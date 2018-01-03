@@ -193,6 +193,7 @@ TEST_F(CmdlineTest, exit) {
             ds("--trace-exit", "-c", "exit 23"), 23, "", "^Shell Exit: terminated by exit 23\n.*$"));
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(
             ds("--trace-exit", "-c", "exit 2300"), 2300 % 256, "", "^Shell Exit: terminated by exit 2300\n.*$"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--trace-exit", "-e", "exit", "34"), 34));
 }
 
 TEST_F(CmdlineTest, bytecode) {

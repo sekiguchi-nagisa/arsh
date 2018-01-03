@@ -107,7 +107,7 @@ static void showFeature(FILE *fp) {
     OP(COMPILE_ONLY,   "--compile-only",      0, "not evaluate, compile only") \
     OP(DISABLE_ASSERT, "--disable-assertion", 0, "disable assert statement") \
     OP(PRINT_TOPLEVEL, "--print-toplevel",    0, "print top level evaluated value") \
-    OP(TRACE_EXIT,     "--trace-exit",        0, "trace execution process to exit command") \
+    OP(TRACE_EXIT,     "--trace-exit",        0, "trace execution process to exit command (ignored in -e)") \
     OP(VERSION,        "--version",           0, "show version and copyright") \
     OP(HELP,           "--help",              0, "show this help message") \
     OP(COMMAND,        "-c",                  argv::HAS_ARG | argv::IGNORE_REST, "evaluate argument") \
@@ -308,6 +308,7 @@ int main(int argc, char **argv) {
         exit(INVOKE(eval)(&state, "(string)", evalText, strlen(evalText)));
     }
     case InvocationKind::BUILTIN: {
+        DSState_unsetOption(state, DS_OPTION_TRACE_EXIT);
         exit(DSState_exec(state, shellArgs));
     }
     }
