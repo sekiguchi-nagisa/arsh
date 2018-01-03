@@ -145,8 +145,8 @@ static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
     fflush(stderr);
 }
 
-static void handleError(const Lexer &lexer, DSErrorKind type, const char *errorKind,
-                        Token errorToken, const std::string &message, DSError *dsError) {
+static DSError handleError(const Lexer &lexer, DSErrorKind type, const char *errorKind,
+                           Token errorToken, const std::string &message) {
     unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(errorToken.pos);
     const bool isatty = isSupportedTerminal(STDERR_FILENO);
 
@@ -161,38 +161,60 @@ static void handleError(const Lexer &lexer, DSErrorKind type, const char *errorK
             color(TermColor::Reset, isatty), message.c_str());
     formatErrorLine(isatty, lexer, errorToken);
 
-    setErrorInfo(dsError, type, errorLineNum, errorKind);
+    return {
+            .kind = type,
+            .lineNum = errorLineNum,
+            .name = errorKind
+    };
 }
 
-static void handleParseError(const Lexer &lexer, const ParseError &e, DSError *dsError) {
+static DSError handleParseError(const Lexer &lexer, const ParseError &e) {
     Token errorToken = lexer.shiftEOS(e.getErrorToken());
-    handleError(lexer, DS_ERROR_KIND_PARSE_ERROR, e.getErrorKind(), errorToken, e.getMessage(), dsError);
+    return handleError(lexer, DS_ERROR_KIND_PARSE_ERROR, e.getErrorKind(), errorToken, e.getMessage());
 }
 
-static void handleTypeError(const Lexer &lexer, const TypeCheckError &e, DSError *dsError) {
-    handleError(lexer, DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage(), dsError);
+static DSError handleTypeError(const Lexer &lexer, const TypeCheckError &e) {
+    return handleError(lexer, DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage());
 }
 
 /**
  * if called from child process, exit(1).
- * @param except
+ * @param state
+ * @return
  */
-static void handleUncaughtException(DSState *st, DSValue &&except) {
-    fputs("[runtime error]\n", stderr);
-    const bool bt = st->pool.getErrorType().isSameOrBaseTypeOf(*except->getType());
-    auto *handle = except->getType()->lookupMethodHandle(st->pool, bt ? "backtrace" : OP_STR);
+static DSError handleRuntimeError(DSState *state) {
+    // get error line number
+    auto thrownObj = state->getThrownObject();
+    auto &errorType = *thrownObj->getType();
+    unsigned int errorLineNum = 0;
+    if(state->pool.getErrorType().isSameOrBaseTypeOf(errorType)) {
+        auto *obj = typeAs<Error_Object>(thrownObj);
+        errorLineNum = getOccurredLineNum(obj->getStackTrace());
+    }
 
-    DSValue ret = callMethod(*st, handle, std::move(except), std::vector<DSValue>());
-    if(st->getThrownObject()) {
+    // print error message
+    fputs("[runtime error]\n", stderr);
+    const bool bt = state->pool.getErrorType().isSameOrBaseTypeOf(errorType);
+    auto *handle = errorType.lookupMethodHandle(state->pool, bt ? "backtrace" : OP_STR);
+
+    DSValue ret = callMethod(*state, handle, std::move(thrownObj), std::vector<DSValue>());
+    if(state->getThrownObject()) {
         fputs("cannot obtain string representation\n", stderr);
     } else if(!bt) {
         fprintf(stderr, "%s\n", typeAs<String_Object>(ret)->getValue());
     }
     fflush(stderr);
 
-    if(!st->isRootShell()) {
-        exit(1);    // in child process.
+    // in child process always exit(1)
+    if(!state->isRootShell()) {
+        exit(1);
     }
+
+    return {
+            .kind = DS_ERROR_KIND_RUNTIME_ERROR,
+            .lineNum = errorLineNum,
+            .name = state->pool.getTypeName(errorType)
+    };
 }
 
 static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
@@ -207,18 +229,11 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
     }
 
     if(!vmEval(*state, code)) {
-        unsigned int errorLineNum = 0;
-        DSValue thrownObj = state->getThrownObject();
-        if(state->pool.getErrorType().isSameOrBaseTypeOf(*thrownObj->getType())) {
-            auto *obj = typeAs<Error_Object>(thrownObj);
-            errorLineNum = getOccurredLineNum(obj->getStackTrace());
+        auto ret = handleRuntimeError(state);
+        if(dsError != nullptr) {
+            *dsError = ret;
         }
-
-        state->loadThrownObject();
-        handleUncaughtException(state, state->pop());
         state->recover(false);
-        setErrorInfo(dsError, DS_ERROR_KIND_RUNTIME_ERROR, errorLineNum,
-                     state->pool.getTypeName(*thrownObj->getType()));
         return 1;
     }
     return state->getExitStatus();
@@ -233,7 +248,10 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     auto rootNode = parser();
     state->lineNum = lexer.getLineNum();
     if(parser.hasError()) {
-        handleParseError(lexer, parser.getError(), dsError);
+        auto e = handleParseError(lexer, parser.getError());
+        if(dsError != nullptr) {
+            *dsError = e;
+        }
         return 1;
     }
 
@@ -258,7 +276,10 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
             NodeDumper::dump(fp, state->pool, *rootNode);
         }
     } catch(const TypeCheckError &e) {
-        handleTypeError(lexer, e, dsError);
+        auto ret = handleTypeError(lexer, e);
+        if(dsError != nullptr) {
+            *dsError = ret;
+        }
         state->recover();
         return 1;
     }
