@@ -192,17 +192,9 @@ static void checkAssertion(DSState &state) {
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
+        state.updateExitStatus(1);
         auto except = Error_Object::newError(state, state.pool.getAssertFail(), std::move(msg));
-
-        // invoke termination hook
-        if(state.terminationHook != nullptr) {
-            const unsigned int lineNum = getOccurredLineNum(typeAs<Error_Object>(except)->getStackTrace());
-            state.terminationHook(DS_ERROR_KIND_ASSERTION_ERROR, lineNum);
-        }
-
-        // print stack trace
-        typeAs<Error_Object>(except)->printStackTrace(state);
-        exit(1);
+        state.throwException(std::move(except));
     }
 }
 
@@ -210,20 +202,9 @@ static void checkAssertion(DSState &state) {
 static void exitShell(DSState &st, unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
-    auto except = st.newError(st.pool.getShellExit(), std::move(str));
-
-    // invoke termination hook
-    if(st.terminationHook != nullptr) {
-        const unsigned int lineNum = getOccurredLineNum(typeAs<Error_Object>(except)->getStackTrace());
-        st.terminationHook(DS_ERROR_KIND_EXIT, lineNum);
-    }
-
-    // print stack trace
-    if(hasFlag(st.option, DS_OPTION_TRACE_EXIT)) {
-        typeAs<Error_Object>(except)->printStackTrace(st);
-    }
     status %= 256;
-    exit(status);
+    st.updateExitStatus(status);
+    throwError(st, st.pool.getShellExit(), std::move(str));
 }
 
 static const char *loadEnv(DSState &state, bool hasDefault) {
@@ -2146,13 +2127,13 @@ static bool mainLoop(DSState &state) {
  * if found exception handler, return true.
  * otherwise return false.
  */
-static bool handleException(DSState &state) {
+static bool handleException(DSState &state, bool forceUnwind) {
     if(state.hook != nullptr) {
         state.hook->vmThrowHook(state);
     }
 
     while(!state.codeStack.empty()) {
-        if(!CODE(state)->is(CodeKind::NATIVE)) {
+        if(!forceUnwind && !CODE(state)->is(CodeKind::NATIVE)) {
             auto *cc = static_cast<const CompiledCode *>(CODE(state));
 
             // search exception entry
@@ -2172,8 +2153,10 @@ static bool handleException(DSState &state) {
             }
         } else if(CODE(state) == &signalTrampoline) {   // within signal trampoline
             unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
-            auto v = state.getLocal(0);
-            state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
+            if(!forceUnwind) {
+                auto v = state.getLocal(0);
+                state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
+            }
         }
         if(state.codeStack.size() == 1) {
             break;  // when top level
@@ -2269,7 +2252,9 @@ static bool runMainLoop(DSState &state) {
             state.codeStack.clear();
             return ret;
         } catch(const DSException &) {
-            if(handleException(state)) {
+            bool forceUnwind = state.pool.getInternalStatus()
+                    .isSameOrBaseTypeOf(*state.getThrownObject()->getType());
+            if(handleException(state, forceUnwind)) {
                 continue;
             }
             return false;
@@ -2318,7 +2303,11 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     if(!st.codeStack.empty()) {
         bool r = runMainLoop(st);
         if(!r) {
-            st.pushExitStatus(1);
+            if(st.pool.getInternalStatus().isSameOrBaseTypeOf(*st.getThrownObject()->getType())) {
+                st.loadThrownObject(); // force clear thrownObject
+            } else {
+                st.pushExitStatus(1);
+            }
         }
     }
     st.popNoReturn();

@@ -251,22 +251,6 @@ unsigned int DSState_featureBit();
 #define DSState_supportDBus() (DSState_featureBit() & DS_FEATURE_DBUS ? 1 : 0)
 
 
-/* for termination hook */
-/**
- * status indicates execution status (DS_ERROR_KIND_ASSERTION_ERROR or DS_ERROR_KIND_EXIT).
- */
-typedef void (*TerminationHook)(unsigned int status, unsigned int errorLineNum);
-
-/**
- * when calling builtin exit command or raising assertion error, invoke hook and terminate immediately.
- * @param st
- * not null.
- * @param hook
- * if null, clear termination hook.
- */
-void DSState_addTerminationHook(DSState *st, TerminationHook hook);
-
-
 /* for input completion */
 typedef struct {
     /**

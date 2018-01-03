@@ -72,16 +72,6 @@ static int invoke(DSState **state, T&& ... args) {
 
 #define INVOKE(F) invoke<decltype(&DSState_ ## F), DSState_ ## F>
 
-static void terminationHook(unsigned int kind, unsigned int errorLineNum) {
-    if(statusLogPath != nullptr) {
-        FILE *fp = fopen(statusLogPath, "w");
-        if(fp != nullptr) {
-            fprintf(fp, "kind=%d lineNum=%d name=\n", kind, errorLineNum);
-            fclose(fp);
-        }
-    }
-}
-
 static void showFeature(FILE *fp) {
     const char *featureNames[] = {
             "USE_LOGGING",
@@ -245,7 +235,6 @@ int main(int argc, char **argv) {
 
     // init state
     DSState *state = DSState_createWithMode(mode);
-    DSState_addTerminationHook(state, terminationHook);
     DSState_setOption(state, option);
     for(auto &e : dumpTarget) {
         if(e.path != nullptr) {
@@ -295,10 +284,6 @@ int main(int argc, char **argv) {
             if(userc) {
                 loadRC(state, rcfile);
             }
-
-            // ignore termination hook
-            DSState_addTerminationHook(state, nullptr);
-
             exit(exec_interactive(state));
         }
     }
@@ -308,7 +293,6 @@ int main(int argc, char **argv) {
         exit(INVOKE(eval)(&state, "(string)", evalText, strlen(evalText)));
     }
     case InvocationKind::BUILTIN: {
-        DSState_unsetOption(state, DS_OPTION_TRACE_EXIT);
         exit(DSState_exec(state, shellArgs));
     }
     }

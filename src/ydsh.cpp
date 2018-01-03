@@ -183,37 +183,48 @@ static DSError handleTypeError(const Lexer &lexer, const TypeCheckError &e) {
  * @return
  */
 static DSError handleRuntimeError(DSState *state) {
-    // get error line number
     auto thrownObj = state->getThrownObject();
     auto &errorType = *thrownObj->getType();
+    DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
+    if(errorType == state->pool.getShellExit()) {
+        kind = DS_ERROR_KIND_EXIT;
+    } else if(errorType == state->pool.getAssertFail()) {
+        kind = DS_ERROR_KIND_ASSERTION_ERROR;
+    }
+
+    // get error line number
     unsigned int errorLineNum = 0;
-    if(state->pool.getErrorType().isSameOrBaseTypeOf(errorType)) {
+    if(state->pool.getErrorType().isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
         auto *obj = typeAs<Error_Object>(thrownObj);
         errorLineNum = getOccurredLineNum(obj->getStackTrace());
     }
 
     // print error message
-    fputs("[runtime error]\n", stderr);
-    const bool bt = state->pool.getErrorType().isSameOrBaseTypeOf(errorType);
-    auto *handle = errorType.lookupMethodHandle(state->pool, bt ? "backtrace" : OP_STR);
+    if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
+        fputs("[runtime error]\n", stderr);
+        const bool bt = state->pool.getErrorType().isSameOrBaseTypeOf(errorType);
+        auto *handle = errorType.lookupMethodHandle(state->pool, bt ? "backtrace" : OP_STR);
 
-    DSValue ret = callMethod(*state, handle, std::move(thrownObj), std::vector<DSValue>());
-    if(state->getThrownObject()) {
-        fputs("cannot obtain string representation\n", stderr);
-    } else if(!bt) {
-        fprintf(stderr, "%s\n", typeAs<String_Object>(ret)->getValue());
+        DSValue ret = callMethod(*state, handle, std::move(thrownObj), std::vector<DSValue>());
+        if(state->getThrownObject()) {
+            fputs("cannot obtain string representation\n", stderr);
+        } else if(!bt) {
+            fprintf(stderr, "%s\n", typeAs<String_Object>(ret)->getValue());
+        }
+    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state->option, DS_OPTION_TRACE_EXIT)) {
+        typeAs<Error_Object>(thrownObj)->printStackTrace(*state);
     }
     fflush(stderr);
 
     // in child process always exit(1)
     if(!state->isRootShell()) {
-        exit(1);
+        exit(kind == DS_ERROR_KIND_EXIT ? state->getExitStatus() : 1);
     }
 
     return {
-            .kind = DS_ERROR_KIND_RUNTIME_ERROR,
+            .kind = kind,
             .lineNum = errorLineNum,
-            .name = state->pool.getTypeName(errorType)
+            .name = kind == DS_ERROR_KIND_RUNTIME_ERROR ? state->pool.getTypeName(errorType) : ""
     };
 }
 
@@ -233,8 +244,12 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
         if(dsError != nullptr) {
             *dsError = ret;
         }
-        state->recover(false);
-        return 1;
+        if(ret.kind == DS_ERROR_KIND_RUNTIME_ERROR) {
+            state->recover(false);
+        }
+        if(ret.kind != DS_ERROR_KIND_EXIT) {
+            return 1;
+        }
     }
     return state->getExitStatus();
 }
@@ -724,10 +739,6 @@ unsigned int DSState_featureBit() {
     setFlag(featureBit, DS_FEATURE_FIXED_TIME);
 #endif
     return featureBit;
-}
-
-void DSState_addTerminationHook(DSState *st, TerminationHook hook) {
-    st->terminationHook = hook;
 }
 
 void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c) {

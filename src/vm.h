@@ -168,8 +168,6 @@ struct DSState {
      */
     FilePathCache pathCache;
 
-    TerminationHook terminationHook{nullptr};
-
     unsigned int lineNum{1};
 
     /**
