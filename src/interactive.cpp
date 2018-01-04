@@ -276,9 +276,8 @@ int exec_interactive(DSState *dsState) {
     int status = 0;
     for(std::string line; readLine(line);) {
         DSError e;
-        int r = DSState_eval(dsState, nullptr, line.c_str(), line.size(), &e);
+        status = DSState_eval(dsState, nullptr, line.c_str(), line.size(), &e);
         if(e.kind == DS_ERROR_KIND_EXIT || e.kind == DS_ERROR_KIND_ASSERTION_ERROR) {
-            status = r; //FIXME: exit status of interactive shell is equivalent to latest exit status
             break;
         }
     }
