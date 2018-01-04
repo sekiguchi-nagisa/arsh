@@ -62,15 +62,6 @@ static unsigned int originalShellLevel() {
     return level;
 }
 
-
-static void setErrorInfo(DSError *error, DSErrorKind type, unsigned int lineNum, const char *errorName) {
-    if(error != nullptr) {
-        error->kind = type;
-        error->lineNum = lineNum;
-        error->name = errorName;
-    }
-}
-
 /**
  * not allow dumb terminal
  */
@@ -255,7 +246,9 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
 }
 
 static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
-    setErrorInfo(dsError, DS_ERROR_KIND_SUCCESS, 0, nullptr);
+    if(dsError != nullptr) {
+        *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .lineNum = 0, .name = nullptr};
+    }
     lexer.setLineNum(state->lineNum);
 
     // parse
