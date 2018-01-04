@@ -1,12 +1,17 @@
 language: cpp
 
+os: linux
+sudo: required
+dist: trusty
+
+branches:
+  only:
+    - master
+
 matrix:
   include:
     # gcc 4.8
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: gcc
+    - compiler: gcc
       addons:
         apt:
           sources:
@@ -22,10 +27,7 @@ matrix:
       env: CC_BIN=gcc-4.8 CXX_BIN=g++-4.8
 
     # gcc 4.9
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: gcc
+    - compiler: gcc
       addons:
         apt:
           sources:
@@ -41,10 +43,7 @@ matrix:
       env: CC_BIN=gcc-4.9 CXX_BIN=g++-4.9
 
     # gcc 5
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: gcc
+    - compiler: gcc
       addons:
         apt:
           sources:
@@ -60,10 +59,7 @@ matrix:
       env: CC_BIN=gcc-5 CXX_BIN=g++-5
 
     # gcc 6
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: gcc
+    - compiler: gcc
       addons:
         apt:
           sources:
@@ -79,10 +75,7 @@ matrix:
       env: CC_BIN=gcc-6 CXX_BIN=g++-6
 
     # gcc 7
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: gcc
+    - compiler: gcc
       addons:
         apt:
           sources:
@@ -98,10 +91,7 @@ matrix:
       env: CC_BIN=gcc-7 CXX_BIN=g++-7
 
     # gcc 7 (Release build)
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: gcc
+    - compiler: gcc
       addons:
         apt:
           sources:
@@ -122,10 +112,7 @@ matrix:
 
 
     # clang 3.5
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -140,10 +127,7 @@ matrix:
       env: CC_BIN=clang-3.5 CXX_BIN=clang++-3.5
 
     # clang 3.6
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -177,10 +161,7 @@ matrix:
       # env: CC_BIN=clang-3.7 CXX_BIN=clang++-3.7
 
     # clang 3.8
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -195,10 +176,7 @@ matrix:
       env: CC_BIN=clang-3.8 CXX_BIN=clang++-3.8
 
     # clang 3.9
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -214,10 +192,7 @@ matrix:
       env: CC_BIN=clang-3.9 CXX_BIN=clang++-3.9
 
     # clang 4.0
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -233,10 +208,7 @@ matrix:
       env: CC_BIN=clang-4.0 CXX_BIN=clang++-4.0
 
     # clang 5.0
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -252,10 +224,7 @@ matrix:
       env: CC_BIN=clang-5.0 CXX_BIN=clang++-5.0
 
     # clang 5.0 (Release build)
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -275,10 +244,7 @@ matrix:
         - ctest --output-on-failure
 
     # clang 5.0 with address sanitizer
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -298,10 +264,7 @@ matrix:
         - ctest --output-on-failure
 
     # clang 5.0 with undefined behavior sanitizer
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -321,10 +284,7 @@ matrix:
         - ctest --output-on-failure
 
     # clang 5.0 with fuzzing
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -344,10 +304,7 @@ matrix:
         - ctest --output-on-failure
 
     # clang 5.0 with USE_DBUS=OFF
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: clang
+    - compiler: clang
       addons:
         apt:
           sources:
@@ -368,10 +325,7 @@ matrix:
 
 
     # gcc6 with coverage
-    - os: linux
-      sudo: required
-      dist: trusty
-      compiler: gcc
+    - ocompiler: gcc
       addons:
         apt:
           sources:
