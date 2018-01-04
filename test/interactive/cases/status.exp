@@ -1,6 +1,7 @@
 #!/usr/bin/env expect
 
 # skip empty line
+#@status: 1
 
 set bin_name [lindex $argv 0]
 spawn ${bin_name} --norc
@@ -13,7 +14,7 @@ expect {
     }
     default {
         send_error "mismatch first prompt"
-        exit 1
+        exit 127
     }
 }
 
@@ -23,7 +24,7 @@ expect {
     }
     default {
         send_error "mismatch first prompt"
-        exit 1
+        exit 127
     }
 }
 
@@ -33,7 +34,7 @@ expect {
     }
     default {
         send_error "mismatch first prompt"
-        exit 1
+        exit 127
     }
 }
 
@@ -43,7 +44,7 @@ expect {
     }
     default {
         send_error "mismatch first prompt"
-        exit 1
+        exit 127
     }
 }
 
@@ -53,7 +54,7 @@ expect {
     }
     default {
         send_error "mismatch prompt"
-        exit 1
+        exit 127
     }
 }
 
@@ -62,7 +63,7 @@ catch wait result
 set os_error [ lindex $result 2 ]
 if { $os_error == -1 } {
     send_error "execution failed"
-    exit 1
+    exit 127
 }
 set status [ lindex $result 3]
 exit $status
