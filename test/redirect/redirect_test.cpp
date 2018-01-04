@@ -83,8 +83,9 @@ TEST_F(RedirectTest, STDIN) {
     ProcBuilder builder = {
             "sh", "-c", format("echo hello world > %s", this->getTargetName()).c_str(),
     };
-    int s = builder.exec();
-    s = WEXITSTATUS(s);
+    auto pair = inspectStatus(builder.exec());
+    int s = pair.first;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitType::EXITED, pair.second));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(s, 0));
 
     // builtin

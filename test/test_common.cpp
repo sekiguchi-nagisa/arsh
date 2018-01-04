@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Nagisa Sekiguchi
+ * Copyright (C) 2017-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,6 +115,23 @@ void TempFileFactory::freeName() {
     this->tmpDirName = nullptr;
 }
 
+std::pair<int, WaitType> inspectStatus(int status) {
+    int s;
+    WaitType type;
+    if(WIFEXITED(status)) {
+        s = WEXITSTATUS(status);
+        type = WaitType::EXITED;
+    } else if(WIFSIGNALED(status)) {
+        s = WTERMSIG(status);
+        type = WaitType::SIGNALED;
+    } else if(WIFSTOPPED(status)) {
+        s = WSTOPSIG(status);
+        type = WaitType::STOPPED;
+    } else {
+        fatal("unsupported status\n");
+    }
+    return {s, type};
+}
 
 // ########################
 // ##     ProcHandle     ##
@@ -201,21 +218,15 @@ static void trimLastSpace(std::string &str) {
 Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
     auto output = this->readAll();
     int status = this->wait();
-
-    if(WIFEXITED(status)) {
-        status = WEXITSTATUS(status);
-    } else if(WIFSIGNALED(status)) {
-        status = WTERMSIG(status) + 128;
-    } else {
-        fatal("invalid exit status\n");
-    }
+    auto pair = inspectStatus(status);
 
     if(removeLastSpace) {
         trimLastSpace(output.first);
         trimLastSpace(output.second);
     }
 
-    return {.status = status,
+    return {.status = pair.first,
+            .waitType = pair.second,
             .out = std::move(output.first),
             .err = std::move(output.second)};
 }

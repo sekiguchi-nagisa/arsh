@@ -84,8 +84,8 @@ public:
         builder.addArgs(d.getParams());
 
         // execute
-        int ret = builder.exec();
-        ret = WEXITSTATUS(ret);
+        auto pair = inspectStatus(builder.exec());
+        int ret = toShellExitStatus(pair.first, pair.second);
 
         // get internal status
         std::ifstream input(this->getTmpFileName());

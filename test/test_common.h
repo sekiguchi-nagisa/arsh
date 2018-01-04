@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Nagisa Sekiguchi
+ * Copyright (C) 2017-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,8 +55,31 @@ private:
     void freeName();
 };
 
+enum class WaitType : unsigned char {
+    EXITED,
+    SIGNALED,
+    STOPPED,
+};
+
+std::pair<int, WaitType> inspectStatus(int status);
+
+/**
+ * convert to shell style exit status
+ * @param status
+ * 0~255
+ * @param type
+ * @return
+ */
+inline int toShellExitStatus(int status, WaitType type) {
+    if(type != WaitType::EXITED) {
+        status += 128;
+    }
+    return status;
+}
+
 struct Output {
     int status;
+    WaitType waitType;
     std::string out;
     std::string err;
 };
@@ -250,6 +273,11 @@ public:
         return (*this)().waitAndGetResult(removeLastSpace);
     }
 
+    /**
+     *
+     * @return
+     * raw exit status
+     */
     int exec() {
         return (*this)().wait();
     }
