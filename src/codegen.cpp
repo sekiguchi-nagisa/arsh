@@ -66,7 +66,7 @@ unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
     this->curBuilder().constBuffer.push_back(std::move(value));
     unsigned int index = this->curBuilder().constBuffer.size() - 1;
     if(index > 0xFFFFFF) {
-        fatal("const pool index is up to 24bit");
+        fatal("const pool index is up to 24bit\n");
     }
     return index;
 }
@@ -649,7 +649,7 @@ static RedirOP resolveRedirOp(TokenKind kind) {
     EACH_RedirOP(GEN_CASE)
 #undef GEN_CASE
     default:
-        fatal("unsupported redir op: %s", toString(kind));
+        fatal("unsupported redir op: %s\n", toString(kind));
     }
 }
 

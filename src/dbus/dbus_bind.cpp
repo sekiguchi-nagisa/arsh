@@ -118,7 +118,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
         return DSValue::create<String_Object>(getPool(ctx).getObjectPathType(), std::string(value));
     }
     case DBUS_TYPE_UNIX_FD: {
-        fatal("unsupported dbus type: UNIX_FD");
+        fatal("unsupported dbus type: UNIX_FD\n");
     }
     case DBUS_TYPE_ARRAY: {
         int elementType = dbus_message_iter_get_element_type(iter);
@@ -248,7 +248,7 @@ static DSValue decodeMessage(DSState &ctx, const std::vector<DSType *> &types, S
 
     unsigned int size = values.size();
     if(size == 0) {
-        fatal("broken message, must need more than one argument");
+        fatal("broken message, must need more than one argument\n");
     } else if(size == 1) {
         return std::move(values[0]);
     }

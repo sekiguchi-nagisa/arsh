@@ -365,7 +365,7 @@ static DSType &decodeTypeDescriptorImpl(TypePool *pool, const char *&desc) {
         return pool->getVariantType();
     }
     default:
-        fatal("unsupported dbus type: %c", kind);
+        fatal("unsupported dbus type: %c\n", kind);
         return pool->getVoidType();
     }
 }
