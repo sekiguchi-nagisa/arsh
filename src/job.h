@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Nagisa Sekiguchi
+ * Copyright (C) 2017-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,8 +31,6 @@ namespace ydsh {
 void tryToForeground(const DSState &st);
 
 class JobTable;
-
-struct JobTrait;
 
 class Proc {
 public:
@@ -78,11 +76,9 @@ public:
  */
 Proc xfork(DSState &st, pid_t pgid, bool foreground);
 
-class JobImpl {
+class JobImpl : public RefCount<JobImpl> {
 private:
     static_assert(std::is_pod<Proc>::value, "failed");
-
-    unsigned long refCount{0};
 
     /**
      * after detach, will be 0
@@ -124,10 +120,14 @@ private:
         }
     }
 
-    ~JobImpl() = default;
-
 public:
     NON_COPYABLE(JobImpl);
+
+    ~JobImpl() = default;
+
+    static void operator delete(void *ptr) noexcept {
+        free(ptr);
+    }
 
     unsigned short getProcSize() const {
         return this->procSize;
@@ -201,25 +201,7 @@ public:
     int wait();
 };
 
-struct JobTrait {
-    static unsigned long useCount(const JobImpl *ptr) noexcept {
-        return ptr->refCount;
-    }
-
-    static void increase(JobImpl *ptr) noexcept {
-        if(ptr != nullptr) {
-            ptr->refCount++;
-        }
-    }
-
-    static void decrease(JobImpl *ptr) noexcept {
-        if(ptr != nullptr && --ptr->refCount == 0) {
-            free(ptr);
-        }
-    }
-};
-
-using Job = IntrusivePtr<JobImpl, JobTrait>;
+using Job = IntrusivePtr<JobImpl>;
 
 class JobTable {    //FIXME: send signal to managed jobs
 private:

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017 Nagisa Sekiguchi
+ * Copyright (C) 2016-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ template <typename T> struct RefCountOp;
 template <typename T>
 class RefCount {
 private:
-    unsigned long count{0};
+    long count{0};
     friend struct RefCountOp<T>;
 
 protected:
@@ -36,8 +36,8 @@ protected:
 };
 
 template <typename T>
-struct RefCountOp {
-    static unsigned long useCount(const RefCount<T> *ptr) noexcept {
+struct RefCountOp final {
+    static long useCount(const RefCount<T> *ptr) noexcept {
         return ptr->count;
     }
 
@@ -93,7 +93,7 @@ public:
         std::swap(this->ptr, o.ptr);
     }
 
-    unsigned long useCount() const noexcept {
+    long useCount() const noexcept {
         return P::useCount(this->ptr);
     }
 
