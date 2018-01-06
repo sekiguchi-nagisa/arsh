@@ -49,10 +49,10 @@ private:
      */
     unsigned char exitStatus_;
 
+    explicit Proc(pid_t pid) : pid_(pid), state_(RUNNING), exitStatus_(0) {}
+
 public:
     Proc() = default;
-
-    explicit Proc(pid_t pid) : pid_(pid), state_(RUNNING), exitStatus_(0) {}
 
     pid_t pid() const {
         return this->pid_;
@@ -69,12 +69,12 @@ public:
     int wait();
 
     void send(int sigNum);
-};
 
-/**
- * after fork, reset signal setting in child process.
- */
-Proc xfork(DSState &st, pid_t pgid, bool foreground);
+    /**
+     * after fork, reset signal setting in child process.
+     */
+    static Proc fork(DSState &st, pid_t pgid, bool foreground);
+};
 
 class JobImpl : public RefCount<JobImpl> {
 private:

@@ -623,7 +623,7 @@ static void forkAndEval(DSState &state) {
     // set in/out pipe
     auto pipeset = initPipeSet(forkKind);
 
-    Proc proc = xfork(state, getpgid(0), false);
+    auto proc = Proc::fork(state, getpgid(0), false);
     if(proc.pid() > 0) {   // parent process
         tryToClose(pipeset.in[READ_PIPE]);
         tryToClose(pipeset.out[WRITE_PIPE]);
@@ -1104,7 +1104,7 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         pgid = state.foreground->getPid(0);
     }
 
-    Proc proc = xfork(state, pgid, rootShell);
+    auto proc = Proc::fork(state, pgid, rootShell);
     if(proc.pid() == -1) {
         perror("child process error");
         exit(1);
@@ -1357,7 +1357,7 @@ static void callPipeline(DSState &state) {
     Proc proc;
 
     unsigned int procIndex;
-    for(procIndex = 0; procIndex < pipeSize && (proc = xfork(state, pgid, rootShell)).pid() > 0; procIndex++) {
+    for(procIndex = 0; procIndex < pipeSize && (proc = Proc::fork(state, pgid, rootShell)).pid() > 0; procIndex++) {
         childs[procIndex] = proc;
         if(pgid == 0) {
             pgid = proc.pid();

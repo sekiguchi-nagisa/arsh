@@ -22,10 +22,10 @@
 
 namespace ydsh {
 
-Proc xfork(DSState &st, pid_t pgid, bool foreground) {
+Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
     SignalGuard guard;
 
-    pid_t pid = fork();
+    pid_t pid = ::fork();
     if(pid == 0) {  // child process
         if(st.isJobControl()) {
             setpgid(0, pgid);
