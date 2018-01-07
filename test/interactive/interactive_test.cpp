@@ -68,7 +68,7 @@ public:
     virtual void doTest() {
         SCOPED_TRACE("");
 
-        ProcBuilder builder ={
+        ProcBuilder builder = {
                 "expect",
                 this->targetName.c_str(),
                 BIN_PATH,
