@@ -239,6 +239,7 @@ TEST(API, case7) {
 
     // command, eval
     result = EXEC("command eval %s --first | eval command %s", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
@@ -250,6 +251,7 @@ TEST(API, case7) {
 
     // udc1
     result = EXEC("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
@@ -261,6 +263,7 @@ TEST(API, case7) {
 
     // udc2
     result = EXEC("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
@@ -289,6 +292,7 @@ TEST(API, case8) {
 
     // udc1
     result = EXEC2("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
@@ -300,6 +304,7 @@ TEST(API, case8) {
 
     // udc2
     result = EXEC2("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
