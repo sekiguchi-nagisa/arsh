@@ -69,21 +69,10 @@ void tryToForeground(const DSState &st) {
 int Proc::wait() {
     if(this->state_ == RUNNING) {
         int status = 0;
-        waitpid(this->pid_, &status, WUNTRACED);
-        if(WIFSTOPPED(status)) {
-            this->state_ = STOPPED;
-            this->exitStatus_ = WSTOPSIG(status) + 128;
-        } else {
-            this->state_ = TERMINATED;
-            if(WIFEXITED(status)) {
-                this->exitStatus_ = WEXITSTATUS(status);
-            } else if(WIFSIGNALED(status)) {
-                this->exitStatus_ = WTERMSIG(status) + 128;
-            }
+        if(waitpid(this->pid_, &status, WUNTRACED) == -1) {
+            fatal("%s\n", strerror(errno));
         }
-    }
-    if(this->state_ == TERMINATED) {
-        this->pid_ = -1;
+        this->updateStatus(status);
     }
     return this->exitStatus_;
 }
@@ -96,6 +85,28 @@ void Proc::send(int sigNum) {
         if(sigNum == SIGCONT) {
             this->state_ = RUNNING;
         }
+    }
+}
+
+void Proc::updateStatus(int status) {
+    if(this->state_ == TERMINATED) {
+        return;
+    }
+    if(WIFEXITED(status)) {
+        this->state_ = TERMINATED;
+        this->exitStatus_ = WEXITSTATUS(status);
+    } else if(WIFSIGNALED(status)) {
+        this->state_ = TERMINATED;
+        this->exitStatus_ = WTERMSIG(status) + 128;
+    } else if(WIFSTOPPED(status)) {
+        this->state_ = STOPPED;
+        this->exitStatus_ = WSTOPSIG(status) + 128;
+    } else if(WIFCONTINUED(status)) {
+        this->state_ = RUNNING;
+    }
+
+    if(this->state_ == TERMINATED) {
+        this->pid_ = -1;
     }
 }
 

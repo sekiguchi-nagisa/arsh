@@ -74,6 +74,15 @@ public:
      * after fork, reset signal setting in child process.
      */
     static Proc fork(DSState &st, pid_t pgid, bool foreground);
+
+private:
+    /**
+     * if already terminated, do nothing.
+     * must be called after waitpid.
+     * @param status
+     * waitpid's status.
+     */
+    void updateStatus(int status);
 };
 
 class JobImpl : public RefCount<JobImpl> {
