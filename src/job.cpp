@@ -66,13 +66,31 @@ void tryToForeground(const DSState &st) {
 // ##     Proc     ##
 // ##################
 
-int Proc::wait() {
-    if(this->state_ == RUNNING) {
+int Proc::wait(bool nonblocking) {
+    if(this->state() == RUNNING || (nonblocking && this->state() == STOPPED)) {
         int status = 0;
-        if(waitpid(this->pid_, &status, WUNTRACED) == -1) {
+        int option = nonblocking ? (WUNTRACED | WNOHANG | WCONTINUED) : WUNTRACED;
+        if(waitpid(this->pid_, &status, option) == -1) {
             fatal("%s\n", strerror(errno));
         }
-        this->updateStatus(status);
+
+        // update status
+        if(WIFEXITED(status)) {
+            this->state_ = TERMINATED;
+            this->exitStatus_ = WEXITSTATUS(status);
+        } else if(WIFSIGNALED(status)) {
+            this->state_ = TERMINATED;
+            this->exitStatus_ = WTERMSIG(status) + 128;
+        } else if(WIFSTOPPED(status)) {
+            this->state_ = STOPPED;
+            this->exitStatus_ = WSTOPSIG(status) + 128;
+        } else if(WIFCONTINUED(status)) {
+            this->state_ = RUNNING;
+        }
+
+        if(this->state_ == TERMINATED) {
+            this->pid_ = -1;
+        }
     }
     return this->exitStatus_;
 }
@@ -85,28 +103,6 @@ void Proc::send(int sigNum) {
         if(sigNum == SIGCONT) {
             this->state_ = RUNNING;
         }
-    }
-}
-
-void Proc::updateStatus(int status) {
-    if(this->state_ == TERMINATED) {
-        return;
-    }
-    if(WIFEXITED(status)) {
-        this->state_ = TERMINATED;
-        this->exitStatus_ = WEXITSTATUS(status);
-    } else if(WIFSIGNALED(status)) {
-        this->state_ = TERMINATED;
-        this->exitStatus_ = WTERMSIG(status) + 128;
-    } else if(WIFSTOPPED(status)) {
-        this->state_ = STOPPED;
-        this->exitStatus_ = WSTOPSIG(status) + 128;
-    } else if(WIFCONTINUED(status)) {
-        this->state_ = RUNNING;
-    }
-
-    if(this->state_ == TERMINATED) {
-        this->pid_ = -1;
     }
 }
 
@@ -124,7 +120,7 @@ bool JobImpl::restoreStdin() {
     return false;
 }
 
-int JobImpl::wait() {
+int JobImpl::wait(bool nonblocking) {
     if(!hasOwnership()) {
         return -1;
     }
@@ -136,7 +132,7 @@ int JobImpl::wait() {
     unsigned int lastStatus = 0;
     for(unsigned int i = 0; i < this->procSize; i++) {
         auto &proc = this->procs[i];
-        int s = proc.wait();
+        int s = proc.wait(nonblocking);
         if(proc.state() == Proc::TERMINATED) {
             terminateCount++;
             lastStatus = s;

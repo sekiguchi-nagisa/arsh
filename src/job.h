@@ -66,7 +66,13 @@ public:
         return this->exitStatus_;
     }
 
-    int wait();
+    /**
+     * wait for termination.
+     * if `nonblocking' is true, not wait for termination.
+     * @param nonblocking
+     * @return
+     */
+    int wait(bool nonblocking = false);
 
     void send(int sigNum);
 
@@ -74,15 +80,6 @@ public:
      * after fork, reset signal setting in child process.
      */
     static Proc fork(DSState &st, pid_t pgid, bool foreground);
-
-private:
-    /**
-     * if already terminated, do nothing.
-     * must be called after waitpid.
-     * @param status
-     * waitpid's status.
-     */
-    void updateStatus(int status);
 };
 
 class JobImpl : public RefCount<JobImpl> {
@@ -203,11 +200,12 @@ public:
     /**
      * wait for termination.
      * after termination, `state' will be TERMINATED.
+     * @param nonblocking
      * @return
      * exit status of last process.
-     * if cannot terminate (has no-wnership or stopped), return -1.
+     * if cannot terminate (has no-ownership), return -1.
      */
-    int wait();
+    int wait(bool nonblocking = false);
 };
 
 using Job = IntrusivePtr<JobImpl>;
