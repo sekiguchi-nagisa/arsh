@@ -220,6 +220,9 @@ private:
     Job latestEntry;
 
 public:
+    using EntryIter = std::vector<Job>::iterator;
+    using ConstEntryIter = std::vector<Job>::const_iterator;
+
     JobTable() = default;
     ~JobTable() = default;
 
@@ -240,7 +243,15 @@ public:
      * detached job.
      * if specified job is not found, return null
      */
-    Job detach(unsigned int jobId);
+    Job detach(unsigned int jobId) {
+        if(jobId == 0) {
+            return nullptr;
+        }
+        auto iter = this->findEntryIter(jobId);
+        auto job = *iter;
+        this->detachByIter(iter);
+        return job;
+    }
 
     /**
      * if has ownership, wait termination.
@@ -264,6 +275,13 @@ public:
         this->entries.clear();
         this->latestEntry.reset();
     }
+
+    /**
+     * update status of managed jobs.
+     * when a job is terminated, detach job.
+     * should call after wait termination of foreground job.
+     */
+    void updateStatus();
 
     Job &getLatestEntry() {
         return this->latestEntry;
@@ -294,7 +312,15 @@ private:
      */
     std::pair<unsigned int, unsigned int> findEmptyEntry() const;   //FIXME: binary search
 
-    std::vector<Job>::const_iterator findEntryIter(unsigned int jobId) const;
+    ConstEntryIter findEntryIter(unsigned int jobId) const;
+
+    /**
+     *
+     * @param iter
+     * @return
+     * iterator of next entry.
+     */
+    EntryIter detachByIter(ConstEntryIter iter);
 };
 
 } // namespace ydsh

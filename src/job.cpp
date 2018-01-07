@@ -70,26 +70,29 @@ int Proc::wait(bool nonblocking) {
     if(this->state() == RUNNING || (nonblocking && this->state() == STOPPED)) {
         int status = 0;
         int option = nonblocking ? (WUNTRACED | WNOHANG | WCONTINUED) : WUNTRACED;
-        if(waitpid(this->pid_, &status, option) == -1) {
+        int ret = waitpid(this->pid_, &status, option);
+        if(ret == -1) {
             fatal("%s\n", strerror(errno));
         }
 
-        // update status
-        if(WIFEXITED(status)) {
-            this->state_ = TERMINATED;
-            this->exitStatus_ = WEXITSTATUS(status);
-        } else if(WIFSIGNALED(status)) {
-            this->state_ = TERMINATED;
-            this->exitStatus_ = WTERMSIG(status) + 128;
-        } else if(WIFSTOPPED(status)) {
-            this->state_ = STOPPED;
-            this->exitStatus_ = WSTOPSIG(status) + 128;
-        } else if(WIFCONTINUED(status)) {
-            this->state_ = RUNNING;
-        }
+        if(ret > 0) {
+            // update status
+            if(WIFEXITED(status)) {
+                this->state_ = TERMINATED;
+                this->exitStatus_ = WEXITSTATUS(status);
+            } else if(WIFSIGNALED(status)) {
+                this->state_ = TERMINATED;
+                this->exitStatus_ = WTERMSIG(status) + 128;
+            } else if(WIFSTOPPED(status)) {
+                this->state_ = STOPPED;
+                this->exitStatus_ = WSTOPSIG(status) + 128;
+            } else if(WIFCONTINUED(status)) {
+                this->state_ = RUNNING;
+            }
 
-        if(this->state_ == TERMINATED) {
-            this->pid_ = -1;
+            if(this->state_ == TERMINATED) {
+                this->pid_ = -1;
+            }
         }
     }
     return this->exitStatus_;
@@ -167,13 +170,7 @@ void JobTable::attach(Job job) {
     this->latestEntry = std::move(job);
 }
 
-Job JobTable::detach(unsigned int jobId) {
-    if(jobId == 0) {
-        return nullptr;
-    }
-
-    // remove entry
-    auto iter = this->findEntryIter(jobId);
+JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
     if(iter != this->entries.end()) {
         /**
          * convert const_iterator -> iterator
@@ -186,7 +183,7 @@ Job JobTable::detach(unsigned int jobId) {
          * in C++11, vector::erase accepts const_iterator.
          * but in libstdc++ 4.8, vector::erase(const_iterator) is not implemented.
          */
-        this->entries.erase(actual);
+        auto next = this->entries.erase(actual);
 
         // change latest entry
         if(this->latestEntry == job) {
@@ -195,9 +192,20 @@ Job JobTable::detach(unsigned int jobId) {
                 this->latestEntry = this->entries.back();
             }
         }
-        return job;
+        return next;
     }
-    return nullptr;
+    return this->entries.end();
+}
+
+void JobTable::updateStatus() {
+    for(auto begin = this->entries.begin(); begin != this->entries.end();) {
+        (*begin)->wait(true);
+        if((*begin)->available()) {
+            ++begin;
+        } else {
+            begin = this->detachByIter(begin);
+        }
+    }
 }
 
 std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
@@ -236,7 +244,7 @@ struct Comparator {
     }
 };
 
-std::vector<Job>::const_iterator JobTable::findEntryIter(unsigned int jobId) const {
+JobTable::ConstEntryIter JobTable::findEntryIter(unsigned int jobId) const {
     auto iter = std::lower_bound(this->entries.cbegin(), this->entries.cend(), jobId, Comparator());
     if(iter != this->entries.end() && (*iter)->jobId == jobId) {
         return iter;

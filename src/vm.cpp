@@ -753,6 +753,7 @@ public:
             // job is still running, attach to JobTable
             this->state.jobTable.attach(this->entry);
         }
+        this->state.jobTable.updateStatus();
     }
 };
 
@@ -1145,6 +1146,7 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
             }
         }
         tryToForeground(state);
+        state.jobTable.updateStatus();
         if(errnum != 0) {
             state.updateExitStatus(1);
             throwCmdError(state, cmdName, errnum);

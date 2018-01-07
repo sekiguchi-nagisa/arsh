@@ -12,7 +12,7 @@ assert "$(fg %1 2>&1)" == 'ydsh: fg: %1: no such job'
 
 sh -c 'kill -s STOP $$; exit 180'
 assert $? == 128 + %'stop'.value()
-assert { fg; $?; } == 180
+assert { fg; $?; } == 180 : "$?"
 
 assert { fg; $?; } == 1
 assert "$(fg 2>&1)" == 'ydsh: fg: current: no such job'

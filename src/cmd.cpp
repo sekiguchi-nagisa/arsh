@@ -1435,6 +1435,7 @@ static int builtin_fg(DSState &state, Array_Object &argvObj) {
     job->send(SIGCONT);
     int s = getJobTable(state).waitAndDetach(job);
     tryToForeground(state);
+    getJobTable(state).updateStatus();
     return s;
 }
 
