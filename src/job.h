@@ -215,6 +215,11 @@ private:
     std::vector<Job> entries;
 
     /**
+     * if maintain disowned job, `jobSize' is not equivalent to `entries' size.
+     */
+    unsigned int jobSize{0};
+
+    /**
      * latest attached entry.
      */
     Job latestEntry;
@@ -233,25 +238,18 @@ public:
         return newEntry(1, procs, false);
     }
 
-    void attach(Job job);
+    void attach(Job job, bool disowned = false);
 
     /**
      * remove job from JobTable
      * @param jobId
      * if 0, do nothing.
+     * @param remove
      * @return
      * detached job.
      * if specified job is not found, return null
      */
-    Job detach(unsigned int jobId) {
-        if(jobId == 0) {
-            return nullptr;
-        }
-        auto iter = this->findEntryIter(jobId);
-        auto job = *iter;
-        this->detachByIter(iter);
-        return job;
-    }
+    Job detach(unsigned int jobId, bool remove = false);
 
     /**
      * if has ownership, wait termination.
@@ -263,7 +261,7 @@ public:
     int waitAndDetach(Job &entry) {
         int ret = entry->wait();
         if(!entry->available()) {
-            this->detach(entry->getJobId());
+            this->detach(entry->getJobId(), true);
         }
         return ret;
     }
@@ -287,14 +285,6 @@ public:
         return this->latestEntry;
     }
 
-    std::vector<Job>::iterator begin() {
-        return this->entries.begin();
-    }
-
-    std::vector<Job>::iterator end() {
-        return this->entries.end();
-    }
-
     /**
      *
      * @param jobId
@@ -304,6 +294,23 @@ public:
     Job findEntry(unsigned int jobId) const;
 
 private:
+    // helper method for entry lookup
+    EntryIter beginJob() {
+        return this->entries.begin();
+    }
+
+    EntryIter endJob() {
+        return this->entries.begin() + this->jobSize;
+    }
+
+    ConstEntryIter beginJob() const {
+        return this->entries.begin();
+    }
+
+    ConstEntryIter endJob() const {
+        return this->entries.begin() + this->jobSize;
+    }
+
     /**
      *
      * @return
@@ -312,6 +319,13 @@ private:
      */
     std::pair<unsigned int, unsigned int> findEmptyEntry() const;   //FIXME: binary search
 
+    /**
+     *
+     * @param jobId
+     * greater than 0.
+     * @return
+     * if not found, return end
+     */
     ConstEntryIter findEntryIter(unsigned int jobId) const;
 
     /**

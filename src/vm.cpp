@@ -641,9 +641,11 @@ static void forkAndEval(DSState &state) {
             break;
         }
         case ForkKind::COPROC:
-        case ForkKind::JOB: {
+        case ForkKind::JOB:
+        case ForkKind::DISOWN: {
+            bool disown = forkKind == ForkKind::DISOWN;
             auto entry = JobTable::newEntry(proc);
-            state.jobTable.attach(entry);
+            state.jobTable.attach(entry, disown);
             obj = DSValue::create<Job_Object>(
                     state.pool.getJobType(),
                     entry,
@@ -652,8 +654,6 @@ static void forkAndEval(DSState &state) {
             );
             break;
         }
-        case ForkKind::DISOWN:
-            break;
         }
 
         // push object

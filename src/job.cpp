@@ -159,15 +159,34 @@ Job JobTable::newEntry(unsigned int size, const Proc *procs, bool saveStdin) {
     return Job(entry);
 }
 
-void JobTable::attach(Job job) {
+void JobTable::attach(Job job, bool disowned) {
     if(job->getJobId() != 0) {
         return;
     }
 
+    if(disowned) {
+        this->entries.push_back(std::move(job));
+        return;
+    }
+
     auto pair = this->findEmptyEntry();
-    this->entries.insert(this->entries.begin() + pair.first, job);
+    this->entries.insert(this->beginJob() + pair.first, job);
     job->jobId = pair.second;
     this->latestEntry = std::move(job);
+    this->jobSize++;
+}
+
+Job JobTable::detach(unsigned int jobId, bool remove) {
+    auto iter = this->findEntryIter(jobId);
+    if(iter == this->endJob()) {
+        return nullptr;
+    }
+    auto job = *iter;
+    this->detachByIter(iter);
+    if(!remove) {
+        this->entries.push_back(job);
+    }
+    return job;
 }
 
 JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
@@ -177,6 +196,9 @@ JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
          */
         auto actual = this->entries.begin() + (iter - this->entries.cbegin());
         Job job = *actual;
+        if(job->getJobId() > 0) {
+            this->jobSize--;
+        }
         job->jobId = 0;
 
         /**
@@ -209,7 +231,7 @@ void JobTable::updateStatus() {
 }
 
 std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
-    const unsigned int size = this->entries.size();
+    const unsigned int size = this->jobSize;
     if(size == 0) {
         return {0, 1};
     }
@@ -245,16 +267,18 @@ struct Comparator {
 };
 
 JobTable::ConstEntryIter JobTable::findEntryIter(unsigned int jobId) const {
-    auto iter = std::lower_bound(this->entries.cbegin(), this->entries.cend(), jobId, Comparator());
-    if(iter != this->entries.end() && (*iter)->jobId == jobId) {
-        return iter;
+    if(jobId > 0) {
+        auto iter = std::lower_bound(this->beginJob(), this->endJob(), jobId, Comparator());
+        if(iter != this->endJob() && (*iter)->jobId == jobId) {
+            return iter;
+        }
     }
-    return this->entries.end();
+    return this->endJob();
 }
 
 Job JobTable::findEntry(unsigned int jobId) const {
     auto iter = this->findEntryIter(jobId);
-    if(iter != this->entries.end()) {
+    if(iter != this->endJob()) {
         return *iter;
     }
     return nullptr;
