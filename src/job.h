@@ -231,7 +231,11 @@ public:
     JobTable() = default;
     ~JobTable() = default;
 
-    static Job newEntry(unsigned int size, const Proc *procs, bool saveStdin = true);
+    static Job newEntry(unsigned int size, const Proc *procs, bool saveStdin = true) {
+        void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * (size + 1));
+        auto *entry = new(ptr) JobImpl(size, procs, saveStdin);
+        return Job(entry);
+    }
 
     static Job newEntry(Proc proc) {
         Proc procs[1] = {proc};
@@ -291,7 +295,13 @@ public:
      * @return
      * if not found, return nullptr
      */
-    Job findEntry(unsigned int jobId) const;
+    Job findEntry(unsigned int jobId) const {
+        auto iter = this->findEntryIter(jobId);
+        if(iter != this->endJob()) {
+            return *iter;
+        }
+        return nullptr;
+    }
 
 private:
     // helper method for entry lookup

@@ -151,14 +151,6 @@ int JobImpl::wait(bool nonblocking) {
 // ##     JobTable     ##
 // ######################
 
-Job JobTable::newEntry(unsigned int size, const Proc *procs, bool saveStdin) {
-    assert(size > 0);
-
-    void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * (size + 1));
-    auto *entry = new(ptr) JobImpl(size, procs, saveStdin);
-    return Job(entry);
-}
-
 void JobTable::attach(Job job, bool disowned) {
     if(job->getJobId() != 0) {
         return;
@@ -274,14 +266,6 @@ JobTable::ConstEntryIter JobTable::findEntryIter(unsigned int jobId) const {
         }
     }
     return this->endJob();
-}
-
-Job JobTable::findEntry(unsigned int jobId) const {
-    auto iter = this->findEntryIter(jobId);
-    if(iter != this->endJob()) {
-        return *iter;
-    }
-    return nullptr;
 }
 
 } // namespace ydsh
