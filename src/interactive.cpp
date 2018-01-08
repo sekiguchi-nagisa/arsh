@@ -268,7 +268,7 @@ int exec_interactive(DSState *dsState) {
 
     linenoiseSetHistoryCallback(historyCallback);
 
-    DSState_setOption(dsState, DS_OPTION_TOPLEVEL | DS_OPTION_HISTORY | DS_OPTION_JOB_CONTROL);
+    DSState_setOption(dsState, DS_OPTION_TOPLEVEL | DS_OPTION_HISTORY | DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE);
     DSState_syncHistorySize(dsState);
     DSState_loadHistory(dsState, nullptr);
     state = dsState;

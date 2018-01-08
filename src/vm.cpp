@@ -200,6 +200,10 @@ static void checkAssertion(DSState &state) {
 
 [[noreturn]]
 static void exitShell(DSState &st, unsigned int status) {
+    if(hasFlag(st.option, DS_OPTION_INTERACTIVE)) {
+        st.jobTable.send(SIGHUP);
+    }
+
     std::string str("terminated by exit ");
     str += std::to_string(status);
     status %= 256;

@@ -303,6 +303,12 @@ public:
         return nullptr;
     }
 
+    void send(int sigNum) {
+        for(auto begin = this->beginJob(); begin != this->endJob(); ++begin) {
+            (*begin)->send(sigNum);
+        }
+    }
+
 private:
     // helper method for entry lookup
     EntryIter beginJob() {
