@@ -626,8 +626,8 @@ static void forkAndEval(DSState &state) {
 
     // set in/out pipe
     auto pipeset = initPipeSet(forkKind);
-
-    auto proc = Proc::fork(state, getpgid(0), false);
+    pid_t pgid = state.isRootShell() ? 0 : getpgid(0);
+    auto proc = Proc::fork(state, pgid, false);
     if(proc.pid() > 0) {   // parent process
         tryToClose(pipeset.in[READ_PIPE]);
         tryToClose(pipeset.out[WRITE_PIPE]);
