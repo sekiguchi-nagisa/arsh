@@ -21,6 +21,7 @@
 #include <csignal>
 
 #include "vm.h"
+#include "logger.h"
 
 namespace ydsh {
 
@@ -76,6 +77,30 @@ int Proc::wait(bool nonblocking) {
         if(ret == -1) {
             fatal("%s\n", strerror(errno));
         }
+
+        // dump waitpid result
+        LOG_L(DUMP_WAIT, [&](std::ostream &stream) {
+            stream << "opt: " << (nonblocking ? "nonblocking" : "blocking") << std::endl;
+            stream << "pid: " << this->pid() << ", before state: "
+                   << (this->state() == Proc::RUNNING ? "RUNNING" : "STOPPED") << std::endl;
+            stream << "ret: " << ret << std::endl;
+            if(ret > 0) {
+                stream << "after state: ";
+                if(WIFEXITED(status)) {
+                    stream << "TERMINATED" << std::endl
+                           << "kind: EXITED, status: " << WEXITSTATUS(status);
+                } else if(WIFSIGNALED(status)) {
+                    stream << "TERMINATED" << std::endl
+                           << "kind: SIGNALED, status: " << WTERMSIG(status);
+                } else if(WIFSTOPPED(status)) {
+                    stream << "STOPPED" << std::endl
+                           << "kind: STOPPED, status: " << WSTOPSIG(status);
+                } else if(WIFCONTINUED(status)) {
+                    stream << "RUNNING" << std::endl << "kind: CONTINUED";
+                }
+                stream << std::endl;
+            }
+        });
 
         if(ret > 0) {
             // update status
