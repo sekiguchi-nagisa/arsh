@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <type_traits>
+#include <csignal>
 
 #include "misc/resource.hpp"
 
@@ -74,7 +75,11 @@ public:
      */
     int wait(bool nonblocking = false);
 
-    void send(int sigNum);
+    void send(int sigNum) const {
+        if(this->pid() > 0) {
+            kill(this->pid(), sigNum);
+        }
+    }
 
     /**
      * after fork, reset signal setting in child process.
@@ -192,7 +197,7 @@ public:
      * @param sigNum
      * @param group
      */
-    void send(int sigNum, bool group = false);
+    void send(int sigNum, bool group = false) const;
 
     /**
      * wait for termination.
@@ -300,7 +305,7 @@ public:
         return nullptr;
     }
 
-    void send(int sigNum) {
+    void send(int sigNum) const {
         for(auto begin = this->beginJob(); begin != this->endJob(); ++begin) {
             (*begin)->send(sigNum);
         }
