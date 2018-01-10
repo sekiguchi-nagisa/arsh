@@ -70,7 +70,7 @@ void tryToForeground(const DSState &st) {
 // ##################
 
 int Proc::wait(bool nonblocking) {
-    if(this->state() == RUNNING || (nonblocking && this->state() == STOPPED)) {
+    if(this->state() != TERMINATED) {
         int status = 0;
         int option = nonblocking ? (WUNTRACED | WNOHANG | WCONTINUED) : WUNTRACED;
         int ret = waitpid(this->pid_, &status, option);
