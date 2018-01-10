@@ -23,6 +23,7 @@
 #include <cstring>
 #include <type_traits>
 
+#include <ydsh/ydsh.h>
 #include "core.h"
 #include "object.h"
 #include "signals.h"
@@ -2009,7 +2010,8 @@ YDSH_METHOD job_kill(RuntimeContext &ctx) {
 YDSH_METHOD job_suspend(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_suspend);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    obj->getEntry()->send(SIGSTOP);
+    bool group = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
+    obj->getEntry()->send(SIGSTOP, group);
     RET_VOID;
 }
 
@@ -2017,7 +2019,8 @@ YDSH_METHOD job_suspend(RuntimeContext &ctx) {
 YDSH_METHOD job_resume(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_resume);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    obj->getEntry()->send(SIGCONT);
+    bool group = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
+    obj->getEntry()->send(SIGCONT, group);
     RET_VOID;
 }
 

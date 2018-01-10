@@ -1432,7 +1432,9 @@ static int builtin_fg(DSState &state, Array_Object &argvObj) {
     }
 
     tcsetpgrp(STDIN_FILENO, getpgid(job->getPid(0)));
-    job->send(SIGCONT);
+
+    bool group = hasFlag(DSState_option(&state), DS_OPTION_JOB_CONTROL);
+    job->send(SIGCONT, group);
     int s = getJobTable(state).waitAndDetach(job);
     tryToForeground(state);
     getJobTable(state).updateStatus();
@@ -1440,10 +1442,11 @@ static int builtin_fg(DSState &state, Array_Object &argvObj) {
 }
 
 static int builtin_bg(DSState &state, Array_Object &argvObj) {
+    bool group = hasFlag(DSState_option(&state), DS_OPTION_JOB_CONTROL);
     if(argvObj.getValues().size() == 1) {
         Job job = getJobTable(state).getLatestEntry();
         if(job) {
-            job->send(SIGCONT);
+            job->send(SIGCONT, group);
             return 0;
         }
         ERROR(argvObj, "current: no such job");
@@ -1456,7 +1459,7 @@ static int builtin_bg(DSState &state, Array_Object &argvObj) {
         const char *arg = str(*begin);
         Job job = tryToGetJob(getJobTable(state), arg);
         if(job) {
-            job->send(SIGCONT);
+            job->send(SIGCONT, group);
         } else {
             ERROR(argvObj, "%s: no such job", arg);
             ret = 1;

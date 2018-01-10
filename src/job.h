@@ -190,12 +190,9 @@ public:
     /**
      * send signal to all processes.
      * @param sigNum
+     * @param group
      */
-    void send(int sigNum) {
-        for(unsigned int i = 0; i < this->procSize; i++) {
-            this->procs[i].send(sigNum);
-        }
-    }
+    void send(int sigNum, bool group = false);
 
     /**
      * wait for termination.

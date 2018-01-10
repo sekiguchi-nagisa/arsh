@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <csignal>
 
 #include "vm.h"
 
@@ -122,6 +123,18 @@ bool JobImpl::restoreStdin() {
         return true;
     }
     return false;
+}
+
+void JobImpl::send(int sigNum, bool group) {
+    if(group) {
+        if(this->state != Proc::TERMINATED) {
+            kill(-this->getPid(0), sigNum);
+        }
+        return;
+    }
+    for(unsigned int i = 0; i < this->procSize; i++) {
+        this->procs[i].send(sigNum);
+    }
 }
 
 int JobImpl::wait(bool nonblocking) {
