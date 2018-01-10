@@ -15,7 +15,6 @@
  */
 
 #include <cstring>
-#include <csignal>
 #include <algorithm>
 
 #include "signals.h"

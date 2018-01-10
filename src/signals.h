@@ -18,6 +18,9 @@
 #define YDSH_SIGNAL_LIST_H
 
 #include <vector>
+#include <csignal>
+
+#include "misc/flag_util.hpp"
 
 namespace ydsh {
 
@@ -54,6 +57,33 @@ const char *getSignalName(int sigNum);
  * @return
  */
 std::vector<int> getUniqueSignalList();
+
+class SigSet {
+private:
+    static_assert(NSIG - 1 <= sizeof(unsigned long) * 8, "huge signal number");
+
+    unsigned long value{0};
+
+public:
+    void add(int sigNum) {
+        unsigned long f = static_cast<unsigned long>(1L << (sigNum - 1));
+        setFlag(this->value, f);
+    }
+
+    void del(int sigNum) {
+        unsigned long f = static_cast<unsigned long>(1L << (sigNum - 1));
+        unsetFlag(this->value, f);
+    }
+
+    bool has(int sigNum) const {
+        unsigned long f = static_cast<unsigned long>(1L << (sigNum - 1));
+        return hasFlag(this->value, f);
+    }
+
+    bool empty() const {
+        return this->value == 0;
+    }
+};
 
 } // namespace ydsh
 

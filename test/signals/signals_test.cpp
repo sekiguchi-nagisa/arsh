@@ -126,6 +126,28 @@ TEST(Signal, base) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, getSignalName(-12)));
 }
 
+TEST(Signal, sigset) {
+    using namespace ydsh;
+
+    SigSet set;
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(set.empty()));
+    set.add(SIGHUP);
+    set.add(SIGCHLD);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(set.has(SIGHUP)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(set.has(SIGCHLD)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.has(SIGTERM)));
+
+    set.del(SIGTERM);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.has(SIGTERM)));
+    set.del(SIGHUP);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.has(SIGHUP)));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.empty()));
+    set.del(SIGCLD);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(set.empty()));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
