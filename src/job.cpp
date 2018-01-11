@@ -139,9 +139,10 @@ bool JobImpl::restoreStdin() {
 }
 
 void JobImpl::send(int sigNum, bool group) const {
-    if(group) {
+    pid_t pid = this->getPid(0);
+    if(group && pid == getpgid(pid)) {
         if(this->state != Proc::TERMINATED) {
-            kill(-this->getPid(0), sigNum);
+            kill(-pid, sigNum);
         }
         return;
     }
