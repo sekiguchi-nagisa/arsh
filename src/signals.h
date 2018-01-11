@@ -83,6 +83,10 @@ public:
     bool empty() const {
         return this->value == 0;
     }
+
+    void clear() {
+        this->value = 0;
+    }
 };
 
 } // namespace ydsh

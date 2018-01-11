@@ -25,11 +25,11 @@
 
 #include "object.h"
 #include "symbol_table.h"
+#include "signals.h"
 #include "core.h"
 #include "job.h"
 #include "misc/buffer.hpp"
 #include "misc/noncopyable.h"
-#include "misc/queue.hpp"
 
 using namespace ydsh;
 
@@ -195,7 +195,9 @@ struct DSState {
 
     static flag32_set_t eventDesc;
 
-    static FixedQueue<int, 32> signalQueue;
+    static unsigned int pendingSigIndex;
+
+    static SigSet pendingSigSet;
 
     NON_COPYABLE(DSState);
 

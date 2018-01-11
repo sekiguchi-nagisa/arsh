@@ -130,10 +130,12 @@ void DSState::expandLocalStack() {
 
 flag32_set_t DSState::eventDesc = 0;
 
-FixedQueue<int, 32> DSState::signalQueue;
+unsigned int DSState::pendingSigIndex = 1;
+
+SigSet DSState::pendingSigSet;
 
 static void signalHandler(int sigNum) { // when called this handler, all signals are blocked due to signal mask
-    DSState::signalQueue.push(sigNum);
+    DSState::pendingSigSet.add(sigNum);
     setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
 }
 
@@ -1473,14 +1475,27 @@ static void kickSignalHandler(DSState &st, int sigNum, DSValue &&func) {
     windStackFrame(st, 3, 3, &signalTrampoline);
 }
 
+static int popPendingSig() {
+    assert(!DSState::pendingSigSet.empty());
+    int sigNum;
+    do {
+        sigNum = DSState::pendingSigIndex++;
+        if(DSState::pendingSigIndex == NSIG) {
+            DSState::pendingSigIndex = 1;
+        }
+    } while(!DSState::pendingSigSet.has(sigNum));
+    DSState::pendingSigSet.del(sigNum);
+    return sigNum;
+}
+
 static void checkVMEvent(DSState &state) {
     if(hasFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL) &&
             !hasFlag(DSState::eventDesc, DSState::VM_EVENT_MASK)) {
         SignalGuard guard;
 
-        assert(!DSState::signalQueue.empty());
-        int sigNum = DSState::signalQueue.pop();
-        if(DSState::signalQueue.empty()) {
+        int sigNum = popPendingSig();
+        if(DSState::pendingSigSet.empty()) {
+            DSState::pendingSigIndex = 1;
             unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
         }
 
