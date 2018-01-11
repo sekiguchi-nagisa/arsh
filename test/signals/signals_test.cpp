@@ -144,7 +144,7 @@ TEST(Signal, sigset) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.has(SIGHUP)));
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.empty()));
-    set.del(SIGCLD);
+    set.del(SIGCHLD);
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(set.empty()));
 }
 
