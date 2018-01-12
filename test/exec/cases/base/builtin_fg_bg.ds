@@ -1,0 +1,8 @@
+
+assert { fg; $?; } == 1
+assert "$(fg 2>&1)" == 'ydsh: fg: no job control in this shell'
+
+assert { bg; $?; } == 1
+assert "$(bg 2>&1)" == 'ydsh: bg: no job control in this shell'
+
+true

@@ -1416,6 +1416,11 @@ static Job tryToGetJob(const JobTable &table, const char *name) {
 }
 
 static int builtin_fg(DSState &state, Array_Object &argvObj) {
+    if(!hasFlag(DSState_option(&state), DS_OPTION_JOB_CONTROL)) {
+        ERROR(argvObj, "no job control in this shell");
+        return 1;
+    }
+
     unsigned int size = argvObj.getValues().size();
     assert(size > 0);
     Job job;
@@ -1433,8 +1438,7 @@ static int builtin_fg(DSState &state, Array_Object &argvObj) {
 
     tcsetpgrp(STDIN_FILENO, getpgid(job->getPid(0)));
 
-    bool group = hasFlag(DSState_option(&state), DS_OPTION_JOB_CONTROL);
-    job->send(SIGCONT, group);
+    job->send(SIGCONT, true);
     int s = getJobTable(state).waitAndDetach(job);
     tryToForeground(state);
     getJobTable(state).updateStatus();
@@ -1442,11 +1446,15 @@ static int builtin_fg(DSState &state, Array_Object &argvObj) {
 }
 
 static int builtin_bg(DSState &state, Array_Object &argvObj) {
-    bool group = hasFlag(DSState_option(&state), DS_OPTION_JOB_CONTROL);
+    if(!hasFlag(DSState_option(&state), DS_OPTION_JOB_CONTROL)) {
+        ERROR(argvObj, "no job control in this shell");
+        return 1;
+    }
+
     if(argvObj.getValues().size() == 1) {
         Job job = getJobTable(state).getLatestEntry();
         if(job) {
-            job->send(SIGCONT, group);
+            job->send(SIGCONT, true);
             return 0;
         }
         ERROR(argvObj, "current: no such job");
@@ -1459,7 +1467,7 @@ static int builtin_bg(DSState &state, Array_Object &argvObj) {
         const char *arg = str(*begin);
         Job job = tryToGetJob(getJobTable(state), arg);
         if(job) {
-            job->send(SIGCONT, group);
+            job->send(SIGCONT, true);
         } else {
             ERROR(argvObj, "%s: no such job", arg);
             ret = 1;
