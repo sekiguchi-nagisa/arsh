@@ -643,7 +643,9 @@ static void forkAndEval(DSState &state) {
             const bool isStr = forkKind == ForkKind::STR;
             obj = isStr ? readAsStr(state, pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
             tryToClose(pipeset.out[READ_PIPE]);
-            state.updateExitStatus(proc.wait());    // wait exit
+            auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+            int ret = proc.wait(waitOp);   // wait exit
+            state.updateExitStatus(ret);
             break;
         }
         case ForkKind::COPROC:
@@ -751,7 +753,8 @@ public:
             DSObject(nullptr), state(state), entry(std::move(entry)) {}
 
     ~PipelineState() override {
-        this->entry->wait();
+        auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+        this->entry->wait(waitOp);
         if(this->entry->restoreStdin()) {
             tryToForeground(this->state);
         }
@@ -1138,15 +1141,16 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
 
         // wait process or job termination
         int status;
+        auto waitOp = rootShell && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
         if(lastPipe) {
             state.foreground->append(proc);
-            status = state.foreground->wait();
+            status = state.foreground->wait(waitOp);
             state.foreground->restoreStdin();
             if(state.foreground->available()) {
                 state.jobTable.attach(state.foreground);
             }
         } else {
-            status = proc.wait();
+            status = proc.wait(waitOp);
             if(proc.state() != Proc::TERMINATED) {
                 state.jobTable.attach(JobTable::newEntry(proc));
             }

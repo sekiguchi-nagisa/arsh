@@ -1439,7 +1439,7 @@ static int builtin_fg(DSState &state, Array_Object &argvObj) {
     tcsetpgrp(STDIN_FILENO, getpgid(job->getPid(0)));
 
     job->send(SIGCONT, true);
-    int s = getJobTable(state).waitAndDetach(job);
+    int s = getJobTable(state).waitAndDetach(job, true);    //FIXME: check root shell
     tryToForeground(state);
     getJobTable(state).updateStatus();
     return s;

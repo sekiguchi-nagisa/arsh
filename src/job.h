@@ -41,6 +41,17 @@ public:
         TERMINATED, // already called waitpid
     };
 
+#define EACH_WAIT_OP(OP) \
+    OP(BLOCKING) \
+    OP(BLOCK_UNTRACED) \
+    OP(NONBLOCKING)
+
+    enum WaitOp : unsigned char {
+#define GEN_ENUM(OP) OP,
+        EACH_WAIT_OP(GEN_ENUM)
+#undef GEN_ENUM
+    };
+
 private:
     pid_t pid_;
     State state_;
@@ -68,12 +79,11 @@ public:
     }
 
     /**
-     * wait for termination.
-     * if `nonblocking' is true, not wait for termination.
-     * @param nonblocking
+     * wait for termination
+     * @param op
      * @return
      */
-    int wait(bool nonblocking = false);
+    int wait(WaitOp op);
 
     void send(int sigNum) const {
         if(this->pid() > 0) {
@@ -202,12 +212,12 @@ public:
     /**
      * wait for termination.
      * after termination, `state' will be TERMINATED.
-     * @param nonblocking
+     * @param op
      * @return
      * exit status of last process.
      * if cannot terminate (has no-ownership), return -1.
      */
-    int wait(bool nonblocking = false);
+    int wait(Proc::WaitOp op);
 };
 
 using Job = IntrusivePtr<JobImpl>;
@@ -260,12 +270,13 @@ public:
     /**
      * if has ownership, wait termination.
      * @param entry
+     * @param jobctrl
      * @return
      * exit status of last process.
      * after waiting termination, remove entry.
      */
-    int waitAndDetach(Job &entry) {
-        int ret = entry->wait();
+    int waitAndDetach(Job &entry, bool jobctrl) {
+        int ret = entry->wait(jobctrl ? Proc::BLOCK_UNTRACED : Proc::BLOCKING);
         if(!entry->available()) {
             this->detach(entry->getJobId(), true);
         }

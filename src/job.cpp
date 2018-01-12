@@ -69,18 +69,44 @@ void tryToForeground(const DSState &st) {
 // ##     Proc     ##
 // ##################
 
-int Proc::wait(bool nonblocking) {
+static int toOption(Proc::WaitOp op) {
+    int option = 0;
+    switch(op) {
+    case Proc::BLOCKING:
+        break;
+    case Proc::BLOCK_UNTRACED:
+        option = WUNTRACED;
+        break;
+    case Proc::NONBLOCKING:
+        option = WUNTRACED | WCONTINUED | WNOHANG;
+        break;
+    }
+    return option;
+}
+
+#ifdef USE_LOGGING
+static const char *toString(Proc::WaitOp op) {
+    const char *str;
+    switch(op) {
+#define GEN_STR(OP) case Proc::OP: str = #OP; break;
+    EACH_WAIT_OP(GEN_STR)
+#undef GEN_STR
+    }
+    return str;
+}
+#endif
+
+int Proc::wait(WaitOp op) {
     if(this->state() != TERMINATED) {
         int status = 0;
-        int option = nonblocking ? (WUNTRACED | WNOHANG | WCONTINUED) : WUNTRACED;
-        int ret = waitpid(this->pid_, &status, option);
+        int ret = waitpid(this->pid_, &status, toOption(op));
         if(ret == -1) {
             fatal("%s\n", strerror(errno));
         }
 
         // dump waitpid result
         LOG_L(DUMP_WAIT, [&](std::ostream &stream) {
-            stream << "opt: " << (nonblocking ? "nonblocking" : "blocking") << std::endl;
+            stream << "opt: " << toString(op) << std::endl;
             stream << "pid: " << this->pid() << ", before state: "
                    << (this->state() == Proc::RUNNING ? "RUNNING" : "STOPPED") << std::endl;
             stream << "ret: " << ret << std::endl;
@@ -90,11 +116,13 @@ int Proc::wait(bool nonblocking) {
                     stream << "TERMINATED" << std::endl
                            << "kind: EXITED, status: " << WEXITSTATUS(status);
                 } else if(WIFSIGNALED(status)) {
+                    int sigNum = WTERMSIG(status);
                     stream << "TERMINATED" << std::endl
-                           << "kind: SIGNALED, status: " << WTERMSIG(status);
+                           << "kind: SIGNALED, status: " << getSignalName(sigNum) << "(" << sigNum << ")";
                 } else if(WIFSTOPPED(status)) {
+                    int sigNum = WSTOPSIG(status);
                     stream << "STOPPED" << std::endl
-                           << "kind: STOPPED, status: " << WSTOPSIG(status);
+                           << "kind: STOPPED, status: " << getSignalName(sigNum) << "(" << sigNum << ")";
                 } else if(WIFCONTINUED(status)) {
                     stream << "RUNNING" << std::endl << "kind: CONTINUED";
                 }
@@ -152,7 +180,7 @@ void JobImpl::send(int sigNum, bool group) const {
     }
 }
 
-int JobImpl::wait(bool nonblocking) {
+int JobImpl::wait(Proc::WaitOp op) {
     if(!hasOwnership()) {
         return -1;
     }
@@ -164,7 +192,7 @@ int JobImpl::wait(bool nonblocking) {
     unsigned int lastStatus = 0;
     for(unsigned int i = 0; i < this->procSize; i++) {
         auto &proc = this->procs[i];
-        int s = proc.wait(nonblocking);
+        int s = proc.wait(op);
         if(proc.state() == Proc::TERMINATED) {
             terminateCount++;
             lastStatus = s;
@@ -242,7 +270,7 @@ JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
 
 void JobTable::updateStatus() {
     for(auto begin = this->entries.begin(); begin != this->entries.end();) {
-        (*begin)->wait(true);
+        (*begin)->wait(Proc::NONBLOCKING);
         if((*begin)->available()) {
             ++begin;
         } else {
