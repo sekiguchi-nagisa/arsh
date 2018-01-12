@@ -39,13 +39,12 @@ namespace ydsh {
 // builtin command definition
 static int builtin___gets(DSState &state, Array_Object &argvObj);
 static int builtin___puts(DSState &state, Array_Object &argvObj);
-static int builtin_bg(DSState &state, Array_Object &argvObj);
 static int builtin_cd(DSState &state, Array_Object &argvObj);
 static int builtin_check_env(DSState &state, Array_Object &argvObj);
 static int builtin_complete(DSState &state, Array_Object &argvObj);
 static int builtin_echo(DSState &state, Array_Object &argvObj);
 static int builtin_false(DSState &state, Array_Object &argvObj);
-static int builtin_fg(DSState &state, Array_Object &argvObj);
+static int builtin_fg_bg(DSState &state, Array_Object &argvObj);
 static int builtin_hash(DSState &state, Array_Object &argvObj);
 static int builtin_help(DSState &state, Array_Object &argvObj);
 static int builtin_history(DSState &state, Array_Object &argvObj);
@@ -73,7 +72,7 @@ const struct {
                 "    Options:\n"
                 "        -1    print to standard output\n"
                 "        -2    print to standard error"},
-        {"bg", builtin_bg, "[job_spec ...]",
+        {"bg", builtin_fg_bg, "[job_spec ...]",
                 "    Move jobs to the background.\n"
                 "    If JOB_SPEC is not present, latest job is used."},
         {"cd", builtin_cd, "[-LP] [dir]",
@@ -125,7 +124,7 @@ const struct {
                 "    status is $?."},
         {"false", builtin_false, "",
                 "    Always failure (exit status is 1)."},
-        {"fg", builtin_fg, "[job_spec]",
+        {"fg", builtin_fg_bg, "[job_spec]",
                 "    Move job to the foreground.\n"
                 "    If JOB_SPEC is not present, latest job is used."},
         {"hash", builtin_hash, "[-r] [command ...]",
@@ -1415,12 +1414,13 @@ static Job tryToGetJob(const JobTable &table, const char *name) {
     return job;
 }
 
-static int builtin_fg(DSState &state, Array_Object &argvObj) {
+static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
     if(!hasFlag(DSState_option(&state), DS_OPTION_JOB_CONTROL)) {
         ERROR(argvObj, "no job control in this shell");
         return 1;
     }
 
+    bool fg = strcmp("fg", str(argvObj.getValues()[0])) == 0;
     unsigned int size = argvObj.getValues().size();
     assert(size > 0);
     Job job;
@@ -1431,40 +1431,31 @@ static int builtin_fg(DSState &state, Array_Object &argvObj) {
         arg = str(argvObj.getValues()[1]);
         job = tryToGetJob(getJobTable(state), arg);
     }
-    if(!job) {
-        ERROR(argvObj, "%s: no such job", arg);
-        return 1;
-    }
-
-    tcsetpgrp(STDIN_FILENO, getpgid(job->getPid(0)));
-
-    job->send(SIGCONT, true);
-    int s = getJobTable(state).waitAndDetach(job, true);    //FIXME: check root shell
-    tryToForeground(state);
-    getJobTable(state).updateStatus();
-    return s;
-}
-
-static int builtin_bg(DSState &state, Array_Object &argvObj) {
-    if(!hasFlag(DSState_option(&state), DS_OPTION_JOB_CONTROL)) {
-        ERROR(argvObj, "no job control in this shell");
-        return 1;
-    }
-
-    if(argvObj.getValues().size() == 1) {
-        Job job = getJobTable(state).getLatestEntry();
-        if(job) {
-            job->send(SIGCONT, true);
-            return 0;
-        }
-        ERROR(argvObj, "current: no such job");
-        return 1;
-    }
 
     int ret = 0;
-    const auto end = argvObj.getValues().end();
-    for(auto begin = argvObj.getValues().begin() + 1; begin != end; ++begin) {
-        const char *arg = str(*begin);
+    if(job) {
+        if(fg) {
+            tcsetpgrp(STDIN_FILENO, getpgid(job->getPid(0)));
+        }
+        job->send(SIGCONT, true);
+    } else {
+        ERROR(argvObj, "%s: no such job", arg);
+        ret = 1;
+        if(fg) {
+            return ret;
+        }
+    }
+
+    if(fg) {
+        int s = getJobTable(state).waitAndDetach(job, true);    //FIXME: check root shell
+        tryToForeground(state);
+        getJobTable(state).updateStatus();
+        return s;
+    }
+
+    // process remain arguments
+    for(unsigned int i = 2; i < size; i++) {
+        const char *arg = str(argvObj.getValues()[i]);
         Job job = tryToGetJob(getJobTable(state), arg);
         if(job) {
             job->send(SIGCONT, true);
@@ -1475,6 +1466,5 @@ static int builtin_bg(DSState &state, Array_Object &argvObj) {
     }
     return ret;
 }
-
 
 } // namespace ydsh
