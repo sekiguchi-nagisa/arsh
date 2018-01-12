@@ -315,6 +315,95 @@ TEST(API, case8) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
 }
 
+#undef EXEC
+#define EXEC(S) exec(std::string(S)).waitAndGetResult(true)
+
+TEST(API, jobctrl1) {
+    SCOPED_TRACE("");
+
+    // invalid
+    auto result = EXEC("fg");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: current: no such job", result.err));
+
+    result = EXEC("fg %hoge");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %hoge: no such job", result.err));
+
+    result = EXEC("fg %1");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %1: no such job", result.err));
+
+    const char *str = R"(
+        sh -c 'kill -s STOP $$; exit 180'
+        assert $? == 128 + %'stop'.value()
+        assert { fg %1; $?; } == 180 : "$?"
+        fg %1
+)";
+    result = EXEC(str);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %1: no such job", result.err));
+
+    str = R"(
+        sh -c 'kill -s STOP $$; exit 18'
+        assert $? == 128 + %'stop'.value()
+        fg
+)";
+    result = EXEC(str);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(18, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
+}
+
+TEST(API, jobctrl2) {
+    SCOPED_TRACE("");
+
+    // invalid
+    auto result = EXEC("bg");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: current: no such job", result.err));
+
+    result = EXEC("bg hoge %1");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: hoge: no such job\nydsh: bg: %1: no such job", result.err));
+
+    const char *str = R"(
+        var j = {
+             %'stop'.kill($PID)
+             exit 99
+        } &
+        assert not $j.wait()
+        assert { bg; $?; } == 0
+        assert $j.wait()! == 99
+        true
+)";
+    result = EXEC(str);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
+
+    str = R"(
+        var j = {
+             %'stop'.kill($PID)
+             exit 99
+        } &
+        assert not $j.wait()
+        assert { bg %1 %2; $?; } == 1
+        assert $j.wait()! == 99
+        true
+)";
+    result = EXEC(str);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: %2: no such job", result.err));
+}
+
 TEST(PID, case1) {
     SCOPED_TRACE("");
 
