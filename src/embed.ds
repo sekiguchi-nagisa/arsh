@@ -28,12 +28,15 @@ let false = $False
 
 
 # dummy function for signal handler
-function SIG_DFL($s : Signal) {}
+function SIG_DFL($s : Signal) {
+    if $s == %'HUP' { exit ${$s.value() + 128}; }
+}
 function SIG_IGN($s : Signal) {}
 
 ## normally meaningless code, but need to prevent segmentation fault
 ## (due to lazy initialization of function type, see src/object.cpp)
-$SIG_DFL; $SIG_IGN
+$SIG_IGN
+$SIG.trap(%'hup', $SIG_DFL)
 
 
 # builtin D-Bus interface

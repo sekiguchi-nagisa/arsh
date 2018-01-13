@@ -390,7 +390,11 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
     DSValue actualHandler;
     auto op = DSState::UnsafeSigOp::SET;
     if(handler == DFL_handler) {
-        op = DSState::UnsafeSigOp::DFL;
+        if(sigNum == SIGHUP) {
+            actualHandler = handler;
+        } else {
+            op = DSState::UnsafeSigOp::DFL;
+        }
     } else if(handler == IGN_handler) {
         op = DSState::UnsafeSigOp::IGN;
     } else {
