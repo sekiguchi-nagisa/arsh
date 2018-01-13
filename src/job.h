@@ -21,7 +21,6 @@
 
 #include <vector>
 #include <type_traits>
-#include <csignal>
 
 #include "misc/resource.hpp"
 
@@ -85,12 +84,6 @@ public:
      */
     int wait(WaitOp op);
 
-    void send(int sigNum) const {
-        if(this->pid() > 0) {
-            kill(this->pid(), sigNum);
-        }
-    }
-
     /**
      * after fork, reset signal setting in child process.
      */
@@ -104,7 +97,7 @@ private:
     /**
      * after detach, will be 0
      */
-    unsigned int jobId{0};
+    unsigned int jobID_{0};
 
     /**
      * pid of owner process (JobEntry creator)
@@ -113,10 +106,7 @@ private:
 
     unsigned short procSize;
 
-    /**
-     * if all process are terminated. will be TERMINATED
-     */
-    Proc::State state{Proc::RUNNING};
+    bool running{true};
 
     /**
      * if already closed, will be -1.
@@ -155,7 +145,7 @@ public:
     }
 
     bool available() const {
-        return this->state != Proc::TERMINATED;
+        return this->running;
     }
 
     /**
@@ -173,8 +163,8 @@ public:
      * @return
      * after detached, return 0.
      */
-    unsigned int getJobId() const {
-        return this->jobId;
+    unsigned int jobID() const {
+        return this->jobID_;
     }
 
     pid_t getOwnerPid() const {
@@ -278,14 +268,14 @@ public:
     int waitAndDetach(Job &entry, bool jobctrl) {
         int ret = entry->wait(jobctrl ? Proc::BLOCK_UNTRACED : Proc::BLOCKING);
         if(!entry->available()) {
-            this->detach(entry->getJobId(), true);
+            this->detach(entry->jobID(), true);
         }
         return ret;
     }
 
     void detachAll() {
         for(auto &e : this->entries) {
-            e->jobId = 0;
+            e->jobID_ = 0;
         }
         this->entries.clear();
         this->latestEntry.reset();

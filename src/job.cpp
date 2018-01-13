@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <csignal>
 
 #include "vm.h"
 #include "logger.h"
@@ -168,15 +169,20 @@ bool JobImpl::restoreStdin() {
 }
 
 void JobImpl::send(int sigNum) const {
-    if(this->state != Proc::TERMINATED) {
-        pid_t pid = this->getPid(0);
-        if(pid == getpgid(pid)) {
-            kill(-pid, sigNum);
-            return;
-        }
+    if(!this->available()) {
+        return;
+    }
+
+    pid_t pid = this->getPid(0);
+    if(pid == getpgid(pid)) {
+        kill(-pid, sigNum);
+        return;
     }
     for(unsigned int i = 0; i < this->procSize; i++) {
-        this->procs[i].send(sigNum);
+        pid = this->getPid(i);
+        if(pid > 0) {
+            kill(pid, sigNum);
+        }
     }
 }
 
@@ -199,7 +205,7 @@ int JobImpl::wait(Proc::WaitOp op) {
         }
     }
     if(terminateCount == this->procSize) {
-        this->state = Proc::TERMINATED;
+        this->running = false;
     }
     return lastStatus;
 }
@@ -209,7 +215,7 @@ int JobImpl::wait(Proc::WaitOp op) {
 // ######################
 
 void JobTable::attach(Job job, bool disowned) {
-    if(job->getJobId() != 0) {
+    if(job->jobID() != 0) {
         return;
     }
 
@@ -220,7 +226,7 @@ void JobTable::attach(Job job, bool disowned) {
 
     auto pair = this->findEmptyEntry();
     this->entries.insert(this->beginJob() + pair.first, job);
-    job->jobId = pair.second;
+    job->jobID_ = pair.second;
     this->latestEntry = std::move(job);
     this->jobSize++;
 }
@@ -245,10 +251,10 @@ JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
          */
         auto actual = this->entries.begin() + (iter - this->entries.cbegin());
         Job job = *actual;
-        if(job->getJobId() > 0) {
+        if(job->jobID() > 0) {
             this->jobSize--;
         }
-        job->jobId = 0;
+        job->jobID_ = 0;
 
         /**
          * in C++11, vector::erase accepts const_iterator.
@@ -285,7 +291,7 @@ std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
         return {0, 1};
     }
 
-    if(this->entries.back()->jobId == size) {
+    if(this->entries.back()->jobID_ == size) {
         return {size, size + 1};
     }
 
@@ -297,7 +303,7 @@ std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
      *  | 1 | 2 | 3 | 4 | 7 |
      */
     for(unsigned int i = 0; i < size; i++) {
-        if(this->entries[i]->jobId != i + 1) {
+        if(this->entries[i]->jobID_ != i + 1) {
             return {i, i + 1};  //FIXME: optimize lookup
         }
     }
@@ -307,18 +313,18 @@ std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
 
 struct Comparator {
     bool operator()(const Job &x, unsigned int y) const {
-        return x->getJobId() < y;
+        return x->jobID() < y;
     }
 
     bool operator()(unsigned int x, const Job &y) const {
-        return x < y->getJobId();
+        return x < y->jobID();
     }
 };
 
 JobTable::ConstEntryIter JobTable::findEntryIter(unsigned int jobId) const {
     if(jobId > 0) {
         auto iter = std::lower_bound(this->beginJob(), this->endJob(), jobId, Comparator());
-        if(iter != this->endJob() && (*iter)->jobId == jobId) {
+        if(iter != this->endJob() && (*iter)->jobID_ == jobId) {
             return iter;
         }
     }

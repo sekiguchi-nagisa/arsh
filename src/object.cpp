@@ -326,7 +326,7 @@ std::string Map_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
 
 std::string Job_Object::toString(DSState &, VisitedSet *) {
     std::string str = "%";
-    str += std::to_string(this->entry->getJobId());
+    str += std::to_string(this->entry->jobID());
     return str;
 }
 

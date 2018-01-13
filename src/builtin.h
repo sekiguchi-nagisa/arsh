@@ -2026,7 +2026,7 @@ YDSH_METHOD job_resume(RuntimeContext &ctx) {
 YDSH_METHOD job_detach(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_detach);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    getJobTable(ctx).detach(obj->getEntry()->getJobId());
+    getJobTable(ctx).detach(obj->getEntry()->jobID());
     RET_VOID;
 }
 
