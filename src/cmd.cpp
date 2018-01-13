@@ -1437,7 +1437,7 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
         if(fg) {
             tcsetpgrp(STDIN_FILENO, getpgid(job->getPid(0)));
         }
-        job->send(SIGCONT, true);
+        job->send(SIGCONT);
     } else {
         ERROR(argvObj, "%s: no such job", arg);
         ret = 1;
@@ -1458,7 +1458,7 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
         const char *arg = str(argvObj.getValues()[i]);
         Job job = tryToGetJob(getJobTable(state), arg);
         if(job) {
-            job->send(SIGCONT, true);
+            job->send(SIGCONT);
         } else {
             ERROR(argvObj, "%s: no such job", arg);
             ret = 1;

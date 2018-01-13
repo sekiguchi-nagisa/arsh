@@ -2010,8 +2010,7 @@ YDSH_METHOD job_kill(RuntimeContext &ctx) {
 YDSH_METHOD job_suspend(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_suspend);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    bool group = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
-    obj->getEntry()->send(SIGSTOP, group);
+    obj->getEntry()->send(SIGSTOP);
     RET_VOID;
 }
 
@@ -2019,8 +2018,7 @@ YDSH_METHOD job_suspend(RuntimeContext &ctx) {
 YDSH_METHOD job_resume(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_resume);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    bool group = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
-    obj->getEntry()->send(SIGCONT, group);
+    obj->getEntry()->send(SIGCONT);
     RET_VOID;
 }
 

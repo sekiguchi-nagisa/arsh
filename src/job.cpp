@@ -167,13 +167,13 @@ bool JobImpl::restoreStdin() {
     return false;
 }
 
-void JobImpl::send(int sigNum, bool group) const {
-    if(this->state != Proc::TERMINATED && group) {
+void JobImpl::send(int sigNum) const {
+    if(this->state != Proc::TERMINATED) {
         pid_t pid = this->getPid(0);
         if(pid == getpgid(pid)) {
             kill(-pid, sigNum);
+            return;
         }
-        return;
     }
     for(unsigned int i = 0; i < this->procSize; i++) {
         this->procs[i].send(sigNum);

@@ -204,10 +204,10 @@ public:
 
     /**
      * send signal to all processes.
+     * if jos is process group leader, send signal to process group
      * @param sigNum
-     * @param group
      */
-    void send(int sigNum, bool group = false) const;
+    void send(int sigNum) const;
 
     /**
      * wait for termination.
