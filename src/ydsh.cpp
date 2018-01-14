@@ -543,15 +543,6 @@ DSState *DSState_createWithMode(DSExecMode mode) {
     auto *ctx = new DSState();
 
     initEnv(*ctx);
-
-    /**
-     * set execution mode before embedded script loading.
-     * due to suppress fuzzer error
-     */
-#ifdef FUZZING_BUILD_MODE
-    ctx->execMode = mode;
-#endif
-
     initBuiltinVar(ctx);
     loadEmbeddedScript(ctx);
 
