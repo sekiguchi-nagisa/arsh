@@ -291,7 +291,7 @@ std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
         return {0, 1};
     }
 
-    if(this->entries.back()->jobID_ == size) {
+    if(this->entries[size - 1]->jobID() == size) {
         return {size, size + 1};
     }
 
@@ -303,7 +303,7 @@ std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
      *  | 1 | 2 | 3 | 4 | 7 |
      */
     for(unsigned int i = 0; i < size; i++) {
-        if(this->entries[i]->jobID_ != i + 1) {
+        if(this->entries[i]->jobID() != i + 1) {
             return {i, i + 1};  //FIXME: optimize lookup
         }
     }
