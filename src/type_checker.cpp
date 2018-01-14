@@ -887,10 +887,8 @@ void TypeChecker::visitForkNode(DSType *, ForkNode &node) {
         break;
     case ForkNode::BG:
     case ForkNode::COPROC:
-        type = &this->typePool.getJobType();
-        break;
     case ForkNode::DISOWN:
-        type = &this->typePool.getVoidType();
+        type = &this->typePool.getJobType();
         break;
     }
     node.setType(*type);

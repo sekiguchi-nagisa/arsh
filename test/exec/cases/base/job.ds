@@ -17,6 +17,17 @@ assert $j.wait()! == 0
 assert not $j
 
 
+# disowned background job
+$j = ls &!
+assert not $j[0]
+assert not $j[1]
+assert not $j.in()
+assert not $j.out()
+assert $j.size() == 1
+assert $j as String == "%0"
+assert $j.wait()! == 0
+
+
 # co-process
 $j = coproc { read; echo reply: $REPLY; }
 assert $j[0]
