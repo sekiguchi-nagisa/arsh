@@ -6,8 +6,8 @@ function f($a : Signal) {
 }
 
 
-$SIG.trap(%'term', $f)
+$SIG[%'term'] = $f
 
-eval "$(which kill)" -s ${$SIG['term'].name()} $PID
+eval "$(which kill)" -s ${$SIG.signal('term')!.name()} $PID
 
 true

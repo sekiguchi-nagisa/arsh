@@ -1,7 +1,7 @@
 #$test($result = 'exit', $lineNum = 12, $status = 1)
 
 function raise($s : String) {
-    eval "$(which kill)" -s ${$SIG[$s].name()} $PID
+    eval "$(which kill)" -s ${$SIG.signal($s)!.name()} $PID
 }
 
 function f($s : Signal) {
@@ -12,7 +12,7 @@ function g($s : Signal) {
     exit $s
 }
 
-$SIG.trap(%'int', $f)
+$SIG[%'int'] = $f
 
 try {
     $raise('int')
@@ -21,7 +21,7 @@ try {
     assert ($e as Signal).name() == %'int'.name()
 }
 
-$SIG.trap(%'hup', $g)
+$SIG[%'hup'] = $g
 $raise('hup')
 
 exit 0

@@ -1418,31 +1418,24 @@ YDSH_METHOD signal_ne(RuntimeContext &ctx) {
 // ##     Signals     ##
 // #####################
 
-//!bind: function trap($this : Signals, $s : Signal, $action : Func<Void,[Signal]>) : Void
-YDSH_METHOD signals_trap(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(signals_trap);
+//!bind: function $OP_GET($this : Signals, $s : Signal) : Func<Void,[Signal]>
+YDSH_METHOD signals_get(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signals_get);
+    int sigNum = typeAs<Int_Object>(LOCAL(1))->getValue();
+    RET(getSignalHandler(ctx, sigNum));
+}
+
+//!bind: function $OP_SET($this : Signals, $s : Signal, $action : Func<Void,[Signal]>) : Void
+YDSH_METHOD signals_set(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signals_set);
     auto *obj = typeAs<Int_Object>(LOCAL(1));
     installSignalHandler(ctx, obj->getValue(), LOCAL(2));
-
     RET_VOID;
 }
 
-//!bind: function $OP_GET($this : Signals, $key : String) : Signal
-YDSH_METHOD signals_get(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(signals_get);
-    const char *key = typeAs<String_Object>(LOCAL(1))->getValue();
-    int sigNum = getSignalNum(key);
-    if(sigNum < 0) {
-        std::string msg = "unsupported signal: ";
-        msg += key;
-        throwError(ctx, getPool(ctx).getKeyNotFoundErrorType(), std::move(msg));
-    }
-    RET(DSValue::create<Int_Object>(getPool(ctx).getSignalType(), sigNum));
-}
-
-//!bind: function get($this : Signals, $key : String) : Option<Signal>
-YDSH_METHOD signals_get2(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(signals_get2);
+//!bind: function signal($this : Signals, $key : String) : Option<Signal>
+YDSH_METHOD signals_signal(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signals_signal);
     const char *key = typeAs<String_Object>(LOCAL(1))->getValue();
     int sigNum = getSignalNum(key);
     if(sigNum < 0) {
@@ -1462,14 +1455,6 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
         array->append(DSValue::create<Int_Object>(getPool(ctx).getSignalType(), e));
     }
     RET(v);
-}
-
-//!bind: function action($this : Signals, $s : Signal) : Func<Void,[Signal]>
-YDSH_METHOD signals_action(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(signals_action);
-
-    int sigNum = typeAs<Int_Object>(LOCAL(1))->getValue();
-    RET(getSignalHandler(ctx, sigNum));
 }
 
 

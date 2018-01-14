@@ -410,15 +410,13 @@ function %OP_NE($this : Signal, $target : Signal) : Boolean
 
 ## Signals type
 ```
-function trap($this : Signals, $s : Signal, $action : Func<Void,[Signal]>) : Void
+function %OP_GET($this : Signals, $s : Signal) : Func<Void,[Signal]>
 
-function %OP_GET($this : Signals, $key : String) : Signal
+function %OP_SET($this : Signals, $s : Signal, $action : Func<Void,[Signal]>) : Void
 
-function get($this : Signals, $key : String) : Option<Signal>
+function signal($this : Signals, $key : String) : Option<Signal>
 
 function list($this : Signals) : Array<Signal>
-
-function action($this : Signals, $s : Signal) : Func<Void,[Signal]>
 ```
 
 ## Array type

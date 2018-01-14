@@ -36,7 +36,7 @@ function SIG_IGN($s : Signal) {}
 ## normally meaningless code, but need to prevent segmentation fault
 ## (due to lazy initialization of function type, see src/object.cpp)
 $SIG_IGN
-$SIG.trap(%'hup', $SIG_DFL)
+$SIG[%'hup'] = $SIG_DFL
 
 
 # builtin D-Bus interface

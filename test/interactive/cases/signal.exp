@@ -9,7 +9,7 @@ set CTRLD \004
 
 expect {
     -re "\\$ $" {
-        send "assert (\$SIG.action(%'int') as String) == \$SIG_IGN as String\r"
+        send "assert (\$SIG\[%'int'] as String) == \$SIG_IGN as String\r"
     }
     default {
         send_error "mismatch first prompt"
@@ -19,7 +19,7 @@ expect {
 
 expect {
     -re "\\$ $" {
-        send "assert (\$SIG.action(%'quit') as String) == \$SIG_IGN as String\r"
+        send "assert (\$SIG\[%'quit'] as String) == \$SIG_IGN as String\r"
     }
     default {
         send_error "mismatch first prompt"
@@ -29,7 +29,7 @@ expect {
 
 expect {
     -re "\\$ $" {
-        send "assert (\$SIG.action(%'tstp') as String) == \$SIG_IGN as String\r"
+        send "assert (\$SIG\[%'tstp'] as String) == \$SIG_IGN as String\r"
     }
     default {
         send_error "mismatch first prompt"
@@ -39,7 +39,7 @@ expect {
 
 expect {
     -re "\\$ $" {
-        send "assert (\$SIG.action(%'ttin') as String) == \$SIG_IGN as String\r"
+        send "assert (\$SIG\[%'ttin'] as String) == \$SIG_IGN as String\r"
     }
     default {
         send_error "mismatch first prompt"
@@ -49,7 +49,7 @@ expect {
 
 expect {
     -re "\\$ $" {
-        send "assert (\$SIG.action(%'ttou') as String) == \$SIG_IGN as String\r"
+        send "assert (\$SIG\[%'ttou'] as String) == \$SIG_IGN as String\r"
     }
     default {
         send_error "mismatch first prompt"

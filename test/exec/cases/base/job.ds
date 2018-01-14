@@ -71,7 +71,7 @@ function handle($s : Signal) {
     echo ${$s.name()}
     exit $s
 }
-$SIG.trap(%'cont', $handle)
+$SIG[%'cont'] = $handle
 $j = for(;;) { true; } &
 $j.suspend()
 $j.resume()

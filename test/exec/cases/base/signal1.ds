@@ -7,18 +7,14 @@ assert %'INT'.value() == (%'int' as String).toInt32()!
 assert %'TRAP' is Signal
 assert %'tRAp'.name() == 'TRAP'
 
-var s = $SIG['hUp']
+var s = $SIG.signal('hUp')!
 assert $s as String == %'HUP' as String
-$s = $SIG['sigterm']
+$s = $SIG.signal('sigterm')!
 assert $s as Any is Signal
 assert $s.name() == 'TERM'
-assert $SIG.get('sys')!.name() == 'SYS'
+assert $SIG.signal('sys')!.name() == 'SYS'
 
-var a = '' as Any
-try { $SIG['hogeud']; assert $false; } catch $e { $a = $e; }
-assert $a is KeyNotFoundError
-
-assert not $SIG.get('SIGCHILD')
+assert not $SIG.signal('SIGCHILD')
 
 assert $SIG.list()[0] is Signal
 
