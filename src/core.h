@@ -212,6 +212,16 @@ const char *getIfaceDir();
 const char *getLogicalWorkingDir(const DSState &st);
 
 /**
+ *
+ * @param st
+ * @param useLogical
+ * @param buf
+ * @return
+ * if has error, return null and set errno.
+ */
+const char *getWorkingDir(const DSState &st, bool useLogical, std::string &buf);
+
+/**
  * change current working directory and update OLDPWD, PWD.
  * if dest is null, do nothing and return true.
  */

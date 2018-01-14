@@ -478,6 +478,13 @@ static void initBuiltinVar(DSState *state) {
      * must be UnixFD_Object
      */
     bindVariable(state, VAR_STDERR, DSValue::create<UnixFD_Object>(state->pool, STDERR_FILENO));
+
+    /**
+     * must be String_Object
+     */
+    std::string str = ".";
+    getWorkingDir(*state, false, str);
+    bindVariable(state, VAR_SCRIPT_DIR, DSValue::create<String_Object>(state->pool.getStringType(), std::move(str)));
 }
 
 static void loadEmbeddedScript(DSState *state) {
@@ -492,7 +499,7 @@ static void loadEmbeddedScript(DSState *state) {
     state->updateExitStatus(0);
 }
 
-static void initEnv() {
+static void initEnv(const DSState &state) {
     // set locale
     setlocale(LC_ALL, "");
     setlocale(LC_MESSAGES, "C");
@@ -512,6 +519,15 @@ static void initEnv() {
 
     // set LOGNAME
     setenv(ENV_LOGNAME, pw->pw_name, 0);
+
+    // set PWD/OLDPWD
+    std::string str;
+    const char *ptr = getWorkingDir(state, true, str);
+    if(ptr == nullptr) {
+        ptr = ".";
+    }
+    setenv(ENV_PWD, ptr, 0);
+    setenv(ENV_OLDPWD, ptr, 0);
 }
 
 // ###################################
@@ -519,14 +535,14 @@ static void initEnv() {
 // ###################################
 
 DSState *DSState_createWithMode(DSExecMode mode) {
-    initEnv();
-
     // ignore SIGPIPE by default
     struct sigaction action{};
     action.sa_handler = SIG_IGN;
     sigaction(SIGPIPE, &action, nullptr);
 
     auto *ctx = new DSState();
+
+    initEnv(*ctx);
 
     /**
      * set execution mode before embedded script loading.

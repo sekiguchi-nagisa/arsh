@@ -1,12 +1,8 @@
 # builtin variable definition
 
-let SCRIPT_DIR = "$(pwd -P)"
-
 if not(check_env PATH) {
     export-env PATH = '/bin:/usr/bin:/usr/local/bin'
 }
-
-{ import-env PWD : "$(pwd)"; import-env OLDPWD : "$(pwd)"; }
 
 alias Int = Int32
 alias Uint = Uint32

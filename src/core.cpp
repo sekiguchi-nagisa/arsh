@@ -339,6 +339,23 @@ const char *getLogicalWorkingDir(const DSState &st) {
     return st.logicalWorkingDir.c_str();
 }
 
+const char *getWorkingDir(const DSState &st, bool useLogical, std::string &buf) {
+    if(useLogical) {
+        if(!S_ISDIR(getStMode(st.logicalWorkingDir.c_str()))) {
+            return nullptr;
+        }
+        buf = st.logicalWorkingDir;
+    } else {
+        size_t size = PATH_MAX;
+        char data[size];
+        if(getcwd(data, size) == nullptr) {
+            return nullptr;
+        }
+        buf = data;
+    }
+    return buf.c_str();
+}
+
 bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
     if(dest == nullptr) {
         return true;

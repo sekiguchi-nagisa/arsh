@@ -603,23 +603,13 @@ static int builtin_pwd(DSState &state, Array_Object &argvObj) {
         }
     }
 
-    if(useLogical) {
-        const char *dir = getLogicalWorkingDir(state);
-        if(!S_ISDIR(getStMode(dir))) {
-            PERROR(argvObj, ".");
-            return 1;
-        }
-        fputs(dir, stdout);
-    } else {
-        size_t size = PATH_MAX;
-        char buf[size];
-        if(getcwd(buf, size) == nullptr) {
-            PERROR(argvObj, ".");
-            return 1;
-        }
-        fputs(buf, stdout);
+    std::string buf;
+    const char *ptr = getWorkingDir(state, useLogical, buf);
+    if(ptr == nullptr) {
+        PERROR(argvObj, ".");
+        return 1;
     }
-    fputc('\n', stdout);
+    printf("%s\n", ptr);
     return 0;
 }
 
