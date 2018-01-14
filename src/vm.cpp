@@ -1985,7 +1985,7 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(SUCCESS_CHILD) {
-            exit(state.getExitStatus());
+            exitShell(state, state.getExitStatus());
         }
         vmcase(FAILURE_CHILD) {
             state.storeThrowObject();
