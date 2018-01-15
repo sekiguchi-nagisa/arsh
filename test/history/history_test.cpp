@@ -73,7 +73,7 @@ public:
         std::string c(code);
         c += "\n";
         c += "exit $?";
-        EXPECT_EXIT(DSState_eval(this->state, "(dummy)", c.c_str(), c.size(), nullptr), ::testing::ExitedWithCode(0), "");
+        EXPECT_EXIT(exit(DSState_eval(this->state, "(dummy)", c.c_str(), c.size(), nullptr)), ::testing::ExitedWithCode(0), "");
     }
 
 private:
