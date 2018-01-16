@@ -1321,10 +1321,7 @@ void TypeChecker::visitEmptyNode(DSType *, EmptyNode &node) {
 }
 
 void TypeChecker::visitRootNode(DSType *, RootNode &node) {
-    this->symbolTable.commit();
-    this->typePool.commit();
-    this->fctx.clear();
-    this->breakGather.clear();
+    this->reset();
 
     bool prevIsTerminal = false;
     for(auto &targetNode : node.refNodes()) {

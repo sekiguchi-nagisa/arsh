@@ -213,9 +213,9 @@ protected:
     /**
      * contains current return type of current function
      */
-    DSType *curReturnType;
+    DSType *curReturnType{nullptr};
 
-    int visitingDepth;
+    int visitingDepth{0};
 
     FlowContext fctx;
 
@@ -225,8 +225,7 @@ protected:
 
 public:
     TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting) :
-            typePool(typePool), symbolTable(symbolTable), curReturnType(nullptr),
-            visitingDepth(0), toplevelPrinting(toplevelPrinting) { }
+            typePool(typePool), symbolTable(symbolTable), toplevelPrinting(toplevelPrinting) { }
 
     ~TypeChecker() = default;
 
@@ -235,6 +234,13 @@ public:
      */
     void checkTypeRootNode(RootNode &rootNode) {
         this->visitRootNode(nullptr, rootNode);
+    }
+
+    void reset() {
+        this->symbolTable.commit();
+        this->typePool.commit();
+        this->fctx.clear();
+        this->breakGather.clear();
     }
 
 protected:

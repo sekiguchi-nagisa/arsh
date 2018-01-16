@@ -285,13 +285,13 @@ private:
 
     bool assertion;
 
-    MethodHandle *handle_STR;
+    MethodHandle *handle_STR{nullptr};
 
     std::vector<CodeBuilder *> builders;
 
 public:
     ByteCodeGenerator(TypePool &pool, bool assertion) :
-            pool(pool), assertion(assertion), handle_STR(nullptr) { }
+            pool(pool), assertion(assertion) { }
 
     ~ByteCodeGenerator() override;
 
@@ -446,7 +446,6 @@ private:
     void generateBreakContinue(JumpNode &node);
 
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum);
-    void initToplevelCodeBuilder(const RootNode &node);
     CompiledCode finalizeCodeBuilder(const CallableNode &node);
 
     // visitor api
@@ -491,6 +490,8 @@ private:
     void visitRootNode(RootNode &node) override;
 
 public:
+    void initialize(const RootNode &node);
+
     /**
      * entry point of code generation.
      */

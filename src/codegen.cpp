@@ -1101,7 +1101,7 @@ void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNu
     this->curBuilder().append8(localVarNum);
 }
 
-void ByteCodeGenerator::initToplevelCodeBuilder(const RootNode &node) {
+void ByteCodeGenerator::initialize(const RootNode &node) {
     this->initCodeBuilder(CodeKind::TOPLEVEL, node.getMaxVarNum());
     this->curBuilder().append16(node.getMaxGVarNum());
 }
@@ -1150,7 +1150,7 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const CallableNode &node) {
 }
 
 CompiledCode ByteCodeGenerator::generateToplevel(RootNode &node) {
-    this->initToplevelCodeBuilder(node);
+    this->initialize(node);
     this->visit(node);
     return this->finalizeCodeBuilder(node);
 }
