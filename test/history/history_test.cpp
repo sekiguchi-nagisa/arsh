@@ -54,6 +54,14 @@ public:
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, value));
     }
 
+    Output evalInChild(const std::string &code) {
+        IOConfig config{IOConfig::INHERIT, IOConfig::INHERIT, IOConfig::INHERIT};
+        return ProcBuilder::spawn(config, [&] {
+            int ret = DSState_eval(this->state, nullptr, code.c_str(), code.size(), nullptr);
+            return ret;
+        }).waitAndGetResult(true);
+    }
+
     void eval(const char *code) {
         if(!this->evaled) {
             this->evaled = true;
@@ -73,7 +81,10 @@ public:
         std::string c(code);
         c += "\n";
         c += "exit $?";
-        EXPECT_EXIT(exit(DSState_eval(this->state, "(dummy)", c.c_str(), c.size(), nullptr)), ::testing::ExitedWithCode(0), "");
+
+        auto result = this->evalInChild(c);
+        ASSERT_EQ(WaitType::EXITED, result.waitType);
+        ASSERT_EQ(0, result.status);
     }
 
 private:
