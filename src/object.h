@@ -43,15 +43,15 @@ typedef std::unordered_set<unsigned long> VisitedSet;
 class DSObject {
 protected:
     DSType *type;
-    unsigned int refCount;
+    unsigned int refCount{0};
 
     friend class DSValue;
 
 public:
     NON_COPYABLE(DSObject);
 
-    explicit DSObject(DSType &type) : type(&type), refCount(0) { }
-    explicit DSObject(DSType *type) : type(type), refCount(0) { }
+    explicit DSObject(DSType &type) : type(&type) { }
+    explicit DSObject(DSType *type) : type(type) { }
 
     virtual ~DSObject() = default;
 

@@ -93,9 +93,9 @@ protected:
     /**
      * initial value is null.
      */
-    DSType *type;
+    DSType *type{nullptr};
 
-    Node(NodeKind kind, Token token) : nodeKind(kind), token(token), type() { }
+    Node(NodeKind kind, Token token) : nodeKind(kind), token(token) { }
 
 public:
     NON_COPYABLE(Node);

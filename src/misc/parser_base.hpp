@@ -77,26 +77,26 @@ protected:
     /**
      * need 'T nextToken(Token)'
      */
-    LexerImpl *lexer;
+    LexerImpl *lexer{nullptr};
 
-    T curKind;
-    Token curToken;
+    T curKind{};
+    Token curToken{};
 
     /**
      * kind of latest consumed token
      */
-    T consumedKind;
+    T consumedKind{};
 
     /**
      * need 'void operator()(T, Token)'
      */
-    Tracker *tracker;
+    Tracker *tracker{nullptr};
 
 private:
     std::unique_ptr<ParseError<T>> error;
 
 public:
-    AbstractParser() : lexer(nullptr), curKind(), curToken(), consumedKind(), tracker(nullptr), error() { }
+    AbstractParser() = default;
 
     void setTracker(Tracker *tracker) {
         this->tracker = tracker;

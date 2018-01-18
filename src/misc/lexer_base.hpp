@@ -48,52 +48,50 @@ protected:
      * may be null, if input source is string. not closed it.
      * must be binary mode.
      */
-    FILE *fp;
+    FILE *fp{nullptr};
 
-    unsigned int bufSize;
+    unsigned int bufSize{0};
 
     /**
      * must terminate null character.
      */
-    unsigned char *buf;
+    unsigned char *buf{nullptr};
 
     /**
      * current reading pointer of buf.
      */
-    unsigned char *cursor;
+    unsigned char *cursor{nullptr};
 
     /**
      * limit of buf.
      */
-    unsigned char *limit;
+    unsigned char *limit{nullptr};
 
     /**
      * for backtracking.
      */
-    unsigned char *marker;
+    unsigned char *marker{nullptr};
 
     /**
      * for trailing context
      */
-    unsigned char *ctxMarker;
+    unsigned char *ctxMarker{nullptr};
 
     /**
      * if fp is null or fp reach EOF, it it true.
      */
-    bool endOfFile;
+    bool endOfFile{false};
 
     /**
      * if true, reach end of string. nextToken() always return EOS.
      */
-    bool endOfString;
+    bool endOfString{false};
 
     static constexpr unsigned int DEFAULT_SIZE = 256;
     static constexpr int DEFAULT_READ_SIZE = 128;
 
 private:
-    LexerBase() :
-            fp(nullptr), bufSize(0), buf(nullptr), cursor(nullptr),
-            limit(nullptr), marker(nullptr), ctxMarker(nullptr), endOfFile(false), endOfString(false) { }
+    LexerBase() = default;
 
 public:
     NON_COPYABLE(LexerBase);

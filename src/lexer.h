@@ -38,7 +38,7 @@ private:
     /**
      * default value is 1.
      */
-    unsigned int lineNumOffset;
+    unsigned int lineNumOffset{1};
 
     /**
      * contains newline character position.
@@ -46,7 +46,7 @@ private:
     std::vector<unsigned int> lineNumTable;
 
 public:
-    explicit SourceInfo(const char *sourceName) : sourceName(sourceName), lineNumOffset(1) { }
+    explicit SourceInfo(const char *sourceName) : sourceName(sourceName) { }
     ~SourceInfo() = default;
 
     const std::string &getSourceName() const {
@@ -80,14 +80,14 @@ private:
      */
     std::vector<LexerMode> modeStack;
 
-    bool prevNewLine;
+    bool prevNewLine{false};
 
     /**
      * only available in command mode.
      */
-    bool prevSpace;
+    bool prevSpace{false};
 
-    LexerMode prevMode;
+    LexerMode prevMode{yycSTMT};
 
 public:
     NON_COPYABLE(Lexer);
@@ -112,9 +112,7 @@ public:
      * @return
      */
     Lexer(const char *sourceName, const char *source, unsigned int size) :
-            LexerBase(source, size),
-            srcInfoPtr(SourceInfoPtr::create(sourceName)),
-            modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
+            LexerBase(source, size), srcInfoPtr(SourceInfoPtr::create(sourceName)), modeStack(1, yycSTMT) {}
 
     /**
      * 
@@ -125,9 +123,7 @@ public:
      * @return
      */
     Lexer(const char *sourceName, FILE *fp) :
-            LexerBase(fp),
-            srcInfoPtr(SourceInfoPtr::create(sourceName)),
-            modeStack(1, yycSTMT), prevNewLine(false), prevSpace(false), prevMode(yycSTMT) {}
+            LexerBase(fp), srcInfoPtr(SourceInfoPtr::create(sourceName)), modeStack(1, yycSTMT) {}
 
     ~Lexer() = default;
 
