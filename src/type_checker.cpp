@@ -1320,29 +1320,35 @@ void TypeChecker::visitEmptyNode(DSType *, EmptyNode &node) {
     node.setType(this->typePool.getVoidType());
 }
 
+const DSType* TypeChecker::operator()(const DSType *prevType, Node *&node) {
+    if(prevType != nullptr && prevType->isNothingType()) {
+        RAISE_TC_ERROR(Unreachable, *node);
+    }
+
+    auto kind = node->getNodeKind();
+    if(kind == NodeKind::Pipeline || kind == NodeKind::Cmd) {
+        this->checkTypeWithCoercion(this->typePool.getVoidType(), node);  // pop stack top
+    } else if(this->toplevelPrinting) {
+        this->checkType(nullptr, node, nullptr);
+        node = this->newPrintOpNode(node);
+    } else {
+        this->checkTypeWithCoercion(this->typePool.getVoidType(), node);
+    }
+
+    // check empty block
+    if(node->is(NodeKind::Block) && static_cast<BlockNode *>(node)->getNodes().empty()) {
+        RAISE_TC_ERROR(UselessBlock, *node);
+    }
+
+    return &node->getType();
+}
+
 void TypeChecker::visitRootNode(DSType *, RootNode &node) {
     this->reset();
 
-    bool prevIsTerminal = false;
+    const DSType *prevType = nullptr;
     for(auto &targetNode : node.refNodes()) {
-        if(prevIsTerminal) {
-            RAISE_TC_ERROR(Unreachable, *targetNode);
-        }
-        auto kind = targetNode->getNodeKind();
-        if(kind == NodeKind::Pipeline || kind == NodeKind::Cmd) {
-            this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);  // pop stack top
-        } else if(this->toplevelPrinting) {
-            this->checkType(nullptr, targetNode, nullptr);
-            targetNode = this->newPrintOpNode(targetNode);
-        } else {
-            this->checkTypeWithCoercion(this->typePool.getVoidType(), targetNode);
-        }
-        prevIsTerminal = targetNode->getType().isNothingType();
-
-        // check empty block
-        if(targetNode->is(NodeKind::Block) && static_cast<BlockNode *>(targetNode)->getNodes().empty()) {
-            RAISE_TC_ERROR(UselessBlock, *targetNode);
-        }
+        prevType = (*this)(prevType, targetNode);
     }
 
     node.setMaxVarNum(this->symbolTable.getMaxVarIndex());

@@ -236,6 +236,8 @@ public:
         this->visitRootNode(nullptr, rootNode);
     }
 
+    const DSType *operator()(const DSType *prevType, Node *&node);
+
     void reset() {
         this->symbolTable.commit();
         this->typePool.commit();
