@@ -298,7 +298,12 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
 
     // code generation
     ByteCodeGenerator codegen(state->pool, hasFlag(state->option, DS_OPTION_ASSERT));
-    code = codegen.generateToplevel(*rootNode);
+    codegen.initialize();
+    for(auto &node : rootNode->getNodes()) {
+        codegen.generate(node);
+    }
+    code = codegen.finalize(rootNode->getSourceInfoPtr(),
+                            state->symbolTable.getMaxVarIndex(), state->symbolTable.getMaxGVarIndex());
     return 0;
 }
 

@@ -446,7 +446,11 @@ private:
     void generateBreakContinue(JumpNode &node);
 
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum);
-    CompiledCode finalizeCodeBuilder(const CallableNode &node);
+    CompiledCode finalizeCodeBuilder(const CallableNode &node) {
+        return this->finalizeCodeBuilder(node.getSourceInfoPtr(), node.getName());
+    }
+
+    CompiledCode finalizeCodeBuilder(const SourceInfoPtr &srcInfo, const std::string &name);
 
     // visitor api
     void visit(Node &node) override;
@@ -490,12 +494,23 @@ private:
     void visitRootNode(RootNode &node) override;
 
 public:
-    void initialize(const RootNode &node);
+    void initialize() {
+        this->initCodeBuilder(CodeKind::TOPLEVEL, 0);
+        this->curBuilder().append16(0);
+    }
 
-    /**
-     * entry point of code generation.
-     */
-    CompiledCode generateToplevel(RootNode &node);
+    void generate(Node *node) {
+        this->visit(*node);
+    }
+
+    CompiledCode finalize(const SourceInfoPtr &srcInfo,
+                          unsigned char maxLocalSize, unsigned short maxGlobalSize) {
+        this->curBuilder().emit8(5, maxLocalSize);
+        this->curBuilder().emit16(6, maxGlobalSize);
+
+        this->emitIns(OpCode::HALT);
+        return this->finalizeCodeBuilder(srcInfo, "");
+    }
 };
 
 /**

@@ -1101,12 +1101,7 @@ void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNu
     this->curBuilder().append8(localVarNum);
 }
 
-void ByteCodeGenerator::initialize(const RootNode &node) {
-    this->initCodeBuilder(CodeKind::TOPLEVEL, node.getMaxVarNum());
-    this->curBuilder().append16(node.getMaxGVarNum());
-}
-
-CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const CallableNode &node) {
+CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const SourceInfoPtr &srcInfo, const std::string &name) {
     this->curBuilder().finalize();
 
     // extract code
@@ -1145,14 +1140,8 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const CallableNode &node) {
     delete this->builders.back();
     this->builders.pop_back();
 
-    return CompiledCode(node.getSourceInfoPtr(), node.getName().empty() ? nullptr : node.getName().c_str(),
-                    code, constPool, entries, except);
-}
-
-CompiledCode ByteCodeGenerator::generateToplevel(RootNode &node) {
-    this->initialize(node);
-    this->visit(node);
-    return this->finalizeCodeBuilder(node);
+    return CompiledCode(srcInfo, name.empty() ? nullptr : name.c_str(),
+                        code, constPool, entries, except);
 }
 
 static unsigned int digit(unsigned int n) {
