@@ -956,17 +956,13 @@ void TypeChecker::visitLoopNode(DSType *, LoopNode &node) {
     node.setType(type);
 }
 
-void TypeChecker::visitIfNode(DSType *requiredType, IfNode &node) {
+void TypeChecker::visitIfNode(DSType *, IfNode &node) {
     this->checkTypeWithCoercion(this->typePool.getBooleanType(), node.refCondNode());
     auto &thenType = this->checkType(nullptr, node.getThenNode(), nullptr);
     auto &elseType = this->checkType(nullptr, node.getElseNode(), nullptr);
 
     if(thenType.isNothingType() && elseType.isNothingType()) {
         node.setType(thenType);
-    } else if(requiredType != nullptr && requiredType->isVoidType()) {
-        this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refThenNode());
-        this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refElseNode());
-        node.setType(this->typePool.getVoidType());
     } else if(thenType.isSameOrBaseTypeOf(elseType)) {
         node.setType(thenType);
     } else if(elseType.isSameOrBaseTypeOf(thenType)) {
@@ -974,9 +970,13 @@ void TypeChecker::visitIfNode(DSType *requiredType, IfNode &node) {
     } else if(this->checkCoercion(thenType, elseType)) {
         this->checkTypeWithCoercion(thenType, node.refElseNode());
         node.setType(thenType);
-    } else {
+    } else if(this->checkCoercion(elseType, thenType)) {
         this->checkTypeWithCoercion(elseType, node.refThenNode());
         node.setType(elseType);
+    } else {
+        this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refThenNode());
+        this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refElseNode());
+        node.setType(this->typePool.getVoidType());
     }
 }
 
