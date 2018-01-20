@@ -1307,6 +1307,14 @@ Node *createIndexNode(Node *recvNode, Node *indexNode) {
     return methodCallNode;
 }
 
+const Node *findInnerNode(NodeKind kind, const Node *node) {
+    while(node->getNodeKind() != kind) {
+        assert(node->getNodeKind() == NodeKind::TypeOp);
+        node = static_cast<const TypeOpNode *>(node)->getExprNode();
+    }
+    return node;
+}
+
 // ########################
 // ##     NodeDumper     ##
 // ########################

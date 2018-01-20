@@ -61,14 +61,6 @@ static std::pair<std::string, unsigned int> extractDirective(std::istream &input
     return {std::string(), 0};
 }
 
-template <typename T>
-struct type2info {};
-
-#define GEN_TO_INFO(T) template <> struct type2info<T ## Node> { static constexpr auto value = NodeKind::T; };
-
-EACH_NODE_KIND(GEN_TO_INFO)
-
-
 using AttributeHandler = std::function<void(Node &, Directive &)>;
 
 class DirectiveInitializer : public TypeChecker {

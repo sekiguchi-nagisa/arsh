@@ -2090,6 +2090,28 @@ inline Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
 
 Node *createIndexNode(Node *recvNode, Node *indexNode);
 
+template <typename T>
+struct type2info {};
+
+#define GEN_TO_INFO(T) template <> struct type2info<T ## Node> { static constexpr auto value = NodeKind::T; };
+
+EACH_NODE_KIND(GEN_TO_INFO)
+
+/**
+ *
+ * @param kind
+ * @param node
+ * may be TypeOpNode
+ * @return
+ */
+const Node *findInnerNode(NodeKind kind, const Node *node);
+
+template <typename T>
+inline const T *findInnerNode(const Node *node) {
+    static_cast<const T *>(findInnerNode(type2info<T>::value, node));
+}
+
+
 struct NodeVisitor {
     virtual ~NodeVisitor() = default;
 
