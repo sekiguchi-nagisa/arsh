@@ -199,7 +199,7 @@ private:
 };
 
 
-class TypeChecker {
+class TypeChecker : protected NodeVisitor {
 protected:
     friend class TypeGenerator;
 
@@ -233,7 +233,7 @@ public:
      * type checker entry point
      */
     void checkTypeRootNode(RootNode &rootNode) {
-        this->visitRootNode(nullptr, rootNode);
+        this->visitRootNode(rootNode);
     }
 
     const DSType *operator()(const DSType *prevType, Node *&node);
@@ -401,47 +401,45 @@ protected:
     void checkTypeAsBreakContinue(JumpNode &node);
     void checkTypeAsReturn(JumpNode &node);
 
-    void dispatch(DSType *requiredType, Node &node);
-
     // visitor api
-    void visitTypeNode(DSType *requiredType, TypeNode &node);
-    void visitNumberNode(DSType *requiredType, NumberNode &node);
-    void visitStringNode(DSType *requiredType, StringNode &node);
-    void visitStringExprNode(DSType *requiredType, StringExprNode &node);
-    void visitRegexNode(DSType *requiredType, RegexNode &node);
-    void visitArrayNode(DSType *requiredType, ArrayNode &node);
-    void visitMapNode(DSType *requiredType, MapNode &node);
-    void visitTupleNode(DSType *requiredType, TupleNode &node);
-    void visitVarNode(DSType *requiredType, VarNode &node);
-    void visitAccessNode(DSType *requiredType, AccessNode &node);
-    void visitTypeOpNode(DSType *requiredType, TypeOpNode &node);
-    void visitUnaryOpNode(DSType *requiredType, UnaryOpNode &node);
-    void visitBinaryOpNode(DSType *requiredType, BinaryOpNode &node);
-    void visitApplyNode(DSType *requiredType, ApplyNode &node);
-    void visitMethodCallNode(DSType *requiredType, MethodCallNode &node);
-    void visitNewNode(DSType *requiredType, NewNode &node);
-    void visitCmdNode(DSType *requiredType, CmdNode &node);
-    void visitCmdArgNode(DSType *requiredType, CmdArgNode &node);
-    void visitRedirNode(DSType *requiredType, RedirNode &node);
-    void visitPipelineNode(DSType *requiredType, PipelineNode &node);
-    void visitWithNode(DSType *requiredType, WithNode &node);
-    void visitForkNode(DSType *requiredType, ForkNode &node);
-    void visitAssertNode(DSType *requiredType, AssertNode &node);
-    void visitBlockNode(DSType *requiredType, BlockNode &node);
-    void visitTypeAliasNode(DSType *requiredType, TypeAliasNode &node);
-    void visitLoopNode(DSType *requiredType, LoopNode &node);
-    void visitIfNode(DSType *requiredType, IfNode &node);
-    void visitJumpNode(DSType *requredType, JumpNode &node);
-    void visitCatchNode(DSType *requiredType, CatchNode &node);
-    void visitTryNode(DSType *requiredType, TryNode &node);
-    void visitVarDeclNode(DSType *requiredType, VarDeclNode &node);
-    void visitAssignNode(DSType *requiredType, AssignNode &node);
-    void visitElementSelfAssignNode(DSType *requiredType, ElementSelfAssignNode &node);
-    void visitFunctionNode(DSType *requiredType, FunctionNode &node);
-    void visitInterfaceNode(DSType *requiredType, InterfaceNode &node);
-    void visitUserDefinedCmdNode(DSType *requiredType, UserDefinedCmdNode &node);
-    void visitEmptyNode(DSType *requiredType, EmptyNode &node);
-    void visitRootNode(DSType *requiredType, RootNode &node);
+    void visitTypeNode(TypeNode &node) override;
+    void visitNumberNode(NumberNode &node) override;
+    void visitStringNode(StringNode &node) override;
+    void visitStringExprNode(StringExprNode &node) override;
+    void visitRegexNode(RegexNode &node) override;
+    void visitArrayNode(ArrayNode &node) override;
+    void visitMapNode(MapNode &node) override;
+    void visitTupleNode(TupleNode &node) override;
+    void visitVarNode(VarNode &node) override;
+    void visitAccessNode(AccessNode &node) override;
+    void visitTypeOpNode(TypeOpNode &node) override;
+    void visitUnaryOpNode(UnaryOpNode &node) override;
+    void visitBinaryOpNode(BinaryOpNode &node) override;
+    void visitApplyNode(ApplyNode &node) override;
+    void visitMethodCallNode(MethodCallNode &node) override;
+    void visitNewNode(NewNode &node) override;
+    void visitCmdNode(CmdNode &node) override;
+    void visitCmdArgNode(CmdArgNode &node) override;
+    void visitRedirNode(RedirNode &node) override;
+    void visitPipelineNode(PipelineNode &node) override;
+    void visitWithNode(WithNode &node) override;
+    void visitForkNode(ForkNode &node) override;
+    void visitAssertNode(AssertNode &node) override;
+    void visitBlockNode(BlockNode &node) override;
+    void visitTypeAliasNode(TypeAliasNode &node) override;
+    void visitLoopNode(LoopNode &node) override;
+    void visitIfNode(IfNode &node) override;
+    void visitJumpNode(JumpNode &node) override;
+    void visitCatchNode(CatchNode &node) override;
+    void visitTryNode(TryNode &node) override;
+    void visitVarDeclNode(VarDeclNode &node) override;
+    void visitAssignNode(AssignNode &node) override;
+    void visitElementSelfAssignNode(ElementSelfAssignNode &node) override;
+    void visitFunctionNode(FunctionNode &node) override;
+    void visitInterfaceNode(InterfaceNode &node) override;
+    void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
+    void visitEmptyNode(EmptyNode &node) override;
+    void visitRootNode(RootNode &node) override;
 };
 
 } // namespace ydsh
