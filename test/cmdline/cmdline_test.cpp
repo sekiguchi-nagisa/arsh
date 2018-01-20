@@ -231,12 +231,12 @@ Code:
   13: LOAD_GLOBAL  46
   16: LOAD_CONST  1
   18: CALL_FUNC  1
-  21: POP
-  22: ENTER_FINALLY  8
-  25: GOTO  34
-  30: LOAD_CONST  2
-  32: POP
-  33: EXIT_FINALLY
+  21: ENTER_FINALLY  8
+  24: GOTO  33
+  29: LOAD_CONST  2
+  31: POP
+  32: EXIT_FINALLY
+  33: POP
   34: HALT
 Constant Pool:
   0: (null) function(f)
@@ -245,7 +245,7 @@ Constant Pool:
 Source Pos Entry:
   lineNum: 1, address: 18, pos: 67
 Exception Table:
-  begin: 13, end: 30, type: Any, dest: 30, offset: 0, size: 0
+  begin: 13, end: 29, type: Any, dest: 29, offset: 0, size: 0
 
 DSCode: function f
   code size: 18

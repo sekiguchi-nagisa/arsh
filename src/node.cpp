@@ -919,10 +919,10 @@ void CatchNode::dump(NodeDumper &dumper) const {
 // #####################
 
 TryNode::~TryNode() {
-    delete this->blockNode;
+    delete this->exprNode;
 
-    for(CatchNode *n : this->catchNodes) {
-        delete n;
+    for(auto &e : this->catchNodes) {
+        delete e;
     }
 
     delete this->finallyNode;
@@ -939,9 +939,8 @@ void TryNode::addFinallyNode(BlockNode *finallyNode) {
 }
 
 void TryNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(blockNode);
+    DUMP_PTR(exprNode);
     DUMP(catchNodes);
-
     DUMP_PTR(finallyNode);
 }
 

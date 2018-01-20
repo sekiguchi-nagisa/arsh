@@ -1,0 +1,23 @@
+
+function f($s : Int) : Int {
+    return try {
+        100 / $s
+    } catch $e : ArithmeticError {
+        0
+    }
+}
+
+assert $f(10) == 10
+assert $f(0) == 0
+
+function g($s : Int) : Float {
+    var a = try {
+        (100 / $s) as Float
+    } catch $e : ArithmeticError {
+        0u
+    }
+    return $a
+}
+
+assert $g(100) == 1.0
+assert $g(0) == 0

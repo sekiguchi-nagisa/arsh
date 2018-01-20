@@ -1061,7 +1061,7 @@ void TypeChecker::visitCatchNode(DSType *, CatchNode &node) {
     FieldHandle *handle =
             this->addEntryAndThrowIfDefined(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
     node.setAttribute(handle);
-    this->checkTypeWithCurrentScope(node.getBlockNode());
+    this->checkTypeWithCurrentScope(nullptr, node.getBlockNode());
     this->symbolTable.exitScope();
     node.setType(node.getBlockNode()->getType());
 }
@@ -1070,31 +1070,43 @@ void TypeChecker::visitTryNode(DSType *, TryNode &node) {
     if(node.getCatchNodes().empty() && node.getFinallyNode() == nullptr) {
         RAISE_TC_ERROR(UselessTry, node);
     }
-    if(node.getBlockNode()->getNodes().empty()) {
-        RAISE_TC_ERROR(EmptyTry, *node.getBlockNode());
+    assert(node.getExprNode()->getNodeKind() == NodeKind::Block);
+    if(static_cast<BlockNode*>(node.getExprNode())->getNodes().empty()) {
+        RAISE_TC_ERROR(EmptyTry, *node.getExprNode());
     }
 
+    // check type try block
     this->fctx.enterTry();
-    this->checkType(this->typePool.getVoidType(), node.getBlockNode());
+    auto *exprType = &this->checkType(nullptr, node.getExprNode(), nullptr);
     this->fctx.leave();
 
     // check type catch block
-    for(CatchNode *c : node.getCatchNodes()) {
+    for(auto &c : node.getCatchNodes()) {
         this->fctx.enterTry();
-        this->checkType(this->typePool.getVoidType(), c);
+        auto &catchType = this->checkType(nullptr, c, nullptr);
         this->fctx.leave();
+
+        if(!exprType->isSameOrBaseTypeOf(catchType) && !this->checkCoercion(*exprType, catchType)) {
+            exprType = &this->typePool.getVoidType();
+        }
+    }
+
+    // perform coercion
+    this->checkTypeWithCoercion(*exprType, node.refExprNode());
+    for(auto &c : node.refCatchNodes()) {
+        this->checkTypeWithCoercion(*exprType, c);
     }
 
     // check type finally block, may be empty node
     if(node.getFinallyNode() != nullptr) {
         this->fctx.enterFinally();
-        auto &type = this->checkType(this->typePool.getVoidType(), node.getFinallyNode());
+        this->checkTypeWithCoercion(this->typePool.getVoidType(), node.refFinallyNode());
         this->fctx.leave();
 
-        if(node.getFinallyNode()->getNodes().empty()) {
+        if(findInnerNode<BlockNode>(node.getFinallyNode())->getNodes().empty()) {
             RAISE_TC_ERROR(UselessBlock, *node.getFinallyNode());
         }
-        if(type.isNothingType()) {
+        if(node.getFinallyNode()->getType().isNothingType()) {
             RAISE_TC_ERROR(InsideFinally, *node.getFinallyNode());
         }
     }
@@ -1104,20 +1116,14 @@ void TypeChecker::visitTryNode(DSType *, TryNode &node) {
      */
     const int size = node.getCatchNodes().size();
     for(int i = 0; i < size - 1; i++) {
-        auto &curType = node.getCatchNodes()[i]->getTypeNode()->getType();
-        CatchNode *nextNode = node.getCatchNodes()[i + 1];
-        auto &nextType = nextNode->getTypeNode()->getType();
+        auto &curType = findInnerNode<CatchNode>(node.getCatchNodes()[i])->getTypeNode()->getType();
+        auto &nextType = findInnerNode<CatchNode>(node.getCatchNodes()[i + 1])->getTypeNode()->getType();
         if(curType.isSameOrBaseTypeOf(nextType)) {
+            auto &nextNode = node.getCatchNodes()[i + 1];
             RAISE_TC_ERROR(Unreachable, *nextNode);
         }
     }
-
-    // check if terminal node
-    bool terminal = node.getBlockNode()->getType().isNothingType();
-    for(int i = 0; i < size && terminal; i++) {
-        terminal = node.getCatchNodes()[i]->getType().isNothingType();
-    }
-    node.setType(terminal ? this->typePool.getNothingType() : this->typePool.getVoidType());
+    node.setType(*exprType);
 }
 
 void TypeChecker::visitVarDeclNode(DSType *, VarDeclNode &node) {

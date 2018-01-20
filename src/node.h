@@ -1598,33 +1598,44 @@ public:
 
 class TryNode : public Node {
 private:
-    BlockNode *blockNode;
+    /**
+     * initial value is BlockNode
+     */
+    Node *exprNode;
 
     /**
      * may be empty
      */
-    std::vector<CatchNode *> catchNodes;
+    std::vector<Node *> catchNodes;
 
     /**
      * may be null
      */
-    BlockNode *finallyNode;
+    Node *finallyNode;
 
 public:
     TryNode(unsigned int startPos, BlockNode *blockNode) :
-            Node(NodeKind::Try, {startPos, 0}), blockNode(blockNode), finallyNode() {
+            Node(NodeKind::Try, {startPos, 0}), exprNode(blockNode), finallyNode() {
         this->updateToken(blockNode->getToken());
     }
 
     ~TryNode() override;
 
-    BlockNode *getBlockNode() const {
-        return this->blockNode;
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    Node *&refExprNode() {
+        return this->exprNode;
     }
 
     void addCatchNode(CatchNode *catchNode);
 
-    const std::vector<CatchNode *> &getCatchNodes() const {
+    const std::vector<Node *> &getCatchNodes() const {
+        return this->catchNodes;
+    }
+
+    std::vector<Node *> &refCatchNodes() {
         return this->catchNodes;
     }
 
@@ -1633,7 +1644,11 @@ public:
     /**
      * if has no finally block, return null
      */
-    BlockNode *getFinallyNode() {
+    Node *getFinallyNode() const {
+        return this->finallyNode;
+    }
+
+    Node *&refFinallyNode() {
         return this->finallyNode;
     }
 
@@ -2108,7 +2123,7 @@ const Node *findInnerNode(NodeKind kind, const Node *node);
 
 template <typename T>
 inline const T *findInnerNode(const Node *node) {
-    static_cast<const T *>(findInnerNode(type2info<T>::value, node));
+    return static_cast<const T *>(findInnerNode(type2info<T>::value, node));
 }
 
 

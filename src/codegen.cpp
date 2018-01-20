@@ -921,14 +921,11 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     auto endLabel = makeLabel();
     auto mergeLabel = makeLabel();
 
-    auto &blockNode = *node.getBlockNode();
-    auto maxLocalSize = blockNode.getMaxVarSize();
-
     // generate try block
     this->markLabel(beginLabel);
-    this->visit(blockNode);
+    this->visit(*node.getExprNode());
     this->markLabel(endLabel);
-    if(!blockNode.getType().isNothingType()) {
+    if(!node.getExprNode()->getType().isNothingType()) {
         if(hasFinally) {
             this->enterFinally();
         }
@@ -936,15 +933,18 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     }
 
     // generate catch
-    for(auto &c : node.getCatchNodes()) {
-        if(maxLocalSize < c->getBlockNode()->getMaxVarSize()) {
-            maxLocalSize = c->getBlockNode()->getMaxVarSize();
+    auto &blockNode = *findInnerNode<BlockNode>(node.getExprNode());
+    auto maxLocalSize = blockNode.getMaxVarSize();
+    for(auto &catchNode : node.getCatchNodes()) {
+        unsigned int varSize = findInnerNode<CatchNode>(catchNode)->getBlockNode()->getMaxVarSize();
+        if(maxLocalSize < varSize) {
+            maxLocalSize = varSize;
         }
 
-        this->catchException(beginLabel, endLabel, c->getTypeNode()->getType(),
-                             blockNode.getBaseIndex(), blockNode.getVarSize());
-        this->visit(*c);
-        if(!c->getType().isNothingType()) {
+        auto &catchType = findInnerNode<CatchNode>(catchNode)->getTypeNode()->getType();
+        this->catchException(beginLabel, endLabel, catchType, blockNode.getBaseIndex(), blockNode.getVarSize());
+        this->visit(*catchNode);
+        if(!catchNode->getType().isNothingType()) {
             if(hasFinally) {
                 this->enterFinally();
             }
