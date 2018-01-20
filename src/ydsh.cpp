@@ -207,16 +207,27 @@ static DSError handleRuntimeError(DSState *state) {
     }
     fflush(stderr);
 
-    // in child process always exit(1)
-    if(!state->isRootShell()) {
-        exit(kind == DS_ERROR_KIND_EXIT ? state->getExitStatus() : 1);
-    }
-
     return {
             .kind = kind,
             .lineNum = errorLineNum,
             .name = kind == DS_ERROR_KIND_RUNTIME_ERROR ? state->pool.getTypeName(errorType) : ""
     };
+}
+
+static int evalCodeImpl(DSState *state, CompiledCode &code, DSError *dsError) {
+    if(!vmEval(*state, code)) {
+        auto ret = handleRuntimeError(state);
+        if(dsError != nullptr) {
+            *dsError = ret;
+        }
+        if(ret.kind == DS_ERROR_KIND_RUNTIME_ERROR && state->isRootShell()) {
+            state->recover(false);
+        }
+        if(ret.kind != DS_ERROR_KIND_EXIT) {
+            return 1;
+        }
+    }
+    return state->getExitStatus();
 }
 
 static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
@@ -229,20 +240,11 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
     if(state->execMode == DS_EXEC_MODE_COMPILE_ONLY) {
         return 0;
     }
-
-    if(!vmEval(*state, code)) {
-        auto ret = handleRuntimeError(state);
-        if(dsError != nullptr) {
-            *dsError = ret;
-        }
-        if(ret.kind == DS_ERROR_KIND_RUNTIME_ERROR) {
-            state->recover(false);
-        }
-        if(ret.kind != DS_ERROR_KIND_EXIT) {
-            return 1;
-        }
+    int ret = evalCodeImpl(state, code, dsError);
+    if(!state->isRootShell()) {
+        _exit(ret);
     }
-    return state->getExitStatus();
+    return ret;
 }
 
 static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
