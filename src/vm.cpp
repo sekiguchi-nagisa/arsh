@@ -1984,13 +1984,6 @@ static bool mainLoop(DSState &state) {
             state.push(DSValue::create<Long_Object>(state.pool.getInt64Type(), v));
             vmnext;
         }
-        vmcase(SUCCESS_CHILD) {
-            exitShell(state, state.getExitStatus());
-        }
-        vmcase(FAILURE_CHILD) {
-            state.storeThrowObject();
-            return false;
-        }
         vmcase(FORK) {
             forkAndEval(state);
             vmnext;
@@ -2169,6 +2162,9 @@ static bool handleException(DSState &state, bool forceUnwind) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
                 if(occurredPC >= entry.begin && occurredPC < entry.end
                    && entry.type->isSameOrBaseTypeOf(*occurredType)) {
+                    if(*entry.type == state.pool.getRoot()) {
+                        return false;
+                    }
                     state.pc() = entry.dest - 1;
                     clearOperandStack(state);
                     reclaimLocals(state, entry.localOffset, entry.localSize);
