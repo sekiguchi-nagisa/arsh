@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Nagisa Sekiguchi
+ * Copyright (C) 2015-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -523,7 +523,9 @@ TypePool::TypePool() :
         arrayTemplate(), mapTemplate(), tupleTemplate() {
 
     // initialize type
-    this->initBuiltinType(Any, "Any", true, info_AnyType());
+    this->initBuiltinType(Root__, "pseudo top%%", false, info_Dummy()); // pseudo base type
+
+    this->initBuiltinType(Any, "Any", true, this->getRoot(), info_AnyType());
     this->initBuiltinType(Void, "Void", false, info_Dummy());
     this->initBuiltinType(Nothing, "Nothing", false, info_Dummy());
     this->initBuiltinType(Variant, "Variant", false, this->getAnyType(), info_Dummy());
@@ -595,7 +597,7 @@ TypePool::TypePool() :
     this->registerDBusErrorTypes();
 
     // init internal status type
-    this->initBuiltinType(InternalStatus__, "internal status%%", false, info_Dummy());
+    this->initBuiltinType(InternalStatus__, "internal status%%", false, this->getRoot(), info_Dummy());
     this->initBuiltinType(ShellExit__, "Shell Exit", false, this->getInternalStatus(), info_Dummy());
     this->initBuiltinType(AssertFail__, "Assertion Error", false, this->getInternalStatus(), info_Dummy());
 

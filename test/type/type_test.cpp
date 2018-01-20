@@ -221,11 +221,12 @@ TEST_F(TypeTest, builtinName) {
 }
 
 TEST_F(TypeTest, superType) {
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getAnyType().getSuperType() == nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getAnyType().getSuperType() != nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getVoidType().getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getNothingType().getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->toType<Option_t<String_t>>().getSuperType() == nullptr));
 
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getAnyType(), this->pool.getRoot()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getVariantType(), this->pool.getAnyType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getValueType(), this->pool.getVariantType()));
 

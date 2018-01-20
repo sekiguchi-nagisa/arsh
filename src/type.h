@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Nagisa Sekiguchi
+ * Copyright (C) 2015-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -509,6 +509,7 @@ private:
 class TypePool {
 public:
     enum DS_TYPE : unsigned int {
+        Root__, // pseudo top type of all throwable type(except for option types)
         Any,
         Void,
         Nothing,
@@ -756,6 +757,10 @@ public:
     }
 
     // for internal status reporting
+    DSType &getRoot() const {
+        return *this->typeTable[Root__];
+    }
+
     DSType &getInternalStatus() const {
         return *this->typeTable[InternalStatus__];
     }
