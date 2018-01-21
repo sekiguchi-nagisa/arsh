@@ -225,6 +225,12 @@ TEST_F(DirectiveTest, errorKind) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("Error", this->getDirective().getErrorKind().c_str()));
 }
 
+TEST_F(DirectiveTest, out) {
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($out = $'hello\\nworld', $err = '12345')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello\nworld", this->getDirective().getOut()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("12345", this->getDirective().getErr()));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

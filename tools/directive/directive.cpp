@@ -154,6 +154,14 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         d.setErrorKind(this->checkedCast<StringNode>(node).getValue());
     });
 
+    this->addHandler("out", this->typePool.getStringType(), [&](Node &node, Directive &d) {
+        d.setOut(this->checkedCast<StringNode>(node).getValue());
+    });
+
+    this->addHandler("err", this->typePool.getStringType(), [&](Node &node, Directive &d) {
+        d.setErr(this->checkedCast<StringNode>(node).getValue());
+    });
+
     std::unordered_set<std::string> foundAttrSet;
     for(auto &attrNode : node.getArgNodes()) {
         auto &assignNode = this->checkedCast<AssignNode>(*attrNode);
@@ -266,6 +274,11 @@ void DirectiveInitializer::setVarName(const char *name, DSType &type) {
 // #######################
 // ##     Directive     ##
 // #######################
+
+Directive::~Directive() {
+    free(this->out);
+    free(this->err);
+}
 
 static void showError(const char *sourceName, Lexer &lexer, const std::string &line,
                       Token errorToken, const std::string &message, const char *errorName) {

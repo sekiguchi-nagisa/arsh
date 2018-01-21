@@ -83,9 +83,17 @@ public:
         builder.addArg(scriptName);
         builder.addArgs(d.getParams());
 
+        // set IO config
+        if(d.getOut()) {
+            builder.setOut(IOConfig::PIPE);
+        }
+        if(d.getErr()) {
+            builder.setErr(IOConfig::PIPE);
+        }
+
         // execute
-        auto pair = inspectStatus(builder.exec());
-        int ret = toShellExitStatus(pair.first, pair.second);
+        auto output = builder().waitAndGetResult(false);
+        int ret = toShellExitStatus(output.status, output.waitType);
 
         // get internal status
         std::ifstream input(this->getTmpFileName());
@@ -107,6 +115,12 @@ public:
         ASSERT_EQ(d.getLineNum(), lineNum);
         ASSERT_EQ(d.getStatus(), static_cast<unsigned int>(ret));
         ASSERT_EQ(d.getErrorKind(), name);
+        if(d.getOut()) {
+            ASSERT_STREQ(d.getOut(), output.out.c_str());
+        }
+        if(d.getErr()) {
+            ASSERT_STREQ(d.getErr(), output.err.c_str());
+        }
     }
 };
 

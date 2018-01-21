@@ -20,6 +20,7 @@
 #include <vector>
 #include <iostream>
 #include <memory>
+#include <cstring>
 
 #include <ydsh/ydsh.h>
 
@@ -59,10 +60,20 @@ private:
      */
     std::string errorKind;
 
+    /**
+     * indicate stdout value
+     */
+    char *out{nullptr};
+
+    /**
+     * indicate stderr value
+     */
+    char *err{nullptr};
+
 public:
     Directive() : result(DS_ERROR_KIND_SUCCESS) {}
 
-    ~Directive() = default;
+    ~Directive();
 
     unsigned int getResult() const {
         return this->result;
@@ -114,6 +125,22 @@ public:
 
     const std::string &getErrorKind() const {
         return this->errorKind;
+    }
+
+    void setOut(const std::string &str) {
+        this->out = strdup(str.c_str());
+    }
+
+    const char *getOut() const {
+        return this->out;
+    }
+
+    void setErr(const std::string &str) {
+        this->err = strdup(str.c_str());
+    }
+
+    const char *getErr() const {
+        return this->err;
     }
 
     static bool init(const char *fileName, Directive &d);
