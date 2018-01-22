@@ -248,19 +248,20 @@ static DSError handleRuntimeError(DSState *state) {
 
 static int evalCodeImpl(DSState *state, CompiledCode &code, DSError *dsError) {
     bool s = vmEval(*state, code);
+    bool root = state->isRootShell();
     if(!s) {
         auto ret = handleRuntimeError(state);
         if(dsError != nullptr) {
             *dsError = ret;
         }
-        if(ret.kind == DS_ERROR_KIND_RUNTIME_ERROR && state->isRootShell()) {
+        if(ret.kind == DS_ERROR_KIND_RUNTIME_ERROR && root) {
             state->recover(false);
         }
         if(ret.kind != DS_ERROR_KIND_EXIT) {
             return 1;
         }
     }
-    if(s && !hasFlag(state->option, DS_OPTION_INTERACTIVE)) {
+    if(s && (!hasFlag(state->option, DS_OPTION_INTERACTIVE) || !root)) {
         invokeTerminationHook(*state, DS_ERROR_KIND_EXIT, DSValue());
     }
     return state->getExitStatus();

@@ -1,0 +1,19 @@
+
+#$test($result = 'EXIT', $status = 100, $lineNum = 12, $out = $'receive error: 0: 100\n')
+
+function f($s : Int, $a : Any) {
+    %'term'.kill($$)
+    echo receive error: $s: $a
+}
+
+$TERM_HOOK = $f
+
+function ss($s : Signal) {
+    exit 100
+}
+
+$SIG[%'TERM'] = $ss
+
+%'term'.kill($$)
+
+exit 5
