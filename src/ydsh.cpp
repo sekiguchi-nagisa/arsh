@@ -168,6 +168,35 @@ static DSError handleTypeError(const Lexer &lexer, const TypeCheckError &e) {
     return handleError(lexer, DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage());
 }
 
+static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&except) {
+    DSValue funcObj = state.getGlobal(getTermHookIndex(state));
+    if(funcObj.kind() == DSValueKind::INVALID) {
+        return;
+    }
+
+    int termKind = TERM_ON_EXIT;
+    if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
+        termKind = TERM_ON_ERR;
+    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR) {
+        termKind = TERM_ON_ASSERT;
+    }
+
+    auto oldExitStatus = state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS));
+    std::vector<DSValue> args = { DSValue::create<Int_Object>(state.pool.getInt32Type(), termKind) };
+    if(termKind == TERM_ON_ERR) {
+        args.push_back(std::move(except));
+    } else {
+        args.push_back(oldExitStatus);
+    }
+
+    setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+    callFunction(state, std::move(funcObj), std::move(args));
+
+    // restore old value
+    state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(oldExitStatus));
+    unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+}
+
 /**
  * if called from child process, exit(1).
  * @param state
@@ -196,7 +225,7 @@ static DSError handleRuntimeError(DSState *state) {
         const bool bt = state->pool.getErrorType().isSameOrBaseTypeOf(errorType);
         auto *handle = errorType.lookupMethodHandle(state->pool, bt ? "backtrace" : OP_STR);
 
-        DSValue ret = callMethod(*state, handle, std::move(thrownObj), std::vector<DSValue>());
+        DSValue ret = callMethod(*state, handle, DSValue(thrownObj), std::vector<DSValue>());
         if(state->getThrownObject()) {
             fputs("cannot obtain string representation\n", stderr);
         } else if(!bt) {
@@ -207,6 +236,9 @@ static DSError handleRuntimeError(DSState *state) {
     }
     fflush(stderr);
 
+    // invoke termination hook.
+    invokeTerminationHook(*state, kind, std::move(thrownObj));
+
     return {
             .kind = kind,
             .lineNum = errorLineNum,
@@ -215,7 +247,8 @@ static DSError handleRuntimeError(DSState *state) {
 }
 
 static int evalCodeImpl(DSState *state, CompiledCode &code, DSError *dsError) {
-    if(!vmEval(*state, code)) {
+    bool s = vmEval(*state, code);
+    if(!s) {
         auto ret = handleRuntimeError(state);
         if(dsError != nullptr) {
             *dsError = ret;
@@ -226,6 +259,9 @@ static int evalCodeImpl(DSState *state, CompiledCode &code, DSError *dsError) {
         if(ret.kind != DS_ERROR_KIND_EXIT) {
             return 1;
         }
+    }
+    if(s && !hasFlag(state->option, DS_OPTION_INTERACTIVE)) {
+        invokeTerminationHook(*state, DS_ERROR_KIND_EXIT, DSValue());
     }
     return state->getExitStatus();
 }

@@ -189,6 +189,16 @@ const DSValue &getGlobal(const DSState &st, unsigned int index);
 
 const DSValue &getGlobal(const DSState &st, const char *varName);
 
+/**
+ *
+ * @param st
+ * @return
+ * offset + 0 EXIT_HOOK
+ * offset + 1 ERR_HOOK
+ * offset + 2 ASSERT_HOOK
+ */
+unsigned int getTermHookIndex(DSState &st);
+
 [[noreturn]]
 void throwError(DSState &st, DSType &errorType, std::string &&message);
 

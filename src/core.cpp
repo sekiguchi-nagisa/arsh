@@ -245,6 +245,15 @@ const DSValue &getGlobal(const DSState &st, const char *varName) {
     return st.getGlobal(handle->getFieldIndex());
 }
 
+unsigned int getTermHookIndex(DSState &st) {
+    if(st.termHookIndex == 0) {
+        auto *handle = st.symbolTable.lookupHandle(VAR_TERM_HOOK);
+        assert(handle != nullptr);
+        st.termHookIndex = handle->getFieldIndex();
+    }
+    return st.termHookIndex;
+}
+
 void throwError(DSState &st, DSType &errorType, std::string &&message) {
     st.throwException(st.newError(errorType, std::move(message)));
 }

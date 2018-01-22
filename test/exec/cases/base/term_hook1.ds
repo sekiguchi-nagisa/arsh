@@ -1,0 +1,11 @@
+
+#$test($result = 'EXIT', $status = 5, $lineNum = 11, $out = $'receive error: 0: 5\n')
+
+function f($s : Int, $a : Any) {
+    echo receive error: $s: $a
+    exit 100    # disallow nested exit
+}
+
+$TERM_HOOK = $f
+
+exit 5

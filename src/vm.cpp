@@ -2356,3 +2356,23 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
     }
     return ret;
 }
+
+DSValue callFunction(DSState &state, DSValue &&funcObj, std::vector<DSValue> &&args) {
+    state.resetState();
+
+    // push arguments
+    auto *type = funcObj->getType();
+    state.push(std::move(funcObj));
+    for(auto &arg : args) {
+        state.push(std::move(arg));
+    }
+
+    applyFuncObject(state, args.size());
+    bool s = runMainLoop(state);
+    DSValue ret;
+    assert(type->isFuncType());
+    if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType() && s) {
+        ret = state.pop();
+    }
+    return ret;
+}

@@ -181,6 +181,8 @@ struct DSState {
 
     decltype(std::chrono::system_clock::now()) baseTime;
 
+    unsigned int termHookIndex{0};
+
     DSHistory history;
 
     SignalVector sigVector;
@@ -457,5 +459,15 @@ int execBuiltinCommand(DSState &st, char *const argv[]);
  * return value of method (if no return value, return null).
  */
 DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args);
+
+/**
+ *
+ * @param state
+ * @param funcObj
+ * @param args
+ * @return
+ * return value of method (if no return value, return null).
+ */
+DSValue callFunction(DSState &state, DSValue &&funcObj, std::vector<DSValue> &&args);
 
 #endif //YDSH_VM_H

@@ -1,0 +1,16 @@
+
+#$test($result = 'assert', $status = 1, $lineNum = 16, $out = $'receive error: 2: 1\n')
+
+function f($s : Int, $a : Any) {
+    %'term'.kill($$)    # disallow signal handler in termination hook
+    echo receive error: $s: $a
+}
+
+function g($s : Signal) {
+    echo receive signal
+}
+
+$TERM_HOOK = $f
+$SIG[%'TERM'] = $g
+
+assert false

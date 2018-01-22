@@ -1,0 +1,11 @@
+
+#$test($result = 'ASSERT', $status = 1, $lineNum = 11, $out = $'receive error: 2: 1\n')
+
+function f($s : Int, $a : Any) {
+    echo receive error: $s: $a
+    assert false    # disallow nested exit
+}
+
+$TERM_HOOK = $f
+
+assert false

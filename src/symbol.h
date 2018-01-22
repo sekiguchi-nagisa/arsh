@@ -47,6 +47,8 @@ constexpr const char *VAR_SCRIPT_DIR = "SCRIPT_DIR";
 constexpr const char *VAR_SIG_DFL = "SIG_DFL";
 constexpr const char *VAR_SIG_IGN = "SIG_IGN";
 
+constexpr const char *VAR_TERM_HOOK = "TERM_HOOK";
+
 // =====  magic method  =====
 
 // unary op definition
@@ -127,6 +129,12 @@ constexpr const char *TYPE_FUNC = "Func";
 constexpr unsigned int UDC_PARAM_ATTR  = 0;
 constexpr unsigned int UDC_PARAM_REDIR = 1;
 constexpr unsigned int UDC_PARAM_ARGV  = 2;
+
+// =====  termination kind  =====
+
+constexpr unsigned int TERM_ON_EXIT   = 0;
+constexpr unsigned int TERM_ON_ERR    = 1;
+constexpr unsigned int TERM_ON_ASSERT = 2;
 
 
 } // namespace ydsh

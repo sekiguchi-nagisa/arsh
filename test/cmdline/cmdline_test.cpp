@@ -202,10 +202,10 @@ Source File: (string)
 DSCode: top level
   code size: 22
   number of local variable: 0
-  number of global variable: 47
+  number of global variable: 51
 Code:
    8: LOAD_CONST  0
-  10: STORE_GLOBAL  46
+  10: STORE_GLOBAL  50
   13: LOAD_CONST  1
   15: CALL_METHOD  0  0
   20: POP
@@ -224,11 +224,11 @@ Source File: (string)
 DSCode: top level
   code size: 35
   number of local variable: 0
-  number of global variable: 47
+  number of global variable: 51
 Code:
    8: LOAD_CONST  0
-  10: STORE_GLOBAL  46
-  13: LOAD_GLOBAL  46
+  10: STORE_GLOBAL  50
+  13: LOAD_GLOBAL  50
   16: LOAD_CONST  1
   18: CALL_FUNC  1
   21: ENTER_FINALLY  8
@@ -782,6 +782,45 @@ TEST_F(CmdlineTest, read) {
      * timeout
      */
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("read -t 1"), 1));
+}
+
+TEST_F(CmdlineTest, termHook) {
+    const char *src = R"(
+        function f($k : Int, $a : Any) {
+            echo receive error: $k: $a
+        }
+        $TERM_HOOK = $f
+
+        exit 45
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 45, "receive error: 0: 45\n"));
+
+    src = R"(
+        function f($k : Int, $a : Any) {
+            echo receive error: $k: $a
+        }
+        $TERM_HOOK = $f
+
+        45 / 0
+)";
+    const char *e = R"([runtime error]
+ArithmeticError: zero division
+    from (string):7 '<toplevel>()'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 1: ArithmeticError: zero division\n", e));
+
+    src = R"(
+        function f($k : Int, $a : Any) {
+            echo receive error: $k: $a
+        }
+        $TERM_HOOK = $f
+
+        assert false
+)";
+    e = R"(Assertion Error: `false'
+    from (string):7 '<toplevel>()'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 2: 1\n", e));
 }
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {

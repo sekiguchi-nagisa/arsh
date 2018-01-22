@@ -35,6 +35,13 @@ $SIG_IGN
 $SIG[%'hup'] = $SIG_DFL
 
 
+# termination hook definition
+var TERM_HOOK = new Func<Void, [Int, Any]>!()
+let ON_EXIT = 0
+let ON_ERR = 1
+let ON_ASSERT = 2
+
+
 # builtin D-Bus interface
 
 interface org.freedesktop.DBus.Peer {
