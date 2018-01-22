@@ -242,7 +242,7 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
     }
     int ret = evalCodeImpl(state, code, dsError);
     if(!state->isRootShell()) {
-        _exit(ret);
+        exit(ret);
     }
     return ret;
 }
