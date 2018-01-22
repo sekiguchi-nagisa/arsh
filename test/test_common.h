@@ -55,31 +55,37 @@ private:
     void freeName();
 };
 
-enum class WaitType : unsigned char {
-    EXITED,
-    SIGNALED,
-    STOPPED,
+struct WaitStatus {
+    enum Kind : unsigned char {
+        ERROR,  // if error happened
+        EXITED,
+        SIGNALED,
+        STOPPED,
+    };
+
+    Kind kind;
+
+    int value;
+
+    int toShellStatus() const {
+        int status = this->value;
+        if(this->kind != EXITED) {
+            status += 128;
+        }
+        return status;
+    }
+
+    explicit operator bool() const {
+        return this->kind != ERROR;
+    }
+
+    bool isTerminated() const {
+        return this->kind == EXITED || this->kind == SIGNALED;
+    }
 };
 
-std::pair<int, WaitType> inspectStatus(int status);
-
-/**
- * convert to shell style exit status
- * @param status
- * 0~255
- * @param type
- * @return
- */
-inline int toShellExitStatus(int status, WaitType type) {
-    if(type != WaitType::EXITED) {
-        status += 128;
-    }
-    return status;
-}
-
 struct Output {
-    int status;
-    WaitType waitType;
+    WaitStatus status;
     std::string out;
     std::string err;
 };
@@ -91,7 +97,7 @@ private:
      */
     pid_t pid_;
 
-    int status_{0};
+    WaitStatus status_{WaitStatus::EXITED, 0};
 
     /**
      * after call wait, will be -1
@@ -162,9 +168,8 @@ public:
     /**
      * wait process termination
      * @return
-     * raw exit status
      */
-    int wait();
+    WaitStatus wait();
 
     std::pair<std::string, std::string> readAll() const;
 
@@ -273,12 +278,7 @@ public:
         return (*this)().waitAndGetResult(removeLastSpace);
     }
 
-    /**
-     *
-     * @return
-     * raw exit status
-     */
-    int exec() {
+    WaitStatus exec() {
         return (*this)().wait();
     }
 

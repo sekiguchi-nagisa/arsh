@@ -74,9 +74,9 @@ public:
                 BIN_PATH,
                 INTERACTIVE_TEST_WORK_DIR
         };
-        auto pair = inspectStatus(builder.exec());
-        ASSERT_EQ(WaitType::EXITED, pair.second);
-        ASSERT_EQ(extractStatus(this->targetName, 0), pair.first);
+        auto pair = builder.exec();
+        ASSERT_EQ(WaitStatus::EXITED, pair.kind);
+        ASSERT_EQ(extractStatus(this->targetName, 0), pair.value);
     }
 };
 

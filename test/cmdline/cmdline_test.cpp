@@ -53,7 +53,7 @@ public:
 
         auto result = builder.execAndGetResult(false);
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status.value));
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
     }
@@ -66,7 +66,7 @@ public:
 
         auto result = builder.execAndGetResult(false);
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status.value));
 
         ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(result.out, ::testing::MatchesRegex(out)));
         ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(result.err, ::testing::MatchesRegex(err)));
@@ -88,7 +88,7 @@ public:
         close(handle.in());
         auto result = handle.waitAndGetResult(false);
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status.value));
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
     }
@@ -354,7 +354,7 @@ var a
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a   \n    \\\n   \t  \t  \n   "), 1, "", msg));
 
     auto result = ds("-c", "\n);").execAndGetResult(false);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(");\n^\n", strchr(result.err.c_str(), '\n') + 1));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
 
@@ -504,7 +504,7 @@ TEST_F(CmdlineTest, toplevel_escape) {
     auto builder = ds("--print-toplevel", "-c", "$'hello\\x00world'");
     auto r = builder.execAndGetResult(false);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r.status.value));
 
     const char msg[] = "(String) hello\0world\n";
     std::string out(msg, arraySize(msg) - 1);

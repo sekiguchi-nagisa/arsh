@@ -93,7 +93,7 @@ public:
 
         // execute
         auto output = builder().waitAndGetResult(false);
-        int ret = toShellExitStatus(output.status, output.waitType);
+        int ret = output.status.toShellStatus();
 
         // get internal status
         std::ifstream input(this->getTmpFileName());

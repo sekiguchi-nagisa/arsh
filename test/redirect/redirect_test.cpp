@@ -42,7 +42,7 @@ public:
 
         auto result = builder.execAndGetResult(false);
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status.value));
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
     }
@@ -83,10 +83,9 @@ TEST_F(RedirectTest, STDIN) {
     ProcBuilder builder = {
             "sh", "-c", format("echo hello world > %s", this->getTargetName()).c_str(),
     };
-    auto pair = inspectStatus(builder.exec());
-    int s = pair.first;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitType::EXITED, pair.second));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(s, 0));
+    auto pair = builder.exec();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, pair.kind));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, pair.value));
 
     // builtin
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("__gets < %s", this->getTargetName()), 0, "hello world\n"));

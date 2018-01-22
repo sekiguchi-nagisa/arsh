@@ -83,8 +83,8 @@ public:
         c += "exit $?";
 
         auto result = this->evalInChild(c);
-        ASSERT_EQ(WaitType::EXITED, result.waitType);
-        ASSERT_EQ(0, result.status);
+        ASSERT_EQ(WaitStatus::EXITED, result.status.kind);
+        ASSERT_EQ(0, result.status.value);
     }
 
 private:

@@ -115,41 +115,48 @@ void TempFileFactory::freeName() {
     this->tmpDirName = nullptr;
 }
 
-std::pair<int, WaitType> inspectStatus(int status) {
+static WaitStatus inspectStatus(int status) {
     int s;
-    WaitType type;
+    WaitStatus::Kind type;
     if(WIFEXITED(status)) {
         s = WEXITSTATUS(status);
-        type = WaitType::EXITED;
+        type = WaitStatus::EXITED;
     } else if(WIFSIGNALED(status)) {
         s = WTERMSIG(status);
-        type = WaitType::SIGNALED;
+        type = WaitStatus::SIGNALED;
     } else if(WIFSTOPPED(status)) {
         s = WSTOPSIG(status);
-        type = WaitType::STOPPED;
+        type = WaitStatus::STOPPED;
     } else {
         fatal("unsupported status\n");
     }
-    return {s, type};
+    return {.kind = type, .value = s};
 }
 
 // ########################
 // ##     ProcHandle     ##
 // ########################
 
-int ProcHandle::wait() {
+WaitStatus ProcHandle::wait() {
     if(this->pid() > -1) {
-        close(this->in());
-        close(this->out());
-        close(this->err());
-
         // wait for exit
-        waitpid(this->pid(), &this->status_, 0);
+        int s;
+        if(waitpid(this->pid(), &s, 0) < 0) {
+            this->status_ = {.kind = WaitStatus::ERROR, .value = errno};
+        } else {
+            this->status_ = inspectStatus(s);
+        }
 
-        this->pid_ = -1;
-        this->in_ = -1;
-        this->out_ = -1;
-        this->err_ = -1;
+        if(this->status_.isTerminated()) {
+            close(this->in());
+            close(this->out());
+            close(this->err());
+
+            this->pid_ = -1;
+            this->in_ = -1;
+            this->out_ = -1;
+            this->err_ = -1;
+        }
     }
     return this->status_;
 }
@@ -217,16 +224,14 @@ static void trimLastSpace(std::string &str) {
 
 Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
     auto output = this->readAll();
-    int status = this->wait();
-    auto pair = inspectStatus(status);
+    auto status = this->wait();
 
     if(removeLastSpace) {
         trimLastSpace(output.first);
         trimLastSpace(output.second);
     }
 
-    return {.status = pair.first,
-            .waitType = pair.second,
+    return {.status = status,
             .out = std::move(output.first),
             .err = std::move(output.second)};
 }

@@ -225,7 +225,7 @@ TEST(API, case7) {
     // normal
     auto result = EXEC("%s --first | %s | %s", PID_CHECK_PATH, PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     auto pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, pids.size()));
 
@@ -240,7 +240,7 @@ TEST(API, case7) {
     // command, eval
     result = EXEC("command eval %s --first | eval command %s", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -252,7 +252,7 @@ TEST(API, case7) {
     // udc1
     result = EXEC("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -264,7 +264,7 @@ TEST(API, case7) {
     // udc2
     result = EXEC("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -281,7 +281,7 @@ TEST(API, case8) {
     // normal
     auto result = EXEC2("%s --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     auto pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -293,7 +293,7 @@ TEST(API, case8) {
     // udc1
     result = EXEC2("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -305,7 +305,7 @@ TEST(API, case8) {
     // udc2
     result = EXEC2("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -323,17 +323,17 @@ TEST(API, jobctrl1) {
 
     // invalid
     auto result = EXEC("fg");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: current: no such job", result.err));
 
     result = EXEC("fg %hoge");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %hoge: no such job", result.err));
 
     result = EXEC("fg %1");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %1: no such job", result.err));
 
@@ -344,7 +344,7 @@ TEST(API, jobctrl1) {
         fg %1
 )";
     result = EXEC(str);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %1: no such job", result.err));
 
@@ -354,7 +354,7 @@ TEST(API, jobctrl1) {
         fg
 )";
     result = EXEC(str);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(18, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(18, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
 }
@@ -364,12 +364,12 @@ TEST(API, jobctrl2) {
 
     // invalid
     auto result = EXEC("bg");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: current: no such job", result.err));
 
     result = EXEC("bg hoge %1");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: hoge: no such job\nydsh: bg: %1: no such job", result.err));
 
@@ -384,7 +384,7 @@ TEST(API, jobctrl2) {
         true
 )";
     result = EXEC(str);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
 
@@ -399,7 +399,7 @@ TEST(API, jobctrl2) {
         true
 )";
     result = EXEC(str);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: %2: no such job", result.err));
 }
