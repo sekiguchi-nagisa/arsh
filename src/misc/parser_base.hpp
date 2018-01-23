@@ -106,6 +106,10 @@ public:
         return this->tracker;
     }
 
+    const LexerImpl *getLexer() const {
+        return this->lexer;
+    }
+
     bool hasError() const {
         return static_cast<bool>(this->error);
     }

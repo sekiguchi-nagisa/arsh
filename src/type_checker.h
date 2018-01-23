@@ -229,14 +229,7 @@ public:
 
     ~TypeChecker() = default;
 
-    /**
-     * type checker entry point
-     */
-    void checkTypeRootNode(RootNode &rootNode) {
-        this->visitRootNode(rootNode);
-    }
-
-    const DSType *operator()(const DSType *prevType, Node *&node);
+    DSType *operator()(const DSType *prevType, Node *&node);
 
     void reset() {
         this->symbolTable.commit();
@@ -439,7 +432,6 @@ protected:
     void visitInterfaceNode(InterfaceNode &node) override;
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
     void visitEmptyNode(EmptyNode &node) override;
-    void visitRootNode(RootNode &node) override;
 };
 
 } // namespace ydsh

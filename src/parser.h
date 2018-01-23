@@ -98,11 +98,9 @@ public:
 
     ~Parser() = default;
 
-    /**
-     * parse entry point.
-     * write parsed nodes to rootNode.
-     */
-    std::unique_ptr<RootNode> operator()();
+    std::unique_ptr<Node> operator()() {
+        return this->parse_statement();
+    }
 
     operator bool() const {
         return this->curKind != EOS;
@@ -224,7 +222,7 @@ protected:
 };
 
 // for DBus interface loading
-std::unique_ptr<RootNode> parse(const char *sourceName);
+std::unique_ptr<Node> parse(const char *sourceName);
 
 } // namespace ydsh
 

@@ -1148,27 +1148,6 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
 void EmptyNode::dump(NodeDumper &) const {
 } // do nothing
 
-// ######################
-// ##     RootNode     ##
-// ######################
-
-RootNode::~RootNode() {
-    for(Node *n : this->nodes) {
-        delete n;
-    }
-}
-
-void RootNode::addNode(Node *node) {
-    this->nodes.push_back(node);
-}
-
-void RootNode::dump(NodeDumper &dumper) const {
-    DUMP(nodes);
-    dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
-    DUMP_PRIM(maxVarNum);
-    DUMP_PRIM(maxGVarNum);
-}
-
 // for node creation
 
 const char *resolveUnaryOpName(TokenKind op) {
@@ -1457,11 +1436,11 @@ void NodeDumper::writeName(const char *fieldName) {
     this->indent(); fprintf(this->fp, "%s: ", fieldName);
 }
 
-void NodeDumper::operator()(const RootNode &rootNode) {
+void NodeDumper::operator()(const Node &rootNode) {
     this->dump(rootNode);
 }
 
-void NodeDumper::dump(FILE *fp, TypePool &pool, const RootNode &rootNode) {
+void NodeDumper::dump(FILE *fp, TypePool &pool, const Node &rootNode) {
     NodeDumper writer(fp, pool);
     writer(rootNode);
     fflush(fp);

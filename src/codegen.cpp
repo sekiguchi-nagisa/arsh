@@ -1080,14 +1080,6 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
-void ByteCodeGenerator::visitRootNode(RootNode &rootNode) {
-    for(auto &node : rootNode.refNodes()) {
-        this->visit(*node);
-    }
-
-    this->emit0byteIns(OpCode::HALT);
-}
-
 void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
     // push new builder
     auto *builder = new CodeBuilder();

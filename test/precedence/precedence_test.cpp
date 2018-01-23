@@ -50,8 +50,8 @@ public:
     PrettyPrinter() = default;
     ~PrettyPrinter() = default;
 
-    std::vector<std::string> operator()(RootNode &rootNode) {
-        this->visitRootNode(rootNode);
+    std::vector<std::string> operator()(Node &node) {
+        node.accept(*this);
         return std::move(this->out);
     }
 
@@ -159,14 +159,6 @@ public:
         this->visit(*node.getExprNode());
         this->append("&");
         this->close();
-    }
-
-    void visitRootNode(RootNode &node) override {
-        if(node.getNodes().size() != 1) {
-            fatal("must be 1\n");
-        }
-
-        this->visit(*node.getNodes().front());
     }
 };
 

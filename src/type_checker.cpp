@@ -1316,7 +1316,7 @@ void TypeChecker::visitEmptyNode(EmptyNode &node) {
     node.setType(this->typePool.getVoidType());
 }
 
-const DSType* TypeChecker::operator()(const DSType *prevType, Node *&node) {
+DSType* TypeChecker::operator()(const DSType *prevType, Node *&node) {
     if(prevType != nullptr && prevType->isNothingType()) {
         RAISE_TC_ERROR(Unreachable, *node);
     }
@@ -1337,19 +1337,6 @@ const DSType* TypeChecker::operator()(const DSType *prevType, Node *&node) {
     }
 
     return &node->getType();
-}
-
-void TypeChecker::visitRootNode(RootNode &node) {
-    this->reset();
-
-    const DSType *prevType = nullptr;
-    for(auto &targetNode : node.refNodes()) {
-        prevType = (*this)(prevType, targetNode);
-    }
-
-    node.setMaxVarNum(this->symbolTable.getMaxVarIndex());
-    node.setMaxGVarNum(this->symbolTable.getMaxGVarIndex());
-    node.setType(this->typePool.getVoidType());
 }
 
 } // namespace ydsh

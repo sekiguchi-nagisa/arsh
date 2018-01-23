@@ -28,12 +28,10 @@
 #include <config.h>
 #include <embed.h>
 
-#include "lexer.h"
-#include "parser.h"
-#include "type_checker.h"
 #include "vm.h"
 #include "symbol.h"
 #include "logger.h"
+#include "frontend.h"
 #include "codegen.h"
 #include "misc/num.h"
 
@@ -60,112 +58,6 @@ static unsigned int getShellLevel() {
 static unsigned int originalShellLevel() {
     static unsigned int level = getShellLevel();
     return level;
-}
-
-/**
- * not allow dumb terminal
- */
-static bool isSupportedTerminal(int fd) {
-    const char *term = getenv(ENV_TERM);
-    return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
-}
-
-#define EACH_TERM_COLOR(C) \
-    C(Reset,    0) \
-    C(Bold,     1) \
-    /*C(Black,   30)*/ \
-    /*C(Red,     31)*/ \
-    C(Green,   32) \
-    /*C(Yellow,  33)*/ \
-    /*C(Blue,    34)*/ \
-    C(Magenta, 35) \
-    C(Cyan,    36) /*\
-    C(white,   37)*/
-
-enum class TermColor : unsigned int {   // ansi color code
-#define GEN_ENUM(E, N) E,
-    EACH_TERM_COLOR(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-static const char *color(TermColor color, bool isatty) {
-    if(isatty) {
-#define GEN_STR(E, C) "\033[" #C "m",
-        const char *ansi[] = {
-                EACH_TERM_COLOR(GEN_STR)
-        };
-#undef GEN_STR
-        return ansi[static_cast<unsigned int>(color)];
-    }
-    return "";
-}
-
-static std::vector<std::string> split(const std::string &str) {
-    std::vector<std::string> bufs;
-    bufs.emplace_back();
-    for(auto ch : str) {
-        if(ch == '\n') {
-            bufs.emplace_back();
-        } else {
-            bufs.back() += ch;
-        }
-    }
-    return bufs;
-}
-
-static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
-    errorToken = lexer.shiftEOS(errorToken);
-    Token lineToken = lexer.getLineToken(errorToken);
-    auto line = lexer.toTokenText(lineToken);
-    auto marker = lexer.formatLineMarker(lineToken, errorToken);
-
-    auto lines = split(line);
-    auto markers = split(marker);
-    unsigned int size = lines.size();
-    assert(size == markers.size());
-    for(unsigned int i = 0; i < size; i++) {
-        // print error line
-        fprintf(stderr, "%s%s%s\n", color(TermColor::Cyan, isatty),
-                lines[i].c_str(), color(TermColor::Reset, isatty));
-
-        // print line marker
-        fprintf(stderr, "%s%s%s%s\n", color(TermColor::Green, isatty), color(TermColor::Bold, isatty),
-                markers[i].c_str(), color(TermColor::Reset, isatty));
-    }
-
-    fflush(stderr);
-}
-
-static DSError handleError(const Lexer &lexer, DSErrorKind type, const char *errorKind,
-                           Token errorToken, const std::string &message) {
-    unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(errorToken.pos);
-    const bool isatty = isSupportedTerminal(STDERR_FILENO);
-
-    /**
-     * show error message
-     */
-    fprintf(stderr, "%s:%d:%s%s ",
-            lexer.getSourceInfoPtr()->getSourceName().c_str(), errorLineNum,
-            color(TermColor::Magenta, isatty), color(TermColor::Bold, isatty));
-    fprintf(stderr, "[%s error] %s%s\n",
-            type == DS_ERROR_KIND_PARSE_ERROR ? "syntax" : "semantic",
-            color(TermColor::Reset, isatty), message.c_str());
-    formatErrorLine(isatty, lexer, errorToken);
-
-    return {
-            .kind = type,
-            .lineNum = errorLineNum,
-            .name = errorKind
-    };
-}
-
-static DSError handleParseError(const Lexer &lexer, const ParseError &e) {
-    Token errorToken = lexer.shiftEOS(e.getErrorToken());
-    return handleError(lexer, DS_ERROR_KIND_PARSE_ERROR, e.getErrorKind(), errorToken, e.getMessage());
-}
-
-static DSError handleTypeError(const Lexer &lexer, const TypeCheckError &e) {
-    return handleError(lexer, DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage());
 }
 
 static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&except) {
@@ -290,59 +182,26 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     }
     lexer.setLineNum(state->lineNum);
 
-    // parse
-    Parser parser(lexer);
-    auto rootNode = parser();
-    state->lineNum = lexer.getLineNum();
-    if(parser.hasError()) {
-        auto e = handleParseError(lexer, parser.getError());
-        if(dsError != nullptr) {
-            *dsError = e;
-        }
-        return 1;
-    }
-
-    if(state->dumpTarget.fps[DS_DUMP_KIND_UAST] != nullptr) {
-        auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_UAST];
-        fputs("### dump untyped AST ###\n", fp);
-        NodeDumper::dump(fp, state->pool, *rootNode);
-    }
-
-    if(state->execMode == DS_EXEC_MODE_PARSE_ONLY) {
-        return 0;
-    }
-
-    // type check
-    try {
-        TypeChecker checker(state->pool, state->symbolTable, hasFlag(state->option, DS_OPTION_TOPLEVEL));
-        checker.checkTypeRootNode(*rootNode);
-
-        if(state->dumpTarget.fps[DS_DUMP_KIND_AST] != nullptr) {
-            auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_AST];
-            fputs("### dump typed AST ###\n", fp);
-            NodeDumper::dump(fp, state->pool, *rootNode);
-        }
-    } catch(const TypeCheckError &e) {
-        auto ret = handleTypeError(lexer, e);
-        if(dsError != nullptr) {
-            *dsError = ret;
-        }
-        state->recover();
-        return 1;
-    }
-
-    if(state->execMode == DS_EXEC_MODE_CHECK_ONLY) {
-        return 0;
-    }
-
-    // code generation
+    FrontEnd frontEnd(lexer, state->pool, state->symbolTable,
+                      state->execMode, hasFlag(state->option, DS_OPTION_TOPLEVEL));
     ByteCodeGenerator codegen(state->pool, hasFlag(state->option, DS_OPTION_ASSERT));
+
     codegen.initialize();
-    for(auto &node : rootNode->getNodes()) {
-        codegen.generate(node);
+    while(frontEnd) {
+        auto node = frontEnd(dsError);
+        state->lineNum = lexer.getLineNum();
+        if(node == nullptr) {
+            state->recover();
+            return 1;
+        }
+        if(!frontEnd.frontEndOnly()) {
+            codegen.generate(node.get());
+        }
     }
-    code = codegen.finalize(rootNode->getSourceInfoPtr(),
-                            state->symbolTable.getMaxVarIndex(), state->symbolTable.getMaxGVarIndex());
+    if(!frontEnd.frontEndOnly()) {
+        code = codegen.finalize(lexer.getSourceInfoPtr(),
+                                state->symbolTable.getMaxVarIndex(), state->symbolTable.getMaxGVarIndex());
+    }
     return 0;
 }
 

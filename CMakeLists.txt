@@ -268,6 +268,7 @@ set(YDSH_SRC
         src/lexer.cpp
         src/parser.cpp
         src/type_checker.cpp
+        src/frontend.cpp
         src/signals.cpp
         src/job.cpp)
 

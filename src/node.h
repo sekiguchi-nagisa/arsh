@@ -74,8 +74,7 @@ class NodeDumper;
     OP(Function) \
     OP(Interface) \
     OP(UserDefinedCmd) \
-    OP(Empty) \
-    OP(Root)
+    OP(Empty)
 
 enum class NodeKind : unsigned char {
 #define GEN_ENUM(T) T,
@@ -2039,54 +2038,6 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class RootNode : public CallableNode {
-private:
-    std::vector<Node *> nodes;
-
-    /**
-     * max number of local variable.
-     */
-    unsigned int maxVarNum{0};
-
-    /**
-     * max number of global variable.
-     */
-    unsigned int maxGVarNum{0};
-
-public:
-    RootNode() : CallableNode(NodeKind::Root) { }
-
-    ~RootNode() override;
-
-    void addNode(Node *node);
-
-    const std::vector<Node *> &getNodes() const {
-        return this->nodes;
-    }
-
-    std::vector<Node *> &refNodes() {
-        return this->nodes;
-    }
-
-    void setMaxVarNum(unsigned int maxVarNum) {
-        this->maxVarNum = maxVarNum;
-    }
-
-    unsigned int getMaxVarNum() const {
-        return this->maxVarNum;
-    }
-
-    void setMaxGVarNum(unsigned int maxGVarNum) {
-        this->maxGVarNum = maxGVarNum;
-    }
-
-    unsigned int getMaxGVarNum() const {
-        return this->maxGVarNum;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-};
-
 // helper function for node creation
 
 const char *resolveUnaryOpName(TokenKind op);
@@ -2168,7 +2119,6 @@ struct NodeVisitor {
     virtual void visitInterfaceNode(InterfaceNode &node) = 0;
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
     virtual void visitEmptyNode(EmptyNode &node) = 0;
-    virtual void visitRootNode(RootNode &node) = 0;
 };
 
 struct BaseVisitor : public NodeVisitor {
@@ -2213,7 +2163,6 @@ struct BaseVisitor : public NodeVisitor {
     void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
     void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
-    void visitRootNode(RootNode &node) override { this->visitDefault(node); }
 };
 
 class NodeDumper {
@@ -2271,9 +2220,9 @@ public:
     /**
      * entry point
      */
-    void operator()(const RootNode &rootNode);
+    void operator()(const Node &rootNode);
 
-    static void dump(FILE *fp, TypePool &pool, const RootNode &rootNode);
+    static void dump(FILE *fp, TypePool &pool, const Node &rootNode);
 
 private:
     void enterIndent() {

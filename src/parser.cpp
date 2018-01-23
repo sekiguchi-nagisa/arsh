@@ -178,19 +178,6 @@ void ArgsWrapper::addArgNode(std::unique_ptr<Node> &&node) {
 // ##     Parser     ##
 // ####################
 
-std::unique_ptr<RootNode> Parser::operator()() {
-    auto rootNode = make_unique<RootNode>();
-    rootNode->setSourceInfoPtr(this->lexer->getSourceInfoPtr());
-
-    // start parsing
-    while((*this)) {
-        auto node = TRY(this->parse_statement());
-        rootNode->addNode(node.release());
-    }
-//    assert(this->lexer->lexerModeSize() == 1);
-    return rootNode;
-}
-
 void Parser::refetch(LexerMode mode) {
     this->lexer->setPos(START_POS());
     this->lexer->setLexerMode(mode);
@@ -1409,7 +1396,7 @@ std::unique_ptr<Node> Parser::parse_substitution(bool strExpr) {
     return std::unique_ptr<Node>(ForkNode::newSubsitution(pos, exprNode.release(), token, strExpr));
 }
 
-std::unique_ptr<RootNode> parse(const char *sourceName) {
+std::unique_ptr<Node> parse(const char *sourceName) {
     FILE *fp = fopen(sourceName, "rb");
     if(fp == nullptr) {
         return nullptr;

@@ -1134,12 +1134,21 @@ static bool inCmdMode(const Node &node) {
         return inCmdMode(*static_cast<const VarDeclNode &>(node).getExprNode());
     case NodeKind::Assign:
         return inCmdMode(*static_cast<const AssignNode &>(node).getRightNode());
-    case NodeKind::Root:
-        return inCmdMode(*static_cast<const RootNode &>(node).getNodes().back());
     default:
         break;
     }
     return false;
+}
+
+static std::unique_ptr<Node> applyAndGetLatest(Parser &parser) {
+    std::unique_ptr<Node> node;
+    while(parser) {
+        node = parser();
+        if(parser.hasError()) {
+            break;
+        }
+    }
+    return node;
 }
 
 static CompletorKind selectCompletor(const std::string &line, std::string &tokenStr) {
@@ -1152,7 +1161,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
     TokenTracker tracker;
     Parser parser(lexer);
     parser.setTracker(&tracker);
-    auto rootNode = parser();
+    auto node = applyAndGetLatest(parser);
 
     if(!parser.hasError()) {
         const auto &tokenPairs = tracker.getTokenPairs();
@@ -1167,7 +1176,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                 tokenStr = lexer.toTokenText(token);
                 kind = CompletorKind::VAR;
                 goto END;
-            } else if(token.pos + token.size < cursor && inCmdMode(*rootNode)) {
+            } else if(token.pos + token.size < cursor && inCmdMode(*node)) {
                 kind = CompletorKind::FILE;
                 goto END;
             }
@@ -1178,7 +1187,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             goto END;
         }
         default:
-            if(inCmdMode(*rootNode)) {
+            if(inCmdMode(*node)) {
                 kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr);
                 goto END;
             }
