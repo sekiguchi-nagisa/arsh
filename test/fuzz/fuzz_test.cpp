@@ -26,8 +26,8 @@ public:
                 BIN_PATH,
                 this->targetName.c_str(),
         };
-        int status = builder.exec();
-        ASSERT_EQ(0, status);
+        auto status = builder.exec();
+        ASSERT_EQ(0, status.value);
     }
 };
 
