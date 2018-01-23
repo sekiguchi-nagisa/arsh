@@ -203,7 +203,7 @@ std::pair<std::string, std::string> ProcHandle::readAll() const {
                 if(readSize <= 0) {
                     breakCount++;
                 }
-            } else {
+            } else if(pollfds[i].fd >= 0) {
                 breakCount++;
             }
         }
