@@ -116,16 +116,16 @@ TEST_F(CmdlineTest, assert) {
 
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert 34 == 43"), 1, "", msg));
 }
-//
-//TEST_F(CmdlineTest, ast) {
-//    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
-//            ds("--dump-ast", "-c", "[12, 32] is Array<Int>"), 0, "^### dump typed AST ###.*$"));
-//}
-//
-//TEST_F(CmdlineTest, uast) {
-//    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
-//            ds("--dump-untyped-ast", "-c", "12"), 0, "^### dump untyped AST ###.*$"));
-//}
+
+TEST_F(CmdlineTest, ast) {
+    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
+            ds("--dump-ast", "-c", "[12, 32] is Array<Int>"), 0, "^### dump typed AST ###.*$"));
+}
+
+TEST_F(CmdlineTest, uast) {
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
+            ds("--dump-untyped-ast", "-c", "12"), 0, "^### dump untyped AST ###.*$"));
+}
 
 TEST_F(CmdlineTest, cmd1) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert($0 == 'ydsh')"), 0));
