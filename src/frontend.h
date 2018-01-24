@@ -23,18 +23,20 @@
 
 namespace ydsh {
 
+struct DumpTarget;
+
 class FrontEnd {
 private:
     DSExecMode mode;
     Parser parser;
     TypeChecker checker;
     DSType *prevType{nullptr};
+    NodeDumper uastDumper;
+    NodeDumper astDumper;
 
 public:
-    FrontEnd(Lexer &lexer, TypePool &pool, SymbolTable &symbolTable, DSExecMode mode, bool toplevel) :
-            mode(mode), parser(lexer), checker(pool, symbolTable, toplevel) {
-        this->checker.reset();
-    }
+    FrontEnd(Lexer &lexer, TypePool &pool, SymbolTable &symbolTable,
+             DSExecMode mode, bool toplevel, const DumpTarget &target);
 
     bool frontEndOnly() const {
         return this->mode == DS_EXEC_MODE_PARSE_ONLY || this->mode == DS_EXEC_MODE_CHECK_ONLY;
@@ -45,6 +47,10 @@ public:
     }
 
     std::unique_ptr<Node> operator()(DSError *dsError);
+
+    void setupASTDump();
+
+    void teardownASTDump();
 
 private:
     DSError handleError(DSErrorKind type, const char *errorKind,

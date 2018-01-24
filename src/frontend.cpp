@@ -19,8 +19,17 @@
 
 #include "frontend.h"
 #include "symbol.h"
+#include "core.h"
 
 namespace ydsh {
+
+FrontEnd::FrontEnd(Lexer &lexer, TypePool &pool, SymbolTable &symbolTable,
+                   DSExecMode mode, bool toplevel, const DumpTarget &target) :
+        mode(mode), parser(lexer), checker(pool, symbolTable, toplevel),
+        uastDumper(target.fps[DS_DUMP_KIND_UAST], pool),
+        astDumper(target.fps[DS_DUMP_KIND_AST], pool) {
+    this->checker.reset();
+}
 
 /**
  * not allow dumb terminal
@@ -146,12 +155,9 @@ std::unique_ptr<Node> FrontEnd::operator()(DSError *dsError) {
         }
         return node;
     }
-    //TODO: node dump
-//    if(state->dumpTarget.fps[DS_DUMP_KIND_UAST] != nullptr) {
-//        auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_UAST];
-//        fputs("### dump untyped AST ###\n", fp);
-//        NodeDumper::dump(fp, state->pool, *rootNode);
-//    }
+    if(this->uastDumper) {
+        this->uastDumper(*node);
+    }
 
     if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
         return node;
@@ -163,12 +169,9 @@ std::unique_ptr<Node> FrontEnd::operator()(DSError *dsError) {
         this->prevType = this->checker(this->prevType, wrap.ptr);
         node = wrap.release();
 
-        //TODO: node dump
-//        if(state->dumpTarget.fps[DS_DUMP_KIND_AST] != nullptr) {
-//            auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_AST];
-//            fputs("### dump typed AST ###\n", fp);
-//            NodeDumper::dump(fp, state->pool, *rootNode);
-//        }
+        if(this->astDumper) {
+            this->astDumper(*node);
+        }
     } catch(const TypeCheckError &e) {
         auto ret = this->handleTypeError(e);
         if(dsError != nullptr) {
@@ -177,6 +180,34 @@ std::unique_ptr<Node> FrontEnd::operator()(DSError *dsError) {
         return nullptr;
     }
     return node;
+}
+
+void FrontEnd::setupASTDump() {
+    if(this->uastDumper) {
+        this->uastDumper.initialize("### dump untyped AST ###");
+    }
+    if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
+        return;
+    }
+    if(this->astDumper) {
+        this->astDumper.initialize("### dump typed AST ###");
+    }
+}
+
+void FrontEnd::teardownASTDump() {
+    const auto &srcInfo = this->parser.getLexer()->getSourceInfoPtr();
+    unsigned int varNum = this->checker.getSymbolTable().getMaxVarIndex();
+    unsigned int gvarNum = this->checker.getSymbolTable().getMaxGVarIndex();
+
+    if(this->uastDumper) {
+        this->uastDumper.finalize(srcInfo, varNum, gvarNum);
+    }
+    if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
+        return;
+    }
+    if(this->astDumper) {
+        this->astDumper.finalize(srcInfo, varNum, gvarNum);
+    }
 }
 
 } // namespace ydsh

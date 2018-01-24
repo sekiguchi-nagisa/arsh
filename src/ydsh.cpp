@@ -182,10 +182,11 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     }
     lexer.setLineNum(state->lineNum);
 
-    FrontEnd frontEnd(lexer, state->pool, state->symbolTable,
-                      state->execMode, hasFlag(state->option, DS_OPTION_TOPLEVEL));
+    FrontEnd frontEnd(lexer, state->pool, state->symbolTable, state->execMode,
+                      hasFlag(state->option, DS_OPTION_TOPLEVEL), state->dumpTarget);
     ByteCodeGenerator codegen(state->pool, hasFlag(state->option, DS_OPTION_ASSERT));
 
+    frontEnd.setupASTDump();
     codegen.initialize();
     while(frontEnd) {
         auto node = frontEnd(dsError);
@@ -198,6 +199,7 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
             codegen.generate(node.get());
         }
     }
+    frontEnd.teardownASTDump();
     if(!frontEnd.frontEndOnly()) {
         code = codegen.finalize(lexer.getSourceInfoPtr(),
                                 state->symbolTable.getMaxVarIndex(), state->symbolTable.getMaxGVarIndex());

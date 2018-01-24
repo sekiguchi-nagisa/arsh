@@ -1436,15 +1436,31 @@ void NodeDumper::writeName(const char *fieldName) {
     this->indent(); fprintf(this->fp, "%s: ", fieldName);
 }
 
-void NodeDumper::operator()(const Node &rootNode) {
-    this->dump(rootNode);
+void NodeDumper::initialize(const char *header) {
+    fprintf(this->fp, "%s\n", header);
+    this->writeName("nodes");
+    this->newline();
+
+    this->enterIndent();
 }
 
-void NodeDumper::dump(FILE *fp, TypePool &pool, const Node &rootNode) {
-    NodeDumper writer(fp, pool);
-    writer(rootNode);
-    fflush(fp);
+void NodeDumper::operator()(const Node &node) {
+    this->indent();
+    fputs("- ", this->fp);
+    this->dumpNodeHeader(node, true);
+    this->enterIndent();
+    node.dump(*this);
+    this->leaveIndent();
 }
 
+void NodeDumper::finalize(const SourceInfoPtr &srcInfo, unsigned int maxVarNum, unsigned int maxGVarNum) {
+    this->leaveIndent();
+
+    this->dump("sourceName", srcInfo->getSourceName());
+    this->dump("maxVarNum", std::to_string(maxVarNum));
+    this->dump("maxGVarNum", std::to_string(maxGVarNum));
+
+    fflush(this->fp);
+}
 
 } // namespace ydsh

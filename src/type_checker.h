@@ -238,6 +238,10 @@ public:
         this->breakGather.clear();
     }
 
+    const SymbolTable &getSymbolTable() const {
+        return this->symbolTable;
+    }
+
 protected:
     // base type check entry point
     DSType &toType(TypeNode *node) {

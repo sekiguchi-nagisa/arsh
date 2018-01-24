@@ -66,18 +66,6 @@ public:
     };
 };
 
-struct DumpTarget {
-    FILE *fps[3]{nullptr};
-
-    ~DumpTarget() {
-        for(auto &fp : this->fps) {
-            if(fp != nullptr) {
-                fclose(fp);
-            }
-        }
-    }
-};
-
 struct DSState {
     TypePool pool;
     SymbolTable symbolTable;

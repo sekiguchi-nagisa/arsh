@@ -2168,12 +2168,12 @@ struct BaseVisitor : public NodeVisitor {
 class NodeDumper {
 private:
     FILE *fp;
-    TypePool &pool;
+    const TypePool &pool;
 
-    unsigned int indentLevel;
+    unsigned int indentLevel{0};
 
 public:
-    NodeDumper(FILE *fp, TypePool &pool) : fp(fp), pool(pool), indentLevel(0) { }
+    NodeDumper(FILE *fp, const TypePool &pool) : fp(fp), pool(pool) { }
 
     ~NodeDumper() = default;
 
@@ -2220,9 +2220,15 @@ public:
     /**
      * entry point
      */
-    void operator()(const Node &rootNode);
+    void initialize(const char *header);
 
-    static void dump(FILE *fp, TypePool &pool, const Node &rootNode);
+    void operator()(const Node &node);
+
+    void finalize(const SourceInfoPtr &srcInfo, unsigned int varNum, unsigned int gvarNum);
+
+    operator bool() const {
+        return this->fp != nullptr;
+    }
 
 private:
     void enterIndent() {

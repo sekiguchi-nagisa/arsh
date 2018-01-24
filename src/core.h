@@ -35,6 +35,7 @@ namespace ydsh {
 class TypePool;
 class DSType;
 class DSValue;
+class Array_Object;
 class StackTraceElement;
 class FuncObject;
 class SymbolTable;
@@ -156,6 +157,18 @@ struct VMHook {
      * @param st
      */
     virtual void vmThrowHook(DSState &st) = 0;
+};
+
+struct DumpTarget {
+    FILE *fps[3]{nullptr};
+
+    ~DumpTarget() {
+        for(auto &fp : this->fps) {
+            if(fp != nullptr) {
+                fclose(fp);
+            }
+        }
+    }
 };
 
 // core api
