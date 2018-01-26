@@ -323,16 +323,19 @@ TEST(API, jobctrl1) {
 
     // invalid
     auto result = EXEC("fg");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: current: no such job", result.err));
 
     result = EXEC("fg %hoge");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %hoge: no such job", result.err));
 
     result = EXEC("fg %1");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %1: no such job", result.err));
@@ -344,6 +347,7 @@ TEST(API, jobctrl1) {
         fg %1
 )";
     result = EXEC(str);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %1: no such job", result.err));
@@ -354,6 +358,7 @@ TEST(API, jobctrl1) {
         fg
 )";
     result = EXEC(str);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(18, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
@@ -364,11 +369,13 @@ TEST(API, jobctrl2) {
 
     // invalid
     auto result = EXEC("bg");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: current: no such job", result.err));
 
     result = EXEC("bg hoge %1");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: hoge: no such job\nydsh: bg: %1: no such job", result.err));
@@ -384,6 +391,7 @@ TEST(API, jobctrl2) {
         true
 )";
     result = EXEC(str);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
@@ -399,6 +407,7 @@ TEST(API, jobctrl2) {
         true
 )";
     result = EXEC(str);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: %2: no such job", result.err));
