@@ -664,6 +664,13 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     auto &leftType = this->checkType(node.getLeftNode());
     auto &rightType = this->checkType(node.getRightNode());
 
+    // check referencial equality of func object
+    if(leftType.isFuncType() && leftType == rightType
+       && (node.getOp() == TokenKind::EQ || node.getOp() == TokenKind::NE)) {
+        node.setType(this->typePool.getBooleanType());
+        return;
+    }
+
     // string concatenation
     if(node.getOp() == TokenKind::PLUS &&
                 (leftType == this->typePool.getStringType() || rightType == this->typePool.getStringType())) {

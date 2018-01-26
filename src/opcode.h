@@ -90,6 +90,8 @@ namespace ydsh {
     OP(D_TO_I32, 0) \
     OP(D_TO_U64, 0) \
     OP(D_TO_I64, 0) \
+    OP(REF_EQ, 0) \
+    OP(REF_NE, 0) \
     OP(FORK, 3) \
     OP(PIPELINE, -1) \
     OP(EXPAND_TILDE, 0) \

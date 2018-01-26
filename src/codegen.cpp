@@ -565,6 +565,16 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
 
         this->visit(*node.getRightNode());
         this->markLabel(mergeLabel);
+    } else if(node.getLeftNode() && node.getLeftNode()->getType().isFuncType()
+              && node.getRightNode() && node.getRightNode()->getType().isFuncType()) {
+        this->visit(*node.getLeftNode());
+        this->visit(*node.getRightNode());
+        if(kind == EQ) {
+            this->emit0byteIns(OpCode::REF_EQ);
+        } else {
+            assert(kind == NE);
+            this->emit0byteIns(OpCode::REF_NE);
+        }
     } else {
         this->visit(*node.getOptNode());
     }

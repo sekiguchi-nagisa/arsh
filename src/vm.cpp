@@ -1984,6 +1984,18 @@ static bool mainLoop(DSState &state) {
             state.push(DSValue::create<Long_Object>(state.pool.getInt64Type(), v));
             vmnext;
         }
+        vmcase(REF_EQ) {
+            auto v1 = state.pop();
+            auto v2 = state.pop();
+            state.push(v1 == v2 ? state.trueObj : state.falseObj);
+            vmnext;
+        }
+        vmcase(REF_NE) {
+            auto v1 = state.pop();
+            auto v2 = state.pop();
+            state.push(v1 != v2 ? state.trueObj : state.falseObj);
+            vmnext;
+        }
         vmcase(FORK) {
             forkAndEval(state);
             vmnext;
