@@ -12,7 +12,7 @@
 
 using namespace ydsh;
 
-class RedirectTest : public ::testing::Test, public TempFileFactory {
+class RedirectTest : public ExpectOutput, public TempFileFactory {
 private:
     std::string targetName;
 
@@ -41,10 +41,7 @@ public:
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
 
         auto result = builder.execAndGetResult(false);
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status.value));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
+        ExpectOutput::expect(result, status, WaitStatus::EXITED, out, err);
     }
 
     void contentEq(const char *str) {

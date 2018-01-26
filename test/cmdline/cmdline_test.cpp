@@ -36,7 +36,7 @@ InputWrapper operator|(const char (&value)[N], ProcBuilder &&builder) {
     };
 }
 
-class CmdlineTest : public ::testing::Test {
+class CmdlineTest : public ExpectOutput {
 public:
     CmdlineTest() = default;
     virtual ~CmdlineTest() = default;
@@ -52,10 +52,7 @@ public:
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
 
         auto result = builder.execAndGetResult(false);
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status.value));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
+        ExpectOutput::expect(result, status, WaitStatus::EXITED, out, err);
     }
 
     void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
@@ -87,10 +84,7 @@ public:
         }
         close(handle.in());
         auto result = handle.waitAndGetResult(false);
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status.value));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(out, result.out.c_str()));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(err, result.err.c_str()));
+        ExpectOutput::expect(result, status, WaitStatus::EXITED, out, err);
     }
 };
 

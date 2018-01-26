@@ -2,19 +2,7 @@
 
 #include "../test_common.h"
 
-class ProcTest : public ::testing::Test {
-public:
-    void expect(const Output &output, int status = 0,
-                WaitStatus::Kind type = WaitStatus::EXITED,
-                const char *out = "", const char *err = "") {
-        SCOPED_TRACE("");
-
-        ASSERT_EQ(status, output.status.value);
-        ASSERT_EQ(type, output.status.kind);
-        ASSERT_EQ(out, output.out);
-        ASSERT_EQ(err, output.err);
-    }
-};
+class ProcTest : public ExpectOutput {};
 
 template <typename Func>
 static Output spawnAndWait(IOConfig config, Func func, bool remove = false) {

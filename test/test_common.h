@@ -19,6 +19,8 @@
 
 #include <unistd.h>
 
+#include "gtest/gtest.h"
+
 #include <ostream>
 #include <vector>
 #include <string>
@@ -28,8 +30,6 @@
 #include <misc/noncopyable.h>
 
 // common utility for test
-
-#define ASSERT_(F) do { SCOPED_TRACE(""); F; } while(false)
 
 class TempFileFactory {
 protected:
@@ -337,5 +337,26 @@ private:
         return ret == 0 ? this->delegate(std::forward<T>(rest)...) : ret;
     }
 };
+
+
+#define ASSERT_(F) do { SCOPED_TRACE(""); F; } while(false)
+
+struct ExpectOutput : public ::testing::Test {
+    void expect(const Output &output, int status = 0,
+                WaitStatus::Kind type = WaitStatus::EXITED,
+                const char *out = "", const char *err = "") {
+        SCOPED_TRACE("");
+
+        ASSERT_EQ(status, output.status.value);
+        ASSERT_EQ(type, output.status.kind);
+        if(out != nullptr) {
+            ASSERT_EQ(out, output.out);
+        }
+        if(err != nullptr) {
+            ASSERT_EQ(err, output.err);
+        }
+    }
+};
+
 
 #endif //YDSH_TEST_COMMON_H

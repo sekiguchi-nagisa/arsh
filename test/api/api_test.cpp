@@ -219,13 +219,14 @@ static std::vector<PIDs> decompose(const std::string &str) {
     return ret;
 }
 
-TEST(API, case7) {
+struct APITest : public ExpectOutput {};
+
+TEST_F(APITest, case7) {
     SCOPED_TRACE("");
 
     // normal
     auto result = EXEC("%s --first | %s | %s", PID_CHECK_PATH, PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
     auto pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, pids.size()));
 
@@ -239,8 +240,7 @@ TEST(API, case7) {
 
     // command, eval
     result = EXEC("command eval %s --first | eval command %s", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -251,8 +251,7 @@ TEST(API, case7) {
 
     // udc1
     result = EXEC("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -263,8 +262,7 @@ TEST(API, case7) {
 
     // udc2
     result = EXEC("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -275,13 +273,12 @@ TEST(API, case7) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
 }
 
-TEST(API, case8) {
+TEST_F(APITest, case8) {
     SCOPED_TRACE("");
 
     // normal
     auto result = EXEC2("%s --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
     auto pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -292,8 +289,7 @@ TEST(API, case8) {
 
     // udc1
     result = EXEC2("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -304,8 +300,7 @@ TEST(API, case8) {
 
     // udc2
     result = EXEC2("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -318,27 +313,21 @@ TEST(API, case8) {
 #undef EXEC
 #define EXEC(S) exec(std::string(S)).waitAndGetResult(true)
 
-TEST(API, jobctrl1) {
+TEST_F(APITest, jobctrl1) {
     SCOPED_TRACE("");
 
     // invalid
     auto result = EXEC("fg");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: current: no such job", result.err));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: fg: current: no such job"));
 
     result = EXEC("fg %hoge");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %hoge: no such job", result.err));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: fg: %hoge: no such job"));
 
     result = EXEC("fg %1");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %1: no such job", result.err));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: fg: %1: no such job"));
 
     const char *str = R"(
         sh -c 'kill -s STOP $$; exit 180'
@@ -347,10 +336,8 @@ TEST(API, jobctrl1) {
         fg %1
 )";
     result = EXEC(str);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: fg: %1: no such job", result.err));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: fg: %1: no such job"));
 
     str = R"(
         sh -c 'kill -s STOP $$; exit 18'
@@ -358,27 +345,21 @@ TEST(API, jobctrl1) {
         fg
 )";
     result = EXEC(str);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(18, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 18));
 }
 
-TEST(API, jobctrl2) {
+TEST_F(APITest, jobctrl2) {
     SCOPED_TRACE("");
 
     // invalid
     auto result = EXEC("bg");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: current: no such job", result.err));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: bg: current: no such job"));
 
     result = EXEC("bg hoge %1");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: hoge: no such job\nydsh: bg: %1: no such job", result.err));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect(result, 1, WaitStatus::EXITED, "", "ydsh: bg: hoge: no such job\nydsh: bg: %1: no such job"));
+
 
     const char *str = R"(
         var j = {
@@ -391,10 +372,7 @@ TEST(API, jobctrl2) {
         true
 )";
     result = EXEC(str);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.err));
+    ASSERT_NO_FATAL_FAILURE(this->expect(result));
 
     str = R"(
         var j = {
@@ -407,10 +385,8 @@ TEST(API, jobctrl2) {
         true
 )";
     result = EXEC(str);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, result.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ydsh: bg: %2: no such job", result.err));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect(result, 0, WaitStatus::EXITED, "", "ydsh: bg: %2: no such job"));
 }
 
 TEST(PID, case1) {
