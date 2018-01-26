@@ -347,14 +347,14 @@ struct ExpectOutput : public ::testing::Test {
                 const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
 
-        ASSERT_EQ(status, output.status.value);
-        ASSERT_EQ(type, output.status.kind);
         if(out != nullptr) {
             ASSERT_EQ(out, output.out);
         }
         if(err != nullptr) {
             ASSERT_EQ(err, output.err);
         }
+        ASSERT_EQ(status, output.status.value);
+        ASSERT_EQ(type, output.status.kind);
     }
 };
 
