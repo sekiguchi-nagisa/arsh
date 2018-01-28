@@ -275,7 +275,7 @@ int exec_interactive(DSState *dsState) {
 
     int status = 0;
     for(std::string line; readLine(line);) {
-        DSError e;
+        DSError e{};
         status = DSState_eval(dsState, nullptr, line.c_str(), line.size(), &e);
         if(e.kind == DS_ERROR_KIND_EXIT || e.kind == DS_ERROR_KIND_ASSERTION_ERROR) {
             break;

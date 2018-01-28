@@ -227,7 +227,7 @@ public:
     TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting) :
             typePool(typePool), symbolTable(symbolTable), toplevelPrinting(toplevelPrinting) { }
 
-    ~TypeChecker() = default;
+    ~TypeChecker() override = default;
 
     DSType *operator()(const DSType *prevType, Node *&node);
 

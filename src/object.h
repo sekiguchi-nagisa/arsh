@@ -627,7 +627,7 @@ public:
     Job_Object(DSType &type, Job entry, DSValue inObj, DSValue outObj) :
             DSObject(type), entry(std::move(entry)), inObj(std::move(inObj)), outObj(std::move(outObj)) {}
 
-    ~Job_Object() = default;
+    ~Job_Object() override = default;
 
     DSValue getInObj() const {
         return this->inObj;
@@ -882,7 +882,7 @@ struct SourcePosEntry {
 /**
  * entries must not be null
  */
-unsigned int getSourcePos(const SourcePosEntry *const entries, unsigned int index);
+unsigned int getSourcePos(const SourcePosEntry *entries, unsigned int index);
 
 struct ExceptionEntry {
     /**

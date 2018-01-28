@@ -90,7 +90,7 @@ static int toOption(Proc::WaitOp op) {
 
 #ifdef USE_LOGGING
 static const char *toString(Proc::WaitOp op) {
-    const char *str;
+    const char *str = nullptr;
     switch(op) {
 #define GEN_STR(OP) case Proc::OP: str = #OP; break;
     EACH_WAIT_OP(GEN_STR)

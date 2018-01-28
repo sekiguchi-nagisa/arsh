@@ -70,7 +70,7 @@ private:
 
 public:
     DirectiveInitializer(TypePool &pool, SymbolTable &symbolTable);
-    ~DirectiveInitializer() = default;
+    ~DirectiveInitializer() override = default;
 
     void operator()(ApplyNode &node, Directive &d);
 

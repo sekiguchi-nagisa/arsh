@@ -2304,10 +2304,10 @@ bool vmEval(DSState &state, CompiledCode &code) {
     // reserve local and global variable slot
     {
         assert(state.codeStack.back()->is(CodeKind::TOPLEVEL));
-        const auto *code = static_cast<const CompiledCode *>(state.codeStack.back());
+        const auto *cc = static_cast<const CompiledCode *>(state.codeStack.back());
 
-        unsigned short varNum = code->getLocalVarNum();
-        unsigned short gvarNum = code->getGlobalVarNum();
+        unsigned short varNum = cc->getLocalVarNum();
+        unsigned short gvarNum = cc->getGlobalVarNum();
 
         reserveGlobalVar(state, gvarNum);
         reserveLocalVar(state, state.localVarOffset + varNum);

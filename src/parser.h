@@ -102,7 +102,7 @@ public:
         return this->parse_statement();
     }
 
-    operator bool() const {
+    explicit operator bool() const {
         return this->curKind != EOS;
     }
 
@@ -198,7 +198,7 @@ protected:
     auto expectNum(TokenKind kind, Func func) ->
     std::pair<Token, decltype((this->lexer->*func)(std::declval<Token>(), std::declval<int &>()))> {
         auto token = this->expect(kind);
-        int status;
+        int status = 0;
         auto out = (this->lexer->*func)(token, status);
         if(status != 0) {
             this->raiseTokenFormatError(kind, token, "out of range");

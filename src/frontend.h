@@ -42,7 +42,7 @@ public:
         return this->mode == DS_EXEC_MODE_PARSE_ONLY || this->mode == DS_EXEC_MODE_CHECK_ONLY;
     }
 
-    operator bool() const {
+    explicit operator bool() const {
         return static_cast<bool>(this->parser);
     }
 

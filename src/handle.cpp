@@ -179,7 +179,7 @@ DSType* TypeDecoder::decode() {
     case HandleInfo::T1:
         return (*this->types)[1];
     default:
-        fatal("broken handle info\n");
+        return nullptr; // normally unreachable due to suppress gcc warning
     }
 }
 

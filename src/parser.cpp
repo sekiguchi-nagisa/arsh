@@ -988,14 +988,13 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             std::string name = this->lexer->toName(token);
             if(CUR_KIND() == LP && !HAS_NL()) {  // treat as method call
                 auto args = TRY(this->parse_arguments());
-                Token token = args.getToken();
+                token = args.getToken();
                 node = make_unique<MethodCallNode>(node.release(), std::move(name),
                                                    ArgsWrapper::extract(std::move(args)));
-                node->updateToken(token);
             } else {    // treat as field access
                 node = make_unique<AccessNode>(node.release(), new VarNode(token, std::move(name)));
-                node->updateToken(token);
             }
+            node->updateToken(token);
             break;
         }
         case LB: {

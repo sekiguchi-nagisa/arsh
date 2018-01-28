@@ -1238,7 +1238,7 @@ public:
         return node;
     }
 
-    ~ForkNode();
+    ~ForkNode() override;
 
     OpKind getOpKind() const {
         return this->opKind;
@@ -2226,7 +2226,7 @@ public:
 
     void finalize(const SourceInfoPtr &srcInfo, unsigned int varNum, unsigned int gvarNum);
 
-    operator bool() const {
+    explicit operator bool() const {
         return this->fp != nullptr;
     }
 

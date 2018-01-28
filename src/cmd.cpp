@@ -1445,8 +1445,8 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
 
     // process remain arguments
     for(unsigned int i = 2; i < size; i++) {
-        const char *arg = str(argvObj.getValues()[i]);
-        Job job = tryToGetJob(getJobTable(state), arg);
+        arg = str(argvObj.getValues()[i]);
+        job = tryToGetJob(getJobTable(state), arg);
         if(job) {
             job->send(SIGCONT);
         } else {

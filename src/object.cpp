@@ -444,7 +444,7 @@ void Error_Object::createStackTrace(const DSState &ctx) {
     fillInStackTrace(ctx, this->stackTrace);
 }
 
-unsigned int getSourcePos(const SourcePosEntry *const entries, unsigned int index) {  //FIXME binary search
+unsigned int getSourcePos(const SourcePosEntry *entries, unsigned int index) {  //FIXME binary search
     unsigned int i = 0;
     for(; entries[i].address > 0; i++) {
         if(index < entries[i].address) {

@@ -1121,14 +1121,14 @@ static bool inCmdMode(const Node &node) {
         return inCmdMode(*static_cast<const PipelineNode &>(node).getNodes().back());
     case NodeKind::Fork: {
         auto &forkNode = static_cast<const ForkNode &>(node);
-        return forkNode.getOpKind() == ForkNode::COPROC ? inCmdMode(*forkNode.getExprNode()) : false;
+        return forkNode.getOpKind() == ForkNode::COPROC && inCmdMode(*forkNode.getExprNode());
     }
     case NodeKind::Assert:
         return inCmdMode(*static_cast<const AssertNode &>(node).getCondNode());
     case NodeKind::Jump: {
         auto &jumpNode = static_cast<const JumpNode &>(node);
-        return (jumpNode.getOpKind() == JumpNode::THROW || jumpNode.getOpKind() == JumpNode::RETURN) ?
-               inCmdMode(*jumpNode.getExprNode()) : false;
+        return (jumpNode.getOpKind() == JumpNode::THROW || jumpNode.getOpKind() == JumpNode::RETURN)
+               && inCmdMode(*jumpNode.getExprNode());
     }
     case NodeKind::VarDecl:
         return inCmdMode(*static_cast<const VarDeclNode &>(node).getExprNode());
