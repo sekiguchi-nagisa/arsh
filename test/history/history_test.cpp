@@ -9,7 +9,7 @@
 #include "../test_common.h"
 
 
-class HistoryTest : public ::testing::Test, public TempFileFactory {
+class HistoryTest : public ExpectOutput, public TempFileFactory {
 protected:
     DSState *state;
     bool evaled;
@@ -83,8 +83,7 @@ public:
         c += "exit $?";
 
         auto result = this->evalInChild(c);
-        ASSERT_EQ(WaitStatus::EXITED, result.status.kind);
-        ASSERT_EQ(0, result.status.value);
+        ExpectOutput::expect(result, 0, WaitStatus::EXITED, nullptr, nullptr);
     }
 
 private:
