@@ -1,7 +1,9 @@
 #include "gtest/gtest.h"
 
 #include <misc/argv.hpp>
+#include <misc/opt.hpp>
 
+using namespace ydsh;
 using namespace ydsh::argv;
 
 enum class Kind : unsigned int {
@@ -305,12 +307,101 @@ TEST_F(ArgTest, success9) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, index));
 }
 
+TEST(ArgsTest, base) {
+    opt::Parser<Kind> parser = {
+            {Kind::A, "--a", opt::NO_ARG, "hogehoge"},
+            {Kind::B, "--out", opt::HAS_ARG, "hogehoge"},
+            {Kind::C, "--dump", opt::OPT_ARG, "hogehoge"},
+    };
+
+    const char *args[] = {
+            "--a", "-", "--out", "hello", "world", "--", "--dump=!!", "--dump", "123", "--out"
+    };
+
+    auto begin = std::begin(args);
+    auto end = std::end(args);
+
+    opt::Result<Kind> result;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::END, result.error()));
+
+    result = parser(begin, end);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--a", result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::A, result.value()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("-", *begin));
+
+    result = parser(begin, end);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("-", result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::UNRECOG, result.error()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("-", *begin));
+    ++begin;
+
+    result = parser(begin, end);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--out", result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello", result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::B, result.value()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("world", *begin));
+
+    result = parser(begin, end);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("world", result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::UNRECOG, result.error()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("world", *begin));
+    ++begin;
+
+    result = parser(begin, end);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--", result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::UNRECOG, result.error()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--dump=!!", *begin));
+
+    result = parser(begin, end);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--dump=!!", result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("!!", result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::C, result.value()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--dump", *begin));
+
+    result = parser(begin, end);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--dump", result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(Kind::C, result.value()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("123", *begin));
+    ++begin;
+
+    result = parser(begin, end);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--out", result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::NEED_ARG, result.error()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--out", *begin));
+    ++begin;
+
+    result = parser(begin, end);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(result));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.recog()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::END, result.error()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(end, begin));
+}
+
+
 TEST(GetOptTest, base) {
     const char *argv[] = {
             "-a", "2", "hello", "-bcd", "-", "--", "hoge", "-f", "-e",
     };
     const char *optstr = "de:ba:c";
-    GetOptState optState;
+    opt::GetOptState optState;
 
     auto begin = std::begin(argv);
     auto end = std::end(argv);
