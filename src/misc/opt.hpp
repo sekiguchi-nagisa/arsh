@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <cstring>
+#include <algorithm>
 
 #include "flag_util.hpp"
 
