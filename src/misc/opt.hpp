@@ -112,8 +112,8 @@ public:
         return Result(NEED_ARG, recog);
     }
 
-    static Result end() {
-        return Result(END, nullptr);
+    static Result end(const char *opt = nullptr) {
+        return Result(END, opt);
     }
 
     const char *recog() const {
@@ -230,11 +230,11 @@ Result<T> Parser<T>::operator()(Iter &begin, Iter end) const {
 
     const char *haystack = *begin;
     if(haystack[0] != '-' || strcmp(haystack, "-") == 0) {
-        return Result<T>::unrecog(haystack);
+        return Result<T>::end(haystack);
     }
     if(strcmp(haystack, "--") == 0) {
         ++begin;
-        return Result<T>::unrecog(haystack);
+        return Result<T>::end(haystack);
     }
 
     // check options

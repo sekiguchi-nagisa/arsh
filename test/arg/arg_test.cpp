@@ -338,7 +338,7 @@ TEST(ArgsTest, base) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(result));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("-", result.recog()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::UNRECOG, result.error()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::END, result.error()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("-", *begin));
     ++begin;
 
@@ -353,7 +353,7 @@ TEST(ArgsTest, base) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(result));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("world", result.recog()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::UNRECOG, result.error()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::END, result.error()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("world", *begin));
     ++begin;
 
@@ -361,7 +361,7 @@ TEST(ArgsTest, base) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(result));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--", result.recog()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, result.arg()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::UNRECOG, result.error()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(opt::END, result.error()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("--dump=!!", *begin));
 
     result = parser(begin, end);
