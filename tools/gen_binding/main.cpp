@@ -25,7 +25,7 @@
 #include <symbol.h>
 #include <misc/parser_base.hpp>
 #include <misc/fatal.h>
-#include <misc/argv.hpp>
+#include <misc/opt.hpp>
 #include <DescLexer.h>
 
 namespace {
@@ -1100,9 +1100,9 @@ void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
 }
 
 #define EACH_OPT(OP) \
-    OP(DOC,  "--doc",  0, "generate interface documentation") \
-    OP(BIND, "--bind", 0, "generate function binding") \
-    OP(HELP, "--help", 0, "show help message")
+    OP(DOC,  "--doc",  opt::NO_ARG, "generate interface documentation") \
+    OP(BIND, "--bind", opt::NO_ARG, "generate function binding") \
+    OP(HELP, "--help", opt::NO_ARG, "show help message")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -1117,25 +1117,19 @@ void usage(FILE *fp, char **argv) {
 } // namespace
 
 int main(int argc, char **argv) {
-    using namespace ydsh::argv;
-
-    ArgvParser<OptionSet> parser = {
+    opt::Parser<OptionSet> parser = {
 #define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
             EACH_OPT(GEN_OPT)
 #undef GEN_OPT
     };
-    CmdLines<OptionSet> cmdLines;
-    int index = parser(argc, argv, cmdLines);
-    if(parser.hasError()) {
-        usage(stderr, argv);
-        fprintf(stderr, "%s\n", parser.getErrorMessage());
-        parser.printOption(stderr);
-        exit(1);
-    }
+
+    auto begin = argv + 1;
+    auto end = argv + argc;
+    opt::Result<OptionSet> result;
 
     bool doc = false;
-    for(auto &cmdline : cmdLines) {
-        switch(cmdline.first) {
+    while((result = parser(begin, end))) {
+        switch(result.value()) {
         case OptionSet::DOC:
             doc = true;
             break;
@@ -1148,14 +1142,19 @@ int main(int argc, char **argv) {
             exit(0);
         }
     }
+    if(result.error() != opt::END) {
+        fprintf(stderr, "%s\n", result.formatError().c_str());
+        parser.printOption(stderr);
+        exit(1);
+    }
 
-    if(index + 1 >= argc) {
+    if(begin == end || begin + 1 == end) {
         usage(stderr, argv);
         exit(1);
     }
 
-    const char *inputFileName = argv[index];
-    const char *outputFileName = argv[index + 1];
+    const char *inputFileName = *begin;
+    const char *outputFileName = *(++begin);
 
     auto elements = Parser()(inputFileName);
     std::vector<TypeBind *> binds(genTypeBinds(elements));

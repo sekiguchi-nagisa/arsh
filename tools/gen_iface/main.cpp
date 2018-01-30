@@ -24,7 +24,8 @@
 #include <unordered_set>
 #include <cassert>
 
-#include <misc/argv.hpp>
+#include <misc/opt.hpp>
+#include <misc/hash.hpp>
 #include <misc/fatal.h>
 
 namespace {
@@ -645,16 +646,18 @@ void generateIface(Config &config) {
 
 } // namespace
 
+using namespace ydsh;
+
 #define EACH_OPT(OP) \
-    OP(SYSTEM_BUS,  "--system",    0,       "use system bus") \
-    OP(SESSION_BUS, "--session",   0,       "use session bus (default)") \
-    OP(RECURSIVE,   "--recursive", 0,       "search interface from child object") \
-    OP(DEST,        "--dest",      HAS_ARG, "destination service name (must be well-known name)") \
-    OP(OUTPUT,      "--output",    HAS_ARG, "specify output directory (default is standard output)") \
-    OP(OVERWRITE,   "--overwrite", 0,       "if generated interface files have already existed, overwrite them") \
-    OP(HELP,        "--help",      0,       "show this help message") \
-    OP(XML_FILE,    "--xml",       HAS_ARG | IGNORE_REST, "generate interface from specified xml. no introspection.(ignore some option)") \
-    OP(ALLOW_STD,   "--allow-std", 0,       "allow standard D-Bus interface generation")
+    OP(SYSTEM_BUS,  "--system",    opt::NO_ARG,  "use system bus") \
+    OP(SESSION_BUS, "--session",   opt::NO_ARG,  "use session bus (default)") \
+    OP(RECURSIVE,   "--recursive", opt::NO_ARG,  "search interface from child object") \
+    OP(DEST,        "--dest",      opt::HAS_ARG, "destination service name (must be well-known name)") \
+    OP(OUTPUT,      "--output",    opt::HAS_ARG, "specify output directory (default is standard output)") \
+    OP(OVERWRITE,   "--overwrite", opt::NO_ARG,  "if generated interface files have already existed, overwrite them") \
+    OP(HELP,        "--help",      opt::NO_ARG,  "show this help message") \
+    OP(XML_FILE,    "--xml",       opt::HAS_ARG, "generate interface from specified xml. no introspection.(ignore some option)") \
+    OP(ALLOW_STD,   "--allow-std", opt::NO_ARG,  "allow standard D-Bus interface generation")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -663,28 +666,23 @@ enum class OptionSet : unsigned int {
 };
 
 int main(int argc, char **argv) {
-    using namespace ydsh::argv;
-
-    ArgvParser<OptionSet> parser = {
+    opt::Parser<OptionSet> parser = {
 #define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
             EACH_OPT(GEN_OPT)
 #undef GEN_OPT
     };
 
-    std::vector<std::pair<OptionSet, const char *>> cmdLines;
-    int restIndex = parser(argc, argv, cmdLines);
-    if(parser.hasError()) {
-        fprintf(stderr, "%s\n", parser.getErrorMessage());
-        parser.printOption(stderr);
-    }
+    auto begin = argv + 1;
+    auto end = argv + argc;
+    opt::Result<OptionSet> result;
 
     // set option
     Config config;
     bool foundDest = false;
     bool foundXml = false;
 
-    for(auto &cmdLine : cmdLines) {
-        switch(cmdLine.first) {
+    while((result = parser(begin, end))) {
+        switch(result.value()) {
         case OptionSet::SYSTEM_BUS:
             config.setSystemBus(true);
             break;
@@ -695,11 +693,11 @@ int main(int argc, char **argv) {
             config.setRecursive(true);
             break;
         case OptionSet::DEST:
-            config.setDest(cmdLine.second);
+            config.setDest(result.arg());
             foundDest = true;
             break;
         case OptionSet::OUTPUT:
-            config.setOutputDir(cmdLine.second);
+            config.setOutputDir(result.arg());
             break;
         case OptionSet::OVERWRITE:
             config.setRecursive(true);
@@ -708,13 +706,17 @@ int main(int argc, char **argv) {
             parser.printOption(stdout);
             return 0;
         case OptionSet::XML_FILE:
-            config.setXmlFileName(cmdLine.second);
+            config.setXmlFileName(result.arg());
             foundXml = true;
             break;
         case OptionSet::ALLOW_STD:
             config.setAllowStd(true);
             break;
         }
+    }
+    if(result.error() != opt::END) {
+        fprintf(stderr, "%s\n", result.formatError().c_str());
+        parser.printOption(stderr);
     }
 
     if(!foundDest && !foundXml) {
@@ -723,18 +725,15 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    const int size = argc - restIndex;
-    if(size == 0 && !foundXml) {
+    if(begin == end && !foundXml) {
         std::cerr << "require atleast one object path" << std::endl;
         parser.printOption(stdout);
         return 1;
     }
-    
-    for(int i = restIndex; i < argc; i++) {
-        config.addPath(argv[i]);
+
+    for(; begin != end; ++begin) {
+        config.addPath(*begin);
     }
-
     generateIface(config);
-
     return 0;
 }

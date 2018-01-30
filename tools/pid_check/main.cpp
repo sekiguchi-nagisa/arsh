@@ -20,16 +20,16 @@
 #include <string>
 #include <vector>
 
-#include <misc/argv.hpp>
+#include <misc/opt.hpp>
 #include <misc/fatal.h>
 
 using namespace ydsh;
 
 #define EACH_OPT(OP) \
-    OP(PID,   "--pid",   HAS_ARG, "specify pid") \
-    OP(PPID,  "--ppid",  HAS_ARG, "specify ppid") \
-    OP(FIRST, "--first", 0,       "treat as first process of pipeline") \
-    OP(HELP,  "--help",  0,       "show help message")
+    OP(PID,   "--pid",   opt::HAS_ARG, "specify pid") \
+    OP(PPID,  "--ppid",  opt::HAS_ARG, "specify ppid") \
+    OP(FIRST, "--first", opt::NO_ARG,  "treat as first process of pipeline") \
+    OP(HELP,  "--help",  opt::NO_ARG,  "show help message")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
@@ -99,32 +99,26 @@ static void dumpPID(bool isFirst) {
 }
 
 int main(int argc, char **argv) {
-    using namespace ydsh::argv;
-
-    ArgvParser<OptionSet> parser = {
+    opt::Parser<OptionSet> parser = {
 #define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
             EACH_OPT(GEN_OPT)
 #undef GEN_OPT
     };
-    CmdLines<OptionSet> cmdLines;
-    parser(argc, argv, cmdLines);
-    if(parser.hasError()) {
-        fprintf(stderr, "%s\n", parser.getErrorMessage());
-        parser.printOption(stderr);
-        exit(1);
-    }
 
     pid_t pid = -1;
     pid_t ppid = -1;
     bool isFirst = false;
 
-    for(auto &cmdline : cmdLines) {
-        switch(cmdline.first) {
+    char **begin = argv + 1;
+    char **end = argv + argc;
+    opt::Result<OptionSet> result;
+    while((result = parser(begin, end))) {
+        switch(result.value()) {
         case OptionSet::PID:
-            pid = toInt32(cmdline.second);
+            pid = toInt32(result.arg());
             break;
         case OptionSet::PPID:
-            ppid = toInt32(cmdline.second);
+            ppid = toInt32(result.arg());
             break;
         case OptionSet::FIRST:
             isFirst = true;
@@ -133,6 +127,11 @@ int main(int argc, char **argv) {
             parser.printOption(stdout);
             exit(1);
         }
+    }
+    if(result.error() != opt::END) {
+        fprintf(stderr, "%s\n", result.formatError().c_str());
+        parser.printOption(stderr);
+        exit(1);
     }
 
     if(pid > -1 || ppid > -1) {
