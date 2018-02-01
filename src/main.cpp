@@ -21,7 +21,7 @@
 #include <cerrno>
 
 #include <ydsh/ydsh.h>
-#include "misc/argv.hpp"
+#include "misc/opt.hpp"
 #include "misc/util.hpp"
 
 using namespace ydsh;
@@ -89,27 +89,27 @@ static void showFeature(FILE *fp) {
 }
 
 #define EACH_OPT(OP) \
-    OP(DUMP_UAST,      "--dump-untyped-ast",  0, "dump abstract syntax tree (before type checking)") \
-    OP(DUMP_AST,       "--dump-ast",          0, "dump abstract syntax tree (after type checking)") \
-    OP(DUMP_CODE,      "--dump-code",         0, "dump compiled code") \
-    OP(PARSE_ONLY,     "--parse-only",        0, "not evaluate, parse only") \
-    OP(CHECK_ONLY,     "--check-only",        0, "not evaluate, type check only") \
-    OP(COMPILE_ONLY,   "--compile-only",      0, "not evaluate, compile only") \
-    OP(DISABLE_ASSERT, "--disable-assertion", 0, "disable assert statement") \
-    OP(PRINT_TOPLEVEL, "--print-toplevel",    0, "print top level evaluated value") \
-    OP(TRACE_EXIT,     "--trace-exit",        0, "trace execution process to exit command (ignored in -e)") \
-    OP(VERSION,        "--version",           0, "show version and copyright") \
-    OP(HELP,           "--help",              0, "show this help message") \
-    OP(COMMAND,        "-c",                  argv::HAS_ARG | argv::IGNORE_REST, "evaluate argument") \
-    OP(NORC,           "--norc",              0, "not load rc file (only available interactive mode)") \
-    OP(EXEC,           "-e",                  argv::HAS_ARG | argv::IGNORE_REST, "execute builtin command (ignore some option)") \
-    OP(STATUS_LOG,     "--status-log",        argv::HAS_ARG, "write execution status to specified file (ignored in interactive mode or -e)") \
-    OP(FEATURE,        "--feature",           0, "show available features") \
-    OP(RC_FILE,        "--rcfile",            argv::HAS_ARG, "load specified rc file (only available interactive mode)") \
-    OP(QUIET,          "--quiet",             0, "suppress startup message (only available interactive mode)") \
-    OP(SET_ARGS,       "-s",                  argv::IGNORE_REST, "set arguments and read command from standard input") \
-    OP(INTERACTIVE,    "-i",                  0, "run interactive mode") \
-    OP(CHECK_ONLY2,    "-n",                  0, "equivalent to `--check-only' option")
+    OP(DUMP_UAST,      "--dump-untyped-ast",  opt::NO_ARG, "dump abstract syntax tree (before type checking)") \
+    OP(DUMP_AST,       "--dump-ast",          opt::NO_ARG, "dump abstract syntax tree (after type checking)") \
+    OP(DUMP_CODE,      "--dump-code",         opt::NO_ARG, "dump compiled code") \
+    OP(PARSE_ONLY,     "--parse-only",        opt::NO_ARG, "not evaluate, parse only") \
+    OP(CHECK_ONLY,     "--check-only",        opt::NO_ARG, "not evaluate, type check only") \
+    OP(COMPILE_ONLY,   "--compile-only",      opt::NO_ARG, "not evaluate, compile only") \
+    OP(DISABLE_ASSERT, "--disable-assertion", opt::NO_ARG, "disable assert statement") \
+    OP(PRINT_TOPLEVEL, "--print-toplevel",    opt::NO_ARG, "print top level evaluated value") \
+    OP(TRACE_EXIT,     "--trace-exit",        opt::NO_ARG, "trace execution process to exit command (ignored in -e)") \
+    OP(VERSION,        "--version",           opt::NO_ARG, "show version and copyright") \
+    OP(HELP,           "--help",              opt::NO_ARG, "show this help message") \
+    OP(COMMAND,        "-c",                  opt::HAS_ARG, "evaluate argument") \
+    OP(NORC,           "--norc",              opt::NO_ARG, "not load rc file (only available interactive mode)") \
+    OP(EXEC,           "-e",                  opt::HAS_ARG, "execute builtin command (ignore some option)") \
+    OP(STATUS_LOG,     "--status-log",        opt::HAS_ARG, "write execution status to specified file (ignored in interactive mode or -e)") \
+    OP(FEATURE,        "--feature",           opt::NO_ARG, "show available features") \
+    OP(RC_FILE,        "--rcfile",            opt::HAS_ARG, "load specified rc file (only available interactive mode)") \
+    OP(QUIET,          "--quiet",             opt::NO_ARG, "suppress startup message (only available interactive mode)") \
+    OP(SET_ARGS,       "-s",                  opt::NO_ARG, "set arguments and read command from standard input") \
+    OP(INTERACTIVE,    "-i",                  opt::NO_ARG, "run interactive mode") \
+    OP(CHECK_ONLY2,    "-n",                  opt::NO_ARG, "equivalent to `--check-only' option")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -130,18 +130,14 @@ static const char *version() {
 }
 
 int main(int argc, char **argv) {
-    argv::CmdLines<OptionKind> cmdLines;
-    argv::ArgvParser<OptionKind> parser = {
+    opt::Parser<OptionKind> parser = {
 #define GEN_OPT(E, S, F, D) {E, S, F, D},
             EACH_OPT(GEN_OPT)
 #undef GEN_OPT
     };
-    int restIndex = parser(argc, argv, cmdLines);
-    if(parser.hasError()) {
-        fprintf(stderr, "%s\n%s\n", parser.getErrorMessage(), version());
-        parser.printOption(stderr);
-        exit(1);
-    }
+    auto begin = argv + 1;
+    auto end = argv + argc;
+    opt::Result<OptionKind> result;
 
     InvocationKind invocationKind = InvocationKind::FROM_FILE;
     const char *evalText = nullptr;
@@ -162,8 +158,8 @@ int main(int argc, char **argv) {
     };
 
 
-    for(auto &cmdLine : cmdLines) {
-        switch(cmdLine.first) {
+    while((result = parser(begin, end))) {
+        switch(result.value()) {
         case DUMP_UAST:
             dumpTarget[0].path = "";
             break;
@@ -201,37 +197,43 @@ int main(int argc, char **argv) {
             exit(0);
         case COMMAND:
             invocationKind = InvocationKind::FROM_STRING;
-            evalText = cmdLine.second;
-            break;
+            evalText = result.arg();
+            goto INIT;
         case NORC:
             userc = false;
             break;
         case EXEC:
             invocationKind = InvocationKind::BUILTIN;
             statusLogPath = nullptr;
-            restIndex--;
-            break;
+            --begin;
+            goto INIT;
         case STATUS_LOG:
-            statusLogPath = cmdLine.second;
+            statusLogPath = result.arg();
             break;
         case FEATURE:
             showFeature(stdout);
             exit(0);
         case RC_FILE:
-            rcfile = cmdLine.second;
+            rcfile = result.arg();
             break;
         case QUIET:
             quiet = true;
             break;
         case SET_ARGS:
             invocationKind = InvocationKind::FROM_STDIN;
-            break;
+            goto INIT;
         case INTERACTIVE:
             forceInteractive = true;
             break;
         }
     }
+    if(result.error() != opt::END) {
+        fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), version());
+        parser.printOption(stderr);
+        exit(1);
+    }
 
+    INIT:
 
     // init state
     DSState *state = DSState_createWithMode(mode);
@@ -248,9 +250,9 @@ int main(int argc, char **argv) {
 
 
     // set rest argument
-    const int size = argc - restIndex;
+    const int size = end - begin;
     char *shellArgs[size + 1];
-    memcpy(shellArgs, argv + restIndex, sizeof(char *) * size);
+    memcpy(shellArgs, begin, sizeof(char *) * size);
     shellArgs[size] = nullptr;
 
     if(invocationKind == InvocationKind::FROM_FILE && (size == 0 || strcmp(shellArgs[0], "-") == 0)) {

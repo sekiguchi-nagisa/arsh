@@ -174,7 +174,7 @@ TEST_F(CmdlineTest, help) {
 }
 
 TEST_F(CmdlineTest, illegal) {
-    const char *p = R"(^illegal option: --ho
+    const char *p = R"(^invalid option: --ho
 ydsh, version .*, build by .*
 Options:
 .*$)";
