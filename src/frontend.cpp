@@ -31,14 +31,6 @@ FrontEnd::FrontEnd(Lexer &lexer, TypePool &pool, SymbolTable &symbolTable,
     this->checker.reset();
 }
 
-/**
- * not allow dumb terminal
- */
-static bool isSupportedTerminal(int fd) {
-    const char *term = getenv(ENV_TERM);
-    return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
-}
-
 #define EACH_TERM_COLOR(C) \
     C(Reset,    0) \
     C(Bold,     1) \
@@ -57,17 +49,31 @@ enum class TermColor : unsigned int {   // ansi color code
 #undef GEN_ENUM
 };
 
-static const char *color(TermColor color, bool isatty) {
-    if(isatty) {
-#define GEN_STR(E, C) "\033[" #C "m",
-        const char *ansi[] = {
-                EACH_TERM_COLOR(GEN_STR)
-        };
-#undef GEN_STR
-        return ansi[static_cast<unsigned int>(color)];
-    }
-    return "";
+/**
+ * not allow dumb terminal
+ */
+static bool isSupportedTerminal(int fd) {
+    const char *term = getenv(ENV_TERM);
+    return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
 }
+
+struct ColorControler {
+    bool isatty;
+
+    ColorControler(int fd) : isatty(isSupportedTerminal(fd)) {}
+
+    const char *operator()(TermColor color) const {
+        if(this->isatty) {
+#define GEN_STR(E, C) "\033[" #C "m",
+            const char *ansi[] = {
+                    EACH_TERM_COLOR(GEN_STR)
+            };
+#undef GEN_STR
+            return ansi[static_cast<unsigned int>(color)];
+        }
+        return "";
+    }
+};
 
 static std::vector<std::string> split(const std::string &str) {
     std::vector<std::string> bufs;
@@ -82,7 +88,7 @@ static std::vector<std::string> split(const std::string &str) {
     return bufs;
 }
 
-static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
+static void formatErrorLine(ColorControler cc, const Lexer &lexer, Token errorToken) {
     errorToken = lexer.shiftEOS(errorToken);
     Token lineToken = lexer.getLineToken(errorToken);
     auto line = lexer.toTokenText(lineToken);
@@ -94,33 +100,32 @@ static void formatErrorLine(bool isatty, const Lexer &lexer, Token errorToken) {
     assert(size == markers.size());
     for(unsigned int i = 0; i < size; i++) {
         // print error line
-        fprintf(stderr, "%s%s%s\n", color(TermColor::Cyan, isatty),
-                lines[i].c_str(), color(TermColor::Reset, isatty));
+        fprintf(stderr, "%s%s%s\n", cc(TermColor::Cyan), lines[i].c_str(), cc(TermColor::Reset));
 
         // print line marker
-        fprintf(stderr, "%s%s%s%s\n", color(TermColor::Green, isatty), color(TermColor::Bold, isatty),
-                markers[i].c_str(), color(TermColor::Reset, isatty));
+        fprintf(stderr, "%s%s%s%s\n", cc(TermColor::Green), cc(TermColor::Bold),
+                markers[i].c_str(), cc(TermColor::Reset));
     }
 
     fflush(stderr);
 }
 
 DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
-                           Token errorToken, const std::string &message) const {
+                              Token errorToken, const std::string &message) const {
     auto &lexer = *this->parser.getLexer();
     unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(errorToken.pos);
-    const bool isatty = isSupportedTerminal(STDERR_FILENO);
+    ColorControler cc(STDERR_FILENO);
 
     /**
      * show error message
      */
     fprintf(stderr, "%s:%d:%s%s ",
             lexer.getSourceInfoPtr()->getSourceName().c_str(), errorLineNum,
-            color(TermColor::Magenta, isatty), color(TermColor::Bold, isatty));
+            cc(TermColor::Magenta), cc(TermColor::Bold));
     fprintf(stderr, "[%s error] %s%s\n",
             type == DS_ERROR_KIND_PARSE_ERROR ? "syntax" : "semantic",
-            color(TermColor::Reset, isatty), message.c_str());
-    formatErrorLine(isatty, lexer, errorToken);
+            cc(TermColor::Reset), message.c_str());
+    formatErrorLine(cc, lexer, errorToken);
 
     return {
             .kind = type,
