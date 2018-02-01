@@ -89,9 +89,9 @@ static void showFeature(FILE *fp) {
 }
 
 #define EACH_OPT(OP) \
-    OP(DUMP_UAST,      "--dump-untyped-ast",  opt::NO_ARG, "dump abstract syntax tree (before type checking)") \
-    OP(DUMP_AST,       "--dump-ast",          opt::NO_ARG, "dump abstract syntax tree (after type checking)") \
-    OP(DUMP_CODE,      "--dump-code",         opt::NO_ARG, "dump compiled code") \
+    OP(DUMP_UAST,      "--dump-untyped-ast",  opt::OPT_ARG, "dump abstract syntax tree (before type checking)") \
+    OP(DUMP_AST,       "--dump-ast",          opt::OPT_ARG, "dump abstract syntax tree (after type checking)") \
+    OP(DUMP_CODE,      "--dump-code",         opt::OPT_ARG, "dump compiled code") \
     OP(PARSE_ONLY,     "--parse-only",        opt::NO_ARG, "not evaluate, parse only") \
     OP(CHECK_ONLY,     "--check-only",        opt::NO_ARG, "not evaluate, type check only") \
     OP(COMPILE_ONLY,   "--compile-only",      opt::NO_ARG, "not evaluate, compile only") \
@@ -161,13 +161,13 @@ int main(int argc, char **argv) {
     while((result = parser(begin, end))) {
         switch(result.value()) {
         case DUMP_UAST:
-            dumpTarget[0].path = "";
+            dumpTarget[0].path = result.arg() != nullptr ? result.arg() : "";
             break;
         case DUMP_AST:
-            dumpTarget[1].path = "";
+            dumpTarget[1].path = result.arg() != nullptr ? result.arg() : "";
             break;
         case DUMP_CODE:
-            dumpTarget[2].path = "";
+            dumpTarget[2].path = result.arg() != nullptr ? result.arg() : "";
             break;
         case PARSE_ONLY:
             mode = DS_EXEC_MODE_PARSE_ONLY;
