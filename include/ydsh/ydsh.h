@@ -253,41 +253,40 @@ unsigned int DSState_featureBit();
 
 
 /* for input completion */
-typedef struct {
-    /**
-     * size of values.
-     */
-    unsigned int size;
-
-    /**
-     * if size is 0, it is null.
-     */
-    char **values;
-} DSCandidates;
+struct DSCandidates;
+typedef struct DSCandidates DSCandidates;
 
 /**
- * fill the candidates of possible token.
- * if buf or st is null, write 0 and null to c.
- * if c is null, do nothing.
+ * get the candidates of possible token.
  * call DSCandidates_release() to release candidate.
  * @param st
- * may be null.
+ * may be null
  * @param buf
- * may be null.
+ * may be null
  * @param cursor
- * @param c
- * may be null.
+ * @return
+ * return null if no candidates.
  */
-void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c);
+DSCandidates *DSState_complete(const DSState *st, const char *buf, size_t cursor);
+
+/**
+ *
+ * @param c
+ * @param index
+ * @return
+ * return null, if index out of range.
+ */
+const char *DSCandidates_get(const DSCandidates *c, unsigned int index);
+
+unsigned int DSCandidates_size(const DSCandidates *c);
 
 /**
  * release buffer of candidates.
- * after call it, assign 0 and null to c.
  * if c is null, do nothing.
  * @param c
  * may be null.
  */
-void DSCandidates_release(DSCandidates *c);
+void DSCandidates_release(DSCandidates **c);
 
 /* for history */
 #define DS_HISTSIZE_LIMIT       ((unsigned int) 4096)

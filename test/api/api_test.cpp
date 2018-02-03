@@ -117,29 +117,31 @@ TEST(API, case4) {
     SCOPED_TRACE("");
 
     // null arguments
-    DSState_complete(nullptr, nullptr, 1, nullptr); // do nothing
+    auto *c = DSState_complete(nullptr, nullptr, 1); // do nothing
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c == nullptr));
 
     DSState *state = DSState_create();
 
-    DSCandidates c;
-    DSState_complete(state, "echo ~", 6, &c);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.values != nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c.size > 0));
+    c = DSState_complete(state, "echo ~", 6);
+    unsigned int size = DSCandidates_size(c);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(size > 0));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, DSCandidates_get(c, size)));
 
     auto expect = tilde();
     for(auto &e : expect) { std::cerr << e << std::endl; }
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), c.size));
-    for(unsigned int i = 0; i < c.size; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), c.values[i]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), size));
+    for(unsigned int i = 0; i < size; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), DSCandidates_get(c, i)));
     }
     DSCandidates_release(&c);
 
 
-    DSState_complete(state, "echo ~r", 7, &c);
+    c = DSState_complete(state, "echo ~r", 7);
+    size = DSCandidates_size(c);
     expect = filter(expect, "~r");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), c.size));
-    for(unsigned int i = 0; i < c.size; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), c.values[i]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), size));
+    for(unsigned int i = 0; i < size; i++) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), DSCandidates_get(c, i)));
     }
     DSCandidates_release(&c);
 

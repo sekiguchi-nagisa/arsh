@@ -214,10 +214,13 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
     actualBuf += buf;
     actualBuf += '\n';
 
-    DSCandidates c{};
-    DSState_complete(state, actualBuf.c_str(), actualCursor, &c);
-    lc->len = c.size;
-    lc->cvec = c.values;
+    auto *c = DSState_complete(state, actualBuf.c_str(), actualCursor);
+    lc->len = DSCandidates_size(c);
+    lc->cvec = static_cast<char**>(malloc(sizeof(char *) * lc->len));
+    for(unsigned int i = 0; i < lc->len; i++) {
+        lc->cvec[i] = strdup(DSCandidates_get(c, i));
+    }
+    DSCandidates_release(&c);
 }
 
 static const char *historyCallback(const char *buf, int *historyIndex, historyOp op) {

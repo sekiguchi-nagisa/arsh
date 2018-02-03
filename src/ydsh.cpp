@@ -646,17 +646,30 @@ unsigned int DSState_featureBit() {
     return featureBit;
 }
 
-void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandidates *c) {
-    if(c == nullptr) {
-        return;
+struct DSCandidates {
+    /**
+     * size of values.
+     */
+    unsigned int size;
+
+    /**
+     * if size is 0, it is null.
+     */
+    char **values;
+
+    ~DSCandidates() {
+        if(this->values != nullptr) {
+            for(unsigned int i = 0 ; i < this->size; i++) {
+                free(this->values[i]);
+            }
+            free(this->values);
+        }
     }
+};
 
-    // init candidates
-    c->size = 0;
-    c->values = nullptr;
-
+DSCandidates *DSState_complete(const DSState *st, const char *buf, size_t cursor) {
     if(st == nullptr || buf == nullptr || cursor == 0) {
-        return;
+        return nullptr;
     }
 
     std::string line(buf, cursor);
@@ -664,22 +677,27 @@ void DSState_complete(const DSState *st, const char *buf, size_t cursor, DSCandi
 
     line += '\n';
     CStrBuffer sbuf = completeLine(*st, line);
-
-    // write to DSCandidates
-    c->size = sbuf.size();
-    c->values = extract(std::move(sbuf));
+    return new DSCandidates {
+            .size = sbuf.size(),
+            .values = extract(std::move(sbuf))
+    };
 }
 
-void DSCandidates_release(DSCandidates *c) {
+const char *DSCandidates_get(const DSCandidates *c, unsigned int index) {
+    if(c != nullptr && index < c->size) {
+        return c->values[index];
+    }
+    return nullptr;
+}
+
+unsigned int DSCandidates_size(const DSCandidates *c) {
+    return c != nullptr ? c->size : 0;
+}
+
+void DSCandidates_release(DSCandidates **c) {
     if(c != nullptr) {
-        for(unsigned int i = 0; i < c->size; i++) {
-            free(c->values[i]);
-        }
-        c->size = 0;
-        if(c->values != nullptr) {
-            free(c->values);
-            c->values = nullptr;
-        }
+        delete *c;
+        *c = nullptr;
     }
 }
 
