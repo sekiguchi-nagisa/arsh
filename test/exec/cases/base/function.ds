@@ -6,7 +6,7 @@ function func($x: Int) : Int {
 assert($func is Func<Int, [Int]>)
 assert($func is Any)
 assert($func is Func) # function base type
-assert(not ($func is Variant))
+assert(!($func is Variant))
 
 # apply function object
 function call() {

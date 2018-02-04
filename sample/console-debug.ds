@@ -8,12 +8,12 @@ if $# != 2 {
 let YDSH_BIN = $1
 let FILE = $2
 
-if not(test -x $YDSH_BIN) {
+if !(test -x $YDSH_BIN) {
     echo $YDSH_BIN must be executable file
     exit 1
 }
 
-if not(eval $YDSH_BIN --feature | grep USE_LOGGING) {
+if !(eval $YDSH_BIN --feature | grep USE_LOGGING) {
     echo $YDSH_BIN needs USE_LOGGING feature
     exit 1
 }

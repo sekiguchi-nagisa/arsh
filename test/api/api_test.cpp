@@ -368,7 +368,7 @@ TEST_F(APITest, jobctrl2) {
              %'stop'.kill($PID)
              exit 99
         } &
-        assert not $j.wait()
+        assert ! $j.wait()
         assert { bg; $?; } == 0
         assert $j.wait()! == 99
         true
@@ -381,7 +381,7 @@ TEST_F(APITest, jobctrl2) {
              %'stop'.kill($PID)
              exit 99
         } &
-        assert not $j.wait()
+        assert ! $j.wait()
         assert { bg %1 %2; $?; } == 1
         assert $j.wait()! == 99
         true

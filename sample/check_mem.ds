@@ -9,13 +9,13 @@ if $# != 2 {
 let bin = $1
 let dir = $2
 
-if not(test -x $bin) {
+if (!test -x $bin) {
     echo not found executable file: $bin 1>&2
     exit 1
 }
 
 # check valgrind
-if not(which valgrind) {
+if !(which valgrind) {
     echo need valgrind 1>&2
     exit 1
 }
@@ -29,11 +29,11 @@ let OK = $color(32, '[OK]')
 let NG = $color(35, '[NG]')
 
 function test($a : String) : Boolean {
-    if not(test -f $a) {
+    if !(test -f $a) {
         echo not found file: $a 1>&2
         exit 1
     }
-    return not(valgrind -v --leak-check=full $bin $a 2>&1 > /dev/null | __gets | grep "blocks are definitely lost" > /dev/null)
+    return !(valgrind -v --leak-check=full $bin $a 2>&1 > /dev/null | __gets | grep "blocks are definitely lost" > /dev/null)
 }
 
 function __test_each($data : Array<String>, $test : typeof($test)): Boolean {

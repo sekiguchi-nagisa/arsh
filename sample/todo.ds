@@ -3,7 +3,7 @@
 # not return 
 function open_todo_today() : Boolean {
     let name = "$(date +'%Y%m%d').md"
-    not test -e $name && {
+    !test -e $name && {
         echo "# $(date +'%Y-%m-%d')"
         echo "## TODO"
         echo -e "\n"

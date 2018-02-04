@@ -2,7 +2,7 @@
 
 for $a in $(find $SCRIPT_DIR) {
     $a =~ $/\.xml$/ && { continue; }
-    not test -f $a && { continue; }
+    !test -f $a && { continue; }
 
     var r = ydsh --compile-only $a
     echo ${$r ? "[OK]" : "[NG]"} $a

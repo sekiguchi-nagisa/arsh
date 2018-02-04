@@ -291,8 +291,7 @@ TEST_F(LexerTest_Lv1, not_tok) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(NOT, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
+        EXPECT(INVALID, text);
     });
 }
 

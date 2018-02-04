@@ -26,21 +26,21 @@ function table($n : String, $v : typeof([""])) {
 }
 
 
-if not(test -d $work_dir) {
+if !(test -d $work_dir) {
     mkdir $work_dir
 }
 
 cd $work_dir
 
-if not(test -f UnicodeData.txt) {
+if !(test -f UnicodeData.txt) {
     wget http://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
 }
 
-if not(test -f EastAsianWidth.txt) {
+if !(test -f EastAsianWidth.txt) {
     wget http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
 }
 
-if not(test -d uniset) {
+if !(test -d uniset) {
     assert(git clone https://github.com/depp/uniset.git)
 }
 

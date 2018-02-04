@@ -149,7 +149,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "interface"       { RET(INTERFACE); }
       <STMT> "let"             { MODE(NAME); RET(LET); }
       <STMT> "new"             { MODE(EXPR); RET(NEW); }
-      <STMT> "not"             { RET(NOT); }
+      <STMT> "not"             { RET(INVALID); }
       <STMT> "return"          { RET(RETURN); }
       <STMT> "try"             { RET(TRY); }
       <STMT> "throw"           { RET(THROW); }

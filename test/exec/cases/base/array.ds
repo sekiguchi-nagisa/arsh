@@ -17,7 +17,7 @@ try { $a[5] = "hoge"; assert($false) } catch($e) { $ex = $e }
 assert($ex is OutOfRangeError)
 
 assert $a.get(2)
-assert not $a.get(5)
+assert ! $a.get(5)
 assert $a.get(2)! == "ho"
 
 assert($a.empty() == $false)
