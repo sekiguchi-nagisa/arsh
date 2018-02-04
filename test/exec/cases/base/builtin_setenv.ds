@@ -7,10 +7,10 @@ assert check_env AAA BBB
 
 set_env EEE= CCC DDD=ddd
 assert $? == 1
-assert not check_env CCC
-assert not check_env EEE
+assert !check_env CCC
+assert ! check_env EEE
 assert { import-env EEE; $EEE; }.empty()
-assert not check_env DDD
+assert ! check_env DDD
 
 assert "$(set_env CCC 2>&1)" == "ydsh: set_env: CCC: Invalid argument"
 assert "$(set_env =CCC 2>&1)" == "ydsh: set_env: =CCC: Invalid argument"

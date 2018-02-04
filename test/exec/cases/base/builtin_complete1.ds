@@ -20,7 +20,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 
     let size = $x.size()
     for(var i = 0; $i < $size; $i++) {
-        if(not $assertSEQ($x[$i], $y[$i])) {
+        if(!$assertSEQ($x[$i], $y[$i])) {
             for(var j = 0; $j < $i; $j++) { echo $x[$j] $y[$j] 1>&2; }
             assert($false)
         }

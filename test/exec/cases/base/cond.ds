@@ -9,7 +9,7 @@ function f() : Boolean {
 assert($true && $f())
 assert($count == 1)
 
-assert(not ($false && $f()))    # short circuit
+assert(!($false && $f()))    # short circuit
 assert($count == 1)
 
 

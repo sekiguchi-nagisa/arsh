@@ -10,7 +10,7 @@ assert $fd as Boolean
 
 $fd.close()
 assert $fd as String == -1 as String
-assert not $fd
+assert ! $fd
 assert $false == $fd
 
 var ex = 34 as Any

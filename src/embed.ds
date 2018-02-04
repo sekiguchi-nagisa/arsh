@@ -1,6 +1,6 @@
 # builtin variable definition
 
-if not(check_env PATH) {
+if !(check_env PATH) {
     export-env PATH = '/bin:/usr/bin:/usr/local/bin'
 }
 
@@ -18,7 +18,7 @@ let TRUE = :
 let True = $TRUE
 let true = $True
 
-let FALSE = not $true
+let FALSE = !$true
 let False = $FALSE
 let false = $False
 

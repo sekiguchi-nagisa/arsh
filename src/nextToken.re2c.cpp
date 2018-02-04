@@ -109,7 +109,7 @@ TokenKind Lexer::nextToken(Token &token) {
       INNER_NAME = APPLIED_NAME | '${' VAR_NAME '}';
       INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
 
-      CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#[\]+\-0-9\000];
+      CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#[\]!+\-0-9\000];
       CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$\000];
       CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>()$#\000];
       CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$\000];
@@ -158,6 +158,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
       <STMT,EXPR> "+"          { MODE(STMT); RET(PLUS); }
       <STMT,EXPR> "-"          { MODE(STMT); RET(MINUS); }
+      <STMT> "!"               { RET(NOT); }
 
       <STMT> INTEGER           { MODE(EXPR); RET(INT32_LITERAL); }
       <STMT> INTEGER_ "u"      { MODE(EXPR); RET(UINT32_LITERAL); }

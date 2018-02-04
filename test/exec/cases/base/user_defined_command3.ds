@@ -9,7 +9,7 @@ var t = $false
 try {
     f
 } catch($e) {
-    $t = not $t
+    $t = !$t
 }
 assert($t)
 assert($? == 1)

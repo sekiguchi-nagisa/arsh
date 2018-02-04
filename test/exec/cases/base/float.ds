@@ -25,10 +25,10 @@ assert(6.28 / 2.0 == 3.14)
 
 assert(3.14 != 0.004)
 assert(3.14 > 0.004)
-assert(not (3.14 < 0.004))
+assert(!(3.14 < 0.004))
 assert(3.14 >= 0.004)
 assert(3.14 >= 3.14E0)
-assert(not (3.14 <= 0.004))
+assert(!(3.14 <= 0.004))
 assert(3.14 <= 3.14E0)
 assert(3.14 != -4.5)
 
@@ -60,17 +60,17 @@ assert(3.14 + (6u64 as Float) == 9.14)
 let nan = 0.0 / 0.0   # nan
 let inf = 23.0 / 0.0 # inf
 
-assert(not 34.0.isNan())
+assert(!34.0.isNan())
 assert($nan.isNan())
-assert(not $inf.isNan())
+assert(!$inf.isNan())
 
-assert(not 23.0.isInf())
+assert(!23.0.isInf())
 assert($inf.isInf())
-assert(not $nan.isInf())
+assert(! $nan.isInf())
 
 assert(34.0.isFinite())
-assert(not $nan.isFinite())
-assert(not $inf.isFinite())
+assert(!$nan.isFinite())
+assert(! $inf.isFinite())
 
 
 # inheritance

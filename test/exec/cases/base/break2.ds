@@ -7,13 +7,13 @@ var i = 0
 var c = 'd'
 assert while $i < $list.size() { if $list[$i] == $c { break $i; }; $i++}! == 3
 $i++
-assert not while $i < $list.size() { if $list[$i] == $c { break $i; }; $i++}
+assert !while $i < $list.size() { if $list[$i] == $c { break $i; }; $i++}
 
 
 # do-while
 $i = 0
 assert (do { if $i > 100 { break 'de'; }; } while $false) is String!
-assert not do { if $i > 100 { break 'de'; }; } while $false
+assert ! do { if $i > 100 { break 'de'; }; } while $false
 $i = 120
 assert (do { if $i > 100 { break 'de'; }; } while $false)! == 'de'
 
@@ -22,13 +22,13 @@ assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12; 
 $i = 0
 assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12; } } while $false)! == 45.3
 $i = -1
-assert not(do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12; } } while $false)
+assert !(do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12; } } while $false)
 
 
 # for
 $i = -1
 assert for(var j = 0; $j < $i; $j++) { break new Error(""); } is Error!
-assert not for(var j = 0; $j < $i; $j++) { break new Error(""); }
+assert !for(var j = 0; $j < $i; $j++) { break new Error(""); }
 $i = 100
 assert for(var j = 0; $j < $i; $j++) { break new Error(""); }! is Error
 

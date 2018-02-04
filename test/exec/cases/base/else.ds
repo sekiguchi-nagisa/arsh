@@ -7,6 +7,6 @@ function func($num : Int): Boolean {
 	}
 }
 
-assert(not $func(1))
-assert(not $func(2))
+assert(! $func(1))
+assert(!$func(2))
 assert($func(3))

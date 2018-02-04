@@ -1,5 +1,5 @@
 #$test($result = 'throw', $lineNum = 5, $ifHaveDBus = $false, $errorKind = 'DBusError', $status = 1)
 
-assert(not $DBus.available())
+assert(! $DBus.available())
 
 throw new DBusError("unsupported");

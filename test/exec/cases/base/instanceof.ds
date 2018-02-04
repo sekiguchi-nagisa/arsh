@@ -15,7 +15,7 @@ function f($a : Int, $b : Error) {
 }
 
 assert($f is Func<Void, [Int, Error]>)
-assert(not($f is Func<Float, [Int, Int]>))
+assert(!($f is Func<Float, [Int, Int]>))
 
 # generic type
 var g1 = [1u32, 2u32, 3u32]
@@ -28,19 +28,19 @@ var g4 = ["a" : 1, "b" : 2]
 var g5 = ["a" : "aa", "b" : "bb"]
 assert($g4 is Map<String, Int>)
 assert($g5 is Map<String, String>)
-assert(not($g5 is Map<Int, String>))
+assert(!($g5 is Map<Int, String>))
 
 # Exception type
 var h1 = new Error("")
 var h2 = new TypeCastError("")
 
 assert($h1 is Error)
-assert(not ($h1 is OutOfRangeError))
+assert(! ($h1 is OutOfRangeError))
 assert($h2 is Error)
 assert($h2 is TypeCastError)
 $h1 = $h2
 assert($h1 is TypeCastError)
-assert(not ($h1 is KeyNotFoundError))
+assert(! ($h1 is KeyNotFoundError))
 
 
 try {

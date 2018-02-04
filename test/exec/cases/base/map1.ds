@@ -13,25 +13,25 @@ assert($a["b"] == -456)
 
 assert($a.size() is Int32)
 assert($a.size() == 2)
-assert(not $a.empty())
+assert(!$a.empty())
 
 assert($a.get("b"))
 assert $a.get("b")! == -456
-assert(not $a.get("c"))
+assert(! $a.get("c"))
 
 assert $a.find("b")
-assert not $a.find("de")
+assert ! $a.find("de")
 
-assert(not $a.put("c", -19))
+assert(!$a.put("c", -19))
 assert($a.put("c", 789)! == -19)
 
 assert $a.default("1234", 100) == 100
 assert $a.get("1234")! == 100
 assert $a.default("1234", 10) == 100
 
-assert(not $a.remove("333"))
+assert(! $a.remove("333"))
 assert($a.remove("c"))
-assert(not $a.get("c"))
+assert(!$a.get("c"))
 
 
 var b = new Map<Int, Float>()
@@ -50,7 +50,7 @@ assert($ex is KeyNotFoundError)
 
 $b.clear()
 assert($b.empty())
-assert(not $b.get(34))
+assert(!$b.get(34))
 
 
 # inheritance
@@ -59,4 +59,4 @@ assert(["fr" : 34.2] is Variant)
 assert(["fre" : 32] is Any)
 
 assert(new Map<Byte, Any>() is Map<Byte, Any>)
-assert(not(new Map<Byte, Any>() is Variant))
+assert(!(new Map<Byte, Any>() is Variant))

@@ -5,7 +5,7 @@ function opt($v : Int) : Option<String> {
 # boolean cast
 assert $opt(1)
 
-assert not $opt(-2)
+assert ! $opt(-2)
 
 if $opt(1) {
     assert $true
@@ -23,7 +23,7 @@ assert $opt(5) ? $true : $false
 assert $opt(-3) ? $false : $true
 
 assert $opt(45) as Boolean
-assert not ($opt(-90) as Boolean)
+assert !($opt(-90) as Boolean)
 
 
 # unwrap
@@ -82,5 +82,5 @@ try { echo ${(new Byte!(),)}; } catch $e { $ex = $e }
 assert $ex is UnwrappingError
 
 # type
-assert not (new Int!() is Int)
+assert !(new Int!() is Int)
 assert new Int!() is Int!

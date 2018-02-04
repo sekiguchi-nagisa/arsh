@@ -13,7 +13,7 @@ false
 assert($? == 1)
 
 var t = false
-assert(not $t)
+assert(! $t)
 
 assert(help false | grep 'false: false')
 assert(help false | grep 'Always failure')

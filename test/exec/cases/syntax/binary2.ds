@@ -11,7 +11,7 @@ false ||
 
 var a = $true
 $a =
-     not true
+     ! true
 
 var b = 0
 $b +=

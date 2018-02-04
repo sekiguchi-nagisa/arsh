@@ -7,9 +7,9 @@ assert($true == $True)
 assert($TRUE == $true)
 assert($false == $False)
 assert($FALSE == $false)
-assert(not $true == $false)
-assert(not not $true == $true)
-assert(not not $TRUE)
+assert(! $true == $false)
+assert(! ! $true == $true)
+assert(! ! $TRUE)
 
 # inheritance
 assert($true is Boolean)

@@ -1301,7 +1301,7 @@ TEST_F(LexerTest_Lv1, CMD9) {
     SCOPED_TRACE("");
 
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(NOT, "!", COMMAND, "hoge", EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD10) {
@@ -1642,7 +1642,7 @@ TEST_F(LexerTest_Lv1, NE1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, EOS, "");
+        EXPECT(NOT, "!", COMMAND, "=", EOS, "");
     });
 }
 
@@ -1866,7 +1866,7 @@ TEST_F(LexerTest_Lv1, UNMATCH1) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text);
-        EXPECT(COMMAND, text, EOS, "");
+        EXPECT(NOT, "!", COMMAND, "~", EOS, "");
     });
 }
 

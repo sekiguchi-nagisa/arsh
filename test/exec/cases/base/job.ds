@@ -1,10 +1,10 @@
 
 # background job
 var j = ls &
-assert not $j[0]
-assert not $j[1]
-assert not $j.in()
-assert not $j.out()
+assert ! $j[0]
+assert ! $j[1]
+assert !$j.in()
+assert ! $j.out()
 assert $j.size() == 1
 
 var ex = 34 as Any
@@ -14,15 +14,15 @@ assert $ex is OutOfRangeError
 assert $j as String == "%1"
 assert $j
 assert $j.wait()! == 0
-assert not $j
+assert ! $j
 
 
 # disowned background job
 $j = ls &!
-assert not $j[0]
-assert not $j[1]
-assert not $j.in()
-assert not $j.out()
+assert ! $j[0]
+assert ! $j[1]
+assert !$j.in()
+assert !$j.out()
 assert $j.size() == 1
 assert $j as String == "%0"
 assert $j.wait()! == 0
@@ -41,9 +41,9 @@ assert { read -u $j[1]; $REPLY; } == "reply: hello"
 
 assert $j
 assert $j.wait()! == 0
-assert not $j
-assert not $j.in()
-assert not $j.out()
+assert ! $j
+assert ! $j.in()
+assert !$j.out()
 assert $j.size() == 1
 
 
@@ -68,7 +68,7 @@ assert $j2.wait()! == 0
 $j = for(;;) { true; } &
 $j.suspend()
 assert $j
-assert not $j.wait()
+assert !$j.wait()
 assert $j
 
 $j.resume()

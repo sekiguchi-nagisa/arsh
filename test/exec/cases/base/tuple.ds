@@ -8,7 +8,7 @@ assert($a._0 == 100)
 $a._1 = "world"
 assert($a._1 == "world")
 
-assert(not ($false, 
+assert(! ($false,
 		3.14)._0
 		)
 
@@ -31,7 +31,7 @@ assert((23, "") is Variant)
 assert((23, "") is Any)
 
 assert((12 as Any, $true) is Tuple<Any, Boolean>)
-assert(not ((12 as Any, $true) is Variant))
+assert(! ((12 as Any, $true) is Variant))
 
 # super method
 assert("(1, 2)" == (1, 2) as String)

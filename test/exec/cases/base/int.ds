@@ -124,18 +124,18 @@ assert(0o1777777777777777777777_u64 == 18446744073709551615u64)
 assert(-12b is Byte)
 assert(-1b == 255b)
 assert(+ 23b is Byte)
-assert(not 23b is Byte)
+assert(! 23b is Byte)
 
 # Int16 op
 assert(+ 23i16 is Int16)
 assert(- 23i16 is Int16)
-assert(not 43i16 is Int16)
+assert(! 43i16 is Int16)
 
 # Uint16 op
 assert(- 23u16 is Uint16)
 assert(-200u16 == 65336)
 assert(+ 34u16 is Uint16)
-assert(not 34u16 is Uint16)
+assert(! 34u16 is Uint16)
 
 # Int32 op
 assert((12 + 3) is Int32)
@@ -161,13 +161,13 @@ assert($ex is ArithmeticError)
 
 assert(12 == + 12)
 assert(-12 == - 12)
-assert((not 43) is Int32)
+assert((! 43) is Int32)
 
 assert(3456 != 345)
 assert(3543 < 9999)
 assert(32 > -999)
 assert(43 <= 43)
-assert(not (43 <= 0))
+assert(!(43 <= 0))
 assert(55 >= 55)
 assert(43 >= -353)
 
@@ -206,7 +206,7 @@ try { 12u32%0u32 } catch($e) { $ex = $e}
 assert($ex is ArithmeticError)
 
 assert(12u32 == + 12u32)
-assert((not 43u32) is Uint32)
+assert((!43u32) is Uint32)
 
 assert(3456u32 != 345u32)
 assert(3543u32 < 9999u32)
@@ -249,13 +249,13 @@ assert($ex is ArithmeticError)
 
 assert(12i64 == + 12i64)
 assert(-12i64 == - 12i64)
-assert((not 43i64) is Int64)
+assert((! 43i64) is Int64)
 
 assert(3456i64 != 345i64)
 assert(3543i64 < 9999i64)
 assert(32i64 > -999i64)
 assert(43i64 <= 43i64)
-assert(not (43i64 <= 0i64))
+assert(! (43i64 <= 0i64))
 assert(55i64 >= 55i64)
 assert(43i64 >= -353i64)
 
@@ -293,7 +293,7 @@ try { 12u64%0u64 } catch($e) { $ex = $e}
 assert($ex is ArithmeticError)
 
 assert(12u64 == + 12u64)
-assert((not 43u64) is Uint64)
+assert((! 43u64) is Uint64)
 
 assert(3456u64 != 345u64)
 assert(3543u64 < 9999u64)

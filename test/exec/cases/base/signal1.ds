@@ -14,7 +14,7 @@ assert $s as Any is Signal
 assert $s.name() == 'TERM'
 assert $SIG.signal('sys')!.name() == 'SYS'
 
-assert not $SIG.signal('SIGCHILD')
+assert ! $SIG.signal('SIGCHILD')
 
 assert $SIG.list()[0] is Signal
 

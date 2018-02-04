@@ -99,4 +99,4 @@ assert([32, 43] is Variant)
 assert([34] is Any)
 
 assert(new Array<Any>() is Array<Any>)
-assert(not(new Array<Any>() is Variant))
+assert(!(new Array<Any>() is Variant))

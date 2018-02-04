@@ -5,9 +5,9 @@ function func($num: Int) : Boolean {
 	return $false
 }
 
-assert not $func(1)
+assert ! $func(1)
 assert($func(2))
-assert(not $func(3))
+assert(!$func(3))
 
 assert if $true { $true; } else { $false; }
 assert if $false { throw 34; } else { $true; }
