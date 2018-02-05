@@ -385,7 +385,7 @@ TEST_F(LexerTest_Lv1, plus_tok2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
-        EXPECT(PLUS, text, EOS, "");
+        EXPECT(ADD, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -405,7 +405,7 @@ TEST_F(LexerTest_Lv1, minus_tok2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
-        EXPECT(MINUS, text, EOS, "");
+        EXPECT(SUB, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -1565,7 +1565,7 @@ TEST_F(LexerTest_Lv1, LT2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
-        EXPECT(LA, text, EOS, "");
+        EXPECT(LT, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }
@@ -1584,7 +1584,7 @@ TEST_F(LexerTest_Lv1, GT2) {
     ASSERT_NO_FATAL_FAILURE({
         SCOPED_TRACE("");
         this->initLexer(text, yycEXPR);
-        EXPECT(RA, text, EOS, "");
+        EXPECT(GT, text, EOS, "");
         this->assertLexerMode(yycSTMT);
     });
 }

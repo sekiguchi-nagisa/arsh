@@ -1165,9 +1165,9 @@ const char *resolveUnaryOpName(TokenKind op) {
 
 const char *resolveBinaryOpName(TokenKind op) {
     switch(op) {
-    case PLUS:
+    case ADD:
         return OP_ADD;
-    case MINUS:
+    case SUB:
         return OP_SUB;
     case MUL:
         return OP_MUL;
@@ -1179,9 +1179,9 @@ const char *resolveBinaryOpName(TokenKind op) {
         return OP_EQ;
     case NE:
         return OP_NE;
-    case LA:
+    case LT:
         return OP_LT;
-    case RA:
+    case GT:
         return OP_GT;
     case LE:
         return OP_LE;
@@ -1205,13 +1205,13 @@ const char *resolveBinaryOpName(TokenKind op) {
 TokenKind resolveAssignOp(TokenKind op) {
     switch(op) {
     case INC:
-        return PLUS;
+        return ADD;
     case DEC:
-        return MINUS;
+        return SUB;
     case ADD_ASSIGN:
-        return PLUS;
+        return ADD;
     case SUB_ASSIGN:
-        return MINUS;
+        return SUB;
     case MUL_ASSIGN:
         return MUL;
     case DIV_ASSIGN:

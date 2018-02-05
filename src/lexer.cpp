@@ -41,8 +41,8 @@ unsigned int getPrecedence(TokenKind kind) {
     case DIV:
     case MOD:
         return 280;
-    case PLUS:
-    case MINUS:
+    case ADD:
+    case SUB:
         return 260;
     case AND:
         return 220;
@@ -52,8 +52,8 @@ unsigned int getPrecedence(TokenKind kind) {
         return 180;
     case NULL_COALE:
         return 170;
-    case LA:
-    case RA:
+    case LT:
+    case GT:
     case LE:
     case GE:
     case EQ:

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Nagisa Sekiguchi
+ * Copyright (C) 2015-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,17 +75,19 @@
     TOKEN(RB                                 , "]") /* ] */\
     TOKEN(LBC                                , "{") /* { */\
     TOKEN(RBC                                , "}") /* } */\
-    TOKEN(LA                                 , "<") /* < */\
-    TOKEN(RA                                 , ">") /* > */\
     /* command */\
     TOKEN(COMMAND                            , "<Command>") \
     /* separator */\
     TOKEN(COLON                              , ":") \
     TOKEN(COMMA                              , ",") \
     /* binary op */\
+    TOKEN(ADD                                , "+") \
+    TOKEN(SUB                                , "-") \
     TOKEN(MUL                                , "*") \
     TOKEN(DIV                                , "/") \
     TOKEN(MOD                                , "%") \
+    TOKEN(LT                                 , "<") \
+    TOKEN(GT                                 , ">") \
     TOKEN(LE                                 , "<=") \
     TOKEN(GE                                 , ">=") \
     TOKEN(EQ                                 , "==") \
@@ -173,8 +175,6 @@ const char *toString(TokenKind kind);
 
 
 // binary op alias
-//#define ADD PLUS
-//#define SUB MINUS
 //#define LT LA
 //#define GT RA
 

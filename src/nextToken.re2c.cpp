@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Nagisa Sekiguchi
+ * Copyright (C) 2015-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,8 +156,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "var"             { MODE(NAME); RET(VAR); }
       <STMT,EXPR> "while"      { MODE(STMT); RET(WHILE); }
 
-      <STMT,EXPR> "+"          { MODE(STMT); RET(PLUS); }
-      <STMT,EXPR> "-"          { MODE(STMT); RET(MINUS); }
+      <STMT> "+"               { RET(PLUS); }
+      <STMT> "-"               { RET(MINUS); }
       <STMT> "!"               { RET(NOT); }
 
       <STMT> INTEGER           { MODE(EXPR); RET(INT32_LITERAL); }
@@ -196,11 +196,13 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> ":"               { RET(COLON); }
       <EXPR> ","               { MODE(STMT); RET(COMMA); }
 
+      <EXPR> "+"               { MODE(STMT); RET(ADD); }
+      <EXPR> "-"               { MODE(STMT); RET(SUB); }
       <EXPR> "*"               { MODE(STMT); RET(MUL); }
       <EXPR> "/"               { MODE(STMT); RET(DIV); }
       <EXPR> "%"               { MODE(STMT); RET(MOD); }
-      <EXPR> "<"               { MODE(STMT); RET(LA); }
-      <EXPR> ">"               { MODE(STMT); RET(RA); }
+      <EXPR> "<"               { MODE(STMT); RET(LT); }
+      <EXPR> ">"               { MODE(STMT); RET(GT); }
       <EXPR> "<="              { MODE(STMT); RET(LE); }
       <EXPR> ">="              { MODE(STMT); RET(GE); }
       <EXPR> "=="              { MODE(STMT); RET(EQ); }

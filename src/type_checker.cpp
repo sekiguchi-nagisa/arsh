@@ -672,7 +672,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     }
 
     // string concatenation
-    if(node.getOp() == TokenKind::PLUS &&
+    if(node.getOp() == TokenKind::ADD &&
                 (leftType == this->typePool.getStringType() || rightType == this->typePool.getStringType())) {
         this->convertToStringExpr(node);
         node.setType(this->checkType(node.getOptNode()));
