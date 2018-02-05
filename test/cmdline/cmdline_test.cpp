@@ -396,7 +396,7 @@ TEST_F(CmdlineTest, feature) {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert($DBus.available())"), 0));
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 0, "USE_DBUS\n"));
     } else {
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert(not $DBus.available())"), 0));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert(!$DBus.available())"), 0));
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
     }
 }
