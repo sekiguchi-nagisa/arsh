@@ -344,10 +344,6 @@ const char *getIfaceDir() {
     return dir.c_str();
 }
 
-const char *getLogicalWorkingDir(const DSState &st) {
-    return st.logicalWorkingDir.c_str();
-}
-
 const char *getWorkingDir(const DSState &st, bool useLogical, std::string &buf) {
     if(useLogical) {
         if(!S_ISDIR(getStMode(st.logicalWorkingDir.c_str()))) {

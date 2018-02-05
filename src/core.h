@@ -232,8 +232,6 @@ const char *getConfigRootDir();
 
 const char *getIfaceDir();
 
-const char *getLogicalWorkingDir(const DSState &st);
-
 /**
  *
  * @param st
