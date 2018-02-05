@@ -71,9 +71,19 @@ private:
         } while(k != EOS && k != INVALID);
     }
 
+
+    const char *toName(TokenKind kind) {
+        const char *t[] = {
+#define GEN_NAME(E, S) #E,
+            EACH_TOKEN(GEN_NAME)
+#undef GEN_NAME
+        };
+        return t[static_cast<unsigned int>(kind)];
+    }
+
     virtual void assertKind(TokenKind expected, TokenKind actual) {
         SCOPED_TRACE("");
-        ASSERT_STREQ(TO_NAME(expected), TO_NAME(actual));
+        ASSERT_STREQ(this->toName(expected), this->toName(actual));
     }
 
     virtual void assertToken(unsigned int index, TokenKind expectedKind, const char *expectedText) {
