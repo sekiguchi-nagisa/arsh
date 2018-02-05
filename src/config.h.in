@@ -28,8 +28,4 @@
 
 #cmakedefine USE_FIXED_TIME     // time_util.h
 
-
-// for fuzzing
-#cmakedefine FUZZING_BUILD_MODE
-
 #endif //YDSH_CONFIG_H
