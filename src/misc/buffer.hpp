@@ -161,6 +161,10 @@ public:
         return this->data;
     }
 
+    T *get() noexcept {
+        return this->data;
+    }
+
     void clear() noexcept {
         this->usedSize = 0;
     }
