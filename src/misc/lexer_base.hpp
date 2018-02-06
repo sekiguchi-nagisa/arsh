@@ -90,11 +90,40 @@ protected:
     static constexpr unsigned int DEFAULT_SIZE = 256;
     static constexpr int DEFAULT_READ_SIZE = 128;
 
-private:
+protected:
     LexerBase() = default;
+
+    ~LexerBase() {
+        delete[] this->buf;
+    }
 
 public:
     NON_COPYABLE(LexerBase);
+
+    LexerBase(LexerBase &&lex) noexcept :
+            fp(lex.fp), bufSize(lex.bufSize), buf(lex.buf), cursor(lex.cursor),
+            limit(lex.limit), marker(lex.marker), ctxMarker(lex.ctxMarker),
+            endOfFile(lex.endOfFile), endOfString(lex.endOfString) {
+        lex.buf = nullptr;
+    }
+
+    LexerBase &operator=(LexerBase &&lex) {
+        auto tmp(std::move(lex));
+        this->swap(tmp);
+        return *this;
+    }
+
+    void swap(LexerBase &lex) {
+        std::swap(this->fp, lex.fp);
+        std::swap(this->bufSize, lex.bufSize);
+        std::swap(this->buf, lex.buf);
+        std::swap(this->cursor, lex.cursor);
+        std::swap(this->limit, lex.limit);
+        std::swap(this->marker, lex.marker);
+        std::swap(this->ctxMarker, lex.ctxMarker);
+        std::swap(this->endOfFile, lex.endOfFile);
+        std::swap(this->endOfString, lex.endOfString);
+    }
 
     /**
      * FILE must be opened with binary mode.
@@ -125,12 +154,6 @@ public:
      */
     LexerBase(const char *data, unsigned int size);
 
-protected:
-    ~LexerBase() {
-        delete[] this->buf;
-    }
-
-public:
     /**
      * get current reading position.
      */
