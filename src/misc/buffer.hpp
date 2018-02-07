@@ -145,6 +145,14 @@ public:
      */
     FlexBuffer &append(const T *value, size_type size) noexcept;
 
+    template <typename Func>
+    FlexBuffer &appendBy(size_type maxSize, Func func) noexcept {
+        this->reserve(this->size() + maxSize);
+        size_type actualSize = func(this->get() + this->size());
+        this->usedSize += actualSize;
+        return *this;
+    }
+
     size_type capacity() const noexcept {
         return this->maxSize;
     }
