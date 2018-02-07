@@ -316,7 +316,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
     EOS:
     kind = EOS;
-    token.pos = this->limit - this->buf;
+    token.pos = startPos;
     token.size = 0;
     goto RET;
 

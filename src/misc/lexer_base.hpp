@@ -29,6 +29,7 @@
 #include "unicode.hpp"
 #include "noncopyable.h"
 #include "token.hpp"
+#include "buffer.hpp"
 
 namespace ydsh {
 namespace parser_base {
@@ -50,12 +51,7 @@ protected:
      */
     FILE *fp{nullptr};
 
-    unsigned int bufSize{0};
-
-    /**
-     * must terminate null character.
-     */
-    unsigned char *buf{nullptr};
+    FlexBuffer<unsigned char> buf;
 
     /**
      * current reading pointer of buf.
@@ -78,11 +74,6 @@ protected:
     unsigned char *ctxMarker{nullptr};
 
     /**
-     * if fp is null or fp reach EOF, it it true.
-     */
-    bool endOfFile{false};
-
-    /**
      * if true, reach end of string. nextToken() always return EOS.
      */
     bool endOfString{false};
@@ -93,18 +84,15 @@ protected:
 protected:
     LexerBase() = default;
 
-    ~LexerBase() {
-        delete[] this->buf;
-    }
+    ~LexerBase() = default;
 
 public:
     NON_COPYABLE(LexerBase);
 
     LexerBase(LexerBase &&lex) noexcept :
-            fp(lex.fp), bufSize(lex.bufSize), buf(lex.buf), cursor(lex.cursor),
+            fp(lex.fp), buf(std::move(lex.buf)), cursor(lex.cursor),
             limit(lex.limit), marker(lex.marker), ctxMarker(lex.ctxMarker),
-            endOfFile(lex.endOfFile), endOfString(lex.endOfString) {
-        lex.buf = nullptr;
+            endOfString(lex.endOfString) {
     }
 
     LexerBase &operator=(LexerBase &&lex) {
@@ -115,13 +103,11 @@ public:
 
     void swap(LexerBase &lex) {
         std::swap(this->fp, lex.fp);
-        std::swap(this->bufSize, lex.bufSize);
         std::swap(this->buf, lex.buf);
         std::swap(this->cursor, lex.cursor);
         std::swap(this->limit, lex.limit);
         std::swap(this->marker, lex.marker);
         std::swap(this->ctxMarker, lex.ctxMarker);
-        std::swap(this->endOfFile, lex.endOfFile);
         std::swap(this->endOfString, lex.endOfString);
     }
 
@@ -158,19 +144,18 @@ public:
      * get current reading position.
      */
     unsigned int getPos() const {
-        return this->cursor - this->buf;
+        return this->cursor - this->buf.get();
     }
 
     /**
      * used size of buf. must be this->getUsedSize() <= this->getBufSize().
      */
     unsigned int getUsedSize() const {
-        return this->limit - this->buf + 1;
+        return this->buf.size();
     }
 
     bool withinRange(Token token) const {
-        return token.pos < this->getUsedSize()
-               && token.pos + token.size <= this->getUsedSize();
+        return token.pos + token.size <= this->getUsedSize();
     }
 
     /**
@@ -178,7 +163,7 @@ public:
      */
     std::string toTokenText(Token token) const {
         assert(this->withinRange(token));
-        return std::string((char *) (this->buf + token.pos), token.size);
+        return std::string((char *) (this->buf.get() + token.pos), token.size);
     }
 
     /**
@@ -186,7 +171,7 @@ public:
      */
     void copyTokenText(Token token, char *buf) const {
         assert(this->withinRange(token));
-        memcpy(buf, (char *)this->buf + token.pos, token.size);
+        memcpy(buf, (char *)this->buf.get() + token.pos, token.size);
     }
 
     bool startsWith(Token token, char ch) const {
@@ -197,7 +182,7 @@ public:
     bool equals(Token token, const char *str) const {
         assert(this->withinRange(token));
         return strlen(str) == token.size &&
-                memcmp(this->buf + token.pos, str, token.size) == 0;
+                memcmp(this->buf.get() + token.pos, str, token.size) == 0;
     }
 
     /**
@@ -217,18 +202,10 @@ public:
     std::string formatLineMarker(Token lineToken, Token token) const;
 
 private:
-    /**
-     * if this->usedSize + needSize > this->maxSize, expand buf.
-     */
-    void expandBuf(unsigned int needSize);
-
-    /**
-     * swap new buffer and old one, after swapping, update some pointers and bufSize
-     */
-    void swapBuffer(unsigned char *&newBuf, unsigned int &newSize);
+    void appendToBuf(unsigned char *data, unsigned int size);
 
     unsigned int toCodePoint(unsigned int offset, int &code) const {
-        return UnicodeUtil::utf8ToCodePoint((char *)(this->buf + offset), this->getUsedSize() - offset, code);
+        return UnicodeUtil::utf8ToCodePoint((char *)(this->buf.get() + offset), this->getUsedSize() - offset, code);
     }
 
 protected:
@@ -245,28 +222,28 @@ protected:
 template<bool T>
 LexerBase<T>::LexerBase(FILE *fp) : LexerBase() {
     this->fp = fp;
-    this->bufSize = DEFAULT_SIZE;
-    this->buf = new unsigned char[this->bufSize];
-
-    this->cursor = this->buf;
-    this->limit = this->buf;
+    this->cursor = this->buf.get();
+    this->limit = this->buf.get();
 }
 
 template<bool T>
 LexerBase<T>::LexerBase(const char *data, unsigned int size) : LexerBase() {
     const bool insertingNewline = size == 0 || data[size - 1] != '\n';
-    this->bufSize = size + 1 + (insertingNewline ? 1 : 0);
+    unsigned int needSize = size + 2;
+    this->buf.appendBy(needSize, [&](unsigned char *ptr) {
+        unsigned int writeSize = size;
+        memcpy(ptr, data, size);
+        if(insertingNewline) {
+            *(ptr + writeSize) = '\n';
+            writeSize++;
+        }
+        *(ptr + writeSize) = '\0';
+        writeSize++;
+        return writeSize;
+    });
 
-    this->buf = new unsigned char[this->bufSize];
-    memcpy(this->buf, data, sizeof(unsigned char) * size);
-    if(insertingNewline) {
-        this->buf[this->bufSize - 2] = '\n';
-    }
-    this->buf[this->bufSize - 1] = '\0';
-
-    this->cursor = this->buf;
-    this->limit = this->buf + this->bufSize - 1;
-    this->endOfFile = true;
+    this->cursor = this->buf.get();
+    this->limit = this->cursor + this->buf.size();
 }
 
 template <bool T>
@@ -373,66 +350,47 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     return marker;
 }
 
-template<bool T>
-void LexerBase<T>::expandBuf(unsigned int needSize) {
-    unsigned int usedSize = this->getUsedSize();
-    unsigned int size = usedSize + needSize;
-    if(size > this->bufSize) {
-        unsigned int newSize = this->bufSize;
-        do {
-            newSize += (newSize >> 1);
-        } while(newSize < size);
-
-        // swap to new buffer
-        unsigned char *newBuf = new unsigned char[newSize];
-        memcpy(newBuf, this->buf, sizeof(unsigned char) * usedSize);
-        this->swapBuffer(newBuf, newSize);
-        delete[] newBuf;
-    }
-}
-
 template <bool T>
-void LexerBase<T>::swapBuffer(unsigned char *&newBuf, unsigned int &newSize) {
+void LexerBase<T>::appendToBuf(unsigned char *data, unsigned int size) {
     // save position
-    const unsigned int usedSize = this->getUsedSize();
     const unsigned int pos = this->getPos();
-    const unsigned int markerPos = this->marker - this->buf;
-    const unsigned int ctxMarkerPos = this->ctxMarker - this->buf;
+    const unsigned int markerPos = this->marker - this->buf.get();
+    const unsigned int ctxMarkerPos = this->ctxMarker - this->buf.get();
 
-    // swap
-    std::swap(this->buf, newBuf);
-    std::swap(this->bufSize, newSize);
+    this->buf.append(data, size);
 
     // restore position
-    this->cursor = this->buf + pos;
-    this->limit = this->buf + usedSize - 1;
-    this->marker = this->buf + markerPos;
-    this->ctxMarker = this->buf + ctxMarkerPos;
+    this->cursor = this->buf.get() + pos;
+    this->limit = this->buf.get() + this->buf.size();
+    this->marker = this->buf.get() + markerPos;
+    this->ctxMarker = this->buf.get() + ctxMarkerPos;
 }
 
 template<bool T>
 bool LexerBase<T>::fill(int n) {
-    if(this->endOfString && this->limit - this->cursor <= 0) {
+    if(this->endOfString) {
         return false;
     }
 
-    if(!this->endOfFile) {
-        int needSize = n - (this->limit - this->cursor);
-        assert(needSize > -1);
-        needSize = (needSize > DEFAULT_READ_SIZE) ? needSize : DEFAULT_READ_SIZE;
-        this->expandBuf(needSize);
-        int readSize = fread(this->limit, sizeof(unsigned char), needSize, this->fp);
-        this->limit += readSize;
-        *this->limit = '\0';
+    if(this->fp != nullptr) {
+        int needSize = (n > DEFAULT_READ_SIZE) ? n : DEFAULT_READ_SIZE;
+        unsigned char data[needSize + 2];
+        int readSize = fread(data, sizeof(unsigned char), needSize, this->fp);
         if(readSize < needSize) {
-            this->endOfFile = true;
-            if(*(this->limit - 1) != '\n') {    // terminated newline
-                this->expandBuf(1);
-                *this->limit = '\n';
-                this->limit += 1;
-                *this->limit = '\0';
+            this->fp = nullptr;
+            if(readSize > 0) {
+                if(data[readSize - 1] != '\n') {
+                    data[readSize] = '\n';
+                    readSize++;
+                }
+            } else {
+                data[readSize] = '\n';
+                readSize++;
             }
+            data[readSize] = '\0';
+            readSize++;
         }
+        this->appendToBuf(data, readSize);
     }
     return true;
 }

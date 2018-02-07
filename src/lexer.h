@@ -149,8 +149,8 @@ public:
     }
 
     void setPos(unsigned int pos) {
-        assert(this->buf + pos <= this->limit);
-        this->cursor = this->buf + pos;
+        assert(this->buf.get() + pos <= this->limit);
+        this->cursor = this->buf.get() + pos;
     }
 
     const SourceInfoPtr &getSourceInfoPtr() const {
