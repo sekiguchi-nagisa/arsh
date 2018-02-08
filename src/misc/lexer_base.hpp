@@ -202,7 +202,7 @@ public:
     std::string formatLineMarker(Token lineToken, Token token) const;
 
 private:
-    void appendToBuf(unsigned char *data, unsigned int size);
+    void appendToBuf(const unsigned char *data, unsigned int size, bool isEnd);
 
     unsigned int toCodePoint(unsigned int offset, int &code) const {
         return UnicodeUtil::utf8ToCodePoint((char *)(this->buf.get() + offset), this->getUsedSize() - offset, code);
@@ -228,22 +228,7 @@ LexerBase<T>::LexerBase(FILE *fp) : LexerBase() {
 
 template<bool T>
 LexerBase<T>::LexerBase(const char *data, unsigned int size) : LexerBase() {
-    const bool insertingNewline = size == 0 || data[size - 1] != '\n';
-    unsigned int needSize = size + 2;
-    this->buf.appendBy(needSize, [&](unsigned char *ptr) {
-        unsigned int writeSize = size;
-        memcpy(ptr, data, size);
-        if(insertingNewline) {
-            *(ptr + writeSize) = '\n';
-            writeSize++;
-        }
-        *(ptr + writeSize) = '\0';
-        writeSize++;
-        return writeSize;
-    });
-
-    this->cursor = this->buf.get();
-    this->limit = this->cursor + this->buf.size();
+    this->appendToBuf(reinterpret_cast<const unsigned char *>(data), size, true);
 }
 
 template <bool T>
@@ -351,13 +336,30 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
 }
 
 template <bool T>
-void LexerBase<T>::appendToBuf(unsigned char *data, unsigned int size) {
+void LexerBase<T>::appendToBuf(const unsigned char *data, unsigned int size, bool isEnd) {
     // save position
     const unsigned int pos = this->getPos();
     const unsigned int markerPos = this->marker - this->buf.get();
     const unsigned int ctxMarkerPos = this->ctxMarker - this->buf.get();
 
-    this->buf.append(data, size);
+    this->buf.appendBy(size + 2, [&](unsigned char *ptr){
+        unsigned int writeSize = size;
+        memcpy(ptr, data, size);
+        if(isEnd) {
+            if(size == 0) {
+                if(this->buf.empty() || this->buf.back() != '\n') {
+                    *(ptr + writeSize) = '\n';
+                    writeSize++;
+                }
+            } else if(data[size - 1] != '\n') {
+                *(ptr + writeSize) = '\n';
+                writeSize++;
+            }
+            *(ptr + writeSize) = '\0';
+            writeSize++;
+        }
+        return writeSize;
+    });
 
     // restore position
     this->cursor = this->buf.get() + pos;
@@ -378,19 +380,8 @@ bool LexerBase<T>::fill(int n) {
         int readSize = fread(data, sizeof(unsigned char), needSize, this->fp);
         if(readSize < needSize) {
             this->fp = nullptr;
-            if(readSize > 0) {
-                if(data[readSize - 1] != '\n') {
-                    data[readSize] = '\n';
-                    readSize++;
-                }
-            } else {
-                data[readSize] = '\n';
-                readSize++;
-            }
-            data[readSize] = '\0';
-            readSize++;
         }
-        this->appendToBuf(data, readSize);
+        this->appendToBuf(data, readSize, this->fp == nullptr);
     }
     return true;
 }
