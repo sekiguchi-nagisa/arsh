@@ -143,7 +143,8 @@ public:
     void swap(Lexer &lex) {
         LexerBase::swap(lex);
         std::swap(this->srcInfoPtr, lex.srcInfoPtr);
-        std::swap(prevNewLine, lex.prevNewLine);
+        std::swap(this->modeStack, lex.modeStack);
+        std::swap(this->prevNewLine, lex.prevNewLine);
         std::swap(this->prevSpace, lex.prevSpace);
         std::swap(this->prevMode, lex.prevMode);
     }
