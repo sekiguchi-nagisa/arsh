@@ -17,13 +17,13 @@
 #include <DescLexer.h>
 
 // helper macro definition.
-#define RET(k) do { kind = k; goto END; } while(0)
+#define RET(k) do { kind = k; goto END; } while(false)
 
-#define REACH_EOS() do { this->endOfString = true; goto EOS; } while(0)
+#define REACH_EOS() do { goto EOS; } while(false)
 
 #define SKIP() goto INIT
 
-#define ERROR() do { RET(INVALID); } while(0)
+#define ERROR() do { RET(INVALID); } while(false)
 
 
 DescTokenKind DescLexer::nextToken(Token &token) {
@@ -80,7 +80,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
     return kind;
 
     EOS:
-    token.pos = startPos;
+    token.pos = this->getUsedSize() - 1;
     token.size = 0;
     return EOS;
 }

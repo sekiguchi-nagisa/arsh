@@ -73,11 +73,6 @@ protected:
      */
     unsigned char *ctxMarker{nullptr};
 
-    /**
-     * if true, reach end of string. nextToken() always return EOS.
-     */
-    bool endOfString{false};
-
     static constexpr unsigned int DEFAULT_SIZE = 256;
     static constexpr int DEFAULT_READ_SIZE = 128;
 
@@ -91,9 +86,7 @@ public:
 
     LexerBase(LexerBase &&lex) noexcept :
             fp(lex.fp), buf(std::move(lex.buf)), cursor(lex.cursor),
-            limit(lex.limit), marker(lex.marker), ctxMarker(lex.ctxMarker),
-            endOfString(lex.endOfString) {
-    }
+            limit(lex.limit), marker(lex.marker), ctxMarker(lex.ctxMarker) { }
 
     LexerBase &operator=(LexerBase &&lex) {
         auto tmp(std::move(lex));
@@ -108,7 +101,6 @@ public:
         std::swap(this->limit, lex.limit);
         std::swap(this->marker, lex.marker);
         std::swap(this->ctxMarker, lex.ctxMarker);
-        std::swap(this->endOfString, lex.endOfString);
     }
 
     /**
@@ -152,6 +144,10 @@ public:
      */
     unsigned int getUsedSize() const {
         return this->buf.size();
+    }
+
+    bool isEnd() const {
+        return this->fp == nullptr && this->cursor == this->limit;
     }
 
     bool withinRange(Token token) const {
@@ -370,10 +366,6 @@ void LexerBase<T>::appendToBuf(const unsigned char *data, unsigned int size, boo
 
 template<bool T>
 bool LexerBase<T>::fill(int n) {
-    if(this->endOfString) {
-        return false;
-    }
-
     if(this->fp != nullptr) {
         int needSize = (n > DEFAULT_READ_SIZE) ? n : DEFAULT_READ_SIZE;
         unsigned char data[needSize + 2];
@@ -383,7 +375,7 @@ bool LexerBase<T>::fill(int n) {
         }
         this->appendToBuf(data, readSize, this->fp == nullptr);
     }
-    return true;
+    return !this->isEnd();
 }
 
 } // namespace __detail

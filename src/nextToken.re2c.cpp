@@ -21,7 +21,7 @@
 // helper macro definition.
 #define RET(k) do { kind = k; goto END; } while(false)
 
-#define REACH_EOS() do { this->endOfString = true; goto EOS; } while(false)
+#define REACH_EOS() do { goto EOS; } while(false)
 
 #define SKIP() goto INIT
 
@@ -316,7 +316,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
     EOS:
     kind = EOS;
-    token.pos = startPos;
+    token.pos = this->getUsedSize() - 1;
     token.size = 0;
     goto RET;
 
