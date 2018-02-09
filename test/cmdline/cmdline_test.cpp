@@ -373,6 +373,10 @@ $a = 34 +
 ~~~~~~~~~
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
+
+    // line marker (reach null character)
+    msg = "(stdin):1: [syntax error] invalid token, expected: <NewLine>\nhello\n     \n";
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello\0world" | ds(), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, version) {
