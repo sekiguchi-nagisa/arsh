@@ -19,7 +19,6 @@
 #include "symbol.h"
 #include "object.h"
 #include "node.h"
-#include "handle.h"
 #include "symbol_table.h"
 
 // helper macro for node dumper

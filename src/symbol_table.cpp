@@ -19,12 +19,9 @@
 #include "symbol_table.h"
 #include "parser.h"
 #include "type_checker.h"
-#include "handle.h"
-#include "diagnosis.h"
 #include "core.h"
 #include "object.h"
 #include "symbol.h"
-#include "misc/util.hpp"
 
 namespace ydsh {
 

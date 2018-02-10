@@ -18,7 +18,6 @@
 #include <pwd.h>
 #include <csignal>
 #include <algorithm>
-#include <cstdlib>
 #include <fstream>
 
 #include <unistd.h>

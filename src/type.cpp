@@ -21,10 +21,7 @@
 #include "object.h"
 #include "handle.h"
 #include "diagnosis.h"
-
 #include "core.h"
-#include "symbol.h"
-#include "misc/util.hpp"
 
 namespace ydsh {
 

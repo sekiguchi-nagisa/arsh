@@ -18,7 +18,6 @@
 
 #include "symbol_table.h"
 #include "handle.h"
-#include "type.h"
 #include "misc/fatal.h"
 #include "misc/util.hpp"
 #include "diagnosis.h"
