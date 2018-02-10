@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Nagisa Sekiguchi
+ * Copyright (C) 2015-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -368,7 +368,7 @@ template<bool T>
 bool LexerBase<T>::fill(int n) {
     if(this->fp != nullptr) {
         int needSize = (n > DEFAULT_READ_SIZE) ? n : DEFAULT_READ_SIZE;
-        unsigned char data[needSize + 2];
+        unsigned char data[needSize];
         int readSize = fread(data, sizeof(unsigned char), needSize, this->fp);
         if(readSize < needSize) {
             this->fp = nullptr;
