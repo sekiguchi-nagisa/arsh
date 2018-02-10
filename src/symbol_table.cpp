@@ -15,6 +15,7 @@
  */
 
 #include <cassert>
+#include <array>
 
 #include "symbol_table.h"
 #include "parser.h"
