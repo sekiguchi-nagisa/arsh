@@ -16,6 +16,7 @@
 
 #include <cassert>
 
+#include "symbol_table.h"
 #include "handle.h"
 #include "type.h"
 #include "misc/fatal.h"
@@ -53,7 +54,7 @@ std::string FieldAttributes::str() const {
 // ##     FieldHandle     ##
 // #########################
 
-DSType *FieldHandle::getFieldType(TypePool &) {
+DSType *FieldHandle::getFieldType(SymbolTable &) {
     return this->fieldType;
 }
 
@@ -62,9 +63,9 @@ DSType *FieldHandle::getFieldType(TypePool &) {
 // ##     FunctionHandle     ##
 // ############################
 
-DSType *FunctionHandle::getFieldType(TypePool &typePool) {
+DSType *FunctionHandle::getFieldType(SymbolTable &symbolTable) {
     if(this->fieldType == nullptr) {
-        this->fieldType = &typePool.createFuncType(this->returnType, std::move(this->paramTypes));
+        this->fieldType = &symbolTable.createFuncType(this->returnType, std::move(this->paramTypes));
     }
     return this->fieldType;
 }
@@ -91,13 +92,13 @@ void MethodHandle::addParamType(DSType &type) {
 
 class TypeDecoder {
 private:
-    TypePool &pool;
+    SymbolTable &symbolTable;
     const char *pos;
     const std::vector<DSType *> *types;
 
 public:
-    TypeDecoder(TypePool &pool, const char *pos, const std::vector<DSType *> *types) :
-            pool(pool), pos(pos), types(types) {}
+    TypeDecoder(SymbolTable &pool, const char *pos, const std::vector<DSType *> *types) :
+            symbolTable(pool), pos(pos), types(types) {}
     ~TypeDecoder() = default;
 
     DSType *decode();
@@ -109,26 +110,26 @@ public:
 
 DSType* TypeDecoder::decode() {
     switch(static_cast<HandleInfo>(*(this->pos++))) {
-#define GEN_CASE(ENUM) case HandleInfo::ENUM: return &this->pool.get##ENUM##Type();
+#define GEN_CASE(ENUM) case HandleInfo::ENUM: return &this->symbolTable.get##ENUM##Type();
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
     case HandleInfo::Array: {
-        auto &t = this->pool.getArrayTemplate();
+        auto &t = this->symbolTable.getArrayTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 1);
         std::vector<DSType *> elementTypes(size);
         elementTypes[0] = decode();
-        return &this->pool.createReifiedType(t, std::move(elementTypes));
+        return &this->symbolTable.createReifiedType(t, std::move(elementTypes));
     }
     case HandleInfo::Map: {
-        auto &t = this->pool.getMapTemplate();
+        auto &t = this->symbolTable.getMapTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 2);
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = this->decode();
         }
-        return &this->pool.createReifiedType(t, std::move(elementTypes));
+        return &this->symbolTable.createReifiedType(t, std::move(elementTypes));
     }
     case HandleInfo::Tuple: {
         unsigned int size = this->decodeNum();
@@ -138,22 +139,22 @@ DSType* TypeDecoder::decode() {
             for(unsigned int i = 0; i < size; i++) {
                 elementTypes[i] = (*this->types)[i];
             }
-            return &this->pool.createTupleType(std::move(elementTypes));
+            return &this->symbolTable.createTupleType(std::move(elementTypes));
         }
 
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = this->decode();
         }
-        return &this->pool.createTupleType(std::move(elementTypes));
+        return &this->symbolTable.createTupleType(std::move(elementTypes));
     }
     case HandleInfo::Option: {
-        auto &t = this->pool.getOptionTemplate();
+        auto &t = this->symbolTable.getOptionTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 1);
         std::vector<DSType *> elementTypes(size);
         elementTypes[0] = this->decode();
-        return &this->pool.createReifiedType(t, std::move(elementTypes));
+        return &this->symbolTable.createReifiedType(t, std::move(elementTypes));
     }
     case HandleInfo::Func: {
         auto *retType = this->decode();
@@ -162,7 +163,7 @@ DSType* TypeDecoder::decode() {
         for(unsigned int i = 0; i < size; i++) {
             paramTypes[i] = this->decode();
         }
-        return &this->pool.createFuncType(retType, std::move(paramTypes));
+        return &this->symbolTable.createFuncType(retType, std::move(paramTypes));
     }
     case HandleInfo::P_N0:
     case HandleInfo::P_N1:
@@ -183,10 +184,10 @@ DSType* TypeDecoder::decode() {
     }
 }
 
-bool MethodHandle::init(TypePool &typePool, NativeFuncInfo &info,
+bool MethodHandle::init(SymbolTable &symbolTable, const NativeFuncInfo &info,
                         const std::vector<DSType *> *types) {
     try {
-        TypeDecoder decoder(typePool, info.handleInfo, types);
+        TypeDecoder decoder(symbolTable, info.handleInfo, types);
 
         auto *returnType = decoder.decode();    // init return type
         const unsigned int paramSize = decoder.decodeNum();

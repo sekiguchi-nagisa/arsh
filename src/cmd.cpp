@@ -28,11 +28,11 @@
 #include "cmd.h"
 #include "core.h"
 #include "symbol.h"
+#include "symbol_table.h"
 #include "object.h"
 #include "signals.h"
 #include "misc/num.h"
 #include "misc/files.h"
-#include "misc/util.hpp"
 
 namespace ydsh {
 

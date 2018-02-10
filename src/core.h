@@ -32,7 +32,6 @@ struct DSState;
 
 namespace ydsh {
 
-class TypePool;
 class DSType;
 class DSValue;
 class Array_Object;
@@ -175,8 +174,8 @@ struct DumpTarget {
 
 // getter api
 
-TypePool &getPool(DSState &st);
-const TypePool &getPool(const DSState &st);
+SymbolTable &getPool(DSState &st);
+const SymbolTable &getPool(const DSState &st);
 
 JobTable &getJobTable(DSState &st);
 

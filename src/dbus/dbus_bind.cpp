@@ -18,6 +18,7 @@
 
 #include "dbus_bind.h"
 #include "handle.h"
+#include "symbol_table.h"
 #include "../logger.h"
 #include "../misc/resource.hpp"
 
@@ -709,7 +710,7 @@ ScopedDBusMessage DBusProxy_Object::sendMessage(DSState &ctx, ScopedDBusMessage 
 
 #define LOCAL(i) getLocal(ctx, i)
 
-DSValue newDBusObject(TypePool &pool) {
+DSValue newDBusObject(SymbolTable &pool) {
     return DSValue::create<DBus_Object>(pool);
 }
 

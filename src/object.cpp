@@ -18,6 +18,7 @@
 
 #include "object.h"
 #include "core.h"
+#include "symbol_table.h"
 #include "misc/num.h"
 
 namespace ydsh {

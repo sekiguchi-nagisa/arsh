@@ -27,7 +27,7 @@
 
 namespace ydsh {
 
-class TypePool;
+class SymbolTable;
 class DSType;
 class FunctionType;
 struct NativeFuncInfo;
@@ -100,7 +100,7 @@ public:
 
     virtual ~FieldHandle() = default;
 
-    virtual DSType *getFieldType(TypePool &typePool);
+    virtual DSType *getFieldType(SymbolTable &symbolTable);
 
     unsigned int getFieldIndex() const {
         return this->fieldIndex;
@@ -126,7 +126,7 @@ public:
 
     ~FunctionHandle() override = default;
 
-    DSType *getFieldType(TypePool &typePool) override;
+    DSType *getFieldType(SymbolTable &symbolTable) override;
 
     DSType *getReturnType() const {
         return this->returnType;
@@ -192,7 +192,7 @@ public:
     /**
      * initialize internal types.
      */
-    bool init(TypePool &typePool, NativeFuncInfo &info,
+    bool init(SymbolTable &symbolTable, const NativeFuncInfo &info,
               const std::vector<DSType *> *types = nullptr);
 
     /**

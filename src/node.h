@@ -32,6 +32,7 @@
 
 namespace ydsh {
 
+class SymbolTable;
 class FieldHandle;
 class MethodHandle;
 struct NodeVisitor;
@@ -1346,7 +1347,7 @@ public:
      * this node and exprNode must be typed.
      * this node must not be bottom type.
      */
-    void addReturnNodeToLast(TypePool &pool, Node *exprNode);
+    void addReturnNodeToLast(const SymbolTable &symbolTable, Node *exprNode);
 
     void dump(NodeDumper &dumper) const override;
 };
@@ -2168,12 +2169,12 @@ struct BaseVisitor : public NodeVisitor {
 class NodeDumper {
 private:
     FILE *fp;
-    const TypePool &pool;
+    const SymbolTable &symbolTable;
 
     unsigned int indentLevel{0};
 
 public:
-    NodeDumper(FILE *fp, const TypePool &pool) : fp(fp), pool(pool) { }
+    NodeDumper(FILE *fp, const SymbolTable &symbolTable) : fp(fp), symbolTable(symbolTable) { }
 
     ~NodeDumper() = default;
 

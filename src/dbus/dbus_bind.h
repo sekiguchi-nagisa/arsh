@@ -135,7 +135,7 @@ private:
     MessageBuilder builder;
 
 public:
-    explicit DBus_Object(TypePool &typePool) :
+    explicit DBus_Object(SymbolTable &typePool) :
             DSObject(typePool.getDBusType()), builder(&typePool) { }
 
     ~DBus_Object() override = default;

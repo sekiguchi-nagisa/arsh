@@ -23,6 +23,7 @@
 #include <misc/fatal.h>
 #include <parser.h>
 #include <type_checker.h>
+#include <symbol_table.h>
 
 
 namespace ydsh {
@@ -69,7 +70,7 @@ private:
     std::unordered_map<std::string, Handler> handlerMap;
 
 public:
-    DirectiveInitializer(TypePool &pool, SymbolTable &symbolTable);
+    DirectiveInitializer(SymbolTable &symbolTable);
     ~DirectiveInitializer() override = default;
 
     void operator()(ApplyNode &node, Directive &d);
@@ -108,9 +109,9 @@ static bool toBool(const std::string &str) {
     return strcasecmp(str.c_str(), "true") == 0;
 }
 
-DirectiveInitializer::DirectiveInitializer(TypePool &pool, SymbolTable &symbolTable) :
-        TypeChecker(pool, symbolTable, false) {
-    auto &boolType = this->typePool.getBooleanType();
+DirectiveInitializer::DirectiveInitializer(SymbolTable &symbolTable) :
+        TypeChecker(symbolTable, false) {
+    auto &boolType = this->symbolTable.getBooleanType();
     const char *names[] = {
             "TRUE", "True", "true", "FALSE", "False", "false",
     };
@@ -126,39 +127,39 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         throw TypeCheckError(node.getToken(), "", str.c_str());
     }
 
-    this->addHandler("status", this->typePool.getIntType(), [&](Node &node, Directive &d) {
+    this->addHandler("status", this->symbolTable.getIntType(), [&](Node &node, Directive &d) {
         d.setStatus(this->checkedCast<NumberNode>(node).getIntValue());
     });
 
-    this->addHandler("result", this->typePool.getStringType(), [&](Node &node, Directive &d) {
+    this->addHandler("result", this->symbolTable.getStringType(), [&](Node &node, Directive &d) {
         d.setResult(this->resolveStatus(this->checkedCast<StringNode>(node)));
     });
 
-    this->addHandler("params", this->typePool.getStringArrayType(), [&](Node &node, Directive &d) {
+    this->addHandler("params", this->symbolTable.getStringArrayType(), [&](Node &node, Directive &d) {
         auto &value = this->checkedCast<ArrayNode>(node);
         for(auto &e : value.getExprNodes()) {
             d.appendParam(this->checkedCast<StringNode>(*e).getValue());
         }
     });
 
-    this->addHandler("lineNum", this->typePool.getInt32Type(), [&](Node &node, Directive &d) {
+    this->addHandler("lineNum", this->symbolTable.getInt32Type(), [&](Node &node, Directive &d) {
         d.setLineNum(this->checkedCast<NumberNode>(node).getIntValue());
     });
 
-    this->addHandler("ifHaveDBus", this->typePool.getBooleanType(), [&](Node &node, Directive &d) {
+    this->addHandler("ifHaveDBus", this->symbolTable.getBooleanType(), [&](Node &node, Directive &d) {
         bool v = toBool(this->checkedCast<VarNode>(node).getVarName());
         d.setIfHaveDBus(v);
     });
 
-    this->addHandler("errorKind", this->typePool.getStringType(), [&](Node &node, Directive &d) {
+    this->addHandler("errorKind", this->symbolTable.getStringType(), [&](Node &node, Directive &d) {
         d.setErrorKind(this->checkedCast<StringNode>(node).getValue());
     });
 
-    this->addHandler("out", this->typePool.getStringType(), [&](Node &node, Directive &d) {
+    this->addHandler("out", this->symbolTable.getStringType(), [&](Node &node, Directive &d) {
         d.setOut(this->checkedCast<StringNode>(node).getValue());
     });
 
-    this->addHandler("err", this->typePool.getStringType(), [&](Node &node, Directive &d) {
+    this->addHandler("err", this->symbolTable.getStringType(), [&](Node &node, Directive &d) {
         d.setErr(this->checkedCast<StringNode>(node).getValue());
     });
 
@@ -307,9 +308,8 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
     }
 
     try {
-        TypePool pool;
         SymbolTable symbolTable;
-        DirectiveInitializer initializer(pool, symbolTable);
+        DirectiveInitializer initializer(symbolTable);
         initializer(*node, directive);
     } catch(const TypeCheckError &e) {
         showError(fileName, lexer, ret.first, e.getToken(), e.getMessage(), "semantic");

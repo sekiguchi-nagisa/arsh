@@ -93,10 +93,10 @@ static DSHistory initHistory() {
 }
 
 DSState::DSState() :
-        trueObj(DSValue::create<Boolean_Object>(this->pool.getBooleanType(), true)),
-        falseObj(DSValue::create<Boolean_Object>(this->pool.getBooleanType(), false)),
-        emptyStrObj(DSValue::create<String_Object>(this->pool.getStringType(), std::string())),
-        emptyFDObj(DSValue::create<UnixFD_Object>(this->pool, -1)),
+        trueObj(DSValue::create<Boolean_Object>(this->symbolTable.getBooleanType(), true)),
+        falseObj(DSValue::create<Boolean_Object>(this->symbolTable.getBooleanType(), false)),
+        emptyStrObj(DSValue::create<String_Object>(this->symbolTable.getStringType(), std::string())),
+        emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.getUnixFDType(), -1)),
         callStack(new DSValue[DEFAULT_STACK_SIZE]), logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
 
@@ -112,7 +112,7 @@ void DSState::expandLocalStack() {
     const unsigned int needSize = this->stackTopIndex;
     if(needSize >= MAXIMUM_STACK_SIZE) {
         this->stackTopIndex = this->callStackSize - 1;
-        throwError(*this, this->pool.getStackOverflowErrorType(), "local stack size reaches limit");
+        throwError(*this, this->symbolTable.getStackOverflowErrorType(), "local stack size reaches limit");
     }
 
     unsigned int newSize = this->callStackSize;
@@ -182,10 +182,10 @@ static void checkCast(DSState &state, DSType *targetType) {
     if(!state.peek()->introspect(state, targetType)) {
         DSType *stackTopType = state.pop()->getType();
         std::string str("cannot cast ");
-        str += state.pool.getTypeName(*stackTopType);
+        str += state.symbolTable.getTypeName(*stackTopType);
         str += " to ";
-        str += state.pool.getTypeName(*targetType);
-        throwError(state, state.pool.getTypeCastErrorType(), std::move(str));
+        str += state.symbolTable.getTypeName(*targetType);
+        throwError(state, state.symbolTable.getTypeCastErrorType(), std::move(str));
     }
 }
 
@@ -195,7 +195,7 @@ static void checkAssertion(DSState &state) {
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
         state.updateExitStatus(1);
-        auto except = Error_Object::newError(state, state.pool.getAssertFail(), std::move(msg));
+        auto except = Error_Object::newError(state, state.symbolTable.getAssertFail(), std::move(msg));
         state.throwException(std::move(except));
     }
 }
@@ -210,7 +210,7 @@ static void exitShell(DSState &st, unsigned int status) {
     str += std::to_string(status);
     status %= 256;
     st.updateExitStatus(status);
-    throwError(st, st.pool.getShellExit(), std::move(str));
+    throwError(st, st.symbolTable.getShellExit(), std::move(str));
 }
 
 static const char *loadEnv(DSState &state, bool hasDefault) {
@@ -489,7 +489,7 @@ static DSValue readAsStr(const DSState &state, int fd) {
     // remove last newlines
     for(; !str.empty() && str.back() == '\n'; str.pop_back());
 
-    return DSValue::create<String_Object>(state.pool.getStringType(), std::move(str));
+    return DSValue::create<String_Object>(state.symbolTable.getStringType(), std::move(str));
 }
 
 static DSValue readAsStrArray(const DSState &state, int fd) {
@@ -500,7 +500,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
     char buf[256];
     std::string str;
-    auto obj = DSValue::create<Array_Object>(state.pool.getStringArrayType());
+    auto obj = DSValue::create<Array_Object>(state.symbolTable.getStringArrayType());
     auto *array = typeAs<Array_Object>(obj);
 
     while(true) {
@@ -525,7 +525,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
             }
             skipCount = 0;
             if(fieldSep) {
-                array->append(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
+                array->append(DSValue::create<String_Object>(state.symbolTable.getStringType(), std::move(str)));
                 str = "";
                 skipCount = isSpace(ch) ? 2 : 1;
                 continue;
@@ -539,7 +539,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
     // append remain
     if(!str.empty() || !hasSpace(ifsSize, ifs)) {
-        array->append(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
+        array->append(DSValue::create<String_Object>(state.symbolTable.getStringType(), std::move(str)));
     }
 
     return obj;
@@ -616,7 +616,7 @@ static DSValue newFD(const DSState &st, int &fd) {
     }
     int v = fd;
     fd = -1;
-    return DSValue::create<UnixFD_Object>(st.pool, v);
+    return DSValue::create<UnixFD_Object>(st.symbolTable.getUnixFDType(), v);
 }
 
 static void forkAndEval(DSState &state) {
@@ -655,7 +655,7 @@ static void forkAndEval(DSState &state) {
             auto entry = JobTable::newEntry(proc);
             state.jobTable.attach(entry, disown);
             obj = DSValue::create<Job_Object>(
-                    state.pool.getJobType(),
+                    state.symbolTable.getJobType(),
                     entry,
                     newFD(state, pipeset.in[WRITE_PIPE]),
                     newFD(state, pipeset.out[READ_PIPE])
@@ -844,9 +844,9 @@ static int doIOHere(const String_Object &value) {
 /**
  * if failed, return non-zero value(errno)
  */
-static int redirectToFile(const TypePool &pool, const DSValue &fileName, const char *mode, int targetFD) {
+static int redirectToFile(const SymbolTable &symbolTable, const DSValue &fileName, const char *mode, int targetFD) {
     auto &type = *fileName->getType();
-    if(type == pool.getStringType()) {
+    if(type == symbolTable.getStringType()) {
         FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
         if(fp == nullptr) {
             return errno;
@@ -859,7 +859,7 @@ static int redirectToFile(const TypePool &pool, const DSValue &fileName, const c
         }
         fclose(fp);
     } else {
-        assert(type == pool.getUnixFDType());
+        assert(type == symbolTable.getUnixFDType());
         int fd = typeAs<UnixFD_Object>(fileName)->getValue();
         if(strchr(mode, 'a') != nullptr) {
             if(lseek(fd, 0, SEEK_END) == -1) {
@@ -873,25 +873,25 @@ static int redirectToFile(const TypePool &pool, const DSValue &fileName, const c
     return 0;
 }
 
-static int redirectImpl(const TypePool &pool, const std::pair<RedirOP, DSValue> &pair) {
+static int redirectImpl(const SymbolTable &symbolTable, const std::pair<RedirOP, DSValue> &pair) {
     switch(pair.first) {
     case RedirOP::IN_2_FILE: {
-        return redirectToFile(pool, pair.second, "rb", STDIN_FILENO);
+        return redirectToFile(symbolTable, pair.second, "rb", STDIN_FILENO);
     }
     case RedirOP::OUT_2_FILE: {
-        return redirectToFile(pool, pair.second, "wb", STDOUT_FILENO);
+        return redirectToFile(symbolTable, pair.second, "wb", STDOUT_FILENO);
     }
     case RedirOP::OUT_2_FILE_APPEND: {
-        return redirectToFile(pool, pair.second, "ab", STDOUT_FILENO);
+        return redirectToFile(symbolTable, pair.second, "ab", STDOUT_FILENO);
     }
     case RedirOP::ERR_2_FILE: {
-        return redirectToFile(pool, pair.second, "wb", STDERR_FILENO);
+        return redirectToFile(symbolTable, pair.second, "wb", STDERR_FILENO);
     }
     case RedirOP::ERR_2_FILE_APPEND: {
-        return redirectToFile(pool, pair.second, "ab", STDERR_FILENO);
+        return redirectToFile(symbolTable, pair.second, "ab", STDERR_FILENO);
     }
     case RedirOP::MERGE_ERR_2_OUT_2_FILE: {
-        int r = redirectToFile(pool, pair.second, "wb", STDOUT_FILENO);
+        int r = redirectToFile(symbolTable, pair.second, "wb", STDOUT_FILENO);
         if(r != 0) {
             return r;
         }
@@ -899,7 +899,7 @@ static int redirectImpl(const TypePool &pool, const std::pair<RedirOP, DSValue> 
         return 0;
     }
     case RedirOP::MERGE_ERR_2_OUT_2_FILE_APPEND: {
-        int r = redirectToFile(pool, pair.second, "ab", STDOUT_FILENO);
+        int r = redirectToFile(symbolTable, pair.second, "ab", STDOUT_FILENO);
         if(r != 0) {
             return r;
         }
@@ -920,17 +920,17 @@ static int redirectImpl(const TypePool &pool, const std::pair<RedirOP, DSValue> 
 
 void RedirConfig::redirect(DSState &st) const {
     for(auto &pair : this->ops) {
-        int r = redirectImpl(st.pool, pair);
+        int r = redirectImpl(st.symbolTable, pair);
         if(this->restore && r != 0) {
             std::string msg = REDIR_ERROR;
             if(pair.second) {
                 auto *type = pair.second->getType();
-                if(*type == st.pool.getStringType()) {
+                if(*type == st.symbolTable.getStringType()) {
                     if(!typeAs<String_Object>(pair.second)->empty()) {
                         msg += ": ";
                         msg += typeAs<String_Object>(pair.second)->getValue();
                     }
-                } else if(*type == st.pool.getUnixFDType()) {
+                } else if(*type == st.symbolTable.getUnixFDType()) {
                     msg += ": ";
                     msg += std::to_string(typeAs<UnixFD_Object>(pair.second)->getValue());
                 }
@@ -971,7 +971,7 @@ static void callUserDefinedCommand(DSState &st, const DSCode *code,
         auto argv = typeAs<Array_Object>(st.getLocal(UDC_PARAM_ARGV));
         eraseFirst(*argv);
         const unsigned int argSize = argv->getValues().size();
-        st.setLocal(UDC_PARAM_ARGV + 1, DSValue::create<Int_Object>(st.pool.getInt32Type(), argSize));   // #
+        st.setLocal(UDC_PARAM_ARGV + 1, DSValue::create<Int_Object>(st.symbolTable.getInt32Type(), argSize));   // #
         st.setLocal(UDC_PARAM_ARGV + 2, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
         unsigned int limit = 9;
         if(argSize < limit) {
@@ -1091,7 +1091,7 @@ static void throwCmdError(DSState &state, const char *cmdName, int errnum) {
     str += cmdName;
     if(errnum == ENOENT) {
         str += ": command not found";
-        throwError(state, state.pool.getSystemErrorType(), std::move(str));
+        throwError(state, state.symbolTable.getSystemErrorType(), std::move(str));
     }
     throwSystemError(state, errnum, std::move(str));
 }
@@ -1425,7 +1425,7 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
     DSType *valueType = value->getType();
 
     auto *argv = typeAs<Array_Object>(state.callStack[state.stackTopIndex - 1]);
-    if(*valueType == state.pool.getStringType()) {  // String
+    if(*valueType == state.symbolTable.getStringType()) {  // String
         if(skipEmptyStr && typeAs<String_Object>(value)->empty()) {
             return;
         }
@@ -1433,7 +1433,7 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
         return;
     }
 
-    assert(*valueType == state.pool.getStringArrayType());  // Array<String>
+    assert(*valueType == state.symbolTable.getStringArrayType());  // Array<String>
     auto *arrayObj = typeAs<Array_Object>(value);
     for(auto &element : arrayObj->getValues()) {
         if(typeAs<String_Object>(element)->empty()) {
@@ -1474,7 +1474,7 @@ static auto signalTrampoline = initSignalTrampoline();
 static void kickSignalHandler(DSState &st, int sigNum, DSValue &&func) {
     st.push(st.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)));
     st.push(std::move(func));
-    st.push(DSValue::create<Int_Object>(st.pool.getSignalType(), sigNum));
+    st.push(DSValue::create<Int_Object>(st.symbolTable.getSignalType(), sigNum));
 
     windStackFrame(st, 3, 3, &signalTrampoline);
 }
@@ -1553,7 +1553,7 @@ static bool mainLoop(DSState &state) {
             auto stackTopType = reinterpret_cast<DSType *>(v);
             assert(!stackTopType->isVoidType());
             auto *strObj = typeAs<String_Object>(state.peek());
-            printf("(%s) ", state.pool.getTypeName(*stackTopType));
+            printf("(%s) ", state.symbolTable.getTypeName(*stackTopType));
             fwrite(strObj->getValue(), sizeof(char), strObj->size(), stdout);
             fputc('\n', stdout);
             fflush(stdout);
@@ -1620,7 +1620,7 @@ static bool mainLoop(DSState &state) {
             if(func->getType() == nullptr) {
                 auto *handle = state.symbolTable.lookupHandle(func->getCode().getName());
                 assert(handle != nullptr);
-                func->setType(handle->getFieldType(state.pool));
+                func->setType(handle->getFieldType(state.symbolTable));
             }
             vmnext;
         }
@@ -1665,7 +1665,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(LOAD_ENV) {
             const char *value = loadEnv(state, false);
-            state.push(DSValue::create<String_Object>(state.pool.getStringType(), value));
+            state.push(DSValue::create<String_Object>(state.symbolTable.getStringType(), value));
             vmnext;
         }
         vmcase(STORE_ENV) {
@@ -1693,7 +1693,7 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_STRING) {
-            state.push(DSValue::create<String_Object>(state.pool.getStringType()));
+            state.push(DSValue::create<String_Object>(state.symbolTable.getStringType()));
             vmnext;
         }
         vmcase(APPEND_STRING) {
@@ -1845,9 +1845,9 @@ static bool mainLoop(DSState &state) {
             auto &type = *obj->getType();
 
             int ret = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
-            if(type == state.pool.getInt32Type()) { // normally Int Object
+            if(type == state.symbolTable.getInt32Type()) { // normally Int Object
                 ret = typeAs<Int_Object>(obj)->getValue();
-            } else if(type == state.pool.getStringArrayType()) {    // for builtin exit command
+            } else if(type == state.symbolTable.getStringArrayType()) {    // for builtin exit command
                 auto *arrayObj = typeAs<Array_Object>(obj);
                 if(arrayObj->getValues().size() > 1) {
                     const char *num = str(arrayObj->getValues()[1]);
@@ -1883,7 +1883,7 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(COPY_INT) {
-            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             int v = typeAs<Int_Object>(state.pop())->getValue();
             state.push(DSValue::create<Int_Object>(*type, v));
             vmnext;
@@ -1891,13 +1891,13 @@ static bool mainLoop(DSState &state) {
         vmcase(TO_BYTE) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             v &= 0xFF;  // fill higher bits (8th ~ 31) with 0
-            state.push(DSValue::create<Int_Object>(state.pool.getByteType(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.getByteType(), v));
             vmnext;
         }
         vmcase(TO_U16) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
-            state.push(DSValue::create<Int_Object>(state.pool.getUint16Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.getUint16Type(), v));
             vmnext;
         }
         vmcase(TO_I16) {
@@ -1906,31 +1906,31 @@ static bool mainLoop(DSState &state) {
             if((v & 0x8000) != 0u) {    // if 15th bit is 1, fill higher bits with 1
                 v |= 0xFFFF0000;
             }
-            state.push(DSValue::create<Int_Object>(state.pool.getInt16Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.getInt16Type(), v));
             vmnext;
         }
         vmcase(NEW_LONG) {
-            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             unsigned long l = v;
             state.push(DSValue::create<Long_Object>(*type, l));
             vmnext;
         }
         vmcase(COPY_LONG) {
-            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             long v = typeAs<Long_Object>(state.pop())->getValue();
             state.push(DSValue::create<Long_Object>(*type, v));
             vmnext;
         }
         vmcase(I_NEW_LONG) {
-            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             int v = typeAs<Int_Object>(state.pop())->getValue();
             long l = v;
             state.push(DSValue::create<Long_Object>(*type, l));
             vmnext;
         }
         vmcase(NEW_INT) {
-            DSType *type = state.pool.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
+            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             unsigned long l = typeAs<Long_Object>(state.pop())->getValue();
             auto v = static_cast<unsigned int>(l);
             state.push(DSValue::create<Int_Object>(*type, v));
@@ -1939,49 +1939,49 @@ static bool mainLoop(DSState &state) {
         vmcase(U32_TO_D) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.symbolTable.getFloatType(), d));
             vmnext;
         }
         vmcase(I32_TO_D) {
             int v = typeAs<Int_Object>(state.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.symbolTable.getFloatType(), d));
             vmnext;
         }
         vmcase(U64_TO_D) {
             unsigned long v = typeAs<Long_Object>(state.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.symbolTable.getFloatType(), d));
             vmnext;
         }
         vmcase(I64_TO_D) {
             long v = typeAs<Long_Object>(state.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.pool.getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.symbolTable.getFloatType(), d));
             vmnext;
         }
         vmcase(D_TO_U32) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             auto v = static_cast<unsigned int>(d);
-            state.push(DSValue::create<Int_Object>(state.pool.getUint32Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.getUint32Type(), v));
             vmnext;
         }
         vmcase(D_TO_I32) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             auto v = static_cast<int>(d);
-            state.push(DSValue::create<Int_Object>(state.pool.getInt32Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.getInt32Type(), v));
             vmnext;
         }
         vmcase(D_TO_U64) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             auto v = static_cast<unsigned long>(d);
-            state.push(DSValue::create<Long_Object>(state.pool.getUint64Type(), v));
+            state.push(DSValue::create<Long_Object>(state.symbolTable.getUint64Type(), v));
             vmnext;
         }
         vmcase(D_TO_I64) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             auto v = static_cast<long>(d);
-            state.push(DSValue::create<Long_Object>(state.pool.getInt64Type(), v));
+            state.push(DSValue::create<Long_Object>(state.symbolTable.getInt64Type(), v));
             vmnext;
         }
         vmcase(REF_EQ) {
@@ -2007,12 +2007,12 @@ static bool mainLoop(DSState &state) {
         vmcase(EXPAND_TILDE) {
             std::string str = typeAs<String_Object>(state.pop())->getValue();
             expandTilde(str);
-            state.push(DSValue::create<String_Object>(state.pool.getStringType(), std::move(str)));
+            state.push(DSValue::create<String_Object>(state.symbolTable.getStringType(), std::move(str)));
             vmnext;
         }
         vmcase(NEW_CMD) {
             auto v = state.pop();
-            auto obj = DSValue::create<Array_Object>(state.pool.getStringArrayType());
+            auto obj = DSValue::create<Array_Object>(state.symbolTable.getStringArrayType());
             auto *argv = typeAs<Array_Object>(obj);
             argv->append(std::move(v));
             state.push(std::move(obj));
@@ -2100,7 +2100,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(RAND) {
             int v = rand();
-            state.push(DSValue::create<Int_Object>(state.pool.getUint32Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.getUint32Type(), v));
             vmnext;
         }
         vmcase(GET_SECOND) {
@@ -2109,7 +2109,7 @@ static bool mainLoop(DSState &state) {
             auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
             unsigned long v = typeAs<Long_Object>(state.getGlobal(toIndex(BuiltinVarOffset::SECONDS)))->getValue();
             v += sec.count();
-            state.push(DSValue::create<Long_Object>(state.pool.getUint64Type(), v));
+            state.push(DSValue::create<Long_Object>(state.symbolTable.getUint64Type(), v));
             vmnext;
         }
         vmcase(SET_SECOND) {
@@ -2119,7 +2119,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(UNWRAP) {
             if(state.peek().kind() == DSValueKind::INVALID) {
-                throwError(state, state.pool.getUnwrappingErrorType(), std::string("invalid value"));
+                throwError(state, state.symbolTable.getUnwrappingErrorType(), std::string("invalid value"));
             }
             vmnext;
         }
@@ -2174,7 +2174,7 @@ static bool handleException(DSState &state, bool forceUnwind) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
                 if(occurredPC >= entry.begin && occurredPC < entry.end
                    && entry.type->isSameOrBaseTypeOf(*occurredType)) {
-                    if(*entry.type == state.pool.getRoot()) {
+                    if(*entry.type == state.symbolTable.getRoot()) {
                         return false;
                     }
                     state.pc() = entry.dest - 1;
@@ -2214,61 +2214,61 @@ static bool handleException(DSState &state, bool forceUnwind) {
 void DBusInitSignal(DSState &) {  }   // do nothing
 
 std::vector<DSValue> DBusWaitSignal(DSState &st) {
-    throwError(st, st.pool.getErrorType(), "not support method");
+    throwError(st, st.symbolTable.getErrorType(), "not support method");
     return std::vector<DSValue>();
 }
 
-DSValue newDBusObject(TypePool &pool) {
-    return DSValue::create<DSObject>(pool.getDBusType());
+DSValue newDBusObject(SymbolTable &symbolTable) {
+    return DSValue::create<DSObject>(symbolTable.getDBusType());
 }
 
 DSValue dbus_systemBus(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
 DSValue dbus_sessionBus(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
 DSValue dbus_getSrv(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
 DSValue dbus_getPath(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
 DSValue dbus_getIface(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
 DSValue dbus_introspect(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
 DSValue bus_service(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
 DSValue bus_listNames(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
 DSValue bus_listActiveNames(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
 DSValue service_object(DSState &ctx) {
-    throwError(ctx, ctx.pool.getErrorType(), "not support method");
+    throwError(ctx, ctx.symbolTable.getErrorType(), "not support method");
     return DSValue();
 }
 
@@ -2285,7 +2285,7 @@ static bool runMainLoop(DSState &state) {
             state.codeStack.clear();
             return ret;
         } catch(const DSException &) {
-            bool forceUnwind = state.pool.getInternalStatus()
+            bool forceUnwind = state.symbolTable.getInternalStatus()
                     .isSameOrBaseTypeOf(*state.getThrownObject()->getType());
             if(handleException(state, forceUnwind)) {
                 continue;
@@ -2327,16 +2327,16 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     // init parameter
     std::vector<DSValue> values;
     for(; *argv != nullptr; argv++) {
-        values.push_back(DSValue::create<String_Object>(st.pool.getStringType(), std::string(*argv)));
+        values.push_back(DSValue::create<String_Object>(st.symbolTable.getStringType(), std::string(*argv)));
     }
-    auto obj = DSValue::create<Array_Object>(st.pool.getStringArrayType(), std::move(values));
+    auto obj = DSValue::create<Array_Object>(st.symbolTable.getStringArrayType(), std::move(values));
 
     st.resetState();
     callCommand(st, cmd, std::move(obj), DSValue());
     if(!st.codeStack.empty()) {
         bool r = runMainLoop(st);
         if(!r) {
-            if(st.pool.getInternalStatus().isSameOrBaseTypeOf(*st.getThrownObject()->getType())) {
+            if(st.symbolTable.getInternalStatus().isSameOrBaseTypeOf(*st.getThrownObject()->getType())) {
                 st.loadThrownObject(); // force clear thrownObject
             } else {
                 st.pushExitStatus(1);

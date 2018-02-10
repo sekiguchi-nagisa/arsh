@@ -23,11 +23,11 @@
 
 namespace ydsh {
 
-FrontEnd::FrontEnd(Lexer &lexer, TypePool &pool, SymbolTable &symbolTable,
+FrontEnd::FrontEnd(Lexer &lexer, SymbolTable &symbolTable,
                    DSExecMode mode, bool toplevel, const DumpTarget &target) :
-        mode(mode), parser(lexer), checker(pool, symbolTable, toplevel),
-        uastDumper(target.fps[DS_DUMP_KIND_UAST], pool),
-        astDumper(target.fps[DS_DUMP_KIND_AST], pool) {
+        mode(mode), parser(lexer), checker(symbolTable, toplevel),
+        uastDumper(target.fps[DS_DUMP_KIND_UAST], symbolTable),
+        astDumper(target.fps[DS_DUMP_KIND_AST], symbolTable) {
     this->checker.reset();
 }
 

@@ -316,7 +316,7 @@ public:
 };
 
 struct UnixFD_Object : public Int_Object {
-    UnixFD_Object(const TypePool &pool, int fd) : Int_Object(pool.getUnixFDType(), fd) {}
+    UnixFD_Object(DSType &type, int fd) : Int_Object(type, fd) {}
     ~UnixFD_Object() override;
 
     int tryToClose(bool forceClose) {
@@ -1049,7 +1049,7 @@ struct ProxyObject : public DSObject {
                               const char *fieldName, const DSType *fieldType) = 0;
 };
 
-DSValue newDBusObject(TypePool &pool);
+DSValue newDBusObject(SymbolTable &symbolTable);
 
 inline bool dbusAvailable() {
 #ifdef USE_DBUS

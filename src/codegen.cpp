@@ -15,6 +15,7 @@
  */
 
 #include "codegen.h"
+#include "symbol_table.h"
 #include "symbol.h"
 #include "core.h"
 #include "cmd.h"
@@ -88,13 +89,13 @@ void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
 
 void ByteCodeGenerator::emitDescriptorIns(OpCode op, std::string &&desc) {
     unsigned short index = this->emitConstant(
-            DSValue::create<String_Object>(this->pool.getStringType(), std::move(desc)));
+            DSValue::create<String_Object>(this->symbolTable.getStringType(), std::move(desc)));
     this->emit2byteIns(op, index);
 }
 
 void ByteCodeGenerator::generateToString() {
     if(this->handle_STR == nullptr) {
-        this->handle_STR = this->pool.getAnyType().lookupMethodHandle(this->pool, std::string(OP_STR));
+        this->handle_STR = this->symbolTable.getAnyType().lookupMethodHandle(this->symbolTable, std::string(OP_STR));
     }
 
     this->emit4byteIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
@@ -109,8 +110,8 @@ static constexpr unsigned short toShort(OpCode op1, OpCode op2) {
 }
 
 void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &afterType) {
-    const int beforeIndex = this->pool.getNumTypeIndex(beforeType);
-    const int afterIndex = this->pool.getNumTypeIndex(afterType);
+    const int beforeIndex = this->symbolTable.getNumTypeIndex(beforeType);
+    const int afterIndex = this->symbolTable.getNumTypeIndex(afterType);
 
     assert(beforeIndex > -1 && beforeIndex < 8);
     assert(afterIndex > -1 && afterIndex < 8);
@@ -229,7 +230,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         const bool tildeExpansion = isTildeExpansion(node.getSegmentNodes()[0]);
         if(tildeExpansion) {
             this->emitLdcIns(DSValue::create<String_Object>(
-                    this->pool.getStringType(), static_cast<StringNode *>(node.getSegmentNodes()[0])->getValue()));
+                    this->symbolTable.getStringType(), static_cast<StringNode *>(node.getSegmentNodes()[0])->getValue()));
             this->emit0byteIns(OpCode::APPEND_STRING);
             index++;
         }
@@ -473,7 +474,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         break;
     case TypeOpNode::TO_BOOL: {
         this->emitSourcePos(node.getPos());
-        auto *handle = node.getExprNode()->getType().lookupMethodHandle(this->pool, OP_BOOL);
+        auto *handle = node.getExprNode()->getType().lookupMethodHandle(this->symbolTable, OP_BOOL);
         assert(handle != nullptr);
         this->emit4byteIns(OpCode::CALL_METHOD, handle->getMethodIndex(), 0);
         break;
@@ -495,16 +496,16 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
             auto thenLabel = makeLabel();
             auto mergeLabel = makeLabel();
             this->emitBranchIns(OpCode::TRY_UNWRAP, thenLabel);
-            this->emitLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), "(invalid)"));
+            this->emitLdcIns(DSValue::create<String_Object>(this->symbolTable.getStringType(), "(invalid)"));
             this->emitJumpIns(mergeLabel);
 
             this->markLabel(thenLabel);
-            if(*elementType != this->pool.getStringType()) {
+            if(*elementType != this->symbolTable.getStringType()) {
                 this->generateToString();
             }
 
             this->markLabel(mergeLabel);
-        } else if(exprType != this->pool.getStringType()) {
+        } else if(exprType != this->symbolTable.getStringType()) {
             this->generateToString();
         }
         this->emitTypeIns(OpCode::PRINT, exprType);
@@ -692,7 +693,7 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
         this->emit0byteIns(OpCode::HALT);
     }
     this->markLabel(end);
-    this->catchException(begin, end, this->pool.getRoot());
+    this->catchException(begin, end, this->symbolTable.getRoot());
 
     // generate last pipe
     this->markLabel(labels[size - 1]);
@@ -742,7 +743,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     this->markLabel(endLabel);
 
     this->emit0byteIns(OpCode::HALT);
-    this->catchException(beginLabel, endLabel, this->pool.getRoot());
+    this->catchException(beginLabel, endLabel, this->symbolTable.getRoot());
     this->markLabel(mergeLabel);
 }
 
@@ -898,7 +899,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
         this->enterFinally();
 
         if(this->inUDC()) {
-            assert(node.getExprNode()->getType() == this->pool.getInt32Type());
+            assert(node.getExprNode()->getType() == this->symbolTable.getInt32Type());
             this->emit0byteIns(OpCode::RETURN_UDC);
         } else if(node.getExprNode()->getType().isVoidType()) {
             this->emit0byteIns(OpCode::RETURN);
@@ -967,7 +968,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->curBuilder().finallyLabels.pop_back();
 
         this->markLabel(finallyLabel);
-        this->catchException(beginLabel, finallyLabel, this->pool.getAnyType(),
+        this->catchException(beginLabel, finallyLabel, this->symbolTable.getAnyType(),
                              blockNode.getBaseIndex(), maxLocalSize);
         this->visit(*node.getFinallyNode());
         this->emit0byteIns(OpCode::EXIT_FINALLY);
@@ -983,7 +984,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
         this->visit(*node.getExprNode());
         break;
     case VarDeclNode::IMPORT_ENV: {
-        this->emitLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getVarName()));
+        this->emitLdcIns(DSValue::create<String_Object>(this->symbolTable.getStringType(), node.getVarName()));
         this->emit0byteIns(OpCode::DUP);
         const bool hashDefault = node.getExprNode() != nullptr;
         if(hashDefault) {
@@ -995,7 +996,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
         break;
     }
     case VarDeclNode::EXPORT_ENV: {
-        this->emitLdcIns(DSValue::create<String_Object>(this->pool.getStringType(), node.getVarName()));
+        this->emitLdcIns(DSValue::create<String_Object>(this->symbolTable.getStringType(), node.getVarName()));
         this->emit0byteIns(OpCode::DUP);
         this->visit(*node.getExprNode());
         this->emit0byteIns(OpCode::STORE_ENV);

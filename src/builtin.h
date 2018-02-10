@@ -1876,7 +1876,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
         int flag = fcntl(fd, F_GETFD);
         if(flag != -1) {
             if(fcntl(fd, F_SETFD, flag | FD_CLOEXEC) != -1) {
-                auto obj = DSValue::create<UnixFD_Object>(getPool(ctx), fd);
+                auto obj = DSValue::create<UnixFD_Object>(getPool(ctx).getUnixFDType(), fd);
                 setLocal(ctx, 0, std::move(obj));
                 RET_VOID;
             }
@@ -1908,7 +1908,7 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
     if(newfd < 0) {
         throwSystemError(ctx, errno, std::to_string(fd));
     }
-    RET(DSValue::create<UnixFD_Object>(getPool(ctx), newfd));
+    RET(DSValue::create<UnixFD_Object>(getPool(ctx).getUnixFDType(), newfd));
 }
 
 //!bind: function $OP_BOOL($this : UnixFD) : Boolean

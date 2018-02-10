@@ -1026,7 +1026,9 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
         }
     }
     OUT("};\n");
-    OUT("NativeFuncInfo *const nativeFuncInfoTable = infoTable;\n");
+    OUT("const NativeFuncInfo *nativeFuncInfoTable() {\n"
+                "    return infoTable;\n"
+                "}\n");
     OUT("\n");
 
     OUT("const NativeCode *getNativeCode(unsigned int index) {\n");

@@ -35,7 +35,7 @@ private:
     NodeDumper astDumper;
 
 public:
-    FrontEnd(Lexer &lexer, TypePool &pool, SymbolTable &symbolTable,
+    FrontEnd(Lexer &lexer, SymbolTable &symbolTable,
              DSExecMode mode, bool toplevel, const DumpTarget &target);
 
     bool frontEndOnly() const {

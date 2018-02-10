@@ -22,7 +22,7 @@ namespace ydsh {
 // ##     BaseTypeDescriptorMap     ##
 // ###################################
 
-BaseTypeDescriptorMap::BaseTypeDescriptorMap(TypePool *pool) {
+BaseTypeDescriptorMap::BaseTypeDescriptorMap(SymbolTable *pool) {
 #define ADD(type, desc) this->map.insert(std::make_pair((unsigned long) (&type), desc))
     ADD(pool->getInt64Type(), DBUS_TYPE_INT64);
     ADD(pool->getUint64Type(), DBUS_TYPE_UINT64);
@@ -308,7 +308,7 @@ void MessageBuilder::closeContainerIter(DBusMessageIter *parentIter, DBusMessage
     dbus_message_iter_close_container(this->iter, subIter);
 }
 
-static DSType &decodeTypeDescriptorImpl(TypePool *pool, const char *&desc) {
+static DSType &decodeTypeDescriptorImpl(SymbolTable *pool, const char *&desc) {
     int kind = *(desc++);
     switch(kind) {
     case DBUS_TYPE_INT64:
@@ -370,7 +370,7 @@ static DSType &decodeTypeDescriptorImpl(TypePool *pool, const char *&desc) {
     }
 }
 
-DSType &decodeTypeDescriptor(TypePool *pool, const char *desc) {
+DSType &decodeTypeDescriptor(SymbolTable *pool, const char *desc) {
     const char *copyDesc = desc;
     return decodeTypeDescriptorImpl(pool, copyDesc);
 }

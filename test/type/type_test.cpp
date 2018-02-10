@@ -2,6 +2,7 @@
 
 #include <type.h>
 #include <type_checker.h>
+#include <symbol_table.h>
 
 using namespace ydsh;
 
@@ -112,7 +113,7 @@ struct TypeFactory<Func_t<R, P...>> {
 
 class TypeTest : public ::testing::Test {
 public:
-    TypePool pool;
+    SymbolTable pool;
 
 public:
     TypeTest() = default;

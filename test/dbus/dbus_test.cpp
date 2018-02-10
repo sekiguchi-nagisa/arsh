@@ -6,12 +6,12 @@ using namespace ydsh;
 
 class DescriptorTest : public ::testing::Test {
 public:
-    TypePool *pool;
+    SymbolTable *pool;
     BaseTypeDescriptorMap map;
     DescriptorBuilder builder;
 
     DescriptorTest() :
-            pool(new TypePool()), map(this->pool), builder(this->pool, &this->map) {
+            pool(new SymbolTable()), map(this->pool), builder(this->pool, &this->map) {
     }
 
     virtual ~DescriptorTest() {

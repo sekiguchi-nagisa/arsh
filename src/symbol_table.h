@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2017 Nagisa Sekiguchi
+ * Copyright (C) 2015-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,60 @@ public:
     }
 };
 
+class TypeMap {
+private:
+    std::unordered_map<std::string, DSType *> typeMapImpl;
+    std::unordered_map<unsigned long, const std::string *> typeNameMap;
+
+    /**
+     * cache generated type(interface).
+     */
+    std::vector<const std::string *> typeCache;
+
+public:
+    NON_COPYABLE(TypeMap);
+
+    TypeMap() = default;
+    ~TypeMap();
+
+    /**
+     * return added type. type must not be null.
+     */
+    DSType *addType(std::string &&typeName, DSType *type);
+
+    /**
+     * return null, if has no type.
+     */
+    DSType *getType(const std::string &typeName) const;
+
+    /**
+     * type must not be null.
+     */
+    const std::string &getTypeName(const DSType &type) const;
+
+    /**
+     * return false, if duplicated
+     */
+    bool setAlias(std::string &&alias, DSType &targetType);
+
+    /**
+     * clear typeCache.
+     */
+    void commit();
+
+    /**
+     * remove cached type
+     */
+    void abort();
+
+
+private:
+    /**
+     * remove type and call destructor.
+     */
+    void removeType(const std::string &typeName);
+};
+
 enum class SymbolError {
     DUMMY,
     DEFINED,
@@ -93,7 +147,62 @@ enum class SymbolError {
 };
 
 class SymbolTable {
+public:
+    enum DS_TYPE : unsigned int {
+        Root__, // pseudo top type of all throwable type(except for option types)
+        Any,
+        Void,
+        Nothing,
+        Variant,    // for base type of all of D-Bus related type.
+        Value__,    // super type of value type(int, float, bool, string). not directly used it.
+        Byte,       // unsigned int 8
+        Int16,
+        Uint16,
+        Int32,
+        Uint32,
+        Int64,
+        Uint64,
+        Float,
+        Boolean,
+        String,
+        StringArray,    // for command argument
+        Regex,
+        Signal,
+        Signals,
+        Error,
+        Job,
+        Func,
+        StringIter__,
+        ObjectPath, // for D-Bus object path
+        UnixFD,     // for Unix file descriptor
+        Proxy,
+        DBus,       // for owner type of each bus object
+        Bus,        // for message bus.
+        Service,    // for service
+        DBusObject, // for D-Bus proxy instance
+        ArithmeticError,
+        OutOfRangeError,
+        KeyNotFoundError,
+        TypeCastError,
+        DBusError,
+        SystemError,    // for errno
+        StackOverflowError,
+        RegexSyntaxError,
+        UnwrapingError,
+
+        /**
+         * for internal status reporting.
+         * they are pseudo type, so must not use it from shell
+         */
+                InternalStatus__,   // base type
+        ShellExit__,
+        AssertFail__,
+
+        __SIZE_OF_DS_TYPE__,    // for enum size counting
+    };
+
 private:
+    // for FieldHandle
     std::vector<std::string> handleCache;
 
     /**
@@ -105,6 +214,22 @@ private:
      * contains max number of variable index.
      */
     std::vector<unsigned int> maxVarIndexStack;
+
+
+    // for type
+    TypeMap typeMap;
+    DSType **typeTable; //for builtin type lookup
+
+    /**
+     * for type template
+     */
+    std::unordered_map<std::string, TypeTemplate *> templateMap;
+
+    // type template definition
+    TypeTemplate *arrayTemplate;
+    TypeTemplate *mapTemplate;
+    TypeTemplate *tupleTemplate;
+    TypeTemplate *optionTemplate;
 
 public:
     NON_COPYABLE(SymbolTable);
@@ -124,6 +249,8 @@ private:
     }
 
 public:
+    // for FieldHandle lookup
+
     /**
      * return null, if not found.
      */
@@ -193,7 +320,7 @@ public:
     /**
      * remove changed state(local scope, global FieldHandle)
      */
-    void abort();
+    void abort(bool sbortType);
 
     /**
      * max number of local variable index.
@@ -219,6 +346,330 @@ public:
     }
 
     static constexpr const char *cmdSymbolPrefix = "%c";
+
+
+    // for type lookup
+
+    /**
+     * get any type (root class of ydsh class)
+     */
+    DSType &getAnyType() const {
+        return *this->typeTable[Any];
+    }
+
+    /**
+     * get void type (pseudo class representing for void)
+     */
+    DSType &getVoidType() const {
+        return *this->typeTable[Void];
+    }
+
+    DSType &getNothingType() const {
+        return *this->typeTable[Nothing];
+    }
+
+    DSType &getVariantType() const {
+        return *this->typeTable[Variant];
+    }
+
+    DSType &getValueType() const {
+        return *this->typeTable[Value__];
+    }
+
+    /**
+     * int is 32bit.
+     */
+    DSType &getIntType() const {
+        return this->getInt32Type();
+    }
+
+    DSType &getByteType() const {
+        return *this->typeTable[Byte];
+    }
+
+    DSType &getInt16Type() const {
+        return *this->typeTable[Int16];
+    }
+
+    DSType &getUint16Type() const {
+        return *this->typeTable[Uint16];
+    }
+
+    DSType &getInt32Type() const {
+        return *this->typeTable[Int32];
+    }
+
+    DSType &getUint32Type() const {
+        return *this->typeTable[Uint32];
+    }
+
+    DSType &getInt64Type() const {
+        return *this->typeTable[Int64];
+    }
+
+    DSType &getUint64Type() const {
+        return *this->typeTable[Uint64];
+    }
+
+    /**
+     * float is 64bit.
+     */
+    DSType &getFloatType() const {
+        return *this->typeTable[Float];
+    }
+
+    DSType &getBooleanType() const {
+        return *this->typeTable[Boolean];
+    }
+
+    DSType &getStringType() const {
+        return *this->typeTable[String];
+    }
+
+    DSType &getErrorType() const {
+        return *this->typeTable[Error];
+    }
+
+    DSType &getJobType() const {
+        return *this->typeTable[Job];
+    }
+
+    DSType &getBaseFuncType() const {
+        return *this->typeTable[Func];
+    }
+
+    DSType &getStringIterType() const {
+        return *this->typeTable[StringIter__];
+    }
+
+    DSType &getRegexType() const {
+        return *this->typeTable[Regex];
+    }
+
+    DSType &getSignalType() const {
+        return *this->typeTable[Signal];
+    }
+
+    DSType &getSignalsType() const {
+        return *this->typeTable[Signals];
+    }
+
+    DSType &getObjectPathType() const {
+        return *this->typeTable[ObjectPath];
+    }
+
+    DSType &getUnixFDType() const {
+        return *this->typeTable[UnixFD];
+    }
+
+    DSType &getProxyType() const {
+        return *this->typeTable[Proxy];
+    }
+
+    DSType &getDBusType() const {
+        return *this->typeTable[DBus];
+    }
+
+    DSType &getBusType() const {
+        return *this->typeTable[Bus];
+    }
+
+    DSType &getServiceType() const {
+        return *this->typeTable[Service];
+    }
+
+    DSType &getDBusObjectType() const {
+        return *this->typeTable[DBusObject];
+    }
+
+    DSType &getStringArrayType() const {
+        return *this->typeTable[StringArray];
+    }
+
+    // for error
+    DSType &getArithmeticErrorType() const {
+        return *this->typeTable[ArithmeticError];
+    }
+
+    DSType &getOutOfRangeErrorType() const {
+        return *this->typeTable[OutOfRangeError];
+    }
+
+    DSType &getKeyNotFoundErrorType() const {
+        return *this->typeTable[KeyNotFoundError];
+    }
+
+    DSType &getTypeCastErrorType() const {
+        return *this->typeTable[TypeCastError];
+    }
+
+    DSType &getDBusErrorType() const {
+        return *this->typeTable[DBusError];
+    }
+
+    DSType &getSystemErrorType() const {
+        return *this->typeTable[SystemError];
+    }
+
+    DSType &getStackOverflowErrorType() const {
+        return *this->typeTable[StackOverflowError];
+    }
+
+    DSType &getRegexSyntaxErrorType() const {
+        return *this->typeTable[RegexSyntaxError];
+    }
+
+    DSType &getUnwrappingErrorType() const {
+        return *this->typeTable[UnwrapingError];
+    }
+
+    // for internal status reporting
+    DSType &getRoot() const {
+        return *this->typeTable[Root__];
+    }
+
+    DSType &getInternalStatus() const {
+        return *this->typeTable[InternalStatus__];
+    }
+
+    DSType &getShellExit() const {
+        return *this->typeTable[ShellExit__];
+    }
+
+    DSType &getAssertFail() const {
+        return *this->typeTable[AssertFail__];
+    }
+
+    // for reified type.
+    const TypeTemplate &getArrayTemplate() const {
+        return *this->arrayTemplate;
+    }
+
+    const TypeTemplate &getMapTemplate() const {
+        return *this->mapTemplate;
+    }
+
+    const TypeTemplate &getTupleTemplate() const {
+        return *this->tupleTemplate;
+    }
+
+    const TypeTemplate &getOptionTemplate() const {
+        return *this->optionTemplate;
+    }
+
+    // for type lookup
+
+    /**
+     * return null, if type is not defined.
+     */
+    DSType *getType(const std::string &typeName) const {
+        return this->typeMap.getType(typeName);
+    }
+
+    /**
+     * get type except template type.
+     * if type is undefined, throw exception
+     */
+    DSType &getTypeAndThrowIfUndefined(const std::string &typeName) const;
+
+    /**
+     * get template type.
+     * if template type is not found, throw exception
+     */
+    const TypeTemplate &getTypeTemplate(const std::string &typeName) const;
+
+    /**
+     * if type template is Tuple, call createTupleType()
+     */
+    DSType &createReifiedType(const TypeTemplate &typeTemplate, std::vector<DSType *> &&elementTypes);
+
+    DSType &createTupleType(std::vector<DSType *> &&elementTypes);
+
+    FunctionType &createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
+
+    InterfaceType &createInterfaceType(const std::string &interfaceName);
+
+    DSType &createErrorType(const std::string &errorName, DSType &superType);
+
+    /**
+     * if not found type, search directory /etc/ydsh/dbus/
+     */
+    DSType &getDBusInterfaceType(const std::string &typeName);
+
+    /**
+     * set type name alias. if alias name has already defined, report error.
+     */
+    void setAlias(const std::string &alias, DSType &targetType) {
+        this->setAlias(alias.c_str(), targetType);
+    }
+
+    void setAlias(const char *alias, DSType &targetType);
+
+    const char *getTypeName(const DSType &type) const {
+        return this->typeMap.getTypeName(type).c_str();
+    }
+
+    /**
+     * create reified type name
+     * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
+     */
+    std::string toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes) const {
+        return this->toReifiedTypeName(typeTemplate.getName(), elementTypes);
+    }
+
+    std::string toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) const;
+
+    std::string toTupleTypeName(const std::vector<DSType *> &elementTypes) const {
+        return this->toReifiedTypeName("Tuple", elementTypes);
+    }
+
+    /**
+     * create function type name
+     */
+    std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const;
+
+    static constexpr int INT64_PRECISION = 50;
+    static constexpr int INT32_PRECISION = 40;
+    static constexpr int INT16_PRECISION = 30;
+    static constexpr int BYTE_PRECISION = 20;
+    static constexpr int INVALID_PRECISION = 1;
+
+    /**
+     * get integer precision. if type is not int type, return INVALID_PRECISION.
+     */
+    int getIntPrecision(const DSType &type) const;
+
+    /**
+     * if type is not number type, return -1.
+     */
+    int getNumTypeIndex(const DSType &type) const;
+
+    /**
+     * if not found, return null.
+     */
+    DSType *getByNumTypeIndex(unsigned int index) const;
+
+private:
+    void setToTypeTable(DS_TYPE TYPE, DSType *type);
+
+    void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendible, native_type_info_t info);
+
+    void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendible,
+                         DSType &superType, native_type_info_t info);
+
+    TypeTemplate *initTypeTemplate(const char *typeName,
+                                   std::vector<DSType*> &&elementTypes, native_type_info_t info);
+
+    void initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superType);
+
+    void checkElementTypes(const std::vector<DSType *> &elementTypes) const;
+    void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
+    bool asVariantType(const std::vector<DSType *> &elementTypes) const;
+
+    /**
+     * add standard dbus error type and alias. must call only once.
+     */
+    void registerDBusErrorTypes();
 };
 
 } // namespace ydsh

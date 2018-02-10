@@ -281,7 +281,7 @@ struct CodeBuilder : public CodeEmitter<true> {
 
 class ByteCodeGenerator : protected NodeVisitor {
 private:
-    TypePool &pool;
+    SymbolTable &symbolTable;
 
     bool assertion;
 
@@ -290,8 +290,8 @@ private:
     std::vector<CodeBuilder *> builders;
 
 public:
-    ByteCodeGenerator(TypePool &pool, bool assertion) :
-            pool(pool), assertion(assertion) { }
+    ByteCodeGenerator(SymbolTable &symbolTable, bool assertion) :
+            symbolTable(symbolTable), assertion(assertion) { }
 
     ~ByteCodeGenerator() override;
 

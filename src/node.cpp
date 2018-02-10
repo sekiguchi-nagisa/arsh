@@ -20,6 +20,7 @@
 #include "object.h"
 #include "node.h"
 #include "handle.h"
+#include "symbol_table.h"
 
 // helper macro for node dumper
 #define NAME(f) #f
@@ -747,12 +748,12 @@ void BlockNode::insertNodeToFirst(Node *node) {
     this->nodes.insert(this->nodes.begin(), node);
 }
 
-void BlockNode::addReturnNodeToLast(TypePool &pool, Node *exprNode) {
+void BlockNode::addReturnNodeToLast(const SymbolTable &symbolTable, Node *exprNode) {
     assert(!this->isUntyped() && !this->getType().isNothingType());
     assert(!exprNode->isUntyped());
 
     auto *returnNode = JumpNode::newReturn(exprNode->getToken(), exprNode);
-    returnNode->setType(pool.getNothingType());
+    returnNode->setType(symbolTable.getNothingType());
     this->addNode(returnNode);
     this->setType(returnNode->getType());
 }
@@ -1360,7 +1361,7 @@ void NodeDumper::dump(const char *fieldName, const Node &node) {
 }
 
 void NodeDumper::dump(const char *fieldName, const DSType &type) {
-    this->dump(fieldName, this->pool.getTypeName(type));
+    this->dump(fieldName, this->symbolTable.getTypeName(type));
 }
 
 void NodeDumper::dump(const char *fieldName, TokenKind kind) {
@@ -1407,7 +1408,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     this->indent(); fprintf(this->fp, "size: %d\n", node.getSize());
     this->leaveIndent();
     this->indent(); fprintf(this->fp, "type: %s\n",
-                            (!node.isUntyped() ? this->pool.getTypeName(node.getType()) : ""));
+                            (!node.isUntyped() ? this->symbolTable.getTypeName(node.getType()) : ""));
 
     if(inArray) {
         this->leaveIndent();

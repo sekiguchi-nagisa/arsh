@@ -67,7 +67,6 @@ public:
 };
 
 struct DSState {
-    TypePool pool;
     SymbolTable symbolTable;
 
     /**
@@ -210,10 +209,7 @@ struct DSState {
      * abort symbol table and TypePool when error happened
      */
     void recover(bool abortType = true) {
-        this->symbolTable.abort();
-        if(abortType) {
-            this->pool.abort();
-        }
+        this->symbolTable.abort(abortType);
     }
 
     const DSValue &getThrownObject() const {
@@ -229,7 +225,7 @@ struct DSState {
      */
     DSValue newError(DSType &errorType, std::string &&message) const {
         return Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
-                this->pool.getStringType(), std::move(message)));
+                this->symbolTable.getStringType(), std::move(message)));
     }
 
     /**
@@ -371,7 +367,7 @@ struct DSState {
 
     void updateExitStatus(unsigned int status) {
         unsigned int index = toIndex(BuiltinVarOffset::EXIT_STATUS);
-        this->setGlobal(index, DSValue::create<Int_Object>(this->pool.getInt32Type(), status));
+        this->setGlobal(index, DSValue::create<Int_Object>(this->symbolTable.getInt32Type(), status));
     }
 
     void pushExitStatus(int status) {

@@ -18,7 +18,6 @@
 #define YDSH_TYPE_CHECKER_H
 
 #include "node.h"
-#include "type.h"
 #include "handle.h"
 #include "symbol_table.h"
 #include "diagnosis.h"
@@ -184,11 +183,12 @@ class TypeChecker;
 
 class TypeGenerator {
 private:
-    TypePool &pool;
+    SymbolTable &symbolTable;
     TypeChecker *checker;
 
 public:
-    explicit TypeGenerator(TypePool &pool, TypeChecker *checker = nullptr) : pool(pool), checker(checker) {}
+    explicit TypeGenerator(SymbolTable &symbolTable, TypeChecker *checker = nullptr) :
+            symbolTable(symbolTable), checker(checker) {}
 
     DSType &toType(TypeNode &node);
 
@@ -202,11 +202,6 @@ private:
 class TypeChecker : protected NodeVisitor {
 protected:
     friend class TypeGenerator;
-
-    /**
-     * for type lookup
-     */
-    TypePool &typePool;
 
     SymbolTable &symbolTable;
 
@@ -224,8 +219,8 @@ protected:
     bool toplevelPrinting;
 
 public:
-    TypeChecker(TypePool &typePool, SymbolTable &symbolTable, bool toplevelPrinting) :
-            typePool(typePool), symbolTable(symbolTable), toplevelPrinting(toplevelPrinting) { }
+    TypeChecker(SymbolTable &symbolTable, bool toplevelPrinting) :
+            symbolTable(symbolTable), toplevelPrinting(toplevelPrinting) { }
 
     ~TypeChecker() override = default;
 
@@ -233,7 +228,6 @@ public:
 
     void reset() {
         this->symbolTable.commit();
-        this->typePool.commit();
         this->fctx.clear();
         this->breakGather.clear();
     }
@@ -254,7 +248,7 @@ protected:
      * return resolved type.
      */
     DSType &checkType(Node *targetNode) {
-        return this->checkType(nullptr, targetNode, &this->typePool.getVoidType());
+        return this->checkType(nullptr, targetNode, &this->symbolTable.getVoidType());
     }
 
     /**
@@ -289,7 +283,7 @@ protected:
                       DSType *unacceptableType, CoercionKind &kind);
 
     void checkTypeWithCurrentScope(BlockNode *blockNode) {
-        this->checkTypeWithCurrentScope(&this->typePool.getVoidType(), blockNode);
+        this->checkTypeWithCurrentScope(&this->symbolTable.getVoidType(), blockNode);
     }
 
     void checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blockNode);

@@ -183,12 +183,12 @@ int GetOptState::operator()(const Array_Object &obj, const char *optStr) {
 
 // core api definition
 
-TypePool &getPool(DSState &st) {
-    return st.pool;
+SymbolTable &getPool(DSState &st) {
+    return st.symbolTable;
 }
 
-const TypePool &getPool(const DSState &st) {
-    return st.pool;
+const SymbolTable &getPool(const DSState &st) {
+    return st.symbolTable;
 }
 
 JobTable &getJobTable(DSState &st) {
@@ -271,7 +271,7 @@ void throwSystemError(DSState &st, int errorNum, std::string &&message) {
     std::string str(std::move(message));
     str += ": ";
     str += strerror(errorNum);
-    throwError(st, st.pool.getSystemErrorType(), std::move(str));
+    throwError(st, st.symbolTable.getSystemErrorType(), std::move(str));
 }
 
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace) {

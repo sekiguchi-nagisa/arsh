@@ -22,6 +22,7 @@ extern "C" {
 
 #include "type.h"
 #include "object.h"
+#include "symbol_table.h"
 
 namespace ydsh {
 
@@ -33,7 +34,7 @@ private:
     std::unordered_map<unsigned long, int> map;
 
 public:
-    explicit BaseTypeDescriptorMap(TypePool *pool);
+    explicit BaseTypeDescriptorMap(SymbolTable *pool);
     ~BaseTypeDescriptorMap() = default;
 
     /**
@@ -48,12 +49,12 @@ public:
  */
 class DescriptorBuilder : public TypeVisitor {
 private:
-    TypePool *pool;
+    SymbolTable *pool;
     BaseTypeDescriptorMap *typeMap;
     std::string buf;
 
 public:
-    DescriptorBuilder(TypePool *pool, BaseTypeDescriptorMap *typeMap) : pool(pool), typeMap(typeMap) { }
+    DescriptorBuilder(SymbolTable *pool, BaseTypeDescriptorMap *typeMap) : pool(pool), typeMap(typeMap) { }
     ~DescriptorBuilder() override = default;
 
     const char *buildDescriptor(DSType &type);
@@ -73,7 +74,7 @@ private:
 
 class MessageBuilder : public TypeVisitor {
 private:
-    TypePool *pool;
+    SymbolTable *pool;
 
     BaseTypeDescriptorMap *typeMap;
     DescriptorBuilder *descBuilder;
@@ -83,7 +84,7 @@ private:
     DBusMessageIter *iter;
 
 public:
-    explicit MessageBuilder(TypePool *pool) :
+    explicit MessageBuilder(SymbolTable *pool) :
             pool(pool), typeMap(nullptr), descBuilder(nullptr), iter() { }
 
     ~MessageBuilder() override {
@@ -119,7 +120,7 @@ private:
     void closeContainerIter(DBusMessageIter *parentIter, DBusMessageIter *subIter);
 };
 
-DSType &decodeTypeDescriptor(TypePool *pool, const char *desc);
+DSType &decodeTypeDescriptor(SymbolTable *pool, const char *desc);
 
 } // namespace ydsh
 
