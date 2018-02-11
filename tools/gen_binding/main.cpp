@@ -24,7 +24,6 @@
 #include <handle_info.h>
 #include <symbol.h>
 #include <misc/parser_base.hpp>
-#include <misc/fatal.h>
 #include <misc/opt.hpp>
 #include <DescLexer.h>
 

@@ -17,7 +17,6 @@
 #include <unistd.h>
 
 #include <iostream>
-#include <string>
 #include <vector>
 
 #include <misc/opt.hpp>

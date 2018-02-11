@@ -23,8 +23,6 @@
 #include <misc/fatal.h>
 #include <parser.h>
 #include <type_checker.h>
-#include <symbol_table.h>
-
 
 namespace ydsh {
 namespace directive {
@@ -70,7 +68,7 @@ private:
     std::unordered_map<std::string, Handler> handlerMap;
 
 public:
-    DirectiveInitializer(SymbolTable &symbolTable);
+    explicit DirectiveInitializer(SymbolTable &symbolTable);
     ~DirectiveInitializer() override = default;
 
     void operator()(ApplyNode &node, Directive &d);
