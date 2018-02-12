@@ -91,12 +91,12 @@ public:
     /**
      * default initial size is equivalent to MINIMUM_CAPACITY
      */
-    explicit FlexBuffer(size_type initSize) :
+    explicit FlexBuffer(size_type initSize) noexcept :
             maxSize(initSize < MINIMUM_CAPACITY ? MINIMUM_CAPACITY : initSize),
             usedSize(0),
             data(allocArray(nullptr, this->maxSize)) { }
 
-    FlexBuffer(std::initializer_list<T> list) : FlexBuffer(list.size()) {
+    FlexBuffer(std::initializer_list<T> list) noexcept : FlexBuffer(list.size()) {
         for(auto iter = list.begin(); iter != list.end(); ++iter) {
             this->data[this->usedSize++] = *iter;
         }
@@ -262,7 +262,7 @@ public:
      */
     iterator erase(const_iterator first, const_iterator last) noexcept;
 
-    void assign(size_type n, const T &value);
+    void assign(size_type n, const T &value) noexcept;
 
     bool operator==(const FlexBuffer &v) const noexcept {
         return this->size() == v.size() && memcmp(this->data, v.data, sizeof(T) * this->size()) == 0;
@@ -401,7 +401,7 @@ typename FlexBuffer<T, SIZE_T>::iterator FlexBuffer<T, SIZE_T>::erase(const_iter
 }
 
 template <typename T, typename SIZE_T>
-void FlexBuffer<T, SIZE_T>::assign(size_type n, const T &value) {
+void FlexBuffer<T, SIZE_T>::assign(size_type n, const T &value) noexcept {
     this->reserve(this->usedSize + n);
     for(unsigned int i = 0; i < n; i++) {
         this->data[this->usedSize++] = value;
