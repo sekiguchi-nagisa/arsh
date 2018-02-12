@@ -55,10 +55,10 @@ static void loadRC(DSState *state, const char *rcfile) {
 
 static const char *statusLogPath = nullptr;
 
-template <typename F, F func, typename ...T>
-static int invoke(DSState **state, T&& ... args) {
+template <typename Func, typename ...T>
+static int apply(Func func, DSState *state, T&& ... args) {
     DSError error{};
-    int ret = func(*state, std::forward<T>(args)..., &error);
+    int ret = func(state, std::forward<T>(args)..., &error);
     if(statusLogPath != nullptr) {
         FILE *fp = fopen(statusLogPath, "w");
         if(fp != nullptr) {
@@ -69,8 +69,6 @@ static int invoke(DSState **state, T&& ... args) {
     }
     return ret;
 }
-
-#define INVOKE(F) invoke<decltype(&DSState_ ## F), DSState_ ## F>
 
 static void showFeature(FILE *fp) {
     const char *featureNames[] = {
@@ -272,13 +270,13 @@ int main(int argc, char **argv) {
         DSState_setShellName(state, scriptName);
         DSState_setArguments(state, shellArgs + 1);
         DSState_setScriptDir(state, scriptName);
-        exit(INVOKE(loadAndEval)(&state, scriptName, fp));
+        exit(apply(DSState_loadAndEval, state, scriptName, fp));
     }
     case InvocationKind::FROM_STDIN: {
         DSState_setArguments(state, shellArgs);
 
         if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
-            exit(INVOKE(loadAndEval)(&state, nullptr, stdin));
+            exit(apply(DSState_loadAndEval, state, nullptr, stdin));
         } else {    // interactive mode
             if(!quiet) {
                 fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
@@ -292,7 +290,7 @@ int main(int argc, char **argv) {
     case InvocationKind::FROM_STRING: {
         DSState_setShellName(state, shellArgs[0]);
         DSState_setArguments(state, size == 0 ? nullptr : shellArgs + 1);
-        exit(INVOKE(eval)(&state, "(string)", evalText, strlen(evalText)));
+        exit(apply(DSState_eval, state, "(string)", evalText, strlen(evalText)));
     }
     case InvocationKind::BUILTIN: {
         exit(DSState_exec(state, shellArgs));
