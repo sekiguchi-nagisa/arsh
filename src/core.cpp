@@ -264,10 +264,7 @@ void throwError(DSState &st, DSType &errorType, std::string &&message) {
  * format message '%s: %s', message, strerror(errorNum)
  */
 void throwSystemError(DSState &st, int errorNum, std::string &&message) {
-    if(errorNum == 0) {
-        fatal("errno is not 0\n");
-    }
-
+    assert(errorNum != 0);
     std::string str(std::move(message));
     str += ": ";
     str += strerror(errorNum);
