@@ -65,7 +65,7 @@ $j = for(;;) { true; } &
 assert $j.poll()
 $j.kill(%'STOP')
 assert $j.poll()
-assert !$j.wait()
+#assert !$j.wait()
 
 $j.kill(%'CONT')
 assert $j.poll()
