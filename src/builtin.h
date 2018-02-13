@@ -1975,9 +1975,9 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
     RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), s));
 }
 
-//!bind: function kill($this : Job, $s : Signal) : Void
-YDSH_METHOD job_kill(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(job_kill);
+//!bind: function raise($this : Job, $s : Signal) : Void
+YDSH_METHOD job_raise(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_raise);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
     auto *sig = typeAs<Int_Object>(LOCAL(1));
     obj->getEntry()->send(sig->getValue());

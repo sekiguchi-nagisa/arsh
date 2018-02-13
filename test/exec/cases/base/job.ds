@@ -63,12 +63,12 @@ assert $j2.wait() == 0
 # signal
 $j = for(;;) { true; } &
 assert $j.poll()
-$j.kill(%'STOP')
+$j.raise(%'STOP')
 assert $j.poll()
 
-$j.kill(%'CONT')
+$j.raise(%'CONT')
 assert $j.poll()
-$j.kill(%'term')
+$j.raise(%'term')
 assert $j.wait() == %'term'.value() + 128
 assert !$j.poll()
 
@@ -80,8 +80,8 @@ function handle($s : Signal) {
 }
 $SIG[%'cont'] = $handle
 $j = for(;;) { true; } &
-$j.kill(%'STOP')
-$j.kill(%'CONT')
+$j.raise(%'STOP')
+$j.raise(%'CONT')
 assert $j.wait() == %'cont'.value()
 
 

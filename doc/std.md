@@ -362,7 +362,7 @@ function poll($this : Job) : Boolean
 
 function wait($this : Job) : Int32
 
-function kill($this : Job, $s : Signal) : Void
+function raise($this : Job, $s : Signal) : Void
 
 function detach($this : Job) : Void
 
