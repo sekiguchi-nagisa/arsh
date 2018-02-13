@@ -19,6 +19,7 @@
 #include <string>
 #include <memory>
 #include <cerrno>
+#include <cstdlib>
 
 #include <unistd.h>
 
