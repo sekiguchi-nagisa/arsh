@@ -66,15 +66,19 @@ assert $j2.wait()! == 0
 
 # signal
 $j = for(;;) { true; } &
+assert $j.poll()
 $j.kill(%'STOP')
+assert $j.poll()
 assert $j
 assert !$j.wait()
 assert $j
 
 $j.kill(%'CONT')
+assert $j.poll()
 assert $j
 $j.kill(%'term')
 assert $j.wait()! == %'term'.value() + 128
+assert !$j.poll()
 
 
 # handle SIGCONT

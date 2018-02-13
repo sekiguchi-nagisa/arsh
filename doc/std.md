@@ -362,6 +362,8 @@ function %OP_BOOL($this : Job) : Boolean
 
 function %OP_NOT($this : Job) : Boolean
 
+function poll($this : Job) : Boolean
+
 function wait($this : Job) : Option<Int32>
 
 function kill($this : Job, $s : Signal) : Void

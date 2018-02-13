@@ -1973,6 +1973,13 @@ YDSH_METHOD job_not(RuntimeContext &ctx) {
     RET_BOOL(!obj->getEntry()->available());
 }
 
+//!bind: function poll($this : Job) : Boolean
+YDSH_METHOD job_poll(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_poll);
+    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    RET_BOOL(obj->poll());
+}
+
 //!bind: function wait($this : Job) : Option<Int32>
 YDSH_METHOD job_wait(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_wait);

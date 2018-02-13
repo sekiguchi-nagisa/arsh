@@ -641,6 +641,11 @@ public:
         return this->entry;
     }
 
+    bool poll() {
+        this->entry->wait(Proc::NONBLOCKING);
+        return this->entry->available();
+    }
+
     int wait(JobTable &jobTable) {
         int s = jobTable.waitAndDetach(this->entry, true);
         typeAs<UnixFD_Object>(this->inObj)->tryToClose(false);
