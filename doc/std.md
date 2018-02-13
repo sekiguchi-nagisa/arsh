@@ -358,10 +358,6 @@ function out($this : Job) : UnixFD
 
 function %OP_GET($this : Job, $index : Int32) : UnixFD
 
-function %OP_BOOL($this : Job) : Boolean
-
-function %OP_NOT($this : Job) : Boolean
-
 function poll($this : Job) : Boolean
 
 function wait($this : Job) : Option<Int32>

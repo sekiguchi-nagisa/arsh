@@ -12,9 +12,7 @@ try { $j[2]; } catch $e { $ex = $e; }
 assert $ex is OutOfRangeError
 
 assert $j as String == "%1"
-assert $j
 assert $j.wait()! == 0
-assert ! $j
 
 
 # disowned background job
@@ -39,9 +37,7 @@ assert $j.size() == 1
 echo hello > $j[0]
 assert { read -u $j[1]; $REPLY; } == "reply: hello"
 
-assert $j
 assert $j.wait()! == 0
-assert ! $j
 assert ! $j.in()
 assert !$j.out()
 assert $j.size() == 1
@@ -69,13 +65,10 @@ $j = for(;;) { true; } &
 assert $j.poll()
 $j.kill(%'STOP')
 assert $j.poll()
-assert $j
 assert !$j.wait()
-assert $j
 
 $j.kill(%'CONT')
 assert $j.poll()
-assert $j
 $j.kill(%'term')
 assert $j.wait()! == %'term'.value() + 128
 assert !$j.poll()
@@ -98,5 +91,4 @@ $j = coproc false
 assert $j as String == '%1'
 $j.detach()
 assert $j as String == '%0'
-assert $j
 assert $j.wait()! == 1
