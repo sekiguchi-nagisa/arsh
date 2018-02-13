@@ -1991,22 +1991,6 @@ YDSH_METHOD job_kill(RuntimeContext &ctx) {
     RET_VOID;
 }
 
-//!bind: function suspend($this : Job) : Void
-YDSH_METHOD job_suspend(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(job_suspend);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
-    obj->getEntry()->send(SIGSTOP);
-    RET_VOID;
-}
-
-//!bind: function resume($this : Job) : Void
-YDSH_METHOD job_resume(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(job_resume);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
-    obj->getEntry()->send(SIGCONT);
-    RET_VOID;
-}
-
 //!bind: function detach($this : Job) : Void
 YDSH_METHOD job_detach(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_detach);

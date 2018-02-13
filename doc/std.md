@@ -366,10 +366,6 @@ function wait($this : Job) : Option<Int32>
 
 function kill($this : Job, $s : Signal) : Void
 
-function suspend($this : Job) : Void
-
-function resume($this : Job) : Void
-
 function detach($this : Job) : Void
 
 function size($this : Job) : Int32

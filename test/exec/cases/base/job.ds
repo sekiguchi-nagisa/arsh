@@ -66,12 +66,12 @@ assert $j2.wait()! == 0
 
 # signal
 $j = for(;;) { true; } &
-$j.suspend()
+$j.kill(%'STOP')
 assert $j
 assert !$j.wait()
 assert $j
 
-$j.resume()
+$j.kill(%'CONT')
 assert $j
 $j.kill(%'term')
 assert $j.wait()! == %'term'.value() + 128
@@ -84,8 +84,8 @@ function handle($s : Signal) {
 }
 $SIG[%'cont'] = $handle
 $j = for(;;) { true; } &
-$j.suspend()
-$j.resume()
+$j.kill(%'STOP')
+$j.kill(%'CONT')
 assert $j.wait()! == %'cont'.value()
 
 
