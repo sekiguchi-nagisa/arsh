@@ -1966,13 +1966,13 @@ YDSH_METHOD job_poll(RuntimeContext &ctx) {
     RET_BOOL(obj->poll());
 }
 
-//!bind: function wait($this : Job) : Option<Int32>
+//!bind: function wait($this : Job) : Int32
 YDSH_METHOD job_wait(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_wait);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    int s = obj->wait(getJobTable(ctx));
-    RET(obj->getEntry()->available() ? DSValue::createInvalid() :
-        DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), s));
+    bool jobctrl = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
+    int s = obj->wait(getJobTable(ctx), jobctrl);
+    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), s));
 }
 
 //!bind: function kill($this : Job, $s : Signal) : Void

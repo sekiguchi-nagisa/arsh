@@ -201,10 +201,9 @@ int JobImpl::wait(Proc::WaitOp op) {
     unsigned int lastStatus = 0;
     for(unsigned int i = 0; i < this->procSize; i++) {
         auto &proc = this->procs[i];
-        int s = proc.wait(op);
+        lastStatus = proc.wait(op);
         if(proc.state() == Proc::TERMINATED) {
             terminateCount++;
-            lastStatus = s;
         }
     }
     if(terminateCount == this->procSize) {

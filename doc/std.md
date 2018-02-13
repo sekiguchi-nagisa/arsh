@@ -360,7 +360,7 @@ function %OP_GET($this : Job, $index : Int32) : UnixFD
 
 function poll($this : Job) : Boolean
 
-function wait($this : Job) : Option<Int32>
+function wait($this : Job) : Int32
 
 function kill($this : Job, $s : Signal) : Void
 

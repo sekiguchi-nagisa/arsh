@@ -368,9 +368,10 @@ TEST_F(APITest, jobctrl2) {
              %'stop'.kill($PID)
              exit 99
         } &
-        assert ! $j.wait()
+        assert $j.wait() == 128 + %'stop'.value()
+        assert $j.poll()
         assert { bg; $?; } == 0
-        assert $j.wait()! == 99
+        assert $j.wait() == 99
         true
 )";
     result = EXEC(str);
@@ -381,9 +382,10 @@ TEST_F(APITest, jobctrl2) {
              %'stop'.kill($PID)
              exit 99
         } &
-        assert ! $j.wait()
+        assert $j.wait() == 128 + %'stop'.value()
+        assert $j.poll()
         assert { bg %1 %2; $?; } == 1
-        assert $j.wait()! == 99
+        assert $j.wait() == 99
         true
 )";
     result = EXEC(str);

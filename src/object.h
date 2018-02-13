@@ -646,10 +646,12 @@ public:
         return this->entry->available();
     }
 
-    int wait(JobTable &jobTable) {
-        int s = jobTable.waitAndDetach(this->entry, true);
-        typeAs<UnixFD_Object>(this->inObj)->tryToClose(false);
-        typeAs<UnixFD_Object>(this->outObj)->tryToClose(false);
+    int wait(JobTable &jobTable, bool jobctrl) {
+        int s = jobTable.waitAndDetach(this->entry, jobctrl);
+        if(!this->entry->available()) {
+            typeAs<UnixFD_Object>(this->inObj)->tryToClose(false);
+            typeAs<UnixFD_Object>(this->outObj)->tryToClose(false);
+        }
         return s;
     }
 

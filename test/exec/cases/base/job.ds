@@ -12,7 +12,7 @@ try { $j[2]; } catch $e { $ex = $e; }
 assert $ex is OutOfRangeError
 
 assert $j as String == "%1"
-assert $j.wait()! == 0
+assert $j.wait() == 0
 
 
 # disowned background job
@@ -23,7 +23,7 @@ assert !$j.in()
 assert !$j.out()
 assert $j.size() == 1
 assert $j as String == "%0"
-assert $j.wait()! == 0
+assert $j.wait() == 0
 
 
 # co-process
@@ -37,7 +37,7 @@ assert $j.size() == 1
 echo hello > $j[0]
 assert { read -u $j[1]; $REPLY; } == "reply: hello"
 
-assert $j.wait()! == 0
+assert $j.wait() == 0
 assert ! $j.in()
 assert !$j.out()
 assert $j.size() == 1
@@ -46,18 +46,18 @@ assert $j.size() == 1
 # jobs in child
 $j = {
     var j = exit 3 &
-    exit ${$j.wait()!}
+    exit ${$j.wait()}
 } &
-assert $j.wait()! == 3
+assert $j.wait() == 3
 
 
 var j2 = true &
 $j = {
- var s = $j2.wait() ?? 255;
+ var s = $j2.wait()
  exit $s;
 } &
-assert $j.wait()! == 255
-assert $j2.wait()! == 0
+assert $j.wait() == 255
+assert $j2.wait() == 0
 
 
 # signal
@@ -65,12 +65,11 @@ $j = for(;;) { true; } &
 assert $j.poll()
 $j.kill(%'STOP')
 assert $j.poll()
-#assert !$j.wait()
 
 $j.kill(%'CONT')
 assert $j.poll()
 $j.kill(%'term')
-assert $j.wait()! == %'term'.value() + 128
+assert $j.wait() == %'term'.value() + 128
 assert !$j.poll()
 
 
@@ -83,7 +82,7 @@ $SIG[%'cont'] = $handle
 $j = for(;;) { true; } &
 $j.kill(%'STOP')
 $j.kill(%'CONT')
-assert $j.wait()! == %'cont'.value()
+assert $j.wait() == %'cont'.value()
 
 
 # detach
@@ -91,4 +90,4 @@ $j = coproc false
 assert $j as String == '%1'
 $j.detach()
 assert $j as String == '%0'
-assert $j.wait()! == 1
+assert $j.wait() == 1
