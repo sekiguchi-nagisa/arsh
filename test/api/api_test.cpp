@@ -172,17 +172,38 @@ TEST(API, case6) {
     DSState_delete(&state);
 }
 
+struct Executor {
+    std::string str;
+    bool jobctrl;
+    std::unordered_map<std::string, std::string> envs;
+
+    Executor(std::string &&str, bool jobctrl) : str(std::move(str)), jobctrl(jobctrl) {}
+
+    Executor &env(const char *name, const char *value) {
+        this->envs.insert({name, value});
+        return *this;
+    }
+
+    ProcHandle operator()() const {
+        IOConfig config{IOConfig::INHERIT, IOConfig::PIPE, IOConfig::PIPE};
+        return ProcBuilder::spawn(config, [&] {
+            for(auto &e : this->envs) {
+                setenv(e.first.c_str(), e.second.c_str(), 1);
+            }
+
+            DSState *state = DSState_create();
+            if(this->jobctrl) {
+                DSState_setOption(state, DS_OPTION_JOB_CONTROL);
+            }
+            int ret = DSState_eval(state, nullptr, this->str.c_str(), this->str.size(), nullptr);
+            DSState_delete(&state);
+            return ret;
+        });
+    }
+};
+
 static ProcHandle exec(std::string &&str, bool jobControl = true) {
-    IOConfig config{IOConfig::INHERIT, IOConfig::PIPE, IOConfig::PIPE};
-    return ProcBuilder::spawn(config, [&] {
-        DSState *state = DSState_create();
-        if(jobControl) {
-            DSState_setOption(state, DS_OPTION_JOB_CONTROL);
-        }
-        int ret = DSState_eval(state, nullptr, str.c_str(), str.size(), nullptr);
-        DSState_delete(&state);
-        return ret;
-    });
+    return Executor(std::move(str), jobControl)();
 }
 
 #define EXEC(...) exec(format(__VA_ARGS__)).waitAndGetResult(true)
@@ -194,12 +215,12 @@ struct PIDs {
     pid_t pgid;
 };
 
-static std::vector<std::string> split(const std::string &str) {
+static std::vector<std::string> split(const std::string &str, char delim = ' ') {
     std::vector<std::string> bufs;
     bufs.emplace_back();
 
     for(auto &ch : str) {
-        if(ch == ' ') {
+        if(ch == delim) {
             bufs.emplace_back();
         } else {
             bufs.back() += ch;
@@ -350,6 +371,17 @@ TEST_F(APITest, jobctrl1) {
     ASSERT_NO_FATAL_FAILURE(this->expect(result, 18));
 }
 
+static Output execWithLogging(const char *str) {
+    Executor executor(std::string(str), true);
+    const char *value = getenv("YDSH_LOG_POLICY");
+    if(value != nullptr) {
+        for(auto &p : split(value, ',')) {
+            executor.env(p.c_str(), "on");
+        }
+    }
+    return executor().waitAndGetResult(true);
+}
+
 TEST_F(APITest, jobctrl2) {
     SCOPED_TRACE("");
 
@@ -375,7 +407,7 @@ TEST_F(APITest, jobctrl2) {
         assert $r == 99 : $r as String
         true
 )";
-    result = EXEC(str);
+    result = execWithLogging(str);
     ASSERT_NO_FATAL_FAILURE(this->expect(result));
 
     str = R"(
@@ -390,7 +422,7 @@ TEST_F(APITest, jobctrl2) {
         assert $r == 99 : $r as String
         true
 )";
-    result = EXEC(str);
+    result = execWithLogging(str);
     ASSERT_NO_FATAL_FAILURE(
             this->expect(result, 0, WaitStatus::EXITED, "", "ydsh: bg: %2: no such job"));
 }
