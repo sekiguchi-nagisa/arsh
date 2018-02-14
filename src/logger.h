@@ -29,8 +29,6 @@
 #include <string>
 #include <ctime>
 
-#include "misc/flag_util.hpp"
-
 #define EACH_LOGGING_POLICY(E) \
     E(TRACE_TOKEN) \
     E(DUMP_EXEC) \
@@ -51,8 +49,6 @@ class Logger {
 private:
     std::ostream *stream_;
 
-    unsigned int whiteList_;
-
 public:
     ~Logger() {
         if(this->stream_ != &std::cerr) {
@@ -61,7 +57,7 @@ public:
     }
 
 private:
-    Logger() : stream_(nullptr), whiteList_(0) {
+    Logger() : stream_(nullptr) {
         // init appender
         const char *appender = getenv("YDSH_APPENDER");
         if(appender != nullptr) {
@@ -75,28 +71,16 @@ private:
         if(this->stream_ == nullptr) {
             this->stream_ = &std::cerr;
         }
-
-        // init policy
-        const char *policies[] = {
-#define GEN_STR(E) #E,
-                EACH_LOGGING_POLICY(GEN_STR)
-#undef GEN_STR
-        };
-
-        unsigned int index = 0;
-        for(auto &p : policies) {
-            std::string str("YDSH_");
-            str += p;
-            const char *env = getenv(str.c_str());
-            if(env != nullptr) {
-                ydsh::setFlag(this->whiteList_, (1u << index));
-            }
-            index++;
-        }
     }
 
     bool checkPolicy(LoggingPolicy policy) const {
-        return ydsh::hasFlag(this->whiteList_, 1u << static_cast<unsigned int>(policy));
+        const char *policies[] = {
+#define GEN_STR(E) "YDSH_" #E,
+                EACH_LOGGING_POLICY(GEN_STR)
+#undef GEN_STR
+        };
+        const char *e = policies[static_cast<unsigned int>(policy)];
+        return getenv(e) != nullptr;
     }
 
     void writeHeader(const char *funcName) {
