@@ -454,7 +454,7 @@ TEST_F(CmdlineTest, logger) {
         // specify appender (not found)
         builder = ds("-c", "var a = 0; exit $a")
                 .addEnv("YDSH_TRACE_TOKEN", "on")
-                .addEnv("YDSH_APPENDER", "/dev/hogehogehuga");
+                .addEnv("YDSH_APPENDER", "/dev/null/hogehu");
         ASSERT_NO_FATAL_FAILURE(this->expectRegex(std::move(builder), 0, "", ".+"));
     } else {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
