@@ -254,6 +254,18 @@ unsigned int getTermHookIndex(DSState &st) {
     return st.termHookIndex;
 }
 
+void raiseError(DSState &st, DSType &errorType, std::string &&message) {
+    st.setThrownObject(st.newError(errorType, std::move(message)));
+}
+
+void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
+    assert(errorNum != 0);
+    std::string str(std::move(message));
+    str += ": ";
+    str += strerror(errorNum);
+    raiseError(st, st.symbolTable.getSystemErrorType(), std::move(str));
+}
+
 void throwError(DSState &st, DSType &errorType, std::string &&message) {
     st.throwException(st.newError(errorType, std::move(message)));
 }

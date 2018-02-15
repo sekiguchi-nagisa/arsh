@@ -235,6 +235,14 @@ struct DSState {
     void throwException(DSValue &&except);
 
     /**
+     * for exception reporting
+     * @param except
+     */
+    void setThrownObject(DSValue &&except) {
+        this->thrownObject = std::move(except);
+    }
+
+    /**
      * get thrownObject and push to callStack
      */
     void loadThrownObject() {
@@ -242,7 +250,7 @@ struct DSState {
     }
 
     void storeThrowObject() {
-        this->thrownObject = this->pop();
+        this->setThrownObject(this->pop());
     }
 
     /**
