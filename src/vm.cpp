@@ -189,18 +189,19 @@ static void checkCast(DSState &state, DSType *targetType) {
     }
 }
 
-static void checkAssertion(DSState &state) {
+static bool checkAssertion(DSState &state) {
     auto msg(state.pop());
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
         state.updateExitStatus(1);
         auto except = Error_Object::newError(state, state.symbolTable.getAssertFail(), std::move(msg));
-        state.throwException(std::move(except));
+        state.setThrownObject(std::move(except));
+        return false;
     }
+    return true;
 }
 
-[[noreturn]]
 static void exitShell(DSState &st, unsigned int status) {
     if(hasFlag(st.option, DS_OPTION_INTERACTIVE)) {
         st.jobTable.send(SIGHUP);
@@ -210,7 +211,7 @@ static void exitShell(DSState &st, unsigned int status) {
     str += std::to_string(status);
     status %= 256;
     st.updateExitStatus(status);
-    throwError(st, st.symbolTable.getShellExit(), std::move(str));
+    raiseError(st, st.symbolTable.getShellExit(), std::move(str));
 }
 
 static const char *loadEnv(DSState &state, bool hasDefault) {
@@ -1527,6 +1528,7 @@ static void checkVMEvent(DSState &state) {
 #endif
 
 #define vmnext continue
+#define vmerror return false
 
 static bool mainLoop(DSState &state) {
     while(true) {
@@ -1543,7 +1545,9 @@ static bool mainLoop(DSState &state) {
             return true;
         }
         vmcase(ASSERT) {
-            checkAssertion(state);
+            if(!checkAssertion(state)) {
+                vmerror;
+            }
             vmnext;
         }
         vmcase(PRINT) {
@@ -1837,8 +1841,8 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(THROW) {
-            state.throwException(state.pop());
-            vmnext;
+            state.storeThrowObject();
+            vmerror;
         }
         vmcase(EXIT_SHELL) {
             auto obj = state.pop();
@@ -1859,6 +1863,7 @@ static bool mainLoop(DSState &state) {
                 }
             }
             exitShell(state, ret);
+            vmerror;
         }
         vmcase(ENTER_FINALLY) {
             const unsigned int offset = read16(GET_CODE(state), state.pc() + 1);
@@ -2278,21 +2283,24 @@ DSValue service_object(DSState &ctx) {
 } // namespace ydsh
 
 
+static bool runMainLoopImpl(DSState &state) {
+    try {
+        return mainLoop(state);
+    } catch(const DSException &) {
+        return false;
+    }
+}
+
 static bool runMainLoop(DSState &state) {
-    while(true) {
-        try {
-            bool ret = mainLoop(state);
-            state.codeStack.clear();
-            return ret;
-        } catch(const DSException &) {
-            bool forceUnwind = state.symbolTable.getInternalStatus()
-                    .isSameOrBaseTypeOf(*state.getThrownObject()->getType());
-            if(handleException(state, forceUnwind)) {
-                continue;
-            }
+    while(!runMainLoopImpl(state)) {
+        bool forceUnwind = state.symbolTable.getInternalStatus()
+                .isSameOrBaseTypeOf(*state.getThrownObject()->getType());
+        if(!handleException(state, forceUnwind)) {
             return false;
         }
     }
+    state.codeStack.clear();
+    return true;
 }
 
 bool vmEval(DSState &state, CompiledCode &code) {
