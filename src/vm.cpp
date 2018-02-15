@@ -178,15 +178,17 @@ namespace ydsh {
 #define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
 
 /* runtime api */
-static void checkCast(DSState &state, DSType *targetType) {
+static bool checkCast(DSState &state, DSType *targetType) {
     if(!state.peek()->introspect(state, targetType)) {
         DSType *stackTopType = state.pop()->getType();
         std::string str("cannot cast ");
         str += state.symbolTable.getTypeName(*stackTopType);
         str += " to ";
         str += state.symbolTable.getTypeName(*targetType);
-        throwError(state, state.symbolTable.getTypeCastErrorType(), std::move(str));
+        raiseError(state, state.symbolTable.getTypeCastErrorType(), std::move(str));
+        return false;
     }
+    return true;
 }
 
 static bool checkAssertion(DSState &state) {
@@ -231,7 +233,8 @@ static const char *loadEnv(DSState &state, bool hasDefault) {
     if(env == nullptr) {
         std::string str = UNDEF_ENV_ERROR;
         str += name;
-        throwSystemError(state, EINVAL, std::move(str));
+        raiseSystemError(state, EINVAL, std::move(str));
+        return nullptr;
     }
     return env;
 }
@@ -803,7 +806,7 @@ public:
         this->restore = restore;
     }
 
-    void redirect(DSState &st) const;
+    bool redirect(DSState &st) const;
 };
 
 static int doIOHere(const String_Object &value) {
@@ -919,7 +922,7 @@ static int redirectImpl(const SymbolTable &symbolTable, const std::pair<RedirOP,
     return 0;   // normally unreachable, but gcc requires this return statement.
 }
 
-void RedirConfig::redirect(DSState &st) const {
+bool RedirConfig::redirect(DSState &st) const {
     for(auto &pair : this->ops) {
         int r = redirectImpl(st.symbolTable, pair);
         if(this->restore && r != 0) {
@@ -936,9 +939,11 @@ void RedirConfig::redirect(DSState &st) const {
                     msg += std::to_string(typeAs<UnixFD_Object>(pair.second)->getValue());
                 }
             }
-            throwSystemError(st, r, std::move(msg));
+            raiseSystemError(st, r, std::move(msg));
+            return false;
         }
     }
+    return true;
 }
 
 static constexpr flag8_t UDC_ATTR_SETVAR    = 1 << 0;
@@ -1579,7 +1584,9 @@ static bool mainLoop(DSState &state) {
         vmcase(CHECK_CAST) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
             state.pc() += 8;
-            checkCast(state, reinterpret_cast<DSType *>(v));
+            if(!checkCast(state, reinterpret_cast<DSType *>(v))) {
+                vmerror;
+            }
             vmnext;
         }
         vmcase(PUSH_NULL) {
@@ -1664,11 +1671,16 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(IMPORT_ENV) {
             unsigned char b = read8(GET_CODE(state), ++state.pc());
-            loadEnv(state, b > 0);
+            if(!loadEnv(state, b > 0)) {
+                vmerror;
+            }
             vmnext;
         }
         vmcase(LOAD_ENV) {
             const char *value = loadEnv(state, false);
+            if(!value) {
+                vmerror;
+            }
             state.push(DSValue::create<String_Object>(state.symbolTable.getStringType(), value));
             vmnext;
         }
@@ -1876,8 +1888,8 @@ static bool mainLoop(DSState &state) {
             switch(state.peek().kind()) {
             case DSValueKind::OBJECT:
             case DSValueKind::INVALID: {
-                state.throwException(state.pop());
-                vmnext;
+                state.storeThrowObject();
+                vmerror;
             }
             case DSValueKind::NUMBER: {
                 unsigned int index = static_cast<unsigned int>(state.pop().value());
@@ -2088,7 +2100,9 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(DO_REDIR) {
-            typeAs<RedirConfig>(state.peek())->redirect(state);
+            if(!typeAs<RedirConfig>(state.peek())->redirect(state)) {
+                vmerror;
+            }
             vmnext;
         }
         vmcase(DBUS_INIT_SIG) {
@@ -2124,7 +2138,8 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(UNWRAP) {
             if(state.peek().kind() == DSValueKind::INVALID) {
-                throwError(state, state.symbolTable.getUnwrappingErrorType(), std::string("invalid value"));
+                raiseError(state, state.symbolTable.getUnwrappingErrorType(), std::string("invalid value"));
+                vmerror;
             }
             vmnext;
         }
