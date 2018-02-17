@@ -189,7 +189,7 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     codegen.initialize();
     while(frontEnd) {
         auto node = frontEnd(dsError);
-        state->lineNum = lexer.getLineNum();
+        state->lineNum = frontEnd.lineNum();
         if(node == nullptr) {
             state->recover();
             return 1;
