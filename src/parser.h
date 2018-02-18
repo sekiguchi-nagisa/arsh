@@ -122,7 +122,7 @@ protected:
     /**
      * after matching token, change lexer mode and fetchNext.
      */
-    bool expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
+    Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
 
     void raiseTokenFormatError(TokenKind kind, Token token, const char *msg);
 
@@ -182,6 +182,8 @@ protected:
     std::unique_ptr<CmdArgNode> parse_cmdArg();
 
     std::unique_ptr<Node> parse_cmdArgSeg(unsigned int pos);
+
+    std::unique_ptr<Node> parse_cmdArgPart(unsigned int pos, LexerMode mode = yycCMD);
 
     std::unique_ptr<Node> parse_expression();
 

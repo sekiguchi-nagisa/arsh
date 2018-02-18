@@ -190,16 +190,15 @@ void Parser::restoreLexerState(Token prevToken) {
     this->fetchNext();
 }
 
-bool Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext) {
-    this->expect(kind, false);
-    bool r = !this->hasError();
-    if(r) {
+Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext) {
+    Token token = this->expect(kind, false);
+    if(!this->hasError()) {
         this->lexer->setLexerMode(mode);
         if(fetchNext) {
             this->fetchNext();
         }
     }
-    return r;
+    return token;
 }
 
 void Parser::raiseTokenFormatError(TokenKind kind, Token token, const char *msg) {
@@ -838,11 +837,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
     GUARD_DEEP_NESTING(guard);
 
     switch(CUR_KIND()) {
-    case CMD_ARG_PART: {
-        Token token = this->expect(CMD_ARG_PART);   // always success
-        auto kind = pos == 0 && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
-        return make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
-    }
+    case CMD_ARG_PART:
+        return this->parse_cmdArgPart(pos);
     case STRING_LITERAL:
         return this->parse_stringLiteral();
     case OPEN_DQUOTE:
@@ -854,6 +850,14 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
     default:
         E_ALTER(EACH_LA_cmdArg(GEN_LA_ALTER));
     }
+}
+
+std::unique_ptr<Node> Parser::parse_cmdArgPart(unsigned int pos, LexerMode mode) {
+    GUARD_DEEP_NESTING(guard);
+
+    Token token = TRY(this->expectAndChangeMode(CMD_ARG_PART, mode));
+    auto kind = pos == 0 && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
+    return make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
 }
 
 // expression
