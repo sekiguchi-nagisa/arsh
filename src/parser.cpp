@@ -88,6 +88,7 @@
     OP(IMPORT_ENV) \
     OP(LET) \
     OP(RETURN) \
+    OP(SOURCE) \
     OP(VAR) \
     OP(LINE_END) \
     EACH_LA_expression(OP)
@@ -570,6 +571,19 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
             }
         }
         return std::unique_ptr<Node>(JumpNode::newReturn(token, exprNode.release()));
+    }
+    case SOURCE: {
+        unsigned int startPos = START_POS();
+        this->expect(SOURCE);   // always success
+        auto pathNode = TRY(this->parse_cmdArgPart(0, yycEXPR));
+        this->lexer->popLexerMode();
+        auto node = make_unique<SourceNode>(startPos, pathNode.release());
+        if(!HAS_NL() && CUR_KIND() == AS) {
+            this->expectAndChangeMode(AS, yycNAME); // always success
+            Token token = TRY(this->expect(IDENTIFIER));
+            node->setName(token, this->lexer->toName(token));
+        }
+        return std::move(node);
     }
     EACH_LA_varDecl(GEN_LA_CASE)
         return this->parse_variableDeclaration();

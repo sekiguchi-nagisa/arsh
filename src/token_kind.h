@@ -43,6 +43,7 @@
     TOKEN(NEW                                , "new") \
     TOKEN(NOT                                , "not") \
     TOKEN(RETURN                             , "return") \
+    TOKEN(SOURCE                             , "source") \
     TOKEN(TRY                                , "try") \
     TOKEN(THROW                              , "throw") \
     TOKEN(VAR                                , "var") \

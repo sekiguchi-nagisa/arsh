@@ -1141,6 +1141,19 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
     dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
 }
 
+// ########################
+// ##     SourceNode     ##
+// ########################
+
+SourceNode::~SourceNode() {
+    delete this->pathNode;
+}
+
+void SourceNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(pathNode);
+    DUMP(name);
+}
+
 // #######################
 // ##     EmptyNode     ##
 // #######################

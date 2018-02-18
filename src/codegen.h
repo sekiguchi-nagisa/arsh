@@ -490,6 +490,7 @@ private:
     void visitFunctionNode(FunctionNode &node) override;
     void visitInterfaceNode(InterfaceNode &node) override;
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
+    void visitSourceNode(SourceNode &node) override;
     void visitEmptyNode(EmptyNode &node) override;
 
 public:

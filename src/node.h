@@ -75,6 +75,7 @@ class NodeDumper;
     OP(Function) \
     OP(Interface) \
     OP(UserDefinedCmd) \
+    OP(Source) \
     OP(Empty)
 
 enum class NodeKind : unsigned char {
@@ -2030,6 +2031,39 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
+class SourceNode : public Node {
+private:
+    Node *pathNode;
+
+    /**
+     * may be empty string
+     */
+    std::string name;
+
+public:
+    SourceNode(unsigned int startPos, Node *pathNode) :
+            Node(NodeKind::Source, {startPos, 1}), pathNode(pathNode) {
+        this->updateToken(pathNode->getToken());
+    }
+
+    ~SourceNode();
+
+    Node *getPathNode() {
+        return this->pathNode;
+    }
+
+    void setName(Token token, std::string &&name) {
+        this->updateToken(token);
+        this->name = std::move(name);
+    }
+
+    const std::string &getName() const {
+        return this->name;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
 class EmptyNode : public Node {
 public:
     EmptyNode() : EmptyNode({0, 0}) { }
@@ -2119,6 +2153,7 @@ struct NodeVisitor {
     virtual void visitFunctionNode(FunctionNode &node) = 0;
     virtual void visitInterfaceNode(InterfaceNode &node) = 0;
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
+    virtual void visitSourceNode(SourceNode &node) = 0;
     virtual void visitEmptyNode(EmptyNode &node) = 0;
 };
 
@@ -2163,6 +2198,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitFunctionNode(FunctionNode &node) override { this->visitDefault(node); }
     void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
+    void visitSourceNode(SourceNode &node) override { this->visitDefault(node); }
     void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
 };
 

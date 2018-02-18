@@ -1089,6 +1089,10 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
 }
 
+void ByteCodeGenerator::visitSourceNode(SourceNode &) {
+    fatal("unimplemented\n");
+}
+
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
 void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNum) {

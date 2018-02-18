@@ -1319,6 +1319,13 @@ void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
     TypeGenerator(this->symbolTable, this).resolveInterface(&node);
 }
 
+void TypeChecker::visitSourceNode(SourceNode &node) {
+    if(!this->isTopLevel()) {   // only available toplevel scope
+        RAISE_TC_ERROR(OutsideToplevel, node);
+    }
+    fatal("unimplemented\n");
+}
+
 void TypeChecker::visitEmptyNode(EmptyNode &node) {
     node.setType(this->symbolTable.getVoidType());
 }

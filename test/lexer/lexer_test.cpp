@@ -314,6 +314,13 @@ TEST_F(LexerTest_Lv1, return_tok) {
     });
 }
 
+TEST_F(LexerTest_Lv1, source_tok) {
+    const char *text = "source";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(SOURCE, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+}
+
 TEST_F(LexerTest_Lv1, try_tok) {
     const char *text = "try";
     ASSERT_NO_FATAL_FAILURE({
