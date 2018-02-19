@@ -1092,14 +1092,15 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     return cmd;
 }
 
-static void throwCmdError(DSState &state, const char *cmdName, int errnum) {
+static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
     std::string str = EXEC_ERROR;
     str += cmdName;
     if(errnum == ENOENT) {
         str += ": command not found";
-        throwError(state, state.symbolTable.getSystemErrorType(), std::move(str));
+        raiseError(state, state.symbolTable.getSystemErrorType(), std::move(str));
+    } else {
+        raiseSystemError(state, errnum, std::move(str));
     }
-    throwSystemError(state, errnum, std::move(str));
 }
 
 static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv, bool lastPipe) {
@@ -1164,14 +1165,14 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         tryToForeground(state);
         state.jobTable.updateStatus();
         if(errnum != 0) {
-            state.updateExitStatus(1);
-            throwCmdError(state, cmdName, errnum);
+            raiseCmdError(state, cmdName, errnum);
+            return 1;
         }
         return status;
     }
 }
 
-static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0) {
+static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0) {
     auto *array = typeAs<Array_Object>(argvObj);
     const unsigned int size = array->getValues().size();
     auto &first = array->getValues()[0];
@@ -1184,13 +1185,13 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
             setFlag(attr, UDC_ATTR_SETVAR);
         }
         callUserDefinedCommand(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
-        return;
+        return true;
     }
     case CmdKind::BUILTIN: {
         int status = cmd.builtinCmd(state, *array);
         state.pushExitStatus(status);
         flushStdFD();
-        return;
+        return true;
     }
     case CmdKind::EXTERNAL: {
         // create argv
@@ -1205,16 +1206,16 @@ static void callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
             state.pushExitStatus(status);
         } else {
             xexecve(cmd.filePath, argv, nullptr);
-            throwCmdError(state, cmdName, errno);
+            raiseCmdError(state, cmdName, errno);
         }
-        return;
+        return !state.getThrownObject();
     }
     }
 }
 
 int invalidOptionError(const Array_Object &obj, const GetOptState &s);
 
-static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
+static bool callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
     auto &arrayObj = *typeAs<Array_Object>(argvObj);
 
     bool useDefaultPath = false;
@@ -1241,7 +1242,7 @@ static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
         default:
             int s = invalidOptionError(arrayObj, optState);
             state.pushExitStatus(s);
-            return;
+            return true;
         }
     }
 
@@ -1254,8 +1255,7 @@ static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
             values.erase(values.begin(), values.begin() + index);
 
             auto resolve = CmdResolver(CmdResolver::MASK_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
-            callCommand(state, resolve(state, cmdName), std::move(argvObj), std::move(redir), attr);
-            return;
+            return callCommand(state, resolve(state, cmdName), std::move(argvObj), std::move(redir), attr);
         }
 
         // show command description
@@ -1305,9 +1305,10 @@ static void callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
             }
         }
         state.pushExitStatus(successCount > 0 ? 0 : 1);
-        return;
+        return true;
     }
     state.pushExitStatus(0);
+    return true;
 }
 
 static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
@@ -2057,15 +2058,20 @@ static bool mainLoop(DSState &state) {
             auto argv = state.pop();
 
             const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-            callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr);
+            if(!callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr)) {
+                vmerror;
+            }
             vmnext;
         }
         vmcase(BUILTIN_CMD) {
             auto attr = state.getLocal(UDC_PARAM_ATTR).value();
             auto redir = state.getLocal(UDC_PARAM_REDIR);
             auto argv = state.getLocal(UDC_PARAM_ARGV);
-            callBuiltinCommand(state, std::move(argv), std::move(redir), attr);
+            bool ret = callBuiltinCommand(state, std::move(argv), std::move(redir), attr);
             flushStdFD();
+            if(!ret) {
+                vmerror;
+            }
             vmnext;
         }
         vmcase(BUILTIN_EVAL) {
@@ -2077,7 +2083,9 @@ static bool mainLoop(DSState &state) {
             auto *array = typeAs<Array_Object>(argv);
             if(!array->getValues().empty()) {
                 const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-                callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr);
+                if(!callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr)) {
+                    vmerror;
+                }
             } else {
                 state.pushExitStatus(0);
             }
@@ -2355,7 +2363,9 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     auto obj = DSValue::create<Array_Object>(st.symbolTable.getStringArrayType(), std::move(values));
 
     st.resetState();
-    callCommand(st, cmd, std::move(obj), DSValue());
+    bool ret = callCommand(st, cmd, std::move(obj), DSValue());
+    assert(ret);
+    (void) ret;
     if(!st.codeStack.empty()) {
         bool r = runMainLoop(st);
         if(!r) {
