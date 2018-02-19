@@ -1211,6 +1211,7 @@ static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         return !state.getThrownObject();
     }
     }
+    return true;    // normally unreachable, but need to suppress gcc warning.
 }
 
 int invalidOptionError(const Array_Object &obj, const GetOptState &s);
