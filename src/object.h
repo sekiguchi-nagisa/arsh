@@ -651,6 +651,7 @@ public:
         if(!this->entry->available()) {
             typeAs<UnixFD_Object>(this->inObj)->tryToClose(false);
             typeAs<UnixFD_Object>(this->outObj)->tryToClose(false);
+            jobTable.updateStatus();
         }
         return s;
     }
