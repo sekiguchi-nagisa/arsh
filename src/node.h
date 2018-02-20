@@ -2046,7 +2046,7 @@ public:
         this->updateToken(pathNode->getToken());
     }
 
-    ~SourceNode();
+    ~SourceNode() override;
 
     Node *getPathNode() {
         return this->pathNode;
