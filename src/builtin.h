@@ -36,6 +36,7 @@
 #define RET(value) return value
 #define RET_BOOL(value) return ((value) ? getTrueObj(ctx) : getFalseObj(ctx))
 #define RET_VOID return DSValue()
+#define RET_ERROR return DSValue()
 
 #define SUPPRESS_WARNING(a) (void)a
 
@@ -117,16 +118,20 @@ EACH_RELATE_OP(GEN_RELATE_OP)
 EACH_UNARY_OP(GEN_UNARY_OP)
 
 
-static inline void checkZeroDiv(RuntimeContext &ctx, int right) {
+static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
     if(right == 0) {
-        throwError(ctx, getPool(ctx).getArithmeticErrorType(), "zero division");
+        raiseError(ctx, getPool(ctx).getArithmeticErrorType(), "zero division");
+        return false;
     }
+    return true;
 }
 
-static inline void checkZeroMod(RuntimeContext &ctx, int right) {
+static inline bool checkZeroMod(RuntimeContext &ctx, int right) {
     if(right == 0) {
-        throwError(ctx, getPool(ctx).getArithmeticErrorType(), "zero module");
+        raiseError(ctx, getPool(ctx).getArithmeticErrorType(), "zero module");
+        return false;
     }
+    return true;
 }
 
 template <typename T>
@@ -134,7 +139,9 @@ YDSH_METHOD basic_div(RuntimeContext &ctx) {
     using ObjType = ObjTypeStub<T>;
     auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
     auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
-    checkZeroDiv(ctx, (int) right);
+    if(!checkZeroDiv(ctx, (int) right)) {
+        RET_ERROR;
+    }
     T result = left / right;
     RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result));
 }
@@ -144,7 +151,9 @@ YDSH_METHOD basic_mod(RuntimeContext &ctx) {
     using ObjType = ObjTypeStub<T>;
     auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
     auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
-    checkZeroMod(ctx, (int) right);
+    if(!checkZeroMod(ctx, (int) right)) {
+        RET_ERROR;
+    }
     T result = left % right;
     RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result));
 }
@@ -931,8 +940,8 @@ YDSH_METHOD string_count(RuntimeContext &ctx) {
 /**
  * return always false.
  */
-static void throwOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
-    throwError(ctx, getPool(ctx).getOutOfRangeErrorType(), std::move(message));
+static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
+    raiseError(ctx, getPool(ctx).getOutOfRangeErrorType(), std::move(message));
 }
 
 //!bind: function $OP_GET($this : String, $index : Int32) : String
@@ -963,8 +972,8 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
     msg += std::to_string(size);
     msg += ", but code position is ";
     msg += std::to_string(pos);
-    throwOutOfRangeError(ctx, std::move(msg));
-    RET_VOID;
+    raiseOutOfRangeError(ctx, std::move(msg));
+    RET_ERROR;
 }
 
 /**
@@ -988,7 +997,8 @@ static DSValue sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIn
         msg += ", ";
         msg += std::to_string(stopIndex);
         msg += ")";
-        throwOutOfRangeError(ctx, std::move(msg));
+        raiseOutOfRangeError(ctx, std::move(msg));
+        RET_ERROR;
     }
 
     RET(DSValue::create<String_Object>(
@@ -1244,7 +1254,8 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
     auto strIter = typeAs<StringIter_Object>(LOCAL(0));
     auto strObj = typeAs<String_Object>(strIter->strObj);
     if(strIter->curIndex >= strObj->size()) {
-        throwOutOfRangeError(ctx, std::string("string iterator reach end of string"));
+        raiseOutOfRangeError(ctx, std::string("string iterator reach end of string"));
+        RET_ERROR;
     }
     unsigned int curIndex = strIter->curIndex;
     strIter->curIndex = UnicodeUtil::utf8NextPos(curIndex, strObj->getValue()[curIndex]);
@@ -1309,7 +1320,8 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
     const char *errorStr;
     auto re = compileRegex(str->getValue(), errorStr, 0);
     if(!re) {
-        throwError(ctx, getPool(ctx).getRegexSyntaxErrorType(), std::string(errorStr));
+        raiseError(ctx, getPool(ctx).getRegexSyntaxErrorType(), std::string(errorStr));
+        RET_ERROR;
     }
     setLocal(ctx, 0, DSValue::create<Regex_Object>(getPool(ctx).getRegexType(), std::move(re)));
     RET_VOID;
@@ -1390,7 +1402,8 @@ YDSH_METHOD signal_kill(RuntimeContext &ctx) {
     if(kill(pid, sigNum) != 0) {
         int num = errno;
         std::string str = getSignalName(sigNum);
-        throwSystemError(ctx, num, std::move(str));
+        raiseSystemError(ctx, num, std::move(str));
+        RET_ERROR;
     }
     RET_VOID;
 }
@@ -1471,14 +1484,16 @@ YDSH_METHOD array_init(RuntimeContext &ctx) {
 }
 
 // check index range and throw exception.
-static void checkRange(RuntimeContext &ctx, int index, int size) {
+static bool checkRange(RuntimeContext &ctx, int index, int size) {
     if(index < 0 || index >= size) {
         std::string message("size is ");
         message += std::to_string(size);
         message += ", but index is ";
         message += std::to_string(index);
-        throwOutOfRangeError(ctx, std::move(message));
+        raiseOutOfRangeError(ctx, std::move(message));
+        return false;
     }
+    return true;
 }
 
 //!bind: function $OP_GET($this : Array<T0>, $index : Int32) : T0
@@ -1488,7 +1503,9 @@ YDSH_METHOD array_get(RuntimeContext &ctx) {
     Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
-    checkRange(ctx, index, size);
+    if(!checkRange(ctx, index, size)) {
+        RET_ERROR;
+    }
     RET(obj->getValues()[index]);
 }
 
@@ -1512,36 +1529,55 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
     Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
-    checkRange(ctx, index, size);
+    if(!checkRange(ctx, index, size)) {
+        RET_ERROR;
+    }
     obj->set(index, EXTRACT_LOCAL(2));
     RET_VOID;
+}
+
+static bool array_peekImpl(RuntimeContext &ctx, DSValue &value) {
+    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    if(obj->getValues().empty()) {
+        raiseOutOfRangeError(ctx, std::string("Array size is 0"));
+        return false;
+    }
+    value = obj->refValues().back();
+    return true;
 }
 
 //!bind: function peek($this : Array<T0>) : T0
 YDSH_METHOD array_peek(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_peek);
+    DSValue value;
+    array_peekImpl(ctx, value);
+    return value;
+}
+
+static bool array_pushImpl(RuntimeContext &ctx) {
     Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
-    if(obj->getValues().empty()) {
-        throwOutOfRangeError(ctx, std::string("Array size is 0"));
+    if(obj->getValues().size() == INT32_MAX) {
+        raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
+        return false;
     }
-    RET(obj->refValues().back());
+    obj->append(EXTRACT_LOCAL(1));
+    return true;
 }
 
 //!bind: function push($this : Array<T0>, $value : T0) : Void
 YDSH_METHOD array_push(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_push);
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
-    if(obj->getValues().size() == INT32_MAX) {
-        throwOutOfRangeError(ctx, std::string("reach Array size limit"));
-    }
-    obj->append(EXTRACT_LOCAL(1));
+    array_pushImpl(ctx);
     RET_VOID;
 }
 
 //!bind: function pop($this : Array<T0>) : T0
 YDSH_METHOD array_pop(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_pop);
-    auto v = array_peek(ctx);
+    DSValue v;
+    if(!array_peekImpl(ctx, v)) {
+        RET_ERROR;
+    }
     typeAs<Array_Object>(LOCAL(0))->refValues().pop_back();
     RET(v);
 }
@@ -1549,7 +1585,9 @@ YDSH_METHOD array_pop(RuntimeContext &ctx) {
 //!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
 YDSH_METHOD array_add(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_add);
-    array_push(ctx);
+    if(!array_pushImpl(ctx)) {
+        RET_ERROR;
+    }
     RET(LOCAL(0));
 }
 
@@ -1562,7 +1600,8 @@ YDSH_METHOD array_extend(RuntimeContext &ctx) {
         unsigned int valueSize = value->getValues().size();
         for(unsigned int i = 0; i < valueSize; i++) {
             if(obj->getValues().size() == INT32_MAX) {
-                throwOutOfRangeError(ctx, std::string("reach Array size limit"));
+                raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
+                RET_ERROR;
             }
             obj->append(value->getValues()[i]);
         }
@@ -1575,7 +1614,9 @@ YDSH_METHOD array_swap(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_swap);
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
-    checkRange(ctx, index, obj->getValues().size());
+    if(!checkRange(ctx, index, obj->getValues().size())) {
+        RET_ERROR;
+    }
     DSValue value = LOCAL(2);
     std::swap(obj->refValues()[index], value);
     RET(value);
@@ -1602,7 +1643,8 @@ static DSValue slice(RuntimeContext &ctx, Array_Object *arrayObj, int startIndex
         msg += ", ";
         msg += std::to_string(stopIndex);
         msg += ")";
-        throwOutOfRangeError(ctx, std::move(msg));
+        raiseOutOfRangeError(ctx, std::move(msg));
+        RET_ERROR;
     }
 
     auto begin = arrayObj->getValues().begin() + startIndex;
@@ -1671,7 +1713,8 @@ YDSH_METHOD array_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_next);
     Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
     if(!obj->hasNext()) {
-        throwOutOfRangeError(ctx, std::string("array iterator has already reached end"));
+        raiseOutOfRangeError(ctx, std::string("array iterator has already reached end"));
+        RET_ERROR;
     }
     RET(obj->nextElement());
 }
@@ -1709,7 +1752,8 @@ YDSH_METHOD map_get(RuntimeContext &ctx) {
     if(iter == obj->getValueMap().end()) {
         std::string msg("not found key: ");
         msg += LOCAL(1)->toString(ctx, nullptr);
-        throwError(ctx, getPool(ctx).getKeyNotFoundErrorType(), std::move(msg));
+        raiseError(ctx, getPool(ctx).getKeyNotFoundErrorType(), std::move(msg));
+        RET_ERROR;
     }
     RET(iter->second);
 }
@@ -1786,7 +1830,8 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
     if(!obj->trySwap(LOCAL(1), value)) {
         std::string msg("not found key: ");
         msg += LOCAL(1)->toString(ctx, nullptr);
-        throwError(ctx, getPool(ctx).getKeyNotFoundErrorType(), std::move(msg));
+        raiseError(ctx, getPool(ctx).getKeyNotFoundErrorType(), std::move(msg));
+        RET_ERROR;
     }
     RET(value);
 }
@@ -1810,7 +1855,8 @@ YDSH_METHOD map_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_next);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
     if(!obj->hasNext()) {
-        throwOutOfRangeError(ctx, std::string("map iterator has already reached end"));
+        raiseOutOfRangeError(ctx, std::string("map iterator has already reached end"));
+        RET_ERROR;
     }
     RET(obj->nextElement(ctx));
 }
@@ -1886,7 +1932,8 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
     close(fd);
     std::string msg = "open failed: ";
     msg += path;
-    throwSystemError(ctx, e, std::move(msg));
+    raiseSystemError(ctx, e, std::move(msg));
+    RET_ERROR;
 }
 
 //!bind: function close($this : UnixFD) : Void
@@ -1895,7 +1942,8 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
     auto *fdObj = typeAs<UnixFD_Object>(LOCAL(0));
     int fd = fdObj->getValue();
     if(fdObj->tryToClose(true) < 0) {
-        throwSystemError(ctx, errno, std::to_string(fd));
+        raiseSystemError(ctx, errno, std::to_string(fd));
+        RET_ERROR;
     }
     RET_VOID;
 }
@@ -1906,7 +1954,8 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
     int fd = typeAs<UnixFD_Object>(LOCAL(0))->getValue();
     int newfd = dup(fd);
     if(newfd < 0) {
-        throwSystemError(ctx, errno, std::to_string(fd));
+        raiseSystemError(ctx, errno, std::to_string(fd));
+        RET_ERROR;
     }
     RET(DSValue::create<UnixFD_Object>(getPool(ctx).getUnixFDType(), newfd));
 }
@@ -1955,8 +2004,8 @@ YDSH_METHOD job_get(RuntimeContext &ctx) {
         RET(obj->getOutObj());
     }
     std::string msg = "invalid fd number";
-    throwOutOfRangeError(ctx, std::move(msg));
-    RET_VOID;
+    raiseOutOfRangeError(ctx, std::move(msg));
+    RET_ERROR;
 }
 
 //!bind: function poll($this : Job) : Boolean
@@ -2013,8 +2062,8 @@ YDSH_METHOD job_pid(RuntimeContext &ctx) {
     msg += std::to_string(entry->getProcSize());
     msg += ", but index is: ";
     msg += std::to_string(index);
-    throwOutOfRangeError(ctx, std::move(msg));
-    RET_VOID;
+    raiseOutOfRangeError(ctx, std::move(msg));
+    RET_ERROR;
 }
 
 
