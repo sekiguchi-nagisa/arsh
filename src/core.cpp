@@ -270,19 +270,6 @@ void throwError(DSState &st, DSType &errorType, std::string &&message) {
     st.throwException(st.newError(errorType, std::move(message)));
 }
 
-/**
- * convert errno to SystemError.
- * errorNum must not be 0.
- * format message '%s: %s', message, strerror(errorNum)
- */
-void throwSystemError(DSState &st, int errorNum, std::string &&message) {
-    assert(errorNum != 0);
-    std::string str(std::move(message));
-    str += ": ";
-    str += strerror(errorNum);
-    throwError(st, st.symbolTable.getSystemErrorType(), std::move(str));
-}
-
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace) {
     unsigned int callableDepth = st.codeStack.size();
 

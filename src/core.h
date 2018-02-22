@@ -218,17 +218,6 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message);
 [[noreturn]]
 void throwError(DSState &st, DSType &errorType, std::string &&message);
 
-/**
- * convert errno to SystemError.
- * format message '%s: %s', message, strerror(errorNum).
- * @param st
- * @param errorNum
- * must not be 0.
- * @param message
- */
-[[noreturn]]
-void throwSystemError(DSState &st, int errorNum, std::string &&message);
-
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace);
 
 const char *getConfigRootDir();
