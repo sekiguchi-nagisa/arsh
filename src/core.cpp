@@ -254,6 +254,10 @@ unsigned int getTermHookIndex(DSState &st) {
     return st.termHookIndex;
 }
 
+bool hasError(const DSState &st) {
+    return static_cast<bool>(st.getThrownObject());
+}
+
 void raiseError(DSState &st, DSType &errorType, std::string &&message) {
     st.setThrownObject(st.newError(errorType, std::move(message)));
 }

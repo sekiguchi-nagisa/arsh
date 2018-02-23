@@ -211,6 +211,8 @@ const DSValue &getGlobal(const DSState &st, const char *varName);
  */
 unsigned int getTermHookIndex(DSState &st);
 
+bool hasError(const DSState &st);
+
 void raiseError(DSState &st, DSType &errorType, std::string &&message);
 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message);
