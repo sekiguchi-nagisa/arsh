@@ -8,23 +8,41 @@ $b[0] = $c
 $c.push(34)
 $c.push($b)
 
+var ex = 23 as Any
 
 # to string
-try { $a as String; assert($false); } catch($e) { assert($e is StackOverflowError) }
-try { $b as String; assert($false); } catch($e) { assert($e is StackOverflowError) }
-try { $c as String; assert($false); } catch($e) { assert($e is StackOverflowError) }
-
+try { $a as String; assert($false); } catch($e) { $ex = $e; }
+assert($ex is StackOverflowError)
+$ex = 32
+try { $b as String; assert($false); } catch($e) { $ex = $e; }
+assert($ex is StackOverflowError)
+$ex = 34
+try { $c as String; assert($false); } catch($e) { $ex = $e; }
+assert($ex is StackOverflowError)
+$ex = 34
 
 # to command argument
-try { echo $a; assert($false); } catch($e) { assert($e is StackOverflowError) }
-try { echo $b; assert($false); } catch($e) { assert($e is StackOverflowError) }
-try { echo $c; assert($false); } catch($e) { assert($e is StackOverflowError) }
+try { echo $a; assert($false); } catch($e) { $ex = $e; }
+assert($ex is StackOverflowError)
+$ex = 12
+try { echo $b; assert($false); } catch($e) { $ex = $e; }
+assert($ex is StackOverflowError)
+$ex = 2
+try { echo $c; assert($false); } catch($e) { $ex = $e; }
+assert($ex is StackOverflowError)
+$ex = 13
 
 
 # string interpolation
-try { "$a"; assert($false); } catch($e) { assert($e is StackOverflowError) }
-try { "$b"; assert($false); } catch($e) { assert($e is StackOverflowError) }
-try { "$c"; assert($false); } catch($e) { assert($e is StackOverflowError) }
+try { "$a"; assert($false); } catch($e) { $ex = $e; }
+assert($ex is StackOverflowError)
+$ex = 23
+try { "$b"; assert($false); } catch($e) { $ex = $e; }
+assert($ex is StackOverflowError)
+$ex = 34
+try { "$c"; assert($false); } catch($e) { $ex = $e; }
+assert($ex is StackOverflowError)
+$ex = 43
 
 
 # clear collection due to prevent memory leak

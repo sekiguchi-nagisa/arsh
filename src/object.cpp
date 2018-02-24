@@ -168,7 +168,7 @@ size_t String_Object::hash() const {
 // ##     Array_Object     ##
 // ##########################
 
-static void checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
+static bool checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
                              std::shared_ptr<VisitedSet> &newSet, const DSObject *thisPtr) {
     if(visitedSet == nullptr) {
         auto &elementTypes = static_cast<ReifiedType *>(thisPtr->getType())->getElementTypes();
@@ -182,9 +182,11 @@ static void checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
         }
     } else {
         if(visitedSet->find((unsigned long) thisPtr) != visitedSet->end()) {
-            throwError(ctx, getPool(ctx).getStackOverflowErrorType(), "caused by circular reference");
+            raiseError(ctx, getPool(ctx).getStackOverflowErrorType(), "caused by circular reference");
+            return false;
         }
     }
+    return true;
 }
 
 static void preVisit(VisitedSet *set, const DSObject *ptr) {
@@ -199,16 +201,21 @@ static void postVisit(VisitedSet *set, const DSObject *ptr) {
     }
 }
 
-static void checkInvalid(DSState &st, DSValue &v) {
+static bool checkInvalid(DSState &st, DSValue &v) {
     if(v.kind() == DSValueKind::INVALID) {
-        throwError(st, getPool(st).getUnwrappingErrorType(), "invalid value");
+        raiseError(st, getPool(st).getUnwrappingErrorType(), "invalid value");
+        return false;
     }
+    return true;
 }
+
+#define TRY(T, E) \
+({ auto v = E; if(hasError(ctx)) { return T(); } std::forward<decltype(v)>(v); })
 
 
 std::string Array_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
-    checkCircularRef(ctx, visitedSet, newSet, this);
+    TRY(std::string, checkCircularRef(ctx, visitedSet, newSet, this));
 
     std::string str("[");
     unsigned int size = this->values.size();
@@ -216,9 +223,9 @@ std::string Array_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
         if(i > 0) {
             str += ", ";
         }
-        checkInvalid(ctx, this->values[i]);
+        TRY(std::string, checkInvalid(ctx, this->values[i]));
         preVisit(visitedSet, this);
-        str += this->values[i]->toString(ctx, visitedSet);
+        str += TRY(std::string, this->values[i]->toString(ctx, visitedSet));
         postVisit(visitedSet, this);
     }
     str += "]";
@@ -233,12 +240,12 @@ const DSValue &Array_Object::nextElement() {
 
 DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
-    checkCircularRef(ctx, visitedSet, newSet, this);
+    TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
 
     if(this->values.size() == 1) {
-        checkInvalid(ctx, this->values[0]);
+        TRY(DSValue, checkInvalid(ctx, this->values[0]));
         preVisit(visitedSet, this);
-        auto v = this->values[0]->interp(ctx, visitedSet);
+        auto v = TRY(DSValue, this->values[0]->interp(ctx, visitedSet));
         postVisit(visitedSet, this);
         return v;
     }
@@ -249,9 +256,10 @@ DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         if(i > 0) {
             str += " ";
         }
-        checkInvalid(ctx, this->values[i]);
+        TRY(DSValue, checkInvalid(ctx, this->values[i]));
         preVisit(visitedSet, this);
-        str += typeAs<String_Object>(this->values[i]->interp(ctx, visitedSet))->getValue();
+        auto ret = TRY(DSValue, this->values[i]->interp(ctx, visitedSet));
+        str += typeAs<String_Object>(ret)->getValue();
         postVisit(visitedSet, this);
     }
     return DSValue::create<String_Object>(getPool(ctx).getStringType(), std::move(str));
@@ -259,13 +267,13 @@ DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
 
 DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
-    checkCircularRef(ctx, visitedSet, newSet, this);
+    TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
 
     auto result = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
     for(auto &e : this->values) {
-        checkInvalid(ctx, e);
+        TRY(DSValue, checkInvalid(ctx, e));
         preVisit(visitedSet, this);
-        DSValue temp(e->commandArg(ctx, visitedSet));
+        auto temp = TRY(DSValue, e->commandArg(ctx, visitedSet));
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
@@ -301,7 +309,7 @@ DSValue Map_Object::nextElement(DSState &ctx) {
 
 std::string Map_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
-    checkCircularRef(ctx, visitedSet, newSet, this);
+    TRY(std::string, checkCircularRef(ctx, visitedSet, newSet, this));
 
     std::string str("[");
     unsigned int count = 0;
@@ -312,9 +320,9 @@ std::string Map_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
         str += iter.first->toString(ctx, nullptr);
         str += " : ";
 
-        checkInvalid(ctx, iter.second);
+        TRY(std::string, checkInvalid(ctx, iter.second));
         preVisit(visitedSet, this);
-        str += iter.second->toString(ctx, visitedSet);
+        str += TRY(std::string, iter.second->toString(ctx, visitedSet));
         postVisit(visitedSet, this);
     }
     str += "]";
@@ -349,7 +357,7 @@ DSValue *BaseObject::getFieldTable() {
 
 std::string Tuple_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
-    checkCircularRef(ctx, visitedSet, newSet, this);
+    TRY(std::string, checkCircularRef(ctx, visitedSet, newSet, this));
 
     std::string str("(");
     unsigned int size = this->getElementSize();
@@ -358,9 +366,9 @@ std::string Tuple_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
             str += ", ";
         }
 
-        checkInvalid(ctx, this->fieldTable[i]);
+        TRY(std::string, checkInvalid(ctx, this->fieldTable[i]));
         preVisit(visitedSet, this);
-        str += this->fieldTable[i]->toString(ctx, visitedSet);
+        str += TRY(std::string, this->fieldTable[i]->toString(ctx, visitedSet));
         postVisit(visitedSet, this);
     }
     str += ")";
@@ -369,7 +377,7 @@ std::string Tuple_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
 
 DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
-    checkCircularRef(ctx, visitedSet, newSet, this);
+    TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
 
     std::string str;
     unsigned int size = this->getElementSize();
@@ -377,9 +385,10 @@ DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         if(i > 0) {
             str += " ";
         }
-        checkInvalid(ctx, this->fieldTable[i]);
+        TRY(DSValue, checkInvalid(ctx, this->fieldTable[i]));
         preVisit(visitedSet, this);
-        str += typeAs<String_Object>(this->fieldTable[i]->interp(ctx, visitedSet))->getValue();
+        auto ret = TRY(DSValue, this->fieldTable[i]->interp(ctx, visitedSet));
+        str += typeAs<String_Object>(ret)->getValue();
         postVisit(visitedSet, this);
     }
     return DSValue::create<String_Object>(getPool(ctx).getStringType(), std::move(str));
@@ -387,14 +396,14 @@ DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
 
 DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
-    checkCircularRef(ctx, visitedSet, newSet, this);
+    TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
 
     auto result = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
-        checkInvalid(ctx, this->fieldTable[i]);
+        TRY(DSValue, checkInvalid(ctx, this->fieldTable[i]));
         preVisit(visitedSet, this);
-        DSValue temp(this->fieldTable[i]->commandArg(ctx, visitedSet));
+        auto temp = TRY(DSValue, this->fieldTable[i]->commandArg(ctx, visitedSet));
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
