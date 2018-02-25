@@ -773,10 +773,10 @@ private:
 };
 
 enum class CodeKind : unsigned char {
-    TOPLEVEL,
-    FUNCTION,
-    USER_DEFINED_CMD,
-    NATIVE,
+    TOPLEVEL         = 6,
+    FUNCTION         = (1 << 4) + 6,
+    USER_DEFINED_CMD = (2 << 4) + 6,
+    NATIVE           = (3 << 4) + 1,
 };
 
 class DSCode {
@@ -823,7 +823,7 @@ public:
     }
 
     unsigned int getCodeOffset() const {
-        return this->is(CodeKind::NATIVE) ? 1 : 6;
+        return this->code[0] & 0xF;
     }
 };
 
