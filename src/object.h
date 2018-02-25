@@ -782,15 +782,12 @@ enum class CodeKind : unsigned char {
 class DSCode {
 protected:
     /**
+     *
+     * if indicate compiled code
+     *
      * +----------------------+-------------------+-------------------------------+
      * | CallableKind (1byte) | code size (4byte) | local variable number (1byte) |
      * +----------------------+-------------------+-------------------------------+
-     *
-     * if indicate toplevel
-     *
-     * +----------------------+-------------------+-------------------------------+--------------------------------+
-     * | CallableKind (1byte) | code size (4byte) | local variable number (1byte) | global variable number (2byte) |
-     * +----------------------+-------------------+-------------------------------+--------------------------------+
      *
      * if indicate native
      *
@@ -826,7 +823,7 @@ public:
     }
 
     unsigned int getCodeOffset() const {
-        return this->is(CodeKind::NATIVE) ? 1 : this->is(CodeKind::TOPLEVEL) ? 8 : 6;
+        return this->is(CodeKind::NATIVE) ? 1 : 6;
     }
 };
 
@@ -974,11 +971,6 @@ public:
 
     unsigned short getLocalVarNum() const {
         return read8(this->code, 5);
-    }
-
-    unsigned short getGlobalVarNum() const {
-        assert(this->getKind() == CodeKind::TOPLEVEL);
-        return read16(this->code, 6);
     }
 
     const SourceInfoPtr &getSrcInfo() const {

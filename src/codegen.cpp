@@ -1193,7 +1193,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
     fprintf(fp, "  code size: %d\n", c.getCodeSize());
     fprintf(fp, "  number of local variable: %d\n", c.getLocalVarNum());
     if(c.getKind() == CodeKind::TOPLEVEL) {
-        fprintf(fp, "  number of global variable: %d\n", c.getGlobalVarNum());
+        fprintf(fp, "  number of global variable: %d\n", getPool(ctx).getMaxGVarIndex());
     }
 
 #if 0

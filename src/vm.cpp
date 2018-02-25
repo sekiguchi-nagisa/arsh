@@ -2345,7 +2345,7 @@ bool vmEval(DSState &state, CompiledCode &code) {
         const auto *cc = static_cast<const CompiledCode *>(state.codeStack.back());
 
         unsigned short varNum = cc->getLocalVarNum();
-        unsigned short gvarNum = cc->getGlobalVarNum();
+        unsigned short gvarNum = state.symbolTable.getMaxGVarIndex();
 
         reserveGlobalVar(state, gvarNum);
         reserveLocalVar(state, state.localVarOffset + varNum);

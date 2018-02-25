@@ -496,17 +496,14 @@ private:
 public:
     void initialize() {
         this->initCodeBuilder(CodeKind::TOPLEVEL, 0);
-        this->curBuilder().append16(0);
     }
 
     void generate(Node *node) {
         this->visit(*node);
     }
 
-    CompiledCode finalize(const SourceInfoPtr &srcInfo,
-                          unsigned char maxLocalSize, unsigned short maxGlobalSize) {
+    CompiledCode finalize(const SourceInfoPtr &srcInfo, unsigned char maxLocalSize) {
         this->curBuilder().emit8(5, maxLocalSize);
-        this->curBuilder().emit16(6, maxGlobalSize);
 
         this->emitIns(OpCode::HALT);
         return this->finalizeCodeBuilder(srcInfo, "");
