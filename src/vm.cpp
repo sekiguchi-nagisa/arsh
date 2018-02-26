@@ -1537,6 +1537,8 @@ static void checkVMEvent(DSState &state) {
 #define vmnext continue
 #define vmerror return false
 
+#define TRY(E) do { if(!E) { vmerror; } } while(false)
+
 static bool mainLoop(DSState &state) {
     while(true) {
         if(DSState::eventDesc != 0u) {
@@ -1552,9 +1554,7 @@ static bool mainLoop(DSState &state) {
             return true;
         }
         vmcase(ASSERT) {
-            if(!checkAssertion(state)) {
-                vmerror;
-            }
+            TRY(checkAssertion(state));
             vmnext;
         }
         vmcase(PRINT) {
@@ -1586,9 +1586,7 @@ static bool mainLoop(DSState &state) {
         vmcase(CHECK_CAST) {
             unsigned long v = read64(GET_CODE(state), state.pc() + 1);
             state.pc() += 8;
-            if(!checkCast(state, reinterpret_cast<DSType *>(v))) {
-                vmerror;
-            }
+            TRY(checkCast(state, reinterpret_cast<DSType *>(v)));
             vmnext;
         }
         vmcase(PUSH_NULL) {
@@ -1673,16 +1671,12 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(IMPORT_ENV) {
             unsigned char b = read8(GET_CODE(state), ++state.pc());
-            if(!loadEnv(state, b > 0)) {
-                vmerror;
-            }
+            TRY(loadEnv(state, b > 0));
             vmnext;
         }
         vmcase(LOAD_ENV) {
             const char *value = loadEnv(state, false);
-            if(!value) {
-                vmerror;
-            }
+            TRY(value);
             state.push(DSValue::create<String_Object>(state.symbolTable.getStringType(), value));
             vmnext;
         }
@@ -1785,9 +1779,7 @@ static bool mainLoop(DSState &state) {
             state.pc() += 8;
             auto func = (native_func_t) v;
             DSValue returnValue = func(state);
-            if(state.getThrownObject()) {
-                vmerror;
-            }
+            TRY(!state.getThrownObject());
             if(returnValue) {
                 state.push(std::move(returnValue));
             }
@@ -2062,9 +2054,7 @@ static bool mainLoop(DSState &state) {
             auto argv = state.pop();
 
             const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-            if(!callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr)) {
-                vmerror;
-            }
+            TRY(callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr));
             vmnext;
         }
         vmcase(BUILTIN_CMD) {
@@ -2073,9 +2063,7 @@ static bool mainLoop(DSState &state) {
             auto argv = state.getLocal(UDC_PARAM_ARGV);
             bool ret = callBuiltinCommand(state, std::move(argv), std::move(redir), attr);
             flushStdFD();
-            if(!ret) {
-                vmerror;
-            }
+            TRY(ret);
             vmnext;
         }
         vmcase(BUILTIN_EVAL) {
@@ -2087,9 +2075,7 @@ static bool mainLoop(DSState &state) {
             auto *array = typeAs<Array_Object>(argv);
             if(!array->getValues().empty()) {
                 const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-                if(!callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr)) {
-                    vmerror;
-                }
+                TRY(callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr));
             } else {
                 state.pushExitStatus(0);
             }
@@ -2112,9 +2098,7 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(DO_REDIR) {
-            if(!typeAs<RedirConfig>(state.peek())->redirect(state)) {
-                vmerror;
-            }
+            TRY(typeAs<RedirConfig>(state.peek())->redirect(state));
             vmnext;
         }
         vmcase(DBUS_INIT_SIG) {
@@ -2123,9 +2107,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(DBUS_WAIT_SIG) {
             auto v = DBusWaitSignal(state);
-            if(state.getThrownObject()) {
-                vmerror;
-            }
+            TRY(!state.getThrownObject());
             for(auto &e : v) {
                 state.push(std::move(e));
             }
