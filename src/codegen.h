@@ -350,20 +350,23 @@ private:
         this->curBuilder().append32(v);
     }
 
-    void emit4byteIns(OpCode op, unsigned short v1, unsigned short v2) {
-        assert(op == OpCode::CALL_METHOD);
-        ASSERT_BYTE_SIZE(op, 4);
-        this->emitIns(op);
-        this->curBuilder().append16(v1);
-        this->curBuilder().append16(v2);
-    }
-
     void emit8byteIns(OpCode op, unsigned long v) {
         ASSERT_BYTE_SIZE(op, 8);
         this->emitIns(op);
         this->curBuilder().append64(v);
     }
 
+    void emitCallIns(OpCode op, unsigned short paramSize) {
+        assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_INIT
+               || op == OpCode::CALL_METHOD);
+        this->emit2byteIns(op, paramSize);
+    }
+
+    void emitCallIns(OpCode op, unsigned short paramSize, unsigned short index) {
+        assert(op == OpCode::CALL_METHOD);
+        this->emitCallIns(op, paramSize);
+        this->curBuilder().append16(index);
+    }
 
     /**
      * write instruction having type. (ex. PRINT).

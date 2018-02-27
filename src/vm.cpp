@@ -1761,9 +1761,9 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CALL_METHOD) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
+            state.pc() += 2;
+            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
             callMethod(state, index, paramSize);
             vmnext;

@@ -10,7 +10,7 @@
 | PUSH_NULL     |                                | -> value                                     | push the null value onto the stack                 |
 | PUSH_TRUE     |                                | -> value                                     | push the true value onto the stack                 |
 | PUSH_FALSE    |                                | -> value                                     | push the false value onto the stack                |
-| PUSH_ESTRING  |                                | ->                                           | push the empty string value onto the stack         |
+| PUSH_ESTRING  |                                | -> value                                     | push the empty string value onto the stack         |
 | LOAD_CONST    | 1: byte1                       | -> value                                     | load a constant from the constant pool             |
 | LOAD_CONST_W  | 2: byte1 byte2                 | -> value                                     | load a constant from the constant pool             |
 | LOAD_CONST_T  | 3: byte1 byte2 byte3           | -> value                                     | load a constant from the constant pool             |
@@ -36,8 +36,8 @@
 | APPEND_MAP    |                                | value1 value2 value3 -> value1               | append value2 and value3 into value1               |
 | NEW_TUPLE     | 8: ptr1 ~ ptr8                 | -> value                                     | create an empty tuple value                        |
 | NEW           | 8: ptr1 ~ ptr8                 | -> value                                     | create an empty object of a specified type         |
-| CALL_INIT     | 2: byte1 byte2                 | value -> value                               | call constructor                                   |
-| CALL_METHOD   | 4: index1 index2 param1 param2 | recv param1 ~ paramN -> result               | call virtual method                                |
+| CALL_INIT     | 2: param1 param2               | value -> value                               | call constructor                                   |
+| CALL_METHOD   | 4: param1 param2 index1 index2 | recv param1 ~ paramN -> result               | call virtual method                                |
 | CALL_FUNC     | 2: param1 param2               | func param1 ~ paramN -> result               | apply function object                              |
 | CALL_NATIVE   | 8: ptr1 ~ ptr8                 | -> value                                     | call native function                               |
 | INVOKE_METHOD | 2: byte1 byte2                 | recv param1 ~ paramN -> result               | invoke interface method                            |

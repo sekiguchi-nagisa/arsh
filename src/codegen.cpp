@@ -98,7 +98,7 @@ void ByteCodeGenerator::generateToString() {
         this->handle_STR = this->symbolTable.getAnyType().lookupMethodHandle(this->symbolTable, std::string(OP_STR));
     }
 
-    this->emit4byteIns(OpCode::CALL_METHOD, this->handle_STR->getMethodIndex(), 0);
+    this->emitCallIns(OpCode::CALL_METHOD, 0, this->handle_STR->getMethodIndex());
 }
 
 static constexpr unsigned short toShort(OpCode op) {
@@ -476,7 +476,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         this->emitSourcePos(node.getPos());
         auto *handle = node.getExprNode()->getType().lookupMethodHandle(this->symbolTable, OP_BOOL);
         assert(handle != nullptr);
-        this->emit4byteIns(OpCode::CALL_METHOD, handle->getMethodIndex(), 0);
+        this->emitCallIns(OpCode::CALL_METHOD, 0, handle->getMethodIndex());
         break;
     }
     case TypeOpNode::CHECK_CAST:
@@ -590,7 +590,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
     }
 
     this->emitSourcePos(node.getPos());
-    this->emit2byteIns(OpCode::CALL_FUNC, paramSize);
+    this->emitCallIns(OpCode::CALL_FUNC, paramSize);
 }
 
 void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
@@ -605,7 +605,7 @@ void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
         this->emitDescriptorIns(
                 OpCode::INVOKE_METHOD, encodeMethodDescriptor(node.getMethodName().c_str(), node.getHandle()));
     } else {
-        this->emit4byteIns(OpCode::CALL_METHOD, node.getHandle()->getMethodIndex(), node.getArgNodes().size());
+        this->emitCallIns(OpCode::CALL_METHOD, node.getArgNodes().size(), node.getHandle()->getMethodIndex());
     }
 }
 
@@ -626,7 +626,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
 
     // call constructor
     this->emitSourcePos(node.getPos());
-    this->emit2byteIns(OpCode::CALL_INIT, paramSize);
+    this->emitCallIns(OpCode::CALL_INIT, paramSize);
 }
 
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
