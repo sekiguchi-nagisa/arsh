@@ -24,7 +24,7 @@ namespace ydsh {
 
 int getByteSize(OpCode code) {
     char table[] = {
-#define GEN_BYTE_SIZE(CODE, N) N,
+#define GEN_BYTE_SIZE(CODE, N, S) N,
             OPCODE_LIST(GEN_BYTE_SIZE)
 #undef GEN_BYTE_SIZE
     };
@@ -55,6 +55,23 @@ bool isTypeOp(OpCode code) {
 ByteCodeGenerator::~ByteCodeGenerator() {
     for(auto &e : this->builders) {
         delete e;
+    }
+}
+
+void ByteCodeGenerator::emitIns(OpCode op) {
+    this->curBuilder().append8(static_cast<unsigned char>(op));
+
+    // max stack depth size
+    int table[] = {
+#define GEN_SIZE_TABLE(C, N, S) S,
+            OPCODE_LIST(GEN_SIZE_TABLE)
+#undef GEN_SIZE_TABLE
+    };
+    int size = table[static_cast<unsigned int>(op)];
+    this->curBuilder().stackDepthCount += size;
+    int count = this->curBuilder().stackDepthCount;
+    if(count > 0 && static_cast<unsigned short>(count) > this->curBuilder().maxStackDepth) {
+        this->curBuilder().maxStackDepth = count;
     }
 }
 
@@ -1104,10 +1121,14 @@ void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNu
     this->curBuilder().append8(static_cast<unsigned char>(kind));
     this->curBuilder().append32(0);
     this->curBuilder().append8(localVarNum);
+    this->curBuilder().append16(0);
 }
 
 CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const SourceInfoPtr &srcInfo, const std::string &name) {
     this->curBuilder().finalize();
+
+    // set max stack depth
+    this->curBuilder().emit16(6, this->curBuilder().maxStackDepth);
 
     // extract code
     const unsigned int codeSize = this->curBuilder().codeBuffer.size();
@@ -1191,6 +1212,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
     }
     fputc('\n', fp);
     fprintf(fp, "  code size: %d\n", c.getCodeSize());
+    fprintf(fp, "  max stack depth: %d\n", c.getStackDepth());
     fprintf(fp, "  number of local variable: %d\n", c.getLocalVarNum());
     if(c.getKind() == CodeKind::TOPLEVEL) {
         fprintf(fp, "  number of global variable: %d\n", getPool(ctx).getMaxGVarIndex());
@@ -1209,7 +1231,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
     fputs("Code:\n", fp);
     {
         const char *opName[] = {
-#define GEN_NAME(CODE, N) #CODE,
+#define GEN_NAME(CODE, N, S) #CODE,
                 OPCODE_LIST(GEN_NAME)
 #undef GEN_NAME
         };

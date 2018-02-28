@@ -773,9 +773,9 @@ private:
 };
 
 enum class CodeKind : unsigned char {
-    TOPLEVEL         = 6,
-    FUNCTION         = (1 << 4) + 6,
-    USER_DEFINED_CMD = (2 << 4) + 6,
+    TOPLEVEL         = 8,
+    FUNCTION         = (1 << 4) + 8,
+    USER_DEFINED_CMD = (2 << 4) + 8,
     NATIVE           = (3 << 4) + 1,
 };
 
@@ -785,9 +785,9 @@ protected:
      *
      * if indicate compiled code
      *
-     * +----------------------+-------------------+-------------------------------+
-     * | CallableKind (1byte) | code size (4byte) | local variable number (1byte) |
-     * +----------------------+-------------------+-------------------------------+
+     * +----------------------+-------------------+-------------------------------+---------------------+
+     * | CallableKind (1byte) | code size (4byte) | local variable number (1byte) | stack depth (2byte) |
+     * +----------------------+-------------------+-------------------------------+---------------------+
      *
      * if indicate native
      *
@@ -971,6 +971,10 @@ public:
 
     unsigned short getLocalVarNum() const {
         return read8(this->code, 5);
+    }
+
+    unsigned short getStackDepth() const {
+        return read16(this->code, 6);
     }
 
     const SourceInfoPtr &getSrcInfo() const {

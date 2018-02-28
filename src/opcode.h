@@ -23,102 +23,102 @@ namespace ydsh {
  * see (doc/opcode.md)
  */
 #define OPCODE_LIST(OP) \
-    OP(HALT         , 0) \
-    OP(ASSERT       , 0) \
-    OP(PRINT        , 8) \
-    OP(INSTANCE_OF  , 8) \
-    OP(CHECK_CAST   , 8) \
-    OP(PUSH_NULL    , 0) \
-    OP(PUSH_TRUE    , 0) \
-    OP(PUSH_FALSE   , 0) \
-    OP(PUSH_ESTRING , 0) \
-    OP(LOAD_CONST   , 1) \
-    OP(LOAD_CONST_W , 2) \
-    OP(LOAD_CONST_T , 3) \
-    OP(LOAD_FUNC    , 2) \
-    OP(LOAD_GLOBAL  , 2) \
-    OP(STORE_GLOBAL , 2) \
-    OP(LOAD_LOCAL   , 1) \
-    OP(STORE_LOCAL  , 1) \
-    OP(LOAD_FIELD   , 2) \
-    OP(STORE_FIELD  , 2) \
-    OP(IMPORT_ENV   , 1) \
-    OP(LOAD_ENV     , 0) \
-    OP(STORE_ENV    , 0) \
-    OP(POP          , 0) \
-    OP(DUP          , 0) \
-    OP(DUP2         , 0) \
-    OP(SWAP         , 0) \
-    OP(NEW_STRING   , 0) \
-    OP(APPEND_STRING, 0) \
-    OP(NEW_ARRAY    , 8) \
-    OP(APPEND_ARRAY , 0) \
-    OP(NEW_MAP      , 8) \
-    OP(APPEND_MAP   , 0) \
-    OP(NEW_TUPLE    , 8) \
-    OP(NEW          , 8) \
-    OP(CALL_INIT    , 2) \
-    OP(CALL_METHOD  , 4) \
-    OP(CALL_FUNC    , 2) \
-    OP(CALL_NATIVE  , 8) \
-    OP(INVOKE_METHOD, 2) \
-    OP(INVOKE_GETTER, 2) \
-    OP(INVOKE_SETTER, 2) \
-    OP(RETURN       , 0) \
-    OP(RETURN_V     , 0) \
-    OP(RETURN_UDC   , 0) \
-    OP(RETURN_SIG   , 0) \
-    OP(BRANCH       , 2) \
-    OP(GOTO         , 4) \
-    OP(THROW        , 0) \
-    OP(EXIT_SHELL   , 0) \
-    OP(ENTER_FINALLY, 2) \
-    OP(EXIT_FINALLY , 0) \
-    OP(COPY_INT     , 1) \
-    OP(TO_BYTE      , 0) \
-    OP(TO_U16       , 0) \
-    OP(TO_I16       , 0) \
-    OP(NEW_LONG     , 1) \
-    OP(COPY_LONG    , 1) \
-    OP(I_NEW_LONG   , 1) \
-    OP(NEW_INT      , 1) \
-    OP(U32_TO_D     , 0) \
-    OP(I32_TO_D     , 0) \
-    OP(U64_TO_D     , 0) \
-    OP(I64_TO_D     , 0) \
-    OP(D_TO_U32     , 0) \
-    OP(D_TO_I32     , 0) \
-    OP(D_TO_U64     , 0) \
-    OP(D_TO_I64     , 0) \
-    OP(REF_EQ       , 0) \
-    OP(REF_NE       , 0) \
-    OP(FORK         , 3) \
-    OP(PIPELINE     , -1) \
-    OP(EXPAND_TILDE , 0) \
-    OP(NEW_CMD      , 0) \
-    OP(ADD_CMD_ARG  , 1) \
-    OP(CALL_CMD     , 0) \
-    OP(CALL_CMD_P   , 0) \
-    OP(CALL_CMD_LP  , 0) \
-    OP(BUILTIN_CMD  , 0) \
-    OP(BUILTIN_EVAL , 0) \
-    OP(BUILTIN_EXEC , 0) \
-    OP(NEW_REDIR    , 0) \
-    OP(ADD_REDIR_OP , 1) \
-    OP(DO_REDIR     , 0) \
-    OP(DBUS_INIT_SIG, 0) \
-    OP(DBUS_WAIT_SIG, 0) \
-    OP(RAND         , 0) \
-    OP(GET_SECOND   , 0) \
-    OP(SET_SECOND   , 0) \
-    OP(UNWRAP       , 0) \
-    OP(CHECK_UNWRAP , 0) \
-    OP(TRY_UNWRAP   , 2) \
-    OP(NEW_INVALID  , 0) \
-    OP(RECLAIM_LOCAL, 2)
+    OP(HALT         , 0,  0) \
+    OP(ASSERT       , 0, -2) \
+    OP(PRINT        , 8, -1) \
+    OP(INSTANCE_OF  , 8,  0) \
+    OP(CHECK_CAST   , 8,  0) \
+    OP(PUSH_NULL    , 0,  1) \
+    OP(PUSH_TRUE    , 0,  1) \
+    OP(PUSH_FALSE   , 0,  1) \
+    OP(PUSH_ESTRING , 0,  1) \
+    OP(LOAD_CONST   , 1,  1) \
+    OP(LOAD_CONST_W , 2,  1) \
+    OP(LOAD_CONST_T , 3,  1) \
+    OP(LOAD_FUNC    , 2,  1) \
+    OP(LOAD_GLOBAL  , 2,  1) \
+    OP(STORE_GLOBAL , 2, -1) \
+    OP(LOAD_LOCAL   , 1,  1) \
+    OP(STORE_LOCAL  , 1, -1) \
+    OP(LOAD_FIELD   , 2,  0) \
+    OP(STORE_FIELD  , 2, -2) \
+    OP(IMPORT_ENV   , 1, -1) \
+    OP(LOAD_ENV     , 0,  0) \
+    OP(STORE_ENV    , 0, -2) \
+    OP(POP          , 0, -1) \
+    OP(DUP          , 0,  1) \
+    OP(DUP2         , 0,  2) \
+    OP(SWAP         , 0,  0) \
+    OP(NEW_STRING   , 0,  1) \
+    OP(APPEND_STRING, 0, -1) \
+    OP(NEW_ARRAY    , 8,  1) \
+    OP(APPEND_ARRAY , 0, -1) \
+    OP(NEW_MAP      , 8,  1) \
+    OP(APPEND_MAP   , 0, -1) \
+    OP(NEW_TUPLE    , 8,  1) \
+    OP(NEW          , 8,  1) \
+    OP(CALL_INIT    , 2,  0) \
+    OP(CALL_METHOD  , 4,  1) \
+    OP(CALL_FUNC    , 2,  1) \
+    OP(CALL_NATIVE  , 8,  1) \
+    OP(INVOKE_METHOD, 2,  0) \
+    OP(INVOKE_GETTER, 2,  0) \
+    OP(INVOKE_SETTER, 2,  0) \
+    OP(RETURN       , 0,  0) \
+    OP(RETURN_V     , 0,  0) \
+    OP(RETURN_UDC   , 0,  0) \
+    OP(RETURN_SIG   , 0,  0) \
+    OP(BRANCH       , 2, -1) \
+    OP(GOTO         , 4,  0) \
+    OP(THROW        , 0,  0) \
+    OP(EXIT_SHELL   , 0,  0) \
+    OP(ENTER_FINALLY, 2,  1) \
+    OP(EXIT_FINALLY , 0, -1) \
+    OP(COPY_INT     , 1,  0) \
+    OP(TO_BYTE      , 0,  0) \
+    OP(TO_U16       , 0,  0) \
+    OP(TO_I16       , 0,  0) \
+    OP(NEW_LONG     , 1,  0) \
+    OP(COPY_LONG    , 1,  0) \
+    OP(I_NEW_LONG   , 1,  0) \
+    OP(NEW_INT      , 1,  0) \
+    OP(U32_TO_D     , 0,  0) \
+    OP(I32_TO_D     , 0,  0) \
+    OP(U64_TO_D     , 0,  0) \
+    OP(I64_TO_D     , 0,  0) \
+    OP(D_TO_U32     , 0,  0) \
+    OP(D_TO_I32     , 0,  0) \
+    OP(D_TO_U64     , 0,  0) \
+    OP(D_TO_I64     , 0,  0) \
+    OP(REF_EQ       , 0, -1) \
+    OP(REF_NE       , 0, -1) \
+    OP(FORK         , 3,  1) \
+    OP(PIPELINE    , -1,  1) \
+    OP(EXPAND_TILDE , 0,  0) \
+    OP(NEW_CMD      , 0,  0) \
+    OP(ADD_CMD_ARG  , 1, -1) \
+    OP(CALL_CMD     , 0, -1) \
+    OP(CALL_CMD_P   , 0, -1) \
+    OP(CALL_CMD_LP  , 0, -1) \
+    OP(BUILTIN_CMD  , 0,  1) \
+    OP(BUILTIN_EVAL , 0,  1) \
+    OP(BUILTIN_EXEC , 0,  1) \
+    OP(NEW_REDIR    , 0,  1) \
+    OP(ADD_REDIR_OP , 1, -1) \
+    OP(DO_REDIR     , 0,  0) \
+    OP(DBUS_INIT_SIG, 0,  0) \
+    OP(DBUS_WAIT_SIG, 0,  0) \
+    OP(RAND         , 0,  1) \
+    OP(GET_SECOND   , 0,  1) \
+    OP(SET_SECOND   , 0, -1) \
+    OP(UNWRAP       , 0,  0) \
+    OP(CHECK_UNWRAP , 0,  0) \
+    OP(TRY_UNWRAP   , 2,  0) \
+    OP(NEW_INVALID  , 0,  1) \
+    OP(RECLAIM_LOCAL, 2,  0)
 
 enum class OpCode : unsigned char {
-#define GEN_OPCODE(CODE, N) CODE,
+#define GEN_OPCODE(CODE, N, S) CODE,
     OPCODE_LIST(GEN_OPCODE)
 #undef GEN_OPCODE
 };

@@ -194,21 +194,22 @@ TEST_F(CmdlineTest, bytecode) {
     const char *msg = R"(### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 20
+  code size: 22
+  max stack depth: 1
   number of local variable: 0
   number of global variable: 51
 Code:
-   6: LOAD_CONST  0
-   8: STORE_GLOBAL  50
-  11: LOAD_CONST  1
-  13: CALL_METHOD  0  0
-  18: POP
-  19: HALT
+   8: LOAD_CONST  0
+  10: STORE_GLOBAL  50
+  13: LOAD_CONST  1
+  15: CALL_METHOD  0  0
+  20: POP
+  21: HALT
 Constant Pool:
   0: Int32 34
   1: Int32 34
 Source Pos Entry:
-  lineNum: 1, address: 13, pos: 12
+  lineNum: 1, address: 15, pos: 12
 Exception Table:
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", "var a = 34; 34 as String"), 0, msg));
@@ -216,38 +217,40 @@ Exception Table:
     msg = R"(### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 33
+  code size: 35
+  max stack depth: 3
   number of local variable: 0
   number of global variable: 51
 Code:
-   6: LOAD_CONST  0
-   8: STORE_GLOBAL  50
-  11: LOAD_GLOBAL  50
-  14: LOAD_CONST  1
-  16: CALL_FUNC  1
-  19: ENTER_FINALLY  8
-  22: GOTO  31
-  27: LOAD_CONST  2
-  29: POP
-  30: EXIT_FINALLY
+   8: LOAD_CONST  0
+  10: STORE_GLOBAL  50
+  13: LOAD_GLOBAL  50
+  16: LOAD_CONST  1
+  18: CALL_FUNC  1
+  21: ENTER_FINALLY  8
+  24: GOTO  33
+  29: LOAD_CONST  2
   31: POP
-  32: HALT
+  32: EXIT_FINALLY
+  33: POP
+  34: HALT
 Constant Pool:
   0: (null) function(f)
   1: Int32 1
   2: Int32 3
 Source Pos Entry:
-  lineNum: 1, address: 16, pos: 67
+  lineNum: 1, address: 18, pos: 67
 Exception Table:
-  begin: 11, end: 27, type: Any, dest: 27, offset: 0, size: 0
+  begin: 13, end: 29, type: Any, dest: 29, offset: 0, size: 0
 
 DSCode: function f
-  code size: 18
+  code size: 20
+  max stack depth: 1
   number of local variable: 1
 Code:
-   6: LOAD_LOCAL  0
-   8: INSTANCE_OF  Array<Int32>
-  17: RETURN_V
+   8: LOAD_LOCAL  0
+  10: INSTANCE_OF  Array<Int32>
+  19: RETURN_V
 Constant Pool:
 Source Pos Entry:
 Exception Table:

@@ -277,6 +277,9 @@ struct CodeBuilder : public CodeEmitter<true> {
     std::vector<LoopState> loopLabels;
 
     std::vector<Label> finallyLabels;
+
+    signed short stackDepthCount{0};
+    signed short maxStackDepth{0};
 };
 
 class ByteCodeGenerator : protected NodeVisitor {
@@ -309,9 +312,7 @@ private:
         return static_cast<CodeKind>(this->builders.back()->codeBuffer[0]) == CodeKind::FUNCTION;
     }
 
-    void emitIns(OpCode op) {
-        this->curBuilder().append8(static_cast<unsigned char>(op));
-    }
+    void emitIns(OpCode op);
 
     void emit0byteIns(OpCode op) {
         ASSERT_BYTE_SIZE(op, 0);
@@ -359,6 +360,7 @@ private:
     void emitCallIns(OpCode op, unsigned short paramSize) {
         assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_INIT
                || op == OpCode::CALL_METHOD);
+        this->curBuilder().stackDepthCount -= paramSize + 1;
         this->emitIns(op);
         this->curBuilder().append16(paramSize);
     }
