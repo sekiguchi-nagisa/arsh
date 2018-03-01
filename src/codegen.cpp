@@ -1297,7 +1297,6 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
                 break;
             case DSValueKind::OBJECT:
                 if(list != nullptr && v->getType() == nullptr) {
-                    assert(dynamic_cast<FuncObject *>(v.get()) != nullptr);
                     list->push_back(&static_cast<FuncObject *>(v.get())->getCode());
                 }
                 fprintf(fp, "%s %s",

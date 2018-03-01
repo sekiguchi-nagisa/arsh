@@ -470,7 +470,7 @@ unsigned int getSourcePos(const SourcePosEntry *entries, unsigned int index) {  
 
 void FuncObject::setType(DSType *type) {
     if(this->type == nullptr) {
-        assert(dynamic_cast<FunctionType *>(type) != nullptr);
+        assert(type->isFuncType());
         this->type = type;
     }
 }
