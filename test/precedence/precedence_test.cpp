@@ -83,7 +83,9 @@ public:
         this->open();
         this->visit(*node.getExprNode());
         this->append(node.isCastOp() ? "as" : "is");
-        this->append(dynamic_cast<BaseTypeNode *>(node.getTargetTypeNode())->getTokenText()); //FIXME:
+        auto *typeNode = node.getTargetTypeNode();
+        assert(typeNode->typeKind == TypeNode::Base);
+        this->append(static_cast<BaseTypeNode *>(typeNode)->getTokenText());
         this->close();
     }
 
