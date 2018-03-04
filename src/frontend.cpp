@@ -60,7 +60,7 @@ static bool isSupportedTerminal(int fd) {
 struct ColorControler {
     bool isatty;
 
-    ColorControler(int fd) : isatty(isSupportedTerminal(fd)) {}
+    explicit ColorControler(int fd) : isatty(isSupportedTerminal(fd)) {}
 
     const char *operator()(TermColor color) const {
         if(this->isatty) {

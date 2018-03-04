@@ -401,7 +401,7 @@ double Lexer::toDouble(Token token, int &status) const {
 bool Lexer::isDecimal(Token token) const {
     assert(this->withinRange(token));
     if(token.size > 2) {    // '0x' or '0o'
-        const char *str = reinterpret_cast<const char *>(this->buf.get() + token.pos);
+        auto *str = reinterpret_cast<const char *>(this->buf.get() + token.pos);
         if(str[0] == '0' && (str[1] == 'x' || str[1] == 'o')) {
             return false;
         }

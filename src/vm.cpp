@@ -1537,7 +1537,7 @@ static void checkVMEvent(DSState &state) {
 #define vmnext continue
 #define vmerror return false
 
-#define TRY(E) do { if(!E) { vmerror; } } while(false)
+#define TRY(E) do { if(!(E)) { vmerror; } } while(false)
 
 static bool mainLoop(DSState &state) {
     while(true) {

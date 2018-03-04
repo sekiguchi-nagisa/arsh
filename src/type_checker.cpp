@@ -792,7 +792,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
             }
 
             // create MethodCallNode and check type
-            MethodCallNode *callNode = new MethodCallNode(exprNode, std::move(methodName));
+            auto *callNode = new MethodCallNode(exprNode, std::move(methodName));
             this->checkTypeArgsNode(node, handle, callNode->refArgNodes());
             callNode->setHandle(handle);
             callNode->setType(*handle->getReturnType());
