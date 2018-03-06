@@ -275,19 +275,16 @@ void throwError(DSState &st, DSType &errorType, std::string &&message) {
 }
 
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace) {
-    unsigned int callableDepth = st.codeStack.size();
-
-    unsigned int curPC = st.pc_;
-    unsigned int curBottomIndex = st.stackBottomIndex;
-
-    while(callableDepth != 0u) {
-        auto &callable = st.codeStack[--callableDepth];
+    assert(!st.controlStack.empty());
+    auto frame = st.getFrame();
+    for(unsigned int callDepth = st.controlStack.size(); callDepth > 0; frame = st.controlStack[--callDepth]) {
+        auto &callable = frame.code;
         if(!callable->is(CodeKind::NATIVE)) {
             const auto *cc = static_cast<const CompiledCode *>(callable);
 
             // create stack trace element
             const char *sourceName = cc->getSrcInfo()->getSourceName().c_str();
-            unsigned int pos = getSourcePos(cc->getSourcePosEntries(), curPC);
+            unsigned int pos = getSourcePos(cc->getSourcePosEntries(), frame.pc);
 
             std::string callableName;
             switch(callable->getKind()) {
@@ -305,15 +302,7 @@ void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTr
             default:
                 break;
             }
-
             stackTrace.emplace_back(sourceName, cc->getSrcInfo()->getLineNum(pos), std::move(callableName));
-        }
-
-        // unwind state
-        if(callableDepth != 0u) {
-            const unsigned int offset = curBottomIndex;
-            curPC = static_cast<unsigned int>(st.callStack[offset - 3].value());
-            curBottomIndex = static_cast<unsigned int>(st.callStack[offset - 1].value());
         }
     }
 }

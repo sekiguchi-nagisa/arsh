@@ -108,11 +108,15 @@ void DSState::throwException(DSValue &&except) {
     throw DSException();
 }
 
-void DSState::expandLocalStack() {
-    const unsigned int needSize = this->stackTopIndex;
-    if(needSize >= MAXIMUM_STACK_SIZE) {
-        this->stackTopIndex = this->callStackSize - 1;
-        throwError(*this, this->symbolTable.getStackOverflowErrorType(), "local stack size reaches limit");
+bool DSState::expandLocalStack(unsigned int add) {
+    unsigned int needSize = this->stackTopIndex + add;
+    if(needSize < this->callStackSize) {
+        return true;
+    }
+
+    if(needSize > MAXIMUM_STACK_SIZE) {
+        raiseError(*this, this->symbolTable.getStackOverflowErrorType(), "local stack size reaches limit");
+        return false;
     }
 
     unsigned int newSize = this->callStackSize;
@@ -120,12 +124,19 @@ void DSState::expandLocalStack() {
         newSize += (newSize >> 1);
     } while(newSize < needSize);
     auto newTable = new DSValue[newSize];
-    for(unsigned int i = 0; i < this->callStackSize; i++) {
+    for(unsigned int i = 0; i < this->stackTopIndex + 1; i++) {
         newTable[i] = std::move(this->callStack[i]);
     }
     delete[] this->callStack;
     this->callStack = newTable;
     this->callStackSize = newSize;
+    return true;
+}
+
+void DSState::expandLocalStack2(unsigned int add) {
+    if(!this->expandLocalStack(add)) {
+        throw DSException();
+    }
 }
 
 flag32_set_t DSState::eventDesc = 0;
@@ -173,7 +184,7 @@ extern char **environ;
 
 namespace ydsh {
 
-#define CODE(ctx) ((ctx).codeStack.back())
+#define CODE(ctx) ((ctx).code)
 #define GET_CODE(ctx) (CODE(ctx)->getCode())
 #define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
 
@@ -254,83 +265,54 @@ static void reclaimLocals(DSState &state, unsigned char offset, unsigned char si
 }
 
 /**
- * set stackTopIndex.
- * if this->localStackSize < size, expand callStack.
+ * reserve global variable entry and set local variable offset.
  */
-static void reserveLocalVar(DSState &st, unsigned int size) {
+static void reserveGlobalVar(DSState &st) {
+    unsigned int size = st.symbolTable.getMaxGVarIndex();
+    st.expandLocalStack(size - st.globalVarSize);
+    st.globalVarSize = size;
+    st.localVarOffset = size;
     st.stackTopIndex = size;
-    if(size >= st.callStackSize) {
-        st.expandLocalStack();
-    }
     st.stackBottomIndex = size;
 }
 
-/**
- * reserve global variable entry and set local variable offset.
- */
-static void reserveGlobalVar(DSState &st, unsigned int size) {
-    reserveLocalVar(st, size);
-    st.globalVarSize = size;
-    st.localVarOffset = size;
-}
-
-static void skipHeader(DSState &st) {
-    assert(!st.codeStack.empty());
-    st.pc_ = 0;
-    st.pc_ += st.codeStack.back()->getCodeOffset() - 1;
-}
-
-static void windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
-    const unsigned int maxVarSize = code->is(CodeKind::NATIVE)? paramSize :
+static bool windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
+    const unsigned int maxVarSize = code->is(CodeKind::NATIVE) ? paramSize :
                                     static_cast<const CompiledCode *>(code)->getLocalVarNum();
-
-    const unsigned int oldLocalVarOffset = st.localVarOffset;
-    const unsigned int oldStackBottomIndex = st.stackBottomIndex;
-    const unsigned int oldStackTopIndex = st.stackTopIndex - stackTopOffset;
-    const unsigned int oldPC = st.pc_;
-
-    // change stack state
     const unsigned int localVarOffset = st.stackTopIndex - paramSize + 1;
-    reserveLocalVar(st, st.stackTopIndex + maxVarSize - paramSize + 4);
+    const unsigned int operandSize = code->is(CodeKind::NATIVE) ? 4 :
+                                     static_cast<const CompiledCode *>(code)->getStackDepth();
+
+    // save current control frame
+    st.stackTopIndex -= stackTopOffset;
+    st.saveFrame();
+    st.stackTopIndex += stackTopOffset;
+
+    // reallocate stack
+    st.expandLocalStack2(maxVarSize - paramSize + operandSize);
+
+    // prepare control frame
+    st.code = code;
+    st.stackTopIndex = st.stackTopIndex + maxVarSize - paramSize;
+    st.stackBottomIndex = st.stackTopIndex;
     st.localVarOffset = localVarOffset;
-    st.pc_ = 0;
-
-    // push old state
-    st.callStack[st.stackTopIndex] = DSValue::createNum(oldLocalVarOffset);
-    st.callStack[st.stackTopIndex - 1] = DSValue::createNum(oldStackBottomIndex);
-    st.callStack[st.stackTopIndex - 2] = DSValue::createNum(oldStackTopIndex);
-    st.callStack[st.stackTopIndex - 3] = DSValue::createNum(oldPC);
-
-    // push callable
-    st.codeStack.push_back(code);
-    skipHeader(st);
+    st.pc_ = st.code->getCodeOffset() - 1;
+    return true;
 }
 
 static void unwindStackFrame(DSState &st) {
-    // check stack layout
-    assert(st.callStack[st.stackBottomIndex].kind() == DSValueKind::NUMBER);
-    assert(st.callStack[st.stackBottomIndex - 1].kind() == DSValueKind::NUMBER);
-    assert(st.callStack[st.stackBottomIndex - 2].kind() == DSValueKind::NUMBER);
-    assert(st.callStack[st.stackBottomIndex - 3].kind() == DSValueKind::NUMBER);
+    auto frame = st.controlStack.back();
 
-    // pop old state
-    const auto oldLocalVarOffset = static_cast<unsigned int>(st.callStack[st.stackBottomIndex].value());
-    const auto oldStackBottomIndex = static_cast<unsigned int>(st.callStack[st.stackBottomIndex - 1].value());
-    const auto oldStackTopIndex = static_cast<unsigned int>(st.callStack[st.stackBottomIndex - 2].value());
-    const auto oldPC = static_cast<unsigned int>(st.callStack[st.stackBottomIndex - 3].value());
+    st.code = frame.code;
+    st.stackBottomIndex = frame.stackBottomIndex;
+    st.localVarOffset = frame.localVarOffset;
+    st.pc_= frame.pc;
 
-    // restore state
-    st.localVarOffset = oldLocalVarOffset;
-    st.stackBottomIndex = oldStackBottomIndex;
-    st.pc_ = oldPC;
-
-    // unwind operand and local variable
+    unsigned int oldStackTopIndex = frame.stackTopIndex;
     while(st.stackTopIndex > oldStackTopIndex) {
         st.popNoReturn();
     }
-
-    // pop callable
-    st.codeStack.pop_back();
+    st.controlStack.pop_back();
 }
 
 /**
@@ -393,8 +375,8 @@ const NativeCode *getNativeCode(unsigned int index);
  * indicates the constant pool index of descriptor object.
  */
 static void invokeMethod(DSState &st, unsigned short constPoolIndex) {
-    assert(!st.codeStack.back()->is(CodeKind::NATIVE));
-    const auto *code = static_cast<const CompiledCode *>(st.codeStack.back());
+    assert(!st.code->is(CodeKind::NATIVE));
+    const auto *code = static_cast<const CompiledCode *>(st.code);
 
     auto pair = decodeMethodDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
     const char *methodName = pair.first;
@@ -418,8 +400,8 @@ static void invokeMethod(DSState &st, unsigned short constPoolIndex) {
  * indicates the constant pool index of descriptor object.
  */
 static void invokeGetter(DSState &st, unsigned short constPoolIndex) {
-    assert(!st.codeStack.back()->is(CodeKind::NATIVE));
-    auto *code = static_cast<const CompiledCode *>(st.codeStack.back());
+    assert(!st.code->is(CodeKind::NATIVE));
+    auto *code = static_cast<const CompiledCode *>(st.code);
 
     auto tuple = decodeFieldDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
     const DSType *recvType = std::get<0>(tuple);
@@ -450,8 +432,8 @@ static void invokeGetter(DSState &st, unsigned short constPoolIndex) {
  * indicates the constant pool index of descriptor object
  */
 static void invokeSetter(DSState &st, unsigned short constPoolIndex) {
-    assert(!st.codeStack.back()->is(CodeKind::NATIVE));
-    auto *code = static_cast<const CompiledCode *>(st.codeStack.back());
+    assert(!st.code->is(CodeKind::NATIVE));
+    auto *code = static_cast<const CompiledCode *>(st.code);
 
     auto tuple = decodeFieldDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
     const DSType *recvType = std::get<0>(tuple);
@@ -1551,6 +1533,7 @@ static bool mainLoop(DSState &state) {
         // dispatch instruction
         vmdispatch(op) {
         vmcase(HALT) {
+            unwindStackFrame(state);
             return true;
         }
         vmcase(ASSERT) {
@@ -1805,7 +1788,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(RETURN) {
             unwindStackFrame(state);
-            if(state.codeStack.empty()) {
+            if(state.controlStack.empty()) {
                 return true;
             }
             vmnext;
@@ -1814,7 +1797,7 @@ static bool mainLoop(DSState &state) {
             DSValue v = state.pop();
             unwindStackFrame(state);
             state.push(std::move(v));
-            if(state.codeStack.empty()) {
+            if(state.controlStack.empty()) {
                 return true;
             }
             vmnext;
@@ -1823,7 +1806,7 @@ static bool mainLoop(DSState &state) {
             auto v = state.pop();
             unwindStackFrame(state);
             state.pushExitStatus(typeAs<Int_Object>(v)->getValue());
-            if(state.codeStack.empty()) {
+            if(state.controlStack.empty()) {
                 return true;
             }
             vmnext;
@@ -2179,7 +2162,7 @@ static bool handleException(DSState &state, bool forceUnwind) {
         state.hook->vmThrowHook(state);
     }
 
-    while(!state.codeStack.empty()) {
+    for(; !state.controlStack.empty(); unwindStackFrame(state)) {
         if(!forceUnwind && !CODE(state)->is(CodeKind::NATIVE)) {
             auto *cc = static_cast<const CompiledCode *>(CODE(state));
 
@@ -2208,19 +2191,9 @@ static bool handleException(DSState &state, bool forceUnwind) {
                 state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
             }
         }
-        if(state.codeStack.size() == 1) {
-            break;  // when top level
-        }
-        unwindStackFrame(state);
-    }
-
-    if(!CODE(state)->is(CodeKind::NATIVE)) {
-        unsigned int localSize = static_cast<const CompiledCode *>(CODE(state))->getLocalVarNum();
-        reclaimLocals(state, 0, localSize);
     }
     return false;
 }
-
 
 /**
  * stub of D-Bus related method and api
@@ -2311,27 +2284,14 @@ static bool runMainLoop(DSState &state) {
             return false;
         }
     }
-    state.codeStack.clear();
     return true;
 }
 
 bool vmEval(DSState &state, CompiledCode &code) {
     state.resetState();
+    reserveGlobalVar(state);
 
-    state.codeStack.push_back(&code);
-    skipHeader(state);
-
-    // reserve local and global variable slot
-    {
-        assert(state.codeStack.back()->is(CodeKind::TOPLEVEL));
-        const auto *cc = static_cast<const CompiledCode *>(state.codeStack.back());
-
-        unsigned short varNum = cc->getLocalVarNum();
-        unsigned short gvarNum = state.symbolTable.getMaxGVarIndex();
-
-        reserveGlobalVar(state, gvarNum);
-        reserveLocalVar(state, state.localVarOffset + varNum);
-    }
+    windStackFrame(state, 0, 0, &code);
 
     return runMainLoop(state);
 }
@@ -2355,7 +2315,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     bool ret = callCommand(st, cmd, std::move(obj), DSValue());
     assert(ret);
     (void) ret;
-    if(!st.codeStack.empty()) {
+    if(!st.controlStack.empty()) {
         bool r = runMainLoop(st);
         if(!r) {
             if(st.symbolTable.getInternalStatus().isSameOrBaseTypeOf(*st.getThrownObject()->getType())) {

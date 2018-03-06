@@ -66,6 +66,18 @@ public:
     };
 };
 
+struct ControlFrame {
+    const DSCode *code;
+
+    unsigned int stackTopIndex;
+
+    unsigned int stackBottomIndex;
+
+    unsigned int localVarOffset;
+
+    unsigned int pc;
+};
+
 struct DSState {
     SymbolTable symbolTable;
 
@@ -139,16 +151,18 @@ struct DSState {
      */
     unsigned int pc_{0};
 
+    /**
+     * currently executed code
+     */
+    const DSCode *code{nullptr};
+
     unsigned short option{DS_OPTION_ASSERT};
 
     DSExecMode execMode{DS_EXEC_MODE_NORMAL};
 
     DumpTarget dumpTarget;
 
-    /**
-     * contains currently evaluating code.
-     */
-    std::vector<const DSCode *> codeStack;
+    std::vector<ControlFrame> controlStack;
 
     /**
      * cache searched result.
@@ -253,21 +267,13 @@ struct DSState {
         this->setThrownObject(this->pop());
     }
 
-    /**
-     * expand local stack size to stackTopIndex
-     */
-    void expandLocalStack();
-
     // operand manipulation
     void push(const DSValue &value) {
         this->push(DSValue(value));
     }
 
     void push(DSValue &&value) {
-        if(++this->stackTopIndex >= this->callStackSize) {
-            this->expandLocalStack();
-        }
-        this->callStack[this->stackTopIndex] = std::move(value);
+        this->callStack[++this->stackTopIndex] = std::move(value);
     }
 
     DSValue pop() {
@@ -283,19 +289,15 @@ struct DSState {
     }
 
     void dup() {
-        if(++this->stackTopIndex >= this->callStackSize) {
-            this->expandLocalStack();
-        }
-        this->callStack[this->stackTopIndex] = this->callStack[this->stackTopIndex - 1];
+        auto v = this->callStack[this->stackTopIndex];
+        this->callStack[++this->stackTopIndex] = std::move(v);
     }
 
     void dup2() {
-        this->stackTopIndex += 2;
-        if(this->stackTopIndex >= this->callStackSize) {
-            this->expandLocalStack();
-        }
-        this->callStack[this->stackTopIndex] = this->callStack[this->stackTopIndex - 2];
-        this->callStack[this->stackTopIndex - 1] = this->callStack[this->stackTopIndex - 3];
+        auto v1 = this->callStack[this->stackTopIndex - 1];
+        auto v2 = this->callStack[this->stackTopIndex];
+        this->callStack[++this->stackTopIndex] = std::move(v1);
+        this->callStack[++this->stackTopIndex] = std::move(v2);
     }
 
     void swap() {
@@ -370,7 +372,6 @@ struct DSState {
     void resetState() {
         this->localVarOffset = this->globalVarSize;
         this->thrownObject.reset();
-        this->codeStack.clear();
     }
 
     void updateExitStatus(unsigned int status) {
@@ -421,6 +422,31 @@ struct DSState {
      * if true, set signal handler of SIGCHLD
      */
     void installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD = false);
+
+    /**
+     * expand stack size to at least (stackTopIndex + add)
+     * @param add
+     * additional size
+     * @return
+     * if failed, return false
+     */
+    bool expandLocalStack(unsigned int add);
+
+    void expandLocalStack2(unsigned int add);
+
+    ControlFrame getFrame() const {
+        return ControlFrame {
+                .code = this->code,
+                .stackTopIndex = this->stackTopIndex,
+                .stackBottomIndex = this->stackBottomIndex,
+                .localVarOffset = this->localVarOffset,
+                .pc = this->pc_
+        };
+    }
+
+    void saveFrame() {
+        controlStack.push_back(this->getFrame());
+    }
 };
 
 /**
