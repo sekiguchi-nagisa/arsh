@@ -126,7 +126,7 @@ struct DSState {
     unsigned int callStackSize{DEFAULT_STACK_SIZE};
 
     static constexpr unsigned int DEFAULT_STACK_SIZE = 256;
-    static constexpr unsigned int MAXIMUM_STACK_SIZE = 2 * 1024 * 1024;
+    static constexpr unsigned int MAX_CONTROL_STACK_SIZE = 1024;
 
     unsigned int globalVarSize{0};
 
@@ -427,12 +427,8 @@ struct DSState {
      * expand stack size to at least (stackTopIndex + add)
      * @param add
      * additional size
-     * @return
-     * if failed, return false
      */
-    bool expandLocalStack(unsigned int add);
-
-    void expandLocalStack2(unsigned int add);
+    void reserveLocalStack(unsigned int add);
 
     ControlFrame getFrame() const {
         return ControlFrame {
@@ -442,10 +438,6 @@ struct DSState {
                 .localVarOffset = this->localVarOffset,
                 .pc = this->pc_
         };
-    }
-
-    void saveFrame() {
-        controlStack.push_back(this->getFrame());
     }
 };
 

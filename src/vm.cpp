@@ -108,15 +108,10 @@ void DSState::throwException(DSValue &&except) {
     throw DSException();
 }
 
-bool DSState::expandLocalStack(unsigned int add) {
+void DSState::reserveLocalStack(unsigned int add) {
     unsigned int needSize = this->stackTopIndex + add;
     if(needSize < this->callStackSize) {
-        return true;
-    }
-
-    if(needSize > MAXIMUM_STACK_SIZE) {
-        raiseError(*this, this->symbolTable.getStackOverflowErrorType(), "local stack size reaches limit");
-        return false;
+        return;
     }
 
     unsigned int newSize = this->callStackSize;
@@ -130,13 +125,6 @@ bool DSState::expandLocalStack(unsigned int add) {
     delete[] this->callStack;
     this->callStack = newTable;
     this->callStackSize = newSize;
-    return true;
-}
-
-void DSState::expandLocalStack2(unsigned int add) {
-    if(!this->expandLocalStack(add)) {
-        throw DSException();
-    }
 }
 
 flag32_set_t DSState::eventDesc = 0;
@@ -269,7 +257,7 @@ static void reclaimLocals(DSState &state, unsigned char offset, unsigned char si
  */
 static void reserveGlobalVar(DSState &st) {
     unsigned int size = st.symbolTable.getMaxGVarIndex();
-    st.expandLocalStack(size - st.globalVarSize);
+    st.reserveLocalStack(size - st.globalVarSize);
     st.globalVarSize = size;
     st.localVarOffset = size;
     st.stackTopIndex = size;
@@ -283,13 +271,18 @@ static bool windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned in
     const unsigned int operandSize = code->is(CodeKind::NATIVE) ? 4 :
                                      static_cast<const CompiledCode *>(code)->getStackDepth();
 
+    if(st.controlStack.size() == DSState::MAX_CONTROL_STACK_SIZE) {
+        raiseError(st, st.symbolTable.getStackOverflowErrorType(), "local stack size reaches limit");
+        return false;
+    }
+
     // save current control frame
     st.stackTopIndex -= stackTopOffset;
-    st.saveFrame();
+    st.controlStack.push_back(st.getFrame());
     st.stackTopIndex += stackTopOffset;
 
     // reallocate stack
-    st.expandLocalStack2(maxVarSize - paramSize + operandSize);
+    st.reserveLocalStack(maxVarSize - paramSize + operandSize);
 
     // prepare control frame
     st.code = code;
@@ -323,9 +316,9 @@ static void unwindStackFrame(DSState &st) {
  * +-----------+---------+--------+   +--------+
  *                       | offset |   |        |
  */
-static void applyFuncObject(DSState &st, unsigned int paramSize) {
+static bool applyFuncObject(DSState &st, unsigned int paramSize) {
     auto *func = typeAs<FuncObject>(st.callStack[st.stackTopIndex - paramSize]);
-    windStackFrame(st, paramSize + 1, paramSize, &func->getCode());
+    return windStackFrame(st, paramSize + 1, paramSize, &func->getCode());
 }
 
 /**
@@ -336,11 +329,11 @@ static void applyFuncObject(DSState &st, unsigned int paramSize) {
  * +-----------+------------------+   +--------+
  *             | offset           |   |        |
  */
-static void callMethod(DSState &st, unsigned short index, unsigned short paramSize) {
+static bool callMethod(DSState &st, unsigned short index, unsigned short paramSize) {
     const unsigned int actualParamSize = paramSize + 1; // include receiver
     const unsigned int recvIndex = st.stackTopIndex - paramSize;
 
-    windStackFrame(st, actualParamSize, actualParamSize, st.callStack[recvIndex]->getType()->getMethodRef(index));
+    return windStackFrame(st, actualParamSize, actualParamSize, st.callStack[recvIndex]->getType()->getMethodRef(index));
 }
 
 
@@ -352,10 +345,10 @@ static void callMethod(DSState &st, unsigned short index, unsigned short paramSi
  * +-----------+------------------+   +--------+
  *             |    new offset    |
  */
-static void callConstructor(DSState &st, unsigned short paramSize) {
+static bool callConstructor(DSState &st, unsigned short paramSize) {
     const unsigned int recvIndex = st.stackTopIndex - paramSize;
 
-    windStackFrame(st, paramSize, paramSize + 1, st.callStack[recvIndex]->getType()->getConstructor());
+    return windStackFrame(st, paramSize, paramSize + 1, st.callStack[recvIndex]->getType()->getConstructor());
 }
 
 const NativeCode *getNativeCode(unsigned int index);
@@ -940,7 +933,7 @@ static constexpr flag8_t UDC_ATTR_LAST_PIPE = 1 << 2;
  * +-----------+---------------+--------------+
  *             |     offset    |
  */
-static void callUserDefinedCommand(DSState &st, const DSCode *code,
+static bool callUserDefinedCommand(DSState &st, const DSCode *code,
                                    DSValue &&argvObj, DSValue &&restoreFD, const flag8_set_t attr) {
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {
         // reset exit status
@@ -953,7 +946,9 @@ static void callUserDefinedCommand(DSState &st, const DSCode *code,
     st.push(std::move(argvObj));    // push argv (@)
 
     // set stack stack
-    windStackFrame(st, 3, 3, code);
+    if(!windStackFrame(st, 3, 3, code)) {
+        return false;
+    }
 
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
         auto argv = typeAs<Array_Object>(st.getLocal(UDC_PARAM_ARGV));
@@ -975,6 +970,7 @@ static void callUserDefinedCommand(DSState &st, const DSCode *code,
             st.setLocal(index + UDC_PARAM_ARGV + 3, st.emptyStrObj);  // set remain
         }
     }
+    return true;
 }
 
 enum class CmdKind {
@@ -1166,8 +1162,7 @@ static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         if(cmd.kind == CmdKind::USER_DEFINED) {
             setFlag(attr, UDC_ATTR_SETVAR);
         }
-        callUserDefinedCommand(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
-        return true;
+        return callUserDefinedCommand(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
     }
     case CmdKind::BUILTIN: {
         int status = cmd.builtinCmd(state, *array);
@@ -1461,12 +1456,13 @@ static NativeCode initSignalTrampoline() noexcept {
 
 static auto signalTrampoline = initSignalTrampoline();
 
-static void kickSignalHandler(DSState &st, int sigNum, DSValue &&func) {
+static bool kickSignalHandler(DSState &st, int sigNum, DSValue &&func) {
+    st.reserveLocalStack(3);
     st.push(st.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)));
     st.push(std::move(func));
     st.push(DSValue::create<Int_Object>(st.symbolTable.getSignalType(), sigNum));
 
-    windStackFrame(st, 3, 3, &signalTrampoline);
+    return windStackFrame(st, 3, 3, &signalTrampoline);
 }
 
 static int popPendingSig() {
@@ -1482,7 +1478,7 @@ static int popPendingSig() {
     return sigNum;
 }
 
-static void checkVMEvent(DSState &state) {
+static bool checkVMEvent(DSState &state) {
     if(hasFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL) &&
             !hasFlag(DSState::eventDesc, DSState::VM_EVENT_MASK)) {
         SignalGuard guard;
@@ -1496,7 +1492,9 @@ static void checkVMEvent(DSState &state) {
         auto handler = state.sigVector.lookup(sigNum);
         if(handler != nullptr) {
             setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
-            kickSignalHandler(state, sigNum, std::move(handler));
+            if(!kickSignalHandler(state, sigNum, std::move(handler))) {
+                return false;
+            }
         }
     }
 
@@ -1505,6 +1503,7 @@ static void checkVMEvent(DSState &state) {
         auto op = static_cast<OpCode>(GET_CODE(state)[state.pc() + 1]);
         state.hook->vmFetchHook(state, op);
     }
+    return true;
 }
 
 
@@ -1524,7 +1523,7 @@ static void checkVMEvent(DSState &state) {
 static bool mainLoop(DSState &state) {
     while(true) {
         if(DSState::eventDesc != 0u) {
-            checkVMEvent(state);
+            TRY(checkVMEvent(state));
         }
 
         // fetch next opcode
@@ -1740,7 +1739,7 @@ static bool mainLoop(DSState &state) {
         vmcase(CALL_INIT) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            callConstructor(state, paramSize);
+            TRY(callConstructor(state, paramSize));
             vmnext;
         }
         vmcase(CALL_METHOD) {
@@ -1748,13 +1747,13 @@ static bool mainLoop(DSState &state) {
             state.pc() += 2;
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            callMethod(state, index, paramSize);
+            TRY(callMethod(state, index, paramSize));
             vmnext;
         }
         vmcase(CALL_FUNC) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            applyFuncObject(state, paramSize);
+            TRY(applyFuncObject(state, paramSize));
             vmnext;
         }
         vmcase(CALL_NATIVE) {
@@ -2094,7 +2093,7 @@ static bool mainLoop(DSState &state) {
             for(auto &e : v) {
                 state.push(std::move(e));
             }
-            applyFuncObject(state, v.size() - 1);
+            TRY(applyFuncObject(state, v.size() - 1));
             vmnext;
         }
         vmcase(RAND) {
