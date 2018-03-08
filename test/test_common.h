@@ -161,7 +161,7 @@ public:
         return this->err_;
     }
 
-    operator bool() const {
+    explicit operator bool() const {
         return this->pid() > -1;
     }
 
@@ -210,7 +210,7 @@ private:
     std::string cwd;
 
 public:
-    ProcBuilder(const char *cmdName) : args{cmdName} {}
+    explicit ProcBuilder(const char *cmdName) : args{cmdName} {}
 
     ProcBuilder(std::initializer_list<const char *> list) {
         for(auto &v : list) {
