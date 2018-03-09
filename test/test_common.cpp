@@ -152,10 +152,7 @@ WaitStatus ProcHandle::wait() {
             close(this->out());
             close(this->err());
 
-            this->pid_ = -1;
-            this->in_ = -1;
-            this->out_ = -1;
-            this->err_ = -1;
+            this->detach();
         }
     }
     return this->status_;
