@@ -108,12 +108,7 @@ void DSState::throwException(DSValue &&except) {
     throw DSException();
 }
 
-void DSState::reserveLocalStack(unsigned int add) {
-    unsigned int needSize = this->stackTopIndex + add;
-    if(needSize < this->callStackSize) {
-        return;
-    }
-
+void DSState::reserveLocalStackImpl(unsigned int needSize) {
     unsigned int newSize = this->callStackSize;
     do {
         newSize += (newSize >> 1);

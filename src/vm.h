@@ -428,7 +428,13 @@ struct DSState {
      * @param add
      * additional size
      */
-    void reserveLocalStack(unsigned int add);
+    void reserveLocalStack(unsigned int add) {
+        unsigned int needSize = this->stackTopIndex + add;
+        if(needSize < this->callStackSize) {
+            return;
+        }
+        this->reserveLocalStackImpl(needSize);
+    }
 
     ControlFrame getFrame() const {
         return ControlFrame {
@@ -439,6 +445,13 @@ struct DSState {
                 .pc = this->pc_
         };
     }
+
+private:
+    /**
+     * expand stack size to at least needSize
+     * @param needSize
+     */
+    void reserveLocalStackImpl(unsigned int needSize);
 };
 
 /**
