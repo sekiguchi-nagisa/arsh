@@ -2085,6 +2085,7 @@ static bool mainLoop(DSState &state) {
         vmcase(DBUS_WAIT_SIG) {
             auto v = DBusWaitSignal(state);
             TRY(!state.getThrownObject());
+            state.reserveLocalStack(v.size());
             for(auto &e : v) {
                 state.push(std::move(e));
             }
