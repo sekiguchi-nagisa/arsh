@@ -78,9 +78,9 @@ const struct {
         {"cd", builtin_cd, "[-LP] [dir]",
                 "    Changing the current directory to DIR.  The Environment variable\n"
                 "    HOME is the default DIR.  A null directory name is the same as\n"
-                "    the current directory. If -L is specified, use logical directory \n"
-                "    (with symbolic link). If -P is specified, use physical directory \n"
-                "    (without symbolic link). Default is -L."},
+                "    the current directory.  If -L is specified, use logical directory \n"
+                "    (with symbolic link).  If -P is specified, use physical directory \n"
+                "    (without symbolic link).  Default is -L."},
         {"check_env", builtin_check_env, "variable ...",
                 "    Check existence of specified environmental variables.\n"
                 "    If all of variables are exist and not empty string, exit with 0."},
@@ -145,7 +145,7 @@ const struct {
                 "    Send a signal to a process or job.\n"
                 "    If signal is not specified, then SIGTERM is assumed.\n"
                 "    Options:\n"
-                "        -s sig    send a signal. SIG is a signal name or signal number\n"
+                "        -s sig    send a signal.  SIG is a signal name or signal number\n"
                 "        -l        list the signal names"},
         {"ps_intrp", builtin_ps_intrp, "prompt",
                 "    Interpret prompt string.\n"
@@ -176,7 +176,7 @@ const struct {
                 "    Print the current working directory(absolute path).\n"
                 "    If -L specified, print logical working directory.\n"
                 "    If -P specified, print physical working directory\n"
-                "    (without symbolic link). Default is -L."},
+                "    (without symbolic link).  Default is -L."},
         {"read", builtin_read, "[-r] [-p prompt] [-f field separator] [-u fd] [-t timeout] [name ...]",
                 "    Read from standard input.\n"
                 "    Options:\n"
