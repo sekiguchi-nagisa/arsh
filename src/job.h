@@ -152,7 +152,7 @@ public:
      *
      * @param index
      * @return
-     * after termiantion, return -1.
+     * after termination, return -1.
      */
     pid_t getPid(unsigned int index) const {
         return this->procs[index].pid();

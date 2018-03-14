@@ -126,7 +126,7 @@ struct DSState {
     unsigned int callStackSize{DEFAULT_STACK_SIZE};
 
     static constexpr unsigned int DEFAULT_STACK_SIZE = 256;
-    static constexpr unsigned int MAX_CONTROL_STACK_SIZE = 1024;
+    static constexpr unsigned int MAX_CONTROL_STACK_SIZE = 2048;
 
     unsigned int globalVarSize{0};
 
