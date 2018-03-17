@@ -20,6 +20,7 @@
 
 #include <cstdlib>
 #include <cerrno>
+#include <random>
 
 #include "opcode.h"
 #include "vm.h"
@@ -2093,7 +2094,10 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(RAND) {
-            int v = rand();
+            std::random_device rand;
+            std::default_random_engine engine(rand());
+            std::uniform_int_distribution<unsigned int> dist;
+            unsigned int v = dist(engine);
             state.push(DSValue::create<Int_Object>(state.symbolTable.getUint32Type(), v));
             vmnext;
         }
