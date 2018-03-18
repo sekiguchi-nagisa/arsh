@@ -1,8 +1,0 @@
-#$test($result = 'type', $lineNum = 8, $errorKind = 'UndefinedMethod', $status = 1)
-
-function str($a : Int) : String {
-    return $a as String
-}
-
-var a = ($str, 0)
-$a._0(34)   # require parenthesis

@@ -882,8 +882,8 @@ std::unique_ptr<Node> Parser::parse_expression() {
             TRY(this->parse_unaryExpression()), getPrecedence(ASSIGN));
 }
 
-static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode,
-                                              TokenKind op, std::unique_ptr<Node> &&rightNode) {
+static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, TokenKind op,
+                                              Token token, std::unique_ptr<Node> &&rightNode) {
     if(op == PIPE) {
         if(leftNode->is(NodeKind::Pipeline)) {
             static_cast<PipelineNode *>(leftNode.get())->addNode(rightNode.release());
@@ -892,10 +892,10 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode,
         return make_unique<PipelineNode>(leftNode.release(), rightNode.release());
     }
     if(isAssignOp(op)) {
-        return std::unique_ptr<Node>(createAssignNode(leftNode.release(), op, rightNode.release()));
+        return std::unique_ptr<Node>(createAssignNode(leftNode.release(), op, token, rightNode.release()));
     }
 
-    return make_unique<BinaryOpNode>(leftNode.release(), op, rightNode.release());
+    return make_unique<BinaryOpNode>(leftNode.release(), op, token, rightNode.release());
 }
 
 std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&leftNode,
@@ -954,13 +954,14 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             return std::unique_ptr<Node>(ForkNode::newBackground(node.release(), token, disown));
         }
         default: {
+            Token token = this->curToken;
             TokenKind op = this->consume();
             auto rightNode = TRY(this->parse_unaryExpression());
             for(unsigned int nextP = PRECEDENCE();
                 !HAS_NL() && (nextP > p || (nextP == p && isAssignOp(op))); nextP = PRECEDENCE()) {
                 rightNode = TRY(this->parse_binaryExpression(std::move(rightNode), nextP));
             }
-            node = createBinaryNode(std::move(node), op, std::move(rightNode));
+            node = createBinaryNode(std::move(node), op, token, std::move(rightNode));
             break;
         }
         }
@@ -975,9 +976,9 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case PLUS:
     case MINUS:
     case NOT: {
-        unsigned int startPos = START_POS();
+        Token token = this->curToken;
         TokenKind op = this->consume();
-        return make_unique<UnaryOpNode>(startPos, op, TRY(this->parse_unaryExpression()).release());
+        return make_unique<UnaryOpNode>(op, token, TRY(this->parse_unaryExpression()).release());
     }
     case THROW: {
         auto token = this->expect(THROW);   // always success
@@ -1003,29 +1004,29 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             this->consume();    // ACCESSOR
             Token token = TRY(this->expect(IDENTIFIER));
             std::string name = this->lexer->toName(token);
+            node = make_unique<AccessNode>(node.release(), new VarNode(token, std::move(name)));
             if(CUR_KIND() == LP && !HAS_NL()) {  // treat as method call
                 auto args = TRY(this->parse_arguments());
                 token = args.getToken();
-                node = make_unique<MethodCallNode>(node.release(), std::move(name),
-                                                   ArgsWrapper::extract(std::move(args)));
-            } else {    // treat as field access
-                node = make_unique<AccessNode>(node.release(), new VarNode(token, std::move(name)));
+                node = make_unique<ApplyNode>(node.release(), ArgsWrapper::extract(std::move(args)));
             }
             node->updateToken(token);
             break;
         }
         case LB: {
+            auto opToken = this->curToken;
             this->consume();    // LB
             auto indexNode = TRY(this->parse_expression());
             auto token = TRY(this->expect(RB));
-            node.reset(createIndexNode(node.release(), indexNode.release()));
+            node.reset(ApplyNode::newIndexCall(node.release(), opToken, indexNode.release()));
             node->updateToken(token);
             break;
         }
         case LP: {
             auto args = TRY(this->parse_arguments());
             Token token = args.getToken();
-            node = make_unique<ApplyNode>(node.release(), ArgsWrapper::extract(std::move(args)));
+            node = make_unique<ApplyNode>(node.release(), ArgsWrapper::extract(std::move(args)),
+                                          ApplyNode::FUNC_CALL);
             node->updateToken(token);
             break;
         }
@@ -1039,8 +1040,8 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         case UNWRAP: {
             Token token = this->curToken;
             TokenKind op = this->consume(); // UNWRAP
-            unsigned int pos = node->getPos();
-            node = make_unique<UnaryOpNode>(pos, op, node.release());
+            Token opToken = node->getToken();
+            node = make_unique<UnaryOpNode>(op, opToken, node.release());
             node->updateToken(token);
             break;
         }
@@ -1391,8 +1392,13 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
         this->consume();    // always success
         auto varNode = make_unique<VarNode>(token, this->lexer->toName(token));
         auto indexNode = TRY(this->parse_expression());
+
+        Token opToken = token;
+        opToken.pos += opToken.size - 1;
+        opToken.size = 1;
+
         token = TRY(this->expect(RB));
-        auto node = std::unique_ptr<Node>(createIndexNode(varNode.release(), indexNode.release()));
+        auto node = std::unique_ptr<Node>(ApplyNode::newIndexCall(varNode.release(), opToken, indexNode.release()));
         node->updateToken(token);
         return node;
     }

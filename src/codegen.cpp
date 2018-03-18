@@ -600,29 +600,30 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
 
 void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
     const unsigned int paramSize = node.getArgNodes().size();
-    this->visit(*node.getExprNode());
+    if(node.isMethodCall()) {
+        this->visit(*node.getRecvNode());
 
-    for(Node *e : node.getArgNodes()) {
-        this->visit(*e);
-    }
+        for(Node *e : node.getArgNodes()) {
+            this->visit(*e);
+        }
 
-    this->emitSourcePos(node.getPos());
-    this->emitCallIns(OpCode::CALL_FUNC, paramSize);
-}
-
-void ByteCodeGenerator::visitMethodCallNode(MethodCallNode &node) {
-    this->visit(*node.getRecvNode());
-
-    for(Node *e : node.getArgNodes()) {
-        this->visit(*e);
-    }
-
-    this->emitSourcePos(node.getPos());
-    if(node.getHandle()->isInterfaceMethod()) {
-        this->emitDescriptorIns(
-                OpCode::INVOKE_METHOD, encodeMethodDescriptor(node.getMethodName().c_str(), node.getHandle()));
+        this->emitSourcePos(node.getPos());
+        if(node.getHandle()->isInterfaceMethod()) {
+            this->emitDescriptorIns(OpCode::INVOKE_METHOD,
+                                    encodeMethodDescriptor(node.getMethodName().c_str(), node.getHandle()));
+        } else {
+            this->emitCallIns(OpCode::CALL_METHOD, node.getArgNodes().size(), node.getHandle()->getMethodIndex());
+        }
+        return;
     } else {
-        this->emitCallIns(OpCode::CALL_METHOD, node.getArgNodes().size(), node.getHandle()->getMethodIndex());
+        this->visit(*node.getExprNode());
+
+        for(Node *e : node.getArgNodes()) {
+            this->visit(*e);
+        }
+
+        this->emitSourcePos(node.getPos());
+        this->emitCallIns(OpCode::CALL_FUNC, paramSize);
     }
 }
 

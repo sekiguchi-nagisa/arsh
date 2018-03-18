@@ -440,12 +440,17 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
 // ##     ApplyNode     ##
 // #######################
 
-ApplyNode::ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes) :
+ApplyNode::ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes, Kind kind) :
         Node(NodeKind::Apply, exprNode->getToken()),
-        exprNode(exprNode), argNodes(std::move(argNodes)) {
+        exprNode(exprNode), argNodes(std::move(argNodes)), kind(kind) {
     if(!this->argNodes.empty()) {
         this->updateToken(this->argNodes.back()->getToken());
     }
+}
+
+ApplyNode* ApplyNode::newMethodCall(Node *recvNode, Token token, std::string &&methodName) {
+    auto *exprNode = new AccessNode(recvNode, new VarNode(token, std::move(methodName)));
+    return new ApplyNode(exprNode, std::vector<Node *>(), METHOD_CALL);
 }
 
 ApplyNode::~ApplyNode() {
@@ -459,44 +464,19 @@ ApplyNode::~ApplyNode() {
 void ApplyNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     DUMP(argNodes);
-}
 
-// ############################
-// ##     MethodCallNode     ##
-// ############################
-
-MethodCallNode::MethodCallNode(Node *recvNode, std::string &&methodName, std::vector<Node *> &&argNodes) :
-        Node(NodeKind::MethodCall, recvNode->getToken()),
-        recvNode(recvNode), methodName(std::move(methodName)),
-        argNodes(std::move(argNodes)), handle(), attributeSet() {
-    if(!this->argNodes.empty()) {
-        this->updateToken(this->argNodes.back()->getToken());
-    }
-}
-
-MethodCallNode::~MethodCallNode() {
-    delete this->recvNode;
-
-    for(Node *n : this->argNodes) {
-        delete n;
-    }
-}
-
-void MethodCallNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(recvNode);
-    DUMP(methodName);
     unsigned int methodIndex =
             this->handle != nullptr ? this->handle->getMethodIndex() : 0;
     DUMP_PRIM(methodIndex);
-    DUMP(argNodes);
 
-#define EACH_FLAG(OP) \
-    OP(INDEX) \
-    OP(ICALL)
+#define EACH_ENUM(OP) \
+    OP(UNRESOLVED) \
+    OP(FUNC_CALL) \
+    OP(METHOD_CALL) \
+    OP(INDEX_CALL)
 
-    DUMP_BITSET(attributeSet, EACH_FLAG);
-
-#undef EACH_FLAG
+    DUMP_ENUM(kind, EACH_ENUM);
+#undef EACH_ENUM
 }
 
 // #####################
@@ -532,8 +512,8 @@ UnaryOpNode::~UnaryOpNode() {
     delete this->methodCallNode;
 }
 
-MethodCallNode *UnaryOpNode::createApplyNode() {
-    this->methodCallNode = new MethodCallNode(this->exprNode, resolveUnaryOpName(this->op));
+ApplyNode *UnaryOpNode::createApplyNode() {
+    this->methodCallNode = ApplyNode::newMethodCall(this->exprNode, this->opToken, resolveUnaryOpName(this->op));
 
     // assign null to prevent double free
     this->exprNode = nullptr;
@@ -556,6 +536,14 @@ BinaryOpNode::~BinaryOpNode() {
     delete this->leftNode;
     delete this->rightNode;
     delete this->optNode;
+}
+
+void BinaryOpNode::createApplyNode() {
+    auto *applyNode = ApplyNode::newMethodCall(this->leftNode, this->opToken, resolveBinaryOpName(this->op));
+    applyNode->refArgNodes().push_back(this->rightNode);
+    this->leftNode = nullptr;
+    this->rightNode = nullptr;
+    this->setOptNode(applyNode);
 }
 
 void BinaryOpNode::dump(NodeDumper &dumper) const {
@@ -1006,25 +994,23 @@ void AssignNode::dump(NodeDumper &dumper) const {
 // ##     ElementSelfAssignNode     ##
 // ###################################
 
-ElementSelfAssignNode::ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode) :
-        Node(NodeKind::ElementSelfAssign, leftNode->getToken()),
-        recvNode(), indexNode(),
-        getterNode(), setterNode(), rightNode(binaryNode) {
+ElementSelfAssignNode::ElementSelfAssignNode(ApplyNode *leftNode, BinaryOpNode *binaryNode) :
+        Node(NodeKind::ElementSelfAssign, leftNode->getToken()), rightNode(binaryNode) {
     this->updateToken(binaryNode->getToken());
 
     // init recv, indexNode
-    this->recvNode = leftNode->getRecvNode();
-    leftNode->setRecvNode(nullptr);
-    this->indexNode = leftNode->getArgNodes()[0];
-    leftNode->refArgNodes()[0] = nullptr;
-    delete leftNode;
+    assert(leftNode->isIndexCall());
+    auto opToken = static_cast<AccessNode *>(leftNode->getExprNode())->getNameNode()->getToken();
+    auto pair = ApplyNode::split(leftNode);
+    this->recvNode = pair.first;
+    this->indexNode = pair.second;
 
     // init getter node
-    this->getterNode = new MethodCallNode(new EmptyNode(), std::string(OP_GET));
+    this->getterNode = ApplyNode::newMethodCall(new EmptyNode(), opToken, std::string(OP_GET));
     this->getterNode->refArgNodes().push_back(new EmptyNode());
 
     // init setter node
-    this->setterNode = new MethodCallNode(new EmptyNode(), std::string(OP_SET));
+    this->setterNode = ApplyNode::newMethodCall(new EmptyNode(), opToken, std::string(OP_SET));
     this->setterNode->refArgNodes().push_back(new EmptyNode());
     this->setterNode->refArgNodes().push_back(new EmptyNode());
 }
@@ -1240,17 +1226,17 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
     Token dummy = {startPos, 1};
 
     // create for-init
-    MethodCallNode *call_iter = new MethodCallNode(exprNode, std::string(OP_ITER));
+    auto *call_iter = ApplyNode::newMethodCall(exprNode, std::string(OP_ITER));
     std::string reset_var_name(std::to_string(rand()));
     VarDeclNode *reset_varDecl = new VarDeclNode(startPos, std::string(reset_var_name), call_iter, VarDeclNode::CONST);
 
     // create for-cond
     VarNode *reset_var = new VarNode(dummy, std::string(reset_var_name));
-    MethodCallNode *call_hasNext = new MethodCallNode(reset_var, std::string(OP_HAS_NEXT));
+    auto *call_hasNext = ApplyNode::newMethodCall(reset_var, std::string(OP_HAS_NEXT));
 
     // create forIn-init
     reset_var = new VarNode(dummy, std::string(reset_var_name));
-    MethodCallNode *call_next = new MethodCallNode(reset_var, std::string(OP_NEXT));
+    auto *call_next = ApplyNode::newMethodCall(reset_var, std::string(OP_NEXT));
     auto *init_var = new VarDeclNode(startPos, std::move(varName), call_next, VarDeclNode::VAR);
 
     // insert init to block
@@ -1259,15 +1245,15 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
     return new LoopNode(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
 }
 
-Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
+Node *createAssignNode(Node *leftNode, TokenKind op, Token token, Node *rightNode) {
     /*
      * basic assignment
      */
     if(op == ASSIGN) {
         // assign to element(actually call SET)
-        if(leftNode->is(NodeKind::MethodCall) &&
-                static_cast<MethodCallNode *>(leftNode)->hasAttribute(MethodCallNode::INDEX)) {
-            auto *indexNode = static_cast<MethodCallNode *>(leftNode);
+        if(leftNode->is(NodeKind::Apply) &&
+                static_cast<ApplyNode *>(leftNode)->isIndexCall()) {
+            auto *indexNode = static_cast<ApplyNode *>(leftNode);
             indexNode->setMethodName(std::string(OP_SET));
             indexNode->refArgNodes().push_back(rightNode);
             return indexNode;
@@ -1280,22 +1266,14 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode) {
      * self assignment
      */
     // assign to element
-    auto *opNode = new BinaryOpNode(new EmptyNode(rightNode->getToken()), resolveAssignOp(op), rightNode);
-    if(leftNode->is(NodeKind::MethodCall) &&
-            static_cast<MethodCallNode *>(leftNode)->hasAttribute(MethodCallNode::INDEX)) {
-        auto *indexNode = static_cast<MethodCallNode *>(leftNode);
+    auto *opNode = new BinaryOpNode(new EmptyNode(rightNode->getToken()), resolveAssignOp(op), token, rightNode);
+    if(leftNode->is(NodeKind::Apply) &&
+            static_cast<ApplyNode *>(leftNode)->isIndexCall()) {
+        auto *indexNode = static_cast<ApplyNode *>(leftNode);
         return new ElementSelfAssignNode(indexNode, opNode);
     }
     // assign to variable or field
     return new AssignNode(leftNode, opNode, true);
-
-}
-
-Node *createIndexNode(Node *recvNode, Node *indexNode) {
-    MethodCallNode *methodCallNode = new MethodCallNode(recvNode, std::string(OP_GET));
-    methodCallNode->setAttribute(MethodCallNode::INDEX);
-    methodCallNode->refArgNodes().push_back(indexNode);
-    return methodCallNode;
 }
 
 const Node *findInnerNode(NodeKind kind, const Node *node) {

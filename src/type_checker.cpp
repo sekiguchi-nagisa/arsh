@@ -309,14 +309,30 @@ FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::strin
 }
 
 // for ApplyNode type checking
-HandleOrFuncType TypeChecker::resolveCallee(Node &recvNode) {
-    if(recvNode.is(NodeKind::Var)) {
-        return this->resolveCallee(*static_cast<VarNode *>(&recvNode));
+HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
+    auto &exprNode = *node.getExprNode();
+    if(exprNode.is(NodeKind::Access) && !node.isFuncCall()) {
+        auto &accessNode = static_cast<AccessNode &>(exprNode);
+        if(!this->checkAccessNode(accessNode)) {
+            auto &recvType = accessNode.getRecvNode()->getType();
+            auto *handle = recvType.lookupMethodHandle(this->symbolTable, accessNode.getFieldName());
+            if(handle == nullptr) {
+                const char *name = accessNode.getFieldName().c_str();
+                RAISE_TC_ERROR(UndefinedMethod, *accessNode.getNameNode(), name);
+            }
+            node.setKind(ApplyNode::METHOD_CALL);
+            return HandleOrFuncType(handle);
+        }
     }
 
-    auto &type = this->checkType(this->symbolTable.getBaseFuncType(), &recvNode);
+    node.setKind(ApplyNode::FUNC_CALL);
+    if(exprNode.is(NodeKind::Var)) {
+        return this->resolveCallee(static_cast<VarNode &>(exprNode));
+    }
+
+    auto &type = this->checkType(this->symbolTable.getBaseFuncType(), &exprNode);
     if(!type.isFuncType()) {
-        RAISE_TC_ERROR(NotCallable, recvNode);
+        RAISE_TC_ERROR(NotCallable, exprNode);
     }
     return HandleOrFuncType(static_cast<FunctionType *>(&type));
 }
@@ -358,6 +374,17 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
             this->checkTypeWithCoercion(*handle->getParamTypes()[i], argNodes[i]);
         }
     } while(handle->getNext() != nullptr);  //FIXME: method overloading
+}
+
+bool TypeChecker::checkAccessNode(AccessNode &node) {
+    auto &recvType = this->checkType(node.getRecvNode());
+    FieldHandle *handle = recvType.lookupFieldHandle(this->symbolTable, node.getFieldName());
+    if(handle == nullptr) {
+        return false;
+    }
+    node.setAttribute(handle);
+    node.setType(*handle->getFieldType(this->symbolTable));
+    return true;
 }
 
 void TypeChecker::resolveCastOp(TypeOpNode &node) {
@@ -508,7 +535,7 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
                 RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName.c_str());
             }
 
-            auto *callNode = new MethodCallNode(exprNode, std::move(methodName));
+            auto *callNode = ApplyNode::newMethodCall(exprNode, std::move(methodName));
 
             // check type argument
             this->checkTypeArgsNode(node, handle, callNode->refArgNodes());
@@ -581,14 +608,9 @@ void TypeChecker::visitVarNode(VarNode &node) {
 }
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
-    auto &recvType = this->checkType(node.getRecvNode());
-    FieldHandle *handle = recvType.lookupFieldHandle(this->symbolTable, node.getFieldName());
-    if(handle == nullptr) {
+    if(!this->checkAccessNode(node)) {
         RAISE_TC_ERROR(UndefinedField, *node.getNameNode(), node.getFieldName().c_str());
     }
-
-    node.setAttribute(handle);
-    node.setType(*handle->getFieldType(this->symbolTable));
 }
 
 void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
@@ -621,20 +643,9 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
         if(exprType.isOptionType()) {
             this->resolveCoercion(this->symbolTable.getBooleanType(), node.refExprNode());
         }
-        MethodCallNode *applyNode = node.createApplyNode();
+        auto *applyNode = node.createApplyNode();
         node.setType(this->checkType(applyNode));
     }
-}
-
-static void toMethodCall(BinaryOpNode &node) {
-    auto *methodCallNode = new MethodCallNode(node.getLeftNode(), resolveBinaryOpName(node.getOp()));
-    methodCallNode->refArgNodes().push_back(node.getRightNode());
-
-    // assign null to prevent double free
-    node.refLeftNode() = nullptr;
-    node.refRightNode() = nullptr;
-
-    node.setOptNode(methodCallNode);
 }
 
 void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
@@ -693,19 +704,30 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
         this->resolveCoercion(rightType, node.refLeftNode());
     }
 
-    toMethodCall(node);
+    node.createApplyNode();
     node.setType(this->checkType(node.getOptNode()));
+}
+
+void TypeChecker::checkTypeAsMethodCall(ApplyNode &node, MethodHandle *handle) {
+    // check type argument
+    this->checkTypeArgsNode(node, handle, node.refArgNodes());
+    node.setHandle(handle);
+    node.setType(*handle->getReturnType());
 }
 
 void TypeChecker::visitApplyNode(ApplyNode &node) {
     /**
      * resolve handle
      */
-    Node *exprNode = node.getExprNode();
-    HandleOrFuncType hf = this->resolveCallee(*exprNode);
+    HandleOrFuncType hf = this->resolveCallee(node);
+
+    if(hf.isMethod()) {
+        this->checkTypeAsMethodCall(node, hf.getMethodHandle());
+        return;
+    }
 
     // resolve param types
-    auto &paramTypes = hf.treatAsHandle() ? hf.getHandle()->getParamTypes() :
+    auto &paramTypes = hf.isFuncHandle() ? hf.getFuncHandle()->getParamTypes() :
                        hf.getFuncType()->getParamTypes();
     unsigned int size = paramTypes.size();
     unsigned int argSize = node.getArgNodes().size();
@@ -720,21 +742,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
     }
 
     // set return type
-    node.setType(hf.treatAsHandle() ? *hf.getHandle()->getReturnType() : *hf.getFuncType()->getReturnType());
-}
-
-void TypeChecker::visitMethodCallNode(MethodCallNode &node) {
-    auto &recvType = this->checkType(node.getRecvNode());
-    MethodHandle *handle = recvType.lookupMethodHandle(this->symbolTable, node.getMethodName());
-    if(handle == nullptr) {
-        RAISE_TC_ERROR(UndefinedMethod, node, node.getMethodName().c_str());
-    }
-
-    // check type argument
-    this->checkTypeArgsNode(node, handle, node.refArgNodes());
-
-    node.setHandle(handle);
-    node.setType(*handle->getReturnType());
+    node.setType(hf.isFuncHandle() ? *hf.getFuncHandle()->getReturnType() : *hf.getFuncType()->getReturnType());
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
@@ -792,7 +800,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
             }
 
             // create MethodCallNode and check type
-            auto *callNode = new MethodCallNode(exprNode, std::move(methodName));
+            auto *callNode = ApplyNode::newMethodCall(exprNode, std::move(methodName));
             this->checkTypeArgsNode(node, handle, callNode->refArgNodes());
             callNode->setHandle(handle);
             callNode->setType(*handle->getReturnType());

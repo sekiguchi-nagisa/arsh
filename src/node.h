@@ -28,6 +28,7 @@
 #include "lexer.h"
 #include "type.h"
 #include "handle.h"
+#include "symbol.h"
 #include "regex_wrapper.h"
 
 namespace ydsh {
@@ -53,7 +54,6 @@ class NodeDumper;
     OP(UnaryOp) \
     OP(BinaryOp) \
     OP(Apply) \
-    OP(MethodCall) \
     OP(New) \
     OP(Cmd) \
     OP(CmdArg) \
@@ -662,6 +662,14 @@ public:
         return this->varName;
     }
 
+    /**
+     * force rewrite varName
+     * @param name
+     */
+    void setVarName(std::string &&name) {
+        this->varName = std::move(name);
+    }
+
     void dump(NodeDumper &dumper) const override;
 };
 
@@ -686,6 +694,10 @@ public:
 
     Node *getRecvNode() const {
         return this->recvNode;
+    }
+
+    void setRecvNode(Node *recvNode) {
+        this->recvNode = recvNode;
     }
 
     const std::string &getFieldName() const {
@@ -770,15 +782,43 @@ public:
 };
 
 /**
- * for function object apply
+ * for function object apply or method call
  */
 class ApplyNode : public Node {
+public:
+    enum Kind : unsigned int {
+        UNRESOLVED,
+        FUNC_CALL,
+        METHOD_CALL,
+        INDEX_CALL, // special case of method call
+    };
+
 private:
     Node *exprNode;
     std::vector<Node *> argNodes;
 
+    /**
+     * for method call
+     */
+    MethodHandle *handle{nullptr};
+
+    Kind kind;
+
 public:
-    ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes);
+    ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes, Kind kind = UNRESOLVED);
+
+    static ApplyNode *newMethodCall(Node *recvNode, Token token, std::string &&methodName);
+
+    static ApplyNode *newMethodCall(Node *recvNode, std::string &&methodName) {
+        return newMethodCall(recvNode, {0, 0}, std::move(methodName));
+    }
+
+    static ApplyNode *newIndexCall(Node *recvNode, Token token, Node *indexNode) {
+        auto *node = newMethodCall(recvNode, token, std::string(OP_GET));
+        node->setKind(INDEX_CALL);
+        node->argNodes.push_back(indexNode);
+        return node;
+    }
 
     ~ApplyNode() override;
 
@@ -794,57 +834,39 @@ public:
         return this->argNodes;
     }
 
-    void dump(NodeDumper &dumper) const override;
-};
+    const std::string &getMethodName() const {
+        assert(this->isMethodCall());
+        return static_cast<AccessNode *>(this->exprNode)->getNameNode()->getVarName();
+    }
 
-class MethodCallNode : public Node {
-private:
-    Node *recvNode;
-    std::string methodName;
-    std::vector<Node *> argNodes;
-
-    MethodHandle *handle;
-
-    flag8_set_t attributeSet;
-
-public:
-    MethodCallNode(Node *recvNode, std::string &&methodName) :
-            MethodCallNode(recvNode, std::move(methodName), std::vector<Node *>()) { }
-
-    MethodCallNode(Node *recvNode, std::string &&methodName, std::vector<Node *> &&argNodes);
-
-    ~MethodCallNode() override;
-
-    void setRecvNode(Node *node) {
-        this->recvNode = node;
+    void setMethodName(std::string &&name) {
+        assert(this->isIndexCall());
+        static_cast<AccessNode *>(this->exprNode)->getNameNode()->setVarName(std::move(name));
     }
 
     Node *getRecvNode() const {
-        return this->recvNode;
+        assert(this->isMethodCall());
+        return static_cast<AccessNode *>(this->exprNode)->getRecvNode();
     }
 
-    void setMethodName(std::string &&methodName) {
-        this->methodName = std::move(methodName);
+    Kind getKind() const {
+        return this->kind;
     }
 
-    const std::string &getMethodName() const {
-        return this->methodName;
+    void setKind(Kind kind) {
+        this->kind = kind;
     }
 
-    const std::vector<Node *> &getArgNodes() const {
-        return this->argNodes;
+    bool isFuncCall() const {
+        return this->getKind() == FUNC_CALL;
     }
 
-    std::vector<Node *> &refArgNodes() {
-        return this->argNodes;
+    bool isMethodCall() const {
+        return this->getKind() == METHOD_CALL || this->isIndexCall();
     }
 
-    void setAttribute(flag8_t attribute) {
-        setFlag(this->attributeSet, attribute);
-    }
-
-    bool hasAttribute(flag8_t attribute) const {
-        return hasFlag(this->attributeSet, attribute);
+    bool isIndexCall() const {
+        return this->getKind() == INDEX_CALL;
     }
 
     void setHandle(MethodHandle *handle) {
@@ -855,10 +877,17 @@ public:
         return this->handle;
     }
 
-    void dump(NodeDumper &dumper) const override;
+    static std::pair<Node *, Node *> split(ApplyNode *&node) {
+        auto *first = node->getRecvNode();
+        static_cast<AccessNode *>(node->getExprNode())->setRecvNode(nullptr);
+        auto *second = node->getArgNodes()[0];
+        node->refArgNodes()[0] = nullptr;
+        delete node;
+        node = nullptr;
+        return {first, second};
+    }
 
-    static constexpr flag8_t INDEX = 1 << 0;
-    static constexpr flag8_t ICALL = 1 << 1;
+    void dump(NodeDumper &dumper) const override;
 };
 
 /**
@@ -896,6 +925,8 @@ class UnaryOpNode : public Node {
 private:
     TokenKind op;
 
+    Token opToken;  // for line number
+
     /**
      * after call this->createApplyNode(), will be null.
      */
@@ -904,11 +935,12 @@ private:
     /**
      * before call this->createApplyNode(), it is null.
      */
-    MethodCallNode *methodCallNode;
+    ApplyNode *methodCallNode;
 
 public:
-    UnaryOpNode(unsigned int startPos, TokenKind op, Node *exprNode) :
-            Node(NodeKind::UnaryOp, {startPos, 0}), op(op), exprNode(exprNode), methodCallNode(nullptr) {
+    UnaryOpNode(TokenKind op, Token opToken, Node *exprNode) :
+            Node(NodeKind::UnaryOp, opToken), op(op), opToken(opToken),
+            exprNode(exprNode), methodCallNode(nullptr) {
         this->updateToken(exprNode->getToken());
     }
 
@@ -930,12 +962,12 @@ public:
      * create ApplyNode and set to this->applyNode.
      * exprNode will be null.
      */
-    MethodCallNode *createApplyNode();
+    ApplyNode *createApplyNode();
 
     /**
      * return null, before call this->createApplyNode().
      */
-    MethodCallNode *getApplyNode() const {
+    ApplyNode *getApplyNode() const {
         return this->methodCallNode;
     }
 
@@ -959,15 +991,17 @@ private:
 
     TokenKind op;
 
+    Token opToken;
+
     /**
      * initial value is null
      */
     Node *optNode;
 
 public:
-    BinaryOpNode(Node *leftNode, TokenKind op, Node *rightNode) :
+    BinaryOpNode(Node *leftNode, TokenKind op, Token opToken, Node *rightNode) :
             Node(NodeKind::BinaryOp, leftNode->getToken()),
-            leftNode(leftNode), rightNode(rightNode), op(op), optNode(nullptr) {
+            leftNode(leftNode), rightNode(rightNode), op(op), opToken(opToken), optNode(nullptr) {
         this->updateToken(rightNode->getToken());
     }
 
@@ -993,9 +1027,6 @@ public:
         return this->op;
     }
 
-    /**
-     * return null, before call toMethodCall().
-     */
     Node *getOptNode() const {
         return this->optNode;
     }
@@ -1003,6 +1034,8 @@ public:
     void setOptNode(Node *node) {
         this->optNode = node;
     }
+
+    void createApplyNode();
 
     void dump(NodeDumper &dumper) const override;
 };
@@ -1775,12 +1808,12 @@ private:
     /**
      * receiver and argument are dummy node
      */
-    MethodCallNode *getterNode;
+    ApplyNode *getterNode;
 
     /**
      * receiver and argument are dummy node
      */
-    MethodCallNode *setterNode;
+    ApplyNode *setterNode;
 
     /**
      * before type checking, rightNode is BinaryOpNode.
@@ -1790,7 +1823,7 @@ private:
     Node *rightNode;
 
 public:
-    ElementSelfAssignNode(MethodCallNode *leftNode, BinaryOpNode *binaryNode);
+    ElementSelfAssignNode(ApplyNode *leftNode, BinaryOpNode *binaryNode);
     ~ElementSelfAssignNode() override;
 
     Node *getRecvNode() const {
@@ -1812,11 +1845,11 @@ public:
         return this->rightNode;
     }
 
-    MethodCallNode *getGetterNode() const {
+    ApplyNode *getGetterNode() const {
         return this->getterNode;
     }
 
-    MethodCallNode *getSetterNode() const {
+    ApplyNode *getSetterNode() const {
         return this->setterNode;
     }
 
@@ -2083,13 +2116,11 @@ TokenKind resolveAssignOp(TokenKind op);
 
 LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode);
 
-Node *createAssignNode(Node *leftNode, TokenKind op, Node *rightNode);
+Node *createAssignNode(Node *leftNode, TokenKind op, Token token, Node *rightNode);
 
 inline Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
-    return createAssignNode(leftNode, op, NumberNode::newByte(token, 1));
+    return createAssignNode(leftNode, op, token, NumberNode::newByte(token, 1));
 }
-
-Node *createIndexNode(Node *recvNode, Node *indexNode);
 
 template <typename T>
 struct type2info {};
@@ -2131,7 +2162,6 @@ struct NodeVisitor {
     virtual void visitUnaryOpNode(UnaryOpNode &node) = 0;
     virtual void visitBinaryOpNode(BinaryOpNode &node) = 0;
     virtual void visitApplyNode(ApplyNode &node) = 0;
-    virtual void visitMethodCallNode(MethodCallNode &node) = 0;
     virtual void visitNewNode(NewNode &node) = 0;
     virtual void visitForkNode(ForkNode &node) = 0;
     virtual void visitCmdNode(CmdNode &node) = 0;
@@ -2176,7 +2206,6 @@ struct BaseVisitor : public NodeVisitor {
     void visitUnaryOpNode(UnaryOpNode &node) override { this->visitDefault(node); }
     void visitBinaryOpNode(BinaryOpNode &node) override { this->visitDefault(node); }
     void visitApplyNode(ApplyNode &node) override { this->visitDefault(node); }
-    void visitMethodCallNode(MethodCallNode &node) override { this->visitDefault(node); }
     void visitNewNode(NewNode &node) override { this->visitDefault(node); }
     void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
     void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }

@@ -483,7 +483,6 @@ private:
     void visitUnaryOpNode(UnaryOpNode &node) override;
     void visitBinaryOpNode(BinaryOpNode &node) override;
     void visitApplyNode(ApplyNode &node) override;
-    void visitMethodCallNode(MethodCallNode &node) override;
     void visitNewNode(NewNode &node) override;
     void visitCmdNode(CmdNode &node) override;
     void visitCmdArgNode(CmdArgNode &node) override;

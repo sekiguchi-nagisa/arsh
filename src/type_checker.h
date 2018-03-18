@@ -28,27 +28,47 @@ namespace ydsh {
 // for apply node type checking
 class HandleOrFuncType {
 private:
-    bool hasHandle;
+    enum {
+        FUNC_HANDLE,
+        FUNC_TYPE,
+        METHOD,
+    } kind;
+
     union {
         FunctionHandle *handle;
         FunctionType *funcType;
+        MethodHandle *methodHandle;
     };
 
 public:
-    explicit HandleOrFuncType(FunctionHandle *handle) : hasHandle(true), handle(handle) { }
+    explicit HandleOrFuncType(FunctionHandle *handle) : kind(FUNC_HANDLE), handle(handle) { }
 
-    explicit HandleOrFuncType(FunctionType *funcType) : hasHandle(false), funcType(funcType) { }
+    explicit HandleOrFuncType(FunctionType *funcType) : kind(FUNC_TYPE), funcType(funcType) { }
 
-    bool treatAsHandle() const {
-        return this->hasHandle;
+    explicit HandleOrFuncType(MethodHandle *handle) : kind(METHOD), methodHandle(handle) {}
+
+    bool isFuncHandle() const {
+        return this->kind == FUNC_HANDLE;
     }
 
-    FunctionHandle *getHandle() const {
-        return this->hasHandle ? this->handle : nullptr;
+    bool isFuncType() const {
+        return this->kind == FUNC_TYPE;
+    }
+
+    bool isMethod() const {
+        return this->kind == METHOD;
+    }
+
+    FunctionHandle *getFuncHandle() const {
+        return this->isFuncHandle() ? this->handle : nullptr;
     }
 
     FunctionType *getFuncType() const {
-        return this->hasHandle ? nullptr : this->funcType;
+        return this->isFuncType() ? this->funcType : nullptr;
+    }
+
+    MethodHandle *getMethodHandle() const {
+        return this->isMethod() ? this->methodHandle : nullptr;
     }
 };
 
@@ -350,7 +370,7 @@ protected:
     /**
      * check type ApplyNode and resolve callee(handle or function type).
      */
-    HandleOrFuncType resolveCallee(Node &recvNode);
+    HandleOrFuncType resolveCallee(ApplyNode &node);
 
     /**
      * check type ApplyNode and resolve callee(handle or function type).
@@ -359,6 +379,10 @@ protected:
 
     // helper for argument type checking
     void checkTypeArgsNode(Node &node, MethodHandle *handle, std::vector<Node *> &argNodes);
+
+    void checkTypeAsMethodCall(ApplyNode &node, MethodHandle *handle);
+
+    bool checkAccessNode(AccessNode &node);
 
     // helper api for type cast
 
@@ -407,7 +431,6 @@ protected:
     void visitUnaryOpNode(UnaryOpNode &node) override;
     void visitBinaryOpNode(BinaryOpNode &node) override;
     void visitApplyNode(ApplyNode &node) override;
-    void visitMethodCallNode(MethodCallNode &node) override;
     void visitNewNode(NewNode &node) override;
     void visitCmdNode(CmdNode &node) override;
     void visitCmdArgNode(CmdArgNode &node) override;
