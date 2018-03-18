@@ -280,6 +280,10 @@ struct CodeBuilder : public CodeEmitter<true> {
 
     signed short stackDepthCount{0};
     signed short maxStackDepth{0};
+
+    CodeKind getCodeKind() const {
+        return static_cast<CodeKind>(this->codeBuffer[0]);
+    }
 };
 
 class ByteCodeGenerator : protected NodeVisitor {
@@ -304,12 +308,17 @@ private:
         return *this->builders.back();
     }
 
+    const CodeBuilder &curBuilder() const noexcept {
+        assert(!this->builders.empty());
+        return *this->builders.back();
+    }
+
     bool inUDC() const {
-        return static_cast<CodeKind>(this->builders.back()->codeBuffer[0]) == CodeKind::USER_DEFINED_CMD;
+        return this->curBuilder().getCodeKind() == CodeKind::USER_DEFINED_CMD;;
     }
 
     bool inFunc() const {
-        return static_cast<CodeKind>(this->builders.back()->codeBuffer[0]) == CodeKind::FUNCTION;
+        return this->curBuilder().getCodeKind() == CodeKind::FUNCTION;
     }
 
     void emitIns(OpCode op);
