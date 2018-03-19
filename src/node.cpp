@@ -181,15 +181,6 @@ void TypeOfNode::dump(NodeDumper &dumper) const {
 }
 
 
-TypeNode *newAnyTypeNode() {
-    return new BaseTypeNode({0, 0}, std::string("Any"));
-}
-
-TypeNode *newVoidTypeNode() {
-    return new BaseTypeNode({0, 0}, std::string("Void"));
-}
-
-
 // ########################
 // ##     NumberNode     ##
 // ########################

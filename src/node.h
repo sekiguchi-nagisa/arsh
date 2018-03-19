@@ -324,10 +324,13 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-TypeNode *newAnyTypeNode();
+inline TypeNode *newAnyTypeNode() {
+    return new BaseTypeNode({0, 0}, std::string("Any"));
+}
 
-TypeNode *newVoidTypeNode();
-
+inline TypeNode *newVoidTypeNode() {
+    return new BaseTypeNode({0, 0}, std::string("Void"));
+}
 
 
 // expression definition
@@ -942,6 +945,11 @@ public:
             Node(NodeKind::UnaryOp, opToken), op(op), opToken(opToken),
             exprNode(exprNode), methodCallNode(nullptr) {
         this->updateToken(exprNode->getToken());
+    }
+
+    UnaryOpNode(Node *exprNode, TokenKind op, Token opToken) :
+            UnaryOpNode(op, exprNode->getToken(), exprNode) {
+        this->updateToken(opToken);
     }
 
     ~UnaryOpNode() override;

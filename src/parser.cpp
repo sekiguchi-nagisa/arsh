@@ -1040,9 +1040,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         case UNWRAP: {
             Token token = this->curToken;
             TokenKind op = this->consume(); // UNWRAP
-            Token opToken = node->getToken();
-            node = make_unique<UnaryOpNode>(op, opToken, node.release());
-            node->updateToken(token);
+            node = make_unique<UnaryOpNode>(node.release(), op, token);
             break;
         }
         default:
