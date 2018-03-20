@@ -575,7 +575,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     case SOURCE: {
         unsigned int startPos = START_POS();
         this->expect(SOURCE);   // always success
-        auto pathNode = TRY(this->parse_cmdArgPart(0, yycEXPR));
+        auto pathNode = TRY(this->parse_cmdArgPart(true, yycEXPR));
         this->lexer->popLexerMode();
         auto node = make_unique<SourceNode>(startPos, pathNode.release());
         if(!HAS_NL() && CUR_KIND() == AS) {
@@ -831,13 +831,12 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
 std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     GUARD_DEEP_NESTING(guard);
 
-    auto node = make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(0)).release());
+    auto node = make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(true)).release());
 
-    unsigned int pos = 1;
-    for(bool next = true; !HAS_SPACE() && !HAS_NL() && next; pos++) {
+    for(bool next = true; !HAS_SPACE() && !HAS_NL() && next;) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg(GEN_LA_CASE)
-            node->addSegmentNode(TRY(this->parse_cmdArgSeg(pos)).release());
+            node->addSegmentNode(TRY(this->parse_cmdArgSeg(false)).release());
             break;
         default:
             next = false;
@@ -847,12 +846,12 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     return node;
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
+std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool first) {
     GUARD_DEEP_NESTING(guard);
 
     switch(CUR_KIND()) {
     case CMD_ARG_PART:
-        return this->parse_cmdArgPart(pos);
+        return this->parse_cmdArgPart(first);
     case STRING_LITERAL:
         return this->parse_stringLiteral();
     case OPEN_DQUOTE:
@@ -866,11 +865,11 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(unsigned int pos) {
     }
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgPart(unsigned int pos, LexerMode mode) {
+std::unique_ptr<Node> Parser::parse_cmdArgPart(bool first, LexerMode mode) {
     GUARD_DEEP_NESTING(guard);
 
     Token token = TRY(this->expectAndChangeMode(CMD_ARG_PART, mode));
-    auto kind = pos == 0 && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
+    auto kind = first && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
     return make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
 }
 
