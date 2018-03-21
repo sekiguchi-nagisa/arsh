@@ -1008,7 +1008,7 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
     OUT("#define YDSH_BIND_H\n");
     OUT("\n");
     OUT("#include <builtin.h>\n");
-    OUT("#include <symbol.h>\n");
+    OUT("#include <constant.h>\n");
     OUT("\n");
     OUT("namespace ydsh {\n");
     OUT("\n");
