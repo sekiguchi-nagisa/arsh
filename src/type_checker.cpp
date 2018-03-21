@@ -16,7 +16,7 @@
 
 #include <vector>
 
-#include "symbol.h"
+#include "constant.h"
 #include "object.h"
 #include "type_checker.h"
 

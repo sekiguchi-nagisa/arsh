@@ -15,7 +15,7 @@
  */
 
 #include "parser.h"
-#include "symbol.h"
+#include "constant.h"
 #include "signals.h"
 
 // helper macro

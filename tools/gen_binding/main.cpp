@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include <handle_info.h>
-#include <symbol.h>
+#include <constant.h>
 #include <misc/parser_base.hpp>
 #include <misc/opt.hpp>
 #include <DescLexer.h>

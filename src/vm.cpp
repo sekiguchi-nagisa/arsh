@@ -26,7 +26,7 @@
 #include "vm.h"
 #include "cmd.h"
 #include "logger.h"
-#include "symbol.h"
+#include "constant.h"
 #include "misc/files.h"
 #include "misc/num.h"
 

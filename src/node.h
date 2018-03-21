@@ -28,7 +28,7 @@
 #include "lexer.h"
 #include "type.h"
 #include "handle.h"
-#include "symbol.h"
+#include "constant.h"
 #include "regex_wrapper.h"
 
 namespace ydsh {

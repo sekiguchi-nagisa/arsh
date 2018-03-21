@@ -18,7 +18,7 @@
 #include <unistd.h>
 
 #include "frontend.h"
-#include "symbol.h"
+#include "constant.h"
 #include "core.h"
 
 namespace ydsh {

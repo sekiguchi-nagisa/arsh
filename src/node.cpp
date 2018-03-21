@@ -16,7 +16,7 @@
 
 #include <pwd.h>
 
-#include "symbol.h"
+#include "constant.h"
 #include "object.h"
 #include "node.h"
 #include "symbol_table.h"

@@ -27,7 +27,7 @@
 #include "logger.h"
 #include "cmd.h"
 #include "core.h"
-#include "symbol.h"
+#include "constant.h"
 #include "symbol_table.h"
 #include "object.h"
 #include "signals.h"

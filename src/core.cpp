@@ -26,7 +26,7 @@
 
 #include <config.h>
 #include "vm.h"
-#include "symbol.h"
+#include "constant.h"
 #include "parser.h"
 #include "logger.h"
 #include "cmd.h"

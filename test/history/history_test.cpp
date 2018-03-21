@@ -3,7 +3,7 @@
 #include <fstream>
 
 #include <ydsh/ydsh.h>
-#include <symbol.h>
+#include <constant.h>
 #include <vm.h>
 
 #include "../test_common.h"

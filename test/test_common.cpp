@@ -24,7 +24,7 @@
 #include <cstdlib>
 #include <cassert>
 
-#include <symbol.h>
+#include <constant.h>
 #include <misc/util.hpp>
 #include <misc/files.h>
 #include <misc/fatal.h>

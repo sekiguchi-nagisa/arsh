@@ -21,6 +21,7 @@
 
 #include "type.h"
 #include "handle.h"
+#include "constant.h"
 
 namespace ydsh {
 
@@ -620,7 +621,7 @@ public:
     std::string toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) const;
 
     std::string toTupleTypeName(const std::vector<DSType *> &elementTypes) const {
-        return this->toReifiedTypeName("Tuple", elementTypes);
+        return this->toReifiedTypeName(TYPE_TUPLE, elementTypes);
     }
 
     /**

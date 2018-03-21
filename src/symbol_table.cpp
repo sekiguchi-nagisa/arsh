@@ -22,7 +22,7 @@
 #include "type_checker.h"
 #include "core.h"
 #include "object.h"
-#include "symbol.h"
+#include "constant.h"
 
 namespace ydsh {
 
