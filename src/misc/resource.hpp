@@ -70,6 +70,12 @@ public:
 
     IntrusivePtr(IntrusivePtr &&v) noexcept : ptr(v.ptr) { v.ptr = nullptr; }
 
+    template <typename U>
+    IntrusivePtr(const IntrusivePtr<U, P> &v) noexcept : IntrusivePtr(v.get()) { }
+
+    template <typename U>
+    IntrusivePtr(IntrusivePtr<U, P> &&v) noexcept : ptr(v.get()) { v.reset(); }
+
     ~IntrusivePtr() { P::decrease(this->ptr); }
 
     IntrusivePtr &operator=(const IntrusivePtr &v) noexcept {
