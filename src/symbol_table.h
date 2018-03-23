@@ -274,61 +274,60 @@ public:
     static constexpr const char *cmdSymbolPrefix = "%c";
 };
 
+enum class DS_TYPE : unsigned int {
+    Root__, // pseudo top type of all throwable type(except for option types)
+    Any,
+    Void,
+    Nothing,
+    Variant,    // for base type of all of D-Bus related type.
+    Value__,    // super type of value type(int, float, bool, string). not directly used it.
+    Byte,       // unsigned int 8
+    Int16,
+    Uint16,
+    Int32,
+    Uint32,
+    Int64,
+    Uint64,
+    Float,
+    Boolean,
+    String,
+    StringArray,    // for command argument
+    Regex,
+    Signal,
+    Signals,
+    Error,
+    Job,
+    Func,
+    StringIter,
+    ObjectPath, // for D-Bus object path
+    UnixFD,     // for Unix file descriptor
+    Proxy,
+    DBus,       // for owner type of each bus object
+    Bus,        // for message bus.
+    Service,    // for service
+    DBusObject, // for D-Bus proxy instance
+    ArithmeticError,
+    OutOfRangeError,
+    KeyNotFoundError,
+    TypeCastError,
+    DBusError,
+    SystemError,    // for errno
+    StackOverflowError,
+    RegexSyntaxError,
+    UnwrapingError,
+
+    /**
+     * for internal status reporting.
+     * they are pseudo type, so must not use it from shell
+     */
+            InternalStatus__,   // base type
+    ShellExit__,
+    AssertFail__,
+
+    __SIZE_OF_DS_TYPE__,    // for enum size counting
+};
+
 class SymbolTable : public SymbolTableBase {
-public:
-    enum DS_TYPE : unsigned int {
-        Root__, // pseudo top type of all throwable type(except for option types)
-        Any,
-        Void,
-        Nothing,
-        Variant,    // for base type of all of D-Bus related type.
-        Value__,    // super type of value type(int, float, bool, string). not directly used it.
-        Byte,       // unsigned int 8
-        Int16,
-        Uint16,
-        Int32,
-        Uint32,
-        Int64,
-        Uint64,
-        Float,
-        Boolean,
-        String,
-        StringArray,    // for command argument
-        Regex,
-        Signal,
-        Signals,
-        Error,
-        Job,
-        Func,
-        StringIter__,
-        ObjectPath, // for D-Bus object path
-        UnixFD,     // for Unix file descriptor
-        Proxy,
-        DBus,       // for owner type of each bus object
-        Bus,        // for message bus.
-        Service,    // for service
-        DBusObject, // for D-Bus proxy instance
-        ArithmeticError,
-        OutOfRangeError,
-        KeyNotFoundError,
-        TypeCastError,
-        DBusError,
-        SystemError,    // for errno
-        StackOverflowError,
-        RegexSyntaxError,
-        UnwrapingError,
-
-        /**
-         * for internal status reporting.
-         * they are pseudo type, so must not use it from shell
-         */
-                InternalStatus__,   // base type
-        ShellExit__,
-        AssertFail__,
-
-        __SIZE_OF_DS_TYPE__,    // for enum size counting
-    };
-
 private:
     // for type
     TypeMap typeMap;
@@ -365,30 +364,34 @@ public:
 
     // for type lookup
 
+    DSType &get(DS_TYPE type) const {
+        return *this->typeTable[static_cast<unsigned int>(type)];
+    }
+
     /**
      * get any type (root class of ydsh class)
      */
     DSType &getAnyType() const {
-        return *this->typeTable[Any];
+        return this->get(DS_TYPE::Any);
     }
 
     /**
      * get void type (pseudo class representing for void)
      */
     DSType &getVoidType() const {
-        return *this->typeTable[Void];
+        return this->get(DS_TYPE::Void);
     }
 
     DSType &getNothingType() const {
-        return *this->typeTable[Nothing];
+        return this->get(DS_TYPE::Nothing);
     }
 
     DSType &getVariantType() const {
-        return *this->typeTable[Variant];
+        return this->get(DS_TYPE::Variant);
     }
 
     DSType &getValueType() const {
-        return *this->typeTable[Value__];
+        return this->get(DS_TYPE::Value__);
     }
 
     /**
@@ -399,160 +402,160 @@ public:
     }
 
     DSType &getByteType() const {
-        return *this->typeTable[Byte];
+        return this->get(DS_TYPE::Byte);
     }
 
     DSType &getInt16Type() const {
-        return *this->typeTable[Int16];
+        return this->get(DS_TYPE::Int16);
     }
 
     DSType &getUint16Type() const {
-        return *this->typeTable[Uint16];
+        return this->get(DS_TYPE::Uint16);
     }
 
     DSType &getInt32Type() const {
-        return *this->typeTable[Int32];
+        return this->get(DS_TYPE::Int32);
     }
 
     DSType &getUint32Type() const {
-        return *this->typeTable[Uint32];
+        return this->get(DS_TYPE::Uint32);
     }
 
     DSType &getInt64Type() const {
-        return *this->typeTable[Int64];
+        return this->get(DS_TYPE::Int64);
     }
 
     DSType &getUint64Type() const {
-        return *this->typeTable[Uint64];
+        return this->get(DS_TYPE::Uint64);
     }
 
     /**
      * float is 64bit.
      */
     DSType &getFloatType() const {
-        return *this->typeTable[Float];
+        return this->get(DS_TYPE::Float);
     }
 
     DSType &getBooleanType() const {
-        return *this->typeTable[Boolean];
+        return this->get(DS_TYPE::Boolean);
     }
 
     DSType &getStringType() const {
-        return *this->typeTable[String];
+        return this->get(DS_TYPE::String);
     }
 
     DSType &getErrorType() const {
-        return *this->typeTable[Error];
+        return this->get(DS_TYPE::Error);
     }
 
     DSType &getJobType() const {
-        return *this->typeTable[Job];
+        return this->get(DS_TYPE::Job);
     }
 
     DSType &getBaseFuncType() const {
-        return *this->typeTable[Func];
+        return this->get(DS_TYPE::Func);
     }
 
     DSType &getStringIterType() const {
-        return *this->typeTable[StringIter__];
+        return this->get(DS_TYPE::StringIter);
     }
 
     DSType &getRegexType() const {
-        return *this->typeTable[Regex];
+        return this->get(DS_TYPE::Regex);
     }
 
     DSType &getSignalType() const {
-        return *this->typeTable[Signal];
+        return this->get(DS_TYPE::Signal);
     }
 
     DSType &getSignalsType() const {
-        return *this->typeTable[Signals];
+        return this->get(DS_TYPE::Signals);
     }
 
     DSType &getObjectPathType() const {
-        return *this->typeTable[ObjectPath];
+        return this->get(DS_TYPE::ObjectPath);
     }
 
     DSType &getUnixFDType() const {
-        return *this->typeTable[UnixFD];
+        return this->get(DS_TYPE::UnixFD);
     }
 
     DSType &getProxyType() const {
-        return *this->typeTable[Proxy];
+        return this->get(DS_TYPE::Proxy);
     }
 
     DSType &getDBusType() const {
-        return *this->typeTable[DBus];
+        return this->get(DS_TYPE::DBus);
     }
 
     DSType &getBusType() const {
-        return *this->typeTable[Bus];
+        return this->get(DS_TYPE::Bus);
     }
 
     DSType &getServiceType() const {
-        return *this->typeTable[Service];
+        return this->get(DS_TYPE::Service);
     }
 
     DSType &getDBusObjectType() const {
-        return *this->typeTable[DBusObject];
+        return this->get(DS_TYPE::DBusObject);
     }
 
     DSType &getStringArrayType() const {
-        return *this->typeTable[StringArray];
+        return this->get(DS_TYPE::StringArray);
     }
 
     // for error
     DSType &getArithmeticErrorType() const {
-        return *this->typeTable[ArithmeticError];
+        return this->get(DS_TYPE::ArithmeticError);
     }
 
     DSType &getOutOfRangeErrorType() const {
-        return *this->typeTable[OutOfRangeError];
+        return this->get(DS_TYPE::OutOfRangeError);
     }
 
     DSType &getKeyNotFoundErrorType() const {
-        return *this->typeTable[KeyNotFoundError];
+        return this->get(DS_TYPE::KeyNotFoundError);
     }
 
     DSType &getTypeCastErrorType() const {
-        return *this->typeTable[TypeCastError];
+        return this->get(DS_TYPE::TypeCastError);
     }
 
     DSType &getDBusErrorType() const {
-        return *this->typeTable[DBusError];
+        return this->get(DS_TYPE::DBusError);
     }
 
     DSType &getSystemErrorType() const {
-        return *this->typeTable[SystemError];
+        return this->get(DS_TYPE::SystemError);
     }
 
     DSType &getStackOverflowErrorType() const {
-        return *this->typeTable[StackOverflowError];
+        return this->get(DS_TYPE::StackOverflowError);
     }
 
     DSType &getRegexSyntaxErrorType() const {
-        return *this->typeTable[RegexSyntaxError];
+        return this->get(DS_TYPE::RegexSyntaxError);
     }
 
     DSType &getUnwrappingErrorType() const {
-        return *this->typeTable[UnwrapingError];
+        return this->get(DS_TYPE::UnwrapingError);
     }
 
     // for internal status reporting
     DSType &getRoot() const {
-        return *this->typeTable[Root__];
+        return this->get(DS_TYPE::Root__);
     }
 
     DSType &getInternalStatus() const {
-        return *this->typeTable[InternalStatus__];
+        return this->get(DS_TYPE::InternalStatus__);
     }
 
     DSType &getShellExit() const {
-        return *this->typeTable[ShellExit__];
+        return this->get(DS_TYPE::ShellExit__);
     }
 
     DSType &getAssertFail() const {
-        return *this->typeTable[AssertFail__];
+        return this->get(DS_TYPE::AssertFail__);
     }
 
     // for reified type.

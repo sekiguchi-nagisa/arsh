@@ -294,47 +294,47 @@ void TypeMap::removeType(const std::string &typeName) {
 // ##     SymbolTable     ##
 // #########################
 
-SymbolTable::SymbolTable() : typeTable(new DSType*[__SIZE_OF_DS_TYPE__]()), templateMap(8) {
+SymbolTable::SymbolTable() : typeTable(new DSType*[static_cast<unsigned int>(DS_TYPE::__SIZE_OF_DS_TYPE__)]()), templateMap(8) {
     // initialize type
-    this->initBuiltinType(Root__, "pseudo top%%", false, info_Dummy()); // pseudo base type
+    this->initBuiltinType(DS_TYPE::Root__, "pseudo top%%", false, info_Dummy()); // pseudo base type
 
-    this->initBuiltinType(Any, "Any", true, this->getRoot(), info_AnyType());
-    this->initBuiltinType(Void, "Void", false, info_Dummy());
-    this->initBuiltinType(Nothing, "Nothing", false, info_Dummy());
-    this->initBuiltinType(Variant, "Variant", false, this->getAnyType(), info_Dummy());
+    this->initBuiltinType(DS_TYPE::Any, "Any", true, this->getRoot(), info_AnyType());
+    this->initBuiltinType(DS_TYPE::Void, "Void", false, info_Dummy());
+    this->initBuiltinType(DS_TYPE::Nothing, "Nothing", false, info_Dummy());
+    this->initBuiltinType(DS_TYPE::Variant, "Variant", false, this->getAnyType(), info_Dummy());
 
     /**
      * hidden from script.
      */
-    this->initBuiltinType(Value__, "Value%%", true, this->getVariantType(), info_Dummy());
+    this->initBuiltinType(DS_TYPE::Value__, "Value%%", true, this->getVariantType(), info_Dummy());
 
-    this->initBuiltinType(Byte, "Byte", false, this->getValueType(), info_ByteType());
-    this->initBuiltinType(Int16, "Int16", false, this->getValueType(), info_Int16Type());
-    this->initBuiltinType(Uint16, "Uint16", false, this->getValueType(), info_Uint16Type());
-    this->initBuiltinType(Int32, "Int32", false, this->getValueType(), info_Int32Type());
-    this->initBuiltinType(Uint32, "Uint32", false, this->getValueType(), info_Uint32Type());
-    this->initBuiltinType(Int64, "Int64", false, this->getValueType(), info_Int64Type());
-    this->initBuiltinType(Uint64, "Uint64", false, this->getValueType(), info_Uint64Type());
+    this->initBuiltinType(DS_TYPE::Byte, "Byte", false, this->getValueType(), info_ByteType());
+    this->initBuiltinType(DS_TYPE::Int16, "Int16", false, this->getValueType(), info_Int16Type());
+    this->initBuiltinType(DS_TYPE::Uint16, "Uint16", false, this->getValueType(), info_Uint16Type());
+    this->initBuiltinType(DS_TYPE::Int32, "Int32", false, this->getValueType(), info_Int32Type());
+    this->initBuiltinType(DS_TYPE::Uint32, "Uint32", false, this->getValueType(), info_Uint32Type());
+    this->initBuiltinType(DS_TYPE::Int64, "Int64", false, this->getValueType(), info_Int64Type());
+    this->initBuiltinType(DS_TYPE::Uint64, "Uint64", false, this->getValueType(), info_Uint64Type());
 
-    this->initBuiltinType(Float, "Float", false, this->getValueType(), info_FloatType());
-    this->initBuiltinType(Boolean, "Boolean", false, this->getValueType(), info_BooleanType());
-    this->initBuiltinType(String, "String", false, this->getValueType(), info_StringType());
+    this->initBuiltinType(DS_TYPE::Float, "Float", false, this->getValueType(), info_FloatType());
+    this->initBuiltinType(DS_TYPE::Boolean, "Boolean", false, this->getValueType(), info_BooleanType());
+    this->initBuiltinType(DS_TYPE::String, "String", false, this->getValueType(), info_StringType());
 
-    this->initBuiltinType(ObjectPath, "ObjectPath", false, this->getValueType(), info_ObjectPathType());
-    this->initBuiltinType(UnixFD, "UnixFD", false, this->getAnyType(), info_UnixFDType());
-    this->initBuiltinType(Proxy, "Proxy", false, this->getAnyType(), info_ProxyType());
-    this->initBuiltinType(DBus, "DBus", false, this->getAnyType(), info_DBusType());
-    this->initBuiltinType(Bus, "Bus", false, this->getAnyType(), info_BusType());
-    this->initBuiltinType(Service, "Service", false, this->getAnyType(), info_ServiceType());
-    this->initBuiltinType(DBusObject, "DBusObject", false, this->getProxyType(), info_DBusObjectType());
+    this->initBuiltinType(DS_TYPE::ObjectPath, "ObjectPath", false, this->getValueType(), info_ObjectPathType());
+    this->initBuiltinType(DS_TYPE::UnixFD, "UnixFD", false, this->getAnyType(), info_UnixFDType());
+    this->initBuiltinType(DS_TYPE::Proxy, "Proxy", false, this->getAnyType(), info_ProxyType());
+    this->initBuiltinType(DS_TYPE::DBus, "DBus", false, this->getAnyType(), info_DBusType());
+    this->initBuiltinType(DS_TYPE::Bus, "Bus", false, this->getAnyType(), info_BusType());
+    this->initBuiltinType(DS_TYPE::Service, "Service", false, this->getAnyType(), info_ServiceType());
+    this->initBuiltinType(DS_TYPE::DBusObject, "DBusObject", false, this->getProxyType(), info_DBusObjectType());
 
-    this->initBuiltinType(Error, "Error", true, this->getAnyType(), info_ErrorType());
-    this->initBuiltinType(Job, "Job", false, this->getAnyType(), info_JobType());
-    this->initBuiltinType(Func, "Func", false, this->getAnyType(), info_Dummy());
-    this->initBuiltinType(StringIter__, "StringIter%%", false, this->getAnyType(), info_StringIterType());
-    this->initBuiltinType(Regex, "Regex", false, this->getAnyType(), info_RegexType());
-    this->initBuiltinType(Signal, "Signal", false, this->getAnyType(), info_SignalType());
-    this->initBuiltinType(Signals, "Signals", false, this->getAnyType(), info_SignalsType());
+    this->initBuiltinType(DS_TYPE::Error, "Error", true, this->getAnyType(), info_ErrorType());
+    this->initBuiltinType(DS_TYPE::Job, "Job", false, this->getAnyType(), info_JobType());
+    this->initBuiltinType(DS_TYPE::Func, "Func", false, this->getAnyType(), info_Dummy());
+    this->initBuiltinType(DS_TYPE::StringIter, "StringIter%%", false, this->getAnyType(), info_StringIterType());
+    this->initBuiltinType(DS_TYPE::Regex, "Regex", false, this->getAnyType(), info_RegexType());
+    this->initBuiltinType(DS_TYPE::Signal, "Signal", false, this->getAnyType(), info_SignalType());
+    this->initBuiltinType(DS_TYPE::Signals, "Signals", false, this->getAnyType(), info_SignalsType());
 
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType());
@@ -354,25 +354,25 @@ SymbolTable::SymbolTable() : typeTable(new DSType*[__SIZE_OF_DS_TYPE__]()), temp
 
     // init string array type(for command argument)
     std::vector<DSType *> types = {&this->getStringType()};
-    this->setToTypeTable(StringArray, &this->createReifiedType(this->getArrayTemplate(), std::move(types)));
+    this->setToTypeTable(DS_TYPE::StringArray, &this->createReifiedType(this->getArrayTemplate(), std::move(types)));
 
     // init some error type
-    this->initErrorType(ArithmeticError, "ArithmeticError", this->getErrorType());
-    this->initErrorType(OutOfRangeError, "OutOfRangeError", this->getErrorType());
-    this->initErrorType(KeyNotFoundError, "KeyNotFoundError", this->getErrorType());
-    this->initErrorType(TypeCastError, "TypeCastError", this->getErrorType());
-    this->initErrorType(DBusError, "DBusError", this->getErrorType());
-    this->initErrorType(SystemError, "SystemError", this->getErrorType());
-    this->initErrorType(StackOverflowError, "StackOverflowError", this->getErrorType());
-    this->initErrorType(RegexSyntaxError, "RegexSyntaxError", this->getErrorType());
-    this->initErrorType(UnwrapingError, "UnwrappingError", this->getErrorType());
+    this->initErrorType(DS_TYPE::ArithmeticError, "ArithmeticError", this->getErrorType());
+    this->initErrorType(DS_TYPE::OutOfRangeError, "OutOfRangeError", this->getErrorType());
+    this->initErrorType(DS_TYPE::KeyNotFoundError, "KeyNotFoundError", this->getErrorType());
+    this->initErrorType(DS_TYPE::TypeCastError, "TypeCastError", this->getErrorType());
+    this->initErrorType(DS_TYPE::DBusError, "DBusError", this->getErrorType());
+    this->initErrorType(DS_TYPE::SystemError, "SystemError", this->getErrorType());
+    this->initErrorType(DS_TYPE::StackOverflowError, "StackOverflowError", this->getErrorType());
+    this->initErrorType(DS_TYPE::RegexSyntaxError, "RegexSyntaxError", this->getErrorType());
+    this->initErrorType(DS_TYPE::UnwrapingError, "UnwrappingError", this->getErrorType());
 
     this->registerDBusErrorTypes();
 
     // init internal status type
-    this->initBuiltinType(InternalStatus__, "internal status%%", false, this->getRoot(), info_Dummy());
-    this->initBuiltinType(ShellExit__, "Shell Exit", false, this->getInternalStatus(), info_Dummy());
-    this->initBuiltinType(AssertFail__, "Assertion Error", false, this->getInternalStatus(), info_Dummy());
+    this->initBuiltinType(DS_TYPE::InternalStatus__, "internal status%%", false, this->getRoot(), info_Dummy());
+    this->initBuiltinType(DS_TYPE::ShellExit__, "Shell Exit", false, this->getInternalStatus(), info_Dummy());
+    this->initBuiltinType(DS_TYPE::AssertFail__, "Assertion Error", false, this->getInternalStatus(), info_Dummy());
 
     // commit generated type
     this->typeMap.commit();
@@ -568,40 +568,40 @@ int SymbolTable::getIntPrecision(const DSType &type) const {
         int precision;
     } table[] = {
             // Int64, Uint64
-            {Int64, INT64_PRECISION},
-            {Uint64, INT64_PRECISION},
+            {DS_TYPE::Int64, INT64_PRECISION},
+            {DS_TYPE::Uint64, INT64_PRECISION},
             // Int32, Uint32
-            {Int32, INT32_PRECISION},
-            {Uint32, INT32_PRECISION},
+            {DS_TYPE::Int32, INT32_PRECISION},
+            {DS_TYPE::Uint32, INT32_PRECISION},
             // Int16, Uint16
-            {Int16, INT16_PRECISION},
-            {Uint16, INT16_PRECISION},
+            {DS_TYPE::Int16, INT16_PRECISION},
+            {DS_TYPE::Uint16, INT16_PRECISION},
             // Byte
-            {Byte, BYTE_PRECISION},
+            {DS_TYPE::Byte, BYTE_PRECISION},
     };
 
     for(auto &e : table) {
-        if(*this->typeTable[e.TYPE] == type) {
+        if(this->get(e.TYPE) == type) {
             return e.precision;
         }
     }
     return INVALID_PRECISION;
 }
 
-static const SymbolTable::DS_TYPE numTypeTable[] = {
-        SymbolTable::Byte,   // 0
-        SymbolTable::Int16,  // 1
-        SymbolTable::Uint16, // 2
-        SymbolTable::Int32,  // 3
-        SymbolTable::Uint32, // 4
-        SymbolTable::Int64,  // 5
-        SymbolTable::Uint64, // 6
-        SymbolTable::Float,  // 7
+static const DS_TYPE numTypeTable[] = {
+        DS_TYPE::Byte,   // 0
+        DS_TYPE::Int16,  // 1
+        DS_TYPE::Uint16, // 2
+        DS_TYPE::Int32,  // 3
+        DS_TYPE::Uint32, // 4
+        DS_TYPE::Int64,  // 5
+        DS_TYPE::Uint64, // 6
+        DS_TYPE::Float,  // 7
 };
 
 int SymbolTable::getNumTypeIndex(const DSType &type) const {
     for(unsigned int i = 0; i < arraySize(numTypeTable); i++) {
-        if(*this->typeTable[numTypeTable[i]] == type) {
+        if(this->get(numTypeTable[i]) == type) {
             return i;
         }
     }
@@ -609,22 +609,23 @@ int SymbolTable::getNumTypeIndex(const DSType &type) const {
 }
 
 DSType *SymbolTable::getByNumTypeIndex(unsigned int index) const {
-    return index < arraySize(numTypeTable) ? this->typeTable[numTypeTable[index]] : nullptr;
+    return index < arraySize(numTypeTable) ?
+           this->typeTable[static_cast<unsigned int>(numTypeTable[index])] : nullptr;
 }
 
 void SymbolTable::setToTypeTable(DS_TYPE TYPE, DSType *type) {
-    assert(this->typeTable[TYPE] == nullptr && type != nullptr);
-    this->typeTable[TYPE] = type;
+    assert(this->typeTable[static_cast<unsigned int>(TYPE)] == nullptr && type != nullptr);
+    this->typeTable[static_cast<unsigned int>(TYPE)] = type;
 }
 
 void SymbolTable::initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendable,
                                native_type_info_t info) {
     // create and register type
     flag8_set_t attribute = extendable ? DSType::EXTENDIBLE : 0;
-    if(TYPE == Void) {
+    if(TYPE == DS_TYPE::Void) {
         attribute |= DSType::VOID_TYPE;
     }
-    if(TYPE == Nothing) {
+    if(TYPE == DS_TYPE::Nothing) {
         attribute |= DSType::NOTHING_TYPE;
     }
 
