@@ -211,14 +211,14 @@ TEST_F(TypeTest, builtinName) {
 
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Array<String>", this->pool.getStringArrayType()));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Error", this->pool.getErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("ArithmeticError", this->pool.getArithmeticErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("OutOfRangeError", this->pool.getOutOfRangeErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("KeyNotFoundError", this->pool.getKeyNotFoundErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("TypeCastError", this->pool.getTypeCastErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("StackOverflowError", this->pool.getStackOverflowErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("DBusError", this->pool.getDBusErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("ArithmeticError", this->pool.get(DS_TYPE::ArithmeticError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("OutOfRangeError", this->pool.get(DS_TYPE::OutOfRangeError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("KeyNotFoundError", this->pool.get(DS_TYPE::KeyNotFoundError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("TypeCastError", this->pool.get(DS_TYPE::TypeCastError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("StackOverflowError", this->pool.get(DS_TYPE::StackOverflowError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("DBusError", this->pool.get(DS_TYPE::DBusError)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Regex", this->pool.getRegexType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("RegexSyntaxError", this->pool.getRegexSyntaxErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("RegexSyntaxError", this->pool.get(DS_TYPE::RegexSyntaxError)));
 }
 
 TEST_F(TypeTest, superType) {
@@ -227,7 +227,7 @@ TEST_F(TypeTest, superType) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getNothingType().getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->toType<Option_t<String_t>>().getSuperType() == nullptr));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getAnyType(), this->pool.getRoot()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getAnyType(), this->pool.get(DS_TYPE::_Root)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getVariantType(), this->pool.getAnyType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getValueType(), this->pool.getVariantType()));
 
@@ -248,14 +248,14 @@ TEST_F(TypeTest, superType) {
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getStringArrayType(), this->pool.getVariantType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getErrorType(), this->pool.getAnyType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getArithmeticErrorType(), this->pool.getErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getOutOfRangeErrorType(), this->pool.getErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getKeyNotFoundErrorType(), this->pool.getErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getTypeCastErrorType(), this->pool.getErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getStackOverflowErrorType(), this->pool.getErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getDBusErrorType(), this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(DS_TYPE::ArithmeticError), this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(DS_TYPE::OutOfRangeError), this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(DS_TYPE::KeyNotFoundError), this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(DS_TYPE::TypeCastError), this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(DS_TYPE::StackOverflowError), this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(DS_TYPE::DBusError), this->pool.getErrorType()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getRegexType(), this->pool.getAnyType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getRegexSyntaxErrorType(), this->pool.getErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(DS_TYPE::RegexSyntaxError), this->pool.getErrorType()));
 }
 
 TEST_F(TypeTest, attribute) {
@@ -279,13 +279,13 @@ TEST_F(TypeTest, attribute) {
 
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getStringArrayType()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getArithmeticErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getOutOfRangeErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getKeyNotFoundErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getTypeCastErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getStackOverflowErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getDBusErrorType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getRegexSyntaxErrorType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(DS_TYPE::ArithmeticError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(DS_TYPE::OutOfRangeError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(DS_TYPE::KeyNotFoundError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(DS_TYPE::TypeCastError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(DS_TYPE::StackOverflowError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(DS_TYPE::DBusError)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(DS_TYPE::RegexSyntaxError)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getRegexType()));
 
     ASSERT_NO_FATAL_FAILURE(
@@ -350,7 +350,7 @@ TEST_F(TypeTest, api) {
     ASSERT_NO_FATAL_FAILURE(
             ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.getInt32Type())));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->toType<Option_t<Error_t>>().isSameOrBaseTypeOf(this->pool.getArithmeticErrorType())));
+            ASSERT_TRUE(this->toType<Option_t<Error_t>>().isSameOrBaseTypeOf(this->pool.get(DS_TYPE::ArithmeticError))));
 }
 
 int main(int argc, char **argv) {

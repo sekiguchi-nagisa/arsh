@@ -120,7 +120,7 @@ EACH_UNARY_OP(GEN_UNARY_OP)
 
 static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
     if(right == 0) {
-        raiseError(ctx, getPool(ctx).getArithmeticErrorType(), "zero division");
+        raiseError(ctx, getPool(ctx).get(DS_TYPE::ArithmeticError), "zero division");
         return false;
     }
     return true;
@@ -128,7 +128,7 @@ static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
 
 static inline bool checkZeroMod(RuntimeContext &ctx, int right) {
     if(right == 0) {
-        raiseError(ctx, getPool(ctx).getArithmeticErrorType(), "zero module");
+        raiseError(ctx, getPool(ctx).get(DS_TYPE::ArithmeticError), "zero module");
         return false;
     }
     return true;
@@ -941,7 +941,7 @@ YDSH_METHOD string_count(RuntimeContext &ctx) {
  * return always false.
  */
 static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
-    raiseError(ctx, getPool(ctx).getOutOfRangeErrorType(), std::move(message));
+    raiseError(ctx, getPool(ctx).get(DS_TYPE::OutOfRangeError), std::move(message));
 }
 
 //!bind: function $OP_GET($this : String, $index : Int32) : String
@@ -1320,7 +1320,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
     const char *errorStr;
     auto re = compileRegex(str->getValue(), errorStr, 0);
     if(!re) {
-        raiseError(ctx, getPool(ctx).getRegexSyntaxErrorType(), std::string(errorStr));
+        raiseError(ctx, getPool(ctx).get(DS_TYPE::RegexSyntaxError), std::string(errorStr));
         RET_ERROR;
     }
     setLocal(ctx, 0, DSValue::create<Regex_Object>(getPool(ctx).getRegexType(), std::move(re)));
@@ -1752,7 +1752,7 @@ YDSH_METHOD map_get(RuntimeContext &ctx) {
     if(iter == obj->getValueMap().end()) {
         std::string msg("not found key: ");
         msg += LOCAL(1)->toString(ctx, nullptr);
-        raiseError(ctx, getPool(ctx).getKeyNotFoundErrorType(), std::move(msg));
+        raiseError(ctx, getPool(ctx).get(DS_TYPE::KeyNotFoundError), std::move(msg));
         RET_ERROR;
     }
     RET(iter->second);
@@ -1830,7 +1830,7 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
     if(!obj->trySwap(LOCAL(1), value)) {
         std::string msg("not found key: ");
         msg += LOCAL(1)->toString(ctx, nullptr);
-        raiseError(ctx, getPool(ctx).getKeyNotFoundErrorType(), std::move(msg));
+        raiseError(ctx, getPool(ctx).get(DS_TYPE::KeyNotFoundError), std::move(msg));
         RET_ERROR;
     }
     RET(value);

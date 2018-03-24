@@ -180,7 +180,7 @@ static bool checkCast(DSState &state, DSType *targetType) {
         str += state.symbolTable.getTypeName(*stackTopType);
         str += " to ";
         str += state.symbolTable.getTypeName(*targetType);
-        raiseError(state, state.symbolTable.getTypeCastErrorType(), std::move(str));
+        raiseError(state, state.symbolTable.get(DS_TYPE::TypeCastError), std::move(str));
         return false;
     }
     return true;
@@ -192,7 +192,7 @@ static bool checkAssertion(DSState &state) {
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
         state.updateExitStatus(1);
-        auto except = Error_Object::newError(state, state.symbolTable.getAssertFail(), std::move(msg));
+        auto except = Error_Object::newError(state, state.symbolTable.get(DS_TYPE::_AssertFail), std::move(msg));
         state.setThrownObject(std::move(except));
         return false;
     }
@@ -208,7 +208,7 @@ static void exitShell(DSState &st, unsigned int status) {
     str += std::to_string(status);
     status %= 256;
     st.updateExitStatus(status);
-    raiseError(st, st.symbolTable.getShellExit(), std::move(str));
+    raiseError(st, st.symbolTable.get(DS_TYPE::_ShellExit), std::move(str));
 }
 
 static const char *loadEnv(DSState &state, bool hasDefault) {
@@ -268,7 +268,7 @@ static bool windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned in
                                      static_cast<const CompiledCode *>(code)->getStackDepth();
 
     if(st.controlStack.size() == DSState::MAX_CONTROL_STACK_SIZE) {
-        raiseError(st, st.symbolTable.getStackOverflowErrorType(), "local stack size reaches limit");
+        raiseError(st, st.symbolTable.get(DS_TYPE::StackOverflowError), "local stack size reaches limit");
         return false;
     }
 
@@ -1071,7 +1071,7 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
     str += cmdName;
     if(errnum == ENOENT) {
         str += ": command not found";
-        raiseError(state, state.symbolTable.getSystemErrorType(), std::move(str));
+        raiseError(state, state.symbolTable.get(DS_TYPE::SystemError), std::move(str));
     } else {
         raiseSystemError(state, errnum, std::move(str));
     }
@@ -2117,7 +2117,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(UNWRAP) {
             if(state.peek().kind() == DSValueKind::INVALID) {
-                raiseError(state, state.symbolTable.getUnwrappingErrorType(), std::string("invalid value"));
+                raiseError(state, state.symbolTable.get(DS_TYPE::UnwrappingError), std::string("invalid value"));
                 vmerror;
             }
             vmnext;
@@ -2173,7 +2173,7 @@ static bool handleException(DSState &state, bool forceUnwind) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
                 if(occurredPC >= entry.begin && occurredPC < entry.end
                    && entry.type->isSameOrBaseTypeOf(*occurredType)) {
-                    if(*entry.type == state.symbolTable.getRoot()) {
+                    if(*entry.type == state.symbolTable.get(DS_TYPE::_Root)) {
                         return false;
                     }
                     state.pc() = entry.dest - 1;
@@ -2277,7 +2277,7 @@ static bool runMainLoopImpl(DSState &state) {
 
 static bool runMainLoop(DSState &state) {
     while(!runMainLoopImpl(state)) {
-        bool forceUnwind = state.symbolTable.getInternalStatus()
+        bool forceUnwind = state.symbolTable.get(DS_TYPE::_InternalStatus)
                 .isSameOrBaseTypeOf(*state.getThrownObject()->getType());
         if(!handleException(state, forceUnwind)) {
             return false;
@@ -2317,7 +2317,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     if(!st.controlStack.empty()) {
         bool r = runMainLoop(st);
         if(!r) {
-            if(st.symbolTable.getInternalStatus().isSameOrBaseTypeOf(*st.getThrownObject()->getType())) {
+            if(st.symbolTable.get(DS_TYPE::_InternalStatus).isSameOrBaseTypeOf(*st.getThrownObject()->getType())) {
                 st.loadThrownObject(); // force clear thrownObject
             } else {
                 st.pushExitStatus(1);

@@ -267,7 +267,7 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
     std::string str(std::move(message));
     str += ": ";
     str += strerror(errorNum);
-    raiseError(st, st.symbolTable.getSystemErrorType(), std::move(str));
+    raiseError(st, st.symbolTable.get(DS_TYPE::SystemError), std::move(str));
 }
 
 void throwError(DSState &st, DSType &errorType, std::string &&message) {

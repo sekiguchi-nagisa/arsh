@@ -44,7 +44,7 @@ static ScopedDBusError newDBusError() {
 
 static void throwDBusError(DSState &ctx, const char *dbusErrorName, std::string &&message) {
     std::string name(dbusErrorName);
-    auto &type = getPool(ctx).createErrorType(name, getPool(ctx).getDBusErrorType());
+    auto &type = getPool(ctx).createErrorType(name, getPool(ctx).get(DS_TYPE::DBusError));
     throwError(ctx, type, std::move(message));
 }
 
@@ -328,7 +328,7 @@ DSValue Bus_Object::service(DSState &ctx, std::string &&serviceName) {
 
     // init service object
     return DSValue::create<Service_Object>(
-            getPool(ctx).getServiceType(), DSValue(this), std::move(serviceName), std::move(uniqueName));
+            getPool(ctx).get(DS_TYPE::Service), DSValue(this), std::move(serviceName), std::move(uniqueName));
 }
 
 DSValue Bus_Object::listNames(DSState &ctx, bool activeName) {
@@ -351,7 +351,7 @@ std::string Service_Object::toString(DSState &, VisitedSet *) {
 }
 
 DSValue Service_Object::object(DSState &ctx, const DSValue &objectPath) {
-    DSValue obj(new DBusProxy_Object(getPool(ctx).getDBusObjectType(), DSValue(this), objectPath));
+    DSValue obj(new DBusProxy_Object(getPool(ctx).get(DS_TYPE::DBusObject), DSValue(this), objectPath));
 
     // first call Introspection and resolve interface type.
     typeAs<DBusProxy_Object>(obj)->doIntrospection(ctx);
@@ -365,7 +365,7 @@ DSValue Service_Object::object(DSState &ctx, const DSValue &objectPath) {
 
 DSValue DBus_Object::getSystemBus(DSState &ctx) {
     if(!this->systemBus) {
-        this->systemBus = DSValue::create<Bus_Object>(getPool(ctx).getBusType(), true);
+        this->systemBus = DSValue::create<Bus_Object>(getPool(ctx).get(DS_TYPE::Bus), true);
         typeAs<Bus_Object>(this->systemBus)->initConnection(ctx, true);
     }
     return this->systemBus;
@@ -373,7 +373,7 @@ DSValue DBus_Object::getSystemBus(DSState &ctx) {
 
 DSValue DBus_Object::getSessionBus(DSState &ctx) {
     if(!this->sessionBus) {
-        this->sessionBus = DSValue::create<Bus_Object>(getPool(ctx).getBusType(), false);
+        this->sessionBus = DSValue::create<Bus_Object>(getPool(ctx).get(DS_TYPE::Bus), false);
         typeAs<Bus_Object>(this->sessionBus)->initConnection(ctx, false);
     }
     return this->sessionBus;

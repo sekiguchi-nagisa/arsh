@@ -275,12 +275,12 @@ public:
 };
 
 enum class DS_TYPE : unsigned int {
-    Root__, // pseudo top type of all throwable type(except for option types)
+    _Root, // pseudo top type of all throwable type(except for option types)
     Any,
     Void,
     Nothing,
     Variant,    // for base type of all of D-Bus related type.
-    Value__,    // super type of value type(int, float, bool, string). not directly used it.
+    _Value,    // super type of value type(int, float, bool, string). not directly used it.
     Byte,       // unsigned int 8
     Int16,
     Uint16,
@@ -314,15 +314,15 @@ enum class DS_TYPE : unsigned int {
     SystemError,    // for errno
     StackOverflowError,
     RegexSyntaxError,
-    UnwrapingError,
+    UnwrappingError,
 
     /**
      * for internal status reporting.
      * they are pseudo type, so must not use it from shell
      */
-            InternalStatus__,   // base type
-    ShellExit__,
-    AssertFail__,
+    _InternalStatus,   // base type
+    _ShellExit,
+    _AssertFail,
 
     __SIZE_OF_DS_TYPE__,    // for enum size counting
 };
@@ -360,7 +360,7 @@ public:
     /**
      * remove changed state(local scope, global FieldHandle)
      */
-    void abort(bool sbortType);
+    void abort(bool abortType);
 
     // for type lookup
 
@@ -391,7 +391,7 @@ public:
     }
 
     DSType &getValueType() const {
-        return this->get(DS_TYPE::Value__);
+        return this->get(DS_TYPE::_Value);
     }
 
     /**
@@ -480,83 +480,10 @@ public:
         return this->get(DS_TYPE::UnixFD);
     }
 
-    DSType &getProxyType() const {
-        return this->get(DS_TYPE::Proxy);
-    }
-
-    DSType &getDBusType() const {
-        return this->get(DS_TYPE::DBus);
-    }
-
-    DSType &getBusType() const {
-        return this->get(DS_TYPE::Bus);
-    }
-
-    DSType &getServiceType() const {
-        return this->get(DS_TYPE::Service);
-    }
-
-    DSType &getDBusObjectType() const {
-        return this->get(DS_TYPE::DBusObject);
-    }
-
     DSType &getStringArrayType() const {
         return this->get(DS_TYPE::StringArray);
     }
 
-    // for error
-    DSType &getArithmeticErrorType() const {
-        return this->get(DS_TYPE::ArithmeticError);
-    }
-
-    DSType &getOutOfRangeErrorType() const {
-        return this->get(DS_TYPE::OutOfRangeError);
-    }
-
-    DSType &getKeyNotFoundErrorType() const {
-        return this->get(DS_TYPE::KeyNotFoundError);
-    }
-
-    DSType &getTypeCastErrorType() const {
-        return this->get(DS_TYPE::TypeCastError);
-    }
-
-    DSType &getDBusErrorType() const {
-        return this->get(DS_TYPE::DBusError);
-    }
-
-    DSType &getSystemErrorType() const {
-        return this->get(DS_TYPE::SystemError);
-    }
-
-    DSType &getStackOverflowErrorType() const {
-        return this->get(DS_TYPE::StackOverflowError);
-    }
-
-    DSType &getRegexSyntaxErrorType() const {
-        return this->get(DS_TYPE::RegexSyntaxError);
-    }
-
-    DSType &getUnwrappingErrorType() const {
-        return this->get(DS_TYPE::UnwrapingError);
-    }
-
-    // for internal status reporting
-    DSType &getRoot() const {
-        return this->get(DS_TYPE::Root__);
-    }
-
-    DSType &getInternalStatus() const {
-        return this->get(DS_TYPE::InternalStatus__);
-    }
-
-    DSType &getShellExit() const {
-        return this->get(DS_TYPE::ShellExit__);
-    }
-
-    DSType &getAssertFail() const {
-        return this->get(DS_TYPE::AssertFail__);
-    }
 
     // for reified type.
     const TypeTemplate &getArrayTemplate() const {

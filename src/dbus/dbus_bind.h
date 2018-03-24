@@ -136,7 +136,7 @@ private:
 
 public:
     explicit DBus_Object(SymbolTable &typePool) :
-            DSObject(typePool.getDBusType()), builder(&typePool) { }
+            DSObject(typePool.get(DS_TYPE::DBus)), builder(&typePool) { }
 
     ~DBus_Object() override = default;
 
