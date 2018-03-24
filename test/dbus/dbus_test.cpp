@@ -95,9 +95,9 @@ TEST_F(DescriptorTest, baseType) {
         this->assertDesc("d", this->pool->getFloatType());
 
         this->assertDesc("s", this->pool->getStringType());
-        this->assertDesc("o", this->pool->getObjectPathType());
+        this->assertDesc("o", this->pool->get(TYPE::ObjectPath));
 
-        this->assertDesc("h", this->pool->getUnixFDType());
+        this->assertDesc("h", this->pool->get(TYPE::UnixFD));
     });
 }
 
@@ -106,14 +106,14 @@ TEST_F(DescriptorTest, containerType) {
         SCOPED_TRACE("");
 
         this->assertDesc("v", this->pool->getVariantType());
-        this->assertDesc("as", this->pool->getStringArrayType());
+        this->assertDesc("as", this->pool->get(TYPE::StringArray));
         this->assertDesc("a{si}", this->newMapType(this->pool->getStringType(),
                                                    this->pool->getInt32Type()));
         this->assertDesc("a{iay}", this->newMapType(
                 this->pool->getInt32Type(), this->newArrayType(this->pool->getByteType())));
 
         this->assertDesc("aa{ob}", this->newArrayType(
-                this->newMapType(this->pool->getObjectPathType(), this->pool->getBooleanType())));
+                this->newMapType(this->pool->get(TYPE::ObjectPath), this->pool->getBooleanType())));
 
         this->assertDesc("(x)", this->newTupleType(this->pool->getInt64Type()));
         this->assertDesc("(daq)", this->newTupleType(

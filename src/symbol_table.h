@@ -274,7 +274,7 @@ public:
     static constexpr const char *cmdSymbolPrefix = "%c";
 };
 
-enum class DS_TYPE : unsigned int {
+enum class TYPE : unsigned int {
     _Root, // pseudo top type of all throwable type(except for option types)
     Any,
     Void,
@@ -364,7 +364,7 @@ public:
 
     // for type lookup
 
-    DSType &get(DS_TYPE type) const {
+    DSType &get(TYPE type) const {
         return *this->typeTable[static_cast<unsigned int>(type)];
     }
 
@@ -372,26 +372,22 @@ public:
      * get any type (root class of ydsh class)
      */
     DSType &getAnyType() const {
-        return this->get(DS_TYPE::Any);
+        return this->get(TYPE::Any);
     }
 
     /**
      * get void type (pseudo class representing for void)
      */
     DSType &getVoidType() const {
-        return this->get(DS_TYPE::Void);
+        return this->get(TYPE::Void);
     }
 
     DSType &getNothingType() const {
-        return this->get(DS_TYPE::Nothing);
+        return this->get(TYPE::Nothing);
     }
 
     DSType &getVariantType() const {
-        return this->get(DS_TYPE::Variant);
-    }
-
-    DSType &getValueType() const {
-        return this->get(DS_TYPE::_Value);
+        return this->get(TYPE::Variant);
     }
 
     /**
@@ -402,88 +398,47 @@ public:
     }
 
     DSType &getByteType() const {
-        return this->get(DS_TYPE::Byte);
+        return this->get(TYPE::Byte);
     }
 
     DSType &getInt16Type() const {
-        return this->get(DS_TYPE::Int16);
+        return this->get(TYPE::Int16);
     }
 
     DSType &getUint16Type() const {
-        return this->get(DS_TYPE::Uint16);
+        return this->get(TYPE::Uint16);
     }
 
     DSType &getInt32Type() const {
-        return this->get(DS_TYPE::Int32);
+        return this->get(TYPE::Int32);
     }
 
     DSType &getUint32Type() const {
-        return this->get(DS_TYPE::Uint32);
+        return this->get(TYPE::Uint32);
     }
 
     DSType &getInt64Type() const {
-        return this->get(DS_TYPE::Int64);
+        return this->get(TYPE::Int64);
     }
 
     DSType &getUint64Type() const {
-        return this->get(DS_TYPE::Uint64);
+        return this->get(TYPE::Uint64);
     }
 
     /**
      * float is 64bit.
      */
     DSType &getFloatType() const {
-        return this->get(DS_TYPE::Float);
+        return this->get(TYPE::Float);
     }
 
     DSType &getBooleanType() const {
-        return this->get(DS_TYPE::Boolean);
+        return this->get(TYPE::Boolean);
     }
 
     DSType &getStringType() const {
-        return this->get(DS_TYPE::String);
+        return this->get(TYPE::String);
     }
-
-    DSType &getErrorType() const {
-        return this->get(DS_TYPE::Error);
-    }
-
-    DSType &getJobType() const {
-        return this->get(DS_TYPE::Job);
-    }
-
-    DSType &getBaseFuncType() const {
-        return this->get(DS_TYPE::Func);
-    }
-
-    DSType &getStringIterType() const {
-        return this->get(DS_TYPE::StringIter);
-    }
-
-    DSType &getRegexType() const {
-        return this->get(DS_TYPE::Regex);
-    }
-
-    DSType &getSignalType() const {
-        return this->get(DS_TYPE::Signal);
-    }
-
-    DSType &getSignalsType() const {
-        return this->get(DS_TYPE::Signals);
-    }
-
-    DSType &getObjectPathType() const {
-        return this->get(DS_TYPE::ObjectPath);
-    }
-
-    DSType &getUnixFDType() const {
-        return this->get(DS_TYPE::UnixFD);
-    }
-
-    DSType &getStringArrayType() const {
-        return this->get(DS_TYPE::StringArray);
-    }
-
 
     // for reified type.
     const TypeTemplate &getArrayTemplate() const {
@@ -595,17 +550,17 @@ public:
     DSType *getByNumTypeIndex(unsigned int index) const;
 
 private:
-    void setToTypeTable(DS_TYPE TYPE, DSType *type);
+    void setToTypeTable(TYPE TYPE, DSType *type);
 
-    void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendible, native_type_info_t info);
+    void initBuiltinType(TYPE TYPE, const char *typeName, bool extendible, native_type_info_t info);
 
-    void initBuiltinType(DS_TYPE TYPE, const char *typeName, bool extendible,
+    void initBuiltinType(TYPE TYPE, const char *typeName, bool extendible,
                          DSType &superType, native_type_info_t info);
 
     TypeTemplate *initTypeTemplate(const char *typeName,
                                    std::vector<DSType*> &&elementTypes, native_type_info_t info);
 
-    void initErrorType(DS_TYPE TYPE, const char *typeName, DSType &superType);
+    void initErrorType(TYPE TYPE, const char *typeName, DSType &superType);
 
     void checkElementTypes(const std::vector<DSType *> &elementTypes) const;
     void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;

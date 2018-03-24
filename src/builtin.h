@@ -120,7 +120,7 @@ EACH_UNARY_OP(GEN_UNARY_OP)
 
 static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
     if(right == 0) {
-        raiseError(ctx, getPool(ctx).get(DS_TYPE::ArithmeticError), "zero division");
+        raiseError(ctx, getPool(ctx).get(TYPE::ArithmeticError), "zero division");
         return false;
     }
     return true;
@@ -128,7 +128,7 @@ static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
 
 static inline bool checkZeroMod(RuntimeContext &ctx, int right) {
     if(right == 0) {
-        raiseError(ctx, getPool(ctx).get(DS_TYPE::ArithmeticError), "zero module");
+        raiseError(ctx, getPool(ctx).get(TYPE::ArithmeticError), "zero module");
         return false;
     }
     return true;
@@ -941,7 +941,7 @@ YDSH_METHOD string_count(RuntimeContext &ctx) {
  * return always false.
  */
 static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
-    raiseError(ctx, getPool(ctx).get(DS_TYPE::OutOfRangeError), std::move(message));
+    raiseError(ctx, getPool(ctx).get(TYPE::OutOfRangeError), std::move(message));
 }
 
 //!bind: function $OP_GET($this : String, $index : Int32) : String
@@ -1114,7 +1114,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     const unsigned int thisSize = typeAs<String_Object>(LOCAL(0))->size();
     const unsigned int delimSize = typeAs<String_Object>(LOCAL(1))->size();
 
-    auto results = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
+    auto results = DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray));
     auto ptr = typeAs<Array_Object>(results);
 
     const char *remain = thisStr;
@@ -1204,7 +1204,7 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
 YDSH_METHOD string_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_iter);
     String_Object *str = typeAs<String_Object>(LOCAL(0));
-    RET(DSValue::create<StringIter_Object>(getPool(ctx).getStringIterType(), str));
+    RET(DSValue::create<StringIter_Object>(getPool(ctx).get(TYPE::StringIter), str));
 }
 
 static bool regexSearch(const Regex_Object *re, const String_Object *str);
@@ -1320,10 +1320,10 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
     const char *errorStr;
     auto re = compileRegex(str->getValue(), errorStr, 0);
     if(!re) {
-        raiseError(ctx, getPool(ctx).get(DS_TYPE::RegexSyntaxError), std::string(errorStr));
+        raiseError(ctx, getPool(ctx).get(TYPE::RegexSyntaxError), std::string(errorStr));
         RET_ERROR;
     }
-    setLocal(ctx, 0, DSValue::create<Regex_Object>(getPool(ctx).getRegexType(), std::move(re)));
+    setLocal(ctx, 0, DSValue::create<Regex_Object>(getPool(ctx).get(TYPE::Regex), std::move(re)));
     RET_VOID;
 }
 
@@ -1356,7 +1356,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     int *ovec = static_cast<int *>(malloc(sizeof(int) * (captureSize + 1) * 3));
     int matchSize = pcre_exec(re->getRe().get(), nullptr, str->getValue(), str->size(), 0, 0, ovec, (captureSize + 1) * 3);
 
-    auto ret = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
+    auto ret = DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray));
     auto *array = typeAs<Array_Object>(ret);
 
     if(matchSize > 0) {
@@ -1454,18 +1454,18 @@ YDSH_METHOD signals_signal(RuntimeContext &ctx) {
     if(sigNum < 0) {
         RET(DSValue::createInvalid());
     }
-    RET(DSValue::create<Int_Object>(getPool(ctx).getSignalType(), sigNum));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Signal), sigNum));
 }
 
 //!bind: function list($this : Signals) : Array<Signal>
 YDSH_METHOD signals_list(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_list);
 
-    auto &type = getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), {&getPool(ctx).getSignalType()});
+    auto &type = getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), {&getPool(ctx).get(TYPE::Signal)});
     auto v = DSValue::create<Array_Object>(type);
     auto *array = typeAs<Array_Object>(v);
     for(auto &e : getUniqueSignalList()) {
-        array->append(DSValue::create<Int_Object>(getPool(ctx).getSignalType(), e));
+        array->append(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Signal), e));
     }
     RET(v);
 }
@@ -1752,7 +1752,7 @@ YDSH_METHOD map_get(RuntimeContext &ctx) {
     if(iter == obj->getValueMap().end()) {
         std::string msg("not found key: ");
         msg += LOCAL(1)->toString(ctx, nullptr);
-        raiseError(ctx, getPool(ctx).get(DS_TYPE::KeyNotFoundError), std::move(msg));
+        raiseError(ctx, getPool(ctx).get(TYPE::KeyNotFoundError), std::move(msg));
         RET_ERROR;
     }
     RET(iter->second);
@@ -1830,7 +1830,7 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
     if(!obj->trySwap(LOCAL(1), value)) {
         std::string msg("not found key: ");
         msg += LOCAL(1)->toString(ctx, nullptr);
-        raiseError(ctx, getPool(ctx).get(DS_TYPE::KeyNotFoundError), std::move(msg));
+        raiseError(ctx, getPool(ctx).get(TYPE::KeyNotFoundError), std::move(msg));
         RET_ERROR;
     }
     RET(value);
@@ -1922,7 +1922,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
         int flag = fcntl(fd, F_GETFD);
         if(flag != -1) {
             if(fcntl(fd, F_SETFD, flag | FD_CLOEXEC) != -1) {
-                auto obj = DSValue::create<UnixFD_Object>(getPool(ctx).getUnixFDType(), fd);
+                auto obj = DSValue::create<UnixFD_Object>(getPool(ctx).get(TYPE::UnixFD), fd);
                 setLocal(ctx, 0, std::move(obj));
                 RET_VOID;
             }
@@ -1957,7 +1957,7 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
         raiseSystemError(ctx, errno, std::to_string(fd));
         RET_ERROR;
     }
-    RET(DSValue::create<UnixFD_Object>(getPool(ctx).getUnixFDType(), newfd));
+    RET(DSValue::create<UnixFD_Object>(getPool(ctx).get(TYPE::UnixFD), newfd));
 }
 
 //!bind: function $OP_BOOL($this : UnixFD) : Boolean

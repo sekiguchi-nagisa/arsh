@@ -330,7 +330,7 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
         return this->resolveCallee(static_cast<VarNode &>(exprNode));
     }
 
-    auto &type = this->checkType(this->symbolTable.getBaseFuncType(), &exprNode);
+    auto &type = this->checkType(this->symbolTable.get(TYPE::Func), &exprNode);
     if(!type.isFuncType()) {
         RAISE_TC_ERROR(NotCallable, exprNode);
     }
@@ -350,10 +350,10 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
 
     DSType *type = handle->getFieldType(this->symbolTable);
     if(!type->isFuncType()) {
-        if(this->symbolTable.getBaseFuncType() == *type) {
+        if(this->symbolTable.get(TYPE::Func) == *type) {
             RAISE_TC_ERROR(NotCallable, recvNode);
         } else {
-            RAISE_TC_ERROR(Required, recvNode, this->symbolTable.getTypeName(this->symbolTable.getBaseFuncType()),
+            RAISE_TC_ERROR(Required, recvNode, this->symbolTable.getTypeName(this->symbolTable.get(TYPE::Func)),
                            this->symbolTable.getTypeName(*type));
         }
     }
@@ -513,13 +513,13 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
         node.setType(this->symbolTable.getFloatType());
         break;
     case NumberNode::Signal:
-        node.setType(this->symbolTable.getSignalType());
+        node.setType(this->symbolTable.get(TYPE::Signal));
         break;
     }
 }
 
 void TypeChecker::visitStringNode(StringNode &node) {
-    node.setType(node.isObjectPath() ? this->symbolTable.getObjectPathType() : this->symbolTable.getStringType());
+    node.setType(node.isObjectPath() ? this->symbolTable.get(TYPE::ObjectPath) : this->symbolTable.getStringType());
 }
 
 void TypeChecker::visitStringExprNode(StringExprNode &node) {
@@ -549,7 +549,7 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
 }
 
 void TypeChecker::visitRegexNode(RegexNode &node) {
-    node.setType(this->symbolTable.getRegexType());
+    node.setType(this->symbolTable.get(TYPE::Regex));
 }
 
 void TypeChecker::visitArrayNode(ArrayNode &node) {
@@ -572,7 +572,7 @@ void TypeChecker::visitMapNode(MapNode &node) {
     unsigned int size = node.getValueNodes().size();
     assert(size != 0);
     Node *firstKeyNode = node.getKeyNodes()[0];
-    auto &keyType = this->checkType(this->symbolTable.getValueType(), firstKeyNode);
+    auto &keyType = this->checkType(this->symbolTable.get(TYPE::_Value), firstKeyNode);
     Node *firstValueNode = node.getValueNodes()[0];
     auto &valueType = this->checkType(firstValueNode);
 
@@ -784,13 +784,13 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
         auto &segmentType = this->checkType(exprNode);
 
         if(!this->symbolTable.getStringType().isSameOrBaseTypeOf(segmentType) &&
-                !this->symbolTable.getStringArrayType().isSameOrBaseTypeOf(segmentType)) { // call __STR__ or __CMD__ARG
+                !this->symbolTable.get(TYPE::StringArray).isSameOrBaseTypeOf(segmentType)) { // call __STR__ or __CMD__ARG
             // first try lookup __CMD_ARG__ method
             std::string methodName(OP_CMD_ARG);
             MethodHandle *handle = segmentType.lookupMethodHandle(this->symbolTable, methodName);
 
             if(handle == nullptr || (*handle->getReturnType() != this->symbolTable.getStringType() &&
-                                     *handle->getReturnType() != this->symbolTable.getStringArrayType())) { // if not found, lookup __STR__
+                                     *handle->getReturnType() != this->symbolTable.get(TYPE::StringArray))) { // if not found, lookup __STR__
                 methodName = OP_STR;
                 handle = segmentType.isOptionType() ? nullptr :
                          segmentType.lookupMethodHandle(this->symbolTable, methodName);
@@ -813,7 +813,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
     // not allow String Array type
     if(node.getSegmentNodes().size() > 1) {
         for(Node *exprNode : node.getSegmentNodes()) {
-            this->checkType(nullptr, exprNode, &this->symbolTable.getStringArrayType());
+            this->checkType(nullptr, exprNode, &this->symbolTable.get(TYPE::StringArray));
         }
     }
     node.setType(this->symbolTable.getAnyType());   //FIXME
@@ -825,7 +825,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     // check UnixFD
     if(argNode->getSegmentNodes().size() == 1) {
         auto &type = this->checkType(argNode->getSegmentNodes()[0]);
-        if(type == this->symbolTable.getUnixFDType() && !node.isHereStr()) {
+        if(type == this->symbolTable.get(TYPE::UnixFD) && !node.isHereStr()) {
             argNode->setType(type);
             node.setType(this->symbolTable.getAnyType());
             return;
@@ -836,7 +836,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
 
     // not allow String Array type
     if(argNode->getSegmentNodes().size() == 1) {
-        this->checkType(nullptr, argNode->getSegmentNodes()[0], &this->symbolTable.getStringArrayType());
+        this->checkType(nullptr, argNode->getSegmentNodes()[0], &this->symbolTable.get(TYPE::StringArray));
     }
 
     node.setType(this->symbolTable.getAnyType());   //FIXME
@@ -879,7 +879,7 @@ void TypeChecker::visitWithNode(WithNode &node) {
 
 void TypeChecker::visitForkNode(ForkNode &node) {
     this->fctx.enterChild();
-    this->checkType(nullptr, node.getExprNode(), node.isJob() ? &this->symbolTable.getJobType() : nullptr);
+    this->checkType(nullptr, node.getExprNode(), node.isJob() ? &this->symbolTable.get(TYPE::Job) : nullptr);
     this->fctx.leave();
 
     DSType *type = nullptr;
@@ -888,12 +888,12 @@ void TypeChecker::visitForkNode(ForkNode &node) {
         type = &this->symbolTable.getStringType();
         break;
     case ForkNode::SUB_ARRAY:
-        type = &this->symbolTable.getStringArrayType();
+        type = &this->symbolTable.get(TYPE::StringArray);
         break;
     case ForkNode::BG:
     case ForkNode::COPROC:
     case ForkNode::DISOWN:
-        type = &this->symbolTable.getJobType();
+        type = &this->symbolTable.get(TYPE::Job);
         break;
     }
     node.setType(*type);
@@ -1295,7 +1295,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->addEntryAndThrowIfDefined(node, "%%redir", this->symbolTable.getAnyType(), FieldAttribute::READ_ONLY);
 
     // register special characters (@, #, 0, 1, ... 9)
-    this->addEntryAndThrowIfDefined(node, "@", this->symbolTable.getStringArrayType(), FieldAttribute::READ_ONLY);
+    this->addEntryAndThrowIfDefined(node, "@", this->symbolTable.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
     this->addEntryAndThrowIfDefined(node, "#", this->symbolTable.getInt32Type(), FieldAttribute::READ_ONLY);
     for(unsigned int i = 0; i < 10; i++) {
         this->addEntryAndThrowIfDefined(node, std::to_string(i), this->symbolTable.getStringType(), FieldAttribute::READ_ONLY);

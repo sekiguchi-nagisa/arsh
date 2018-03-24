@@ -133,7 +133,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         d.setResult(this->resolveStatus(this->checkedCast<StringNode>(node)));
     });
 
-    this->addHandler("params", this->symbolTable.getStringArrayType(), [&](Node &node, Directive &d) {
+    this->addHandler("params", this->symbolTable.get(TYPE::StringArray), [&](Node &node, Directive &d) {
         auto &value = this->checkedCast<ArrayNode>(node);
         for(auto &e : value.getExprNodes()) {
             d.appendParam(this->checkedCast<StringNode>(*e).getValue());

@@ -711,7 +711,7 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
         this->emit0byteIns(OpCode::HALT);
     }
     this->markLabel(end);
-    this->catchException(begin, end, this->symbolTable.get(DS_TYPE::_Root));
+    this->catchException(begin, end, this->symbolTable.get(TYPE::_Root));
 
     // generate last pipe
     this->markLabel(labels[size - 1]);
@@ -761,7 +761,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     this->markLabel(endLabel);
 
     this->emit0byteIns(OpCode::HALT);
-    this->catchException(beginLabel, endLabel, this->symbolTable.get(DS_TYPE::_Root));
+    this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_Root));
     this->markLabel(mergeLabel);
 }
 

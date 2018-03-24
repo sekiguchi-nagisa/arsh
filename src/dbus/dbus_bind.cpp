@@ -44,7 +44,7 @@ static ScopedDBusError newDBusError() {
 
 static void throwDBusError(DSState &ctx, const char *dbusErrorName, std::string &&message) {
     std::string name(dbusErrorName);
-    auto &type = getPool(ctx).createErrorType(name, getPool(ctx).get(DS_TYPE::DBusError));
+    auto &type = getPool(ctx).createErrorType(name, getPool(ctx).get(TYPE::DBusError));
     throwError(ctx, type, std::move(message));
 }
 
@@ -113,7 +113,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
     case DBUS_TYPE_OBJECT_PATH: {
         const char *value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<String_Object>(getPool(ctx).getObjectPathType(), std::string(value));
+        return DSValue::create<String_Object>(getPool(ctx).get(TYPE::ObjectPath), std::string(value));
     }
     case DBUS_TYPE_UNIX_FD: {
         fatal("unsupported dbus type: UNIX_FD\n");
@@ -328,7 +328,7 @@ DSValue Bus_Object::service(DSState &ctx, std::string &&serviceName) {
 
     // init service object
     return DSValue::create<Service_Object>(
-            getPool(ctx).get(DS_TYPE::Service), DSValue(this), std::move(serviceName), std::move(uniqueName));
+            getPool(ctx).get(TYPE::Service), DSValue(this), std::move(serviceName), std::move(uniqueName));
 }
 
 DSValue Bus_Object::listNames(DSState &ctx, bool activeName) {
@@ -338,7 +338,7 @@ DSValue Bus_Object::listNames(DSState &ctx, bool activeName) {
     auto reply = sendMessage(ctx, this->conn, std::move(msg));
 
     // decode result
-    return decodeMessage(ctx, getPool(ctx).getStringArrayType(), std::move(reply));
+    return decodeMessage(ctx, getPool(ctx).get(TYPE::StringArray), std::move(reply));
 }
 
 
@@ -351,7 +351,7 @@ std::string Service_Object::toString(DSState &, VisitedSet *) {
 }
 
 DSValue Service_Object::object(DSState &ctx, const DSValue &objectPath) {
-    DSValue obj(new DBusProxy_Object(getPool(ctx).get(DS_TYPE::DBusObject), DSValue(this), objectPath));
+    DSValue obj(new DBusProxy_Object(getPool(ctx).get(TYPE::DBusObject), DSValue(this), objectPath));
 
     // first call Introspection and resolve interface type.
     typeAs<DBusProxy_Object>(obj)->doIntrospection(ctx);
@@ -365,7 +365,7 @@ DSValue Service_Object::object(DSState &ctx, const DSValue &objectPath) {
 
 DSValue DBus_Object::getSystemBus(DSState &ctx) {
     if(!this->systemBus) {
-        this->systemBus = DSValue::create<Bus_Object>(getPool(ctx).get(DS_TYPE::Bus), true);
+        this->systemBus = DSValue::create<Bus_Object>(getPool(ctx).get(TYPE::Bus), true);
         typeAs<Bus_Object>(this->systemBus)->initConnection(ctx, true);
     }
     return this->systemBus;
@@ -373,7 +373,7 @@ DSValue DBus_Object::getSystemBus(DSState &ctx) {
 
 DSValue DBus_Object::getSessionBus(DSState &ctx) {
     if(!this->sessionBus) {
-        this->sessionBus = DSValue::create<Bus_Object>(getPool(ctx).get(DS_TYPE::Bus), false);
+        this->sessionBus = DSValue::create<Bus_Object>(getPool(ctx).get(TYPE::Bus), false);
         typeAs<Bus_Object>(this->sessionBus)->initConnection(ctx, false);
     }
     return this->sessionBus;
@@ -654,7 +654,7 @@ DSValue DBusProxy_Object::createIfaceList(DSState &ctx) {
     for(auto &value : this->ifaceSet) {
         list[i++] = DSValue::create<String_Object>(getPool(ctx).getStringType(), value);
     }
-    return DSValue::create<Array_Object>(getPool(ctx).getStringArrayType(), std::move(list));
+    return DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray), std::move(list));
 }
 
 bool DBusProxy_Object::matchObject(const char *serviceName, const char *objectPath) {

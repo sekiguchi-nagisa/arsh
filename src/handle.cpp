@@ -109,7 +109,7 @@ public:
 
 DSType* TypeDecoder::decode() {
     switch(static_cast<HandleInfo>(*(this->pos++))) {
-#define GEN_CASE(ENUM) case HandleInfo::ENUM: return &this->symbolTable.get(DS_TYPE::ENUM);
+#define GEN_CASE(ENUM) case HandleInfo::ENUM: return &this->symbolTable.get(TYPE::ENUM);
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
     case HandleInfo::Array: {

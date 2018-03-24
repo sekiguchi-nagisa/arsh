@@ -97,7 +97,7 @@ DSState::DSState() :
         trueObj(DSValue::create<Boolean_Object>(this->symbolTable.getBooleanType(), true)),
         falseObj(DSValue::create<Boolean_Object>(this->symbolTable.getBooleanType(), false)),
         emptyStrObj(DSValue::create<String_Object>(this->symbolTable.getStringType(), std::string())),
-        emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.getUnixFDType(), -1)),
+        emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.get(TYPE::UnixFD), -1)),
         callStack(new DSValue[DEFAULT_STACK_SIZE]), logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
 
@@ -180,7 +180,7 @@ static bool checkCast(DSState &state, DSType *targetType) {
         str += state.symbolTable.getTypeName(*stackTopType);
         str += " to ";
         str += state.symbolTable.getTypeName(*targetType);
-        raiseError(state, state.symbolTable.get(DS_TYPE::TypeCastError), std::move(str));
+        raiseError(state, state.symbolTable.get(TYPE::TypeCastError), std::move(str));
         return false;
     }
     return true;
@@ -192,7 +192,7 @@ static bool checkAssertion(DSState &state) {
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
         state.updateExitStatus(1);
-        auto except = Error_Object::newError(state, state.symbolTable.get(DS_TYPE::_AssertFail), std::move(msg));
+        auto except = Error_Object::newError(state, state.symbolTable.get(TYPE::_AssertFail), std::move(msg));
         state.setThrownObject(std::move(except));
         return false;
     }
@@ -208,7 +208,7 @@ static void exitShell(DSState &st, unsigned int status) {
     str += std::to_string(status);
     status %= 256;
     st.updateExitStatus(status);
-    raiseError(st, st.symbolTable.get(DS_TYPE::_ShellExit), std::move(str));
+    raiseError(st, st.symbolTable.get(TYPE::_ShellExit), std::move(str));
 }
 
 static const char *loadEnv(DSState &state, bool hasDefault) {
@@ -268,7 +268,7 @@ static bool windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned in
                                      static_cast<const CompiledCode *>(code)->getStackDepth();
 
     if(st.controlStack.size() == DSState::MAX_CONTROL_STACK_SIZE) {
-        raiseError(st, st.symbolTable.get(DS_TYPE::StackOverflowError), "local stack size reaches limit");
+        raiseError(st, st.symbolTable.get(TYPE::StackOverflowError), "local stack size reaches limit");
         return false;
     }
 
@@ -475,7 +475,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
     char buf[256];
     std::string str;
-    auto obj = DSValue::create<Array_Object>(state.symbolTable.getStringArrayType());
+    auto obj = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
     auto *array = typeAs<Array_Object>(obj);
 
     while(true) {
@@ -591,7 +591,7 @@ static DSValue newFD(const DSState &st, int &fd) {
     }
     int v = fd;
     fd = -1;
-    return DSValue::create<UnixFD_Object>(st.symbolTable.getUnixFDType(), v);
+    return DSValue::create<UnixFD_Object>(st.symbolTable.get(TYPE::UnixFD), v);
 }
 
 static void forkAndEval(DSState &state) {
@@ -630,7 +630,7 @@ static void forkAndEval(DSState &state) {
             auto entry = JobTable::newEntry(proc);
             state.jobTable.attach(entry, disown);
             obj = DSValue::create<Job_Object>(
-                    state.symbolTable.getJobType(),
+                    state.symbolTable.get(TYPE::Job),
                     entry,
                     newFD(state, pipeset.in[WRITE_PIPE]),
                     newFD(state, pipeset.out[READ_PIPE])
@@ -834,7 +834,7 @@ static int redirectToFile(const SymbolTable &symbolTable, const DSValue &fileNam
         }
         fclose(fp);
     } else {
-        assert(type == symbolTable.getUnixFDType());
+        assert(type == symbolTable.get(TYPE::UnixFD));
         int fd = typeAs<UnixFD_Object>(fileName)->getValue();
         if(strchr(mode, 'a') != nullptr) {
             if(lseek(fd, 0, SEEK_END) == -1) {
@@ -905,7 +905,7 @@ bool RedirConfig::redirect(DSState &st) const {
                         msg += ": ";
                         msg += typeAs<String_Object>(pair.second)->getValue();
                     }
-                } else if(*type == st.symbolTable.getUnixFDType()) {
+                } else if(*type == st.symbolTable.get(TYPE::UnixFD)) {
                     msg += ": ";
                     msg += std::to_string(typeAs<UnixFD_Object>(pair.second)->getValue());
                 }
@@ -1071,7 +1071,7 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
     str += cmdName;
     if(errnum == ENOENT) {
         str += ": command not found";
-        raiseError(state, state.symbolTable.get(DS_TYPE::SystemError), std::move(str));
+        raiseError(state, state.symbolTable.get(TYPE::SystemError), std::move(str));
     } else {
         raiseSystemError(state, errnum, std::move(str));
     }
@@ -1414,7 +1414,7 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
         return;
     }
 
-    assert(*valueType == state.symbolTable.getStringArrayType());  // Array<String>
+    assert(*valueType == state.symbolTable.get(TYPE::StringArray));  // Array<String>
     auto *arrayObj = typeAs<Array_Object>(value);
     for(auto &element : arrayObj->getValues()) {
         if(typeAs<String_Object>(element)->empty()) {
@@ -1456,7 +1456,7 @@ static bool kickSignalHandler(DSState &st, int sigNum, DSValue &&func) {
     st.reserveLocalStack(3);
     st.push(st.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)));
     st.push(std::move(func));
-    st.push(DSValue::create<Int_Object>(st.symbolTable.getSignalType(), sigNum));
+    st.push(DSValue::create<Int_Object>(st.symbolTable.get(TYPE::Signal), sigNum));
 
     return windStackFrame(st, 3, 3, &signalTrampoline);
 }
@@ -1838,7 +1838,7 @@ static bool mainLoop(DSState &state) {
             int ret = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
             if(type == state.symbolTable.getInt32Type()) { // normally Int Object
                 ret = typeAs<Int_Object>(obj)->getValue();
-            } else if(type == state.symbolTable.getStringArrayType()) {    // for builtin exit command
+            } else if(type == state.symbolTable.get(TYPE::StringArray)) {    // for builtin exit command
                 auto *arrayObj = typeAs<Array_Object>(obj);
                 if(arrayObj->getValues().size() > 1) {
                     const char *num = str(arrayObj->getValues()[1]);
@@ -2004,7 +2004,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(NEW_CMD) {
             auto v = state.pop();
-            auto obj = DSValue::create<Array_Object>(state.symbolTable.getStringArrayType());
+            auto obj = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
             auto *argv = typeAs<Array_Object>(obj);
             argv->append(std::move(v));
             state.push(std::move(obj));
@@ -2117,7 +2117,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(UNWRAP) {
             if(state.peek().kind() == DSValueKind::INVALID) {
-                raiseError(state, state.symbolTable.get(DS_TYPE::UnwrappingError), std::string("invalid value"));
+                raiseError(state, state.symbolTable.get(TYPE::UnwrappingError), std::string("invalid value"));
                 vmerror;
             }
             vmnext;
@@ -2173,7 +2173,7 @@ static bool handleException(DSState &state, bool forceUnwind) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
                 if(occurredPC >= entry.begin && occurredPC < entry.end
                    && entry.type->isSameOrBaseTypeOf(*occurredType)) {
-                    if(*entry.type == state.symbolTable.get(DS_TYPE::_Root)) {
+                    if(*entry.type == state.symbolTable.get(TYPE::_Root)) {
                         return false;
                     }
                     state.pc() = entry.dest - 1;
@@ -2277,7 +2277,7 @@ static bool runMainLoopImpl(DSState &state) {
 
 static bool runMainLoop(DSState &state) {
     while(!runMainLoopImpl(state)) {
-        bool forceUnwind = state.symbolTable.get(DS_TYPE::_InternalStatus)
+        bool forceUnwind = state.symbolTable.get(TYPE::_InternalStatus)
                 .isSameOrBaseTypeOf(*state.getThrownObject()->getType());
         if(!handleException(state, forceUnwind)) {
             return false;
@@ -2308,7 +2308,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     for(; *argv != nullptr; argv++) {
         values.push_back(DSValue::create<String_Object>(st.symbolTable.getStringType(), std::string(*argv)));
     }
-    auto obj = DSValue::create<Array_Object>(st.symbolTable.getStringArrayType(), std::move(values));
+    auto obj = DSValue::create<Array_Object>(st.symbolTable.get(TYPE::StringArray), std::move(values));
 
     st.resetState();
     bool ret = callCommand(st, cmd, std::move(obj), DSValue());
@@ -2317,7 +2317,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     if(!st.controlStack.empty()) {
         bool r = runMainLoop(st);
         if(!r) {
-            if(st.symbolTable.get(DS_TYPE::_InternalStatus).isSameOrBaseTypeOf(*st.getThrownObject()->getType())) {
+            if(st.symbolTable.get(TYPE::_InternalStatus).isSameOrBaseTypeOf(*st.getThrownObject()->getType())) {
                 st.loadThrownObject(); // force clear thrownObject
             } else {
                 st.pushExitStatus(1);

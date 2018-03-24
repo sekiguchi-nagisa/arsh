@@ -182,7 +182,7 @@ static bool checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
         }
     } else {
         if(visitedSet->find((unsigned long) thisPtr) != visitedSet->end()) {
-            raiseError(ctx, getPool(ctx).get(DS_TYPE::StackOverflowError), "caused by circular reference");
+            raiseError(ctx, getPool(ctx).get(TYPE::StackOverflowError), "caused by circular reference");
             return false;
         }
     }
@@ -203,7 +203,7 @@ static void postVisit(VisitedSet *set, const DSObject *ptr) {
 
 static bool checkInvalid(DSState &st, DSValue &v) {
     if(v.kind() == DSValueKind::INVALID) {
-        raiseError(st, getPool(st).get(DS_TYPE::UnwrappingError), "invalid value");
+        raiseError(st, getPool(st).get(TYPE::UnwrappingError), "invalid value");
         return false;
     }
     return true;
@@ -269,7 +269,7 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
 
-    auto result = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
+    auto result = DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray));
     for(auto &e : this->values) {
         TRY(DSValue, checkInvalid(ctx, e));
         preVisit(visitedSet, this);
@@ -280,7 +280,7 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         if(*tempType == getPool(ctx).getStringType()) {
             typeAs<Array_Object>(result)->values.push_back(std::move(temp));
         } else {
-            assert(*tempType == getPool(ctx).getStringArrayType());
+            assert(*tempType == getPool(ctx).get(TYPE::StringArray));
             auto *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->values) {
                 typeAs<Array_Object>(result)->values.push_back(tempValue);
@@ -398,7 +398,7 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
 
-    auto result = DSValue::create<Array_Object>(getPool(ctx).getStringArrayType());
+    auto result = DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray));
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         TRY(DSValue, checkInvalid(ctx, this->fieldTable[i]));
@@ -410,7 +410,7 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         if(*tempType == getPool(ctx).getStringType()) {
             typeAs<Array_Object>(result)->append(std::move(temp));
         } else {
-            assert(*tempType == getPool(ctx).getStringArrayType());
+            assert(*tempType == getPool(ctx).get(TYPE::StringArray));
             auto *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->getValues()) {
                 typeAs<Array_Object>(result)->append(tempValue);

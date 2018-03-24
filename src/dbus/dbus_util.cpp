@@ -37,9 +37,9 @@ BaseTypeDescriptorMap::BaseTypeDescriptorMap(SymbolTable *pool) {
     ADD(pool->getBooleanType(), DBUS_TYPE_BOOLEAN);
 
     ADD(pool->getStringType(), DBUS_TYPE_STRING);
-    ADD(pool->getObjectPathType(), DBUS_TYPE_OBJECT_PATH);
+    ADD(pool->get(TYPE::ObjectPath), DBUS_TYPE_OBJECT_PATH);
 
-    ADD(pool->getUnixFDType(), DBUS_TYPE_UNIX_FD);
+    ADD(pool->get(TYPE::UnixFD), DBUS_TYPE_UNIX_FD);
 #undef ADD
 }
 
@@ -332,10 +332,10 @@ static DSType &decodeTypeDescriptorImpl(SymbolTable *pool, const char *&desc) {
     case DBUS_TYPE_STRING:
         return pool->getStringType();
     case DBUS_TYPE_OBJECT_PATH:
-        return pool->getObjectPathType();
+        return pool->get(TYPE::ObjectPath);
     case DBUS_TYPE_UNIX_FD:
         fatal("unsupported dbus type: UNIX_FD\n");
-        return pool->getUnixFDType();
+        return pool->get(TYPE::UnixFD);
     case DBUS_TYPE_ARRAY: {
         int nextKind = *desc;
         if(nextKind == DBUS_DICT_ENTRY_BEGIN_CHAR) {    // map

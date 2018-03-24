@@ -97,15 +97,15 @@ static DSError handleRuntimeError(DSState *state) {
     auto thrownObj = state->getThrownObject();
     auto &errorType = *thrownObj->getType();
     DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
-    if(errorType == state->symbolTable.get(DS_TYPE::_ShellExit)) {
+    if(errorType == state->symbolTable.get(TYPE::_ShellExit)) {
         kind = DS_ERROR_KIND_EXIT;
-    } else if(errorType == state->symbolTable.get(DS_TYPE::_AssertFail)) {
+    } else if(errorType == state->symbolTable.get(TYPE::_AssertFail)) {
         kind = DS_ERROR_KIND_ASSERTION_ERROR;
     }
 
     // get error line number
     unsigned int errorLineNum = 0;
-    if(state->symbolTable.getErrorType().isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
+    if(state->symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
         auto *obj = typeAs<Error_Object>(thrownObj);
         errorLineNum = getOccurredLineNum(obj->getStackTrace());
     }
@@ -113,7 +113,7 @@ static DSError handleRuntimeError(DSState *state) {
     // print error message
     if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
         fputs("[runtime error]\n", stderr);
-        const bool bt = state->symbolTable.getErrorType().isSameOrBaseTypeOf(errorType);
+        const bool bt = state->symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
         auto *handle = errorType.lookupMethodHandle(state->symbolTable, bt ? "backtrace" : OP_STR);
 
         DSValue ret = callMethod(*state, handle, DSValue(thrownObj), std::vector<DSValue>());
@@ -300,7 +300,7 @@ static void initBuiltinVar(DSState *state) {
      * contains script argument(exclude script name). ($@)
      * must be Array_Object
      */
-    bindVariable(state, "@", DSValue::create<Array_Object>(state->symbolTable.getStringArrayType()));
+    bindVariable(state, "@", DSValue::create<Array_Object>(state->symbolTable.get(TYPE::StringArray)));
 
     /**
      * contains size of argument. ($#)
@@ -365,22 +365,22 @@ static void initBuiltinVar(DSState *state) {
      * dummy object for signal handler setting
      * must be DSObject
      */
-    bindVariable(state, "SIG", DSValue::create<DSObject>(state->symbolTable.getSignalsType()));
+    bindVariable(state, "SIG", DSValue::create<DSObject>(state->symbolTable.get(TYPE::Signals)));
 
     /**
      * must be UnixFD_Object
      */
-    bindVariable(state, VAR_STDIN, DSValue::create<UnixFD_Object>(state->symbolTable.getUnixFDType(), STDIN_FILENO));
+    bindVariable(state, VAR_STDIN, DSValue::create<UnixFD_Object>(state->symbolTable.get(TYPE::UnixFD), STDIN_FILENO));
 
     /**
      * must be UnixFD_Object
      */
-    bindVariable(state, VAR_STDOUT, DSValue::create<UnixFD_Object>(state->symbolTable.getUnixFDType(), STDOUT_FILENO));
+    bindVariable(state, VAR_STDOUT, DSValue::create<UnixFD_Object>(state->symbolTable.get(TYPE::UnixFD), STDOUT_FILENO));
 
     /**
      * must be UnixFD_Object
      */
-    bindVariable(state, VAR_STDERR, DSValue::create<UnixFD_Object>(state->symbolTable.getUnixFDType(), STDERR_FILENO));
+    bindVariable(state, VAR_STDERR, DSValue::create<UnixFD_Object>(state->symbolTable.get(TYPE::UnixFD), STDERR_FILENO));
 
     /**
      * must be String_Object
