@@ -2203,61 +2203,61 @@ static bool handleException(DSState &state, bool forceUnwind) {
 void DBusInitSignal(DSState &) {  }   // do nothing
 
 std::vector<DSValue> DBusWaitSignal(DSState &st) {
-    raiseError(st, st.symbolTable.getErrorType(), "not support method");
+    raiseError(st, st.symbolTable.get(TYPE::Error), "not support method");
     return std::vector<DSValue>();
 }
 
 DSValue newDBusObject(SymbolTable &symbolTable) {
-    return DSValue::create<DSObject>(symbolTable.getDBusType());
+    return DSValue::create<DSObject>(symbolTable.get(TYPE::DBus));
 }
 
 DSValue dbus_systemBus(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
 DSValue dbus_sessionBus(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
 DSValue dbus_getSrv(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
 DSValue dbus_getPath(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
 DSValue dbus_getIface(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
 DSValue dbus_introspect(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
 DSValue bus_service(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
 DSValue bus_listNames(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
 DSValue bus_listActiveNames(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
 DSValue service_object(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.getErrorType(), "not support method");
+    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
     return DSValue();
 }
 
