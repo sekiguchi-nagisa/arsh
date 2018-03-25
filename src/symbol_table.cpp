@@ -564,7 +564,7 @@ constexpr int SymbolTable::INVALID_PRECISION;
 
 int SymbolTable::getIntPrecision(const DSType &type) const {
     const struct {
-        TYPE TYPE;
+        TYPE t;
         int precision;
     } table[] = {
             // Int64, Uint64
@@ -581,7 +581,7 @@ int SymbolTable::getIntPrecision(const DSType &type) const {
     };
 
     for(auto &e : table) {
-        if(this->get(e.TYPE) == type) {
+        if(this->get(e.t) == type) {
             return e.precision;
         }
     }
@@ -613,19 +613,19 @@ DSType *SymbolTable::getByNumTypeIndex(unsigned int index) const {
            this->typeTable[static_cast<unsigned int>(numTypeTable[index])] : nullptr;
 }
 
-void SymbolTable::setToTypeTable(TYPE TYPE, DSType *type) {
-    assert(this->typeTable[static_cast<unsigned int>(TYPE)] == nullptr && type != nullptr);
-    this->typeTable[static_cast<unsigned int>(TYPE)] = type;
+void SymbolTable::setToTypeTable(TYPE t, DSType *type) {
+    assert(this->typeTable[static_cast<unsigned int>(t)] == nullptr && type != nullptr);
+    this->typeTable[static_cast<unsigned int>(t)] = type;
 }
 
-void SymbolTable::initBuiltinType(TYPE TYPE, const char *typeName, bool extendable,
+void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
                                native_type_info_t info) {
     // create and register type
     flag8_set_t attribute = extendable ? DSType::EXTENDIBLE : 0;
-    if(TYPE == TYPE::Void) {
+    if(t == TYPE::Void) {
         attribute |= DSType::VOID_TYPE;
     }
-    if(TYPE == TYPE::Nothing) {
+    if(t == TYPE::Nothing) {
         attribute |= DSType::NOTHING_TYPE;
     }
 
@@ -633,17 +633,17 @@ void SymbolTable::initBuiltinType(TYPE TYPE, const char *typeName, bool extendab
             std::string(typeName), new BuiltinType(nullptr, info, attribute));
 
     // set to typeTable
-    this->setToTypeTable(TYPE, type);
+    this->setToTypeTable(t, type);
 }
 
-void SymbolTable::initBuiltinType(TYPE TYPE, const char *typeName, bool extendable,
+void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
                                   DSType &superType, native_type_info_t info) {
     // create and register type
     DSType *type = this->typeMap.addType(
             std::string(typeName), new BuiltinType(&superType, info, extendable ? DSType::EXTENDIBLE : 0));
 
     // set to typeTable
-    this->setToTypeTable(TYPE, type);
+    this->setToTypeTable(t, type);
 }
 
 TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
@@ -653,9 +653,9 @@ TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
                                                       std::move(elementTypes), info))).first->second;
 }
 
-void SymbolTable::initErrorType(TYPE TYPE, const char *typeName, DSType &superType) {
+void SymbolTable::initErrorType(TYPE t, const char *typeName, DSType &superType) {
     DSType *type = this->typeMap.addType(std::string(typeName), new ErrorType(&superType));
-    this->setToTypeTable(TYPE, type);
+    this->setToTypeTable(t, type);
 }
 
 void SymbolTable::checkElementTypes(const std::vector<DSType *> &elementTypes) const {

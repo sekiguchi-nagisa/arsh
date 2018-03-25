@@ -550,17 +550,17 @@ public:
     DSType *getByNumTypeIndex(unsigned int index) const;
 
 private:
-    void setToTypeTable(TYPE TYPE, DSType *type);
+    void setToTypeTable(TYPE t, DSType *type);
 
-    void initBuiltinType(TYPE TYPE, const char *typeName, bool extendible, native_type_info_t info);
+    void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info);
 
-    void initBuiltinType(TYPE TYPE, const char *typeName, bool extendible,
+    void initBuiltinType(TYPE t, const char *typeName, bool extendible,
                          DSType &superType, native_type_info_t info);
 
     TypeTemplate *initTypeTemplate(const char *typeName,
                                    std::vector<DSType*> &&elementTypes, native_type_info_t info);
 
-    void initErrorType(TYPE TYPE, const char *typeName, DSType &superType);
+    void initErrorType(TYPE t, const char *typeName, DSType &superType);
 
     void checkElementTypes(const std::vector<DSType *> &elementTypes) const;
     void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
