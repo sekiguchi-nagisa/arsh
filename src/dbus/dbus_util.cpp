@@ -24,19 +24,19 @@ namespace ydsh {
 
 BaseTypeDescriptorMap::BaseTypeDescriptorMap(SymbolTable *pool) {
 #define ADD(type, desc) this->map.insert(std::make_pair((unsigned long) (&type), desc))
-    ADD(pool->getInt64Type(), DBUS_TYPE_INT64);
-    ADD(pool->getUint64Type(), DBUS_TYPE_UINT64);
-    ADD(pool->getInt32Type(), DBUS_TYPE_INT32);
-    ADD(pool->getUint32Type(), DBUS_TYPE_UINT32);
-    ADD(pool->getInt16Type(), DBUS_TYPE_INT16);
-    ADD(pool->getUint16Type(), DBUS_TYPE_UINT16);
-    ADD(pool->getByteType(), DBUS_TYPE_BYTE);
+    ADD(pool->get(TYPE::Int64), DBUS_TYPE_INT64);
+    ADD(pool->get(TYPE::Uint64), DBUS_TYPE_UINT64);
+    ADD(pool->get(TYPE::Int32), DBUS_TYPE_INT32);
+    ADD(pool->get(TYPE::Uint32), DBUS_TYPE_UINT32);
+    ADD(pool->get(TYPE::Int16), DBUS_TYPE_INT16);
+    ADD(pool->get(TYPE::Uint16), DBUS_TYPE_UINT16);
+    ADD(pool->get(TYPE::Byte), DBUS_TYPE_BYTE);
 
-    ADD(pool->getFloatType(), DBUS_TYPE_DOUBLE);
+    ADD(pool->get(TYPE::Float), DBUS_TYPE_DOUBLE);
 
-    ADD(pool->getBooleanType(), DBUS_TYPE_BOOLEAN);
+    ADD(pool->get(TYPE::Boolean), DBUS_TYPE_BOOLEAN);
 
-    ADD(pool->getStringType(), DBUS_TYPE_STRING);
+    ADD(pool->get(TYPE::String), DBUS_TYPE_STRING);
     ADD(pool->get(TYPE::ObjectPath), DBUS_TYPE_OBJECT_PATH);
 
     ADD(pool->get(TYPE::UnixFD), DBUS_TYPE_UNIX_FD);
@@ -71,7 +71,7 @@ void DescriptorBuilder::visitFunctionType(FunctionType *type) {
 void DescriptorBuilder::visitBuiltinType(BuiltinType *type) {
     int dbusType = this->typeMap->getDescriptor(*type);
     if(dbusType == DBUS_TYPE_INVALID) {
-        if(*type == this->pool->getVariantType()) {
+        if(*type == this->pool->get(TYPE::Variant)) {
             this->append(DBUS_TYPE_VARIANT);
             return;
         }
@@ -195,7 +195,7 @@ void MessageBuilder::visitBuiltinType(BuiltinType *type) {
         break;
     }
     default:
-        if(*type == this->pool->getVariantType()) {    //variant
+        if(*type == this->pool->get(TYPE::Variant)) {    //variant
             DSType *actualType = this->peek()->getType();
             const char *desc = this->getBuilder()->buildDescriptor(*actualType);
 
@@ -312,25 +312,25 @@ static DSType &decodeTypeDescriptorImpl(SymbolTable *pool, const char *&desc) {
     int kind = *(desc++);
     switch(kind) {
     case DBUS_TYPE_INT64:
-        return pool->getInt64Type();
+        return pool->get(TYPE::Int64);
     case DBUS_TYPE_UINT64:
-        return pool->getUint64Type();
+        return pool->get(TYPE::Uint64);
     case DBUS_TYPE_INT32:
-        return pool->getInt32Type();
+        return pool->get(TYPE::Int32);
     case DBUS_TYPE_UINT32:
-        return pool->getUint32Type();
+        return pool->get(TYPE::Uint32);
     case DBUS_TYPE_INT16:
-        return pool->getInt16Type();
+        return pool->get(TYPE::Int16);
     case DBUS_TYPE_UINT16:
-        return pool->getUint16Type();
+        return pool->get(TYPE::Uint16);
     case DBUS_TYPE_BYTE:
-        return pool->getByteType();
+        return pool->get(TYPE::Byte);
     case DBUS_TYPE_DOUBLE:
-        return pool->getFloatType();
+        return pool->get(TYPE::Float);
     case DBUS_TYPE_BOOLEAN:
-        return pool->getBooleanType();
+        return pool->get(TYPE::Boolean);
     case DBUS_TYPE_STRING:
-        return pool->getStringType();
+        return pool->get(TYPE::String);
     case DBUS_TYPE_OBJECT_PATH:
         return pool->get(TYPE::ObjectPath);
     case DBUS_TYPE_UNIX_FD:
@@ -362,11 +362,10 @@ static DSType &decodeTypeDescriptorImpl(SymbolTable *pool, const char *&desc) {
         return pool->createTupleType(std::move(types));
     }
     case DBUS_TYPE_VARIANT: {
-        return pool->getVariantType();
+        return pool->get(TYPE::Variant);
     }
     default:
         fatal("unsupported dbus type: %c\n", kind);
-        return pool->getVoidType();
     }
 }
 

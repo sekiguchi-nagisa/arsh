@@ -63,37 +63,37 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
     case DBUS_TYPE_BYTE: {
         unsigned char value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(getPool(ctx).getByteType(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Byte), value);
     }
     case DBUS_TYPE_INT16: {
         dbus_int16_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(getPool(ctx).getInt16Type(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int16), value);
     }
     case DBUS_TYPE_UINT16: {
         dbus_uint16_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(getPool(ctx).getUint16Type(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Uint16), value);
     }
     case DBUS_TYPE_INT32: {
         dbus_int32_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), value);
     }
     case DBUS_TYPE_UINT32: {
         dbus_uint32_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Int_Object>(getPool(ctx).getUint32Type(), value);
+        return DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Uint32), value);
     }
     case DBUS_TYPE_INT64: {
         dbus_int64_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Long_Object>(getPool(ctx).getInt64Type(), value);
+        return DSValue::create<Long_Object>(getPool(ctx).get(TYPE::Int64), value);
     }
     case DBUS_TYPE_UINT64: {
         dbus_uint64_t value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Long_Object>(getPool(ctx).getUint64Type(), value);
+        return DSValue::create<Long_Object>(getPool(ctx).get(TYPE::Uint64), value);
     }
     case DBUS_TYPE_BOOLEAN: {
         dbus_bool_t value;
@@ -103,12 +103,12 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
     case DBUS_TYPE_DOUBLE: {
         double value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<Float_Object>(getPool(ctx).getFloatType(), value);
+        return DSValue::create<Float_Object>(getPool(ctx).get(TYPE::Float), value);
     }
     case DBUS_TYPE_STRING: {
         const char *value;
         dbus_message_iter_get_basic(iter, &value);
-        return DSValue::create<String_Object>(getPool(ctx).getStringType(), std::string(value));
+        return DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::string(value));
     }
     case DBUS_TYPE_OBJECT_PATH: {
         const char *value;
@@ -149,7 +149,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
             std::vector<DSType *> types(2);
             types[0] = entries.back().first->getType();
             types[1] = firstElementType == DBUS_TYPE_VARIANT ?
-                       &getPool(ctx).getVariantType() : entries.back().second->getType();
+                       &getPool(ctx).get(TYPE::Variant) : entries.back().second->getType();
 
             auto map = DSValue::create<Map_Object>(
                     getPool(ctx).createReifiedType(getPool(ctx).getMapTemplate(), std::move(types)));
@@ -173,7 +173,7 @@ static DSValue decodeMessageIter(DSState &ctx, DBusMessageIter *iter) {
             values.push_back(decodeMessageIter(ctx, &subIter));
         } while(dbus_message_iter_next(&subIter) != 0u);
         std::vector<DSType *> types(1);
-        types[0] = elementType == DBUS_TYPE_VARIANT ? &getPool(ctx).getVariantType() : values[0]->getType();
+        types[0] = elementType == DBUS_TYPE_VARIANT ? &getPool(ctx).get(TYPE::Variant) : values[0]->getType();
 
         return DSValue::create<Array_Object>(
                 getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), std::move(types)), std::move(values));
@@ -479,7 +479,7 @@ DSValue DBus_Object::introspectProxy(DSState &ctx, const DSValue &proxy) {
             ctx, typeAs<Service_Object>(obj->getService())->getConnection(), std::move(msg));
 
     // decode result
-    return decodeMessage(ctx, getPool(ctx).getStringType(), std::move(reply));
+    return decodeMessage(ctx, getPool(ctx).get(TYPE::String), std::move(reply));
 }
 
 // ##############################
@@ -642,7 +642,7 @@ void DBusProxy_Object::invokeSetter(DSState &ctx, const DSType *recvType,
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &ifaceName);
     dbus_message_iter_append_basic(&iter, DBUS_TYPE_STRING, &fieldName);
 
-    appendArg(ctx, &iter, getPool(ctx).getVariantType(), getLocal(ctx, 1));
+    appendArg(ctx, &iter, getPool(ctx).get(TYPE::Variant), getLocal(ctx, 1));
 
     // call setter
     this->sendMessage(ctx, std::move(msg));
@@ -652,7 +652,7 @@ DSValue DBusProxy_Object::createIfaceList(DSState &ctx) {
     std::vector<DSValue> list(this->ifaceSet.size());
     unsigned int i = 0;
     for(auto &value : this->ifaceSet) {
-        list[i++] = DSValue::create<String_Object>(getPool(ctx).getStringType(), value);
+        list[i++] = DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), value);
     }
     return DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray), std::move(list));
 }
