@@ -950,7 +950,7 @@ static bool callUserDefinedCommand(DSState &st, const DSCode *code,
         auto argv = typeAs<Array_Object>(st.getLocal(UDC_PARAM_ARGV));
         eraseFirst(*argv);
         const unsigned int argSize = argv->getValues().size();
-        st.setLocal(UDC_PARAM_ARGV + 1, DSValue::create<Int_Object>(st.symbolTable.getInt32Type(), argSize));   // #
+        st.setLocal(UDC_PARAM_ARGV + 1, DSValue::create<Int_Object>(st.symbolTable.get(TYPE::Int32), argSize));   // #
         st.setLocal(UDC_PARAM_ARGV + 2, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
         unsigned int limit = 9;
         if(argSize < limit) {
@@ -1836,7 +1836,7 @@ static bool mainLoop(DSState &state) {
             auto &type = *obj->getType();
 
             int ret = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
-            if(type == state.symbolTable.getInt32Type()) { // normally Int Object
+            if(type == state.symbolTable.get(TYPE::Int32)) { // normally Int Object
                 ret = typeAs<Int_Object>(obj)->getValue();
             } else if(type == state.symbolTable.get(TYPE::StringArray)) {    // for builtin exit command
                 auto *arrayObj = typeAs<Array_Object>(obj);
@@ -1955,25 +1955,25 @@ static bool mainLoop(DSState &state) {
         vmcase(D_TO_U32) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             auto v = static_cast<unsigned int>(d);
-            state.push(DSValue::create<Int_Object>(state.symbolTable.getUint32Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Uint32), v));
             vmnext;
         }
         vmcase(D_TO_I32) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             auto v = static_cast<int>(d);
-            state.push(DSValue::create<Int_Object>(state.symbolTable.getInt32Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), v));
             vmnext;
         }
         vmcase(D_TO_U64) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             auto v = static_cast<unsigned long>(d);
-            state.push(DSValue::create<Long_Object>(state.symbolTable.getUint64Type(), v));
+            state.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Uint64), v));
             vmnext;
         }
         vmcase(D_TO_I64) {
             double d = typeAs<Float_Object>(state.pop())->getValue();
             auto v = static_cast<long>(d);
-            state.push(DSValue::create<Long_Object>(state.symbolTable.getInt64Type(), v));
+            state.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Int64), v));
             vmnext;
         }
         vmcase(REF_EQ) {
@@ -2098,7 +2098,7 @@ static bool mainLoop(DSState &state) {
             std::default_random_engine engine(rand());
             std::uniform_int_distribution<unsigned int> dist;
             unsigned int v = dist(engine);
-            state.push(DSValue::create<Int_Object>(state.symbolTable.getUint32Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Uint32), v));
             vmnext;
         }
         vmcase(GET_SECOND) {
@@ -2107,7 +2107,7 @@ static bool mainLoop(DSState &state) {
             auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
             unsigned long v = typeAs<Long_Object>(state.getGlobal(toIndex(BuiltinVarOffset::SECONDS)))->getValue();
             v += sec.count();
-            state.push(DSValue::create<Long_Object>(state.symbolTable.getUint64Type(), v));
+            state.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Uint64), v));
             vmnext;
         }
         vmcase(SET_SECOND) {

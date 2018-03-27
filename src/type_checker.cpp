@@ -498,16 +498,16 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
         node.setType(this->symbolTable.get(TYPE::Uint16));
         break;
     case NumberNode::Int32:
-        node.setType(this->symbolTable.getInt32Type());
+        node.setType(this->symbolTable.get(TYPE::Int32));
         break;
     case NumberNode::Uint32:
-        node.setType(this->symbolTable.getUint32Type());
+        node.setType(this->symbolTable.get(TYPE::Uint32));
         break;
     case NumberNode::Int64:
-        node.setType(this->symbolTable.getInt64Type());
+        node.setType(this->symbolTable.get(TYPE::Int64));
         break;
     case NumberNode::Uint64:
-        node.setType(this->symbolTable.getUint64Type());
+        node.setType(this->symbolTable.get(TYPE::Uint64));
         break;
     case NumberNode::Float:
         node.setType(this->symbolTable.get(TYPE::Float));
@@ -699,8 +699,8 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
        leftPrecision < SymbolTable::INT32_PRECISION &&
        rightPrecision > SymbolTable::INVALID_PRECISION &&
        rightPrecision < SymbolTable::INT32_PRECISION) {   // int widening
-        this->resolveCoercion(this->symbolTable.getInt32Type(), node.refLeftNode());
-        this->resolveCoercion(this->symbolTable.getInt32Type(), node.refRightNode());
+        this->resolveCoercion(this->symbolTable.get(TYPE::Int32), node.refLeftNode());
+        this->resolveCoercion(this->symbolTable.get(TYPE::Int32), node.refRightNode());
     } else if(leftPrecision != rightPrecision && this->checkCoercion(rightType, leftType)) {    // cast left
         this->resolveCoercion(rightType, node.refLeftNode());
     }
@@ -1297,7 +1297,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 
     // register special characters (@, #, 0, 1, ... 9)
     this->addEntryAndThrowIfDefined(node, "@", this->symbolTable.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
-    this->addEntryAndThrowIfDefined(node, "#", this->symbolTable.getInt32Type(), FieldAttribute::READ_ONLY);
+    this->addEntryAndThrowIfDefined(node, "#", this->symbolTable.get(TYPE::Int32), FieldAttribute::READ_ONLY);
     for(unsigned int i = 0; i < 10; i++) {
         this->addEntryAndThrowIfDefined(node, std::to_string(i), this->symbolTable.get(TYPE::String), FieldAttribute::READ_ONLY);
     }

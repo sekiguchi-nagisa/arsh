@@ -361,22 +361,6 @@ public:
         return *this->typeTable[static_cast<unsigned int>(type)];
     }
 
-    DSType &getInt32Type() const {
-        return this->get(TYPE::Int32);
-    }
-
-    DSType &getUint32Type() const {
-        return this->get(TYPE::Uint32);
-    }
-
-    DSType &getInt64Type() const {
-        return this->get(TYPE::Int64);
-    }
-
-    DSType &getUint64Type() const {
-        return this->get(TYPE::Uint64);
-    }
-
     // for reified type.
     const TypeTemplate &getArrayTemplate() const {
         return *this->arrayTemplate;

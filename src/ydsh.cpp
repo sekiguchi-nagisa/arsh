@@ -73,7 +73,7 @@ static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&ex
     }
 
     auto oldExitStatus = state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS));
-    std::vector<DSValue> args = { DSValue::create<Int_Object>(state.symbolTable.getInt32Type(), termKind) };
+    std::vector<DSValue> args = { DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), termKind) };
     if(termKind == TERM_ON_ERR) {
         args.push_back(std::move(except));
     } else {
@@ -259,18 +259,18 @@ static void initBuiltinVar(DSState *state) {
      * process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PID", DSValue::create<Int_Object>(state->symbolTable.getInt32Type(), getpid()));
+    bindVariable(state, "PID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), getpid()));
 
     /**
      * parent process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PPID", DSValue::create<Int_Object>(state->symbolTable.getInt32Type(), getppid()));
+    bindVariable(state, "PPID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), getppid()));
 
     /**
      * must be Long_Object.
      */
-    bindVariable(state, "SECONDS", DSValue::create<Long_Object>(state->symbolTable.getUint64Type(), 0), FieldAttribute::SECONDS);
+    bindVariable(state, "SECONDS", DSValue::create<Long_Object>(state->symbolTable.get(TYPE::Uint64), 0), FieldAttribute::SECONDS);
 
     /**
      * for internal field splitting.
@@ -282,19 +282,19 @@ static void initBuiltinVar(DSState *state) {
      * for history api.
      * must be Int_Object.
      */
-    bindVariable(state, "HISTCMD", DSValue::create<Int_Object>(state->symbolTable.getUint32Type(), 1));
+    bindVariable(state, "HISTCMD", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Uint32), 1));
 
     /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
-    bindVariable(state, "?", DSValue::create<Int_Object>(state->symbolTable.getInt32Type(), 0));
+    bindVariable(state, "?", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0));
 
     /**
      * process id of root shell. ($$)
      * must be Int_Object
      */
-    bindVariable(state, "$", DSValue::create<Int_Object>(state->symbolTable.getInt32Type(), getpid()));
+    bindVariable(state, "$", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), getpid()));
 
     /**
      * contains script argument(exclude script name). ($@)
@@ -306,7 +306,7 @@ static void initBuiltinVar(DSState *state) {
      * contains size of argument. ($#)
      * must be Int_Object
      */
-    bindVariable(state, "#", DSValue::create<Int_Object>(state->symbolTable.getInt32Type(), 0));
+    bindVariable(state, "#", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0));
 
     /**
      * represent shell or shell script name.
@@ -329,13 +329,13 @@ static void initBuiltinVar(DSState *state) {
      * uid of shell
      * must be Int_Object
      */
-    bindVariable(state, "UID", DSValue::create<Int_Object>(state->symbolTable.getUint32Type(), getuid()));
+    bindVariable(state, "UID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Uint32), getuid()));
 
     /**
      * euid of shell
      * must be Int_Object
      */
-    bindVariable(state, "EUID", DSValue::create<Int_Object>(state->symbolTable.getUint32Type(), geteuid()));
+    bindVariable(state, "EUID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Uint32), geteuid()));
 
     struct utsname name{};
     if(uname(&name) == -1) {
@@ -357,7 +357,7 @@ static void initBuiltinVar(DSState *state) {
      * dummy object for random number
      * must be Int_Object
      */
-    bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state->symbolTable.getUint32Type(), 0),
+    bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Uint32), 0),
                  FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
     srand(static_cast<unsigned int>(time(nullptr)));    // init rand for $RANDOM
 
@@ -483,7 +483,7 @@ static void finalizeScriptArg(DSState *st) {
     // update argument size
     const unsigned int size = array->getValues().size();
     index = toIndex(BuiltinVarOffset::ARGS_SIZE);
-    st->setGlobal(index, DSValue::create<Int_Object>(st->symbolTable.getInt32Type(), size));
+    st->setGlobal(index, DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), size));
 
     unsigned int limit = 9;
     if(size < limit) {
@@ -748,7 +748,7 @@ static void updateHistCmd(DSState *st, unsigned int offset, bool inc) {
     } else {
         value -= offset;
     }
-    st->setGlobal(index, DSValue::create<Int_Object>(st->symbolTable.getUint32Type(), value));
+    st->setGlobal(index, DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Uint32), value));
 }
 
 static void unsafeDeleteHistory(DSHistory &history, unsigned int index) {

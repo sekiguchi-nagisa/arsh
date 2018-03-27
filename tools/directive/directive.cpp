@@ -140,7 +140,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         }
     });
 
-    this->addHandler("lineNum", this->symbolTable.getInt32Type(), [&](Node &node, Directive &d) {
+    this->addHandler("lineNum", this->symbolTable.get(TYPE::Int32), [&](Node &node, Directive &d) {
         d.setLineNum(this->checkedCast<NumberNode>(node).getIntValue());
     });
 

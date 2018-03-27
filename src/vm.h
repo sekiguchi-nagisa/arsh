@@ -376,7 +376,7 @@ struct DSState {
 
     void updateExitStatus(unsigned int status) {
         unsigned int index = toIndex(BuiltinVarOffset::EXIT_STATUS);
-        this->setGlobal(index, DSValue::create<Int_Object>(this->symbolTable.getInt32Type(), status));
+        this->setGlobal(index, DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), status));
     }
 
     void pushExitStatus(int status) {

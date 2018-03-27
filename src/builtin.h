@@ -915,7 +915,7 @@ YDSH_METHOD string_ge(RuntimeContext &ctx) {
 YDSH_METHOD string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
     int size = typeAs<String_Object>(LOCAL(0))->size();
-    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), size));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), size));
 }
 
 //!bind: function empty($this : String) : Boolean
@@ -934,7 +934,7 @@ YDSH_METHOD string_count(RuntimeContext &ctx) {
     for(unsigned int i = 0; i < size; i = UnicodeUtil::utf8NextPos(i, ptr[i])) {
         count++;
     }
-    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), count));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), count));
 }
 
 /**
@@ -1152,7 +1152,7 @@ YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
         value = 0;
     }
 
-    RET(status == 0 ? DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), (int)value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), (int)value) : DSValue::createInvalid());
 }
 
 //!bind: function toUint32($this : String) : Option<Uint32>
@@ -1167,7 +1167,7 @@ YDSH_METHOD string_toUint32(RuntimeContext &ctx) {
         status = 1;
         value = 0;
     }
-    RET(status == 0 ? DSValue::create<Int_Object>(getPool(ctx).getUint32Type(), (unsigned int)value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Uint32), (unsigned int)value) : DSValue::createInvalid());
 }
 
 //!bind: function toInt64($this : String) : Option<Int64>
@@ -1177,7 +1177,7 @@ YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
     int status = 0;
     long value = convertToInt64(str, status, false);
 
-    RET(status == 0 ? DSValue::create<Long_Object>(getPool(ctx).getInt64Type(), value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Long_Object>(getPool(ctx).get(TYPE::Int64), value) : DSValue::createInvalid());
 }
 
 //!bind: function toUint64($this : String) : Option<Uint64>
@@ -1187,7 +1187,7 @@ YDSH_METHOD string_toUint64(RuntimeContext &ctx) {
     int status = 0;
     unsigned long value = convertToUint64(str, status, false);
 
-    RET(status == 0 ? DSValue::create<Long_Object>(getPool(ctx).getUint64Type(), value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Long_Object>(getPool(ctx).get(TYPE::Uint64), value) : DSValue::createInvalid());
 }
 
 //!bind: function toFloat($this : String) : Option<Float>
@@ -1299,7 +1299,7 @@ YDSH_METHOD objectpath_ne(RuntimeContext &ctx) {
 YDSH_METHOD objectpath_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(objectpath_size);
     int size = typeAs<String_Object>(LOCAL(0))->size();
-    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), size));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), size));
 }
 
 
@@ -1391,7 +1391,7 @@ YDSH_METHOD signal_name(RuntimeContext &ctx) {
 YDSH_METHOD signal_value(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_value);
     auto *obj = typeAs<Int_Object>(LOCAL(0));
-    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), obj->getValue()));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), obj->getValue()));
 }
 
 //!bind: function kill($this : Signal, $pid : Int32) : Void
@@ -1682,7 +1682,7 @@ YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
 YDSH_METHOD array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
     int size = typeAs<Array_Object>(LOCAL(0))->getValues().size();
-    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), size));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), size));
 }
 
 //!bind: function empty($this : Array<T0>) : Boolean
@@ -1787,7 +1787,7 @@ YDSH_METHOD map_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_size);
     Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
     int value = obj->getValueMap().size();
-    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), value));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), value));
 }
 
 //!bind: function empty($this : Map<T0, T1>) : Boolean
@@ -2021,7 +2021,7 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
     auto *obj = typeAs<Job_Object>(LOCAL(0));
     bool jobctrl = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
     int s = obj->wait(getJobTable(ctx), jobctrl);
-    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), s));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), s));
 }
 
 //!bind: function raise($this : Job, $s : Signal) : Void
@@ -2045,7 +2045,7 @@ YDSH_METHOD job_detach(RuntimeContext &ctx) {
 YDSH_METHOD job_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_size);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), obj->getEntry()->getProcSize()));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), obj->getEntry()->getProcSize()));
 }
 
 //!bind: function pid($this : Job, $index : Int32) : Int32
@@ -2056,7 +2056,7 @@ YDSH_METHOD job_pid(RuntimeContext &ctx) {
 
     if(index > -1 && static_cast<unsigned int>(index) < entry->getProcSize()) {
         int pid = entry->getPid(index);
-        RET(DSValue::create<Int_Object>(getPool(ctx).getInt32Type(), pid));
+        RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), pid));
     }
     std::string msg = "number of processes is: ";
     msg += std::to_string(entry->getProcSize());

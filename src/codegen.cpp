@@ -917,7 +917,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
         this->enterFinally();
 
         if(this->inUDC()) {
-            assert(node.getExprNode()->getType() == this->symbolTable.getInt32Type());
+            assert(node.getExprNode()->getType() == this->symbolTable.get(TYPE::Int32));
             this->emit0byteIns(OpCode::RETURN_UDC);
         } else if(node.getExprNode()->getType().isVoidType()) {
             this->emit0byteIns(OpCode::RETURN);

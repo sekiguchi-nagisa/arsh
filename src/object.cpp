@@ -70,7 +70,7 @@ bool DSObject::introspect(DSState &, DSType *targetType) {
 // ########################
 
 std::string Int_Object::toString(DSState &ctx, VisitedSet *) {
-    if(*this->type == getPool(ctx).getUint32Type()) {
+    if(*this->type == getPool(ctx).get(TYPE::Uint32)) {
         return std::to_string(static_cast<unsigned int>(this->value));
     }
     return std::to_string(this->value);
@@ -101,7 +101,7 @@ UnixFD_Object::~UnixFD_Object() {
 // #########################
 
 std::string Long_Object::toString(DSState &ctx, VisitedSet *) {
-    if(*this->type == getPool(ctx).getUint64Type()) {
+    if(*this->type == getPool(ctx).get(TYPE::Uint64)) {
         return std::to_string(static_cast<unsigned long>(this->value));
     }
     return std::to_string(this->value);
