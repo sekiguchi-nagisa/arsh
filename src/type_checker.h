@@ -268,7 +268,7 @@ protected:
      * return resolved type.
      */
     DSType &checkType(Node *targetNode) {
-        return this->checkType(nullptr, targetNode, &this->symbolTable.getVoidType());
+        return this->checkType(nullptr, targetNode, &this->symbolTable.get(TYPE::Void));
     }
 
     /**
@@ -303,7 +303,7 @@ protected:
                       DSType *unacceptableType, CoercionKind &kind);
 
     void checkTypeWithCurrentScope(BlockNode *blockNode) {
-        this->checkTypeWithCurrentScope(&this->symbolTable.getVoidType(), blockNode);
+        this->checkTypeWithCurrentScope(&this->symbolTable.get(TYPE::Void), blockNode);
     }
 
     void checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blockNode);

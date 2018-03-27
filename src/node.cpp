@@ -731,7 +731,7 @@ void BlockNode::addReturnNodeToLast(const SymbolTable &symbolTable, Node *exprNo
     assert(!exprNode->isUntyped());
 
     auto *returnNode = JumpNode::newReturn(exprNode->getToken(), exprNode);
-    returnNode->setType(symbolTable.getNothingType());
+    returnNode->setType(symbolTable.get(TYPE::Nothing));
     this->addNode(returnNode);
     this->setType(returnNode->getType());
 }

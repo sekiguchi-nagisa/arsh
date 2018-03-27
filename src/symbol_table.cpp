@@ -301,12 +301,12 @@ SymbolTable::SymbolTable() : typeTable(new DSType*[static_cast<unsigned int>(TYP
     this->initBuiltinType(TYPE::Any, "Any", true, this->get(TYPE::_Root), info_AnyType());
     this->initBuiltinType(TYPE::Void, "Void", false, info_Dummy());
     this->initBuiltinType(TYPE::Nothing, "Nothing", false, info_Dummy());
-    this->initBuiltinType(TYPE::Variant, "Variant", false, this->getAnyType(), info_Dummy());
+    this->initBuiltinType(TYPE::Variant, "Variant", false, this->get(TYPE::Any), info_Dummy());
 
     /**
      * hidden from script.
      */
-    this->initBuiltinType(TYPE::_Value, "Value%%", true, this->getVariantType(), info_Dummy());
+    this->initBuiltinType(TYPE::_Value, "Value%%", true, this->get(TYPE::Variant), info_Dummy());
 
     this->initBuiltinType(TYPE::Byte, "Byte", false, this->get(TYPE::_Value), info_ByteType());
     this->initBuiltinType(TYPE::Int16, "Int16", false, this->get(TYPE::_Value), info_Int16Type());
@@ -321,29 +321,29 @@ SymbolTable::SymbolTable() : typeTable(new DSType*[static_cast<unsigned int>(TYP
     this->initBuiltinType(TYPE::String, "String", false, this->get(TYPE::_Value), info_StringType());
 
     this->initBuiltinType(TYPE::ObjectPath, "ObjectPath", false, this->get(TYPE::_Value), info_ObjectPathType());
-    this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, this->getAnyType(), info_UnixFDType());
-    this->initBuiltinType(TYPE::Proxy, "Proxy", false, this->getAnyType(), info_ProxyType());
-    this->initBuiltinType(TYPE::DBus, "DBus", false, this->getAnyType(), info_DBusType());
-    this->initBuiltinType(TYPE::Bus, "Bus", false, this->getAnyType(), info_BusType());
-    this->initBuiltinType(TYPE::Service, "Service", false, this->getAnyType(), info_ServiceType());
+    this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, this->get(TYPE::Any), info_UnixFDType());
+    this->initBuiltinType(TYPE::Proxy, "Proxy", false, this->get(TYPE::Any), info_ProxyType());
+    this->initBuiltinType(TYPE::DBus, "DBus", false, this->get(TYPE::Any), info_DBusType());
+    this->initBuiltinType(TYPE::Bus, "Bus", false, this->get(TYPE::Any), info_BusType());
+    this->initBuiltinType(TYPE::Service, "Service", false, this->get(TYPE::Any), info_ServiceType());
     this->initBuiltinType(TYPE::DBusObject, "DBusObject", false, this->get(TYPE::Proxy), info_DBusObjectType());
 
-    this->initBuiltinType(TYPE::Error, "Error", true, this->getAnyType(), info_ErrorType());
-    this->initBuiltinType(TYPE::Job, "Job", false, this->getAnyType(), info_JobType());
-    this->initBuiltinType(TYPE::Func, "Func", false, this->getAnyType(), info_Dummy());
-    this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, this->getAnyType(), info_StringIterType());
-    this->initBuiltinType(TYPE::Regex, "Regex", false, this->getAnyType(), info_RegexType());
-    this->initBuiltinType(TYPE::Signal, "Signal", false, this->getAnyType(), info_SignalType());
-    this->initBuiltinType(TYPE::Signals, "Signals", false, this->getAnyType(), info_SignalsType());
+    this->initBuiltinType(TYPE::Error, "Error", true, this->get(TYPE::Any), info_ErrorType());
+    this->initBuiltinType(TYPE::Job, "Job", false, this->get(TYPE::Any), info_JobType());
+    this->initBuiltinType(TYPE::Func, "Func", false, this->get(TYPE::Any), info_Dummy());
+    this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, this->get(TYPE::Any), info_StringIterType());
+    this->initBuiltinType(TYPE::Regex, "Regex", false, this->get(TYPE::Any), info_RegexType());
+    this->initBuiltinType(TYPE::Signal, "Signal", false, this->get(TYPE::Any), info_SignalType());
+    this->initBuiltinType(TYPE::Signals, "Signals", false, this->get(TYPE::Any), info_SignalsType());
 
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType());
 
     // initialize type template
-    std::vector<DSType *> elements = {&this->getAnyType()};
+    std::vector<DSType *> elements = {&this->get(TYPE::Any)};
     this->arrayTemplate = this->initTypeTemplate(TYPE_ARRAY, std::move(elements), info_ArrayType());
 
-    elements = {&this->get(TYPE::_Value), &this->getAnyType()};
+    elements = {&this->get(TYPE::_Value), &this->get(TYPE::Any)};
     this->mapTemplate = this->initTypeTemplate(TYPE_MAP, std::move(elements), info_MapType());
 
     elements = std::vector<DSType *>();
@@ -353,7 +353,7 @@ SymbolTable::SymbolTable() : typeTable(new DSType*[static_cast<unsigned int>(TYP
     this->optionTemplate = this->initTypeTemplate(TYPE_OPTION, std::move(elements), info_OptionType()); // pseudo template
 
     // init string array type(for command argument)
-    std::vector<DSType *> types = {&this->getStringType()};
+    std::vector<DSType *> types = {&this->get(TYPE::String)};
     this->setToTypeTable(TYPE::StringArray, &this->createReifiedType(this->getArrayTemplate(), std::move(types)));
 
     // init some error type
@@ -435,7 +435,7 @@ DSType &SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         DSType *superType = attr != 0u ? nullptr :
-                            this->asVariantType(elementTypes) ? &this->getVariantType() : &this->getAnyType();
+                            this->asVariantType(elementTypes) ? &this->get(TYPE::Variant) : &this->get(TYPE::Any);
         return *this->typeMap.addType(std::move(typeName),
                                       new ReifiedType(typeTemplate.getInfo(), superType, std::move(elementTypes), attr));
     }
@@ -450,7 +450,7 @@ DSType &SymbolTable::createTupleType(std::vector<DSType *> &&elementTypes) {
     std::string typeName(this->toTupleTypeName(elementTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        DSType *superType = this->asVariantType(elementTypes) ? &this->getVariantType() : &this->getAnyType();
+        DSType *superType = this->asVariantType(elementTypes) ? &this->get(TYPE::Variant) : &this->get(TYPE::Any);
         return *this->typeMap.addType(std::move(typeName),
                                       new TupleType(this->tupleTemplate->getInfo(), superType, std::move(elementTypes)));
     }
@@ -680,7 +680,7 @@ void SymbolTable::checkElementTypes(const TypeTemplate &t, const std::vector<DST
         if(acceptType->isSameOrBaseTypeOf(*elementType) && !elementType->isNothingType()) {
             continue;
         }
-        if(*acceptType == this->getAnyType() && elementType->isOptionType()) {
+        if(*acceptType == this->get(TYPE::Any) && elementType->isOptionType()) {
             continue;
         }
         RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementType));
@@ -689,7 +689,7 @@ void SymbolTable::checkElementTypes(const TypeTemplate &t, const std::vector<DST
 
 bool SymbolTable::asVariantType(const std::vector<DSType *> &elementTypes) const {
     for(DSType *type : elementTypes) {
-        if(!this->getVariantType().isSameOrBaseTypeOf(*type)) {
+        if(!this->get(TYPE::Variant).isSameOrBaseTypeOf(*type)) {
             return false;
         }
     }

@@ -106,13 +106,13 @@ void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
 
 void ByteCodeGenerator::emitDescriptorIns(OpCode op, std::string &&desc) {
     unsigned short index = this->emitConstant(
-            DSValue::create<String_Object>(this->symbolTable.getStringType(), std::move(desc)));
+            DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::move(desc)));
     this->emit2byteIns(op, index);
 }
 
 void ByteCodeGenerator::generateToString() {
     if(this->handle_STR == nullptr) {
-        this->handle_STR = this->symbolTable.getAnyType().lookupMethodHandle(this->symbolTable, std::string(OP_STR));
+        this->handle_STR = this->symbolTable.get(TYPE::Any).lookupMethodHandle(this->symbolTable, std::string(OP_STR));
     }
 
     this->emitCallIns(OpCode::CALL_METHOD, 0, this->handle_STR->getMethodIndex());
@@ -247,7 +247,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         const bool tildeExpansion = isTildeExpansion(node.getSegmentNodes()[0]);
         if(tildeExpansion) {
             this->emitLdcIns(DSValue::create<String_Object>(
-                    this->symbolTable.getStringType(), static_cast<StringNode *>(node.getSegmentNodes()[0])->getValue()));
+                    this->symbolTable.get(TYPE::String), static_cast<StringNode *>(node.getSegmentNodes()[0])->getValue()));
             this->emit0byteIns(OpCode::APPEND_STRING);
             index++;
         }
@@ -513,16 +513,16 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
             auto thenLabel = makeLabel();
             auto mergeLabel = makeLabel();
             this->emitBranchIns(OpCode::TRY_UNWRAP, thenLabel);
-            this->emitLdcIns(DSValue::create<String_Object>(this->symbolTable.getStringType(), "(invalid)"));
+            this->emitLdcIns(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), "(invalid)"));
             this->emitJumpIns(mergeLabel);
 
             this->markLabel(thenLabel);
-            if(*elementType != this->symbolTable.getStringType()) {
+            if(*elementType != this->symbolTable.get(TYPE::String)) {
                 this->generateToString();
             }
 
             this->markLabel(mergeLabel);
-        } else if(exprType != this->symbolTable.getStringType()) {
+        } else if(exprType != this->symbolTable.get(TYPE::String)) {
             this->generateToString();
         }
         this->emitTypeIns(OpCode::PRINT, exprType);
@@ -986,7 +986,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->curBuilder().finallyLabels.pop_back();
 
         this->markLabel(finallyLabel);
-        this->catchException(beginLabel, finallyLabel, this->symbolTable.getAnyType(),
+        this->catchException(beginLabel, finallyLabel, this->symbolTable.get(TYPE::Any),
                              blockNode.getBaseIndex(), maxLocalSize);
         this->visit(*node.getFinallyNode());
         this->emit0byteIns(OpCode::EXIT_FINALLY);
@@ -1002,7 +1002,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
         this->visit(*node.getExprNode());
         break;
     case VarDeclNode::IMPORT_ENV: {
-        this->emitLdcIns(DSValue::create<String_Object>(this->symbolTable.getStringType(), node.getVarName()));
+        this->emitLdcIns(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), node.getVarName()));
         this->emit0byteIns(OpCode::DUP);
         const bool hashDefault = node.getExprNode() != nullptr;
         if(hashDefault) {
@@ -1014,7 +1014,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
         break;
     }
     case VarDeclNode::EXPORT_ENV: {
-        this->emitLdcIns(DSValue::create<String_Object>(this->symbolTable.getStringType(), node.getVarName()));
+        this->emitLdcIns(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), node.getVarName()));
         this->emit0byteIns(OpCode::DUP);
         this->visit(*node.getExprNode());
         this->emit0byteIns(OpCode::STORE_ENV);

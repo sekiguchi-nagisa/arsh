@@ -235,7 +235,7 @@ static void initBuiltinVar(DSState *state) {
      * must be String_Object
      */
     bindVariable(state, "YDSH_VERSION", DSValue::create<String_Object>(
-            state->symbolTable.getStringType(),
+            state->symbolTable.get(TYPE::String),
             STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "." STR(X_INFO_PATCH_VERSION)));
 #undef XSTR
 #undef STR
@@ -246,7 +246,7 @@ static void initBuiltinVar(DSState *state) {
      */
     bindVariable(state, "REPLY", state->emptyStrObj);
 
-    std::vector<DSType *> types = {&state->symbolTable.getStringType(), &state->symbolTable.getStringType()};
+    std::vector<DSType *> types = {&state->symbolTable.get(TYPE::String), &state->symbolTable.get(TYPE::String)};
 
     /**
      * holding read variable.
@@ -276,7 +276,7 @@ static void initBuiltinVar(DSState *state) {
      * for internal field splitting.
      * must be String_Object.
      */
-    bindVariable(state, "IFS", DSValue::create<String_Object>(state->symbolTable.getStringType(), " \t\n"), FieldAttributes());
+    bindVariable(state, "IFS", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), " \t\n"), FieldAttributes());
 
     /**
      * for history api.
@@ -312,7 +312,7 @@ static void initBuiltinVar(DSState *state) {
      * represent shell or shell script name.
      * must be String_Object
      */
-    bindVariable(state, "0", DSValue::create<String_Object>(state->symbolTable.getStringType(), "ydsh"));
+    bindVariable(state, "0", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), "ydsh"));
 
     /**
      * initialize positional parameter
@@ -346,12 +346,12 @@ static void initBuiltinVar(DSState *state) {
     /**
      * must be String_Object
      */
-    bindVariable(state, "OSTYPE", DSValue::create<String_Object>(state->symbolTable.getStringType(), name.sysname));
+    bindVariable(state, "OSTYPE", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), name.sysname));
 
     /**
      * must be String_Object
      */
-    bindVariable(state, "MACHTYPE", DSValue::create<String_Object>(state->symbolTable.getStringType(), name.machine));
+    bindVariable(state, "MACHTYPE", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), name.machine));
 
     /**
      * dummy object for random number
@@ -387,7 +387,7 @@ static void initBuiltinVar(DSState *state) {
      */
     std::string str = ".";
     getWorkingDir(*state, false, str);
-    bindVariable(state, VAR_SCRIPT_DIR, DSValue::create<String_Object>(state->symbolTable.getStringType(), std::move(str)));
+    bindVariable(state, VAR_SCRIPT_DIR, DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
 }
 
 static void loadEmbeddedScript(DSState *state) {
@@ -471,7 +471,7 @@ unsigned int DSState_lineNum(const DSState *st) {
 void DSState_setShellName(DSState *st, const char *shellName) {
     if(shellName != nullptr) {
         unsigned int index = toIndex(BuiltinVarOffset::POS_0);
-        st->setGlobal(index, DSValue::create<String_Object>(st->symbolTable.getStringType(), std::string(shellName)));
+        st->setGlobal(index, DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::string(shellName)));
     }
 }
 
@@ -515,7 +515,7 @@ void DSState_setArguments(DSState *st, char *const *args) {
 
     for(unsigned int i = 0; args[i] != nullptr; i++) {
         auto *array = typeAs<Array_Object>(st->getGlobal(toIndex(BuiltinVarOffset::ARGS)));
-        array->append(DSValue::create<String_Object>(st->symbolTable.getStringType(), std::string(args[i])));
+        array->append(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::string(args[i])));
     }
     finalizeScriptArg(st);
 }
@@ -531,7 +531,7 @@ int DSState_setScriptDir(DSState *st, const char *scriptPath) {
 
     std::string str(real, real == ptr ? 1 : ptr - real);
     free(real);
-    st->setGlobal(index, DSValue::create<String_Object>(st->symbolTable.getStringType(), std::move(str)));
+    st->setGlobal(index, DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::move(str)));
     return 0;
 }
 

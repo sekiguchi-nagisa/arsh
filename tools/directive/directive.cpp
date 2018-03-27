@@ -109,7 +109,7 @@ static bool toBool(const std::string &str) {
 
 DirectiveInitializer::DirectiveInitializer(SymbolTable &symbolTable) :
         TypeChecker(symbolTable, false) {
-    auto &boolType = this->symbolTable.getBooleanType();
+    auto &boolType = this->symbolTable.get(TYPE::Boolean);
     const char *names[] = {
             "TRUE", "True", "true", "FALSE", "False", "false",
     };
@@ -125,11 +125,11 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         throw TypeCheckError(node.getToken(), "", str.c_str());
     }
 
-    this->addHandler("status", this->symbolTable.getIntType(), [&](Node &node, Directive &d) {
+    this->addHandler("status", this->symbolTable.get(TYPE::Int32), [&](Node &node, Directive &d) {
         d.setStatus(this->checkedCast<NumberNode>(node).getIntValue());
     });
 
-    this->addHandler("result", this->symbolTable.getStringType(), [&](Node &node, Directive &d) {
+    this->addHandler("result", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
         d.setResult(this->resolveStatus(this->checkedCast<StringNode>(node)));
     });
 
@@ -144,20 +144,20 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         d.setLineNum(this->checkedCast<NumberNode>(node).getIntValue());
     });
 
-    this->addHandler("ifHaveDBus", this->symbolTable.getBooleanType(), [&](Node &node, Directive &d) {
+    this->addHandler("ifHaveDBus", this->symbolTable.get(TYPE::Boolean), [&](Node &node, Directive &d) {
         bool v = toBool(this->checkedCast<VarNode>(node).getVarName());
         d.setIfHaveDBus(v);
     });
 
-    this->addHandler("errorKind", this->symbolTable.getStringType(), [&](Node &node, Directive &d) {
+    this->addHandler("errorKind", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
         d.setErrorKind(this->checkedCast<StringNode>(node).getValue());
     });
 
-    this->addHandler("out", this->symbolTable.getStringType(), [&](Node &node, Directive &d) {
+    this->addHandler("out", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
         d.setOut(this->checkedCast<StringNode>(node).getValue());
     });
 
-    this->addHandler("err", this->symbolTable.getStringType(), [&](Node &node, Directive &d) {
+    this->addHandler("err", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
         d.setErr(this->checkedCast<StringNode>(node).getValue());
     });
 

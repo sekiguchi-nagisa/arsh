@@ -46,7 +46,7 @@ bool DSObject::equals(const DSValue &obj) const {
 }
 
 DSValue DSObject::str(DSState &ctx) {
-    return DSValue::create<String_Object>(getPool(ctx).getStringType(), this->toString(ctx, nullptr));
+    return DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), this->toString(ctx, nullptr));
 }
 
 DSValue DSObject::interp(DSState &ctx, VisitedSet *) {
@@ -173,8 +173,8 @@ static bool checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
     if(visitedSet == nullptr) {
         auto &elementTypes = static_cast<ReifiedType *>(thisPtr->getType())->getElementTypes();
         for(auto &elementType : elementTypes) {
-            if(*elementType == getPool(ctx).getVariantType() ||
-               *elementType == getPool(ctx).getAnyType()) {
+            if(*elementType == getPool(ctx).get(TYPE::Variant) ||
+               *elementType == getPool(ctx).get(TYPE::Any)) {
                 newSet = std::make_shared<VisitedSet>();
                 visitedSet = newSet.get();
                 break;
@@ -262,7 +262,7 @@ DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         str += typeAs<String_Object>(ret)->getValue();
         postVisit(visitedSet, this);
     }
-    return DSValue::create<String_Object>(getPool(ctx).getStringType(), std::move(str));
+    return DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::move(str));
 }
 
 DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
@@ -277,7 +277,7 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
-        if(*tempType == getPool(ctx).getStringType()) {
+        if(*tempType == getPool(ctx).get(TYPE::String)) {
             typeAs<Array_Object>(result)->values.push_back(std::move(temp));
         } else {
             assert(*tempType == getPool(ctx).get(TYPE::StringArray));
@@ -391,7 +391,7 @@ DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         str += typeAs<String_Object>(ret)->getValue();
         postVisit(visitedSet, this);
     }
-    return DSValue::create<String_Object>(getPool(ctx).getStringType(), std::move(str));
+    return DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::move(str));
 }
 
 DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
@@ -407,7 +407,7 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
-        if(*tempType == getPool(ctx).getStringType()) {
+        if(*tempType == getPool(ctx).get(TYPE::String)) {
             typeAs<Array_Object>(result)->append(std::move(temp));
         } else {
             assert(*tempType == getPool(ctx).get(TYPE::StringArray));
@@ -446,7 +446,7 @@ DSValue Error_Object::newError(const DSState &ctx, DSType &type, DSValue &&messa
     DSValue obj(new Error_Object(type, std::move(message)));
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
     typeAs<Error_Object>(obj)->name = DSValue::create<String_Object>(
-            getPool(ctx).getStringType(), getPool(ctx).getTypeName(type));
+            getPool(ctx).get(TYPE::String), getPool(ctx).getTypeName(type));
     return obj;
 }
 

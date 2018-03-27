@@ -94,9 +94,9 @@ static DSHistory initHistory() {
 }
 
 DSState::DSState() :
-        trueObj(DSValue::create<Boolean_Object>(this->symbolTable.getBooleanType(), true)),
-        falseObj(DSValue::create<Boolean_Object>(this->symbolTable.getBooleanType(), false)),
-        emptyStrObj(DSValue::create<String_Object>(this->symbolTable.getStringType(), std::string())),
+        trueObj(DSValue::create<Boolean_Object>(this->symbolTable.get(TYPE::Boolean), true)),
+        falseObj(DSValue::create<Boolean_Object>(this->symbolTable.get(TYPE::Boolean), false)),
+        emptyStrObj(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::string())),
         emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.get(TYPE::UnixFD), -1)),
         callStack(new DSValue[DEFAULT_STACK_SIZE]), logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
@@ -464,7 +464,7 @@ static DSValue readAsStr(const DSState &state, int fd) {
     // remove last newlines
     for(; !str.empty() && str.back() == '\n'; str.pop_back());
 
-    return DSValue::create<String_Object>(state.symbolTable.getStringType(), std::move(str));
+    return DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str));
 }
 
 static DSValue readAsStrArray(const DSState &state, int fd) {
@@ -500,7 +500,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
             }
             skipCount = 0;
             if(fieldSep) {
-                array->append(DSValue::create<String_Object>(state.symbolTable.getStringType(), std::move(str)));
+                array->append(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str)));
                 str = "";
                 skipCount = isSpace(ch) ? 2 : 1;
                 continue;
@@ -514,7 +514,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
     // append remain
     if(!str.empty() || !hasSpace(ifsSize, ifs)) {
-        array->append(DSValue::create<String_Object>(state.symbolTable.getStringType(), std::move(str)));
+        array->append(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str)));
     }
 
     return obj;
@@ -821,7 +821,7 @@ static int doIOHere(const String_Object &value) {
  */
 static int redirectToFile(const SymbolTable &symbolTable, const DSValue &fileName, const char *mode, int targetFD) {
     auto &type = *fileName->getType();
-    if(type == symbolTable.getStringType()) {
+    if(type == symbolTable.get(TYPE::String)) {
         FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
         if(fp == nullptr) {
             return errno;
@@ -900,7 +900,7 @@ bool RedirConfig::redirect(DSState &st) const {
             std::string msg = REDIR_ERROR;
             if(pair.second) {
                 auto *type = pair.second->getType();
-                if(*type == st.symbolTable.getStringType()) {
+                if(*type == st.symbolTable.get(TYPE::String)) {
                     if(!typeAs<String_Object>(pair.second)->empty()) {
                         msg += ": ";
                         msg += typeAs<String_Object>(pair.second)->getValue();
@@ -1406,7 +1406,7 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
     DSType *valueType = value->getType();
 
     auto *argv = typeAs<Array_Object>(state.callStack[state.stackTopIndex - 1]);
-    if(*valueType == state.symbolTable.getStringType()) {  // String
+    if(*valueType == state.symbolTable.get(TYPE::String)) {  // String
         if(skipEmptyStr && typeAs<String_Object>(value)->empty()) {
             return;
         }
@@ -1655,7 +1655,7 @@ static bool mainLoop(DSState &state) {
         vmcase(LOAD_ENV) {
             const char *value = loadEnv(state, false);
             TRY(value);
-            state.push(DSValue::create<String_Object>(state.symbolTable.getStringType(), value));
+            state.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), value));
             vmnext;
         }
         vmcase(STORE_ENV) {
@@ -1683,7 +1683,7 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_STRING) {
-            state.push(DSValue::create<String_Object>(state.symbolTable.getStringType()));
+            state.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String)));
             vmnext;
         }
         vmcase(APPEND_STRING) {
@@ -1883,13 +1883,13 @@ static bool mainLoop(DSState &state) {
         vmcase(TO_BYTE) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             v &= 0xFF;  // fill higher bits (8th ~ 31) with 0
-            state.push(DSValue::create<Int_Object>(state.symbolTable.getByteType(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Byte), v));
             vmnext;
         }
         vmcase(TO_U16) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
-            state.push(DSValue::create<Int_Object>(state.symbolTable.getUint16Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Uint16), v));
             vmnext;
         }
         vmcase(TO_I16) {
@@ -1898,7 +1898,7 @@ static bool mainLoop(DSState &state) {
             if((v & 0x8000) != 0u) {    // if 15th bit is 1, fill higher bits with 1
                 v |= 0xFFFF0000;
             }
-            state.push(DSValue::create<Int_Object>(state.symbolTable.getInt16Type(), v));
+            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int16), v));
             vmnext;
         }
         vmcase(NEW_LONG) {
@@ -1931,25 +1931,25 @@ static bool mainLoop(DSState &state) {
         vmcase(U32_TO_D) {
             unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.symbolTable.getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(I32_TO_D) {
             int v = typeAs<Int_Object>(state.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.symbolTable.getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(U64_TO_D) {
             unsigned long v = typeAs<Long_Object>(state.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.symbolTable.getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(I64_TO_D) {
             long v = typeAs<Long_Object>(state.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.symbolTable.getFloatType(), d));
+            state.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(D_TO_U32) {
@@ -1999,7 +1999,7 @@ static bool mainLoop(DSState &state) {
         vmcase(EXPAND_TILDE) {
             std::string str = typeAs<String_Object>(state.pop())->getValue();
             expandTilde(str);
-            state.push(DSValue::create<String_Object>(state.symbolTable.getStringType(), std::move(str)));
+            state.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str)));
             vmnext;
         }
         vmcase(NEW_CMD) {
@@ -2306,7 +2306,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     // init parameter
     std::vector<DSValue> values;
     for(; *argv != nullptr; argv++) {
-        values.push_back(DSValue::create<String_Object>(st.symbolTable.getStringType(), std::string(*argv)));
+        values.push_back(DSValue::create<String_Object>(st.symbolTable.get(TYPE::String), std::string(*argv)));
     }
     auto obj = DSValue::create<Array_Object>(st.symbolTable.get(TYPE::StringArray), std::move(values));
 

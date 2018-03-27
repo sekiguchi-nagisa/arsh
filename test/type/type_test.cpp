@@ -187,27 +187,27 @@ public:
 
 
 TEST_F(TypeTest, builtinName) {
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Any", this->pool.getAnyType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Void", this->pool.getVoidType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Nothing", this->pool.getNothingType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Any", this->pool.get(TYPE::Any)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Void", this->pool.get(TYPE::Void)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Nothing", this->pool.get(TYPE::Nothing)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Byte", this->pool.getByteType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int16", this->pool.getInt16Type()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Uint16", this->pool.getUint16Type()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Byte", this->pool.get(TYPE::Byte)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int16", this->pool.get(TYPE::Int16)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Uint16", this->pool.get(TYPE::Uint16)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int32", this->pool.getInt32Type()));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Uint32", this->pool.getUint32Type()));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int64", this->pool.getInt64Type()));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Uint64", this->pool.getUint64Type()));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int32", this->pool.getIntType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int32", this->pool.get(TYPE::Int32)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Boolean", this->pool.getBooleanType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Float", this->pool.getFloatType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Boolean", this->pool.get(TYPE::Boolean)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Float", this->pool.get(TYPE::Float)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("String", this->pool.getStringType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("String", this->pool.get(TYPE::String)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("ObjectPath", this->pool.get(TYPE::ObjectPath)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("UnixFD", this->pool.get(TYPE::UnixFD)));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Variant", this->pool.getVariantType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Variant", this->pool.get(TYPE::Variant)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Array<String>", this->pool.get(TYPE::StringArray)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Error", this->pool.get(TYPE::Error)));
@@ -222,58 +222,58 @@ TEST_F(TypeTest, builtinName) {
 }
 
 TEST_F(TypeTest, superType) {
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getAnyType().getSuperType() != nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getVoidType().getSuperType() == nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.getNothingType().getSuperType() == nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.get(TYPE::Any).getSuperType() != nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.get(TYPE::Void).getSuperType() == nullptr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->pool.get(TYPE::Nothing).getSuperType() == nullptr));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->toType<Option_t<String_t>>().getSuperType() == nullptr));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getAnyType(), this->pool.get(TYPE::_Root)));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getVariantType(), this->pool.getAnyType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::_Value), this->pool.getVariantType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Any), this->pool.get(TYPE::_Root)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Variant), this->pool.get(TYPE::Any)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::_Value), this->pool.get(TYPE::Variant)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getByteType(), this->pool.get(TYPE::_Value)));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getInt16Type(), this->pool.get(TYPE::_Value)));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getUint16Type(), this->pool.get(TYPE::_Value)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Byte), this->pool.get(TYPE::_Value)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Int16), this->pool.get(TYPE::_Value)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Uint16), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getInt32Type(), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getUint32Type(), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getInt64Type(), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getUint64Type(), this->pool.get(TYPE::_Value)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getBooleanType(), this->pool.get(TYPE::_Value)));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getFloatType(), this->pool.get(TYPE::_Value)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Boolean), this->pool.get(TYPE::_Value)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Float), this->pool.get(TYPE::_Value)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.getStringType(), this->pool.get(TYPE::_Value)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::String), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::ObjectPath), this->pool.get(TYPE::_Value)));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::UnixFD), this->pool.getAnyType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::UnixFD), this->pool.get(TYPE::Any)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::StringArray), this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Error), this->pool.getAnyType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::StringArray), this->pool.get(TYPE::Variant)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Error), this->pool.get(TYPE::Any)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::ArithmeticError), this->pool.get(TYPE::Error)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::OutOfRangeError), this->pool.get(TYPE::Error)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::KeyNotFoundError), this->pool.get(TYPE::Error)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::TypeCastError), this->pool.get(TYPE::Error)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::StackOverflowError), this->pool.get(TYPE::Error)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::DBusError), this->pool.get(TYPE::Error)));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Regex), this->pool.getAnyType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Regex), this->pool.get(TYPE::Any)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::RegexSyntaxError), this->pool.get(TYPE::Error)));
 }
 
 TEST_F(TypeTest, attribute) {
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.getAnyType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::VOID_TYPE, this->pool.getVoidType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::NOTHING_TYPE, this->pool.getNothingType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getVariantType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(TYPE::Any)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::VOID_TYPE, this->pool.get(TYPE::Void)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::NOTHING_TYPE, this->pool.get(TYPE::Nothing)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Variant)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(TYPE::_Value)));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getByteType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getInt16Type()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getUint16Type()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Byte)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Int16)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Uint16)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getInt32Type()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getUint32Type()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getInt64Type()));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getUint64Type()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getBooleanType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getFloatType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.getStringType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Boolean)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Float)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::String)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::ObjectPath)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::UnixFD)));
 
@@ -309,13 +309,13 @@ TEST_F(TypeTest, typeToken) {
     ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int", this->pool.getInt32Type()));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Int_t>(), this->pool.get(TYPE::_Value)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<String_t>>(), this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Array_t<ObjectPath_t>>>(), this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Error_t>>(), this->pool.getAnyType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<String_t>>(), this->pool.get(TYPE::Variant)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Array_t<ObjectPath_t>>>(), this->pool.get(TYPE::Variant)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Error_t>>(), this->pool.get(TYPE::Any)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Map_t<Byte_t, Uint64_t>>(), this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Map_t<Boolean_t, Tuple_t<Uint32_t, String_t>>>(), this->pool.getVariantType()));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Tuple_t<Error_t>>(), this->pool.getAnyType()));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Map_t<Byte_t, Uint64_t>>(), this->pool.get(TYPE::Variant)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Map_t<Boolean_t, Tuple_t<Uint32_t, String_t>>>(), this->pool.get(TYPE::Variant)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Tuple_t<Error_t>>(), this->pool.get(TYPE::Any)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Func_t<Void_t>>(), this->pool.get(TYPE::Func)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Func_t<Int16_t, Uint16_t, Int64_t, Float_t>>(), this->pool.get(TYPE::Func)));
@@ -334,19 +334,19 @@ TEST_F(TypeTest, pool) {
 
 TEST_F(TypeTest, api) {
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->pool.getAnyType().isSameOrBaseTypeOf(this->pool.getStringType())));
+            ASSERT_TRUE(this->pool.get(TYPE::Any).isSameOrBaseTypeOf(this->pool.get(TYPE::String))));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_FALSE(this->pool.getAnyType().isSameOrBaseTypeOf(this->pool.getVoidType())));
+            ASSERT_FALSE(this->pool.get(TYPE::Any).isSameOrBaseTypeOf(this->pool.get(TYPE::Void))));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->pool.getBooleanType().isSameOrBaseTypeOf(this->pool.getNothingType())));
+            ASSERT_TRUE(this->pool.get(TYPE::Boolean).isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing))));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_FALSE(this->pool.getNothingType().isSameOrBaseTypeOf(this->pool.getBooleanType())));
+            ASSERT_FALSE(this->pool.get(TYPE::Nothing).isSameOrBaseTypeOf(this->pool.get(TYPE::Boolean))));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->pool.getVoidType().isSameOrBaseTypeOf(this->pool.getNothingType())));
+            ASSERT_TRUE(this->pool.get(TYPE::Void).isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing))));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.getNothingType())));
+            ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing))));
     ASSERT_NO_FATAL_FAILURE(
-            ASSERT_FALSE(this->pool.getAnyType().isSameOrBaseTypeOf(this->toType<Option_t<Int32_t>>())));
+            ASSERT_FALSE(this->pool.get(TYPE::Any).isSameOrBaseTypeOf(this->toType<Option_t<Int32_t>>())));
     ASSERT_NO_FATAL_FAILURE(
             ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.getInt32Type())));
     ASSERT_NO_FATAL_FAILURE(

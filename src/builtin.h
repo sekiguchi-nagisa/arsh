@@ -769,7 +769,7 @@ YDSH_METHOD float_2_float_div(RuntimeContext & ctx) {
     double left = typeAs<Float_Object>(LOCAL(0))->getValue();
     double right = typeAs<Float_Object>(LOCAL(1))->getValue();
     double value = left / right;
-    RET(DSValue::create<Float_Object>(getPool(ctx).getFloatType(), value));
+    RET(DSValue::create<Float_Object>(getPool(ctx).get(TYPE::Float), value));
 }
 
 //   =====  equality  =====
@@ -964,7 +964,7 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
         if(count == limit && index < size) {
             unsigned int nextIndex = UnicodeUtil::utf8NextPos(index, strObj->getValue()[index]);
             RET(DSValue::create<String_Object>(
-                    getPool(ctx).getStringType(), std::string(strObj->getValue() + index, nextIndex - index)));
+                    getPool(ctx).get(TYPE::String), std::string(strObj->getValue() + index, nextIndex - index)));
         }
     }
 
@@ -1002,7 +1002,7 @@ static DSValue sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIn
     }
 
     RET(DSValue::create<String_Object>(
-            getPool(ctx).getStringType(),
+            getPool(ctx).get(TYPE::String),
             std::string(strObj->getValue() + startIndex, stopIndex - startIndex)));
 }
 
@@ -1079,7 +1079,7 @@ YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
     if(ptr != nullptr) {
         index = reinterpret_cast<const char *>(ptr) - thisObj->getValue();
     }
-    RET(DSValue::create<Int_Object>(getPool(ctx).getIntType(), index));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), index));
 }
 
 //!bind: function lastIndexOf($this : String, $target : String) : Int32
@@ -1103,7 +1103,7 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
     if(thisSize == targetSize && targetSize == 0) {
         index = 0;
     }
-    RET(DSValue::create<Int_Object>(getPool(ctx).getIntType(), index));
+    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), index));
 }
 
 //!bind: function split($this : String, $delim : String) : Array<String>
@@ -1125,7 +1125,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
             if(ret == nullptr) {
                 break;
             }
-            ptr->append(DSValue::create<String_Object>(getPool(ctx).getStringType(), std::string(remain, ret - remain)));
+            ptr->append(DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::string(remain, ret - remain)));
             remain = ret + delimSize;
         }
     }
@@ -1133,7 +1133,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     if(remain == thisStr) {
         ptr->append(LOCAL(0));
     } else if(remain != thisStr + thisSize) {
-        ptr->append(DSValue::create<String_Object>(getPool(ctx).getStringType(), std::string(remain, thisSize - (remain - thisStr))));
+        ptr->append(DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::string(remain, thisSize - (remain - thisStr))));
     }
 
     RET(results);
@@ -1197,7 +1197,7 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
     int status = 0;
     double value = convertToDouble(str, status, false);
 
-    RET(status == 0 ? DSValue::create<Float_Object>(getPool(ctx).getFloatType(), value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Float_Object>(getPool(ctx).get(TYPE::Float), value) : DSValue::createInvalid());
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter
@@ -1265,7 +1265,7 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
 
     unsigned int size = strIter->curIndex - curIndex;
     RET(DSValue::create<String_Object>(
-            getPool(ctx).getStringType(), std::string(strObj->getValue() + curIndex, size)));
+            getPool(ctx).get(TYPE::String), std::string(strObj->getValue() + curIndex, size)));
 }
 
 //!bind: function $OP_HAS_NEXT($this : StringIter) : Boolean
@@ -1365,7 +1365,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     for(int i = 0; i < matchSize; i++) {
         unsigned int size = ovec[i * 2 + 1] - ovec[i * 2];
         auto v = size == 0 ? getEmptyStrObj(ctx) :
-                 DSValue::create<String_Object>(getPool(ctx).getStringType(),
+                 DSValue::create<String_Object>(getPool(ctx).get(TYPE::String),
                                                 std::string(str->getValue() + ovec[i * 2], size));
         array->refValues().push_back(std::move(v));
     }
@@ -1384,7 +1384,7 @@ YDSH_METHOD signal_name(RuntimeContext &ctx) {
     auto *obj = typeAs<Int_Object>(LOCAL(0));
     const char *name = getSignalName(obj->getValue());
     assert(name != nullptr);
-    RET(DSValue::create<String_Object>(getPool(ctx).getStringType(), name));
+    RET(DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), name));
 }
 
 //!bind: function value($this : Signal) : Int32

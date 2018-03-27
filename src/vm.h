@@ -239,7 +239,7 @@ struct DSState {
      */
     DSValue newError(DSType &errorType, std::string &&message) const {
         return Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
-                this->symbolTable.getStringType(), std::move(message)));
+                this->symbolTable.get(TYPE::String), std::move(message)));
     }
 
     /**

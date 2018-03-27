@@ -990,7 +990,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
         if(fieldSep && index < argc - 1) {
             auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
             auto varObj = argvObj.getValues()[index];
-            auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
+            auto valueObj = DSValue::create<String_Object>(getPool(state).get(TYPE::String), std::move(strBuf));
             obj->set(std::move(varObj), std::move(valueObj));
             strBuf = "";
             index++;
@@ -1019,7 +1019,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
 
     if(varSize == 0) {
         setGlobal(state, varIndex,
-                  DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf)));
+                  DSValue::create<String_Object>(getPool(state).get(TYPE::String), std::move(strBuf)));
         strBuf = "";
     }
 
@@ -1027,7 +1027,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
     for(; index < argc; index++) {
         auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
         auto varObj = argvObj.getValues()[index];
-        auto valueObj = DSValue::create<String_Object>(getPool(state).getStringType(), std::move(strBuf));
+        auto valueObj = DSValue::create<String_Object>(getPool(state).get(TYPE::String), std::move(strBuf));
         obj->set(std::move(varObj), std::move(valueObj));
         strBuf = "";
     }

@@ -361,47 +361,6 @@ public:
         return *this->typeTable[static_cast<unsigned int>(type)];
     }
 
-    /**
-     * get any type (root class of ydsh class)
-     */
-    DSType &getAnyType() const {
-        return this->get(TYPE::Any);
-    }
-
-    /**
-     * get void type (pseudo class representing for void)
-     */
-    DSType &getVoidType() const {
-        return this->get(TYPE::Void);
-    }
-
-    DSType &getNothingType() const {
-        return this->get(TYPE::Nothing);
-    }
-
-    DSType &getVariantType() const {
-        return this->get(TYPE::Variant);
-    }
-
-    /**
-     * int is 32bit.
-     */
-    DSType &getIntType() const {
-        return this->get(TYPE::Int32);
-    }
-
-    DSType &getByteType() const {
-        return this->get(TYPE::Byte);
-    }
-
-    DSType &getInt16Type() const {
-        return this->get(TYPE::Int16);
-    }
-
-    DSType &getUint16Type() const {
-        return this->get(TYPE::Uint16);
-    }
-
     DSType &getInt32Type() const {
         return this->get(TYPE::Int32);
     }
@@ -416,21 +375,6 @@ public:
 
     DSType &getUint64Type() const {
         return this->get(TYPE::Uint64);
-    }
-
-    /**
-     * float is 64bit.
-     */
-    DSType &getFloatType() const {
-        return this->get(TYPE::Float);
-    }
-
-    DSType &getBooleanType() const {
-        return this->get(TYPE::Boolean);
-    }
-
-    DSType &getStringType() const {
-        return this->get(TYPE::String);
     }
 
     // for reified type.
