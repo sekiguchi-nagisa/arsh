@@ -33,13 +33,13 @@ class FunctionType;
 struct NativeFuncInfo;
 
 #define EACH_FIELD_ATTR(OP) \
-    OP(READ_ONLY  , (1 << 0)) \
-    OP(GLOBAL     , (1 << 1)) \
-    OP(ENV        , (1 << 2)) \
-    OP(FUNC_HANDLE, (1 << 3)) \
-    OP(INTERFACE  , (1 << 4)) \
-    OP(RANDOM     , (1 << 5)) \
-    OP(SECONDS    , (1 << 6))
+    OP(READ_ONLY  , (1u << 0)) \
+    OP(GLOBAL     , (1u << 1)) \
+    OP(ENV        , (1u << 2)) \
+    OP(FUNC_HANDLE, (1u << 3)) \
+    OP(INTERFACE  , (1u << 4)) \
+    OP(RANDOM     , (1u << 5)) \
+    OP(SECONDS    , (1u << 6))
 
 enum class FieldAttribute : unsigned int {
 #define GEN_ENUM(E, V) E = (V),
@@ -224,8 +224,8 @@ public:
 
     bool isSignal() const;
 
-    static constexpr flag8_t INTERFACE    = 1 << 0;
-    static constexpr flag8_t MULTI_RETURN = 1 << 1;
+    static constexpr flag8_t INTERFACE    = 1u << 0;
+    static constexpr flag8_t MULTI_RETURN = 1u << 1;
 };
 
 } // namespace ydsh

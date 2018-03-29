@@ -774,9 +774,9 @@ private:
 
 enum class CodeKind : unsigned char {
     TOPLEVEL         = 8,
-    FUNCTION         = (1 << 4) + 8,
-    USER_DEFINED_CMD = (2 << 4) + 8,
-    NATIVE           = (3 << 4) + 1,
+    FUNCTION         = (1u << 4) + 8,
+    USER_DEFINED_CMD = (2u << 4) + 8,
+    NATIVE           = (3u << 4) + 1,
 };
 
 class DSCode {

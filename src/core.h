@@ -85,8 +85,8 @@ public:
 
     ~FilePathCache();
 
-    static constexpr flag8_t USE_DEFAULT_PATH = 1 << 0;
-    static constexpr flag8_t DIRECT_SEARCH    = 1 << 1;
+    static constexpr flag8_t USE_DEFAULT_PATH = 1u << 0;
+    static constexpr flag8_t DIRECT_SEARCH    = 1u << 1;
 
     /**
      * search file path by using PATH
