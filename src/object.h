@@ -33,12 +33,9 @@
 
 namespace ydsh {
 
-class FunctionNode;
 class DSValue;
-class String_Object;
-struct ObjectVisitor;
 
-typedef std::unordered_set<unsigned long> VisitedSet;
+using VisitedSet = std::unordered_set<unsigned long>;
 
 class DSObject {
 protected:
