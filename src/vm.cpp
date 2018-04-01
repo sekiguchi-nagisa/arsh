@@ -1600,19 +1600,6 @@ static bool mainLoop(DSState &state) {
             state.push(CONST_POOL(state)[index]);
             vmnext;
         }
-        vmcase(LOAD_FUNC) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            state.loadGlobal(index);
-
-            auto *func = typeAs<FuncObject>(state.peek());
-            if(func->getType() == nullptr) {
-                auto *handle = state.symbolTable.lookupHandle(func->getCode().getName());
-                assert(handle != nullptr);
-                func->setType(handle->getFieldType(state.symbolTable));
-            }
-            vmnext;
-        }
         vmcase(LOAD_GLOBAL) {
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;

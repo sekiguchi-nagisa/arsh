@@ -344,11 +344,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     }
     recvNode.setAttribute(handle);
 
-    if(handle->attr().has(FieldAttribute::FUNC_HANDLE)) {
-        return HandleOrFuncType(static_cast<FunctionHandle *>(handle));
-    }
-
-    DSType *type = handle->getFieldType(this->symbolTable);
+    DSType *type = handle->getFieldType();
     if(!type->isFuncType()) {
         if(this->symbolTable.get(TYPE::Func) == *type) {
             RAISE_TC_ERROR(NotCallable, recvNode);
@@ -383,7 +379,7 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
         return false;
     }
     node.setAttribute(handle);
-    node.setType(*handle->getFieldType(this->symbolTable));
+    node.setType(*handle->getFieldType());
     return true;
 }
 
@@ -604,7 +600,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
     }
 
     node.setAttribute(handle);
-    node.setType(*handle->getFieldType(this->symbolTable));
+    node.setType(*handle->getFieldType());
 }
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
@@ -728,8 +724,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
     }
 
     // resolve param types
-    auto &paramTypes = hf.isFuncHandle() ? hf.getFuncHandle()->getParamTypes() :
-                       hf.getFuncType()->getParamTypes();
+    auto &paramTypes = hf.getFuncType()->getParamTypes();
     unsigned int size = paramTypes.size();
     unsigned int argSize = node.getArgNodes().size();
     // check param size
@@ -743,7 +738,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
     }
 
     // set return type
-    node.setType(hf.isFuncHandle() ? *hf.getFuncHandle()->getReturnType() : *hf.getFuncType()->getReturnType());
+    node.setType(*hf.getFuncType()->getReturnType());
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
@@ -1232,11 +1227,11 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     }
 
     // register function handle
-    auto pair = this->symbolTable.registerFuncHandle(node.getName(), returnType, paramTypes);
-    if(pair.second == SymbolError::DEFINED) {
-        RAISE_TC_ERROR(DefinedSymbol, node, node.getName().c_str());
-    }
-    node.setVarIndex(pair.first->getFieldIndex());
+    auto &funcType = this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
+    node.setFuncType(&funcType);
+    auto handle = this->addEntryAndThrowIfDefined(node, node.getName(), funcType,
+                                                /*FieldAttribute::FUNC_HANDLE |*/ FieldAttribute::READ_ONLY);
+    node.setVarIndex(handle->getFieldIndex());
 
     // prepare type checking
     this->pushReturnType(returnType);
@@ -1247,7 +1242,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     for(unsigned int i = 0; i < paramSize; i++) {
         VarNode *paramNode = node.getParamNodes()[i];
         FieldHandle *fieldHandle = this->addEntryAndThrowIfDefined(
-                *paramNode, paramNode->getVarName(), *paramTypes[i], FieldAttributes());
+                *paramNode, paramNode->getVarName(), *funcType.getParamTypes()[i], FieldAttributes());
         paramNode->setAttribute(fieldHandle);
     }
 

@@ -29,27 +29,19 @@ namespace ydsh {
 class HandleOrFuncType {
 private:
     enum {
-        FUNC_HANDLE,
         FUNC_TYPE,
         METHOD,
     } kind;
 
     union {
-        FunctionHandle *handle;
         FunctionType *funcType;
         MethodHandle *methodHandle;
     };
 
 public:
-    explicit HandleOrFuncType(FunctionHandle *handle) : kind(FUNC_HANDLE), handle(handle) { }
-
     explicit HandleOrFuncType(FunctionType *funcType) : kind(FUNC_TYPE), funcType(funcType) { }
 
     explicit HandleOrFuncType(MethodHandle *handle) : kind(METHOD), methodHandle(handle) {}
-
-    bool isFuncHandle() const {
-        return this->kind == FUNC_HANDLE;
-    }
 
     bool isFuncType() const {
         return this->kind == FUNC_TYPE;
@@ -57,10 +49,6 @@ public:
 
     bool isMethod() const {
         return this->kind == METHOD;
-    }
-
-    FunctionHandle *getFuncHandle() const {
-        return this->isFuncHandle() ? this->handle : nullptr;
     }
 
     FunctionType *getFuncType() const {

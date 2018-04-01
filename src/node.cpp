@@ -1065,6 +1065,7 @@ void FunctionNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(maxVarNum);
     DUMP_PRIM(varIndex);
     dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
+    DUMP_PTR(funcType);
 }
 
 // ###########################

@@ -98,9 +98,11 @@ public:
     FieldHandle(DSType *fieldType, unsigned int fieldIndex, FieldAttributes attribute) :
             fieldType(fieldType), fieldIndex(fieldIndex), attribute(attribute) {}
 
-    virtual ~FieldHandle() = default;
+    ~FieldHandle() = default;
 
-    virtual DSType *getFieldType(SymbolTable &symbolTable);
+    DSType *getFieldType() {
+        return this->fieldType;
+    }
 
     unsigned int getFieldIndex() const {
         return this->fieldIndex;
@@ -109,30 +111,6 @@ public:
     FieldAttributes attr() const {
         return this->attribute;
     }
-};
-
-/**
- * represent for function. used from SymbolTable.
- */
-class FunctionHandle : public FieldHandle {
-protected:
-    DSType *returnType;
-    std::vector<DSType *> paramTypes;
-
-public:
-    FunctionHandle(DSType *returnType, std::vector<DSType *> paramTypes, unsigned int fieldIndex) :
-            FieldHandle(nullptr, fieldIndex, FieldAttribute::READ_ONLY | FieldAttribute::FUNC_HANDLE | FieldAttribute::GLOBAL),
-            returnType(returnType), paramTypes(std::move(paramTypes)) { }
-
-    ~FunctionHandle() override = default;
-
-    DSType *getFieldType(SymbolTable &symbolTable) override;
-
-    DSType *getReturnType() const {
-        return this->returnType;
-    }
-
-    const std::vector<DSType *> &getParamTypes() const;
 };
 
 class MethodHandle {

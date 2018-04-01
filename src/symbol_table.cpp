@@ -315,18 +315,6 @@ std::pair<FieldHandle *, SymbolError> SymbolTable::registerHandle(const std::str
     return std::make_pair(handle, SymbolError::DUMMY);
 }
 
-std::pair<FieldHandle *, SymbolError> SymbolTable::registerFuncHandle(const std::string &funcName, DSType &returnType,
-                                                                    const std::vector<DSType *> &paramTypes) {
-    assert(this->inGlobalScope());
-    FieldHandle *handle = new FunctionHandle(&returnType, paramTypes, this->scopes.back()->getCurVarIndex());
-    auto e = this->tryToRegister(funcName, handle);
-    if(e != SymbolError::DUMMY) {
-        return std::make_pair(nullptr, e);
-    }
-    this->handleCache.push_back(funcName);
-    return std::make_pair(handle, SymbolError::DUMMY);
-}
-
 void SymbolTable::enterScope() {
     unsigned int index = this->scopes.back()->getCurVarIndex();
     if(this->inGlobalScope()) {

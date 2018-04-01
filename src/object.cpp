@@ -27,9 +27,6 @@ namespace ydsh {
 // ##     DSObject     ##
 // ######################
 
-void DSObject::setType(DSType *) {  // do nothing.
-}
-
 DSValue *DSObject::getFieldTable() {
     return nullptr;
 }
@@ -467,13 +464,6 @@ unsigned int getSourcePos(const SourcePosEntry *entries, unsigned int index) {  
 // ########################
 // ##     FuncObject     ##
 // ########################
-
-void FuncObject::setType(DSType *type) {
-    if(this->type == nullptr) {
-        assert(type->isFuncType());
-        this->type = type;
-    }
-}
 
 std::string FuncObject::toString(DSState &, VisitedSet *) {
     std::string str("function(");

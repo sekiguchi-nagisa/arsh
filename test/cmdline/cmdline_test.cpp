@@ -235,7 +235,7 @@ Code:
   33: POP
   34: HALT
 Constant Pool:
-  0: (null) function(f)
+  0: Func<Boolean,[Any]> function(f)
   1: Int32 1
   2: Int32 3
 Source Pos Entry:

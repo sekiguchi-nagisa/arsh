@@ -29,9 +29,6 @@ function SIG_DFL($s : Signal) {
 }
 function SIG_IGN($s : Signal) {}
 
-## normally meaningless code, but need to prevent segmentation fault
-## (due to lazy initialization of function type, see src/object.cpp)
-$SIG_IGN
 $SIG[%'hup'] = $SIG_DFL
 
 

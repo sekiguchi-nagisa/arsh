@@ -79,7 +79,7 @@ protected:
 
     DSValue getValue(const char *name) const {
         auto handle = this->state->symbolTable.lookupHandle(name);
-        if(handle == nullptr || !handle->attr().has(FieldAttribute::FUNC_HANDLE)) {
+        if(handle == nullptr) {
             return nullptr;
         }
         return this->state->getGlobal(handle->getFieldIndex());

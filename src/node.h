@@ -1920,25 +1920,25 @@ private:
      */
     std::vector<TypeNode *> paramTypeNodes;
 
-    TypeNode *returnTypeNode;
+    TypeNode *returnTypeNode{nullptr};
 
-    BlockNode *blockNode;
+    BlockNode *blockNode{nullptr};
 
     /**
      * maximum number of local variable in function
      */
-    unsigned int maxVarNum;
+    unsigned int maxVarNum{0};
 
     /**
      * global variable table index of this function
      */
-    unsigned int varIndex;
+    unsigned int varIndex{0};
+
+    FunctionType *funcType{nullptr};
 
 public:
-    FunctionNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
-                 std::string &&funcName) :
-            CallableNode(NodeKind::Function, startPos, srcInfoPtr, std::move(funcName)),
-            returnTypeNode(), blockNode(), maxVarNum(0), varIndex(0) { }
+    FunctionNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr, std::string &&funcName) :
+            CallableNode(NodeKind::Function, startPos, srcInfoPtr, std::move(funcName)) { }
 
     ~FunctionNode() override;
 
@@ -1987,6 +1987,19 @@ public:
 
     unsigned int getVarIndex() const {
         return this->varIndex;
+    }
+
+    void setFuncType(FunctionType *funcType) {
+        this->funcType = funcType;
+    }
+
+    /**
+     *
+     * @return
+     * may be null
+     */
+    FunctionType *getFuncType() const {
+        return this->funcType;
     }
 
     void dump(NodeDumper &dumper) const override;

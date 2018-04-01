@@ -63,11 +63,6 @@ public:
         return this->refCount;
     }
 
-    /**
-     * for FuncObject.
-     */
-    virtual void setType(DSType *type);
-
     virtual DSValue *getFieldTable();
 
     /**
@@ -1007,16 +1002,16 @@ private:
     CompiledCode code;
 
 public:
-    explicit FuncObject(CompiledCode &&callable) :
-            DSObject(nullptr), code(std::move(callable)) { }
+    FuncObject(FunctionType *funcType, CompiledCode &&callable) :
+            DSObject(funcType), code(std::move(callable)) {}
+
+    explicit FuncObject(CompiledCode &&callable) : FuncObject(nullptr, std::move(callable)) { }
 
     ~FuncObject() override = default;
 
     const CompiledCode &getCode() const {
         return this->code;
     }
-
-    void setType(DSType *type) override;
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 };

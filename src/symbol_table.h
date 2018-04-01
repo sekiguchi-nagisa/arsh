@@ -267,12 +267,6 @@ public:
     }
 
     /**
-     * return null, if found duplicated handle.
-     */
-    std::pair<FieldHandle *, SymbolError> registerFuncHandle(const std::string &funcName, DSType &returnType,
-                                       const std::vector<DSType *> &paramTypes);
-
-    /**
      * if already registered, return null.
      * type must be any type
      */

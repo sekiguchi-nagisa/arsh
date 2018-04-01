@@ -433,11 +433,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
         this->emit0byteIns(OpCode::GET_SECOND);
     } else {
         if(node.attr().has(FieldAttribute::GLOBAL)) {
-            if(!node.isUntyped() && node.getType().isFuncType()) {
-                this->emit2byteIns(OpCode::LOAD_FUNC, node.getIndex());
-            } else {
-                this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
-            }
+            this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
         } else {
             this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
         }
@@ -1090,7 +1086,7 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
     this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
     this->visit(*node.getBlockNode());
-    auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node));
+    auto func = DSValue::create<FuncObject>(node.getFuncType(), this->finalizeCodeBuilder(node));
 
     this->emitLdcIns(func);
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
@@ -1297,7 +1293,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
                 fprintf(fp, "%lu", static_cast<unsigned long>(v.value()));
                 break;
             case DSValueKind::OBJECT:
-                if(list != nullptr && v->getType() == nullptr) {
+                if(list != nullptr && (v->getType() == nullptr || v->getType()->isFuncType())) {
                     list->push_back(&static_cast<FuncObject *>(v.get())->getCode());
                 }
                 fprintf(fp, "%s %s",

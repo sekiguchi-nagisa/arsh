@@ -48,35 +48,6 @@ std::string FieldAttributes::str() const {
     return value;
 }
 
-
-// #########################
-// ##     FieldHandle     ##
-// #########################
-
-DSType *FieldHandle::getFieldType(SymbolTable &) {
-    return this->fieldType;
-}
-
-
-// ############################
-// ##     FunctionHandle     ##
-// ############################
-
-DSType *FunctionHandle::getFieldType(SymbolTable &symbolTable) {
-    if(this->fieldType == nullptr) {
-        this->fieldType = &symbolTable.createFuncType(this->returnType, std::move(this->paramTypes));
-    }
-    return this->fieldType;
-}
-
-const std::vector<DSType *> &FunctionHandle::getParamTypes() const {
-    if(this->fieldType != nullptr) {
-        return static_cast<FunctionType *>(this->fieldType)->getParamTypes();
-    }
-    return this->paramTypes;
-}
-
-
 // ##########################
 // ##     MethodHandle     ##
 // ##########################
