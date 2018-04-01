@@ -73,139 +73,6 @@ void Scope::deleteHandle(const std::string &symbolName) {
     this->handleMap.erase(symbolName);
 }
 
-// #############################
-// ##     SymbolTableBase     ##
-// #############################
-
-SymbolTableBase::SymbolTableBase() : scopes(1), maxVarIndexStack(1) {
-    this->scopes[0] = new Scope();
-    this->maxVarIndexStack[0] = 0;
-
-    const char *blacklist[] = {
-            "eval",
-            "exit",
-            "exec",
-            "command",
-    };
-    for(auto &e : blacklist) {
-        this->forbitCmdRedefinition(e);
-    }
-}
-
-SymbolTableBase::~SymbolTableBase() {
-    for(Scope *scope : this->scopes) {
-        delete scope;
-    }
-}
-
-SymbolError SymbolTableBase::tryToRegister(const std::string &name, FieldHandle *handle) {
-    if(!this->scopes.back()->addFieldHandle(name, handle)) {
-        delete handle;
-        return SymbolError::DEFINED;
-    }
-    if(!this->inGlobalScope()) {
-        unsigned int varIndex = this->scopes.back()->getCurVarIndex();
-        if(varIndex > UINT8_MAX) {
-            return SymbolError::LIMIT;
-        }
-        if(varIndex > this->maxVarIndexStack.back()) {
-            this->maxVarIndexStack.back() = varIndex;
-        }
-    }
-    return SymbolError::DUMMY;
-}
-
-FieldHandle *SymbolTableBase::lookupHandle(const std::string &symbolName) const {
-    for(auto iter = this->scopes.crbegin(); iter != this->scopes.crend(); ++iter) {
-        FieldHandle *handle = (*iter)->lookupHandle(symbolName);
-        if(handle != nullptr) {
-            return handle;
-        }
-    }
-    return nullptr;
-}
-
-std::pair<FieldHandle *, SymbolError>
-SymbolTableBase::registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute) {
-    if(this->inGlobalScope()) {
-        attribute.set(FieldAttribute::GLOBAL);
-    }
-
-    auto *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), attribute);
-    auto e = this->tryToRegister(symbolName, handle);
-    if(e != SymbolError::DUMMY) {
-        return {nullptr, e};
-    }
-    if(this->inGlobalScope()) {
-        this->handleCache.push_back(symbolName);
-    }
-    return std::make_pair(handle, SymbolError::DUMMY);
-}
-
-std::pair<FieldHandle *, SymbolError>
-SymbolTableBase::registerFuncHandle(const std::string &funcName, DSType &returnType,
-                                    const std::vector<DSType *> &paramTypes) {
-    assert(this->inGlobalScope());
-    FieldHandle *handle = new FunctionHandle(&returnType, paramTypes, this->scopes.back()->getCurVarIndex());
-    auto e = this->tryToRegister(funcName, handle);
-    if(e != SymbolError::DUMMY) {
-        return {nullptr, e};
-    }
-    this->handleCache.push_back(funcName);
-    return std::make_pair(handle, SymbolError::DUMMY);
-}
-
-void SymbolTableBase::enterScope() {
-    unsigned int index = this->scopes.back()->getCurVarIndex();
-    if(this->inGlobalScope()) {
-        index = 0;
-    }
-    this->scopes.push_back(new Scope(index));
-}
-
-void SymbolTableBase::exitScope() {
-    assert(!this->inGlobalScope());
-    delete this->scopes.back();
-    this->scopes.pop_back();
-}
-
-void SymbolTableBase::enterFunc() {
-    this->scopes.push_back(new Scope());
-    this->maxVarIndexStack.push_back(0);
-}
-
-void SymbolTableBase::exitFunc() {
-    assert(!this->inGlobalScope());
-    delete this->scopes.back();
-    this->scopes.pop_back();
-    this->maxVarIndexStack.pop_back();
-}
-
-void SymbolTableBase::commit() {
-    assert(this->inGlobalScope());
-    this->handleCache.clear();
-    this->maxVarIndexStack.clear();
-    this->maxVarIndexStack.push_back(0);
-}
-
-void SymbolTableBase::abort() {
-    // pop local scope and function scope
-    while(!this->inGlobalScope()) {
-        delete this->scopes.back();
-        this->scopes.pop_back();
-    }
-    while(this->maxVarIndexStack.size() > 1) {
-        this->maxVarIndexStack.pop_back();
-    }
-
-    // remove cached entry
-    assert(this->inGlobalScope());
-    for(auto &p : this->handleCache) {
-        this->scopes.back()->deleteHandle(p);
-    }
-}
-
-
 // #####################
 // ##     TypeMap     ##
 // #####################
@@ -294,7 +161,22 @@ void TypeMap::removeType(const std::string &typeName) {
 // ##     SymbolTable     ##
 // #########################
 
-SymbolTable::SymbolTable() : typeTable(new DSType*[static_cast<unsigned int>(TYPE::__SIZE_OF_DS_TYPE__)]()), templateMap(8) {
+SymbolTable::SymbolTable() :
+        scopes(1), maxVarIndexStack(1),
+        typeTable(new DSType*[static_cast<unsigned int>(TYPE::__SIZE_OF_DS_TYPE__)]()), templateMap(8) {
+    this->scopes[0] = new Scope();
+    this->maxVarIndexStack[0] = 0;
+
+    const char *blacklist[] = {
+            "eval",
+            "exit",
+            "exec",
+            "command",
+    };
+    for(auto &e : blacklist) {
+        this->forbitCmdRedefinition(e);
+    }
+
     // initialize type
     this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, info_Dummy()); // pseudo base type
 
@@ -379,19 +261,122 @@ SymbolTable::SymbolTable() : typeTable(new DSType*[static_cast<unsigned int>(TYP
 }
 
 SymbolTable::~SymbolTable() {
+    for(Scope *scope : this->scopes) {
+        delete scope;
+    }
+
     delete[] this->typeTable;
     for(auto &pair : this->templateMap) {
         delete pair.second;
     }
 }
 
+SymbolError SymbolTable::tryToRegister(const std::string &name, FieldHandle *handle) {
+    if(!this->scopes.back()->addFieldHandle(name, handle)) {
+        delete handle;
+        return SymbolError::DEFINED;
+    }
+    if(!this->inGlobalScope()) {
+        unsigned int varIndex = this->scopes.back()->getCurVarIndex();
+        if(varIndex > UINT8_MAX) {
+            return SymbolError::LIMIT;
+        }
+        if(varIndex > this->maxVarIndexStack.back()) {
+            this->maxVarIndexStack.back() = varIndex;
+        }
+    }
+    return SymbolError::DUMMY;
+}
+
+FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
+    for(auto iter = this->scopes.crbegin(); iter != this->scopes.crend(); ++iter) {
+        FieldHandle *handle = (*iter)->lookupHandle(symbolName);
+        if(handle != nullptr) {
+            return handle;
+        }
+    }
+    return nullptr;
+}
+
+std::pair<FieldHandle *, SymbolError> SymbolTable::registerHandle(const std::string &symbolName,
+                                                                DSType &type, FieldAttributes attribute) {
+    if(this->inGlobalScope()) {
+        attribute.set(FieldAttribute::GLOBAL);
+    }
+
+    auto *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), attribute);
+    auto e = this->tryToRegister(symbolName, handle);
+    if(e != SymbolError::DUMMY) {
+        return std::make_pair(nullptr, e);
+    }
+    if(this->inGlobalScope()) {
+        this->handleCache.push_back(symbolName);
+    }
+    return std::make_pair(handle, SymbolError::DUMMY);
+}
+
+std::pair<FieldHandle *, SymbolError> SymbolTable::registerFuncHandle(const std::string &funcName, DSType &returnType,
+                                                                    const std::vector<DSType *> &paramTypes) {
+    assert(this->inGlobalScope());
+    FieldHandle *handle = new FunctionHandle(&returnType, paramTypes, this->scopes.back()->getCurVarIndex());
+    auto e = this->tryToRegister(funcName, handle);
+    if(e != SymbolError::DUMMY) {
+        return std::make_pair(nullptr, e);
+    }
+    this->handleCache.push_back(funcName);
+    return std::make_pair(handle, SymbolError::DUMMY);
+}
+
+void SymbolTable::enterScope() {
+    unsigned int index = this->scopes.back()->getCurVarIndex();
+    if(this->inGlobalScope()) {
+        index = 0;
+    }
+    this->scopes.push_back(new Scope(index));
+}
+
+void SymbolTable::exitScope() {
+    assert(!this->inGlobalScope());
+    delete this->scopes.back();
+    this->scopes.pop_back();
+}
+
+void SymbolTable::enterFunc() {
+    this->scopes.push_back(new Scope());
+    this->maxVarIndexStack.push_back(0);
+}
+
+void SymbolTable::exitFunc() {
+    assert(!this->inGlobalScope());
+    delete this->scopes.back();
+    this->scopes.pop_back();
+    this->maxVarIndexStack.pop_back();
+}
+
 void SymbolTable::commit() {
-    SymbolTableBase::commit();
+    assert(this->inGlobalScope());
+    this->handleCache.clear();
+    this->maxVarIndexStack.clear();
+    this->maxVarIndexStack.push_back(0);
     this->typeMap.commit();
 }
 
 void SymbolTable::abort(bool abortType) {
-    SymbolTableBase::abort();
+    // pop local scope and function scope
+    while(!this->inGlobalScope()) {
+        delete this->scopes.back();
+        this->scopes.pop_back();
+    }
+    while(this->maxVarIndexStack.size() > 1) {
+        this->maxVarIndexStack.pop_back();
+    }
+
+    // remove cached entry
+    assert(this->inGlobalScope());
+    for(auto &p : this->handleCache) {
+        this->scopes.back()->deleteHandle(p);
+    }
+
     if(abortType) {
         this->typeMap.abort();
     }

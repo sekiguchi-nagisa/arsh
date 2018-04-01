@@ -147,9 +147,61 @@ enum class SymbolError {
     LIMIT,
 };
 
+enum class TYPE : unsigned int {
+    _Root, // pseudo top type of all throwable type(except for option types)
+    Any,
+    Void,
+    Nothing,
+    Variant,    // for base type of all of D-Bus related type.
+    _Value,    // super type of value type(int, float, bool, string). not directly used it.
+    Byte,       // unsigned int 8
+    Int16,
+    Uint16,
+    Int32,
+    Uint32,
+    Int64,
+    Uint64,
+    Float,
+    Boolean,
+    String,
+    StringArray,    // for command argument
+    Regex,
+    Signal,
+    Signals,
+    Error,
+    Job,
+    Func,
+    StringIter,
+    ObjectPath, // for D-Bus object path
+    UnixFD,     // for Unix file descriptor
+    Proxy,
+    DBus,       // for owner type of each bus object
+    Bus,        // for message bus.
+    Service,    // for service
+    DBusObject, // for D-Bus proxy instance
+    ArithmeticError,
+    OutOfRangeError,
+    KeyNotFoundError,
+    TypeCastError,
+    DBusError,
+    SystemError,    // for errno
+    StackOverflowError,
+    RegexSyntaxError,
+    UnwrappingError,
 
-class SymbolTableBase {
-protected:
+    /**
+     * for internal status reporting.
+     * they are pseudo type, so must not use it from shell
+     */
+            _InternalStatus,   // base type
+    _ShellExit,
+    _AssertFail,
+
+    __SIZE_OF_DS_TYPE__,    // for enum size counting
+};
+
+class SymbolTable {
+private:
     // for FieldHandle
     std::vector<std::string> handleCache;
 
@@ -163,10 +215,30 @@ protected:
      */
     std::vector<unsigned int> maxVarIndexStack;
 
-    SymbolTableBase();
 
-    ~SymbolTableBase();
+    // for type
+    TypeMap typeMap;
+    DSType **typeTable; //for builtin type lookup
 
+    /**
+     * for type template
+     */
+    std::unordered_map<std::string, TypeTemplate *> templateMap;
+
+    // type template definition
+    TypeTemplate *arrayTemplate;
+    TypeTemplate *mapTemplate;
+    TypeTemplate *tupleTemplate;
+    TypeTemplate *optionTemplate;
+
+public:
+    NON_COPYABLE(SymbolTable);
+
+    SymbolTable();
+
+    ~SymbolTable();
+
+private:
     SymbolError tryToRegister(const std::string &name, FieldHandle *handle);
 
     void forbitCmdRedefinition(const char *cmdName) {
@@ -177,6 +249,8 @@ protected:
     }
 
 public:
+    // for FieldHandle lookup
+
     /**
      * return null, if not found.
      */
@@ -196,7 +270,7 @@ public:
      * return null, if found duplicated handle.
      */
     std::pair<FieldHandle *, SymbolError> registerFuncHandle(const std::string &funcName, DSType &returnType,
-                                                             const std::vector<DSType *> &paramTypes);
+                                       const std::vector<DSType *> &paramTypes);
 
     /**
      * if already registered, return null.
@@ -246,7 +320,7 @@ public:
     /**
      * remove changed state(local scope, global FieldHandle)
      */
-    void abort();
+    void abort(bool sbortType);
 
     /**
      * max number of local variable index.
@@ -272,95 +346,6 @@ public:
     }
 
     static constexpr const char *cmdSymbolPrefix = "%c";
-};
-
-enum class TYPE : unsigned int {
-    _Root, // pseudo top type of all throwable type(except for option types)
-    Any,
-    Void,
-    Nothing,
-    Variant,    // for base type of all of D-Bus related type.
-    _Value,    // super type of value type(int, float, bool, string). not directly used it.
-    Byte,       // unsigned int 8
-    Int16,
-    Uint16,
-    Int32,
-    Uint32,
-    Int64,
-    Uint64,
-    Float,
-    Boolean,
-    String,
-    StringArray,    // for command argument
-    Regex,
-    Signal,
-    Signals,
-    Error,
-    Job,
-    Func,
-    StringIter,
-    ObjectPath, // for D-Bus object path
-    UnixFD,     // for Unix file descriptor
-    Proxy,
-    DBus,       // for owner type of each bus object
-    Bus,        // for message bus.
-    Service,    // for service
-    DBusObject, // for D-Bus proxy instance
-    ArithmeticError,
-    OutOfRangeError,
-    KeyNotFoundError,
-    TypeCastError,
-    DBusError,
-    SystemError,    // for errno
-    StackOverflowError,
-    RegexSyntaxError,
-    UnwrappingError,
-
-    /**
-     * for internal status reporting.
-     * they are pseudo type, so must not use it from shell
-     */
-    _InternalStatus,   // base type
-    _ShellExit,
-    _AssertFail,
-
-    __SIZE_OF_DS_TYPE__,    // for enum size counting
-};
-
-class SymbolTable : public SymbolTableBase {
-private:
-    // for type
-    TypeMap typeMap;
-    DSType **typeTable; //for builtin type lookup
-
-    /**
-     * for type template
-     */
-    std::unordered_map<std::string, TypeTemplate *> templateMap;
-
-    // type template definition
-    TypeTemplate *arrayTemplate;
-    TypeTemplate *mapTemplate;
-    TypeTemplate *tupleTemplate;
-    TypeTemplate *optionTemplate;
-
-public:
-    NON_COPYABLE(SymbolTable);
-
-    SymbolTable();
-
-    ~SymbolTable();
-
-public:
-    /**
-     * clear entry cache.
-     */
-    void commit();
-
-    /**
-     * remove changed state(local scope, global FieldHandle)
-     */
-    void abort(bool abortType);
 
     // for type lookup
 
