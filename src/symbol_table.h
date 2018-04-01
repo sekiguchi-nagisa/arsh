@@ -169,6 +169,13 @@ protected:
 
     SymbolError tryToRegister(const std::string &name, FieldHandle *handle);
 
+    void forbitCmdRedefinition(const char *cmdName) {
+        assert(this->inGlobalScope());
+        std::string name = cmdSymbolPrefix;
+        name += cmdName;
+        this->scopes.back()->addFieldHandle(name, nullptr);
+    }
+
 public:
     /**
      * return null, if not found.
@@ -190,6 +197,26 @@ public:
      */
     std::pair<FieldHandle *, SymbolError> registerFuncHandle(const std::string &funcName, DSType &returnType,
                                                              const std::vector<DSType *> &paramTypes);
+
+    /**
+     * if already registered, return null.
+     * type must be any type
+     */
+    std::pair<FieldHandle *, SymbolError> registerUdc(const std::string &cmdName, DSType &type) {
+        assert(this->inGlobalScope());
+        std::string name = cmdSymbolPrefix;
+        name += cmdName;
+        return this->registerHandle(name, type, FieldAttribute::READ_ONLY);
+    }
+
+    /**
+     * if not found, return null.
+     */
+    FieldHandle *lookupUdc(const char *cmdName) const {
+        std::string name = cmdSymbolPrefix;
+        name += cmdName;
+        return this->lookupHandle(name);
+    }
 
     /**
      * create new local scope.
@@ -243,6 +270,8 @@ public:
     const Scope &curScope() const {
         return *this->scopes.back();
     }
+
+    static constexpr const char *cmdSymbolPrefix = "%c";
 };
 
 enum class TYPE : unsigned int {
@@ -323,28 +352,6 @@ public:
     ~SymbolTable();
 
 public:
-    static constexpr const char *cmdSymbolPrefix = "%c";
-
-    /**
-     * if already registered, return null.
-     * type must be any type
-     */
-    std::pair<FieldHandle *, SymbolError> registerUdc(const std::string &cmdName, DSType &type) {
-        assert(this->inGlobalScope());
-        std::string name = cmdSymbolPrefix;
-        name += cmdName;
-        return this->registerHandle(name, type, FieldAttribute::READ_ONLY);
-    }
-
-    /**
-     * if not found, return null.
-     */
-    FieldHandle *lookupUdc(const char *cmdName) const {
-        std::string name = cmdSymbolPrefix;
-        name += cmdName;
-        return this->lookupHandle(name);
-    }
-
     /**
      * clear entry cache.
      */
@@ -471,13 +478,6 @@ public:
     DSType *getByNumTypeIndex(unsigned int index) const;
 
 private:
-    void forbitCmdRedefinition(const char *cmdName) {
-        assert(this->inGlobalScope());
-        std::string name = cmdSymbolPrefix;
-        name += cmdName;
-        this->scopes.back()->addFieldHandle(name, nullptr);
-    }
-
     void setToTypeTable(TYPE t, DSType *type);
 
     void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info);

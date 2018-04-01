@@ -80,6 +80,16 @@ void Scope::deleteHandle(const std::string &symbolName) {
 SymbolTableBase::SymbolTableBase() : scopes(1), maxVarIndexStack(1) {
     this->scopes[0] = new Scope();
     this->maxVarIndexStack[0] = 0;
+
+    const char *blacklist[] = {
+            "eval",
+            "exit",
+            "exec",
+            "command",
+    };
+    for(auto &e : blacklist) {
+        this->forbitCmdRedefinition(e);
+    }
 }
 
 SymbolTableBase::~SymbolTableBase() {
@@ -285,16 +295,6 @@ void TypeMap::removeType(const std::string &typeName) {
 // #########################
 
 SymbolTable::SymbolTable() : typeTable(new DSType*[static_cast<unsigned int>(TYPE::__SIZE_OF_DS_TYPE__)]()), templateMap(8) {
-    const char *blacklist[] = {
-            "eval",
-            "exit",
-            "exec",
-            "command",
-    };
-    for(auto &e : blacklist) {
-        this->forbitCmdRedefinition(e);
-    }
-
     // initialize type
     this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, info_Dummy()); // pseudo base type
 
