@@ -50,7 +50,7 @@ namespace ydsh {
 // ##     Scope     ##
 // ###################
 
-const FieldHandle *Scope::lookupHandle(const std::string &symbolName) const {
+const FieldHandle *Scope::lookup(const std::string &symbolName) const {
     auto iter = this->handleMap.find(symbolName);
     if(iter != this->handleMap.end() && iter->second) {
         return &iter->second;
@@ -58,7 +58,7 @@ const FieldHandle *Scope::lookupHandle(const std::string &symbolName) const {
     return nullptr;
 }
 
-const FieldHandle *Scope::addFieldHandle(const std::string &symbolName, FieldHandle &&handle) {
+const FieldHandle *Scope::add(const std::string &symbolName, FieldHandle &&handle) {
     auto pair = this->handleMap.insert({symbolName, std::move(handle)});
     if(!pair.second) {
         return nullptr;
@@ -270,7 +270,7 @@ SymbolTable::~SymbolTable() {
 }
 
 HandleOrError SymbolTable::tryToRegister(const std::string &name, FieldHandle &&handle) {
-    auto ret = this->scopes.back()->addFieldHandle(name, std::move(handle));
+    auto ret = this->scopes.back()->add(name, std::move(handle));
     if(ret == nullptr) {
         return {nullptr, SymbolError::DEFINED};
     }
@@ -288,7 +288,7 @@ HandleOrError SymbolTable::tryToRegister(const std::string &name, FieldHandle &&
 
 const FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
     for(auto iter = this->scopes.crbegin(); iter != this->scopes.crend(); ++iter) {
-        auto *handle = (*iter)->lookupHandle(symbolName);
+        auto *handle = (*iter)->lookup(symbolName);
         if(handle != nullptr) {
             return handle;
         }
@@ -357,7 +357,7 @@ void SymbolTable::abort(bool abortType) {
     // remove cached entry
     assert(this->inGlobalScope());
     for(auto &p : this->handleCache) {
-        this->scopes.back()->deleteHandle(p);
+        this->scopes.back()->remove(p);
     }
 
     if(abortType) {

@@ -47,18 +47,18 @@ public:
     /**
      * return null, if not exist.
      */
-    const FieldHandle *lookupHandle(const std::string &symbolName) const;
+    const FieldHandle *lookup(const std::string &symbolName) const;
 
     /**
      * add FieldHandle. if adding success, increment curVarIndex.
      * return null if found duplicated handle.
      */
-    const FieldHandle *addFieldHandle(const std::string &symbolName, FieldHandle &&handle);
+    const FieldHandle *add(const std::string &symbolName, FieldHandle &&handle);
 
     /**
      * remove handle from handleMap, and delete it.
      */
-    void deleteHandle(const std::string &symbolName) {
+    void remove(const std::string &symbolName) {
         this->handleMap.erase(symbolName);
     }
 
@@ -245,7 +245,7 @@ private:
         assert(this->inGlobalScope());
         std::string name = cmdSymbolPrefix;
         name += cmdName;
-        this->scopes.back()->addFieldHandle(name, FieldHandle());
+        this->scopes.back()->add(name, FieldHandle());
     }
 
 public:
@@ -263,7 +263,7 @@ public:
 
     bool disallowShadowing(const std::string &symbolName) {
         assert(!this->inGlobalScope());
-        return this->scopes.back()->addFieldHandle(symbolName, FieldHandle()) != nullptr;
+        return this->scopes.back()->add(symbolName, FieldHandle()) != nullptr;
     }
 
     /**
