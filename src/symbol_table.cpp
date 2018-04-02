@@ -370,7 +370,7 @@ void SymbolTable::abort(bool abortType) {
     }
 }
 
-DSType &SymbolTable::getTypeAndThrowIfUndefined(const std::string &typeName) const {
+DSType &SymbolTable::getTypeOrThrow(const std::string &typeName) const {
     DSType *type = this->getType(typeName);
     if(type == nullptr) {
         RAISE_TL_ERROR(UndefinedType, typeName.c_str());

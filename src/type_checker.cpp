@@ -55,7 +55,7 @@ void BreakGather::addJumpNode(JumpNode *node) {
 DSType *TypeGenerator::toTypeImpl(TypeNode &node) {
     switch(node.typeKind) {
     case TypeNode::Base: {
-        return &symbolTable.getTypeAndThrowIfUndefined(static_cast<BaseTypeNode&>(node).getTokenText());
+        return &symbolTable.getTypeOrThrow(static_cast<BaseTypeNode &>(node).getTokenText());
     }
     case TypeNode::Reified: {
         auto &typeNode = static_cast<ReifiedTypeNode&>(node);
@@ -294,8 +294,8 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
     return this->symbolTable.createReifiedType(this->symbolTable.getOptionTemplate(), {&firstType});
 }
 
-FieldHandle *TypeChecker::addEntryAndThrowIfDefined(Node &node, const std::string &symbolName, DSType &type,
-                                                    FieldAttributes attribute) {
+FieldHandle *TypeChecker::addEntry(Node &node, const std::string &symbolName,
+                                   DSType &type, FieldAttributes attribute) {
     auto pair = this->symbolTable.registerHandle(symbolName, type, attribute);
     switch(pair.second) {
     case SymbolError::DUMMY:
@@ -849,7 +849,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
     this->symbolTable.enterScope();
 
     // register pipeline state
-    this->addEntryAndThrowIfDefined(node, "%%pipe", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+    this->addEntry(node, "%%pipe", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
     auto &type = this->checkType(nullptr, node.getNodes()[size - 1], nullptr);
 
     node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
@@ -861,7 +861,7 @@ void TypeChecker::visitWithNode(WithNode &node) {
     this->symbolTable.enterScope();
 
     // register redir config
-    this->addEntryAndThrowIfDefined(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+    this->addEntry(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
     auto &type = this->checkType(nullptr, node.getExprNode(), nullptr);
     for(auto &e : node.getRedirNodes()) {
@@ -1060,7 +1060,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
      */
     this->symbolTable.enterScope();
     FieldHandle *handle =
-            this->addEntryAndThrowIfDefined(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
+            this->addEntry(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
     node.setAttribute(handle);
     this->checkTypeWithCurrentScope(nullptr, node.getBlockNode());
     this->symbolTable.exitScope();
@@ -1151,7 +1151,7 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
         break;
     }
 
-    FieldHandle *handle = this->addEntryAndThrowIfDefined(node, node.getVarName(), *exprType, attr);
+    FieldHandle *handle = this->addEntry(node, node.getVarName(), *exprType, attr);
     node.setAttribute(handle);
     node.setType(this->symbolTable.get(TYPE::Void));
 }
@@ -1229,8 +1229,8 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     // register function handle
     auto &funcType = this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
     node.setFuncType(&funcType);
-    auto handle = this->addEntryAndThrowIfDefined(node, node.getName(), funcType,
-                                                /*FieldAttribute::FUNC_HANDLE |*/ FieldAttribute::READ_ONLY);
+    auto handle = this->addEntry(node, node.getName(), funcType,
+                                 FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
     node.setVarIndex(handle->getFieldIndex());
 
     // prepare type checking
@@ -1241,7 +1241,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     // register parameter
     for(unsigned int i = 0; i < paramSize; i++) {
         VarNode *paramNode = node.getParamNodes()[i];
-        FieldHandle *fieldHandle = this->addEntryAndThrowIfDefined(
+        FieldHandle *fieldHandle = this->addEntry(
                 *paramNode, paramNode->getVarName(), *funcType.getParamTypes()[i], FieldAttributes());
         paramNode->setAttribute(fieldHandle);
     }
@@ -1285,16 +1285,16 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->symbolTable.enterScope();
 
     // register dummy parameter (for propagating command attr)
-    this->addEntryAndThrowIfDefined(node, "%%attr", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+    this->addEntry(node, "%%attr", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
     // register dummy parameter (for closing file descriptor)
-    this->addEntryAndThrowIfDefined(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+    this->addEntry(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
     // register special characters (@, #, 0, 1, ... 9)
-    this->addEntryAndThrowIfDefined(node, "@", this->symbolTable.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
-    this->addEntryAndThrowIfDefined(node, "#", this->symbolTable.get(TYPE::Int32), FieldAttribute::READ_ONLY);
+    this->addEntry(node, "@", this->symbolTable.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
+    this->addEntry(node, "#", this->symbolTable.get(TYPE::Int32), FieldAttribute::READ_ONLY);
     for(unsigned int i = 0; i < 10; i++) {
-        this->addEntryAndThrowIfDefined(node, std::to_string(i), this->symbolTable.get(TYPE::String), FieldAttribute::READ_ONLY);
+        this->addEntry(node, std::to_string(i), this->symbolTable.get(TYPE::String), FieldAttribute::READ_ONLY);
     }
 
     // check type command body

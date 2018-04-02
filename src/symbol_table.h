@@ -193,7 +193,7 @@ enum class TYPE : unsigned int {
      * for internal status reporting.
      * they are pseudo type, so must not use it from shell
      */
-            _InternalStatus,   // base type
+    _InternalStatus,   // base type
     _ShellExit,
     _AssertFail,
 
@@ -377,7 +377,7 @@ public:
      * get type except template type.
      * if type is undefined, throw exception
      */
-    DSType &getTypeAndThrowIfUndefined(const std::string &typeName) const;
+    DSType &getTypeOrThrow(const std::string &typeName) const;
 
     /**
      * get template type.
