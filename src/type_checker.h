@@ -318,7 +318,7 @@ protected:
 
     DSType &resolveCoercionOfJumpValue();
 
-    FieldHandle *addEntry(Node &node, const std::string &symbolName,
+    const FieldHandle *addEntry(Node &node, const std::string &symbolName,
                           DSType &type, FieldAttributes attribute);
 
     bool isTopLevel() const {

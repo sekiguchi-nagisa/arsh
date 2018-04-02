@@ -29,7 +29,7 @@ class Scope {
 private:
     unsigned int curVarIndex;
     unsigned int shadowCount;
-    std::unordered_map<std::string, FieldHandle *> handleMap;
+    std::unordered_map<std::string, FieldHandle> handleMap;
 
 public:
     NON_COPYABLE(Scope);
@@ -42,22 +42,25 @@ public:
     explicit Scope(unsigned int curVarIndex) :
             curVarIndex(curVarIndex), shadowCount(0) { }
 
-    ~Scope() {
-        for(auto &pair : this->handleMap) {
-            delete pair.second;
-        }
-    }
+    ~Scope() = default;
 
     /**
      * return null, if not exist.
      */
-    FieldHandle *lookupHandle(const std::string &symbolName) const;
+    const FieldHandle *lookupHandle(const std::string &symbolName) const;
 
     /**
      * add FieldHandle. if adding success, increment curVarIndex.
-     * return false if found duplicated handle.
+     * return null if found duplicated handle.
      */
-    bool addFieldHandle(const std::string &symbolName, FieldHandle *handle);
+    const FieldHandle *addFieldHandle(const std::string &symbolName, FieldHandle &&handle);
+
+    /**
+     * remove handle from handleMap, and delete it.
+     */
+    void deleteHandle(const std::string &symbolName) {
+        this->handleMap.erase(symbolName);
+    }
 
     unsigned int getCurVarIndex() const {
         return this->curVarIndex;
@@ -71,12 +74,7 @@ public:
         return this->getCurVarIndex() - this->getVarSize();
     }
 
-    /**
-     * remove handle from handleMap, and delete it.
-     */
-    void deleteHandle(const std::string &symbolName);
-
-    using const_iterator = std::unordered_map<std::string, FieldHandle *>::const_iterator;
+    using const_iterator = decltype(handleMap)::const_iterator;
 
     const_iterator begin() const {
         return this->handleMap.begin();
@@ -200,6 +198,8 @@ enum class TYPE : unsigned int {
     __SIZE_OF_DS_TYPE__,    // for enum size counting
 };
 
+using HandleOrError = std::pair<const FieldHandle *, SymbolError>;
+
 class SymbolTable {
 private:
     // for FieldHandle
@@ -239,13 +239,13 @@ public:
     ~SymbolTable();
 
 private:
-    SymbolError tryToRegister(const std::string &name, FieldHandle *handle);
+    HandleOrError tryToRegister(const std::string &name, FieldHandle &&handle);
 
     void forbitCmdRedefinition(const char *cmdName) {
         assert(this->inGlobalScope());
         std::string name = cmdSymbolPrefix;
         name += cmdName;
-        this->scopes.back()->addFieldHandle(name, nullptr);
+        this->scopes.back()->addFieldHandle(name, FieldHandle());
     }
 
 public:
@@ -254,23 +254,23 @@ public:
     /**
      * return null, if not found.
      */
-    FieldHandle *lookupHandle(const std::string &symbolName) const;
+    const FieldHandle *lookupHandle(const std::string &symbolName) const;
 
     /**
      * return null, if found duplicated handle.
      */
-    std::pair<FieldHandle *, SymbolError> registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
+    HandleOrError registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
 
     bool disallowShadowing(const std::string &symbolName) {
         assert(!this->inGlobalScope());
-        return this->scopes.back()->addFieldHandle(symbolName, nullptr);
+        return this->scopes.back()->addFieldHandle(symbolName, FieldHandle()) != nullptr;
     }
 
     /**
      * if already registered, return null.
      * type must be any type
      */
-    std::pair<FieldHandle *, SymbolError> registerUdc(const std::string &cmdName, DSType &type) {
+    HandleOrError registerUdc(const std::string &cmdName, DSType &type) {
         assert(this->inGlobalScope());
         std::string name = cmdSymbolPrefix;
         name += cmdName;
@@ -280,7 +280,7 @@ public:
     /**
      * if not found, return null.
      */
-    FieldHandle *lookupUdc(const char *cmdName) const {
+    const FieldHandle *lookupUdc(const char *cmdName) const {
         std::string name = cmdSymbolPrefix;
         name += cmdName;
         return this->lookupHandle(name);

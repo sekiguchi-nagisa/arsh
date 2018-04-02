@@ -27,7 +27,6 @@
 
 namespace ydsh {
 
-class SymbolTable;
 class DSType;
 class FunctionType;
 struct NativeFuncInfo;
@@ -84,32 +83,35 @@ inline FieldAttributes operator|(FieldAttribute x, FieldAttribute y) {
  * represent for class field or variable. field type may be function type.
  */
 class FieldHandle {
-protected:
-    DSType *fieldType;
-
 private:
-    unsigned int fieldIndex;
+    DSType *type;
+
+    unsigned int index;
 
     FieldAttributes attribute;
 
 public:
-    NON_COPYABLE(FieldHandle);
+    FieldHandle() : FieldHandle(nullptr, 0, FieldAttributes()) {}
 
     FieldHandle(DSType *fieldType, unsigned int fieldIndex, FieldAttributes attribute) :
-            fieldType(fieldType), fieldIndex(fieldIndex), attribute(attribute) {}
+            type(fieldType), index(fieldIndex), attribute(attribute) {}
 
     ~FieldHandle() = default;
 
-    DSType *getFieldType() {
-        return this->fieldType;
+    DSType *getType() const {
+        return this->type;
     }
 
-    unsigned int getFieldIndex() const {
-        return this->fieldIndex;
+    unsigned int getIndex() const {
+        return this->index;
     }
 
     FieldAttributes attr() const {
         return this->attribute;
+    }
+
+    explicit operator bool() const {
+        return this->type != nullptr;
     }
 };
 

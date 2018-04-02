@@ -208,7 +208,7 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
 static void bindVariable(DSState *state, const char *varName, DSValue &&value, FieldAttributes attribute) {
     auto handle = state->symbolTable.registerHandle(varName, *value->getType(), attribute);
     assert(handle.first != nullptr);
-    state->setGlobal(handle.first->getFieldIndex(), std::move(value));
+    state->setGlobal(handle.first->getIndex(), std::move(value));
 }
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
@@ -526,7 +526,7 @@ int DSState_setScriptDir(DSState *st, const char *scriptPath) {
         return -1;
     }
 
-    unsigned int index = st->symbolTable.lookupHandle(VAR_SCRIPT_DIR)->getFieldIndex();
+    unsigned int index = st->symbolTable.lookupHandle(VAR_SCRIPT_DIR)->getIndex();
     const char *ptr = strrchr(real, '/');
 
     std::string str(real, real == ptr ? 1 : ptr - real);

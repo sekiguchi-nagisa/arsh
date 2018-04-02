@@ -1020,7 +1020,7 @@ static NativeCode initExit() {
 
 static const DSCode *lookupUserDefinedCommand(const DSState &st, const char *commandName) {
     auto handle = st.symbolTable.lookupUdc(commandName);
-    return handle == nullptr ? nullptr : &typeAs<FuncObject>(st.getGlobal(handle->getFieldIndex()))->getCode();
+    return handle == nullptr ? nullptr : &typeAs<FuncObject>(st.getGlobal(handle->getIndex()))->getCode();
 }
 
 Command CmdResolver::operator()(DSState &state, const char *cmdName) const {

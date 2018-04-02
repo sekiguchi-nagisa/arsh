@@ -82,7 +82,7 @@ protected:
         if(handle == nullptr) {
             return nullptr;
         }
-        return this->state->getGlobal(handle->getFieldIndex());
+        return this->state->getGlobal(handle->getIndex());
     }
 
     void RefCount(const char *gvarName, unsigned int refCount) {
@@ -91,7 +91,7 @@ protected:
         auto *handle = this->state->symbolTable.lookupHandle(gvarName);
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(handle != nullptr));
 
-        auto &v = this->state->getGlobal(handle->getFieldIndex());
+        auto &v = this->state->getGlobal(handle->getIndex());
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.isObject()));
 
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(refCount, v.get()->getRefcount()));

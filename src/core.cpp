@@ -242,14 +242,14 @@ const DSValue &getGlobal(const DSState &st, unsigned int index) {
 const DSValue &getGlobal(const DSState &st, const char *varName) {
     auto *handle = st.symbolTable.lookupHandle(varName);
     assert(handle != nullptr);
-    return st.getGlobal(handle->getFieldIndex());
+    return st.getGlobal(handle->getIndex());
 }
 
 unsigned int getTermHookIndex(DSState &st) {
     if(st.termHookIndex == 0) {
         auto *handle = st.symbolTable.lookupHandle(VAR_TERM_HOOK);
         assert(handle != nullptr);
-        st.termHookIndex = handle->getFieldIndex();
+        st.termHookIndex = handle->getIndex();
     }
     return st.termHookIndex;
 }

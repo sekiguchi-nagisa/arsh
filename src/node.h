@@ -631,9 +631,9 @@ protected:
 public:
     ~AssignableNode() override = default;
 
-    void setAttribute(FieldHandle *handle) {
-        this->index = handle->getFieldIndex();
-        this->attribute = handle->attr();
+    void setAttribute(const FieldHandle &handle) {
+        this->index = handle.getIndex();
+        this->attribute = handle.attr();
     }
 
     FieldAttributes attr() const {
@@ -1625,7 +1625,9 @@ public:
         return this->typeNode;
     }
 
-    void setAttribute(FieldHandle *handle);
+    void setAttribute(const FieldHandle &handle) {
+        this->varIndex = handle.getIndex();
+    }
 
     unsigned int getVarIndex() const {
         return this->varIndex;
@@ -1734,7 +1736,7 @@ public:
         return this->getKind() == CONST;
     }
 
-    void setAttribute(FieldHandle *handle);
+    void setAttribute(const FieldHandle &handle);
 
     bool isGlobal() const {
         return this->global;

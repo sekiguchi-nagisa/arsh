@@ -50,27 +50,25 @@ namespace ydsh {
 // ##     Scope     ##
 // ###################
 
-FieldHandle *Scope::lookupHandle(const std::string &symbolName) const {
+const FieldHandle *Scope::lookupHandle(const std::string &symbolName) const {
     auto iter = this->handleMap.find(symbolName);
-    return iter != this->handleMap.end() ? iter->second : nullptr;
+    if(iter != this->handleMap.end() && iter->second) {
+        return &iter->second;
+    }
+    return nullptr;
 }
 
-bool Scope::addFieldHandle(const std::string &symbolName, FieldHandle *handle) {
-    if(!this->handleMap.insert(std::make_pair(symbolName, handle)).second) {
-        return false;
+const FieldHandle *Scope::addFieldHandle(const std::string &symbolName, FieldHandle &&handle) {
+    auto pair = this->handleMap.insert({symbolName, std::move(handle)});
+    if(!pair.second) {
+        return nullptr;
     }
-    if(handle == nullptr) {
-        this->shadowCount++;
-    } else {
+    if(pair.first->second) {
         this->curVarIndex++;
+    } else {
+        this->shadowCount++;
     }
-    return true;
-}
-
-void Scope::deleteHandle(const std::string &symbolName) {
-    auto iter = this->handleMap.find(symbolName);
-    delete iter->second;
-    this->handleMap.erase(symbolName);
+    return &pair.first->second;
 }
 
 // #####################
@@ -97,8 +95,8 @@ TypeMap::~TypeMap() {
 
 DSType *TypeMap::addType(std::string &&typeName, DSType *type) {
     assert(type != nullptr);
-    auto pair = this->typeMapImpl.insert(std::make_pair(std::move(typeName), type));
-    this->typeNameMap.insert(std::make_pair(asKey(type), &pair.first->first));
+    auto pair = this->typeMapImpl.insert({std::move(typeName), type});
+    this->typeNameMap.insert({asKey(type), &pair.first->first});
 //    this->typeCache.push_back(&pair.first->first);
     return type;
 }
@@ -129,7 +127,7 @@ bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
      * use tagged pointer to prevent double free.
      */
     auto *taggedPtr = reinterpret_cast<DSType *>(tag | (unsigned long) &targetType);
-    auto pair = this->typeMapImpl.insert(std::make_pair(std::move(alias), taggedPtr));
+    auto pair = this->typeMapImpl.insert({std::move(alias), taggedPtr});
 //    this->typeCache.push_back(&pair.first->first);
     return pair.second;
 }
@@ -271,26 +269,26 @@ SymbolTable::~SymbolTable() {
     }
 }
 
-SymbolError SymbolTable::tryToRegister(const std::string &name, FieldHandle *handle) {
-    if(!this->scopes.back()->addFieldHandle(name, handle)) {
-        delete handle;
-        return SymbolError::DEFINED;
+HandleOrError SymbolTable::tryToRegister(const std::string &name, FieldHandle &&handle) {
+    auto ret = this->scopes.back()->addFieldHandle(name, std::move(handle));
+    if(ret == nullptr) {
+        return {nullptr, SymbolError::DEFINED};
     }
     if(!this->inGlobalScope()) {
         unsigned int varIndex = this->scopes.back()->getCurVarIndex();
         if(varIndex > UINT8_MAX) {
-            return SymbolError::LIMIT;
+            return {nullptr, SymbolError::LIMIT};
         }
         if(varIndex > this->maxVarIndexStack.back()) {
             this->maxVarIndexStack.back() = varIndex;
         }
     }
-    return SymbolError::DUMMY;
+    return {ret, SymbolError::DUMMY};
 }
 
-FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
+const FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
     for(auto iter = this->scopes.crbegin(); iter != this->scopes.crend(); ++iter) {
-        FieldHandle *handle = (*iter)->lookupHandle(symbolName);
+        auto *handle = (*iter)->lookupHandle(symbolName);
         if(handle != nullptr) {
             return handle;
         }
@@ -298,21 +296,18 @@ FieldHandle *SymbolTable::lookupHandle(const std::string &symbolName) const {
     return nullptr;
 }
 
-std::pair<FieldHandle *, SymbolError> SymbolTable::registerHandle(const std::string &symbolName,
-                                                                DSType &type, FieldAttributes attribute) {
+HandleOrError SymbolTable::registerHandle(const std::string &symbolName,
+                                          DSType &type, FieldAttributes attribute) {
     if(this->inGlobalScope()) {
         attribute.set(FieldAttribute::GLOBAL);
     }
 
-    auto *handle = new FieldHandle(&type, this->scopes.back()->getCurVarIndex(), attribute);
-    auto e = this->tryToRegister(symbolName, handle);
-    if(e != SymbolError::DUMMY) {
-        return std::make_pair(nullptr, e);
-    }
-    if(this->inGlobalScope()) {
+    FieldHandle handle(&type, this->scopes.back()->getCurVarIndex(), attribute);
+    auto e = this->tryToRegister(symbolName, std::move(handle));
+    if(e.second == SymbolError::DUMMY && this->inGlobalScope()) {
         this->handleCache.push_back(symbolName);
     }
-    return std::make_pair(handle, SymbolError::DUMMY);
+    return e;
 }
 
 void SymbolTable::enterScope() {
@@ -622,8 +617,7 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
 TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
                                             std::vector<DSType *> &&elementTypes, native_type_info_t info) {
     return this->templateMap.insert(
-            std::make_pair(typeName, new TypeTemplate(std::string(typeName),
-                                                      std::move(elementTypes), info))).first->second;
+            {typeName, new TypeTemplate(std::string(typeName), std::move(elementTypes), info)}).first->second;
 }
 
 void SymbolTable::initErrorType(TYPE t, const char *typeName, DSType &superType) {

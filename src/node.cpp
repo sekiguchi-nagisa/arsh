@@ -882,10 +882,6 @@ CatchNode::~CatchNode() {
     delete this->blockNode;
 }
 
-void CatchNode::setAttribute(FieldHandle *handle) {
-    this->varIndex = handle->getFieldIndex();
-}
-
 void CatchNode::dump(NodeDumper &dumper) const {
     DUMP(exceptionName);
     DUMP_PTR(typeNode);
@@ -939,9 +935,9 @@ VarDeclNode::~VarDeclNode() {
     delete this->exprNode;
 }
 
-void VarDeclNode::setAttribute(FieldHandle *handle) {
-    this->global = handle->attr().has(FieldAttribute::GLOBAL);
-    this->varIndex = handle->getFieldIndex();
+void VarDeclNode::setAttribute(const FieldHandle &handle) {
+    this->global = handle.attr().has(FieldAttribute::GLOBAL);
+    this->varIndex = handle.getIndex();
 }
 
 void VarDeclNode::dump(NodeDumper &dumper) const {

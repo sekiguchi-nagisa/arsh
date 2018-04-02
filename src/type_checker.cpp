@@ -126,8 +126,7 @@ DSType& TypeGenerator::resolveInterface(InterfaceNode *node) {
     for(unsigned int i = 0; i < fieldSize; i++) {
         VarDeclNode *fieldDeclNode = node->getFieldDeclNodes()[i];
         auto &fieldType = this->toType(*node->getFieldTypeNodes()[i]);
-        FieldHandle *handle = type.newFieldHandle(
-                fieldDeclNode->getVarName(), fieldType, fieldDeclNode->isReadOnly());
+        auto *handle = type.newFieldHandle(fieldDeclNode->getVarName(), fieldType, fieldDeclNode->isReadOnly());
         if(handle == nullptr) {
             RAISE_TC_ERROR(DefinedField, *fieldDeclNode, fieldDeclNode->getVarName().c_str());
         }
@@ -294,7 +293,7 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
     return this->symbolTable.createReifiedType(this->symbolTable.getOptionTemplate(), {&firstType});
 }
 
-FieldHandle *TypeChecker::addEntry(Node &node, const std::string &symbolName,
+const FieldHandle *TypeChecker::addEntry(Node &node, const std::string &symbolName,
                                    DSType &type, FieldAttributes attribute) {
     auto pair = this->symbolTable.registerHandle(symbolName, type, attribute);
     switch(pair.second) {
@@ -338,13 +337,13 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
 }
 
 HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
-    FieldHandle *handle = this->symbolTable.lookupHandle(recvNode.getVarName());
+    auto handle = this->symbolTable.lookupHandle(recvNode.getVarName());
     if(handle == nullptr) {
         RAISE_TC_ERROR(UndefinedSymbol, recvNode, recvNode.getVarName().c_str());
     }
-    recvNode.setAttribute(handle);
+    recvNode.setAttribute(*handle);
 
-    DSType *type = handle->getFieldType();
+    DSType *type = handle->getType();
     if(!type->isFuncType()) {
         if(this->symbolTable.get(TYPE::Func) == *type) {
             RAISE_TC_ERROR(NotCallable, recvNode);
@@ -374,12 +373,12 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
 
 bool TypeChecker::checkAccessNode(AccessNode &node) {
     auto &recvType = this->checkType(node.getRecvNode());
-    FieldHandle *handle = recvType.lookupFieldHandle(this->symbolTable, node.getFieldName());
+    auto handle = recvType.lookupFieldHandle(this->symbolTable, node.getFieldName());
     if(handle == nullptr) {
         return false;
     }
-    node.setAttribute(handle);
-    node.setType(*handle->getFieldType());
+    node.setAttribute(*handle);
+    node.setType(*handle->getType());
     return true;
 }
 
@@ -594,13 +593,13 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 }
 
 void TypeChecker::visitVarNode(VarNode &node) {
-    FieldHandle *handle = this->symbolTable.lookupHandle(node.getVarName());
+    auto handle = this->symbolTable.lookupHandle(node.getVarName());
     if(handle == nullptr) {
         RAISE_TC_ERROR(UndefinedSymbol, node, node.getVarName().c_str());
     }
 
-    node.setAttribute(handle);
-    node.setType(*handle->getFieldType());
+    node.setAttribute(*handle);
+    node.setType(*handle->getType());
 }
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
@@ -1059,9 +1058,8 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
      * check type catch block
      */
     this->symbolTable.enterScope();
-    FieldHandle *handle =
-            this->addEntry(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
-    node.setAttribute(handle);
+    auto handle = this->addEntry(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
+    node.setAttribute(*handle);
     this->checkTypeWithCurrentScope(nullptr, node.getBlockNode());
     this->symbolTable.exitScope();
     node.setType(node.getBlockNode()->getType());
@@ -1151,8 +1149,8 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
         break;
     }
 
-    FieldHandle *handle = this->addEntry(node, node.getVarName(), *exprType, attr);
-    node.setAttribute(handle);
+    auto handle = this->addEntry(node, node.getVarName(), *exprType, attr);
+    node.setAttribute(*handle);
     node.setType(this->symbolTable.get(TYPE::Void));
 }
 
@@ -1231,7 +1229,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     node.setFuncType(&funcType);
     auto handle = this->addEntry(node, node.getName(), funcType,
                                  FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
-    node.setVarIndex(handle->getFieldIndex());
+    node.setVarIndex(handle->getIndex());
 
     // prepare type checking
     this->pushReturnType(returnType);
@@ -1241,9 +1239,9 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     // register parameter
     for(unsigned int i = 0; i < paramSize; i++) {
         VarNode *paramNode = node.getParamNodes()[i];
-        FieldHandle *fieldHandle = this->addEntry(
-                *paramNode, paramNode->getVarName(), *funcType.getParamTypes()[i], FieldAttributes());
-        paramNode->setAttribute(fieldHandle);
+        auto fieldHandle = this->addEntry(*paramNode, paramNode->getVarName(),
+                                           *funcType.getParamTypes()[i], FieldAttributes());
+        paramNode->setAttribute(*fieldHandle);
     }
 
     // check type func body
@@ -1278,7 +1276,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     if(pair.second == SymbolError::DEFINED) {
         RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
     }
-    node.setUdcIndex(pair.first->getFieldIndex());
+    node.setUdcIndex(pair.first->getIndex());
 
     this->pushReturnType(this->symbolTable.get(TYPE::Int32));    // pseudo return type
     this->symbolTable.enterFunc();
