@@ -28,6 +28,16 @@ expect {
 
 expect {
     -re "\\$ $" {
+        send "assert(test -t 0)\r"
+    }
+    default {
+        send_error "mismatch prompt"
+        exit 1
+    }
+}
+
+expect {
+    -re "\\$ $" {
         send $CTRLD
     }
     default {
