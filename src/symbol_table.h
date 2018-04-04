@@ -39,6 +39,8 @@ public:
      */
     Scope() : Scope(0) { }
 
+    Scope(Scope&&) = default;
+
     explicit Scope(unsigned int curVarIndex) :
             curVarIndex(curVarIndex), shadowCount(0) { }
 
@@ -208,7 +210,7 @@ private:
     /**
      * first scope is always global scope.
      */
-    std::vector<Scope *> scopes;
+    std::vector<Scope> scopes;
 
     /**
      * contains max number of variable index.
@@ -245,7 +247,7 @@ private:
         assert(this->inGlobalScope());
         std::string name = cmdSymbolPrefix;
         name += cmdName;
-        this->scopes.back()->add(name, FieldHandle());
+        this->scopes.back().add(name, FieldHandle());
     }
 
 public:
@@ -263,7 +265,7 @@ public:
 
     bool disallowShadowing(const std::string &symbolName) {
         assert(!this->inGlobalScope());
-        return this->scopes.back()->add(symbolName, FieldHandle()) != nullptr;
+        return this->scopes.back().add(symbolName, FieldHandle()) != nullptr;
     }
 
     /**
@@ -328,7 +330,7 @@ public:
      */
     unsigned int getMaxGVarIndex() const {
         assert(this->inGlobalScope());
-        return this->scopes.back()->getCurVarIndex();
+        return this->scopes.back().getCurVarIndex();
     }
 
     bool inGlobalScope() const {
@@ -336,7 +338,7 @@ public:
     }
 
     const Scope &curScope() const {
-        return *this->scopes.back();
+        return this->scopes.back();
     }
 
     static constexpr const char *cmdSymbolPrefix = "%c";
