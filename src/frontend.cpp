@@ -28,7 +28,6 @@ FrontEnd::FrontEnd(Lexer &lexer, SymbolTable &symbolTable,
         mode(mode), parser(lexer), checker(symbolTable, toplevel),
         uastDumper(target.fps[DS_DUMP_KIND_UAST], symbolTable),
         astDumper(target.fps[DS_DUMP_KIND_AST], symbolTable) {
-    this->checker.reset();
 }
 
 #define EACH_TERM_COLOR(C) \

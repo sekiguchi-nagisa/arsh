@@ -234,13 +234,11 @@ public:
 
     DSType *operator()(const DSType *prevType, Node *&node);
 
-    void reset() {
-        this->symbolTable.commit();
-        this->fctx.clear();
-        this->breakGather.clear();
+    const SymbolTable &getSymbolTable() const {
+        return this->symbolTable;
     }
 
-    const SymbolTable &getSymbolTable() const {
+    SymbolTable &getSymbolTable() {
         return this->symbolTable;
     }
 
