@@ -58,8 +58,8 @@ const FieldHandle *Scope::lookup(const std::string &symbolName) const {
     return nullptr;
 }
 
-const FieldHandle *Scope::add(const std::string &symbolName, FieldHandle &&handle) {
-    auto pair = this->handleMap.insert({symbolName, std::move(handle)});
+const FieldHandle *Scope::add(const std::string &symbolName, FieldHandle handle) {
+    auto pair = this->handleMap.insert({symbolName, handle});
     if(!pair.second) {
         return nullptr;
     }
@@ -265,8 +265,8 @@ SymbolTable::~SymbolTable() {
     }
 }
 
-HandleOrError SymbolTable::tryToRegister(const std::string &name, FieldHandle &&handle) {
-    auto ret = this->scopes.back().add(name, std::move(handle));
+HandleOrError SymbolTable::tryToRegister(const std::string &name, FieldHandle handle) {
+    auto ret = this->scopes.back().add(name, handle);
     if(ret == nullptr) {
         return {nullptr, SymbolError::DEFINED};
     }
@@ -299,7 +299,7 @@ HandleOrError SymbolTable::registerHandle(const std::string &symbolName,
     }
 
     FieldHandle handle(&type, this->scopes.back().getCurVarIndex(), attribute);
-    auto e = this->tryToRegister(symbolName, std::move(handle));
+    auto e = this->tryToRegister(symbolName, handle);
     if(e.second == SymbolError::DUMMY && this->inGlobalScope()) {
         this->handleCache.push_back(symbolName);
     }

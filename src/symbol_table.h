@@ -55,7 +55,7 @@ public:
      * add FieldHandle. if adding success, increment curVarIndex.
      * return null if found duplicated handle.
      */
-    const FieldHandle *add(const std::string &symbolName, FieldHandle &&handle);
+    const FieldHandle *add(const std::string &symbolName, FieldHandle handle);
 
     /**
      * remove handle from handleMap, and delete it.
@@ -241,7 +241,7 @@ public:
     ~SymbolTable();
 
 private:
-    HandleOrError tryToRegister(const std::string &name, FieldHandle &&handle);
+    HandleOrError tryToRegister(const std::string &name, FieldHandle handle);
 
     void forbitCmdRedefinition(const char *cmdName) {
         assert(this->inGlobalScope());
