@@ -118,11 +118,11 @@ public:
 class MethodHandle {
 protected:
     unsigned int methodIndex;
-    flag8_set_t attributeSet;
+    flag8_set_t attributeSet{0};
 
-    DSType *returnType;
+    DSType *returnType{nullptr};
 
-    DSType *recvType;
+    DSType *recvType{nullptr};
 
     /**
      * not contains receiver type
@@ -132,14 +132,12 @@ protected:
     /**
      * may be null, if has no overloaded method.
      */
-    MethodHandle *next;
+    MethodHandle *next{nullptr};
 
 public:
     NON_COPYABLE(MethodHandle);
 
-    explicit MethodHandle(unsigned int methodIndex) :
-            methodIndex(methodIndex), attributeSet(),
-            returnType(), recvType(), next() { }
+    explicit MethodHandle(unsigned int methodIndex) : methodIndex(methodIndex) { }
 
     ~MethodHandle();
 
