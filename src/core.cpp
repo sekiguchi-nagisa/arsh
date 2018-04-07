@@ -880,8 +880,8 @@ static void completeCommandName(const DSState &ctx, const std::string &token, CS
     // search user defined command
     for(const auto &iter : ctx.symbolTable.curScope()) {
         const char *name = iter.first.c_str();
-        if(startsWith(name, SymbolTable::cmdSymbolPrefix)) {
-            name += strlen(SymbolTable::cmdSymbolPrefix);
+        if(startsWith(name, CMD_SYMBOL_PREFIX)) {
+            name += strlen(CMD_SYMBOL_PREFIX);
             if(startsWith(name, token.c_str())) {
                 append(results, name, EscapeOp::COMMAND_NAME);
             }
@@ -1004,7 +1004,7 @@ static void completeFileName(const DSState &st, const std::string &token,
 static void completeGlobalVarName(const DSState &ctx, const std::string &token, CStrBuffer &results) {
     for(const auto &iter : ctx.symbolTable.curScope()) {
         const char *varName = iter.first.c_str();
-        if(!token.empty() && !startsWith(varName, SymbolTable::cmdSymbolPrefix)
+        if(!token.empty() && !startsWith(varName, CMD_SYMBOL_PREFIX)
            && startsWith(varName, token.c_str() + 1)) {
             append(results, iter.first, EscapeOp::NOP);
         }

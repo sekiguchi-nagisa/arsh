@@ -136,6 +136,8 @@ constexpr unsigned int TERM_ON_EXIT   = 0;
 constexpr unsigned int TERM_ON_ERR    = 1;
 constexpr unsigned int TERM_ON_ASSERT = 2;
 
+// =====  for symbol lookup =====
+constexpr const char *CMD_SYMBOL_PREFIX = "%c";
 
 } // namespace ydsh
 

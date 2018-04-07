@@ -18,6 +18,7 @@
 #define YDSH_SYMBOL_TABLE_H
 
 #include <cassert>
+#include <functional>
 
 #include "type.h"
 #include "handle.h"
@@ -87,6 +88,109 @@ public:
     }
 };
 
+enum class SymbolError {
+    DUMMY,
+    DEFINED,
+    LIMIT,
+};
+
+using HandleOrError = std::pair<const FieldHandle *, SymbolError>;
+
+class ModuleScope {
+private:
+    std::vector<std::string> handleCache;
+
+    /**
+     * first scope is always global scope.
+     */
+    std::vector<Scope> scopes;
+
+    /**
+     * contains max number of local variable index.
+     */
+    std::vector<unsigned int> maxVarIndexStack;
+
+public:
+    NON_COPYABLE(ModuleScope);
+
+    ModuleScope(bool rootModule = false);
+
+    ModuleScope(ModuleScope&&) = default;
+
+    ~ModuleScope() = default;
+
+    /**
+     * return null, if not found.
+     */
+    const FieldHandle *lookupHandle(const std::string &symbolName) const;
+
+    /**
+     * return null, if found duplicated handle.
+     */
+    HandleOrError registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
+
+    bool disallowShadowing(const std::string &symbolName) {
+        assert(!this->inGlobalScope());
+        return this->scopes.back().add(symbolName, FieldHandle()) != nullptr;
+    }
+
+    /**
+     * create new local scope.
+     */
+    void enterScope();
+
+    /**
+     * delete current local scope.
+     */
+    void exitScope();
+
+    /**
+     * create new function scope.
+     */
+    void enterFunc();
+
+    /**
+     * delete current function scope.
+     */
+    void exitFunc();
+
+    /**
+     * clear entry cache.
+     */
+    void commit();
+
+    /**
+     * remove changed state(local scope, global FieldHandle)
+     */
+    void abort();
+
+    /**
+     * max number of local variable index.
+     */
+    unsigned int getMaxVarIndex() const {
+        return this->maxVarIndexStack.back();
+    }
+
+    /**
+     * max number of global variable index.
+     */
+    unsigned int getMaxGVarIndex() const {
+        assert(this->inGlobalScope());
+        return this->scopes.back().getCurVarIndex();
+    }
+
+    bool inGlobalScope() const {
+        return this->scopes.size() == 1;
+    }
+
+    const Scope &curScope() const {
+        return this->scopes.back();
+    }
+
+private:
+    HandleOrError tryToRegister(const std::string &name, FieldHandle handle);
+};
+
 class TypeMap {
 private:
     std::unordered_map<std::string, DSType *> typeMapImpl;
@@ -139,12 +243,6 @@ private:
      * remove type and call destructor.
      */
     void removeType(const std::string &typeName);
-};
-
-enum class SymbolError {
-    DUMMY,
-    DEFINED,
-    LIMIT,
 };
 
 enum class TYPE : unsigned int {
@@ -200,22 +298,10 @@ enum class TYPE : unsigned int {
     __SIZE_OF_DS_TYPE__,    // for enum size counting
 };
 
-using HandleOrError = std::pair<const FieldHandle *, SymbolError>;
 
 class SymbolTable {
 private:
-    // for FieldHandle
-    std::vector<std::string> handleCache;
-
-    /**
-     * first scope is always global scope.
-     */
-    std::vector<Scope> scopes;
-
-    /**
-     * contains max number of variable index.
-     */
-    std::vector<unsigned int> maxVarIndexStack;
+    std::vector<ModuleScope> moduleScopes;
 
 
     // for type
@@ -241,13 +327,20 @@ public:
     ~SymbolTable();
 
 private:
-    HandleOrError tryToRegister(const std::string &name, FieldHandle handle);
+    ModuleScope &cur() {
+        return this->moduleScopes.back();
+    }
 
-    void forbitCmdRedefinition(const char *cmdName) {
-        assert(this->inGlobalScope());
-        std::string name = cmdSymbolPrefix;
-        name += cmdName;
-        this->scopes.back().add(name, FieldHandle());
+    const ModuleScope &cur() const {
+        return this->moduleScopes.back();
+    }
+
+    ModuleScope &root() {
+        return this->moduleScopes.front();
+    }
+
+    const ModuleScope &root() const {
+        return this->moduleScopes.front();
     }
 
 public:
@@ -256,16 +349,19 @@ public:
     /**
      * return null, if not found.
      */
-    const FieldHandle *lookupHandle(const std::string &symbolName) const;
+    const FieldHandle *lookupHandle(const std::string &symbolName) const {
+        return this->cur().lookupHandle(symbolName);
+    }
 
     /**
      * return null, if found duplicated handle.
      */
-    HandleOrError registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
+    HandleOrError registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute) {
+        return this->cur().registerHandle(symbolName, type, attribute);
+    }
 
     bool disallowShadowing(const std::string &symbolName) {
-        assert(!this->inGlobalScope());
-        return this->scopes.back().add(symbolName, FieldHandle()) != nullptr;
+        return this->cur().disallowShadowing(symbolName);
     }
 
     /**
@@ -273,75 +369,78 @@ public:
      * type must be any type
      */
     HandleOrError registerUdc(const std::string &cmdName, DSType &type) {
-        assert(this->inGlobalScope());
-        std::string name = cmdSymbolPrefix;
+        assert(this->root().inGlobalScope());
+        std::string name = CMD_SYMBOL_PREFIX;
         name += cmdName;
-        return this->registerHandle(name, type, FieldAttribute::READ_ONLY);
+        return this->root().registerHandle(name, type, FieldAttribute::READ_ONLY);
     }
 
     /**
      * if not found, return null.
      */
     const FieldHandle *lookupUdc(const char *cmdName) const {
-        std::string name = cmdSymbolPrefix;
+        std::string name = CMD_SYMBOL_PREFIX;
         name += cmdName;
-        return this->lookupHandle(name);
+        return this->root().lookupHandle(name);
     }
 
     /**
      * create new local scope.
      */
-    void enterScope();
+    void enterScope() {
+        this->cur().enterScope();
+    }
 
     /**
      * delete current local scope.
      */
-    void exitScope();
+    void exitScope() {
+        this->cur().exitScope();
+    }
 
     /**
      * create new function scope.
      */
-    void enterFunc();
+    void enterFunc() {
+        this->cur().enterFunc();
+    }
 
     /**
      * delete current function scope.
      */
-    void exitFunc();
+    void exitFunc() {
+        this->cur().exitFunc();
+    }
 
-    /**
-     * clear entry cache.
-     */
-    void commit();
+    void commit() {
+        this->typeMap.commit();
+        this->cur().commit();
+    }
 
-    /**
-     * remove changed state(local scope, global FieldHandle)
-     */
-    void abort(bool sbortType);
+    void abort(bool abortType) {
+        if(abortType) {
+            this->typeMap.abort();
+        }
+        this->cur().abort();
+    }
 
     /**
      * max number of local variable index.
      */
     unsigned int getMaxVarIndex() const {
-        return this->maxVarIndexStack.back();
+        return this->cur().getMaxVarIndex();
     }
 
     /**
      * max number of global variable index.
      */
     unsigned int getMaxGVarIndex() const {
-        assert(this->inGlobalScope());
-        return this->scopes.back().getCurVarIndex();
-    }
-
-    bool inGlobalScope() const {
-        return this->scopes.size() == 1;
+        return this->cur().getMaxGVarIndex();
     }
 
     const Scope &curScope() const {
-        return this->scopes.back();
+        return this->cur().curScope();
     }
-
-    static constexpr const char *cmdSymbolPrefix = "%c";
 
     // for type lookup
 
