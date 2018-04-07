@@ -294,23 +294,23 @@ private:
 
     MethodHandle *handle_STR{nullptr};
 
-    std::vector<CodeBuilder *> builders;
+    std::vector<CodeBuilder> builders;
 
 public:
     ByteCodeGenerator(SymbolTable &symbolTable, bool assertion) :
             symbolTable(symbolTable), assertion(assertion) { }
 
-    ~ByteCodeGenerator() override;
+    ~ByteCodeGenerator() override = default;
 
 private:
     CodeBuilder &curBuilder() noexcept {
         assert(!this->builders.empty());
-        return *this->builders.back();
+        return this->builders.back();
     }
 
     const CodeBuilder &curBuilder() const noexcept {
         assert(!this->builders.empty());
-        return *this->builders.back();
+        return this->builders.back();
     }
 
     bool inUDC() const {

@@ -52,12 +52,6 @@ bool isTypeOp(OpCode code) {
 // ##     ByteCodeGenerator     ##
 // ###############################
 
-ByteCodeGenerator::~ByteCodeGenerator() {
-    for(auto &e : this->builders) {
-        delete e;
-    }
-}
-
 void ByteCodeGenerator::emitIns(OpCode op) {
     this->curBuilder().append8(static_cast<unsigned char>(op));
 
@@ -1111,8 +1105,7 @@ void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
 void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
     // push new builder
-    auto *builder = new CodeBuilder();
-    this->builders.push_back(builder);
+    this->builders.emplace_back();
 
     // generate header
     this->curBuilder().append8(static_cast<unsigned char>(kind));
@@ -1160,7 +1153,6 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const SourceInfoPtr &srcInfo
     };  // sentinel
 
     // remove current builder
-    delete this->builders.back();
     this->builders.pop_back();
 
     return CompiledCode(srcInfo, name.empty() ? nullptr : name.c_str(),
