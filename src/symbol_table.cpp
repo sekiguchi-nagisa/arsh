@@ -46,40 +46,32 @@ std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
 
 namespace ydsh {
 
-// ###################
-// ##     Scope     ##
-// ###################
+// ########################
+// ##     BlockScope     ##
+// ########################
 
-const FieldHandle *Scope::lookup(const std::string &symbolName) const {
-    auto iter = this->handleMap.find(symbolName);
-    if(iter != this->handleMap.end() && iter->second) {
-        return &iter->second;
-    }
-    return nullptr;
-}
-
-const FieldHandle *Scope::add(const std::string &symbolName, FieldHandle handle) {
+HandleOrError BlockScope::add(const std::string &symbolName, FieldHandle handle) {
     auto pair = this->handleMap.insert({symbolName, handle});
     if(!pair.second) {
-        return nullptr;
+        return {nullptr, SymbolError::DEFINED};
     }
     if(pair.first->second) {
         this->curVarIndex++;
     } else {
         this->shadowCount++;
     }
-    return &pair.first->second;
+    if(this->getCurVarIndex() > UINT8_MAX) {
+        return {nullptr, SymbolError::LIMIT};
+    }
+    return {&pair.first->second, SymbolError::DUMMY};
 }
 
 // #########################
-// ##     ModuleScope     ##
+// ##     GlobalScope     ##
 // #########################
 
-ModuleScope::ModuleScope(bool rootModule) : maxVarIndexStack(1) {
-    this->scopes.emplace_back();
-    this->maxVarIndexStack[0] = 0;
-
-    if(rootModule) {
+GlobalScope::GlobalScope(unsigned int &gvarCount) : gvarCount(gvarCount) {
+    if(gvarCount == 0) {
         const char *blacklist[] = {
                 "eval",
                 "exit",
@@ -89,27 +81,29 @@ ModuleScope::ModuleScope(bool rootModule) : maxVarIndexStack(1) {
         for(auto &e : blacklist) {
             std::string name = CMD_SYMBOL_PREFIX;
             name += e;
-            this->scopes.back().add(name, FieldHandle());
+            this->handleMap.emplace(std::move(name), FieldHandle());
         }
     }
 }
 
-HandleOrError ModuleScope::tryToRegister(const std::string &name, FieldHandle handle) {
-    auto ret = this->scopes.back().add(name, handle);
-    if(ret == nullptr) {
+HandleOrError GlobalScope::addNew(const std::string &symbolName, DSType &type, FieldAttributes attribute) {
+    attribute.set(FieldAttribute::GLOBAL);
+    FieldHandle handle(&type, this->gvarCount.get(), attribute);
+    auto pair = this->handleMap.emplace(symbolName, handle);
+    if(!pair.second) {
         return {nullptr, SymbolError::DEFINED};
     }
-    if(!this->inGlobalScope()) {
-        unsigned int varIndex = this->scopes.back().getCurVarIndex();
-        if(varIndex > UINT8_MAX) {
-            return {nullptr, SymbolError::LIMIT};
-        }
-        if(varIndex > this->maxVarIndexStack.back()) {
-            this->maxVarIndexStack.back() = varIndex;
-        }
+    if(pair.first->second) {
+        this->gvarCount.get()++;
+        this->handleCache.push_back(symbolName);
     }
-    return {ret, SymbolError::DUMMY};
+    return {&pair.first->second, SymbolError::DUMMY};
 }
+
+
+// #########################
+// ##     ModuleScope     ##
+// #########################
 
 const FieldHandle *ModuleScope::lookupHandle(const std::string &symbolName) const {
     for(auto iter = this->scopes.crbegin(); iter != this->scopes.crend(); ++iter) {
@@ -118,27 +112,30 @@ const FieldHandle *ModuleScope::lookupHandle(const std::string &symbolName) cons
             return handle;
         }
     }
-    return nullptr;
+    return this->globalScope.lookup(symbolName);
 }
 
-HandleOrError ModuleScope::registerHandle(const std::string &symbolName,
-                                          DSType &type, FieldAttributes attribute) {
+HandleOrError ModuleScope::newHandle(const std::string &symbolName,
+                                     DSType &type, FieldAttributes attribute) {
     if(this->inGlobalScope()) {
-        attribute.set(FieldAttribute::GLOBAL);
+        return this->globalScope.addNew(symbolName, type, attribute);
     }
 
     FieldHandle handle(&type, this->scopes.back().getCurVarIndex(), attribute);
-    auto e = this->tryToRegister(symbolName, handle);
-    if(e.second == SymbolError::DUMMY && this->inGlobalScope()) {
-        this->handleCache.push_back(symbolName);
+    auto ret = this->scopes.back().add(symbolName, handle);
+    if(ret.second == SymbolError::DUMMY) {
+        unsigned int varIndex = this->scopes.back().getCurVarIndex();
+        if(varIndex > this->maxVarIndexStack.back()) {
+            this->maxVarIndexStack.back() = varIndex;
+        }
     }
-    return e;
+    return ret;
 }
 
 void ModuleScope::enterScope() {
-    unsigned int index = this->scopes.back().getCurVarIndex();
-    if(this->inGlobalScope()) {
-        index = 0;
+    unsigned int index = 0;
+    if(!this->inGlobalScope()) {
+        index = this->scopes.back().getCurVarIndex();
     }
     this->scopes.emplace_back(index);
 }
@@ -161,26 +158,17 @@ void ModuleScope::exitFunc() {
 
 void ModuleScope::commit() {
     assert(this->inGlobalScope());
-    this->handleCache.clear();
+    this->globalScope.commit();
     this->maxVarIndexStack.clear();
     this->maxVarIndexStack.push_back(0);
     this->scopes.shrink_to_fit();
 }
 
 void ModuleScope::abort() {
-    // pop local scope and function scope
-    while(!this->inGlobalScope()) {
-        this->scopes.pop_back();
-    }
-    while(this->maxVarIndexStack.size() > 1) {
-        this->maxVarIndexStack.pop_back();
-    }
-
-    // remove cached entry
-    assert(this->inGlobalScope());
-    for(auto &p : this->handleCache) {
-        this->scopes.back().remove(p);
-    }
+    this->globalScope.abort();
+    this->maxVarIndexStack.clear();
+    this->maxVarIndexStack.push_back(0);
+    this->scopes.clear();
     this->scopes.shrink_to_fit();
 }
 
@@ -274,7 +262,7 @@ void TypeMap::removeType(const std::string &typeName) {
 
 SymbolTable::SymbolTable() :
         typeTable(new DSType*[static_cast<unsigned int>(TYPE::__SIZE_OF_DS_TYPE__)]()), templateMap(8) {
-    this->moduleScopes.emplace_back(true);
+    this->moduleScopes.emplace_back(this->gvarCount);
 
     // initialize type
     this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, info_Dummy()); // pseudo base type

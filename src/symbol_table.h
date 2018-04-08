@@ -27,43 +27,63 @@
 namespace ydsh {
 
 class Scope {
-private:
-    unsigned int curVarIndex;
-    unsigned int shadowCount;
+protected:
     std::unordered_map<std::string, FieldHandle> handleMap;
+
+    ~Scope() = default;
 
 public:
     NON_COPYABLE(Scope);
 
-    /**
-     * equivalent to Scope(0)
-     */
-    Scope() : Scope(0) { }
-
+    Scope() = default;
     Scope(Scope&&) = default;
 
-    explicit Scope(unsigned int curVarIndex) :
+    using const_iterator = decltype(handleMap)::const_iterator;
+
+    const_iterator begin() const {
+        return this->handleMap.begin();
+    }
+
+    const_iterator end() const {
+        return this->handleMap.end();
+    }
+
+protected:
+    const FieldHandle *lookup(const std::string &symbolName) const {
+        auto iter = this->handleMap.find(symbolName);
+        if(iter != this->handleMap.end() && iter->second) {
+            return &iter->second;
+        }
+        return nullptr;
+    }
+};
+
+enum class SymbolError {
+    DUMMY,
+    DEFINED,
+    LIMIT,
+};
+
+using HandleOrError = std::pair<const FieldHandle *, SymbolError>;
+
+class ModuleScope;
+
+class BlockScope : public Scope {
+private:
+    unsigned int curVarIndex;
+    unsigned int shadowCount;
+
+    friend class ModuleScope;
+
+public:
+    NON_COPYABLE(BlockScope);
+
+    BlockScope(BlockScope&&) = default;
+
+    explicit BlockScope(unsigned int curVarIndex = 0) :
             curVarIndex(curVarIndex), shadowCount(0) { }
 
-    ~Scope() = default;
-
-    /**
-     * return null, if not exist.
-     */
-    const FieldHandle *lookup(const std::string &symbolName) const;
-
-    /**
-     * add FieldHandle. if adding success, increment curVarIndex.
-     * return null if found duplicated handle.
-     */
-    const FieldHandle *add(const std::string &symbolName, FieldHandle handle);
-
-    /**
-     * remove handle from handleMap, and delete it.
-     */
-    void remove(const std::string &symbolName) {
-        this->handleMap.erase(symbolName);
-    }
+    ~BlockScope() = default;
 
     unsigned int getCurVarIndex() const {
         return this->curVarIndex;
@@ -77,33 +97,50 @@ public:
         return this->getCurVarIndex() - this->getVarSize();
     }
 
-    using const_iterator = decltype(handleMap)::const_iterator;
-
-    const_iterator begin() const {
-        return this->handleMap.begin();
-    }
-
-    const_iterator end() const {
-        return this->handleMap.end();
-    }
+private:
+    /**
+     * add FieldHandle. if adding success, increment curVarIndex.
+     * return null if found duplicated handle.
+     */
+    HandleOrError add(const std::string &symbolName, FieldHandle handle);
 };
 
-enum class SymbolError {
-    DUMMY,
-    DEFINED,
-    LIMIT,
-};
+class GlobalScope : public Scope {
+private:
+    std::reference_wrapper<unsigned int> gvarCount;
+    std::vector<std::string> handleCache;
 
-using HandleOrError = std::pair<const FieldHandle *, SymbolError>;
+    friend class ModuleScope;
+
+public:
+    NON_COPYABLE(GlobalScope);
+
+    explicit GlobalScope(unsigned int &gvarCount);
+    GlobalScope(GlobalScope &&) = default;
+    ~GlobalScope() = default;
+
+private:
+    HandleOrError addNew(const std::string &symbolName, DSType &type, FieldAttributes attribute);
+
+    void commit() {
+        this->handleCache.clear();
+    }
+
+    void abort() {
+        for(auto &e : this->handleCache) {
+            this->handleMap.erase(e);
+        }
+    }
+};
 
 class ModuleScope {
 private:
-    std::vector<std::string> handleCache;
+    GlobalScope globalScope;
 
     /**
      * first scope is always global scope.
      */
-    std::vector<Scope> scopes;
+    std::vector<BlockScope> scopes;
 
     /**
      * contains max number of local variable index.
@@ -113,7 +150,9 @@ private:
 public:
     NON_COPYABLE(ModuleScope);
 
-    ModuleScope(bool rootModule = false);
+    explicit ModuleScope(unsigned int &gvarCount) : globalScope(gvarCount) {
+        this->maxVarIndexStack.push_back(0);
+    }
 
     ModuleScope(ModuleScope&&) = default;
 
@@ -127,11 +166,11 @@ public:
     /**
      * return null, if found duplicated handle.
      */
-    HandleOrError registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
+    HandleOrError newHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
 
     bool disallowShadowing(const std::string &symbolName) {
         assert(!this->inGlobalScope());
-        return this->scopes.back().add(symbolName, FieldHandle()) != nullptr;
+        return this->scopes.back().add(symbolName, FieldHandle()).first != nullptr;
     }
 
     /**
@@ -168,27 +207,21 @@ public:
      * max number of local variable index.
      */
     unsigned int getMaxVarIndex() const {
+        assert(this->maxVarIndexStack.size());
         return this->maxVarIndexStack.back();
     }
 
-    /**
-     * max number of global variable index.
-     */
-    unsigned int getMaxGVarIndex() const {
-        assert(this->inGlobalScope());
-        return this->scopes.back().getCurVarIndex();
-    }
-
     bool inGlobalScope() const {
-        return this->scopes.size() == 1;
+        return this->scopes.empty();
     }
 
-    const Scope &curScope() const {
+    const GlobalScope &global() const {
+        return this->globalScope;
+    }
+
+    const BlockScope &curScope() const {
         return this->scopes.back();
     }
-
-private:
-    HandleOrError tryToRegister(const std::string &name, FieldHandle handle);
 };
 
 class TypeMap {
@@ -301,6 +334,7 @@ enum class TYPE : unsigned int {
 
 class SymbolTable {
 private:
+    unsigned int gvarCount{};
     std::vector<ModuleScope> moduleScopes;
 
 
@@ -356,8 +390,8 @@ public:
     /**
      * return null, if found duplicated handle.
      */
-    HandleOrError registerHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute) {
-        return this->cur().registerHandle(symbolName, type, attribute);
+    HandleOrError newHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute) {
+        return this->cur().newHandle(symbolName, type, attribute);
     }
 
     bool disallowShadowing(const std::string &symbolName) {
@@ -372,7 +406,7 @@ public:
         assert(this->root().inGlobalScope());
         std::string name = CMD_SYMBOL_PREFIX;
         name += cmdName;
-        return this->root().registerHandle(name, type, FieldAttribute::READ_ONLY);
+        return this->root().newHandle(name, type, FieldAttribute::READ_ONLY);
     }
 
     /**
@@ -435,10 +469,14 @@ public:
      * max number of global variable index.
      */
     unsigned int getMaxGVarIndex() const {
-        return this->cur().getMaxGVarIndex();
+        return this->gvarCount;
     }
 
-    const Scope &curScope() const {
+    const GlobalScope &globalScope() const {
+        return this->cur().global();
+    }
+
+    const BlockScope &curScope() const {
         return this->cur().curScope();
     }
 

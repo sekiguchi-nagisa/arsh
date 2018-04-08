@@ -295,7 +295,7 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
 
 const FieldHandle *TypeChecker::addEntry(Node &node, const std::string &symbolName,
                                    DSType &type, FieldAttributes attribute) {
-    auto pair = this->symbolTable.registerHandle(symbolName, type, attribute);
+    auto pair = this->symbolTable.newHandle(symbolName, type, attribute);
     switch(pair.second) {
     case SymbolError::DUMMY:
         break;
