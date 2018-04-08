@@ -196,14 +196,14 @@ public:
     void exitFunc();
 
     /**
-     * clear entry cache.
-     */
-    void commit();
-
-    /**
      * remove changed state(local scope, global FieldHandle)
      */
-    void abort();
+    void abort() {
+        this->globalScope.abort();
+        this->scopes.clear();
+    }
+
+    void clear();
 
     /**
      * max number of local variable index.
@@ -451,7 +451,6 @@ public:
 
     void commit() {
         this->typeMap.commit();
-        this->cur().commit();
         this->oldGvarCount = this->gvarCount;
     }
 
@@ -461,6 +460,10 @@ public:
             this->typeMap.abort();
         }
         this->cur().abort();
+    }
+
+    void clear() {
+        this->cur().clear();
     }
 
     /**

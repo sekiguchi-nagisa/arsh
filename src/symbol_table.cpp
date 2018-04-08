@@ -155,18 +155,9 @@ void ModuleScope::exitFunc() {
     this->maxVarIndexStack.pop_back();
 }
 
-void ModuleScope::commit() {
-    assert(this->inGlobalScope());
+void ModuleScope::clear() {
     this->maxVarIndexStack.clear();
     this->maxVarIndexStack.push_back(0);
-    this->scopes.shrink_to_fit();
-}
-
-void ModuleScope::abort() {
-    this->globalScope.abort();
-    this->maxVarIndexStack.clear();
-    this->maxVarIndexStack.push_back(0);
-    this->scopes.clear();
     this->scopes.shrink_to_fit();
 }
 
