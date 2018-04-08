@@ -108,7 +108,6 @@ private:
 class GlobalScope : public Scope {
 private:
     std::reference_wrapper<unsigned int> gvarCount;
-    std::vector<std::string> handleCache;
 
     friend class ModuleScope;
 
@@ -122,13 +121,16 @@ public:
 private:
     HandleOrError addNew(const std::string &symbolName, DSType &type, FieldAttributes attribute);
 
-    void commit() {
-        this->handleCache.clear();
-    }
-
+    /**
+     * before call it, reset gvarCount
+     */
     void abort() {
-        for(auto &e : this->handleCache) {
-            this->handleMap.erase(e);
+        for(auto iter = this->handleMap.begin(); iter != this->handleMap.end();) {
+            if(iter->second && iter->second.getIndex() >= this->gvarCount) {
+                iter = this->handleMap.erase(iter);
+            } else {
+                ++iter;
+            }
         }
     }
 };
@@ -334,7 +336,8 @@ enum class TYPE : unsigned int {
 
 class SymbolTable {
 private:
-    unsigned int gvarCount{};
+    unsigned int oldGvarCount{0};
+    unsigned int gvarCount{0};
     std::vector<ModuleScope> moduleScopes;
 
 
@@ -449,9 +452,11 @@ public:
     void commit() {
         this->typeMap.commit();
         this->cur().commit();
+        this->oldGvarCount = this->gvarCount;
     }
 
     void abort(bool abortType) {
+        this->gvarCount = this->oldGvarCount;
         if(abortType) {
             this->typeMap.abort();
         }

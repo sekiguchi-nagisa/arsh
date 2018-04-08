@@ -95,7 +95,6 @@ HandleOrError GlobalScope::addNew(const std::string &symbolName, DSType &type, F
     }
     if(pair.first->second) {
         this->gvarCount.get()++;
-        this->handleCache.push_back(symbolName);
     }
     return {&pair.first->second, SymbolError::DUMMY};
 }
@@ -158,7 +157,6 @@ void ModuleScope::exitFunc() {
 
 void ModuleScope::commit() {
     assert(this->inGlobalScope());
-    this->globalScope.commit();
     this->maxVarIndexStack.clear();
     this->maxVarIndexStack.push_back(0);
     this->scopes.shrink_to_fit();

@@ -38,9 +38,7 @@ public:
     FrontEnd(Lexer &lexer, SymbolTable &symbolTable,
              DSExecMode mode, bool toplevel, const DumpTarget &target);
 
-    ~FrontEnd() {
-        this->checker.getSymbolTable().commit();
-    }
+    ~FrontEnd() = default;
 
     bool frontEndOnly() const {
         return this->mode == DS_EXEC_MODE_PARSE_ONLY || this->mode == DS_EXEC_MODE_CHECK_ONLY;

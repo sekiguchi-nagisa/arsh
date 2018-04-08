@@ -238,10 +238,6 @@ public:
         return this->symbolTable;
     }
 
-    SymbolTable &getSymbolTable() {
-        return this->symbolTable;
-    }
-
 protected:
     // base type check entry point
     DSType &toType(TypeNode *node) {

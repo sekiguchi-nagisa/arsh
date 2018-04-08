@@ -155,6 +155,7 @@ static int evalCodeImpl(DSState *state, CompiledCode &code, DSError *dsError) {
     if(s && (!hasFlag(state->option, DS_OPTION_INTERACTIVE) || !root)) {
         invokeTerminationHook(*state, DS_ERROR_KIND_EXIT, DSValue());
     }
+    state->symbolTable.commit();
     return state->getExitStatus();
 }
 
@@ -395,7 +396,6 @@ static void loadEmbeddedScript(DSState *state) {
     if(ret != 0) {
         fatal("broken embedded script\n");
     }
-    state->symbolTable.commit();
 
     // rest some state
     state->lineNum = 1;

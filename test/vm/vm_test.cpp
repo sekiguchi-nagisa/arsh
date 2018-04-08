@@ -235,6 +235,11 @@ TEST_F(VMTest, sig1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DSValue(), v.lookup(5)));
 }
 
+TEST_F(VMTest, abort) {
+    ASSERT_(this->eval("var a = 45 / 0;", DS_ERROR_KIND_RUNTIME_ERROR));
+    ASSERT_(this->eval("$a;", DS_ERROR_KIND_TYPE_ERROR));
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
