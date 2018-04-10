@@ -182,7 +182,7 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     }
     lexer.setLineNum(state->lineNum);
 
-    FrontEnd frontEnd(lexer, state->symbolTable, state->execMode,
+    FrontEnd frontEnd(std::move(lexer), state->symbolTable, state->execMode,
                       hasFlag(state->option, DS_OPTION_TOPLEVEL), state->dumpTarget);
     ByteCodeGenerator codegen(state->symbolTable, hasFlag(state->option, DS_OPTION_ASSERT));
 
@@ -201,7 +201,7 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     }
     frontEnd.teardownASTDump();
     if(!frontEnd.frontEndOnly()) {
-        code = codegen.finalize(lexer.getSourceInfoPtr(), state->symbolTable.getMaxVarIndex());
+        code = codegen.finalize(frontEnd.getLexer().getSourceInfoPtr(), state->symbolTable.getMaxVarIndex());
     }
     return 0;
 }

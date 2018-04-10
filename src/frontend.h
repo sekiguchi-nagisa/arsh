@@ -27,6 +27,7 @@ struct DumpTarget;
 
 class FrontEnd {
 private:
+    Lexer lexer;
     DSExecMode mode;
     Parser parser;
     TypeChecker checker;
@@ -35,11 +36,15 @@ private:
     NodeDumper astDumper;
 
 public:
-    FrontEnd(Lexer &lexer, SymbolTable &symbolTable,
+    FrontEnd(Lexer &&lexer, SymbolTable &symbolTable,
              DSExecMode mode, bool toplevel, const DumpTarget &target);
 
     ~FrontEnd() {
         this->checker.getSymbolTable().clear();
+    }
+
+    const Lexer &getLexer() const {
+        return this->lexer;
     }
 
     bool frontEndOnly() const {
