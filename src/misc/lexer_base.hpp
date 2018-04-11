@@ -84,29 +84,7 @@ protected:
 public:
     NON_COPYABLE(LexerBase);
 
-    LexerBase(LexerBase &&lex) noexcept :
-            fp(lex.fp), buf(std::move(lex.buf)), cursor(lex.cursor),
-            limit(lex.limit), marker(lex.marker), ctxMarker(lex.ctxMarker) { }
-
-    LexerBase &operator=(LexerBase &&lex) {
-        auto tmp(std::move(lex));
-        this->swap(tmp);
-        return *this;
-    }
-
-    void swap(LexerBase &lex) {
-        std::swap(this->fp, lex.fp);
-        std::swap(this->buf, lex.buf);
-        std::swap(this->cursor, lex.cursor);
-        std::swap(this->limit, lex.limit);
-        std::swap(this->marker, lex.marker);
-        std::swap(this->ctxMarker, lex.ctxMarker);
-    }
-
-    /**
-     * FILE must be opened with binary mode.
-     * insert newline if not terminated by it.
-     */
+    LexerBase(LexerBase &&) = default;
 
     /**
      *

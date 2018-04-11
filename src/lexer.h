@@ -92,6 +92,8 @@ private:
 public:
     NON_COPYABLE(Lexer);
 
+    Lexer(Lexer&&) = default;
+
     Lexer() = default;
 
     /**
@@ -127,27 +129,7 @@ public:
     Lexer(const char *sourceName, FILE *fp) :
             LexerBase(fp), srcInfoPtr(SourceInfoPtr::create(sourceName)), modeStack(1, yycSTMT) {}
 
-    Lexer(Lexer &&lex) noexcept :
-            LexerBase(std::move(lex)), srcInfoPtr(std::move(lex.srcInfoPtr)),
-            modeStack(std::move(lex.modeStack)), prevNewLine(lex.prevNewLine),
-            prevSpace(lex.prevSpace), prevMode(lex.prevMode) {}
-
     ~Lexer() = default;
-
-    Lexer &operator=(Lexer &&lex) noexcept {
-        auto tmp(std::move(lex));
-        this->swap(lex);
-        return *this;
-    }
-
-    void swap(Lexer &lex) {
-        LexerBase::swap(lex);
-        std::swap(this->srcInfoPtr, lex.srcInfoPtr);
-        std::swap(this->modeStack, lex.modeStack);
-        std::swap(this->prevNewLine, lex.prevNewLine);
-        std::swap(this->prevSpace, lex.prevSpace);
-        std::swap(this->prevMode, lex.prevMode);
-    }
 
     void setPos(unsigned int pos) {
         assert(this->buf.get() + pos <= this->limit);
