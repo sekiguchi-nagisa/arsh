@@ -338,7 +338,8 @@ class SymbolTable {
 private:
     unsigned int oldGvarCount{0};
     unsigned int gvarCount{0};
-    std::vector<ModuleScope> moduleScopes;
+    ModuleScope rootModule;
+    ModuleScope *curModule;
 
 
     // for type
@@ -365,19 +366,19 @@ public:
 
 private:
     ModuleScope &cur() {
-        return this->moduleScopes.back();
+        return *this->curModule;
     }
 
     const ModuleScope &cur() const {
-        return this->moduleScopes.back();
+        return *this->curModule;
     }
 
     ModuleScope &root() {
-        return this->moduleScopes.front();
+        return this->rootModule;
     }
 
     const ModuleScope &root() const {
-        return this->moduleScopes.front();
+        return this->rootModule;
     }
 
 public:

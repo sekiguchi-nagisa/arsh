@@ -250,8 +250,8 @@ void TypeMap::removeType(const std::string &typeName) {
 // #########################
 
 SymbolTable::SymbolTable() :
+        rootModule(this->gvarCount), curModule(&this->rootModule),
         typeTable(new DSType*[static_cast<unsigned int>(TYPE::__SIZE_OF_DS_TYPE__)]()), templateMap(8) {
-    this->moduleScopes.emplace_back(this->gvarCount);
 
     // initialize type
     this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, info_Dummy()); // pseudo base type
