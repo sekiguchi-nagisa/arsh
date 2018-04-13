@@ -183,7 +183,7 @@ protected:
 
     std::unique_ptr<Node> parse_cmdArgSeg(bool first);
 
-    std::unique_ptr<Node> parse_cmdArgPart(bool first, LexerMode mode = yycCMD);
+    std::unique_ptr<StringNode> parse_cmdArgPart(bool first, LexerMode mode = yycCMD);
 
     std::unique_ptr<Node> parse_expression();
 

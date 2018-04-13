@@ -2089,7 +2089,7 @@ public:
 
 class SourceNode : public Node {
 private:
-    Node *pathNode;
+    StringNode *pathNode;
 
     /**
      * may be empty string
@@ -2097,15 +2097,19 @@ private:
     std::string name;
 
 public:
-    SourceNode(unsigned int startPos, Node *pathNode) :
+    SourceNode(unsigned int startPos, StringNode *pathNode) :
             Node(NodeKind::Source, {startPos, 1}), pathNode(pathNode) {
         this->updateToken(pathNode->getToken());
     }
 
     ~SourceNode() override;
 
-    Node *getPathNode() {
+    StringNode *getPathNode() {
         return this->pathNode;
+    }
+
+    const std::string &getPathStr() const {
+        return this->pathNode->getValue();
     }
 
     void setName(Token token, std::string &&name) {

@@ -865,7 +865,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool first) {
     }
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgPart(bool first, LexerMode mode) {
+std::unique_ptr<StringNode> Parser::parse_cmdArgPart(bool first, LexerMode mode) {
     GUARD_DEEP_NESTING(guard);
 
     Token token = TRY(this->expectAndChangeMode(CMD_ARG_PART, mode));
