@@ -446,84 +446,61 @@ TEST_F(LexerTest_Lv1, invalid_float_literal2) {
 // string literal
 TEST_F(LexerTest_Lv1, string_literal1) {
     const char *text = "''";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(STRING_LITERAL, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, string_literal2) {
     const char *text = "'fhrωu4あ\t3\"5^*&!@#~AFG '";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(STRING_LITERAL, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, string_literal3) {
     const char *text = "'\\t\\n\\r\\\\'";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(STRING_LITERAL, "'\\t\\n\\r\\\\'", EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, "'\\t\\n\\r\\\\'", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, string_litearl4) {
     const char *text = "'\n\thoge\\\"'";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycCMD);
-        EXPECT(STRING_LITERAL, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, estring_literal1) {
     const char *text = "$'\\''";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(STRING_LITERAL, "$'\\''", EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, "$'\\''", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, estring_literal2) {
     const char *text = "$'\\n'";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(STRING_LITERAL, "$'\\n'", EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, "$'\\n'", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, estring_literal3) {
     const char *text = "$'\\\\'";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(STRING_LITERAL, "$'\\\\'", EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, "$'\\\\'", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, estring_literal4) {
     const char *text = "$'\\\\'";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycCMD);
-        EXPECT(STRING_LITERAL, "$'\\\\'", EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    SCOPED_TRACE("");
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, "$'\\\\'", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 
