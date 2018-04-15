@@ -507,118 +507,92 @@ TEST_F(LexerTest_Lv1, estring_literal4) {
 // invalid string literal
 TEST_F(LexerTest_Lv1, invalid_string_literal) {
     const char *text = "'\\''";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(STRING_LITERAL, "'\\'", INVALID, "'");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, "'\\'", INVALID, "'"));
 }
 
 TEST_F(LexerTest_Lv1, path_literal1) {
     const char *text = "p'/hoge'";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(PATH_LITERAL, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(PATH_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, path_literal2) {
     const char *text = "p'/org/example'";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(PATH_LITERAL, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(PATH_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, invalid_path_iteral1) {
     const char *text = "p'hoge'";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(COMMAND, "p", STRING_LITERAL, "'hoge'", EOS, "");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, "p", STRING_LITERAL, "'hoge'", EOS, ""));
 }
 
 
 TEST_F(LexerTest_Lv1, string_expr1) {
     const char *text = "\"hello word\"";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello word", CLOSE_DQUOTE, "\"", EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(
+            EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello word",
+                   CLOSE_DQUOTE, "\"", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, string_expr2) {
     const char *text = "\"hello ${a} word\"";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello ",
-               APPLIED_NAME, "${a}", STR_ELEMENT, " word",
-               CLOSE_DQUOTE, "\"", EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(
+            EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello ",
+                   APPLIED_NAME, "${a}", STR_ELEMENT, " word",
+                   CLOSE_DQUOTE, "\"", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, string_expr3) {
     const char *text = "\"hello\\\"world\"";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello\\\"world",
-               CLOSE_DQUOTE, "\"", EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(
+            EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello\\\"world",
+                   CLOSE_DQUOTE, "\"", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, string_expr4) {
     const char *text = "\"hello\\$world\"";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello\\$world",
-               CLOSE_DQUOTE, "\"", EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(
+            EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello\\$world",
+                   CLOSE_DQUOTE, "\"", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, string_expr5) {
     const char *text = "\"\\\\\"";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "\\\\",
-               CLOSE_DQUOTE, "\"", EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(
+            EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "\\\\",
+                   CLOSE_DQUOTE, "\"", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, string_expr6) {
     const char *text = "\"\n\t\\$\\\\$(ls)hoge\"";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycCMD);
-        EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "\n\t\\$\\\\",
-               START_SUB_CMD, "$(", COMMAND, "ls", RP, ")", STR_ELEMENT, "hoge",
-               CLOSE_DQUOTE, "\"", EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(
+            EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "\n\t\\$\\\\",
+                   START_SUB_CMD, "$(", COMMAND, "ls", RP, ")", STR_ELEMENT, "hoge",
+                   CLOSE_DQUOTE, "\"", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, invalid_string_expr) {
     const char *text = "\"hello$\"";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello", INVALID, "$");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello", INVALID, "$"));
 }
 
 // regex literal
@@ -673,126 +647,93 @@ TEST_F(LexerTest_Lv1, invalid_signal) {
 
 TEST_F(LexerTest_Lv1, subCmd1) {
     const char *text = "$(";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(START_SUB_CMD, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-        this->lexer->popLexerMode();
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(START_SUB_CMD, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, subCmd2) {
     const char *text = "$(";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycDSTRING);
-        EXPECT(START_SUB_CMD, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-        this->lexer->popLexerMode();
-        this->assertLexerMode(yycDSTRING);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycDSTRING);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(START_SUB_CMD, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycDSTRING));
 }
 
 TEST_F(LexerTest_Lv1, subCmd3) {
     const char *text = "$(";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycCMD);
-        EXPECT(START_SUB_CMD, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-        this->lexer->popLexerMode();
-        this->assertLexerMode(yycCMD);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(START_SUB_CMD, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
 }
 
 // applied name
 TEST_F(LexerTest_Lv1, appliedName1) {
     const char *text = "$w10i_fArhue";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(APPLIED_NAME, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(APPLIED_NAME, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, appliedName2) {
     const char *text ="$__0";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(APPLIED_NAME, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(APPLIED_NAME, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, appliedName3) {
     const char *text = "$hoge";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(APPLIED_NAME, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(APPLIED_NAME, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, appliedName4) {
     const char *text = "$ab02";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycDSTRING);
-        EXPECT(APPLIED_NAME, text, STR_ELEMENT, "\n", EOS, "");
-        this->assertLexerMode(yycDSTRING);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycDSTRING);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(APPLIED_NAME, text, STR_ELEMENT, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycDSTRING));
 }
 
 TEST_F(LexerTest_Lv1, appliedName5) {
     const char *text = "${ab02}";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycDSTRING);
-        EXPECT(APPLIED_NAME, text, STR_ELEMENT, "\n", EOS, "");
-        this->assertLexerMode(yycDSTRING);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycDSTRING);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(APPLIED_NAME, text, STR_ELEMENT, "\n", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycDSTRING));
 }
 
 TEST_F(LexerTest_Lv1, appliedName6) {
     const char *text = "$ab02";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycCMD);
-        EXPECT(APPLIED_NAME, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(APPLIED_NAME, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, appliedName7) {
     const char *text = "${ab02}";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycCMD);
-        EXPECT(APPLIED_NAME, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(APPLIED_NAME, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, appliedName8) {
     const char *text = "$hello[";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycCMD);
-        EXPECT(APPLIED_NAME_WITH_BRACKET, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(APPLIED_NAME_WITH_BRACKET, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 // special name
@@ -1879,58 +1820,40 @@ TEST_F(LexerTest_Lv1, MOD_ASSIGN2) {
 
 TEST_F(LexerTest_Lv1, AS1) {
     const char *text = "as";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(COMMAND, text, EOS, "");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, AS2) {
     const char *text = "as";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
-        EXPECT(AS, text, EOS, "");
-    });
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(AS, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, AS3) {
     const char *text = "as";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycNAME);
-        EXPECT(IDENTIFIER, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text, yycNAME);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(IDENTIFIER, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, FUNC1) {
     const char *text = "Func";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(COMMAND, text, EOS, "");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, FUNC2) {
     const char *text = "Func";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycTYPE);
-        EXPECT(FUNC, text, EOS, "");
-    });
+    this->initLexer(text, yycTYPE);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(FUNC, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, FUNC3) {
     const char *text = "Func";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycNAME);
-        EXPECT(IDENTIFIER, text, EOS, "");
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text, yycNAME);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(IDENTIFIER, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, IN1) {
