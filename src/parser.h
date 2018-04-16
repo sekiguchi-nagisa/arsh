@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <utility>
+#include <tuple>
 
 #include "misc/parser_base.hpp"
 #include "lexer.h"
@@ -104,6 +105,17 @@ public:
 
     explicit operator bool() const {
         return this->curKind != EOS;
+    }
+
+    void restoreLexicalState(Lexer &lexer, TokenKind kind, Token token, TokenKind ckind) {
+        this->lexer = &lexer;
+        this->curKind = kind;
+        this->curToken = token;
+        this->consumedKind = ckind;
+    }
+
+    std::tuple<TokenKind, Token, TokenKind> saveLexicalState() const {
+        return {this->curKind, this->curToken, this->consumedKind};
     }
 
 protected:
