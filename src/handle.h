@@ -40,7 +40,7 @@ struct NativeFuncInfo;
     OP(RANDOM     , (1u << 5)) \
     OP(SECONDS    , (1u << 6))
 
-enum class FieldAttribute : unsigned int {
+enum class FieldAttribute : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
     EACH_FIELD_ATTR(GEN_ENUM)
 #undef GEN_ENUM
@@ -48,35 +48,35 @@ enum class FieldAttribute : unsigned int {
 
 class FieldAttributes {
 private:
-    unsigned int value_{0};
+    unsigned short value_{0};
 
 private:
-    FieldAttributes(unsigned int value) : value_(value) {}
+    FieldAttributes(unsigned short value) : value_(value) {}
 
 public:
     FieldAttributes() = default;
-    FieldAttributes(FieldAttribute attr) : value_(static_cast<unsigned int>(attr)) {}
+    FieldAttributes(FieldAttribute attr) : value_(static_cast<unsigned short>(attr)) {}
     ~FieldAttributes() = default;
 
     friend inline FieldAttributes operator|(FieldAttribute x, FieldAttribute y);
 
     FieldAttributes operator|(FieldAttribute attr) const {
-        return this->value_ | static_cast<unsigned int>(attr);
+        return this->value_ | static_cast<unsigned short>(attr);
     }
 
     void set(FieldAttribute attr) {
-        setFlag(this->value_, static_cast<unsigned int>(attr));
+        setFlag(this->value_, static_cast<unsigned short>(attr));
     }
 
     bool has(FieldAttribute attr) const {
-        return hasFlag(this->value_, static_cast<unsigned int>(attr));
+        return hasFlag(this->value_, static_cast<unsigned short>(attr));
     }
 
     std::string str() const;
 };
 
 inline FieldAttributes operator|(FieldAttribute x, FieldAttribute y) {
-    return static_cast<unsigned int>(x) | static_cast<unsigned int>(y);
+    return static_cast<unsigned short>(x) | static_cast<unsigned short>(y);
 }
 
 /**
@@ -90,11 +90,16 @@ private:
 
     FieldAttributes attribute;
 
+    /**
+     * if global module, id is 0.
+     */
+    unsigned short modID;
+
 public:
     FieldHandle() : FieldHandle(nullptr, 0, FieldAttributes()) {}
 
-    FieldHandle(DSType *fieldType, unsigned int fieldIndex, FieldAttributes attribute) :
-            type(fieldType), index(fieldIndex), attribute(attribute) {}
+    FieldHandle(DSType *fieldType, unsigned int fieldIndex, FieldAttributes attribute, unsigned short modID = 0) :
+            type(fieldType), index(fieldIndex), attribute(attribute), modID(modID) {}
 
     ~FieldHandle() = default;
 
@@ -112,6 +117,10 @@ public:
 
     explicit operator bool() const {
         return this->type != nullptr;
+    }
+
+    unsigned short getModID() const {
+        return this->modID;
     }
 };
 

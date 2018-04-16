@@ -36,8 +36,8 @@ std::string FieldAttributes::str() const {
     };
 
     std::string value;
-    for(unsigned int i = 0; i < arraySize(table); i++) {
-        if(hasFlag(this->value_, 1u << i)) {
+    for(unsigned short i = 0; i < arraySize(table); i++) {
+        if(hasFlag(this->value_, static_cast<unsigned short>(1u << i))) {
             if(!value.empty()) {
                 value += " | ";
             }

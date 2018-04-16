@@ -21,11 +21,14 @@
 
 namespace ydsh {
 
-typedef unsigned char flag8_set_t;
-typedef unsigned char flag8_t;
+using flag8_set_t = unsigned char;
+using flag8_t = unsigned char;
 
-typedef unsigned int flag32_set_t;
-typedef unsigned int flag32_t;
+using flag16_set_t = unsigned short;
+using flag16_t = unsigned short;
+
+using flag32_set_t = unsigned int;
+using flag32_t = unsigned int;
 
 template <typename T>
 inline void setFlag(T &set, T flag) {
