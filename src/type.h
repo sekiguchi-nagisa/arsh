@@ -147,12 +147,6 @@ public:
      */
     virtual MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName);
 
-    /**
-     * return null if handle not found.
-     * not directly use it
-     */
-    virtual FieldHandle *findHandle(const std::string &fieldName) = 0;
-
     virtual void accept(TypeVisitor *visitor) = 0;
 
     bool operator==(const DSType &type) const {
@@ -206,7 +200,6 @@ public:
      */
     MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
 
-    FieldHandle *findHandle(const std::string &fieldName) override;
     void accept(TypeVisitor *visitor) override;
 };
 
@@ -280,8 +273,6 @@ public:
     const DSCode *getConstructor() override;
     MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
 
-    FieldHandle *findHandle(const std::string &fieldName) override;
-
     void accept(TypeVisitor *visitor) override;
     unsigned int getMethodSize() override;
     const DSCode *getMethodRef(unsigned int methodIndex) override;
@@ -338,7 +329,6 @@ public:
     unsigned int getFieldSize() override;
 
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
-    FieldHandle *findHandle(const std::string &fieldName) override;
     void accept(TypeVisitor *visitor) override;
 };
 
@@ -371,7 +361,6 @@ public:
     unsigned int getMethodSize() override;
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
     MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
-    FieldHandle *findHandle(const std::string &fieldName) override;
     void accept(TypeVisitor *visitor) override;
 };
 
@@ -399,7 +388,6 @@ public:
 
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
     MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
-    FieldHandle *findHandle(const std::string &fieldName) override;
     void accept(TypeVisitor *visitor) override;
     /**
      * call only once.

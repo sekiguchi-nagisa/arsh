@@ -87,10 +87,6 @@ MethodHandle *FunctionType::lookupMethodHandle(SymbolTable &symbolTable, const s
     return this->superType->lookupMethodHandle(symbolTable, methodName);
 }
 
-FieldHandle *FunctionType::findHandle(const std::string &fieldName) {
-    return this->superType->findHandle(fieldName);
-}
-
 void FunctionType::accept(TypeVisitor *visitor) {
     visitor->visitFunctionType(this);
 }
@@ -186,14 +182,6 @@ MethodHandle *BuiltinType::lookupMethodHandle(SymbolTable &symbolTable, const st
     return handle;
 }
 
-FieldHandle *BuiltinType::findHandle(const std::string &fieldName) { // override
-//    auto iter = this->methodHandleMap.find(fieldName);
-//    if(iter != this->methodHandleMap.end()) {
-//        return iter->second;
-//    }
-    return this->superType != nullptr ? this->superType->findHandle(fieldName) : nullptr;
-}
-
 void BuiltinType::accept(TypeVisitor *visitor) {
     visitor->visitBuiltinType(this);
 }
@@ -262,14 +250,6 @@ FieldHandle *TupleType::lookupFieldHandle(SymbolTable &symbolTable, const std::s
     auto iter = this->fieldHandleMap.find(fieldName);
     if(iter == this->fieldHandleMap.end()) {
         return this->superType->lookupFieldHandle(symbolTable, fieldName);
-    }
-    return iter->second;
-}
-
-FieldHandle *TupleType::findHandle(const std::string &fieldName) {
-    auto iter = this->fieldHandleMap.find(fieldName);
-    if(iter == this->fieldHandleMap.end()) {
-        return this->superType->findHandle(fieldName);
     }
     return iter->second;
 }
@@ -347,10 +327,6 @@ MethodHandle *InterfaceType::lookupMethodHandle(SymbolTable &symbolTable, const 
     return iter->second;
 }
 
-FieldHandle *InterfaceType::findHandle(const std::string &fieldName) {
-    return this->superType->findHandle(fieldName);
-}
-
 void InterfaceType::accept(TypeVisitor *visitor) {
     visitor->visitInterfaceType(this);
 }
@@ -389,10 +365,6 @@ FieldHandle *ErrorType::lookupFieldHandle(SymbolTable &symbolTable, const std::s
 
 MethodHandle *ErrorType::lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) {
     return this->superType->lookupMethodHandle(symbolTable, methodName);
-}
-
-FieldHandle *ErrorType::findHandle(const std::string &fieldName) {
-    return this->superType->findHandle(fieldName);
 }
 
 void ErrorType::accept(TypeVisitor *visitor) {
