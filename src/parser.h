@@ -115,7 +115,7 @@ public:
     }
 
     std::tuple<TokenKind, Token, TokenKind> saveLexicalState() const {
-        return {this->curKind, this->curToken, this->consumedKind};
+        return std::make_tuple(this->curKind, this->curToken, this->consumedKind);
     }
 
 protected:
