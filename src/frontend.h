@@ -27,7 +27,28 @@ struct DumpTarget;
 
 class FrontEnd {
 private:
+    struct Context {
+        Lexer lexer;
+        ModuleScope scope;
+
+        // for saving old state
+        TokenKind kind;
+        Token token;
+        std::unique_ptr<SourceNode> sourceNode;
+
+        Context(Lexer &&lexer, ModuleScope &&scope, TokenKind oldKind,
+                Token oldToken, SourceNode *oldSourceNode) :
+                lexer(std::move(lexer)), scope(std::move(scope)),
+                kind(oldKind), token(oldToken) {
+            this->sourceNode.reset(oldSourceNode);
+        }
+    };
+
+    // root lexer state
     Lexer lexer;
+
+    std::vector<Context> contexts;
+
     DSExecMode mode;
     Parser parser;
     TypeChecker checker;

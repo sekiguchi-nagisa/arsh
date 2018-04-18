@@ -28,7 +28,6 @@
 namespace ydsh {
 
 class DSType;
-class FunctionType;
 struct NativeFuncInfo;
 
 #define EACH_FIELD_ATTR(OP) \

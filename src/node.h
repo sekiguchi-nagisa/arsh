@@ -2096,6 +2096,13 @@ private:
      */
     std::string name;
 
+    /**
+     * resolved module type.
+     */
+    DSType *modType{nullptr};
+
+    bool firstAppear{false};
+
 public:
     SourceNode(unsigned int startPos, StringNode *pathNode) :
             Node(NodeKind::Source, {startPos, 1}), pathNode(pathNode) {
@@ -2119,6 +2126,22 @@ public:
 
     const std::string &getName() const {
         return this->name;
+    }
+
+    void setModType(DSType *type) {
+        this->modType = type;
+    }
+
+    DSType *getModType() {
+        return this->modType;
+    }
+
+    void setFirstAppear(bool appear) {
+        this->firstAppear = appear;
+    }
+
+    bool isFirstAppear() const {
+        return this->firstAppear;
     }
 
     void dump(NodeDumper &dumper) const override;

@@ -40,6 +40,10 @@ public:
 
     using const_iterator = decltype(handleMap)::const_iterator;
 
+    const std::unordered_map<std::string, FieldHandle> &getHandleMap() const {
+        return this->handleMap;
+    }
+
     const_iterator begin() const {
         return this->handleMap.begin();
     }
@@ -119,7 +123,8 @@ public:
     ~GlobalScope() = default;
 
 private:
-    HandleOrError addNew(const std::string &symbolName, DSType &type, FieldAttributes attribute);
+    HandleOrError addNew(const std::string &symbolName, DSType &type,
+                         FieldAttributes attribute, unsigned short modID);
 
     /**
      * before call it, reset gvarCount
@@ -135,8 +140,12 @@ private:
     }
 };
 
+class ModuleLoader;
+
 class ModuleScope {
 private:
+    unsigned short modID{0};
+
     GlobalScope globalScope;
 
     /**
@@ -148,6 +157,8 @@ private:
      * contains max number of local variable index.
      */
     std::vector<unsigned int> maxVarIndexStack;
+
+    friend class ModuleLoader;
 
 public:
     NON_COPYABLE(ModuleScope);
@@ -333,6 +344,118 @@ enum class TYPE : unsigned int {
     __SIZE_OF_DS_TYPE__,    // for enum size counting
 };
 
+class ModType : public DSType {
+private:
+    std::unordered_map<std::string, FieldHandle> handleMap;
+
+public:
+    ModType(DSType &superType, unsigned short modID,
+            const std::unordered_map<std::string, FieldHandle> &handleMap);
+
+    ~ModType() override = default;
+
+    FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
+    void accept(TypeVisitor *visitor) override;
+};
+
+class ModResult {
+public:
+    enum Kind {
+        // module loading error
+        UNRESOLVED,
+        CIRCULAR,
+
+        PATH,
+        TYPE,
+    };
+
+private:
+    Kind kind;
+
+    union {
+        /**
+         * resolved module path
+         */
+        const char *path;
+
+        /**
+         * resolved module type
+         */
+        DSType *type;
+    };
+
+private:
+    ModResult(Kind kind) : kind(kind), path(nullptr) {}
+
+public:
+    explicit ModResult(const char *path) : kind(PATH), path(path) {}
+
+    explicit ModResult(DSType *type) : kind(TYPE), type(type) {}
+
+    static ModResult unresolved() {
+        return ModResult(UNRESOLVED);
+    }
+
+    static ModResult circular() {
+        return ModResult(CIRCULAR);
+    }
+
+    /**
+     * if false, module loading failed
+     * @return
+     */
+    explicit operator bool() const {
+        return this->path != nullptr;
+    }
+
+    Kind getKind() const {
+        return this->kind;
+    }
+
+    const char *asPath() const {
+        return this->path;
+    }
+
+    DSType *asType() const {
+        return this->type;
+    }
+};
+
+class ModuleLoader {
+private:
+    unsigned short oldIDCount{0};
+    unsigned short modIDCount{0};
+    std::unordered_map<std::string, ModType *> typeMap;  //FIXME: mod type
+
+public:
+    ~ModuleLoader() {
+        for(auto &e : this->typeMap) {
+            delete e.second;
+        }
+    }
+
+    void commit() {
+        this->oldIDCount = this->modIDCount;
+    }
+
+    void abort() {
+        this->modIDCount = this->oldIDCount;//FIXME: remove old mod type
+    }
+
+    /**
+     *
+     * @param modPath
+     * @return
+     */
+    ModResult load(const char *modPath);
+
+    ModType *newModType(const char *modPath, DSType &anyType, const ModuleScope &scope);
+
+    unsigned short currentModID() const {
+        return this->modIDCount;
+    }
+};
+
 
 class SymbolTable {
 private:
@@ -420,6 +543,10 @@ public:
         std::string name = CMD_SYMBOL_PREFIX;
         name += cmdName;
         return this->root().lookupHandle(name);
+    }
+
+    void setModuleScope(ModuleScope &module) {
+        this->curModule = &module;
     }
 
     /**

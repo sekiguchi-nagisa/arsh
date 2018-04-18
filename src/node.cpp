@@ -1126,6 +1126,8 @@ SourceNode::~SourceNode() {
 void SourceNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(pathNode);
     DUMP(name);
+    DUMP_PTR(modType);
+    DUMP_PRIM(firstAppear);
 }
 
 // #######################

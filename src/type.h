@@ -58,6 +58,7 @@ public:
     static constexpr flag8_t RECORD_TYPE  = 1 << 4;  // indicate user defined type
     static constexpr flag8_t NOTHING_TYPE = 1 << 5;  // Nothing (a.k.a. Bottom type)
     static constexpr flag8_t OPTION_TYPE  = 1 << 6;  // Option<T>
+    static constexpr flag8_t MODULE_TYPE  = 1 << 7;  // Module type
 
     NON_COPYABLE(DSType);
 

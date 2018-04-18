@@ -86,9 +86,10 @@ GlobalScope::GlobalScope(unsigned int &gvarCount) : gvarCount(gvarCount) {
     }
 }
 
-HandleOrError GlobalScope::addNew(const std::string &symbolName, DSType &type, FieldAttributes attribute) {
+HandleOrError GlobalScope::addNew(const std::string &symbolName, DSType &type,
+                                  FieldAttributes attribute, unsigned short modID) {
     attribute.set(FieldAttribute::GLOBAL);
-    FieldHandle handle(&type, this->gvarCount.get(), attribute);
+    FieldHandle handle(&type, this->gvarCount.get(), attribute, modID);
     auto pair = this->handleMap.emplace(symbolName, handle);
     if(!pair.second) {
         return {nullptr, SymbolError::DEFINED};
@@ -117,10 +118,10 @@ const FieldHandle *ModuleScope::lookupHandle(const std::string &symbolName) cons
 HandleOrError ModuleScope::newHandle(const std::string &symbolName,
                                      DSType &type, FieldAttributes attribute) {
     if(this->inGlobalScope()) {
-        return this->globalScope.addNew(symbolName, type, attribute);
+        return this->globalScope.addNew(symbolName, type, attribute, this->modID);
     }
 
-    FieldHandle handle(&type, this->scopes.back().getCurVarIndex(), attribute);
+    FieldHandle handle(&type, this->scopes.back().getCurVarIndex(), attribute, this->modID);
     auto ret = this->scopes.back().add(symbolName, handle);
     if(ret.second == SymbolError::DUMMY) {
         unsigned int varIndex = this->scopes.back().getCurVarIndex();
@@ -242,6 +243,66 @@ void TypeMap::removeType(const std::string &typeName) {
         }
         this->typeMapImpl.erase(iter);
     }
+}
+
+// #####################
+// ##     ModType     ##
+// #####################
+
+ModType::ModType(ydsh::DSType &superType, unsigned short modID,
+                 const std::unordered_map<std::string, ydsh::FieldHandle> &handleMap) :
+        DSType(&superType, DSType::MODULE_TYPE) {
+    for(auto &e : handleMap) {
+        if(e.second.getModID() == modID) {
+            this->handleMap.emplace(e.first, e.second);
+        }
+    }
+}
+
+FieldHandle* ModType::lookupFieldHandle(ydsh::SymbolTable &, const std::string &fieldName) {
+    auto iter = this->handleMap.find(fieldName);
+    if(iter != this->handleMap.end()) {
+        return &iter->second;
+    }
+    return nullptr;
+}
+
+void ModType::accept(ydsh::TypeVisitor *) {
+    fatal("unsupported\n");
+}
+
+// ##########################
+// ##     ModuleLoader     ##
+// ##########################
+
+ModResult ModuleLoader::load(const char *modPath) {
+    std::string str = modPath;
+    expandTilde(str);
+    char *buf = realpath(str.c_str(), nullptr);
+    if(buf == nullptr) {
+        return ModResult::unresolved();
+    }
+
+    str = buf;
+    free(buf);
+
+    auto pair = this->typeMap.emplace(std::move(str), nullptr);
+    if(pair.second) {
+        if(pair.first->second) {
+            return ModResult(pair.first->second);
+        }
+        return ModResult::circular();
+    }
+    this->modIDCount++;
+    return ModResult(pair.first->first.c_str());
+}
+
+ModType* ModuleLoader::newModType(const char *modPath, DSType &anyType, const ydsh::ModuleScope &scope) {
+    auto *modType = new ModType(anyType, scope.modID, scope.globalScope.getHandleMap());
+    auto iter = this->typeMap.find(modPath);
+    assert(iter != this->typeMap.end());
+    iter->second = modType;
+    return modType;
 }
 
 
