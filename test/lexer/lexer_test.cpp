@@ -1202,58 +1202,40 @@ TEST_F(LexerTest_Lv1, CMD_ARG12) {
  */
 TEST_F(LexerTest_Lv1, COLON1) {
     const char *text = ":";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(COMMAND, text, EOS, "");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, COLON2) {
     const char *text = ":";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
-        EXPECT(COLON, text, EOS, "");
-    });
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COLON, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, COMMA1) {
     const char *text = ",";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(COMMAND, text, EOS, "");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, COMMA2) {
     const char *text = ",";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
-        EXPECT(COMMA, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMA, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, MUL1) {
     const char *text = "*";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(COMMAND, text, EOS, "");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, MUL2) {
     const char *text = "*";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
-        EXPECT(MUL, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(MUL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, DIV1) {
@@ -1634,38 +1616,26 @@ TEST_F(LexerTest_Lv1, UNMATCH2) {
 
 TEST_F(LexerTest_Lv1, INC1) {
     const char *text = "++";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(PLUS, "+", PLUS, "+", EOS, "");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(PLUS, "+", PLUS, "+", EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, INC2) {
     const char *text = "++";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
-        EXPECT(INC, text, EOS, "");
-    });
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INC, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, DEC1) {
     const char *text = "--";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(MINUS, "-", MINUS, "-", EOS, "");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(MINUS, "-", MINUS, "-", EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, DEC2) {
     const char *text = "--";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
-        EXPECT(DEC, text, EOS, "");
-    });
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(DEC, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, ASSIGN1) {
