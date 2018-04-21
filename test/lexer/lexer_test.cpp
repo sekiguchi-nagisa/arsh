@@ -890,88 +890,65 @@ TEST_F(LexerTest_Lv1, LB2) {
 
 TEST_F(LexerTest_Lv1, RB1) {
     const char *text = "]";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(INVALID, text);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, text));
 }
 
 TEST_F(LexerTest_Lv1, RB2) {
     const char *text = "]";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycEXPR);
-        EXPECT(RB, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(RB, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, RB3) {
     const char *text = "]";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycSTMT);
-        EXPECT(RB, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycSTMT);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(RB, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, LBC1) {
     const char *text = "{";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(LBC, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-        this->lexer->popLexerMode();
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(LBC, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+
 }
 
 TEST_F(LexerTest_Lv1, LBC2) {
     const char *text = "{";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
-        EXPECT(LBC, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-        this->lexer->popLexerMode();
-        this->assertLexerMode(yycEXPR);
-    });
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(LBC, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, RBC1) {
     const char *text = "}";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(INVALID, "}");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, "}"));
 }
 
 TEST_F(LexerTest_Lv1, RBC2) {
     const char *text = "}";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycSTMT);
-        EXPECT(RBC, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycSTMT);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(RBC, text, EOS, ""););
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, RBC3) {
     const char *text = "}";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        this->lexer->pushLexerMode(yycEXPR);
-        EXPECT(RBC, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(RBC, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 /*
@@ -1220,21 +1197,15 @@ TEST_F(LexerTest_Lv1, MUL2) {
 
 TEST_F(LexerTest_Lv1, DIV1) {
     const char *text = "/";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text);
-        EXPECT(COMMAND, text, EOS, "");
-    });
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, DIV2) {
     const char *text = "/";
-    ASSERT_NO_FATAL_FAILURE({
-        SCOPED_TRACE("");
-        this->initLexer(text, yycEXPR);
-        EXPECT(DIV, text, EOS, "");
-        this->assertLexerMode(yycSTMT);
-    });
+    this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(DIV, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, MOD1) {
