@@ -120,8 +120,6 @@ private:
 
     friend class JobTable;
 
-    friend struct JobTrait;
-
     JobImpl(unsigned int size, const Proc *procs, bool saveStdin) : ownerPid(getpid()), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->procs[i] = procs[i];
@@ -288,7 +286,7 @@ public:
      */
     void updateStatus();
 
-    Job &getLatestEntry() {
+    const Job &getLatestEntry() {
         return this->latestEntry;
     }
 
