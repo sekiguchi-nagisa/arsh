@@ -235,13 +235,14 @@ public:
     }
 
     ProcBuilder &addArg(const std::string &str) {
-        return this->addArg(str.c_str());
+        this->args.emplace_back(str);
+        return *this;
     }
 
     ProcBuilder &addArgs(const std::vector<std::string> &values);
 
     ProcBuilder &addEnv(const char *name, const char *value) {
-        this->env.insert({name, value});
+        this->env.emplace(name, value);
         return *this;
     }
 
