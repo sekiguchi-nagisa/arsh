@@ -201,7 +201,7 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     }
     frontEnd.teardownASTDump();
     if(!frontEnd.frontEndOnly()) {
-        code = codegen.finalize(frontEnd.getLexer().getSourceInfoPtr(), state->symbolTable.getMaxVarIndex());
+        code = codegen.finalize(frontEnd.getSourceInfo(), state->symbolTable.getMaxVarIndex());
     }
     return 0;
 }

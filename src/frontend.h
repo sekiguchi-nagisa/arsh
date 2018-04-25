@@ -64,8 +64,8 @@ public:
         this->checker.getSymbolTable().clear();
     }
 
-    const Lexer &getLexer() const {
-        return this->lexer;
+    const SourceInfoPtr &getSourceInfo() const {
+        return this->parser.getLexer()->getSourceInfoPtr();
     }
 
     bool frontEndOnly() const {
