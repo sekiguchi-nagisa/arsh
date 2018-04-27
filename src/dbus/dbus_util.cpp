@@ -136,57 +136,57 @@ void MessageBuilder::visitBuiltinType(BuiltinType *type) {
     int dbusType = this->typeMap->getDescriptor(*type);
     switch(dbusType) {
     case DBUS_TYPE_INT64: {
-        auto value = (dbus_int64_t) (typeAs<Long_Object>(this->peek()))->getValue();
+        auto value = (dbus_int64_t) (static_cast<Long_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_UINT64: {
-        dbus_uint64_t value = (typeAs<Long_Object>(this->peek()))->getValue();
+        dbus_uint64_t value = (static_cast<Long_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_INT32: {
-        dbus_int32_t value = (typeAs<Int_Object>(this->peek()))->getValue();
+        dbus_int32_t value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_UINT32: {
-        dbus_uint32_t value = (typeAs<Int_Object>(this->peek()))->getValue();
+        dbus_uint32_t value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_INT16: {
-        dbus_int16_t value = (typeAs<Int_Object>(this->peek()))->getValue();
+        dbus_int16_t value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_UINT16: {
-        dbus_uint16_t value = (typeAs<Int_Object>(this->peek()))->getValue();
+        dbus_uint16_t value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_BYTE: {
-        unsigned char value = (typeAs<Int_Object>(this->peek()))->getValue();
+        unsigned char value = (static_cast<Int_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_DOUBLE: {
-        double value = (typeAs<Float_Object>(this->peek()))->getValue();
+        double value = (static_cast<Float_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_BOOLEAN: {
-        dbus_bool_t value = (typeAs<Boolean_Object>(this->peek()))->getValue() ? TRUE : FALSE;
+        dbus_bool_t value = (static_cast<Boolean_Object *>(this->peek()))->getValue() ? TRUE : FALSE;
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_STRING: {
-        const char *value = (typeAs<String_Object>(this->peek()))->getValue();
+        const char *value = (static_cast<String_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
     case DBUS_TYPE_OBJECT_PATH: {
-        const char *value = (typeAs<String_Object>(this->peek()))->getValue();
+        const char *value = (static_cast<String_Object *>(this->peek()))->getValue();
         dbus_message_iter_append_basic(this->iter, dbusType, &value);
         return;
     }
@@ -223,7 +223,7 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
         DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_ARRAY, desc, &subIter);
 
         // append element
-        auto *arrayObj = typeAs<Array_Object>(this->peek());
+        auto *arrayObj = static_cast<Array_Object *>(this->peek());
         for(auto &e : arrayObj->getValues()) {
             this->append(elementType, e.get());
         }
@@ -239,7 +239,7 @@ void MessageBuilder::visitReifiedType(ReifiedType *type) {
         DBusMessageIter *curIter = this->openContainerIter(DBUS_TYPE_ARRAY, desc, &subIter);
 
         // append entry
-        auto *mapObj = typeAs<Map_Object>(this->peek());
+        auto *mapObj = static_cast<Map_Object *>(this->peek());
         for(auto &pair : mapObj->getValueMap()) {
             DBusMessageIter entryIter{};
             DBusMessageIter *oldIter = this->openContainerIter(DBUS_TYPE_DICT_ENTRY, nullptr, &entryIter);
@@ -265,7 +265,7 @@ void MessageBuilder::visitTupleType(TupleType *type) {
     // append element
     this->iter = &subIter;
 
-    auto *tupleObj = typeAs<Tuple_Object>(this->peek());
+    auto *tupleObj = static_cast<Tuple_Object *>(this->peek());
     unsigned int size = tupleObj->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         this->append(type->getElementTypes()[i], tupleObj->get(i).get());
