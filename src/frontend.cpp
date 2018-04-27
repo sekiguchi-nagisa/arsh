@@ -56,10 +56,10 @@ static bool isSupportedTerminal(int fd) {
     return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
 }
 
-struct ColorControler {
+struct ColorController {
     bool isatty;
 
-    explicit ColorControler(int fd) : isatty(isSupportedTerminal(fd)) {}
+    explicit ColorController(int fd) : isatty(isSupportedTerminal(fd)) {}
 
     const char *operator()(TermColor color) const {
         if(this->isatty) {
@@ -87,7 +87,7 @@ static std::vector<std::string> split(const std::string &str) {
     return bufs;
 }
 
-static void formatErrorLine(ColorControler cc, const Lexer &lexer, Token errorToken) {
+static void formatErrorLine(ColorController cc, const Lexer &lexer, Token errorToken) {
     errorToken = lexer.shiftEOS(errorToken);
     Token lineToken = lexer.getLineToken(errorToken);
     auto line = lexer.toTokenText(lineToken);
@@ -113,7 +113,7 @@ DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
                               Token errorToken, const std::string &message) const {
     auto &lexer = *this->parser.getLexer();
     unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(errorToken.pos);
-    ColorControler cc(STDERR_FILENO);
+    ColorController cc(STDERR_FILENO);
 
     /**
      * show error message
