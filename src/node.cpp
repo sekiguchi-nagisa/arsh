@@ -924,8 +924,8 @@ void TryNode::dump(NodeDumper &dumper) const {
 // #########################
 
 VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName, Node *exprNode, Kind kind) :
-        Node(NodeKind::VarDecl, {startPos, 0}), varName(std::move(varName)), global(false), kind(kind),
-        varIndex(0), exprNode(exprNode) {
+        Node(NodeKind::VarDecl, {startPos, 0}),
+        varName(std::move(varName)), kind(kind), exprNode(exprNode) {
     if(this->exprNode != nullptr) {
         this->updateToken(exprNode->getToken());
     }

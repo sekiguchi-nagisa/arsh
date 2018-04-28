@@ -1710,9 +1710,9 @@ public:
 
 private:
     std::string varName;
-    bool global;
+    bool global{false};
     Kind kind;
-    unsigned int varIndex;
+    unsigned int varIndex{0};
 
     /**
      * may be null
