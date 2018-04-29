@@ -166,6 +166,8 @@ if(USE_DBUS)
     check_header(HAVE_DBUS_H "dbus/dbus.h")
     check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
     check_library(HAVE_LIBDBUS "dbus-1")
+else()
+    unset(HAVE_LIBDBUS CACHE)
 endif()
 
 
