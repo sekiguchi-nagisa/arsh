@@ -77,7 +77,7 @@ public:
     }
 
     explicit operator bool() const {
-        return static_cast<bool>(this->parser);
+        return static_cast<bool>(this->parser) || !this->contexts.empty();
     }
 
     std::unique_ptr<Node> operator()(DSError *dsError);
