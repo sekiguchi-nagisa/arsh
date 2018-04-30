@@ -435,12 +435,13 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
 }
 
 void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
+    this->visit(*node.getRecvNode());
+
     if(node.getRecvNode()->getType().isModType()) {
+        this->emit0byteIns(OpCode::POP);
         this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
         return;
     }
-
-    this->visit(*node.getRecvNode());
 
     switch(node.getAdditionalOp()) {
     case AccessNode::NOP: {
@@ -1029,19 +1030,13 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     unsigned int index = assignableNode->getIndex();
     if(node.isFieldAssign()) {
         auto *accessNode = static_cast<AccessNode *>(node.getLeftNode());
-        if(accessNode->getRecvNode()->getType().isModType()) {
-            if(node.isSelfAssignment()) {
-                this->visit(*node.getLeftNode());
-            }
-            this->visit(*node.getRightNode());
-            this->emit2byteIns(OpCode::STORE_GLOBAL, index);
-            return;
-        }
-
         if(node.isSelfAssignment()) {
             this->visit(*node.getLeftNode());
         } else {
             this->visit(*accessNode->getRecvNode());
+            if(accessNode->getRecvNode()->getType().isModType()) {
+                this->emit0byteIns(OpCode::POP);
+            }
         }
         this->visit(*node.getRightNode());
 
@@ -1049,6 +1044,8 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
             std::string desc = encodeFieldDescriptor(
                     accessNode->getRecvNode()->getType(), accessNode->getFieldName().c_str(), accessNode->getType());
             this->emitDescriptorIns(OpCode::INVOKE_SETTER, std::move(desc));
+        } else if(accessNode->getRecvNode()->getType().isModType()) {
+            this->emit2byteIns(OpCode::STORE_GLOBAL, index);
         } else {
             this->emit2byteIns(OpCode::STORE_FIELD, index);
         }
