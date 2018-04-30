@@ -1,0 +1,9 @@
+source ./mod.ds as mod
+
+echo ${$mod.hello}
+$mod.hello()
+
+$mod.hey = "hey"
+echo ${$mod.hey}
+$mod.hey += "!!"
+echo ${$mod.hey}
