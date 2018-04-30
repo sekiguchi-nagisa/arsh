@@ -91,6 +91,9 @@ public:
             builder.setErr(IOConfig::PIPE);
         }
 
+        // set working dir
+        builder.setWorkingDir(EXEC_TEST_DIR);
+
         // execute
         auto output = builder().waitAndGetResult(false);
         int ret = output.status.toShellStatus();
