@@ -42,6 +42,7 @@
 | INVOKE_METHOD | 2: byte1 byte2                 | recv param1 ~ paramN -> result               | invoke interface method                            |
 | INVOKE_GETTER | 2: byte1 byte2                 | recv -> value                                | invoke interface getter                            |
 | INVOKE_SETTER | 2: byte1 byte2                 | recv value ->                                | invoke interface setter                            |
+| INIT_MODULE   |                                | value -> value                               | initialize module                                  |
 | RETURN        |                                | -> [empty]                                   | return from callable                               |
 | RETURN_V      |                                | value -> [empty]                             | return value from callable                         |
 | RETURN_UDC    |                                | value -> [empty]                             | return from user-defined command                   |

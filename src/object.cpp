@@ -466,7 +466,7 @@ unsigned int getSourcePos(const SourcePosEntry *entries, unsigned int index) {  
 // ########################
 
 std::string FuncObject::toString(DSState &, VisitedSet *) {
-    std::string str("function(");
+    std::string str = this->code.is(CodeKind::FUNCTION) ? "function(" : "module(";
     str += this->code.getName();
     str += ")";
     return str;

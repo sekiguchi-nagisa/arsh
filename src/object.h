@@ -1002,7 +1002,7 @@ private:
     CompiledCode code;
 
 public:
-    FuncObject(FunctionType *funcType, CompiledCode &&callable) :
+    FuncObject(DSType *funcType, CompiledCode &&callable) :
             DSObject(funcType), code(std::move(callable)) {}
 
     explicit FuncObject(CompiledCode &&callable) : FuncObject(nullptr, std::move(callable)) { }

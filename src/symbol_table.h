@@ -140,11 +140,9 @@ private:
     }
 };
 
-class ModuleLoader;
-
 class ModuleScope {
 private:
-    unsigned short modID{0};
+    unsigned short modID;
 
     GlobalScope globalScope;
 
@@ -158,18 +156,21 @@ private:
      */
     std::vector<unsigned int> maxVarIndexStack;
 
-    friend class ModuleLoader;
-
 public:
     NON_COPYABLE(ModuleScope);
 
-    explicit ModuleScope(unsigned int &gvarCount) : globalScope(gvarCount) {
+    ModuleScope(unsigned int &gvarCount, unsigned short modID = 0) :
+            modID(modID), globalScope(gvarCount) {
         this->maxVarIndexStack.push_back(0);
     }
 
     ModuleScope(ModuleScope&&) = default;
 
     ~ModuleScope() = default;
+
+    unsigned short getModID() const {
+        return this->modID;
+    }
 
     /**
      * return null, if not found.
@@ -346,6 +347,7 @@ enum class TYPE : unsigned int {
 
 class ModType : public DSType {
 private:
+    unsigned short modID;
     std::unordered_map<std::string, FieldHandle> handleMap;
 
 public:
@@ -353,6 +355,10 @@ public:
             const std::unordered_map<std::string, FieldHandle> &handleMap);
 
     ~ModType() override = default;
+
+    unsigned short getModID() const {
+        return this->modID;
+    }
 
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
     void accept(TypeVisitor *visitor) override;
@@ -381,7 +387,7 @@ private:
         /**
          * resolved module type
          */
-        DSType *type;
+        ModType *type;
     };
 
 private:
@@ -390,7 +396,7 @@ private:
 public:
     explicit ModResult(const char *path) : kind(PATH), path(path) {}
 
-    explicit ModResult(DSType *type) : kind(TYPE), type(type) {}
+    explicit ModResult(ModType *type) : kind(TYPE), type(type) {}
 
     static ModResult unresolved() {
         return ModResult(UNRESOLVED);
@@ -416,7 +422,7 @@ public:
         return this->path;
     }
 
-    DSType *asType() const {
+    ModType *asType() const {
         return this->type;
     }
 };
@@ -428,6 +434,10 @@ private:
     std::unordered_map<std::string, ModType *> typeMap;  //FIXME: mod type
 
 public:
+    NON_COPYABLE(ModuleLoader);
+
+    ModuleLoader() = default;
+
     ~ModuleLoader() {
         for(auto &e : this->typeMap) {
             delete e.second;
@@ -447,9 +457,9 @@ public:
      * @param modPath
      * @return
      */
-    ModResult load(const char *modPath);
+    ModResult load(const std::string &modPath);
 
-    ModType *newModType(const char *modPath, DSType &anyType, const ModuleScope &scope);
+    ModType *newModType(const std::string &fullPath, DSType &anyType, const ModuleScope &scope);
 
     unsigned short currentModID() const {
         return this->modIDCount;
@@ -459,6 +469,7 @@ public:
 
 class SymbolTable {
 private:
+    ModuleLoader modLoader;
     unsigned int oldGvarCount{0};
     unsigned int gvarCount{0};
     ModuleScope rootModule;
@@ -487,7 +498,6 @@ public:
 
     ~SymbolTable();
 
-private:
     ModuleScope &cur() {
         return *this->curModule;
     }
@@ -504,8 +514,15 @@ private:
         return this->rootModule;
     }
 
-public:
     // for FieldHandle lookup
+
+    ModuleLoader &getModLoader() {
+        return this->modLoader;
+    }
+
+    ModuleScope newModuleScope(unsigned short modID) {
+        return ModuleScope(this->gvarCount, modID);
+    }
 
     /**
      * return null, if not found.
@@ -543,6 +560,10 @@ public:
         std::string name = CMD_SYMBOL_PREFIX;
         name += cmdName;
         return this->root().lookupHandle(name);
+    }
+
+    HandleOrError newModHandle(const std::string &name, ModType &type) {
+        return this->root().newHandle(name, type, FieldAttribute::READ_ONLY);
     }
 
     void setModuleScope(ModuleScope &module) {

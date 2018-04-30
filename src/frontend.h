@@ -26,22 +26,30 @@ namespace ydsh {
 struct DumpTarget;
 
 class FrontEnd {
+public:
+    enum Status : unsigned char {
+        IN_MODULE,
+        ENTER_MODULE,
+        EXIT_MODULE,
+    };
+
 private:
     struct Context {
+        std::string fullPath;
         Lexer lexer;
         ModuleScope scope;
 
         // for saving old state
         TokenKind kind;
         Token token;
+        TokenKind consumedKind;
         std::unique_ptr<SourceNode> sourceNode;
 
-        Context(Lexer &&lexer, ModuleScope &&scope, TokenKind oldKind,
-                Token oldToken, SourceNode *oldSourceNode) :
-                lexer(std::move(lexer)), scope(std::move(scope)),
-                kind(oldKind), token(oldToken) {
-            this->sourceNode.reset(oldSourceNode);
-        }
+        Context(const char *fullPath, Lexer &&lexer, ModuleScope &&scope,
+                std::tuple<TokenKind, Token, TokenKind > &&state, SourceNode *oldSourceNode) :
+                fullPath(fullPath), lexer(std::move(lexer)), scope(std::move(scope)),
+                kind(std::get<0>(state)), token(std::get<1>(state)),
+                consumedKind(std::get<2>(state)), sourceNode(oldSourceNode) { }
     };
 
     // root lexer state
@@ -80,13 +88,25 @@ public:
         return static_cast<bool>(this->parser) || !this->contexts.empty();
     }
 
-    std::unique_ptr<Node> operator()(DSError *dsError);
+    std::pair<std::unique_ptr<Node>, Status> operator()(DSError *dsError);
 
     void setupASTDump();
 
     void teardownASTDump();
 
 private:
+    /**
+     * if module loading failed, throw TypeCheckError
+     * @param node
+     * @return
+     */
+    Status tryToCheckModule(std::unique_ptr<Node> &node);
+
+    void enterModule(const char *fullPath, unsigned short modID, SourceNode *node);
+
+    std::unique_ptr<SourceNode> exitModule();
+
+    // for error reporting
     DSError handleError(DSErrorKind type, const char *errorKind,
                         Token errorToken, const std::string &message) const;
 

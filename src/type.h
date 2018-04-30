@@ -110,6 +110,10 @@ public:
         return hasFlag(this->attributeSet, OPTION_TYPE);
     }
 
+    bool isModType() const {
+        return hasFlag(this->attributeSet, MODULE_TYPE);
+    }
+
     /**
      * get super type of this type.
      * return null, if has no super type(ex. AnyType, VoidType).

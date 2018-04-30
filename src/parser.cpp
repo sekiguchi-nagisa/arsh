@@ -224,7 +224,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     unsigned int startPos = START_POS();
     this->consume();    // FUNCTION
     Token token = TRY(this->expect(IDENTIFIER));
-    auto node = make_unique<FunctionNode>(startPos, this->lexer->getSourceInfoPtr(), this->lexer->toName(token));
+    auto node = make_unique<FunctionNode>(startPos, this->lexer->toName(token));
     TRY(this->expect(LP));
 
     if(CUR_KIND() == APPLIED_NAME) {
@@ -780,8 +780,7 @@ std::unique_ptr<Node> Parser::parse_command() {
         this->consume();    // LP
         TRY(this->expect(RP));
         auto blockNode = TRY(this->parse_block());
-        return make_unique<UserDefinedCmdNode>(
-                token.pos, this->lexer->getSourceInfoPtr(), this->lexer->toCmdArg(token), blockNode.release());
+        return make_unique<UserDefinedCmdNode>(token.pos, this->lexer->toCmdArg(token), blockNode.release());
     }
 
     auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;

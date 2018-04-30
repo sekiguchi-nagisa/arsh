@@ -63,6 +63,7 @@ namespace ydsh {
     OP(INVOKE_METHOD, 2,  0) \
     OP(INVOKE_GETTER, 2,  0) \
     OP(INVOKE_SETTER, 2,  0) \
+    OP(INIT_MODULE  , 0,  0) \
     OP(RETURN       , 0,  0) \
     OP(RETURN_V     , 0,  0) \
     OP(RETURN_UDC   , 0,  0) \

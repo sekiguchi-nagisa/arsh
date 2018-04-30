@@ -251,7 +251,7 @@ void TypeMap::removeType(const std::string &typeName) {
 
 ModType::ModType(ydsh::DSType &superType, unsigned short modID,
                  const std::unordered_map<std::string, ydsh::FieldHandle> &handleMap) :
-        DSType(&superType, DSType::MODULE_TYPE) {
+        DSType(&superType, DSType::MODULE_TYPE), modID(modID) {
     for(auto &e : handleMap) {
         if(e.second.getModID() == modID) {
             this->handleMap.emplace(e.first, e.second);
@@ -275,7 +275,7 @@ void ModType::accept(ydsh::TypeVisitor *) {
 // ##     ModuleLoader     ##
 // ##########################
 
-ModResult ModuleLoader::load(const char *modPath) {
+ModResult ModuleLoader::load(const std::string &modPath) {
     std::string str = modPath;
     expandTilde(str);
     char *buf = realpath(str.c_str(), nullptr);
@@ -287,7 +287,7 @@ ModResult ModuleLoader::load(const char *modPath) {
     free(buf);
 
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
-    if(pair.second) {
+    if(!pair.second) {
         if(pair.first->second) {
             return ModResult(pair.first->second);
         }
@@ -297,10 +297,11 @@ ModResult ModuleLoader::load(const char *modPath) {
     return ModResult(pair.first->first.c_str());
 }
 
-ModType* ModuleLoader::newModType(const char *modPath, DSType &anyType, const ydsh::ModuleScope &scope) {
-    auto *modType = new ModType(anyType, scope.modID, scope.globalScope.getHandleMap());
-    auto iter = this->typeMap.find(modPath);
+ModType* ModuleLoader::newModType(const std::string &fullPath, DSType &anyType, const ydsh::ModuleScope &scope) {
+    auto *modType = new ModType(anyType, scope.getModID(), scope.global().getHandleMap());
+    auto iter = this->typeMap.find(fullPath);
     assert(iter != this->typeMap.end());
+    assert(iter->second == nullptr);
     iter->second = modType;
     return modType;
 }

@@ -262,6 +262,8 @@ struct LoopState {
 };
 
 struct CodeBuilder : public CodeEmitter<true> {
+    SourceInfoPtr srcInfo;
+
     std::vector<DSValue> constBuffer;
     FlexBuffer<SourcePosEntry> sourcePosEntries;
     std::vector<CatchBuilder> catchBuilders;
@@ -280,6 +282,8 @@ struct CodeBuilder : public CodeEmitter<true> {
 
     signed short stackDepthCount{0};
     signed short maxStackDepth{0};
+
+    explicit CodeBuilder(const SourceInfoPtr &info) : srcInfo(info) {}
 
     CodeKind getCodeKind() const {
         return static_cast<CodeKind>(this->codeBuffer[0]);
@@ -460,12 +464,14 @@ private:
     void generateStringExpr(StringExprNode &node, bool fragment);
     void generateBreakContinue(JumpNode &node);
 
-    void initCodeBuilder(CodeKind kind, unsigned short localVarNum);
-    CompiledCode finalizeCodeBuilder(const CallableNode &node) {
-        return this->finalizeCodeBuilder(node.getSourceInfoPtr(), node.getName());
+    void initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
+        auto info = this->builders.back().srcInfo;
+        this->initCodeBuilder(kind, info, localVarNum);
     }
 
-    CompiledCode finalizeCodeBuilder(const SourceInfoPtr &srcInfo, const std::string &name);
+    void initCodeBuilder(CodeKind kind, const SourceInfoPtr &srcInfo, unsigned short localVarNum);
+
+    CompiledCode finalizeCodeBuilder(const std::string &name);
 
     // visitor api
     void visit(Node &node) override;
@@ -508,20 +514,25 @@ private:
     void visitEmptyNode(EmptyNode &node) override;
 
 public:
-    void initialize() {
-        this->initCodeBuilder(CodeKind::TOPLEVEL, 0);
+    void initialize(const SourceInfoPtr &srcInfo) {
+        this->initCodeBuilder(CodeKind::TOPLEVEL, srcInfo, 0);
     }
 
     void generate(Node *node) {
         this->visit(*node);
     }
 
-    CompiledCode finalize(const SourceInfoPtr &srcInfo, unsigned char maxLocalSize) {
+    CompiledCode finalize(unsigned char maxLocalSize) {
         this->curBuilder().emit8(5, maxLocalSize);
-
         this->emitIns(OpCode::HALT);
-        return this->finalizeCodeBuilder(srcInfo, "");
+        return this->finalizeCodeBuilder("");
     }
+
+    void enterModule(const SourceInfoPtr &srcInfo) {
+        this->initCodeBuilder(CodeKind::TOPLEVEL, srcInfo, 0);
+    }
+
+    void exitModule(SourceNode &node);
 };
 
 /**

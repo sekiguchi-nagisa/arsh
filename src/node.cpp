@@ -1052,7 +1052,7 @@ void FunctionNode::addParamNode(VarNode *node, TypeNode *paramType) {
 }
 
 void FunctionNode::dump(NodeDumper &dumper) const {
-    DUMP(name);
+    DUMP(funcName);
     DUMP(paramNodes);
     DUMP(paramTypeNodes);
 
@@ -1060,7 +1060,6 @@ void FunctionNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(blockNode);
     DUMP_PRIM(maxVarNum);
     DUMP_PRIM(varIndex);
-    dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
     DUMP_PTR(funcType);
 }
 
@@ -1108,11 +1107,10 @@ UserDefinedCmdNode::~UserDefinedCmdNode() {
 }
 
 void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
-    DUMP(name);
+    DUMP(cmdName);
     DUMP_PRIM(udcIndex);
     DUMP_PTR(blockNode);
     DUMP_PRIM(maxVarNum);
-    dumper.dump("sourceName", this->srcInfoPtr->getSourceName());
 }
 
 // ########################
@@ -1123,11 +1121,20 @@ SourceNode::~SourceNode() {
     delete this->pathNode;
 }
 
+std::string SourceNode::toModName() const {
+    std::string str = MOD_SYMBOL_PREFIX;
+    str += std::to_string(this->modType->getModID());
+    return str;
+}
+
 void SourceNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(pathNode);
     DUMP(name);
     DUMP_PTR(modType);
     DUMP_PRIM(firstAppear);
+    DUMP_PRIM(modIndex);
+    DUMP_PRIM(index);
+    DUMP_PRIM(maxVarNum);
 }
 
 // #######################
@@ -1434,10 +1441,10 @@ void NodeDumper::operator()(const Node &node) {
     this->leaveIndent();
 }
 
-void NodeDumper::finalize(const SourceInfoPtr &srcInfo, unsigned int maxVarNum, unsigned int maxGVarNum) {
+void NodeDumper::finalize(const std::string &srcName, unsigned int maxVarNum, unsigned int maxGVarNum) {
     this->leaveIndent();
 
-    this->dump("sourceName", srcInfo->getSourceName());
+    this->dump("sourceName", srcName);
     this->dump("maxVarNum", std::to_string(maxVarNum));
     this->dump("maxGVarNum", std::to_string(maxGVarNum));
 

@@ -1768,6 +1768,11 @@ static bool mainLoop(DSState &state) {
             invokeSetter(state, index);
             vmnext;
         }
+        vmcase(INIT_MODULE) {
+            auto &code = typeAs<FuncObject>(state.peek())->getCode();
+            windStackFrame(state, 0, 0, &code);
+            vmnext;
+        }
         vmcase(RETURN) {
             unwindStackFrame(state);
             if(state.controlStack.empty()) {

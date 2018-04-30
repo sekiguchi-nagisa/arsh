@@ -134,7 +134,7 @@ DSType& TypeGenerator::resolveInterface(InterfaceNode *node) {
 
     // create method handle
     for(FunctionNode *funcNode : node->getMethodDeclNodes()) {
-        MethodHandle *handle = type.newMethodHandle(funcNode->getName());
+        MethodHandle *handle = type.newMethodHandle(funcNode->getFuncName());
         handle->setRecvType(type);
         auto *retTypeNode = funcNode->getReturnTypeToken();
         handle->setReturnType(this->toType(*retTypeNode));
@@ -1227,7 +1227,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     // register function handle
     auto &funcType = this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
     node.setFuncType(&funcType);
-    auto handle = this->addEntry(node, node.getName(), funcType,
+    auto handle = this->addEntry(node, node.getFuncName(), funcType,
                                  FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
     node.setVarIndex(handle->getIndex());
 
@@ -1272,9 +1272,9 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     }
 
     // register command name
-    auto pair = this->symbolTable.registerUdc(node.getName(), this->symbolTable.get(TYPE::Any));
+    auto pair = this->symbolTable.registerUdc(node.getCmdName(), this->symbolTable.get(TYPE::Any));
     if(pair.second == SymbolError::DEFINED) {
-        RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
+        RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str());
     }
     node.setUdcIndex(pair.first->getIndex());
 
@@ -1325,7 +1325,27 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
         RAISE_TC_ERROR(OutsideToplevel, node);
     }
-    fatal("unimplemented\n");
+
+    // register module handle
+    const FieldHandle *handle = nullptr;
+    if(node.isFirstAppear()) {
+        auto pair = this->symbolTable.newModHandle(node.toModName(), *node.getModType());
+        handle = pair.first;
+        assert(handle != nullptr);
+    }
+    if(handle == nullptr) {
+        handle = this->symbolTable.lookupHandle(node.toModName());
+        assert(handle != nullptr);
+    }
+
+    // register actual module handle
+    node.setModIndex(handle->getIndex());
+    if(!node.getName().empty()) {
+        auto handle = this->addEntry(node, node.getName(), *node.getModType(), FieldAttribute::READ_ONLY);
+        assert(handle != nullptr);
+        node.setIndex(handle->getIndex());
+    }
+    node.setType(this->symbolTable.get(TYPE::Void));
 }
 
 void TypeChecker::visitEmptyNode(EmptyNode &node) {

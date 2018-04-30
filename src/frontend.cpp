@@ -149,31 +149,45 @@ struct NodeWrapper {
     }
 };
 
-std::unique_ptr<Node> FrontEnd::operator()(DSError *dsError) {
-    // parse
-    auto node = this->parser();
-    if(this->parser.hasError()) {
-        auto e = this->handleParseError();
-        if(dsError != nullptr) {
-            *dsError = e;
-        }
-        return node;
-    }
-    if(this->uastDumper) {
-        this->uastDumper(*node);
-    }
+std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError *dsError) {
+    bool available = static_cast<bool>(this->parser);
+    std::unique_ptr<Node> node;
 
-    if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
-        return node;
+    // parse
+    if(available) {
+        node = this->parser();
+        if(this->parser.hasError()) {
+            auto e = this->handleParseError();
+            if(dsError != nullptr) {
+                *dsError = e;
+            }
+            return {nullptr, IN_MODULE};
+        }
+        if(this->uastDumper) {  //FIXME: supports module
+            this->uastDumper(*node);
+        }
+
+        if(this->mode == DS_EXEC_MODE_PARSE_ONLY) { //FIXME: supports module
+            return {std::move(node), IN_MODULE};
+        }
     }
 
     // typecheck
     try {
+        if(available) {
+            auto s = this->tryToCheckModule(node);
+            if(s != IN_MODULE) {
+                return {nullptr, s};
+            }
+        } else {
+            node = this->exitModule();
+        }
+
         NodeWrapper wrap(std::move(node));
         this->prevType = this->checker(this->prevType, wrap.ptr);
         node = wrap.release();
 
-        if(this->astDumper) {
+        if(this->astDumper) {   //FIXME: supports module
             this->astDumper(*node);
         }
     } catch(const TypeCheckError &e) {
@@ -181,9 +195,14 @@ std::unique_ptr<Node> FrontEnd::operator()(DSError *dsError) {
         if(dsError != nullptr) {
             *dsError = ret;
         }
-        return nullptr;
+        return {nullptr, IN_MODULE};
     }
-    return node;
+
+    auto s = IN_MODULE;
+    if(node->is(NodeKind::Source) && static_cast<SourceNode&>(*node).isFirstAppear()) {
+        s = EXIT_MODULE;
+    }
+    return {std::move(node), s};
 }
 
 void FrontEnd::setupASTDump() {
@@ -199,19 +218,83 @@ void FrontEnd::setupASTDump() {
 }
 
 void FrontEnd::teardownASTDump() {
-    const auto &srcInfo = this->parser.getLexer()->getSourceInfoPtr();
+    auto &srcName = this->parser.getLexer()->getSourceInfoPtr()->getSourceName();
     unsigned int varNum = this->checker.getSymbolTable().getMaxVarIndex();
     unsigned int gvarNum = this->checker.getSymbolTable().getMaxGVarIndex();
 
     if(this->uastDumper) {
-        this->uastDumper.finalize(srcInfo, varNum, gvarNum);
+        this->uastDumper.finalize(srcName, varNum, gvarNum);
     }
     if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
         return;
     }
     if(this->astDumper) {
-        this->astDumper.finalize(srcInfo, varNum, gvarNum);
+        this->astDumper.finalize(srcName, varNum, gvarNum);
     }
+}
+
+FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
+    if(!node->is(NodeKind::Source)) {
+        return IN_MODULE;
+    }
+
+    auto &symbolTable = this->checker.getSymbolTable();
+    auto &srcNode = static_cast<SourceNode&>(*node);
+    const auto modID = symbolTable.getModLoader().currentModID();
+    auto ret = symbolTable.getModLoader().load(srcNode.getPathStr());
+    switch(ret.getKind()) {
+    case ModResult::UNRESOLVED: //FIXME: error reporting
+    case ModResult::CIRCULAR:
+        fatal("loading failed\n");
+    case ModResult::PATH:
+        this->enterModule(ret.asPath(), modID, static_cast<SourceNode *>(node.release()));
+        return ENTER_MODULE;
+    case ModResult::TYPE:
+        srcNode.setModType(ret.asType());
+        return IN_MODULE;
+    }
+    return IN_MODULE;   // normally unreachable, due to suppress gcc warning
+}
+
+void FrontEnd::enterModule(const char *fullPath, unsigned short modID, ydsh::SourceNode *node) {
+    auto &symbolTable = this->checker.getSymbolTable();
+    {
+        FILE *fp = fopen(fullPath, "rb");
+        Lexer lex(fullPath, fp);
+        node->setFirstAppear(true);
+        auto state = this->parser.saveLexicalState();
+        this->contexts.emplace_back(
+                fullPath, std::move(lex),
+                symbolTable.newModuleScope(modID), std::move(state), node);
+    }
+    Token token;
+    TokenKind kind = this->contexts.back().lexer.nextToken(token);
+    TokenKind ckind{};
+    this->parser.restoreLexicalState(this->contexts.back().lexer, kind, token, ckind);
+    symbolTable.setModuleScope(this->contexts.back().scope);
+}
+
+std::unique_ptr<SourceNode> FrontEnd::exitModule() {
+    auto &symbolTable = this->checker.getSymbolTable();
+    auto &ctx = this->contexts.back();
+    TokenKind kind = ctx.kind;
+    Token token = ctx.token;
+    TokenKind consumedKind = ctx.consumedKind;
+    std::unique_ptr<SourceNode> node(ctx.sourceNode.release());
+    auto *modType = symbolTable.getModLoader().newModType(ctx.fullPath, symbolTable.get(TYPE::Any), ctx.scope);
+    unsigned int varNum = ctx.scope.getMaxVarIndex();
+    this->contexts.pop_back();
+
+    node->setMaxVarNum(varNum);
+    node->setModType(modType);
+    auto &lex = this->contexts.empty() ? this->lexer : this->contexts.back().lexer;
+    this->parser.restoreLexicalState(lex, kind, token, consumedKind);
+    if(this->contexts.empty()) {
+        symbolTable.setModuleScope(symbolTable.root());
+    } else {
+        symbolTable.setModuleScope(this->contexts.back().scope);
+    }
+    return node;
 }
 
 } // namespace ydsh

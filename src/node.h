@@ -21,11 +21,12 @@
 #include <memory>
 #include <type_traits>
 #include <list>
+#include <cassert>
 
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
+#include "misc/token.hpp"
 #include "token_kind.h"
-#include "lexer.h"
 #include "type.h"
 #include "handle.h"
 #include "constant.h"
@@ -34,6 +35,7 @@
 namespace ydsh {
 
 class SymbolTable;
+class ModType;
 class FieldHandle;
 class MethodHandle;
 struct NodeVisitor;
@@ -1876,42 +1878,10 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class CallableNode : public Node {
-protected:
-    SourceInfoPtr srcInfoPtr;
-
-    /**
-     * if RootNode, name is empty.
-     */
-    std::string name;
-
-    CallableNode(NodeKind kind, unsigned int startPos, SourceInfoPtr srcInfoPtr, std::string &&name) :
-            Node(kind, {startPos, 0}), srcInfoPtr(std::move(srcInfoPtr)), name(std::move(name)) { }
-
-    explicit CallableNode(NodeKind kind) : Node(kind, {0, 0}), srcInfoPtr(nullptr) { }
-
-public:
-    ~CallableNode() override = default;
-
-    const SourceInfoPtr &getSourceInfoPtr() const {
-        return this->srcInfoPtr;
-    }
-
-    void setSourceInfoPtr(const SourceInfoPtr &srcInfoPtr) {
-        this->srcInfoPtr = srcInfoPtr;
-    }
-
-    const char *getSourceName() const {
-        return this->srcInfoPtr->getSourceName().c_str();
-    }
-
-    const std::string &getName() const {
-        return this->name;
-    }
-};
-
-class FunctionNode : public CallableNode {
+class FunctionNode : public Node {
 private:
+    std::string funcName;
+
     /**
      * for parameter definition.
      */
@@ -1939,10 +1909,14 @@ private:
     FunctionType *funcType{nullptr};
 
 public:
-    FunctionNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr, std::string &&funcName) :
-            CallableNode(NodeKind::Function, startPos, srcInfoPtr, std::move(funcName)) { }
+    FunctionNode(unsigned int startPos, std::string &&funcName) :
+            Node(NodeKind::Function, {startPos, 0}), funcName(std::move(funcName)) { }
 
     ~FunctionNode() override;
+
+    const std::string &getFuncName() const {
+        return this->funcName;
+    }
 
     void addParamNode(VarNode *node, TypeNode *paramType);
 
@@ -2047,22 +2021,27 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class UserDefinedCmdNode : public CallableNode {
+class UserDefinedCmdNode : public Node {
 private:
-    unsigned int udcIndex;
+    std::string cmdName;
+
+    unsigned int udcIndex{0};
     BlockNode *blockNode;
 
-    unsigned int maxVarNum;
+    unsigned int maxVarNum{0};
 
 public:
-    UserDefinedCmdNode(unsigned int startPos, const SourceInfoPtr &srcInfoPtr,
-                       std::string &&commandName, BlockNode *blockNode) :
-            CallableNode(NodeKind::UserDefinedCmd, startPos, srcInfoPtr, std::move(commandName)),
-            udcIndex(0), blockNode(blockNode), maxVarNum(0) {
+    UserDefinedCmdNode(unsigned int startPos, std::string &&commandName, BlockNode *blockNode) :
+            Node(NodeKind::UserDefinedCmd, {startPos, 0}),
+            cmdName(std::move(commandName)), blockNode(blockNode) {
         this->updateToken(blockNode->getToken());
     }
 
     ~UserDefinedCmdNode() override;
+
+    const std::string &getCmdName() const {
+        return this->cmdName;
+    }
 
     unsigned int getUdcIndex() const {
         return this->udcIndex;
@@ -2099,9 +2078,21 @@ private:
     /**
      * resolved module type.
      */
-    DSType *modType{nullptr};
+    ModType *modType{nullptr};
 
     bool firstAppear{false};
+
+    unsigned int modIndex{0};
+
+    /**
+     * global variable index of module object
+     */
+    unsigned int index{0};
+
+    /**
+     * maximum number of local variable in this module
+     */
+    unsigned int maxVarNum{0};
 
 public:
     SourceNode(unsigned int startPos, StringNode *pathNode) :
@@ -2128,21 +2119,47 @@ public:
         return this->name;
     }
 
-    void setModType(DSType *type) {
+    void setModType(ModType *type) {
         this->modType = type;
     }
 
-    DSType *getModType() {
+    ModType *getModType() {
         return this->modType;
     }
 
-    void setFirstAppear(bool appear) {
-        this->firstAppear = appear;
+    void setFirstAppear(bool b) {
+        this->firstAppear = b;
     }
 
     bool isFirstAppear() const {
         return this->firstAppear;
     }
+
+    void setModIndex(unsigned int index) {
+        this->modIndex = index;
+    }
+
+    unsigned int getModIndex() const {
+        return this->modIndex;
+    }
+
+    void setIndex(unsigned int index) {
+        this->index = index;
+    }
+
+    unsigned int getIndex() const {
+        return this->index;
+    }
+
+    void setMaxVarNum(unsigned int v) {
+        this->maxVarNum = v;
+    }
+
+    unsigned int getMaxVarNum() const {
+        return this->maxVarNum;
+    }
+
+    std::string toModName() const;
 
     void dump(NodeDumper &dumper) const override;
 };
@@ -2340,7 +2357,7 @@ public:
 
     void operator()(const Node &node);
 
-    void finalize(const SourceInfoPtr &srcInfo, unsigned int varNum, unsigned int gvarNum);
+    void finalize(const std::string &srcName, unsigned int varNum, unsigned int gvarNum);
 
     explicit operator bool() const {
         return this->fp != nullptr;

@@ -435,6 +435,11 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
 }
 
 void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
+    if(node.getRecvNode()->getType().isModType()) {
+        this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
+        return;
+    }
+
     this->visit(*node.getRecvNode());
 
     switch(node.getAdditionalOp()) {
@@ -1024,6 +1029,15 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     unsigned int index = assignableNode->getIndex();
     if(node.isFieldAssign()) {
         auto *accessNode = static_cast<AccessNode *>(node.getLeftNode());
+        if(accessNode->getRecvNode()->getType().isModType()) {
+            if(node.isSelfAssignment()) {
+                this->visit(*node.getLeftNode());
+            }
+            this->visit(*node.getRightNode());
+            this->emit2byteIns(OpCode::STORE_GLOBAL, index);
+            return;
+        }
+
         if(node.isSelfAssignment()) {
             this->visit(*node.getLeftNode());
         } else {
@@ -1080,7 +1094,7 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
     this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
     this->visit(*node.getBlockNode());
-    auto func = DSValue::create<FuncObject>(node.getFuncType(), this->finalizeCodeBuilder(node));
+    auto func = DSValue::create<FuncObject>(node.getFuncType(), this->finalizeCodeBuilder(node.getFuncName()));
 
     this->emitLdcIns(func);
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
@@ -1091,21 +1105,35 @@ void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) { } // do nothing
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->initCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
     this->visit(*node.getBlockNode());
-    auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node));
+    auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node.getCmdName()));
 
     this->emitLdcIns(func);
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
 }
 
-void ByteCodeGenerator::visitSourceNode(SourceNode &) {
-    fatal("unimplemented\n");
+void ByteCodeGenerator::visitSourceNode(SourceNode &node) {
+    unsigned int index = node.getIndex();
+    if(node.isFirstAppear()) {
+        this->emit0byteIns(OpCode::INIT_MODULE);
+        if(index > 0) {
+            this->emit0byteIns(OpCode::DUP);
+        }
+        this->emit2byteIns(OpCode::STORE_GLOBAL, node.getModIndex());
+        if(index > 0) {
+            this->emit2byteIns(OpCode::STORE_GLOBAL, index);
+        }
+    } else if(index > 0) {
+        this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getModIndex());
+        this->emit2byteIns(OpCode::STORE_GLOBAL, index);
+    }
 }
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
-void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
+void ByteCodeGenerator::initCodeBuilder(CodeKind kind, const SourceInfoPtr &srcInfo,
+                                        unsigned short localVarNum) {
     // push new builder
-    this->builders.emplace_back();
+    this->builders.emplace_back(srcInfo);
 
     // generate header
     this->curBuilder().append8(static_cast<unsigned char>(kind));
@@ -1114,7 +1142,7 @@ void ByteCodeGenerator::initCodeBuilder(CodeKind kind, unsigned short localVarNu
     this->curBuilder().append16(0);
 }
 
-CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const SourceInfoPtr &srcInfo, const std::string &name) {
+CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const std::string &name) {
     this->curBuilder().finalize();
 
     // set max stack depth
@@ -1138,12 +1166,12 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const SourceInfoPtr &srcInfo
     auto *entries = extract(std::move(this->curBuilder().sourcePosEntries));
 
     // create exception entry
-    const unsigned int exeptEntrySize = this->curBuilder().catchBuilders.size();
-    auto *except = new ExceptionEntry[exeptEntrySize + 1];
-    for(unsigned int i = 0; i < exeptEntrySize; i++) {
+    const unsigned int exceptEntrySize = this->curBuilder().catchBuilders.size();
+    auto *except = new ExceptionEntry[exceptEntrySize + 1];
+    for(unsigned int i = 0; i < exceptEntrySize; i++) {
         except[i] = this->curBuilder().catchBuilders[i].toEntry();
     }
-    except[exeptEntrySize] = {
+    except[exceptEntrySize] = {
             .type = nullptr,
             .begin = 0,
             .end = 0,
@@ -1153,10 +1181,19 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const SourceInfoPtr &srcInfo
     };  // sentinel
 
     // remove current builder
+    auto srcInfo = this->builders.back().srcInfo;
     this->builders.pop_back();
 
     return CompiledCode(srcInfo, name.empty() ? nullptr : name.c_str(),
                         code, constPool, entries, except);
+}
+
+void ByteCodeGenerator::exitModule(SourceNode &node) {
+    this->curBuilder().emit8(5, node.getMaxVarNum());
+    this->emitIns(OpCode::RETURN);
+    auto func = DSValue::create<FuncObject>(node.getModType(), this->finalizeCodeBuilder(node.toModName()));
+    this->emitLdcIns(func);
+    this->visit(node);
 }
 
 static unsigned int digit(unsigned int n) {
