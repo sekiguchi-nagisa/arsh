@@ -362,6 +362,8 @@ public:
         return this->modID;
     }
 
+    std::string toName() const;
+
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
     void accept(TypeVisitor *visitor) override;
 };
@@ -441,11 +443,7 @@ private:
 
     ModuleLoader() = default;
 
-    ~ModuleLoader() {
-        for(auto &e : this->typeMap) {
-            delete e.second;
-        }
-    }
+    ~ModuleLoader() = default;
 
     void commit() {
         this->oldIDCount = this->modIDCount;
@@ -585,8 +583,8 @@ public:
         return this->root().lookupHandle(name);
     }
 
-    HandleOrError newModHandle(const std::string &name, ModType &type) {
-        return this->root().newHandle(name, type, FieldAttribute::READ_ONLY);
+    HandleOrError newModHandle(ModType &type) {
+        return this->root().newHandle(type.toName(), type, FieldAttribute::READ_ONLY);
     }
 
     /**

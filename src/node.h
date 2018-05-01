@@ -2159,8 +2159,6 @@ public:
         return this->maxVarNum;
     }
 
-    std::string toModName() const;
-
     void dump(NodeDumper &dumper) const override;
 };
 

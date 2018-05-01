@@ -1188,7 +1188,7 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const std::string &name) {
 void ByteCodeGenerator::exitModule(SourceNode &node) {
     this->curBuilder().emit8(5, node.getMaxVarNum());
     this->emitIns(OpCode::RETURN);
-    auto func = DSValue::create<FuncObject>(node.getModType(), this->finalizeCodeBuilder(node.toModName()));
+    auto func = DSValue::create<FuncObject>(node.getModType(), this->finalizeCodeBuilder(node.getModType()->toName()));
     this->emitLdcIns(func);
     this->visit(node);
 }

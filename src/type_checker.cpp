@@ -1329,12 +1329,12 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     // register module handle
     const FieldHandle *handle = nullptr;
     if(node.isFirstAppear()) {
-        auto pair = this->symbolTable.newModHandle(node.toModName(), *node.getModType());
+        auto pair = this->symbolTable.newModHandle(*node.getModType());
         handle = pair.first;
         assert(handle != nullptr);
     }
     if(handle == nullptr) {
-        handle = this->symbolTable.lookupHandle(node.toModName());
+        handle = this->symbolTable.lookupHandle(node.getModType()->toName());
         assert(handle != nullptr);
     }
 

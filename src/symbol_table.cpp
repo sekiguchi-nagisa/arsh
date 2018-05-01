@@ -260,6 +260,12 @@ ModType::ModType(ydsh::DSType &superType, unsigned short modID,
     }
 }
 
+std::string ModType::toName() const {
+    std::string str = MOD_SYMBOL_PREFIX;
+    str += std::to_string(this->modID);
+    return str;
+}
+
 FieldHandle* ModType::lookupFieldHandle(ydsh::SymbolTable &, const std::string &fieldName) {
     auto iter = this->handleMap.find(fieldName);
     if(iter != this->handleMap.end()) {
@@ -403,6 +409,7 @@ ModType& SymbolTable::createModType(const std::string &fullpath) {
     assert(iter != this->modLoader.typeMap.end());
     assert(iter->second == nullptr);
     iter->second = modType;
+    this->typeMap.addType(modType->toName(), modType);
     return *modType;
 }
 

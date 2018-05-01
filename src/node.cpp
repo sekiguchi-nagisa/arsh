@@ -1121,12 +1121,6 @@ SourceNode::~SourceNode() {
     delete this->pathNode;
 }
 
-std::string SourceNode::toModName() const {
-    std::string str = MOD_SYMBOL_PREFIX;
-    str += std::to_string(this->modType->getModID());
-    return str;
-}
-
 void SourceNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(pathNode);
     DUMP(name);
