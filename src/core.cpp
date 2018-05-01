@@ -1005,6 +1005,7 @@ static void completeGlobalVarName(const DSState &ctx, const std::string &token, 
     for(const auto &iter : ctx.symbolTable.globalScope()) {
         const char *varName = iter.first.c_str();
         if(!token.empty() && !startsWith(varName, CMD_SYMBOL_PREFIX)
+           && !startsWith(varName, MOD_SYMBOL_PREFIX)
            && startsWith(varName, token.c_str() + 1)) {
             append(results, iter.first, EscapeOp::NOP);
         }
