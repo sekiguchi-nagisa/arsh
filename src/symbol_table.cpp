@@ -252,6 +252,7 @@ void TypeMap::removeType(const std::string &typeName) {
 ModType::ModType(ydsh::DSType &superType, unsigned short modID,
                  const std::unordered_map<std::string, ydsh::FieldHandle> &handleMap) :
         DSType(&superType, DSType::MODULE_TYPE), modID(modID) {
+    assert(modID > 0);
     for(auto &e : handleMap) {
         if(e.second.getModID() == modID) {
             this->handleMap.emplace(e.first, e.second);
@@ -293,17 +294,7 @@ ModResult ModuleLoader::load(const std::string &modPath) {
         }
         return ModResult::circular();
     }
-    this->modIDCount++;
     return ModResult(pair.first->first.c_str());
-}
-
-ModType* ModuleLoader::newModType(const std::string &fullPath, DSType &anyType, const ydsh::ModuleScope &scope) {
-    auto *modType = new ModType(anyType, scope.getModID(), scope.global().getHandleMap());
-    auto iter = this->typeMap.find(fullPath);
-    assert(iter != this->typeMap.end());
-    assert(iter->second == nullptr);
-    iter->second = modType;
-    return modType;
 }
 
 
@@ -403,6 +394,16 @@ SymbolTable::~SymbolTable() {
     for(auto &pair : this->templateMap) {
         delete pair.second;
     }
+}
+
+ModType& SymbolTable::createModType(const std::string &fullpath) {
+    auto *modType = new ModType(this->get(TYPE::Any), this->cur().getModID(), this->cur().global().getHandleMap());
+    this->curModule = nullptr;
+    auto iter = this->modLoader.typeMap.find(fullpath);
+    assert(iter != this->modLoader.typeMap.end());
+    assert(iter->second == nullptr);
+    iter->second = modType;
+    return *modType;
 }
 
 DSType &SymbolTable::getTypeOrThrow(const std::string &typeName) const {

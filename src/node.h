@@ -2119,8 +2119,8 @@ public:
         return this->name;
     }
 
-    void setModType(ModType *type) {
-        this->modType = type;
+    void setModType(ModType &type) {
+        this->modType = &type;
     }
 
     ModType *getModType() {

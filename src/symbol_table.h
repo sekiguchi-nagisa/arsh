@@ -26,6 +26,8 @@
 
 namespace ydsh {
 
+class SymbolTable;
+
 class Scope {
 protected:
     std::unordered_map<std::string, FieldHandle> handleMap;
@@ -422,8 +424,8 @@ public:
         return this->path;
     }
 
-    ModType *asType() const {
-        return this->type;
+    ModType &asType() const {
+        return *this->type;
     }
 };
 
@@ -431,9 +433,10 @@ class ModuleLoader {
 private:
     unsigned short oldIDCount{0};
     unsigned short modIDCount{0};
-    std::unordered_map<std::string, ModType *> typeMap;  //FIXME: mod type
+    std::unordered_map<std::string, ModType *> typeMap;
 
-public:
+    friend class SymbolTable;
+
     NON_COPYABLE(ModuleLoader);
 
     ModuleLoader() = default;
@@ -458,12 +461,6 @@ public:
      * @return
      */
     ModResult load(const std::string &modPath);
-
-    ModType *newModType(const std::string &fullPath, DSType &anyType, const ModuleScope &scope);
-
-    unsigned short currentModID() const {
-        return this->modIDCount;
-    }
 };
 
 
@@ -498,6 +495,7 @@ public:
 
     ~SymbolTable();
 
+private:
     ModuleScope &cur() {
         return *this->curModule;
     }
@@ -514,15 +512,40 @@ public:
         return this->rootModule;
     }
 
+public:
+    // for module scope
+
+    void setModuleScope(ModuleScope &module) {
+        this->curModule = &module;
+    }
+
+    void resetCurModule() {
+        this->curModule = &this->rootModule;
+    }
+
+    ModResult tryToLoadModule(const std::string &modPath) {
+        return this->modLoader.load(modPath);
+    }
+
+    /**
+     * create new moulue scope and assign it to curModule
+     * @return
+     */
+    std::unique_ptr<ModuleScope> createModuleScope() {
+        auto id = ++this->modLoader.modIDCount;
+        auto *ptr = new ModuleScope(this->gvarCount, id);
+        this->curModule = ptr;
+        return std::unique_ptr<ModuleScope>(ptr);
+    }
+
+    /**
+     * after call it, assign null to curModule
+     * @param fullpath
+     * @return
+     */
+    ModType &createModType(const std::string &fullpath);
+
     // for FieldHandle lookup
-
-    ModuleLoader &getModLoader() {
-        return this->modLoader;
-    }
-
-    ModuleScope newModuleScope(unsigned short modID) {
-        return ModuleScope(this->gvarCount, modID);
-    }
 
     /**
      * return null, if not found.
@@ -566,10 +589,6 @@ public:
         return this->root().newHandle(name, type, FieldAttribute::READ_ONLY);
     }
 
-    void setModuleScope(ModuleScope &module) {
-        this->curModule = &module;
-    }
-
     /**
      * create new local scope.
      */
@@ -600,6 +619,7 @@ public:
 
     void commit() {
         this->typeMap.commit();
+        this->modLoader.commit();
         this->oldGvarCount = this->gvarCount;
     }
 
@@ -609,6 +629,7 @@ public:
             this->typeMap.abort();
         }
         this->cur().abort();
+        this->modLoader.abort();
     }
 
     void clear() {

@@ -37,7 +37,7 @@ private:
     struct Context {
         std::string fullPath;
         Lexer lexer;
-        ModuleScope scope;
+        std::unique_ptr<ModuleScope> scope;
 
         // for saving old state
         TokenKind kind;
@@ -45,7 +45,7 @@ private:
         TokenKind consumedKind;
         std::unique_ptr<SourceNode> sourceNode;
 
-        Context(const char *fullPath, Lexer &&lexer, ModuleScope &&scope,
+        Context(const char *fullPath, Lexer &&lexer, std::unique_ptr<ModuleScope> &&scope,
                 std::tuple<TokenKind, Token, TokenKind > &&state, SourceNode *oldSourceNode) :
                 fullPath(fullPath), lexer(std::move(lexer)), scope(std::move(scope)),
                 kind(std::get<0>(state)), token(std::get<1>(state)),
@@ -102,7 +102,7 @@ private:
      */
     Status tryToCheckModule(std::unique_ptr<Node> &node);
 
-    void enterModule(const char *fullPath, unsigned short modID, SourceNode *node);
+    void enterModule(const char *fullPath, SourceNode *node);
 
     std::unique_ptr<SourceNode> exitModule();
 
