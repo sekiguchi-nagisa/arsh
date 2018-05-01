@@ -1,7 +1,0 @@
-echo hello module!!
-
-function hello() {
-    echo hello
-}
-
-var hey = ""

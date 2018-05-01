@@ -1,0 +1,10 @@
+
+var hello = ""
+
+{
+    $hello = "$(echo hello module!!)"
+}
+
+function hey() {
+  echo hey!!
+}

@@ -1,0 +1,28 @@
+
+source ../module/module1.ds as mod
+
+# access variable
+assert $mod.hello is String
+assert $mod.hello == "hello module!!"
+
+assert "$($mod.hey())" == "hey!!"
+
+# assign to variable
+var c = 0
+{ $c++; $mod; }.hello = "hello"
+assert { $c++; $mod; }.hello == "hello"
+assert $c == 2
+$mod.hello ++
+{ $c++; $mod}.hello += "world"
+assert $mod.hello == "hello1world"
+assert $c == 3
+
+# type of module variable
+function get() : typeof($mod) {
+    $mod.hello = "!!"
+    return $mod
+}
+
+assert $get().hello == "!!"
+
+
