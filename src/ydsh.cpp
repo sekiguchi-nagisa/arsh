@@ -585,6 +585,11 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
 }
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *e) {
+    if(sourceName != nullptr) {
+        auto ret = st->symbolTable.tryToLoadModule(sourceName);
+        (void) ret;
+        assert(ret.getKind() == ModResult::PATH);
+    }
     CompiledCode code;
     int ret = compileImpl(st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp), e, code);
     if(!code) {

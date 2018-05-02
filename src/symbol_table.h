@@ -410,14 +410,6 @@ public:
         return ModResult(CIRCULAR, fullpath);
     }
 
-    /**
-     * if false, module loading failed
-     * @return
-     */
-    explicit operator bool() const {
-        return this->path != nullptr;
-    }
-
     Kind getKind() const {
         return this->kind;
     }

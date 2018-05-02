@@ -937,7 +937,7 @@ static std::string makeLineMarker(const std::string &line) {
     return str;
 }
 
-TEST_F(CmdlineTest2, import) {
+TEST_F(CmdlineTest2, import1) {
     std::string fileName = this->getTmpDirName();
     fileName += "/target.ds";
     FILE *fp = fopen(fileName.c_str(), "w");
@@ -951,6 +951,31 @@ TEST_F(CmdlineTest2, import) {
                              "       %s\n", fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("source %s as mod", fileName.c_str()), 1, "", str.c_str()));
+}
+
+TEST_F(CmdlineTest2, import2) {
+    std::string modName = this->getTmpDirName();
+    modName += "/mod.ds";
+
+    std::string fileName = this->getTmpDirName();
+    fileName += "/target.ds";
+
+    FILE *fp = fopen(fileName.c_str(), "w");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
+    fprintf(fp, "source %s as mod1", modName.c_str());
+    fclose(fp);
+
+    fp = fopen(modName.c_str(), "w");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
+    fprintf(fp, "source %s as mod2", fileName.c_str());
+    fclose(fp);
+
+    std::string str = format("%s:1: [semantic error] circular module import: %s\n"
+                             "source %s as mod2\n"
+                             "       %s\n",
+                             modName.c_str(), fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(ProcBuilder{ BIN_PATH, fileName.c_str() }, 1, "", str.c_str()));
 }
 
 int main(int argc, char **argv) {
