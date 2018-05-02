@@ -241,9 +241,10 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     auto &srcNode = static_cast<SourceNode&>(*node);
     auto ret = this->checker.getSymbolTable().tryToLoadModule(srcNode.getPathStr());
     switch(ret.getKind()) {
-    case ModResult::UNRESOLVED: //FIXME: error reporting
+    case ModResult::UNRESOLVED:
+        RAISE_TC_ERROR(UnresolvedMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str());
     case ModResult::CIRCULAR:
-        fatal("loading failed\n");
+        RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), ret.asPath());
     case ModResult::PATH:
         this->enterModule(ret.asPath(), static_cast<SourceNode *>(node.release()));
         return ENTER_MODULE;
@@ -257,6 +258,9 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
 void FrontEnd::enterModule(const char *fullPath, ydsh::SourceNode *node) {
     {
         FILE *fp = fopen(fullPath, "rb");
+        if(fp == nullptr) {
+            RAISE_TC_ERROR(NotMod, *node->getPathNode(), fullPath, strerror(errno));
+        }
         Lexer lex(fullPath, fp);
         node->setFirstAppear(true);
         auto state = this->parser.saveLexicalState();

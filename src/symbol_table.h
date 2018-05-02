@@ -395,7 +395,7 @@ private:
     };
 
 private:
-    ModResult(Kind kind) : kind(kind), path(nullptr) {}
+    ModResult(Kind kind, const char *ptr) : kind(kind), path(ptr) {}
 
 public:
     explicit ModResult(const char *path) : kind(PATH), path(path) {}
@@ -403,11 +403,11 @@ public:
     explicit ModResult(ModType *type) : kind(TYPE), type(type) {}
 
     static ModResult unresolved() {
-        return ModResult(UNRESOLVED);
+        return ModResult(UNRESOLVED, nullptr);
     }
 
-    static ModResult circular() {
-        return ModResult(CIRCULAR);
+    static ModResult circular(const char *fullpath) {
+        return ModResult(CIRCULAR, fullpath);
     }
 
     /**

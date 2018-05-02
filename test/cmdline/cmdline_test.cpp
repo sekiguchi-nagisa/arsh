@@ -929,6 +929,30 @@ TEST_F(CmdlineTest2, cwd) {
                                             this->getTmpDirName(), target.c_str()), 0));
 }
 
+static std::string makeLineMarker(const std::string &line) {
+    std::string str = "^";
+    for(unsigned int i = 1; i < line.size(); i++) {
+        str += "~";
+    }
+    return str;
+}
+
+TEST_F(CmdlineTest2, import) {
+    std::string fileName = this->getTmpDirName();
+    fileName += "/target.ds";
+    FILE *fp = fopen(fileName.c_str(), "w");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
+    fprintf(fp, "throw new Error('invalid!!')");
+    fclose(fp);
+    chmod(fileName.c_str(), ~S_IRUSR);
+
+    std::string str = format("(string):1: [semantic error] unavailable module: %s, by `Permission denied'\n"
+                             "source %s as mod\n"
+                             "       %s\n", fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source %s as mod", fileName.c_str()), 1, "", str.c_str()));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

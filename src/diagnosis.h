@@ -136,6 +136,9 @@ enum class TCError : unsigned int {
     E_UndefinedInit,
     E_Unacceptable,
     E_DefinedCmd,
+    E_UnresolvedMod,
+    E_CircularMod,
+    E_NotMod,
     E_Required,
     E_CastOp,
     E_UnmatchParam,
@@ -165,6 +168,9 @@ enum class TCError : unsigned int {
 #define UndefinedInit     "undefined constructor: %s"
 #define Unacceptable      "unacceptable type: `%s'"
 #define DefinedCmd        "already defined command: %s"
+#define UnresolvedMod     "unresolved module: %s"
+#define CircularMod       "circular module import: %s"
+#define NotMod            "unavailable module: %s, by `%s'"
 #define Required          "require `%s' type, but is `%s' type"
 #define CastOp            "unsupported cast op: `%s' type -> `%s' type"
 #define UnmatchParam      "not match parameter, require size is %d, but is %d"

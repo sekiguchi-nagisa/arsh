@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $errorKind = 'UnresolvedMod', $status = 1)
+
+source \
+  hogehuga

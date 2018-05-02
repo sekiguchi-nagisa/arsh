@@ -298,7 +298,7 @@ ModResult ModuleLoader::load(const std::string &modPath) {
         if(pair.first->second) {
             return ModResult(pair.first->second);
         }
-        return ModResult::circular();
+        return ModResult::circular(pair.first->first.c_str());
     }
     return ModResult(pair.first->first.c_str());
 }
