@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $errorKind = 'DefinedSymbol', $status = 1)
+
+var mod = 23456
+
+source ../module/module1.ds as mod

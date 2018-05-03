@@ -142,6 +142,8 @@ private:
     }
 };
 
+class ModType;
+
 class ModuleScope {
 private:
     unsigned short modID;
@@ -208,6 +210,16 @@ public:
      * delete current function scope.
      */
     void exitFunc();
+
+    /**
+     *
+     * @param type
+     * @return
+     * if detect symbol name conflict, return conflicted symbol name.
+     * if has no conflict, return null
+     */
+    const char *import(const ModType &type);
+
 
     /**
      * remove changed state(local scope, global FieldHandle)
@@ -351,6 +363,8 @@ class ModType : public DSType {
 private:
     unsigned short modID;
     std::unordered_map<std::string, FieldHandle> handleMap;
+
+    friend class ModuleScope;
 
 public:
     ModType(DSType &superType, unsigned short modID,
@@ -534,6 +548,10 @@ public:
      * @return
      */
     ModType &createModType(const std::string &fullpath);
+
+    const char *import(const ModType &type) {
+        return this->cur().import(type);
+    }
 
     // for FieldHandle lookup
 

@@ -1,0 +1,14 @@
+
+# test global import
+
+source ../module/module1.ds
+
+assert $hello == "hello module!!"
+
+assert "$($hey())" == "hey!!"
+
+source ../module/module1.ds as mod
+
+$hello = 'ABC'
+assert $mod.hello == "ABC"
+assert $hey == $mod.hey

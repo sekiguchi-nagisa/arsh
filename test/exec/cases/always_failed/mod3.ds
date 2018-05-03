@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $errorKind = 'ConflictSymbol', $status = 1)
+
+var hello = 12345
+
+source ../module/module1.ds

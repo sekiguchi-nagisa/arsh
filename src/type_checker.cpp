@@ -1326,7 +1326,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
         RAISE_TC_ERROR(OutsideToplevel, node);
     }
 
-    // register module handle
+    // register module placeholder
     const FieldHandle *handle = nullptr;
     if(node.isFirstAppear()) {
         auto pair = this->symbolTable.newModHandle(*node.getModType());
@@ -1340,7 +1340,13 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
 
     // register actual module handle
     node.setModIndex(handle->getIndex());
-    if(!node.getName().empty()) {
+    if(node.getName().empty()) {    // global import
+        const char *ret = this->symbolTable.import(*node.getModType());
+        if(ret) {
+            RAISE_TC_ERROR(ConflictSymbol, *node.getPathNode(), ret);
+        }
+    } else {    // scoped import
+        // register actual module handle
         auto handle = this->addEntry(node, node.getName(), *node.getModType(), FieldAttribute::READ_ONLY);
         assert(handle != nullptr);
         node.setIndex(handle->getIndex());

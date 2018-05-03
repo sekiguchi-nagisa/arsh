@@ -136,6 +136,7 @@ enum class TCError : unsigned int {
     E_UndefinedInit,
     E_Unacceptable,
     E_DefinedCmd,
+    E_ConflictSymbol,
     E_UnresolvedMod,
     E_CircularMod,
     E_NotMod,
@@ -168,6 +169,7 @@ enum class TCError : unsigned int {
 #define UndefinedInit     "undefined constructor: %s"
 #define Unacceptable      "unacceptable type: `%s'"
 #define DefinedCmd        "already defined command: %s"
+#define ConflictSymbol    "at global import, detect symbol conflict: `%s'"
 #define UnresolvedMod     "unresolved module: %s"
 #define CircularMod       "circular module import: %s"
 #define NotMod            "unavailable module: %s, by `%s'"

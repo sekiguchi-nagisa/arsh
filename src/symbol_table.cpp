@@ -156,6 +156,16 @@ void ModuleScope::exitFunc() {
     this->maxVarIndexStack.pop_back();
 }
 
+const char* ModuleScope::import(const ydsh::ModType &type) {
+    for(auto &e : type.handleMap) {
+        auto ret = this->globalScope.handleMap.insert(e);
+        if(!ret.second) {
+            return ret.first->first.c_str();
+        }
+    }
+    return nullptr;
+}
+
 void ModuleScope::clear() {
     this->maxVarIndexStack.clear();
     this->maxVarIndexStack.push_back(0);
