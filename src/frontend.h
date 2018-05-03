@@ -46,10 +46,10 @@ private:
         std::unique_ptr<SourceNode> sourceNode;
 
         Context(const char *fullPath, Lexer &&lexer, std::unique_ptr<ModuleScope> &&scope,
-                std::tuple<TokenKind, Token, TokenKind > &&state, SourceNode *oldSourceNode) :
+                std::tuple<TokenKind, Token, TokenKind > &&state, std::unique_ptr<SourceNode> &&oldSourceNode) :
                 fullPath(fullPath), lexer(std::move(lexer)), scope(std::move(scope)),
                 kind(std::get<0>(state)), token(std::get<1>(state)),
-                consumedKind(std::get<2>(state)), sourceNode(oldSourceNode) { }
+                consumedKind(std::get<2>(state)), sourceNode(std::move(oldSourceNode)) { }
     };
 
     // root lexer state
@@ -102,7 +102,7 @@ private:
      */
     Status tryToCheckModule(std::unique_ptr<Node> &node);
 
-    void enterModule(const char *fullPath, SourceNode *node);
+    void enterModule(const char *fullPath, std::unique_ptr<SourceNode> &&node);
 
     std::unique_ptr<SourceNode> exitModule();
 
