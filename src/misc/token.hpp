@@ -17,6 +17,8 @@
 #ifndef YDSH_TOKEN_HPP
 #define YDSH_TOKEN_HPP
 
+#include <string>
+
 namespace ydsh {
 
 struct Token {

@@ -15,6 +15,8 @@
  */
 
 #include <cstdlib>
+#include <cerrno>
+
 #include <unistd.h>
 
 #include "frontend.h"
