@@ -39,12 +39,20 @@ static void loadRC(DSState *state, const char *rcfile) {
 
     FILE *fp = fopen(path.c_str(), "rb");
     if(fp == nullptr) {
+        if(errno != ENOENT) {
+            fprintf(stderr, "ydsh: %s: %s\n", path.c_str(), strerror(errno));
+        }
         return; // not read
     }
-    DSError e{};
-    int ret = DSState_loadAndEval(state, path.c_str(), fp, &e);
-    int kind = e.kind;
     fclose(fp);
+
+    std::string line = "source ";
+    line += path;
+    line += '\n';
+
+    DSError e{};
+    int ret = DSState_eval(state, nullptr, line.c_str(), line.size(), &e);
+    int kind = e.kind;
     if(kind != DS_ERROR_KIND_SUCCESS) {
         exit(ret);
     }
