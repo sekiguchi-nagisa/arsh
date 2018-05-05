@@ -974,6 +974,10 @@ TEST_F(CmdlineTest2, import2) {
                              "source %s as mod2\n"
                              "       %s\n",
                              modName.c_str(), fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
+    str += format("%s:1: [note] at module import\n"
+                  "source %s as mod1\n"
+                  "       %s\n",
+                  fileName.c_str(),modName.c_str(), makeLineMarker(modName).c_str());
 
     ASSERT_NO_FATAL_FAILURE(this->expect(ProcBuilder{ BIN_PATH, fileName.c_str() }, 1, "", str.c_str()));
 }

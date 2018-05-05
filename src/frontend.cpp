@@ -39,7 +39,7 @@ FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable,
     /*C(Red,     31)*/ \
     C(Green,   32) \
     /*C(Yellow,  33)*/ \
-    /*C(Blue,    34)*/ \
+    C(Blue,    34) \
     C(Magenta, 35) \
     C(Cyan,    36) /*\
     C(white,   37)*/
@@ -113,20 +113,34 @@ static void formatErrorLine(ColorController cc, const Lexer &lexer, Token errorT
 
 DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
                               Token errorToken, const std::string &message) const {
-    auto &lexer = *this->parser.getLexer();
-    unsigned int errorLineNum = lexer.getSourceInfoPtr()->getLineNum(errorToken.pos);
     ColorController cc(STDERR_FILENO);
 
     /**
      * show error message
      */
-    fprintf(stderr, "%s:%d:%s%s ",
-            lexer.getSourceInfoPtr()->getSourceName().c_str(), errorLineNum,
-            cc(TermColor::Magenta), cc(TermColor::Bold));
-    fprintf(stderr, "[%s error] %s%s\n",
+    auto srcInfo = this->getSourceInfo();
+    unsigned int errorLineNum = srcInfo->getLineNum(errorToken.pos);
+    fprintf(stderr, "%s:%d: ", srcInfo->getSourceName().c_str(), errorLineNum);
+    fprintf(stderr, "%s%s[%s error]%s %s\n",
+            cc(TermColor::Magenta), cc(TermColor::Bold),
             type == DS_ERROR_KIND_PARSE_ERROR ? "syntax" : "semantic",
             cc(TermColor::Reset), message.c_str());
-    formatErrorLine(cc, lexer, errorToken);
+    formatErrorLine(cc, *this->parser.getLexer(), errorToken);
+
+    for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
+        Token token = this->contexts[i].sourceNode->getPathNode()->getToken();
+        auto *lex = &this->lexer;
+        if(i > 0) {
+            lex = &this->contexts[i - 1].lexer;
+        }
+        srcInfo = lex->getSourceInfoPtr();
+        unsigned int lineNum = srcInfo->getLineNum(token.pos);
+
+        fprintf(stderr, "%s:%d: ", srcInfo->getSourceName().c_str(), lineNum);
+        fprintf(stderr, "%s%s[note]%s at module import\n",
+                cc(TermColor::Blue), cc(TermColor::Bold), cc(TermColor::Reset));
+        formatErrorLine(cc, *lex, token);
+    }
 
     return {
             .kind = type,
