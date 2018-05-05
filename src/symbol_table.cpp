@@ -202,7 +202,6 @@ DSType *TypeMap::addType(std::string &&typeName, DSType *type) {
     assert(type != nullptr);
     auto pair = this->typeMapImpl.insert({std::move(typeName), type});
     this->typeNameMap.insert({asKey(type), &pair.first->first});
-//    this->typeCache.push_back(&pair.first->first);
     return type;
 }
 
@@ -233,20 +232,9 @@ bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
      */
     auto *taggedPtr = reinterpret_cast<DSType *>(tag | (unsigned long) &targetType);
     auto pair = this->typeMapImpl.insert({std::move(alias), taggedPtr});
-//    this->typeCache.push_back(&pair.first->first);
     return pair.second;
 }
 
-void TypeMap::removeType(const std::string &typeName) {
-    auto iter = this->typeMapImpl.find(typeName);
-    if(iter != this->typeMapImpl.end()) {
-        if(!isAlias(iter->second)) {
-            this->typeNameMap.erase(asKey(iter->second));
-            delete iter->second;
-        }
-        this->typeMapImpl.erase(iter);
-    }
-}
 
 // #####################
 // ##     ModType     ##

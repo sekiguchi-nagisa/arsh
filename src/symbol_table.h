@@ -292,13 +292,6 @@ public:
     void commit() {}    // FIXME:
 
     void abort() {} // FIXME:
-
-
-private:
-    /**
-     * remove type and call destructor.
-     */
-    void removeType(const std::string &typeName);
 };
 
 enum class TYPE : unsigned int {
