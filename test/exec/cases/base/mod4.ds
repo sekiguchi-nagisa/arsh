@@ -1,0 +1,6 @@
+
+#$test($result = 'exit', $status = 23, $lineNum = 2)
+
+var a = 45
+
+source ../module/exit.ds

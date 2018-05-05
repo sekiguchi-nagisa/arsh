@@ -308,6 +308,10 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     } else {
         symbolTable.setModuleScope(*this->contexts.back().scope);
     }
+    if(this->prevType->isNothingType()) {
+        this->prevType = &symbolTable.get(TYPE::Void);
+        node->setNothing(true);
+    }
     return node;
 }
 

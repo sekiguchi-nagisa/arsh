@@ -2082,6 +2082,8 @@ private:
 
     bool firstAppear{false};
 
+    bool nothing{false};
+
     unsigned int modIndex{0};
 
     /**
@@ -2133,6 +2135,14 @@ public:
 
     bool isFirstAppear() const {
         return this->firstAppear;
+    }
+
+    void setNothing(bool set) {
+        this->nothing = set;
+    }
+
+    bool isNothing() const {
+        return this->nothing;
     }
 
     void setModIndex(unsigned int index) {

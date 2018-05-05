@@ -1351,7 +1351,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
         assert(handle != nullptr);
         node.setIndex(handle->getIndex());
     }
-    node.setType(this->symbolTable.get(TYPE::Void));
+    node.setType(this->symbolTable.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
 }
 
 void TypeChecker::visitEmptyNode(EmptyNode &node) {
