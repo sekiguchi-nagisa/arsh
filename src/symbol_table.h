@@ -263,11 +263,6 @@ private:
     std::unordered_map<std::string, DSType *> typeMapImpl;
     std::unordered_map<unsigned long, const std::string *> typeNameMap;
 
-    /**
-     * cache generated type(interface).
-     */
-    std::vector<const std::string *> typeCache;
-
 public:
     NON_COPYABLE(TypeMap);
 
@@ -294,15 +289,9 @@ public:
      */
     bool setAlias(std::string &&alias, DSType &targetType);
 
-    /**
-     * clear typeCache.
-     */
-    void commit();
+    void commit() {}    // FIXME:
 
-    /**
-     * remove cached type
-     */
-    void abort();
+    void abort() {} // FIXME:
 
 
 private:

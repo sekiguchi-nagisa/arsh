@@ -237,17 +237,6 @@ bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
     return pair.second;
 }
 
-void TypeMap::commit() {
-    this->typeCache.clear();
-}
-
-void TypeMap::abort() {
-//    for(const std::string *typeName : this->typeCache) {
-//        this->removeType(*typeName);
-//    }
-    this->typeCache.clear();
-}
-
 void TypeMap::removeType(const std::string &typeName) {
     auto iter = this->typeMapImpl.find(typeName);
     if(iter != this->typeMapImpl.end()) {
