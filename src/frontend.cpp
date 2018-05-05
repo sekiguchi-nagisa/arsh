@@ -111,6 +111,15 @@ static void formatErrorLine(ColorController cc, const Lexer &lexer, Token errorT
     fflush(stderr);
 }
 
+void printError(const Lexer &lex, const char *kind, Token token,
+               ColorController cc, TermColor color, const char *message) {
+    unsigned int lineNum = lex.getSourceInfoPtr()->getLineNum(token.pos);
+    fprintf(stderr, "%s:%d: ", lex.getSourceInfoPtr()->getSourceName().c_str(), lineNum);
+    fprintf(stderr, "%s%s[%s]%s %s\n",
+            cc(color), cc(TermColor::Bold), kind, cc(TermColor::Reset), message);
+    formatErrorLine(cc, lex, token);
+}
+
 DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
                               Token errorToken, const std::string &message) const {
     ColorController cc(STDERR_FILENO);
@@ -118,14 +127,9 @@ DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
     /**
      * show error message
      */
-    auto srcInfo = this->getSourceInfo();
-    unsigned int errorLineNum = srcInfo->getLineNum(errorToken.pos);
-    fprintf(stderr, "%s:%d: ", srcInfo->getSourceName().c_str(), errorLineNum);
-    fprintf(stderr, "%s%s[%s error]%s %s\n",
-            cc(TermColor::Magenta), cc(TermColor::Bold),
-            type == DS_ERROR_KIND_PARSE_ERROR ? "syntax" : "semantic",
-            cc(TermColor::Reset), message.c_str());
-    formatErrorLine(cc, *this->parser.getLexer(), errorToken);
+    printError(*this->parser.getLexer(),
+               type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
+               errorToken, cc, TermColor::Magenta, message.c_str());
 
     for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
         Token token = this->contexts[i].sourceNode->getPathNode()->getToken();
@@ -133,15 +137,10 @@ DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
         if(i > 0) {
             lex = &this->contexts[i - 1].lexer;
         }
-        srcInfo = lex->getSourceInfoPtr();
-        unsigned int lineNum = srcInfo->getLineNum(token.pos);
-
-        fprintf(stderr, "%s:%d: ", srcInfo->getSourceName().c_str(), lineNum);
-        fprintf(stderr, "%s%s[note]%s at module import\n",
-                cc(TermColor::Blue), cc(TermColor::Bold), cc(TermColor::Reset));
-        formatErrorLine(cc, *lex, token);
+        printError(*lex, "note", token, cc, TermColor::Blue, "at module import");
     }
 
+    unsigned int errorLineNum = this->getSourceInfo()->getLineNum(errorToken.pos);
     return {
             .kind = type,
             .lineNum = errorLineNum,
