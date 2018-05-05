@@ -296,6 +296,17 @@ void ModType::accept(ydsh::TypeVisitor *) {
 // ##     ModuleLoader     ##
 // ##########################
 
+void ModuleLoader::abort() {
+    for(auto iter = this->typeMap.begin(); iter != this->typeMap.end();) {
+        if(!iter->second || iter->second->getModID() > this->oldIDCount) {
+            iter = this->typeMap.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+    this->modIDCount = this->oldIDCount;
+}
+
 ModResult ModuleLoader::load(const std::string &modPath) {
     std::string str = modPath;
     expandTilde(str);

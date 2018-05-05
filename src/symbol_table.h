@@ -461,9 +461,7 @@ private:
         this->oldIDCount = this->modIDCount;
     }
 
-    void abort() {
-        this->modIDCount = this->oldIDCount;//FIXME: remove old mod type
-    }
+    void abort();
 
     /**
      *
@@ -538,7 +536,7 @@ public:
     }
 
     /**
-     * create new moulue scope and assign it to curModule
+     * create new module scope and assign it to curModule
      * @return
      */
     std::unique_ptr<ModuleScope> createModuleScope() {
@@ -638,12 +636,13 @@ public:
     }
 
     void abort(bool abortType) {
+        this->modLoader.abort();
         this->gvarCount = this->oldGvarCount;
         if(abortType) {
             this->typeMap.abort();
         }
         this->cur().abort();
-        this->modLoader.abort();
+        this->resetCurModule();
     }
 
     void clear() {
