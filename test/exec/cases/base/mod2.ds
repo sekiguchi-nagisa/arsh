@@ -12,3 +12,6 @@ source ../module/module1.ds as mod
 $hello = 'ABC'
 assert $mod.hello == "ABC"
 assert $hey == $mod.hey
+
+# import already loaded module (do nothing)
+source .././module/module1.ds

@@ -159,7 +159,7 @@ void ModuleScope::exitFunc() {
 const char* ModuleScope::import(const ydsh::ModType &type) {
     for(auto &e : type.handleMap) {
         auto ret = this->globalScope.handleMap.insert(e);
-        if(!ret.second) {
+        if(!ret.second && ret.first->second.getModID() != type.getModID()) {
             return ret.first->first.c_str();
         }
     }
