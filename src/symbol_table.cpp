@@ -118,6 +118,9 @@ const FieldHandle *ModuleScope::lookupHandle(const std::string &symbolName) cons
 HandleOrError ModuleScope::newHandle(const std::string &symbolName,
                                      DSType &type, FieldAttributes attribute) {
     if(this->inGlobalScope()) {
+        if(this->builtin) {
+            attribute.set(FieldAttribute::BUILTIN);
+        }
         return this->globalScope.addNew(symbolName, type, attribute, this->modID);
     }
 
@@ -158,6 +161,7 @@ void ModuleScope::exitFunc() {
 
 const char* ModuleScope::import(const ydsh::ModType &type) {
     for(auto &e : type.handleMap) {
+        assert(!e.second.attr().has(FieldAttribute::BUILTIN));
         auto ret = this->globalScope.handleMap.insert(e);
         if(!ret.second && ret.first->second.getModID() != type.getModID()) {
             return ret.first->first.c_str();
@@ -421,6 +425,32 @@ ModType& SymbolTable::createModType(const std::string &fullpath) {
     iter->second = modType;
     this->typeMap.addType(modType->toName(), modType);
     return *modType;
+}
+
+const FieldHandle* SymbolTable::lookupHandle(const std::string &symbolName) const {
+    auto handle = this->cur().lookupHandle(symbolName);
+    if(handle == nullptr) {
+        if(&this->cur() != &this->root()) {
+            assert(this->root().inGlobalScope());
+            auto ret = this->root().lookupHandle(symbolName);
+            if(ret && ret->attr().has(FieldAttribute::BUILTIN)) {
+                handle = ret;
+            }
+        }
+    }
+    return handle;
+}
+
+HandleOrError SymbolTable::newHandle(const std::string &symbolName, DSType &type,
+                                     FieldAttributes attribute) {
+    if(this->cur().inGlobalScope() && &this->cur() != &this->root()) {
+        assert(this->root().inGlobalScope());
+        auto handle = this->root().lookupHandle(symbolName);
+        if(handle && handle->attr().has(FieldAttribute::BUILTIN)) {
+            return {nullptr, SymbolError::DEFINED};
+        }
+    }
+    return this->cur().newHandle(symbolName, type, attribute);
 }
 
 DSType &SymbolTable::getTypeOrThrow(const std::string &typeName) const {

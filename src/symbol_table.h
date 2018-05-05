@@ -148,6 +148,8 @@ class ModuleScope {
 private:
     unsigned short modID;
 
+    bool builtin;
+
     GlobalScope globalScope;
 
     /**
@@ -164,7 +166,7 @@ public:
     NON_COPYABLE(ModuleScope);
 
     ModuleScope(unsigned int &gvarCount, unsigned short modID = 0) :
-            modID(modID), globalScope(gvarCount) {
+            modID(modID), builtin(modID == 0), globalScope(gvarCount) {
         this->maxVarIndexStack.push_back(0);
     }
 
@@ -189,6 +191,10 @@ public:
     bool disallowShadowing(const std::string &symbolName) {
         assert(!this->inGlobalScope());
         return this->scopes.back().add(symbolName, FieldHandle()).first != nullptr;
+    }
+
+    void setBuitlin(bool set) {
+        this->builtin = set;
     }
 
     /**
@@ -558,19 +564,19 @@ public:
     /**
      * return null, if not found.
      */
-    const FieldHandle *lookupHandle(const std::string &symbolName) const {
-        return this->cur().lookupHandle(symbolName);
-    }
+    const FieldHandle *lookupHandle(const std::string &symbolName) const;
 
     /**
      * return null, if found duplicated handle.
      */
-    HandleOrError newHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute) {
-        return this->cur().newHandle(symbolName, type, attribute);
-    }
+    HandleOrError newHandle(const std::string &symbolName, DSType &type, FieldAttributes attribute);
 
     bool disallowShadowing(const std::string &symbolName) {
         return this->cur().disallowShadowing(symbolName);
+    }
+
+    void closeBuiltin() {
+        this->root().setBuitlin(false);
     }
 
     /**

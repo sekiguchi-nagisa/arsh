@@ -461,6 +461,7 @@ DSState *DSState_createWithMode(DSExecMode mode) {
     loadEmbeddedScript(ctx);
 
     ctx->execMode = mode;
+    ctx->symbolTable.closeBuiltin();
     return ctx;
 }
 

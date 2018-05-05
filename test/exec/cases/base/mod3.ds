@@ -1,0 +1,15 @@
+
+# test complex module
+
+function scriptName() : String {
+    return "hello!!"
+}
+
+source ../module/module3.ds as mod
+
+assert $mod.test($true, $mod.scriptName)! == $0
+
+assert !$mod.test($false, $mod.scriptName)
+
+echo ${$scriptName()} 1>&2
+assert $mod.test($true, $scriptName)! == 'hello!!'
