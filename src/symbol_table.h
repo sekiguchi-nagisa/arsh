@@ -19,6 +19,7 @@
 
 #include <cassert>
 #include <functional>
+#include <misc/buffer.hpp>
 
 #include "type.h"
 #include "handle.h"
@@ -260,6 +261,7 @@ public:
 
 class TypeMap {
 private:
+    FlexBuffer<DSType *> typeTable;
     std::unordered_map<std::string, DSType *> typeMapImpl;
     std::unordered_map<unsigned long, const std::string *> typeNameMap;
 
@@ -269,10 +271,14 @@ public:
     TypeMap() = default;
     ~TypeMap();
 
-    /**
-     * return added type. type must not be null.
-     */
-    DSType *addType(std::string &&typeName, DSType *type);
+    template <typename T, typename ...A>
+    T &newType(std::string &&name, A &&...arg) {
+        return *static_cast<T *>(this->addType(std::move(name), new T(std::forward<A>(arg)...)));
+    }
+
+    DSType *get(unsigned int index) {
+        return this->typeTable[index];
+    }
 
     /**
      * return null, if has no type.
@@ -292,6 +298,12 @@ public:
     void commit() {}    // FIXME:
 
     void abort() {} // FIXME:
+
+private:
+    /**
+     * return added type. type must not be null.
+     */
+    DSType *addType(std::string &&typeName, DSType *type);
 };
 
 enum class TYPE : unsigned int {
@@ -364,10 +376,14 @@ public:
         return this->modID;
     }
 
-    std::string toName() const;
+    std::string toName() const {
+        return toModName(this->modID);
+    }
 
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
     void accept(TypeVisitor *visitor) override;
+
+    static std::string toModName(unsigned short modID);
 };
 
 class ModResult {

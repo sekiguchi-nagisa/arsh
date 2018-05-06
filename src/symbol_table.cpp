@@ -251,12 +251,6 @@ ModType::ModType(ydsh::DSType &superType, unsigned short modID,
     }
 }
 
-std::string ModType::toName() const {
-    std::string str = MOD_SYMBOL_PREFIX;
-    str += std::to_string(this->modID);
-    return str;
-}
-
 FieldHandle* ModType::lookupFieldHandle(ydsh::SymbolTable &, const std::string &fieldName) {
     auto iter = this->handleMap.find(fieldName);
     if(iter != this->handleMap.end()) {
@@ -267,6 +261,12 @@ FieldHandle* ModType::lookupFieldHandle(ydsh::SymbolTable &, const std::string &
 
 void ModType::accept(ydsh::TypeVisitor *) {
     fatal("unsupported\n");
+}
+
+std::string ModType::toModName(unsigned short id) {
+    std::string str = MOD_SYMBOL_PREFIX;
+    str += std::to_string(id);
+    return str;
 }
 
 // ##########################
@@ -405,14 +405,15 @@ SymbolTable::~SymbolTable() {
 }
 
 ModType& SymbolTable::createModType(const std::string &fullpath) {
-    auto *modType = new ModType(this->get(TYPE::Any), this->cur().getModID(), this->cur().global().getHandleMap());
+    std::string name = ModType::toModName(this->cur().getModID());
+    auto &modType = this->typeMap.newType<ModType>(std::move(name),
+            this->get(TYPE::Any), this->cur().getModID(), this->cur().global().getHandleMap());
     this->curModule = nullptr;
     auto iter = this->modLoader.typeMap.find(fullpath);
     assert(iter != this->modLoader.typeMap.end());
     assert(iter->second == nullptr);
-    iter->second = modType;
-    this->typeMap.addType(modType->toName(), modType);
-    return *modType;
+    iter->second = &modType;
+    return modType;
 }
 
 const FieldHandle* SymbolTable::lookupHandle(const std::string &symbolName) const {
@@ -480,8 +481,8 @@ DSType &SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
     if(type == nullptr) {
         DSType *superType = attr != 0u ? nullptr :
                             this->asVariantType(elementTypes) ? &this->get(TYPE::Variant) : &this->get(TYPE::Any);
-        return *this->typeMap.addType(std::move(typeName),
-                                      new ReifiedType(typeTemplate.getInfo(), superType, std::move(elementTypes), attr));
+        return this->typeMap.newType<ReifiedType>(std::move(typeName),
+                                                  typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
     }
     return *type;
 }
@@ -495,8 +496,8 @@ DSType &SymbolTable::createTupleType(std::vector<DSType *> &&elementTypes) {
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         DSType *superType = this->asVariantType(elementTypes) ? &this->get(TYPE::Variant) : &this->get(TYPE::Any);
-        return *this->typeMap.addType(std::move(typeName),
-                                      new TupleType(this->tupleTemplate->getInfo(), superType, std::move(elementTypes)));
+        return this->typeMap.newType<TupleType>(std::move(typeName),
+                                                this->tupleTemplate->getInfo(), superType, std::move(elementTypes));
     }
     return *type;
 }
@@ -507,9 +508,8 @@ FunctionType &SymbolTable::createFuncType(DSType *returnType, std::vector<DSType
     std::string typeName(toFunctionTypeName(returnType, paramTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        auto *funcType = new FunctionType(&this->get(TYPE::Func), returnType, std::move(paramTypes));
-        this->typeMap.addType(std::move(typeName), funcType);
-        return *funcType;
+        return this->typeMap.newType<FunctionType>(std::move(typeName),
+                                                   &this->get(TYPE::Func), returnType, std::move(paramTypes));
     }
     assert(type->isFuncType());
 
@@ -519,9 +519,7 @@ FunctionType &SymbolTable::createFuncType(DSType *returnType, std::vector<DSType
 InterfaceType &SymbolTable::createInterfaceType(const std::string &interfaceName) {
     DSType *type = this->typeMap.getType(interfaceName);
     if(type == nullptr) {
-        auto *ifaceType = new InterfaceType(&this->get(TYPE::DBusObject));
-        this->typeMap.addType(std::string(interfaceName), ifaceType);
-        return *ifaceType;
+        return this->typeMap.newType<InterfaceType>(std::string(interfaceName), &this->get(TYPE::DBusObject));
     }
     assert(type->isInterface());
 
@@ -531,9 +529,7 @@ InterfaceType &SymbolTable::createInterfaceType(const std::string &interfaceName
 DSType &SymbolTable::createErrorType(const std::string &errorName, DSType &superType) {
     DSType *type = this->typeMap.getType(errorName);
     if(type == nullptr) {
-        DSType *errorType = new ErrorType(&superType);
-        this->typeMap.addType(std::string(errorName), errorType);
-        return *errorType;
+        return this->typeMap.newType<ErrorType>(std::string(errorName), &superType);
     }
     return *type;
 }
@@ -673,21 +669,20 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
         attribute |= DSType::NOTHING_TYPE;
     }
 
-    DSType *type = this->typeMap.addType(
-            std::string(typeName), new BuiltinType(nullptr, info, attribute));
+    DSType &type = this->typeMap.newType<BuiltinType>(std::string(typeName), nullptr, info, attribute);
 
     // set to typeTable
-    this->setToTypeTable(t, type);
+    this->setToTypeTable(t, &type);
 }
 
 void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
                                   DSType &superType, native_type_info_t info) {
     // create and register type
-    DSType *type = this->typeMap.addType(
-            std::string(typeName), new BuiltinType(&superType, info, extendable ? DSType::EXTENDIBLE : 0));
+    DSType &type = this->typeMap.newType<BuiltinType>(
+            std::string(typeName), &superType, info, extendable ? DSType::EXTENDIBLE : 0);
 
     // set to typeTable
-    this->setToTypeTable(t, type);
+    this->setToTypeTable(t, &type);
 }
 
 TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
@@ -697,8 +692,8 @@ TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
 }
 
 void SymbolTable::initErrorType(TYPE t, const char *typeName, DSType &superType) {
-    DSType *type = this->typeMap.addType(std::string(typeName), new ErrorType(&superType));
-    this->setToTypeTable(t, type);
+    DSType &type = this->typeMap.newType<ErrorType>(std::string(typeName), &superType);
+    this->setToTypeTable(t, &type);
 }
 
 void SymbolTable::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
