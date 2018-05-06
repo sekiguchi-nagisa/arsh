@@ -119,8 +119,8 @@ static const NativeCode *getCode(native_type_info_t info) {
 // ##     BuiltinType     ##
 // #########################
 
-BuiltinType::BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t attribute) :
-        DSType(superType, attribute),
+BuiltinType::BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, flag8_set_t attribute) :
+        DSType(id, superType, attribute),
         info(info), constructorHandle(), constructor(),
         methodTable(superType != nullptr ? superType->getMethodSize() + info.methodSize : info.methodSize) {
 
@@ -226,8 +226,8 @@ void ReifiedType::accept(TypeVisitor *visitor) {
 // ##     TupleType     ##
 // #######################
 
-TupleType::TupleType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&types) :
-        ReifiedType(info, superType, std::move(types)) {
+TupleType::TupleType(unsigned int id, native_type_info_t info, DSType *superType, std::vector<DSType *> &&types) :
+        ReifiedType(id, info, superType, std::move(types)) {
     const unsigned int size = this->elementTypes.size();
     const unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {

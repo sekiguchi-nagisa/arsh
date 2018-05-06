@@ -43,6 +43,8 @@ class SymbolTable;
 
 class DSType {
 protected:
+    const unsigned int id;
+
     /**
      * if this type is Void or Any type, superType is null
      */
@@ -65,10 +67,14 @@ public:
     /**
      * not directly call it.
      */
-    DSType(DSType *superType, flag8_set_t attribute) :
-            superType(superType), attributeSet(attribute) { }
+    DSType(unsigned int id, DSType *superType, flag8_set_t attribute) :
+            id(id), superType(superType), attributeSet(attribute) { }
 
     virtual ~DSType() = default;
+
+    unsigned int getTypeID() const {
+        return this->id;
+    }
 
     /**
      * if true, can extend this type
@@ -183,8 +189,8 @@ private:
     std::vector<DSType *> paramTypes;
 
 public:
-    FunctionType(DSType *superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
-            DSType(superType, DSType::FUNC_TYPE),
+    FunctionType(unsigned int id, DSType *superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
+            DSType(id, superType, DSType::FUNC_TYPE),
             returnType(returnType), paramTypes(std::move(paramTypes)) {}
 
     ~FunctionType() override = default;
@@ -270,7 +276,7 @@ protected:
     std::vector<const DSCode *> methodTable;
 
 public:
-    BuiltinType(DSType *superType, native_type_info_t info, flag8_set_t attribute);
+    BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, flag8_set_t attribute);
 
     ~BuiltinType() override;
 
@@ -301,9 +307,9 @@ public:
     /**
      * super type is AnyType or VariantType.
      */
-    ReifiedType(native_type_info_t info, DSType *superType,
+    ReifiedType(unsigned int id, native_type_info_t info, DSType *superType,
                 std::vector<DSType *> &&elementTypes, flag8_set_t attribute = 0) :
-            BuiltinType(superType, info, attribute), elementTypes(std::move(elementTypes)) { }
+            BuiltinType(id, superType, info, attribute), elementTypes(std::move(elementTypes)) { }
 
     ~ReifiedType() override = default;
 
@@ -325,7 +331,7 @@ public:
     /**
      * superType is AnyType ot VariantType
      */
-    TupleType(native_type_info_t info, DSType *superType, std::vector<DSType *> &&types);
+    TupleType(unsigned int id, native_type_info_t info, DSType *superType, std::vector<DSType *> &&types);
     ~TupleType() override;
 
     /**
@@ -350,8 +356,8 @@ public:
     /**
      * superType is always AnyType.
      */
-    explicit InterfaceType(DSType *superType) :
-            DSType(superType, DSType::IFACE_TYPE) { }
+    InterfaceType(unsigned int id, DSType *superType) :
+            DSType(id, superType, DSType::IFACE_TYPE) { }
 
     ~InterfaceType() override;
 
@@ -377,8 +383,8 @@ private:
     static const DSCode *initRef;
 
 public:
-    explicit ErrorType(DSType *superType) :
-            DSType(superType, DSType::EXTENDIBLE),
+    ErrorType(unsigned int id, DSType *superType) :
+            DSType(id, superType, DSType::EXTENDIBLE),
             constructorHandle() { }
 
     ~ErrorType() override;

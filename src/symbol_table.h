@@ -262,8 +262,8 @@ public:
 class TypeMap {
 private:
     FlexBuffer<DSType *> typeTable;
-    std::unordered_map<std::string, DSType *> typeMapImpl;
-    std::unordered_map<unsigned long, const std::string *> typeNameMap;
+    std::vector<std::string> nameTable; //   maintain type name
+    std::unordered_map<std::string, unsigned int> aliasMap;
 
 public:
     NON_COPYABLE(TypeMap);
@@ -273,10 +273,11 @@ public:
 
     template <typename T, typename ...A>
     T &newType(std::string &&name, A &&...arg) {
-        return *static_cast<T *>(this->addType(std::move(name), new T(std::forward<A>(arg)...)));
+        unsigned int id = this->typeTable.size();
+        return *static_cast<T *>(this->addType(std::move(name), new T(id, std::forward<A>(arg)...)));
     }
 
-    DSType *get(unsigned int index) {
+    DSType *get(unsigned int index) const {
         return this->typeTable[index];
     }
 
@@ -288,12 +289,17 @@ public:
     /**
      * type must not be null.
      */
-    const std::string &getTypeName(const DSType &type) const;
+    const std::string &getTypeName(const DSType &type) const {
+        return this->nameTable[type.getTypeID()];
+    }
 
     /**
      * return false, if duplicated
      */
-    bool setAlias(std::string &&alias, DSType &targetType);
+    bool setAlias(std::string &&alias, unsigned int typeID) {
+        auto pair = this->aliasMap.emplace(std::move(alias), typeID);
+        return pair.second;
+    }
 
     void commit() {}    // FIXME:
 
@@ -308,11 +314,14 @@ private:
 
 enum class TYPE : unsigned int {
     _Root, // pseudo top type of all throwable type(except for option types)
+
     Any,
     Void,
     Nothing,
     Variant,    // for base type of all of D-Bus related type.
+
     _Value,    // super type of value type(int, float, bool, string). not directly used it.
+
     Byte,       // unsigned int 8
     Int16,
     Uint16,
@@ -323,7 +332,7 @@ enum class TYPE : unsigned int {
     Float,
     Boolean,
     String,
-    StringArray,    // for command argument
+
     Regex,
     Signal,
     Signals,
@@ -331,6 +340,7 @@ enum class TYPE : unsigned int {
     Job,
     Func,
     StringIter,
+
     ObjectPath, // for D-Bus object path
     UnixFD,     // for Unix file descriptor
     Proxy,
@@ -338,6 +348,9 @@ enum class TYPE : unsigned int {
     Bus,        // for message bus.
     Service,    // for service
     DBusObject, // for D-Bus proxy instance
+
+    StringArray,    // for command argument
+
     ArithmeticError,
     OutOfRangeError,
     KeyNotFoundError,
@@ -355,8 +368,6 @@ enum class TYPE : unsigned int {
     _InternalStatus,   // base type
     _ShellExit,
     _AssertFail,
-
-    __SIZE_OF_DS_TYPE__,    // for enum size counting
 };
 
 class ModType : public DSType {
@@ -367,7 +378,7 @@ private:
     friend class ModuleScope;
 
 public:
-    ModType(DSType &superType, unsigned short modID,
+    ModType(unsigned int id, DSType &superType, unsigned short modID,
             const std::unordered_map<std::string, FieldHandle> &handleMap);
 
     ~ModType() override = default;
@@ -478,10 +489,7 @@ private:
     ModuleScope rootModule;
     ModuleScope *curModule;
 
-
-    // for type
     TypeMap typeMap;
-    DSType **typeTable; //for builtin type lookup
 
     /**
      * for type template
@@ -672,7 +680,8 @@ public:
     // for type lookup
 
     DSType &get(TYPE type) const {
-        return *this->typeTable[static_cast<unsigned int>(type)];
+//        return *this->typeTable[static_cast<unsigned int>(type)];
+        return *this->typeMap.get(static_cast<unsigned int>(type));
     }
 
     // for reified type.
@@ -785,8 +794,6 @@ public:
     DSType *getByNumTypeIndex(unsigned int index) const;
 
 private:
-    void setToTypeTable(TYPE t, DSType *type);
-
     void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info);
 
     void initBuiltinType(TYPE t, const char *typeName, bool extendible,

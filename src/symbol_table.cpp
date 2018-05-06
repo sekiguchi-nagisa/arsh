@@ -180,59 +180,28 @@ void ModuleScope::clear() {
 // ##     TypeMap     ##
 // #####################
 
-static bool isAlias(const DSType *type) {
-    assert(type != nullptr);
-    return (reinterpret_cast<long>(type)) < 0;
-}
-
-static unsigned long asKey(const DSType *type) {
-    assert(type != nullptr);
-    return reinterpret_cast<unsigned long>(type);
-}
-
 TypeMap::~TypeMap() {
-    for(auto pair : this->typeMapImpl) {
-        if(!isAlias(pair.second)) {
-            delete pair.second;
-        }
+    for(auto &e : this->typeTable) {
+        delete e;
     }
 }
 
 DSType *TypeMap::addType(std::string &&typeName, DSType *type) {
     assert(type != nullptr);
-    auto pair = this->typeMapImpl.insert({std::move(typeName), type});
-    this->typeNameMap.insert({asKey(type), &pair.first->first});
+    this->nameTable.push_back(typeName);
+    this->typeTable.push_back(type);
+    bool s = this->setAlias(std::move(typeName), type->getTypeID());
+    (void) s;
+    assert(s);
     return type;
 }
 
 DSType *TypeMap::getType(const std::string &typeName) const {
-    constexpr unsigned long mask = ~(1L << 63);
-    auto iter = this->typeMapImpl.find(typeName);
-    if(iter != this->typeMapImpl.end()) {
-        DSType *type = iter->second;
-        if(isAlias(type)) {   // if tagged pointer, mask tag
-            return reinterpret_cast<DSType *>(mask & (unsigned long) type);
-        }
-        return type;
+    auto iter = this->aliasMap.find(typeName);
+    if(iter == this->aliasMap.end()) {
+        return nullptr;
     }
-    return nullptr;
-}
-
-const std::string &TypeMap::getTypeName(const DSType &type) const {
-    auto iter = this->typeNameMap.find(asKey(&type));
-    assert(iter != this->typeNameMap.end());
-    return *iter->second;
-}
-
-bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
-    constexpr unsigned long tag = 1L << 63;
-
-    /**
-     * use tagged pointer to prevent double free.
-     */
-    auto *taggedPtr = reinterpret_cast<DSType *>(tag | (unsigned long) &targetType);
-    auto pair = this->typeMapImpl.insert({std::move(alias), taggedPtr});
-    return pair.second;
+    return this->get(iter->second);
 }
 
 
@@ -240,9 +209,9 @@ bool TypeMap::setAlias(std::string &&alias, DSType &targetType) {
 // ##     ModType     ##
 // #####################
 
-ModType::ModType(ydsh::DSType &superType, unsigned short modID,
+ModType::ModType(unsigned int id, ydsh::DSType &superType, unsigned short modID,
                  const std::unordered_map<std::string, ydsh::FieldHandle> &handleMap) :
-        DSType(&superType, DSType::MODULE_TYPE), modID(modID) {
+        DSType(id, &superType, DSType::MODULE_TYPE), modID(modID) {
     assert(modID > 0);
     for(auto &e : handleMap) {
         if(e.second.getModID() == modID) {
@@ -311,8 +280,7 @@ ModResult ModuleLoader::load(const std::string &modPath) {
 // #########################
 
 SymbolTable::SymbolTable() :
-        rootModule(this->gvarCount), curModule(&this->rootModule),
-        typeTable(new DSType*[static_cast<unsigned int>(TYPE::__SIZE_OF_DS_TYPE__)]()), templateMap(8) {
+        rootModule(this->gvarCount), curModule(&this->rootModule), templateMap(8) {
 
     // initialize type
     this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, info_Dummy()); // pseudo base type
@@ -334,10 +302,17 @@ SymbolTable::SymbolTable() :
     this->initBuiltinType(TYPE::Uint32, "Uint32", false, this->get(TYPE::_Value), info_Uint32Type());
     this->initBuiltinType(TYPE::Int64, "Int64", false, this->get(TYPE::_Value), info_Int64Type());
     this->initBuiltinType(TYPE::Uint64, "Uint64", false, this->get(TYPE::_Value), info_Uint64Type());
-
     this->initBuiltinType(TYPE::Float, "Float", false, this->get(TYPE::_Value), info_FloatType());
     this->initBuiltinType(TYPE::Boolean, "Boolean", false, this->get(TYPE::_Value), info_BooleanType());
     this->initBuiltinType(TYPE::String, "String", false, this->get(TYPE::_Value), info_StringType());
+
+    this->initBuiltinType(TYPE::Regex, "Regex", false, this->get(TYPE::Any), info_RegexType());
+    this->initBuiltinType(TYPE::Signal, "Signal", false, this->get(TYPE::Any), info_SignalType());
+    this->initBuiltinType(TYPE::Signals, "Signals", false, this->get(TYPE::Any), info_SignalsType());
+    this->initBuiltinType(TYPE::Error, "Error", true, this->get(TYPE::Any), info_ErrorType());
+    this->initBuiltinType(TYPE::Job, "Job", false, this->get(TYPE::Any), info_JobType());
+    this->initBuiltinType(TYPE::Func, "Func", false, this->get(TYPE::Any), info_Dummy());
+    this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, this->get(TYPE::Any), info_StringIterType());
 
     this->initBuiltinType(TYPE::ObjectPath, "ObjectPath", false, this->get(TYPE::_Value), info_ObjectPathType());
     this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, this->get(TYPE::Any), info_UnixFDType());
@@ -346,14 +321,6 @@ SymbolTable::SymbolTable() :
     this->initBuiltinType(TYPE::Bus, "Bus", false, this->get(TYPE::Any), info_BusType());
     this->initBuiltinType(TYPE::Service, "Service", false, this->get(TYPE::Any), info_ServiceType());
     this->initBuiltinType(TYPE::DBusObject, "DBusObject", false, this->get(TYPE::Proxy), info_DBusObjectType());
-
-    this->initBuiltinType(TYPE::Error, "Error", true, this->get(TYPE::Any), info_ErrorType());
-    this->initBuiltinType(TYPE::Job, "Job", false, this->get(TYPE::Any), info_JobType());
-    this->initBuiltinType(TYPE::Func, "Func", false, this->get(TYPE::Any), info_Dummy());
-    this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, this->get(TYPE::Any), info_StringIterType());
-    this->initBuiltinType(TYPE::Regex, "Regex", false, this->get(TYPE::Any), info_RegexType());
-    this->initBuiltinType(TYPE::Signal, "Signal", false, this->get(TYPE::Any), info_SignalType());
-    this->initBuiltinType(TYPE::Signals, "Signals", false, this->get(TYPE::Any), info_SignalsType());
 
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType());
@@ -373,7 +340,7 @@ SymbolTable::SymbolTable() :
 
     // init string array type(for command argument)
     std::vector<DSType *> types = {&this->get(TYPE::String)};
-    this->setToTypeTable(TYPE::StringArray, &this->createReifiedType(this->getArrayTemplate(), std::move(types)));
+    this->createReifiedType(this->getArrayTemplate(), std::move(types));    // TYPE::StringArray
 
     // init some error type
     this->initErrorType(TYPE::ArithmeticError, "ArithmeticError", this->get(TYPE::Error));
@@ -386,19 +353,18 @@ SymbolTable::SymbolTable() :
     this->initErrorType(TYPE::RegexSyntaxError, "RegexSyntaxError", this->get(TYPE::Error));
     this->initErrorType(TYPE::UnwrappingError, "UnwrappingError", this->get(TYPE::Error));
 
-    this->registerDBusErrorTypes();
-
     // init internal status type
     this->initBuiltinType(TYPE::_InternalStatus, "internal status%%", false, this->get(TYPE::_Root), info_Dummy());
     this->initBuiltinType(TYPE::_ShellExit, "Shell Exit", false, this->get(TYPE::_InternalStatus), info_Dummy());
     this->initBuiltinType(TYPE::_AssertFail, "Assertion Error", false, this->get(TYPE::_InternalStatus), info_Dummy());
+
+    this->registerDBusErrorTypes();
 
     // commit generated type
     this->typeMap.commit();
 }
 
 SymbolTable::~SymbolTable() {
-    delete[] this->typeTable;
     for(auto &pair : this->templateMap) {
         delete pair.second;
     }
@@ -557,7 +523,7 @@ DSType &SymbolTable::getDBusInterfaceType(const std::string &typeName) {
 }
 
 void SymbolTable::setAlias(const char *alias, DSType &targetType) {
-    if(!this->typeMap.setAlias(std::string(alias), targetType)) {
+    if(!this->typeMap.setAlias(std::string(alias), targetType.getTypeID())) {
         RAISE_TL_ERROR(DefinedType, alias);
     }
 }
@@ -650,12 +616,7 @@ int SymbolTable::getNumTypeIndex(const DSType &type) const {
 
 DSType *SymbolTable::getByNumTypeIndex(unsigned int index) const {
     return index < arraySize(numTypeTable) ?
-           this->typeTable[static_cast<unsigned int>(numTypeTable[index])] : nullptr;
-}
-
-void SymbolTable::setToTypeTable(TYPE t, DSType *type) {
-    assert(this->typeTable[static_cast<unsigned int>(t)] == nullptr && type != nullptr);
-    this->typeTable[static_cast<unsigned int>(t)] = type;
+           this->typeMap.get(static_cast<unsigned int>(numTypeTable[index])) : nullptr;
 }
 
 void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
@@ -669,20 +630,20 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
         attribute |= DSType::NOTHING_TYPE;
     }
 
-    DSType &type = this->typeMap.newType<BuiltinType>(std::string(typeName), nullptr, info, attribute);
-
-    // set to typeTable
-    this->setToTypeTable(t, &type);
+    auto &type = this->typeMap.newType<BuiltinType>(std::string(typeName), nullptr, info, attribute);
+    (void) type;
+    (void) t;
+    assert(type.getTypeID() == static_cast<unsigned int>(t));
 }
 
 void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
                                   DSType &superType, native_type_info_t info) {
     // create and register type
-    DSType &type = this->typeMap.newType<BuiltinType>(
+    auto &type = this->typeMap.newType<BuiltinType>(
             std::string(typeName), &superType, info, extendable ? DSType::EXTENDIBLE : 0);
-
-    // set to typeTable
-    this->setToTypeTable(t, &type);
+    (void) type;
+    (void) t;
+    assert(type.getTypeID() == static_cast<unsigned int>(t));
 }
 
 TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
@@ -692,8 +653,10 @@ TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
 }
 
 void SymbolTable::initErrorType(TYPE t, const char *typeName, DSType &superType) {
-    DSType &type = this->typeMap.newType<ErrorType>(std::string(typeName), &superType);
-    this->setToTypeTable(t, &type);
+    auto &type = this->typeMap.newType<ErrorType>(std::string(typeName), &superType);
+    (void) type;
+    (void) t;
+    assert(type.getTypeID() == static_cast<unsigned int>(t));
 }
 
 void SymbolTable::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
