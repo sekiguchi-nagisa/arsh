@@ -261,6 +261,7 @@ public:
 
 class TypeMap {
 private:
+    unsigned int oldIDCount{0};
     FlexBuffer<DSType *> typeTable;
     std::vector<std::string> nameTable; //   maintain type name
     std::unordered_map<std::string, unsigned int> aliasMap;
@@ -301,9 +302,11 @@ public:
         return pair.second;
     }
 
-    void commit() {}    // FIXME:
+    void commit() {
+        this->oldIDCount = this->typeTable.size();
+    }
 
-    void abort() {} // FIXME:
+    void abort();
 
 private:
     /**

@@ -204,6 +204,24 @@ DSType *TypeMap::getType(const std::string &typeName) const {
     return this->get(iter->second);
 }
 
+void TypeMap::abort() {
+    for(unsigned int i = this->oldIDCount; i < this->typeTable.size(); i++) {
+        delete this->typeTable[i];
+    }
+    this->typeTable.erase(this->typeTable.begin() + this->oldIDCount, this->typeTable.end());
+    this->nameTable.erase(this->nameTable.begin() + this->oldIDCount, this->nameTable.end());
+
+    for(auto iter = this->aliasMap.begin(); iter != this->aliasMap.end();) {
+        if(iter->second >= this->oldIDCount) {
+            iter = this->aliasMap.erase(iter);
+        } else {
+            ++iter;
+        }
+    }
+
+    assert(this->oldIDCount == this->typeTable.size());
+    assert(this->oldIDCount == this->nameTable.size());
+}
 
 // #####################
 // ##     ModType     ##
