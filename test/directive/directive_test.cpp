@@ -1,3 +1,5 @@
+#include <limits.h>
+
 #include "gtest/gtest.h"
 
 #include <directive.h>
