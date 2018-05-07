@@ -141,8 +141,10 @@ DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
     }
 
     unsigned int errorLineNum = this->getSourceInfo()->getLineNum(errorToken.pos);
+    const char *sourceName = this->getSourceInfo()->getSourceName().c_str();
     return {
             .kind = type,
+            .fileName = strdup(sourceName),
             .lineNum = errorLineNum,
             .name = errorKind
     };

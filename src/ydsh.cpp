@@ -136,8 +136,8 @@ static DSError handleRuntimeError(DSState *state) {
 
     return {
             .kind = kind,
-            .lineNum = errorLineNum,
             .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
+            .lineNum = errorLineNum,
             .name = kind == DS_ERROR_KIND_RUNTIME_ERROR ? state->symbolTable.getTypeName(errorType) : ""
     };
 }
@@ -186,7 +186,7 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
 
 static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
     if(dsError != nullptr) {
-        *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .lineNum = 0, .name = nullptr, .fileName = nullptr};
+        *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .fileName = nullptr, .lineNum = 0, .name = nullptr};
     }
     lexer.setLineNum(state->lineNum);
 
