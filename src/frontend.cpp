@@ -175,6 +175,8 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
             auto e = this->handleParseError();
             if(dsError != nullptr) {
                 *dsError = e;
+            } else {
+                DSError_release(&e);
             }
             return {nullptr, IN_MODULE};
         }
@@ -209,6 +211,8 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
         auto ret = this->handleTypeError(e);
         if(dsError != nullptr) {
             *dsError = ret;
+        } else {
+            DSError_release(&ret);
         }
         return {nullptr, IN_MODULE};
     }

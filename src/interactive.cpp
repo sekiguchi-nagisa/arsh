@@ -279,7 +279,9 @@ int exec_interactive(DSState *dsState) {
     for(std::string line; readLine(line);) {
         DSError e{};
         status = DSState_eval(dsState, nullptr, line.c_str(), line.size(), &e);
-        if(e.kind == DS_ERROR_KIND_EXIT || e.kind == DS_ERROR_KIND_ASSERTION_ERROR) {
+        auto kind = e.kind;
+        DSError_release(&e);
+        if(kind == DS_ERROR_KIND_EXIT || kind == DS_ERROR_KIND_ASSERTION_ERROR) {
             break;
         }
     }

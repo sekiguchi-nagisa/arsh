@@ -146,6 +146,12 @@ typedef struct {
     DSErrorKind kind;
 
     /**
+     * file name of the error location.
+     * if has no errors, will be null.
+     */
+    char *fileName;
+
+    /**
      * indicate the line number of the error location.
      * if kind is, DS_ERROR_KIND_SUCCESS, it is 0.
      */
@@ -159,6 +165,14 @@ typedef struct {
      */
     const char *name;
 } DSError;
+
+/**
+ * release internal fields of DSError.
+ * after call it, assign null to `fileName'
+ * @param e
+ * may be null
+ */
+void DSError_release(DSError *e);
 
 /**
  * evaluate string. if e is not null, set error info.

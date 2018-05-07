@@ -53,6 +53,7 @@ static void loadRC(DSState *state, const char *rcfile) {
     DSError e{};
     int ret = DSState_eval(state, nullptr, line.c_str(), line.size(), &e);
     int kind = e.kind;
+    DSError_release(&e);
     if(kind != DS_ERROR_KIND_SUCCESS) {
         exit(ret);
     }
@@ -75,6 +76,7 @@ static int apply(Func func, DSState *state, T&& ... args) {
             fclose(fp);
         }
     }
+    DSError_release(&error);
     return ret;
 }
 

@@ -438,8 +438,10 @@ TEST(PID, case1) {
 
     DSError e;
     int s = DSState_eval(state, nullptr, src.c_str(), src.size(), &e);
+    auto kind = e.kind;
+    DSError_release(&e);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, kind));
 
     DSState_delete(&state);
 }

@@ -3,6 +3,7 @@
 #include <functional>
 
 #include <vm.h>
+#include <ydsh/ydsh.h>
 
 #include "../test_common.h"
 
@@ -68,7 +69,9 @@ protected:
     void eval(const char *code, DSErrorKind kind = DS_ERROR_KIND_SUCCESS) {
         DSError e;
         DSState_eval(this->state, "(dummy)", code, strlen(code), &e);
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(kind, e.kind));
+        auto actualKind = e.kind;
+        DSError_release(&e);
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(kind, actualKind));
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->inspector.getCalled()));
     }
 

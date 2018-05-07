@@ -719,6 +719,9 @@ inline unsigned int getOccurredLineNum(const std::vector<StackTraceElement> &ele
     return elements.empty() ? 0 : elements.front().getLineNum();
 }
 
+inline const char *getOccurredSourceName(const std::vector<StackTraceElement> &elements) {
+    return elements.empty() ? nullptr : elements.front().getSourceName().c_str();
+}
 
 class Error_Object : public DSObject {
 private:

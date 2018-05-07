@@ -105,9 +105,13 @@ static DSError handleRuntimeError(DSState *state) {
 
     // get error line number
     unsigned int errorLineNum = 0;
+    std::string sourceName;
     if(state->symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
         auto *obj = typeAs<Error_Object>(thrownObj);
         errorLineNum = getOccurredLineNum(obj->getStackTrace());
+        const char *ptr = getOccurredSourceName(obj->getStackTrace());
+        assert(ptr != nullptr);
+        sourceName = ptr;
     }
 
     // print error message
@@ -133,6 +137,7 @@ static DSError handleRuntimeError(DSState *state) {
     return {
             .kind = kind,
             .lineNum = errorLineNum,
+            .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
             .name = kind == DS_ERROR_KIND_RUNTIME_ERROR ? state->symbolTable.getTypeName(errorType) : ""
     };
 }
@@ -142,13 +147,16 @@ static int evalCodeImpl(DSState *state, CompiledCode &code, DSError *dsError) {
     bool root = state->isRootShell();
     if(!s) {
         auto ret = handleRuntimeError(state);
+        auto kind = ret.kind;
         if(dsError != nullptr) {
             *dsError = ret;
+        } else {
+            DSError_release(&ret);
         }
-        if(ret.kind == DS_ERROR_KIND_RUNTIME_ERROR && root) {
+        if(kind == DS_ERROR_KIND_RUNTIME_ERROR && root) {
             state->recover(false);
         }
-        if(ret.kind != DS_ERROR_KIND_EXIT) {
+        if(kind != DS_ERROR_KIND_EXIT) {
             return 1;
         }
     }
@@ -178,7 +186,7 @@ static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
 
 static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
     if(dsError != nullptr) {
-        *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .lineNum = 0, .name = nullptr};
+        *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .lineNum = 0, .name = nullptr, .fileName = nullptr};
     }
     lexer.setLineNum(state->lineNum);
 
@@ -573,6 +581,13 @@ void DSState_unsetOption(DSState *st, unsigned short optionSet) {
 
     if(hasFlag(optionSet, DS_OPTION_JOB_CONTROL)) {
         setJobControlSignalSetting(*st, false);
+    }
+}
+
+void DSError_release(DSError *e) {
+    if(e != nullptr) {
+        free(e->fileName);
+        e->fileName = nullptr;
     }
 }
 

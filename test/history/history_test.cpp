@@ -76,7 +76,9 @@ public:
             )EOF";
             DSError e;
             DSState_eval(this->state, "(builtin)", func, strlen(func), &e);
-            ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+            auto kind = e.kind;
+            DSError_release(&e);
+            ASSERT_EQ(DS_ERROR_KIND_SUCCESS, kind);
         }
         std::string c(code);
         c += "\n";
