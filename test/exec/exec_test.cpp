@@ -167,5 +167,9 @@ TEST(Base, case2) {
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
+
+    if(chdir(EXEC_TEST_DIR) != 0) {
+        fatal("broken test directory: %s\n", EXEC_TEST_DIR);
+    }
     return RUN_ALL_TESTS();
 }

@@ -231,6 +231,15 @@ TEST_F(DirectiveTest, out) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("12345", this->getDirective().getErr()));
 }
 
+TEST_F(DirectiveTest, fileName) {
+    char buf[PATH_MAX];
+    const char *dir = getcwd(buf, PATH_MAX);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(dir != nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($fileName = './././')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->getDirective().getFileName().size() > 0));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(dir, this->getDirective().getFileName().c_str()));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

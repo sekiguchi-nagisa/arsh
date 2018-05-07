@@ -23,6 +23,7 @@
 #include <misc/fatal.h>
 #include <parser.h>
 #include <type_checker.h>
+#include <core.h>
 
 namespace ydsh {
 namespace directive {
@@ -159,6 +160,14 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
 
     this->addHandler("err", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
         d.setErr(this->checkedCast<StringNode>(node).getValue());
+    });
+
+    this->addHandler("fileName", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+        std::string str = this->checkedCast<StringNode>(node).getValue().c_str();
+        expandTilde(str);
+        char *buf = realpath(str.c_str(), nullptr);
+        d.setFileName(buf);
+        free(buf);
     });
 
     std::unordered_set<std::string> foundAttrSet;

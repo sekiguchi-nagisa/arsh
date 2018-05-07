@@ -38,7 +38,7 @@ private:
     /**
      * kind of status.(DS_STATUS_*)
      */
-    unsigned int result;
+    unsigned int result{DS_ERROR_KIND_SUCCESS};
 
     std::vector<std::string> params;
 
@@ -70,9 +70,13 @@ private:
      */
     char *err{nullptr};
 
-public:
-    Directive() : result(DS_ERROR_KIND_SUCCESS) {}
+    /**
+     * indicate error file name.
+     * if empty, file name is not specified.
+     */
+    std::string fileName;
 
+public:
     ~Directive();
 
     unsigned int getResult() const {
@@ -141,6 +145,16 @@ public:
 
     const char *getErr() const {
         return this->err;
+    }
+
+    void setFileName(const char *name) {
+        if(name != nullptr) {
+            this->fileName = name;
+        }
+    }
+
+    const std::string &getFileName() const {
+        return this->fileName;
     }
 
     static bool init(const char *fileName, Directive &d);
