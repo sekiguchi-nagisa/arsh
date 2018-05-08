@@ -111,7 +111,6 @@ public:
         std::string name;
         std::string fileName;
 
-        fprintf(stderr, "%s\n", line.c_str());
         int r = parse(line, "kind", "=", kind, "lineNum", "=", lineNum, "name", "=", name, "fileName", "=", fileName);
         ASSERT_EQ(0, r);
 

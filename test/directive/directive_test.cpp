@@ -94,6 +94,10 @@ TEST_F(DirectiveTest, fail9) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($status = 1 + 2)", false));
 }
 
+TEST_F(DirectiveTest, fail10) {
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($fileName = 'hgoiehruhfr')", false));
+}
+
 TEST_F(DirectiveTest, result1) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'SUCCESS')", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult()));

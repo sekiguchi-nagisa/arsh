@@ -166,6 +166,11 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         std::string str = this->checkedCast<StringNode>(node).getValue().c_str();
         expandTilde(str);
         char *buf = realpath(str.c_str(), nullptr);
+        if(buf == nullptr) {
+            std::string message = "invalid file name: ";
+            message += str;
+            throw TypeCheckError(node.getToken(), "", message.c_str());
+        }
         d.setFileName(buf);
         free(buf);
     });

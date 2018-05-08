@@ -148,9 +148,7 @@ public:
     }
 
     void setFileName(const char *name) {
-        if(name != nullptr) {
-            this->fileName = name;
-        }
+        this->fileName = name;
     }
 
     const std::string &getFileName() const {
