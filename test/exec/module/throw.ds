@@ -1,0 +1,4 @@
+
+function hoge($s : Int) {
+    10 / $s
+}
