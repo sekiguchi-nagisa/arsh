@@ -65,11 +65,12 @@ using AttributeHandler = std::function<void(Node &, Directive &)>;
 
 class DirectiveInitializer : public TypeChecker {
 private:
+    std::string sourceName;
     using Handler = std::pair<DSType *, AttributeHandler>;
     std::unordered_map<std::string, Handler> handlerMap;
 
 public:
-    explicit DirectiveInitializer(SymbolTable &symbolTable);
+    DirectiveInitializer(const char *sourceName, SymbolTable &symbolTable);
     ~DirectiveInitializer() override = default;
 
     void operator()(ApplyNode &node, Directive &d);
@@ -108,8 +109,8 @@ static bool toBool(const std::string &str) {
     return strcasecmp(str.c_str(), "true") == 0;
 }
 
-DirectiveInitializer::DirectiveInitializer(SymbolTable &symbolTable) :
-        TypeChecker(symbolTable, false) {
+DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &symbolTable) :
+        TypeChecker(symbolTable, false), sourceName(sourceName) {
     auto &boolType = this->symbolTable.get(TYPE::Boolean);
     const char *names[] = {
             "TRUE", "True", "true", "FALSE", "False", "false",
@@ -117,6 +118,8 @@ DirectiveInitializer::DirectiveInitializer(SymbolTable &symbolTable) :
     for(auto &name : names) {
         this->setVarName(name, boolType);
     }
+
+    this->setVarName("0", this->symbolTable.get(TYPE::String));
 }
 
 void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
@@ -163,6 +166,12 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     });
 
     this->addHandler("fileName", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+        if(node.getNodeKind() == NodeKind::Var &&
+           this->checkedCast<VarNode>(node).getVarName() == "0") {
+            d.setFileName(this->sourceName.c_str());
+            return;
+        }
+
         std::string str = this->checkedCast<StringNode>(node).getValue().c_str();
         expandTilde(str);
         char *buf = realpath(str.c_str(), nullptr);
@@ -321,7 +330,7 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
 
     try {
         SymbolTable symbolTable;
-        DirectiveInitializer initializer(symbolTable);
+        DirectiveInitializer initializer(fileName, symbolTable);
         initializer(*node, directive);
     } catch(const TypeCheckError &e) {
         showError(fileName, lexer, ret.first, e.getToken(), e.getMessage(), "semantic");

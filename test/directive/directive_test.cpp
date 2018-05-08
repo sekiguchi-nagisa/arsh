@@ -24,12 +24,16 @@ public:
         SCOPED_TRACE("");
         ASSERT_TRUE(line != nullptr);
 
-        bool s = Directive::init("(dummy)", line, this->d);
+        bool s = Directive::init(this->getSourceName(), line, this->d);
         ASSERT_EQ(status, s);
     }
 
     virtual const Directive &getDirective() {
         return this->d;
+    }
+
+    const char *getSourceName() const {
+        return "(dummy)";
     }
 };
 
@@ -237,13 +241,19 @@ TEST_F(DirectiveTest, out) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("12345", this->getDirective().getErr()));
 }
 
-TEST_F(DirectiveTest, fileName) {
+TEST_F(DirectiveTest, fileName1) {
     char buf[PATH_MAX];
     const char *dir = getcwd(buf, PATH_MAX);
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(dir != nullptr));
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($fileName = './././')", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->getDirective().getFileName().size() > 0));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(dir, this->getDirective().getFileName().c_str()));
+}
+
+TEST_F(DirectiveTest, fileName2) {
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($fileName = $0)", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->getDirective().getFileName().size() > 0));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(this->getSourceName(), this->getDirective().getFileName().c_str()));
 }
 
 int main(int argc, char **argv) {
