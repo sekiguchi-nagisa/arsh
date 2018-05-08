@@ -71,8 +71,9 @@ static int apply(Func func, DSState *state, T&& ... args) {
     if(statusLogPath != nullptr) {
         FILE *fp = fopen(statusLogPath, "w");
         if(fp != nullptr) {
-            fprintf(fp, "kind=%d lineNum=%d name=%s\n",
-                    error.kind, error.lineNum, error.name != nullptr ? error.name : "");
+            fprintf(fp, "kind=%d lineNum=%d name=%s fileName=%s\n",
+                    error.kind, error.lineNum, error.name != nullptr ? error.name : "",
+                    error.fileName != nullptr ? error.fileName : "");
             fclose(fp);
         }
     }

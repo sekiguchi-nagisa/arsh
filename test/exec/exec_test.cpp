@@ -109,8 +109,10 @@ public:
         unsigned int kind;
         unsigned int lineNum;
         std::string name;
+        std::string fileName;
 
-        int r = parse(line, "kind", "=", kind, "lineNum", "=", lineNum, "name", "=", name);
+        fprintf(stderr, "%s\n", line.c_str());
+        int r = parse(line, "kind", "=", kind, "lineNum", "=", lineNum, "name", "=", name, "fileName", "=", fileName);
         ASSERT_EQ(0, r);
 
         // check status
@@ -138,16 +140,18 @@ INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getSortedFileLis
 TEST(Base, case1) {
     SCOPED_TRACE("");
 
-    std::string line("type=3 lineNum=1 kind=SystemError");
+    std::string line("type=3 lineNum=1 kind=SystemError fileName=../hoge.ds");
     unsigned int type;
     unsigned int lineNum;
     std::string kind;
+    std::string fileName;
 
-    int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
+    int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind, "fileName", "=", fileName);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, type));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, lineNum));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("SystemError", kind));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("../hoge.ds", fileName));
 }
 
 TEST(Base, case2) {
@@ -159,6 +163,22 @@ TEST(Base, case2) {
     std::string kind;
 
     int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, type));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, lineNum));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", kind));
+}
+
+TEST(Base, case3) {
+    SCOPED_TRACE("");
+
+    std::string line("type=0 lineNum=0 kind= fileName= ");
+    unsigned int type;
+    unsigned int lineNum;
+    std::string kind;
+    std::string fileName;
+
+    int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind, "fileName", "=", fileName);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, type));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, lineNum));

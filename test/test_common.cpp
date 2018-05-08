@@ -368,8 +368,6 @@ void Extractor::consumeSpace() {
 }
 
 int Extractor::extract(unsigned int &value) {
-    this->consumeSpace();
-
     std::string buf;
     for(; *this->str != '\0'; this->str++) {
         char ch = *this->str;
@@ -387,8 +385,6 @@ int Extractor::extract(unsigned int &value) {
 }
 
 int Extractor::extract(int &value) {
-    this->consumeSpace();
-
     std::string buf;
     for(; *this->str != '\0'; this->str++) {
         char ch = *this->str;
@@ -407,8 +403,6 @@ int Extractor::extract(int &value) {
 
 int Extractor::extract(std::string &value) {
     value.clear();
-
-    this->consumeSpace();
 
     for(; *this->str != '\0'; this->str++) {
         char ch = *this->str;
