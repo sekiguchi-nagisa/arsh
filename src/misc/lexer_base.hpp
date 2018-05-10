@@ -37,6 +37,14 @@ namespace parser_base {
 
 namespace __detail {
 
+struct FileCloser {
+    void operator()(FILE *fp) const {
+        if(fp) {
+            fclose(fp);
+        }
+    }
+};
+
 /**
  * base lexer for re2c
  */
@@ -46,10 +54,10 @@ protected:
     static_assert(T, "not allowed instantiation");
 
     /**
-     * may be null, if input source is string. not closed it.
+     * may be null, if input source is string.
      * must be binary mode.
      */
-    FILE *fp{nullptr};
+    std::unique_ptr<FILE, FileCloser> file;
 
     FlexBuffer<unsigned char> buf;
 
@@ -89,7 +97,7 @@ public:
     /**
      *
      * @param fp
-     * must be opened with binary mode.
+     * must be opened with binary mode. after call it, not close fp.
      * @return
      */
     explicit LexerBase(FILE *fp);
@@ -125,7 +133,7 @@ public:
     }
 
     bool isEnd() const {
-        return this->fp == nullptr && this->cursor == this->limit;
+        return this->file == nullptr && this->cursor == this->limit;
     }
 
     bool withinRange(Token token) const {
@@ -195,7 +203,7 @@ protected:
 
 template<bool T>
 LexerBase<T>::LexerBase(FILE *fp) : LexerBase() {
-    this->fp = fp;
+    this->file.reset(fp);
     this->cursor = this->buf.get();
     this->limit = this->buf.get();
 }
@@ -344,14 +352,14 @@ void LexerBase<T>::appendToBuf(const unsigned char *data, unsigned int size, boo
 
 template<bool T>
 bool LexerBase<T>::fill(int n) {
-    if(this->fp != nullptr) {
+    if(this->file != nullptr) {
         int needSize = (n > DEFAULT_READ_SIZE) ? n : DEFAULT_READ_SIZE;
         unsigned char data[needSize];
-        int readSize = fread(data, sizeof(unsigned char), needSize, this->fp);
+        int readSize = fread(data, sizeof(unsigned char), needSize, this->file.get());
         if(readSize < needSize) {
-            this->fp = nullptr;
+            this->file.reset();
         }
-        this->appendToBuf(data, readSize, this->fp == nullptr);
+        this->appendToBuf(data, readSize, this->file == nullptr);
     }
     return !this->isEnd();
 }

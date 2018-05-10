@@ -194,6 +194,7 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
 
 /**
  * evaluate file content. if e is not null, set error info.
+ * after call this, close fp.
  * @param st
  * not null.
  * @param sourceName

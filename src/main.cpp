@@ -287,7 +287,7 @@ int main(int argc, char **argv) {
         DSState_setArguments(state, shellArgs);
 
         if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
-            exit(apply(DSState_loadAndEval, state, nullptr, stdin));
+            exit(apply(DSState_loadAndEval, state, nullptr, fdopen(dup(STDIN_FILENO), "r")));
         } else {    // interactive mode
             if(!quiet) {
                 fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
