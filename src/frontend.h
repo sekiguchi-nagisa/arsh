@@ -98,6 +98,7 @@ private:
     /**
      * if module loading failed, throw TypeCheckError
      * @param node
+     * after call it, will be null
      * @return
      */
     Status tryToCheckModule(std::unique_ptr<Node> &node);
