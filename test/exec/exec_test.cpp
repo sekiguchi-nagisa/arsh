@@ -139,7 +139,7 @@ INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getSortedFileLis
 TEST(Base, case1) {
     SCOPED_TRACE("");
 
-    std::string line("type=3 lineNum=1 kind=SystemError fileName=../hoge.ds");
+    std::string line("type=3 lineNum=1 kind=\"SystemError\" fileName=\"../hoge.ds\"");
     unsigned int type;
     unsigned int lineNum;
     std::string kind;
@@ -156,7 +156,7 @@ TEST(Base, case1) {
 TEST(Base, case2) {
     SCOPED_TRACE("");
 
-    std::string line("type=0 lineNum=0 kind=");
+    std::string line("type=0 lineNum=0 kind=\"\"");
     unsigned int type;
     unsigned int lineNum;
     std::string kind;
@@ -171,7 +171,7 @@ TEST(Base, case2) {
 TEST(Base, case3) {
     SCOPED_TRACE("");
 
-    std::string line("type=0 lineNum=0 kind= fileName= ");
+    std::string line("type=0 lineNum=0 kind=\"\" fileName=\"\" ");
     unsigned int type;
     unsigned int lineNum;
     std::string kind;

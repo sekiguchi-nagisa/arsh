@@ -404,14 +404,27 @@ int Extractor::extract(int &value) {
 int Extractor::extract(std::string &value) {
     value.clear();
 
+    if(*this->str != '"') {
+        return 1;
+    }
+    this->str++;
+
     for(; *this->str != '\0'; this->str++) {
         char ch = *this->str;
-        if(isSpace(ch)) {
-           break;
+        if(ch == '"') {
+            this->str++;
+            return 0;
+        }
+        if(ch == '\\') {
+            char next = *(this->str + 1);
+            if(next == '\\' || next == '"') {
+                ch = next;
+                this->str++;
+            }
         }
         value += ch;
     }
-    return 0;
+    return 1;
 }
 
 int Extractor::extract(const char *value) {

@@ -64,19 +64,38 @@ static void loadRC(DSState *state, const char *rcfile) {
 
 static const char *statusLogPath = nullptr;
 
+static std::string escape(const char *str) {
+    std::string value;
+    value += '"';
+    for(; str != nullptr && *str != '\0'; str++) {
+        char ch = *str;
+        if(ch == '\\' || ch == '"') {
+            value += '\\';
+        }
+        value += ch;
+    }
+    value += '"';
+    return value;
+}
+
+static void writeStatusLog(DSError &error) {
+    if(statusLogPath == nullptr) {
+        return;
+    }
+
+    FILE *fp = fopen(statusLogPath, "w");
+    if(fp != nullptr) {
+        fprintf(fp, "kind=%d lineNum=%d name=%s fileName=%s\n",
+                error.kind, error.lineNum, escape(error.name).c_str(), escape(error.fileName).c_str());
+        fclose(fp);
+    }
+}
+
 template <typename Func, typename ...T>
 static int apply(Func func, DSState *state, T&& ... args) {
     DSError error{};
     int ret = func(state, std::forward<T>(args)..., &error);
-    if(statusLogPath != nullptr) {
-        FILE *fp = fopen(statusLogPath, "w");
-        if(fp != nullptr) {
-            fprintf(fp, "kind=%d lineNum=%d name=%s fileName=%s\n",
-                    error.kind, error.lineNum, error.name != nullptr ? error.name : "",
-                    error.fileName != nullptr ? error.fileName : "");
-            fclose(fp);
-        }
-    }
+    writeStatusLog(error);
     DSError_release(&error);
     return ret;
 }
