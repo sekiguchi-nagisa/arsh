@@ -2306,12 +2306,17 @@ struct BaseVisitor : public NodeVisitor {
     void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
 };
 
+struct DumpBuffer {
+    unsigned int indentLevel{0};
+    std::string value;
+};
+
 class NodeDumper {
 private:
     FILE *fp;
     const SymbolTable &symbolTable;
 
-    unsigned int indentLevel{0};
+    std::vector<DumpBuffer> bufs;
 
 public:
     NodeDumper(FILE *fp, const SymbolTable &symbolTable) : fp(fp), symbolTable(symbolTable) { }
@@ -2358,10 +2363,16 @@ public:
      */
     void dump(const Node &node);
 
+    void enterModule(const char *header = nullptr);
+
+    void leaveModule();
+
     /**
      * entry point
      */
-    void initialize(const char *header);
+    void initialize(const char *header) {
+        this->enterModule(header);
+    }
 
     void operator()(const Node &node);
 
@@ -2373,18 +2384,24 @@ public:
 
 private:
     void enterIndent() {
-        this->indentLevel++;
+        this->bufs.back().indentLevel++;
     }
 
     void leaveIndent() {
-        this->indentLevel--;
+        this->bufs.back().indentLevel--;
     }
 
     void indent();
 
     void newline() {
-        fputc('\n', this->fp);
+        this->append('\n');
     }
+
+    void append(char ch);
+
+    void append(const char *str);
+
+    void appendAs(const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 
     void dumpNodeHeader(const Node &node, bool inArray = false);
 

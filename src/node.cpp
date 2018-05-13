@@ -15,6 +15,7 @@
  */
 
 #include <pwd.h>
+#include <stdarg.h>
 
 #include "constant.h"
 #include "object.h"
@@ -1283,7 +1284,7 @@ const Node *findInnerNode(NodeKind kind, const Node *node) {
 void NodeDumper::dump(const char *fieldName, const char *value) {
     this->writeName(fieldName);
 
-    fputc('"', this->fp);
+    this->append('"');
     while(*value != 0) {
         char ch = *(value++);
         bool escape = true;
@@ -1308,11 +1309,11 @@ void NodeDumper::dump(const char *fieldName, const char *value) {
             break;
         }
         if(escape) {
-            fputc('\\', this->fp);
+            this->append('\\');
         }
-        fputc(ch, this->fp);
+        this->append(ch);
     }
-    fputs("\"\n", this->fp);
+    this->append("\"\n");
 }
 
 void NodeDumper::dump(const char *fieldName, const std::list<Node *> &nodes) {
@@ -1322,7 +1323,7 @@ void NodeDumper::dump(const char *fieldName, const std::list<Node *> &nodes) {
     this->enterIndent();
     for(Node *node : nodes) {
         this->indent();
-        fputs("- ", this->fp);
+        this->append("- ");
         this->dumpNodeHeader(*node, true);
         this->enterIndent();
         node->dump(*this);
@@ -1359,12 +1360,11 @@ void NodeDumper::dump(const Node &node) {
     this->indent();
     this->dumpNodeHeader(node);
     node.dump(*this);
-    fflush(this->fp);
 }
 
 void NodeDumper::indent() {
-    for(unsigned int i = 0; i < this->indentLevel; i++) {
-        fputs("  ", this->fp);
+    for(unsigned int i = 0; i < this->bufs.back().indentLevel; i++) {
+        this->append("  ");
     }
 }
 
@@ -1378,19 +1378,19 @@ static const char *toString(NodeKind kind) {
 }
 
 void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
-    fprintf(this->fp, "nodeKind: %s\n", toString(node.getNodeKind()));
+    this->appendAs("nodeKind: %s\n", toString(node.getNodeKind()));
 
     if(inArray) {
         this->enterIndent();
     }
 
-    this->indent(); fprintf(this->fp, "token: \n");
+    this->indent(); this->appendAs("token: \n");
     this->enterIndent();
-    this->indent(); fprintf(this->fp, "pos: %d\n", node.getPos());
-    this->indent(); fprintf(this->fp, "size: %d\n", node.getSize());
+    this->indent(); this->appendAs("pos: %d\n", node.getPos());
+    this->indent(); this->appendAs("size: %d\n", node.getSize());
     this->leaveIndent();
-    this->indent(); fprintf(this->fp, "type: %s\n",
-                            (!node.isUntyped() ? this->symbolTable.getTypeName(node.getType()) : ""));
+    this->indent(); this->appendAs("type: %s\n",
+                                   (!node.isUntyped() ? this->symbolTable.getTypeName(node.getType()) : ""));
 
     if(inArray) {
         this->leaveIndent();
@@ -1406,7 +1406,7 @@ void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *co
         Node *node = *begin;
 
         this->indent();
-        fputs("- ", this->fp);
+        this->append("- ");
         this->dumpNodeHeader(*node, true);
         this->enterIndent();
         node->dump(*this);
@@ -1415,21 +1415,53 @@ void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *co
     this->leaveIndent();
 }
 
-void NodeDumper::writeName(const char *fieldName) {
-    this->indent(); fprintf(this->fp, "%s: ", fieldName);
+void NodeDumper::append(char ch) {
+    this->bufs.back().value += ch;
 }
 
-void NodeDumper::initialize(const char *header) {
-    fprintf(this->fp, "%s\n", header);
+void NodeDumper::append(const char *str) {
+    this->bufs.back().value += str;
+}
+
+void NodeDumper::appendAs(const char *fmt, ...) {
+    va_list arg;
+
+    va_start(arg, fmt);
+    char *str = nullptr;
+    if(vasprintf(&str, fmt, arg) == -1) {
+        fatal("%s\n", strerror(errno));
+    }
+    va_end(arg);
+
+    this->append(str);
+    free(str);
+}
+
+void NodeDumper::writeName(const char *fieldName) {
+    this->indent(); this->appendAs("%s: ", fieldName);
+}
+
+void NodeDumper::enterModule(const char *header) {
+    this->bufs.emplace_back();
+
+    if(header) {
+        this->appendAs("%s\n", header);
+    }
     this->writeName("nodes");
     this->newline();
 
     this->enterIndent();
 }
 
+void NodeDumper::leaveModule() {
+    fputs(this->bufs.back().value.c_str(), this->fp);
+    fflush(this->fp);
+    this->bufs.pop_back();
+}
+
 void NodeDumper::operator()(const Node &node) {
     this->indent();
-    fputs("- ", this->fp);
+    this->append("- ");
     this->dumpNodeHeader(node, true);
     this->enterIndent();
     node.dump(*this);
@@ -1443,7 +1475,7 @@ void NodeDumper::finalize(const std::string &srcName, unsigned int maxVarNum, un
     this->dump("maxVarNum", std::to_string(maxVarNum));
     this->dump("maxGVarNum", std::to_string(maxGVarNum));
 
-    fflush(this->fp);
+    this->leaveModule();
 }
 
 } // namespace ydsh
