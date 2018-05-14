@@ -1318,22 +1318,6 @@ void NodeDumper::dump(const char *fieldName, const char *value) {
     this->append("\"\n");
 }
 
-void NodeDumper::dump(const char *fieldName, const std::list<Node *> &nodes) {
-    this->writeName(fieldName);
-    this->newline();
-
-    this->enterIndent();
-    for(Node *node : nodes) {
-        this->indent();
-        this->append("- ");
-        this->dumpNodeHeader(*node, true);
-        this->enterIndent();
-        node->dump(*this);
-        this->leaveIndent();
-    }
-    this->leaveIndent();
-}
-
 void NodeDumper::dump(const char *fieldName, const Node &node) {
     // write field name
     this->writeName(fieldName);

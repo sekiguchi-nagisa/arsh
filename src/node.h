@@ -2345,8 +2345,6 @@ public:
                         reinterpret_cast<Node *const*>(nodes.data() + nodes.size()));
     }
 
-    void dump(const char *fieldName, const std::list<Node *> &nodes);
-
     /**
      * dump node with indent
      */
