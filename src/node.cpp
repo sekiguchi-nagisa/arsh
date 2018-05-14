@@ -17,6 +17,8 @@
 #include <pwd.h>
 #include <stdarg.h>
 
+#include <cerrno>
+
 #include "constant.h"
 #include "object.h"
 #include "node.h"
