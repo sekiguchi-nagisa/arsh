@@ -1427,12 +1427,13 @@ void NodeDumper::writeName(const char *fieldName) {
     this->indent(); this->appendAs("%s: ", fieldName);
 }
 
-void NodeDumper::enterModule(const char *header) {
+void NodeDumper::enterModule(const char *sourceName, const char *header) {
     this->bufs.emplace_back();
 
     if(header) {
         this->appendAs("%s\n", header);
     }
+    this->dump("sourceName", sourceName);
     this->writeName("nodes");
     this->newline();
 
@@ -1440,9 +1441,9 @@ void NodeDumper::enterModule(const char *header) {
 }
 
 void NodeDumper::leaveModule() {
-    fputs(this->bufs.back().value.c_str(), this->fp);
-    fflush(this->fp);
+    auto b = std::move(this->bufs.back());
     this->bufs.pop_back();
+    this->bufs.push_front(std::move(b));
 }
 
 void NodeDumper::operator()(const Node &node) {
@@ -1454,14 +1455,19 @@ void NodeDumper::operator()(const Node &node) {
     this->leaveIndent();
 }
 
-void NodeDumper::finalize(const std::string &srcName, unsigned int maxVarNum, unsigned int maxGVarNum) {
+void NodeDumper::finalize(unsigned int maxVarNum, unsigned int maxGVarNum) {
     this->leaveIndent();
 
-    this->dump("sourceName", srcName);
     this->dump("maxVarNum", std::to_string(maxVarNum));
     this->dump("maxGVarNum", std::to_string(maxGVarNum));
 
     this->leaveModule();
+
+    for(auto &e : this->bufs) {
+        fputs(e.value.c_str(), this->fp);
+        fputc('\n', this->fp);
+        fflush(this->fp);
+    }
 }
 
 } // namespace ydsh

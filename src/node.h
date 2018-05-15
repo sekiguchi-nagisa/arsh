@@ -2316,7 +2316,7 @@ private:
     FILE *fp;
     const SymbolTable &symbolTable;
 
-    std::vector<DumpBuffer> bufs;
+    std::list<DumpBuffer> bufs;
 
 public:
     NodeDumper(FILE *fp, const SymbolTable &symbolTable) : fp(fp), symbolTable(symbolTable) { }
@@ -2361,20 +2361,20 @@ public:
      */
     void dump(const Node &node);
 
-    void enterModule(const char *header = nullptr);
+    void enterModule(const char *sourceName, const char *header = nullptr);
 
     void leaveModule();
 
     /**
      * entry point
      */
-    void initialize(const char *header) {
-        this->enterModule(header);
+    void initialize(const std::string &sourceName, const char *header) {
+        this->enterModule(sourceName.c_str(), header);
     }
 
     void operator()(const Node &node);
 
-    void finalize(const std::string &srcName, unsigned int varNum, unsigned int gvarNum);
+    void finalize(unsigned int varNum, unsigned int gvarNum);
 
     explicit operator bool() const {
         return this->fp != nullptr;

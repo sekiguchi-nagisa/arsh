@@ -228,29 +228,28 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
 
 void FrontEnd::setupASTDump() {
     if(this->uastDumper) {
-        this->uastDumper.initialize("### dump untyped AST ###");
+        this->uastDumper.initialize(this->getSourceInfo()->getSourceName(), "### dump untyped AST ###");
     }
     if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
         return;
     }
     if(this->astDumper) {
-        this->astDumper.initialize("### dump typed AST ###");
+        this->astDumper.initialize(this->getSourceInfo()->getSourceName(), "### dump typed AST ###");
     }
 }
 
 void FrontEnd::teardownASTDump() {
-    auto &srcName = this->parser.getLexer()->getSourceInfoPtr()->getSourceName();
     unsigned int varNum = this->checker.getSymbolTable().getMaxVarIndex();
     unsigned int gvarNum = this->checker.getSymbolTable().getMaxGVarIndex();
 
     if(this->uastDumper) {
-        this->uastDumper.finalize(srcName, varNum, gvarNum);
+        this->uastDumper.finalize(varNum, gvarNum);
     }
     if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
         return;
     }
     if(this->astDumper) {
-        this->astDumper.finalize(srcName, varNum, gvarNum);
+        this->astDumper.finalize(varNum, gvarNum);
     }
 }
 
@@ -292,6 +291,10 @@ void FrontEnd::enterModule(const char *fullPath, std::unique_ptr<SourceNode> &&n
     TokenKind kind = this->contexts.back().lexer.nextToken(token);
     TokenKind ckind{};
     this->parser.restoreLexicalState(this->contexts.back().lexer, kind, token, ckind);
+
+    if(this->astDumper) {
+        this->astDumper.enterModule(fullPath);
+    }
 }
 
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
@@ -317,6 +320,10 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     if(this->prevType->isNothingType()) {
         this->prevType = &symbolTable.get(TYPE::Void);
         node->setNothing(true);
+    }
+
+    if(this->astDumper) {
+        this->astDumper.leaveModule();
     }
     return node;
 }
