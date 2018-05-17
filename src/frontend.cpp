@@ -239,17 +239,14 @@ void FrontEnd::setupASTDump() {
 }
 
 void FrontEnd::teardownASTDump() {
-    unsigned int varNum = this->checker.getSymbolTable().getMaxVarIndex();
-    unsigned int gvarNum = this->checker.getSymbolTable().getMaxGVarIndex();
-
     if(this->uastDumper) {
-        this->uastDumper.finalize(varNum, gvarNum);
+        this->uastDumper.finalize();
     }
     if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
         return;
     }
     if(this->astDumper) {
-        this->astDumper.finalize(varNum, gvarNum);
+        this->astDumper.finalize();
     }
 }
 

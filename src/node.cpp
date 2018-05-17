@@ -1455,14 +1455,15 @@ void NodeDumper::operator()(const Node &node) {
     this->leaveIndent();
 }
 
-void NodeDumper::finalize(unsigned int maxVarNum, unsigned int maxGVarNum) {
+void NodeDumper::finalize() {
     this->leaveIndent();
 
-    this->dump("maxVarNum", std::to_string(maxVarNum));
-    this->dump("maxGVarNum", std::to_string(maxGVarNum));
+    this->dump("maxVarNum", std::to_string(this->symbolTable.getMaxVarIndex()));
+    this->dump("maxGVarNum", std::to_string(this->symbolTable.getMaxGVarIndex()));
 
     this->leaveModule();
 
+    assert(this->fp != nullptr);
     for(auto &e : this->bufs) {
         fputs(e.value.c_str(), this->fp);
         fputc('\n', this->fp);

@@ -2374,7 +2374,7 @@ public:
 
     void operator()(const Node &node);
 
-    void finalize(unsigned int varNum, unsigned int gvarNum);
+    void finalize();
 
     explicit operator bool() const {
         return this->fp != nullptr;
