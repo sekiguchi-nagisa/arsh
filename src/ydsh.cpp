@@ -195,13 +195,19 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     ByteCodeGenerator codegen(state->symbolTable, hasFlag(state->option, DS_OPTION_ASSERT));
 
     frontEnd.setupASTDump();
-    codegen.initialize(frontEnd.getSourceInfo());
+    if(!frontEnd.frontEndOnly()) {
+        codegen.initialize(frontEnd.getSourceInfo());
+    }
     while(frontEnd) {
         auto ret = frontEnd(dsError);
         state->lineNum = frontEnd.lineNum();
         if(ret.first == nullptr && ret.second == FrontEnd::IN_MODULE) {
             state->recover();
             return 1;
+        }
+
+        if(frontEnd.frontEndOnly()) {
+            continue;
         }
 
         switch(ret.second) {
@@ -212,9 +218,7 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
             codegen.exitModule(static_cast<SourceNode&>(*ret.first));
             break;
         case FrontEnd::IN_MODULE:
-            if(!frontEnd.frontEndOnly()) {
-                codegen.generate(ret.first.get());
-            }
+            codegen.generate(ret.first.get());
             break;
         }
     }
