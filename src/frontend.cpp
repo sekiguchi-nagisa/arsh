@@ -166,12 +166,9 @@ struct NodeWrapper {
     }
 };
 
-std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError *dsError) {
-    bool available = static_cast<bool>(this->parser);
+std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
     std::unique_ptr<Node> node;
-
-    // parse
-    if(available) {
+    if(this->parser) {
         node = this->parser();
         if(this->parser.hasError()) {
             auto e = this->handleParseError();
@@ -180,35 +177,43 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
             } else {
                 DSError_release(&e);
             }
-            return {nullptr, IN_MODULE};
         }
         if(this->uastDumper) {  //FIXME: supports module
             this->uastDumper(*node);
         }
+    }
+    return node;
+}
 
-        if(this->mode == DS_EXEC_MODE_PARSE_ONLY) { //FIXME: supports module
-            return {std::move(node), IN_MODULE};
-        }
+void FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
+    NodeWrapper wrap(std::move(node));
+    this->prevType = this->checker(this->prevType, wrap.ptr);
+    node = wrap.release();
+
+    if(this->astDumper) {
+        this->astDumper(*node);
+    }
+}
+
+std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError *dsError) {
+    // parse
+    auto node = this->tryToParse(dsError);
+    if(this->parser.hasError()) {
+        return {nullptr, IN_MODULE};
+    }
+
+    if(this->mode == DS_EXEC_MODE_PARSE_ONLY) { //FIXME: supports module
+        return {std::move(node), IN_MODULE};
     }
 
     // typecheck
     try {
-        if(available) {
-            auto s = this->tryToCheckModule(node);
-            if(s != IN_MODULE) {
-                return {nullptr, s};
-            }
-        } else {
-            node = this->exitModule();
+        auto s = this->tryToCheckModule(node);
+        if(s != IN_MODULE) {
+            return {nullptr, s};
         }
 
-        NodeWrapper wrap(std::move(node));
-        this->prevType = this->checker(this->prevType, wrap.ptr);
-        node = wrap.release();
-
-        if(this->astDumper) {   //FIXME: supports module
-            this->astDumper(*node);
-        }
+        this->tryToCheckType(node);
     } catch(const TypeCheckError &e) {
         auto ret = this->handleTypeError(e);
         if(dsError != nullptr) {
@@ -251,6 +256,11 @@ void FrontEnd::teardownASTDump() {
 }
 
 FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
+    if(!node) {
+        node = this->exitModule();
+        return IN_MODULE;
+    }
+
     if(!node->is(NodeKind::Source)) {
         return IN_MODULE;
     }

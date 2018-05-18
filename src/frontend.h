@@ -95,6 +95,10 @@ public:
     void teardownASTDump();
 
 private:
+    std::unique_ptr<Node> tryToParse(DSError *dsError);
+
+    void tryToCheckType(std::unique_ptr<Node> &node);
+
     /**
      * if module loading failed, throw TypeCheckError
      * @param node
