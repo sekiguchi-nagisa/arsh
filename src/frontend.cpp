@@ -178,7 +178,7 @@ std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
                 DSError_release(&e);
             }
         }
-        if(this->uastDumper) {  //FIXME: supports module
+        if(this->uastDumper) {
             this->uastDumper(*node);
         }
     }
@@ -186,6 +186,10 @@ std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
 }
 
 void FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
+    if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
+        return;
+    }
+
     NodeWrapper wrap(std::move(node));
     this->prevType = this->checker(this->prevType, wrap.ptr);
     node = wrap.release();
@@ -200,10 +204,6 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
     auto node = this->tryToParse(dsError);
     if(this->parser.hasError()) {
         return {nullptr, IN_MODULE};
-    }
-
-    if(this->mode == DS_EXEC_MODE_PARSE_ONLY) { //FIXME: supports module
-        return {std::move(node), IN_MODULE};
     }
 
     // typecheck
@@ -299,7 +299,10 @@ void FrontEnd::enterModule(const char *fullPath, std::unique_ptr<SourceNode> &&n
     TokenKind ckind{};
     this->parser.restoreLexicalState(this->contexts.back().lexer, kind, token, ckind);
 
-    if(this->astDumper) {
+    if(this->uastDumper) {
+        this->uastDumper.enterModule(fullPath);
+    }
+    if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
         this->astDumper.enterModule(fullPath);
     }
 }
@@ -312,11 +315,9 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     TokenKind consumedKind = ctx.consumedKind;
     std::unique_ptr<SourceNode> node(ctx.sourceNode.release());
     auto &modType = symbolTable.createModType(ctx.fullPath);
-    unsigned int varNum = ctx.scope->getMaxVarIndex();
+    auto scope = std::move(ctx.scope);
     this->contexts.pop_back();
 
-    node->setMaxVarNum(varNum);
-    node->setModType(modType);
     auto &lex = this->contexts.empty() ? this->lexer : this->contexts.back().lexer;
     this->parser.restoreLexicalState(lex, kind, token, consumedKind);
     if(this->contexts.empty()) {
@@ -324,12 +325,21 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     } else {
         symbolTable.setModuleScope(*this->contexts.back().scope);
     }
-    if(this->prevType->isNothingType()) {
-        this->prevType = &symbolTable.get(TYPE::Void);
-        node->setNothing(true);
+
+    if(this->mode != DS_EXEC_MODE_PARSE_ONLY) {
+        unsigned int varNum = scope->getMaxVarIndex();
+        node->setMaxVarNum(varNum);
+        node->setModType(modType);
+        if(this->prevType->isNothingType()) {
+            this->prevType = &symbolTable.get(TYPE::Void);
+            node->setNothing(true);
+        }
     }
 
-    if(this->astDumper) {
+    if(this->uastDumper) {
+        this->uastDumper.leaveModule();
+    }
+    if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
         this->astDumper.leaveModule();
     }
     return node;

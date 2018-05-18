@@ -57,7 +57,7 @@ private:
 
     std::vector<Context> contexts;
 
-    DSExecMode mode;
+    const DSExecMode mode;
     Parser parser;
     TypeChecker checker;
     DSType *prevType{nullptr};
