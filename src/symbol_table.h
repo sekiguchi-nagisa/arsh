@@ -194,7 +194,7 @@ public:
         return this->scopes.back().add(symbolName, FieldHandle()).first != nullptr;
     }
 
-    void setBuitlin(bool set) {
+    void setBuiltin(bool set) {
         this->builtin = set;
     }
 
@@ -583,7 +583,7 @@ public:
     }
 
     void closeBuiltin() {
-        this->root().setBuitlin(false);
+        this->root().setBuiltin(false);
     }
 
     /**
