@@ -2306,15 +2306,15 @@ struct BaseVisitor : public NodeVisitor {
     void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
 };
 
-struct DumpBuffer {
-    unsigned int indentLevel{0};
-    std::string value;
-};
-
 class NodeDumper {
 private:
     FILE *fp;
     const SymbolTable &symbolTable;
+
+    struct DumpBuffer {
+        unsigned int indentLevel{0};
+        std::string value;
+    };
 
     std::list<DumpBuffer> bufs;
 
