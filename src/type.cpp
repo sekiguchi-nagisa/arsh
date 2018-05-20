@@ -16,6 +16,7 @@
 
 #include <cstdarg>
 #include <array>
+#include <cerrno>
 
 #include "type.h"
 #include "object.h"
@@ -381,7 +382,7 @@ void ErrorType::registerFuncInfo(native_type_info_t info) {
     }
 }
 
-TypeLookupError createTLError(TLError, const char *kind, const char *fmt, ...) {
+TypeLookupError createTLErrorImpl(const char *kind, const char *fmt, ...) {
     va_list arg;
 
     va_start(arg, fmt);
@@ -394,7 +395,7 @@ TypeLookupError createTLError(TLError, const char *kind, const char *fmt, ...) {
     return error;
 }
 
-TypeCheckError createTCError(TCError, const Node &node, const char *kind, const char *fmt, ...) {
+TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char *fmt, ...) {
     va_list arg;
 
     va_start(arg, fmt);

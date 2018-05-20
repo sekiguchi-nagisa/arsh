@@ -29,7 +29,7 @@ private:
     std::string message;
 
 public:
-    TypeLookupError(const char *kind, const char *message) noexcept :
+    TypeLookupError(const char *kind, const char *message) :
             kind(kind), message(message) { }
 
     ~TypeLookupError() = default;
@@ -51,27 +51,35 @@ public:
     }
 };
 
-enum class TLError : unsigned int {
-    E_UndefinedType,
-    E_NotTemplate,
-    E_DefinedType,
-    E_InvalidElement,
-    E_NoDBusInterface,
-    E_UnmatchElement,
-};
+struct TLError {};
 
-#define UndefinedType   "undefined type: `%s'"
-#define NotTemplate     "illegal type template: %s"
-#define DefinedType     "already defined type: `%s'"
-#define InvalidElement  "invalid type element: `%s'"
-#define NoDBusInterface "not found D-Bus interface: %s"
-#define UnmatchElement  "not match type element, `%s' requires %d type element, but is %d"
+template <typename T, typename B>
+using base_of_t = typename std::enable_if<std::is_base_of<B, T>::value, T>::type;
 
 
-TypeLookupError createTLError(TLError e, const char *kind, const char *fmt, ...) __attribute__ ((format(printf, 3, 4)));
+#define DEFINE_TLError(E, fmt) \
+struct E : TLError { \
+    static constexpr const char *kind = #E; \
+    static constexpr const char *value = fmt; }
+
+DEFINE_TLError(UndefinedType,   "undefined type: `%s'");
+DEFINE_TLError(NotTemplate,     "illegal type template: %s");
+DEFINE_TLError(DefinedType,     "already defined type: `%s'");
+DEFINE_TLError(InvalidElement,  "invalid type element: `%s'");
+DEFINE_TLError(NoDBusInterface, "not found D-Bus interface: %s");
+DEFINE_TLError(UnmatchElement,  "not match type element, `%s' requires %d type element, but is %d");
+
+#undef DEFINE_TLError
+
+TypeLookupError createTLErrorImpl(const char *kind, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
+
+template <typename T, typename ... Arg, typename = base_of_t<T, TLError>>
+inline TypeLookupError createTLError(Arg && ...arg) {
+    return createTLErrorImpl(T::kind, T::value, std::forward<Arg>(arg)...);
+}
 
 #define RAISE_TL_ERROR(e, ...) \
-    throw createTLError(TLError::E_ ## e, #e, e, ## __VA_ARGS__)
+    throw createTLError<e>(__VA_ARGS__)
 
 
 /**
@@ -86,7 +94,7 @@ private:
     std::string message;
 
 public:
-    TypeCheckError(Token token, const char *kind, const char *message) noexcept :
+    TypeCheckError(Token token, const char *kind, const char *message) :
             token(token), kind(kind), message(message) { }
 
     TypeCheckError(Token token, TypeLookupError &e) noexcept :
@@ -111,78 +119,58 @@ public:
     }
 };
 
-enum class TCError : unsigned int {
-    E_InsideLoop,
-    E_UnfoundReturn,
-    E_Unreachable,
-    E_InsideFunc,
-    E_NotNeedExpr,
-    E_Assignable,
-    E_ReadOnly,
-    E_InsideFinally,
-    E_InsideChild,
-    E_OutsideToplevel,
-    E_NotCallable,
-    E_DisallowTypeof,
-    E_UselessBlock,
-    E_EmptyTry,
-    E_UselessTry,
-    E_LocalLimit,
-    E_DefinedSymbol,
-    E_DefinedField,
-    E_UndefinedSymbol,
-    E_UndefinedField,
-    E_UndefinedMethod,
-    E_UndefinedInit,
-    E_Unacceptable,
-    E_DefinedCmd,
-    E_ConflictSymbol,
-    E_UnresolvedMod,
-    E_CircularMod,
-    E_NotMod,
-    E_Required,
-    E_CastOp,
-    E_UnmatchParam,
-};
+struct TCError {};
 
-#define InsideLoop        "only available inside loop statement"
-#define UnfoundReturn     "not found return statement"
-#define Unreachable       "unreachable code"
-#define InsideFunc        "only available inside function"
-#define NotNeedExpr       "not need expression"
-#define Assignable        "require assignable expression"
-#define ReadOnly          "read only symbol"
-#define InsideFinally     "unavailable inside finally block"
-#define InsideChild       "unavailable inside child process"
-#define OutsideToplevel   "only available top level scope"
-#define NotCallable       "Func type object is not directly callable"
-#define DisallowTypeof    "not allow typeof operator"
-#define UselessBlock      "useless block"
-#define EmptyTry          "empty try block"
-#define UselessTry        "useless try block"
-#define LocalLimit        "too many local variable"
-#define DefinedSymbol     "already defined symbol: %s"
-#define DefinedField      "already defined field: %s"
-#define UndefinedSymbol   "undefined symbol: %s"
-#define UndefinedField    "undefined field: %s"
-#define UndefinedMethod   "undefined method: %s"
-#define UndefinedInit     "undefined constructor: %s"
-#define Unacceptable      "unacceptable type: `%s'"
-#define DefinedCmd        "already defined command: %s"
-#define ConflictSymbol    "at global import, detect symbol conflict: `%s'"
-#define UnresolvedMod     "unresolved module: %s"
-#define CircularMod       "circular module import: %s"
-#define NotMod            "unavailable module: %s, by `%s'"
-#define Required          "require `%s' type, but is `%s' type"
-#define CastOp            "unsupported cast op: `%s' type -> `%s' type"
-#define UnmatchParam      "not match parameter, require size is %d, but is %d"
+#define DEFINE_TCError(E, fmt) \
+struct E : TCError { \
+    static constexpr const char *kind = #E; \
+    static constexpr const char *value = fmt; }
+
+DEFINE_TCError(InsideLoop        ,"only available inside loop statement"              );
+DEFINE_TCError(UnfoundReturn     ,"not found return statement"                        );
+DEFINE_TCError(Unreachable       ,"unreachable code"                                  );
+DEFINE_TCError(InsideFunc        ,"only available inside function"                    );
+DEFINE_TCError(NotNeedExpr       ,"not need expression"                               );
+DEFINE_TCError(Assignable        ,"require assignable expression"                     );
+DEFINE_TCError(ReadOnly          ,"read only symbol"                                  );
+DEFINE_TCError(InsideFinally     ,"unavailable inside finally block"                  );
+DEFINE_TCError(InsideChild       ,"unavailable inside child process"                  );
+DEFINE_TCError(OutsideToplevel   ,"only available top level scope"                    );
+DEFINE_TCError(NotCallable       ,"Func type object is not directly callable"         );
+DEFINE_TCError(DisallowTypeof    ,"not allow typeof operator"                         );
+DEFINE_TCError(UselessBlock      ,"useless block"                                     );
+DEFINE_TCError(EmptyTry          ,"empty try block"                                   );
+DEFINE_TCError(UselessTry        ,"useless try block"                                 );
+DEFINE_TCError(LocalLimit        ,"too many local variable"                           );
+DEFINE_TCError(DefinedSymbol     ,"already defined symbol: %s"                        );
+DEFINE_TCError(DefinedField      ,"already defined field: %s"                         );
+DEFINE_TCError(UndefinedSymbol   ,"undefined symbol: %s"                              );
+DEFINE_TCError(UndefinedField    ,"undefined field: %s"                               );
+DEFINE_TCError(UndefinedMethod   ,"undefined method: %s"                              );
+DEFINE_TCError(UndefinedInit     ,"undefined constructor: %s"                         );
+DEFINE_TCError(Unacceptable      ,"unacceptable type: `%s'"                           );
+DEFINE_TCError(DefinedCmd        ,"already defined command: %s"                       );
+DEFINE_TCError(ConflictSymbol    ,"at global import, detect symbol conflict: `%s'"    );
+DEFINE_TCError(UnresolvedMod     ,"unresolved module: %s"                             );
+DEFINE_TCError(CircularMod       ,"circular module import: %s"                        );
+DEFINE_TCError(NotMod            ,"unavailable module: %s, by `%s'"                   );
+DEFINE_TCError(Required          ,"require `%s' type, but is `%s' type"               );
+DEFINE_TCError(CastOp            ,"unsupported cast op: `%s' type -> `%s' type"       );
+DEFINE_TCError(UnmatchParam      ,"not match parameter, require size is %d, but is %d");
+
+#undef DEFINE_TCError
 
 
-TypeCheckError createTCError(TCError e, const Node &node,
-                             const char *kind, const char *fmt, ...) __attribute__ ((format(printf, 4, 5)));
+TypeCheckError createTCErrorImpl(const Node &node, const char *kind,
+                                 const char *fmt, ...) __attribute__ ((format(printf, 3, 4)));
+
+template <typename T, typename ... Arg, typename = base_of_t<T, TCError>>
+inline TypeCheckError createTCError(const Node &node, Arg && ...arg) {
+    return createTCErrorImpl(node, T::kind, T::value, std::forward<Arg>(arg)...);
+}
 
 #define RAISE_TC_ERROR(e, node,  ...) \
-    throw createTCError(TCError::E_ ## e, node, #e, e, ## __VA_ARGS__)
+    throw createTCError<e>(node, ## __VA_ARGS__)
 
 } // namespace ydsh
 
