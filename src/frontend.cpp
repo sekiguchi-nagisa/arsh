@@ -235,10 +235,7 @@ void FrontEnd::setupASTDump() {
     if(this->uastDumper) {
         this->uastDumper.initialize(this->getSourceInfo()->getSourceName(), "### dump untyped AST ###");
     }
-    if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
-        return;
-    }
-    if(this->astDumper) {
+    if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
         this->astDumper.initialize(this->getSourceInfo()->getSourceName(), "### dump typed AST ###");
     }
 }
@@ -247,10 +244,7 @@ void FrontEnd::teardownASTDump() {
     if(this->uastDumper) {
         this->uastDumper.finalize();
     }
-    if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
-        return;
-    }
-    if(this->astDumper) {
+    if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
         this->astDumper.finalize();
     }
 }
