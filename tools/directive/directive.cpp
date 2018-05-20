@@ -172,7 +172,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
             return;
         }
 
-        std::string str = this->checkedCast<StringNode>(node).getValue().c_str();
+        std::string str = this->checkedCast<StringNode>(node).getValue();
         expandTilde(str);
         char *buf = realpath(str.c_str(), nullptr);
         if(buf == nullptr) {

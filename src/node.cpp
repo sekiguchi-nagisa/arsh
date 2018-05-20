@@ -15,8 +15,8 @@
  */
 
 #include <pwd.h>
-#include <stdarg.h>
 
+#include <cstdarg>
 #include <cerrno>
 
 #include "constant.h"
