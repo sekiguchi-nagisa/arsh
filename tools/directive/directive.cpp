@@ -122,11 +122,15 @@ DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &
     this->setVarName("0", this->symbolTable.get(TYPE::String));
 }
 
+TypeCheckError createError(const Node &node, const std::string &str) {
+    return TypeCheckError(node.getToken(), "", str.c_str());
+}
+
 void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     if(!checkDirectiveName(node)) {
         std::string str("unsupported directive: ");
         str += static_cast<VarNode *>(node.getExprNode())->getVarName();
-        throw TypeCheckError(node.getToken(), "", str.c_str());
+        throw createError(node, str);
     }
 
     this->addHandler("status", this->symbolTable.get(TYPE::Int32), [&](Node &node, Directive &d) {
@@ -178,7 +182,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         if(buf == nullptr) {
             std::string message = "invalid file name: ";
             message += str;
-            throw TypeCheckError(node.getToken(), "", message.c_str());
+            throw createError(node, message);
         }
         d.setFileName(buf);
         free(buf);
@@ -192,7 +196,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         if(pair == nullptr) {
             std::string str("unsupported attribute: ");
             str += attrName;
-            throw TypeCheckError(assignNode.getLeftNode()->getToken(), "", str.c_str());
+            throw createError(*assignNode.getLeftNode(), str);
         }
 
         // check duplication
@@ -200,7 +204,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         if(iter != foundAttrSet.end()) {
             std::string str("duplicated attribute: ");
             str += attrName;
-            throw TypeCheckError(assignNode.getLeftNode()->getToken(), "", str.c_str());
+            throw createError(*assignNode.getLeftNode(), str);
         }
 
         // check type attribute
@@ -259,7 +263,7 @@ unsigned int DirectiveInitializer::resolveStatus(const StringNode &node) {
         }
         message += e;
     }
-    throw TypeCheckError(node.getToken(), "", message.c_str());
+    throw createError(node, message);
 //    return 0;
 }
 
