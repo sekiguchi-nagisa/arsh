@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2017 Nagisa Sekiguchi
+ * Copyright (C) 2016-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,6 @@ public:
 
     const std::string &getMessage() const {
         return this->message;
-    }
-
-    bool operator==(const TypeLookupError &e) const {
-        return this->message == e.getMessage();
     }
 
     friend std::string extract(TypeLookupError &&e) {
@@ -112,10 +108,6 @@ public:
 
     const std::string &getMessage() const {
         return this->message;
-    }
-
-    bool operator==(const TypeCheckError &e) const {
-        return this->message == e.getMessage();
     }
 };
 
