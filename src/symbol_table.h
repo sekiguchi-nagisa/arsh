@@ -682,9 +682,17 @@ public:
 
     // for type lookup
 
+    /**
+     * unsafe api. normally unused
+     * @param index
+     * @return
+     */
+    DSType &get(unsigned int index) const {
+        return *this->typeMap.get(index);
+    }
+
     DSType &get(TYPE type) const {
-//        return *this->typeTable[static_cast<unsigned int>(type)];
-        return *this->typeMap.get(static_cast<unsigned int>(type));
+        return this->get(static_cast<unsigned int>(type));
     }
 
     // for reified type.
