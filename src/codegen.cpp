@@ -40,7 +40,7 @@ bool isTypeOp(OpCode code) {
     case OpCode::NEW_MAP:
     case OpCode::NEW_TUPLE:
     case OpCode::NEW:
-        ASSERT_BYTE_SIZE(code, 8);
+        ASSERT_BYTE_SIZE(code, 4);
         return true;
     default:
         return false;
@@ -71,7 +71,7 @@ void ByteCodeGenerator::emitIns(OpCode op) {
 
 void ByteCodeGenerator::emitTypeIns(OpCode op, const DSType &type) {
     assert(isTypeOp(op));
-    this->emit8byteIns(op, reinterpret_cast<unsigned long>(&type));
+    this->emit4byteIns(op, type.getTypeID());
 }
 
 unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
@@ -1263,9 +1263,9 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
             auto code = static_cast<OpCode>(c.getCode()[i]);
             fprintf(fp, "  %s: %s", formatNum(digit(codeSize), i).c_str(), opName[static_cast<unsigned char>(code)]);
             if(isTypeOp(code)) {
-                unsigned long v = read64(c.getCode(), i + 1);
-                i += 8;
-                fprintf(fp, "  %s", getPool(ctx).getTypeName(*reinterpret_cast<DSType *>(v)));
+                unsigned int v = read32(c.getCode(), i + 1);
+                i += 4;
+                fprintf(fp, "  %s", getPool(ctx).getTypeName(getPool(ctx).get(v)));
             } else {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD) {

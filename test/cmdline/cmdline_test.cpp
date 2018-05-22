@@ -244,13 +244,13 @@ Exception Table:
   begin: 13, end: 29, type: Any, dest: 29, offset: 0, size: 0
 
 DSCode: function f
-  code size: 20
+  code size: 16
   max stack depth: 1
   number of local variable: 1
 Code:
    8: LOAD_LOCAL  0
   10: INSTANCE_OF  Array<Int32>
-  19: RETURN_V
+  15: RETURN_V
 Constant Pool:
 Source Pos Entry:
 Exception Table:

@@ -25,9 +25,9 @@ namespace ydsh {
 #define OPCODE_LIST(OP) \
     OP(HALT         , 0,  0) \
     OP(ASSERT       , 0, -2) \
-    OP(PRINT        , 8, -1) \
-    OP(INSTANCE_OF  , 8,  0) \
-    OP(CHECK_CAST   , 8,  0) \
+    OP(PRINT        , 4, -1) \
+    OP(INSTANCE_OF  , 4,  0) \
+    OP(CHECK_CAST   , 4,  0) \
     OP(PUSH_NULL    , 0,  1) \
     OP(PUSH_TRUE    , 0,  1) \
     OP(PUSH_FALSE   , 0,  1) \
@@ -50,12 +50,12 @@ namespace ydsh {
     OP(SWAP         , 0,  0) \
     OP(NEW_STRING   , 0,  1) \
     OP(APPEND_STRING, 0, -1) \
-    OP(NEW_ARRAY    , 8,  1) \
+    OP(NEW_ARRAY    , 4,  1) \
     OP(APPEND_ARRAY , 0, -1) \
-    OP(NEW_MAP      , 8,  1) \
+    OP(NEW_MAP      , 4,  1) \
     OP(APPEND_MAP   , 0, -1) \
-    OP(NEW_TUPLE    , 8,  1) \
-    OP(NEW          , 8,  1) \
+    OP(NEW_TUPLE    , 4,  1) \
+    OP(NEW          , 4,  1) \
     OP(CALL_INIT    , 2,  0) \
     OP(CALL_METHOD  , 4,  1) \
     OP(CALL_FUNC    , 2,  1) \

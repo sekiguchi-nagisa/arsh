@@ -1536,13 +1536,13 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(PRINT) {
-            unsigned long v = read64(GET_CODE(state), state.pc() + 1);
-            state.pc() += 8;
+            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
+            state.pc() += 4;
 
-            auto stackTopType = reinterpret_cast<DSType *>(v);
-            assert(!stackTopType->isVoidType());
+            auto &stackTopType = state.symbolTable.get(v);
+            assert(!stackTopType.isVoidType());
             auto *strObj = typeAs<String_Object>(state.peek());
-            printf("(%s) ", state.symbolTable.getTypeName(*stackTopType));
+            printf("(%s) ", state.symbolTable.getTypeName(stackTopType));
             fwrite(strObj->getValue(), sizeof(char), strObj->size(), stdout);
             fputc('\n', stdout);
             fflush(stdout);
@@ -1550,11 +1550,11 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(INSTANCE_OF) {
-            unsigned long v = read64(GET_CODE(state), state.pc() + 1);
-            state.pc() += 8;
+            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
+            state.pc() += 4;
 
-            auto *targetType = reinterpret_cast<DSType *>(v);
-            if(state.pop()->introspect(state, targetType)) {
+            auto &targetType = state.symbolTable.get(v);
+            if(state.pop()->introspect(state, &targetType)) {
                 state.push(state.trueObj);
             } else {
                 state.push(state.falseObj);
@@ -1562,9 +1562,9 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CHECK_CAST) {
-            unsigned long v = read64(GET_CODE(state), state.pc() + 1);
-            state.pc() += 8;
-            TRY(checkCast(state, reinterpret_cast<DSType *>(v)));
+            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
+            state.pc() += 4;
+            TRY(checkCast(state, &state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(PUSH_NULL) {
@@ -1679,9 +1679,9 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_ARRAY) {
-            unsigned long v = read64(GET_CODE(state), state.pc() + 1);
-            state.pc() += 8;
-            state.push(DSValue::create<Array_Object>(*reinterpret_cast<DSType *>(v)));
+            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
+            state.pc() += 4;
+            state.push(DSValue::create<Array_Object>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(APPEND_ARRAY) {
@@ -1690,9 +1690,9 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_MAP) {
-            unsigned long v = read64(GET_CODE(state), state.pc() + 1);
-            state.pc() += 8;
-            state.push(DSValue::create<Map_Object>(*reinterpret_cast<DSType *>(v)));
+            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
+            state.pc() += 4;
+            state.push(DSValue::create<Map_Object>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(APPEND_MAP) {
@@ -1702,18 +1702,18 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_TUPLE) {
-            unsigned long v = read64(GET_CODE(state), state.pc() + 1);
-            state.pc() += 8;
-            state.push(DSValue::create<Tuple_Object>(*reinterpret_cast<DSType *>(v)));
+            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
+            state.pc() += 4;
+            state.push(DSValue::create<Tuple_Object>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(NEW) {
-            unsigned long v = read64(GET_CODE(state), state.pc() + 1);
-            state.pc() += 8;
+            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
+            state.pc() += 4;
 
-            auto *type = reinterpret_cast<DSType *>(v);
-            if(!type->isRecordType()) {
-                state.push(DSValue::create<DSObject>(*type));
+            auto &type = state.symbolTable.get(v);
+            if(!type.isRecordType()) {
+                state.push(DSValue::create<DSObject>(type));
             } else {
                 fatal("currently, DSObject allocation not supported\n");
             }
