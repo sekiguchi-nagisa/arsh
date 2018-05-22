@@ -5,8 +5,8 @@
 | HALT          |                                | [no change]                                  | stop evaluation of interpreter                     |
 | ASSERT        |                                | value1 value2 ->                             | assertion that value1 is true.                     |
 | PRINT         | 4: byte1 ~ byte4               | value ->                                     | print specified type and value on top of the stack |
-| INSTANCE_OF   | 4: byte1 ~ byte8               | value -> value                               | check if a value is instance of a specified type   |
-| CHECK_CAST    | 4: byte1 ~ byte8               | value -> value                               | check if a value is instance of a specified type   |
+| INSTANCE_OF   | 4: byte1 ~ byte4               | value -> value                               | check if a value is instance of a specified type   |
+| CHECK_CAST    | 4: byte1 ~ byte4               | value -> value                               | check if a value is instance of a specified type   |
 | PUSH_NULL     |                                | -> value                                     | push the null value onto the stack                 |
 | PUSH_TRUE     |                                | -> value                                     | push the true value onto the stack                 |
 | PUSH_FALSE    |                                | -> value                                     | push the false value onto the stack                |
