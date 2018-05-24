@@ -69,11 +69,6 @@ void ByteCodeGenerator::emitIns(OpCode op) {
     }
 }
 
-void ByteCodeGenerator::emitTypeIns(OpCode op, const DSType &type) {
-    assert(isTypeOp(op));
-    this->emit4byteIns(op, type.getTypeID());
-}
-
 unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
     this->curBuilder().constBuffer.push_back(std::move(value));
     unsigned int index = this->curBuilder().constBuffer.size() - 1;
@@ -81,10 +76,6 @@ unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
         fatal("const pool index is up to 24bit\n");
     }
     return index;
-}
-
-void ByteCodeGenerator::emitLdcIns(const DSValue &value) {
-    this->emitLdcIns(DSValue(value));
 }
 
 void ByteCodeGenerator::emitLdcIns(DSValue &&value) {

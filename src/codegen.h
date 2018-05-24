@@ -364,12 +364,6 @@ private:
         this->curBuilder().append32(v);
     }
 
-    void emit8byteIns(OpCode op, unsigned long v) {
-        ASSERT_BYTE_SIZE(op, 8);
-        this->emitIns(op);
-        this->curBuilder().append64(v);
-    }
-
     void emitCallIns(OpCode op, unsigned short paramSize) {
         assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_INIT
                || op == OpCode::CALL_METHOD);
@@ -387,10 +381,16 @@ private:
     /**
      * write instruction having type. (ex. PRINT).
      */
-    void emitTypeIns(OpCode op, const DSType &type);
+    void emitTypeIns(OpCode op, const DSType &type) {
+        this->emit4byteIns(op, type.getTypeID());
+    }
 
     unsigned int emitConstant(DSValue &&value);
-    void emitLdcIns(const DSValue &value);
+
+    void emitLdcIns(const DSValue &value) {
+        this->emitLdcIns(DSValue(value));
+    }
+
     void emitLdcIns(DSValue &&value);
     void emitDescriptorIns(OpCode op, std::string &&desc);
     void generateToString();
