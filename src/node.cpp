@@ -1222,7 +1222,8 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
 
     // create for-init
     auto *call_iter = ApplyNode::newMethodCall(exprNode, std::string(OP_ITER));
-    std::string reset_var_name(std::to_string(rand()));
+    std::string reset_var_name = "%reset_";
+    reset_var_name += std::to_string(startPos);
     VarDeclNode *reset_varDecl = new VarDeclNode(startPos, std::string(reset_var_name), call_iter, VarDeclNode::CONST);
 
     // create for-cond
