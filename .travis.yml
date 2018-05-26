@@ -319,27 +319,6 @@ matrix:
         - ninja
         - ctest --output-on-failure
 
-    # clang 6.0 with USE_DBUS=OFF
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-6.0
-          packages:
-            - clang-6.0
-            - libxml2-dev
-            - libdbus-1-3
-            - libdbus-glib-1-dev
-            - expect
-            - ninja-build
-      env: CC_BIN=clang-6.0 CXX_BIN=clang++-6.0 DUMMY=use-dbus-off
-      script:
-        - cmake . -G Ninja -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=debug -DUSE_DBUS=OFF
-        - ninja
-        - ctest --output-on-failure
-
-
     # gcc6 with coverage
     - ocompiler: gcc
       addons:
