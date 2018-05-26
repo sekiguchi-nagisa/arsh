@@ -27,11 +27,9 @@ assert($c._2 == "hello")
 
 # inheritance
 assert((23, "") is Tuple<Int, String>)
-assert((23, "") is Variant)
 assert((23, "") is Any)
 
 assert((12 as Any, $true) is Tuple<Any, Boolean>)
-assert(! ((12 as Any, $true) is Variant))
 
 # super method
 assert("(1, 2)" == (1, 2) as String)

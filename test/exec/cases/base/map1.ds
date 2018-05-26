@@ -55,8 +55,6 @@ assert(!$b.get(34))
 
 # inheritance
 assert([23 : $true] is Map<Int, Boolean>)
-assert(["fr" : 34.2] is Variant)
 assert(["fre" : 32] is Any)
 
 assert(new Map<Byte, Any>() is Map<Byte, Any>)
-assert(!(new Map<Byte, Any>() is Variant))

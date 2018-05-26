@@ -321,7 +321,6 @@ enum class TYPE : unsigned int {
     Any,
     Void,
     Nothing,
-    Variant,    // for base type of all of D-Bus related type.
 
     _Value,    // super type of value type(int, float, bool, string). not directly used it.
 

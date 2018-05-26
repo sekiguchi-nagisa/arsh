@@ -166,8 +166,7 @@ static bool checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
     if(visitedSet == nullptr) {
         auto &elementTypes = static_cast<ReifiedType *>(thisPtr->getType())->getElementTypes();
         for(auto &elementType : elementTypes) {
-            if(*elementType == getPool(ctx).get(TYPE::Variant) ||
-               *elementType == getPool(ctx).get(TYPE::Any)) {
+            if(*elementType == getPool(ctx).get(TYPE::Any)) {
                 newSet = std::make_shared<VisitedSet>();
                 visitedSet = newSet.get();
                 break;

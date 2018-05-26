@@ -297,12 +297,11 @@ SymbolTable::SymbolTable() :
     this->initBuiltinType(TYPE::Any, "Any", true, this->get(TYPE::_Root), info_AnyType());
     this->initBuiltinType(TYPE::Void, "Void", false, info_Dummy());
     this->initBuiltinType(TYPE::Nothing, "Nothing", false, info_Dummy());
-    this->initBuiltinType(TYPE::Variant, "Variant", false, this->get(TYPE::Any), info_Dummy());
 
     /**
      * hidden from script.
      */
-    this->initBuiltinType(TYPE::_Value, "Value%%", true, this->get(TYPE::Variant), info_Dummy());
+    this->initBuiltinType(TYPE::_Value, "Value%%", true, this->get(TYPE::Any), info_Dummy());
 
     this->initBuiltinType(TYPE::Byte, "Byte", false, this->get(TYPE::_Value), info_ByteType());
     this->initBuiltinType(TYPE::Int16, "Int16", false, this->get(TYPE::_Value), info_Int16Type());
@@ -438,8 +437,7 @@ DSType &SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        DSType *superType = attr != 0u ? nullptr :
-                            this->asVariantType(elementTypes) ? &this->get(TYPE::Variant) : &this->get(TYPE::Any);
+        DSType *superType = attr != 0u ? nullptr : &this->get(TYPE::Any);
         return this->typeMap.newType<ReifiedType>(std::move(typeName),
                                                   typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
     }
@@ -454,7 +452,7 @@ DSType &SymbolTable::createTupleType(std::vector<DSType *> &&elementTypes) {
     std::string typeName(this->toTupleTypeName(elementTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        DSType *superType = this->asVariantType(elementTypes) ? &this->get(TYPE::Variant) : &this->get(TYPE::Any);
+        DSType *superType = &this->get(TYPE::Any);
         return this->typeMap.newType<TupleType>(std::move(typeName),
                                                 this->tupleTemplate->getInfo(), superType, std::move(elementTypes));
     }
@@ -632,15 +630,5 @@ void SymbolTable::checkElementTypes(const TypeTemplate &t, const std::vector<DST
         RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementType));
     }
 }
-
-bool SymbolTable::asVariantType(const std::vector<DSType *> &elementTypes) const {
-    for(DSType *type : elementTypes) {
-        if(!this->get(TYPE::Variant).isSameOrBaseTypeOf(*type)) {
-            return false;
-        }
-    }
-    return true;
-}
-
 
 } // namespace ydsh

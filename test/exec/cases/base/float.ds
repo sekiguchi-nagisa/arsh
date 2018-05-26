@@ -75,5 +75,4 @@ assert(! $inf.isFinite())
 
 # inheritance
 assert(3.14 is Float)
-assert(3.14 is Variant)
 assert(3.14 is Any)

@@ -95,8 +95,6 @@ $ee = 1
 
 # inheritance
 assert([34, 43] is Array<Int32>)
-assert([32, 43] is Variant)
 assert([34] is Any)
 
 assert(new Array<Any>() is Array<Any>)
-assert(!(new Array<Any>() is Variant))

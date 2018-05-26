@@ -13,5 +13,4 @@ assert(! ! $TRUE)
 
 # inheritance
 assert($true is Boolean)
-assert($a is Variant)
 assert($a is Any)
