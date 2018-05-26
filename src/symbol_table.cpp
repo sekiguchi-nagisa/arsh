@@ -611,7 +611,7 @@ static const TYPE numTypeTable[] = {
 
 int SymbolTable::getNumTypeIndex(const DSType &type) const {
     for(unsigned int i = 0; i < arraySize(numTypeTable); i++) {
-        if(this->get(numTypeTable[i]) == type) {
+        if(static_cast<unsigned int>(numTypeTable[i]) == type.getTypeID()) {
             return i;
         }
     }
