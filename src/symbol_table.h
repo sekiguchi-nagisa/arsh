@@ -343,10 +343,7 @@ enum class TYPE : unsigned int {
     Job,
     Func,
     StringIter,
-
-    ObjectPath, // for D-Bus object path
     UnixFD,     // for Unix file descriptor
-
     StringArray,    // for command argument
 
     ArithmeticError,

@@ -38,7 +38,6 @@ DEFINE_TYPE(Int);
 DEFINE_TYPE(String);
 DEFINE_TYPE(Error);
 DEFINE_TYPE(Byte);
-DEFINE_TYPE(ObjectPath);
 DEFINE_TYPE(Boolean);
 DEFINE_TYPE(Uint64);
 DEFINE_TYPE(Int64);
@@ -204,7 +203,6 @@ TEST_F(TypeTest, builtinName) {
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Float", this->pool.get(TYPE::Float)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("String", this->pool.get(TYPE::String)));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("ObjectPath", this->pool.get(TYPE::ObjectPath)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("UnixFD", this->pool.get(TYPE::UnixFD)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Variant", this->pool.get(TYPE::Variant)));
 
@@ -241,7 +239,6 @@ TEST_F(TypeTest, superType) {
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Float), this->pool.get(TYPE::_Value)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::String), this->pool.get(TYPE::_Value)));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::ObjectPath), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::UnixFD), this->pool.get(TYPE::Any)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::StringArray), this->pool.get(TYPE::Variant)));
@@ -271,7 +268,6 @@ TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Boolean)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Float)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::String)));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::ObjectPath)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::UnixFD)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::StringArray)));
@@ -306,7 +302,6 @@ TEST_F(TypeTest, typeToken) {
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Int_t>(), this->pool.get(TYPE::_Value)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<String_t>>(), this->pool.get(TYPE::Variant)));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Array_t<ObjectPath_t>>>(), this->pool.get(TYPE::Variant)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Error_t>>(), this->pool.get(TYPE::Any)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Map_t<Byte_t, Uint64_t>>(), this->pool.get(TYPE::Variant)));

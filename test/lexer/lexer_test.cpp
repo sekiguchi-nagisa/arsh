@@ -511,27 +511,6 @@ TEST_F(LexerTest_Lv1, invalid_string_literal) {
     ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, "'\\'", INVALID, "'"));
 }
 
-TEST_F(LexerTest_Lv1, path_literal1) {
-    const char *text = "p'/hoge'";
-    this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(PATH_LITERAL, text, EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
-}
-
-TEST_F(LexerTest_Lv1, path_literal2) {
-    const char *text = "p'/org/example'";
-    this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(PATH_LITERAL, text, EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
-}
-
-TEST_F(LexerTest_Lv1, invalid_path_iteral1) {
-    const char *text = "p'hoge'";
-    this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, "p", STRING_LITERAL, "'hoge'", EOS, ""));
-}
-
-
 TEST_F(LexerTest_Lv1, string_expr1) {
     const char *text = "\"hello word\"";
     this->initLexer(text);

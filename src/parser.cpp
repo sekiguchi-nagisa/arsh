@@ -53,7 +53,6 @@
     OP(UINT64_LITERAL) \
     OP(FLOAT_LITERAL) \
     OP(STRING_LITERAL) \
-    OP(PATH_LITERAL) \
     OP(REGEX_LITERAL) \
     OP(SIGNAL_LITERAL) \
     OP(OPEN_DQUOTE) \
@@ -1094,18 +1093,6 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case STRING_LITERAL:
         return this->parse_stringLiteral();
-    case PATH_LITERAL: {
-        Token token = this->expect(PATH_LITERAL);   // always success
-
-        /**
-         * skip prefix 'p'
-         */
-        token.pos++;
-        token.size--;
-        std::string str;
-        this->lexer->singleToString(token, str);    // always success
-        return make_unique<StringNode>(token, std::move(str), StringNode::OBJECT_PATH);
-    }
     case REGEX_LITERAL: {
         Token token = this->expect(REGEX_LITERAL);  // always success
         auto old = token;

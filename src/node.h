@@ -420,7 +420,6 @@ class StringNode : public Node {
 public:
     enum StringKind {
         STRING,
-        OBJECT_PATH,
         TILDE,
     };
 
@@ -446,10 +445,6 @@ public:
 
     StringKind getKind() const {
         return this->kind;
-    }
-
-    bool isObjectPath() const {
-        return this->getKind() == OBJECT_PATH;
     }
 
     bool isTilde() const {

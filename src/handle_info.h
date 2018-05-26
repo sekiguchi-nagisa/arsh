@@ -33,7 +33,6 @@ namespace ydsh {
     OP(Float) \
     OP(Boolean)  \
     OP(String) \
-    OP(ObjectPath) \
     OP(UnixFD) \
     OP(Error) \
     OP(Job) \

@@ -102,7 +102,6 @@ TokenKind Lexer::nextToken(Token &token) {
 
       STRING_LITERAL = ['] [^'\000]* ['];
       ESTRING_LITERAL = "$" ['] SQUOTE_CHAR* ['];
-      PATH_CHARS = "/" | ("/" [_a-zA-Z0-9]+ )+;
       APPLIED_NAME = "$" VAR_NAME;
       SPECIAL_NAME = "$" SPECIAL_NAMES;
 
@@ -173,8 +172,6 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> FLOAT             { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT> STRING_LITERAL    { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
       <STMT> ESTRING_LITERAL   { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
-      <STMT> "p" ['] PATH_CHARS [']
-                               { MODE(EXPR); RET(PATH_LITERAL); }
       <STMT> REGEX             { MODE(EXPR); RET(REGEX_LITERAL); }
       <STMT> "%" ['] VAR_NAME [']
                                { MODE(EXPR); RET(SIGNAL_LITERAL); }

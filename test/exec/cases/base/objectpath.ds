@@ -1,6 +1,0 @@
-var a = p'/org/freedesktop'
-assert($a.size() == 16)
-
-assert($a == p'/org/freedesktop')
-
-assert($a != p'/org/freedesktos')

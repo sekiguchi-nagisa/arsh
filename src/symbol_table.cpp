@@ -322,8 +322,6 @@ SymbolTable::SymbolTable() :
     this->initBuiltinType(TYPE::Job, "Job", false, this->get(TYPE::Any), info_JobType());
     this->initBuiltinType(TYPE::Func, "Func", false, this->get(TYPE::Any), info_Dummy());
     this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, this->get(TYPE::Any), info_StringIterType());
-
-    this->initBuiltinType(TYPE::ObjectPath, "ObjectPath", false, this->get(TYPE::_Value), info_ObjectPathType());
     this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, this->get(TYPE::Any), info_UnixFDType());
 
     // register NativeFuncInfo to ErrorType

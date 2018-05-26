@@ -476,7 +476,7 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
 }
 
 void TypeChecker::visitStringNode(StringNode &node) {
-    node.setType(this->symbolTable.get(node.isObjectPath() ? TYPE::ObjectPath : TYPE::String));
+    node.setType(this->symbolTable.get(TYPE::String));
 }
 
 void TypeChecker::visitStringExprNode(StringExprNode &node) {

@@ -61,7 +61,6 @@
     TOKEN(UINT64_LITERAL                     , "<Uint64 Literal>") \
     TOKEN(FLOAT_LITERAL                      , "<Float Literal>") \
     TOKEN(STRING_LITERAL                     , "<String Literal>") \
-    TOKEN(PATH_LITERAL                       , "<Path Literal>") \
     TOKEN(REGEX_LITERAL                      , "<Regex Literal>") \
     TOKEN(SIGNAL_LITERAL                     , "<Signal Literal>") \
     TOKEN(OPEN_DQUOTE                        , "\"") \

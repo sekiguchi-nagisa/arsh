@@ -1276,33 +1276,6 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
-
-// ########################
-// ##     ObjectPath     ##
-// ########################
-
-//!bind: function $OP_EQ($this : ObjectPath, $target : ObjectPath) : Boolean
-YDSH_METHOD objectpath_eq(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(objectpath_eq);
-    bool r = LOCAL(0)->equals(LOCAL(1));
-    RET_BOOL(r);
-}
-
-//!bind: function $OP_NE($this : ObjectPath, $target : ObjectPath) : Boolean
-YDSH_METHOD objectpath_ne(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(objectpath_ne);
-    bool r = !LOCAL(0)->equals(LOCAL(1));
-    RET_BOOL(r);
-}
-
-//!bind: function size($this : ObjectPath) : Int32
-YDSH_METHOD objectpath_size(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(objectpath_size);
-    int size = typeAs<String_Object>(LOCAL(0))->size();
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), size));
-}
-
-
 // ###################
 // ##     Regex     ##
 // ###################
