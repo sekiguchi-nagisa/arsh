@@ -85,8 +85,12 @@ option(USE_FIXED_TIME "enable fixed time source" OFF)
 option(FUZZING_BUILD_MODE "enable fuzzing-aware build" OFF)
 
 if(FUZZING_BUILD_MODE)
-    set(CMAKE_BUILD_TYPE Debug)
-    set(SANITIZER "address")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set(CMAKE_BUILD_TYPE Debug)
+        set(SANITIZER "address,fuzzer-no-link")
+    else()
+        message(FATAL_ERROR "require clang")
+    endif()
 endif()
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
@@ -281,26 +285,21 @@ target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
 
 
-#++++++++++++++++#
-#     fuzzer     #
-#++++++++++++++++#
-
-if(FUZZING_BUILD_MODE)
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize-coverage=trace-pc-guard")
-        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fuzzing)
-    else()
-        message(FATAL_ERROR "require clang")
-    endif()
-endif()
-
-
 #++++++++++++++++++++#
 #     setup test     #
 #++++++++++++++++++++#
 
 enable_testing()
 add_subdirectory(test)
+
+
+#++++++++++++++++#
+#     fuzzer     #
+#++++++++++++++++#
+
+if(FUZZING_BUILD_MODE)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fuzzing)
+endif()
 
 
 #+++++++++++++++++++++++++#
