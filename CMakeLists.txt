@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 include(CheckTypeSize)
 
 project(ydsh)
+enable_language(CXX)
 
 #++++++++++++++++++++++++++++++++++#
 #     helper macro or function     #
@@ -71,7 +72,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -Wall -Wextra -Wno-missing-field-initializers")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-missing-field-initializers -std=gnu++11")
 
 
@@ -113,11 +113,9 @@ show_option(FUZZING_BUILD_MODE)
 set(SANITIZER "" CACHE STRING "which sanitizer to use")
 
 if(NOT ("${SANITIZER}" STREQUAL ""))
-    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O1 -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O1 -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
 endif()
 
-set(CMAKE_C_FLAGS_COVERAGE "-g -fprofile-arcs -ftest-coverage")
 set(CMAKE_CXX_FLAGS_COVERAGE "-g -fprofile-arcs -ftest-coverage")
 
 
@@ -310,13 +308,6 @@ message("")
 message("+++++ List of System Configuration +++++")
 message(STATUS "CMAKE_BUILD_TYPE                 = ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_SYSTEM                     = ${CMAKE_SYSTEM}")
-message(STATUS "CMAKE_C_COMPILER_ID              = ${CMAKE_C_COMPILER_ID}")
-message(STATUS "CMAKE_C_COMPILER_VERSION         = ${CMAKE_C_COMPILER_VERSION}")
-message(STATUS "CMAKE_C_COMPILER                 = ${CMAKE_C_COMPILER}")
-message(STATUS "CMAKE_C_FLAGS                    = ${CMAKE_C_FLAGS}")
-message(STATUS "CMAKE_C_FLAGS_DEBUG              = ${CMAKE_C_FLAGS_DEBUG}")
-message(STATUS "CMAKE_C_FLAGS_RELEASE            = ${CMAKE_C_FLAGS_RELEASE}")
-message(STATUS "CMAKE_C_FLAGS_RELWITHDEBINFO     = ${CMAKE_C_FLAGS_RELWITHDEBINFO}")
 message(STATUS "CMAKE_CXX_COMPILER_ID            = ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "CMAKE_CXX_COMPILER_VERSION       = ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "CMAKE_CXX_COMPILER               = ${CMAKE_CXX_COMPILER}")

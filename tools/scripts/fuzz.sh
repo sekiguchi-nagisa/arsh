@@ -6,7 +6,6 @@ ROOT=$SCRIPT_DIR/../..
 mkdir -p build-fuzz
 cd build-fuzz
 cmake $ROOT -G Ninja \
-            -DCMAKE_C_COMPILER=/usr/bin/clang \
             -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
             -DFUZZING_BUILD_MODE=on
 ninja

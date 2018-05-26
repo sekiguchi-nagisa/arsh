@@ -30,8 +30,7 @@ cmake $ROOT
 
 # build with coverage
 clear_cmake_cache
-cmake $ROOT -DCMAKE_C_COMPILER=clang \
-            -DCMAKE_CXX_COMPILER=clang++ \
+cmake $ROOT -DCMAKE_CXX_COMPILER=clang++ \
             -DCMAKE_BUILD_TYPE=coverage
 make clean
 make -j2
