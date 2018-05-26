@@ -737,8 +737,6 @@ public:
 
     FunctionType &createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
-    DSType &createErrorType(const std::string &errorName, DSType &superType);
-
     /**
      * set type name alias. if alias name has already defined, report error.
      */

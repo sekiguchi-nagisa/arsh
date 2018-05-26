@@ -475,14 +475,6 @@ FunctionType &SymbolTable::createFuncType(DSType *returnType, std::vector<DSType
     return *static_cast<FunctionType *>(type);
 }
 
-DSType &SymbolTable::createErrorType(const std::string &errorName, DSType &superType) {
-    DSType *type = this->typeMap.getType(errorName);
-    if(type == nullptr) {
-        return this->typeMap.newType<ErrorType>(std::string(errorName), &superType);
-    }
-    return *type;
-}
-
 void SymbolTable::setAlias(const char *alias, DSType &targetType) {
     if(!this->typeMap.setAlias(std::string(alias), targetType.getTypeID())) {
         RAISE_TL_ERROR(DefinedType, alias);
