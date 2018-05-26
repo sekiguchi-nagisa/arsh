@@ -581,29 +581,21 @@ constexpr int SymbolTable::BYTE_PRECISION;
 constexpr int SymbolTable::INVALID_PRECISION;
 
 int SymbolTable::getIntPrecision(const DSType &type) const {
-    const struct {
-        TYPE t;
-        int precision;
-    } table[] = {
-            // Int64, Uint64
-            {TYPE::Int64, INT64_PRECISION},
-            {TYPE::Uint64, INT64_PRECISION},
-            // Int32, Uint32
-            {TYPE::Int32, INT32_PRECISION},
-            {TYPE::Uint32, INT32_PRECISION},
-            // Int16, Uint16
-            {TYPE::Int16, INT16_PRECISION},
-            {TYPE::Uint16, INT16_PRECISION},
-            // Byte
-            {TYPE::Byte, BYTE_PRECISION},
-    };
-
-    for(auto &e : table) {
-        if(this->get(e.t) == type) {
-            return e.precision;
-        }
+    switch(type.getTypeID()) {
+    case static_cast<unsigned int>(TYPE::Int64):
+    case static_cast<unsigned int>(TYPE::Uint64):
+        return INT64_PRECISION;
+    case static_cast<unsigned int>(TYPE::Int32):
+    case static_cast<unsigned int>(TYPE::Uint32):
+        return INT32_PRECISION;
+    case static_cast<unsigned int>(TYPE::Int16):
+    case static_cast<unsigned int>(TYPE::Uint16):
+        return INT16_PRECISION;
+    case static_cast<unsigned int>(TYPE::Byte):
+        return BYTE_PRECISION;
+    default:
+        return INVALID_PRECISION;
     }
-    return INVALID_PRECISION;
 }
 
 static const TYPE numTypeTable[] = {
