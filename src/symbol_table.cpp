@@ -361,15 +361,15 @@ SymbolTable::SymbolTable() :
     this->createReifiedType(this->getArrayTemplate(), std::move(types));    // TYPE::StringArray
 
     // init some error type
-    this->initErrorType(TYPE::ArithmeticError, "ArithmeticError", this->get(TYPE::Error));
-    this->initErrorType(TYPE::OutOfRangeError, "OutOfRangeError", this->get(TYPE::Error));
-    this->initErrorType(TYPE::KeyNotFoundError, "KeyNotFoundError", this->get(TYPE::Error));
-    this->initErrorType(TYPE::TypeCastError, "TypeCastError", this->get(TYPE::Error));
-    this->initErrorType(TYPE::DBusError, "DBusError", this->get(TYPE::Error));
-    this->initErrorType(TYPE::SystemError, "SystemError", this->get(TYPE::Error));
-    this->initErrorType(TYPE::StackOverflowError, "StackOverflowError", this->get(TYPE::Error));
-    this->initErrorType(TYPE::RegexSyntaxError, "RegexSyntaxError", this->get(TYPE::Error));
-    this->initErrorType(TYPE::UnwrappingError, "UnwrappingError", this->get(TYPE::Error));
+    this->initErrorType(TYPE::ArithmeticError, "ArithmeticError");
+    this->initErrorType(TYPE::OutOfRangeError, "OutOfRangeError");
+    this->initErrorType(TYPE::KeyNotFoundError, "KeyNotFoundError");
+    this->initErrorType(TYPE::TypeCastError, "TypeCastError");
+    this->initErrorType(TYPE::DBusError, "DBusError");
+    this->initErrorType(TYPE::SystemError, "SystemError");
+    this->initErrorType(TYPE::StackOverflowError, "StackOverflowError");
+    this->initErrorType(TYPE::RegexSyntaxError, "RegexSyntaxError");
+    this->initErrorType(TYPE::UnwrappingError, "UnwrappingError");
 
     // init internal status type
     this->initBuiltinType(TYPE::_InternalStatus, "internal status%%", false, this->get(TYPE::_Root), info_Dummy());
@@ -656,8 +656,8 @@ TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
             {typeName, new TypeTemplate(std::string(typeName), std::move(elementTypes), info)}).first->second;
 }
 
-void SymbolTable::initErrorType(TYPE t, const char *typeName, DSType &superType) {
-    auto &type = this->typeMap.newType<ErrorType>(std::string(typeName), &superType);
+void SymbolTable::initErrorType(TYPE t, const char *typeName) {
+    auto &type = this->typeMap.newType<ErrorType>(std::string(typeName), &this->get(TYPE::Error));
     (void) type;
     (void) t;
     assert(type.getTypeID() == static_cast<unsigned int>(t));

@@ -818,7 +818,7 @@ private:
     TypeTemplate *initTypeTemplate(const char *typeName,
                                    std::vector<DSType*> &&elementTypes, native_type_info_t info);
 
-    void initErrorType(TYPE t, const char *typeName, DSType &superType);
+    void initErrorType(TYPE t, const char *typeName);
 
     void checkElementTypes(const std::vector<DSType *> &elementTypes) const;
     void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
