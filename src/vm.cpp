@@ -841,15 +841,15 @@ static bool callUserDefinedCommand(DSState &st, const DSCode *code,
         st.updateExitStatus(0);
     }
 
-    // push parameter
-    st.push(DSValue::createNum(attr));  // push %%attr
-    st.push(std::move(restoreFD));  // push %%redir
-    st.push(std::move(argvObj));    // push argv (@)
-
     // set stack stack
-    if(!windStackFrame(st, 3, 3, code)) {
+    if(!windStackFrame(st, 0, 0, code)) {
         return false;
     }
+
+    // set parameter
+    st.setLocal(UDC_PARAM_ATTR, DSValue::createNum(attr));
+    st.setLocal(UDC_PARAM_REDIR, std::move(restoreFD));
+    st.setLocal(UDC_PARAM_ARGV, std::move(argvObj));
 
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
         auto argv = typeAs<Array_Object>(st.getLocal(UDC_PARAM_ARGV));
