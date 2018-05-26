@@ -1904,8 +1904,8 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(BUILTIN_CMD) {
             auto attr = state.getLocal(UDC_PARAM_ATTR).value();
-            auto redir = state.getLocal(UDC_PARAM_REDIR);
-            auto argv = state.getLocal(UDC_PARAM_ARGV);
+            DSValue redir = state.getLocal(UDC_PARAM_REDIR);
+            DSValue argv = state.getLocal(UDC_PARAM_ARGV);
             bool ret = callBuiltinCommand(state, std::move(argv), std::move(redir), attr);
             flushStdFD();
             TRY(ret);
@@ -1913,8 +1913,8 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(BUILTIN_EVAL) {
             auto attr = state.getLocal(UDC_PARAM_ATTR).value();
-            auto redir = state.getLocal(UDC_PARAM_REDIR);
-            auto argv = state.getLocal(UDC_PARAM_ARGV);
+            DSValue redir = state.getLocal(UDC_PARAM_REDIR);
+            DSValue argv = state.getLocal(UDC_PARAM_ARGV);
 
             eraseFirst(*typeAs<Array_Object>(argv));
             auto *array = typeAs<Array_Object>(argv);
@@ -1927,8 +1927,8 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(BUILTIN_EXEC) {
-            auto redir = state.getLocal(UDC_PARAM_REDIR);
-            auto argv = state.getLocal(UDC_PARAM_ARGV);
+            DSValue redir = state.getLocal(UDC_PARAM_REDIR);
+            DSValue argv = state.getLocal(UDC_PARAM_ARGV);
             callBuiltinExec(state, std::move(argv), std::move(redir));
             vmnext;
         }
