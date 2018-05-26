@@ -510,7 +510,12 @@ public:
 
     SymbolTable();
 
-    ~SymbolTable();
+    ~SymbolTable() {
+        delete this->arrayTemplate;
+        delete this->mapTemplate;
+        delete this->tupleTemplate;
+        delete this->optionTemplate;
+    }
 
 private:
     ModuleScope &cur() {

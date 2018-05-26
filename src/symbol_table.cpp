@@ -382,12 +382,6 @@ SymbolTable::SymbolTable() :
     this->typeMap.commit();
 }
 
-SymbolTable::~SymbolTable() {
-    for(auto &pair : this->templateMap) {
-        delete pair.second;
-    }
-}
-
 ModType& SymbolTable::createModType(const std::string &fullpath) {
     std::string name = ModType::toModName(this->cur().getModID());
     auto &modType = this->typeMap.newType<ModType>(std::move(name),
