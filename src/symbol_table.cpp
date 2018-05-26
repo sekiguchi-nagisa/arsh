@@ -298,7 +298,7 @@ ModResult ModuleLoader::load(const std::string &modPath) {
 // #########################
 
 SymbolTable::SymbolTable() :
-        rootModule(this->gvarCount), curModule(&this->rootModule), templateMap(8) {
+        rootModule(this->gvarCount), curModule(&this->rootModule) {
 
     // initialize type
     this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, info_Dummy()); // pseudo base type
