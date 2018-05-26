@@ -270,10 +270,6 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
     raiseError(st, st.symbolTable.get(TYPE::SystemError), std::move(str));
 }
 
-void throwError(DSState &st, DSType &errorType, std::string &&message) {
-    st.throwException(st.newError(errorType, std::move(message)));
-}
-
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace) {
     assert(!st.controlStack.empty());
     auto frame = st.getFrame();
@@ -319,17 +315,6 @@ static std::string initConfigRootDir() {
 
 const char *getConfigRootDir() {
     static std::string dir(initConfigRootDir());
-    return dir.c_str();
-}
-
-static std::string initIfaceDir() {
-    std::string root(getConfigRootDir());
-    root += "/dbus/iface";
-    return root;
-}
-
-const char *getIfaceDir() {
-    static std::string dir(initIfaceDir());
     return dir.c_str();
 }
 

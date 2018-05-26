@@ -246,12 +246,6 @@ static void bindVariable(DSState *state, const char *varName, const DSValue &val
 static void initBuiltinVar(DSState *state) {
     // set builtin variables internally used
 
-    /**
-     * management object for D-Bus related function
-     * must be DBus_Object
-     */
-    bindVariable(state, "DBus", newDBusObject(state->symbolTable));
-
 #define XSTR(V) #V
 #define STR(V) XSTR(V)
     /**
@@ -664,10 +658,6 @@ unsigned int DSState_featureBit() {
 
 #ifdef USE_LOGGING
     setFlag(featureBit, DS_FEATURE_LOGGING);
-#endif
-
-#ifdef USE_DBUS
-    setFlag(featureBit, DS_FEATURE_DBUS);
 #endif
 
 #ifdef USE_SAFE_CAST

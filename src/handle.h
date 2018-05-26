@@ -35,10 +35,9 @@ struct NativeFuncInfo;
     OP(GLOBAL     , (1u << 1)) \
     OP(ENV        , (1u << 2)) \
     OP(FUNC_HANDLE, (1u << 3)) \
-    OP(INTERFACE  , (1u << 4)) \
-    OP(RANDOM     , (1u << 5)) \
-    OP(SECONDS    , (1u << 6)) \
-    OP(BUILTIN    , (1u << 7))
+    OP(RANDOM     , (1u << 4)) \
+    OP(SECONDS    , (1u << 5)) \
+    OP(BUILTIN    , (1u << 6))
 
 enum class FieldAttribute : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
@@ -127,7 +126,6 @@ public:
 class MethodHandle {
 protected:
     unsigned int methodIndex;
-    flag8_set_t attributeSet{0};
 
     DSType *returnType{nullptr};
 
@@ -196,23 +194,6 @@ public:
     MethodHandle *getNext() const {
         return this->next;
     }
-
-    void setAttribute(flag8_t attribute) {
-        setFlag(this->attributeSet, attribute);
-    }
-
-    bool isInterfaceMethod() const {
-        return hasFlag(this->attributeSet, INTERFACE);
-    }
-
-    bool hasMultipleReturnType() const {
-        return hasFlag(this->attributeSet, MULTI_RETURN);
-    }
-
-    bool isSignal() const;
-
-    static constexpr flag8_t INTERFACE    = 1u << 0;
-    static constexpr flag8_t MULTI_RETURN = 1u << 1;
 };
 
 } // namespace ydsh

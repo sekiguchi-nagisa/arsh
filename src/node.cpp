@@ -141,15 +141,6 @@ void FuncTypeNode::dump(NodeDumper &dumper) const {
     DUMP(paramTypeNodes);
 }
 
-// ###############################
-// ##     DBusIfaceTypeNode     ##
-// ###############################
-
-void DBusIfaceTypeNode::dump(NodeDumper &dumper) const {
-    TypeNode::dump(dumper);
-    DUMP(name);
-}
-
 // ############################
 // ##     ReturnTypeNode     ##
 // ############################

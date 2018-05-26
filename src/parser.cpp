@@ -127,8 +127,7 @@
     OP(PTYPE_OPEN) \
     OP(ATYPE_OPEN) \
     OP(FUNC) \
-    OP(TYPEOF) \
-    OP(TYPE_PATH)
+    OP(TYPEOF)
 
 
 #define E_ALTER(...) \
@@ -288,7 +287,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
     // enter TYPE mode
     this->pushLexerMode(yycTYPE);
 
-    Token token = TRY(this->expect(TYPE_PATH));
+    Token token = TRY(this->expect(IDENTIFIER));
 
     // exit TYPE mode
     this->restoreLexerState(token);
@@ -441,10 +440,6 @@ TypeWrapper Parser::parse_typeNameImpl() {
             return {std::move(func), token};
         }
         return {make_unique<BaseTypeNode>(token, this->lexer->toName(token)), token};
-    }
-    case TYPE_PATH: {
-        Token token = this->expect(TYPE_PATH);  // always success
-        return {make_unique<DBusIfaceTypeNode>(token, this->lexer->toTokenText(token)), token};
     }
     default:
         E_ALTER(EACH_LA_typeName(GEN_LA_ALTER));
@@ -1412,17 +1407,6 @@ std::unique_ptr<Node> Parser::parse_substitution(bool strExpr) {
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(RP));
     return std::unique_ptr<Node>(ForkNode::newSubsitution(pos, exprNode.release(), token, strExpr));
-}
-
-std::unique_ptr<Node> parse(const char *sourceName) {
-    FILE *fp = fopen(sourceName, "rb");
-    if(fp == nullptr) {
-        return nullptr;
-    }
-
-    Lexer lexer(sourceName, fp);
-    Parser parser(lexer);
-    return parser();    //FIXME: display error message
 }
 
 } // namespace ydsh

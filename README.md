@@ -16,9 +16,7 @@ Language specification is subject to change without notice.
 * make/ninja
 * expect (for testing)
 * gcc/clang (need c++11 support, need GNU extension)
-* libdbus 1.6.x or later
 * libpcre
-* libxml2 (for D-Bus introspection)
 
 ### Tested Compiler
 * gcc (4.8, 4.9, 5, 6, 7)
@@ -30,8 +28,4 @@ Language specification is subject to change without notice.
 $ cmake .
 $ make
 $ ./ydsh
-```
-if not need D-Bus support,
-```
-$ cmake . -DUSE_DBUS=off
 ```

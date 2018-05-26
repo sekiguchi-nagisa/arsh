@@ -197,10 +197,10 @@ DSCode: top level
   code size: 22
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 51
+  number of global variable: 50
 Code:
    8: LOAD_CONST  0
-  10: STORE_GLOBAL  50
+  10: STORE_GLOBAL  49
   13: LOAD_CONST  1
   15: CALL_METHOD  0  0
   20: POP
@@ -220,11 +220,11 @@ DSCode: top level
   code size: 35
   max stack depth: 3
   number of local variable: 0
-  number of global variable: 51
+  number of global variable: 50
 Code:
    8: LOAD_CONST  0
-  10: STORE_GLOBAL  50
-  13: LOAD_GLOBAL  50
+  10: STORE_GLOBAL  49
+  13: LOAD_GLOBAL  49
   16: LOAD_CONST  1
   18: CALL_FUNC  1
   21: ENTER_FINALLY  8
@@ -390,23 +390,6 @@ TEST_F(CmdlineTest, version) {
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--version"), 0, msg.c_str()));
 }
 
-TEST_F(CmdlineTest, feature) {
-#ifdef USE_DBUS
-    bool useDBus = true;
-#else
-    bool useDBus = false;
-#endif
-
-    std::string cmd = BIN_PATH;
-    cmd += " --feature | grep USE_DBUS";
-    if(useDBus) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert($DBus.available())"), 0));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 0, "USE_DBUS\n"));
-    } else {
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert(!$DBus.available())"), 0));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
-    }
-}
 
 TEST_F(CmdlineTest, prompt) {
 #ifdef USE_FIXED_TIME

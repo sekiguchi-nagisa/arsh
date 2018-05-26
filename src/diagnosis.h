@@ -62,7 +62,6 @@ DEFINE_TLError(UndefinedType,   "undefined type: `%s'");
 DEFINE_TLError(NotTemplate,     "illegal type template: %s");
 DEFINE_TLError(DefinedType,     "already defined type: `%s'");
 DEFINE_TLError(InvalidElement,  "invalid type element: `%s'");
-DEFINE_TLError(NoDBusInterface, "not found D-Bus interface: %s");
 DEFINE_TLError(UnmatchElement,  "not match type element, `%s' requires %d type element, but is %d");
 
 #undef DEFINE_TLError

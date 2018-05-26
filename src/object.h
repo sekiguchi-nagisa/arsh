@@ -100,7 +100,9 @@ public:
     /**
      * check if this type is instance of targetType.
      */
-    virtual bool introspect(DSState &ctx, DSType *targetType);
+    bool introspect(DSState &, DSType *targetType) const {
+        return targetType->isSameOrBaseTypeOf(*this->type);
+    }
 };
 
 enum class DSValueKind : unsigned char {
@@ -850,26 +852,6 @@ struct NativeCode : public DSCode {
     }
 };
 
-/**
- * DBUS_INIT_SIG
- * DBUS_WAIT_SIG
- * GOTO <prev inst>
- * RETURN
- *
- * @return
- */
-inline NativeCode createWaitSignalCode() {
-    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(OpCode::DBUS_INIT_SIG);
-    code[2] = static_cast<unsigned char>(OpCode::DBUS_WAIT_SIG);
-    code[3] = static_cast<unsigned char>(OpCode::GOTO);
-    code[4] = code[5] = code[6] = code[7] = 0;
-    code[8] = static_cast<unsigned char>(OpCode::RETURN);
-    write32(code + 4, 2);
-    return NativeCode(code);
-}
-
 struct SourcePosEntry {
     unsigned int address;
 
@@ -1018,45 +1000,6 @@ public:
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 };
-
-std::string encodeMethodDescriptor(const char *methodName, const MethodHandle *handle);
-std::pair<const char *, const MethodHandle *> decodeMethodDescriptor(const char *desc);
-
-std::string encodeFieldDescriptor(const DSType &recvType, const char *fieldName, const DSType &fieldType);
-std::tuple<const DSType *, const char *, const DSType *> decodeFieldDescriptor(const char *desc);
-
-struct ProxyObject : public DSObject {
-    explicit ProxyObject(DSType &type) : DSObject(type) { }
-
-    ~ProxyObject() override = default;
-
-    /**
-     * invoke method and return result.
-     */
-    virtual DSValue invokeMethod(DSState &ctx, const char *methodName, const MethodHandle *handle) = 0;
-
-    /**
-     * return got value
-     */
-    virtual DSValue invokeGetter(DSState &ctx, const DSType *recvType,
-                                 const char *fieldName, const DSType *fieldType) = 0;
-
-    /**
-     * pop stack top value and set to field.
-     */
-    virtual void invokeSetter(DSState &ctx, const DSType *recvType,
-                              const char *fieldName, const DSType *fieldType) = 0;
-};
-
-DSValue newDBusObject(SymbolTable &symbolTable);
-
-inline bool dbusAvailable() {
-#ifdef USE_DBUS
-    return true;
-#else
-    return false;
-#endif
-}
 
 } // namespace ydsh
 

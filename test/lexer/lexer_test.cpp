@@ -1657,12 +1657,6 @@ TEST_F(LexerTest_Lv1, TYPEOF2) {
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
-TEST_F(LexerTest_Lv1, TYPE_PATH) {
-    const char *text = "org.freedesktop";
-    this->initLexer(text, yycTYPE);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(TYPE_PATH, text, EOS, ""));
-}
-
 TEST_F(LexerTest_Lv1, NAME1) {
     const char *text = "assert";
     this->initLexer(text, yycNAME);

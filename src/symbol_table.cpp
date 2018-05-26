@@ -30,12 +30,7 @@ template <std::size_t N>
 std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
     std::array<NativeCode, N> array;
     for(unsigned int i = 0; i < N; i++) {
-        const char *funcName = e[i].funcName;
-        if(funcName != nullptr && strcmp(funcName, "waitSignal") == 0) {
-            array[i] = createWaitSignalCode();
-        } else {
-            array[i] = NativeCode(e[i].func_ptr, static_cast<HandleInfo>(e[i].handleInfo[0]) != HandleInfo::Void);
-        }
+        array[i] = NativeCode(e[i].func_ptr, static_cast<HandleInfo>(e[i].handleInfo[0]) != HandleInfo::Void);
     }
     return array;
 }
@@ -246,10 +241,6 @@ FieldHandle* ModType::lookupFieldHandle(ydsh::SymbolTable &, const std::string &
     return nullptr;
 }
 
-void ModType::accept(ydsh::TypeVisitor *) {
-    fatal("unsupported\n");
-}
-
 std::string ModType::toModName(unsigned short id) {
     std::string str = MOD_SYMBOL_PREFIX;
     str += std::to_string(id);
@@ -334,11 +325,6 @@ SymbolTable::SymbolTable() :
 
     this->initBuiltinType(TYPE::ObjectPath, "ObjectPath", false, this->get(TYPE::_Value), info_ObjectPathType());
     this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, this->get(TYPE::Any), info_UnixFDType());
-    this->initBuiltinType(TYPE::Proxy, "Proxy", false, this->get(TYPE::Any), info_ProxyType());
-    this->initBuiltinType(TYPE::DBus, "DBus", false, this->get(TYPE::Any), info_DBusType());
-    this->initBuiltinType(TYPE::Bus, "Bus", false, this->get(TYPE::Any), info_BusType());
-    this->initBuiltinType(TYPE::Service, "Service", false, this->get(TYPE::Any), info_ServiceType());
-    this->initBuiltinType(TYPE::DBusObject, "DBusObject", false, this->get(TYPE::Proxy), info_DBusObjectType());
 
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType());
@@ -365,7 +351,6 @@ SymbolTable::SymbolTable() :
     this->initErrorType(TYPE::OutOfRangeError, "OutOfRangeError");
     this->initErrorType(TYPE::KeyNotFoundError, "KeyNotFoundError");
     this->initErrorType(TYPE::TypeCastError, "TypeCastError");
-    this->initErrorType(TYPE::DBusError, "DBusError");
     this->initErrorType(TYPE::SystemError, "SystemError");
     this->initErrorType(TYPE::StackOverflowError, "StackOverflowError");
     this->initErrorType(TYPE::RegexSyntaxError, "RegexSyntaxError");
@@ -375,8 +360,6 @@ SymbolTable::SymbolTable() :
     this->initBuiltinType(TYPE::_InternalStatus, "internal status%%", false, this->get(TYPE::_Root), info_Dummy());
     this->initBuiltinType(TYPE::_ShellExit, "Shell Exit", false, this->get(TYPE::_InternalStatus), info_Dummy());
     this->initBuiltinType(TYPE::_AssertFail, "Assertion Error", false, this->get(TYPE::_InternalStatus), info_Dummy());
-
-    this->registerDBusErrorTypes();
 
     // commit generated type
     this->typeMap.commit();
@@ -494,42 +477,10 @@ FunctionType &SymbolTable::createFuncType(DSType *returnType, std::vector<DSType
     return *static_cast<FunctionType *>(type);
 }
 
-InterfaceType &SymbolTable::createInterfaceType(const std::string &interfaceName) {
-    DSType *type = this->typeMap.getType(interfaceName);
-    if(type == nullptr) {
-        return this->typeMap.newType<InterfaceType>(std::string(interfaceName), &this->get(TYPE::DBusObject));
-    }
-    assert(type->isInterface());
-
-    return *static_cast<InterfaceType *>(type);
-}
-
 DSType &SymbolTable::createErrorType(const std::string &errorName, DSType &superType) {
     DSType *type = this->typeMap.getType(errorName);
     if(type == nullptr) {
         return this->typeMap.newType<ErrorType>(std::string(errorName), &superType);
-    }
-    return *type;
-}
-
-DSType &SymbolTable::getDBusInterfaceType(const std::string &typeName) {
-    DSType *type = this->typeMap.getType(typeName);
-    if(type == nullptr) {
-        // load dbus interface
-        std::string ifacePath(getIfaceDir());
-        ifacePath += "/";
-        ifacePath += typeName;
-
-        auto node = parse(ifacePath.c_str());
-        if(!node) {
-            RAISE_TL_ERROR(NoDBusInterface, typeName.c_str());
-        }
-        if(!node->is(NodeKind::Interface)) {
-            RAISE_TL_ERROR(NoDBusInterface, typeName.c_str());
-        }
-
-        auto *ifaceNode = static_cast<InterfaceNode *>(node.get());
-        return TypeGenerator(*this).resolveInterface(ifaceNode);
     }
     return *type;
 }
@@ -699,64 +650,6 @@ bool SymbolTable::asVariantType(const std::vector<DSType *> &elementTypes) const
         }
     }
     return true;
-}
-
-void SymbolTable::registerDBusErrorTypes() {
-    const char *table[] = {
-            "Failed",
-            "NoMemory",
-            "ServiceUnknown",
-            "NameHasNoOwner",
-            "NoReply",
-            "IOError",
-            "BadAddress",
-            "NotSupported",
-            "LimitsExceeded",
-            "AccessDenied",
-            "AuthFailed",
-            "NoServer",
-            "Timeout",
-            "NoNetwork",
-            "AddressInUse",
-            "Disconnected",
-            "InvalidArgs",
-            "FileNotFound",
-            "FileExists",
-            "UnknownMethod",
-            "UnknownObject",
-            "UnknownInterface",
-            "UnknownProperty",
-            "PropertyReadOnly",
-            "TimedOut",
-            "MatchRuleNotFound",
-            "MatchRuleInvalid",
-            "Spawn.ExecFailed",
-            "Spawn.ForkFailed",
-            "Spawn.ChildExited",
-            "Spawn.ChildSignaled",
-            "Spawn.Failed",
-            "Spawn.FailedToSetup",
-            "Spawn.ConfigInvalid",
-            "Spawn.ServiceNotValid",
-            "Spawn.ServiceNotFound",
-            "Spawn.PermissionsInvalid",
-            "Spawn.FileInvalid",
-            "Spawn.NoMemory",
-            "UnixProcessIdUnknown",
-            "InvalidSignature",
-            "InvalidFileContent",
-            "SELinuxSecurityContextUnknown",
-            "AdtAuditDataUnknown",
-            "ObjectPathInUse",
-            "InconsistentMessage",
-            "InteractiveAuthorizationRequired",
-    };
-
-    for(const auto &e : table) {
-        std::string s = "org.freedesktop.DBus.Error.";
-        s += e;
-        this->setAlias(e, this->createErrorType(s, this->get(TYPE::DBusError)));
-    }
 }
 
 

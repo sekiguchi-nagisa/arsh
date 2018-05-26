@@ -243,12 +243,6 @@ struct DSState {
     }
 
     /**
-     * pop stack top and store to thrownObject.
-     */
-    [[noreturn]]
-    void throwException(DSValue &&except);
-
-    /**
      * for exception reporting
      * @param except
      */

@@ -103,7 +103,6 @@ static int apply(Func func, DSState *state, T&& ... args) {
 static void showFeature(FILE *fp) {
     const char *featureNames[] = {
             "USE_LOGGING",
-            "USE_DBUS",
             "USE_SAFE_CAST",
             "USE_FIXED_TIME"
     };

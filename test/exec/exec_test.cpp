@@ -69,12 +69,6 @@ public:
         bool s = Directive::init(this->getSourceName().c_str(), d);
         ASSERT_TRUE(s);
 
-        // check run condition
-        RunCondition haveDBus = DSState_supportDBus() ? RunCondition::TRUE : RunCondition::FALSE;
-        if(d.getIfHaveDBus() != RunCondition::IGNORE && haveDBus != d.getIfHaveDBus()) {
-            return; // do nothing
-        }
-
         const char *scriptName = this->getSourceName().c_str();
         ProcBuilder builder(BIN_PATH);
         builder.addArg("--status-log").addArg(this->getTmpFileName());

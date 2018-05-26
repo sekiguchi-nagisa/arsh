@@ -346,11 +346,6 @@ enum class TYPE : unsigned int {
 
     ObjectPath, // for D-Bus object path
     UnixFD,     // for Unix file descriptor
-    Proxy,
-    DBus,       // for owner type of each bus object
-    Bus,        // for message bus.
-    Service,    // for service
-    DBusObject, // for D-Bus proxy instance
 
     StringArray,    // for command argument
 
@@ -358,7 +353,6 @@ enum class TYPE : unsigned int {
     OutOfRangeError,
     KeyNotFoundError,
     TypeCastError,
-    DBusError,
     SystemError,    // for errno
     StackOverflowError,
     RegexSyntaxError,
@@ -395,7 +389,6 @@ public:
     }
 
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
-    void accept(TypeVisitor *visitor) override;
 
     static std::string toModName(unsigned short modID);
 };
@@ -747,14 +740,7 @@ public:
 
     FunctionType &createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
-    InterfaceType &createInterfaceType(const std::string &interfaceName);
-
     DSType &createErrorType(const std::string &errorName, DSType &superType);
-
-    /**
-     * if not found type, search directory /etc/ydsh/dbus/
-     */
-    DSType &getDBusInterfaceType(const std::string &typeName);
 
     /**
      * set type name alias. if alias name has already defined, report error.
@@ -823,11 +809,6 @@ private:
     void checkElementTypes(const std::vector<DSType *> &elementTypes) const;
     void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
     bool asVariantType(const std::vector<DSType *> &elementTypes) const;
-
-    /**
-     * add standard dbus error type and alias. must call only once.
-     */
-    void registerDBusErrorTypes();
 };
 
 } // namespace ydsh

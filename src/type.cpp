@@ -88,10 +88,6 @@ MethodHandle *FunctionType::lookupMethodHandle(SymbolTable &symbolTable, const s
     return this->superType->lookupMethodHandle(symbolTable, methodName);
 }
 
-void FunctionType::accept(TypeVisitor *visitor) {
-    visitor->visitFunctionType(this);
-}
-
 // ################################
 // ##     native_type_info_t     ##
 // ################################
@@ -183,10 +179,6 @@ MethodHandle *BuiltinType::lookupMethodHandle(SymbolTable &symbolTable, const st
     return handle;
 }
 
-void BuiltinType::accept(TypeVisitor *visitor) {
-    visitor->visitBuiltinType(this);
-}
-
 unsigned int BuiltinType::getMethodSize() {
     if(this->superType != nullptr) {
         return this->superType->getMethodSize() + this->methodHandleMap.size();
@@ -219,10 +211,6 @@ bool ReifiedType::initMethodHandle(MethodHandle *handle, SymbolTable &symbolTabl
     return handle->init(symbolTable, info, &this->elementTypes);
 }
 
-void ReifiedType::accept(TypeVisitor *visitor) {
-    visitor->visitReifiedType(this);
-}
-
 // #######################
 // ##     TupleType     ##
 // #######################
@@ -253,83 +241,6 @@ FieldHandle *TupleType::lookupFieldHandle(SymbolTable &symbolTable, const std::s
         return this->superType->lookupFieldHandle(symbolTable, fieldName);
     }
     return iter->second;
-}
-
-void TupleType::accept(TypeVisitor *visitor) {
-    visitor->visitTupleType(this);
-}
-
-
-// ###########################
-// ##     InterfaceType     ##
-// ###########################
-
-InterfaceType::~InterfaceType() {
-    for(auto &pair : this->fieldHandleMap) {
-        delete pair.second;
-    }
-
-    for(auto &pair : this->methodHandleMap) {
-        delete pair.second;
-    }
-}
-
-FieldHandle *InterfaceType::newFieldHandle(const std::string &fieldName, DSType &fieldType, bool readOnly) {
-    // field index is always 0.
-    FieldAttributes attr(FieldAttribute::INTERFACE);
-    if(readOnly) {
-        attr.set(FieldAttribute::READ_ONLY);
-    }
-
-    auto *handle = new FieldHandle(&fieldType, 0, attr);
-    auto pair = this->fieldHandleMap.insert(std::make_pair(fieldName, handle));
-    if(pair.second) {
-        return handle;
-    }
-    delete handle;
-    return nullptr;
-
-}
-
-MethodHandle *InterfaceType::newMethodHandle(const std::string &methodName) {
-    auto *handle = new MethodHandle(0);
-    handle->setAttribute(MethodHandle::INTERFACE);
-    auto pair = this->methodHandleMap.insert(std::make_pair(methodName, handle));
-    if(!pair.second) {
-        handle->setNext(pair.first->second);
-        pair.first->second = handle;
-    }
-    return handle;
-}
-
-unsigned int InterfaceType::getFieldSize() {
-    return this->superType->getFieldSize() + this->fieldHandleMap.size();
-}
-
-unsigned int InterfaceType::getMethodSize() {
-    return this->superType->getMethodSize() + this->methodHandleMap.size();
-}
-
-FieldHandle *InterfaceType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) {
-    auto iter = this->fieldHandleMap.find(fieldName);
-    if(iter == this->fieldHandleMap.end()) {
-        return this->superType->lookupFieldHandle(symbolTable, fieldName);
-    }
-    return iter->second;
-}
-
-MethodHandle *InterfaceType::lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) {
-    auto iter = this->methodHandleMap.find(methodName);
-    if(iter == this->methodHandleMap.end()) {
-        return this->superType->lookupMethodHandle(symbolTable, methodName);
-    }
-
-    //FIXME:
-    return iter->second;
-}
-
-void InterfaceType::accept(TypeVisitor *visitor) {
-    visitor->visitInterfaceType(this);
 }
 
 // #######################
@@ -366,10 +277,6 @@ FieldHandle *ErrorType::lookupFieldHandle(SymbolTable &symbolTable, const std::s
 
 MethodHandle *ErrorType::lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) {
     return this->superType->lookupMethodHandle(symbolTable, methodName);
-}
-
-void ErrorType::accept(TypeVisitor *visitor) {
-    visitor->visitErrorType(this);
 }
 
 /**

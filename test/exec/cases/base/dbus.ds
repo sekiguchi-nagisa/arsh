@@ -1,3 +1,0 @@
-
-assert $DBus.available() == !! $DBus
-assert !!$DBus == $DBus

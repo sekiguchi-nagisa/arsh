@@ -32,7 +32,6 @@ struct DSState;
 
 namespace ydsh {
 
-struct TypeVisitor;
 class FieldHandle;
 class MethodHandle;
 class DSValue;
@@ -56,11 +55,10 @@ public:
     static constexpr flag8_t EXTENDIBLE   = 1 << 0;
     static constexpr flag8_t VOID_TYPE    = 1 << 1;  // Void
     static constexpr flag8_t FUNC_TYPE    = 1 << 2;  // function type
-    static constexpr flag8_t IFACE_TYPE   = 1 << 3;  // interface
-    static constexpr flag8_t RECORD_TYPE  = 1 << 4;  // indicate user defined type
-    static constexpr flag8_t NOTHING_TYPE = 1 << 5;  // Nothing (a.k.a. Bottom type)
-    static constexpr flag8_t OPTION_TYPE  = 1 << 6;  // Option<T>
-    static constexpr flag8_t MODULE_TYPE  = 1 << 7;  // Module type
+    static constexpr flag8_t RECORD_TYPE  = 1 << 3;  // indicate user defined type
+    static constexpr flag8_t NOTHING_TYPE = 1 << 4;  // Nothing (a.k.a. Bottom type)
+    static constexpr flag8_t OPTION_TYPE  = 1 << 5;  // Option<T>
+    static constexpr flag8_t MODULE_TYPE  = 1 << 6;  // Module type
 
     NON_COPYABLE(DSType);
 
@@ -95,13 +93,6 @@ public:
      */
     bool isFuncType() const {
         return hasFlag(this->attributeSet, FUNC_TYPE);
-    }
-
-    /**
-     * if this type is InterfaceType, return true.
-     */
-    bool isInterface() const {
-        return hasFlag(this->attributeSet, IFACE_TYPE);
     }
 
     bool isRecordType() const {
@@ -158,8 +149,6 @@ public:
      */
     virtual MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName);
 
-    virtual void accept(TypeVisitor *visitor) = 0;
-
     bool operator==(const DSType &type) const {
         return (unsigned long) this == (unsigned long) &type;
     }
@@ -210,8 +199,6 @@ public:
      * lookup from super type
      */
     MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
-
-    void accept(TypeVisitor *visitor) override;
 };
 
 /**
@@ -284,7 +271,6 @@ public:
     const DSCode *getConstructor() override;
     MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
 
-    void accept(TypeVisitor *visitor) override;
     unsigned int getMethodSize() override;
     const DSCode *getMethodRef(unsigned int methodIndex) override;
     void copyAllMethodRef(std::vector<const DSCode *> &methodTable) override;
@@ -317,7 +303,6 @@ public:
         return this->elementTypes;
     }
 
-    void accept(TypeVisitor *visitor) override;
 protected:
     bool initMethodHandle(MethodHandle *handle, SymbolTable &symbolTable, const NativeFuncInfo &info) override;
 };
@@ -340,39 +325,6 @@ public:
     unsigned int getFieldSize() override;
 
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
-    void accept(TypeVisitor *visitor) override;
-};
-
-
-/**
- * for D-Bus interface
- */
-class InterfaceType : public DSType {
-private:
-    std::unordered_map<std::string, FieldHandle *> fieldHandleMap;
-    std::unordered_map<std::string, MethodHandle *> methodHandleMap;
-
-public:
-    /**
-     * superType is always AnyType.
-     */
-    InterfaceType(unsigned int id, DSType *superType) :
-            DSType(id, superType, DSType::IFACE_TYPE) { }
-
-    ~InterfaceType() override;
-
-    /**
-     * return null, if found duplicated field
-     */
-    FieldHandle *newFieldHandle(const std::string &fieldName, DSType &fieldType, bool readOnly);
-
-    MethodHandle *newMethodHandle(const std::string &methodName);
-
-    unsigned int getFieldSize() override;
-    unsigned int getMethodSize() override;
-    FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
-    MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
-    void accept(TypeVisitor *visitor) override;
 };
 
 class ErrorType : public DSType {
@@ -399,22 +351,11 @@ public:
 
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
     MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
-    void accept(TypeVisitor *visitor) override;
+
     /**
      * call only once.
      */
     static void registerFuncInfo(native_type_info_t info);
-};
-
-struct TypeVisitor {
-    virtual ~TypeVisitor() = default;
-
-    virtual void visitFunctionType(FunctionType *type) = 0;
-    virtual void visitBuiltinType(BuiltinType *type) = 0;
-    virtual void visitReifiedType(ReifiedType *type) = 0;
-    virtual void visitTupleType(TupleType *type) = 0;
-    virtual void visitInterfaceType(InterfaceType *type) = 0;
-    virtual void visitErrorType(ErrorType *type) = 0;
 };
 
 /**

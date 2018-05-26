@@ -105,20 +105,8 @@ static bool checkDirectiveName(ApplyNode &node) {
     return exprNode->getVarName() == "test";
 }
 
-static bool toBool(const std::string &str) {
-    return strcasecmp(str.c_str(), "true") == 0;
-}
-
 DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &symbolTable) :
         TypeChecker(symbolTable, false), sourceName(sourceName) {
-    auto &boolType = this->symbolTable.get(TYPE::Boolean);
-    const char *names[] = {
-            "TRUE", "True", "true", "FALSE", "False", "false",
-    };
-    for(auto &name : names) {
-        this->setVarName(name, boolType);
-    }
-
     this->setVarName("0", this->symbolTable.get(TYPE::String));
 }
 
@@ -150,11 +138,6 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
 
     this->addHandler("lineNum", this->symbolTable.get(TYPE::Int32), [&](Node &node, Directive &d) {
         d.setLineNum(this->checkedCast<NumberNode>(node).getIntValue());
-    });
-
-    this->addHandler("ifHaveDBus", this->symbolTable.get(TYPE::Boolean), [&](Node &node, Directive &d) {
-        bool v = toBool(this->checkedCast<VarNode>(node).getVarName());
-        d.setIfHaveDBus(v);
     });
 
     this->addHandler("errorKind", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {

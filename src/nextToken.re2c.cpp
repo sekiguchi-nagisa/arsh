@@ -290,8 +290,6 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
       <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); UPDATE_LN(); FIND_NEW_LINE(); }
 
-      <TYPE> VAR_NAME ("." VAR_NAME)+
-                               { RET(TYPE_PATH); }
       <TYPE> "Func"            { RET(FUNC); }
       <TYPE> "typeof"          { RET(TYPEOF); }
       <TYPE> VAR_NAME          { RET(IDENTIFIER); }

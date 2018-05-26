@@ -235,9 +235,6 @@ protected:
     std::unique_ptr<Node> parse_substitution(bool strExpr = false);
 };
 
-// for DBus interface loading
-std::unique_ptr<Node> parse(const char *sourceName);
-
 } // namespace ydsh
 
 #endif //YDSH_PARSER_H

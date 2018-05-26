@@ -1,5 +1,0 @@
-#$test($result = 'throw', $lineNum = 5, $ifHaveDBus = $true, $errorKind = 'org.freedesktop.DBus.Error.NameHasNoOwner', $status = 1)
-
-assert($DBus.available())
-
-$DBus.systemBus().service("org.fr").object(p'/org');

@@ -22,8 +22,6 @@
 
 #cmakedefine USE_LOGGING
 
-#cmakedefine USE_DBUS
-
 #cmakedefine USE_SAFE_CAST
 
 #cmakedefine USE_FIXED_TIME     // time_util.h

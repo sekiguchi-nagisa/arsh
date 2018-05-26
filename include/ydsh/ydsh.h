@@ -253,18 +253,10 @@ const char *DSState_copyright();
 
 /* for feature detection */
 #define DS_FEATURE_LOGGING    ((unsigned int) (1 << 0))
-#define DS_FEATURE_DBUS       ((unsigned int) (1 << 1))
-#define DS_FEATURE_SAFE_CAST  ((unsigned int) (1 << 2))
-#define DS_FEATURE_FIXED_TIME ((unsigned int) (1 << 3))
+#define DS_FEATURE_SAFE_CAST  ((unsigned int) (1 << 1))
+#define DS_FEATURE_FIXED_TIME ((unsigned int) (1 << 2))
 
 unsigned int DSState_featureBit();
-
-/**
- * check if support D-Bus binding.
- * if support D-Bus, return 1.
- * otherwise, return 0.
- */
-#define DSState_supportDBus() (DSState_featureBit() & DS_FEATURE_DBUS ? 1 : 0)
 
 
 /* for input completion */

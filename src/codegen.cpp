@@ -436,25 +436,12 @@ void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
 
     switch(node.getAdditionalOp()) {
     case AccessNode::NOP: {
-        if(node.attr().has(FieldAttribute::INTERFACE)) {
-            std::string desc = encodeFieldDescriptor(
-                    node.getRecvNode()->getType(), node.getFieldName().c_str(), node.getType());
-            this->emitDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
-        } else {
-            this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
-        }
+        this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
         break;
     }
     case AccessNode::DUP_RECV: {
         this->emit0byteIns(OpCode::DUP);
-
-        if(node.attr().has(FieldAttribute::INTERFACE)) {
-            std::string desc = encodeFieldDescriptor(
-                    node.getRecvNode()->getType(), node.getFieldName().c_str(), node.getType());
-            this->emitDescriptorIns(OpCode::INVOKE_GETTER, std::move(desc));
-        } else {
-            this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
-        }
+        this->emit2byteIns(OpCode::LOAD_FIELD, node.getIndex());
         break;
     }
     }
@@ -595,12 +582,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
         }
 
         this->emitSourcePos(node.getPos());
-        if(node.getHandle()->isInterfaceMethod()) {
-            this->emitDescriptorIns(OpCode::INVOKE_METHOD,
-                                    encodeMethodDescriptor(node.getMethodName().c_str(), node.getHandle()));
-        } else {
-            this->emitCallIns(OpCode::CALL_METHOD, node.getArgNodes().size(), node.getHandle()->getMethodIndex());
-        }
+        this->emitCallIns(OpCode::CALL_METHOD, node.getArgNodes().size(), node.getHandle()->getMethodIndex());
         return;
     } else {
         this->visit(*node.getExprNode());
@@ -1031,11 +1013,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
         }
         this->visit(*node.getRightNode());
 
-        if(assignableNode->attr().has(FieldAttribute::INTERFACE)) {
-            std::string desc = encodeFieldDescriptor(
-                    accessNode->getRecvNode()->getType(), accessNode->getFieldName().c_str(), accessNode->getType());
-            this->emitDescriptorIns(OpCode::INVOKE_SETTER, std::move(desc));
-        } else if(accessNode->getRecvNode()->getType().isModType()) {
+        if(accessNode->getRecvNode()->getType().isModType()) {
             this->emit2byteIns(OpCode::STORE_GLOBAL, index);
         } else {
             this->emit2byteIns(OpCode::STORE_FIELD, index);

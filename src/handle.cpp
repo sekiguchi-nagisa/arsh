@@ -176,9 +176,4 @@ bool MethodHandle::init(SymbolTable &symbolTable, const NativeFuncInfo &info,
     return true;
 }
 
-bool MethodHandle::isSignal() const {
-    return this->isInterfaceMethod() && this->paramTypes.size() == 1 &&
-           this->paramTypes[0]->isFuncType() && this->returnType->isVoidType();
-}
-
 } // namespace ydsh

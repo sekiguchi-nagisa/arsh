@@ -27,12 +27,6 @@
 namespace ydsh {
 namespace directive {
 
-enum class RunCondition : unsigned int {
-    IGNORE,
-    TRUE,
-    FALSE,
-};
-
 class Directive {
 private:
     /**
@@ -48,11 +42,6 @@ private:
     unsigned int status{0};
 
     unsigned int lineNum{0};
-
-    /**
-     * default is IGNORE
-     */
-    RunCondition ifHaveDBus{RunCondition::IGNORE};
 
     /**
      * represent parse or type error name or raised exception type name.
@@ -109,18 +98,6 @@ public:
 
     unsigned int getLineNum() const {
         return this->lineNum;
-    }
-
-    void setIfHaveDBus(bool value) {
-        if(value) {
-            this->ifHaveDBus = RunCondition::TRUE;
-        } else {
-            this->ifHaveDBus = RunCondition::FALSE;
-        }
-    }
-
-    RunCondition getIfHaveDBus() const {
-        return this->ifHaveDBus;
     }
 
     void setErrorKind(const std::string &kind) {

@@ -60,9 +60,6 @@ namespace ydsh {
     OP(CALL_METHOD  , 4,  1) \
     OP(CALL_FUNC    , 2,  1) \
     OP(CALL_NATIVE  , 8,  1) \
-    OP(INVOKE_METHOD, 2,  0) \
-    OP(INVOKE_GETTER, 2,  0) \
-    OP(INVOKE_SETTER, 2,  0) \
     OP(INIT_MODULE  , 0,  0) \
     OP(RETURN       , 0,  0) \
     OP(RETURN_V     , 0,  0) \
@@ -106,8 +103,6 @@ namespace ydsh {
     OP(NEW_REDIR    , 0,  1) \
     OP(ADD_REDIR_OP , 1, -1) \
     OP(DO_REDIR     , 0,  0) \
-    OP(DBUS_INIT_SIG, 0,  0) \
-    OP(DBUS_WAIT_SIG, 0,  0) \
     OP(RAND         , 0,  1) \
     OP(GET_SECOND   , 0,  1) \
     OP(SET_SECOND   , 0, -1) \

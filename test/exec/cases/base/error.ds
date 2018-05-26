@@ -31,8 +31,3 @@ $e = new TypeCastError("")
 assert($e is TypeCastError)
 assert($e is Error)
 assert($e.name() == "TypeCastError")
-
-$e = new DBusError("")
-assert($e is DBusError)
-assert($e is Error)
-assert($e.name() == "DBusError")

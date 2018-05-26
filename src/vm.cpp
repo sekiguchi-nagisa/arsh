@@ -101,14 +101,6 @@ DSState::DSState() :
         callStack(new DSValue[DEFAULT_STACK_SIZE]), logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
 
-// for exception handling
-struct DSException {};
-
-void DSState::throwException(DSValue &&except) {
-    this->thrownObject = std::move(except);
-    throw DSException();
-}
-
 void DSState::reserveLocalStackImpl(unsigned int needSize) {
     unsigned int newSize = this->callStackSize;
     do {
@@ -348,93 +340,6 @@ static bool callConstructor(DSState &st, unsigned short paramSize) {
 }
 
 const NativeCode *getNativeCode(unsigned int index);
-
-/**
- * invoke interface method.
- *
- * stack state in method call    stack grow ===>
- *
- * +-----------+------------------+   +--------+
- * | stack top | param1(receiver) | ~ | paramN |
- * +-----------+------------------+   +--------+
- *             | offset           |   |        |
- *
- * @param st
- * @param constPoolIndex
- * indicates the constant pool index of descriptor object.
- */
-static void invokeMethod(DSState &st, unsigned short constPoolIndex) {
-    assert(!st.code->is(CodeKind::NATIVE));
-    const auto *code = static_cast<const CompiledCode *>(st.code);
-
-    auto pair = decodeMethodDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
-    const char *methodName = pair.first;
-    auto handle = pair.second;
-    const unsigned int actualParamSize = handle->getParamTypes().size() + 1;    // include receiver
-    const unsigned int recvIndex = st.stackTopIndex - handle->getParamTypes().size();
-
-    windStackFrame(st, actualParamSize, actualParamSize, getNativeCode(0));
-    DSValue ret = typeAs<ProxyObject>(st.callStack[recvIndex])->invokeMethod(st, methodName, handle);
-    unwindStackFrame(st);
-
-    if(ret) {
-        st.push(std::move(ret));
-    }
-}
-
-/**
- * invoke interface getter.
- * @param st
- * @param constPoolIndex
- * indicates the constant pool index of descriptor object.
- */
-static void invokeGetter(DSState &st, unsigned short constPoolIndex) {
-    assert(!st.code->is(CodeKind::NATIVE));
-    auto *code = static_cast<const CompiledCode *>(st.code);
-
-    auto tuple = decodeFieldDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
-    const DSType *recvType = std::get<0>(tuple);
-    const char *fieldName = std::get<1>(tuple);
-    const DSType *fieldType = std::get<2>(tuple);
-    const unsigned int recvIndex = st.stackTopIndex;
-
-    windStackFrame(st, 1, 1, getNativeCode(0));
-    DSValue ret = typeAs<ProxyObject>(st.callStack[recvIndex])->invokeGetter(st, recvType, fieldName, fieldType);
-    unwindStackFrame(st);
-
-    assert(ret);
-    st.push(std::move(ret));
-}
-
-/**
- * invoke interface setter.
- *
- * stack state in setter call    stack grow ===>
- *
- * +-----------+--------+-------+
- * | stack top |  recv  | value |
- * +-----------+--------+-------+
- *             | offset |       |
- *
- * @param st
- * @param constPoolIndex
- * indicates the constant pool index of descriptor object
- */
-static void invokeSetter(DSState &st, unsigned short constPoolIndex) {
-    assert(!st.code->is(CodeKind::NATIVE));
-    auto *code = static_cast<const CompiledCode *>(st.code);
-
-    auto tuple = decodeFieldDescriptor(typeAs<String_Object>(code->getConstPool()[constPoolIndex])->getValue());
-    const DSType *recvType = std::get<0>(tuple);
-    const char *fieldName = std::get<1>(tuple);
-    const DSType *fieldType = std::get<2>(tuple);
-    const unsigned int recvIndex = st.stackTopIndex - 1;
-
-    windStackFrame(st, 2, 2, getNativeCode(0));
-    typeAs<ProxyObject>(st.callStack[recvIndex])->invokeSetter(st, recvType, fieldName, fieldType);
-    unwindStackFrame(st);
-}
-
 
 
 /* for substitution */
@@ -1424,18 +1329,6 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
     }
 }
 
-
-// prototype of DBus related api
-void DBusInitSignal(DSState &st);
-
-/**
- *
- * @param st
- * @return
- * last elements indicates resolved signal handler
- */
-std::vector<DSValue> DBusWaitSignal(DSState &st);
-
 static NativeCode initSignalTrampoline() noexcept {
     auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
     code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
@@ -1750,24 +1643,6 @@ static bool mainLoop(DSState &state) {
             }
             vmnext;
         }
-        vmcase(INVOKE_METHOD) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            invokeMethod(state, index);
-            vmnext;
-        }
-        vmcase(INVOKE_GETTER) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            invokeGetter(state, index);
-            vmnext;
-        }
-        vmcase(INVOKE_SETTER) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            invokeSetter(state, index);
-            vmnext;
-        }
         vmcase(INIT_MODULE) {
             auto &code = typeAs<FuncObject>(state.peek())->getCode();
             windStackFrame(state, 0, 0, &code);
@@ -2071,20 +1946,6 @@ static bool mainLoop(DSState &state) {
             TRY(typeAs<RedirConfig>(state.peek())->redirect(state));
             vmnext;
         }
-        vmcase(DBUS_INIT_SIG) {
-            DBusInitSignal(state);
-            vmnext;
-        }
-        vmcase(DBUS_WAIT_SIG) {
-            auto v = DBusWaitSignal(state);
-            TRY(!state.getThrownObject());
-            state.reserveLocalStack(v.size());
-            for(auto &e : v) {
-                state.push(std::move(e));
-            }
-            TRY(applyFuncObject(state, v.size() - 1));
-            vmnext;
-        }
         vmcase(RAND) {
             std::random_device rand;
             std::default_random_engine engine(rand());
@@ -2186,89 +2047,10 @@ static bool handleException(DSState &state, bool forceUnwind) {
     return false;
 }
 
-/**
- * stub of D-Bus related method and api
- */
-
-#ifndef USE_DBUS
-
-void DBusInitSignal(DSState &) {  }   // do nothing
-
-std::vector<DSValue> DBusWaitSignal(DSState &st) {
-    raiseError(st, st.symbolTable.get(TYPE::Error), "not support method");
-    return std::vector<DSValue>();
-}
-
-DSValue newDBusObject(SymbolTable &symbolTable) {
-    return DSValue::create<DSObject>(symbolTable.get(TYPE::DBus));
-}
-
-DSValue dbus_systemBus(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-DSValue dbus_sessionBus(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-DSValue dbus_getSrv(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-DSValue dbus_getPath(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-DSValue dbus_getIface(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-DSValue dbus_introspect(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-DSValue bus_service(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-DSValue bus_listNames(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-DSValue bus_listActiveNames(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-DSValue service_object(DSState &ctx) {
-    raiseError(ctx, ctx.symbolTable.get(TYPE::Error), "not support method");
-    return DSValue();
-}
-
-#endif
-
-
 } // namespace ydsh
 
-
-static bool runMainLoopImpl(DSState &state) {
-    try {
-        return mainLoop(state);
-    } catch(const DSException &) {
-        return false;
-    }
-}
-
 static bool runMainLoop(DSState &state) {
-    while(!runMainLoopImpl(state)) {
+    while(!mainLoop(state)) {
         bool forceUnwind = state.symbolTable.get(TYPE::_InternalStatus)
                 .isSameOrBaseTypeOf(*state.getThrownObject()->getType());
         if(!handleException(state, forceUnwind)) {

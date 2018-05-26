@@ -77,9 +77,6 @@ DSType *TypeGenerator::toTypeImpl(TypeNode &node) {
         }
         return &symbolTable.createFuncType(&returnType, std::move(paramTypes));
     }
-    case TypeNode::DBusIface: {
-        return &symbolTable.getDBusInterfaceType(static_cast<DBusIfaceTypeNode&>(node).getTokenText());
-    }
     case TypeNode::Return: {
         auto &typeNode = static_cast<ReturnTypeNode&>(node);
         unsigned int size = typeNode.getTypeNodes().size();
@@ -116,41 +113,6 @@ DSType& TypeGenerator::toType(TypeNode &node) {
     } catch(TypeLookupError &e) {
         throw TypeCheckError(node.getToken(), e);
     }
-}
-
-DSType& TypeGenerator::resolveInterface(InterfaceNode *node) {
-    auto &type = this->symbolTable.createInterfaceType(node->getInterfaceName());
-
-    // create field handle
-    unsigned int fieldSize = node->getFieldDeclNodes().size();
-    for(unsigned int i = 0; i < fieldSize; i++) {
-        VarDeclNode *fieldDeclNode = node->getFieldDeclNodes()[i];
-        auto &fieldType = this->toType(*node->getFieldTypeNodes()[i]);
-        auto *handle = type.newFieldHandle(fieldDeclNode->getVarName(), fieldType, fieldDeclNode->isReadOnly());
-        if(handle == nullptr) {
-            RAISE_TC_ERROR(DefinedField, *fieldDeclNode, fieldDeclNode->getVarName().c_str());
-        }
-    }
-
-    // create method handle
-    for(FunctionNode *funcNode : node->getMethodDeclNodes()) {
-        MethodHandle *handle = type.newMethodHandle(funcNode->getFuncName());
-        handle->setRecvType(type);
-        auto *retTypeNode = funcNode->getReturnTypeToken();
-        handle->setReturnType(this->toType(*retTypeNode));
-        // resolve multi return
-        if(retTypeNode->typeKind == TypeNode::Return && static_cast<ReturnTypeNode *>(retTypeNode)->hasMultiReturn()) {
-            handle->setAttribute(MethodHandle::MULTI_RETURN);
-        }
-
-        unsigned int paramSize = funcNode->getParamNodes().size();
-        for(unsigned int i = 0; i < paramSize; i++) {
-            handle->addParamType(this->toType(*funcNode->getParamTypeNodes()[i]));
-        }
-    }
-
-    node->setType(this->symbolTable.get(TYPE::Void));
-    return type;
 }
 
 
@@ -1318,7 +1280,7 @@ void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
         RAISE_TC_ERROR(OutsideToplevel, node);
     }
-    TypeGenerator(this->symbolTable, this).resolveInterface(&node);
+    fatal("unsupported syntax");
 }
 
 void TypeChecker::visitSourceNode(SourceNode &node) {

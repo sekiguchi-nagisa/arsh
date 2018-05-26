@@ -200,8 +200,6 @@ public:
 
     DSType &toType(TypeNode &node);
 
-    DSType &resolveInterface(InterfaceNode *node);
-
 private:
     DSType *toTypeImpl(TypeNode &node);
 };

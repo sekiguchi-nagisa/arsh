@@ -79,12 +79,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-missing-field
 #     set extra option     #
 #++++++++++++++++++++++++++#
 
-option(USE_DBUS "support D-Bus" ON)
-if(NOT ("${CMAKE_SYSTEM_NAME}" MATCHES "Linux"))
-    set(USE_DBUS OFF)
-endif()
-show_option(USE_DBUS)
-
 option(USE_LOGGING "enable internal logging" OFF)
 option(USE_SAFE_CAST "check object cast" OFF)
 option(USE_FIXED_TIME "enable fixed time source" OFF)
@@ -150,25 +144,6 @@ check_program(aclocal)
 check_header(HAVE_PCRE_H "pcre.h")
 set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
 check_library(HAVE_LIBPCRE "pcre")
-
-
-#++++++++++++++++++++++#
-#     find libdbus     #
-#++++++++++++++++++++++#
-
-if(USE_DBUS)
-    set(CMAKE_INCLUDE_PATH
-        "/usr/include/dbus-1.0"
-        "/usr/lib64/dbus-1.0/include"
-        "/usr/lib/dbus-1.0/include"
-        "/usr/lib/x86_64-linux-gnu/dbus-1.0/include"
-    )
-    check_header(HAVE_DBUS_H "dbus/dbus.h")
-    check_header(HAVE_DBUS_ARCH_DEPS_H "dbus/dbus-arch-deps.h")
-    check_library(HAVE_LIBDBUS "dbus-1")
-else()
-    unset(HAVE_LIBDBUS CACHE)
-endif()
 
 
 #++++++++++++++++++++++++#
@@ -252,10 +227,6 @@ set(BIN_NAME ydsh)
 include_directories(src)
 include_directories(include)
 
-if(USE_DBUS)
-    include_directories(${HAVE_DBUS_H} ${HAVE_DBUS_ARCH_DEPS_H})
-endif()
-
 set(YDSH_SRC
         src/ydsh.cpp
         src/node.cpp
@@ -274,17 +245,10 @@ set(YDSH_SRC
         src/signals.cpp
         src/job.cpp)
 
-if(USE_DBUS)
-    set(YDSH_SRC ${YDSH_SRC}
-            src/dbus/dbus_bind.cpp
-            src/dbus/dbus_util.cpp)
-endif()
-
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_iface)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/pid_check)
 
 set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/gtest)
@@ -300,7 +264,7 @@ endif()
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)
-target_link_libraries(${YDSH_STATIC} ${HAVE_LIBDBUS} ${HAVE_LIBPCRE})
+target_link_libraries(${YDSH_STATIC} ${HAVE_LIBPCRE})
 
 
 #==============#

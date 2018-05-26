@@ -35,13 +35,10 @@
 | APPEND_MAP    |                                | value1 value2 value3 -> value1               | append value2 and value3 into value1               |
 | NEW_TUPLE     | 4: byte1 ~ byte4               | -> value                                     | create an empty tuple value                        |
 | NEW           | 4: byte1 ~ byte4               | -> value                                     | create an empty object of a specified type         |
-| CALL_INIT     | 2: param1 param2               | recv param1 ~ paramN -> value                               | call constructor                                   |
+| CALL_INIT     | 2: param1 param2               | recv param1 ~ paramN -> value                | call constructor                                   |
 | CALL_METHOD   | 4: param1 param2 index1 index2 | recv param1 ~ paramN -> result               | call virtual method                                |
 | CALL_FUNC     | 2: param1 param2               | func param1 ~ paramN -> result               | apply function object                              |
 | CALL_NATIVE   | 8: ptr1 ~ ptr8                 | -> value                                     | call native function                               |
-| INVOKE_METHOD | 2: byte1 byte2                 | recv param1 ~ paramN -> result               | invoke interface method                            |
-| INVOKE_GETTER | 2: byte1 byte2                 | recv -> value                                | invoke interface getter                            |
-| INVOKE_SETTER | 2: byte1 byte2                 | recv value ->                                | invoke interface setter                            |
 | INIT_MODULE   |                                | value -> value                               | initialize module                                  |
 | RETURN        |                                | -> [empty]                                   | return from callable                               |
 | RETURN_V      |                                | value -> [empty]                             | return value from callable                         |
@@ -85,8 +82,6 @@
 | NEW_REDIR     |                                | -> value                                     | create new RedireConfig                            |
 | ADD_REDIR_OP  | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection target          |
 | DO_REDIR      |                                | value -> value                               | perform redirection                                |
-| DBUS_INIT_SIG |                                | [no change]                                  | init DBus signal match rule                        |
-| DBUS_WAIT_SIG |                                | -> func param1 ~ paramN                      | wait DBus signal, then dispatched handler          |
 | RAND          |                                | -> value                                     | generate random number and push stack top          |
 | GET_SECOND    |                                | -> value                                     | get differential time between current and base     |
 | SET_SECOND    |                                | value ->                                     | set base time                                      |

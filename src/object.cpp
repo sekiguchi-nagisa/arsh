@@ -58,10 +58,6 @@ size_t DSObject::hash() const {
     return std::hash<long>()(reinterpret_cast<long>(this));
 }
 
-bool DSObject::introspect(DSState &, DSType *targetType) {
-    return targetType->isSameOrBaseTypeOf(*this->type);
-}
-
 // ########################
 // ##     Int_Object     ##
 // ########################
@@ -470,54 +466,6 @@ std::string FuncObject::toString(DSState &, VisitedSet *) {
     str += this->code.getName();
     str += ")";
     return str;
-}
-
-static std::string toHexString(unsigned long v) {
-    constexpr unsigned int size = sizeof(v) * 2 + 3;
-    char buf[size];
-    snprintf(buf, size, "0x%lx", v);
-    return std::string(buf);
-}
-
-std::string encodeMethodDescriptor(const char *methodName, const MethodHandle *handle) {
-    const auto num = reinterpret_cast<unsigned long>(handle);
-    std::string str(toHexString(num));
-    str += ';';
-    str += methodName;
-    return str;
-}
-
-std::pair<const char *, const MethodHandle *> decodeMethodDescriptor(const char *desc) {
-    const char *delim = strchr(desc, ';');
-    std::string ptr(desc, delim - desc);
-    int s = 0;
-    unsigned long v = convertToUint64(ptr.c_str(), s);
-    assert(s == 0);
-    return std::make_pair(delim + 1, reinterpret_cast<const MethodHandle *>(v));
-}
-
-std::string encodeFieldDescriptor(const DSType &recvType, const char *fieldName, const DSType &fieldType) {
-    std::string str(toHexString(reinterpret_cast<unsigned long>(&fieldType)));
-    str += ';';
-    str += toHexString(reinterpret_cast<unsigned long>(&recvType));
-    str += ';';
-    str += fieldName;
-    return str;
-}
-
-std::tuple<const DSType *, const char *, const DSType *> decodeFieldDescriptor(const char *desc) {
-    const char *delim = strchr(desc, ';');
-    std::string ptr(desc, delim - desc);
-    int s = 0;
-    const auto *fieldType = reinterpret_cast<const DSType *>(convertToUint64(ptr.c_str(), s));
-    assert(s == 0);
-
-    desc = delim + 1;
-    delim = strchr(desc, ';');
-    ptr = std::string(desc, delim - desc);
-    const auto *recvType = reinterpret_cast<const DSType *>(convertToUint64(ptr.c_str(), s));
-    assert(s == 0);
-    return std::make_tuple(recvType, delim + 1, fieldType);
 }
 
 } // namespace ydsh

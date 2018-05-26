@@ -160,7 +160,6 @@ public:
     OP(Base) \
     OP(Reified) \
     OP(Func) \
-    OP(DBusIface) \
     OP(Return) \
     OP(TypeOf)
 
@@ -253,27 +252,6 @@ public:
 
     TypeNode *getReturnTypeNode() const {
         return this->returnTypeNode;
-    }
-
-    void dump(NodeDumper &dumper) const override;
-};
-
-class DBusIfaceTypeNode : public TypeNode {
-private:
-    /**
-     * must be valid interface name.
-     * ex. org.freedesktop.NetworkManager
-     */
-    std::string name;
-
-public:
-    DBusIfaceTypeNode(Token token, std::string &&name) :
-            TypeNode(TypeNode::DBusIface, token), name(std::move(name)) { }
-
-    ~DBusIfaceTypeNode() override = default;
-
-    const std::string &getTokenText() const {
-        return this->name;
     }
 
     void dump(NodeDumper &dumper) const override;

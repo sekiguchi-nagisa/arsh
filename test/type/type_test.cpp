@@ -151,7 +151,6 @@ public:
         ASSERT_EQ(hasFlag(set, DSType::EXTENDIBLE), type.isExtendible());
         ASSERT_EQ(hasFlag(set, DSType::VOID_TYPE), type.isVoidType());
         ASSERT_EQ(hasFlag(set, DSType::FUNC_TYPE), type.isFuncType());
-        ASSERT_EQ(hasFlag(set, DSType::IFACE_TYPE), type.isInterface());
         ASSERT_EQ(hasFlag(set, DSType::RECORD_TYPE), type.isRecordType());
     }
 
@@ -216,7 +215,6 @@ TEST_F(TypeTest, builtinName) {
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("KeyNotFoundError", this->pool.get(TYPE::KeyNotFoundError)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("TypeCastError", this->pool.get(TYPE::TypeCastError)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("StackOverflowError", this->pool.get(TYPE::StackOverflowError)));
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("DBusError", this->pool.get(TYPE::DBusError)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Regex", this->pool.get(TYPE::Regex)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("RegexSyntaxError", this->pool.get(TYPE::RegexSyntaxError)));
 }
@@ -253,7 +251,6 @@ TEST_F(TypeTest, superType) {
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::KeyNotFoundError), this->pool.get(TYPE::Error)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::TypeCastError), this->pool.get(TYPE::Error)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::StackOverflowError), this->pool.get(TYPE::Error)));
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::DBusError), this->pool.get(TYPE::Error)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Regex), this->pool.get(TYPE::Any)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::RegexSyntaxError), this->pool.get(TYPE::Error)));
 }
@@ -284,7 +281,6 @@ TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(TYPE::KeyNotFoundError)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(TYPE::TypeCastError)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(TYPE::StackOverflowError)));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(TYPE::DBusError)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(TYPE::RegexSyntaxError)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Regex)));
 

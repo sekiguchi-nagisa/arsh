@@ -47,7 +47,6 @@ using CStrBuffer = FlexBuffer<char *>;
  * enum order is corresponding to builtin variable declaration order.
  */
 enum class BuiltinVarOffset : unsigned int {
-    DBUS,           // DBus
     VERSION,        // YDSH_VERSION (equivalent to ps_intrp '\V')
     REPLY,          // REPLY (for read command)
     REPLY_VAR,      // reply (fo read command)
@@ -217,14 +216,9 @@ void raiseError(DSState &st, DSType &errorType, std::string &&message);
 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message);
 
-[[noreturn]]
-void throwError(DSState &st, DSType &errorType, std::string &&message);
-
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace);
 
 const char *getConfigRootDir();
-
-const char *getIfaceDir();
 
 /**
  *
