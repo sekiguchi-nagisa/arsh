@@ -47,78 +47,58 @@ void BreakGather::addJumpNode(JumpNode *node) {
     this->entry->jumpNodes.push_back(node);
 }
 
+// #########################
+// ##     TypeChecker     ##
+// #########################
 
-// ###########################
-// ##     TypeGenerator     ##
-// ###########################
-
-DSType *TypeGenerator::toTypeImpl(TypeNode &node) {
+DSType *TypeChecker::toTypeImpl(TypeNode &node) {
     switch(node.typeKind) {
     case TypeNode::Base: {
-        return &symbolTable.getTypeOrThrow(static_cast<BaseTypeNode &>(node).getTokenText());
+        return &this->symbolTable.getTypeOrThrow(static_cast<BaseTypeNode &>(node).getTokenText());
     }
     case TypeNode::Reified: {
         auto &typeNode = static_cast<ReifiedTypeNode&>(node);
         unsigned int size = typeNode.getElementTypeNodes().size();
-        auto &typeTemplate = symbolTable.getTypeTemplate(typeNode.getTemplate()->getTokenText());
+        auto &typeTemplate = this->symbolTable.getTypeTemplate(typeNode.getTemplate()->getTokenText());
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = &this->toType(*typeNode.getElementTypeNodes()[i]);
+            elementTypes[i] = &this->toType(typeNode.getElementTypeNodes()[i]);
         }
-        return &symbolTable.createReifiedType(typeTemplate, std::move(elementTypes));
+        return &this->symbolTable.createReifiedType(typeTemplate, std::move(elementTypes));
     }
     case TypeNode::Func: {
         auto &typeNode = static_cast<FuncTypeNode&>(node);
-        auto &returnType = this->toType(*typeNode.getReturnTypeNode());
+        auto &returnType = this->toType(typeNode.getReturnTypeNode());
         unsigned int size = typeNode.getParamTypeNodes().size();
         std::vector<DSType *> paramTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            paramTypes[i] = &this->toType(*typeNode.getParamTypeNodes()[i]);
+            paramTypes[i] = &this->toType(typeNode.getParamTypeNodes()[i]);
         }
-        return &symbolTable.createFuncType(&returnType, std::move(paramTypes));
+        return &this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
     }
     case TypeNode::Return: {
         auto &typeNode = static_cast<ReturnTypeNode&>(node);
         unsigned int size = typeNode.getTypeNodes().size();
         if(size == 1) {
-            return &this->toType(*typeNode.getTypeNodes()[0]);
+            return &this->toType(typeNode.getTypeNodes()[0]);
         }
 
         std::vector<DSType *> types(size);
         for(unsigned int i = 0; i < size; i++) {
-            types[i] = &this->toType(*typeNode.getTypeNodes()[i]);
+            types[i] = &this->toType(typeNode.getTypeNodes()[i]);
         }
-        return &symbolTable.createTupleType(std::move(types));
+        return &this->symbolTable.createTupleType(std::move(types));
     }
     case TypeNode::TypeOf:
-        if(this->checker == nullptr) {
-            RAISE_TC_ERROR(DisallowTypeof, node);
-        } else {
-            auto &typeNode = static_cast<TypeOfNode&>(node);
-            auto &type = this->checker->checkType(typeNode.getExprNode());
-            if(type.isNothingType()) {
-                RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->symbolTable.getTypeName(type));
-            }
-            return &type;
+        auto &typeNode = static_cast<TypeOfNode&>(node);
+        auto &type = this->checkType(typeNode.getExprNode());
+        if(type.isNothingType()) {
+            RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->symbolTable.getTypeName(type));
         }
+        return &type;
     }
     return nullptr; // for suppressing gcc warning (normally unreachable).
 }
-
-DSType& TypeGenerator::toType(TypeNode &node) {
-    try {
-        auto *type = this->toTypeImpl(node);
-        node.setType(*type);
-        return *type;
-    } catch(TypeLookupError &e) {
-        throw TypeCheckError(node.getToken(), e);
-    }
-}
-
-
-// #########################
-// ##     TypeChecker     ##
-// #########################
 
 DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
                                DSType *unacceptableType, CoercionKind &kind) {
@@ -440,7 +420,12 @@ void TypeChecker::convertToStringExpr(BinaryOpNode &node) {
 
 // visitor api
 void TypeChecker::visitTypeNode(TypeNode &node) {
-    TypeGenerator(this->symbolTable, this).toType(node);
+    try {
+        auto *type = this->toTypeImpl(node);
+        node.setType(*type);
+    } catch(TypeLookupError &e) {
+        throw TypeCheckError(node.getToken(), e);
+    }
 }
 
 void TypeChecker::visitNumberNode(NumberNode &node) {

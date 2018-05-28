@@ -113,9 +113,10 @@ struct TypeFactory<Func_t<R, P...>> {
 class TypeTest : public ::testing::Test {
 public:
     SymbolTable pool;
+    TypeChecker checker;
 
 public:
-    TypeTest() = default;
+    TypeTest() : checker(this->pool, false) {}
 
     virtual ~TypeTest() = default;
 
@@ -179,7 +180,9 @@ public:
     template <typename T>
     DSType &toType() {
         auto t = TypeFactory<T>{}();
-        return TypeGenerator(this->pool).toType(*t);
+        auto node = this->checker(nullptr, std::move(t));
+        assert(node->is(NodeKind::TypeOp));
+        return static_cast<TypeOpNode &>(*node).getExprNode()->getType();
     }
 };
 

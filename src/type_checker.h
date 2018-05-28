@@ -187,24 +187,6 @@ public:
     }
 };
 
-class TypeChecker;
-
-class TypeGenerator {
-private:
-    SymbolTable &symbolTable;
-    TypeChecker *checker;
-
-public:
-    explicit TypeGenerator(SymbolTable &symbolTable, TypeChecker *checker = nullptr) :
-            symbolTable(symbolTable), checker(checker) {}
-
-    DSType &toType(TypeNode &node);
-
-private:
-    DSType *toTypeImpl(TypeNode &node);
-};
-
-
 class TypeChecker : protected NodeVisitor {
 protected:
     friend class TypeGenerator;
@@ -242,6 +224,8 @@ public:
 
 protected:
     // base type check entry point
+    DSType *toTypeImpl(TypeNode &node);
+
     DSType &toType(TypeNode *node) {
         return this->checkType(nullptr, node, nullptr);
     }
