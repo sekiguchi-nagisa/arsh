@@ -128,7 +128,6 @@ DEFINE_TCError(InsideFinally     ,"unavailable inside finally block"            
 DEFINE_TCError(InsideChild       ,"unavailable inside child process"                  );
 DEFINE_TCError(OutsideToplevel   ,"only available top level scope"                    );
 DEFINE_TCError(NotCallable       ,"Func type object is not directly callable"         );
-DEFINE_TCError(DisallowTypeof    ,"not allow typeof operator"                         );
 DEFINE_TCError(UselessBlock      ,"useless block"                                     );
 DEFINE_TCError(EmptyTry          ,"empty try block"                                   );
 DEFINE_TCError(UselessTry        ,"useless try block"                                 );
