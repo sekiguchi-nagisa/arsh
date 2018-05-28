@@ -89,12 +89,6 @@ void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
     }
 }
 
-void ByteCodeGenerator::emitDescriptorIns(OpCode op, std::string &&desc) {
-    unsigned short index = this->emitConstant(
-            DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::move(desc)));
-    this->emit2byteIns(op, index);
-}
-
 void ByteCodeGenerator::generateToString() {
     if(this->handle_STR == nullptr) {
         this->handle_STR = this->symbolTable.get(TYPE::Any).lookupMethodHandle(this->symbolTable, std::string(OP_STR));

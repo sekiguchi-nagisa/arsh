@@ -392,7 +392,6 @@ private:
     }
 
     void emitLdcIns(DSValue &&value);
-    void emitDescriptorIns(OpCode op, std::string &&desc);
     void generateToString();
     void emitNumCastIns(const DSType &beforeType, const DSType &afterType);
     void emitBranchIns(OpCode op, const Label &label);
