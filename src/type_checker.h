@@ -230,7 +230,7 @@ public:
 
     ~TypeChecker() override = default;
 
-    DSType *operator()(const DSType *prevType, Node *&node);
+    std::unique_ptr<Node> operator()(const DSType *prevType, std::unique_ptr<Node> &&node);
 
     const SymbolTable &getSymbolTable() const {
         return this->symbolTable;

@@ -150,22 +150,6 @@ DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
     };
 }
 
-struct NodeWrapper {
-    Node *ptr;
-
-    explicit NodeWrapper(std::unique_ptr<Node> &&ptr) : ptr(ptr.release()) {}
-
-    ~NodeWrapper() {
-        delete this->ptr;
-    }
-
-    std::unique_ptr<Node> release() {
-        Node *old = nullptr;
-        std::swap(this->ptr, old);
-        return std::unique_ptr<Node>(old);
-    }
-};
-
 std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
     std::unique_ptr<Node> node;
     if(this->parser) {
@@ -190,9 +174,8 @@ void FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
         return;
     }
 
-    NodeWrapper wrap(std::move(node));
-    this->prevType = this->checker(this->prevType, wrap.ptr);
-    node = wrap.release();
+    node = this->checker(this->prevType, std::move(node));
+    this->prevType = &node->getType();
 
     if(this->astDumper) {
         this->astDumper(*node);

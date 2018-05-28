@@ -1320,7 +1320,26 @@ void TypeChecker::visitEmptyNode(EmptyNode &node) {
     node.setType(this->symbolTable.get(TYPE::Void));
 }
 
-DSType* TypeChecker::operator()(const DSType *prevType, Node *&node) {
+struct NodeWrapper {
+    Node *ptr;
+
+    explicit NodeWrapper(std::unique_ptr<Node> &&ptr) : ptr(ptr.release()) {}
+
+    ~NodeWrapper() {
+        delete this->ptr;
+    }
+
+    std::unique_ptr<Node> release() {
+        Node *old = nullptr;
+        std::swap(this->ptr, old);
+        return std::unique_ptr<Node>(old);
+    }
+};
+
+std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&ptr) {
+    NodeWrapper wrap(std::move(ptr));
+    Node *&node = wrap.ptr;
+
     if(prevType != nullptr && prevType->isNothingType()) {
         RAISE_TC_ERROR(Unreachable, *node);
     }
@@ -1340,7 +1359,7 @@ DSType* TypeChecker::operator()(const DSType *prevType, Node *&node) {
         RAISE_TC_ERROR(UselessBlock, *node);
     }
 
-    return &node->getType();
+    return wrap.release();
 }
 
 } // namespace ydsh
