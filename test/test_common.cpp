@@ -269,28 +269,60 @@ static int tryToDup(int srcFD, int targetFD) {
     return 0;
 }
 
-static ProcHandle spawnImpl(int (&inpipe)[2], int (&outpipe)[2], int (&errpipe)[2]) {
-    pid_t pid = fork();
-    if(pid > 0) {
-        close(inpipe[READ_PIPE]);
-        close(outpipe[WRITE_PIPE]);
-        close(errpipe[WRITE_PIPE]);
+class StreamBuilder {
+private:
+    const IOConfig config;
+    int inpipe[2];
+    int outpipe[2];
+    int errpipe[2];
 
-        return ProcHandle(pid, inpipe[WRITE_PIPE], outpipe[READ_PIPE], errpipe[READ_PIPE]);
-    } else if(pid == 0) {
-        tryToDup(inpipe[READ_PIPE], STDIN_FILENO);
-        tryToDup(outpipe[WRITE_PIPE], STDOUT_FILENO);
-        tryToDup(errpipe[WRITE_PIPE], STDERR_FILENO);
-
-        close(inpipe[WRITE_PIPE]);
-        close(outpipe[READ_PIPE]);
-        close(errpipe[READ_PIPE]);
-
-        return ProcHandle();
-    } else {
-        error_at("fork failed");
+public:
+    StreamBuilder(IOConfig config) : config(config),
+            inpipe{dup(this->config.in.fd), -1},
+            outpipe{-1, dup(this->config.out.fd)},
+            errpipe{-1, dup(this->config.err.fd)} {
     }
-}
+
+    void initPipe() {
+        if(this->config.in.fd == IOConfig::PIPE && pipe(this->inpipe) < 0) {
+            error_at("pipe creation failed");
+        }
+        if(this->config.out.fd == IOConfig::PIPE && pipe(this->outpipe) < 0) {
+            error_at("pipe creation failed");
+        }
+        if(this->config.err.fd == IOConfig::PIPE && pipe(this->errpipe) < 0) {
+            error_at("pipe creation failed");
+        }
+    }
+
+    void closeInParent() {
+        close(this->inpipe[READ_PIPE]);
+        close(this->outpipe[WRITE_PIPE]);
+        close(this->errpipe[WRITE_PIPE]);
+    }
+
+    void setInChild() {
+        tryToDup(this->inpipe[READ_PIPE], STDIN_FILENO);
+        tryToDup(this->outpipe[WRITE_PIPE], STDOUT_FILENO);
+        tryToDup(this->errpipe[WRITE_PIPE], STDERR_FILENO);
+
+        close(this->inpipe[WRITE_PIPE]);
+        close(this->outpipe[READ_PIPE]);
+        close(this->errpipe[READ_PIPE]);
+    }
+
+    int inputWriter() const {
+        return this->inpipe[WRITE_PIPE];
+    }
+
+    int outputReader() const {
+        return this->outpipe[READ_PIPE];
+    }
+
+    int errorReader() const {
+        return this->errpipe[READ_PIPE];
+    }
+};
 
 ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
     // flush standard stream due to prevent mixing io buffer
@@ -298,22 +330,18 @@ ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
     fflush(stdout);
     fflush(stderr);
 
-    pid_t inpipe[] = {dup(config.in.fd), -1};
-    pid_t outpipe[] = {-1, dup(config.out.fd)};
-    pid_t errpipe[] = {-1, dup(config.err.fd)};
-
-    // create pipe
-    if(config.in.fd == IOConfig::PIPE && pipe(inpipe) < 0) {
-        error_at("pipe creation failed");
+    StreamBuilder builder(config);
+    builder.initPipe();
+    pid_t pid = fork();
+    if(pid > 0) {
+        builder.closeInParent();
+        return ProcHandle(pid, builder.inputWriter(), builder.outputReader(), builder.errorReader());
+    } else if(pid == 0) {
+        builder.setInChild();
+        return ProcHandle();
+    } else {
+        error_at("fork failed");
     }
-    if(config.out.fd == IOConfig::PIPE && pipe(outpipe) < 0) {
-        error_at("pipe creation failed");
-    }
-    if(config.err.fd == IOConfig::PIPE && pipe(errpipe) < 0) {
-        error_at("pipe creation failed");
-    }
-
-    return ::spawnImpl(inpipe, outpipe, errpipe);
 }
 
 void ProcBuilder::syncPWD() const {
