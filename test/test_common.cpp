@@ -306,9 +306,11 @@ public:
         tryToDup(this->outpipe[WRITE_PIPE], STDOUT_FILENO);
         tryToDup(this->errpipe[WRITE_PIPE], STDERR_FILENO);
 
-        close(this->inpipe[WRITE_PIPE]);
-        close(this->outpipe[READ_PIPE]);
-        close(this->errpipe[READ_PIPE]);
+        for(unsigned int i = 0; i < 2; i++) {
+            close(this->inpipe[i]);
+            close(this->outpipe[i]);
+            close(this->errpipe[i]);
+        }
     }
 
     int inputWriter() const {
