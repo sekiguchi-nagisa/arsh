@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <stdarg.h>
+#include <fcntl.h>
 
 #include <cstdlib>
 #include <cassert>
@@ -269,6 +270,32 @@ static int tryToDup(int srcFD, int targetFD) {
     return 0;
 }
 
+static int openPTYMaster(IOConfig config, std::string &slaveName) {
+    if(config.in.fd == IOConfig::PTY ||
+       config.out.fd == IOConfig::PTY ||
+       config.err.fd == IOConfig::PTY) {
+        int fd = posix_openpt(O_RDWR | O_NOCTTY);
+        if(fd < 0) {
+            return -1;
+        }
+        if(grantpt(fd) != 0) {
+            int e = errno;
+            close(fd);
+            errno = e;
+            return -1;
+        }
+        if(unlockpt(fd) != 0) {
+            int e = errno;
+            close(fd);
+            errno = e;
+            return -1;
+        }
+        slaveName = ptsname(fd);
+        return fd;
+    }
+    return -1;
+}
+
 class StreamBuilder {
 private:
     const IOConfig config;
@@ -284,15 +311,54 @@ public:
     }
 
     void initPipe() {
-        if(this->config.in.fd == IOConfig::PIPE && pipe(this->inpipe) < 0) {
+        if(this->config.in.is(IOConfig::PIPE) && pipe(this->inpipe) < 0) {
             error_at("pipe creation failed");
         }
-        if(this->config.out.fd == IOConfig::PIPE && pipe(this->outpipe) < 0) {
+        if(this->config.out.is(IOConfig::PIPE) && pipe(this->outpipe) < 0) {
             error_at("pipe creation failed");
         }
-        if(this->config.err.fd == IOConfig::PIPE && pipe(this->errpipe) < 0) {
+        if(this->config.err.is(IOConfig::PIPE) && pipe(this->errpipe) < 0) {
             error_at("pipe creation failed");
         }
+    }
+
+    std::string initPTYMaster() {
+        std::string slaveName;
+        int fd = openPTYMaster(this->config, slaveName);
+        if(fd > -1) {
+            if(this->config.in.is(IOConfig::PTY)) {
+                this->inpipe[WRITE_PIPE] = dup(fd);
+            }
+            if(this->config.out.is(IOConfig::PTY)) {
+                this->outpipe[READ_PIPE] = dup(fd);
+            }
+            if(this->config.err.is(IOConfig::PTY)) {
+                this->errpipe[READ_PIPE] = dup(fd);
+            }
+            close(fd);
+        }
+        return slaveName;
+    }
+
+    void initPTYSlave(const std::string &slaveName) {
+        if(slaveName.empty()) {
+            return;
+        }
+
+        int fd = open(slaveName.c_str(), O_RDWR);
+        if(fd == -1) {
+            error_at("open pty slave failed: %s", slaveName.c_str());
+        }
+        if(this->config.in.is(IOConfig::PTY)) {
+            this->inpipe[READ_PIPE] = dup(fd);
+        }
+        if(this->config.out.is(IOConfig::PTY)) {
+            this->outpipe[WRITE_PIPE] = dup(fd);
+        }
+        if(this->config.err.is(IOConfig::PTY)) {
+            this->errpipe[WRITE_PIPE] = dup(fd);
+        }
+        close(fd);
     }
 
     void closeInParent() {
@@ -334,11 +400,13 @@ ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
 
     StreamBuilder builder(config);
     builder.initPipe();
+    auto slaveName = builder.initPTYMaster();
     pid_t pid = fork();
     if(pid > 0) {
         builder.closeInParent();
         return ProcHandle(pid, builder.inputWriter(), builder.outputReader(), builder.errorReader());
     } else if(pid == 0) {
+        builder.initPTYSlave(slaveName);
         builder.setInChild();
         return ProcHandle();
     } else {

@@ -201,6 +201,10 @@ struct IOConfig {
         operator bool() const {
             return this->fd > -1;
         }
+
+        bool is(FDType type) const {
+            return this->fd == static_cast<int>(type);
+        }
     };
 
     FDWrapper in;
