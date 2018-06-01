@@ -38,6 +38,31 @@ TEST_F(ProcTest, pipe) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 10, WaitStatus::EXITED, "hello", "world"));
 }
 
+//static std::string
+
+TEST_F(ProcTest, pty) {
+    IOConfig config;
+    config.in = IOConfig::PTY;
+    config.out = IOConfig::PTY;
+    config.err = IOConfig::PIPE;
+
+    auto ret = spawnAndWait(config, [&]{
+        if(!isatty(STDIN_FILENO)) {
+            return 10;
+        }
+        if(!isatty(STDOUT_FILENO)) {
+            return 20;
+        }
+        if(isatty(STDERR_FILENO)) {
+            return 30;
+        }
+        printf("hello pty\n");
+        printf("!!");
+        return 0;
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED, "hello pty\n!!"));
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

@@ -19,8 +19,10 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <termios.h>
 
 #include <cstdlib>
 #include <cassert>
@@ -345,10 +347,27 @@ public:
             return;
         }
 
+        if(setsid() == -1) {
+            error_at("failed");
+        }
+
         int fd = open(slaveName.c_str(), O_RDWR);
         if(fd == -1) {
             error_at("open pty slave failed: %s", slaveName.c_str());
         }
+
+#ifdef TIOCSCTTY
+        if(ioctl(fd, TIOCSCTTY, 0) == -1) {
+            error_at("failed");
+        }
+#endif
+
+        termios term;
+        cfmakeraw(&term);
+        if(tcsetattr(fd, TCSAFLUSH, &term) == -1) {
+            error_at("failed");
+        }
+
         if(this->config.in.is(IOConfig::PTY)) {
             this->inpipe[READ_PIPE] = dup(fd);
         }
