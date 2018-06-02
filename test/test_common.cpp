@@ -265,13 +265,6 @@ ProcHandle ProcBuilder::operator()() {
 static constexpr unsigned int READ_PIPE = 0;
 static constexpr unsigned int WRITE_PIPE = 1;
 
-static int tryToDup(int srcFD, int targetFD) {
-    if(srcFD > -1) {
-        return dup2(srcFD, targetFD);
-    }
-    return 0;
-}
-
 static int openPTYMaster(IOConfig config, std::string &slaveName) {
     if(config.in.fd == IOConfig::PTY ||
        config.out.fd == IOConfig::PTY ||
@@ -280,13 +273,7 @@ static int openPTYMaster(IOConfig config, std::string &slaveName) {
         if(fd < 0) {
             return -1;
         }
-        if(grantpt(fd) != 0) {
-            int e = errno;
-            close(fd);
-            errno = e;
-            return -1;
-        }
-        if(unlockpt(fd) != 0) {
+        if(grantpt(fd) != 0 || unlockpt(fd) != 0) {
             int e = errno;
             close(fd);
             errno = e;
@@ -387,9 +374,9 @@ public:
     }
 
     void setInChild() {
-        tryToDup(this->inpipe[READ_PIPE], STDIN_FILENO);
-        tryToDup(this->outpipe[WRITE_PIPE], STDOUT_FILENO);
-        tryToDup(this->errpipe[WRITE_PIPE], STDERR_FILENO);
+        dup2(this->inpipe[READ_PIPE], STDIN_FILENO);
+        dup2(this->outpipe[WRITE_PIPE], STDOUT_FILENO);
+        dup2(this->errpipe[WRITE_PIPE], STDERR_FILENO);
 
         for(unsigned int i = 0; i < 2; i++) {
             close(this->inpipe[i]);
