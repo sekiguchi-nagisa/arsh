@@ -424,11 +424,11 @@ public:
     explicit ModResult(ModType *type) : kind(TYPE), type(type) {}
 
     static ModResult unresolved() {
-        return ModResult(UNRESOLVED, nullptr);
+        return {UNRESOLVED, nullptr};
     }
 
     static ModResult circular(const char *fullpath) {
-        return ModResult(CIRCULAR, fullpath);
+        return {CIRCULAR, fullpath};
     }
 
     Kind getKind() const {
