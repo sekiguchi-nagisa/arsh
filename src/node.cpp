@@ -265,7 +265,7 @@ void RegexNode::dump(NodeDumper &dumper) const {
 // #######################
 
 ArrayNode::~ArrayNode() {
-    for(Node *e : this->nodes) {
+    for(auto &e : this->nodes) {
         delete e;
     }
 }
@@ -283,11 +283,11 @@ void ArrayNode::dump(NodeDumper &dumper) const {
 // #####################
 
 MapNode::~MapNode() {
-    for(Node *e : this->keyNodes) {
+    for(auto &e : this->keyNodes) {
         delete e;
     }
 
-    for(Node *e : this->valueNodes) {
+    for(auto &e : this->valueNodes) {
         delete e;
     }
 }
@@ -440,7 +440,7 @@ ApplyNode* ApplyNode::newMethodCall(Node *recvNode, Token token, std::string &&m
 ApplyNode::~ApplyNode() {
     delete this->exprNode;
 
-    for(Node *n : this->argNodes) {
+    for(auto &n : this->argNodes) {
         delete n;
     }
 }
@@ -477,7 +477,7 @@ NewNode::NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<No
 NewNode::~NewNode() {
     delete this->targetTypeNode;
 
-    for(Node *n : this->argNodes) {
+    for(auto &n : this->argNodes) {
         delete n;
     }
 }
@@ -583,7 +583,7 @@ void RedirNode::dump(NodeDumper &dumper) const {
 CmdNode::~CmdNode() {
     delete this->nameNode;
 
-    for(auto *e : this->argNodes) {
+    for(auto &e : this->argNodes) {
         delete e;
     }
 }
@@ -612,7 +612,7 @@ void CmdNode::dump(NodeDumper &dumper) const {
 // ##########################
 
 PipelineNode::~PipelineNode() {
-    for(auto *p : this->nodes) {
+    for(auto &p : this->nodes) {
         delete p;
     }
 }
@@ -1027,11 +1027,11 @@ void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
 // ##########################
 
 FunctionNode::~FunctionNode() {
-    for(VarNode *n : this->paramNodes) {
+    for(auto &n : this->paramNodes) {
         delete n;
     }
 
-    for(TypeNode *t : this->paramTypeNodes) {
+    for(auto &t : this->paramTypeNodes) {
         delete t;
     }
 
@@ -1061,15 +1061,15 @@ void FunctionNode::dump(NodeDumper &dumper) const {
 // ###########################
 
 InterfaceNode::~InterfaceNode() {
-    for(FunctionNode *node : this->methodDeclNodes) {
+    for(auto &node : this->methodDeclNodes) {
         delete node;
     }
 
-    for(VarDeclNode *node : this->fieldDeclNodes) {
+    for(auto &node : this->fieldDeclNodes) {
         delete node;
     }
 
-    for(TypeNode *t : this->fieldTypeNodes) {
+    for(auto &t : this->fieldTypeNodes) {
         delete t;
     }
 }
