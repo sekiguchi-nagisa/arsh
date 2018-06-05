@@ -265,24 +265,43 @@ ProcHandle ProcBuilder::operator()() {
 static constexpr unsigned int READ_PIPE = 0;
 static constexpr unsigned int WRITE_PIPE = 1;
 
-static int openPTYMaster(IOConfig config, std::string &slaveName) {
-    if(config.in.fd == IOConfig::PTY ||
-       config.out.fd == IOConfig::PTY ||
-       config.err.fd == IOConfig::PTY) {
+static void loginPTY(int fd) {
+    if(fd < 0) {
+        return;
+    }
+
+    if(setsid() == -1) {
+        error_at("failed");
+    }
+
+    if(ioctl(fd, TIOCSCTTY, 0) == -1) {
+        error_at("failed");
+    }
+}
+
+static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {
+    if(config.in.is(IOConfig::PTY) ||
+       config.out.is(IOConfig::PTY) ||
+       config.err.is(IOConfig::PTY)) {
         int fd = posix_openpt(O_RDWR | O_NOCTTY);
-        if(fd < 0) {
-            return -1;
+        if(fd == -1) {
+            error_at("open pty master failed");
         }
         if(grantpt(fd) != 0 || unlockpt(fd) != 0) {
-            int e = errno;
-            close(fd);
-            errno = e;
-            return -1;
+            error_at("failed");
         }
-        slaveName = ptsname(fd);
-        return fd;
+        masterFD = fd;
+        fd = open(ptsname(masterFD), O_RDWR | O_NOCTTY);
+        if(fd == -1) {
+            error_at("open pty slave failed");
+        }
+        termios term;
+        cfmakeraw(&term);
+        if(tcsetattr(fd, TCSAFLUSH, &term) == -1) {
+            error_at("failed");
+        }
+        slaveFD = fd;
     }
-    return -1;
 }
 
 class StreamBuilder {
@@ -291,6 +310,9 @@ private:
     int inpipe[2];
     int outpipe[2];
     int errpipe[2];
+
+    int masterFD{-1};
+    int slaveFD{-1};
 
 public:
     StreamBuilder(IOConfig config) : config(config),
@@ -311,49 +333,31 @@ public:
         }
     }
 
-    std::string initPTYMaster() {
-        std::string slaveName;
-        int fd = openPTYMaster(this->config, slaveName);
-        if(fd > -1) {
-            if(this->config.in.is(IOConfig::PTY)) {
-                this->inpipe[WRITE_PIPE] = dup(fd);
-            }
-            if(this->config.out.is(IOConfig::PTY)) {
-                this->outpipe[READ_PIPE] = dup(fd);
-            }
-            if(this->config.err.is(IOConfig::PTY)) {
-                this->errpipe[READ_PIPE] = dup(fd);
-            }
-            close(fd);
-        }
-        return slaveName;
+    void init() {
+        openPTY(this->config, this->masterFD, this->slaveFD);
+        this->initPipe();
     }
 
-    void initPTYSlave(const std::string &slaveName) {
-        if(slaveName.empty()) {
-            return;
+    void setInParent() {
+        close(this->slaveFD);
+        this->closeInParent();
+        if(this->masterFD > -1) {
+            if(this->config.in.is(IOConfig::PTY)) {
+                this->inpipe[WRITE_PIPE] = dup(this->masterFD);
+            }
+            if(this->config.out.is(IOConfig::PTY)) {
+                this->outpipe[READ_PIPE] = dup(this->masterFD);
+            }
+            if(this->config.err.is(IOConfig::PTY)) {
+                this->errpipe[READ_PIPE] = dup(this->masterFD);
+            }
+            close(this->masterFD);
         }
+    }
 
-        if(setsid() == -1) {
-            error_at("failed");
-        }
-
-        int fd = open(slaveName.c_str(), O_RDWR);
-        if(fd == -1) {
-            error_at("open pty slave failed: %s", slaveName.c_str());
-        }
-
-#ifdef TIOCSCTTY
-        if(ioctl(fd, TIOCSCTTY, 0) == -1) {
-            error_at("failed");
-        }
-#endif
-
-        termios term;
-        cfmakeraw(&term);
-        if(tcsetattr(fd, TCSAFLUSH, &term) == -1) {
-            error_at("failed");
-        }
+    void initPTYSlave() {
+        int fd = this->slaveFD;
+        loginPTY(fd);
 
         if(this->config.in.is(IOConfig::PTY)) {
             this->inpipe[READ_PIPE] = dup(fd);
@@ -385,6 +389,12 @@ public:
         }
     }
 
+    void setChildStream() {
+        close(this->masterFD);
+        this->initPTYSlave();
+        this->setInChild();
+    }
+
     int inputWriter() const {
         return this->inpipe[WRITE_PIPE];
     }
@@ -405,15 +415,13 @@ ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
     fflush(stderr);
 
     StreamBuilder builder(config);
-    builder.initPipe();
-    auto slaveName = builder.initPTYMaster();
+    builder.init();
     pid_t pid = fork();
     if(pid > 0) {
-        builder.closeInParent();
+        builder.setInParent();
         return ProcHandle(pid, builder.inputWriter(), builder.outputReader(), builder.errorReader());
     } else if(pid == 0) {
-        builder.initPTYSlave(slaveName);
-        builder.setInChild();
+        builder.setChildStream();
         return ProcHandle();
     } else {
         error_at("fork failed");
