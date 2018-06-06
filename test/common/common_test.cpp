@@ -61,6 +61,21 @@ TEST_F(ProcTest, pty) {
         return 0;
     });
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED, "hello pty\n!!"));
+
+    auto handle = ProcBuilder::spawn(config, [&]{
+        char buf[64];
+        auto size = read(STDIN_FILENO, buf, 64);
+        if(size > 0) {
+            buf[size] = '\0';
+            printf("%s\n", buf);
+            return 0;
+        }
+        return 1;
+    });
+    std::string str = "hello";
+    write(handle.in(), str.c_str(), str.size());
+    auto ret2 = handle.waitAndGetResult(false);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret2, 0, WaitStatus::EXITED, "hello\n"));
 }
 
 
