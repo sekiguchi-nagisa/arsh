@@ -73,7 +73,8 @@ TEST_F(ProcTest, pty) {
         return 1;
     });
     std::string str = "hello";
-    (void)write(handle.in(), str.c_str(), str.size());
+    auto r = write(handle.in(), str.c_str(), str.size());
+    (void) r;
     auto ret2 = handle.waitAndGetResult(false);
     ASSERT_NO_FATAL_FAILURE(this->expect(ret2, 0, WaitStatus::EXITED, "hello\n"));
 }
