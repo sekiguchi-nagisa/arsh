@@ -280,15 +280,6 @@ function %OP_UNMATCH($this : String, $re : Regex) : Boolean
 function realpath($this : String) : Option<String>
 ```
 
-## ObjectPath type
-```
-function %OP_EQ($this : ObjectPath, $target : ObjectPath) : Boolean
-
-function %OP_NE($this : ObjectPath, $target : ObjectPath) : Boolean
-
-function size($this : ObjectPath) : Int32
-```
-
 ## UnixFD type
 ```
 constructor($this : UnixFD, $path : String) : Void
@@ -300,43 +291,6 @@ function dup($this : UnixFD) : UnixFD
 function %OP_BOOL($this : UnixFD) : Boolean
 
 function %OP_NOT($this : UnixFD) : Boolean
-```
-
-## DBus type
-```
-function systemBus($this : DBus) : Bus
-
-function sessionBus($this : DBus) : Bus
-
-function waitSignal($this : DBus, $obj : DBusObject) : Void
-
-function available($this : DBus) : Boolean
-
-function %OP_BOOL($this : DBus) : Boolean
-
-function %OP_NOT($this : DBus) : Boolean
-
-function getService($this : DBus, $proxy : DBusObject) : Service
-
-function getObjectPath($this : DBus, $proxy : DBusObject) : ObjectPath
-
-function getIfaces($this : DBus, $proxy : DBusObject) : Array<String>
-
-function introspect($this : DBus, $proxy : DBusObject) : String
-```
-
-## Bus type
-```
-function service($this : Bus, $dest : String) : Service
-
-function listNames($this : Bus) : Array<String>
-
-function listActiveNames($this : Bus) : Array<String>
-```
-
-## Service type
-```
-function object($this : Service, $path : ObjectPath) : DBusObject
 ```
 
 ## Error type
