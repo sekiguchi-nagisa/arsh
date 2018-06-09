@@ -802,7 +802,6 @@ private:
 
     void checkElementTypes(const std::vector<DSType *> &elementTypes) const;
     void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
-    bool asVariantType(const std::vector<DSType *> &elementTypes) const;
 };
 
 } // namespace ydsh
