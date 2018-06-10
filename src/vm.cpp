@@ -1292,7 +1292,6 @@ static void callPipeline(DSState &state, bool lastPipe) {
 
         auto jobEntry = JobImpl::create(procSize, childs, lastPipe);
         if(lastPipe) {
-            state.foreground = jobEntry;
             state.push(DSValue::create<PipelineState>(state, std::move(jobEntry)));
         } else {
             // job termination
