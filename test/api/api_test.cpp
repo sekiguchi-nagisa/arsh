@@ -244,7 +244,7 @@ static std::vector<PIDs> decompose(const std::string &str) {
 
 struct APITest : public ExpectOutput {};
 
-TEST_F(APITest, case7) {
+TEST_F(APITest, case7) {    // enable job control
     SCOPED_TRACE("");
 
     // normal
@@ -278,10 +278,10 @@ TEST_F(APITest, case7) {
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].ppid, pids[1].ppid));
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[1].pgid));
 
     // udc2
     result = EXEC("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
@@ -294,9 +294,21 @@ TEST_F(APITest, case7) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
+
+    // last pipe
+    result = EXEC("%s --first | { %s; }", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    pids = decompose(result.out);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pgid, pids[1].pgid));
 }
 
-TEST_F(APITest, case8) {
+TEST_F(APITest, case8) {    // disable job control
     SCOPED_TRACE("");
 
     // normal
@@ -316,7 +328,7 @@ TEST_F(APITest, case8) {
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].ppid, pids[1].ppid));
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[1].pid, pids[1].pgid));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
@@ -331,6 +343,18 @@ TEST_F(APITest, case8) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[1].pid, pids[1].pgid));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
+
+    // last pipe
+    result = EXEC("%s --first | { %s; }", PID_CHECK_PATH, PID_CHECK_PATH);
+    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    pids = decompose(result.out);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pgid, pids[1].pgid));
 }
 
 #undef EXEC

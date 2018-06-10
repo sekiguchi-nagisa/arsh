@@ -824,7 +824,6 @@ bool RedirConfig::redirect(DSState &st) const {
 
 static constexpr flag8_t UDC_ATTR_SETVAR    = 1 << 0;
 static constexpr flag8_t UDC_ATTR_NEED_FORK = 1 << 1;
-static constexpr flag8_t UDC_ATTR_LAST_PIPE = 1 << 2;
 
 /**
  * stack state in function apply    stack grow ===>
@@ -982,7 +981,7 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
     }
 }
 
-static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv, bool lastPipe) {
+static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv) {
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
@@ -996,10 +995,6 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
 
     bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
-    if(pgid == 0 && lastPipe) {
-        pgid = state.foreground->getPid(0);
-    }
-
     auto proc = Proc::fork(state, pgid, rootShell);
     if(proc.pid() == -1) {
         perror("child process error");
@@ -1028,18 +1023,9 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         // wait process or job termination
         int status;
         auto waitOp = rootShell && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
-        if(lastPipe) {
-            state.foreground->append(proc);
-            status = state.foreground->wait(waitOp);
-            state.foreground->restoreStdin();
-            if(state.foreground->available()) {
-                state.jobTable.attach(state.foreground);
-            }
-        } else {
-            status = proc.wait(waitOp);
-            if(proc.state() != Proc::TERMINATED) {
-                state.jobTable.attach(JobImpl::create(proc));
-            }
+        status = proc.wait(waitOp);
+        if(proc.state() != Proc::TERMINATED) {
+            state.jobTable.attach(JobImpl::create(proc));
         }
         tryToForeground(state);
         state.jobTable.updateStatus();
@@ -1080,7 +1066,7 @@ static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         argv[size] = nullptr;
 
         if(hasFlag(attr, UDC_ATTR_NEED_FORK)) {
-            int status = forkAndExec(state, cmdName, cmd, argv, hasFlag(attr, UDC_ATTR_LAST_PIPE));
+            int status = forkAndExec(state, cmdName, cmd, argv);
             state.pushExitStatus(status);
         } else {
             xexecve(cmd.filePath, argv, nullptr);
@@ -1237,11 +1223,24 @@ static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     state.pushExitStatus(0);
 }
 
-static void callPipeline(DSState &state) {
+/**
+ *
+ * @param state
+ * @param lastPipe
+ * if true, evaluate last pipe in parent shell
+ */
+static void callPipeline(DSState &state, bool lastPipe) {
     /**
-     * exclude last pipe (ex. ls | grep . | grep . => pipeSize == 2)
+     * ls | grep .
+     * ==> pipeSize == 1, procSize == 2
+     *
+     * if lastPipe is true,
+     *
+     * ls | { grep . ;}
+     * ==> pipeSize == 1, procSize == 1
      */
-    const unsigned int pipeSize = read8(GET_CODE(state), state.pc() + 1) - 1;
+    const unsigned int procSize = read8(GET_CODE(state), state.pc() + 1) - 1;
+    const unsigned int pipeSize = procSize - (lastPipe ? 0 : 1);
 
     assert(pipeSize > 0);
 
@@ -1249,13 +1248,13 @@ static void callPipeline(DSState &state) {
     initPipe(pipeSize, pipefds);
 
     // fork
-    Proc childs[pipeSize];
+    Proc childs[procSize];
     const bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
     Proc proc;
 
     unsigned int procIndex;
-    for(procIndex = 0; procIndex < pipeSize && (proc = Proc::fork(state, pgid, rootShell)).pid() > 0; procIndex++) {
+    for(procIndex = 0; procIndex < procSize && (proc = Proc::fork(state, pgid, rootShell)).pid() > 0; procIndex++) {
         childs[procIndex] = proc;
         if(pgid == 0) {
             pgid = proc.pid();
@@ -1277,17 +1276,34 @@ static void callPipeline(DSState &state) {
             dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
             dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
         }
+        if(procIndex == pipeSize && !lastPipe) {    // last process
+            dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+        }
         closeAllPipe(pipeSize, pipefds);
 
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
-    } else if(procIndex == pipeSize) { // parent (last pipeline)
-        auto jobEntry = JobImpl::create(pipeSize, childs);
-        state.foreground = jobEntry;
-        state.push(DSValue::create<PipelineState>(state, std::move(jobEntry)));
-
-        dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+    } else if(procIndex == procSize) { // parent (last pipeline)
+        if(lastPipe) {
+            dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+        }
         closeAllPipe(pipeSize, pipefds);
+
+        auto jobEntry = JobImpl::create(procSize, childs, lastPipe);
+        if(lastPipe) {
+            state.foreground = jobEntry;
+            state.push(DSValue::create<PipelineState>(state, std::move(jobEntry)));
+        } else {
+            // job termination
+            auto waitOp = rootShell && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+            int status = jobEntry->wait(waitOp);
+            if(jobEntry->available()) {
+                state.jobTable.attach(jobEntry);
+            }
+            tryToForeground(state);
+            state.jobTable.updateStatus();
+            state.pushExitStatus(status);
+        }
 
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
@@ -1399,7 +1415,7 @@ static bool checkVMEvent(DSState &state) {
 #define vmdispatch(V) switch(V)
 
 #if 0
-#define vmcase(code) case OpCode::code: {fprintf(stderr, "pc: %u, code: %s\n", ctx.pc(), #code); }
+#define vmcase(code) case OpCode::code: {fprintf(stderr, "pc: %u, code: %s\n", state.pc(), #code); }
 #else
 #define vmcase(code) case OpCode::code:
 #endif
@@ -1859,8 +1875,10 @@ static bool mainLoop(DSState &state) {
             forkAndEval(state);
             vmnext;
         }
-        vmcase(PIPELINE) {
-            callPipeline(state);
+        vmcase(PIPELINE)
+        vmcase(PIPELINE_LP) {
+            bool lastPipe = op == OpCode::PIPELINE_LP;
+            callPipeline(state, lastPipe);
             vmnext;
         }
         vmcase(EXPAND_TILDE) {
@@ -1883,16 +1901,11 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CALL_CMD)
-        vmcase(CALL_CMD_P)
-        vmcase(CALL_CMD_LP) {
+        vmcase(CALL_CMD_P) {
             bool needFork = op != OpCode::CALL_CMD_P;
-            bool lastPipe = op == OpCode::CALL_CMD_LP;
             flag8_set_t attr = 0;
             if(needFork) {
                 setFlag(attr, UDC_ATTR_NEED_FORK);
-            }
-            if(lastPipe) {
-                setFlag(attr, UDC_ATTR_LAST_PIPE);
             }
 
             auto redir = state.pop();

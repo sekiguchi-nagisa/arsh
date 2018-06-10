@@ -70,12 +70,12 @@
 | REF_NE        |                                | value1 value2 -> value                       | check referencial un-equality                      |
 | FORK          | 1: byte1 2: offset1 offset2    | -> value                                     | evaluate code in child shell                       |
 | PIPELINE      | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline                                      |
+| PIPELINE_LP   | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline (lastPipe is true)                   |
 | EXPAND_TILDE  |                                | value -> value                               | perform tilde expansion                            |
 | NEW_CMD       |                                | value -> value                               | pop stack top and store it to new argv             |
 | ADD_CMD_ARG   | 1: byte1                       | value1 value2 value3 -> value1 value2        | add stack top value as command argument            |
 | CALL_CMD      |                                | value1 value2 -> value                       | call command. value1 is parameter, value2 is redir |
 | CALL_CMD_P    |                                | value1 value2 -> value                       | call command in child                              |
-| CALL_CMD_LP   |                                | value1 value2 -> value                       | call command in last pipeline                      |
 | BUILTIN_CMD   |                                | -> value                                     | call builtin command command                       |
 | BUILTIN_EVAL  |                                | -> value                                     | call builtin eval command                          |
 | BUILTIN_EXEC  |                                | -> value / [terminate]                       | call builtin exec command                          |

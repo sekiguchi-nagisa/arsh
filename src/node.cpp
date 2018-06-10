@@ -604,7 +604,6 @@ void CmdNode::dump(NodeDumper &dumper) const {
     DUMP(argNodes);
     DUMP_PRIM(redirCount);
     DUMP_PRIM(inPipe);
-    DUMP_PRIM(inLastPipe);
 }
 
 // ##########################
@@ -638,10 +637,6 @@ void PipelineNode::dump(NodeDumper &dumper) const {
 void PipelineNode::addNodeImpl(Node *node) {
     if(node->is(NodeKind::Cmd)) {
         static_cast<CmdNode *>(node)->setInPipe(true);
-        static_cast<CmdNode *>(node)->setInLastPipe(true);
-        if(!this->nodes.empty() && this->nodes.back()->is(NodeKind::Cmd)) {
-            static_cast<CmdNode *>(this->nodes.back())->setInLastPipe(false);
-        }
     }
     this->nodes.push_back(node);
     this->updateToken(node->getToken());

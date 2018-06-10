@@ -459,7 +459,7 @@ private:
                         unsigned short localOffset = 0, unsigned short localSize = 0);
     void enterFinally();
     void generateCmdArg(CmdArgNode &node);
-    void emitPipelineIns(const std::vector<Label> &labels);
+    void emitPipelineIns(const std::vector<Label> &labels, bool lastPipe);
     void generateStringExpr(StringExprNode &node, bool fragment);
     void generateBreakContinue(JumpNode &node);
 

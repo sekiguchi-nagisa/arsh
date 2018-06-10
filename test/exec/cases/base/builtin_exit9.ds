@@ -1,0 +1,6 @@
+
+#$test($result = 'SUCCESS', $status = 0)
+
+true | exit 34
+assert $? == 34
+true

@@ -1101,12 +1101,10 @@ private:
 
     bool inPipe;
 
-    bool inLastPipe;
-
 public:
     explicit CmdNode(StringNode *nameNode) :
             Node(NodeKind::Cmd, nameNode->getToken()),
-            nameNode(nameNode), redirCount(0), inPipe(false), inLastPipe(false) { }
+            nameNode(nameNode), redirCount(0), inPipe(false) { }
 
     ~CmdNode() override;
 
@@ -1130,14 +1128,6 @@ public:
 
     bool getInPipe() const {
         return this->inPipe;
-    }
-
-    void setInLastPipe(bool in) {
-        this->inLastPipe = in;
-    }
-
-    bool getInLastPipe() const {
-        return this->inLastPipe;
     }
 
     void addRedirNode(RedirNode *node);
@@ -1172,6 +1162,10 @@ public:
 
     unsigned int getBaseIndex() const {
         return this->baseIndex;
+    }
+
+    bool isLastPipe() const {
+        return !this->nodes.back()->is(NodeKind::Cmd);
     }
 
     void dump(NodeDumper &dumper) const override;

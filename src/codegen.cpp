@@ -247,14 +247,14 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     }
 }
 
-void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels) {
+void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool lastPipe) {
     const unsigned int size = labels.size();
     if(size > UINT8_MAX) {
         fatal("reach limit\n");
     }
 
     const unsigned int offset = this->curBuilder().codeBuffer.size();
-    this->emitIns(OpCode::PIPELINE);
+    this->emitIns(lastPipe ? OpCode::PIPELINE_LP : OpCode::PIPELINE);
     this->curBuilder().append8(size);
     for(unsigned int i = 0; i < size; i++) {
         this->curBuilder().append16(0);
@@ -625,8 +625,7 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
         this->emit0byteIns(OpCode::DO_REDIR);
     }
 
-    OpCode ins = node.getInLastPipe() ? OpCode::CALL_CMD_LP :
-                 node.getInPipe() ? OpCode::CALL_CMD_P : OpCode::CALL_CMD;
+    OpCode ins = node.getInPipe() ? OpCode::CALL_CMD_P : OpCode::CALL_CMD;
     this->emit0byteIns(ins);
 }
 
@@ -651,24 +650,26 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
 }
 
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
-    const unsigned int size = node.getNodes().size();
+    const bool lastPipe = node.isLastPipe();
+    const unsigned int size = node.getNodes().size() - (lastPipe ? 1 : 0);
+    const unsigned int labelSize = node.getNodes().size() + (lastPipe ? 0 : 1);
 
     // init label
-    std::vector<Label> labels(size);
-    for(unsigned int i = 0; i < size; i++) {
+    std::vector<Label> labels(labelSize);
+    for(unsigned int i = 0; i < labelSize; i++) {
         labels[i] = makeLabel();
     }
 
     // generate pipeline
     this->emitSourcePos(node.getPos());
-    this->emitPipelineIns(labels);
+    this->emitPipelineIns(labels, lastPipe);
 
     auto begin = makeLabel();
     auto end = makeLabel();
 
     // generate pipeline (child)
     this->markLabel(begin);
-    for(unsigned int i = 0; i < size - 1; i++) {
+    for(unsigned int i = 0; i < size; i++) {
         this->markLabel(labels[i]);
         this->visit(*node.getNodes()[i]);
         this->emit0byteIns(OpCode::HALT);
@@ -676,12 +677,14 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
     this->markLabel(end);
     this->catchException(begin, end, this->symbolTable.get(TYPE::_Root));
 
-    // generate last pipe
-    this->markLabel(labels[size - 1]);
-    this->generateBlock(node.getBaseIndex(), 1, true, [&] {
-        this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
-        this->visit(*node.getNodes()[size - 1]);
-    });
+    this->markLabel(labels.back());
+
+    if(lastPipe) {  // generate last pipe
+        this->generateBlock(node.getBaseIndex(), 1, true, [&] {
+            this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
+            this->visit(*node.getNodes().back());
+        });
+    }
 }
 
 void ByteCodeGenerator::visitWithNode(WithNode &node) {
