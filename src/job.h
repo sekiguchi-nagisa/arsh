@@ -137,7 +137,7 @@ public:
 
     ~JobImpl() = default;
 
-    static Job create(unsigned int size, const Proc *procs, bool saveStdin = true) {
+    static Job create(unsigned int size, const Proc *procs, bool saveStdin) {
         void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * (size + 1));
         auto *entry = new(ptr) JobImpl(size, procs, saveStdin);
         return Job(entry);

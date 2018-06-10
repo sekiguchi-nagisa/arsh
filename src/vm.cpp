@@ -634,8 +634,9 @@ public:
 
     ~PipelineState() override {
         auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+        bool r = this->entry->restoreStdin();
         this->entry->wait(waitOp);
-        if(this->entry->restoreStdin()) {
+        if(r) {
             tryToForeground(this->state);
         }
         if(this->entry->available()) {
