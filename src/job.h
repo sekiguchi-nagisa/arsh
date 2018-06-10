@@ -117,7 +117,7 @@ private:
     int oldStdin{-1};
 
     /**
-     * initial size is procSize + 1 (due to append process)
+     * initial size is procSize
      */
     Proc procs[];
 
@@ -138,7 +138,7 @@ public:
     ~JobImpl() = default;
 
     static Job create(unsigned int size, const Proc *procs, bool saveStdin) {
-        void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * (size + 1));
+        void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * size);
         auto *entry = new(ptr) JobImpl(size, procs, saveStdin);
         return Job(entry);
     }
@@ -185,14 +185,6 @@ public:
 
     bool hasOwnership() const {
         return this->ownerPid == getpid();
-    }
-
-    /**
-     * call only once
-     * @param proc
-     */
-    void append(Proc proc) {
-        this->procs[this->procSize++] = proc;
     }
 
     /**
