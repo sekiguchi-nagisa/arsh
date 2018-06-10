@@ -33,11 +33,11 @@ if !(test -d $work_dir) {
 cd $work_dir
 
 if !(test -f UnicodeData.txt) {
-    wget http://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt
+    curl http://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt -o ./UnicodeData.txt
 }
 
 if !(test -f EastAsianWidth.txt) {
-    wget http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
+    curl http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt -o ./EastAsianWidth.txt
 }
 
 if !(test -d uniset) {
