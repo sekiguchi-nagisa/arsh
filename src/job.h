@@ -90,6 +90,9 @@ public:
     static Proc fork(DSState &st, pid_t pgid, bool foreground);
 };
 
+class JobImpl;
+using Job = IntrusivePtr<JobImpl>;
+
 class JobImpl : public RefCount<JobImpl> {
 private:
     static_assert(std::is_pod<Proc>::value, "failed");
@@ -133,6 +136,17 @@ public:
     NON_COPYABLE(JobImpl);
 
     ~JobImpl() = default;
+
+    static Job create(unsigned int size, const Proc *procs, bool saveStdin = true) {
+        void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * (size + 1));
+        auto *entry = new(ptr) JobImpl(size, procs, saveStdin);
+        return Job(entry);
+    }
+
+    static Job create(Proc proc) {
+        Proc procs[1] = {proc};
+        return create(1, procs, false);
+    }
 
     static void operator delete(void *ptr) noexcept {
         free(ptr);
@@ -208,8 +222,6 @@ public:
     int wait(Proc::WaitOp op);
 };
 
-using Job = IntrusivePtr<JobImpl>;
-
 class JobTable {    //FIXME: send signal to managed jobs
 private:
     std::vector<Job> entries;
@@ -230,17 +242,6 @@ public:
 
     JobTable() = default;
     ~JobTable() = default;
-
-    static Job newEntry(unsigned int size, const Proc *procs, bool saveStdin = true) {
-        void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * (size + 1));
-        auto *entry = new(ptr) JobImpl(size, procs, saveStdin);
-        return Job(entry);
-    }
-
-    static Job newEntry(Proc proc) {
-        Proc procs[1] = {proc};
-        return newEntry(1, procs, false);
-    }
 
     void attach(Job job, bool disowned = false);
 

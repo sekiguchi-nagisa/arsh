@@ -532,7 +532,7 @@ static void forkAndEval(DSState &state) {
         case ForkKind::JOB:
         case ForkKind::DISOWN: {
             bool disown = forkKind == ForkKind::DISOWN;
-            auto entry = JobTable::newEntry(proc);
+            auto entry = JobImpl::create(proc);
             state.jobTable.attach(entry, disown);
             obj = DSValue::create<Job_Object>(
                     state.symbolTable.get(TYPE::Job),
@@ -1038,7 +1038,7 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         } else {
             status = proc.wait(waitOp);
             if(proc.state() != Proc::TERMINATED) {
-                state.jobTable.attach(JobTable::newEntry(proc));
+                state.jobTable.attach(JobImpl::create(proc));
             }
         }
         tryToForeground(state);
@@ -1282,7 +1282,7 @@ static void callPipeline(DSState &state) {
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
     } else if(procIndex == pipeSize) { // parent (last pipeline)
-        auto jobEntry = JobTable::newEntry(pipeSize, childs);
+        auto jobEntry = JobImpl::create(pipeSize, childs);
         state.foreground = jobEntry;
         state.push(DSValue::create<PipelineState>(state, std::move(jobEntry)));
 
