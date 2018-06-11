@@ -343,14 +343,6 @@ const NativeCode *getNativeCode(unsigned int index);
 
 
 /* for substitution */
-static constexpr unsigned int READ_PIPE = 0;
-static constexpr unsigned int WRITE_PIPE = 1;
-
-static void flushStdFD() {
-    fflush(stdin);
-    fflush(stdout);
-    fflush(stderr);
-}
 
 static DSValue readAsStr(const DSState &state, int fd) {
     char buf[256];
@@ -498,6 +490,16 @@ static DSValue newFD(const DSState &st, int &fd) {
     fd = -1;
     return DSValue::create<UnixFD_Object>(st.symbolTable.get(TYPE::UnixFD), v);
 }
+
+static constexpr unsigned int READ_PIPE = 0;
+static constexpr unsigned int WRITE_PIPE = 1;
+
+static void flushStdFD() {
+    fflush(stdin);
+    fflush(stdout);
+    fflush(stderr);
+}
+
 
 static void forkAndEval(DSState &state) {
     const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), ++state.pc()));
