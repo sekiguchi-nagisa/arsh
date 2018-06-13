@@ -531,7 +531,7 @@ TEST_F(CmdlineTest, read) {
      * not terminate
      */
     src = R"(
-        read;
+        read -u 0;
         assert $REPLY == "hello"
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect("hello" | DS(src), 1));
@@ -541,7 +541,7 @@ TEST_F(CmdlineTest, read) {
      * terminate newline
      */
     src = R"(
-        read; assert($REPLY == "hello");
+        read -u /dev/fd/0; assert($REPLY == "hello");
         read; assert($REPLY == "world")
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect("   hello\n   world   \t   \n" | DS(src), 0));

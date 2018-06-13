@@ -891,8 +891,12 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
             noecho = true;
             break;
         case 'u': {
+            const char *arg = optState.optArg;
+            if(arg == strstr(arg, "/dev/fd/")) {
+                arg += strlen("/dev/fd/");
+            }
             int s;
-            long t = convertToInt64(optState.optArg, s);
+            long t = convertToInt64(arg, s);
             if(s != 0 || t < 0 || t > INT32_MAX) {
                 ERROR(argvObj, "%s: invalid file descriptor", optState.optArg);
                 return 1;
