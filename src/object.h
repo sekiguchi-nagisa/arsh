@@ -321,6 +321,8 @@ struct UnixFD_Object : public Int_Object {
         this->value = -1;
         return s;
     }
+
+    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 };
 
 class Long_Object : public DSObject {

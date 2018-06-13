@@ -11,4 +11,4 @@ for(var i = 0; $i < 10; $i++) {
 assert "$(cat <<< $a && echo !!!)" == $a + $'\n!!!'
 
 # unix fd
-assert "$(cat <<< $STDIN)" == "0" # as String
+assert "$(cat <<< $STDIN)" == "/dev/fd/0" # as String

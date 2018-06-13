@@ -88,6 +88,12 @@ UnixFD_Object::~UnixFD_Object() {
     }
 }
 
+std::string UnixFD_Object::toString(DSState &, ydsh::VisitedSet *) {
+    std::string str = "/dev/fd/";
+    str += std::to_string(this->value);
+    return str;
+}
+
 
 // #########################
 // ##     Long_Object     ##
