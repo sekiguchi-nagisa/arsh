@@ -733,9 +733,12 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
             break;
         }
         case 't': {
+            if(value == strstr(value, "/dev/fd/")) {
+                value += strlen("/dev/fd/");
+            }
             int s;
             long n = convertToInt64(value, s);
-            result = s == 0 && n >= INT32_MIN && n <= INT32_MAX && isatty(n) != 0;  //  check if FD is a terminal
+            result = s == 0 && n > -1 && n <= INT32_MAX && isatty(n) != 0;  //  check if FD is a terminal
             break;
         }
         case 'u': {
