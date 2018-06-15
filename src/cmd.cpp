@@ -627,6 +627,18 @@ enum class BinaryOp : unsigned int {
     GE,
 };
 
+static int parseFD(const char *value) {
+    if(value == strstr(value, "/dev/fd/")) {
+        value += strlen("/dev/fd/");
+    }
+    int s;
+    long t = convertToInt64(value, s);
+    if(s != 0 || t < 0 || t > INT32_MAX) {
+        return -1;
+    }
+    return t;
+}
+
 static int builtin_test(DSState &, Array_Object &argvObj) {
     const struct {
         const char *k;
@@ -733,12 +745,8 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
             break;
         }
         case 't': {
-            if(value == strstr(value, "/dev/fd/")) {
-                value += strlen("/dev/fd/");
-            }
-            int s;
-            long n = convertToInt64(value, s);
-            result = s == 0 && n > -1 && n <= INT32_MAX && isatty(n) != 0;  //  check if FD is a terminal
+            int fd = parseFD(value);
+            result = fd > -1 && isatty(fd) != 0;    //  check if FD is a terminal
             break;
         }
         case 'u': {
@@ -894,17 +902,12 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
             noecho = true;
             break;
         case 'u': {
-            const char *arg = optState.optArg;
-            if(arg == strstr(arg, "/dev/fd/")) {
-                arg += strlen("/dev/fd/");
-            }
-            int s;
-            long t = convertToInt64(arg, s);
-            if(s != 0 || t < 0 || t > INT32_MAX) {
-                ERROR(argvObj, "%s: invalid file descriptor", optState.optArg);
+            const char *value = optState.optArg;
+            fd = parseFD(value);
+            if(fd < 0) {
+                ERROR(argvObj, "%s: invalid file descriptor", value);
                 return 1;
             }
-            fd = static_cast<int>(t);
             break;
         }
         case 't': {
