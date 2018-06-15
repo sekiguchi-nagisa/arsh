@@ -1092,7 +1092,7 @@ static bool inCmdMode(const Node &node) {
         return inCmdMode(*static_cast<const PipelineNode &>(node).getNodes().back());
     case NodeKind::Fork: {
         auto &forkNode = static_cast<const ForkNode &>(node);
-        return forkNode.getOpKind() == ForkNode::COPROC && inCmdMode(*forkNode.getExprNode());
+        return forkNode.getOpKind() == ForkKind::COPROC && inCmdMode(*forkNode.getExprNode());
     }
     case NodeKind::Assert:
         return inCmdMode(*static_cast<const AssertNode &>(node).getCondNode());

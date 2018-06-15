@@ -672,11 +672,11 @@ void ForkNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
 
 #define EACH_ENUM(OP) \
-    OP(SUB_STR) \
-    OP(SUB_ARRAY) \
-    OP(BG) \
-    OP(DISOWN) \
-    OP(COPROC)
+    OP(ForkKind::STR) \
+    OP(ForkKind::ARRAY) \
+    OP(ForkKind::JOB) \
+    OP(ForkKind::DISOWN) \
+    OP(ForkKind::COPROC)
 
     DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM

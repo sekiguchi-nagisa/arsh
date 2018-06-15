@@ -1215,44 +1215,35 @@ public:
 };
 
 class ForkNode : public Node {
-public:
-    enum OpKind : unsigned char {
-        SUB_STR,    // "$(echo)"
-        SUB_ARRAY,  // $(echo)
-        BG,         // echo &
-        DISOWN,     // echo &!
-        COPROC,     // coproc echo
-    };
-
 private:
-    OpKind opKind;
+    ForkKind opKind;
     Node *exprNode;
 
-    ForkNode(Token token, OpKind kind, Node *exprNode) :
+    ForkNode(Token token, ForkKind kind, Node *exprNode) :
             Node(NodeKind::Fork, token), opKind(kind), exprNode(exprNode) { }
 
 public:
     static ForkNode *newSubsitution(unsigned int pos, Node *exprNode, Token token, bool strExpr) {
-        auto *node = new ForkNode({pos, 1}, strExpr ? SUB_STR : SUB_ARRAY, exprNode);
+        auto *node = new ForkNode({pos, 1}, strExpr ?  ForkKind::STR : ForkKind::ARRAY, exprNode);
         node->updateToken(token);
         return node;
     }
 
     static ForkNode *newBackground(Node *exprNode, Token token, bool disown) {
-        auto *node = new ForkNode(exprNode->getToken(), disown ? DISOWN : BG, exprNode);
+        auto *node = new ForkNode(exprNode->getToken(), disown ? ForkKind::DISOWN : ForkKind::JOB, exprNode);
         node->updateToken(token);
         return node;
     }
 
     static ForkNode *newCoproc(Token token, Node *exprNode) {
-        auto *node = new ForkNode(token, COPROC, exprNode);
+        auto *node = new ForkNode(token, ForkKind::COPROC, exprNode);
         node->updateToken(exprNode->getToken());
         return node;
     }
 
     ~ForkNode() override;
 
-    OpKind getOpKind() const {
+    ForkKind getOpKind() const {
         return this->opKind;
     }
 
@@ -1262,9 +1253,9 @@ public:
 
     bool isJob() const {
         switch(this->opKind) {
-        case BG:
-        case COPROC:
-        case DISOWN:
+        case ForkKind::JOB:
+        case ForkKind::COPROC:
+        case ForkKind::DISOWN:
             return true;
         default:
             return false;

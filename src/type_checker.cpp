@@ -827,15 +827,15 @@ void TypeChecker::visitForkNode(ForkNode &node) {
 
     DSType *type = nullptr;
     switch(node.getOpKind()) {
-    case ForkNode::SUB_STR:
+    case ForkKind::STR:
         type = &this->symbolTable.get(TYPE::String);
         break;
-    case ForkNode::SUB_ARRAY:
+    case ForkKind::ARRAY:
         type = &this->symbolTable.get(TYPE::StringArray);
         break;
-    case ForkNode::BG:
-    case ForkNode::COPROC:
-    case ForkNode::DISOWN:
+    case ForkKind::JOB:
+    case ForkKind::COPROC:
+    case ForkKind::DISOWN:
         type = &this->symbolTable.get(TYPE::Job);
         break;
     }

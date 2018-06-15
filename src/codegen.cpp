@@ -700,29 +700,13 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
     });
 }
 
-static ForkKind resolveForkKind(ForkNode::OpKind kind) {
-    switch(kind) {
-    case ForkNode::SUB_STR:
-        return ForkKind::STR;
-    case ForkNode::SUB_ARRAY:
-        return ForkKind::ARRAY;
-    case ForkNode::COPROC:
-        return ForkKind::COPROC;
-    case ForkNode::BG:
-        return ForkKind::JOB;
-    case ForkNode::DISOWN:
-        return ForkKind::DISOWN;
-    }
-    return ForkKind::DISOWN;    // normally unreachable, due to suppress gcc warning
-}
-
 void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     auto beginLabel = makeLabel();
     auto endLabel = makeLabel();
     auto mergeLabel = makeLabel();
 
     this->markLabel(beginLabel);
-    this->emitForkIns(resolveForkKind(node.getOpKind()), mergeLabel);
+    this->emitForkIns(node.getOpKind(), mergeLabel);
     this->visit(*node.getExprNode());
     this->markLabel(endLabel);
 

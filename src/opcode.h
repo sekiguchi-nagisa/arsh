@@ -122,14 +122,6 @@ int getByteSize(OpCode code);
 
 bool isTypeOp(OpCode code);
 
-enum class ForkKind : unsigned char {
-    STR,    // capture stdout as string
-    ARRAY,  // capture stdout as string array
-    COPROC, // launch as co-process
-    JOB,    // launch as background job
-    DISOWN, // launch as disowned background job
-};
-
 } // namespace ydsh
 
 #endif //YDSH_OPCODE_H
