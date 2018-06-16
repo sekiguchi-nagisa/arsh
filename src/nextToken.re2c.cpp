@@ -177,6 +177,8 @@ TokenKind Lexer::nextToken(Token &token) {
                                { MODE(EXPR); RET(SIGNAL_LITERAL); }
       <STMT> ["]               { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <STMT> "$("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_SUB_CMD); }
+      <STMT> ">("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_IN_SUB); }
+      <STMT> "<("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_OUT_SUB); }
 
       <STMT> APPLIED_NAME      { MODE(EXPR); RET(APPLIED_NAME); }
       <STMT> SPECIAL_NAME      { MODE(EXPR); RET(SPECIAL_NAME); }
@@ -278,6 +280,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> "2>&1"             { RET(REDIR_MERGE_ERR_2_OUT); }
       <CMD> "1>&2"             { RET(REDIR_MERGE_OUT_2_ERR); }
       <CMD> "<<<"              { RET(REDIR_HERE_STR); }
+      <CMD> ">("               { PUSH_MODE(STMT); RET(START_IN_SUB); }
+      <CMD> "<("               { PUSH_MODE(STMT); RET(START_OUT_SUB); }
 
       <CMD> "|"                { POP_MODE(); MODE(STMT); RET(PIPE); }
       <CMD> "&"                { RET(BACKGROUND); }

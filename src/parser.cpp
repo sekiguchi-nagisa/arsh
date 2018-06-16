@@ -59,6 +59,8 @@
     OP(START_SUB_CMD) \
     OP(APPLIED_NAME) \
     OP(SPECIAL_NAME) \
+    OP(START_IN_SUB) \
+    OP(START_OUT_SUB) \
     OP(LP) \
     OP(LB) \
     OP(LBC) \
@@ -119,6 +121,8 @@
     OP(STRING_LITERAL) \
     OP(OPEN_DQUOTE) \
     OP(START_SUB_CMD) \
+    OP(START_IN_SUB) \
+    OP(START_OUT_SUB) \
     EACH_LA_paramExpansion(OP)
 
 #define EACH_LA_typeName(OP) \
@@ -850,7 +854,10 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool first) {
     case OPEN_DQUOTE:
         return this->parse_stringExpression();
     case START_SUB_CMD:
-        return this->parse_substitution();
+        return this->parse_cmdSubstitution();
+    case START_IN_SUB:
+    case START_OUT_SUB:
+        return this->parse_procSubstitution();
     EACH_LA_paramExpansion(GEN_LA_CASE)
         return this->parse_paramExpansion();
     default:
@@ -1141,10 +1148,13 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case OPEN_DQUOTE:
         return this->parse_stringExpression();
     case START_SUB_CMD:
-        return this->parse_substitution();
+        return this->parse_cmdSubstitution();
     case APPLIED_NAME:
     case SPECIAL_NAME:
         return this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
+    case START_IN_SUB:
+    case START_OUT_SUB:
+        return this->parse_procSubstitution();
     case LP: {  // group or tuple
         Token token = this->expect(LP); // always success
         auto node = TRY(this->parse_expression());
@@ -1328,7 +1338,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             break;
         }
         case START_SUB_CMD: {
-            auto subNode = TRY(this->parse_substitution(true));
+            auto subNode = TRY(this->parse_cmdSubstitution(true));
             node->addExprNode(subNode.release());
             break;
         }
@@ -1385,7 +1395,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     }
 }
 
-std::unique_ptr<Node> Parser::parse_substitution(bool strExpr) {
+std::unique_ptr<Node> Parser::parse_cmdSubstitution(bool strExpr) {
     GUARD_DEEP_NESTING(guard);
 
     assert(CUR_KIND() == START_SUB_CMD);
@@ -1393,7 +1403,18 @@ std::unique_ptr<Node> Parser::parse_substitution(bool strExpr) {
     this->consume();    // START_SUB_CMD
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(RP));
-    return std::unique_ptr<Node>(ForkNode::newSubsitution(pos, exprNode.release(), token, strExpr));
+    return std::unique_ptr<Node>(ForkNode::newCmdSubstitution(pos, exprNode.release(), token, strExpr));
+}
+
+std::unique_ptr<Node> Parser::parse_procSubstitution() {
+    GUARD_DEEP_NESTING(guard);
+
+    assert(CUR_KIND() == START_IN_SUB || CUR_KIND() == START_OUT_SUB);
+    unsigned int pos = START_POS();
+    bool inPipe = this->consume() == START_IN_SUB;
+    auto exprNode = TRY(this->parse_expression());
+    Token token = TRY(this->expect(RP));
+    return std::unique_ptr<Node>(ForkNode::newProcSubstitution(pos, exprNode.release(), token, inPipe));
 }
 
 } // namespace ydsh

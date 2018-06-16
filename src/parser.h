@@ -232,7 +232,9 @@ protected:
 
     std::unique_ptr<Node> parse_paramExpansion();
 
-    std::unique_ptr<Node> parse_substitution(bool strExpr = false);
+    std::unique_ptr<Node> parse_cmdSubstitution(bool strExpr = false);
+
+    std::unique_ptr<Node> parse_procSubstitution();
 };
 
 } // namespace ydsh

@@ -65,6 +65,8 @@
     TOKEN(SIGNAL_LITERAL                     , "<Signal Literal>") \
     TOKEN(OPEN_DQUOTE                        , "\"") \
     TOKEN(START_SUB_CMD                      , "$(") \
+    TOKEN(START_IN_SUB                       , ">(") \
+    TOKEN(START_OUT_SUB                      , "<(") \
     /* applied name */\
     TOKEN(APPLIED_NAME                       , "<$ Name>") \
     TOKEN(SPECIAL_NAME                       , "<$ Char>") \

@@ -653,6 +653,8 @@ TEST_F(LexerTest_Lv1, subCmd3) {
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
 }
 
+
+
 // applied name
 TEST_F(LexerTest_Lv1, appliedName1) {
     const char *text = "$w10i_fArhue";

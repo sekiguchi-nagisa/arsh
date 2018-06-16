@@ -1223,8 +1223,14 @@ private:
             Node(NodeKind::Fork, token), opKind(kind), exprNode(exprNode) { }
 
 public:
-    static ForkNode *newSubsitution(unsigned int pos, Node *exprNode, Token token, bool strExpr) {
+    static ForkNode *newCmdSubstitution(unsigned int pos, Node *exprNode, Token token, bool strExpr) {
         auto *node = new ForkNode({pos, 1}, strExpr ?  ForkKind::STR : ForkKind::ARRAY, exprNode);
+        node->updateToken(token);
+        return node;
+    }
+
+    static ForkNode *newProcSubstitution(unsigned int pos, Node *exprNode, Token token, bool inPipe) {
+        auto *node = new ForkNode({pos, 1}, inPipe ?  ForkKind::IN_PIPE : ForkKind::OUT_PIPE, exprNode);
         node->updateToken(token);
         return node;
     }

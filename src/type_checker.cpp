@@ -833,6 +833,10 @@ void TypeChecker::visitForkNode(ForkNode &node) {
     case ForkKind::ARRAY:
         type = &this->symbolTable.get(TYPE::StringArray);
         break;
+    case ForkKind::IN_PIPE:
+    case ForkKind::OUT_PIPE:
+        type = &this->symbolTable.get(TYPE::UnixFD);
+        break;
     case ForkKind::JOB:
     case ForkKind::COPROC:
     case ForkKind::DISOWN:

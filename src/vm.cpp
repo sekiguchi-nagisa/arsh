@@ -461,6 +461,12 @@ static PipeSet initPipeSet(ForkKind kind) {
     case ForkKind::ARRAY:
         useOutPipe = true;
         break;
+    case ForkKind::IN_PIPE:
+        useInPipe = true;
+        break;
+    case ForkKind::OUT_PIPE:
+        useOutPipe = true;
+        break;
     case ForkKind::COPROC:
         useInPipe = true;
         useOutPipe = true;
@@ -528,6 +534,14 @@ static void forkAndEval(DSState &state) {
             auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
             int ret = proc.wait(waitOp);   // wait exit
             state.updateExitStatus(ret);
+            break;
+        }
+        case ForkKind::IN_PIPE:
+        case ForkKind::OUT_PIPE: {
+            auto entry = JobImpl::create(proc);
+            state.jobTable.attach(entry, true);
+            int &fd = forkKind == ForkKind::IN_PIPE ? pipeset.in[WRITE_PIPE] : pipeset.out[READ_PIPE];
+            obj = newFD(state, fd);
             break;
         }
         case ForkKind::COPROC:

@@ -141,11 +141,13 @@ constexpr const char *CMD_SYMBOL_PREFIX = "%c";
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 
 enum class ForkKind : unsigned char {
-    STR,    // capture stdout as string. ex. "$(echo)"
-    ARRAY,  // capture stdout as string array. ex. $(echo)
-    COPROC, // launch as co-process. ex. coproc echo
-    JOB,    // launch as background job. ex. echo &
-    DISOWN, // launch as disowned background job. ex. echo &!
+    STR,        // capture stdout as string. ex. "$(echo)"
+    ARRAY,      // capture stdout as string array. ex. $(echo)
+    IN_PIPE,    // capture stdin as pipe. ex. >(echo)
+    OUT_PIPE,   // capture stdout as pipe. ex. <(echo)
+    COPROC,     // launch as co-process. ex. coproc echo
+    JOB,        // launch as background job. ex. echo &
+    DISOWN,     // launch as disowned background job. ex. echo &!
 };
 
 

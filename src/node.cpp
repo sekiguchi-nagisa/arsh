@@ -674,6 +674,8 @@ void ForkNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP) \
     OP(ForkKind::STR) \
     OP(ForkKind::ARRAY) \
+    OP(ForkKind::IN_PIPE) \
+    OP(ForkKind::OUT_PIPE) \
     OP(ForkKind::JOB) \
     OP(ForkKind::DISOWN) \
     OP(ForkKind::COPROC)
