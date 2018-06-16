@@ -157,7 +157,7 @@ public:
 
     void visitForkNode(ForkNode &node) override {
         this->open();
-        assert(node.getOpKind() == ForkNode::BG);
+        assert(node.getOpKind() == ForkKind::JOB);
         this->visit(*node.getExprNode());
         this->append("&");
         this->close();
