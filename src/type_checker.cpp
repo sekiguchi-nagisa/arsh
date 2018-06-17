@@ -766,11 +766,12 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
 
     // check UnixFD
     if(argNode->getSegmentNodes().size() == 1) {
-        auto &type = this->checkType(argNode->getSegmentNodes()[0]);
+        DSType *unacceptType = nullptr;
+        if(node.isHereStr()) {
+            unacceptType = &this->symbolTable.get(TYPE::UnixFD);
+        }
+        auto &type = this->checkType(nullptr, argNode->getSegmentNodes()[0], unacceptType);
         if(type == this->symbolTable.get(TYPE::UnixFD)) {
-            if(node.isHereStr()) {
-                RAISE_TC_ERROR(Unacceptable, *argNode, this->symbolTable.getTypeName(type));
-            }
             argNode->setType(type);
             node.setType(this->symbolTable.get(TYPE::Any));
             return;
