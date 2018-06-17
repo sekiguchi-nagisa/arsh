@@ -1,0 +1,7 @@
+
+var f = <(echo hello)
+assert $f is UnixFD
+assert $f is typeof(>(echo hello))
+assert "$(cat $f)" == "hello"
+
+assert "$(cat <(echo world?))" == "world?"

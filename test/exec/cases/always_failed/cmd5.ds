@@ -1,0 +1,5 @@
+# not allow command argument concatenation of UnixFD type
+
+#$test($result = 'type', $lineNum = 5, $errorKind = 'Unacceptable', $status = 1)
+
+echo 34>(echo hello)

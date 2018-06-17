@@ -1122,6 +1122,10 @@ public:
         return this->redirCount > 0;
     }
 
+    void incRedirCount() {
+        this->redirCount++;
+    }
+
     void setInPipe(bool inPipe) {
         this->inPipe = inPipe;
     }

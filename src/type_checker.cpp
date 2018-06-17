@@ -726,7 +726,8 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
         auto &segmentType = this->checkType(exprNode);
 
         if(!this->symbolTable.get(TYPE::String).isSameOrBaseTypeOf(segmentType) &&
-                !this->symbolTable.get(TYPE::StringArray).isSameOrBaseTypeOf(segmentType)) { // call __STR__ or __CMD__ARG
+                !this->symbolTable.get(TYPE::StringArray).isSameOrBaseTypeOf(segmentType) &&
+                !this->symbolTable.get(TYPE::UnixFD).isSameOrBaseTypeOf(segmentType)) { // call __STR__ or __CMD__ARG
             // first try lookup __CMD_ARG__ method
             std::string methodName(OP_CMD_ARG);
             MethodHandle *handle = segmentType.lookupMethodHandle(this->symbolTable, methodName);
@@ -752,10 +753,11 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
         }
     }
 
-    // not allow String Array type
+    // not allow String Array and UnixFD type
     if(node.getSegmentNodes().size() > 1) {
         for(Node *exprNode : node.getSegmentNodes()) {
             this->checkType(nullptr, exprNode, &this->symbolTable.get(TYPE::StringArray));
+            this->checkType(nullptr, exprNode, &this->symbolTable.get(TYPE::UnixFD));
         }
     }
     node.setType(this->symbolTable.get(TYPE::Any));   //FIXME

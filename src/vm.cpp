@@ -811,6 +811,8 @@ static int redirectImpl(const SymbolTable &symbolTable, const std::pair<RedirOP,
         return 0;
     case RedirOP::HERE_STR:
         return doIOHere(*typeAs<String_Object>(pair.second));
+    case RedirOP::NOP:
+        return 0;   // do nothing
     }
     return 0;   // normally unreachable, but gcc requires this return statement.
 }
@@ -1350,6 +1352,18 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
             return;
         }
         argv->append(std::move(value));
+        return;
+    }
+
+    if(*valueType == state.symbolTable.get(TYPE::UnixFD)) { // UnixFD
+        if(!state.peek()) {
+            state.pop();
+            state.push(DSValue::create<RedirConfig>());
+        }
+        auto fdPath = typeAs<UnixFD_Object>(value)->toString(state, nullptr);
+        auto strObj = DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(fdPath));
+        typeAs<RedirConfig>(state.peek())->addRedirOp(RedirOP::NOP, std::move(value));
+        argv->append(std::move(strObj));
         return;
     }
 

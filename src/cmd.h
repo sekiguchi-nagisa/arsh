@@ -39,6 +39,7 @@ enum class RedirOP : unsigned char {
 #define GEN_ENUM(ENUM) ENUM,
     EACH_RedirOP(GEN_ENUM)
 #undef GEN_ENUM
+        NOP,
 };
 
 /**
