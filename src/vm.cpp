@@ -998,7 +998,7 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
     }
 }
 
-static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv) {
+static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv, DSValue &&redirConfig) {
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
@@ -1025,6 +1025,8 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         exit(-1);
     } else {    // parent process
         close(selfpipe[WRITE_PIPE]);
+        redirConfig = nullptr;  // restore redirconfig
+
         int readSize;
         int errnum = 0;
         while((readSize = read(selfpipe[READ_PIPE], &errnum, sizeof(int))) == -1) {
@@ -1083,7 +1085,7 @@ static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         argv[size] = nullptr;
 
         if(hasFlag(attr, UDC_ATTR_NEED_FORK)) {
-            int status = forkAndExec(state, cmdName, cmd, argv);
+            int status = forkAndExec(state, cmdName, cmd, argv, std::move(redirConfig));
             state.pushExitStatus(status);
         } else {
             xexecve(cmd.filePath, argv, nullptr);
