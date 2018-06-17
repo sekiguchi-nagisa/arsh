@@ -653,6 +653,43 @@ TEST_F(LexerTest_Lv1, subCmd3) {
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
 }
 
+TEST_F(LexerTest_Lv1, inSub1) {
+    const char *text = ">(";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(START_IN_SUB, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, inSub2) {
+    const char *text = ">(";
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(START_IN_SUB, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
+}
+
+TEST_F(LexerTest_Lv1, outSub1) {
+    const char *text = "<(";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(START_OUT_SUB, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, outSub2) {
+    const char *text = "<(";
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(START_OUT_SUB, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
+}
 
 
 // applied name
