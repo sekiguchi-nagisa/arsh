@@ -636,7 +636,7 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
 
 static RedirOP resolveRedirOp(TokenKind kind) {
     switch(kind) {
-#define GEN_CASE(ENUM) case REDIR_##ENUM : return RedirOP::ENUM;
+#define GEN_CASE(ENUM, BITS) case REDIR_##ENUM : return RedirOP::ENUM;
     EACH_RedirOP(GEN_CASE)
 #undef GEN_CASE
     default:

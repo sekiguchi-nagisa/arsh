@@ -663,43 +663,64 @@ public:
     }
 };
 
+static unsigned int getChangedFD(RedirOP op) {
+    switch(op) {
+#define GEN_CASE(ENUM, BITS) case RedirOP::ENUM: return BITS;
+    EACH_RedirOP(GEN_CASE)
+#undef GEN_CASE
+    case RedirOP::NOP:
+        return 0;
+    }
+    return 0;  // normally unreachable. due to suppress gcc warning
+}
+
 class RedirConfig : public DSObject {
 private:
-    bool restore{true};
+    unsigned int backupFDset{0};   // if corresponding bit is set, backup old fd
 
     std::vector<std::pair<RedirOP, DSValue>> ops;
 
-    int fds[3]{};
+    int oldFds[3];
 
 public:
     NON_COPYABLE(RedirConfig);
 
-    RedirConfig() : DSObject(nullptr) {
-        this->fds[0] = dup(STDIN_FILENO);
-        this->fds[1] = dup(STDOUT_FILENO);
-        this->fds[2] = dup(STDERR_FILENO);
-    }
+    RedirConfig() : DSObject(nullptr), oldFds{-1, -1, -1} {}
 
     ~RedirConfig() override {
-        if(this->restore) {
-            dup2(this->fds[0], STDIN_FILENO);
-            dup2(this->fds[1], STDOUT_FILENO);
-            dup2(this->fds[2], STDERR_FILENO);
-        }
-        for(int fd : this->fds) {
+        this->restoreFDs();
+        for(int fd : this->oldFds) {
             close(fd);
         }
     }
 
     void addRedirOp(RedirOP op, DSValue &&arg) {
         this->ops.emplace_back(op, std::move(arg));
+        this->backupFDset |= getChangedFD(op);
     }
 
-    void setRestore(bool restore) {
-        this->restore = restore;
+    void ignoreBackup() {
+        this->backupFDset = 0;
     }
 
-    bool redirect(DSState &st) const;
+    bool redirect(DSState &st);
+
+private:
+    void backupFDs() {
+        for(unsigned int i = 0; i < 3; i++) {
+            if(this->backupFDset & (1 << i)) {
+                this->oldFds[i] = dup(i);
+            }
+        }
+    }
+
+    void restoreFDs() {
+        for(unsigned int i = 0; i < 3; i++) {
+            if(this->backupFDset & (1 << i)) {
+                dup2(this->oldFds[i], i);
+            }
+        }
+    }
 };
 
 static int doIOHere(const String_Object &value) {
@@ -817,10 +838,11 @@ static int redirectImpl(const SymbolTable &symbolTable, const std::pair<RedirOP,
     return 0;   // normally unreachable, but gcc requires this return statement.
 }
 
-bool RedirConfig::redirect(DSState &st) const {
+bool RedirConfig::redirect(DSState &st) {
+    this->backupFDs();
     for(auto &pair : this->ops) {
         int r = redirectImpl(st.symbolTable, pair);
-        if(this->restore && r != 0) {
+        if(this->backupFDset > 0 && r != 0) {
             std::string msg = REDIR_ERROR;
             if(pair.second) {
                 auto *type = pair.second->getType();
@@ -1204,7 +1226,7 @@ static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     GetOptState optState;
 
     if(redir) {
-        typeAs<RedirConfig>(redir)->setRestore(false);
+        typeAs<RedirConfig>(redir)->ignoreBackup();
     }
 
     for(int opt; (opt = optState(argvObj, "ca:")) != -1;) {
