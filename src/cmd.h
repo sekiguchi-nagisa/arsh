@@ -23,25 +23,6 @@ namespace ydsh {
 
 class Array_Object;
 
-#define EACH_RedirOP(OP) \
-    OP(IN_2_FILE) \
-    OP(OUT_2_FILE) \
-    OP(OUT_2_FILE_APPEND) \
-    OP(ERR_2_FILE) \
-    OP(ERR_2_FILE_APPEND) \
-    OP(MERGE_ERR_2_OUT_2_FILE) \
-    OP(MERGE_ERR_2_OUT_2_FILE_APPEND) \
-    OP(MERGE_ERR_2_OUT) \
-    OP(MERGE_OUT_2_ERR) \
-    OP(HERE_STR)
-
-enum class RedirOP : unsigned char {
-#define GEN_ENUM(ENUM) ENUM,
-    EACH_RedirOP(GEN_ENUM)
-#undef GEN_ENUM
-        NOP,
-};
-
 /**
  * return exit status.
  * argvObj must be Array_Object
