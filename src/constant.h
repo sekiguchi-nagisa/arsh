@@ -150,21 +150,21 @@ enum class ForkKind : unsigned char {
     DISOWN,     // launch as disowned background job. ex. echo &!
 };
 
-constexpr unsigned int operator ""_bit(unsigned long long n) {
-    return 1 << n;
-}
+constexpr unsigned int FD_BIT_0 = 1 << 0;
+constexpr unsigned int FD_BIT_1 = 1 << 1;
+constexpr unsigned int FD_BIT_2 = 1 << 2;
 
 #define EACH_RedirOP(OP) \
-    OP(IN_2_FILE                    , (0_bit)) \
-    OP(OUT_2_FILE                   , (1_bit)) \
-    OP(OUT_2_FILE_APPEND            , (1_bit)) \
-    OP(ERR_2_FILE                   , (2_bit)) \
-    OP(ERR_2_FILE_APPEND            , (2_bit)) \
-    OP(MERGE_ERR_2_OUT_2_FILE       , (2_bit | 1_bit)) \
-    OP(MERGE_ERR_2_OUT_2_FILE_APPEND, (2_bit | 1_bit)) \
-    OP(MERGE_ERR_2_OUT              , (2_bit)) \
-    OP(MERGE_OUT_2_ERR              , (1_bit)) \
-    OP(HERE_STR                     , (0_bit))
+    OP(IN_2_FILE                    , FD_BIT_0) \
+    OP(OUT_2_FILE                   , FD_BIT_1) \
+    OP(OUT_2_FILE_APPEND            , FD_BIT_1) \
+    OP(ERR_2_FILE                   , FD_BIT_2) \
+    OP(ERR_2_FILE_APPEND            , FD_BIT_2) \
+    OP(MERGE_ERR_2_OUT_2_FILE       , (FD_BIT_2 | FD_BIT_1)) \
+    OP(MERGE_ERR_2_OUT_2_FILE_APPEND, (FD_BIT_2 | FD_BIT_1)) \
+    OP(MERGE_ERR_2_OUT              , FD_BIT_2) \
+    OP(MERGE_OUT_2_ERR              , FD_BIT_1) \
+    OP(HERE_STR                     , FD_BIT_0)
 
 enum class RedirOP : unsigned char {
 #define GEN_ENUM(ENUM, BITS) ENUM,
