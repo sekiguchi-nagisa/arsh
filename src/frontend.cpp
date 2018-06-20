@@ -25,9 +25,10 @@
 
 namespace ydsh {
 
-FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable,
+FrontEnd::FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTable,
                    DSExecMode mode, bool toplevel, const DumpTarget &target) :
-        lexer(std::move(lexer)), mode(mode), parser(this->lexer), checker(symbolTable, toplevel),
+        scriptDir(scriptDir), lexer(std::move(lexer)), mode(mode),
+        parser(this->lexer), checker(symbolTable, toplevel),
         uastDumper(target.fps[DS_DUMP_KIND_UAST], symbolTable),
         astDumper(target.fps[DS_DUMP_KIND_AST], symbolTable) {
 }
@@ -243,7 +244,7 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     }
 
     auto &srcNode = static_cast<SourceNode&>(*node);
-    auto ret = this->checker.getSymbolTable().tryToLoadModule(srcNode.getPathStr());
+    auto ret = this->checker.getSymbolTable().tryToLoadModule(this->scriptDir.c_str(), srcNode.getPathStr().c_str());
     switch(ret.getKind()) {
     case ModResult::UNRESOLVED:
         RAISE_TC_ERROR(UnresolvedMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), "");

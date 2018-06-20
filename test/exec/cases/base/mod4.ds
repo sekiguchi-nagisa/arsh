@@ -3,4 +3,4 @@
 
 var a = 45
 
-source ../module/exit.ds
+source ../../module/exit.ds

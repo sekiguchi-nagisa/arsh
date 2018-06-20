@@ -5,7 +5,7 @@ function scriptName() : String {
     return "hello!!"
 }
 
-source ../module/module3.ds as mod
+source ../../module/module3.ds as mod
 
 assert $mod.test($true, $mod.scriptName)! == $0
 

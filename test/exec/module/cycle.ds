@@ -1,6 +1,6 @@
 
 var a = 34
 
-source ../module/cycle.ds as cy2
+source ../../module/cycle.ds as cy2
 
 var b = 0

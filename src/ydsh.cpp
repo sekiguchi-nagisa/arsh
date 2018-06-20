@@ -190,7 +190,9 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     }
     lexer.setLineNum(state->lineNum);
 
-    FrontEnd frontEnd(std::move(lexer), state->symbolTable, state->execMode,
+    const char *scriptDir = typeAs<String_Object>(getGlobal(*state, VAR_SCRIPT_DIR))->getValue();
+
+    FrontEnd frontEnd(scriptDir, std::move(lexer), state->symbolTable, state->execMode,
                       hasFlag(state->option, DS_OPTION_TOPLEVEL), state->dumpTarget);
     ByteCodeGenerator codegen(state->symbolTable, hasFlag(state->option, DS_OPTION_ASSERT));
 
@@ -595,7 +597,8 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *e) {
     if(sourceName != nullptr) {
-        auto ret = st->symbolTable.tryToLoadModule(sourceName);
+        const char *scriptDir = typeAs<String_Object>(getGlobal(*st, VAR_SCRIPT_DIR))->getValue();
+        auto ret = st->symbolTable.tryToLoadModule(scriptDir, sourceName);
         (void) ret;
         assert(ret.getKind() == ModResult::PATH);
     }

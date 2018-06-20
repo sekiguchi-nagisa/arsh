@@ -1,5 +1,5 @@
 #$test($result = 'throw', $lineNum = 3, $errorKind = 'ArithmeticError', $status = 1, $fileName = '../module/throw.ds')
 
-source ../module/throw.ds as mod
+source ../../module/throw.ds as mod
 
 $mod.hoge(0)

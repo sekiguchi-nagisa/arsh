@@ -1,5 +1,5 @@
 
-source ../module/module1.ds as mod
+source ../../module/module1.ds as mod
 
 # access variable
 assert $mod.hello is String

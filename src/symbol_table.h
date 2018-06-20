@@ -466,10 +466,11 @@ private:
 
     /**
      *
+     * @param scriptDir
      * @param modPath
      * @return
      */
-    ModResult load(const std::string &modPath);
+    ModResult load(const char *scriptDir, const char *modPath);
 };
 
 
@@ -534,8 +535,8 @@ public:
         this->curModule = &this->rootModule;
     }
 
-    ModResult tryToLoadModule(const std::string &modPath) {
-        return this->modLoader.load(modPath);
+    ModResult tryToLoadModule(const char *scriptDir, const char *modPath) {
+        return this->modLoader.load(scriptDir, modPath);
     }
 
     /**

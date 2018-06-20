@@ -262,17 +262,20 @@ void ModuleLoader::abort() {
     this->modIDCount = this->oldIDCount;
 }
 
-ModResult ModuleLoader::load(const std::string &modPath) {
+std::string toFullModPath(const char *scriptDir, const char *modPath) {
     std::string str = modPath;
     expandTilde(str);
-    char *buf = realpath(str.c_str(), nullptr);
-    if(buf == nullptr) {
-        return ModResult::unresolved();
+    if(!str.empty() && str[0] == '~') {
+        std::string tmp = "./";
+        tmp += str;
+        str = tmp;
     }
+    str = expandDots(scriptDir, str.c_str());
+    return str;
+}
 
-    str = buf;
-    free(buf);
-
+ModResult ModuleLoader::load(const char *scriptDir, const char *modPath) {
+    std::string str = toFullModPath(scriptDir, modPath);
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
     if(!pair.second) {
         if(pair.first->second) {

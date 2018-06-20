@@ -2,4 +2,4 @@
 
 var mod = 23456
 
-source ../module/module1.ds as mod
+source ../../module/module1.ds as mod

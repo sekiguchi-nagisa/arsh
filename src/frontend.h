@@ -52,6 +52,8 @@ private:
                 consumedKind(std::get<2>(state)), sourceNode(std::move(oldSourceNode)) { }
     };
 
+    const std::string scriptDir;
+
     // root lexer state
     Lexer lexer;
 
@@ -65,7 +67,7 @@ private:
     NodeDumper astDumper;
 
 public:
-    FrontEnd(Lexer &&lexer, SymbolTable &symbolTable,
+    FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTable,
              DSExecMode mode, bool toplevel, const DumpTarget &target);
 
     ~FrontEnd() {
