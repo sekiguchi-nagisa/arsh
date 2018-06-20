@@ -141,9 +141,8 @@ DEFINE_TCError(UndefinedInit     ,"undefined constructor: %s"                   
 DEFINE_TCError(Unacceptable      ,"unacceptable type: `%s'"                           );
 DEFINE_TCError(DefinedCmd        ,"already defined command: %s"                       );
 DEFINE_TCError(ConflictSymbol    ,"at global import, detect symbol conflict: `%s'"    );
-DEFINE_TCError(UnresolvedMod     ,"unresolved module: %s"                             );
+DEFINE_TCError(UnresolvedMod     ,"unresolved module: %s, by `%s'"                    );
 DEFINE_TCError(CircularMod       ,"circular module import: %s"                        );
-DEFINE_TCError(NotMod            ,"unavailable module: %s, by `%s'"                   );
 DEFINE_TCError(Required          ,"require `%s' type, but is `%s' type"               );
 DEFINE_TCError(CastOp            ,"unsupported cast op: `%s' type -> `%s' type"       );
 DEFINE_TCError(UnmatchParam      ,"not match parameter, require size is %d, but is %d");

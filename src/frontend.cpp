@@ -246,7 +246,7 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     auto ret = this->checker.getSymbolTable().tryToLoadModule(srcNode.getPathStr());
     switch(ret.getKind()) {
     case ModResult::UNRESOLVED:
-        RAISE_TC_ERROR(UnresolvedMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str());
+        RAISE_TC_ERROR(UnresolvedMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), "");
     case ModResult::CIRCULAR:
         RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), ret.asPath());
     case ModResult::PATH:
@@ -263,7 +263,7 @@ void FrontEnd::enterModule(const char *fullPath, std::unique_ptr<SourceNode> &&n
     {
         FILE *fp = fopen(fullPath, "rb");
         if(fp == nullptr) {
-            RAISE_TC_ERROR(NotMod, *node->getPathNode(), fullPath, strerror(errno));
+            RAISE_TC_ERROR(UnresolvedMod, *node->getPathNode(), fullPath, strerror(errno));
         }
         Lexer lex(fullPath, fp);
         node->setFirstAppear(true);

@@ -929,7 +929,7 @@ TEST_F(CmdlineTest2, import1) {
     fclose(fp);
     chmod(fileName.c_str(), ~S_IRUSR);
 
-    std::string str = format("(string):1: [semantic error] unavailable module: %s, by `Permission denied'\n"
+    std::string str = format("(string):1: [semantic error] unresolved module: %s, by `Permission denied'\n"
                              "source %s as mod\n"
                              "       %s\n", fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
 
