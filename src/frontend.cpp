@@ -246,8 +246,6 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     auto &srcNode = static_cast<SourceNode&>(*node);
     auto ret = this->checker.getSymbolTable().tryToLoadModule(this->scriptDir.c_str(), srcNode.getPathStr().c_str());
     switch(ret.getKind()) {
-    case ModResult::UNRESOLVED:
-        RAISE_TC_ERROR(UnresolvedMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), "");
     case ModResult::CIRCULAR:
         RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), ret.asPath());
     case ModResult::PATH:

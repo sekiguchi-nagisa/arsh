@@ -393,7 +393,6 @@ class ModResult {
 public:
     enum Kind {
         // module loading error
-        UNRESOLVED,
         CIRCULAR,
 
         PATH,
@@ -422,10 +421,6 @@ public:
     explicit ModResult(const char *path) : kind(PATH), path(path) {}
 
     explicit ModResult(ModType *type) : kind(TYPE), type(type) {}
-
-    static ModResult unresolved() {
-        return {UNRESOLVED, nullptr};
-    }
 
     static ModResult circular(const char *fullpath) {
         return {CIRCULAR, fullpath};
