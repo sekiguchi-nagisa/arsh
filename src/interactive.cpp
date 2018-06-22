@@ -20,6 +20,7 @@
 #include <memory>
 #include <cerrno>
 #include <cstdlib>
+#include <climits>
 
 #include <unistd.h>
 
@@ -277,6 +278,12 @@ int exec_interactive(DSState *dsState) {
 
     int status = 0;
     for(std::string line; readLine(line);) {
+        char buf[PATH_MAX];
+        const char *cwd = getcwd(buf, PATH_MAX);
+        if(cwd != nullptr) {
+            DSState_setScriptDir(dsState, cwd);
+        }
+
         DSError e{};
         status = DSState_eval(dsState, nullptr, line.c_str(), line.size(), &e);
         auto kind = e.kind;
