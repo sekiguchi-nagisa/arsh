@@ -74,10 +74,10 @@ DSValue SignalVector::lookup(int sigNum) const {
 static std::string initLogicalWorkingDir() {
     const char *dir = getenv(ENV_PWD);
     if(dir == nullptr || !S_ISDIR(getStMode(dir))) {
-        size_t size = PATH_MAX;
-        char buf[size];
-        const char *cwd = getcwd(buf, size);
-        return std::string(cwd != nullptr ? cwd : "");
+        char *ptr = realpath(".", nullptr);
+        std::string str = ptr == nullptr ? "" : ptr;
+        free(ptr);
+        return str;
     }
     if(dir[0] == '/') {
         return std::string(dir);

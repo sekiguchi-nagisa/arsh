@@ -325,12 +325,12 @@ const char *getWorkingDir(const DSState &st, bool useLogical, std::string &buf) 
         }
         buf = st.logicalWorkingDir;
     } else {
-        size_t size = PATH_MAX;
-        char data[size];
-        if(getcwd(data, size) == nullptr) {
+        char *ptr = realpath(".", nullptr);
+        if(ptr == nullptr) {
             return nullptr;
         }
-        buf = data;
+        buf = ptr;
+        free(ptr);
     }
     return buf.c_str();
 }
@@ -365,13 +365,12 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
             setenv(ENV_PWD, actualDest.c_str(), 1);
             st.logicalWorkingDir = std::move(actualDest);
         } else {
-            size_t size = PATH_MAX;
-            char buf[size];
-            const char *cwd = getcwd(buf, size);
+            char *cwd = realpath(".", nullptr);
             if(cwd != nullptr) {
                 setenv(ENV_PWD, cwd, 1);
+                st.logicalWorkingDir = cwd;
+                free(cwd);
             }
-            st.logicalWorkingDir = cwd;
         }
     }
     return true;

@@ -278,10 +278,10 @@ int exec_interactive(DSState *dsState) {
 
     int status = 0;
     for(std::string line; readLine(line);) {
-        char buf[PATH_MAX];
-        const char *cwd = getcwd(buf, PATH_MAX);
+        char *cwd = realpath(".", nullptr);
         if(cwd != nullptr) {
             DSState_setScriptDir(dsState, cwd);
+            free(cwd);
         }
 
         DSError e{};
