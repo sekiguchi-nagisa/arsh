@@ -665,11 +665,10 @@ std::string expandDots(const char *basePath, const char *path) {
         if(basePath != nullptr) {
             resolvedPathStack = createPathStack(basePath);
         } else {
-            size_t size = PATH_MAX;
-            char buf[size];
-            const char *cwd = getcwd(buf, size);
-            if(cwd != nullptr) {
-                resolvedPathStack = createPathStack(cwd);
+            char *ptr = realpath(".", nullptr);
+            if(ptr) {
+                resolvedPathStack = createPathStack(ptr);
+                free(ptr);
             }
         }
     }
@@ -714,11 +713,10 @@ void expandTilde(std::string &str) {
             expanded = pw->pw_dir;
         }
     } else if(expanded == "~+") {
-        size_t size = PATH_MAX;
-        char buf[size];
-        const char *cwd = getcwd(buf, size);
-        if(cwd != nullptr) {
-            expanded = cwd;
+        char *ptr = realpath(".", nullptr);
+        if(ptr) {
+            expanded = ptr;
+            free(ptr);
         }
     } else if(expanded == "~-") {
         const char *env = getenv(ENV_OLDPWD);
