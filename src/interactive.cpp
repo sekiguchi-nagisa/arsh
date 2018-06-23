@@ -278,12 +278,7 @@ int exec_interactive(DSState *dsState) {
 
     int status = 0;
     for(std::string line; readLine(line);) {
-        char *cwd = realpath(".", nullptr);
-        if(cwd != nullptr) {
-            DSState_setScriptDir(dsState, cwd);
-            free(cwd);
-        }
-
+        DSState_setScriptDir(dsState, ".");
         DSError e{};
         status = DSState_eval(dsState, nullptr, line.c_str(), line.size(), &e);
         auto kind = e.kind;

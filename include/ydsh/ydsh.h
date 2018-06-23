@@ -79,12 +79,12 @@ void DSState_setArguments(DSState *st, char *const *args);
  *
  * @param st
  * not null
- * @param scriptPath
+ * @param scriptDir
  * @return
- * if scriptPath is not found, return -1 and do nothing. (set errno)
+ * if scriptDir is not found, return -1 and do nothing. (set errno)
  * if success, return 0.
  */
-int DSState_setScriptDir(DSState *st, const char *scriptPath);
+int DSState_setScriptDir(DSState *st, const char *scriptDir);
 
 /* for internal data structure dump */
 typedef enum {

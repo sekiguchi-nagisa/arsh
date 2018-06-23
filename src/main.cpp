@@ -156,6 +156,11 @@ static const char *version() {
     return DSState_version(nullptr);
 }
 
+static std::string safeDirName(const char *path) {
+    const char *ptr = strrchr(path, '/');
+    return ptr == nullptr ? path : std::string(path, ptr - path);
+}
+
 int main(int argc, char **argv) {
     opt::Parser<OptionKind> parser = {
 #define GEN_OPT(E, S, F, D) {E, S, F, D},
@@ -298,7 +303,9 @@ int main(int argc, char **argv) {
 
         DSState_setShellName(state, scriptName);
         DSState_setArguments(state, shellArgs + 1);
-        DSState_setScriptDir(state, scriptName);
+
+        std::string dirName = safeDirName(scriptName);
+        DSState_setScriptDir(state, dirName.c_str());
         exit(apply(DSState_loadAndEval, state, scriptName, fp));
     }
     case InvocationKind::FROM_STDIN: {
