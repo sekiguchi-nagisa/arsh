@@ -439,6 +439,23 @@ static const char *safeBasename(const char *str) {
     return ptr == nullptr ? str : ptr + 1;
 }
 
+static std::string findPWD() {
+    std::string str;
+    const char *cwd = getenv(ENV_PWD);
+    if(cwd) {
+        str = cwd;
+    } else {
+        char *ptr = realpath(".", nullptr);
+        if(ptr) {
+            str = ptr;
+            free(ptr);
+        } else {
+            str = ".";
+        }
+    }
+    return str;
+}
+
 std::string interpretPromptString(const DSState &st, const char *ps) {
     std::string output;
 
@@ -532,16 +549,8 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
                 continue;
             }
             case 'w': {
-                size_t size = PATH_MAX;
-                char buf[size];
-                const char *cwd = getenv(ENV_PWD);
-                if(cwd == nullptr) {
-                    cwd = getcwd(buf, size);
-                }
-                if(cwd == nullptr) {
-                    cwd = ".";
-                }
-
+                std::string str = findPWD();
+                const char *cwd = str.c_str();
                 const char *home = getenv(ENV_HOME);
                 if(home != nullptr && strstr(cwd, home) == cwd) {
                     output += '~';
@@ -551,14 +560,10 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
                 continue;
             }
             case 'W':  {
-                size_t size = PATH_MAX;
-                char buf[size];
-                const char *cwd = getenv(ENV_PWD);
-                if(cwd == nullptr) {
-                    cwd = getcwd(buf, size);
-                }
-                if(cwd == nullptr) {
-                    output += ".";
+                std::string str = findPWD();
+                const char *cwd = str.c_str();
+                if(str == ".") {
+                    output += str;
                     continue;
                 }
 

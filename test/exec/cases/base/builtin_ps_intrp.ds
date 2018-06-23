@@ -33,11 +33,14 @@ import-env PWD : "$(pwd)"
 assert("$(ps_intrp '\w')" == $dirname($PWD))
 
 $PWD = '/'
+assert("$(ps_intrp '\w')" == "/")
 assert("$(ps_intrp '\W')" == "/")
 unset_env PWD
 cd ~
+assert("$(ps_intrp '\w')" == "~")
 assert("$(ps_intrp '\W')" == "~")
 cd ~
+assert("$(ps_intrp '\w')" == "~")
 assert("$(ps_intrp '\W')" == "~")
 
 assert("$(ps_intrp '\0101\066')" == "A6")    # octal number
