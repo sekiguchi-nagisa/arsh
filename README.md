@@ -19,7 +19,7 @@ Language specification is subject to change without notice.
 * libpcre
 
 ### Tested Compiler
-* gcc (4.8, 4.9, 5, 6, 7)
+* gcc (4.8, 4.9, 5, 6, 7, 8)
 * clang (3.5, 3.6, 3.7, 3.8, 3.9, 4, 5, 6)
 
 ## How to use
