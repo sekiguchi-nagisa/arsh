@@ -620,17 +620,13 @@ int DSState_exec(DSState *st, char *const *argv) {
 
 const char *DSState_prompt(DSState *st, unsigned int n) {
     const char *psName = nullptr;
-    switch(n) {
-    case 1:
+    if(n == 1) {
         psName = VAR_PS1;
-        break;
-    case 2:
+    } else if(n == 2) {
         psName = VAR_PS2;
-        break;
-    default:
+    } else {
         return "";
     }
-
     const DSValue &obj = getGlobal(*st, psName);
     st->prompt = interpretPromptString(*st, typeAs<String_Object>(obj)->getValue());
     return st->prompt.c_str();
