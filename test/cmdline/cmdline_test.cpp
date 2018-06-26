@@ -953,7 +953,7 @@ TEST_F(CmdlineTest2, import2) {
     fprintf(fp, "source %s as mod2", fileName.c_str());
     fclose(fp);
 
-    std::string str = format("%s:1: [semantic error] circular module import: %s\n"
+    std::string str = format("%s:1: [semantic error] circular module import: `%s'\n"
                              "source %s as mod2\n"
                              "       %s\n",
                              modName.c_str(), fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
