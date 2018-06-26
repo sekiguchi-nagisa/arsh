@@ -130,8 +130,8 @@ DEFINE_TCError(OutsideToplevel   ,"only available top level scope"              
 DEFINE_TCError(NotCallable       ,"Func type object is not directly callable"         );
 DEFINE_TCError(UselessBlock      ,"useless block"                                     );
 DEFINE_TCError(EmptyTry          ,"empty try block"                                   );
-DEFINE_TCError(UselessTry        ,"useless try block"                                 );
-DEFINE_TCError(LocalLimit        ,"too many local variable"                           );
+DEFINE_TCError(MeaninglessTry    ,"meaningless try block"                             );
+DEFINE_TCError(LocalLimit        ,"too many local variables"                           );
 DEFINE_TCError(DefinedSymbol     ,"already defined symbol: %s"                        );
 DEFINE_TCError(DefinedField      ,"already defined field: %s"                         );
 DEFINE_TCError(UndefinedSymbol   ,"undefined symbol: %s"                              );

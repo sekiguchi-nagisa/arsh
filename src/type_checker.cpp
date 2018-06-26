@@ -1025,7 +1025,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
 
 void TypeChecker::visitTryNode(TryNode &node) {
     if(node.getCatchNodes().empty() && node.getFinallyNode() == nullptr) {
-        RAISE_TC_ERROR(UselessTry, node);
+        RAISE_TC_ERROR(MeaninglessTry, node);
     }
     assert(node.getExprNode()->getNodeKind() == NodeKind::Block);
     if(static_cast<BlockNode*>(node.getExprNode())->getNodes().empty()) {
