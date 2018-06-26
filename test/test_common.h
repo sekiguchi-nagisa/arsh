@@ -302,8 +302,17 @@ public:
         if(handle) {
             return handle;
         } else {
-            int ret = func();
-            exit(ret);
+#ifdef __EXCEPTIONS
+            try {
+#endif
+                int ret = func();
+                exit(ret);
+
+#ifdef __EXCEPTIONS
+            } catch(...) {
+                abort();
+            }
+#endif
         }
     }
 
