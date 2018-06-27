@@ -17,6 +17,8 @@
 
 #define X_INFO_PATCH_VERSION   ${YDSH_PATCH_VERSION}
 
+#define YDSH_SYSTEM_CONFIG_DIR "${CMAKE_INSTALL_PREFIX}/etc/ydsh"
+
 
 // extra option
 
