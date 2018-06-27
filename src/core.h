@@ -218,8 +218,6 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message);
 
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace);
 
-const char *getConfigRootDir();
-
 /**
  *
  * @param st

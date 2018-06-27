@@ -303,21 +303,6 @@ void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTr
     }
 }
 
-static std::string initConfigRootDir() {
-#ifdef X_CONFIG_DIR
-    return std::string(X_CONFIG_DIR);
-#else
-    std::string path(getenv(ENV_HOME));
-    path += "/.ydsh";
-    return path;
-#endif
-}
-
-const char *getConfigRootDir() {
-    static std::string dir(initConfigRootDir());
-    return dir.c_str();
-}
-
 const char *getWorkingDir(const DSState &st, bool useLogical, std::string &buf) {
     if(useLogical) {
         if(!S_ISDIR(getStMode(st.logicalWorkingDir.c_str()))) {
