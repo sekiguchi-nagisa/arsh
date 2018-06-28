@@ -244,10 +244,11 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     }
 
     auto &srcNode = static_cast<SourceNode&>(*node);
-    auto ret = this->checker.getSymbolTable().tryToLoadModule(this->scriptDir.c_str(), srcNode.getPathStr().c_str());
+    const char *modPath = srcNode.getPathStr().c_str();
+    auto ret = this->checker.getSymbolTable().tryToLoadModule(this->scriptDir.c_str(), modPath);
     switch(ret.getKind()) {
     case ModResult::CIRCULAR:
-        RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), ret.asPath());
+        RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), modPath);
     case ModResult::PATH:
         this->enterModule(ret.asPath(), std::unique_ptr<SourceNode>(static_cast<SourceNode *>(node.release())));
         return ENTER_MODULE;
@@ -262,7 +263,7 @@ void FrontEnd::enterModule(const char *fullPath, std::unique_ptr<SourceNode> &&n
     {
         FILE *fp = fopen(fullPath, "rb");
         if(fp == nullptr) {
-            RAISE_TC_ERROR(UnresolvedMod, *node->getPathNode(), fullPath, strerror(errno));
+            RAISE_TC_ERROR(UnresolvedMod, *node->getPathNode(), node->getPathStr().c_str(), strerror(errno));
         }
         Lexer lex(fullPath, fp);
         node->setFirstAppear(true);
