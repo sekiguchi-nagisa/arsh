@@ -15,13 +15,14 @@
  */
 
 #include <cstring>
-#include <pwd.h>
 #include <csignal>
 #include <algorithm>
 #include <fstream>
 
 #include <unistd.h>
 #include <sys/utsname.h>
+#include <pwd.h>
+#include <libgen.h>
 
 #include <ydsh/ydsh.h>
 #include <config.h>
@@ -406,7 +407,6 @@ static void initBuiltinVar(DSState *state) {
      * must be String_Object
      */
     std::string str = ".";
-    getWorkingDir(*state, false, str);
     bindVariable(state, VAR_SCRIPT_DIR, DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
 }
 
@@ -535,16 +535,25 @@ void DSState_setArguments(DSState *st, char *const *args) {
     finalizeScriptArg(st);
 }
 
+/**
+ *
+ * @param st
+ * @param scriptDir
+ * full path
+ */
+static void setScriptDir(DSState *st, const char *scriptDir) {
+    unsigned int index = st->symbolTable.lookupHandle(VAR_SCRIPT_DIR)->getIndex();
+    std::string str = scriptDir;
+    st->setGlobal(index, DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::move(str)));
+}
+
 int DSState_setScriptDir(DSState *st, const char *scriptDir) {
     char *real = realpath(scriptDir, nullptr);
     if(real == nullptr) {
         return -1;
     }
-
-    unsigned int index = st->symbolTable.lookupHandle(VAR_SCRIPT_DIR)->getIndex();
-    std::string str = real;
+    setScriptDir(st, real);
     free(real);
-    st->setGlobal(index, DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::move(str)));
     return 0;
 }
 
@@ -593,11 +602,6 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
     return evalCode(st, code, e);
 }
 
-static std::string safeDirName(const char *path) {
-    const char *ptr = strrchr(path, '/');
-    return ptr == nullptr ? path : std::string(path, ptr - path);
-}
-
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     FILE *fp;
     if(sourceName == nullptr) {
@@ -617,8 +621,10 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
             return 1;
         }
 
-        std::string dirName = safeDirName(sourceName);
-        DSState_setScriptDir(st, dirName.c_str());
+        char *ptr = realpath(sourceName, nullptr);
+        const char *dirName = dirname(ptr);
+        setScriptDir(st, dirName);
+        free(ptr);
     }
 
     if(sourceName != nullptr) {
