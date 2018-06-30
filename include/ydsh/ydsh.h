@@ -193,21 +193,19 @@ void DSError_release(DSError *e);
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e);
 
 /**
- * evaluate file content. if e is not null, set error info.
- * after call this, close fp.
+ * open file and evaluate. if e is not null, set error info.
+ * set SCRIPT_DIR to dirname of fileName.
  * @param st
  * not null.
- * @param sourceName
- * if null, source name is treated as standard input
- * @param fp
- * must be opened with binary mode.
+ * @param fileName
+ * if null, file name is treated as standard input
  * @param e
  * may be null.
  * @return
  * exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  */
-int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *e);
+int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
 
 /**
  * execute builtin command.

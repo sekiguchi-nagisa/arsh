@@ -156,11 +156,6 @@ static const char *version() {
     return DSState_version(nullptr);
 }
 
-static std::string safeDirName(const char *path) {
-    const char *ptr = strrchr(path, '/');
-    return ptr == nullptr ? path : std::string(path, ptr - path);
-}
-
 int main(int argc, char **argv) {
     opt::Parser<OptionKind> parser = {
 #define GEN_OPT(E, S, F, D) {E, S, F, D},
@@ -295,24 +290,15 @@ int main(int argc, char **argv) {
     switch(invocationKind) {
     case InvocationKind::FROM_FILE: {
         const char *scriptName = shellArgs[0];
-        FILE *fp = fopen(scriptName, "rb");
-        if(fp == nullptr) {
-            fprintf(stderr, "ydsh: %s: %s\n", scriptName, strerror(errno));
-            exit(1);
-        }
-
         DSState_setShellName(state, scriptName);
         DSState_setArguments(state, shellArgs + 1);
-
-        std::string dirName = safeDirName(scriptName);
-        DSState_setScriptDir(state, dirName.c_str());
-        exit(apply(DSState_loadAndEval, state, scriptName, fp));
+        exit(apply(DSState_loadAndEval, state, scriptName));
     }
     case InvocationKind::FROM_STDIN: {
         DSState_setArguments(state, shellArgs);
 
         if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
-            exit(apply(DSState_loadAndEval, state, nullptr, fdopen(dup(STDIN_FILENO), "r")));
+            exit(apply(DSState_loadAndEval, state, nullptr));
         } else {    // interactive mode
             if(!quiet) {
                 fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());

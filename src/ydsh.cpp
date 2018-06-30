@@ -593,7 +593,34 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
     return evalCode(st, code, e);
 }
 
-int DSState_loadAndEval(DSState *st, const char *sourceName, FILE *fp, DSError *e) {
+static std::string safeDirName(const char *path) {
+    const char *ptr = strrchr(path, '/');
+    return ptr == nullptr ? path : std::string(path, ptr - path);
+}
+
+int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
+    FILE *fp;
+    if(sourceName == nullptr) {
+        fp = fdopen(dup(STDIN_FILENO), "rb");
+    } else {
+        fp = fopen(sourceName, "rb");
+        if(fp == nullptr) {
+            fprintf(stderr, "ydsh: %s: %s\n", sourceName, strerror(errno));
+            if(e) {
+                *e = {
+                        .kind = DS_ERROR_KIND_PARSE_ERROR,
+                        .fileName = strdup(sourceName),
+                        .lineNum = 0,
+                        .name = ""
+                };
+            }
+            return 1;
+        }
+
+        std::string dirName = safeDirName(sourceName);
+        DSState_setScriptDir(st, dirName.c_str());
+    }
+
     if(sourceName != nullptr) {
         const char *scriptDir = typeAs<String_Object>(getGlobal(*st, VAR_SCRIPT_DIR))->getValue();
         auto ret = st->symbolTable.tryToLoadModule(scriptDir, sourceName);
