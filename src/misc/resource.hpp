@@ -17,7 +17,9 @@
 #ifndef YDSH_MISC_RESOURCE_HPP
 #define YDSH_MISC_RESOURCE_HPP
 
+#include <cstdio>
 #include <type_traits>
+#include <memory>
 
 #include "noncopyable.h"
 
@@ -196,6 +198,16 @@ ScopedResource<R, typename std::remove_reference<D>::type> makeScopedResource(R 
     using ActualD = typename std::remove_reference<D>::type;
     return ScopedResource<R, ActualD>(std::move(r), std::forward<ActualD>(d));
 };
+
+struct FileCloser {
+    void operator()(FILE *fp) const {
+        if(fp) {
+            fclose(fp);
+        }
+    }
+};
+
+using FilePtr = std::unique_ptr<FILE, FileCloser>;
 
 } // namespace ydsh
 

@@ -17,33 +17,23 @@
 #ifndef YDSH_MISC_LEXER_BASE_HPP
 #define YDSH_MISC_LEXER_BASE_HPP
 
-#include <cstdio>
 #include <cstring>
 #include <cassert>
 #include <string>
-#include <type_traits>
 #include <vector>
-#include <memory>
 #include <algorithm>
 
 #include "unicode.hpp"
 #include "noncopyable.h"
 #include "token.hpp"
 #include "buffer.hpp"
+#include "resource.hpp"
 
 namespace ydsh {
 namespace parser_base {
 
 
 namespace __detail {
-
-struct FileCloser {
-    void operator()(FILE *fp) const {
-        if(fp) {
-            fclose(fp);
-        }
-    }
-};
 
 /**
  * base lexer for re2c
@@ -57,7 +47,7 @@ protected:
      * may be null, if input source is string.
      * must be binary mode.
      */
-    std::unique_ptr<FILE, FileCloser> file;
+    FilePtr file;
 
     FlexBuffer<unsigned char> buf;
 
