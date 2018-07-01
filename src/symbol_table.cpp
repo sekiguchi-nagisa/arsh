@@ -382,13 +382,13 @@ FilePtr SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPath,
     if(*modPath == '/') {   // if full path, not search next path
         return filePtr;
     }
-    if(ret.getKind() == ModResult::UNRESOLVED) {
+    if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT) {
         std::string dir = LOCAL_MOD_DIR;
         expandTilde(dir);
         filePtr = this->modLoader.load(dir.c_str(), modPath, ret);
-    }
-    if(ret.getKind() == ModResult::UNRESOLVED) {
-        filePtr = this->modLoader.load(SYSTEM_MOD_DIR, modPath, ret);
+        if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT) {
+            filePtr = this->modLoader.load(SYSTEM_MOD_DIR, modPath, ret);
+        }
     }
     return filePtr;
 }

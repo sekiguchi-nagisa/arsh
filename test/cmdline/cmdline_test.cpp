@@ -965,6 +965,13 @@ TEST_F(CmdlineTest2, import2) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ProcBuilder{ BIN_PATH, fileName.c_str() }, 1, "", str.c_str()));
 }
 
+TEST_F(CmdlineTest2, import3) {
+    std::string str = format("(string):1: [semantic error] unresolved module: ., by `Is a directory'\n"
+                             "source .\n"
+                             "       %s\n", makeLineMarker(".").c_str());
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source ."), 1, "", str.c_str()));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
