@@ -109,7 +109,7 @@ private:
      */
     Status tryToCheckModule(std::unique_ptr<Node> &node);
 
-    void enterModule(const char *fullPath, std::unique_ptr<SourceNode> &&node);
+    void enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_ptr<SourceNode> &&node);
 
     std::unique_ptr<SourceNode> exitModule();
 

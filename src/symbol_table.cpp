@@ -274,16 +274,27 @@ std::string toFullModPath(const char *scriptDir, const char *modPath) {
     return str;
 }
 
-ModResult ModuleLoader::load(const char *scriptDir, const char *modPath) {
+FilePtr ModuleLoader::load(const char *scriptDir, const char *modPath, ModResult &ret) {
+    FilePtr filePtr;
     std::string str = toFullModPath(scriptDir, modPath);
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
     if(!pair.second) {
         if(pair.first->second) {
-            return ModResult(pair.first->second);
+            ret = ModResult(pair.first->second);
+            return filePtr;
         }
-        return ModResult::circular(pair.first->first.c_str());
+        ret = ModResult::circular(pair.first->first.c_str());
+        return filePtr;
     }
-    return ModResult(pair.first->first.c_str());
+
+    const char *resolvedPath = pair.first->first.c_str();
+    filePtr.reset(fopen(resolvedPath, "rb"));
+    if(!filePtr) {
+        ret = ModResult::unresolved();
+        return filePtr;
+    }
+    ret = ModResult(resolvedPath);
+    return filePtr;
 }
 
 

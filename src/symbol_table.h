@@ -19,11 +19,12 @@
 
 #include <cassert>
 #include <functional>
-#include <misc/buffer.hpp>
 
 #include "type.h"
 #include "handle.h"
 #include "constant.h"
+#include "misc/buffer.hpp"
+#include "misc/resource.hpp"
 
 namespace ydsh {
 
@@ -394,6 +395,7 @@ public:
     enum Kind {
         // module loading error
         CIRCULAR,
+        UNRESOLVED,
 
         PATH,
         TYPE,
@@ -418,12 +420,18 @@ private:
     ModResult(Kind kind, const char *ptr) : kind(kind), path(ptr) {}
 
 public:
+    ModResult() : ModResult(UNRESOLVED, nullptr) {}
+
     explicit ModResult(const char *path) : kind(PATH), path(path) {}
 
     explicit ModResult(ModType *type) : kind(TYPE), type(type) {}
 
     static ModResult circular(const char *fullpath) {
         return {CIRCULAR, fullpath};
+    }
+
+    static ModResult unresolved() {
+        return {UNRESOLVED, nullptr};
     }
 
     Kind getKind() const {
@@ -460,12 +468,15 @@ private:
     void abort();
 
     /**
-     *
+     * resolve module path or module type
      * @param scriptDir
      * @param modPath
+     * @param ret
      * @return
+     * if ModResult is PATH, return resolve file pointer.
+     * otherwise, return null.
      */
-    ModResult load(const char *scriptDir, const char *modPath);
+    FilePtr load(const char *scriptDir, const char *modPath, ModResult &ret);
 };
 
 
@@ -530,8 +541,8 @@ public:
         this->curModule = &this->rootModule;
     }
 
-    ModResult tryToLoadModule(const char *scriptDir, const char *modPath) {
-        return this->modLoader.load(scriptDir, modPath);
+    FilePtr tryToLoadModule(const char *scriptDir, const char *modPath, ModResult &ret) {
+        return this->modLoader.load(scriptDir, modPath, ret);
     }
 
     /**

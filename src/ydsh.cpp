@@ -608,7 +608,10 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     if(sourceName == nullptr) {
         fp = fdopen(dup(STDIN_FILENO), "rb");
     } else {
-        fp = fopen(sourceName, "rb");
+        char *real = realpath(sourceName, nullptr);
+        ModResult ret;
+        fp = st->symbolTable.tryToLoadModule(nullptr, sourceName, ret).release();
+        assert(ret.getKind() == ModResult::PATH || ret.getKind() == ModResult::UNRESOLVED);
         if(fp == nullptr) {
             fprintf(stderr, "ydsh: %s: %s\n", sourceName, strerror(errno));
             if(e) {
@@ -619,21 +622,14 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
                         .name = ""
                 };
             }
+            free(real);
             return 1;
         }
-
-        char *ptr = realpath(sourceName, nullptr);
-        const char *dirName = dirname(ptr);
+        const char *dirName = dirname(real);
         setScriptDir(st, dirName);
-        free(ptr);
+        free(real);
     }
 
-    if(sourceName != nullptr) {
-        const char *scriptDir = typeAs<String_Object>(getGlobal(*st, VAR_SCRIPT_DIR))->getValue();
-        auto ret = st->symbolTable.tryToLoadModule(scriptDir, sourceName);
-        (void) ret;
-        assert(ret.getKind() == ModResult::PATH);
-    }
     CompiledCode code;
     int ret = compileImpl(st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp), e, code);
     if(!code) {

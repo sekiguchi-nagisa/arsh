@@ -245,12 +245,16 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
 
     auto &srcNode = static_cast<SourceNode&>(*node);
     const char *modPath = srcNode.getPathStr().c_str();
-    auto ret = this->checker.getSymbolTable().tryToLoadModule(this->scriptDir.c_str(), modPath);
+    ModResult ret;
+    auto filePtr = this->checker.getSymbolTable().tryToLoadModule(this->scriptDir.c_str(), modPath, ret);
     switch(ret.getKind()) {
     case ModResult::CIRCULAR:
         RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), modPath);
+    case ModResult::UNRESOLVED:
+        RAISE_TC_ERROR(UnresolvedMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno));
     case ModResult::PATH:
-        this->enterModule(ret.asPath(), std::unique_ptr<SourceNode>(static_cast<SourceNode *>(node.release())));
+        this->enterModule(ret.asPath(), std::move(filePtr),
+                          std::unique_ptr<SourceNode>(static_cast<SourceNode *>(node.release())));
         return ENTER_MODULE;
     case ModResult::TYPE:
         srcNode.setModType(ret.asType());
@@ -259,13 +263,9 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     return IN_MODULE;   // normally unreachable, due to suppress gcc warning
 }
 
-void FrontEnd::enterModule(const char *fullPath, std::unique_ptr<SourceNode> &&node) {
+void FrontEnd::enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_ptr<SourceNode> &&node) {
     {
-        FILE *fp = fopen(fullPath, "rb");
-        if(fp == nullptr) {
-            RAISE_TC_ERROR(UnresolvedMod, *node->getPathNode(), node->getPathStr().c_str(), strerror(errno));
-        }
-        Lexer lex(fullPath, fp);
+        Lexer lex(fullPath, filePtr.release());
         node->setFirstAppear(true);
         auto state = this->parser.saveLexicalState();
         auto scope = this->checker.getSymbolTable().createModuleScope();
