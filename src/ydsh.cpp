@@ -25,7 +25,6 @@
 #include <libgen.h>
 
 #include <ydsh/ydsh.h>
-#include <config.h>
 #include <embed.h>
 
 #include "vm.h"

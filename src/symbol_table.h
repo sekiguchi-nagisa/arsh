@@ -541,9 +541,7 @@ public:
         this->curModule = &this->rootModule;
     }
 
-    FilePtr tryToLoadModule(const char *scriptDir, const char *modPath, ModResult &ret) {
-        return this->modLoader.load(scriptDir, modPath, ret);
-    }
+    FilePtr tryToLoadModule(const char *scriptDir, const char *modPath, ModResult &ret);
 
     /**
      * create new module scope and assign it to curModule

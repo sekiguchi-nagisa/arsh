@@ -290,6 +290,7 @@ FilePtr ModuleLoader::load(const char *scriptDir, const char *modPath, ModResult
     const char *resolvedPath = pair.first->first.c_str();
     filePtr.reset(fopen(resolvedPath, "r+b"));
     if(!filePtr) {
+        this->typeMap.erase(pair.first);
         ret = ModResult::unresolved();
         return filePtr;
     }
@@ -374,6 +375,22 @@ SymbolTable::SymbolTable() :
 
     // commit generated type
     this->typeMap.commit();
+}
+
+FilePtr SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPath, ydsh::ModResult &ret) {
+    auto filePtr = this->modLoader.load(scriptDir, modPath, ret);
+    if(*modPath == '/') {   // if full path, not search next path
+        return filePtr;
+    }
+    if(ret.getKind() == ModResult::UNRESOLVED) {
+        std::string dir = LOCAL_MOD_DIR;
+        expandTilde(dir);
+        filePtr = this->modLoader.load(dir.c_str(), modPath, ret);
+    }
+    if(ret.getKind() == ModResult::UNRESOLVED) {
+        filePtr = this->modLoader.load(SYSTEM_MOD_DIR, modPath, ret);
+    }
+    return filePtr;
 }
 
 ModType& SymbolTable::createModType(const std::string &fullpath) {
