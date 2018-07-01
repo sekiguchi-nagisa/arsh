@@ -288,7 +288,7 @@ FilePtr ModuleLoader::load(const char *scriptDir, const char *modPath, ModResult
     }
 
     const char *resolvedPath = pair.first->first.c_str();
-    filePtr.reset(fopen(resolvedPath, "rb"));
+    filePtr.reset(fopen(resolvedPath, "r+b"));
     if(!filePtr) {
         ret = ModResult::unresolved();
         return filePtr;
