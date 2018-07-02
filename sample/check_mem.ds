@@ -9,13 +9,13 @@ if $# != 2 {
 let bin = $1
 let dir = $2
 
-if (!test -x $bin) {
+test -x $bin || {
     echo not found executable file: $bin 1>&2
     exit 1
 }
 
 # check valgrind
-if !(which valgrind) {
+which valgrind || {
     echo need valgrind 1>&2
     exit 1
 }
