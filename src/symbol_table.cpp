@@ -23,6 +23,7 @@
 #include "core.h"
 #include "object.h"
 #include "constant.h"
+#include "logger.h"
 
 namespace ydsh {
 
@@ -277,6 +278,10 @@ std::string toFullModPath(const char *scriptDir, const char *modPath) {
 FilePtr ModuleLoader::load(const char *scriptDir, const char *modPath, ModResult &ret) {
     FilePtr filePtr;
     std::string str = toFullModPath(scriptDir, modPath);
+    LOG(TRACE_MODULE, std::endl << "\tscriptDir: `" << scriptDir << "'" << std::endl
+                                << "\tmodPath: `" << modPath << "'" << std::endl
+                                << "\tfullPath: `" << str << "'");
+
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
     if(!pair.second) {
         if(pair.first->second) {

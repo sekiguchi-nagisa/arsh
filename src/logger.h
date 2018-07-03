@@ -33,7 +33,8 @@
     E(TRACE_TOKEN) \
     E(DUMP_EXEC) \
     E(DUMP_CONSOLE) \
-    E(DUMP_WAIT)
+    E(DUMP_WAIT) \
+    E(TRACE_MODULE)
 
 
 namespace __detail_logger {
