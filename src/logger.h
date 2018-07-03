@@ -32,7 +32,6 @@
 #define EACH_LOGGING_POLICY(E) \
     E(TRACE_TOKEN) \
     E(DUMP_EXEC) \
-    E(TRACE_SIGNAL) \
     E(DUMP_CONSOLE) \
     E(DUMP_WAIT)
 
