@@ -246,7 +246,7 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     auto &srcNode = static_cast<SourceNode&>(*node);
     const char *modPath = srcNode.getPathStr().c_str();
     ModResult ret;
-    auto filePtr = this->checker.getSymbolTable().tryToLoadModule(this->scriptDir.c_str(), modPath, ret);
+    auto filePtr = this->checker.getSymbolTable().tryToLoadModule(this->getCurScriptDir().c_str(), modPath, ret);
     switch(ret.getKind()) {
     case ModResult::CIRCULAR:
         RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), modPath);
@@ -265,11 +265,12 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
 
 void FrontEnd::enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_ptr<SourceNode> &&node) {
     {
+        assert(*fullPath == '/');
         Lexer lex(fullPath, filePtr.release());
         node->setFirstAppear(true);
         auto state = this->parser.saveLexicalState();
         auto scope = this->checker.getSymbolTable().createModuleScope();
-        this->contexts.emplace_back(fullPath, std::move(lex), std::move(scope), std::move(state), std::move(node));
+        this->contexts.emplace_back(std::move(lex), std::move(scope), std::move(state), std::move(node));
     }
     Token token;
     TokenKind kind = this->contexts.back().lexer.nextToken(token);
@@ -291,7 +292,7 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     Token token = ctx.token;
     TokenKind consumedKind = ctx.consumedKind;
     std::unique_ptr<SourceNode> node(ctx.sourceNode.release());
-    auto &modType = symbolTable.createModType(ctx.fullPath);
+    auto &modType = symbolTable.createModType(ctx.lexer.getSourceInfoPtr()->getSourceName());
     auto scope = std::move(ctx.scope);
     this->contexts.pop_back();
 

@@ -35,7 +35,7 @@ public:
 
 private:
     struct Context {
-        std::string fullPath;
+        std::string scriptDir;
         Lexer lexer;
         std::unique_ptr<ModuleScope> scope;
 
@@ -45,11 +45,15 @@ private:
         TokenKind consumedKind;
         std::unique_ptr<SourceNode> sourceNode;
 
-        Context(const char *fullPath, Lexer &&lexer, std::unique_ptr<ModuleScope> &&scope,
+        Context(Lexer &&lexer, std::unique_ptr<ModuleScope> &&scope,
                 std::tuple<TokenKind, Token, TokenKind > &&state, std::unique_ptr<SourceNode> &&oldSourceNode) :
-                fullPath(fullPath), lexer(std::move(lexer)), scope(std::move(scope)),
+                lexer(std::move(lexer)), scope(std::move(scope)),
                 kind(std::get<0>(state)), token(std::get<1>(state)),
-                consumedKind(std::get<2>(state)), sourceNode(std::move(oldSourceNode)) { }
+                consumedKind(std::get<2>(state)), sourceNode(std::move(oldSourceNode)) {
+            const char *fileName = this->lexer.getSourceInfoPtr()->getSourceName().c_str();
+            const char *ptr = strrchr(fileName, '/');
+            this->scriptDir.append(fileName, ptr == fileName ? 1 : ptr - fileName);
+        }
     };
 
     const std::string scriptDir;
@@ -97,6 +101,10 @@ public:
     void teardownASTDump();
 
 private:
+    const std::string getCurScriptDir() const {
+        return this->contexts.empty() ? this->scriptDir : this->contexts.back().scriptDir;
+    }
+
     std::unique_ptr<Node> tryToParse(DSError *dsError);
 
     void tryToCheckType(std::unique_ptr<Node> &node);
@@ -109,6 +117,13 @@ private:
      */
     Status tryToCheckModule(std::unique_ptr<Node> &node);
 
+    /**
+     *
+     * @param fullPath
+     * must be full file path (not directory)
+     * @param filePtr
+     * @param node
+     */
     void enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_ptr<SourceNode> &&node);
 
     std::unique_ptr<SourceNode> exitModule();
