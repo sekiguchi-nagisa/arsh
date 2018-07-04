@@ -541,6 +541,14 @@ public:
         this->curModule = &this->rootModule;
     }
 
+    /**
+     *
+     * @param scriptDir
+     * may be null
+     * @param modPath
+     * @param ret
+     * @return
+     */
     FilePtr tryToLoadModule(const char *scriptDir, const char *modPath, ModResult &ret);
 
     /**

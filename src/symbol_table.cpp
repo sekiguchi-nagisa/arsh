@@ -276,6 +276,8 @@ std::string toFullModPath(const char *scriptDir, const char *modPath) {
 }
 
 FilePtr ModuleLoader::load(const char *scriptDir, const char *modPath, ModResult &ret) {
+    assert(modPath != nullptr);
+
     FilePtr filePtr;
     std::string str = toFullModPath(scriptDir, modPath);
     LOG(TRACE_MODULE, std::endl << "\tscriptDir: `" << scriptDir << "'" << std::endl
@@ -382,20 +384,26 @@ SymbolTable::SymbolTable() :
     this->typeMap.commit();
 }
 
+static bool safeStrcmp(const char *p1, const char *p2) {
+    return p1 != nullptr && p2 != nullptr && strcmp(p1, p2) == 0;
+}
+
 FilePtr SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPath, ModResult &ret) {
     auto filePtr = this->modLoader.load(scriptDir, modPath, ret);
     if(*modPath == '/') {   // if full path, not search next path
         return filePtr;
     }
     if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT) {
+        int old = errno;
         std::string dir = LOCAL_MOD_DIR;
         expandTilde(dir);
-        if(strcmp(dir.c_str(), scriptDir) == 0) {
+        if(safeStrcmp(scriptDir, dir.c_str())) {
+            errno = old;
             return filePtr; // short circuit
         }
         filePtr = this->modLoader.load(dir.c_str(), modPath, ret);
         if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT
-           && strcmp(scriptDir, SYSTEM_MOD_DIR) != 0) {
+           && !safeStrcmp(scriptDir, SYSTEM_MOD_DIR)) {
             filePtr = this->modLoader.load(SYSTEM_MOD_DIR, modPath, ret);
         }
     }
