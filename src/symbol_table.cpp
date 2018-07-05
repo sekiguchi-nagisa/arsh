@@ -280,7 +280,7 @@ FilePtr ModuleLoader::load(const char *scriptDir, const char *modPath, ModResult
 
     FilePtr filePtr;
     std::string str = toFullModPath(scriptDir, modPath);
-    LOG(TRACE_MODULE, std::endl << "\tscriptDir: `" << scriptDir << "'" << std::endl
+    LOG(TRACE_MODULE, std::endl << "\tscriptDir: `" << (scriptDir == nullptr ? "" : scriptDir) << "'" << std::endl
                                 << "\tmodPath: `" << modPath << "'" << std::endl
                                 << "\tfullPath: `" << str << "'");
 

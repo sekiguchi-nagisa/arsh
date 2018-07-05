@@ -470,6 +470,7 @@ private:
     /**
      * resolve module path or module type
      * @param scriptDir
+     * may be null
      * @param modPath
      * @param ret
      * @return
