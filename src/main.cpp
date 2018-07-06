@@ -95,9 +95,6 @@ template <typename Func, typename ...T>
 static int apply(Func func, DSState *state, T&& ... args) {
     DSError error{};
     int ret = func(state, std::forward<T>(args)..., &error);
-    if(error.kind == DS_ERROR_KIND_FILE) {
-        fprintf(stderr, "ydsh: %s: %s\n", error.fileName, strerror(errno));
-    }
     writeStatusLog(error);
     DSError_release(&error);
     return ret;
