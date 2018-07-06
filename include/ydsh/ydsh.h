@@ -131,6 +131,7 @@ void DSState_unsetOption(DSState *st, unsigned short optionSet);
 /* for indicating error kind. */
 typedef enum {
     DS_ERROR_KIND_SUCCESS        ,
+    DS_ERROR_KIND_FILE           ,
     DS_ERROR_KIND_PARSE_ERROR    ,
     DS_ERROR_KIND_TYPE_ERROR     ,
     DS_ERROR_KIND_RUNTIME_ERROR  ,
@@ -159,6 +160,7 @@ typedef struct {
 
     /**
      * indicate error name.
+     * if DS_ERROR_KIND_FILE, set errno
      * if DS_ERROR_KIND_PARSE_ERROR or DS_ERROR_KIND_TYPE_ERROR, error kind.
      * if DS_ERROR_KIND_RUNTIME_ERROR, raised type name.
      * otherwise, null

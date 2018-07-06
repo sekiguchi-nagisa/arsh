@@ -609,17 +609,20 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     } else {
         ModResult ret;
         fp = st->symbolTable.tryToLoadModule(nullptr, sourceName, ret).release();
-        assert(ret.getKind() == ModResult::PATH || ret.getKind() == ModResult::UNRESOLVED);
         if(fp == nullptr) {
-            fprintf(stderr, "ydsh: %s: %s\n", sourceName, strerror(errno));
+            if(ret.getKind() != ModResult::UNRESOLVED) {
+                errno = ETXTBSY;
+            }
+            int old = errno;
             if(e) {
                 *e = {
-                        .kind = DS_ERROR_KIND_PARSE_ERROR,
+                        .kind = DS_ERROR_KIND_FILE,
                         .fileName = strdup(sourceName),
                         .lineNum = 0,
                         .name = ""
                 };
             }
+            errno = old;
             return 1;
         }
         char *real = strdup(ret.asPath());
