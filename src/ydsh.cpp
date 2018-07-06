@@ -607,7 +607,6 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     if(sourceName == nullptr) {
         fp = fdopen(dup(STDIN_FILENO), "rb");
     } else {
-        char *real = realpath(sourceName, nullptr);
         ModResult ret;
         fp = st->symbolTable.tryToLoadModule(nullptr, sourceName, ret).release();
         assert(ret.getKind() == ModResult::PATH || ret.getKind() == ModResult::UNRESOLVED);
@@ -621,9 +620,9 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
                         .name = ""
                 };
             }
-            free(real);
             return 1;
         }
+        char *real = strdup(ret.asPath());
         const char *dirName = dirname(real);
         setScriptDir(st, dirName);
         free(real);

@@ -543,7 +543,7 @@ public:
     }
 
     /**
-     *
+     * if scriptDir is null, not search module dir
      * @param scriptDir
      * may be null
      * @param modPath

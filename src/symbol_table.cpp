@@ -384,26 +384,22 @@ SymbolTable::SymbolTable() :
     this->typeMap.commit();
 }
 
-static bool safeStrcmp(const char *p1, const char *p2) {
-    return p1 != nullptr && p2 != nullptr && strcmp(p1, p2) == 0;
-}
-
 FilePtr SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPath, ModResult &ret) {
     auto filePtr = this->modLoader.load(scriptDir, modPath, ret);
-    if(*modPath == '/') {   // if full path, not search next path
+    if(*modPath == '/' || scriptDir == nullptr) {   // if full path, not search next path
         return filePtr;
     }
     if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT) {
         int old = errno;
         std::string dir = LOCAL_MOD_DIR;
         expandTilde(dir);
-        if(safeStrcmp(scriptDir, dir.c_str())) {
+        if(strcmp(scriptDir, dir.c_str()) == 0) {
             errno = old;
             return filePtr; // short circuit
         }
         filePtr = this->modLoader.load(dir.c_str(), modPath, ret);
         if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT
-           && !safeStrcmp(scriptDir, SYSTEM_MOD_DIR)) {
+           && strcmp(scriptDir, SYSTEM_MOD_DIR) != 0) {
             filePtr = this->modLoader.load(SYSTEM_MOD_DIR, modPath, ret);
         }
     }
