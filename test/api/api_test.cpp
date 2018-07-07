@@ -40,7 +40,7 @@ TEST(BuiltinExecTest, case2) {
     DSState_delete(&state);
 }
 
-TEST(API, case1) {
+TEST(API, version) {
     SCOPED_TRACE("");
 
     DSVersion version;
@@ -51,7 +51,7 @@ TEST(API, case1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, version.patch));
 }
 
-TEST(API, case2) {
+TEST(API, lineNum) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
@@ -70,7 +70,7 @@ TEST(API, case2) {
     DSState_delete(&state);
 }
 
-TEST(API, case3) {
+TEST(API, prompt) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
@@ -113,7 +113,7 @@ static std::vector<std::string> filter(const std::vector<std::string> &v, const 
     return t;
 }
 
-TEST(API, case4) {
+TEST(API, complete) {
     SCOPED_TRACE("");
 
     // null arguments
@@ -148,7 +148,7 @@ TEST(API, case4) {
     DSState_delete(&state);
 }
 
-TEST(API, case5) {
+TEST(API, option) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
@@ -163,12 +163,25 @@ TEST(API, case5) {
     DSState_delete(&state);
 }
 
-TEST(API, case6) {
+TEST(API, scriptDir) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
     int r = DSState_setScriptDir(state, "hfarefoiaji vfd");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
+    DSState_delete(&state);
+}
+
+TEST(API, load) {
+    auto *state = DSState_create();
+    DSError e;
+    int r = DSState_loadAndEval(state, "hogehuga", &e);
+    int errorNum = errno;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(ENOENT, errorNum));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE, e.kind));
+
+    DSError_release(&e);
     DSState_delete(&state);
 }
 
@@ -244,7 +257,7 @@ static std::vector<PIDs> decompose(const std::string &str) {
 
 struct APITest : public ExpectOutput {};
 
-TEST_F(APITest, case7) {    // enable job control
+TEST_F(APITest, pid1) {    // enable job control
     SCOPED_TRACE("");
 
     // normal
@@ -308,7 +321,7 @@ TEST_F(APITest, case7) {    // enable job control
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pgid, pids[1].pgid));
 }
 
-TEST_F(APITest, case8) {    // disable job control
+TEST_F(APITest, pid2) {    // disable job control
     SCOPED_TRACE("");
 
     // normal
