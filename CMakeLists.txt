@@ -281,6 +281,7 @@ add_executable(${BIN_NAME}
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 
 install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
+install(DIRECTORY etc/ DESTINATION etc)
 
 
 #++++++++++++++++++++#
