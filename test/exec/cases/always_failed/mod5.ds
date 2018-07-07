@@ -1,7 +1,7 @@
 #$test($result = 'type', $lineNum = 5, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
 
-source ../../module/module1.ds
+source ../../_module4test/module1.ds
 
-source ../../module/module2.ds
+source ../../_module4test/module2.ds
 
 var hello = 12345

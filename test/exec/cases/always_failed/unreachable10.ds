@@ -1,5 +1,5 @@
 #$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $lineNum = 5)
 
-source ../../module/exit.ds as mod
+source ../../_module4test/exit.ds as mod
 
 echo $mod
