@@ -308,7 +308,7 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
         unsigned int varNum = scope->getMaxVarIndex();
         node->setMaxVarNum(varNum);
         node->setModType(modType);
-        if(this->prevType->isNothingType()) {
+        if(prevType != nullptr && this->prevType->isNothingType()) {
             this->prevType = &symbolTable.get(TYPE::Void);
             node->setNothing(true);
         }
