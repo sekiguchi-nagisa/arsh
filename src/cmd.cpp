@@ -539,13 +539,11 @@ static int builtin_false(DSState &, Array_Object &) {
  * for stdin redirection test
  */
 static int builtin___gets(DSState &, Array_Object &) {
-    unsigned int bufSize = 256;
-    char buf[bufSize];
-    int readSize;
-    while((readSize = fread(buf, sizeof(char), bufSize, stdin)) > 0) {
-        fwrite(buf, sizeof(char), readSize, stdout);
+    char buf[256];
+    int readSize = 0;
+    while((readSize = read(STDIN_FILENO, buf, arraySize(buf))) > 0) {
+        write(STDOUT_FILENO, buf, readSize);
     }
-    clearerr(stdin);    // clear eof flag
     return 0;
 }
 
