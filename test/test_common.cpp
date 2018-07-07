@@ -161,7 +161,7 @@ WaitStatus ProcHandle::wait() {
     return this->status_;
 }
 
-std::pair<std::string, std::string> ProcHandle::readAll() const {
+std::pair<std::string, std::string> ProcHandle::readAll(bool breakNoData, int timeout) const {
     std::pair<std::string, std::string> output;
 
     unsigned int validFDCount = 0;
@@ -183,7 +183,7 @@ std::pair<std::string, std::string> ProcHandle::readAll() const {
     pollfds[1].events = POLLIN;
 
     while(true) {
-        if(poll(pollfds, ydsh::arraySize(pollfds), -1) == -1) {
+        if(poll(pollfds, ydsh::arraySize(pollfds), timeout) == -1) {
             if(errno != EINTR) {
                 break;
             }
@@ -193,9 +193,13 @@ std::pair<std::string, std::string> ProcHandle::readAll() const {
         for(unsigned int i = 0; i < ydsh::arraySize(pollfds); i++) {
             if(pollfds[i].revents & POLLIN) {
                 char buf[64];
-                int readSize = read(pollfds[i].fd, buf, ydsh::arraySize(buf));
+                unsigned int bufSize = ydsh::arraySize(buf);
+                int readSize = read(pollfds[i].fd, buf, bufSize);
                 if(readSize > 0) {
                     (i == 0 ? output.first : output.second).append(buf, readSize);
+                    if(breakNoData && static_cast<unsigned int>(readSize) < bufSize) {
+                        breakCount++;
+                    }
                 }
                 if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
                     continue;
@@ -223,7 +227,7 @@ static void trimLastSpace(std::string &str) {
 }
 
 Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
-    auto output = this->readAll();
+    auto output = this->readAll(false);
     auto status = this->wait();
 
     if(removeLastSpace) {

@@ -40,7 +40,7 @@ TEST_F(ProcTest, pipe) {
 
 //static std::string
 
-TEST_F(ProcTest, pty) {
+TEST_F(ProcTest, pty1) {
     IOConfig config;
     config.in = IOConfig::PTY;
     config.out = IOConfig::PTY;
@@ -77,6 +77,42 @@ TEST_F(ProcTest, pty) {
     (void) r;
     auto ret2 = handle.waitAndGetResult(false);
     ASSERT_NO_FATAL_FAILURE(this->expect(ret2, 0, WaitStatus::EXITED, "hello\n"));
+}
+
+TEST_F(ProcTest, pty2) {
+    IOConfig config;
+    config.in = IOConfig::PTY;
+    config.out = IOConfig::PTY;
+
+    auto handle = ProcBuilder::spawn(config, [&]{
+        char buf[1];
+        while(read(STDIN_FILENO, buf, 1) > 0) {
+            if(buf[0] == 'p') {
+                printf("print\n");
+            } else if(buf[0] == 'b') {
+                printf("break!!\n");
+                break;
+            } else {
+                printf("ignore %c\n", buf[0]);
+            }
+            fflush(stdout);
+        }
+        return 0;
+    });
+    auto r = write(handle.in(), "p", 1);
+    (void) r;
+    auto output = handle.readAll(true);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("print\n", output.first));
+
+    r = write(handle.in(), "x", 1);
+    (void) r;
+    output = handle.readAll(true);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ignore x\n", output.first));
+
+    r = write(handle.in(), "b", 1);
+    (void) r;
+    auto ret = handle.waitAndGetResult(false);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED, "break!!\n"));
 }
 
 
