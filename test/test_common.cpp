@@ -304,6 +304,12 @@ static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {
         if(tcsetattr(fd, TCSAFLUSH, &term) == -1) {
             error_at("failed");
         }
+        winsize ws;
+        ws.ws_row = 24;
+        ws.ws_col = 80;
+        if(ioctl(fd, TIOCSWINSZ, &ws) == -1) {
+            error_at("failed");
+        }
         slaveFD = fd;
     }
 }
