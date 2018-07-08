@@ -542,7 +542,8 @@ static int builtin___gets(DSState &, Array_Object &) {
     char buf[256];
     int readSize = 0;
     while((readSize = read(STDIN_FILENO, buf, arraySize(buf))) > 0) {
-        write(STDOUT_FILENO, buf, readSize);
+        int r = write(STDOUT_FILENO, buf, readSize);
+        (void) r;
     }
     return 0;
 }
