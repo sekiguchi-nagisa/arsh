@@ -180,7 +180,7 @@ public:
         return pid;
     }
 
-    std::pair<std::string, std::string> readAll(bool breakNoData, int timeout = -1) const;
+    std::pair<std::string, std::string> readAll(int timeout = -1) const;
 
     Output waitAndGetResult(bool removeLastSpace = true);
 };

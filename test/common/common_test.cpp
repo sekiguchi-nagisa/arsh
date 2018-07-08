@@ -38,8 +38,6 @@ TEST_F(ProcTest, pipe) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 10, WaitStatus::EXITED, "hello", "world"));
 }
 
-//static std::string
-
 TEST_F(ProcTest, pty1) {
     IOConfig config;
     config.in = IOConfig::PTY;
@@ -56,11 +54,16 @@ TEST_F(ProcTest, pty1) {
         if(isatty(STDERR_FILENO)) {
             return 30;
         }
-        printf("hello pty\n");
-        printf("!!");
         return 0;
     });
-    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED, "hello pty\n!!"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret));
+}
+
+TEST_F(ProcTest, pty2) {
+    IOConfig config;
+    config.in = IOConfig::PTY;
+    config.out = IOConfig::PTY;
+    config.err = IOConfig::PIPE;
 
     auto handle = ProcBuilder::spawn(config, [&]{
         char buf[64];
@@ -79,7 +82,7 @@ TEST_F(ProcTest, pty1) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ret2, 0, WaitStatus::EXITED, "hello\n"));
 }
 
-TEST_F(ProcTest, pty2) {
+TEST_F(ProcTest, pty3) {
     IOConfig config;
     config.in = IOConfig::PTY;
     config.out = IOConfig::PTY;
@@ -101,12 +104,12 @@ TEST_F(ProcTest, pty2) {
     });
     auto r = write(handle.in(), "p", 1);
     (void) r;
-    auto output = handle.readAll(true);
+    auto output = handle.readAll();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("print\n", output.first));
 
     r = write(handle.in(), "x", 1);
     (void) r;
-    output = handle.readAll(true);
+    output = handle.readAll();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ignore x\n", output.first));
 
     r = write(handle.in(), "b", 1);

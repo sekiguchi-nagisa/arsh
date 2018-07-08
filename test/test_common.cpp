@@ -161,7 +161,7 @@ WaitStatus ProcHandle::wait() {
     return this->status_;
 }
 
-std::pair<std::string, std::string> ProcHandle::readAll(bool breakNoData, int timeout) const {
+std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
     std::pair<std::string, std::string> output;
 
     unsigned int validFDCount = 0;
@@ -182,6 +182,11 @@ std::pair<std::string, std::string> ProcHandle::readAll(bool breakNoData, int ti
     pollfds[1].fd = this->err();
     pollfds[1].events = POLLIN;
 
+    bool isTTYs[] = {
+            isatty(this->out()) == 1,
+            isatty(this->err()) == 1
+    };
+
     while(true) {
         if(poll(pollfds, ydsh::arraySize(pollfds), timeout) == -1) {
             if(errno != EINTR) {
@@ -191,13 +196,14 @@ std::pair<std::string, std::string> ProcHandle::readAll(bool breakNoData, int ti
 
         unsigned int breakCount = 0;
         for(unsigned int i = 0; i < ydsh::arraySize(pollfds); i++) {
+            const int fd = pollfds[i].fd;
             if(pollfds[i].revents & POLLIN) {
                 char buf[64];
                 unsigned int bufSize = ydsh::arraySize(buf);
-                int readSize = read(pollfds[i].fd, buf, bufSize);
+                int readSize = read(fd, buf, bufSize);
                 if(readSize > 0) {
                     (i == 0 ? output.first : output.second).append(buf, readSize);
-                    if(breakNoData && static_cast<unsigned int>(readSize) < bufSize) {
+                    if(isTTYs[i] && static_cast<unsigned int>(readSize) < bufSize) {
                         breakCount++;
                     }
                 }
@@ -207,7 +213,7 @@ std::pair<std::string, std::string> ProcHandle::readAll(bool breakNoData, int ti
                 if(readSize <= 0) {
                     breakCount++;
                 }
-            } else if(pollfds[i].fd >= 0) {
+            } else if(fd >= 0) {
                 breakCount++;
             }
         }
@@ -227,7 +233,7 @@ static void trimLastSpace(std::string &str) {
 }
 
 Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
-    auto output = this->readAll(false);
+    auto output = this->readAll();
     auto status = this->wait();
 
     if(removeLastSpace) {
