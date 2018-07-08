@@ -182,11 +182,6 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
     pollfds[1].fd = this->err();
     pollfds[1].events = POLLIN;
 
-    bool isTTYs[] = {
-            isatty(this->out()) == 1,
-            isatty(this->err()) == 1
-    };
-
     while(true) {
         if(poll(pollfds, ydsh::arraySize(pollfds), timeout) == -1) {
             if(errno != EINTR) {
@@ -203,9 +198,6 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
                 int readSize = read(fd, buf, bufSize);
                 if(readSize > 0) {
                     (i == 0 ? output.first : output.second).append(buf, readSize);
-                    if(isTTYs[i] && static_cast<unsigned int>(readSize) < bufSize) {
-                        breakCount++;
-                    }
                 }
                 if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
                     continue;
