@@ -1193,6 +1193,11 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                     goto END;
                 }
 
+                if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
+                    kind = CompletorKind::FILE;
+                    goto END;
+                }
+
                 std::string expectedStr = toString(expected);
                 if(expectedStr.size() < 2 || (expectedStr.front() != '<' && expectedStr.back() != '>')) {
                     tokenStr = std::move(expectedStr);

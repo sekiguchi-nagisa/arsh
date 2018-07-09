@@ -152,6 +152,7 @@ $assertArray($(file '.'), $(complete 'echo | echo < '))
 $assertArray($(file '.'), $(complete 'echo >'))
 $assertArray($(file '.'), $(complete 'echo | echo $TRUE '))
 $assertArray($(file '.'), $(complete 'echo ${34} '))
+$assertArray($(file '.'), $(complete 'source '))
 
 
 # complete expected token
