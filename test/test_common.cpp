@@ -161,6 +161,20 @@ WaitStatus ProcHandle::wait() {
     return this->status_;
 }
 
+static bool recvData(int fd, std::string &str) {
+    char buf[64];
+    unsigned int bufSize = ydsh::arraySize(buf);
+    int readSize = read(fd, buf, bufSize);
+    if(readSize <= 0) {
+        if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
+            return true;
+        }
+        return false;
+    }
+    str.append(buf, readSize);
+    return true;
+}
+
 std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
     std::pair<std::string, std::string> output;
 
@@ -181,28 +195,22 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
     pollfds[0].events = POLLIN;
     pollfds[1].fd = this->err();
     pollfds[1].events = POLLIN;
+    constexpr unsigned int pollfdSize = ydsh::arraySize(pollfds);
 
     while(true) {
-        if(poll(pollfds, ydsh::arraySize(pollfds), timeout) == -1) {
-            if(errno != EINTR) {
-                break;
+        int ret = poll(pollfds, pollfdSize, timeout);
+        if(ret <= 0) {
+            if(ret == -1 && (errno == EINTR || errno == EAGAIN)) {
+                continue;
             }
+            break;
         }
 
         unsigned int breakCount = 0;
-        for(unsigned int i = 0; i < ydsh::arraySize(pollfds); i++) {
+        for(unsigned int i = 0; i < pollfdSize; i++) {
             const int fd = pollfds[i].fd;
             if(pollfds[i].revents & POLLIN) {
-                char buf[64];
-                unsigned int bufSize = ydsh::arraySize(buf);
-                int readSize = read(fd, buf, bufSize);
-                if(readSize > 0) {
-                    (i == 0 ? output.first : output.second).append(buf, readSize);
-                }
-                if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
-                    continue;
-                }
-                if(readSize <= 0) {
+                if(!recvData(fd, (i == 0 ? output.first : output.second))) {
                     breakCount++;
                 }
             } else if(fd >= 0) {
