@@ -177,16 +177,7 @@ static bool recvData(int fd, std::string &str) {
 
 std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
     std::pair<std::string, std::string> output;
-
-    unsigned int validFDCount = 0;
-    if(this->out() > -1) {
-        validFDCount++;
-    }
-    if(this->err() > -1) {
-        validFDCount++;
-    }
-
-    if(validFDCount == 0) {
+    if(this->out() < 0 && this->err() < 0) {
         return output;
     }
 
@@ -195,9 +186,9 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
     pollfds[0].events = POLLIN;
     pollfds[1].fd = this->err();
     pollfds[1].events = POLLIN;
-    constexpr unsigned int pollfdSize = ydsh::arraySize(pollfds);
 
     while(true) {
+        constexpr unsigned int pollfdSize = ydsh::arraySize(pollfds);
         int ret = poll(pollfds, pollfdSize, timeout);
         if(ret <= 0) {
             if(ret == -1 && (errno == EINTR || errno == EAGAIN)) {
@@ -208,16 +199,15 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
 
         unsigned int breakCount = 0;
         for(unsigned int i = 0; i < pollfdSize; i++) {
-            const int fd = pollfds[i].fd;
-            if(pollfds[i].revents & POLLIN) {
-                if(!recvData(fd, (i == 0 ? output.first : output.second))) {
+            if(pollfds[i].revents) {
+                if(!recvData(pollfds[i].fd, (i == 0 ? output.first : output.second))) {
                     breakCount++;
                 }
-            } else if(fd >= 0) {
+            } else {
                 breakCount++;
             }
         }
-        if(breakCount == validFDCount) {
+        if(breakCount == 2) {
             break;
         }
     }

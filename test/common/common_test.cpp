@@ -15,6 +15,13 @@ TEST_F(ProcTest, status) {
     });
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 100));
 
+    IOConfig config;
+    config.out = IOConfig::PIPE;
+    ret = spawnAndWait(config, [&]{
+        return 10;
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 10));
+
     ret = spawnAndWait(IOConfig{}, [&]()-> int {
         abort();
     });
