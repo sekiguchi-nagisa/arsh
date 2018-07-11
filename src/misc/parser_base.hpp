@@ -24,6 +24,10 @@
 namespace ydsh {
 namespace parser_base {
 
+constexpr const char *TOKEN_MISMATCHED = "TokenMismatched";
+constexpr const char *NO_VIABLE_ALTER  = "NoViableAlter";
+constexpr const char *INVALID_TOKEN    = "InvalidToken";
+
 template <typename T>
 class ParseError {
 private:
@@ -199,7 +203,7 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T expected
 
         std::vector<T> expectedTokens(1);
         expectedTokens[0] = expected;
-        this->createError(this->curKind, this->curToken, "TokenMismatched",
+        this->createError(this->curKind, this->curToken, TOKEN_MISMATCHED,
                           std::move(expectedTokens), std::move(message));
     }
 }
@@ -222,7 +226,7 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseNoViableAlterError(unsigned int
         }
 
         std::vector<T> expectedTokens(alters, alters + size);
-        this->createError(this->curKind, this->curToken, "NoViableAlter",
+        this->createError(this->curKind, this->curToken, NO_VIABLE_ALTER,
                           std::move(expectedTokens), std::move(message));
     }
 }
@@ -240,7 +244,7 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseInvalidTokenError(unsigned int 
     }
 
     std::vector<T> expectedTokens(alters, alters + size);
-    this->createError(this->curKind, this->curToken, "InvalidToken",
+    this->createError(this->curKind, this->curToken, INVALID_TOKEN,
                       std::move(expectedTokens), std::move(message));
 }
 
