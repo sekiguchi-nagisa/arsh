@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 
 include(CheckTypeSize)
 
@@ -263,8 +263,13 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE" OR "${CMAKE_BUILD_TYPE}" STREQUAL "R
     endif()
 endif()
 
+set(CMAKE_MACOSX_RPATH ON)
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
 set(YDSH_STATIC ydsh_static)
-add_library(${YDSH_STATIC} STATIC ${YDSH_SRC} ${lexer_src} ${bind_src})
+add_library(${YDSH_STATIC} SHARED ${YDSH_SRC} ${lexer_src} ${bind_src})
+set_target_properties(${YDSH_STATIC} PROPERTIES OUTPUT_NAME ydsh)
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)
 target_link_libraries(${YDSH_STATIC} ${HAVE_LIBPCRE})
 
@@ -280,8 +285,11 @@ add_executable(${BIN_NAME}
         ext/linenoise/linenoise.c)
 target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
 
-install(TARGETS ${BIN_NAME} RUNTIME DESTINATION bin)
+install(TARGETS ${BIN_NAME} ${YDSH_STATIC}
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib)
 install(DIRECTORY etc/ DESTINATION etc)
+install(DIRECTORY include/ DESTINATION include)
 
 
 #++++++++++++++++++++#
