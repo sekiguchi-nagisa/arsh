@@ -596,12 +596,12 @@ public:
  */
 class AssignableNode : public Node {
 protected:
-    unsigned int index;
+    unsigned int index{0};
 
     FieldAttributes attribute;
 
     AssignableNode(NodeKind kind, Token token) :
-            Node(kind, token), index(0) { }
+            Node(kind, token) { }
 
 public:
     ~AssignableNode() override = default;
@@ -661,12 +661,12 @@ public:
 private:
     Node *recvNode;
     VarNode *nameNode;
-    AdditionalOp additionalOp;
+    AdditionalOp additionalOp{NOP};
 
 public:
     AccessNode(Node *recvNode, VarNode *nameNode) :
             AssignableNode(NodeKind::Access, recvNode->getToken()),
-            recvNode(recvNode), nameNode(nameNode), additionalOp(NOP) { }
+            recvNode(recvNode), nameNode(nameNode) { }
 
     ~AccessNode() override;
 
@@ -1097,14 +1097,14 @@ private:
      */
     std::vector<Node *> argNodes;
 
-    unsigned int redirCount;
+    unsigned int redirCount{0};
 
-    bool inPipe;
+    bool inPipe{false};
 
 public:
     explicit CmdNode(StringNode *nameNode) :
             Node(NodeKind::Cmd, nameNode->getToken()),
-            nameNode(nameNode), redirCount(0), inPipe(false) { }
+            nameNode(nameNode) { }
 
     ~CmdNode() override;
 
@@ -1180,11 +1180,11 @@ private:
 
     std::vector<Node *> redirNodes;
 
-    unsigned int baseIndex;
+    unsigned int baseIndex{0};
 
 public:
     WithNode(Node *exprNode, RedirNode *redirNode) :
-            Node(NodeKind::With, exprNode->getToken()), exprNode(exprNode), baseIndex(0) {
+            Node(NodeKind::With, exprNode->getToken()), exprNode(exprNode) {
         this->addRedirNode(redirNode);
     }
 
@@ -1305,13 +1305,13 @@ public:
 class BlockNode : public Node {
 private:
     std::vector<Node *> nodes;
-    unsigned int baseIndex;
-    unsigned int varSize;
-    unsigned int maxVarSize;
+    unsigned int baseIndex{0};
+    unsigned int varSize{0};
+    unsigned int maxVarSize{0};
 
 public:
     explicit BlockNode(unsigned int startPos) :
-            Node(NodeKind::Block, {startPos, 1}), baseIndex(0), varSize(0), maxVarSize(0) { }
+            Node(NodeKind::Block, {startPos, 1}) { }
 
     ~BlockNode() override;
 
@@ -1569,7 +1569,7 @@ private:
     std::string exceptionName;
     TypeNode *typeNode;
 
-    unsigned int varIndex;
+    unsigned int varIndex{0};
 
     BlockNode *blockNode;
 
@@ -1577,7 +1577,7 @@ public:
     CatchNode(unsigned int startPos, std::string &&exceptionName,
               TypeNode *typeNode, BlockNode *blockNode) :
             Node(NodeKind::Catch, {startPos, 0}), exceptionName(std::move(exceptionName)),
-            typeNode(typeNode != nullptr ? typeNode : newAnyTypeNode()), varIndex(0), blockNode(blockNode) {
+            typeNode(typeNode != nullptr ? typeNode : newAnyTypeNode()), blockNode(blockNode) {
         this->updateToken(blockNode->getToken());
     }
 
@@ -1621,11 +1621,11 @@ private:
     /**
      * may be null
      */
-    Node *finallyNode;
+    Node *finallyNode{nullptr};
 
 public:
     TryNode(unsigned int startPos, BlockNode *blockNode) :
-            Node(NodeKind::Try, {startPos, 0}), exprNode(blockNode), finallyNode() {
+            Node(NodeKind::Try, {startPos, 0}), exprNode(blockNode) {
         this->updateToken(blockNode->getToken());
     }
 
@@ -1732,7 +1732,7 @@ private:
     Node *leftNode;
 
     Node *rightNode;
-    flag8_set_t attributeSet;
+    flag8_set_t attributeSet{0};
 
 public:
     static constexpr flag8_t SELF_ASSIGN  = 1u << 0;
@@ -1740,7 +1740,7 @@ public:
 
     AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false) :
             Node(NodeKind::Assign, leftNode->getToken()),
-            leftNode(leftNode), rightNode(rightNode), attributeSet(0) {
+            leftNode(leftNode), rightNode(rightNode) {
         if(selfAssign) {
             setFlag(this->attributeSet, SELF_ASSIGN);
         }
