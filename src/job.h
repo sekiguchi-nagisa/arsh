@@ -324,10 +324,10 @@ private:
     /**
      *
      * @return
-     * first is entry index.
-     * second is job id.
+     * entry index.
+     * new job id is index + 1
      */
-    std::pair<unsigned int, unsigned int> findEmptyEntry() const;   //FIXME: binary search
+    unsigned int findEmptyEntry() const;
 
     /**
      *

@@ -226,9 +226,9 @@ void JobTable::attach(Job job, bool disowned) {
         return;
     }
 
-    auto pair = this->findEmptyEntry();
-    this->entries.insert(this->beginJob() + pair.first, job);
-    job->jobID_ = pair.second;
+    auto ret = this->findEmptyEntry();
+    this->entries.insert(this->beginJob() + ret, job);
+    job->jobID_ = ret + 1;
     this->latestEntry = std::move(job);
     this->jobSize++;
 }
@@ -287,30 +287,21 @@ void JobTable::updateStatus() {
     }
 }
 
-std::pair<unsigned int, unsigned int> JobTable::findEmptyEntry() const {
-    const unsigned int size = this->jobSize;
-    if(size == 0) {
-        return {0, 1};
-    }
+unsigned int JobTable::findEmptyEntry() const {
+    unsigned int firstIndex = 0;
+    unsigned int dist = this->jobSize;
 
-    if(this->entries[size - 1]->jobID() == size) {
-        return {size, size + 1};
-    }
-
-    /**
-     *  | 3 | 4 |
-     *
-     *  | 1 | 4 |
-     *
-     *  | 1 | 2 | 3 | 4 | 7 |
-     */
-    for(unsigned int i = 0; i < size; i++) {
-        if(this->entries[i]->jobID() != i + 1) {
-            return {i, i + 1};  //FIXME: optimize lookup
+    while(dist > 0) {
+        unsigned int hafDist = dist / 2;
+        unsigned int midIndex = hafDist + firstIndex;
+        if(entries[midIndex]->jobID() == midIndex + 1) {
+            firstIndex = midIndex + 1;
+            dist = dist - hafDist - 1;
+        } else {
+            dist = hafDist;
         }
     }
-
-    fatal("normally unreachable\n");
+    return firstIndex;
 }
 
 struct Comparator {
