@@ -303,21 +303,21 @@ public:
         }
     }
 
-private:
     // helper method for entry lookup
-    EntryIter beginJob() {
-        return this->entries.begin();
-    }
-
-    EntryIter endJob() {
-        return this->entries.begin() + this->jobSize;
-    }
-
     ConstEntryIter beginJob() const {
         return this->entries.begin();
     }
 
     ConstEntryIter endJob() const {
+        return this->entries.begin() + this->jobSize;
+    }
+
+private:
+    EntryIter beginJob() {
+        return this->entries.begin();
+    }
+
+    EntryIter endJob() {
         return this->entries.begin() + this->jobSize;
     }
 

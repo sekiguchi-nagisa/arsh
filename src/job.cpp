@@ -268,7 +268,7 @@ JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
         if(this->latestEntry == job) {
             this->latestEntry = nullptr;
             if(!this->entries.empty()) {
-                this->latestEntry = this->entries.back();
+                this->latestEntry = this->entries[this->jobSize - 1];
             }
         }
         return next;
