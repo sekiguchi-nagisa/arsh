@@ -111,12 +111,12 @@ TEST_F(ProcTest, pty3) {
     });
     auto r = write(handle.in(), "p", 1);
     (void) r;
-    auto output = handle.readAll(5);
+    auto output = handle.readAll(20);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("print\n", output.first));
 
     r = write(handle.in(), "x", 1);
     (void) r;
-    output = handle.readAll(5);
+    output = handle.readAll(20);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ignore x\n", output.first));
 
     r = write(handle.in(), "b", 1);
