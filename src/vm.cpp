@@ -104,7 +104,7 @@ DSState::DSState() :
 void DSState::reserveLocalStackImpl(unsigned int needSize) {
     unsigned int newSize = this->callStackSize;
     do {
-        newSize += (newSize >> 1);
+        newSize += (newSize >> 1u);
     } while(newSize < needSize);
     auto newTable = new DSValue[newSize];
     for(unsigned int i = 0; i < this->stackTopIndex + 1; i++) {

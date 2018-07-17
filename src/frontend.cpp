@@ -272,7 +272,7 @@ void FrontEnd::enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_
         auto scope = this->checker.getSymbolTable().createModuleScope();
         this->contexts.emplace_back(std::move(lex), std::move(scope), std::move(state), std::move(node));
     }
-    Token token;
+    Token token{};
     TokenKind kind = this->contexts.back().lexer.nextToken(token);
     TokenKind ckind{};
     this->parser.restoreLexicalState(this->contexts.back().lexer, kind, token, ckind);
