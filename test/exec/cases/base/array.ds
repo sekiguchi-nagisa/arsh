@@ -1,4 +1,7 @@
-var a = ["3", "43", "d"]
+#var a = ["3", "43", "d"]
+var a = ["43"]
+$a.insert(0, "3")
+$a.insert(2, "d")
 assert($a.add("hello") is Array<String>)
 
 assert($a[0] is String)
@@ -8,6 +11,11 @@ assert($a[2] == "d")
 assert($a[3] == "hello")
 var ex = 34 as Any
 try { $a[5]; assert($false) } catch($e) { $ex = $e }
+assert($ex is OutOfRangeError)
+
+try { $ex = 34; $a.insert(34, "1"); assert $false; } catch($e) { $ex = $e; }
+assert($ex is OutOfRangeError)
+try { $ex = 34; $a.insert(-1, "1"); assert $false; } catch($e) { $ex = $e; }
 assert($ex is OutOfRangeError)
 
 $a[2] = "ho"

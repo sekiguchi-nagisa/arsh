@@ -1527,14 +1527,23 @@ YDSH_METHOD array_peek(RuntimeContext &ctx) {
     return value;
 }
 
-static bool array_pushImpl(RuntimeContext &ctx) {
+static bool array_insertImpl(DSState &ctx, int index, const DSValue &v) {
     Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
-    if(obj->getValues().size() == INT32_MAX) {
+    int size = obj->getValues().size();
+    if(size == INT32_MAX) {
         raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
         return false;
     }
-    obj->append(EXTRACT_LOCAL(1));
+    if(index != size && !checkRange(ctx, index, size)) {
+        return false;
+    }
+    obj->refValues().insert(obj->refValues().begin() + static_cast<unsigned int>(index), v);
     return true;
+}
+
+static bool array_pushImpl(RuntimeContext &ctx) {
+    int index = typeAs<Array_Object>(LOCAL(0))->getValues().size();
+    return array_insertImpl(ctx, index, LOCAL(1));
 }
 
 //!bind: function push($this : Array<T0>, $value : T0) : Void
@@ -1553,6 +1562,15 @@ YDSH_METHOD array_pop(RuntimeContext &ctx) {
     }
     typeAs<Array_Object>(LOCAL(0))->refValues().pop_back();
     RET(v);
+}
+
+//!bind: function insert($this : Array<T0>, $index : Int32, $value : T0) : Void
+YDSH_METHOD array_insert(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_insert);
+    if(!array_insertImpl(ctx, typeAs<Int_Object>(LOCAL(1))->getValue(), LOCAL(2))) {
+        RET_ERROR;
+    }
+    RET_VOID;
 }
 
 //!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
