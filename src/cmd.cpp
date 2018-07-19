@@ -85,7 +85,7 @@ const struct {
                 "    Check existence of specified environmental variables.\n"
                 "    If all of variables are exist and not empty string, exit with 0."},
         {"command", nullptr, "[-pVv] command [arg ...]",
-                "    Execute COMMAND with ARGS excepting user defined command.\n"
+                "    Execute COMMAND with ARGs excepting user defined command.\n"
                         "    If -p option is specified, search command from default PATH.\n"
                         "    If -V or -v option are specified, print description of COMMAND.\n"
                         "    -V option shows more detailed information."},
@@ -110,8 +110,8 @@ const struct {
                 "                  \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
                 "                  \\xnn  N is hex number.  NN can be 1 to 2 number\n"
                 "        -E    disable escape sequence interpretation"},
-        {"eval", nullptr, "[args ...]",
-                "    evaluate ARGS as command."},
+        {"eval", nullptr, "[arg ...]",
+                "    evaluate ARGs as command."},
         {"exec", nullptr, "[-c] [-a name] file [args ...]",
                 "    Execute FILE and replace this shell with specified program.\n"
                 "    If FILE is not specified, the redirections take effect in this shell.\n"
