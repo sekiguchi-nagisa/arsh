@@ -59,6 +59,8 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
                 tcsetpgrp(STDIN_FILENO, getpgid(pid));
             }
         }
+    } else if(errno != EAGAIN) {
+        fatal("forked failed: %s\n", strerror(errno));
     }
     return Proc(pid);
 }

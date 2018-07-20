@@ -507,7 +507,7 @@ static void flushStdFD() {
 }
 
 
-static void forkAndEval(DSState &state) {
+static bool forkAndEval(DSState &state) {
     const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), ++state.pc()));
     const unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
 
@@ -578,9 +578,10 @@ static void forkAndEval(DSState &state) {
 
         state.pc() += 2;
     } else {
-        perror("fork failed");
-        exit(1);    //FIXME: throw exception
+        raiseSystemError(state, EAGAIN, "");
+        return false;
     }
+    return true;
 }
 
 
@@ -1038,8 +1039,8 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
     pid_t pgid = rootShell ? 0 : getpgid(0);
     auto proc = Proc::fork(state, pgid, rootShell);
     if(proc.pid() == -1) {
-        perror("child process error");
-        exit(1);
+        raiseCmdError(state, cmdName, EAGAIN);
+        return 1;
     } else if(proc.pid() == 0) {   // child
         xexecve(cmd.filePath, argv, nullptr);
 
@@ -1271,8 +1272,10 @@ static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
  * @param state
  * @param lastPipe
  * if true, evaluate last pipe in parent shell
+ * @return
+ * if has error, return false.
  */
-static void callPipeline(DSState &state, bool lastPipe) {
+static bool callPipeline(DSState &state, bool lastPipe) {
     /**
      * ls | grep .
      * ==> pipeSize == 1, procSize == 2
@@ -1350,9 +1353,10 @@ static void callPipeline(DSState &state, bool lastPipe) {
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
     } else {
-        perror("child process error");
-        exit(1);
+        raiseSystemError(state, EAGAIN, "");
+        return false;
     }
+    return true;
 }
 
 
@@ -1926,13 +1930,13 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(FORK) {
-            forkAndEval(state);
+            TRY(forkAndEval(state));
             vmnext;
         }
         vmcase(PIPELINE)
         vmcase(PIPELINE_LP) {
             bool lastPipe = op == OpCode::PIPELINE_LP;
-            callPipeline(state, lastPipe);
+            TRY(callPipeline(state, lastPipe));
             vmnext;
         }
         vmcase(EXPAND_TILDE) {

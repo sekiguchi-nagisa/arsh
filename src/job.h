@@ -86,6 +86,11 @@ public:
 
     /**
      * after fork, reset signal setting in child process.
+     * if Proc#pid() is -1, fork failed due to EAGAIN.
+     * @param st
+     * @param pgid
+     * @param foreground
+     * @return
      */
     static Proc fork(DSState &st, pid_t pgid, bool foreground);
 };
