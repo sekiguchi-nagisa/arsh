@@ -60,7 +60,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
             }
         }
     } else if(errno != EAGAIN) {
-        fatal("forked failed: %s\n", strerror(errno));
+        fatal_perror("fork failed");
     }
     return Proc(pid);
 }
@@ -107,7 +107,7 @@ int Proc::wait(WaitOp op) {
         int status = 0;
         int ret = waitpid(this->pid_, &status, toOption(op));
         if(ret == -1) {
-            fatal("%s\n", strerror(errno));
+            fatal_perror("");
         }
 
         // dump waitpid result

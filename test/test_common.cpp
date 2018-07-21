@@ -33,7 +33,7 @@
 #include <misc/fatal.h>
 #include "test_common.h"
 
-#define error_at(fmt, ...) fatal(fmt ": %s\n", ## __VA_ARGS__, strerror(errno))
+#define error_at fatal_perror
 
 // #############################
 // ##     TempFileFactory     ##
@@ -464,7 +464,7 @@ std::string format(const char *fmt, ...) {
     va_start(arg, fmt);
     char *str = nullptr;
     if(vasprintf(&str, fmt, arg) == -1) {
-        fatal("%s\n", strerror(errno));
+        fatal_perror("");
     }
     va_end(arg);
 

@@ -1403,7 +1403,7 @@ void NodeDumper::appendAs(const char *fmt, ...) {
     va_start(arg, fmt);
     char *str = nullptr;
     if(vasprintf(&str, fmt, arg) == -1) {
-        fatal("%s\n", strerror(errno));
+        fatal_perror("");
     }
     va_end(arg);
 

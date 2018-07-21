@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2016 Nagisa Sekiguchi
+ * Copyright (C) 2015-2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cerrno>
 
 #define __FILE_NAME__ (strrchr(__FILE__, '/') != nullptr ? ((const char *)strrchr(__FILE__, '/') + 1) : __FILE__)
 
@@ -31,6 +32,8 @@
         fprintf(stderr, "[fatal] %s:%d:%s(): " fmt, __FILE_NAME__, __LINE__, __func__, ## __VA_ARGS__);\
         abort();\
     } while(false)
+
+#define fatal_perror(fmt, ...) fatal(fmt ": %s\n", ## __VA_ARGS__, strerror(errno))
 
 
 #endif //YDSH_MISC_FATAL_H

@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
 
     FILE *fp = fopen(outputFileName, "w");
     if(fp == nullptr) {
-        fatal("%s: %s\n", strerror(errno), outputFileName);
+        fatal_perror("%s", outputFileName);
     }
 
     // generate file

@@ -80,7 +80,7 @@ public:
                 .setOut(IOConfig::PIPE)
                 .setErr(IOConfig::PIPE)();
         if(write(handle.in(), wrapper.value.c_str(), wrapper.value.size()) < 0) {
-            fatal("%s\n", strerror(errno));
+            fatal_perror("");
         }
         close(handle.in());
         auto result = handle.waitAndGetResult(false);
