@@ -29,7 +29,7 @@
  */
 #define fatal(fmt, ...) \
     do {\
-        fprintf(stderr, "[fatal] %s:%d: " fmt, __FILE_NAME__, __LINE__, ## __VA_ARGS__);\
+        fprintf(stderr, "%s:%d: [fatal error] " fmt, __FILE_NAME__, __LINE__, ## __VA_ARGS__);\
         abort();\
     } while(false)
 
