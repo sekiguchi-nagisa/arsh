@@ -1273,10 +1273,10 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 }
 
 void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
-    if(!this->isTopLevel()) {   // only available toplevel scope
-        RAISE_TC_ERROR(OutsideToplevel, node);
-    }
-    fatal("unsupported syntax");
+//    if(!this->isTopLevel()) {   // only available toplevel scope
+//        RAISE_TC_ERROR(OutsideToplevel, node);
+//    }
+    RAISE_TC_ERROR(OutsideToplevel, node);
 }
 
 void TypeChecker::visitSourceNode(SourceNode &node) {

@@ -412,9 +412,8 @@ static void initBuiltinVar(DSState *state) {
 
 static void loadEmbeddedScript(DSState *state) {
     int ret = DSState_eval(state, "(embed)", embed_script, strlen(embed_script), nullptr);
-    if(ret != 0) {
-        fatal("broken embedded script\n");
-    }
+    (void) ret;
+    assert(ret == 0);
 
     // rest some state
     state->lineNum = 1;
