@@ -36,9 +36,7 @@ enum OptionKind {
 
 static std::string escape(const std::string &line) {
     std::string out;
-    unsigned int size = line.size();
-    for(unsigned int i = 0; i < size; i++) {
-        char ch = line[i];
+    for(const auto &ch : line) {
         switch(ch) {
         case '\n':
             out += '\\';
