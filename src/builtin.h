@@ -128,7 +128,7 @@ static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
 
 static inline bool checkZeroMod(RuntimeContext &ctx, int right) {
     if(right == 0) {
-        raiseError(ctx, getPool(ctx).get(TYPE::ArithmeticError), "zero module");
+        raiseError(ctx, getPool(ctx).get(TYPE::ArithmeticError), "zero modulo");
         return false;
     }
     return true;
