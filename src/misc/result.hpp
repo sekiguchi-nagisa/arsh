@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 Nagisa Sekiguchi
+ * Copyright (C) 2018 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,143 +22,128 @@
 #include "noncopyable.h"
 
 namespace ydsh {
-
 namespace __detail {
 
-template <typename T>
-inline typename std::enable_if<std::is_const<T>::value, void>::type destroy(T *) {}   // do nothing
-
-template <typename T>
-inline typename std::enable_if<!std::is_const<T>::value, void>::type destroy(T *v) {
-    delete v;
+template<typename T>
+constexpr T max2(T x, T y) {
+    return x > y ? x : y;
 }
 
-} // namespace __detail
+template<typename T>
+constexpr T max(T t) {
+    return t;
+}
+
+template<typename T, typename U, typename ...R>
+constexpr T max(T t, U u, R... r) {
+    return max2(t, max(u, std::forward<R>(r)...));
+}
+
+}   // namespace __detail
+
+template <typename ...T>
+struct Storage {
+    static_assert(sizeof...(T) > 1, "atleast 2 type");
+
+    static constexpr auto size = __detail::max(sizeof(T)...);
+    static constexpr auto align = __detail::max(alignof(T)...);
+
+    using type = typename std::aligned_storage<size, align>::type;
+
+    type data;
+
+    template <typename U>
+    void construct(U &&value) {
+        new (&this->data) U(std::move(value));
+    }
+
+    template <typename U>
+    void destroy() {
+        this->get<U>().~U();
+    }
+
+    template <typename U>
+    U &get() {
+        return *reinterpret_cast<U *>(&this->data);
+    }
+
+    template <typename U>
+    static void move(Storage &src, Storage &dest) {
+        dest.construct(std::move(src.get<U>()));
+        src.destroy<U>();
+    }
+};
 
 template <typename T>
-class OkHolder {
-private:
-    T *ptr;
+struct OkHolder {
+    T value;
 
-public:
-    NON_COPYABLE(OkHolder);
-
-    OkHolder(T *ptr) : ptr(ptr) {}
-
-    ~OkHolder() {
-        __detail::destroy(this->ptr);
-    }
+    explicit OkHolder(T &&value) : value(std::move(value)) {}
+    explicit OkHolder(const T &value) : value(value) {}
 };
 
 template <typename E>
-class ErrHolder {
-private:
-    E *ptr;
+struct ErrHolder {
+    E value;
 
-public:
-    NON_COPYABLE(ErrHolder);
-
-    ErrHolder(E *ptr) : ptr(ptr) {}
-
-    ~ErrHolder() {
-        __detail::destroy(this->ptr);
-    }
+    explicit ErrHolder(E &&value) : value(std::move(value)) {}
+    explicit ErrHolder(const E &value) : value(value) {}
 };
 
-class __Result {
-protected:
-    uintptr_t ptr;
+template <typename T, typename Decayed = typename std::decay<T>::type>
+OkHolder<Decayed> Ok(T &&value) {
+    return OkHolder<Decayed>(std::forward<T>(value));
+}
 
-    __Result(uintptr_t ptr) : ptr(ptr) {}
-};
+template <typename E, typename Decayed = typename std::decay<E>::type>
+ErrHolder<Decayed> Err(E &&value) {
+    return ErrHolder<Decayed>(std::forward<E>(value));
+}
 
 template <typename T, typename E>
-class Result : public __Result {
+class Result {
 private:
-    enum Kind : unsigned char {
-        OK = 0,
-        ERR = 1,
-    };
-
-    friend class OkHolder<T>;
-    friend class ErrHolder<E>;
-
-    Result(uintptr_t ptr) : __Result(ptr) {}
+    using StorageType = Storage<T, E>;
+    StorageType value;
+    bool ok;
 
 public:
     NON_COPYABLE(Result);
 
-    Result() noexcept : __Result(0) {}
-
-    Result(std::nullptr_t) noexcept : Result() {}
-
-    Result(Result &&v) noexcept : __Result(v.ptr) {
-        v.ptr = nullptr;
+    Result(OkHolder<T> &&okHolder) : ok(true) {
+        this->value.construct(std::move(okHolder.value));
     }
 
-    template <typename U, typename F>
-    Result(Result<U, F> &&v) noexcept : __Result(v.ptr) {};
+    Result(ErrHolder<E> &&errHolder) : ok(false) {
+        this->value.construct(std::move(errHolder.value));
+    }
 
-    ~Result() {
-        if(this->isErr()) {
-            __detail::destroy(this->asErr());
+    Result(Result &&result) : ok(result.ok) {
+        if(this->ok) {
+            StorageType::template move<T>(result.value, this->value);
         } else {
-            __detail::destroy(this->asOk());
+            StorageType::template move<E>(result.value, this->value);
         }
     }
 
-    Result &operator=(Result &&v) noexcept {
-        auto tmp(std::move(v));
-        std::swap(this->ptr, tmp.ptr);
-        return *this;
+    ~Result() {
+        if(this->ok) {
+            this->value.template destroy<T>();
+        } else {
+            this->value.template destroy<E>();
+        }
     }
 
-    template <typename U, typename F>
-    Result &operator=(Result<U, F> &&v) noexcept {
-        auto tmp(std::move(v));
-        std::swap(this->ptr, tmp.ptr);
-        return *this;
+    explicit operator bool() const {
+        return this->ok;
     }
 
-    bool isNull() const {
-        return this->ptr == 0;
+    T &asOk() {
+        return this->value.template get<T>();
     }
 
-    bool isErr() const {
-        return this->ptr & 1;
-    }
-
-    bool isOk() const {
-        return !this->isErr();
-    }
-
-    T &ok() {
-        return *this->asOk();
-    }
-
-    E &err() {
-        return *this->asErr();
-    }
-
-    T *releaseAsOk() {
-        T *ptr = this->asOk();
-        this->ptr = nullptr;
-        return ptr;
-    }
-
-    E *releaseAsErr() {
-        E *ptr = this->asErr();
-        this->ptr = nullptr;
-        return ptr;
-    }
-
-private:
-    T *asOk() {
-        return reinterpret_cast<T *>(this->ptr);
-    }
-
-    E *asErr() {
-        return reinterpret_cast<E *>(this->ptr & static_cast<uintptr_t>(-2));
+    E &asErr() {
+        return this->value.template get<E>();
     }
 };
 
