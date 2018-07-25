@@ -54,7 +54,8 @@ struct Storage {
 
     template <typename U>
     void construct(U &&value) {
-        new (&this->data) U(std::move(value));
+        using Decayed = typename std::decay<U>::type;
+        new (&this->data) Decayed(std::move(value));
     }
 
     template <typename U>
