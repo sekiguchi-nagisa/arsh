@@ -122,7 +122,7 @@ public:
         this->value.construct(std::move(errHolder.value));
     }
 
-    Result(Result &&result) : ok(result.ok) {
+    Result(Result &&result) noexcept : ok(result.ok) {
         if(this->ok) {
             StorageType::template move<T>(result.value, this->value);
         } else {

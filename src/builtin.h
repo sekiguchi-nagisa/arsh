@@ -1120,7 +1120,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     const char *remain = thisStr;
     if(delimSize > 0) {
         while(true) {
-            const char *ret = reinterpret_cast<const char *>(
+            auto *ret = reinterpret_cast<const char *>(
                     xmemmem(remain, thisSize - (remain - thisStr), delimStr, delimSize));
             if(ret == nullptr) {
                 break;
@@ -1203,7 +1203,7 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
 //!bind: function $OP_ITER($this : String) : StringIter
 YDSH_METHOD string_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_iter);
-    String_Object *str = typeAs<String_Object>(LOCAL(0));
+    auto *str = typeAs<String_Object>(LOCAL(0));
     RET(DSValue::create<StringIter_Object>(getPool(ctx).get(TYPE::StringIter), str));
 }
 
@@ -1326,7 +1326,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
 
     int captureSize;
     pcre_fullinfo(re->getRe().get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
-    int *ovec = static_cast<int *>(malloc(sizeof(int) * (captureSize + 1) * 3));
+    auto *ovec = static_cast<int *>(malloc(sizeof(int) * (captureSize + 1) * 3));
     int matchSize = pcre_exec(re->getRe().get(), nullptr, str->getValue(), str->size(), 0, 0, ovec, (captureSize + 1) * 3);
 
     auto ret = DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray));
@@ -1473,7 +1473,7 @@ static bool checkRange(RuntimeContext &ctx, int index, int size) {
 YDSH_METHOD array_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_get);
 
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
     if(!checkRange(ctx, index, size)) {
@@ -1486,7 +1486,7 @@ YDSH_METHOD array_get(RuntimeContext &ctx) {
 YDSH_METHOD array_get2(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_get);
 
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
     if(index < 0 || index >= size) {
@@ -1499,7 +1499,7 @@ YDSH_METHOD array_get2(RuntimeContext &ctx) {
 YDSH_METHOD array_set(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_set);
 
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
     if(!checkRange(ctx, index, size)) {
@@ -1510,7 +1510,7 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
 }
 
 static bool array_peekImpl(RuntimeContext &ctx, DSValue &value) {
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
     if(obj->getValues().empty()) {
         raiseOutOfRangeError(ctx, std::string("Array size is 0"));
         return false;
@@ -1528,7 +1528,7 @@ YDSH_METHOD array_peek(RuntimeContext &ctx) {
 }
 
 static bool array_insertImpl(DSState &ctx, int index, const DSValue &v) {
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     if(size == INT32_MAX) {
         raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
@@ -1686,7 +1686,7 @@ YDSH_METHOD array_empty(RuntimeContext &ctx) {
 //!bind: function clear($this : Array<T0>) : Void
 YDSH_METHOD array_clear(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_clear);
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
     obj->initIterator();
     obj->refValues().clear();
     RET_VOID;
@@ -1702,7 +1702,7 @@ YDSH_METHOD array_iter(RuntimeContext &ctx) {
 //!bind: function $OP_NEXT($this : Array<T0>) : T0
 YDSH_METHOD array_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_next);
-    Array_Object *obj = typeAs<Array_Object>(LOCAL(0));
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
     if(!obj->hasNext()) {
         raiseOutOfRangeError(ctx, std::string("array iterator has already reached end"));
         RET_ERROR;
@@ -1738,7 +1738,7 @@ YDSH_METHOD map_init(RuntimeContext &ctx) {
 //!bind: function $OP_GET($this : Map<T0, T1>, $key : T0) : T1
 YDSH_METHOD map_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_get);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     auto iter = obj->getValueMap().find(LOCAL(1));
     if(iter == obj->getValueMap().end()) {
         std::string msg("not found key: ");
@@ -1752,7 +1752,7 @@ YDSH_METHOD map_get(RuntimeContext &ctx) {
 //!bind: function $OP_SET($this : Map<T0, T1>, $key : T0, $value : T1) : Void
 YDSH_METHOD map_set(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_set);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     obj->set(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
     RET_VOID;
 }
@@ -1760,7 +1760,7 @@ YDSH_METHOD map_set(RuntimeContext &ctx) {
 //!bind: function put($this : Map<T0, T1>, $key : T0, $value : T1) : Option<T1>
 YDSH_METHOD map_put(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_put);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     auto v = obj->set(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
     RET(v);
 }
@@ -1768,7 +1768,7 @@ YDSH_METHOD map_put(RuntimeContext &ctx) {
 //!bind: function default($this : Map<T0, T1>, $key : T0, $value : T1) : T1
 YDSH_METHOD map_default(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_default);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     auto v = obj->setDefault(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
     RET(v);
 }
@@ -1776,7 +1776,7 @@ YDSH_METHOD map_default(RuntimeContext &ctx) {
 //!bind: function size($this : Map<T0, T1>) : Int32
 YDSH_METHOD map_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_size);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     int value = obj->getValueMap().size();
     RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), value));
 }
@@ -1784,7 +1784,7 @@ YDSH_METHOD map_size(RuntimeContext &ctx) {
 //!bind: function empty($this : Map<T0, T1>) : Boolean
 YDSH_METHOD map_empty(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_empty);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     bool value = obj->getValueMap().empty();
     RET_BOOL(value);
 }
@@ -1792,7 +1792,7 @@ YDSH_METHOD map_empty(RuntimeContext &ctx) {
 //!bind: function get($this : Map<T0, T1>, $key : T0) : Option<T1>
 YDSH_METHOD map_find(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_find);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     auto iter = obj->getValueMap().find(LOCAL(1));
     RET(iter != obj->getValueMap().end() ? iter->second : DSValue::createInvalid());
 }
@@ -1800,7 +1800,7 @@ YDSH_METHOD map_find(RuntimeContext &ctx) {
 //!bind: function find($this : Map<T0, T1>, $key : T0) : Boolean
 YDSH_METHOD map_find2(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_find2);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     auto iter = obj->getValueMap().find(LOCAL(1));
     RET_BOOL(iter != obj->getValueMap().end());
 }
@@ -1808,7 +1808,7 @@ YDSH_METHOD map_find2(RuntimeContext &ctx) {
 //!bind: function remove($this : Map<T0, T1>, $key : T0) : Boolean
 YDSH_METHOD map_remove(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_remove);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     bool r = obj->remove(LOCAL(1));
     RET_BOOL(r);
 }
@@ -1844,7 +1844,7 @@ YDSH_METHOD map_iter(RuntimeContext &ctx) {
 //!bind: function $OP_NEXT($this : Map<T0, T1>) : Tuple<T0, T1>
 YDSH_METHOD map_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_next);
-    Map_Object *obj = typeAs<Map_Object>(LOCAL(0));
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
     if(!obj->hasNext()) {
         raiseOutOfRangeError(ctx, std::string("map iterator has already reached end"));
         RET_ERROR;

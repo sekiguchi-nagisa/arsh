@@ -58,7 +58,7 @@ private:
      * if old is null, only allocate.
      */
     static T *allocArray(T *old, SIZE_T size) noexcept {
-        T *ptr = static_cast<T *>(realloc(old, sizeof(T) * size));
+        auto *ptr = static_cast<T *>(realloc(old, sizeof(T) * size));
         if(ptr == nullptr) {
             fatal("memory allocation failed\n");
         }

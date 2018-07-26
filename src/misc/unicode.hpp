@@ -45,14 +45,14 @@ struct UnicodeUtil {
 
     /**
      *
-     * @param begin
-     * @param end
+     * @param begin0
+     * @param end0
      * exclusive
      * @return
      * if first character is invalid UTF-8, return 0.
      * Otherwise, return byte size.
      */
-    static unsigned int utf8ValidateChar(const char *begin, const char *end);
+    static unsigned int utf8ValidateChar(const char *begin0, const char *end0);
 
     /**
      * if illegal UTF-8 code, return -1.

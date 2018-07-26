@@ -243,7 +243,7 @@ public:
      * max number of local variable index.
      */
     unsigned int getMaxVarIndex() const {
-        assert(this->maxVarIndexStack.size());
+        assert(!this->maxVarIndexStack.empty());
         return this->maxVarIndexStack.back();
     }
 

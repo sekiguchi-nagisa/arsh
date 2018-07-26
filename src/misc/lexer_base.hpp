@@ -82,7 +82,7 @@ protected:
 public:
     NON_COPYABLE(LexerBase);
 
-    LexerBase(LexerBase &&) = default;
+    LexerBase(LexerBase &&) noexcept = default;
 
     /**
      *
@@ -254,9 +254,10 @@ Token LexerBase<T>::getLineToken(Token token) const {
     }
 
     assert(startIndex > -1);
-    Token lineToken;
-    lineToken.pos = static_cast<unsigned int>(startIndex);
-    lineToken.size = stopIndex - static_cast<unsigned int>(startIndex);
+    Token lineToken = {
+            .pos = static_cast<unsigned int>(startIndex),
+            .size = stopIndex - static_cast<unsigned int>(startIndex)
+    };
     return lineToken;
 }
 

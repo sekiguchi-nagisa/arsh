@@ -154,9 +154,9 @@ protected:
 
     void raiseTokenMismatchedError(T expected);
 
-    void raiseNoViableAlterError(unsigned int size, const T *const alters);
+    void raiseNoViableAlterError(unsigned int size, const T *alters);
 
-    void raiseInvalidTokenError(unsigned int size, const T *const alters);
+    void raiseInvalidTokenError(unsigned int size, const T *alters);
 
     template <typename ...Arg>
     void createError(Arg && ...arg) {
@@ -209,7 +209,7 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T expected
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void AbstractParser<T, LexerImpl, Tracker>::raiseNoViableAlterError(unsigned int size, const T *const alters) {
+void AbstractParser<T, LexerImpl, Tracker>::raiseNoViableAlterError(unsigned int size, const T *alters) {
     if(LexerImpl::isInvalidToken(this->curKind)) {
         this->raiseInvalidTokenError(size, alters);
     } else {
@@ -232,7 +232,7 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseNoViableAlterError(unsigned int
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void AbstractParser<T, LexerImpl, Tracker>::raiseInvalidTokenError(unsigned int size, const T *const alters) {
+void AbstractParser<T, LexerImpl, Tracker>::raiseInvalidTokenError(unsigned int size, const T *alters) {
     std::string message = "invalid token, expected: ";
     if(size > 0 && alters != nullptr) {
         for(unsigned int i = 0; i < size; i++) {

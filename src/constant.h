@@ -152,9 +152,9 @@ enum class ForkKind : unsigned char {
     DISOWN,     // launch as disowned background job. ex. echo &!
 };
 
-constexpr unsigned int FD_BIT_0 = 1 << 0;
-constexpr unsigned int FD_BIT_1 = 1 << 1;
-constexpr unsigned int FD_BIT_2 = 1 << 2;
+constexpr unsigned int FD_BIT_0 = 1u << 0;
+constexpr unsigned int FD_BIT_1 = 1u << 1;
+constexpr unsigned int FD_BIT_2 = 1u << 2;
 
 #define EACH_RedirOP(OP) \
     OP(IN_2_FILE                    , FD_BIT_0) \
