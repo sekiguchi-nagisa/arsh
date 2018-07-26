@@ -104,6 +104,9 @@ ErrHolder<Decayed> Err(E &&value) {
 template <typename T, typename E>
 class Result {
 private:
+    static_assert(std::is_move_constructible<T>::value, "must be move-constructible");
+    static_assert(std::is_move_constructible<E>::value, "must be move-constructible");
+
     using StorageType = Storage<T, E>;
     StorageType value;
     bool ok;
