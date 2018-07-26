@@ -238,15 +238,15 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
 const FieldHandle *TypeChecker::addEntry(Node &node, const std::string &symbolName,
                                    DSType &type, FieldAttributes attribute) {
     auto pair = this->symbolTable.newHandle(symbolName, type, attribute);
-    switch(pair.second) {
-    case SymbolError::DUMMY:
-        break;
-    case SymbolError::DEFINED:
-        RAISE_TC_ERROR(DefinedSymbol, node, symbolName.c_str());
-    case SymbolError::LIMIT:
-        RAISE_TC_ERROR(LocalLimit, node);
+    if(!pair) {
+        switch(pair.asErr()) {
+        case SymbolError::DEFINED:
+            RAISE_TC_ERROR(DefinedSymbol, node, symbolName.c_str());
+        case SymbolError::LIMIT:
+            RAISE_TC_ERROR(LocalLimit, node);
+        }
     }
-    return pair.first;
+    return pair.asOk();
 }
 
 // for ApplyNode type checking
@@ -1231,10 +1231,10 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 
     // register command name
     auto pair = this->symbolTable.registerUdc(node.getCmdName(), this->symbolTable.get(TYPE::Any));
-    if(pair.second == SymbolError::DEFINED) {
+    if(!pair && pair.asErr() == SymbolError::DEFINED) {
         RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str());
     }
-    node.setUdcIndex(pair.first->getIndex());
+    node.setUdcIndex(pair.asOk()->getIndex());
 
     this->pushReturnType(this->symbolTable.get(TYPE::Int32));    // pseudo return type
     this->symbolTable.enterFunc();
@@ -1288,8 +1288,8 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     const FieldHandle *handle = nullptr;
     if(node.isFirstAppear()) {
         auto pair = this->symbolTable.newModHandle(*node.getModType());
-        handle = pair.first;
-        assert(handle != nullptr);
+        assert(static_cast<bool>(pair));
+        handle = pair.asOk();
     }
     if(handle == nullptr) {
         handle = this->symbolTable.lookupHandle(node.getModType()->toName());

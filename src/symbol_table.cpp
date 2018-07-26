@@ -49,7 +49,7 @@ namespace ydsh {
 HandleOrError BlockScope::add(const std::string &symbolName, FieldHandle handle) {
     auto pair = this->handleMap.insert({symbolName, handle});
     if(!pair.second) {
-        return {nullptr, SymbolError::DEFINED};
+        return Err(SymbolError::DEFINED);
     }
     if(pair.first->second) {
         this->curVarIndex++;
@@ -57,9 +57,10 @@ HandleOrError BlockScope::add(const std::string &symbolName, FieldHandle handle)
         this->shadowCount++;
     }
     if(this->getCurVarIndex() > UINT8_MAX) {
-        return {nullptr, SymbolError::LIMIT};
+        return Err(SymbolError::LIMIT);
     }
-    return {&pair.first->second, SymbolError::DUMMY};
+    const auto &ret = pair.first->second;
+    return Ok(&ret);
 }
 
 // #########################
@@ -88,12 +89,13 @@ HandleOrError GlobalScope::addNew(const std::string &symbolName, DSType &type,
     FieldHandle handle(&type, this->gvarCount.get(), attribute, modID);
     auto pair = this->handleMap.emplace(symbolName, handle);
     if(!pair.second) {
-        return {nullptr, SymbolError::DEFINED};
+        return Err(SymbolError::DEFINED);
     }
     if(pair.first->second) {
         this->gvarCount.get()++;
     }
-    return {&pair.first->second, SymbolError::DUMMY};
+    const auto &ret = pair.first->second;
+    return Ok(&ret);
 }
 
 
@@ -122,7 +124,7 @@ HandleOrError ModuleScope::newHandle(const std::string &symbolName,
 
     FieldHandle handle(&type, this->scopes.back().getCurVarIndex(), attribute, this->modID);
     auto ret = this->scopes.back().add(symbolName, handle);
-    if(ret.second == SymbolError::DUMMY) {
+    if(ret) {
         unsigned int varIndex = this->scopes.back().getCurVarIndex();
         if(varIndex > this->maxVarIndexStack.back()) {
             this->maxVarIndexStack.back() = varIndex;
@@ -438,7 +440,7 @@ HandleOrError SymbolTable::newHandle(const std::string &symbolName, DSType &type
         assert(this->root().inGlobalScope());
         auto handle = this->root().lookupHandle(symbolName);
         if(handle && handle->attr().has(FieldAttribute::BUILTIN)) {
-            return {nullptr, SymbolError::DEFINED};
+            return Err(SymbolError::DEFINED);
         }
     }
     return this->cur().newHandle(symbolName, type, attribute);

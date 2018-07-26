@@ -25,6 +25,7 @@
 #include "constant.h"
 #include "misc/buffer.hpp"
 #include "misc/resource.hpp"
+#include "misc/result.hpp"
 
 namespace ydsh {
 
@@ -67,12 +68,11 @@ protected:
 };
 
 enum class SymbolError {
-    DUMMY,
     DEFINED,
     LIMIT,
 };
 
-using HandleOrError = std::pair<const FieldHandle *, SymbolError>;
+using HandleOrError = Result<const FieldHandle *, SymbolError>;
 
 class ModuleScope;
 
@@ -192,7 +192,7 @@ public:
 
     bool disallowShadowing(const std::string &symbolName) {
         assert(!this->inGlobalScope());
-        return this->scopes.back().add(symbolName, FieldHandle()).first != nullptr;
+        return static_cast<bool>(this->scopes.back().add(symbolName, FieldHandle()));
     }
 
     void setBuiltin(bool set) {

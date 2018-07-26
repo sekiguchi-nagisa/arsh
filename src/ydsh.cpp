@@ -233,8 +233,8 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value, FieldAttributes attribute) {
     auto handle = state->symbolTable.newHandle(varName, *value->getType(), attribute);
-    assert(handle.first != nullptr);
-    state->setGlobal(handle.first->getIndex(), std::move(value));
+    assert(static_cast<bool>(handle));
+    state->setGlobal(handle.asOk()->getIndex(), std::move(value));
 }
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
