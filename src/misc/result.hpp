@@ -53,27 +53,42 @@ struct Storage {
     type data;
 
     template <typename U>
-    void construct(U &&value) {
+    void obtain(U &&value) {
+        static_assert(std::is_rvalue_reference<decltype(value)>::value, "must be rvalue reference");
         using Decayed = typename std::decay<U>::type;
         new (&this->data) Decayed(std::move(value));
     }
-
-    template <typename U>
-    void destroy() {
-        this->get<U>().~U();
-    }
-
-    template <typename U>
-    U &get() {
-        return *reinterpret_cast<U *>(&this->data);
-    }
-
-    template <typename U>
-    static void move(Storage &src, Storage &dest) {
-        dest.construct(std::move(src.get<U>()));
-        src.destroy<U>();
-    }
 };
+
+template <typename T, typename ...R>
+inline T &get(Storage<R...> &storage) {
+    return *reinterpret_cast<T *>(&storage.data);
+}
+
+template <typename T, typename ...R>
+inline const T &get(const Storage<R...> &storage) {
+    return *reinterpret_cast<const T *>(&storage.data);
+}
+
+template <typename T, typename ...R>
+inline void destroy(Storage<R...> &storage) {
+    get<T>(storage).~T();
+}
+
+/**
+ *
+ * @tparam T
+ * @tparam R
+ * @param src
+ * @param dest
+ * must be uninitialized
+ */
+template <typename T, typename ...R>
+inline void move(Storage<R...> &src, Storage<R...> &dest) {
+    dest.obtain(std::move(get<T>(src)));
+    destroy<T>(src);
+}
+
 
 template <typename T>
 struct OkHolder {
@@ -115,26 +130,26 @@ public:
     NON_COPYABLE(Result);
 
     Result(OkHolder<T> &&okHolder) : ok(true) {
-        this->value.construct(std::move(okHolder.value));
+        this->value.obtain(std::move(okHolder.value));
     }
 
     Result(ErrHolder<E> &&errHolder) : ok(false) {
-        this->value.construct(std::move(errHolder.value));
+        this->value.obtain(std::move(errHolder.value));
     }
 
     Result(Result &&result) noexcept : ok(result.ok) {
         if(this->ok) {
-            StorageType::template move<T>(result.value, this->value);
+            move<T>(result.value, this->value);
         } else {
-            StorageType::template move<E>(result.value, this->value);
+            move<E>(result.value, this->value);
         }
     }
 
     ~Result() {
         if(this->ok) {
-            this->value.template destroy<T>();
+            destroy<T>(this->value);
         } else {
-            this->value.template destroy<E>();
+            destroy<E>(this->value);
         }
     }
 
@@ -143,11 +158,11 @@ public:
     }
 
     T &asOk() {
-        return this->value.template get<T>();
+        return get<T>(this->value);
     }
 
     E &asErr() {
-        return this->value.template get<E>();
+        return get<E>(this->value);
     }
 };
 
