@@ -142,38 +142,38 @@ inline void move(Storage<R...> &src, Storage<R...> &dest) {
 
 namespace __detail_union {
 
-template <std::size_t N, typename ...R>
+template <int N, typename ...R>
 struct Destroyer {
     void operator()(Storage<R...> &storage, int tag) const {
         if(tag == N) {
             using T = typename TypeByIndex<N, R...>::type;
             destroy<T>(storage);
         } else {
-            Destroyer<N + 1, R...>()(storage, tag);
+            Destroyer<N - 1, R...>()(storage, tag);
         }
     }
 };
 
 template <typename ...R>
-struct Destroyer<sizeof...(R), R...> {
+struct Destroyer<-1, R...> {
     void operator()(Storage<R...> &, int) const {}
 };
 
 
-template <std::size_t N, typename ...R>
+template <int N, typename ...R>
 struct Mover {
     void operator()(Storage<R...> &src, int srcTag, Storage<R...> &dest) const {
         if(srcTag == N) {
             using T = typename TypeByIndex<N, R...>::type;
             move<T>(src, dest);
         } else {
-            Mover<N + 1, R...>()(src, srcTag, dest);
+            Mover<N - 1, R...>()(src, srcTag, dest);
         }
     }
 };
 
 template <typename ...R>
-struct Mover<sizeof...(R), R...> {
+struct Mover<-1, R...> {
     void operator()(Storage<R...> &, int, Storage<R...> &) const {}
 };
 
@@ -183,7 +183,7 @@ struct Mover<sizeof...(R), R...> {
 
 template <typename ...R>
 inline void polyDestroy(Storage<R...> &storage, int tag) {
-    __detail_union::Destroyer<0, R...>()(storage, tag);
+    __detail_union::Destroyer<sizeof...(R) - 1, R...>()(storage, tag);
 }
 
 
@@ -198,7 +198,7 @@ inline void polyDestroy(Storage<R...> &storage, int tag) {
  */
 template <typename ...R>
 inline void polyMove(Storage<R...> &src, int srcTag, Storage<R...> &dest) {
-    __detail_union::Mover<0, R...>()(src, srcTag, dest);
+    __detail_union::Mover<sizeof...(R) - 1, R...>()(src, srcTag, dest);
 }
 
 
