@@ -6,6 +6,17 @@
 
 using namespace ydsh;
 
+TEST(result, tag) {
+    static_assert(TypeTag<int, std::string, int>::value == 1, "must be 1");
+    static_assert(TypeTag<unsigned int, std::string, int>::value == -1, "must be -1");
+    static_assert(TypeTag<unsigned int>::value == -1, "must be -1");
+
+    static_assert(std::is_same<int, typename TypeByIndex<0, int>::type>::value, "");
+    static_assert(std::is_same<int, typename TypeByIndex<0, int, void *, std::string>::type>::value, "");
+    static_assert(std::is_same<void *, typename TypeByIndex<1, int, void *, std::string>::type>::value, "");
+    static_assert(std::is_same<std::string, typename TypeByIndex<2, int, void *, std::string>::type>::value, "");
+}
+
 TEST(result, storage) {
     auto str = std::make_shared<std::string>("hello");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, str.use_count()));
@@ -32,6 +43,39 @@ TEST(result, storage) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(get<bool>(raw2)));
 }
 
+TEST(result, Union1) {
+    Union<int, std::string> value(std::string("hey"));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<std::string>(value)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(is<int>(value)));
+
+    auto value2 = std::move(value);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value2)));
+}
+
+TEST(result, Union2) {
+    auto str = std::make_shared<std::string>("hello");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, str.use_count()));
+
+    using shared = decltype(str);
+    auto v = Union<const char *, shared>(shared(str));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, str.use_count()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, get<shared>(v).use_count()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str.get(), get<shared>(v).get()));
+
+    {
+        auto v2 = std::move(v);
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, v.tag()));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, str.use_count()));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, get<shared>(v2).use_count()));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str.get(), get<shared>(v2).get()));
+    }
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, str.use_count()));
+
+    auto v3 = Union<const char *, bool>((const char *)"hello");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", get<const char *>(v3)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<const char *>(v3)));
+}
 
 Result<std::string, int> func(int index) {
     if(index < 0) {

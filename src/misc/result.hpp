@@ -39,11 +39,56 @@ constexpr T max(T t, U u, R... r) {
     return max2(t, max(u, std::forward<R>(r)...));
 }
 
-}   // namespace __detail
+constexpr bool andAll(bool b) {
+    return b;
+}
+
+template <typename ...T>
+constexpr bool andAll(bool b, T && ...t) {
+    return b && andAll(std::forward<T>(t)...);
+}
+
+template <typename T>
+constexpr int toTypeIndex(int) {
+    return -1;
+}
+
+template <typename T, typename F, typename ...R>
+constexpr int toTypeIndex(int index) {
+    return std::is_same<T, F>::value ? index : toTypeIndex<T, R...>(index + 1);
+}
+
+template <std::size_t I, std::size_t N, typename F, typename ...R>
+struct TypeByIndex : TypeByIndex<I + 1, N, R...> {};
+
+template <std::size_t N, typename F, typename ...R>
+struct TypeByIndex<N, N, F, R...> {
+    using type = F;
+};
+
+} // namespace __detail
+
+
+template <typename U, typename ...T>
+struct TypeTag {
+    static constexpr int value = __detail::toTypeIndex<U, T...>(0);
+};
+
+template <std::size_t N, typename ...T>
+struct TypeByIndex {
+    static_assert(sizeof...(T) > 0, "at least 1 type");
+    static_assert(N < sizeof...(T), "out of range");
+    using type = typename __detail::TypeByIndex<0, N, T...>::type;
+};
+
+
+// #####################
+// ##     Storage     ##
+// #####################
 
 template <typename ...T>
 struct Storage {
-    static_assert(sizeof...(T) > 1, "atleast 2 type");
+    static_assert(sizeof...(T) > 1, "at least 2 type");
 
     static constexpr auto size = __detail::max(sizeof(T)...);
     static constexpr auto align = __detail::max(alignof(T)...);
@@ -55,6 +100,8 @@ struct Storage {
     template <typename U>
     void obtain(U &&value) {
         static_assert(std::is_rvalue_reference<decltype(value)>::value, "must be rvalue reference");
+        static_assert(TypeTag<U, T...>::value > -1, "invalid type");
+
         using Decayed = typename std::decay<U>::type;
         new (&this->data) Decayed(std::move(value));
     }
@@ -62,11 +109,15 @@ struct Storage {
 
 template <typename T, typename ...R>
 inline T &get(Storage<R...> &storage) {
+    static_assert(TypeTag<T, R...>::value > -1, "invalid type");
+
     return *reinterpret_cast<T *>(&storage.data);
 }
 
 template <typename T, typename ...R>
 inline const T &get(const Storage<R...> &storage) {
+    static_assert(TypeTag<T, R...>::value > -1, "invalid type");
+
     return *reinterpret_cast<const T *>(&storage.data);
 }
 
@@ -89,6 +140,130 @@ inline void move(Storage<R...> &src, Storage<R...> &dest) {
     destroy<T>(src);
 }
 
+namespace __detail_union {
+
+template <std::size_t N, typename ...R>
+struct Destroyer {
+    void operator()(Storage<R...> &storage, int tag) const {
+        if(tag == N) {
+            using T = typename TypeByIndex<N, R...>::type;
+            destroy<T>(storage);
+        } else {
+            Destroyer<N + 1, R...>()(storage, tag);
+        }
+    }
+};
+
+template <typename ...R>
+struct Destroyer<sizeof...(R), R...> {
+    void operator()(Storage<R...> &, int) const {}
+};
+
+
+template <std::size_t N, typename ...R>
+struct Mover {
+    void operator()(Storage<R...> &src, int srcTag, Storage<R...> &dest) const {
+        if(srcTag == N) {
+            using T = typename TypeByIndex<N, R...>::type;
+            move<T>(src, dest);
+        } else {
+            Mover<N + 1, R...>()(src, srcTag, dest);
+        }
+    }
+};
+
+template <typename ...R>
+struct Mover<sizeof...(R), R...> {
+    void operator()(Storage<R...> &, int, Storage<R...> &) const {}
+};
+
+
+
+} // namespace __detail_union
+
+template <typename ...R>
+inline void polyDestroy(Storage<R...> &storage, int tag) {
+    __detail_union::Destroyer<0, R...>()(storage, tag);
+}
+
+
+/**
+ *
+ * @tparam N
+ * @tparam R
+ * @param src
+ * @param srcTag
+ * @param dest
+ * must be uninitialized
+ */
+template <typename ...R>
+inline void polyMove(Storage<R...> &src, int srcTag, Storage<R...> &dest) {
+    __detail_union::Mover<0, R...>()(src, srcTag, dest);
+}
+
+
+// ###################
+// ##     Union     ##
+// ###################
+
+template <typename ...T>
+class Union {
+private:
+    static_assert(__detail::andAll(std::is_move_constructible<T>::value...), "must be move-constructible");
+
+    using StorageType = Storage<T...>;
+    StorageType value_;
+    int tag_;
+
+public:
+    NON_COPYABLE(Union);
+
+    template <typename U>
+    explicit Union(U &&value) :tag_(TypeTag<U, T...>::value) {
+        this->value_.obtain(std::forward<U>(value));
+    }
+
+    Union(Union &&value) : tag_(value.tag()) {
+        polyMove(value.value(), this->tag(), this->value());
+        value.tag_ = -1;
+    }
+
+    ~Union() {
+        polyDestroy(this->value(), this->tag());
+    }
+
+    StorageType &value() {
+        return this->value_;
+    }
+
+    const StorageType &value() const {
+        return this->value_;
+    }
+
+    int tag() const {
+        return this->tag_;
+    }
+};
+
+template <typename T, typename ...R>
+inline bool is(const Union<R...> &value) {
+    return value.tag() == TypeTag<T, R...>::value;
+}
+
+template <typename T, typename ...R>
+inline T &get(Union<R...> &value) {
+    return get<T>(value.value());
+}
+
+template <typename T, typename ...R>
+inline const T &get(const Union<R...> &value) {
+    return get<T>(value.value());
+}
+
+
+// ####################
+// ##     Result     ##
+// ####################
 
 template <typename T>
 struct OkHolder {
