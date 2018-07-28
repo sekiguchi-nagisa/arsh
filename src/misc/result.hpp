@@ -292,52 +292,27 @@ ErrHolder<Decayed> Err(E &&value) {
 }
 
 template <typename T, typename E>
-class Result {
-private:
-    static_assert(std::is_move_constructible<T>::value, "must be move-constructible");
-    static_assert(std::is_move_constructible<E>::value, "must be move-constructible");
-
-    using StorageType = Storage<T, E>;
-    StorageType value;
-    bool ok;
-
+class Result : public Union<T, E> {
 public:
     NON_COPYABLE(Result);
 
-    Result(OkHolder<T> &&okHolder) : ok(true) {
-        this->value.obtain(std::move(okHolder.value));
-    }
+    Result(OkHolder<T> &&okHolder) : Union<T, E>(std::move(okHolder.value)) {}
 
-    Result(ErrHolder<E> &&errHolder) : ok(false) {
-        this->value.obtain(std::move(errHolder.value));
-    }
+    Result(ErrHolder<E> &&errHolder) : Union<T, E>(std::move(errHolder.value)) {}
 
-    Result(Result &&result) noexcept : ok(result.ok) {
-        if(this->ok) {
-            move<T>(result.value, this->value);
-        } else {
-            move<E>(result.value, this->value);
-        }
-    }
+    Result(Result &&result) = default;
 
-    ~Result() {
-        if(this->ok) {
-            destroy<T>(this->value);
-        } else {
-            destroy<E>(this->value);
-        }
-    }
+    ~Result() = default;
 
     explicit operator bool() const {
-        return this->ok;
+        return is<T>(*this);
     }
-
     T &asOk() {
-        return get<T>(this->value);
+        return get<T>(*this);
     }
 
     E &asErr() {
-        return get<E>(this->value);
+        return get<E>(*this);
     }
 };
 
