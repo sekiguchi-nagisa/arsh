@@ -99,11 +99,10 @@ struct Storage {
 
     template <typename U>
     void obtain(U &&value) {
-        static_assert(std::is_rvalue_reference<decltype(value)>::value, "must be rvalue reference");
         static_assert(TypeTag<U, T...>::value > -1, "invalid type");
 
         using Decayed = typename std::decay<U>::type;
-        new (&this->data) Decayed(std::move(value));
+        new (&this->data) Decayed(std::forward<U>(value));
     }
 };
 
