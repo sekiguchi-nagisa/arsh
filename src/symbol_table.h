@@ -426,8 +426,8 @@ public:
 
     explicit ModResult(ModType *type) : kind(TYPE), type(type) {}
 
-    static ModResult circular(const char *fullpath) {
-        return {CIRCULAR, fullpath};
+    static ModResult circular() {
+        return {CIRCULAR, nullptr};
     }
 
     static ModResult unresolved() {

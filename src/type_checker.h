@@ -26,39 +26,7 @@
 namespace ydsh {
 
 // for apply node type checking
-class HandleOrFuncType {
-private:
-    enum {
-        FUNC_TYPE,
-        METHOD,
-    } kind;
-
-    union {
-        FunctionType *funcType;
-        MethodHandle *methodHandle;
-    };
-
-public:
-    explicit HandleOrFuncType(FunctionType *funcType) : kind(FUNC_TYPE), funcType(funcType) { }
-
-    explicit HandleOrFuncType(MethodHandle *handle) : kind(METHOD), methodHandle(handle) {}
-
-    bool isFuncType() const {
-        return this->kind == FUNC_TYPE;
-    }
-
-    bool isMethod() const {
-        return this->kind == METHOD;
-    }
-
-    FunctionType *getFuncType() const {
-        return this->isFuncType() ? this->funcType : nullptr;
-    }
-
-    MethodHandle *getMethodHandle() const {
-        return this->isMethod() ? this->methodHandle : nullptr;
-    }
-};
+using HandleOrFuncType = Union<FunctionType *, MethodHandle *>;
 
 enum class CoercionKind : unsigned char {
     PERFORM_COERCION,

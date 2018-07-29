@@ -262,7 +262,7 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
                 RAISE_TC_ERROR(UndefinedMethod, *accessNode.getNameNode(), name);
             }
             node.setKind(ApplyNode::METHOD_CALL);
-            return HandleOrFuncType(handle);
+            return HandleOrFuncType(std::move(handle));
         }
     }
 
@@ -663,14 +663,13 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
      * resolve handle
      */
     HandleOrFuncType hf = this->resolveCallee(node);
-
-    if(hf.isMethod()) {
-        this->checkTypeAsMethodCall(node, hf.getMethodHandle());
+    if(is<MethodHandle *>(hf)) {
+        this->checkTypeAsMethodCall(node, get<MethodHandle *>(hf));
         return;
     }
 
     // resolve param types
-    auto &paramTypes = hf.getFuncType()->getParamTypes();
+    auto &paramTypes = get<FunctionType *>(hf)->getParamTypes();
     unsigned int size = paramTypes.size();
     unsigned int argSize = node.getArgNodes().size();
     // check param size
@@ -684,7 +683,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
     }
 
     // set return type
-    node.setType(*hf.getFuncType()->getReturnType());
+    node.setType(*get<FunctionType *>(hf)->getReturnType());
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {

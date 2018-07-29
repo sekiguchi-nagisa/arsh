@@ -292,7 +292,7 @@ FilePtr ModuleLoader::load(const char *scriptDir, const char *modPath, ModResult
             ret = ModResult(pair.first->second);
             return filePtr;
         }
-        ret = ModResult::circular(pair.first->first.c_str());
+        ret = ModResult::circular();
         return filePtr;
     }
 
