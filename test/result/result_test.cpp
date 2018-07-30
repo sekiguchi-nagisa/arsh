@@ -49,8 +49,12 @@ TEST(result, Union1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<std::string>(value)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(is<int>(value)));
 
-    auto value2 = std::move(value);
+    decltype(value) value2;
+    value2 = std::move(value);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value2)));
+    value = std::move(value2);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, value2.tag()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value)));
 }
 
 TEST(result, Union2) {

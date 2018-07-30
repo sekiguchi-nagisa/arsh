@@ -217,18 +217,31 @@ private:
 public:
     NON_COPYABLE(Union);
 
+    Union() noexcept : tag_(-1) {}
+
     template <typename U>
-    explicit Union(U &&value) :tag_(TypeTag<U, T...>::value) {
+    explicit Union(U &&value) noexcept : tag_(TypeTag<U, T...>::value) {
         this->value_.obtain(std::forward<U>(value));
     }
 
-    Union(Union &&value) : tag_(value.tag()) {
+    Union(Union &&value) noexcept : tag_(value.tag()) {
         polyMove(value.value(), this->tag(), this->value());
         value.tag_ = -1;
     }
 
     ~Union() {
         polyDestroy(this->value(), this->tag());
+    }
+
+    Union &operator=(Union && value) noexcept {
+        auto tmp(std::move(value));
+        this->swap(tmp);
+        return *this;
+    }
+
+    void swap(Union &value) noexcept {
+        std::swap(this->tag_, value.tag_);
+        std::swap(this->value_, value.value_);
     }
 
     StorageType &value() {
@@ -294,6 +307,8 @@ template <typename T, typename E>
 class Result : public Union<T, E> {
 public:
     NON_COPYABLE(Result);
+
+    Result() = delete;
 
     Result(OkHolder<T> &&okHolder) : Union<T, E>(std::move(okHolder.value)) {}
 
