@@ -277,10 +277,9 @@ std::string toFullModPath(const char *scriptDir, const char *modPath) {
     return str;
 }
 
-FilePtr ModuleLoader::load(const char *scriptDir, const char *modPath, ModResult &ret) {
+ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr &filePtr) {
     assert(modPath != nullptr);
 
-    FilePtr filePtr;
     std::string str = toFullModPath(scriptDir, modPath);
     LOG(TRACE_MODULE, std::endl << "\tscriptDir: `" << (scriptDir == nullptr ? "" : scriptDir) << "'" << std::endl
                                 << "\tmodPath: `" << modPath << "'" << std::endl
@@ -289,22 +288,18 @@ FilePtr ModuleLoader::load(const char *scriptDir, const char *modPath, ModResult
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
     if(!pair.second) {
         if(pair.first->second) {
-            ret = ModResult(pair.first->second);
-            return filePtr;
+            return ModResult(pair.first->second);
         }
-        ret = ModResult::circular();
-        return filePtr;
+        return ModResult::circular();
     }
 
     const char *resolvedPath = pair.first->first.c_str();
     filePtr.reset(fopen(resolvedPath, "r+b"));
     if(!filePtr) {
         this->typeMap.erase(pair.first);
-        ret = ModResult::unresolved();
-        return filePtr;
+        return ModResult::unresolved();
     }
-    ret = ModResult(resolvedPath);
-    return filePtr;
+    return ModResult(resolvedPath);
 }
 
 
@@ -386,10 +381,10 @@ SymbolTable::SymbolTable() :
     this->typeMap.commit();
 }
 
-FilePtr SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPath, ModResult &ret) {
-    auto filePtr = this->modLoader.load(scriptDir, modPath, ret);
+ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPath, FilePtr &filePtr) {
+    auto ret = this->modLoader.load(scriptDir, modPath, filePtr);
     if(*modPath == '/' || scriptDir == nullptr) {   // if full path, not search next path
-        return filePtr;
+        return ret;
     }
     if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT) {
         int old = errno;
@@ -397,15 +392,15 @@ FilePtr SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPath,
         expandTilde(dir);
         if(strcmp(scriptDir, dir.c_str()) == 0) {
             errno = old;
-            return filePtr; // short circuit
+            return ret;
         }
-        filePtr = this->modLoader.load(dir.c_str(), modPath, ret);
+        ret = this->modLoader.load(dir.c_str(), modPath, filePtr);
         if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT
            && strcmp(scriptDir, SYSTEM_MOD_DIR) != 0) {
-            filePtr = this->modLoader.load(SYSTEM_MOD_DIR, modPath, ret);
+            ret = this->modLoader.load(SYSTEM_MOD_DIR, modPath, filePtr);
         }
     }
-    return filePtr;
+    return ret;
 }
 
 ModType& SymbolTable::createModType(const std::string &fullpath) {

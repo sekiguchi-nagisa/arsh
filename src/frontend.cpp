@@ -245,8 +245,8 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
 
     auto &srcNode = static_cast<SourceNode&>(*node);
     const char *modPath = srcNode.getPathStr().c_str();
-    ModResult ret;
-    auto filePtr = this->checker.getSymbolTable().tryToLoadModule(this->getCurScriptDir().c_str(), modPath, ret);
+    FilePtr filePtr;
+    auto ret = this->checker.getSymbolTable().tryToLoadModule(this->getCurScriptDir().c_str(), modPath, filePtr);
     switch(ret.getKind()) {
     case ModResult::CIRCULAR:
         RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), modPath);

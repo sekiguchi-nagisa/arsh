@@ -606,8 +606,9 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     if(sourceName == nullptr) {
         fp = fdopen(dup(STDIN_FILENO), "rb");
     } else {
-        ModResult ret;
-        fp = st->symbolTable.tryToLoadModule(nullptr, sourceName, ret).release();
+        FilePtr filePtr;
+        auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr);
+        fp = filePtr.release();
         if(fp == nullptr) {
             if(ret.getKind() != ModResult::UNRESOLVED) {
                 errno = ETXTBSY;

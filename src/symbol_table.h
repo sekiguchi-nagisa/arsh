@@ -472,12 +472,11 @@ private:
      * @param scriptDir
      * may be null
      * @param modPath
-     * @param ret
+     * @param filePtr
+     * write resolved file pointer
      * @return
-     * if ModResult is PATH, return resolve file pointer.
-     * otherwise, return null.
      */
-    FilePtr load(const char *scriptDir, const char *modPath, ModResult &ret);
+    ModResult load(const char *scriptDir, const char *modPath, FilePtr &filePtr);
 };
 
 
@@ -547,10 +546,10 @@ public:
      * @param scriptDir
      * may be null
      * @param modPath
-     * @param ret
+     * @param filePtr
      * @return
      */
-    FilePtr tryToLoadModule(const char *scriptDir, const char *modPath, ModResult &ret);
+    ModResult tryToLoadModule(const char *scriptDir, const char *modPath, FilePtr &filePtr);
 
     /**
      * create new module scope and assign it to curModule
