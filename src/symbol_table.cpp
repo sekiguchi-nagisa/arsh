@@ -288,18 +288,19 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
     if(!pair.second) {
         if(pair.first->second) {
-            return ModResult(pair.first->second);
+            auto v = pair.first->second;
+            return ModResult(std::move(v));
         }
-        return ModResult::circular();
+        return ModResult(ModLoadingError::CIRCULAR);
     }
 
     const char *resolvedPath = pair.first->first.c_str();
     filePtr.reset(fopen(resolvedPath, "r+b"));
     if(!filePtr) {
         this->typeMap.erase(pair.first);
-        return ModResult::unresolved();
+        return ModResult(ModLoadingError::UNRESOLVED);
     }
-    return ModResult(resolvedPath);
+    return ModResult(std::move(resolvedPath));
 }
 
 
@@ -381,12 +382,17 @@ SymbolTable::SymbolTable() :
     this->typeMap.commit();
 }
 
+static bool isFileNotFound(ModResult &ret) {
+    return is<ModLoadingError>(ret) && get<ModLoadingError>(ret) == ModLoadingError::UNRESOLVED
+           && errno == ENOENT;
+}
+
 ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPath, FilePtr &filePtr) {
     auto ret = this->modLoader.load(scriptDir, modPath, filePtr);
     if(*modPath == '/' || scriptDir == nullptr) {   // if full path, not search next path
         return ret;
     }
-    if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT) {
+    if(isFileNotFound(ret)) {
         int old = errno;
         std::string dir = LOCAL_MOD_DIR;
         expandTilde(dir);
@@ -395,8 +401,7 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPat
             return ret;
         }
         ret = this->modLoader.load(dir.c_str(), modPath, filePtr);
-        if(ret.getKind() == ModResult::UNRESOLVED && errno == ENOENT
-           && strcmp(scriptDir, SYSTEM_MOD_DIR) != 0) {
+        if(isFileNotFound(ret) && strcmp(scriptDir, SYSTEM_MOD_DIR) != 0) {
             ret = this->modLoader.load(SYSTEM_MOD_DIR, modPath, filePtr);
         }
     }

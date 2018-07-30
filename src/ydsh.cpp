@@ -610,7 +610,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr);
         fp = filePtr.release();
         if(fp == nullptr) {
-            if(ret.getKind() != ModResult::UNRESOLVED) {
+            if(is<ModLoadingError>(ret) && get<ModLoadingError>(ret) != ModLoadingError::UNRESOLVED) {
                 errno = ETXTBSY;
             }
             int old = errno;
@@ -626,7 +626,8 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
             errno = old;
             return 1;
         }
-        char *real = strdup(ret.asPath());
+        assert(is<const char *>(ret));
+        char *real = strdup(get<const char *>(ret));
         const char *dirName = dirname(real);
         setScriptDir(st, dirName);
         free(real);

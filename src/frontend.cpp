@@ -247,17 +247,19 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     const char *modPath = srcNode.getPathStr().c_str();
     FilePtr filePtr;
     auto ret = this->checker.getSymbolTable().tryToLoadModule(this->getCurScriptDir().c_str(), modPath, filePtr);
-    switch(ret.getKind()) {
-    case ModResult::CIRCULAR:
-        RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), modPath);
-    case ModResult::UNRESOLVED:
-        RAISE_TC_ERROR(UnresolvedMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno));
-    case ModResult::PATH:
-        this->enterModule(ret.asPath(), std::move(filePtr),
+    if(is<ModLoadingError>(ret)) {
+        switch(get<ModLoadingError>(ret)) {
+        case ModLoadingError::CIRCULAR:
+            RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), modPath);
+        case ModLoadingError::UNRESOLVED:
+            RAISE_TC_ERROR(UnresolvedMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno));
+        }
+    } else if(is<const char *>(ret)) {
+        this->enterModule(get<const char*>(ret), std::move(filePtr),
                           std::unique_ptr<SourceNode>(static_cast<SourceNode *>(node.release())));
         return ENTER_MODULE;
-    case ModResult::TYPE:
-        srcNode.setModType(ret.asType());
+    } else if(is<ModType *>(ret)) {
+        srcNode.setModType(*get<ModType *>(ret));
         return IN_MODULE;
     }
     return IN_MODULE;   // normally unreachable, due to suppress gcc warning

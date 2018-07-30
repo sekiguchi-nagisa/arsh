@@ -390,62 +390,12 @@ public:
     static std::string toModName(unsigned short modID);
 };
 
-class ModResult {
-public:
-    enum Kind {
-        // module loading error
-        CIRCULAR,
-        UNRESOLVED,
-
-        PATH,
-        TYPE,
-    };
-
-private:
-    Kind kind;
-
-    union {
-        /**
-         * resolved module path
-         */
-        const char *path;
-
-        /**
-         * resolved module type
-         */
-        ModType *type;
-    };
-
-private:
-    ModResult(Kind kind, const char *ptr) : kind(kind), path(ptr) {}
-
-public:
-    ModResult() : ModResult(UNRESOLVED, nullptr) {}
-
-    explicit ModResult(const char *path) : kind(PATH), path(path) {}
-
-    explicit ModResult(ModType *type) : kind(TYPE), type(type) {}
-
-    static ModResult circular() {
-        return {CIRCULAR, nullptr};
-    }
-
-    static ModResult unresolved() {
-        return {UNRESOLVED, nullptr};
-    }
-
-    Kind getKind() const {
-        return this->kind;
-    }
-
-    const char *asPath() const {
-        return this->path;
-    }
-
-    ModType &asType() const {
-        return *this->type;
-    }
+enum class ModLoadingError {
+    CIRCULAR,
+    UNRESOLVED,
 };
+
+using ModResult = Union<const char *, ModType *, ModLoadingError>;
 
 class ModuleLoader {
 private:
