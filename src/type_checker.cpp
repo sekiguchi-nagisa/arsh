@@ -262,7 +262,7 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
                 RAISE_TC_ERROR(UndefinedMethod, *accessNode.getNameNode(), name);
             }
             node.setKind(ApplyNode::METHOD_CALL);
-            return HandleOrFuncType(std::move(handle));
+            return handle;
         }
     }
 
@@ -275,7 +275,7 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
     if(!type.isFuncType()) {
         RAISE_TC_ERROR(NotCallable, exprNode);
     }
-    return HandleOrFuncType(static_cast<FunctionType *>(&type));
+    return static_cast<FunctionType *>(&type);
 }
 
 HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
@@ -294,7 +294,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
                            this->symbolTable.getTypeName(*type));
         }
     }
-    return HandleOrFuncType(static_cast<FunctionType *>(type));
+    return static_cast<FunctionType *>(type);
 }
 
 void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vector<Node *> &argNodes) {
