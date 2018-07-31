@@ -262,7 +262,7 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
                 RAISE_TC_ERROR(UndefinedMethod, *accessNode.getNameNode(), name);
             }
             node.setKind(ApplyNode::METHOD_CALL);
-            return handle;
+            return std::move(handle);
         }
     }
 
