@@ -221,7 +221,7 @@ public:
 
     template <typename U>
     Union(U &&value) noexcept : tag_(TypeTag<U, T...>::value) {
-        this->value_.obtain(std::forward<U>(value));
+        this->value_.obtain(std::move(value));
     }
 
     Union(Union &&value) noexcept : tag_(value.tag()) {
@@ -310,11 +310,11 @@ public:
 
     Result() = delete;
 
-    Result(OkHolder<T> &&okHolder) : Union<T, E>(std::move(okHolder.value)) {}
+    Result(OkHolder<T> &&okHolder) noexcept : Union<T, E>(std::move(okHolder.value)) {}
 
-    Result(ErrHolder<E> &&errHolder) : Union<T, E>(std::move(errHolder.value)) {}
+    Result(ErrHolder<E> &&errHolder) noexcept : Union<T, E>(std::move(errHolder.value)) {}
 
-    Result(Result &&result) = default;
+    Result(Result &&result) noexcept = default;
 
     ~Result() = default;
 
