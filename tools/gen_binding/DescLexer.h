@@ -56,7 +56,7 @@ using Token = ydsh::Token;
 
 class DescLexer : public ydsh::parser_base::LexerBase {
 public:
-    DescLexer(const char *line) : LexerBase(line) {}
+    explicit DescLexer(const char *line) : LexerBase(line) {}
     ~DescLexer() = default;
 
     DescTokenKind nextToken(Token &token);
