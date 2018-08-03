@@ -59,11 +59,10 @@ struct TypeTag {
     static constexpr int value = __detail::toTypeIndex<U, T...>(0);
 };
 
-template <std::size_t N, typename ...T>
+template <std::size_t N, typename T0, typename ...T>
 struct TypeByIndex {
-    static_assert(sizeof...(T) > 0, "at least 1 type");
-    static_assert(N < sizeof...(T), "out of range");
-    using type = typename __detail::TypeByIndex<0, N, T...>::type;
+    static_assert(N < sizeof...(T) + 1, "out of range");
+    using type = typename __detail::TypeByIndex<0, N, T0, T...>::type;
 };
 
 
