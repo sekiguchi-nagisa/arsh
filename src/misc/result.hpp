@@ -24,6 +24,21 @@
 namespace ydsh {
 namespace __detail {
 
+template<typename T>
+constexpr T max2(T x, T y) {
+    return x > y ? x : y;
+}
+
+template<typename T>
+constexpr T max(T t) {
+    return t;
+}
+
+template<typename T, typename U, typename ...R>
+constexpr T max(T t, U u, R... r) {
+    return max2(t, max(u, std::forward<R>(r)...));
+}
+
 constexpr bool andAll(bool b) {
     return b;
 }
@@ -70,15 +85,20 @@ struct TypeByIndex {
 // ##     Storage     ##
 // #####################
 
-template <typename T0, typename ...T>
+template <typename ...T>
 struct Storage {
-    using type = typename std::aligned_union<sizeof(T0), T0, T...>::type;
+    static_assert(sizeof...(T) > 1, "at least 2 type");
+
+    static constexpr auto size = __detail::max(sizeof(T)...);
+    static constexpr auto align = __detail::max(alignof(T)...);
+
+    using type = typename std::aligned_storage<size, align>::type;
 
     type data;
 
     template <typename U>
     void obtain(U &&value) {
-        static_assert(TypeTag<U, T0, T...>::value > -1, "invalid type");
+        static_assert(TypeTag<U, T...>::value > -1, "invalid type");
 
         using Decayed = typename std::decay<U>::type;
         new (&this->data) Decayed(std::forward<U>(value));
