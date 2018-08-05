@@ -617,7 +617,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
             fprintf(stderr, "ydsh: %s: %s\n", sourceName, strerror(old));
             if(e) {
                 *e = {
-                        .kind = DS_ERROR_KIND_FILE,
+                        .kind = DS_ERROR_KIND_FILE_ERROR,
                         .fileName = strdup(sourceName),
                         .lineNum = 0,
                         .name = ""

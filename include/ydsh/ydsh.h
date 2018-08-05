@@ -131,7 +131,7 @@ void DSState_unsetOption(DSState *st, unsigned short optionSet);
 /* for indicating error kind. */
 typedef enum {
     DS_ERROR_KIND_SUCCESS        ,
-    DS_ERROR_KIND_FILE           ,
+    DS_ERROR_KIND_FILE_ERROR     ,
     DS_ERROR_KIND_PARSE_ERROR    ,
     DS_ERROR_KIND_TYPE_ERROR     ,
     DS_ERROR_KIND_RUNTIME_ERROR  ,

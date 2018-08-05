@@ -179,7 +179,7 @@ TEST(API, load) {
     int errorNum = errno;
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(ENOENT, errorNum));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE, e.kind));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
 
     DSError_release(&e);
     DSState_delete(&state);
