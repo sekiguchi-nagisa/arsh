@@ -1933,7 +1933,8 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
     auto *fdObj = typeAs<UnixFD_Object>(LOCAL(0));
     int fd = fdObj->getValue();
     if(fdObj->tryToClose(true) < 0) {
-        raiseSystemError(ctx, errno, std::to_string(fd));
+        int e = errno;
+        raiseSystemError(ctx, e, std::to_string(fd));
         RET_ERROR;
     }
     RET_VOID;
@@ -1945,7 +1946,8 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
     int fd = typeAs<UnixFD_Object>(LOCAL(0))->getValue();
     int newfd = dup(fd);
     if(newfd < 0) {
-        raiseSystemError(ctx, errno, std::to_string(fd));
+        int e = errno;
+        raiseSystemError(ctx, e, std::to_string(fd));
         RET_ERROR;
     }
     RET(DSValue::create<UnixFD_Object>(getPool(ctx).get(TYPE::UnixFD), newfd));

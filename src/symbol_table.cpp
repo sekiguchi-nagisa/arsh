@@ -297,7 +297,9 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
     const char *resolvedPath = pair.first->first.c_str();
     filePtr.reset(fopen(resolvedPath, "r+b"));
     if(!filePtr) {
+        int old = errno;
         this->typeMap.erase(pair.first);
+        errno = old;
         return ModLoadingError::UNRESOLVED;
     }
     return std::move(resolvedPath);
