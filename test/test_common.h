@@ -245,6 +245,15 @@ public:
 
     ProcBuilder &addArgs(const std::vector<std::string> &values);
 
+    template <typename F, typename ...Arg>
+    ProcBuilder &addArgs(F &&arg0, Arg &&... arg) {
+        return this->addArg(arg0).addArgs(std::forward<Arg>(arg)...);
+    }
+
+    ProcBuilder &addArgs() {
+        return *this;   // do nothing
+    }
+
     ProcBuilder &addEnv(const char *name, const char *value) {
         this->env.emplace(name, value);
         return *this;
