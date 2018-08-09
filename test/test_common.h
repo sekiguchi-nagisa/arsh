@@ -233,13 +233,9 @@ public:
 
     ~ProcBuilder() = default;
 
-    ProcBuilder &addArg(const char *arg) {
-        this->args.emplace_back(arg);
-        return *this;
-    }
-
-    ProcBuilder &addArg(const std::string &str) {
-        this->args.emplace_back(str);
+    template <typename T>
+    ProcBuilder &addArg(T && arg) {
+        this->args.emplace_back(std::forward<T>(arg));
         return *this;
     }
 
