@@ -234,13 +234,8 @@ public:
 
     Union &operator=(Union && value) noexcept {
         auto tmp(std::move(value));
-        this->swap(tmp);
+        this->moveAssign(tmp);
         return *this;
-    }
-
-    void swap(Union &value) noexcept {
-        std::swap(this->tag_, value.tag_);
-        std::swap(this->value_, value.value_);
     }
 
     StorageType &value() {
@@ -253,6 +248,14 @@ public:
 
     int tag() const {
         return this->tag_;
+    }
+
+private:
+    void moveAssign(Union &value) noexcept {
+        polyDestroy(this->value(), this->tag());
+        polyMove(value.value(), value.tag(), this->value());
+        this->tag_ = value.tag();
+        value.tag_ = -1;
     }
 };
 

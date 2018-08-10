@@ -17,7 +17,7 @@ TEST(result, tag) {
     static_assert(std::is_same<std::string, typename TypeByIndex<2, int, void *, std::string>::type>::value, "");
 }
 
-TEST(result, storage) {
+TEST(result, storage1) {
     auto str = std::make_shared<std::string>("hello");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, str.use_count()));
 
@@ -43,6 +43,16 @@ TEST(result, storage) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(get<bool>(raw2)));
 }
 
+TEST(result, storage2) {
+    Storage<int, std::string> value;
+    value.obtain(std::string("hello"));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", get<std::string>(value)));
+
+    decltype(value) value2;
+    move<std::string>(value, value2);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", get<std::string>(value2)));
+}
+
 TEST(result, Union1) {
     Union<int, std::string> value(std::string("hey"));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value)));
@@ -50,7 +60,10 @@ TEST(result, Union1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(is<int>(value)));
 
     decltype(value) value2;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, value2.tag()));
+
     value2 = std::move(value);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<std::string>(value2)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value2)));
     value = std::move(value2);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, value2.tag()));
