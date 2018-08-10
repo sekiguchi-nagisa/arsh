@@ -134,11 +134,8 @@ DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
 
     for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
         Token token = this->contexts[i].sourceNode->getPathNode()->getToken();
-        auto *lex = &this->lexer;
-        if(i > 0) {
-            lex = &this->contexts[i - 1].lexer;
-        }
-        printError(*lex, "note", token, cc, TermColor::Blue, "at module import");
+        auto &lex = i > 0 ? this->contexts[i - 1].lexer : this->lexer;
+        printError(lex, "note", token, cc, TermColor::Blue, "at module import");
     }
 
     unsigned int errorLineNum = this->getSourceInfo()->getLineNum(errorToken.pos);
