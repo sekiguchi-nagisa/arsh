@@ -220,7 +220,7 @@ public:
 
     template <typename U>
     Union(U &&value) noexcept : tag_(TypeTag<U, T...>::value) {
-        this->value_.obtain(std::move(value));
+        this->value_.obtain(std::forward<U>(value));
     }
 
     Union(Union &&value) noexcept : tag_(value.tag()) {
