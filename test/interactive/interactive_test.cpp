@@ -116,7 +116,8 @@ protected:
     }
 
     void send(const char *str) {
-        write(this->handle.in(), str, strlen(str));
+        int r = write(this->handle.in(), str, strlen(str));
+        (void) r;
         fsync(this->handle.in());
     }
 
