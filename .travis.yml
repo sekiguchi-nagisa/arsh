@@ -236,7 +236,6 @@ matrix:
             - llvm-toolchain-trusty-6.0
           packages:
             - clang-6.0
-            - g++-8
             - expect
             - ninja-build
       env: CC_BIN=clang-6.0 CXX_BIN=clang++-6.0 DUMMY=address-sanitizer
@@ -254,7 +253,6 @@ matrix:
             - llvm-toolchain-trusty-6.0
           packages:
             - clang-6.0
-            - g++-8
             - expect
             - ninja-build
       env: CC_BIN=clang-6.0 CXX_BIN=clang++-6.0 DUMMY=undefined-behavior-sanitizer
@@ -272,7 +270,6 @@ matrix:
             - llvm-toolchain-trusty-6.0
           packages:
             - clang-6.0
-            - g++8
             - expect
             - ninja-build
       env: CC_BIN=clang-6.0 CXX_BIN=clang++-6.0 DUMMY=fuzzing
