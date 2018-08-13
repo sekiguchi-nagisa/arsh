@@ -218,6 +218,11 @@ struct IOConfig {
 
 void xcfmakesane(termios &term);
 
+struct WinSize {
+    unsigned short row;
+    unsigned short col;
+};
+
 class ProcBuilder {
 private:
     IOConfig config;
@@ -225,13 +230,23 @@ private:
     std::unordered_map<std::string, std::string> env;
     std::string cwd;
 
+    /**
+     * if IOConfig has PTY, set terminal setting.
+     */
+    termios term;
+
+    WinSize winSize{24, 80};
+
 public:
-    explicit ProcBuilder(const char *cmdName) : args{cmdName} {}
+    explicit ProcBuilder(const char *cmdName) : args{cmdName} {
+        cfmakeraw(&this->term);
+    }
 
     ProcBuilder(std::initializer_list<const char *> list) {
         for(auto &v : list) {
             this->args.emplace_back(v);
         }
+        cfmakeraw(&this->term);
     }
 
     ~ProcBuilder() = default;
@@ -271,6 +286,16 @@ public:
 
     ProcBuilder &setWorkingDir(const char *dir) {
         this->cwd = dir;
+        return *this;
+    }
+
+    ProcBuilder &setTerm(termios &term) {
+        this->term = term;
+        return *this;
+    }
+
+    ProcBuilder &setWinSize(WinSize size) {
+        this->winSize = size;
         return *this;
     }
 
@@ -321,6 +346,8 @@ private:
     void syncPWD() const;
 
     void syncEnv() const;
+
+    int findPTY() const;
 };
 
 std::string format(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));

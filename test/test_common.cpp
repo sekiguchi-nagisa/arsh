@@ -243,6 +243,23 @@ Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
 // ##     ProcBuilder     ##
 // #########################
 
+static void setPTYSetting(int fd, termios &term, WinSize size) {
+    if(fd < 0) {
+        return;
+    }
+
+    if(tcsetattr(fd, TCSAFLUSH, &term) == -1) {
+        error_at("failed");
+    }
+
+    winsize ws;
+    ws.ws_row = size.row;
+    ws.ws_col = size.col;
+    if(ioctl(fd, TIOCSWINSZ, &ws) == -1) {
+        error_at("failed");
+    }
+}
+
 ProcBuilder& ProcBuilder::addArgs(const std::vector<std::string> &values) {
     for(auto &e : values) {
         this->args.push_back(e);
@@ -260,6 +277,7 @@ ProcHandle ProcBuilder::operator()() {
 
         this->syncEnv();
         this->syncPWD();
+        setPTYSetting(this->findPTY(), this->term, this->winSize);
         execvp(argv[0], argv);
         return -errno;
     });
@@ -310,15 +328,7 @@ static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {
         }
         termios term;
         cfmakeraw(&term);
-        if(tcsetattr(fd, TCSAFLUSH, &term) == -1) {
-            error_at("failed");
-        }
-        winsize ws;
-        ws.ws_row = 24;
-        ws.ws_col = 80;
-        if(ioctl(fd, TIOCSWINSZ, &ws) == -1) {
-            error_at("failed");
-        }
+        setPTYSetting(fd, term, {.row = 24, .col = 80});
         slaveFD = fd;
     }
 }
@@ -469,6 +479,20 @@ void ProcBuilder::syncEnv() const {
     for(auto &pair : this->env) {
         setenv(pair.first.c_str(), pair.second.c_str(), 1);
     }
+}
+
+int ProcBuilder::findPTY() const {
+    int fd = -1;
+    if(this->config.in.is(IOConfig::PTY)) {
+        return STDIN_FILENO;
+    }
+    if(this->config.out.is(IOConfig::PTY)) {
+        return STDOUT_FILENO;
+    }
+    if(this->config.err.is(IOConfig::PTY)) {
+        return STDERR_FILENO;
+    }
+    return fd;
 }
 
 std::string format(const char *fmt, ...) {
