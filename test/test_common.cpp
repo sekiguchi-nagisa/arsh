@@ -205,6 +205,7 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
             if(pollfds[i].revents) {
                 if(!recvData(pollfds[i].fd, (i == 0 ? output.first : output.second))) {
                     breakCount++;
+                    continue;
                 }
             } else {
                 breakCount++;
