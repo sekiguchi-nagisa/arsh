@@ -51,6 +51,8 @@ TEST(result, storage2) {
     decltype(value) value2;
     move<std::string>(value, value2);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", get<std::string>(value2)));
+
+    destroy<std::string>(value2);
 }
 
 TEST(result, Union1) {
