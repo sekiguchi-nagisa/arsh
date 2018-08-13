@@ -252,8 +252,10 @@ public:
 
 private:
     void moveAssign(Union &value) noexcept {
-        std::swap(this->tag_, value.tag_);
-        std::swap(this->value_, value.value_);
+        polyDestroy(this->value(), this->tag());
+        polyMove(value.value(), value.tag(), this->value());
+        this->tag_ = value.tag();
+        value.tag_ = -1;
     }
 };
 
