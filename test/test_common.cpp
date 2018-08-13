@@ -22,7 +22,6 @@
 #include <sys/ioctl.h>
 #include <stdarg.h>
 #include <fcntl.h>
-#include <termios.h>
 
 #include <cstdlib>
 #include <cassert>
@@ -31,7 +30,11 @@
 #include <misc/util.hpp>
 #include <misc/files.h>
 #include <misc/fatal.h>
+
+#define TTYDEFCHARS
 #include "test_common.h"
+
+#undef TTYDEFCHARS
 
 #define error_at fatal_perror
 
@@ -277,6 +280,16 @@ static void loginPTY(int fd) {
     if(ioctl(fd, TIOCSCTTY, 0) == -1) {
         error_at("failed");
     }
+}
+
+void xcfmakesane(termios &term) {
+    term.c_iflag = TTYDEF_IFLAG;
+    term.c_oflag = TTYDEF_OFLAG;
+    term.c_lflag = TTYDEF_LFLAG;
+    term.c_cflag = TTYDEF_CFLAG;
+    cfsetispeed(&term, TTYDEF_SPEED);
+    cfsetospeed(&term, TTYDEF_SPEED);
+    memcpy(term.c_cc, ttydefchars, sizeof(ttydefchars));
 }
 
 static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {

@@ -18,6 +18,7 @@
 #define YDSH_TEST_COMMON_H
 
 #include <unistd.h>
+#include <termios.h>
 
 #include "gtest/gtest.h"
 
@@ -214,6 +215,8 @@ struct IOConfig {
     IOConfig(FDWrapper in, FDWrapper out, FDWrapper err) : in(in), out(out), err(err) {}
     IOConfig() : IOConfig(INHERIT, INHERIT, INHERIT) {}
 };
+
+void xcfmakesane(termios &term);
 
 class ProcBuilder {
 private:
