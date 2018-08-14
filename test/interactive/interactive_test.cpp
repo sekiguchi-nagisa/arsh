@@ -166,16 +166,14 @@ protected:
     }
 };
 
-//static constexpr const char *CTRL_C = "\x03";
-static constexpr const char *CTRL_D = "\x04";
+#define CTRL_C "\x03"
+#define CTRL_D "\x04"
 
 #define XSTR(v) #v
 #define STR(v) XSTR(v)
 
-static constexpr const char *PROMPT = "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ ";
+#define PROMPT "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ "
 
-#undef XSTR
-#undef STR
 
 
 TEST_F(InteractiveTest, exit) {
@@ -199,10 +197,7 @@ TEST_F(InteractiveTest, ctrld2) {
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-    std::string str = "(String) hey\r\n";
-    str += PROMPT;
-
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("'hey'", str.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("'hey'", "(String) hey\r\n" PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("false", PROMPT));
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
@@ -301,6 +296,118 @@ TEST_F(InteractiveTest, stdin) {
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
+}
+
+TEST_F(InteractiveTest, rc1) {
+    this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $RC_VAR == 'rc file'; exit 23;"));
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(23, WaitStatus::EXITED));
+}
+
+TEST_F(InteractiveTest, rc2) {
+    this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile2");
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(10, WaitStatus::EXITED));
+}
+
+TEST_F(InteractiveTest, rc3) {
+    this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/faiurehfianf325d");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $? == 0", PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
+}
+
+TEST_F(InteractiveTest, termHook1) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("false", PROMPT));
+
+    this->send(CTRL_D); // do nothing when terminated by CTRL-D
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
+}
+
+TEST_F(InteractiveTest, termHook2) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("exit 56", "hello\r\n"));
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(56, WaitStatus::EXITED));
+}
+
+TEST_F(InteractiveTest, termHook3) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;", PROMPT));
+
+    const char *estr = R"(Assertion Error: `false'
+    from (stdin):2 '<toplevel>()'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert false", "hello\r\n", estr));
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED));
+}
+
+TEST_F(InteractiveTest, termHook4) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;", PROMPT));
+
+    const char *estr = R"([runtime error]
+ArithmeticError: zero division
+    from (stdin):2 '<toplevel>()'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("34 / 0", "hello\r\n" PROMPT, estr));   // call term hook in interactive mode
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
+}
+
+TEST_F(InteractiveTest, skip) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("      ", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("", PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
+}
+
+TEST_F(InteractiveTest, read) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("read -u 0 -p $PS2;", "", "> "));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("hello", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $REPLY == 'hello'", PROMPT));
+
+    // disable echo
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("read -u 0 -s -p $PS2;", "", "> "));
+    this->send("world!!\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $REPLY == 'world!!'", PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
+}
+
+TEST_F(InteractiveTest, continuation) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("echo \\", "> "));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("world", "world\r\n" PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
 }
 
 int main(int argc, char **argv) {
