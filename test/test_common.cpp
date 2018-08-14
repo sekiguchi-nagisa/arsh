@@ -467,13 +467,12 @@ void ProcBuilder::syncPWD() const {
     }
 
     // update PWD
-    size_t size = PATH_MAX;
-    char buf[size];
-    const char *cwd = getcwd(buf, size);
-    if(cwd == nullptr) {
+    char *dir = realpath(".", nullptr);
+    if(dir == nullptr) {
         error_at("current working directory is broken!!");
     }
-    setenv(ydsh::ENV_PWD, cwd, 1);
+    setenv(ydsh::ENV_PWD, dir, 1);
+    free(dir);
 }
 
 void ProcBuilder::syncEnv() const {
