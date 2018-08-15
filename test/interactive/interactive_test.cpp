@@ -110,7 +110,8 @@ protected:
     void invoke(T && ...args) {
         termios term;
         xcfmakesane(term);
-        this->handle = ProcBuilder{BIN_PATH, std::forward<T>(args)...}.setWorkingDir(INTERACTIVE_TEST_WORK_DIR)
+        this->handle = ProcBuilder{BIN_PATH, std::forward<T>(args)...}.addEnv("TERM", "xterm")
+                .setWorkingDir(INTERACTIVE_TEST_WORK_DIR)
                 .setIn(IOConfig::PTY)
                 .setOut(IOConfig::PTY)
                 .setErr(IOConfig::PIPE)
