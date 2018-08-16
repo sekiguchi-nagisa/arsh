@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <sys/ttydefaults.h>
 #include <stdarg.h>
 #include <fcntl.h>
 
@@ -33,19 +34,6 @@
 
 #include "test_common.h"
 
-#ifdef __CYGWIN__
-static cc_t	ttydefchars[NCCS] = {
-	CEOF,	CEOL,	CEOL,	CERASE, CWERASE, CKILL, CREPRINT,
-	_POSIX_VDISABLE, CINTR,	CQUIT,	CSUSP,	CDSUSP,	CSTART,	CSTOP,	CLNEXT,
-	CDISCARD, CMIN,	CTIME,  CSTATUS, _POSIX_VDISABLE
-};
-
-#else
-
-#define TTYDEFCHARS
-#include <sys/ttydefaults.h>
-
-#endif
 
 #define error_at fatal_perror
 
@@ -319,6 +307,13 @@ void xcfmakesane(termios &term) {
     term.c_cflag = TTYDEF_CFLAG;
     cfsetispeed(&term, TTYDEF_SPEED);
     cfsetospeed(&term, TTYDEF_SPEED);
+
+    cc_t ttydefchars[NCCS] = {
+            CEOF, CEOL, CEOL, CERASE, CWERASE, CKILL, CREPRINT,
+            _POSIX_VDISABLE, CINTR, CQUIT, CSUSP, CDSUSP, CSTART, CSTOP, CLNEXT,
+            CDISCARD, CMIN, CTIME,  CSTATUS, _POSIX_VDISABLE
+    };
+
     memcpy(term.c_cc, ttydefchars, sizeof(ttydefchars));
 }
 
