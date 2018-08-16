@@ -31,10 +31,21 @@
 #include <misc/files.h>
 #include <misc/fatal.h>
 
-#define TTYDEFCHARS
 #include "test_common.h"
 
-#undef TTYDEFCHARS
+#ifdef __CYGWIN__
+static cc_t	ttydefchars[NCCS] = {
+	CEOF,	CEOL,	CEOL,	CERASE, CWERASE, CKILL, CREPRINT,
+	_POSIX_VDISABLE, CINTR,	CQUIT,	CSUSP,	CDSUSP,	CSTART,	CSTOP,	CLNEXT,
+	CDISCARD, CMIN,	CTIME,  CSTATUS, _POSIX_VDISABLE
+};
+
+#else
+
+#define TTYDEFCHARS
+#include <sys/ttydefaults.h>
+
+#endif
 
 #define error_at fatal_perror
 
