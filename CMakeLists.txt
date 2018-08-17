@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 2.8.12)
 
-include(CheckTypeSize)
-
 project(ydsh)
 enable_language(CXX)
+
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
+
+include(CheckTypeSize)
+include(DownloadProject)
 
 #++++++++++++++++++++++++++++++++++#
 #     helper macro or function     #
