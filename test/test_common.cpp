@@ -308,7 +308,7 @@ void xcfmakesane(termios &term) {
     cfsetospeed(&term, TTYDEF_SPEED);
 
 #ifndef CSTATUS
-#define CSTATUS CTRL('t')
+#define CSTATUS '\x14'
 #endif
 
     cc_t ttydefchars[NCCS] = {
