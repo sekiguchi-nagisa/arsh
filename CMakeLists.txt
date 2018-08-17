@@ -256,8 +256,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/pid_check)
 
-set(GTEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/gtest)
-add_subdirectory(${GTEST_DIR} EXCLUDE_FROM_ALL)
 
 add_definitions(-D_GNU_SOURCE)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RELWITHDEBINFO")

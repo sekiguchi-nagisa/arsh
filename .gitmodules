@@ -6,7 +6,4 @@
 	path = ext/re2c
     url = https://github.com/skvadrik/re2c.git
     ignore = dirty
-[submodule "ext/gtest"]
-	path = ext/gtest
-    url = https://github.com/google/googletest.git
-    ignore = dirty
+
