@@ -20,7 +20,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
-#include <sys/ttydefaults.h>
 #include <stdarg.h>
 #include <fcntl.h>
 
