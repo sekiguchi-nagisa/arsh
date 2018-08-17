@@ -7,6 +7,7 @@ Release/
 build
 build-*
 cmake-build-*
+googletest-*
 
 # Compiled Object files
 *.slo
