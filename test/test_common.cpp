@@ -307,6 +307,10 @@ void xcfmakesane(termios &term) {
     cfsetispeed(&term, TTYDEF_SPEED);
     cfsetospeed(&term, TTYDEF_SPEED);
 
+#ifndef CSTATUS
+#define CSTATUS CTRL('t')
+#endif
+
     cc_t ttydefchars[NCCS] = {
             CEOF, CEOL, CEOL, CERASE, CWERASE, CKILL, CREPRINT,
             _POSIX_VDISABLE, CINTR, CQUIT, CSUSP, CDSUSP, CSTART, CSTOP, CLNEXT,
