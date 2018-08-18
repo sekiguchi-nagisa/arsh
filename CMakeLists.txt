@@ -7,6 +7,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
 include(CheckTypeSize)
 include(DownloadProject)
+include(GetRE2C)
 
 #++++++++++++++++++++++++++++++++++#
 #     helper macro or function     #
@@ -170,19 +171,8 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 #     build re2c    #
 #+++++++++++++++++++#
 
-set(RE2C_SRC_DIR ${CMAKE_SOURCE_DIR}/ext/re2c/re2c)
-set(RE2C_DIR ${CMAKE_SOURCE_DIR}/build-re2c)
+getRE2C()
 
-if(NOT EXISTS "${RE2C_DIR}")
-    file(MAKE_DIRECTORY ${RE2C_DIR})
-endif()
-
- if(NOT EXISTS "${RE2C_SRC_DIR}/configure")
-    execute_process(COMMAND ./autogen.sh WORKING_DIRECTORY ${RE2C_SRC_DIR})
- endif()
-
-execute_process(COMMAND ${RE2C_SRC_DIR}/configure WORKING_DIRECTORY ${RE2C_DIR})
-execute_process(COMMAND make WORKING_DIRECTORY ${RE2C_DIR})
 
 #========================#
 #     generate Lexer     #
@@ -190,7 +180,7 @@ execute_process(COMMAND make WORKING_DIRECTORY ${RE2C_DIR})
 
 set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/nextToken.cpp)
 add_custom_command(OUTPUT ${lexer_src}
-    COMMAND ${RE2C_DIR}/re2c -W -Werror -c -8
+    COMMAND ${RE2C_BIN} -W -Werror -c -8
             -s -t ${CMAKE_CURRENT_BINARY_DIR}/src/yycond.h -o ${lexer_src}
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nextToken.re2c.cpp
 )

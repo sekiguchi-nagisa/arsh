@@ -2,8 +2,4 @@
 	path = ext/linenoise
     url = https://github.com/sekiguchi-nagisa/linenoise.git
     ignore = dirty
-[submodule "ext/re2c"]
-	path = ext/re2c
-    url = https://github.com/skvadrik/re2c.git
-    ignore = dirty
 

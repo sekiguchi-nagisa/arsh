@@ -8,6 +8,7 @@ build
 build-*
 cmake-build-*
 googletest-*
+re2c-*
 
 # Compiled Object files
 *.slo
