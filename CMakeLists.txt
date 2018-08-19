@@ -8,6 +8,7 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 include(Helper)
 include(DownloadProject)
 include(GetRE2C)
+include(GenLexer)
 
 
 #++++++++++++++++++++++++++#
@@ -139,12 +140,12 @@ getRE2C()
 #========================#
 
 set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/nextToken.cpp)
-add_custom_command(OUTPUT ${lexer_src}
-    COMMAND ${RE2C_BIN} -W -Werror -c -8
-            -s -t ${CMAKE_CURRENT_BINARY_DIR}/src/yycond.h -o ${lexer_src}
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/nextToken.re2c.cpp
+add_gen_lexer_target(
+        TARGET      gen_lexer
+        SOURCE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/nextToken.re2c.cpp
+        OUTPUT_FILE ${lexer_src}
+        RE2C_OPTION "-W -Werror -c -8 -s -t ${CMAKE_CURRENT_BINARY_DIR}/src/yycond.h"
 )
-add_custom_target(gen_lexer DEPENDS ${lexer_src})
 
 
 #==================================#
