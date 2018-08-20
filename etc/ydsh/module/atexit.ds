@@ -10,6 +10,9 @@ function __defaultHook($s : Int32, $e : Any) {
 }
 
 function addTermHook($s : Int32, $h : typeof($TERM_HOOK!)) {
+    if $h == $__defaultHook {
+        return
+    }
     $__TERM_HOOKS.add(($s, $h))
 }
 
