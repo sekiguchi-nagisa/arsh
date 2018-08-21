@@ -1,5 +1,5 @@
 
-#$test($result = 'EXIT', $status = 100, $lineNum = 12, $out = $'receive error: 0: 100\n')
+#$test($result = 'EXIT', $status = 100, $lineNum = 12, $out = $'receive error: 1: 100\n')
 
 function f($s : Int, $a : Any) {
     %'term'.kill($$)

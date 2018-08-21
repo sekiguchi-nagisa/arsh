@@ -1,5 +1,5 @@
 
-#$test($result = 'throw', $errorKind = 'Error', $status = 1, $lineNum = 11, $out = $'receive error: 1: Error: de\n')
+#$test($result = 'throw', $errorKind = 'Error', $status = 1, $lineNum = 11, $out = $'receive error: 2: Error: de\n')
 
 function f($s : Int, $a : Any) {
     echo receive error: $s: $a

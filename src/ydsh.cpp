@@ -408,6 +408,13 @@ static void initBuiltinVar(DSState *state) {
     std::string str = ".";
     getWorkingDir(*state, false, str);
     bindVariable(state, VAR_SCRIPT_DIR, DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
+
+    /**
+     * must be Int_Object
+     */
+    bindVariable(state, "ON_EXIT", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), TERM_ON_EXIT));
+    bindVariable(state, "ON_ERR", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), TERM_ON_ERR));
+    bindVariable(state, "ON_ASSERT", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), TERM_ON_ASSERT));
 }
 
 static void loadEmbeddedScript(DSState *state) {

@@ -777,7 +777,7 @@ TEST_F(CmdlineTest, termHook) {
 
         exit 45
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 45, "receive error: 0: 45\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 45, "receive error: 1: 45\n"));
 
     src = R"(
         function f($k : Int, $a : Any) {
@@ -791,7 +791,7 @@ TEST_F(CmdlineTest, termHook) {
 ArithmeticError: zero division
     from (string):7 '<toplevel>()'
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 1: ArithmeticError: zero division\n", e));
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 2: ArithmeticError: zero division\n", e));
 
     src = R"(
         function f($k : Int, $a : Any) {
@@ -804,7 +804,7 @@ ArithmeticError: zero division
     e = R"(Assertion Error: `false'
     from (string):7 '<toplevel>()'
 )";
-    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 2: 1\n", e));
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 4: 1\n", e));
 }
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
