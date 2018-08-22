@@ -289,7 +289,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
     if(!pair.second) {
         if(pair.first->second) {
             auto v = pair.first->second;
-            return std::move(v);
+            return v;
         }
         return ModLoadingError::CIRCULAR;
     }
@@ -302,7 +302,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
         errno = old;
         return ModLoadingError::UNRESOLVED;
     }
-    return std::move(resolvedPath);
+    return resolvedPath;
 }
 
 
