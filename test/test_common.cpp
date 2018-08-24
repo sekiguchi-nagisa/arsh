@@ -15,16 +15,16 @@
  */
 
 #include <poll.h>
-#include <limits.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
-#include <stdarg.h>
 #include <fcntl.h>
 
 #include <cstdlib>
 #include <cassert>
+#include <cstdarg>
+#include <climits>
 
 #include <constant.h>
 #include <misc/util.hpp>
@@ -354,7 +354,7 @@ private:
     int slaveFD{-1};
 
 public:
-    StreamBuilder(IOConfig config) : config(config),
+    explicit StreamBuilder(IOConfig config) : config(config),
             inpipe{dup(this->config.in.fd), -1},
             outpipe{-1, dup(this->config.out.fd)},
             errpipe{-1, dup(this->config.err.fd)} {
