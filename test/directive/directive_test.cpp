@@ -1,4 +1,4 @@
-#include <limits.h>
+#include <climits>
 
 #include "gtest/gtest.h"
 
@@ -214,7 +214,7 @@ TEST_F(DirectiveTest, fileName1) {
     const char *dir = getcwd(buf, PATH_MAX);
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(dir != nullptr));
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($fileName = './././')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->getDirective().getFileName().size() > 0));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!this->getDirective().getFileName().empty()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(dir, this->getDirective().getFileName().c_str()));
 }
 

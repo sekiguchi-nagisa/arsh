@@ -56,7 +56,7 @@ public:
     }
 
     void append(const char *str) {
-        this->out.push_back(str);
+        this->out.emplace_back(str);
     }
 
     void append(const std::string &str) {

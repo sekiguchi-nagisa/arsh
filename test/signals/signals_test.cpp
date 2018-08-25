@@ -87,7 +87,7 @@ static std::vector<std::string> toSignalList(const std::string &str) {
 static std::vector<std::string> toList(const ydsh::SignalPair *pairs) {
     std::vector<std::string> values;
     for(; pairs->name; pairs++) {
-        values.push_back(std::string(pairs->name));
+        values.emplace_back(pairs->name);
     }
     std::sort(values.begin(), values.end());
     values.erase(std::remove_if(values.begin(), values.end(), SigFilter()), values.end());

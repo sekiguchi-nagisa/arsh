@@ -35,7 +35,7 @@ public:
 
     virtual ~LexerTest_Lv1() {
         delete this->lexer;
-        this->lexer = 0;
+        this->lexer = nullptr;
     }
 
     virtual void SetUp() {

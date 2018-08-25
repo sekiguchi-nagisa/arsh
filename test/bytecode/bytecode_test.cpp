@@ -214,7 +214,7 @@ TEST(writer, read) {
         writer.codeBuffer += 34;
     }
     {
-        const unsigned long v = static_cast<unsigned long>(-456789);
+        const auto v = static_cast<unsigned long>(-456789);
         writer.emit(0, v);
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(v, ydsh::read64(writer.codeBuffer.get(), 0)));
     }

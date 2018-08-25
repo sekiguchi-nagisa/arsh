@@ -36,19 +36,19 @@ public:
         DSState_delete(&this->state);
     }
 
-    virtual void setHistSize(unsigned int size, bool sync = true) {
+    void setHistSize(unsigned int size, bool sync = true) {
         this->assignUintValue(VAR_HISTSIZE, size);
         if(sync) {
             DSState_syncHistorySize(this->state);
         }
     }
 
-    virtual void setHistFileSize(unsigned int size) {
+    void setHistFileSize(unsigned int size) {
         this->assignUintValue(VAR_HISTFILESIZE, size);
     }
 
 
-    virtual void assertHistCmd(unsigned int expect) {
+    void assertHistCmd(unsigned int expect) {
         unsigned int index = toIndex(BuiltinVarOffset::HIST_CMD);
         unsigned int value = typeAs<Int_Object>(this->state->getGlobal(index))->getValue();
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, value));
@@ -93,7 +93,7 @@ private:
         std::string str = "$";
         str += varName;
         str += " = ";
-        str += std::move(value);
+        str += value;
 
         auto r = DSState_eval(this->state, "(dummy)", str.c_str(), str.size(), nullptr);
         SCOPED_TRACE("");

@@ -809,7 +809,8 @@ ArithmeticError: zero division
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
     CmdlineTest2() = default;
-    virtual ~CmdlineTest2() = default;
+
+    ~CmdlineTest2() = default;
 
     virtual void SetUp() { this->createTemp(); }
 

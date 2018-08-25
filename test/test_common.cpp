@@ -167,10 +167,7 @@ static bool recvData(int fd, std::string &str) {
     unsigned int bufSize = ydsh::arraySize(buf);
     int readSize = read(fd, buf, bufSize);
     if(readSize <= 0) {
-        if(readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
-            return true;
-        }
-        return false;
+        return readSize == -1 && (errno == EAGAIN || errno == EINTR);
     }
     str.append(buf, readSize);
     return true;
