@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 5, $errorKind = 'Unacceptable', $status = 1)
+
+while(true) {
+    break {
+        break
+    }
+}
