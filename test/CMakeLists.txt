@@ -21,6 +21,7 @@ add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_
 include_directories("${gtest_SOURCE_DIR}/include" "${gmock_SOURCE_DIR}/include")
 
 include_directories(${CMAKE_SOURCE_DIR}/tools/directive)
+include_directories(${CMAKE_SOURCE_DIR}/tools/process)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/arg)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/buffer)
@@ -52,3 +53,4 @@ endif()
 #=====================#
 
 add_library(test_common STATIC test_common.cpp)
+target_link_libraries(test_common process)

@@ -206,6 +206,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_binding)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/pid_check)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/process)
 
 
 add_definitions(-D_GNU_SOURCE)
