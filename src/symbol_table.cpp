@@ -288,8 +288,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
     if(!pair.second) {
         if(pair.first->second) {
-            auto v = pair.first->second;
-            return std::move(v);
+            return pair.first->second;
         }
         return ModLoadingError::CIRCULAR;
     }
@@ -302,7 +301,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
         errno = old;
         return ModLoadingError::UNRESOLVED;
     }
-    return std::move(resolvedPath);
+    return resolvedPath;
 }
 
 

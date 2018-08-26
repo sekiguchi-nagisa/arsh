@@ -66,6 +66,32 @@ struct TypeByIndex<N, N, F, R...> {
     using type = F;
 };
 
+template <typename T>
+struct typeHolder {
+    using type = T;
+};
+
+template <typename ...T>
+struct OverloadResolver;
+
+template <typename F, typename ...T>
+struct OverloadResolver<F, T...> : OverloadResolver<T...> {
+    using OverloadResolver<T...>::operator();
+
+    typeHolder<F> operator()(F) const;
+};
+
+template <>
+struct OverloadResolver<> {
+    void operator()() const;
+};
+
+template <typename T>
+using result_of_t = typename std::result_of<T>::type;
+
+template <typename F, typename ...T>
+using resolvedType = typename result_of_t<OverloadResolver<T...>(F)>::type;
+
 } // namespace __detail
 
 
@@ -96,11 +122,11 @@ struct Storage {
 
     type data;
 
-    template <typename U>
+    template <typename U, typename F = __detail::resolvedType<U, T...>>
     void obtain(U &&value) {
-        static_assert(TypeTag<U, T...>::value > -1, "invalid type");
+        static_assert(TypeTag<F, T...>::value > -1, "invalid type");
 
-        using Decayed = typename std::decay<U>::type;
+        using Decayed = typename std::decay<F>::type;
         new (&this->data) Decayed(std::forward<U>(value));
     }
 };
@@ -175,8 +201,6 @@ struct Mover<-1, R...> {
     void operator()(Storage<R...> &, int, Storage<R...> &) const {}
 };
 
-
-
 } // namespace __detail_union
 
 template <typename ...R>
@@ -218,8 +242,8 @@ public:
 
     Union() noexcept : tag_(-1) {}
 
-    template <typename U>
-    Union(U &&value) noexcept : tag_(TypeTag<U, T...>::value) {
+    template <typename U, typename F = __detail::resolvedType<U, T...>>
+    Union(U &&value) noexcept : tag_(TypeTag<F, T...>::value) {
         this->value_.obtain(std::forward<U>(value));
     }
 
