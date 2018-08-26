@@ -94,11 +94,8 @@ public:
 
     ProcHandle(pid_t pid, int in, int out, int err) noexcept : pid_(pid), in_(in), out_(out), err_(err) {}
 
-    ProcHandle(ProcHandle &&proc) noexcept : pid_(proc.pid_), in_(proc.in_), out_(proc.out_), err_(proc.err_) {
-        proc.pid_ = -1;
-        proc.in_ = -1;
-        proc.out_ = -1;
-        proc.err_ = -1;
+    ProcHandle(ProcHandle &&proc) noexcept : pid_(proc.pid_), status_(proc.status_), in_(proc.in_), out_(proc.out_), err_(proc.err_) {
+        proc.detach();
     }
 
     ~ProcHandle() {
@@ -113,6 +110,7 @@ public:
 
     void swap(ProcHandle &proc) noexcept {
         std::swap(this->pid_, proc.pid_);
+        std::swap(this->status_, proc.status_);
         std::swap(this->in_, proc.in_);
         std::swap(this->out_, proc.out_);
         std::swap(this->err_, proc.err_);
@@ -147,6 +145,7 @@ public:
     pid_t detach() {
         pid_t pid = this->pid_;
         this->pid_ = -1;
+        this->status_ = {WaitStatus::EXITED, 0};
         this->in_ = -1;
         this->out_ = -1;
         this->err_ = -1;

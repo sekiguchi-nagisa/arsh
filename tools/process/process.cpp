@@ -404,7 +404,6 @@ void ProcBuilder::syncEnv() const {
 }
 
 int ProcBuilder::findPTY() const {
-    int fd = -1;
     if(this->config.in.is(IOConfig::PTY)) {
         return STDIN_FILENO;
     }
@@ -414,7 +413,7 @@ int ProcBuilder::findPTY() const {
     if(this->config.err.is(IOConfig::PTY)) {
         return STDERR_FILENO;
     }
-    return fd;
+    return -1;
 }
 
 
