@@ -145,7 +145,6 @@ public:
     pid_t detach() {
         pid_t pid = this->pid_;
         this->pid_ = -1;
-        this->status_ = {WaitStatus::EXITED, 0};
         this->in_ = -1;
         this->out_ = -1;
         this->err_ = -1;
