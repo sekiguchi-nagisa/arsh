@@ -37,6 +37,7 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+add_definitions(-D_GNU_SOURCE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-missing-field-initializers -std=gnu++11")
 
 
@@ -209,7 +210,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/pid_check)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/process)
 
 
-add_definitions(-D_GNU_SOURCE)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RELWITHDEBINFO")
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_definitions(-D_FORTIFY_SOURCE=2)
