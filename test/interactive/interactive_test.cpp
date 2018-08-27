@@ -282,7 +282,7 @@ TEST_F(InteractiveTest, signal) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
 }
 
-TEST_F(InteractiveTest, stdin) {
+TEST_F(InteractiveTest, standardInput) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
