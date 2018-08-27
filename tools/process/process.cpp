@@ -220,9 +220,14 @@ void xcfmakesane(termios &term) {
     cfsetispeed(&term, TTYDEF_SPEED);
     cfsetospeed(&term, TTYDEF_SPEED);
 
-#ifndef CSTATUS
-#define CSTATUS '\x14'
-#endif
+
+#ifdef __CYGWIN__
+    cc_t ttydefchars[NCCS] = {
+            _POSIX_VDISABLE, CDISCARD, CEOL, CEOL2, CEOF, CERASE,
+            CINTR, CKILL, CLNEXT, CMIN, CQUIT, CREPRINT, CSTART,
+            CSTOP, CSUSP, CSWTCH, CTIME, CWERASE
+    };
+#else
 
     cc_t ttydefchars[NCCS] = {
             CEOF, CEOL, CEOL, CERASE, CWERASE, CKILL, CREPRINT,
@@ -230,6 +235,7 @@ void xcfmakesane(termios &term) {
             CDISCARD, CMIN, CTIME,  CSTATUS, _POSIX_VDISABLE
     };
 
+#endif
     memcpy(term.c_cc, ttydefchars, sizeof(ttydefchars));
 }
 
