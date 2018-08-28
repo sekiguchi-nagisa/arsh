@@ -14,7 +14,7 @@ macro(getRE2C)
             DOWNLOAD_DIR        ${CMAKE_SOURCE_DIR}/re2c-download
             BINARY_DIR          ${CMAKE_SOURCE_DIR}/re2c-build
             GIT_REPOSITORY      https://github.com/skvadrik/re2c.git
-            GIT_TAG             1.0.3
+            GIT_TAG             1.1
             ${UPDATE_DISCONNECTED_IF_AVAILABLE}
     )
 
