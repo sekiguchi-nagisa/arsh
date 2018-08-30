@@ -169,7 +169,7 @@ struct IOConfig {
         FDWrapper(int fd) : fd(fd) {}
         FDWrapper(FDType type) : fd(static_cast<int>(type)) {}
 
-        operator bool() const {
+        explicit operator bool() const {
             return this->fd > -1;
         }
 
