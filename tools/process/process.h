@@ -189,8 +189,8 @@ struct IOConfig {
 void xcfmakesane(termios &term);
 
 struct WinSize {
-    unsigned short row;
-    unsigned short col;
+    unsigned short row{24};
+    unsigned short col{80};
 };
 
 class ProcBuilder {
@@ -205,7 +205,7 @@ private:
      */
     termios term;
 
-    WinSize winSize{24, 80};
+    WinSize winSize;
 
 public:
     explicit ProcBuilder(const char *cmdName) : args{cmdName} {

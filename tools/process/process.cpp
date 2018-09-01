@@ -257,7 +257,7 @@ static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {
         }
         termios term;
         cfmakeraw(&term);
-        setPTYSetting(fd, term, {.row = 24, .col = 80});
+        setPTYSetting(fd, term, WinSize());
         slaveFD = fd;
     }
 }
