@@ -189,8 +189,12 @@ struct IOConfig {
 void xcfmakesane(termios &term);
 
 struct WinSize {
-    unsigned short row{24};
-    unsigned short col{80};
+    unsigned short row;
+    unsigned short col;
+
+    WinSize(unsigned short row, unsigned short col) : row(row), col(col) {}
+
+    WinSize() : WinSize(24, 80) {}
 };
 
 class ProcBuilder {
