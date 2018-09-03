@@ -29,8 +29,6 @@
 
 namespace ydsh {
 
-class SymbolTable;
-
 class Scope {
 protected:
     std::unordered_map<std::string, FieldHandle> handleMap;
@@ -363,6 +361,8 @@ enum class TYPE : unsigned int {
     _ShellExit,
     _AssertFail,
 };
+
+class SymbolTable;
 
 class ModType : public DSType {
 private:
