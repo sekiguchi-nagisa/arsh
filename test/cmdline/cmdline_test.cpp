@@ -39,11 +39,6 @@ InputWrapper operator|(const char (&value)[N], ProcBuilder &&builder) {
 class CmdlineTest : public ExpectOutput {
 public:
     CmdlineTest() = default;
-    virtual ~CmdlineTest() = default;
-
-    virtual void SetUp() { }
-
-    virtual void TearDown() { }
 
     void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
@@ -809,8 +804,6 @@ ArithmeticError: zero division
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
     CmdlineTest2() = default;
-
-    ~CmdlineTest2() = default;
 
     void SetUp() override { this->createTemp(); }
 

@@ -114,7 +114,7 @@ TEST(result, result) {
 
     auto v = std::move(func(12).asOk());
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("12", v));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, std::move(func(-1).asErr())));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, func(-1).asErr()));
 }
 
 int main(int argc, char **argv) {

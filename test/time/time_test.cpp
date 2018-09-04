@@ -11,7 +11,6 @@ using namespace ydsh;
 class BaseTest : public ::testing::Test {
 public:
     BaseTest() = default;
-    virtual ~BaseTest() = default;
 
     virtual void dotest(struct tm *t) {
         SCOPED_TRACE("");

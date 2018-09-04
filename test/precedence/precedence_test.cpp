@@ -168,11 +168,6 @@ public:
 class PrecedenceTest : public ::testing::Test {
 public:
     PrecedenceTest() = default;
-    virtual ~PrecedenceTest() = default;
-
-    virtual void SetUp() { }
-
-    virtual void TearDown() { }
 
     virtual void equalsTokens(const std::vector<std::string> &expected, const std::vector<std::string> &actual) {
         SCOPED_TRACE("");

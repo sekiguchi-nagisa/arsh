@@ -46,14 +46,12 @@ private:
 public:
     ExecTest() = default;
 
-    virtual ~ExecTest() = default;
-
-    virtual void SetUp() {
+    void SetUp() override {
         this->createTemp();
         this->targetName = this->GetParam();
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         this->deleteTemp();
     }
 
@@ -165,7 +163,7 @@ TEST(Base, case2) {
 TEST(Base, case3) {
     SCOPED_TRACE("");
 
-    std::string line("type=0 lineNum=0 kind=\"\" fileName=\"\" ");
+    std::string line(R"(type=0 lineNum=0 kind="" fileName="" )");
     unsigned int type;
     unsigned int lineNum;
     std::string kind;

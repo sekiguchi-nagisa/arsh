@@ -118,14 +118,6 @@ public:
 public:
     TypeTest() : checker(this->pool, false) {}
 
-    virtual ~TypeTest() = default;
-
-    virtual void SetUp() {
-    }
-
-    virtual void TearDown() {
-    }
-
     virtual void assertTypeName(const char *typeName, DSType &type) {
         SCOPED_TRACE("");
 

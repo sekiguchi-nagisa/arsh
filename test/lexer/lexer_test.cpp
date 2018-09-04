@@ -16,7 +16,7 @@ using namespace ydsh;
  */
 TEST(LexerTest_Lv0, case1) {
     FILE *fp = fopen(LEXER_TEST_DIR  "/" "lexer_test.cpp", "r");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(fp == 0));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(fp == nullptr));
 }
 
 /**
@@ -33,15 +33,9 @@ public:
 public:
     LexerTest_Lv1() = default;
 
-    virtual ~LexerTest_Lv1() {
+    ~LexerTest_Lv1() override {
         delete this->lexer;
         this->lexer = nullptr;
-    }
-
-    virtual void SetUp() {
-    }
-
-    virtual void TearDown() {
     }
 
     // for test
@@ -63,7 +57,7 @@ private:
         do {
             SCOPED_TRACE("");
             k = this->lexer->nextToken(t);
-            this->tokens.push_back(std::make_pair(k, t));
+            this->tokens.emplace_back(k, t);
         } while(k != EOS && k != INVALID);
     }
 

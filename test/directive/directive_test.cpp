@@ -12,13 +12,6 @@ private:
 
 public:
     DirectiveTest() = default;
-    virtual ~DirectiveTest() = default;
-
-    virtual void SetUp() {
-    }
-
-    virtual void TearDown() {
-    }
 
     virtual void parse(const char *line, bool status) {
         SCOPED_TRACE("");
@@ -220,7 +213,7 @@ TEST_F(DirectiveTest, fileName1) {
 
 TEST_F(DirectiveTest, fileName2) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($fileName = $0)", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->getDirective().getFileName().size() > 0));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!this->getDirective().getFileName().empty()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(this->getSourceName(), this->getDirective().getFileName().c_str()));
 }
 

@@ -9,13 +9,6 @@ using namespace ydsh;
 class UnicodeTest : public ::testing::Test {
 public:
     UnicodeTest() = default;
-    virtual ~UnicodeTest() = default;
-
-    virtual void SetUp() {
-    }
-
-    virtual void TearDown() {
-    }
 
     void toCodePoint(const char *str, int &codePoint) {
         SCOPED_TRACE("");
