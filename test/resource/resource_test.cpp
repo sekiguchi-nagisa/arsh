@@ -53,7 +53,7 @@ TEST(resource, moveAssign) {
      struct Deleter {
          std::stringstream *s;
 
-         Deleter(std::stringstream &s) : s(&s) {}
+         explicit Deleter(std::stringstream &s) : s(&s) {}
 
          void operator()(unsigned int i) const {
              (*this->s) << "delete" << i;
@@ -76,7 +76,7 @@ TEST(resource, moveAssign2) {
     struct Deleter {
         std::stringstream *s;
 
-        Deleter(std::stringstream &s) : s(&s) {}
+        explicit Deleter(std::stringstream &s) : s(&s) {}
 
         void operator()(unsigned int i) const {
             (*this->s) << "delete" << i;

@@ -812,9 +812,9 @@ struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
 
     ~CmdlineTest2() = default;
 
-    virtual void SetUp() { this->createTemp(); }
+    void SetUp() override { this->createTemp(); }
 
-    virtual void TearDown() { this->deleteTemp(); }
+    void TearDown() override { this->deleteTemp(); }
 };
 
 TEST_F(CmdlineTest2, script) {

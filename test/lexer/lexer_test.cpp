@@ -459,7 +459,7 @@ TEST_F(LexerTest_Lv1, string_literal2) {
 }
 
 TEST_F(LexerTest_Lv1, string_literal3) {
-    const char *text = "'\\t\\n\\r\\\\'";
+    const char *text = R"('\t\n\r\\')";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, "'\\t\\n\\r\\\\'", EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));

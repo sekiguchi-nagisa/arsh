@@ -18,15 +18,15 @@ private:
 
 public:
     RedirectTest() = default;
-    virtual ~RedirectTest() = default;
+    ~RedirectTest() override = default;
 
-    virtual void SetUp() {
+    void SetUp() override {
         this->createTemp();
         this->targetName += this->getTmpDirName();
         this->targetName += "/target";
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         this->deleteTemp();
     }
 

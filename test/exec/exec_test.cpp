@@ -44,7 +44,7 @@ private:
     std::string targetName;
 
 public:
-    ExecTest() : targetName() { }
+    ExecTest() = default;
 
     virtual ~ExecTest() = default;
 

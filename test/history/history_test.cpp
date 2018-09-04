@@ -16,9 +16,9 @@ protected:
 
 public:
     HistoryTest() = default;
-    virtual ~HistoryTest() = default;
+    ~HistoryTest() override = default;
 
-    virtual void SetUp() {
+    void SetUp() override {
         this->createTemp();
         this->state = DSState_create();
         DSState_setOption(this->state, DS_OPTION_HISTORY);
@@ -31,7 +31,7 @@ public:
         this->assignValue(VAR_HISTFILE, std::move(value));
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         this->deleteTemp();
         DSState_delete(&this->state);
     }

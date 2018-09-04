@@ -48,7 +48,7 @@ private:
 
 public:
     PrettyPrinter() = default;
-    ~PrettyPrinter() = default;
+    ~PrettyPrinter() override = default;
 
     std::vector<std::string> operator()(Node &node) {
         node.accept(*this);
