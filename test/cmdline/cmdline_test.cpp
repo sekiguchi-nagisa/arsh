@@ -381,7 +381,6 @@ TEST_F(CmdlineTest, version) {
     std::string msg = "^ydsh, version ";
     msg += X_INFO_VERSION;
     msg += ", build by .+\n";
-    msg += "Copyright .+\n$";
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--version"), 0, msg.c_str()));
 }
 

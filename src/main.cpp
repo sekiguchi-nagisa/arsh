@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
             setFlag(option, DS_OPTION_TRACE_EXIT);
             break;
         case VERSION:
-            fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
+            fprintf(stdout, "%s\n", version());
             exit(0);
         case HELP:
             fprintf(stdout, "%s\n", version());
