@@ -222,15 +222,17 @@ set(CMAKE_MACOSX_RPATH ON)
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+add_library(ydsh_obj OBJECT ${YDSH_SRC})
+add_dependencies(ydsh_obj gen_lexer gen_binding gen_bind embed_script)
+target_link_libraries(ydsh_obj ${HAVE_LIBPCRE})
+
 set(YDSH_STATIC ydsh_static)
-add_library(${YDSH_STATIC} STATIC ${YDSH_SRC})
-add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)
+add_library(${YDSH_STATIC} STATIC $<TARGET_OBJECTS:ydsh_obj>)
 target_link_libraries(${YDSH_STATIC} ${HAVE_LIBPCRE})
 
 set(YDSH_LIB ydsh_lib)
-add_library(${YDSH_LIB} SHARED ${YDSH_SRC})
+add_library(${YDSH_LIB} SHARED $<TARGET_OBJECTS:ydsh_obj>)
 set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
-add_dependencies(${YDSH_LIB} ${YDSH_STATIC})
 target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE})
 
 
