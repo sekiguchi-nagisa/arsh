@@ -200,7 +200,9 @@ set(YDSH_SRC
         src/type_checker.cpp
         src/frontend.cpp
         src/signals.cpp
-        src/job.cpp)
+        src/job.cpp
+        ${lexer_src}
+        ${bind_src})
 
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
@@ -221,10 +223,15 @@ SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 set(YDSH_STATIC ydsh_static)
-add_library(${YDSH_STATIC} SHARED ${YDSH_SRC} ${lexer_src} ${bind_src})
-set_target_properties(${YDSH_STATIC} PROPERTIES OUTPUT_NAME ydsh)
+add_library(${YDSH_STATIC} STATIC ${YDSH_SRC})
 add_dependencies(${YDSH_STATIC} gen_lexer gen_binding gen_bind embed_script)
 target_link_libraries(${YDSH_STATIC} ${HAVE_LIBPCRE})
+
+set(YDSH_LIB ydsh_lib)
+add_library(${YDSH_LIB} SHARED ${YDSH_SRC})
+set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
+add_dependencies(${YDSH_LIB} ${YDSH_STATIC})
+target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE})
 
 
 #==============#
@@ -236,9 +243,9 @@ add_executable(${BIN_NAME}
         src/main.cpp
         src/interactive.cpp
         ext/linenoise/linenoise.c)
-target_link_libraries(${BIN_NAME} ${YDSH_STATIC})
+target_link_libraries(${BIN_NAME} ${YDSH_LIB})
 
-install(TARGETS ${BIN_NAME} ${YDSH_STATIC}
+install(TARGETS ${BIN_NAME} ${YDSH_LIB}
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib)
 install(DIRECTORY etc/ DESTINATION etc)
