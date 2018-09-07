@@ -224,7 +224,6 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(ydsh_obj OBJECT ${YDSH_SRC})
 add_dependencies(ydsh_obj gen_lexer gen_binding gen_bind embed_script)
-target_link_libraries(ydsh_obj ${HAVE_LIBPCRE})
 
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC $<TARGET_OBJECTS:ydsh_obj>)
