@@ -279,7 +279,7 @@ public:
         return *this;
     }
 
-    ProcBuilder &setBeforeExec(std::function<void()> &func) {
+    ProcBuilder &setBeforeExec(const std::function<void()> &func) {
         this->beforeExec = func;
         return *this;
     }

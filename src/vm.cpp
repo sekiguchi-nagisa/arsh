@@ -578,7 +578,7 @@ static bool forkAndEval(DSState &state) {
 
         state.pc() += 2;
     } else {
-        raiseSystemError(state, EAGAIN, "");
+        raiseSystemError(state, EAGAIN, "fork failed");
         return false;
     }
     return true;
@@ -1353,7 +1353,7 @@ static bool callPipeline(DSState &state, bool lastPipe) {
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
     } else {
-        raiseSystemError(state, EAGAIN, "");
+        raiseSystemError(state, EAGAIN, "fork failed");
         return false;
     }
     return true;
