@@ -23,6 +23,7 @@
 #include <string>
 #include <unordered_map>
 #include <initializer_list>
+#include <functional>
 
 #include <misc/noncopyable.h>
 
@@ -211,6 +212,11 @@ private:
 
     WinSize winSize;
 
+    /**
+     * called before exec process
+     */
+    std::function<void()> beforeExec;
+
 public:
     explicit ProcBuilder(const char *cmdName) : args{cmdName} {
         cfmakeraw(&this->term);
@@ -270,6 +276,11 @@ public:
 
     ProcBuilder &setWinSize(WinSize size) {
         this->winSize = size;
+        return *this;
+    }
+
+    ProcBuilder &setBeforeExec(std::function<void()> &func) {
+        this->beforeExec = func;
         return *this;
     }
 

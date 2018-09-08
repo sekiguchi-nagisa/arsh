@@ -190,6 +190,9 @@ ProcHandle ProcBuilder::operator()() {
         this->syncEnv();
         this->syncPWD();
         setPTYSetting(this->findPTY(), this->term, this->winSize);
+        if(this->beforeExec) {
+            this->beforeExec();
+        }
         execvp(argv[0], argv);
         return -errno;
     });
