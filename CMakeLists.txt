@@ -232,6 +232,7 @@ target_link_libraries(${YDSH_STATIC} ${HAVE_LIBPCRE})
 set(YDSH_LIB ydsh_lib)
 add_library(${YDSH_LIB} SHARED $<TARGET_OBJECTS:ydsh_obj>)
 set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
+set_target_properties(${YDSH_LIB} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE})
 
 
