@@ -99,9 +99,7 @@ public:
         proc.detach();
     }
 
-    ~ProcHandle() {
-        this->wait();
-    }
+    ~ProcHandle();
 
     ProcHandle &operator=(ProcHandle &&proc) noexcept {
         auto tmp(std::move(proc));

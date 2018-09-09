@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <climits>
+#include <csignal>
 
 #include <constant.h>
 #include <misc/util.hpp>
@@ -56,6 +57,13 @@ static WaitStatus inspectStatus(int status) {
 // ########################
 // ##     ProcHandle     ##
 // ########################
+
+ProcHandle::~ProcHandle() {
+    if(*this) {
+        kill(-this->pid(), SIGKILL);
+    }
+    this->wait();
+}
 
 WaitStatus ProcHandle::wait() {
     if(this->pid() > -1) {
