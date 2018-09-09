@@ -259,7 +259,9 @@ bool hasError(const DSState &st) {
 }
 
 void raiseError(DSState &st, DSType &errorType, std::string &&message, int status) {
-    st.throwObject(st.newError(errorType, std::move(message)), status);
+    auto except = Error_Object::newError(st, errorType, DSValue::create<String_Object>(
+            st.symbolTable.get(TYPE::String), std::move(message)));
+    st.throwObject(std::move(except), status);
 }
 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message) {

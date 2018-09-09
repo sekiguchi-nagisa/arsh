@@ -233,14 +233,6 @@ struct DSState {
     }
 
     /**
-     * create error.
-     */
-    DSValue newError(DSType &errorType, std::string &&message) const {
-        return Error_Object::newError(*this, errorType, DSValue::create<String_Object>(
-                this->symbolTable.get(TYPE::String), std::move(message)));
-    }
-
-    /**
      * set thrownObject and update exit status
      * @param except
      * @param afterStatus
