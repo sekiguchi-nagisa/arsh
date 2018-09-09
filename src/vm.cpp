@@ -184,8 +184,8 @@ static bool checkAssertion(DSState &state) {
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
         state.updateExitStatus(1);
-        auto except = Error_Object::newError(state, state.symbolTable.get(TYPE::_AssertFail), std::move(msg));
-        state.setThrownObject(std::move(except));
+        raiseError(state, state.symbolTable.get(TYPE::_AssertFail),
+                std::string(typeAs<String_Object>(msg)->getValue()));
         return false;
     }
     return true;
