@@ -1,3 +1,4 @@
+#$test($status = 1)
 
 assert %'HUP' is Signal
 assert %'HuP' as Any is Signal

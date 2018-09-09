@@ -258,8 +258,9 @@ bool hasError(const DSState &st) {
     return static_cast<bool>(st.getThrownObject());
 }
 
-void raiseError(DSState &st, DSType &errorType, std::string &&message) {
+void raiseError(DSState &st, DSType &errorType, std::string &&message, int status) {
     st.setThrownObject(st.newError(errorType, std::move(message)));
+    st.updateExitStatus(status);
 }
 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message) {

@@ -183,7 +183,6 @@ static bool checkAssertion(DSState &state) {
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
-        state.updateExitStatus(1);
         raiseError(state, state.symbolTable.get(TYPE::_AssertFail),
                 std::string(typeAs<String_Object>(msg)->getValue()));
         return false;
@@ -199,8 +198,7 @@ static void exitShell(DSState &st, unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
     status %= 256;
-    st.updateExitStatus(status);
-    raiseError(st, st.symbolTable.get(TYPE::_ShellExit), std::move(str));
+    raiseError(st, st.symbolTable.get(TYPE::_ShellExit), std::move(str), status);
 }
 
 static const char *loadEnv(DSState &state, bool hasDefault) {

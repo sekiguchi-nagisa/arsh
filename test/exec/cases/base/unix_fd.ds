@@ -1,3 +1,5 @@
+#$test($status = 1)
+
 assert $STDIN && $STDOUT && $STDERR
 assert $STDIN as String == "/dev/fd/0"
 assert $STDOUT as String == "/dev/fd/1"

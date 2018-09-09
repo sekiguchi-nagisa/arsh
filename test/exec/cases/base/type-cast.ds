@@ -1,3 +1,5 @@
+#$test($status = 1)
+
 # int to float
 var a1 = 12
 var b1 = $a1 as Float

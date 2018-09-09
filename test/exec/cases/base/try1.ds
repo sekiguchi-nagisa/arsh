@@ -1,3 +1,5 @@
+#$test($status = 1)
+
 # basic try-catch
 
 var c = 0

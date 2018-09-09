@@ -1,3 +1,4 @@
+#$test($status = 1)
 
 assert $/a/ =~ 'bac'
 
