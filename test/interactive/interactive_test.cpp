@@ -252,7 +252,7 @@ TEST_F(InteractiveTest, status) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
 }
 
-TEST_F(InteractiveTest, except) {
+TEST_F(InteractiveTest, except1) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -266,6 +266,44 @@ ArithmeticError: zero division
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
+}
+
+TEST_F(InteractiveTest, except2) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("throw 2", PROMPT, "[runtime error]\n2\n"));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
+}
+
+TEST_F(InteractiveTest, except5) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+    const char *estr = R"([runtime error]
+ArithmeticError: zero division
+    from (stdin):1 '<toplevel>()'
+)";
+
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("45 / 0", PROMPT, estr));
+
+    this->send("exit\r");
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "exit\r\n"));
+}
+
+TEST_F(InteractiveTest, except4) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("throw 2", PROMPT, "[runtime error]\n2\n"));
+
+    this->send("exit\r");
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "exit\r\n"));
 }
 
 TEST_F(InteractiveTest, signal) {
