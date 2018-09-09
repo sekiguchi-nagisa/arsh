@@ -367,8 +367,8 @@ TEST_F(InteractiveTest, termHook1) {
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;", PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("false", PROMPT));
 
-    this->send(CTRL_D); // do nothing when terminated by CTRL-D
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
+    this->send(CTRL_D); // automatically insert 'exit'
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\nhello\r\n"));
 }
 
 TEST_F(InteractiveTest, termHook2) {
@@ -405,8 +405,8 @@ ArithmeticError: zero division
 )";
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("34 / 0", "hello\r\n" PROMPT, estr));   // call term hook in interactive mode
 
-    this->send(CTRL_D);
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
+    this->send(CTRL_D); // automatically insert 'exit'
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\nhello\r\n"));
 }
 
 TEST_F(InteractiveTest, skip) {

@@ -88,7 +88,8 @@ static bool readLine(std::string &line) {
                 line.clear();
                 continue;
             }
-            return false;
+            line = "exit\n";
+            return true;
         }
 
         if(isSkipLine(str)) {
