@@ -241,6 +241,17 @@ struct DSState {
     }
 
     /**
+     * set thrownObject and update exit status
+     * @param except
+     * @param afterStatus
+     * set exit status to it
+     */
+    void throwObject(DSValue &&except, int afterStatus) {
+        this->setThrownObject(std::move(except));
+        this->updateExitStatus(afterStatus);
+    }
+
+    /**
      * for exception reporting
      * @param except
      */

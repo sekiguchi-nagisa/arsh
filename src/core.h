@@ -213,7 +213,7 @@ unsigned int getTermHookIndex(DSState &st);
 bool hasError(const DSState &st);
 
 /**
- * raise exception and update exit status
+ * raise Error Object and update exit status
  * @param st
  * @param errorType
  * @param message

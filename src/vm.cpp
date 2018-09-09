@@ -1772,7 +1772,8 @@ static bool mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(THROW) {
-            state.storeThrowObject();
+            auto obj = state.pop();
+            state.throwObject(std::move(obj), 1);
             vmerror;
         }
         vmcase(EXIT_SHELL) {

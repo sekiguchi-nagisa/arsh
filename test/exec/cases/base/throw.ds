@@ -1,3 +1,5 @@
+#$test($status = 1)
+
 var a = $false
 try {
 	throw new Error("hello")
