@@ -2113,10 +2113,6 @@ static bool handleException(DSState &state, bool forceUnwind) {
             }
         } else if(CODE(state) == &signalTrampoline) {   // within signal trampoline
             unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
-            if(!forceUnwind) {
-                auto v = state.getLocal(0);
-                state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
-            }
         }
     }
     return false;
