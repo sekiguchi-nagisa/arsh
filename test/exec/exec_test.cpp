@@ -86,6 +86,11 @@ public:
         // set working dir
         builder.setWorkingDir(EXEC_TEST_DIR);
 
+        // set env
+        for(auto &env : d.getEnvs()) {
+            builder.addEnv(env.first.c_str(), env.second.c_str());
+        }
+
         // execute
         auto output = builder().waitAndGetResult(false);
         int ret = output.status.toShellStatus();

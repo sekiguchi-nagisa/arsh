@@ -21,6 +21,7 @@
 #include <iostream>
 #include <memory>
 #include <cstring>
+#include <unordered_map>
 
 #include <ydsh/ydsh.h>
 
@@ -64,6 +65,8 @@ private:
      * if empty, file name is not specified.
      */
     std::string fileName;
+
+    std::unordered_map<std::string, std::string> envs;
 
 public:
     ~Directive();
@@ -130,6 +133,14 @@ public:
 
     const std::string &getFileName() const {
         return this->fileName;
+    }
+
+    void addEnv(const std::string &name, const std::string &value) {
+        this->envs.emplace(name, value);
+    }
+
+    const std::unordered_map<std::string, std::string> getEnvs() const {
+        return this->envs;
     }
 
     static bool init(const char *fileName, Directive &d);

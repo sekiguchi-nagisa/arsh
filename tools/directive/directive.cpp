@@ -93,6 +93,16 @@ private:
         this->checkNode(type2info<T>::value, node);
         return static_cast<T &>(node);
     }
+
+    /**
+     * return always [String : String] type
+     * @return
+     */
+    DSType &getMapType() {
+        return this->symbolTable.createReifiedType(this->symbolTable.getMapTemplate(), {
+            &this->symbolTable.get(TYPE::String), &this->symbolTable.get(TYPE::String)
+        });
+    }
 };
 
 // ##################################
@@ -169,6 +179,16 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         }
         d.setFileName(buf);
         free(buf);
+    });
+
+    this->addHandler("envs", this->getMapType(), [&](Node &node, Directive &d) {
+        auto &mapNode = this->checkedCast<MapNode>(node);
+        const unsigned int size = mapNode.getKeyNodes().size();
+        for(unsigned int i = 0; i < size; i++) {
+            auto &keyNode = this->checkedCast<StringNode>(*mapNode.getKeyNodes()[i]);
+            auto &valueNode = this->checkedCast<StringNode>(*mapNode.getValueNodes()[i]);
+            d.addEnv(keyNode.getValue(), valueNode.getValue());
+        }
     });
 
     std::unordered_set<std::string> foundAttrSet;

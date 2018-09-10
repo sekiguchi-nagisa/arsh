@@ -217,6 +217,19 @@ TEST_F(DirectiveTest, fileName2) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(this->getSourceName(), this->getDirective().getFileName().c_str()));
 }
 
+TEST_F(DirectiveTest, envs1) {
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($envs = ['hoge' : '1', 'huga' : '2'])", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, this->getDirective().getEnvs().size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("1", this->getDirective().getEnvs().find("hoge")->second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2", this->getDirective().getEnvs().find("huga")->second));
+}
+
+TEST_F(DirectiveTest, envs2) {
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($envs = ['hoge' : '1', 'hoge' : '2'])", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, this->getDirective().getEnvs().size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("1", this->getDirective().getEnvs().find("hoge")->second));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
