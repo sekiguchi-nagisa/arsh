@@ -804,34 +804,55 @@ ArithmeticError: zero division
     ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 4: 1\n", e));
 }
 
-//static ProcBuilder dslimit(const char *src) {
-//    return DS(src)
-//    .setBeforeExec([]{
-//        struct rlimit limit;
-//        limit.rlim_cur = 1;
-//        limit.rlim_max = 1;
-//        setrlimit(RLIMIT_NPROC, &limit);
-//    });
-//}
-//
-//TEST_F(CmdlineTest, forkFailed) {
-//    const char *e = R"([runtime error]
-//SystemError: fork failed: Resource temporarily unavailable
-//    from (string):1 '<toplevel>()'
-//)";
-//    // job
-//    ASSERT_NO_FATAL_FAILURE(this->expect(dslimit("echo hello; echo hey &"), 1, "hello\n", e));
-//
-//    // pipeline
-//    ASSERT_NO_FATAL_FAILURE(this->expect(dslimit("echo hey | echo !!"), 1, "", e));
-//
-//    // external command
-//    e = R"([runtime error]
-//SystemError: execution error: /usr/bin/env: Resource temporarily unavailable
-//    from (string):1 '<toplevel>()'
-//)";
-//    ASSERT_NO_FATAL_FAILURE(this->expect(dslimit("/usr/bin/env"), 1, "", e));
-//}
+static ProcBuilder dslimit(const char *src, unsigned int l = 5) {
+    return DS(src)
+    .setBeforeExec([=]{
+        struct rlimit limit;
+        limit.rlim_cur = l;
+        limit.rlim_max = l;
+        setrlimit(RLIMIT_NPROC, &limit);
+    });
+}
+
+TEST_F(CmdlineTest, forkFailed1) {
+    const char *e = R"([runtime error]
+SystemError: fork failed: Resource temporarily unavailable
+    from (string):8 '<toplevel>()'
+)";
+
+    // job
+    const char *src = R"(
+        var js = new [Job]()
+        function f($s : Int, $a : Any) {
+            for $j in $js { $j.raise(%'kill'); }
+        }
+        $TERM_HOOK = $f
+        echo hello;
+        for(var i = 0; $i < 20; $i++) {
+            var j = while $true {} &
+            $js.add($j)
+        }
+        echo world!!
+)";
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(dslimit(src), 1, "hello\n", e));
+
+    // pipeline
+    src = "\n\n\n\n\n\n\n"
+          "sleep 1000 | sleep 1000 | sleep 1000 | sleep 1000 | sleep 1000 | sleep 1000\n"
+          "echo hello";
+    ASSERT_NO_FATAL_FAILURE(this->expect(dslimit(src), 1, "", e));
+}
+
+TEST_F(CmdlineTest, forkFailed2) {
+    // external command
+    const char *e = R"([runtime error]
+SystemError: execution error: /usr/bin/env: Resource temporarily unavailable
+    from (string):1 '<toplevel>()'
+)";
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(dslimit("/usr/bin/env"), 1, "", e));
+}
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
     CmdlineTest2() = default;
