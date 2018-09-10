@@ -60,7 +60,7 @@ static WaitStatus inspectStatus(int status) {
 
 ProcHandle::~ProcHandle() {
     if(*this) {
-        kill(-this->pid(), SIGKILL);
+        kill(this->pid(), SIGKILL);
     }
     this->wait();
 }
