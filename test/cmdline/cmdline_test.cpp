@@ -804,12 +804,24 @@ ArithmeticError: zero division
     ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 4: 1\n", e));
 }
 
-static ProcBuilder dslimit(const char *src, unsigned int l = 5) {
+#if defined(__clang__) && defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define DISABLED_ON_ASAN
+#endif
+#endif
+
+#if defined(__GNUC__) && defined(__SANITIZE_ADDRESS__)
+#define DISABLED_ON_ASAN
+#endif
+
+#ifndef DISABLED_ON_ASAN
+
+static ProcBuilder dslimit(const char *src) {
     return DS(src)
-    .setBeforeExec([=]{
+    .setBeforeExec([]{
         struct rlimit limit;
-        limit.rlim_cur = l;
-        limit.rlim_max = l;
+        limit.rlim_cur = 1;
+        limit.rlim_max = 1;
         setrlimit(RLIMIT_NPROC, &limit);
     });
 }
@@ -853,6 +865,8 @@ SystemError: execution error: /usr/bin/env: Resource temporarily unavailable
 
     ASSERT_NO_FATAL_FAILURE(this->expect(dslimit("/usr/bin/env"), 1, "", e));
 }
+
+#endif
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
     CmdlineTest2() = default;
