@@ -238,7 +238,7 @@ matrix:
             - clang-6.0
             - expect
             - ninja-build
-      env: CC_BIN=clang-6.0 CXX_BIN=clang++-6.0 DUMMY=address-sanitizer
+      env: CC_BIN=clang-6.0 CXX_BIN=clang++-6.0 DUMMY=address-sanitizer ASAN_OPTIONS=detect_leaks=0
       script:
         - cmake . -G Ninja -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=debug -DSANITIZER=address
         - ninja
