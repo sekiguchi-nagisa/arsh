@@ -804,7 +804,7 @@ ArithmeticError: zero division
     ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 4: 1\n", e));
 }
 
-static ProcBuilder dslimit(const char *src, unsigned int l = 5) {
+static ProcBuilder dslimit(const char *src, unsigned int l = 50) {
     return DS(src)
     .setBeforeExec([=]{
         struct rlimit limit;
