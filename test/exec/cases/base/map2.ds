@@ -17,3 +17,8 @@ assert ! $u64[47833298u64]
 var f = [3.14 : 3.14, 0.1e-3: 34]
 assert $f[3.14] == 3.14
 assert $f[0.0001] == 34
+
+# duplicated key
+var dd = ["a" : 23, "a" : 54]
+assert $dd.size() == 1
+assert $dd['a'] == 23
