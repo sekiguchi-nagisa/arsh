@@ -68,8 +68,11 @@ elseif("${lower_type}" STREQUAL "release" OR "${lower_type}" STREQUAL "relwithde
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_definitions(-D_FORTIFY_SOURCE=2)
     endif()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto")
+
+    if(USE_LTO)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
+        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto")
+    endif()
 endif()
 
 
