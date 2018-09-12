@@ -105,22 +105,22 @@ matrix:
         - ninja
         - ctest --output-on-failure
 
-    # gcc 8 with LTO
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-          - ubuntu-toolchain-r-test
-          packages:
-          - gcc-8
-          - g++-8
-          - expect
-          - ninja-build
-      env: CC_BIN=gcc-8 CXX_BIN=g++-8 DUMMY=release
-      script:
-      - cmake . -G Ninja -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release -DUSE_LTO=ON
-      - ninja
-      - ctest --output-on-failure
+#    # gcc 8 with LTO
+#    - compiler: gcc
+#      addons:
+#        apt:
+#          sources:
+#          - ubuntu-toolchain-r-test
+#          packages:
+#          - gcc-8
+#          - g++-8
+#          - expect
+#          - ninja-build
+#      env: CC_BIN=gcc-8 CXX_BIN=g++-8 DUMMY=release
+#      script:
+#      - cmake . -G Ninja -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release -DUSE_LTO=ON
+#      - ninja
+#      - ctest --output-on-failure
 
 
     # clang 3.5
@@ -244,22 +244,22 @@ matrix:
         - ninja
         - ctest --output-on-failure
 
-    # clang 6.0 with LTO
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-          - ubuntu-toolchain-r-test
-          - llvm-toolchain-trusty-6.0
-          packages:
-          - clang-6.0
-          - expect
-          - ninja-build
-      env: CC_BIN=clang-6.0 CXX_BIN=clang++-6.0 DUMMY=lto
-      script:
-      - cmake . -G Ninja -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release -DUSE_LTO=ON
-      - ninja
-      - ctest --output-on-failure
+#    # clang 6.0 with LTO
+#    - compiler: clang
+#      addons:
+#        apt:
+#          sources:
+#          - ubuntu-toolchain-r-test
+#          - llvm-toolchain-trusty-6.0
+#          packages:
+#          - clang-6.0
+#          - expect
+#          - ninja-build
+#      env: CC_BIN=clang-6.0 CXX_BIN=clang++-6.0 DUMMY=lto
+#      script:
+#      - cmake . -G Ninja -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release -DUSE_LTO=ON
+#      - ninja
+#      - ctest --output-on-failure
 
     # clang 6.0 with address sanitizer
     - compiler: clang
