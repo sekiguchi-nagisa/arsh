@@ -33,24 +33,6 @@ if(NOT ${YDSH_STABLE_RELEASE})
 endif()
 
 
-#++++++++++++++++++++++++++++#
-#     set some variable      #
-#++++++++++++++++++++++++++++#
-
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
-    set(CMAKE_BUILD_TYPE Release)
-endif()
-
-add_definitions(-D_GNU_SOURCE)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-missing-field-initializers -std=gnu++11")
-
-if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RELWITHDEBINFO")
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        add_definitions(-D_FORTIFY_SOURCE=2)
-    endif()
-endif()
-
-
 #++++++++++++++++++++++++++#
 #     set extra option     #
 #++++++++++++++++++++++++++#
@@ -59,6 +41,13 @@ option(USE_LOGGING "enable internal logging" OFF)
 option(USE_SAFE_CAST "check object cast" OFF)
 option(USE_FIXED_TIME "enable fixed time source" OFF)
 option(FUZZING_BUILD_MODE "enable fuzzing-aware build" OFF)
+
+if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+add_definitions(-D_GNU_SOURCE)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-missing-field-initializers -std=gnu++11")
 
 if(FUZZING_BUILD_MODE)
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -74,12 +63,11 @@ if(("${lower_type}" STREQUAL "debug") OR ("${lower_type}" STREQUAL "coverage"))
     set(USE_LOGGING ON)
     set(USE_SAFE_CAST ON)
     set(USE_FIXED_TIME ON)
+elseif("${lower_type}" STREQUAL "release" OR "${lower_type}" STREQUAL "relwithdebinfo")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        add_definitions(-D_FORTIFY_SOURCE=2)
+    endif()
 endif()
-
-show_option(USE_LOGGING)
-show_option(USE_SAFE_CAST)
-show_option(USE_FIXED_TIME)
-show_option(FUZZING_BUILD_MODE)
 
 
 #+++++++++++++++++++++++++++++++++#
@@ -93,6 +81,16 @@ if(NOT ("${SANITIZER}" STREQUAL ""))
 endif()
 
 set(CMAKE_CXX_FLAGS_COVERAGE "-g -fprofile-arcs -ftest-coverage")
+
+
+#+++++++++++++++++++++++++++#
+#     show extra option     #
+#+++++++++++++++++++++++++++#
+
+show_option(USE_LOGGING)
+show_option(USE_SAFE_CAST)
+show_option(USE_FIXED_TIME)
+show_option(FUZZING_BUILD_MODE)
 
 
 #++++++++++++++++++++++++++++#
