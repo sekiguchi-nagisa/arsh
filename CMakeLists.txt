@@ -44,6 +44,12 @@ endif()
 add_definitions(-D_GNU_SOURCE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wall -Wextra -Wno-missing-field-initializers -std=gnu++11")
 
+if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RELWITHDEBINFO")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        add_definitions(-D_FORTIFY_SOURCE=2)
+    endif()
+endif()
+
 
 #++++++++++++++++++++++++++#
 #     set extra option     #
@@ -215,12 +221,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/directive)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/pid_check)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/process)
 
-
-if("${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RELWITHDEBINFO")
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-        add_definitions(-D_FORTIFY_SOURCE=2)
-    endif()
-endif()
 
 set(CMAKE_MACOSX_RPATH ON)
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
