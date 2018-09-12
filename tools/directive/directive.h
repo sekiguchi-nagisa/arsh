@@ -136,7 +136,7 @@ public:
     }
 
     void addEnv(const std::string &name, const std::string &value) {
-        this->envs.emplace(name, value);
+        this->envs[name] = value;
     }
 
     const std::unordered_map<std::string, std::string> getEnvs() const {

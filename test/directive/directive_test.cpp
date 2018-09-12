@@ -227,7 +227,7 @@ TEST_F(DirectiveTest, envs1) {
 TEST_F(DirectiveTest, envs2) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($envs = ['hoge' : '1', 'hoge' : '2'])", true));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, this->getDirective().getEnvs().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("1", this->getDirective().getEnvs().find("hoge")->second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2", this->getDirective().getEnvs().find("hoge")->second));
 }
 
 int main(int argc, char **argv) {
