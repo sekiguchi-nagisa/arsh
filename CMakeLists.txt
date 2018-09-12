@@ -41,6 +41,7 @@ option(USE_LOGGING "enable internal logging" OFF)
 option(USE_SAFE_CAST "check object cast" OFF)
 option(USE_FIXED_TIME "enable fixed time source" OFF)
 option(FUZZING_BUILD_MODE "enable fuzzing-aware build" OFF)
+option(USE_LTO "enable Link Time Optimization" OFF)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
@@ -67,6 +68,8 @@ elseif("${lower_type}" STREQUAL "release" OR "${lower_type}" STREQUAL "relwithde
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_definitions(-D_FORTIFY_SOURCE=2)
     endif()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto")
 endif()
 
 
@@ -91,6 +94,7 @@ show_option(USE_LOGGING)
 show_option(USE_SAFE_CAST)
 show_option(USE_FIXED_TIME)
 show_option(FUZZING_BUILD_MODE)
+show_option(USE_LTO)
 
 
 #++++++++++++++++++++++++++++#
