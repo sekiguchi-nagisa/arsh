@@ -21,4 +21,4 @@ assert $f[0.0001] == 34
 # duplicated key
 var dd = ["a" : 23, "a" : 54]
 assert $dd.size() == 1
-assert $dd['a'] == 23
+assert $dd['a'] == 54

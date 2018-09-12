@@ -568,12 +568,6 @@ public:
         return pair.first->second;
     }
 
-    bool add(std::pair<DSValue, DSValue> &&entry) {
-        auto pair = this->valueMap.insert(std::move(entry));
-        this->iter = ++pair.first;
-        return pair.second;
-    }
-
     bool trySwap(const DSValue &key, DSValue &value) {
         auto iter = this->valueMap.find(key);
         if(iter != this->valueMap.end()) {

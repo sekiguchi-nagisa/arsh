@@ -1668,7 +1668,7 @@ static bool mainLoop(DSState &state) {
         vmcase(APPEND_MAP) {
             DSValue value = state.pop();
             DSValue key = state.pop();
-            typeAs<Map_Object>(state.peek())->add(std::make_pair(std::move(key), std::move(value)));
+            typeAs<Map_Object>(state.peek())->set(std::move(key), std::move(value));
             vmnext;
         }
         vmcase(NEW_TUPLE) {
