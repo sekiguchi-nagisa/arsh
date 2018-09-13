@@ -165,7 +165,7 @@ private:
 public:
     NON_COPYABLE(ModuleScope);
 
-    ModuleScope(unsigned int &gvarCount, unsigned short modID = 0) :
+    explicit ModuleScope(unsigned int &gvarCount, unsigned short modID = 0) :
             modID(modID), builtin(modID == 0), globalScope(gvarCount) {
         this->maxVarIndexStack.push_back(0);
     }
