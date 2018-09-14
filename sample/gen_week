@@ -1,0 +1,22 @@
+#!/usr/bin/env ydsh
+
+# generate weekly report stub
+
+# currently only allow OSX
+assert $OSTYPE =~ $/darwin/i
+
+
+var w = "$(date +%w)".toInt32()!
+if $w < 1 || $w > 5 {
+    echo today is holiday!!
+    exit 1
+}
+
+var begin = "$(date -v -${$w - 1}d +'%Y%m%d')"
+var end = "$(date -v +${5 - $w}d +'%Y%m%d')"
+
+var name = "$begin-$end.md"
+
+test -e $name && { echo $name already exists!!; exit 1; }
+
+touch $name 
