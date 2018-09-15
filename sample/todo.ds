@@ -1,46 +1,76 @@
-#! /usr/bin/env ydsh
+#!/usr/bin/env ydsh
+
+let today = "$(date +'%Y%m%d').md"
+
+function create_today() : String {
+    let name = $today
+    if !(test -e $name) {
+        echo "# $(date +'%Y-%m-%d')" > $name
+        echo "## TODO" >> $name
+        echo -e "\n" >> $name
+        echo "## MEMO" >> $name
+    }
+    assert test -f $name
+    return $name
+}
+
+function find_todo_at($a : Uint) : String! {
+    var c = $a + 1u
+    var v = $(ls | grep '20[0-9][0-9][0-1][0-9][0-3][0-9].md' | sort -r | head -n $c)
+    var i = $a as Int
+    if $i < $v.size() {
+        var name = $v[$i]
+        assert test -f $name
+        return $name
+    }
+    return new String!()
+}
+
+function find_todo($a : String) : String! {
+    var path = $create_today()
+
+    $a =~ $/^today$/i && { return $path; }
+
+    var r = $/^\-([1-9][0-9]*)$/.match($a)
+    $r.size() > 0 && { return $find_todo_at($r[1].toUint32()!) }
+
+    if $a =~ $/^[1-9][0-9]?/ { 
+        var b = $a.toUint32()!
+        var v = $(ls | grep "$(date +'%Y%m')${$b < 10u ? '0' + $b : $b as String}")
+        return $v.size() == 1 ? $v[0] : new String!()
+    }
+    return (test -f $a) ? $a : new String!()
+}
+
 
 # not return 
 function open_todo_today() : Boolean {
-    let name = "$(date +'%Y%m%d').md"
-    !test -e $name && {
-        echo "# $(date +'%Y-%m-%d')"
-        echo "## TODO"
-        echo -e "\n"
-        echo "## MEMO"
-    } with > $name
-    assert test -f $name
-    return exec vim $name
+    return exec vim ${$create_today()}
 }
-
-function open_todo_at($a : Uint) : Boolean {
-    var c = $a + 1u
-    var name = $(ls | grep '20[0-9][0-9][0-1][0-9][0-3][0-9].md' | sort -r | head -n $c)[$a as Int]
-    assert test -f $name
-    return exec vim $name
-}
-
-function open_todo($a : Uint) : Boolean {
-    if $a == 0u { return $false; }
-    var v = $(ls | grep "$(date +'%Y%m')${$a < 10u ? '0' + $a : $a as String}")
-    var name = if $v.size() == 1 { $v[0]; } else { return $false; }
-    assert test -f $name
-    return exec vim $name
-}
-
 
 if $# == 0 {
     $open_todo_today()
-} elif $# == 1 {
-    $1 =~ $/^today$/i && $open_todo_today()
-
-    var r = $/^\-([1-9][0-9]*)$/.match($1)
-    $r.size() > 0 && $open_todo_at($r[1].toUint32()!)
-
-    $open_todo($1.toUint32() ?? 0u)
-
-    test -f $1 && exec vim $1
-
+}
+if $# == 1 && $1 !~ $/^show$/i {
+    var f = $find_todo($1)
+    if $f {
+        exec vim ${$f!}
+    }
     echo file not found: $1 1>&2
     exit 1
 }
+
+if $# == 1 && $1 =~ $/^show$/i {
+    echo ${$find_todo('today')!}
+    exit 0
+}
+
+if $1 =~ $/^show$/i {
+    var f = $find_todo($2)
+    $f && { echo ${$f!}; exit 0; }
+    echo file not found: $2 1>&2
+    exit 1
+}
+
+echo file not found: $1 1>&2
+exit 1
