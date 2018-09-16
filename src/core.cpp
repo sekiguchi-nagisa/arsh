@@ -135,50 +135,35 @@ void FilePathCache::clear() {
     this->map.clear();
 }
 
-/**
- *
- * @param obj
- * first element is command name.
- * @param optStr
- * @return
- */
-int GetOptState::operator()(const Array_Object &obj, const char *optStr) {
-    unsigned int argc = obj.getValues().size();
-    if(this->index < argc) {
-        const char *arg = str(obj.getValues()[this->index]);
-        if(*arg != '-' || strcmp(arg, "-") == 0) {
-            return -1;
-        }
+struct StrArrayIter {
+    Array_Object::IterType actual;
 
-        if(strcmp(arg, "--") == 0) {
-            this->index++;
-            return -1;
-        }
+    explicit StrArrayIter(Array_Object::IterType actual) : actual(actual) {}
 
-        if(this->optCursor == nullptr || *this->optCursor == '\0') {
-            this->optCursor = arg + 1;
-        }
-
-        const char *ptr = strchr(optStr, *this->optCursor);
-        if(ptr != nullptr) {
-            if(*(ptr + 1) == ':') {
-                if(++this->index == argc) {
-                    this->optOpt = *ptr;
-                    return ':';
-                }
-                this->optArg = str(obj.getValues()[this->index]);
-                this->optCursor = nullptr;
-            }
-
-            if(this->optCursor == nullptr || *(++this->optCursor) == '\0') {
-                this->index++;
-            }
-            return *ptr;
-        }
-        this->optOpt = *this->optCursor;
-        return '?';
+    const char *operator*() const {
+        return str(*actual);
     }
-    return -1;
+
+    bool operator==(const StrArrayIter &o) const {
+        return this->actual == o.actual;
+    }
+
+    bool operator!=(const StrArrayIter &o) const {
+        return !(*this == o);
+    }
+
+    StrArrayIter &operator++() {
+        ++this->actual;
+        return *this;
+    }
+};
+
+int GetOptState::operator()(const Array_Object &obj, const char *optStr) {
+    auto iter = StrArrayIter(obj.getValues().begin() + this->index);
+    auto end = StrArrayIter(obj.getValues().end());
+    int ret = opt::GetOptState::operator()(iter, end, optStr);
+    this->index = iter.actual - obj.getValues().begin();
+    return ret;
 }
 
 // core api definition

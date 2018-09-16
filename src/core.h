@@ -27,6 +27,7 @@
 #include "misc/hash.hpp"
 #include "misc/buffer.hpp"
 #include "misc/flag_util.hpp"
+#include "misc/opt.hpp"
 
 struct DSState;
 
@@ -117,26 +118,11 @@ public:
     }
 };
 
-struct GetOptState {
+struct GetOptState : public opt::GetOptState {
     /**
      * index of next processing argument
      */
     unsigned int index{1};
-
-    /**
-     * currently processed argument.
-     */
-    const char *optCursor{nullptr};
-
-    /**
-     * may be null, if has no optional argument.
-     */
-    const char *optArg{nullptr};
-
-    /**
-     * unrecognized option.
-     */
-    int optOpt{0};
 
     int operator()(const Array_Object &obj, const char *optStr);
 };

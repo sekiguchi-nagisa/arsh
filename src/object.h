@@ -451,6 +451,8 @@ private:
     std::vector<DSValue> values;
 
 public:
+    using IterType = std::vector<DSValue>::const_iterator;
+
     explicit Array_Object(DSType &type) : DSObject(type), curIndex(0) { }
 
     Array_Object(DSType &type, std::vector<DSValue> &&values) :
