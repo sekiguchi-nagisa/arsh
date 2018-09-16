@@ -279,17 +279,17 @@ struct GetOptState {
     /**
      * may be null, if has no optional argument.
      */
-    const char *optionalArg{nullptr};
+    const char *optArg{nullptr};
 
     /**
      * unrecognized option.
      */
-    int unrecogOpt{0};
+    int optOpt{0};
 
     void reset() {
         this->nextChar = nullptr;
-        this->optionalArg = nullptr;
-        this->unrecogOpt = 0;
+        this->optArg = nullptr;
+        this->optOpt = 0;
     }
 
     /**
@@ -313,8 +313,8 @@ struct GetOptState {
 template <typename Iter>
 int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
     // reset previous state
-    this->optionalArg = nullptr;
-    this->unrecogOpt = 0;
+    this->optArg = nullptr;
+    this->optOpt = 0;
 
     if(begin == end) {
         this->nextChar = nullptr;
@@ -341,10 +341,10 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
     if(ptr != nullptr) {
         if(*(ptr + 1) == ':') {
             if(++begin == end) {
-                this->unrecogOpt = *ptr;
+                this->optOpt = *ptr;
                 return ':';
             }
-            this->optionalArg = *begin;
+            this->optArg = *begin;
             this->nextChar = nullptr;
         }
 
@@ -353,7 +353,7 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
         }
         return *ptr;
     }
-    this->unrecogOpt = *this->nextChar;
+    this->optOpt = *this->nextChar;
     return '?';
 }
 
