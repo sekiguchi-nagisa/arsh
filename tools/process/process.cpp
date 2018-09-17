@@ -25,6 +25,7 @@
 #include <cassert>
 #include <climits>
 #include <csignal>
+#include <cctype>
 
 #include <constant.h>
 #include <misc/util.hpp>
@@ -137,12 +138,8 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
     return output;
 }
 
-static bool isSpace(char ch) {
-    return ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n';
-}
-
 static void trimLastSpace(std::string &str) {
-    for(; !str.empty() && isSpace(str.back()); str.pop_back());
+    for(; !str.empty() && isspace(str.back()); str.pop_back());
 }
 
 Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
