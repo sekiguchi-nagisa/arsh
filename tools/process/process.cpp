@@ -33,6 +33,18 @@
 
 #include "process.h"
 
+#ifdef __CYGWIN__
+static cc_t ttydefchars[NCCS] = {
+            _POSIX_VDISABLE, CDISCARD, CEOL, CEOL2, CEOF, CERASE,
+            CINTR, CKILL, CLNEXT, CMIN, CQUIT, CREPRINT, CSTART,
+            CSTOP, CSUSP, CSWTCH, CTIME, CWERASE
+    };
+#else
+#define TTYDEFCHARS
+#include <sys/ttydefaults.h>
+#endif
+
+
 #define error_at fatal_perror
 
 namespace process {
@@ -228,22 +240,6 @@ void xcfmakesane(termios &term) {
     cfsetispeed(&term, TTYDEF_SPEED);
     cfsetospeed(&term, TTYDEF_SPEED);
 
-
-#ifdef __CYGWIN__
-    cc_t ttydefchars[NCCS] = {
-            _POSIX_VDISABLE, CDISCARD, CEOL, CEOL2, CEOF, CERASE,
-            CINTR, CKILL, CLNEXT, CMIN, CQUIT, CREPRINT, CSTART,
-            CSTOP, CSUSP, CSWTCH, CTIME, CWERASE
-    };
-#else
-
-    cc_t ttydefchars[NCCS] = {
-            CEOF, CEOL, CEOL, CERASE, CWERASE, CKILL, CREPRINT,
-            _POSIX_VDISABLE, CINTR, CQUIT, CSUSP, CDSUSP, CSTART, CSTOP, CLNEXT,
-            CDISCARD, CMIN, CTIME,  CSTATUS, _POSIX_VDISABLE
-    };
-
-#endif
     memcpy(term.c_cc, ttydefchars, sizeof(ttydefchars));
 }
 
