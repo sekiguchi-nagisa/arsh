@@ -184,10 +184,6 @@ void ByteCodeGenerator::popLoopLabels() {
     this->curBuilder().loopLabels.pop_back();
 }
 
-const LoopState &ByteCodeGenerator::peekLoopLabels() {
-    return this->curBuilder().loopLabels.back();
-}
-
 void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
     if(this->curBuilder().sourcePosEntries.empty() || this->curBuilder().sourcePosEntries.back().pos != pos) {

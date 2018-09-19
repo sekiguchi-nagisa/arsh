@@ -407,7 +407,10 @@ private:
 
     void pushLoopLabels(Label breakLabel, Label continueLabel, Label breakWithValueLabel);
     void popLoopLabels();
-    const LoopState &peekLoopLabels();
+
+    const LoopState &peekLoopLabels() const {
+        return this->curBuilder().loopLabels.back();
+    }
 
     /**
      *
@@ -415,7 +418,7 @@ private:
      * not empty block
      * @return
      */
-    bool needReclaim(const BlockNode &node) {
+    bool needReclaim(const BlockNode &node) const {
         if(node.getNodes().empty()) {
             return false;
         }
