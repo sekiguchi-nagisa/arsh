@@ -235,9 +235,9 @@ TEST_F(LexerTest_Lv1, new_tok) {
 }
 
 TEST_F(LexerTest_Lv1, not_tok) {
-    const char *text = "not";
+    const char *text = "!";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, text));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(NOT, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, return_tok) {

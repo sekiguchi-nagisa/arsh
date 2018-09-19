@@ -41,7 +41,6 @@
     TOKEN(INTERFACE                          , "interface") \
     TOKEN(LET                                , "let") \
     TOKEN(NEW                                , "new") \
-    TOKEN(NOT                                , "not") \
     TOKEN(RETURN                             , "return") \
     TOKEN(SOURCE                             , "source") \
     TOKEN(TRY                                , "try") \
@@ -51,6 +50,7 @@
     /* unary op */\
     TOKEN(PLUS                               , "+") \
     TOKEN(MINUS                              , "-") \
+    TOKEN(NOT                            , "!") \
     /* literal */\
     TOKEN(BYTE_LITERAL                       , "<Byte Literal>") \
     TOKEN(INT16_LITERAL                      , "<Int16 Literal>") \
