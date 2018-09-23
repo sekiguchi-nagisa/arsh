@@ -338,7 +338,7 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
     }
 
     const char *ptr = strchr(optStr, *this->nextChar);
-    if(ptr != nullptr) {
+    if(ptr != nullptr && *ptr != ':') {
         if(*(ptr + 1) == ':') {
             this->optArg = ++this->nextChar;
             if(*this->optArg == '\0') {

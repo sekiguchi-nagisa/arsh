@@ -885,7 +885,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
     int timeout = -1;
 
     GetOptState optState;
-    for(int opt; (opt = optState(argvObj, "rp:f:su:t:")) != -1;) {
+    for(int opt; (opt = optState(argvObj, ":rp:f:su:t:")) != -1;) {
         switch(opt) {
         case 'p':
             prompt = optState.optArg;
@@ -1334,7 +1334,7 @@ static int builtin_kill(DSState &state, Array_Object &argvObj) {
     }
 
     GetOptState optState;
-    const int opt = optState(argvObj, "ls:");
+    const int opt = optState(argvObj, ":ls:");
     switch(opt) {
     case 'l':
         listing = true;
