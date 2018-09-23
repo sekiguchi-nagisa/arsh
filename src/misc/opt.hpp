@@ -340,11 +340,19 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
     const char *ptr = strchr(optStr, *this->nextChar);
     if(ptr != nullptr) {
         if(*(ptr + 1) == ':') {
-            if(++begin == end) {
-                this->optOpt = *ptr;
-                return ':';
+            this->optArg = ++this->nextChar;
+            if(*this->optArg == '\0') {
+                if(*(ptr + 2) != ':') {
+                    if(++begin == end) {
+                        this->optArg = nullptr;
+                        this->optOpt = *ptr;
+                        return *optStr == ':' ? ':' : '?';
+                    }
+                    this->optArg = *begin;
+                } else {
+                    this->optArg = nullptr;
+                }
             }
-            this->optArg = *begin;
             this->nextChar = nullptr;
         }
 

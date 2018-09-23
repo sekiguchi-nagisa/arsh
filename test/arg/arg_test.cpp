@@ -177,10 +177,46 @@ TEST(GetOptTest, base) {
     ++begin;
     optState.reset();
     opt = optState(begin, end, optstr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(':', opt));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("e", optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('?', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", optState.nextChar));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optArg));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('e', optState.optOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(begin, end));
+}
+
+TEST(GetOptTest, opt) {
+    const char *argv[] = {
+            "-aba", "-a", "hoge", "-b",
+    };
+    const char *optstr = ":a::b:";
+    opt::GetOptState optState;
+
+    auto begin = std::begin(argv);
+    auto end = std::end(argv);
+
+    int opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('a', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ba", optState.optArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, optState.optOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "-a"));
+
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('a', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, optState.optOpt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(begin, end));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(*begin, "hoge"));
+
+    ++begin;
+    optState.reset();
+    opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(':', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('b', optState.optOpt));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(begin, end));
 }
 
