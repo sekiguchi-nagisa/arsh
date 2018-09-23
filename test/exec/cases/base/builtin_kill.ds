@@ -8,10 +8,13 @@ assert { kill; $?; } == 2
 
 ## invalid sig
 assert "$(kill -1234 2>&1)" == "ydsh: kill: 1234: invalid signal specification"
-assert {kill -999; $? } == 1
+assert {kill -1234; $? } == 1
 
 assert "$(kill -s 1234 2>&1)" == "ydsh: kill: 1234: invalid signal specification"
-assert {kill -s -999; $? } == 1
+assert {kill -s 1234; $? } == 1
+
+assert "$(kill -: 2>&1)" == "ydsh: kill: :: invalid signal specification"
+assert {kill -: ; $? } == 1
 
 ## '-s' has no arg
 assert "$(kill -s 2>&1)" == "ydsh: kill: -s: option requires argument"

@@ -33,7 +33,11 @@ assert "$(read -p 2>&1)" == "ydsh: read: -p: option require argument"
 
 read -:
 assert $? == 2
-assert "$(read -: 2>&1)" == "ydsh: read: -:: invalid option"
+assert "$(read -q 2>&1)" ==
+"\
+ydsh: read: -q: invalid option
+read: read [-r] [-p prompt] [-f field separator] [-u fd] [-t timeout] [name ...]\
+"
 
 
 true
