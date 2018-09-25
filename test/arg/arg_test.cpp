@@ -220,6 +220,25 @@ TEST(GetOptTest, opt) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(begin, end));
 }
 
+TEST(GetOptTest, invalid) {
+    const char *argv[] = {
+            "-:",
+    };
+    const char *optstr = ":a::b:";
+    opt::GetOptState optState;
+
+    auto begin = std::begin(argv);
+    auto end = std::end(argv);
+
+    int opt = optState(begin, end, optstr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('?', opt));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(":", optState.nextChar));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, optState.optArg));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(':', optState.optOpt));
+    ++begin;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(begin, end));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
