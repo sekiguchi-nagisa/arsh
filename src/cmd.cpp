@@ -1566,7 +1566,7 @@ static int builtin_ulimit(DSState &state, Array_Object &argvObj) {
     }
 
     (void) options;
-
+    (void) soft;
     (void) state;
     fatal("ulimit command is not implemented!!\n");
 }
