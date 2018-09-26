@@ -18,6 +18,8 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <poll.h>
+#include <sys/time.h>
+#include <sys/resource.h>
 
 #include <cstdlib>
 #include <cstdarg>
@@ -55,6 +57,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj);
 static int builtin_setenv(DSState &state, Array_Object &argvObj);
 static int builtin_test(DSState &state, Array_Object &argvObj);
 static int builtin_true(DSState &state, Array_Object &argvObj);
+static int builtin_ulimit(DSState &state, Array_Object &argvObj);
 static int builtin_unsetenv(DSState &state, Array_Object &argvObj);
 
 const struct {
@@ -240,6 +243,8 @@ const struct {
                 "        -G FILE        check if file is effectively owned by group"},
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
+        {"ulimit", builtin_ulimit, "[-H | -S] [-a | -cdefilmnpqrRstvw [value]]",
+                "    "},
         {"unset_env", builtin_unsetenv, "[name ...]",
                 "    unset environmental variables."},
 };
@@ -1464,6 +1469,106 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
         }
     }
     return ret;
+}
+
+//-H -S -a -cdefilmnpqrRstvw
+static int builtin_ulimit(DSState &state, Array_Object &argvObj) {
+    struct {
+        char op;
+        char resource;
+        const char *desc;
+    } options[] = {
+#ifdef RLIMIT_CORE
+            {'c', RLIMIT_CORE, "core file size (blocks)"},
+#endif
+
+#ifdef RLIMIT_DATA
+            {'d', RLIMIT_DATA, "data seg size (kb)"},
+#endif
+
+#ifdef RLIMIT_NICE
+            {'e', RLIMIT_NICE, "scheduling priority"},
+#endif
+
+#ifdef RLIMIT_FSIZE
+            {'f', RLIMIT_FSIZE, "file size (blocks)"},
+#endif
+
+#ifdef RLIMIT_SIGPENDING
+            {'i', RLIMIT_SIGPENDING, "queued signals"},
+#endif
+
+#ifdef RLIMIT_MEMLOCK
+            {'l', RLIMIT_MEMLOCK, "lock memory (kb)"},
+#endif
+
+#ifdef RLIMIT_RSS
+            {'m', RLIMIT_RSS, "resident set size (kb)"},
+#endif
+
+#ifdef RLIMIT_NOFILE
+            {'n', RLIMIT_NOFILE, "file descriptors"},
+#endif
+
+#ifdef RLIMIT_NPROC
+            {'p', RLIMIT_NPROC, "processes"},
+#endif
+
+#ifdef RLIMIT_MSGQUEUE
+            {'q', RLIMIT_MSGQUEUE, "POSIX message queue (kb)"},
+#endif
+
+#ifdef RLIMIT_RTPRIO
+            {'r', RLIMIT_RTPRIO, "real-time priority"},
+#endif
+
+#ifdef RLIMIT_RTTIME
+            {'R', RLIMIT_RTTIME, "real-time latency"},
+#endif
+
+#ifdef RLIMIT_STACK
+            {'s', RLIMIT_STACK, "stack size (kb)"},
+#endif
+
+#ifdef RLIMIT_CPU
+            {'t', RLIMIT_CPU, "cup time (seconds)"},
+#endif
+
+#ifdef RLIMIT_AS
+            {'v', RLIMIT_AS, "address space (kb)"},
+#endif
+
+#ifdef RLIMIT_LOCKS
+            {'w', RLIMIT_LOCKS, "locks"},
+#endif
+    };
+
+    bool soft = true;
+
+    // -H -S -a -cdefilmnpqrRstvw
+    GetOptState optState;
+    const char *optStr = "HSac::d::e::f::i::l::m::n::p::q::r::R::s::t::v::w::";
+    for(int opt; (opt = optState(argvObj, optStr)) != -1;) {
+        switch(opt) {
+        case 'H':
+            soft = false;
+            break;
+        case 'S':
+            soft = true;
+            break;
+        case 'a':
+            break;
+        case '?':
+            return invalidOptionError(argvObj, optState);
+        default:
+            break;
+        }
+    }
+
+    (void) options;
+
+    (void) state;
+    fatal("ulimit command is not implemented!!\n");
 }
 
 } // namespace ydsh
