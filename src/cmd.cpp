@@ -1471,78 +1471,116 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
     return ret;
 }
 
-//-H -S -a -cdefilmnpqrRstvw
-static int builtin_ulimit(DSState &state, Array_Object &argvObj) {
-    struct {
-        char op;
-        char resource;
-        const char *desc;
-    } options[] = {
+static const struct {
+    char op;
+    char resource;
+    const char *desc;
+} ulimitOps[] = {
 #ifdef RLIMIT_CORE
-            {'c', RLIMIT_CORE, "core file size (blocks)"},
+        {'c', RLIMIT_CORE, "core file size (blocks)"},
 #endif
 
 #ifdef RLIMIT_DATA
-            {'d', RLIMIT_DATA, "data seg size (kb)"},
+        {'d', RLIMIT_DATA, "data seg size (kb)"},
 #endif
 
 #ifdef RLIMIT_NICE
-            {'e', RLIMIT_NICE, "scheduling priority"},
+        {'e', RLIMIT_NICE, "scheduling priority"},
 #endif
 
 #ifdef RLIMIT_FSIZE
-            {'f', RLIMIT_FSIZE, "file size (blocks)"},
+        {'f', RLIMIT_FSIZE, "file size (blocks)"},
 #endif
 
 #ifdef RLIMIT_SIGPENDING
-            {'i', RLIMIT_SIGPENDING, "queued signals"},
+        {'i', RLIMIT_SIGPENDING, "queued signals"},
 #endif
 
 #ifdef RLIMIT_MEMLOCK
-            {'l', RLIMIT_MEMLOCK, "lock memory (kb)"},
+        {'l', RLIMIT_MEMLOCK, "lock memory (kb)"},
 #endif
 
 #ifdef RLIMIT_RSS
-            {'m', RLIMIT_RSS, "resident set size (kb)"},
+        {'m', RLIMIT_RSS, "resident set size (kb)"},
 #endif
 
 #ifdef RLIMIT_NOFILE
-            {'n', RLIMIT_NOFILE, "file descriptors"},
+        {'n', RLIMIT_NOFILE, "file descriptors"},
 #endif
 
 #ifdef RLIMIT_NPROC
-            {'p', RLIMIT_NPROC, "processes"},
+        {'p', RLIMIT_NPROC, "processes"},
 #endif
 
 #ifdef RLIMIT_MSGQUEUE
-            {'q', RLIMIT_MSGQUEUE, "POSIX message queue (kb)"},
+        {'q', RLIMIT_MSGQUEUE, "POSIX message queue (kb)"},
 #endif
 
 #ifdef RLIMIT_RTPRIO
-            {'r', RLIMIT_RTPRIO, "real-time priority"},
+        {'r', RLIMIT_RTPRIO, "real-time priority"},
 #endif
 
 #ifdef RLIMIT_RTTIME
-            {'R', RLIMIT_RTTIME, "real-time latency"},
+        {'R', RLIMIT_RTTIME, "real-time latency"},
 #endif
 
 #ifdef RLIMIT_STACK
-            {'s', RLIMIT_STACK, "stack size (kb)"},
+        {'s', RLIMIT_STACK, "stack size (kb)"},
 #endif
 
 #ifdef RLIMIT_CPU
-            {'t', RLIMIT_CPU, "cup time (seconds)"},
+        {'t', RLIMIT_CPU, "cup time (seconds)"},
 #endif
 
 #ifdef RLIMIT_AS
-            {'v', RLIMIT_AS, "address space (kb)"},
+        {'v', RLIMIT_AS, "address space (kb)"},
 #endif
 
 #ifdef RLIMIT_LOCKS
-            {'w', RLIMIT_LOCKS, "locks"},
+        {'w', RLIMIT_LOCKS, "locks"},
 #endif
-    };
+};
 
+static int findUlimitResource(char op) {
+    for(auto &ulimitOp : ulimitOps) {
+        if(ulimitOp.op == op) {
+            return ulimitOp.resource;
+        }
+    }
+    return -1;
+}
+
+static unsigned int computeMaxDescLen() {
+    unsigned int max = 0;
+    for(auto &e : ulimitOps) {
+        unsigned int len = strlen(e.desc);
+        if(len > max) {
+            max = len;
+        }
+    }
+    return max;
+}
+
+static void showAllLimit(bool soft) {
+    unsigned int maxDescLen = computeMaxDescLen();
+    for(auto &e : ulimitOps) {
+        struct rlimit limit;
+        getrlimit(e.resource, &limit);
+        printf("-%c: %s  ", e.op, e.desc);
+        for(unsigned int len = strlen(e.desc); len < maxDescLen; len++) {
+            printf(" ");
+        }
+        auto value = soft ? limit.rlim_cur : limit.rlim_max;
+        if(value == RLIM_INFINITY) {
+            printf("unlimited\n");
+        } else {
+            printf("%llu\n", value);
+        }
+    }
+}
+
+//-H -S -a -cdefilmnpqrRstvw
+static int builtin_ulimit(DSState &, Array_Object &argvObj) {
     bool soft = true;
 
     // -H -S -a -cdefilmnpqrRstvw
@@ -1557,18 +1595,21 @@ static int builtin_ulimit(DSState &state, Array_Object &argvObj) {
             soft = true;
             break;
         case 'a':
+            showAllLimit(soft);
             break;
         case '?':
             return invalidOptionError(argvObj, optState);
-        default:
+        default: {
+            int resource = findUlimitResource(opt);
+            if(resource < 0) {
+                ERROR(argvObj, "%c: unsupported option", opt);
+                return 1;
+            }
             break;
         }
+        }
     }
-
-    (void) options;
-    (void) soft;
-    (void) state;
-    fatal("ulimit command is not implemented!!\n");
+    return 0;
 }
 
 } // namespace ydsh
