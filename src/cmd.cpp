@@ -1574,7 +1574,7 @@ static void showAllLimit(bool soft) {
         if(value == RLIM_INFINITY) {
             printf("unlimited\n");
         } else {
-            printf("%llu\n", value);
+            printf("%u\n", static_cast<unsigned int>(value));
         }
     }
 }
