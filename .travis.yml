@@ -11,91 +11,77 @@ branches:
 matrix:
   include:
     # gcc 4.8
-    - compiler: gcc
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-4.8
             - g++-4.8
             - expect
             - ninja-build
       env: CC_BIN=gcc-4.8 CXX_BIN=g++-4.8
 
     # gcc 4.9
-    - compiler: gcc
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-4.9
             - g++-4.9
             - expect
             - ninja-build
       env: CC_BIN=gcc-4.9 CXX_BIN=g++-4.9
 
     # gcc 5
-    - compiler: gcc
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-5
             - g++-5
             - expect
             - ninja-build
       env: CC_BIN=gcc-5 CXX_BIN=g++-5
 
     # gcc 6
-    - compiler: gcc
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-6
             - g++-6
             - expect
             - ninja-build
       env: CC_BIN=gcc-6 CXX_BIN=g++-6
 
     # gcc 7
-    - compiler: gcc
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-7
             - g++-7
             - expect
             - ninja-build
       env: CC_BIN=gcc-7 CXX_BIN=g++-7
 
     # gcc 8
-    - compiler: gcc
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-8
             - g++-8
             - expect
             - ninja-build
       env: CC_BIN=gcc-8 CXX_BIN=g++-8
 
     # gcc 8 (Release build)
-    - compiler: gcc
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-8
             - g++-8
             - expect
             - ninja-build
@@ -124,8 +110,7 @@ matrix:
 
 
     # clang 3.5
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -136,8 +121,7 @@ matrix:
       env: CC_BIN=clang-3.5 CXX_BIN=clang++-3.5
 
     # clang 3.6
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -148,11 +132,7 @@ matrix:
       env: CC_BIN=clang-3.6 CXX_BIN=clang++-3.6
 
     # clang 3.7
-     - os: linux
-       sudo: required
-       dist: trusty
-       compiler: clang
-       addons:
+     - addons:
          apt:
            sources:
              - ubuntu-toolchain-r-test
@@ -164,8 +144,7 @@ matrix:
        env: CC_BIN=clang-3.7 CXX_BIN=clang++-3.7
 
     # clang 3.8
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -176,8 +155,7 @@ matrix:
       env: CC_BIN=clang-3.8 CXX_BIN=clang++-3.8
 
     # clang 3.9
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -189,8 +167,7 @@ matrix:
       env: CC_BIN=clang-3.9 CXX_BIN=clang++-3.9
 
     # clang 4.0
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -202,8 +179,7 @@ matrix:
       env: CC_BIN=clang-4.0 CXX_BIN=clang++-4.0
 
     # clang 5.0
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -215,8 +191,7 @@ matrix:
       env: CC_BIN=clang-5.0 CXX_BIN=clang++-5.0
 
     # clang 6.0
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -228,8 +203,7 @@ matrix:
       env: CC_BIN=clang-6.0 CXX_BIN=clang++-6.0
 
   # clang 7.0
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
           - ubuntu-toolchain-r-test
@@ -242,8 +216,7 @@ matrix:
       env: CC_BIN=clang-7.0 CXX_BIN=clang++-7.0
 
     # clang 6.0 (Release build)
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -276,8 +249,7 @@ matrix:
 #      - ctest --output-on-failure
 
     # clang 6.0 with address sanitizer
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -293,8 +265,7 @@ matrix:
         - ctest --output-on-failure
 
     # clang 6.0 with undefined behavior sanitizer
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -310,8 +281,7 @@ matrix:
         - ctest --output-on-failure
 
     # clang 6.0 with fuzzing
-    - compiler: clang
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
@@ -327,13 +297,11 @@ matrix:
         - ctest --output-on-failure
 
     # gcc6 with coverage
-    - ocompiler: gcc
-      addons:
+    - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-6
             - g++-6
             - expect
             - ninja-build
