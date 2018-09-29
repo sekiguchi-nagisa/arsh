@@ -148,20 +148,20 @@ matrix:
       env: CC_BIN=clang-3.6 CXX_BIN=clang++-3.6
 
     # clang 3.7
-    # - os: linux
-      # sudo: required
-      # dist: trusty
-      # compiler: clang
-      # addons:
-        # apt:
-          # sources:
-            # - ubuntu-toolchain-r-test
-            # - llvm-toolchain-trusty
-          # packages:
-            # - clang-3.7
-            # - expect
-            # - ninja-build
-      # env: CC_BIN=clang-3.7 CXX_BIN=clang++-3.7
+     - os: linux
+       sudo: required
+       dist: trusty
+       compiler: clang
+       addons:
+         apt:
+           sources:
+             - ubuntu-toolchain-r-test
+             - llvm-toolchain-precise-3.7
+           packages:
+             - clang-3.7
+             - expect
+             - ninja-build
+       env: CC_BIN=clang-3.7 CXX_BIN=clang++-3.7
 
     # clang 3.8
     - compiler: clang
@@ -233,7 +233,8 @@ matrix:
         apt:
           sources:
           - ubuntu-toolchain-r-test
-          - llvm-toolchain-trusty-7.0
+          - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-7 main'
+            key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
           - clang-7.0
           - expect
