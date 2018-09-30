@@ -77,6 +77,7 @@ public:
 
 private:
     void addHandler(const char *attributeName, DSType &type, AttributeHandler &&handler);
+    void addAlias(const char *alias, const char *attr);
     unsigned int resolveStatus(const StringNode &node);
 
     /**
@@ -181,7 +182,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         free(buf);
     });
 
-    auto envHandler = [&](Node &node, Directive &d) {
+    this->addHandler("envs", this->getMapType(), [&](Node &node, Directive &d) {
         auto &mapNode = this->checkedCast<MapNode>(node);
         const unsigned int size = mapNode.getKeyNodes().size();
         for(unsigned int i = 0; i < size; i++) {
@@ -189,9 +190,8 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
             auto &valueNode = this->checkedCast<StringNode>(*mapNode.getValueNodes()[i]);
             d.addEnv(keyNode.getValue(), valueNode.getValue());
         }
-    };
-    this->addHandler("env", this->getMapType(), envHandler);
-    this->addHandler("envs", this->getMapType(), envHandler);
+    });
+    this->addAlias("env", "envs");
 
     std::unordered_set<std::string> foundAttrSet;
     for(auto &attrNode : node.getArgNodes()) {
@@ -226,6 +226,13 @@ void DirectiveInitializer::addHandler(const char *attributeName, DSType &type, A
     auto pair = this->handlerMap.insert(std::make_pair(attributeName, std::make_pair(&type, std::move(handler))));
     if(!pair.second) {
         fatal("found duplicated handler: %s\n", attributeName);
+    }
+}
+
+void DirectiveInitializer::addAlias(const char *alias, const char *attr) {
+    auto *handler = this->lookupHandler(attr);
+    if(handler != nullptr) {
+        this->addHandler(alias, *handler->first, AttributeHandler(handler->second));
     }
 }
 
