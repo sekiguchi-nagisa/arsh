@@ -1,0 +1,16 @@
+#$test($result = 'throw', $lineNum = 10, $errorKind = 'SystemError', $status = 1, $envs = ['ASAN_OPTIONS' : 'detect_leaks=0'])
+
+assert ulimit -p 1
+var js = new [Job]()
+function f($s : Int, $a : Any) {
+    for $j in $js { $j.raise(%'kill'); }
+}
+$TERM_HOOK = $f
+echo hello;
+for(var i = 0; $i < 20; $i++) {
+    var j = while $true {} &
+    $js.add($j)
+}
+echo world!!
+
+exit 0
