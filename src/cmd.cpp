@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <cstdarg>
 #include <unordered_map>
+#include <array>
 #include <ydsh/ydsh.h>
 
 #include "logger.h"
@@ -1494,11 +1495,19 @@ struct ulimitOp {
     char op;
     char resource;
     char shift;
-    const char *desc;
+    const char *name;
 
-    void print(flag8_set_t limOpt) const {
+    void print(flag8_set_t limOpt, unsigned int maxNameLen) const {
         rlimit limit;
         getrlimit(this->resource, &limit);
+
+        if(maxNameLen) {
+            printf("-%c: %s  ", this->op, this->name);
+            for(unsigned int len = strlen(this->name); len < maxNameLen; len++) {
+                printf(" ");
+            }
+        }
+
         auto value = hasFlag(limOpt, RLIM_HARD) ? limit.rlim_max : limit.rlim_cur;
         if(value == RLIM_INFINITY) {
             printf("unlimited\n");
@@ -1506,62 +1515,37 @@ struct ulimitOp {
             value >>= this->shift;
             printf("%llu\n", static_cast<unsigned long long>(value));
         }
+        fflush(stdout);
+    }
+};
+
+struct UlimitOptEntry {
+    enum Kind : unsigned char {
+        UNUSED,
+        NUM,
+        SOFT,
+        HARD,
+        UNLIMITED,
+    };
+
+    Kind kind{UNUSED};
+    rlim_t value{0};
+
+    explicit operator bool() const {
+        return this->kind != UNUSED;
     }
 
-    bool parseLimit(const char *str, rlimit limit, rlim_t &ret) const {
-        if(strcasecmp(str, "soft") == 0) {
-            ret = limit.rlim_cur;
-            return true;
-        } else if(strcasecmp(str, "hard") == 0) {
-            ret = limit.rlim_max;
-            return true;
-        } else if(strcasecmp(str, "unlimited") == 0) {
-            ret = RLIM_INFINITY;
-            return true;
+    rlim_t getValue(const rlimit &limit) const {
+        switch(this->kind) {
+        case SOFT:
+            return limit.rlim_cur;
+        case HARD:
+            return limit.rlim_max;
+        case UNLIMITED:
+            return RLIM_INFINITY;
+        default:
+            return this->value;
         }
-
-        int status = 0;
-        ret = convertToUint64(str, status);
-        if(status != 0) {
-            return false;
-        }
-        if(sizeof(rlim_t) == sizeof(unsigned int)) {
-            if(ret > UINT32_MAX) {
-                return false;
-            }
-        }
-        ret <<= this->shift;
-        return true;
-    }
-
-    /**
-     *
-     * @param limOpt
-     * @param numStr
-     * @return
-     * if 0, update succeed.
-     * if 1, parse error
-     * if 2, setrlimit faile
-     */
-    int updateLimit(flag8_set_t limOpt, const char *numStr) const {
-        rlimit limit;
-        getrlimit(this->resource, &limit);
-
-        rlim_t value = 0;
-        if(!this->parseLimit(numStr, limit, value)) {
-            return 1;
-        }
-
-        if(hasFlag(limOpt, RLIM_SOFT)) {
-            limit.rlim_cur = value;
-        }
-        if(hasFlag(limOpt, RLIM_HARD)) {
-            limit.rlim_max = value;
-        }
-        if(setrlimit(this->resource, &limit) < 0) {
-            return 2;
-        }
-        return 0;
     }
 };
 
@@ -1571,22 +1555,10 @@ static constexpr ulimitOp ulimitOps[] = {
 #undef DEF
 };
 
-static const ulimitOp &findUlimitOp(int ch) {
-    if(ch == -1) {
-        ch = 'f';   // default option
-    }
-    for(auto &e : ulimitOps) {
-        if(e.op == ch) {
-            return e;
-        }
-    }
-    fatal("unreachable");
-}
-
-static unsigned int computeMaxDescLen() {
+static unsigned int computeMaxNameLen() {
     unsigned int max = 0;
     for(auto &e : ulimitOps) {
-        unsigned int len = strlen(e.desc);
+        unsigned int len = strlen(e.name);
         if(len > max) {
             max = len;
         }
@@ -1594,19 +1566,63 @@ static unsigned int computeMaxDescLen() {
     return max;
 }
 
-static void showAllLimit(flag8_set_t limOpt) {
-    unsigned int maxDescLen = computeMaxDescLen();
-    for(auto &e : ulimitOps) {
-        printf("-%c: %s  ", e.op, e.desc);
-        for(unsigned int len = strlen(e.desc); len < maxDescLen; len++) {
-            printf(" ");
-        }
-        e.print(limOpt);
+static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &entry) {
+    if(strcasecmp(str, "soft") == 0) {
+        entry.kind = UlimitOptEntry::SOFT;
+        return true;
+    } else if(strcasecmp(str, "hard") == 0) {
+        entry.kind = UlimitOptEntry::HARD;
+        return true;
+    } else if(strcasecmp(str, "unlimited") == 0) {
+        entry.kind = UlimitOptEntry::UNLIMITED;
+        return true;
     }
+
+    int status = 0;
+    auto ret = convertToUint64(str, status);
+    if(status != 0) {
+        return false;
+    }
+    if(sizeof(rlim_t) == sizeof(unsigned int)) {
+        if(ret > UINT32_MAX) {
+            return false;
+        }
+    }
+    ret <<= ulimitOps[index].shift;
+    entry.kind = UlimitOptEntry::NUM;
+    entry.value = ret;
+    return true;
 }
+
+struct UlimitOptEntryTable {
+    unsigned long printSet{0};
+    std::array<UlimitOptEntry, arraySize(ulimitOps)> entries;
+
+    bool update(int ch, const char *str) {
+        if(ch == -1) {
+            ch = 'f';
+        }
+        // search entry
+        for(unsigned int index = 0; index < arraySize(ulimitOps); index++) {
+            if(ulimitOps[index].op == ch) {
+                auto &entry = this->entries[index];
+                if(str) {
+                    if(!parseUlimitOpt(str, index, entry)) {
+                        return false;
+                    }
+                } else {
+                    setFlag(this->printSet, static_cast<unsigned long>(1 << index));
+                }
+            }
+        }
+        return true;
+    }
+};
 
 static int builtin_ulimit(DSState &, Array_Object &argvObj) {
     flag8_set_t limOpt = RLIM_SOFT;
+    bool showAll = false;
+
     GetOptState optState;
     const char *optStr = "HSa"
 #define DEF(O, R, S, N, D) O
@@ -1614,6 +1630,9 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
 #undef DEF
             ;
 
+    UlimitOptEntryTable table;
+
+    // parse option
     for(unsigned int count = 0;; count++) {
         int opt = optState(argvObj, optStr);
         switch(opt) {
@@ -1624,7 +1643,7 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
             setFlag(limOpt, RLIM_SOFT);
             continue;
         case 'a':
-            showAllLimit(limOpt);
+            showAll = true;
             continue;
         case '?':
             return invalidOptionError(argvObj, optState);
@@ -1633,23 +1652,53 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
         }
 
         if(opt != -1 || count == 0) {
-            auto &op = findUlimitOp(opt);
+            const char *arg = nullptr;
             if(optState.index < argvObj.getValues().size() && *str(argvObj.getValues()[optState.index]) != '-') {
-                const char *arg = str(argvObj.getValues()[optState.index++]);
-                int ret = op.updateLimit(limOpt, arg);
-                if(ret == 1) {
-                    ERROR(argvObj, "%s: invalid number", arg);
-                    return 1;
-                } else if(ret == 2) {
-                    PERROR(argvObj, "%s: cannot change limit", op.desc);
-                    return 1;
-                }
-            } else {
-                op.print(limOpt);
+                arg = str(argvObj.getValues()[optState.index++]);
+            }
+            if(!table.update(opt, arg)) {
+                ERROR(argvObj, "%s: invalid number", arg);
+                return 1;
             }
         }
         if(opt == -1) {
             break;
+        }
+    }
+
+    if(showAll) {
+        unsigned int maxDescLen = computeMaxNameLen();
+        for(auto &e : ulimitOps) {
+            e.print(limOpt, maxDescLen);
+        }
+        return 0;
+    }
+
+    // print or set limit
+    unsigned int maxNameLen = 0;
+    if(table.printSet > 0 && (table.printSet & (table.printSet - 1)) != 0) {
+        maxNameLen = computeMaxNameLen();
+    }
+    for(unsigned int index = 0; index < table.entries.size(); index++) {
+        if(table.entries[index]) {
+            const auto &op = ulimitOps[index];
+            rlimit limit;
+            getrlimit(op.resource, &limit);
+            rlim_t value = table.entries[index].getValue(limit);
+            if(hasFlag(limOpt, RLIM_SOFT)) {
+                limit.rlim_cur = value;
+            }
+            if(hasFlag(limOpt, RLIM_HARD)) {
+                limit.rlim_max = value;
+            }
+            if(setrlimit(op.resource, &limit) < 0) {
+                PERROR(argvObj, "%s: cannot change limit", op.name);
+                return 1;
+            }
+            return 0;
+        }
+        if(hasFlag(table.printSet, static_cast<unsigned long>(1 << index))) {
+            ulimitOps[index].print(limOpt, maxNameLen);
         }
     }
     return 0;
