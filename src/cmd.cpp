@@ -114,7 +114,7 @@ const struct {
                 "                  \\xnn  N is hex number.  NN can be 1 to 2 number\n"
                 "        -E    disable escape sequence interpretation"},
         {"eval", nullptr, "[arg ...]",
-                "    evaluate ARGs as command."},
+                "    Evaluate ARGs as command."},
         {"exec", nullptr, "[-c] [-a name] file [args ...]",
                 "    Execute FILE and replace this shell with specified program.\n"
                 "    If FILE is not specified, the redirections take effect in this shell.\n"
@@ -190,7 +190,7 @@ const struct {
                 "        -u         specify file descriptor\n"
                 "        -t timeout set timeout second (only available if input fd is a tty)"},
         {"set_env", builtin_setenv, "[name=env ...]",
-                "    set environmental variables."},
+                "    Set environmental variables."},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
@@ -246,7 +246,7 @@ const struct {
         {"ulimit", builtin_ulimit, "[-H | -S] [-a | -cdefilmnpqrRstvw [value]]",
                 "    "},
         {"unset_env", builtin_unsetenv, "[name ...]",
-                "    unset environmental variables."},
+                "    Unset environmental variables."},
 };
 
 unsigned int getBuiltinCommandSize() {
