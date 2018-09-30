@@ -557,8 +557,7 @@ public:
             return DSValue::createInvalid();
         }
         std::swap(pair.first->second, value);
-        return value;
-
+        return std::move(value);
     }
 
     DSValue setDefault(DSValue &&key, DSValue &&value) {
