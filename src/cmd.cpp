@@ -1695,7 +1695,6 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
                 PERROR(argvObj, "%s: cannot change limit", op.name);
                 return 1;
             }
-            return 0;
         }
         if(hasFlag(table.printSet, static_cast<unsigned long>(1 << index))) {
             ulimitOps[index].print(limOpt, maxNameLen);
