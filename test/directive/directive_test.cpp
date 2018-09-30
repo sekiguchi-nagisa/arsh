@@ -230,6 +230,13 @@ TEST_F(DirectiveTest, envs2) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2", this->getDirective().getEnvs().find("hoge")->second));
 }
 
+TEST_F(DirectiveTest, envs3) {
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($env = ['hoge' : '1', 'huga' : '2', 'hoge' : '4'])", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, this->getDirective().getEnvs().size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("4", this->getDirective().getEnvs().find("hoge")->second));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2", this->getDirective().getEnvs().find("huga")->second));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

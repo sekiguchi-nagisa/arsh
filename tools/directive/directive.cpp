@@ -181,7 +181,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         free(buf);
     });
 
-    this->addHandler("envs", this->getMapType(), [&](Node &node, Directive &d) {
+    auto envHandler = [&](Node &node, Directive &d) {
         auto &mapNode = this->checkedCast<MapNode>(node);
         const unsigned int size = mapNode.getKeyNodes().size();
         for(unsigned int i = 0; i < size; i++) {
@@ -189,7 +189,9 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
             auto &valueNode = this->checkedCast<StringNode>(*mapNode.getValueNodes()[i]);
             d.addEnv(keyNode.getValue(), valueNode.getValue());
         }
-    });
+    };
+    this->addHandler("env", this->getMapType(), envHandler);
+    this->addHandler("envs", this->getMapType(), envHandler);
 
     std::unordered_set<std::string> foundAttrSet;
     for(auto &attrNode : node.getArgNodes()) {
