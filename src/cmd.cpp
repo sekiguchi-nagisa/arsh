@@ -60,7 +60,7 @@ static int builtin_true(DSState &state, Array_Object &argvObj);
 static int builtin_ulimit(DSState &state, Array_Object &argvObj);
 static int builtin_unsetenv(DSState &state, Array_Object &argvObj);
 
-const struct {
+static constexpr struct {
     const char *commandName;
     builtin_command_t cmd_ptr;
     const char *usage;
@@ -243,8 +243,22 @@ const struct {
                 "        -G FILE        check if file is effectively owned by group"},
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
-        {"ulimit", builtin_ulimit, "[-H | -S] [-a | -cdefilmnpqrRstvw [value]]",
-                "    "},
+        {"ulimit", builtin_ulimit, "[-H | -S] [-a | -"
+                                   #define DEF(O, R, S, N, D) O
+                                   #include "ulimit-def.in"
+                                   #undef DEF
+                                   " [value]]",
+                "    Set or show resource limits of the shell and processes started by the shell.\n"
+                "    If VALUE is `soft', `hard' and {unlimited', represent current soft limit\n"
+                "    and hard limit and no limit. If no option specified, assume `-f'.\n"
+                "    Options.\n"
+                "        -H    use `hard' resource limit\n"
+                "        -S    use `soft' resource limit (default)\n"
+                "        -a    show all resource limits"
+#define DEF(O, R, S, N, D) "\n        -" O "    " D
+                #include "ulimit-def.in"
+#undef DEF
+                },
         {"unset_env", builtin_unsetenv, "[name ...]",
                 "    Unset environmental variables."},
 };
@@ -1551,79 +1565,22 @@ struct ulimitOp {
     }
 };
 
-static const ulimitOp ulimitOps[] = {
-#ifdef RLIMIT_CORE
-        {'c', RLIMIT_CORE, 9, "core file size (blocks)"},
-#endif
-
-#ifdef RLIMIT_DATA
-        {'d', RLIMIT_DATA, 10, "data seg size (kb)"},
-#endif
-
-#ifdef RLIMIT_NICE
-        {'e', RLIMIT_NICE, 0, "scheduling priority"},
-#endif
-
-#ifdef RLIMIT_FSIZE
-        {'f', RLIMIT_FSIZE, 9, "file size (blocks)"},
-#endif
-
-#ifdef RLIMIT_SIGPENDING
-        {'i', RLIMIT_SIGPENDING, 0, "queued signals"},
-#endif
-
-#ifdef RLIMIT_MEMLOCK
-        {'l', RLIMIT_MEMLOCK, 10, "lock memory (kb)"},
-#endif
-
-#ifdef RLIMIT_RSS
-        {'m', RLIMIT_RSS, 10, "resident set size (kb)"},
-#endif
-
-#ifdef RLIMIT_NOFILE
-        {'n', RLIMIT_NOFILE, 0, "file descriptors"},
-#endif
-
-#ifdef RLIMIT_NPROC
-        {'p', RLIMIT_NPROC, 0, "processes"},
-#endif
-
-#ifdef RLIMIT_MSGQUEUE
-        {'q', RLIMIT_MSGQUEUE, 10, "POSIX message queue (kb)"},
-#endif
-
-#ifdef RLIMIT_RTPRIO
-        {'r', RLIMIT_RTPRIO, 0, "real-time priority"},
-#endif
-
-#ifdef RLIMIT_RTTIME
-        {'R', RLIMIT_RTTIME, 0, "real-time latency"},
-#endif
-
-#ifdef RLIMIT_STACK
-        {'s', RLIMIT_STACK, 10, "stack size (kb)"},
-#endif
-
-#ifdef RLIMIT_CPU
-        {'t', RLIMIT_CPU, 0, "cup time (seconds)"},
-#endif
-
-#ifdef RLIMIT_AS
-        {'v', RLIMIT_AS, 10, "address space (kb)"},
-#endif
-
-#ifdef RLIMIT_LOCKS
-        {'w', RLIMIT_LOCKS, 0, "locks"},
-#endif
+static constexpr ulimitOp ulimitOps[] = {
+#define DEF(O, R, S, N, D) {O[0], R, S, N},
+#include "ulimit-def.in"
+#undef DEF
 };
 
-static const ulimitOp *findUlimitOp(char ch) {
+static const ulimitOp &findUlimitOp(int ch) {
+    if(ch == -1) {
+        ch = 'f';   // default option
+    }
     for(auto &e : ulimitOps) {
         if(e.op == ch) {
-            return &e;
+            return e;
         }
     }
-    return nullptr;
+    fatal("unreachable");
 }
 
 static unsigned int computeMaxDescLen() {
@@ -1648,47 +1605,51 @@ static void showAllLimit(flag8_set_t limOpt) {
     }
 }
 
-//-H -S -a -cdefilmnpqrRstvw
 static int builtin_ulimit(DSState &, Array_Object &argvObj) {
     flag8_set_t limOpt = RLIM_SOFT;
-
-    // -H -S -a -cdefilmnpqrRstvw
     GetOptState optState;
-    const char *optStr = "HSac::d::e::f::i::l::m::n::p::q::r::R::s::t::v::w::";
-    for(int opt; (opt = optState(argvObj, optStr)) != -1;) {
+    const char *optStr = "HSa"
+#define DEF(O, R, S, N, D) O
+#include "ulimit-def.in"
+#undef DEF
+            ;
+
+    for(unsigned int count = 0;; count++) {
+        int opt = optState(argvObj, optStr);
         switch(opt) {
         case 'H':
             setFlag(limOpt, RLIM_HARD);
-            break;
+            continue;
         case 'S':
             setFlag(limOpt, RLIM_SOFT);
-            break;
+            continue;
         case 'a':
             showAllLimit(limOpt);
-            break;
+            continue;
         case '?':
             return invalidOptionError(argvObj, optState);
-        default: {
-            auto *op = findUlimitOp(opt);
-            if(op == nullptr) {
-                ERROR(argvObj, "%c: unsupported option", opt);
-                return 1;
-            }
+        default:
+            break;
+        }
+
+        if(opt != -1 || count == 0) {
+            auto &op = findUlimitOp(opt);
             if(optState.index < argvObj.getValues().size() && *str(argvObj.getValues()[optState.index]) != '-') {
-                const char *arg = str(argvObj.getValues()[optState.index]);
-                int ret = op->updateLimit(limOpt, arg);
+                const char *arg = str(argvObj.getValues()[optState.index++]);
+                int ret = op.updateLimit(limOpt, arg);
                 if(ret == 1) {
                     ERROR(argvObj, "%s: invalid number", arg);
                     return 1;
                 } else if(ret == 2) {
-                    PERROR(argvObj, "%s: cannot change limit", op->desc);
+                    PERROR(argvObj, "%s: cannot change limit", op.desc);
                     return 1;
                 }
             } else {
-                op->print(limOpt);
+                op.print(limOpt);
             }
-            break;
         }
+        if(opt == -1) {
+            break;
         }
     }
     return 0;

@@ -1,0 +1,67 @@
+
+// definition of ulimit option
+// DEF(O, R, S, N, D)
+
+#ifdef   RLIMIT_CORE
+DEF("c", RLIMIT_CORE, 9, "core file size (blocks)", "512-byte blocks on the size of core file")
+#endif
+
+#ifdef   RLIMIT_DATA
+DEF("d", RLIMIT_DATA, 10, "data seg size (kb)", "Kbyte on the size of data segment")
+#endif
+
+#ifdef   RLIMIT_NICE
+DEF("e", RLIMIT_NICE, 0, "scheduling priority", "scheduling priority (nice)")
+#endif
+
+#ifdef   RLIMIT_FSIZE
+DEF("f", RLIMIT_FSIZE, 9, "file size (blocks)", "512-byte blocks on the size of file written")
+#endif
+
+#ifdef   RLIMIT_SIGPENDING
+DEF("i", RLIMIT_SIGPENDING, 0, "queued signals", "the number of pending signals")
+#endif
+
+#ifdef   RLIMIT_MEMLOCK
+DEF("l", RLIMIT_MEMLOCK, 10, "lock memory (kb)", "Kbyte on the size of locked in memory")
+#endif
+
+#ifdef   RLIMIT_RSS
+DEF("m", RLIMIT_RSS, 10, "resident set size (kb)", "Kbyte on the size of resident set")
+#endif
+
+#ifdef   RLIMIT_NOFILE
+DEF("n", RLIMIT_NOFILE, 0, "file descriptors", "the number of opened file descriptor")
+#endif
+
+#ifdef   RLIMIT_NPROC
+DEF("p", RLIMIT_NPROC, 0, "processes", "the number of extant process")
+#endif
+
+#ifdef   RLIMIT_MSGQUEUE
+DEF("q", RLIMIT_MSGQUEUE, 10, "POSIX message queue (kb)", "Kbyte on the size of POSIX message queues")
+#endif
+
+#ifdef   RLIMIT_RTPRIO
+DEF("r", RLIMIT_RTPRIO, 0, "real-time priority", "real-time priority")
+#endif
+
+#ifdef   RLIMIT_RTTIME
+DEF("R", RLIMIT_RTTIME, 0, "real-time latency (usec)", "real-time latency in microseconds")
+#endif
+
+#ifdef   RLIMIT_STACK
+DEF("s", RLIMIT_STACK, 10, "stack size (kb)", "Kbyte on the size of process stack")
+#endif
+
+#ifdef   RLIMIT_CPU
+DEF("t", RLIMIT_CPU, 0, "cup time (seconds)", "the amount of cpu time in seconds")
+#endif
+
+#ifdef   RLIMIT_AS
+DEF("v", RLIMIT_AS, 10, "address space (kb)", "Kbyte on the size of address space")
+#endif
+
+#ifdef   RLIMIT_LOCKS
+DEF("w", RLIMIT_LOCKS, 0, "locks", "the number of file locks")
+#endif
