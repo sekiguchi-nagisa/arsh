@@ -27,7 +27,7 @@ class Array_Object;
  * return exit status.
  * argvObj must be Array_Object
  */
-typedef int (*builtin_command_t)(DSState &state, Array_Object &argvObj);
+using builtin_command_t = int (*)(DSState &state, Array_Object &argvObj);
 
 unsigned int getBuiltinCommandSize();
 

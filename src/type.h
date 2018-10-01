@@ -36,7 +36,7 @@ class FieldHandle;
 class MethodHandle;
 class DSValue;
 class DSCode;
-typedef DSValue (*native_func_t)(DSState &);
+using native_func_t = DSValue (*)(DSState &);
 
 class SymbolTable;
 
