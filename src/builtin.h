@@ -22,6 +22,7 @@
 #include <cmath>
 #include <cstring>
 #include <type_traits>
+#include <algorithm>
 
 #include <ydsh/ydsh.h>
 #include "core.h"
@@ -1243,6 +1244,23 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
     RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
 }
 
+//!bind: function lower($this : String) : String
+YDSH_METHOD string_lower(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_lower);
+    auto *obj = typeAs<String_Object>(LOCAL(0));
+    std::string str = obj->getValue();
+    std::transform(str.begin(), str.end(), str.begin(), std::tolower);
+    RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
+}
+
+//!bind: function upper($this : String) : String
+YDSH_METHOD string_upper(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_upper);
+    auto *obj = typeAs<String_Object>(LOCAL(0));
+    std::string str = obj->getValue();
+    std::transform(str.begin(), str.end(), str.begin(), std::toupper);
+    RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
+}
 
 // ########################
 // ##     StringIter     ##

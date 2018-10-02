@@ -188,6 +188,10 @@ assert !($'a\x00b' <= $'a\x00a')
 assert $'a\x00b' != $'a\x00c'
 assert $'a\x00b' != $'a'
 
+# case
+assert "AbcDEf".lower() == "abcdef"
+assert "AbcDEf".upper() == "ABCDEF"
+
 # string interpolation
 $a = "西暦${1900 + 114}年"
 $b = "西暦\${1900 + 114}年"

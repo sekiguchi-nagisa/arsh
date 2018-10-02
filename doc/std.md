@@ -278,6 +278,10 @@ function %OP_MATCH($this : String, $re : Regex) : Boolean
 function %OP_UNMATCH($this : String, $re : Regex) : Boolean
 
 function realpath($this : String) : Option<String>
+
+function lower($this : String) : String
+
+function upper($this : String) : String
 ```
 
 ## UnixFD type
