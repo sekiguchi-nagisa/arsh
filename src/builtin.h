@@ -1249,7 +1249,7 @@ YDSH_METHOD string_lower(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lower);
     auto *obj = typeAs<String_Object>(LOCAL(0));
     std::string str = obj->getValue();
-    std::transform(str.begin(), str.end(), str.begin(), std::tolower);
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
     RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
 }
 
@@ -1258,7 +1258,7 @@ YDSH_METHOD string_upper(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_upper);
     auto *obj = typeAs<String_Object>(LOCAL(0));
     std::string str = obj->getValue();
-    std::transform(str.begin(), str.end(), str.begin(), std::toupper);
+    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
     RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
 }
 
