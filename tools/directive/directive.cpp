@@ -39,7 +39,7 @@ struct DirectiveParser : public Parser {
         auto exprNode = TRY(this->parse_appliedName(false));
         auto args = TRY(this->parse_arguments());
         TRY(this->expect(EOS));
-        return make_unique<ApplyNode>(exprNode.release(), ArgsWrapper::extract(std::move(args)));
+        return unique<ApplyNode>(exprNode.release(), ArgsWrapper::extract(std::move(args)));
     }
 };
 

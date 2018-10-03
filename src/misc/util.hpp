@@ -29,7 +29,7 @@ constexpr std::size_t arraySize(const T (&)[N]) noexcept {
 }
 
 template <typename T, typename ... A>
-inline std::unique_ptr<T> make_unique(A &&... args) {
+inline std::unique_ptr<T> unique(A &&... args) {
     return std::unique_ptr<T>(new T(std::forward<A>(args)...));
 }
 
