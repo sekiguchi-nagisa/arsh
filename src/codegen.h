@@ -406,7 +406,10 @@ private:
     void markLabel(Label &label);
 
     void pushLoopLabels(Label breakLabel, Label continueLabel, Label breakWithValueLabel);
-    void popLoopLabels();
+
+    void popLoopLabels() {
+        this->curBuilder().loopLabels.pop_back();
+    }
 
     const LoopState &peekLoopLabels() const {
         return this->curBuilder().loopLabels.back();

@@ -180,10 +180,6 @@ void ByteCodeGenerator::pushLoopLabels(Label breakLabel, Label continueLabel, La
     this->curBuilder().loopLabels.push_back(std::move(s));
 }
 
-void ByteCodeGenerator::popLoopLabels() {
-    this->curBuilder().loopLabels.pop_back();
-}
-
 void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
     if(this->curBuilder().sourcePosEntries.empty() || this->curBuilder().sourcePosEntries.back().pos != pos) {
