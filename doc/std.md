@@ -261,6 +261,8 @@ function lastIndexOf($this : String, $target : String) : Int32
 
 function split($this : String, $delim : String) : Array<String>
 
+function replace($this : String, $target : String, $rep : String) : String
+
 function toInt32($this : String) : Option<Int32>
 
 function toUint32($this : String) : Option<Uint32>

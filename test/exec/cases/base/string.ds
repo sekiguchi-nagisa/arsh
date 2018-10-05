@@ -151,6 +151,18 @@ assert $sa.size() == 2
 assert $sa[0] == $'a\x00'
 assert $sa[1] == $'\x00c'
 
+assert "hello".replace("e", "@") == "h@llo"
+assert "hello".replace("ll", "") == "heo"
+assert "hello".replace("", "123") == "hello"
+
+assert "あいあう2".replace("あ", "お") == "おいおう2"
+assert "あいあう2".replace("い", "") == "ああう2"
+assert "あいあう2".replace("", "間") == "あいあう2"
+
+assert "".replace("a", "34") == ""
+assert "".replace("", "") == ""
+assert "".replace("", "hoge") == ""
+
 assert(! "-1".toUint32())
 assert("4294967295".toUint32()! == 4294967295u32)
 assert(! "4294967296".toUint32())

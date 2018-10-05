@@ -1140,6 +1140,36 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     RET(results);
 }
 
+//!bind: function replace($this : String, $target : String, $rep : String) : String
+YDSH_METHOD string_replace(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_replace);
+    const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
+    const char *delimStr = typeAs<String_Object>(LOCAL(1))->getValue();
+    const char *repStr = typeAs<String_Object>(LOCAL(2))->getValue();
+    const unsigned int thisSize = typeAs<String_Object>(LOCAL(0))->size();
+    const unsigned int delimSize = typeAs<String_Object>(LOCAL(1))->size();
+    const unsigned int repSize = typeAs<String_Object>(LOCAL(2))->size();
+
+    const char *ret = reinterpret_cast<const char *>(xmemmem(thisStr, thisSize, delimStr, delimSize));
+    if(ret == nullptr || delimSize == 0) {
+        RET(LOCAL(0));
+    }
+
+    const char *remain = thisStr;
+    std::string buf;
+    do {
+        buf.append(remain, ret - remain);
+        remain = ret + delimSize;
+        buf.append(repStr, repSize);
+    } while((ret = reinterpret_cast<const char *>(
+            xmemmem(remain, thisSize - (remain - thisStr), delimStr, delimSize))) != nullptr);
+    if(remain != thisStr + thisSize) {
+        buf.append(remain, thisSize - (remain - thisStr));
+    }
+    RET(DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::move(buf)));
+}
+
+
 //!bind: function toInt32($this : String) : Option<Int32>
 YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt32);
