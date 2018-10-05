@@ -1029,9 +1029,9 @@ YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
     RET(sliceImpl(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue()));
 }
 
-static void *xmemmem(const void *haystack, size_t haystackSize, const void *needle, size_t needleSize) {
+static const void *xmemmem(const void *haystack, size_t haystackSize, const void *needle, size_t needleSize) {
     if(needleSize == 0) {
-        return const_cast<void *>(haystack);
+        return haystack;
     }
     return memmem(haystack, haystackSize, needle, needleSize);
 }
@@ -1074,7 +1074,7 @@ YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
     auto *thisObj = typeAs<String_Object>(LOCAL(0));
     auto *targetObj = typeAs<String_Object>(LOCAL(1));
 
-    void *ptr = xmemmem(thisObj->getValue(), thisObj->size(),
+    const void *ptr = xmemmem(thisObj->getValue(), thisObj->size(),
                         targetObj->getValue(), targetObj->size());
     int index = -1;
     if(ptr != nullptr) {
