@@ -957,7 +957,7 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
     if(node.getExprNode()->is(NodeKind::Empty)) {
         this->checkType(this->symbolTable.get(TYPE::Void), node.getExprNode());
     } else if(node.getOpKind() == JumpNode::BREAK) {
-        auto &type = this->checkType(this->symbolTable.get(TYPE::Any), node.getExprNode());
+        auto &type = this->checkType(node.getExprNode());
         if(type.isNothingType()) {
             RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->symbolTable.getTypeName(type));
         }
