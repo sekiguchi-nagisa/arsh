@@ -453,7 +453,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
     GUARD_DEEP_NESTING(guard);
 
     auto result = TRY(this->parse_typeNameImpl());
-    if(!HAS_NL() && CUR_KIND() == TYPE_OPT) {
+    while(!HAS_NL() && CUR_KIND() == TYPE_OPT) {
         result.token = this->expect(TYPE_OPT); // always success
         auto reified = unique<ReifiedTypeNode>(new BaseTypeNode(result.token, TYPE_OPTION));
         reified->setPos(result.typeNode->getPos());

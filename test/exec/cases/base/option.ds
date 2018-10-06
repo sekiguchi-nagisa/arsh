@@ -86,3 +86,11 @@ assert $ex is UnwrappingError
 # type
 assert !(new Int!() is Int)
 assert new Int!() is Int!
+
+# nested option
+var no = [34 as Int!].get(0)
+assert $no is Int!
+assert $no is Int!!
+assert $no is Option<Int!>!!
+assert $no! == 34
+assert ! ([new Int!!()].get(0))

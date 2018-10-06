@@ -474,8 +474,10 @@ DSType &SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
     // check each element type
     if(attr != 0u) {
         auto *type = elementTypes[0];
-        if(type->isOptionType() || type->isVoidType() || type->isNothingType()) {
+        if(type->isVoidType() || type->isNothingType()) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
+        } else if(type->isOptionType()) {
+            return *type;
         }
     } else {
         this->checkElementTypes(typeTemplate, elementTypes);
