@@ -1,6 +1,6 @@
 #$test($result = 'throw', $lineNum = 10, $errorKind = 'SystemError', $status = 1, $envs = ['ASAN_OPTIONS' : 'detect_leaks=0'])
 
-assert ulimit -p 1
+assert ulimit -u 1
 var js = new [Job]()
 function f($s : Int, $a : Any) {
     for $j in $js { $j.raise(%'kill'); }

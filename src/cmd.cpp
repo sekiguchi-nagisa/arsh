@@ -250,7 +250,7 @@ static constexpr struct {
                                    #undef DEF
                                    " [value]]",
                 "    Set or show resource limits of the shell and processes started by the shell.\n"
-                "    If VALUE is `soft', `hard' and {unlimited', represent current soft limit\n"
+                "    If VALUE is `soft', `hard' and `unlimited', represent current soft limit\n"
                 "    and hard limit and no limit. If no option specified, assume `-f'.\n"
                 "    Options.\n"
                 "        -H    use `hard' resource limit\n"

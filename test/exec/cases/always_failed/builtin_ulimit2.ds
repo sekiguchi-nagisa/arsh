@@ -1,6 +1,6 @@
 #$test($result = 'throw', $lineNum = 5, $errorKind = 'SystemError', $status = 1, $envs = ['ASAN_OPTIONS' : 'detect_leaks=0'])
 
-assert ulimit -p 1
+assert ulimit -u 1
 
 sleep 1000 | sleep 1000 | sleep 1000 | sleep 1000 | sleep 1000 | sleep 1000
 echo hello

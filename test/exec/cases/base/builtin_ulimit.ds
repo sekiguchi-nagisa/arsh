@@ -15,7 +15,7 @@ assert $? == 2
 
 # print resources
 var opts = new [String]()
-for $opt in "cdefilmnpqrRstvw" {
+for $opt in "cdefilmnqrRstuvx" {
     ulimit -$opt && { $opts.add("-$opt"); true; }
 }
 assert "$(ulimit)" == "$(ulimit -f)"

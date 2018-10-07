@@ -34,10 +34,6 @@ DEF("m", RLIMIT_RSS, 10, "resident set size (kb)", "Kbyte on the size of residen
 DEF("n", RLIMIT_NOFILE, 0, "file descriptors", "the number of opened file descriptor")
 #endif
 
-#ifdef   RLIMIT_NPROC
-DEF("p", RLIMIT_NPROC, 0, "processes", "the number of extant process")
-#endif
-
 #ifdef   RLIMIT_MSGQUEUE
 DEF("q", RLIMIT_MSGQUEUE, 10, "POSIX message queue (kb)", "Kbyte on the size of POSIX message queues")
 #endif
@@ -58,10 +54,14 @@ DEF("s", RLIMIT_STACK, 10, "stack size (kb)", "Kbyte on the size of process stac
 DEF("t", RLIMIT_CPU, 0, "cup time (seconds)", "the amount of cpu time in seconds")
 #endif
 
+#ifdef   RLIMIT_NPROC
+DEF("u", RLIMIT_NPROC, 0, "processes", "the number of extant process")
+#endif
+
 #ifdef   RLIMIT_AS
 DEF("v", RLIMIT_AS, 10, "address space (kb)", "Kbyte on the size of address space")
 #endif
 
 #ifdef   RLIMIT_LOCKS
-DEF("w", RLIMIT_LOCKS, 0, "locks", "the number of file locks")
+DEF("x", RLIMIT_LOCKS, 0, "locks", "the number of file locks")
 #endif
