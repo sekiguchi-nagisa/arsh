@@ -28,19 +28,17 @@ assert "$(ulimit -a -H)" == "$(ulimit $opts -H)"
 assert "$(ulimit -a -S)" == "$(ulimit $opts -S)"
 
 # change resource limit
-assert ulimit -S -f 5000
-assert "$(ulimit -S -f)" == '5000'
+assert "$(ulimit -S -f -f 5000)" == '5000'
 assert "$(ulimit -S -f -f unLimiTed)" == "unlimited"
 assert "$(ulimit -S -f HarD -f)" == "$(ulimit -f -H)"
+assert "$(ulimit -S -f sOft -f)" == "$(ulimit -f -S)"
 
-assert ulimit -H 5000
-assert "$(ulimit -H)" == "5000"
-assert !ulimit -S 6000
+assert ulimit -S -f 5000
+assert ulimit -H 6000
+assert "$(ulimit -H)" == "6000"
+assert !ulimit -S 7000
 assert $? == 1
-assert "$(ulimit -S 6000 2>&1)" ==
+assert "$(ulimit -S 7000 2>&1)" ==
        "ydsh: ulimit: file size (blocks): cannot change limit: Invalid argument"
 
-assert ulimit -S -f 4000
-assert "$(ulimit -S -f)" == "4000"
-assert ulimit -H -f sOft
-assert "$(ulimit -H -f)" == "4000"
+true
