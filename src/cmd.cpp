@@ -1597,11 +1597,23 @@ static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &
 struct UlimitOptEntryTable {
     unsigned long printSet{0};
     std::array<UlimitOptEntry, arraySize(ulimitOps)> entries;
+    unsigned int count{0};
 
-    bool update(int ch, const char *str) {
-        if(ch == -1) {
-            ch = 'f';
+    int tryToUpdate(GetOptState &optState, Array_Object &argvObj, int opt) {
+        const char *arg = nullptr;
+        if(optState.index < argvObj.getValues().size() && *str(argvObj.getValues()[optState.index]) != '-') {
+            arg = str(argvObj.getValues()[optState.index++]);
         }
+        if(!this->update(opt, arg)) {
+            ERROR(argvObj, "%s: invalid number", arg);
+            return 1;
+        }
+        return 0;
+    }
+
+private:
+    bool update(int ch, const char *str) {
+        this->count++;
         // search entry
         for(unsigned int index = 0; index < arraySize(ulimitOps); index++) {
             if(ulimitOps[index].op == ch) {
@@ -1619,6 +1631,7 @@ struct UlimitOptEntryTable {
     }
 };
 
+
 static int builtin_ulimit(DSState &, Array_Object &argvObj) {
     flag8_set_t limOpt = RLIM_SOFT;
     bool showAll = false;
@@ -1633,36 +1646,33 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
     UlimitOptEntryTable table;
 
     // parse option
-    for(unsigned int count = 0;; count++) {
-        int opt = optState(argvObj, optStr);
+    for(int opt; (opt = optState(argvObj, optStr)) != -1;) {
         switch(opt) {
         case 'H':
             setFlag(limOpt, RLIM_HARD);
-            continue;
+            break;
         case 'S':
             setFlag(limOpt, RLIM_SOFT);
-            continue;
+            break;
         case 'a':
             showAll = true;
-            continue;
+            break;
         case '?':
             return invalidOptionError(argvObj, optState);
         default:
+            int ret = table.tryToUpdate(optState, argvObj, opt);
+            if(ret) {
+                return ret;
+            }
             break;
         }
+    }
 
-        if(opt != -1 || count == 0) {
-            const char *arg = nullptr;
-            if(optState.index < argvObj.getValues().size() && *str(argvObj.getValues()[optState.index]) != '-') {
-                arg = str(argvObj.getValues()[optState.index++]);
-            }
-            if(!table.update(opt, arg)) {
-                ERROR(argvObj, "%s: invalid number", arg);
-                return 1;
-            }
-        }
-        if(opt == -1) {
-            break;
+    // parse remain
+    if(table.count == 0) {
+        int ret = table.tryToUpdate(optState, argvObj, 'f');
+        if(ret) {
+            return ret;
         }
     }
 

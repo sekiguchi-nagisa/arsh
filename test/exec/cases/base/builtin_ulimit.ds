@@ -1,0 +1,13 @@
+
+# print resources
+var opts = new [String]()
+for $opt in "cdefilmnpqrRstvw" {
+    ulimit -$opt && { $opts.add("-$opt"); true; }
+}
+assert "$(ulimit -S)" == "$(ulimit -f -S)"
+assert "$(ulimit -H)" == "$(ulimit -f -H)"
+
+# print all resources
+assert "$(ulimit -a)" == "$(ulimit $opts)"
+assert "$(ulimit -a -H)" == "$(ulimit $opts -H)"
+assert "$(ulimit -a -S)" == "$(ulimit $opts -S)"
