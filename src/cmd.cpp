@@ -1633,7 +1633,7 @@ private:
 
 
 static int builtin_ulimit(DSState &, Array_Object &argvObj) {
-    flag8_set_t limOpt = RLIM_SOFT;
+    flag8_set_t limOpt = 0;
     bool showAll = false;
 
     GetOptState optState;
@@ -1674,6 +1674,10 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
         if(ret) {
             return ret;
         }
+    }
+
+    if(limOpt == 0) {
+        setFlag(limOpt, RLIM_SOFT);
     }
 
     if(showAll) {
