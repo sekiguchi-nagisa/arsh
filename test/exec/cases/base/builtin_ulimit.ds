@@ -40,7 +40,7 @@ assert $? == 1
 assert "$(ulimit -S 6000 2>&1)" ==
        "ydsh: ulimit: file size (blocks): cannot change limit: Invalid argument"
 
-assert ulimit -S -c 4000
-assert "$(ulimit -S -c)" == "4000"
-assert ulimit -H -c sOft
-assert "$(ulimit -H -c)" == "4000"
+assert ulimit -S -f 4000
+assert "$(ulimit -S -f)" == "4000"
+assert ulimit -H -f sOft
+assert "$(ulimit -H -f)" == "4000"
