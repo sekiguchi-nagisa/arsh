@@ -140,8 +140,18 @@ int Proc::wait(WaitOp op) {
                 this->state_ = TERMINATED;
                 this->exitStatus_ = WEXITSTATUS(status);
             } else if(WIFSIGNALED(status)) {
+                int sigNum = WTERMSIG(status);
+                bool hasCoreDump = false;
                 this->state_ = TERMINATED;
-                this->exitStatus_ = WTERMSIG(status) + 128;
+                this->exitStatus_ = sigNum + 128;
+
+#ifdef WCOREDUMP
+                if(WCOREDUMP(status)) {
+                    hasCoreDump = true;
+                }
+#endif
+                fprintf(stderr, "%s%s\n", strsignal(sigNum), hasCoreDump ? " (core dump)" : "");
+                fflush(stderr);
             } else if(WIFSTOPPED(status)) {
                 this->state_ = STOPPED;
                 this->exitStatus_ = WSTOPSIG(status) + 128;
