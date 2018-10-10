@@ -187,14 +187,6 @@ struct IOConfig {
 
 void xcfmakesane(termios &term);
 
-struct WinSize {
-    unsigned short row;
-    unsigned short col;
-
-    WinSize(unsigned short row, unsigned short col) : row(row), col(col) {}
-
-    WinSize() : WinSize(24, 80) {}
-};
 
 class ProcBuilder {
 private:
@@ -208,7 +200,8 @@ private:
      */
     termios term;
 
-    WinSize winSize;
+    unsigned short row{24};
+    unsigned short col{80};
 
     /**
      * called before exec process
@@ -272,8 +265,9 @@ public:
         return *this;
     }
 
-    ProcBuilder &setWinSize(WinSize size) {
-        this->winSize = size;
+    ProcBuilder &setWinSize(unsigned short row, unsigned short col) {
+        this->row = row;
+        this->col = col;
         return *this;
     }
 

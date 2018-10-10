@@ -172,7 +172,7 @@ Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
 // ##     ProcBuilder     ##
 // #########################
 
-static void setPTYSetting(int fd, termios &term, WinSize size) {
+static void setPTYSetting(int fd, termios &term, unsigned short row, unsigned short col) {
     if(fd < 0) {
         return;
     }
@@ -182,8 +182,8 @@ static void setPTYSetting(int fd, termios &term, WinSize size) {
     }
 
     winsize ws;
-    ws.ws_row = size.row;
-    ws.ws_col = size.col;
+    ws.ws_row = row;
+    ws.ws_col = col;
     if(ioctl(fd, TIOCSWINSZ, &ws) == -1) {
         error_at("failed");
     }
@@ -206,7 +206,7 @@ ProcHandle ProcBuilder::operator()() {
 
         this->syncEnv();
         this->syncPWD();
-        setPTYSetting(this->findPTY(), this->term, this->winSize);
+        setPTYSetting(this->findPTY(), this->term, this->row, this->col);
         if(this->beforeExec) {
             this->beforeExec();
         }
@@ -261,7 +261,7 @@ static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {
         }
         termios term;
         cfmakeraw(&term);
-        setPTYSetting(fd, term, WinSize());
+        setPTYSetting(fd, term, 24, 80);
         slaveFD = fd;
     }
 }
