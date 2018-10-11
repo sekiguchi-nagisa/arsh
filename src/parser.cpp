@@ -229,37 +229,28 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     auto node = unique<FunctionNode>(startPos, this->lexer->toName(token));
     TRY(this->expect(LP));
 
-    if(CUR_KIND() == APPLIED_NAME) {
-        token = this->expect(APPLIED_NAME); // always success
-        auto nameNode = unique<VarNode>(token, this->lexer->toName(token));
-        TRY(this->expect(COLON, false));
-
-        auto type = TRY(this->parse_typeName());
-
-        node->addParamNode(nameNode.release(), type.release());
-
-        while(CUR_KIND() != RP) {
-            if(CUR_KIND() == COMMA) {
-                this->consume();    // COMMA
-                token = TRY(this->expect(APPLIED_NAME));
-
-                nameNode = unique<VarNode>(token, this->lexer->toName(token));
-
-                TRY(this->expect(COLON, false));
-
-                type = TRY(this->parse_typeName());
-
-                node->addParamNode(nameNode.release(), type.release());
-            } else {
+    for(unsigned int count = 0; CUR_KIND() != RP; count++) {
+        if(count > 0) {
+            if(CUR_KIND() != COMMA) {
                 E_ALTER(COMMA, RP);
             }
+            this->consume();    // COMMA
         }
-    } else if(CUR_KIND() != RP) {
-        E_ALTER(APPLIED_NAME, RP);
-    }
 
+        if(CUR_KIND() == APPLIED_NAME) {
+            token = this->expect(APPLIED_NAME); // always success
+            auto nameNode = unique<VarNode>(token, this->lexer->toName(token));
+            TRY(this->expect(COLON, false));
+
+            auto type = TRY(this->parse_typeName());
+
+            node->addParamNode(nameNode.release(), type.release());
+        } else {
+            E_ALTER(APPLIED_NAME, RP);
+        }
+    }
+    this->expect(RP);   // always success
     node->updateToken(this->curToken);
-    TRY(this->expect(RP));
 
     std::unique_ptr<TypeNode> retTypeNode;
     if(CUR_KIND() == COLON) {
