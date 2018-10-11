@@ -1284,26 +1284,22 @@ ArgsWrapper Parser::parse_arguments() {
     Token token = TRY(this->expect(LP));
 
     ArgsWrapper args(token.pos);
-    switch(CUR_KIND()) {
-    EACH_LA_expression(GEN_LA_CASE) {
-        args.addArgNode(TRY(this->parse_expression()));
-        while(CUR_KIND() != RP) {
-            if(CUR_KIND() == COMMA) {
-                this->consume();    // COMMA
-                args.addArgNode(TRY(this->parse_expression()));
-            } else {
+    for(unsigned int count = 0; CUR_KIND() != RP; count++) {
+        if(count > 0) {
+            if(CUR_KIND() != COMMA) {
                 E_ALTER(COMMA, RP);
             }
+            this->consume();    // COMMA
         }
-        break;
+        switch(CUR_KIND()) {
+        EACH_LA_expression(GEN_LA_CASE)
+            args.addArgNode(TRY(this->parse_expression()));
+            break;
+        default:
+            E_ALTER(EACH_LA_expression(GEN_LA_ALTER) RP);
+        }
     }
-    case RP:
-        break;
-    default:  // no args
-        E_ALTER(EACH_LA_expression(GEN_LA_ALTER) RP);
-    }
-
-    token = TRY(this->expect(RP));
+    token = this->expect(RP);   // always success
     args.updateToken(token);
     return args;
 }
