@@ -56,6 +56,23 @@ public:
 
         ASSERT_EQ(-1, UnicodeUtil::utf8ToCodePoint(buf, bufSize));
     }
+
+    template <unsigned int N>
+    void assertCodePoint2Utf8(const char (&ch)[N]) {
+        this->assertCodePoint2Utf8(ch, N - 1);
+    }
+
+    void assertCodePoint2Utf8(const char *ch, unsigned int byteSize) {
+        SCOPED_TRACE("");
+
+        char buf[4];
+        int codePoint = UnicodeUtil::utf8ToCodePoint(ch, byteSize);
+        unsigned int size = UnicodeUtil::codePointToUtf8(codePoint, buf);
+        ASSERT_EQ(byteSize, size);
+        std::string before(ch, byteSize);
+        std::string after(buf, size);
+        ASSERT_EQ(before, after);
+    }
 };
 
 TEST_F(UnicodeTest, size) {
@@ -76,6 +93,19 @@ TEST_F(UnicodeTest, size) {
     ASSERT_NO_FATAL_FAILURE(this->assertByteSize(4, "𪗱"));
     ASSERT_NO_FATAL_FAILURE(this->assertByteSize(4, "𣏤"));
     ASSERT_NO_FATAL_FAILURE(this->assertByteSize(4, "𣴀"));
+}
+
+TEST_F(UnicodeTest, codepoint2utf8) {
+    SCOPED_TRACE("");
+
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("\0"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("a"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("å"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("¶"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("あ"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("ｱ"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("𣏤"));
+    ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("𣴀"));
 }
 
 TEST_F(UnicodeTest, base) {

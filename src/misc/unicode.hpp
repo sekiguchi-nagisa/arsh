@@ -100,6 +100,18 @@ struct UnicodeUtil {
      * if LC_CTYPE is CJK, call width(codePoint, TWO_WIDTH)
      */
     static int localeAwareWidth(int codePoint);
+
+    /**
+     *
+     * @param codePoint
+     * must be unicode code point
+     * @param buf
+     * atleast 4byte
+     * @return
+     * size of written byte.
+     * if invalid code point, return 0 and do nothing
+     */
+    static unsigned int codePointToUtf8(int codePoint, char * const buf);
 };
 
 
@@ -277,6 +289,30 @@ int UnicodeUtil<T>::localeAwareWidth(int codePoint) {
         }
     }
     return width(codePoint, e);
+}
+
+template <bool T>
+unsigned int UnicodeUtil<T>::codePointToUtf8(int codePoint, char * const buf) {
+    if(codePoint <= 0x7F) { // 0xxxxxxx
+        buf[0] = codePoint;
+        return 1;
+    } else if(codePoint <= 0x7FF) { // 110xxxxx 10xxxxxx
+        buf[0] = 0xC0 | (codePoint >> 6);
+        buf[1] = 0x80 | (codePoint & 0x3F);
+        return 2;
+    } else if(codePoint <= 0xFFFF) {    // 1110xxxx 10xxxxxx 10xxxxxx
+        buf[0] = 0xE0 | (codePoint >> 12);
+        buf[1] = 0x80 | ((codePoint >> 6) & 0x3F);
+        buf[2] = 0x80 | (codePoint & 0x3F);
+        return 3;
+    } else if(codePoint <= 0x10FFFF) {   // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+        buf[0] = 0xF0 | (codePoint >> 18);
+        buf[1] = 0x80 | ((codePoint >> 12) & 0x3F);
+        buf[2] = 0x80 | ((codePoint >> 6) & 0x3F);
+        buf[3] = 0x80 | (codePoint & 0x3F);
+        return 4;
+    }
+    return 0;
 }
 
 } // namespace __detail_unicode
