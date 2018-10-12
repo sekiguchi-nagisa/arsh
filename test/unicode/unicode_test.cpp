@@ -98,6 +98,9 @@ TEST_F(UnicodeTest, size) {
 TEST_F(UnicodeTest, codepoint2utf8) {
     SCOPED_TRACE("");
 
+    char buf[4];
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, UnicodeUtil::codePointToUtf8(-3, buf)));
+
     ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("\0"));
     ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("a"));
     ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("å"));
