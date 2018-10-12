@@ -204,19 +204,6 @@ Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext
     return token;
 }
 
-void Parser::raiseTokenFormatError(TokenKind kind, Token token, const char *msg) {
-    std::string message(msg);
-    message += ": ";
-    message += toString(kind);
-
-    this->createError(kind, token, "TokenFormat", std::move(message));
-}
-
-void Parser::raiseDeepNestingError() {
-    std::string message = "parser recursion depth exceeded";
-    this->createError(this->curKind, this->curToken, "DeepNesting", std::move(message));
-}
-
 
 // parse rule definition
 std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {

@@ -136,10 +136,6 @@ protected:
      */
     Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
 
-    void raiseTokenFormatError(TokenKind kind, Token token, const char *msg);
-
-    void raiseDeepNestingError();
-
     // parser rule definition.
     std::unique_ptr<FunctionNode> parse_funcDecl();
     std::unique_ptr<Node> parse_interface();

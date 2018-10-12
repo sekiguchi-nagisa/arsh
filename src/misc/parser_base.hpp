@@ -27,6 +27,8 @@ namespace parser_base {
 constexpr const char *TOKEN_MISMATCHED = "TokenMismatched";
 constexpr const char *NO_VIABLE_ALTER  = "NoViableAlter";
 constexpr const char *INVALID_TOKEN    = "InvalidToken";
+constexpr const char *TOKEN_FORMAT     = "TokenFormat";
+constexpr const char *DEEP_NESTING     = "DeepNesting";
 
 template <typename T>
 class ParseError {
@@ -158,6 +160,10 @@ protected:
 
     void raiseInvalidTokenError(unsigned int size, const T *alters);
 
+    void raiseTokenFormatError(T kind, Token token, const char *msg);
+
+    void raiseDeepNestingError();
+
     template <typename ...Arg>
     void createError(Arg && ...arg) {
         this->error.reset(new ParseError<T>(std::forward<Arg>(arg)...));
@@ -248,6 +254,20 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseInvalidTokenError(unsigned int 
                       std::move(expectedTokens), std::move(message));
 }
 
+template<typename T, typename LexerImpl, typename Tracker>
+void AbstractParser<T, LexerImpl, Tracker>::raiseTokenFormatError(T kind, Token token, const char *msg) {
+    std::string message(msg);
+    message += ": ";
+    message += toString(kind);
+
+    this->createError(kind, token, TOKEN_FORMAT, std::move(message));
+}
+
+template<typename T, typename LexerImpl, typename Tracker>
+void AbstractParser<T, LexerImpl, Tracker>::raiseDeepNestingError() {
+    std::string message = "parser recursion depth exceeded";
+    this->createError(this->curKind, this->curToken, DEEP_NESTING, std::move(message));
+}
 
 } //namespace parser_base
 } //namespace ydsh
