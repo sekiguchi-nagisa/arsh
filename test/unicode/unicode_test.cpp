@@ -233,7 +233,27 @@ TEST_F(UnicodeTest, illegal) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-2, UnicodeUtil::width(-1, UnicodeUtil::ONE_WIDTH)));
 }
 
+TEST_F(UnicodeTest, utf16) {
+    unsigned short high = 0xD867;
+    unsigned short low = 0xDE3D;
 
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isHighSurrogate(high)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(UnicodeUtil::isHighSurrogate(low)));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isLowSurrogate(low)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(UnicodeUtil::isLowSurrogate(high)));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isSurrogate(high)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isSurrogate(low)));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isBmpCodePoint(high)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isBmpCodePoint(low)));
+
+    int code = UnicodeUtil::utf16ToCodePoint(high, low);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isSupplementaryCodePoint(code)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(UnicodeUtil::isBmpCodePoint(code)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0x29E3D, code));
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

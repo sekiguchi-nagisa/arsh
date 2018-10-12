@@ -95,6 +95,39 @@ struct UnicodeUtil {
         return codePoint >= 0x0000 && codePoint <= 0x10FFFF;
     }
 
+    static bool isBmpCodePoint(int codePoint) {
+        return codePoint >= 0x0000 && codePoint <= 0xFFFF;
+    }
+
+    static bool isSupplementaryCodePoint(int codePoint) {
+        return codePoint > 0xFFFF && codePoint <= 0x10FFFF;
+    }
+
+    static bool isHighSurrogate(unsigned short v) {
+        return v >= 0xD800 && v <= 0xDBFF;
+    }
+
+    static bool isLowSurrogate(unsigned short v) {
+        return v >= 0xDC00 && v <= 0xDFFF;
+    }
+
+    static bool isSurrogate(unsigned short v) {
+        return v >= 0xD800 && v <= 0xDFFF;
+    }
+
+    /**
+     * if illegal surrogate pair, return -1.
+     * @param high
+     * @param low
+     * @return
+     */
+    static int utf16ToCodePoint(unsigned short high, unsigned short low) {
+        if(isHighSurrogate(high) && isLowSurrogate(low)) {
+            return (static_cast<unsigned int>(high - 0xD800) << 10) + (low - 0xDC00) + 0x10000;
+        }
+        return -1;
+    }
+
     enum AmbiguousCharWidth {
         ONE_WIDTH,
         TWO_WIDTH,
