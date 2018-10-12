@@ -21,6 +21,7 @@
 #include <cerrno>
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 
 namespace ydsh {
 
