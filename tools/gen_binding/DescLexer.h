@@ -60,11 +60,11 @@ public:
     ~DescLexer() = default;
 
     DescTokenKind nextToken(Token &token);
-
-    static bool isInvalidToken(DescTokenKind kind) {
-        return kind == INVALID;
-    }
 };
+
+inline bool isInvalidToken(DescTokenKind kind) {
+    return kind == INVALID;
+}
 
 const char *toString(DescTokenKind kind);
 

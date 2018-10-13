@@ -202,7 +202,7 @@ void AbstractParser<T, LexerImpl, Tracker>::consume() {
 
 template<typename T, typename LexerImpl, typename Tracker>
 void AbstractParser<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T expected) {
-    if(LexerImpl::isInvalidToken(this->curKind)) {
+    if(isInvalidToken(this->curKind)) {
         T alter[1] = { expected };
         this->raiseInvalidTokenError(1, alter);
     } else {
@@ -220,7 +220,7 @@ void AbstractParser<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T expected
 
 template<typename T, typename LexerImpl, typename Tracker>
 void AbstractParser<T, LexerImpl, Tracker>::raiseNoViableAlterError(unsigned int size, const T *alters) {
-    if(LexerImpl::isInvalidToken(this->curKind)) {
+    if(isInvalidToken(this->curKind)) {
         this->raiseInvalidTokenError(size, alters);
     } else {
         std::string message = "no viable alternative: ";

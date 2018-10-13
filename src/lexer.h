@@ -181,10 +181,6 @@ public:
         return this->modeStack.size();
     }
 
-    static bool isInvalidToken(TokenKind kind) {
-        return kind == INVALID;
-    }
-
     /**
      * lexer entry point.
      * write next token to token.

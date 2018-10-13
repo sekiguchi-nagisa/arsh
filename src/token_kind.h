@@ -170,6 +170,10 @@ enum TokenKind : unsigned int {
 #undef GEN_ENUM
 };
 
+inline bool isInvalidToken(TokenKind kind) {
+    return kind == INVALID;
+}
+
 const char *toString(TokenKind kind);
 
 #define TO_NAME(kind) toString(kind)
