@@ -287,7 +287,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
         case VAR:
         case LET: {
             startPos = START_POS();
-            auto readOnly = this->consume() == LET ? VarDeclNode::CONST : VarDeclNode::VAR;
+            auto readOnly = this->scan() == LET ? VarDeclNode::CONST : VarDeclNode::VAR;
             token = TRY(this->expect(IDENTIFIER));
             TRY(this->expect(COLON, false));
             auto type = TRY(this->parse_typeName());
@@ -790,12 +790,12 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
 
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
-        TokenKind kind = this->consume();
+        TokenKind kind = this->scan();
         return unique<RedirNode>(kind, TRY(this->parse_cmdArg()).release());
     }
     EACH_LA_redirNoFile(GEN_LA_CASE) {
         Token token = this->curToken;
-        TokenKind kind = this->consume();
+        TokenKind kind = this->scan();
         return unique<RedirNode>(kind, token);
     }
     default:
@@ -927,12 +927,12 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
         case BACKGROUND:
         case DISOWN_BG: {
             Token token = this->curToken;
-            bool disown = this->consume() == DISOWN_BG;
+            bool disown = this->scan() == DISOWN_BG;
             return std::unique_ptr<Node>(ForkNode::newBackground(node.release(), token, disown));
         }
         default: {
             Token token = this->curToken;
-            TokenKind op = this->consume();
+            TokenKind op = this->scan();
             auto rightNode = TRY(this->parse_unaryExpression());
             for(unsigned int nextP = PRECEDENCE();
                 !HAS_NL() && (nextP > p || (nextP == p && isAssignOp(op))); nextP = PRECEDENCE()) {
@@ -954,7 +954,7 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case MINUS:
     case NOT: {
         Token token = this->curToken;
-        TokenKind op = this->consume();
+        TokenKind op = this->scan();
         return unique<UnaryOpNode>(op, token, TRY(this->parse_unaryExpression()).release());
     }
     case THROW: {
@@ -1010,13 +1010,13 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         case INC:
         case DEC: {
             Token token = this->curToken;
-            TokenKind op = this->consume();
+            TokenKind op = this->scan();
             node.reset(createSuffixNode(node.release(), op, token));
             break;
         }
         case UNWRAP: {
             Token token = this->curToken;
-            TokenKind op = this->consume(); // UNWRAP
+            TokenKind op = this->scan(); // UNWRAP
             node = unique<UnaryOpNode>(node.release(), op, token);
             break;
         }
@@ -1385,7 +1385,7 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
 
     assert(CUR_KIND() == START_IN_SUB || CUR_KIND() == START_OUT_SUB);
     unsigned int pos = START_POS();
-    bool inPipe = this->consume() == START_IN_SUB;
+    bool inPipe = this->scan() == START_IN_SUB;
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(RP));
     return std::unique_ptr<Node>(ForkNode::newProcSubstitution(pos, exprNode.release(), token, inPipe));
