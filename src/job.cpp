@@ -150,7 +150,7 @@ int Proc::wait(WaitOp op) {
                     hasCoreDump = true;
                 }
 #endif
-                fprintf(stderr, "%s%s\n", strsignal(sigNum), hasCoreDump ? " (core dump)" : "");
+                fprintf(stderr, "%s%s\n", strsignal(sigNum), hasCoreDump ? " (core dumped)" : "");
                 fflush(stderr);
             } else if(WIFSTOPPED(status)) {
                 this->state_ = STOPPED;
