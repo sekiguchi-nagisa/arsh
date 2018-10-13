@@ -108,6 +108,20 @@ public:
      */
     LexerBase(const char *data, unsigned int size);
 
+    LexerBase &operator=(LexerBase &&lex) noexcept {
+        this->swap(lex);
+        return *this;
+    }
+
+    void swap(LexerBase &lex) noexcept {
+        std::swap(this->file, lex.file);
+        this->buf.swap(lex.buf);
+        std::swap(this->cursor, lex.cursor);
+        std::swap(this->limit, lex.limit);
+        std::swap(this->marker, lex.marker);
+        std::swap(this->ctxMarker, lex.ctxMarker);
+    }
+
     /**
      * get current reading position.
      */
