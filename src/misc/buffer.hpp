@@ -115,8 +115,7 @@ public:
     }
 
     FlexBuffer &operator=(FlexBuffer &&buffer) noexcept {
-        FlexBuffer tmp(std::move(buffer));
-        this->swap(tmp);
+        this->swap(buffer);
         return *this;
     }
 

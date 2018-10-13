@@ -87,8 +87,7 @@ public:
     }
 
     IntrusivePtr &operator=(IntrusivePtr &&v) noexcept {
-        IntrusivePtr tmp(std::move(v));
-        this->swap(tmp);
+        this->swap(v);
         return *this;
     }
 

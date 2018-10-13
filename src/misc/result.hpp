@@ -257,8 +257,7 @@ public:
     }
 
     Union &operator=(Union && value) noexcept {
-        auto tmp(std::move(value));
-        this->moveAssign(tmp);
+        this->moveAssign(value);
         return *this;
     }
 

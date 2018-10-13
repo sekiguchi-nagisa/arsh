@@ -177,8 +177,7 @@ public:
     }
 
     DSValue &operator=(DSValue &&value) noexcept {
-        DSValue tmp(std::move(value));
-        this->swap(tmp);
+        this->swap(value);
         return *this;
     }
 
@@ -843,8 +842,7 @@ struct NativeCode : public DSCode {
     NON_COPYABLE(NativeCode);
 
     NativeCode &operator=(NativeCode &&o) noexcept {
-        NativeCode tmp(std::move(o));
-        std::swap(this->code, tmp.code);
+        std::swap(this->code, o.code);
         return *this;
     }
 };
@@ -929,8 +927,7 @@ public:
     }
 
     CompiledCode &operator=(CompiledCode &&o) noexcept {
-        auto tmp(std::move(o));
-        this->swap(tmp);
+        this->swap(o);
         return *this;
     }
 
