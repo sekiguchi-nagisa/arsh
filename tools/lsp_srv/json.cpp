@@ -117,7 +117,7 @@ JSON Parser::parseValue() {
         Token token = this->expect(STRING); // always success
         auto str = createString();
         TRY(this->unescapeStr(token, *str));
-        return str;
+        return JSON(std::move(str));    // for prevent build error in older gcc/clang
     }
     case ARRAY_OPEN:
         return this->parseArray();
