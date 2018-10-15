@@ -103,13 +103,13 @@ JSON Parser::operator()(json::Lexer &&lexer) {
 JSON Parser::parseValue() {
     switch(this->curKind) {
     case NIL:
-        this->expect(NIL);
+        this->consume();    // NIL
         return nullptr;
     case TRUE:
-        this->expect(TRUE);
+        this->consume();    // TRUE
         return true;
     case FALSE:
-        this->expect(FALSE);
+        this->consume();    // FALSE
         return false;
     case NUMBER:
         return this->parseNumber();
