@@ -238,12 +238,15 @@ private:
     int tag_;
 
 public:
+    template <typename R>
+    using Tag = TypeTag<R, T...>;
+
     NON_COPYABLE(Union);
 
     Union() noexcept : tag_(-1) {}
 
     template <typename U, typename F = __detail::resolvedType<U, T...>>
-    Union(U &&value) noexcept : tag_(TypeTag<F, T...>::value) {
+    Union(U &&value) noexcept : tag_(Tag<F>::value) {
         this->value_.obtain(std::forward<U>(value));
     }
 
