@@ -42,5 +42,19 @@ int main(void) {
     showSize<std::vector<json::JSON>>("std::vector<json::JSON>");
     showSize<std::map<std::string, json::JSON>>("std::map<std::string, json::JSON>");
     showSize<ydsh::Union<std::string, double >>("ydsh::Union<std::string, double >");
+
+//    printf("\\u%04x\n", 28);
+
+    json::JSON value = {
+            {"hello", false},
+            {"aaaa", json::array()},
+            {"123456" , json::array(34, "gare", nullptr)},
+            {"AA", {
+                        {"BBB", false}, {"", nullptr}
+                    }
+            }
+    };
+    printf("%s", json::Parser()(value.serialize(2).c_str()).serialize(2).c_str());
+//    printf("")
     return 0;
 }

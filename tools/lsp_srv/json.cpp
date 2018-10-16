@@ -57,6 +57,156 @@ size_t JSON::size() const {
     return 0;
 }
 
+#define EACH_JSON_TYPE(T) \
+    T(bool) \
+    T(long) \
+    T(double) \
+    T(String) \
+    T(Array) \
+    T(Object)
+
+struct Serializer {
+    const unsigned int tab;
+    unsigned int level{0};
+    std::string str;
+
+    Serializer(unsigned int tab) : tab(tab) {}
+
+    void operator()(const JSON &value) {
+        this->serialize(value);
+        this->str += '\n';
+    }
+
+    void serialize(const JSON &value) {
+#define GEN_CASE(T) case JSON::Tag<T>::value: this->serialize(ydsh::get<T>(value)); break;
+        switch(value.tag()) {
+        EACH_JSON_TYPE(GEN_CASE)
+        default:
+            this->serialize();
+            break;
+        }
+#undef GEN_CASE
+    }
+
+    void serialize() {
+        this->str += "null";
+    }
+
+    void serialize(bool value) {
+        this->str += value ? "true" : "false";
+    }
+
+    void serialize(long value) {
+        this->str += std::to_string(value);
+    }
+
+    void serialize(double value) {
+        this->str += std::to_string(value);
+    }
+
+    void serializeStr(const std::string &value) {
+        this->str += '"';
+        for(int ch : value) {
+            if(ch >= 0 && ch < 0x1F) {
+                char buf[16];
+                snprintf(buf, 16, "\\u%04x", ch);
+                str += buf;
+                continue;
+            } else if(ch == '\\' || ch == '"') {
+                this->str += '\\';
+            }
+            this->str += ch;
+        }
+        this->str += '"';
+    }
+
+    void serialize(const String &value) {
+        this->serializeStr(*value);
+    }
+
+    void serialize(const Array &value) {
+        if(value->size() == 0) {
+            this->str += "[]";
+            return;
+        }
+
+        this->enter('[');
+        for(unsigned int i = 0; i < value->size(); i++) {
+            if(i > 0) {
+                this->separator();
+            }
+            this->indent();
+            this->serialize((*value)[i]);
+        }
+        this->leave(']');
+    }
+
+    void serialize(const Object &value) {
+        if(value->size() == 0) {
+            this->str += "{}";
+            return;
+        }
+
+        this->enter('{');
+        unsigned int count = 0;
+        for(auto &e : (*value)) {
+            if(count++ > 0) {
+                this->separator();
+            }
+            this->indent();
+            this->serialize(e);
+        }
+        this->leave('}');
+    }
+
+    void enter(char ch) {
+        this->str += ch;
+        if(this->tab > 0) {
+            this->str += '\n';
+        }
+        this->level++;
+    }
+
+    void leave(char ch) {
+        if(this->tab > 0) {
+            this->str += '\n';
+        }
+        this->level--;
+        this->indent();
+        this->str += ch;
+    }
+
+    void separator() {
+        this->str += ',';
+        if(this->tab > 0) {
+            this->str += '\n';
+        }
+    }
+
+    void serialize(const std::pair<const std::string, JSON> &value) {
+        this->serializeStr(value.first);
+        this->str += ':';
+        if(this->tab > 0) {
+            this->str += ' ';
+        }
+        this->serialize(value.second);
+    }
+
+    void indent() {
+        for(unsigned int i = 0; i < this->level; i++) {
+            for(unsigned j = 0; j < this->tab; j++) {
+                this->str += ' ';
+            }
+        }
+    }
+};
+
+std::string JSON::serialize(unsigned int tab) const {
+    Serializer serializer(tab);
+    serializer(*this);
+    return std::move(serializer.str);
+}
+
 
 const char *toString(JSONTokenKind kind) {
     const char *table[] = {

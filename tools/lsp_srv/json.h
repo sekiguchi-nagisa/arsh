@@ -149,6 +149,8 @@ public:
     JSON &operator[](const std::string &key);
 
     size_t size() const;
+
+    std::string serialize(unsigned int tab = 0) const;
 };
 
 struct Member {
