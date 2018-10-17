@@ -129,11 +129,25 @@ set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
 check_library(HAVE_LIBPCRE "pcre")
 
 
-#++++++++++++++++++++++++#
-#     init submodule     #
-#++++++++++++++++++++++++#
+#+++++++++++++++++++++++#
+#     get linenoise     #
+#+++++++++++++++ +++++++#
 
-execute_process(COMMAND git submodule update --init)
+if (CMAKE_VERSION VERSION_LESS 3.2)
+    set(UPDATE_DISCONNECTED_IF_AVAILABLE "")
+else()
+    set(UPDATE_DISCONNECTED_IF_AVAILABLE "UPDATE_DISCONNECTED 1")
+endif()
+
+download_project(
+        PROJ                linenoise
+        SOURCE_DIR          ${CMAKE_SOURCE_DIR}/linenoise-source
+        DOWNLOAD_DIR        ${CMAKE_SOURCE_DIR}/linenoise-download
+        GIT_REPOSITORY      https://github.com/sekiguchi-nagisa/linenoise.git
+        GIT_TAG             shell-patch
+        ${UPDATE_DISCONNECTED_IF_AVAILABLE}
+)
+include_directories(${linenoise_SOURCE_DIR})
 
 
 #+++++++++++++++++++++++++++#
@@ -254,7 +268,7 @@ include_directories(ext/linenoise)
 add_executable(${BIN_NAME}
         src/main.cpp
         src/interactive.cpp
-        ext/linenoise/linenoise.c)
+        ${linenoise_SOURCE_DIR}/linenoise.c)
 target_link_libraries(${BIN_NAME} ${YDSH_LIB})
 
 install(TARGETS ${BIN_NAME} ${YDSH_LIB}
