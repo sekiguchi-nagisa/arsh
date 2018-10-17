@@ -208,6 +208,21 @@ TEST_F(ParserTest, object) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->ret["hohgeo"].isNull()));
 }
 
+TEST_F(ParserTest, serialize) {
+    auto expect = JSON {
+            {"34", {}},
+            {"aa", false},
+            {"bb", array(nullptr, 3, 3.4, "hey", JSON { {"huga", array()} })},
+            {"ZZ", {
+                           {";;;", 234}, {"", {}}
+            }}
+    }.serialize(3);
+
+    auto actual = Parser()(expect.c_str(), expect.size()).serialize(3);
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
