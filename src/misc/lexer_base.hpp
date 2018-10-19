@@ -144,6 +144,12 @@ public:
         return token.pos + token.size <= this->getUsedSize();
     }
 
+    std::pair<const char *, const char *> getRange(Token token) const {
+        const char *begin = (char *)this->buf.get() + token.pos;
+        const char *end = begin + token.size;
+        return {begin, end};
+    }
+
     /**
      * get text of token.
      */

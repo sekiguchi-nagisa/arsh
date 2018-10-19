@@ -202,12 +202,6 @@ public:
     Lexer(const char *data, unsigned int size) : LexerBase(data, size) {}
 
     JSONTokenKind nextToken(Token &token);
-
-    std::pair<const char *, const char *> getRange(Token token) const {
-        const char *begin = (char *)this->buf.get() + token.pos;
-        const char *end = begin + token.size;
-        return {begin, end};
-    }
 };
 
 class Parser : public ydsh::parser_base::AbstractParser<JSONTokenKind, Lexer> {
