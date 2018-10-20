@@ -448,7 +448,7 @@ bool Parser::unescapeStr(json::Token token, std::string &str)  {
 void Parser::showError() const {
     assert(this->hasError());
 
-    unsigned int lineNum = 1;   // FIXME: fix lineNum
+    unsigned int lineNum = this->getLexer()->getSourceInfo()->getLineNum(this->getError().getErrorToken().pos);
     const char *srcName = "(string)";   //FIXME:
 
     fprintf(stderr, "%s:%d: [error] %s\n", srcName, lineNum, this->getError().getMessage().c_str());

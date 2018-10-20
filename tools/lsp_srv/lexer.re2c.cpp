@@ -21,6 +21,8 @@
 
 #define REACH_EOS() do { if(this->isEnd()) { goto EOS; } else { ERROR(); } } while(false)
 
+#define UPDATE_LN() this->updateNewline(startPos)
+
 #define SKIP() goto INIT
 
 #define ERROR() do { RET(INVALID); } while(false)
@@ -65,7 +67,7 @@ JSONTokenKind Lexer::nextToken(json::Token &token) {
       ","                    { RET(COMMA); }
       ":"                    { RET(COLON); }
 
-      [ \t\r\n]+             { SKIP(); }
+      [ \t\r\n]+             { UPDATE_LN(); SKIP(); }
       "\000"                 { REACH_EOS(); }
 
       *                      { RET(INVALID); }
