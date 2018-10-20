@@ -194,6 +194,19 @@ public:
         std::swap(this->ctxMarker, lex.ctxMarker);
     }
 
+    const SourceInfo &getSourceInfo() const {
+        return this->srcInfo;
+    }
+
+    void setLineNum(unsigned int lineNum) {
+        this->srcInfo->setLineNumOffset(lineNum);
+    }
+
+    unsigned int getLineNum() const {
+        return this->srcInfo->getLineNumOffset() +
+               this->srcInfo->getLineNumTable().size();
+    }
+
     /**
      * get current reading position.
      */

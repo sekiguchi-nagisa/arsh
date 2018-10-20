@@ -93,19 +93,6 @@ public:
         this->cursor = this->buf.get() + pos;
     }
 
-    const SourceInfo &getSourceInfo() const {
-        return this->srcInfo;
-    }
-
-    void setLineNum(unsigned int lineNum) {
-        this->srcInfo->setLineNumOffset(lineNum);
-    }
-
-    unsigned int getLineNum() const {
-        return this->srcInfo->getLineNumOffset() +
-               this->srcInfo->getLineNumTable().size();
-    }
-
     bool isPrevNewLine() const {
         return this->prevNewLine;
     }
