@@ -452,14 +452,14 @@ void Error_Object::createStackTrace(const DSState &ctx) {
     fillInStackTrace(ctx, this->stackTrace);
 }
 
-unsigned int getSourcePos(const SourcePosEntry *entries, unsigned int index) {  //FIXME binary search
+unsigned int getLineNum(const LineNumEntry *entries, unsigned int index) {  //FIXME binary search
     unsigned int i = 0;
     for(; entries[i].address > 0; i++) {
         if(index < entries[i].address) {
             break;
         }
     }
-    return entries[i > 0 ? i - 1 : 0].pos;
+    return entries[i > 0 ? i - 1 : 0].lineNum;
 }
 
 // ########################

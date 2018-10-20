@@ -847,19 +847,15 @@ struct NativeCode : public DSCode {
     }
 };
 
-struct SourcePosEntry {
+struct LineNumEntry {
     unsigned int address;
-
-    /**
-     * indicating source position.
-     */
-    unsigned int pos;
+    unsigned int lineNum;
 };
 
 /**
  * entries must not be null
  */
-unsigned int getSourcePos(const SourcePosEntry *entries, unsigned int index);
+unsigned int getLineNum(const LineNumEntry *entries, unsigned int index);
 
 struct ExceptionEntry {
     /**
@@ -877,7 +873,7 @@ struct ExceptionEntry {
 
 class CompiledCode : public DSCode {
 private:
-    SourceInfoPtr srcInfo;
+    char *sourceName{nullptr};
 
     /**
      * if CallableKind is toplevel, it is null
@@ -892,7 +888,7 @@ private:
     /**
      * last element is sentinel ({0, 0})
      */
-    SourcePosEntry *sourcePosEntries{nullptr};
+    LineNumEntry *lineNumEntries{nullptr};
 
     /**
      * lats element is sentinel.
@@ -903,26 +899,28 @@ public:
     NON_COPYABLE(CompiledCode);
 
     CompiledCode(SourceInfoPtr srcInfo, const char *name, unsigned char *code,
-                 DSValue *constPool, SourcePosEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
-            DSCode(code), srcInfo(std::move(srcInfo)), name(name == nullptr ? nullptr : strdup(name)),
-            constPool(constPool), sourcePosEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
+                 DSValue *constPool, LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
+            DSCode(code), sourceName(strdup(srcInfo->getSourceName().c_str())), name(name == nullptr ? nullptr : strdup(name)),
+            constPool(constPool), lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
 
     CompiledCode(CompiledCode &&c) noexcept :
-            DSCode(c.code), srcInfo(std::move(c.srcInfo)), name(c.name),
-            constPool(c.constPool), sourcePosEntries(c.sourcePosEntries), exceptionEntries(c.exceptionEntries) {
+            DSCode(c.code), sourceName(c.sourceName), name(c.name),
+            constPool(c.constPool), lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries) {
+        c.sourceName = nullptr;
         c.name = nullptr;
         c.code = nullptr;
         c.constPool = nullptr;
-        c.sourcePosEntries = nullptr;
+        c.lineNumEntries = nullptr;
         c.exceptionEntries = nullptr;
     }
 
     CompiledCode() noexcept : DSCode(nullptr) {}
 
     ~CompiledCode() {
+        free(this->sourceName);
         free(this->name);
         delete[] this->constPool;
-        free(this->sourcePosEntries);
+        free(this->lineNumEntries);
         delete[] this->exceptionEntries;
     }
 
@@ -933,10 +931,10 @@ public:
 
     void swap(CompiledCode &o) noexcept {
         std::swap(this->code, o.code);
-        std::swap(this->srcInfo, o.srcInfo);
+        std::swap(this->sourceName, o.sourceName);
         std::swap(this->name, o.name);
         std::swap(this->constPool, o.constPool);
-        std::swap(this->sourcePosEntries, o.sourcePosEntries);
+        std::swap(this->lineNumEntries, o.lineNumEntries);
         std::swap(this->exceptionEntries, o.exceptionEntries);
     }
 
@@ -948,8 +946,8 @@ public:
         return read16(this->code, 6);
     }
 
-    const SourceInfoPtr &getSrcInfo() const {
-        return this->srcInfo;
+    const char *getSourceName() const {
+        return this->sourceName;
     }
 
     /**
@@ -963,8 +961,8 @@ public:
         return this->constPool;
     }
 
-    const SourcePosEntry *getSourcePosEntries() const {
-        return this->sourcePosEntries;
+    const LineNumEntry *getLineNumEntries() const {
+        return this->lineNumEntries;
     }
 
     const ExceptionEntry *getExceptionEntries() const {

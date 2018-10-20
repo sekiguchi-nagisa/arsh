@@ -266,8 +266,8 @@ void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTr
             const auto *cc = static_cast<const CompiledCode *>(callable);
 
             // create stack trace element
-            const char *sourceName = cc->getSrcInfo()->getSourceName().c_str();
-            unsigned int pos = getSourcePos(cc->getSourcePosEntries(), frame.pc);
+            const char *sourceName = cc->getSourceName();
+            unsigned int lineNum = getLineNum(cc->getLineNumEntries(), frame.pc);
 
             std::string callableName;
             switch(callable->getKind()) {
@@ -285,7 +285,7 @@ void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTr
             default:
                 break;
             }
-            stackTrace.emplace_back(sourceName, cc->getSrcInfo()->getLineNum(pos), std::move(callableName));
+            stackTrace.emplace_back(sourceName, lineNum, std::move(callableName));
         }
     }
 }

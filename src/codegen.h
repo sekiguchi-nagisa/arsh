@@ -265,7 +265,7 @@ struct CodeBuilder : public CodeEmitter<true> {
     SourceInfoPtr srcInfo;
 
     std::vector<DSValue> constBuffer;
-    FlexBuffer<SourcePosEntry> sourcePosEntries;
+    FlexBuffer<LineNumEntry> lineNumEntries;
     std::vector<CatchBuilder> catchBuilders;
 
     /**

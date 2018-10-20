@@ -206,8 +206,8 @@ Code:
 Constant Pool:
   0: Int32 34
   1: Int32 34
-Source Pos Entry:
-  lineNum: 1, address: 15, pos: 12
+Line Number Table:
+  lineNum: 1, address: 15
 Exception Table:
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", "var a = 34; 34 as String"), 0, msg));
@@ -236,8 +236,8 @@ Constant Pool:
   0: Func<Boolean,[Any]> function(f)
   1: Int32 1
   2: Int32 3
-Source Pos Entry:
-  lineNum: 1, address: 18, pos: 67
+Line Number Table:
+  lineNum: 1, address: 18
 Exception Table:
   begin: 13, end: 29, type: Any, dest: 29, offset: 0, size: 0
 
@@ -250,7 +250,7 @@ Code:
   10: INSTANCE_OF  Array<Int32>
   15: RETURN_V
 Constant Pool:
-Source Pos Entry:
+Line Number Table:
 Exception Table:
 )";
     const char *s = "function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}";

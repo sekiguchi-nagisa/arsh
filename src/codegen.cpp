@@ -182,8 +182,9 @@ void ByteCodeGenerator::pushLoopLabels(Label breakLabel, Label continueLabel, La
 
 void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
     const unsigned int index = this->curBuilder().codeBuffer.size();
-    if(this->curBuilder().sourcePosEntries.empty() || this->curBuilder().sourcePosEntries.back().pos != pos) {
-        this->curBuilder().sourcePosEntries.push_back({index, pos});
+    unsigned int lineNum = this->curBuilder().srcInfo->getLineNum(pos);
+    if(this->curBuilder().lineNumEntries.empty() || this->curBuilder().lineNumEntries.back().lineNum != lineNum) {
+        this->curBuilder().lineNumEntries.push_back({index, lineNum});
     }
 }
 
@@ -1101,8 +1102,8 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const std::string &name) {
     constPool[constSize] = nullptr; // sentinel
 
     // extract source pos entry
-    this->curBuilder().sourcePosEntries.push_back({0, 0});
-    auto *entries = extract(std::move(this->curBuilder().sourcePosEntries));
+    this->curBuilder().lineNumEntries.push_back({0, 0});
+    auto *entries = extract(std::move(this->curBuilder().lineNumEntries));
 
     // create exception entry
     const unsigned int exceptEntrySize = this->curBuilder().catchBuilders.size();
@@ -1156,6 +1157,16 @@ static std::string formatNum(unsigned int width, unsigned int num) {
     return str;
 }
 
+static unsigned int getMaxLineNum(const LineNumEntry *table) {
+    unsigned int max = 1;
+    for(unsigned int i = 0; table[i].address != 0; i++) {
+        unsigned int value = table[i].lineNum;
+        if(value > max) {
+            max = value;
+        }
+    }
+    return max;
+}
 
 static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
                          std::vector<const CompiledCode *> *list) {
@@ -1183,16 +1194,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
         fprintf(fp, "  number of global variable: %d\n", getPool(ctx).getMaxGVarIndex());
     }
 
-#if 0
-    stream << "Line Number Table:" << std::endl;
-    {
-        const unsigned int size = c.getSrcInfo()->getLineNumTable().size();
-        for(unsigned int i = 0; i < size; i++) {
-            stream << "  line " << std::setw(digit(size)) << (i + 1) <<
-            ", pos " << c.getSrcInfo()->getLineNumTable()[i] << std::endl;
-        }
-    }
-#endif
+
     fputs("Code:\n", fp);
     {
         const char *opName[] = {
@@ -1276,15 +1278,14 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
     }
 
 
-    fputs("Source Pos Entry:\n", fp);
+    fputs("Line Number Table:\n", fp);
     {
-        auto &srcInfo = c.getSrcInfo();
-        const unsigned int maxLineNum = srcInfo->getLineNumTable().size() + srcInfo->getLineNumOffset();
-        for(unsigned int i = 0; c.getSourcePosEntries()[i].address != 0; i++) {
-            const auto &e = c.getSourcePosEntries()[i];
-            fprintf(fp, "  lineNum: %s, address: %s, pos: %d\n",
-                    formatNum(digit(maxLineNum), srcInfo->getLineNum(e.pos)).c_str(),
-                    formatNum(digit(codeSize), e.address).c_str(), e.pos);
+        const unsigned int maxLineNum = getMaxLineNum(c.getLineNumEntries());
+        for(unsigned int i = 0; c.getLineNumEntries()[i].address != 0; i++) {
+            const auto &e = c.getLineNumEntries()[i];
+            fprintf(fp, "  lineNum: %s, address: %s\n",
+                    formatNum(digit(maxLineNum), e.lineNum).c_str(),
+                    formatNum(digit(codeSize), e.address).c_str());
         }
     }
 
@@ -1299,7 +1300,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
 }
 
 void dumpCode(FILE *fp, DSState &ctx, const CompiledCode &c) {
-    fprintf(fp, "Source File: %s\n", c.getSrcInfo()->getSourceName().c_str());
+    fprintf(fp, "Source File: %s\n", c.getSourceName());
 
     std::vector<const CompiledCode *> list;
 
