@@ -180,15 +180,6 @@ public:
 
 private:
     bool isDecimal(Token token) const;
-
-    void updateNewline(unsigned int pos) {
-        const unsigned int stopPos = this->getPos();
-        for(unsigned int i = pos; i < stopPos; ++i) {
-            if(this->buf[i] == '\n') {
-                this->srcInfo->addNewlinePos(i);
-            }
-        }
-    }
 };
 
 } // namespace ydsh

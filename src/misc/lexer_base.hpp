@@ -290,6 +290,8 @@ protected:
      * fill buffer. called from this->nextToken().
      */
     bool fill(int n);
+
+    void updateNewline(unsigned int pos);
 };
 
 // #######################
@@ -458,6 +460,16 @@ bool LexerBase<T>::fill(int n) {
         this->appendToBuf(data, readSize, this->file == nullptr);
     }
     return !this->isEnd();
+}
+
+template<bool T>
+void LexerBase<T>::updateNewline(unsigned int pos) {
+    const unsigned int stopPos = this->getPos();
+    for(unsigned int i = pos; i < stopPos; ++i) {
+        if(this->buf[i] == '\n') {
+            this->srcInfo->addNewlinePos(i);
+        }
+    }
 }
 
 } // namespace __detail
