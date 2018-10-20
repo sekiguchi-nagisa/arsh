@@ -22,7 +22,6 @@
 
 #include "token_kind.h"
 #include "misc/lexer_base.hpp"
-#include "misc/resource.hpp"
 
 namespace ydsh {
 
@@ -31,50 +30,8 @@ namespace ydsh {
 const char *toModeName(LexerMode mode);
 
 
-class SourceInfoImpl : public RefCount<SourceInfoImpl> {
-private:
-    std::string sourceName;
-
-    /**
-     * default value is 1.
-     */
-    unsigned int lineNumOffset{1};
-
-    /**
-     * contains newline character position.
-     */
-    std::vector<unsigned int> lineNumTable;
-
-public:
-    explicit SourceInfoImpl(const char *sourceName) : sourceName(sourceName) { }
-    ~SourceInfoImpl() = default;
-
-    const std::string &getSourceName() const {
-        return this->sourceName;
-    }
-
-    void setLineNumOffset(unsigned int offset) {
-        this->lineNumOffset = offset;
-    }
-
-    unsigned int getLineNumOffset() const {
-        return this->lineNumOffset;
-    }
-
-    const std::vector<unsigned int> &getLineNumTable() const {
-        return this->lineNumTable;
-    }
-
-    void addNewlinePos(unsigned int pos);
-    unsigned int getLineNum(unsigned int pos) const;
-};
-
-using SourceInfo = IntrusivePtr<SourceInfoImpl>;
-
 class Lexer : public ydsh::parser_base::LexerBase {
 private:
-    SourceInfo srcInfo;
-
     /**
      * default mode is yycSTMT
      */
@@ -116,7 +73,7 @@ public:
      * @return
      */
     Lexer(const char *sourceName, const char *source, unsigned int size) :
-            LexerBase(source, size), srcInfo(SourceInfo::create(sourceName)), modeStack(1, yycSTMT) {}
+            LexerBase(sourceName, source, size), modeStack(1, yycSTMT) {}
 
     /**
      * 
@@ -127,7 +84,7 @@ public:
      * @return
      */
     Lexer(const char *sourceName, FILE *fp) :
-            LexerBase(fp), srcInfo(SourceInfo::create(sourceName)), modeStack(1, yycSTMT) {}
+            LexerBase(sourceName, fp), modeStack(1, yycSTMT) {}
 
     ~Lexer() = default;
 

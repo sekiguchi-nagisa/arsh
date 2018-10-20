@@ -198,8 +198,8 @@ using Token = ydsh::Token;
 class Lexer : public ydsh::parser_base::LexerBase {
 public:
     Lexer() = default;
-    explicit Lexer(const char *line) : LexerBase(line) {}
-    Lexer(const char *data, unsigned int size) : LexerBase(data, size) {}
+    explicit Lexer(const char *line) : LexerBase("", line) {}
+    Lexer(const char *data, unsigned int size) : LexerBase("", data, size) {}
 
     JSONTokenKind nextToken(Token &token);
 };

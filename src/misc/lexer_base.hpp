@@ -30,9 +30,76 @@
 #include "resource.hpp"
 
 namespace ydsh {
+namespace __detail {
+
+template <bool T>
+class SourceInfo : public RefCount<SourceInfo<T>> {
+private:
+    static_assert(T, "not allowed instantiation");
+
+    std::string sourceName;
+
+    /**
+     * default value is 1.
+     */
+    unsigned int lineNumOffset{1};
+
+    /**
+     * contains newline character position.
+     */
+    std::vector<unsigned int> lineNumTable;
+
+public:
+    explicit SourceInfo(const char *sourceName) : sourceName(sourceName) { }
+    ~SourceInfo() = default;
+
+    const std::string &getSourceName() const {
+        return this->sourceName;
+    }
+
+    void setLineNumOffset(unsigned int offset) {
+        this->lineNumOffset = offset;
+    }
+
+    unsigned int getLineNumOffset() const {
+        return this->lineNumOffset;
+    }
+
+    const std::vector<unsigned int> &getLineNumTable() const {
+        return this->lineNumTable;
+    }
+
+    void addNewlinePos(unsigned int pos);
+    unsigned int getLineNum(unsigned int pos) const;
+};
+
+// ############################
+// ##     SourceInfo     ##
+// ############################
+
+template <bool T>
+void SourceInfo<T>::addNewlinePos(unsigned int pos) {
+    if(this->lineNumTable.empty()) {
+        this->lineNumTable.push_back(pos);
+    } else if(pos > this->lineNumTable.back()) {
+        this->lineNumTable.push_back(pos);
+    }
+}
+
+template <bool T>
+unsigned int SourceInfo<T>::getLineNum(unsigned int pos) const {
+    auto iter = std::lower_bound(this->lineNumTable.begin(), this->lineNumTable.end(), pos);
+    if(this->lineNumTable.end() == iter) {
+        return this->lineNumTable.size() + this->lineNumOffset;
+    }
+    return iter - this->lineNumTable.begin() + this->lineNumOffset;
+}
+
+} // namespace __detail
+
+using SourceInfo = IntrusivePtr<__detail::SourceInfo<true>>;
+
 namespace parser_base {
-
-
 namespace __detail {
 
 /**
@@ -42,6 +109,8 @@ template<bool T>
 class LexerBase {
 protected:
     static_assert(T, "not allowed instantiation");
+
+    SourceInfo srcInfo;
 
     /**
      * may be null, if input source is string.
@@ -77,6 +146,8 @@ protected:
 protected:
     LexerBase() = default;
 
+    explicit LexerBase(const char *sourceName) : srcInfo(SourceInfo::create(sourceName)) {}
+
     ~LexerBase() = default;
 
 public:
@@ -90,7 +161,7 @@ public:
      * must be opened with binary mode. after call it, not close fp.
      * @return
      */
-    explicit LexerBase(FILE *fp);
+    explicit LexerBase(const char *sourceName, FILE *fp);
 
     /**
      *
@@ -98,7 +169,7 @@ public:
      * must be null terminated.
      * @return
      */
-    explicit LexerBase(const char *src) : LexerBase(src, strlen(src)) {}
+    explicit LexerBase(const char *sourceName, const char *src) : LexerBase(sourceName, src, strlen(src)) {}
 
     /**
      *
@@ -106,7 +177,7 @@ public:
      * @param size
      * @return
      */
-    LexerBase(const char *data, unsigned int size);
+    LexerBase(const char *sourceName, const char *data, unsigned int size);
 
     LexerBase &operator=(LexerBase &&lex) noexcept {
         this->swap(lex);
@@ -114,6 +185,7 @@ public:
     }
 
     void swap(LexerBase &lex) noexcept {
+        std::swap(this->srcInfo, lex.srcInfo);
         std::swap(this->file, lex.file);
         this->buf.swap(lex.buf);
         std::swap(this->cursor, lex.cursor);
@@ -212,14 +284,14 @@ protected:
 // #######################
 
 template<bool T>
-LexerBase<T>::LexerBase(FILE *fp) : LexerBase() {
+LexerBase<T>::LexerBase(const char *sourceName, FILE *fp) : LexerBase(sourceName) {
     this->file.reset(fp);
     this->cursor = this->buf.get();
     this->limit = this->buf.get();
 }
 
 template<bool T>
-LexerBase<T>::LexerBase(const char *data, unsigned int size) : LexerBase() {
+LexerBase<T>::LexerBase(const char *sourceName, const char *data, unsigned int size) : LexerBase(sourceName) {
     this->appendToBuf(reinterpret_cast<const unsigned char *>(data), size, true);
 }
 

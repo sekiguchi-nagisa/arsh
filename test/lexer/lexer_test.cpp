@@ -1840,41 +1840,41 @@ TEST(LexerTest_Lv3, IllegalChar) {
 }
 
 TEST(LineNumTest, case1) {
-    SourceInfoImpl info("dummy");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::string("dummy"), info.getSourceName()));
+    auto info = SourceInfo::create("dummy");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::string("dummy"), info->getSourceName()));
 }
 
 TEST(LineNumTest, case2) {
-    SourceInfoImpl info("dummy");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(12))); // empty
+    auto info = SourceInfo::create("dummy");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(12))); // empty
 }
 
 TEST(LineNumTest, case3) {
-    SourceInfoImpl info("dummy");
-    info.addNewlinePos(5);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(3)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(4)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(5)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, info.getLineNum(6)));
+    auto info = SourceInfo::create("dummy");
+    info->addNewlinePos(5);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(3)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(4)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(5)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, info->getLineNum(6)));
 }
 
 TEST(LineNumTest, case4) {
-    SourceInfoImpl info("dummy");
-    info.addNewlinePos(5);
-    info.addNewlinePos(4);  // overwrite
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(3)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(4)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(5)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, info.getLineNum(6)));
+    auto info = SourceInfo::create("dummy");
+    info->addNewlinePos(5);
+    info->addNewlinePos(4);  // overwrite
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(3)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(4)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(5)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, info->getLineNum(6)));
 }
 
 TEST(LineNumTest, case5) {
-    SourceInfoImpl info("dummy");
-    info.setLineNumOffset(4);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, info.getLineNum(5)));
-    info.addNewlinePos(10);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, info.getLineNum(5)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, info.getLineNum(13)));
+    auto info = SourceInfo::create("dummy");
+    info->setLineNumOffset(4);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, info->getLineNum(5)));
+    info->addNewlinePos(10);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, info->getLineNum(5)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, info->getLineNum(13)));
 }
 
 int main(int argc, char **argv) {
