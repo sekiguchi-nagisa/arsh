@@ -50,7 +50,7 @@ private:
                 lexer(std::move(lexer)), scope(std::move(scope)),
                 kind(std::get<0>(state)), token(std::get<1>(state)),
                 consumedKind(std::get<2>(state)), sourceNode(std::move(oldSourceNode)) {
-            const char *fileName = this->lexer.getSourceInfoPtr()->getSourceName().c_str();
+            const char *fileName = this->lexer.getSourceInfo()->getSourceName().c_str();
             const char *ptr = strrchr(fileName, '/');
             this->scriptDir.append(fileName, ptr == fileName ? 1 : ptr - fileName);
         }
@@ -78,8 +78,8 @@ public:
         this->checker.getSymbolTable().clear();
     }
 
-    const SourceInfoPtr &getSourceInfo() const {
-        return this->parser.getLexer()->getSourceInfoPtr();
+    const SourceInfo &getSourceInfo() const {
+        return this->parser.getLexer()->getSourceInfo();
     }
 
     bool frontEndOnly() const {

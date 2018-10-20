@@ -1840,17 +1840,17 @@ TEST(LexerTest_Lv3, IllegalChar) {
 }
 
 TEST(LineNumTest, case1) {
-    SourceInfo info("dummy");
+    SourceInfoImpl info("dummy");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::string("dummy"), info.getSourceName()));
 }
 
 TEST(LineNumTest, case2) {
-    SourceInfo info("dummy");
+    SourceInfoImpl info("dummy");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(12))); // empty
 }
 
 TEST(LineNumTest, case3) {
-    SourceInfo info("dummy");
+    SourceInfoImpl info("dummy");
     info.addNewlinePos(5);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(3)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(4)));
@@ -1859,7 +1859,7 @@ TEST(LineNumTest, case3) {
 }
 
 TEST(LineNumTest, case4) {
-    SourceInfo info("dummy");
+    SourceInfoImpl info("dummy");
     info.addNewlinePos(5);
     info.addNewlinePos(4);  // overwrite
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info.getLineNum(3)));
@@ -1869,7 +1869,7 @@ TEST(LineNumTest, case4) {
 }
 
 TEST(LineNumTest, case5) {
-    SourceInfo info("dummy");
+    SourceInfoImpl info("dummy");
     info.setLineNumOffset(4);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, info.getLineNum(5)));
     info.addNewlinePos(10);

@@ -262,7 +262,7 @@ struct LoopState {
 };
 
 struct CodeBuilder : public CodeEmitter<true> {
-    SourceInfoPtr srcInfo;
+    SourceInfo srcInfo;
 
     std::vector<DSValue> constBuffer;
     FlexBuffer<LineNumEntry> lineNumEntries;
@@ -283,7 +283,7 @@ struct CodeBuilder : public CodeEmitter<true> {
     signed short stackDepthCount{0};
     signed short maxStackDepth{0};
 
-    explicit CodeBuilder(const SourceInfoPtr &info) : srcInfo(info) {}
+    explicit CodeBuilder(const SourceInfo &info) : srcInfo(info) {}
 
     CodeKind getCodeKind() const {
         return static_cast<CodeKind>(this->codeBuffer[0]);
@@ -474,7 +474,7 @@ private:
         this->initCodeBuilder(kind, info, localVarNum);
     }
 
-    void initCodeBuilder(CodeKind kind, const SourceInfoPtr &srcInfo, unsigned short localVarNum);
+    void initCodeBuilder(CodeKind kind, const SourceInfo &srcInfo, unsigned short localVarNum);
 
     CompiledCode finalizeCodeBuilder(const std::string &name);
 
@@ -519,7 +519,7 @@ private:
     void visitEmptyNode(EmptyNode &node) override;
 
 public:
-    void initialize(const SourceInfoPtr &srcInfo) {
+    void initialize(const SourceInfo &srcInfo) {
         this->initCodeBuilder(CodeKind::TOPLEVEL, srcInfo, 0);
     }
 
@@ -533,7 +533,7 @@ public:
         return this->finalizeCodeBuilder("");
     }
 
-    void enterModule(const SourceInfoPtr &srcInfo) {
+    void enterModule(const SourceInfo &srcInfo) {
         this->initCodeBuilder(CodeKind::TOPLEVEL, srcInfo, 0);
     }
 

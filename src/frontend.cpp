@@ -114,8 +114,8 @@ static void formatErrorLine(ColorController cc, const Lexer &lexer, Token errorT
 
 void printError(const Lexer &lex, const char *kind, Token token,
                ColorController cc, TermColor color, const char *message) {
-    unsigned int lineNum = lex.getSourceInfoPtr()->getLineNum(token.pos);
-    fprintf(stderr, "%s:%d: ", lex.getSourceInfoPtr()->getSourceName().c_str(), lineNum);
+    unsigned int lineNum = lex.getSourceInfo()->getLineNum(token.pos);
+    fprintf(stderr, "%s:%d: ", lex.getSourceInfo()->getSourceName().c_str(), lineNum);
     fprintf(stderr, "%s%s[%s]%s %s\n",
             cc(color), cc(TermColor::Bold), kind, cc(TermColor::Reset), message);
     formatErrorLine(cc, lex, token);
@@ -291,7 +291,7 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     Token token = ctx.token;
     TokenKind consumedKind = ctx.consumedKind;
     std::unique_ptr<SourceNode> node(ctx.sourceNode.release());
-    auto &modType = symbolTable.createModType(ctx.lexer.getSourceInfoPtr()->getSourceName());
+    auto &modType = symbolTable.createModType(ctx.lexer.getSourceInfo()->getSourceName());
     auto scope = std::move(ctx.scope);
     this->contexts.pop_back();
 

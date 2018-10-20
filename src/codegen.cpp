@@ -1070,7 +1070,7 @@ void ByteCodeGenerator::visitSourceNode(SourceNode &node) {
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
-void ByteCodeGenerator::initCodeBuilder(CodeKind kind, const SourceInfoPtr &srcInfo,
+void ByteCodeGenerator::initCodeBuilder(CodeKind kind, const SourceInfo &srcInfo,
                                         unsigned short localVarNum) {
     // push new builder
     this->builders.emplace_back(srcInfo);

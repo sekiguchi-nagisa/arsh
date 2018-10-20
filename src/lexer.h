@@ -31,7 +31,7 @@ namespace ydsh {
 const char *toModeName(LexerMode mode);
 
 
-class SourceInfo : public RefCount<SourceInfo> {
+class SourceInfoImpl : public RefCount<SourceInfoImpl> {
 private:
     std::string sourceName;
 
@@ -46,8 +46,8 @@ private:
     std::vector<unsigned int> lineNumTable;
 
 public:
-    explicit SourceInfo(const char *sourceName) : sourceName(sourceName) { }
-    ~SourceInfo() = default;
+    explicit SourceInfoImpl(const char *sourceName) : sourceName(sourceName) { }
+    ~SourceInfoImpl() = default;
 
     const std::string &getSourceName() const {
         return this->sourceName;
@@ -69,11 +69,11 @@ public:
     unsigned int getLineNum(unsigned int pos) const;
 };
 
-using SourceInfoPtr = IntrusivePtr<SourceInfo>;
+using SourceInfo = IntrusivePtr<SourceInfoImpl>;
 
 class Lexer : public ydsh::parser_base::LexerBase {
 private:
-    SourceInfoPtr srcInfoPtr;
+    SourceInfo srcInfo;
 
     /**
      * default mode is yycSTMT
@@ -116,7 +116,7 @@ public:
      * @return
      */
     Lexer(const char *sourceName, const char *source, unsigned int size) :
-            LexerBase(source, size), srcInfoPtr(SourceInfoPtr::create(sourceName)), modeStack(1, yycSTMT) {}
+            LexerBase(source, size), srcInfo(SourceInfo::create(sourceName)), modeStack(1, yycSTMT) {}
 
     /**
      * 
@@ -127,7 +127,7 @@ public:
      * @return
      */
     Lexer(const char *sourceName, FILE *fp) :
-            LexerBase(fp), srcInfoPtr(SourceInfoPtr::create(sourceName)), modeStack(1, yycSTMT) {}
+            LexerBase(fp), srcInfo(SourceInfo::create(sourceName)), modeStack(1, yycSTMT) {}
 
     ~Lexer() = default;
 
@@ -136,17 +136,17 @@ public:
         this->cursor = this->buf.get() + pos;
     }
 
-    const SourceInfoPtr &getSourceInfoPtr() const {
-        return this->srcInfoPtr;
+    const SourceInfo &getSourceInfo() const {
+        return this->srcInfo;
     }
 
     void setLineNum(unsigned int lineNum) {
-        this->srcInfoPtr->setLineNumOffset(lineNum);
+        this->srcInfo->setLineNumOffset(lineNum);
     }
 
     unsigned int getLineNum() const {
-        return this->srcInfoPtr->getLineNumOffset() +
-               this->srcInfoPtr->getLineNumTable().size();
+        return this->srcInfo->getLineNumOffset() +
+               this->srcInfo->getLineNumTable().size();
     }
 
     bool isPrevNewLine() const {
@@ -241,7 +241,7 @@ private:
         const unsigned int stopPos = this->getPos();
         for(unsigned int i = pos; i < stopPos; ++i) {
             if(this->buf[i] == '\n') {
-                this->srcInfoPtr->addNewlinePos(i);
+                this->srcInfo->addNewlinePos(i);
             }
         }
     }
