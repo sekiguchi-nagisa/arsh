@@ -241,6 +241,14 @@ do { this->raiseNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return nu
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
 
+JSON Parser::operator()(bool matchEOS) {
+    auto value = TRY(this->parseValue());
+    if(matchEOS) {
+        TRY(this->expect(EOS));
+    }
+    return value;
+}
+
 JSON Parser::parseValue() {
     switch(this->curKind) {
     case NIL:
@@ -440,7 +448,7 @@ void Parser::showError() const {
     assert(this->hasError());
 
     unsigned int lineNum = this->getLexer()->getSourceInfo()->getLineNum(this->getError().getErrorToken().pos);
-    const char *srcName = "(string)";   //FIXME:
+    const char *srcName = this->getLexer()->getSourceInfo()->getSourceName().c_str();
 
     fprintf(stderr, "%s:%d: [error] %s\n", srcName, lineNum, this->getError().getMessage().c_str());
 

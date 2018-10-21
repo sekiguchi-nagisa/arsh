@@ -198,8 +198,9 @@ using Token = ydsh::Token;
 class Lexer : public ydsh::parser_base::LexerBase {
 public:
     Lexer() = default;
-    explicit Lexer(const char *line) : LexerBase("", line) {}
-    Lexer(const char *data, unsigned int size) : LexerBase("", data, size) {}
+    explicit Lexer(const char *line) : LexerBase("(string)", line) {}
+    Lexer(const char *data, unsigned int size) : LexerBase("(string)", data, size) {}
+    Lexer(const char *sourceName, FILE *fp) : LexerBase(sourceName, fp) {}
 
     JSONTokenKind nextToken(Token &token);
 };
@@ -218,8 +219,12 @@ public:
 
     Parser(const char *date, unsigned int size) : Parser(Lexer(date, size)) {}
 
-    JSON operator()() {
-        return this->parseValue();
+    Parser(const char *sourceName, FILE *fp) : Parser(Lexer(sourceName, fp)) {}
+
+    JSON operator()(bool matchEOS = true);
+
+    operator bool() const {
+        return this->curKind != EOS;
     }
 
     void showError() const;
