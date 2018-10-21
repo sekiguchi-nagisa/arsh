@@ -209,14 +209,17 @@ private:
     Lexer lex;
 
 public:
-    JSON operator()(Lexer &&lexer);
-
-    JSON operator()(const char *date, unsigned int size) {
-        return (*this)(Lexer(date, size));
+    explicit Parser(Lexer &&lex) : lex(std::move(lex)) {
+        this->lexer = &this->lex;
+        this->fetchNext();
     }
 
-    JSON operator()(const char *str) {
-        return (*this)(str, strlen(str));
+    explicit Parser(const char *str) : Parser(Lexer(str)) {}
+
+    Parser(const char *date, unsigned int size) : Parser(Lexer(date, size)) {}
+
+    JSON operator()() {
+        return this->parseValue();
     }
 
     void showError() const;

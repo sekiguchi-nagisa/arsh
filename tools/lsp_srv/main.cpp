@@ -54,7 +54,7 @@ int main(void) {
                     }
             }
     };
-    printf("%s", json::Parser()(value.serialize(2).c_str()).serialize(2).c_str());
+    printf("%s", json::Parser(value.serialize(2).c_str())().serialize(2).c_str());
 //    printf("")
     return 0;
 }

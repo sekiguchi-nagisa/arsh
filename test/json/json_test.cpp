@@ -64,17 +64,17 @@ TEST(JSON, type) {
 
 class ParserTest : public ::testing::Test {
 protected:
-    Parser parser;
     JSON ret;
 
     void parse(const char *src) {
         SCOPED_TRACE("");
 
-        this->ret = this->parser(src);
-        if(this->parser.hasError()) {
-            this->parser.showError();
+        Parser parser(src);
+        this->ret = parser();
+        if(parser.hasError()) {
+            parser.showError();
         }
-        ASSERT_FALSE(this->parser.hasError());
+        ASSERT_FALSE(parser.hasError());
     }
 
 public:
@@ -218,7 +218,7 @@ TEST_F(ParserTest, serialize) {
             }}
     }.serialize(3);
 
-    auto actual = Parser()(expect.c_str(), expect.size()).serialize(3);
+    auto actual = Parser(expect.c_str(), expect.size())().serialize(3);
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 }

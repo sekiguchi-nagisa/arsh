@@ -241,15 +241,6 @@ do { this->raiseNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return nu
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
 
-JSON Parser::operator()(json::Lexer &&lexer) {
-    this->lex = std::move(lexer);
-    this->lexer = &this->lex;
-    this->fetchNext();
-    auto ret = TRY(this->parseValue());
-    TRY(this->expect(EOS));
-    return ret;
-}
-
 JSON Parser::parseValue() {
     switch(this->curKind) {
     case NIL:
