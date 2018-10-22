@@ -26,5 +26,6 @@ add_library(json STATIC json.cpp ${lexer_src})
 set(LSP_SRV ydshd)
 add_executable(${LSP_SRV}
         main.cpp
+        jsonrpc.cpp
 )
 target_link_libraries(${LSP_SRV} ${YDSH_LIB} json)
