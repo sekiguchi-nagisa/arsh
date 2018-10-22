@@ -26,4 +26,11 @@ JSON newError(int code, const char *message, JSON &&data) {
     };
 }
 
+JSON newError(int code, const char *message) {
+    return {
+            {"code", code},
+            {"message", message},
+    };
+}
+
 } // namespace rpc

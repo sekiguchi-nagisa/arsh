@@ -32,6 +32,8 @@ constexpr int InternalError  = -32603;
 
 JSON newError(int code, const char *message, JSON &&data);
 
+JSON newError(int code, const char *message);
+
 } // namespace rpc
 
 #endif //TOOLS_JSONRPC_H
