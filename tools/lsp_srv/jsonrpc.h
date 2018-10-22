@@ -17,7 +17,11 @@
 #ifndef TOOLS_JSONRPC_H
 #define TOOLS_JSONRPC_H
 
+#include "json.h"
+
 namespace rpc {
+
+using namespace json;
 
 // Error Code definition
 constexpr int ParseError     = -32700;
