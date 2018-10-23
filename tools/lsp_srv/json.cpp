@@ -447,8 +447,8 @@ bool Parser::unescapeStr(json::Token token, std::string &str)  {
 void Parser::showError() const {
     assert(this->hasError());
 
-    unsigned int lineNum = this->getLexer()->getSourceInfo()->getLineNum(this->getError().getErrorToken().pos);
-    const char *srcName = this->getLexer()->getSourceInfo()->getSourceName().c_str();
+    unsigned int lineNum = this->lexer->getSourceInfo()->getLineNum(this->getError().getErrorToken().pos);
+    const char *srcName = this->lexer->getSourceInfo()->getSourceName().c_str();
 
     fprintf(stderr, "%s:%d: [error] %s\n", srcName, lineNum, this->getError().getMessage().c_str());
 
