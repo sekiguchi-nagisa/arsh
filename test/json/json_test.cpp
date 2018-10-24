@@ -221,6 +221,11 @@ TEST_F(ParserTest, serialize) {
     auto actual = Parser(expect.c_str(), expect.size())().serialize(3);
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+
+    expect = JSON(34).serialize(3);
+    actual = Parser(expect.c_str(), expect.size())().serialize(3);
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 }
 
 int main(int argc, char **argv) {
