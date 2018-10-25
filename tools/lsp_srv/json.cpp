@@ -125,7 +125,7 @@ struct Serializer {
     }
 
     void serialize(const Array &value) {
-        if(value->size() == 0) {
+        if(value->empty()) {
             this->str += "[]";
             return;
         }
@@ -142,7 +142,7 @@ struct Serializer {
     }
 
     void serialize(const Object &value) {
-        if(value->size() == 0) {
+        if(value->empty()) {
             this->str += "{}";
             return;
         }

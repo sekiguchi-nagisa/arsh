@@ -160,8 +160,6 @@ struct Member {
     NON_COPYABLE(Member);
 
     Member(std::string &&key, JSON &&value) : key(std::move(key)), value(std::move(value)) {}
-
-    Member(const std::string &key, JSON &&value) : key(key), value(std::move(value)) {}
 };
 
 #define EACH_JSON_TOKEN(OP) \
