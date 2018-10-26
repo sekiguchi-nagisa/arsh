@@ -17,7 +17,7 @@
 #ifndef TOOLS_JSONRPC_H
 #define TOOLS_JSONRPC_H
 
-#include "json.h"
+#include "validate.h"
 
 namespace rpc {
 
