@@ -32,9 +32,9 @@ namespace json {
 
 class JSON;
 
-using String = std::unique_ptr<std::string>;
-using Array = std::unique_ptr<std::vector<JSON>>;
-using Object = std::unique_ptr<std::map<std::string, JSON>>;
+using String = std::string;
+using Array = std::vector<JSON>;
+using Object = std::map<std::string, JSON>;
 
 struct Member;
 
@@ -44,7 +44,7 @@ inline void append(Array &) {}
 
 template <typename ...T>
 void append(Array &array, JSON &&v, T && ...arg) {
-    array->push_back(std::move(v));
+    array.push_back(std::move(v));
     append(array, std::forward<T>(arg)...);
 }
 
@@ -52,18 +52,18 @@ void append(Array &array, JSON &&v, T && ...arg) {
 
 template <typename ...Arg>
 inline String createString(Arg && ...arg) {
-    return ydsh::unique<std::string>(std::forward<Arg>(arg)...);
+    return std::string(std::forward<Arg>(arg)...);
 }
 
 template <typename ... Arg>
 inline Array array(Arg&& ...arg) {
-    auto value = ydsh::unique<std::vector<JSON>>();
+    auto value = std::vector<JSON>();
     __detail::append(value, std::forward<Arg>(arg)...);
     return value;
 }
 
 inline Object createObject() {
-    return ydsh::unique<std::map<std::string, JSON>>();
+    return std::map<std::string, JSON>();
 }
 
 class JSON : public ydsh::Union<bool, long, double, String, Array, Object> {
@@ -125,23 +125,23 @@ public:
     }
 
     const std::string &asString() const {
-        return *ydsh::get<String>(*this);
+        return ydsh::get<String>(*this);
     }
 
     std::vector<JSON> &asArray() {
-        return *ydsh::get<Array>(*this);
+        return ydsh::get<Array>(*this);
     }
 
     const std::vector<JSON> &asArray() const {
-        return *ydsh::get<Array>(*this);
+        return ydsh::get<Array>(*this);
     }
 
     std::map<std::string, JSON> &asObject() {
-        return *ydsh::get<Object>(*this);
+        return ydsh::get<Object>(*this);
     }
 
     const std::map<std::string, JSON> &asObject() const {
-        return *ydsh::get<Object>(*this);
+        return ydsh::get<Object>(*this);
     }
 
     JSON &operator[](unsigned int index);
@@ -231,8 +231,8 @@ private:
     JSON parseValue();
     JSON parseNumber();
     std::pair<std::string, JSON> parseMember();
-    Array parseArray();
-    Object parseObject();
+    JSON parseArray();
+    JSON parseObject();
 
     int unescape(const char * &iter, const char *end) const;
 

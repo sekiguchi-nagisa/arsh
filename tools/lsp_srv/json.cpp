@@ -104,7 +104,7 @@ struct Serializer {
         this->str += std::to_string(value);
     }
 
-    void serializeStr(const std::string &value) {
+    void serialize(const String &value) {
         this->str += '"';
         for(int ch : value) {
             if(ch >= 0 && ch < 0x1F) {
@@ -120,36 +120,32 @@ struct Serializer {
         this->str += '"';
     }
 
-    void serialize(const String &value) {
-        this->serializeStr(*value);
-    }
-
     void serialize(const Array &value) {
-        if(value->empty()) {
+        if(value.empty()) {
             this->str += "[]";
             return;
         }
 
         this->enter('[');
-        for(unsigned int i = 0; i < value->size(); i++) {
+        for(unsigned int i = 0; i < value.size(); i++) {
             if(i > 0) {
                 this->separator();
             }
             this->indent();
-            this->serialize((*value)[i]);
+            this->serialize(value[i]);
         }
         this->leave(']');
     }
 
     void serialize(const Object &value) {
-        if(value->empty()) {
+        if(value.empty()) {
             this->str += "{}";
             return;
         }
 
         this->enter('{');
         unsigned int count = 0;
-        for(auto &e : (*value)) {
+        for(auto &e : value) {
             if(count++ > 0) {
                 this->separator();
             }
@@ -184,7 +180,7 @@ struct Serializer {
     }
 
     void serialize(const std::pair<const std::string, JSON> &value) {
-        this->serializeStr(value.first);
+        this->serialize(value.first);
         this->str += ':';
         if(this->tab > 0) {
             this->str += ' ';
@@ -265,7 +261,7 @@ JSON Parser::parseValue() {
     case STRING: {
         Token token = this->expect(STRING); // always success
         auto str = createString();
-        TRY(this->unescapeStr(token, *str));
+        TRY(this->unescapeStr(token, str));
         return JSON(std::move(str));    // for prevent build error in older gcc/clang
     }
     case ARRAY_OPEN:
@@ -317,7 +313,7 @@ std::pair<std::string, JSON> Parser::parseMember() {
     return {std::move(key), std::move(value)};
 }
 
-Array Parser::parseArray() {
+JSON Parser::parseArray() {
     this->expect(ARRAY_OPEN);   // always success
 
     auto value = array();
@@ -330,7 +326,7 @@ Array Parser::parseArray() {
         }
         switch(this->curKind) {
         EACH_LA_VALUE(GEN_LA_CASE)
-            value->push_back(TRY(this->parseValue()));
+            value.push_back(TRY(this->parseValue()));
             break;
         default:
             E_ALTER(EACH_LA_VALUE(GEN_LA_ALTER) ARRAY_CLOSE);
@@ -340,7 +336,7 @@ Array Parser::parseArray() {
     return value;
 }
 
-Object Parser::parseObject() {
+JSON Parser::parseObject() {
     this->expect(OBJECT_OPEN);
 
     auto object = createObject();
@@ -352,7 +348,7 @@ Object Parser::parseObject() {
             this->consume();    // COMMA
         }
         if(this->curKind == STRING) {
-            object->insert(TRY(this->parseMember()));
+            object.insert(TRY(this->parseMember()));
         } else {
             E_ALTER(STRING, OBJECT_CLOSE);
         }
