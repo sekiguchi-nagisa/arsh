@@ -29,7 +29,7 @@ struct Info4 {
 };
 
 
-int main(void) {
+int main() {
     showSize<json::JSON>("JSON");
     showSize<json::Array>("Array");
     showSize<json::Object>("Object");

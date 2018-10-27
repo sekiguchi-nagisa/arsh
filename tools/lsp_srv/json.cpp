@@ -70,7 +70,7 @@ struct Serializer {
     unsigned int level{0};
     std::string str;
 
-    Serializer(unsigned int tab) : tab(tab) {}
+    explicit Serializer(unsigned int tab) : tab(tab) {}
 
     void operator()(const JSON &value) {
         this->serialize(value);
@@ -115,7 +115,7 @@ struct Serializer {
             } else if(ch == '\\' || ch == '"') {
                 this->str += '\\';
             }
-            this->str += ch;
+            this->str += static_cast<char>(ch);
         }
         this->str += '"';
     }

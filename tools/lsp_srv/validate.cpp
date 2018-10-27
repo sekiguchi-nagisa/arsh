@@ -112,7 +112,7 @@ const TypeMatcherPtr any = std::make_shared<AnyMatcher>();
 // #######################
 
 Interface& Interface::field(const char *name, json::TypeMatcherPtr type, bool require) {
-    auto pair = this->fields.emplace(name, Field(type, require));
+    auto pair = this->fields.emplace(name, Field(std::move(type), require));
     if(!pair.second) {
         fatal("already defined field: %s\n", name);
     }

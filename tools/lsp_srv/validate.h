@@ -62,7 +62,8 @@ private:
     const TypeMatcherPtr matcher;
 
 public:
-    explicit ArrayMatcher(TypeMatcherPtr matcher) : TypeMatcher("Array", JSON::Tag<Array>::value), matcher(matcher) {}
+    explicit ArrayMatcher(TypeMatcherPtr matcher) :
+            TypeMatcher("Array", JSON::Tag<Array>::value), matcher(std::move(matcher)) {}
     bool match(Validator &validator, const JSON &value) const override;
     std::string str() const override;
 };
@@ -84,10 +85,11 @@ private:
     TypeMatcherPtr right;
 
 public:
-    UnionMatcher(TypeMatcherPtr left, TypeMatcherPtr right) : left(left), right(right) {}
+    UnionMatcher(TypeMatcherPtr left, TypeMatcherPtr right) :
+            left(std::move(left)), right(std::move(right)) {}
 
     UnionMatcher(const char *alias, TypeMatcherPtr left, TypeMatcherPtr right) :
-            TypeMatcher(alias, -1), left(left), right(right) {}
+            TypeMatcher(alias, -1), left(std::move(left)), right(std::move(right)) {}
 
     bool match(Validator &validator, const JSON &value) const override;
     std::string str() const override;
@@ -118,7 +120,7 @@ private:
     bool require;
 
 public:
-    Field(TypeMatcherPtr type, bool require) : matcher(type), require(require) {}
+    Field(TypeMatcherPtr type, bool require) : matcher(std::move(type)), require(require) {}
 
     const TypeMatcher &getMatcher() const {
         return *this->matcher;
