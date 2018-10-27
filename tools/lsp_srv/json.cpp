@@ -333,7 +333,7 @@ JSON Parser::parseArray() {
         }
     }
     this->expect(ARRAY_CLOSE);
-    return value;
+    return JSON(std::move(value));
 }
 
 JSON Parser::parseObject() {
@@ -354,7 +354,7 @@ JSON Parser::parseObject() {
         }
     }
     this->expect(OBJECT_CLOSE);
-    return object;
+    return JSON(std::move(object));
 }
 
 static unsigned short parseHex(const char *&iter) {
