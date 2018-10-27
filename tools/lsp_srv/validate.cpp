@@ -42,6 +42,23 @@ std::string AnyMatcher::str() const {
     return "any";
 }
 
+// ##########################
+// ##     ArrayMatcher     ##
+// ##########################
+
+bool ArrayMatcher::match(json::Validator &validator, const json::JSON &value) const {
+    return validator.match(*this, value);
+}
+
+std::string ArrayMatcher::str() const {
+    std::string str = this->name;
+    str += "<";
+    str += this->matcher->str();
+    str += ">";
+    return str;
+}
+
+
 // ###########################
 // ##     ObjectMatcher     ##
 // ###########################
@@ -63,27 +80,39 @@ bool UnionMatcher::match(json::Validator &validator, const json::JSON &value) co
 }
 
 std::string UnionMatcher::str() const {
+    if(!this->name.empty()) {
+        return this->name;
+    }
+
     std::string str = this->left->str();
     str += " | ";
     str += this->right->str();
     return str;
 }
 
+static constexpr int TAG_LONG = JSON::Tag<long>::value;
+static constexpr int TAG_DOBULE = JSON::Tag<double>::value;
+static constexpr int TAG_STRING = JSON::Tag<String>::value;
+static constexpr int TAG_BOOL = JSON::Tag<bool>::value;
+
+const TypeMatcherPtr number = std::make_shared<UnionMatcher>(
+        "number",
+        std::make_shared<TypeMatcher>("long", TAG_LONG),
+        std::make_shared<TypeMatcher>("double", TAG_DOBULE)
+);
+
+const TypeMatcherPtr string = std::make_shared<TypeMatcher>("string", TAG_STRING);
+const TypeMatcherPtr boolean = std::make_shared<TypeMatcher>("boolean", TAG_BOOL);
+const TypeMatcherPtr null = std::make_shared<TypeMatcher>("null", -1);
+const TypeMatcherPtr any = std::make_shared<AnyMatcher>();
+
 
 // #######################
 // ##     Interface     ##
 // #######################
 
-bool Interface::match(Validator &, const JSON &value) const {
-    if(value.tag() != JSON::Tag<Object>::value) {
-        return false;
-    }
-
-    return true;
-}
-
-Interface& Interface::addField(const char *name, MatcherPtr type, bool opt) {
-    auto pair = this->fields.emplace(name, Field(type, opt));
+Interface& Interface::field(const char *name, json::TypeMatcherPtr type, bool require) {
+    auto pair = this->fields.emplace(name, Field(type, require));
     if(!pair.second) {
         fatal("already defined field: %s\n", name);
     }
@@ -122,6 +151,18 @@ bool Validator::match(const json::AnyMatcher &, const json::JSON &) {
     return true;
 }
 
+bool Validator::match(const json::ArrayMatcher &matcher, const json::JSON &value) {
+    if(matcher.tag != value.tag()) {
+        return false;
+    }
+    for(auto &e : value.asArray()) {
+        if(!matcher.matcher->match(*this, e)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool Validator::match(const json::ObjectMatcher &matcher, const json::JSON &value) {
     return this->match(matcher.name, value);
 }
@@ -143,12 +184,12 @@ bool Validator::match(const std::string &ifaceName, const JSON &value) {
     for(auto &e : iface.getFields()) {
         auto iter = value.asObject().find(e.first);
         if(iter == value.asObject().end()) {
-            if(e.second.optional()) {
+            if(!e.second.isRequire()) {
                 continue;
             }
             std::string str = "require field `";
             str += e.first;
-            str += "' at interface `";
+            str += "' in `";
             str += ifaceName;
             str += "'";
             this->errors.emplace_back(std::move(str));
@@ -156,9 +197,11 @@ bool Validator::match(const std::string &ifaceName, const JSON &value) {
         }
 
         if(!e.second.getMatcher().match(*this, iter->second)) {
-            std::string str = "require type `";
+            std::string str = "field `";
+            str += e.first;
+            str += "' requires `";
             str += e.second.getMatcher().str();
-            str += "' at interface `";
+            str += "' type in `";
             str += ifaceName;
             str += "'";
             this->errors.emplace_back(std::move(str));
@@ -166,6 +209,18 @@ bool Validator::match(const std::string &ifaceName, const JSON &value) {
         }
     }
     return true;
+}
+
+std::string Validator::formatError() const {
+    std::string str;
+    if(!this->errors.empty()) {
+        str = this->errors.back();
+        for(auto iter = this->errors.rbegin() + 1; iter != this->errors.rend(); ++iter) {
+            str += "\n    from: ";
+            str += *iter;
+        }
+    }
+    return str;
 }
 
 } // namespace json

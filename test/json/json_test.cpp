@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include <json.h>
+#include <validate.h>
 
 using namespace json;
 
@@ -226,6 +226,62 @@ TEST_F(ParserTest, serialize) {
     actual = Parser(expect.c_str(), expect.size())().serialize(3);
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+}
+
+
+
+class ValidatorTest : public ::testing::Test {
+protected:
+    InterfaceMap map;
+    Validator validator;
+    bool ret{false};
+
+    void tryValidate(const char *ifaceName, const char *src) {
+        SCOPED_TRACE("");
+
+        // clear previous result
+        this->validator.clear();
+        this->ret = false;
+
+        Parser parser(src);
+        auto json = parser();
+        if(parser.hasError()) {
+            parser.showError();
+        }
+        ASSERT_FALSE(parser.hasError());
+        this->ret = this->validator(ifaceName, json);
+    }
+
+    void validate(const char *name, const char *src) {
+        this->tryValidate(name, src);
+        if(!this->ret) {
+            auto message = this->validator.formatError();
+            fprintf(stderr, "%s\n", message.c_str());
+        }
+        ASSERT_TRUE(this->ret);
+    }
+
+public:
+    ValidatorTest() : validator(this->map) {}
+};
+
+TEST_F(ValidatorTest, base) {
+    this->map
+    .interface("hoge1")
+      .field("params", null | array(string))
+      .field("id", number, false);
+
+    const char *text = R"(
+    { "params" : [ "hoge", "de" ] }
+)";
+    ASSERT_NO_FATAL_FAILURE(this->validate("hoge1", text));
+
+    text = R"(
+    {
+        "params" : null, "id" : 45
+    }
+)";
+    ASSERT_NO_FATAL_FAILURE(this->validate("hoge1", text));
 }
 
 int main(int argc, char **argv) {

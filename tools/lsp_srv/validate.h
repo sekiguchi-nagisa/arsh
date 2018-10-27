@@ -28,29 +28,25 @@ class Validator;
 /**
  * for json type validation
  */
-struct Matcher {
-    virtual bool match(Validator &validator, const JSON &value) const = 0;
-
-    virtual std::string str() const = 0;
-
-    virtual ~Matcher() = default;
-};
-
-class TypeMatcher : public Matcher {
-private:
+class TypeMatcher {
+protected:
     friend class Validator;
 
     const std::string name;
-    int tag;
+    const int tag;
 
 public:
     TypeMatcher() : tag(-1) {}
 
     TypeMatcher(const char *name, int tag) : name(name), tag(tag) {}
 
-    bool match(Validator &validator, const JSON &value) const override;
-    std::string str() const override;
+    virtual ~TypeMatcher() = default;
+
+    virtual bool match(Validator &validator, const JSON &value) const;
+    virtual std::string str() const;
 };
+
+using TypeMatcherPtr = std::shared_ptr<TypeMatcher>;
 
 struct AnyMatcher : public TypeMatcher {
     friend class Validator;
@@ -59,22 +55,28 @@ struct AnyMatcher : public TypeMatcher {
     std::string str() const override;
 };
 
-class ObjectMatcher : public TypeMatcher {
+class ArrayMatcher : public TypeMatcher {
 private:
     friend class Validator;
 
-    std::string name;
+    const TypeMatcherPtr matcher;
 
 public:
-    explicit ObjectMatcher(const char *name) : name(name) {}
+    explicit ArrayMatcher(TypeMatcherPtr matcher) : TypeMatcher("Array", JSON::Tag<Array>::value), matcher(matcher) {}
+    bool match(Validator &validator, const JSON &value) const override;
+    std::string str() const override;
+};
+
+struct ObjectMatcher : public TypeMatcher {
+    friend class Validator;
+
+    explicit ObjectMatcher(const char *name) : TypeMatcher(name, JSON::Tag<Object>::value) {}
 
     bool match(Validator &validator, const JSON &value) const override;
     std::string str() const override;
 };
 
-using TypeMatcherPtr = std::shared_ptr<TypeMatcher>;
-
-class UnionMatcher : public Matcher {
+class UnionMatcher : public TypeMatcher {
 private:
     friend class Validator;
 
@@ -84,26 +86,46 @@ private:
 public:
     UnionMatcher(TypeMatcherPtr left, TypeMatcherPtr right) : left(left), right(right) {}
 
+    UnionMatcher(const char *alias, TypeMatcherPtr left, TypeMatcherPtr right) :
+            TypeMatcher(alias, -1), left(left), right(right) {}
+
     bool match(Validator &validator, const JSON &value) const override;
     std::string str() const override;
 };
 
-using MatcherPtr = std::shared_ptr<Matcher>;
+// helper method and constant for interface(schema) definition
+extern const TypeMatcherPtr number;
+extern const TypeMatcherPtr string;
+extern const TypeMatcherPtr boolean;
+extern const TypeMatcherPtr null;
+extern const TypeMatcherPtr any;
+
+inline TypeMatcherPtr object(const char *name) {
+    return std::make_shared<ObjectMatcher>(name);
+}
+
+inline TypeMatcherPtr array(TypeMatcherPtr e) {
+    return std::make_shared<ArrayMatcher>(e);
+}
+
+inline TypeMatcherPtr operator|(TypeMatcherPtr left, TypeMatcherPtr right) {
+    return std::make_shared<UnionMatcher>(left, right);
+}
 
 class Field {
 private:
-    MatcherPtr matcher;
-    bool opt;
+    TypeMatcherPtr matcher;
+    bool require;
 
 public:
-    Field(MatcherPtr type, bool opt = false) : matcher(type), opt(opt) {}
+    Field(TypeMatcherPtr type, bool require) : matcher(type), require(require) {}
 
-    const Matcher &getMatcher() const {
+    const TypeMatcher &getMatcher() const {
         return *this->matcher;
     }
 
-    bool optional() const {
-        return this->opt;
+    bool isRequire() const {
+        return this->require;
     }
 };
 
@@ -113,22 +135,11 @@ private:
     Entry fields;
 
 public:
-    Interface &field(const char *name, MatcherPtr type) {
-        return this->addField(name, type, false);
-    }
-
-    Interface &optField(const char *name, MatcherPtr type) {
-        return this->addField(name, type, true);
-    }
+    Interface &field(const char *name, TypeMatcherPtr type, bool require = true);
 
     const Entry &getFields() const {
         return this->fields;
     }
-
-    bool match(Validator &validator, const JSON &value) const;
-
-private:
-    Interface &addField(const char *name, MatcherPtr type, bool opt);
 };
 
 class InterfaceMap {
@@ -151,9 +162,20 @@ public:
 
     bool match(const TypeMatcher &matcher, const JSON &value);
     bool match(const AnyMatcher &matcher, const JSON &value);
+    bool match(const ArrayMatcher &matcher, const JSON &value);
     bool match(const ObjectMatcher &matcher, const JSON &value);
     bool match(const UnionMatcher &matcher, const JSON &value);
     bool match(const std::string &ifaceName, const JSON &value);
+
+    bool operator()(const std::string &ifaceName, const JSON &value) {
+        return this->match(ifaceName, value);
+    }
+
+    void clear() {
+        this->errors.clear();
+    }
+
+    std::string formatError() const;
 };
 
 } // namespace json
