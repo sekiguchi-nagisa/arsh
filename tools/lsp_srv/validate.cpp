@@ -168,7 +168,11 @@ bool Validator::match(const json::ObjectMatcher &matcher, const json::JSON &valu
 }
 
 bool Validator::match(const json::UnionMatcher &matcher, const json::JSON &value) {
-    return matcher.left->match(*this, value) || matcher.right->match(*this, value);
+    if(matcher.left->match(*this, value)) {
+        return true;
+    }
+    this->errors.clear();
+    return matcher.right->match(*this, value);
 }
 
 bool Validator::match(const std::string &ifaceName, const JSON &value) {

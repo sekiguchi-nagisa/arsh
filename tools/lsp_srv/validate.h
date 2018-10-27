@@ -168,11 +168,8 @@ public:
     bool match(const std::string &ifaceName, const JSON &value);
 
     bool operator()(const std::string &ifaceName, const JSON &value) {
-        return this->match(ifaceName, value);
-    }
-
-    void clear() {
         this->errors.clear();
+        return this->match(ifaceName, value);
     }
 
     std::string formatError() const;

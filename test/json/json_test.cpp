@@ -239,10 +239,6 @@ protected:
     void tryValidate(const char *ifaceName, const char *src) {
         SCOPED_TRACE("");
 
-        // clear previous result
-        this->validator.clear();
-        this->ret = false;
-
         Parser parser(src);
         auto json = parser();
         if(parser.hasError()) {
@@ -259,6 +255,7 @@ protected:
             fprintf(stderr, "%s\n", message.c_str());
         }
         ASSERT_TRUE(this->ret);
+        ASSERT_EQ("", this->validator.formatError());
     }
 
 public:
@@ -282,6 +279,27 @@ TEST_F(ValidatorTest, base) {
     }
 )";
     ASSERT_NO_FATAL_FAILURE(this->validate("hoge1", text));
+}
+
+TEST_F(ValidatorTest, iface) {
+    this->map
+    .interface("AAA")
+        .field("a", number)
+        .field("b", string)
+        .field("c", array(any));
+
+    this->map
+    .interface("BBB")
+        .field("a", object("AAA") | string | any)
+        .field("b", boolean);
+
+    const char *text = R"(
+        {
+            "a" : { "a" : 34, "b" : "dewrfw", "c" : null },
+            "b" : false
+        }
+)";
+    ASSERT_NO_FATAL_FAILURE(this->validate("BBB", text));
 }
 
 int main(int argc, char **argv) {
