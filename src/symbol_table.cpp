@@ -24,6 +24,7 @@
 #include "object.h"
 #include "constant.h"
 #include "logger.h"
+#include "misc/files.h"
 
 namespace ydsh {
 
@@ -294,11 +295,15 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
     }
 
     const char *resolvedPath = pair.first->first.c_str();
-    filePtr.reset(fopen(resolvedPath, "r+b"));
+    filePtr.reset(fopen(resolvedPath, "rb"));
     if(!filePtr) {
         int old = errno;
         this->typeMap.erase(pair.first);
         errno = old;
+        return ModLoadingError::UNRESOLVED;
+    } else if(S_ISDIR(getStMode(fileno(filePtr.get())))) {
+        this->typeMap.erase(pair.first);
+        errno = EISDIR;
         return ModLoadingError::UNRESOLVED;
     }
     return resolvedPath;

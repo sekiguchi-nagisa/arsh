@@ -42,6 +42,14 @@ inline mode_t getStMode(const char *fileName) {
     return st.st_mode;
 }
 
+inline mode_t getStMode(int fd) {
+    struct stat st;
+    if(fstat(fd, &st) != 0) {
+        return 0;
+    }
+    return st.st_mode;
+}
+
 #define S_IS_PERM_(mode, flag) (((mode) & (flag)) == (flag))
 
 inline int getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
