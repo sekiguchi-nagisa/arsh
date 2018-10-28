@@ -3,9 +3,6 @@ language: cpp
 os: linux
 sudo: required
 dist: trusty
-env:
-  global:
-    - BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
 branches:
   only:
@@ -22,7 +19,7 @@ matrix:
             - g++-4.8
             - expect
             - ninja-build
-      env: CXX_BIN=g++-4.8
+      env: CXX_BIN=g++-4.8 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # gcc 4.9
     - addons:
@@ -33,7 +30,7 @@ matrix:
             - g++-4.9
             - expect
             - ninja-build
-      env: CXX_BIN=g++-4.9
+      env: CXX_BIN=g++-4.9 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # gcc 5
     - addons:
@@ -44,7 +41,7 @@ matrix:
             - g++-5
             - expect
             - ninja-build
-      env: CXX_BIN=g++-5
+      env: CXX_BIN=g++-5 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # gcc 6
     - addons:
@@ -55,7 +52,7 @@ matrix:
             - g++-6
             - expect
             - ninja-build
-      env: CXX_BIN=g++-6
+      env: CXX_BIN=g++-6 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # gcc 7
     - addons:
@@ -66,7 +63,7 @@ matrix:
             - g++-7
             - expect
             - ninja-build
-      env: CXX_BIN=g++-7
+      env: CXX_BIN=g++-7 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # gcc 8
     - addons:
@@ -77,7 +74,7 @@ matrix:
             - g++-8
             - expect
             - ninja-build
-      env: CXX_BIN=g++-8
+      env: CXX_BIN=g++-8 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # gcc 8 (Release build)
     - addons:
@@ -120,7 +117,7 @@ matrix:
             - clang-3.5
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-3.5
+      env: CXX_BIN=clang++-3.5 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # clang 3.6
     - addons:
@@ -131,7 +128,7 @@ matrix:
             - clang-3.6
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-3.6
+      env: CXX_BIN=clang++-3.6 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # clang 3.7
     - addons:
@@ -143,7 +140,7 @@ matrix:
             - clang-3.7
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-3.7
+      env: CXX_BIN=clang++-3.7 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # clang 3.8
     - addons:
@@ -154,7 +151,7 @@ matrix:
             - clang-3.8
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-3.8
+      env: CXX_BIN=clang++-3.8 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # clang 3.9
     - addons:
@@ -166,7 +163,7 @@ matrix:
             - clang-3.9
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-3.9
+      env: CXX_BIN=clang++-3.9 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # clang 4.0
     - addons:
@@ -178,7 +175,7 @@ matrix:
             - clang-4.0
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-4.0
+      env: CXX_BIN=clang++-4.0 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # clang 5.0
     - addons:
@@ -190,7 +187,7 @@ matrix:
             - clang-5.0
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-5.0
+      env: CXX_BIN=clang++-5.0 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # clang 6.0
     - addons:
@@ -202,7 +199,7 @@ matrix:
             - clang-6.0
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-6.0
+      env: CXX_BIN=clang++-6.0 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
   # clang 7.0
     - addons:
@@ -215,7 +212,7 @@ matrix:
           - clang-7
           - expect
           - ninja-build
-      env: CXX_BIN=clang++-7
+      env: CXX_BIN=clang++-7 BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
     # clang 7.0 (Release build)
     - addons:
