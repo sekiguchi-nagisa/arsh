@@ -8,6 +8,10 @@ branches:
   only:
     - master
 
+env:
+  global:
+    - BUILD_TYPE=DEBUG
+
 matrix:
   include:
     # gcc 4.8
@@ -85,11 +89,7 @@ matrix:
             - g++-8
             - expect
             - ninja-build
-      env: CXX_BIN=g++-8 DUMMY=release
-      script:
-        - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release
-        - ninja
-        - ctest --output-on-failure
+      env: CXX_BIN=g++-8 BUILD_TYPE=release
 
 #    # gcc 8 with LTO
 #    - compiler: gcc
@@ -225,11 +225,7 @@ matrix:
             - clang-7
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-7 DUMMY=release
-      script:
-        - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release
-        - ninja
-        - ctest --output-on-failure
+      env: CXX_BIN=clang++-7 BUILD_TYPE=release
 
 #    # clang 6.0 with LTO
 #    - compiler: clang
@@ -320,7 +316,7 @@ matrix:
         - coveralls --gcov gcov-6 --gcov-options '\-lp' --exclude test --exclude tools --exclude ext --exclude fuzzing --exclude-pattern .*-source --exclude-pattern re2c-.* --exclude src/nextToken.re2c.cpp --exclude nextToken.cpp
 
 script:
-  - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=DEBUG
+  - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=$BUILD_TYPE
   - ninja
   - ctest --output-on-failure
 
