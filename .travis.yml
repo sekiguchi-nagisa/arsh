@@ -11,6 +11,7 @@ branches:
 env:
   global:
     - BUILD_TYPE=DEBUG
+    - OPTION=""
 
 matrix:
   include:
@@ -101,11 +102,7 @@ matrix:
 #          - g++-8
 #          - expect
 #          - ninja-build
-#      env: CXX_BIN=g++-8 DUMMY=release
-#      script:
-#      - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release -DUSE_LTO=ON
-#      - ninja
-#      - ctest --output-on-failure
+#      env: CXX_BIN=g++-8 -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
 
 
     # clang 3.5
@@ -238,11 +235,7 @@ matrix:
 #          - clang-6.0
 #          - expect
 #          - ninja-build
-#      env: CXX_BIN=clang++-6.0 DUMMY=lto
-#      script:
-#      - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=Release -DUSE_LTO=ON
-#      - ninja
-#      - ctest --output-on-failure
+#      env: CXX_BIN=clang++-6.0 BUILD_TYPE=Release OPTION="-DUSE_LTO=ON"
 
     # clang 7.0 with address sanitizer
     - addons:
@@ -255,11 +248,7 @@ matrix:
             - clang-7
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-7 DUMMY=address-sanitizer
-      script:
-        - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=debug -DSANITIZER=address
-        - ninja
-        - ctest --output-on-failure
+      env: CXX_BIN=clang++-7 OPTION="-DSANITIZER=address"
 
     # clang 7.0 with undefined behavior sanitizer
     - addons:
@@ -272,11 +261,7 @@ matrix:
             - clang-7
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-7 DUMMY=undefined-behavior-sanitizer
-      script:
-        - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=debug -DSANITIZER=undefined
-        - ninja
-        - ctest --output-on-failure
+      env: CXX_BIN=clang++-7 OPTION="-DSANITIZER=undefined"
 
     # clang 7.0 with fuzzing
     - addons:
@@ -289,11 +274,7 @@ matrix:
             - clang-7
             - expect
             - ninja-build
-      env: CXX_BIN=clang++-7 DUMMY=fuzzing
-      script:
-        - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DFUZZING_BUILD_MODE=on
-        - ninja
-        - ctest --output-on-failure
+      env: CXX_BIN=clang++-7 OPTION="-DFUZZING_BUILD_MODE=on"
 
     # gcc6 with coverage
     - addons:
@@ -305,18 +286,14 @@ matrix:
             - g++-6
             - expect
             - ninja-build
-      env: CC_BIN=gcc-6 CXX_BIN=g++-6 OPTION="-DCMAKE_BUILD_TYPE=coverage"
+      env: CXX_BIN=g++-6 BUILD_TYPE=coverage OPTION="-DCMAKE_C_COMPILER=gcc-6"
       before_script:
         - pip install --user cpp-coveralls
-      script:
-        - cmake . -G Ninja -DCMAKE_C_COMPILER=$CC_BIN -DCMAKE_CXX_COMPILER=$CXX_BIN $OPTION
-        - ninja
-        - ctest --output-on-failure
       after_success:
         - coveralls --gcov gcov-6 --gcov-options '\-lp' --exclude test --exclude tools --exclude ext --exclude fuzzing --exclude-pattern .*-source --exclude-pattern re2c-.* --exclude src/nextToken.re2c.cpp --exclude nextToken.cpp
 
 script:
-  - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+  - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=$BUILD_TYPE $OPTION
   - ninja
   - ctest --output-on-failure
 
