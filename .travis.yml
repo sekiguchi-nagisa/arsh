@@ -4,8 +4,7 @@ os: linux
 sudo: required
 dist: trusty
 env:
-  global:
-    - BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
+  - BUILD_TYPE="-DCMAKE_BUILD_TYPE=DEBUG"
 
 branches:
   only:
