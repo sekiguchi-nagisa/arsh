@@ -51,6 +51,11 @@ if(FUZZING_BUILD_MODE)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fuzz)
 endif()
 
+if(USE_EXTRA_TEST)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/extra)
+endif()
+
+
 #=====================#
 #     test_common     #
 #=====================#

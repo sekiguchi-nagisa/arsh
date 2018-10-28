@@ -42,6 +42,7 @@ option(USE_SAFE_CAST "check object cast" OFF)
 option(USE_FIXED_TIME "enable fixed time source" OFF)
 option(FUZZING_BUILD_MODE "enable fuzzing-aware build" OFF)
 option(USE_LTO "enable Link Time Optimization" OFF)
+option(USE_EXTRA_TEST "enable system extra test cases" OFF)
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
@@ -98,6 +99,7 @@ show_option(USE_SAFE_CAST)
 show_option(USE_FIXED_TIME)
 show_option(FUZZING_BUILD_MODE)
 show_option(USE_LTO)
+show_option(USE_EXTRA_TEST)
 
 
 #++++++++++++++++++++++++++++#

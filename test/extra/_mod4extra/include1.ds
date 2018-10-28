@@ -1,0 +1,8 @@
+
+echo include from script_dir!!
+
+source mod4extra1.ds as mod1
+
+source mod4extra2.ds as mod2
+
+source mod4extra3.ds as mod3

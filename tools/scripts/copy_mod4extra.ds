@@ -1,0 +1,29 @@
+#!/usr/bin/env ydsh
+
+let INSTALL_PREFIX = $1 == "" ? "/usr/local" : $1
+
+function error($s : String) : Nothing {
+    throw new Error($s)
+}
+
+test -d ~/.ydsh/module || {
+    mkdir -p ~/.ydsh/module || $error("failed!!")
+}
+
+test -d /etc/ydsh/module || {
+    sudo mkdir -p /etc/ydsh/module || $error("failed!!")
+}
+
+
+# copy local
+let local = "$SCRIPT_DIR/../../test/extra/_mod4extra/local/".realpath()!
+for $a in $(ls $local) {
+    echo copy $local/$a to ~/.ydsh/module/
+    cp $local/$a ~/.ydsh/module/
+}
+
+let system = "$SCRIPT_DIR/../../test/extra/_mod4extra/system/".realpath()!
+for $a in $(ls $system) {
+    echo copy $system/$a to $INSTALL_PREFIX/etc/ydsh/module/
+    sudo cp $system/$a $INSTALL_PREFIX/etc/ydsh/module/
+}

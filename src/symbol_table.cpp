@@ -388,7 +388,7 @@ SymbolTable::SymbolTable() :
     this->typeMap.commit();
 }
 
-static bool isFileNotFound(ModResult &ret) {
+static bool isFileNotFound(const ModResult &ret) {
     return is<ModLoadingError>(ret) && get<ModLoadingError>(ret) == ModLoadingError::UNRESOLVED
            && errno == ENOENT;
 }
@@ -398,15 +398,16 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPat
     if(*modPath == '/' || scriptDir == nullptr) {   // if full path, not search next path
         return ret;
     }
+    if(strcmp(scriptDir, SYSTEM_MOD_DIR) == 0) {
+        return ret;
+    }
+
     if(isFileNotFound(ret)) {
-        int old = errno;
         std::string dir = LOCAL_MOD_DIR;
         expandTilde(dir);
-        if(strcmp(scriptDir, dir.c_str()) == 0) {
-            errno = old;
-            return ret;
+        if(strcmp(scriptDir, dir.c_str()) != 0) {
+            ret = this->modLoader.load(dir.c_str(), modPath, filePtr);
         }
-        ret = this->modLoader.load(dir.c_str(), modPath, filePtr);
         if(isFileNotFound(ret) && strcmp(scriptDir, SYSTEM_MOD_DIR) != 0) {
             ret = this->modLoader.load(SYSTEM_MOD_DIR, modPath, filePtr);
         }
