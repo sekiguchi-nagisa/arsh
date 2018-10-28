@@ -403,12 +403,14 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPat
     }
 
     if(isFileNotFound(ret)) {
+        int old = errno;
         std::string dir = LOCAL_MOD_DIR;
         expandTilde(dir);
+        errno = old;
         if(strcmp(scriptDir, dir.c_str()) != 0) {
             ret = this->modLoader.load(dir.c_str(), modPath, filePtr);
         }
-        if(isFileNotFound(ret) && strcmp(scriptDir, SYSTEM_MOD_DIR) != 0) {
+        if(isFileNotFound(ret)) {
             ret = this->modLoader.load(SYSTEM_MOD_DIR, modPath, filePtr);
         }
     }
