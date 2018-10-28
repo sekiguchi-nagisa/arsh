@@ -104,6 +104,16 @@ struct ExpectOutput : public ::testing::Test {
         ASSERT_EQ(status, output.status.value);
         ASSERT_EQ(type, output.status.kind);
     }
+
+    void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
+        SCOPED_TRACE("");
+
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
+
+        auto result = builder.execAndGetResult(false);
+        this->expect(result, status, WaitStatus::EXITED, out, err);
+    }
 };
 
 

@@ -43,15 +43,7 @@ class CmdlineTest : public ExpectOutput {
 public:
     CmdlineTest() = default;
 
-    void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
-        SCOPED_TRACE("");
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
-
-        auto result = builder.execAndGetResult(false);
-        ExpectOutput::expect(result, status, WaitStatus::EXITED, out, err);
-    }
+    using ExpectOutput::expect;
 
     void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
         SCOPED_TRACE("");
