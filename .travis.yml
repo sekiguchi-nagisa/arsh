@@ -22,7 +22,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.8
-            - expect
             - ninja-build
       env: CXX_BIN=g++-4.8
 
@@ -33,7 +32,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-4.9
-            - expect
             - ninja-build
       env: CXX_BIN=g++-4.9
 
@@ -44,7 +42,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-            - expect
             - ninja-build
       env: CXX_BIN=g++-5
 
@@ -55,7 +52,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-6
-            - expect
             - ninja-build
       env: CXX_BIN=g++-6
 
@@ -66,7 +62,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-7
-            - expect
             - ninja-build
       env: CXX_BIN=g++-7
 
@@ -77,7 +72,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-8
-            - expect
             - ninja-build
       env: CXX_BIN=g++-8
 
@@ -88,7 +82,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-8
-            - expect
             - ninja-build
       env: CXX_BIN=g++-8 BUILD_TYPE=release
 
@@ -100,7 +93,6 @@ matrix:
 #          - ubuntu-toolchain-r-test
 #          packages:
 #          - g++-8
-#          - expect
 #          - ninja-build
 #      env: CXX_BIN=g++-8 -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
 
@@ -112,7 +104,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - clang-3.5
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-3.5
 
@@ -123,7 +114,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - clang-3.6
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-3.6
 
@@ -135,7 +125,6 @@ matrix:
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-3.7
 
@@ -146,7 +135,6 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - clang-3.8
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-3.8
 
@@ -158,7 +146,6 @@ matrix:
             - llvm-toolchain-trusty-3.9
           packages:
             - clang-3.9
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-3.9
 
@@ -170,7 +157,6 @@ matrix:
             - llvm-toolchain-trusty-4.0
           packages:
             - clang-4.0
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-4.0
 
@@ -182,7 +168,6 @@ matrix:
             - llvm-toolchain-trusty-5.0
           packages:
             - clang-5.0
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-5.0
 
@@ -194,7 +179,6 @@ matrix:
             - llvm-toolchain-trusty-6.0
           packages:
             - clang-6.0
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-6.0
 
@@ -207,7 +191,6 @@ matrix:
             key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
           - clang-7
-          - expect
           - ninja-build
       env: CXX_BIN=clang++-7
 
@@ -220,7 +203,6 @@ matrix:
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - clang-7
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-7 BUILD_TYPE=release
 
@@ -233,7 +215,6 @@ matrix:
 #          - llvm-toolchain-trusty-6.0
 #          packages:
 #          - clang-6.0
-#          - expect
 #          - ninja-build
 #      env: CXX_BIN=clang++-6.0 BUILD_TYPE=Release OPTION="-DUSE_LTO=ON"
 
@@ -246,7 +227,6 @@ matrix:
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - clang-7
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-7 OPTION="-DSANITIZER=address"
 
@@ -259,7 +239,6 @@ matrix:
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - clang-7
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-7 OPTION="-DSANITIZER=undefined"
 
@@ -272,7 +251,6 @@ matrix:
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - clang-7
-            - expect
             - ninja-build
       env: CXX_BIN=clang++-7 OPTION="-DFUZZING_BUILD_MODE=on"
 
@@ -284,7 +262,6 @@ matrix:
           packages:
             - gcc-6
             - g++-6
-            - expect
             - ninja-build
       env: CXX_BIN=g++-6 BUILD_TYPE=coverage OPTION="-DCMAKE_C_COMPILER=gcc-6"
       before_script:

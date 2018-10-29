@@ -2,11 +2,9 @@
 #     interactive_test     #
 #==========================#
 
-check_program("expect")
 set(TEST_NAME interactive_test)
 
 add_definitions(-DBIN_PATH="${CMAKE_BINARY_DIR}/${BIN_NAME}")
-add_definitions(-DINTERACTIVE_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}/cases")
 add_definitions(-DINTERACTIVE_TEST_WORK_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 add_executable(${TEST_NAME}
     interactive_test.cpp
