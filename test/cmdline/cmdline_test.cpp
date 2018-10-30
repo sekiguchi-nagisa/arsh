@@ -35,7 +35,7 @@ template <unsigned int N>
 InputWrapper operator|(const char (&value)[N], ProcBuilder &&builder) {
     return InputWrapper{
             .value = std::string(value, N - 1),
-            .builder = std::move(builder),
+            .builder = std::forward<ProcBuilder>(builder),
     };
 }
 

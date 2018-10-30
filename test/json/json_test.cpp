@@ -26,8 +26,8 @@ TEST(JSON, type) {
 
     json = JSON(array());
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.isArray()));
-    json.asArray().push_back(JSON(23));
-    json.asArray().push_back(true);
+    json.asArray().emplace_back(23);
+    json.asArray().emplace_back(true);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, json.size()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(23, json[0].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json[1].asBool()));

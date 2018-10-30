@@ -27,7 +27,7 @@ private:
     ProcHandle handle;
 
 protected:
-    virtual void TearDown() {
+    void TearDown() override {
         if(this->handle) {
             auto pid = this->handle.pid();
             kill(pid, SIGKILL);
