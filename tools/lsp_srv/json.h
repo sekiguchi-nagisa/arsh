@@ -153,7 +153,8 @@ void append(Array &array, JSON &&v, T && ...arg) {
 
 template <typename ...T>
 void append(Object &object, Member &&v, T && ...arg) {
-    object.insert({std::move(v.key), std::move(v.value)});
+    std::pair<std::string, JSON> kv = {std::move(v.key), std::move(v.value)};
+    object.insert(std::move(kv));
     append(object, std::forward<T>(arg)...);
 }
 
