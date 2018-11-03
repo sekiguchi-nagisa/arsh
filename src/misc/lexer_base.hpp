@@ -146,12 +146,12 @@ protected:
 protected:
     LexerBase() = default;
 
-    explicit LexerBase(const char *sourceName) : srcInfo(SourceInfo::create(sourceName)) {}
-
     ~LexerBase() = default;
 
 public:
     NON_COPYABLE(LexerBase);
+
+    explicit LexerBase(const char *sourceName) : srcInfo(SourceInfo::create(sourceName)) {}
 
     LexerBase(LexerBase &&) noexcept = default;
 
@@ -161,7 +161,9 @@ public:
      * must be opened with binary mode. after call it, not close fp.
      * @return
      */
-    explicit LexerBase(const char *sourceName, FILE *fp);
+    explicit LexerBase(const char *sourceName, FILE *fp) : LexerBase(sourceName) {
+        this->file.reset(fp);
+    }
 
     /**
      *
@@ -177,7 +179,9 @@ public:
      * @param size
      * @return
      */
-    LexerBase(const char *sourceName, const char *data, unsigned int size);
+    LexerBase(const char *sourceName, const char *data, unsigned int size) : LexerBase(sourceName) {
+        this->appendToBuf(reinterpret_cast<const unsigned char *>(data), size, true);
+    }
 
     LexerBase &operator=(LexerBase &&lex) noexcept {
         this->swap(lex);
@@ -278,9 +282,17 @@ public:
 
     std::string formatLineMarker(Token lineToken, Token token) const;
 
-private:
+    /**
+     *
+     * @param data
+     * @param size
+     * size of data
+     * @param isEnd
+     * if true, append '\n\0'
+     */
     void appendToBuf(const unsigned char *data, unsigned int size, bool isEnd);
 
+private:
     unsigned int toCodePoint(unsigned int offset, int &code) const {
         return UnicodeUtil::utf8ToCodePoint((char *)(this->buf.get() + offset), this->getUsedSize() - offset, code);
     }
@@ -297,18 +309,6 @@ protected:
 // #######################
 // ##     LexerBase     ##
 // #######################
-
-template<bool T>
-LexerBase<T>::LexerBase(const char *sourceName, FILE *fp) : LexerBase(sourceName) {
-    this->file.reset(fp);
-    this->cursor = this->buf.get();
-    this->limit = this->buf.get();
-}
-
-template<bool T>
-LexerBase<T>::LexerBase(const char *sourceName, const char *data, unsigned int size) : LexerBase(sourceName) {
-    this->appendToBuf(reinterpret_cast<const unsigned char *>(data), size, true);
-}
 
 template <bool T>
 Token LexerBase<T>::shiftEOS(Token token) const {
