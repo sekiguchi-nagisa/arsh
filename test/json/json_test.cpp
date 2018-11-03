@@ -6,7 +6,11 @@ using namespace json;
 
 TEST(JSON, type) {
     JSON json;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.isInvalid()));
+
+    json = nullptr;
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.isNull()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ydsh::get<std::nullptr_t>(json) == nullptr));
 
     json = true;
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.isBool()));
@@ -20,7 +24,7 @@ TEST(JSON, type) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.isDouble()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3.14, json.asDouble()));
 
-    json = JSON("hello");
+    json = "hello";
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.isString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", json.asString()));
 
@@ -47,7 +51,7 @@ TEST(JSON, type) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(23, json[6][0].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(true, json[6][1].asBool()));
 
-    json = JSON(createObject());
+    json = JSON(object());
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.isObject()));
     json.asObject().emplace("hey", false);
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(json["hey"].asBool()));
@@ -205,16 +209,17 @@ TEST_F(ParserTest, object) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(true, this->ret["aaa"].isNull()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(true, this->ret["bbb"].asObject().empty()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(true, this->ret["ccc"].asArray().empty()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->ret["hohgeo"].isNull()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->ret["hohgeo"].isInvalid()));
 }
 
 TEST_F(ParserTest, serialize) {
     auto expect = JSON {
-            {"34", {}},
+            {"hiofr", JSON()},
+            {"34", object()},
             {"aa", false},
-            {"bb", array(nullptr, 3, 3.4, "hey", JSON { {"huga", array()} })},
+            {"bb", array(nullptr, 3, 3.4, "hey", object({"huga", array()}), JSON())},
             {"ZZ", {
-                           {";;;", 234}, {"", {}}
+                           {";;;", 234}, {"", object()}
             }}
     }.serialize(3);
 

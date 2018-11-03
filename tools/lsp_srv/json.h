@@ -38,54 +38,30 @@ using Object = std::map<std::string, JSON>;
 
 struct Member;
 
-namespace __detail {
-
-inline void append(Array &) {}
-
-template <typename ...T>
-void append(Array &array, JSON &&v, T && ...arg) {
-    array.push_back(std::move(v));
-    append(array, std::forward<T>(arg)...);
-}
-
-} // namespace
-
-template <typename ...Arg>
-inline String createString(Arg && ...arg) {
-    return std::string(std::forward<Arg>(arg)...);
-}
-
-template <typename ... Arg>
-inline Array array(Arg&& ...arg) {
-    auto value = std::vector<JSON>();
-    __detail::append(value, std::forward<Arg>(arg)...);
-    return value;
-}
-
-inline Object createObject() {
-    return std::map<std::string, JSON>();
-}
-
-class JSON : public ydsh::Union<bool, long, double, String, Array, Object> {
+class JSON : public ydsh::Union<std::nullptr_t, bool, long, double, String, Array, Object> {
 public:
-    using Base = ydsh::Union<bool, long, double, String, Array, Object>;
+    using Base = ydsh::Union<std::nullptr_t, bool, long, double, String, Array, Object>;
 
-    JSON() : Base() {}
-    JSON(std::nullptr_t) : Base() {}
+    explicit JSON() : Base() {}
     JSON(bool v) : Base(v) {}
     JSON(long v) : Base(v) {}
     JSON(int v) : JSON(static_cast<long>(v)) {}
     JSON(double v) : Base(v) {}
-    JSON(const char *str) : Base(createString(str)) {}
-    JSON(const std::string &str) : JSON(str.c_str()) {}
+    JSON(const char *str) : JSON(std::string(str)) {}
+    JSON(const std::string &str) : JSON(std::string(str)) {}
     JSON(String &&v) : Base(std::move(v)) {}
     JSON(Array &&v) : Base(std::move(v)) {}
     JSON(Object &&v) : Base(std::move(v)) {}
     JSON(std::initializer_list<Member> list);
+    JSON(std::nullptr_t) : Base(nullptr) {}
 
+
+    bool isInvalid() const {
+        return this->tag() < 0;
+    }
 
     bool isNull() const {
-        return this->tag() < 0;
+        return ydsh::is<std::nullptr_t>(*this);
     }
 
     bool isBool() const {
@@ -161,6 +137,55 @@ struct Member {
 
     Member(std::string &&key, JSON &&value) : key(std::move(key)), value(std::move(value)) {}
 };
+
+
+namespace __detail {
+
+inline void append(Array &) {}
+
+inline void append(Object &) {}
+
+template <typename ...T>
+void append(Array &array, JSON &&v, T && ...arg) {
+    array.push_back(std::move(v));
+    append(array, std::forward<T>(arg)...);
+}
+
+template <typename ...T>
+void append(Object &object, Member &&v, T && ...arg) {
+    object.insert({std::move(v.key), std::move(v.value)});
+    append(object, std::forward<T>(arg)...);
+}
+
+} // namespace
+
+template <typename ...Arg>
+inline String createString(Arg && ...arg) {
+    return std::string(std::forward<Arg>(arg)...);
+}
+
+inline Array array() {
+    return std::vector<JSON>();
+}
+
+template <typename ... Arg>
+inline Array array(Arg&& ...arg) {
+    auto value = array();
+    __detail::append(value, std::forward<Arg>(arg)...);
+    return value;
+}
+
+inline Object object() {
+    return std::map<std::string, JSON>();
+}
+
+template <typename ... Arg>
+inline Object object(Member &&m, Arg&& ...arg) {
+    auto value = object();
+    __detail::append(value, std::forward<Member>(m), std::forward<Arg>(arg)...);
+    return value;
+}
+
 
 #define EACH_JSON_TOKEN(OP) \
     OP(INVALID     , "<invalid>") \

@@ -25,7 +25,7 @@ namespace json {
 // ##     JSON     ##
 // ##################
 
-JSON::JSON(std::initializer_list<json::Member> list) : JSON(createObject()) {
+JSON::JSON(std::initializer_list<json::Member> list) : JSON(object()) {
     for(auto &v : list) {
         this->asObject().emplace(
                 std::move(const_cast<Member&>(v).key),
@@ -58,6 +58,7 @@ size_t JSON::size() const {
 }
 
 #define EACH_JSON_TYPE(T) \
+    T(std::nullptr_t) \
     T(bool) \
     T(long) \
     T(double) \
@@ -73,6 +74,9 @@ struct Serializer {
     explicit Serializer(unsigned int tab) : tab(tab) {}
 
     void operator()(const JSON &value) {
+        if(value.isInvalid()) {
+            return;
+        }
         this->serialize(value);
         this->str += '\n';
     }
@@ -82,13 +86,12 @@ struct Serializer {
         switch(value.tag()) {
         EACH_JSON_TYPE(GEN_CASE)
         default:
-            this->serialize();
-            break;
+            fatal("invalid JSON object\n");
         }
 #undef GEN_CASE
     }
 
-    void serialize() {
+    void serialize(std::nullptr_t) {
         this->str += "null";
     }
 
@@ -127,12 +130,17 @@ struct Serializer {
         }
 
         this->enter('[');
-        for(unsigned int i = 0; i < value.size(); i++) {
-            if(i > 0) {
+        unsigned int count = 0;
+        for(auto &e : value) {
+            if(e.isInvalid()) {
+                continue;
+            }
+
+            if(count++ > 0) {
                 this->separator();
             }
             this->indent();
-            this->serialize(value[i]);
+            this->serialize(e);
         }
         this->leave(']');
     }
@@ -146,6 +154,10 @@ struct Serializer {
         this->enter('{');
         unsigned int count = 0;
         for(auto &e : value) {
+            if(e.second.isInvalid()) {
+                continue;
+            }
+
             if(count++ > 0) {
                 this->separator();
             }
@@ -339,7 +351,7 @@ JSON Parser::parseArray() {
 JSON Parser::parseObject() {
     this->expect(OBJECT_OPEN);
 
-    auto object = createObject();
+    auto value = object();
     for(unsigned int count = 0; this->curKind != OBJECT_CLOSE; count++) {
         if(count > 0) {
             if(this->curKind != COMMA) {
@@ -348,13 +360,13 @@ JSON Parser::parseObject() {
             this->consume();    // COMMA
         }
         if(this->curKind == STRING) {
-            object.insert(TRY(this->parseMember()));
+            value.insert(TRY(this->parseMember()));
         } else {
             E_ALTER(STRING, OBJECT_CLOSE);
         }
     }
     this->expect(OBJECT_CLOSE);
-    return JSON(std::move(object));
+    return JSON(std::move(value));
 }
 
 static unsigned short parseHex(const char *&iter) {
