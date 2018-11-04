@@ -138,17 +138,16 @@ struct Request {
     JSON convertToJSON();   // for testing
 };
 
-
-
 struct RequestParser : public Parser {
     RequestParser() : Parser() {}
 
-    void append(const char *text) {
-        this->append(text, strlen(text));
+    RequestParser &append(const char *text) {
+        return this->append(text, strlen(text));
     }
 
-    void append(const char *data, unsigned int size) {
+    RequestParser &append(const char *data, unsigned int size) {
         this->lexer->appendToBuf(reinterpret_cast<const unsigned char *>(data), size, false);
+        return *this;
     }
 
     Request operator()();
