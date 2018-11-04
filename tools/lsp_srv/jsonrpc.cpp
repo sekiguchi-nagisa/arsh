@@ -18,19 +18,75 @@
 
 namespace rpc {
 
-JSON newError(int code, const char *message, JSON &&data) {
+JSON ResponseError::convertToJSON() {
     return {
-            {"code", code},
-            {"message", message},
-            {"data", std::move(data)}
+            {"code", this->code},
+            {"message", std::move(this->message)},
+            {"data", std::move(this->data)}
     };
 }
 
-JSON newError(int code, const char *message) {
-    return {
-            {"code", code},
-            {"message", message},
+std::string ResponseError::serialize(int tab) {
+    JSON json = {
+            {"jsonrpc", "2.0"},
+            {"id", nullptr},
+            {"error", this->convertToJSON()}
     };
+    return json.serialize(tab);
+}
+
+JSON Response::convertToJSON() {
+    assert(this->id.isString() || this->id.isNumber());
+    assert(!this->result.isInvalid());
+    return {
+            {"jsonrpc", "2.0"},
+            {"id", std::move(this->id)},
+            {"result", std::move(this->result)},
+    };
+}
+
+std::string Response::serialize(int tab) {
+    return this->convertToJSON().serialize(tab);
+}
+
+JSON Request::convertToJSON() {
+    assert(!this->isError());
+    return {
+            {"jsonrpc", "2.0"},
+            {"id", std::move(this->id)},
+            {"method", std::move(this->method)},
+            {"params", std::move(this->params)}
+    };
+}
+
+Request RequestParser::operator()() {
+    // finalize lexer
+    unsigned char b[1];
+    this->lexer->appendToBuf(b, 0, true);
+
+    // parse
+    auto ret = Parser::operator()();
+    if(this->hasError()) {
+        return Request(Request::PARSE_ERROR, this->formatError());
+    }
+
+    // validate
+    const char *ifaceName = "Request";
+    InterfaceMap map;
+    map.interface(ifaceName)
+            .field("id", number | string, false)
+            .field("method", string)
+            .field("params", array(any) | object(""), false);
+    Validator validator(map);
+    if(!validator(ifaceName, ret)) {
+        return Request(Request::INVALID, validator.formatError());
+    }
+
+    auto id = std::move(ret["id"]);
+    auto method = std::move(ret["method"].asString());
+    auto params = std::move(ret["params"]);
+
+    return Request(std::move(id), std::move(method), std::move(params));
 }
 
 } // namespace rpc

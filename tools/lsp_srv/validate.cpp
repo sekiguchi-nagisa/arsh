@@ -177,15 +177,18 @@ bool Validator::match(const json::UnionMatcher &matcher, const json::JSON &value
 }
 
 bool Validator::match(const std::string &ifaceName, const JSON &value) {
+    if(value.tag() != JSON::Tag<Object>::value) {
+        return false;
+    }
+
+    if(ifaceName.empty()) {
+        return true;
+    }
     auto *ptr = this->map.lookup(ifaceName);
     if(ptr == nullptr) {
         fatal("undefined interface: %s\n", ifaceName.c_str());
     }
     auto &iface = *ptr;
-
-    if(value.tag() != JSON::Tag<Object>::value) {
-        return false;
-    }
     for(auto &e : iface.getFields()) {
         auto iter = value.asObject().find(e.first);
         if(iter == value.asObject().end()) {

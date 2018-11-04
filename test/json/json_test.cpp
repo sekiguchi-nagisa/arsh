@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <validate.h>
+#include <jsonrpc.h>
 
 using namespace json;
 
@@ -212,7 +213,7 @@ TEST_F(ParserTest, object) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->ret["hohgeo"].isInvalid()));
 }
 
-TEST_F(ParserTest, serialize) {
+TEST_F(ParserTest, serialize1) {
     auto expect = JSON {
             {"hiofr", JSON()},
             {"34", object()},
@@ -230,6 +231,36 @@ TEST_F(ParserTest, serialize) {
     expect = JSON(34).serialize(3);
     actual = Parser(expect.c_str(), expect.size())().serialize(3);
 
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+}
+
+TEST_F(ParserTest, serialize2) {
+    // error
+    auto actual = rpc::ResponseError(-1, "hello").convertToJSON().serialize(3);
+    const char *text = R"( { "code" : -1, "message": "hello" })";
+    auto expect = Parser(text)().serialize(3);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+
+    actual = rpc::ResponseError(-100, "world", array(1, 3, 5)).convertToJSON().serialize(3);
+    text = R"( { "code" : -100, "message": "world", "data": [1,3,5] })";
+    expect = Parser(text)().serialize(3);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+
+    // response
+    actual = rpc::Response(34, nullptr).serialize(2);
+    text = R"( { "jsonrpc" : "2.0", "id" : 34, "result" : null } )";
+    expect = Parser(text)().serialize(2);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+
+    actual = rpc::Response(-0.4, 34).serialize(2);
+    text = R"( { "jsonrpc" : "2.0", "id" : -0.4, "result" : 34 } )";
+    expect = Parser(text)().serialize(2);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+
+    actual = rpc::ResponseError(-100, "world", array(1, 3, 5)).serialize(2);
+    text = R"( { "jsonrpc" : "2.0", "id" : null,
+                "error" : { "code": -100, "message" : "world", "data" : [1,3,5]}})";
+    expect = Parser(text)().serialize(2);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 }
 
@@ -306,6 +337,7 @@ TEST_F(ValidatorTest, iface) {
 )";
     ASSERT_NO_FATAL_FAILURE(this->validate("BBB", text));
 }
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

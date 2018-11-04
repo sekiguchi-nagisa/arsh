@@ -76,6 +76,10 @@ public:
         return ydsh::is<double >(*this);
     }
 
+    bool isNumber() const {
+        return this->isLong() || this->isDouble();
+    }
+
     bool isString() const {
         return ydsh::is<String>(*this);
     }
@@ -98,6 +102,10 @@ public:
 
     double asDouble() const {
         return ydsh::get<double >(*this);
+    }
+
+    std::string &asString() {
+        return ydsh::get<String>(*this);
     }
 
     const std::string &asString() const {
@@ -221,10 +229,8 @@ using Token = ydsh::Token;
 
 class Lexer : public ydsh::parser_base::LexerBase {
 public:
-    Lexer() = default;
-    explicit Lexer(const char *line) : LexerBase("(string)", line) {}
-    Lexer(const char *data, unsigned int size) : LexerBase("(string)", data, size) {}
-    Lexer(const char *sourceName, FILE *fp) : LexerBase(sourceName, fp) {}
+    template <typename ...Arg>
+    explicit Lexer(Arg&& ...arg) : LexerBase("(string)", std::forward<Arg>(arg)...) {}
 
     JSONTokenKind nextToken(Token &token);
 };
@@ -236,22 +242,20 @@ private:
 public:
     explicit Parser(Lexer &&lex) : lex(std::move(lex)) {
         this->lexer = &this->lex;
-        this->fetchNext();
     }
 
-    explicit Parser(const char *str) : Parser(Lexer(str)) {}
+    template <typename ...Arg>
+    explicit Parser(Arg&& ...arg) : Parser(Lexer(std::forward<Arg>(arg)...)) {}
 
-    Parser(const char *date, unsigned int size) : Parser(Lexer(date, size)) {}
-
-    Parser(const char *sourceName, FILE *fp) : Parser(Lexer(sourceName, fp)) {}
-
-    JSON operator()(bool matchEOS = true);
+    JSON operator()();
 
     explicit operator bool() const {
         return this->curKind != EOS;
     }
 
-    void showError() const;
+    std::string formatError() const;
+
+    void showError(FILE *fp = stderr) const;
 
 private:
     JSON parseValue();

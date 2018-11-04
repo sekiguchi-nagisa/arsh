@@ -71,6 +71,11 @@ public:
 struct ObjectMatcher : public TypeMatcher {
     friend class Validator;
 
+    /**
+     *
+     * @param name
+     * if empty string, match all of objects
+     */
     explicit ObjectMatcher(const char *name) : TypeMatcher(name, JSON::Tag<Object>::value) {}
 
     bool match(Validator &validator, const JSON &value) const override;

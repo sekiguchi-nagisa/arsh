@@ -249,11 +249,10 @@ do { this->raiseNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return nu
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
 
-JSON Parser::operator()(bool matchEOS) {
+JSON Parser::operator()() {
+    this->fetchNext();
     auto value = TRY(this->parseValue());
-    if(matchEOS) {
-        TRY(this->expect(EOS));
-    }
+    TRY(this->expect(EOS));
     return value;
 }
 
@@ -452,23 +451,37 @@ bool Parser::unescapeStr(json::Token token, std::string &str)  {
     return true;
 }
 
-void Parser::showError() const {
+std::string Parser::formatError() const {
     assert(this->hasError());
 
+    std::string str;
+
     unsigned int lineNum = this->lexer->getSourceInfo()->getLineNum(this->getError().getErrorToken().pos);
-    const char *srcName = this->lexer->getSourceInfo()->getSourceName().c_str();
 
-    fprintf(stderr, "%s:%d: [error] %s\n", srcName, lineNum, this->getError().getMessage().c_str());
-
+    str += this->lexer->getSourceInfo()->getSourceName();
+    str += ':';
+    str += std::to_string(lineNum);
+    str += ": [error] ";
+    str += this->getError().getMessage();
+    str += '\n';
 
     auto eToken = this->getError().getErrorToken();
     auto errorToken = this->lexer->shiftEOS(eToken);
     auto lineToken = this->lexer->getLineToken(errorToken);
-    auto line = this->lexer->toTokenText(lineToken);
-    auto marker = this->lexer->formatLineMarker(lineToken, errorToken);
 
-    fprintf(stderr, "%s\n%s\n", line.c_str(), marker.c_str());
-    fflush(stderr);
+    str += this->lexer->toTokenText(lineToken);
+    str += '\n';
+    str += this->lexer->formatLineMarker(lineToken, errorToken);
+    str += '\n';
+
+    return str;
+}
+
+void Parser::showError(FILE *fp) const {
+    assert(fp != nullptr);
+    auto str = this->formatError();
+    fputs(str.c_str(), fp);
+    fflush(fp);
 }
 
 } // namespace json
