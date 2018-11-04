@@ -31,7 +31,11 @@ struct ResponseBase {
      * after call it, will be empty
      * @return
      */
-    virtual std::string serialize(int tab = 0) = 0;
+    virtual std::string serialize(int tab) = 0;
+
+    std::string serialize() {
+        return this->serialize(0);
+    }
 };
 
 struct Response : public ResponseBase {

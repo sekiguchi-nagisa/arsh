@@ -167,11 +167,6 @@ void append(Object &object, Member &&v, T && ...arg) {
 
 } // namespace
 
-template <typename ...Arg>
-inline String createString(Arg && ...arg) {
-    return std::string(std::forward<Arg>(arg)...);
-}
-
 inline Array array() {
     return std::vector<JSON>();
 }
