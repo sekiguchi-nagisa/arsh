@@ -161,8 +161,7 @@ void append(Array &array, JSON &&v, T && ...arg) {
 
 template <typename ...T>
 void append(Object &object, Member &&v, T && ...arg) {
-    std::pair<std::string, JSON> kv = {std::move(v.key), std::move(v.value)};
-    object.insert(std::move(kv));
+    object.emplace(std::move(v.key), std::move(v.value));
     append(object, std::forward<T>(arg)...);
 }
 
@@ -178,9 +177,9 @@ inline Array array() {
 }
 
 template <typename ... Arg>
-inline Array array(Arg&& ...arg) {
+inline Array array(JSON &&v, Arg&& ...arg) {
     auto value = array();
-    __detail::append(value, std::forward<Arg>(arg)...);
+    __detail::append(value, std::forward<JSON>(v), std::forward<Arg>(arg)...);
     return value;
 }
 
