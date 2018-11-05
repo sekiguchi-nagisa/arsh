@@ -96,16 +96,16 @@ static constexpr int TAG_STRING = JSON::Tag<String>::value;
 static constexpr int TAG_BOOL = JSON::Tag<bool>::value;
 static constexpr int TAG_NULL = JSON::Tag<std::nullptr_t>::value;
 
-const TypeMatcherPtr number = std::make_shared<UnionMatcher>(
+const TypeMatcherPtr number = std::make_shared<UnionMatcher>(  //NOLINT
         "number",
         std::make_shared<TypeMatcher>("long", TAG_LONG),
         std::make_shared<TypeMatcher>("double", TAG_DOBULE)
 );
 
-const TypeMatcherPtr string = std::make_shared<TypeMatcher>("string", TAG_STRING);
-const TypeMatcherPtr boolean = std::make_shared<TypeMatcher>("boolean", TAG_BOOL);
-const TypeMatcherPtr null = std::make_shared<TypeMatcher>("null", TAG_NULL);
-const TypeMatcherPtr any = std::make_shared<AnyMatcher>();
+const TypeMatcherPtr string = std::make_shared<TypeMatcher>("string", TAG_STRING);  //NOLINT
+const TypeMatcherPtr boolean = std::make_shared<TypeMatcher>("boolean", TAG_BOOL);  //NOLINT
+const TypeMatcherPtr null = std::make_shared<TypeMatcher>("null", TAG_NULL);    //NOLINT
+const TypeMatcherPtr any = std::make_shared<AnyMatcher>();  //NOLINT
 
 
 // #######################

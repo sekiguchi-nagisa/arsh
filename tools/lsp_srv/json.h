@@ -43,17 +43,17 @@ public:
     using Base = ydsh::Union<std::nullptr_t, bool, long, double, String, Array, Object>;
 
     explicit JSON() : Base() {}
-    JSON(bool v) : Base(v) {}
-    JSON(long v) : Base(v) {}
-    JSON(int v) : JSON(static_cast<long>(v)) {}
-    JSON(double v) : Base(v) {}
-    JSON(const char *str) : JSON(std::string(str)) {}
-    JSON(const std::string &str) : JSON(std::string(str)) {}
-    JSON(String &&v) : Base(std::move(v)) {}
-    JSON(Array &&v) : Base(std::move(v)) {}
-    JSON(Object &&v) : Base(std::move(v)) {}
-    JSON(std::initializer_list<Member> list);
-    JSON(std::nullptr_t) : Base(nullptr) {}
+    JSON(bool v) : Base(v) {}   //NOLINT
+    JSON(long v) : Base(v) {}   //NOLINT
+    JSON(int v) : JSON(static_cast<long>(v)) {} //NOLINT
+    JSON(double v) : Base(v) {} //NOLINT
+    JSON(const char *str) : JSON(std::string(str)) {}   //NOLINT
+    JSON(const std::string &str) : JSON(std::string(str)) {}    //NOLINT
+    JSON(String &&v) : Base(std::move(v)) {}    //NOLINT
+    JSON(Array &&v) : Base(std::move(v)) {} //NOLINT
+    JSON(Object &&v) : Base(std::move(v)) {}    //NOLINT
+    JSON(std::initializer_list<Member> list);   //NOLINT
+    JSON(std::nullptr_t) : Base(nullptr) {} //NOLINT
 
 
     bool isInvalid() const {
