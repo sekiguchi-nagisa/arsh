@@ -52,13 +52,13 @@ protected:
     flag8_set_t attributeSet;
 
 public:
-    static constexpr flag8_t EXTENDIBLE   = 1 << 0;
-    static constexpr flag8_t VOID_TYPE    = 1 << 1;  // Void
-    static constexpr flag8_t FUNC_TYPE    = 1 << 2;  // function type
-    static constexpr flag8_t RECORD_TYPE  = 1 << 3;  // indicate user defined type
-    static constexpr flag8_t NOTHING_TYPE = 1 << 4;  // Nothing (a.k.a. Bottom type)
-    static constexpr flag8_t OPTION_TYPE  = 1 << 5;  // Option<T>
-    static constexpr flag8_t MODULE_TYPE  = 1 << 6;  // Module type
+    static constexpr flag8_t EXTENDIBLE   = 1u << 0u;
+    static constexpr flag8_t VOID_TYPE    = 1u << 1u;  // Void
+    static constexpr flag8_t FUNC_TYPE    = 1u << 2u;  // function type
+    static constexpr flag8_t RECORD_TYPE  = 1u << 3u;  // indicate user defined type
+    static constexpr flag8_t NOTHING_TYPE = 1u << 4u;  // Nothing (a.k.a. Bottom type)
+    static constexpr flag8_t OPTION_TYPE  = 1u << 5u;  // Option<T>
+    static constexpr flag8_t MODULE_TYPE  = 1u << 6u;  // Module type
 
     NON_COPYABLE(DSType);
 

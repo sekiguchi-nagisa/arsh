@@ -165,8 +165,8 @@ struct IOConfig {
     struct FDWrapper {
         int fd;
 
-        FDWrapper(int fd) : fd(fd) {}
-        FDWrapper(FDType type) : fd(static_cast<int>(type)) {}
+        FDWrapper(int fd) : fd(fd) {}   //NOLINT
+        FDWrapper(FDType type) : fd(static_cast<int>(type)) {}  //NOLINT
 
         explicit operator bool() const {
             return this->fd > -1;

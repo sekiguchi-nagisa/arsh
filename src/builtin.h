@@ -1150,7 +1150,7 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
     const unsigned int delimSize = typeAs<String_Object>(LOCAL(1))->size();
     const unsigned int repSize = typeAs<String_Object>(LOCAL(2))->size();
 
-    const char *ret = reinterpret_cast<const char *>(xmemmem(thisStr, thisSize, delimStr, delimSize));
+    auto *ret = reinterpret_cast<const char *>(xmemmem(thisStr, thisSize, delimStr, delimSize));
     if(ret == nullptr || delimSize == 0) {
         RET(LOCAL(0));
     }

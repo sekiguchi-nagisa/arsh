@@ -66,17 +66,17 @@ private:
 
 public:
     void add(int sigNum) {
-        auto f = static_cast<unsigned long>(1L << (sigNum - 1));
+        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
         setFlag(this->value, f);
     }
 
     void del(int sigNum) {
-        auto f = static_cast<unsigned long>(1L << (sigNum - 1));
+        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
         unsetFlag(this->value, f);
     }
 
     bool has(int sigNum) const {
-        auto f = static_cast<unsigned long>(1L << (sigNum - 1));
+        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
         return hasFlag(this->value, f);
     }
 

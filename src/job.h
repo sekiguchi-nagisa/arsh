@@ -153,7 +153,7 @@ public:
         return create(1, procs, false);
     }
 
-    static void operator delete(void *ptr) noexcept {
+    static void operator delete(void *ptr) noexcept {   //NOLINT
         free(ptr);
     }
 

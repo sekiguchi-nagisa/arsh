@@ -336,7 +336,7 @@ void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) noexcept {
     if(reservingSize > this->maxSize) {
         std::size_t newSize = (this->maxSize == 0 ? MINIMUM_CAPACITY : this->maxSize);
         while(newSize < reservingSize) {
-            newSize += (newSize >> 1);
+            newSize += (newSize >> 1u);
         }
 
         if(newSize > MAXIMUM_CAPACITY) {
@@ -417,7 +417,7 @@ inline unsigned long readN(const unsigned char *ptr, unsigned int index) noexcep
     ptr += index;
     unsigned long v = 0;
     for(int i = N; i > 0; i--) {
-        v |= static_cast<unsigned long>(*(ptr++)) << ((i - 1) * 8);
+        v |= static_cast<unsigned long>(*(ptr++)) << (static_cast<unsigned int>(i - 1) * 8);
     }
     return v;
 }

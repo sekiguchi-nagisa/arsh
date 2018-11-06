@@ -50,11 +50,11 @@ private:
     unsigned short value_{0};
 
 private:
-    FieldAttributes(unsigned short value) : value_(value) {}
+    FieldAttributes(unsigned short value) : value_(value) {}    //NOLINT
 
 public:
     FieldAttributes() = default;
-    FieldAttributes(FieldAttribute attr) : value_(static_cast<unsigned short>(attr)) {}
+    FieldAttributes(FieldAttribute attr) : value_(static_cast<unsigned short>(attr)) {} //NOLINT
     ~FieldAttributes() = default;
 
     friend inline FieldAttributes operator|(FieldAttribute x, FieldAttribute y);

@@ -604,7 +604,7 @@ public:
         unsigned int size = this->paramNames.size();
         for(unsigned int i = 0; i < size; i++) {
             if(this->paramNames[i].second) {
-                flag += (1 << (i + 1));
+                flag += (1u << (i + 1));
             }
         }
         return flag;

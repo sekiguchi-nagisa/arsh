@@ -1488,8 +1488,8 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
 
 // for ulimit command
 
-static constexpr flag8_t RLIM_HARD = 1 << 0;
-static constexpr flag8_t RLIM_SOFT = 1 << 1;
+static constexpr flag8_t RLIM_HARD = 1u << 0;
+static constexpr flag8_t RLIM_SOFT = 1u << 1;
 
 struct ulimitOp {
     char op;
@@ -1623,7 +1623,7 @@ private:
                         return false;
                     }
                 } else {
-                    setFlag(this->printSet, static_cast<unsigned long>(1 << index));
+                    setFlag(this->printSet, 1LU << index);
                 }
             }
         }
@@ -1710,7 +1710,7 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
                 return 1;
             }
         }
-        if(hasFlag(table.printSet, static_cast<unsigned long>(1 << index))) {
+        if(hasFlag(table.printSet, 1LU << index)) {
             ulimitOps[index].print(limOpt, maxNameLen);
         }
     }

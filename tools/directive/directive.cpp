@@ -112,7 +112,7 @@ private:
 
 static bool checkDirectiveName(ApplyNode &node) {
     assert(node.getExprNode()->is(NodeKind::Var));
-    auto *exprNode = static_cast<VarNode *>(node.getExprNode());
+    auto *exprNode = static_cast<VarNode *>(node.getExprNode());    //NOLINT
     return exprNode->getVarName() == "test";
 }
 
@@ -128,7 +128,7 @@ TypeCheckError createError(const Node &node, const std::string &str) {
 void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     if(!checkDirectiveName(node)) {
         std::string str("unsupported directive: ");
-        str += static_cast<VarNode *>(node.getExprNode())->getVarName();
+        str += static_cast<VarNode *>(node.getExprNode())->getVarName();    //NOLINT
         throw createError(node, str);
     }
 

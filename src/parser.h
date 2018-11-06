@@ -34,7 +34,7 @@ struct TypeWrapper {
     TypeWrapper(std::unique_ptr<TypeNode> &&typeNode, Token token) :
             typeNode(std::move(typeNode)), token(token) {}
 
-    TypeWrapper(std::nullptr_t) : typeNode(), token() {}
+    TypeWrapper(std::nullptr_t) : typeNode(), token() {}    //NOLINT
 };
 
 class ArgsWrapper {
@@ -47,7 +47,7 @@ public:
 
     explicit ArgsWrapper(unsigned int pos) : token({pos, 1}) {}
     ArgsWrapper(ArgsWrapper &&) = default;
-    ArgsWrapper(std::nullptr_t) : ArgsWrapper(-1) {}
+    ArgsWrapper(std::nullptr_t) : ArgsWrapper(-1) {}    //NOLINT
 
     ~ArgsWrapper();
 

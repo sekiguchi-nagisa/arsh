@@ -367,7 +367,7 @@ void AccessNode::dump(NodeDumper &dumper) const {
 TypeOpNode::TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupTypeToken) :
         Node(NodeKind::TypeOp, exprNode->getToken()), exprNode(exprNode), targetTypeNode(nullptr),
         opKind(init) {
-    constexpr unsigned long tag = (unsigned long) 1UL << 63;
+    constexpr unsigned long tag = 1UL << 63u;
 
     if(dupTypeToken) {
         auto *tok = reinterpret_cast<TypeNode *>(tag | reinterpret_cast<unsigned long>(type));
@@ -390,7 +390,7 @@ TypeOpNode::~TypeOpNode() {
 }
 
 TypeNode *TypeOpNode::getTargetTypeNode() const {
-    constexpr unsigned long mask = ~(1UL << 63);
+    constexpr unsigned long mask = ~(1UL << 63u);
     if(reinterpret_cast<long>(this->targetTypeNode) < 0) {
         auto *tok = reinterpret_cast<TypeNode *>(mask & reinterpret_cast<unsigned long>(this->targetTypeNode));
         return tok;
