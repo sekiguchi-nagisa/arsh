@@ -252,9 +252,9 @@ const char *DSState_version(DSVersion *version);
 const char *DSState_copyright();
 
 /* for feature detection */
-#define DS_FEATURE_LOGGING    ((unsigned int) (1 << 0))
-#define DS_FEATURE_SAFE_CAST  ((unsigned int) (1 << 1))
-#define DS_FEATURE_FIXED_TIME ((unsigned int) (1 << 2))
+#define DS_FEATURE_LOGGING    ((unsigned int) (1u << 0u))
+#define DS_FEATURE_SAFE_CAST  ((unsigned int) (1u << 1u))
+#define DS_FEATURE_FIXED_TIME ((unsigned int) (1u << 2u))
 
 unsigned int DSState_featureBit();
 
