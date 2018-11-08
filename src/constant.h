@@ -134,9 +134,9 @@ constexpr unsigned int UDC_PARAM_ARGV  = 2;
 
 // =====  termination kind  =====
 
-constexpr unsigned int TERM_ON_EXIT   = 1 << 0;
-constexpr unsigned int TERM_ON_ERR    = 1 << 1;
-constexpr unsigned int TERM_ON_ASSERT = 1 << 2;
+constexpr unsigned int TERM_ON_EXIT   = 1u << 0u;
+constexpr unsigned int TERM_ON_ERR    = 1u << 1u;
+constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
 
 // =====  for symbol lookup =====
 constexpr const char *CMD_SYMBOL_PREFIX = "%c";
@@ -152,9 +152,9 @@ enum class ForkKind : unsigned char {
     DISOWN,     // launch as disowned background job. ex. echo &!
 };
 
-constexpr unsigned int FD_BIT_0 = 1u << 0;
-constexpr unsigned int FD_BIT_1 = 1u << 1;
-constexpr unsigned int FD_BIT_2 = 1u << 2;
+constexpr unsigned int FD_BIT_0 = 1u << 0u;
+constexpr unsigned int FD_BIT_1 = 1u << 1u;
+constexpr unsigned int FD_BIT_2 = 1u << 2u;
 
 #define EACH_RedirOP(OP) \
     OP(IN_2_FILE                    , FD_BIT_0) \

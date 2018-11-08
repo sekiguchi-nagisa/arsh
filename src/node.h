@@ -1735,8 +1735,8 @@ private:
     flag8_set_t attributeSet{0};
 
 public:
-    static constexpr flag8_t SELF_ASSIGN  = 1u << 0;
-    static constexpr flag8_t FIELD_ASSIGN = 1u << 1;
+    static constexpr flag8_t SELF_ASSIGN  = 1u << 0u;
+    static constexpr flag8_t FIELD_ASSIGN = 1u << 1u;
 
     AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false) :
             Node(NodeKind::Assign, leftNode->getToken()),

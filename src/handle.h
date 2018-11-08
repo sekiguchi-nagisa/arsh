@@ -31,13 +31,13 @@ class DSType;
 struct NativeFuncInfo;
 
 #define EACH_FIELD_ATTR(OP) \
-    OP(READ_ONLY  , (1u << 0)) \
-    OP(GLOBAL     , (1u << 1)) \
-    OP(ENV        , (1u << 2)) \
-    OP(FUNC_HANDLE, (1u << 3)) \
-    OP(RANDOM     , (1u << 4)) \
-    OP(SECONDS    , (1u << 5)) \
-    OP(BUILTIN    , (1u << 6))
+    OP(READ_ONLY  , (1u << 0u)) \
+    OP(GLOBAL     , (1u << 1u)) \
+    OP(ENV        , (1u << 2u)) \
+    OP(FUNC_HANDLE, (1u << 3u)) \
+    OP(RANDOM     , (1u << 4u)) \
+    OP(SECONDS    , (1u << 5u)) \
+    OP(BUILTIN    , (1u << 6u))
 
 enum class FieldAttribute : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
