@@ -707,7 +707,7 @@ public:
 private:
     void backupFDs() {
         for(unsigned int i = 0; i < 3; i++) {
-            if(this->backupFDset & (1 << i)) {
+            if(this->backupFDset & (1u << i)) {
                 this->oldFds[i] = dup(i);
             }
         }
@@ -715,7 +715,7 @@ private:
 
     void restoreFDs() {
         for(unsigned int i = 0; i < 3; i++) {
-            if(this->backupFDset & (1 << i)) {
+            if(this->backupFDset & (1u << i)) {
                 dup2(this->oldFds[i], i);
             }
         }
@@ -862,8 +862,8 @@ bool RedirConfig::redirect(DSState &st) {
     return true;
 }
 
-static constexpr flag8_t UDC_ATTR_SETVAR    = 1 << 0;
-static constexpr flag8_t UDC_ATTR_NEED_FORK = 1 << 1;
+static constexpr flag8_t UDC_ATTR_SETVAR    = 1u << 0u;
+static constexpr flag8_t UDC_ATTR_NEED_FORK = 1u << 1u;
 
 /**
  * stack state in function apply    stack grow ===>
@@ -935,8 +935,8 @@ private:
     flag8_set_t searchOp;
 
 public:
-    static constexpr flag8_t MASK_UDC      = 1 << 0;
-    static constexpr flag8_t MASK_EXTERNAL = 1 << 1;
+    static constexpr flag8_t MASK_UDC      = 1u << 0u;
+    static constexpr flag8_t MASK_EXTERNAL = 1u << 1u;
 
     CmdResolver(flag8_set_t mask, flag8_set_t op) : mask(mask), searchOp(op) {}
     CmdResolver() : CmdResolver(0, 0) {}
