@@ -247,7 +247,7 @@ public:
 
     template <typename U, typename F = __detail::resolvedType<U, T...>>
     Union(U &&value) noexcept : tag_(Tag<F>::value) {
-        this->value_.obtain(std::forward<U>(value));
+        this->value_.obtain(std::move(value));
     }
 
     Union(Union &&value) noexcept : tag_(value.tag()) {
