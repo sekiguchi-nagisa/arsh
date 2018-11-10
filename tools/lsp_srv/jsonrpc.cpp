@@ -18,7 +18,7 @@
 
 namespace rpc {
 
-JSON ResponseError::convertToJSON() {
+JSON ResponseError::toJSON() {
     return {
             {"code", this->code},
             {"message", std::move(this->message)},
@@ -26,30 +26,7 @@ JSON ResponseError::convertToJSON() {
     };
 }
 
-std::string ResponseError::serialize(int tab) {
-    JSON json = {
-            {"jsonrpc", "2.0"},
-            {"id", nullptr},
-            {"error", this->convertToJSON()}
-    };
-    return json.serialize(tab);
-}
-
-JSON Response::convertToJSON() {
-    assert(this->id.isString() || this->id.isNumber());
-    assert(!this->result.isInvalid());
-    return {
-            {"jsonrpc", "2.0"},
-            {"id", std::move(this->id)},
-            {"result", std::move(this->result)},
-    };
-}
-
-std::string Response::serialize(int tab) {
-    return this->convertToJSON().serialize(tab);
-}
-
-JSON Request::convertToJSON() {
+JSON Request::toJSON() {
     assert(!this->isError());
     return {
             {"jsonrpc", "2.0"},
@@ -88,5 +65,36 @@ Request RequestParser::operator()() {
 
     return Request(std::move(id), std::move(method), std::move(params));
 }
+
+JSON Transport::newResponse(json::JSON &&id, json::JSON &&result) {
+    assert(id.isString() || id.isNumber());
+    assert(!result.isInvalid());
+    return {
+        {"jsonrpc", "2.0"},
+        {"id", std::move(id)},
+        {"result", std::move(result)}
+    };
+}
+
+JSON Transport::newResponse(json::JSON &&id, rpc::ResponseError &&error) {
+    assert(id.isString() || id.isNumber() || id.isNull());
+    return {
+        {"jsonrpc", "2.0"},
+        {"id", std::move(id)},
+        {"error", error.toJSON()}
+    };
+}
+
+void Transport::reply(JSON &&id, JSON &&result) {
+    auto str = newResponse(std::move(id), std::move(result)).serialize(0);
+    this->send(str.size(), str.c_str());
+}
+
+void Transport::reply(JSON &&id, ResponseError &&error) {
+    auto str = newResponse(std::move(id), std::move(error)).serialize(0);
+    this->send(str.size(), str.c_str());
+}
+
+
 
 } // namespace rpc

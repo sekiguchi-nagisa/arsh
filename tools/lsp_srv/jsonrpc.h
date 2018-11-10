@@ -23,39 +23,7 @@ namespace rpc {
 
 using namespace json;
 
-struct ResponseBase {
-    virtual ~ResponseBase() = default;
-
-    /**
-     * convert to serialized response json
-     * after call it, will be empty
-     * @return
-     */
-    virtual std::string serialize(int tab) = 0;
-
-    std::string serialize() {
-        return this->serialize(0);
-    }
-};
-
-struct Response : public ResponseBase {
-    JSON id;    // must be `number | string'
-    JSON result;
-
-    /**
-     *
-     * @param id
-     * must not be null
-     * @param result
-     */
-    Response(JSON &&id, JSON &&result) : id(std::move(id)), result(std::move(result)) {}
-
-    JSON convertToJSON();
-
-    std::string serialize(int tab) override;
-};
-
-struct ResponseError : public ResponseBase {
+struct ResponseError {
     int code;
     std::string message;
     JSON data;
@@ -71,9 +39,7 @@ struct ResponseError : public ResponseBase {
      * after call it, will be empty object.
      * @return
      */
-    JSON convertToJSON();
-
-    std::string serialize(int tab) override;
+    JSON toJSON();
 };
 
 // Error Code definition
@@ -135,7 +101,7 @@ struct Request {
      * after call it, will be empty.
      * @return
      */
-    JSON convertToJSON();   // for testing
+    JSON toJSON();   // for testing
 };
 
 struct RequestParser : public Parser {
@@ -151,6 +117,30 @@ struct RequestParser : public Parser {
     }
 
     Request operator()();
+};
+
+class Transport {
+public:
+    virtual ~Transport() = default;
+
+    void reply(JSON &&id, JSON &&result);
+
+    /**
+     *
+     * @param id
+     * may be null
+     * @param error
+     */
+    void reply(JSON &&id, ResponseError &&error);
+
+    static JSON newResponse(JSON &&id, JSON &&result);
+
+    static JSON newResponse(JSON &&id, ResponseError &&error);
+
+private:
+    virtual int send(unsigned int size, const char *data) = 0;
+
+    virtual int recv(unsigned int size, char *data) = 0;
 };
 
 } // namespace rpc

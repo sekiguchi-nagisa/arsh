@@ -236,28 +236,28 @@ TEST_F(ParserTest, serialize1) {
 
 TEST_F(ParserTest, serialize2) {
     // error
-    auto actual = rpc::ResponseError(-1, "hello").convertToJSON().serialize(3);
+    auto actual = rpc::ResponseError(-1, "hello").toJSON().serialize(3);
     const char *text = R"( { "code" : -1, "message": "hello" })";
     auto expect = Parser(text)().serialize(3);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 
-    actual = rpc::ResponseError(-100, "world", array(1, 3, 5)).convertToJSON().serialize(3);
+    actual = rpc::ResponseError(-100, "world", array(1, 3, 5)).toJSON().serialize(3);
     text = R"( { "code" : -100, "message": "world", "data": [1,3,5] })";
     expect = Parser(text)().serialize(3);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 
     // response
-    actual = rpc::Response(34, nullptr).serialize(2);
+    actual = rpc::Transport::newResponse(34, nullptr).serialize(2);
     text = R"( { "jsonrpc" : "2.0", "id" : 34, "result" : null } )";
     expect = Parser(text)().serialize(2);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 
-    actual = rpc::Response(-0.4, 34).serialize(2);
+    actual = rpc::Transport::newResponse(-0.4, 34).serialize(2);
     text = R"( { "jsonrpc" : "2.0", "id" : -0.4, "result" : 34 } )";
     expect = Parser(text)().serialize(2);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 
-    actual = rpc::ResponseError(-100, "world", array(1, 3, 5)).serialize(2);
+    actual = rpc::Transport::newResponse(nullptr, rpc::ResponseError(-100, "world", array(1, 3, 5))).serialize(2);
     text = R"( { "jsonrpc" : "2.0", "id" : null,
                 "error" : { "code": -100, "message" : "world", "data" : [1,3,5]}})";
     expect = Parser(text)().serialize(2);
@@ -352,39 +352,39 @@ TEST(RPCTest, parse) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Request::INVALID, req.kind));
 
     // request
-    std::string text = rpc::Request("AAA", "hey", array(false, true)).convertToJSON().serialize(0);
+    std::string text = rpc::Request("AAA", "hey", array(false, true)).toJSON().serialize(0);
     req = rpc::RequestParser().append(text.c_str())();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!req.isError()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isRequest()));
-    auto json = req.convertToJSON();
+    auto json = req.toJSON();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("AAA", json["id"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", json["method"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, json["params"].size()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(false, json["params"][0].asBool()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(true, json["params"][1].asBool()));
 
-    text = rpc::Request(1234, "hoge", JSON()).convertToJSON().serialize(0);
+    text = rpc::Request(1234, "hoge", JSON()).toJSON().serialize(0);
     req = rpc::RequestParser().append(text.c_str())();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!req.isError()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isRequest()));
-    json = req.convertToJSON();
+    json = req.toJSON();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1234, json["id"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hoge", json["method"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["params"].isInvalid()));
 
     // notification
-    text = rpc::Request(JSON(), "world", {{"AAA", 0.23}}).convertToJSON().serialize(0);
+    text = rpc::Request(JSON(), "world", {{"AAA", 0.23}}).toJSON().serialize(0);
     req = rpc::RequestParser().append(text.c_str())();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!req.isError()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isNotification()));
-    json = req.convertToJSON();
+    json = req.toJSON();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["id"].isInvalid()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("world", json["method"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["params"].size()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0.23, json["params"]["AAA"].asDouble()));
 
     // invalid request
-    text = rpc::Request(true, "world", {{"AAA", 0.23}}).convertToJSON().serialize(0);
+    text = rpc::Request(true, "world", {{"AAA", 0.23}}).toJSON().serialize(0);
     req = rpc::RequestParser().append(text.c_str())();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isError()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Request::INVALID, req.kind));
