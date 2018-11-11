@@ -130,11 +130,11 @@ public:
 
     Field(TypeMatcherPtr type, bool require) : matcher(std::move(type)), require(require) {}
 
-    explicit Field(TypeMatcherPtr type) : Field(type, true) {}
+    explicit Field(TypeMatcherPtr type) : Field(std::move(type), true) {}
 
-    Field(Field &&v) : matcher(std::move(v.matcher)), require(v.require) {}
+    Field(Field &&v) noexcept : matcher(std::move(v.matcher)), require(v.require) {}
 
-    Field &operator=(Field &&v) {
+    Field &operator=(Field &&v) noexcept {
         auto tmp = std::move(v);
         std::swap(this->matcher, tmp.matcher);
         std::swap(this->require, tmp.require);

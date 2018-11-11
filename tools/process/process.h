@@ -198,7 +198,7 @@ private:
     /**
      * if IOConfig has PTY, set terminal setting.
      */
-    termios term;
+    termios term{};
 
     unsigned short row{24};
     unsigned short col{80};
