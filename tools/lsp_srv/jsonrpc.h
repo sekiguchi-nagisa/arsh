@@ -17,6 +17,8 @@
 #ifndef TOOLS_JSONRPC_H
 #define TOOLS_JSONRPC_H
 
+#include <functional>
+
 #include "validate.h"
 
 namespace rpc {
@@ -86,7 +88,7 @@ struct Request {
         return !this->isError() && this->id.isInvalid();
     }
 
-    bool isRequest() const {
+    bool isCall() const {
         return !this->isError() && !this->id.isInvalid();
     }
 
@@ -104,7 +106,7 @@ struct Request {
     JSON toJSON();   // for testing
 };
 
-struct RequestParser : public Parser {
+struct RequestParser : public Parser {  //TODO: currently only support single request (not support batch-request)
     RequestParser() : Parser() {}
 
     RequestParser &append(const char *text) {
@@ -119,9 +121,25 @@ struct RequestParser : public Parser {
     Request operator()();
 };
 
+class MethodParamMap {
+private:
+    std::unordered_map<std::string, std::string> map;
+
+public:
+    void add(const std::string &methodName, const char *ifaceName);
+
+    const char *lookupIface(const std::string &methodName) const;
+};
+
+class Handler;
+
 class Transport {
 public:
     virtual ~Transport() = default;
+
+    void call(JSON &&id, const char *methodName, JSON &&param);
+
+    void notify(const char *methodName, JSON &&param);
 
     void reply(JSON &&id, JSON &&result);
 
@@ -133,15 +151,91 @@ public:
      */
     void reply(JSON &&id, ResponseError &&error);
 
+    bool dispatch(Handler &handler);
+
+    void dispatchLoop(Handler &handler) {
+        while(this->dispatch(handler));
+    }
+
     static JSON newResponse(JSON &&id, JSON &&result);
 
     static JSON newResponse(JSON &&id, ResponseError &&error);
 
 private:
+    /**
+     * send json text
+     * @param size
+     * size of data
+     * @param data
+     * @return
+     * sent size
+     */
     virtual int send(unsigned int size, const char *data) = 0;
 
+    /**
+     * receive chunk of json text
+     * @param size
+     * size of data
+     * @param data
+     * @return
+     * received size
+     */
     virtual int recv(unsigned int size, char *data) = 0;
+
+    virtual bool isEnd() = 0;
 };
+
+using MethodResult = ydsh::Result<JSON, ResponseError>;
+
+class Handler {
+private:
+    using Call = std::function<MethodResult(JSON &&)>;
+    using Nofification = std::function<void(JSON &&)>;
+
+    std::unordered_map<std::string, Call> callMap;
+    std::unordered_map<std::string, Nofification> notificationMap;
+
+    MethodParamMap callParamMap;
+    MethodParamMap notificationParamMap;
+
+    InterfaceMap ifaceMap;
+
+public:
+    MethodResult onCall(const std::string &name, JSON &&param);
+
+    void onNotify(const std::string &name, JSON &&param);
+
+    Interface &interface(const char *name) {
+        return this->ifaceMap.interface(name);
+    }
+
+    void bind(const std::string &name, const char *paramIface, Call &&func);
+
+    void bind(const std::string &name, const char *paramIface, Nofification &&func);
+
+    template <typename State, typename Param>
+    void bind(const std::string &name, const char *paramIface, State *obj,
+            MethodResult(State::*method)(const Param &)) {
+        Call func = [obj, method](JSON &&json) -> MethodResult {
+            Param p;
+            fromJSON(std::move(json), p);
+            return (obj->*method)(p);
+        };
+        this->bind(name, paramIface, std::move(func));
+    }
+
+    template <typename State, typename Param>
+    void bind(const std::string &name, const char *paramIface, State *obj,
+            void(State::*method)(const Param &)) {
+        Nofification func = [obj, method](JSON &&json) {
+            Param p;
+            fromJSON(std::move(json), p);
+            (obj->*method)(p);
+        };
+        this->bind(name, paramIface, std::move(func));
+    }
+};
+
 
 } // namespace rpc
 

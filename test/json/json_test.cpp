@@ -389,7 +389,7 @@ TEST(RPCTest, parse) {
     std::string text = rpc::Request("AAA", "hey", array(false, true)).toJSON().serialize(0);
     req = rpc::RequestParser().append(text.c_str())();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!req.isError()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isRequest()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isCall()));
     auto json = req.toJSON();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("AAA", json["id"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", json["method"].asString()));
@@ -400,7 +400,7 @@ TEST(RPCTest, parse) {
     text = rpc::Request(1234, "hoge", JSON()).toJSON().serialize(0);
     req = rpc::RequestParser().append(text.c_str())();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!req.isError()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isRequest()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isCall()));
     json = req.toJSON();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1234, json["id"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hoge", json["method"].asString()));
@@ -422,6 +422,82 @@ TEST(RPCTest, parse) {
     req = rpc::RequestParser().append(text.c_str())();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isError()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Request::INVALID, req.kind));
+}
+
+struct StringTransport : public rpc::Transport {
+    std::string inStr;
+    unsigned int cursor{0};
+    std::string outStr;
+
+    StringTransport(std::string &&text) : inStr(std::move(text)) {}
+
+    int send(unsigned int size, const char *data) override {
+        this->outStr.append(data, size);
+        return size;
+    }
+
+    int recv(unsigned int size, char *data) override {
+        unsigned int count = 0;
+        for(; this->cursor < this->inStr.size() && count < size; this->cursor++) {
+            data[count] = this->inStr[this->cursor];
+            count++;
+        }
+        return count;
+    }
+
+    bool isEnd() override {
+        return this->cursor == this->inStr.size();
+    }
+};
+
+struct Param1 {
+    unsigned int value;
+};
+
+static void fromJSON(JSON &&j, Param1 &p) {
+    p.value = j["value"].asLong();
+}
+
+struct Param2 {
+    std::string value;
+};
+
+static void fromJSON(JSON &&j, Param2 &p) {
+    p.value = std::move(j["value"].asString());
+}
+
+struct Context {
+    unsigned int nRet{0};
+    std::string cRet;
+
+    void init(const Param1 &p) {
+        this->nRet = p.value;
+    }
+
+    rpc::MethodResult put(const Param2 &p) {
+        this->cRet = p.value;
+        if(this->cRet.size() > 5) {
+            return ydsh::Err(rpc::ResponseError(-100, "too long"));
+        }
+        return ydsh::Ok(JSON("hello"));
+    }
+};
+
+TEST(RPCTest, dispatch) {
+    Context ctx;
+
+    StringTransport transport(rpc::Request(1, "/put", {{"value", "hello"}}).toJSON().serialize());
+    rpc::Handler handler;
+    handler.bind("/put", "Param2", &ctx, &Context::put);
+    handler.bind("/init", "Param1", &ctx, &Context::init);
+    handler.interface("Param1")
+              .field("value", number);
+    handler.interface("Param2")
+              .field("value", string);
+
+    transport.dispatch(handler);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Transport::newResponse(1, "hello").serialize(), transport.outStr));
 }
 
 int main(int argc, char **argv) {
