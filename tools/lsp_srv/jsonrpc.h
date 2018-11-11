@@ -205,8 +205,8 @@ public:
 
     void onNotify(const std::string &name, JSON &&param);
 
-    Interface &interface(const char *name) {
-        return this->ifaceMap.interface(name);
+    const InterfacePtr &interface(const char *name, Fields &&fields) {
+        return this->ifaceMap.interface(name, std::move(fields));
     }
 
     void bind(const std::string &name, const char *paramIface, Call &&func);
@@ -225,6 +225,12 @@ public:
     }
 
     template <typename State, typename Param>
+    void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
+              MethodResult(State::*method)(const Param &)) {
+        this->bind(name, paramIface->getName().c_str(), obj, method);
+    }
+
+    template <typename State, typename Param>
     void bind(const std::string &name, const char *paramIface, State *obj,
             void(State::*method)(const Param &)) {
         Nofification func = [obj, method](JSON &&json) {
@@ -233,6 +239,12 @@ public:
             (obj->*method)(p);
         };
         this->bind(name, paramIface, std::move(func));
+    }
+
+    template <typename State, typename Param>
+    void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
+              void(State::*method)(const Param &)) {
+        this->bind(name, paramIface->getName().c_str(), obj, method);
     }
 };
 

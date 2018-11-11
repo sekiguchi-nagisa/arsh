@@ -108,34 +108,34 @@ const TypeMatcherPtr null = std::make_shared<TypeMatcher>("null", TAG_NULL);    
 const TypeMatcherPtr any = std::make_shared<AnyMatcher>();  //NOLINT
 
 
-// #######################
-// ##     Interface     ##
-// #######################
+// ####################
+// ##     Fields     ##
+// ####################
 
-Interface& Interface::field(const char *name, json::TypeMatcherPtr type, bool require) {
-    auto pair = this->fields.emplace(name, Field(std::move(type), require));
-    if(!pair.second) {
-        fatal("already defined field: %s\n", name);
+Fields::Fields(std::initializer_list<std::pair<std::string, json::Field>> list) {
+    for(auto &e : list) {
+        auto &pair = const_cast<std::pair<std::string, json::Field>&>(e);
+        this->value[std::move(pair.first)] = std::move(pair.second);
     }
-    return *this;
 }
 
 // ##########################
 // ##     InterfaceMap     ##
 // ##########################
 
-Interface& InterfaceMap::interface(const char *name) {
-    auto pair = this->map.emplace(name, Interface());
+const InterfacePtr &InterfaceMap::interface(const char *name, json::Fields &&fields) {
+    auto iface = std::make_shared<Interface>(name, std::move(fields));
+    auto pair = this->map.emplace(iface->getName().c_str(), iface);
     if(!pair.second) {
         fatal("already defined interface: %s\n", name);
     }
     return pair.first->second;
 }
 
-const Interface* InterfaceMap::lookup(const std::string &name) const {
+const Interface* InterfaceMap::lookup(const char *name) const {
     auto iter = this->map.find(name);
     if(iter != this->map.end()) {
-        return &iter->second;
+        return iter->second.get();
     }
     return nullptr;
 }

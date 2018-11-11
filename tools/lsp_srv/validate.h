@@ -19,6 +19,7 @@
 
 #include <unordered_map>
 
+#include <misc/hash.hpp>
 #include "json.h"
 
 namespace json {
@@ -125,7 +126,20 @@ private:
     bool require;
 
 public:
+    explicit Field() : matcher(), require(true) {}
+
     Field(TypeMatcherPtr type, bool require) : matcher(std::move(type)), require(require) {}
+
+    explicit Field(TypeMatcherPtr type) : Field(type, true) {}
+
+    Field(Field &&v) : matcher(std::move(v.matcher)), require(v.require) {}
+
+    Field &operator=(Field &&v) {
+        auto tmp = std::move(v);
+        std::swap(this->matcher, tmp.matcher);
+        std::swap(this->require, tmp.require);
+        return *this;
+    }
 
     const TypeMatcher &getMatcher() const {
         return *this->matcher;
@@ -136,27 +150,52 @@ public:
     }
 };
 
+struct Fields {
+    using Entry = std::unordered_map<std::string, Field>;
+    Entry value;
+
+    Fields(std::initializer_list<std::pair<std::string, Field>> list);
+};
+
+template <typename ...Arg>
+inline std::pair<std::string, Field> field(const char *name, Arg&& ...arg) {
+    return {name, Field(std::forward<Arg>(arg)...)};
+}
+
 class Interface {
 private:
-    using Entry = std::unordered_map<std::string, Field>;
+    using Entry = Fields::Entry;
+    std::string name;
     Entry fields;
 
 public:
-    Interface &field(const char *name, TypeMatcherPtr type, bool require = true);
+    Interface() = default;
+
+    Interface(const char *name, Fields &&fields) : name(name), fields(std::move(fields.value)) {}
+
+    const std::string &getName() const {
+        return this->name;
+    }
 
     const Entry &getFields() const {
         return this->fields;
     }
 };
 
+using InterfacePtr = std::shared_ptr<Interface>;
+
 class InterfaceMap {
 private:
-    std::unordered_map<std::string, Interface> map;
+    ydsh::CStringHashMap<InterfacePtr> map;
 
 public:
-    Interface &interface(const char *name);
+    const InterfacePtr &interface(const char *name, Fields &&fields);
 
-    const Interface *lookup(const std::string &name) const;
+    const Interface *lookup(const std::string &name) const {
+        return this->lookup(name.c_str());
+    }
+
+    const Interface *lookup(const char *name) const;
 };
 
 class Validator {

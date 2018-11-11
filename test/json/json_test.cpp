@@ -334,9 +334,10 @@ public:
 
 TEST_F(ValidatorTest, base) {
     this->map
-    .interface("hoge1")
-      .field("params", null | array(string))
-      .field("id", number, false);
+    .interface("hoge1", {
+        field("params", null | array(string)),
+        field("id", number, false)
+    });
 
     const char *text = R"(
     { "params" : [ "hoge", "de" ] }
@@ -353,15 +354,17 @@ TEST_F(ValidatorTest, base) {
 
 TEST_F(ValidatorTest, iface) {
     this->map
-    .interface("AAA")
-        .field("a", number)
-        .field("b", string)
-        .field("c", array(any));
+    .interface("AAA", {
+        field("a", number),
+        field("b", string),
+        field("c", array(any))
+    });
 
     this->map
-    .interface("BBB")
-        .field("a", object("AAA") | string | any)
-        .field("b", boolean);
+    .interface("BBB", {
+        field("a", object("AAA") | string | any),
+        field("b", boolean)
+    });
 
     const char *text = R"(
         {
@@ -490,10 +493,12 @@ TEST(RPCTest, dispatch) {
     rpc::Handler handler;
     handler.bind("/put", "Param2", &ctx, &Context::put);
     handler.bind("/init", "Param1", &ctx, &Context::init);
-    handler.interface("Param1")
-              .field("value", number);
-    handler.interface("Param2")
-              .field("value", string);
+    handler.interface("Param1", {
+        field("value", number)
+    });
+    handler.interface("Param2", {
+        field("value", string)
+    });
 
     transport.dispatch(handler);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ctx.cRet));

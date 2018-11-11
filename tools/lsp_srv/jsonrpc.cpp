@@ -50,10 +50,13 @@ Request RequestParser::operator()() {
     // validate
     const char *ifaceName = "Request";
     InterfaceMap map;
-    map.interface(ifaceName)
-            .field("id", number | string, false)
-            .field("method", string)
-            .field("params", array(any) | object(""), false);
+    map.interface(ifaceName, {
+        field("id", number | string, false),
+        field("method", string),
+        field("params", array(any) | object(""), false)
+    });
+
+
     Validator validator(map);
     if(!validator(ifaceName, ret)) {
         return Request(Request::INVALID, validator.formatError());
