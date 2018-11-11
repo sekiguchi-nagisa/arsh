@@ -67,6 +67,41 @@ TEST(JSON, type) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["world"][1].asBool()));
 }
 
+TEST(JSON, serialize) {
+    JSON json = {
+            {"hello", false},
+            {"hoge", array(2, nullptr, true)}
+    };
+    auto actual = json.serialize();
+
+    const char *expect = R"({"hello":false,"hoge":[2,null,true]})";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+
+    json = 34;
+    actual = json.serialize(1);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("34\n", actual));
+
+    json = {
+            {"23",array(JSON())},
+            {"hey", array(3, -123, nullptr, object({"3",""}))}
+    };
+    actual = json.serialize(4);
+
+    expect = R"({
+    "23": [],
+    "hey": [
+        3,
+        -123,
+        null,
+        {
+            "3": ""
+        }
+    ]
+}
+)";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
+}
+
 class ParserTest : public ::testing::Test {
 protected:
     JSON ret;
@@ -263,7 +298,6 @@ TEST_F(ParserTest, serialize2) {
     expect = Parser(text)().serialize(2);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 }
-
 
 
 class ValidatorTest : public ::testing::Test {

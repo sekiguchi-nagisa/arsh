@@ -57,6 +57,26 @@ size_t JSON::size() const {
     return 0;
 }
 
+static unsigned int actualSize(const Array &value) {
+    unsigned int count = 0;
+    for(auto &e : value) {
+        if(!e.isInvalid()) {
+            count++;
+        }
+    }
+    return count;
+}
+
+static unsigned int actualSize(const Object &value) {
+    unsigned int count = 0;
+    for(auto &e : value) {
+        if(!e.second.isInvalid()) {
+            count++;
+        }
+    }
+    return count;
+}
+
 #define EACH_JSON_TYPE(T) \
     T(std::nullptr_t) \
     T(bool) \
@@ -127,7 +147,7 @@ struct Serializer {
     }
 
     void serialize(const Array &value) {
-        if(value.empty()) {
+        if(actualSize(value) == 0) {
             this->str += "[]";
             return;
         }
@@ -149,7 +169,7 @@ struct Serializer {
     }
 
     void serialize(const Object &value) {
-        if(value.empty()) {
+        if(actualSize(value) == 0) {
             this->str += "{}";
             return;
         }
