@@ -78,7 +78,10 @@ struct Serializer {
             return;
         }
         this->serialize(value);
-        this->str += '\n';
+
+        if(this->tab > 0) {
+            this->str += '\n';
+        }
     }
 
     void serialize(const JSON &value) {
