@@ -53,7 +53,7 @@ protected:
     }
 
     std::pair<std::string, std::string> readAll() {
-        return this->handle.readAll(50);
+        return this->handle.readAll(80);
     }
 
     void expectRegex(const char *out = "", const char *err = "") {
