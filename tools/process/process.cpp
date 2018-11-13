@@ -103,10 +103,10 @@ static bool recvData(int fd, std::string &str) {
     char buf[64];
     unsigned int bufSize = ydsh::arraySize(buf);
     int readSize = read(fd, buf, bufSize);
-    if(readSize < 0) {
-        return errno == EAGAIN || errno == EINTR;
+    if(readSize <= 0) {
+        return readSize == -1 && (errno == EAGAIN || errno == EINTR);
     }
-    str.append(buf, static_cast<unsigned int>(readSize));
+    str.append(buf, readSize);
     return true;
 }
 
@@ -134,7 +134,7 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
 
         unsigned int breakCount = 0;
         for(unsigned int i = 0; i < pollfdSize; i++) {
-            if(pollfds[i].revents & POLLIN) {
+            if(pollfds[i].revents) {
                 if(!recvData(pollfds[i].fd, (i == 0 ? output.first : output.second))) {
                     breakCount++;
                     continue;
