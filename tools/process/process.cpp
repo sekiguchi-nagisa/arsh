@@ -134,7 +134,7 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
 
         unsigned int breakCount = 0;
         for(unsigned int i = 0; i < pollfdSize; i++) {
-            if(pollfds[i].revents) {
+            if(pollfds[i].revents & POLLIN) {
                 if(!recvData(pollfds[i].fd, (i == 0 ? output.first : output.second))) {
                     breakCount++;
                     continue;
