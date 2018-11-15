@@ -72,13 +72,16 @@ struct Request {
     Request(JSON &&id, std::string &&method, JSON &&params) :
         kind(SUCCESS), id(std::move(id)), method(std::move(method)), params(std::move(params)) {}
 
+    Request(std::string &&method, JSON &&params) : Request(JSON(), std::move(method), std::move(params)) {}
+
     /**
-     *
+     * for error
      * @param kind
      * must not be SUCCESS
      * @param error
      */
-    Request(Kind kind, std::string &&error) : kind(kind), method(std::move(error)) {}
+    Request(Kind kind, std::string &&error, JSON &&data) :
+        kind(kind), method(std::move(error)), params(std::move(data)) {}
 
     bool isError() const {
         return this->kind != SUCCESS;
@@ -94,7 +97,7 @@ struct Request {
 
     static ResponseError asError(Request &&req) {
         assert(req.isError());
-        return ResponseError(static_cast<int>(req.kind), std::move(req.method));
+        return ResponseError(static_cast<int>(req.kind), std::move(req.method), std::move(req.params));
     }
 
     /**

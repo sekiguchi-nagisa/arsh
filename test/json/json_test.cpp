@@ -486,7 +486,7 @@ struct Context {
     }
 };
 
-TEST(RPCTest, dispatch) {
+TEST(RPCTest, dispatch1) {
     Context ctx;
 
     StringTransport transport(rpc::Request(1, "/put", {{"value", "hello"}}).toJSON().serialize());
@@ -502,7 +502,28 @@ TEST(RPCTest, dispatch) {
 
     transport.dispatch(handler);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Transport::newResponse(1, "hello").serialize(), transport.outStr));
+}
+
+TEST(RPCTest, dispatch2) {
+    Context ctx;
+
+    StringTransport transport(rpc::Request("/init", {{"value", 1234}}).toJSON().serialize());
+    rpc::Handler handler;
+    handler.bind("/put", "Param2", &ctx, &Context::put);
+    handler.bind("/init", "Param1", &ctx, &Context::init);
+    handler.interface("Param1", {
+        field("value", number)
+    });
+    handler.interface("Param2", {
+        field("value", string)
+    });
+
+    transport.dispatch(handler);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1234, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", transport.outStr));
 }
 
 int main(int argc, char **argv) {

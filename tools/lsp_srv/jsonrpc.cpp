@@ -44,7 +44,7 @@ Request RequestParser::operator()() {
     // parse
     auto ret = Parser::operator()();
     if(this->hasError()) {
-        return Request(Request::PARSE_ERROR, this->formatError());
+        return Request(Request::PARSE_ERROR, "Parse error", this->formatError());
     }
 
     // validate
@@ -59,7 +59,7 @@ Request RequestParser::operator()() {
 
     Validator validator(map);
     if(!validator(ifaceName, ret)) {
-        return Request(Request::INVALID, validator.formatError());
+        return Request(Request::INVALID, "Invalid Request", validator.formatError());
     }
 
     auto id = std::move(ret["id"]);
