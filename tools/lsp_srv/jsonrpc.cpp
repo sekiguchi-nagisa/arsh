@@ -69,10 +69,10 @@ Request RequestParser::operator()() {
     return Request(std::move(id), std::move(method), std::move(params));
 }
 
-void MethodParamMap::add(const std::string &methodName, const char *ifaceName) {
+void MethodParamMap::add(const std::string &methodName, const std::string &ifaceName) {
     auto pair = this->map.emplace(methodName, ifaceName);
     if(!pair.second) {
-        fatal("already defined param type mapping: %s -> %s\n", methodName.c_str(), ifaceName);
+        fatal("already defined param type mapping: %s -> %s\n", methodName.c_str(), ifaceName.c_str());
     }
 }
 
@@ -113,7 +113,7 @@ void Transport::call(json::JSON &&id, const char *methodName, json::JSON &&param
 }
 
 void Transport::notify(const char *methodName, json::JSON &&param) {
-    auto str = Request(nullptr, methodName, std::move(param)).toJSON().serialize();
+    auto str = Request(JSON(), methodName, std::move(param)).toJSON().serialize();
     this->send(str.size(), str.c_str());
 }
 
@@ -164,19 +164,14 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
     if(iter == this->callMap.end()) {
         std::string str = "undefined method: ";
         str += name;
-        return ydsh::Err(ResponseError(MethodNotFound, std::move(str)));
+        return ydsh::Err(ResponseError(MethodNotFound, "Method not found", std::move(str)));
     }
 
     auto *ifaceName = this->callParamMap.lookupIface(name);
-    if(!ifaceName) {
-        std::string str = "corresponding interface not found: ";
-        str += name;
-        return ydsh::Err(ResponseError(InvalidParams, std::move(str)));
-    }
-
+    assert(ifaceName);
     Validator validator(this->ifaceMap);
     if(!validator(ifaceName, param)) {
-        return ydsh::Err(ResponseError(InvalidParams, validator.formatError()));
+        return ydsh::Err(ResponseError(InvalidParams, "Invalid params", validator.formatError()));
     }
 
     return iter->second(std::move(param));
@@ -189,10 +184,7 @@ void Handler::onNotify(const std::string &name, json::JSON &&param) {
     }
 
     auto *ifaceName = this->notificationParamMap.lookupIface(name);
-    if(!ifaceName) {
-        return; //FIXME: logging
-    }
-
+    assert(ifaceName);
     Validator validator(this->ifaceMap);
     if(!validator(ifaceName, param)) {
         return; //FIXME: logging
@@ -201,18 +193,20 @@ void Handler::onNotify(const std::string &name, json::JSON &&param) {
     iter->second(std::move(param));
 }
 
-void Handler::bind(const std::string &name, const char *paramIface, rpc::Handler::Call &&func) {
+void Handler::bind(const std::string &name, const InterfacePtr &paramIface, rpc::Handler::Call &&func) {
+    assert(paramIface);
     if(!this->callMap.emplace(name, std::move(func)).second) {
         fatal("already defined method: %s\n", name.c_str());
     }
-    this->callParamMap.add(name, paramIface);
+    this->callParamMap.add(name, paramIface->getName());
 }
 
-void Handler::bind(const std::string &name, const char *paramIface, rpc::Handler::Nofification &&func) {
+void Handler::bind(const std::string &name, const InterfacePtr &paramIface, rpc::Handler::Nofification &&func) {
+    assert(paramIface);
     if(!this->notificationMap.emplace(name, std::move(func)).second) {
         fatal("already defined method: %s\n", name.c_str());
     }
-    this->notificationParamMap.add(name, paramIface);
+    this->notificationParamMap.add(name, paramIface->getName());
 }
 
 } // namespace rpc

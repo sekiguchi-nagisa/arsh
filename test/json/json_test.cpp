@@ -375,7 +375,7 @@ TEST_F(ValidatorTest, iface) {
     ASSERT_NO_FATAL_FAILURE(this->validate("BBB", text));
 }
 
-TEST(RPCTest, parse) {
+TEST(ReqTest, parse) {
     // syntax error
     auto req = rpc::RequestParser().append("}{")();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isError()));
@@ -432,6 +432,8 @@ struct StringTransport : public rpc::Transport {
     unsigned int cursor{0};
     std::string outStr;
 
+    StringTransport() = default;
+
     StringTransport(std::string &&text) : inStr(std::move(text)) {}
 
     int send(unsigned int size, const char *data) override {
@@ -452,6 +454,66 @@ struct StringTransport : public rpc::Transport {
         return this->cursor == this->inStr.size();
     }
 };
+
+class RPCTest : public ::testing::Test {
+protected:
+    StringTransport transport;
+    rpc::Handler handler;
+
+    RPCTest() = default;
+
+    void init(rpc::Request &&req) {
+        this->init(req.toJSON().serialize());
+    }
+
+    void init(std::string &&text) {
+        this->transport = StringTransport(std::move(text));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, this->transport.cursor));
+    }
+
+    void dispatch() {
+        this->transport.dispatch(this->handler);
+    }
+
+    const std::string &response() const {
+        return this->transport.outStr;
+    }
+
+    void assertResponse(const JSON &res) {
+        ASSERT_EQ(res.serialize(), this->response());
+    }
+
+    void parseResponse(JSON &value) {
+        Parser parser(this->response().c_str());
+        auto ret = parser();
+        ASSERT_FALSE(parser.hasError());
+        ASSERT_FALSE(ret.isInvalid());
+        ASSERT_TRUE(ret.isObject());
+        value = std::move(ret);
+    }
+};
+
+TEST_F(RPCTest, api1) {
+    this->transport.call(34, "hoge", {{"value", false}});
+    JSON json;
+    ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2.0", json["jsonrpc"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hoge", json["method"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(34, json["id"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["params"].size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(false, json["params"]["value"].asBool()));
+}
+
+TEST_F(RPCTest, api2) {
+    this->transport.notify("hoge", {{"value", "hey"}});
+    JSON json;
+    ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2.0", json["jsonrpc"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hoge", json["method"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["id"].isInvalid()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["params"].size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", json["params"]["value"].asString()));
+}
 
 struct Param1 {
     unsigned int value;
@@ -486,44 +548,152 @@ struct Context {
     }
 };
 
-TEST(RPCTest, dispatch1) {
-    Context ctx;
+TEST_F(RPCTest, parse1) {
+    this->init("hoger hiur!!");
+    this->dispatch();
 
-    StringTransport transport(rpc::Request(1, "/put", {{"value", "hello"}}).toJSON().serialize());
-    rpc::Handler handler;
-    handler.bind("/put", "Param2", &ctx, &Context::put);
-    handler.bind("/init", "Param1", &ctx, &Context::init);
-    handler.interface("Param1", {
-        field("value", number)
-    });
-    handler.interface("Param2", {
-        field("value", string)
-    });
-
-    transport.dispatch(handler);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ctx.cRet));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Transport::newResponse(1, "hello").serialize(), transport.outStr));
+    JSON json;
+    ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("id") != json.asObject().end()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["id"].isNull()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::ParseError, json["error"]["code"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Parse error", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
 }
 
-TEST(RPCTest, dispatch2) {
+TEST_F(RPCTest, parse2) {
+    this->init("false");
+    this->dispatch();
+
+    JSON json;
+    ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("id") != json.asObject().end()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["id"].isNull()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InvalidRequest, json["error"]["code"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Invalid Request", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
+}
+
+TEST_F(RPCTest, call1) {
     Context ctx;
 
-    StringTransport transport(rpc::Request("/init", {{"value", 1234}}).toJSON().serialize());
-    rpc::Handler handler;
-    handler.bind("/put", "Param2", &ctx, &Context::put);
-    handler.bind("/init", "Param1", &ctx, &Context::init);
-    handler.interface("Param1", {
-        field("value", number)
-    });
-    handler.interface("Param2", {
-        field("value", string)
-    });
+    this->init(rpc::Request(1, "/put", {{"value", "hello"}}));
+    this->handler.bind(
+            "/init",
+            this->handler.interface("Param1", {
+                field("value", number)
+            }), &ctx, &Context::init);
+    this->handler.bind(
+            "/put",
+            this->handler.interface("Param2", {
+                field("value", string)
+            }), &ctx, &Context::put);
 
-    transport.dispatch(handler);
+    this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(this->assertResponse(rpc::Transport::newResponse(1, "hello")));
+}
+
+TEST_F(RPCTest, call2) {
+    Context ctx;
+
+    this->init(rpc::Request(1, "/putdd", {{"value", "hello"}}));
+    this->handler.bind(
+            "/init",
+            this->handler.interface("Param1", {
+                field("value", number)
+            }), &ctx, &Context::init);
+    this->handler.bind(
+            "/put",
+            this->handler.interface("Param2", {
+                field("value", string)
+            }), &ctx, &Context::put);
+
+    this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+
+    JSON json;
+    ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::MethodNotFound, json["error"]["code"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Method not found", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("undefined method: /putdd", json["error"]["data"].asString()));
+}
+
+TEST_F(RPCTest, call3) {
+    Context ctx;
+
+    this->init(rpc::Request(1, "/put", {{"value", array(34,43)}}));
+    this->handler.bind(
+            "/init",
+            this->handler.interface("Param1", {
+                field("value", number)
+            }), &ctx, &Context::init);
+    this->handler.bind(
+            "/put",
+            this->handler.interface("Param2", {
+                    field("value", string)
+            }), &ctx, &Context::put);
+
+    this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+
+    JSON json;
+    ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InvalidParams, json["error"]["code"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Invalid params", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
+}
+
+TEST_F(RPCTest, notify1) {
+    Context ctx;
+
+    this->init(rpc::Request("/init", {{"value", 1234}}));
+    this->handler.bind(
+            "/init",
+            this->handler.interface("Param1", {
+                field("value", number)
+            }), &ctx, &Context::init);
+    this->handler.bind(
+            "/put",
+            this->handler.interface("Param2", {
+                field("value", string)
+            }), &ctx, &Context::put);
+
+    this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1234, ctx.nRet));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", transport.outStr));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", this->response()));
+}
+
+TEST_F(RPCTest, notify2) {
+    Context ctx;
+
+    this->init(rpc::Request("/inited", {{"value", 1234}}));
+    this->handler.bind(
+            "/init",
+            this->handler.interface("Param1", {
+                field("value", number)
+            }), &ctx, &Context::init);
+    this->handler.bind(
+            "/put",
+            this->handler.interface("Param2", {
+                field("value", string)
+            }), &ctx, &Context::put);
+
+    this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", this->response()));
 }
 
 int main(int argc, char **argv) {

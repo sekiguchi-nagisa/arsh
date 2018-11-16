@@ -129,7 +129,7 @@ private:
     std::unordered_map<std::string, std::string> map;
 
 public:
-    void add(const std::string &methodName, const char *ifaceName);
+    void add(const std::string &methodName, const std::string &ifaceName);
 
     const char *lookupIface(const std::string &methodName) const;
 };
@@ -212,12 +212,12 @@ public:
         return this->ifaceMap.interface(name, std::move(fields));
     }
 
-    void bind(const std::string &name, const char *paramIface, Call &&func);
+    void bind(const std::string &name, const InterfacePtr &paramIface, Call &&func);
 
-    void bind(const std::string &name, const char *paramIface, Nofification &&func);
+    void bind(const std::string &name, const InterfacePtr &paramIface, Nofification &&func);
 
     template <typename State, typename Param>
-    void bind(const std::string &name, const char *paramIface, State *obj,
+    void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
             MethodResult(State::*method)(const Param &)) {
         Call func = [obj, method](JSON &&json) -> MethodResult {
             Param p;
@@ -229,12 +229,6 @@ public:
 
     template <typename State, typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
-              MethodResult(State::*method)(const Param &)) {
-        this->bind(name, paramIface->getName().c_str(), obj, method);
-    }
-
-    template <typename State, typename Param>
-    void bind(const std::string &name, const char *paramIface, State *obj,
             void(State::*method)(const Param &)) {
         Nofification func = [obj, method](JSON &&json) {
             Param p;
@@ -242,12 +236,6 @@ public:
             (obj->*method)(p);
         };
         this->bind(name, paramIface, std::move(func));
-    }
-
-    template <typename State, typename Param>
-    void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
-              void(State::*method)(const Param &)) {
-        this->bind(name, paramIface->getName().c_str(), obj, method);
     }
 };
 
