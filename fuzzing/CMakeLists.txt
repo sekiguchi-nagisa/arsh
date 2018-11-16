@@ -5,3 +5,12 @@
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=fuzzer")
 add_executable(ds_fuzzer ds_fuzzer.cpp)
 target_link_libraries(ds_fuzzer ${YDSH_STATIC})
+
+
+#====================#
+#     rpc_fuzzer     #
+#====================#
+
+include_directories(${CMAKE_SOURCE_DIR}/tools/lsp_srv)
+add_executable(rpc_fuzzer rpc_fuzzer.cpp)
+target_link_libraries(rpc_fuzzer jsonrpc)
