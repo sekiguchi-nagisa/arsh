@@ -29,8 +29,8 @@ FrontEnd::FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTabl
                    DSExecMode mode, bool toplevel, const DumpTarget &target) :
         scriptDir(scriptDir), lexer(std::move(lexer)), mode(mode),
         parser(this->lexer), checker(symbolTable, toplevel),
-        uastDumper(target.fps[DS_DUMP_KIND_UAST], symbolTable),
-        astDumper(target.fps[DS_DUMP_KIND_AST], symbolTable) {
+        uastDumper(target.files[DS_DUMP_KIND_UAST].get(), symbolTable),
+        astDumper(target.files[DS_DUMP_KIND_AST].get(), symbolTable) {
 }
 
 #define EACH_TERM_COLOR(C) \

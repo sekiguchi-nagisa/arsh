@@ -28,6 +28,7 @@
 #include "misc/buffer.hpp"
 #include "misc/flag_util.hpp"
 #include "misc/opt.hpp"
+#include "misc/resource.hpp"
 
 struct DSState;
 
@@ -144,15 +145,7 @@ struct VMHook {
 };
 
 struct DumpTarget {
-    FILE *fps[3]{nullptr};
-
-    ~DumpTarget() {
-        for(auto &fp : this->fps) {
-            if(fp != nullptr) {
-                fclose(fp);
-            }
-        }
-    }
+    FilePtr files[3];
 };
 
 // core api

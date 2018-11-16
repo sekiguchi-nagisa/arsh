@@ -164,8 +164,8 @@ static int evalCodeImpl(DSState *state, CompiledCode &code, DSError *dsError) {
 }
 
 static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
-    if(state->dumpTarget.fps[DS_DUMP_KIND_CODE] != nullptr) {
-        auto *fp = state->dumpTarget.fps[DS_DUMP_KIND_CODE];
+    if(state->dumpTarget.files[DS_DUMP_KIND_CODE]) {
+        auto *fp = state->dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");
         dumpCode(fp, *state, code);
     }
@@ -559,13 +559,16 @@ int DSState_setScriptDir(DSState *st, const char *scriptDir) {
     return 0;
 }
 
-void DSState_setDumpTarget(DSState *st, DSDumpKind kind, FILE *fp) {
-    assert(fp != nullptr);
-
-    if(st->dumpTarget.fps[kind] != nullptr) {
-        fclose(st->dumpTarget.fps[kind]);
+int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
+    FilePtr file;
+    if(target != nullptr) {
+        file.reset(strlen(target) == 0 ? fdopen(STDOUT_FILENO, "w") : fopen(target, "w"));
+        if(!file) {
+            return -1;
+        }
     }
-    st->dumpTarget.fps[kind] = fp;
+    st->dumpTarget.files[kind] = std::move(file);
+    return 0;
 }
 
 unsigned short DSState_option(const DSState *st) {

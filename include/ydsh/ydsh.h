@@ -95,12 +95,16 @@ typedef enum {
 
 /**
  *
+ * @param st
  * @param kind
- * @param fp
- * fp is not null.
- * after call it, do not close fp.
+ * @param target
+ * if null, clear dump target.
+ * if empty string, treat as stdout.
+ * @return
+ * if success, return 0.
+ * if cannot open target, do nothing and return -1.
  */
-void DSState_setDumpTarget(DSState *st, DSDumpKind kind, FILE *fp);
+int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target);
 
 
 /* for option */

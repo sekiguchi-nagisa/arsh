@@ -267,8 +267,7 @@ int main(int argc, char **argv) {
     DSState_setOption(state, option);
     for(auto &e : dumpTarget) {
         if(e.path != nullptr) {
-            FILE *fp = strlen(e.path) == 0 ? fdopen(STDOUT_FILENO, "w") : fopen(e.path, "w");
-            DSState_setDumpTarget(state, e.kind, fp);
+            DSState_setDumpTarget(state, e.kind, e.path);
         }
     }
     if(noAssert) {
