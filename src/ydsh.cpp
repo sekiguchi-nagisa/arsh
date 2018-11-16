@@ -142,7 +142,7 @@ static DSError handleRuntimeError(DSState *state) {
     };
 }
 
-static int evalCodeImpl(DSState *state, CompiledCode &code, DSError *dsError) {
+static int evalCodeImpl(DSState *state, const CompiledCode &code, DSError *dsError) {
     bool s = vmEval(*state, code);
     bool root = state->isRootShell();
     if(!s) {
@@ -163,7 +163,7 @@ static int evalCodeImpl(DSState *state, CompiledCode &code, DSError *dsError) {
     return state->getExitStatus();
 }
 
-static int evalCode(DSState *state, CompiledCode &code, DSError *dsError) {
+static int evalCode(DSState *state, const CompiledCode &code, DSError *dsError) {
     if(state->dumpTarget.files[DS_DUMP_KIND_CODE]) {
         auto *fp = state->dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");

@@ -452,7 +452,7 @@ private:
 /**
  * entry point
  */
-bool vmEval(DSState &state, CompiledCode &code);
+bool vmEval(DSState &state, const CompiledCode &code);
 
 /**
  *

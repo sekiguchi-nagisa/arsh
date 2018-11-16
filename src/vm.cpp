@@ -2131,7 +2131,7 @@ static bool runMainLoop(DSState &state) {
     return true;
 }
 
-bool vmEval(DSState &state, CompiledCode &code) {
+bool vmEval(DSState &state, const CompiledCode &code) {
     state.resetState();
     reserveGlobalVar(state);
 

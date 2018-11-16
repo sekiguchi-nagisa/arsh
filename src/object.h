@@ -790,10 +790,8 @@ protected:
      */
     unsigned char *code;
 
-public:
     explicit DSCode(unsigned char *code) : code(code) {}
 
-protected:
     ~DSCode() {
         free(this->code);
     }
