@@ -85,10 +85,8 @@ public:
     };
 };
 
-class Parser : public ydsh::parser_base::AbstractParser<TokenKind, Lexer, TokenTracker> {
+class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer, TokenTracker> {
 private:
-    unsigned int callCount{0};
-
     static constexpr unsigned int MAX_NESTING_DEPTH = 5000;
 
 public:

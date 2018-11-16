@@ -660,7 +660,7 @@ using ParseError = ydsh::parser_base::ParseError<DescTokenKind>;
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
 
-class Parser : public ydsh::parser_base::AbstractParser<DescTokenKind, DescLexer> {
+class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer> {
 public:
     Parser() = default;
 

@@ -229,7 +229,7 @@ public:
     JSONTokenKind nextToken(Token &token);
 };
 
-class Parser : public ydsh::parser_base::AbstractParser<JSONTokenKind, Lexer> {
+class Parser : public ydsh::parser_base::ParserBase<JSONTokenKind, Lexer> {
 private:
     Lexer lex;
 
