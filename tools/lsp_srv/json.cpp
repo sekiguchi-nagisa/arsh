@@ -271,6 +271,22 @@ do { this->raiseNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return nu
 #define TRY(expr) \
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
+struct CallCounter {
+    unsigned int &count;
+
+    explicit CallCounter(unsigned int &count) : count(count) {}
+
+    ~CallCounter() {
+        --this->count;
+    }
+};
+
+#define MAX_NESTING_DEPTH 8000
+#define GUARD_DEEP_NESTING(name) \
+if(++this->callCount == MAX_NESTING_DEPTH) { this->raiseDeepNestingError(); return nullptr; } \
+CallCounter name(this->callCount)
+
+
 
 JSON Parser::operator()() {
     this->fetchNext();
@@ -280,6 +296,8 @@ JSON Parser::operator()() {
 }
 
 JSON Parser::parseValue() {
+    GUARD_DEEP_NESTING(guard);
+
     switch(this->curKind) {
     case NIL:
         this->consume();    // NIL
