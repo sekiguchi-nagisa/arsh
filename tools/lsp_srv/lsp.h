@@ -17,7 +17,7 @@
 #ifndef TOOLS_LSP_H
 #define TOOLS_LSP_H
 
-#include "json.h"
+#include "../json/json.h"
 
 namespace lsp {
 

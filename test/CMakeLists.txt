@@ -44,7 +44,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/redirect)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cmdline)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/interactive)
 
-include_directories(${CMAKE_SOURCE_DIR}/tools/lsp_srv)
+include_directories(${CMAKE_SOURCE_DIR}/tools/json)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/json)
 
 if(FUZZING_BUILD_MODE)

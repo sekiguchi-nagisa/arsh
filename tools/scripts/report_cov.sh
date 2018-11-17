@@ -45,6 +45,6 @@ lcov --rc lcov_branch_coverage=1 $TOOL --directory . --capture --output-file ${O
 lcov --rc lcov_branch_coverage=1 --remove ${OUTPUT}.info \
     '*test/*' '*fuzzing/*' \
     '*-source/*' '/usr/include/*' '*v1/*' \
-    '*.re2c.cpp' '*nextToken.cpp' '*tools/lsp_srv/lexer.cpp' \
+    '*.re2c.cpp' '*nextToken.cpp' '*tools/json/lexer.cpp' \
     --output-file ${OUTPUT}-cleaned.info
 genhtml --rc lcov_branch_coverage=1 -o ${OUTPUT} ${OUTPUT}-cleaned.info

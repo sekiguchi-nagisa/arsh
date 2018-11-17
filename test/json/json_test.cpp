@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 
-#include <validate.h>
-#include <jsonrpc.h>
+#include "jsonrpc.h"
 
 using namespace json;
 
