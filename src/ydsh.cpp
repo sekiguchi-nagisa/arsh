@@ -334,8 +334,7 @@ static void initBuiltinVar(DSState *state) {
      * initialize positional parameter
      */
     for(unsigned int i = 0; i < 9; i++) {
-        auto num = std::to_string(i + 1);
-        bindVariable(state, num.c_str(), state->emptyStrObj);
+        bindVariable(state, std::to_string(i + 1).c_str(), state->emptyStrObj);
     }
 
 
