@@ -254,20 +254,20 @@ matrix:
             - ninja-build
       env: CXX_BIN=clang++-7 OPTION="-DFUZZING_BUILD_MODE=on"
 
-    # gcc6 with coverage
+    # gcc7 with coverage
     - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - gcc-6
-            - g++-6
+            - gcc-7
+            - g++-7
             - ninja-build
-      env: CXX_BIN=g++-6 BUILD_TYPE=coverage OPTION="-DCMAKE_C_COMPILER=gcc-6"
+      env: CXX_BIN=g++-7 BUILD_TYPE=coverage OPTION="-DCMAKE_C_COMPILER=gcc-7"
       before_script:
         - pip install --user cpp-coveralls
       after_success:
-        - coveralls --gcov gcov-6 --gcov-options '\-lp' --exclude test --exclude fuzzing --exclude-pattern .*-source --exclude-pattern '.*\.re2c\.cpp' --exclude nextToken.cpp --exclude tools/json/lexer.cpp
+        - coveralls --gcov gcov-7 --gcov-options '\-lp' --exclude test --exclude fuzzing --exclude-pattern .*-source --exclude-pattern '.*\.re2c\.cpp' --exclude nextToken.cpp --exclude tools/json/lexer.cpp
 
 script:
   - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_EXTRA_TEST=on $OPTION
