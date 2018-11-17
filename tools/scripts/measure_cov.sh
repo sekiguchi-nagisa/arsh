@@ -28,7 +28,7 @@ clear_cmake_cache
 # build with coverage
 cmake $ROOT -G Ninja \
             -DCMAKE_CXX_COMPILER=g++ \
-            -DCAMKE_C_COMPILER=gcc \
+            -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_BUILD_TYPE=coverage
 ninja clean
 ninja
