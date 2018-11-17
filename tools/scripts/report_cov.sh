@@ -42,5 +42,9 @@ fi
 # generate coverage report
 OUTPUT="coverage_report"
 lcov --rc lcov_branch_coverage=1 $TOOL --directory . --capture --output-file ${OUTPUT}.info
-lcov --rc lcov_branch_coverage=1 --remove ${OUTPUT}.info '*test/*' '*tools/*' '*ext/*' '*fuzzing/*' '*googletest-source/*' '*re2c-source/*' '/usr/include/*' '*src/nextToken.re2c.cpp' '*nextToken.cpp' '*v1/*' --output-file ${OUTPUT}-cleaned.info
+lcov --rc lcov_branch_coverage=1 --remove ${OUTPUT}.info \
+    '*test/*' '*fuzzing/*' \
+    '*-source/*' '/usr/include/*' '*v1/*' \
+    '*.re2c.cpp' '*nextToken.cpp' '*tools/lsp_srv/lexer.cpp' \
+    --output-file ${OUTPUT}-cleaned.info
 genhtml --rc lcov_branch_coverage=1 -o ${OUTPUT} ${OUTPUT}-cleaned.info

@@ -25,15 +25,13 @@ mkdir -p build-coverage
 cd build-coverage
 clear_cmake_cache
 
-# setup
-cmake $ROOT
-
 # build with coverage
-clear_cmake_cache
-cmake $ROOT -DCMAKE_CXX_COMPILER=clang++ \
+cmake $ROOT -G Ninja \
+            -DCMAKE_CXX_COMPILER=g++ \
+            -DCAMKE_C_COMPILER=gcc \
             -DCMAKE_BUILD_TYPE=coverage
-make clean
-make -j2
+ninja clean
+ninja
 
 # run test
 lcov --directory . --zerocounters
