@@ -30,6 +30,7 @@
 #include <constant.h>
 #include <misc/util.hpp>
 #include <misc/fatal.h>
+#include <misc/logger_base.hpp>
 
 #include "process.h"
 
