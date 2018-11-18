@@ -100,10 +100,19 @@ WaitStatus ProcHandle::wait() {
     return this->status_;
 }
 
+struct ProcLogger : public ydsh::SingletonLogger<ProcLogger> {
+    ProcLogger() : ydsh::SingletonLogger<ProcLogger>("PROC_LOG") {}
+};
+
 static bool recvData(int fd, std::string &str) {
     char buf[64];
     unsigned int bufSize = ydsh::arraySize(buf);
     int readSize = read(fd, buf, bufSize);
+    if(ProcLogger::Enabled(ProcLogger::INFO)) {
+        int old = errno;
+        ProcLogger::Info("recv size: %d, errno=%s", readSize, readSize < 0 ? strerror(errno) : "");
+        errno = old;
+    }
     if(readSize <= 0) {
         return readSize == -1 && (errno == EAGAIN || errno == EINTR);
     }
@@ -126,8 +135,17 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
     while(true) {
         constexpr unsigned int pollfdSize = ydsh::arraySize(pollfds);
         int ret = poll(pollfds, pollfdSize, timeout);
+
+        if(ProcLogger::Enabled(ProcLogger::INFO)) {
+            int old = errno;
+            ProcLogger::Info("poll: %d, out: %04x, err: %04x, errno=%s",
+                    ret, pollfds[0].revents, pollfds[1].revents, ret < 0 ? strerror(errno) : "");
+            errno = old;
+        }
+
         if(ret <= 0) {
             if(ret == -1 && (errno == EINTR || errno == EAGAIN)) {
+                ProcLogger::Info("retry poll by errno=%s", strerror(errno));
                 continue;
             }
             break;

@@ -154,7 +154,7 @@ void LoggerBase<T>::syncSetting() {
 using LoggerBase = __detail_logger::LoggerBase<true>;
 
 template <typename T>
-class SingletonLogger : public LoggerBase, Singleton<T> {
+class SingletonLogger : public LoggerBase, public Singleton<T> {
 protected:
     explicit SingletonLogger(const char *prefix) : LoggerBase(prefix) {}
 
@@ -185,6 +185,10 @@ public:
         va_start(arg, fmt);
         Singleton<T>::instance().log(FATAL, fmt, arg);
         va_end(arg);
+    }
+
+    static bool Enabled(Severity level) {
+        return Singleton<T>::instance().enabled(level);
     }
 };
 
