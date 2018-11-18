@@ -208,6 +208,20 @@ struct FileCloser {
 
 using FilePtr = std::unique_ptr<FILE, FileCloser>;
 
+template <typename T>
+class Singleton {
+protected:
+    Singleton() = default;
+
+public:
+    NON_COPYABLE(Singleton);
+
+    static T &instance() {
+        static T value;
+        return value;
+    }
+};
+
 } // namespace ydsh
 
 #endif //YDSH_MISC_RESOURCE_HPP
