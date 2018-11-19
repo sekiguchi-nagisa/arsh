@@ -727,7 +727,7 @@ DSCandidates *DSState_complete(const DSState *st, const char *buf, size_t cursor
     }
 
     std::string line(buf, cursor);
-    LOG(DUMP_CONSOLE, "line: " << line << ", cursor: " << cursor);
+    LOG(DUMP_CONSOLE, "line: %s, cursor: %zu", line.c_str(), cursor);
 
     line += '\n';
     CStrBuffer sbuf = completeLine(*st, line);

@@ -88,7 +88,7 @@ static int toOption(Proc::WaitOp op) {
     return option;
 }
 
-#ifdef USE_LOGGING
+//#ifdef USE_LOGGING
 static const char *toString(Proc::WaitOp op) {
     const char *str = nullptr;
     switch(op) {
@@ -98,7 +98,7 @@ static const char *toString(Proc::WaitOp op) {
     }
     return str;
 }
-#endif
+//#endif
 
 int Proc::wait(WaitOp op) {
     if(this->state() != TERMINATED) {
@@ -109,29 +109,36 @@ int Proc::wait(WaitOp op) {
         }
 
         // dump waitpid result
-        LOG_L(DUMP_WAIT, [&](std::ostream &stream) {
-            stream << "opt: " << toString(op) << std::endl;
-            stream << "pid: " << this->pid() << ", before state: "
-                   << (this->state() == Proc::RUNNING ? "RUNNING" : "STOPPED") << std::endl;
-            stream << "ret: " << ret << std::endl;
+        LOG_IF(DUMP_WAIT, {
+            char *str1 = nullptr;
+            asprintf(&str1, "opt: %s\npid: %d, before state: %s\nret: %d",
+                    toString(op), this->pid(), this->state() == Proc::RUNNING ? "RUNNING" : "STOPPED", ret);
+            std::string str = str1;
+            free(str1);
             if(ret > 0) {
-                stream << "after state: ";
+                str += "\nafter state: ";
                 if(WIFEXITED(status)) {
-                    stream << "TERMINATED" << std::endl
-                           << "kind: EXITED, status: " << WEXITSTATUS(status);
+                    str += "TERMINATED\nkind: EXITED, status: ";
+                    str += std::to_string(WEXITSTATUS(status));
                 } else if(WIFSIGNALED(status)) {
                     int sigNum = WTERMSIG(status);
-                    stream << "TERMINATED" << std::endl
-                           << "kind: SIGNALED, status: " << getSignalName(sigNum) << "(" << sigNum << ")";
+                    str += "TERMINATED\nkind: SIGNALED, status: ";
+                    str += getSignalName(sigNum);
+                    str += "(";
+                    str += std::to_string(sigNum);
+                    str += ")";
                 } else if(WIFSTOPPED(status)) {
                     int sigNum = WSTOPSIG(status);
-                    stream << "STOPPED" << std::endl
-                           << "kind: STOPPED, status: " << getSignalName(sigNum) << "(" << sigNum << ")";
+                    str += "STOPPED\nkind: STOPPED, status: ";
+                    str += getSignalName(sigNum);
+                    str += "(";
+                    str += std::to_string(sigNum);
+                    str += ")";
                 } else if(WIFCONTINUED(status)) {
-                    stream << "RUNNING" << std::endl << "kind: CONTINUED";
+                    str += "RUNNING\nkind: CONTINUED";
                 }
-                stream << std::endl;
             }
+            LOG(DUMP_WAIT, "%s", str.c_str());
         });
 
         if(ret > 0) {

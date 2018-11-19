@@ -282,9 +282,8 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
     assert(modPath != nullptr);
 
     std::string str = toFullModPath(scriptDir, modPath);
-    LOG(TRACE_MODULE, std::endl << "\tscriptDir: `" << (scriptDir == nullptr ? "" : scriptDir) << "'" << std::endl
-                                << "\tmodPath: `" << modPath << "'" << std::endl
-                                << "\tfullPath: `" << str << "'");
+    LOG(TRACE_MODULE, "\n    scriptDir: `%s'\n    modPath: `%s'\n    fullPath: `%s'",
+                       (scriptDir == nullptr ? "" : scriptDir), modPath, str.c_str());
 
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
     if(!pair.second) {

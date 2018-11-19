@@ -18,16 +18,8 @@
 #define YDSH_LOGGER_H
 
 #include <config.h>
-
-#ifdef USE_LOGGING
-
-#include <unistd.h>
-
-#include <iostream>
-#include <fstream>
-#include <cstring>
-#include <string>
-#include <ctime>
+#include "misc/logger_base.hpp"
+#include "misc/flag_util.hpp"
 
 #define EACH_LOGGING_POLICY(E) \
     E(TRACE_TOKEN) \
@@ -37,89 +29,68 @@
     E(TRACE_MODULE)
 
 
-namespace __detail_logger {
+namespace ydsh {
 
-enum LoggingPolicy : unsigned int {
-#define GEN_ENUM(E) E,
-    EACH_LOGGING_POLICY(GEN_ENUM)
-#undef GEN_ENUM
-};
+#ifdef USE_LOGGING
+constexpr bool useLogging = true;
+#else
+constexpr bool useLogging = false;
+#endif
 
-class Logger {
+
+class Logger : public ydsh::SingletonLogger<Logger> {
 private:
-    std::ostream *stream_;
+    unsigned int whiteList{0};
 
 public:
-    ~Logger() {
-        if(this->stream_ != &std::cerr) {
-            delete this->stream_;
-        }
+    enum Policy : unsigned int {
+#define GEN_ENUM(E) E,
+        EACH_LOGGING_POLICY(GEN_ENUM)
+#undef GEN_ENUM
+    };
+
+    Logger() : ydsh::SingletonLogger<Logger>("YDSH") {
+        this->syncSetting();
     }
 
-private:
-    Logger() : stream_(nullptr) {
-        // init appender
-        const char *appender = getenv("YDSH_APPENDER");
-        if(appender != nullptr) {
-            std::ostream *os = new std::ofstream(appender);
-            if(!(*os)) {
-                delete os;
-                os = nullptr;
-            }
-            this->stream_ = os;
-        }
-        if(this->stream_ == nullptr) {
-            this->stream_ = &std::cerr;
-        }
-    }
-
-    bool checkPolicy(LoggingPolicy policy) const {
+    void syncSetting() {
+        LoggerBase::syncSetting();
+        std::lock_guard<std::mutex>(this->outMutex);
         const char *policies[] = {
 #define GEN_STR(E) "YDSH_" #E,
                 EACH_LOGGING_POLICY(GEN_STR)
 #undef GEN_STR
         };
-        const char *e = policies[static_cast<unsigned int>(policy)];
-        return getenv(e) != nullptr;
-    }
-
-    void writeHeader(const char *funcName) {
-        time_t timer = time(nullptr);
-        struct tm *local = localtime(&timer);
-
-        char buf[32];
-        strftime(buf, 32, "%F %T", local);
-
-        *this->stream_ << buf << " ["  << getpid() << "] " << funcName << "(): ";
-    }
-
-public:
-    template <typename FUNC>
-    void operator()(LoggingPolicy policy, const char *funcName, FUNC func) {
-        if(this->checkPolicy(policy)) {
-            this->writeHeader(funcName);
-            func(*this->stream_);
-            *this->stream_ << std::endl;
+        for(unsigned int i = 0; i < arraySize(policies); i++) {
+            if(getenv(policies[i])) {
+                setFlag(this->whiteList, 1u << i);
+            }
         }
+        this->severity = INFO;
     }
 
-    static Logger &get() {
-        static Logger logger;
-        return logger;
+    bool checkPolicy(Policy policy) const {
+        return hasFlag(this->whiteList, 1u << static_cast<unsigned int>(policy));
     }
 };
 
-} // namespace __detail_logger
+} // namespace ydsh
 
 
-#define LOG_L(P, L) __detail_logger::Logger::get()(__detail_logger::P, __func__, L)
-#define LOG(P, V) LOG_L(P, [&](std::ostream & ___s) { ___s << V; })
+#define LOG(P, fmt, ...) \
+do { using namespace ydsh; \
+    if(useLogging && Logger::instance().checkPolicy(Logger::P)) { \
+        Logger::Info("%s(): " fmt, __func__, ## __VA_ARGS__); \
+    } \
+} while(false)
 
-#else
+#define LOG_IF(P, B) \
+do { using namespace ydsh; \
+    if(useLogging && Logger::instance().checkPolicy(Logger::P)) { \
+        B \
+    } \
+} while(false)
 
-#define LOG_L(P, L)
-#define LOG(P, L) 
 
-#endif
 
 #endif //YDSH_LOGGER_H

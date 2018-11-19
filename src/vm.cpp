@@ -603,15 +603,17 @@ static void xexecve(const char *filePath, char **argv, char *const *envp) {
         envp = environ;
     }
 
-    LOG_L(DUMP_EXEC, [&](std::ostream &stream) {
-        stream << "execve(" << filePath << ", [";
+    LOG_IF(DUMP_EXEC, {
+        std::string str = filePath;
+        str += ", [";
         for(unsigned int i = 0; argv[i] != nullptr; i++) {
             if(i > 0) {
-                stream << ", ";
+                str += ", ";
             }
-            stream << argv[i];
+            str += argv[i];
         }
-        stream << "])";
+        str += "]";
+        LOG(DUMP_EXEC, "%s", str.c_str());
     });
 
     // execute external command

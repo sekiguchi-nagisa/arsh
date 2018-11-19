@@ -919,7 +919,7 @@ static void completeFileName(const DSState &st, const std::string &token,
     } else {
         targetDir = expandDots(st.logicalWorkingDir.c_str(), ".");
     }
-    LOG(DUMP_CONSOLE, "targetDir = " << targetDir);
+    LOG(DUMP_CONSOLE, "targetDir = %s", targetDir.c_str());
 
     /**
      * resolve name
@@ -1140,12 +1140,10 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
         }
     } else {
         const auto &e = parser.getError();
-        LOG_L(DUMP_CONSOLE, [&](std::ostream &stream) {
-            stream << "error kind: " << e.getErrorKind() << std::endl;
-            stream << "kind: " << toString(e.getTokenKind())
-                   << ", token: " << toString(e.getErrorToken())
-                   << ", text: " << lexer.toTokenText(e.getErrorToken()) << std::endl;
-        });
+        LOG(DUMP_CONSOLE, "error kind: %s\nkind: %s, token: %s, text: %s",
+                e.getErrorKind(), toString(e.getTokenKind()),
+                toString(e.getErrorToken()).c_str(),
+                lexer.toTokenText(e.getErrorToken()).c_str());
 
         Token token = e.getErrorToken();
         auto &tokenPairs = tracker.getTokenPairs();
@@ -1173,7 +1171,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             } else if(strcmp(e.getErrorKind(), parser_base::TOKEN_MISMATCHED) == 0) {
                 assert(!e.getExpectedTokens().empty());
                 TokenKind expected = e.getExpectedTokens().back();
-                LOG(DUMP_CONSOLE, "expected: " << toString(expected));
+                LOG(DUMP_CONSOLE, "expected: %s", toString(expected));
 
                 kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr, true);
                 if(kind != CompletorKind::NONE) {
@@ -1211,34 +1209,41 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
     }
 
     END:
-    LOG_L(DUMP_CONSOLE, [&](std::ostream &stream) {
-        stream << "token size: " << tracker.getTokenPairs().size() << std::endl;
+    LOG_IF(DUMP_CONSOLE, {
+        std::string str = "token size: ";
+        str += std::to_string(tracker.getTokenPairs().size());
+        str += "\n";
         for(auto &t : tracker.getTokenPairs()) {
-            stream << "kind: " << toString(t.first)
-                   << ", token: " << toString(t.second)
-                   << ", text: " << lexer.toTokenText(t.second) << std::endl;
+            str += "kind: ";
+            str += toString(t.first);
+            str += ", token: ";
+            str += toString(t.second);
+            str += ", text: ";
+            str += lexer.toTokenText(t.second);
+            str += "\n";
         }
 
         switch(kind) {
         case CompletorKind::NONE:
-            stream << "ckind: NONE" << std::endl;
+            str += "ckind: NONE";
             break;
         case CompletorKind::CMD:
-            stream << "ckind: CMD" << std::endl;
+            str += "ckind: CMD";
             break;
         case CompletorKind::QCMD:
-            stream << "ckind: QCMD" << std::endl;
+            str += "ckind: QCMD";
             break;
         case CompletorKind::FILE:
-            stream << "ckind: FILE" << std::endl;
+            str += "ckind: FILE";
             break;
         case CompletorKind::VAR:
-            stream << "ckind: VAR" << std::endl;
+            str += "ckind: VAR";
             break;
         case CompletorKind::EXPECT:
-            stream << "ckind: EXPECT" << std::endl;
+            str += "ckind: EXPECT";
             break;
         }
+        LOG(DUMP_CONSOLE, "%s", str.c_str());
     });
 
     return kind;
