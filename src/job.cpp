@@ -113,7 +113,7 @@ int Proc::wait(WaitOp op) {
             std::string str;
             char *str1 = nullptr;
             if(asprintf(&str1, "opt: %s\npid: %d, before state: %s\nret: %d",
-                    toString(op), this->pid(), this->state() == Proc::RUNNING ? "RUNNING" : "STOPPED", ret)) {
+                    toString(op), this->pid(), this->state() == Proc::RUNNING ? "RUNNING" : "STOPPED", ret) == 0) {
                str = str1;
                free(str1);
             }
