@@ -110,11 +110,13 @@ int Proc::wait(WaitOp op) {
 
         // dump waitpid result
         LOG_IF(DUMP_WAIT, {
+            std::string str;
             char *str1 = nullptr;
-            asprintf(&str1, "opt: %s\npid: %d, before state: %s\nret: %d",
-                    toString(op), this->pid(), this->state() == Proc::RUNNING ? "RUNNING" : "STOPPED", ret);
-            std::string str = str1;
-            free(str1);
+            if(asprintf(&str1, "opt: %s\npid: %d, before state: %s\nret: %d",
+                    toString(op), this->pid(), this->state() == Proc::RUNNING ? "RUNNING" : "STOPPED", ret)) {
+               str = str1;
+               free(str1);
+            }
             if(ret > 0) {
                 str += "\nafter state: ";
                 if(WIFEXITED(status)) {
