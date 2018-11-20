@@ -683,6 +683,10 @@ const char *DSState_copyright() {
     return "Copyright (C) 2015-2018 Nagisa Sekiguchi";
 }
 
+const char *DSState_systemConfigDir() {
+    return SYSTEM_CONFIG_DIR;
+}
+
 unsigned int DSState_featureBit() {
     unsigned int featureBit = 0;
 

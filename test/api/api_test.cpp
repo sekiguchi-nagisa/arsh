@@ -6,6 +6,7 @@
 #include <ydsh/ydsh.h>
 #include <config.h>
 #include <misc/fatal.h>
+#include <constant.h>
 
 #include <sys/types.h>
 #include <pwd.h>
@@ -49,6 +50,10 @@ TEST(API, version) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, version.major));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, version.minor));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, version.patch));
+}
+
+TEST(API, config) {
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(ydsh::SYSTEM_CONFIG_DIR, DSState_systemConfigDir()));
 }
 
 TEST(API, lineNum) {

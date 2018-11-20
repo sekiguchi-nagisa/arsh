@@ -255,6 +255,8 @@ const char *DSState_version(DSVersion *version);
 
 const char *DSState_copyright();
 
+const char *DSState_systemConfigDir();
+
 /* for feature detection */
 #define DS_FEATURE_LOGGING    ((unsigned int) (1u << 0u))
 #define DS_FEATURE_SAFE_CAST  ((unsigned int) (1u << 1u))
