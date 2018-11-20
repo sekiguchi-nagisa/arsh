@@ -53,9 +53,13 @@ public:
         this->syncSetting();
     }
 
+    bool checkPolicy(Policy policy) const {
+        return hasFlag(this->whiteList, 1u << static_cast<unsigned int>(policy));
+    }
+
+private:
     void syncSetting() {
         LoggerBase::syncSetting();
-        std::lock_guard<std::mutex>(this->outMutex);
         const char *policies[] = {
 #define GEN_STR(E) "YDSH_" #E,
                 EACH_LOGGING_POLICY(GEN_STR)
@@ -67,10 +71,6 @@ public:
             }
         }
         this->severity = INFO;
-    }
-
-    bool checkPolicy(Policy policy) const {
-        return hasFlag(this->whiteList, 1u << static_cast<unsigned int>(policy));
     }
 };
 

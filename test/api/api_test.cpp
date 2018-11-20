@@ -413,17 +413,6 @@ TEST_F(APITest, jobctrl1) {
     ASSERT_NO_FATAL_FAILURE(this->expect(result, 18));
 }
 
-static Output execWithLogging(const char *str) {
-    Executor executor(std::string(str), true);
-    const char *value = getenv("YDSH_LOG_POLICY");
-    if(value != nullptr) {
-        for(auto &p : split(value, ',')) {
-            executor.env(p.c_str(), "on");
-        }
-    }
-    return executor().waitAndGetResult(true);
-}
-
 TEST_F(APITest, jobctrl2) {
     SCOPED_TRACE("");
 
@@ -449,7 +438,7 @@ TEST_F(APITest, jobctrl2) {
         assert $r == 99 : $r as String
         true
 )";
-    result = execWithLogging(str);
+    result = EXEC(str);
     ASSERT_NO_FATAL_FAILURE(this->expect(result));
 
     str = R"(
@@ -464,7 +453,7 @@ TEST_F(APITest, jobctrl2) {
         assert $r == 99 : $r as String
         true
 )";
-    result = execWithLogging(str);
+    result = EXEC(str);
     ASSERT_NO_FATAL_FAILURE(
             this->expect(result, 0, WaitStatus::EXITED, "", "ydsh: bg: %2: no such job"));
 }
