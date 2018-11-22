@@ -172,6 +172,32 @@ TEST_F(LoggerTest, appender) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0));
 }
 
+TEST_F(LoggerTest, none) {
+    this->addEnv("testlog_LEVEL", "NONE");
+
+    auto ret = this->spawnAndWait([]{
+        TestLogger logger;
+        logger(TestLogger::INFO, "hello!!");
+        logger(TestLogger::ERROR, "world!!");
+        logger(TestLogger::NONE, "world!!");
+        logger(TestLogger::FATAL, "world!!");
+        return 0;
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0));
+}
+
+TEST_F(LoggerTest, nullloger) {
+    auto ret = this->spawnAndWait([]{
+        NullLogger logger;
+        logger(TestLogger::INFO, "hello!!");
+        logger(TestLogger::ERROR, "world!!");
+        logger(TestLogger::NONE, "world!!");
+        logger(TestLogger::FATAL, "world!!");
+        return 0;
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

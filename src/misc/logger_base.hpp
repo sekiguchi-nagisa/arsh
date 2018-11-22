@@ -39,15 +39,19 @@ public:
     static_assert(T, "not allowed instantiation");
 
     enum Severity : unsigned int {
-        INFO, WARNING, ERROR, FATAL,
+        INFO, WARNING, ERROR, FATAL, NONE
     };
 
 protected:
     std::string prefix;
     FILE *fp{nullptr};
-    unsigned int severity{FATAL};
+    Severity severity{FATAL};
     std::mutex outMutex;
 
+    /**
+     * if prefix is mepty string, treat as null logger
+     * @param prefix
+     */
     explicit LoggerBase(const char *prefix) : prefix(prefix) {
         this->syncSetting();
     }
@@ -63,7 +67,7 @@ protected:
 public:
     const char *get(Severity severity) const {
         const char *str[] = {
-                "info", "warning", "error", "fatal"
+                "info", "warning", "error", "fatal", "none"
         };
         return str[severity];
     }
@@ -78,7 +82,7 @@ public:
     }
 
     bool enabled(Severity level) const {
-        return level >= this->severity;
+        return level < NONE && level >= this->severity;
     }
 };
 
@@ -121,11 +125,16 @@ template <bool T>
 void LoggerBase<T>::syncSetting() {
     std::lock_guard<std::mutex> guard(this->outMutex);
 
+    if(this->prefix.empty()) {
+        this->severity = NONE;
+        return;
+    }
+
     std::string key = this->prefix;
     key += "_LEVEL";
     const char *level = getenv(key.c_str());
     if(level != nullptr) {
-        for(auto i = static_cast<unsigned int>(INFO); i < static_cast<unsigned int>(FATAL); i++) {
+        for(auto i = static_cast<unsigned int>(INFO); i < static_cast<unsigned int>(NONE) + 1; i++) {
             auto s = static_cast<Severity>(i);
             if(strcasecmp(this->get(s), level) == 0) {
                 this->severity = s;
@@ -152,6 +161,10 @@ void LoggerBase<T>::syncSetting() {
 } // namespace __detail_logger
 
 using LoggerBase = __detail_logger::LoggerBase<true>;
+
+struct NullLogger : public LoggerBase {
+    NullLogger() : LoggerBase("") {}
+};
 
 template <typename T>
 class SingletonLogger : public LoggerBase, public Singleton<T> {
