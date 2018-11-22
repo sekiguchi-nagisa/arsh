@@ -108,7 +108,7 @@ static bool recvData(int fd, std::string &str) {
     char buf[64];
     unsigned int bufSize = ydsh::arraySize(buf);
     int readSize = read(fd, buf, bufSize);
-    if(ProcLogger::Enabled(ProcLogger::INFO)) {
+    if(ProcLogger::Enabled(ydsh::LogLevel::INFO)) {
         int old = errno;
         ProcLogger::Info("recv size: %d, errno=%s", readSize, readSize < 0 ? strerror(errno) : "");
         errno = old;
@@ -136,7 +136,7 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
         constexpr unsigned int pollfdSize = ydsh::arraySize(pollfds);
         int ret = poll(pollfds, pollfdSize, timeout);
 
-        if(ProcLogger::Enabled(ProcLogger::INFO)) {
+        if(ProcLogger::Enabled(ydsh::LogLevel::INFO)) {
             int old = errno;
             ProcLogger::Info("poll: %d, out: %04x, err: %04x, errno=%s",
                     ret, pollfds[0].revents, pollfds[1].revents, ret < 0 ? strerror(errno) : "");

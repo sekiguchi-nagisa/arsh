@@ -70,7 +70,7 @@ private:
                 setFlag(this->whiteList, 1u << i);
             }
         }
-        this->severity = INFO;
+        this->severity = LogLevel::INFO;
     }
 };
 

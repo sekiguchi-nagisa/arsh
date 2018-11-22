@@ -31,21 +31,27 @@
 
 namespace ydsh {
 
+enum class LogLevel : unsigned int {
+    INFO, WARNING, ERROR, FATAL, NONE
+};
+
+inline const char *toString(LogLevel level) {
+    const char *str[] = {
+            "info", "warning", "error", "fatal", "none"
+    };
+    return str[static_cast<unsigned int>(level)];
+}
+
 namespace __detail_logger {
 
 template<bool T>
 class LoggerBase {
-public:
+protected:
     static_assert(T, "not allowed instantiation");
 
-    enum Severity : unsigned int {
-        INFO, WARNING, ERROR, FATAL, NONE
-    };
-
-protected:
     std::string prefix;
     FILE *fp{nullptr};
-    Severity severity{FATAL};
+    LogLevel severity{LogLevel::FATAL};
     std::mutex outMutex;
 
     /**
@@ -62,32 +68,26 @@ protected:
         }
     }
 
-    void log(Severity level, const char *fmt, va_list list);
+    void log(LogLevel level, const char *fmt, va_list list);
 
 public:
-    const char *get(Severity severity) const {
-        const char *str[] = {
-                "info", "warning", "error", "fatal", "none"
-        };
-        return str[severity];
-    }
-
     void syncSetting();
 
-    void operator()(Severity level, const char *fmt, ...) __attribute__ ((format(printf, 3, 4))) {
+    void operator()(LogLevel level, const char *fmt, ...) __attribute__ ((format(printf, 3, 4))) {
         va_list arg;
         va_start(arg, fmt);
         this->log(level, fmt, arg);
         va_end(arg);
     }
 
-    bool enabled(Severity level) const {
-        return level < NONE && level >= this->severity;
+    bool enabled(LogLevel level) const {
+        return static_cast<unsigned int>(level) < static_cast<unsigned int>(LogLevel::NONE) &&
+                static_cast<unsigned int>(level) >= static_cast<unsigned int>(this->severity);
     }
 };
 
 template <bool T>
-void LoggerBase<T>::log(Severity level, const char *fmt, va_list list) {
+void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
     if(!this->enabled(level)) {
         return;
     }
@@ -108,7 +108,7 @@ void LoggerBase<T>::log(Severity level, const char *fmt, va_list list) {
     if(localtime_r(&timer, &local)) {
         char buf[32];
         strftime(buf, arraySize(buf), "%F %T", &local);
-        snprintf(header, arraySize(header), "%s [%d] [%s] ", buf, getpid(), this->get(level));
+        snprintf(header, arraySize(header), "%s [%d] [%s] ", buf, getpid(), toString(level));
     }
 
     // print body
@@ -116,7 +116,7 @@ void LoggerBase<T>::log(Severity level, const char *fmt, va_list list) {
     fflush(this->fp);
     free(str);
 
-    if(level == FATAL) {
+    if(level == LogLevel::FATAL) {
         abort();
     }
 }
@@ -126,7 +126,7 @@ void LoggerBase<T>::syncSetting() {
     std::lock_guard<std::mutex> guard(this->outMutex);
 
     if(this->prefix.empty()) {
-        this->severity = NONE;
+        this->severity = LogLevel::NONE;
         return;
     }
 
@@ -134,9 +134,10 @@ void LoggerBase<T>::syncSetting() {
     key += "_LEVEL";
     const char *level = getenv(key.c_str());
     if(level != nullptr) {
-        for(auto i = static_cast<unsigned int>(INFO); i < static_cast<unsigned int>(NONE) + 1; i++) {
-            auto s = static_cast<Severity>(i);
-            if(strcasecmp(this->get(s), level) == 0) {
+        for(auto i = static_cast<unsigned int>(LogLevel::INFO);
+            i < static_cast<unsigned int>(LogLevel::NONE) + 1; i++) {
+            auto s = static_cast<LogLevel>(i);
+            if(strcasecmp(toString(s), level) == 0) {
                 this->severity = s;
                 break;
             }
@@ -175,32 +176,32 @@ public:
     static void Info(const char *fmt, ...) __attribute__ ((format(printf, 1, 2))) {
         va_list arg;
         va_start(arg, fmt);
-        Singleton<T>::instance().log(INFO, fmt, arg);
+        Singleton<T>::instance().log(LogLevel::INFO, fmt, arg);
         va_end(arg);
     }
 
     static void Warning(const char *fmt, ...) __attribute__ ((format(printf, 1, 2))) {
         va_list arg;
         va_start(arg, fmt);
-        Singleton<T>::instance().log(WARNING, fmt, arg);
+        Singleton<T>::instance().log(LogLevel::WARNING, fmt, arg);
         va_end(arg);
     }
 
     static void Error(const char *fmt, ...) __attribute__ ((format(printf, 1, 2))) {
         va_list arg;
         va_start(arg, fmt);
-        Singleton<T>::instance().log(ERROR, fmt, arg);
+        Singleton<T>::instance().log(LogLevel::ERROR, fmt, arg);
         va_end(arg);
     }
 
     static void Fatal(const char *fmt, ...) __attribute__ ((format(printf, 1, 2))) {
         va_list arg;
         va_start(arg, fmt);
-        Singleton<T>::instance().log(FATAL, fmt, arg);
+        Singleton<T>::instance().log(LogLevel::FATAL, fmt, arg);
         va_end(arg);
     }
 
-    static bool Enabled(Severity level) {
+    static bool Enabled(LogLevel level) {
         return Singleton<T>::instance().enabled(level);
     }
 };

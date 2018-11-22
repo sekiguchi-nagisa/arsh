@@ -67,11 +67,11 @@ static std::vector<std::string> split(const std::string &line) {
 TEST_F(LoggerTest, base) {
     auto ret = this->spawnAndWait([]{
         TestLogger logger;
-        if(logger.enabled(TestLogger::FATAL)) {
+        if(logger.enabled(LogLevel::FATAL)) {
             printf("hello fatal!!\n");
             fflush(stdout);
         }
-        logger(TestLogger::FATAL, "broken!!");
+        logger(LogLevel::FATAL, "broken!!");
         return 0;
     });
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(ret, SIGABRT, WaitStatus::SIGNALED, "^hello fatal!!\n$", HEADER"\\[fatal\\] broken!!\n$"));
@@ -79,16 +79,16 @@ TEST_F(LoggerTest, base) {
 
     auto func = []{
         TestLogger logger;
-        logger(TestLogger::ERROR, "error!!");
-        if(logger.enabled(TestLogger::ERROR)) {
+        logger(LogLevel::ERROR, "error!!");
+        if(logger.enabled(LogLevel::ERROR)) {
             printf("hello error!!\n");
         }
-        logger(TestLogger::WARNING, "warning!!");
-        if(logger.enabled(TestLogger::WARNING)) {
+        logger(LogLevel::WARNING, "warning!!");
+        if(logger.enabled(LogLevel::WARNING)) {
             printf("hello warning!!\n");
         }
-        logger(TestLogger::INFO, "info!!");
-        if(logger.enabled(TestLogger::INFO)) {
+        logger(LogLevel::INFO, "info!!");
+        if(logger.enabled(LogLevel::INFO)) {
             printf("hello info!!\n");
         }
         return 0;
@@ -130,13 +130,13 @@ TEST_F(LoggerTest, thread) {
     auto ret = this->spawnAndWait([]{
         TestLogger logger;
         auto t1 = std::thread([&]{
-            logger(TestLogger::INFO, "thread1-1");
-            logger(TestLogger::INFO, "thread1-2");
+            logger(LogLevel::INFO, "thread1-1");
+            logger(LogLevel::INFO, "thread1-2");
         });
 
         auto t2 = std::thread([&]{
-            logger(TestLogger::WARNING, "thread2-1");
-            logger(TestLogger::WARNING, "thread2-2");
+            logger(LogLevel::WARNING, "thread2-1");
+            logger(LogLevel::WARNING, "thread2-2");
         });
 
         t1.join();
@@ -165,8 +165,8 @@ TEST_F(LoggerTest, appender) {
 
     auto ret = this->spawnAndWait([]{
         TestLogger logger;
-        logger(TestLogger::INFO, "hello!!");
-        logger(TestLogger::ERROR, "world!!");
+        logger(LogLevel::INFO, "hello!!");
+        logger(LogLevel::ERROR, "world!!");
         return 0;
     });
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0));
@@ -177,10 +177,10 @@ TEST_F(LoggerTest, none) {
 
     auto ret = this->spawnAndWait([]{
         TestLogger logger;
-        logger(TestLogger::INFO, "hello!!");
-        logger(TestLogger::ERROR, "world!!");
-        logger(TestLogger::NONE, "world!!");
-        logger(TestLogger::FATAL, "world!!");
+        logger(LogLevel::INFO, "hello!!");
+        logger(LogLevel::ERROR, "world!!");
+        logger(LogLevel::NONE, "world!!");
+        logger(LogLevel::FATAL, "world!!");
         return 0;
     });
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0));
@@ -189,10 +189,10 @@ TEST_F(LoggerTest, none) {
 TEST_F(LoggerTest, nullloger) {
     auto ret = this->spawnAndWait([]{
         NullLogger logger;
-        logger(TestLogger::INFO, "hello!!");
-        logger(TestLogger::ERROR, "world!!");
-        logger(TestLogger::NONE, "world!!");
-        logger(TestLogger::FATAL, "world!!");
+        logger(LogLevel::INFO, "hello!!");
+        logger(LogLevel::ERROR, "world!!");
+        logger(LogLevel::NONE, "world!!");
+        logger(LogLevel::FATAL, "world!!");
         return 0;
     });
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0));
