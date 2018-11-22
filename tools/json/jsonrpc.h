@@ -19,6 +19,7 @@
 
 #include <functional>
 
+#include <misc/logger_base.hpp>
 #include "validate.h"
 
 namespace rpc {
@@ -137,7 +138,12 @@ public:
 class Handler;
 
 class Transport {
+protected:
+    std::reference_wrapper<ydsh::LoggerBase> logger;
+
 public:
+    explicit Transport(ydsh::LoggerBase &logger) : logger(logger) {}
+
     virtual ~Transport() = default;
 
     void call(JSON &&id, const char *methodName, JSON &&param);
@@ -193,17 +199,21 @@ using MethodResult = ydsh::Result<JSON, ResponseError>;
 class Handler {
 private:
     using Call = std::function<MethodResult(JSON &&)>;
-    using Nofification = std::function<void(JSON &&)>;
+    using Notification = std::function<void(JSON &&)>;
 
     std::unordered_map<std::string, Call> callMap;
-    std::unordered_map<std::string, Nofification> notificationMap;
+    std::unordered_map<std::string, Notification> notificationMap;
 
     MethodParamMap callParamMap;
     MethodParamMap notificationParamMap;
 
     InterfaceMap ifaceMap;
 
+    std::reference_wrapper<ydsh::LoggerBase> logger;
+
 public:
+    explicit Handler(ydsh::LoggerBase &logger) : logger(logger) {}
+
     MethodResult onCall(const std::string &name, JSON &&param);
 
     void onNotify(const std::string &name, JSON &&param);
@@ -214,7 +224,7 @@ public:
 
     void bind(const std::string &name, const InterfacePtr &paramIface, Call &&func);
 
-    void bind(const std::string &name, const InterfacePtr &paramIface, Nofification &&func);
+    void bind(const std::string &name, const InterfacePtr &paramIface, Notification &&func);
 
     template <typename State, typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
@@ -230,7 +240,7 @@ public:
     template <typename State, typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
             void(State::*method)(const Param &)) {
-        Nofification func = [obj, method](JSON &&json) {
+        Notification func = [obj, method](JSON &&json) {
             Param p;
             fromJSON(std::move(json), p);
             (obj->*method)(p);

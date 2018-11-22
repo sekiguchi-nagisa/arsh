@@ -164,6 +164,7 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
     if(iter == this->callMap.end()) {
         std::string str = "undefined method: ";
         str += name;
+        this->logger.get()(ydsh::LogLevel::ERROR, "undefined call: %s", name.c_str());
         return ydsh::Err(ResponseError(MethodNotFound, "Method not found", std::move(str)));
     }
 
@@ -171,7 +172,9 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
     assert(ifaceName);
     Validator validator(this->ifaceMap);
     if(!validator(ifaceName, param)) {
-        return ydsh::Err(ResponseError(InvalidParams, "Invalid params", validator.formatError()));
+        std::string e = validator.formatError();
+        this->logger.get()(ydsh::LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
+        return ydsh::Err(ResponseError(InvalidParams, "Invalid params", e));
     }
 
     return iter->second(std::move(param));
@@ -180,14 +183,17 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
 void Handler::onNotify(const std::string &name, json::JSON &&param) {
     auto iter = this->notificationMap.find(name);
     if(iter == this->notificationMap.end()) {
-        return; //FIXME: logging
+        this->logger.get()(ydsh::LogLevel::ERROR, "undefined notification: %s", name.c_str());
+        return;
     }
 
     auto *ifaceName = this->notificationParamMap.lookupIface(name);
     assert(ifaceName);
     Validator validator(this->ifaceMap);
     if(!validator(ifaceName, param)) {
-        return; //FIXME: logging
+        this->logger.get()(ydsh::LogLevel::ERROR,
+                "notification message validation failed: \n%s", validator.formatError().c_str());
+        return;
     }
 
     iter->second(std::move(param));
@@ -201,7 +207,7 @@ void Handler::bind(const std::string &name, const InterfacePtr &paramIface, rpc:
     this->callParamMap.add(name, paramIface->getName());
 }
 
-void Handler::bind(const std::string &name, const InterfacePtr &paramIface, rpc::Handler::Nofification &&func) {
+void Handler::bind(const std::string &name, const InterfacePtr &paramIface, rpc::Handler::Notification &&func) {
     assert(paramIface);
     if(!this->notificationMap.emplace(name, std::move(func)).second) {
         fatal("already defined method: %s\n", name.c_str());

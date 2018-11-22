@@ -426,14 +426,18 @@ TEST(ReqTest, parse) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Request::INVALID, req.kind));
 }
 
+struct NullLogger : ydsh::SingletonLogger<NullLogger> {
+    NullLogger() : ydsh::SingletonLogger<NullLogger>("") {}
+};
+
 struct StringTransport : public rpc::Transport {
     std::string inStr;
     unsigned int cursor{0};
     std::string outStr;
 
-    StringTransport() = default;
+    StringTransport() : rpc::Transport(NullLogger::instance()) {}
 
-    StringTransport(std::string &&text) : inStr(std::move(text)) {}
+    StringTransport(std::string &&text) : rpc::Transport(NullLogger::instance()), inStr(std::move(text)) {}
 
     int send(unsigned int size, const char *data) override {
         this->outStr.append(data, size);
@@ -459,7 +463,7 @@ protected:
     StringTransport transport;
     rpc::Handler handler;
 
-    RPCTest() = default;
+    RPCTest() : handler(NullLogger::instance()) {}
 
     void init(rpc::Request &&req) {
         this->init(req.toJSON().serialize());
