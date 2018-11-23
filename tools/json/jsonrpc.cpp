@@ -164,7 +164,7 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
     if(iter == this->callMap.end()) {
         std::string str = "undefined method: ";
         str += name;
-        this->logger.get()(ydsh::LogLevel::ERROR, "undefined call: %s", name.c_str());
+        this->logger(ydsh::LogLevel::ERROR, "undefined call: %s", name.c_str());
         return ydsh::Err(ResponseError(MethodNotFound, "Method not found", std::move(str)));
     }
 
@@ -173,7 +173,7 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
     Validator validator(this->ifaceMap);
     if(!validator(ifaceName, param)) {
         std::string e = validator.formatError();
-        this->logger.get()(ydsh::LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
+        this->logger(ydsh::LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
         return ydsh::Err(ResponseError(InvalidParams, "Invalid params", e));
     }
 
@@ -183,7 +183,7 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
 void Handler::onNotify(const std::string &name, json::JSON &&param) {
     auto iter = this->notificationMap.find(name);
     if(iter == this->notificationMap.end()) {
-        this->logger.get()(ydsh::LogLevel::ERROR, "undefined notification: %s", name.c_str());
+        this->logger(ydsh::LogLevel::ERROR, "undefined notification: %s", name.c_str());
         return;
     }
 
@@ -191,7 +191,7 @@ void Handler::onNotify(const std::string &name, json::JSON &&param) {
     assert(ifaceName);
     Validator validator(this->ifaceMap);
     if(!validator(ifaceName, param)) {
-        this->logger.get()(ydsh::LogLevel::ERROR,
+        this->logger(ydsh::LogLevel::ERROR,
                 "notification message validation failed: \n%s", validator.formatError().c_str());
         return;
     }
