@@ -257,7 +257,7 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
 /**
  * after execution, delete ctx
  */
-int exec_interactive(DSState *dsState) {
+void exec_interactive(DSState *dsState) {
     *linenoiseInputFD() = dup(STDIN_FILENO);
     *linenoiseOutputFD() = dup(STDOUT_FILENO);
     *linenoiseErrorFD() = dup(STDERR_FILENO);
@@ -290,6 +290,7 @@ int exec_interactive(DSState *dsState) {
         }
     }
     DSState_saveHistory(dsState, nullptr);
-    return status;
+    DSState_delete(&dsState);
+    exit(status);
 }
 

@@ -26,7 +26,8 @@
 
 using namespace ydsh;
 
-int exec_interactive(DSState *dsState);
+[[noreturn]]
+void exec_interactive(DSState *dsState);
 
 static void loadRC(DSState *state, const char *rcfile) {
     std::string path;
@@ -92,12 +93,13 @@ static void writeStatusLog(DSError &error) {
 }
 
 template <typename Func, typename ...T>
-static int apply(Func func, DSState *state, T&& ... args) {
+[[noreturn]]
+static void apply(Func func, DSState *state, T&& ... args) {
     DSError error{};
     int ret = func(state, std::forward<T>(args)..., &error);
     writeStatusLog(error);
     DSError_release(&error);
-    return ret;
+    exit(ret);
 }
 
 static void showFeature(FILE *fp) {
@@ -291,13 +293,13 @@ int main(int argc, char **argv) {
         const char *scriptName = shellArgs[0];
         DSState_setShellName(state, scriptName);
         DSState_setArguments(state, shellArgs + 1);
-        exit(apply(DSState_loadAndEval, state, scriptName));
+        apply(DSState_loadAndEval, state, scriptName);
     }
     case InvocationKind::FROM_STDIN: {
         DSState_setArguments(state, shellArgs);
 
         if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
-            exit(apply(DSState_loadAndEval, state, nullptr));
+            apply(DSState_loadAndEval, state, nullptr);
         } else {    // interactive mode
             if(!quiet) {
                 fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
@@ -305,16 +307,15 @@ int main(int argc, char **argv) {
             if(userc) {
                 loadRC(state, rcfile);
             }
-            exit(exec_interactive(state));
+            exec_interactive(state);
         }
     }
     case InvocationKind::FROM_STRING: {
         DSState_setShellName(state, shellArgs[0]);
         DSState_setArguments(state, size == 0 ? nullptr : shellArgs + 1);
-        exit(apply(DSState_eval, state, "(string)", evalText, strlen(evalText)));
+        apply(DSState_eval, state, "(string)", evalText, strlen(evalText));
     }
-    case InvocationKind::BUILTIN: {
+    case InvocationKind::BUILTIN:
         exit(DSState_exec(state, shellArgs));
-    }
     }
 }
