@@ -923,7 +923,7 @@ TEST_F(CmdlineTest2, import1) {
     fclose(fp);
     chmod(fileName.c_str(), ~S_IRUSR);
 
-    std::string str = format("(string):1: [semantic error] unresolved module: %s, by `Permission denied'\n"
+    std::string str = format("(string):1: [semantic error] cannot open module: %s, by `Permission denied'\n"
                              "source %s as mod\n"
                              "       %s\n", fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
 
@@ -960,7 +960,7 @@ TEST_F(CmdlineTest2, import2) {
 }
 
 TEST_F(CmdlineTest2, import3) {
-    std::string str = format("(string):1: [semantic error] unresolved module: ., by `Is a directory'\n"
+    std::string str = format("(string):1: [semantic error] cannot open module: ., by `Is a directory'\n"
                              "source .\n"
                              "       %s\n", makeLineMarker(".").c_str());
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("source ."), 1, "", str.c_str()));
