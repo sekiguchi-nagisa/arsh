@@ -69,7 +69,7 @@ public:
 
         const char *scriptName = this->getSourceName().c_str();
         ProcBuilder builder(BIN_PATH);
-        builder.addArg("--status-log").addArg(this->getTmpFileName());
+        builder.addArg("--status-log").addArg(this->getTempFileName());
 
         // set argument
         builder.addArg(scriptName);
@@ -96,7 +96,7 @@ public:
         int ret = output.status.toShellStatus();
 
         // get internal status
-        std::ifstream input(this->getTmpFileName());
+        std::ifstream input(this->getTempFileName());
         ASSERT_FALSE(!input);
 
         std::string line;

@@ -210,13 +210,7 @@ TEST_F(APITest, load2) {
 }
 
 TEST_F(APITest, load3) {
-    std::string modName = this->getTmpDirName();
-    modName += "/mod.ds";
-
-    FILE *fp = fopen(modName.c_str(), "w");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
-    fprintf(fp, "var mod_load_success = true; false");
-    fclose(fp);
+    auto modName = this->createTempFile("mod.ds", "var mod_load_success = true; false");
 
     auto *state = DSState_create();
     DSError e;
@@ -236,13 +230,7 @@ TEST_F(APITest, load3) {
 }
 
 TEST_F(APITest, load4) {
-    std::string modName = this->getTmpDirName();
-    modName += "/mod.ds";
-
-    FILE *fp = fopen(modName.c_str(), "w");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
-    fprintf(fp, "var mod_load_success = true; false");
-    fclose(fp);
+    auto modName = this->createTempFile("mod.ds", "var mod_load_success = true; false");
 
     std::string line = "source ";
     line += modName;

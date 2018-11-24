@@ -37,13 +37,15 @@ protected:
     void deleteTemp();
 
 public:
-    const char *getTmpDirName() const {
+    const char *getTempDirName() const {
         return this->tmpDirName;
     }
 
-    const char *getTmpFileName() const {
+    const char *getTempFileName() const {
         return this->tmpFileName;
     }
+
+    std::string createTempFile(const char *baseName, const std::string &content) const;
 
 private:
     void freeName();

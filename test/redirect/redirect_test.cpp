@@ -22,7 +22,7 @@ public:
 
     void SetUp() override {
         this->createTemp();
-        this->targetName += this->getTmpDirName();
+        this->targetName += this->getTempDirName();
         this->targetName += "/target";
     }
 

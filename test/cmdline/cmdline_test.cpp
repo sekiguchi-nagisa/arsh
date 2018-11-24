@@ -811,99 +811,90 @@ struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
 };
 
 TEST_F(CmdlineTest2, script) {
-    std::string fileName = this->getTmpDirName();
-    fileName += "/target.ds";
-    FILE *fp = fopen(fileName.c_str(), "w");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
-    fprintf(fp, "assert($0 == \"%s\"); assert($@.size() == 1); assert($@[0] == 'A')", fileName.c_str());
-    fclose(fp);
+    auto fileName = this->createTempFile("target.ds",
+            format("assert($0 == \"%s/target.ds\"); assert($@.size() == 1); assert($@[0] == 'A')", this->getTempDirName()));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(ds(fileName.c_str(), "A"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--", fileName.c_str(), "A"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("hogehogehuga"), 1, "", "^ydsh: cannot open file: hogehogehuga, by .+$"));
 
     // script dir
-    fileName = this->getTmpDirName();
-    fileName += "/target2.ds";
-    fp = fopen(fileName.c_str(), "w");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
-    fprintf(fp, "assert $SCRIPT_DIR == \"$(cd $(dirname $0) && pwd -P)\"");
-    fclose(fp);
+    fileName = this->createTempFile("target2.ds", "assert $SCRIPT_DIR == \"$(cd $(dirname $0) && pwd -P)\"");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(ds(fileName.c_str()), 0));
 }
 
 TEST_F(CmdlineTest2, complete) {
-    std::string target = this->getTmpDirName();
+    std::string target = this->getTempDirName();
     target += "/work/actual";
 
     // create working dir
     auto builder = CL("mkdir -p %s; ln -s %s ./link && cd ./link && touch hogehuga && chmod +x hogehuga",
                       target.c_str(), target.c_str())
-            .setWorkingDir(this->getTmpDirName());
+            .setWorkingDir(this->getTempDirName());
     ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
 
     // follow symbolic link
     ASSERT_NO_FATAL_FAILURE(
-            this->expect(CL("cd %s; assert \"$(complete ./link/)\" == 'hogehuga'", this->getTmpDirName()), 0));
+            this->expect(CL("cd %s; assert \"$(complete ./link/)\" == 'hogehuga'", this->getTempDirName()), 0));
 
     builder = CL("cd %s; var ret = $(complete ./link/../);\n"
                  "assert $ret.size() == 2\n"
                  "assert $ret[0] == 'link/'\n"
-                 "assert $ret[1] == 'work/'", this->getTmpDirName());
+                 "assert $ret[1] == 'work/'", this->getTempDirName());
 
     ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
 }
 
 TEST_F(CmdlineTest2, cwd) {
-    std::string target = this->getTmpDirName();
+    std::string target = this->getTempDirName();
     target += "/work/actual";
 
     // create working dir
     auto builder = CL("mkdir -p %s; ln -s %s ./link", target.c_str(), target.c_str())
-            .setWorkingDir(this->getTmpDirName());
+            .setWorkingDir(this->getTempDirName());
     ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
 
     // follow symbolic link
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("cd %s/link; import-env PWD; assert $PWD == '%s/link'",
-                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+                                            this->getTempDirName(), this->getTempDirName()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("cd %s/link; assert \"$(pwd)\" == '%s/link'",
-                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+                                            this->getTempDirName(), this->getTempDirName()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("cd -L %s/link; assert \"$(pwd -L)\" == '%s/link'",
-                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+                                            this->getTempDirName(), this->getTempDirName()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd %s/link); assert \"$(pwd -P)\" == '%s'",
-                                            this->getTmpDirName(), target.c_str()), 0));
+                                            this->getTempDirName(), target.c_str()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd %s/link); assert cd ../; assert \"$(pwd -P)\" == '%s'",
-                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+                                            this->getTempDirName(), this->getTempDirName()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd %s/link); assert cd ../; assert \"$(pwd -L)\" == '%s'",
-                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+                                            this->getTempDirName(), this->getTempDirName()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd %s/link); assert cd ../; import-env OLDPWD; assert $OLDPWD == '%s/link'",
-                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+                                            this->getTempDirName(), this->getTempDirName()), 0));
 
     // without symbolic link
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); import-env PWD; assert $PWD == '%s'",
-                                            this->getTmpDirName(), target.c_str()), 0));
+                                            this->getTempDirName(), target.c_str()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert \"$(pwd)\" == '%s'",
-                                            this->getTmpDirName(), target.c_str()), 0));
+                                            this->getTempDirName(), target.c_str()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert \"$(pwd -P)\" == '%s'",
-                                            this->getTmpDirName(), target.c_str()), 0));
+                                            this->getTempDirName(), target.c_str()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert \"$(pwd -L)\" == '%s'",
-                                            this->getTmpDirName(), target.c_str()), 0));
+                                            this->getTempDirName(), target.c_str()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert cd ../; assert \"$(pwd -L)\" == '%s/work'",
-                                            this->getTmpDirName(), this->getTmpDirName()), 0));
+                                            this->getTempDirName(), this->getTempDirName()), 0));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("assert(cd -P %s/link); assert cd ../; import-env OLDPWD; assert $OLDPWD == '%s'",
-                                            this->getTmpDirName(), target.c_str()), 0));
+                                            this->getTempDirName(), target.c_str()), 0));
 }
 
 static std::string makeLineMarker(const std::string &line) {
@@ -915,12 +906,7 @@ static std::string makeLineMarker(const std::string &line) {
 }
 
 TEST_F(CmdlineTest2, import1) {
-    std::string fileName = this->getTmpDirName();
-    fileName += "/target.ds";
-    FILE *fp = fopen(fileName.c_str(), "w");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
-    fprintf(fp, "throw new Error('invalid!!')");
-    fclose(fp);
+    auto fileName = this->createTempFile("target.ds", "throw new Error('invalid!!')");
     chmod(fileName.c_str(), ~S_IRUSR);
 
     std::string str = format("(string):1: [semantic error] cannot open module: %s, by `Permission denied'\n"
@@ -931,21 +917,8 @@ TEST_F(CmdlineTest2, import1) {
 }
 
 TEST_F(CmdlineTest2, import2) {
-    std::string modName = this->getTmpDirName();
-    modName += "/mod.ds";
-
-    std::string fileName = this->getTmpDirName();
-    fileName += "/target.ds";
-
-    FILE *fp = fopen(fileName.c_str(), "w");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
-    fprintf(fp, "source %s as mod1", modName.c_str());
-    fclose(fp);
-
-    fp = fopen(modName.c_str(), "w");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
-    fprintf(fp, "source %s as mod2", fileName.c_str());
-    fclose(fp);
+    auto modName = this->createTempFile("mod.ds", format("source %s/target.ds as mod2", this->getTempDirName()));
+    auto fileName = this->createTempFile("target.ds", format("source %s/mod.ds as mod1", this->getTempDirName()));
 
     std::string str = format("%s:1: [semantic error] circular module import: `%s'\n"
                              "source %s as mod2\n"

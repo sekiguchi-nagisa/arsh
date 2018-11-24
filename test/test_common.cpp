@@ -69,6 +69,17 @@ void TempFileFactory::createTemp() {
     this->tmpFileName = name;
 }
 
+std::string TempFileFactory::createTempFile(const char *baseName, const std::string &content) const {
+    std::string fileName = this->getTempDirName();
+    fileName += '/';
+    fileName += baseName;
+
+    FILE *fp = fopen(fileName.c_str(), "w");
+    fwrite(content.c_str(), sizeof(char), content.size(), fp);
+    fclose(fp);
+    return fileName;
+}
+
 static void removeRecursive(const char *currentDir) {
     DIR *dir = opendir(currentDir);
     if(dir == nullptr) {

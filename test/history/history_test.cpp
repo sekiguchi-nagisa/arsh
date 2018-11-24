@@ -520,7 +520,7 @@ TEST_F(HistoryTest, cmd_delete) {
 TEST_F(HistoryTest, cmd_load) {
     this->setHistSize(10);
 
-    FILE *fp = fopen(this->getTmpFileName(), "w");
+    FILE *fp = fopen(this->getTempFileName(), "w");
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
 
     const char *v[] = {
@@ -561,7 +561,7 @@ TEST_F(HistoryTest, cmd_load) {
                          "    5  e"], $(history))
     )EOF";
     std::string c = "history -r ";
-    c += this->getTmpFileName();
+    c += this->getTempFileName();
     c += "\n";
     c += code;
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(c.c_str())));
@@ -589,9 +589,9 @@ TEST_F(HistoryTest, cmd_save) {
 
     // save to specified file
     std::string code = "history -w ";
-    code += this->getTmpFileName();
+    code += this->getTempFileName();
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code.c_str())));
-    auto hist = readFile(this->getTmpFileName());
+    auto hist = readFile(this->getTempFileName());
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(arraySize(v), hist.size()));
     for(unsigned int i = 0; i < hist.size(); i++) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(v[i], hist[i].c_str()));
@@ -603,7 +603,7 @@ TEST_F(HistoryTest, cmd_save) {
     }
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval("history -w")));
-    hist = readFile(this->getTmpFileName());
+    hist = readFile(this->getTempFileName());
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(arraySize(v) * 2, hist.size()));
     for(unsigned int i = 0; i < hist.size(); i++) {
         unsigned int index = i % 5;
