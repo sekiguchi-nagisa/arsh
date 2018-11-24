@@ -133,7 +133,6 @@ DEFINE_TCError(EmptyTry          ,"empty try block"                             
 DEFINE_TCError(MeaninglessTry    ,"meaningless try block"                             );
 DEFINE_TCError(LocalLimit        ,"too many local variables"                          );
 DEFINE_TCError(DefinedSymbol     ,"already defined symbol: `%s'"                      );
-DEFINE_TCError(DefinedField      ,"already defined field: `%s'"                       );
 DEFINE_TCError(UndefinedSymbol   ,"undefined symbol: `%s'"                            );
 DEFINE_TCError(UndefinedField    ,"undefined field: `%s'"                             );
 DEFINE_TCError(UndefinedMethod   ,"undefined method: `%s'"                            );
