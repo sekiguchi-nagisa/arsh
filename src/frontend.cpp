@@ -26,11 +26,11 @@
 namespace ydsh {
 
 FrontEnd::FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTable,
-                   DSExecMode mode, bool toplevel, const DumpTarget &target) :
+                   DSExecMode mode, bool toplevel, const DumpTarget &target, bool ignore) :
         scriptDir(scriptDir), lexer(std::move(lexer)), mode(mode),
         parser(this->lexer), checker(symbolTable, toplevel),
         uastDumper(target.files[DS_DUMP_KIND_UAST].get(), symbolTable),
-        astDumper(target.files[DS_DUMP_KIND_AST].get(), symbolTable) {
+        astDumper(target.files[DS_DUMP_KIND_AST].get(), symbolTable), ignoreModNotFound(ignore) {
 }
 
 #define EACH_TERM_COLOR(C) \
@@ -123,19 +123,21 @@ void printError(const Lexer &lex, const char *kind, Token token,
 
 DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
                               Token errorToken, const std::string &message) const {
-    ColorController cc(STDERR_FILENO);
+    if(!this->suppressError(errorKind)) {
+        ColorController cc(STDERR_FILENO);
 
-    /**
-     * show error message
-     */
-    printError(*this->parser.getLexer(),
-               type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
-               errorToken, cc, TermColor::Magenta, message.c_str());
+        /**
+         * show error message
+         */
+        printError(*this->parser.getLexer(),
+                   type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
+                   errorToken, cc, TermColor::Magenta, message.c_str());
 
-    for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
-        Token token = this->contexts[i].sourceNode->getPathNode()->getToken();
-        auto &lex = i > 0 ? this->contexts[i - 1].lexer : this->lexer;
-        printError(lex, "note", token, cc, TermColor::Blue, "at module import");
+        for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
+            Token token = this->contexts[i].sourceNode->getPathNode()->getToken();
+            auto &lex = i > 0 ? this->contexts[i - 1].lexer : this->lexer;
+            printError(lex, "note", token, cc, TermColor::Blue, "at module import");
+        }
     }
 
     unsigned int errorLineNum = this->getSourceInfo()->getLineNum(errorToken.pos);
@@ -243,7 +245,7 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     auto &srcNode = static_cast<SourceNode&>(*node);
     const char *modPath = srcNode.getPathStr().c_str();
     FilePtr filePtr;
-    auto ret = this->checker.getSymbolTable().tryToLoadModule(this->getCurScriptDir().c_str(), modPath, filePtr);
+    auto ret = this->getSymbolTable().tryToLoadModule(this->getCurScriptDir().c_str(), modPath, filePtr);
     if(is<ModLoadingError>(ret)) {
         switch(get<ModLoadingError>(ret)) {
         case ModLoadingError::CIRCULAR:
@@ -270,7 +272,7 @@ void FrontEnd::enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_
         Lexer lex(fullPath, filePtr.release());
         node->setFirstAppear(true);
         auto state = this->parser.saveLexicalState();
-        auto scope = this->checker.getSymbolTable().createModuleScope();
+        auto scope = this->getSymbolTable().createModuleScope();
         this->contexts.emplace_back(std::move(lex), std::move(scope), std::move(state), std::move(node));
     }
     Token token{};
@@ -287,22 +289,21 @@ void FrontEnd::enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_
 }
 
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
-    auto &symbolTable = this->checker.getSymbolTable();
     auto &ctx = this->contexts.back();
     TokenKind kind = ctx.kind;
     Token token = ctx.token;
     TokenKind consumedKind = ctx.consumedKind;
     std::unique_ptr<SourceNode> node(ctx.sourceNode.release());
-    auto &modType = symbolTable.createModType(ctx.lexer.getSourceInfo()->getSourceName());
+    auto &modType = this->getSymbolTable().createModType(ctx.lexer.getSourceInfo()->getSourceName());
     auto scope = std::move(ctx.scope);
     this->contexts.pop_back();
 
     auto &lex = this->contexts.empty() ? this->lexer : this->contexts.back().lexer;
     this->parser.restoreLexicalState(lex, kind, token, consumedKind);
     if(this->contexts.empty()) {
-        symbolTable.resetCurModule();
+        this->getSymbolTable().resetCurModule();
     } else {
-        symbolTable.setModuleScope(*this->contexts.back().scope);
+        this->getSymbolTable().setModuleScope(*this->contexts.back().scope);
     }
 
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY) {
@@ -310,7 +311,7 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
         node->setMaxVarNum(varNum);
         node->setModType(modType);
         if(prevType != nullptr && this->prevType->isNothingType()) {
-            this->prevType = &symbolTable.get(TYPE::Void);
+            this->prevType = &this->getSymbolTable().get(TYPE::Void);
             node->setNothing(true);
         }
     }

@@ -639,7 +639,7 @@ std::string expandDots(const char *basePath, const char *path) {
 
     // fill resolvedPathStack
     if(!pathStack.empty() && pathStack.front() != "/") {
-        if(basePath != nullptr) {
+        if(basePath != nullptr && *basePath != '\0') {
             resolvedPathStack = createPathStack(basePath);
         } else {
             char *ptr = realpath(".", nullptr);

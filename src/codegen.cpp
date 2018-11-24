@@ -1128,6 +1128,13 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const std::string &name) {
                         code, constPool, entries, except);
 }
 
+CompiledCode ByteCodeGenerator::finalize() {
+    unsigned char maxLocalSize = this->symbolTable.getMaxVarIndex();
+    this->curBuilder().emit8(5, maxLocalSize);
+    this->emitIns(OpCode::HALT);
+    return this->finalizeCodeBuilder("");
+}
+
 void ByteCodeGenerator::exitModule(SourceNode &node) {
     this->curBuilder().emit8(5, node.getMaxVarNum());
     this->emitIns(OpCode::RETURN);

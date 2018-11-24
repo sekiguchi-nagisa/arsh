@@ -604,7 +604,7 @@ public:
         this->oldGvarCount = this->gvarCount;
     }
 
-    void abort(bool abortType) {
+    void abort(bool abortType = true) {
         this->modLoader.abort();
         this->gvarCount = this->oldGvarCount;
         if(abortType) {

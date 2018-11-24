@@ -93,20 +93,20 @@ static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&ex
  * @param state
  * @return
  */
-static DSError handleRuntimeError(DSState *state) {
-    auto thrownObj = state->getThrownObject();
+static DSError handleRuntimeError(DSState &state) {
+    auto thrownObj = state.getThrownObject();
     auto &errorType = *thrownObj->getType();
     DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
-    if(errorType == state->symbolTable.get(TYPE::_ShellExit)) {
+    if(errorType == state.symbolTable.get(TYPE::_ShellExit)) {
         kind = DS_ERROR_KIND_EXIT;
-    } else if(errorType == state->symbolTable.get(TYPE::_AssertFail)) {
+    } else if(errorType == state.symbolTable.get(TYPE::_AssertFail)) {
         kind = DS_ERROR_KIND_ASSERTION_ERROR;
     }
 
     // get error line number
     unsigned int errorLineNum = 0;
     std::string sourceName;
-    if(state->symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
+    if(state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
         auto *obj = typeAs<Error_Object>(thrownObj);
         errorLineNum = getOccurredLineNum(obj->getStackTrace());
         const char *ptr = getOccurredSourceName(obj->getStackTrace());
@@ -117,34 +117,34 @@ static DSError handleRuntimeError(DSState *state) {
     // print error message
     if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
         fputs("[runtime error]\n", stderr);
-        const bool bt = state->symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
-        auto *handle = errorType.lookupMethodHandle(state->symbolTable, bt ? "backtrace" : OP_STR);
+        const bool bt = state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
+        auto *handle = errorType.lookupMethodHandle(state.symbolTable, bt ? "backtrace" : OP_STR);
 
-        DSValue ret = callMethod(*state, handle, DSValue(thrownObj), std::vector<DSValue>());
-        if(state->getThrownObject()) {
+        DSValue ret = callMethod(state, handle, DSValue(thrownObj), std::vector<DSValue>());
+        if(state.getThrownObject()) {
             fputs("cannot obtain string representation\n", stderr);
         } else if(!bt) {
             fprintf(stderr, "%s\n", typeAs<String_Object>(ret)->getValue());
         }
-    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state->option, DS_OPTION_TRACE_EXIT)) {
-        typeAs<Error_Object>(thrownObj)->printStackTrace(*state);
+    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state.option, DS_OPTION_TRACE_EXIT)) {
+        typeAs<Error_Object>(thrownObj)->printStackTrace(state);
     }
     fflush(stderr);
 
     // invoke termination hook.
-    invokeTerminationHook(*state, kind, std::move(thrownObj));
+    invokeTerminationHook(state, kind, std::move(thrownObj));
 
     return {
             .kind = kind,
             .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
             .lineNum = errorLineNum,
-            .name = kind == DS_ERROR_KIND_RUNTIME_ERROR ? state->symbolTable.getTypeName(errorType) : ""
+            .name = kind == DS_ERROR_KIND_RUNTIME_ERROR ? state.symbolTable.getTypeName(errorType) : ""
     };
 }
 
-static int evalCodeImpl(DSState *state, const CompiledCode &code, DSError *dsError) {
-    bool s = vmEval(*state, code);
-    bool root = state->isRootShell();
+static int evalCodeImpl(DSState &state, const CompiledCode &code, DSError *dsError) {
+    bool s = vmEval(state, code);
+    bool root = state.isRootShell();
     if(!s) {
         auto ret = handleRuntimeError(state);
         auto kind = ret.kind;
@@ -154,76 +154,110 @@ static int evalCodeImpl(DSState *state, const CompiledCode &code, DSError *dsErr
             DSError_release(&ret);
         }
         if(kind == DS_ERROR_KIND_RUNTIME_ERROR && root) {
-            state->recover(false);
+            state.symbolTable.abort(false);
         }
-    } else if(!hasFlag(state->option, DS_OPTION_INTERACTIVE) || !root) {
-        invokeTerminationHook(*state, DS_ERROR_KIND_EXIT, DSValue());
+    } else if(!hasFlag(state.option, DS_OPTION_INTERACTIVE) || !root) {
+        invokeTerminationHook(state, DS_ERROR_KIND_EXIT, DSValue());
     }
-    state->symbolTable.commit();
-    return state->getExitStatus();
+    state.symbolTable.commit();
+    return state.getExitStatus();
 }
 
-static int evalCode(DSState *state, const CompiledCode &code, DSError *dsError) {
-    if(state->dumpTarget.files[DS_DUMP_KIND_CODE]) {
-        auto *fp = state->dumpTarget.files[DS_DUMP_KIND_CODE].get();
+static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) {
+    if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
+        auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");
-        dumpCode(fp, *state, code);
+        dumpCode(fp, state, code);
     }
 
-    if(state->execMode == DS_EXEC_MODE_COMPILE_ONLY) {
+    if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
         return 0;
     }
     int ret = evalCodeImpl(state, code, dsError);
-    if(!state->isRootShell()) {
+    if(!state.isRootShell()) {
         exit(ret);
     }
     return ret;
 }
 
-static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
+static const char *getScriptDir(const DSState &state, unsigned short option) {
+    return hasFlag(option, DS_MOD_FULLPATH) ? "" :
+            typeAs<String_Object>(getGlobal(state, VAR_SCRIPT_DIR))->getValue();
+}
+
+class Compiler {
+private:
+    FrontEnd frontEnd;
+    ByteCodeGenerator codegen;
+
+public:
+    Compiler(const DSState &state, SymbolTable &symbolTable, Lexer &&lexer, unsigned short option) :
+            frontEnd(getScriptDir(state, option), std::move(lexer), symbolTable, state.execMode,
+                    hasFlag(state.option, DS_OPTION_TOPLEVEL),
+                    state.dumpTarget, hasFlag(option, DS_MOD_IGNORE_ENOENT)),
+            codegen(symbolTable, hasFlag(state.option, DS_OPTION_ASSERT)) {}
+
+    unsigned int lineNum() const {
+        return this->frontEnd.lineNum();
+    }
+
+    int operator()(DSError *dsError, CompiledCode &code);
+};
+
+int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     if(dsError != nullptr) {
         *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .fileName = nullptr, .lineNum = 0, .name = nullptr};
     }
 
-    const char *scriptDir = typeAs<String_Object>(getGlobal(*state, VAR_SCRIPT_DIR))->getValue();
-
-    FrontEnd frontEnd(scriptDir, std::move(lexer), state->symbolTable, state->execMode,
-                      hasFlag(state->option, DS_OPTION_TOPLEVEL), state->dumpTarget);
-    ByteCodeGenerator codegen(state->symbolTable, hasFlag(state->option, DS_OPTION_ASSERT));
-
-    frontEnd.setupASTDump();
-    if(!frontEnd.frontEndOnly()) {
-        codegen.initialize(frontEnd.getSourceInfo());
+    this->frontEnd.setupASTDump();
+    if(!this->frontEnd.frontEndOnly()) {
+        this->codegen.initialize(this->frontEnd.getSourceInfo());
     }
-    while(frontEnd) {
-        auto ret = frontEnd(dsError);
-        state->lineNum = frontEnd.lineNum();
+    while(this->frontEnd) {
+        auto ret = this->frontEnd(dsError);
         if(ret.first == nullptr && ret.second == FrontEnd::IN_MODULE) {
-            state->recover();
+            this->frontEnd.getSymbolTable().abort();
             return 1;
         }
 
-        if(frontEnd.frontEndOnly()) {
+        if(this->frontEnd.frontEndOnly()) {
             continue;
         }
 
         switch(ret.second) {
         case FrontEnd::ENTER_MODULE:
-            codegen.enterModule(frontEnd.getSourceInfo());
+            this->codegen.enterModule(this->frontEnd.getSourceInfo());
             break;
         case FrontEnd::EXIT_MODULE:
-            codegen.exitModule(static_cast<SourceNode&>(*ret.first));
+            this->codegen.exitModule(static_cast<SourceNode&>(*ret.first));
             break;
         case FrontEnd::IN_MODULE:
-            codegen.generate(ret.first.get());
+            this->codegen.generate(ret.first.get());
             break;
         }
     }
-    frontEnd.teardownASTDump();
-    if(!frontEnd.frontEndOnly()) {
-        code = codegen.finalize(state->symbolTable.getMaxVarIndex());
+    this->frontEnd.teardownASTDump();
+    if(!this->frontEnd.frontEndOnly()) {
+        code = this->codegen.finalize();
     }
     return 0;
+}
+
+static int compile(DSState &state, Lexer &&lexer, DSError *dsError,
+                   CompiledCode &code, unsigned short option) {
+    Compiler compiler(state, state.symbolTable, std::move(lexer), option);
+    int ret = compiler(dsError, code);
+    state.lineNum = compiler.lineNum();
+    return ret;
+}
+
+static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError, unsigned short modOption = 0) {
+    CompiledCode code;
+    int ret = compile(state, std::move(lexer), dsError, code, modOption);
+    if(!code) {
+        return ret;
+    }
+    return evalCode(state, code, dsError);
 }
 
 static void bindVariable(DSState *state, const char *varName, DSValue &&value, FieldAttributes attribute) {
@@ -599,13 +633,7 @@ void DSError_release(DSError *e) {
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, data, size);
     lexer.setLineNum(st->lineNum);
-
-    CompiledCode code;
-    int ret = compileImpl(st, std::move(lexer), e, code);
-    if(!code) {
-        return ret;
-    }
-    return evalCode(st, code, e);
+    return evalScript(*st, std::move(lexer), e);
 }
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
@@ -641,13 +669,20 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         setScriptDir(st, dirName);
         free(real);
     }
+    return evalScript(*st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp), e);
+}
 
+int DSState_loadModule(DSState *st, const char *fileName,
+                       const char *varName, unsigned short option, DSError *e) {
     CompiledCode code;
-    int ret = compileImpl(st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp), e, code);
-    if(!code) {
-        return ret;
+    std::string line = "source ";
+    line += fileName;
+    if(varName != nullptr) {
+        line += " as ";
+        line += varName;
     }
-    return evalCode(st, code, e);
+    st->lineNum = 1;
+    return evalScript(*st, Lexer("(string)", line.c_str(), line.size()), e, option);
 }
 
 int DSState_exec(DSState *st, char *const *argv) {

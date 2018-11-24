@@ -527,11 +527,7 @@ public:
         this->visit(*node);
     }
 
-    CompiledCode finalize(unsigned char maxLocalSize) {
-        this->curBuilder().emit8(5, maxLocalSize);
-        this->emitIns(OpCode::HALT);
-        return this->finalizeCodeBuilder("");
-    }
+    CompiledCode finalize();
 
     void enterModule(const SourceInfo &srcInfo) {
         this->initCodeBuilder(CodeKind::TOPLEVEL, srcInfo, 0);

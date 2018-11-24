@@ -217,13 +217,6 @@ struct DSState {
         return typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
     }
 
-    /**
-     * abort symbol table and TypePool when error happened
-     */
-    void recover(bool abortType = true) {
-        this->symbolTable.abort(abortType);
-    }
-
     const DSValue &getThrownObject() const {
         return this->thrownObject;
     }

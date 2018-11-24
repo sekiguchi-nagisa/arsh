@@ -227,6 +227,31 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
  */
 int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
 
+
+/* for module loading option */
+#define DS_MOD_FULLPATH      ((unsigned short) (1u << 0u))
+#define DS_MOD_IGNORE_ENOENT ((unsigned short) (1u << 1u))
+
+/**
+ * open file as module. if e is not null, set error info.
+ * before evaluation reset line number.
+ * @param st
+ * not null.
+ * @param fileName
+ * not null
+ * @param varName
+ * if null, treat as globally imported module.
+ * @param option
+ * @param e
+ * may be null
+ * @return
+ * exit status of most recently executed command(include exit).
+ * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
+ * if flleName is already loaded module, return always 0 and do nothing.
+ */
+int DSState_loadModule(DSState *st, const char *fileName,
+                       const char *varName, unsigned short option, DSError *e);
+
 /**
  * execute builtin command.
  * @param st
