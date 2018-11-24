@@ -422,11 +422,12 @@ private:
      * @param scriptDir
      * may be null
      * @param modPath
+     * must be applied tilde expansion
      * @param filePtr
      * write resolved file pointer
      * @return
      */
-    ModResult load(const char *scriptDir, const char *modPath, FilePtr &filePtr);
+    ModResult load(const char *scriptDir, const std::string &modPath, FilePtr &filePtr);
 };
 
 
@@ -497,6 +498,7 @@ public:
      * may be null
      * @param modPath
      * @param filePtr
+     * if module loading failed, will be null
      * @return
      */
     ModResult tryToLoadModule(const char *scriptDir, const char *modPath, FilePtr &filePtr);

@@ -210,6 +210,8 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
  * @return
  * exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
+ * if fileName is already loaded file, return 1.
+ * if flleName is already loaded module, return always 0 and do nothing.
  */
 int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
 

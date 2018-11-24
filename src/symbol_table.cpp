@@ -266,24 +266,10 @@ void ModuleLoader::abort() {
     this->modIDCount = this->oldIDCount;
 }
 
-std::string toFullModPath(const char *scriptDir, const char *modPath) {
-    std::string str = modPath;
-    expandTilde(str);
-    if(!str.empty() && str[0] == '~') {
-        std::string tmp = "./";
-        tmp += str;
-        str = tmp;
-    }
-    str = expandDots(scriptDir, str.c_str());
-    return str;
-}
-
-ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr &filePtr) {
-    assert(modPath != nullptr);
-
-    std::string str = toFullModPath(scriptDir, modPath);
+ModResult ModuleLoader::load(const char *scriptDir, const std::string &modPath, FilePtr &filePtr) {
+    std::string str = expandDots(scriptDir, modPath.c_str());
     LOG(TRACE_MODULE, "\n    scriptDir: `%s'\n    modPath: `%s'\n    fullPath: `%s'",
-                       (scriptDir == nullptr ? "" : scriptDir), modPath, str.c_str());
+                       (scriptDir == nullptr ? "" : scriptDir), modPath.c_str(), str.c_str());
 
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
     if(!pair.second) {
@@ -302,6 +288,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
         return ModLoadingError::UNRESOLVED;
     } else if(S_ISDIR(getStMode(fileno(filePtr.get())))) {
         this->typeMap.erase(pair.first);
+        filePtr.reset();
         errno = EISDIR;
         return ModLoadingError::UNRESOLVED;
     }
@@ -392,9 +379,11 @@ static bool isFileNotFound(const ModResult &ret) {
            && errno == ENOENT;
 }
 
-ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *modPath, FilePtr &filePtr) {
+ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path, FilePtr &filePtr) {
+    std::string modPath = path;
+    expandTilde(modPath);
     auto ret = this->modLoader.load(scriptDir, modPath, filePtr);
-    if(*modPath == '/' || scriptDir == nullptr) {   // if full path, not search next path
+    if(modPath[0] == '/' || scriptDir == nullptr) {   // if full path, not search next path
         return ret;
     }
     if(strcmp(scriptDir, SYSTEM_MOD_DIR) == 0) {

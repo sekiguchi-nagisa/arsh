@@ -613,9 +613,8 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     } else {
         FilePtr filePtr;
         auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr);
-        fp = filePtr.release();
-        if(fp == nullptr) {
-            if(is<ModLoadingError>(ret) && get<ModLoadingError>(ret) != ModLoadingError::UNRESOLVED) {
+        if(is<ModLoadingError>(ret)) {
+            if(get<ModLoadingError>(ret) != ModLoadingError::UNRESOLVED) {
                 errno = ETXTBSY;
             }
             int old = errno;
@@ -630,8 +629,11 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
             }
             errno = old;
             return 1;
+        } else if(is<ModType *>(ret)) {
+            return 0;   // do nothing.
         }
-        assert(is<const char *>(ret));
+        fp = filePtr.release();
+        assert(fp != nullptr);
         char *real = strdup(get<const char *>(ret));
         const char *dirName = dirname(real);
         setScriptDir(st, dirName);

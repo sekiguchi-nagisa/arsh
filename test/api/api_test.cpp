@@ -177,7 +177,13 @@ TEST(API, scriptDir) {
     DSState_delete(&state);
 }
 
-TEST(API, load) {
+struct FileLoadTest : public ExpectOutput, public TempFileFactory {
+    void SetUp() override { this->createTemp(); }
+
+    void TearDown() override { this->deleteTemp(); }
+};
+
+TEST_F(FileLoadTest, load1) {
     auto *state = DSState_create();
     DSError e;
     int r = DSState_loadAndEval(state, "hogehuga", &e);
@@ -187,6 +193,72 @@ TEST(API, load) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
 
     DSError_release(&e);
+    DSState_delete(&state);
+}
+
+TEST_F(FileLoadTest, load2) {
+    auto *state = DSState_create();
+    DSError e;
+    int r = DSState_loadAndEval(state, ".", &e);
+    int errorNum = errno;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(EISDIR, errorNum));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
+
+    DSError_release(&e);
+    DSState_delete(&state);
+}
+
+TEST_F(FileLoadTest, load3) {
+    std::string modName = this->getTmpDirName();
+    modName += "/mod.ds";
+
+    FILE *fp = fopen(modName.c_str(), "w");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
+    fprintf(fp, "var mod_load_success = true; false");
+    fclose(fp);
+
+    auto *state = DSState_create();
+    DSError e;
+    int r = DSState_loadAndEval(state, modName.c_str(), &e);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
+    DSError_release(&e);
+
+    r = DSState_loadAndEval(state, modName.c_str(), &e);    // file is already loaded
+    int errorNum = errno;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(ETXTBSY, errorNum));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
+    DSError_release(&e);
+
+    DSState_delete(&state);
+}
+
+TEST_F(FileLoadTest, load4) {
+    std::string modName = this->getTmpDirName();
+    modName += "/mod.ds";
+
+    FILE *fp = fopen(modName.c_str(), "w");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(fp != nullptr));
+    fprintf(fp, "var mod_load_success = true; false");
+    fclose(fp);
+
+    std::string line = "source ";
+    line += modName;
+
+    auto *state = DSState_create();
+    DSError e;
+    int r = DSState_eval(state, "(string)", line.c_str(), line.size(), &e);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
+    DSError_release(&e);
+
+    r = DSState_loadAndEval(state, modName.c_str(), &e);    // file is already loaded
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
+    DSError_release(&e);
+
     DSState_delete(&state);
 }
 
