@@ -619,7 +619,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
                 errno = ETXTBSY;
             }
             int old = errno;
-            fprintf(stderr, "ydsh: %s: %s\n", sourceName, strerror(old));
+            fprintf(stderr, "ydsh: cannot open file: %s, by `%s'\n", sourceName, strerror(old));
             if(e) {
                 *e = {
                         .kind = DS_ERROR_KIND_FILE_ERROR,

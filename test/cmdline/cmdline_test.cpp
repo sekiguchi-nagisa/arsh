@@ -820,7 +820,7 @@ TEST_F(CmdlineTest2, script) {
 
     ASSERT_NO_FATAL_FAILURE(this->expect(ds(fileName.c_str(), "A"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--", fileName.c_str(), "A"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("hogehogehuga"), 1, "", "^ydsh: hogehogehuga: .+$"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("hogehogehuga"), 1, "", "^ydsh: cannot open file: hogehogehuga, by .+$"));
 
     // script dir
     fileName = this->getTmpDirName();
