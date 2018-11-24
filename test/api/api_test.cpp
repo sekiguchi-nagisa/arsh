@@ -41,7 +41,13 @@ TEST(BuiltinExecTest, case2) {
     DSState_delete(&state);
 }
 
-TEST(API, version) {
+struct APITest : public ExpectOutput, public TempFileFactory {
+    void SetUp() override { this->createTemp(); }
+
+    void TearDown() override { this->deleteTemp(); }
+};
+
+TEST_F(APITest, version) {
     SCOPED_TRACE("");
 
     DSVersion version;
@@ -52,11 +58,11 @@ TEST(API, version) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, version.patch));
 }
 
-TEST(API, config) {
+TEST_F(APITest, config) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(ydsh::SYSTEM_CONFIG_DIR, DSState_systemConfigDir()));
 }
 
-TEST(API, lineNum) {
+TEST_F(APITest, lineNum) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
@@ -75,7 +81,7 @@ TEST(API, lineNum) {
     DSState_delete(&state);
 }
 
-TEST(API, prompt) {
+TEST_F(APITest, prompt) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
@@ -118,7 +124,7 @@ static std::vector<std::string> filter(const std::vector<std::string> &v, const 
     return t;
 }
 
-TEST(API, complete) {
+TEST_F(APITest, complete) {
     SCOPED_TRACE("");
 
     // null arguments
@@ -153,7 +159,7 @@ TEST(API, complete) {
     DSState_delete(&state);
 }
 
-TEST(API, option) {
+TEST_F(APITest, option) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
@@ -168,7 +174,7 @@ TEST(API, option) {
     DSState_delete(&state);
 }
 
-TEST(API, scriptDir) {
+TEST_F(APITest, scriptDir) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
@@ -177,13 +183,7 @@ TEST(API, scriptDir) {
     DSState_delete(&state);
 }
 
-struct FileLoadTest : public ExpectOutput, public TempFileFactory {
-    void SetUp() override { this->createTemp(); }
-
-    void TearDown() override { this->deleteTemp(); }
-};
-
-TEST_F(FileLoadTest, load1) {
+TEST_F(APITest, load1) {
     auto *state = DSState_create();
     DSError e;
     int r = DSState_loadAndEval(state, "hogehuga", &e);
@@ -196,7 +196,7 @@ TEST_F(FileLoadTest, load1) {
     DSState_delete(&state);
 }
 
-TEST_F(FileLoadTest, load2) {
+TEST_F(APITest, load2) {
     auto *state = DSState_create();
     DSError e;
     int r = DSState_loadAndEval(state, ".", &e);
@@ -209,7 +209,7 @@ TEST_F(FileLoadTest, load2) {
     DSState_delete(&state);
 }
 
-TEST_F(FileLoadTest, load3) {
+TEST_F(APITest, load3) {
     std::string modName = this->getTmpDirName();
     modName += "/mod.ds";
 
@@ -235,7 +235,7 @@ TEST_F(FileLoadTest, load3) {
     DSState_delete(&state);
 }
 
-TEST_F(FileLoadTest, load4) {
+TEST_F(APITest, load4) {
     std::string modName = this->getTmpDirName();
     modName += "/mod.ds";
 
@@ -331,8 +331,6 @@ static std::vector<PIDs> decompose(const std::string &str) {
     }
     return ret;
 }
-
-struct APITest : public ExpectOutput {};
 
 TEST_F(APITest, pid1) {    // enable job control
     SCOPED_TRACE("");
