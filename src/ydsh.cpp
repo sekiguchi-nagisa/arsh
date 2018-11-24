@@ -184,7 +184,6 @@ static int compileImpl(DSState *state, Lexer &&lexer, DSError *dsError, Compiled
     if(dsError != nullptr) {
         *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .fileName = nullptr, .lineNum = 0, .name = nullptr};
     }
-    lexer.setLineNum(state->lineNum);
 
     const char *scriptDir = typeAs<String_Object>(getGlobal(*state, VAR_SCRIPT_DIR))->getValue();
 
@@ -598,8 +597,11 @@ void DSError_release(DSError *e) {
 }
 
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
+    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, data, size);
+    lexer.setLineNum(st->lineNum);
+
     CompiledCode code;
-    int ret = compileImpl(st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, data, size), e, code);
+    int ret = compileImpl(st, std::move(lexer), e, code);
     if(!code) {
         return ret;
     }

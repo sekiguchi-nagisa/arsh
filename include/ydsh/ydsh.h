@@ -54,7 +54,18 @@ DSState *DSState_createWithMode(DSExecMode mode);
  */
 void DSState_delete(DSState **st);
 
+/**
+ * affect DSState_eval() result. (not affect DSState_loadAndEval())
+ * @param st
+ * @param lineNum
+ */
 void DSState_setLineNum(DSState *st, unsigned int lineNum);
+
+/**
+ * get line number after latest evaluation or setLineNum().
+ * @param st
+ * @return
+ */
 unsigned int DSState_lineNum(const DSState *st);
 
 /**
@@ -201,6 +212,7 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
 /**
  * open file and evaluate. if e is not null, set error info.
  * set SCRIPT_DIR to dirname of fileName.
+ * before evaluation reset line number.
  * @param st
  * not null.
  * @param fileName

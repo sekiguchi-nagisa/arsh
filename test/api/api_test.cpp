@@ -62,7 +62,7 @@ TEST_F(APITest, config) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(ydsh::SYSTEM_CONFIG_DIR, DSState_systemConfigDir()));
 }
 
-TEST_F(APITest, lineNum) {
+TEST_F(APITest, lineNum1) {
     SCOPED_TRACE("");
 
     DSState *state = DSState_create();
@@ -77,6 +77,28 @@ TEST_F(APITest, lineNum) {
     str = "23";
     DSState_eval(state, nullptr, str, strlen(str), nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(50u, DSState_lineNum(state)));
+
+    DSState_delete(&state);
+}
+
+TEST_F(APITest, lineNum2) {
+    SCOPED_TRACE("");
+
+    DSState *state = DSState_create();
+
+    DSError e;
+    auto fileName1 = this->createTempFile("target1.ds", "true\ntrue\n");
+    DSState_loadAndEval(state, fileName1.c_str(), &e);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, DSState_lineNum(state)));
+    DSError_release(&e);
+
+    fileName1 = this->createTempFile("targe2.ds", "45/'de'");
+    DSState_loadAndEval(state, fileName1.c_str(), &e);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, e.lineNum));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, DSState_lineNum(state)));
+    DSError_release(&e);
 
     DSState_delete(&state);
 }
