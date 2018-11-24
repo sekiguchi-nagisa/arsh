@@ -1,3 +1,3 @@
-#$test($result = 'type', $lineNum = 3, $errorKind = 'UnresolvedMod', $status = 1, $fileName = './always_failed/mod8.ds')
+#$test($result = 'type', $lineNum = 3, $errorKind = 'NotOpenMod', $status = 1, $fileName = './always_failed/mod8.ds')
 
 source .

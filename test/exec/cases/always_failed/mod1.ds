@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 4, $errorKind = 'UnresolvedMod', $status = 1, $fileName = './always_failed/mod1.ds')
+#$test($result = 'type', $lineNum = 4, $errorKind = 'NotFoundMod', $status = 1, $fileName = './always_failed/mod1.ds')
 
 source \
   hogehuga

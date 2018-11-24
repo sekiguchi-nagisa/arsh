@@ -248,8 +248,10 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
         switch(get<ModLoadingError>(ret)) {
         case ModLoadingError::CIRCULAR:
             RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), modPath);
-        case ModLoadingError::UNRESOLVED:
-            RAISE_TC_ERROR(UnresolvedMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno));
+        case ModLoadingError::NOT_OPEN:
+            RAISE_TC_ERROR(NotOpenMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno));
+        case ModLoadingError::NOT_FOUND:
+            RAISE_TC_ERROR(NotFoundMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str());
         }
     } else if(is<const char *>(ret)) {
         this->enterModule(get<const char*>(ret), std::move(filePtr),

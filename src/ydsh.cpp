@@ -616,7 +616,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         FilePtr filePtr;
         auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr);
         if(is<ModLoadingError>(ret)) {
-            if(get<ModLoadingError>(ret) != ModLoadingError::UNRESOLVED) {
+            if(get<ModLoadingError>(ret) == ModLoadingError::CIRCULAR) {
                 errno = ETXTBSY;
             }
             int old = errno;

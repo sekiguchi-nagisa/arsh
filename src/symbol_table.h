@@ -392,7 +392,8 @@ public:
 
 enum class ModLoadingError {
     CIRCULAR,
-    UNRESOLVED,
+    NOT_OPEN,
+    NOT_FOUND,
 };
 
 using ModResult = Union<const char *, ModType *, ModLoadingError>;

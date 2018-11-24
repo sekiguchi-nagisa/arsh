@@ -285,12 +285,15 @@ ModResult ModuleLoader::load(const char *scriptDir, const std::string &modPath, 
         int old = errno;
         this->typeMap.erase(pair.first);
         errno = old;
-        return ModLoadingError::UNRESOLVED;
+        if(errno == ENOENT) {
+            return ModLoadingError::NOT_FOUND;
+        }
+        return ModLoadingError::NOT_OPEN;
     } else if(S_ISDIR(getStMode(fileno(filePtr.get())))) {
         this->typeMap.erase(pair.first);
         filePtr.reset();
         errno = EISDIR;
-        return ModLoadingError::UNRESOLVED;
+        return ModLoadingError::NOT_OPEN;
     }
     return resolvedPath;
 }
@@ -375,8 +378,7 @@ SymbolTable::SymbolTable() :
 }
 
 static bool isFileNotFound(const ModResult &ret) {
-    return is<ModLoadingError>(ret) && get<ModLoadingError>(ret) == ModLoadingError::UNRESOLVED
-           && errno == ENOENT;
+    return is<ModLoadingError>(ret) && get<ModLoadingError>(ret) == ModLoadingError::NOT_FOUND;
 }
 
 ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path, FilePtr &filePtr) {

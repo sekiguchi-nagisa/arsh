@@ -97,7 +97,7 @@ TEST_F(ModLoadTest, system) {
         exit 100
 )";
 
-    auto e = format("%s/include5.ds:2: [semantic error] cannot open module: mod4extra5.ds, by `No such file or directory'\n"
+    auto e = format("%s/include5.ds:2: [semantic error] not found module: `mod4extra5.ds'\n"
                     "source mod4extra5.ds as mod\n"
                     "       ^~~~~~~~~~~~~\n"
                     "(string):2: [note] at module import\n"
