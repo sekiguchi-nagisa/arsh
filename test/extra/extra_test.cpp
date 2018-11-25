@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include <ydsh/ydsh.h>
 #include "../test_common.h"
 #include "../../src/constant.h"
 
@@ -38,26 +37,6 @@ TEST_F(ModLoadTest, prepare) {
                       "true", SYSTEM_MOD_DIR, SYSTEM_MOD_DIR, SYSTEM_MOD_DIR);
 
     ASSERT_NO_FATAL_FAILURE(this->expect(ds(src.c_str()), 0));
-}
-
-TEST_F(ModLoadTest, api1) {
-    auto *state = DSState_create();
-    DSError e;
-    int r = DSState_loadModule(state, "mod4extra1.ds", nullptr, 0, &e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
-    DSError_release(&e);
-    DSState_delete(&state);
-}
-
-TEST_F(ModLoadTest, api2) {
-    auto *state = DSState_create();
-    DSError e;
-    int r = DSState_loadModule(state, "mod4extra1.ds", nullptr, DS_MOD_FULLPATH, &e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind));
-    DSError_release(&e);
-    DSState_delete(&state);
 }
 
 TEST_F(ModLoadTest, scriptdir) {

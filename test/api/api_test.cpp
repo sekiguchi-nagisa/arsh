@@ -325,7 +325,7 @@ TEST_F(APITest, module3) {
 TEST_F(APITest, module4) {
     auto fileName = this->createTempFile("target.ds", "var OK_LOADING = true");
 
-    int r = DSState_loadModule(this->state, fileName.c_str(), "hoge", 0, nullptr);
+    int r = DSState_loadModule(this->state, fileName.c_str(), "hoge", DS_MOD_FULLPATH, nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
     std::string src = "assert $hoge.OK_LOADING";
     r = DSState_eval(this->state, "(string)", src.c_str(), src.size(), nullptr);
