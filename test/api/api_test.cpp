@@ -42,9 +42,17 @@ TEST(BuiltinExecTest, case2) {
 }
 
 struct APITest : public ExpectOutput, public TempFileFactory {
-    void SetUp() override { this->createTemp(); }
+    DSState *state{nullptr};
 
-    void TearDown() override { this->deleteTemp(); }
+    void SetUp() override {
+        this->createTemp();
+        this->state = DSState_create();
+    }
+
+    void TearDown() override {
+        this->deleteTemp();
+        DSState_delete(&this->state);
+    }
 };
 
 TEST_F(APITest, version) {
@@ -65,55 +73,44 @@ TEST_F(APITest, config) {
 TEST_F(APITest, lineNum1) {
     SCOPED_TRACE("");
 
-    DSState *state = DSState_create();
-
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, DSState_lineNum(state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, DSState_lineNum(this->state)));
 
     const char *str = "12 + 32\n $true\n";
-    DSState_eval(state, nullptr, str, strlen(str), nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_lineNum(state)));
+    DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_lineNum(this->state)));
 
-    DSState_setLineNum(state, 49);
+    DSState_setLineNum(this->state, 49);
     str = "23";
-    DSState_eval(state, nullptr, str, strlen(str), nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(50u, DSState_lineNum(state)));
-
-    DSState_delete(&state);
+    DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(50u, DSState_lineNum(this->state)));
 }
 
 TEST_F(APITest, lineNum2) {
     SCOPED_TRACE("");
 
-    DSState *state = DSState_create();
-
     DSError e;
     auto fileName1 = this->createTempFile("target1.ds", "true\ntrue\n");
-    DSState_loadAndEval(state, fileName1.c_str(), &e);
+    DSState_loadAndEval(this->state, fileName1.c_str(), &e);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, DSState_lineNum(state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, DSState_lineNum(this->state)));
     DSError_release(&e);
 
     fileName1 = this->createTempFile("targe2.ds", "45/'de'");
-    DSState_loadAndEval(state, fileName1.c_str(), &e);
+    DSState_loadAndEval(this->state, fileName1.c_str(), &e);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, e.lineNum));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, DSState_lineNum(state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, DSState_lineNum(this->state)));
     DSError_release(&e);
-
-    DSState_delete(&state);
 }
 
 TEST_F(APITest, prompt) {
     SCOPED_TRACE("");
 
-    DSState *state = DSState_create();
     const char *str = "$PS1 = 'hello>'; $PS2 = 'second>'";
-    DSState_eval(state, nullptr, str, strlen(str), nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(state, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSState_prompt(state, 2)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSState_prompt(state, 5)));
-
-    DSState_delete(&state);
+    DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(this->state, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSState_prompt(this->state, 2)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSState_prompt(this->state, 5)));
 }
 
 static std::vector<std::string> tilde() {
@@ -153,9 +150,7 @@ TEST_F(APITest, complete) {
     auto *c = DSState_complete(nullptr, nullptr, 1); // do nothing
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c == nullptr));
 
-    DSState *state = DSState_create();
-
-    c = DSState_complete(state, "echo ~", 6);
+    c = DSState_complete(this->state, "echo ~", 6);
     unsigned int size = DSCandidates_size(c);
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(size > 0));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, DSCandidates_get(c, size)));
@@ -169,7 +164,7 @@ TEST_F(APITest, complete) {
     DSCandidates_release(&c);
 
 
-    c = DSState_complete(state, "echo ~r", 7);
+    c = DSState_complete(this->state, "echo ~r", 7);
     size = DSCandidates_size(c);
     expect = filter(expect, "~r");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), size));
@@ -177,78 +172,80 @@ TEST_F(APITest, complete) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), DSCandidates_get(c, i)));
     }
     DSCandidates_release(&c);
-
-    DSState_delete(&state);
 }
 
 TEST_F(APITest, option) {
     SCOPED_TRACE("");
 
-    DSState *state = DSState_create();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(this->state)));
 
-    DSState_setOption(state, DS_OPTION_HISTORY);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_HISTORY | DS_OPTION_ASSERT, DSState_option(state)));
+    DSState_setOption(this->state, DS_OPTION_HISTORY);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_HISTORY | DS_OPTION_ASSERT, DSState_option(this->state)));
 
-    DSState_unsetOption(state, DS_OPTION_ASSERT);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_HISTORY, DSState_option(state)));
-
-    DSState_delete(&state);
+    DSState_unsetOption(this->state, DS_OPTION_ASSERT);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_HISTORY, DSState_option(this->state)));
 }
 
 TEST_F(APITest, scriptDir) {
     SCOPED_TRACE("");
 
-    DSState *state = DSState_create();
-    int r = DSState_setScriptDir(state, "hfarefoiaji vfd");
+    int r = DSState_setScriptDir(this->state, "hfarefoiaji vfd");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
-    DSState_delete(&state);
+}
+
+TEST_F(APITest, pid) {
+    SCOPED_TRACE("");
+
+    pid_t pid = getpid();
+    std::string src("assert($$ == ");
+    src += std::to_string(pid);
+    src += ")";
+
+    DSError e;
+    int s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), &e);
+    auto kind = e.kind;
+    DSError_release(&e);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, kind));
 }
 
 TEST_F(APITest, load1) {
-    auto *state = DSState_create();
     DSError e;
-    int r = DSState_loadAndEval(state, "hogehuga", &e);
+    int r = DSState_loadAndEval(this->state, "hogehuga", &e);
     int errorNum = errno;
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(ENOENT, errorNum));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
 
     DSError_release(&e);
-    DSState_delete(&state);
 }
 
 TEST_F(APITest, load2) {
-    auto *state = DSState_create();
     DSError e;
-    int r = DSState_loadAndEval(state, ".", &e);
+    int r = DSState_loadAndEval(this->state, ".", &e);
     int errorNum = errno;
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(EISDIR, errorNum));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
 
     DSError_release(&e);
-    DSState_delete(&state);
 }
 
 TEST_F(APITest, load3) {
     auto modName = this->createTempFile("mod.ds", "var mod_load_success = true; false");
 
-    auto *state = DSState_create();
     DSError e;
-    int r = DSState_loadAndEval(state, modName.c_str(), &e);
+    int r = DSState_loadAndEval(this->state, modName.c_str(), &e);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
     DSError_release(&e);
 
-    r = DSState_loadAndEval(state, modName.c_str(), &e);    // file is already loaded
+    r = DSState_loadAndEval(this->state, modName.c_str(), &e);    // file is already loaded
     int errorNum = errno;
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(ETXTBSY, errorNum));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
     DSError_release(&e);
-
-    DSState_delete(&state);
 }
 
 TEST_F(APITest, load4) {
@@ -257,19 +254,16 @@ TEST_F(APITest, load4) {
     std::string line = "source ";
     line += modName;
 
-    auto *state = DSState_create();
     DSError e;
-    int r = DSState_eval(state, "(string)", line.c_str(), line.size(), &e);
+    int r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), &e);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
     DSError_release(&e);
 
-    r = DSState_loadAndEval(state, modName.c_str(), &e);    // file is already loaded
+    r = DSState_loadAndEval(this->state, modName.c_str(), &e);    // file is already loaded
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
     DSError_release(&e);
-
-    DSState_delete(&state);
 }
 
 struct Executor {
@@ -342,7 +336,9 @@ static std::vector<PIDs> decompose(const std::string &str) {
     return ret;
 }
 
-TEST_F(APITest, pid1) {    // enable job control
+struct JobTest : public ExpectOutput {};
+
+TEST_F(JobTest, pid1) {    // enable job control
     SCOPED_TRACE("");
 
     // normal
@@ -406,7 +402,7 @@ TEST_F(APITest, pid1) {    // enable job control
     ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pgid, pids[1].pgid));
 }
 
-TEST_F(APITest, pid2) {    // disable job control
+TEST_F(JobTest, pid2) {    // disable job control
     SCOPED_TRACE("");
 
     // normal
@@ -458,7 +454,7 @@ TEST_F(APITest, pid2) {    // disable job control
 #undef EXEC
 #define EXEC(S) exec(std::string(S)).waitAndGetResult(true)
 
-TEST_F(APITest, jobctrl1) {
+TEST_F(JobTest, jobctrl1) {
     SCOPED_TRACE("");
 
     // invalid
@@ -493,7 +489,7 @@ TEST_F(APITest, jobctrl1) {
     ASSERT_NO_FATAL_FAILURE(this->expect(result, 18));
 }
 
-TEST_F(APITest, jobctrl2) {
+TEST_F(JobTest, jobctrl2) {
     SCOPED_TRACE("");
 
     // invalid
@@ -536,25 +532,6 @@ TEST_F(APITest, jobctrl2) {
     result = EXEC(str);
     ASSERT_NO_FATAL_FAILURE(
             this->expect(result, 0, WaitStatus::EXITED, "", "ydsh: bg: %2: no such job"));
-}
-
-TEST(PID, case1) {
-    SCOPED_TRACE("");
-
-    pid_t pid = getpid();
-    DSState *state = DSState_create();
-    std::string src("assert($$ == ");
-    src += std::to_string(pid);
-    src += ")";
-
-    DSError e;
-    int s = DSState_eval(state, nullptr, src.c_str(), src.size(), &e);
-    auto kind = e.kind;
-    DSError_release(&e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, kind));
-
-    DSState_delete(&state);
 }
 
 int main(int argc, char **argv) {
