@@ -30,7 +30,7 @@ FrontEnd::FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTabl
         scriptDir(scriptDir), lexer(std::move(lexer)), mode(mode),
         parser(this->lexer), checker(symbolTable, toplevel),
         uastDumper(target.files[DS_DUMP_KIND_UAST].get(), symbolTable),
-        astDumper(target.files[DS_DUMP_KIND_AST].get(), symbolTable), ignoreModNotFound(ignore) {
+        astDumper(target.files[DS_DUMP_KIND_AST].get(), symbolTable), ignoreNotFoundMod(ignore) {
 }
 
 #define EACH_TERM_COLOR(C) \
@@ -114,11 +114,18 @@ static void formatErrorLine(ColorController cc, const Lexer &lexer, Token errorT
 
 void printError(const Lexer &lex, const char *kind, Token token,
                ColorController cc, TermColor color, const char *message) {
-    unsigned int lineNum = lex.getSourceInfo()->getLineNum(token.pos);
-    fprintf(stderr, "%s:%d: ", lex.getSourceInfo()->getSourceName().c_str(), lineNum);
-    fprintf(stderr, "%s%s[%s]%s %s\n",
+    unsigned lineNumOffset = lex.getSourceInfo()->getLineNumOffset();
+    fprintf(stderr, "%s:", lex.getSourceInfo()->getSourceName().c_str());
+    if(lineNumOffset > 0) {
+        unsigned int lineNum = lex.getSourceInfo()->getLineNum(token.pos);
+        fprintf(stderr, "%d:", lineNum);
+    }
+    fprintf(stderr, " %s%s[%s]%s %s\n",
             cc(color), cc(TermColor::Bold), kind, cc(TermColor::Reset), message);
-    formatErrorLine(cc, lex, token);
+
+    if(lineNumOffset > 0) {
+        formatErrorLine(cc, lex, token);
+    }
 }
 
 DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,

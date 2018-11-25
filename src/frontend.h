@@ -70,7 +70,7 @@ private:
     NodeDumper uastDumper;
     NodeDumper astDumper;
 
-    bool ignoreModNotFound; // ignore 'NotFoundMod' error
+    bool ignoreNotFoundMod; // ignore 'NotFoundMod' error
 
 public:
     FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTable,
@@ -149,7 +149,7 @@ private:
     }
 
     bool suppressError(const char *kind) const {
-        return this->ignoreModNotFound && strcmp(kind, NotFoundMod::kind) == 0;
+        return this->ignoreNotFoundMod && strcmp(kind, NotFoundMod::kind) == 0;
     }
 };
 

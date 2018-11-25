@@ -683,8 +683,10 @@ int DSState_loadModule(DSState *st, const char *fileName,
         line += " as ";
         line += varName;
     }
-    st->lineNum = 1;
-    return evalScript(*st, Lexer("(string)", line.c_str(), line.size()), e, option);
+    st->lineNum = 0;
+    Lexer lexer("ydsh", line.c_str(), line.size());
+    lexer.setLineNum(st->lineNum);
+    return evalScript(*st, std::move(lexer), e, option);
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
