@@ -175,12 +175,12 @@ typedef struct {
 
     /**
      * indicate error name.
-     * if DS_ERROR_KIND_FILE, set errno
+     * if DS_ERROR_KIND_FILE, strerror()
      * if DS_ERROR_KIND_PARSE_ERROR or DS_ERROR_KIND_TYPE_ERROR, error kind.
      * if DS_ERROR_KIND_RUNTIME_ERROR, raised type name.
      * otherwise, null
      */
-    const char *name;
+    char *name;
 } DSError;
 
 /**

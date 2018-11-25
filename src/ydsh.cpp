@@ -138,7 +138,7 @@ static DSError handleRuntimeError(DSState &state) {
             .kind = kind,
             .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
             .lineNum = errorLineNum,
-            .name = kind == DS_ERROR_KIND_RUNTIME_ERROR ? state.symbolTable.getTypeName(errorType) : ""
+            .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? state.symbolTable.getTypeName(errorType) : "")
     };
 }
 
@@ -627,6 +627,8 @@ void DSError_release(DSError *e) {
     if(e != nullptr) {
         free(e->fileName);
         e->fileName = nullptr;
+        free(e->name);
+        e->name = nullptr;
     }
 }
 
@@ -654,7 +656,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
                         .kind = DS_ERROR_KIND_FILE_ERROR,
                         .fileName = strdup(sourceName),
                         .lineNum = 0,
-                        .name = ""
+                        .name = strdup(strerror(old))
                 };
             }
             errno = old;

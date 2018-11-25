@@ -146,7 +146,7 @@ DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
             .kind = type,
             .fileName = strdup(sourceName),
             .lineNum = errorLineNum,
-            .name = errorKind
+            .name = strdup(errorKind)
     };
 }
 
