@@ -30,34 +30,16 @@ using namespace ydsh;
 void exec_interactive(DSState *dsState);
 
 static void loadRC(DSState *state, const char *rcfile) {
-    std::string path;
-    if(rcfile != nullptr) {
-        path += rcfile;
-    } else {
-        path += getenv("HOME");
-        path += "/.ydshrc";
+    if(rcfile == nullptr) {
+        rcfile = "~/.ydshrc";
     }
-
-    FILE *fp = fopen(path.c_str(), "rb");
-    if(fp == nullptr) {
-        if(errno != ENOENT) {
-            fprintf(stderr, "ydsh: %s: %s\n", path.c_str(), strerror(errno));
-        }
-        return; // not read
-    }
-    fclose(fp);
-
-    std::string line = "source ";
-    line += path;
-    line += '\n';
 
     DSError e{};
-    int ret = DSState_eval(state, nullptr, line.c_str(), line.size(), &e);
-    int kind = e.kind;
-    DSError_release(&e);
-    if(kind != DS_ERROR_KIND_SUCCESS) {
+    int ret = DSState_loadModule(state, rcfile, nullptr, DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
+    if(e.kind != DS_ERROR_KIND_SUCCESS && strcmp(e.name, "NotFoundMod") != 0) {
         exit(ret);
     }
+    DSError_release(&e);
 
     // reset line num
     DSState_setLineNum(state, 1);
