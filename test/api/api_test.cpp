@@ -266,6 +266,72 @@ TEST_F(APITest, load4) {
     DSError_release(&e);
 }
 
+template <typename Func>
+static Output invoke(Func func) {
+    IOConfig config;
+    config.out = IOConfig::PIPE;
+    config.err = IOConfig::PIPE;
+
+    return ProcBuilder::spawn(config, [func]() {
+        return func();
+    }).waitAndGetResult(true);
+}
+
+TEST_F(APITest, module1) {
+    DSError e;
+    int r = DSState_loadModule(this->state, "fhuahfuiefer", "12", 0, &e);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, e.kind));
+    DSError_release(&e);
+
+    auto ret = invoke([&]{
+        return DSState_loadModule(this->state, "fhjreuhfurie", "34", 0, nullptr);
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 1, WaitStatus::EXITED, "",
+            "ydsh: [syntax error] invalid token, expected: <Identifier>"));
+}
+
+TEST_F(APITest, module2) {
+    auto ret = invoke([&]{
+        return DSState_loadModule(this->state, "fhjreuhfurie", "hoge", 0, nullptr);
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 1, WaitStatus::EXITED, "",
+                                         "ydsh: [semantic error] not found module: `fhjreuhfurie'"));
+
+    DSError e;
+    int r = DSState_loadModule(this->state, "fhuahfuiefer", "hoge", 0, &e);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("NotFoundMod", e.name));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, e.lineNum));
+    DSError_release(&e);
+
+    ret = invoke([&]{
+        return DSState_loadModule(this->state, "fhjreuhfurie", "hoge", DS_MOD_IGNORE_ENOENT, nullptr);
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 1, WaitStatus::EXITED));
+}
+
+TEST_F(APITest, module3) {
+    auto fileName = this->createTempFile("target.ds", "var OK_LOADING = true");
+
+    int r = DSState_loadModule(this->state, fileName.c_str(), nullptr, 0, nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+    std::string src = "assert $OK_LOADING";
+    r = DSState_eval(this->state, "(string)", src.c_str(), src.size(), nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+}
+
+TEST_F(APITest, module4) {
+    auto fileName = this->createTempFile("target.ds", "var OK_LOADING = true");
+
+    int r = DSState_loadModule(this->state, fileName.c_str(), "hoge", 0, nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+    std::string src = "assert $hoge.OK_LOADING";
+    r = DSState_eval(this->state, "(string)", src.c_str(), src.size(), nullptr);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+}
+
 struct Executor {
     std::string str;
     bool jobctrl;
