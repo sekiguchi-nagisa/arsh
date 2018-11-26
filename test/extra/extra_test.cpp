@@ -1,8 +1,11 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
+#include <dirent.h>
+
 #include "../test_common.h"
 #include "../../src/constant.h"
+#include "../../src/misc/fatal.h"
 
 
 #ifndef BIN_PATH
@@ -12,6 +15,12 @@
 #ifndef EXTRA_TEST_DIR
 #error require EXTRA_TEST_DIR
 #endif
+
+/**
+ * extra test cases dependent on system directory structure
+ * and have side effect on directory structures
+ */
+
 
 using namespace ydsh;
 
@@ -104,6 +113,71 @@ TEST_F(ModLoadTest, system) {
                     "        source include5.ds\n"
                     "               ^~~~~~~~~~~\n", SYSTEM_MOD_DIR);
     ASSERT_NO_FATAL_FAILURE(this->expect(ds(src), 1, "", e.c_str()));
+}
+
+static ProcHandle invoke() {
+    termios term;
+    xcfmakesane(term);
+    return ProcBuilder{BIN_PATH}
+            .setIn(IOConfig::PTY)
+            .setOut(IOConfig::PTY)
+            .setErr(IOConfig::PIPE)
+            .setTerm(term)
+            .addEnv("TERM", "xterm")();
+}
+
+class FileFactory {
+private:
+    std::string name;
+
+public:
+    /**
+     *
+     * @param name
+     * must be full path
+     * @param content
+     */
+    FileFactory(const char *name, const std::string &content) : name(name) {
+        FILE *fp = fopen(this->name.c_str(), "w");
+        fwrite(content.c_str(), sizeof(char), content.size(), fp);
+        fflush(fp);
+        fclose(fp);
+    }
+
+    ~FileFactory() {
+        remove(this->name.c_str());
+    }
+
+    const std::string &getFileName() const {
+        return this->name;
+    }
+};
+
+static std::string getHOME() {
+    std::string str;
+    struct passwd *pw = getpwuid(getuid());
+    if(pw == nullptr) {
+        fatal_perror("getpwuid failed");
+    }
+    str = pw->pw_dir;
+    return str;
+}
+
+static void write(ProcHandle &handle, const char *text) {
+    int r = write(this->handle.in(), text, strlen(text));
+    (void) r;
+    fsync(this->handle.in());
+}
+
+TEST_F(ModLoadTest, rcfile1) {
+    std::string rcpath = getHOME();
+    rcpath += "/.ydshrc";
+    FileFactory fileFactory(rcpath.c_str(), "var RC_VAR = 'rcfile: ~/.ydshrc'");
+
+    auto handle = invoke();
+    write(handle, "assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23");
+    auto ret = handle.waitAndGetResult(false);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 23, WaitStatus::EXITED));
 }
 
 int main(int argc, char **argv) {
