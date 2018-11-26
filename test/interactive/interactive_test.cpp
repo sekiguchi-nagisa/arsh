@@ -288,6 +288,12 @@ TEST_F(InteractiveTest, rc3) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
 }
 
+TEST_F(InteractiveTest, rc4) {
+    this->invoke("--quiet", "--rcfile", ".");
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "",
+            "ydsh: [semantic error] cannot open module: `.', by `Is a directory'\n"));
+}
+
 TEST_F(InteractiveTest, termHook1) {
     this->invoke("--quiet", "--norc");
 
