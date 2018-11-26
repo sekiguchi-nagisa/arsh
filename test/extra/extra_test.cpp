@@ -166,9 +166,9 @@ static std::string getHOME() {
 }
 
 static void write(ProcHandle &handle, const char *text) {
-    int r = write(this->handle.in(), text, strlen(text));
+    int r = write(handle.in(), text, strlen(text));
     (void) r;
-    fsync(this->handle.in());
+    fsync(handle.in());
 }
 
 TEST_F(ModLoadTest, rcfile1) {
