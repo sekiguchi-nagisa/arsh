@@ -2,6 +2,8 @@
 #include "gmock/gmock.h"
 
 #include <dirent.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include "../test_common.h"
 #include "../../src/constant.h"
