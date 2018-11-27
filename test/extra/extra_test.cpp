@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include <config.h>
 #include "../test_common.h"
 #include "../../src/constant.h"
 #include "../../src/misc/fatal.h"
@@ -117,17 +118,6 @@ TEST_F(ModLoadTest, system) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds(src), 1, "", e.c_str()));
 }
 
-static ProcHandle invoke() {
-    termios term;
-    xcfmakesane(term);
-    return ProcBuilder{BIN_PATH}
-            .setIn(IOConfig::PTY)
-            .setOut(IOConfig::PTY)
-            .setErr(IOConfig::PIPE)
-            .setTerm(term)
-            .addEnv("TERM", "xterm")();
-}
-
 class FileFactory {
 private:
     std::string name;
@@ -155,6 +145,10 @@ public:
     }
 };
 
+struct RCTest : public InteractiveBase {
+    RCTest() : InteractiveBase(BIN_PATH, ".") {}
+};
+
 static std::string getHOME() {
     std::string str;
     struct passwd *pw = getpwuid(getuid());
@@ -165,21 +159,20 @@ static std::string getHOME() {
     return str;
 }
 
-static void write(ProcHandle &handle, const char *text) {
-    int r = write(handle.in(), text, strlen(text));
-    (void) r;
-    fsync(handle.in());
-}
+#define XSTR(v) #v
+#define STR(v) XSTR(v)
 
-TEST_F(ModLoadTest, rcfile1) {
+#define PROMPT "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ "
+
+TEST_F(RCTest, rcfile1) {
     std::string rcpath = getHOME();
     rcpath += "/.ydshrc";
     FileFactory fileFactory(rcpath.c_str(), "var RC_VAR = 'rcfile: ~/.ydshrc'");
 
-    auto handle = invoke();
-    write(handle, "assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23");
-    auto ret = handle.waitAndGetResult(false);
-    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 23, WaitStatus::EXITED));
+    this->invoke("--quiet");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(23, WaitStatus::EXITED));
 }
 
 int main(int argc, char **argv) {
