@@ -171,7 +171,7 @@ TEST_F(RCTest, rcfile1) {
 
     this->invoke("--quiet");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23"));
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(23, WaitStatus::EXITED));
 }
 
