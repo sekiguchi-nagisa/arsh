@@ -47,7 +47,7 @@ JSON toJSON(const Range &range) {
     return {
         {"start", toJSON(range.start)},
         {"end", toJSON(range.end)}
-    }
+    };
 }
 
 // ######################

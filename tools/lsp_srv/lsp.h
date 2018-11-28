@@ -66,11 +66,11 @@ enum class DiagnosticSeverity {
 struct DiagnosticRelatedInformation {
     Location location;
     std::string message;
-}
+};
 
 void fromJSON(JSON &&json, DiagnosticRelatedInformation &info);
 JSON toJSON(const DiagnosticRelatedInformation &info);
 
-}; // namespace lsp
+} // namespace lsp
 
 #endif //TOOLS_LSP_H

@@ -172,7 +172,7 @@ public:
 
 private:
     /**
-     * send json text
+     * send whole json text
      * @param size
      * size of data
      * @param data
@@ -180,6 +180,12 @@ private:
      * sent size
      */
     virtual int send(unsigned int size, const char *data) = 0;
+
+    /**
+     * read header and get total size of json text
+     * @return
+     */
+    virtual int recvSize() = 0;
 
     /**
      * receive chunk of json text
@@ -190,8 +196,6 @@ private:
      * received size
      */
     virtual int recv(unsigned int size, char *data) = 0;
-
-    virtual bool isEnd() = 0;
 };
 
 using MethodResult = ydsh::Result<JSON, ResponseError>;

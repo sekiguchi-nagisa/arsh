@@ -129,13 +129,20 @@ void Transport::reply(JSON &&id, ResponseError &&error) {
 
 bool Transport::dispatch(rpc::Handler &handler) {
     RequestParser parser;
-    while(!this->isEnd()) {
+    int dataSize = this->recvSize();
+    if(dataSize < 0) {
+        this->logger(ydsh::LogLevel::ERROR, "may be broken or empty message");
+        return false;
+    }
+    for(int size = 0; size < dataSize;) {
         char data[256];
         int recvSize = this->recv(ydsh::arraySize(data), data);
         if(recvSize < 0) {
-            fatal("message receiving failed!!");
+            this->logger(ydsh::LogLevel::ERROR, "message receiving failed");
+            return false;
         }
         parser.append(data, static_cast<unsigned int>(recvSize));
+        size += recvSize;
     }
     auto req = parser();
     if(req.isError()) {

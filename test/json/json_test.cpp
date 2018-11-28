@@ -453,8 +453,8 @@ struct StringTransport : public rpc::Transport {
         return count;
     }
 
-    bool isEnd() override {
-        return this->cursor == this->inStr.size();
+    int recvSize() override {
+        return this->inStr.size();
     }
 };
 
