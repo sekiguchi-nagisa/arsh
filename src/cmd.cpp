@@ -1498,7 +1498,7 @@ struct ulimitOp {
     const char *name;
 
     void print(flag8_set_t limOpt, unsigned int maxNameLen) const {
-        rlimit limit;
+        rlimit limit{};
         getrlimit(this->resource, &limit);
 
         if(maxNameLen) {
@@ -1696,7 +1696,7 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
     for(unsigned int index = 0; index < table.entries.size(); index++) {
         if(table.entries[index]) {
             const auto &op = ulimitOps[index];
-            rlimit limit;
+            rlimit limit{};
             getrlimit(op.resource, &limit);
             rlim_t value = table.entries[index].getValue(limit);
             if(hasFlag(limOpt, RLIM_SOFT)) {
