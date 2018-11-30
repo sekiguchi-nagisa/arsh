@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef TOOLS_DESCLEXER_H
-#define TOOLS_DESCLEXER_H
+#ifndef YDSH_TOOLS_DESCLEXER_H
+#define YDSH_TOOLS_DESCLEXER_H
 
 #include <ostream>
 
@@ -68,4 +68,4 @@ inline bool isInvalidToken(DescTokenKind kind) {
 
 const char *toString(DescTokenKind kind);
 
-#endif //TOOLS_DESCLEXER_H
+#endif //YDSH_TOOLS_DESCLEXER_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef TOOLS_VALIDATE_H
-#define TOOLS_VALIDATE_H
+#ifndef YDSH_TOOLS_VALIDATE_H
+#define YDSH_TOOLS_VALIDATE_H
 
 #include <unordered_map>
 
@@ -223,4 +223,4 @@ public:
 
 } // namespace json
 
-#endif //TOOLS_VALIDATE_H
+#endif //YDSH_TOOLS_VALIDATE_H

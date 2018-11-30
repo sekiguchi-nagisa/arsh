@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_DIRECTIVE_H
-#define YDSH_DIRECTIVE_H
+#ifndef YDSH_TOOLS_DIRECTIVE_H
+#define YDSH_TOOLS_DIRECTIVE_H
 
 #include <vector>
 #include <iostream>
@@ -152,4 +152,4 @@ public:
 } // namespace ydsh
 
 
-#endif //YDSH_DIRECTIVE_H
+#endif //YDSH_TOOLS_DIRECTIVE_H

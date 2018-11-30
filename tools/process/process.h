@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_PROCESS_H
-#define YDSH_PROCESS_H
+#ifndef YDSH_TOOLS_PROCESS_H
+#define YDSH_TOOLS_PROCESS_H
 
 #include <termios.h>
 
@@ -329,4 +329,4 @@ private:
 
 } // namespace process
 
-#endif //YDSH_PROCESS_H
+#endif //YDSH_TOOLS_PROCESS_H

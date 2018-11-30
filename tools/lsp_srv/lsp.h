@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef TOOLS_LSP_H
-#define TOOLS_LSP_H
+#ifndef YDSH_TOOLS_LSP_H
+#define YDSH_TOOLS_LSP_H
 
 #include "../json/json.h"
 
@@ -73,4 +73,4 @@ JSON toJSON(const DiagnosticRelatedInformation &info);
 
 } // namespace lsp
 
-#endif //TOOLS_LSP_H
+#endif //YDSH_TOOLS_LSP_H

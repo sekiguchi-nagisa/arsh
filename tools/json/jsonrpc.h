@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef TOOLS_JSONRPC_H
-#define TOOLS_JSONRPC_H
+#ifndef YDSH_TOOLS_JSONRPC_H
+#define YDSH_TOOLS_JSONRPC_H
 
 #include <functional>
 
@@ -256,4 +256,4 @@ public:
 
 } // namespace rpc
 
-#endif //TOOLS_JSONRPC_H
+#endif //YDSH_TOOLS_JSONRPC_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef TOOLS_JSON_H
-#define TOOLS_JSON_H
+#ifndef YDSH_TOOLS_JSON_H
+#define YDSH_TOOLS_JSON_H
 
 #include <vector>
 #include <memory>
