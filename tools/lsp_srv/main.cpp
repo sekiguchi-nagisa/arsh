@@ -30,6 +30,8 @@ struct Info4 {
 
 
 int main() {
+    using namespace ydsh;
+
     showSize<json::JSON>("JSON");
     showSize<json::Array>("Array");
     showSize<json::Object>("Object");

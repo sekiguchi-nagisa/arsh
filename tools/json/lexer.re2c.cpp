@@ -27,6 +27,7 @@
 
 #define ERROR() do { RET(INVALID); } while(false)
 
+namespace ydsh {
 namespace json {
 
 JSONTokenKind Lexer::nextToken(json::Token &token) {
@@ -85,3 +86,4 @@ JSONTokenKind Lexer::nextToken(json::Token &token) {
 }
 
 } // namespace json
+} // namespace ydsh

@@ -22,6 +22,7 @@
 #include <misc/hash.hpp>
 #include "json.h"
 
+namespace ydsh {
 namespace json {
 
 class Validator;
@@ -222,5 +223,6 @@ public:
 };
 
 } // namespace json
+} // namespace ydsh
 
 #endif //YDSH_TOOLS_VALIDATE_H

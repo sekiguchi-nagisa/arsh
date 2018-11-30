@@ -22,6 +22,7 @@
 #include <misc/logger_base.hpp>
 #include "validate.h"
 
+namespace ydsh {
 namespace rpc {
 
 using namespace json;
@@ -46,11 +47,11 @@ struct ResponseError {
 };
 
 // Error Code definition
-constexpr int ParseError     = -32700;
+constexpr int ParseError = -32700;
 constexpr int InvalidRequest = -32600;
 constexpr int MethodNotFound = -32601;
-constexpr int InvalidParams  = -32602;
-constexpr int InternalError  = -32603;
+constexpr int InvalidParams = -32602;
+constexpr int InternalError = -32603;
 
 
 struct Request {
@@ -71,7 +72,7 @@ struct Request {
      * @param params
      */
     Request(JSON &&id, std::string &&method, JSON &&params) :
-        kind(SUCCESS), id(std::move(id)), method(std::move(method)), params(std::move(params)) {}
+            kind(SUCCESS), id(std::move(id)), method(std::move(method)), params(std::move(params)) {}
 
     Request(std::string &&method, JSON &&params) : Request(JSON(), std::move(method), std::move(params)) {}
 
@@ -82,7 +83,7 @@ struct Request {
      * @param error
      */
     Request(Kind kind, std::string &&error, JSON &&data) :
-        kind(kind), method(std::move(error)), params(std::move(data)) {}
+            kind(kind), method(std::move(error)), params(std::move(data)) {}
 
     bool isError() const {
         return this->kind != SUCCESS;
@@ -230,9 +231,9 @@ public:
 
     void bind(const std::string &name, const InterfacePtr &paramIface, Notification &&func);
 
-    template <typename State, typename Param>
+    template<typename State, typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
-            MethodResult(State::*method)(const Param &)) {
+              MethodResult(State::*method)(const Param &)) {
         Call func = [obj, method](JSON &&json) -> MethodResult {
             Param p;
             fromJSON(std::move(json), p);
@@ -241,9 +242,9 @@ public:
         this->bind(name, paramIface, std::move(func));
     }
 
-    template <typename State, typename Param>
+    template<typename State, typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
-            void(State::*method)(const Param &)) {
+              void(State::*method)(const Param &)) {
         Notification func = [obj, method](JSON &&json) {
             Param p;
             fromJSON(std::move(json), p);
@@ -253,7 +254,7 @@ public:
     }
 };
 
-
 } // namespace rpc
+} // namespace ydsh
 
 #endif //YDSH_TOOLS_JSONRPC_H

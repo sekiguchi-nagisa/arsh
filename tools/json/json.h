@@ -28,6 +28,7 @@
 #include <misc/lexer_base.hpp>
 #include <misc/parser_base.hpp>
 
+namespace ydsh {
 namespace json {
 
 class JSON;
@@ -43,6 +44,7 @@ public:
     using Base = ydsh::Union<std::nullptr_t, bool, long, double, String, Array, Object>;
 
     explicit JSON() : Base() {}
+
     JSON(bool v) : Base(v) {}   //NOLINT
     JSON(long v) : Base(v) {}   //NOLINT
     JSON(int v) : JSON(static_cast<long>(v)) {} //NOLINT
@@ -73,7 +75,7 @@ public:
     }
 
     bool isDouble() const {
-        return ydsh::is<double >(*this);
+        return ydsh::is<double>(*this);
     }
 
     bool isNumber() const {
@@ -101,7 +103,7 @@ public:
     }
 
     double asDouble() const {
-        return ydsh::get<double >(*this);
+        return ydsh::get<double>(*this);
     }
 
     std::string &asString() {
@@ -153,14 +155,14 @@ inline void append(Array &) {}
 
 inline void append(Object &) {}
 
-template <typename ...T>
-void append(Array &array, JSON &&v, T && ...arg) {
+template<typename ...T>
+void append(Array &array, JSON &&v, T &&...arg) {
     array.push_back(std::move(v));
     append(array, std::forward<T>(arg)...);
 }
 
-template <typename ...T>
-void append(Object &object, Member &&v, T && ...arg) {
+template<typename ...T>
+void append(Object &object, Member &&v, T &&...arg) {
     object.emplace(std::move(v.key), std::move(v.value));
     append(object, std::forward<T>(arg)...);
 }
@@ -171,8 +173,8 @@ inline Array array() {
     return std::vector<JSON>();
 }
 
-template <typename ... Arg>
-inline Array array(JSON &&v, Arg&& ...arg) {
+template<typename ... Arg>
+inline Array array(JSON &&v, Arg &&...arg) {
     auto value = array();
     __detail::append(value, std::forward<JSON>(v), std::forward<Arg>(arg)...);
     return value;
@@ -182,8 +184,8 @@ inline Object object() {
     return std::map<std::string, JSON>();
 }
 
-template <typename ... Arg>
-inline Object object(Member &&m, Arg&& ...arg) {
+template<typename ... Arg>
+inline Object object(Member &&m, Arg &&...arg) {
     auto value = object();
     __detail::append(value, std::forward<Member>(m), std::forward<Arg>(arg)...);
     return value;
@@ -223,8 +225,8 @@ using Token = ydsh::Token;
 
 class Lexer : public ydsh::parser_base::LexerBase {
 public:
-    template <typename ...Arg>
-    explicit Lexer(Arg&& ...arg) : LexerBase("(string)", std::forward<Arg>(arg)...) {}
+    template<typename ...Arg>
+    explicit Lexer(Arg &&...arg) : LexerBase("(string)", std::forward<Arg>(arg)...) {}
 
     JSONTokenKind nextToken(Token &token);
 };
@@ -238,8 +240,8 @@ public:
         this->lexer = &this->lex;
     }
 
-    template <typename ...Arg>
-    explicit Parser(Arg&& ...arg) : Parser(Lexer(std::forward<Arg>(arg)...)) {}
+    template<typename ...Arg>
+    explicit Parser(Arg &&...arg) : Parser(Lexer(std::forward<Arg>(arg)...)) {}
 
     JSON operator()();
 
@@ -253,16 +255,21 @@ public:
 
 private:
     JSON parseValue();
+
     JSON parseNumber();
+
     std::pair<std::string, JSON> parseMember();
+
     JSON parseArray();
+
     JSON parseObject();
 
-    int unescape(const char * &iter, const char *end) const;
+    int unescape(const char *&iter, const char *end) const;
 
     bool unescapeStr(Token token, std::string &str);
 };
 
 } // namespace json
+} // namespace ydsh
 
 #endif //TOOLS_JSON_H

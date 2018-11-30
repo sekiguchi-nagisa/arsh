@@ -19,6 +19,7 @@
 
 #include "../json/json.h"
 
+namespace ydsh {
 namespace lsp {
 
 using namespace json;
@@ -72,5 +73,6 @@ void fromJSON(JSON &&json, DiagnosticRelatedInformation &info);
 JSON toJSON(const DiagnosticRelatedInformation &info);
 
 } // namespace lsp
+} // namespace ydsh
 
 #endif //YDSH_TOOLS_LSP_H

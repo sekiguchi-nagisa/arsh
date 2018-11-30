@@ -18,6 +18,7 @@
 
 #include "transport.h"
 
+namespace ydsh {
 namespace lsp {
 
 static constexpr const char HEADER_LENGTH[] = "Content-Length: ";
@@ -109,3 +110,4 @@ bool LSPTransport::readHeader(std::string &header) {
 }
 
 } // namespace lsp
+} // namespace ydsh

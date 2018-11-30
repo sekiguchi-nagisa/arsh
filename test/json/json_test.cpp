@@ -2,6 +2,7 @@
 
 #include "jsonrpc.h"
 
+using namespace ydsh;
 using namespace json;
 
 TEST(JSON, type) {
@@ -426,8 +427,8 @@ TEST(ReqTest, parse) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Request::INVALID, req.kind));
 }
 
-struct NullLogger : ydsh::SingletonLogger<NullLogger> {
-    NullLogger() : ydsh::SingletonLogger<NullLogger>("") {}
+struct SingleNullLogger : ydsh::SingletonLogger<SingleNullLogger> {
+    SingleNullLogger() : ydsh::SingletonLogger<SingleNullLogger>("") {}
 };
 
 struct StringTransport : public rpc::Transport {
@@ -435,9 +436,9 @@ struct StringTransport : public rpc::Transport {
     unsigned int cursor{0};
     std::string outStr;
 
-    StringTransport() : rpc::Transport(NullLogger::instance()) {}
+    StringTransport() : rpc::Transport(SingleNullLogger::instance()) {}
 
-    StringTransport(std::string &&text) : rpc::Transport(NullLogger::instance()), inStr(std::move(text)) {}
+    StringTransport(std::string &&text) : rpc::Transport(SingleNullLogger::instance()), inStr(std::move(text)) {}
 
     int send(unsigned int size, const char *data) override {
         this->outStr.append(data, size);
@@ -463,7 +464,7 @@ protected:
     StringTransport transport;
     rpc::Handler handler;
 
-    RPCTest() : handler(NullLogger::instance()) {}
+    RPCTest() : handler(SingleNullLogger::instance()) {}
 
     void init(rpc::Request &&req) {
         this->init(req.toJSON().serialize());

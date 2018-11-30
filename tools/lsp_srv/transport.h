@@ -19,6 +19,7 @@
 
 #include "../json/jsonrpc.h"
 
+namespace ydsh {
 namespace lsp {
 
 using namespace json;
@@ -56,5 +57,6 @@ private:
 
 
 } // namespace lsp
+} // namespace ydsh
 
 #endif //YDSH_TOOLS_TRANSPORT_H

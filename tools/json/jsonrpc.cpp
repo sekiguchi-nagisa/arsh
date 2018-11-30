@@ -16,6 +16,7 @@
 
 #include "jsonrpc.h"
 
+namespace ydsh {
 namespace rpc {
 
 JSON ResponseError::toJSON() {
@@ -223,3 +224,4 @@ void Handler::bind(const std::string &name, const InterfacePtr &paramIface, rpc:
 }
 
 } // namespace rpc
+} // namespace ydsh

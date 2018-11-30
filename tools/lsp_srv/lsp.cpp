@@ -16,6 +16,7 @@
 
 #include "lsp.h"
 
+namespace ydsh {
 namespace lsp {
 
 // ######################
@@ -72,3 +73,4 @@ JSON toJSON(const DiagnosticRelatedInformation &info) {
 }
 
 } // namespace lsp
+} // namespace ydsh

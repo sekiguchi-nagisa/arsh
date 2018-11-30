@@ -19,6 +19,7 @@
 
 #include "json.h"
 
+namespace ydsh {
 namespace json {
 
 // ##################
@@ -28,19 +29,19 @@ namespace json {
 JSON::JSON(std::initializer_list<json::Member> list) : JSON(object()) {
     for(auto &v : list) {
         this->asObject().emplace(
-                std::move(const_cast<Member&>(v).key),
-                std::move(const_cast<Member&>(v).value));
+                std::move(const_cast<Member &>(v).key),
+                std::move(const_cast<Member &>(v).value));
     }
 }
 
-JSON& JSON::operator[](unsigned int index) {
+JSON &JSON::operator[](unsigned int index) {
     if(!this->isArray()) {
         fatal("must be array\n");
     }
     return this->asArray()[index];
 }
 
-JSON& JSON::operator[](const std::string &key) {
+JSON &JSON::operator[](const std::string &key) {
     if(!this->isObject()) {
         fatal("must be object\n");
     }
@@ -287,7 +288,6 @@ if(++this->callCount == MAX_NESTING_DEPTH) { this->raiseDeepNestingError(); retu
 CallCounter name(this->callCount)
 
 
-
 JSON Parser::operator()() {
     this->fetchNext();
     auto value = TRY(this->parseValue());
@@ -381,7 +381,8 @@ JSON Parser::parseArray() {
             value.push_back(TRY(this->parseValue()));
             break;
         default:
-            E_ALTER(EACH_LA_VALUE(GEN_LA_ALTER) ARRAY_CLOSE);
+            E_ALTER(EACH_LA_VALUE(GEN_LA_ALTER)
+                            ARRAY_CLOSE);
         }
     }
     this->expect(ARRAY_CLOSE);
@@ -473,7 +474,7 @@ int Parser::unescape(const char *&iter, const char *end) const {
     return ch;
 }
 
-bool Parser::unescapeStr(json::Token token, std::string &str)  {
+bool Parser::unescapeStr(json::Token token, std::string &str) {
     auto actual = token;
     actual.pos++;
     actual.size -= 2;
@@ -526,3 +527,4 @@ void Parser::showError(FILE *fp) const {
 }
 
 } // namespace json
+} // namespace ydsh

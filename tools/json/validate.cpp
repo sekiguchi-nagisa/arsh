@@ -16,6 +16,7 @@
 
 #include "jsonrpc.h"
 
+namespace ydsh {
 namespace json {
 
 // #########################
@@ -232,3 +233,4 @@ std::string Validator::formatError() const {
 }
 
 } // namespace json
+} // namespace ydsh
