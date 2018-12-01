@@ -138,7 +138,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "coproc"          { RET(COPROC); }
       <STMT> "do"              { RET(DO); }
       <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
-      <EXPR> "else"            { RET(ELSE); }
+      <STMT,EXPR> "else"       { MODE(EXPR); RET(ELSE); }
       <STMT> "export-env"      { MODE(NAME); RET(EXPORT_ENV); }
       <EXPR> "finally"         { RET(FINALLY); }
       <STMT> "for"             { RET(FOR); }
