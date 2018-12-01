@@ -132,6 +132,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "alias"           { MODE(NAME); RET(ALIAS); }
       <STMT> "assert"          { RET(ASSERT); }
       <STMT> "break"           { RET(BREAK); }
+      <STMT> "case"            { RET(CASE); }
       <EXPR> "catch"           { MODE(STMT); RET(CATCH); }
       <STMT> "class"           { MODE(NAME); RET(CLASS); }
       <STMT> "continue"        { RET(CONTINUE); }
@@ -227,6 +228,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "*="              { MODE(STMT); RET(MUL_ASSIGN); }
       <EXPR> "/="              { MODE(STMT); RET(DIV_ASSIGN); }
       <EXPR> "%="              { MODE(STMT); RET(MOD_ASSIGN); }
+      <EXPR> "=>"              { MODE(STMT); RET(CASE_ARM); }
 
       <EXPR> "as"              { RET(AS); }
       <EXPR> "is"              { RET(IS); }

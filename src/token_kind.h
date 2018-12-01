@@ -25,6 +25,7 @@
     TOKEN(ALIAS                              , "alias") \
     TOKEN(ASSERT                             , "assert") \
     TOKEN(BREAK                              , "break") \
+    TOKEN(CASE                               , "case") \
     TOKEN(CATCH                              , "catch") \
     TOKEN(CLASS                              , "class") \
     TOKEN(CONTINUE                           , "continue") \
@@ -50,7 +51,7 @@
     /* unary op */\
     TOKEN(PLUS                               , "+") \
     TOKEN(MINUS                              , "-") \
-    TOKEN(NOT                            , "!") \
+    TOKEN(NOT                                , "!") \
     /* literal */\
     TOKEN(BYTE_LITERAL                       , "<Byte Literal>") \
     TOKEN(INT16_LITERAL                      , "<Int16 Literal>") \
@@ -115,6 +116,8 @@
     TOKEN(MUL_ASSIGN                         , "*=") \
     TOKEN(DIV_ASSIGN                         , "/=") \
     TOKEN(MOD_ASSIGN                         , "%=") \
+    /* for case expression */\
+    TOKEN(CASE_ARM                           , "=>") \
     /* context dependent key word */\
     TOKEN(AS                                 , "as") \
     TOKEN(FUNC                               , "Func") \
