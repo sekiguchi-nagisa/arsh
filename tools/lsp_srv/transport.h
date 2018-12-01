@@ -26,11 +26,11 @@ using namespace json;
 
 class LSPTransport : public rpc::Transport {
 private:
-    ydsh::FilePtr input;
-    ydsh::FilePtr output;
+    FilePtr input;
+    FilePtr output;
 
 public:
-    LSPTransport(ydsh::LoggerBase &logger, FILE *in, FILE *out) :
+    LSPTransport(LoggerBase &logger, FILE *in, FILE *out) :
         rpc::Transport(logger),input(in), output(out) {}
 
     ~LSPTransport() override = default;

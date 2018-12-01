@@ -132,14 +132,14 @@ bool Transport::dispatch(rpc::Handler &handler) {
     RequestParser parser;
     int dataSize = this->recvSize();
     if(dataSize < 0) {
-        this->logger(ydsh::LogLevel::ERROR, "may be broken or empty message");
+        this->logger(LogLevel::ERROR, "may be broken or empty message");
         return false;
     }
     for(int size = 0; size < dataSize;) {
         char data[256];
-        int recvSize = this->recv(ydsh::arraySize(data), data);
+        int recvSize = this->recv(arraySize(data), data);
         if(recvSize < 0) {
-            this->logger(ydsh::LogLevel::ERROR, "message receiving failed");
+            this->logger(LogLevel::ERROR, "message receiving failed");
             return false;
         }
         parser.append(data, static_cast<unsigned int>(recvSize));
@@ -172,8 +172,8 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
     if(iter == this->callMap.end()) {
         std::string str = "undefined method: ";
         str += name;
-        this->logger(ydsh::LogLevel::ERROR, "undefined call: %s", name.c_str());
-        return ydsh::Err(ResponseError(MethodNotFound, "Method not found", std::move(str)));
+        this->logger(LogLevel::ERROR, "undefined call: %s", name.c_str());
+        return Err(ResponseError(MethodNotFound, "Method not found", std::move(str)));
     }
 
     auto *ifaceName = this->callParamMap.lookupIface(name);
@@ -181,8 +181,8 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
     Validator validator(this->ifaceMap);
     if(!validator(ifaceName, param)) {
         std::string e = validator.formatError();
-        this->logger(ydsh::LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
-        return ydsh::Err(ResponseError(InvalidParams, "Invalid params", e));
+        this->logger(LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
+        return Err(ResponseError(InvalidParams, "Invalid params", e));
     }
 
     return iter->second(std::move(param));
@@ -191,7 +191,7 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
 void Handler::onNotify(const std::string &name, json::JSON &&param) {
     auto iter = this->notificationMap.find(name);
     if(iter == this->notificationMap.end()) {
-        this->logger(ydsh::LogLevel::ERROR, "undefined notification: %s", name.c_str());
+        this->logger(LogLevel::ERROR, "undefined notification: %s", name.c_str());
         return;
     }
 
@@ -199,7 +199,7 @@ void Handler::onNotify(const std::string &name, json::JSON &&param) {
     assert(ifaceName);
     Validator validator(this->ifaceMap);
     if(!validator(ifaceName, param)) {
-        this->logger(ydsh::LogLevel::ERROR,
+        this->logger(LogLevel::ERROR,
                 "notification message validation failed: \n%s", validator.formatError().c_str());
         return;
     }

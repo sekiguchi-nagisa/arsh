@@ -30,7 +30,7 @@
 namespace ydsh {
 namespace json {
 
-JSONTokenKind Lexer::nextToken(json::Token &token) {
+JSONTokenKind Lexer::nextToken(Token &token) {
     /*!re2c
       re2c:define:YYCTYPE = "unsigned char";
       re2c:define:YYCURSOR = this->cursor;

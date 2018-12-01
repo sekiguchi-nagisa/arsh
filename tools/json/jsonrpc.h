@@ -140,10 +140,10 @@ class Handler;
 
 class Transport {
 protected:
-    std::reference_wrapper<ydsh::LoggerBase> logger;
+    std::reference_wrapper<LoggerBase> logger;
 
 public:
-    explicit Transport(ydsh::LoggerBase &logger) : logger(logger) {}
+    explicit Transport(LoggerBase &logger) : logger(logger) {}
 
     virtual ~Transport() = default;
 
@@ -199,7 +199,7 @@ private:
     virtual int recv(unsigned int size, char *data) = 0;
 };
 
-using MethodResult = ydsh::Result<JSON, ResponseError>;
+using MethodResult = Result<JSON, ResponseError>;
 
 class Handler {
 private:
@@ -214,10 +214,10 @@ private:
 
     InterfaceMap ifaceMap;
 
-    std::reference_wrapper<ydsh::LoggerBase> logger;
+    std::reference_wrapper<LoggerBase> logger;
 
 public:
-    explicit Handler(ydsh::LoggerBase &logger) : logger(logger) {}
+    explicit Handler(LoggerBase &logger) : logger(logger) {}
 
     MethodResult onCall(const std::string &name, JSON &&param);
 

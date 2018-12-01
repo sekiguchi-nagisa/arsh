@@ -106,7 +106,7 @@ struct Serializer {
     }
 
     void serialize(const JSON &value) {
-#define GEN_CASE(T) case JSON::Tag<T>::value: this->serialize(ydsh::get<T>(value)); break;
+#define GEN_CASE(T) case JSON::Tag<T>::value: this->serialize(get<T>(value)); break;
         switch(value.tag()) {
         EACH_JSON_TYPE(GEN_CASE)
         default:
@@ -337,12 +337,12 @@ JSON Parser::parseNumber() {
 
     int status = 0;
     if(isFloat(data)) {
-        auto v = ydsh::convertToDouble(data, status);
+        auto v = convertToDouble(data, status);
         if(status == 0) {
             return v;
         }
     } else {
-        auto v = ydsh::convertToInt64(data, status);
+        auto v = convertToInt64(data, status);
         if(status == 0) {
             return v;
         }
@@ -414,9 +414,9 @@ static unsigned short parseHex(const char *&iter) {
     unsigned short v = 0;
     for(unsigned int i = 0; i < 4; i++) {
         char ch = *(iter++);
-        assert(ydsh::isHex(ch));
+        assert(isHex(ch));
         v *= 16;
-        v += ydsh::toHex(ch);
+        v += toHex(ch);
     }
     return v;
 }
@@ -452,19 +452,19 @@ int Parser::unescape(const char *&iter, const char *end) const {
             break;
         case 'u':
             ch = parseHex(iter);
-            if(ydsh::UnicodeUtil::isLowSurrogate(ch)) {
+            if(UnicodeUtil::isLowSurrogate(ch)) {
                 return -1;
             }
-            if(ydsh::UnicodeUtil::isHighSurrogate(ch)) {
+            if(UnicodeUtil::isHighSurrogate(ch)) {
                 if(iter == end || *iter != '\\' || (iter + 1) == end || *(iter + 1) != 'u') {
                     return -1;
                 }
                 iter += 2;
                 int low = parseHex(iter);
-                if(!ydsh::UnicodeUtil::isLowSurrogate(low)) {
+                if(!UnicodeUtil::isLowSurrogate(low)) {
                     return -1;
                 }
-                ch = ydsh::UnicodeUtil::utf16ToCodePoint(ch, low);
+                ch = UnicodeUtil::utf16ToCodePoint(ch, low);
             }
             break;
         default:
@@ -474,7 +474,7 @@ int Parser::unescape(const char *&iter, const char *end) const {
     return ch;
 }
 
-bool Parser::unescapeStr(json::Token token, std::string &str) {
+bool Parser::unescapeStr(Token token, std::string &str) {
     auto actual = token;
     actual.pos++;
     actual.size -= 2;
@@ -487,7 +487,7 @@ bool Parser::unescapeStr(json::Token token, std::string &str) {
             return false;
         }
         char buf[4];
-        unsigned int size = ydsh::UnicodeUtil::codePointToUtf8(codePoint, buf);
+        unsigned int size = UnicodeUtil::codePointToUtf8(codePoint, buf);
         str.append(buf, size);
     }
     return true;

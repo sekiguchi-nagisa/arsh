@@ -39,9 +39,9 @@ using Object = std::map<std::string, JSON>;
 
 struct Member;
 
-class JSON : public ydsh::Union<std::nullptr_t, bool, long, double, String, Array, Object> {
+class JSON : public Union<std::nullptr_t, bool, long, double, String, Array, Object> {
 public:
-    using Base = ydsh::Union<std::nullptr_t, bool, long, double, String, Array, Object>;
+    using Base = Union<std::nullptr_t, bool, long, double, String, Array, Object>;
 
     explicit JSON() : Base() {}
 
@@ -63,19 +63,19 @@ public:
     }
 
     bool isNull() const {
-        return ydsh::is<std::nullptr_t>(*this);
+        return is<std::nullptr_t>(*this);
     }
 
     bool isBool() const {
-        return ydsh::is<bool>(*this);
+        return is<bool>(*this);
     }
 
     bool isLong() const {
-        return ydsh::is<long>(*this);
+        return is<long>(*this);
     }
 
     bool isDouble() const {
-        return ydsh::is<double>(*this);
+        return is<double>(*this);
     }
 
     bool isNumber() const {
@@ -83,51 +83,51 @@ public:
     }
 
     bool isString() const {
-        return ydsh::is<String>(*this);
+        return is<String>(*this);
     }
 
     bool isArray() const {
-        return ydsh::is<Array>(*this);
+        return is<Array>(*this);
     }
 
     bool isObject() const {
-        return ydsh::is<Object>(*this);
+        return is<Object>(*this);
     }
 
     bool asBool() const {
-        return ydsh::get<bool>(*this);
+        return get<bool>(*this);
     }
 
     long asLong() const {
-        return ydsh::get<long>(*this);
+        return get<long>(*this);
     }
 
     double asDouble() const {
-        return ydsh::get<double>(*this);
+        return get<double>(*this);
     }
 
     std::string &asString() {
-        return ydsh::get<String>(*this);
+        return get<String>(*this);
     }
 
     const std::string &asString() const {
-        return ydsh::get<String>(*this);
+        return get<String>(*this);
     }
 
     std::vector<JSON> &asArray() {
-        return ydsh::get<Array>(*this);
+        return get<Array>(*this);
     }
 
     const std::vector<JSON> &asArray() const {
-        return ydsh::get<Array>(*this);
+        return get<Array>(*this);
     }
 
     std::map<std::string, JSON> &asObject() {
-        return ydsh::get<Object>(*this);
+        return get<Object>(*this);
     }
 
     const std::map<std::string, JSON> &asObject() const {
-        return ydsh::get<Object>(*this);
+        return get<Object>(*this);
     }
 
     JSON &operator[](unsigned int index);
@@ -221,9 +221,8 @@ inline bool isInvalidToken(JSONTokenKind kind) {
 
 const char *toString(JSONTokenKind kind);
 
-using Token = ydsh::Token;
 
-class Lexer : public ydsh::parser_base::LexerBase {
+class Lexer : public parser_base::LexerBase {
 public:
     template<typename ...Arg>
     explicit Lexer(Arg &&...arg) : LexerBase("(string)", std::forward<Arg>(arg)...) {}
@@ -231,7 +230,7 @@ public:
     JSONTokenKind nextToken(Token &token);
 };
 
-class Parser : public ydsh::parser_base::ParserBase<JSONTokenKind, Lexer> {
+class Parser : public parser_base::ParserBase<JSONTokenKind, Lexer> {
 private:
     Lexer lex;
 

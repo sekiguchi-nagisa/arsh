@@ -187,7 +187,7 @@ using InterfacePtr = std::shared_ptr<Interface>;
 
 class InterfaceMap {
 private:
-    ydsh::CStringHashMap<InterfacePtr> map;
+    CStringHashMap<InterfacePtr> map;
 
 public:
     const InterfacePtr &interface(const char *name, Fields &&fields);

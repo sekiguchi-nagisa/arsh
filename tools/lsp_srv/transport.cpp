@@ -41,15 +41,15 @@ int LSPTransport::send(unsigned int size, const char *data) {
 }
 
 static bool isContentLength(const std::string &line) {
-    return strncmp(line.c_str(), HEADER_LENGTH, ydsh::arraySize(HEADER_LENGTH) - 1) == 0 &&
+    return strncmp(line.c_str(), HEADER_LENGTH, arraySize(HEADER_LENGTH) - 1) == 0 &&
         line.size() == strlen(line.c_str());
 }
 
 static int parseContentLength(const std::string &line) {
     const char *ptr = line.c_str();
-    ptr += ydsh::arraySize(HEADER_LENGTH) - 1;
+    ptr += arraySize(HEADER_LENGTH) - 1;
     int s;
-    long value = ydsh::convertToInt64(ptr, s);
+    long value = convertToInt64(ptr, s);
     if(s == 0 && value >= 0 && value <= INT32_MAX) {
         return value;
     }
@@ -68,17 +68,17 @@ int LSPTransport::recvSize() {
             break;
         }
         if(isContentLength(header)) {
-            this->logger(ydsh::LogLevel::INFO, "length header: %s", header.c_str());
+            this->logger(LogLevel::INFO, "length header: %s", header.c_str());
             if(size > 0) {
-                this->logger(ydsh::LogLevel::WARNING, "previous read message length: %d", size);
+                this->logger(LogLevel::WARNING, "previous read message length: %d", size);
             }
             int ret = parseContentLength(header);
             if(!ret) {
-                this->logger(ydsh::LogLevel::ERROR, "may be broken message or empty message");
+                this->logger(LogLevel::ERROR, "may be broken message or empty message");
             }
             size = ret;
         } else {    // may be other header
-            this->logger(ydsh::LogLevel::INFO, "other header: %s", header.c_str());
+            this->logger(LogLevel::INFO, "other header: %s", header.c_str());
         }
     }
     return size;
