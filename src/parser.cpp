@@ -642,7 +642,7 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
     std::unique_ptr<Node> elseNode;
     if(CUR_KIND() == ELIF) {
         elseNode = TRY(this->parse_ifExpression(true));
-    } else if(CUR_KIND() == ELSE) {
+    } else if(CUR_KIND() == ELSE && this->lexer->getPrevMode() == yycEXPR) {
         this->consume();    // ELSE
         elseNode = TRY(this->parse_block());
     }

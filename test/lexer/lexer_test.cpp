@@ -169,9 +169,15 @@ TEST_F(LexerTest_Lv1, elif_tok) {
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
-TEST_F(LexerTest_Lv1, else_tok) {
+TEST_F(LexerTest_Lv1, else_tok1) {
     const char *text = "else";
     this->initLexer(text, yycEXPR);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(ELSE, text, EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, else_tok2) {
+    const char *text = "else";
+    this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(ELSE, text, EOS, ""));
 }
 
