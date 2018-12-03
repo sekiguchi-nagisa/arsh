@@ -30,8 +30,8 @@ private:
     FilePtr output;
 
 public:
-    LSPTransport(LoggerBase &logger, FILE *in, FILE *out) :
-        rpc::Transport(logger),input(in), output(out) {}
+    LSPTransport(LoggerBase &logger, FilePtr &&in, FilePtr &&out) :
+        rpc::Transport(logger),input(std::move(in)), output(std::move(out)) {}
 
     ~LSPTransport() override = default;
 
