@@ -1,97 +1,81 @@
 # Grammar specification of ydsh
 ## Lexer specification
 ```
-NUM = "0" | [1-9] [0-9]*;
-OCTAL = "0o" [0-7]+;
-HEX = "0x" [0-9a-fA-F]+;
-INTEGER = NUM | OCTAL | HEX;
-INTEGER_ = NUM | OCTAL "_" | HEX "_";
-DIGITS = [0-9]+;
-FLOAT_SUFFIX =  [eE] [+-]? NUM;
-FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
+NUM = "0" | [1-9] [0-9]*
+OCTAL = "0o" [0-7]+
+HEX = "0x" [0-9a-fA-F]+
+INTEGER = NUM | OCTAL | HEX
+INTEGER_ = NUM | OCTAL "_" | HEX "_"
+DIGITS = [0-9]+
+FLOAT_SUFFIX =  [eE] [+-]? NUM
+FLOAT = NUM "." DIGITS FLOAT_SUFFIX?
+
+SQUOTE_CHAR = "\\" ['] | [^'\000]
+DQUOTE_CHAR = "\\" [^\000] | [^$\\"\000]
+VAR_NAME = [_a-zA-Z] [_0-9a-zA-Z]* 
+SPECIAL_NAMES = [@#?$0-9]
+
+STRING_LITERAL = ['] [^'\000]* [']
+ESTRING_LITERAL = "$" ['] SQUOTE_CHAR* [']
+APPLIED_NAME = "$" VAR_NAME
+SPECIAL_NAME = "$" SPECIAL_NAMES
+
+INNER_NAME = APPLIED_NAME | '${' VAR_NAME '}'
+INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}'
+
+CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#[\]!+\-0-9\000]
+CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$\000]
+CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>()$#\000]
+CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$\000]
+
+REGEX_CHAR = "\\/" | [^\r\n/]
+REGEX = "$/" REGEX_CHAR* "/" [im]{0,2}
+
+LINE_END = ";"
+NEW_LINE = [\r\n][ \t\r\n]*
+COMMENT = "#" [^\r\n\000]*
 
 
+ALIAS = "alias"
+ASSERT = "assert"
+BREAK = "break"
+CASE = "case"
+CATCH = "catch"
+CLASS = "class"
+CONTINUE = "continue"
+COPROC = "coproc"
+DO = "do"
+ELIF = "elif"
+ELSE = "else"
+EXPORT_ENV = "export-env"
+FINALLY = "finally"
+FOR = "for"
+FUNCTION = "function"
+IF = "if"
+IMPORT_ENV = "import-env"
+INTERFACE = "interface"
+LET = "let"
+NEW = "new"
+RETURN = "return"
+TRY = "try"
+THROW = "throw"
+VAR = "var"
+WHILE = "while"
 
-ASSERT = 'assert'
-       ;
+PLUS = "+"
+MINUS = "-"
+NOT = "!"
 
-BREAK = 'break'
-      ;
-
-CATCH = 'catch'
-      ;
-
-CLASS = 'class'
-      ;
-
-CONTINUE = 'continue'
-         ;
-
-DO = 'do'
-   ;
-
-ELIF = 'elif'
-     ;
-
-ELSE = 'else'
-     ;
-
-EXPORT_ENV = 'export-env'
-           ;
-
-FINALLY = 'finally'
-        ;
-
-FOR = 'for'
-    ;
-
-FUNCTION = 'function'
-         ;
-
-IF = 'if'
-   ;
-
-IMPORT_ENV = 'import-env'
-           ;
-
-INTERFACE = 'interface'
-          ;
-
-LET = 'let'
-    ;
-
-NEW = 'new'
-    ;
-
-NOT = 'not'
-    ;
-
-RETURN = 'return'
-       ;
-
-TRY = 'try'
-    ;
-
-THROW = 'throw'
-      ;
-
-TYPE_ALIAS = 'type-alias'
-           ;
-
-VAR = 'var'
-    ;
-
-WHILE = 'while'
-      ;
-
-PLUS = '+'
-     ;
-
-MINUS = '-'
-      ;
-
-
-
+INT32_LITERAL  = INTEGER
+               | INTEGER_ "i32"
+UINT32_LITERAL = INTEGER_ "u" 
+BYTE_LITERAL   = INTEGER_ "b"
+INT16_LITERAL  = INTEGER_ "i16"
+INT64_LITERAL  = INTEGER_ "i64" 
+UINT16_LITERAL = INTEGER_ "u16"
+UINT32_LITERAL = INTEGER_ "u32" 
+UINT64_LITERAL = INTEGER_ "u64"
+LOAT_LITERAL   = FLOAT
 
 
 ```
@@ -101,29 +85,23 @@ MINUS = '-'
 
 ```
 toplevel = statement* EOF
-         ;
 
 function = funcDecl block
-         ;
 
 funcDecl = FUNCTION IDENTIFIER LP 
            (APPLIED_NAME COLON typeName (COMMA APPLIED_NAME COLON typeName)*)? 
            RP (COLON typeName (COMMA typeName)*)?
-         ;
 
 interface = INTERFACE TYPE_PATH LBC 
             ( VAR IDENTIFIER COLON typeName statementEnd
             | LET IDENTIFIER COLON typeName statementEnd
             | funcDecl statementEnd
             )+ RBC
-          ;
 
-typeAlias = TYPE_ALIAS IDENTIFIER typeName statementEnd
-          ;
+typeAlias = ALIAS IDENTIFIER typeName statementEnd
 
 basicOrReifiedType = (IDENTIFIER | TYPEOF) 
                      ({!HAS_NL} TYPE_OPEN typeName (TYPE_SEP typeName)* TYPE_CLOSE)?     
-                   ;
 
 typeNameImpl = basicOrReifiedType
              | PTYPE_OPEN typeName (TYPE_SEP typeName)* PTYPE_CLOSE
@@ -133,10 +111,8 @@ typeNameImpl = basicOrReifiedType
                 (TYPE_SEP ATYPE_OPEN typeName (TYPE_SEP typeName)* ATYPE_CLOSE)? 
                 TYPE_CLOSE)?   
              | TYPE_PATH
-             ;
 
 typeName = typeNameImpl ({!HAS_NL} TYPE_OPT)?
-         ;
 
 statementImpl = LINE_END
               | function
@@ -150,43 +126,31 @@ statementImpl = LINE_END
               | RETURN ({!HAS_NL} expression)?
               | variableDeclaration
               | expression
-              ;
 
 statement = statementImpl statementEnd
-          ;
 
 statementEnd = EOS | RBC | LINE_END | {!HAS_NL}     # FIXME:
-             ;
 
 block = LBC statement* RBC
-      ;
 
 variableDeclaration = (VAR | LET) IDENTIFIER ASSIGN expression
-                    ;
 
 ifExpression = IF expression block (ELIF expression block)* (ELSE block)?
-             ;
 
 forExpression = FOR LP forInit LINE_END forCond LINE_END forIter RP block
               | FOR APPLIED_NAME IN expression block
-              ;
 
 forInit = (variableDeclaration | expression)?
-        ;
 
 forCond = expression?
-        ;
 
 forIter = expression?
-        ;
 
 catchStatement = CATCH LP APPLIED_NAME (COLON typeName)? RP block
                | CATCH APPLIED_NAME (COLON typeName)? block
-               ;
 
 command = COMMAND ({HAS_SPACE} (cmdArg | redirOption))*
         | COMMAND LR RP block
-        ;
 
 redirOption = (REDIR_MERGE_ERR_2_OUT | REDIR_MERGE_OUT_2_ERR)
             | (REDIR_IN_2_FILE 
@@ -197,68 +161,50 @@ redirOption = (REDIR_MERGE_ERR_2_OUT | REDIR_MERGE_OUT_2_ERR)
                | REDIR_MERGE_ERR_2_OUT_2_FILE
                | REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND
                | REDIR_HERE_STR) {HAS_SPACE} cmdArg
-            ;
 
 cmdArg = cmdArgSeg ({!HAS_SPACE} cmdArgSeg)*
-       ;
 
 cmdArgSeg = CMD_ARG_PART
           | stringLiteral
           | stringExpression
           | substitution
           | paramExpansion
-          ;
 
 expression = THROW expression
            | binaryExpression
-           ;
 
 binaryExpression = unaryExpression {!HAS_NL} ? expression : expression
                  | unaryExpression {!HAS_NL}
                    (ASSIGN | ADD_ASSIGN | SUB_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN) expression
                  | condOrExpression
-                 ;
 
 condOrExpression = condAndExpression ({!HAS_NL} COND_OR condAndExpression)*
-                 ;
 
 condAndExpression = pipedExpression ({!HAS_NL} COND_AND pipedExpression)*
-                  ;
 
 pipedExpression = withExpression ({!HAS_NL} PIPE withExpression)*
-                ;
 
 withExpression = equalityExpression ({!HAS_NL} WITH ({HAS_SPACE} redirOption)*)?
-               :
 
 equalityExpression = nullCoalescingExpression
                      ({!HAS_NL} (EQ | NE | LT | GT | LE | GE | MATCH | UNMATCH) nullCoalescingExpression)*
-                   ;
 
 nullCoalescingExpression = orExpression ({!HAS_NL} NULL_COALE orExpression)*
-                         ;
 
 orExpression = xorExpression ({!HAS_NL} OR xorExpression)*
-             ;
 
 xorExpression = andExpression ({!HAS_NL} XOR andExpression)*
-              ;
 
 andExpression = addExpression ({!HAS_NL} AND addExpression)*
-              ;
 
 addExpression = mulExpression ({!HAS_NL} (ADD | SUB) mulExpression)*
-              ;
 
 mulExpression = typeExpression ({!HAS_NL} (MUL | DIV | MOD) typeExpression)*
-              ;
 
 typeExpression = unaryExpression ({!HAS_NL} (AS | IS) typeName)*
-               ;
 
 unaryExpression = (PLUS | MINUS | NOT) unaryExpression
                 | suffixExpression
-                ;
 
 suffixExpression = suffixExpression {!HAS_NL} ACCESSOR IDENTIFIER
                  | suffixExpression {!HAS_NL} ACCESSOR IDENTIFIER {!HAS_NL} arguments
@@ -266,7 +212,6 @@ suffixExpression = suffixExpression {!HAS_NL} ACCESSOR IDENTIFIER
                  | suffixExpression {!HAS_NL} arguments
                  | suffixExpression {!HAS_NL} (INC | DEC | UNWRAP)
                  | primaryExpression
-                 ;
 
 primaryExpression = command
                   | NEW typeName arguments
@@ -295,32 +240,24 @@ primaryExpression = command
                   | WHILE expression block
                   | DO block expression
                   | TRY block (catchStatment)* (FINALLY block)?
-                  ;
 
 appliedName = SPECIAL_NAME | APPLIED_NAME
-            ;
 
 stringLiteral = STRING_LITERAL
-              ;
 
 arguments = LP RP
           | LP expression (COMMA expression)* RP
-          ;
 
 stringExpression = OPEN_DQUOTE (STR_ELEMENT | interpolation | substitution)* CLOSE_DQUOTE
-                 ;
 
 interpolation = APPLIED_NAME
               | SPECIAL_NAME
               | START_INTERP expression RP
-              ;
 
 paramExpansion = (APPLIED_NAME_WITH_BRACKET | SPECIAL_NAME_WITH_BRACKET) expression RB
                | interpolation
-               ;
 
 substitution = START_SUB_CMD expression RP
-             ;
 
 ```
 
