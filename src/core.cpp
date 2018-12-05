@@ -364,6 +364,12 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
         }
     } else if(handler == IGN_handler) {
         op = DSState::UnsafeSigOp::IGN;
+    } else if(sigNum == SIGSEGV || sigNum == SIGILL || sigNum == SIGFPE) {
+        /**
+         * always set default due to prevent undefined behavior.
+         * see. https://wiki.sei.cmu.edu/confluence/display/c/SIG35-C.+Do+not+return+from+a+computational+exception+signal+handler
+         */
+        op = DSState::UnsafeSigOp::DFL;
     } else {
         actualHandler = handler;
     }

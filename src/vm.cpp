@@ -122,14 +122,6 @@ unsigned int DSState::pendingSigIndex = 1;
 SigSet DSState::pendingSigSet;
 
 static void signalHandler(int sigNum) { // when called this handler, all signals are blocked due to signal mask
-    /**
-     * due to prevent undefined behavior
-     * see. https://wiki.sei.cmu.edu/confluence/display/c/SIG35-C.+Do+not+return+from+a+computational+exception+signal+handler
-     */
-     if(sigNum == SIGSEGV || sigNum == SIGILL || sigNum == SIGFPE) {
-        abort();
-     }
-
     DSState::pendingSigSet.add(sigNum);
     setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
 }
