@@ -75,7 +75,100 @@ INT64_LITERAL  = INTEGER_ "i64"
 UINT16_LITERAL = INTEGER_ "u16"
 UINT32_LITERAL = INTEGER_ "u32" 
 UINT64_LITERAL = INTEGER_ "u64"
-LOAT_LITERAL   = FLOAT
+FLOAT_LITERAL  = FLOAT
+SIGNAL_LITERAL = "%" ['] VAR_NAME [']
+
+OPEN_DQUOTE = ["]
+START_SUB_CMD = "$("
+START_IN_SUB  = ">("
+START_OUT_SUB = "<("
+
+LP = "("
+RP = ")"
+LB = "["
+RB = "]"
+LBC = "{"
+RBC = "}"
+
+COMMAND = CMD_START_CHAR CMD_CHAR*
+
+COLON = ":"
+COMMA = ","
+
+ADD = "+"
+SUB = "-"
+MUL = "*"
+DIV = "/"
+MOD = "%"
+LT = "<"
+GT = ">"
+LE = "<="
+GE = ">="
+EQ = "=="
+NE = "!="
+AND = "and"
+OR = "or"
+XOR = "xor"
+COND_AND = "&&"
+COND_OR = "||"
+MATCH = "=~"
+UNMATCH = "!~"
+TERNARY = "?
+NULL_COALE = "??"
+PIPE = "|"
+
+INC = "++"
+DEC = "--"
+UNWRAP = "!"
+
+ASSIGN = "="
+ADD_ASSIGN = "+="
+SUB_ASSIGN = "-="
+MUL_ASSIGN = "*="
+DIV_ASSIGN = "/="
+MOD_ASSIGN = "%="
+CASE_ARM = "=>"
+
+AS = "as"
+IS = "is"
+IN = "in"
+WITH = "with"
+BACKGROUND = "&"
+DISOWN_BG = ("&!" | "&|") 
+
+IDENTIFIER = VAR_NAME
+ACCESSOR = "."
+
+CLOSE_DQUOTE = ["]
+STR_ELEMENT = DQUOTE_CHAR+ 
+START_INTERP = "${"
+
+CMD_ARG_PART = CMD_ARG_START_CHAR CMD_ARG_CHAR*
+APPLIED_NAME_WITH_BRACKET = APPLIED_NAME "["
+SPECIAL_NAME_WITH_BRACKET = SPECIAL_NAME "[" 
+
+REDIR_IN_2_FILE = "<"
+REDIR_OUT_2_FILE = (">" | "1>") 
+REDIR_OUT_2_FILE_APPEND = ("1>>" | ">>")
+REDIR_ERR_2_FILE = "2>" 
+REDIR_ERR_2_FILE_APPEND = "2>>"
+REDIR_MERGE_ERR_2_OUT_2_FILE = (">&" | "&>")
+REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND = "&>>"
+REDIR_MERGE_ERR_2_OUT = "2>&1"
+REDIR_MERGE_OUT_2_ERR = "1>&2"
+REDIR_HERE_STR = "<<<"
+
+FUNC = "Func"
+TYPEOF = "typeof"
+TYPE_OPEN = "<"
+TYPE_CLOSE = ">"
+TYPE_SEP = ","
+ATYPE_OPEN = "["
+ATYPE_CLOSE = "]"
+PTYPE_OPEN = "("
+PTYPE_CLOSE = ")"
+TYPE_MSEP = ":"
+TYPE_OPT = "!"
 
 
 ```
