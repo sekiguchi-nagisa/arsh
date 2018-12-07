@@ -326,7 +326,7 @@ TokenKind Lexer::nextToken(Token &token) {
     this->prevSpace = foundSpace;
     this->prevMode = prevMode;
 
-    LOG(TRACE_TOKEN, "%s, %s, text = %s\n    lexer mpde: %s",
+    LOG(TRACE_TOKEN, "%s, %s, text = %s\n    lexer mode: %s",
             toString(kind), toString(token).c_str(),
             this->toTokenText(token).c_str(), toModeName(this->getLexerMode()));
     return kind;
