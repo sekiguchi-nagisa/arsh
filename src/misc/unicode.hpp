@@ -89,7 +89,7 @@ struct UnicodeUtil {
      * size of written byte.
      * if invalid code point, return 0 and do nothing
      */
-    static unsigned int codePointToUtf8(int codePoint, char * const buf);
+    static unsigned int codePointToUtf8(int codePoint, char *buf);
 
     static bool isValidCodePoint(int codePoint) {
         return codePoint >= 0x0000 && codePoint <= 0x10FFFF;

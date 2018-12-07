@@ -246,7 +246,7 @@ public:
     Union() noexcept : tag_(-1) {}
 
     template <typename U, typename F = __detail::resolvedType<U, T...>>
-    Union(U &&value) noexcept : tag_(Tag<F>::value) {
+    Union(U &&value) noexcept : tag_(Tag<F>::value) {   //NOLINT
         this->value_.obtain(std::move(value));
     }
 
@@ -338,9 +338,9 @@ public:
 
     Result() = delete;
 
-    Result(OkHolder<T> &&okHolder) noexcept : Union<T, E>(std::move(okHolder.value)) {}
+    Result(OkHolder<T> &&okHolder) noexcept : Union<T, E>(std::move(okHolder.value)) {} //NOLINT
 
-    Result(ErrHolder<E> &&errHolder) noexcept : Union<T, E>(std::move(errHolder.value)) {}
+    Result(ErrHolder<E> &&errHolder) noexcept : Union<T, E>(std::move(errHolder.value)) {}  //NOLINT
 
     Result(Result &&result) noexcept = default;
 

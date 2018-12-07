@@ -64,19 +64,19 @@ private:
 public:
     constexpr IntrusivePtr() noexcept : ptr(nullptr) { }
 
-    constexpr IntrusivePtr(std::nullptr_t) noexcept : ptr(nullptr) { }
+    constexpr IntrusivePtr(std::nullptr_t) noexcept : ptr(nullptr) { }  //NOLINT
 
-    IntrusivePtr(T *ptr) noexcept : ptr(ptr) { P::increase(this->ptr); }
+    explicit IntrusivePtr(T *ptr) noexcept : ptr(ptr) { P::increase(this->ptr); }
 
     IntrusivePtr(const IntrusivePtr &v) noexcept : IntrusivePtr(v.ptr) { }
 
     IntrusivePtr(IntrusivePtr &&v) noexcept : ptr(v.ptr) { v.ptr = nullptr; }
 
     template <typename U>
-    IntrusivePtr(const IntrusivePtr<U, P> &v) noexcept : IntrusivePtr(v.get()) { }
+    IntrusivePtr(const IntrusivePtr<U, P> &v) noexcept : IntrusivePtr(v.get()) { }  //NOLINT
 
     template <typename U>
-    IntrusivePtr(IntrusivePtr<U, P> &&v) noexcept : ptr(v.get()) { v.reset(); }
+    IntrusivePtr(IntrusivePtr<U, P> &&v) noexcept : ptr(v.get()) { v.reset(); } //NOLINT
 
     ~IntrusivePtr() { P::decrease(this->ptr); }
 
