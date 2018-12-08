@@ -90,8 +90,12 @@ static std::vector<std::string> split(const std::string &str) {
     return bufs;
 }
 
-static void formatErrorLine(ColorController cc, const Lexer &lexer, Token errorToken) {
-    errorToken = lexer.shiftEOS(errorToken);
+static void formatErrorLine(ColorController cc, const Lexer &lexer, Token token) {
+    if(token.pos + token.size == 0) {
+        return;
+    }
+
+    Token errorToken = lexer.shiftEOS(token);
     Token lineToken = lexer.getLineToken(errorToken);
     auto line = lexer.toTokenText(lineToken);
     auto marker = lexer.formatLineMarker(lineToken, errorToken);
