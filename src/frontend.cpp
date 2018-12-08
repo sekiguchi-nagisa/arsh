@@ -97,7 +97,7 @@ static void formatErrorLine(ColorController cc, const Lexer &lexer, Token token)
 
     Token errorToken = lexer.shiftEOS(token);
     Token lineToken = lexer.getLineToken(errorToken);
-    auto line = lexer.toTokenText(lineToken);
+    auto line = lexer.formatTokenText(lineToken);
     auto marker = lexer.formatLineMarker(lineToken, errorToken);
 
     auto lines = split(line);

@@ -280,6 +280,13 @@ public:
      */
     Token getLineToken(Token token) const;
 
+    /**
+     * get token text without invalid characters.
+     * @param token
+     * @return
+     */
+    std::string formatTokenText(Token token) const;
+
     std::string formatLineMarker(Token lineToken, Token token) const;
 
     /**
@@ -366,6 +373,22 @@ Token LexerBase<T>::getLineToken(Token token) const {
             .size = stopIndex - static_cast<unsigned int>(startIndex)
     };
     return lineToken;
+}
+
+template <bool T>
+std::string LexerBase<T>::formatTokenText(Token token) const {
+    std::string str;
+    unsigned int limit = token.pos + token.size;
+    for(unsigned int i = token.pos; i < limit;) {
+        int code = 0;
+        unsigned int size = this->toCodePoint(i, code);
+        if(code < 0) {
+            break;
+        }
+        str.append((char *)(this->buf.get() + i), size);
+        i += size;
+    }
+    return str;
 }
 
 template<bool T>
