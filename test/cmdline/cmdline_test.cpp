@@ -379,6 +379,12 @@ $e
 ^~
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
+
+    s = "for $a in 34 {}";
+    msg = "(string):1: [semantic error] undefined method: `%iter'\n"
+          "for $a in 34 {}\n"
+          "          ^~\n";
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, version) {

@@ -788,7 +788,7 @@ public:
     static ApplyNode *newMethodCall(Node *recvNode, Token token, std::string &&methodName);
 
     static ApplyNode *newMethodCall(Node *recvNode, std::string &&methodName) {
-        return newMethodCall(recvNode, {0, 0}, std::move(methodName));
+        return newMethodCall(recvNode, recvNode->getToken(), std::move(methodName));
     }
 
     static ApplyNode *newIndexCall(Node *recvNode, Token token, Node *indexNode) {
