@@ -332,7 +332,7 @@ TEST_F(CmdlineTest, exec) {
                                                                         "exec: exec [-c] [-a name] file [args ...]\n"));
 }
 
-TEST_F(CmdlineTest, marker) {
+TEST_F(CmdlineTest, marker1) {
     // line marker of syntax error
     const char *msg = R"((string):1: [syntax error] mismatched token: <EOS>, expected: =
 var a
@@ -370,6 +370,15 @@ $a = 34 +
     // line marker (reach null character)
     msg = "(stdin):1: [syntax error] invalid token, expected: <NewLine>\nhello\n     \n";
     ASSERT_NO_FATAL_FAILURE(this->expect("hello\0world" | ds(), 1, "", msg));
+}
+
+TEST_F(CmdlineTest, marker2) {
+    const char *s = "$e";
+    const char *msg = R"((string):1: [semantic error] undefined symbol: `e'
+$e
+^~
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, version) {
