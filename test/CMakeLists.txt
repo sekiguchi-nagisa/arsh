@@ -48,6 +48,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/logger)
 include_directories(${CMAKE_SOURCE_DIR}/tools/json)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/json)
 
+include_directories(${CMAKE_SOURCE_DIR}/tools/uri)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/uri)
+
 if(FUZZING_BUILD_MODE)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fuzz)
 endif()
