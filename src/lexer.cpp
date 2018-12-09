@@ -173,10 +173,10 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
                 break;
             case 'x':
                 if(i + 1 < stopPos && isHex(this->buf[i + 1])) {
-                    int v = toHex(this->buf[++i]);
+                    int v = hexToNum(this->buf[++i]);
                     if(i + 1 < stopPos && isHex(this->buf[i + 1])) {
                         v *= 16;
-                        v += toHex(this->buf[++i]);
+                        v += hexToNum(this->buf[++i]);
                         ch = (char) v;
                         break;
                     }

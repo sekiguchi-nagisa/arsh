@@ -148,7 +148,12 @@ inline bool isHex(char ch) {
            (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
 }
 
-inline int toHex(char ch) {
+/**
+ * convert hex character to number
+ * @param ch
+ * @return
+ */
+inline int hexToNum(char ch) {
     if(ch >= '0' && ch <= '9') {
         return ch - '0';
     } else if(ch >= 'a' && ch <= 'f') {

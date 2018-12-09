@@ -416,7 +416,7 @@ static unsigned short parseHex(const char *&iter) {
         char ch = *(iter++);
         assert(isHex(ch));
         v *= 16;
-        v += toHex(ch);
+        v += hexToNum(ch);
     }
     return v;
 }

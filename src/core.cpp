@@ -587,10 +587,10 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
             }
             case 'x': {
                 if(isHex(ps[i + 1])) {
-                    int v = toHex(ps[++i]);
+                    int v = hexToNum(ps[++i]);
                     if(isHex(ps[i + 1])) {
                         v *= 16;
-                        v += toHex(ps[++i]);
+                        v += hexToNum(ps[++i]);
                     }
                     ch = (char) v;
                     break;

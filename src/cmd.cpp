@@ -521,10 +521,10 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
                 }
                 case 'x': {
                     if(isHex(arg[i + 1])) {
-                        int v = toHex(arg[++i]);
+                        int v = hexToNum(arg[++i]);
                         if(isHex(arg[i + 1])) {
                             v *= 16;
-                            v += toHex(arg[++i]);
+                            v += hexToNum(arg[++i]);
                         }
                         ch = static_cast<char>(v);
                         break;
