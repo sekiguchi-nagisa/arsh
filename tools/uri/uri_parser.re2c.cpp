@@ -68,10 +68,8 @@ URI URI::fromString(const std::string &str) {
     /*!stags:re2c format = "const char *@@;\n"; */
 
     const char *cursor = str.c_str();
-    const char *limit = cursor + str.size() + 1;
     const char *marker = nullptr;
 
-    // see. http://re2c.org/examples/example_10.html
     /**
      * see. http://re2c.org/examples/example_10.html
      *      https://tools.ietf.org/html/rfc3986
@@ -84,8 +82,7 @@ URI URI::fromString(const std::string &str) {
       re2c:define:YYMARKER = marker;
       re2c:define:YYFILL:naked = 1;
       re2c:define:YYFILL@len = #;
-      re2c:define:YYFILL = "if(cursor == limit) { ERROR(); }";
-      re2c:yyfill:enable = 1;
+      re2c:yyfill:enable = 0;
       re2c:indent:top = 1;
       re2c:indent:string = "    ";
 
