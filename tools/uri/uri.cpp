@@ -21,8 +21,28 @@
 namespace ydsh {
 namespace uri {
 
-std::string URI::toString() const {
+std::string Authority::toString() const {
     std::string value;
+    if(!this->userinfo.empty()) {
+        value += URI::encode(this->userinfo);
+        value += '@';
+    }
+    value += URI::encode(this->host);
+    if(!this->port.empty()) {
+        value += ':';
+        value += URI::encode(this->port);
+    }
+    return value;
+}
+
+std::string URI::toString() const {
+    std::string value = this->scheme;
+    value += ':';
+    if(this->authority || (!this->path.empty() && this->path[0] == '/')) {
+        value += "//";
+        value += this->authority.toString();
+    }
+    value += URI::encode(this->path);
     return value;
 }
 
@@ -33,6 +53,8 @@ static bool isEscaped(char ch) {
     case '_':
     case '~':
         return false;
+    case '/':
+        return false;   //FIXME:
     default:
         if((ch >= '0'&& ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
             return false;

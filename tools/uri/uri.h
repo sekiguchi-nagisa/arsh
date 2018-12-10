@@ -48,6 +48,10 @@ public:
         return this->port;
     }
 
+    operator bool() const {
+        return !this->host.empty();
+    }
+
     std::string toString() const;
 };
 
