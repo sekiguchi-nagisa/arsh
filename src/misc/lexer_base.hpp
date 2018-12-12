@@ -30,10 +30,9 @@
 #include "resource.hpp"
 
 namespace ydsh {
-namespace __detail {
 
 template <bool T>
-class SourceInfo : public RefCount<SourceInfo<T>> {
+class SourceInfoImpl : public RefCount<SourceInfoImpl<T>> {
 private:
     static_assert(T, "not allowed instantiation");
 
@@ -50,8 +49,8 @@ private:
     std::vector<unsigned int> lineNumTable;
 
 public:
-    explicit SourceInfo(const char *sourceName) : sourceName(sourceName) { }
-    ~SourceInfo() = default;
+    explicit SourceInfoImpl(const char *sourceName) : sourceName(sourceName) { }
+    ~SourceInfoImpl() = default;
 
     const std::string &getSourceName() const {
         return this->sourceName;
@@ -74,11 +73,11 @@ public:
 };
 
 // ############################
-// ##     SourceInfo     ##
+// ##     SourceInfoImpl     ##
 // ############################
 
 template <bool T>
-void SourceInfo<T>::addNewlinePos(unsigned int pos) {
+void SourceInfoImpl<T>::addNewlinePos(unsigned int pos) {
     if(this->lineNumTable.empty()) {
         this->lineNumTable.push_back(pos);
     } else if(pos > this->lineNumTable.back()) {
@@ -87,7 +86,7 @@ void SourceInfo<T>::addNewlinePos(unsigned int pos) {
 }
 
 template <bool T>
-unsigned int SourceInfo<T>::getLineNum(unsigned int pos) const {
+unsigned int SourceInfoImpl<T>::getLineNum(unsigned int pos) const {
     auto iter = std::lower_bound(this->lineNumTable.begin(), this->lineNumTable.end(), pos);
     if(this->lineNumTable.end() == iter) {
         return this->lineNumTable.size() + this->lineNumOffset;
@@ -95,9 +94,7 @@ unsigned int SourceInfo<T>::getLineNum(unsigned int pos) const {
     return iter - this->lineNumTable.begin() + this->lineNumOffset;
 }
 
-} // namespace __detail
-
-using SourceInfo = IntrusivePtr<__detail::SourceInfo<true>>;
+using SourceInfo = IntrusivePtr<SourceInfoImpl<true>>;
 
 namespace parser_base {
 namespace __detail {
@@ -140,7 +137,6 @@ protected:
      */
     unsigned char *ctxMarker{nullptr};
 
-    static constexpr unsigned int DEFAULT_SIZE = 256;
     static constexpr int DEFAULT_READ_SIZE = 128;
 
 protected:
