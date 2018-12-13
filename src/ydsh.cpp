@@ -639,11 +639,10 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
 }
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
-    FILE *fp;
+    FilePtr filePtr;
     if(sourceName == nullptr) {
-        fp = fdopen(dup(STDIN_FILENO), "rb");
+        filePtr.reset(fdopen(dup(STDIN_FILENO), "rb"));
     } else {
-        FilePtr filePtr;
         auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr);
         if(is<ModLoadingError>(ret)) {
             if(get<ModLoadingError>(ret) == ModLoadingError::CIRCULAR) {
@@ -664,14 +663,13 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         } else if(is<ModType *>(ret)) {
             return 0;   // do nothing.
         }
-        fp = filePtr.release();
-        assert(fp != nullptr);
         char *real = strdup(get<const char *>(ret));
         const char *dirName = dirname(real);
         setScriptDir(st, dirName);
         free(real);
     }
-    return evalScript(*st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, fp), e);
+    assert(filePtr);
+    return evalScript(*st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, std::move(filePtr)), e);
 }
 
 int DSState_loadModule(DSState *st, const char *fileName,

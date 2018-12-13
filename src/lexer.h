@@ -79,12 +79,12 @@ public:
      * 
      * @param sourceName
      * must not be null.
-     * @param fp
+     * @param file
      * must be opened with binary mode.
      * @return
      */
-    Lexer(const char *sourceName, FILE *fp) :
-            LexerBase(sourceName, fp), modeStack(1, yycSTMT) {}
+    Lexer(const char *sourceName, FilePtr &&file) :
+            LexerBase(sourceName, std::move(file)), modeStack(1, yycSTMT) {}
 
     ~Lexer() = default;
 

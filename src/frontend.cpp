@@ -280,7 +280,7 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
 void FrontEnd::enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_ptr<SourceNode> &&node) {
     {
         assert(*fullPath == '/');
-        Lexer lex(fullPath, filePtr.release());
+        Lexer lex(fullPath, std::move(filePtr));
         node->setFirstAppear(true);
         auto state = this->parser.saveLexicalState();
         auto scope = this->getSymbolTable().createModuleScope();

@@ -153,12 +153,12 @@ public:
 
     /**
      *
-     * @param fp
-     * must be opened with binary mode. after call it, not close fp.
+     * @param file
+     * must be opened with binary mode.
      * @return
      */
-    explicit LexerBase(const char *sourceName, FILE *fp) : LexerBase(sourceName) {
-        this->file.reset(fp);
+    explicit LexerBase(const char *sourceName, FilePtr &&file) : LexerBase(sourceName) {
+        this->file = std::move(file);
     }
 
     /**
