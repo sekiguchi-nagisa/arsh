@@ -191,7 +191,7 @@ interface = INTERFACE TYPE_PATH LBC
             | funcDecl statementEnd
             )+ RBC
 
-typeAlias = ALIAS IDENTIFIER typeName statementEnd
+typeAlias = ALIAS IDENTIFIER typeName
 
 basicOrReifiedType = (IDENTIFIER | TYPEOF) 
                      ({!HAS_NL} TYPE_OPEN typeName (TYPE_SEP typeName)* TYPE_CLOSE)?     
@@ -266,7 +266,7 @@ cmdArgSeg = CMD_ARG_PART
 expression = THROW expression
            | binaryExpression
 
-binaryExpression = unaryExpression {!HAS_NL} ? expression : expression
+binaryExpression = unaryExpression {!HAS_NL} TERNARY expression COLON expression
                  | unaryExpression {!HAS_NL}
                    (ASSIGN | ADD_ASSIGN | SUB_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN) expression
                  | condOrExpression
