@@ -96,7 +96,6 @@ unsigned int SourceInfoImpl<T>::getLineNum(unsigned int pos) const {
 
 using SourceInfo = IntrusivePtr<SourceInfoImpl<true>>;
 
-namespace parser_base {
 namespace __detail {
 
 /**
@@ -495,8 +494,6 @@ void LexerBase<T>::updateNewline(unsigned int pos) {
 
 using LexerBase = __detail::LexerBase<true>;
 
-
-} // namespace parser_base
 } // namespace ydsh
 
 #endif //YDSH_LEXER_BASE_HPP

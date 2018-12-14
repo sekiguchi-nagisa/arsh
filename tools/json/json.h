@@ -222,7 +222,7 @@ inline bool isInvalidToken(JSONTokenKind kind) {
 const char *toString(JSONTokenKind kind);
 
 
-class Lexer : public parser_base::LexerBase {
+class Lexer : public LexerBase {
 public:
     template<typename ...Arg>
     explicit Lexer(Arg &&...arg) : LexerBase("(string)", std::forward<Arg>(arg)...) {}
@@ -230,7 +230,7 @@ public:
     JSONTokenKind nextToken(Token &token);
 };
 
-class Parser : public parser_base::ParserBase<JSONTokenKind, Lexer> {
+class Parser : public ParserBase<JSONTokenKind, Lexer> {
 private:
     Lexer lex;
 

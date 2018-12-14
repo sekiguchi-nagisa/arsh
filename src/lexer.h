@@ -30,7 +30,7 @@ namespace ydsh {
 const char *toModeName(LexerMode mode);
 
 
-class Lexer : public ydsh::parser_base::LexerBase {
+class Lexer : public ydsh::LexerBase {
 private:
     /**
      * default mode is yycSTMT

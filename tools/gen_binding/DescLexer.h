@@ -54,7 +54,7 @@ EACH_DESC_TOKEN(GEN_ENUM)
 
 using Token = ydsh::Token;
 
-class DescLexer : public ydsh::parser_base::LexerBase {
+class DescLexer : public ydsh::LexerBase {
 public:
     explicit DescLexer(const char *line) : LexerBase("", line) {}
     ~DescLexer() = default;

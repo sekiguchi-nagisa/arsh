@@ -652,7 +652,7 @@ public:
     }
 };
 
-using ParseError = ydsh::parser_base::ParseError<DescTokenKind>;
+using ParseError = ydsh::ParseErrorBase<DescTokenKind>;
 
 #define CUR_KIND() (this->curKind)
 
@@ -660,7 +660,7 @@ using ParseError = ydsh::parser_base::ParseError<DescTokenKind>;
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
 
-class Parser : public ydsh::parser_base::ParserBase<DescTokenKind, DescLexer> {
+class Parser : public ydsh::ParserBase<DescTokenKind, DescLexer> {
 public:
     Parser() = default;
 

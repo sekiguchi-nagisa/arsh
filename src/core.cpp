@@ -1159,7 +1159,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
 
         switch(e.getTokenKind()) {
         case EOS: {
-            if(strcmp(e.getErrorKind(), parser_base::NO_VIABLE_ALTER) == 0) {
+            if(strcmp(e.getErrorKind(), NO_VIABLE_ALTER) == 0) {
                 kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr, true);
                 if(kind != CompletorKind::NONE) {
                     goto END;
@@ -1174,7 +1174,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
                     kind = CompletorKind::FILE;
                     goto END;
                 }
-            } else if(strcmp(e.getErrorKind(), parser_base::TOKEN_MISMATCHED) == 0) {
+            } else if(strcmp(e.getErrorKind(), TOKEN_MISMATCHED) == 0) {
                 assert(!e.getExpectedTokens().empty());
                 TokenKind expected = e.getExpectedTokens().back();
                 LOG(DUMP_CONSOLE, "expected: %s", toString(expected));

@@ -66,7 +66,7 @@ public:
     }
 };
 
-using ParseError = ydsh::parser_base::ParseError<TokenKind>;
+using ParseError = ParseErrorBase<TokenKind>;
 
 class TokenTracker {
 private:
@@ -85,7 +85,7 @@ public:
     };
 };
 
-class Parser : public ydsh::parser_base::ParserBase<TokenKind, Lexer, TokenTracker> {
+class Parser : public ydsh::ParserBase<TokenKind, Lexer, TokenTracker> {
 private:
     static constexpr unsigned int MAX_NESTING_DEPTH = 5000;
 

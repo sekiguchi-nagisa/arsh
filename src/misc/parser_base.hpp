@@ -22,7 +22,6 @@
 #include "misc/lexer_base.hpp"
 
 namespace ydsh {
-namespace parser_base {
 
 constexpr const char *TOKEN_MISMATCHED = "TokenMismatched";
 constexpr const char *NO_VIABLE_ALTER  = "NoViableAlter";
@@ -31,7 +30,7 @@ constexpr const char *TOKEN_FORMAT     = "TokenFormat";
 constexpr const char *DEEP_NESTING     = "DeepNesting";
 
 template <typename T>
-class ParseError {
+class ParseErrorBase {
 private:
     T kind;
     Token errorToken;
@@ -40,16 +39,16 @@ private:
     std::string message;
 
 public:
-    ParseError(T kind, Token errorToken, const char *errorKind, std::string &&message) :
+    ParseErrorBase(T kind, Token errorToken, const char *errorKind, std::string &&message) :
             kind(kind), errorToken(errorToken), errorKind(errorKind),
             expectedTokens(), message(std::move(message)) { }
 
-    ParseError(T kind, Token errorToken, const char *errorKind,
+    ParseErrorBase(T kind, Token errorToken, const char *errorKind,
                std::vector<T> &&expectedTokens, std::string &&message) :
             kind(kind), errorToken(errorToken), errorKind(errorKind),
             expectedTokens(std::move(expectedTokens)), message(std::move(message)) { }
 
-    ~ParseError() = default;
+    ~ParseErrorBase() = default;
 
     const Token &getErrorToken() const {
         return this->errorToken;
@@ -101,7 +100,7 @@ protected:
     unsigned int callCount{0};
 
 private:
-    std::unique_ptr<ParseError<T>> error;
+    std::unique_ptr<ParseErrorBase<T>> error;
 
 public:
     ParserBase() = default;
@@ -122,7 +121,7 @@ public:
         return static_cast<bool>(this->error);
     }
 
-    const ParseError<T> &getError() const {
+    const ParseErrorBase<T> &getError() const {
         return *this->error;
     }
 
@@ -174,7 +173,7 @@ protected:
 
     template <typename ...Arg>
     void createError(Arg && ...arg) {
-        this->error.reset(new ParseError<T>(std::forward<Arg>(arg)...));
+        this->error.reset(new ParseErrorBase<T>(std::forward<Arg>(arg)...));
     }
 };
 
@@ -275,7 +274,6 @@ void ParserBase<T, LexerImpl, Tracker>::raiseDeepNestingError() {
     this->createError(this->curKind, this->curToken, DEEP_NESTING, std::move(message));
 }
 
-} //namespace parser_base
 } //namespace ydsh
 
 
