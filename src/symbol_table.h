@@ -704,13 +704,16 @@ public:
     FunctionType &createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
     /**
-     * set type name alias. if alias name has already defined, report error.
+     * set type name alias. if alias name has alreadt defined, return false
+     * @param alias
+     * @param targetType
+     * @return
      */
-    void setAlias(const std::string &alias, DSType &targetType) {
-        this->setAlias(alias.c_str(), targetType);
+    bool setAlias(const std::string &alias, DSType &targetType) {
+        return this->setAlias(alias.c_str(), targetType);
     }
 
-    void setAlias(const char *alias, DSType &targetType);
+    bool setAlias(const char *alias, DSType &targetType);
 
     const char *getTypeName(const DSType &type) const {
         return this->typeMap.getTypeName(type).c_str();

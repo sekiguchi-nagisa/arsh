@@ -20,7 +20,6 @@
 #include "handle.h"
 #include "misc/fatal.h"
 #include "misc/util.hpp"
-#include "tcerror.h"
 
 namespace ydsh {
 

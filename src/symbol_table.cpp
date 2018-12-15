@@ -520,10 +520,8 @@ FunctionType &SymbolTable::createFuncType(DSType *returnType, std::vector<DSType
     return *static_cast<FunctionType *>(type);
 }
 
-void SymbolTable::setAlias(const char *alias, DSType &targetType) {
-    if(!this->typeMap.setAlias(std::string(alias), targetType.getTypeID())) {
-        RAISE_TL_ERROR(DefinedType, alias);
-    }
+bool SymbolTable::setAlias(const char *alias, DSType &targetType) {
+    return this->typeMap.setAlias(std::string(alias), targetType.getTypeID());
 }
 
 std::string SymbolTable::toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) const {

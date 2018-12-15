@@ -869,12 +869,10 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
     }
 
     TypeNode *typeToken = node.getTargetTypeNode();
-    try {
-        this->symbolTable.setAlias(node.getAlias(), this->toType(typeToken));
-        node.setType(this->symbolTable.get(TYPE::Void));
-    } catch(TypeLookupError &e) {
-        throw TypeCheckError(typeToken->getToken(), e);
+    if(!this->symbolTable.setAlias(node.getAlias(), this->toType(typeToken))) {
+        RAISE_TC_ERROR(DefinedSymbol, node, node.getAlias().c_str());
     }
+    node.setType(this->symbolTable.get(TYPE::Void));
 }
 
 void TypeChecker::visitLoopNode(LoopNode &node) {
