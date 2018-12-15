@@ -23,6 +23,7 @@
 #include "type.h"
 #include "handle.h"
 #include "constant.h"
+#include "tlerror.h"
 #include "misc/buffer.hpp"
 #include "misc/resource.hpp"
 #include "misc/result.hpp"

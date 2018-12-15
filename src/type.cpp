@@ -21,7 +21,7 @@
 #include "type.h"
 #include "object.h"
 #include "handle.h"
-#include "diagnosis.h"
+#include "tcerror.h"
 #include "core.h"
 
 namespace ydsh {

@@ -20,7 +20,7 @@
 #include "handle.h"
 #include "misc/fatal.h"
 #include "misc/util.hpp"
-#include "diagnosis.h"
+#include "tcerror.h"
 
 namespace ydsh {
 

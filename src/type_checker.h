@@ -20,7 +20,7 @@
 #include "node.h"
 #include "handle.h"
 #include "symbol_table.h"
-#include "diagnosis.h"
+#include "tcerror.h"
 #include "misc/buffer.hpp"
 
 namespace ydsh {
