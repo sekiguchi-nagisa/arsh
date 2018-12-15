@@ -56,10 +56,10 @@ struct E : TLError { \
     static constexpr const char *kind = #E; \
     static constexpr const char *value = fmt; }
 
-DEFINE_TLError(UndefinedType,   "undefined type: `%s'");
-DEFINE_TLError(NotTemplate,     "illegal type template: %s");
-DEFINE_TLError(InvalidElement,  "invalid type element: `%s'");
-DEFINE_TLError(UnmatchElement,  "not match type element, `%s' requires %d type element, but is %d");
+DEFINE_TLError(UndefinedType , "undefined type: `%s'");
+DEFINE_TLError(NotTemplate   , "illegal type template: `%s'");
+DEFINE_TLError(InvalidElement, "invalid type element: `%s'");
+DEFINE_TLError(UnmatchElement, "not match type element, `%s' requires %d type element, but is %d");
 
 #undef DEFINE_TLError
 

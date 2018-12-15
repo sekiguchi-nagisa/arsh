@@ -64,35 +64,35 @@ struct E : TCError { \
     static constexpr const char *kind = #E; \
     static constexpr const char *value = fmt; }
 
-DEFINE_TCError(InsideLoop        ,"only available inside loop statement"              );
-DEFINE_TCError(UnfoundReturn     ,"not found return statement"                        );
-DEFINE_TCError(Unreachable       ,"unreachable code"                                  );
-DEFINE_TCError(InsideFunc        ,"only available inside function"                    );
-DEFINE_TCError(NotNeedExpr       ,"not need expression"                               );
-DEFINE_TCError(Assignable        ,"require assignable expression"                     );
-DEFINE_TCError(ReadOnly          ,"read only symbol"                                  );
-DEFINE_TCError(InsideFinally     ,"unavailable inside finally block"                  );
-DEFINE_TCError(InsideChild       ,"unavailable inside child process"                  );
-DEFINE_TCError(OutsideToplevel   ,"only available top level scope"                    );
-DEFINE_TCError(NotCallable       ,"Func type object is not directly callable"         );
-DEFINE_TCError(UselessBlock      ,"useless block"                                     );
-DEFINE_TCError(EmptyTry          ,"empty try block"                                   );
-DEFINE_TCError(MeaninglessTry    ,"meaningless try block"                             );
-DEFINE_TCError(LocalLimit        ,"too many local variables"                          );
-DEFINE_TCError(DefinedSymbol     ,"already defined symbol: `%s'"                      );
-DEFINE_TCError(UndefinedSymbol   ,"undefined symbol: `%s'"                            );
-DEFINE_TCError(UndefinedField    ,"undefined field: `%s'"                             );
-DEFINE_TCError(UndefinedMethod   ,"undefined method: `%s'"                            );
-DEFINE_TCError(UndefinedInit     ,"undefined constructor: `%s'"                       );
-DEFINE_TCError(Unacceptable      ,"unacceptable type: `%s'"                           );
-DEFINE_TCError(DefinedCmd        ,"already defined command: `%s'"                     );
-DEFINE_TCError(ConflictSymbol    ,"at global import, detect symbol conflict: `%s'"    );
-DEFINE_TCError(NotOpenMod        ,"cannot open module: `%s', by `%s'"                 );
-DEFINE_TCError(NotFoundMod       ,"not found module: `%s'"                            );
-DEFINE_TCError(CircularMod       ,"circular module import: `%s'"                      );
-DEFINE_TCError(Required          ,"require `%s' type, but is `%s' type"               );
-DEFINE_TCError(CastOp            ,"unsupported cast op: `%s' type -> `%s' type"       );
-DEFINE_TCError(UnmatchParam      ,"not match parameter, require size is %d, but is %d");
+DEFINE_TCError(InsideLoop     , "only available inside loop statement"              );
+DEFINE_TCError(UnfoundReturn  , "not found return statement"                        );
+DEFINE_TCError(Unreachable    , "unreachable code"                                  );
+DEFINE_TCError(InsideFunc     , "only available inside function"                    );
+DEFINE_TCError(NotNeedExpr    , "not need expression"                               );
+DEFINE_TCError(Assignable     , "require assignable expression"                     );
+DEFINE_TCError(ReadOnly       , "read only symbol"                                  );
+DEFINE_TCError(InsideFinally  , "unavailable inside finally block"                  );
+DEFINE_TCError(InsideChild    , "unavailable inside child process"                  );
+DEFINE_TCError(OutsideToplevel, "only available top level scope"                    );
+DEFINE_TCError(NotCallable    , "Func type object is not directly callable"         );
+DEFINE_TCError(UselessBlock   , "useless block"                                     );
+DEFINE_TCError(EmptyTry       , "empty try block"                                   );
+DEFINE_TCError(MeaninglessTry , "meaningless try block"                             );
+DEFINE_TCError(LocalLimit     , "too many local variables"                          );
+DEFINE_TCError(DefinedSymbol  , "already defined symbol: `%s'"                      );
+DEFINE_TCError(UndefinedSymbol, "undefined symbol: `%s'"                            );
+DEFINE_TCError(UndefinedField , "undefined field: `%s'"                             );
+DEFINE_TCError(UndefinedMethod, "undefined method: `%s'"                            );
+DEFINE_TCError(UndefinedInit  , "undefined constructor: `%s'"                       );
+DEFINE_TCError(Unacceptable   , "unacceptable type: `%s'"                           );
+DEFINE_TCError(DefinedCmd     , "already defined command: `%s'"                     );
+DEFINE_TCError(ConflictSymbol , "at global import, detect symbol conflict: `%s'"    );
+DEFINE_TCError(NotOpenMod     , "cannot open module: `%s', by `%s'"                 );
+DEFINE_TCError(NotFoundMod    , "not found module: `%s'"                            );
+DEFINE_TCError(CircularMod    , "circular module import: `%s'"                      );
+DEFINE_TCError(Required       , "require `%s' type, but is `%s' type"               );
+DEFINE_TCError(CastOp         , "unsupported cast op: `%s' type -> `%s' type"       );
+DEFINE_TCError(UnmatchParam   , "not match parameter, require size is %d, but is %d");
 
 #undef DEFINE_TCError
 
