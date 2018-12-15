@@ -1,4 +1,4 @@
-#$test($result = 'type', $status = 1, $errorKind = 'DefinedType', $lineNum = 8)
+#$test($result = 'type', $status = 1, $errorKind = 'DefinedSymbol', $lineNum = 8)
 
 alias catch = Int
 
