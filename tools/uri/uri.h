@@ -48,7 +48,7 @@ public:
         return this->port;
     }
 
-    operator bool() const {
+    explicit operator bool() const {
         return !this->host.empty();
     }
 

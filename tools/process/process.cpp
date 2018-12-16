@@ -200,7 +200,7 @@ static void setPTYSetting(int fd, termios &term, unsigned short row, unsigned sh
         error_at("failed");
     }
 
-    winsize ws;
+    winsize ws{};
     ws.ws_row = row;
     ws.ws_col = col;
     if(ioctl(fd, TIOCSWINSZ, &ws) == -1) {
@@ -278,7 +278,7 @@ static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {
         if(fd == -1) {
             error_at("open pty slave failed");
         }
-        termios term;
+        termios term{};
         cfmakeraw(&term);
         setPTYSetting(fd, term, 24, 80);
         slaveFD = fd;
