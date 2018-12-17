@@ -177,8 +177,6 @@ TYPE_OPT = "!"
 ## Parser specification
 
 ```
-toplevel = statement* EOF
-
 function = funcDecl block
 
 funcDecl = FUNCTION IDENTIFIER LP 
@@ -212,7 +210,7 @@ statementImpl = LINE_END
               | interface
               | typeAlias
               | ASSERT expression ({!HAS_NL} COLON expression)?
-              | BREAK
+              | BREAK ({!HAS_NL} expression)?
               | CONTINUE
               | EXPORT_ENV IDENTIFIER ASSIGN epxression
               | IMPORT_ENV IDENTIFIER ({!HAS_NL} COLON expression)?
@@ -262,6 +260,7 @@ cmdArgSeg = CMD_ARG_PART
           | stringExpression
           | substitution
           | paramExpansion
+          | procSubstitution
 
 expression = THROW expression
            | binaryExpression
@@ -322,6 +321,7 @@ primaryExpression = command
                   | stringLiteral
                   | stringExpression
                   | substitution
+                  | procSubstitution
                   | appliedName
                   | LP expression RP
                   | LP expression (COMMA expression)* RP
@@ -351,6 +351,8 @@ paramExpansion = (APPLIED_NAME_WITH_BRACKET | SPECIAL_NAME_WITH_BRACKET) express
                | interpolation
 
 substitution = START_SUB_CMD expression RP
+
+procSubstitution = (START_IN_SUB | START_OUT_SUB) expression RP
 
 ```
 
