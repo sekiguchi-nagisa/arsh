@@ -276,24 +276,25 @@ public:
         return *this;
     }
 
-    ProcHandle operator()();
+    ProcHandle operator()() const;
 
     /**
      * if old out/err is INHERIT, set PIPE.
      * @param removeLastSpace
      * @return
      */
-    Output execAndGetResult(bool removeLastSpace = true) {
-        if(this->config.out.fd == IOConfig::INHERIT) {
-            this->config.out = IOConfig::PIPE;
+    Output execAndGetResult(bool removeLastSpace = true) const {
+        auto tmp = *this;
+        if(tmp.config.out.fd == IOConfig::INHERIT) {
+            tmp.config.out = IOConfig::PIPE;
         }
-        if(this->config.err.fd == IOConfig::INHERIT) {
-            this->config.err = IOConfig::PIPE;
+        if(tmp.config.err.fd == IOConfig::INHERIT) {
+            tmp.config.err = IOConfig::PIPE;
         }
-        return (*this)().waitAndGetResult(removeLastSpace);
+        return tmp().waitAndGetResult(removeLastSpace);
     }
 
-    WaitStatus exec() {
+    WaitStatus exec() const {
         return (*this)().wait();
     }
 

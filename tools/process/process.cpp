@@ -191,7 +191,7 @@ Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
 // ##     ProcBuilder     ##
 // #########################
 
-static void setPTYSetting(int fd, termios &term, unsigned short row, unsigned short col) {
+static void setPTYSetting(int fd, const termios &term, unsigned short row, unsigned short col) {
     if(fd < 0) {
         return;
     }
@@ -215,7 +215,7 @@ ProcBuilder& ProcBuilder::addArgs(const std::vector<std::string> &values) {
     return *this;
 }
 
-ProcHandle ProcBuilder::operator()() {
+ProcHandle ProcBuilder::operator()() const {
     return spawn(this->config, [&] {
         char *argv[this->args.size() + 1];
         for(unsigned int i = 0; i < this->args.size(); i++) {
