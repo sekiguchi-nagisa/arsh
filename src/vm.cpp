@@ -651,10 +651,14 @@ public:
 
     ~PipelineState() override {
         auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
-        bool r = this->entry->restoreStdin();
         this->entry->wait(waitOp);
-        if(r) {
-            tryToForeground(this->state);
+
+        /**
+         * due to prevent SIGPIPE, restore stdin after call wait
+         */
+        if(this->entry->restoreStdin()) {
+            int ret = tryToForeground(this->state);
+            LOG(DUMP_EXEC, "tryToForeground: %d, %s", ret, strerror(errno));
         }
         if(this->entry->available()) {
             // job is still running, attach to JobTable
@@ -1071,7 +1075,8 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         if(proc.state() != Proc::TERMINATED) {
             state.jobTable.attach(JobImpl::create(proc));
         }
-        tryToForeground(state);
+        int ret = tryToForeground(state);
+        LOG(DUMP_EXEC, "tryToForeground: %d, %s", ret, strerror(errno));
         state.jobTable.updateStatus();
         if(errnum != 0) {
             raiseCmdError(state, cmdName, errnum);
@@ -1330,12 +1335,16 @@ static bool callPipeline(DSState &state, bool lastPipe) {
         // set pc to next instruction
         state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
     } else if(procIndex == procSize) { // parent (last pipeline)
+        /**
+         * in last pipe, save current stdin before call dup2
+         */
+        auto jobEntry = JobImpl::create(procSize, childs, lastPipe);
+
         if(lastPipe) {
             dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
         }
         closeAllPipe(pipeSize, pipefds);
 
-        auto jobEntry = JobImpl::create(procSize, childs, lastPipe);
         if(lastPipe) {
             state.push(DSValue::create<PipelineState>(state, std::move(jobEntry)));
         } else {

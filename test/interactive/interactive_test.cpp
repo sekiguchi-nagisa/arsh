@@ -313,6 +313,28 @@ TEST_F(InteractiveTest, continuation) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
 }
 
+TEST_F(InteractiveTest, throwFromLastPipe) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("true | throw 12", PROMPT, "[runtime error]\n12\n"));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\r\n"));
+}
+
+TEST_F(InteractiveTest, readAfterLastPipe) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("var a = 23|'>> '; read -u 0 -p $a;", "", ">> "));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("hello", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $REPLY == 'hello'", PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
