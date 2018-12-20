@@ -657,8 +657,8 @@ public:
          * due to prevent SIGPIPE, restore stdin after call wait
          */
         if(this->entry->restoreStdin()) {
-            int ret = tryToForeground(this->state);
-            LOG(DUMP_EXEC, "tryToForeground: %d, %s", ret, strerror(errno));
+            int ret = tryToBeForeground(this->state);
+            LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
         }
         if(this->entry->available()) {
             // job is still running, attach to JobTable
@@ -1075,8 +1075,8 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         if(proc.state() != Proc::TERMINATED) {
             state.jobTable.attach(JobImpl::create(proc));
         }
-        int ret = tryToForeground(state);
-        LOG(DUMP_EXEC, "tryToForeground: %d, %s", ret, strerror(errno));
+        int ret = tryToBeForeground(state);
+        LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
         state.jobTable.updateStatus();
         if(errnum != 0) {
             raiseCmdError(state, cmdName, errnum);
@@ -1354,7 +1354,7 @@ static bool callPipeline(DSState &state, bool lastPipe) {
             if(jobEntry->available()) {
                 state.jobTable.attach(jobEntry);
             }
-            tryToForeground(state);
+            tryToBeForeground(state);
             state.jobTable.updateStatus();
             state.pushExitStatus(status);
         }

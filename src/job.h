@@ -36,7 +36,7 @@ namespace ydsh {
  * if not DSState::isForeground is false, return 1.
  * if error, return -1 and set errno
  */
-int tryToForeground(const DSState &st);
+int tryToBeForeground(const DSState &st);
 
 class JobTable;
 

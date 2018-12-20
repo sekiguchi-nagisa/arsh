@@ -1467,7 +1467,7 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
 
     if(fg) {
         int s = getJobTable(state).waitAndDetach(job, true);    //FIXME: check root shell
-        tryToForeground(state);
+        tryToBeForeground(state);
         getJobTable(state).updateStatus();
         return s;
     }
