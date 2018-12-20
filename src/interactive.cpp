@@ -28,6 +28,7 @@
 
 #include <ydsh/ydsh.h>
 #include "misc/unicode.hpp"
+#include "misc/fatal.h"
 
 static DSState *state;
 
@@ -90,6 +91,9 @@ static bool readLine(std::string &line) {
             }
             line = "exit\n";
             return true;
+        }
+        if(*str == '\0' && errno != 0) {
+            fatal_perror("read line failed");
         }
 
         if(isSkipLine(str)) {
