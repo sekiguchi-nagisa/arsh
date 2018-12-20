@@ -28,7 +28,15 @@ struct DSState;
 
 namespace ydsh {
 
-void tryToForeground(const DSState &st);
+/**
+ *
+ * @param st
+ * @return
+ * if success, return 0.
+ * if not DSState::isForeground is false, return 1.
+ * if error, return -1 and set errno
+ */
+int tryToForeground(const DSState &st);
 
 class JobTable;
 

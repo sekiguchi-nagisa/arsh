@@ -63,10 +63,12 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
     return Proc(pid);
 }
 
-void tryToForeground(const DSState &st) {
+int tryToForeground(const DSState &st) {
+    errno = 0;
     if(st.isForeground()) {
-        tcsetpgrp(STDIN_FILENO, getpgid(0));
+        return tcsetpgrp(STDIN_FILENO, getpgid(0));
     }
+    return 1;
 }
 
 // ##################
