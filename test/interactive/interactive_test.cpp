@@ -335,6 +335,18 @@ TEST_F(InteractiveTest, readAfterLastPipe) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
 }
 
+TEST_F(InteractiveTest, printStackTop) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("34|$false", "(Boolean) false\r\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("34|true", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("true", PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

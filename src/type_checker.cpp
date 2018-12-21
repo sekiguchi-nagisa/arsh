@@ -1332,6 +1332,19 @@ struct NodeWrapper {
     }
 };
 
+static bool mayBeCmd(const Node &node) {
+    auto kind = node.getNodeKind();
+    if(kind == NodeKind::Cmd) {
+        return true;
+    }
+    if(kind == NodeKind::Pipeline) {
+        if(static_cast<const PipelineNode&>(node).getNodes().back()->getNodeKind() == NodeKind::Cmd) {
+            return true;
+        }
+    }
+    return false;
+}
+
 std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&ptr) {
     NodeWrapper wrap(std::move(ptr));
     Node *&node = wrap.ptr;
@@ -1340,8 +1353,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
         RAISE_TC_ERROR(Unreachable, *node);
     }
 
-    auto kind = node->getNodeKind();
-    if(kind == NodeKind::Pipeline || kind == NodeKind::Cmd) {
+    if(mayBeCmd(*node)) {
         this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);  // pop stack top
     } else if(this->toplevelPrinting) {
         this->checkType(nullptr, node, nullptr);
