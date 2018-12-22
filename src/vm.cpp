@@ -156,8 +156,6 @@ void DSState::installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &ha
 }
 
 
-extern char **environ;
-
 namespace ydsh {
 
 #define CODE(ctx) ((ctx).code)
@@ -474,7 +472,7 @@ static PipeSet initPipeSet(ForkKind kind) {
         break;
     }
 
-    PipeSet set;
+    PipeSet set;    //NOLINT
     tryToPipe(set.in, useInPipe);
     tryToPipe(set.out, useOutPipe);
     return set;
@@ -1302,7 +1300,7 @@ static bool callPipeline(DSState &state, bool lastPipe) {
     Proc childs[procSize];
     const bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
-    Proc proc;
+    Proc proc;  //NOLINT
 
     unsigned int procIndex;
     for(procIndex = 0; procIndex < procSize && (proc = Proc::fork(state, pgid, rootShell)).pid() > 0; procIndex++) {

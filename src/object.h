@@ -152,7 +152,7 @@ public:
      */
     constexpr DSValue() noexcept: obj(nullptr) { }
 
-    constexpr DSValue(std::nullptr_t) noexcept: obj(nullptr) { }
+    constexpr DSValue(std::nullptr_t) noexcept: obj(nullptr) { }    //NOLINT
 
     DSValue(const DSValue &value) noexcept : DSValue(value.obj) { }
 
