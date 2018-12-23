@@ -91,7 +91,7 @@ DSType *TypeChecker::toTypeImpl(TypeNode &node) {
     }
     case TypeNode::TypeOf:
         auto &typeNode = static_cast<TypeOfNode&>(node);
-        auto &type = this->checkType(typeNode.getExprNode());
+        auto &type = this->checkTypeAsExpr(typeNode.getExprNode());
         if(type.isNothingType()) {
             RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->symbolTable.getTypeName(type));
         }
@@ -159,7 +159,7 @@ void TypeChecker::checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blo
             if(requiredType != nullptr) {
                 this->checkTypeWithCoercion(*requiredType, targetNode);
             } else {
-                this->checkType(nullptr, targetNode, nullptr);
+                this->checkTypeExactly(targetNode);
             }
         } else {
             this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), targetNode);
@@ -314,7 +314,7 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
 }
 
 bool TypeChecker::checkAccessNode(AccessNode &node) {
-    auto &recvType = this->checkType(node.getRecvNode());
+    auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
     auto handle = recvType.lookupFieldHandle(this->symbolTable, node.getFieldName());
     if(handle == nullptr) {
         return false;
@@ -468,7 +468,7 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
     const unsigned int size = node.getExprNodes().size();
     for(unsigned int i = 0; i < size; i++) {
         Node *exprNode = node.getExprNodes()[i];
-        auto &exprType = this->checkType(exprNode);
+        auto &exprType = this->checkTypeAsExpr(exprNode);
         if(!this->symbolTable.get(TYPE::String).isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
             std::string methodName(OP_INTERP);
             MethodHandle *handle = exprType.isOptionType() ? nullptr :
@@ -498,7 +498,7 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
     unsigned int size = node.getExprNodes().size();
     assert(size != 0);
     Node *firstElementNode = node.getExprNodes()[0];
-    auto &elementType = this->checkType(firstElementNode);
+    auto &elementType = this->checkTypeAsExpr(firstElementNode);
 
     for(unsigned int i = 1; i < size; i++) {
         this->checkTypeWithCoercion(elementType, node.refExprNodes()[i]);
@@ -516,7 +516,7 @@ void TypeChecker::visitMapNode(MapNode &node) {
     Node *firstKeyNode = node.getKeyNodes()[0];
     auto &keyType = this->checkType(this->symbolTable.get(TYPE::_Value), firstKeyNode);
     Node *firstValueNode = node.getValueNodes()[0];
-    auto &valueType = this->checkType(firstValueNode);
+    auto &valueType = this->checkTypeAsExpr(firstValueNode);
 
     for(unsigned int i = 1; i < size; i++) {
         this->checkTypeWithCoercion(keyType, node.refKeyNodes()[i]);
@@ -534,7 +534,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
     unsigned int size = node.getNodes().size();
     std::vector<DSType *> types(size);
     for(unsigned int i = 0; i < size; i++) {
-        types[i] = &this->checkType(node.getNodes()[i]);
+        types[i] = &this->checkTypeAsExpr(node.getNodes()[i]);
     }
     node.setType(this->symbolTable.createTupleType(std::move(types)));
 }
@@ -556,7 +556,7 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
 }
 
 void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
-    auto &exprType = this->checkType(node.getExprNode());
+    auto &exprType = this->checkTypeAsExpr(node.getExprNode());
     auto &targetType = this->toType(node.getTargetTypeNode());
 
     if(node.isCastOp()) {
@@ -575,7 +575,7 @@ void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
 }
 
 void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
-    auto &exprType = this->checkType(node.getExprNode());
+    auto &exprType = this->checkTypeAsExpr(node.getExprNode());
     if(node.isUnwrapOp()) {
         if(!exprType.isOptionType()) {
             RAISE_TC_ERROR(Required, *node.getExprNode(), "Option type", this->symbolTable.getTypeName(exprType));
@@ -586,7 +586,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
             this->resolveCoercion(this->symbolTable.get(TYPE::Boolean), node.refExprNode());
         }
         auto *applyNode = node.createApplyNode();
-        node.setType(this->checkType(applyNode));
+        node.setType(this->checkTypeAsExpr(applyNode));
     }
 }
 
@@ -604,7 +604,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     }
 
     if(node.getOp() == NULL_COALE) {
-        auto &leftType = this->checkType(node.getLeftNode());
+        auto &leftType = this->checkTypeAsExpr(node.getLeftNode());
         if(!leftType.isOptionType()) {
             RAISE_TC_ERROR(Required, *node.getLeftNode(), "Option type", this->symbolTable.getTypeName(leftType));
         }
@@ -614,8 +614,8 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
         return;
     }
 
-    auto &leftType = this->checkType(node.getLeftNode());
-    auto &rightType = this->checkType(node.getRightNode());
+    auto &leftType = this->checkTypeAsExpr(node.getLeftNode());
+    auto &rightType = this->checkTypeAsExpr(node.getRightNode());
 
     // check referencial equality of func object
     if(leftType.isFuncType() && leftType == rightType
@@ -629,7 +629,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
                 (leftType == this->symbolTable.get(TYPE::String) ||
                         rightType == this->symbolTable.get(TYPE::String))) {
         this->convertToStringExpr(node);
-        node.setType(this->checkType(node.getOptNode()));
+        node.setType(this->checkTypeAsExpr(node.getOptNode()));
         return;
     }
 
@@ -648,7 +648,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     }
 
     node.createApplyNode();
-    node.setType(this->checkType(node.getOptNode()));
+    node.setType(this->checkTypeAsExpr(node.getOptNode()));
 }
 
 void TypeChecker::checkTypeAsMethodCall(ApplyNode &node, MethodHandle *handle) {
@@ -708,7 +708,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
 void TypeChecker::visitCmdNode(CmdNode &node) {
     this->checkType(this->symbolTable.get(TYPE::String), node.getNameNode());
     for(auto *argNode : node.getArgNodes()) {
-        this->checkType(argNode);
+        this->checkTypeAsExpr(argNode);
     }
     if(node.getNameNode()->is(NodeKind::String)
        && static_cast<StringNode*>(node.getNameNode())->getValue() == "exit") {
@@ -722,7 +722,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
     const unsigned int size = node.getSegmentNodes().size();
     for(unsigned int i = 0; i < size; i++) {
         Node *exprNode = node.getSegmentNodes()[i];
-        auto &segmentType = this->checkType(exprNode);
+        auto &segmentType = this->checkTypeAsExpr(exprNode);
 
         if(!this->symbolTable.get(TYPE::String).isSameOrBaseTypeOf(segmentType) &&
                 !this->symbolTable.get(TYPE::StringArray).isSameOrBaseTypeOf(segmentType) &&
@@ -779,7 +779,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
         }
     }
 
-    this->checkType(argNode);
+    this->checkTypeAsExpr(argNode);
 
     // not allow String Array type
     if(argNode->getSegmentNodes().size() == 1) {
@@ -793,13 +793,13 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
     unsigned int size = node.getNodes().size();
     this->fctx.enterChild();
     for(unsigned int i = 0; i < size - 1; i++) {
-        this->checkType(nullptr, node.getNodes()[i], nullptr);
+        this->checkTypeExactly(node.getNodes()[i]);
     }
     this->fctx.leave();
 
     this->symbolTable.enterScope();
 
-    auto &type = this->checkType(nullptr, node.getNodes()[size - 1], nullptr);
+    auto &type = this->checkTypeExactly(node.getNodes()[size - 1]);
     if(node.isLastPipe()) { // register pipeline state
         this->addEntry(node, "%%pipe", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
         node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
@@ -815,9 +815,9 @@ void TypeChecker::visitWithNode(WithNode &node) {
     // register redir config
     this->addEntry(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
-    auto &type = this->checkType(nullptr, node.getExprNode(), nullptr);
+    auto &type = this->checkTypeExactly(node.getExprNode());
     for(auto &e : node.getRedirNodes()) {
-        this->checkType(e);
+        this->checkTypeAsExpr(e);
     }
 
     node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
@@ -913,8 +913,8 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
 
 void TypeChecker::visitIfNode(IfNode &node) {
     this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Boolean), node.refCondNode());
-    auto &thenType = this->checkType(nullptr, node.getThenNode(), nullptr);
-    auto &elseType = this->checkType(nullptr, node.getElseNode(), nullptr);
+    auto &thenType = this->checkTypeExactly(node.getThenNode());
+    auto &elseType = this->checkTypeExactly(node.getElseNode());
 
     if(thenType.isNothingType() && elseType.isNothingType()) {
         node.setType(thenType);
@@ -955,7 +955,7 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
     if(node.getExprNode()->is(NodeKind::Empty)) {
         this->checkType(this->symbolTable.get(TYPE::Void), node.getExprNode());
     } else if(node.getOpKind() == JumpNode::BREAK) {
-        auto &type = this->checkType(node.getExprNode());
+        auto &type = this->checkTypeAsExpr(node.getExprNode());
         if(type.isNothingType()) {
             RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->symbolTable.getTypeName(type));
         }
@@ -1034,13 +1034,13 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
     // check type try block
     this->fctx.enterTry();
-    auto *exprType = &this->checkType(nullptr, node.getExprNode(), nullptr);
+    auto *exprType = &this->checkTypeExactly(node.getExprNode());
     this->fctx.leave();
 
     // check type catch block
     for(auto &c : node.getCatchNodes()) {
         this->fctx.enterTry();
-        auto &catchType = this->checkType(nullptr, c, nullptr);
+        auto &catchType = this->checkTypeExactly(c);
         this->fctx.leave();
 
         if(!exprType->isSameOrBaseTypeOf(catchType) && !this->checkCoercion(*exprType, catchType)) {
@@ -1092,7 +1092,7 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
         if(node.getKind() == VarDeclNode::CONST) {
             attr.set(FieldAttribute::READ_ONLY);
         }
-        exprType = &this->checkType(node.getExprNode());
+        exprType = &this->checkTypeAsExpr(node.getExprNode());
         if(exprType->isNothingType()) {
             RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->symbolTable.getTypeName(*exprType));
         }
@@ -1117,7 +1117,7 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
         RAISE_TC_ERROR(Assignable, *node.getLeftNode());
     }
     auto *leftNode = static_cast<AssignableNode *>(node.getLeftNode());
-    auto &leftType = this->checkType(leftNode);
+    auto &leftType = this->checkTypeAsExpr(leftNode);
     if(leftNode->attr().has(FieldAttribute::READ_ONLY)) {
         RAISE_TC_ERROR(ReadOnly, *leftNode);
     }
@@ -1132,7 +1132,7 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
         if(leftNode->is(NodeKind::Access)) {
             static_cast<AccessNode *>(leftNode)->setAdditionalOp(AccessNode::DUP_RECV);
         }
-        auto &rightType = this->checkType(node.getRightNode());
+        auto &rightType = this->checkTypeAsExpr(node.getRightNode());
         if(leftType != rightType) { // convert right hand-side type to left type
             this->resolveCoercion(leftType, node.refRightNode());
         }
@@ -1144,17 +1144,17 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
 }
 
 void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
-    auto &recvType = this->checkType(node.getRecvNode());
-    auto &indexType = this->checkType(node.getIndexNode());
+    auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
+    auto &indexType = this->checkTypeAsExpr(node.getIndexNode());
 
     node.setRecvType(recvType);
     node.setIndexType(indexType);
 
-    auto &elementType = this->checkType(node.getGetterNode());
+    auto &elementType = this->checkTypeAsExpr(node.getGetterNode());
     static_cast<BinaryOpNode *>(node.getRightNode())->getLeftNode()->setType(elementType);
 
     // convert right hand-side type to element type
-    auto &rightType = this->checkType(node.getRightNode());
+    auto &rightType = this->checkTypeAsExpr(node.getRightNode());
     if(elementType != rightType) {
         this->resolveCoercion(elementType, node.refRightNode());
     }
@@ -1265,7 +1265,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     if(node.getBlockNode()->getNodes().empty() ||
             !node.getBlockNode()->getNodes().back()->getType().isNothingType()) {
         VarNode *varNode = new VarNode({0, 1}, "?");
-        this->checkType(varNode);
+        this->checkTypeAsExpr(varNode);
         node.getBlockNode()->addReturnNodeToLast(this->symbolTable, varNode);
     }
 
@@ -1356,7 +1356,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
     if(mayBeCmd(*node)) {
         this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);  // pop stack top
     } else if(this->toplevelPrinting) {
-        this->checkType(nullptr, node, nullptr);
+        this->checkTypeExactly(node);
         node = this->newPrintOpNode(node);
     } else {
         this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);

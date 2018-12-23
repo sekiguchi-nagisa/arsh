@@ -195,7 +195,7 @@ protected:
     DSType *toTypeImpl(TypeNode &node);
 
     DSType &toType(TypeNode *node) {
-        return this->checkType(nullptr, node, nullptr);
+        return this->checkTypeExactly(node);
     }
 
     /**
@@ -203,7 +203,7 @@ protected:
      * if node type is void type, throw exception.
      * return resolved type.
      */
-    DSType &checkType(Node *targetNode) {
+    DSType &checkTypeAsExpr(Node *targetNode) {
         return this->checkType(nullptr, targetNode, &this->symbolTable.get(TYPE::Void));
     }
 
@@ -215,6 +215,15 @@ protected:
      */
     DSType &checkType(DSType &requiredType, Node *targetNode) {
         return this->checkType(&requiredType, targetNode, nullptr);
+    }
+
+    /**
+     * only call visitor api (not perform additional type checking)
+     * @param targetNode
+     * @return
+     */
+    DSType &checkTypeExactly(Node *targetNode) {
+        return this->checkType(nullptr, targetNode, nullptr);
     }
 
     /**
