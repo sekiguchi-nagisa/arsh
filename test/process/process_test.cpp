@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "../test_common.h"
+#include "ansi.h"
 
 class ProcTest : public ExpectOutput {};
 
@@ -123,6 +124,63 @@ TEST_F(ProcTest, pty3) {
     (void) r;
     auto ret = handle.waitAndGetResult(false);
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED, "break!!\n"));
+}
+
+TEST(ANSITest, case1) {
+    Screen screen;
+    std::string line = "abc";
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("abc", screen.toString()));
+
+    screen = Screen();
+    line = "a\bbc";
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("bc", screen.toString()));
+
+    screen = Screen();
+    line = "ab\x1b[2Dc";
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("cb", screen.toString()));
+
+    screen = Screen();
+    line = "abcdef\x1b[3D\x1b[0K0";
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("abc0", screen.toString()));
+
+    screen = Screen();
+    line = "abcdef\x1b[2J";
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", screen.toString()));
+
+    std::string rep;
+    screen = Screen();
+    screen.setReporter([&](std::string &&m){
+        rep = std::move(m);
+    });
+    line = "abcdef\x1b[2J\x1b[6n0";
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("      0", screen.toString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("\x1b[1;7R", rep));
+
+    rep = "";
+    screen = Screen();
+    screen.setReporter([&](std::string &&m){
+        rep = std::move(m);
+    });
+    line = "abc\x1b[H\x1b[6nd";
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("dbc", screen.toString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("\x1b[1;1R", rep));
+
+    rep = "";
+    screen = Screen();
+    screen.setReporter([&](std::string &&m){
+        rep = std::move(m);
+    });
+    line = "abc\x1b[H\x1b[1C\x1b[6nd";
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("adc", screen.toString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("\x1b[1;2R", rep));
 }
 
 

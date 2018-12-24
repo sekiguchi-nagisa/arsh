@@ -33,6 +33,7 @@
 #include <misc/logger_base.hpp>
 
 #include "process.h"
+#include "ansi.h"
 
 #ifdef __CYGWIN__
 static cc_t ttydefchars[NCCS] = {
@@ -445,5 +446,79 @@ int ProcBuilder::findPTY() const {
     return -1;
 }
 
+
+// ####################
+// ##     Screen     ##
+// ####################
+
+void Screen::addChar(char ch) {
+    switch(ch) {
+    case '\0':
+        break;
+    case '\n':
+        this->row++;
+        this->col++;
+        break;
+    case '\r':
+        this->col = 0;
+        break;
+    case '\b':
+        this->setChar('\0');
+        this->col--;
+        break;
+    case '\t':
+        this->setChar('\t');
+        break;
+    case 127:
+        this->setChar('\0');
+        break;
+    default:
+        if(ch >= 0 && ch <= 31) {
+            break;
+        }
+        this->setChar(ch);
+        this->col++;
+        break;
+    }
+}
+
+void Screen::reportPos() {
+    if(this->reporter) {
+        auto pos = this->getPos();
+        std::string str = "\x1b[";
+        str += std::to_string(pos.first);
+        str += ';';
+        str += std::to_string(pos.second);
+        str += 'R';
+
+        this->reporter(std::move(str));
+    }
+}
+
+void Screen::clear() {
+    for(unsigned int i = 0; i < this->buf.size(); i++) {
+        this->buf[i] = '\0';
+    }
+}
+
+void Screen::clearLineFrom() {
+    for(unsigned int i = this->col; i < buf.size(); i++) {
+        this->buf[i] = '\0';
+    }
+}
+
+std::string Screen::toString() const {
+    std::string ret;
+    for(char ch : this->buf) {
+        ret += ch;
+    }
+    for(; !ret.empty() && ret.back() == '\0'; ret.pop_back());
+    for(auto &ch : ret) {
+        if(ch == '\0') {
+            ch = ' ';
+        }
+    }
+    return ret;
+}
 
 } // namespace process
