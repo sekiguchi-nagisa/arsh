@@ -21,6 +21,7 @@
 #include "gmock/gmock.h"
 
 #include <process.h>
+#include <ansi.h>
 
 using namespace process;
 
@@ -149,9 +150,7 @@ protected:
         fsync(this->handle.in());
     }
 
-    std::pair<std::string, std::string> readAll() {
-        return this->handle.readAll(80);
-    }
+    std::pair<std::string, std::string> readAll();
 
     void expectRegex(const char *out = "", const char *err = "") {
         SCOPED_TRACE("");

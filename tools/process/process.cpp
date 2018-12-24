@@ -456,11 +456,15 @@ void Screen::addChar(char ch) {
     case '\0':
         break;
     case '\n':
-        this->row++;
+//        this->row++;
+//        this->col++;
+        this->setChar(ch);
         this->col++;
         break;
     case '\r':
-        this->col = 0;
+//        this->col = 0;
+        this->setChar(ch);
+        this->col++;
         break;
     case '\b':
         this->setChar('\0');

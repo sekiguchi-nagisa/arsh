@@ -216,3 +216,20 @@ int Extractor::extract(const char *value) {
     this->str += size;
     return 0;
 }
+
+
+// #############################
+// ##     InteractiveBase     ##
+// #############################
+
+std::pair<std::string, std::string> InteractiveBase::readAll() {
+    auto ret = this->handle.readAll(80);
+    Screen screen(24, 200);
+    screen.setReporter([&](std::string &&m) {
+        this->send(m.c_str());
+    });
+
+    screen.interpret(ret.first.c_str(), ret.first.size());
+    ret.first = screen.toString();
+    return ret;
+}
