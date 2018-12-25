@@ -155,6 +155,7 @@ void DSState::installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &ha
     }
 }
 
+extern char **environ; //NOLINT
 
 namespace ydsh {
 
