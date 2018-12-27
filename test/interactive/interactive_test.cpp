@@ -84,18 +84,18 @@ TEST_F(InteractiveTest, assert) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED));
 }
 
-//TEST_F(InteractiveTest, ctrlc) {
-//    this->invoke("--quiet", "--norc");
-//
-//    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-//
-//    std::string str = "throw 34";
-//    str += CTRL_C;
-//    this->send(str.c_str());
-//    ASSERT_NO_FATAL_FAILURE(this->expect("throw 34"));
-//    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("exit 0", PROMPT));
-//    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED));
-//}
+TEST_F(InteractiveTest, ctrlc) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+    std::string str = "throw 34";
+    str += CTRL_C;
+    this->send(str.c_str());
+    ASSERT_NO_FATAL_FAILURE(this->expect("throw 34\r\n" PROMPT));
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
+}
 
 TEST_F(InteractiveTest, status) {
     this->invoke("--quiet", "--norc");

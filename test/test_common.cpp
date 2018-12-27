@@ -222,6 +222,19 @@ int Extractor::extract(const char *value) {
 // ##     InteractiveBase     ##
 // #############################
 
+void InteractiveBase::invokeImpl(const std::vector<std::string> &args) {
+    termios term;
+    xcfmakesane(term);
+    this->handle = ProcBuilder{this->binPath.c_str()}
+            .addArgs(args)
+            .addEnv("TERM", "xterm")
+            .setWorkingDir(this->workingDir.c_str())
+            .setIn(IOConfig::PTY)
+            .setOut(IOConfig::PTY)
+            .setErr(IOConfig::PIPE)
+            .setTerm(term)();
+}
+
 std::pair<std::string, std::string> InteractiveBase::readAll() {
     auto ret = this->handle.readAll(80);
     Screen screen(24, 200);

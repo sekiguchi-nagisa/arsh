@@ -133,16 +133,11 @@ protected:
 
     template <typename ... T>
     void invoke(T && ...args) {
-        termios term;
-        xcfmakesane(term);
-        this->handle = ProcBuilder{this->binPath.c_str(), std::forward<T>(args)...}
-                .addEnv("TERM", "xterm")
-                .setWorkingDir(this->workingDir.c_str())
-                .setIn(IOConfig::PTY)
-                .setOut(IOConfig::PTY)
-                .setErr(IOConfig::PIPE)
-                .setTerm(term)();
+        std::vector<std::string> values = { std::forward<T>(args)... };
+        this->invokeImpl(values);
     }
+
+    void invokeImpl(const std::vector<std::string> &args);
 
     void send(const char *str) {
         int r = write(this->handle.in(), str, strlen(str));
