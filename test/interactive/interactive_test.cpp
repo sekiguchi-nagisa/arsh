@@ -97,6 +97,18 @@ TEST_F(InteractiveTest, ctrlc) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
 }
 
+TEST_F(InteractiveTest, tab) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    this->send("$F\t\t");
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE  False.+"));
+    this->send("\t\r");
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE.+\\(Boolean\\) false.+"));
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\r\n"));
+}
+
 TEST_F(InteractiveTest, status) {
     this->invoke("--quiet", "--norc");
 
