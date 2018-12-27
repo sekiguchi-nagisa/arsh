@@ -89,7 +89,7 @@ const char* MethodParamMap::lookupIface(const std::string &methodName) const {
 // ##     Transport     ##
 // #######################
 
-JSON Transport::newResponse(json::JSON &&id, json::JSON &&result) {
+JSON Transport::newResponse(JSON &&id, JSON &&result) {
     assert(id.isString() || id.isNumber());
     assert(!result.isInvalid());
     return {
@@ -99,7 +99,7 @@ JSON Transport::newResponse(json::JSON &&id, json::JSON &&result) {
     };
 }
 
-JSON Transport::newResponse(json::JSON &&id, rpc::ResponseError &&error) {
+JSON Transport::newResponse(JSON &&id, ResponseError &&error) {
     assert(id.isString() || id.isNumber() || id.isNull());
     return {
         {"jsonrpc", "2.0"},
@@ -108,12 +108,12 @@ JSON Transport::newResponse(json::JSON &&id, rpc::ResponseError &&error) {
     };
 }
 
-void Transport::call(json::JSON &&id, const char *methodName, json::JSON &&param) {
+void Transport::call(JSON &&id, const char *methodName, JSON &&param) {
     auto str = Request(std::move(id), methodName, std::move(param)).toJSON().serialize();
     this->send(str.size(), str.c_str());
 }
 
-void Transport::notify(const char *methodName, json::JSON &&param) {
+void Transport::notify(const char *methodName, JSON &&param) {
     auto str = Request(JSON(), methodName, std::move(param)).toJSON().serialize();
     this->send(str.size(), str.c_str());
 }
@@ -128,7 +128,7 @@ void Transport::reply(JSON &&id, ResponseError &&error) {
     this->send(str.size(), str.c_str());
 }
 
-bool Transport::dispatch(rpc::Handler &handler) {
+bool Transport::dispatch(Handler &handler) {
     RequestParser parser;
     int dataSize = this->recvSize();
     if(dataSize < 0) {
@@ -167,7 +167,7 @@ bool Transport::dispatch(rpc::Handler &handler) {
 // ##     Handler     ##
 // #####################
 
-MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
+MethodResult Handler::onCall(const std::string &name, JSON &&param) {
     auto iter = this->callMap.find(name);
     if(iter == this->callMap.end()) {
         std::string str = "undefined method: ";
@@ -188,7 +188,7 @@ MethodResult Handler::onCall(const std::string &name, json::JSON &&param) {
     return iter->second(std::move(param));
 }
 
-void Handler::onNotify(const std::string &name, json::JSON &&param) {
+void Handler::onNotify(const std::string &name, JSON &&param) {
     auto iter = this->notificationMap.find(name);
     if(iter == this->notificationMap.end()) {
         this->logger(LogLevel::ERROR, "undefined notification: %s", name.c_str());
@@ -207,7 +207,7 @@ void Handler::onNotify(const std::string &name, json::JSON &&param) {
     iter->second(std::move(param));
 }
 
-void Handler::bind(const std::string &name, const InterfacePtr &paramIface, rpc::Handler::Call &&func) {
+void Handler::bind(const std::string &name, const InterfaceBasePtr &paramIface, Call &&func) {
     assert(paramIface);
     if(!this->callMap.emplace(name, std::move(func)).second) {
         fatal("already defined method: %s\n", name.c_str());
@@ -215,7 +215,7 @@ void Handler::bind(const std::string &name, const InterfacePtr &paramIface, rpc:
     this->callParamMap.add(name, paramIface->getName());
 }
 
-void Handler::bind(const std::string &name, const InterfacePtr &paramIface, rpc::Handler::Notification &&func) {
+void Handler::bind(const std::string &name, const InterfaceBasePtr &paramIface, Notification &&func) {
     assert(paramIface);
     if(!this->notificationMap.emplace(name, std::move(func)).second) {
         fatal("already defined method: %s\n", name.c_str());

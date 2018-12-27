@@ -23,7 +23,7 @@ namespace json {
 // ##     TypeMatcher     ##
 // #########################
 
-bool TypeMatcher::match(json::Validator &validator, const json::JSON &value) const {
+bool TypeMatcher::match(Validator &validator, const JSON &value) const {
     return validator.match(*this, value);
 }
 
@@ -35,7 +35,7 @@ std::string TypeMatcher::str() const {
 // ##     AnyMatcher     ##
 // ########################
 
-bool AnyMatcher::match(json::Validator &validator, const json::JSON &value) const {
+bool AnyMatcher::match(Validator &validator, const JSON &value) const {
     return validator.match(*this, value);
 }
 
@@ -47,7 +47,7 @@ std::string AnyMatcher::str() const {
 // ##     ArrayMatcher     ##
 // ##########################
 
-bool ArrayMatcher::match(json::Validator &validator, const json::JSON &value) const {
+bool ArrayMatcher::match(Validator &validator, const JSON &value) const {
     return validator.match(*this, value);
 }
 
@@ -64,7 +64,7 @@ std::string ArrayMatcher::str() const {
 // ##     ObjectMatcher     ##
 // ###########################
 
-bool ObjectMatcher::match(json::Validator &validator, const json::JSON &value) const {
+bool ObjectMatcher::match(Validator &validator, const JSON &value) const {
     return validator.match(*this, value);
 }
 
@@ -76,7 +76,7 @@ std::string ObjectMatcher::str() const {
 // ##     UnionMatcher     ##
 // ##########################
 
-bool UnionMatcher::match(json::Validator &validator, const json::JSON &value) const {
+bool UnionMatcher::match(Validator &validator, const JSON &value) const {
     return validator.match(*this, value);
 }
 
@@ -113,27 +113,52 @@ const TypeMatcherPtr any = std::make_shared<AnyMatcher>();  //NOLINT
 // ##     Fields     ##
 // ####################
 
-Fields::Fields(std::initializer_list<std::pair<std::string, json::Field>> list) {
+Fields::Fields(std::initializer_list<std::pair<std::string, Field>> list) {
     for(auto &e : list) {
         auto &pair = const_cast<std::pair<std::string, json::Field>&>(e);
         this->value[std::move(pair.first)] = std::move(pair.second);
     }
 }
 
+// #######################
+// ##     Interface     ##
+// #######################
+
+bool Interface::match(Validator &validator, const JSON &json) const {
+    return validator.match(*this, json);
+}
+
+// ###########################
+// ##     VoidInterface     ##
+// ###########################
+
+bool VoidInterface::match(Validator &validator, const JSON &json) const {
+    return validator.match(*this, json);
+}
+
+
 // ##########################
 // ##     InterfaceMap     ##
 // ##########################
 
-const InterfacePtr &InterfaceMap::interface(const char *name, json::Fields &&fields) {
+InterfacePtr InterfaceMap::interface(const char *name, Fields &&fields) {
     auto iface = std::make_shared<Interface>(name, std::move(fields));
-    auto pair = this->map.emplace(iface->getName().c_str(), iface);
-    if(!pair.second) {
-        fatal("already defined interface: %s\n", name);
-    }
-    return pair.first->second;
+    return std::static_pointer_cast<Interface>(this->add(std::move(iface)));
 }
 
-const Interface* InterfaceMap::lookup(const char *name) const {
+VoidInterfacePtr InterfaceMap::interface() {
+    return std::static_pointer_cast<VoidInterface>(this->add(std::make_shared<VoidInterface>()));
+}
+
+InterfaceBasePtr InterfaceMap::add(InterfaceBasePtr &&iface) {
+    auto pair = this->map.emplace(iface->getName(), iface);
+    if(!pair.second) {
+        fatal("already defined interface: %s\n", iface->getName());
+    }
+    return std::move(iface);
+}
+
+const InterfaceBase* InterfaceMap::lookup(const char *name) const {
     auto iter = this->map.find(name);
     if(iter != this->map.end()) {
         return iter->second.get();
@@ -145,15 +170,15 @@ const Interface* InterfaceMap::lookup(const char *name) const {
 // ##     Validator     ##
 // #######################
 
-bool Validator::match(const TypeMatcher &matcher, const json::JSON &value) {
+bool Validator::match(const TypeMatcher &matcher, const JSON &value) {
     return matcher.tag == value.tag();
 }
 
-bool Validator::match(const json::AnyMatcher &, const json::JSON &) {
+bool Validator::match(const AnyMatcher &, const JSON &) {
     return true;
 }
 
-bool Validator::match(const json::ArrayMatcher &matcher, const json::JSON &value) {
+bool Validator::match(const ArrayMatcher &matcher, const JSON &value) {
     if(matcher.tag != value.tag()) {
         return false;
     }
@@ -165,11 +190,11 @@ bool Validator::match(const json::ArrayMatcher &matcher, const json::JSON &value
     return true;
 }
 
-bool Validator::match(const json::ObjectMatcher &matcher, const json::JSON &value) {
+bool Validator::match(const ObjectMatcher &matcher, const JSON &value) {
     return this->match(matcher.name, value);
 }
 
-bool Validator::match(const json::UnionMatcher &matcher, const json::JSON &value) {
+bool Validator::match(const UnionMatcher &matcher, const JSON &value) {
     if(matcher.left->match(*this, value)) {
         return true;
     }
@@ -189,7 +214,10 @@ bool Validator::match(const std::string &ifaceName, const JSON &value) {
     if(ptr == nullptr) {
         fatal("undefined interface: %s\n", ifaceName.c_str());
     }
-    auto &iface = *ptr;
+    return ptr->match(*this, value);
+}
+
+bool Validator::match(const Interface &iface, const JSON &value) {
     for(auto &e : iface.getFields()) {
         auto iter = value.asObject().find(e.first);
         if(iter == value.asObject().end()) {
@@ -199,7 +227,7 @@ bool Validator::match(const std::string &ifaceName, const JSON &value) {
             std::string str = "require field `";
             str += e.first;
             str += "' in `";
-            str += ifaceName;
+            str += iface.getName();
             str += "'";
             this->errors.emplace_back(std::move(str));
             return false;
@@ -211,11 +239,19 @@ bool Validator::match(const std::string &ifaceName, const JSON &value) {
             str += "' requires `";
             str += e.second.getMatcher().str();
             str += "' type in `";
-            str += ifaceName;
+            str += iface.getName();
             str += "'";
             this->errors.emplace_back(std::move(str));
             return false;
         }
+    }
+    return true;
+}
+
+bool Validator::match(const VoidInterface &, const JSON &value) {
+    if(!value.asObject().empty()) {
+        this->errors.emplace_back("must be empty object");
+        return false;
     }
     return true;
 }

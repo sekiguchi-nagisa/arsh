@@ -366,6 +366,8 @@ TEST_F(ValidatorTest, iface) {
         field("b", boolean)
     });
 
+    this->map.interface();
+
     const char *text = R"(
         {
             "a" : { "a" : 34, "b" : "dewrfw", "c" : null },
@@ -373,6 +375,7 @@ TEST_F(ValidatorTest, iface) {
         }
 )";
     ASSERT_NO_FATAL_FAILURE(this->validate("BBB", text));
+    ASSERT_NO_FATAL_FAILURE(this->validate("void", "{}"));
 }
 
 TEST(ReqTest, parse) {
@@ -538,6 +541,7 @@ static void fromJSON(JSON &&j, Param2 &p) {
 struct Context {
     unsigned int nRet{0};
     std::string cRet;
+    bool exited{false};
 
     void init(const Param1 &p) {
         this->nRet = p.value;
@@ -549,6 +553,15 @@ struct Context {
             return ydsh::Err(rpc::ResponseError(-100, "too long"));
         }
         return ydsh::Ok(JSON("hello"));
+    }
+
+    void exit() {
+        this->exited = true;
+    }
+
+    rpc::MethodResult tryExit() {
+        this->exited = false;
+        return ydsh::Err(rpc::ResponseError(-100, "busy"));
     }
 };
 
@@ -594,10 +607,14 @@ TEST_F(RPCTest, call1) {
             this->handler.interface("Param2", {
                 field("value", string)
             }), &ctx, &Context::put);
+    this->handler.bind(
+            "/exit",
+            this->handler.interface(), &ctx, &Context::exit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
     ASSERT_NO_FATAL_FAILURE(this->assertResponse(rpc::Transport::newResponse(1, "hello")));
 }
 
@@ -615,10 +632,14 @@ TEST_F(RPCTest, call2) {
             this->handler.interface("Param2", {
                 field("value", string)
             }), &ctx, &Context::put);
+    this->handler.bind(
+            "/exit",
+            this->handler.interface(), &ctx, &Context::exit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
 
     JSON json;
     ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
@@ -644,10 +665,14 @@ TEST_F(RPCTest, call3) {
             this->handler.interface("Param2", {
                     field("value", string)
             }), &ctx, &Context::put);
+    this->handler.bind(
+            "/exit",
+            this->handler.interface(), &ctx, &Context::exit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
 
     JSON json;
     ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
@@ -657,6 +682,72 @@ TEST_F(RPCTest, call3) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Invalid params", json["error"]["message"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
 }
+
+TEST_F(RPCTest, call4) {
+    Context ctx;
+
+    this->init(rpc::Request(1, "/tryExit", object()));
+    this->handler.bind(
+            "/init",
+            this->handler.interface("Param1", {
+                    field("value", number)
+            }), &ctx, &Context::init);
+    this->handler.bind(
+            "/put",
+            this->handler.interface("Param2", {
+                    field("value", string)
+            }), &ctx, &Context::put);
+    this->handler.bind(
+            "/tryExit",
+            this->handler.interface(), &ctx, &Context::tryExit);
+
+    this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
+
+    JSON json;
+    ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-100, json["error"]["code"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("busy", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(json["error"]["data"].isString()));
+}
+
+TEST_F(RPCTest, call5) {
+    Context ctx;
+
+    this->init(rpc::Request(1, "/tryExit", {{"de",45}}));
+    this->handler.bind(
+            "/init",
+            this->handler.interface("Param1", {
+                    field("value", number)
+            }), &ctx, &Context::init);
+    this->handler.bind(
+            "/put",
+            this->handler.interface("Param2", {
+                    field("value", string)
+            }), &ctx, &Context::put);
+    this->handler.bind(
+            "/tryExit",
+            this->handler.interface(), &ctx, &Context::tryExit);
+
+    this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
+
+    JSON json;
+    ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InvalidParams, json["error"]["code"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Invalid params", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("must be empty object", json["error"]["data"].asString()));
+}
+
 
 TEST_F(RPCTest, notify1) {
     Context ctx;
@@ -672,10 +763,14 @@ TEST_F(RPCTest, notify1) {
             this->handler.interface("Param2", {
                 field("value", string)
             }), &ctx, &Context::put);
+    this->handler.bind(
+            "/exit",
+            this->handler.interface(), &ctx, &Context::exit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1234, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", this->response()));
 }
 
@@ -693,10 +788,39 @@ TEST_F(RPCTest, notify2) {
             this->handler.interface("Param2", {
                 field("value", string)
             }), &ctx, &Context::put);
+    this->handler.bind(
+            "/exit",
+            this->handler.interface(), &ctx, &Context::exit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", this->response()));
+}
+
+TEST_F(RPCTest, notify3) {
+    Context ctx;
+
+    this->init(rpc::Request("/exit", object()));
+    this->handler.bind(
+            "/init",
+            this->handler.interface("Param1", {
+                    field("value", number)
+            }), &ctx, &Context::init);
+    this->handler.bind(
+            "/put",
+            this->handler.interface("Param2", {
+                    field("value", string)
+            }), &ctx, &Context::put);
+    this->handler.bind(
+            "/exit",
+            this->handler.interface(), &ctx, &Context::exit);
+
+    this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ctx.exited));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", this->response()));
 }
 

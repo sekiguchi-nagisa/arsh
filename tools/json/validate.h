@@ -163,7 +163,13 @@ inline std::pair<std::string, Field> field(const char *name, Arg&& ...arg) {
     return {name, Field(std::forward<Arg>(arg)...)};
 }
 
-class Interface {
+struct InterfaceBase {
+    virtual ~InterfaceBase() = default;
+    virtual const char *getName() const = 0;
+    virtual bool match(Validator &validator, const JSON &json) const = 0;
+};
+
+class Interface : public InterfaceBase {
 private:
     using Entry = Fields::Entry;
     std::string name;
@@ -174,29 +180,46 @@ public:
 
     Interface(const char *name, Fields &&fields) : name(name), fields(std::move(fields.value)) {}
 
-    const std::string &getName() const {
-        return this->name;
+    const char *getName() const override {
+        return this->name.c_str();
     }
 
     const Entry &getFields() const {
         return this->fields;
     }
+
+    bool match(Validator &validator, const JSON &json) const override;
 };
 
+struct VoidInterface : public InterfaceBase {
+    const char *getName() const override {
+        return "void";
+    }
+
+    bool match(Validator &validator, const JSON &json) const override;
+};
+
+using InterfaceBasePtr = std::shared_ptr<InterfaceBase>;
 using InterfacePtr = std::shared_ptr<Interface>;
+using VoidInterfacePtr = std::shared_ptr<VoidInterface>;
 
 class InterfaceMap {
 private:
-    CStringHashMap<InterfacePtr> map;
+    CStringHashMap<InterfaceBasePtr> map;
 
 public:
-    const InterfacePtr &interface(const char *name, Fields &&fields);
+    InterfacePtr interface(const char *name, Fields &&fields);
 
-    const Interface *lookup(const std::string &name) const {
+    VoidInterfacePtr interface();
+
+    const InterfaceBase *lookup(const std::string &name) const {
         return this->lookup(name.c_str());
     }
 
-    const Interface *lookup(const char *name) const;
+    const InterfaceBase *lookup(const char *name) const;
+
+private:
+    InterfaceBasePtr add(InterfaceBasePtr &&iface);
 };
 
 class Validator {
@@ -213,6 +236,9 @@ public:
     bool match(const ObjectMatcher &matcher, const JSON &value);
     bool match(const UnionMatcher &matcher, const JSON &value);
     bool match(const std::string &ifaceName, const JSON &value);
+
+    bool match(const Interface &inface, const JSON &value);
+    bool match(const VoidInterface &iface, const JSON &value);
 
     bool operator()(const std::string &ifaceName, const JSON &value) {
         this->errors.clear();

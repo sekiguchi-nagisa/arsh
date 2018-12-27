@@ -223,13 +223,17 @@ public:
 
     void onNotify(const std::string &name, JSON &&param);
 
-    const InterfacePtr &interface(const char *name, Fields &&fields) {
+    InterfacePtr interface(const char *name, Fields &&fields) {
         return this->ifaceMap.interface(name, std::move(fields));
     }
 
-    void bind(const std::string &name, const InterfacePtr &paramIface, Call &&func);
+    VoidInterfacePtr interface() {
+        return this->ifaceMap.interface();
+    }
 
-    void bind(const std::string &name, const InterfacePtr &paramIface, Notification &&func);
+    void bind(const std::string &name, const InterfaceBasePtr &paramIface, Call &&func);
+
+    void bind(const std::string &name, const InterfaceBasePtr &paramIface, Notification &&func);
 
     template<typename State, typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
@@ -242,6 +246,15 @@ public:
         this->bind(name, paramIface, std::move(func));
     }
 
+    template<typename State>
+    void bind(const std::string &name, const VoidInterfacePtr &paramIface, State *obj,
+              MethodResult(State::*method)(void)) {
+        Call func = [obj, method](JSON &&) -> MethodResult {
+            return (obj->*method)();
+        };
+        this->bind(name, paramIface, std::move(func));
+    }
+
     template<typename State, typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
               void(State::*method)(const Param &)) {
@@ -249,6 +262,15 @@ public:
             Param p;
             fromJSON(std::move(json), p);
             (obj->*method)(p);
+        };
+        this->bind(name, paramIface, std::move(func));
+    }
+
+    template<typename State>
+    void bind(const std::string &name, const VoidInterfacePtr &paramIface, State *obj,
+              void(State::*method)(void)) {
+        Notification func = [obj, method](JSON &&) {
+            (obj->*method)();
         };
         this->bind(name, paramIface, std::move(func));
     }
