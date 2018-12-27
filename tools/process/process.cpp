@@ -35,18 +35,6 @@
 #include "process.h"
 #include "ansi.h"
 
-#ifdef __CYGWIN__
-static cc_t ttydefchars[NCCS] = {
-            _POSIX_VDISABLE, CDISCARD, CEOL, CEOL2, CEOF, CERASE,
-            CINTR, CKILL, CLNEXT, CMIN, CQUIT, CREPRINT, CSTART,
-            CSTOP, CSUSP, CSWTCH, CTIME, CWERASE
-    };
-#else
-#define TTYDEFCHARS
-#include <sys/ttydefaults.h>
-#endif
-
-
 #define error_at fatal_perror
 
 namespace process {
@@ -260,7 +248,85 @@ void xcfmakesane(termios &term) {
     cfsetispeed(&term, TTYDEF_SPEED);
     cfsetospeed(&term, TTYDEF_SPEED);
 
-    memcpy(term.c_cc, ttydefchars, sizeof(ttydefchars));
+    // set to default control characters
+    cc_t defchars[NCCS] = {0};
+#ifdef VDISCARD
+    defchars[VDISCARD] = CDISCARD;
+#endif
+
+#ifdef VDSUSP
+    defchars[VDSUSP] = CDSUSP;
+#endif
+
+#ifdef VEOF
+    defchars[VEOF] = CEOF;
+#endif
+
+#ifdef VEOL
+    defchars[VEOL] = CEOL;
+#endif
+
+#ifdef VEOL2
+    defchars[VEOL2] = CEOL;
+#endif
+
+#ifdef VERASE
+    defchars[VERASE] = CERASE;
+#endif
+
+#ifdef VINTR
+    defchars[VINTR] = CINTR;
+#endif
+
+#ifdef VKILL
+    defchars[VKILL] = CKILL;
+#endif
+
+#ifdef VLNEXT
+    defchars[VLNEXT] = CLNEXT;
+#endif
+
+#ifdef VMIN
+    defchars[VMIN] = CMIN;
+#endif
+
+#ifdef VQUIT
+    defchars[VQUIT] = CQUIT;
+#endif
+
+#ifdef VREPRINT
+    defchars[VREPRINT] = CREPRINT;
+#endif
+
+#ifdef VSTART
+    defchars[VSTART] = CSTART;
+#endif
+
+#ifdef VSTATUS
+    defchars[VSTATUS] = CSTATUS;
+#endif
+
+#ifdef VSTOP
+    defchars[VSTOP] = CSTOP;
+#endif
+
+#ifdef VSUSP
+    defchars[VSUSP] = CSUSP;
+#endif
+
+#ifdef VSWTCH
+    defchars[VSWTCH] = CSWTCH;
+#endif
+
+#ifdef VTIME
+    defchars[VTIME] = CTIME;
+#endif
+
+#ifdef VWERASE
+    defchars[VWERASE] = CWERASE;
+#endif
+
+    memcpy(term.c_cc, defchars, ydsh::arraySize(defchars) * sizeof(cc_t));
 }
 
 static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {
