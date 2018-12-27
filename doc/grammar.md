@@ -324,14 +324,15 @@ primaryExpression = command
                   | procSubstitution
                   | appliedName
                   | LP expression RP
+                  | LP expression COMMA RP
                   | LP expression (COMMA expression)* RP
-                  | LB expression (COMMA expression)* RB
-                  | LB expression COLON expression (COMMA expression COLON expression)* RB
+                  | LB expression (COMMA expression)* COMMA? RB
+                  | LB expression COLON expression (COMMA expression COLON expression)* COMMA? RB
                   | block
                   | forExpression
                   | ifExpression
                   | WHILE expression block
-                  | DO block expression
+                  | DO block expression WHILE
                   | TRY block (catchStatment)* (FINALLY block)?
 
 appliedName = SPECIAL_NAME | APPLIED_NAME
