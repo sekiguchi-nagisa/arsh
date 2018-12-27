@@ -935,6 +935,80 @@ void TypeChecker::visitIfNode(IfNode &node) {
     }
 }
 
+void TypeChecker::visitCaseNode(CaseNode &node) {
+    this->checkTypeAsExpr(node.getExprNode());
+
+    for(auto &e : node.getArmNodes()) {
+        this->checkTypeExactly(e);
+    }
+
+    fatal("unsupported");
+}
+
+void TypeChecker::visitArmNode(ArmNode &node) {
+    node.asConstant();  //FIXME: currently only support constant pattern
+
+    for(auto &e : node.getPatternNodes()) {
+        this->checkTypeAsExpr(e);
+    }
+
+    for(auto &e : node.refPatternNode()) {
+        this->applyConstFolding(e);
+    }
+
+    auto &type = this->checkTypeExactly(node.getActionNode());
+    node.setType(type);
+}
+
+bool TypeChecker::isConstNode(const Node &node) {
+    switch(node.getNodeKind()) {
+    case NodeKind::String:
+    case NodeKind::Number:
+        return true;
+    case NodeKind::UnaryOp:
+        return isConstNode(*static_cast<const UnaryOpNode&>(node).getExprNode());
+    default:
+        return false;
+    }
+}
+
+bool TypeChecker::applyConstFolding(Node *&node) const {
+    switch(node->getNodeKind()) {
+    case NodeKind::String:
+    case NodeKind::Number:
+        return true;
+    case NodeKind::UnaryOp: {
+        Token token = node->getToken();
+        assert(static_cast<UnaryOpNode*>(node)->getOp() == MINUS);
+        auto *applyNode = static_cast<UnaryOpNode*>(node)->refApplyNode();
+        assert(applyNode->getExprNode()->getNodeKind() == NodeKind::Access);
+        auto *accessNode = static_cast<AccessNode*>(applyNode->getExprNode());
+        assert(accessNode->getRecvNode()->getNodeKind() == NodeKind::Number);
+        auto *numNode = static_cast<NumberNode*>(accessNode->getRecvNode());
+
+        if(node->getType() == this->symbolTable.get(TYPE::Int32)) {
+            int value = numNode->getIntValue();
+            value = -value;
+            delete node;
+            node = NumberNode::newInt32(token, value);
+            node->setType(this->symbolTable.get(TYPE::Int32));
+            return true;
+        } else if(node->getType() == this->symbolTable.get(TYPE::Uint32)) {
+            unsigned int value = numNode->getIntValue();
+            value = -value;
+            delete node;
+            node = NumberNode::newUint32(token, value);
+            node->setType(this->symbolTable.get(TYPE::Uint32));
+            return true;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    return false;
+}
+
 void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
     if(this->fctx.loopLevel() == 0) {
         RAISE_TC_ERROR(InsideLoop, node);

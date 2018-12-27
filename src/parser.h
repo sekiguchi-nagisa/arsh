@@ -130,6 +130,11 @@ protected:
     void restoreLexerState(Token prevToken);
 
     /**
+     * try to change lexer mode to STMT mode and refetech token.
+     */
+    void changeLexerModeToSTMT();
+
+    /**
      * after matching token, change lexer mode and fetchNext.
      */
     Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
@@ -170,6 +175,14 @@ protected:
     std::unique_ptr<Node> parse_variableDeclaration();
 
     std::unique_ptr<Node> parse_ifExpression(bool asElif = false);
+
+    std::unique_ptr<Node> parse_caseExpression();
+
+    std::unique_ptr<ArmNode> parse_armExpression();
+
+    std::unique_ptr<Node> parse_patternExpression();
+
+    std::unique_ptr<Node> parse_primaryPattern();
 
     std::unique_ptr<Node> parse_forExpression();
 

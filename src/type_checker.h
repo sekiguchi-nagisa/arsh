@@ -362,6 +362,17 @@ protected:
     void checkTypeAsBreakContinue(JumpNode &node);
     void checkTypeAsReturn(JumpNode &node);
 
+    // for case-expression
+    static bool isConstNode(const Node &node);
+
+    /**
+     *
+     * @param node
+     * must be typed node
+     * @return
+     */
+    bool applyConstFolding(Node *&node) const;
+
     // visitor api
     void visitTypeNode(TypeNode &node) override;
     void visitNumberNode(NumberNode &node) override;
@@ -389,6 +400,8 @@ protected:
     void visitTypeAliasNode(TypeAliasNode &node) override;
     void visitLoopNode(LoopNode &node) override;
     void visitIfNode(IfNode &node) override;
+    void visitCaseNode(CaseNode &node) override;
+    void visitArmNode(ArmNode &node) override;
     void visitJumpNode(JumpNode &node) override;
     void visitCatchNode(CatchNode &node) override;
     void visitTryNode(TryNode &node) override;

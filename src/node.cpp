@@ -833,6 +833,47 @@ void IfNode::dump(NodeDumper &dumper) const {
 }
 
 // ######################
+// ##     CaseNode     ##
+// ######################
+
+CaseNode::~CaseNode() {
+    delete this->exprNode;
+    for(auto &e : this->armNodes) {
+        delete e;
+    }
+}
+
+void CaseNode::addArmNode(ArmNode *armNode) {
+    this->armNodes.push_back(armNode);
+}
+
+void CaseNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
+    DUMP(armNodes);
+}
+
+// #####################
+// ##     ArmNode     ##
+// #####################
+
+ArmNode::~ArmNode() {
+    for(auto &e : this->patternNodes) {
+        delete e;
+    }
+    delete this->actionNode;
+}
+
+void ArmNode::addPatternNode(ydsh::Node *node) {
+    this->patternNodes.push_back(node);
+}
+
+void ArmNode::dump(ydsh::NodeDumper &dumper) const {
+    DUMP(this->patternNodes);
+    DUMP_PTR(this->actionNode);
+}
+
+
+// ######################
 // ##     JumpNode     ##
 // ######################
 

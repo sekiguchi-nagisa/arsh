@@ -804,6 +804,16 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
     this->markLabel(mergeLabel);
 }
 
+void ByteCodeGenerator::visitCaseNode(CaseNode &node) {
+    (void) node;
+    fatal("unsupported\n");
+}
+
+void ByteCodeGenerator::visitArmNode(ArmNode &node) {
+    (void) node;
+    fatal("unsupported\n");
+}
+
 void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
     assert(!this->curBuilder().loopLabels.empty());
 

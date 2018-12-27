@@ -506,6 +506,8 @@ private:
     void visitTypeAliasNode(TypeAliasNode &node) override;
     void visitLoopNode(LoopNode &node) override;
     void visitIfNode(IfNode &node) override;
+    void visitCaseNode(CaseNode &node) override;
+    void visitArmNode(ArmNode &node) override;
     void visitJumpNode(JumpNode &node) override;
     void visitCatchNode(CatchNode &node) override;
     void visitTryNode(TryNode &node) override;

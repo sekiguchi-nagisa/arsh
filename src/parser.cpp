@@ -41,6 +41,15 @@
     OP(SPECIAL_NAME_WITH_BRACKET) \
     EACH_LA_interpolation(OP)
 
+#define EACH_LA_primaryPattern(OP) \
+    OP(INT32_LITERAL) \
+    OP(UINT32_LITERAL) \
+    OP(STRING_LITERAL)
+
+#define EACH_LA_pattern(OP) \
+    OP(MINUS) \
+    EACH_LA_primaryPattern(OP)
+
 #define EACH_LA_primary(OP) \
     OP(COMMAND) \
     OP(NEW) \
@@ -67,6 +76,7 @@
     OP(DO) \
     OP(FOR) \
     OP(IF) \
+    OP(CASE) \
     OP(TRY) \
     OP(WHILE)
 
@@ -191,6 +201,17 @@ void Parser::restoreLexerState(Token prevToken) {
     this->lexer->setPos(pos);
     this->lexer->popLexerMode();
     this->fetchNext();
+}
+
+void Parser::changeLexerModeToSTMT() {
+    if(this->lexer->getPrevMode() != yycSTMT) {
+        if(CUR_KIND() != LP && CUR_KIND() != LB && CUR_KIND() != LBC) {
+            if(CUR_KIND() == WITH) {
+                this->lexer->popLexerMode();
+            }
+            this->refetch(yycSTMT);
+        }
+    }
 }
 
 Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext) {
@@ -445,14 +466,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName() {
 }
 
 std::unique_ptr<Node> Parser::parse_statementImp() {
-    if(this->lexer->getPrevMode() != yycSTMT) {
-        if(CUR_KIND() != LP && CUR_KIND() != LB && CUR_KIND() != LBC) {
-            if(CUR_KIND() == WITH) {
-                this->lexer->popLexerMode();
-            }
-            this->refetch(yycSTMT);
-        }
-    }
+    this->changeLexerModeToSTMT();
 
     switch(CUR_KIND()) {
     case LINE_END: {
@@ -647,6 +661,87 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
         elseNode = TRY(this->parse_block());
     }
     return unique<IfNode>(startPos, condNode.release(), thenNode.release(), elseNode.release());
+}
+
+std::unique_ptr<Node> Parser::parse_caseExpression() {
+    GUARD_DEEP_NESTING(guard);
+
+    assert(CUR_KIND() == CASE);
+    unsigned int pos = START_POS();
+    this->consume();    // CASE
+
+    auto caseNode = unique<CaseNode>(pos, TRY(this->parse_expression()).release());
+    TRY(this->expect(LBC));
+    do {
+        caseNode->addArmNode(TRY(this->parse_armExpression().release()));
+    } while(CUR_KIND() != RBC);
+    Token token = this->expect(RBC);    // always success
+    caseNode->updateToken(token);
+    return std::move(caseNode);
+}
+
+std::unique_ptr<ArmNode> Parser::parse_armExpression() {
+    GUARD_DEEP_NESTING(guard);
+
+    this->changeLexerModeToSTMT();
+
+    std::unique_ptr<ArmNode> armNode;
+    if(CUR_KIND() == ELSE) {
+        unsigned int pos = START_POS();
+        this->consume();    // ELSE
+        armNode = unique<ArmNode>(pos);
+    } else {
+        armNode = unique<ArmNode>(TRY(this->parse_patternExpression()).release());
+        while(CUR_KIND() == PIPE) {
+            this->expect(PIPE); // always success
+            armNode->addPatternNode(TRY(this->parse_patternExpression()).release());
+        }
+    }
+
+    TRY(this->expect(CASE_ARM));
+    armNode->setActionNode(TRY(this->parse_expression()).release());
+    TRY(this->parse_statementEnd());
+
+    return armNode;
+}
+
+std::unique_ptr<Node> Parser::parse_patternExpression() {
+    Token unaryToken = {0,0};
+    TokenKind unaryOp = EOS;
+
+    if(CUR_KIND() == MINUS) {
+        unaryToken = this->curToken;
+        unaryOp = this->scan(); // MINUS
+    }
+
+    std::unique_ptr<Node> node;
+    switch(CUR_KIND()) {
+    EACH_LA_primaryPattern(GEN_LA_CASE)
+        node = this->parse_primaryPattern();
+        break;
+    default:
+        E_ALTER(EACH_LA_pattern(GEN_LA_ALTER));
+    }
+
+    if(unaryOp != EOS) {
+        node = unique<UnaryOpNode>(unaryOp, unaryToken, node.release());
+    }
+    return node;
+}
+
+std::unique_ptr<Node> Parser::parse_primaryPattern() {
+    switch(CUR_KIND()) {
+    case INT32_LITERAL: {
+        auto pair = TRY(this->expectNum(INT32_LITERAL, &Lexer::toInt32));
+        return std::unique_ptr<Node>(NumberNode::newInt32(pair.first, pair.second));
+    }
+    case UINT32_LITERAL: {
+        auto pair = TRY(this->expectNum(UINT32_LITERAL, &Lexer::toUint32));
+        return std::unique_ptr<Node>(NumberNode::newUint32(pair.first, pair.second));
+    }
+    default:
+        return this->parse_stringLiteral();
+    }
 }
 
 std::unique_ptr<Node> Parser::parse_forExpression() {
@@ -1209,6 +1304,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return this->parse_forExpression();
     case IF:
         return this->parse_ifExpression();
+    case CASE:
+        return this->parse_caseExpression();
     case WHILE: {
         unsigned int startPos = START_POS();
         this->consume();    // WHILE

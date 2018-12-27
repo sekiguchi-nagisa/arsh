@@ -68,6 +68,8 @@ class NodeDumper;
     OP(TypeAlias) \
     OP(Loop) \
     OP(If) \
+    OP(Case) \
+    OP(Arm) \
     OP(Jump) \
     OP(Catch) \
     OP(Try) \
@@ -937,6 +939,10 @@ public:
         return this->exprNode;
     }
 
+    TokenKind getOp() const {
+        return this->op;
+    }
+
     bool isUnwrapOp() const {
         return this->op == UNWRAP;
     }
@@ -951,6 +957,10 @@ public:
      * return null, before call this->createApplyNode().
      */
     ApplyNode *getApplyNode() const {
+        return this->methodCallNode;
+    }
+
+    ApplyNode *&refApplyNode() {
         return this->methodCallNode;
     }
 
@@ -1486,6 +1496,89 @@ public:
 
     Node *&refElseNode() {
         return this->elseNode;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
+class ArmNode : public Node {
+private:
+    /**
+     * if represents default pattern, size is 0
+     */
+    std::vector<Node *> patternNodes;
+
+    /**
+     * initial value is null.
+     */
+    Node *actionNode{nullptr};
+
+    /**
+     * currently only support constant pattern
+     */
+    bool constant{false};
+
+public:
+    explicit ArmNode(Node *patternNode) : Node(NodeKind::Arm, patternNode->getToken()) {
+        this->addPatternNode(patternNode);
+    }
+
+    explicit ArmNode(unsigned int pos) : Node(NodeKind::Arm, {pos, 1}) {}
+
+    ~ArmNode() override;
+
+    void setActionNode(Node *node) {
+        this->actionNode = node;
+        this->updateToken(this->actionNode->getToken());
+    }
+
+    void addPatternNode(Node *node);
+
+    const std::vector<Node *> &getPatternNodes() const {
+        return this->patternNodes;
+    }
+
+    std::vector<Node *> &refPatternNode() {
+        return this->patternNodes;
+    }
+
+    Node *getActionNode() const {
+        return this->actionNode;
+    }
+
+    bool isDefault() const {
+        return this->patternNodes.empty();
+    }
+
+    void asConstant() {
+        this->constant = true;
+    }
+
+    bool isConstant() const {
+        return this->constant;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
+class CaseNode : public Node {
+private:
+    Node *exprNode;
+    std::vector<ArmNode *> armNodes;
+
+public:
+    CaseNode(unsigned int pos, Node *exprNode) : Node(NodeKind::Case, {pos, 1}), exprNode(exprNode) {}
+
+    ~CaseNode() override;
+
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    void addArmNode(ArmNode *armNode);
+
+    const std::vector<ArmNode *> &getArmNodes() const {
+        return this->armNodes;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2213,6 +2306,8 @@ struct NodeVisitor {
     virtual void visitTypeAliasNode(TypeAliasNode &node) = 0;
     virtual void visitLoopNode(LoopNode &node) = 0;
     virtual void visitIfNode(IfNode &node) = 0;
+    virtual void visitCaseNode(CaseNode &node) = 0;
+    virtual void visitArmNode(ArmNode &node) = 0;
     virtual void visitJumpNode(JumpNode &node) = 0;
     virtual void visitCatchNode(CatchNode &node) = 0;
     virtual void visitTryNode(TryNode &node) = 0;
@@ -2257,6 +2352,8 @@ struct BaseVisitor : public NodeVisitor {
     void visitTypeAliasNode(TypeAliasNode &node) override { this->visitDefault(node); }
     void visitLoopNode(LoopNode &node) override { this->visitDefault(node); }
     void visitIfNode(IfNode &node) override { this->visitDefault(node); }
+    void visitCaseNode(CaseNode &node) override { this->visitDefault(node); }
+    void visitArmNode(ArmNode &node) override { this->visitDefault(node); }
     void visitJumpNode(JumpNode &node) override { this->visitDefault(node); }
     void visitCatchNode(CatchNode &node) override { this->visitDefault(node); }
     void visitTryNode(TryNode &node) override { this->visitDefault(node); }
