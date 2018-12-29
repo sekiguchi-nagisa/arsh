@@ -1,62 +1,31 @@
-//
-// Created by sekiguchi nagisa on 2018/10/09.
-//
-#include "../json/json.h"
+/*
+ * Copyright (C) 2018 Nagisa Sekiguchi
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-template <typename T>
-void showSize(const char *name) {
-    printf("sizeof `%s' %lu\n", name, sizeof(T));
-}
+#include "srv.h"
 
-struct Info {
-    unsigned int a;
-    unsigned int b;
-    unsigned int c;
-};
-
-struct Info2 {
-    Info info;
-    unsigned int k;
-};
-
-struct Info3 : public Info {
-    unsigned int t;
-};
-
-struct Info4 {
-    unsigned char c;
-    Info info;
-};
-
+using namespace ydsh;
+using namespace lsp;
 
 int main() {
-    using namespace ydsh;
+    FilePtr in(fdopen(STDIN_FILENO, "r"));
+    FilePtr out(fdopen(STDOUT_FILENO, "w"));
 
-    showSize<json::JSON>("JSON");
-    showSize<json::Array>("Array");
-    showSize<json::Object>("Object");
-    showSize<std::string>("std::string");
-    showSize<json::String>("String");
-    showSize<Info>("Info");
-    showSize<Info2>("Info2");
-    showSize<Info3>("Info3");
-    showSize<Info4>("Info4");
-    showSize<std::vector<json::JSON>>("std::vector<json::JSON>");
-    showSize<std::map<std::string, json::JSON>>("std::map<std::string, json::JSON>");
-    showSize<ydsh::Union<std::string, double >>("ydsh::Union<std::string, double >");
-
-//    printf("\\u%04x\n", 28);
-
-    json::JSON value = {
-            {"hello", false},
-            {"aaaa", json::array()},
-            {"123456" , json::array(34, "gare", nullptr)},
-            {"AA", {
-                        {"BBB", false}, {"", nullptr}
-                    }
-            }
-    };
-    printf("%s", json::Parser(value.serialize(2).c_str())().serialize(2).c_str());
-//    printf("")
+    LSPLogger logger;
+    LSPServer server(std::move(in), std::move(out), logger);
+    server.bindAll();
+    server.run();
     return 0;
 }

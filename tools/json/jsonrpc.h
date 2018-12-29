@@ -163,10 +163,6 @@ public:
 
     bool dispatch(Handler &handler);
 
-    void dispatchLoop(Handler &handler) {
-        while(this->dispatch(handler));
-    }
-
     static JSON newResponse(JSON &&id, JSON &&result);
 
     static JSON newResponse(JSON &&id, ResponseError &&error);
@@ -214,6 +210,7 @@ private:
 
     InterfaceMap ifaceMap;
 
+protected:
     std::reference_wrapper<LoggerBase> logger;
 
 public:
