@@ -31,6 +31,9 @@ struct InteractiveTest : public InteractiveBase {
 #define CTRL_D "\x04"
 #define CTRL_F "\x06"
 
+#define UP "\x1b[A"
+#define DOWN "\x1b[B"
+
 #define XSTR(v) #v
 #define STR(v) XSTR(v)
 
@@ -136,6 +139,72 @@ TEST_F(InteractiveTest, edit1) {
 //    this->send(CTRL_D);
 //    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 //}
+
+TEST_F(InteractiveTest, history1) {
+    this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("1", "(Int32) 1\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", "(Int32) 2\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", "(Int32) 3\n" PROMPT));
+
+    this->send(UP UP DOWN "\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3\n(Int32) 3\n" PROMPT));
+    this->send(UP UP "\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2\n(Int32) 2\n" PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, history2) {
+    this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("1", "(Int32) 1\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", "(Int32) 2\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", "(Int32) 3\n" PROMPT));
+
+    this->send(UP UP DOWN DOWN "\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "\n" PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, history3) {
+    this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("1", "(Int32) 1\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", "(Int32) 2\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", "(Int32) 3\n" PROMPT));
+
+    this->send(UP UP "\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2\n(Int32) 2\n" PROMPT));
+    this->send(UP UP UP UP "\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "1\n(Int32) 1\n" PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, history4) {
+    this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("1", "(Int32) 1\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", "(Int32) 2\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", "(Int32) 3\n" PROMPT));
+
+    this->send(UP UP "4" DOWN UP "\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "24\n(Int32) 24\n" PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+
 
 TEST_F(InteractiveTest, status) {
     this->invoke("--quiet", "--norc");
