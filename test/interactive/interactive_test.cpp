@@ -25,8 +25,11 @@ struct InteractiveTest : public InteractiveBase {
     InteractiveTest() : InteractiveBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {}
 };
 
+#define CTRL_A "\x01"
+#define CTRL_B "\x02"
 #define CTRL_C "\x03"
 #define CTRL_D "\x04"
+#define CTRL_F "\x06"
 
 #define XSTR(v) #v
 #define STR(v) XSTR(v)
@@ -108,6 +111,31 @@ TEST_F(InteractiveTest, tab) {
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
+
+TEST_F(InteractiveTest, edit1) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    this->send("t" CTRL_A "$" CTRL_F "re" CTRL_B "u\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "$true\n(Boolean) true\n" PROMPT));
+
+    this->send("''" CTRL_F CTRL_F CTRL_B "い" CTRL_B "あ" CTRL_F "う" CTRL_B CTRL_B CTRL_B CTRL_B CTRL_B CTRL_B "\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "'あいう'\n(String) あいう\n" PROMPT));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+//TEST_F(InteractiveTest, edit2) {
+//    this->invoke("--quiet", "--norc");
+//
+//    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+//    this->send("\u0041\u0303" CTRL_B "'" CTRL_F "'\r");
+//    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "'\u0041\u0303'\n(String) \u0041\u0303\n" PROMPT));
+//
+//    this->send(CTRL_D);
+//    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+//}
 
 TEST_F(InteractiveTest, status) {
     this->invoke("--quiet", "--norc");
