@@ -39,14 +39,19 @@ private:
     unsigned int row{0};
     unsigned int col{0};
 
-    ydsh::ByteBuffer buf;
+//    ydsh::ByteBuffer buf;
+    std::vector<ydsh::ByteBuffer> bufs;
 
     std::function<void(std::string &&)> reporter;
 
 
 public:
     Screen(unsigned int row, unsigned int col) : maxRow(row), maxCol(col) {
-        this->buf.assign(this->maxCol, '\0');
+        this->bufs.reserve(this->maxRow);
+        for(unsigned int i = 0; i < this->maxRow; i++) {
+            this->bufs.emplace_back();
+            this->bufs.back().assign(this->maxCol, '\0');
+        }
     }
 
     Screen() : Screen(24, 80) {}
@@ -127,7 +132,7 @@ public:
 
 private:
     void setChar(char ch) {
-        this->buf.at(this->col) = ch;
+        this->bufs.at(this->row).at(this->col) = ch;
     }
 };
 

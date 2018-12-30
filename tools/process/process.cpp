@@ -522,15 +522,10 @@ void Screen::addChar(char ch) {
     case '\0':
         break;
     case '\n':
-//        this->row++;
-//        this->col++;
-        this->setChar(ch);
-        this->col++;
+        this->row++;
         break;
     case '\r':
-//        this->col = 0;
-        this->setChar(ch);
-        this->col++;
+        this->col = 0;
         break;
     case '\b':
         this->setChar('\0');
@@ -566,20 +561,23 @@ void Screen::reportPos() {
 }
 
 void Screen::clear() {
-    for(unsigned int i = 0; i < this->buf.size(); i++) {
-        this->buf[i] = '\0';
+    for(auto &buf : this->bufs) {
+        for(auto &ch : buf) {
+            ch = '\0';
+        }
     }
 }
 
 void Screen::clearLineFrom() {
+    auto &buf = this->bufs[this->row];
     for(unsigned int i = this->col; i < buf.size(); i++) {
-        this->buf[i] = '\0';
+        buf[i] = '\0';
     }
 }
 
-std::string Screen::toString() const {
+static std::string toStringAtLine(const ydsh::ByteBuffer &buf) {
     std::string ret;
-    for(char ch : this->buf) {
+    for(char ch : buf) {
         ret += ch;
     }
     for(; !ret.empty() && ret.back() == '\0'; ret.pop_back());
@@ -587,6 +585,20 @@ std::string Screen::toString() const {
         if(ch == '\0') {
             ch = ' ';
         }
+    }
+    return ret;
+}
+
+std::string Screen::toString() const {
+    std::string ret;
+    for(unsigned int i = 0; i < this->maxRow; i++) {
+        auto line = toStringAtLine(this->bufs[i]);
+        if(i > 0) {
+            if(!line.empty() || i <= this->row) {
+                ret += '\n';
+            }
+        }
+        ret += line;
     }
     return ret;
 }

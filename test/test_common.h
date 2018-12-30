@@ -145,7 +145,13 @@ protected:
         fsync(this->handle.in());
     }
 
-    std::pair<std::string, std::string> readAll();
+    void interpret(std::string &line);
+
+    std::pair<std::string, std::string> readAll() {
+        auto ret = this->handle.readAll(80);
+        this->interpret(ret.first);
+        return ret;
+    }
 
     void expectRegex(const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
@@ -174,7 +180,7 @@ protected:
         this->send("\r");
 
         std::string eout = str;
-        eout += "\r\n";
+        eout += "\n";
         eout += out;
         this->expect(eout.c_str(), err);
     }
@@ -182,6 +188,7 @@ protected:
     void waitAndExpect(int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
                        const char *out = "", const char *err = "") {
         auto ret = this->handle.waitAndGetResult(false);
+        this->interpret(ret.out);
         ExpectOutput::expect(ret, status, type, out, err);
     }
 };

@@ -235,14 +235,11 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args) {
             .setTerm(term)();
 }
 
-std::pair<std::string, std::string> InteractiveBase::readAll() {
-    auto ret = this->handle.readAll(80);
+void InteractiveBase::interpret(std::string &line) {
     Screen screen(24, 200);
     screen.setReporter([&](std::string &&m) {
         this->send(m.c_str());
     });
-
-    screen.interpret(ret.first.c_str(), ret.first.size());
-    ret.first = screen.toString();
-    return ret;
+    screen.interpret(line.c_str(), line.size());
+    line = screen.toString();
 }
