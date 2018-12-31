@@ -385,6 +385,10 @@ private:
         this->emit4byteIns(op, type.getTypeID());
     }
 
+    unsigned int currentCodeOffset() const {
+        return this->curBuilder().codeBuffer.size();
+    }
+
     unsigned int emitConstant(DSValue &&value);
 
     void emitLdcIns(const DSValue &value) {

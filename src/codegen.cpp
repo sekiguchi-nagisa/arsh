@@ -146,13 +146,13 @@ void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &a
 }
 
 void ByteCodeGenerator::emitBranchIns(OpCode op, const Label &label) {
-    const unsigned int index = this->curBuilder().codeBuffer.size();    //FIXME: check index range
+    const unsigned int index = this->currentCodeOffset()    //FIXME: check index range
     this->emit2byteIns(op, 0);
     this->curBuilder().writeLabel(index + 1, label, index, CodeEmitter<true>::LabelTarget::_16);
 }
 
 void ByteCodeGenerator::emitForkIns(ForkKind kind, const Label &label) {
-    const unsigned int offset = this->curBuilder().codeBuffer.size();
+    const unsigned int offset = this->currentCodeOffset();
     this->emitIns(OpCode::FORK);
     this->curBuilder().append8(static_cast<unsigned char>(kind));
     this->curBuilder().append16(0);
@@ -160,13 +160,13 @@ void ByteCodeGenerator::emitForkIns(ForkKind kind, const Label &label) {
 }
 
 void ByteCodeGenerator::emitJumpIns(const Label &label) {
-    const unsigned int index = this->curBuilder().codeBuffer.size();
+    const unsigned int index = this->currentCodeOffset();
     this->emit4byteIns(OpCode::GOTO, 0);
     this->curBuilder().writeLabel(index + 1, label, 0, CodeEmitter<true>::LabelTarget::_32);
 }
 
 void ByteCodeGenerator::markLabel(Label &label) {
-    const unsigned int index = this->curBuilder().codeBuffer.size();
+    const unsigned int index = this->currentCodeOffset();
     this->curBuilder().markLabel(index, label);
 }
 
@@ -181,7 +181,7 @@ void ByteCodeGenerator::pushLoopLabels(Label breakLabel, Label continueLabel, La
 }
 
 void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
-    const unsigned int index = this->curBuilder().codeBuffer.size();
+    const unsigned int index = this->currentCodeOffset();
     unsigned int lineNum = this->curBuilder().srcInfo->getLineNum(pos);
     if(this->curBuilder().lineNumEntries.empty() || this->curBuilder().lineNumEntries.back().lineNum != lineNum) {
         this->curBuilder().lineNumEntries.push_back({index, lineNum});
@@ -190,14 +190,14 @@ void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
 
 void ByteCodeGenerator::catchException(const Label &begin, const Label &end,
                                        const DSType &type, unsigned short localOffset, unsigned short localSize) {
-    const unsigned int index = this->curBuilder().codeBuffer.size();
+    const unsigned int index = this->currentCodeOffset();
     this->curBuilder().catchBuilders.emplace_back(begin, end, type, index, localOffset, localSize);
 }
 
 void ByteCodeGenerator::enterFinally() {
     for(auto iter = this->curBuilder().finallyLabels.rbegin();
         iter != this->curBuilder().finallyLabels.rend(); ++iter) {
-        const unsigned int index = this->curBuilder().codeBuffer.size();
+        const unsigned int index = this->currentCodeOffset();
         this->emit2byteIns(OpCode::ENTER_FINALLY, 0);
         this->curBuilder().writeLabel(index + 1, *iter, index, CodeEmitter<true>::LabelTarget::_16);
     }
@@ -246,7 +246,7 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool l
         fatal("reach limit\n");
     }
 
-    const unsigned int offset = this->curBuilder().codeBuffer.size();
+    const unsigned int offset = this->currentCodeOffset();
     this->emitIns(lastPipe ? OpCode::PIPELINE_LP : OpCode::PIPELINE);
     this->curBuilder().append8(size);
     for(unsigned int i = 0; i < size; i++) {
