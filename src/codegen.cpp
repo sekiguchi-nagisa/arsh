@@ -146,7 +146,7 @@ void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &a
 }
 
 void ByteCodeGenerator::emitBranchIns(OpCode op, const Label &label) {
-    const unsigned int index = this->currentCodeOffset()    //FIXME: check index range
+    const unsigned int index = this->currentCodeOffset();    //FIXME: check index range
     this->emit2byteIns(op, 0);
     this->curBuilder().writeLabel(index + 1, label, index, CodeEmitter<true>::LabelTarget::_16);
 }
