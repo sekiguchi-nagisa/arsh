@@ -19,6 +19,7 @@
 #include "constant.h"
 #include "object.h"
 #include "type_checker.h"
+#include "misc/util.hpp"
 
 namespace ydsh {
 
@@ -935,41 +936,104 @@ void TypeChecker::visitIfNode(IfNode &node) {
     }
 }
 
-void TypeChecker::visitCaseNode(CaseNode &node) {
-    this->checkTypeAsExpr(node.getExprNode());
+bool TypeChecker::IntPatternCollector::collect(const Node &constNode) {
+    assert(constNode.getNodeKind() == NodeKind::Number);
+    unsigned int value = static_cast<const NumberNode&>(constNode).getIntValue();
+    auto pair = this->set.insert(value);
+    return pair.second;
+}
 
+bool TypeChecker::StrPatternCollector::collect(const ydsh::Node &constNode) {
+    assert(constNode.getNodeKind() == NodeKind::String);
+    const char *str = static_cast<const StringNode&>(constNode).getValue().c_str();
+    auto pair = this->set.insert(str);
+    return pair.second;
+}
+
+std::unique_ptr<TypeChecker::PatternCollector> TypeChecker::newCollector(const DSType &type) const {
+    if(this->symbolTable.get(TYPE::String) == type) {
+        return unique<StrPatternCollector>();
+    }
+    return unique<IntPatternCollector>();
+}
+
+void TypeChecker::visitCaseNode(CaseNode &node) {
+    auto &exprType = this->checkTypeAsExpr(node.getExprNode());
+    auto collector = this->newCollector(exprType);
+
+    // check pattern type
     for(auto &e : node.getArmNodes()) {
-        this->checkTypeExactly(e);
+        this->checkPatternType(exprType, *e, *collector);
     }
 
-    fatal("unsupported");
+    unsigned int size = node.getArmNodes().size();
+    std::vector<DSType *> types(size);
+    for(unsigned int i = 0; i < size; i++) {
+        types[i] = &this->checkTypeExactly(node.getArmNodes()[i]);
+    }
+
+    // apply coercion
+    auto &type = this->resolveCommonSuperType(types);
+    for(auto &armNode : node.getArmNodes()) {
+        this->checkTypeWithCoercion(type, armNode->refActionNode());
+        armNode->setType(type);
+    }
+
+    if(!type.isVoidType() && !collector->hasElsePattern()) {
+        RAISE_TC_ERROR(NeedDefault, node);
+    }
+    node.setType(type);
 }
 
 void TypeChecker::visitArmNode(ArmNode &node) {
-    node.asConstant();  //FIXME: currently only support constant pattern
-
-    for(auto &e : node.getPatternNodes()) {
-        this->checkTypeAsExpr(e);
-    }
-
-    for(auto &e : node.refPatternNode()) {
-        this->applyConstFolding(e);
-    }
-
     auto &type = this->checkTypeExactly(node.getActionNode());
     node.setType(type);
 }
 
-bool TypeChecker::isConstNode(const Node &node) {
-    switch(node.getNodeKind()) {
-    case NodeKind::String:
-    case NodeKind::Number:
-        return true;
-    case NodeKind::UnaryOp:
-        return isConstNode(*static_cast<const UnaryOpNode&>(node).getExprNode());
-    default:
-        return false;
+void TypeChecker::checkPatternType(DSType &type, ArmNode &node, PatternCollector &collector) {
+    node.asConstant();  //FIXME: currently only support constant pattern
+    if(node.getPatternNodes().empty()) {
+        if(collector.hasElsePattern()) {
+            Token token{node.getPos(), 4};
+            auto elseNode = unique<StringNode>(token, "else");
+            RAISE_TC_ERROR(DupPattern, *elseNode);
+        }
+        collector.setElsePattern(true);
     }
+    for(auto &e : node.getPatternNodes()) {
+        this->checkType(type, e);
+    }
+
+    for(auto &e : node.refPatternNodes()) {
+        this->applyConstFolding(e);
+    }
+
+    for(auto &e : node.getPatternNodes()) {
+        if(!collector.collect(*e)) {
+            RAISE_TC_ERROR(DupPattern, *e);
+        }
+    }
+}
+
+DSType& TypeChecker::resolveCommonSuperType(const std::vector<DSType *> &types) {
+    for(auto &type : types) {
+        unsigned int size = types.size();
+        unsigned int index = 0;
+        for(; index < size; index++) {
+            auto &curType = types[index];
+            if(type == curType) {
+                continue;
+            }
+
+            if(!this->checkCoercion(*type, *curType)) {
+                break;
+            }
+        }
+        if(index == size) {
+            return *type;
+        }
+    }
+    return this->symbolTable.get(TYPE::Void);
 }
 
 bool TypeChecker::applyConstFolding(Node *&node) const {

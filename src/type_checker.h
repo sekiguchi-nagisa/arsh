@@ -22,6 +22,7 @@
 #include "symbol_table.h"
 #include "tcerror.h"
 #include "misc/buffer.hpp"
+#include "misc/hash.hpp"
 
 namespace ydsh {
 
@@ -363,7 +364,57 @@ protected:
     void checkTypeAsReturn(JumpNode &node);
 
     // for case-expression
-    static bool isConstNode(const Node &node);
+    class PatternCollector {
+    private:
+        bool elsePattern{false};
+
+    public:
+        virtual ~PatternCollector() = default;
+
+        bool hasElsePattern() const {
+            return this->elsePattern;
+        }
+
+        void setElsePattern(bool set) {
+            this->elsePattern = set;
+        }
+
+        /**
+         * try to collect constant node.
+         * if found duplicated constant, return false
+         * @param constNode
+         * @return
+         */
+        virtual bool collect(const Node &constNode) = 0;
+    };
+
+    class IntPatternCollector : public PatternCollector {
+    private:
+        std::unordered_set<unsigned int> set;
+
+    public:
+        bool collect(const Node &constNode) override;
+    };
+
+    class StrPatternCollector : public PatternCollector {
+    private:
+        CStringHashSet set;
+
+    public:
+        bool collect(const Node &constNode) override;
+    };
+
+    std::unique_ptr<PatternCollector> newCollector(const DSType &type) const;
+
+    void checkPatternType(DSType &type, ArmNode &node, PatternCollector &collector);
+
+    /**
+     *
+     * @param types
+     * @return
+     * if not found, return void type.
+     */
+    DSType &resolveCommonSuperType(const std::vector<DSType *> &types);
 
     /**
      *

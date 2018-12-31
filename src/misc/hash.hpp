@@ -19,6 +19,7 @@
 
 #include <cstring>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace ydsh {
 
@@ -40,6 +41,8 @@ struct CStringHash {
 
 template <typename T>
 using CStringHashMap = std::unordered_map<const char *, T, CStringHash, CStringComparator>;
+
+using CStringHashSet = std::unordered_set<const char *, CStringHash, CStringComparator>;
 
 } // namespace ydsh
 

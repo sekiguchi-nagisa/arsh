@@ -804,14 +804,59 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
     this->markLabel(mergeLabel);
 }
 
+static DSValue newObjetc(Node &constNode) {
+    auto kind = constNode.getNodeKind();
+    assert(kind == NodeKind::Number || kind == NodeKind::String);
+    if(kind == NodeKind::Number) {
+        return DSValue::create<Int_Object>(constNode.getType(), static_cast<NumberNode&>(constNode).getIntValue());
+    }
+    return DSValue::create<String_Object>(constNode.getType(), static_cast<StringNode&>(constNode).getValue());
+}
+
+void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, Map_Object &obj) {
+    unsigned int offset = this->currentCodeOffset();
+    auto value = DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint32), offset);
+    for(auto &e : node.getPatternNodes()) {
+        obj.set(newObjetc(*e), DSValue(value));
+    }
+}
+
 void ByteCodeGenerator::visitCaseNode(CaseNode &node) {
-    (void) node;
-    fatal("unsupported\n");
+    bool hasDefault = !node.getType().isVoidType();
+    auto mergeLabel = makeLabel();
+    auto elseLabel = makeLabel();
+    auto value = DSValue::create<Map_Object>(this->symbolTable.get(TYPE::Void));
+    auto map = typeAs<Map_Object>(value);
+
+    this->emitLdcIns(value);
+    this->visit(*node.getExprNode());
+    this->emit0byteIns(OpCode::LOOKUP_HASH);
+
+    if(hasDefault) {
+        this->emitJumpIns(elseLabel);
+    } else {
+        this->emitJumpIns(mergeLabel);
+    }
+
+    // generate case arm
+    unsigned int count = 0;
+    for(auto &armNode : node.getArmNodes()) {
+        if(count++ > 0) {
+            this->emitJumpIns(mergeLabel);
+        }
+        if(armNode->isDefault()) {
+            this->markLabel(elseLabel);
+        } else {
+            this->generateCaseLabels(*armNode, *map);
+        }
+        this->visit(*armNode);
+    }
+
+    this->markLabel(mergeLabel);
 }
 
 void ByteCodeGenerator::visitArmNode(ArmNode &node) {
-    (void) node;
-    fatal("unsupported\n");
+    this->visit(*node.getActionNode());
 }
 
 void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {

@@ -79,6 +79,8 @@ DEFINE_TCError(UselessBlock   , "useless block"                                 
 DEFINE_TCError(EmptyTry       , "empty try block"                                   );
 DEFINE_TCError(MeaninglessTry , "meaningless try block"                             );
 DEFINE_TCError(LocalLimit     , "too many local variables"                          );
+DEFINE_TCError(DupPattern     , "duplicated pattern"                                );
+DEFINE_TCError(NeedDefault    , "the case expression needs default pattern"         );
 DEFINE_TCError(DefinedSymbol  , "already defined symbol: `%s'"                      );
 DEFINE_TCError(UndefinedSymbol, "undefined symbol: `%s'"                            );
 DEFINE_TCError(UndefinedField , "undefined field: `%s'"                             );

@@ -50,6 +50,7 @@
 | EXIT_SHELL    |                                | value -> [terminate]                         | exit current shell                                 |
 | ENTER_FINALLY | 2: offset1 offset2             | -> value                                     | save current pc and go to instruction              |
 | EXIT_FINALLY  |                                | value ->                                     | pop stack top and go to instruction                |
+| LOOKUP_HASH   |                                | hashmap key ->                               | jump to the offset from stack top hashmap          |
 | COPY_INT      | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
 | TO_BYTE       |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | TO_U16        |                                | value -> value                               | convert number (see. int-cast.md)                  |

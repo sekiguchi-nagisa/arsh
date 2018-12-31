@@ -1,0 +1,8 @@
+#$test($result = 'type', $lineNum = 7, $errorKind = 'DupPattern', $status = 1)
+
+case 'de' {
+    'de' => 45
+    'a' => 54
+    'BBB' |
+       'de' | 'AA' => 0
+}

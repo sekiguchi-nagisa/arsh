@@ -1829,6 +1829,17 @@ static bool mainLoop(DSState &state) {
             }
             vmnext;
         }
+        vmcase(LOOKUP_HASH) {
+            auto key = state.pop();
+            auto map = state.pop();
+            auto &valueMap = typeAs<Map_Object>(map)->getValueMap();
+            auto iter = valueMap.find(key);
+            if(iter != valueMap.end()) {
+                unsigned int index = typeAs<Int_Object>(iter->second)->getValue();
+                state.pc() = index - 1;
+            }
+            vmnext;
+        }
         vmcase(COPY_INT) {
             DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
             int v = typeAs<Int_Object>(state.pop())->getValue();

@@ -170,6 +170,10 @@ size_t String_Object::hash() const {
 static bool checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
                              std::shared_ptr<VisitedSet> &newSet, const DSObject *thisPtr) {
     if(visitedSet == nullptr) {
+        if(thisPtr->getType()->isVoidType()) {
+            return true;
+        }
+
         auto &elementTypes = static_cast<ReifiedType *>(thisPtr->getType())->getElementTypes();
         for(auto &elementType : elementTypes) {
             if(*elementType == getPool(ctx).get(TYPE::Any)) {

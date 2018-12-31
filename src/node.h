@@ -1538,11 +1538,15 @@ public:
         return this->patternNodes;
     }
 
-    std::vector<Node *> &refPatternNode() {
+    std::vector<Node *> &refPatternNodes() {
         return this->patternNodes;
     }
 
     Node *getActionNode() const {
+        return this->actionNode;
+    }
+
+    Node *&refActionNode() {
         return this->actionNode;
     }
 

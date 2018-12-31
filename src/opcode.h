@@ -71,6 +71,7 @@ namespace ydsh {
     OP(EXIT_SHELL   , 0,  0) \
     OP(ENTER_FINALLY, 2,  1) \
     OP(EXIT_FINALLY , 0, -1) \
+    OP(LOOKUP_HASH  , 0, -2) \
     OP(COPY_INT     , 1,  0) \
     OP(TO_BYTE      , 0,  0) \
     OP(TO_U16       , 0,  0) \

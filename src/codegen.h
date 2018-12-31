@@ -473,6 +473,8 @@ private:
     void generateStringExpr(StringExprNode &node, bool fragment);
     void generateBreakContinue(JumpNode &node);
 
+    void generateCaseLabels(const ArmNode &node, Map_Object &obj);
+
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
         auto info = this->builders.back().srcInfo;
         this->initCodeBuilder(kind, info, localVarNum);

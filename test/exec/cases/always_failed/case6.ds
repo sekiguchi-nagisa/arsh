@@ -1,0 +1,6 @@
+#$test($result = 'type', $lineNum = 3, $errorKind = 'NeedDefault', $status = 1)
+
+case 34 {
+    1 => 34;
+    2 => 25;
+}

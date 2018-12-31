@@ -1,0 +1,57 @@
+
+var a = case 1 {
+    34 => 3.14;
+    12 => 34;
+    else => -9
+}
+
+assert $a is Float
+assert $a == -9
+
+var called = -1
+function case1($s : String) : Int {
+    $called = -1
+    return case $s {
+        'A' | 'a' => { $called = 1; 1; }
+        'B' | 'b' => { $called = 2; 2; }
+        'C' | 'c' => { $called = 3; 3; }
+        else => { $called = 0; 0;}
+    }
+}
+
+assert $case1('a') == 1
+assert $called == 1
+assert $case1('A') == 1
+assert $called == 1
+assert $case1('b') == 2
+assert $called == 2
+assert $case1('B') == 2
+assert $called == 2
+assert $case1('C') == 3
+assert $called == 3
+assert $case1('c') == 3
+assert $called == 3
+assert $case1('d') == 0
+assert $called == 0
+
+
+function case2($a : Int) {
+    case $a {
+        1|2|3|4|5 => echo $a!!
+        6|7|8|9|10 => echo -$a!!
+        11 => (echo dummy) as Void
+    }
+}
+
+assert "$($case2(1))" == "1!!"
+assert "$($case2(2))" == "2!!"
+assert "$($case2(3))" == "3!!"
+assert "$($case2(4))" == "4!!"
+assert "$($case2(5))" == "5!!"
+assert "$($case2(6))" == "-6!!"
+assert "$($case2(7))" == "-7!!"
+assert "$($case2(8))" == "-8!!"
+assert "$($case2(9))" == "-9!!"
+assert "$($case2(10))" == "-10!!"
+assert "$($case2(11))" == "dummy"
+assert "$($case2(12))" == ""
