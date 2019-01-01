@@ -119,7 +119,7 @@ struct RequestParser : public Parser {  //TODO: currently only support single re
     }
 
     RequestParser &append(const char *data, unsigned int size) {
-        this->lexer->appendToBuf(reinterpret_cast<const unsigned char *>(data), size, false);
+        this->lexer->appendToBuf(data, size, false);
         return *this;
     }
 

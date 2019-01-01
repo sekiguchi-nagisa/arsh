@@ -39,7 +39,7 @@ JSON Request::toJSON() {
 
 Request RequestParser::operator()() {
     // finalize lexer
-    unsigned char b[1];
+    char b[1];
     this->lexer->appendToBuf(b, 0, true);
 
     // parse

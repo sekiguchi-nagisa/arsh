@@ -114,27 +114,27 @@ protected:
      */
     FilePtr file;
 
-    FlexBuffer<unsigned char> buf;
+    ByteBuffer buf;
 
     /**
      * current reading pointer of buf.
      */
-    unsigned char *cursor{nullptr};
+    char *cursor{nullptr};
 
     /**
      * limit of buf.
      */
-    unsigned char *limit{nullptr};
+    char *limit{nullptr};
 
     /**
      * for backtracking.
      */
-    unsigned char *marker{nullptr};
+    char *marker{nullptr};
 
     /**
      * for trailing context
      */
-    unsigned char *ctxMarker{nullptr};
+    char *ctxMarker{nullptr};
 
     static constexpr int DEFAULT_READ_SIZE = 128;
 
@@ -175,7 +175,7 @@ public:
      * @return
      */
     LexerBase(const char *sourceName, const char *data, unsigned int size) : LexerBase(sourceName) {
-        this->appendToBuf(reinterpret_cast<const unsigned char *>(data), size, true);
+        this->appendToBuf(data, size, true);
     }
 
     LexerBase &operator=(LexerBase &&lex) noexcept {
@@ -229,7 +229,7 @@ public:
     }
 
     std::pair<const char *, const char *> getRange(Token token) const {
-        const char *begin = (char *)this->buf.get() + token.pos;
+        const char *begin = this->buf.get() + token.pos;
         const char *end = begin + token.size;
         return {begin, end};
     }
@@ -239,7 +239,7 @@ public:
      */
     std::string toTokenText(Token token) const {
         assert(this->withinRange(token));
-        return std::string((char *) (this->buf.get() + token.pos), token.size);
+        return std::string(this->buf.get() + token.pos, token.size);
     }
 
     /**
@@ -247,7 +247,7 @@ public:
      */
     void copyTokenText(Token token, char *buf) const {
         assert(this->withinRange(token));
-        memcpy(buf, (char *)this->buf.get() + token.pos, token.size);
+        memcpy(buf, this->buf.get() + token.pos, token.size);
     }
 
     bool startsWith(Token token, char ch) const {
@@ -292,11 +292,11 @@ public:
      * @param isEnd
      * if true, append '\n\0'
      */
-    void appendToBuf(const unsigned char *data, unsigned int size, bool isEnd);
+    void appendToBuf(const char *data, unsigned int size, bool isEnd);
 
 private:
     unsigned int toCodePoint(unsigned int offset, int &code) const {
-        return UnicodeUtil::utf8ToCodePoint((char *)(this->buf.get() + offset), this->getUsedSize() - offset, code);
+        return UnicodeUtil::utf8ToCodePoint(this->buf.get() + offset, this->getUsedSize() - offset, code);
     }
 
 protected:
@@ -434,13 +434,13 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
 }
 
 template <bool T>
-void LexerBase<T>::appendToBuf(const unsigned char *data, unsigned int size, bool isEnd) {
+void LexerBase<T>::appendToBuf(const char *data, unsigned int size, bool isEnd) {
     // save position
     const unsigned int pos = this->getPos();
     const unsigned int markerPos = this->marker - this->buf.get();
     const unsigned int ctxMarkerPos = this->ctxMarker - this->buf.get();
 
-    this->buf.appendBy(size + 2, [&](unsigned char *ptr){
+    this->buf.appendBy(size + 2, [&](char *ptr){
         unsigned int writeSize = size;
         memcpy(ptr, data, size);
         if(isEnd) {
@@ -470,7 +470,7 @@ template<bool T>
 bool LexerBase<T>::fill(int n) {
     if(this->file != nullptr) {
         int needSize = (n > DEFAULT_READ_SIZE) ? n : DEFAULT_READ_SIZE;
-        unsigned char data[needSize];
+        char data[needSize];
         int readSize = fread(data, sizeof(unsigned char), needSize, this->file.get());
         if(readSize < needSize) {
             this->file.reset();
