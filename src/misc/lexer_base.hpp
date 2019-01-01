@@ -178,6 +178,16 @@ public:
         this->appendToBuf(data, size, true);
     }
 
+    LexerBase(const char *sourceName, ByteBuffer &&buffer) : LexerBase(sourceName) {
+        this->buf = std::move(buffer);
+        if(this->buf.empty() || this->buf.back() != '\n') {
+            this->buf += '\n';
+        }
+        this->buf += '\0';
+        this->cursor = this->buf.get();
+        this->limit = this->cursor + this->buf.size();
+    }
+
     LexerBase &operator=(LexerBase &&lex) noexcept {
         this->swap(lex);
         return *this;
@@ -380,7 +390,7 @@ std::string LexerBase<T>::formatTokenText(Token token) const {
         if(code < 0) {
             break;
         }
-        str.append((char *)(this->buf.get() + i), size);
+        str.append(this->buf.get() + i, size);
         i += size;
     }
     return str;

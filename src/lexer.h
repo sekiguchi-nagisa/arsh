@@ -75,16 +75,18 @@ public:
     Lexer(const char *sourceName, const char *source, unsigned int size) :
             LexerBase(sourceName, source, size), modeStack(1, yycSTMT) {}
 
+    Lexer(const char *sourceName, FilePtr &&file) :
+            LexerBase(sourceName, std::move(file)), modeStack(1, yycSTMT) {}
+
     /**
      * 
      * @param sourceName
      * must not be null.
-     * @param file
-     * must be opened with binary mode.
+     * @param buf
      * @return
      */
-    Lexer(const char *sourceName, FilePtr &&file) :
-            LexerBase(sourceName, std::move(file)), modeStack(1, yycSTMT) {}
+    Lexer(const char *sourceName, ByteBuffer &&buf) :
+            LexerBase(sourceName, std::move(buf)), modeStack(1, yycSTMT) {}
 
     ~Lexer() = default;
 

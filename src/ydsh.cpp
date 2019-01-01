@@ -638,6 +638,41 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
     return evalScript(*st, std::move(lexer), e);
 }
 
+static bool readAll(FILE *fp, ByteBuffer &buf) {
+    while(true) {
+        char data[128];
+        clearerr(fp);
+        errno = 0;
+        unsigned int size = fread(data, sizeof(char), arraySize(data), fp);
+        if(size > 0) {
+            buf.append(data, size);
+        } else if(errno) {
+            if(errno == EINTR) {
+                continue;
+            }
+            return false;
+        } else {
+            break;
+        }
+    }
+    return true;
+}
+
+static void reportFileError(const char *sourceName, bool isIO, DSError *e) {
+    int old = errno;
+    fprintf(stderr, "ydsh: %s: %s, by `%s'\n",
+            isIO ? "cannot read file" : "cannot open file", sourceName, strerror(old));
+    if(e) {
+        *e = {
+                .kind = DS_ERROR_KIND_FILE_ERROR,
+                .fileName = strdup(sourceName),
+                .lineNum = 0,
+                .name = strdup(strerror(old))
+        };
+    }
+    errno = old;
+}
+
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     FilePtr filePtr;
     if(sourceName == nullptr) {
@@ -648,17 +683,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
             if(get<ModLoadingError>(ret) == ModLoadingError::CIRCULAR) {
                 errno = ETXTBSY;
             }
-            int old = errno;
-            fprintf(stderr, "ydsh: cannot open file: %s, by `%s'\n", sourceName, strerror(old));
-            if(e) {
-                *e = {
-                        .kind = DS_ERROR_KIND_FILE_ERROR,
-                        .fileName = strdup(sourceName),
-                        .lineNum = 0,
-                        .name = strdup(strerror(old))
-                };
-            }
-            errno = old;
+            reportFileError(sourceName, false, e);
             return 1;
         } else if(is<ModType *>(ret)) {
             return 0;   // do nothing.
@@ -668,8 +693,17 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         setScriptDir(st, dirName);
         free(real);
     }
+
+    // read data
     assert(filePtr);
-    return evalScript(*st, Lexer(sourceName == nullptr ? "(stdin)" : sourceName, std::move(filePtr)), e);
+    ByteBuffer buf;
+    sourceName = sourceName == nullptr ? "(stdin)" : sourceName;
+    if(!readAll(filePtr.get(), buf)) {
+        reportFileError(sourceName, true, e);
+        return 1;
+    }
+    filePtr.reset(nullptr);
+    return evalScript(*st, Lexer(sourceName, std::move(buf)), e);
 }
 
 int DSState_loadModule(DSState *st, const char *fileName,
