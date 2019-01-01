@@ -296,7 +296,7 @@ TEST_F(APITest, module2) {
         return DSState_loadModule(this->state, "fhjreuhfurie", "hoge", 0, nullptr);
     });
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 1, WaitStatus::EXITED, "",
-                                         "ydsh: [semantic error] not found module: `fhjreuhfurie'"));
+                                         "ydsh: [semantic error] module not found: `fhjreuhfurie'"));
 
     DSError e;
     int r = DSState_loadModule(this->state, "fhuahfuiefer", "hoge", 0, &e);
