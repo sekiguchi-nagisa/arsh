@@ -127,10 +127,10 @@ private:
      *
      * @param fullPath
      * must be full file path (not directory)
-     * @param filePtr
+     * @param buf
      * @param node
      */
-    void enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_ptr<SourceNode> &&node);
+    void enterModule(const char *fullPath, ByteBuffer &&buf, std::unique_ptr<SourceNode> &&node);
 
     std::unique_ptr<SourceNode> exitModule();
 

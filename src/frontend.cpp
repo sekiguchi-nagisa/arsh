@@ -267,7 +267,11 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
             RAISE_TC_ERROR(NotFoundMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str());
         }
     } else if(is<const char *>(ret)) {
-        this->enterModule(get<const char*>(ret), std::move(filePtr),
+        ByteBuffer buf;
+        if(!readAll(filePtr.get(), buf)) {
+            RAISE_TC_ERROR(NotOpenMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno));
+        }
+        this->enterModule(get<const char*>(ret), std::move(buf),
                           std::unique_ptr<SourceNode>(static_cast<SourceNode *>(node.release())));
         return ENTER_MODULE;
     } else if(is<ModType *>(ret)) {
@@ -277,10 +281,10 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     return IN_MODULE;   // normally unreachable, due to suppress gcc warning
 }
 
-void FrontEnd::enterModule(const char *fullPath, FilePtr &&filePtr, std::unique_ptr<SourceNode> &&node) {
+void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf, std::unique_ptr<SourceNode> &&node) {
     {
         assert(*fullPath == '/');
-        Lexer lex(fullPath, std::move(filePtr));
+        Lexer lex(fullPath, std::move(buf));
         node->setFirstAppear(true);
         auto state = this->parser.saveLexicalState();
         auto scope = this->getSymbolTable().createModuleScope();

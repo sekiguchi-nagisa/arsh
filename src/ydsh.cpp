@@ -638,26 +638,6 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
     return evalScript(*st, std::move(lexer), e);
 }
 
-static bool readAll(FILE *fp, ByteBuffer &buf) {
-    while(true) {
-        char data[128];
-        clearerr(fp);
-        errno = 0;
-        unsigned int size = fread(data, sizeof(char), arraySize(data), fp);
-        if(size > 0) {
-            buf.append(data, size);
-        } else if(errno) {
-            if(errno == EINTR) {
-                continue;
-            }
-            return false;
-        } else {
-            break;
-        }
-    }
-    return true;
-}
-
 static void reportFileError(const char *sourceName, bool isIO, DSError *e) {
     int old = errno;
     fprintf(stderr, "ydsh: %s: %s, by `%s'\n",

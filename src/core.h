@@ -276,6 +276,8 @@ public:
     }
 };
 
+bool readAll(FILE *fp, ByteBuffer &buf);
+
 } // namespace ydsh
 
 #endif //YDSH_CORE_H

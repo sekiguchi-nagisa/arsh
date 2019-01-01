@@ -89,7 +89,7 @@ DEFINE_TCError(UndefinedInit  , "undefined constructor: `%s'"                   
 DEFINE_TCError(Unacceptable   , "unacceptable type: `%s'"                           );
 DEFINE_TCError(DefinedCmd     , "already defined command: `%s'"                     );
 DEFINE_TCError(ConflictSymbol , "at global import, detect symbol conflict: `%s'"    );
-DEFINE_TCError(NotOpenMod     , "cannot open module: `%s', by `%s'"                 );
+DEFINE_TCError(NotOpenMod     , "cannot read module: `%s', by `%s'"                 );
 DEFINE_TCError(NotFoundMod    , "not found module: `%s'"                            );
 DEFINE_TCError(CircularMod    , "circular module import: `%s'"                      );
 DEFINE_TCError(Required       , "require `%s' type, but is `%s' type"               );
