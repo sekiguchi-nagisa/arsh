@@ -82,7 +82,7 @@ TokenKind Lexer::nextToken(Token &token) {
       re2c:define:YYFILL:naked = 1;
       re2c:define:YYFILL@len = #;
       re2c:define:YYFILL = "if(!this->fill(#)) { REACH_EOS(); }";
-      re2c:yyfill:enable = 1;
+      re2c:yyfill:enable = 0;
       re2c:indent:top = 1;
       re2c:indent:string = "    ";
 
@@ -319,6 +319,7 @@ TokenKind Lexer::nextToken(Token &token) {
     kind = EOS;
     token.pos = this->getUsedSize() - 1;
     token.size = 0;
+    this->cursor--;
     goto RET;
 
     RET:
