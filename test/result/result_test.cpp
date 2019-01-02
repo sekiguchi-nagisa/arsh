@@ -63,12 +63,14 @@ TEST(result, Union1) {
 
     decltype(value) value2;
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, value2.tag()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(value2.hasValue()));
 
     value2 = std::move(value);
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<std::string>(value2)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value2)));
     value = std::move(value2);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, value2.tag()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(value2.hasValue()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value)));
 }
 
@@ -85,6 +87,7 @@ TEST(result, Union2) {
     {
         auto v2 = std::move(v);
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, v.tag()));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(v.hasValue()));
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, str.use_count()));
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, get<shared>(v2).use_count()));
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str.get(), get<shared>(v2).get()));
@@ -94,6 +97,14 @@ TEST(result, Union2) {
     auto v3 = Union<const char *, bool>((const char *)"hello");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", get<const char *>(v3)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<const char *>(v3)));
+}
+
+TEST(result, Union3) {
+    auto v = Union<unsigned int>();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(v.hasValue()));
+    v = 34;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.hasValue()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(34, get<unsigned int>(v)));
 }
 
 Result<std::string, int> func(int index) {

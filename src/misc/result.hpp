@@ -113,7 +113,7 @@ struct TypeByIndex {
 
 template <typename ...T>
 struct Storage {
-    static_assert(sizeof...(T) > 1, "at least 2 type");
+    static_assert(sizeof...(T) > 0, "at least 1 type");
 
     static constexpr auto size = __detail::max(sizeof(T)...);
     static constexpr auto align = __detail::max(alignof(T)...);
@@ -274,6 +274,10 @@ public:
 
     int tag() const {
         return this->tag_;
+    }
+
+    bool hasValue() const {
+        return this->tag() > -1;
     }
 
 private:
