@@ -198,10 +198,11 @@ private:
 using MethodResult = Result<JSON, ResponseError>;
 
 class Handler {
-private:
+protected:
     using Call = std::function<MethodResult(JSON &&)>;
     using Notification = std::function<void(JSON &&)>;
 
+private:
     std::unordered_map<std::string, Call> callMap;
     std::unordered_map<std::string, Notification> notificationMap;
 

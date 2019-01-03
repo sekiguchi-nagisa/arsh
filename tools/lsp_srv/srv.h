@@ -50,7 +50,12 @@ private:
     template<typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface,
               MethodResult(LSPServer::*method)(const Param &)) {
-        Handler::bind(name, paramIface, this, method);
+        Handler::Call func = [this, method](JSON &&json) -> MethodResult {
+            Param p;
+            fromJSON(std::move(json), p);
+            return (this->*method)(p);
+        };
+        Handler::bind(name, paramIface, std::move(func));
     }
 
     void bind(const std::string &name, const VoidInterfacePtr &paramIface,
@@ -61,7 +66,12 @@ private:
     template<typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface,
               void(LSPServer::*method)(const Param &)) {
-        Handler::bind(name, paramIface, this, method);
+        Notification func = [this, method](JSON &&json) {
+            Param p;
+            fromJSON(std::move(json), p);
+            (this->*method)(p);
+        };
+        Handler::bind(name, paramIface, std::move(func));
     }
 
     void bind(const std::string &name, const VoidInterfacePtr &paramIface,
