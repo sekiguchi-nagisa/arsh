@@ -19,6 +19,18 @@
 namespace ydsh {
 namespace lsp {
 
+// #########################
+// ##     DocumentURI     ##
+// #########################
+
+void fromJSON(JSON &&json, DocumentURI &uri) {
+    uri.uri = std::move(json.asString());
+}
+
+JSON toJSON(const DocumentURI &uri) {
+    return JSON(uri.uri);
+}
+
 // ######################
 // ##     Position     ##
 // ######################
@@ -55,14 +67,56 @@ JSON toJSON(const Range &range) {
 // ##     Location     ##
 // ######################
 
+void fromJSON(JSON &&json, Location &location) {
+    fromJSON(std::move(json["rage"]), location.range);
+    fromJSON(std::move(json["uri"]), location.uri);
+}
+
+JSON toJSON(const Location &location) {
+    return {
+        {"uri", toJSON(location.uri)},
+        {"range", toJSON(location.range)}
+    };
+}
+
+// ##########################
+// ##     LocationLink     ##
+// ##########################
+
+void fromJSON(JSON &&json, LocationLink &link) {
+    auto v = std::move(json["originSelectionRange"]);
+    if(!v.isInvalid()) {
+        Range range;
+        fromJSON(std::move(v), range);
+        link.originSelectionRange = std::move(range);
+    }
+    link.targetUri = std::move(json["targetUri"].asString());
+    fromJSON(std::move(json["targetRange"]), link.targetRange);
+
+    v = std::move(json["targetSelectionRange"]);
+    if(!v.isInvalid()) {
+        Range range;
+        fromJSON(std::move(v), range);
+        link.targetSelectionRange = std::move(range);
+    }
+}
+
+JSON toJSON(const LocationLink &link) {
+    return {
+        {"originSelectionRange", link.originSelectionRange.hasValue() ? toJSON(get<Range>(link.originSelectionRange)) : JSON()},
+        {"targetUri", JSON(link.targetUri)},
+        {"targetRange", toJSON(link.targetRange)},
+        {"targetSelectionRange", link.targetSelectionRange.hasValue() ? toJSON(get<Range>(link.targetSelectionRange)) : JSON()}
+    };
+}
 
 // ##########################################
 // ##     DiagnosticRelatedInformation     ##
 // ##########################################
 
 void fromJSON(JSON &&json, DiagnosticRelatedInformation &info) {
-    fromJSON(std::move(json["location"]), info.location);
     info.message = std::move(json["message"].asString());
+    fromJSON(std::move(json["location"]), info.location);
 }
 
 JSON toJSON(const DiagnosticRelatedInformation &info) {
@@ -71,6 +125,78 @@ JSON toJSON(const DiagnosticRelatedInformation &info) {
         {"message", info.message}
     };
 }
+
+// ########################
+// ##     Diagnostic     ##
+// ########################
+
+void fromJSON(JSON &&json, Diagnostic &diagnostic) {
+    fromJSON(std::move(json["range"]), diagnostic.range);
+
+    auto v = std::move(json["severity"]);
+    diagnostic.severity = v.isInvalid() ? DiagnosticSeverity::DUMMY : static_cast<DiagnosticSeverity>(v.asLong());
+    diagnostic.message = std::move(json["message"].asString());
+
+    v = std::move(json["relatedInformation"]);
+    if(!v.isInvalid()) {
+        for(auto &e : v.asArray()) {
+            DiagnosticRelatedInformation info;
+            fromJSON(std::move(e), info);
+            diagnostic.relatedInformation.push_back(std::move(info));
+        }
+    }
+}
+
+JSON toJSON(const Diagnostic &diagnostic) {
+    int severity = static_cast<int>(diagnostic.severity);
+
+    json::Array jsonArray;
+    for(auto &e : diagnostic.relatedInformation) {
+        jsonArray.emplace_back(toJSON(e));
+    }
+
+    return {
+        {"range", toJSON(diagnostic.range)},
+        {"severity", severity > 0 ? JSON(severity): JSON()},
+        //{"code"}
+        //{"source"}
+        {"message", JSON(diagnostic.message)},
+        {"relatedInformation", jsonArray.empty() ? JSON() : JSON(std::move(jsonArray))}
+    };
+}
+
+// #####################
+// ##     Command     ##
+// #####################
+
+void fromJSON(JSON &&json, Command &command) {
+    command.title = std::move(json["title"].asString());
+    command.command = std::move(json["command"].asString());
+}
+
+JSON toJSON(const Command &command) {
+    return {
+        {"title", JSON(command.title)},
+        {"command", JSON(command.command)}
+    };
+}
+
+// ######################
+// ##     TextEdit     ##
+// ######################
+
+void fromJSON(JSON &&json, TextEdit &edit) {
+    fromJSON(std::move(json["range"]), edit.range);
+    edit.newText = std::move(json["newText"].asString());
+}
+
+JSON toJSON(const TextEdit &edit) {
+    return {
+        {"range", toJSON(edit.range)},
+        {"newText", JSON(edit.newText)}
+    };
+}
+
 
 } // namespace lsp
 } // namespace ydsh

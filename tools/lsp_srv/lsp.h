@@ -18,6 +18,7 @@
 #define YDSH_TOOLS_LSP_H
 
 #include "../json/json.h"
+#include "../uri/uri.h"
 
 namespace ydsh {
 namespace lsp {
@@ -26,9 +27,22 @@ using namespace json;
 
 // definition of basic interface of language server protocol
 
-struct DocumentUri {
-    std::string value;
+// LSP specific error code
+constexpr int ServerErrorStart     = -32099;
+constexpr int ServerErrorEnd       = -32000;
+constexpr int ServerNotInitialized = -32002;
+constexpr int UnknownErrorCode     = -32001;
+
+constexpr int RequestCancelled     = -32800;
+constexpr int ContentModified      = -32801;
+
+struct DocumentURI {
+    std::string uri;    // must be valid URI
 };
+
+void fromJSON(JSON &&json, DocumentURI &uri);
+JSON toJSON(const DocumentURI &uri);
+
 
 struct Position {
     int line{0};
@@ -49,7 +63,7 @@ JSON toJSON(const Range &range);
 
 
 struct Location {
-    DocumentUri uri;    //FIXME
+    DocumentURI uri;
     Range range;
 };
 
@@ -57,7 +71,19 @@ void fromJSON(JSON &&json, Location &location);
 JSON toJSON(const Location &location);
 
 
-enum class DiagnosticSeverity {
+struct LocationLink {
+    Union<Range> originSelectionRange;  // optional
+    std::string targetUri;
+    Range targetRange;
+    Union<Range> targetSelectionRange;  // optional
+};
+
+void fromJSON(JSON &&json, LocationLink &link);
+JSON toJSON(const LocationLink &link);
+
+
+enum class DiagnosticSeverity : int {
+    DUMMY = 0,  // not defined in protocol
     Error = 1,
     Warning = 2,
     Information = 3,
@@ -71,6 +97,39 @@ struct DiagnosticRelatedInformation {
 
 void fromJSON(JSON &&json, DiagnosticRelatedInformation &info);
 JSON toJSON(const DiagnosticRelatedInformation &info);
+
+
+struct Diagnostic {
+    Range range;
+    DiagnosticSeverity severity{DiagnosticSeverity::DUMMY}; // optional
+//    std::string code; // string | number, //FIXME: currently not supported.
+//    std::string source;                   //FIXME: currently not supported.
+    std::string message;
+    std::vector<DiagnosticRelatedInformation> relatedInformation;   // optional
+};
+
+void fromJSON(JSON &&json, Diagnostic &diagnostic);
+JSON toJSON(const Diagnostic &diagnostic);
+
+
+struct Command {
+    std::string title;
+    std::string command;
+//    std::vector<JSON> arguments // any[], optional  //FIXME: currently not supported.
+};
+
+void fromJSON(JSON &&json, Command &command);
+JSON toJSON(const Command &command);
+
+
+struct TextEdit {
+    Range range;
+    std::string newText;
+};
+
+void fromJSON(JSON &&json, TextEdit &edit);
+JSON toJSON(const TextEdit &edit);
+
 
 } // namespace lsp
 } // namespace ydsh
