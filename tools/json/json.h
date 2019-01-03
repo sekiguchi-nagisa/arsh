@@ -57,6 +57,12 @@ public:
     JSON(std::initializer_list<Member> list);   //NOLINT
     JSON(std::nullptr_t) : Base(nullptr) {} //NOLINT
 
+    /**
+     * if text is invalid json, return empty json object
+     * @param text
+     * @return
+     */
+    static JSON fromString(const char *text);
 
     bool isInvalid() const {
         return this->tag() < 0;

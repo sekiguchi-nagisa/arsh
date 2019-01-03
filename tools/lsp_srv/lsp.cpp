@@ -19,12 +19,18 @@
 namespace ydsh {
 namespace lsp {
 
+#define FROM_JSON(json, value, field) fromJSON(std::move(json[#field]), value.field)
+
+static void fromJSON(JSON &&json, std::string &value) {
+    value = std::move(json.asString());
+}
+
 // #########################
 // ##     DocumentURI     ##
 // #########################
 
 void fromJSON(JSON &&json, DocumentURI &uri) {
-    uri.uri = std::move(json.asString());
+    fromJSON(std::move(json), uri.uri);
 }
 
 JSON toJSON(const DocumentURI &uri) {
@@ -43,7 +49,7 @@ void fromJSON(JSON &&json, Position &p) {
 JSON toJSON(const Position &p) {
     return {
         {"line", p.line},
-        {"character", p.line}
+        {"character", p.character}
     };
 }
 
@@ -52,8 +58,8 @@ JSON toJSON(const Position &p) {
 // ###################
 
 void fromJSON(JSON &&json, Range &range) {
-    fromJSON(std::move(json["start"]), range.start);
-    fromJSON(std::move(json["end"]), range.end);
+    FROM_JSON(json, range, start);
+    FROM_JSON(json, range, end);
 }
 
 JSON toJSON(const Range &range) {
@@ -68,8 +74,8 @@ JSON toJSON(const Range &range) {
 // ######################
 
 void fromJSON(JSON &&json, Location &location) {
-    fromJSON(std::move(json["rage"]), location.range);
-    fromJSON(std::move(json["uri"]), location.uri);
+    FROM_JSON(json, location, range);
+    FROM_JSON(json, location, uri);
 }
 
 JSON toJSON(const Location &location) {
@@ -91,7 +97,7 @@ void fromJSON(JSON &&json, LocationLink &link) {
         link.originSelectionRange = std::move(range);
     }
     link.targetUri = std::move(json["targetUri"].asString());
-    fromJSON(std::move(json["targetRange"]), link.targetRange);
+    FROM_JSON(json, link, targetRange);
 
     v = std::move(json["targetSelectionRange"]);
     if(!v.isInvalid()) {
@@ -115,8 +121,8 @@ JSON toJSON(const LocationLink &link) {
 // ##########################################
 
 void fromJSON(JSON &&json, DiagnosticRelatedInformation &info) {
-    info.message = std::move(json["message"].asString());
-    fromJSON(std::move(json["location"]), info.location);
+    FROM_JSON(json, info, message);
+    FROM_JSON(json, info, location);
 }
 
 JSON toJSON(const DiagnosticRelatedInformation &info) {
@@ -131,11 +137,11 @@ JSON toJSON(const DiagnosticRelatedInformation &info) {
 // ########################
 
 void fromJSON(JSON &&json, Diagnostic &diagnostic) {
-    fromJSON(std::move(json["range"]), diagnostic.range);
+    FROM_JSON(json, diagnostic, range);
 
     auto v = std::move(json["severity"]);
     diagnostic.severity = v.isInvalid() ? DiagnosticSeverity::DUMMY : static_cast<DiagnosticSeverity>(v.asLong());
-    diagnostic.message = std::move(json["message"].asString());
+    FROM_JSON(json, diagnostic, message);
 
     v = std::move(json["relatedInformation"]);
     if(!v.isInvalid()) {
@@ -170,8 +176,8 @@ JSON toJSON(const Diagnostic &diagnostic) {
 // #####################
 
 void fromJSON(JSON &&json, Command &command) {
-    command.title = std::move(json["title"].asString());
-    command.command = std::move(json["command"].asString());
+    FROM_JSON(json, command, title);
+    FROM_JSON(json, command, command);
 }
 
 JSON toJSON(const Command &command) {
@@ -186,8 +192,8 @@ JSON toJSON(const Command &command) {
 // ######################
 
 void fromJSON(JSON &&json, TextEdit &edit) {
-    fromJSON(std::move(json["range"]), edit.range);
-    edit.newText = std::move(json["newText"].asString());
+    FROM_JSON(json, edit, range);
+    FROM_JSON(json, edit, newText);
 }
 
 JSON toJSON(const TextEdit &edit) {

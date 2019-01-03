@@ -34,6 +34,12 @@ JSON::JSON(std::initializer_list<json::Member> list) : JSON(object()) {
     }
 }
 
+JSON JSON::fromString(const char *text) {
+    Lexer lexer(text);
+    Parser parser(std::move(lexer));
+    return parser();
+}
+
 JSON &JSON::operator[](unsigned int index) {
     if(!this->isArray()) {
         fatal("must be array\n");

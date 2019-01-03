@@ -51,6 +51,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/json)
 include_directories(${CMAKE_SOURCE_DIR}/tools/uri)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/uri)
 
+include_directories(${CMAKE_SOURCE_DIR}/tools/lsp_srv)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lsp)
+
 if(FUZZING_BUILD_MODE)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fuzz)
 endif()
