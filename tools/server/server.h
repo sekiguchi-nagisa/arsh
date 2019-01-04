@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2019 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,14 +47,15 @@ public:
     void run();
 
 private:
-    template<typename Param>
+    template<typename Ret, typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface,
-              MethodResult(LSPServer::*method)(const Param &)) {
+              Reply<Ret>(LSPServer::*method)(const Param &)) {
         Handler::bind(name, paramIface, this, method);
     }
 
+    template <typename Ret>
     void bind(const std::string &name, const VoidInterfacePtr &paramIface,
-              MethodResult(LSPServer::*method)(void)) {
+              Reply<Ret>(LSPServer::*method)(void)) {
         Handler::bind(name, paramIface, this, method);
     }
 
@@ -71,7 +72,7 @@ private:
 
 public:
     // RPC method definition
-    MethodResult shutdown();
+    Reply<void> shutdown();
 
     void exit();
 };

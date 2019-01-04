@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2019 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -195,11 +195,41 @@ private:
     virtual int recv(unsigned int size, char *data) = 0;
 };
 
-using MethodResult = Result<JSON, ResponseError>;
+inline JSON toJSON(const std::string &str) {
+    return JSON(str);
+}
+
+using ReplyImpl = Result<JSON, ResponseError>;
+
+template <typename T>
+struct Reply : public ReplyImpl {
+    Reply(T &&value) : ReplyImpl(Ok(toJSON(value))) {}
+
+    Reply(ErrHolder<ResponseError> &&err) : ReplyImpl(std::move(err)) {}
+
+    Reply(Reply &&) noexcept = default;
+
+    ~Reply() = default;
+};
+
+template <>
+struct Reply<void> : public ReplyImpl {
+    Reply(std::nullptr_t) : ReplyImpl(Ok(toJSON(nullptr))) {}
+
+    Reply(ErrHolder<ResponseError> &&err) : ReplyImpl(std::move(err)) {}
+
+    Reply(Reply &&) noexcept = default;
+
+    ~Reply() = default;
+};
+
+inline ErrHolder<ResponseError> newError(const std::string &detail) {
+    return Err(ResponseError(InternalError, "Internal error", JSON(detail)));
+}
 
 class Handler {
 protected:
-    using Call = std::function<MethodResult(JSON &&)>;
+    using Call = std::function<ReplyImpl(JSON &&)>;
     using Notification = std::function<void(JSON &&)>;
 
 private:
@@ -217,7 +247,7 @@ protected:
 public:
     explicit Handler(LoggerBase &logger) : logger(logger) {}
 
-    MethodResult onCall(const std::string &name, JSON &&param);
+    ReplyImpl onCall(const std::string &name, JSON &&param);
 
     void onNotify(const std::string &name, JSON &&param);
 
@@ -233,10 +263,10 @@ public:
 
     void bind(const std::string &name, const InterfaceBasePtr &paramIface, Notification &&func);
 
-    template<typename State, typename Param>
+    template<typename State, typename Ret, typename Param>
     void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
-              MethodResult(State::*method)(const Param &)) {
-        Call func = [obj, method](JSON &&json) -> MethodResult {
+              Reply<Ret>(State::*method)(const Param &)) {
+        Call func = [obj, method](JSON &&json) -> ReplyImpl {
             Param p;
             fromJSON(std::move(json), p);
             return (obj->*method)(p);
@@ -244,10 +274,10 @@ public:
         this->bind(name, paramIface, std::move(func));
     }
 
-    template<typename State>
+    template<typename State, typename Ret>
     void bind(const std::string &name, const VoidInterfacePtr &paramIface, State *obj,
-              MethodResult(State::*method)(void)) {
-        Call func = [obj, method](JSON &&) -> MethodResult {
+              Reply<Ret>(State::*method)(void)) {
+        Call func = [obj, method](JSON &&) -> ReplyImpl {
             return (obj->*method)();
         };
         this->bind(name, paramIface, std::move(func));

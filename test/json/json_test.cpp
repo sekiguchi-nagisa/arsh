@@ -547,21 +547,21 @@ struct Context {
         this->nRet = p.value;
     }
 
-    rpc::MethodResult put(const Param2 &p) {
+    rpc::Reply<std::string> put(const Param2 &p) {
         this->cRet = p.value;
         if(this->cRet.size() > 5) {
-            return ydsh::Err(rpc::ResponseError(-100, "too long"));
+            return rpc::newError("too long");
         }
-        return ydsh::Ok(JSON("hello"));
+        return std::string("hello");
     }
 
     void exit() {
         this->exited = true;
     }
 
-    rpc::MethodResult tryExit() {
+    rpc::Reply<void> tryExit() {
         this->exited = false;
-        return ydsh::Err(rpc::ResponseError(-100, "busy"));
+        return rpc::newError("busy");
     }
 };
 
@@ -710,9 +710,10 @@ TEST_F(RPCTest, call4) {
     ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-100, json["error"]["code"].asLong()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("busy", json["error"]["message"].asString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(json["error"]["data"].isString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InternalError, json["error"]["code"].asLong()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Internal error", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("busy", json["error"]["data"].asString()));
 }
 
 TEST_F(RPCTest, call5) {

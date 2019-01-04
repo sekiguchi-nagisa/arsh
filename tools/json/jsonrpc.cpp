@@ -167,7 +167,7 @@ bool Transport::dispatch(Handler &handler) {
 // ##     Handler     ##
 // #####################
 
-MethodResult Handler::onCall(const std::string &name, JSON &&param) {
+ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
     auto iter = this->callMap.find(name);
     if(iter == this->callMap.end()) {
         std::string str = "undefined method: ";
