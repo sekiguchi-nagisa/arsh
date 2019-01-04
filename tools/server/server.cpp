@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "srv.h"
+#include "server.h"
 
 namespace ydsh {
 namespace lsp {

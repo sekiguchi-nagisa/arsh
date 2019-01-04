@@ -243,7 +243,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/pid_check)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/process)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/uri)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/json)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/lsp_srv)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/server)
 
 
 set(CMAKE_MACOSX_RPATH ON)
