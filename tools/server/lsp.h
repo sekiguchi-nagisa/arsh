@@ -40,36 +40,20 @@ struct DocumentURI {
     std::string uri;    // must be valid URI
 };
 
-void fromJSON(JSON &&json, DocumentURI &uri);
-JSON toJSON(const DocumentURI &uri);
-
-
 struct Position {
     int line{0};
     int character{0};
 };
-
-void fromJSON(JSON &&json, Position &p);
-JSON toJSON(const Position &p);
-
 
 struct Range {
     Position start;
     Position end;
 };
 
-void fromJSON(JSON &&json, Range &range);
-JSON toJSON(const Range &range);
-
-
 struct Location {
     DocumentURI uri;
     Range range;
 };
-
-void fromJSON(JSON &&json, Location &location);
-JSON toJSON(const Location &location);
-
 
 struct LocationLink {
     Union<Range> originSelectionRange;  // optional
@@ -77,9 +61,6 @@ struct LocationLink {
     Range targetRange;
     Union<Range> targetSelectionRange;  // optional
 };
-
-void fromJSON(JSON &&json, LocationLink &link);
-JSON toJSON(const LocationLink &link);
 
 
 enum class DiagnosticSeverity : int {
@@ -95,10 +76,6 @@ struct DiagnosticRelatedInformation {
     std::string message;
 };
 
-void fromJSON(JSON &&json, DiagnosticRelatedInformation &info);
-JSON toJSON(const DiagnosticRelatedInformation &info);
-
-
 struct Diagnostic {
     Range range;
     DiagnosticSeverity severity{DiagnosticSeverity::DUMMY}; // optional
@@ -108,30 +85,51 @@ struct Diagnostic {
     std::vector<DiagnosticRelatedInformation> relatedInformation;   // optional
 };
 
-void fromJSON(JSON &&json, Diagnostic &diagnostic);
-JSON toJSON(const Diagnostic &diagnostic);
-
-
 struct Command {
     std::string title;
     std::string command;
 //    std::vector<JSON> arguments // any[], optional  //FIXME: currently not supported.
 };
 
-void fromJSON(JSON &&json, Command &command);
-JSON toJSON(const Command &command);
-
-
 struct TextEdit {
     Range range;
     std::string newText;
 };
 
+} // namespace lsp
+
+namespace rpc {
+
+using namespace lsp;
+
+void fromJSON(JSON &&json, DocumentURI &uri);
+JSON toJSON(const DocumentURI &uri);
+
+void fromJSON(JSON &&json, Position &p);
+JSON toJSON(const Position &p);
+
+void fromJSON(JSON &&json, Range &range);
+JSON toJSON(const Range &range);
+
+void fromJSON(JSON &&json, Location &location);
+JSON toJSON(const Location &location);
+
+void fromJSON(JSON &&json, LocationLink &link);
+JSON toJSON(const LocationLink &link);
+
+void fromJSON(JSON &&json, DiagnosticRelatedInformation &info);
+JSON toJSON(const DiagnosticRelatedInformation &info);
+
+void fromJSON(JSON &&json, Diagnostic &diagnostic);
+JSON toJSON(const Diagnostic &diagnostic);
+
+void fromJSON(JSON &&json, Command &command);
+JSON toJSON(const Command &command);
+
 void fromJSON(JSON &&json, TextEdit &edit);
 JSON toJSON(const TextEdit &edit);
 
-
-} // namespace lsp
+} // namespace rpc
 } // namespace ydsh
 
 #endif //YDSH_TOOLS_LSP_H

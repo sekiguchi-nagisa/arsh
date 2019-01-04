@@ -17,7 +17,7 @@
 #include "lsp.h"
 
 namespace ydsh {
-namespace lsp {
+namespace rpc {
 
 #define FROM_JSON(json, value, field) fromJSON(std::move(json[#field]), value.field)
 
@@ -25,9 +25,6 @@ static void fromJSON(JSON &&json, std::string &value) {
     value = std::move(json.asString());
 }
 
-// #########################
-// ##     DocumentURI     ##
-// #########################
 
 void fromJSON(JSON &&json, DocumentURI &uri) {
     fromJSON(std::move(json), uri.uri);
@@ -37,9 +34,6 @@ JSON toJSON(const DocumentURI &uri) {
     return JSON(uri.uri);
 }
 
-// ######################
-// ##     Position     ##
-// ######################
 
 void fromJSON(JSON &&json, Position &p) {
     p.line = json["line"].asLong();
@@ -53,9 +47,6 @@ JSON toJSON(const Position &p) {
     };
 }
 
-// ###################
-// ##     Range     ##
-// ###################
 
 void fromJSON(JSON &&json, Range &range) {
     FROM_JSON(json, range, start);
@@ -69,9 +60,6 @@ JSON toJSON(const Range &range) {
     };
 }
 
-// ######################
-// ##     Location     ##
-// ######################
 
 void fromJSON(JSON &&json, Location &location) {
     FROM_JSON(json, location, range);
@@ -85,9 +73,6 @@ JSON toJSON(const Location &location) {
     };
 }
 
-// ##########################
-// ##     LocationLink     ##
-// ##########################
 
 void fromJSON(JSON &&json, LocationLink &link) {
     auto v = std::move(json["originSelectionRange"]);
@@ -116,9 +101,6 @@ JSON toJSON(const LocationLink &link) {
     };
 }
 
-// ##########################################
-// ##     DiagnosticRelatedInformation     ##
-// ##########################################
 
 void fromJSON(JSON &&json, DiagnosticRelatedInformation &info) {
     FROM_JSON(json, info, message);
@@ -132,9 +114,6 @@ JSON toJSON(const DiagnosticRelatedInformation &info) {
     };
 }
 
-// ########################
-// ##     Diagnostic     ##
-// ########################
 
 void fromJSON(JSON &&json, Diagnostic &diagnostic) {
     FROM_JSON(json, diagnostic, range);
@@ -171,9 +150,6 @@ JSON toJSON(const Diagnostic &diagnostic) {
     };
 }
 
-// #####################
-// ##     Command     ##
-// #####################
 
 void fromJSON(JSON &&json, Command &command) {
     FROM_JSON(json, command, title);
@@ -187,9 +163,6 @@ JSON toJSON(const Command &command) {
     };
 }
 
-// ######################
-// ##     TextEdit     ##
-// ######################
 
 void fromJSON(JSON &&json, TextEdit &edit) {
     FROM_JSON(json, edit, range);
@@ -203,6 +176,5 @@ JSON toJSON(const TextEdit &edit) {
     };
 }
 
-
-} // namespace lsp
+} // namespace rpc
 } // namespace ydsh

@@ -5,6 +5,7 @@
 using namespace ydsh;
 using namespace lsp;
 using namespace json;
+using namespace rpc;
 
 TEST(LSPTest, Position) {
     const char *text = R"(
