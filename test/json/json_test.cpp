@@ -121,6 +121,13 @@ public:
     ParserTest() = default;
 };
 
+TEST(InvalidTest, base) {
+    Parser parser("hoge");
+    auto ret = parser();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(parser.hasError()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret.isInvalid()));
+}
+
 TEST_F(ParserTest, null1) {
     ASSERT_NO_FATAL_FAILURE(this->parse("null"));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->ret.isNull()));

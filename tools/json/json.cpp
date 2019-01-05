@@ -273,10 +273,10 @@ const char *toString(JSONTokenKind kind) {
 #define GEN_LA_ALTER(CASE) CASE,
 
 #define E_ALTER(...) \
-do { this->raiseNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return nullptr; } while(false)
+do { this->raiseNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return JSON(); } while(false)
 
 #define TRY(expr) \
-({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
+({ auto v = expr; if(this->hasError()) { return JSON(); } std::forward<decltype(v)>(v); })
 
 struct CallCounter {
     unsigned int &count;
@@ -290,7 +290,7 @@ struct CallCounter {
 
 #define MAX_NESTING_DEPTH 8000
 #define GUARD_DEEP_NESTING(name) \
-if(++this->callCount == MAX_NESTING_DEPTH) { this->raiseDeepNestingError(); return nullptr; } \
+if(++this->callCount == MAX_NESTING_DEPTH) { this->raiseDeepNestingError(); return JSON(); } \
 CallCounter name(this->callCount)
 
 
@@ -354,7 +354,7 @@ JSON Parser::parseNumber() {
         }
     }
     this->raiseTokenFormatError(NUMBER, token, "out of range");
-    return nullptr;
+    return JSON();
 }
 
 #define TRY2(expr) \
