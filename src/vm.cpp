@@ -527,9 +527,9 @@ static bool forkAndEval(DSState &state) {
             tryToClose(pipeset.in[WRITE_PIPE]);
             const bool isStr = forkKind == ForkKind::STR;
             obj = isStr ? readAsStr(state, pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
-            tryToClose(pipeset.out[READ_PIPE]);
             auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
             int ret = proc.wait(waitOp);   // wait exit
+            tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
             state.updateExitStatus(ret);
             break;
         }
