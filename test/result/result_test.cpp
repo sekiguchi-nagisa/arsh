@@ -56,7 +56,7 @@ TEST(result, storage2) {
 }
 
 TEST(result, Union1) {
-    Union<int, std::string> value(std::string("hey"));
+    Union<int, std::string, std::nullptr_t> value(std::string("hey"));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<std::string>(value)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(is<int>(value)));
@@ -72,6 +72,10 @@ TEST(result, Union1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, value2.tag()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(value2.hasValue()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", get<std::string>(value)));
+
+    value = nullptr;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<std::nullptr_t>(value)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, get<std::nullptr_t>(value)));
 }
 
 TEST(result, Union2) {
