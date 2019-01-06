@@ -1,0 +1,58 @@
+#!/usr/bin/env ydsh
+
+function usage($m : String) : Nothing {
+    echo 1>&2 [error] $m
+    echo [usage] $0 [backup src subvol path] [backup dest subvol path] 1>&2
+    exit 1
+}
+
+error() {
+    new Error("$@").backtrace()
+    exit 1
+}
+
+# check arguments
+let SRC_PATH = $1.realpath() ?? $usage("must be valid src path: `$1'")
+let DEST_PATH = $2.realpath() ?? $usage("must be valid dest path: `$2'")
+
+let SRC_BACKUP = "$SRC_PATH/BACKUP"
+let DEST_BACKUP = "$DEST_PATH/BACKUP"
+
+let SRC_BACKUP_NEW = "$SRC_PATH/BACKUP-new"
+let DEST_BACKUP_NEW = "$DEST_PATH/BACKUP-new"
+
+$SRC_PATH != $DEST_PATH || $usage("dest path must be different from src path")
+
+test -d $SRC_BACKUP || $usage("require initial snapshot in `$SRC_BACKUP'")
+
+test -d $DEST_BACKUP || $usage("require initial backup in `$DEST_BACKUP'")
+
+$UID == 0u || $usage("require root privilege. use `sudo'")
+
+assert command -V date > /dev/null
+mount | grep $SRC_BACKUP && umount $SRC_BACKUP
+
+echo perform backup operation "`$SRC_PATH'" to "`$DEST_PATH'"
+read -p 'confirm (y/n): '
+if $REPLY.lower() != "y" {
+    echo not perform backup operation
+    exit 0
+}
+
+#error failed!!
+
+# take snapshot
+btrfs subvolume snapshot -r $SRC_PATH $SRC_BACKUP_NEW || error "snapshot failed!!"
+sync
+
+# send/receive snapshot
+btrfs send -p $SRC_BACKUP $SRC_BACKUP_NEW | btrfs receive $DEST_PATH || error "send/receive failed!!"
+
+# remove old snapshot
+btrfs subvolume delete $SRC_BACKUP || error "subvolume delete failed"
+mv $SRC_BACKUP_NEW $SRC_BACKUP || error "subvolume move failed"
+btrfs subvolume delete $DEST_BACKUP || error "subvolume delete failed"
+mv $DEST_BACKUP_NEW $DEST_BACKUP || error "subvolume move failed"
+
+# keep history of backup
+btrfs subvolume snapshot -r $DEST_BACKUP "${DEST_PATH}.$(date +%Y%m%d-%H%M%S)"
