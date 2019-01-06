@@ -107,6 +107,34 @@ TEST(result, Union3) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(34, get<unsigned int>(v)));
 }
 
+TEST(result, Union4) {
+    auto str = std::make_shared<std::string>("hello");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, str.use_count()));
+
+    using shared = decltype(str);
+    auto v = Union<const char *, shared>(shared(str));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, str.use_count()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, get<shared>(v).use_count()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str.get(), get<shared>(v).get()));
+
+    auto v2 = v;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, str.use_count()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, get<shared>(v).use_count()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, get<shared>(v2).use_count()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str.get(), get<shared>(v).get()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str.get(), get<shared>(v2).get()));
+
+    v = "34";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("34", get<const char *>(v)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, str.use_count()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, get<shared>(v2).use_count()));
+
+    v2 = v;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("34", get<const char *>(v2)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, str.use_count()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(get<const char *>(v), get<const char *>(v2)));
+}
+
 Result<std::string, int> func(int index) {
     if(index < 0) {
         return Err(index);

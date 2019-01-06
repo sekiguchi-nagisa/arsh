@@ -164,6 +164,11 @@ inline void move(Storage<R...> &src, Storage<R...> &dest) {
     destroy<T>(src);
 }
 
+template <typename T, typename ...R>
+inline void copy(const Storage<R...> &src, Storage<R...> &dest) {
+    dest.obtain(get<T>(src));
+}
+
 namespace __detail_union {
 
 template <int N, typename ...R>
@@ -201,6 +206,24 @@ struct Mover<-1, R...> {
     void operator()(Storage<R...> &, int, Storage<R...> &) const {}
 };
 
+
+template <int N, typename ...R>
+struct Copier {
+    void operator()(const Storage<R...> &src, int srcTag, Storage<R...> &dest) const {
+        if(srcTag == N) {
+            using T = typename TypeByIndex<N, R...>::type;
+            copy<T>(src, dest);
+        } else {
+            Copier<N - 1, R...>()(src, srcTag, dest);
+        }
+    }
+};
+
+template <typename ...R>
+struct Copier<-1, R...> {
+    void operator()(const Storage<R...> &, int, Storage<R...> &) const {}
+};
+
 } // namespace __detail_union
 
 template <typename ...R>
@@ -224,6 +247,12 @@ inline void polyMove(Storage<R...> &src, int srcTag, Storage<R...> &dest) {
 }
 
 
+template <typename ...R>
+inline void polyCopy(const Storage<R...> &src, int srcTag, Storage<R...> &dest) {
+    __detail_union::Copier<sizeof...(R) - 1, R...>()(src, srcTag, dest);
+}
+
+
 // ###################
 // ##     Union     ##
 // ###################
@@ -241,8 +270,6 @@ public:
     template <typename R>
     using Tag = TypeTag<R, T...>;
 
-    NON_COPYABLE(Union);
-
     Union() noexcept : tag_(-1) {}
 
     template <typename U, typename F = __detail::resolvedType<U, T...>>
@@ -255,12 +282,21 @@ public:
         value.tag_ = -1;
     }
 
+    Union(const Union &value) : tag_(value.tag()) {
+        polyCopy(value.value(), this->tag(), this->value());
+    }
+
     ~Union() {
         polyDestroy(this->value(), this->tag());
     }
 
     Union &operator=(Union && value) noexcept {
         this->moveAssign(value);
+        return *this;
+    }
+
+    Union &operator=(const Union &value) {
+        this->copyAssign(value);
         return *this;
     }
 
@@ -286,6 +322,12 @@ private:
         polyMove(value.value(), value.tag(), this->value());
         this->tag_ = value.tag();
         value.tag_ = -1;
+    }
+
+    void copyAssign(const Union &value) {
+        polyDestroy(this->value(), this->tag());
+        polyCopy(value.value(), value.tag(), this->value());
+        this->tag_ = value.tag();
     }
 };
 
