@@ -203,9 +203,9 @@ using ReplyImpl = Result<JSON, ResponseError>;
 
 template <typename T>
 struct Reply : public ReplyImpl {
-    Reply(T &&value) : ReplyImpl(Ok(toJSON(value))) {}
+    Reply(T &&value) : ReplyImpl(Ok(toJSON(value))) {}  //NOLINT
 
-    Reply(ErrHolder<ResponseError> &&err) : ReplyImpl(std::move(err)) {}
+    Reply(ErrHolder<ResponseError> &&err) : ReplyImpl(std::move(err)) {}    //NOLINT
 
     Reply(Reply &&) noexcept = default;
 
@@ -214,9 +214,9 @@ struct Reply : public ReplyImpl {
 
 template <>
 struct Reply<void> : public ReplyImpl {
-    Reply(std::nullptr_t) : ReplyImpl(Ok(toJSON(nullptr))) {}
+    Reply(std::nullptr_t) : ReplyImpl(Ok(toJSON(nullptr))) {}   //NOLINT
 
-    Reply(ErrHolder<ResponseError> &&err) : ReplyImpl(std::move(err)) {}
+    Reply(ErrHolder<ResponseError> &&err) : ReplyImpl(std::move(err)) {}    //NOLINT
 
     Reply(Reply &&) noexcept = default;
 
@@ -276,7 +276,7 @@ public:
 
     template<typename State, typename Ret>
     void bind(const std::string &name, const VoidInterfacePtr &paramIface, State *obj,
-              Reply<Ret>(State::*method)(void)) {
+              Reply<Ret>(State::*method)()) {
         Call func = [obj, method](JSON &&) -> ReplyImpl {
             return (obj->*method)();
         };
@@ -296,7 +296,7 @@ public:
 
     template<typename State>
     void bind(const std::string &name, const VoidInterfacePtr &paramIface, State *obj,
-              void(State::*method)(void)) {
+              void(State::*method)()) {
         Notification func = [obj, method](JSON &&) {
             (obj->*method)();
         };

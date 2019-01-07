@@ -57,7 +57,7 @@ public:
     Screen() : Screen(24, 80) {}
 
     void setReporter(std::function<void(std::string &&)> func) {
-        this->reporter = func;
+        this->reporter = std::move(func);
     }
 
     /**

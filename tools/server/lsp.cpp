@@ -133,7 +133,7 @@ void fromJSON(JSON &&json, Diagnostic &diagnostic) {
 }
 
 JSON toJSON(const Diagnostic &diagnostic) {
-    int severity = static_cast<int>(diagnostic.severity);
+    auto severity = static_cast<int>(diagnostic.severity);
 
     json::Array jsonArray;
     for(auto &e : diagnostic.relatedInformation) {

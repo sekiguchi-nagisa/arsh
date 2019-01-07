@@ -55,7 +55,7 @@ private:
 
     template <typename Ret>
     void bind(const std::string &name, const VoidInterfacePtr &paramIface,
-              Reply<Ret>(LSPServer::*method)(void)) {
+              Reply<Ret>(LSPServer::*method)()) {
         Handler::bind(name, paramIface, this, method);
     }
 
@@ -66,7 +66,7 @@ private:
     }
 
     void bind(const std::string &name, const VoidInterfacePtr &paramIface,
-              void(LSPServer::*method)(void)) {
+              void(LSPServer::*method)()) {
         Handler::bind(name, paramIface, this, method);
     }
 
