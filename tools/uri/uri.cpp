@@ -43,6 +43,14 @@ std::string URI::toString() const {
         value += this->authority.toString();
     }
     value += URI::encode(this->path);
+    if(!this->query.empty()) {
+        value += '?';
+        value += URI::encode(this->query);
+    }
+    if(!this->fragment.empty()) {
+        value += '#';
+        value += URI::encode(this->fragment);
+    }
     return value;
 }
 

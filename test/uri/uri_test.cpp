@@ -16,6 +16,7 @@ TEST(URITest, base1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("/html/rfc3986", uri.getPath()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", uri.getQuery()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", uri.getFragment()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str, uri.toString()));
 }
 
 TEST(URITest, base2) {
@@ -29,6 +30,7 @@ TEST(URITest, base2) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("/path/data", uri.getPath()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("key=val&key2=val2", uri.getQuery()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("frag1", uri.getFragment()));
+//    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str, URI::fromString(uri.toString()).toString()));
 }
 
 TEST(URITest, base3) {
@@ -42,6 +44,7 @@ TEST(URITest, base3) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("/", uri.getPath()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", uri.getQuery()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", uri.getFragment()));
+//    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str, URI::fromString(uri.toString()).toString()));
 }
 
 TEST(URITest, base4) {
@@ -55,6 +58,7 @@ TEST(URITest, base4) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("/pub/", uri.getPath()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", uri.getQuery()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", uri.getFragment()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str, uri.toString()));
 }
 
 
