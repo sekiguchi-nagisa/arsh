@@ -17,9 +17,9 @@
 #ifndef YDSH_TOOLS_SERVER_H
 #define YDSH_TOOLS_SERVER_H
 
-#include "../json/jsonrpc.h"
 #include "lsp.h"
 #include "transport.h"
+#include "../json/jsonrpc.h"
 
 namespace ydsh {
 namespace lsp {
@@ -34,6 +34,7 @@ struct LSPLogger : public LoggerBase {
 class LSPServer : public Handler {
 private:
     LSPTransport transport;
+    bool init{false};
 
 public:
     LSPServer(FilePtr &&in, FilePtr &&out, LoggerBase &logger) :
@@ -72,6 +73,8 @@ private:
 
 public:
     // RPC method definition
+    Reply<ServerCapabilities> initialize(const ClientCapabilities &cap);
+
     Reply<void> shutdown();
 
     void exit();

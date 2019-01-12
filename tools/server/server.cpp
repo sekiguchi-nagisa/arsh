@@ -28,12 +28,37 @@ void LSPServer::bindAll() {
 
     this->bind("shutdown", voidIface, &LSPServer::shutdown);
     this->bind("exit", voidIface, &LSPServer::exit);
+
+    auto clientCap = this->interface("ClientCapabilities", {
+        field("workspace", any, false),
+        field("textDocument", any, false)
+    });
+    this->bind("initialize",
+            this->interface("InitializeParams", {
+                field("processId", integer),
+                field("rootPath", string | null ,false),
+                field("rootUri", string | null),
+                field("initializationOptions", any, false),
+                field("capabilities", object(clientCap)),
+                field("trace", string, false)
+            }), &LSPServer::initialize
+    );
 }
 
 void LSPServer::run() {
     while(true) {
         this->transport.dispatch(*this);
     }
+}
+
+Reply<ServerCapabilities> LSPServer::initialize(const ClientCapabilities &cap) {
+    this->logger(LogLevel::INFO, "initialize server ....");
+    this->init = true;
+
+    (void) cap; //FIXME: currently not used
+
+    ServerCapabilities scap;    //FIXME: set supported capabilites
+    return scap;
 }
 
 Reply<void> LSPServer::shutdown() {
