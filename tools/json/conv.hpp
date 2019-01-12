@@ -29,6 +29,10 @@ inline bool isType(const JSON &json, TypeHolder<int>) {
     return json.isLong();
 }
 
+inline bool isType(const JSON &json, TypeHolder<bool>) {
+    return json.isBool();
+}
+
 inline bool isType(const JSON &json, TypeHolder<std::nullptr_t>) {
     return json.isNull();
 }
@@ -37,6 +41,9 @@ inline bool isType(const JSON &json, TypeHolder<std::string>) {
     return json.isString();
 }
 
+inline void fromJSON(JSON &&json, bool &value) {
+    value = json.asBool();
+}
 
 inline void fromJSON(JSON &&json, int &value) {
     value = json.asLong();
@@ -94,6 +101,15 @@ struct FromJSON {
     }
 };
 
+template <typename R>
+struct FromJSON<0, R> {
+    void operator()(JSON &&json, Union<R> &value) const {
+        if(!json.isInvalid()) {
+            FromJSONImpl<R, R>()(std::move(json), value);
+        }
+    }
+};
+
 template <typename ...R>
 struct FromJSON<-1, R...> {
     void operator()(JSON &&, Union<R...> &) const {}
@@ -108,6 +124,10 @@ void fromJSON(JSON &&json, Union<R...> &value) {
 
 inline JSON toJSON(const std::string &str) {
     return JSON(str);
+}
+
+inline JSON toJSON(bool value) {
+    return JSON(value);
 }
 
 inline JSON toJSON(int value) {

@@ -118,6 +118,105 @@ struct InitializeParams {
 //    Union<WorkspaceFolder, std::nullptr_t> workspaceFolders;    // optional   //FIXME: currently not supported
 };
 
+// for server capability
+enum class TextDocumentSyncKind : int {
+    None = 0,
+    Full = 1,
+    Incremental = 2,
+};
+
+struct CompletionOptions {
+    Union<bool> resolveProvider;    // optional
+    Union<std::vector<std::string>> triggerCharacters;  // optional
+};
+
+struct SignatureHelpOptions {
+    Union<std::vector<std::string>> triggerCharacters;  // optional
+};
+
+#define EACH_CODE_ACTION_KIND(OP) \
+    OP(QuickFix, "quickfix") \
+    OP(Refactor, "refactor") \
+    OP(RefactorExtract, "refactor.extract") \
+    OP(RefactorInline, "refactor.inline") \
+    OP(RefactorRewrite, "refactor.rewrite") \
+    OP(Source, "source") \
+    OP(SourceOrganizeImports, "source.organizeImports")
+
+enum class CodeActionKind : unsigned int {
+#define GEN_ENUM(e, s) e,
+    EACH_CODE_ACTION_KIND(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+struct CodeActionOptions {
+    Union<std::vector<CodeActionKind>> codeActionKinds; // optional
+};
+
+struct CodeLensOptions {
+    Union<bool> resolveProvider;    // optional
+};
+
+struct DocumentOnTypeFormattingOptions {
+    std::string firstTriggerCharacter;
+    Union<std::vector<std::string>> moreTriggerCharacter;   // optional
+};
+
+struct RenameOptions {
+    Union<bool> prepareProvider;    // optional
+};
+
+struct DocumentLinkOptions {
+    Union<bool> resolveProvider;    // optional
+};
+
+struct ExecuteCommandOptions {
+    std::vector<std::string> commands;
+};
+
+struct SaveOptions {
+    Union<bool> includeText;    // optional
+};
+
+struct ColorProviderOptions {};
+struct FoldingRangeProviderOptions {};
+
+struct TextDocumentSyncOptions {
+    Union<bool> openClose;  // optional
+    Union<TextDocumentSyncKind> change; // optional
+    Union<bool> willSave;   // optional
+    Union<bool> willSaveWaitUntil;  // optional
+    Union<SaveOptions> save;    // optional
+};
+
+struct StaticRegistrationOptions {
+    Union<std::string> id;  // optional
+};
+
+/**
+ * for representing server capability.
+ * only define supported capability
+ */
+struct ServerCapabilities {
+    Union<TextDocumentSyncOptions> textDocumentSync;    // optional
+    bool hoverProvider{false};
+    Union<CompletionOptions> completionProvider;    // optional
+    Union<SignatureHelpOptions> signatureHelpProvider;  // optiona;
+    bool definitionProvider{false};
+    bool referencesProvider{false};
+    bool documentHighlightProvider{false};
+    bool documentSymbolProvider{false};
+    bool workspaceSymbolProvider{false};
+    Union<bool, CodeActionOptions> codeActionProvider;  // optional
+    Union<CodeLensOptions> codeLensProvider;    // optional
+    bool documentFormattingProvider{false};
+    bool documentRangeFormattingProvider{false};
+    Union<DocumentOnTypeFormattingOptions> documentOnTypeFormattingProvider;    // optional
+    Union<bool, RenameOptions> renameProvider;  // optional
+    Union<DocumentLinkOptions> documentLinkProvider;    // optional
+    Union<ExecuteCommandOptions> executeCommandProvider;    // optional
+};
+
 } // namespace lsp
 
 namespace rpc {
@@ -165,6 +264,58 @@ JSON toJSON(const ClientCapabilities &cap);
 
 void fromJSON(JSON &&json, InitializeParams &params);
 JSON toJSON(const InitializeParams &params);
+
+void fromJSON(JSON &&json, TextDocumentSyncKind &kind);
+JSON toJSON(TextDocumentSyncKind kind);
+
+void fromJSON(JSON &&json, CompletionOptions &options);
+JSON toJSON(const CompletionOptions &options);
+
+void fromJSON(JSON &&json, SignatureHelpOptions &options);
+JSON toJSON(const SignatureHelpOptions &options);
+
+void fromJSON(JSON &&json, CodeActionKind &kind);
+JSON toJSON(const CodeActionKind &kind);
+
+inline bool isType(const JSON &value, TypeHolder<CodeActionOptions>) {
+    return value.isObject();    //FIXME:
+}
+void fromJSON(JSON &&json, CodeActionOptions &options);
+JSON toJSON(const CodeActionOptions &options);
+
+void fromJSON(JSON &&json, CodeLensOptions &options);
+JSON toJSON(const CodeLensOptions &options);
+
+void fromJSON(JSON &&json, DocumentOnTypeFormattingOptions &options);
+JSON toJSON(const DocumentOnTypeFormattingOptions &options);
+
+inline bool isType(const JSON &value, TypeHolder<RenameOptions>) {
+    return value.isObject();    //FIXME:
+}
+void fromJSON(JSON &&json, RenameOptions &options);
+JSON toJSON(const RenameOptions &options);
+
+void fromJSON(JSON &&json, DocumentLinkOptions &options);
+JSON toJSON(const DocumentLinkOptions &options);
+
+void fromJSON(JSON &&json, ExecuteCommandOptions &options);
+JSON toJSON(const ExecuteCommandOptions &options);
+
+void fromJSON(JSON &&json, SaveOptions &options);
+JSON toJSON(const SaveOptions &options);
+
+inline bool isType(const JSON &value, TypeHolder<TextDocumentSyncOptions>) {
+    return value.isObject();    //FIXME:
+}
+void fromJSON(JSON &&json, TextDocumentSyncOptions &options);
+JSON toJSON(const TextDocumentSyncOptions &options);
+
+void fromJSON(JSON &&json, StaticRegistrationOptions &options);
+JSON toJSON(const StaticRegistrationOptions &options);
+
+void fromJSON(JSON &&json, ServerCapabilities &cap);
+JSON toJSON(const ServerCapabilities &cap);
+
 
 } // namespace rpc
 } // namespace ydsh
