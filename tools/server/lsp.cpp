@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2019 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,26 @@
  */
 
 #include "lsp.h"
+#include "../json/conv.hpp"
 
 namespace ydsh {
 namespace rpc {
 
 #define FROM_JSON(json, value, field) fromJSON(std::move(json[#field]), value.field)
+#define FROM_JSON_OPT(json, value, field) fromJSON(json, #field, value.field)
+#define MOVE_JSON(json, value, field) value.field = std::move(json[#field])
 
-static void fromJSON(JSON &&json, std::string &value) {
-    value = std::move(json.asString());
+#define TO_MEMBER(obj, field) {#field, toJSON(obj.field)}
+
+template <typename T>
+static void fromJSON(JSON &json, const char *field, Union<T> &value) {
+    auto v = std::move(json[field]);
+    if(!v.isInvalid()) {
+        T t;
+        fromJSON(std::move(v), t);
+        value = std::move(t);
+    }
 }
-
 
 void fromJSON(JSON &&json, DocumentURI &uri) {
     fromJSON(std::move(json), uri.uri);
@@ -42,8 +52,8 @@ void fromJSON(JSON &&json, Position &p) {
 
 JSON toJSON(const Position &p) {
     return {
-        {"line", p.line},
-        {"character", p.character}
+        TO_MEMBER(p, line),
+        TO_MEMBER(p, character)
     };
 }
 
@@ -55,8 +65,8 @@ void fromJSON(JSON &&json, Range &range) {
 
 JSON toJSON(const Range &range) {
     return {
-        {"start", toJSON(range.start)},
-        {"end", toJSON(range.end)}
+        TO_MEMBER(range, start),
+        TO_MEMBER(range, end)
     };
 }
 
@@ -68,36 +78,25 @@ void fromJSON(JSON &&json, Location &location) {
 
 JSON toJSON(const Location &location) {
     return {
-        {"uri", toJSON(location.uri)},
-        {"range", toJSON(location.range)}
+        TO_MEMBER(location, uri),
+        TO_MEMBER(location, range)
     };
 }
 
 
 void fromJSON(JSON &&json, LocationLink &link) {
-    auto v = std::move(json["originSelectionRange"]);
-    if(!v.isInvalid()) {
-        Range range;
-        fromJSON(std::move(v), range);
-        link.originSelectionRange = std::move(range);
-    }
-    link.targetUri = std::move(json["targetUri"].asString());
+    FROM_JSON_OPT(json, link, originSelectionRange);
+    FROM_JSON(json, link, targetUri);
     FROM_JSON(json, link, targetRange);
-
-    v = std::move(json["targetSelectionRange"]);
-    if(!v.isInvalid()) {
-        Range range;
-        fromJSON(std::move(v), range);
-        link.targetSelectionRange = std::move(range);
-    }
+    FROM_JSON_OPT(json, link, targetSelectionRange);
 }
 
 JSON toJSON(const LocationLink &link) {
     return {
-        {"originSelectionRange", link.originSelectionRange.hasValue() ? toJSON(get<Range>(link.originSelectionRange)) : JSON()},
-        {"targetUri", JSON(link.targetUri)},
-        {"targetRange", toJSON(link.targetRange)},
-        {"targetSelectionRange", link.targetSelectionRange.hasValue() ? toJSON(get<Range>(link.targetSelectionRange)) : JSON()}
+        TO_MEMBER(link, originSelectionRange),
+        TO_MEMBER(link, targetUri),
+        TO_MEMBER(link, targetRange),
+        TO_MEMBER(link, targetSelectionRange)
     };
 }
 
@@ -109,8 +108,8 @@ void fromJSON(JSON &&json, DiagnosticRelatedInformation &info) {
 
 JSON toJSON(const DiagnosticRelatedInformation &info) {
     return {
-        {"location", toJSON(info.location)},
-        {"message", info.message}
+        TO_MEMBER(info, location),
+        TO_MEMBER(info, message)
     };
 }
 
@@ -121,32 +120,19 @@ void fromJSON(JSON &&json, Diagnostic &diagnostic) {
     auto v = std::move(json["severity"]);
     diagnostic.severity = v.isInvalid() ? DiagnosticSeverity::DUMMY : static_cast<DiagnosticSeverity>(v.asLong());
     FROM_JSON(json, diagnostic, message);
-
-    v = std::move(json["relatedInformation"]);
-    if(!v.isInvalid()) {
-        for(auto &e : v.asArray()) {
-            DiagnosticRelatedInformation info;
-            fromJSON(std::move(e), info);
-            diagnostic.relatedInformation.push_back(std::move(info));
-        }
-    }
+    FROM_JSON_OPT(json, diagnostic, relatedInformation);
 }
 
 JSON toJSON(const Diagnostic &diagnostic) {
     auto severity = static_cast<int>(diagnostic.severity);
 
-    json::Array jsonArray;
-    for(auto &e : diagnostic.relatedInformation) {
-        jsonArray.emplace_back(toJSON(e));
-    }
-
     return {
-        {"range", toJSON(diagnostic.range)},
+        TO_MEMBER(diagnostic, range),
         {"severity", severity > 0 ? JSON(severity): JSON()},
         //{"code"}
         //{"source"}
-        {"message", JSON(diagnostic.message)},
-        {"relatedInformation", jsonArray.empty() ? JSON() : JSON(std::move(jsonArray))}
+        TO_MEMBER(diagnostic, message),
+        TO_MEMBER(diagnostic, relatedInformation)
     };
 }
 
@@ -158,8 +144,8 @@ void fromJSON(JSON &&json, Command &command) {
 
 JSON toJSON(const Command &command) {
     return {
-        {"title", JSON(command.title)},
-        {"command", JSON(command.command)}
+        TO_MEMBER(command, title),
+        TO_MEMBER(command, command)
     };
 }
 
@@ -171,8 +157,93 @@ void fromJSON(JSON &&json, TextEdit &edit) {
 
 JSON toJSON(const TextEdit &edit) {
     return {
-        {"range", toJSON(edit.range)},
-        {"newText", JSON(edit.newText)}
+        TO_MEMBER(edit, range),
+        TO_MEMBER(edit, newText)
+    };
+}
+
+
+void fromJSON(JSON &&json, TraceSetting &setting) {
+    std::string value;
+    fromJSON(std::move(json), value);
+    setting = TraceSetting::off;
+    if(value == "off") {
+        setting = TraceSetting::off;
+    } else if(value == "messages") {
+        setting = TraceSetting::messages;
+    } else if(value == "verbose") {
+        setting = TraceSetting::verbose;
+    }
+}
+
+JSON toJSON(TraceSetting setting) {
+    JSON value;
+    switch(setting) {
+    case TraceSetting::off:
+        value = JSON("off");
+        break;
+    case TraceSetting::messages:
+        value = JSON("messages");
+        break;
+    case TraceSetting::verbose:
+        value = JSON("verbose");
+        break;
+    }
+    return value;
+}
+
+
+void fromJSON(JSON &&json, ClientCapabilities &cap) {
+    MOVE_JSON(json, cap, workspace);
+    MOVE_JSON(json, cap, textDocument);
+}
+
+JSON toJSON(const ClientCapabilities &cap) {
+    return {
+        TO_MEMBER(cap, workspace),
+        TO_MEMBER(cap, textDocument)
+    };
+}
+
+
+void fromJSON(JSON &&json, InitializeParams &params) {
+    auto value = std::move(json["processId"]);
+    if(value.isLong()) {
+        int v = value.asLong();
+        params.processId = v;
+    } else if(value.isNull()) {
+        params.processId = nullptr;
+    }
+
+    value = std::move(json["rootPath"]);
+    if(value.isString()) {
+        params.rootPath = std::move(value.asString());
+    } else if(value.isNull()) {
+        params.rootPath = nullptr;
+    }
+
+    value = std::move(json["rootUri"]);
+    if(value.isString()) {
+        DocumentURI uri;
+        fromJSON(std::move(value), uri);
+        params.rootUri = std::move(uri);
+    } else if(value.isNull()) {
+        params.rootUri = nullptr;
+    }
+
+    MOVE_JSON(json, params, initializationOptions);
+    FROM_JSON(json, params, capabilities);
+    FROM_JSON_OPT(json, params, trace);
+}
+
+JSON toJSON(const InitializeParams &params) {
+    return {
+        TO_MEMBER(params, processId),
+        TO_MEMBER(params, rootPath),
+        TO_MEMBER(params, rootUri),
+        TO_MEMBER(params, initializationOptions),
+        TO_MEMBER(params, capabilities),
+        TO_MEMBER(params, trace)
     };
 }
 

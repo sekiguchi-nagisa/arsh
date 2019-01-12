@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2019 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@ struct Diagnostic {
 //    std::string code; // string | number, //FIXME: currently not supported.
 //    std::string source;                   //FIXME: currently not supported.
     std::string message;
-    std::vector<DiagnosticRelatedInformation> relatedInformation;   // optional
+    Union<std::vector<DiagnosticRelatedInformation>> relatedInformation;   // optional
 };
 
 struct Command {
@@ -95,6 +95,30 @@ struct TextEdit {
     Range range;
     std::string newText;
 };
+
+// for Initialize request
+
+struct ClientCapabilities {
+    JSON workspace;   // optional
+    JSON textDocument; // optional
+};
+
+enum class TraceSetting {
+    off,
+    messages,
+    verbose
+};
+
+struct InitializeParams {
+    Union<int, std::nullptr_t> processId;
+    Union<std::string, std::nullptr_t> rootPath;    // optional
+    Union<DocumentURI, std::nullptr_t> rootUri;
+    JSON initializationOptions; // optional
+    ClientCapabilities capabilities;
+    Union<TraceSetting> trace;  // optional
+//    Union<WorkspaceFolder, std::nullptr_t> workspaceFolders;    // optional   //FIXME: currently not supported
+};
+
 
 } // namespace lsp
 
@@ -128,6 +152,15 @@ JSON toJSON(const Command &command);
 
 void fromJSON(JSON &&json, TextEdit &edit);
 JSON toJSON(const TextEdit &edit);
+
+void fromJSON(JSON &&json, TraceSetting &setting);
+JSON toJSON(TraceSetting setting);
+
+void fromJSON(JSON &&json, ClientCapabilities &cap);
+JSON toJSON(const ClientCapabilities &cap);
+
+void fromJSON(JSON &&json, InitializeParams &params);
+JSON toJSON(const InitializeParams &params);
 
 } // namespace rpc
 } // namespace ydsh

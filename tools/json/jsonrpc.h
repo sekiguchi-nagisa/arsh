@@ -21,6 +21,7 @@
 
 #include <misc/logger_base.hpp>
 #include "validate.h"
+#include "conv.hpp"
 
 namespace ydsh {
 namespace rpc {
@@ -195,9 +196,6 @@ private:
     virtual int recv(unsigned int size, char *data) = 0;
 };
 
-inline JSON toJSON(const std::string &str) {
-    return JSON(str);
-}
 
 using ReplyImpl = Result<JSON, ResponseError>;
 
