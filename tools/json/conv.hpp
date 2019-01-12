@@ -16,6 +16,7 @@
 #ifndef YDSH_TOOLS_CONV_HPP
 #define YDSH_TOOLS_CONV_HPP
 
+#include <type_traits>
 #include "json.h"
 
 namespace ydsh {
@@ -24,6 +25,23 @@ namespace rpc {
 using namespace json;
 
 // helper function for json conversion
+inline bool isType(const JSON &json, TypeHolder<int>) {
+    return json.isLong();
+}
+
+inline bool isType(const JSON &json, TypeHolder<std::nullptr_t>) {
+    return json.isNull();
+}
+
+inline bool isType(const JSON &json, TypeHolder<std::string>) {
+    return json.isString();
+}
+
+
+inline void fromJSON(JSON &&json, int &value) {
+    value = json.asLong();
+}
+
 inline void fromJSON(JSON &&json, std::string &value) {
     value = std::move(json.asString());
 }
@@ -36,6 +54,56 @@ void fromJSON(JSON &&json, std::vector<T> &value) {
         fromJSON(std::move(e), v);
         value.push_back(std::move(v));
     }
+}
+
+namespace __detail {
+
+template <typename T, typename ...R>
+struct FromJSONImpl {
+    void operator()(JSON &&json, Union<R...> &value) const {
+        T v;
+        fromJSON(std::move(json), v);
+        value = std::move(v);
+    }
+};
+
+template <typename ...R>
+struct FromJSONImpl<std::nullptr_t, R...> {
+    void operator()(JSON &&, Union<R...> &value) const {
+        value = nullptr;
+    }
+};
+
+template <typename ...R>
+struct FromJSONImpl<int, R...> {
+    void operator()(JSON &&json, Union<R...> &value) const {
+        value = json.asLong();
+    }
+};
+
+
+template <int N, typename ...R>
+struct FromJSON {
+    void operator()(JSON &&json, Union<R...> &value) const {
+        using T = typename TypeByIndex<N, R...>::type;
+        if(isType(json, TypeHolder<T>())) {
+            FromJSONImpl<T, R...>()(std::move(json), value);
+        } else {
+            FromJSON<N - 1, R...>()(std::move(json), value);
+        }
+    }
+};
+
+template <typename ...R>
+struct FromJSON<-1, R...> {
+    void operator()(JSON &&, Union<R...> &) const {}
+};
+
+} // namespace __detail
+
+template <typename ...R>
+void fromJSON(JSON &&json, Union<R...> &value) {
+    return __detail::FromJSON<sizeof...(R) - 1, R...>()(std::move(json), value);
 }
 
 inline JSON toJSON(const std::string &str) {

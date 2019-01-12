@@ -64,7 +64,6 @@ struct LocationLink {
 
 
 enum class DiagnosticSeverity : int {
-    DUMMY = 0,  // not defined in protocol
     Error = 1,
     Warning = 2,
     Information = 3,
@@ -78,7 +77,7 @@ struct DiagnosticRelatedInformation {
 
 struct Diagnostic {
     Range range;
-    DiagnosticSeverity severity{DiagnosticSeverity::DUMMY}; // optional
+    Union<DiagnosticSeverity> severity; // optional
 //    std::string code; // string | number, //FIXME: currently not supported.
 //    std::string source;                   //FIXME: currently not supported.
     std::string message;
@@ -119,13 +118,15 @@ struct InitializeParams {
 //    Union<WorkspaceFolder, std::nullptr_t> workspaceFolders;    // optional   //FIXME: currently not supported
 };
 
-
 } // namespace lsp
 
 namespace rpc {
 
 using namespace lsp;
 
+inline bool isType(const JSON &value, TypeHolder<DocumentURI>) {
+    return value.isString();
+}
 void fromJSON(JSON &&json, DocumentURI &uri);
 JSON toJSON(const DocumentURI &uri);
 
@@ -140,6 +141,9 @@ JSON toJSON(const Location &location);
 
 void fromJSON(JSON &&json, LocationLink &link);
 JSON toJSON(const LocationLink &link);
+
+void fromJSON(JSON &&json, DiagnosticSeverity &severity);
+JSON toJSON(DiagnosticSeverity severity);
 
 void fromJSON(JSON &&json, DiagnosticRelatedInformation &info);
 JSON toJSON(const DiagnosticRelatedInformation &info);

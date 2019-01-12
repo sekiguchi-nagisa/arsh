@@ -46,8 +46,8 @@ JSON toJSON(const DocumentURI &uri) {
 
 
 void fromJSON(JSON &&json, Position &p) {
-    p.line = json["line"].asLong();
-    p.character = json["character"].asLong();
+    FROM_JSON(json, p, line);
+    FROM_JSON(json, p, character);
 }
 
 JSON toJSON(const Position &p) {
@@ -100,6 +100,13 @@ JSON toJSON(const LocationLink &link) {
     };
 }
 
+void fromJSON(JSON &&json, DiagnosticSeverity &severity) {
+    severity = static_cast<DiagnosticSeverity>(json.asLong());
+}
+
+JSON toJSON(DiagnosticSeverity severity) {
+    return JSON(static_cast<int>(severity));
+}
 
 void fromJSON(JSON &&json, DiagnosticRelatedInformation &info) {
     FROM_JSON(json, info, message);
@@ -116,19 +123,15 @@ JSON toJSON(const DiagnosticRelatedInformation &info) {
 
 void fromJSON(JSON &&json, Diagnostic &diagnostic) {
     FROM_JSON(json, diagnostic, range);
-
-    auto v = std::move(json["severity"]);
-    diagnostic.severity = v.isInvalid() ? DiagnosticSeverity::DUMMY : static_cast<DiagnosticSeverity>(v.asLong());
+    FROM_JSON_OPT(json, diagnostic, severity);
     FROM_JSON(json, diagnostic, message);
     FROM_JSON_OPT(json, diagnostic, relatedInformation);
 }
 
 JSON toJSON(const Diagnostic &diagnostic) {
-    auto severity = static_cast<int>(diagnostic.severity);
-
     return {
         TO_MEMBER(diagnostic, range),
-        {"severity", severity > 0 ? JSON(severity): JSON()},
+        TO_MEMBER(diagnostic, severity),
         //{"code"}
         //{"source"}
         TO_MEMBER(diagnostic, message),
@@ -207,30 +210,9 @@ JSON toJSON(const ClientCapabilities &cap) {
 
 
 void fromJSON(JSON &&json, InitializeParams &params) {
-    auto value = std::move(json["processId"]);
-    if(value.isLong()) {
-        int v = value.asLong();
-        params.processId = v;
-    } else if(value.isNull()) {
-        params.processId = nullptr;
-    }
-
-    value = std::move(json["rootPath"]);
-    if(value.isString()) {
-        params.rootPath = std::move(value.asString());
-    } else if(value.isNull()) {
-        params.rootPath = nullptr;
-    }
-
-    value = std::move(json["rootUri"]);
-    if(value.isString()) {
-        DocumentURI uri;
-        fromJSON(std::move(value), uri);
-        params.rootUri = std::move(uri);
-    } else if(value.isNull()) {
-        params.rootUri = nullptr;
-    }
-
+    FROM_JSON(json, params, processId);
+    FROM_JSON(json, params, rootPath);
+    FROM_JSON(json, params, rootUri);
     MOVE_JSON(json, params, initializationOptions);
     FROM_JSON(json, params, capabilities);
     FROM_JSON_OPT(json, params, trace);

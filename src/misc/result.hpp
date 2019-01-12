@@ -22,6 +22,12 @@
 #include "noncopyable.h"
 
 namespace ydsh {
+
+template <typename T>
+struct TypeHolder {
+    using type = T;
+};
+
 namespace __detail {
 
 template<typename T>
@@ -66,11 +72,6 @@ struct TypeByIndex<N, N, F, R...> {
     using type = F;
 };
 
-template <typename T>
-struct typeHolder {
-    using type = T;
-};
-
 template <typename ...T>
 struct OverloadResolver;
 
@@ -78,7 +79,7 @@ template <typename F, typename ...T>
 struct OverloadResolver<F, T...> : OverloadResolver<T...> {
     using OverloadResolver<T...>::operator();
 
-    typeHolder<F> operator()(F) const;
+    TypeHolder<F> operator()(F) const;
 };
 
 template <>
