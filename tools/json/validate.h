@@ -110,6 +110,19 @@ extern const TypeMatcherPtr boolean;
 extern const TypeMatcherPtr null;
 extern const TypeMatcherPtr any;
 
+inline TypeMatcherPtr object(const char *name) {
+    return std::make_shared<ObjectMatcher>(name);
+}
+
+inline TypeMatcherPtr array(TypeMatcherPtr e) {
+    return std::make_shared<ArrayMatcher>(e);
+}
+
+inline TypeMatcherPtr operator|(TypeMatcherPtr left, TypeMatcherPtr right) {
+    return std::make_shared<UnionMatcher>(left, right);
+}
+
+
 class Field {
 private:
     TypeMatcherPtr matcher;
@@ -236,18 +249,6 @@ public:
 
     std::string formatError() const;
 };
-
-inline TypeMatcherPtr object(const char *name) {
-    return std::make_shared<ObjectMatcher>(name);
-}
-
-inline TypeMatcherPtr array(TypeMatcherPtr e) {
-    return std::make_shared<ArrayMatcher>(e);
-}
-
-inline TypeMatcherPtr operator|(TypeMatcherPtr left, TypeMatcherPtr right) {
-    return std::make_shared<UnionMatcher>(left, right);
-}
 
 } // namespace json
 } // namespace ydsh
