@@ -39,7 +39,7 @@ void LSPServer::bindAll() {
                 field("rootPath", string | null ,false),
                 field("rootUri", string | null),
                 field("initializationOptions", any, false),
-                field("capabilities", object(clientCap)),
+                field("capabilities", object(clientCap->getName())),
                 field("trace", string, false)
             }), &LSPServer::initialize
     );
