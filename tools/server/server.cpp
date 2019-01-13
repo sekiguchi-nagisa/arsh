@@ -58,7 +58,7 @@ Reply<ServerCapabilities> LSPServer::initialize(const ClientCapabilities &cap) {
     (void) cap; //FIXME: currently not used
 
     ServerCapabilities scap;    //FIXME: set supported capabilites
-    return scap;
+    return std::move(scap);
 }
 
 Reply<void> LSPServer::shutdown() {
