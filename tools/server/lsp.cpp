@@ -413,5 +413,15 @@ JSON toJSON(const ServerCapabilities &cap) {
     };
 }
 
+void fromJSON(JSON &&json, InitializeResult &ret) {
+    FROM_JSON(json, ret, capabilities);
+}
+
+JSON toJSON(const InitializeResult &ret) {
+    return {
+        TO_MEMBER(ret, capabilities)
+    };
+}
+
 } // namespace rpc
 } // namespace ydsh

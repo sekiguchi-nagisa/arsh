@@ -35,6 +35,7 @@ class LSPServer : public Handler {
 private:
     LSPTransport transport;
     bool init{false};
+    bool willExit{false};
 
 public:
     LSPServer(FilePtr &&in, FilePtr &&out, LoggerBase &logger) :
@@ -73,7 +74,7 @@ private:
 
 public:
     // RPC method definition
-    Reply<ServerCapabilities> initialize(const ClientCapabilities &cap);
+    Reply<InitializeResult> initialize(const InitializeParams &params);
 
     Reply<void> shutdown();
 

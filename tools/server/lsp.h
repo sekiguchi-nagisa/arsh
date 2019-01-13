@@ -217,6 +217,10 @@ struct ServerCapabilities {
     Union<ExecuteCommandOptions> executeCommandProvider;    // optional
 };
 
+struct InitializeResult {
+    ServerCapabilities capabilities;
+};
+
 } // namespace lsp
 
 namespace rpc {
@@ -315,6 +319,9 @@ JSON toJSON(const StaticRegistrationOptions &options);
 
 void fromJSON(JSON &&json, ServerCapabilities &cap);
 JSON toJSON(const ServerCapabilities &cap);
+
+void fromJSON(JSON &&json, InitializeResult &ret);
+JSON toJSON(const InitializeResult &ret);
 
 
 } // namespace rpc

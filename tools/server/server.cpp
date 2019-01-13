@@ -51,24 +51,27 @@ void LSPServer::run() {
     }
 }
 
-Reply<ServerCapabilities> LSPServer::initialize(const ClientCapabilities &cap) {
+Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     this->logger(LogLevel::INFO, "initialize server ....");
+    if(this->init) {
+        //FIXME: check duplicated initialization
+    }
     this->init = true;
 
-    (void) cap; //FIXME: currently not used
+    (void) params; //FIXME: currently not used
 
-    ServerCapabilities scap;    //FIXME: set supported capabilites
-    return std::move(scap);
+    InitializeResult ret;   //FIXME: set supported capabilities
+    return std::move(ret);
 }
 
 Reply<void> LSPServer::shutdown() {
     this->logger(LogLevel::INFO, "try to shutdown ....");
-    // currently do nothing.
+    this->willExit = true;
     return nullptr;
 }
 
 void LSPServer::exit() {
-    int s = 0;
+    int s = this->willExit ? 0 : 1;
     this->logger(LogLevel::INFO, "exit server: %d", s);
     std::exit(s);   // always success
 }
