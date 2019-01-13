@@ -173,7 +173,7 @@ ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
         std::string str = "undefined method: ";
         str += name;
         this->logger(LogLevel::ERROR, "undefined call: %s", name.c_str());
-        return Err(ResponseError(MethodNotFound, "Method not found", std::move(str)));
+        return newError(MethodNotFound, std::move(str));
     }
 
     auto *ifaceName = this->callParamMap.lookupIface(name);
@@ -182,7 +182,7 @@ ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
     if(!validator(ifaceName, param)) {
         std::string e = validator.formatError();
         this->logger(LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
-        return Err(ResponseError(InvalidParams, "Invalid params", e));
+        return newError(InvalidParams, std::move(e));
     }
 
     return iter->second(std::move(param));

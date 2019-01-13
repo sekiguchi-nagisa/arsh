@@ -557,7 +557,7 @@ struct Context {
     rpc::Reply<std::string> put(const Param2 &p) {
         this->cRet = p.value;
         if(this->cRet.size() > 5) {
-            return rpc::newError("too long");
+            return rpc::newError(rpc::InternalError, "too long");
         }
         return std::string("hello");
     }
@@ -568,7 +568,7 @@ struct Context {
 
     rpc::Reply<void> tryExit() {
         this->exited = false;
-        return rpc::newError("busy");
+        return rpc::newError(rpc::InternalError, "busy");
     }
 };
 
@@ -653,9 +653,8 @@ TEST_F(RPCTest, call2) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::MethodNotFound, json["error"]["code"].asLong()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Method not found", json["error"]["message"].asString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("undefined method: /putdd", json["error"]["data"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("undefined method: /putdd", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isInvalid()));
 }
 
 TEST_F(RPCTest, call3) {
@@ -686,8 +685,8 @@ TEST_F(RPCTest, call3) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InvalidParams, json["error"]["code"].asLong()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Invalid params", json["error"]["message"].asString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["message"].isString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isInvalid()));
 }
 
 TEST_F(RPCTest, call4) {
@@ -718,9 +717,8 @@ TEST_F(RPCTest, call4) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InternalError, json["error"]["code"].asLong()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Internal error", json["error"]["message"].asString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("busy", json["error"]["data"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("busy", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isInvalid()));
 }
 
 TEST_F(RPCTest, call5) {
@@ -751,9 +749,8 @@ TEST_F(RPCTest, call5) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InvalidParams, json["error"]["code"].asLong()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Invalid params", json["error"]["message"].asString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("must be empty object", json["error"]["data"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("must be empty object", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isInvalid()));
 }
 
 

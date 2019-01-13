@@ -26,15 +26,15 @@ namespace lsp {
 using namespace json;
 
 // definition of basic interface of language server protocol
-
 // LSP specific error code
-constexpr int ServerErrorStart     = -32099;
-constexpr int ServerErrorEnd       = -32000;
-constexpr int ServerNotInitialized = -32002;
-constexpr int UnknownErrorCode     = -32001;
-
-constexpr int RequestCancelled     = -32800;
-constexpr int ContentModified      = -32801;
+enum LSPErrorCode : int {
+    ServerErrorStart     = -32099,
+    ServerErrorEnd       = -32000,
+    ServerNotInitialized = -32002,
+    UnknownErrorCode     = -32001,
+    RequestCancelled     = -32800,
+    ContentModified      = -32801,
+};
 
 struct DocumentURI {
     std::string uri;    // must be valid URI

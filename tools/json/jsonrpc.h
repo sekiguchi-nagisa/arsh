@@ -48,18 +48,20 @@ struct ResponseError {
 };
 
 // Error Code definition
-constexpr int ParseError = -32700;
-constexpr int InvalidRequest = -32600;
-constexpr int MethodNotFound = -32601;
-constexpr int InvalidParams = -32602;
-constexpr int InternalError = -32603;
+enum ErrorCode : int {
+    ParseError = -32700,
+    InvalidRequest = -32600,
+    MethodNotFound = -32601,
+    InvalidParams = -32602,
+    InternalError = -32603
+};
 
 
 struct Request {
     enum Kind : int {
         SUCCESS = 0,
-        PARSE_ERROR = ParseError,
-        INVALID = InvalidRequest,
+        PARSE_ERROR = ErrorCode::ParseError,
+        INVALID = ErrorCode::InvalidRequest,
     } kind;
 
     JSON id;    // optional. must be `number | string'
@@ -221,8 +223,9 @@ struct Reply<void> : public ReplyImpl {
     ~Reply() = default;
 };
 
-inline ErrHolder<ResponseError> newError(const std::string &detail) {
-    return Err(ResponseError(InternalError, "Internal error", JSON(detail)));
+template <typename ...Arg>
+inline ErrHolder<ResponseError> newError(Arg ...arg) {
+    return Err(ResponseError(std::forward<Arg>(arg)...));
 }
 
 class Handler {
