@@ -23,6 +23,14 @@ namespace lsp {
 // ##     LSPServer     ##
 // #######################
 
+ReplyImpl LSPServer::onCall(const std::string &name, JSON &&param) {
+    if(!this->init && name != "initialize") {
+        this->logger(LogLevel::ERROR, "must be initialized");
+        return newError(LSPErrorCode::ServerNotInitialized, "server not initialized!!");
+    }
+    return Handler::onCall(name, std::move(param));
+}
+
 void LSPServer::bindAll() {
     auto voidIface = this->interface();
 

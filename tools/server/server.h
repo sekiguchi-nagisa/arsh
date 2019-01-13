@@ -41,6 +41,8 @@ public:
     LSPServer(FilePtr &&in, FilePtr &&out, LoggerBase &logger) :
         Handler(logger), transport(logger, std::move(in), std::move(out)) {}
 
+    ReplyImpl onCall(const std::string &name, JSON &&param) override;
+
     /**
      * bind all of methods
      */

@@ -248,9 +248,11 @@ protected:
 public:
     explicit Handler(LoggerBase &logger) : logger(logger) {}
 
-    ReplyImpl onCall(const std::string &name, JSON &&param);
+    virtual ~Handler() = default;
 
-    void onNotify(const std::string &name, JSON &&param);
+    virtual ReplyImpl onCall(const std::string &name, JSON &&param);
+
+    virtual void onNotify(const std::string &name, JSON &&param);
 
     InterfacePtr interface(const char *name, Fields &&fields) {
         return this->ifaceMap.interface(name, std::move(fields));
