@@ -54,7 +54,7 @@ void LSPServer::run() {
 Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     this->logger(LogLevel::INFO, "initialize server ....");
     if(this->init) {
-        //FIXME: check duplicated initialization
+        return newError(ErrorCode::InvalidRequest, "server has already initialized");
     }
     this->init = true;
 
