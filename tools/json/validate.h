@@ -241,7 +241,7 @@ inline TypeMatcherPtr object(const char *name) {
     return std::make_shared<ObjectMatcher>(name);
 }
 
-inline TypeMatcherPtr object(const InterfaceBasePtr &iface) {
+inline TypeMatcherPtr object(InterfaceBasePtr iface) {
     return std::make_shared<ObjectMatcher>(iface->getName());
 }
 
