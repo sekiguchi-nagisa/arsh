@@ -89,6 +89,7 @@ int LSPTransport::recv(unsigned int size, char *data) {
 }
 
 bool LSPTransport::readHeader(std::string &header) {
+    clearerr(this->input.get());
     char prev = '\0';
     while(true) {
         char ch;
