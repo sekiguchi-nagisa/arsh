@@ -160,27 +160,26 @@ void fromJSON(JSON &&json, TraceSetting &setting) {
     std::string value;
     fromJSON(std::move(json), value);
     setting = TraceSetting::off;
-    if(value == "off") {
-        setting = TraceSetting::off;
-    } else if(value == "messages") {
-        setting = TraceSetting::messages;
-    } else if(value == "verbose") {
-        setting = TraceSetting::verbose;
+
+    const char *table[] = {
+#define GEN_STR(E) #E,
+            EACH_TRACE_SETTING(GEN_STR)
+#undef GEN_STR
+    };
+    for(unsigned int i = 0; i < arraySize(table); i++) {
+        if(value == table[i]) {
+            setting = static_cast<TraceSetting>(i);
+            break;
+        }
     }
 }
 
 JSON toJSON(TraceSetting setting) {
     JSON value;
     switch(setting) {
-    case TraceSetting::off:
-        value = JSON("off");
-        break;
-    case TraceSetting::messages:
-        value = JSON("messages");
-        break;
-    case TraceSetting::verbose:
-        value = JSON("verbose");
-        break;
+#define GEN_CASE(E) case TraceSetting::E: value = JSON(#E); break;
+    EACH_TRACE_SETTING(GEN_CASE)
+#undef GEN_CASE
     }
     return value;
 }

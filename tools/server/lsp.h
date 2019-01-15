@@ -102,10 +102,15 @@ struct ClientCapabilities {
     JSON textDocument; // optional
 };
 
-enum class TraceSetting {
-    off,
-    messages,
-    verbose
+#define EACH_TRACE_SETTING(OP) \
+    OP(off) \
+    OP(message) \
+    OP(verbose)
+
+enum class TraceSetting : unsigned int {
+#define GEN_ENUM(e) e,
+    EACH_TRACE_SETTING(GEN_ENUM)
+#undef GEN_ENUM
 };
 
 struct InitializeParams {
