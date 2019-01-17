@@ -1301,8 +1301,8 @@ Node *createAssignNode(Node *leftNode, TokenKind op, Token token, Node *rightNod
 }
 
 const Node *findInnerNode(NodeKind kind, const Node *node) {
-    while(node->getNodeKind() != kind) {
-        assert(node->getNodeKind() == NodeKind::TypeOp);
+    while(!node->is(kind)) {
+        assert(node->is(NodeKind::TypeOp));
         node = static_cast<const TypeOpNode *>(node)->getExprNode();
     }
     return node;

@@ -164,7 +164,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     });
 
     this->addHandler("fileName", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
-        if(node.getNodeKind() == NodeKind::Var &&
+        if(node.is(NodeKind::Var) &&
            this->checkedCast<VarNode>(node).getVarName() == "0") {
             d.setFileName(this->sourceName.c_str());
             return;

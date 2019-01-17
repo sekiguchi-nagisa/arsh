@@ -937,14 +937,14 @@ void TypeChecker::visitIfNode(IfNode &node) {
 }
 
 bool TypeChecker::IntPatternCollector::collect(const Node &constNode) {
-    assert(constNode.getNodeKind() == NodeKind::Number);
+    assert(constNode.is(NodeKind::Number));
     unsigned int value = static_cast<const NumberNode&>(constNode).getIntValue();
     auto pair = this->set.insert(value);
     return pair.second;
 }
 
 bool TypeChecker::StrPatternCollector::collect(const ydsh::Node &constNode) {
-    assert(constNode.getNodeKind() == NodeKind::String);
+    assert(constNode.is(NodeKind::String));
     const char *str = static_cast<const StringNode&>(constNode).getValue().c_str();
     auto pair = this->set.insert(str);
     return pair.second;
@@ -1045,9 +1045,9 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
         Token token = node->getToken();
         assert(static_cast<UnaryOpNode*>(node)->getOp() == MINUS);
         auto *applyNode = static_cast<UnaryOpNode*>(node)->refApplyNode();
-        assert(applyNode->getExprNode()->getNodeKind() == NodeKind::Access);
+        assert(applyNode->getExprNode()->is(NodeKind::Access));
         auto *accessNode = static_cast<AccessNode*>(applyNode->getExprNode());
-        assert(accessNode->getRecvNode()->getNodeKind() == NodeKind::Number);
+        assert(accessNode->getRecvNode()->is(NodeKind::Number));
         auto *numNode = static_cast<NumberNode*>(accessNode->getRecvNode());
 
         if(node->getType() == this->symbolTable.get(TYPE::Int32)) {
@@ -1165,7 +1165,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
     if(node.getCatchNodes().empty() && node.getFinallyNode() == nullptr) {
         RAISE_TC_ERROR(MeaninglessTry, node);
     }
-    assert(node.getExprNode()->getNodeKind() == NodeKind::Block);
+    assert(node.getExprNode()->is(NodeKind::Block));
     if(static_cast<BlockNode*>(node.getExprNode())->getNodes().empty()) {
         RAISE_TC_ERROR(EmptyTry, *node.getExprNode());
     }
@@ -1471,12 +1471,11 @@ struct NodeWrapper {
 };
 
 static bool mayBeCmd(const Node &node) {
-    auto kind = node.getNodeKind();
-    if(kind == NodeKind::Cmd) {
+    if(node.is(NodeKind::Cmd)) {
         return true;
     }
-    if(kind == NodeKind::Pipeline) {
-        if(static_cast<const PipelineNode&>(node).getNodes().back()->getNodeKind() == NodeKind::Cmd) {
+    if(node.is(NodeKind::Pipeline)) {
+        if(static_cast<const PipelineNode&>(node).getNodes().back()->is(NodeKind::Cmd)) {
             return true;
         }
     }

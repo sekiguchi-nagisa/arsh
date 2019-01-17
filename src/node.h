@@ -625,7 +625,7 @@ public:
 };
 
 inline bool isAssignable(const Node &node) {
-    return node.getNodeKind() == NodeKind::Var || node.getNodeKind() == NodeKind::Access;
+    return node.is(NodeKind::Var) || node.is(NodeKind::Access);
 }
 
 class VarNode : public AssignableNode {
