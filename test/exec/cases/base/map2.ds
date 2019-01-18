@@ -18,6 +18,11 @@ var f = [3.14 : 3.14, 0.1e-3: 34]
 assert $f[3.14] == 3.14
 assert $f[0.0001] == 34
 
+# Signal
+var sg = [%'hup' : "hung up", %'kill' : "killed"]
+assert $sg[%'SigHuP'] == "hung up"
+assert $sg[$SIG.signal("KILL")!] == "killed"
+
 # duplicated key
 var dd = ["a" : 23, "a" : 54]
 assert $dd.size() == 1

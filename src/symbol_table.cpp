@@ -330,7 +330,7 @@ SymbolTable::SymbolTable() :
     this->initBuiltinType(TYPE::String, "String", false, this->get(TYPE::_Value), info_StringType());
 
     this->initBuiltinType(TYPE::Regex, "Regex", false, this->get(TYPE::Any), info_RegexType());
-    this->initBuiltinType(TYPE::Signal, "Signal", false, this->get(TYPE::Any), info_SignalType());
+    this->initBuiltinType(TYPE::Signal, "Signal", false, this->get(TYPE::_Value), info_SignalType());
     this->initBuiltinType(TYPE::Signals, "Signals", false, this->get(TYPE::Any), info_SignalsType());
     this->initBuiltinType(TYPE::Error, "Error", true, this->get(TYPE::Any), info_ErrorType());
     this->initBuiltinType(TYPE::Job, "Job", false, this->get(TYPE::Any), info_JobType());
