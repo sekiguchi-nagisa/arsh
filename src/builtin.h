@@ -1557,13 +1557,13 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
     RET_VOID;
 }
 
-static bool array_peekImpl(RuntimeContext &ctx, DSValue &value) {
+static bool array_fetch(RuntimeContext &ctx, DSValue &value, bool fetchLast = true) {
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     if(obj->getValues().empty()) {
         raiseOutOfRangeError(ctx, std::string("Array size is 0"));
         return false;
     }
-    value = obj->refValues().back();
+    value = fetchLast ? obj->getValues().back() : obj->getValues().front();
     return true;
 }
 
@@ -1571,7 +1571,7 @@ static bool array_peekImpl(RuntimeContext &ctx, DSValue &value) {
 YDSH_METHOD array_peek(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_peek);
     DSValue value;
-    array_peekImpl(ctx, value);
+    array_fetch(ctx, value);
     return value;
 }
 
@@ -1605,11 +1605,32 @@ YDSH_METHOD array_push(RuntimeContext &ctx) {
 YDSH_METHOD array_pop(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_pop);
     DSValue v;
-    if(!array_peekImpl(ctx, v)) {
+    if(!array_fetch(ctx, v)) {
         RET_ERROR;
     }
     typeAs<Array_Object>(LOCAL(0))->refValues().pop_back();
     RET(v);
+}
+
+//!bind: function shift($this : Array<T0>) : T0
+YDSH_METHOD array_shift(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_shift);
+    DSValue v;
+    if(!array_fetch(ctx, v, false)) {
+        RET_ERROR;
+    }
+    auto &values = typeAs<Array_Object>(LOCAL(0))->refValues();
+    values.erase(values.begin());
+    RET(v);
+}
+
+//!bind: function unshift($this : Array<T0>, $value : T0) : Void
+YDSH_METHOD array_unshift(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_unshift);
+    if(!array_insertImpl(ctx, 0, LOCAL(1))) {
+        RET_ERROR;
+    }
+    RET_VOID;
 }
 
 //!bind: function insert($this : Array<T0>, $index : Int32, $value : T0) : Void

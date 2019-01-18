@@ -389,6 +389,10 @@ function push($this : Array<T0>, $value : T0) : Void
 
 function pop($this : Array<T0>) : T0
 
+function shift($this : Array<T0>) : T0
+
+function unshift($this : Array<T0>, $value : T0) : Void
+
 function insert($this : Array<T0>, $index : Int32, $value : T0) : Void
 
 function add($this : Array<T0>, $value : T0) : Array<T0>

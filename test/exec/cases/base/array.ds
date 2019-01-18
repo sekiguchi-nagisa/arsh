@@ -66,6 +66,18 @@ $ex = 2
 try { $b.peek(); assert($false) } catch($e) { $ex = $e }
 assert($ex is OutOfRangeError)
 
+$b = new [Boolean]()
+$b.unshift($true)
+$b.unshift($false)
+assert $b.size() == 2
+assert !$b.shift()
+assert $b.shift()
+assert $b.empty()
+$ex = 100
+try { $b.shift(); assert $false; } catch $e { $ex = $e; }
+assert $ex is OutOfRangeError
+
+
 # slice
 $b = [$true, $false, $false]
 var bb = $b.slice(0, $b.size())
