@@ -2,5 +2,4 @@
 
 var bin = $@.shift()
 
-export-env YDSH_SUPPRESS_COMPILE_ERROR = "on"
-eval $bin -jobs=4 -workers=4 $@
+exec env YDSH_SUPPRESS_COMPILE_ERROR=on $bin -jobs=4 -workers=4 $@
