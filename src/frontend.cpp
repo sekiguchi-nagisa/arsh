@@ -59,24 +59,6 @@ static bool isSupportedTerminal(int fd) {
     return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
 }
 
-struct ColorController {
-    bool isatty;
-
-    explicit ColorController(int fd) : isatty(isSupportedTerminal(fd)) {}
-
-    const char *operator()(TermColor color) const {
-        if(this->isatty) {
-#define GEN_STR(E, C) "\033[" #C "m",
-            const char *ansi[] = {
-                    EACH_TERM_COLOR(GEN_STR)
-            };
-#undef GEN_STR
-            return ansi[static_cast<unsigned int>(color)];
-        }
-        return "";
-    }
-};
-
 static std::vector<std::string> split(const std::string &str) {
     std::vector<std::string> bufs;
     bufs.emplace_back();
@@ -90,64 +72,86 @@ static std::vector<std::string> split(const std::string &str) {
     return bufs;
 }
 
-static void formatErrorLine(ColorController cc, const Lexer &lexer, Token token) {
-    if(token.pos + token.size == 0) {
-        return;
+class ErrorReporter {
+private:
+    FILE *fp;
+    bool tty;
+
+public:
+    explicit ErrorReporter(FILE *fp) : fp(fp), tty(isSupportedTerminal(fileno(fp))) {}
+
+    void operator()(const Lexer &lex, const char *kind, Token token, TermColor c, const char *message) const {
+        unsigned lineNumOffset = lex.getSourceInfo()->getLineNumOffset();
+        fprintf(this->fp, "%s:", lex.getSourceInfo()->getSourceName().c_str());
+        if(lineNumOffset > 0) {
+            unsigned int lineNum = lex.getSourceInfo()->getLineNum(token.pos);
+            fprintf(this->fp, "%d:", lineNum);
+        }
+        fprintf(this->fp, " %s%s[%s]%s %s\n",
+                this->color(c), this->color(TermColor::Bold), kind, this->color(TermColor::Reset), message);
+
+        if(lineNumOffset > 0) {
+            this->printErrorLine(lex, token);
+        }
+        fflush(this->fp);
     }
 
-    Token errorToken = lexer.shiftEOS(token);
-    Token lineToken = lexer.getLineToken(errorToken);
-    auto line = lexer.formatTokenText(lineToken);
-    auto marker = lexer.formatLineMarker(lineToken, errorToken);
-
-    auto lines = split(line);
-    auto markers = split(marker);
-    unsigned int size = lines.size();
-    assert(size == markers.size());
-    for(unsigned int i = 0; i < size; i++) {
-        // print error line
-        fprintf(stderr, "%s%s%s\n", cc(TermColor::Cyan), lines[i].c_str(), cc(TermColor::Reset));
-
-        // print line marker
-        fprintf(stderr, "%s%s%s%s\n", cc(TermColor::Green), cc(TermColor::Bold),
-                markers[i].c_str(), cc(TermColor::Reset));
+private:
+    const char *color(TermColor c) const {
+        if(this->tty) {
+#define GEN_STR(E, C) "\033[" #C "m",
+            const char *ansi[] = {
+                    EACH_TERM_COLOR(GEN_STR)
+            };
+#undef GEN_STR
+            return ansi[static_cast<unsigned int>(c)];
+        }
+        return "";
     }
 
-    fflush(stderr);
-}
+    void printErrorLine(const Lexer &lexer, Token token) const {
+        if(token.pos + token.size == 0) {
+            return;
+        }
 
-void printError(const Lexer &lex, const char *kind, Token token,
-               ColorController cc, TermColor color, const char *message) {
-    unsigned lineNumOffset = lex.getSourceInfo()->getLineNumOffset();
-    fprintf(stderr, "%s:", lex.getSourceInfo()->getSourceName().c_str());
-    if(lineNumOffset > 0) {
-        unsigned int lineNum = lex.getSourceInfo()->getLineNum(token.pos);
-        fprintf(stderr, "%d:", lineNum);
-    }
-    fprintf(stderr, " %s%s[%s]%s %s\n",
-            cc(color), cc(TermColor::Bold), kind, cc(TermColor::Reset), message);
+        Token errorToken = lexer.shiftEOS(token);
+        Token lineToken = lexer.getLineToken(errorToken);
+        auto line = lexer.formatTokenText(lineToken);
+        auto marker = lexer.formatLineMarker(lineToken, errorToken);
 
-    if(lineNumOffset > 0) {
-        formatErrorLine(cc, lex, token);
+        auto lines = split(line);
+        auto markers = split(marker);
+        unsigned int size = lines.size();
+        assert(size == markers.size());
+        for(unsigned int i = 0; i < size; i++) {
+            // print error line
+            fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Cyan), lines[i].c_str(), this->color(TermColor::Reset));
+
+            // print line marker
+            fprintf(this->fp, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
+                    markers[i].c_str(), this->color(TermColor::Reset));
+        }
+
+        fflush(this->fp);
     }
-}
+};
 
 DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
                               Token errorToken, const std::string &message) const {
     if(!this->suppressError(errorKind)) {
-        ColorController cc(STDERR_FILENO);
+        ErrorReporter stream(stderr);
 
         /**
          * show error message
          */
-        printError(*this->parser.getLexer(),
+        stream(*this->parser.getLexer(),
                    type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
-                   errorToken, cc, TermColor::Magenta, message.c_str());
+                   errorToken, TermColor::Magenta, message.c_str());
 
         for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
             Token token = this->contexts[i].sourceNode->getPathNode()->getToken();
             auto &lex = i > 0 ? this->contexts[i - 1].lexer : this->lexer;
-            printError(lex, "note", token, cc, TermColor::Blue, "at module import");
+            stream(lex, "note", token, TermColor::Blue, "at module import");
         }
     }
 
