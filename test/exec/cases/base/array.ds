@@ -115,6 +115,20 @@ $ee = 1
     assert $c.size() == 3
 }
 
+
+# reverse
+var rr = [1, 2, 3, 4, 5]
+$rr.reverse()
+assert $rr.size() == 5
+assert $rr[0] == 5
+assert $rr[1] == 4
+assert $rr[2] == 3
+assert $rr[3] == 2
+assert $rr[4] == 1
+$rr.clear()
+$rr.reverse()
+assert $rr.empty()
+
 # inheritance
 assert([34, 43] is Array<Int32>)
 assert([34] is Any)

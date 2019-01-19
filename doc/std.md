@@ -407,6 +407,8 @@ function from($this : Array<T0>, $from : Int32) : Array<T0>
 
 function to($this : Array<T0>, $to : Int32) : Array<T0>
 
+function reverse($this : Array<T0>) : Void
+
 function size($this : Array<T0>) : Int32
 
 function empty($this : Array<T0>) : Boolean

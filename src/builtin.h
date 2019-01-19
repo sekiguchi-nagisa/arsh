@@ -70,7 +70,7 @@ using ObjTypeStub = typename std::conditional<
     OP(AND, &) \
     OP(OR,  |) \
     OP(XOR, ^)
-    
+
 
 #define EACH_UNARY_OP(OP) \
     OP(MINUS, -) \
@@ -1727,6 +1727,14 @@ YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     int stop = typeAs<Int_Object>(LOCAL(1))->getValue();
     return slice(ctx, obj, 0, stop);
+}
+
+//!bind: function reverse($this : Array<T0>) : Void
+YDSH_METHOD array_reverse(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_reverse);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    std::reverse(obj->refValues().begin(), obj->refValues().end());
+    RET_VOID;
 }
 
 //!bind: function size($this : Array<T0>) : Int32
