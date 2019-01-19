@@ -76,6 +76,13 @@ public:
     virtual bool equals(const DSValue &obj) const;
 
     /**
+     * for Array#sort
+     * @param obj
+     * @return
+     */
+    virtual bool compare(const DSValue &obj) const;
+
+    /**
      * STR method implementation.
      * return String_Object
      */
@@ -305,6 +312,7 @@ public:
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     bool equals(const DSValue &obj) const override;
+    bool compare(const DSValue &obj) const override;
     size_t hash() const override;
 };
 
@@ -339,6 +347,7 @@ public:
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     bool equals(const DSValue &obj) const override;
+    bool compare(const DSValue &obj) const override;
     size_t hash() const override;
 };
 
@@ -357,6 +366,7 @@ public:
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     bool equals(const DSValue &obj) const override;
+    bool compare(const DSValue &obj) const override;
     size_t hash() const override;
 };
 
@@ -375,6 +385,7 @@ public:
 
     std::string toString(DSState &ctx, VisitedSet *visitedSe) override;
     bool equals(const DSValue &obj) const override;
+    bool compare(const DSValue &obj) const override;
     size_t hash() const override;
 };
 
@@ -419,6 +430,7 @@ public:
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
 
     bool equals(const DSValue &obj) const override;
+    bool compare(const DSValue &obj) const override;
     size_t hash() const override;
 };
 

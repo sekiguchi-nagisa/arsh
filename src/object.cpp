@@ -15,6 +15,7 @@
  */
 
 #include <memory>
+#include <algorithm>
 
 #include "object.h"
 #include "core.h"
@@ -40,6 +41,10 @@ std::string DSObject::toString(DSState &, VisitedSet *) {
 
 bool DSObject::equals(const DSValue &obj) const {
     return reinterpret_cast<long>(this) == reinterpret_cast<long>(obj.get());
+}
+
+bool DSObject::compare(const ydsh::DSValue &obj) const {
+    return reinterpret_cast<long>(this) < reinterpret_cast<long>(obj.get());
 }
 
 DSValue DSObject::str(DSState &ctx) {
@@ -71,6 +76,13 @@ std::string Int_Object::toString(DSState &ctx, VisitedSet *) {
 
 bool Int_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Int_Object>(obj)->value;
+}
+
+bool Int_Object::compare(const DSValue &obj) const {
+    if(this->type->isType(TYPE::Uint32)) {
+        return static_cast<unsigned int>(this->value) < static_cast<unsigned int>(typeAs<Int_Object>(obj)->value);
+    }
+    return this->value < typeAs<Int_Object>(obj)->value;
 }
 
 size_t Int_Object::hash() const {
@@ -110,6 +122,13 @@ bool Long_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Long_Object>(obj)->value;
 }
 
+bool Long_Object::compare(const DSValue &obj) const {
+    if(this->type->isType(TYPE::Uint64)) {
+        return static_cast<unsigned long>(this->value) < static_cast<unsigned long>(typeAs<Long_Object>(obj)->value);
+    }
+    return this->value < typeAs<Long_Object>(obj)->value;
+}
+
 size_t Long_Object::hash() const {
     return std::hash<long>()(this->value);
 }
@@ -124,6 +143,10 @@ std::string Float_Object::toString(DSState &, VisitedSet *) {
 
 bool Float_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Float_Object>(obj)->value;
+}
+
+bool Float_Object::compare(const DSValue &obj) const {
+    return this->value < typeAs<Float_Object>(obj)->value;
 }
 
 size_t Float_Object::hash() const {
@@ -143,6 +166,12 @@ bool Boolean_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Boolean_Object>(obj)->value;
 }
 
+bool Boolean_Object::compare(const DSValue &obj) const {
+    unsigned int left = this->value ? 1 : 0;
+    unsigned int right = typeAs<Boolean_Object>(obj)->value ? 1 : 0;
+    return left < right;
+}
+
 size_t Boolean_Object::hash() const {
     return std::hash<bool>()(this->value);
 }
@@ -157,6 +186,12 @@ std::string String_Object::toString(DSState &, VisitedSet *) {
 
 bool String_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<String_Object>(obj)->value;
+}
+
+bool String_Object::compare(const DSValue &obj) const {
+    auto *str2 = typeAs<String_Object>(obj);
+    unsigned int size = std::min(this->size(), str2->size());
+    return memcmp(this->getValue(), str2->getValue(), size) < 0;
 }
 
 size_t String_Object::hash() const {

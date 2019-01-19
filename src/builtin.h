@@ -159,6 +159,22 @@ YDSH_METHOD basic_mod(RuntimeContext &ctx) {
     RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result));
 }
 
+static bool binary_lt(RuntimeContext &ctx) {    // x < y
+    return LOCAL(0)->compare(LOCAL(1));
+}
+
+static bool binary_gt(RuntimeContext &ctx) {    // x > y  =  y < x
+    return LOCAL(1)->compare(LOCAL(0));
+}
+
+static bool binary_le(RuntimeContext &ctx) {    // x <= y  =  !(x > y)
+    return !binary_gt(ctx);
+}
+
+static bool binary_ge(RuntimeContext &ctx) {    // x >= y  =  !(x < y)
+    return !binary_lt(ctx);
+}
+
 
 // #################
 // ##     Any     ##
@@ -880,36 +896,28 @@ YDSH_METHOD string_ne(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
-static int cmpstring(DSState &ctx) {
-    auto *str1 = typeAs<String_Object>(LOCAL(0));
-    auto *str2 = typeAs<String_Object>(LOCAL(1));
-    unsigned int size = std::min(str1->size(), str2->size());
-    return memcmp(str1->getValue(), str2->getValue(), size);
-}
-
-
 //!bind: function $OP_LT($this : String, $target : String) : Boolean
 YDSH_METHOD string_lt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lt);
-    RET_BOOL(cmpstring(ctx) < 0);
+    RET_BOOL(binary_lt(ctx));
 }
 
 //!bind: function $OP_GT($this : String, $target : String) : Boolean
 YDSH_METHOD string_gt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_gt);
-    RET_BOOL(cmpstring(ctx) > 0);
+    RET_BOOL(binary_gt(ctx));
 }
 
 //!bind: function $OP_LE($this : String, $target : String) : Boolean
 YDSH_METHOD string_le(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_le);
-    RET_BOOL(cmpstring(ctx) <= 0);
+    RET_BOOL(binary_le(ctx));
 }
 
 //!bind: function $OP_GE($this : String, $target : String) : Boolean
 YDSH_METHOD string_ge(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_ge);
-    RET_BOOL(cmpstring(ctx) >= 0);
+    RET_BOOL(binary_ge(ctx));
 }
 
 //!bind: function size($this : String) : Int32
