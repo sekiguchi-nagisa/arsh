@@ -38,6 +38,7 @@ class DSValue;
 class DSCode;
 using native_func_t = DSValue (*)(DSState &);
 
+enum class TYPE : unsigned int;
 class SymbolTable;
 
 class DSType {
@@ -72,6 +73,10 @@ public:
 
     unsigned int getTypeID() const {
         return this->id;
+    }
+
+    bool isType(TYPE type) const {
+        return this->id == static_cast<unsigned int>(type);
     }
 
     /**

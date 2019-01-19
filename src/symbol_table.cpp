@@ -621,7 +621,7 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
     auto &type = this->typeMap.newType<BuiltinType>(std::string(typeName), nullptr, info, attribute);
     (void) type;
     (void) t;
-    assert(type.getTypeID() == static_cast<unsigned int>(t));
+    assert(type.isType(t));
 }
 
 void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
@@ -631,7 +631,7 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
             std::string(typeName), &superType, info, extendable ? DSType::EXTENDIBLE : 0);
     (void) type;
     (void) t;
-    assert(type.getTypeID() == static_cast<unsigned int>(t));
+    assert(type.isType(t));
 }
 
 TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
@@ -644,7 +644,7 @@ void SymbolTable::initErrorType(TYPE t, const char *typeName) {
     auto &type = this->typeMap.newType<ErrorType>(std::string(typeName), &this->get(TYPE::Error));
     (void) type;
     (void) t;
-    assert(type.getTypeID() == static_cast<unsigned int>(t));
+    assert(type.isType(t));
 }
 
 void SymbolTable::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
