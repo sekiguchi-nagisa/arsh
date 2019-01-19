@@ -70,12 +70,7 @@ using ObjTypeStub = typename std::conditional<
     OP(AND, &) \
     OP(OR,  |) \
     OP(XOR, ^)
-
-#define EACH_RELATE_OP(OP) \
-    OP(LT, <) \
-    OP(GT, >) \
-    OP(LE, <=) \
-    OP(GE, >=)
+    
 
 #define EACH_UNARY_OP(OP) \
     OP(MINUS, -) \
@@ -92,16 +87,6 @@ YDSH_METHOD basic_##NAME(RuntimeContext &ctx) { \
     RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result)); \
 }
 
-#define GEN_RELATE_OP(NAME, OPERATOR) \
-template <typename T> \
-YDSH_METHOD relate_##NAME(RuntimeContext &ctx) { \
-    using ObjType = ObjTypeStub<T>; \
-    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
-    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue(); \
-    bool result = left OPERATOR right; \
-    RET_BOOL(result); \
-}
-
 #define GEN_UNARY_OP(NAME, OPERATOR) \
 template <typename T> \
 YDSH_METHOD unary_##NAME(RuntimeContext &ctx) { \
@@ -113,8 +98,6 @@ YDSH_METHOD unary_##NAME(RuntimeContext &ctx) { \
 
 
 EACH_BASIC_OP(GEN_BASIC_OP)
-
-EACH_RELATE_OP(GEN_RELATE_OP)
 
 EACH_UNARY_OP(GEN_UNARY_OP)
 
@@ -340,25 +323,25 @@ YDSH_METHOD int_2_int_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_lt);
-    RET(relate_LT<int>(ctx));
+    RET_BOOL(binary_lt(ctx));
 }
 
 //!bind: function $OP_GT($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_gt);
-    RET(relate_GT<int>(ctx));
+    RET_BOOL(binary_gt(ctx));
 }
 
 //!bind: function $OP_LE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_le);
-    RET(relate_LE<int>(ctx));
+    RET_BOOL(binary_le(ctx));
 }
 
 //!bind: function $OP_GE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ge);
-    RET(relate_GE<int>(ctx));
+    RET_BOOL(binary_ge(ctx));
 }
 
 //   =====  logical  =====
@@ -460,25 +443,25 @@ YDSH_METHOD uint_2_uint_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_lt);
-    RET(relate_LT<unsigned int>(ctx));
+    RET_BOOL(binary_lt(ctx));
 }
 
 //!bind: function $OP_GT($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_gt);
-    RET(relate_GT<unsigned int>(ctx));
+    RET_BOOL(binary_gt(ctx));
 }
 
 //!bind: function $OP_LE($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_le);
-    RET(relate_LE<unsigned int>(ctx));
+    RET_BOOL(binary_le(ctx));
 }
 
 //!bind: function $OP_GE($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_ge);
-    RET(relate_GE<unsigned int>(ctx));
+    RET_BOOL(binary_ge(ctx));
 }
 
 //   =====  logical  =====
@@ -579,25 +562,25 @@ YDSH_METHOD int64_2_int64_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_lt);
-    RET(relate_LT<long>(ctx));
+    RET_BOOL(binary_lt(ctx));
 }
 
 //!bind: function $OP_GT($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_gt);
-    RET(relate_GT<long>(ctx));
+    RET_BOOL(binary_gt(ctx));
 }
 
 //!bind: function $OP_LE($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_le);
-    RET(relate_LE<long>(ctx));
+    RET_BOOL(binary_le(ctx));
 }
 
 //!bind: function $OP_GE($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_ge);
-    RET(relate_GE<long>(ctx));
+    RET_BOOL(binary_ge(ctx));
 }
 
 //   =====  logical  =====
@@ -698,25 +681,25 @@ YDSH_METHOD uint64_2_uint64_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_lt);
-    RET(relate_LT<unsigned long>(ctx));
+    RET_BOOL(binary_lt(ctx));
 }
 
 //!bind: function $OP_GT($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_gt);
-    RET(relate_GT<unsigned long>(ctx));
+    RET_BOOL(binary_gt(ctx));
 }
 
 //!bind: function $OP_LE($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_le);
-    RET(relate_LE<unsigned long>(ctx));
+    RET_BOOL(binary_le(ctx));
 }
 
 //!bind: function $OP_GE($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_ge);
-    RET(relate_GE<unsigned long>(ctx));
+    RET_BOOL(binary_ge(ctx));
 }
 
 //   =====  logical  =====
@@ -808,25 +791,25 @@ YDSH_METHOD float_2_float_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_lt);
-    RET(relate_LT<double>(ctx));
+    RET_BOOL(binary_lt(ctx));
 }
 
 //!bind: function $OP_GT($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_gt);
-    RET(relate_GT<double>(ctx));
+    RET_BOOL(binary_gt(ctx));
 }
 
 //!bind: function $OP_LE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_le);
-    RET(relate_LE<double>(ctx));
+    RET_BOOL(binary_le(ctx));
 }
 
 //!bind: function $OP_GE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ge);
-    RET(relate_GE<double>(ctx));
+    RET_BOOL(binary_ge(ctx));
 }
 
 // =====  additional float op  ======
