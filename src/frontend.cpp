@@ -139,7 +139,13 @@ private:
 DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
                               Token errorToken, const std::string &message) const {
     if(!this->suppressError(errorKind)) {
+#ifdef FUZZING_BUILD_MODE
+        bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
+        FilePtr file(ignore ? fopen("/dev/null", "w") : fdopen(dup(STDERR_FILENO), "w"));
+        ErrorReporter stream(file.get());
+#else
         ErrorReporter stream(stderr);
+#endif
 
         /**
          * show error message
