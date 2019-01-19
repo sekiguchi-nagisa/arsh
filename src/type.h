@@ -38,8 +38,55 @@ class DSValue;
 class DSCode;
 using native_func_t = DSValue (*)(DSState &);
 
-enum class TYPE : unsigned int;
 class SymbolTable;
+
+enum class TYPE : unsigned int {
+    _Root, // pseudo top type of all throwable type(except for option types)
+
+    Any,
+    Void,
+    Nothing,
+
+    _Value,    // super type of value type(int, float, bool, string). not directly used it.
+
+    Byte,       // unsigned int 8
+    Int16,
+    Uint16,
+    Int32,
+    Uint32,
+    Int64,
+    Uint64,
+    Float,
+    Boolean,
+    String,
+
+    Regex,
+    Signal,
+    Signals,
+    Error,
+    Job,
+    Func,
+    StringIter,
+    UnixFD,     // for Unix file descriptor
+    StringArray,    // for command argument
+
+    ArithmeticError,
+    OutOfRangeError,
+    KeyNotFoundError,
+    TypeCastError,
+    SystemError,    // for errno
+    StackOverflowError,
+    RegexSyntaxError,
+    UnwrappingError,
+
+    /**
+     * for internal status reporting.
+     * they are pseudo type, so must not use it from shell
+     */
+            _InternalStatus,   // base type
+    _ShellExit,
+    _AssertFail,
+};
 
 class DSType {
 protected:
@@ -54,12 +101,10 @@ protected:
 
 public:
     static constexpr flag8_t EXTENDIBLE   = 1u << 0u;
-    static constexpr flag8_t VOID_TYPE    = 1u << 1u;  // Void
-    static constexpr flag8_t FUNC_TYPE    = 1u << 2u;  // function type
-    static constexpr flag8_t RECORD_TYPE  = 1u << 3u;  // indicate user defined type
-    static constexpr flag8_t NOTHING_TYPE = 1u << 4u;  // Nothing (a.k.a. Bottom type)
-    static constexpr flag8_t OPTION_TYPE  = 1u << 5u;  // Option<T>
-    static constexpr flag8_t MODULE_TYPE  = 1u << 6u;  // Module type
+    static constexpr flag8_t FUNC_TYPE    = 1u << 1u;  // function type
+    static constexpr flag8_t RECORD_TYPE  = 1u << 2u;  // indicate user defined type
+    static constexpr flag8_t OPTION_TYPE  = 1u << 3u;  // Option<T>
+    static constexpr flag8_t MODULE_TYPE  = 1u << 4u;  // Module type
 
     NON_COPYABLE(DSType);
 
@@ -90,7 +135,7 @@ public:
      * if this type is VoidType, return true.
      */
     bool isVoidType() const {
-        return hasFlag(this->attributeSet, VOID_TYPE);
+        return this->isType(TYPE::Void);
     }
 
     /**
@@ -105,7 +150,7 @@ public:
     }
 
     bool isNothingType() const {
-        return hasFlag(this->attributeSet, NOTHING_TYPE);
+        return this->isType(TYPE::Nothing);
     }
 
     bool isOptionType() const {

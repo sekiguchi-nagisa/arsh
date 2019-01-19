@@ -315,54 +315,6 @@ private:
     DSType *addType(std::string &&typeName, DSType *type);
 };
 
-enum class TYPE : unsigned int {
-    _Root, // pseudo top type of all throwable type(except for option types)
-
-    Any,
-    Void,
-    Nothing,
-
-    _Value,    // super type of value type(int, float, bool, string). not directly used it.
-
-    Byte,       // unsigned int 8
-    Int16,
-    Uint16,
-    Int32,
-    Uint32,
-    Int64,
-    Uint64,
-    Float,
-    Boolean,
-    String,
-
-    Regex,
-    Signal,
-    Signals,
-    Error,
-    Job,
-    Func,
-    StringIter,
-    UnixFD,     // for Unix file descriptor
-    StringArray,    // for command argument
-
-    ArithmeticError,
-    OutOfRangeError,
-    KeyNotFoundError,
-    TypeCastError,
-    SystemError,    // for errno
-    StackOverflowError,
-    RegexSyntaxError,
-    UnwrappingError,
-
-    /**
-     * for internal status reporting.
-     * they are pseudo type, so must not use it from shell
-     */
-    _InternalStatus,   // base type
-    _ShellExit,
-    _AssertFail,
-};
-
 class SymbolTable;
 
 class ModType : public DSType {

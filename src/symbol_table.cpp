@@ -611,13 +611,6 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
                                native_type_info_t info) {
     // create and register type
     flag8_set_t attribute = extendable ? DSType::EXTENDIBLE : 0;
-    if(t == TYPE::Void) {
-        attribute |= DSType::VOID_TYPE;
-    }
-    if(t == TYPE::Nothing) {
-        attribute |= DSType::NOTHING_TYPE;
-    }
-
     auto &type = this->typeMap.newType<BuiltinType>(std::string(typeName), nullptr, info, attribute);
     (void) type;
     (void) t;

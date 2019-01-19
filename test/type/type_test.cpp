@@ -141,7 +141,6 @@ public:
     virtual void assertAttribute(flag8_set_t set, DSType &type) {
         SCOPED_TRACE("");
         ASSERT_EQ(hasFlag(set, DSType::EXTENDIBLE), type.isExtendible());
-        ASSERT_EQ(hasFlag(set, DSType::VOID_TYPE), type.isVoidType());
         ASSERT_EQ(hasFlag(set, DSType::FUNC_TYPE), type.isFuncType());
         ASSERT_EQ(hasFlag(set, DSType::RECORD_TYPE), type.isRecordType());
     }
@@ -247,8 +246,6 @@ TEST_F(TypeTest, superType) {
 
 TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(TYPE::Any)));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::VOID_TYPE, this->pool.get(TYPE::Void)));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::NOTHING_TYPE, this->pool.get(TYPE::Nothing)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(DSType::EXTENDIBLE, this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Byte)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(0, this->pool.get(TYPE::Int16)));
