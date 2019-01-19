@@ -1,0 +1,5 @@
+#!/usr/bin/env ydsh
+
+var bin = $@.shift()
+
+eval $bin -jobs=4 -workers=4 $@
