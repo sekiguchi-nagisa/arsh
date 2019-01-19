@@ -129,6 +129,40 @@ $rr.clear()
 $rr.reverse()
 assert $rr.empty()
 
+
+# sort
+var s1 = [4, 8, -9, -1, 78, 0, 2]
+$s1.sort()
+assert $s1[0] == -9
+assert $s1[1] == -1
+assert $s1[2] == 0
+assert $s1[3] == 2
+assert $s1[4] == 4
+assert $s1[5] == 8
+assert $s1[6] == 78
+
+var s2 = [$false, $true, $false]
+$s2.sort()
+assert !$s2[0]
+assert !$s2[1]
+assert $s2[2]
+
+var s3 = ["a", "AA", "1"]
+$s3.sort()
+assert $s3[0] == "1"
+assert $s3[1] == "AA"
+assert $s3[2] == "a"
+
+var s4 = [new Int!(), 34 as Int!, new Int!()]
+$s4.sort()
+assert $s4[0]! == 34
+assert !$s4[1]
+assert !$s4[2]
+
+var s5 = [$SIG_DFL, $SIG_IGN]
+$s5.sort()  # sort result is undefined
+
+
 # inheritance
 assert([34, 43] is Array<Int32>)
 assert([34] is Any)

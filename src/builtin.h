@@ -1737,6 +1737,23 @@ YDSH_METHOD array_reverse(RuntimeContext &ctx) {
     RET_VOID;
 }
 
+//!bind: function sort($this : Array<T0>) : Void
+YDSH_METHOD array_sort(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_sort);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    std::sort(obj->refValues().begin(), obj->refValues().end(),
+            [](const DSValue &x, const DSValue &y){
+        if(x.kind() == DSValueKind::INVALID) {  // (invalid x) < y  => false
+            return false;
+        }
+        if(y.kind() == DSValueKind::INVALID) {  // x < (invalid y) => true
+            return true;
+        }
+        return x->compare(y);
+    });
+    RET_VOID;
+}
+
 //!bind: function size($this : Array<T0>) : Int32
 YDSH_METHOD array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
