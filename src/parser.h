@@ -227,6 +227,8 @@ protected:
         return std::make_pair(token, out);
     }
 
+    std::unique_ptr<Node> parse_signalLiteral();
+
     std::unique_ptr<Node> parse_appliedName(bool asSpecialName = false);
 
     std::unique_ptr<Node> parse_stringLiteral();

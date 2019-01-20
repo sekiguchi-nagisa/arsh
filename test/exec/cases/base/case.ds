@@ -55,3 +55,15 @@ assert "$($case2(9))" == "-9!!"
 assert "$($case2(10))" == "-10!!"
 assert "$($case2(11))" == "dummy"
 assert "$($case2(12))" == ""
+
+
+function case3($s : Signal)  : String{
+    return case $s {
+        %'hup' => "hung up!!"
+        %'kill' => "killed!!"
+        else => $s.name()
+    }
+}
+assert $case3(%'STOP') == "STOP"
+assert $case3(%'SIGHUP') == "hung up!!"
+assert $case3(%'kIlL') == "killed!!"

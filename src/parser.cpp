@@ -44,6 +44,7 @@
 #define EACH_LA_primaryPattern(OP) \
     OP(INT32_LITERAL) \
     OP(UINT32_LITERAL) \
+    OP(SIGNAL_LITERAL) \
     OP(STRING_LITERAL)
 
 #define EACH_LA_pattern(OP) \
@@ -739,6 +740,8 @@ std::unique_ptr<Node> Parser::parse_primaryPattern() {
         auto pair = TRY(this->expectNum(UINT32_LITERAL, &Lexer::toUint32));
         return std::unique_ptr<Node>(NumberNode::newUint32(pair.first, pair.second));
     }
+    case SIGNAL_LITERAL:
+        return this->parse_signalLiteral();
     default:
         return this->parse_stringLiteral();
     }
@@ -1207,17 +1210,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         }
         return unique<RegexNode>(old, std::move(str), std::move(re));
     }
-    case SIGNAL_LITERAL: {
-        Token token = this->expect(SIGNAL_LITERAL); // always success
-        auto str = this->lexer->toTokenText(token);
-        str.pop_back(); // skip suffix [']
-        int num = getSignalNum(str.c_str() + 2); // skip prefix [%']
-        if(num < 0) {
-            raiseTokenFormatError(SIGNAL_LITERAL, token, "unsupported signal");
-            return nullptr;
-        }
-        return std::unique_ptr<Node>(NumberNode::newSignal(token, num));
-    }
+    case SIGNAL_LITERAL:
+        return this->parse_signalLiteral();
     case OPEN_DQUOTE:
         return this->parse_stringExpression();
     case START_SUB_CMD:
@@ -1343,6 +1337,19 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     default:
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
     }
+}
+
+std::unique_ptr<Node> Parser::parse_signalLiteral() {
+    assert(CUR_KIND() == SIGNAL_LITERAL);
+    Token token = this->expect(SIGNAL_LITERAL); // always success
+    auto str = this->lexer->toTokenText(token);
+    str.pop_back(); // skip suffix [']
+    int num = getSignalNum(str.c_str() + 2); // skip prefix [%']
+    if(num < 0) {
+        raiseTokenFormatError(SIGNAL_LITERAL, token, "unsupported signal");
+        return nullptr;
+    }
+    return std::unique_ptr<Node>(NumberNode::newSignal(token, num));
 }
 
 std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {

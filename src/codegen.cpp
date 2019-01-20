@@ -804,7 +804,7 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
     this->markLabel(mergeLabel);
 }
 
-static DSValue newObjetc(Node &constNode) {
+static DSValue newObject(Node &constNode) {
     auto kind = constNode.getNodeKind();
     assert(kind == NodeKind::Number || kind == NodeKind::String);
     if(kind == NodeKind::Number) {
@@ -817,7 +817,7 @@ void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, Map_Object &obj)
     unsigned int offset = this->currentCodeOffset();
     auto value = DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint32), offset);
     for(auto &e : node.getPatternNodes()) {
-        obj.set(newObjetc(*e), DSValue(value));
+        obj.set(newObject(*e), DSValue(value));
     }
 }
 
