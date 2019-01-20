@@ -1548,6 +1548,21 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
     RET_VOID;
 }
 
+//!bind: function remove($this : Array<T0>, $index : Int32) : T0
+YDSH_METHOD array_remove(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_remove);
+
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    int size = obj->getValues().size();
+    int index = typeAs<Int_Object>(LOCAL(1))->getValue();
+    if(!checkRange(ctx, index, size)) {
+        RET_ERROR;
+    }
+    auto v = obj->getValues()[index];
+    obj->refValues().erase(obj->refValues().begin() + index);
+    RET(v);
+}
+
 static bool array_fetch(RuntimeContext &ctx, DSValue &value, bool fetchLast = true) {
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     if(obj->getValues().empty()) {

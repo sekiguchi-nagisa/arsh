@@ -383,6 +383,8 @@ function get($this : Array<T0>, $index : Int32) : Option<T0>
 
 function %OP_SET($this : Array<T0>, $index : Int32, $value : T0) : Void
 
+function remove($this : Array<T0>, $index : Int32) : T0
+
 function peek($this : Array<T0>) : T0
 
 function push($this : Array<T0>, $value : T0) : Void

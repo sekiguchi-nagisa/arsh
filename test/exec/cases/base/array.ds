@@ -162,6 +162,17 @@ assert !$s4[2]
 var s5 = [$SIG_DFL, $SIG_IGN]
 $s5.sort()  # sort result is undefined
 
+# remove
+var r2 = [3,4,5,6]
+assert $r2.remove(2) == 5
+assert $r2.remove(0) == 3
+$ex = 34
+try { $r2.remove(-1); assert false; } catch $e { $ex = $e; }
+assert $ex is OutOfRangeError
+$ex = 34
+try { $r2.remove(5); assert false; } catch $e { $ex = $e; }
+assert $ex is OutOfRangeError
+
 
 # inheritance
 assert([34, 43] is Array<Int32>)
