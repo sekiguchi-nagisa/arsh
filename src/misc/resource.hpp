@@ -222,6 +222,18 @@ public:
     }
 };
 
+struct CallCounter {
+    unsigned int &count;
+
+    explicit CallCounter(unsigned int &count) : count(count) {
+        ++this->count;
+    }
+
+    ~CallCounter() {
+        --this->count;
+    }
+};
+
 } // namespace ydsh
 
 #endif //YDSH_MISC_RESOURCE_HPP

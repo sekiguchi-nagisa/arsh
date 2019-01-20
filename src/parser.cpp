@@ -17,6 +17,7 @@
 #include "parser.h"
 #include "constant.h"
 #include "signals.h"
+#include "misc/resource.hpp"
 
 // helper macro
 #define HAS_NL() (this->lexer->isPrevNewLine())
@@ -155,21 +156,10 @@ do { this->raiseNoViableAlterError((TokenKind[]) { __VA_ARGS__ }); return nullpt
 
 namespace ydsh {
 
-struct CallCounter {
-    unsigned int &count;
-
-    explicit CallCounter(unsigned int &count) : count(count) {}
-
-    ~CallCounter() {
-        --this->count;
-    }
-};
-
 #define GUARD_DEEP_NESTING(name) \
-if(++this->callCount == MAX_NESTING_DEPTH) { this->raiseDeepNestingError(); return nullptr; } \
 CallCounter name(this->callCount); \
+if(this->callCount == MAX_NESTING_DEPTH) { this->raiseDeepNestingError(); return nullptr; } \
 (void) name
-//fprintf(stderr, "depth: %d\n", name.count)
 
 
 // #########################
