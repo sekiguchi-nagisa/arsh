@@ -264,7 +264,7 @@ private:
     static_assert(__detail::andAll(std::is_move_constructible<T>::value...), "must be move-constructible");
 
     using StorageType = Storage<T...>;
-    StorageType value_{};
+    StorageType value_;
     int tag_;
 
 public:
