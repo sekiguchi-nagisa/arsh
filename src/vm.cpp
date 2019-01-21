@@ -107,7 +107,7 @@ void DSState::reserveLocalStackImpl(unsigned int needSize) {
         newSize += (newSize >> 1u);
     } while(newSize < needSize);
     auto newTable = new DSValue[newSize];
-    for(unsigned int i = 0; i < this->stackTopIndex + 1; i++) {
+    for(unsigned int i = 0; i < this->stackTopIndex() + 1; i++) {
         newTable[i] = std::move(this->callStack[i]);
     }
     delete[] this->callStack;
@@ -159,7 +159,7 @@ extern char **environ; //NOLINT
 
 namespace ydsh {
 
-#define CODE(ctx) ((ctx).code)
+#define CODE(ctx) ((ctx).code())
 #define GET_CODE(ctx) (CODE(ctx)->getCode())
 #define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
 
@@ -224,13 +224,13 @@ static const char *loadEnv(DSState &state, bool hasDefault) {
 }
 
 static void clearOperandStack(DSState &st) {
-    while(st.stackTopIndex > st.stackBottomIndex) {
+    while(st.stackTopIndex() > st.stackBottomIndex()) {
         st.popNoReturn();
     }
 }
 
 static void reclaimLocals(DSState &state, unsigned char offset, unsigned char size) {
-    auto *limit = state.callStack + state.localVarOffset + offset;
+    auto *limit = state.callStack + state.localVarOffset() + offset;
     auto *cur = limit + size - 1;
     while(cur >= limit) {
         (cur--)->reset();
@@ -244,15 +244,15 @@ static void reserveGlobalVar(DSState &st) {
     unsigned int size = st.symbolTable.getMaxGVarIndex();
     st.reserveLocalStack(size - st.globalVarSize);
     st.globalVarSize = size;
-    st.localVarOffset = size;
-    st.stackTopIndex = size;
-    st.stackBottomIndex = size;
+    st.localVarOffset() = size;
+    st.stackTopIndex() = size;
+    st.stackBottomIndex() = size;
 }
 
 static bool windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
     const unsigned int maxVarSize = code->is(CodeKind::NATIVE) ? paramSize :
                                     static_cast<const CompiledCode *>(code)->getLocalVarNum();
-    const unsigned int localVarOffset = st.stackTopIndex - paramSize + 1;
+    const unsigned int localVarOffset = st.stackTopIndex() - paramSize + 1;
     const unsigned int operandSize = code->is(CodeKind::NATIVE) ? 4 :
                                      static_cast<const CompiledCode *>(code)->getStackDepth();
 
@@ -262,32 +262,32 @@ static bool windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned in
     }
 
     // save current control frame
-    st.stackTopIndex -= stackTopOffset;
+    st.stackTopIndex() -= stackTopOffset;
     st.controlStack.push_back(st.getFrame());
-    st.stackTopIndex += stackTopOffset;
+    st.stackTopIndex() += stackTopOffset;
 
     // reallocate stack
     st.reserveLocalStack(maxVarSize - paramSize + operandSize);
 
     // prepare control frame
-    st.code = code;
-    st.stackTopIndex = st.stackTopIndex + maxVarSize - paramSize;
-    st.stackBottomIndex = st.stackTopIndex;
-    st.localVarOffset = localVarOffset;
-    st.pc_ = st.code->getCodeOffset() - 1;
+    st.code() = code;
+    st.stackTopIndex() = st.stackTopIndex() + maxVarSize - paramSize;
+    st.stackBottomIndex() = st.stackTopIndex();
+    st.localVarOffset() = localVarOffset;
+    st.pc() = st.code()->getCodeOffset() - 1;
     return true;
 }
 
 static void unwindStackFrame(DSState &st) {
     auto frame = st.controlStack.back();
 
-    st.code = frame.code;
-    st.stackBottomIndex = frame.stackBottomIndex;
-    st.localVarOffset = frame.localVarOffset;
-    st.pc_= frame.pc;
+    st.code() = frame.code;
+    st.stackBottomIndex() = frame.stackBottomIndex;
+    st.localVarOffset() = frame.localVarOffset;
+    st.pc() = frame.pc;
 
     unsigned int oldStackTopIndex = frame.stackTopIndex;
-    while(st.stackTopIndex > oldStackTopIndex) {
+    while(st.stackTopIndex() > oldStackTopIndex) {
         st.popNoReturn();
     }
     st.controlStack.pop_back();
@@ -302,7 +302,7 @@ static void unwindStackFrame(DSState &st) {
  *                       | offset |   |        |
  */
 static bool applyFuncObject(DSState &st, unsigned int paramSize) {
-    auto *func = typeAs<FuncObject>(st.callStack[st.stackTopIndex - paramSize]);
+    auto *func = typeAs<FuncObject>(st.callStack[st.stackTopIndex() - paramSize]);
     return windStackFrame(st, paramSize + 1, paramSize, &func->getCode());
 }
 
@@ -316,7 +316,7 @@ static bool applyFuncObject(DSState &st, unsigned int paramSize) {
  */
 static bool callMethod(DSState &st, unsigned short index, unsigned short paramSize) {
     const unsigned int actualParamSize = paramSize + 1; // include receiver
-    const unsigned int recvIndex = st.stackTopIndex - paramSize;
+    const unsigned int recvIndex = st.stackTopIndex() - paramSize;
 
     return windStackFrame(st, actualParamSize, actualParamSize, st.callStack[recvIndex]->getType()->getMethodRef(index));
 }
@@ -331,7 +331,7 @@ static bool callMethod(DSState &st, unsigned short index, unsigned short paramSi
  *             |    new offset    |
  */
 static bool callConstructor(DSState &st, unsigned short paramSize) {
-    const unsigned int recvIndex = st.stackTopIndex - paramSize;
+    const unsigned int recvIndex = st.stackTopIndex() - paramSize;
 
     return windStackFrame(st, paramSize, paramSize + 1, st.callStack[recvIndex]->getType()->getConstructor());
 }
@@ -1385,7 +1385,7 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
     DSValue value = state.pop();
     DSType *valueType = value->getType();
 
-    auto *argv = typeAs<Array_Object>(state.callStack[state.stackTopIndex - 1]);
+    auto *argv = typeAs<Array_Object>(state.callStack[state.stackTopIndex() - 1]);
     if(*valueType == state.symbolTable.get(TYPE::String)) {  // String
         if(skipEmptyStr && typeAs<String_Object>(value)->empty()) {
             return;

@@ -67,14 +67,30 @@ public:
 };
 
 struct ControlFrame {
+    /**
+     * currently executed code
+     */
     const DSCode *code;
 
+    /**
+     * initial value is 0. increment index before push
+     */
     unsigned int stackTopIndex;
 
+    /**
+     * indicate lower limit of stack top index (bottom <= top)
+     */
     unsigned int stackBottomIndex;
 
+    /**
+     * offset of current local variable index.
+     * initial value is equivalent to globalVarSize.
+     */
     unsigned int localVarOffset;
 
+    /**
+     * indicate the index of currently evaluating op code.
+     */
     unsigned int pc;
 };
 
@@ -131,30 +147,9 @@ struct DSState {
     unsigned int globalVarSize{0};
 
     /**
-     * initial value is 0. increment index before push
+     * currently executed frame
      */
-    unsigned int stackTopIndex{0};
-
-    /**
-     * indicate lower limit of stack top index (bottom <= top)
-     */
-    unsigned int stackBottomIndex{0};
-
-    /**
-     * offset of current local variable index.
-     * initial value is equivalent to globalVarSize.
-     */
-    unsigned int localVarOffset{0};
-
-    /**
-     * indicate the index of currently evaluating op code.
-     */
-    unsigned int pc_{0};
-
-    /**
-     * currently executed code
-     */
-    const DSCode *code{nullptr};
+    ControlFrame frame{0};
 
     unsigned short option{DS_OPTION_ASSERT};
 
@@ -221,8 +216,28 @@ struct DSState {
         return this->thrownObject;
     }
 
+    unsigned int &stackTopIndex() noexcept {
+        return this->frame.stackTopIndex;
+    }
+
+    unsigned int &stackBottomIndex() noexcept {
+        return this->frame.stackBottomIndex;
+    }
+
+    unsigned int &localVarOffset() noexcept {
+        return this->frame.localVarOffset;
+    }
+
+    unsigned int localVarOffset() const noexcept {
+        return this->frame.localVarOffset;
+    }
+
     unsigned int &pc() noexcept {
-        return this->pc_;
+        return this->frame.pc;
+    }
+
+    const DSCode *&code() noexcept {
+        return this->frame.code;
     }
 
     /**
@@ -261,35 +276,35 @@ struct DSState {
     }
 
     void push(DSValue &&value) {
-        this->callStack[++this->stackTopIndex] = std::move(value);
+        this->callStack[++this->stackTopIndex()] = std::move(value);
     }
 
     DSValue pop() {
-        return std::move(this->callStack[this->stackTopIndex--]);
+        return std::move(this->callStack[this->stackTopIndex()--]);
     }
 
     void popNoReturn() {
-        this->callStack[this->stackTopIndex--].reset();
+        this->callStack[this->stackTopIndex()--].reset();
     }
 
     const DSValue &peek() {
-        return this->callStack[this->stackTopIndex];
+        return this->callStack[this->stackTopIndex()];
     }
 
     void dup() {
-        auto v = this->callStack[this->stackTopIndex];
-        this->callStack[++this->stackTopIndex] = std::move(v);
+        auto v = this->callStack[this->stackTopIndex()];
+        this->callStack[++this->stackTopIndex()] = std::move(v);
     }
 
     void dup2() {
-        auto v1 = this->callStack[this->stackTopIndex - 1];
-        auto v2 = this->callStack[this->stackTopIndex];
-        this->callStack[++this->stackTopIndex] = std::move(v1);
-        this->callStack[++this->stackTopIndex] = std::move(v2);
+        auto v1 = this->callStack[this->stackTopIndex() - 1];
+        auto v2 = this->callStack[this->stackTopIndex()];
+        this->callStack[++this->stackTopIndex()] = std::move(v1);
+        this->callStack[++this->stackTopIndex()] = std::move(v2);
     }
 
     void swap() {
-        this->callStack[this->stackTopIndex].swap(this->callStack[this->stackTopIndex - 1]);
+        this->callStack[this->stackTopIndex()].swap(this->callStack[this->stackTopIndex() - 1]);
     }
 
     // variable manipulation
@@ -315,11 +330,11 @@ struct DSState {
     }
 
     void storeLocal(unsigned char index) {
-        this->callStack[this->localVarOffset + index] = this->pop();
+        this->callStack[this->localVarOffset() + index] = this->pop();
     }
 
     void loadLocal(unsigned char index) {
-        auto v(this->callStack[this->localVarOffset + index]); // callStack may be expanded.
+        auto v(this->callStack[this->localVarOffset() + index]); // callStack may be expanded.
         this->push(std::move(v));
     }
 
@@ -328,15 +343,15 @@ struct DSState {
     }
 
     void setLocal(unsigned char index, DSValue &&obj) {
-        this->callStack[this->localVarOffset + index] = std::move(obj);
+        this->callStack[this->localVarOffset() + index] = std::move(obj);
     }
 
     const DSValue &getLocal(unsigned char index) const {
-        return this->callStack[this->localVarOffset + index];
+        return this->callStack[this->localVarOffset() + index];
     }
 
     DSValue moveLocal(unsigned char index) {
-        return std::move(this->callStack[this->localVarOffset + index]);
+        return std::move(this->callStack[this->localVarOffset() + index]);
     }
 
     // field manipulation
@@ -350,15 +365,15 @@ struct DSState {
      * get field from stack top value.
      */
     void loadField(unsigned int index) {
-        this->callStack[this->stackTopIndex] =
-                this->callStack[this->stackTopIndex]->getFieldTable()[index];
+        this->callStack[this->stackTopIndex()] =
+                this->callStack[this->stackTopIndex()]->getFieldTable()[index];
     }
 
     /**
      * reset call stack, local var offset, thrown object.
      */
     void resetState() {
-        this->localVarOffset = this->globalVarSize;
+        this->localVarOffset() = this->globalVarSize;
         this->thrownObject.reset();
     }
 
@@ -417,21 +432,15 @@ struct DSState {
      * additional size
      */
     void reserveLocalStack(unsigned int add) {
-        unsigned int needSize = this->stackTopIndex + add;
+        unsigned int needSize = this->stackTopIndex() + add;
         if(needSize < this->callStackSize) {
             return;
         }
         this->reserveLocalStackImpl(needSize);
     }
 
-    ControlFrame getFrame() const {
-        return ControlFrame {
-                .code = this->code,
-                .stackTopIndex = this->stackTopIndex,
-                .stackBottomIndex = this->stackBottomIndex,
-                .localVarOffset = this->localVarOffset,
-                .pc = this->pc_
-        };
+    const ControlFrame &getFrame() const {
+        return this->frame;
     }
 
 private:
