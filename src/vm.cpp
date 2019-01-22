@@ -878,8 +878,8 @@ static constexpr flag8_t UDC_ATTR_NEED_FORK = 1u << 1u;
  * +-----------+---------------+--------------+
  *             |     offset    |
  */
-static bool callUserDefinedCommand(DSState &st, const DSCode *code,
-                                   DSValue &&argvObj, DSValue &&restoreFD, const flag8_set_t attr) {
+static bool prepareUserDefinedCommandCall(DSState &st, const DSCode *code,
+                                          DSValue &&argvObj, DSValue &&restoreFD, const flag8_set_t attr) {
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {
         // reset exit status
         st.updateExitStatus(0);
@@ -1097,7 +1097,7 @@ static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         if(cmd.kind == CmdKind::USER_DEFINED) {
             setFlag(attr, UDC_ATTR_SETVAR);
         }
-        return callUserDefinedCommand(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
+        return prepareUserDefinedCommandCall(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
     }
     case CmdKind::BUILTIN: {
         int status = cmd.builtinCmd(state, *array);
