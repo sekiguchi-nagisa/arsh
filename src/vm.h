@@ -160,6 +160,11 @@ struct DSState {
     std::vector<ControlFrame> controlStack;
 
     /**
+     * interpreter recursive depth
+     */
+    unsigned int recDepth{0};
+
+    /**
      * cache searched result.
      */
     FilePathCache pathCache;

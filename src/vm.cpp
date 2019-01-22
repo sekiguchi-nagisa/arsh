@@ -2194,11 +2194,41 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     return st.getExitStatus();
 }
 
+class RecursionGuard {
+private:
+    static constexpr unsigned int LIMIT = 256;
+    DSState &state;
+
+public:
+    explicit RecursionGuard(DSState &state) : state(state) {
+        this->state.recDepth++;
+    }
+
+    ~RecursionGuard() {
+        this->state.recDepth--;
+    }
+
+    bool checkLimit() {
+        if(this->state.recDepth == LIMIT) {
+            raiseError(this->state, this->state.symbolTable.get(TYPE::StackOverflowError),
+                    "interpreter recursion depth reaches limit");
+            return false;
+        }
+        return true;
+    }
+};
+
+#define GUARD_RECURSION(state) \
+    RecursionGuard _guard(state); \
+    do { if(!_guard.checkLimit()) { return nullptr; } } while(false)
+
 DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args) {
     assert(handle != nullptr);
     assert(handle->getParamTypes().size() == args.size());
 
     state.clearThrownObject();
+
+    GUARD_RECURSION(state);
 
     // push argument
     state.push(std::move(recv));
@@ -2218,6 +2248,8 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
 
 DSValue callFunction(DSState &state, DSValue &&funcObj, std::vector<DSValue> &&args) {
     state.clearThrownObject();
+
+    GUARD_RECURSION(state);
 
     // push arguments
     auto *type = funcObj->getType();
