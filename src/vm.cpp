@@ -2237,11 +2237,12 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
         state.push(std::move(arg));
     }
 
-    prepareMethodCall(state, handle->getMethodIndex(), args.size());
-    bool s = runMainLoop(state);
     DSValue ret;
-    if(!handle->getReturnType()->isVoidType() && s) {
-        ret = state.pop();
+    if(prepareMethodCall(state, handle->getMethodIndex(), args.size())) {
+        bool s = runMainLoop(state);
+        if(!handle->getReturnType()->isVoidType() && s) {
+            ret = state.pop();
+        }
     }
     return ret;
 }
@@ -2259,12 +2260,13 @@ DSValue callFunction(DSState &state, DSValue &&funcObj, std::array<DSValue, 3> &
         state.push(std::move(arg));
     }
 
-    prepareFuncCall(state, args.size());
-    bool s = runMainLoop(state);
     DSValue ret;
-    assert(type->isFuncType());
-    if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType() && s) {
-        ret = state.pop();
+    if(prepareFuncCall(state, args.size())) {
+        bool s = runMainLoop(state);
+        assert(type->isFuncType());
+        if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType() && s) {
+            ret = state.pop();
+        }
     }
     return ret;
 }
