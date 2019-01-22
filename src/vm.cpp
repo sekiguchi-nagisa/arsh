@@ -2222,23 +2222,25 @@ public:
     RecursionGuard _guard(state); \
     do { if(!_guard.checkLimit()) { return nullptr; } } while(false)
 
-DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::array<DSValue, 3> &&args) {
+DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
+                    std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     assert(handle != nullptr);
-    assert(handle->getParamTypes().size() == args.size());
+    assert(handle->getParamTypes().size() == args.first);
 
     state.clearThrownObject();
 
     GUARD_RECURSION(state);
 
     // push argument
-    state.reserveLocalStack(args.size() + 1);
+    unsigned int size = args.first;
+    state.reserveLocalStack(size + 1);
     state.push(std::move(recv));
-    for(auto &arg : args) {
-        state.push(std::move(arg));
+    for(unsigned int i = 0; i < size; i++) {
+        state.push(std::move(args.second[i]));
     }
 
     DSValue ret;
-    if(prepareMethodCall(state, handle->getMethodIndex(), args.size())) {
+    if(prepareMethodCall(state, handle->getMethodIndex(), size)) {
         bool s = runMainLoop(state);
         if(!handle->getReturnType()->isVoidType() && s) {
             ret = state.pop();
@@ -2247,21 +2249,23 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
     return ret;
 }
 
-DSValue callFunction(DSState &state, DSValue &&funcObj, std::array<DSValue, 3> &&args) {
+DSValue callFunction(DSState &state, DSValue &&funcObj,
+                        std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     state.clearThrownObject();
 
     GUARD_RECURSION(state);
 
     // push arguments
-    state.reserveLocalStack(args.size() + 1);
+    unsigned int size = args.first;
+    state.reserveLocalStack(size + 1);
     auto *type = funcObj->getType();
     state.push(std::move(funcObj));
-    for(auto &arg : args) {
-        state.push(std::move(arg));
+    for(unsigned int i = 0; i < size; i++) {
+        state.push(std::move(args.second[i]));
     }
 
     DSValue ret;
-    if(prepareFuncCall(state, args.size())) {
+    if(prepareFuncCall(state, size)) {
         bool s = runMainLoop(state);
         assert(type->isFuncType());
         if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType() && s) {

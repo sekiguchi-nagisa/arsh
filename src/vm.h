@@ -480,7 +480,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]);
  * @return
  * return value of method (if no return value, return null).
  */
-DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::array<DSValue, 3> &&args);
+DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 
 /**
  *
@@ -490,6 +490,12 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
  * @return
  * return value of method (if no return value, return null).
  */
-DSValue callFunction(DSState &state, DSValue &&funcObj, std::array<DSValue, 3> &&args);
+DSValue callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+
+template <typename ...T>
+inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {
+    static_assert(sizeof...(arg) <= 3, "too long");
+    return {sizeof...(arg), std::array<DSValue, 3>{ arg...} };
+}
 
 #endif //YDSH_VM_H
