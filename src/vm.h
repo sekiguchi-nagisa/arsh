@@ -92,11 +92,6 @@ struct ControlFrame {
      * indicate the index of currently evaluating op code.
      */
     unsigned int pc;
-
-    /**
-     * for checking interpreter recursion depth.
-     */
-    unsigned int recDepth;
 };
 
 struct DSState {
@@ -148,7 +143,6 @@ struct DSState {
 
     static constexpr unsigned int DEFAULT_STACK_SIZE = 256;
     static constexpr unsigned int MAX_CONTROL_STACK_SIZE = 2048;
-    static constexpr unsigned int MAX_RECURSION_DEPTH = 256;
 
     unsigned int globalVarSize{0};
 
@@ -244,10 +238,6 @@ struct DSState {
 
     const DSCode *&code() noexcept {
         return this->frame.code;
-    }
-
-    unsigned int &recDepth() noexcept {
-        return this->frame.recDepth;
     }
 
     /**

@@ -1497,12 +1497,6 @@ static bool checkVMEvent(DSState &state) {
 #define TRY(E) do { if(!(E)) { vmerror; } } while(false)
 
 static bool mainLoop(DSState &state) {
-    if(state.recDepth() == DSState::MAX_RECURSION_DEPTH) {
-        raiseError(state, state.symbolTable.get(TYPE::StackOverflowError),
-                "interpreter recursion depth reaches limit");
-        return false;
-    }
-
     while(true) {
         if(DSState::eventDesc != 0u) {
             TRY(checkVMEvent(state));
@@ -2116,8 +2110,7 @@ static bool handleException(DSState &state, bool forceUnwind) {
         state.hook->vmThrowHook(state);
     }
 
-    for(; !state.controlStack.empty() && state.recDepth() == state.controlStack.back().recDepth;
-        unwindStackFrame(state)) {
+    for(; !state.controlStack.empty(); unwindStackFrame(state)) {
         if(!forceUnwind && !CODE(state)->is(CodeKind::NATIVE)) {
             auto *cc = static_cast<const CompiledCode *>(CODE(state));
 
@@ -2148,8 +2141,6 @@ static bool handleException(DSState &state, bool forceUnwind) {
 
 } // namespace ydsh
 
-#define CALL_COUNT(st) CallCounter _counter(st.recDepth())
-
 static bool runMainLoop(DSState &state) {
     while(!mainLoop(state)) {
         bool forceUnwind = state.symbolTable.get(TYPE::_InternalStatus)
@@ -2162,8 +2153,6 @@ static bool runMainLoop(DSState &state) {
 }
 
 bool vmEval(DSState &state, const CompiledCode &code) {
-    CALL_COUNT(state);
-
     state.resetState();
     reserveGlobalVar(state);
 
@@ -2173,8 +2162,6 @@ bool vmEval(DSState &state, const CompiledCode &code) {
 }
 
 int execBuiltinCommand(DSState &st, char *const argv[]) {
-    CALL_COUNT(st);
-
     auto cmd = CmdResolver(CmdResolver::MASK_EXTERNAL | CmdResolver::MASK_UDC, 0)(st, argv[0]);
     if(cmd.builtinCmd == nullptr) {
         fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
@@ -2208,8 +2195,6 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
 }
 
 DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args) {
-    CALL_COUNT(state);
-
     assert(handle != nullptr);
     assert(handle->getParamTypes().size() == args.size());
 
@@ -2232,8 +2217,6 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
 }
 
 DSValue callFunction(DSState &state, DSValue &&funcObj, std::vector<DSValue> &&args) {
-    CALL_COUNT(state);
-
     state.resetState();
 
     // push arguments
