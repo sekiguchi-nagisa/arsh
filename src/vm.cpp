@@ -301,7 +301,7 @@ static void unwindStackFrame(DSState &st) {
  * +-----------+---------+--------+   +--------+
  *                       | offset |   |        |
  */
-static bool applyFuncObject(DSState &st, unsigned int paramSize) {
+static bool prepareFuncCall(DSState &st, unsigned int paramSize) {
     auto *func = typeAs<FuncObject>(st.callStack[st.stackTopIndex() - paramSize]);
     return windStackFrame(st, paramSize + 1, paramSize, &func->getCode());
 }
@@ -314,7 +314,7 @@ static bool applyFuncObject(DSState &st, unsigned int paramSize) {
  * +-----------+------------------+   +--------+
  *             | offset           |   |        |
  */
-static bool callMethod(DSState &st, unsigned short index, unsigned short paramSize) {
+static bool prepareMethodCall(DSState &st, unsigned short index, unsigned short paramSize) {
     const unsigned int actualParamSize = paramSize + 1; // include receiver
     const unsigned int recvIndex = st.stackTopIndex() - paramSize;
 
@@ -330,7 +330,7 @@ static bool callMethod(DSState &st, unsigned short index, unsigned short paramSi
  * +-----------+------------------+   +--------+
  *             |    new offset    |
  */
-static bool callConstructor(DSState &st, unsigned short paramSize) {
+static bool prepareConstructorCall(DSState &st, unsigned short paramSize) {
     const unsigned int recvIndex = st.stackTopIndex() - paramSize;
 
     return windStackFrame(st, paramSize, paramSize + 1, st.callStack[recvIndex]->getType()->getConstructor());
@@ -1702,7 +1702,7 @@ static bool mainLoop(DSState &state) {
         vmcase(CALL_INIT) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            TRY(callConstructor(state, paramSize));
+            TRY(prepareConstructorCall(state, paramSize));
             vmnext;
         }
         vmcase(CALL_METHOD) {
@@ -1710,13 +1710,13 @@ static bool mainLoop(DSState &state) {
             state.pc() += 2;
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            TRY(callMethod(state, index, paramSize));
+            TRY(prepareMethodCall(state, index, paramSize));
             vmnext;
         }
         vmcase(CALL_FUNC) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            TRY(applyFuncObject(state, paramSize));
+            TRY(prepareFuncCall(state, paramSize));
             vmnext;
         }
         vmcase(CALL_NATIVE) {
@@ -2207,7 +2207,7 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
         state.push(std::move(args[i]));
     }
 
-    callMethod(state, handle->getMethodIndex(), args.size());
+    prepareMethodCall(state, handle->getMethodIndex(), args.size());
     bool s = runMainLoop(state);
     DSValue ret;
     if(!handle->getReturnType()->isVoidType() && s) {
@@ -2226,7 +2226,7 @@ DSValue callFunction(DSState &state, DSValue &&funcObj, std::vector<DSValue> &&a
         state.push(std::move(arg));
     }
 
-    applyFuncObject(state, args.size());
+    prepareFuncCall(state, args.size());
     bool s = runMainLoop(state);
     DSValue ret;
     assert(type->isFuncType());
