@@ -1818,7 +1818,7 @@ static bool mainLoop(DSState &state) {
             switch(state.peek().kind()) {
             case DSValueKind::OBJECT:
             case DSValueKind::INVALID: {
-                state.storeThrowObject();
+                state.storeThrownObject();
                 vmerror;
             }
             case DSValueKind::NUMBER: {
@@ -2153,7 +2153,7 @@ static bool runMainLoop(DSState &state) {
 }
 
 bool vmEval(DSState &state, const CompiledCode &code) {
-    state.resetState();
+    state.clearThrownObject();
     reserveGlobalVar(state);
 
     windStackFrame(state, 0, 0, &code);
@@ -2176,7 +2176,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]) {
     }
     auto obj = DSValue::create<Array_Object>(st.symbolTable.get(TYPE::StringArray), std::move(values));
 
-    st.resetState();
+    st.clearThrownObject();
     bool ret = callCommand(st, cmd, std::move(obj), DSValue());
     assert(ret);
     (void) ret;
@@ -2198,7 +2198,7 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
     assert(handle != nullptr);
     assert(handle->getParamTypes().size() == args.size());
 
-    state.resetState();
+    state.clearThrownObject();
 
     // push argument
     state.push(std::move(recv));
@@ -2217,7 +2217,7 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
 }
 
 DSValue callFunction(DSState &state, DSValue &&funcObj, std::vector<DSValue> &&args) {
-    state.resetState();
+    state.clearThrownObject();
 
     // push arguments
     auto *type = funcObj->getType();

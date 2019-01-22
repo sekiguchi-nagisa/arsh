@@ -266,8 +266,12 @@ struct DSState {
         this->push(std::move(this->thrownObject));
     }
 
-    void storeThrowObject() {
+    void storeThrownObject() {
         this->setThrownObject(this->pop());
+    }
+
+    void clearThrownObject() {
+        this->thrownObject.reset();
     }
 
     // operand manipulation
@@ -367,14 +371,6 @@ struct DSState {
     void loadField(unsigned int index) {
         this->callStack[this->stackTopIndex()] =
                 this->callStack[this->stackTopIndex()]->getFieldTable()[index];
-    }
-
-    /**
-     * reset call stack, local var offset, thrown object.
-     */
-    void resetState() {
-        this->localVarOffset() = this->globalVarSize;
-        this->thrownObject.reset();
     }
 
     void updateExitStatus(unsigned int status) {
