@@ -20,6 +20,7 @@
 #include <vector>
 #include <chrono>
 #include <cstdio>
+#include <array>
 
 #include <ydsh/ydsh.h>
 
@@ -479,7 +480,7 @@ int execBuiltinCommand(DSState &st, char *const argv[]);
  * @return
  * return value of method (if no return value, return null).
  */
-DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args);
+DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::array<DSValue, 3> &&args);
 
 /**
  *
@@ -489,6 +490,6 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
  * @return
  * return value of method (if no return value, return null).
  */
-DSValue callFunction(DSState &state, DSValue &&funcObj, std::vector<DSValue> &&args);
+DSValue callFunction(DSState &state, DSValue &&funcObj, std::array<DSValue, 3> &&args);
 
 #endif //YDSH_VM_H

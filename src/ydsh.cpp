@@ -73,12 +73,10 @@ static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&ex
     }
 
     auto oldExitStatus = state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS));
-    std::vector<DSValue> args = { DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), termKind) };
-    if(termKind == TERM_ON_ERR) {
-        args.push_back(std::move(except));
-    } else {
-        args.push_back(oldExitStatus);
-    }
+    std::array<DSValue, 3> args = {
+            DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), termKind),
+            termKind == TERM_ON_ERR ? std::move(except) : oldExitStatus
+    };
 
     setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
     callFunction(state, std::move(funcObj), std::move(args));
@@ -120,7 +118,7 @@ static DSError handleRuntimeError(DSState &state) {
         const bool bt = state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
         auto *handle = errorType.lookupMethodHandle(state.symbolTable, bt ? "backtrace" : OP_STR);
 
-        DSValue ret = callMethod(state, handle, DSValue(thrownObj), std::vector<DSValue>());
+        DSValue ret = callMethod(state, handle, DSValue(thrownObj), std::array<DSValue, 3>());
         if(state.getThrownObject()) {
             fputs("cannot obtain string representation\n", stderr);
         } else if(!bt) {

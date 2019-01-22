@@ -2222,7 +2222,7 @@ public:
     RecursionGuard _guard(state); \
     do { if(!_guard.checkLimit()) { return nullptr; } } while(false)
 
-DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::vector<DSValue> &&args) {
+DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::array<DSValue, 3> &&args) {
     assert(handle != nullptr);
     assert(handle->getParamTypes().size() == args.size());
 
@@ -2231,10 +2231,10 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
     GUARD_RECURSION(state);
 
     // push argument
+    state.reserveLocalStack(args.size() + 1);
     state.push(std::move(recv));
-    const unsigned int size = args.size();
-    for(unsigned int i = 0; i < size; i++) {
-        state.push(std::move(args[i]));
+    for(auto &arg : args) {
+        state.push(std::move(arg));
     }
 
     prepareMethodCall(state, handle->getMethodIndex(), args.size());
@@ -2246,12 +2246,13 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, s
     return ret;
 }
 
-DSValue callFunction(DSState &state, DSValue &&funcObj, std::vector<DSValue> &&args) {
+DSValue callFunction(DSState &state, DSValue &&funcObj, std::array<DSValue, 3> &&args) {
     state.clearThrownObject();
 
     GUARD_RECURSION(state);
 
     // push arguments
+    state.reserveLocalStack(args.size() + 1);
     auto *type = funcObj->getType();
     state.push(std::move(funcObj));
     for(auto &arg : args) {
