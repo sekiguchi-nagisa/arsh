@@ -22,8 +22,10 @@
 #include <csignal>
 #include <string>
 #include <vector>
+#include <array>
 
 #include "opcode.h"
+#include "object.h"
 #include "misc/hash.hpp"
 #include "misc/buffer.hpp"
 #include "misc/flag_util.hpp"
@@ -277,6 +279,34 @@ public:
 };
 
 bool readAll(FILE *fp, ByteBuffer &buf);
+
+/**
+ * call method.
+ * @param state
+ * @param handle
+ * must not be null
+ * @param recv
+ * @param args
+ * @return
+ * return value of method (if no return value, return null).
+ */
+DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+
+/**
+ *
+ * @param state
+ * @param funcObj
+ * @param args
+ * @return
+ * return value of method (if no return value, return null).
+ */
+DSValue callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+
+template <typename ...T>
+inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {
+    static_assert(sizeof...(arg) <= 3, "too long");
+    return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{ std::forward<T>(arg)...}});
+}
 
 } // namespace ydsh
 

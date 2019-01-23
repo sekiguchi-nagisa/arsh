@@ -17,10 +17,8 @@
 #ifndef YDSH_VM_H
 #define YDSH_VM_H
 
-#include <vector>
 #include <chrono>
 #include <cstdio>
-#include <array>
 
 #include <ydsh/ydsh.h>
 
@@ -453,6 +451,8 @@ private:
     void reserveLocalStackImpl(unsigned int needSize);
 };
 
+namespace ydsh {
+
 /**
  * entry point
  */
@@ -470,32 +470,6 @@ bool vmEval(DSState &state, const CompiledCode &code);
  */
 int execBuiltinCommand(DSState &st, char *const argv[]);
 
-/**
- * call method.
- * @param state
- * @param handle
- * must not be null
- * @param recv
- * @param args
- * @return
- * return value of method (if no return value, return null).
- */
-DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
-
-/**
- *
- * @param state
- * @param funcObj
- * @param args
- * @return
- * return value of method (if no return value, return null).
- */
-DSValue callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
-
-template <typename ...T>
-inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {
-    static_assert(sizeof...(arg) <= 3, "too long");
-    return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{ std::forward<T>(arg)...}});
-}
+} // namespace
 
 #endif //YDSH_VM_H

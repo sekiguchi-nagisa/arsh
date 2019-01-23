@@ -2139,8 +2139,6 @@ static bool handleException(DSState &state, bool forceUnwind) {
     return false;
 }
 
-} // namespace ydsh
-
 static bool runMainLoop(DSState &state) {
     while(!mainLoop(state)) {
         bool forceUnwind = state.symbolTable.get(TYPE::_InternalStatus)
@@ -2211,7 +2209,7 @@ public:
     bool checkLimit() {
         if(this->state.recDepth == LIMIT) {
             raiseError(this->state, this->state.symbolTable.get(TYPE::StackOverflowError),
-                    "interpreter recursion depth reaches limit");
+                       "interpreter recursion depth reaches limit");
             return false;
         }
         return true;
@@ -2223,7 +2221,7 @@ public:
     do { if(!_guard.checkLimit()) { return nullptr; } } while(false)
 
 DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
-                    std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+                   std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     assert(handle != nullptr);
     assert(handle->getParamTypes().size() == args.first);
 
@@ -2250,7 +2248,7 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
 }
 
 DSValue callFunction(DSState &state, DSValue &&funcObj,
-                        std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+                     std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     state.clearThrownObject();
 
     GUARD_RECURSION(state);
@@ -2274,3 +2272,5 @@ DSValue callFunction(DSState &state, DSValue &&funcObj,
     }
     return ret;
 }
+
+} // namespace ydsh
