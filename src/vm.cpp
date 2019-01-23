@@ -1482,6 +1482,10 @@ static bool checkVMEvent(DSState &state) {
     return true;
 }
 
+static bool checkVMReturn(const DSState &st) {
+    return st.controlStack.empty() || st.recDepth() != st.controlStack.back().recDepth;
+}
+
 
 #define vmdispatch(V) switch(V)
 
@@ -1737,7 +1741,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(RETURN) {
             unwindStackFrame(state);
-            if(state.controlStack.empty()) {
+            if(checkVMReturn(state)) {
                 return true;
             }
             vmnext;
@@ -1746,7 +1750,7 @@ static bool mainLoop(DSState &state) {
             DSValue v = state.pop();
             unwindStackFrame(state);
             state.push(std::move(v));
-            if(state.controlStack.empty()) {
+            if(checkVMReturn(state)) {
                 return true;
             }
             vmnext;
@@ -1755,7 +1759,7 @@ static bool mainLoop(DSState &state) {
             auto v = state.pop();
             unwindStackFrame(state);
             state.pushExitStatus(typeAs<Int_Object>(v)->getValue());
-            if(state.controlStack.empty()) {
+            if(checkVMReturn(state)) {
                 return true;
             }
             vmnext;
@@ -2110,7 +2114,7 @@ static bool handleException(DSState &state, bool forceUnwind) {
         state.hook->vmThrowHook(state);
     }
 
-    for(; !state.controlStack.empty(); unwindStackFrame(state)) {
+    for(; !checkVMReturn(state); unwindStackFrame(state)) {
         if(!forceUnwind && !CODE(state)->is(CodeKind::NATIVE)) {
             auto *cc = static_cast<const CompiledCode *>(CODE(state));
 
@@ -2199,15 +2203,15 @@ private:
 
 public:
     explicit RecursionGuard(DSState &state) : state(state) {
-        this->state.recDepth++;
+        this->state.recDepth()++;
     }
 
     ~RecursionGuard() {
-        this->state.recDepth--;
+        this->state.recDepth()--;
     }
 
     bool checkLimit() {
-        if(this->state.recDepth == LIMIT) {
+        if(this->state.recDepth() == LIMIT) {
             raiseError(this->state, this->state.symbolTable.get(TYPE::StackOverflowError),
                        "interpreter recursion depth reaches limit");
             return false;

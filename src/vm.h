@@ -69,28 +69,33 @@ struct ControlFrame {
     /**
      * currently executed code
      */
-    const DSCode *code;
+    const DSCode *code{nullptr};
 
     /**
      * initial value is 0. increment index before push
      */
-    unsigned int stackTopIndex;
+    unsigned int stackTopIndex{0};
 
     /**
      * indicate lower limit of stack top index (bottom <= top)
      */
-    unsigned int stackBottomIndex;
+    unsigned int stackBottomIndex{0};
 
     /**
      * offset of current local variable index.
      * initial value is equivalent to globalVarSize.
      */
-    unsigned int localVarOffset;
+    unsigned int localVarOffset{0};
 
     /**
      * indicate the index of currently evaluating op code.
      */
-    unsigned int pc;
+    unsigned int pc{0};
+
+    /**
+     * interpreter recursive depth
+     */
+    unsigned int recDepth{0};
 };
 
 struct DSState {
@@ -148,7 +153,7 @@ struct DSState {
     /**
      * currently executed frame
      */
-    ControlFrame frame{0};
+    ControlFrame frame;
 
     unsigned short option{DS_OPTION_ASSERT};
 
@@ -157,11 +162,6 @@ struct DSState {
     DumpTarget dumpTarget;
 
     std::vector<ControlFrame> controlStack;
-
-    /**
-     * interpreter recursive depth
-     */
-    unsigned int recDepth{0};
 
     /**
      * cache searched result.
@@ -242,6 +242,14 @@ struct DSState {
 
     const DSCode *&code() noexcept {
         return this->frame.code;
+    }
+
+    unsigned int &recDepth() noexcept {
+        return this->frame.recDepth;
+    }
+
+    unsigned int recDepth() const noexcept {
+        return this->frame.recDepth;
     }
 
     /**
