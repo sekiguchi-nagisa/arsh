@@ -413,6 +413,8 @@ function reverse($this : Array<T0>) : Void
 
 function sort($this : Array<T0>) : Void
 
+function sortWith($this : Array<T0>, $comp : Func<Boolean,[T0,T0]>) : Void
+
 function size($this : Array<T0>) : Int32
 
 function empty($this : Array<T0>) : Boolean

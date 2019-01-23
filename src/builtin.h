@@ -1769,6 +1769,25 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
     RET_VOID;
 }
 
+//!bind: function sortWith($this : Array<T0>, $comp : Func<Boolean, [T0, T0]>) : Void
+YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_sortWith);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    try {
+        std::sort(obj->refValues().begin(), obj->refValues().end(),
+                [&](const DSValue &x, const DSValue &y){
+            auto ret = callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
+            if(hasError(ctx)) {
+                throw 1;    //FIXME: not use exception
+            }
+            return typeAs<Boolean_Object>(ret)->getValue();
+        });
+        RET_VOID;
+    } catch(...) {
+        RET_ERROR;
+    }
+}
+
 //!bind: function size($this : Array<T0>) : Int32
 YDSH_METHOD array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
