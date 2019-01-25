@@ -1386,7 +1386,7 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
     DSType *valueType = value->getType();
 
     auto *argv = typeAs<Array_Object>(state.callStack[state.stackTopIndex() - 1]);
-    if(*valueType == state.symbolTable.get(TYPE::String)) {  // String
+    if(valueType->isType(TYPE::String)) {  // String
         if(skipEmptyStr && typeAs<String_Object>(value)->empty()) {
             return;
         }
@@ -1394,7 +1394,7 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
         return;
     }
 
-    if(*valueType == state.symbolTable.get(TYPE::UnixFD)) { // UnixFD
+    if(valueType->isType(TYPE::UnixFD)) { // UnixFD
         if(!state.peek()) {
             state.pop();
             state.push(DSValue::create<RedirConfig>());
@@ -1406,7 +1406,7 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
         return;
     }
 
-    assert(*valueType == state.symbolTable.get(TYPE::StringArray));  // Array<String>
+    assert(valueType->isType(TYPE::StringArray));  // Array<String>
     auto *arrayObj = typeAs<Array_Object>(value);
     for(auto &element : arrayObj->getValues()) {
         if(typeAs<String_Object>(element)->empty()) {

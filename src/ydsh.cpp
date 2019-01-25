@@ -95,9 +95,9 @@ static DSError handleRuntimeError(DSState &state) {
     auto thrownObj = state.getThrownObject();
     auto &errorType = *thrownObj->getType();
     DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
-    if(errorType == state.symbolTable.get(TYPE::_ShellExit)) {
+    if(errorType.isType(TYPE::_ShellExit)) {
         kind = DS_ERROR_KIND_EXIT;
-    } else if(errorType == state.symbolTable.get(TYPE::_AssertFail)) {
+    } else if(errorType.isType(TYPE::_AssertFail)) {
         kind = DS_ERROR_KIND_ASSERTION_ERROR;
     }
 
