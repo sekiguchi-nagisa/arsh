@@ -478,12 +478,12 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
             this->emitJumpIns(mergeLabel);
 
             this->markLabel(thenLabel);
-            if(!elementType->isType(TYPE::String)) {
+            if(!elementType->is(TYPE::String)) {
                 this->generateToString();
             }
 
             this->markLabel(mergeLabel);
-        } else if(!exprType.isType(TYPE::String)) {
+        } else if(!exprType.is(TYPE::String)) {
             this->generateToString();
         }
         this->emitTypeIns(OpCode::PRINT, exprType);

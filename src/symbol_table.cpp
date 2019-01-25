@@ -614,7 +614,7 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
     auto &type = this->typeMap.newType<BuiltinType>(std::string(typeName), nullptr, info, attribute);
     (void) type;
     (void) t;
-    assert(type.isType(t));
+    assert(type.is(t));
 }
 
 void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
@@ -624,7 +624,7 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
             std::string(typeName), &superType, info, extendable ? DSType::EXTENDIBLE : 0);
     (void) type;
     (void) t;
-    assert(type.isType(t));
+    assert(type.is(t));
 }
 
 TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
@@ -637,7 +637,7 @@ void SymbolTable::initErrorType(TYPE t, const char *typeName) {
     auto &type = this->typeMap.newType<ErrorType>(std::string(typeName), &this->get(TYPE::Error));
     (void) type;
     (void) t;
-    assert(type.isType(t));
+    assert(type.is(t));
 }
 
 void SymbolTable::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
@@ -662,7 +662,7 @@ void SymbolTable::checkElementTypes(const TypeTemplate &t, const std::vector<DST
         if(acceptType->isSameOrBaseTypeOf(*elementType) && !elementType->isNothingType()) {
             continue;
         }
-        if(acceptType->isType(TYPE::Any) && elementType->isOptionType()) {
+        if(acceptType->is(TYPE::Any) && elementType->isOptionType()) {
             continue;
         }
         RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementType));

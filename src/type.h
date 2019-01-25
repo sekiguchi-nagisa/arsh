@@ -120,7 +120,7 @@ public:
         return this->id;
     }
 
-    bool isType(TYPE type) const {
+    bool is(TYPE type) const {
         return this->id == static_cast<unsigned int>(type);
     }
 
@@ -135,7 +135,7 @@ public:
      * if this type is VoidType, return true.
      */
     bool isVoidType() const {
-        return this->isType(TYPE::Void);
+        return this->is(TYPE::Void);
     }
 
     /**
@@ -150,7 +150,7 @@ public:
     }
 
     bool isNothingType() const {
-        return this->isType(TYPE::Nothing);
+        return this->is(TYPE::Nothing);
     }
 
     bool isOptionType() const {

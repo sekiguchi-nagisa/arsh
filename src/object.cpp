@@ -68,7 +68,7 @@ size_t DSObject::hash() const {
 // ########################
 
 std::string Int_Object::toString(DSState &, VisitedSet *) {
-    if(this->type->isType(TYPE::Uint32)) {
+    if(this->type->is(TYPE::Uint32)) {
         return std::to_string(static_cast<unsigned int>(this->value));
     }
     return std::to_string(this->value);
@@ -79,7 +79,7 @@ bool Int_Object::equals(const DSValue &obj) const {
 }
 
 bool Int_Object::compare(const DSValue &obj) const {
-    if(this->type->isType(TYPE::Uint32)) {
+    if(this->type->is(TYPE::Uint32)) {
         return static_cast<unsigned int>(this->value) < static_cast<unsigned int>(typeAs<Int_Object>(obj)->value);
     }
     return this->value < typeAs<Int_Object>(obj)->value;
@@ -112,7 +112,7 @@ std::string UnixFD_Object::toString(DSState &, ydsh::VisitedSet *) {
 // #########################
 
 std::string Long_Object::toString(DSState &, VisitedSet *) {
-    if(this->type->isType(TYPE::Uint64)) {
+    if(this->type->is(TYPE::Uint64)) {
         return std::to_string(static_cast<unsigned long>(this->value));
     }
     return std::to_string(this->value);
@@ -123,7 +123,7 @@ bool Long_Object::equals(const DSValue &obj) const {
 }
 
 bool Long_Object::compare(const DSValue &obj) const {
-    if(this->type->isType(TYPE::Uint64)) {
+    if(this->type->is(TYPE::Uint64)) {
         return static_cast<unsigned long>(this->value) < static_cast<unsigned long>(typeAs<Long_Object>(obj)->value);
     }
     return this->value < typeAs<Long_Object>(obj)->value;
@@ -211,7 +211,7 @@ static bool checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
 
         auto &elementTypes = static_cast<ReifiedType *>(thisPtr->getType())->getElementTypes();
         for(auto &elementType : elementTypes) {
-            if(elementType->isType(TYPE::Any)) {
+            if(elementType->is(TYPE::Any)) {
                 newSet = std::make_shared<VisitedSet>();
                 visitedSet = newSet.get();
                 break;
@@ -314,10 +314,10 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
-        if(tempType->isType(TYPE::String)) {
+        if(tempType->is(TYPE::String)) {
             typeAs<Array_Object>(result)->values.push_back(std::move(temp));
         } else {
-            assert(tempType->isType(TYPE::StringArray));
+            assert(tempType->is(TYPE::StringArray));
             auto *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->values) {
                 typeAs<Array_Object>(result)->values.push_back(tempValue);
@@ -444,10 +444,10 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
-        if(tempType->isType(TYPE::String)) {
+        if(tempType->is(TYPE::String)) {
             typeAs<Array_Object>(result)->append(std::move(temp));
         } else {
-            assert(tempType->isType(TYPE::StringArray));
+            assert(tempType->is(TYPE::StringArray));
             auto *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->getValues()) {
                 typeAs<Array_Object>(result)->append(tempValue);
