@@ -2224,22 +2224,29 @@ public:
     RecursionGuard _guard(state); \
     do { if(!_guard.checkLimit()) { return nullptr; } } while(false)
 
-DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
-                   std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
-    assert(handle != nullptr);
-    assert(handle->getParamTypes().size() == args.first);
 
+static unsigned int prepareArguments(DSState &state, DSValue &&recv,
+                                     std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     state.clearThrownObject();
 
-    GUARD_RECURSION(state);
-
-    // push argument
+    // push arguments
     unsigned int size = args.first;
     state.reserveLocalStack(size + 1);
     state.push(std::move(recv));
     for(unsigned int i = 0; i < size; i++) {
         state.push(std::move(args.second[i]));
     }
+    return size;
+}
+
+DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
+                   std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+    assert(handle != nullptr);
+    assert(handle->getParamTypes().size() == args.first);
+
+    GUARD_RECURSION(state);
+
+    unsigned int size = prepareArguments(state, std::move(recv), std::move(args));
 
     DSValue ret;
     if(prepareMethodCall(state, handle->getMethodIndex(), size)) {
@@ -2253,18 +2260,10 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
 
 DSValue callFunction(DSState &state, DSValue &&funcObj,
                      std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
-    state.clearThrownObject();
-
     GUARD_RECURSION(state);
 
-    // push arguments
-    unsigned int size = args.first;
-    state.reserveLocalStack(size + 1);
     auto *type = funcObj->getType();
-    state.push(std::move(funcObj));
-    for(unsigned int i = 0; i < size; i++) {
-        state.push(std::move(args.second[i]));
-    }
+    unsigned int size = prepareArguments(state, std::move(funcObj), std::move(args));
 
     DSValue ret;
     if(prepareFuncCall(state, size)) {
