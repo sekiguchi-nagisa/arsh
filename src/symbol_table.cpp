@@ -662,7 +662,7 @@ void SymbolTable::checkElementTypes(const TypeTemplate &t, const std::vector<DST
         if(acceptType->isSameOrBaseTypeOf(*elementType) && !elementType->isNothingType()) {
             continue;
         }
-        if(*acceptType == this->get(TYPE::Any) && elementType->isOptionType()) {
+        if(acceptType->isType(TYPE::Any) && elementType->isOptionType()) {
             continue;
         }
         RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementType));

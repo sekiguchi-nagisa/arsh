@@ -67,8 +67,8 @@ size_t DSObject::hash() const {
 // ##     Int_Object     ##
 // ########################
 
-std::string Int_Object::toString(DSState &ctx, VisitedSet *) {
-    if(*this->type == getPool(ctx).get(TYPE::Uint32)) {
+std::string Int_Object::toString(DSState &, VisitedSet *) {
+    if(this->type->isType(TYPE::Uint32)) {
         return std::to_string(static_cast<unsigned int>(this->value));
     }
     return std::to_string(this->value);
@@ -111,8 +111,8 @@ std::string UnixFD_Object::toString(DSState &, ydsh::VisitedSet *) {
 // ##     Long_Object     ##
 // #########################
 
-std::string Long_Object::toString(DSState &ctx, VisitedSet *) {
-    if(*this->type == getPool(ctx).get(TYPE::Uint64)) {
+std::string Long_Object::toString(DSState &, VisitedSet *) {
+    if(this->type->isType(TYPE::Uint64)) {
         return std::to_string(static_cast<unsigned long>(this->value));
     }
     return std::to_string(this->value);
@@ -211,7 +211,7 @@ static bool checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
 
         auto &elementTypes = static_cast<ReifiedType *>(thisPtr->getType())->getElementTypes();
         for(auto &elementType : elementTypes) {
-            if(*elementType == getPool(ctx).get(TYPE::Any)) {
+            if(elementType->isType(TYPE::Any)) {
                 newSet = std::make_shared<VisitedSet>();
                 visitedSet = newSet.get();
                 break;
@@ -314,10 +314,10 @@ DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
-        if(*tempType == getPool(ctx).get(TYPE::String)) {
+        if(tempType->isType(TYPE::String)) {
             typeAs<Array_Object>(result)->values.push_back(std::move(temp));
         } else {
-            assert(*tempType == getPool(ctx).get(TYPE::StringArray));
+            assert(tempType->isType(TYPE::StringArray));
             auto *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->values) {
                 typeAs<Array_Object>(result)->values.push_back(tempValue);
@@ -444,10 +444,10 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
         postVisit(visitedSet, this);
 
         DSType *tempType = temp->getType();
-        if(*tempType == getPool(ctx).get(TYPE::String)) {
+        if(tempType->isType(TYPE::String)) {
             typeAs<Array_Object>(result)->append(std::move(temp));
         } else {
-            assert(*tempType == getPool(ctx).get(TYPE::StringArray));
+            assert(tempType->isType(TYPE::StringArray));
             auto *tempArray = typeAs<Array_Object>(temp);
             for(auto &tempValue : tempArray->getValues()) {
                 typeAs<Array_Object>(result)->append(tempValue);

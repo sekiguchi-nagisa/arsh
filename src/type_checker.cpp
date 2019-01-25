@@ -195,7 +195,7 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, DSType &targetType) 
         return true;
     }
 
-    if(requiredType == this->symbolTable.get(TYPE::Boolean)) {
+    if(requiredType.isType(TYPE::Boolean)) {
         if(targetType.isOptionType()) {
             return true;
         }
@@ -209,7 +209,7 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, DSType &targetType) 
     int targetPrecision = this->symbolTable.getIntPrecision(targetType);
     if(targetPrecision > SymbolTable::INVALID_PRECISION) {
         int requiredPrecision = this->symbolTable.getIntPrecision(requiredType);
-        if(requiredType == this->symbolTable.get(TYPE::Float) && targetPrecision < SymbolTable::INT64_PRECISION) {
+        if(requiredType.isType(TYPE::Float) && targetPrecision < SymbolTable::INT64_PRECISION) {
             return true;    // check int (except for Int64, Uint64) to float cast
         }
         if(targetPrecision < requiredPrecision && requiredPrecision <= SymbolTable::INT64_PRECISION) {
@@ -288,7 +288,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
 
     DSType *type = handle->getType();
     if(!type->isFuncType()) {
-        if(this->symbolTable.get(TYPE::Func) == *type) {
+        if(type->isType(TYPE::Func)) {
             RAISE_TC_ERROR(NotCallable, recvNode);
         } else {
             RAISE_TC_ERROR(Required, recvNode, this->symbolTable.getTypeName(this->symbolTable.get(TYPE::Func)),
@@ -353,16 +353,16 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
     }
 
     if(exprType.isOptionType()) {
-        if(targetType == this->symbolTable.get(TYPE::Boolean)) {
+        if(targetType.isType(TYPE::Boolean)) {
             node.setOpKind(TypeOpNode::CHECK_UNWRAP);
             return;
         }
     } else  {
-        if(targetType == this->symbolTable.get(TYPE::String)) {
+        if(targetType.isType(TYPE::String)) {
             node.setOpKind(TypeOpNode::TO_STRING);
             return;
         }
-        if(targetType == this->symbolTable.get(TYPE::Boolean) &&
+        if(targetType.isType(TYPE::Boolean) &&
                 exprType.lookupMethodHandle(this->symbolTable, OP_BOOL) != nullptr) {
             node.setOpKind(TypeOpNode::TO_BOOL);
             return;
@@ -394,10 +394,10 @@ Node* TypeChecker::newPrintOpNode(Node *node) {
 
 void TypeChecker::convertToStringExpr(BinaryOpNode &node) {
     int needCast = 0;
-    if(node.getLeftNode()->getType() != this->symbolTable.get(TYPE::String)) {
+    if(!node.getLeftNode()->getType().isType(TYPE::String)) {
         needCast--;
     }
-    if(node.getRightNode()->getType() != this->symbolTable.get(TYPE::String)) {
+    if(!node.getRightNode()->getType().isType(TYPE::String)) {
         needCast++;
     }
 
@@ -627,8 +627,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
 
     // string concatenation
     if(node.getOp() == TokenKind::ADD &&
-                (leftType == this->symbolTable.get(TYPE::String) ||
-                        rightType == this->symbolTable.get(TYPE::String))) {
+                (leftType.isType(TYPE::String) || rightType.isType(TYPE::String))) {
         this->convertToStringExpr(node);
         node.setType(this->checkTypeAsExpr(node.getOptNode()));
         return;
@@ -732,8 +731,8 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
             std::string methodName(OP_CMD_ARG);
             MethodHandle *handle = segmentType.lookupMethodHandle(this->symbolTable, methodName);
 
-            if(handle == nullptr || (*handle->getReturnType() != this->symbolTable.get(TYPE::String) &&
-                                     *handle->getReturnType() != this->symbolTable.get(TYPE::StringArray))) { // if not found, lookup __STR__
+            if(handle == nullptr || (!handle->getReturnType()->isType(TYPE::String) &&
+                                     !handle->getReturnType()->isType(TYPE::StringArray))) { // if not found, lookup __STR__
                 methodName = OP_STR;
                 handle = segmentType.isOptionType() ? nullptr :
                          segmentType.lookupMethodHandle(this->symbolTable, methodName);
@@ -773,7 +772,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
             unacceptType = &this->symbolTable.get(TYPE::UnixFD);
         }
         auto &type = this->checkType(nullptr, argNode->getSegmentNodes()[0], unacceptType);
-        if(type == this->symbolTable.get(TYPE::UnixFD)) {
+        if(type.isType(TYPE::UnixFD)) {
             argNode->setType(type);
             node.setType(this->symbolTable.get(TYPE::Any));
             return;
@@ -951,7 +950,7 @@ bool TypeChecker::StrPatternCollector::collect(const ydsh::Node &constNode) {
 }
 
 std::unique_ptr<TypeChecker::PatternCollector> TypeChecker::newCollector(const DSType &type) const {
-    if(this->symbolTable.get(TYPE::String) == type) {
+    if(type.isType(TYPE::String)) {
         return unique<StrPatternCollector>();
     }
     return unique<IntPatternCollector>();
@@ -1050,14 +1049,14 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
         assert(accessNode->getRecvNode()->is(NodeKind::Number));
         auto *numNode = static_cast<NumberNode*>(accessNode->getRecvNode());
 
-        if(node->getType() == this->symbolTable.get(TYPE::Int32)) {
+        if(node->getType().isType(TYPE::Int32)) {
             int value = numNode->getIntValue();
             value = -value;
             delete node;
             node = NumberNode::newInt32(token, value);
             node->setType(this->symbolTable.get(TYPE::Int32));
             return true;
-        } else if(node->getType() == this->symbolTable.get(TYPE::Uint32)) {
+        } else if(node->getType().isType(TYPE::Uint32)) {
             unsigned int value = numNode->getIntValue();
             value = -value;
             delete node;
