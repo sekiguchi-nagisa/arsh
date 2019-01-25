@@ -243,8 +243,8 @@ bool hasError(const DSState &st) {
     return static_cast<bool>(st.getThrownObject());
 }
 
-void raiseError(DSState &st, DSType &errorType, std::string &&message, int status) {
-    auto except = Error_Object::newError(st, errorType, DSValue::create<String_Object>(
+void raiseError(DSState &st, TYPE type, std::string &&message, int status) {
+    auto except = Error_Object::newError(st, st.symbolTable.get(type), DSValue::create<String_Object>(
             st.symbolTable.get(TYPE::String), std::move(message)));
     st.throwObject(std::move(except), status);
 }
@@ -254,7 +254,7 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
     std::string str(std::move(message));
     str += ": ";
     str += strerror(errorNum);
-    raiseError(st, st.symbolTable.get(TYPE::SystemError), std::move(str));
+    raiseError(st, TYPE::SystemError, std::move(str));
 }
 
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace) {

@@ -196,12 +196,11 @@ bool hasError(const DSState &st);
 /**
  * raise Error Object and update exit status
  * @param st
- * @param errorType
+ * @param type
  * @param message
  * @param status
- * default value is 1.
  */
-void raiseError(DSState &st, DSType &errorType, std::string &&message, int status = 1);
+void raiseError(DSState &st, TYPE type, std::string &&message, int status = 1);
 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message);
 

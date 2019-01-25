@@ -171,7 +171,7 @@ static bool checkCast(DSState &state, DSType *targetType) {
         str += state.symbolTable.getTypeName(*stackTopType);
         str += " to ";
         str += state.symbolTable.getTypeName(*targetType);
-        raiseError(state, state.symbolTable.get(TYPE::TypeCastError), std::move(str));
+        raiseError(state, TYPE::TypeCastError, std::move(str));
         return false;
     }
     return true;
@@ -182,8 +182,7 @@ static bool checkAssertion(DSState &state) {
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
     if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
-        raiseError(state, state.symbolTable.get(TYPE::_AssertFail),
-                std::string(typeAs<String_Object>(msg)->getValue()));
+        raiseError(state, TYPE::_AssertFail, std::string(typeAs<String_Object>(msg)->getValue()));
         return false;
     }
     return true;
@@ -197,7 +196,7 @@ static void exitShell(DSState &st, unsigned int status) {
     std::string str("terminated by exit ");
     str += std::to_string(status);
     status %= 256;
-    raiseError(st, st.symbolTable.get(TYPE::_ShellExit), std::move(str), status);
+    raiseError(st, TYPE::_ShellExit, std::move(str), status);
 }
 
 static const char *loadEnv(DSState &state, bool hasDefault) {
@@ -257,7 +256,7 @@ static bool windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned in
                                      static_cast<const CompiledCode *>(code)->getStackDepth();
 
     if(st.controlStack.size() == DSState::MAX_CONTROL_STACK_SIZE) {
-        raiseError(st, st.symbolTable.get(TYPE::StackOverflowError), "local stack size reaches limit");
+        raiseError(st, TYPE::StackOverflowError, "local stack size reaches limit");
         return false;
     }
 
@@ -1020,7 +1019,7 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
     str += cmdName;
     if(errnum == ENOENT) {
         str += ": command not found";
-        raiseError(state, state.symbolTable.get(TYPE::SystemError), std::move(str));
+        raiseError(state, TYPE::SystemError, std::move(str));
     } else {
         raiseSystemError(state, errnum, std::move(str));
     }
@@ -2070,7 +2069,7 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(UNWRAP) {
             if(state.peek().kind() == DSValueKind::INVALID) {
-                raiseError(state, state.symbolTable.get(TYPE::UnwrappingError), std::string("invalid value"));
+                raiseError(state, TYPE::UnwrappingError, std::string("invalid value"));
                 vmerror;
             }
             vmnext;
@@ -2212,7 +2211,7 @@ public:
 
     bool checkLimit() {
         if(this->state.recDepth() == LIMIT) {
-            raiseError(this->state, this->state.symbolTable.get(TYPE::StackOverflowError),
+            raiseError(this->state, TYPE::StackOverflowError,
                        "interpreter recursion depth reaches limit");
             return false;
         }

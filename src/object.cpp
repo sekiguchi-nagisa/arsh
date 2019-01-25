@@ -219,7 +219,7 @@ static bool checkCircularRef(DSState &ctx, VisitedSet * &visitedSet,
         }
     } else {
         if(visitedSet->find((unsigned long) thisPtr) != visitedSet->end()) {
-            raiseError(ctx, getPool(ctx).get(TYPE::StackOverflowError), "caused by circular reference");
+            raiseError(ctx, TYPE::StackOverflowError, "caused by circular reference");
             return false;
         }
     }
@@ -240,7 +240,7 @@ static void postVisit(VisitedSet *set, const DSObject *ptr) {
 
 static bool checkInvalid(DSState &st, DSValue &v) {
     if(v.kind() == DSValueKind::INVALID) {
-        raiseError(st, getPool(st).get(TYPE::UnwrappingError), "invalid value");
+        raiseError(st, TYPE::UnwrappingError, "invalid value");
         return false;
     }
     return true;
