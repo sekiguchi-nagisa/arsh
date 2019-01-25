@@ -14,7 +14,7 @@ Language specification is subject to change without notice.
 * cmake 2.8.12 or later
 * autotools (for building re2c)
 * make/ninja
-* gcc/clang (need gnu++11 support)
+* gcc/clang (need gnu++14 support)
 * libpcre
 
 ### Tested Compiler
