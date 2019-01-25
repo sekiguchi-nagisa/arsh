@@ -340,7 +340,7 @@ public:
 };
 
 std::unique_ptr<CommonTypeToken> CommonTypeToken::newTypeToken(const std::string &name) {
-    return unique<CommonTypeToken>(HandleInfoMap::getInstance().getInfo(name));
+    return std::make_unique<CommonTypeToken>(HandleInfoMap::getInstance().getInfo(name));
 }
 
 
@@ -419,7 +419,7 @@ std::unique_ptr<ReifiedTypeToken> ReifiedTypeToken::newReifiedTypeToken(const st
     if(iter == typeMap.end()) {
         ErrorReporter::instance()("unsupported type template: %s", name.c_str());
     }
-    auto tok = unique<CommonTypeToken>(iter->second.second);
+    auto tok = std::make_unique<CommonTypeToken>(iter->second.second);
     unsigned int size = iter->second.first;
     return std::unique_ptr<ReifiedTypeToken>(new ReifiedTypeToken(std::move(tok), size));
 }

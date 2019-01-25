@@ -951,9 +951,9 @@ bool TypeChecker::StrPatternCollector::collect(const ydsh::Node &constNode) {
 
 std::unique_ptr<TypeChecker::PatternCollector> TypeChecker::newCollector(const DSType &type) const {
     if(type.is(TYPE::String)) {
-        return unique<StrPatternCollector>();
+        return std::make_unique<StrPatternCollector>();
     }
-    return unique<IntPatternCollector>();
+    return std::make_unique<IntPatternCollector>();
 }
 
 void TypeChecker::visitCaseNode(CaseNode &node) {
@@ -994,7 +994,7 @@ void TypeChecker::checkPatternType(DSType &type, ArmNode &node, PatternCollector
     if(node.getPatternNodes().empty()) {
         if(collector.hasElsePattern()) {
             Token token{node.getPos(), 4};
-            auto elseNode = unique<StringNode>(token, "else");
+            auto elseNode = std::make_unique<StringNode>(token, "else");
             RAISE_TC_ERROR(DupPattern, *elseNode);
         }
         collector.setElsePattern(true);

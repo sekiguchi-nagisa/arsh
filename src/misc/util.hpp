@@ -28,12 +28,6 @@ constexpr std::size_t arraySize(const T (&)[N]) noexcept {
     return N;
 }
 
-template <typename T, typename ... A>
-inline std::unique_ptr<T> unique(A &&... args) {
-    return std::unique_ptr<T>(new T(std::forward<A>(args)...));
-}
-
-
 } // namespace ydsh
 
 #endif //YDSH_MISC_SIZE_HPP
