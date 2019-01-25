@@ -50,7 +50,7 @@ private:
     FlexBuffer<Context> stacks;
 
 public:
-    FlowContext() : stacks({{0, 0, 0}}) { }
+    FlowContext() : stacks({{0, 0, 0, 0}}) { }
     ~FlowContext() = default;
 
     unsigned int tryCatchLevel() const {
