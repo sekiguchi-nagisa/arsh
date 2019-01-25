@@ -269,21 +269,12 @@ Job JobTable::detach(unsigned int jobId, bool remove) {
 
 JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
     if(iter != this->entries.end()) {
-        /**
-         * convert const_iterator -> iterator
-         */
-        auto actual = this->entries.begin() + (iter - this->entries.cbegin());
-        Job job = *actual;
+        Job job = *iter;
         if(job->jobID() > 0) {
             this->jobSize--;
         }
         job->jobID_ = 0;
-
-        /**
-         * in C++11, vector::erase accepts const_iterator.
-         * but in libstdc++ 4.8, vector::erase(const_iterator) is not implemented.
-         */
-        auto next = this->entries.erase(actual);
+        auto next = this->entries.erase(iter);
 
         // change latest entry
         if(this->latestEntry == job) {
