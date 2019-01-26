@@ -56,14 +56,14 @@ assert($? == 1)
 
 # show detailed information
 hash -r
-assert("$(command -V ls)" == "ls is $(which ls)")                   # external
+assert("$(command -V env)" == "env is /usr/bin/env")                   # external
 assert("$(command -V cd)" == "cd is a shell builtin command")       # builtin
 assert "$(command -V eval)" == "eval is a shell builtin command"
 assert "$(command -V exec)" == "exec is a shell builtin command"
 assert "$(command -V command)" == "command is a shell builtin command"
 assert("$(command -V hoge)" == "hoge is an user-defined command")   # user-defined
-ls 2>&1 > /dev/null
-assert("$(command -V ls)" == "ls is hashed ($(which ls))")          # hashed
+env 2>&1 > /dev/null
+assert("$(command -V env)" == "env is hashed (/usr/bin/env)")          # hashed
 
 assert("$(command -V hfiureaf 2>&1)" ==
        "ydsh: command: hfiureaf: No such file or directory")       # invalid
