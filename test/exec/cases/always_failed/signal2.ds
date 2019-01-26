@@ -8,6 +8,6 @@ function f($a : Signal) {
 
 $SIG[%'hup'] = $f
 
-eval "$(which kill)" -s ${$SIG.signal('hup')!.name()} $PID
+/bin/kill -s ${$SIG.signal('hup')!.name()} $PID
 
 true

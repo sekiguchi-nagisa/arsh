@@ -39,7 +39,7 @@ assert ($ex as Error).message() == 'execution error: hoge: command not found'
 
 # show command information
 hash -r
-assert("$(command -v ls)" == "$(which ls)") # external command
+assert("$(command -v env)" == "/usr/bin/env") # external command
 assert command -v ls
 assert("$(command -v cd)" == "cd")          # builtin
 assert command -v cd

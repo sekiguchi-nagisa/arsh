@@ -1,6 +1,6 @@
 
 function raise($s : String) {
-    eval "$(which kill)" -s ${$SIG.signal($s)!.name()} $PID
+    /bin/kill -s ${$SIG.signal($s)!.name()} $PID
     #echo $?
 }
 
