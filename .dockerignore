@@ -1,0 +1,4 @@
+build*
+re2c-build
+cmake-build*
+.git

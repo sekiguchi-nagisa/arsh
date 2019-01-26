@@ -1,0 +1,20 @@
+#!/usr/bin/env ydsh
+
+let debug = $# > 0
+
+var root = "$SCRIPT_DIR/../../".realpath()!
+
+echo project root: "`$root'"
+
+echo build docker image
+
+
+var name = "ydsh_build:1"
+docker build -t $name $root
+
+if $debug {
+    docker run --rm -it $name /bin/bash
+} else {
+    docker run --rm -t $name
+}
+
