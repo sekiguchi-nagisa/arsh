@@ -102,6 +102,7 @@ constexpr const char *OP_CMD_ARG = "%cmd_arg";  // for command argument
 
 constexpr const char *ENV_HOME = "HOME";
 constexpr const char *ENV_LOGNAME = "LOGNAME";
+constexpr const char *ENV_USER = "USER";
 constexpr const char *ENV_PWD = "PWD";
 constexpr const char *ENV_OLDPWD = "OLDPWD";
 constexpr const char *ENV_PATH = "PATH";

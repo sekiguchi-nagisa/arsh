@@ -312,6 +312,8 @@ TEST_F(CmdlineTest, exec) {
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv LOGNAME)\" == \"$(ps_intrp \\\\u)\")"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv USER)\" == \"$(ps_intrp \\\\u)\")"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv HOME)\" == \"$(echo ~)\")"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv _)\" == \"$(command -v printenv)\")"), 0));
@@ -322,9 +324,9 @@ TEST_F(CmdlineTest, exec) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env WINDIR)"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env SYSTEMROOT)"), 0));
 
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 9"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 10"), 0));
 #else
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 7"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 8"), 0));
 #endif
 
     // invalid option

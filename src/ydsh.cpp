@@ -474,6 +474,9 @@ static void initEnv(const DSState &state) {
     // set LOGNAME
     setenv(ENV_LOGNAME, pw->pw_name, 0);
 
+    // set USER
+    setenv(ENV_USER, pw->pw_name, 0);
+
     // set PWD/OLDPWD
     std::string str;
     const char *ptr = getWorkingDir(state, true, str);
