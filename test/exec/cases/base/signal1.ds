@@ -20,6 +20,11 @@ assert ! $SIG.signal('SIGCHILD')
 assert $SIG.list()[0] is Signal
 
 # kill
+if test -f /proc/1/cgroup && "$(cat /proc/1/cgroup)" =~ $/docker|lxc/i {
+    false
+} else {
+true
+
 var e = 34 as Any
 try {
     %'HUP'.kill(1);
@@ -33,4 +38,6 @@ if $e is SystemError {
                                                 else { 'HUP: No such process'; }
 } else {
     assert $false
+}
+
 }
