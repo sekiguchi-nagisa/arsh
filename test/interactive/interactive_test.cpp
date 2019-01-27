@@ -210,9 +210,9 @@ TEST_F(InteractiveTest, status) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("eval $(which true)", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("true", PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $? == 0", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("eval $(which false)", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("false", PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $? == 1", PROMPT));
 
     this->send(CTRL_D);
