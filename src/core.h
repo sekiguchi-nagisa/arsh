@@ -304,7 +304,7 @@ DSValue callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, 
 template <typename ...T>
 inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {
     static_assert(sizeof...(arg) <= 3, "too long");
-    return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{ std::forward<T>(arg)...}});
+    return { sizeof...(arg), std::array<DSValue, 3>{ std::forward<T>(arg)...}};
 }
 
 } // namespace ydsh
