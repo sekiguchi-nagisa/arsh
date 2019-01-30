@@ -765,9 +765,9 @@ static int doIOHere(const String_Object &value) {
 /**
  * if failed, return non-zero value(errno)
  */
-static int redirectToFile(const SymbolTable &symbolTable, const DSValue &fileName, const char *mode, int targetFD) {
+static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
     auto &type = *fileName->getType();
-    if(type == symbolTable.get(TYPE::String)) {
+    if(type.is(TYPE::String)) {
         FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
         if(fp == nullptr) {
             return errno;
@@ -780,7 +780,7 @@ static int redirectToFile(const SymbolTable &symbolTable, const DSValue &fileNam
         }
         fclose(fp);
     } else {
-        assert(type == symbolTable.get(TYPE::UnixFD));
+        assert(type.is(TYPE::UnixFD));
         int fd = typeAs<UnixFD_Object>(fileName)->getValue();
         if(strchr(mode, 'a') != nullptr) {
             if(lseek(fd, 0, SEEK_END) == -1) {
@@ -794,25 +794,25 @@ static int redirectToFile(const SymbolTable &symbolTable, const DSValue &fileNam
     return 0;
 }
 
-static int redirectImpl(const SymbolTable &symbolTable, const std::pair<RedirOP, DSValue> &pair) {
+static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
     switch(pair.first) {
     case RedirOP::IN_2_FILE: {
-        return redirectToFile(symbolTable, pair.second, "rb", STDIN_FILENO);
+        return redirectToFile(pair.second, "rb", STDIN_FILENO);
     }
     case RedirOP::OUT_2_FILE: {
-        return redirectToFile(symbolTable, pair.second, "wb", STDOUT_FILENO);
+        return redirectToFile(pair.second, "wb", STDOUT_FILENO);
     }
     case RedirOP::OUT_2_FILE_APPEND: {
-        return redirectToFile(symbolTable, pair.second, "ab", STDOUT_FILENO);
+        return redirectToFile(pair.second, "ab", STDOUT_FILENO);
     }
     case RedirOP::ERR_2_FILE: {
-        return redirectToFile(symbolTable, pair.second, "wb", STDERR_FILENO);
+        return redirectToFile(pair.second, "wb", STDERR_FILENO);
     }
     case RedirOP::ERR_2_FILE_APPEND: {
-        return redirectToFile(symbolTable, pair.second, "ab", STDERR_FILENO);
+        return redirectToFile(pair.second, "ab", STDERR_FILENO);
     }
     case RedirOP::MERGE_ERR_2_OUT_2_FILE: {
-        int r = redirectToFile(symbolTable, pair.second, "wb", STDOUT_FILENO);
+        int r = redirectToFile(pair.second, "wb", STDOUT_FILENO);
         if(r != 0) {
             return r;
         }
@@ -820,7 +820,7 @@ static int redirectImpl(const SymbolTable &symbolTable, const std::pair<RedirOP,
         return 0;
     }
     case RedirOP::MERGE_ERR_2_OUT_2_FILE_APPEND: {
-        int r = redirectToFile(symbolTable, pair.second, "ab", STDOUT_FILENO);
+        int r = redirectToFile(pair.second, "ab", STDOUT_FILENO);
         if(r != 0) {
             return r;
         }
@@ -844,17 +844,17 @@ static int redirectImpl(const SymbolTable &symbolTable, const std::pair<RedirOP,
 bool RedirConfig::redirect(DSState &st) {
     this->backupFDs();
     for(auto &pair : this->ops) {
-        int r = redirectImpl(st.symbolTable, pair);
+        int r = redirectImpl(pair);
         if(this->backupFDset > 0 && r != 0) {
             std::string msg = REDIR_ERROR;
             if(pair.second) {
                 auto *type = pair.second->getType();
-                if(*type == st.symbolTable.get(TYPE::String)) {
+                if(type->is(TYPE::String)) {
                     if(!typeAs<String_Object>(pair.second)->empty()) {
                         msg += ": ";
                         msg += typeAs<String_Object>(pair.second)->getValue();
                     }
-                } else if(*type == st.symbolTable.get(TYPE::UnixFD)) {
+                } else if(type->is(TYPE::UnixFD)) {
                     msg += ": ";
                     msg += std::to_string(typeAs<UnixFD_Object>(pair.second)->getValue());
                 }
@@ -2125,7 +2125,7 @@ static bool handleException(DSState &state, bool forceUnwind) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
                 if(occurredPC >= entry.begin && occurredPC < entry.end
                    && entry.type->isSameOrBaseTypeOf(*occurredType)) {
-                    if(*entry.type == state.symbolTable.get(TYPE::_Root)) {
+                    if(entry.type->is(TYPE::_Root)) {
                         return false;
                     }
                     state.pc() = entry.dest - 1;
