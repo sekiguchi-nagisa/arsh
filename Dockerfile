@@ -8,4 +8,4 @@ RUN chown -R tux:users /home/tux/dev && chmod -R 744 /home/tux/dev
 
 USER tux
 WORKDIR /home/tux/dev
-CMD tools/scripts/setup.sh && cd build && ninja && ctest --output-on-failure
+CMD sh tools/scripts/run_all_test.sh
