@@ -30,21 +30,6 @@ struct TypeHolder {
 
 namespace __detail {
 
-template<typename T>
-constexpr T max2(T x, T y) {
-    return x > y ? x : y;
-}
-
-template<typename T>
-constexpr T max(T t) {
-    return t;
-}
-
-template<typename T, typename U, typename ...R>
-constexpr T max(T t, U u, R... r) {
-    return max2(t, max(u, std::forward<R>(r)...));
-}
-
 constexpr bool andAll(bool b) {
     return b;
 }
@@ -116,12 +101,7 @@ template <typename ...T>
 struct Storage {
     static_assert(sizeof...(T) > 0, "at least 1 type");
 
-    static constexpr auto size = __detail::max(sizeof(T)...);
-    static constexpr auto align = __detail::max(alignof(T)...);
-
-    using type = typename std::aligned_storage<size, align>::type;
-
-    type data;
+    std::aligned_union_t<1, T...> data;
 
     template <typename U, typename F = __detail::resolvedType<U, T...>>
     void obtain(U &&value) {
