@@ -48,7 +48,7 @@ public:
 struct TLError {};
 
 template <typename T, typename B>
-using base_of_t = typename std::enable_if<std::is_base_of<B, T>::value, T>::type;
+using base_of_t = std::enable_if_t<std::is_base_of<B, T>::value, T>;
 
 
 #define DEFINE_TLError(E, fmt) \
