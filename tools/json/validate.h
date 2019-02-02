@@ -65,7 +65,7 @@ private:
 
 public:
     explicit ArrayMatcher(TypeMatcherPtr matcher) :
-            TypeMatcher("Array", JSON::Tag<Array>::value), matcher(std::move(matcher)) {}
+            TypeMatcher("Array", JSON::TAG<Array>), matcher(std::move(matcher)) {}
     bool match(Validator &validator, const JSON &value) const override;
     std::string str() const override;
 };
@@ -78,7 +78,7 @@ struct ObjectMatcher : public TypeMatcher {
      * @param name
      * if empty string, match all of objects
      */
-    explicit ObjectMatcher(const char *name) : TypeMatcher(name, JSON::Tag<Object>::value) {}
+    explicit ObjectMatcher(const char *name) : TypeMatcher(name, JSON::TAG<Object>) {}
 
     bool match(Validator &validator, const JSON &value) const override;
     std::string str() const override;

@@ -91,11 +91,11 @@ std::string UnionMatcher::str() const {
     return str;
 }
 
-static constexpr int TAG_LONG = JSON::Tag<long>::value;
-static constexpr int TAG_DOUBLE = JSON::Tag<double>::value;
-static constexpr int TAG_STRING = JSON::Tag<String>::value;
-static constexpr int TAG_BOOL = JSON::Tag<bool>::value;
-static constexpr int TAG_NULL = JSON::Tag<std::nullptr_t>::value;
+static constexpr int TAG_LONG = JSON::TAG<long>;
+static constexpr int TAG_DOUBLE = JSON::TAG<double>;
+static constexpr int TAG_STRING = JSON::TAG<String>;
+static constexpr int TAG_BOOL = JSON::TAG<bool>;
+static constexpr int TAG_NULL = JSON::TAG<std::nullptr_t>;
 
 const TypeMatcherPtr integer = std::make_shared<TypeMatcher>("integer", TAG_LONG);  //NOLINT
 
@@ -205,7 +205,7 @@ bool Validator::match(const UnionMatcher &matcher, const JSON &value) {
 }
 
 bool Validator::match(const std::string &ifaceName, const JSON &value) {
-    if(value.tag() != JSON::Tag<Object>::value) {
+    if(value.tag() != JSON::TAG<Object>) {
         return false;
     }
 

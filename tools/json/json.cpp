@@ -112,7 +112,7 @@ struct Serializer {
     }
 
     void serialize(const JSON &value) {
-#define GEN_CASE(T) case JSON::Tag<T>::value: this->serialize(get<T>(value)); break;
+#define GEN_CASE(T) case JSON::TAG<T>: this->serialize(get<T>(value)); break;
         switch(value.tag()) {
         EACH_JSON_TYPE(GEN_CASE)
         default:

@@ -249,12 +249,12 @@ private:
 
 public:
     template <typename R>
-    using Tag = TypeTag<R, T...>;
+    static constexpr auto TAG = TypeTag<R, T...>::value;
 
     Union() noexcept : tag_(-1) {}
 
     template <typename U, typename F = __detail::resolvedType<U, T...>>
-    Union(U &&value) noexcept : tag_(Tag<F>::value) {   //NOLINT
+    Union(U &&value) noexcept : tag_(TAG<F>) {   //NOLINT
         this->value_.obtain(std::forward<U>(value));
     }
 
