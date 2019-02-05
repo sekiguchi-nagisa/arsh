@@ -1,5 +1,0 @@
-#$test($result = 'parse', $lineNum = 4, $errorKind = 'NoViableAlter', $status = 1)
-
-case 45 {
-    "hello" => echo hello!!
-}

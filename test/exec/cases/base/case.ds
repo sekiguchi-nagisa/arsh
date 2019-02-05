@@ -13,8 +13,8 @@ function case1($s : String) : Int {
     $called = -1
     return case $s {
         'A' | 'a' => { $called = 1; 1; }
-        'B' | 'b' => { $called = 2; 2; }
-        'C' | 'c' => { $called = 3; 3; }
+        $'B' | 'b' => { $called = 2; 2; }
+        'C' | "c" => { $called = 3; 3; }
         else => { $called = 0; 0;}
     }
 }

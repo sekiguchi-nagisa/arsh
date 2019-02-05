@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 4, $errorKind = 'Constant', $status = 1)
+
+var a = case "34" {
+    "1${34}" => 34;
+    "2" => 25;
+    "3" => 45 as Void
+}

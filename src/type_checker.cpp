@@ -1004,7 +1004,9 @@ void TypeChecker::checkPatternType(DSType &type, ArmNode &node, PatternCollector
     }
 
     for(auto &e : node.refPatternNodes()) {
-        this->applyConstFolding(e);
+        if(!this->applyConstFolding(e)) {
+            RAISE_TC_ERROR(Constant, *e);
+        }
     }
 
     for(auto &e : node.getPatternNodes()) {
@@ -1062,6 +1064,17 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
             delete node;
             node = NumberNode::newUint32(token, value);
             node->setType(this->symbolTable.get(TYPE::Uint32));
+            return true;
+        }
+        break;
+    }
+    case NodeKind::StringExpr: {
+        auto *exprNode = static_cast<StringExprNode *>(node);
+        if(exprNode->getExprNodes().size() == 1 && exprNode->getExprNodes()[0]->is(NodeKind::String)) {
+            auto *strNode = static_cast<StringNode *>(exprNode->getExprNodes()[0]);
+            exprNode->setExprNode(0, nullptr);
+            free(exprNode);
+            node = strNode;
             return true;
         }
         break;
