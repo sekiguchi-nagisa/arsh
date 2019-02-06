@@ -142,6 +142,14 @@ YDSH_METHOD basic_mod(RuntimeContext &ctx) {
     RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result));
 }
 
+static bool binary_eq(RuntimeContext &ctx) {
+    return LOCAL(0)->equals(LOCAL(1));
+}
+
+static bool binary_ne(RuntimeContext &ctx) {
+    return !binary_eq(ctx);
+}
+
 static bool binary_lt(RuntimeContext &ctx) {    // x < y
     return LOCAL(0)->compare(LOCAL(1));
 }
@@ -309,13 +317,13 @@ YDSH_METHOD int_2_int_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_eq);
-    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_eq(ctx));
 }
 
 //!bind: function $OP_NE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ne);
-    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_ne(ctx));
 }
 
 //   =====  relational  =====
@@ -429,13 +437,13 @@ YDSH_METHOD uint_2_uint_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_eq);
-    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_eq(ctx));
 }
 
 //!bind: function $OP_NE($this : Uint32, $target : Uint32) : Boolean
 YDSH_METHOD uint_2_uint_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint_2_uint_ne);
-    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_ne(ctx));
 }
 
 //   =====  relational  =====
@@ -548,13 +556,13 @@ YDSH_METHOD int64_2_int64_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_eq);
-    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_eq(ctx));
 }
 
 //!bind: function $OP_NE($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_ne);
-    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_ne(ctx));
 }
 
 //   =====  relational  =====
@@ -667,13 +675,13 @@ YDSH_METHOD uint64_2_uint64_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_eq);
-    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_eq(ctx));
 }
 
 //!bind: function $OP_NE($this : Uint64, $target : Uint64) : Boolean
 YDSH_METHOD uint64_2_uint64_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(uint64_2_uint64_ne);
-    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_ne(ctx));
 }
 
 //   =====  relational  =====
@@ -777,13 +785,13 @@ YDSH_METHOD float_2_float_div(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_eq);
-    RET_BOOL(LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_eq(ctx));
 }
 
 //!bind: function $OP_NE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ne);
-    RET_BOOL(!LOCAL(0)->equals(LOCAL(1)));
+    RET_BOOL(binary_ne(ctx));
 }
 
 //   =====  relational  =====
@@ -849,15 +857,13 @@ YDSH_METHOD boolean_not(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Boolean, $target : Boolean) : Boolean
 YDSH_METHOD boolean_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_eq);
-    bool r = LOCAL(0)->equals(LOCAL(1));
-    RET_BOOL(r);
+    RET_BOOL(binary_eq(ctx));
 }
 
 //!bind: function $OP_NE($this : Boolean, $target : Boolean) : Boolean
 YDSH_METHOD boolean_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_ne);
-    bool r = !LOCAL(0)->equals(LOCAL(1));
-    RET_BOOL(r);
+    RET_BOOL(binary_ne(ctx));
 }
 
 
@@ -868,15 +874,13 @@ YDSH_METHOD boolean_ne(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : String, $target : String) : Boolean
 YDSH_METHOD string_eq(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_eq);
-    bool r = LOCAL(0)->equals(LOCAL(1));
-    RET_BOOL(r);
+    RET_BOOL(binary_eq(ctx));
 }
 
 //!bind: function $OP_NE($this : String, $target : String) : Boolean
 YDSH_METHOD string_ne(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_ne);
-    bool r = !LOCAL(0)->equals(LOCAL(1));
-    RET_BOOL(r);
+    RET_BOOL(binary_ne(ctx));
 }
 
 //!bind: function $OP_LT($this : String, $target : String) : Boolean
