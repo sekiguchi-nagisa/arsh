@@ -1073,7 +1073,7 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
         if(exprNode->getExprNodes().size() == 1 && exprNode->getExprNodes()[0]->is(NodeKind::String)) {
             auto *strNode = static_cast<StringNode *>(exprNode->getExprNodes()[0]);
             exprNode->setExprNode(0, nullptr);
-            free(exprNode);
+            delete exprNode;
             node = strNode;
             return true;
         }
