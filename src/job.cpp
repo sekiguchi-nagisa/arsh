@@ -102,7 +102,7 @@ static const char *toString(Proc::WaitOp op) {
 }
 //#endif
 
-int Proc::wait(WaitOp op) {
+int Proc::wait(WaitOp op, bool showSignal) {
     if(this->state() != TERMINATED) {
         int status = 0;
         int ret = waitpid(this->pid_, &status, toOption(op));
@@ -161,8 +161,10 @@ int Proc::wait(WaitOp op) {
                     hasCoreDump = true;
                 }
 #endif
-                fprintf(stderr, "%s%s\n", strsignal(sigNum), hasCoreDump ? " (core dumped)" : "");
-                fflush(stderr);
+                if(showSignal) {
+                    fprintf(stderr, "%s%s\n", strsignal(sigNum), hasCoreDump ? " (core dumped)" : "");
+                    fflush(stderr);
+                }
             } else if(WIFSTOPPED(status)) {
                 this->state_ = STOPPED;
                 this->exitStatus_ = WSTOPSIG(status) + 128;
@@ -222,7 +224,7 @@ int JobImpl::wait(Proc::WaitOp op) {
     unsigned int lastStatus = 0;
     for(unsigned int i = 0; i < this->procSize; i++) {
         auto &proc = this->procs[i];
-        lastStatus = proc.wait(op);
+        lastStatus = proc.wait(op, i == this->procSize - 1);
         if(proc.state() == Proc::TERMINATED) {
             terminateCount++;
         }

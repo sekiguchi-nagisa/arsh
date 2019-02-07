@@ -88,9 +88,11 @@ public:
     /**
      * wait for termination
      * @param op
+     * @param showSignal
+     * if true, print signal message when terminated by signal.
      * @return
      */
-    int wait(WaitOp op);
+    int wait(WaitOp op, bool showSignal = true);
 
     /**
      * after fork, reset signal setting in child process.
