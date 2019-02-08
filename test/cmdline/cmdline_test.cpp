@@ -813,10 +813,14 @@ ArithmeticError: zero division
     ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 4: 1\n", e));
 }
 
-TEST_F(CmdlineTest, signal) {
+TEST_F(CmdlineTest, signal1) {
     std::string str = strsignal(SIGKILL);
     str += "\n";
     ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$'"), 128 + SIGKILL, "", str.c_str()));
+}
+
+TEST_F(CmdlineTest, signal2) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS("cat /dev/random | grep 2> /dev/null"), 2));
 }
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
