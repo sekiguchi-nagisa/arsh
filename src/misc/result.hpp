@@ -365,7 +365,8 @@ public:
 
     Result() = delete;
 
-    Result(OkHolder<T> &&okHolder) noexcept : Union<T, E>(std::move(okHolder.value)) {} //NOLINT
+    template <typename T0>
+    Result(OkHolder<T0> &&okHolder) noexcept : Union<T, E>(std::move(okHolder.value)) {} //NOLINT
 
     Result(ErrHolder<E> &&errHolder) noexcept : Union<T, E>(std::move(errHolder.value)) {}  //NOLINT
 

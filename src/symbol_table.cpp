@@ -60,8 +60,7 @@ HandleOrError BlockScope::add(const std::string &symbolName, FieldHandle handle)
     if(this->getCurVarIndex() > UINT8_MAX) {
         return Err(SymbolError::LIMIT);
     }
-    const auto &ret = pair.first->second;
-    return Ok(&ret);
+    return Ok(&pair.first->second);
 }
 
 // #########################
@@ -95,8 +94,7 @@ HandleOrError GlobalScope::addNew(const std::string &symbolName, DSType &type,
     if(pair.first->second) {
         this->gvarCount.get()++;
     }
-    const auto &ret = pair.first->second;
-    return Ok(&ret);
+    return Ok(&pair.first->second);
 }
 
 
@@ -462,7 +460,7 @@ TypeTempOrError SymbolTable::getTypeTemplate(const std::string &typeName) const 
     if(iter == this->templateMap.end()) {
         RAISE_TL_ERROR(NotTemplate, typeName.c_str());
     }
-    return Ok(const_cast<const TypeTemplate *>(iter->second));
+    return Ok(iter->second);
 }
 
 TypeOrError SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
