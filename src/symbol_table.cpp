@@ -449,7 +449,7 @@ HandleOrError SymbolTable::newHandle(const std::string &symbolName, DSType &type
     return this->cur().newHandle(symbolName, type, attribute);
 }
 
-TypeOrError SymbolTable::getTypeOrThrow(const std::string &typeName) const {
+TypeOrError SymbolTable::getTypeOrError(const std::string &typeName) const {
     DSType *type = this->getType(typeName);
     if(type == nullptr) {
         RAISE_TL_ERROR(UndefinedType, typeName.c_str());

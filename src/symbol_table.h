@@ -637,10 +637,11 @@ public:
     }
 
     /**
-     * get type except template type.
-     * if type is undefined, throw exception
+     *
+     * @param typeName
+     * @return
      */
-    TypeOrError getTypeOrThrow(const std::string &typeName) const;
+    TypeOrError getTypeOrError(const std::string &typeName) const;
 
     /**
      * get template type.

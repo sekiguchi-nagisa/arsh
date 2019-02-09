@@ -57,7 +57,7 @@ void BreakGather::addJumpNode(JumpNode *node) {
 TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
     switch(node.typeKind) {
     case TypeNode::Base: {
-        return this->symbolTable.getTypeOrThrow(static_cast<BaseTypeNode &>(node).getTokenText());
+        return this->symbolTable.getTypeOrError(static_cast<BaseTypeNode &>(node).getTokenText());
     }
     case TypeNode::Reified: {
         auto &typeNode = static_cast<ReifiedTypeNode&>(node);
