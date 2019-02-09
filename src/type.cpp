@@ -289,7 +289,7 @@ void ErrorType::registerFuncInfo(native_type_info_t info) {
     }
 }
 
-TypeLookupError createTLErrorImpl(const char *kind, const char *fmt, ...) {
+std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {
     va_list arg;
 
     va_start(arg, fmt);
@@ -297,7 +297,7 @@ TypeLookupError createTLErrorImpl(const char *kind, const char *fmt, ...) {
     if(vasprintf(&str, fmt, arg) == -1) { abort(); }
     va_end(arg);
 
-    TypeLookupError error(kind, str);
+    auto error = std::make_unique<TypeLookupError>(kind, str);
     free(str);
     return error;
 }

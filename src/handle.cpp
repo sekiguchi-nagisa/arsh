@@ -70,16 +70,18 @@ public:
             symbolTable(pool), pos(pos), types(types) {}
     ~TypeDecoder() = default;
 
-    DSType *decode();
+    TypeOrError decode();
 
     unsigned int decodeNum() {
         return static_cast<unsigned int>(*(this->pos++) - static_cast<int>(HandleInfo::P_N0));
     }
 };
 
-DSType* TypeDecoder::decode() {
+#define TRY(E) ({ auto value = E; if(!value) { return value; } value.take(); })
+
+TypeOrError TypeDecoder::decode() {
     switch(static_cast<HandleInfo>(*(this->pos++))) {
-#define GEN_CASE(ENUM) case HandleInfo::ENUM: return &this->symbolTable.get(TYPE::ENUM);
+#define GEN_CASE(ENUM) case HandleInfo::ENUM: return Ok(&this->symbolTable.get(TYPE::ENUM));
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
     case HandleInfo::Array: {
@@ -87,8 +89,8 @@ DSType* TypeDecoder::decode() {
         unsigned int size = this->decodeNum();
         assert(size == 1);
         std::vector<DSType *> elementTypes(size);
-        elementTypes[0] = decode();
-        return &this->symbolTable.createReifiedType(t, std::move(elementTypes));
+        elementTypes[0] = TRY(decode());
+        return this->symbolTable.createReifiedType(t, std::move(elementTypes));
     }
     case HandleInfo::Map: {
         auto &t = this->symbolTable.getMapTemplate();
@@ -96,9 +98,9 @@ DSType* TypeDecoder::decode() {
         assert(size == 2);
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = this->decode();
+            elementTypes[i] = TRY(this->decode());
         }
-        return &this->symbolTable.createReifiedType(t, std::move(elementTypes));
+        return this->symbolTable.createReifiedType(t, std::move(elementTypes));
     }
     case HandleInfo::Tuple: {
         unsigned int size = this->decodeNum();
@@ -108,31 +110,31 @@ DSType* TypeDecoder::decode() {
             for(unsigned int i = 0; i < size; i++) {
                 elementTypes[i] = (*this->types)[i];
             }
-            return &this->symbolTable.createTupleType(std::move(elementTypes));
+            return this->symbolTable.createTupleType(std::move(elementTypes));
         }
 
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = this->decode();
+            elementTypes[i] = TRY(this->decode());
         }
-        return &this->symbolTable.createTupleType(std::move(elementTypes));
+        return this->symbolTable.createTupleType(std::move(elementTypes));
     }
     case HandleInfo::Option: {
         auto &t = this->symbolTable.getOptionTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 1);
         std::vector<DSType *> elementTypes(size);
-        elementTypes[0] = this->decode();
-        return &this->symbolTable.createReifiedType(t, std::move(elementTypes));
+        elementTypes[0] = TRY(this->decode());
+        return this->symbolTable.createReifiedType(t, std::move(elementTypes));
     }
     case HandleInfo::Func: {
-        auto *retType = this->decode();
+        auto *retType = TRY(this->decode());
         unsigned int size = this->decodeNum();
         std::vector<DSType *> paramTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            paramTypes[i] = this->decode();
+            paramTypes[i] = TRY(this->decode());
         }
-        return &this->symbolTable.createFuncType(retType, std::move(paramTypes));
+        return this->symbolTable.createFuncType(retType, std::move(paramTypes));
     }
     case HandleInfo::P_N0:
     case HandleInfo::P_N1:
@@ -145,33 +147,31 @@ DSType* TypeDecoder::decode() {
     case HandleInfo::P_N8:
         fatal("must be type\n");
     case HandleInfo::T0:
-        return (*this->types)[0];
+        return Ok((*this->types)[0]);
     case HandleInfo::T1:
-        return (*this->types)[1];
+        return Ok((*this->types)[1]);
     default:
-        return nullptr; // normally unreachable due to suppress gcc warning
+        return Ok(static_cast<DSType *>(nullptr)); // normally unreachable due to suppress gcc warning
     }
 }
 
+#define TRY2(E) ({ auto value = E; if(!value) { return false; } value.take(); })
+
 bool MethodHandle::init(SymbolTable &symbolTable, const NativeFuncInfo &info,
                         const std::vector<DSType *> *types) {
-    try {
-        TypeDecoder decoder(symbolTable, info.handleInfo, types);
+    TypeDecoder decoder(symbolTable, info.handleInfo, types);
 
-        auto *returnType = decoder.decode();    // init return type
-        const unsigned int paramSize = decoder.decodeNum();
-        auto *recvType = decoder.decode();
-        std::vector<DSType *> paramTypes(paramSize - 1);
-        for(unsigned int i = 1; i < paramSize; i++) {   // init param types
-            paramTypes[i - 1] = decoder.decode();
-        }
-
-        this->returnType = returnType;
-        this->recvType = recvType;
-        this->paramTypes = std::move(paramTypes);
-    } catch(const TypeLookupError &) {
-        return false;
+    auto *returnType = TRY2(decoder.decode());    // init return type
+    const unsigned int paramSize = decoder.decodeNum();
+    auto *recvType = TRY2(decoder.decode());
+    std::vector<DSType *> paramTypes(paramSize - 1);
+    for(unsigned int i = 1; i < paramSize; i++) {   // init param types
+        paramTypes[i - 1] = TRY2(decoder.decode());
     }
+
+    this->returnType = returnType;
+    this->recvType = recvType;
+    this->paramTypes = std::move(paramTypes);
     return true;
 }
 

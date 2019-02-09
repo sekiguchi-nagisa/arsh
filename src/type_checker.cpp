@@ -52,20 +52,26 @@ void BreakGather::addJumpNode(JumpNode *node) {
 // ##     TypeChecker     ##
 // #########################
 
-DSType *TypeChecker::toTypeImpl(TypeNode &node) {
+#define TRY(E) ({ auto value = E; if(!value) { return value; } value.take();})
+
+TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
     switch(node.typeKind) {
     case TypeNode::Base: {
-        return &this->symbolTable.getTypeOrThrow(static_cast<BaseTypeNode &>(node).getTokenText());
+        return this->symbolTable.getTypeOrThrow(static_cast<BaseTypeNode &>(node).getTokenText());
     }
     case TypeNode::Reified: {
         auto &typeNode = static_cast<ReifiedTypeNode&>(node);
         unsigned int size = typeNode.getElementTypeNodes().size();
-        auto &typeTemplate = this->symbolTable.getTypeTemplate(typeNode.getTemplate()->getTokenText());
+        auto tempOrError = this->symbolTable.getTypeTemplate(typeNode.getTemplate()->getTokenText());
+        if(!tempOrError) {
+            return Err(tempOrError.takeError());
+        }
+        auto typeTemplate = tempOrError.take();
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = &this->toType(typeNode.getElementTypeNodes()[i]);
         }
-        return &this->symbolTable.createReifiedType(typeTemplate, std::move(elementTypes));
+        return this->symbolTable.createReifiedType(*typeTemplate, std::move(elementTypes));
     }
     case TypeNode::Func: {
         auto &typeNode = static_cast<FuncTypeNode&>(node);
@@ -75,20 +81,20 @@ DSType *TypeChecker::toTypeImpl(TypeNode &node) {
         for(unsigned int i = 0; i < size; i++) {
             paramTypes[i] = &this->toType(typeNode.getParamTypeNodes()[i]);
         }
-        return &this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
+        return this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
     }
     case TypeNode::Return: {
         auto &typeNode = static_cast<ReturnTypeNode&>(node);
         unsigned int size = typeNode.getTypeNodes().size();
         if(size == 1) {
-            return &this->toType(typeNode.getTypeNodes()[0]);
+            return Ok(&this->toType(typeNode.getTypeNodes()[0]));
         }
 
         std::vector<DSType *> types(size);
         for(unsigned int i = 0; i < size; i++) {
             types[i] = &this->toType(typeNode.getTypeNodes()[i]);
         }
-        return &this->symbolTable.createTupleType(std::move(types));
+        return this->symbolTable.createTupleType(std::move(types));
     }
     case TypeNode::TypeOf:
         auto &typeNode = static_cast<TypeOfNode&>(node);
@@ -96,9 +102,9 @@ DSType *TypeChecker::toTypeImpl(TypeNode &node) {
         if(type.isNothingType()) {
             RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->symbolTable.getTypeName(type));
         }
-        return &type;
+        return Ok(&type);
     }
-    return nullptr; // for suppressing gcc warning (normally unreachable).
+    return Ok(static_cast<DSType *>(nullptr)); // for suppressing gcc warning (normally unreachable).
 }
 
 DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
@@ -233,7 +239,9 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
             this->checkTypeWithCoercion(firstType, jumpNode->refExprNode());
         }
     }
-    return this->symbolTable.createReifiedType(this->symbolTable.getOptionTemplate(), {&firstType});
+    auto ret = this->symbolTable.createReifiedType(this->symbolTable.getOptionTemplate(), {&firstType});
+    assert(ret);
+    return *ret.take();
 }
 
 const FieldHandle *TypeChecker::addEntry(Node &node, const std::string &symbolName,
@@ -421,11 +429,11 @@ void TypeChecker::convertToStringExpr(BinaryOpNode &node) {
 
 // visitor api
 void TypeChecker::visitTypeNode(TypeNode &node) {
-    try {
-        auto *type = this->toTypeImpl(node);
-        node.setType(*type);
-    } catch(TypeLookupError &e) {
-        throw TypeCheckError(node.getToken(), e);
+    auto ret = this->toTypeImpl(node);
+    if(ret) {
+        node.setType(*ret.take());
+    } else {
+        throw TypeCheckError(node.getToken(), *ret.asErr());
     }
 }
 
@@ -508,7 +516,9 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
     auto &arrayTemplate = this->symbolTable.getArrayTemplate();
     std::vector<DSType *> elementTypes(1);
     elementTypes[0] = &elementType;
-    node.setType(this->symbolTable.createReifiedType(arrayTemplate, std::move(elementTypes)));
+    auto typeOrError = this->symbolTable.createReifiedType(arrayTemplate, std::move(elementTypes));
+    assert(typeOrError);
+    node.setType(*typeOrError.take());
 }
 
 void TypeChecker::visitMapNode(MapNode &node) {
@@ -528,7 +538,9 @@ void TypeChecker::visitMapNode(MapNode &node) {
     std::vector<DSType *> elementTypes(2);
     elementTypes[0] = &keyType;
     elementTypes[1] = &valueType;
-    node.setType(this->symbolTable.createReifiedType(mapTemplate, std::move(elementTypes)));
+    auto typeOrError = this->symbolTable.createReifiedType(mapTemplate, std::move(elementTypes));
+    assert(typeOrError);
+    node.setType(*typeOrError.take());
 }
 
 void TypeChecker::visitTupleNode(TupleNode &node) {
@@ -537,7 +549,8 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
     for(unsigned int i = 0; i < size; i++) {
         types[i] = &this->checkTypeAsExpr(node.getNodes()[i]);
     }
-    node.setType(this->symbolTable.createTupleType(std::move(types)));
+    auto typeOrError = this->symbolTable.createTupleType(std::move(types));
+    node.setType(*typeOrError.take());
 }
 
 void TypeChecker::visitVarNode(VarNode &node) {
@@ -1333,7 +1346,9 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     }
 
     // register function handle
-    auto &funcType = static_cast<FunctionType&>(this->symbolTable.createFuncType(&returnType, std::move(paramTypes)));
+    auto typeOrError = this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
+    assert(typeOrError);
+    auto &funcType = static_cast<FunctionType&>(*typeOrError.take());
     node.setFuncType(&funcType);
     auto handle = this->addEntry(node, node.getFuncName(), funcType,
                                  FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);

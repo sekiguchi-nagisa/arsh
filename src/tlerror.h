@@ -18,6 +18,7 @@
 #define YDSH_TLERROR_H
 
 #include <string>
+#include <memory>
 
 namespace ydsh {
 
@@ -63,15 +64,14 @@ DEFINE_TLError(UnmatchElement, "not match type element, `%s' requires %d type el
 
 #undef DEFINE_TLError
 
-TypeLookupError createTLErrorImpl(const char *kind, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
+std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 
 template <typename T, typename ... Arg, typename = base_of_t<T, TLError>>
-inline TypeLookupError createTLError(Arg && ...arg) {
+inline std::unique_ptr<TypeLookupError> createTLError(Arg && ...arg) {
     return createTLErrorImpl(T::kind, T::value, std::forward<Arg>(arg)...);
 }
 
-#define RAISE_TL_ERROR(e, ...) \
-    throw createTLError<e>(__VA_ARGS__)
+#define RAISE_TL_ERROR(e, ...) return Err(createTLError<e>(__VA_ARGS__))
 
 } // namespace ydsh
 

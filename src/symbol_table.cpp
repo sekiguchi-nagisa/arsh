@@ -355,8 +355,12 @@ SymbolTable::SymbolTable() :
     this->optionTemplate = this->initTypeTemplate(TYPE_OPTION, std::move(elements), info_OptionType()); // pseudo template
 
     // init string array type(for command argument)
-    std::vector<DSType *> types = {&this->get(TYPE::String)};
-    this->createReifiedType(this->getArrayTemplate(), std::move(types));    // TYPE::StringArray
+    {
+        std::vector<DSType *> types = {&this->get(TYPE::String)};
+        auto checked = this->createReifiedType(this->getArrayTemplate(), std::move(types));    // TYPE::StringArray
+        (void) checked;
+        assert(checked);
+    }
 
     // init some error type
     this->initErrorType(TYPE::ArithmeticError, "ArithmeticError");
@@ -445,23 +449,23 @@ HandleOrError SymbolTable::newHandle(const std::string &symbolName, DSType &type
     return this->cur().newHandle(symbolName, type, attribute);
 }
 
-DSType &SymbolTable::getTypeOrThrow(const std::string &typeName) const {
+TypeOrError SymbolTable::getTypeOrThrow(const std::string &typeName) const {
     DSType *type = this->getType(typeName);
     if(type == nullptr) {
         RAISE_TL_ERROR(UndefinedType, typeName.c_str());
     }
-    return *type;
+    return Ok(type);
 }
 
-const TypeTemplate &SymbolTable::getTypeTemplate(const std::string &typeName) const {
+TypeTempOrError SymbolTable::getTypeTemplate(const std::string &typeName) const {
     auto iter = this->templateMap.find(typeName);
     if(iter == this->templateMap.end()) {
         RAISE_TL_ERROR(NotTemplate, typeName.c_str());
     }
-    return *iter->second;
+    return Ok(const_cast<const TypeTemplate *>(iter->second));
 }
 
-DSType &SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
+TypeOrError SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
                                     std::vector<DSType *> &&elementTypes) {
     if(this->tupleTemplate->getName() == typeTemplate.getName()) {
         return this->createTupleType(std::move(elementTypes));
@@ -475,24 +479,31 @@ DSType &SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
         if(type->isVoidType() || type->isNothingType()) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
         } else if(type->isOptionType()) {
-            return *type;
+            return Ok(type);
         }
     } else {
-        this->checkElementTypes(typeTemplate, elementTypes);
+        auto checked = this->checkElementTypes(typeTemplate, elementTypes);
+        if(!checked) {
+            return checked;
+        }
     }
 
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         DSType *superType = attr != 0u ? nullptr : &this->get(TYPE::Any);
-        return this->typeMap.newType<ReifiedType>(std::move(typeName),
-                                                  typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
+        type = &this->typeMap.newType<ReifiedType>(
+                std::move(typeName),
+                typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
     }
-    return *type;
+    return Ok(type);
 }
 
-DSType &SymbolTable::createTupleType(std::vector<DSType *> &&elementTypes) {
-    this->checkElementTypes(elementTypes);
+TypeOrError SymbolTable::createTupleType(std::vector<DSType *> &&elementTypes) {
+    auto checked = this->checkElementTypes(elementTypes);
+    if(!checked) {
+        return checked;
+    }
 
     assert(!elementTypes.empty());
 
@@ -500,23 +511,28 @@ DSType &SymbolTable::createTupleType(std::vector<DSType *> &&elementTypes) {
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         DSType *superType = &this->get(TYPE::Any);
-        return this->typeMap.newType<TupleType>(std::move(typeName),
-                                                this->tupleTemplate->getInfo(), superType, std::move(elementTypes));
+        type = &this->typeMap.newType<TupleType>(
+                std::move(typeName),
+                this->tupleTemplate->getInfo(), superType, std::move(elementTypes));
     }
-    return *type;
+    return Ok(type);
 }
 
-DSType &SymbolTable::createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
-    this->checkElementTypes(paramTypes);
+TypeOrError SymbolTable::createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
+    auto checked = this->checkElementTypes(paramTypes);
+    if(!checked) {
+        return checked;
+    }
 
     std::string typeName(toFunctionTypeName(returnType, paramTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        return this->typeMap.newType<FunctionType>(std::move(typeName),
-                                                   &this->get(TYPE::Func), returnType, std::move(paramTypes));
+        type = &this->typeMap.newType<FunctionType>(
+                std::move(typeName),
+                &this->get(TYPE::Func), returnType, std::move(paramTypes));
     }
     assert(type->isFuncType());
-    return *type;
+    return Ok(type);
 }
 
 bool SymbolTable::setAlias(const char *alias, DSType &targetType) {
@@ -639,15 +655,16 @@ void SymbolTable::initErrorType(TYPE t, const char *typeName) {
     assert(type.is(t));
 }
 
-void SymbolTable::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
+TypeOrError SymbolTable::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
     for(DSType *type : elementTypes) {
         if(type->isVoidType() || type->isNothingType()) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
         }
     }
+    return Ok(static_cast<DSType *>(nullptr));
 }
 
-void SymbolTable::checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const {
+TypeOrError SymbolTable::checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const {
     const unsigned int size = elementTypes.size();
 
     // check element type size
@@ -666,6 +683,7 @@ void SymbolTable::checkElementTypes(const TypeTemplate &t, const std::vector<DST
         }
         RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementType));
     }
+    return Ok(static_cast<DSType *>(nullptr));
 }
 
 } // namespace ydsh

@@ -162,10 +162,12 @@ public:
         std::string name(templateName);
         ASSERT_EQ(name, t.getName());
 
-        auto &gotten = this->pool.getTypeTemplate(name);
+        auto ret = this->pool.getTypeTemplate(name);
+        ASSERT_TRUE(ret);
+        auto gotten = ret.take();
         ASSERT_EQ(size, t.getElementTypeSize());
-        ASSERT_EQ(size, gotten.getElementTypeSize());
-        ASSERT_TRUE((unsigned long)&this->pool.getTypeTemplate(name) == (unsigned long)&t);
+        ASSERT_EQ(size, gotten->getElementTypeSize());
+        ASSERT_TRUE((unsigned long)this->pool.getTypeTemplate(name).take() == (unsigned long)&t);
     }
 
     template <typename T>
