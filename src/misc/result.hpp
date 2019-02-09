@@ -383,6 +383,14 @@ public:
     E &asErr() {
         return get<E>(*this);
     }
+
+    T &&take() {
+        return std::move(this->asOk());
+    }
+
+    E &&takeError() {
+        return std::move(this->asErr());
+    }
 };
 
 } // namespace ydsh

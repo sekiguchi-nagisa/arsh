@@ -152,9 +152,9 @@ bool Transport::dispatch(Handler &handler) {
         auto id = std::move(req.id);
         auto ret = handler.onCall(req.method, std::move(req.params));
         if(ret) {
-            this->reply(std::move(id), std::move(ret.asOk()));
+            this->reply(std::move(id), ret.take());
         } else {
-            this->reply(std::move(id), std::move(ret.asErr()));
+            this->reply(std::move(id), ret.takeError());
         }
     } else if(req.isNotification()) {
         handler.onNotify(req.method, std::move(req.params));
