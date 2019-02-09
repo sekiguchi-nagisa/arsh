@@ -506,7 +506,7 @@ DSType &SymbolTable::createTupleType(std::vector<DSType *> &&elementTypes) {
     return *type;
 }
 
-FunctionType &SymbolTable::createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
+DSType &SymbolTable::createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
     this->checkElementTypes(paramTypes);
 
     std::string typeName(toFunctionTypeName(returnType, paramTypes));
@@ -516,8 +516,7 @@ FunctionType &SymbolTable::createFuncType(DSType *returnType, std::vector<DSType
                                                    &this->get(TYPE::Func), returnType, std::move(paramTypes));
     }
     assert(type->isFuncType());
-
-    return *static_cast<FunctionType *>(type);
+    return *type;
 }
 
 bool SymbolTable::setAlias(const char *alias, DSType &targetType) {

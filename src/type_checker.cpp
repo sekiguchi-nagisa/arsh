@@ -1333,7 +1333,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     }
 
     // register function handle
-    auto &funcType = this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
+    auto &funcType = static_cast<FunctionType&>(this->symbolTable.createFuncType(&returnType, std::move(paramTypes)));
     node.setFuncType(&funcType);
     auto handle = this->addEntry(node, node.getFuncName(), funcType,
                                  FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);

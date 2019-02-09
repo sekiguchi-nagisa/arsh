@@ -653,7 +653,14 @@ public:
 
     DSType &createTupleType(std::vector<DSType *> &&elementTypes);
 
-    FunctionType &createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
+    /**
+     *
+     * @param returnType
+     * @param paramTypes
+     * @return
+     * must be FunctionType
+     */
+    DSType &createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
     /**
      * set type name alias. if alias name has alreadt defined, return false
