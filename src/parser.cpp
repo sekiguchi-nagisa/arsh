@@ -709,7 +709,7 @@ std::unique_ptr<Node> Parser::parse_patternExpression() {
     std::unique_ptr<Node> node;
     switch(CUR_KIND()) {
     EACH_LA_primaryPattern(GEN_LA_CASE)
-        node = this->parse_primaryPattern();
+        node = TRY(this->parse_primaryPattern());
         break;
     default:
         E_ALTER(EACH_LA_pattern(GEN_LA_ALTER));
