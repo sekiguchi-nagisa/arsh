@@ -301,6 +301,21 @@ if(FUZZING_BUILD_MODE)
 endif()
 
 
+#+++++++++++++++#
+#     CPack     #
+#+++++++++++++++#
+
+include(InstallRequiredSystemLibraries)
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "statically typed shell language")
+#set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_PACKAGE_VERSION_MAJOR "${YDSH_MAJOR_VERSION}")
+set(CPACK_PACKAGE_VERSION_MINOR "${YDSH_MINOR_VERSION}")
+set(CPACK_PACKAGE_VERSION_PATCH "${YDSH_PATCH_VERSION}")
+set(CPACK_STRIP_FILES "bin/${BIN_NAME} lib/${YDSH_LIB}")
+include(CPack)
+
+
 #+++++++++++++++++++++++++#
 #     show enviroment     #
 #+++++++++++++++++++++++++#
