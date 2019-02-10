@@ -434,7 +434,7 @@ TEST_F(CmdlineTest, logger) {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 0, "USE_LOGGING\n"));
 
         auto builder = ds("-c", "sh -c true").addEnv("YDSH_DUMP_EXEC", "on");
-        const char *re = ".+ xexecve.+";
+        const char *re = ".+\\(xexecve\\).+";
         ASSERT_NO_FATAL_FAILURE(this->expectRegex(std::move(builder), 0, "", re));
 
         // specify appender
