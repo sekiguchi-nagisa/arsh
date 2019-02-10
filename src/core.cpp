@@ -1154,7 +1154,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             goto END;
         }
         default:
-            if(inCmdMode(*node)) {
+            if(tokenPairs.back().first != TokenKind::RP && inCmdMode(*node)) {
                 kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr);
                 goto END;
             }
