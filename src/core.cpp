@@ -983,14 +983,30 @@ static void completeExpectedToken(const std::string &token, CStrBuffer &results)
     }
 }
 
-enum class CompletorKind {
-    NONE,
-    CMD,    // command name without '/'
-    QCMD,   // command name with '/'
-    FILE,
-    VAR,    // complete global variable name
-    EXPECT,
+#define EACH_COMPLETOR_KIND(OP) \
+    OP(NONE) \
+    OP(CMD) /* command name without '/' */\
+    OP(QCMD) /* command name with '/' */\
+    OP(FILE) \
+    OP(VAR) /* complete global variable name */\
+    OP(EXPECT)
+
+
+enum class CompletorKind : unsigned int {
+#define GEN_ENUM(OP) OP,
+    EACH_COMPLETOR_KIND(GEN_ENUM)
+#undef GEN_ENUM
 };
+
+static const char *toString(CompletorKind kind) {
+    const char *table[] = {
+#define GEN_STR(OP) #OP,
+            EACH_COMPLETOR_KIND(GEN_STR)
+#undef GEN_STR
+    };
+    return table[static_cast<unsigned int>(kind)];
+}
+
 
 static bool isFileName(const std::string &str) {
     return !str.empty() && (str[0] == '~' || strchr(str.c_str(), '/') != nullptr);
@@ -1228,27 +1244,8 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             str += lexer.toTokenText(t.second);
             str += "\n";
         }
-
-        switch(kind) {
-        case CompletorKind::NONE:
-            str += "ckind: NONE";
-            break;
-        case CompletorKind::CMD:
-            str += "ckind: CMD";
-            break;
-        case CompletorKind::QCMD:
-            str += "ckind: QCMD";
-            break;
-        case CompletorKind::FILE:
-            str += "ckind: FILE";
-            break;
-        case CompletorKind::VAR:
-            str += "ckind: VAR";
-            break;
-        case CompletorKind::EXPECT:
-            str += "ckind: EXPECT";
-            break;
-        }
+        str += "ckind: ";
+        str += toString(kind);
         LOG(DUMP_CONSOLE, "%s", str.c_str());
     });
 
