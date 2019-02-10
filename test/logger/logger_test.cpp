@@ -49,7 +49,7 @@ struct LoggerTest : public ExpectOutput {
     }
 };
 
-#define HEADER "^[1-9][0-9]{3}-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9] \\[[0-9]+\\] "
+#define HEADER "^[1-9][0-9]{3}-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9] <%s> \\[[0-9]+\\] %s$"
 
 static std::vector<std::string> split(const std::string &line) {
     std::vector<std::string> values;
@@ -74,7 +74,7 @@ TEST_F(LoggerTest, base) {
         logger(LogLevel::FATAL, "broken!!");
         return 0;
     });
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ret, SIGABRT, WaitStatus::SIGNALED, "^hello fatal!!\n$", HEADER"\\[fatal\\] broken!!\n$"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ret, SIGABRT, WaitStatus::SIGNALED, "^hello fatal!!\n$", format(HEADER, "fatal", "broken!!\n").c_str()));
 
 
     auto func = []{
@@ -97,7 +97,7 @@ TEST_F(LoggerTest, base) {
     this->envs.clear();
     this->addEnv("testlog_LEVEL", "ERROR");
     ret = this->spawnAndWait(func);
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ret, 0, WaitStatus::EXITED, "^hello error!!\n$", HEADER"\\[error\\] error!!\n$"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ret, 0, WaitStatus::EXITED, "^hello error!!\n$", format(HEADER, "error", "error!!\n").c_str()));
 
     this->envs.clear();
     this->addEnv("testlog_LEVEL", "INFO");
@@ -118,7 +118,9 @@ TEST_F(LoggerTest, base) {
     };
     for(unsigned int i = 0; i < 3; i++) {
         auto outPattern = format("^hello %s!!$", kind[i]);
-        auto errPattern = format(HEADER"\\[%s\\] %s!!$", kind[i], kind[i]);
+        std::string str = kind[i];
+        str += "!!";
+        auto errPattern = format(HEADER, kind[i], str.c_str());
 
         ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(outs[i], ::testing::MatchesRegex(outPattern)));
         ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(errs[i], ::testing::MatchesRegex(errPattern)));
@@ -154,7 +156,7 @@ TEST_F(LoggerTest, thread) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4, errs.size()));
 
     for(auto &e : errs) {
-        const char *pattern = HEADER"\\[(info|warning)\\] thread[12]-[12]$";
+        auto pattern = format(HEADER, "(info|warning)", "thread[12]-[12]");
         ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(e, ::testing::MatchesRegex(pattern)));
     }
 }
