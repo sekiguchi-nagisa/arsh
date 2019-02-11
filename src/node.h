@@ -1805,6 +1805,9 @@ public:
         return this->global;
     }
 
+    /**
+     * may be null
+     */
     Node *getExprNode() const {
         return this->exprNode;
     }

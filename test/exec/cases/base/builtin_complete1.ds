@@ -111,6 +111,8 @@ if(test -d ~/bin) {
 $assertArray($(cmd /bin /usr/bin), $comp('{', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('{l', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin), $comp('echo &&', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin), $comp('export-env HOGE = ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('export-env HOGE = l', '/bin:/usr/bin'))
 
 
 # complete file name
@@ -153,6 +155,7 @@ $assertArray($(file '.'), $(complete 'echo >'))
 $assertArray($(file '.'), $(complete 'echo | echo $TRUE '))
 $assertArray($(file '.'), $(complete 'echo ${34} '))
 $assertArray($(file '.'), $(complete 'source '))
+assert $(complete 'import-env home ').empty()
 
 
 # complete expected token

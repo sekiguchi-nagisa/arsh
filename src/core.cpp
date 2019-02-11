@@ -1081,8 +1081,10 @@ static bool inCmdMode(const Node &node) {
         return (jumpNode.getOpKind() == JumpNode::THROW || jumpNode.getOpKind() == JumpNode::RETURN)
                && inCmdMode(*jumpNode.getExprNode());
     }
-    case NodeKind::VarDecl:
-        return inCmdMode(*static_cast<const VarDeclNode &>(node).getExprNode());
+    case NodeKind::VarDecl: {
+        auto &vardeclNode = static_cast<const VarDeclNode &>(node);
+        return vardeclNode.getExprNode() != nullptr && inCmdMode(*vardeclNode.getExprNode());
+    }
     case NodeKind::Assign:
         return inCmdMode(*static_cast<const AssignNode &>(node).getRightNode());
     default:
