@@ -100,9 +100,9 @@ private:
      * @return
      */
     DSType &getMapType() {
-        return this->symbolTable.createReifiedType(this->symbolTable.getMapTemplate(), {
+        return *this->symbolTable.createReifiedType(this->symbolTable.getMapTemplate(), {
             &this->symbolTable.get(TYPE::String), &this->symbolTable.get(TYPE::String)
-        });
+        }).take();
     }
 };
 

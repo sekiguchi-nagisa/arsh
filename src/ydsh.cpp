@@ -300,7 +300,7 @@ static void initBuiltinVar(DSState *state) {
      * must be Map_Object
      */
     bindVariable(state, "reply", DSValue::create<Map_Object>(
-            state->symbolTable.createReifiedType(state->symbolTable.getMapTemplate(), std::move(types))));
+            *state->symbolTable.createReifiedType(state->symbolTable.getMapTemplate(), std::move(types)).take()));
 
     /**
      * process id of current process.

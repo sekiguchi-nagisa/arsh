@@ -1477,8 +1477,10 @@ YDSH_METHOD signals_signal(RuntimeContext &ctx) {
 YDSH_METHOD signals_list(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_list);
 
-    auto &type = getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), {&getPool(ctx).get(TYPE::Signal)});
-    auto v = DSValue::create<Array_Object>(type);
+    auto ret = getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), {&getPool(ctx).get(TYPE::Signal)});
+    assert(ret);
+    auto type = ret.take();
+    auto v = DSValue::create<Array_Object>(*type);
     auto *array = typeAs<Array_Object>(v);
     for(auto &e : getUniqueSignalList()) {
         array->append(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Signal), e));

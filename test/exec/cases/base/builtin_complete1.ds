@@ -105,6 +105,7 @@ assert($(complete '     ').empty())
 $assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('l', '/bin:/usr/bin'))
 $assertArray($(cmd | grep '^p'), $comp('p', ''))
 $assertArray($(cmd /bin /usr/bin), $comp('echo; ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin), $comp('35 | ', '/bin:/usr/bin'))
 if(test -d ~/bin) {
     $assertArray($(cmd /bin /usr/bin ~/bin), $comp('echo; ', '/bin:/usr/bin:~/bin'))
 }
@@ -155,7 +156,9 @@ $assertArray($(file '.'), $(complete 'echo >'))
 $assertArray($(file '.'), $(complete 'echo | echo $TRUE '))
 $assertArray($(file '.'), $(complete 'echo ${34} '))
 $assertArray($(file '.'), $(complete 'source '))
-assert $(complete 'import-env home ').empty()
+$assertArray(new [String](), $(complete 'import-env home '))
+$assertArray(new [String](), $(complete '(ls) '))
+$assertArray(new [String](), $(complete 'assert (ls) : "de" '))
 
 
 # complete expected token

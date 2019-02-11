@@ -109,7 +109,7 @@ public:
         this->tracker = tracker;
     }
 
-    Tracker *getTracker() {
+    const Tracker *getTracker() const {
         return this->tracker;
     }
 

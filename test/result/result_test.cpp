@@ -147,7 +147,7 @@ Result<std::string, int> func(int index) {
 }
 
 TEST(result, result) {
-    Result<std::string, int> ret = Ok(std::string("hello"));
+    Result<std::string, int> ret = Ok("hello");
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ret.asOk()));
 

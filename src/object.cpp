@@ -336,7 +336,7 @@ DSValue Map_Object::nextElement(DSState &ctx) {
     types[0] = this->iter->first->getType();
     types[1] = this->iter->second->getType();
 
-    auto entry = DSValue::create<Tuple_Object>(getPool(ctx).createTupleType(std::move(types)));
+    auto entry = DSValue::create<Tuple_Object>(*getPool(ctx).createTupleType(std::move(types)).take());
     typeAs<Tuple_Object>(entry)->set(0, this->iter->first);
     typeAs<Tuple_Object>(entry)->set(1, this->iter->second);
     ++this->iter;

@@ -1,0 +1,20 @@
+#!/usr/bin/env ydsh
+
+command -v rpmbuild || {
+    echo 1>&2 require rpmbuild;
+    exit 1
+}
+
+let root = "$SCRIPT_DIR/../.."
+
+mkdir -p build-rpm
+cd build-rpm
+cmake $root -G Ninja \
+      -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
+      -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+
+ninja || {
+    echo build failed!!
+    exit 1
+}
+cpack -G RPM

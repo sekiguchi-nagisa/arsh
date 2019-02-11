@@ -841,7 +841,9 @@ static bool startsWith(const char *s1, const char *s2) {
  * append candidates to results.
  * token may be empty string.
  */
-static void completeCommandName(const DSState &ctx, const std::string &token, CStrBuffer &results) {
+static CStrBuffer completeCommandName(const DSState &ctx, const std::string &token) {
+    CStrBuffer results;
+
     // search user defined command
     for(const auto &iter : ctx.symbolTable.globalScope()) {
         const char *name = iter.first.c_str();
@@ -866,7 +868,7 @@ static void completeCommandName(const DSState &ctx, const std::string &token, CS
     // search external command
     const char *path = getenv(ENV_PATH);
     if(path == nullptr) {
-        return;
+        return results;
     }
 
     auto pathList(computePathList(path));
@@ -889,10 +891,12 @@ static void completeCommandName(const DSState &ctx, const std::string &token, CS
         }
         closedir(dir);
     }
+    return results;
 }
 
-static void completeFileName(const DSState &st, const std::string &token,
-                             CStrBuffer &results, bool onlyExec = true) {
+static CStrBuffer completeFileName(const DSState &st, const std::string &token, bool onlyExec = true) {
+    CStrBuffer results;
+
     const auto s = token.find_last_of('/');
 
     // complete tilde
@@ -907,7 +911,7 @@ static void completeFileName(const DSState &st, const std::string &token,
             }
         }
         endpwent();
-        return;
+        return results;
     }
 
     // complete file name
@@ -939,7 +943,7 @@ static void completeFileName(const DSState &st, const std::string &token,
 
     DIR *dir = opendir(targetDir.c_str());
     if(dir == nullptr) {
-        return;
+        return results;
     }
 
     for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
@@ -964,9 +968,12 @@ static void completeFileName(const DSState &st, const std::string &token,
         }
     }
     closedir(dir);
+    return results;
 }
 
-static void completeGlobalVarName(const DSState &ctx, const std::string &token, CStrBuffer &results) {
+static CStrBuffer completeGlobalVarName(const DSState &ctx, const std::string &token) {
+    CStrBuffer results;
+
     for(const auto &iter : ctx.symbolTable.globalScope()) {
         const char *varName = iter.first.c_str();
         if(!token.empty() && !startsWith(varName, CMD_SYMBOL_PREFIX)
@@ -975,22 +982,42 @@ static void completeGlobalVarName(const DSState &ctx, const std::string &token, 
             append(results, iter.first, EscapeOp::NOP);
         }
     }
+    return results;
 }
 
-static void completeExpectedToken(const std::string &token, CStrBuffer &results) {
+static CStrBuffer completeExpectedToken(const std::string &token) {
+    CStrBuffer results;
+
     if(!token.empty()) {
         append(results, token, EscapeOp::NOP);
     }
+    return results;
 }
 
-enum class CompletorKind {
-    NONE,
-    CMD,    // command name without '/'
-    QCMD,   // command name with '/'
-    FILE,
-    VAR,    // complete global variable name
-    EXPECT,
+#define EACH_COMPLETOR_KIND(OP) \
+    OP(NONE) \
+    OP(CMD) /* command name without '/' */\
+    OP(QCMD) /* command name with '/' */\
+    OP(FILE) \
+    OP(VAR) /* complete global variable name */\
+    OP(EXPECT)
+
+
+enum class CompletorKind : unsigned int {
+#define GEN_ENUM(OP) OP,
+    EACH_COMPLETOR_KIND(GEN_ENUM)
+#undef GEN_ENUM
 };
+
+static const char *toString(CompletorKind kind) {
+    const char *table[] = {
+#define GEN_STR(OP) #OP,
+            EACH_COMPLETOR_KIND(GEN_STR)
+#undef GEN_STR
+    };
+    return table[static_cast<unsigned int>(kind)];
+}
+
 
 static bool isFileName(const std::string &str) {
     return !str.empty() && (str[0] == '~' || strchr(str.c_str(), '/') != nullptr);
@@ -1013,8 +1040,8 @@ static bool isRedirOp(TokenKind kind) {
     }
 }
 
-static CompletorKind selectWithCmd(const Lexer &lexer, const std::vector<std::pair<TokenKind, Token>> &tokenPairs,
-                                   unsigned int cursor, std::string &tokenStr, bool exactly = false) {
+static std::pair<CompletorKind, std::string> selectWithCmd(const Parser &parser, unsigned int cursor, bool exactly = false) {
+    auto &tokenPairs = parser.getTracker()->getTokenPairs();
     assert(!tokenPairs.empty());
     TokenKind kind = tokenPairs.back().first;
     Token token = tokenPairs.back().second;
@@ -1022,10 +1049,11 @@ static CompletorKind selectWithCmd(const Lexer &lexer, const std::vector<std::pa
     switch(kind) {
     case COMMAND:
         if(token.pos + token.size == cursor) {
-            tokenStr = lexer.toTokenText(token);
-            return isFileName(tokenStr) ? CompletorKind::QCMD : CompletorKind::CMD;
+            auto tokenStr = parser.getLexer()->toTokenText(token);
+            auto kind = isFileName(tokenStr) ? CompletorKind::QCMD : CompletorKind::CMD;
+            return {kind, std::move(tokenStr)};
         }
-        return CompletorKind::FILE;
+        return {CompletorKind::FILE, ""};
     case CMD_ARG_PART:
         if(token.pos + token.size == cursor && tokenPairs.size() > 1) {
             unsigned int prevIndex = tokenPairs.size() - 2;
@@ -1037,17 +1065,16 @@ static CompletorKind selectWithCmd(const Lexer &lexer, const std::vector<std::pa
              * or if spaces exist between current and previous
              */
             if(isRedirOp(prevKind) || prevToken.pos + prevToken.size < token.pos) {
-                tokenStr = lexer.toTokenText(token);
-                return CompletorKind::FILE;
+                return {CompletorKind::FILE, parser.getLexer()->toTokenText(token)};
             }
-            return CompletorKind::NONE;
+            return {CompletorKind::NONE, ""};
         }
-        return CompletorKind::FILE;
+        return {CompletorKind::FILE, ""};
     default:
         if(!exactly && token.pos + token.size < cursor) {
-            return CompletorKind::FILE;
+            return {CompletorKind::FILE, ""};
         }
-        return CompletorKind::NONE;
+        return {CompletorKind::NONE, ""};
     }
 }
 
@@ -1074,8 +1101,10 @@ static bool inCmdMode(const Node &node) {
         auto &forkNode = static_cast<const ForkNode &>(node);
         return forkNode.getOpKind() == ForkKind::COPROC && inCmdMode(*forkNode.getExprNode());
     }
-    case NodeKind::Assert:
-        return inCmdMode(*static_cast<const AssertNode &>(node).getCondNode());
+    case NodeKind::Assert: {
+        auto &assertNode = static_cast<const AssertNode &>(node);
+        return assertNode.getMessageNode()->getToken().size == 0 && inCmdMode(*assertNode.getCondNode());
+    }
     case NodeKind::Jump: {
         auto &jumpNode = static_cast<const JumpNode &>(node);
         return (jumpNode.getOpKind() == JumpNode::THROW || jumpNode.getOpKind() == JumpNode::RETURN)
@@ -1104,98 +1133,78 @@ static std::unique_ptr<Node> applyAndGetLatest(Parser &parser) {
     return node;
 }
 
-static CompletorKind selectCompletor(const std::string &line, std::string &tokenStr) {
-    CompletorKind kind = CompletorKind::NONE;
-
-    const unsigned int cursor = line.size() - 1; //   ignore last newline
-
-    // parse input line
-    Lexer lexer("<line>", line.c_str());
-    TokenTracker tracker;
-    Parser parser(lexer);
-    parser.setTracker(&tracker);
-    auto node = applyAndGetLatest(parser);
+static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parser, const std::unique_ptr<Node> &node,
+                                                             const unsigned int cursor) {
+    auto &lexer = *parser.getLexer();
 
     if(!parser.hasError()) {
-        const auto &tokenPairs = tracker.getTokenPairs();
+        const auto &tokenPairs = parser.getTracker()->getTokenPairs();
         if(tokenPairs.empty()) {
-            goto END;
+            return {CompletorKind::NONE, ""};
         }
         switch(tokenPairs.back().first) {
         case APPLIED_NAME:
         case SPECIAL_NAME: {
             Token token = tokenPairs.back().second;
             if(token.pos + token.size == cursor) {
-                tokenStr = lexer.toTokenText(token);
-                kind = CompletorKind::VAR;
-                goto END;
+                return {CompletorKind::VAR, lexer.toTokenText(token)};
             } else if(token.pos + token.size < cursor && inCmdMode(*node)) {
-                kind = CompletorKind::FILE;
-                goto END;
+                return {CompletorKind::FILE, ""};
             }
             break;
         }
-        case LINE_END: {
-            kind = CompletorKind::CMD;
-            goto END;
-        }
+        case LINE_END:
+            return {CompletorKind::CMD, ""};
         default:
-            if(inCmdMode(*node)) {
-                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr);
-                goto END;
+            if(tokenPairs.back().first != TokenKind::RP && inCmdMode(*node)) {
+                return selectWithCmd(parser, cursor);
             }
             break;
         }
     } else {
         const auto &e = parser.getError();
         LOG(DUMP_CONSOLE, "error kind: %s\nkind: %s, token: %s, text: %s",
-                e.getErrorKind(), toString(e.getTokenKind()),
-                toString(e.getErrorToken()).c_str(),
-                lexer.toTokenText(e.getErrorToken()).c_str());
+            e.getErrorKind(), toString(e.getTokenKind()),
+            toString(e.getErrorToken()).c_str(),
+            lexer.toTokenText(e.getErrorToken()).c_str());
 
         Token token = e.getErrorToken();
-        auto &tokenPairs = tracker.getTokenPairs();
         if(token.pos + token.size < cursor) {
-            goto END;
+            return {CompletorKind::NONE, ""};
         }
 
         switch(e.getTokenKind()) {
         case EOS: {
             if(strcmp(e.getErrorKind(), NO_VIABLE_ALTER) == 0) {
-                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr, true);
-                if(kind != CompletorKind::NONE) {
-                    goto END;
+                auto pair = selectWithCmd(parser, cursor, true);
+                if(pair.first != CompletorKind::NONE) {
+                    return pair;
                 }
 
                 if(findKind(e.getExpectedTokens(), COMMAND)) {
-                    kind = CompletorKind::CMD;
-                    goto END;
+                    return {CompletorKind::CMD, ""};
                 }
 
                 if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
-                    kind = CompletorKind::FILE;
-                    goto END;
+                    return {CompletorKind::FILE, ""};
                 }
             } else if(strcmp(e.getErrorKind(), TOKEN_MISMATCHED) == 0) {
                 assert(!e.getExpectedTokens().empty());
                 TokenKind expected = e.getExpectedTokens().back();
                 LOG(DUMP_CONSOLE, "expected: %s", toString(expected));
 
-                kind = selectWithCmd(lexer, tokenPairs, cursor, tokenStr, true);
-                if(kind != CompletorKind::NONE) {
-                    goto END;
+                auto pair = selectWithCmd(parser, cursor, true);
+                if(pair.first != CompletorKind::NONE) {
+                    return pair;
                 }
 
                 if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
-                    kind = CompletorKind::FILE;
-                    goto END;
+                    return {CompletorKind::FILE, ""};
                 }
 
                 std::string expectedStr = toString(expected);
                 if(expectedStr.size() < 2 || (expectedStr.front() != '<' && expectedStr.back() != '>')) {
-                    tokenStr = std::move(expectedStr);
-                    kind = CompletorKind::EXPECT;
-                    goto END;
+                    return {CompletorKind::EXPECT, std::move(expectedStr)};
                 }
             }
             break;
@@ -1205,9 +1214,7 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             if(str == "$" && token.pos + token.size == cursor &&
                findKind(e.getExpectedTokens(), APPLIED_NAME) &&
                findKind(e.getExpectedTokens(), SPECIAL_NAME)) {
-                tokenStr = std::move(str);
-                kind = CompletorKind::VAR;
-                goto END;
+                return {CompletorKind::VAR, std::move(str)};
             }
             break;
         }
@@ -1215,8 +1222,20 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             break;
         }
     }
+    return {CompletorKind::NONE, ""};
+}
 
-    END:
+static std::pair<CompletorKind, std::string> selectCompletor(const std::string &line) {
+    const unsigned int cursor = line.size() - 1; //   ignore last newline
+
+    // parse input line
+    Lexer lexer("<line>", line.c_str());
+    TokenTracker tracker;
+    Parser parser(lexer);
+    parser.setTracker(&tracker);
+    auto node = applyAndGetLatest(parser);
+    auto pair = selectCompletor(parser, node, cursor);
+
     LOG_IF(DUMP_CONSOLE, {
         std::string str = "token size: ";
         str += std::to_string(tracker.getTokenPairs().size());
@@ -1230,55 +1249,36 @@ static CompletorKind selectCompletor(const std::string &line, std::string &token
             str += lexer.toTokenText(t.second);
             str += "\n";
         }
-
-        switch(kind) {
-        case CompletorKind::NONE:
-            str += "ckind: NONE";
-            break;
-        case CompletorKind::CMD:
-            str += "ckind: CMD";
-            break;
-        case CompletorKind::QCMD:
-            str += "ckind: QCMD";
-            break;
-        case CompletorKind::FILE:
-            str += "ckind: FILE";
-            break;
-        case CompletorKind::VAR:
-            str += "ckind: VAR";
-            break;
-        case CompletorKind::EXPECT:
-            str += "ckind: EXPECT";
-            break;
-        }
+        str += "ckind: ";
+        str += toString(pair.first);
         LOG(DUMP_CONSOLE, "%s", str.c_str());
     });
 
-    return kind;
+    return pair;
 }
 
 CStrBuffer completeLine(const DSState &st, const std::string &line) {
     assert(!line.empty() && line.back() == '\n');
 
     CStrBuffer sbuf;
-    std::string tokenStr;
-    switch(selectCompletor(line, tokenStr)) {
+    auto pair = selectCompletor(line);
+    switch(pair.first) {
     case CompletorKind::NONE:
         break;  // do nothing
     case CompletorKind::CMD:
-        completeCommandName(st, tokenStr, sbuf);
+        sbuf = completeCommandName(st, pair.second);
         break;
     case CompletorKind::QCMD:
-        completeFileName(st, tokenStr, sbuf);
+        sbuf = completeFileName(st, pair.second);
         break;
     case CompletorKind::FILE:
-        completeFileName(st, tokenStr, sbuf, false);
+        sbuf = completeFileName(st, pair.second, false);
         break;
     case CompletorKind::VAR:
-        completeGlobalVarName(st, tokenStr, sbuf);
+        sbuf = completeGlobalVarName(st, pair.second);
         break;
     case CompletorKind::EXPECT:
-        completeExpectedToken(tokenStr, sbuf);
+        sbuf = completeExpectedToken(pair.second);
         break;
     }
     return sbuf;

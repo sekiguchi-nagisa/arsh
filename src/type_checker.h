@@ -193,7 +193,7 @@ public:
 
 protected:
     // base type check entry point
-    DSType *toTypeImpl(TypeNode &node);
+    TypeOrError toTypeImpl(TypeNode &node);
 
     DSType &toType(TypeNode *node) {
         return this->checkTypeExactly(node);

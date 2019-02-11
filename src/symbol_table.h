@@ -384,6 +384,8 @@ private:
     ModResult load(const char *scriptDir, const std::string &modPath, FilePtr &filePtr);
 };
 
+using TypeOrError = Result<DSType *, std::unique_ptr<TypeLookupError>>;
+using TypeTempOrError = Result<const TypeTemplate*, std::unique_ptr<TypeLookupError>>;
 
 class SymbolTable {
 private:
@@ -635,25 +637,34 @@ public:
     }
 
     /**
-     * get type except template type.
-     * if type is undefined, throw exception
+     *
+     * @param typeName
+     * @return
      */
-    DSType &getTypeOrThrow(const std::string &typeName) const;
+    TypeOrError getTypeOrError(const std::string &typeName) const;
 
     /**
      * get template type.
-     * if template type is not found, throw exception
+     * @param typeName
+     * @return
      */
-    const TypeTemplate &getTypeTemplate(const std::string &typeName) const;
+    TypeTempOrError getTypeTemplate(const std::string &typeName) const;
 
     /**
      * if type template is Tuple, call createTupleType()
      */
-    DSType &createReifiedType(const TypeTemplate &typeTemplate, std::vector<DSType *> &&elementTypes);
+    TypeOrError createReifiedType(const TypeTemplate &typeTemplate, std::vector<DSType *> &&elementTypes);
 
-    DSType &createTupleType(std::vector<DSType *> &&elementTypes);
+    TypeOrError createTupleType(std::vector<DSType *> &&elementTypes);
 
-    FunctionType &createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
+    /**
+     *
+     * @param returnType
+     * @param paramTypes
+     * @return
+     * must be FunctionType
+     */
+    TypeOrError createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
     /**
      * set type name alias. if alias name has alreadt defined, return false
@@ -722,8 +733,22 @@ private:
 
     void initErrorType(TYPE t, const char *typeName);
 
-    void checkElementTypes(const std::vector<DSType *> &elementTypes) const;
-    void checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
+    /**
+     *
+     * @param elementTypes
+     * @return
+     * if success, return null
+     */
+    TypeOrError checkElementTypes(const std::vector<DSType *> &elementTypes) const;
+
+    /**
+     *
+     * @param t
+     * @param elementTypes
+     * @return
+     * if success, return null
+     */
+    TypeOrError checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
 };
 
 } // namespace ydsh

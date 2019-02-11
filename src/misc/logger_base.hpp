@@ -108,7 +108,7 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
     if(localtime_r(&timer, &local)) {
         char buf[32];
         strftime(buf, arraySize(buf), "%F %T", &local);
-        snprintf(header, arraySize(header), "%s [%d] [%s] ", buf, getpid(), toString(level));
+        snprintf(header, arraySize(header), "%s <%s> [%d] ", buf, toString(level), getpid());
     }
 
     // print body
