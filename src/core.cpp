@@ -1101,8 +1101,10 @@ static bool inCmdMode(const Node &node) {
         auto &forkNode = static_cast<const ForkNode &>(node);
         return forkNode.getOpKind() == ForkKind::COPROC && inCmdMode(*forkNode.getExprNode());
     }
-    case NodeKind::Assert:
-        return inCmdMode(*static_cast<const AssertNode &>(node).getCondNode());
+    case NodeKind::Assert: {
+        auto &assertNode = static_cast<const AssertNode &>(node);
+        return assertNode.getMessageNode()->getToken().size == 0 && inCmdMode(*assertNode.getCondNode());
+    }
     case NodeKind::Jump: {
         auto &jumpNode = static_cast<const JumpNode &>(node);
         return (jumpNode.getOpKind() == JumpNode::THROW || jumpNode.getOpKind() == JumpNode::RETURN)
