@@ -34,6 +34,8 @@
 #include "time_util.h"
 #include "misc/files.h"
 
+extern char **environ;
+
 namespace ydsh {
 
 // ###########################
@@ -994,13 +996,27 @@ static CStrBuffer completeExpectedToken(const std::string &token) {
     return results;
 }
 
+static CStrBuffer completeEnvName(const std::string &envName) {
+    CStrBuffer results;
+    for(unsigned int i = 0; environ[i] != nullptr; i++) {
+        const char *env = environ[i];
+        if(startsWith(env, envName.c_str())) {
+            const char *ptr = strchr(env, '=');
+            assert(ptr != nullptr);
+            append(results, std::string(env, ptr - env), EscapeOp::NOP);
+        }
+    }
+    return results;
+}
+
 #define EACH_COMPLETOR_KIND(OP) \
     OP(NONE) \
     OP(CMD) /* command name without '/' */\
     OP(QCMD) /* command name with '/' */\
     OP(FILE) \
     OP(VAR) /* complete global variable name */\
-    OP(EXPECT)
+    OP(EXPECT) \
+    OP(ENV) /* complete environmental vairable name */
 
 
 enum class CompletorKind : unsigned int {
@@ -1136,13 +1152,14 @@ static std::unique_ptr<Node> applyAndGetLatest(Parser &parser) {
 static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parser, const std::unique_ptr<Node> &node,
                                                              const unsigned int cursor) {
     auto &lexer = *parser.getLexer();
+    const auto &tokenPairs = parser.getTracker()->getTokenPairs();
 
     if(!parser.hasError()) {
-        const auto &tokenPairs = parser.getTracker()->getTokenPairs();
         if(tokenPairs.empty()) {
             return {CompletorKind::NONE, ""};
         }
 
+        auto token = tokenPairs.back().second;
         switch(tokenPairs.back().first) {
         case LINE_END:
         case BACKGROUND:
@@ -1151,13 +1168,19 @@ static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parse
         case RP:
             return {CompletorKind::EXPECT, ";"};
         case APPLIED_NAME:
-        case SPECIAL_NAME: {
-            Token token = tokenPairs.back().second;
+        case SPECIAL_NAME:
             if(token.pos + token.size == cursor) {
                 return {CompletorKind::VAR, lexer.toTokenText(token)};
             }
             break;
-        }
+        case IDENTIFIER:
+            if(node->getNodeKind() == NodeKind::VarDecl
+                && static_cast<const VarDeclNode&>(*node).getKind() == VarDeclNode::IMPORT_ENV) {
+                if(token.pos + token.size == cursor) {
+                    return {CompletorKind::ENV, lexer.toTokenText(token)};
+                }
+            }
+            break;
         default:
             break;
         }
@@ -1203,6 +1226,11 @@ static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parse
 
                 if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
                     return {CompletorKind::FILE, ""};
+                }
+
+                if(!tokenPairs.empty() && tokenPairs.back().first == IMPORT_ENV
+                        && findKind(e.getExpectedTokens(), IDENTIFIER)) {
+                    return {CompletorKind::ENV, ""};
                 }
 
                 std::string expectedStr = toString(expected);
@@ -1282,6 +1310,9 @@ CStrBuffer completeLine(const DSState &st, const std::string &line) {
         break;
     case CompletorKind::EXPECT:
         sbuf = completeExpectedToken(pair.second);  //FIXME: complete multiple tokens
+        break;
+    case CompletorKind::ENV:
+        sbuf = completeEnvName(pair.second);
         break;
     }
     return sbuf;
