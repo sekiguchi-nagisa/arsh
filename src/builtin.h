@@ -1750,15 +1750,15 @@ YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
     return slice(ctx, obj, 0, stop);
 }
 
-//!bind: function reverse($this : Array<T0>) : Void
+//!bind: function reverse($this : Array<T0>) : Array<T0>
 YDSH_METHOD array_reverse(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_reverse);
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     std::reverse(obj->refValues().begin(), obj->refValues().end());
-    RET_VOID;
+    RET(LOCAL(0));
 }
 
-//!bind: function sort($this : Array<T0>) : Void
+//!bind: function sort($this : Array<T0>) : Array<T0>
 YDSH_METHOD array_sort(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_sort);
     auto *obj = typeAs<Array_Object>(LOCAL(0));
@@ -1772,10 +1772,10 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
         }
         return x->compare(y);
     });
-    RET_VOID;
+    RET(LOCAL(0));
 }
 
-//!bind: function sortWith($this : Array<T0>, $comp : Func<Boolean, [T0, T0]>) : Void
+//!bind: function sortWith($this : Array<T0>, $comp : Func<Boolean, [T0, T0]>) : Array<T0>
 YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_sortWith);
     auto *obj = typeAs<Array_Object>(LOCAL(0));
@@ -1788,7 +1788,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
             }
             return typeAs<Boolean_Object>(ret)->getValue();
         });
-        RET_VOID;
+        RET(LOCAL(0));
     } catch(...) {
         RET_ERROR;
     }

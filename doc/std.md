@@ -409,11 +409,11 @@ function from($this : Array<T0>, $from : Int32) : Array<T0>
 
 function to($this : Array<T0>, $to : Int32) : Array<T0>
 
-function reverse($this : Array<T0>) : Void
+function reverse($this : Array<T0>) : Array<T0>
 
-function sort($this : Array<T0>) : Void
+function sort($this : Array<T0>) : Array<T0>
 
-function sortWith($this : Array<T0>, $comp : Func<Boolean,[T0,T0]>) : Void
+function sortWith($this : Array<T0>, $comp : Func<Boolean,[T0,T0]>) : Array<T0>
 
 function size($this : Array<T0>) : Int32
 

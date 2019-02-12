@@ -118,7 +118,7 @@ $ee = 1
 
 # reverse
 var rr = [1, 2, 3, 4, 5]
-$rr.reverse()
+assert $rr.reverse() is [Int]
 assert $rr.size() == 5
 assert $rr[0] == 5
 assert $rr[1] == 4
@@ -132,7 +132,7 @@ assert $rr.empty()
 
 # sort
 var s1 = [4, 8, -9, -1, 78, 0, 2]
-$s1.sort()
+assert $s1.sort() is [Int]
 assert $s1[0] == -9
 assert $s1[1] == -1
 assert $s1[2] == 0
