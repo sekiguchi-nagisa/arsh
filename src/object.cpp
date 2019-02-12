@@ -191,7 +191,7 @@ bool String_Object::equals(const DSValue &obj) const {
 bool String_Object::compare(const DSValue &obj) const {
     auto *str2 = typeAs<String_Object>(obj);
     unsigned int size = std::min(this->size(), str2->size());
-    return memcmp(this->getValue(), str2->getValue(), size) < 0;
+    return memcmp(this->getValue(), str2->getValue(), size + 1) < 0;
 }
 
 size_t String_Object::hash() const {

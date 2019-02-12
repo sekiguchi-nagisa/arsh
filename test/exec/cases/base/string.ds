@@ -199,6 +199,10 @@ assert(!($b >= $c))
 assert !($'a\x00b' <= $'a\x00a')
 assert $'a\x00b' != $'a\x00c'
 assert $'a\x00b' != $'a'
+assert "A" < "AB"
+assert !("A" >= "AB")
+assert "AB" > "A"
+assert !("AB" <= "A")
 
 # case
 assert "AbcDEf".lower() == "abcdef"
