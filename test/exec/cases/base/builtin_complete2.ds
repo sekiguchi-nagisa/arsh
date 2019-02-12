@@ -54,6 +54,10 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     $assertArray($gvars2, $(complete 'echo $P'))
 }
 
+# env name
+#$assertArray($(env | while(read) {echo ${$REPLY.split('=')[0]}; }).sort(), $(complete 'import-env '))
+#$assertArray($(env | grep ^P | while(read) {echo ${$REPLY.split('=')[0]}; }).sort(), $(complete 'import-env P'))
+
 
 # no completion candidate
 assert($(complete '34').empty())
