@@ -1142,24 +1142,27 @@ static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parse
         if(tokenPairs.empty()) {
             return {CompletorKind::NONE, ""};
         }
+
         switch(tokenPairs.back().first) {
+        case LINE_END:
+        case BACKGROUND:
+        case DISOWN_BG:
+            return {CompletorKind::CMD, ""};
+        case RP:
+            return {CompletorKind::EXPECT, ";"};
         case APPLIED_NAME:
         case SPECIAL_NAME: {
             Token token = tokenPairs.back().second;
             if(token.pos + token.size == cursor) {
                 return {CompletorKind::VAR, lexer.toTokenText(token)};
-            } else if(token.pos + token.size < cursor && inCmdMode(*node)) {
-                return {CompletorKind::FILE, ""};
             }
             break;
         }
-        case LINE_END:
-            return {CompletorKind::CMD, ""};
         default:
-            if(tokenPairs.back().first != TokenKind::RP && inCmdMode(*node)) {
-                return selectWithCmd(parser, cursor);
-            }
             break;
+        }
+        if(inCmdMode(*node)) {
+            return selectWithCmd(parser, cursor);
         }
     } else {
         const auto &e = parser.getError();
@@ -1278,7 +1281,7 @@ CStrBuffer completeLine(const DSState &st, const std::string &line) {
         sbuf = completeGlobalVarName(st, pair.second);
         break;
     case CompletorKind::EXPECT:
-        sbuf = completeExpectedToken(pair.second);
+        sbuf = completeExpectedToken(pair.second);  //FIXME: complete multiple tokens
         break;
     }
     return sbuf;
