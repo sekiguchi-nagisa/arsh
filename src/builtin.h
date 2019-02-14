@@ -23,6 +23,7 @@
 #include <cstring>
 #include <type_traits>
 #include <algorithm>
+#include <stdexcept>
 
 #include <ydsh/ydsh.h>
 #include "core.h"
@@ -1784,7 +1785,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
                 [&](const DSValue &x, const DSValue &y){
             auto ret = callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
             if(hasError(ctx)) {
-                throw 1;    //FIXME: not use exception
+                throw std::runtime_error("");    //FIXME: not use exception
             }
             return typeAs<Boolean_Object>(ret)->getValue();
         });
