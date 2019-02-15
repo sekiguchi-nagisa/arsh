@@ -177,7 +177,7 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
                     if(i + 1 < stopPos && isHex(this->buf[i + 1])) {
                         v *= 16;
                         v += hexToNum(this->buf[++i]);
-                        ch = (char) v;
+                        ch = static_cast<char>(v);
                         break;
                     }
                 }
@@ -191,7 +191,7 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
                         if(i + 1 < stopPos && isOctal(this->buf[i + 1])) {
                             v *= 8;
                             v += this->buf[++i] - '0';
-                            ch = (char) v;
+                            ch = static_cast<char>(v);
                             break;
                         }
                     }
