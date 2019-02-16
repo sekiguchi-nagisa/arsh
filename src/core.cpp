@@ -1138,6 +1138,24 @@ static bool inCmdMode(const Node &node) {
     return false;
 }
 
+static bool requireSingleCmdArg(const Node &node, unsigned int cursor) {
+    auto token = node.getToken();
+    if(token.pos + token.size < cursor) {
+        return false;
+    }
+    switch(node.getNodeKind()) {
+    case NodeKind::With:
+        return true;
+    case NodeKind::Source: {
+        auto &srcNode = static_cast<const SourceNode&>(node);
+        return srcNode.getName().empty();
+    }
+    default:
+        break;
+    }
+    return false;
+}
+
 static std::unique_ptr<Node> applyAndGetLatest(Parser &parser) {
     std::unique_ptr<Node> node;
     while(parser) {
@@ -1184,7 +1202,7 @@ static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parse
         default:
             break;
         }
-        if(inCmdMode(*node)) {
+        if(inCmdMode(*node) || requireSingleCmdArg(*node, cursor)) {
             return selectWithCmd(parser, cursor);
         }
     } else {
