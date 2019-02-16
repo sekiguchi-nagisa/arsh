@@ -1140,18 +1140,13 @@ static bool inCmdMode(const Node &node) {
 
 static bool requireSingleCmdArg(const Node &node, unsigned int cursor) {
     auto token = node.getToken();
-    if(token.pos + token.size < cursor) {
-        return false;
-    }
-    switch(node.getNodeKind()) {
-    case NodeKind::With:
-        return true;
-    case NodeKind::Source: {
-        auto &srcNode = static_cast<const SourceNode&>(node);
-        return srcNode.getName().empty();
-    }
-    default:
-        break;
+    if(token.pos + token.size == cursor) {
+        auto kind = node.getNodeKind();
+        if(kind == NodeKind::With) {
+            return true;
+        } else if(kind == NodeKind::Source) {
+            return static_cast<const SourceNode&>(node).getName().empty();
+        }
     }
     return false;
 }
