@@ -239,6 +239,142 @@ struct DSState {
         return this->thrownObject;
     }
 
+    unsigned int &recDepth() noexcept {
+        return this->frame.recDepth;
+    }
+
+    /**
+     * set thrownObject and update exit status
+     * @param except
+     * @param afterStatus
+     * set exit status to it
+     */
+    void throwObject(DSValue &&except, int afterStatus) {
+        this->setThrownObject(std::move(except));
+        this->updateExitStatus(afterStatus);
+    }
+
+    DSValue pop() {
+        return std::move(this->callStack[this->stackTopIndex()--]);
+    }
+
+    const DSValue &peek() {
+        return this->callStack[this->stackTopIndex()];
+    }
+
+    // variable manipulation
+    void setGlobal(unsigned int index, const DSValue &obj) {
+        this->setGlobal(index, DSValue(obj));
+    }
+
+    void setGlobal(unsigned int index, DSValue &&obj) {
+        this->callStack[index] = std::move(obj);
+    }
+
+    const DSValue &getGlobal(unsigned int index) const {
+        return this->callStack[index];
+    }
+
+    void setLocal(unsigned char index, const DSValue &obj) {
+        setLocal(index, DSValue(obj));
+    }
+
+    void setLocal(unsigned char index, DSValue &&obj) {
+        this->callStack[this->localVarOffset() + index] = std::move(obj);
+    }
+
+    const DSValue &getLocal(unsigned char index) const {
+        return this->callStack[this->localVarOffset() + index];
+    }
+
+    DSValue moveLocal(unsigned char index) {
+        return std::move(this->callStack[this->localVarOffset() + index]);
+    }
+
+    void updateExitStatus(unsigned int status) {
+        unsigned int index = toIndex(BuiltinVarOffset::EXIT_STATUS);
+        this->setGlobal(index, DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), status));
+    }
+
+    bool isJobControl() const {
+        return hasFlag(this->option, DS_OPTION_JOB_CONTROL);
+    }
+
+    bool isRootShell() const {
+        int shellpid = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue();
+        return shellpid == getpid();
+    }
+
+    bool isForeground() const {
+        return this->isJobControl() && this->isRootShell();
+    }
+
+    void setVMHook(VMHook *hook) {
+        this->hook = hook;
+        if(hook != nullptr) {
+            setFlag(eventDesc, VM_EVENT_HOOK);
+        } else {
+            unsetFlag(eventDesc, VM_EVENT_HOOK);
+        }
+    }
+
+    const ControlFrame &getFrame() const {
+        return this->frame;
+    }
+
+    const DSCode *lookupUserDefinedCommand(const char *commandName) const {
+        auto handle = this->symbolTable.lookupUdc(commandName);
+        return handle == nullptr ? nullptr : &typeAs<FuncObject>(this->getGlobal(handle->getIndex()))->getCode();
+    }
+
+    bool checkVMReturn() const {
+        return this->controlStack.empty() || this->recDepth() != this->controlStack.back().recDepth;
+    }
+
+    bool runMainLoop();
+
+    // entry point
+    bool vmEval(const CompiledCode &code);
+
+    /**
+     *
+     * @param argv
+     * first element of argv is command name.
+     * last element of argv is null.
+     * @return
+     * exit status.
+     * if throw exception, return always 1.
+     */
+    int execBuiltinCommand(char *const argv[]);
+
+    unsigned int prepareArguments(DSValue &&recv, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+
+private:
+    // exception api
+    /**
+     * for exception reporting
+     * @param except
+     */
+    void setThrownObject(DSValue &&except) {
+        this->thrownObject = std::move(except);
+    }
+
+    /**
+     * get thrownObject and push to callStack
+     */
+    void loadThrownObject() {
+        this->push(std::move(this->thrownObject));
+    }
+
+    void storeThrownObject() {
+        this->setThrownObject(this->pop());
+    }
+
+    void clearThrownObject() {
+        this->thrownObject.reset();
+    }
+
+    // stack manipulation api
     unsigned int &stackTopIndex() noexcept {
         return this->frame.stackTopIndex;
     }
@@ -263,49 +399,10 @@ struct DSState {
         return this->frame.code;
     }
 
-    unsigned int &recDepth() noexcept {
-        return this->frame.recDepth;
-    }
-
     unsigned int recDepth() const noexcept {
         return this->frame.recDepth;
     }
 
-    /**
-     * set thrownObject and update exit status
-     * @param except
-     * @param afterStatus
-     * set exit status to it
-     */
-    void throwObject(DSValue &&except, int afterStatus) {
-        this->setThrownObject(std::move(except));
-        this->updateExitStatus(afterStatus);
-    }
-
-    /**
-     * for exception reporting
-     * @param except
-     */
-    void setThrownObject(DSValue &&except) {
-        this->thrownObject = std::move(except);
-    }
-
-    /**
-     * get thrownObject and push to callStack
-     */
-    void loadThrownObject() {
-        this->push(std::move(this->thrownObject));
-    }
-
-    void storeThrownObject() {
-        this->setThrownObject(this->pop());
-    }
-
-    void clearThrownObject() {
-        this->thrownObject.reset();
-    }
-
-    // operand manipulation
     void push(const DSValue &value) {
         this->push(DSValue(value));
     }
@@ -314,16 +411,13 @@ struct DSState {
         this->callStack[++this->stackTopIndex()] = std::move(value);
     }
 
-    DSValue pop() {
-        return std::move(this->callStack[this->stackTopIndex()--]);
+    void pushExitStatus(int status) {
+        this->updateExitStatus(status);
+        this->push(status == 0 ? this->trueObj : this->falseObj);
     }
 
     void popNoReturn() {
         this->callStack[this->stackTopIndex()--].reset();
-    }
-
-    const DSValue &peek() {
-        return this->callStack[this->stackTopIndex()];
     }
 
     void dup() {
@@ -356,7 +450,6 @@ struct DSState {
         }
     }
 
-    // variable manipulation
     void storeGlobal(unsigned int index) {
         this->callStack[index] = this->pop();
     }
@@ -366,18 +459,6 @@ struct DSState {
         this->push(std::move(v));   // callStack may be expanded.
     }
 
-    void setGlobal(unsigned int index, const DSValue &obj) {
-        this->setGlobal(index, DSValue(obj));
-    }
-
-    void setGlobal(unsigned int index, DSValue &&obj) {
-        this->callStack[index] = std::move(obj);
-    }
-
-    const DSValue &getGlobal(unsigned int index) const {
-        return this->callStack[index];
-    }
-
     void storeLocal(unsigned char index) {
         this->callStack[this->localVarOffset() + index] = this->pop();
     }
@@ -385,22 +466,6 @@ struct DSState {
     void loadLocal(unsigned char index) {
         auto v(this->callStack[this->localVarOffset() + index]); // callStack may be expanded.
         this->push(std::move(v));
-    }
-
-    void setLocal(unsigned char index, const DSValue &obj) {
-        setLocal(index, DSValue(obj));
-    }
-
-    void setLocal(unsigned char index, DSValue &&obj) {
-        this->callStack[this->localVarOffset() + index] = std::move(obj);
-    }
-
-    const DSValue &getLocal(unsigned char index) const {
-        return this->callStack[this->localVarOffset() + index];
-    }
-
-    DSValue moveLocal(unsigned char index) {
-        return std::move(this->callStack[this->localVarOffset() + index]);
     }
 
     // field manipulation
@@ -416,38 +481,6 @@ struct DSState {
     void loadField(unsigned int index) {
         this->callStack[this->stackTopIndex()] =
                 this->callStack[this->stackTopIndex()]->getFieldTable()[index];
-    }
-
-    void updateExitStatus(unsigned int status) {
-        unsigned int index = toIndex(BuiltinVarOffset::EXIT_STATUS);
-        this->setGlobal(index, DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), status));
-    }
-
-    void pushExitStatus(int status) {
-        this->updateExitStatus(status);
-        this->push(status == 0 ? this->trueObj : this->falseObj);
-    }
-
-    bool isJobControl() const {
-        return hasFlag(this->option, DS_OPTION_JOB_CONTROL);
-    }
-
-    bool isRootShell() const {
-        int shellpid = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue();
-        return shellpid == getpid();
-    }
-
-    bool isForeground() const {
-        return this->isJobControl() && this->isRootShell();
-    }
-
-    void setVMHook(VMHook *hook) {
-        this->hook = hook;
-        if(hook != nullptr) {
-            setFlag(eventDesc, VM_EVENT_HOOK);
-        } else {
-            unsetFlag(eventDesc, VM_EVENT_HOOK);
-        }
     }
 
     /**
@@ -475,9 +508,16 @@ struct DSState {
         this->stackBottomIndex() = size;
     }
 
-    const ControlFrame &getFrame() const {
-        return this->frame;
-    }
+
+    /**
+     * expand stack size to at least needSize
+     * @param needSize
+     */
+    void reserveLocalStackImpl(unsigned int needSize);
+
+    bool windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code);
+
+    void unwindStackFrame();
 
     // runtime api
     bool checkCast(DSType *targetType);
@@ -488,10 +528,7 @@ struct DSState {
 
     const char *loadEnv(bool hasDefault);
 
-    bool windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code);
-
-    void unwindStackFrame();
-
+public:
     /**
      * stack state in function apply    stack grow ===>
      *
@@ -520,7 +557,7 @@ struct DSState {
         return this->windStackFrame(actualParamSize, actualParamSize, this->callStack[recvIndex]->getType()->getMethodRef(index));
     }
 
-
+private:
     /**
      * stack state in constructor call     stack grow ===>
      *
@@ -533,15 +570,6 @@ struct DSState {
         const unsigned int recvIndex = this->stackTopIndex() - paramSize;
 
         return this->windStackFrame(paramSize, paramSize + 1, this->callStack[recvIndex]->getType()->getConstructor());
-    }
-
-    const DSCode *lookupUserDefinedCommand(const char *commandName) const {
-        auto handle = this->symbolTable.lookupUdc(commandName);
-        return handle == nullptr ? nullptr : &typeAs<FuncObject>(this->getGlobal(handle->getIndex()))->getCode();
-    }
-
-    bool checkVMReturn() const {
-        return this->controlStack.empty() || this->recDepth() != this->controlStack.back().recDepth;
     }
 
     /**
@@ -587,29 +615,6 @@ struct DSState {
      * otherwise return false.
      */
     bool handleException(bool forceUnwind);
-
-    bool runMainLoop();
-
-    // entry point
-    bool vmEval(const CompiledCode &code);
-
-    /**
-     *
-     * @param argv
-     * first element of argv is command name.
-     * last element of argv is null.
-     * @return
-     * exit status.
-     * if throw exception, return always 1.
-     */
-    int execBuiltinCommand(char *const argv[]);
-
-private:
-    /**
-     * expand stack size to at least needSize
-     * @param needSize
-     */
-    void reserveLocalStackImpl(unsigned int needSize);
 };
 
 #endif //YDSH_VM_H

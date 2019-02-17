@@ -1710,6 +1710,20 @@ int DSState::execBuiltinCommand(char *const argv[]) {
     return this->getExitStatus();
 }
 
+unsigned int DSState::prepareArguments(DSValue &&recv,
+                                       std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+    this->clearThrownObject();
+
+    // push arguments
+    unsigned int size = args.first;
+    this->reserveLocalStack(size + 1);
+    this->push(std::move(recv));
+    for(unsigned int i = 0; i < size; i++) {
+        this->push(std::move(args.second[i]));
+    }
+    return size;
+}
+
 namespace ydsh {
 
 class RecursionGuard {
@@ -1741,20 +1755,6 @@ public:
     do { if(!_guard.checkLimit()) { return nullptr; } } while(false)
 
 
-static unsigned int prepareArguments(DSState &state, DSValue &&recv,
-                                     std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
-    state.clearThrownObject();
-
-    // push arguments
-    unsigned int size = args.first;
-    state.reserveLocalStack(size + 1);
-    state.push(std::move(recv));
-    for(unsigned int i = 0; i < size; i++) {
-        state.push(std::move(args.second[i]));
-    }
-    return size;
-}
-
 DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
                    std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     assert(handle != nullptr);
@@ -1762,7 +1762,7 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
 
     GUARD_RECURSION(state);
 
-    unsigned int size = prepareArguments(state, std::move(recv), std::move(args));
+    unsigned int size = state.prepareArguments(std::move(recv), std::move(args));
 
     DSValue ret;
     if(state.prepareMethodCall(handle->getMethodIndex(), size)) {
@@ -1779,7 +1779,7 @@ DSValue callFunction(DSState &state, DSValue &&funcObj,
     GUARD_RECURSION(state);
 
     auto *type = funcObj->getType();
-    unsigned int size = prepareArguments(state, std::move(funcObj), std::move(args));
+    unsigned int size = state.prepareArguments(std::move(funcObj), std::move(args));
 
     DSValue ret;
     if(state.prepareFuncCall(size)) {
