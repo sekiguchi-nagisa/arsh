@@ -141,7 +141,7 @@ static DSError handleRuntimeError(DSState &state) {
 }
 
 static int evalCodeImpl(DSState &state, const CompiledCode &code, DSError *dsError) {
-    bool s = vmEval(state, code);
+    bool s = state.vmEval(code);
     bool root = state.isRootShell();
     if(!s) {
         auto ret = handleRuntimeError(state);
@@ -703,7 +703,7 @@ int DSState_loadModule(DSState *st, const char *fileName,
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
-    int status = execBuiltinCommand(*st, argv);
+    int status = st->execBuiltinCommand(argv);
     if(st->getThrownObject()) {
         auto &obj = typeAs<Error_Object>(st->getThrownObject())->getMessage();
         const char *str = typeAs<String_Object>(obj)->getValue();

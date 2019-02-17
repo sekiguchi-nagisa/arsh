@@ -21,6 +21,8 @@ struct DSState;
 
 namespace ydsh {
 
+class DSCode;
+
 /**
  *
  * @param filePath
@@ -76,6 +78,22 @@ inline bool isFieldSep(unsigned int size, const char *ifs, int ch) {
     }
     return false;
 }
+
+enum class CmdKind {
+    USER_DEFINED,
+    BUILTIN_S,
+    BUILTIN,
+    EXTERNAL,
+};
+
+struct Command {
+    CmdKind kind;
+    union {
+        const DSCode *udc;
+        builtin_command_t builtinCmd;
+        const char *filePath;   // may be null if not found file
+    };
+};
 
 } // namespace ydsh
 

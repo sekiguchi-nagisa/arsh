@@ -298,16 +298,9 @@ bool DSState::prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvOb
     return true;
 }
 
-namespace ydsh {
-
 #define CODE(ctx) ((ctx).code())
 #define GET_CODE(ctx) (CODE(ctx)->getCode())
 #define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
-
-/* runtime api */
-
-const NativeCode *getNativeCode(unsigned int index);
-
 
 /* for substitution */
 
@@ -332,7 +325,7 @@ static DSValue readAsStr(const DSState &state, int fd) {
 }
 
 static DSValue readAsStrArray(const DSState &state, int fd) {
-    auto *ifsObj = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)));
+    auto *ifsObj = typeAs<String_Object>(state.getGlobal(toIndex(BuiltinVarOffset::IFS)));
     const char *ifs = ifsObj->getValue();
     const unsigned ifsSize = ifsObj->size();
     unsigned int skipCount = 1;
@@ -393,17 +386,17 @@ static DSValue newFD(const DSState &st, int &fd) {
     return DSValue::create<UnixFD_Object>(st.symbolTable.get(TYPE::UnixFD), v);
 }
 
-static bool forkAndEval(DSState &state) {
-    const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), ++state.pc()));
-    const unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
+bool DSState::forkAndEval() {
+    const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(*this), ++this->pc()));
+    const unsigned short offset = read16(GET_CODE(*this), this->pc() + 1);
 
     // flush standard stream due to prevent mixing io buffer
     flushStdFD();
 
     // set in/out pipe
     auto pipeset = initPipeSet(forkKind);
-    pid_t pgid = state.isRootShell() ? 0 : getpgid(0);
-    auto proc = Proc::fork(state, pgid, false);
+    pid_t pgid = this->isRootShell() ? 0 : getpgid(0);
+    auto proc = Proc::fork(*this, pgid, false);
     if(proc.pid() > 0) {   // parent process
         tryToClose(pipeset.in[READ_PIPE]);
         tryToClose(pipeset.out[WRITE_PIPE]);
@@ -415,19 +408,19 @@ static bool forkAndEval(DSState &state) {
         case ForkKind::ARRAY: {
             tryToClose(pipeset.in[WRITE_PIPE]);
             const bool isStr = forkKind == ForkKind::STR;
-            obj = isStr ? readAsStr(state, pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
-            auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+            obj = isStr ? readAsStr(*this, pipeset.out[READ_PIPE]) : readAsStrArray(*this, pipeset.out[READ_PIPE]);
+            auto waitOp = this->isRootShell() && this->isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
             int ret = proc.wait(waitOp);   // wait exit
             tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
-            state.updateExitStatus(ret);
+            this->updateExitStatus(ret);
             break;
         }
         case ForkKind::IN_PIPE:
         case ForkKind::OUT_PIPE: {
             auto entry = JobImpl::create(proc);
-            state.jobTable.attach(entry, true);
+            this->jobTable.attach(entry, true);
             int &fd = forkKind == ForkKind::IN_PIPE ? pipeset.in[WRITE_PIPE] : pipeset.out[READ_PIPE];
-            obj = newFD(state, fd);
+            obj = newFD(*this, fd);
             break;
         }
         case ForkKind::COPROC:
@@ -435,12 +428,12 @@ static bool forkAndEval(DSState &state) {
         case ForkKind::DISOWN: {
             bool disown = forkKind == ForkKind::DISOWN;
             auto entry = JobImpl::create(proc);
-            state.jobTable.attach(entry, disown);
+            this->jobTable.attach(entry, disown);
             obj = DSValue::create<Job_Object>(
-                    state.symbolTable.get(TYPE::Job),
+                    this->symbolTable.get(TYPE::Job),
                     entry,
-                    newFD(state, pipeset.in[WRITE_PIPE]),
-                    newFD(state, pipeset.out[READ_PIPE])
+                    newFD(*this, pipeset.in[WRITE_PIPE]),
+                    newFD(*this, pipeset.out[READ_PIPE])
             );
             break;
         }
@@ -448,46 +441,29 @@ static bool forkAndEval(DSState &state) {
 
         // push object
         if(obj) {
-            state.push(std::move(obj));
+            this->push(std::move(obj));
         }
 
-        state.pc() += offset - 1;
+        this->pc() += offset - 1;
     } else if(proc.pid() == 0) {   // child process
         tryToDup(pipeset.in[READ_PIPE], STDIN_FILENO);
         tryToClose(pipeset.in);
         tryToDup(pipeset.out[WRITE_PIPE], STDOUT_FILENO);
         tryToClose(pipeset.out);
 
-        if(forkKind == ForkKind::DISOWN || (forkKind == ForkKind::JOB && !state.isJobControl())) {
+        if(forkKind == ForkKind::DISOWN || (forkKind == ForkKind::JOB && !this->isJobControl())) {
             redirInToNull();
         }
 
-        state.pc() += 2;
+        this->pc() += 2;
     } else {
-        raiseSystemError(state, EAGAIN, "fork failed");
+        raiseSystemError(*this, EAGAIN, "fork failed");
         return false;
     }
     return true;
 }
 
-
 /* for pipeline evaluation */
-
-enum class CmdKind {
-    USER_DEFINED,
-    BUILTIN_S,
-    BUILTIN,
-    EXTERNAL,
-};
-
-struct Command {
-    CmdKind kind;
-    union {
-        const DSCode *udc;
-        builtin_command_t builtinCmd;
-        const char *filePath;   // may be null if not found file
-    };
-};
 
 class CmdResolver {
 private:
@@ -576,7 +552,7 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
     }
 }
 
-static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv, DSValue &&redirConfig) {
+int DSState::forkAndExec(const char *cmdName, Command cmd, char **const argv, DSValue &&redirConfig) {
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
@@ -588,11 +564,11 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         exit(1);
     }
 
-    bool rootShell = state.isRootShell();
+    bool rootShell = this->isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
-    auto proc = Proc::fork(state, pgid, rootShell);
+    auto proc = Proc::fork(*this, pgid, rootShell);
     if(proc.pid() == -1) {
-        raiseCmdError(state, cmdName, EAGAIN);
+        raiseCmdError(*this, cmdName, EAGAIN);
         return 1;
     } else if(proc.pid() == 0) {   // child
         xexecve(cmd.filePath, argv, nullptr);
@@ -614,28 +590,28 @@ static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **
         }
         close(selfpipe[READ_PIPE]);
         if(readSize > 0 && errnum == ENOENT) {  // remove cached path
-            state.pathCache.removePath(argv[0]);
+            this->pathCache.removePath(argv[0]);
         }
 
         // wait process or job termination
         int status;
-        auto waitOp = rootShell && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+        auto waitOp = rootShell && this->isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
         status = proc.wait(waitOp);
         if(proc.state() != Proc::TERMINATED) {
-            state.jobTable.attach(JobImpl::create(proc));
+            this->jobTable.attach(JobImpl::create(proc));
         }
-        int ret = tryToBeForeground(state);
+        int ret = tryToBeForeground(*this);
         LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
-        state.jobTable.updateStatus();
+        this->jobTable.updateStatus();
         if(errnum != 0) {
-            raiseCmdError(state, cmdName, errnum);
+            raiseCmdError(*this, cmdName, errnum);
             return 1;
         }
         return status;
     }
 }
 
-static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0) {
+bool DSState::callCommand(Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr) {
     auto *array = typeAs<Array_Object>(argvObj);
     const unsigned int size = array->getValues().size();
     auto &first = array->getValues()[0];
@@ -647,11 +623,11 @@ static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         if(cmd.kind == CmdKind::USER_DEFINED) {
             setFlag(attr, UDC_ATTR_SETVAR);
         }
-        return state.prepareUserDefinedCommandCall(cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
+        return this->prepareUserDefinedCommandCall(cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
     }
     case CmdKind::BUILTIN: {
-        int status = cmd.builtinCmd(state, *array);
-        state.pushExitStatus(status);
+        int status = cmd.builtinCmd(*this, *array);
+        this->pushExitStatus(status);
         flushStdFD();
         return true;
     }
@@ -664,21 +640,27 @@ static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         argv[size] = nullptr;
 
         if(hasFlag(attr, UDC_ATTR_NEED_FORK)) {
-            int status = forkAndExec(state, cmdName, cmd, argv, std::move(redirConfig));
-            state.pushExitStatus(status);
+            int status = this->forkAndExec(cmdName, cmd, argv, std::move(redirConfig));
+            this->pushExitStatus(status);
         } else {
             xexecve(cmd.filePath, argv, nullptr);
-            raiseCmdError(state, cmdName, errno);
+            raiseCmdError(*this, cmdName, errno);
         }
-        return !state.getThrownObject();
+        return !this->getThrownObject();
     }
     }
     return true;    // normally unreachable, but need to suppress gcc warning.
 }
 
+namespace ydsh {
+
 int invalidOptionError(const Array_Object &obj, const GetOptState &s);
 
-static bool callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
+const NativeCode *getNativeCode(unsigned int index);
+
+}
+
+bool DSState::callBuiltinCommand(DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
     auto &arrayObj = *typeAs<Array_Object>(argvObj);
 
     bool useDefaultPath = false;
@@ -704,7 +686,7 @@ static bool callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
             break;
         default:
             int s = invalidOptionError(arrayObj, optState);
-            state.pushExitStatus(s);
+            this->pushExitStatus(s);
             return true;
         }
     }
@@ -718,14 +700,14 @@ static bool callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
             values.erase(values.begin(), values.begin() + index);
 
             auto resolve = CmdResolver(CmdResolver::MASK_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
-            return callCommand(state, resolve(state, cmdName), std::move(argvObj), std::move(redir), attr);
+            return this->callCommand(resolve(*this, cmdName), std::move(argvObj), std::move(redir), attr);
         }
 
         // show command description
         unsigned int successCount = 0;
         for(; index < argc; index++) {
             const char *commandName = str(arrayObj.getValues()[index]);
-            auto cmd = CmdResolver(0, FilePathCache::DIRECT_SEARCH)(state, commandName);
+            auto cmd = CmdResolver(0, FilePathCache::DIRECT_SEARCH)(*this, commandName);
             switch(cmd.kind) {
             case CmdKind::USER_DEFINED: {
                 successCount++;
@@ -752,7 +734,7 @@ static bool callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
                     successCount++;
                     if(showDesc == 1) {
                         printf("%s\n", path);
-                    } else if(state.pathCache.isCached(commandName)) {
+                    } else if(this->pathCache.isCached(commandName)) {
                         printf("%s is hashed (%s)\n", commandName, path);
                     } else {
                         printf("%s is %s\n", commandName, path);
@@ -767,14 +749,14 @@ static bool callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redi
                 PERROR(arrayObj, "%s", commandName);
             }
         }
-        state.pushExitStatus(successCount > 0 ? 0 : 1);
+        this->pushExitStatus(successCount > 0 ? 0 : 1);
         return true;
     }
-    state.pushExitStatus(0);
+    this->pushExitStatus(0);
     return true;
 }
 
-static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
+void DSState::callBuiltinExec(DSValue &&array, DSValue &&redir) {
     auto &argvObj = *typeAs<Array_Object>(array);
     bool clearEnv = false;
     const char *progName = nullptr;
@@ -794,7 +776,7 @@ static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
             break;
         default:
             int s = invalidOptionError(argvObj, optState);
-            state.pushExitStatus(s);
+            this->pushExitStatus(s);
             return;
         }
     }
@@ -808,7 +790,7 @@ static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
         }
         argv2[argc - index] = nullptr;
 
-        const char *filePath = getPathCache(state).searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
+        const char *filePath = this->pathCache.searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
         if(progName != nullptr) {
             argv2[0] = const_cast<char *>(progName);
         }
@@ -818,18 +800,10 @@ static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
         PERROR(argvObj, "%s", str(argvObj.getValues()[index]));
         exit(1);
     }
-    state.pushExitStatus(0);
+    this->pushExitStatus(0);
 }
 
-/**
- *
- * @param state
- * @param lastPipe
- * if true, evaluate last pipe in parent shell
- * @return
- * if has error, return false.
- */
-static bool callPipeline(DSState &state, bool lastPipe) {
+bool DSState::callPipeline(bool lastPipe) {
     /**
      * ls | grep .
      * ==> pipeSize == 1, procSize == 2
@@ -839,7 +813,7 @@ static bool callPipeline(DSState &state, bool lastPipe) {
      * ls | { grep . ;}
      * ==> pipeSize == 1, procSize == 1
      */
-    const unsigned int procSize = read8(GET_CODE(state), state.pc() + 1) - 1;
+    const unsigned int procSize = read8(GET_CODE(*this), this->pc() + 1) - 1;
     const unsigned int pipeSize = procSize - (lastPipe ? 0 : 1);
 
     assert(pipeSize > 0);
@@ -849,12 +823,12 @@ static bool callPipeline(DSState &state, bool lastPipe) {
 
     // fork
     Proc childs[procSize];
-    const bool rootShell = state.isRootShell();
+    const bool rootShell = this->isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
     Proc proc;  //NOLINT
 
     unsigned int procIndex;
-    for(procIndex = 0; procIndex < procSize && (proc = Proc::fork(state, pgid, rootShell)).pid() > 0; procIndex++) {
+    for(procIndex = 0; procIndex < procSize && (proc = Proc::fork(*this, pgid, rootShell)).pid() > 0; procIndex++) {
         childs[procIndex] = proc;
         if(pgid == 0) {
             pgid = proc.pid();
@@ -870,19 +844,19 @@ static bool callPipeline(DSState &state, bool lastPipe) {
      */
     if(proc.pid() == 0) {   // child
         if(procIndex == 0) {    // first process
-            dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
+            ::dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
         }
         if(procIndex > 0 && procIndex < pipeSize) {   // other process.
-            dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-            dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
+            ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+            ::dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
         }
         if(procIndex == pipeSize && !lastPipe) {    // last process
-            dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+            ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
         }
         closeAllPipe(pipeSize, pipefds);
 
         // set pc to next instruction
-        state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
+        this->pc() += read16(GET_CODE(*this), this->pc() + 2 + procIndex * 2) - 1;
     } else if(procIndex == procSize) { // parent (last pipeline)
         /**
          * in last pipe, save current stdin before call dup2
@@ -890,40 +864,39 @@ static bool callPipeline(DSState &state, bool lastPipe) {
         auto jobEntry = JobImpl::create(procSize, childs, lastPipe);
 
         if(lastPipe) {
-            dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+            ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
         }
         closeAllPipe(pipeSize, pipefds);
 
         if(lastPipe) {
-            state.push(DSValue::create<PipelineState>(state, std::move(jobEntry)));
+            this->push(DSValue::create<PipelineState>(*this, std::move(jobEntry)));
         } else {
             // job termination
-            auto waitOp = rootShell && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+            auto waitOp = rootShell && this->isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
             int status = jobEntry->wait(waitOp);
             if(jobEntry->available()) {
-                state.jobTable.attach(jobEntry);
+                this->jobTable.attach(jobEntry);
             }
-            tryToBeForeground(state);
-            state.jobTable.updateStatus();
-            state.pushExitStatus(status);
+            tryToBeForeground(*this);
+            this->jobTable.updateStatus();
+            this->pushExitStatus(status);
         }
 
         // set pc to next instruction
-        state.pc() += read16(GET_CODE(state), state.pc() + 2 + procIndex * 2) - 1;
+        this->pc() += read16(GET_CODE(*this), this->pc() + 2 + procIndex * 2) - 1;
     } else {
         // force terminate forked process.
         for(unsigned int i = 0; i < procIndex; i++) {
             kill(childs[i].pid(), SIGKILL);
         }
 
-        raiseSystemError(state, EAGAIN, "fork failed");
+        raiseSystemError(*this, EAGAIN, "fork failed");
         return false;
     }
     return true;
 }
 
-
-static void addCmdArg(DSState &state, bool skipEmptyStr) {
+void DSState::addCmdArg(bool skipEmptyStr) {
     /**
      * stack layout
      *
@@ -932,10 +905,10 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
      * | argv | redir | value |
      * +------+-------+-------+
      */
-    DSValue value = state.pop();
+    DSValue value = this->pop();
     DSType *valueType = value->getType();
 
-    auto *argv = typeAs<Array_Object>(state.callStack[state.stackTopIndex() - 1]);
+    auto *argv = typeAs<Array_Object>(this->callStack[this->stackTopIndex() - 1]);
     if(valueType->is(TYPE::String)) {  // String
         if(skipEmptyStr && typeAs<String_Object>(value)->empty()) {
             return;
@@ -945,13 +918,13 @@ static void addCmdArg(DSState &state, bool skipEmptyStr) {
     }
 
     if(valueType->is(TYPE::UnixFD)) { // UnixFD
-        if(!state.peek()) {
-            state.pop();
-            state.push(DSValue::create<RedirConfig>());
+        if(!this->peek()) {
+            this->pop();
+            this->push(DSValue::create<RedirConfig>());
         }
-        auto fdPath = typeAs<UnixFD_Object>(value)->toString(state, nullptr);
-        auto strObj = DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(fdPath));
-        typeAs<RedirConfig>(state.peek())->addRedirOp(RedirOP::NOP, std::move(value));
+        auto fdPath = typeAs<UnixFD_Object>(value)->toString(*this, nullptr);
+        auto strObj = DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::move(fdPath));
+        typeAs<RedirConfig>(this->peek())->addRedirOp(RedirOP::NOP, std::move(value));
         argv->append(std::move(strObj));
         return;
     }
@@ -982,13 +955,13 @@ static NativeCode initSignalTrampoline() noexcept {
 
 static auto signalTrampoline = initSignalTrampoline();
 
-static bool kickSignalHandler(DSState &st, int sigNum, DSValue &&func) {
-    st.reserveLocalStack(3);
-    st.push(st.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)));
-    st.push(std::move(func));
-    st.push(DSValue::create<Int_Object>(st.symbolTable.get(TYPE::Signal), sigNum));
+bool DSState::kickSignalHandler(int sigNum, DSValue &&func) {
+    this->reserveLocalStack(3);
+    this->push(this->getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)));
+    this->push(std::move(func));
+    this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Signal), sigNum));
 
-    return st.windStackFrame(3, 3, &signalTrampoline);
+    return this->windStackFrame(3, 3, &signalTrampoline);
 }
 
 static int popPendingSig() {
@@ -1004,7 +977,7 @@ static int popPendingSig() {
     return sigNum;
 }
 
-static bool checkVMEvent(DSState &state) {
+bool DSState::checkVMEvent() {
     if(hasFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL) &&
             !hasFlag(DSState::eventDesc, DSState::VM_EVENT_MASK)) {
         SignalGuard guard;
@@ -1015,23 +988,22 @@ static bool checkVMEvent(DSState &state) {
             unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
         }
 
-        auto handler = state.sigVector.lookup(sigNum);
+        auto handler = this->sigVector.lookup(sigNum);
         if(handler != nullptr) {
             setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
-            if(!kickSignalHandler(state, sigNum, std::move(handler))) {
+            if(!this->kickSignalHandler(sigNum, std::move(handler))) {
                 return false;
             }
         }
     }
 
-    if(state.hook != nullptr) {
+    if(this->hook != nullptr) {
         assert(hasFlag(DSState::eventDesc, DSState::VM_EVENT_HOOK));
-        auto op = static_cast<OpCode>(GET_CODE(state)[state.pc() + 1]);
-        state.hook->vmFetchHook(state, op);
+        auto op = static_cast<OpCode>(GET_CODE(*this)[this->pc() + 1]);
+        this->hook->vmFetchHook(*this, op);
     }
     return true;
 }
-
 
 #define vmdispatch(V) switch(V)
 
@@ -1046,304 +1018,304 @@ static bool checkVMEvent(DSState &state) {
 
 #define TRY(E) do { if(!(E)) { vmerror; } } while(false)
 
-static bool mainLoop(DSState &state) {
+bool DSState::mainLoop() {
     while(true) {
         if(DSState::eventDesc != 0u) {
-            TRY(checkVMEvent(state));
+            TRY(this->checkVMEvent());
         }
 
         // fetch next opcode
-        const auto op = static_cast<OpCode>(GET_CODE(state)[++state.pc()]);
+        const auto op = static_cast<OpCode>(GET_CODE(*this)[++this->pc()]);
 
         // dispatch instruction
         vmdispatch(op) {
         vmcase(HALT) {
-            state.unwindStackFrame();
+            this->unwindStackFrame();
             return true;
         }
         vmcase(ASSERT) {
-            TRY(state.checkAssertion());
+            TRY(this->checkAssertion());
             vmnext;
         }
         vmcase(PRINT) {
-            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
-            state.pc() += 4;
+            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 4;
 
-            auto &stackTopType = state.symbolTable.get(v);
+            auto &stackTopType = this->symbolTable.get(v);
             assert(!stackTopType.isVoidType());
-            auto *strObj = typeAs<String_Object>(state.peek());
-            printf("(%s) ", state.symbolTable.getTypeName(stackTopType));
+            auto *strObj = typeAs<String_Object>(this->peek());
+            printf("(%s) ", this->symbolTable.getTypeName(stackTopType));
             fwrite(strObj->getValue(), sizeof(char), strObj->size(), stdout);
             fputc('\n', stdout);
             fflush(stdout);
-            state.popNoReturn();
+            this->popNoReturn();
             vmnext;
         }
         vmcase(INSTANCE_OF) {
-            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
-            state.pc() += 4;
+            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 4;
 
-            auto &targetType = state.symbolTable.get(v);
-            if(state.pop()->introspect(state, &targetType)) {
-                state.push(state.trueObj);
+            auto &targetType = this->symbolTable.get(v);
+            if(this->pop()->introspect(*this, &targetType)) {
+                this->push(this->trueObj);
             } else {
-                state.push(state.falseObj);
+                this->push(this->falseObj);
             }
             vmnext;
         }
         vmcase(CHECK_CAST) {
-            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
-            state.pc() += 4;
-            TRY(state.checkCast(&state.symbolTable.get(v)));
+            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 4;
+            TRY(this->checkCast(&this->symbolTable.get(v)));
             vmnext;
         }
         vmcase(PUSH_NULL) {
-            state.push(nullptr);
+            this->push(nullptr);
             vmnext;
         }
         vmcase(PUSH_TRUE) {
-            state.push(state.trueObj);
+            this->push(this->trueObj);
             vmnext;
         }
         vmcase(PUSH_FALSE) {
-            state.push(state.falseObj);
+            this->push(this->falseObj);
             vmnext;
         }
         vmcase(PUSH_ESTRING) {
-            state.push(state.emptyStrObj);
+            this->push(this->emptyStrObj);
             vmnext;
         }
         vmcase(LOAD_CONST) {
-            unsigned char index = read8(GET_CODE(state), ++state.pc());
-            state.push(CONST_POOL(state)[index]);
+            unsigned char index = read8(GET_CODE(*this), ++this->pc());
+            this->push(CONST_POOL(*this)[index]);
             vmnext;
         }
         vmcase(LOAD_CONST_W) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            state.push(CONST_POOL(state)[index]);
+            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 2;
+            this->push(CONST_POOL(*this)[index]);
             vmnext;
         }
         vmcase(LOAD_CONST_T) {
-            unsigned int index = read24(GET_CODE(state), state.pc() + 1);
-            state.pc() += 3;
-            state.push(CONST_POOL(state)[index]);
+            unsigned int index = read24(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 3;
+            this->push(CONST_POOL(*this)[index]);
             vmnext;
         }
         vmcase(LOAD_GLOBAL) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            state.loadGlobal(index);
+            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 2;
+            this->loadGlobal(index);
             vmnext;
         }
         vmcase(STORE_GLOBAL) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            state.storeGlobal(index);
+            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 2;
+            this->storeGlobal(index);
             vmnext;
         }
         vmcase(LOAD_LOCAL) {
-            unsigned char index = read8(GET_CODE(state), ++state.pc());
-            state.loadLocal(index);
+            unsigned char index = read8(GET_CODE(*this), ++this->pc());
+            this->loadLocal(index);
             vmnext;
         }
         vmcase(STORE_LOCAL) {
-            unsigned char index = read8(GET_CODE(state), ++state.pc());
-            state.storeLocal(index);
+            unsigned char index = read8(GET_CODE(*this), ++this->pc());
+            this->storeLocal(index);
             vmnext;
         }
         vmcase(LOAD_FIELD) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            state.loadField(index);
+            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 2;
+            this->loadField(index);
             vmnext;
         }
         vmcase(STORE_FIELD) {
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            state.storeField(index);
+            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 2;
+            this->storeField(index);
             vmnext;
         }
         vmcase(IMPORT_ENV) {
-            unsigned char b = read8(GET_CODE(state), ++state.pc());
-            TRY(state.loadEnv(b > 0));
+            unsigned char b = read8(GET_CODE(*this), ++this->pc());
+            TRY(this->loadEnv(b > 0));
             vmnext;
         }
         vmcase(LOAD_ENV) {
-            const char *value = state.loadEnv(false);
+            const char *value = this->loadEnv(false);
             TRY(value);
-            state.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), value));
+            this->push(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), value));
             vmnext;
         }
         vmcase(STORE_ENV) {
-            DSValue value = state.pop();
-            DSValue name = state.pop();
+            DSValue value = this->pop();
+            DSValue name = this->pop();
 
             setenv(typeAs<String_Object>(name)->getValue(),
                    typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
             vmnext;
         }
         vmcase(POP) {
-            state.popNoReturn();
+            this->popNoReturn();
             vmnext;
         }
         vmcase(DUP) {
-            state.dup();
+            this->dup();
             vmnext;
         }
         vmcase(DUP2) {
-            state.dup2();
+            this->dup2();
             vmnext;
         }
         vmcase(SWAP) {
-            state.swap();
+            this->swap();
             vmnext;
         }
         vmcase(NEW_STRING) {
-            state.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String)));
+            this->push(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String)));
             vmnext;
         }
         vmcase(APPEND_STRING) {
-            DSValue v = state.pop();
-            typeAs<String_Object>(state.peek())->append(std::move(v));
+            DSValue v = this->pop();
+            typeAs<String_Object>(this->peek())->append(std::move(v));
             vmnext;
         }
         vmcase(NEW_ARRAY) {
-            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
-            state.pc() += 4;
-            state.push(DSValue::create<Array_Object>(state.symbolTable.get(v)));
+            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 4;
+            this->push(DSValue::create<Array_Object>(this->symbolTable.get(v)));
             vmnext;
         }
         vmcase(APPEND_ARRAY) {
-            DSValue v = state.pop();
-            typeAs<Array_Object>(state.peek())->append(std::move(v));
+            DSValue v = this->pop();
+            typeAs<Array_Object>(this->peek())->append(std::move(v));
             vmnext;
         }
         vmcase(NEW_MAP) {
-            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
-            state.pc() += 4;
-            state.push(DSValue::create<Map_Object>(state.symbolTable.get(v)));
+            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 4;
+            this->push(DSValue::create<Map_Object>(this->symbolTable.get(v)));
             vmnext;
         }
         vmcase(APPEND_MAP) {
-            DSValue value = state.pop();
-            DSValue key = state.pop();
-            typeAs<Map_Object>(state.peek())->set(std::move(key), std::move(value));
+            DSValue value = this->pop();
+            DSValue key = this->pop();
+            typeAs<Map_Object>(this->peek())->set(std::move(key), std::move(value));
             vmnext;
         }
         vmcase(NEW_TUPLE) {
-            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
-            state.pc() += 4;
-            state.push(DSValue::create<Tuple_Object>(state.symbolTable.get(v)));
+            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 4;
+            this->push(DSValue::create<Tuple_Object>(this->symbolTable.get(v)));
             vmnext;
         }
         vmcase(NEW) {
-            unsigned int v = read32(GET_CODE(state), state.pc() + 1);
-            state.pc() += 4;
+            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 4;
 
-            auto &type = state.symbolTable.get(v);
+            auto &type = this->symbolTable.get(v);
             if(!type.isRecordType()) {
-                state.push(DSValue::create<DSObject>(type));
+                this->push(DSValue::create<DSObject>(type));
             } else {
                 fatal("currently, DSObject allocation not supported\n");
             }
             vmnext;
         }
         vmcase(CALL_INIT) {
-            unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            TRY(state.prepareConstructorCall(paramSize));
+            unsigned short paramSize = read16(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 2;
+            TRY(this->prepareConstructorCall(paramSize));
             vmnext;
         }
         vmcase(CALL_METHOD) {
-            unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            unsigned short index = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            TRY(state.prepareMethodCall(index, paramSize));
+            unsigned short paramSize = read16(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 2;
+            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 2;
+            TRY(this->prepareMethodCall(index, paramSize));
             vmnext;
         }
         vmcase(CALL_FUNC) {
-            unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
-            state.pc() += 2;
-            TRY(state.prepareFuncCall(paramSize));
+            unsigned short paramSize = read16(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 2;
+            TRY(this->prepareFuncCall(paramSize));
             vmnext;
         }
         vmcase(CALL_NATIVE) {
-            unsigned long v = read64(GET_CODE(state), state.pc() + 1);
-            state.pc() += 8;
+            unsigned long v = read64(GET_CODE(*this), this->pc() + 1);
+            this->pc() += 8;
             auto func = (native_func_t) v;
-            DSValue returnValue = func(state);
-            TRY(!state.getThrownObject());
+            DSValue returnValue = func(*this);
+            TRY(!this->getThrownObject());
             if(returnValue) {
-                state.push(std::move(returnValue));
+                this->push(std::move(returnValue));
             }
             vmnext;
         }
         vmcase(INIT_MODULE) {
-            auto &code = typeAs<FuncObject>(state.peek())->getCode();
-            state.windStackFrame(0, 0, &code);
+            auto &code = typeAs<FuncObject>(this->peek())->getCode();
+            this->windStackFrame(0, 0, &code);
             vmnext;
         }
         vmcase(RETURN) {
-            state.unwindStackFrame();
-            if(state.checkVMReturn()) {
+            this->unwindStackFrame();
+            if(this->checkVMReturn()) {
                 return true;
             }
             vmnext;
         }
         vmcase(RETURN_V) {
-            DSValue v = state.pop();
-            state.unwindStackFrame();
-            state.push(std::move(v));
-            if(state.checkVMReturn()) {
+            DSValue v = this->pop();
+            this->unwindStackFrame();
+            this->push(std::move(v));
+            if(this->checkVMReturn()) {
                 return true;
             }
             vmnext;
         }
         vmcase(RETURN_UDC) {
-            auto v = state.pop();
-            state.unwindStackFrame();
-            state.pushExitStatus(typeAs<Int_Object>(v)->getValue());
-            if(state.checkVMReturn()) {
+            auto v = this->pop();
+            this->unwindStackFrame();
+            this->pushExitStatus(typeAs<Int_Object>(v)->getValue());
+            if(this->checkVMReturn()) {
                 return true;
             }
             vmnext;
         }
         vmcase(RETURN_SIG) {
-            auto v = state.getLocal(0);   // old exit status
-            state.unwindStackFrame();
+            auto v = this->getLocal(0);   // old exit status
+            this->unwindStackFrame();
             unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
-            state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
+            this->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
             vmnext;
         }
         vmcase(BRANCH) {
-            unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
-            if(typeAs<Boolean_Object>(state.pop())->getValue()) {
-                state.pc() += 2;
+            unsigned short offset = read16(GET_CODE(*this), this->pc() + 1);
+            if(typeAs<Boolean_Object>(this->pop())->getValue()) {
+                this->pc() += 2;
             } else {
-                state.pc() += offset - 1;
+                this->pc() += offset - 1;
             }
             vmnext;
         }
         vmcase(GOTO) {
-            unsigned int index = read32(GET_CODE(state), state.pc() + 1);
-            state.pc() = index - 1;
+            unsigned int index = read32(GET_CODE(*this), this->pc() + 1);
+            this->pc() = index - 1;
             vmnext;
         }
         vmcase(THROW) {
-            auto obj = state.pop();
-            state.throwObject(std::move(obj), 1);
+            auto obj = this->pop();
+            this->throwObject(std::move(obj), 1);
             vmerror;
         }
         vmcase(EXIT_SHELL) {
-            auto obj = state.pop();
+            auto obj = this->pop();
             auto &type = *obj->getType();
 
-            int ret = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
-            if(type == state.symbolTable.get(TYPE::Int32)) { // normally Int Object
+            int ret = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
+            if(type == this->symbolTable.get(TYPE::Int32)) { // normally Int Object
                 ret = typeAs<Int_Object>(obj)->getValue();
-            } else if(type == state.symbolTable.get(TYPE::StringArray)) {    // for builtin exit command
+            } else if(type == this->symbolTable.get(TYPE::StringArray)) {    // for builtin exit command
                 auto *arrayObj = typeAs<Array_Object>(obj);
                 if(arrayObj->getValues().size() > 1) {
                     const char *num = str(arrayObj->getValues()[1]);
@@ -1354,183 +1326,183 @@ static bool mainLoop(DSState &state) {
                     }
                 }
             }
-            state.exitShell(ret);
+            this->exitShell(ret);
             vmerror;
         }
         vmcase(ENTER_FINALLY) {
-            const unsigned int offset = read16(GET_CODE(state), state.pc() + 1);
-            const unsigned int savedIndex = state.pc() + 2;
-            state.push(DSValue::createNum(savedIndex));
-            state.pc() += offset - 1;
+            const unsigned int offset = read16(GET_CODE(*this), this->pc() + 1);
+            const unsigned int savedIndex = this->pc() + 2;
+            this->push(DSValue::createNum(savedIndex));
+            this->pc() += offset - 1;
             vmnext;
         }
         vmcase(EXIT_FINALLY) {
-            switch(state.peek().kind()) {
+            switch(this->peek().kind()) {
             case DSValueKind::OBJECT:
             case DSValueKind::INVALID: {
-                state.storeThrownObject();
+                this->storeThrownObject();
                 vmerror;
             }
             case DSValueKind::NUMBER: {
-                unsigned int index = static_cast<unsigned int>(state.pop().value());
-                state.pc() = index;
+                unsigned int index = static_cast<unsigned int>(this->pop().value());
+                this->pc() = index;
                 vmnext;
             }
             }
             vmnext;
         }
         vmcase(LOOKUP_HASH) {
-            auto key = state.pop();
-            auto map = state.pop();
+            auto key = this->pop();
+            auto map = this->pop();
             auto &valueMap = typeAs<Map_Object>(map)->getValueMap();
             auto iter = valueMap.find(key);
             if(iter != valueMap.end()) {
                 unsigned int index = typeAs<Int_Object>(iter->second)->getValue();
-                state.pc() = index - 1;
+                this->pc() = index - 1;
             }
             vmnext;
         }
         vmcase(COPY_INT) {
-            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
-            int v = typeAs<Int_Object>(state.pop())->getValue();
-            state.push(DSValue::create<Int_Object>(*type, v));
+            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
+            int v = typeAs<Int_Object>(this->pop())->getValue();
+            this->push(DSValue::create<Int_Object>(*type, v));
             vmnext;
         }
         vmcase(TO_BYTE) {
-            unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
+            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
             v &= 0xFF;  // fill higher bits (8th ~ 31) with 0
-            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Byte), v));
+            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Byte), v));
             vmnext;
         }
         vmcase(TO_U16) {
-            unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
+            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
             v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
-            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Uint16), v));
+            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint16), v));
             vmnext;
         }
         vmcase(TO_I16) {
-            unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
+            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
             v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
             if((v & 0x8000) != 0u) {    // if 15th bit is 1, fill higher bits with 1
                 v |= 0xFFFF0000;
             }
-            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int16), v));
+            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int16), v));
             vmnext;
         }
         vmcase(NEW_LONG) {
-            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
-            unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
+            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
+            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
             unsigned long l = v;
-            state.push(DSValue::create<Long_Object>(*type, l));
+            this->push(DSValue::create<Long_Object>(*type, l));
             vmnext;
         }
         vmcase(COPY_LONG) {
-            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
-            long v = typeAs<Long_Object>(state.pop())->getValue();
-            state.push(DSValue::create<Long_Object>(*type, v));
+            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
+            long v = typeAs<Long_Object>(this->pop())->getValue();
+            this->push(DSValue::create<Long_Object>(*type, v));
             vmnext;
         }
         vmcase(I_NEW_LONG) {
-            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
-            int v = typeAs<Int_Object>(state.pop())->getValue();
+            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
+            int v = typeAs<Int_Object>(this->pop())->getValue();
             long l = v;
-            state.push(DSValue::create<Long_Object>(*type, l));
+            this->push(DSValue::create<Long_Object>(*type, l));
             vmnext;
         }
         vmcase(NEW_INT) {
-            DSType *type = state.symbolTable.getByNumTypeIndex(read8(GET_CODE(state), ++state.pc()));
-            unsigned long l = typeAs<Long_Object>(state.pop())->getValue();
+            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
+            unsigned long l = typeAs<Long_Object>(this->pop())->getValue();
             auto v = static_cast<unsigned int>(l);
-            state.push(DSValue::create<Int_Object>(*type, v));
+            this->push(DSValue::create<Int_Object>(*type, v));
             vmnext;
         }
         vmcase(U32_TO_D) {
-            unsigned int v = typeAs<Int_Object>(state.pop())->getValue();
+            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
+            this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(I32_TO_D) {
-            int v = typeAs<Int_Object>(state.pop())->getValue();
+            int v = typeAs<Int_Object>(this->pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
+            this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(U64_TO_D) {
-            unsigned long v = typeAs<Long_Object>(state.pop())->getValue();
+            unsigned long v = typeAs<Long_Object>(this->pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
+            this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(I64_TO_D) {
-            long v = typeAs<Long_Object>(state.pop())->getValue();
+            long v = typeAs<Long_Object>(this->pop())->getValue();
             auto d = static_cast<double>(v);
-            state.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
+            this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(D_TO_U32) {
-            double d = typeAs<Float_Object>(state.pop())->getValue();
+            double d = typeAs<Float_Object>(this->pop())->getValue();
             auto v = static_cast<unsigned int>(d);
-            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Uint32), v));
+            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint32), v));
             vmnext;
         }
         vmcase(D_TO_I32) {
-            double d = typeAs<Float_Object>(state.pop())->getValue();
+            double d = typeAs<Float_Object>(this->pop())->getValue();
             auto v = static_cast<int>(d);
-            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), v));
+            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
             vmnext;
         }
         vmcase(D_TO_U64) {
-            double d = typeAs<Float_Object>(state.pop())->getValue();
+            double d = typeAs<Float_Object>(this->pop())->getValue();
             auto v = static_cast<unsigned long>(d);
-            state.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Uint64), v));
+            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Uint64), v));
             vmnext;
         }
         vmcase(D_TO_I64) {
-            double d = typeAs<Float_Object>(state.pop())->getValue();
+            double d = typeAs<Float_Object>(this->pop())->getValue();
             auto v = static_cast<long>(d);
-            state.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Int64), v));
+            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Int64), v));
             vmnext;
         }
         vmcase(REF_EQ) {
-            auto v1 = state.pop();
-            auto v2 = state.pop();
-            state.push(v1 == v2 ? state.trueObj : state.falseObj);
+            auto v1 = this->pop();
+            auto v2 = this->pop();
+            this->push(v1 == v2 ? this->trueObj : this->falseObj);
             vmnext;
         }
         vmcase(REF_NE) {
-            auto v1 = state.pop();
-            auto v2 = state.pop();
-            state.push(v1 != v2 ? state.trueObj : state.falseObj);
+            auto v1 = this->pop();
+            auto v2 = this->pop();
+            this->push(v1 != v2 ? this->trueObj : this->falseObj);
             vmnext;
         }
         vmcase(FORK) {
-            TRY(forkAndEval(state));
+            TRY(this->forkAndEval());
             vmnext;
         }
         vmcase(PIPELINE)
         vmcase(PIPELINE_LP) {
             bool lastPipe = op == OpCode::PIPELINE_LP;
-            TRY(callPipeline(state, lastPipe));
+            TRY(this->callPipeline(lastPipe));
             vmnext;
         }
         vmcase(EXPAND_TILDE) {
-            std::string str = typeAs<String_Object>(state.pop())->getValue();
+            std::string str = typeAs<String_Object>(this->pop())->getValue();
             expandTilde(str);
-            state.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str)));
+            this->push(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::move(str)));
             vmnext;
         }
         vmcase(NEW_CMD) {
-            auto v = state.pop();
-            auto obj = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
+            auto v = this->pop();
+            auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray));
             auto *argv = typeAs<Array_Object>(obj);
             argv->append(std::move(v));
-            state.push(std::move(obj));
+            this->push(std::move(obj));
             vmnext;
         }
         vmcase(ADD_CMD_ARG) {
-            unsigned char v = read8(GET_CODE(state), ++state.pc());
-            addCmdArg(state, v > 0);
+            unsigned char v = read8(GET_CODE(*this), ++this->pc());
+            this->addCmdArg(v > 0);
             vmnext;
         }
         vmcase(CALL_CMD)
@@ -1541,55 +1513,55 @@ static bool mainLoop(DSState &state) {
                 setFlag(attr, UDC_ATTR_NEED_FORK);
             }
 
-            auto redir = state.pop();
-            auto argv = state.pop();
+            auto redir = this->pop();
+            auto argv = this->pop();
 
             const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-            TRY(callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr));
+            TRY(this->callCommand(CmdResolver()(*this, cmdName), std::move(argv), std::move(redir), attr));
             vmnext;
         }
         vmcase(BUILTIN_CMD) {
-            auto attr = state.getLocal(UDC_PARAM_ATTR).value();
-            DSValue redir = state.getLocal(UDC_PARAM_REDIR);
-            DSValue argv = state.getLocal(UDC_PARAM_ARGV);
-            bool ret = callBuiltinCommand(state, std::move(argv), std::move(redir), attr);
+            auto attr = this->getLocal(UDC_PARAM_ATTR).value();
+            DSValue redir = this->getLocal(UDC_PARAM_REDIR);
+            DSValue argv = this->getLocal(UDC_PARAM_ARGV);
+            bool ret = this->callBuiltinCommand(std::move(argv), std::move(redir), attr);
             flushStdFD();
             TRY(ret);
             vmnext;
         }
         vmcase(BUILTIN_EVAL) {
-            auto attr = state.getLocal(UDC_PARAM_ATTR).value();
-            DSValue redir = state.getLocal(UDC_PARAM_REDIR);
-            DSValue argv = state.getLocal(UDC_PARAM_ARGV);
+            auto attr = this->getLocal(UDC_PARAM_ATTR).value();
+            DSValue redir = this->getLocal(UDC_PARAM_REDIR);
+            DSValue argv = this->getLocal(UDC_PARAM_ARGV);
 
             eraseFirst(*typeAs<Array_Object>(argv));
             auto *array = typeAs<Array_Object>(argv);
             if(!array->getValues().empty()) {
                 const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-                TRY(callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr));
+                TRY(this->callCommand(CmdResolver()(*this, cmdName), std::move(argv), std::move(redir), attr));
             } else {
-                state.pushExitStatus(0);
+                this->pushExitStatus(0);
             }
             vmnext;
         }
         vmcase(BUILTIN_EXEC) {
-            DSValue redir = state.getLocal(UDC_PARAM_REDIR);
-            DSValue argv = state.getLocal(UDC_PARAM_ARGV);
-            callBuiltinExec(state, std::move(argv), std::move(redir));
+            DSValue redir = this->getLocal(UDC_PARAM_REDIR);
+            DSValue argv = this->getLocal(UDC_PARAM_ARGV);
+            this->callBuiltinExec(std::move(argv), std::move(redir));
             vmnext;
         }
         vmcase(NEW_REDIR) {
-            state.push(DSValue::create<RedirConfig>());
+            this->push(DSValue::create<RedirConfig>());
             vmnext;
         }
         vmcase(ADD_REDIR_OP) {
-            unsigned char v = read8(GET_CODE(state), ++state.pc());
-            auto value = state.pop();
-            typeAs<RedirConfig>(state.peek())->addRedirOp(static_cast<RedirOP>(v), std::move(value));
+            unsigned char v = read8(GET_CODE(*this), ++this->pc());
+            auto value = this->pop();
+            typeAs<RedirConfig>(this->peek())->addRedirOp(static_cast<RedirOP>(v), std::move(value));
             vmnext;
         }
         vmcase(DO_REDIR) {
-            TRY(typeAs<RedirConfig>(state.peek())->redirect(state));
+            TRY(typeAs<RedirConfig>(this->peek())->redirect(*this));
             vmnext;
         }
         vmcase(RAND) {
@@ -1597,76 +1569,72 @@ static bool mainLoop(DSState &state) {
             std::default_random_engine engine(rand());
             std::uniform_int_distribution<unsigned int> dist;
             unsigned int v = dist(engine);
-            state.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Uint32), v));
+            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint32), v));
             vmnext;
         }
         vmcase(GET_SECOND) {
             auto now = std::chrono::system_clock::now();
-            auto diff = now - state.baseTime;
+            auto diff = now - this->baseTime;
             auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
-            unsigned long v = typeAs<Long_Object>(state.getGlobal(toIndex(BuiltinVarOffset::SECONDS)))->getValue();
+            unsigned long v = typeAs<Long_Object>(this->getGlobal(toIndex(BuiltinVarOffset::SECONDS)))->getValue();
             v += sec.count();
-            state.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Uint64), v));
+            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Uint64), v));
             vmnext;
         }
         vmcase(SET_SECOND) {
-            state.baseTime = std::chrono::system_clock::now();
-            state.storeGlobal(toIndex(BuiltinVarOffset::SECONDS));
+            this->baseTime = std::chrono::system_clock::now();
+            this->storeGlobal(toIndex(BuiltinVarOffset::SECONDS));
             vmnext;
         }
         vmcase(UNWRAP) {
-            if(state.peek().kind() == DSValueKind::INVALID) {
-                raiseError(state, TYPE::UnwrappingError, std::string("invalid value"));
+            if(this->peek().kind() == DSValueKind::INVALID) {
+                raiseError(*this, TYPE::UnwrappingError, std::string("invalid value"));
                 vmerror;
             }
             vmnext;
         }
         vmcase(CHECK_UNWRAP) {
-            bool b = state.pop().kind() != DSValueKind::INVALID;
-            state.push(b ? state.trueObj : state.falseObj);
+            bool b = this->pop().kind() != DSValueKind::INVALID;
+            this->push(b ? this->trueObj : this->falseObj);
             vmnext;
         }
         vmcase(TRY_UNWRAP) {
-            unsigned short offset = read16(GET_CODE(state), state.pc() + 1);
-            if(state.peek().kind() == DSValueKind::INVALID) {
-                state.popNoReturn();
-                state.pc() += 2;
+            unsigned short offset = read16(GET_CODE(*this), this->pc() + 1);
+            if(this->peek().kind() == DSValueKind::INVALID) {
+                this->popNoReturn();
+                this->pc() += 2;
             } else {
-                state.pc() += offset - 1;
+                this->pc() += offset - 1;
             }
             vmnext;
         }
         vmcase(NEW_INVALID) {
-            state.push(DSValue::createInvalid());
+            this->push(DSValue::createInvalid());
             vmnext;
         }
         vmcase(RECLAIM_LOCAL) {
-            unsigned char offset = read8(GET_CODE(state), ++state.pc());
-            unsigned char size = read8(GET_CODE(state), ++state.pc());
+            unsigned char offset = read8(GET_CODE(*this), ++this->pc());
+            unsigned char size = read8(GET_CODE(*this), ++this->pc());
 
-            state.reclaimLocals(offset, size);
+            this->reclaimLocals(offset, size);
             vmnext;
         }
         }
     }
 }
 
-/**
- * if found exception handler, return true.
- * otherwise return false.
- */
-static bool handleException(DSState &state, bool forceUnwind) {
-    if(state.hook != nullptr) {
-        state.hook->vmThrowHook(state);
+bool DSState::handleException(bool forceUnwind) {
+    if(this->hook != nullptr) {
+        this->hook->vmThrowHook(*this);
     }
 
-    for(; !state.checkVMReturn(); state.unwindStackFrame()) {
-        if(!forceUnwind && !CODE(state)->is(CodeKind::NATIVE)) {
-            auto *cc = static_cast<const CompiledCode *>(CODE(state));
+    for(; !this->checkVMReturn(); this->unwindStackFrame()) {
+        if(!forceUnwind && !CODE(*this)->is(CodeKind::NATIVE)) {
+            auto *cc = static_cast<const CompiledCode *>(CODE(*this));
 
             // search exception entry
-            const unsigned int occurredPC = state.pc();
-            const DSType *occurredType = state.getThrownObject()->getType();
+            const unsigned int occurredPC = this->pc();
+            const DSType *occurredType = this->getThrownObject()->getType();
 
             for(unsigned int i = 0; cc->getExceptionEntries()[i].type != nullptr; i++) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
@@ -1675,72 +1643,74 @@ static bool handleException(DSState &state, bool forceUnwind) {
                     if(entry.type->is(TYPE::_Root)) {
                         return false;
                     }
-                    state.pc() = entry.dest - 1;
-                    state.clearOperandStack();
-                    state.reclaimLocals(entry.localOffset, entry.localSize);
-                    state.loadThrownObject();
+                    this->pc() = entry.dest - 1;
+                    this->clearOperandStack();
+                    this->reclaimLocals(entry.localOffset, entry.localSize);
+                    this->loadThrownObject();
                     return true;
                 }
             }
-        } else if(CODE(state) == &signalTrampoline) {   // within signal trampoline
+        } else if(CODE(*this) == &signalTrampoline) {   // within signal trampoline
             unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
         }
     }
     return false;
 }
 
-static bool runMainLoop(DSState &state) {
-    while(!mainLoop(state)) {
-        bool forceUnwind = state.symbolTable.get(TYPE::_InternalStatus)
-                .isSameOrBaseTypeOf(*state.getThrownObject()->getType());
-        if(!handleException(state, forceUnwind)) {
+bool DSState::runMainLoop() {
+    while(!this->mainLoop()) {
+        bool forceUnwind = this->symbolTable.get(TYPE::_InternalStatus)
+                .isSameOrBaseTypeOf(*this->getThrownObject()->getType());
+        if(!this->handleException(forceUnwind)) {
             return false;
         }
     }
     return true;
 }
 
-bool vmEval(DSState &state, const CompiledCode &code) {
-    state.clearThrownObject();
-    state.reserveGlobalVar();
+bool DSState::vmEval(const CompiledCode &code) {
+    this->clearThrownObject();
+    this->reserveGlobalVar();
 
-    state.windStackFrame(0, 0, &code);
+    this->windStackFrame(0, 0, &code);
 
-    return runMainLoop(state);
+    return this->runMainLoop();
 }
 
-int execBuiltinCommand(DSState &st, char *const argv[]) {
-    auto cmd = CmdResolver(CmdResolver::MASK_EXTERNAL | CmdResolver::MASK_UDC, 0)(st, argv[0]);
+int DSState::execBuiltinCommand(char *const argv[]) {
+    auto cmd = CmdResolver(CmdResolver::MASK_EXTERNAL | CmdResolver::MASK_UDC, 0)(*this, argv[0]);
     if(cmd.builtinCmd == nullptr) {
         fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
-        st.updateExitStatus(1);
+        this->updateExitStatus(1);
         return 1;
     }
 
     // init parameter
     std::vector<DSValue> values;
     for(; *argv != nullptr; argv++) {
-        values.push_back(DSValue::create<String_Object>(st.symbolTable.get(TYPE::String), std::string(*argv)));
+        values.push_back(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::string(*argv)));
     }
-    auto obj = DSValue::create<Array_Object>(st.symbolTable.get(TYPE::StringArray), std::move(values));
+    auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray), std::move(values));
 
-    st.clearThrownObject();
-    bool ret = callCommand(st, cmd, std::move(obj), DSValue());
+    this->clearThrownObject();
+    bool ret = this->callCommand(cmd, std::move(obj), DSValue());
     assert(ret);
     (void) ret;
-    if(!st.controlStack.empty()) {
-        bool r = runMainLoop(st);
+    if(!this->controlStack.empty()) {
+        bool r = this->runMainLoop();
         if(!r) {
-            if(st.symbolTable.get(TYPE::_InternalStatus).isSameOrBaseTypeOf(*st.getThrownObject()->getType())) {
-                st.loadThrownObject(); // force clear thrownObject
+            if(this->symbolTable.get(TYPE::_InternalStatus).isSameOrBaseTypeOf(*this->getThrownObject()->getType())) {
+                this->loadThrownObject(); // force clear thrownObject
             } else {
-                st.pushExitStatus(1);
+                this->pushExitStatus(1);
             }
         }
     }
-    st.popNoReturn();
-    return st.getExitStatus();
+    this->popNoReturn();
+    return this->getExitStatus();
 }
+
+namespace ydsh {
 
 class RecursionGuard {
 private:
@@ -1796,7 +1766,7 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
 
     DSValue ret;
     if(state.prepareMethodCall(handle->getMethodIndex(), size)) {
-        bool s = runMainLoop(state);
+        bool s = state.runMainLoop();
         if(!handle->getReturnType()->isVoidType() && s) {
             ret = state.pop();
         }
@@ -1813,7 +1783,7 @@ DSValue callFunction(DSState &state, DSValue &&funcObj,
 
     DSValue ret;
     if(state.prepareFuncCall(size)) {
-        bool s = runMainLoop(state);
+        bool s = state.runMainLoop();
         assert(type->isFuncType());
         if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType() && s) {
             ret = state.pop();

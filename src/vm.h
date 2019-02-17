@@ -22,6 +22,7 @@
 
 #include <ydsh/ydsh.h>
 
+#include "cmd.h"
 #include "object.h"
 #include "symbol_table.h"
 #include "signals.h"
@@ -554,6 +555,54 @@ struct DSState {
     bool prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvObj,
                                        DSValue &&restoreFD, const flag8_set_t attr);
 
+    bool forkAndEval();
+
+    int forkAndExec(const char *cmdName, Command cmd, char **const argv, DSValue &&redirConfig);
+
+    bool callCommand(Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
+
+    bool callBuiltinCommand(DSValue &&argvObj, DSValue &&redir, flag8_set_t attr);
+
+    void callBuiltinExec(DSValue &&array, DSValue &&redir);
+
+    /**
+     *
+     * @param lastPipe
+     * if true, evaluate last pipe in parent shell
+     * @return
+     * if has error, return false.
+     */
+    bool callPipeline(bool lastPipe);
+
+    void addCmdArg(bool skipEmptyStr);
+
+    bool kickSignalHandler(int sigNum, DSValue &&func);
+
+    bool checkVMEvent();
+
+    bool mainLoop();
+
+    /**
+     * if found exception handler, return true.
+     * otherwise return false.
+     */
+    bool handleException(bool forceUnwind);
+
+    bool runMainLoop();
+
+    // entry point
+    bool vmEval(const CompiledCode &code);
+
+    /**
+     *
+     * @param argv
+     * first element of argv is command name.
+     * last element of argv is null.
+     * @return
+     * exit status.
+     * if throw exception, return always 1.
+     */
+    int execBuiltinCommand(char *const argv[]);
 
 private:
     /**
@@ -562,26 +611,5 @@ private:
      */
     void reserveLocalStackImpl(unsigned int needSize);
 };
-
-namespace ydsh {
-
-/**
- * entry point
- */
-bool vmEval(DSState &state, const CompiledCode &code);
-
-/**
- *
- * @param st
- * @param argv
- * first element of argv is command name.
- * last element of argv is null.
- * @return
- * exit status.
- * if throw exception, return always 1.
- */
-int execBuiltinCommand(DSState &st, char *const argv[]);
-
-} // namespace
 
 #endif //YDSH_VM_H
