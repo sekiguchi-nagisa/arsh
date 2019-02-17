@@ -234,6 +234,7 @@ set(YDSH_SRC
         src/frontend.cpp
         src/signals.cpp
         src/job.cpp
+        src/redir.cpp
         ${lexer_src}
         ${bind_src})
 

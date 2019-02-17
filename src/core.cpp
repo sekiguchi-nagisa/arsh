@@ -357,26 +357,26 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
     auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
 
     DSValue actualHandler;
-    auto op = DSState::UnsafeSigOp::SET;
+    auto op = SignalVector::UnsafeSigOp::SET;
     if(handler == DFL_handler) {
         if(sigNum == SIGHUP) {
             actualHandler = handler;
         } else {
-            op = DSState::UnsafeSigOp::DFL;
+            op = SignalVector::UnsafeSigOp::DFL;
         }
     } else if(handler == IGN_handler) {
-        op = DSState::UnsafeSigOp::IGN;
+        op = SignalVector::UnsafeSigOp::IGN;
     } else if(sigNum == SIGSEGV || sigNum == SIGILL || sigNum == SIGFPE) {
         /**
          * always set default due to prevent undefined behavior.
          * see. https://wiki.sei.cmu.edu/confluence/display/c/SIG35-C.+Do+not+return+from+a+computational+exception+signal+handler
          */
-        op = DSState::UnsafeSigOp::DFL;
+        op = SignalVector::UnsafeSigOp::DFL;
     } else {
         actualHandler = handler;
     }
 
-    st.installSignalHandler(sigNum, op, actualHandler);
+    st.sigVector.install(sigNum, op, actualHandler);
 }
 
 DSValue getSignalHandler(const DSState &st, int sigNum) {
@@ -400,17 +400,17 @@ DSValue getSignalHandler(const DSState &st, int sigNum) {
 void setJobControlSignalSetting(DSState &st, bool set) {
     SignalGuard guard;
 
-    auto op = set ? DSState::UnsafeSigOp::IGN : DSState::UnsafeSigOp::DFL;
+    auto op = set ? SignalVector::UnsafeSigOp::IGN : SignalVector::UnsafeSigOp::DFL;
     DSValue handler;
 
-    st.installSignalHandler(SIGINT,  op, handler);
-    st.installSignalHandler(SIGQUIT, op, handler);
-    st.installSignalHandler(SIGTSTP, op, handler);
-    st.installSignalHandler(SIGTTIN, op, handler);
-    st.installSignalHandler(SIGTTOU, op, handler);
+    st.sigVector.install(SIGINT, op, handler);
+    st.sigVector.install(SIGQUIT, op, handler);
+    st.sigVector.install(SIGTSTP, op, handler);
+    st.sigVector.install(SIGTTIN, op, handler);
+    st.sigVector.install(SIGTTOU, op, handler);
 
     // due to prevent waitpid error (always wait child process termination)
-    st.installSignalHandler(SIGCHLD, DSState::UnsafeSigOp::DFL, handler, true);
+    st.sigVector.install(SIGCHLD, SignalVector::UnsafeSigOp::DFL, handler, true);
 }
 
 

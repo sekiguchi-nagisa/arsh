@@ -18,6 +18,7 @@
 #define YDSH_SYMBOL_H
 
 #include <config.h>
+#include "misc/flag_util.hpp"
 
 namespace ydsh {
 
@@ -143,6 +144,10 @@ constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
 constexpr const char *CMD_SYMBOL_PREFIX = "%c";
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 
+// =====  for user-defined command  =====
+constexpr flag8_t UDC_ATTR_SETVAR    = 1u << 0u;
+constexpr flag8_t UDC_ATTR_NEED_FORK = 1u << 1u;
+
 enum class ForkKind : unsigned char {
     STR,        // capture stdout as string. ex. "$(echo)"
     ARRAY,      // capture stdout as string array. ex. $(echo)
@@ -153,28 +158,6 @@ enum class ForkKind : unsigned char {
     DISOWN,     // launch as disowned background job. ex. echo &!
 };
 
-constexpr unsigned int FD_BIT_0 = 1u << 0u;
-constexpr unsigned int FD_BIT_1 = 1u << 1u;
-constexpr unsigned int FD_BIT_2 = 1u << 2u;
-
-#define EACH_RedirOP(OP) \
-    OP(IN_2_FILE                    , FD_BIT_0) \
-    OP(OUT_2_FILE                   , FD_BIT_1) \
-    OP(OUT_2_FILE_APPEND            , FD_BIT_1) \
-    OP(ERR_2_FILE                   , FD_BIT_2) \
-    OP(ERR_2_FILE_APPEND            , FD_BIT_2) \
-    OP(MERGE_ERR_2_OUT_2_FILE       , (FD_BIT_2 | FD_BIT_1)) \
-    OP(MERGE_ERR_2_OUT_2_FILE_APPEND, (FD_BIT_2 | FD_BIT_1)) \
-    OP(MERGE_ERR_2_OUT              , FD_BIT_2) \
-    OP(MERGE_OUT_2_ERR              , FD_BIT_1) \
-    OP(HERE_STR                     , FD_BIT_0)
-
-enum class RedirOP : unsigned char {
-#define GEN_ENUM(ENUM, BITS) ENUM,
-    EACH_RedirOP(GEN_ENUM)
-#undef GEN_ENUM
-    NOP,
-};
 
 // ===== for configuration =====
 constexpr const char *LOCAL_CONFIG_DIR = "~/.ydsh";

@@ -17,6 +17,7 @@
 #include "codegen.h"
 #include "symbol_table.h"
 #include "constant.h"
+#include "redir.h"
 #include "core.h"
 #include "cmd.h"
 

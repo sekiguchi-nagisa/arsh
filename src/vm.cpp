@@ -16,7 +16,6 @@
 
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/wait.h>
 
 #include <cstdlib>
 #include <cerrno>
@@ -27,6 +26,7 @@
 #include "cmd.h"
 #include "logger.h"
 #include "constant.h"
+#include "redir.h"
 #include "misc/files.h"
 #include "misc/num.h"
 
@@ -65,6 +65,47 @@ DSValue SignalVector::lookup(int sigNum) const {
         return iter->second;
     }
     return nullptr;
+}
+
+
+flag32_set_t DSState::eventDesc = 0;
+
+unsigned int DSState::pendingSigIndex = 1;
+
+SigSet DSState::pendingSigSet;
+
+static void signalHandler(int sigNum) { // when called this handler, all signals are blocked due to signal mask
+    DSState::pendingSigSet.add(sigNum);
+    setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
+}
+
+void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD) {
+    if(sigNum == SIGCHLD && !setSIGCHLD) {
+        return;
+    }
+
+    // set posix signal handler
+    struct sigaction action{};
+    action.sa_flags = SA_RESTART;
+    sigfillset(&action.sa_mask);
+
+    switch(op) {
+    case UnsafeSigOp::DFL:
+        action.sa_handler = SIG_DFL;
+        break;
+    case UnsafeSigOp::IGN:
+        action.sa_handler = SIG_IGN;
+        break;
+    case UnsafeSigOp::SET:
+        action.sa_handler = signalHandler;
+        break;
+    }
+    sigaction(sigNum, &action, nullptr);
+
+    // register handler
+    if(sigNum != SIGCHLD) {
+        this->insertOrUpdate(sigNum, handler);
+    }
 }
 
 // #####################
@@ -115,96 +156,47 @@ void DSState::reserveLocalStackImpl(unsigned int needSize) {
     this->callStackSize = newSize;
 }
 
-flag32_set_t DSState::eventDesc = 0;
-
-unsigned int DSState::pendingSigIndex = 1;
-
-SigSet DSState::pendingSigSet;
-
-static void signalHandler(int sigNum) { // when called this handler, all signals are blocked due to signal mask
-    DSState::pendingSigSet.add(sigNum);
-    setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
-}
-
-void DSState::installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD) {
-    if(sigNum == SIGCHLD && !setSIGCHLD) {
-        return;
-    }
-
-    // set posix signal handler
-    struct sigaction action{};
-    action.sa_flags = SA_RESTART;
-    sigfillset(&action.sa_mask);
-
-    switch(op) {
-    case UnsafeSigOp::DFL:
-        action.sa_handler = SIG_DFL;
-        break;
-    case UnsafeSigOp::IGN:
-        action.sa_handler = SIG_IGN;
-        break;
-    case UnsafeSigOp::SET:
-        action.sa_handler = signalHandler;
-        break;
-    }
-    sigaction(sigNum, &action, nullptr);
-
-    // register handler
-    if(sigNum != SIGCHLD) {
-        this->sigVector.insertOrUpdate(sigNum, handler);
-    }
-}
-
-extern char **environ; //NOLINT
-
-namespace ydsh {
-
-#define CODE(ctx) ((ctx).code())
-#define GET_CODE(ctx) (CODE(ctx)->getCode())
-#define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
-
-/* runtime api */
-static bool checkCast(DSState &state, DSType *targetType) {
-    if(!state.peek()->introspect(state, targetType)) {
-        DSType *stackTopType = state.pop()->getType();
+bool DSState::checkCast(DSType *targetType) {
+    if(!this->peek()->introspect(*this, targetType)) {
+        DSType *stackTopType = this->pop()->getType();
         std::string str("cannot cast ");
-        str += state.symbolTable.getTypeName(*stackTopType);
+        str += this->symbolTable.getTypeName(*stackTopType);
         str += " to ";
-        str += state.symbolTable.getTypeName(*targetType);
-        raiseError(state, TYPE::TypeCastError, std::move(str));
+        str += this->symbolTable.getTypeName(*targetType);
+        raiseError(*this, TYPE::TypeCastError, std::move(str));
         return false;
     }
     return true;
 }
 
-static bool checkAssertion(DSState &state) {
-    auto msg(state.pop());
+bool DSState::checkAssertion() {
+    auto msg(this->pop());
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
-    if(!typeAs<Boolean_Object>(state.pop())->getValue()) {
-        raiseError(state, TYPE::_AssertFail, std::string(typeAs<String_Object>(msg)->getValue()));
+    if(!typeAs<Boolean_Object>(this->pop())->getValue()) {
+        raiseError(*this, TYPE::_AssertFail, std::string(typeAs<String_Object>(msg)->getValue()));
         return false;
     }
     return true;
 }
 
-static void exitShell(DSState &st, unsigned int status) {
-    if(hasFlag(st.option, DS_OPTION_INTERACTIVE)) {
-        st.jobTable.send(SIGHUP);
+void DSState::exitShell(unsigned int status) {
+    if(hasFlag(this->option, DS_OPTION_INTERACTIVE)) {
+        this->jobTable.send(SIGHUP);
     }
 
     std::string str("terminated by exit ");
     str += std::to_string(status);
     status %= 256;
-    raiseError(st, TYPE::_ShellExit, std::move(str), status);
+    raiseError(*this, TYPE::_ShellExit, std::move(str), status);
 }
 
-static const char *loadEnv(DSState &state, bool hasDefault) {
+const char *DSState::loadEnv(bool hasDefault) {
     DSValue dValue;
     if(hasDefault) {
-        dValue = state.pop();
+        dValue = this->pop();
     }
-    DSValue nameObj(state.pop());
+    DSValue nameObj(this->pop());
     const char *name = typeAs<String_Object>(nameObj)->getValue();
 
     const char *env = getenv(name);
@@ -216,124 +208,103 @@ static const char *loadEnv(DSState &state, bool hasDefault) {
     if(env == nullptr) {
         std::string str = UNDEF_ENV_ERROR;
         str += name;
-        raiseSystemError(state, EINVAL, std::move(str));
+        raiseSystemError(*this, EINVAL, std::move(str));
         return nullptr;
     }
     return env;
 }
 
-static void clearOperandStack(DSState &st) {
-    while(st.stackTopIndex() > st.stackBottomIndex()) {
-        st.popNoReturn();
-    }
-}
-
-static void reclaimLocals(DSState &state, unsigned char offset, unsigned char size) {
-    auto *limit = state.callStack + state.localVarOffset() + offset;
-    auto *cur = limit + size - 1;
-    while(cur >= limit) {
-        (cur--)->reset();
-    }
-}
-
-/**
- * reserve global variable entry and set local variable offset.
- */
-static void reserveGlobalVar(DSState &st) {
-    unsigned int size = st.symbolTable.getMaxGVarIndex();
-    st.reserveLocalStack(size - st.globalVarSize);
-    st.globalVarSize = size;
-    st.localVarOffset() = size;
-    st.stackTopIndex() = size;
-    st.stackBottomIndex() = size;
-}
-
-static bool windStackFrame(DSState &st, unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
+bool DSState::windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
     const unsigned int maxVarSize = code->is(CodeKind::NATIVE) ? paramSize :
                                     static_cast<const CompiledCode *>(code)->getLocalVarNum();
-    const unsigned int localVarOffset = st.stackTopIndex() - paramSize + 1;
+    const unsigned int localVarOffset = this->stackTopIndex() - paramSize + 1;
     const unsigned int operandSize = code->is(CodeKind::NATIVE) ? 4 :
                                      static_cast<const CompiledCode *>(code)->getStackDepth();
 
-    if(st.controlStack.size() == DSState::MAX_CONTROL_STACK_SIZE) {
-        raiseError(st, TYPE::StackOverflowError, "local stack size reaches limit");
+    if(this->controlStack.size() == DSState::MAX_CONTROL_STACK_SIZE) {
+        raiseError(*this, TYPE::StackOverflowError, "local stack size reaches limit");
         return false;
     }
 
     // save current control frame
-    st.stackTopIndex() -= stackTopOffset;
-    st.controlStack.push_back(st.getFrame());
-    st.stackTopIndex() += stackTopOffset;
+    this->stackTopIndex() -= stackTopOffset;
+    this->controlStack.push_back(this->getFrame());
+    this->stackTopIndex() += stackTopOffset;
 
     // reallocate stack
-    st.reserveLocalStack(maxVarSize - paramSize + operandSize);
+    this->reserveLocalStack(maxVarSize - paramSize + operandSize);
 
     // prepare control frame
-    st.code() = code;
-    st.stackTopIndex() = st.stackTopIndex() + maxVarSize - paramSize;
-    st.stackBottomIndex() = st.stackTopIndex();
-    st.localVarOffset() = localVarOffset;
-    st.pc() = st.code()->getCodeOffset() - 1;
+    this->code() = code;
+    this->stackTopIndex() = this->stackTopIndex() + maxVarSize - paramSize;
+    this->stackBottomIndex() = this->stackTopIndex();
+    this->localVarOffset() = localVarOffset;
+    this->pc() = this->code()->getCodeOffset() - 1;
     return true;
 }
 
-static void unwindStackFrame(DSState &st) {
-    auto frame = st.controlStack.back();
+void DSState::unwindStackFrame() {
+    auto frame = this->controlStack.back();
 
-    st.code() = frame.code;
-    st.stackBottomIndex() = frame.stackBottomIndex;
-    st.localVarOffset() = frame.localVarOffset;
-    st.pc() = frame.pc;
+    this->code() = frame.code;
+    this->stackBottomIndex() = frame.stackBottomIndex;
+    this->localVarOffset() = frame.localVarOffset;
+    this->pc() = frame.pc;
 
     unsigned int oldStackTopIndex = frame.stackTopIndex;
-    while(st.stackTopIndex() > oldStackTopIndex) {
-        st.popNoReturn();
+    while(this->stackTopIndex() > oldStackTopIndex) {
+        this->popNoReturn();
     }
-    st.controlStack.pop_back();
+    this->controlStack.pop_back();
 }
 
-/**
- * stack state in function apply    stack grow ===>
- *
- * +-----------+---------+--------+   +--------+
- * | stack top | funcObj | param1 | ~ | paramN |
- * +-----------+---------+--------+   +--------+
- *                       | offset |   |        |
- */
-static bool prepareFuncCall(DSState &st, unsigned int paramSize) {
-    auto *func = typeAs<FuncObject>(st.callStack[st.stackTopIndex() - paramSize]);
-    return windStackFrame(st, paramSize + 1, paramSize, &func->getCode());
+bool DSState::prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvObj,
+                                            DSValue &&restoreFD, const flag8_set_t attr) {
+    if(hasFlag(attr, UDC_ATTR_SETVAR)) {
+        // reset exit status
+        this->updateExitStatus(0);
+    }
+
+    // set stack stack
+    if(!this->windStackFrame(0, 0, code)) {
+        return false;
+    }
+
+    // set parameter
+    this->setLocal(UDC_PARAM_ATTR, DSValue::createNum(attr));
+    this->setLocal(UDC_PARAM_REDIR, std::move(restoreFD));
+    this->setLocal(UDC_PARAM_ARGV, std::move(argvObj));
+
+    if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
+        auto argv = typeAs<Array_Object>(this->getLocal(UDC_PARAM_ARGV));
+        eraseFirst(*argv);
+        const unsigned int argSize = argv->getValues().size();
+        this->setLocal(UDC_PARAM_ARGV + 1, DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), argSize));   // #
+        this->setLocal(UDC_PARAM_ARGV + 2, this->getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
+        unsigned int limit = 9;
+        if(argSize < limit) {
+            limit = argSize;
+        }
+
+        unsigned int index = 0;
+        for(; index < limit; index++) {
+            this->setLocal(index + UDC_PARAM_ARGV + 3, argv->getValues()[index]);
+        }
+
+        for(; index < 9; index++) {
+            this->setLocal(index + UDC_PARAM_ARGV + 3, this->emptyStrObj);  // set remain
+        }
+    }
+    return true;
 }
 
-/**
- * stack state in method call    stack grow ===>
- *
- * +-----------+------------------+   +--------+
- * | stack top | param1(receiver) | ~ | paramN |
- * +-----------+------------------+   +--------+
- *             | offset           |   |        |
- */
-static bool prepareMethodCall(DSState &st, unsigned short index, unsigned short paramSize) {
-    const unsigned int actualParamSize = paramSize + 1; // include receiver
-    const unsigned int recvIndex = st.stackTopIndex() - paramSize;
+namespace ydsh {
 
-    return windStackFrame(st, actualParamSize, actualParamSize, st.callStack[recvIndex]->getType()->getMethodRef(index));
-}
+#define CODE(ctx) ((ctx).code())
+#define GET_CODE(ctx) (CODE(ctx)->getCode())
+#define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
 
-
-/**
- * stack state in constructor call     stack grow ===>
- *
- * +-----------+------------------+   +--------+
- * | stack top | param1(receiver) | ~ | paramN |
- * +-----------+------------------+   +--------+
- *             |    new offset    |
- */
-static bool prepareConstructorCall(DSState &st, unsigned short paramSize) {
-    const unsigned int recvIndex = st.stackTopIndex() - paramSize;
-
-    return windStackFrame(st, paramSize, paramSize + 1, st.callStack[recvIndex]->getType()->getConstructor());
-}
+/* runtime api */
 
 const NativeCode *getNativeCode(unsigned int index);
 
@@ -413,77 +384,6 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
     return obj;
 }
 
-static void tryToDup(int srcFd, int targetFd) {
-    if(srcFd > -1) {
-        dup2(srcFd, targetFd);
-    }
-}
-
-static void tryToClose(int fd) {
-    if(fd > -1) {
-        close(fd);
-    }
-}
-
-static void tryToClose(int (&pipefds)[2]) {
-    tryToClose(pipefds[0]);
-    tryToClose(pipefds[1]);
-}
-
-static void tryToPipe(int (&pipefds)[2], bool openPipe) {
-    if(openPipe) {
-        if(pipe(pipefds) < 0) {
-            perror("pipe creation failed\n");
-            exit(1);    //FIXME: throw exception
-        }
-    } else {
-        pipefds[0] = -1;
-        pipefds[1] = -1;
-    }
-}
-
-struct PipeSet {
-    int in[2];
-    int out[2];
-};
-
-// FIXME: error reporting
-static PipeSet initPipeSet(ForkKind kind) {
-    bool useInPipe = false;
-    bool useOutPipe = false;
-
-    switch(kind) {
-    case ForkKind::STR:
-    case ForkKind::ARRAY:
-        useOutPipe = true;
-        break;
-    case ForkKind::IN_PIPE:
-        useInPipe = true;
-        break;
-    case ForkKind::OUT_PIPE:
-        useOutPipe = true;
-        break;
-    case ForkKind::COPROC:
-        useInPipe = true;
-        useOutPipe = true;
-        break;
-    case ForkKind::JOB:
-    case ForkKind::DISOWN:
-        break;
-    }
-
-    PipeSet set;    //NOLINT
-    tryToPipe(set.in, useInPipe);
-    tryToPipe(set.out, useOutPipe);
-    return set;
-}
-
-static void redirInToNull() {
-    int fd = open("/dev/null", O_WRONLY);
-    dup2(fd, STDIN_FILENO);
-    close(fd);
-}
-
 static DSValue newFD(const DSState &st, int &fd) {
     if(fd < 0) {
         return st.emptyFDObj;
@@ -492,16 +392,6 @@ static DSValue newFD(const DSState &st, int &fd) {
     fd = -1;
     return DSValue::create<UnixFD_Object>(st.symbolTable.get(TYPE::UnixFD), v);
 }
-
-static constexpr unsigned int READ_PIPE = 0;
-static constexpr unsigned int WRITE_PIPE = 1;
-
-static void flushStdFD() {
-    fflush(stdin);
-    fflush(stdout);
-    fflush(stderr);
-}
-
 
 static bool forkAndEval(DSState &state) {
     const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), ++state.pc()));
@@ -583,340 +473,6 @@ static bool forkAndEval(DSState &state) {
 
 /* for pipeline evaluation */
 
-/**
- * if filePath is null, not execute and set ENOENT.
- * argv is not null.
- * envp may be null.
- * if success, not return.
- */
-static void xexecve(const char *filePath, char **argv, char *const *envp) {
-    if(filePath == nullptr) {
-        errno = ENOENT;
-        return;
-    }
-
-    // set env
-    setenv("_", filePath, 1);
-    if(envp == nullptr) {
-        envp = environ;
-    }
-
-    LOG_IF(DUMP_EXEC, {
-        std::string str = filePath;
-        str += ", [";
-        for(unsigned int i = 0; argv[i] != nullptr; i++) {
-            if(i > 0) {
-                str += ", ";
-            }
-            str += argv[i];
-        }
-        str += "]";
-        LOG(DUMP_EXEC, "%s", str.c_str());
-    });
-
-    // execute external command
-    execve(filePath, argv, envp);
-}
-
-using pipe_t = int[2];
-
-static void initPipe(unsigned int size, pipe_t *pipes) {
-    for(unsigned int i = 0; i < size; i++) {
-        if(pipe(pipes[i]) < 0) {  // create pipe
-            perror("pipe creation error");
-            exit(1);
-        }
-    }
-}
-
-static void closeAllPipe(int size, pipe_t *pipefds) {
-    for(int i = 0; i < size; i++) {
-        close(pipefds[i][0]);
-        close(pipefds[i][1]);
-    }
-}
-
-class PipelineState : public DSObject {
-private:
-    DSState &state;
-    Job entry;
-
-public:
-    NON_COPYABLE(PipelineState);
-
-    PipelineState(DSState &state, Job &&entry) :
-            DSObject(nullptr), state(state), entry(std::move(entry)) {}
-
-    ~PipelineState() override {
-        auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
-        this->entry->wait(waitOp);
-
-        /**
-         * due to prevent SIGPIPE, restore stdin after call wait
-         */
-        if(this->entry->restoreStdin()) {
-            int ret = tryToBeForeground(this->state);
-            LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
-        }
-        if(this->entry->available()) {
-            // job is still running, attach to JobTable
-            this->state.jobTable.attach(this->entry);
-        }
-        this->state.jobTable.updateStatus();
-    }
-};
-
-static unsigned int getChangedFD(RedirOP op) {
-    switch(op) {
-#define GEN_CASE(ENUM, BITS) case RedirOP::ENUM: return BITS;
-    EACH_RedirOP(GEN_CASE)
-#undef GEN_CASE
-    case RedirOP::NOP:
-        return 0;
-    }
-    return 0;  // normally unreachable. due to suppress gcc warning
-}
-
-class RedirConfig : public DSObject {
-private:
-    unsigned int backupFDset{0};   // if corresponding bit is set, backup old fd
-
-    std::vector<std::pair<RedirOP, DSValue>> ops;
-
-    int oldFds[3];
-
-public:
-    NON_COPYABLE(RedirConfig);
-
-    RedirConfig() : DSObject(nullptr), oldFds{-1, -1, -1} {}
-
-    ~RedirConfig() override {
-        this->restoreFDs();
-        for(int fd : this->oldFds) {
-            close(fd);
-        }
-    }
-
-    void addRedirOp(RedirOP op, DSValue &&arg) {
-        this->ops.emplace_back(op, std::move(arg));
-        this->backupFDset |= getChangedFD(op);
-    }
-
-    void ignoreBackup() {
-        this->backupFDset = 0;
-    }
-
-    bool redirect(DSState &st);
-
-private:
-    void backupFDs() {
-        for(unsigned int i = 0; i < 3; i++) {
-            if(this->backupFDset & (1u << i)) {
-                this->oldFds[i] = dup(i);
-            }
-        }
-    }
-
-    void restoreFDs() {
-        for(unsigned int i = 0; i < 3; i++) {
-            if(this->backupFDset & (1u << i)) {
-                dup2(this->oldFds[i], i);
-            }
-        }
-    }
-};
-
-static int doIOHere(const String_Object &value) {
-    pipe_t pipe[1];
-    initPipe(1, pipe);
-
-    dup2(pipe[0][READ_PIPE], STDIN_FILENO);
-
-    if(value.size() + 1 <= PIPE_BUF) {
-        int errnum = 0;
-        if(write(pipe[0][WRITE_PIPE], value.getValue(), sizeof(char) * value.size()) < 0) {
-            errnum = errno;
-        }
-        if(errnum == 0 && write(pipe[0][WRITE_PIPE], "\n", 1) < 0) {
-            errnum = errno;
-        }
-        closeAllPipe(1, pipe);
-        return errnum;
-    } else {
-        pid_t pid = fork();
-        if(pid < 0) {
-            return errno;
-        }
-        if(pid == 0) {   // child
-            pid = fork();   // double-fork (not wait IO-here process termination.)
-            if(pid == 0) {  // child
-                close(pipe[0][READ_PIPE]);
-                dup2(pipe[0][WRITE_PIPE], STDOUT_FILENO);
-                printf("%s\n", value.getValue());
-            }
-            exit(0);
-        }
-        closeAllPipe(1, pipe);
-        waitpid(pid, nullptr, 0);
-        return 0;
-    }
-}
-
-/**
- * if failed, return non-zero value(errno)
- */
-static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
-    auto &type = *fileName->getType();
-    if(type.is(TYPE::String)) {
-        FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
-        if(fp == nullptr) {
-            return errno;
-        }
-        int fd = fileno(fp);
-        if(dup2(fd, targetFD) < 0) {
-            int e = errno;
-            fclose(fp);
-            return e;
-        }
-        fclose(fp);
-    } else {
-        assert(type.is(TYPE::UnixFD));
-        int fd = typeAs<UnixFD_Object>(fileName)->getValue();
-        if(strchr(mode, 'a') != nullptr) {
-            if(lseek(fd, 0, SEEK_END) == -1) {
-                return errno;
-            }
-        }
-        if(dup2(fd, targetFD) < 0) {
-            return errno;
-        }
-    }
-    return 0;
-}
-
-static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
-    switch(pair.first) {
-    case RedirOP::IN_2_FILE: {
-        return redirectToFile(pair.second, "rb", STDIN_FILENO);
-    }
-    case RedirOP::OUT_2_FILE: {
-        return redirectToFile(pair.second, "wb", STDOUT_FILENO);
-    }
-    case RedirOP::OUT_2_FILE_APPEND: {
-        return redirectToFile(pair.second, "ab", STDOUT_FILENO);
-    }
-    case RedirOP::ERR_2_FILE: {
-        return redirectToFile(pair.second, "wb", STDERR_FILENO);
-    }
-    case RedirOP::ERR_2_FILE_APPEND: {
-        return redirectToFile(pair.second, "ab", STDERR_FILENO);
-    }
-    case RedirOP::MERGE_ERR_2_OUT_2_FILE: {
-        int r = redirectToFile(pair.second, "wb", STDOUT_FILENO);
-        if(r != 0) {
-            return r;
-        }
-        if(dup2(STDOUT_FILENO, STDERR_FILENO) < 0) { return errno; }
-        return 0;
-    }
-    case RedirOP::MERGE_ERR_2_OUT_2_FILE_APPEND: {
-        int r = redirectToFile(pair.second, "ab", STDOUT_FILENO);
-        if(r != 0) {
-            return r;
-        }
-        if(dup2(STDOUT_FILENO, STDERR_FILENO) < 0) { return errno; }
-        return 0;
-    }
-    case RedirOP::MERGE_ERR_2_OUT:
-        if(dup2(STDOUT_FILENO, STDERR_FILENO) < 0) { return errno; }
-        return 0;
-    case RedirOP::MERGE_OUT_2_ERR:
-        if(dup2(STDERR_FILENO, STDOUT_FILENO) < 0) { return errno; }
-        return 0;
-    case RedirOP::HERE_STR:
-        return doIOHere(*typeAs<String_Object>(pair.second));
-    case RedirOP::NOP:
-        return 0;   // do nothing
-    }
-    return 0;   // normally unreachable, but gcc requires this return statement.
-}
-
-bool RedirConfig::redirect(DSState &st) {
-    this->backupFDs();
-    for(auto &pair : this->ops) {
-        int r = redirectImpl(pair);
-        if(this->backupFDset > 0 && r != 0) {
-            std::string msg = REDIR_ERROR;
-            if(pair.second) {
-                auto *type = pair.second->getType();
-                if(type->is(TYPE::String)) {
-                    if(!typeAs<String_Object>(pair.second)->empty()) {
-                        msg += ": ";
-                        msg += typeAs<String_Object>(pair.second)->getValue();
-                    }
-                } else if(type->is(TYPE::UnixFD)) {
-                    msg += ": ";
-                    msg += std::to_string(typeAs<UnixFD_Object>(pair.second)->getValue());
-                }
-            }
-            raiseSystemError(st, r, std::move(msg));
-            return false;
-        }
-    }
-    return true;
-}
-
-static constexpr flag8_t UDC_ATTR_SETVAR    = 1u << 0u;
-static constexpr flag8_t UDC_ATTR_NEED_FORK = 1u << 1u;
-
-/**
- * stack state in function apply    stack grow ===>
- *
- * +-----------+---------------+--------------+
- * | stack top | param1(redir) | param2(argv) |
- * +-----------+---------------+--------------+
- *             |     offset    |
- */
-static bool prepareUserDefinedCommandCall(DSState &st, const DSCode *code,
-                                          DSValue &&argvObj, DSValue &&restoreFD, const flag8_set_t attr) {
-    if(hasFlag(attr, UDC_ATTR_SETVAR)) {
-        // reset exit status
-        st.updateExitStatus(0);
-    }
-
-    // set stack stack
-    if(!windStackFrame(st, 0, 0, code)) {
-        return false;
-    }
-
-    // set parameter
-    st.setLocal(UDC_PARAM_ATTR, DSValue::createNum(attr));
-    st.setLocal(UDC_PARAM_REDIR, std::move(restoreFD));
-    st.setLocal(UDC_PARAM_ARGV, std::move(argvObj));
-
-    if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
-        auto argv = typeAs<Array_Object>(st.getLocal(UDC_PARAM_ARGV));
-        eraseFirst(*argv);
-        const unsigned int argSize = argv->getValues().size();
-        st.setLocal(UDC_PARAM_ARGV + 1, DSValue::create<Int_Object>(st.symbolTable.get(TYPE::Int32), argSize));   // #
-        st.setLocal(UDC_PARAM_ARGV + 2, st.getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
-        unsigned int limit = 9;
-        if(argSize < limit) {
-            limit = argSize;
-        }
-
-        unsigned int index = 0;
-        for(; index < limit; index++) {
-            st.setLocal(index + UDC_PARAM_ARGV + 3, argv->getValues()[index]);
-        }
-
-        for(; index < 9; index++) {
-            st.setLocal(index + UDC_PARAM_ARGV + 3, st.emptyStrObj);  // set remain
-        }
-    }
-    return true;
-}
-
 enum class CmdKind {
     USER_DEFINED,
     BUILTIN_S,
@@ -966,17 +522,12 @@ static NativeCode initExit() {
     return NativeCode(code);
 }
 
-static const DSCode *lookupUserDefinedCommand(const DSState &st, const char *commandName) {
-    auto handle = st.symbolTable.lookupUdc(commandName);
-    return handle == nullptr ? nullptr : &typeAs<FuncObject>(st.getGlobal(handle->getIndex()))->getCode();
-}
-
 Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     Command cmd{};
 
     // first, check user-defined command
     if(!hasFlag(this->mask, MASK_UDC)) {
-        auto *udcObj = lookupUserDefinedCommand(state, cmdName);
+        auto *udcObj = state.lookupUserDefinedCommand(cmdName);
         if(udcObj != nullptr) {
             cmd.kind = CmdKind::USER_DEFINED;
             cmd.udc = udcObj;
@@ -1096,7 +647,7 @@ static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue 
         if(cmd.kind == CmdKind::USER_DEFINED) {
             setFlag(attr, UDC_ATTR_SETVAR);
         }
-        return prepareUserDefinedCommandCall(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
+        return state.prepareUserDefinedCommandCall(cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
     }
     case CmdKind::BUILTIN: {
         int status = cmd.builtinCmd(state, *array);
@@ -1437,7 +988,7 @@ static bool kickSignalHandler(DSState &st, int sigNum, DSValue &&func) {
     st.push(std::move(func));
     st.push(DSValue::create<Int_Object>(st.symbolTable.get(TYPE::Signal), sigNum));
 
-    return windStackFrame(st, 3, 3, &signalTrampoline);
+    return st.windStackFrame(3, 3, &signalTrampoline);
 }
 
 static int popPendingSig() {
@@ -1481,10 +1032,6 @@ static bool checkVMEvent(DSState &state) {
     return true;
 }
 
-static bool checkVMReturn(const DSState &st) {
-    return st.controlStack.empty() || st.recDepth() != st.controlStack.back().recDepth;
-}
-
 
 #define vmdispatch(V) switch(V)
 
@@ -1511,11 +1058,11 @@ static bool mainLoop(DSState &state) {
         // dispatch instruction
         vmdispatch(op) {
         vmcase(HALT) {
-            unwindStackFrame(state);
+            state.unwindStackFrame();
             return true;
         }
         vmcase(ASSERT) {
-            TRY(checkAssertion(state));
+            TRY(state.checkAssertion());
             vmnext;
         }
         vmcase(PRINT) {
@@ -1547,7 +1094,7 @@ static bool mainLoop(DSState &state) {
         vmcase(CHECK_CAST) {
             unsigned int v = read32(GET_CODE(state), state.pc() + 1);
             state.pc() += 4;
-            TRY(checkCast(state, &state.symbolTable.get(v)));
+            TRY(state.checkCast(&state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(PUSH_NULL) {
@@ -1619,11 +1166,11 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(IMPORT_ENV) {
             unsigned char b = read8(GET_CODE(state), ++state.pc());
-            TRY(loadEnv(state, b > 0));
+            TRY(state.loadEnv(b > 0));
             vmnext;
         }
         vmcase(LOAD_ENV) {
-            const char *value = loadEnv(state, false);
+            const char *value = state.loadEnv(false);
             TRY(value);
             state.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), value));
             vmnext;
@@ -1705,7 +1252,7 @@ static bool mainLoop(DSState &state) {
         vmcase(CALL_INIT) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            TRY(prepareConstructorCall(state, paramSize));
+            TRY(state.prepareConstructorCall(paramSize));
             vmnext;
         }
         vmcase(CALL_METHOD) {
@@ -1713,13 +1260,13 @@ static bool mainLoop(DSState &state) {
             state.pc() += 2;
             unsigned short index = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            TRY(prepareMethodCall(state, index, paramSize));
+            TRY(state.prepareMethodCall(index, paramSize));
             vmnext;
         }
         vmcase(CALL_FUNC) {
             unsigned short paramSize = read16(GET_CODE(state), state.pc() + 1);
             state.pc() += 2;
-            TRY(prepareFuncCall(state, paramSize));
+            TRY(state.prepareFuncCall(paramSize));
             vmnext;
         }
         vmcase(CALL_NATIVE) {
@@ -1735,37 +1282,37 @@ static bool mainLoop(DSState &state) {
         }
         vmcase(INIT_MODULE) {
             auto &code = typeAs<FuncObject>(state.peek())->getCode();
-            windStackFrame(state, 0, 0, &code);
+            state.windStackFrame(0, 0, &code);
             vmnext;
         }
         vmcase(RETURN) {
-            unwindStackFrame(state);
-            if(checkVMReturn(state)) {
+            state.unwindStackFrame();
+            if(state.checkVMReturn()) {
                 return true;
             }
             vmnext;
         }
         vmcase(RETURN_V) {
             DSValue v = state.pop();
-            unwindStackFrame(state);
+            state.unwindStackFrame();
             state.push(std::move(v));
-            if(checkVMReturn(state)) {
+            if(state.checkVMReturn()) {
                 return true;
             }
             vmnext;
         }
         vmcase(RETURN_UDC) {
             auto v = state.pop();
-            unwindStackFrame(state);
+            state.unwindStackFrame();
             state.pushExitStatus(typeAs<Int_Object>(v)->getValue());
-            if(checkVMReturn(state)) {
+            if(state.checkVMReturn()) {
                 return true;
             }
             vmnext;
         }
         vmcase(RETURN_SIG) {
             auto v = state.getLocal(0);   // old exit status
-            unwindStackFrame(state);
+            state.unwindStackFrame();
             unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
             state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
             vmnext;
@@ -1807,7 +1354,7 @@ static bool mainLoop(DSState &state) {
                     }
                 }
             }
-            exitShell(state, ret);
+            state.exitShell(ret);
             vmerror;
         }
         vmcase(ENTER_FINALLY) {
@@ -2097,7 +1644,7 @@ static bool mainLoop(DSState &state) {
             unsigned char offset = read8(GET_CODE(state), ++state.pc());
             unsigned char size = read8(GET_CODE(state), ++state.pc());
 
-            reclaimLocals(state, offset, size);
+            state.reclaimLocals(offset, size);
             vmnext;
         }
         }
@@ -2113,7 +1660,7 @@ static bool handleException(DSState &state, bool forceUnwind) {
         state.hook->vmThrowHook(state);
     }
 
-    for(; !checkVMReturn(state); unwindStackFrame(state)) {
+    for(; !state.checkVMReturn(); state.unwindStackFrame()) {
         if(!forceUnwind && !CODE(state)->is(CodeKind::NATIVE)) {
             auto *cc = static_cast<const CompiledCode *>(CODE(state));
 
@@ -2129,8 +1676,8 @@ static bool handleException(DSState &state, bool forceUnwind) {
                         return false;
                     }
                     state.pc() = entry.dest - 1;
-                    clearOperandStack(state);
-                    reclaimLocals(state, entry.localOffset, entry.localSize);
+                    state.clearOperandStack();
+                    state.reclaimLocals(entry.localOffset, entry.localSize);
                     state.loadThrownObject();
                     return true;
                 }
@@ -2155,9 +1702,9 @@ static bool runMainLoop(DSState &state) {
 
 bool vmEval(DSState &state, const CompiledCode &code) {
     state.clearThrownObject();
-    reserveGlobalVar(state);
+    state.reserveGlobalVar();
 
-    windStackFrame(state, 0, 0, &code);
+    state.windStackFrame(0, 0, &code);
 
     return runMainLoop(state);
 }
@@ -2248,7 +1795,7 @@ DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
     unsigned int size = prepareArguments(state, std::move(recv), std::move(args));
 
     DSValue ret;
-    if(prepareMethodCall(state, handle->getMethodIndex(), size)) {
+    if(state.prepareMethodCall(handle->getMethodIndex(), size)) {
         bool s = runMainLoop(state);
         if(!handle->getReturnType()->isVoidType() && s) {
             ret = state.pop();
@@ -2265,7 +1812,7 @@ DSValue callFunction(DSState &state, DSValue &&funcObj,
     unsigned int size = prepareArguments(state, std::move(funcObj), std::move(args));
 
     DSValue ret;
-    if(prepareFuncCall(state, size)) {
+    if(state.prepareFuncCall(size)) {
         bool s = runMainLoop(state);
         assert(type->isFuncType());
         if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType() && s) {

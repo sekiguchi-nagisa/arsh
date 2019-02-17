@@ -63,6 +63,24 @@ public:
     const std::vector<std::pair<int, DSValue>> &getData() const {
         return this->data;
     };
+
+
+    enum class UnsafeSigOp {
+        DFL,
+        IGN,
+        SET,
+    };
+
+    /**
+     * unsafe op.
+     * @param sigNum
+     * @param op
+     * @param handler
+     * may be nullptr
+     * @param setSIGCHLD
+     * if true, set signal handler of SIGCHLD
+     */
+    void install(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD = false);
 };
 
 struct ControlFrame {
@@ -323,6 +341,20 @@ struct DSState {
         this->callStack[this->stackTopIndex()].swap(this->callStack[this->stackTopIndex() - 1]);
     }
 
+    void clearOperandStack() {
+        while(this->stackTopIndex() > this->stackBottomIndex()) {
+            this->popNoReturn();
+        }
+    }
+
+    void reclaimLocals(unsigned char offset, unsigned char size) {
+        auto *limit = this->callStack + this->localVarOffset() + offset;
+        auto *cur = limit + size - 1;
+        while(cur >= limit) {
+            (cur--)->reset();
+        }
+    }
+
     // variable manipulation
     void storeGlobal(unsigned int index) {
         this->callStack[index] = this->pop();
@@ -417,23 +449,6 @@ struct DSState {
         }
     }
 
-    enum class UnsafeSigOp {
-        DFL,
-        IGN,
-        SET,
-    };
-
-    /**
-     * unsafe op.
-     * @param sigNum
-     * @param op
-     * @param handler
-     * may be nullptr
-     * @param setSIGCHLD
-     * if true, set signal handler of SIGCHLD
-     */
-    void installSignalHandler(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD = false);
-
     /**
      * expand stack size to at least (stackTopIndex + add)
      * @param add
@@ -447,9 +462,98 @@ struct DSState {
         this->reserveLocalStackImpl(needSize);
     }
 
+    /**
+     * reserve global variable entry and set local variable offset.
+     */
+    void reserveGlobalVar() {
+        unsigned int size = this->symbolTable.getMaxGVarIndex();
+        this->reserveLocalStack(size - this->globalVarSize);
+        this->globalVarSize = size;
+        this->localVarOffset() = size;
+        this->stackTopIndex() = size;
+        this->stackBottomIndex() = size;
+    }
+
     const ControlFrame &getFrame() const {
         return this->frame;
     }
+
+    // runtime api
+    bool checkCast(DSType *targetType);
+
+    bool checkAssertion();
+
+    void exitShell(unsigned int status);
+
+    const char *loadEnv(bool hasDefault);
+
+    bool windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code);
+
+    void unwindStackFrame();
+
+    /**
+     * stack state in function apply    stack grow ===>
+     *
+     * +-----------+---------+--------+   +--------+
+     * | stack top | funcObj | param1 | ~ | paramN |
+     * +-----------+---------+--------+   +--------+
+     *                       | offset |   |        |
+     */
+    bool prepareFuncCall(unsigned int paramSize) {
+        auto *func = typeAs<FuncObject>(this->callStack[this->stackTopIndex() - paramSize]);
+        return this->windStackFrame(paramSize + 1, paramSize, &func->getCode());
+    }
+
+    /**
+     * stack state in method call    stack grow ===>
+     *
+     * +-----------+------------------+   +--------+
+     * | stack top | param1(receiver) | ~ | paramN |
+     * +-----------+------------------+   +--------+
+     *             | offset           |   |        |
+     */
+    bool prepareMethodCall(unsigned short index, unsigned short paramSize) {
+        const unsigned int actualParamSize = paramSize + 1; // include receiver
+        const unsigned int recvIndex = this->stackTopIndex() - paramSize;
+
+        return this->windStackFrame(actualParamSize, actualParamSize, this->callStack[recvIndex]->getType()->getMethodRef(index));
+    }
+
+
+    /**
+     * stack state in constructor call     stack grow ===>
+     *
+     * +-----------+------------------+   +--------+
+     * | stack top | param1(receiver) | ~ | paramN |
+     * +-----------+------------------+   +--------+
+     *             |    new offset    |
+     */
+    bool prepareConstructorCall(unsigned short paramSize) {
+        const unsigned int recvIndex = this->stackTopIndex() - paramSize;
+
+        return this->windStackFrame(paramSize, paramSize + 1, this->callStack[recvIndex]->getType()->getConstructor());
+    }
+
+    const DSCode *lookupUserDefinedCommand(const char *commandName) const {
+        auto handle = this->symbolTable.lookupUdc(commandName);
+        return handle == nullptr ? nullptr : &typeAs<FuncObject>(this->getGlobal(handle->getIndex()))->getCode();
+    }
+
+    bool checkVMReturn() const {
+        return this->controlStack.empty() || this->recDepth() != this->controlStack.back().recDepth;
+    }
+
+    /**
+     * stack state in function apply    stack grow ===>
+     *
+     * +-----------+---------------+--------------+
+     * | stack top | param1(redir) | param2(argv) |
+     * +-----------+---------------+--------------+
+     *             |     offset    |
+     */
+    bool prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvObj,
+                                       DSValue &&restoreFD, const flag8_set_t attr);
+
 
 private:
     /**
