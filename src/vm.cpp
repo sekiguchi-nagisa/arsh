@@ -139,8 +139,9 @@ DSState::DSState() :
         falseObj(DSValue::create<Boolean_Object>(this->symbolTable.get(TYPE::Boolean), false)),
         emptyStrObj(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::string())),
         emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.get(TYPE::UnixFD), -1)),
-        callStack(new DSValue[DEFAULT_STACK_SIZE]), logicalWorkingDir(initLogicalWorkingDir()),
-        baseTime(std::chrono::system_clock::now()), history(initHistory()) { }
+        logicalWorkingDir(initLogicalWorkingDir()), history(initHistory()),
+        callStack(new DSValue[DEFAULT_STACK_SIZE]),
+        baseTime(std::chrono::system_clock::now()) { }
 
 void DSState::reserveLocalStackImpl(unsigned int needSize) {
     unsigned int newSize = this->callStackSize;
@@ -154,6 +155,15 @@ void DSState::reserveLocalStackImpl(unsigned int needSize) {
     delete[] this->callStack;
     this->callStack = newTable;
     this->callStackSize = newSize;
+}
+
+unsigned int DSState::getTermHookIndex() {
+    if(this->termHookIndex == 0) {
+        auto *handle = this->symbolTable.lookupHandle(VAR_TERM_HOOK);
+        assert(handle != nullptr);
+        this->termHookIndex = handle->getIndex();
+    }
+    return this->termHookIndex;
 }
 
 bool DSState::checkCast(DSType *targetType) {

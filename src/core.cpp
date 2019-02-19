@@ -178,71 +178,14 @@ const SymbolTable &getPool(const DSState &st) {
     return st.symbolTable;
 }
 
-JobTable &getJobTable(DSState &st) {
-    return st.jobTable;
-}
-
 FilePathCache &getPathCache(DSState &st) {
     return st.pathCache;
-}
-
-const DSValue &getTrueObj(const DSState &st) {
-    return st.trueObj;
-}
-
-const DSValue &getFalseObj(const DSState &st) {
-    return st.falseObj;
-}
-
-const DSValue &getEmptyStrObj(const DSState &st) {
-    return st.emptyStrObj;
-}
-
-void setLocal(DSState &st, unsigned char index, const DSValue &obj) {
-    st.setLocal(index, obj);
-}
-
-void setLocal(DSState &st, unsigned char index, DSValue &&obj) {
-    st.setLocal(index, std::move(obj));
-}
-
-const DSValue &getLocal(const DSState &st, unsigned char index) {
-    return st.getLocal(index);
-}
-
-DSValue extractLocal(DSState &st, unsigned char index) {
-    return st.moveLocal(index);
-}
-
-void setGlobal(DSState &st, unsigned int index, const DSValue &obj) {
-    st.setGlobal(index, obj);
-}
-
-void setGlobal(DSState &st, unsigned int index, DSValue &&obj) {
-    st.setGlobal(index, std::move(obj));
-}
-
-const DSValue &getGlobal(const DSState &st, unsigned int index) {
-    return st.getGlobal(index);
 }
 
 const DSValue &getGlobal(const DSState &st, const char *varName) {
     auto *handle = st.symbolTable.lookupHandle(varName);
     assert(handle != nullptr);
     return st.getGlobal(handle->getIndex());
-}
-
-unsigned int getTermHookIndex(DSState &st) {
-    if(st.termHookIndex == 0) {
-        auto *handle = st.symbolTable.lookupHandle(VAR_TERM_HOOK);
-        assert(handle != nullptr);
-        st.termHookIndex = handle->getIndex();
-    }
-    return st.termHookIndex;
-}
-
-bool hasError(const DSState &st) {
-    return static_cast<bool>(st.getThrownObject());
 }
 
 void raiseError(DSState &st, TYPE type, std::string &&message, int status) {

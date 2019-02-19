@@ -60,7 +60,7 @@ static unsigned int originalShellLevel() {
 }
 
 static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&except) {
-    DSValue funcObj = state.getGlobal(getTermHookIndex(state));
+    DSValue funcObj = state.getGlobal(state.getTermHookIndex());
     if(funcObj.kind() == DSValueKind::INVALID) {
         return;
     }

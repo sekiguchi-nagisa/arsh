@@ -84,6 +84,8 @@ private:
     static constexpr unsigned int MAX_CACHE_SIZE = 100;
 
 public:
+    NON_COPYABLE(FilePathCache);
+
     FilePathCache() = default;
 
     ~FilePathCache();
@@ -157,41 +159,9 @@ struct DumpTarget {
 SymbolTable &getPool(DSState &st);
 const SymbolTable &getPool(const DSState &st);
 
-JobTable &getJobTable(DSState &st);
-
 FilePathCache &getPathCache(DSState &st);
 
-const DSValue &getTrueObj(const DSState &st);
-const DSValue &getFalseObj(const DSState &st);
-const DSValue &getEmptyStrObj(const DSState &st);
-
-void setLocal(DSState &st, unsigned char index, const DSValue &obj);
-
-void setLocal(DSState &st, unsigned char index, DSValue &&obj);
-
-const DSValue &getLocal(const DSState &st, unsigned char index);
-
-DSValue extractLocal(DSState &st, unsigned char index);
-
-void setGlobal(DSState &st, unsigned int index, const DSValue &obj);
-
-void setGlobal(DSState &st, unsigned int index, DSValue &&obj);
-
-const DSValue &getGlobal(const DSState &st, unsigned int index);
-
 const DSValue &getGlobal(const DSState &st, const char *varName);
-
-/**
- *
- * @param st
- * @return
- * offset + 0 EXIT_HOOK
- * offset + 1 ERR_HOOK
- * offset + 2 ASSERT_HOOK
- */
-unsigned int getTermHookIndex(DSState &st);
-
-bool hasError(const DSState &st);
 
 /**
  * raise Error Object and update exit status

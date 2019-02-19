@@ -29,7 +29,7 @@
 
 #include "logger.h"
 #include "cmd.h"
-#include "core.h"
+#include "vm.h"
 #include "constant.h"
 #include "symbol_table.h"
 #include "object.h"
@@ -990,14 +990,14 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
 
     // check ifs
     if(ifs == nullptr) {
-        auto *strObj = typeAs<String_Object>(getGlobal(state, toIndex(BuiltinVarOffset::IFS)));
+        auto *strObj = typeAs<String_Object>(state.getGlobal(toIndex(BuiltinVarOffset::IFS)));
         ifs = strObj->getValue();
         ifsSize = strObj->size();
     }
 
     // clear old variable before read
-    setGlobal(state, toIndex(BuiltinVarOffset::REPLY), getEmptyStrObj(state));    // clear REPLY
-    typeAs<Map_Object>(getGlobal(state, toIndex(BuiltinVarOffset::REPLY_VAR)))->clear();      // clear reply
+    state.setGlobal(toIndex(BuiltinVarOffset::REPLY), state.emptyStrObj);    // clear REPLY
+    typeAs<Map_Object>(state.getGlobal(toIndex(BuiltinVarOffset::REPLY_VAR)))->clear();      // clear reply
 
 
     const int varSize = argc - index;  // if zero, store line to REPLY
@@ -1049,7 +1049,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
         }
         skipCount = 0;
         if(fieldSep && index < argc - 1) {
-            auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
+            auto obj = typeAs<Map_Object>(state.getGlobal(varIndex));
             auto varObj = argvObj.getValues()[index];
             auto valueObj = DSValue::create<String_Object>(getPool(state).get(TYPE::String), std::move(strBuf));
             obj->set(std::move(varObj), std::move(valueObj));
@@ -1079,16 +1079,16 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
     }
 
     if(varSize == 0) {
-        setGlobal(state, varIndex,
-                  DSValue::create<String_Object>(getPool(state).get(TYPE::String), std::move(strBuf)));
+        state.setGlobal(varIndex, DSValue::create<String_Object>(
+                state.symbolTable.get(TYPE::String), std::move(strBuf)));
         strBuf = "";
     }
 
     // set rest variable
     for(; index < argc; index++) {
-        auto obj = typeAs<Map_Object>(getGlobal(state, varIndex));
+        auto obj = typeAs<Map_Object>(state.getGlobal(varIndex));
         auto varObj = argvObj.getValues()[index];
-        auto valueObj = DSValue::create<String_Object>(getPool(state).get(TYPE::String), std::move(strBuf));
+        auto valueObj = DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(strBuf));
         obj->set(std::move(varObj), std::move(valueObj));
         strBuf = "";
     }
@@ -1197,7 +1197,7 @@ static int showHistory(DSState &state, const Array_Object &obj) {
         }
     }
 
-    const unsigned int histCmd = typeAs<Int_Object>(getGlobal(state, toIndex(BuiltinVarOffset::HIST_CMD)))->getValue();
+    const unsigned int histCmd = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::HIST_CMD)))->getValue();
     const unsigned int base = histCmd - histSize;
     for(unsigned int i = histSize - printOffset; i < histSize; i++) {
         fprintf(stdout, "%5d  %s\n", i + base, history->data[i]);
@@ -1358,7 +1358,7 @@ static bool killProcOrJob(DSState &state, Array_Object &argvObj, const char *arg
 
     if(isJob) {
         if(pair.first > 0) {
-            auto job = getJobTable(state).findEntry(static_cast<unsigned int>(pair.first));
+            auto job = state.jobTable.findEntry(static_cast<unsigned int>(pair.first));
             if(job) {
                 job->send(sigNum);
                 return true;
@@ -1477,10 +1477,10 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
     Job job;
     const char *arg = "current";
     if(size == 1) {
-        job = getJobTable(state).getLatestEntry();
+        job = state.jobTable.getLatestEntry();
     } else {
         arg = str(argvObj.getValues()[1]);
-        job = tryToGetJob(getJobTable(state), arg);
+        job = tryToGetJob(state.jobTable, arg);
     }
 
     int ret = 0;
@@ -1498,16 +1498,16 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj) {
     }
 
     if(fg) {
-        int s = getJobTable(state).waitAndDetach(job, true);    //FIXME: check root shell
+        int s = state.jobTable.waitAndDetach(job, true);    //FIXME: check root shell
         tryToBeForeground(state);
-        getJobTable(state).updateStatus();
+        state.jobTable.updateStatus();
         return s;
     }
 
     // process remain arguments
     for(unsigned int i = 2; i < size; i++) {
         arg = str(argvObj.getValues()[i]);
-        job = tryToGetJob(getJobTable(state), arg);
+        job = tryToGetJob(state.jobTable, arg);
         if(job) {
             job->send(SIGCONT);
         } else {

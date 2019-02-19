@@ -244,6 +244,8 @@ private:
     Job latestEntry;
 
 public:
+    NON_COPYABLE(JobTable);
+
     using EntryIter = std::vector<Job>::iterator;
     using ConstEntryIter = std::vector<Job>::const_iterator;
 

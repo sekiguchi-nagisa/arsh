@@ -118,6 +118,7 @@ struct ControlFrame {
 };
 
 struct DSState {
+public:
     SymbolTable symbolTable;
 
     /**
@@ -137,11 +138,37 @@ struct DSState {
 
     const DSValue emptyFDObj;
 
-    /**
-     * if not null ptr, thrown exception.
-     */
-    DSValue thrownObject;
+    unsigned short option{DS_OPTION_ASSERT};
 
+    DSExecMode execMode{DS_EXEC_MODE_NORMAL};
+
+    DumpTarget dumpTarget;
+
+    /**
+     * cache searched result.
+     */
+    FilePathCache pathCache;
+
+    unsigned int lineNum{1};
+
+    std::string logicalWorkingDir;
+
+    DSHistory history;
+
+    SignalVector sigVector;
+
+    JobTable jobTable;
+
+    /**
+     * previously computed prompt (DSState_prompt() )
+     */
+    std::string prompt;
+
+    VMHook *hook{nullptr};
+
+    std::vector<ControlFrame> controlStack;
+
+private:
     /**
      * contains operand, global variable(may be function) or local variable.
      *
@@ -155,10 +182,10 @@ struct DSState {
      * stack layout within callable
      *
      * stack grow ==>
-     *   +-----------------+   +-----------------+-----------+   +-------+----+---------------+------------------+----------------+
-     * ~ | var 1 (param 1) | ~ | var M (param M) | var M + 1 | ~ | var N | PC | stackTopIndex | stackBottomIndex | localVarOffset | ~
-     *   +-----------------+   +-----------------+-----------+   +-------+----+---------------+------------------+----------------+
-     *   |                           local variable                      |                 caller state                           | operand stack
+     *   +-----------------+   +-----------------+-----------+   +-------+--------------+
+     * ~ | var 1 (param 1) | ~ | var M (param M) | var M + 1 | ~ | var N | ~
+     *   +-----------------+   +-----------------+-----------+   +-------+--------------+
+     *   |                           local variable                      | operand stack
      */
     DSValue *callStack;
 
@@ -174,40 +201,16 @@ struct DSState {
      */
     ControlFrame frame;
 
-    unsigned short option{DS_OPTION_ASSERT};
-
-    DSExecMode execMode{DS_EXEC_MODE_NORMAL};
-
-    DumpTarget dumpTarget;
-
-    std::vector<ControlFrame> controlStack;
-
     /**
-     * cache searched result.
+     * if not null ptr, thrown exception.
      */
-    FilePathCache pathCache;
-
-    unsigned int lineNum{1};
-
-    /**
-     * previously computed prompt (DSState_prompt() )
-     */
-    std::string prompt;
-
-    VMHook *hook{nullptr};
-
-    std::string logicalWorkingDir;
+    DSValue thrownObject;
 
     decltype(std::chrono::system_clock::now()) baseTime;
 
     unsigned int termHookIndex{0};
 
-    DSHistory history;
-
-    SignalVector sigVector;
-
-    JobTable jobTable;
-
+public:
     static constexpr flag32_t VM_EVENT_HOOK   = 1u << 0u;
     static constexpr flag32_t VM_EVENT_SIGNAL = 1u << 1u;
     static constexpr flag32_t VM_EVENT_MASK   = 1u << 2u;
@@ -237,6 +240,10 @@ struct DSState {
 
     const DSValue &getThrownObject() const {
         return this->thrownObject;
+    }
+
+    bool hasError() const {
+        return static_cast<bool>(this->getThrownObject());
     }
 
     unsigned int &recDepth() noexcept {
@@ -330,6 +337,15 @@ struct DSState {
     bool checkVMReturn() const {
         return this->controlStack.empty() || this->recDepth() != this->controlStack.back().recDepth;
     }
+
+    /**
+     *
+     * @return
+     * offset + 0 EXIT_HOOK
+     * offset + 1 ERR_HOOK
+     * offset + 2 ASSERT_HOOK
+     */
+    unsigned int getTermHookIndex();
 
     bool runMainLoop();
 

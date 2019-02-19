@@ -17,9 +17,7 @@
 #include <memory>
 #include <algorithm>
 
-#include "object.h"
-#include "core.h"
-#include "symbol_table.h"
+#include "vm.h"
 #include "misc/num.h"
 
 namespace ydsh {
@@ -247,7 +245,7 @@ static bool checkInvalid(DSState &st, DSValue &v) {
 }
 
 #define TRY(T, E) \
-({ auto v = E; if(hasError(ctx)) { return T(); } std::forward<decltype(v)>(v); })
+({ auto v = E; if(ctx.hasError()) { return T(); } std::forward<decltype(v)>(v); })
 
 
 std::string Array_Object::toString(DSState &ctx, VisitedSet *visitedSet) {

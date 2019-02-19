@@ -26,17 +26,16 @@
 #include <stdexcept>
 
 #include <ydsh/ydsh.h>
-#include "core.h"
-#include "object.h"
+#include "vm.h"
 #include "signals.h"
 #include "misc/unicode.hpp"
 #include "misc/num.h"
 
 // helper macro
-#define LOCAL(index) (getLocal(ctx, index))
-#define EXTRACT_LOCAL(index) (extractLocal(ctx, index))
+#define LOCAL(index) (ctx.getLocal(index))
+#define EXTRACT_LOCAL(index) (ctx.moveLocal(index))
 #define RET(value) return value
-#define RET_BOOL(value) return ((value) ? getTrueObj(ctx) : getFalseObj(ctx))
+#define RET_BOOL(value) return ((value) ? ctx.trueObj : ctx.falseObj)
 #define RET_VOID return DSValue()
 #define RET_ERROR return DSValue()
 
@@ -1340,7 +1339,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
         raiseError(ctx, TYPE::RegexSyntaxError, std::string(errorStr));
         RET_ERROR;
     }
-    setLocal(ctx, 0, DSValue::create<Regex_Object>(getPool(ctx).get(TYPE::Regex), std::move(re)));
+    ctx.setLocal(0, DSValue::create<Regex_Object>(getPool(ctx).get(TYPE::Regex), std::move(re)));
     RET_VOID;
 }
 
@@ -1381,7 +1380,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     }
     for(int i = 0; i < matchSize; i++) {
         unsigned int size = ovec[i * 2 + 1] - ovec[i * 2];
-        auto v = size == 0 ? getEmptyStrObj(ctx) :
+        auto v = size == 0 ? ctx.emptyStrObj :
                  DSValue::create<String_Object>(getPool(ctx).get(TYPE::String),
                                                 std::string(str->getValue() + ovec[i * 2], size));
         array->refValues().push_back(std::move(v));
@@ -1498,7 +1497,7 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
 YDSH_METHOD array_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_init);
     DSType *type = LOCAL(0)->getType();
-    setLocal(ctx, 0, DSValue::create<Array_Object>(*type));
+    ctx.setLocal(0, DSValue::create<Array_Object>(*type));
     RET_VOID;
 }
 
@@ -1784,7 +1783,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
         std::sort(obj->refValues().begin(), obj->refValues().end(),
                 [&](const DSValue &x, const DSValue &y){
             auto ret = callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
-            if(hasError(ctx)) {
+            if(ctx.hasError()) {
                 throw std::runtime_error("");    //FIXME: not use exception
             }
             return typeAs<Boolean_Object>(ret)->getValue();
@@ -1857,7 +1856,7 @@ YDSH_METHOD array_cmdArg(RuntimeContext &ctx) {
 YDSH_METHOD map_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_init);
     DSType *type = LOCAL(0)->getType();
-    setLocal(ctx, 0, DSValue::create<Map_Object>(*type));
+    ctx.setLocal(0, DSValue::create<Map_Object>(*type));
     RET_VOID;
 }
 
@@ -2003,7 +2002,7 @@ YDSH_METHOD tuple_cmdArg(RuntimeContext &ctx) {
 YDSH_METHOD error_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_init);
     DSType *type = LOCAL(0)->getType();
-    setLocal(ctx, 0, DSValue(Error_Object::newError(ctx, *type, LOCAL(1))));
+    ctx.setLocal(0, DSValue(Error_Object::newError(ctx, *type, LOCAL(1))));
     RET_VOID;
 }
 
@@ -2040,7 +2039,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
         if(flag != -1) {
             if(fcntl(fd, F_SETFD, flag | FD_CLOEXEC) != -1) {
                 auto obj = DSValue::create<UnixFD_Object>(getPool(ctx).get(TYPE::UnixFD), fd);
-                setLocal(ctx, 0, std::move(obj));
+                ctx.setLocal(0, std::move(obj));
                 RET_VOID;
             }
         }
@@ -2139,7 +2138,7 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_wait);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
     bool jobctrl = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
-    int s = obj->wait(getJobTable(ctx), jobctrl);
+    int s = obj->wait(ctx.jobTable, jobctrl);
     RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), s));
 }
 
@@ -2156,7 +2155,7 @@ YDSH_METHOD job_raise(RuntimeContext &ctx) {
 YDSH_METHOD job_detach(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_detach);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    getJobTable(ctx).detach(obj->getEntry()->jobID());
+    ctx.jobTable.detach(obj->getEntry()->jobID());
     RET_VOID;
 }
 
@@ -2164,7 +2163,7 @@ YDSH_METHOD job_detach(RuntimeContext &ctx) {
 YDSH_METHOD job_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_size);
     auto *obj = typeAs<Job_Object>(LOCAL(0));
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), obj->getEntry()->getProcSize()));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), obj->getEntry()->getProcSize()));
 }
 
 //!bind: function pid($this : Job, $index : Int32) : Int32
@@ -2175,7 +2174,7 @@ YDSH_METHOD job_pid(RuntimeContext &ctx) {
 
     if(index > -1 && static_cast<unsigned int>(index) < entry->getProcSize()) {
         int pid = entry->getPid(index);
-        RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), pid));
+        RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), pid));
     }
     std::string msg = "number of processes is: ";
     msg += std::to_string(entry->getProcSize());
