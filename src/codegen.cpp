@@ -1231,8 +1231,8 @@ static unsigned int getMaxLineNum(const LineNumEntry *table) {
     return max;
 }
 
-static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
-                         std::vector<const CompiledCode *> *list) {
+static void dumpCodeImpl(FILE *fp, DSState &ctx, const SymbolTable &symbolTable,
+                         const CompiledCode &c, std::vector<const CompiledCode *> *list) {
     const unsigned int codeSize = c.getCodeSize();
 
     fputs("DSCode: ", fp);
@@ -1254,7 +1254,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
     fprintf(fp, "  max stack depth: %d\n", c.getStackDepth());
     fprintf(fp, "  number of local variable: %d\n", c.getLocalVarNum());
     if(c.getKind() == CodeKind::TOPLEVEL) {
-        fprintf(fp, "  number of global variable: %d\n", getPool(ctx).getMaxGVarIndex());
+        fprintf(fp, "  number of global variable: %d\n", symbolTable.getMaxGVarIndex());
     }
 
 
@@ -1272,7 +1272,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
             if(isTypeOp(code)) {
                 unsigned int v = read32(c.getCode(), i + 1);
                 i += 4;
-                fprintf(fp, "  %s", getPool(ctx).getTypeName(getPool(ctx).get(v)));
+                fprintf(fp, "  %s", symbolTable.getTypeName(symbolTable.get(v)));
             } else {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD) {
@@ -1330,7 +1330,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
                     list->push_back(&static_cast<FuncObject *>(v.get())->getCode());
                 }
                 fprintf(fp, "%s %s",
-                        (v->getType() != nullptr ? getPool(ctx).getTypeName(*v->getType()) : "(null)"),
+                        (v->getType() != nullptr ? symbolTable.getTypeName(*v->getType()) : "(null)"),
                         v->toString(ctx, nullptr).c_str());
                 break;
             case DSValueKind::INVALID:
@@ -1356,21 +1356,21 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const CompiledCode &c,
     for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
         const auto &e = c.getExceptionEntries()[i];
         fprintf(fp, "  begin: %d, end: %d, type: %s, dest: %d, offset: %d, size: %d\n",
-                e.begin, e.end, getPool(ctx).getTypeName(*e.type), e.dest, e.localOffset, e.localSize);
+                e.begin, e.end, symbolTable.getTypeName(*e.type), e.dest, e.localOffset, e.localSize);
     }
 
     fflush(fp);
 }
 
-void dumpCode(FILE *fp, DSState &ctx, const CompiledCode &c) {
+void dumpCode(FILE *fp, DSState &ctx, const SymbolTable &symbolTable, const CompiledCode &c) {
     fprintf(fp, "Source File: %s\n", c.getSourceName());
 
     std::vector<const CompiledCode *> list;
 
-    dumpCodeImpl(fp, ctx, c, &list);
+    dumpCodeImpl(fp, ctx, symbolTable, c, &list);
     for(auto &e : list) {
         fputc('\n', fp);
-        dumpCodeImpl(fp, ctx, *e, nullptr);
+        dumpCodeImpl(fp, ctx, symbolTable, *e, nullptr);
     }
 }
 

@@ -36,15 +36,6 @@ struct DSState;
 
 namespace ydsh {
 
-class DSType;
-class DSValue;
-class Array_Object;
-class StackTraceElement;
-class FuncObject;
-class SymbolTable;
-class DSCode;
-class JobTable;
-
 using CStrBuffer = FlexBuffer<char *>;
 
 /**
@@ -152,15 +143,6 @@ struct DumpTarget {
     FilePtr files[3];
 };
 
-// core api
-
-// getter api
-
-SymbolTable &getPool(DSState &st);
-const SymbolTable &getPool(const DSState &st);
-
-FilePathCache &getPathCache(DSState &st);
-
 const DSValue &getGlobal(const DSState &st, const char *varName);
 
 /**
@@ -248,28 +230,6 @@ public:
 };
 
 bool readAll(FILE *fp, ByteBuffer &buf);
-
-/**
- * call method.
- * @param state
- * @param handle
- * must not be null
- * @param recv
- * @param args
- * @return
- * return value of method (if no return value, return null).
- */
-DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
-
-/**
- *
- * @param state
- * @param funcObj
- * @param args
- * @return
- * return value of method (if no return value, return null).
- */
-DSValue callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 
 template <typename ...T>
 inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {

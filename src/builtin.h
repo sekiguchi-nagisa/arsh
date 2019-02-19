@@ -777,7 +777,7 @@ YDSH_METHOD float_2_float_div(RuntimeContext & ctx) {
     double left = typeAs<Float_Object>(LOCAL(0))->getValue();
     double right = typeAs<Float_Object>(LOCAL(1))->getValue();
     double value = left / right;
-    RET(DSValue::create<Float_Object>(getPool(ctx).get(TYPE::Float), value));
+    RET(DSValue::create<Float_Object>(ctx.symbolTable.get(TYPE::Float), value));
 }
 
 //   =====  equality  =====
@@ -911,7 +911,7 @@ YDSH_METHOD string_ge(RuntimeContext &ctx) {
 YDSH_METHOD string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
     int size = typeAs<String_Object>(LOCAL(0))->size();
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), size));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), size));
 }
 
 //!bind: function empty($this : String) : Boolean
@@ -930,7 +930,7 @@ YDSH_METHOD string_count(RuntimeContext &ctx) {
     for(unsigned int i = 0; i < size; i = UnicodeUtil::utf8NextPos(i, ptr[i])) {
         count++;
     }
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), count));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), count));
 }
 
 /**
@@ -960,7 +960,7 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
         if(count == limit && index < size) {
             unsigned int nextIndex = UnicodeUtil::utf8NextPos(index, strObj->getValue()[index]);
             RET(DSValue::create<String_Object>(
-                    getPool(ctx).get(TYPE::String), std::string(strObj->getValue() + index, nextIndex - index)));
+                    ctx.symbolTable.get(TYPE::String), std::string(strObj->getValue() + index, nextIndex - index)));
         }
     }
 
@@ -998,7 +998,7 @@ static DSValue sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIn
     }
 
     RET(DSValue::create<String_Object>(
-            getPool(ctx).get(TYPE::String),
+            ctx.symbolTable.get(TYPE::String),
             std::string(strObj->getValue() + startIndex, stopIndex - startIndex)));
 }
 
@@ -1075,7 +1075,7 @@ YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
     if(ptr != nullptr) {
         index = reinterpret_cast<const char *>(ptr) - thisObj->getValue();
     }
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), index));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), index));
 }
 
 //!bind: function lastIndexOf($this : String, $target : String) : Int32
@@ -1099,7 +1099,7 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
     if(thisSize == targetSize && targetSize == 0) {
         index = 0;
     }
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), index));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), index));
 }
 
 //!bind: function split($this : String, $delim : String) : Array<String>
@@ -1110,7 +1110,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     const unsigned int thisSize = typeAs<String_Object>(LOCAL(0))->size();
     const unsigned int delimSize = typeAs<String_Object>(LOCAL(1))->size();
 
-    auto results = DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray));
+    auto results = DSValue::create<Array_Object>(ctx.symbolTable.get(TYPE::StringArray));
     auto ptr = typeAs<Array_Object>(results);
 
     const char *remain = thisStr;
@@ -1121,7 +1121,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
             if(ret == nullptr) {
                 break;
             }
-            ptr->append(DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::string(remain, ret - remain)));
+            ptr->append(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::string(remain, ret - remain)));
             remain = ret + delimSize;
         }
     }
@@ -1129,7 +1129,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     if(remain == thisStr) {
         ptr->append(LOCAL(0));
     } else if(remain != thisStr + thisSize) {
-        ptr->append(DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::string(remain, thisSize - (remain - thisStr))));
+        ptr->append(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::string(remain, thisSize - (remain - thisStr))));
     }
 
     RET(results);
@@ -1161,7 +1161,7 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
     if(remain != thisStr + thisSize) {
         buf.append(remain, thisSize - (remain - thisStr));
     }
-    RET(DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::move(buf)));
+    RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(buf)));
 }
 
 
@@ -1178,7 +1178,7 @@ YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
         value = 0;
     }
 
-    RET(status == 0 ? DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), (int)value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), (int)value) : DSValue::createInvalid());
 }
 
 //!bind: function toUint32($this : String) : Option<Uint32>
@@ -1193,7 +1193,7 @@ YDSH_METHOD string_toUint32(RuntimeContext &ctx) {
         status = 1;
         value = 0;
     }
-    RET(status == 0 ? DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Uint32), (unsigned int)value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Uint32), (unsigned int)value) : DSValue::createInvalid());
 }
 
 //!bind: function toInt64($this : String) : Option<Int64>
@@ -1203,7 +1203,7 @@ YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
     int status = 0;
     long value = convertToInt64(str, status, false);
 
-    RET(status == 0 ? DSValue::create<Long_Object>(getPool(ctx).get(TYPE::Int64), value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Long_Object>(ctx.symbolTable.get(TYPE::Int64), value) : DSValue::createInvalid());
 }
 
 //!bind: function toUint64($this : String) : Option<Uint64>
@@ -1213,7 +1213,7 @@ YDSH_METHOD string_toUint64(RuntimeContext &ctx) {
     int status = 0;
     unsigned long value = convertToUint64(str, status, false);
 
-    RET(status == 0 ? DSValue::create<Long_Object>(getPool(ctx).get(TYPE::Uint64), value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Long_Object>(ctx.symbolTable.get(TYPE::Uint64), value) : DSValue::createInvalid());
 }
 
 //!bind: function toFloat($this : String) : Option<Float>
@@ -1223,14 +1223,14 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
     int status = 0;
     double value = convertToDouble(str, status, false);
 
-    RET(status == 0 ? DSValue::create<Float_Object>(getPool(ctx).get(TYPE::Float), value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::create<Float_Object>(ctx.symbolTable.get(TYPE::Float), value) : DSValue::createInvalid());
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter
 YDSH_METHOD string_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_iter);
     auto *str = typeAs<String_Object>(LOCAL(0));
-    RET(DSValue::create<StringIter_Object>(getPool(ctx).get(TYPE::StringIter), str));
+    RET(DSValue::create<StringIter_Object>(ctx.symbolTable.get(TYPE::StringIter), str));
 }
 
 static bool regexSearch(const Regex_Object *re, const String_Object *str);
@@ -1308,7 +1308,7 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
 
     unsigned int size = strIter->curIndex - curIndex;
     RET(DSValue::create<String_Object>(
-            getPool(ctx).get(TYPE::String), std::string(strObj->getValue() + curIndex, size)));
+            ctx.symbolTable.get(TYPE::String), std::string(strObj->getValue() + curIndex, size)));
 }
 
 //!bind: function $OP_HAS_NEXT($this : StringIter) : Boolean
@@ -1339,7 +1339,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
         raiseError(ctx, TYPE::RegexSyntaxError, std::string(errorStr));
         RET_ERROR;
     }
-    ctx.setLocal(0, DSValue::create<Regex_Object>(getPool(ctx).get(TYPE::Regex), std::move(re)));
+    ctx.setLocal(0, DSValue::create<Regex_Object>(ctx.symbolTable.get(TYPE::Regex), std::move(re)));
     RET_VOID;
 }
 
@@ -1372,7 +1372,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     auto *ovec = static_cast<int *>(malloc(sizeof(int) * (captureSize + 1) * 3));
     int matchSize = pcre_exec(re->getRe().get(), nullptr, str->getValue(), str->size(), 0, 0, ovec, (captureSize + 1) * 3);
 
-    auto ret = DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray));
+    auto ret = DSValue::create<Array_Object>(ctx.symbolTable.get(TYPE::StringArray));
     auto *array = typeAs<Array_Object>(ret);
 
     if(matchSize > 0) {
@@ -1381,7 +1381,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     for(int i = 0; i < matchSize; i++) {
         unsigned int size = ovec[i * 2 + 1] - ovec[i * 2];
         auto v = size == 0 ? ctx.emptyStrObj :
-                 DSValue::create<String_Object>(getPool(ctx).get(TYPE::String),
+                 DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String),
                                                 std::string(str->getValue() + ovec[i * 2], size));
         array->refValues().push_back(std::move(v));
     }
@@ -1400,14 +1400,14 @@ YDSH_METHOD signal_name(RuntimeContext &ctx) {
     auto *obj = typeAs<Int_Object>(LOCAL(0));
     const char *name = getSignalName(obj->getValue());
     assert(name != nullptr);
-    RET(DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), name));
+    RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), name));
 }
 
 //!bind: function value($this : Signal) : Int32
 YDSH_METHOD signal_value(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_value);
     auto *obj = typeAs<Int_Object>(LOCAL(0));
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), obj->getValue()));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), obj->getValue()));
 }
 
 //!bind: function kill($this : Signal, $pid : Int32) : Void
@@ -1470,20 +1470,20 @@ YDSH_METHOD signals_signal(RuntimeContext &ctx) {
     if(sigNum < 0) {
         RET(DSValue::createInvalid());
     }
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Signal), sigNum));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Signal), sigNum));
 }
 
 //!bind: function list($this : Signals) : Array<Signal>
 YDSH_METHOD signals_list(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_list);
 
-    auto ret = getPool(ctx).createReifiedType(getPool(ctx).getArrayTemplate(), {&getPool(ctx).get(TYPE::Signal)});
+    auto ret = ctx.symbolTable.createReifiedType(ctx.symbolTable.getArrayTemplate(), {&ctx.symbolTable.get(TYPE::Signal)});
     assert(ret);
     auto type = ret.take();
     auto v = DSValue::create<Array_Object>(*type);
     auto *array = typeAs<Array_Object>(v);
     for(auto &e : getUniqueSignalList()) {
-        array->append(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Signal), e));
+        array->append(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Signal), e));
     }
     RET(v);
 }
@@ -1782,7 +1782,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
     try {
         std::sort(obj->refValues().begin(), obj->refValues().end(),
                 [&](const DSValue &x, const DSValue &y){
-            auto ret = callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
+            auto ret = ctx.callFunction(DSValue(LOCAL(1)), makeArgs(x, y));
             if(ctx.hasError()) {
                 throw std::runtime_error("");    //FIXME: not use exception
             }
@@ -1798,7 +1798,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
 YDSH_METHOD array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
     int size = typeAs<Array_Object>(LOCAL(0))->getValues().size();
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), size));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), size));
 }
 
 //!bind: function empty($this : Array<T0>) : Boolean
@@ -1903,7 +1903,7 @@ YDSH_METHOD map_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_size);
     auto *obj = typeAs<Map_Object>(LOCAL(0));
     int value = obj->getValueMap().size();
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), value));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), value));
 }
 
 //!bind: function empty($this : Map<T0, T1>) : Boolean
@@ -2038,7 +2038,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
         int flag = fcntl(fd, F_GETFD);
         if(flag != -1) {
             if(fcntl(fd, F_SETFD, flag | FD_CLOEXEC) != -1) {
-                auto obj = DSValue::create<UnixFD_Object>(getPool(ctx).get(TYPE::UnixFD), fd);
+                auto obj = DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), fd);
                 ctx.setLocal(0, std::move(obj));
                 RET_VOID;
             }
@@ -2075,7 +2075,7 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
         raiseSystemError(ctx, e, std::to_string(fd));
         RET_ERROR;
     }
-    RET(DSValue::create<UnixFD_Object>(getPool(ctx).get(TYPE::UnixFD), newfd));
+    RET(DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), newfd));
 }
 
 //!bind: function $OP_BOOL($this : UnixFD) : Boolean
@@ -2139,7 +2139,7 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
     auto *obj = typeAs<Job_Object>(LOCAL(0));
     bool jobctrl = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
     int s = obj->wait(ctx.jobTable, jobctrl);
-    RET(DSValue::create<Int_Object>(getPool(ctx).get(TYPE::Int32), s));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), s));
 }
 
 //!bind: function raise($this : Job, $s : Signal) : Void

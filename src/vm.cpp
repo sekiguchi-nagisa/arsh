@@ -1734,8 +1734,6 @@ unsigned int DSState::prepareArguments(DSValue &&recv,
     return size;
 }
 
-namespace ydsh {
-
 class RecursionGuard {
 private:
     static constexpr unsigned int LIMIT = 256;
@@ -1765,41 +1763,38 @@ public:
     do { if(!_guard.checkLimit()) { return nullptr; } } while(false)
 
 
-DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
-                   std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+DSValue DSState::callMethod(const MethodHandle *handle, DSValue &&recv,
+                            std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     assert(handle != nullptr);
     assert(handle->getParamTypes().size() == args.first);
 
-    GUARD_RECURSION(state);
+    GUARD_RECURSION(*this);
 
-    unsigned int size = state.prepareArguments(std::move(recv), std::move(args));
+    unsigned int size = this->prepareArguments(std::move(recv), std::move(args));
 
     DSValue ret;
-    if(state.prepareMethodCall(handle->getMethodIndex(), size)) {
-        bool s = state.runMainLoop();
+    if(this->prepareMethodCall(handle->getMethodIndex(), size)) {
+        bool s = this->runMainLoop();
         if(!handle->getReturnType()->isVoidType() && s) {
-            ret = state.pop();
+            ret = this->pop();
         }
     }
     return ret;
 }
 
-DSValue callFunction(DSState &state, DSValue &&funcObj,
-                     std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
-    GUARD_RECURSION(state);
+DSValue DSState::callFunction(DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+    GUARD_RECURSION(*this);
 
     auto *type = funcObj->getType();
-    unsigned int size = state.prepareArguments(std::move(funcObj), std::move(args));
+    unsigned int size = this->prepareArguments(std::move(funcObj), std::move(args));
 
     DSValue ret;
-    if(state.prepareFuncCall(size)) {
-        bool s = state.runMainLoop();
+    if(this->prepareFuncCall(size)) {
+        bool s = this->runMainLoop();
         assert(type->isFuncType());
         if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType() && s) {
-            ret = state.pop();
+            ret = this->pop();
         }
     }
     return ret;
 }
-
-} // namespace ydsh

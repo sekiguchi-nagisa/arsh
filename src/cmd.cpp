@@ -1051,7 +1051,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
         if(fieldSep && index < argc - 1) {
             auto obj = typeAs<Map_Object>(state.getGlobal(varIndex));
             auto varObj = argvObj.getValues()[index];
-            auto valueObj = DSValue::create<String_Object>(getPool(state).get(TYPE::String), std::move(strBuf));
+            auto valueObj = DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(strBuf));
             obj->set(std::move(varObj), std::move(valueObj));
             strBuf = "";
             index++;
@@ -1129,9 +1129,9 @@ static int builtin_hash(DSState &state, Array_Object &argvObj) {
         for(; index < argc; index++) {
             const char *name = str(argvObj.getValues()[index]);
             if(remove) {
-                getPathCache(state).removePath(name);
+                state.pathCache.removePath(name);
             } else {
-                if(getPathCache(state).searchPath(name) == nullptr) {
+                if(state.pathCache.searchPath(name) == nullptr) {
                     ERROR(argvObj, "%s: not found", name);
                     return 1;
                 }
@@ -1139,14 +1139,14 @@ static int builtin_hash(DSState &state, Array_Object &argvObj) {
         }
     } else {
         if(remove) {    // remove all cache
-            getPathCache(state).clear();
+            state.pathCache.clear();
         } else {    // show all cache
-            const auto cend = getPathCache(state).end();
-            if(getPathCache(state).begin() == cend) {
+            const auto cend = state.pathCache.end();
+            if(state.pathCache.begin() == cend) {
                 fputs("hash: file path cache is empty\n", stdout);
                 return 0;
             }
-            for(auto &entry : getPathCache(state)) {
+            for(auto &entry : state.pathCache) {
                 printf("%s=%s\n", entry.first, entry.second.c_str());
             }
         }

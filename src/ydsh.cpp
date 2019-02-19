@@ -79,7 +79,7 @@ static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&ex
     );
 
     setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
-    callFunction(state, std::move(funcObj), std::move(args));
+    state.callFunction(std::move(funcObj), std::move(args));
 
     // restore old value
     state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(oldExitStatus));
@@ -118,7 +118,7 @@ static DSError handleRuntimeError(DSState &state) {
         const bool bt = state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
         auto *handle = errorType.lookupMethodHandle(state.symbolTable, bt ? "backtrace" : OP_STR);
 
-        DSValue ret = callMethod(state, handle, DSValue(thrownObj), makeArgs());
+        DSValue ret = state.callMethod(handle, DSValue(thrownObj), makeArgs());
         if(state.getThrownObject()) {
             fputs("cannot obtain string representation\n", stderr);
         } else if(!bt) {
@@ -165,7 +165,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
     if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
         auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");
-        dumpCode(fp, state, code);
+        dumpCode(fp, state, state.symbolTable, code);
     }
 
     if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {

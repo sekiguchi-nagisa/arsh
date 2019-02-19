@@ -347,8 +347,6 @@ public:
      */
     unsigned int getTermHookIndex();
 
-    bool runMainLoop();
-
     // entry point
     bool vmEval(const CompiledCode &code);
 
@@ -363,7 +361,26 @@ public:
      */
     int execBuiltinCommand(char *const argv[]);
 
-    unsigned int prepareArguments(DSValue &&recv, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+    /**
+     * call method.
+     * @param handle
+     * must not be null
+     * @param recv
+     * @param args
+     * @return
+     * return value of method (if no return value, return null).
+     */
+    DSValue callMethod(const MethodHandle *handle, DSValue &&recv,
+                        std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+
+    /**
+     *
+     * @param funcObj
+     * @param args
+     * @return
+     * return value of method (if no return value, return null).
+     */
+    DSValue callFunction(DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 
 private:
     // exception api
@@ -544,7 +561,6 @@ private:
 
     const char *loadEnv(bool hasDefault);
 
-public:
     /**
      * stack state in function apply    stack grow ===>
      *
@@ -573,7 +589,6 @@ public:
         return this->windStackFrame(actualParamSize, actualParamSize, this->callStack[recvIndex]->getType()->getMethodRef(index));
     }
 
-private:
     /**
      * stack state in constructor call     stack grow ===>
      *
@@ -626,11 +641,15 @@ private:
 
     bool mainLoop();
 
+    bool runMainLoop();
+
     /**
      * if found exception handler, return true.
      * otherwise return false.
      */
     bool handleException(bool forceUnwind);
+
+    unsigned int prepareArguments(DSValue &&recv, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 };
 
 #endif //YDSH_VM_H

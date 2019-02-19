@@ -547,7 +547,7 @@ public:
 /**
  * for debugging
  */
-void dumpCode(FILE *fp, DSState &ctx, const CompiledCode &c);
+void dumpCode(FILE *fp, DSState &ctx, const SymbolTable &symbolTable, const CompiledCode &c);
 
 } // namespace ydsh
 

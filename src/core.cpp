@@ -169,19 +169,6 @@ int GetOptState::operator()(const Array_Object &obj, const char *optStr) {
 }
 
 // core api definition
-
-SymbolTable &getPool(DSState &st) {
-    return st.symbolTable;
-}
-
-const SymbolTable &getPool(const DSState &st) {
-    return st.symbolTable;
-}
-
-FilePathCache &getPathCache(DSState &st) {
-    return st.pathCache;
-}
-
 const DSValue &getGlobal(const DSState &st, const char *varName) {
     auto *handle = st.symbolTable.lookupHandle(varName);
     assert(handle != nullptr);

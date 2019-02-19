@@ -46,7 +46,7 @@ bool DSObject::compare(const ydsh::DSValue &obj) const {
 }
 
 DSValue DSObject::str(DSState &ctx) {
-    return DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), this->toString(ctx, nullptr));
+    return DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), this->toString(ctx, nullptr));
 }
 
 DSValue DSObject::interp(DSState &ctx, VisitedSet *) {
@@ -297,14 +297,14 @@ DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         str += typeAs<String_Object>(ret)->getValue();
         postVisit(visitedSet, this);
     }
-    return DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::move(str));
+    return DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(str));
 }
 
 DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
 
-    auto result = DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray));
+    auto result = DSValue::create<Array_Object>(ctx.symbolTable.get(TYPE::StringArray));
     for(auto &e : this->values) {
         TRY(DSValue, checkInvalid(ctx, e));
         preVisit(visitedSet, this);
@@ -334,7 +334,7 @@ DSValue Map_Object::nextElement(DSState &ctx) {
     types[0] = this->iter->first->getType();
     types[1] = this->iter->second->getType();
 
-    auto entry = DSValue::create<Tuple_Object>(*getPool(ctx).createTupleType(std::move(types)).take());
+    auto entry = DSValue::create<Tuple_Object>(*ctx.symbolTable.createTupleType(std::move(types)).take());
     typeAs<Tuple_Object>(entry)->set(0, this->iter->first);
     typeAs<Tuple_Object>(entry)->set(1, this->iter->second);
     ++this->iter;
@@ -426,14 +426,14 @@ DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
         str += typeAs<String_Object>(ret)->getValue();
         postVisit(visitedSet, this);
     }
-    return DSValue::create<String_Object>(getPool(ctx).get(TYPE::String), std::move(str));
+    return DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(str));
 }
 
 DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
 
-    auto result = DSValue::create<Array_Object>(getPool(ctx).get(TYPE::StringArray));
+    auto result = DSValue::create<Array_Object>(ctx.symbolTable.get(TYPE::StringArray));
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         TRY(DSValue, checkInvalid(ctx, this->fieldTable[i]));
@@ -460,7 +460,7 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
 // ##########################
 
 std::string Error_Object::toString(DSState &ctx, VisitedSet *) {
-    std::string str(getPool(ctx).getTypeName(*this->type));
+    std::string str(ctx.symbolTable.getTypeName(*this->type));
     str += ": ";
     str += typeAs<String_Object>(this->message)->getValue();
     return str;
@@ -481,7 +481,7 @@ DSValue Error_Object::newError(const DSState &ctx, DSType &type, DSValue &&messa
     DSValue obj(new Error_Object(type, std::move(message)));
     typeAs<Error_Object>(obj)->createStackTrace(ctx);
     typeAs<Error_Object>(obj)->name = DSValue::create<String_Object>(
-            getPool(ctx).get(TYPE::String), getPool(ctx).getTypeName(type));
+            ctx.symbolTable.get(TYPE::String), ctx.symbolTable.getTypeName(type));
     return obj;
 }
 
