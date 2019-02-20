@@ -39,7 +39,6 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
         }
 
         // clear queued signal
-        DSState::pendingSigIndex = 1;
         DSState::pendingSigSet.clear();
         unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL | DSState::VM_EVENT_MASK);
 

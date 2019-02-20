@@ -1261,6 +1261,95 @@ CStrBuffer completeLine(const DSState &st, const std::string &line) {
     return sbuf;
 }
 
+// ####################
+// ##     SigSet     ##
+// ####################
+
+int SigSet::popPendingSig() {
+    assert(!this->empty());
+    int sigNum = 0;
+    do {
+        sigNum = this->pendingIndex++;
+        if(this->pendingIndex == NSIG) {
+            this->pendingIndex = 1;
+        }
+    } while(!this->has(sigNum));
+    this->del(sigNum);
+    return sigNum;
+}
+
+
+// ##########################
+// ##     SignalVector     ##
+// ##########################
+
+struct SigEntryComp {
+    using Entry = std::pair<int, DSValue>;
+
+    bool operator()(const Entry &x, int y) const {
+        return x.first < y;
+    }
+
+    bool operator()(int x, const Entry &y) const {
+        return x < y.first;
+    }
+};
+
+void SignalVector::insertOrUpdate(int sigNum, const DSValue &func) {
+    auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
+    if(iter != this->data.end() && iter->first == sigNum) {
+        if(func) {
+            iter->second = func;    // update
+        } else {
+            this->data.erase(iter); // remove
+        }
+    } else if(func) {
+        this->data.insert(iter, std::make_pair(sigNum, func));  // insert
+    }
+}
+
+DSValue SignalVector::lookup(int sigNum) const {
+    auto iter = std::lower_bound(this->data.begin(), this->data.end(), sigNum, SigEntryComp());
+    if(iter != this->data.end() && iter->first == sigNum) {
+        return iter->second;
+    }
+    return nullptr;
+}
+
+static void signalHandler(int sigNum) { // when called this handler, all signals are blocked due to signal mask
+    DSState::pendingSigSet.add(sigNum);
+    setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
+}
+
+void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD) {
+    if(sigNum == SIGCHLD && !setSIGCHLD) {
+        return;
+    }
+
+    // set posix signal handler
+    struct sigaction action{};
+    action.sa_flags = SA_RESTART;
+    sigfillset(&action.sa_mask);
+
+    switch(op) {
+    case UnsafeSigOp::DFL:
+        action.sa_handler = SIG_DFL;
+        break;
+    case UnsafeSigOp::IGN:
+        action.sa_handler = SIG_IGN;
+        break;
+    case UnsafeSigOp::SET:
+        action.sa_handler = signalHandler;
+        break;
+    }
+    sigaction(sigNum, &action, nullptr);
+
+    // register handler
+    if(sigNum != SIGCHLD) {
+        this->insertOrUpdate(sigNum, handler);
+    }
+}
+
 bool readAll(FILE *fp, ByteBuffer &buf) {
     while(true) {
         char data[128];

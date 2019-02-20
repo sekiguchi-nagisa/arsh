@@ -229,6 +229,94 @@ public:
     }
 };
 
+class SigSet {
+private:
+    static_assert(NSIG - 1 <= sizeof(unsigned long) * 8, "huge signal number");
+
+    unsigned long value{0};
+
+    unsigned int pendingIndex{1};
+
+public:
+    void add(int sigNum) {
+        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
+        setFlag(this->value, f);
+    }
+
+    void del(int sigNum) {
+        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
+        unsetFlag(this->value, f);
+    }
+
+    bool has(int sigNum) const {
+        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
+        return hasFlag(this->value, f);
+    }
+
+    bool empty() const {
+        return this->value == 0;
+    }
+
+    void clear() {
+        this->value = 0;
+        this->pendingIndex = 1;
+    }
+
+    int popPendingSig();
+};
+
+class SignalVector {
+private:
+    /**
+     * pair.second must be FuncObject
+     */
+    std::vector<std::pair<int, DSValue>> data;
+
+public:
+    SignalVector() = default;
+    ~SignalVector() = default;
+
+    /**
+     * if func is null, delete handler.
+     * @param sigNum
+     * @param value
+     * must be FuncObject
+     * may be null
+     */
+    void insertOrUpdate(int sigNum, const DSValue &value);
+
+    /**
+     *
+     * @param sigNum
+     * @return
+     * if not found, return null obj.
+     */
+    DSValue lookup(int sigNum) const;
+
+    const std::vector<std::pair<int, DSValue>> &getData() const {
+        return this->data;
+    };
+
+
+    enum class UnsafeSigOp {
+        DFL,
+        IGN,
+        SET,
+    };
+
+    /**
+     * unsafe op.
+     * @param sigNum
+     * @param op
+     * @param handler
+     * may be nullptr
+     * @param setSIGCHLD
+     * if true, set signal handler of SIGCHLD
+     */
+    void install(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD = false);
+};
+
+
 bool readAll(FILE *fp, ByteBuffer &buf);
 
 template <typename ...T>

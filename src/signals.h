@@ -20,8 +20,6 @@
 #include <vector>
 #include <csignal>
 
-#include "misc/flag_util.hpp"
-
 namespace ydsh {
 
 struct SignalPair {
@@ -57,37 +55,6 @@ const char *getSignalName(int sigNum);
  * @return
  */
 std::vector<int> getUniqueSignalList();
-
-class SigSet {
-private:
-    static_assert(NSIG - 1 <= sizeof(unsigned long) * 8, "huge signal number");
-
-    unsigned long value{0};
-
-public:
-    void add(int sigNum) {
-        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
-        setFlag(this->value, f);
-    }
-
-    void del(int sigNum) {
-        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
-        unsetFlag(this->value, f);
-    }
-
-    bool has(int sigNum) const {
-        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
-        return hasFlag(this->value, f);
-    }
-
-    bool empty() const {
-        return this->value == 0;
-    }
-
-    void clear() {
-        this->value = 0;
-    }
-};
 
 } // namespace ydsh
 

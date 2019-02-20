@@ -33,57 +33,6 @@
 
 using namespace ydsh;
 
-class SignalVector {
-private:
-    /**
-     * pair.second must be FuncObject
-     */
-    std::vector<std::pair<int, DSValue>> data;
-
-public:
-    SignalVector() = default;
-    ~SignalVector() = default;
-
-    /**
-     * if func is null, delete handler.
-     * @param sigNum
-     * @param value
-     * must be FuncObject
-     * may be null
-     */
-    void insertOrUpdate(int sigNum, const DSValue &value);
-
-    /**
-     *
-     * @param sigNum
-     * @return
-     * if not found, return null obj.
-     */
-    DSValue lookup(int sigNum) const;
-
-    const std::vector<std::pair<int, DSValue>> &getData() const {
-        return this->data;
-    };
-
-
-    enum class UnsafeSigOp {
-        DFL,
-        IGN,
-        SET,
-    };
-
-    /**
-     * unsafe op.
-     * @param sigNum
-     * @param op
-     * @param handler
-     * may be nullptr
-     * @param setSIGCHLD
-     * if true, set signal handler of SIGCHLD
-     */
-    void install(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD = false);
-};
-
 struct ControlFrame {
     /**
      * currently executed code
@@ -216,8 +165,6 @@ public:
     static constexpr flag32_t VM_EVENT_MASK   = 1u << 2u;
 
     static flag32_set_t eventDesc;
-
-    static unsigned int pendingSigIndex;
 
     static SigSet pendingSigSet;
 

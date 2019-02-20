@@ -7,6 +7,7 @@
 
 #include <misc/util.hpp>
 #include <signals.h>
+#include <core.h>
 
 #include "../test_common.h"
 
