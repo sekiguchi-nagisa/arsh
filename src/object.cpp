@@ -31,10 +31,7 @@ DSValue *DSObject::getFieldTable() {
 }
 
 std::string DSObject::toString(DSState &, VisitedSet *) {
-    std::string str("DSObject(");
-    str += std::to_string(reinterpret_cast<long>(this));
-    str += ")";
-    return str;
+    return this->toString();
 }
 
 std::string DSObject::toString() const {
@@ -72,13 +69,6 @@ size_t DSObject::hash() const {
 // ##     Int_Object     ##
 // ########################
 
-std::string Int_Object::toString(DSState &, VisitedSet *) {
-    if(this->type->is(TYPE::Uint32)) {
-        return std::to_string(static_cast<unsigned int>(this->value));
-    }
-    return std::to_string(this->value);
-}
-
 std::string Int_Object::toString() const {
     if(this->type->is(TYPE::Uint32)) {
         return std::to_string(static_cast<unsigned int>(this->value));
@@ -112,7 +102,7 @@ UnixFD_Object::~UnixFD_Object() {
     }
 }
 
-std::string UnixFD_Object::toString(DSState &, ydsh::VisitedSet *) {
+std::string UnixFD_Object::toString() const {
     std::string str = "/dev/fd/";
     str += std::to_string(this->value);
     return str;
@@ -122,13 +112,6 @@ std::string UnixFD_Object::toString(DSState &, ydsh::VisitedSet *) {
 // #########################
 // ##     Long_Object     ##
 // #########################
-
-std::string Long_Object::toString(DSState &, VisitedSet *) {
-    if(this->type->is(TYPE::Uint64)) {
-        return std::to_string(static_cast<unsigned long>(this->value));
-    }
-    return std::to_string(this->value);
-}
 
 std::string Long_Object::toString() const {
     if(this->type->is(TYPE::Uint64)) {
@@ -156,10 +139,6 @@ size_t Long_Object::hash() const {
 // ##     Float_Object     ##
 // ##########################
 
-std::string Float_Object::toString(DSState &, VisitedSet *) {
-    return std::to_string(this->value);
-}
-
 std::string Float_Object::toString() const {
     return std::to_string(this->value);
 }
@@ -180,10 +159,6 @@ size_t Float_Object::hash() const {
 // ############################
 // ##     Boolean_Object     ##
 // ############################
-
-std::string Boolean_Object::toString(DSState &, VisitedSet *) {
-    return this->value ? "true" : "false";
-}
 
 std::string Boolean_Object::toString() const {
     return this->value ? "true" : "false";
@@ -206,10 +181,6 @@ size_t Boolean_Object::hash() const {
 // ###########################
 // ##     String_Object     ##
 // ###########################
-
-std::string String_Object::toString(DSState &, VisitedSet *) {
-    return this->value;
-}
 
 std::string String_Object::toString() const {
     return this->value;
@@ -295,6 +266,19 @@ std::string Array_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
         preVisit(visitedSet, this);
         str += TRY(std::string, this->values[i]->toString(ctx, visitedSet));
         postVisit(visitedSet, this);
+    }
+    str += "]";
+    return str;
+}
+
+std::string Array_Object::toString() const {
+    std::string str = "[";
+    unsigned int size = this->values.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            str += ", ";
+        }
+        str += this->values[i]->toString();
     }
     str += "]";
     return str;
@@ -397,6 +381,21 @@ std::string Map_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     return str;
 }
 
+std::string Map_Object::toString() const {
+    std::string str = "[";
+    unsigned int count = 0;
+    for(auto &e : this->valueMap) {
+        if(count++ > 0) {
+            str += ", ";
+        }
+        str += e.first->toString();
+        str += " : ";
+        str += e.second->toString();
+    }
+    str += "]";
+    return str;
+}
+
 // ########################
 // ##     Job_Object     ##
 // ########################
@@ -438,6 +437,19 @@ std::string Tuple_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
         preVisit(visitedSet, this);
         str += TRY(std::string, this->fieldTable[i]->toString(ctx, visitedSet));
         postVisit(visitedSet, this);
+    }
+    str += ")";
+    return str;
+}
+
+std::string Tuple_Object::toString() const {
+    std::string str = "(";
+    unsigned int size = this->getElementSize();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            str += ", ";
+        }
+        str += this->fieldTable[i]->toString();
     }
     str += ")";
     return str;

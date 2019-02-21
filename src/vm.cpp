@@ -860,7 +860,7 @@ void DSState::addCmdArg(bool skipEmptyStr) {
             this->pop();
             this->push(DSValue::create<RedirConfig>());
         }
-        auto fdPath = typeAs<UnixFD_Object>(value)->toString(*this, nullptr);
+        auto fdPath = typeAs<UnixFD_Object>(value)->toString();
         auto strObj = DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::move(fdPath));
         typeAs<RedirConfig>(this->peek())->addRedirOp(RedirOP::NOP, std::move(value));
         argv->append(std::move(strObj));

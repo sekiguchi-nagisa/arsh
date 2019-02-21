@@ -312,7 +312,6 @@ public:
         return this->value;
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
@@ -332,7 +331,7 @@ struct UnixFD_Object : public Int_Object {
         return s;
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    std::string toString() const override;
 };
 
 class Long_Object : public DSObject {
@@ -348,7 +347,6 @@ public:
         return this->value;
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
@@ -368,7 +366,6 @@ public:
         return this->value;
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
@@ -388,7 +385,6 @@ public:
         return this->value;
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSe) override;
     std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
@@ -433,7 +429,6 @@ public:
         this->value += typeAs<String_Object>(obj)->value;
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
@@ -486,6 +481,7 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    std::string toString() const override;
 
     void append(DSValue &&obj) {
         this->values.push_back(std::move(obj));
@@ -615,6 +611,7 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    std::string toString() const override;
 };
 
 class Job_Object : public DSObject {
@@ -686,6 +683,7 @@ struct Tuple_Object : public BaseObject {
     ~Tuple_Object() override = default;
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    std::string toString() const override;
 
     unsigned int getElementSize() const {
         return this->type->getFieldSize();

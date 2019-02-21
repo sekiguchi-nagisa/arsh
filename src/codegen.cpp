@@ -1231,7 +1231,7 @@ static unsigned int getMaxLineNum(const LineNumEntry *table) {
     return max;
 }
 
-static void dumpCodeImpl(FILE *fp, DSState &ctx, const SymbolTable &symbolTable,
+static void dumpCodeImpl(FILE *fp, const SymbolTable &symbolTable,
                          const CompiledCode &c, std::vector<const CompiledCode *> *list) {
     const unsigned int codeSize = c.getCodeSize();
 
@@ -1331,7 +1331,7 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const SymbolTable &symbolTable,
                 }
                 fprintf(fp, "%s %s",
                         (v->getType() != nullptr ? symbolTable.getTypeName(*v->getType()) : "(null)"),
-                        v->toString(ctx, nullptr).c_str());
+                        v->toString().c_str());
                 break;
             case DSValueKind::INVALID:
                 break;
@@ -1362,15 +1362,15 @@ static void dumpCodeImpl(FILE *fp, DSState &ctx, const SymbolTable &symbolTable,
     fflush(fp);
 }
 
-void dumpCode(FILE *fp, DSState &ctx, const SymbolTable &symbolTable, const CompiledCode &c) {
+void dumpCode(FILE *fp, const SymbolTable &symbolTable, const CompiledCode &c) {
     fprintf(fp, "Source File: %s\n", c.getSourceName());
 
     std::vector<const CompiledCode *> list;
 
-    dumpCodeImpl(fp, ctx, symbolTable, c, &list);
+    dumpCodeImpl(fp, symbolTable, c, &list);
     for(auto &e : list) {
         fputc('\n', fp);
-        dumpCodeImpl(fp, ctx, symbolTable, *e, nullptr);
+        dumpCodeImpl(fp, symbolTable, *e, nullptr);
     }
 }
 
