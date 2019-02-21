@@ -1004,7 +1004,7 @@ public:
         return this->code;
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    std::string toString() const override;
 };
 
 } // namespace ydsh

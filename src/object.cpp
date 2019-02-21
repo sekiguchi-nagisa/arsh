@@ -548,7 +548,7 @@ unsigned int getLineNum(const LineNumEntry *entries, unsigned int index) {  //FI
 // ##     FuncObject     ##
 // ########################
 
-std::string FuncObject::toString(DSState &, VisitedSet *) {
+std::string FuncObject::toString() const {
     std::string str = this->code.is(CodeKind::FUNCTION) ? "function(" : "module(";
     str += this->code.getName();
     str += ")";
