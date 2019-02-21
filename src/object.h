@@ -70,6 +70,8 @@ public:
      */
     virtual std::string toString(DSState &ctx, VisitedSet *visitedSet);
 
+    virtual std::string toString() const;
+
     /**
      * EQ method implementation.
      */
@@ -311,6 +313,7 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
     size_t hash() const override;
@@ -346,6 +349,7 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
     size_t hash() const override;
@@ -365,6 +369,7 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
     size_t hash() const override;
@@ -384,6 +389,7 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSe) override;
+    std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
     size_t hash() const override;
@@ -428,7 +434,7 @@ public:
     }
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
-
+    std::string toString() const override;
     bool equals(const DSValue &obj) const override;
     bool compare(const DSValue &obj) const override;
     size_t hash() const override;

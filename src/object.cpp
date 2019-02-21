@@ -37,6 +37,13 @@ std::string DSObject::toString(DSState &, VisitedSet *) {
     return str;
 }
 
+std::string DSObject::toString() const {
+    std::string str("DSObject(");
+    str += std::to_string(reinterpret_cast<long>(this));
+    str += ")";
+    return str;
+}
+
 bool DSObject::equals(const DSValue &obj) const {
     return reinterpret_cast<long>(this) == reinterpret_cast<long>(obj.get());
 }
@@ -66,6 +73,13 @@ size_t DSObject::hash() const {
 // ########################
 
 std::string Int_Object::toString(DSState &, VisitedSet *) {
+    if(this->type->is(TYPE::Uint32)) {
+        return std::to_string(static_cast<unsigned int>(this->value));
+    }
+    return std::to_string(this->value);
+}
+
+std::string Int_Object::toString() const {
     if(this->type->is(TYPE::Uint32)) {
         return std::to_string(static_cast<unsigned int>(this->value));
     }
@@ -116,6 +130,13 @@ std::string Long_Object::toString(DSState &, VisitedSet *) {
     return std::to_string(this->value);
 }
 
+std::string Long_Object::toString() const {
+    if(this->type->is(TYPE::Uint64)) {
+        return std::to_string(static_cast<unsigned long>(this->value));
+    }
+    return std::to_string(this->value);
+}
+
 bool Long_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Long_Object>(obj)->value;
 }
@@ -136,6 +157,10 @@ size_t Long_Object::hash() const {
 // ##########################
 
 std::string Float_Object::toString(DSState &, VisitedSet *) {
+    return std::to_string(this->value);
+}
+
+std::string Float_Object::toString() const {
     return std::to_string(this->value);
 }
 
@@ -160,6 +185,10 @@ std::string Boolean_Object::toString(DSState &, VisitedSet *) {
     return this->value ? "true" : "false";
 }
 
+std::string Boolean_Object::toString() const {
+    return this->value ? "true" : "false";
+}
+
 bool Boolean_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Boolean_Object>(obj)->value;
 }
@@ -179,6 +208,10 @@ size_t Boolean_Object::hash() const {
 // ###########################
 
 std::string String_Object::toString(DSState &, VisitedSet *) {
+    return this->value;
+}
+
+std::string String_Object::toString() const {
     return this->value;
 }
 
