@@ -227,9 +227,11 @@ static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
     if(!checkInvalid(state, ret)) {
         return DSValue();
     }
-    auto *handle = ret->getType()->lookupMethodHandle(state.symbolTable, op);
-    assert(handle != nullptr);
-    ret = state.callMethod(handle, std::move(ret), makeArgs());
+    if(!ret->getType()->is(TYPE::String)) {
+        auto *handle = ret->getType()->lookupMethodHandle(state.symbolTable, op);
+        assert(handle != nullptr);
+        ret = state.callMethod(handle, std::move(ret), makeArgs());
+    }
     return ret;
 }
 
@@ -274,12 +276,15 @@ static MethodHandle *lookupCmdArg(DSType *recvType, SymbolTable &symbolTable) {
 }
 
 static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const DSValue &value) {
-    DSValue recv = value;
-    if(!checkInvalid(state, recv)) {
+    DSValue ret = value;
+    if(!checkInvalid(state, ret)) {
         return false;
     }
-    auto *handle = lookupCmdArg(recv->getType(), state.symbolTable);
-    auto ret = TRY(state.callMethod(handle, std::move(recv), makeArgs()));
+    if(!ret->getType()->is(TYPE::String) && !ret->getType()->is(TYPE::StringArray)) {
+        auto *handle = lookupCmdArg(ret->getType(), state.symbolTable);
+        assert(handle != nullptr);
+        ret = TRY(state.callMethod(handle, std::move(ret), makeArgs()));
+    }
     auto *retType = ret->getType();
     if(retType->is(TYPE::String)) {
         result.push_back(std::move(ret));
