@@ -113,6 +113,11 @@ public:
      */
     std::string prompt;
 
+    /**
+     * for OP_STR.
+     */
+    std::string toStrBuf;
+
     VMHook *hook{nullptr};
 
     std::vector<ControlFrame> controlStack;

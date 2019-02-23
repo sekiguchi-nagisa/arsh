@@ -41,6 +41,11 @@ std::string DSObject::toString() const {
     return str;
 }
 
+bool DSObject::opStr(DSState &state) const {
+    state.toStrBuf += this->toString();
+    return true;
+}
+
 bool DSObject::equals(const DSValue &obj) const {
     return reinterpret_cast<long>(this) == reinterpret_cast<long>(obj.get());
 }
@@ -284,6 +289,29 @@ std::string Array_Object::toString() const {
     return str;
 }
 
+bool Array_Object::opStr(DSState &state) const {
+    state.toStrBuf += "[";
+    unsigned int size = this->values.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            state.toStrBuf += ", ";
+        }
+
+        DSValue recv = this->values[i];
+        if(!checkInvalid(state, recv)) {
+            return false;
+        }
+        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
+        assert(handle != nullptr);
+        state.callMethod(handle, std::move(recv), makeArgs());
+        if(state.hasError()) {
+            return false;
+        }
+    }
+    state.toStrBuf += "]";
+    return true;
+}
+
 const DSValue &Array_Object::nextElement() {
     unsigned int index = this->curIndex++;
     assert(index < this->values.size());
@@ -396,11 +424,49 @@ std::string Map_Object::toString() const {
     return str;
 }
 
+bool Map_Object::opStr(DSState &state) const {
+    state.toStrBuf += "[";
+    unsigned int count = 0;
+    for(auto &e : this->valueMap) {
+        if(count++ > 0) {
+            state.toStrBuf += ", ";
+        }
+
+        // key
+        DSValue recv = e.first;
+        if(!checkInvalid(state, recv)) {
+            return false;
+        }
+        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
+        assert(handle != nullptr);
+        state.callMethod(handle, std::move(recv), makeArgs());
+        if(state.hasError()) {
+            return false;
+        }
+
+        state.toStrBuf += " : ";
+
+        // value
+        recv = e.second;
+        if(!checkInvalid(state, recv)) {
+            return false;
+        }
+        handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
+        assert(handle != nullptr);
+        state.callMethod(handle, std::move(recv), makeArgs());
+        if(state.hasError()) {
+            return false;
+        }
+    }
+    state.toStrBuf += "]";
+    return true;
+}
+
 // ########################
 // ##     Job_Object     ##
 // ########################
 
-std::string Job_Object::toString(DSState &, VisitedSet *) {
+std::string Job_Object::toString() const {
     std::string str = "%";
     str += std::to_string(this->entry->jobID());
     return str;
@@ -455,6 +521,29 @@ std::string Tuple_Object::toString() const {
     return str;
 }
 
+bool Tuple_Object::opStr(DSState &state) const {
+    state.toStrBuf += "(";
+    unsigned int size = this->getElementSize();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            state.toStrBuf += ", ";
+        }
+
+        DSValue recv = this->fieldTable[i];
+        if(!checkInvalid(state, recv)) {
+            return false;
+        }
+        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
+        assert(handle != nullptr);
+        state.callMethod(handle, std::move(recv), makeArgs());
+        if(state.hasError()) {
+            return false;
+        }
+    }
+    state.toStrBuf += ")";
+    return true;
+}
+
 DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
     TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
@@ -505,15 +594,17 @@ DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
 // ##########################
 
 std::string Error_Object::toString(DSState &ctx, VisitedSet *) {
-    std::string str(ctx.symbolTable.getTypeName(*this->type));
-    str += ": ";
-    str += typeAs<String_Object>(this->message)->getValue();
-    return str;
+    return this->createHeader(ctx);
+}
+
+bool Error_Object::opStr(DSState &state) const {
+    state.toStrBuf += this->createHeader(state);
+    return true;
 }
 
 void Error_Object::printStackTrace(DSState &ctx) {
     // print header
-    fprintf(stderr, "%s\n", this->toString(ctx, nullptr).c_str());
+    fprintf(stderr, "%s\n", this->createHeader(ctx).c_str());
 
     // print stack trace
     for(auto &s : this->stackTrace) {
@@ -528,6 +619,13 @@ DSValue Error_Object::newError(const DSState &ctx, DSType &type, DSValue &&messa
     typeAs<Error_Object>(obj)->name = DSValue::create<String_Object>(
             ctx.symbolTable.get(TYPE::String), ctx.symbolTable.getTypeName(type));
     return obj;
+}
+
+std::string Error_Object::createHeader(const DSState &state) const {
+    std::string str = state.symbolTable.getTypeName(*this->type);
+    str += ": ";
+    str += typeAs<String_Object>(this->message)->getValue();
+    return str;
 }
 
 void Error_Object::createStackTrace(const DSState &ctx) {

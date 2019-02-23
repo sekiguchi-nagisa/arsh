@@ -467,7 +467,7 @@ TEST_F(CmdlineTest, toplevel) {
 
     // runtime error
     const char *msg = R"([runtime error]
-StackOverflowError: caused by circular reference
+StackOverflowError: interpreter recursion depth reaches limit
     from (string):1 '<toplevel>()'
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(

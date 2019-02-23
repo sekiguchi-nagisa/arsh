@@ -174,7 +174,18 @@ static bool binary_ge(RuntimeContext &ctx) {    // x >= y  =  !(x < y)
 //!bind: function $OP_STR($this : Any) : String
 YDSH_METHOD to_str(RuntimeContext & ctx) {
     SUPPRESS_WARNING(to_str);
-    RET(LOCAL(0)->str(ctx));
+    bool hasRet = ctx.toStrBuf.empty();
+    if(!LOCAL(0)->opStr(ctx)) {
+        ctx.toStrBuf.clear();
+    }
+
+    if(hasRet) {
+        std::string value;
+        std::swap(value, ctx.toStrBuf);
+        RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(value)));
+    } else {
+        RET_VOID;
+    }
 }
 
 //!bind: function $OP_INTERP($this : Any) : String

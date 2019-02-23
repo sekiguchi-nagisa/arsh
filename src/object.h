@@ -70,6 +70,14 @@ public:
      */
     virtual std::string toString(DSState &ctx, VisitedSet *visitedSet);
 
+    /**
+     * OP_STR method implementation. write result to `toStrBuf'
+     * @param state
+     * @return
+     * if has error, return false
+     */
+    virtual bool opStr(DSState &state) const;
+
     virtual std::string toString() const;
 
     /**
@@ -482,6 +490,7 @@ public:
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
+    bool opStr(DSState &state) const override;
 
     void append(DSValue &&obj) {
         this->values.push_back(std::move(obj));
@@ -612,6 +621,7 @@ public:
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
+    bool opStr(DSState &state) const override;
 };
 
 class Job_Object : public DSObject {
@@ -661,7 +671,7 @@ public:
         return s;
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    std::string toString() const override;
 };
 
 class BaseObject : public DSObject {
@@ -684,6 +694,7 @@ struct Tuple_Object : public BaseObject {
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
+    bool opStr(DSState &state) const override;
 
     unsigned int getElementSize() const {
         return this->type->getFieldSize();
@@ -750,6 +761,7 @@ public:
     ~Error_Object() override = default;
 
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
+    bool opStr(DSState &state) const override;
 
     const DSValue &getMessage() const {
         return this->message;
@@ -778,6 +790,8 @@ public:
     static DSValue newError(const DSState &ctx, DSType &type, DSValue &&message);
 
 private:
+    std::string createHeader(const DSState &state) const;
+
     void createStackTrace(const DSState &ctx);
 };
 
