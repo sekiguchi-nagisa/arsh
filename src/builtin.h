@@ -184,7 +184,7 @@ YDSH_METHOD to_str(RuntimeContext & ctx) {
         std::swap(value, ctx.toStrBuf);
         RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(value)));
     } else {
-        RET_VOID;
+        RET(DSValue::createInvalid());  // dummy
     }
 }
 

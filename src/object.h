@@ -256,6 +256,10 @@ public:
         return this->val >= 0;
     }
 
+    bool isInvalid() const noexcept {
+        return this->kind() == DSValueKind::INVALID;
+    }
+
     void swap(DSValue &value) noexcept {
         std::swap(this->obj, value.obj);
     }

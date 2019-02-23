@@ -246,7 +246,7 @@ static void postVisit(VisitedSet *set, const DSObject *ptr) {
 }
 
 static bool checkInvalid(DSState &st, DSValue &v) {
-    if(v.kind() == DSValueKind::INVALID) {
+    if(v.isInvalid()) {
         raiseError(st, TYPE::UnwrappingError, "invalid value");
         return false;
     }
@@ -256,6 +256,8 @@ static bool checkInvalid(DSState &st, DSValue &v) {
 #define TRY(T, E) \
 ({ auto v = E; if(ctx.hasError()) { return T(); } std::forward<decltype(v)>(v); })
 
+#define TRY2(E) \
+({ auto v = E; if(state.hasError()) { return false; } std::forward<decltype(v)>(v); })
 
 std::string Array_Object::toString(DSState &ctx, VisitedSet *visitedSet) {
     std::shared_ptr<VisitedSet> newSet;
@@ -303,9 +305,9 @@ bool Array_Object::opStr(DSState &state) const {
         }
         auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
         assert(handle != nullptr);
-        state.callMethod(handle, std::move(recv), makeArgs());
-        if(state.hasError()) {
-            return false;
+        auto ret = TRY2(state.callMethod(handle, std::move(recv), makeArgs()));
+        if(!ret.isInvalid()) {
+            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
     }
     state.toStrBuf += "]";
@@ -439,9 +441,9 @@ bool Map_Object::opStr(DSState &state) const {
         }
         auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
         assert(handle != nullptr);
-        state.callMethod(handle, std::move(recv), makeArgs());
-        if(state.hasError()) {
-            return false;
+        auto ret = TRY2(state.callMethod(handle, std::move(recv), makeArgs()));
+        if(!ret.isInvalid()) {
+            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
 
         state.toStrBuf += " : ";
@@ -453,9 +455,9 @@ bool Map_Object::opStr(DSState &state) const {
         }
         handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
         assert(handle != nullptr);
-        state.callMethod(handle, std::move(recv), makeArgs());
-        if(state.hasError()) {
-            return false;
+        ret = TRY2(state.callMethod(handle, std::move(recv), makeArgs()));
+        if(!ret.isInvalid()) {
+            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
     }
     state.toStrBuf += "]";
@@ -535,9 +537,9 @@ bool Tuple_Object::opStr(DSState &state) const {
         }
         auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
         assert(handle != nullptr);
-        state.callMethod(handle, std::move(recv), makeArgs());
-        if(state.hasError()) {
-            return false;
+        auto ret = TRY2(state.callMethod(handle, std::move(recv), makeArgs()));
+        if(!ret.isInvalid()) {
+            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
     }
     state.toStrBuf += ")";
