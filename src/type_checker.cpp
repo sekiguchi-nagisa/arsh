@@ -744,8 +744,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
             std::string methodName(OP_CMD_ARG);
             MethodHandle *handle = segmentType.lookupMethodHandle(this->symbolTable, methodName);
 
-            if(handle == nullptr || (!handle->getReturnType()->is(TYPE::String) &&
-                                     !handle->getReturnType()->is(TYPE::StringArray))) { // if not found, lookup __STR__
+            if(handle == nullptr) { // if not found, lookup __STR__
                 methodName = OP_STR;
                 handle = segmentType.isOptionType() ? nullptr :
                          segmentType.lookupMethodHandle(this->symbolTable, methodName);
@@ -753,6 +752,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
                     RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName.c_str());
                 }
             }
+            assert(handle->getReturnType()->is(TYPE::String) || handle->getReturnType()->is(TYPE::StringArray));
 
             // create MethodCallNode and check type
             auto *callNode = ApplyNode::newMethodCall(exprNode, std::move(methodName));
