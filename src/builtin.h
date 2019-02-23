@@ -1866,7 +1866,7 @@ YDSH_METHOD array_hasNext(RuntimeContext &ctx) {
 //!bind: function $OP_CMD_ARG($this : Array<T0>) : Array<String>
 YDSH_METHOD array_cmdArg(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_cmdArg);
-    RET(LOCAL(0)->commandArg(ctx, nullptr));
+    RET(typeAs<Array_Object>(LOCAL(0))->opCmdArg(ctx));
 }
 
 
@@ -1889,7 +1889,7 @@ YDSH_METHOD map_get(RuntimeContext &ctx) {
     auto iter = obj->getValueMap().find(LOCAL(1));
     if(iter == obj->getValueMap().end()) {
         std::string msg("not found key: ");
-        msg += LOCAL(1)->toString(ctx, nullptr);
+        msg += LOCAL(1)->toString();
         raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
         RET_ERROR;
     }
@@ -1967,7 +1967,7 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
     DSValue value = LOCAL(2);
     if(!obj->trySwap(LOCAL(1), value)) {
         std::string msg("not found key: ");
-        msg += LOCAL(1)->toString(ctx, nullptr);
+        msg += LOCAL(1)->toString();
         raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
         RET_ERROR;
     }
@@ -2012,7 +2012,7 @@ YDSH_METHOD map_hasNext(RuntimeContext &ctx) {
 //!bind: function $OP_CMD_ARG($this : Tuple<>) : Array<String>
 YDSH_METHOD tuple_cmdArg(RuntimeContext &ctx) {
     SUPPRESS_WARNING(tuple_cmdArg);
-    RET(LOCAL(0)->commandArg(ctx, nullptr));
+    RET(typeAs<Tuple_Object>(LOCAL(0))->opCmdArg(ctx));
 }
 
 

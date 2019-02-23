@@ -68,8 +68,6 @@ public:
     /**
      * for printing
      */
-    virtual std::string toString(DSState &ctx, VisitedSet *visitedSet);
-
     virtual std::string toString() const;
 
     /**
@@ -99,11 +97,6 @@ public:
      * @return
      */
     virtual bool compare(const DSValue &obj) const;
-
-    /**
-     * for command argument.
-     */
-    virtual DSValue commandArg(DSState &ctx, VisitedSet *visitedSet);
 
     /**
      * for Map_Object
@@ -488,10 +481,10 @@ public:
         return this->values;
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
     bool opStr(DSState &state) const override;
     bool opInterp(DSState &state) const override;
+    DSValue opCmdArg(DSState &state) const;
 
     void append(DSValue &&obj) {
         this->values.push_back(std::move(obj));
@@ -514,8 +507,6 @@ public:
     bool hasNext() const {
         return this->curIndex < this->values.size();
     }
-
-    DSValue commandArg(DSState &ctx, VisitedSet *visitedSet) override;
 };
 
 /**
@@ -619,7 +610,6 @@ public:
         return this->iter != this->valueMap.cend();
     }
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
     bool opStr(DSState &state) const override;
 };
@@ -692,10 +682,10 @@ struct Tuple_Object : public BaseObject {
 
     ~Tuple_Object() override = default;
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
     bool opStr(DSState &state) const override;
     bool opInterp(DSState &state) const override;
+    DSValue opCmdArg(DSState &state) const;
 
     unsigned int getElementSize() const {
         return this->type->getFieldSize();
@@ -708,8 +698,6 @@ struct Tuple_Object : public BaseObject {
     const DSValue &get(unsigned int elementIndex) {
         return this->fieldTable[elementIndex];
     }
-
-    DSValue commandArg(DSState &ctx, VisitedSet *visitedSet) override;
 };
 
 class StackTraceElement {
@@ -760,7 +748,6 @@ private:
 public:
     ~Error_Object() override = default;
 
-    std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     bool opStr(DSState &state) const override;
 
     const DSValue &getMessage() const {
