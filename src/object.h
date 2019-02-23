@@ -778,8 +778,6 @@ public:
 
 private:
     std::string createHeader(const DSState &state) const;
-
-    void createStackTrace(const DSState &ctx);
 };
 
 enum class CodeKind : unsigned char {

@@ -225,6 +225,17 @@ std::string Array_Object::toString() const {
     return str;
 }
 
+static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
+    DSValue ret = value;
+    if(!checkInvalid(state, ret)) {
+        return DSValue();
+    }
+    auto *handle = ret->getType()->lookupMethodHandle(state.symbolTable, op);
+    assert(handle != nullptr);
+    ret = state.callMethod(handle, std::move(ret), makeArgs());
+    return ret;
+}
+
 bool Array_Object::opStr(DSState &state) const {
     state.toStrBuf += "[";
     unsigned int size = this->values.size();
@@ -233,13 +244,7 @@ bool Array_Object::opStr(DSState &state) const {
             state.toStrBuf += ", ";
         }
 
-        DSValue recv = this->values[i];
-        if(!checkInvalid(state, recv)) {
-            return false;
-        }
-        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
-        assert(handle != nullptr);
-        auto ret = TRY(state.callMethod(handle, std::move(recv), makeArgs()));
+        auto ret = TRY(callOP(state, this->values[i], OP_STR));
         if(!ret.isInvalid()) {
             state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
@@ -255,13 +260,7 @@ bool Array_Object::opInterp(DSState &state) const {
             state.toStrBuf += " ";
         }
 
-        DSValue recv = this->values[i];
-        if(!checkInvalid(state, recv)) {
-            return false;
-        }
-        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_INTERP);
-        assert(handle != nullptr);
-        auto ret = TRY(state.callMethod(handle, std::move(recv), makeArgs()));
+        auto ret = TRY(callOP(state, this->values[i], OP_INTERP));
         if(!ret.isInvalid()) {
             state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
@@ -277,24 +276,31 @@ static MethodHandle *lookupCmdArg(DSType *recvType, SymbolTable &symbolTable) {
     return handle;
 }
 
+static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const DSValue &value) {
+    DSValue recv = value;
+    if(!checkInvalid(state, recv)) {
+        return false;
+    }
+    auto *handle = lookupCmdArg(recv->getType(), state.symbolTable);
+    auto ret = TRY(state.callMethod(handle, std::move(recv), makeArgs()));
+    auto *retType = ret->getType();
+    if(retType->is(TYPE::String)) {
+        result.push_back(std::move(ret));
+    } else {
+        assert(retType->is(TYPE::StringArray));
+        auto *tempArray = typeAs<Array_Object>(ret);
+        for(auto &tempValue : tempArray->getValues()) {
+            result.push_back(tempValue);
+        }
+    }
+    return true;
+}
+
 DSValue Array_Object::opCmdArg(DSState &state) const {
     auto result = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
     for(auto &e : this->values) {
-        DSValue recv = e;
-        if(!checkInvalid(state, recv)) {
+        if(!appendAsCmdArg(typeAs<Array_Object>(result)->values, state, e)) {
             return DSValue();
-        }
-        auto *handle = lookupCmdArg(recv->getType(), state.symbolTable);
-        auto ret = TRY2(state.callMethod(handle, std::move(recv), makeArgs()));
-        auto *retType = ret->getType();
-        if(retType->is(TYPE::String)) {
-            typeAs<Array_Object>(result)->values.push_back(std::move(ret));
-        } else {
-            assert(retType->is(TYPE::StringArray));
-            auto *tempArray = typeAs<Array_Object>(ret);
-            for(auto &tempValue : tempArray->values) {
-                typeAs<Array_Object>(result)->values.push_back(tempValue);
-            }
         }
     }
     return result;
@@ -347,13 +353,7 @@ bool Map_Object::opStr(DSState &state) const {
         }
 
         // key
-        DSValue recv = e.first;
-        if(!checkInvalid(state, recv)) {
-            return false;
-        }
-        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
-        assert(handle != nullptr);
-        auto ret = TRY(state.callMethod(handle, std::move(recv), makeArgs()));
+        auto ret = TRY(callOP(state, e.first, OP_STR));
         if(!ret.isInvalid()) {
             state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
@@ -361,13 +361,7 @@ bool Map_Object::opStr(DSState &state) const {
         state.toStrBuf += " : ";
 
         // value
-        recv = e.second;
-        if(!checkInvalid(state, recv)) {
-            return false;
-        }
-        handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
-        assert(handle != nullptr);
-        ret = TRY(state.callMethod(handle, std::move(recv), makeArgs()));
+        ret = TRY(callOP(state, e.second, OP_STR));
         if(!ret.isInvalid()) {
             state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
@@ -423,13 +417,7 @@ bool Tuple_Object::opStr(DSState &state) const {
             state.toStrBuf += ", ";
         }
 
-        DSValue recv = this->fieldTable[i];
-        if(!checkInvalid(state, recv)) {
-            return false;
-        }
-        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_STR);
-        assert(handle != nullptr);
-        auto ret = TRY(state.callMethod(handle, std::move(recv), makeArgs()));
+        auto ret = TRY(callOP(state, this->fieldTable[i], OP_STR));
         if(!ret.isInvalid()) {
             state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
@@ -445,13 +433,7 @@ bool Tuple_Object::opInterp(DSState &state) const {
             state.toStrBuf += " ";
         }
 
-        DSValue recv = this->fieldTable[i];
-        if(!checkInvalid(state, recv)) {
-            return false;
-        }
-        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_INTERP);
-        assert(handle != nullptr);
-        auto ret = TRY(state.callMethod(handle, std::move(recv), makeArgs()));
+        auto ret = TRY(callOP(state, this->fieldTable[i], OP_INTERP));
         if(!ret.isInvalid()) {
             state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
@@ -463,21 +445,8 @@ DSValue Tuple_Object::opCmdArg(DSState &state) const {
     auto result = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
-        DSValue recv = this->fieldTable[i];
-        if(!checkInvalid(state, recv)) {
+        if(!appendAsCmdArg(typeAs<Array_Object>(result)->refValues(), state, this->fieldTable[i])) {
             return DSValue();
-        }
-        auto *handle = lookupCmdArg(recv->getType(), state.symbolTable);
-        auto ret = TRY2(state.callMethod(handle, std::move(recv), makeArgs()));
-        DSType *retType = ret->getType();
-        if(retType->is(TYPE::String)) {
-            typeAs<Array_Object>(result)->append(std::move(ret));
-        } else {
-            assert(retType->is(TYPE::StringArray));
-            auto *tempArray = typeAs<Array_Object>(ret);
-            for(auto &tempValue : tempArray->getValues()) {
-                typeAs<Array_Object>(result)->append(tempValue);
-            }
         }
     }
     return result;
@@ -505,7 +474,7 @@ void Error_Object::printStackTrace(DSState &ctx) {
 
 DSValue Error_Object::newError(const DSState &ctx, DSType &type, DSValue &&message) {
     DSValue obj(new Error_Object(type, std::move(message)));
-    typeAs<Error_Object>(obj)->createStackTrace(ctx);
+    fillInStackTrace(ctx, typeAs<Error_Object>(obj)->stackTrace);
     typeAs<Error_Object>(obj)->name = DSValue::create<String_Object>(
             ctx.symbolTable.get(TYPE::String), ctx.symbolTable.getTypeName(type));
     return obj;
@@ -516,10 +485,6 @@ std::string Error_Object::createHeader(const DSState &state) const {
     str += ": ";
     str += typeAs<String_Object>(this->message)->getValue();
     return str;
-}
-
-void Error_Object::createStackTrace(const DSState &ctx) {
-    fillInStackTrace(ctx, this->stackTrace);
 }
 
 unsigned int getLineNum(const LineNumEntry *entries, unsigned int index) {  //FIXME binary search
