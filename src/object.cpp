@@ -46,6 +46,10 @@ bool DSObject::opStr(DSState &state) const {
     return true;
 }
 
+bool DSObject::opInterp(DSState &state) const {
+    return this->opStr(state);
+}
+
 bool DSObject::equals(const DSValue &obj) const {
     return reinterpret_cast<long>(this) == reinterpret_cast<long>(obj.get());
 }
@@ -54,16 +58,8 @@ bool DSObject::compare(const ydsh::DSValue &obj) const {
     return reinterpret_cast<long>(this) < reinterpret_cast<long>(obj.get());
 }
 
-DSValue DSObject::str(DSState &ctx) {
-    return DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), this->toString(ctx, nullptr));
-}
-
-DSValue DSObject::interp(DSState &ctx, VisitedSet *) {
-    return this->str(ctx);
-}
-
 DSValue DSObject::commandArg(DSState &ctx, VisitedSet *) {
-    return this->str(ctx);
+    return DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), this->toString(ctx, nullptr));
 }
 
 size_t DSObject::hash() const {
@@ -314,37 +310,31 @@ bool Array_Object::opStr(DSState &state) const {
     return true;
 }
 
+bool Array_Object::opInterp(DSState &state) const {
+    unsigned int size = this->values.size();
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            state.toStrBuf += " ";
+        }
+
+        DSValue recv = this->values[i];
+        if(!checkInvalid(state, recv)) {
+            return false;
+        }
+        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_INTERP);
+        assert(handle != nullptr);
+        auto ret = TRY2(state.callMethod(handle, std::move(recv), makeArgs()));
+        if(!ret.isInvalid()) {
+            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
+        }
+    }
+    return true;
+}
+
 const DSValue &Array_Object::nextElement() {
     unsigned int index = this->curIndex++;
     assert(index < this->values.size());
     return this->values[index];
-}
-
-DSValue Array_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
-    std::shared_ptr<VisitedSet> newSet;
-    TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
-
-    if(this->values.size() == 1) {
-        TRY(DSValue, checkInvalid(ctx, this->values[0]));
-        preVisit(visitedSet, this);
-        auto v = TRY(DSValue, this->values[0]->interp(ctx, visitedSet));
-        postVisit(visitedSet, this);
-        return v;
-    }
-
-    std::string str;
-    unsigned int size = this->values.size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            str += " ";
-        }
-        TRY(DSValue, checkInvalid(ctx, this->values[i]));
-        preVisit(visitedSet, this);
-        auto ret = TRY(DSValue, this->values[i]->interp(ctx, visitedSet));
-        str += typeAs<String_Object>(ret)->getValue();
-        postVisit(visitedSet, this);
-    }
-    return DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(str));
 }
 
 DSValue Array_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {
@@ -546,23 +536,25 @@ bool Tuple_Object::opStr(DSState &state) const {
     return true;
 }
 
-DSValue Tuple_Object::interp(DSState &ctx, VisitedSet *visitedSet) {
-    std::shared_ptr<VisitedSet> newSet;
-    TRY(DSValue, checkCircularRef(ctx, visitedSet, newSet, this));
-
-    std::string str;
+bool Tuple_Object::opInterp(DSState &state) const {
     unsigned int size = this->getElementSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
-            str += " ";
+            state.toStrBuf += " ";
         }
-        TRY(DSValue, checkInvalid(ctx, this->fieldTable[i]));
-        preVisit(visitedSet, this);
-        auto ret = TRY(DSValue, this->fieldTable[i]->interp(ctx, visitedSet));
-        str += typeAs<String_Object>(ret)->getValue();
-        postVisit(visitedSet, this);
+
+        DSValue recv = this->fieldTable[i];
+        if(!checkInvalid(state, recv)) {
+            return false;
+        }
+        auto *handle = recv->getType()->lookupMethodHandle(state.symbolTable, OP_INTERP);
+        assert(handle != nullptr);
+        auto ret = TRY2(state.callMethod(handle, std::move(recv), makeArgs()));
+        if(!ret.isInvalid()) {
+            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
+        }
     }
-    return DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(str));
+    return true;
 }
 
 DSValue Tuple_Object::commandArg(DSState &ctx, VisitedSet *visitedSet) {

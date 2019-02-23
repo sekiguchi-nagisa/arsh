@@ -70,6 +70,8 @@ public:
      */
     virtual std::string toString(DSState &ctx, VisitedSet *visitedSet);
 
+    virtual std::string toString() const;
+
     /**
      * OP_STR method implementation. write result to `toStrBuf'
      * @param state
@@ -78,7 +80,13 @@ public:
      */
     virtual bool opStr(DSState &state) const;
 
-    virtual std::string toString() const;
+    /**
+     * OP_INTERP method implementation. write result to 'toStrBuf'
+     * @param state
+     * @return
+     * if has error, return false
+     */
+    virtual bool opInterp(DSState &state) const;
 
     /**
      * EQ method implementation.
@@ -91,18 +99,6 @@ public:
      * @return
      */
     virtual bool compare(const DSValue &obj) const;
-
-    /**
-     * STR method implementation.
-     * return String_Object
-     */
-    DSValue str(DSState &ctx);
-
-    /**
-     * for interpolation
-     * return String_Object
-     */
-    virtual DSValue interp(DSState &ctx, VisitedSet *visitedSet);
 
     /**
      * for command argument.
@@ -495,6 +491,7 @@ public:
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
     bool opStr(DSState &state) const override;
+    bool opInterp(DSState &state) const override;
 
     void append(DSValue &&obj) {
         this->values.push_back(std::move(obj));
@@ -518,7 +515,6 @@ public:
         return this->curIndex < this->values.size();
     }
 
-    DSValue interp(DSState &ctx, VisitedSet *visitedSet) override;
     DSValue commandArg(DSState &ctx, VisitedSet *visitedSet) override;
 };
 
@@ -699,6 +695,7 @@ struct Tuple_Object : public BaseObject {
     std::string toString(DSState &ctx, VisitedSet *visitedSet) override;
     std::string toString() const override;
     bool opStr(DSState &state) const override;
+    bool opInterp(DSState &state) const override;
 
     unsigned int getElementSize() const {
         return this->type->getFieldSize();
@@ -712,7 +709,6 @@ struct Tuple_Object : public BaseObject {
         return this->fieldTable[elementIndex];
     }
 
-    DSValue interp(DSState &ctx, VisitedSet *visitedSet) override;
     DSValue commandArg(DSState &ctx, VisitedSet *visitedSet) override;
 };
 

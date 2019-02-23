@@ -191,7 +191,18 @@ YDSH_METHOD to_str(RuntimeContext & ctx) {
 //!bind: function $OP_INTERP($this : Any) : String
 YDSH_METHOD to_interp(RuntimeContext & ctx) {
     SUPPRESS_WARNING(to_interp);
-    RET(LOCAL(0)->interp(ctx, nullptr));
+    bool hasRet = ctx.toStrBuf.empty();
+    if(!LOCAL(0)->opInterp(ctx)) {
+        ctx.toStrBuf.clear();
+    }
+
+    if(hasRet) {
+        std::string value;
+        std::swap(value, ctx.toStrBuf);
+        RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(value)));
+    } else {
+        RET(DSValue::createInvalid());  // dummy
+    }
 }
 
 
