@@ -208,9 +208,6 @@ static bool checkInvalid(DSState &st, DSValue &v) {
 #define TRY(E) \
 ({ auto v = E; if(state.hasError()) { return false; } std::forward<decltype(v)>(v); })
 
-#define TRY2(E) \
-({ auto v = E; if(state.hasError()) { return DSValue(); } std::forward<decltype(v)>(v); })
-
 
 std::string Array_Object::toString() const {
     std::string str = "[";
