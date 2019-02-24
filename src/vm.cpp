@@ -325,8 +325,8 @@ static DSValue newFD(const DSState &st, int &fd) {
 }
 
 bool DSState::forkAndEval() {
-    const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(*this), ++this->pc()));
-    const unsigned short offset = read16(GET_CODE(*this), this->pc() + 1);
+    const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(*this), this->pc() + 1));
+    const unsigned short offset = read16(GET_CODE(*this), this->pc() + 2);
 
     // flush standard stream due to prevent mixing io buffer
     flushStdFD();
@@ -393,7 +393,7 @@ bool DSState::forkAndEval() {
             redirInToNull();
         }
 
-        this->pc() += 2;
+        this->pc() += 3;
     } else {
         raiseSystemError(*this, EAGAIN, "fork failed");
         return false;

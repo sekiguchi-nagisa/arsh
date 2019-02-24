@@ -157,7 +157,7 @@ void ByteCodeGenerator::emitForkIns(ForkKind kind, const Label &label) {
     this->emitIns(OpCode::FORK);
     this->curBuilder().append8(static_cast<unsigned char>(kind));
     this->curBuilder().append16(0);
-    this->curBuilder().writeLabel(offset + 2, label, offset + 1, CodeEmitter<true>::LabelTarget::_16);
+    this->curBuilder().writeLabel(offset + 2, label, offset, CodeEmitter<true>::LabelTarget::_16);
 }
 
 void ByteCodeGenerator::emitJumpIns(const Label &label) {
