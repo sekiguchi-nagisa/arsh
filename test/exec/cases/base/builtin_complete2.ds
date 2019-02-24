@@ -55,11 +55,11 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 }
 
 # env name
-$assertArray($(env | while(read) {
+$assertArray($(env | while(read -r) {
                         var ss = $REPLY.split('=');
                         $REPLY.indexOf('=') > -1 && echo $ss[0];
                      }).sort(), $(complete 'import-env '))
-$assertArray($(env | grep ^P | while(read) {
+$assertArray($(env | grep ^P | while(read -r) {
                                     var ss = $REPLY.split('=');
                                     $REPLY.indexOf('=') > -1 && echo $ss[0];
                                }).sort(), $(complete 'import-env P'))
