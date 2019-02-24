@@ -812,11 +812,11 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
 
     this->symbolTable.enterScope();
 
-    auto &type = this->checkTypeExactly(node.getNodes()[size - 1]);
     if(node.isLastPipe()) { // register pipeline state
         this->addEntry(node, "%%pipe", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
         node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
     }
+    auto &type = this->checkTypeExactly(node.getNodes()[size - 1]);
 
     this->symbolTable.exitScope();
     node.setType(node.isLastPipe() ? type : this->symbolTable.get(TYPE::Boolean));

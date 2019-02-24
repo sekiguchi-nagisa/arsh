@@ -4,7 +4,8 @@ assert (echo | 34) is Int
 
 var c = 0
 echo -e 'a\nb\nc\nd\ne' | while (read) {
-    if $REPLY == 'c' {
+    var ch = 'c'
+    if $REPLY == $ch {
         break
     }
     $c++
