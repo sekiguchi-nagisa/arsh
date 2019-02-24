@@ -67,6 +67,10 @@ public:
         bool s = Directive::init(this->getSourceName().c_str(), d);
         ASSERT_TRUE(s);
 
+        if(d.isIgnoredPlatform()) {
+            return;
+        }
+
         const char *scriptName = this->getSourceName().c_str();
         ProcBuilder builder(BIN_PATH);
         builder.addArg("--status-log").addArg(this->getTempFileName());

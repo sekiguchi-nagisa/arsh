@@ -237,6 +237,18 @@ TEST_F(DirectiveTest, envs3) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2", this->getDirective().getEnvs().find("huga")->second));
 }
 
+TEST_F(DirectiveTest, ignored1) {
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(this->getDirective().isIgnoredPlatform()));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'linux|cygwin|wsl|darwin')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->getDirective().isIgnoredPlatform()));
+}
+
+TEST_F(DirectiveTest, ignored2) {
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(this->getDirective().isIgnoredPlatform()));
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'hogehohfueir345')", true));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(this->getDirective().isIgnoredPlatform()));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

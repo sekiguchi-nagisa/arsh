@@ -68,6 +68,11 @@ private:
 
     std::unordered_map<std::string, std::string> envs;
 
+    /**
+     * if true, suppress execution.
+     */
+    bool ignoredPlatform{false};
+
 public:
     ~Directive();
 
@@ -143,10 +148,36 @@ public:
         return this->envs;
     }
 
+    void setIgnoredPlatform(bool ignore) {
+        this->ignoredPlatform = ignore;
+    }
+
+    bool isIgnoredPlatform() const {
+        return this->ignoredPlatform;
+    }
+
     static bool init(const char *fileName, Directive &d);
 
     static bool init(const char *sourceName, const char *src, Directive &d);
 };
+
+#define EACH_PLATFORM_CONSTANT(OP) \
+    OP(LINUX) \
+    OP(DARWIN) \
+    OP(CYGWIN) \
+    OP(WSL) \
+    OP(UNKNOWN)
+
+
+enum class PlatformConstant {
+#define GEN_ENUM(E) E,
+    EACH_PLATFORM_CONSTANT(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(PlatformConstant c);
+
+PlatformConstant detectPlatform();
 
 } // namespace directive
 } // namespace ydsh
