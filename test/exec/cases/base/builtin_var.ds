@@ -24,7 +24,7 @@ assert $UID is Uint
 assert $EUID is Uint
 
 # uname
-assert($OSTYPE == "$(uname -s)")
+assert($OSTYPE == "$(uname -s)" || $/cygwin/i =~ $OSTYPE)
 assert $MACHTYPE == "$(uname -m)"
 
 # random number, at least 32767 (RAND_MAX)
