@@ -68,6 +68,7 @@ public:
         ASSERT_TRUE(s);
 
         if(d.isIgnoredPlatform()) {
+            fprintf(stderr, "ignore execution: %s\n", this->getSourceName().c_str());
             return;
         }
 
