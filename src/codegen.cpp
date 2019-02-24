@@ -1277,6 +1277,8 @@ static void dumpCodeImpl(FILE *fp, const SymbolTable &symbolTable,
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD) {
                     fprintf(fp, "  %d  %d", read16(c.getCode(), i + 1), read16(c.getCode(), i + 3));
+                } else if(code == OpCode::FORK){
+                    fprintf(fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
                 } else {
                     switch(byteSize) {
                     case 1:
