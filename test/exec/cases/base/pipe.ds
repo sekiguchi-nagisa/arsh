@@ -21,3 +21,5 @@ var t = echo | ($PID, $PPID)
 assert $t._0 == $PID
 assert $t._1 == $PPID
 
+# ignore read pipe
+cat /dev/random | {}

@@ -24,13 +24,15 @@
 namespace ydsh {
 
 PipelineState::~PipelineState() {
+    /**
+     * due to prevent write blocking of child processes, force to restore stdin before call wait.
+     * in some situation, raise SIGPIPE in child processes.
+     */
+    bool restored = this->entry->restoreStdin();
     auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
     this->entry->wait(waitOp);
 
-    /**
-     * due to prevent SIGPIPE, restore stdin after call wait
-     */
-    if(this->entry->restoreStdin()) {
+    if(restored) {
         int ret = tryToBeForeground(this->state);
         LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
     }
