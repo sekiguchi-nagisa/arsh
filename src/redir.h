@@ -57,9 +57,9 @@ inline unsigned int getChangedFD(RedirOP op) {
     EACH_RedirOP(GEN_CASE)
 #undef GEN_CASE
     case RedirOP::NOP:
-        return 0;
+        break;
     }
-    return 0;  // normally unreachable. due to suppress gcc warning
+    return 0;
 }
 
 inline void tryToDup(int srcFd, int targetFd) {
