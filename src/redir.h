@@ -93,6 +93,18 @@ inline void tryToPipe(pipe_t &pipefds, bool openPipe) {
     }
 }
 
+inline void initAllPipe(unsigned int size, pipe_t *pipes) {
+    for(unsigned int i = 0; i < size; i++) {
+        tryToPipe(pipes[i], true);
+    }
+}
+
+inline void closeAllPipe(int size, pipe_t *pipefds) {
+    for(int i = 0; i < size; i++) {
+        tryToClose(pipefds[i]);
+    }
+}
+
 struct PipeSet {
     pipe_t in;
     pipe_t out;
@@ -127,22 +139,6 @@ inline PipeSet initPipeSet(ForkKind kind) {
     tryToPipe(set.in, useInPipe);
     tryToPipe(set.out, useOutPipe);
     return set;
-}
-
-inline void initPipe(unsigned int size, pipe_t *pipes) {
-    for(unsigned int i = 0; i < size; i++) {
-        if(pipe(pipes[i]) < 0) {  // create pipe
-            perror("pipe creation error");
-            exit(1);
-        }
-    }
-}
-
-inline void closeAllPipe(int size, pipe_t *pipefds) {
-    for(int i = 0; i < size; i++) {
-        close(pipefds[i][0]);
-        close(pipefds[i][1]);
-    }
 }
 
 inline void redirInToNull() {

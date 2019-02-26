@@ -757,7 +757,7 @@ bool DSState::callPipeline(bool lastPipe) {
     assert(pipeSize > 0);
 
     int pipefds[pipeSize][2];
-    initPipe(pipeSize, pipefds);
+    initAllPipe(pipeSize, pipefds);
 
     // fork
     Proc childs[procSize];

@@ -52,7 +52,7 @@ RedirConfig::~RedirConfig() {
 
 static int doIOHere(const String_Object &value) {
     pipe_t pipe[1];
-    initPipe(1, pipe);
+    initAllPipe(1, pipe);
 
     dup2(pipe[0][READ_PIPE], STDIN_FILENO);
 
