@@ -564,11 +564,11 @@ private:
      *             |     offset    |
      */
     bool prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvObj,
-                                       DSValue &&restoreFD, const flag8_set_t attr);
+                                       DSValue &&restoreFD, flag8_set_t attr);
 
     bool forkAndEval();
 
-    int forkAndExec(const char *cmdName, Command cmd, char **const argv, DSValue &&redirConfig);
+    int forkAndExec(const char *cmdName, Command cmd, char **argv, DSValue &&redirConfig);
 
     bool callCommand(Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
 
