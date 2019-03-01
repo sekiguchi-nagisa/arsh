@@ -155,9 +155,9 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
     case RedirOP::HERE_STR:
         return doIOHere(*typeAs<String_Object>(pair.second));
     case RedirOP::NOP:
-        return 0;   // do nothing
+        break;
     }
-    return 0;   // normally unreachable, but gcc requires this return statement.
+    return 0;   // do nothing
 }
 
 bool RedirConfig::redirect(DSState &st) {
