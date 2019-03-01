@@ -110,7 +110,7 @@ int Proc::wait(WaitOp op, bool showSignal) {
         }
 
         // dump waitpid result
-        LOG_IF(DUMP_WAIT, {
+        LOG_EXPR(DUMP_WAIT, [&]{
             std::string str;
             char *str1 = nullptr;
             if(asprintf(&str1, "opt: %s\npid: %d, before state: %s\nret: %d",
@@ -141,7 +141,7 @@ int Proc::wait(WaitOp op, bool showSignal) {
                     str += "RUNNING\nkind: CONTINUED";
                 }
             }
-            LOG(DUMP_WAIT, "%s", str.c_str());
+            return str;
         });
 
         if(ret > 0) {
