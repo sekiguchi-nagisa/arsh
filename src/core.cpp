@@ -1210,7 +1210,7 @@ static std::pair<CompletorKind, std::string> selectCompletor(const std::string &
     auto node = applyAndGetLatest(parser);
     auto pair = selectCompletor(parser, node, cursor);
 
-    LOG_IF(DUMP_CONSOLE, {
+    LOG_EXPR(DUMP_CONSOLE, [&]{
         std::string str = "token size: ";
         str += std::to_string(tracker.getTokenPairs().size());
         str += "\n";
@@ -1225,7 +1225,7 @@ static std::pair<CompletorKind, std::string> selectCompletor(const std::string &
         }
         str += "ckind: ";
         str += toString(pair.first);
-        LOG(DUMP_CONSOLE, "%s", str.c_str());
+        return str;
     });
 
     return pair;

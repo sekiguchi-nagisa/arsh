@@ -53,7 +53,7 @@ int xexecve(const char *filePath, char **argv, char *const *envp) {
         envp = environ;
     }
 
-    LOG_IF(DUMP_EXEC, {
+    LOG_EXPR(DUMP_EXEC, [&]{
         std::string str = filePath;
         str += ", [";
         for(unsigned int i = 0; argv[i] != nullptr; i++) {
@@ -63,7 +63,7 @@ int xexecve(const char *filePath, char **argv, char *const *envp) {
             str += argv[i];
         }
         str += "]";
-        LOG(DUMP_EXEC, "%s", str.c_str());
+        return str;
     });
 
     // execute external command
