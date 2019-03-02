@@ -17,6 +17,7 @@
 #include <sys/utsname.h>
 
 #include <regex>
+#include <fstream>
 
 #include <misc/util.hpp>
 #include <misc/flag_util.hpp>
@@ -57,6 +58,19 @@ static std::string toString(PlatformType c) {
     return str;
 }
 
+static bool detectContainer() {
+    std::ifstream stream("/proc/1/cgroup");
+    if(!stream) {
+        return false;
+    }
+    for(std::string line; std::getline(stream, line); ) {
+        if(reSearch("docker|lxc", line)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static PlatformType detectImpl() {
     struct utsname name{};
     if(uname(&name) == -1) {
@@ -68,7 +82,11 @@ static PlatformType detectImpl() {
         if(reSearch("microsoft", name.release)) {
             return PlatformType::WSL;
         }
-        return PlatformType::LINUX;
+        auto p = PlatformType::LINUX;
+        if(detectContainer()) {
+            p |= PlatformType::CONTAINER;
+        }
+        return p;
     }
     if(reSearch("darwin", sysName)) {
         return PlatformType::DARWIN;

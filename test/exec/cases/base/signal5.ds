@@ -1,0 +1,18 @@
+#$test($status = 1, $ignored = 'container')
+
+# kill
+
+var e = 34 as Any
+try {
+    %'HUP'.kill(1);
+    assert $false;
+} catch $a {
+    $e = $a
+}
+
+if $e is SystemError {
+    assert $e.message() == if $OSTYPE !~ $/^cygwin/i { 'HUP: Operation not permitted'; }
+                                                else { 'HUP: No such process'; }
+} else {
+    assert $false
+}

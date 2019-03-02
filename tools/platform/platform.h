@@ -21,11 +21,12 @@ namespace ydsh {
 namespace platform {
 
 #define EACH_PLATFORM_TYPE(OP) \
-    OP(UNKNOWN, 0) \
-    OP(LINUX,   1 << 0) \
-    OP(DARWIN,  1 << 1) \
-    OP(CYGWIN,  1 << 2) \
-    OP(WSL,     1 << 3)
+    OP(UNKNOWN,   0) \
+    OP(LINUX,     1 << 0) \
+    OP(CONTAINER, 1 << 1) \
+    OP(DARWIN,    1 << 2) \
+    OP(CYGWIN,    1 << 3) \
+    OP(WSL,       1 << 4)
 
 
 enum class PlatformType : unsigned int {
