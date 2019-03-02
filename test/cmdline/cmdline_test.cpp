@@ -929,6 +929,10 @@ static std::string makeLineMarker(const std::string &line) {
 }
 
 TEST_F(CmdlineTest2, import1) {
+    if(hasFlag(platform::detect(), platform::PlatformType::CYGWIN)) {
+        return;
+    }
+
     auto fileName = this->createTempFile("target.ds", "throw new Error('invalid!!')");
     chmod(fileName.c_str(), ~S_IRUSR);
 
