@@ -161,24 +161,6 @@ public:
     static bool init(const char *sourceName, const char *src, Directive &d);
 };
 
-#define EACH_PLATFORM_CONSTANT(OP) \
-    OP(LINUX) \
-    OP(DARWIN) \
-    OP(CYGWIN) \
-    OP(WSL) \
-    OP(UNKNOWN)
-
-
-enum class PlatformConstant {
-#define GEN_ENUM(E) E,
-    EACH_PLATFORM_CONSTANT(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-const char *toString(PlatformConstant c);
-
-PlatformConstant detectPlatform();
-
 } // namespace directive
 } // namespace ydsh
 

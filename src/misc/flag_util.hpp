@@ -32,22 +32,16 @@ using flag32_t = unsigned int;
 
 template <typename T>
 inline void setFlag(T &set, T flag) {
-    static_assert(std::is_unsigned<T>::value, "must be unsigned type");
-
     set |= flag;
 }
 
 template <typename T>
 inline void unsetFlag(T &set, T flag) {
-    static_assert(std::is_unsigned<T>::value, "must be unsigned type");
-
     set &= ~flag;
 }
 
 template <typename T>
 inline bool hasFlag(T set, T flag) {
-    static_assert(std::is_unsigned<T>::value, "must be unsigned type");
-
     return (set & flag) == flag;
 }
 

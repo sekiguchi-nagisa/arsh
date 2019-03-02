@@ -17,11 +17,9 @@
 #include <fstream>
 #include <sstream>
 #include <functional>
-#include <regex>
-
-#include <sys/utsname.h>
 
 #include "directive.h"
+#include "../platform/platform.h"
 
 #include <misc/fatal.h>
 #include <parser.h>
@@ -62,12 +60,6 @@ static std::pair<std::string, unsigned int> extractDirective(std::istream &input
         }
     }
     return {std::string(), 0};
-}
-
-static bool reSearch(const char *reStr, const std::string &value) {
-    std::regex re(reStr, std::regex_constants::ECMAScript | std::regex_constants::icase);
-    std::smatch match;
-    return std::regex_search(value, match, re);
 }
 
 using AttributeHandler = std::function<void(Node &, Directive &)>;
@@ -204,7 +196,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
 
     this->addHandler("ignored", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
         auto &str = this->checkedCast<StringNode>(node).getValue();
-        d.setIgnoredPlatform(reSearch(toString(detectPlatform()), str));
+        d.setIgnoredPlatform(platform::contain(str));
     });
 
     std::unordered_set<std::string> foundAttrSet;
@@ -380,37 +372,6 @@ bool Directive::init(const char *fileName, Directive &d) {
 bool Directive::init(const char *sourceName, const char *src, Directive &d) {
     std::istringstream input(src);
     return initDirective(sourceName, input, d);
-}
-
-const char *toString(PlatformConstant c) {
-    const char *table[] = {
-#define GEN_STR(E) #E,
-            EACH_PLATFORM_CONSTANT(GEN_STR)
-#undef GEN_STR
-    };
-    return table[static_cast<unsigned int>(c)];
-}
-
-PlatformConstant detectPlatform() {
-    struct utsname name{};
-    if(uname(&name) == -1) {
-        return PlatformConstant::UNKNOWN;
-    }
-
-    std::string sysName = name.sysname;
-    if(reSearch("linux", sysName)) {
-        if(reSearch("microsoft", name.release)) {
-            return PlatformConstant::WSL;
-        }
-        return PlatformConstant::LINUX;
-    }
-    if(reSearch("darwin", sysName)) {
-        return PlatformConstant::DARWIN;
-    }
-    if(reSearch("cygwin", sysName)) {
-        return PlatformConstant::CYGWIN;
-    }
-    return PlatformConstant::UNKNOWN;
 }
 
 } // namespace directive
