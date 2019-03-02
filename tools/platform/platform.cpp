@@ -26,36 +26,19 @@
 namespace ydsh {
 namespace platform {
 
-static bool reSearch(const std::string &reStr, const std::string &value) {
+static bool reSearch(const char *reStr, const std::string &value) {
     std::regex re(reStr, std::regex_constants::ECMAScript | std::regex_constants::icase);
     std::smatch match;
     return std::regex_search(value, match, re);
 }
 
-static std::string toString(PlatformType c) {
+const char *toString(PlatformType c) {
     const char *table[] = {
-#define GEN_STR(E, B) #E,
+#define GEN_STR(E) #E,
             EACH_PLATFORM_TYPE(GEN_STR)
 #undef GEN_STR
     };
-
-    unsigned int bits[] = {
-#define GEN_BIT(E, B) B,
-            EACH_PLATFORM_TYPE(GEN_BIT)
-#undef GEN_BIT
-    };
-
-    std::string str;
-    for(unsigned int i = 0; i < arraySize(bits); i++) {
-        auto v = bits[i];
-        if(hasFlag(static_cast<unsigned int>(c), v)) {
-            if(!str.empty()) {
-                str += "|";
-            }
-            str += table[i];
-        }
-    }
-    return str;
+    return table[static_cast<unsigned int>(c)];
 }
 
 static bool detectContainer() {
@@ -82,11 +65,10 @@ static PlatformType detectImpl() {
         if(reSearch("microsoft", name.release)) {
             return PlatformType::WSL;
         }
-        auto p = PlatformType::LINUX;
         if(detectContainer()) {
-            p |= PlatformType::CONTAINER;
+            return PlatformType::CONTAINER;
         }
-        return p;
+        return PlatformType::LINUX;
     }
     if(reSearch("darwin", sysName)) {
         return PlatformType::DARWIN;

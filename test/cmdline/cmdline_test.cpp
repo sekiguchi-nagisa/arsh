@@ -322,7 +322,7 @@ TEST_F(CmdlineTest, exec) {
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PWD)\" == \"$(printenv OLDPWD)\")"), 0));
 
-    if(hasFlag(platform::detect(), platform::PlatformType::CYGWIN)) {
+    if(platform::detect() == platform::PlatformType::CYGWIN) {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env WINDIR)"), 0));
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env SYSTEMROOT)"), 0));
 
@@ -929,7 +929,7 @@ static std::string makeLineMarker(const std::string &line) {
 }
 
 TEST_F(CmdlineTest2, import1) {
-    if(hasFlag(platform::detect(), platform::PlatformType::CYGWIN)) {
+    if(platform::detect() == platform::PlatformType::CYGWIN) {
         return;
     }
 

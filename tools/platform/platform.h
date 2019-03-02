@@ -21,42 +21,29 @@ namespace ydsh {
 namespace platform {
 
 #define EACH_PLATFORM_TYPE(OP) \
-    OP(UNKNOWN,   (1 << 0)) \
-    OP(LINUX,     (1 << 1)) \
-    OP(CONTAINER, (1 << 2)) \
-    OP(DARWIN,    (1 << 3)) \
-    OP(CYGWIN,    (1 << 4)) \
-    OP(WSL,       (1 << 5))
+    OP(UNKNOWN) /* unknown platform */\
+    OP(LINUX) /* linux (not container) */\
+    OP(CONTAINER) /* linux container (docker/LXC) */ \
+    OP(DARWIN) /* MacOSX */\
+    OP(CYGWIN) /* Cygwin */\
+    OP(WSL) /* Windows Subsystem for Linux */
 
 
 enum class PlatformType : unsigned int {
-#define GEN_ENUM(E, B) E = B,
+#define GEN_ENUM(E) E,
     EACH_PLATFORM_TYPE(GEN_ENUM)
 #undef GEN_ENUM
 };
 
-inline PlatformType operator|(PlatformType x, PlatformType y) {
-    return static_cast<PlatformType>(static_cast<unsigned int>(x) | static_cast<unsigned int>(y));
+inline bool isLinux(PlatformType type) {
+    return type == PlatformType::LINUX || type == PlatformType::CONTAINER;
 }
 
-inline PlatformType operator&(PlatformType x, PlatformType y) {
-    return static_cast<PlatformType>(static_cast<unsigned int>(x) & static_cast<unsigned int>(y));
+inline bool isWindows(PlatformType type) {
+    return type == PlatformType::WSL || type == PlatformType::CYGWIN;
 }
 
-inline PlatformType operator~(PlatformType x) {
-    return static_cast<PlatformType>(~static_cast<unsigned int>(x));
-}
-
-inline PlatformType &operator|=(PlatformType &x, PlatformType y) {
-    x = (x | y);
-    return x;
-}
-
-inline PlatformType &operator&=(PlatformType &x, PlatformType y) {
-    x = (x & y);
-    return x;
-}
-
+const char *toString(PlatformType c);
 
 PlatformType detect();
 
