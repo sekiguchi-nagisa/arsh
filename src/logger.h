@@ -91,6 +91,5 @@ do { using namespace ydsh; \
     } \
 } while(false)
 
-#define LOG_EXPR(P, FUNC) LOG_IF(P, { LOG(P, "%s", FUNC().c_str()); })
 
 #endif //YDSH_LOGGER_H

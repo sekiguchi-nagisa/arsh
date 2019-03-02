@@ -112,9 +112,7 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
     }
 
     // print body
-    fputs(header, this->fp);
-    fputs(str, this->fp);
-    fputc('\n', this->fp);
+    fprintf(this->fp, "%s%s\n", header, str);
     fflush(this->fp);
     free(str);
 
