@@ -34,6 +34,29 @@ enum class PlatformType : unsigned int {
 #undef GEN_ENUM
 };
 
+inline PlatformType operator|(PlatformType x, PlatformType y) {
+    return static_cast<PlatformType>(static_cast<unsigned int>(x) | static_cast<unsigned int>(y));
+}
+
+inline PlatformType operator&(PlatformType x, PlatformType y) {
+    return static_cast<PlatformType>(static_cast<unsigned int>(x) & static_cast<unsigned int>(y));
+}
+
+inline PlatformType operator~(PlatformType x) {
+    return static_cast<PlatformType>(~static_cast<unsigned int>(x));
+}
+
+inline PlatformType &operator|=(PlatformType &x, PlatformType y) {
+    x = (x | y);
+    return x;
+}
+
+inline PlatformType &operator&=(PlatformType &x, PlatformType y) {
+    x = (x & y);
+    return x;
+}
+
+
 PlatformType detect();
 
 /**
