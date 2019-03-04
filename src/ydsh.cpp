@@ -405,7 +405,6 @@ static void initBuiltinVar(DSState *state) {
      */
     bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Uint32), 0),
                  FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
-    srand(static_cast<unsigned int>(time(nullptr)));    // init rand for $RANDOM
 
     /**
      * dummy object for signal handler setting
