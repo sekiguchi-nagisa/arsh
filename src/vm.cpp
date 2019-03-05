@@ -584,7 +584,7 @@ bool DSState::callCommand(Command cmd, DSValue &&argvObj, DSValue &&redirConfig,
             xexecve(cmd.filePath, argv, nullptr);
             raiseCmdError(*this, cmdName, errno);
         }
-        return !this->getThrownObject();
+        return !this->hasError();
     }
     }
     return true;    // normally unreachable, but need to suppress gcc warning.
