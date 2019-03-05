@@ -68,7 +68,6 @@ namespace ydsh {
     OP(BRANCH       , 2, -1) \
     OP(GOTO         , 4,  0) \
     OP(THROW        , 0,  0) \
-    OP(EXIT_SHELL   , 0,  0) \
     OP(ENTER_FINALLY, 2,  1) \
     OP(EXIT_FINALLY , 0, -1) \
     OP(LOOKUP_HASH  , 0, -2) \

@@ -78,6 +78,7 @@ static int builtin_cd(DSState &state, Array_Object &argvObj);
 static int builtin_check_env(DSState &state, Array_Object &argvObj);
 static int builtin_complete(DSState &state, Array_Object &argvObj);
 static int builtin_echo(DSState &state, Array_Object &argvObj);
+static int builtin_exit(DSState &state, Array_Object &argvObj);
 static int builtin_false(DSState &state, Array_Object &argvObj);
 static int builtin_fg_bg(DSState &state, Array_Object &argvObj);
 static int builtin_hash(DSState &state, Array_Object &argvObj);
@@ -155,7 +156,7 @@ static constexpr struct {
                 "    Options:\n"
                 "        -c    cleaner environmental variable\n"
                 "        -a    specify set program name(default is FILE)"},
-        {"exit", nullptr, "[n]",
+        {"exit", builtin_exit, "[n]",
                 "    Exit the shell with a status of N.  If N is omitted, the exit\n"
                 "    status is $?."},
         {"false", builtin_false, "",
@@ -577,6 +578,28 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
         fputc('\n', stdout);
     }
     return 0;
+}
+
+static int builtin_exit(DSState &state, Array_Object &argvObj) {
+    int ret = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
+    if(argvObj.getValues().size() > 1) {
+        const char *num = str(argvObj.getValues()[1]);
+        int status;
+        long value = convertToInt64(num, status);
+        if(status == 0) {
+            ret = value;
+        }
+    }
+
+    if(hasFlag(state.option, DS_OPTION_INTERACTIVE)) {
+        state.jobTable.send(SIGHUP);
+    }
+
+    std::string str("terminated by exit ");
+    str += std::to_string(ret);
+    ret %= 256;
+    raiseError(state, TYPE::_ShellExit, std::move(str), ret);
+    return ret;
 }
 
 static int builtin_true(DSState &, Array_Object &) {

@@ -509,8 +509,6 @@ private:
 
     bool checkAssertion();
 
-    void exitShell(unsigned int status);
-
     const char *loadEnv(bool hasDefault);
 
     /**

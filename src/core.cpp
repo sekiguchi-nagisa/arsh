@@ -190,7 +190,6 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
 }
 
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace) {
-    assert(!st.controlStack.empty());
     auto frame = st.getFrame();
     for(unsigned int callDepth = st.controlStack.size(); callDepth > 0; frame = st.controlStack[--callDepth]) {
         auto &callable = frame.code;

@@ -118,17 +118,6 @@ bool DSState::checkAssertion() {
     return true;
 }
 
-void DSState::exitShell(unsigned int status) {
-    if(hasFlag(this->option, DS_OPTION_INTERACTIVE)) {
-        this->jobTable.send(SIGHUP);
-    }
-
-    std::string str("terminated by exit ");
-    str += std::to_string(status);
-    status %= 256;
-    raiseError(*this, TYPE::_ShellExit, std::move(str), status);
-}
-
 const char *DSState::loadEnv(bool hasDefault) {
     DSValue dValue;
     if(hasDefault) {
@@ -427,15 +416,6 @@ static NativeCode initCode(OpCode op) {
     return NativeCode(code);
 }
 
-static NativeCode initExit() {
-    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 4));
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
-    code[2] = UDC_PARAM_ARGV;
-    code[3] = static_cast<unsigned char>(OpCode::EXIT_SHELL);
-    return NativeCode(code);
-}
-
 Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     Command cmd{};
 
@@ -462,7 +442,6 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
                 {"command", initCode(OpCode::BUILTIN_CMD)},
                 {"eval", initCode(OpCode::BUILTIN_EVAL)},
                 {"exec", initCode(OpCode::BUILTIN_EXEC)},
-                {"exit", initExit()},
         };
         for(auto &e : sb) {
             if(strcmp(cmdName, e.first) == 0) {
@@ -565,8 +544,11 @@ bool DSState::callCommand(Command cmd, DSValue &&argvObj, DSValue &&redirConfig,
     }
     case CmdKind::BUILTIN: {
         int status = cmd.builtinCmd(*this, *array);
-        this->pushExitStatus(status);
         flushStdFD();
+        if(this->hasError()) {
+            return false;
+        }
+        this->pushExitStatus(status);
         return true;
     }
     case CmdKind::EXTERNAL: {
@@ -1233,27 +1215,6 @@ bool DSState::mainLoop() {
             this->throwObject(std::move(obj), 1);
             vmerror;
         }
-        vmcase(EXIT_SHELL) {
-            auto obj = this->pop();
-            auto &type = *obj->getType();
-
-            int ret = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
-            if(type == this->symbolTable.get(TYPE::Int32)) { // normally Int Object
-                ret = typeAs<Int_Object>(obj)->getValue();
-            } else if(type == this->symbolTable.get(TYPE::StringArray)) {    // for builtin exit command
-                auto *arrayObj = typeAs<Array_Object>(obj);
-                if(arrayObj->getValues().size() > 1) {
-                    const char *num = str(arrayObj->getValues()[1]);
-                    int status;
-                    long value = convertToInt64(num, status);
-                    if(status == 0) {
-                        ret = value;
-                    }
-                }
-            }
-            this->exitShell(ret);
-            vmerror;
-        }
         vmcase(ENTER_FINALLY) {
             const unsigned int offset = read16(GET_CODE(*this), this->pc() + 1);
             const unsigned int savedIndex = this->pc() + 2;
@@ -1618,9 +1579,9 @@ int DSState::execBuiltinCommand(char *const argv[]) {
     auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray), std::move(values));
 
     this->clearThrownObject();
-    bool ret = this->callCommand(cmd, std::move(obj), DSValue());
-    assert(ret);
-    (void) ret;
+    if(!this->callCommand(cmd, std::move(obj), DSValue())) {
+        this->loadThrownObject();   // force clear thrownObject
+    }
     if(!this->controlStack.empty()) {
         bool r = this->runMainLoop();
         if(!r) {
