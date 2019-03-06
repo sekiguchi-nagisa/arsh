@@ -580,7 +580,7 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
     return 0;
 }
 
-static int builtin_exit(DSState &state, Array_Object &argvObj) {
+static int parseExitStatus(const DSState &state, const Array_Object &argvObj) {
     int ret = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
     if(argvObj.getValues().size() > 1) {
         const char *num = str(argvObj.getValues()[1]);
@@ -590,6 +590,11 @@ static int builtin_exit(DSState &state, Array_Object &argvObj) {
             ret = value;
         }
     }
+    return ret;
+}
+
+static int builtin_exit(DSState &state, Array_Object &argvObj) {
+    int ret = parseExitStatus(state, argvObj);
 
     if(hasFlag(state.option, DS_OPTION_INTERACTIVE)) {
         state.jobTable.send(SIGHUP);
