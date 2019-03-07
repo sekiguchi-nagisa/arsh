@@ -512,7 +512,7 @@ TEST_F(LexerTest_Lv1, invalid_string_literal) {
 }
 
 TEST_F(LexerTest_Lv1, string_expr1) {
-    const char *text = "\"hello word\"";
+    const char *text = R"("hello word")";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(
             EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello word",
@@ -521,7 +521,7 @@ TEST_F(LexerTest_Lv1, string_expr1) {
 }
 
 TEST_F(LexerTest_Lv1, string_expr2) {
-    const char *text = "\"hello ${a} word\"";
+    const char *text = R"("hello ${a} word")";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(
             EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello ",
@@ -531,7 +531,7 @@ TEST_F(LexerTest_Lv1, string_expr2) {
 }
 
 TEST_F(LexerTest_Lv1, string_expr3) {
-    const char *text = "\"hello\\\"world\"";
+    const char *text = R"("hello\"world")";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(
             EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello\\\"world",
@@ -540,7 +540,7 @@ TEST_F(LexerTest_Lv1, string_expr3) {
 }
 
 TEST_F(LexerTest_Lv1, string_expr4) {
-    const char *text = "\"hello\\$world\"";
+    const char *text = R"("hello\$world")";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(
             EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello\\$world",
@@ -549,7 +549,7 @@ TEST_F(LexerTest_Lv1, string_expr4) {
 }
 
 TEST_F(LexerTest_Lv1, string_expr5) {
-    const char *text = "\"\\\\\"";
+    const char *text = R"("\\")";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(
             EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "\\\\",
@@ -569,7 +569,7 @@ TEST_F(LexerTest_Lv1, string_expr6) {
 }
 
 TEST_F(LexerTest_Lv1, invalid_string_expr) {
-    const char *text = "\"hello$\"";
+    const char *text = R"("hello$")";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(OPEN_DQUOTE, "\"", STR_ELEMENT, "hello", INVALID, "$"));
 }
