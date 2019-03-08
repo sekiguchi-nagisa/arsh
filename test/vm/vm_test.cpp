@@ -49,14 +49,14 @@ protected:
 
 public:
     VMTest() : state(nullptr), inspector() {}
-    virtual ~VMTest() = default;
+    ~VMTest() override = default;
 
-    virtual void SetUp() {
+    void SetUp() override {
         this->state = DSState_create();
         this->state->setVMHook(&this->inspector);
     }
 
-    virtual void TearDown() {
+    void TearDown() override {
         DSState_delete(&this->state);
     }
 
@@ -97,7 +97,7 @@ protected:
         auto &v = this->state->getGlobal(handle->getIndex());
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.isObject()));
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(refCount, v.get()->getRefcount()));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(refCount, v->getRefcount()));
     }
 };
 
