@@ -29,7 +29,6 @@
 #include "constant.h"
 #include "parser.h"
 #include "logger.h"
-#include "cmd.h"
 #include "misc/num.h"
 #include "time_util.h"
 #include "misc/files.h"

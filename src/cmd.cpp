@@ -23,16 +23,11 @@
 
 #include <cstdlib>
 #include <cstdarg>
-#include <unordered_map>
-#include <array>
 #include <ydsh/ydsh.h>
 
 #include "logger.h"
-#include "cmd.h"
 #include "vm.h"
 #include "constant.h"
-#include "symbol_table.h"
-#include "object.h"
 #include "signals.h"
 #include "misc/num.h"
 #include "misc/files.h"

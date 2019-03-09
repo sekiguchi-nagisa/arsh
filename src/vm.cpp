@@ -23,7 +23,6 @@
 
 #include "opcode.h"
 #include "vm.h"
-#include "cmd.h"
 #include "logger.h"
 #include "constant.h"
 #include "redir.h"
