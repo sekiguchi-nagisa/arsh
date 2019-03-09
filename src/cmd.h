@@ -17,11 +17,60 @@
 #ifndef YDSH_CMD_H
 #define YDSH_CMD_H
 
+#include <string>
+
 struct DSState;
 
 namespace ydsh {
 
 class DSCode;
+
+class ShebangLine {
+private:
+    std::string buf;
+    const char *interp{nullptr};
+    const char *arg{nullptr};
+
+public:
+    ShebangLine() = default;
+
+    /**
+     *
+     * @return
+     * if not start with shebang and empty interpreter name, return nullptr.
+     */
+    const char *getInterpPath() const {
+        return this->interp;
+    }
+
+    /**
+     *
+     * @return
+     * if has no argument, return nullptr.
+     */
+    const char *getOptionalArg() const {
+        return this->arg;
+    }
+
+    enum Kind {
+        OK,
+        NOT_OPEN,
+        INVALID,
+    };
+
+    /**
+     * read file content and parse shebang.
+     * @param fileName
+     * must be script path
+     * @return
+     */
+    Kind operator()(const char *fileName);
+};
+
+enum class ExecRet {
+    NON = 0,
+    BAD_INTERP = 1,
+};
 
 /**
  *
@@ -34,7 +83,7 @@ class DSCode;
  * @return
  * if success, not return.
  */
-int xexecve(const char *filePath, char **argv, char *const *envp);
+ExecRet xexecve(const char *filePath, char **argv, char *const *envp);
 
 class Array_Object;
 

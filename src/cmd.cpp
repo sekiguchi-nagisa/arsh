@@ -23,6 +23,7 @@
 
 #include <cstdlib>
 #include <cstdarg>
+#include <fstream>
 #include <ydsh/ydsh.h>
 
 #include "logger.h"
@@ -36,10 +37,60 @@ extern char **environ; //NOLINT
 
 namespace ydsh {
 
-int xexecve(const char *filePath, char **argv, char *const *envp) {
+ShebangLine::Kind ShebangLine::operator()(const char *fileName) {
+    this->interp = nullptr;
+    this->arg = nullptr;
+    this->buf.clear();
+
+    std::ifstream input(fileName);
+    if(!input) {
+        return NOT_OPEN;
+    }
+
+    std::getline(input, this->buf);
+    if(this->buf.size() < 2 || !(this->buf[0] == '#' && this->buf[1] == '!')) {
+        return INVALID;
+    }
+
+    char *ptr = const_cast<char *>(this->buf.c_str()) + 2;
+    for(; *ptr != '\0' && *ptr == ' '; ++ptr);
+    if(*ptr) {
+        this->interp = ptr;
+
+        // find optional argument
+        for(; *ptr != '\0' && *ptr != ' '; ++ptr);  // find end of interpreter name
+        if(*ptr == '\0') {
+            return OK;
+        }
+
+        *ptr = '\0';
+        ++ptr;
+        for(; *ptr != '\0' && *ptr == ' '; ++ptr);  // skip more spaces
+        if(*ptr != '\0') {
+            this->arg = ptr;
+        }
+        return OK;
+    }
+    return INVALID;
+}
+
+static std::string format(const char *filePath, char **argv) {
+    std::string str = filePath;
+    str += ", [";
+    for(unsigned int i = 0; argv[i] != nullptr; i++) {
+        if(i > 0) {
+            str += ", ";
+        }
+        str += argv[i];
+    }
+    str += "]";
+    return str;
+}
+
+ExecRet xexecve(const char *filePath, char **argv, char *const *envp) {
     if(filePath == nullptr) {
         errno = ENOENT;
-        return -1;
+        return ExecRet::NON;
     }
 
     // set env
@@ -48,21 +99,52 @@ int xexecve(const char *filePath, char **argv, char *const *envp) {
         envp = environ;
     }
 
-    LOG_EXPR(DUMP_EXEC, [&]{
-        std::string str = filePath;
-        str += ", [";
-        for(unsigned int i = 0; argv[i] != nullptr; i++) {
-            if(i > 0) {
-                str += ", ";
-            }
-            str += argv[i];
-        }
-        str += "]";
-        return str;
-    });
+    LOG(DUMP_EXEC, "%s", format(filePath, argv).c_str());
 
     // execute external command
-    return execve(filePath, argv, envp);
+    execve(filePath, argv, envp);
+
+    int oldErrno = errno;
+    if(oldErrno == ENOEXEC || oldErrno == ENOENT) {
+        const char *newFilePath = "/bin/sh";
+
+        ShebangLine line;
+        auto ret = line(filePath);
+        switch(ret) {
+        case ShebangLine::NOT_OPEN:
+            errno = oldErrno;
+            return ExecRet ::NON;
+        case ShebangLine::INVALID:
+            break;
+        case ShebangLine::OK:
+            newFilePath = line.getInterpPath();
+            break;
+        }
+
+        unsigned int argc = 0;
+        for(; argv[argc] != nullptr; argc++);
+        unsigned int size = argc + 1 + (line.getOptionalArg() != nullptr ? 1 : 0);
+        char *newArgv[size + 1];
+        newArgv[0] = const_cast<char *>(newFilePath);
+        newArgv[1] = const_cast<char *>(filePath);
+        unsigned int index = 2;
+        if(line.getOptionalArg() != nullptr) {
+            newArgv[index] = const_cast<char *>(line.getOptionalArg());
+            index++;
+        }
+        for(unsigned int i = 1; i < argc; i++) {
+            newArgv[index] = argv[i];
+            index++;
+        }
+        newArgv[size] = nullptr;
+
+        LOG(DUMP_EXEC, "%s", format(newFilePath, newArgv).c_str());
+
+        execve(newFilePath, newArgv, envp);
+        return ret == ShebangLine::INVALID ? ExecRet::NON : ExecRet::BAD_INTERP;
+    }
+    errno = oldErrno;
+    return ExecRet::NON;
 }
 
 
