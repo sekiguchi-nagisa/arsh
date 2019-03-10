@@ -1,0 +1,3 @@
+#$test($status = 137, $out = '', $err = $'Killed\n')
+
+sh -c 'kill -s kill $$'

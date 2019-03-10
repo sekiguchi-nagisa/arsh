@@ -1,0 +1,12 @@
+
+# no splitting
+# not terminate
+echo -e hello | {
+    read -u 0;
+    assert $? == 0 : "$?"
+    assert $REPLY == "hello"
+    read -u 0
+    assert $? == 1
+}
+
+true

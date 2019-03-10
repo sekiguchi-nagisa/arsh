@@ -1,0 +1,7 @@
+#$test($status = 2, $out = '', $err = '')
+
+cat /dev/random | grep 2> /dev/null
+
+assert $? == 2
+
+# first pipe is terminated by SIGPIPE, but not show signal terminated message.
