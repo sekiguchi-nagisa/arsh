@@ -78,6 +78,11 @@ public:
 
 private:
     void addHandler(const char *attributeName, DSType &type, AttributeHandler &&handler);
+
+    void addHandler(const char *attributeName, TYPE type, AttributeHandler &&handler) {
+        this->addHandler(attributeName, this->symbolTable.get(type), std::move(handler));
+    }
+
     void addAlias(const char *alias, const char *attr);
     unsigned int resolveStatus(const StringNode &node);
 
@@ -133,42 +138,42 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         throw createError(node, str);
     }
 
-    this->addHandler("status", this->symbolTable.get(TYPE::Int32), [&](Node &node, Directive &d) {
+    this->addHandler("status", TYPE::Int32, [&](Node &node, Directive &d) {
         d.setStatus(this->checkedCast<NumberNode>(node).getIntValue());
     });
 
-    this->addHandler("result", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+    this->addHandler("result", TYPE::String, [&](Node &node, Directive &d) {
         d.setResult(this->resolveStatus(this->checkedCast<StringNode>(node)));
     });
 
-    this->addHandler("params", this->symbolTable.get(TYPE::StringArray), [&](Node &node, Directive &d) {
+    this->addHandler("params", TYPE::StringArray, [&](Node &node, Directive &d) {
         auto &value = this->checkedCast<ArrayNode>(node);
         for(auto &e : value.getExprNodes()) {
             d.appendParam(this->checkedCast<StringNode>(*e).getValue());
         }
     });
 
-    this->addHandler("lineNum", this->symbolTable.get(TYPE::Int32), [&](Node &node, Directive &d) {
+    this->addHandler("lineNum", TYPE::Int32, [&](Node &node, Directive &d) {
         d.setLineNum(this->checkedCast<NumberNode>(node).getIntValue());
     });
 
-    this->addHandler("errorKind", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+    this->addHandler("errorKind", TYPE::String, [&](Node &node, Directive &d) {
         d.setErrorKind(this->checkedCast<StringNode>(node).getValue());
     });
 
-    this->addHandler("in", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+    this->addHandler("in", TYPE::String, [&](Node &node, Directive &d) {
         d.setIn(this->checkedCast<StringNode>(node).getValue());
     });
 
-    this->addHandler("out", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+    this->addHandler("out", TYPE::String, [&](Node &node, Directive &d) {
         d.setOut(this->checkedCast<StringNode>(node).getValue());
     });
 
-    this->addHandler("err", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+    this->addHandler("err", TYPE::String, [&](Node &node, Directive &d) {
         d.setErr(this->checkedCast<StringNode>(node).getValue());
     });
 
-    this->addHandler("fileName", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+    this->addHandler("fileName", TYPE::String, [&](Node &node, Directive &d) {
         if(node.is(NodeKind::Var) &&
            this->checkedCast<VarNode>(node).getVarName() == "0") {
             d.setFileName(this->sourceName.c_str());
@@ -198,7 +203,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     });
     this->addAlias("env", "envs");
 
-    this->addHandler("ignored", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+    this->addHandler("ignored", TYPE::String, [&](Node &node, Directive &d) {
         auto &str = this->checkedCast<StringNode>(node).getValue();
         d.setIgnoredPlatform(platform::contain(str));
     });
