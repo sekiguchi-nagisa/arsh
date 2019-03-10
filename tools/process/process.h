@@ -43,7 +43,7 @@ struct WaitStatus {
 
     int toShellStatus() const {
         int status = this->value;
-        if(this->value == SIGNALED || this->value == STOPPED) {
+        if(this->kind == SIGNALED || this->kind == STOPPED) {
             status += 128;
         }
         return status;
