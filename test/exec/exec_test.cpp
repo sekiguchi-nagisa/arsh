@@ -81,6 +81,9 @@ public:
         builder.addArgs(d.getParams());
 
         // set IO config
+        if(!d.getIn().empty()) {
+            builder.setIn(IOConfig::PIPE);
+        }
         if(d.getOut()) {
             builder.setOut(IOConfig::PIPE);
         }
@@ -97,7 +100,14 @@ public:
         }
 
         // execute
-        auto output = builder().waitAndGetResult(false);
+        auto handle = builder();
+        if(!d.getIn().empty()) {
+            if(write(handle.in(), d.getIn().c_str(), d.getIn().size()) < 0) {
+                fatal_perror("");
+            }
+            close(handle.in());
+        }
+        auto output = handle.waitAndGetResult(false);
         int ret = output.status.toShellStatus();
 
         // get internal status

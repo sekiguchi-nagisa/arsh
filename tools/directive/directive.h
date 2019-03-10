@@ -51,6 +51,12 @@ private:
     std::string errorKind;
 
     /**
+     * indicate stdin value. the size must be under PIPE_BUF.
+     * if not specified stdin value, is empty string
+     */
+    std::string in;
+
+    /**
      * indicate stdout value
      */
     char *out{nullptr};
@@ -114,6 +120,14 @@ public:
 
     const std::string &getErrorKind() const {
         return this->errorKind;
+    }
+
+    void setIn(const std::string &str) {
+        this->in = str;
+    }
+
+    const std::string &getIn() const {
+        return this->in;
     }
 
     void setOut(const std::string &str) {

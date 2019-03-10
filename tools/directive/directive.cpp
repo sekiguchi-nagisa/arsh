@@ -156,6 +156,10 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         d.setErrorKind(this->checkedCast<StringNode>(node).getValue());
     });
 
+    this->addHandler("in", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
+        d.setIn(this->checkedCast<StringNode>(node).getValue());
+    });
+
     this->addHandler("out", this->symbolTable.get(TYPE::String), [&](Node &node, Directive &d) {
         d.setOut(this->checkedCast<StringNode>(node).getValue());
     });

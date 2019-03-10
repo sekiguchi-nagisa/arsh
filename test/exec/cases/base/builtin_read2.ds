@@ -1,0 +1,12 @@
+
+#$test($in = $'hello world!!\n', $status = 1)
+
+# read command status
+# if read success, return 0
+# if read failed (error or end of file), return 1
+
+read;
+assert $? == 0
+assert $REPLY == "hello world!!"
+read;
+assert $? == 1

@@ -524,21 +524,10 @@ TEST_F(CmdlineTest, pipeline) {
 
 TEST_F(CmdlineTest, read) {
     /**
-     * read command status
-     * if read success, return 0
-     * if read failed (error or end of file), return 1
-     */
-    const char *src = R"(
-        read; assert($? == 0);
-        read; assert($? == 1);
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello\n" | DS(src), 1));
-
-    /**
      * no splitting
      * not terminate
      */
-    src = R"(
+    const char *src = R"(
         read -u 0;
         assert $REPLY == "hello"
 )";
