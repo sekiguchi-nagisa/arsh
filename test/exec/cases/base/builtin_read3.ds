@@ -127,3 +127,61 @@ echo -ne 'hello1world2!!\n' | {
     assert $reply["a"] == "hello"
     assert $reply["b"] == "world2!!"
 }
+
+# splitting
+# specify multiple separator
+# if separator contains spaces, remove spaces
+echo -e '   hello  1  world22!!  \n' | {
+    read -f " 21" a b c; assert($reply.size() == 3)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == "world"
+    assert $reply["c"] == "2!!"
+}
+
+# splitting
+# specify multiple separator
+# if separator contains spaces, remove spaces
+echo -ne '   hello  21  world22!!  \n' | {
+    read -f " 21" a b c; assert($reply.size() == 3)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == ""
+    assert $reply["c"] == "world22!!"
+}
+
+# splitting
+# specify multiple separator
+# if separator contains spaces, remove spaces
+echo -e '   hello  \\21  world22!!  \n' | {
+    read -f " 21" a b c; assert($reply.size() == 3)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == "2"
+    assert $reply["c"] == "world22!!"
+}
+
+# splitting
+# specify separator (null character)
+echo -ne '   hello\0worlda22!!\n' | {
+    read -f $'a\x00' a b c; assert($reply.size() == 3)
+    assert $reply['a'] == '   hello'
+    assert $reply['b'] == 'world'
+    assert $reply['c'] == '22!!'
+}
+
+# raw mode
+echo -ne '   hello\\ world  \n' | {
+    read -r a b; assert($reply.size() == 2)
+    assert $reply["a"] == "hello\\"
+    assert $reply["b"] == "world"
+}
+
+# raw mode
+echo -ne '   hello\\\nworld  \n' | {
+    read -r; assert($REPLY == "hello\\")
+}
+
+# raw mode
+echo -ne '   hello\\1world  \n' | {
+    read -r -f " 1" a b; assert($reply.size() == 2)
+    assert $reply["a"] == "hello\\"
+    assert $reply["b"] == "world"
+}

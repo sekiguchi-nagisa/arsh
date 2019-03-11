@@ -1,0 +1,5 @@
+
+#$test($status = 1)
+
+# timeout
+read -t 1
