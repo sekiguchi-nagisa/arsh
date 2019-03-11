@@ -1,7 +1,7 @@
 
 # no splitting
 # not terminate
-echo -e hello | {
+echo hello | {
     read -u 0;
     assert $? == 0 : "$?"
     assert $REPLY == "hello"
@@ -9,4 +9,121 @@ echo -e hello | {
     assert $? == 1
 }
 
-true
+# no splitting
+# not terminate
+# stdin is not terminated with newline, return 1.
+echo -n hello | {
+    read -u 0;
+    assert $? == 1 : "$?"
+    assert $REPLY == "hello"
+    read -u 0
+    assert $? == 1
+}
+
+# no splitting
+# terminate newline
+echo -e -n '   hello\n  world   \t   \n' | {
+    read -u /dev/fd/0; assert($REPLY == "hello");
+    read; assert($REPLY == "world")
+}
+
+# no splitting
+# if not specified separator, use IFS
+echo -e -n '  \t  hello world \t  \t  \n' | {
+    read; assert($REPLY == "hello world");
+    assert($reply.empty())
+}
+
+# no splitting
+# specify separator
+echo -en '1hello1world \n' | {
+    read -f 1; assert($REPLY == "1hello1world ")
+}
+
+# no splitting
+# specify multiple separator
+# if separator contains spaces, ignore first and last spaces
+echo -en '  1hello1world1 \n' | {
+    read -f " 1"; assert $REPLY == "1hello1world1"
+}
+
+# splitting
+# use IFS
+# remove first and last spaces
+echo -ne '   \t hello   world     \n' | {
+    read a b; assert($reply.size() == 2)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == "world"
+    assert($REPLY.empty())
+}
+
+# splitting
+# use IFS
+# remove first and last spaces
+# split variables are less than specified them, set empty string.
+echo -ne '   \t hello   world    \n' | {
+    read a b c; assert($reply.size() == 3)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == "world"
+    assert $reply["c"].empty()
+}
+
+# splitting
+# use IFS
+# remove fist and last spaces
+echo -e '   \t hello   world  !!   \n' | {
+    read a b; assert($reply.size() == 2)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == "world  !!"
+}
+
+# splitting
+# use IFS
+# ignore the following string of newline
+echo -en 'hello  \n world\n' | {
+    read a b; assert($reply.size() == 2)
+    assert $reply["a"] == "hello"
+    assert $reply["b"].empty()
+}
+
+# splitting
+# use IFS
+# ignore newline
+echo -e 'hello  \\\n world\n' | {
+    read a b; assert($reply.size() == 2)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == "world"
+}
+
+# splitting
+# specify separator
+echo -en 'hello1world\n' | {
+    read -f 1 a b; assert($reply.size() == 2)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == "world"
+}
+
+# splitting
+# specify separator
+echo -e 'hello\\1world\n' | {
+    read -f 1 a b; assert($reply.size() == 2)
+    assert $reply["a"] == "hello1world"
+    assert $reply["b"].empty()
+}
+
+# splitting
+# specify multiple separator
+echo -en 'hello1world2!!\n' | {
+    read -f 12 a b c; assert($reply.size() == 3)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == "world"
+    assert $reply["c"] == "!!"
+}
+
+# splitting
+# specify multiple separator
+echo -ne 'hello1world2!!\n' | {
+    read -f 1 a b; assert($reply.size() == 2)
+    assert $reply["a"] == "hello"
+    assert $reply["b"] == "world2!!"
+}
