@@ -355,6 +355,8 @@ function name($this : Signal) : String
 
 function value($this : Signal) : Int32
 
+function message($this : Signal) : String
+
 function kill($this : Signal, $pid : Int32) : Void
 
 function %OP_EQ($this : Signal, $target : Signal) : Boolean

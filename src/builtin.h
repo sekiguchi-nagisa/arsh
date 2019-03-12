@@ -1432,6 +1432,14 @@ YDSH_METHOD signal_value(RuntimeContext &ctx) {
     RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), obj->getValue()));
 }
 
+//!bind: function message($this : Signal) : String
+YDSH_METHOD signal_message(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(signal_message);
+    auto *obj = typeAs<Int_Object>(LOCAL(0));
+    const char *value = strsignal(obj->getValue());
+    RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), value));
+}
+
 //!bind: function kill($this : Signal, $pid : Int32) : Void
 YDSH_METHOD signal_kill(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_kill);

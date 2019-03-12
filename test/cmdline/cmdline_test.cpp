@@ -561,6 +561,13 @@ ArithmeticError: zero division
     ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 4: 1\n", e));
 }
 
+TEST_F(CmdlineTest, signal) {
+    std::string str = strsignal(SIGKILL);
+    str += "\n";
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$'"), 128 + SIGKILL, "", str.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo ${%'kill'.message()}"), 0, str.c_str()));
+}
+
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
     CmdlineTest2() = default;
 
