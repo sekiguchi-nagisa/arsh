@@ -950,9 +950,12 @@ bool DSState::mainLoop() {
             auto &stackTopType = this->symbolTable.get(v);
             assert(!stackTopType.isVoidType());
             auto *strObj = typeAs<String_Object>(this->peek());
-            printf("(%s) ", this->symbolTable.getTypeName(stackTopType));
-            fwrite(strObj->getValue(), sizeof(char), strObj->size(), stdout);
-            fputc('\n', stdout);
+            std::string value = "(";
+            value += this->symbolTable.getTypeName(stackTopType);
+            value += ") ";
+            value.append(strObj->getValue(), strObj->size());
+            value += "\n";
+            fwrite(value.c_str(), sizeof(char), value.size(), stdout);
             fflush(stdout);
             this->popNoReturn();
             vmnext;
