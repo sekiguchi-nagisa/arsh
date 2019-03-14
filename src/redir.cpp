@@ -76,7 +76,8 @@ static int doIOHere(const String_Object &value) {
             if(pid == 0) {  // child
                 close(pipe[0][READ_PIPE]);
                 dup2(pipe[0][WRITE_PIPE], STDOUT_FILENO);
-                printf("%s\n", value.getValue());
+                write(STDOUT_FILENO, value.getValue(), value.size());
+                write(STDOUT_FILENO, "\n", 1);
             }
             exit(0);
         }
