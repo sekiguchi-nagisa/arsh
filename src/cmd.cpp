@@ -62,7 +62,17 @@ int xexecve(const char *filePath, char **argv, char *const *envp) {
     });
 
     // execute external command
-    return execve(filePath, argv, envp);
+    int ret = execve(filePath, argv, envp);
+    if(errno == ENOEXEC) {  // fallback to /bin/sh
+        unsigned int size = 0;
+        for(; argv[size]; size++);
+        size++;
+        char *newArgv[size + 1];
+        newArgv[0] = const_cast<char *>("/bin/sh");
+        memcpy(newArgv + 1, argv, sizeof(char *) * size);
+        return execve(newArgv[0], newArgv, envp);
+    }
+    return ret;
 }
 
 
