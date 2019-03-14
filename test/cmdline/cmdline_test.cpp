@@ -576,6 +576,19 @@ struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
     void TearDown() override { this->deleteTemp(); }
 };
 
+TEST_F(CmdlineTest2, exec) {
+    auto fileName = this->createTempFile("run.sh", "echo hey: $0: $1 $2");
+    errno = 0;
+    auto mode = getStMode(fileName.c_str());
+    mode |= S_IXUSR | S_IXGRP | S_IXOTH;
+    chmod(fileName.c_str(), mode);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(strerror(0), strerror(errno)));
+
+    auto out = format("hey: %s: 11111 8888\n", fileName.c_str());
+    auto cmd = format("%s 11111 8888", fileName.c_str());
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS(cmd.c_str()), 0, out.c_str()));
+}
+
 TEST_F(CmdlineTest2, script) {
     auto fileName = this->createTempFile("target.ds",
             format("assert($0 == \"%s/target.ds\"); assert($@.size() == 1); assert($@[0] == 'A')", this->getTempDirName()));
