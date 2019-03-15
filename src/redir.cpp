@@ -76,8 +76,12 @@ static int doIOHere(const String_Object &value) {
             if(pid == 0) {  // child
                 close(pipe[0][READ_PIPE]);
                 dup2(pipe[0][WRITE_PIPE], STDOUT_FILENO);
-                write(STDOUT_FILENO, value.getValue(), value.size());
-                write(STDOUT_FILENO, "\n", 1);
+                if(write(STDOUT_FILENO, value.getValue(), value.size()) < 0) {
+                    exit(1);
+                }
+                if(write(STDOUT_FILENO, "\n", 1) < 0) {
+                    exit(1);
+                }
             }
             exit(0);
         }
