@@ -48,11 +48,8 @@ public:
     using ExpectOutput::expect;
     using ExpectOutput::expectRegex;
 
-    void expect(InputWrapper &&wrapper, int status, const char *out = "", const char *err = "") {
+    void expect(InputWrapper &&wrapper, int status, const std::string &out = "", const std::string &err = "") {
         SCOPED_TRACE("");
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
 
         auto handle = wrapper.builder
                 .setIn(IOConfig::PIPE)

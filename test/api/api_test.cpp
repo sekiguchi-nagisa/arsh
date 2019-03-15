@@ -404,12 +404,16 @@ static std::vector<PIDs> decompose(const std::string &str) {
 
 struct JobTest : public ExpectOutput {};
 
+#define PATTERN "\\[[0-9]+,[0-9]+,[0-9]+\\]"
+#define PATTERN2 PATTERN " " PATTERN
+#define PATTERN3 PATTERN " " PATTERN " " PATTERN
+
 TEST_F(JobTest, pid1) {    // enable job control
     SCOPED_TRACE("");
 
     // normal
     auto result = EXEC("%s --first | %s | %s", PID_CHECK_PATH, PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN3));
     auto pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, pids.size()));
 
@@ -423,7 +427,7 @@ TEST_F(JobTest, pid1) {    // enable job control
 
     // command, eval
     result = EXEC("command eval %s --first | eval command %s", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -434,7 +438,7 @@ TEST_F(JobTest, pid1) {    // enable job control
 
     // udc1
     result = EXEC("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -445,7 +449,7 @@ TEST_F(JobTest, pid1) {    // enable job control
 
     // udc2
     result = EXEC("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -457,7 +461,7 @@ TEST_F(JobTest, pid1) {    // enable job control
 
     // last pipe
     result = EXEC("%s --first | { %s; }", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -473,7 +477,7 @@ TEST_F(JobTest, pid2) {    // disable job control
 
     // normal
     auto result = EXEC2("%s --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     auto pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -484,7 +488,7 @@ TEST_F(JobTest, pid2) {    // disable job control
 
     // udc1
     result = EXEC2("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -495,7 +499,7 @@ TEST_F(JobTest, pid2) {    // disable job control
 
     // udc2
     result = EXEC2("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 
@@ -506,7 +510,7 @@ TEST_F(JobTest, pid2) {    // disable job control
 
     // last pipe
     result = EXEC("%s --first | { %s; }", PID_CHECK_PATH, PID_CHECK_PATH);
-    ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED, nullptr));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
 

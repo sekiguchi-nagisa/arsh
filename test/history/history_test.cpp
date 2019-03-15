@@ -85,7 +85,7 @@ public:
         c += "exit $?";
 
         auto result = this->evalInChild(c);
-        ExpectOutput::expect(result, 0, WaitStatus::EXITED, nullptr, nullptr);
+        ExpectOutput::expect(result, 0, WaitStatus::EXITED);
     }
 
 private:

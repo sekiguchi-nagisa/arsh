@@ -96,43 +96,31 @@ private:
 struct ExpectOutput : public ::testing::Test {
     void expect(const Output &output, int status = 0,
                 WaitStatus::Kind type = WaitStatus::EXITED,
-                const char *out = "", const char *err = "") {
+                const std::string &out = "", const std::string &err = "") {
         SCOPED_TRACE("");
 
-        if(out != nullptr) {
-            ASSERT_EQ(out, output.out);
-        }
-        if(err != nullptr) {
-            ASSERT_EQ(err, output.err);
-        }
+        ASSERT_EQ(out, output.out);
+        ASSERT_EQ(err, output.err);
         ASSERT_EQ(status, output.status.value);
         ASSERT_EQ(type, output.status.kind);
     }
 
-    void expect(ProcBuilder &&builder, int status, const char *out = "", const char *err = "") {
+    void expect(ProcBuilder &&builder, int status, const std::string &out = "", const std::string &err = "") {
         SCOPED_TRACE("");
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
 
         auto result = builder.execAndGetResult(false);
         this->expect(result, status, WaitStatus::EXITED, out, err);
     }
 
     void expectRegex(const Output &output, int status, WaitStatus::Kind type,
-                     const std::string &out, const std::string &err) {
+                     const std::string &out, const std::string &err = "") {
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, output.status.value));
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(type, output.status.kind));
         ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(output.out, ::testing::MatchesRegex(out)));
         ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(output.err, ::testing::MatchesRegex(err)));
     }
 
-    void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
-        SCOPED_TRACE("");
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
-
+    void expectRegex(ProcBuilder &&builder, int status, const std::string &out, const std::string &err = "") {
         auto result = builder.execAndGetResult(false);
         this->expectRegex(result, status, WaitStatus::EXITED, out, err);
     }
