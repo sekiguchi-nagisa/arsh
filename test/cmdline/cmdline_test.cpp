@@ -46,20 +46,7 @@ public:
     CmdlineTest() = default;
 
     using ExpectOutput::expect;
-
-    void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
-        SCOPED_TRACE("");
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
-
-        auto result = builder.execAndGetResult(false);
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, result.status.value));
-
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(result.out, ::testing::MatchesRegex(out)));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(result.err, ::testing::MatchesRegex(err)));
-    }
+    using ExpectOutput::expectRegex;
 
     void expect(InputWrapper &&wrapper, int status, const char *out = "", const char *err = "") {
         SCOPED_TRACE("");

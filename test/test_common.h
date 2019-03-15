@@ -118,6 +118,24 @@ struct ExpectOutput : public ::testing::Test {
         auto result = builder.execAndGetResult(false);
         this->expect(result, status, WaitStatus::EXITED, out, err);
     }
+
+    void expectRegex(const Output &output, int status, WaitStatus::Kind type,
+                     const std::string &out, const std::string &err) {
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, output.status.value));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(type, output.status.kind));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(output.out, ::testing::MatchesRegex(out)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(output.err, ::testing::MatchesRegex(err)));
+    }
+
+    void expectRegex(ProcBuilder &&builder, int status, const char *out, const char *err = "") {
+        SCOPED_TRACE("");
+
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
+
+        auto result = builder.execAndGetResult(false);
+        this->expectRegex(result, status, WaitStatus::EXITED, out, err);
+    }
 };
 
 class InteractiveBase : public ExpectOutput {
