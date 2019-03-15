@@ -17,6 +17,13 @@ z2() {
 
 
 function assertArray($x : Array<String>, $y : Array<String>) {
+    if $x.size() != $y.size() {
+        echo expect:
+        for $a in $x { echo $a; }
+        echo actual
+        for $a in $y { echo $a; }
+    }
+
     assert($z1($x.size(), $y.size()))
 
     let size = $x.size()
@@ -27,6 +34,8 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         }
     }
 }
+
+{ import-env _ : "a" }    # force set env '_'
 
 # complete global variable name
 {
