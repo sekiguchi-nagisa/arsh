@@ -105,6 +105,12 @@ TEST_F(CmdlineTest, cmd1) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "\\"), 0));    // do nothing
 }
 
+template <unsigned int N>
+static std::string toString(const char (&value)[N]) {
+    static_assert(N > 0, "");
+    return std::string(value, N - 1);
+}
+
 TEST_F(CmdlineTest, cmd2) {
     // assertion
     const char *msg = R"(Assertion Error: `(12 == 4)'
@@ -119,12 +125,16 @@ ArithmeticError: zero division
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "34 / 0"), 1, "", msg));
 
-    // normal
     msg = R"([runtime error]
 SystemError: execution error: lajfeoifreo: command not found
     from (string):1 '<toplevel>()'
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "lajfeoifreo"), 1, "", msg));
+
+    const char out[] = "[runtime error]\nhe\0llo\n";
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a = $'he\\000llo'; throw $a"), 1, "", toString(out)));
+
+    // normal
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "__puts -3"), 1));
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo hello"), 0, "hello\n"));
 

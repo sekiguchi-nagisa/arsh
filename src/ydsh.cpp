@@ -122,7 +122,9 @@ static DSError handleRuntimeError(DSState &state) {
         if(state.getThrownObject()) {
             fputs("cannot obtain string representation\n", stderr);
         } else if(!bt) {
-            fprintf(stderr, "%s\n", typeAs<String_Object>(ret)->getValue());
+            fwrite(typeAs<String_Object>(ret)->getValue(),
+                    sizeof(char), typeAs<String_Object>(ret)->size(), stderr);
+            fputc('\n', stderr);
         }
     } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state.option, DS_OPTION_TRACE_EXIT)) {
         typeAs<Error_Object>(thrownObj)->printStackTrace(state);
