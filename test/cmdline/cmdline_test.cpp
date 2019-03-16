@@ -572,11 +572,10 @@ struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
 
 TEST_F(CmdlineTest2, exec) {
     auto fileName = this->createTempFile("run.sh", "echo hey: $0: $1 $2");
-    errno = 0;
     auto mode = getStMode(fileName.c_str());
     mode |= S_IXUSR | S_IXGRP | S_IXOTH;
-    chmod(fileName.c_str(), mode);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(strerror(0), strerror(errno)));
+    int s = chmod(fileName.c_str(), mode);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
 
     auto out = format("hey: %s: 11111 8888\n", fileName.c_str());
     auto cmd = format("%s 11111 8888", fileName.c_str());
