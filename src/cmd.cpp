@@ -1632,6 +1632,8 @@ static unsigned int computeMaxNameLen() {
 }
 
 static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &entry) {
+    static_assert(sizeof(rlim_t) == sizeof(uint64_t), "must be uint64");
+
     if(strcasecmp(str, "soft") == 0) {
         entry.kind = UlimitOptEntry::SOFT;
         return true;
@@ -1647,11 +1649,6 @@ static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &
     auto ret = convertToUint64(str, status);
     if(status != 0) {
         return false;
-    }
-    if(sizeof(rlim_t) == sizeof(unsigned int)) {
-        if(ret > UINT32_MAX) {
-            return false;
-        }
     }
     ret <<= ulimitOps[index].shift;
     entry.kind = UlimitOptEntry::NUM;
