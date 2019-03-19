@@ -389,7 +389,7 @@ TEST_F(CmdlineTest, version) {
     std::string msg = "^ydsh, version ";
     msg += X_INFO_VERSION;
     msg += ", build by .+\n";
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--version"), 0, msg.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--version"), 0, msg));
 }
 
 
@@ -558,8 +558,8 @@ ArithmeticError: zero division
 TEST_F(CmdlineTest, signal) {
     std::string str = strsignal(SIGKILL);
     str += "\n";
-    ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$'"), 128 + SIGKILL, "", str.c_str()));
-    ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo ${%'kill'.message()}"), 0, str.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$'"), 128 + SIGKILL, "", str));
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo ${%'kill'.message()}"), 0, str));
 }
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
@@ -580,7 +580,7 @@ TEST_F(CmdlineTest2, exec) {
 
     auto out = format("hey: %s: 11111 8888\n", fileName.c_str());
     auto cmd = format("%s 11111 8888", fileName.c_str());
-    ASSERT_NO_FATAL_FAILURE(this->expect(DS(cmd.c_str()), 0, out.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS(cmd.c_str()), 0, out));
 }
 
 TEST_F(CmdlineTest2, script) {
@@ -690,7 +690,7 @@ TEST_F(CmdlineTest2, import1) {
                              "source %s as mod\n"
                              "       %s\n", fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
 
-    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source %s as mod", fileName.c_str()), 1, "", str.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source %s as mod", fileName.c_str()), 1, "", str));
 }
 
 TEST_F(CmdlineTest2, import2) {
@@ -706,21 +706,21 @@ TEST_F(CmdlineTest2, import2) {
                   "       %s\n",
                   fileName.c_str(),modName.c_str(), makeLineMarker(modName).c_str());
 
-    ASSERT_NO_FATAL_FAILURE(this->expect(ProcBuilder{ BIN_PATH, fileName.c_str() }, 1, "", str.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ProcBuilder{ BIN_PATH, fileName.c_str() }, 1, "", str));
 }
 
 TEST_F(CmdlineTest2, import3) {
     std::string str = format("(string):1: [semantic error] cannot read module: `.', by `Is a directory'\n"
                              "source .\n"
                              "       %s\n", makeLineMarker(".").c_str());
-    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source ."), 1, "", str.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source ."), 1, "", str));
 }
 
 TEST_F(CmdlineTest2, import4) {
     std::string str = format("(string):1: [semantic error] module not found: `hogehuga'\n"
                              "source hogehuga\n"
                              "       %s\n", makeLineMarker("hogehuga").c_str());
-    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source hogehuga"), 1, "", str.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source hogehuga"), 1, "", str));
 }
 
 int main(int argc, char **argv) {
