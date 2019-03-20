@@ -261,7 +261,8 @@ public:
 
     bool isRootShell() const {
         int shellpid = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue();
-        return shellpid == getpid();
+        int pid = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::PID)))->getValue();
+        return shellpid == pid;
     }
 
     bool isForeground() const {
