@@ -233,6 +233,8 @@ protected:
 
     std::unique_ptr<Node> parse_stringLiteral();
 
+    std::unique_ptr<Node> parse_regexLiteral();
+
     ArgsWrapper parse_arguments();
 
     std::unique_ptr<Node> parse_stringExpression();

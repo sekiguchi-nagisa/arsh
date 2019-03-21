@@ -1168,40 +1168,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case STRING_LITERAL:
         return this->parse_stringLiteral();
-    case REGEX_LITERAL: {
-        Token token = this->expect(REGEX_LITERAL);  // always success
-        auto old = token;
-
-        /**
-         * skip prefix '$/'
-         */
-        token.pos += 2;
-        token.size -= 2;
-        std::string str = this->lexer->toTokenText(token);
-
-        /**
-         * parse regex flag
-         */
-        int regexFlag = 0;
-        while(str.back() != '/') {
-            char ch = str.back();
-            if(ch == 'i') {
-                regexFlag |= PCRE_CASELESS;
-            } else if(ch == 'm') {
-                regexFlag |= PCRE_MULTILINE;
-            }
-            str.pop_back();
-        }
-        str.pop_back(); // skip suffix '/'
-
-        const char *errorStr;
-        auto re = compileRegex(str.c_str(), errorStr, regexFlag);
-        if(!re) {
-            raiseTokenFormatError(REGEX_LITERAL, old, errorStr);
-            return nullptr;
-        }
-        return std::make_unique<RegexNode>(old, std::move(str), std::move(re));
-    }
+    case REGEX_LITERAL:
+        return this->parse_regexLiteral();
     case SIGNAL_LITERAL:
         return this->parse_signalLiteral();
     case OPEN_DQUOTE:
@@ -1359,6 +1327,41 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
         return nullptr;
     }
     return std::make_unique<StringNode>(token, std::move(str));
+}
+
+std::unique_ptr<Node> Parser::parse_regexLiteral() {
+    Token token = this->expect(REGEX_LITERAL);  // always success
+    auto old = token;
+
+    /**
+     * skip prefix '$/'
+     */
+    token.pos += 2;
+    token.size -= 2;
+    std::string str = this->lexer->toTokenText(token);
+
+    /**
+     * parse regex flag
+     */
+    int regexFlag = 0;
+    while(str.back() != '/') {
+        char ch = str.back();
+        if(ch == 'i') {
+            regexFlag |= PCRE_CASELESS;
+        } else if(ch == 'm') {
+            regexFlag |= PCRE_MULTILINE;
+        }
+        str.pop_back();
+    }
+    str.pop_back(); // skip suffix '/'
+
+    const char *errorStr;
+    auto re = compileRegex(str.c_str(), errorStr, regexFlag);
+    if(!re) {
+        raiseTokenFormatError(REGEX_LITERAL, old, errorStr);
+        return nullptr;
+    }
+    return std::make_unique<RegexNode>(old, std::move(str), std::move(re));
 }
 
 ArgsWrapper Parser::parse_arguments() {
