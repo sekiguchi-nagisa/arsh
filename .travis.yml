@@ -158,7 +158,7 @@ matrix:
             - ninja-build
       env: CXX_BIN=clang++-6.0
 
-  # clang 7.0
+    # clang 7.0
     - addons:
         apt:
           sources:
@@ -171,18 +171,31 @@ matrix:
             - ninja-build
       env: CXX_BIN=clang++-7
 
-    # clang 7.0 (Release build)
+    # clang 8.0
     - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-7 main'
+            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-8 main'
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - g++-5
-            - clang-7
+            - clang-8
             - ninja-build
-      env: CXX_BIN=clang++-7 BUILD_TYPE=release
+      env: CXX_BIN=clang++-8
+
+    # clang 8.0 (Release build)
+    - addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-8 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+            - g++-5
+            - clang-8
+            - ninja-build
+      env: CXX_BIN=clang++-8 BUILD_TYPE=release
 
 #    # clang 6.0 with LTO
 #    - compiler: clang
@@ -196,44 +209,44 @@ matrix:
 #          - ninja-build
 #      env: CXX_BIN=clang++-6.0 BUILD_TYPE=Release OPTION="-DUSE_LTO=ON"
 
-    # clang 7.0 with address sanitizer
+    # clang 8.0 with address sanitizer
     - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-7 main'
+            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-8 main'
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - g++-5
-            - clang-7
+            - clang-8
             - ninja-build
       env: CXX_BIN=clang++-7 OPTION="-DSANITIZER=address"
 
-    # clang 7.0 with undefined behavior sanitizer
+    # clang 8.0 with undefined behavior sanitizer
     - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-7 main'
+            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-8 main'
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - g++-5
-            - clang-7
+            - clang-8
             - ninja-build
-      env: CXX_BIN=clang++-7 OPTION="-DSANITIZER=undefined"
+      env: CXX_BIN=clang++-8 OPTION="-DSANITIZER=undefined"
 
-    # clang 7.0 with fuzzing
+    # clang 8.0 with fuzzing
     - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-7 main'
+            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-8 main'
               key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
           packages:
             - g++-5
-            - clang-7
+            - clang-8
             - ninja-build
-      env: CXX_BIN=clang++-7 OPTION="-DFUZZING_BUILD_MODE=on"
+      env: CXX_BIN=clang++-8 OPTION="-DFUZZING_BUILD_MODE=on"
 
     # gcc7 with coverage
     - addons:
