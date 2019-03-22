@@ -19,7 +19,7 @@ Language specification is subject to change without notice.
 
 ### Tested Compiler
 * gcc (5, 6, 7, 8)
-* clang (3.6, 3.7, 3.8, 3.9, 4, 5, 6, 7)
+* clang (3.6, 3.7, 3.8, 3.9, 4, 5, 6, 7, 8)
 
 ## How to use
 
