@@ -348,49 +348,49 @@ private:
 
 public:
     static NumberNode *newByte(Token token, unsigned char value) {
-        auto *node = new  NumberNode(token, Byte);
+        auto *node = new NumberNode(token, Byte);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newInt16(Token token, short value) {
-        auto *node = new  NumberNode(token, Int16);
+        auto *node = new NumberNode(token, Int16);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newUint16(Token token, unsigned short value) {
-        auto *node = new  NumberNode(token, Uint16);
+        auto *node = new NumberNode(token, Uint16);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newInt32(Token token, int value) {
-        auto *node = new  NumberNode(token, Int32);
+        auto *node = new NumberNode(token, Int32);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newUint32(Token token, unsigned int value) {
-        auto *node = new  NumberNode(token, Uint32);
+        auto *node = new NumberNode(token, Uint32);
         node->intValue = value;
         return node;
     }
 
     static NumberNode *newInt64(Token token, long value) {
-        auto *node = new  NumberNode(token, Int64);
+        auto *node = new NumberNode(token, Int64);
         node->longValue = value;
         return node;
     }
 
     static NumberNode *newUint64(Token token, unsigned long value) {
-        auto *node = new  NumberNode(token, Uint64);
+        auto *node = new NumberNode(token, Uint64);
         node->longValue = value;
         return node;
     }
 
     static NumberNode *newFloat(Token token, double value) {
-        auto *node = new  NumberNode(token, Float);
+        auto *node = new NumberNode(token, Float);
         node->floatValue = value;
         return node;
     }

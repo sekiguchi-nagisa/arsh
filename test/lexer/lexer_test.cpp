@@ -979,7 +979,7 @@ TEST_F(LexerTest_Lv1, CMD1) {
 }
 
 TEST_F(LexerTest_Lv1, CMD2) {
-    const char *text = "\\ \\t\\r\\n\\;\\'\\\"\\`\\|\\&\\<\\>\\(\\)\\{\\}\\$\\#\\!\\[\\]\\8";
+    const char *text = R"(\ \t\r\n\;\'\"\`\|\&\<\>\(\)\{\}\$\#\!\[\]\8)";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
