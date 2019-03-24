@@ -290,9 +290,11 @@ matrix:
 
 
 script:
-  - cmake . -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_EXTRA_TEST=on $OPTION
+  - mkdir build
+  - cd build
+  - cmake .. -G Ninja -DCMAKE_CXX_COMPILER=$CXX_BIN -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DUSE_EXTRA_TEST=on $OPTION
   - ninja
-  - ./ydsh ./tools/scripts/copy_mod4extra.ds
+  - ./ydsh ../tools/scripts/copy_mod4extra.ds
   - ctest --output-on-failure
 
 notifications:
