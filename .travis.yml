@@ -14,6 +14,29 @@ env:
 
 matrix:
   include:
+    # gcc 7.0 (Deploy build)
+    - addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-7
+            - ninja-build
+            - rpmbuild
+      env: CXX_BIN=g++-7 BUILD_TYPE=RELWITHDEBINFO
+      before_deploy:
+        - cpack -G RPM
+      deploy:
+        provider: releases
+        api_key:
+          secure: Zkjb0O9Mlf7c5NHHrEKPoXlGjN45xD8Q42voNszVL2d4VMxPIBC2Akwh8373tQOHhY2ok6t43GLzh44m4D5LMe7Loc+mNn80PIijKFjexN+u/4BYwUBb/F9o8zXb7Vk4ZHlWS5j52MB2Z3IPYPkDaMlxHB8HsdLfULOmuGuivMM=
+        file_glob: true
+        file: ydsh-*.rpm
+        skip_cleanup: true
+        on:
+          tags: true
+          repo: sekiguchi-nagisa/ydsh
+
     # gcc 5
     - addons:
         apt:
@@ -262,29 +285,6 @@ matrix:
         - pip install --user cpp-coveralls
       after_success:
         - coveralls --gcov gcov-7 --gcov-options '\-lp' --exclude test --exclude fuzzing --exclude-pattern .*-source --exclude-pattern '.*\.re2c\.cpp' --exclude nextToken.cpp --exclude tools/json/lexer.cpp --exclude tools/uri/uri_parser.cpp --exclude tools/process/ansi.cpp
-
-    # gcc 7.0 (Deploy build)
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-            - ninja-build
-            - rpmbuild
-      env: CXX_BIN=g++-7 BUILD_TYPE=RELWITHDEBINFO
-      before_deploy:
-        - cpack -G RPM
-      deploy:
-        provider: releases
-        api_key:
-          secure: Zkjb0O9Mlf7c5NHHrEKPoXlGjN45xD8Q42voNszVL2d4VMxPIBC2Akwh8373tQOHhY2ok6t43GLzh44m4D5LMe7Loc+mNn80PIijKFjexN+u/4BYwUBb/F9o8zXb7Vk4ZHlWS5j52MB2Z3IPYPkDaMlxHB8HsdLfULOmuGuivMM=
-        file_glob: true
-        file: ydsh-*.rpm
-        skip_cleanup: true
-        on:
-          tags: true
-          repo: sekiguchi-nagisa/ydsh
 
 
 script:
