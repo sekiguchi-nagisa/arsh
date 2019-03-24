@@ -24,6 +24,7 @@ matrix:
             - g++-7
             - ninja-build
             - rpm
+            - elfutils
       env: CXX_BIN=g++-7 BUILD_TYPE=RELWITHDEBINFO
       before_deploy:
         - cpack -G RPM
