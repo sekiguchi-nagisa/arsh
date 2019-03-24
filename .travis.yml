@@ -22,7 +22,7 @@ matrix:
           packages:
             - g++-7
             - ninja-build
-            - rpmbuild
+            - rpm-i18n
       env: CXX_BIN=g++-7 BUILD_TYPE=RELWITHDEBINFO
       before_deploy:
         - cpack -G RPM
