@@ -271,7 +271,7 @@ matrix:
           packages:
             - g++-7
             - ninja-build
-            - rmpbuild
+            - rpmbuild
       env: CXX_BIN=g++-7 BUILD_TYPE=RELWITHDEBINFO
       before_deploy:
         - cpack -G RPM
