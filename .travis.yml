@@ -6,6 +6,7 @@ dist: trusty
 branches:
   only:
     - master
+    - /v\d+\.\d+[a-z]/
 
 env:
   global:
