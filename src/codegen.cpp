@@ -812,15 +812,7 @@ static DSValue newObject(Node &constNode) {
     return DSValue::create<String_Object>(constNode.getType(), static_cast<StringNode&>(constNode).getValue());
 }
 
-void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, Map_Object &obj) {
-    unsigned int offset = this->currentCodeOffset();
-    auto value = DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint32), offset);
-    for(auto &e : node.getPatternNodes()) {
-        obj.set(newObject(*e), DSValue(value));
-    }
-}
-
-void ByteCodeGenerator::visitCaseNode(CaseNode &node) {
+void ByteCodeGenerator::generateMapCase(CaseNode &node) {
     bool hasDefault = !node.getType().isVoidType();
     auto mergeLabel = makeLabel();
     auto elseLabel = makeLabel();
@@ -852,6 +844,83 @@ void ByteCodeGenerator::visitCaseNode(CaseNode &node) {
     }
 
     this->markLabel(mergeLabel);
+}
+
+void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, Map_Object &obj) {
+    unsigned int offset = this->currentCodeOffset();
+    auto value = DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint32), offset);
+    for(auto &e : node.getPatternNodes()) {
+        obj.set(newObject(*e), DSValue(value));
+    }
+}
+
+void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
+    auto &exprType = node.getExprNode()->getType();
+    assert(exprType.is(TYPE::String));
+
+    // generate expr
+    this->visit(*node.getExprNode());
+
+    // generate if-else chain
+    unsigned int eqIndex = exprType.lookupMethodHandle(this->symbolTable, OP_EQ)->getMethodIndex();
+    unsigned int matchIndex = exprType.lookupMethodHandle(this->symbolTable, OP_MATCH)->getMethodIndex();
+
+    int defaultIndex = -1;
+    auto mergeLabel = makeLabel();
+    for(unsigned int index = 0; index < node.getArmNodes().size(); index++) {
+        if(node.getArmNodes()[index]->isDefault()) {
+            defaultIndex = static_cast<int>(index);
+            continue;
+        }
+        this->generateIfElseArm(*node.getArmNodes()[index], eqIndex, matchIndex, mergeLabel);
+    }
+    if(defaultIndex > -1) { // generate default
+        this->emit0byteIns(OpCode::POP);    // pop stack top 'expr'
+        this->visit(*node.getArmNodes()[static_cast<unsigned int>(defaultIndex)]);
+    }
+    this->markLabel(mergeLabel);
+}
+
+void ByteCodeGenerator::generateIfElseArm(ArmNode &node, unsigned int eqIndex,
+                                          unsigned int matchIndex, const Label &mergeLabel) {
+    auto armElse = makeLabel();
+    auto armMerge = makeLabel();
+    unsigned int size = node.getPatternNodes().size();
+
+    // generate arm pattern
+    for(unsigned int index = 0; index < size; index++) {
+        if(index > 0) {
+            auto elseLabel = makeLabel();
+            this->emitBranchIns(elseLabel);
+            this->emit0byteIns(OpCode::PUSH_TRUE);
+            this->emitJumpIns(armMerge);
+            this->markLabel(elseLabel);
+        }
+        this->emit0byteIns(OpCode::DUP);
+        auto &patternNode = node.getPatternNodes()[index];
+        this->visit(*patternNode);
+        assert(patternNode->getType().is(TYPE::String) || patternNode->getType().is(TYPE::Regex));
+        this->emitCallIns(OpCode::CALL_METHOD, 1, patternNode->getType().is(TYPE::String) ? eqIndex : matchIndex);
+    }
+
+    // generate arm action
+    this->markLabel(armMerge);
+    this->emitBranchIns(armElse);
+    this->emit0byteIns(OpCode::POP);    // pop stack top 'expr'
+    this->visit(node);
+    this->emitJumpIns(mergeLabel);
+    this->markLabel(armElse);
+}
+
+void ByteCodeGenerator::visitCaseNode(CaseNode &node) {
+    switch(node.getCaseKind()) {
+    case CaseNode::MAP:
+        this->generateMapCase(node);
+        break;
+    case CaseNode::IF_ELSE:
+        this->generateIfElseCase(node);
+        break;
+    }
 }
 
 void ByteCodeGenerator::visitArmNode(ArmNode &node) {

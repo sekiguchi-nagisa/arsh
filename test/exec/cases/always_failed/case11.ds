@@ -1,0 +1,6 @@
+#$test($result = 'type', $lineNum = 5, $errorKind = 'DupPattern', $status = 1)
+
+case "34" {
+    else => 'de'
+    $/hoge/ => new [Int32](); else => echo hello!!
+}

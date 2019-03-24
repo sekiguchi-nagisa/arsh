@@ -1513,11 +1513,6 @@ private:
      */
     Node *actionNode{nullptr};
 
-    /**
-     * currently only support constant pattern
-     */
-    bool constant{false};
-
 public:
     explicit ArmNode(Node *patternNode) : Node(NodeKind::Arm, patternNode->getToken()) {
         this->addPatternNode(patternNode);
@@ -1554,21 +1549,20 @@ public:
         return this->patternNodes.empty();
     }
 
-    void asConstant() {
-        this->constant = true;
-    }
-
-    bool isConstant() const {
-        return this->constant;
-    }
-
     void dump(NodeDumper &dumper) const override;
 };
 
 class CaseNode : public Node {
+public:
+    enum Kind : unsigned int {
+        MAP = 0,
+        IF_ELSE = 1,
+    };
+
 private:
     Node *exprNode;
     std::vector<ArmNode *> armNodes;
+    Kind caseKind{MAP};
 
 public:
     CaseNode(unsigned int pos, Node *exprNode) : Node(NodeKind::Case, {pos, 1}), exprNode(exprNode) {}
@@ -1583,6 +1577,14 @@ public:
 
     const std::vector<ArmNode *> &getArmNodes() const {
         return this->armNodes;
+    }
+
+    void setCaseKind(Kind k) {
+        this->caseKind = k;
+    }
+
+    Kind getCaseKind() const {
+        return this->caseKind;
     }
 
     void dump(NodeDumper &dumper) const override;

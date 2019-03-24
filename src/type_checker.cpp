@@ -975,7 +975,10 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
 
     // check pattern type
     for(auto &e : node.getArmNodes()) {
-        this->checkPatternType(exprType, *e, *collector);
+        auto kind = this->checkPatternType(exprType, *e, *collector);
+        if(node.getCaseKind() < kind) {
+            node.setCaseKind(kind);
+        }
     }
 
     unsigned int size = node.getArmNodes().size();
@@ -1002,8 +1005,9 @@ void TypeChecker::visitArmNode(ArmNode &node) {
     node.setType(type);
 }
 
-void TypeChecker::checkPatternType(DSType &type, ArmNode &node, PatternCollector &collector) {
-    node.asConstant();  //FIXME: currently only support constant pattern
+CaseNode::Kind TypeChecker::checkPatternType(DSType &exprType, ArmNode &node, PatternCollector &collector) {
+    auto kind = CaseNode::MAP;
+
     if(node.getPatternNodes().empty()) {
         if(collector.hasElsePattern()) {
             Token token{node.getPos(), 4};
@@ -1013,7 +1017,12 @@ void TypeChecker::checkPatternType(DSType &type, ArmNode &node, PatternCollector
         collector.setElsePattern(true);
     }
     for(auto &e : node.getPatternNodes()) {
-        this->checkType(type, e);
+        auto &type = this->checkTypeAsExpr(e);
+        if(type.is(TYPE::Regex) && exprType.is(TYPE::String)) {
+            kind = CaseNode::IF_ELSE;
+        } else {
+            this->checkType(exprType, e);
+        }
     }
 
     for(auto &e : node.refPatternNodes()) {
@@ -1023,10 +1032,14 @@ void TypeChecker::checkPatternType(DSType &type, ArmNode &node, PatternCollector
     }
 
     for(auto &e : node.getPatternNodes()) {
+        if(e->is(NodeKind::Regex)) {
+            continue;
+        }
         if(!collector.collect(*e)) {
             RAISE_TC_ERROR(DupPattern, *e);
         }
     }
+    return kind;
 }
 
 DSType& TypeChecker::resolveCommonSuperType(const std::vector<DSType *> &types) {
@@ -1054,6 +1067,7 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
     switch(node->getNodeKind()) {
     case NodeKind::String:
     case NodeKind::Number:
+    case NodeKind::Regex:
         return true;
     case NodeKind::UnaryOp: {
         Token token = node->getToken();

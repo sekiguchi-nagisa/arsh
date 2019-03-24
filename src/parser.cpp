@@ -47,7 +47,8 @@
     OP(UINT32_LITERAL) \
     OP(SIGNAL_LITERAL) \
     OP(OPEN_DQUOTE) \
-    OP(STRING_LITERAL)
+    OP(STRING_LITERAL) \
+    OP(REGEX_LITERAL)
 
 #define EACH_LA_pattern(OP) \
     OP(MINUS) \
@@ -735,6 +736,8 @@ std::unique_ptr<Node> Parser::parse_primaryPattern() {
         return this->parse_signalLiteral();
     case STRING_LITERAL:
         return this->parse_stringLiteral();
+    case REGEX_LITERAL:
+        return this->parse_regexLiteral();
     default:
         return this->parse_stringExpression();
     }

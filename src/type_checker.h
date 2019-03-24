@@ -406,7 +406,7 @@ protected:
 
     std::unique_ptr<PatternCollector> newCollector(const DSType &type) const;
 
-    void checkPatternType(DSType &type, ArmNode &node, PatternCollector &collector);
+    CaseNode::Kind checkPatternType(DSType &exprType, ArmNode &node, PatternCollector &collector);
 
     /**
      *

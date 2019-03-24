@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 4, $errorKind = 'Required', $status = 1)
+
+var a = case 23 {
+    $/de/ => 34;
+}

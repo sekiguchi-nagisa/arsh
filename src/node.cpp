@@ -850,6 +850,13 @@ void CaseNode::addArmNode(ArmNode *armNode) {
 void CaseNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     DUMP(armNodes);
+
+#define EACH_ENUM(OP) \
+    OP(MAP) \
+    OP(IF_ELSE)
+
+    DUMP_ENUM(caseKind, EACH_ENUM);
+#undef EACH_ENUM
 }
 
 // #####################
