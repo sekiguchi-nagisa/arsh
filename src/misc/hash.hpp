@@ -31,9 +31,12 @@ struct CStringComparator {
 
 struct CStringHash {
     std::size_t operator()(const char *key) const {
-        std::size_t hash = 0;
+        constexpr uint64_t FNV_offset_basis = 0xcbf29ce484222325;
+        constexpr uint64_t FNV_prime = 0x100000001b3;
+        std::size_t hash = FNV_offset_basis;
         while(*key != '\0') {
-            hash = hash * 31 + *(key++);
+            hash = hash * FNV_prime;
+            hash = hash ^ static_cast<uint8_t>(*(key++));
         }
         return hash;
     }
