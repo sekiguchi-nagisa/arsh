@@ -489,6 +489,20 @@ std::string Error_Object::createHeader(const DSState &state) const {
     return str;
 }
 
+// ##########################
+// ##     CompiledCode     ##
+// ##########################
+
+unsigned int CompiledCode::getLineNum(unsigned int index) const {
+    unsigned int i = 0;
+    for(; this->lineNumEntries[i].address > 0; i++) {
+        if(index < this->lineNumEntries[i].address) {
+            break;
+        }
+    }
+    return this->lineNumEntries[i > 0 ? i - 1 : 0].lineNum;
+}
+
 unsigned int getLineNum(const LineNumEntry *entries, unsigned int index) {  //FIXME binary search
     unsigned int i = 0;
     for(; entries[i].address > 0; i++) {

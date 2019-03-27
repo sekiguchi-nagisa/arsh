@@ -865,11 +865,6 @@ struct LineNumEntry {
     unsigned int lineNum;
 };
 
-/**
- * entries must not be null
- */
-unsigned int getLineNum(const LineNumEntry *entries, unsigned int index);
-
 struct ExceptionEntry {
     /**
      * if null, indicate sentinel
@@ -977,6 +972,8 @@ public:
     const LineNumEntry *getLineNumEntries() const {
         return this->lineNumEntries;
     }
+
+    unsigned int getLineNum(unsigned int index) const;
 
     const ExceptionEntry *getExceptionEntries() const {
         return this->exceptionEntries;

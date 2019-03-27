@@ -197,7 +197,7 @@ void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTr
 
             // create stack trace element
             const char *sourceName = cc->getSourceName();
-            unsigned int lineNum = getLineNum(cc->getLineNumEntries(), frame.pc);
+            unsigned int lineNum = cc->getLineNum(frame.pc);
 
             std::string callableName;
             switch(callable->getKind()) {
