@@ -106,9 +106,10 @@ assert($sa[1] == "world")
 assert($sa[2] == "!!")
 
 $sa = 'hell'.split('l')
-assert $sa.size() == 2
+assert $sa.size() == 3
 assert $sa[0] == 'he'
 assert $sa[1] == ''
+assert $sa[2] == ''
 
 $sa = 'hell'.split('h')
 assert $sa.size() == 2
@@ -134,9 +135,10 @@ assert($sa.size() == 1)
 assert($sa[0] == "")
 
 $sa = $'a\x00b\x00'.split($'\x00')
-assert $sa.size() == 2
+assert $sa.size() == 3
 assert $sa[0] == 'a'
 assert $sa[1] == 'b'
+assert $sa[2] == ''
 
 $sa = "".split($'\x00')
 assert $sa.size() == 1

@@ -1150,7 +1150,7 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
 
     if(remain == thisStr) {
         ptr->append(LOCAL(0));
-    } else if(remain != thisStr + thisSize) {
+    } else {
         ptr->append(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::string(remain, thisSize - (remain - thisStr))));
     }
 
