@@ -417,6 +417,8 @@ function sort($this : Array<T0>) : Array<T0>
 
 function sortWith($this : Array<T0>, $comp : Func<Boolean,[T0,T0]>) : Array<T0>
 
+function join($this : Array<T0>, $delim : String) : String
+
 function size($this : Array<T0>) : Int32
 
 function empty($this : Array<T0>) : Boolean

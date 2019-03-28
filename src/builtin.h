@@ -1826,6 +1826,33 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
     }
 }
 
+//!bind: function join($this : Array<T0>, $delim : String) : String
+YDSH_METHOD array_join(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_join);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    auto *delim = typeAs<String_Object>(LOCAL(1));
+
+    bool hasRet = ctx.toStrBuf.empty();
+    unsigned int count = 0;
+    for(auto &e : obj->getValues()) {
+        if(count++ > 0) {
+            ctx.toStrBuf.append(delim->getValue(), delim->size());
+        }
+        if(!e->opStr(ctx)) {
+            ctx.toStrBuf.clear();
+            RET_ERROR;
+        }
+    }
+
+    if(hasRet) {
+        std::string value;
+        std::swap(value, ctx.toStrBuf);
+        RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(value)));
+    } else {
+        RET(DSValue::createInvalid());  // dummy
+    }
+}
+
 //!bind: function size($this : Array<T0>) : Int32
 YDSH_METHOD array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
