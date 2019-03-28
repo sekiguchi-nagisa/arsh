@@ -177,6 +177,7 @@ YDSH_METHOD to_str(RuntimeContext & ctx) {
     bool hasRet = ctx.toStrBuf.empty();
     if(!LOCAL(0)->opStr(ctx)) {
         ctx.toStrBuf.clear();
+        RET_ERROR;
     }
 
     if(hasRet) {
@@ -194,6 +195,7 @@ YDSH_METHOD to_interp(RuntimeContext & ctx) {
     bool hasRet = ctx.toStrBuf.empty();
     if(!LOCAL(0)->opInterp(ctx)) {
         ctx.toStrBuf.clear();
+        RET_ERROR;
     }
 
     if(hasRet) {
