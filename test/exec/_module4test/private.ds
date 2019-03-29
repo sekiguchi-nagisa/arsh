@@ -1,0 +1,10 @@
+
+var _AAA = "this is a private symbol"
+
+function __test() : String {
+    return $_AAA
+}
+
+function test() : String {
+    return $__test()
+}

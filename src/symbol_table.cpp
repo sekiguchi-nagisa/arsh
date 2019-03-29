@@ -156,9 +156,12 @@ void ModuleScope::exitFunc() {
     this->maxVarIndexStack.pop_back();
 }
 
-const char* ModuleScope::import(const ydsh::ModType &type) {
+const char* ModuleScope::import(const ModType &type) {
     for(auto &e : type.handleMap) {
         assert(!e.second.attr().has(FieldAttribute::BUILTIN));
+        if(e.first[0] == '_' && this->getModID() != e.second.getModID()) {
+            continue;
+        }
         auto ret = this->globalScope.handleMap.insert(e);
         if(!ret.second && ret.first->second.getModID() != type.getModID()) {
             return ret.first->first.c_str();
