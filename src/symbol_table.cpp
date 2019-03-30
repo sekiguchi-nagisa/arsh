@@ -238,9 +238,12 @@ ModType::ModType(unsigned int id, ydsh::DSType &superType, unsigned short modID,
     }
 }
 
-FieldHandle* ModType::lookupFieldHandle(ydsh::SymbolTable &, const std::string &fieldName) {
+FieldHandle* ModType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) {
     auto iter = this->handleMap.find(fieldName);
     if(iter != this->handleMap.end()) {
+        if(fieldName[0] == '_' && symbolTable.currentModID() != iter->second.getModID()) {
+            return nullptr;
+        }
         return &iter->second;
     }
     return nullptr;

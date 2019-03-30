@@ -448,6 +448,10 @@ public:
         this->curModule = &this->rootModule;
     }
 
+    unsigned int currentModID() const {
+        return this->cur().getModID();
+    }
+
     /**
      * if scriptDir is null, not search module dir
      * @param scriptDir
