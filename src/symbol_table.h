@@ -397,28 +397,23 @@ private:
 
     TypeMap typeMap;
 
+    // type template definition
+    TypeTemplate arrayTemplate;
+    TypeTemplate mapTemplate;
+    TypeTemplate tupleTemplate;
+    TypeTemplate optionTemplate;
+
     /**
      * for type template
      */
-    std::unordered_map<std::string, TypeTemplate *> templateMap;
-
-    // type template definition
-    TypeTemplate *arrayTemplate;
-    TypeTemplate *mapTemplate;
-    TypeTemplate *tupleTemplate;
-    TypeTemplate *optionTemplate;
+    std::unordered_map<std::string, const TypeTemplate *> templateMap;
 
 public:
     NON_COPYABLE(SymbolTable);
 
     SymbolTable();
 
-    ~SymbolTable() {
-        delete this->arrayTemplate;
-        delete this->mapTemplate;
-        delete this->tupleTemplate;
-        delete this->optionTemplate;
-    }
+    ~SymbolTable() = default;
 
 private:
     ModuleScope &cur() {
@@ -616,19 +611,19 @@ public:
 
     // for reified type.
     const TypeTemplate &getArrayTemplate() const {
-        return *this->arrayTemplate;
+        return this->arrayTemplate;
     }
 
     const TypeTemplate &getMapTemplate() const {
-        return *this->mapTemplate;
+        return this->mapTemplate;
     }
 
     const TypeTemplate &getTupleTemplate() const {
-        return *this->tupleTemplate;
+        return this->tupleTemplate;
     }
 
     const TypeTemplate &getOptionTemplate() const {
-        return *this->optionTemplate;
+        return this->optionTemplate;
     }
 
     // for type lookup
@@ -732,8 +727,8 @@ private:
     void initBuiltinType(TYPE t, const char *typeName, bool extendible,
                          DSType &superType, native_type_info_t info);
 
-    TypeTemplate *initTypeTemplate(const char *typeName,
-                                   std::vector<DSType*> &&elementTypes, native_type_info_t info);
+    void initTypeTemplate(TypeTemplate &temp, const char *typeName,
+                          std::vector<DSType*> &&elementTypes, native_type_info_t info);
 
     void initErrorType(TYPE t, const char *typeName);
 

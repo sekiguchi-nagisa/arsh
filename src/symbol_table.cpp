@@ -347,16 +347,16 @@ SymbolTable::SymbolTable() :
 
     // initialize type template
     std::vector<DSType *> elements = {&this->get(TYPE::Any)};
-    this->arrayTemplate = this->initTypeTemplate(TYPE_ARRAY, std::move(elements), info_ArrayType());
+     this->initTypeTemplate(this->arrayTemplate, TYPE_ARRAY, std::move(elements), info_ArrayType());
 
     elements = {&this->get(TYPE::_Value), &this->get(TYPE::Any)};
-    this->mapTemplate = this->initTypeTemplate(TYPE_MAP, std::move(elements), info_MapType());
+    this->initTypeTemplate(this->mapTemplate, TYPE_MAP, std::move(elements), info_MapType());
 
     elements = std::vector<DSType *>();
-    this->tupleTemplate = this->initTypeTemplate(TYPE_TUPLE, std::move(elements), info_TupleType());   // pseudo template.
+    this->initTypeTemplate(this->tupleTemplate, TYPE_TUPLE, std::move(elements), info_TupleType());   // pseudo template.
 
     elements = std::vector<DSType *>();
-    this->optionTemplate = this->initTypeTemplate(TYPE_OPTION, std::move(elements), info_OptionType()); // pseudo template
+    this->initTypeTemplate(this->optionTemplate, TYPE_OPTION, std::move(elements), info_OptionType()); // pseudo template
 
     // init string array type(for command argument)
     {
@@ -471,11 +471,11 @@ TypeTempOrError SymbolTable::getTypeTemplate(const std::string &typeName) const 
 
 TypeOrError SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
                                     std::vector<DSType *> &&elementTypes) {
-    if(this->tupleTemplate->getName() == typeTemplate.getName()) {
+    if(this->tupleTemplate.getName() == typeTemplate.getName()) {
         return this->createTupleType(std::move(elementTypes));
     }
 
-    flag8_set_t attr = this->optionTemplate->getName() == typeTemplate.getName() ? DSType::OPTION_TYPE : 0;
+    flag8_set_t attr = this->optionTemplate.getName() == typeTemplate.getName() ? DSType::OPTION_TYPE : 0;
 
     // check each element type
     if(attr != 0u) {
@@ -517,7 +517,7 @@ TypeOrError SymbolTable::createTupleType(std::vector<DSType *> &&elementTypes) {
         DSType *superType = &this->get(TYPE::Any);
         type = &this->typeMap.newType<TupleType>(
                 std::move(typeName),
-                this->tupleTemplate->getInfo(), superType, std::move(elementTypes));
+                this->tupleTemplate.getInfo(), superType, std::move(elementTypes));
     }
     return Ok(type);
 }
@@ -646,10 +646,10 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
     assert(type.is(t));
 }
 
-TypeTemplate *SymbolTable::initTypeTemplate(const char *typeName,
-                                            std::vector<DSType *> &&elementTypes, native_type_info_t info) {
-    return this->templateMap.insert(
-            {typeName, new TypeTemplate(std::string(typeName), std::move(elementTypes), info)}).first->second;
+void SymbolTable::initTypeTemplate(TypeTemplate &temp, const char *typeName,
+                                   std::vector<DSType *> &&elementTypes, native_type_info_t info) {
+    temp = TypeTemplate(std::string(typeName), std::move(elementTypes), info);
+    this->templateMap.insert({typeName, &temp});
 }
 
 void SymbolTable::initErrorType(TYPE t, const char *typeName) {

@@ -272,14 +272,14 @@ struct NativeFuncInfo {
 };
 
 struct native_type_info_t {
-    const unsigned short offset;
+    unsigned short offset;
 
     /**
      * may be 0.
      */
-    const unsigned char constructorSize;
+    unsigned char constructorSize;
 
-    const unsigned char methodSize;
+    unsigned char methodSize;
 
 
     const NativeFuncInfo &getMethodInfo(unsigned int index) const;
@@ -420,6 +420,8 @@ private:
     native_type_info_t info;
 
 public:
+    TypeTemplate() = default;
+
     TypeTemplate(std::string &&name, std::vector<DSType*> &&elementTypes, native_type_info_t info) :
             name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) { }
 
