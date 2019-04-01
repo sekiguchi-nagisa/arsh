@@ -318,7 +318,7 @@ private:
     }
 
     bool inUDC() const {
-        return this->curBuilder().getCodeKind() == CodeKind::USER_DEFINED_CMD;;
+        return this->curBuilder().getCodeKind() == CodeKind::USER_DEFINED_CMD;
     }
 
     bool inFunc() const {

@@ -398,6 +398,13 @@ TypeNode *TypeOpNode::getTargetTypeNode() const {
     return this->targetTypeNode;
 }
 
+TypeOpNode *newTypedCastNode(Node *targetNode, DSType &type) {
+    assert(!targetNode->isUntyped());
+    auto *castNode = new TypeOpNode(targetNode, nullptr, TypeOpNode::NO_CAST);
+    castNode->setType(type);
+    return castNode;
+}
+
 void TypeOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     TypeNode *targetTypeToken = this->getTargetTypeNode();

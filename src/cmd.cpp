@@ -1304,6 +1304,8 @@ static int builtin_history(DSState &state, Array_Object &argvObj) {
     case 'w':
         DSState_saveHistory(&state, fileName);
         break;
+    default:
+        break;
     }
     return 0;
 }
@@ -1345,7 +1347,7 @@ static std::pair<int, bool> toInt32(const char *str) {
         return {0, false};
     }
     return {static_cast<int>(v), true};
-};
+}
 
 static int toSigNum(const char *str) {
     if(isDecimal(*str)) {
@@ -1440,6 +1442,8 @@ static int builtin_kill(DSState &state, Array_Object &argvObj) {
     case ':':
         ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
         return 1;
+    default:
+        break;
     }
 
     auto begin = argvObj.getValues().begin() + optState.index;

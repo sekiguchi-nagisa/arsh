@@ -384,14 +384,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
     RAISE_TC_ERROR(CastOp, node, this->symbolTable.getTypeName(exprType), this->symbolTable.getTypeName(targetType));
 }
 
-TypeOpNode *TypeChecker::newTypedCastNode(Node *targetNode, DSType &type) {
-    assert(!targetNode->isUntyped());
-    auto *castNode = new TypeOpNode(targetNode, nullptr, TypeOpNode::NO_CAST);
-    castNode->setType(type);
-    return castNode;
-}
-
-Node* TypeChecker::newPrintOpNode(Node *node) {
+Node *TypeChecker::newPrintOpNode(Node *node) {
     if(!node->getType().isVoidType() && !node->getType().isNothingType()) {
         auto *castNode = newTypedCastNode(node, this->symbolTable.get(TYPE::Void));
         castNode->setOpKind(TypeOpNode::PRINT);

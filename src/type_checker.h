@@ -270,7 +270,7 @@ protected:
     bool checkCoercion(const DSType &requiredType, DSType &targetType);
 
     void resolveCoercion(DSType &requiredType, Node * &targetNode) {
-        targetNode = this->newTypedCastNode(targetNode, requiredType);
+        targetNode = newTypedCastNode(targetNode, requiredType);
         this->resolveCastOp(*static_cast<TypeOpNode *>(targetNode));
     }
 
@@ -339,15 +339,6 @@ protected:
      * must be typed
      */
     void resolveCastOp(TypeOpNode &node);
-
-    /**
-     * for implicit cast.
-     * @param targetNode
-     * must be typed.
-     * @param type
-     * @return
-     */
-    TypeOpNode *newTypedCastNode(Node *targetNode, DSType &type);
 
     /**
      *

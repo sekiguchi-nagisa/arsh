@@ -762,6 +762,15 @@ public:
 };
 
 /**
+ * for implicit cast.
+ * @param targetNode
+ * must be typed.
+ * @param type
+ * @return
+ */
+TypeOpNode *newTypedCastNode(Node *targetNode, DSType &type);
+
+/**
  * for function object apply or method call
  */
 class ApplyNode : public Node {

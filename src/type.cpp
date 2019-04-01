@@ -226,7 +226,7 @@ TupleType::TupleType(unsigned int id, native_type_info_t info, DSType *superType
 }
 
 TupleType::~TupleType() {
-    for(auto pair : this->fieldHandleMap) {
+    for(auto &pair : this->fieldHandleMap) {
         delete pair.second;
     }
 }

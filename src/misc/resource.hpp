@@ -196,7 +196,7 @@ template <typename R, typename D>
 ScopedResource<R, typename std::remove_reference<D>::type> makeScopedResource(R &&r, D &&d) {
     using ActualD = typename std::remove_reference<D>::type;
     return ScopedResource<R, ActualD>(std::forward<R>(r), std::forward<ActualD>(d));
-};
+}
 
 struct FileCloser {
     void operator()(FILE *fp) const {
