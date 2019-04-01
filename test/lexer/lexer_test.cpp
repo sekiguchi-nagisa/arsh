@@ -62,7 +62,7 @@ private:
     }
 
 
-    const char *toName(TokenKind kind) {
+    static const char *toName(TokenKind kind) {
         const char *t[] = {
 #define GEN_NAME(E, S) #E,
             EACH_TOKEN(GEN_NAME)
@@ -121,7 +121,7 @@ ExpectedList expect(TokenKind kind, const char *text, T&& ...rest) {
     ExpectedList list;
     addPair(list, kind, text, std::forward<T>(rest)...);
     return list;
-};
+}
 
 #define EXPECT(...) this->assertTokens(expect(__VA_ARGS__))
 

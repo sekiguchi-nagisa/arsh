@@ -448,7 +448,7 @@ struct StringTransport : public rpc::Transport {
 
     StringTransport() : rpc::Transport(SingleNullLogger::instance()) {}
 
-    StringTransport(std::string &&text) : rpc::Transport(SingleNullLogger::instance()), inStr(std::move(text)) {}
+    explicit StringTransport(std::string &&text) : rpc::Transport(SingleNullLogger::instance()), inStr(std::move(text)) {}
 
     int send(unsigned int size, const char *data) override {
         this->outStr.append(data, size);

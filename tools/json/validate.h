@@ -114,11 +114,11 @@ inline TypeMatcherPtr object(const char *name) {
     return std::make_shared<ObjectMatcher>(name);
 }
 
-inline TypeMatcherPtr array(TypeMatcherPtr e) {
+inline TypeMatcherPtr array(const TypeMatcherPtr &e) {
     return std::make_shared<ArrayMatcher>(e);
 }
 
-inline TypeMatcherPtr operator|(TypeMatcherPtr left, TypeMatcherPtr right) {
+inline TypeMatcherPtr operator|(const TypeMatcherPtr &left, const TypeMatcherPtr &right) {
     return std::make_shared<UnionMatcher>(left, right);
 }
 
