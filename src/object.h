@@ -524,13 +524,13 @@ inline const char *str(const DSValue &v) {
 }
 
 struct KeyCompare {
-    bool operator() (const DSValue &x, const DSValue &y) const {
+    bool operator()(const DSValue &x, const DSValue &y) const {
         return x->equals(y);
     }
 };
 
 struct GenHash {
-    std::size_t operator() (const DSValue &key) const {
+    std::size_t operator()(const DSValue &key) const {
         return key->hash();
     }
 };

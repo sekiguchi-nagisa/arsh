@@ -33,7 +33,7 @@
 #include "time_util.h"
 #include "misc/files.h"
 
-extern char **environ;
+extern char **environ;  //NOLINT
 
 namespace ydsh {
 
