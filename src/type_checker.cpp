@@ -212,13 +212,13 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, DSType &targetType) 
     }
 
     // int widening or float cast
-    int targetPrecision = this->symbolTable.getIntPrecision(targetType);
-    if(targetPrecision > SymbolTable::INVALID_PRECISION) {
-        int requiredPrecision = this->symbolTable.getIntPrecision(requiredType);
-        if(requiredType.is(TYPE::Float) && targetPrecision < SymbolTable::INT64_PRECISION) {
+    int targetPrecision = targetType.getIntPrecision();
+    if(targetPrecision > DSType::INVALID_PRECISION) {
+        int requiredPrecision = requiredType.getIntPrecision();
+        if(requiredType.is(TYPE::Float) && targetPrecision < DSType::INT64_PRECISION) {
             return true;    // check int (except for Int64, Uint64) to float cast
         }
-        if(targetPrecision < requiredPrecision && requiredPrecision <= SymbolTable::INT64_PRECISION) {
+        if(targetPrecision < requiredPrecision && requiredPrecision <= DSType::INT64_PRECISION) {
             return true;    // check int widening
         }
     }
@@ -639,14 +639,14 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
         return;
     }
 
-    int leftPrecision = this->symbolTable.getIntPrecision(leftType);
-    int rightPrecision = this->symbolTable.getIntPrecision(rightType);
+    int leftPrecision = leftType.getIntPrecision();
+    int rightPrecision = rightType.getIntPrecision();
 
     // check int cats
-    if(leftPrecision > SymbolTable::INVALID_PRECISION &&
-       leftPrecision < SymbolTable::INT32_PRECISION &&
-       rightPrecision > SymbolTable::INVALID_PRECISION &&
-       rightPrecision < SymbolTable::INT32_PRECISION) {   // int widening
+    if(leftPrecision > DSType::INVALID_PRECISION &&
+       leftPrecision < DSType::INT32_PRECISION &&
+       rightPrecision > DSType::INVALID_PRECISION &&
+       rightPrecision < DSType::INT32_PRECISION) {   // int widening
         this->resolveCoercion(this->symbolTable.get(TYPE::Int32), node.refLeftNode());
         this->resolveCoercion(this->symbolTable.get(TYPE::Int32), node.refRightNode());
     } else if(leftPrecision != rightPrecision && this->checkCoercion(rightType, leftType)) {    // cast left

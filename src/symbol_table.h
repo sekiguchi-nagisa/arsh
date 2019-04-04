@@ -700,17 +700,6 @@ public:
      */
     std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const;
 
-    static constexpr int INT64_PRECISION = 50;
-    static constexpr int INT32_PRECISION = 40;
-    static constexpr int INT16_PRECISION = 30;
-    static constexpr int BYTE_PRECISION = 20;
-    static constexpr int INVALID_PRECISION = 1;
-
-    /**
-     * get integer precision. if type is not int type, return INVALID_PRECISION.
-     */
-    int getIntPrecision(const DSType &type) const;
-
     /**
      * if type is not number type, return -1.
      */

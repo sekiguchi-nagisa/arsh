@@ -577,30 +577,6 @@ std::string SymbolTable::toFunctionTypeName(DSType *returnType, const std::vecto
     return funcTypeName;
 }
 
-constexpr int SymbolTable::INT64_PRECISION;
-constexpr int SymbolTable::INT32_PRECISION;
-constexpr int SymbolTable::INT16_PRECISION;
-constexpr int SymbolTable::BYTE_PRECISION;
-constexpr int SymbolTable::INVALID_PRECISION;
-
-int SymbolTable::getIntPrecision(const DSType &type) const {
-    switch(type.getTypeID()) {
-    case static_cast<unsigned int>(TYPE::Int64):
-    case static_cast<unsigned int>(TYPE::Uint64):
-        return INT64_PRECISION;
-    case static_cast<unsigned int>(TYPE::Int32):
-    case static_cast<unsigned int>(TYPE::Uint32):
-        return INT32_PRECISION;
-    case static_cast<unsigned int>(TYPE::Int16):
-    case static_cast<unsigned int>(TYPE::Uint16):
-        return INT16_PRECISION;
-    case static_cast<unsigned int>(TYPE::Byte):
-        return BYTE_PRECISION;
-    default:
-        return INVALID_PRECISION;
-    }
-}
-
 static const TYPE numTypeTable[] = {
         TYPE::Byte,   // 0
         TYPE::Int16,  // 1
