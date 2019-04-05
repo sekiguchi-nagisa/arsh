@@ -20,10 +20,10 @@
 namespace ydsh {
 namespace rpc {
 
-#define FROM_JSON(json, value, field) fromJSON(std::move(json[#field]), value.field)
-#define MOVE_JSON(json, value, field) value.field = std::move(json[#field])
+#define FROM_JSON(json, value, field) fromJSON(std::move((json)[#field]), value.field)
+#define MOVE_JSON(json, value, field) value.field = std::move((json)[#field])
 
-#define TO_MEMBER(obj, field) {#field, toJSON(obj.field)}
+#define TO_MEMBER(obj, field) {#field, toJSON((obj).field)}
 
 
 void fromJSON(JSON &&json, DocumentURI &uri) {
