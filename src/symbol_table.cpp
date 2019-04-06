@@ -561,17 +561,15 @@ std::string SymbolTable::toFunctionTypeName(DSType *returnType, const std::vecto
     int paramSize = paramTypes.size();
     std::string funcTypeName("Func<");
     funcTypeName += this->getTypeName(*returnType);
-    for(int i = 0; i < paramSize; i++) {
-        if(i == 0) {
-            funcTypeName += ",[";
+    if(paramSize > 0) {
+        funcTypeName += ",[";
+        for(int i = 0; i < paramSize; i++) {
+            if(i > 0) {
+                funcTypeName += ",";
+            }
+            funcTypeName += this->getTypeName(*paramTypes[i]);
         }
-        if(i > 0) {
-            funcTypeName += ",";
-        }
-        funcTypeName += this->getTypeName(*paramTypes[i]);
-        if(i == paramSize - 1) {
-            funcTypeName += "]";
-        }
+        funcTypeName += "]";
     }
     funcTypeName += ">";
     return funcTypeName;
