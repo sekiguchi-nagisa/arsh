@@ -115,7 +115,7 @@ private:
     /**
      * after detach, will be 0
      */
-    unsigned int jobID_{0};
+    unsigned int jobID{0};
 
     /**
      * pid of owner process (JobEntry creator)
@@ -190,8 +190,8 @@ public:
      * @return
      * after detached, return 0.
      */
-    unsigned int jobID() const {
-        return this->jobID_;
+    unsigned int getJobID() const {
+        return this->jobID;
     }
 
     pid_t getOwnerPid() const {
@@ -199,7 +199,7 @@ public:
     }
 
     bool hasOwnership() const {
-        return this->ownerPid == getpid();
+        return this->getOwnerPid() == getpid();
     }
 
     /**
@@ -276,14 +276,14 @@ public:
     int waitAndDetach(Job &entry, bool jobctrl) {
         int ret = entry->wait(jobctrl ? Proc::BLOCK_UNTRACED : Proc::BLOCKING);
         if(!entry->available()) {
-            this->detach(entry->jobID(), true);
+            this->detach(entry->getJobID(), true);
         }
         return ret;
     }
 
     void detachAll() {
         for(auto &e : this->entries) {
-            e->jobID_ = 0;
+            e->jobID = 0;
         }
         this->entries.clear();
         this->latestEntry.reset();

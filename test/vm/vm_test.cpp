@@ -266,23 +266,23 @@ TEST(JobTable, attach) {
     auto job6 = newJob();
 
     jobTable.attach(job1);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, job1->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, job1->getJobID()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job1, jobTable.getLatestEntry()));
 
     jobTable.attach(job2);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, job2->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, job2->getJobID()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job2, jobTable.getLatestEntry()));
 
     jobTable.attach(job3);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, job3->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, job3->getJobID()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job3, jobTable.getLatestEntry()));
 
     jobTable.attach(job4);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, job4->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, job4->getJobID()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job4, jobTable.getLatestEntry()));
 
     jobTable.attach(job5);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, job5->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, job5->getJobID()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job5, jobTable.getLatestEntry()));
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job2, jobTable.detach(2, true)));
@@ -296,58 +296,58 @@ TEST(JobTable, attach) {
 
     // job entry layout
     auto begin = getBeginIter(jobTable);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->getJobID()));
     ++begin;
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(getEndIter(jobTable), begin));
 
 
     // re-attach
     jobTable.attach(job5);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, job5->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, job5->getJobID()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job5, jobTable.getLatestEntry()));
 
     begin = getBeginIter(jobTable);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->getJobID()));
     ++begin;
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(getEndIter(jobTable), begin));
 
     // re-attach
     jobTable.attach(job2);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, job2->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, job2->getJobID()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job2, jobTable.getLatestEntry()));
 
     begin = getBeginIter(jobTable);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->getJobID()));
     ++begin;
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(getEndIter(jobTable), begin));
 
     // re-attach
     jobTable.attach(job6);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, job6->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, job6->getJobID()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job6, jobTable.getLatestEntry()));
 
     begin = getBeginIter(jobTable);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->getJobID()));
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, (*begin)->jobID()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, (*begin)->getJobID()));
     ++begin;
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(getEndIter(jobTable), begin));
 }

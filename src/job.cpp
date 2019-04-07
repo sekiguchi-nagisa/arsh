@@ -239,7 +239,7 @@ int JobImpl::wait(Proc::WaitOp op) {
 // ######################
 
 void JobTable::attach(Job job, bool disowned) {
-    if(job->jobID() != 0) {
+    if(job->getJobID() != 0) {
         return;
     }
 
@@ -250,7 +250,7 @@ void JobTable::attach(Job job, bool disowned) {
 
     auto ret = this->findEmptyEntry();
     this->entries.insert(this->beginJob() + ret, job);
-    job->jobID_ = ret + 1;
+    job->jobID = ret + 1;
     this->latestEntry = std::move(job);
     this->jobSize++;
 }
@@ -271,10 +271,10 @@ Job JobTable::detach(unsigned int jobId, bool remove) {
 JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
     if(iter != this->entries.end()) {
         Job job = *iter;
-        if(job->jobID() > 0) {
+        if(job->getJobID() > 0) {
             this->jobSize--;
         }
-        job->jobID_ = 0;
+        job->jobID = 0;
         auto next = this->entries.erase(iter);
 
         // change latest entry
@@ -307,7 +307,7 @@ unsigned int JobTable::findEmptyEntry() const {
     while(dist > 0) {
         unsigned int hafDist = dist / 2;
         unsigned int midIndex = hafDist + firstIndex;
-        if(entries[midIndex]->jobID() == midIndex + 1) {
+        if(entries[midIndex]->getJobID() == midIndex + 1) {
             firstIndex = midIndex + 1;
             dist = dist - hafDist - 1;
         } else {
@@ -319,18 +319,18 @@ unsigned int JobTable::findEmptyEntry() const {
 
 struct Comparator {
     bool operator()(const Job &x, unsigned int y) const {
-        return x->jobID() < y;
+        return x->getJobID() < y;
     }
 
     bool operator()(unsigned int x, const Job &y) const {
-        return x < y->jobID();
+        return x < y->getJobID();
     }
 };
 
 JobTable::ConstEntryIter JobTable::findEntryIter(unsigned int jobId) const {
     if(jobId > 0) {
         auto iter = std::lower_bound(this->beginJob(), this->endJob(), jobId, Comparator());
-        if(iter != this->endJob() && (*iter)->jobID_ == jobId) {
+        if(iter != this->endJob() && (*iter)->jobID == jobId) {
             return iter;
         }
     }
