@@ -502,7 +502,10 @@ public:
         this->curIndex = 0;
     }
 
-    const DSValue &nextElement();
+    const DSValue &nextElement() {
+        unsigned int index = this->curIndex++;
+        return this->values[index];
+    }
 
     bool hasNext() const {
         return this->curIndex < this->values.size();

@@ -308,11 +308,6 @@ DSValue Array_Object::opCmdArg(DSState &state) const {
     return result;
 }
 
-const DSValue &Array_Object::nextElement() {
-    unsigned int index = this->curIndex++;
-    assert(index < this->values.size());
-    return this->values[index];
-}
 
 // ########################
 // ##     Map_Object     ##
