@@ -328,6 +328,37 @@ inline const T &get(const Union<R...> &value) {
 }
 
 
+// ######################
+// ##     Optional     ##
+// ######################
+
+template <typename T>
+class Optional : public Union<T> {
+public:
+    Optional() noexcept : Union<T>() {}
+
+    Optional(T &&value) noexcept : Union<T>(std::forward<T>(value)) {}
+
+    T &unwrap() noexcept {
+        return get<T>(*this);
+    }
+
+    const T &unwrap() const noexcept {
+        return get<T>(*this);
+    }
+};
+
+template <typename ...T>
+class Optional<Union<T...>> : public Union<T...> {
+public:
+    Optional() noexcept : Union<T...>() {}
+
+    template <typename U>
+    Optional(U &&value) noexcept : Union<T...>(std::forward<U>(value)) {}
+};
+
+
+
 // ####################
 // ##     Result     ##
 // ####################

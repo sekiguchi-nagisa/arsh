@@ -160,6 +160,29 @@ TEST(result, result) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, func(-1).asErr()));
 }
 
+TEST(result, optioanl1) {
+    Optional<int> ret;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ret.hasValue()));
+    ret = 12;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret.hasValue()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(12, ret.unwrap()));
+    ret = Optional<int>(34);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret.hasValue()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(34, ret.unwrap()));
+}
+
+TEST(result, optioanl2) {
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Union<int, double>), sizeof(Optional<Union<int, double>>)));
+    Optional<Union<int, std::string>> ret;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ret.hasValue()));
+    ret = 12;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret.hasValue()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(12, get<int>(ret)));
+    ret = "hello";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret.hasValue()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", get<std::string>(ret)));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
