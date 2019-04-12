@@ -348,6 +348,23 @@ public:
     }
 };
 
+template <typename T>
+class Optional<Optional<T>> : public Union<T> {
+public:
+    Optional() noexcept : Union<T>() {}
+
+    template <typename U>
+    Optional(U &&value) noexcept : Union<T>(std::forward<U>(value)) {}
+
+    T &unwrap() noexcept {
+        return get<T>(*this);
+    }
+
+    const T &unwrap() const noexcept {
+        return get<T>(*this);
+    }
+};
+
 template <typename ...T>
 class Optional<Union<T...>> : public Union<T...> {
 public:
@@ -356,7 +373,6 @@ public:
     template <typename U>
     Optional(U &&value) noexcept : Union<T...>(std::forward<U>(value)) {}
 };
-
 
 
 // ####################

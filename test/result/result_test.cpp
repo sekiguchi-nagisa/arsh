@@ -160,7 +160,7 @@ TEST(result, result) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, func(-1).asErr()));
 }
 
-TEST(result, optioanl1) {
+TEST(result, optional1) {
     Optional<int> ret;
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ret.hasValue()));
     ret = 12;
@@ -171,7 +171,7 @@ TEST(result, optioanl1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(34, ret.unwrap()));
 }
 
-TEST(result, optioanl2) {
+TEST(result, optional2) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Union<int, double>), sizeof(Optional<Union<int, double>>)));
     Optional<Union<int, std::string>> ret;
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ret.hasValue()));
@@ -181,6 +181,20 @@ TEST(result, optioanl2) {
     ret = "hello";
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret.hasValue()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", get<std::string>(ret)));
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<int>>)));
+}
+
+TEST(result, optional3) {
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<int>>)));
+    Optional<Optional<int>> ret;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ret.hasValue()));
+    ret = 12;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret.hasValue()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(12, ret.unwrap()));
+    ret = Optional<int>(34);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret.hasValue()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(34, ret.unwrap()));
 }
 
 int main(int argc, char **argv) {
