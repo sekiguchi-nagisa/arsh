@@ -332,29 +332,14 @@ inline const T &get(const Union<R...> &value) {
 // ##     Optional     ##
 // ######################
 
+namespace __detail {
+
 template <typename T>
 class Optional : public Union<T> {
 public:
     Optional() noexcept : Union<T>() {}
 
     Optional(T &&value) noexcept : Union<T>(std::forward<T>(value)) {}
-
-    T &unwrap() noexcept {
-        return get<T>(*this);
-    }
-
-    const T &unwrap() const noexcept {
-        return get<T>(*this);
-    }
-};
-
-template <typename T>
-class Optional<Optional<T>> : public Union<T> {
-public:
-    Optional() noexcept : Union<T>() {}
-
-    template <typename U>
-    Optional(U &&value) noexcept : Union<T>(std::forward<U>(value)) {}
 
     T &unwrap() noexcept {
         return get<T>(*this);
@@ -373,6 +358,19 @@ public:
     template <typename U>
     Optional(U &&value) noexcept : Union<T...>(std::forward<U>(value)) {}
 };
+
+template <typename T>
+struct flatten {
+    using type = T;
+};
+
+template <typename T>
+struct flatten<Optional<T>> : flatten<T> {};
+
+} // namespace __detail
+
+template <typename T>
+using Optional = __detail::Optional<typename __detail::flatten<T>::type>;
 
 
 // ####################

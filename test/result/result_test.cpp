@@ -186,7 +186,9 @@ TEST(result, optional2) {
 }
 
 TEST(result, optional3) {
+    static_assert(std::is_same<Optional<float>, Optional<Optional<float>>>::value, "");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<int>>)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<Optional<int>>>)));
     Optional<Optional<int>> ret;
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ret.hasValue()));
     ret = 12;
