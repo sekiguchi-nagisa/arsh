@@ -32,8 +32,6 @@ class Validator;
  */
 class TypeMatcher {
 protected:
-    friend class Validator;
-
     const std::string name;
     const int tag;
 
@@ -44,35 +42,30 @@ public:
 
     virtual ~TypeMatcher() = default;
 
-    virtual bool match(Validator &validator, const JSON &value) const;
+    virtual bool operator()(Validator &validator, const JSON &value) const;
     virtual std::string str() const;
 };
 
 using TypeMatcherPtr = std::shared_ptr<TypeMatcher>;
 
 struct AnyMatcher : public TypeMatcher {
-    friend class Validator;
-
-    bool match(Validator &validator, const JSON &value) const override;
+    bool operator()(Validator &validator, const JSON &value) const override;
     std::string str() const override;
 };
 
 class ArrayMatcher : public TypeMatcher {
 private:
-    friend class Validator;
-
     const TypeMatcherPtr matcher;
 
 public:
     explicit ArrayMatcher(TypeMatcherPtr matcher) :
             TypeMatcher("Array", JSON::TAG<Array>), matcher(std::move(matcher)) {}
-    bool match(Validator &validator, const JSON &value) const override;
+
+    bool operator()(Validator &validator, const JSON &value) const override;
     std::string str() const override;
 };
 
 struct ObjectMatcher : public TypeMatcher {
-    friend class Validator;
-
     /**
      *
      * @param name
@@ -80,14 +73,12 @@ struct ObjectMatcher : public TypeMatcher {
      */
     explicit ObjectMatcher(const char *name) : TypeMatcher(name, JSON::TAG<Object>) {}
 
-    bool match(Validator &validator, const JSON &value) const override;
+    bool operator()(Validator &validator, const JSON &value) const override;
     std::string str() const override;
 };
 
 class UnionMatcher : public TypeMatcher {
 private:
-    friend class Validator;
-
     TypeMatcherPtr left;
     TypeMatcherPtr right;
 
@@ -98,7 +89,7 @@ public:
     UnionMatcher(const char *alias, TypeMatcherPtr left, TypeMatcherPtr right) :
             TypeMatcher(alias, -1), left(std::move(left)), right(std::move(right)) {}
 
-    bool match(Validator &validator, const JSON &value) const override;
+    bool operator()(Validator &validator, const JSON &value) const override;
     std::string str() const override;
 };
 
@@ -173,6 +164,7 @@ struct InterfaceBase {
 
 class Interface : public InterfaceBase {
 private:
+    friend class Validator;
     using Entry = Fields::Entry;
     std::string name;
     Entry fields;
@@ -194,6 +186,8 @@ public:
 };
 
 struct VoidInterface : public InterfaceBase {
+    friend class Validator;
+
     const char *getName() const override {
         return "void";
     }
@@ -232,15 +226,7 @@ private:
 public:
     explicit Validator(const InterfaceMap &map) : map(map) {}
 
-    bool match(const TypeMatcher &matcher, const JSON &value);
-    bool match(const AnyMatcher &matcher, const JSON &value);
-    bool match(const ArrayMatcher &matcher, const JSON &value);
-    bool match(const ObjectMatcher &matcher, const JSON &value);
-    bool match(const UnionMatcher &matcher, const JSON &value);
     bool match(const std::string &ifaceName, const JSON &value);
-
-    bool match(const Interface &inface, const JSON &value);
-    bool match(const VoidInterface &iface, const JSON &value);
 
     bool operator()(const std::string &ifaceName, const JSON &value) {
         this->errors.clear();
@@ -248,6 +234,15 @@ public:
     }
 
     std::string formatError() const;
+
+    void clearError() {
+        this->errors.clear();
+    }
+
+    template <typename ...T>
+    void appendError(T && ...v) {
+        this->errors.emplace_back(std::forward<T>(v)...);
+    }
 };
 
 } // namespace json

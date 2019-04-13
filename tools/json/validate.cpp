@@ -23,8 +23,8 @@ namespace json {
 // ##     TypeMatcher     ##
 // #########################
 
-bool TypeMatcher::match(Validator &validator, const JSON &value) const {
-    return validator.match(*this, value);
+bool TypeMatcher::operator()(Validator &, const JSON &value) const {
+    return this->tag == value.tag();
 }
 
 std::string TypeMatcher::str() const {
@@ -35,8 +35,8 @@ std::string TypeMatcher::str() const {
 // ##     AnyMatcher     ##
 // ########################
 
-bool AnyMatcher::match(Validator &validator, const JSON &value) const {
-    return validator.match(*this, value);
+bool AnyMatcher::operator()(Validator &, const JSON &) const {
+    return true;
 }
 
 std::string AnyMatcher::str() const {
@@ -47,8 +47,16 @@ std::string AnyMatcher::str() const {
 // ##     ArrayMatcher     ##
 // ##########################
 
-bool ArrayMatcher::match(Validator &validator, const JSON &value) const {
-    return validator.match(*this, value);
+bool ArrayMatcher::operator()(Validator &validator, const JSON &value) const {
+    if(this->tag != value.tag()) {
+        return false;
+    }
+    for(auto &e : value.asArray()) {
+        if(!(*this->matcher)(validator, e)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 std::string ArrayMatcher::str() const {
@@ -64,8 +72,8 @@ std::string ArrayMatcher::str() const {
 // ##     ObjectMatcher     ##
 // ###########################
 
-bool ObjectMatcher::match(Validator &validator, const JSON &value) const {
-    return validator.match(*this, value);
+bool ObjectMatcher::operator()(Validator &validator, const JSON &value) const {
+    return validator.match(this->name, value);
 }
 
 std::string ObjectMatcher::str() const {
@@ -76,8 +84,12 @@ std::string ObjectMatcher::str() const {
 // ##     UnionMatcher     ##
 // ##########################
 
-bool UnionMatcher::match(Validator &validator, const JSON &value) const {
-    return validator.match(*this, value);
+bool UnionMatcher::operator()(Validator &validator, const JSON &value) const {
+    if((*this->left)(validator, value)) {
+        return true;
+    }
+    validator.clearError();
+    return (*this->right)(validator, value);
 }
 
 std::string UnionMatcher::str() const {
@@ -127,7 +139,34 @@ Fields::Fields(std::initializer_list<std::pair<std::string, Field>> list) {
 // #######################
 
 bool Interface::match(Validator &validator, const JSON &json) const {
-    return validator.match(*this, json);
+    for(auto &e : this->getFields()) {
+        auto iter = json.asObject().find(e.first);
+        if(iter == json.asObject().end()) {
+            if(!e.second.isRequire()) {
+                continue;
+            }
+            std::string str = "require field `";
+            str += e.first;
+            str += "' in `";
+            str += this->getName();
+            str += "'";
+            validator.appendError(std::move(str));
+            return false;
+        }
+
+        if(!e.second.getMatcher()(validator, iter->second)) {
+            std::string str = "field `";
+            str += e.first;
+            str += "' requires `";
+            str += e.second.getMatcher().str();
+            str += "' type in `";
+            str += this->getName();
+            str += "'";
+            validator.appendError(std::move(str));
+            return false;
+        }
+    }
+    return true;
 }
 
 // ###########################
@@ -135,7 +174,11 @@ bool Interface::match(Validator &validator, const JSON &json) const {
 // ###########################
 
 bool VoidInterface::match(Validator &validator, const JSON &json) const {
-    return validator.match(*this, json);
+    if(!json.asObject().empty()) {
+        validator.appendError("must be empty object");
+        return false;
+    }
+    return true;
 }
 
 
@@ -172,38 +215,6 @@ const InterfaceBase* InterfaceMap::lookup(const char *name) const {
 // ##     Validator     ##
 // #######################
 
-bool Validator::match(const TypeMatcher &matcher, const JSON &value) {
-    return matcher.tag == value.tag();
-}
-
-bool Validator::match(const AnyMatcher &, const JSON &) {
-    return true;
-}
-
-bool Validator::match(const ArrayMatcher &matcher, const JSON &value) {
-    if(matcher.tag != value.tag()) {
-        return false;
-    }
-    for(auto &e : value.asArray()) {
-        if(!matcher.matcher->match(*this, e)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-bool Validator::match(const ObjectMatcher &matcher, const JSON &value) {
-    return this->match(matcher.name, value);
-}
-
-bool Validator::match(const UnionMatcher &matcher, const JSON &value) {
-    if(matcher.left->match(*this, value)) {
-        return true;
-    }
-    this->errors.clear();
-    return matcher.right->match(*this, value);
-}
-
 bool Validator::match(const std::string &ifaceName, const JSON &value) {
     if(value.tag() != JSON::TAG<Object>) {
         return false;
@@ -217,45 +228,6 @@ bool Validator::match(const std::string &ifaceName, const JSON &value) {
         fatal("undefined interface: %s\n", ifaceName.c_str());
     }
     return ptr->match(*this, value);
-}
-
-bool Validator::match(const Interface &iface, const JSON &value) {
-    for(auto &e : iface.getFields()) {
-        auto iter = value.asObject().find(e.first);
-        if(iter == value.asObject().end()) {
-            if(!e.second.isRequire()) {
-                continue;
-            }
-            std::string str = "require field `";
-            str += e.first;
-            str += "' in `";
-            str += iface.getName();
-            str += "'";
-            this->errors.emplace_back(std::move(str));
-            return false;
-        }
-
-        if(!e.second.getMatcher().match(*this, iter->second)) {
-            std::string str = "field `";
-            str += e.first;
-            str += "' requires `";
-            str += e.second.getMatcher().str();
-            str += "' type in `";
-            str += iface.getName();
-            str += "'";
-            this->errors.emplace_back(std::move(str));
-            return false;
-        }
-    }
-    return true;
-}
-
-bool Validator::match(const VoidInterface &, const JSON &value) {
-    if(!value.asObject().empty()) {
-        this->errors.emplace_back("must be empty object");
-        return false;
-    }
-    return true;
 }
 
 std::string Validator::formatError() const {
