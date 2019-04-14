@@ -19,10 +19,10 @@
 
 #include <utility>
 #include <memory>
-#include <type_traits>
 #include <list>
 #include <cassert>
 
+#include "misc/detect.hpp"
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
 #include "misc/token.hpp"
@@ -2415,10 +2415,7 @@ public:
         this->dumpNodes(fieldName, nodes.data(), nodes.data() + nodes.size());
     }
 
-    template <typename T>
-    using convertible_t = typename std::enable_if<std::is_convertible<T, Node *>::value, T>::type;
-
-    template <typename T, typename = convertible_t<T *>>
+    template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
     void dump(const char *fieldName, const std::vector<T *> &nodes) {
         this->dumpNodes(fieldName, reinterpret_cast<Node *const*>(nodes.data()),
                         reinterpret_cast<Node *const*>(nodes.data() + nodes.size()));
