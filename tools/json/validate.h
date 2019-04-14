@@ -25,7 +25,29 @@
 namespace ydsh {
 namespace json {
 
-class Validator;
+class InterfaceMap;
+
+class Validator {
+private:
+    const InterfaceMap &map;
+    std::vector<std::string> errors;
+
+public:
+    explicit Validator(const InterfaceMap &map) : map(map) {}
+
+    bool operator()(const std::string &ifaceName, const JSON &value);
+
+    std::string formatError() const;
+
+    void clearError() {
+        this->errors.clear();
+    }
+
+    template <typename ...T>
+    void appendError(T && ...v) {
+        this->errors.emplace_back(std::forward<T>(v)...);
+    }
+};
 
 /**
  * for json type validation
@@ -216,33 +238,6 @@ public:
 
 private:
     InterfaceBasePtr add(InterfaceBasePtr &&iface);
-};
-
-class Validator {
-private:
-    const InterfaceMap &map;
-    std::vector<std::string> errors;
-
-public:
-    explicit Validator(const InterfaceMap &map) : map(map) {}
-
-    bool match(const std::string &ifaceName, const JSON &value);
-
-    bool operator()(const std::string &ifaceName, const JSON &value) {
-        this->errors.clear();
-        return this->match(ifaceName, value);
-    }
-
-    std::string formatError() const;
-
-    void clearError() {
-        this->errors.clear();
-    }
-
-    template <typename ...T>
-    void appendError(T && ...v) {
-        this->errors.emplace_back(std::forward<T>(v)...);
-    }
 };
 
 } // namespace json

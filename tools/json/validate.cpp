@@ -19,6 +19,37 @@
 namespace ydsh {
 namespace json {
 
+// #######################
+// ##     Validator     ##
+// #######################
+
+bool Validator::operator()(const std::string &ifaceName, const JSON &value) {
+    if(value.tag() != JSON::TAG<Object>) {
+        return false;
+    }
+
+    if(ifaceName.empty()) {
+        return true;
+    }
+    auto *ptr = this->map.lookup(ifaceName);
+    if(ptr == nullptr) {
+        fatal("undefined interface: %s\n", ifaceName.c_str());
+    }
+    return ptr->match(*this, value);
+}
+
+std::string Validator::formatError() const {
+    std::string str;
+    if(!this->errors.empty()) {
+        str = this->errors.back();
+        for(auto iter = this->errors.rbegin() + 1; iter != this->errors.rend(); ++iter) {
+            str += "\n    from: ";
+            str += *iter;
+        }
+    }
+    return str;
+}
+
 // #########################
 // ##     TypeMatcher     ##
 // #########################
@@ -73,7 +104,7 @@ std::string ArrayMatcher::str() const {
 // ###########################
 
 bool ObjectMatcher::operator()(Validator &validator, const JSON &value) const {
-    return validator.match(this->name, value);
+    return validator(this->name, value);
 }
 
 std::string ObjectMatcher::str() const {
@@ -209,37 +240,6 @@ const InterfaceBase* InterfaceMap::lookup(const char *name) const {
         return iter->second.get();
     }
     return nullptr;
-}
-
-// #######################
-// ##     Validator     ##
-// #######################
-
-bool Validator::match(const std::string &ifaceName, const JSON &value) {
-    if(value.tag() != JSON::TAG<Object>) {
-        return false;
-    }
-
-    if(ifaceName.empty()) {
-        return true;
-    }
-    auto *ptr = this->map.lookup(ifaceName);
-    if(ptr == nullptr) {
-        fatal("undefined interface: %s\n", ifaceName.c_str());
-    }
-    return ptr->match(*this, value);
-}
-
-std::string Validator::formatError() const {
-    std::string str;
-    if(!this->errors.empty()) {
-        str = this->errors.back();
-        for(auto iter = this->errors.rbegin() + 1; iter != this->errors.rend(); ++iter) {
-            str += "\n    from: ";
-            str += *iter;
-        }
-    }
-    return str;
 }
 
 } // namespace json
