@@ -20,6 +20,8 @@
 
 #include <type_traits>
 
+#include "misc/noncopyable.h"
+
 namespace ydsh {
 
 template <bool B>
@@ -39,16 +41,29 @@ using void_t = typename __detail::VoidHolder<T...>::type;
 
 namespace __detail {
 
+struct NotDetected {
+    NotDetected() = delete;
+    ~NotDetected() = delete;
+    NON_COPYABLE(NotDetected);
+};
+
 template <typename, template<typename ...> class OP, typename ...>
-struct detector : std::false_type {};
+struct detector : std::false_type {
+    using type = NotDetected;
+};
 
 template <template<typename ...> class OP, typename ...Arg>
-struct detector<void_t<OP<Arg...>>, OP, Arg...> : std::true_type {};
+struct detector<void_t<OP<Arg...>>, OP, Arg...> : std::true_type {
+    using type = OP<Arg...>;
+};
 
 } // namespace __detail
 
 template <template<typename ...> class OP, typename ...Arg>
 constexpr auto is_detected_v = __detail::detector<void, OP, Arg...>::value;
+
+template <template<typename ...> class OP, typename ...Arg>
+using detected_t = typename __detail::detector<void, OP, Arg...>::type;
 
 } // namespace ydsh
 
