@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "misc/result.hpp"
+#include "misc/detect.hpp"
 
 using namespace ydsh;
 
@@ -185,7 +186,12 @@ TEST(result, optional2) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<int>>)));
 }
 
+template <typename T>
+using hasValue_member = decltype(&T::hasValue);
+
 TEST(result, optional3) {
+    static_assert(is_detected_v<hasValue_member, Optional<int>>, "");
+
     static_assert(std::is_same<Optional<float>, Optional<Optional<float>>>::value, "");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<int>>)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<Optional<int>>>)));

@@ -48,7 +48,7 @@ struct detector<void_t<OP<Arg...>>, OP, Arg...> : std::true_type {};
 } // namespace __detail
 
 template <template<typename ...> class OP, typename ...Arg>
-constexpr auto is_detected_v = __detail::detector<OP<Arg...>, OP, Arg...>::value;
+constexpr auto is_detected_v = __detail::detector<void_t<OP<Arg...>>, OP, Arg...>::value;
 
 } // namespace ydsh
 
