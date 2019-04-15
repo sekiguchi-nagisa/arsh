@@ -39,7 +39,7 @@ using void_t = typename __detail::VoidHolder<T...>::type;
 
 namespace __detail {
 
-template <typename, template<typename ...> class, typename ...>
+template <typename, template<typename ...> class OP, typename ...>
 struct detector : std::false_type {};
 
 template <template<typename ...> class OP, typename ...Arg>
@@ -48,7 +48,7 @@ struct detector<void_t<OP<Arg...>>, OP, Arg...> : std::true_type {};
 } // namespace __detail
 
 template <template<typename ...> class OP, typename ...Arg>
-constexpr auto is_detected_v = __detail::detector<void_t<OP<Arg...>>, OP, Arg...>::value;
+constexpr auto is_detected_v = __detail::detector<void, OP, Arg...>::value;
 
 } // namespace ydsh
 

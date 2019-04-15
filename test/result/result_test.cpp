@@ -191,6 +191,7 @@ using hasValue_member = decltype(&T::hasValue);
 
 TEST(result, optional3) {
     static_assert(is_detected_v<hasValue_member, Optional<int>>, "");
+    static_assert(!is_detected_v<hasValue_member, std::string>, "");
 
     static_assert(std::is_same<Optional<float>, Optional<Optional<float>>>::value, "");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<int>>)));
