@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2019 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include <misc/hash.hpp>
+#include <misc/detect.hpp>
 #include "json.h"
 
 namespace ydsh {
@@ -49,104 +50,197 @@ public:
     }
 };
 
-/**
- * for json type validation
- */
-class TypeMatcher {
+class PrimitiveMatcher {
 protected:
-    const std::string name;
-    const int tag;
+    const char *name;
+    int tag;
 
 public:
-    TypeMatcher() : tag(-1) {}
+    constexpr PrimitiveMatcher() : name(""), tag(-1) {}
+    constexpr PrimitiveMatcher(const char *name, int tag) : name(name), tag(tag) {}
 
-    TypeMatcher(const char *name, int tag) : name(name), tag(tag) {}
+    bool operator()(Validator &, const JSON &value) const {
+        return this->tag == value.tag();
+    }
 
-    virtual ~TypeMatcher() = default;
-
-    virtual bool operator()(Validator &validator, const JSON &value) const;
-    virtual std::string str() const;
+    std::string str() const {
+        return this->name;
+    }
 };
 
-using TypeMatcherPtr = std::shared_ptr<TypeMatcher>;
+struct AnyMatcher {
+    bool operator()(Validator &, const JSON &) const {
+        return true;
+    }
 
-struct AnyMatcher : public TypeMatcher {
-    bool operator()(Validator &validator, const JSON &value) const override;
-    std::string str() const override;
+    std::string str() const {
+        return "any";
+    }
 };
 
-class ArrayMatcher : public TypeMatcher {
+template <typename M>
+class ArrayMatcher : public PrimitiveMatcher {
 private:
-    const TypeMatcherPtr matcher;
+    M matcher;
 
 public:
-    explicit ArrayMatcher(TypeMatcherPtr matcher) :
-            TypeMatcher("Array", JSON::TAG<Array>), matcher(std::move(matcher)) {}
+    explicit constexpr ArrayMatcher(M matcher) :
+            PrimitiveMatcher("Array", JSON::TAG<Array>), matcher(matcher) {}
 
-    bool operator()(Validator &validator, const JSON &value) const override;
-    std::string str() const override;
+    bool operator()(Validator &validator, const JSON &value) const {
+        if(this->tag != value.tag()) {
+            return false;
+        }
+        for(auto &e : value.asArray()) {
+            if(!this->matcher(validator, e)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    std::string str() const {
+        std::string str = this->name;
+        str += "<";
+        str += this->matcher.str();
+        str += ">";
+        return str;
+    }
 };
 
-struct ObjectMatcher : public TypeMatcher {
+struct ObjectMatcher : public PrimitiveMatcher {
     /**
      *
      * @param name
      * if empty string, match all of objects
      */
-    explicit ObjectMatcher(const char *name) : TypeMatcher(name, JSON::TAG<Object>) {}
+    explicit constexpr ObjectMatcher(const char *name) : PrimitiveMatcher(name, JSON::TAG<Object>) {}
 
-    bool operator()(Validator &validator, const JSON &value) const override;
-    std::string str() const override;
+    bool operator()(Validator &validator, const JSON &value) const {
+        return validator(this->name, value);
+    }
+
+    std::string str() const {
+        return this->name;
+    }
 };
 
-class UnionMatcher : public TypeMatcher {
+template <typename L, typename R>
+class UnionMatcher : public PrimitiveMatcher {
 private:
-    TypeMatcherPtr left;
-    TypeMatcherPtr right;
+    L left;
+    R right;
 
 public:
-    UnionMatcher(TypeMatcherPtr left, TypeMatcherPtr right) :
-            left(std::move(left)), right(std::move(right)) {}
+    constexpr UnionMatcher(L left, R right) : PrimitiveMatcher(),
+            left(left), right(right) {}
 
-    UnionMatcher(const char *alias, TypeMatcherPtr left, TypeMatcherPtr right) :
-            TypeMatcher(alias, -1), left(std::move(left)), right(std::move(right)) {}
+    constexpr UnionMatcher(const char *alias, L left, R right) :
+            PrimitiveMatcher(alias, -1), left(left), right(right) {}
 
-    bool operator()(Validator &validator, const JSON &value) const override;
-    std::string str() const override;
+    bool operator()(Validator &validator, const JSON &value) const {
+        if(this->left(validator, value)) {
+            return true;
+        }
+        validator.clearError();
+        return this->right(validator, value);
+    }
+
+    std::string str() const {
+        if(this->name[0] != '\0') {
+            return this->name;
+        }
+
+        std::string str = this->left.str();
+        str += " | ";
+        str += this->right.str();
+        return str;
+    }
 };
 
-// helper method and constant for interface(schema) definition
-extern const TypeMatcherPtr integer;
-extern const TypeMatcherPtr number;
-extern const TypeMatcherPtr string;
-extern const TypeMatcherPtr boolean;
-extern const TypeMatcherPtr null;
-extern const TypeMatcherPtr any;
+struct Matcher {
+    virtual bool operator()(Validator &validator, const JSON &value) const = 0;
+    virtual std::string str() const = 0;
+    virtual ~Matcher() = default;
+};
 
-inline TypeMatcherPtr object(const char *name) {
-    return std::make_shared<ObjectMatcher>(name);
+namespace __detail_matcher_detector {
+
+template <typename T>
+using has_apply = decltype(&T::operator());
+
+template <typename T>
+using has_str = decltype(&T::str);
+
+template <typename T>
+using has_apply_member = decltype(std::is_same<detected_t<has_apply, T>,
+        decltype(&Matcher::operator())>::value);
+
+template <typename T>
+using has_str_member = decltype(std::is_same<detected_t<has_str, T>,
+        decltype(&Matcher::str)>::value);
+
+} // namespace __detail_matcher_detector
+
+template <typename T>
+constexpr auto has_matcher_iface_v =
+        is_detected_v<__detail_matcher_detector::has_apply_member, T>
+                && is_detected_v<__detail_matcher_detector::has_str_member, T>;
+
+constexpr auto object(const char *name) {
+    return ObjectMatcher(name);
 }
 
-inline TypeMatcherPtr array(const TypeMatcherPtr &e) {
-    return std::make_shared<ArrayMatcher>(e);
+template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
+constexpr auto array(T matcher) {
+    return ArrayMatcher<T>(matcher);
 }
 
-inline TypeMatcherPtr operator|(const TypeMatcherPtr &left, const TypeMatcherPtr &right) {
-    return std::make_shared<UnionMatcher>(left, right);
+template <typename L, typename R, enable_when<has_matcher_iface_v<L> && has_matcher_iface_v<R>> = nullptr>
+constexpr auto operator|(L left, R right) {
+    return UnionMatcher<L, R>(left, right);
 }
 
+constexpr auto integer = PrimitiveMatcher("integer", JSON::TAG<long>);
+constexpr auto number = UnionMatcher<PrimitiveMatcher, PrimitiveMatcher>(
+        "number",
+        PrimitiveMatcher("long", JSON::TAG<long>),
+        PrimitiveMatcher("double", JSON::TAG<double>)
+);
+
+constexpr auto string = PrimitiveMatcher("string", JSON::TAG<String>);
+constexpr auto boolean = PrimitiveMatcher("boolean", JSON::TAG<bool>);
+constexpr auto null = PrimitiveMatcher("null", JSON::TAG<std::nullptr_t>);
+constexpr auto any = AnyMatcher();
 
 class Field {
 private:
-    TypeMatcherPtr matcher;
+    template <typename T>
+    struct MatcherHolder : public Matcher {
+        T instance;
+
+        explicit MatcherHolder(const T &m) : instance(std::move(m)) {}
+
+        bool operator()(Validator &validator, const JSON &value) const override {
+            return this->instance(validator, value);
+        }
+
+        std::string str() const override {
+            return this->instance.str();
+        }
+    };
+
+    std::unique_ptr<Matcher> matcher;
     bool require;
 
 public:
     explicit Field() : matcher(), require(true) {}
 
-    Field(TypeMatcherPtr type, bool require) : matcher(std::move(type)), require(require) {}
+    template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
+    Field(const T &type, bool require) : matcher(new MatcherHolder<T>(type)), require(require) {}
 
-    explicit Field(TypeMatcherPtr type) : Field(std::move(type), true) {}
+    template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
+    explicit Field(const T &type) : Field(type, true) {}
 
     Field(Field &&v) noexcept : matcher(std::move(v.matcher)), require(v.require) {}
 
@@ -157,7 +251,7 @@ public:
         return *this;
     }
 
-    const TypeMatcher &getMatcher() const {
+    const Matcher &getMatcher() const {
         return *this->matcher;
     }
 

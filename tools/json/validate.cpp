@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2019 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,110 +49,6 @@ std::string Validator::formatError() const {
     }
     return str;
 }
-
-// #########################
-// ##     TypeMatcher     ##
-// #########################
-
-bool TypeMatcher::operator()(Validator &, const JSON &value) const {
-    return this->tag == value.tag();
-}
-
-std::string TypeMatcher::str() const {
-    return this->name;
-}
-
-// ########################
-// ##     AnyMatcher     ##
-// ########################
-
-bool AnyMatcher::operator()(Validator &, const JSON &) const {
-    return true;
-}
-
-std::string AnyMatcher::str() const {
-    return "any";
-}
-
-// ##########################
-// ##     ArrayMatcher     ##
-// ##########################
-
-bool ArrayMatcher::operator()(Validator &validator, const JSON &value) const {
-    if(this->tag != value.tag()) {
-        return false;
-    }
-    for(auto &e : value.asArray()) {
-        if(!(*this->matcher)(validator, e)) {
-            return false;
-        }
-    }
-    return true;
-}
-
-std::string ArrayMatcher::str() const {
-    std::string str = this->name;
-    str += "<";
-    str += this->matcher->str();
-    str += ">";
-    return str;
-}
-
-
-// ###########################
-// ##     ObjectMatcher     ##
-// ###########################
-
-bool ObjectMatcher::operator()(Validator &validator, const JSON &value) const {
-    return validator(this->name, value);
-}
-
-std::string ObjectMatcher::str() const {
-    return this->name;
-}
-
-// ##########################
-// ##     UnionMatcher     ##
-// ##########################
-
-bool UnionMatcher::operator()(Validator &validator, const JSON &value) const {
-    if((*this->left)(validator, value)) {
-        return true;
-    }
-    validator.clearError();
-    return (*this->right)(validator, value);
-}
-
-std::string UnionMatcher::str() const {
-    if(!this->name.empty()) {
-        return this->name;
-    }
-
-    std::string str = this->left->str();
-    str += " | ";
-    str += this->right->str();
-    return str;
-}
-
-static constexpr int TAG_LONG = JSON::TAG<long>;
-static constexpr int TAG_DOUBLE = JSON::TAG<double>;
-static constexpr int TAG_STRING = JSON::TAG<String>;
-static constexpr int TAG_BOOL = JSON::TAG<bool>;
-static constexpr int TAG_NULL = JSON::TAG<std::nullptr_t>;
-
-const TypeMatcherPtr integer = std::make_shared<TypeMatcher>("integer", TAG_LONG);  //NOLINT
-
-const TypeMatcherPtr number = std::make_shared<UnionMatcher>(  //NOLINT
-        "number",
-        std::make_shared<TypeMatcher>("long", TAG_LONG),
-        std::make_shared<TypeMatcher>("double", TAG_DOUBLE)
-);
-
-const TypeMatcherPtr string = std::make_shared<TypeMatcher>("string", TAG_STRING);  //NOLINT
-const TypeMatcherPtr boolean = std::make_shared<TypeMatcher>("boolean", TAG_BOOL);  //NOLINT
-const TypeMatcherPtr null = std::make_shared<TypeMatcher>("null", TAG_NULL);    //NOLINT
-const TypeMatcherPtr any = std::make_shared<AnyMatcher>();  //NOLINT
-
 
 // ####################
 // ##     Fields     ##
