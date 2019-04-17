@@ -32,15 +32,19 @@ struct Token {
     bool operator!=(const Token &token) const {
         return !(*this == token);
     }
+
+    std::string str() const {
+        std::string str = "(pos = ";
+        str += std::to_string(this->pos);
+        str += ", size = ";
+        str += std::to_string(this->size);
+        str += ")";
+        return str;
+    }
 };
 
 inline std::string toString(Token token) {
-    std::string str = "(pos = ";
-    str += std::to_string(token.pos);
-    str += ", size = ";
-    str += std::to_string(token.size);
-    str += ")";
-    return str;
+    return token.str();
 }
 
 } // namespace

@@ -47,7 +47,7 @@ struct NotDetected {
     NON_COPYABLE(NotDetected);
 };
 
-template <typename, template<typename ...> class OP, typename ...>
+template <typename, template<typename ...> class, typename ...>
 struct detector : std::false_type {
     using type = NotDetected;
 };
