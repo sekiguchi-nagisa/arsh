@@ -78,16 +78,20 @@ struct AnyMatcher {
     }
 };
 
+namespace __detail_matcher {
+
+constexpr auto JSON_ARRAY_TAG = JSON::TAG<Array>;
+
+} // namespace __detail_matcher
+
 template <typename M>
 class ArrayMatcher : public PrimitiveMatcher {
 private:
-    static constexpr decltype(std::declval<JSON>().tag()) TAG = JSON::TAG<Array>;
-
     M matcher;
 
 public:
     explicit constexpr ArrayMatcher(M matcher) :
-            PrimitiveMatcher("Array", TAG), matcher(matcher) {}
+            PrimitiveMatcher("Array", __detail_matcher::JSON_ARRAY_TAG), matcher(matcher) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
         if(this->tag != value.tag()) {
