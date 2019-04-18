@@ -80,6 +80,9 @@ struct AnyMatcher {
 
 namespace __detail_matcher {
 
+/**
+ * workaround for gcc-5
+ */
 constexpr auto JSON_ARRAY_TAG = JSON::TAG<Array>;
 
 } // namespace __detail_matcher
