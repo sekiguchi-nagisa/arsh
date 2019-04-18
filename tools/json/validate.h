@@ -81,11 +81,13 @@ struct AnyMatcher {
 template <typename M>
 class ArrayMatcher : public PrimitiveMatcher {
 private:
+    static constexpr auto TAG = JSON::TAG<Array>;
+
     M matcher;
 
 public:
     explicit constexpr ArrayMatcher(M matcher) :
-            PrimitiveMatcher("Array", JSON::TAG<Array>), matcher(matcher) {}
+            PrimitiveMatcher("Array", TAG), matcher(matcher) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
         if(this->tag != value.tag()) {
