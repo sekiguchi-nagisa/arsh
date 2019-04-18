@@ -81,7 +81,7 @@ struct AnyMatcher {
 template <typename M>
 class ArrayMatcher : public PrimitiveMatcher {
 private:
-    static constexpr auto TAG = JSON::TAG<Array>;
+    static constexpr decltype(std::declval<JSON>().tag()) TAG = JSON::TAG<Array>;
 
     M matcher;
 
