@@ -38,17 +38,17 @@ void LSPServer::bindAll() {
     this->bind("exit", voidIface, &LSPServer::exit);
 
     auto clientCap = this->interface("ClientCapabilities", {
-        field("workspace", any, false),
-        field("textDocument", any, false)
+        field("workspace", !any),
+        field("textDocument", !any)
     });
     this->bind("initialize",
             this->interface("InitializeParams", {
                 field("processId", integer),
-                field("rootPath", string | null ,false),
+                field("rootPath", !(string | null)),
                 field("rootUri", string | null),
-                field("initializationOptions", any, false),
+                field("initializationOptions", !any),
                 field("capabilities", object(clientCap->getName())),
-                field("trace", string, false)
+                field("trace", !string)
             }), &LSPServer::initialize
     );
 }

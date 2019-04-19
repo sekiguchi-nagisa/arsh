@@ -168,9 +168,39 @@ public:
     }
 };
 
+template <typename T>
+class OptMatcher {
+private:
+    T matcher;
+
+public:
+    constexpr explicit OptMatcher(T matcher) : matcher(matcher) {}
+
+    bool operator()(Validator &validator, const JSON &value) const {
+        if(value.isInvalid()) {
+            return true;    // always true.
+        }
+        return this->matcher(validator, value);
+    }
+
+    std::string str() const {
+        std::string str = "Option<";
+        str += this->matcher.str();
+        str += ">";
+        return str;
+    }
+};
+
+template <typename T>
+struct isOptMatcher : std::false_type {};
+
+template <typename T>
+struct isOptMatcher<OptMatcher<T>> : std::true_type {};
+
 struct Matcher {
     virtual bool operator()(Validator &validator, const JSON &value) const = 0;
     virtual std::string str() const = 0;
+    virtual bool required() const = 0;
     virtual ~Matcher() = default;
 };
 
@@ -211,6 +241,11 @@ constexpr auto operator|(L left, R right) {
     return UnionMatcher<L, R>(left, right);
 }
 
+template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
+constexpr auto operator!(T matcher) {
+    return OptMatcher<T>(matcher);
+}
+
 constexpr auto integer = PrimitiveMatcher("integer", JSON::TAG<long>);
 constexpr auto number = UnionMatcher<PrimitiveMatcher, PrimitiveMatcher>(
         "number",
@@ -238,35 +273,26 @@ private:
         std::string str() const override {
             return this->instance.str();
         }
+
+        bool required() const override {
+            return !isOptMatcher<T>::value;
+        }
     };
 
     std::unique_ptr<Matcher> matcher;
-    bool require;
 
 public:
-    explicit Field() : matcher(), require(true) {}
+    explicit Field() = default;
 
     template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
-    Field(const T &type, bool require) : matcher(new MatcherHolder<T>(type)), require(require) {}
-
-    template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
-    explicit Field(const T &type) : Field(type, true) {}
-
-    Field(Field &&v) noexcept : matcher(std::move(v.matcher)), require(v.require) {}
-
-    Field &operator=(Field &&v) noexcept {
-        auto tmp = std::move(v);
-        std::swap(this->matcher, tmp.matcher);
-        std::swap(this->require, tmp.require);
-        return *this;
-    }
+    explicit Field(const T &type) : matcher(new MatcherHolder<T>(type)) {}
 
     const Matcher &getMatcher() const {
         return *this->matcher;
     }
 
     bool isRequire() const {
-        return this->require;
+        return this->matcher->required();
     }
 };
 
@@ -277,9 +303,9 @@ struct Fields {
     Fields(std::initializer_list<std::pair<std::string, Field>> list);
 };
 
-template <typename ...Arg>
-inline std::pair<std::string, Field> field(const char *name, Arg&& ...arg) {
-    return {name, Field(std::forward<Arg>(arg)...)};
+template <typename T>
+inline std::pair<std::string, Field> field(const char *name, T value) {
+    return {name, Field(value)};
 }
 
 struct InterfaceBase {

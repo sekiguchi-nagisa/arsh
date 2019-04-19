@@ -52,9 +52,9 @@ Request RequestParser::operator()() {
     const char *ifaceName = "Request";
     InterfaceMap map;
     map.interface(ifaceName, {
-        field("id", number | string, false),
+        field("id", !(number | string)),
         field("method", string),
-        field("params", array(any) | object(""), false)
+        field("params", !(array(any) | object("")))
     });
 
 

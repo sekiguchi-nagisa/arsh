@@ -343,7 +343,7 @@ TEST_F(ValidatorTest, base) {
     this->map
     .interface("hoge1", {
         field("params", null | array(string)),
-        field("id", number, false)
+        field("id", !number)
     });
 
     const char *text = R"(
