@@ -56,8 +56,8 @@ protected:
     int tag;
 
 public:
-    constexpr PrimitiveMatcher() : name(""), tag(-1) {}
-    constexpr PrimitiveMatcher(const char *name, int tag) : name(name), tag(tag) {}
+    constexpr PrimitiveMatcher() noexcept : name(""), tag(-1) {}
+    constexpr PrimitiveMatcher(const char *name, int tag) noexcept : name(name), tag(tag) {}
 
     bool operator()(Validator &, const JSON &value) const {
         return this->tag == value.tag();
@@ -93,7 +93,7 @@ private:
     M matcher;
 
 public:
-    explicit constexpr ArrayMatcher(M matcher) :
+    explicit constexpr ArrayMatcher(M matcher) noexcept :
             PrimitiveMatcher("Array", __detail_matcher::JSON_ARRAY_TAG), matcher(matcher) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
@@ -123,7 +123,8 @@ struct ObjectMatcher : public PrimitiveMatcher {
      * @param name
      * if empty string, match all of objects
      */
-    explicit constexpr ObjectMatcher(const char *name) : PrimitiveMatcher(name, JSON::TAG<Object>) {}
+    explicit constexpr ObjectMatcher(const char *name) noexcept :
+                PrimitiveMatcher(name, JSON::TAG<Object>) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
         return validator(this->name, value);
@@ -141,10 +142,10 @@ private:
     R right;
 
 public:
-    constexpr UnionMatcher(L left, R right) : PrimitiveMatcher(),
-            left(left), right(right) {}
+    constexpr UnionMatcher(L left, R right) noexcept :
+            PrimitiveMatcher(), left(left), right(right) {}
 
-    constexpr UnionMatcher(const char *alias, L left, R right) :
+    constexpr UnionMatcher(const char *alias, L left, R right) noexcept :
             PrimitiveMatcher(alias, -1), left(left), right(right) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
