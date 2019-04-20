@@ -332,14 +332,12 @@ inline const T &get(const Union<R...> &value) {
 // ##     Optional     ##
 // ######################
 
-namespace __detail {
-
 template <typename T>
-class Optional : public Union<T> {
+class OptionalBase : public Union<T> {
 public:
-    Optional() noexcept : Union<T>() {}
+    OptionalBase() noexcept : Union<T>() {}
 
-    Optional(T &&value) noexcept : Union<T>(std::forward<T>(value)) {}
+    OptionalBase(T &&value) noexcept : Union<T>(std::forward<T>(value)) {}
 
     T &unwrap() noexcept {
         return get<T>(*this);
@@ -351,26 +349,24 @@ public:
 };
 
 template <typename ...T>
-class Optional<Union<T...>> : public Union<T...> {
+class OptionalBase<Union<T...>> : public Union<T...> {
 public:
-    Optional() noexcept : Union<T...>() {}
+    OptionalBase() noexcept : Union<T...>() {}
 
     template <typename U>
-    Optional(U &&value) noexcept : Union<T...>(std::forward<U>(value)) {}
+    OptionalBase(U &&value) noexcept : Union<T...>(std::forward<U>(value)) {}
 };
 
 template <typename T>
-struct flatten {
+struct OptFlattener {
     using type = T;
 };
 
 template <typename T>
-struct flatten<Optional<T>> : flatten<T> {};
-
-} // namespace __detail
+struct OptFlattener<OptionalBase<T>> : OptFlattener<T> {};
 
 template <typename T>
-using Optional = __detail::Optional<typename __detail::flatten<T>::type>;
+using Optional = OptionalBase<typename OptFlattener<T>::type>;
 
 
 // ####################
