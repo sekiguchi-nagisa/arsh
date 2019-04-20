@@ -275,6 +275,17 @@ private:
 };
 
 } // namespace json
+
+
+// specialize Optional<JSON>
+template <>
+class OptionalBase<json::JSON> : public json::JSON {
+public:
+    OptionalBase() noexcept : JSON() {}
+
+    OptionalBase(JSON &&json) : JSON(std::move(json)) {}
+};
+
 } // namespace ydsh
 
 #endif //TOOLS_JSON_H

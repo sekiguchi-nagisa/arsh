@@ -65,6 +65,13 @@ TEST(JSON, type) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(45, json["hello"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("false", json["world"][0].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["world"][1].asBool()));
+
+    // Optional<JSON>
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(sizeof(JSON), sizeof(Optional<JSON>)));
+    Optional<JSON> opt;
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(opt.isInvalid()));
+    opt = JSON(23);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(opt.isLong()));
 }
 
 TEST(JSON, serialize) {

@@ -98,8 +98,8 @@ struct TextEdit {
 // for Initialize request
 
 struct ClientCapabilities {
-    JSON workspace;   // optional
-    JSON textDocument; // optional
+    Optional<JSON> workspace;   // optional
+    Optional<JSON> textDocument; // optional
 };
 
 #define EACH_TRACE_SETTING(OP) \
@@ -117,7 +117,7 @@ struct InitializeParams {
     Union<int, std::nullptr_t> processId;
     Optional<Union<std::string, std::nullptr_t>> rootPath;    // optional
     Union<DocumentURI, std::nullptr_t> rootUri;
-    JSON initializationOptions; // optional
+    Optional<JSON> initializationOptions; // optional
     ClientCapabilities capabilities;
     Optional<TraceSetting> trace;  // optional
 //    Union<WorkspaceFolder, std::nullptr_t> workspaceFolders;    // optional   //FIXME: currently not supported
