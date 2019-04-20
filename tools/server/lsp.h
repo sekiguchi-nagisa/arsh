@@ -56,10 +56,10 @@ struct Location {
 };
 
 struct LocationLink {
-    Union<Range> originSelectionRange;  // optional
+    Optional<Range> originSelectionRange;  // optional
     std::string targetUri;
     Range targetRange;
-    Union<Range> targetSelectionRange;  // optional
+    Optional<Range> targetSelectionRange;  // optional
 };
 
 
@@ -77,11 +77,11 @@ struct DiagnosticRelatedInformation {
 
 struct Diagnostic {
     Range range;
-    Union<DiagnosticSeverity> severity; // optional
+    Optional<DiagnosticSeverity> severity; // optional
 //    std::string code; // string | number, //FIXME: currently not supported.
 //    std::string source;                   //FIXME: currently not supported.
     std::string message;
-    Union<std::vector<DiagnosticRelatedInformation>> relatedInformation;   // optional
+    Optional<std::vector<DiagnosticRelatedInformation>> relatedInformation;   // optional
 };
 
 struct Command {
@@ -115,11 +115,11 @@ enum class TraceSetting : unsigned int {
 
 struct InitializeParams {
     Union<int, std::nullptr_t> processId;
-    Union<std::string, std::nullptr_t> rootPath;    // optional
+    Optional<Union<std::string, std::nullptr_t>> rootPath;    // optional
     Union<DocumentURI, std::nullptr_t> rootUri;
     JSON initializationOptions; // optional
     ClientCapabilities capabilities;
-    Union<TraceSetting> trace;  // optional
+    Optional<TraceSetting> trace;  // optional
 //    Union<WorkspaceFolder, std::nullptr_t> workspaceFolders;    // optional   //FIXME: currently not supported
 };
 
@@ -131,12 +131,12 @@ enum class TextDocumentSyncKind : int {
 };
 
 struct CompletionOptions {
-    Union<bool> resolveProvider;    // optional
-    Union<std::vector<std::string>> triggerCharacters;  // optional
+    Optional<bool> resolveProvider;    // optional
+    Optional<std::vector<std::string>> triggerCharacters;  // optional
 };
 
 struct SignatureHelpOptions {
-    Union<std::vector<std::string>> triggerCharacters;  // optional
+    Optional<std::vector<std::string>> triggerCharacters;  // optional
 };
 
 #define EACH_CODE_ACTION_KIND(OP) \
@@ -155,24 +155,24 @@ enum class CodeActionKind : unsigned int {
 };
 
 struct CodeActionOptions {
-    Union<std::vector<CodeActionKind>> codeActionKinds; // optional
+    Optional<std::vector<CodeActionKind>> codeActionKinds; // optional
 };
 
 struct CodeLensOptions {
-    Union<bool> resolveProvider;    // optional
+    Optional<bool> resolveProvider;    // optional
 };
 
 struct DocumentOnTypeFormattingOptions {
     std::string firstTriggerCharacter;
-    Union<std::vector<std::string>> moreTriggerCharacter;   // optional
+    Optional<std::vector<std::string>> moreTriggerCharacter;   // optional
 };
 
 struct RenameOptions {
-    Union<bool> prepareProvider;    // optional
+    Optional<bool> prepareProvider;    // optional
 };
 
 struct DocumentLinkOptions {
-    Union<bool> resolveProvider;    // optional
+    Optional<bool> resolveProvider;    // optional
 };
 
 struct ExecuteCommandOptions {
@@ -180,22 +180,22 @@ struct ExecuteCommandOptions {
 };
 
 struct SaveOptions {
-    Union<bool> includeText;    // optional
+    Optional<bool> includeText;    // optional
 };
 
 struct ColorProviderOptions {};
 struct FoldingRangeProviderOptions {};
 
 struct TextDocumentSyncOptions {
-    Union<bool> openClose;  // optional
-    Union<TextDocumentSyncKind> change; // optional
-    Union<bool> willSave;   // optional
-    Union<bool> willSaveWaitUntil;  // optional
-    Union<SaveOptions> save;    // optional
+    Optional<bool> openClose;  // optional
+    Optional<TextDocumentSyncKind> change; // optional
+    Optional<bool> willSave;   // optional
+    Optional<bool> willSaveWaitUntil;  // optional
+    Optional<SaveOptions> save;    // optional
 };
 
 struct StaticRegistrationOptions {
-    Union<std::string> id;  // optional
+    Optional<std::string> id;  // optional
 };
 
 /**
@@ -203,23 +203,23 @@ struct StaticRegistrationOptions {
  * only define supported capability
  */
 struct ServerCapabilities {
-    Union<TextDocumentSyncOptions> textDocumentSync;    // optional
+    Optional<TextDocumentSyncOptions> textDocumentSync;    // optional
     bool hoverProvider{false};
-    Union<CompletionOptions> completionProvider;    // optional
-    Union<SignatureHelpOptions> signatureHelpProvider;  // optiona;
+    Optional<CompletionOptions> completionProvider;    // optional
+    Optional<SignatureHelpOptions> signatureHelpProvider;  // optiona;
     bool definitionProvider{false};
     bool referencesProvider{false};
     bool documentHighlightProvider{false};
     bool documentSymbolProvider{false};
     bool workspaceSymbolProvider{false};
-    Union<bool, CodeActionOptions> codeActionProvider;  // optional
-    Union<CodeLensOptions> codeLensProvider;    // optional
+    Optional<Union<bool, CodeActionOptions>> codeActionProvider;  // optional
+    Optional<CodeLensOptions> codeLensProvider;    // optional
     bool documentFormattingProvider{false};
     bool documentRangeFormattingProvider{false};
-    Union<DocumentOnTypeFormattingOptions> documentOnTypeFormattingProvider;    // optional
-    Union<bool, RenameOptions> renameProvider;  // optional
-    Union<DocumentLinkOptions> documentLinkProvider;    // optional
-    Union<ExecuteCommandOptions> executeCommandProvider;    // optional
+    Optional<DocumentOnTypeFormattingOptions> documentOnTypeFormattingProvider;    // optional
+    Optional<Union<bool, RenameOptions>> renameProvider;  // optional
+    Optional<DocumentLinkOptions> documentLinkProvider;    // optional
+    Optional<ExecuteCommandOptions> executeCommandProvider;    // optional
 };
 
 struct InitializeResult {
