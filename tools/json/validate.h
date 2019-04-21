@@ -72,26 +72,16 @@ struct AnyMatcher {
     }
 };
 
-namespace __detail_matcher {
-
-/**
- * workaround for gcc-5
- */
-constexpr auto JSON_ARRAY_TAG = JSON::TAG<Array>;
-
-} // namespace __detail_matcher
-
 template <typename M>
-class ArrayMatcher : public PrimitiveMatcher {
+class ArrayMatcher {
 private:
     M matcher;
 
 public:
-    explicit constexpr ArrayMatcher(M matcher) noexcept :
-            PrimitiveMatcher("Array", __detail_matcher::JSON_ARRAY_TAG), matcher(matcher) {}
+    explicit constexpr ArrayMatcher(M matcher) noexcept : matcher(matcher) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
-        if(this->tag != value.tag()) {
+        if(!value.isArray()) {
             return false;
         }
         for(auto &e : value.asArray()) {
@@ -103,8 +93,7 @@ public:
     }
 
     std::string str() const {
-        std::string str = this->name;
-        str += "<";
+        std::string str = "Array<";
         str += this->matcher.str();
         str += ">";
         return str;
@@ -125,7 +114,7 @@ public:
     constexpr ObjectMatcher() noexcept : ref(nullptr) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
-        if(value.tag() != JSON::TAG<Object>) {
+        if(!value.isObject()) {
             return false;
         }
         return this->empty() || this->matcher()(validator, value.asObject());
@@ -475,7 +464,7 @@ private:
         Holder(const T &iface) : iface(iface) {}
 
         bool operator()(Validator &validator, const JSON &value) const override {
-            if(value.tag() != JSON::TAG<Object>) {
+            if(!value.isObject()) {
                 return false;
             }
             return this->iface(validator, value.asObject());
