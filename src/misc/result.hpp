@@ -249,7 +249,7 @@ private:
 
 public:
     template <typename R>
-    static constexpr auto TAG = TypeTag<R, T...>::value;
+    static constexpr int TAG = TypeTag<R, T...>::value; // workaround for gcc5
 
     Union() noexcept : tag_(-1) {}
 
