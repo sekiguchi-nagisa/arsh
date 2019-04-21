@@ -607,6 +607,8 @@ TEST_F(RPCTest, parse2) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
 }
 
+#define DEF_FIELD(t, f) field(#f, toTypeMatcher<decltype(t::f)>)
+
 TEST_F(RPCTest, call1) {
     Context ctx;
 
@@ -614,12 +616,12 @@ TEST_F(RPCTest, call1) {
     this->handler.bind(
             "/init",
             this->handler.interface("Param1", {
-                field("value", number)
+                DEF_FIELD(Param1, value)
             }), &ctx, &Context::init);
     this->handler.bind(
             "/put",
             this->handler.interface("Param2", {
-                field("value", string)
+                DEF_FIELD(Param2, value)
             }), &ctx, &Context::put);
     this->handler.bind(
             "/exit",
@@ -639,12 +641,12 @@ TEST_F(RPCTest, call2) {
     this->handler.bind(
             "/init",
             this->handler.interface("Param1", {
-                field("value", number)
+                DEF_FIELD(Param1, value)
             }), &ctx, &Context::init);
     this->handler.bind(
             "/put",
             this->handler.interface("Param2", {
-                field("value", string)
+                DEF_FIELD(Param2, value)
             }), &ctx, &Context::put);
     this->handler.bind(
             "/exit",
@@ -671,12 +673,12 @@ TEST_F(RPCTest, call3) {
     this->handler.bind(
             "/init",
             this->handler.interface("Param1", {
-                field("value", number)
+                DEF_FIELD(Param1, value)
             }), &ctx, &Context::init);
     this->handler.bind(
             "/put",
             this->handler.interface("Param2", {
-                    field("value", string)
+                DEF_FIELD(Param2, value)
             }), &ctx, &Context::put);
     this->handler.bind(
             "/exit",
@@ -703,12 +705,12 @@ TEST_F(RPCTest, call4) {
     this->handler.bind(
             "/init",
             this->handler.interface("Param1", {
-                    field("value", number)
+                DEF_FIELD(Param1, value)
             }), &ctx, &Context::init);
     this->handler.bind(
             "/put",
             this->handler.interface("Param2", {
-                    field("value", string)
+                    DEF_FIELD(Param2, value)
             }), &ctx, &Context::put);
     this->handler.bind(
             "/tryExit",
@@ -735,12 +737,12 @@ TEST_F(RPCTest, call5) {
     this->handler.bind(
             "/init",
             this->handler.interface("Param1", {
-                    field("value", number)
+                    DEF_FIELD(Param1, value)
             }), &ctx, &Context::init);
     this->handler.bind(
             "/put",
             this->handler.interface("Param2", {
-                    field("value", string)
+                    DEF_FIELD(Param2, value)
             }), &ctx, &Context::put);
     this->handler.bind(
             "/tryExit",
@@ -768,12 +770,12 @@ TEST_F(RPCTest, notify1) {
     this->handler.bind(
             "/init",
             this->handler.interface("Param1", {
-                field("value", number)
+                    DEF_FIELD(Param1, value)
             }), &ctx, &Context::init);
     this->handler.bind(
             "/put",
             this->handler.interface("Param2", {
-                field("value", string)
+                    DEF_FIELD(Param2, value)
             }), &ctx, &Context::put);
     this->handler.bind(
             "/exit",
@@ -793,12 +795,12 @@ TEST_F(RPCTest, notify2) {
     this->handler.bind(
             "/init",
             this->handler.interface("Param1", {
-                field("value", number)
+                    DEF_FIELD(Param1, value)
             }), &ctx, &Context::init);
     this->handler.bind(
             "/put",
             this->handler.interface("Param2", {
-                field("value", string)
+                    DEF_FIELD(Param2, value)
             }), &ctx, &Context::put);
     this->handler.bind(
             "/exit",
@@ -818,12 +820,12 @@ TEST_F(RPCTest, notify3) {
     this->handler.bind(
             "/init",
             this->handler.interface("Param1", {
-                    field("value", number)
+                    DEF_FIELD(Param1, value)
             }), &ctx, &Context::init);
     this->handler.bind(
             "/put",
             this->handler.interface("Param2", {
-                    field("value", string)
+                    DEF_FIELD(Param2, value)
             }), &ctx, &Context::put);
     this->handler.bind(
             "/exit",

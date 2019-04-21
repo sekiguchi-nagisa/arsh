@@ -227,6 +227,8 @@ constexpr auto has_matcher_iface_v =
         is_detected_v<__detail_matcher_detector::has_apply_member, T>
                 && is_detected_v<__detail_matcher_detector::has_str_member, T>;
 
+// helper function for type matcher construction
+
 constexpr auto object(const char *name) {
     return ObjectMatcher(name);
 }
@@ -257,6 +259,65 @@ constexpr auto string = PrimitiveMatcher("string", JSON::TAG<String>);
 constexpr auto boolean = PrimitiveMatcher("boolean", JSON::TAG<bool>);
 constexpr auto null = PrimitiveMatcher("null", JSON::TAG<std::nullptr_t>);
 constexpr auto any = AnyMatcher();
+
+template <typename T>
+struct TypeMatcherConstructor {};
+
+template <>
+struct TypeMatcherConstructor<int> {
+    static constexpr auto value = integer;
+};
+
+template <>
+struct TypeMatcherConstructor<unsigned int> : TypeMatcherConstructor<int> {};
+
+template <>
+struct TypeMatcherConstructor<String> {
+    static constexpr auto value = string;
+};
+
+template <>
+struct TypeMatcherConstructor<bool> {
+    static constexpr auto value = boolean;
+};
+
+template <>
+struct TypeMatcherConstructor<std::nullptr_t> {
+    static constexpr auto value = null;
+};
+
+template <>
+struct TypeMatcherConstructor<JSON> {
+    static constexpr auto value = any;
+};
+
+template <typename T>
+struct TypeMatcherConstructor<std::vector<T>> {
+    static constexpr auto value = array(TypeMatcherConstructor<T>::value);
+};
+
+template <typename T>
+struct TypeMatcherConstructor<OptionalBase<T>> {
+    static constexpr auto value = !(TypeMatcherConstructor<T>::value);
+};
+
+template <typename T1>
+constexpr auto createUnionMatcher(T1 t1) {
+    return std::forward<T1>(t1);
+}
+
+template <typename T1, typename T2, typename ...Tn>
+constexpr auto createUnionMatcher(T1 t1, T2 t2, Tn ...tn) {
+    return t1 | createUnionMatcher(std::forward<T2>(t2), std::forward<Tn>(tn)...);
+}
+
+template <typename ...T>
+struct TypeMatcherConstructor<Union<T...>> {
+    static constexpr auto value = createUnionMatcher(TypeMatcherConstructor<T>::value...);
+};
+
+template <typename T>
+constexpr auto toTypeMatcher = TypeMatcherConstructor<T>::value;
 
 class Field {
 private:
