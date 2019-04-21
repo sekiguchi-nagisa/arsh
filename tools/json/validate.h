@@ -103,34 +103,17 @@ public:
 template <typename T>
 class ObjectMatcher {
 private:
-    /**
-     * if null, match all of objects.
-     */
-    const T *ref;
+    const T &ref;
 
 public:
-    constexpr explicit ObjectMatcher(const T &iface) noexcept : ref(&iface) {}
-
-    constexpr ObjectMatcher() noexcept : ref(nullptr) {}
+    constexpr explicit ObjectMatcher(const T &iface) noexcept : ref(iface) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
-        if(!value.isObject()) {
-            return false;
-        }
-        return this->empty() || this->matcher()(validator, value.asObject());
+        return this->ref(validator, value);
     }
 
     std::string str() const {
-        return this->ref == nullptr ? "" : this->matcher().str();
-    }
-
-private:
-    constexpr bool empty() const {
-        return this->ref == nullptr;
-    }
-
-    const T &matcher() const {
-        return *this->ref;
+        return this->ref.str();
     }
 };
 
@@ -227,8 +210,8 @@ private:
 public:
     constexpr InterfaceMatcher(const char *name, std::tuple<FieldMatcher<T>...> fields) : name(name), fields(fields) {}
 
-    bool operator()(Validator &validator, const Object &value) const {
-        return this->match<0>(validator, value);
+    bool operator()(Validator &validator, const JSON &value) const {
+        return value.isObject() && this->match<0>(validator, value.asObject());
     }
 
     constexpr const char *getName() const {
@@ -283,8 +266,8 @@ class InterfaceMatcher<std::nullptr_t> {
 public:
     constexpr InterfaceMatcher() = default;
 
-    bool operator()(Validator &, const Object &) const {
-        return true;
+    bool operator()(Validator &, const JSON &value) const {
+        return value.isObject();
     }
 
     constexpr const char *getName() const {
@@ -301,8 +284,8 @@ class InterfaceMatcher<void> {
 public:
     constexpr InterfaceMatcher() = default;
 
-    bool operator()(Validator &validator, const Object &value) const {
-        if(!value.empty()) {
+    bool operator()(Validator &validator, const JSON &value) const {
+        if(!value.isObject() || !value.asObject().empty()) {
             validator.appendError("must be empty object");
             return false;
         }
@@ -464,10 +447,7 @@ private:
         Holder(const T &iface) : iface(iface) {}
 
         bool operator()(Validator &validator, const JSON &value) const override {
-            if(!value.isObject()) {
-                return false;
-            }
-            return this->iface(validator, value.asObject());
+            return this->iface(validator, value);
         }
 
         std::string str() const override {
