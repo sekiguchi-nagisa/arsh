@@ -283,7 +283,7 @@ class OptionalBase<json::JSON> : public json::JSON {
 public:
     OptionalBase() noexcept : JSON() {}
 
-    OptionalBase(JSON &&json) : JSON(std::move(json)) {}
+    OptionalBase(JSON &&json) : JSON(std::move(json)) {}    //NOLINT
 };
 
 } // namespace ydsh

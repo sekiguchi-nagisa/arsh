@@ -156,7 +156,7 @@ private:
     T matcher;
 
 public:
-    constexpr explicit OptMatcher(T matcher) : matcher(matcher) {}
+    constexpr explicit OptMatcher(T matcher) noexcept : matcher(matcher) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
         if(value.isInvalid()) {
@@ -208,7 +208,7 @@ private:
     std::tuple<FieldMatcher<T>...> fields;
 
 public:
-    constexpr InterfaceMatcher(const char *name, std::tuple<FieldMatcher<T>...> fields) : name(name), fields(fields) {}
+    constexpr InterfaceMatcher(const char *name, std::tuple<FieldMatcher<T>...> fields) noexcept : name(name), fields(fields) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
         return value.isObject() && this->match<0>(validator, value.asObject());
@@ -264,8 +264,6 @@ private:
 template <>
 class InterfaceMatcher<std::nullptr_t> {
 public:
-    constexpr InterfaceMatcher() = default;
-
     bool operator()(Validator &, const JSON &value) const {
         return value.isObject();
     }
@@ -282,8 +280,6 @@ public:
 template <>
 class InterfaceMatcher<void> {
 public:
-    constexpr InterfaceMatcher() = default;
-
     bool operator()(Validator &validator, const JSON &value) const {
         if(!value.isObject() || !value.asObject().empty()) {
             validator.appendError("must be empty object");
@@ -444,7 +440,7 @@ private:
     struct Holder : public Matcher {
         const T &iface;
 
-        Holder(const T &iface) : iface(iface) {}
+        explicit Holder(const T &iface) noexcept : iface(iface) {}
 
         bool operator()(Validator &validator, const JSON &value) const override {
             return this->iface(validator, value);
@@ -459,7 +455,7 @@ private:
 
 public:
     template <typename T>
-    InterfaceWrapper(const T &ref) : instance(new Holder<T>(ref)) {}
+    InterfaceWrapper(const T &ref) : instance(new Holder<T>(ref)) {}    //NOLINT
 
     const Matcher &get() const {
         return *this->instance;
