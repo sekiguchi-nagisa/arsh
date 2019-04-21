@@ -129,14 +129,14 @@ struct RequestParser : public Parser {  //TODO: currently only support single re
     Request operator()();
 };
 
-class MethodParamMap {
+class ParamIfaceMap {
 private:
-    std::unordered_map<std::string, std::string> map;
+    std::unordered_map<std::string, InterfaceWrapper> map;
 
 public:
-    void add(const std::string &methodName, const std::string &ifaceName);
+    void add(const std::string &key, InterfaceWrapper &&wrapper);
 
-    const char *lookupIface(const std::string &methodName) const;
+    const Matcher *lookup(const std::string &name) const;
 };
 
 class Handler;
@@ -237,10 +237,8 @@ private:
     std::unordered_map<std::string, Call> callMap;
     std::unordered_map<std::string, Notification> notificationMap;
 
-    MethodParamMap callParamMap;
-    MethodParamMap notificationParamMap;
-
-    InterfaceMap ifaceMap;
+    ParamIfaceMap callParamMap;
+    ParamIfaceMap notificationParamMap;
 
 protected:
     std::reference_wrapper<LoggerBase> logger;
@@ -254,56 +252,46 @@ public:
 
     virtual void onNotify(const std::string &name, JSON &&param);
 
-    InterfacePtr interface(const char *name, Fields &&fields) {
-        return this->ifaceMap.interface(name, std::move(fields));
-    }
+    void bind(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func);
 
-    VoidInterfacePtr interface() {
-        return this->ifaceMap.interface();
-    }
-
-    void bind(const std::string &name, const InterfaceBasePtr &paramIface, Call &&func);
-
-    void bind(const std::string &name, const InterfaceBasePtr &paramIface, Notification &&func);
+    void bind(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func);
 
     template<typename State, typename Ret, typename Param>
-    void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
+    void bind(const std::string &name, InterfaceWrapper &&paramIface, State *obj,
               Reply<Ret>(State::*method)(const Param &)) {
         Call func = [obj, method](JSON &&json) -> ReplyImpl {
             Param p;
             fromJSON(std::move(json), p);
             return (obj->*method)(p);
         };
-        this->bind(name, paramIface, std::move(func));
+        this->bind(name, std::move(paramIface), std::move(func));
     }
 
     template<typename State, typename Ret>
-    void bind(const std::string &name, const VoidInterfacePtr &paramIface, State *obj,
-              Reply<Ret>(State::*method)()) {
+    void bind(const std::string &name, State *obj, Reply<Ret>(State::*method)()) {
         Call func = [obj, method](JSON &&) -> ReplyImpl {
             return (obj->*method)();
         };
-        this->bind(name, paramIface, std::move(func));
+        this->bind(name, InterfaceWrapper(voidIface), std::move(func));
     }
 
     template<typename State, typename Param>
-    void bind(const std::string &name, const InterfacePtr &paramIface, State *obj,
+    void bind(const std::string &name, InterfaceWrapper &&paramIface, State *obj,
               void(State::*method)(const Param &)) {
         Notification func = [obj, method](JSON &&json) {
             Param p;
             fromJSON(std::move(json), p);
             (obj->*method)(p);
         };
-        this->bind(name, paramIface, std::move(func));
+        this->bind(name, std::move(paramIface), std::move(func));
     }
 
     template<typename State>
-    void bind(const std::string &name, const VoidInterfacePtr &paramIface, State *obj,
-              void(State::*method)()) {
+    void bind(const std::string &name, State *obj, void(State::*method)()) {
         Notification func = [obj, method](JSON &&) {
             (obj->*method)();
         };
-        this->bind(name, paramIface, std::move(func));
+        this->bind(name, InterfaceWrapper(voidIface), std::move(func));
     }
 };
 

@@ -18,6 +18,7 @@
 #define YDSH_TOOLS_VALIDATE_H
 
 #include <unordered_map>
+#include <tuple>
 
 #include <misc/hash.hpp>
 #include <misc/detect.hpp>
@@ -26,18 +27,11 @@
 namespace ydsh {
 namespace json {
 
-class InterfaceMap;
-
 class Validator {
 private:
-    const InterfaceMap &map;
     std::vector<std::string> errors;
 
 public:
-    explicit Validator(const InterfaceMap &map) : map(map) {}
-
-    bool operator()(const std::string &ifaceName, const JSON &value);
-
     std::string formatError() const;
 
     void clearError() {
@@ -117,21 +111,37 @@ public:
     }
 };
 
-struct ObjectMatcher : public PrimitiveMatcher {
+template <typename T>
+class ObjectMatcher {
+private:
     /**
-     *
-     * @param name
-     * if empty string, match all of objects
+     * if null, match all of objects.
      */
-    explicit constexpr ObjectMatcher(const char *name) noexcept :
-                PrimitiveMatcher(name, JSON::TAG<Object>) {}
+    const T *ref;
+
+public:
+    constexpr explicit ObjectMatcher(const T &iface) noexcept : ref(&iface) {}
+
+    constexpr ObjectMatcher() noexcept : ref(nullptr) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
-        return validator(this->name, value);
+        if(value.tag() != JSON::TAG<Object>) {
+            return false;
+        }
+        return this->empty() || this->matcher()(validator, value.asObject());
     }
 
     std::string str() const {
-        return this->name;
+        return this->ref == nullptr ? "" : this->matcher().str();
+    }
+
+private:
+    constexpr bool empty() const {
+        return this->ref == nullptr;
+    }
+
+    const T &matcher() const {
+        return *this->ref;
     }
 };
 
@@ -197,10 +207,131 @@ struct isOptMatcher : std::false_type {};
 template <typename T>
 struct isOptMatcher<OptMatcher<T>> : std::true_type {};
 
+template <typename T>
+class FieldMatcher {
+private:
+    const char *name;
+    T matcher;
+
+public:
+    constexpr FieldMatcher(const char *name, T matcher) noexcept : name(name), matcher(matcher) {}
+
+    const char *getName() const {
+        return this->name;
+    }
+
+    const T &getMatcher() const {
+        return this->matcher;
+    }
+
+    constexpr bool required() const {
+        return !isOptMatcher<T>::value;
+    }
+};
+
+template <typename ...T>
+class InterfaceMatcher {
+private:
+    const char *name;
+    std::tuple<FieldMatcher<T>...> fields;
+
+public:
+    constexpr InterfaceMatcher(const char *name, std::tuple<FieldMatcher<T>...> fields) : name(name), fields(fields) {}
+
+    bool operator()(Validator &validator, const Object &value) const {
+        return this->match<0>(validator, value);
+    }
+
+    constexpr const char *getName() const {
+        return this->name;
+    }
+
+    std::string str() const {
+        return this->getName();
+    }
+
+private:
+    template <std::size_t I, enable_when<I == sizeof...(T)> = nullptr>
+    bool match(Validator &, const Object &) const {
+        return true;
+    }
+
+    template <std::size_t I, enable_when<I < sizeof...(T)> = nullptr>
+    bool match(Validator &validator, const Object &value) const {
+        auto &field = std::get<I>(this->fields);
+        const auto &iter = value.find(field.getName());
+        bool hasField = iter != value.end();
+        if(!hasField && field.required()) {
+            std::string str = "require field `";
+            str += field.getName();
+            str += "' in `";
+            str += this->getName();
+            str += "'";
+            validator.appendError(std::move(str));
+            return false;
+        }
+
+        if(hasField) {
+            auto &matcher = field.getMatcher();
+            if(!matcher(validator, iter->second)) {
+                std::string str = "field `";
+                str += field.getName();
+                str += "' requires `";
+                str += matcher.str();
+                str += "' type in `";
+                str += this->getName();
+                str += "'";
+                validator.appendError(std::move(str));
+                return false;
+            }
+        }
+        return this->match<I + 1>(validator, value);
+    }
+};
+
+template <>
+class InterfaceMatcher<std::nullptr_t> {
+public:
+    constexpr InterfaceMatcher() = default;
+
+    bool operator()(Validator &, const Object &) const {
+        return true;
+    }
+
+    constexpr const char *getName() const {
+        return "";
+    }
+
+    std::string str() const {
+        return this->getName();
+    }
+};
+
+template <>
+class InterfaceMatcher<void> {
+public:
+    constexpr InterfaceMatcher() = default;
+
+    bool operator()(Validator &validator, const Object &value) const {
+        if(!value.empty()) {
+            validator.appendError("must be empty object");
+            return false;
+        }
+        return true;
+    }
+
+    constexpr const char *getName() const {
+        return "void";
+    }
+
+    std::string str() const {
+        return this->getName();
+    }
+};
+
 struct Matcher {
     virtual bool operator()(Validator &validator, const JSON &value) const = 0;
     virtual std::string str() const = 0;
-    virtual bool required() const = 0;
     virtual ~Matcher() = default;
 };
 
@@ -229,8 +360,9 @@ constexpr auto has_matcher_iface_v =
 
 // helper function for type matcher construction
 
-constexpr auto object(const char *name) {
-    return ObjectMatcher(name);
+template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
+constexpr auto object(const T &iface) {
+    return ObjectMatcher<T>(iface);
 }
 
 template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
@@ -259,6 +391,21 @@ constexpr auto string = PrimitiveMatcher("string", JSON::TAG<String>);
 constexpr auto boolean = PrimitiveMatcher("boolean", JSON::TAG<bool>);
 constexpr auto null = PrimitiveMatcher("null", JSON::TAG<std::nullptr_t>);
 constexpr auto any = AnyMatcher();
+
+template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
+constexpr FieldMatcher<T> field(const char *name, T m) {
+    return FieldMatcher<T>(name, m);
+}
+
+template <typename ...T>
+constexpr auto createInterface(const char *name, FieldMatcher<T>... fields) {
+    return InterfaceMatcher<T...>(name, std::make_tuple(fields...));
+}
+
+
+constexpr auto anyIface = InterfaceMatcher<std::nullptr_t>();
+constexpr auto voidIface = InterfaceMatcher<void>();
+constexpr auto anyObj = object(anyIface);
 
 template <typename T>
 struct TypeMatcherConstructor {};
@@ -319,116 +466,35 @@ struct TypeMatcherConstructor<Union<T...>> {
 template <typename T>
 constexpr auto toTypeMatcher = TypeMatcherConstructor<T>::value;
 
-class Field {
+class InterfaceWrapper {
 private:
     template <typename T>
-    struct MatcherHolder : public Matcher {
-        T instance;
+    struct Holder : public Matcher {
+        const T &iface;
 
-        explicit MatcherHolder(const T &m) : instance(std::move(m)) {}
+        Holder(const T &iface) : iface(iface) {}
 
         bool operator()(Validator &validator, const JSON &value) const override {
-            return this->instance(validator, value);
+            if(value.tag() != JSON::TAG<Object>) {
+                return false;
+            }
+            return this->iface(validator, value.asObject());
         }
 
         std::string str() const override {
-            return this->instance.str();
-        }
-
-        bool required() const override {
-            return !isOptMatcher<T>::value;
+            return this->iface.str();
         }
     };
 
-    std::unique_ptr<Matcher> matcher;
+    std::unique_ptr<Matcher> instance;
 
 public:
-    explicit Field() = default;
+    template <typename T>
+    InterfaceWrapper(const T &ref) : instance(new Holder<T>(ref)) {}
 
-    template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
-    explicit Field(const T &type) : matcher(new MatcherHolder<T>(type)) {}
-
-    const Matcher &getMatcher() const {
-        return *this->matcher;
+    const Matcher &get() const {
+        return *this->instance;
     }
-
-    bool isRequire() const {
-        return this->matcher->required();
-    }
-};
-
-struct Fields {
-    using Entry = std::unordered_map<std::string, Field>;
-    Entry value;
-
-    Fields(std::initializer_list<std::pair<std::string, Field>> list);
-};
-
-template <typename T>
-inline std::pair<std::string, Field> field(const char *name, T value) {
-    return {name, Field(value)};
-}
-
-struct InterfaceBase {
-    virtual ~InterfaceBase() = default;
-    virtual const char *getName() const = 0;
-    virtual bool match(Validator &validator, const JSON &json) const = 0;
-};
-
-class Interface : public InterfaceBase {
-private:
-    friend class Validator;
-    using Entry = Fields::Entry;
-    std::string name;
-    Entry fields;
-
-public:
-    Interface() = default;
-
-    Interface(const char *name, Fields &&fields) : name(name), fields(std::move(fields.value)) {}
-
-    const char *getName() const override {
-        return this->name.c_str();
-    }
-
-    const Entry &getFields() const {
-        return this->fields;
-    }
-
-    bool match(Validator &validator, const JSON &json) const override;
-};
-
-struct VoidInterface : public InterfaceBase {
-    friend class Validator;
-
-    const char *getName() const override {
-        return "void";
-    }
-
-    bool match(Validator &validator, const JSON &json) const override;
-};
-
-using InterfaceBasePtr = std::shared_ptr<InterfaceBase>;
-using InterfacePtr = std::shared_ptr<Interface>;
-using VoidInterfacePtr = std::shared_ptr<VoidInterface>;
-
-class InterfaceMap {
-private:
-    CStringHashMap<InterfaceBasePtr> map;
-
-public:
-    InterfacePtr interface(const char *name, Fields &&fields);
-
-    VoidInterfacePtr interface();
-
-    const InterfaceBase *lookup(const std::string &name) const {
-        return this->lookup(name.c_str());
-    }
-
-    const InterfaceBase *lookup(const char *name) const;
-
-private:
-    InterfaceBasePtr add(InterfaceBasePtr &&iface);
 };
 
 } // namespace json

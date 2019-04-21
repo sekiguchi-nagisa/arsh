@@ -49,17 +49,16 @@ Request RequestParser::operator()() {
     }
 
     // validate
-    const char *ifaceName = "Request";
-    InterfaceMap map;
-    map.interface(ifaceName, {
-        field("id", !(number | string)),
-        field("method", string),
-        field("params", !(array(any) | object("")))
-    });
+    auto iface = createInterface(
+            "Request",
+            field("id", !(number | string)),
+            field("method", string),
+            field("params", !(array(any) | anyObj))
+    );
 
-
-    Validator validator(map);
-    if(!validator(ifaceName, ret)) {
+    Validator validator;
+    InterfaceWrapper wrapper(iface);
+    if(!wrapper.get()(validator, ret)) {
         return Request(Request::INVALID, "Invalid Request", validator.formatError());
     }
 
@@ -70,20 +69,21 @@ Request RequestParser::operator()() {
     return Request(std::move(id), std::move(method), std::move(params));
 }
 
-void MethodParamMap::add(const std::string &methodName, const std::string &ifaceName) {
-    auto pair = this->map.emplace(methodName, ifaceName);
+void ParamIfaceMap::add(const std::string &key, InterfaceWrapper &&wrapper) {
+    auto pair = this->map.emplace(key, std::move(wrapper));
     if(!pair.second) {
-        fatal("already defined param type mapping: %s -> %s\n", methodName.c_str(), ifaceName.c_str());
+        fatal("already bound method param: %s\n", key.c_str());
     }
 }
 
-const char* MethodParamMap::lookupIface(const std::string &methodName) const {
-    auto iter = this->map.find(methodName);
-    if(iter == this->map.end()) {
-        return nullptr;
+const Matcher* ParamIfaceMap::lookup(const std::string &name) const {
+    auto iter = this->map.find(name);
+    if(iter != this->map.end()) {
+        return &iter->second.get();
     }
-    return iter->second.c_str();
+    return nullptr;
 }
+
 
 // #######################
 // ##     Transport     ##
@@ -162,7 +162,6 @@ bool Transport::dispatch(Handler &handler) {
     return true;
 }
 
-
 // #####################
 // ##     Handler     ##
 // #####################
@@ -176,10 +175,10 @@ ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
         return newError(MethodNotFound, std::move(str));
     }
 
-    auto *ifaceName = this->callParamMap.lookupIface(name);
-    assert(ifaceName);
-    Validator validator(this->ifaceMap);
-    if(!validator(ifaceName, param)) {
+    auto *iface = this->callParamMap.lookup(name);
+    assert(iface);
+    Validator validator;
+    if(!(*iface)(validator, param)) {
         std::string e = validator.formatError();
         this->logger(LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
         return newError(InvalidParams, std::move(e));
@@ -195,10 +194,10 @@ void Handler::onNotify(const std::string &name, JSON &&param) {
         return;
     }
 
-    auto *ifaceName = this->notificationParamMap.lookupIface(name);
-    assert(ifaceName);
-    Validator validator(this->ifaceMap);
-    if(!validator(ifaceName, param)) {
+    auto *iface = this->notificationParamMap.lookup(name);
+    assert(iface);
+    Validator validator;
+    if(!(*iface)(validator, param)) {
         this->logger(LogLevel::ERROR,
                 "notification message validation failed: \n%s", validator.formatError().c_str());
         return;
@@ -207,20 +206,18 @@ void Handler::onNotify(const std::string &name, JSON &&param) {
     iter->second(std::move(param));
 }
 
-void Handler::bind(const std::string &name, const InterfaceBasePtr &paramIface, Call &&func) {
-    assert(paramIface);
-    if(!this->callMap.emplace(name, std::move(func)).second) {
-        fatal("already defined method: %s\n", name.c_str());
+void Handler::bind(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func) {
+    if(!this->callMap.emplace(methodName, std::move(func)).second) {
+        fatal("already defined method: %s\n", methodName.c_str());
     }
-    this->callParamMap.add(name, paramIface->getName());
+    this->callParamMap.add(methodName, std::move(wrapper));
 }
 
-void Handler::bind(const std::string &name, const InterfaceBasePtr &paramIface, Notification &&func) {
-    assert(paramIface);
-    if(!this->notificationMap.emplace(name, std::move(func)).second) {
-        fatal("already defined method: %s\n", name.c_str());
+void Handler::bind(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func) {
+    if(!this->notificationMap.emplace(methodName, std::move(func)).second) {
+        fatal("already defined method: %s\n", methodName.c_str());
     }
-    this->notificationParamMap.add(name, paramIface->getName());
+    this->notificationParamMap.add(methodName, std::move(wrapper));
 }
 
 } // namespace rpc

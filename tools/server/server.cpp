@@ -31,26 +31,28 @@ ReplyImpl LSPServer::onCall(const std::string &name, JSON &&param) {
     return Handler::onCall(name, std::move(param));
 }
 
-void LSPServer::bindAll() {
-    auto voidIface = this->interface();
+static constexpr auto Type_ClientCapabilities =
+        createInterface(
+                "ClientCapabilities",
+                field("workspace", !any),
+                field("textDocument", !any)
+        );
 
-    this->bind("shutdown", voidIface, &LSPServer::shutdown);
-    this->bind("exit", voidIface, &LSPServer::exit);
-
-    auto clientCap = this->interface("ClientCapabilities", {
-        field("workspace", !any),
-        field("textDocument", !any)
-    });
-    this->bind("initialize",
-            this->interface("InitializeParams", {
+static constexpr auto Type_InitializeParams =
+        createInterface(
+                "InitializeParams",
                 field("processId", integer),
                 field("rootPath", !(string | null)),
                 field("rootUri", string | null),
                 field("initializationOptions", !any),
-                field("capabilities", object(clientCap->getName())),
+                field("capabilities", object(Type_ClientCapabilities)),
                 field("trace", !string)
-            }), &LSPServer::initialize
-    );
+        );
+
+void LSPServer::bindAll() {
+    this->bind("shutdown", &LSPServer::shutdown);
+    this->bind("exit", &LSPServer::exit);
+    this->bind("initialize", Type_InitializeParams, &LSPServer::initialize);
 }
 
 void LSPServer::run() {

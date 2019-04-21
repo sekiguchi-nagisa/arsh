@@ -316,11 +316,10 @@ TEST_F(ParserTest, serialize2) {
 
 class ValidatorTest : public ::testing::Test {
 protected:
-    InterfaceMap map;
     Validator validator;
     bool ret{false};
 
-    void tryValidate(const char *ifaceName, const char *src) {
+    void tryValidate(const InterfaceWrapper &wrapper, const char *src) {
         SCOPED_TRACE("");
 
         Parser parser(src);
@@ -329,11 +328,11 @@ protected:
             parser.showError();
         }
         ASSERT_FALSE(parser.hasError());
-        this->ret = this->validator(ifaceName, json);
+        this->ret = wrapper.get()(this->validator, json);
     }
 
-    void validate(const char *name, const char *src) {
-        this->tryValidate(name, src);
+    void validate(const InterfaceWrapper &wrapper, const char *src) {
+        this->tryValidate(wrapper, src);
         if(!this->ret) {
             auto message = this->validator.formatError();
             fprintf(stderr, "%s\n", message.c_str());
@@ -341,46 +340,41 @@ protected:
         ASSERT_TRUE(this->ret);
         ASSERT_EQ("", this->validator.formatError());
     }
-
-public:
-    ValidatorTest() : validator(this->map) {}
 };
 
 TEST_F(ValidatorTest, base) {
-    this->map
-    .interface("hoge1", {
-        field("params", null | array(string)),
-        field("id", !number)
-    });
+    constexpr auto iface = createInterface(
+            "hoge1",
+            field("params", null | array(string)),
+            field("id", !number)
+            );
 
     const char *text = R"(
     { "params" : [ "hoge", "de" ] }
 )";
-    ASSERT_NO_FATAL_FAILURE(this->validate("hoge1", text));
+    ASSERT_NO_FATAL_FAILURE(this->validate(iface, text));
 
     text = R"(
     {
         "params" : null, "id" : 45
     }
 )";
-    ASSERT_NO_FATAL_FAILURE(this->validate("hoge1", text));
+    ASSERT_NO_FATAL_FAILURE(this->validate(iface, text));
 }
 
 TEST_F(ValidatorTest, iface) {
-    this->map
-    .interface("AAA", {
-        field("a", number),
-        field("b", string),
-        field("c", array(any))
-    });
+    static constexpr auto AAA = createInterface(
+            "AAA",
+            field("a", number),
+            field("b", string),
+            field("c", array(any))
+            );
 
-    this->map
-    .interface("BBB", {
-        field("a", object("AAA") | string | any),
-        field("b", boolean)
-    });
-
-    this->map.interface();
+    static constexpr auto BBB = createInterface(
+            "BBB",
+            field("a", object(AAA) | string | any),
+            field("b", boolean)
+            );
 
     const char *text = R"(
         {
@@ -388,8 +382,8 @@ TEST_F(ValidatorTest, iface) {
             "b" : false
         }
 )";
-    ASSERT_NO_FATAL_FAILURE(this->validate("BBB", text));
-    ASSERT_NO_FATAL_FAILURE(this->validate("void", "{}"));
+    ASSERT_NO_FATAL_FAILURE(this->validate(BBB, text));
+    ASSERT_NO_FATAL_FAILURE(this->validate(voidIface, "{}"));
 }
 
 TEST(ReqTest, parse) {
@@ -609,23 +603,25 @@ TEST_F(RPCTest, parse2) {
 
 #define DEF_FIELD(t, f) field(#f, toTypeMatcher<decltype(t::f)>)
 
+static constexpr auto Type_Param1 =
+        createInterface(
+                "Param1",
+                DEF_FIELD(Param1, value)
+        );
+
+static constexpr auto Type_Param2 =
+        createInterface(
+                "Param2",
+                DEF_FIELD(Param2, value)
+        );
+
 TEST_F(RPCTest, call1) {
     Context ctx;
 
     this->init(rpc::Request(1, "/put", {{"value", "hello"}}));
-    this->handler.bind(
-            "/init",
-            this->handler.interface("Param1", {
-                DEF_FIELD(Param1, value)
-            }), &ctx, &Context::init);
-    this->handler.bind(
-            "/put",
-            this->handler.interface("Param2", {
-                DEF_FIELD(Param2, value)
-            }), &ctx, &Context::put);
-    this->handler.bind(
-            "/exit",
-            this->handler.interface(), &ctx, &Context::exit);
+    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
+    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/exit", &ctx, &Context::exit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ctx.cRet));
@@ -638,19 +634,9 @@ TEST_F(RPCTest, call2) {
     Context ctx;
 
     this->init(rpc::Request(1, "/putdd", {{"value", "hello"}}));
-    this->handler.bind(
-            "/init",
-            this->handler.interface("Param1", {
-                DEF_FIELD(Param1, value)
-            }), &ctx, &Context::init);
-    this->handler.bind(
-            "/put",
-            this->handler.interface("Param2", {
-                DEF_FIELD(Param2, value)
-            }), &ctx, &Context::put);
-    this->handler.bind(
-            "/exit",
-            this->handler.interface(), &ctx, &Context::exit);
+    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
+    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/exit", &ctx, &Context::exit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
@@ -670,19 +656,9 @@ TEST_F(RPCTest, call3) {
     Context ctx;
 
     this->init(rpc::Request(1, "/put", {{"value", array(34,43)}}));
-    this->handler.bind(
-            "/init",
-            this->handler.interface("Param1", {
-                DEF_FIELD(Param1, value)
-            }), &ctx, &Context::init);
-    this->handler.bind(
-            "/put",
-            this->handler.interface("Param2", {
-                DEF_FIELD(Param2, value)
-            }), &ctx, &Context::put);
-    this->handler.bind(
-            "/exit",
-            this->handler.interface(), &ctx, &Context::exit);
+    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
+    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/exit", &ctx, &Context::exit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
@@ -702,19 +678,10 @@ TEST_F(RPCTest, call4) {
     Context ctx;
 
     this->init(rpc::Request(1, "/tryExit", object()));
-    this->handler.bind(
-            "/init",
-            this->handler.interface("Param1", {
-                DEF_FIELD(Param1, value)
-            }), &ctx, &Context::init);
-    this->handler.bind(
-            "/put",
-            this->handler.interface("Param2", {
-                    DEF_FIELD(Param2, value)
-            }), &ctx, &Context::put);
-    this->handler.bind(
-            "/tryExit",
-            this->handler.interface(), &ctx, &Context::tryExit);
+    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
+    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/exit", &ctx, &Context::exit);
+    this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
@@ -734,19 +701,10 @@ TEST_F(RPCTest, call5) {
     Context ctx;
 
     this->init(rpc::Request(1, "/tryExit", {{"de",45}}));
-    this->handler.bind(
-            "/init",
-            this->handler.interface("Param1", {
-                    DEF_FIELD(Param1, value)
-            }), &ctx, &Context::init);
-    this->handler.bind(
-            "/put",
-            this->handler.interface("Param2", {
-                    DEF_FIELD(Param2, value)
-            }), &ctx, &Context::put);
-    this->handler.bind(
-            "/tryExit",
-            this->handler.interface(), &ctx, &Context::tryExit);
+    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
+    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/exit", &ctx, &Context::exit);
+    this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
@@ -767,19 +725,10 @@ TEST_F(RPCTest, notify1) {
     Context ctx;
 
     this->init(rpc::Request("/init", {{"value", 1234}}));
-    this->handler.bind(
-            "/init",
-            this->handler.interface("Param1", {
-                    DEF_FIELD(Param1, value)
-            }), &ctx, &Context::init);
-    this->handler.bind(
-            "/put",
-            this->handler.interface("Param2", {
-                    DEF_FIELD(Param2, value)
-            }), &ctx, &Context::put);
-    this->handler.bind(
-            "/exit",
-            this->handler.interface(), &ctx, &Context::exit);
+    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
+    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/exit", &ctx, &Context::exit);
+    this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
@@ -792,19 +741,10 @@ TEST_F(RPCTest, notify2) {
     Context ctx;
 
     this->init(rpc::Request("/inited", {{"value", 1234}}));
-    this->handler.bind(
-            "/init",
-            this->handler.interface("Param1", {
-                    DEF_FIELD(Param1, value)
-            }), &ctx, &Context::init);
-    this->handler.bind(
-            "/put",
-            this->handler.interface("Param2", {
-                    DEF_FIELD(Param2, value)
-            }), &ctx, &Context::put);
-    this->handler.bind(
-            "/exit",
-            this->handler.interface(), &ctx, &Context::exit);
+    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
+    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/exit", &ctx, &Context::exit);
+    this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
@@ -817,19 +757,10 @@ TEST_F(RPCTest, notify3) {
     Context ctx;
 
     this->init(rpc::Request("/exit", object()));
-    this->handler.bind(
-            "/init",
-            this->handler.interface("Param1", {
-                    DEF_FIELD(Param1, value)
-            }), &ctx, &Context::init);
-    this->handler.bind(
-            "/put",
-            this->handler.interface("Param2", {
-                    DEF_FIELD(Param2, value)
-            }), &ctx, &Context::put);
-    this->handler.bind(
-            "/exit",
-            this->handler.interface(), &ctx, &Context::exit);
+    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
+    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/exit", &ctx, &Context::exit);
+    this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
