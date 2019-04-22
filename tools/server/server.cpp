@@ -22,17 +22,6 @@ namespace json {
 using namespace rpc;
 using namespace lsp;
 
-#define DEF_FIELD(T, f) field(#f, toTypeMatcher<decltype(T::f)>)
-#define DEF_FIELD2(T, f) , DEF_FIELD(T, f)
-
-#define DEF_INTERFACE(iface) \
-template <> struct InterfaceConstructor<iface> { \
-    static constexpr auto value = createInterface(#iface \
-        EACH_ ## iface ## _FIELD(iface, DEF_FIELD2)); \
-    using type = decltype(value); \
-}; \
-constexpr InterfaceConstructor<iface>::type InterfaceConstructor<iface>::value
-
 #define EACH_ClientCapabilities_FIELD(T, OP) \
     OP(T, workspace) \
     OP(T, textDocument)
@@ -50,8 +39,8 @@ struct TypeMatcherConstructor<DocumentURI> {
     static constexpr auto value = string;
 };
 
-DEF_INTERFACE(ClientCapabilities);
-DEF_INTERFACE(InitializeParams);
+DEFINE_JSON_VALIDATE_INTERFACE(ClientCapabilities);
+DEFINE_JSON_VALIDATE_INTERFACE(InitializeParams);
 
 } // namespace json
 

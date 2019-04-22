@@ -601,26 +601,27 @@ TEST_F(RPCTest, parse2) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isString()));
 }
 
-#define DEF_FIELD(t, f) field(#f, toTypeMatcher<decltype(t::f)>)
+#define EACH_Param1_FIELD(T, OP) \
+    OP(T, value)
 
-static constexpr auto Type_Param1 =
-        createInterface(
-                "Param1",
-                DEF_FIELD(Param1, value)
-        );
+#define EACH_Param2_FIELD(T, OP) \
+    OP(T, value)
 
-static constexpr auto Type_Param2 =
-        createInterface(
-                "Param2",
-                DEF_FIELD(Param2, value)
-        );
+namespace ydsh {
+namespace json {
+
+DEFINE_JSON_VALIDATE_INTERFACE(Param1);
+DEFINE_JSON_VALIDATE_INTERFACE(Param2);
+
+} // namespace json
+} // namespace ydsh
 
 TEST_F(RPCTest, call1) {
     Context ctx;
 
     this->init(rpc::Request(1, "/put", {{"value", "hello"}}));
-    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
-    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/init", toTypeMatcher<Param1>, &ctx, &Context::init);
+    this->handler.bind("/put", toTypeMatcher<Param2>, &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);
 
     this->dispatch();
@@ -634,8 +635,8 @@ TEST_F(RPCTest, call2) {
     Context ctx;
 
     this->init(rpc::Request(1, "/putdd", {{"value", "hello"}}));
-    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
-    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/init", toTypeMatcher<Param1>, &ctx, &Context::init);
+    this->handler.bind("/put", toTypeMatcher<Param2>, &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);
 
     this->dispatch();
@@ -656,8 +657,8 @@ TEST_F(RPCTest, call3) {
     Context ctx;
 
     this->init(rpc::Request(1, "/put", {{"value", array(34,43)}}));
-    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
-    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/init", toTypeMatcher<Param1>, &ctx, &Context::init);
+    this->handler.bind("/put", toTypeMatcher<Param2>, &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);
 
     this->dispatch();
@@ -678,8 +679,8 @@ TEST_F(RPCTest, call4) {
     Context ctx;
 
     this->init(rpc::Request(1, "/tryExit", object()));
-    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
-    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/init", toTypeMatcher<Param1>, &ctx, &Context::init);
+    this->handler.bind("/put", toTypeMatcher<Param2>, &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
@@ -701,8 +702,8 @@ TEST_F(RPCTest, call5) {
     Context ctx;
 
     this->init(rpc::Request(1, "/tryExit", {{"de",45}}));
-    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
-    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/init", toTypeMatcher<Param1>, &ctx, &Context::init);
+    this->handler.bind("/put", toTypeMatcher<Param2>, &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
@@ -725,8 +726,8 @@ TEST_F(RPCTest, notify1) {
     Context ctx;
 
     this->init(rpc::Request("/init", {{"value", 1234}}));
-    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
-    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/init", toTypeMatcher<Param1>, &ctx, &Context::init);
+    this->handler.bind("/put", toTypeMatcher<Param2>, &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
@@ -741,8 +742,8 @@ TEST_F(RPCTest, notify2) {
     Context ctx;
 
     this->init(rpc::Request("/inited", {{"value", 1234}}));
-    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
-    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/init", toTypeMatcher<Param1>, &ctx, &Context::init);
+    this->handler.bind("/put", toTypeMatcher<Param2>, &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
@@ -757,8 +758,8 @@ TEST_F(RPCTest, notify3) {
     Context ctx;
 
     this->init(rpc::Request("/exit", object()));
-    this->handler.bind("/init", Type_Param1, &ctx, &Context::init);
-    this->handler.bind("/put", Type_Param2, &ctx, &Context::put);
+    this->handler.bind("/init", toTypeMatcher<Param1>, &ctx, &Context::init);
+    this->handler.bind("/put", toTypeMatcher<Param2>, &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
