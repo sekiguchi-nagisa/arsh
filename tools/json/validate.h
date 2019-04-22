@@ -375,16 +375,23 @@ constexpr auto anyIface = InterfaceMatcher<std::nullptr_t>();
 constexpr auto voidIface = InterfaceMatcher<void>();
 constexpr auto anyObj = object(anyIface);
 
-template <typename T>
+template <typename>
+struct InterfaceConstructor {};
+
+template <typename, typename = void_t<>>
 struct TypeMatcherConstructor {};
 
-template <>
-struct TypeMatcherConstructor<int> {
+template <typename T>
+struct TypeMatcherConstructor<T, std::enable_if_t<sizeof(T) == sizeof(int)
+        && std::is_integral<T>::value, void>> {
     static constexpr auto value = integer;
 };
 
-template <>
-struct TypeMatcherConstructor<unsigned int> : TypeMatcherConstructor<int> {};
+template <typename T>
+struct TypeMatcherConstructor<T, std::enable_if_t<sizeof(T) == sizeof(int)
+        && std::is_enum<T>::value, void>> {
+    static constexpr auto value = integer;
+};
 
 template <>
 struct TypeMatcherConstructor<String> {
@@ -414,6 +421,11 @@ struct TypeMatcherConstructor<std::vector<T>> {
 template <typename T>
 struct TypeMatcherConstructor<OptionalBase<T>> {
     static constexpr auto value = !(TypeMatcherConstructor<T>::value);
+};
+
+template <typename T>
+struct TypeMatcherConstructor<T, void_t<decltype(InterfaceConstructor<T>::value)>> {
+    static constexpr auto value = object(InterfaceConstructor<T>::value);
 };
 
 template <typename T1>
