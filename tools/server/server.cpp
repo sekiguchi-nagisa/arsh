@@ -61,7 +61,7 @@ ReplyImpl LSPServer::onCall(const std::string &name, JSON &&param) {
 void LSPServer::bindAll() {
     this->bind("shutdown", &LSPServer::shutdown);
     this->bind("exit", &LSPServer::exit);
-    this->bind("initialize", toTypeMatcher<InitializeParams>, &LSPServer::initialize);
+    this->bind("initialize", &LSPServer::initialize);
 }
 
 void LSPServer::run() {

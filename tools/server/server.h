@@ -52,9 +52,8 @@ public:
 
 private:
     template<typename Ret, typename Param>
-    void bind(const std::string &name, InterfaceWrapper &&paramIface,
-              Reply<Ret>(LSPServer::*method)(const Param &)) {
-        Handler::bind(name, std::move(paramIface), this, method);
+    void bind(const std::string &name, Reply<Ret>(LSPServer::*method)(const Param &)) {
+        Handler::bind(name, this, method);
     }
 
     template <typename Ret>
@@ -63,9 +62,8 @@ private:
     }
 
     template<typename Param>
-    void bind(const std::string &name, InterfaceWrapper &&paramIface,
-              void(LSPServer::*method)(const Param &)) {
-        Handler::bind(name, std::move(paramIface), this, method);
+    void bind(const std::string &name, void(LSPServer::*method)(const Param &)) {
+        Handler::bind(name, this, method);
     }
 
     void bind(const std::string &name, void(LSPServer::*method)()) {

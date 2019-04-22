@@ -252,19 +252,18 @@ public:
 
     virtual void onNotify(const std::string &name, JSON &&param);
 
-    void bind(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func);
+    void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func);
 
-    void bind(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func);
+    void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func);
 
     template<typename State, typename Ret, typename Param>
-    void bind(const std::string &name, InterfaceWrapper &&paramIface, State *obj,
-              Reply<Ret>(State::*method)(const Param &)) {
+    void bind(const std::string &name, State *obj, Reply<Ret>(State::*method)(const Param &)) {
         Call func = [obj, method](JSON &&json) -> ReplyImpl {
             Param p;
             fromJSON(std::move(json), p);
             return (obj->*method)(p);
         };
-        this->bind(name, std::move(paramIface), std::move(func));
+        this->bindImpl(name, toTypeMatcher<Param>, std::move(func));
     }
 
     template<typename State, typename Ret>
@@ -272,18 +271,17 @@ public:
         Call func = [obj, method](JSON &&) -> ReplyImpl {
             return (obj->*method)();
         };
-        this->bind(name, InterfaceWrapper(voidIface), std::move(func));
+        this->bindImpl(name, InterfaceWrapper(voidIface), std::move(func));
     }
 
     template<typename State, typename Param>
-    void bind(const std::string &name, InterfaceWrapper &&paramIface, State *obj,
-              void(State::*method)(const Param &)) {
+    void bind(const std::string &name, State *obj, void(State::*method)(const Param &)) {
         Notification func = [obj, method](JSON &&json) {
             Param p;
             fromJSON(std::move(json), p);
             (obj->*method)(p);
         };
-        this->bind(name, std::move(paramIface), std::move(func));
+        this->bindImpl(name, toTypeMatcher<Param>, std::move(func));
     }
 
     template<typename State>
@@ -291,7 +289,7 @@ public:
         Notification func = [obj, method](JSON &&) {
             (obj->*method)();
         };
-        this->bind(name, InterfaceWrapper(voidIface), std::move(func));
+        this->bindImpl(name, InterfaceWrapper(voidIface), std::move(func));
     }
 };
 

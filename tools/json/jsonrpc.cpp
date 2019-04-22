@@ -206,14 +206,14 @@ void Handler::onNotify(const std::string &name, JSON &&param) {
     iter->second(std::move(param));
 }
 
-void Handler::bind(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func) {
+void Handler::bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func) {
     if(!this->callMap.emplace(methodName, std::move(func)).second) {
         fatal("already defined method: %s\n", methodName.c_str());
     }
     this->callParamMap.add(methodName, std::move(wrapper));
 }
 
-void Handler::bind(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func) {
+void Handler::bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func) {
     if(!this->notificationMap.emplace(methodName, std::move(func)).second) {
         fatal("already defined method: %s\n", methodName.c_str());
     }
