@@ -233,15 +233,14 @@ protected:
     using Call = std::function<ReplyImpl(JSON &&)>;
     using Notification = std::function<void(JSON &&)>;
 
+    std::reference_wrapper<LoggerBase> logger;
+
 private:
     std::unordered_map<std::string, Call> callMap;
     std::unordered_map<std::string, Notification> notificationMap;
 
     ParamIfaceMap callParamMap;
     ParamIfaceMap notificationParamMap;
-
-protected:
-    std::reference_wrapper<LoggerBase> logger;
 
 public:
     explicit Handler(LoggerBase &logger) : logger(logger) {}
@@ -251,10 +250,6 @@ public:
     virtual ReplyImpl onCall(const std::string &name, JSON &&param);
 
     virtual void onNotify(const std::string &name, JSON &&param);
-
-    void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func);
-
-    void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func);
 
     template<typename State, typename Ret, typename Param>
     void bind(const std::string &name, State *obj, Reply<Ret>(State::*method)(const Param &)) {
@@ -291,6 +286,11 @@ public:
         };
         this->bindImpl(name, InterfaceWrapper(voidIface), std::move(func));
     }
+
+protected:
+    void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func);
+
+    void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func);
 };
 
 } // namespace rpc
