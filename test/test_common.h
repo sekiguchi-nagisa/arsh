@@ -32,13 +32,15 @@ protected:
     char *tmpDirName{nullptr};
     char *tmpFileName{nullptr};
 
-    virtual ~TempFileFactory();
-
+private:
     void createTemp();
-
     void deleteTemp();
 
 public:
+    TempFileFactory();
+
+    virtual ~TempFileFactory();
+
     const char *getTempDirName() const {
         return this->tmpDirName;
     }

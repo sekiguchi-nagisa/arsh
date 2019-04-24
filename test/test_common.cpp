@@ -29,7 +29,12 @@
 // ##     TempFileFactory     ##
 // #############################
 
+TempFileFactory::TempFileFactory() {
+    this->createTemp();
+}
+
 TempFileFactory::~TempFileFactory() {
+    this->deleteTemp();
     this->freeName();
 }
 

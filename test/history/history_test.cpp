@@ -11,18 +11,13 @@
 
 class HistoryTest : public ExpectOutput, public TempFileFactory {
 protected:
-    DSState *state;
-    bool evaled;
+    DSState *state{nullptr};
+    bool evaled{false};
 
 public:
-    HistoryTest() = default;
-    ~HistoryTest() override = default;
-
-    void SetUp() override {
-        this->createTemp();
+    HistoryTest() {
         this->state = DSState_create();
         DSState_setOption(this->state, DS_OPTION_HISTORY);
-        this->evaled = false;
 
         std::string value;
         value += '"';
@@ -31,8 +26,7 @@ public:
         this->assignValue(VAR_HISTFILE, std::move(value));
     }
 
-    void TearDown() override {
-        this->deleteTemp();
+    ~HistoryTest() override {
         DSState_delete(&this->state);
     }
 

@@ -44,13 +44,11 @@ TEST(BuiltinExecTest, case2) {
 struct APITest : public ExpectOutput, public TempFileFactory {
     DSState *state{nullptr};
 
-    void SetUp() override {
-        this->createTemp();
+    APITest() {
         this->state = DSState_create();
     }
 
-    void TearDown() override {
-        this->deleteTemp();
+    ~APITest() override {
         DSState_delete(&this->state);
     }
 };

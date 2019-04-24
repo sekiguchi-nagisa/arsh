@@ -44,15 +44,8 @@ private:
     std::string targetName;
 
 public:
-    ExecTest() = default;
-
-    void SetUp() override {
-        this->createTemp();
+    ExecTest() {
         this->targetName = this->GetParam();
-    }
-
-    void TearDown() override {
-        this->deleteTemp();
     }
 
     virtual const std::string &getSourceName() {

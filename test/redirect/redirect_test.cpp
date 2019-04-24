@@ -17,18 +17,12 @@ private:
     std::string targetName;
 
 public:
-    RedirectTest() = default;
-    ~RedirectTest() override = default;
-
-    void SetUp() override {
-        this->createTemp();
+    RedirectTest() {
         this->targetName += this->getTempDirName();
         this->targetName += "/target";
     }
 
-    void TearDown() override {
-        this->deleteTemp();
-    }
+    ~RedirectTest() override = default;
 
     const char *getTargetName() const {
         return this->targetName.c_str();

@@ -564,10 +564,6 @@ TEST_F(CmdlineTest, signal) {
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
     CmdlineTest2() = default;
-
-    void SetUp() override { this->createTemp(); }
-
-    void TearDown() override { this->deleteTemp(); }
 };
 
 TEST_F(CmdlineTest2, exec) {
