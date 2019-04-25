@@ -29,12 +29,8 @@ using namespace process;
 
 class TempFileFactory {
 protected:
-    char *tmpDirName{nullptr};
-    char *tmpFileName{nullptr};
-
-private:
-    void createTemp();
-    void deleteTemp();
+    std::string tmpDirName;
+    std::string tmpFileName;
 
 public:
     TempFileFactory();
@@ -42,17 +38,14 @@ public:
     virtual ~TempFileFactory();
 
     const char *getTempDirName() const {
-        return this->tmpDirName;
+        return this->tmpDirName.c_str();
     }
 
     const char *getTempFileName() const {
-        return this->tmpFileName;
+        return this->tmpFileName.c_str();
     }
 
     std::string createTempFile(const char *baseName, const std::string &content) const;
-
-private:
-    void freeName();
 };
 
 std::string format(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
