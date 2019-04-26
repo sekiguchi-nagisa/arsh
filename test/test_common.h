@@ -129,8 +129,11 @@ private:
 
     const std::string workingDir;
 
+    const bool ttyEmulation;
+
 protected:
-    explicit InteractiveBase(const char *binPath, const char *dir) : binPath(binPath), workingDir(dir) {}
+    explicit InteractiveBase(const char *binPath, const char *dir, bool ttyEmulation = true) :
+                    binPath(binPath), workingDir(dir), ttyEmulation(ttyEmulation) {}
 
     template <typename ... T>
     void invoke(T && ...args) {
@@ -150,7 +153,9 @@ protected:
 
     std::pair<std::string, std::string> readAll() {
         auto ret = this->handle.readAll(80);
-        this->interpret(ret.first);
+        if(this->ttyEmulation) {
+            this->interpret(ret.first);
+        }
         return ret;
     }
 
@@ -177,19 +182,23 @@ protected:
     }
 
     void sendAndExpect(const char *str, const char *out = "", const char *err = "") {
-        this->send(str);
-        this->send("\r");
-
         std::string eout = str;
-        eout += "\n";
-        eout += out;
+        this->send(str);
+
+        if(this->ttyEmulation) {
+            this->send("\r");
+            eout += "\n";
+            eout += out;
+        }
         this->expect(eout.c_str(), err);
     }
 
     void waitAndExpect(int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
                        const char *out = "", const char *err = "") {
         auto ret = this->handle.waitAndGetResult(false);
-        this->interpret(ret.out);
+        if(this->ttyEmulation) {
+            this->interpret(ret.out);
+        }
         ExpectOutput::expect(ret, status, type, out, err);
     }
 };
