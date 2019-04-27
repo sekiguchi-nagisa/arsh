@@ -49,16 +49,8 @@ static std::string makeTempDir() {
     return name;
 }
 
-TempFileFactory::TempFileFactory() {
-    this->tmpDirName = makeTempDir();
-    this->tmpFileName = this->tmpDirName;
-    this->tmpFileName += "/test_tmpXXXXXX";
-    int fd = mkstemp(&this->tmpFileName[0]);
-    if(fd < 0) {
-                error_at("");
-    }
-    close(fd);
-}
+TempFileFactory::TempFileFactory() :
+        tmpDirName(makeTempDir()), tmpFileName(this->createTempFile("", "")) {}
 
 static void removeRecursive(const char *currentDir) {
     DIR *dir = opendir(currentDir);
@@ -92,11 +84,27 @@ TempFileFactory::~TempFileFactory() {
 }
 
 std::string TempFileFactory::createTempFile(const char *baseName, const std::string &content) const {
+    FILE *fp = nullptr;
     std::string fileName = this->getTempDirName();
     fileName += '/';
-    fileName += baseName;
 
-    FILE *fp = fopen(fileName.c_str(), "w");
+    if(baseName != nullptr && *baseName != '\0') {
+        fileName += baseName;
+        fp = fopen(fileName.c_str(), "w");
+    } else {
+        fileName += "temp_XXXXXX";
+        int fd = mkstemp(&fileName[0]);
+        if(fd < 0) {
+            error_at("");
+        }
+        fp = fdopen(fd, "w");
+        if(fp == nullptr) {
+            close(fd);
+        }
+    }
+    if(fp == nullptr) {
+        return "";
+    }
     fwrite(content.c_str(), sizeof(char), content.size(), fp);
     fclose(fp);
     return fileName;

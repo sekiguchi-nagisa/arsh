@@ -45,6 +45,14 @@ public:
         return this->tmpFileName.c_str();
     }
 
+    /**
+     * create temp file with content
+     * @param baseName
+     * if null or empty string, generate random name.
+     * @param content
+     * @return
+     * full path of temp file
+     */
     std::string createTempFile(const char *baseName, const std::string &content) const;
 };
 
