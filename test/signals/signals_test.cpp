@@ -95,6 +95,16 @@ static std::vector<std::string> toList(const ydsh::SignalPair *pairs) {
     return values;
 }
 
+static std::string join(const std::vector<std::string> &values, char delim) {
+    std::string ret;
+    for(auto &e : values) {
+        if(!ret.empty()) {
+            ret += delim;
+        }
+        ret += e;
+    }
+    return ret;
+}
 
 TEST(Signal, all) {
     std::string killOut = ProcBuilder{"/bin/kill", "-l"}.execAndGetResult().out;
@@ -103,11 +113,7 @@ TEST(Signal, all) {
     auto expected = toSignalList(killOut);
     auto actual = toList(ydsh::getSignalList());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expected.size(), actual.size()));
-    unsigned int size = expected.size();
-    for(unsigned int i = 0; i < size; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expected[i], actual[i]));
-    }
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(join(expected, '\n'), join(actual, '\n')));
 }
 
 TEST(Signal, base) {
