@@ -39,18 +39,20 @@ private:
 
 public:
     LSPServer(FilePtr &&in, FilePtr &&out, LoggerBase &logger) :
-        Handler(logger), transport(logger, std::move(in), std::move(out)) {}
+        Handler(logger), transport(logger, std::move(in), std::move(out)) {
+        this->bindAll();
+    }
 
     ReplyImpl onCall(const std::string &name, JSON &&param) override;
 
+    [[noreturn]] void run();
+
+private:
     /**
      * bind all of methods
      */
     void bindAll();
 
-    void run();
-
-private:
     template<typename Ret, typename Param>
     void bind(const std::string &name, Reply<Ret>(LSPServer::*method)(const Param &)) {
         Handler::bind(name, this, method);

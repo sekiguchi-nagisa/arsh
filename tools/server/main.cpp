@@ -25,7 +25,5 @@ int main() {
 
     LSPLogger logger;
     LSPServer server(std::move(in), std::move(out), logger);
-    server.bindAll();
     server.run();
-    return 0;
 }
