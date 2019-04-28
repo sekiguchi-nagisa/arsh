@@ -209,8 +209,11 @@ struct FileCloser {
 
 using FilePtr = std::unique_ptr<FILE, FileCloser>;
 
+/**
+ * use 'static' modifier due to suppress 'noexcept-type' warning in gcc7
+ */
 template <typename Func, typename ...Arg>
-FilePtr createFilePtr(Func func, Arg &&...arg) {
+static FilePtr createFilePtr(Func func, Arg &&...arg) {
     return FilePtr(func(std::forward<Arg>(arg)...));
 }
 
