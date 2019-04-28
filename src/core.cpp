@@ -1348,25 +1348,5 @@ void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler, b
     }
 }
 
-bool readAll(FILE *fp, ByteBuffer &buf) {
-    while(true) {
-        char data[128];
-        clearerr(fp);
-        errno = 0;
-        unsigned int size = fread(data, sizeof(char), arraySize(data), fp);
-        if(size > 0) {
-            buf.append(data, size);
-        } else if(errno) {
-            if(errno == EINTR) {
-                continue;
-            }
-            return false;
-        } else {
-            break;
-        }
-    }
-    return true;
-}
-
 } // namespace ydsh
 

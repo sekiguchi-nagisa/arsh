@@ -316,9 +316,6 @@ public:
     void install(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD = false);
 };
 
-
-bool readAll(FILE *fp, ByteBuffer &buf);
-
 template <typename ...T>
 inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {
     static_assert(sizeof...(arg) <= 3, "too long");

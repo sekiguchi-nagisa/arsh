@@ -680,7 +680,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     assert(filePtr);
     ByteBuffer buf;
     sourceName = sourceName == nullptr ? "(stdin)" : sourceName;
-    if(!readAll(filePtr.get(), buf)) {
+    if(!readAll(filePtr, buf)) {
         reportFileError(sourceName, true, e);
         return 1;
     }

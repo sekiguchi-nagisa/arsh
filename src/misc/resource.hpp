@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "noncopyable.h"
+#include "util.hpp"
 
 namespace ydsh {
 
@@ -211,6 +212,32 @@ using FilePtr = std::unique_ptr<FILE, FileCloser>;
 template <typename Func, typename ...Arg>
 FilePtr createFilePtr(Func func, Arg &&...arg) {
     return FilePtr(func(std::forward<Arg>(arg)...));
+}
+
+template <typename Buf>
+bool readAll(FILE *fp, Buf &buf) {
+    while(true) {
+        char data[128];
+        clearerr(fp);
+        errno = 0;
+        unsigned int size = fread(data, sizeof(char), arraySize(data), fp);
+        if(size > 0) {
+            buf.append(data, size);
+        } else if(errno) {
+            if(errno == EINTR) {
+                continue;
+            }
+            return false;
+        } else {
+            break;
+        }
+    }
+    return true;
+}
+
+template <typename Buf>
+inline bool readAll(const FilePtr &filePtr, Buf &buf) {
+    return readAll(filePtr.get(), buf);
 }
 
 template <typename T>

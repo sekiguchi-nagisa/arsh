@@ -278,7 +278,7 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
         }
     } else if(is<const char *>(ret)) {
         ByteBuffer buf;
-        if(!readAll(filePtr.get(), buf)) {
+        if(!readAll(filePtr, buf)) {
             RAISE_TC_ERROR(NotOpenMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno));
         }
         this->enterModule(get<const char*>(ret), std::move(buf),
