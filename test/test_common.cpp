@@ -83,31 +83,34 @@ TempFileFactory::~TempFileFactory() {
     removeRecursive(this->tmpDirName.c_str());
 }
 
-std::string TempFileFactory::createTempFile(const char *baseName, const std::string &content) const {
-    FILE *fp = nullptr;
+ydsh::FilePtr TempFileFactory::createTempFilePtr(std::string &name, const std::string &content) const {
+    using namespace ydsh;
+
+    FilePtr filePtr;
     std::string fileName = this->getTempDirName();
     fileName += '/';
 
-    if(baseName != nullptr && *baseName != '\0') {
-        fileName += baseName;
-        fp = fopen(fileName.c_str(), "w");
+    if(!name.empty()) {
+        fileName += name;
+        filePtr = createFilePtr(fopen, fileName.c_str(), "w+b");
     } else {
         fileName += "temp_XXXXXX";
         int fd = mkstemp(&fileName[0]);
         if(fd < 0) {
             error_at("");
         }
-        fp = fdopen(fd, "w");
-        if(fp == nullptr) {
+        filePtr = createFilePtr(fdopen, fd, "w+b");
+        if(!filePtr) {
             close(fd);
         }
     }
-    if(fp == nullptr) {
-        return "";
+
+    if(filePtr) {
+        name = std::move(fileName);
+        fwrite(content.c_str(), sizeof(char), content.size(), filePtr.get());
+        fflush(filePtr.get());
     }
-    fwrite(content.c_str(), sizeof(char), content.size(), fp);
-    fclose(fp);
-    return fileName;
+    return filePtr;
 }
 
 std::string format(const char *fmt, ...) {
