@@ -208,6 +208,11 @@ struct FileCloser {
 
 using FilePtr = std::unique_ptr<FILE, FileCloser>;
 
+template <typename Func, typename ...Arg>
+FilePtr createFilePtr(Func func, Arg &&...arg) {
+    return FilePtr(func(std::forward<Arg>(arg)...));
+}
+
 template <typename T>
 class Singleton {
 protected:

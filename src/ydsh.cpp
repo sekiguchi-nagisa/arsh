@@ -658,7 +658,7 @@ static void reportFileError(const char *sourceName, bool isIO, DSError *e) {
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     FilePtr filePtr;
     if(sourceName == nullptr) {
-        filePtr.reset(fdopen(dup(STDIN_FILENO), "rb"));
+        filePtr = createFilePtr(fdopen, dup(STDIN_FILENO), "rb");
     } else {
         auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr);
         if(is<ModLoadingError>(ret)) {

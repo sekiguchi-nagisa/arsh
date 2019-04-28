@@ -20,8 +20,8 @@ using namespace ydsh;
 using namespace lsp;
 
 int main() {
-    FilePtr in(fdopen(STDIN_FILENO, "r"));
-    FilePtr out(fdopen(STDOUT_FILENO, "w"));
+    auto in = createFilePtr(fdopen, STDIN_FILENO, "r");
+    auto out = createFilePtr(fdopen, STDOUT_FILENO, "w");
 
     LSPLogger logger;
     LSPServer server(std::move(in), std::move(out), logger);

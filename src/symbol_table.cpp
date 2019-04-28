@@ -284,7 +284,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const std::string &modPath, 
     }
 
     const char *resolvedPath = pair.first->first.c_str();
-    filePtr.reset(fopen(resolvedPath, "rb"));
+    filePtr = createFilePtr(fopen, resolvedPath, "rb");
     if(!filePtr) {
         int old = errno;
         this->typeMap.erase(pair.first);
