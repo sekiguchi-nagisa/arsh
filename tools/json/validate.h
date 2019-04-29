@@ -50,7 +50,6 @@ protected:
     int tag;
 
 public:
-    constexpr PrimitiveMatcher() noexcept : name(""), tag(-1) {}
     constexpr PrimitiveMatcher(const char *name, int tag) noexcept : name(name), tag(tag) {}
 
     bool operator()(Validator &, const JSON &value) const {
@@ -118,17 +117,16 @@ public:
 };
 
 template <typename L, typename R>
-class UnionMatcher : public PrimitiveMatcher {
+class UnionMatcher {
 private:
+    const char *alias;
     L left;
     R right;
 
 public:
-    constexpr UnionMatcher(L left, R right) noexcept :
-            PrimitiveMatcher(), left(left), right(right) {}
+    constexpr UnionMatcher(L left, R right) noexcept : alias(""), left(left), right(right) {}
 
-    constexpr UnionMatcher(const char *alias, L left, R right) noexcept :
-            PrimitiveMatcher(alias, -1), left(left), right(right) {}
+    constexpr UnionMatcher(const char *alias, L left, R right) noexcept : alias(alias), left(left), right(right) {}
 
     bool operator()(Validator &validator, const JSON &value) const {
         if(this->left(validator, value)) {
@@ -139,8 +137,8 @@ public:
     }
 
     std::string str() const {
-        if(this->name[0] != '\0') {
-            return this->name;
+        if(this->alias && *this->alias != '\0') {
+            return this->alias;
         }
 
         std::string str = this->left.str();
