@@ -470,6 +470,11 @@ public:
     const Matcher &get() const {
         return *this->instance;
     }
+
+    template <typename ...Arg>
+    auto operator()(Arg&& ...arg) const {
+        return this->get()(std::forward<Arg>(arg)...);
+    }
 };
 
 } // namespace json

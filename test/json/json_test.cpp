@@ -328,7 +328,7 @@ protected:
             parser.showError();
         }
         ASSERT_FALSE(parser.hasError());
-        this->ret = wrapper.get()(this->validator, json);
+        this->ret = wrapper(this->validator, json);
     }
 
     void validate(const InterfaceWrapper &wrapper, const char *src) {

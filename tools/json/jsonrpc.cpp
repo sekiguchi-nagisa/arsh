@@ -58,7 +58,7 @@ Request RequestParser::operator()() {
 
     Validator validator;
     InterfaceWrapper wrapper(iface);
-    if(!wrapper.get()(validator, ret)) {
+    if(!wrapper(validator, ret)) {
         return Request(Request::INVALID, "Invalid Request", validator.formatError());
     }
 
