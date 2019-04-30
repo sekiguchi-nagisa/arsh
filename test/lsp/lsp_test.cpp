@@ -156,7 +156,8 @@ TEST(LSPTest, TextEdit) {
 
 static void clearFile(const FilePtr &filePtr) {
     int fd = fileno(filePtr.get());
-    ftruncate(fd, 0);
+    int r = ftruncate(fd, 0);
+    (void) r;
     fseek(filePtr.get(), 0L, SEEK_SET);
 }
 
