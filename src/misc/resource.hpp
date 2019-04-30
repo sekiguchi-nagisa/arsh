@@ -243,6 +243,10 @@ inline bool readAll(const FilePtr &filePtr, Buf &buf) {
     return readAll(filePtr.get(), buf);
 }
 
+inline bool writeAll(const FilePtr &filePtr, const std::string &str) {
+    return fwrite(str.c_str(), sizeof(char), str.size(), filePtr.get()) == str.size();
+}
+
 template <typename T>
 class Singleton {
 protected:

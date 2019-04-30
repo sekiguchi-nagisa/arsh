@@ -1,6 +1,8 @@
 #include "gtest/gtest.h"
+#include "../test_common.h"
 
 #include "lsp.h"
+#include "server.h"
 
 using namespace ydsh;
 using namespace lsp;
@@ -152,6 +154,56 @@ TEST(LSPTest, TextEdit) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(line, toJSON(edit).serialize()));
 }
 
+static void clearFile(const FilePtr &filePtr) {
+    int fd = fileno(filePtr.get());
+    ftruncate(fd, 0);
+    fseek(filePtr.get(), 0L, SEEK_SET);
+}
+
+TEST(LSPTest, transport) {
+    LSPLogger logger;
+    logger.setSeverity(LogLevel::INFO);
+    logger.setAppender(createFilePtr(tmpfile));
+    auto &log = logger.getAppender();
+    LSPServer server(createFilePtr(tmpfile), createFilePtr(tmpfile), logger);
+    auto &in = server.getTransport().getInput();
+    auto &out = server.getTransport().getOutput();
+    writeAll(in, "hoge");
+    bool ret = server.runOnlyOnce();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ret));
+    clearFile(log);
+    clearFile(out);
+}
+
+struct ServerTest : public InteractiveBase {
+    ServerTest() : InteractiveBase("", "", false) {
+        IOConfig config;
+        config.in = IOConfig::PIPE;
+        config.out = IOConfig::PIPE;
+        config.err = IOConfig::PIPE;
+
+        this->handle = ProcBuilder::spawn(config, []() -> int {
+            auto in = createFilePtr(fdopen, STDIN_FILENO, "r");
+            auto out = createFilePtr(fdopen, STDOUT_FILENO, "w");
+
+            LSPLogger logger;
+            LSPServer server(std::move(in), std::move(out), logger);
+            server.run();
+        });
+    }
+};
+
+//TEST_F(ServerTest, invalid) {
+//
+//}
+
+//TEST_F(ServerTest, init) {
+//    InitializeParams params;
+//    params.processId = 100;
+//    params.rootUri = nullptr;
+//
+//
+//}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

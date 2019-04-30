@@ -66,7 +66,7 @@ void LSPServer::bindAll() {
 
 void LSPServer::run() {
     while(true) {
-        this->transport.dispatch(*this);
+        this->runOnlyOnce();
     }
 }
 

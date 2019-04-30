@@ -35,6 +35,14 @@ public:
 
     ~LSPTransport() override = default;
 
+    const FilePtr &getInput() const {
+        return this->input;
+    }
+
+    const FilePtr &getOutput() const {
+        return this->output;
+    }
+
 private:
     int send(unsigned int size, const char *data) override;
 

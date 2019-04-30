@@ -43,7 +43,15 @@ public:
         this->bindAll();
     }
 
+    const LSPTransport &getTransport() const {
+        return this->transport;
+    }
+
     ReplyImpl onCall(const std::string &name, JSON &&param) override;
+
+    bool runOnlyOnce() {
+        return this->transport.dispatch(*this);
+    }
 
     [[noreturn]] void run();
 

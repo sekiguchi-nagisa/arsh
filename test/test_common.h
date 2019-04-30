@@ -146,7 +146,7 @@ struct ExpectOutput : public ::testing::Test {
 };
 
 class InteractiveBase : public ExpectOutput {
-private:
+protected:
     ProcHandle handle;
 
     const std::string binPath;
@@ -155,8 +155,7 @@ private:
 
     const bool ttyEmulation;
 
-protected:
-    explicit InteractiveBase(const char *binPath, const char *dir, bool ttyEmulation = true) :
+    InteractiveBase(const char *binPath, const char *dir, bool ttyEmulation = true) :
                     binPath(binPath), workingDir(dir), ttyEmulation(ttyEmulation) {}
 
     template <typename ... T>
