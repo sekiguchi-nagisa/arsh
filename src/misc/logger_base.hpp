@@ -175,7 +175,7 @@ void LoggerBase<T>::syncAppenderWithEnv() {
         file = createFilePtr(fopen, appender, "w");
     }
     if(!file) {
-        file = createFilePtr(fdopen, STDERR_FILENO, "w");
+        file = createFilePtr(fdopen, dup(STDERR_FILENO), "w");
     }
     this->setAppender(std::move(file));
 }
