@@ -174,7 +174,7 @@ void LoggerBase<T>::syncAppenderWithEnv() {
     if(appender && *appender != '\0') {
         file = createFilePtr(fopen, appender, "w");
     }
-    if(!static_cast<bool>(file)) {  // workaround for gcc
+    if(!file) {
         file = createFilePtr(fdopen, dup(STDERR_FILENO), "w");
     }
     this->setAppender(std::move(file));
