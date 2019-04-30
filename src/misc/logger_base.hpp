@@ -50,7 +50,7 @@ protected:
     static_assert(T, "not allowed instantiation");
 
     std::string prefix;
-    FILE *fp{nullptr};
+    FilePtr filePtr;
     LogLevel severity{LogLevel::FATAL};
     std::mutex outMutex;
 
@@ -59,19 +59,23 @@ protected:
      * @param prefix
      */
     explicit LoggerBase(const char *prefix) : prefix(prefix) {
-        this->syncSetting();
+        this->syncSetting([&]{
+            this->syncSeverity();
+            this->syncAppender();
+        });
     }
 
-    ~LoggerBase() {
-        if(this->fp && this->fp != stderr) {
-            fclose(this->fp);
-        }
-    }
+    ~LoggerBase() = default;
 
     void log(LogLevel level, const char *fmt, va_list list);
 
 public:
-    void syncSetting();
+    // helper method for logger setting.
+    template <typename Func>
+    void syncSetting(Func func) {
+        std::lock_guard<std::mutex> guard(this->outMutex);
+        func();
+    }
 
     void operator()(LogLevel level, const char *fmt, ...) __attribute__ ((format(printf, 3, 4))) {
         va_list arg;
@@ -83,6 +87,20 @@ public:
     bool enabled(LogLevel level) const {
         return static_cast<unsigned int>(level) < static_cast<unsigned int>(LogLevel::NONE) &&
                 static_cast<unsigned int>(level) >= static_cast<unsigned int>(this->severity);
+    }
+
+    // not-thread safe api.
+
+    void syncSeverity();
+
+    void syncAppender();
+
+    void setAppender(FilePtr &&file) {
+        this->filePtr = std::move(file);
+    }
+
+    const FilePtr &getAppender() const {
+        return this->filePtr;
     }
 };
 
@@ -112,8 +130,8 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
     }
 
     // print body
-    fprintf(this->fp, "%s%s\n", header, str);
-    fflush(this->fp);
+    fprintf(this->filePtr.get(), "%s%s\n", header, str);
+    fflush(this->filePtr.get());
     free(str);
 
     if(level == LogLevel::FATAL) {
@@ -122,9 +140,7 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
 }
 
 template <bool T>
-void LoggerBase<T>::syncSetting() {
-    std::lock_guard<std::mutex> guard(this->outMutex);
-
+void LoggerBase<T>::syncSeverity() {
     if(this->prefix.empty()) {
         this->severity = LogLevel::NONE;
         return;
@@ -143,20 +159,21 @@ void LoggerBase<T>::syncSetting() {
             }
         }
     }
+}
 
-    key = this->prefix;
+template <bool T>
+void LoggerBase<T>::syncAppender() {
+    std::string key = this->prefix;
     key += "_APPENDER";
     const char *appender = getenv(key.c_str());
-    if(appender != nullptr && strlen(appender) != 0) {
-        if(this->fp && this->fp != stderr) {
-            fclose(this->fp);
-            this->fp = nullptr;
-        }
-        this->fp = fopen(appender, "w");
+    FilePtr file;
+    if(appender && *appender != '\0') {
+        file = createFilePtr(fopen, appender, "w");
     }
-    if(!this->fp) {
-        this->fp = stderr;
+    if(!file) {
+        file = createFilePtr(fdopen, STDERR_FILENO, "w");
     }
+    this->setAppender(std::move(file));
 }
 
 } // namespace __detail_logger

@@ -50,27 +50,23 @@ public:
     };
 
     Logger() : ydsh::SingletonLogger<Logger>("YDSH") {
-        this->syncSetting();
+        this->syncSetting([&]{
+            const char *policies[] = {
+#define GEN_STR(E) "YDSH_" #E,
+                    EACH_LOGGING_POLICY(GEN_STR)
+#undef GEN_STR
+            };
+            for(unsigned int i = 0; i < arraySize(policies); i++) {
+                if(getenv(policies[i])) {
+                    setFlag(this->whiteList, 1u << i);
+                }
+            }
+            this->severity = LogLevel::INFO;
+        });
     }
 
     bool checkPolicy(Policy policy) const {
         return hasFlag(this->whiteList, 1u << static_cast<unsigned int>(policy));
-    }
-
-private:
-    void syncSetting() {
-        LoggerBase::syncSetting();
-        const char *policies[] = {
-#define GEN_STR(E) "YDSH_" #E,
-                EACH_LOGGING_POLICY(GEN_STR)
-#undef GEN_STR
-        };
-        for(unsigned int i = 0; i < arraySize(policies); i++) {
-            if(getenv(policies[i])) {
-                setFlag(this->whiteList, 1u << i);
-            }
-        }
-        this->severity = LogLevel::INFO;
     }
 };
 
