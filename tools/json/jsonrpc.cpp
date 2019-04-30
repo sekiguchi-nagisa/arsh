@@ -51,9 +51,9 @@ Request RequestParser::operator()() {
     // validate
     auto iface = createInterface(
             "Request",
-            field("id", !(number | string)),
+            field("id", opt(number | string)),
             field("method", string),
-            field("params", !(array(any) | anyObj))
+            field("params", opt(array(any) | anyObj))
     );
 
     Validator validator;

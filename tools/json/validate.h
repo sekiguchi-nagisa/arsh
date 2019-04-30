@@ -342,7 +342,7 @@ constexpr auto operator|(L left, R right) {
 }
 
 template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
-constexpr auto operator!(T matcher) {
+constexpr auto opt(T matcher) {
     return OptMatcher<T>(matcher);
 }
 
@@ -418,7 +418,7 @@ struct TypeMatcherConstructor<std::vector<T>> {
 
 template <typename T>
 struct TypeMatcherConstructor<OptionalBase<T>> {
-    static constexpr auto value = !(TypeMatcherConstructor<T>::value);
+    static constexpr auto value = opt(TypeMatcherConstructor<T>::value);
 };
 
 template <typename T>

@@ -346,7 +346,7 @@ TEST_F(ValidatorTest, base) {
     constexpr auto iface = createInterface(
             "hoge1",
             field("params", null | array(string)),
-            field("id", !number)
+            field("id", opt(number))
             );
 
     const char *text = R"(
