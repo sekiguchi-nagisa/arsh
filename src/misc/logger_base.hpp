@@ -60,8 +60,8 @@ protected:
      */
     explicit LoggerBase(const char *prefix) : prefix(prefix) {
         this->syncSetting([&]{
-            this->syncSeverity();
-            this->syncAppender();
+            this->syncSeverityWithEnv();
+            this->syncAppenderWithEnv();
         });
     }
 
@@ -91,9 +91,13 @@ public:
 
     // not-thread safe api.
 
-    void syncSeverity();
+    void syncSeverityWithEnv();
 
-    void syncAppender();
+    void setSeverity(LogLevel level) {
+        this->severity = level;
+    }
+
+    void syncAppenderWithEnv();
 
     void setAppender(FilePtr &&file) {
         this->filePtr = std::move(file);
@@ -140,9 +144,9 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
 }
 
 template <bool T>
-void LoggerBase<T>::syncSeverity() {
+void LoggerBase<T>::syncSeverityWithEnv() {
     if(this->prefix.empty()) {
-        this->severity = LogLevel::NONE;
+        this->setSeverity(LogLevel::NONE);
         return;
     }
 
@@ -154,15 +158,15 @@ void LoggerBase<T>::syncSeverity() {
             i < static_cast<unsigned int>(LogLevel::NONE) + 1; i++) {
             auto s = static_cast<LogLevel>(i);
             if(strcasecmp(toString(s), level) == 0) {
-                this->severity = s;
-                break;
+                this->setSeverity(s);
+                return;
             }
         }
     }
 }
 
 template <bool T>
-void LoggerBase<T>::syncAppender() {
+void LoggerBase<T>::syncAppenderWithEnv() {
     std::string key = this->prefix;
     key += "_APPENDER";
     const char *appender = getenv(key.c_str());
