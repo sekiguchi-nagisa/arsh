@@ -43,7 +43,6 @@ public:
         return this->output;
     }
 
-private:
     int send(unsigned int size, const char *data) override;
 
     /**
@@ -56,6 +55,7 @@ private:
 
     int recv(unsigned int size, char *data) override;
 
+private:
     /**
      * if reach end of header, set empty string
      * @return

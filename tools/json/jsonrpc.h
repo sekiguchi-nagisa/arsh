@@ -170,7 +170,8 @@ public:
 
     static JSON newResponse(JSON &&id, ResponseError &&error);
 
-private:
+    // raw level message send/recv api. not directly use them.
+
     /**
      * send whole json text
      * @param size
