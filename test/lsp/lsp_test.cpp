@@ -154,27 +154,116 @@ TEST(LSPTest, TextEdit) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(line, toJSON(edit).serialize()));
 }
 
-static void clearFile(const FilePtr &filePtr) {
-    int fd = fileno(filePtr.get());
-    int r = ftruncate(fd, 0);
-    (void) r;
-    fseek(filePtr.get(), 0L, SEEK_SET);
+static void writeAndSeekToHead(const FilePtr &file, const std::string &line) {
+    writeAll(file, line);
+    fflush(file.get());
+    fseek(file.get(), 0L, SEEK_SET);
 }
 
-TEST(LSPTest, transport) {
-    LSPLogger logger;
-    logger.setSeverity(LogLevel::INFO);
-    logger.setAppender(createFilePtr(tmpfile));
-    auto &log = logger.getAppender();
-    LSPServer server(createFilePtr(tmpfile), createFilePtr(tmpfile), logger);
-    auto &in = server.getTransport().getInput();
-    auto &out = server.getTransport().getOutput();
-    writeAll(in, "hoge");
-    bool ret = server.runOnlyOnce();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ret));
-    clearFile(log);
-    clearFile(out);
+static std::string readAfterSeekHead(const FilePtr &file) {
+    std::string ret;
+    fseek(file.get(), 0L, SEEK_SET);
+    readAll(file, ret);
+    return ret;
 }
+
+struct TransportTest : public ::testing::Test {
+    LSPLogger logger;
+    LSPTransport transport;
+
+    TransportTest() : transport(this->logger, createFilePtr(tmpfile), createFilePtr(tmpfile)) {
+        this->logger.setSeverity(LogLevel::INFO);
+        this->logger.setAppender(createFilePtr(tmpfile));
+    }
+
+    void setInput(const std::string &str) {
+        writeAndSeekToHead(this->transport.getInput(), str);
+    }
+
+    std::string readLog() const {
+        return readAfterSeekHead(this->logger.getAppender());
+    }
+
+    std::string readOutput() {
+        return readAfterSeekHead(this->transport.getOutput());
+    }
+};
+
+TEST_F(TransportTest, case1) {
+    this->setInput("hoge");
+    int size = this->transport.recvSize();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, size));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+")));
+}
+
+TEST_F(TransportTest, case2) {
+    this->setInput("hoge\r");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+")));
+}
+
+TEST_F(TransportTest, case3) {
+    this->setInput("hoge\n");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+")));
+}
+
+TEST_F(TransportTest, case4) {
+    this->setInput("hoge: 34\r\n");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+other header: hoge: 34.+")));
+}
+
+TEST_F(TransportTest, case5) {
+    this->setInput("Content-Length: hey\r\n");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+may be broken content length.+")));
+}
+
+TEST_F(TransportTest, case6) {
+    this->setInput("Content-Length: 12\r\nContent-Length: 5600\r\n");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+previous read message length: 12.+")));
+}
+
+TEST_F(TransportTest, case7) {
+    this->setInput("Content-Length: 12\r\nContent-Length: 5\r\n\r\n12345");
+    int size = this->transport.recvSize();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5, size));
+    auto logStr = this->readLog();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+")));
+
+    char data[5];
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5, this->transport.recv(arraySize(data), data)));
+    std::string str(data, 5);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("12345", str));
+}
+
+TEST_F(TransportTest, case8) {
+    this->setInput("Content-Length: 5\r\n\r\n12345");
+    int size = this->transport.recvSize();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5, size));
+    auto logStr = this->readLog();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+")));
+
+    char data[3];
+    int recvSize = this->transport.recv(arraySize(data), data);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, recvSize));
+    std::string str(data, recvSize);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("123", str));
+
+    recvSize = this->transport.recv(arraySize(data), data);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, recvSize));
+    str = std::string(data, recvSize);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("45", str));
+}
+
+TEST_F(TransportTest, case9) {
+    std::string str = "helllo";
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str.size(), this->transport.send(str.size(), str.c_str())));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Content-Length: 6\r\n\r\nhelllo", this->readOutput()));
+}
+
 
 struct ServerTest : public InteractiveBase {
     ServerTest() : InteractiveBase("", "", false) {

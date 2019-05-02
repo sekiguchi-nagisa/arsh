@@ -45,6 +45,8 @@ struct ResponseError {
      * @return
      */
     JSON toJSON();
+
+    std::string toString() const;
 };
 
 // Error Code definition
@@ -178,13 +180,15 @@ public:
      * size of data
      * @param data
      * @return
-     * sent size
+     * sent data size
      */
     virtual int send(unsigned int size, const char *data) = 0;
 
     /**
      * read header and get total size of json text
      * @return
+     * return -1, if cannot read message size
+     * return 0, may be broken message
      */
     virtual int recvSize() = 0;
 

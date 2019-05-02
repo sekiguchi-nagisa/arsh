@@ -49,6 +49,11 @@ public:
 
     ReplyImpl onCall(const std::string &name, JSON &&param) override;
 
+    /**
+     *
+     * @return
+     * if cannot receive request, return false
+     */
     bool runOnlyOnce() {
         return this->transport.dispatch(*this);
     }

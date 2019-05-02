@@ -45,12 +45,6 @@ public:
 
     int send(unsigned int size, const char *data) override;
 
-    /**
-     *
-     * @return
-     * return -1, if cannot read message size
-     * return 0, may be broken header
-     */
     int recvSize() override;
 
     int recv(unsigned int size, char *data) override;

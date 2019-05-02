@@ -37,7 +37,7 @@ int LSPTransport::send(unsigned int size, const char *data) {
     fwrite(data, sizeof(char), size, this->output.get());
     fflush(this->output.get());
 
-    return 0;
+    return size;    //FIXME: error checking.
 }
 
 static bool isContentLength(const std::string &line) {
@@ -61,6 +61,7 @@ int LSPTransport::recvSize() {
     while(true) {
         std::string header;
         if(!this->readHeader(header)) {
+            this->logger(LogLevel::ERROR, "invalid header: %s", header.c_str());
             return -1;
         }
 
@@ -68,13 +69,13 @@ int LSPTransport::recvSize() {
             break;
         }
         if(isContentLength(header)) {
-            this->logger(LogLevel::INFO, "length header: %s", header.c_str());
+            this->logger(LogLevel::INFO, "%s", header.c_str());
             if(size > 0) {
                 this->logger(LogLevel::WARNING, "previous read message length: %d", size);
             }
             int ret = parseContentLength(header);
             if(!ret) {
-                this->logger(LogLevel::ERROR, "may be broken message or empty message");
+                this->logger(LogLevel::ERROR, "may be broken content length");
             }
             size = ret;
         } else {    // may be other header

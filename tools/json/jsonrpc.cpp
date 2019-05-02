@@ -27,6 +27,15 @@ JSON ResponseError::toJSON() {
     };
 }
 
+std::string ResponseError::toString() const {
+    std::string ret = "[";
+    ret += std::to_string(this->code);
+    ret += ": ";
+    ret += this->message;
+    ret += "]";
+    return ret;
+}
+
 JSON Request::toJSON() {
     assert(!this->isError());
     return {
@@ -147,7 +156,9 @@ bool Transport::dispatch(Handler &handler) {
     }
     auto req = parser();
     if(req.isError()) {
-        this->reply(nullptr, Request::asError(std::move(req)));
+        auto error = Request::asError(std::move(req));
+        this->logger(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
+        this->reply(nullptr, std::move(error));
     } else if(req.isCall()) {
         auto id = std::move(req.id);
         auto ret = handler.onCall(req.method, std::move(req.params));
