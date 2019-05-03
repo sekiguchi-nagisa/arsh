@@ -62,7 +62,10 @@ Request RequestParser::operator()() {
             "Request",
             field("id", opt(number | string)),
             field("method", string),
-            field("params", opt(array(any) | anyObj))
+            /**
+             * in LSP specification, 'params! : Array<any> | object'.
+             */
+            field("params", opt(array(any) | anyObj | null))
     );
 
     Validator validator;

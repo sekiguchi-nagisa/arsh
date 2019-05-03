@@ -383,7 +383,7 @@ TEST_F(ValidatorTest, iface) {
         }
 )";
     ASSERT_NO_FATAL_FAILURE(this->validate(BBB, text));
-    ASSERT_NO_FATAL_FAILURE(this->validate(voidIface, "{}"));
+    ASSERT_NO_FATAL_FAILURE(this->validate(voidIface, "null"));
 }
 
 TEST(ReqTest, parse) {
@@ -686,7 +686,7 @@ TEST_F(RPCTest, call3) {
 TEST_F(RPCTest, call4) {
     Context ctx;
 
-    this->init(rpc::Request(1, "/tryExit", object()));
+    this->init(rpc::Request(1, "/tryExit", nullptr));
     this->handler.bind("/init", &ctx, &Context::init);
     this->handler.bind("/put", &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);
@@ -727,7 +727,7 @@ TEST_F(RPCTest, call5) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["id"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json.asObject().find("error") != json.asObject().end()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InvalidParams, json["error"]["code"].asLong()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("must be empty object", json["error"]["message"].asString()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("requires `void' type", json["error"]["message"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["error"]["data"].isInvalid()));
 }
 
@@ -769,7 +769,7 @@ TEST_F(RPCTest, notify2) {
 TEST_F(RPCTest, notify3) {
     Context ctx;
 
-    this->init(rpc::Request("/exit", object()));
+    this->init(rpc::Request("/exit", nullptr));
     this->handler.bind("/init", &ctx, &Context::init);
     this->handler.bind("/put", &ctx, &Context::put);
     this->handler.bind("/exit", &ctx, &Context::exit);

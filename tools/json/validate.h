@@ -275,26 +275,6 @@ public:
     }
 };
 
-template <>
-class InterfaceMatcher<void> {
-public:
-    bool operator()(Validator &validator, const JSON &value) const {
-        if(!value.isObject() || !value.asObject().empty()) {
-            validator.appendError("must be empty object");
-            return false;
-        }
-        return true;
-    }
-
-    constexpr const char *getName() const {
-        return "void";
-    }
-
-    std::string str() const {
-        return this->getName();
-    }
-};
-
 struct Matcher {
     virtual bool operator()(Validator &validator, const JSON &value) const = 0;
     virtual std::string str() const = 0;
@@ -357,6 +337,23 @@ constexpr auto string = PrimitiveMatcher("string", JSON::TAG<String>);
 constexpr auto boolean = PrimitiveMatcher("boolean", JSON::TAG<bool>);
 constexpr auto null = PrimitiveMatcher("null", JSON::TAG<std::nullptr_t>);
 constexpr auto any = AnyMatcher();
+
+template <>
+class InterfaceMatcher<void> {
+public:
+    bool operator()(Validator &validator, const JSON &value) const {
+        constexpr auto matcher = opt(null);
+        return matcher(validator, value);
+    }
+
+    constexpr const char *getName() const {
+        return "void";
+    }
+
+    std::string str() const {
+        return this->getName();
+    }
+};
 
 template <typename T, enable_when<has_matcher_iface_v<T>> = nullptr>
 constexpr FieldMatcher<T> field(const char *name, T m) {
@@ -453,7 +450,14 @@ private:
         explicit Holder(const T &iface) noexcept : iface(iface) {}
 
         bool operator()(Validator &validator, const JSON &value) const override {
-            return this->iface(validator, value);
+            if(!this->iface(validator, value)) {
+                std::string str = "requires `";
+                str += this->iface.str();
+                str += "' type";
+                validator.appendError(std::move(str));
+                return false;
+            }
+            return true;
         }
 
         std::string str() const override {
