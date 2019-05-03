@@ -167,6 +167,13 @@ static std::string readAfterSeekHead(const FilePtr &file) {
     return ret;
 }
 
+static void clearFile(const FilePtr &file) {
+    int fd = fileno(file.get());
+    int s = ftruncate(fd, 0);
+    (void) s;
+    fseek(file.get(), 0L, SEEK_SET);
+}
+
 struct TransportTest : public ::testing::Test {
     LSPLogger logger;
     LSPTransport transport;
@@ -266,26 +273,46 @@ TEST_F(TransportTest, case9) {
 
 
 struct ServerTest : public InteractiveBase {
-    ServerTest() : InteractiveBase("", "", false) {
+    FilePtr logFile;
+    int count{0};
+    NullLogger clLogger;    //FIXME: record client log?
+    std::unique_ptr<Transport> client;  // for lazy initialization
+
+    ServerTest() : InteractiveBase("", "", false), logFile(createFilePtr(tmpfile)) {
         IOConfig config;
         config.in = IOConfig::PIPE;
         config.out = IOConfig::PIPE;
         config.err = IOConfig::PIPE;
 
-        this->handle = ProcBuilder::spawn(config, []() -> int {
-            auto in = createFilePtr(fdopen, STDIN_FILENO, "r");
-            auto out = createFilePtr(fdopen, STDOUT_FILENO, "w");
-
+        this->handle = ProcBuilder::spawn(config, [&]() -> int {
             LSPLogger logger;
-            LSPServer server(std::move(in), std::move(out), logger);
+            logger.setSeverity(LogLevel::INFO);
+            logger.setAppender(std::move(this->logFile));
+            LSPServer server(FilePtr(stdin), FilePtr(stdout), logger);
             server.run();
         });
+
+        auto clIn = createFilePtr(fdopen, this->handle.out(), "r");
+        auto clOut = createFilePtr(fdopen, this->handle.in(), "w");
+        this->client = std::make_unique<LSPTransport>(this->clLogger, std::move(clIn), std::move(clOut));
+    }
+
+    void call(const char *methodName, JSON &&params) {
+        this->client->call(++this->count, methodName, std::move(params));
+    }
+
+    std::string readLog() const {
+        std::string ret = readAfterSeekHead(this->logFile);
+        clearFile(this->logFile);
+        return ret;
     }
 };
 
-//TEST_F(ServerTest, invalid) {
-//
-//}
+TEST_F(ServerTest, invalid) {
+    this->call("hello!!!", {{"de", 34}});
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+server not initialized.+"));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+")));
+}
 
 //TEST_F(ServerTest, init) {
 //    InitializeParams params;

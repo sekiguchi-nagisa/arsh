@@ -144,16 +144,20 @@ bool Transport::dispatch(Handler &handler) {
         this->logger(LogLevel::ERROR, "may be broken or empty message");
         return false;
     }
-    for(int size = 0; size < dataSize;) {
-        char data[256];
-        int recvSize = this->recv(arraySize(data), data);
+
+    for(int remainSize = dataSize; remainSize > 0;) {
+        char buf[256];
+        constexpr int bufSize = arraySize(buf);
+        int needSize = remainSize < bufSize ? remainSize : bufSize;
+        int recvSize = this->recv(needSize, buf);
         if(recvSize < 0) {
             this->logger(LogLevel::ERROR, "message receiving failed");
             return false;
         }
-        parser.append(data, static_cast<unsigned int>(recvSize));
-        size += recvSize;
+        parser.append(buf, static_cast<unsigned int>(recvSize));
+        remainSize -= recvSize;
     }
+
     auto req = parser();
     if(req.isError()) {
         auto error = Request::asError(std::move(req));

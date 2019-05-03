@@ -267,7 +267,7 @@ public:
     }
 
     constexpr const char *getName() const {
-        return "";
+        return "object";
     }
 
     std::string str() const {

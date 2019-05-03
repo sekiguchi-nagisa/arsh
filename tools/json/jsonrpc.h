@@ -195,7 +195,7 @@ public:
     /**
      * receive chunk of json text
      * @param size
-     * size of data
+     * receiving size. must be less than or equal to data size
      * @param data
      * @return
      * received size
