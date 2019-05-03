@@ -301,26 +301,83 @@ struct ServerTest : public InteractiveBase {
         this->client->call(++this->count, methodName, std::move(params));
     }
 
+    void notify(const char *methodName, JSON &&params) {
+        this->client->notify(methodName, std::move(params));
+    }
+
     std::string readLog() const {
         std::string ret = readAfterSeekHead(this->logFile);
         clearFile(this->logFile);
         return ret;
+    }
+
+    void callInit() {
+        InitializeParams params;
+        params.processId = 100;
+        params.rootUri = nullptr;
+
+        this->call("initialize", toJSON(params));
+        this->expectRegex(".+capabilities.+");
+        ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+initialize server.+"));
     }
 };
 
 TEST_F(ServerTest, invalid) {
     this->call("hello!!!", {{"de", 34}});
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+server not initialized.+"));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+")));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+must be initialized.+")));
+
+    this->call("hello!!!", "de");
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+Invalid Request.+"));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid message.+")));
+
+    this->call("initialize", {{"de", 34}});
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+require field .+"));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(),
+            ::testing::MatchesRegex(".+notification message validation failed.+")));
 }
 
-//TEST_F(ServerTest, init) {
-//    InitializeParams params;
-//    params.processId = 100;
-//    params.rootUri = nullptr;
-//
-//
-//}
+TEST_F(ServerTest, init1) {
+    ASSERT_NO_FATAL_FAILURE(this->callInit());
+}
+
+TEST_F(ServerTest, init2) {
+    ASSERT_NO_FATAL_FAILURE(this->callInit());
+
+    InitializeParams params;
+    params.processId = 100;
+    params.rootUri = nullptr;
+
+    this->call("initialize", toJSON(params));
+    this->expectRegex(".+server has already initialized.+");
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+initialize server.+"));
+}
+
+TEST_F(ServerTest, term1) {
+    ASSERT_NO_FATAL_FAILURE(this->callInit());
+
+    this->call("shutdown", nullptr);
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+result.+null.+"));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+try to shutdown.+")));
+
+    this->notify("exit", nullptr);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+exit server: 0.+")));
+}
+
+TEST_F(ServerTest, term2) {
+    ASSERT_NO_FATAL_FAILURE(this->callInit());
+
+    this->notify("exit", nullptr);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+exit server: 1.+")));
+}
+
+TEST_F(ServerTest, term3) {
+    this->call("shutdown", nullptr);
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+server not initialized.+"));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+must be initialized.+")));
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
