@@ -550,12 +550,15 @@ struct Context {
     unsigned int nRet{0};
     std::string cRet;
     bool exited{false};
+    std::string calledName;
 
     void init(const Param1 &p) {
+        this->calledName = "init";
         this->nRet = p.value;
     }
 
     rpc::Reply<std::string> put(const Param2 &p) {
+        this->calledName = "put";
         this->cRet = p.value;
         if(this->cRet.size() > 5) {
             return rpc::newError(rpc::InternalError, "too long");
@@ -564,10 +567,12 @@ struct Context {
     }
 
     void exit() {
+        this->calledName = "exit";
         this->exited = true;
     }
 
     rpc::Reply<void> tryExit() {
+        this->calledName = "tryExit";
         this->exited = false;
         return rpc::newError(rpc::InternalError, "busy");
     }
@@ -625,6 +630,7 @@ TEST_F(RPCTest, call1) {
     this->handler.bind("/exit", &ctx, &Context::exit);
 
     this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("put", ctx.calledName));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
@@ -640,6 +646,7 @@ TEST_F(RPCTest, call2) {
     this->handler.bind("/exit", &ctx, &Context::exit);
 
     this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.calledName));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
@@ -662,6 +669,7 @@ TEST_F(RPCTest, call3) {
     this->handler.bind("/exit", &ctx, &Context::exit);
 
     this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.calledName));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
@@ -685,6 +693,7 @@ TEST_F(RPCTest, call4) {
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("tryExit", ctx.calledName));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
@@ -708,6 +717,7 @@ TEST_F(RPCTest, call5) {
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.calledName));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
@@ -732,6 +742,7 @@ TEST_F(RPCTest, notify1) {
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("init", ctx.calledName));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1234, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
@@ -748,6 +759,7 @@ TEST_F(RPCTest, notify2) {
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.calledName));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
@@ -764,6 +776,7 @@ TEST_F(RPCTest, notify3) {
     this->handler.bind("/tryExit", &ctx, &Context::tryExit);
 
     this->dispatch();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("exit", ctx.calledName));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ctx.exited));
