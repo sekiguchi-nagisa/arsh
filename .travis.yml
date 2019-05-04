@@ -54,25 +54,15 @@ matrix:
             - ninja-build
       env: CXX_BIN=g++-8
 
-    # gcc 9
+    # gcc 8 (Release build)
     - addons:
         apt:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-9
+            - g++-8
             - ninja-build
-      env: CXX_BIN=g++-9
-
-    # gcc 9 (Release build)
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-9
-            - ninja-build
-      env: CXX_BIN=g++-9 BUILD_TYPE=release
+      env: CXX_BIN=g++-8 BUILD_TYPE=release
 
 #    # gcc 8 with LTO
 #    - compiler: gcc
