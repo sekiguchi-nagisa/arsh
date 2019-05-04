@@ -313,8 +313,6 @@ struct ServerTest : public InteractiveBase {
 
     void callInit() {
         InitializeParams params;
-        params.processId = 100;
-        params.rootUri = nullptr;
 
         this->call("initialize", toJSON(params));
         this->expectRegex(".+capabilities.+");
@@ -345,8 +343,6 @@ TEST_F(ServerTest, init2) {
     ASSERT_NO_FATAL_FAILURE(this->callInit());
 
     InitializeParams params;
-    params.processId = 100;
-    params.rootUri = nullptr;
 
     this->call("initialize", toJSON(params));
     this->expectRegex(".+server has already initialized.+");

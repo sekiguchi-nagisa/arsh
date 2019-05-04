@@ -114,9 +114,9 @@ enum class TraceSetting : unsigned int {
 };
 
 struct InitializeParams {
-    Union<int, std::nullptr_t> processId;
+    Union<int, std::nullptr_t> processId{nullptr};
     Optional<Union<std::string, std::nullptr_t>> rootPath;    // optional
-    Union<DocumentURI, std::nullptr_t> rootUri;
+    Union<DocumentURI, std::nullptr_t> rootUri{nullptr};
     Optional<JSON> initializationOptions; // optional
     ClientCapabilities capabilities;
     Optional<TraceSetting> trace;  // optional
