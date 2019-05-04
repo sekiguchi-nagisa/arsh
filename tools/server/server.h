@@ -38,7 +38,7 @@ private:
     bool willExit{false};
 
 public:
-    LSPServer(FilePtr &&in, FilePtr &&out, LoggerBase &logger) :
+    LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out) :
         Handler(logger), transport(logger, std::move(in), std::move(out)) {
         this->bindAll();
     }

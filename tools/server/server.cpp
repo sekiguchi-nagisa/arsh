@@ -39,8 +39,8 @@ struct TypeMatcherConstructor<DocumentURI> {
     static constexpr auto value = string;
 };
 
-DEFINE_JSON_VALIDATE_INTERFACE(ClientCapabilities);
-DEFINE_JSON_VALIDATE_INTERFACE(InitializeParams);
+DEFINE_JSON_VALIDATE_INTERFACE(ClientCapabilities); //NOLINT
+DEFINE_JSON_VALIDATE_INTERFACE(InitializeParams);   //NOLINT
 
 } // namespace json
 

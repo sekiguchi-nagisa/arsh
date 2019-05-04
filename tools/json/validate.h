@@ -368,7 +368,7 @@ constexpr auto createInterface(const char *name, FieldMatcher<T>... fields) {
 
 constexpr auto anyIface = InterfaceMatcher<std::nullptr_t>();
 constexpr auto voidIface = InterfaceMatcher<void>();
-constexpr auto anyObj = object(anyIface);
+constexpr auto anyObj = object(anyIface);   //NOLINT
 
 template <typename>
 struct InterfaceConstructor {};
