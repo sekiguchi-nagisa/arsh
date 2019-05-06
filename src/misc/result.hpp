@@ -415,6 +415,8 @@ public:
 
     ~Result() = default;
 
+    Result &operator=(Result &&result) noexcept = default;
+
     explicit operator bool() const {
         return is<T>(*this);
     }

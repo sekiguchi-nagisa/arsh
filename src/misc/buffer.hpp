@@ -102,6 +102,11 @@ public:
         }
     }
 
+    template <std::size_t N>
+    FlexBuffer(const T (&value)[N]) noexcept : FlexBuffer(N) {
+        this->append(value, N);
+    }
+
     /**
      * for lazy allocation
      */

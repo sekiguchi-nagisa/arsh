@@ -411,6 +411,13 @@ TEST(BufferTest, case16) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(b1 != b2));
 }
 
+TEST(BufferTest, case17) {
+    ByteBuffer b("hello");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(6, b.size()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('h', b[0]));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ('\0', b[5]));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
