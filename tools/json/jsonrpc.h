@@ -58,14 +58,25 @@ enum ErrorCode : int {
     InternalError = -32603
 };
 
+struct Error {
+    int code{0};
+    std::string message;
+    JSON data;
+
+    Error() = default;
+
+    Error(int code, std::string &&message, JSON &&data) :
+            code(code), message(std::move(message)), data(std::move(data)) {}
+
+    Error(int code, std::string &&message) : Error(code, std::move(message), JSON()) {}
+
+    std::string toString() const;
+};
+
+JSON toJSON(Error &&error);
+void fromJSON(JSON &&json, Error &error);
 
 struct Request {
-    enum Kind : int {
-        SUCCESS = 0,
-        PARSE_ERROR = ErrorCode::ParseError,
-        INVALID = ErrorCode::InvalidRequest,
-    } kind;
-
     JSON id;    // optional. must be `number | string'
     std::string method; // if error, indicate error message
     JSON params;    // optional. must be `array<any> | object'
@@ -77,34 +88,18 @@ struct Request {
      * @param params
      */
     Request(JSON &&id, std::string &&method, JSON &&params) :
-            kind(SUCCESS), id(std::move(id)), method(std::move(method)), params(std::move(params)) {}
+            id(std::move(id)), method(std::move(method)), params(std::move(params)) {}
 
     Request(std::string &&method, JSON &&params) : Request(JSON(), std::move(method), std::move(params)) {}
 
-    /**
-     * for error
-     * @param kind
-     * must not be SUCCESS
-     * @param error
-     */
-    Request(Kind kind, std::string &&error, JSON &&data) :
-            kind(kind), method(std::move(error)), params(std::move(data)) {}
-
-    bool isError() const {
-        return this->kind != SUCCESS;
-    }
+    Request() = default;
 
     bool isNotification() const {
-        return !this->isError() && this->id.isInvalid();
+        return this->id.isInvalid();
     }
 
     bool isCall() const {
-        return !this->isError() && !this->id.isInvalid();
-    }
-
-    static ResponseError asError(Request &&req) {
-        assert(req.isError());
-        return ResponseError(static_cast<int>(req.kind), std::move(req.method), std::move(req.params));
+        return !this->id.isInvalid();
     }
 
     /**
@@ -116,19 +111,38 @@ struct Request {
     JSON toJSON();   // for testing
 };
 
-struct RequestParser : public Parser {  //TODO: currently only support single request (not support batch-request)
-    RequestParser() : Parser() {}
+void fromJSON(JSON &&json, Request &req);
 
-    RequestParser &append(const char *text) {
-        return this->append(text, strlen(text));
-    }
+struct Response {
+    JSON id;
+    /**
+     * in LSP specification, Response is defined as follow. but reduce memory consumption,
+     * merge 'result' and 'error' field.
+     *
+     * interface Response {
+     *   id : number | string;
+     *   result? : JSON
+     *   error? : Error
+     * }
+     */
+    Result<JSON, Error> value; // result or error
 
-    RequestParser &append(const char *data, unsigned int size) {
-        this->lexer->appendToBuf(data, size, false);
-        return *this;
-    }
+    Response() : value(Ok(JSON())) {}
 
-    Request operator()();
+    Response(JSON &&id, JSON &&result) : id(std::move(id)), value(Ok(std::move(result))) {}
+
+    Response(JSON &&id, Error &&error) : id(std::move(id)), value(Err(std::move(error))) {}
+};
+
+JSON toJSON(Response &&response);
+void fromJSON(JSON &&value, Response &response);
+
+using Message = Union<Request, Response, Error>;
+
+struct MessageParser : public Parser {  //TODO: currently only support single request (not support batch-request)
+    explicit MessageParser(ByteBuffer &&buffer) : Parser(std::move(buffer)) {}
+
+    Message operator()();
 };
 
 class ParamIfaceMap {
@@ -164,13 +178,9 @@ public:
      * may be null
      * @param error
      */
-    void reply(JSON &&id, ResponseError &&error);
+    void reply(JSON &&id, Error &&error);
 
     bool dispatch(Handler &handler);
-
-    static JSON newResponse(JSON &&id, JSON &&result);
-
-    static JSON newResponse(JSON &&id, ResponseError &&error);
 
     // raw level message send/recv api. not directly use them.
 
@@ -204,13 +214,13 @@ public:
 };
 
 
-using ReplyImpl = Result<JSON, ResponseError>;
+using ReplyImpl = Result<JSON, Error>;
 
 template <typename T>
 struct Reply : public ReplyImpl {
     Reply(T &&value) : ReplyImpl(Ok(toJSON(value))) {}  //NOLINT
 
-    Reply(ErrHolder<ResponseError> &&err) : ReplyImpl(std::move(err)) {}    //NOLINT
+    Reply(ErrHolder<Error> &&err) : ReplyImpl(std::move(err)) {}    //NOLINT
 
     Reply(Reply &&) noexcept = default;
 
@@ -221,7 +231,7 @@ template <>
 struct Reply<void> : public ReplyImpl {
     Reply(std::nullptr_t) : ReplyImpl(Ok(toJSON(nullptr))) {}   //NOLINT
 
-    Reply(ErrHolder<ResponseError> &&err) : ReplyImpl(std::move(err)) {}    //NOLINT
+    Reply(ErrHolder<Error> &&err) : ReplyImpl(std::move(err)) {}    //NOLINT
 
     Reply(Reply &&) noexcept = default;
 
@@ -229,8 +239,8 @@ struct Reply<void> : public ReplyImpl {
 };
 
 template <typename ...Arg>
-inline ErrHolder<ResponseError> newError(Arg ...arg) {
-    return Err(ResponseError(std::forward<Arg>(arg)...));
+inline ErrHolder<Error> newError(Arg ...arg) {
+    return Err(Error(std::forward<Arg>(arg)...));
 }
 
 class Handler {

@@ -285,28 +285,28 @@ TEST_F(ParserTest, serialize1) {
 
 TEST_F(ParserTest, serialize2) {
     // error
-    auto actual = rpc::ResponseError(-1, "hello").toJSON().serialize(3);
+    auto actual = toJSON(rpc::Error(-1, "hello")).serialize(3);
     const char *text = R"( { "code" : -1, "message": "hello" })";
     auto expect = Parser(text)().serialize(3);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 
-    actual = rpc::ResponseError(-100, "world", array(1, 3, 5)).toJSON().serialize(3);
+    actual = toJSON(rpc::Error(-100, "world", array(1, 3, 5))).serialize(3);
     text = R"( { "code" : -100, "message": "world", "data": [1,3,5] })";
     expect = Parser(text)().serialize(3);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 
     // response
-    actual = rpc::Transport::newResponse(34, nullptr).serialize(2);
+    actual = toJSON(rpc::Response(34, nullptr)).serialize(2);
     text = R"( { "jsonrpc" : "2.0", "id" : 34, "result" : null } )";
     expect = Parser(text)().serialize(2);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 
-    actual = rpc::Transport::newResponse(-0.4, 34).serialize(2);
+    actual = toJSON(rpc::Response(-0.4, 34)).serialize(2);
     text = R"( { "jsonrpc" : "2.0", "id" : -0.4, "result" : 34 } )";
     expect = Parser(text)().serialize(2);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, actual));
 
-    actual = rpc::Transport::newResponse(nullptr, rpc::ResponseError(-100, "world", array(1, 3, 5))).serialize(2);
+    actual = toJSON(rpc::Response(nullptr, rpc::Error(-100, "world", array(1, 3, 5)))).serialize(2);
     text = R"( { "jsonrpc" : "2.0", "id" : null,
                 "error" : { "code": -100, "message" : "world", "data" : [1,3,5]}})";
     expect = Parser(text)().serialize(2);
@@ -387,24 +387,32 @@ TEST_F(ValidatorTest, iface) {
 }
 
 TEST(ReqTest, parse) {
+    using namespace rpc;
+
     // syntax error
-    auto req = rpc::RequestParser().append("}{")();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isError()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::ParseError, req.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Request::PARSE_ERROR, req.kind));
+    ByteBuffer buf;
+    std::string text = "}{";
+    buf.append(text.c_str(), text.size());
+    auto msg = MessageParser(std::move(buf))();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<Error>(msg)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::ParseError, get<Error>(msg).code));
 
     // semantic error
-    req = rpc::RequestParser().append(R"({ "hoge" : "de" })")();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isError()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InvalidRequest, req.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Request::INVALID, req.kind));
+    text = R"({ "hoge" : "de" })";
+    buf = ByteBuffer();
+    buf.append(text.c_str(), text.size());
+    msg = MessageParser(std::move(buf))();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<Error>(msg)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::InvalidRequest, get<Error>(msg).code));
 
     // request
-    std::string text = rpc::Request("AAA", "hey", array(false, true)).toJSON().serialize(0);
-    req = rpc::RequestParser().append(text.c_str())();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!req.isError()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isCall()));
-    auto json = req.toJSON();
+    text = rpc::Request("AAA", "hey", array(false, true)).toJSON().serialize(0);
+    buf = ByteBuffer();
+    buf.append(text.c_str(), text.size());
+    msg = MessageParser(std::move(buf))();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<Request>(msg)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(get<Request>(msg).isCall()));
+    auto json = get<Request>(msg).toJSON();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("AAA", json["id"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hey", json["method"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, json["params"].size()));
@@ -412,20 +420,24 @@ TEST(ReqTest, parse) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(true, json["params"][1].asBool()));
 
     text = rpc::Request(1234, "hoge", JSON()).toJSON().serialize(0);
-    req = rpc::RequestParser().append(text.c_str())();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!req.isError()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isCall()));
-    json = req.toJSON();
+    buf = ByteBuffer();
+    buf.append(text.c_str(), text.size());
+    msg = MessageParser(std::move(buf))();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<Request>(msg)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(get<Request>(msg).isCall()));
+    json = get<Request>(msg).toJSON();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1234, json["id"].asLong()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hoge", json["method"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["params"].isInvalid()));
 
     // notification
     text = rpc::Request(JSON(), "world", {{"AAA", 0.23}}).toJSON().serialize(0);
-    req = rpc::RequestParser().append(text.c_str())();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!req.isError()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isNotification()));
-    json = req.toJSON();
+    buf = ByteBuffer();
+    buf.append(text.c_str(), text.size());
+    msg = MessageParser(std::move(buf))();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<Request>(msg)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(get<Request>(msg).isNotification()));
+    json = get<Request>(msg).toJSON();
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(json["id"].isInvalid()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("world", json["method"].asString()));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, json["params"].size()));
@@ -433,9 +445,10 @@ TEST(ReqTest, parse) {
 
     // invalid request
     text = rpc::Request(true, "world", {{"AAA", 0.23}}).toJSON().serialize(0);
-    req = rpc::RequestParser().append(text.c_str())();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(req.isError()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(rpc::Request::INVALID, req.kind));
+    buf = ByteBuffer();
+    buf.append(text.c_str(), text.size());
+    msg = MessageParser(std::move(buf))();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(is<Error>(msg)));
 }
 
 struct SingleNullLogger : ydsh::SingletonLogger<SingleNullLogger> {
@@ -494,8 +507,8 @@ protected:
         return this->transport.outStr;
     }
 
-    void assertResponse(const JSON &res) {
-        ASSERT_EQ(res.serialize(), this->response());
+    void assertResponse(rpc::Response &&res) {
+        ASSERT_EQ(toJSON(std::move(res)).serialize(), this->response());
     }
 
     void parseResponse(JSON &value) {
@@ -634,7 +647,7 @@ TEST_F(RPCTest, call1) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello", ctx.cRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ctx.nRet));
     ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ctx.exited));
-    ASSERT_NO_FATAL_FAILURE(this->assertResponse(rpc::Transport::newResponse(1, "hello")));
+    ASSERT_NO_FATAL_FAILURE(this->assertResponse(rpc::Response(1, "hello")));
 }
 
 TEST_F(RPCTest, call2) {

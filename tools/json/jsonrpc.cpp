@@ -17,6 +17,19 @@
 #include "jsonrpc.h"
 
 namespace ydsh {
+namespace json {
+
+using namespace rpc;
+
+#define EACH_Error_FIELD(T, OP) \
+    OP(T, code) \
+    OP(T, message) \
+    OP(T, data)
+
+DEFINE_JSON_VALIDATE_INTERFACE(Error);
+
+} // namespace json
+
 namespace rpc {
 
 JSON ResponseError::toJSON() {
@@ -36,8 +49,30 @@ std::string ResponseError::toString() const {
     return ret;
 }
 
+std::string Error::toString() const {
+    std::string ret = "[";
+    ret += std::to_string(this->code);
+    ret += ": ";
+    ret += this->message;
+    ret += "]";
+    return ret;
+}
+
+JSON toJSON(Error &&error) {
+    return {
+        {"code", error.code},
+        {"message", std::move(error.message)},
+        {"data", std::move(error.data)}
+    };
+}
+
+void fromJSON(JSON &&json, Error &error) {
+    error.code = json["code"].asLong();
+    error.message = std::move(json["message"].asString());
+    error.data = std::move(json["data"]);
+}
+
 JSON Request::toJSON() {
-    assert(!this->isError());
     return {
             {"jsonrpc", "2.0"},
             {"id", std::move(this->id)},
@@ -46,20 +81,38 @@ JSON Request::toJSON() {
     };
 }
 
-Request RequestParser::operator()() {
-    // finalize lexer
-    char b[1];
-    this->lexer->appendToBuf(b, 0, true);
+void fromJSON(JSON &&json, Request &req) {
+    req.id = std::move(json["id"]);
+    req.method = std::move(json["method"].asString());
+    req.params = std::move(json["params"]);
+}
 
-    // parse
-    auto ret = Parser::operator()();
-    if(this->hasError()) {
-        return Request(Request::PARSE_ERROR, "Parse error", this->formatError());
+JSON toJSON(Response &&response) {
+    bool success = static_cast<bool>(response.value);
+    return {
+        {"jsonrpc", "2.0"},
+        {"id", std::move(response.id)},
+        {"result", success ? response.value.take() : JSON()},
+        {"error", success ? JSON() : toJSON(response.value.takeError())}
+    };
+}
+
+void fromJSON(JSON &&value, Response &response) {
+    response.id = std::move(value["id"]);
+    bool success = value.asObject().find("result") != value.asObject().end();
+    if(success) {
+        response.value = Ok(std::move(value["result"]));
+    } else {
+        Error e;
+        fromJSON(std::move(value["error"]), e);
+        response.value = Err(std::move(e));
     }
+}
 
-    // validate
-    auto iface = createInterface(
+static InterfaceWrapper initRequestIface() {
+    constexpr auto iface = createInterface(
             "Request",
+            field("jsonrpc", string),
             field("id", opt(number | string)),
             field("method", string),
             /**
@@ -67,18 +120,58 @@ Request RequestParser::operator()() {
              */
             field("params", opt(array(any) | anyObj | null))
     );
+    return InterfaceWrapper(iface);
+}
 
-    Validator validator;
-    InterfaceWrapper wrapper(iface);
-    if(!wrapper(validator, ret)) {
-        return Request(Request::INVALID, "Invalid Request", validator.formatError());
+static InterfaceWrapper initResponseIface() {
+    constexpr auto iface = createInterface(
+            "Response",
+            field("jsonrpc", string),
+            field("id", number | string | null),
+            field("result", any)
+    );
+    return InterfaceWrapper(iface);
+}
+
+static InterfaceWrapper initResponseErrorIface() {
+    constexpr auto iface = createInterface(
+            "ResponseError",
+            field("jsonrpc", string),
+            field("id", number | string | null),
+            field("error", object(toTypeMatcher<Error>))
+    );
+    return InterfaceWrapper(iface);
+}
+
+Message MessageParser::operator()() {
+    // parse
+    auto ret = Parser::operator()();
+    if(this->hasError()) {
+        return Error(ErrorCode::ParseError, "Parse error", this->formatError());
     }
 
-    auto id = std::move(ret["id"]);
-    auto method = std::move(ret["method"].asString());
-    auto params = std::move(ret["params"]);
+    // validate
+    static auto requestIface = initRequestIface();
+    static auto responseIface = initResponseIface();
+    static auto responseErrorIface = initResponseErrorIface();
+    Validator validator;
+    if(requestIface(validator, ret)) {
+        Request req;
+        fromJSON(std::move(ret), req);
+        return std::move(req);
+    }
 
-    return Request(std::move(id), std::move(method), std::move(params));
+    validator.clearError();
+    if(!responseIface(validator, ret)) {
+        validator.clearError();
+        if(!responseErrorIface(validator, ret)) {
+            return Error(ErrorCode::InvalidRequest, "Invalid Request", validator.formatError());
+        }
+    }
+
+    Response res;
+    fromJSON(std::move(ret), res);
+    return std::move(res);
 }
 
 void ParamIfaceMap::add(const std::string &key, InterfaceWrapper &&wrapper) {
@@ -101,25 +194,6 @@ const Matcher* ParamIfaceMap::lookup(const std::string &name) const {
 // ##     Transport     ##
 // #######################
 
-JSON Transport::newResponse(JSON &&id, JSON &&result) {
-    assert(id.isString() || id.isNumber());
-    assert(!result.isInvalid());
-    return {
-        {"jsonrpc", "2.0"},
-        {"id", std::move(id)},
-        {"result", std::move(result)}
-    };
-}
-
-JSON Transport::newResponse(JSON &&id, ResponseError &&error) {
-    assert(id.isString() || id.isNumber() || id.isNull());
-    return {
-        {"jsonrpc", "2.0"},
-        {"id", std::move(id)},
-        {"error", error.toJSON()}
-    };
-}
-
 void Transport::call(JSON &&id, const char *methodName, JSON &&param) {
     auto str = Request(std::move(id), methodName, std::move(param)).toJSON().serialize();
     this->send(str.size(), str.c_str());
@@ -131,51 +205,57 @@ void Transport::notify(const char *methodName, JSON &&param) {
 }
 
 void Transport::reply(JSON &&id, JSON &&result) {
-    auto str = newResponse(std::move(id), std::move(result)).serialize();
+    auto str = toJSON(Response(std::move(id), std::move(result))).serialize();
     this->send(str.size(), str.c_str());
 }
 
-void Transport::reply(JSON &&id, ResponseError &&error) {
-    auto str = newResponse(std::move(id), std::move(error)).serialize();
+void Transport::reply(JSON &&id, Error &&error) {
+    auto str = toJSON(Response(std::move(id), std::move(error))).serialize();
     this->send(str.size(), str.c_str());
 }
 
 bool Transport::dispatch(Handler &handler) {
-    RequestParser parser;
     int dataSize = this->recvSize();
     if(dataSize < 0) {
         this->logger(LogLevel::ERROR, "may be broken or empty message");
         return false;
     }
 
+    ByteBuffer buf;
     for(int remainSize = dataSize; remainSize > 0;) {
-        char buf[256];
-        constexpr int bufSize = arraySize(buf);
+        char data[256];
+        constexpr int bufSize = arraySize(data);
         int needSize = remainSize < bufSize ? remainSize : bufSize;
-        int recvSize = this->recv(needSize, buf);
+        int recvSize = this->recv(needSize, data);
         if(recvSize < 0) {
             this->logger(LogLevel::ERROR, "message receiving failed");
             return false;
         }
-        parser.append(buf, static_cast<unsigned int>(recvSize));
+        buf.append(data, static_cast<unsigned int>(recvSize));
         remainSize -= recvSize;
     }
 
-    auto req = parser();
-    if(req.isError()) {
-        auto error = Request::asError(std::move(req));
+    auto msg = MessageParser(std::move(buf))();
+    if(is<Error>(msg)) {
+        auto &error = get<Error>(msg);
         this->logger(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
         this->reply(nullptr, std::move(error));
-    } else if(req.isCall()) {
-        auto id = std::move(req.id);
-        auto ret = handler.onCall(req.method, std::move(req.params));
-        if(ret) {
-            this->reply(std::move(id), ret.take());
+    } else if(is<Request>(msg)) {
+        auto &req = get<Request>(msg);
+        if(req.isCall()) {
+            auto id = std::move(req.id);
+            auto ret = handler.onCall(req.method, std::move(req.params));
+            if(ret) {
+                this->reply(std::move(id), ret.take());
+            } else {
+                this->reply(std::move(id), ret.takeError());
+            }
         } else {
-            this->reply(std::move(id), ret.takeError());
+            handler.onNotify(req.method, std::move(req.params));
         }
-    } else if(req.isNotification()) {
-        handler.onNotify(req.method, std::move(req.params));
+    } else {
+        assert(is<Response>(msg));
+        fatal("response handling is unsupported\n");
     }
     return true;
 }
