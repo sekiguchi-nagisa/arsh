@@ -110,7 +110,7 @@ void fromJSON(JSON &&value, Response &response) {
 }
 
 static InterfaceWrapper initRequestIface() {
-    constexpr auto iface = createInterface(
+    static constexpr auto iface = createInterface(
             "Request",
             field("jsonrpc", string),
             field("id", opt(number | string)),
@@ -124,7 +124,7 @@ static InterfaceWrapper initRequestIface() {
 }
 
 static InterfaceWrapper initResponseIface() {
-    constexpr auto iface = createInterface(
+    static constexpr auto iface = createInterface(
             "Response",
             field("jsonrpc", string),
             field("id", number | string | null),
@@ -134,7 +134,7 @@ static InterfaceWrapper initResponseIface() {
 }
 
 static InterfaceWrapper initResponseErrorIface() {
-    constexpr auto iface = createInterface(
+    static constexpr auto iface = createInterface(
             "ResponseError",
             field("jsonrpc", string),
             field("id", number | string | null),
