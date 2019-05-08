@@ -54,6 +54,45 @@ JSON &JSON::operator[](const std::string &key) {
     return this->asObject()[key];
 }
 
+bool JSON::operator==(const JSON &json) const {
+    if(this->tag() != json.tag()) {
+        return false;
+    }
+    switch(this->tag()) {
+    case JSON::TAG<std::nullptr_t>:
+        return true;
+    case JSON::TAG<bool>:
+        return this->asBool() == json.asBool();
+    case JSON::TAG<long>:
+        return this->asLong() == json.asLong();
+    case JSON::TAG<double>:
+        return this->asDouble() == json.asDouble();
+    case JSON::TAG<String>:
+        return this->asString() == json.asString();
+    default:
+        fatal("Array and Object are not allowed\n");
+    }
+    return false;
+}
+
+size_t JSON::hash() const {
+    switch(this->tag()) {
+    case JSON::TAG<std::nullptr_t>:
+        break;
+    case JSON::TAG<bool>:
+        return std::hash<bool>()(this->asBool());
+    case JSON::TAG<long>:
+        return std::hash<long>()(this->asLong());
+    case JSON::TAG<double>:
+        return std::hash<double>()(this->asDouble());
+    case JSON::TAG<String>:
+        return std::hash<String>()(this->asString());
+    default:
+        fatal("Array and Object are not allowed\n");
+    }
+    return 0;
+}
+
 size_t JSON::size() const {
     if(this->isArray()) {
         return this->asArray().size();
