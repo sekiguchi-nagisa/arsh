@@ -69,10 +69,13 @@ bool JSON::operator==(const JSON &json) const {
         return this->asDouble() == json.asDouble();
     case JSON::TAG<String>:
         return this->asString() == json.asString();
-    default:
+    case JSON::TAG<Array>:
+    case JSON::TAG<Object>:
         fatal("Array and Object are not allowed\n");
+    default:
+        break;
     }
-    return false;
+    return true;
 }
 
 size_t JSON::hash() const {
