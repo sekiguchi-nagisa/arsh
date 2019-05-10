@@ -400,47 +400,47 @@ template<bool T>
 std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
     assert(lineToken.pos <= token.pos);
 
-    std::string marker;
+    std::string lineMarker;
     for(unsigned int i = lineToken.pos; i < token.pos;) {
         int code = 0;
         i += this->toCodePoint(i, code);
         if(code < 0) {
-            return marker;
+            return lineMarker;
         }
         if(code == '\t' || code == '\n') {
-            marker += static_cast<char>(code);
+            lineMarker += static_cast<char>(code);
             continue;
         }
         int width = UnicodeUtil::localeAwareWidth(code);
         if(width == 1) {
-            marker += " ";
+            lineMarker += " ";
         } else if(width == 2) {
-            marker += "  ";
+            lineMarker += "  ";
         }
     }
     const unsigned int stopPos = token.size + token.pos;
     if(token.size == 0) {
-        marker += "  ^";
+        lineMarker += "  ^";
     }
     for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;
         int code = 0;
         i += this->toCodePoint(i, code);
         if(code < 0) {
-            return marker;
+            return lineMarker;
         }
         if(code == '\t' || code == '\n') {
-            marker += static_cast<char>(code);
+            lineMarker += static_cast<char>(code);
             continue;
         }
         int width = UnicodeUtil::localeAwareWidth(code);
         if(width == 1) {
-            marker += (prev == token.pos ? "^" : "~");
+            lineMarker += (prev == token.pos ? "^" : "~");
         } else if(width == 2) {
-            marker += (prev == token.pos ? "^~" : "~~");
+            lineMarker += (prev == token.pos ? "^~" : "~~");
         }
     }
-    return marker;
+    return lineMarker;
 }
 
 template <bool T>
