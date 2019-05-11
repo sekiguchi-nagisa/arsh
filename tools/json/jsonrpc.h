@@ -152,7 +152,7 @@ private:
 public:
     void add(const std::string &key, InterfaceWrapper &&wrapper);
 
-    const Matcher *lookup(const std::string &name) const;
+    const InterfaceWrapper &lookup(const std::string &name) const;
 };
 
 class Handler;

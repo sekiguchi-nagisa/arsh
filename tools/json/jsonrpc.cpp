@@ -181,12 +181,12 @@ void ParamIfaceMap::add(const std::string &key, InterfaceWrapper &&wrapper) {
     }
 }
 
-const Matcher* ParamIfaceMap::lookup(const std::string &name) const {
+const InterfaceWrapper &ParamIfaceMap::lookup(const std::string &name) const {
     auto iter = this->map.find(name);
     if(iter != this->map.end()) {
-        return &iter->second.get();
+        return iter->second;
     }
-    return nullptr;
+    fatal("not found corresponding parameter interface to '%s'\n", name.c_str());
 }
 
 
@@ -273,10 +273,9 @@ ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
         return newError(MethodNotFound, std::move(str));
     }
 
-    auto *iface = this->callParamMap.lookup(name);
-    assert(iface);
+    auto &iface = this->callParamMap.lookup(name);
     Validator validator;
-    if(!(*iface)(validator, param)) {
+    if(!iface(validator, param)) {
         std::string e = validator.formatError();
         this->logger(LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
         return newError(InvalidParams, std::move(e));
@@ -292,10 +291,9 @@ void Handler::onNotify(const std::string &name, JSON &&param) {
         return;
     }
 
-    auto *iface = this->notificationParamMap.lookup(name);
-    assert(iface);
+    auto &iface = this->notificationParamMap.lookup(name);
     Validator validator;
-    if(!(*iface)(validator, param)) {
+    if(!iface(validator, param)) {
         this->logger(LogLevel::ERROR,
                 "notification message validation failed: \n%s", validator.formatError().c_str());
         return;

@@ -471,13 +471,9 @@ public:
     template <typename T>
     InterfaceWrapper(const T &ref) : instance(new Holder<T>(ref)) {}    //NOLINT
 
-    const Matcher &get() const {
-        return *this->instance;
-    }
-
     template <typename ...Arg>
     auto operator()(Arg&& ...arg) const {
-        return this->get()(std::forward<Arg>(arg)...);
+        return (*this->instance)(std::forward<Arg>(arg)...);
     }
 };
 
