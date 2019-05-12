@@ -194,12 +194,12 @@ const InterfaceWrapper &ParamIfaceMap::lookup(const std::string &name) const {
 // ##     Transport     ##
 // #######################
 
-void Transport::call(JSON &&id, const char *methodName, JSON &&param) {
+void Transport::call(JSON &&id, const std::string &methodName, JSON &&param) {
     auto str = Request(std::move(id), methodName, std::move(param)).toJSON().serialize();
     this->send(str.size(), str.c_str());
 }
 
-void Transport::notify(const char *methodName, JSON &&param) {
+void Transport::notify(const std::string &methodName, JSON &&param) {
     auto str = Request(JSON(), methodName, std::move(param)).toJSON().serialize();
     this->send(str.size(), str.c_str());
 }
