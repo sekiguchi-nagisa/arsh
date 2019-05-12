@@ -58,11 +58,11 @@ std::string Error::toString() const {
     return ret;
 }
 
-JSON toJSON(Error &&error) {
+JSON toJSON(const Error &error) {
     return {
-        {"code", error.code},
-        {"message", std::move(error.message)},
-        {"data", std::move(error.data)}
+        {"code", toJSON(error.code)},
+        {"message", toJSON(error.message)},
+        {"data", toJSON(error.data)}
     };
 }
 
@@ -87,13 +87,13 @@ void fromJSON(JSON &&json, Request &req) {
     req.params = std::move(json["params"]);
 }
 
-JSON toJSON(Response &&response) {
+JSON toJSON(const Response &response) {
     bool success = static_cast<bool>(response.value);
     return {
         {"jsonrpc", "2.0"},
-        {"id", std::move(response.id)},
-        {"result", success ? response.value.take() : JSON()},
-        {"error", success ? JSON() : toJSON(response.value.takeError())}
+        {"id", toJSON(response.id)},
+        {"result", success ? toJSON(response.value) : JSON()},
+        {"error", success ? JSON() : toJSON(response.value)}
     };
 }
 

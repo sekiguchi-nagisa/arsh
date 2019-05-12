@@ -73,7 +73,7 @@ struct Error {
     std::string toString() const;
 };
 
-JSON toJSON(Error &&error);
+JSON toJSON(const Error &error);
 void fromJSON(JSON &&json, Error &error);
 
 struct Request {
@@ -134,7 +134,7 @@ struct Response {
     Response(JSON &&id, Error &&error) : id(std::move(id)), value(Err(std::move(error))) {}
 };
 
-JSON toJSON(Response &&response);
+JSON toJSON(const Response &response);
 void fromJSON(JSON &&value, Response &response);
 
 using Message = Union<Request, Response, Error>;
