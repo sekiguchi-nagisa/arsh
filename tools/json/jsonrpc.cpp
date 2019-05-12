@@ -181,12 +181,38 @@ void ParamIfaceMap::add(const std::string &key, InterfaceWrapper &&wrapper) {
     }
 }
 
+bool ParamIfaceMap::has(const std::string &key) const {
+    auto iter = this->map.find(key);
+    return iter != this->map.end();
+}
+
 const InterfaceWrapper &ParamIfaceMap::lookup(const std::string &name) const {
     auto iter = this->map.find(name);
     if(iter != this->map.end()) {
         return iter->second;
     }
     fatal("not found corresponding parameter interface to '%s'\n", name.c_str());
+}
+
+long CallbackMap::add(const std::string &methodName, ResponseCallback &&callback) {
+    std::lock_guard<std::mutex> guard(this->mutex);
+    long id = ++this->index;
+    auto pair = this->map.emplace(id, std::make_pair(methodName, std::move(callback)));
+    if(!pair.second) {
+        return 0;
+    }
+    return id;
+}
+
+CallbackMap::Entry CallbackMap::take(long id) {
+    std::lock_guard<std::mutex> guard(this->mutex);
+    auto iter = this->map.find(id);
+    if(iter != this->map.end()) {
+        auto entry = std::move(iter->second);
+        this->map.erase(iter);
+        return entry;
+    }
+    return {"", ResponseCallback()};
 }
 
 
@@ -255,7 +281,7 @@ bool Transport::dispatch(Handler &handler) {
         }
     } else {
         assert(is<Response>(msg));
-        fatal("response handling is unsupported\n");
+        handler.onResponse(std::move(get<Response>(msg)));
     }
     return true;
 }
@@ -302,6 +328,28 @@ void Handler::onNotify(const std::string &name, JSON &&param) {
     iter->second(std::move(param));
 }
 
+void Handler::onResponse(Response &&res) {
+    assert(res.id.isLong());
+    long id = res.id.asLong();
+    auto entry = this->callbackMap.take(id);
+
+    if(!entry.second) {
+        this->logger(LogLevel::ERROR, "broken response: %ld", id);
+        return;
+    }
+
+    if(res) {
+        auto &iface = this->responseTypeMap.lookup(entry.first);
+        Validator validator;
+        if(!iface(validator, get<JSON>(res.value))) {
+            std::string e = validator.formatError();
+            this->logger(LogLevel::ERROR, "response message validation failed: \n%s", e.c_str());
+            res.value = newError(InvalidParams, std::move(e), res.value.take());
+        }
+    }
+    entry.second(std::move(res));
+}
+
 void Handler::bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func) {
     if(!this->callMap.emplace(methodName, std::move(func)).second) {
         fatal("already defined method: %s\n", methodName.c_str());
@@ -314,6 +362,15 @@ void Handler::bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper
         fatal("already defined method: %s\n", methodName.c_str());
     }
     this->notificationParamMap.add(methodName, std::move(wrapper));
+}
+
+long Handler::callImpl(Transport &transport, const std::string &methodName, JSON &&json, ResponseCallback &&func) {
+    if(!this->responseTypeMap.has(methodName)) {
+        fatal("not found response type corresponding to '%s'\n", methodName.c_str());
+    }
+    long id = this->callbackMap.add(methodName, std::move(func));
+    transport.call(id, methodName, std::move(json));
+    return id;
 }
 
 } // namespace rpc

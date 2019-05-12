@@ -85,6 +85,12 @@ private:
         Handler::bind(name, this, method);
     }
 
+    template <typename Ret, typename Param, typename Func, typename Error>
+    auto call(const std::string &name, const Param &param,
+              Func callback, Error ecallback) {
+        return Handler::call(this->transport, name, param, std::forward<Func>(callback), std::forward<Error>(ecallback));
+    }
+
 public:
     // RPC method definition
     Reply<InitializeResult> initialize(const InitializeParams &params);

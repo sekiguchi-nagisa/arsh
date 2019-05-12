@@ -132,6 +132,10 @@ struct Response {
     Response(JSON &&id, JSON &&result) : id(std::move(id)), value(Ok(std::move(result))) {}
 
     Response(JSON &&id, Error &&error) : id(std::move(id)), value(Err(std::move(error))) {}
+
+    explicit operator bool() const {
+        return static_cast<bool>(this->value);
+    }
 };
 
 JSON toJSON(const Response &response);
@@ -152,7 +156,39 @@ private:
 public:
     void add(const std::string &key, InterfaceWrapper &&wrapper);
 
+    bool has(const std::string &key) const;
+
     const InterfaceWrapper &lookup(const std::string &name) const;
+};
+
+using ResponseCallback = std::function<void(Response &&)>;
+
+class CallbackMap {
+private:
+    using Entry = std::pair<std::string, ResponseCallback>;
+
+    std::mutex mutex;
+    std::unordered_map<long, Entry> map;
+    long index{0};
+
+public:
+    /**
+     *
+     * @param methodName
+     * @param callback
+     * @return
+     * call id.
+     * if already added, return 0.
+     */
+    long add(const std::string &methodName, ResponseCallback &&callback);
+
+    /**
+     * take callback entry corresponding to 'id'
+     * @param id
+     * @return
+     * if not found corresponding entry, return empty entry.
+     */
+    Entry take(long id);
 };
 
 class Handler;
@@ -253,9 +289,11 @@ protected:
 private:
     std::unordered_map<std::string, Call> callMap;
     std::unordered_map<std::string, Notification> notificationMap;
+    CallbackMap callbackMap;
 
     ParamIfaceMap callParamMap;
     ParamIfaceMap notificationParamMap;
+    ParamIfaceMap responseTypeMap;    // for response result validation.
 
 public:
     explicit Handler(LoggerBase &logger) : logger(logger) {}
@@ -265,6 +303,8 @@ public:
     virtual ReplyImpl onCall(const std::string &name, JSON &&param);
 
     virtual void onNotify(const std::string &name, JSON &&param);
+
+    virtual void onResponse(Response &&res);
 
     template<typename State, typename Ret, typename Param>
     void bind(const std::string &name, State *obj, Reply<Ret>(State::*method)(const Param &)) {
@@ -302,10 +342,32 @@ public:
         this->bindImpl(name, InterfaceWrapper(voidIface), std::move(func));
     }
 
+    template <typename Ret, typename Param, typename Func, typename Error>
+    auto call(Transport &transport, const std::string &name, const Param &param,
+              Func callback, Error ecallback) {
+        ResponseCallback func = [callback, ecallback](Response &&res) {
+            if(res) {
+                Ret ret;
+                fromJSON(res.value.take(), ret);
+                callback(ret);
+            } else {
+                ecallback(res.value.takeError());
+            }
+        };
+        return this->callImpl(transport, name, toJSON(param), std::move(func));
+    }
+
+    template <typename Ret>
+    void bindResponseType(const std::string &methodName) {
+        this->responseTypeMap.add(methodName, toTypeMatcher<Ret>);
+    }
+
 protected:
     void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func);
 
     void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func);
+
+    long callImpl(Transport &transport, const std::string &methodName, JSON &&json, ResponseCallback &&func);
 };
 
 } // namespace rpc
