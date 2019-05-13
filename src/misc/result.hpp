@@ -337,7 +337,7 @@ class OptionalBase : public Union<T> {
 public:
     OptionalBase() noexcept : Union<T>() {}
 
-    OptionalBase(T &&value) noexcept : Union<T>(std::forward<T>(value)) {}
+    OptionalBase(T &&value) noexcept : Union<T>(std::forward<T>(value)) {}  //NOLINT
 
     T &unwrap() noexcept {
         return get<T>(*this);
@@ -354,7 +354,7 @@ public:
     OptionalBase() noexcept : Union<T...>() {}
 
     template <typename U>
-    OptionalBase(U &&value) noexcept : Union<T...>(std::forward<U>(value)) {}
+    OptionalBase(U &&value) noexcept : Union<T...>(std::forward<U>(value)) {}   //NOLINT
 };
 
 template <typename T>
