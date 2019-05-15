@@ -18,6 +18,7 @@
 #define YDSH_RESULT_HPP
 
 #include <type_traits>
+#include <cassert>
 
 #include "noncopyable.h"
 
@@ -319,11 +320,13 @@ inline bool is(const Union<R...> &value) {
 
 template <typename T, typename ...R>
 inline T &get(Union<R...> &value) {
+    assert(is<T>(value));
     return get<T>(value.value());
 }
 
 template <typename T, typename ...R>
 inline const T &get(const Union<R...> &value) {
+    assert(is<T>(value));
     return get<T>(value.value());
 }
 
