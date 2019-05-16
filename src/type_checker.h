@@ -195,10 +195,6 @@ protected:
     // base type check entry point
     TypeOrError toTypeImpl(TypeNode &node);
 
-    DSType &toType(TypeNode *node) {
-        return this->checkTypeExactly(node);
-    }
-
     /**
      * check node type.
      * if node type is void type, throw exception.
@@ -207,6 +203,13 @@ protected:
     DSType &checkTypeAsExpr(Node *targetNode) {
         return this->checkType(nullptr, targetNode, &this->symbolTable.get(TYPE::Void));
     }
+
+    /**
+     * check node type. not allow Void and Nothing type
+     * @param targetNode
+     * @return
+     */
+    DSType &checkTypeAsSomeExpr(Node *targetNode);
 
     /**
      * check node type

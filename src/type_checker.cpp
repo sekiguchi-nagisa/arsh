@@ -69,17 +69,17 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         auto typeTemplate = tempOrError.take();
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = &this->toType(typeNode.getElementTypeNodes()[i]);
+            elementTypes[i] = &this->checkTypeExactly(typeNode.getElementTypeNodes()[i]);
         }
         return this->symbolTable.createReifiedType(*typeTemplate, std::move(elementTypes));
     }
     case TypeNode::Func: {
         auto &typeNode = static_cast<FuncTypeNode&>(node);
-        auto &returnType = this->toType(typeNode.getReturnTypeNode());
+        auto &returnType = this->checkTypeExactly(typeNode.getReturnTypeNode());
         unsigned int size = typeNode.getParamTypeNodes().size();
         std::vector<DSType *> paramTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            paramTypes[i] = &this->toType(typeNode.getParamTypeNodes()[i]);
+            paramTypes[i] = &this->checkTypeExactly(typeNode.getParamTypeNodes()[i]);
         }
         return this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
     }
@@ -87,21 +87,18 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         auto &typeNode = static_cast<ReturnTypeNode&>(node);
         unsigned int size = typeNode.getTypeNodes().size();
         if(size == 1) {
-            return Ok(&this->toType(typeNode.getTypeNodes()[0]));
+            return Ok(&this->checkTypeExactly(typeNode.getTypeNodes()[0]));
         }
 
         std::vector<DSType *> types(size);
         for(unsigned int i = 0; i < size; i++) {
-            types[i] = &this->toType(typeNode.getTypeNodes()[i]);
+            types[i] = &this->checkTypeExactly(typeNode.getTypeNodes()[i]);
         }
         return this->symbolTable.createTupleType(std::move(types));
     }
     case TypeNode::TypeOf:
         auto &typeNode = static_cast<TypeOfNode&>(node);
-        auto &type = this->checkTypeAsExpr(typeNode.getExprNode());
-        if(type.isNothingType()) {
-            RAISE_TC_ERROR(Unacceptable, *typeNode.getExprNode(), this->symbolTable.getTypeName(type));
-        }
+        auto &type = this->checkTypeAsSomeExpr(typeNode.getExprNode());
         return Ok(&type);
     }
     return Ok(static_cast<DSType *>(nullptr)); // for suppressing gcc warning (normally unreachable).
@@ -153,6 +150,14 @@ DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
 
     RAISE_TC_ERROR(Required, *targetNode, this->symbolTable.getTypeName(*requiredType),
                    this->symbolTable.getTypeName(type));
+}
+
+DSType& TypeChecker::checkTypeAsSomeExpr(Node *targetNode) {
+    auto &type = this->checkTypeAsExpr(targetNode);
+    if(type.isNothingType()) {
+        RAISE_TC_ERROR(Unacceptable, *targetNode, this->symbolTable.getTypeName(type));
+    }
+    return type;
 }
 
 void TypeChecker::checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blockNode) {
@@ -564,7 +569,7 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
 
 void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
     auto &exprType = this->checkTypeAsExpr(node.getExprNode());
-    auto &targetType = this->toType(node.getTargetTypeNode());
+    auto &targetType = this->checkTypeExactly(node.getTargetTypeNode());
 
     if(node.isCastOp()) {
         node.setType(targetType);
@@ -693,7 +698,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
-    auto &type = this->toType(node.getTargetTypeNode());
+    auto &type = this->checkTypeAsExpr(node.getTargetTypeNode());
     if(type.isOptionType()) {
         unsigned int size = node.getArgNodes().size();
         if(size > 0) {
@@ -875,7 +880,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
     }
 
     TypeNode *typeToken = node.getTargetTypeNode();
-    if(!this->symbolTable.setAlias(node.getAlias(), this->toType(typeToken))) {
+    if(!this->symbolTable.setAlias(node.getAlias(), this->checkTypeExactly(typeToken))) {
         RAISE_TC_ERROR(DefinedSymbol, node, node.getAlias().c_str());
     }
     node.setType(this->symbolTable.get(TYPE::Void));
@@ -1125,10 +1130,7 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
     if(node.getExprNode()->is(NodeKind::Empty)) {
         this->checkType(this->symbolTable.get(TYPE::Void), node.getExprNode());
     } else if(node.getOpKind() == JumpNode::BREAK) {
-        auto &type = this->checkTypeAsExpr(node.getExprNode());
-        if(type.isNothingType()) {
-            RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->symbolTable.getTypeName(type));
-        }
+        this->checkTypeAsSomeExpr(node.getExprNode());
         this->breakGather.addJumpNode(&node);
     }
     assert(!node.getExprNode()->isUntyped());
@@ -1177,8 +1179,11 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
 }
 
 void TypeChecker::visitCatchNode(CatchNode &node) {
-    auto &exceptionType = this->toType(node.getTypeNode());
-    if(!this->symbolTable.get(TYPE::Any).isSameOrBaseTypeOf(exceptionType) || exceptionType.isNothingType()) {
+    auto &exceptionType = this->checkTypeAsSomeExpr(node.getTypeNode());
+    /**
+     * not allow Void, Nothing and Option type.
+     */
+    if(exceptionType.isOptionType()) {
         RAISE_TC_ERROR(Unacceptable, *node.getTypeNode(), this->symbolTable.getTypeName(exceptionType));
     }
 
@@ -1262,10 +1267,7 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
         if(node.getKind() == VarDeclNode::CONST) {
             attr.set(FieldAttribute::READ_ONLY);
         }
-        exprType = &this->checkTypeAsExpr(node.getExprNode());
-        if(exprType->isNothingType()) {
-            RAISE_TC_ERROR(Unacceptable, *node.getExprNode(), this->symbolTable.getTypeName(*exprType));
-        }
+        exprType = &this->checkTypeAsSomeExpr(node.getExprNode());
         break;
     case VarDeclNode::IMPORT_ENV:
     case VarDeclNode::EXPORT_ENV:
@@ -1341,15 +1343,12 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     }
 
     // resolve return type, param type
-    auto &returnType = this->toType(node.getReturnTypeToken());
+    auto &returnType = this->checkTypeExactly(node.getReturnTypeToken());
     unsigned int paramSize = node.getParamTypeNodes().size();
     std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
-        auto *type = &this->toType(node.getParamTypeNodes()[i]);
-        if(type->isVoidType() || type->isNothingType()) {
-            RAISE_TC_ERROR(Unacceptable, *node.getParamTypeNodes()[i], this->symbolTable.getTypeName(*type));
-        }
-        paramTypes[i] = type;
+        auto &type = this->checkTypeAsSomeExpr(node.getParamTypeNodes()[i]);
+        paramTypes[i] = &type;
     }
 
     // register function handle
