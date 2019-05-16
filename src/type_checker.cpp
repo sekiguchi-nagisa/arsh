@@ -505,7 +505,7 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
     unsigned int size = node.getExprNodes().size();
     assert(size != 0);
     Node *firstElementNode = node.getExprNodes()[0];
-    auto &elementType = this->checkTypeAsExpr(firstElementNode);
+    auto &elementType = this->checkTypeAsSomeExpr(firstElementNode);
 
     for(unsigned int i = 1; i < size; i++) {
         this->checkTypeWithCoercion(elementType, node.refExprNodes()[i]);
@@ -523,9 +523,10 @@ void TypeChecker::visitMapNode(MapNode &node) {
     unsigned int size = node.getValueNodes().size();
     assert(size != 0);
     Node *firstKeyNode = node.getKeyNodes()[0];
+    this->checkTypeAsSomeExpr(firstKeyNode);
     auto &keyType = this->checkType(this->symbolTable.get(TYPE::_Value), firstKeyNode);
     Node *firstValueNode = node.getValueNodes()[0];
-    auto &valueType = this->checkTypeAsExpr(firstValueNode);
+    auto &valueType = this->checkTypeAsSomeExpr(firstValueNode);
 
     for(unsigned int i = 1; i < size; i++) {
         this->checkTypeWithCoercion(keyType, node.refKeyNodes()[i]);
@@ -545,9 +546,10 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
     unsigned int size = node.getNodes().size();
     std::vector<DSType *> types(size);
     for(unsigned int i = 0; i < size; i++) {
-        types[i] = &this->checkTypeAsExpr(node.getNodes()[i]);
+        types[i] = &this->checkTypeAsSomeExpr(node.getNodes()[i]);
     }
     auto typeOrError = this->symbolTable.createTupleType(std::move(types));
+    assert(typeOrError);
     node.setType(*typeOrError.take());
 }
 
