@@ -158,8 +158,6 @@ public:
 
 class TypeChecker : protected NodeVisitor {
 protected:
-    friend class TypeGenerator;
-
     SymbolTable &symbolTable;
 
     /**
@@ -182,10 +180,6 @@ public:
     ~TypeChecker() override = default;
 
     std::unique_ptr<Node> operator()(const DSType *prevType, std::unique_ptr<Node> &&node);
-
-    const SymbolTable &getSymbolTable() const {
-        return this->symbolTable;
-    }
 
     SymbolTable &getSymbolTable() {
         return this->symbolTable;
