@@ -104,7 +104,7 @@ test -b .
 assert($? == 1)
 
 var blk = $(df . | grep /dev)
-assert $blk.empty() || test -b $blk[0]
+assert $blk.empty() || (test -b $blk[0]) == (sh -c "test -b ${$blk[0]}")
 
 test -c ..
 assert($? == 1)
