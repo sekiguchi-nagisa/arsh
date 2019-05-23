@@ -328,12 +328,6 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "IFS", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), " \t\n"), FieldAttributes());
 
     /**
-     * for history api.
-     * must be Int_Object.
-     */
-    bindVariable(state, "HISTCMD", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Uint32), 1));
-
-    /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
@@ -858,7 +852,7 @@ void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str) {
 }
 
 static void updateHistCmd(DSState *st, unsigned int offset, bool inc) {
-    const unsigned int index = toIndex(BuiltinVarOffset::HIST_CMD);
+    const unsigned int index = st->symbolTable.lookupHandle(VAR_HISTCMD)->getIndex();
     unsigned int value = typeAs<Int_Object>(st->getGlobal(index))->getValue();
     if(inc) {
         value += offset;

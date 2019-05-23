@@ -43,8 +43,7 @@ public:
 
 
     void assertHistCmd(unsigned int expect) {
-        unsigned int index = toIndex(BuiltinVarOffset::HIST_CMD);
-        unsigned int value = typeAs<Int_Object>(this->state->getGlobal(index))->getValue();
+        unsigned int value = typeAs<Int_Object>(getGlobal(*this->state, VAR_HISTCMD))->getValue();
         ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, value));
     }
 
