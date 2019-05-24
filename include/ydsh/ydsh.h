@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Nagisa Sekiguchi
+ * Copyright (C) 2015-2019 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,6 +53,14 @@ DSState *DSState_createWithMode(DSExecMode mode);
  * may be null
  */
 void DSState_delete(DSState **st);
+
+/**
+ * get DSExecMode.
+ * @param st
+ * not null
+ * @return
+ */
+DSExecMode DSState_mode(const DSState *st);
 
 /**
  * affect DSState_eval() result. (not affect DSState_loadAndEval())

@@ -505,6 +505,10 @@ void DSState_delete(DSState **st) {
     }
 }
 
+DSExecMode DSState_mode(const DSState *st) {
+    return st->execMode;
+}
+
 void DSState_setLineNum(DSState *st, unsigned int lineNum) {
     st->lineNum = lineNum;
 }
