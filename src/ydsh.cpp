@@ -331,7 +331,7 @@ static void initBuiltinVar(DSState *state) {
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
-    bindVariable(state, "?", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0));
+    bindVariable(state, "?", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0), FieldAttributes());
 
     /**
      * process id of root shell. ($$)

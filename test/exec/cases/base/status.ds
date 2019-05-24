@@ -1,5 +1,8 @@
 
 # single command
+$? = 40
+assert $? == 40
+
 sh -c 'exit 23'
 assert $? == 23
 
