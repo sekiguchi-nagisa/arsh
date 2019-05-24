@@ -68,6 +68,14 @@ TEST_F(InteractiveTest, ctrld2) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, ctrld3) {
+    this->invoke("--quiet", "--norc", "-n");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, arg) {
     this->invoke("--quiet", "--norc", "-s", "hello", "world");
 

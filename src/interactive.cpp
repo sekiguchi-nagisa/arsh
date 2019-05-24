@@ -88,6 +88,9 @@ static bool readLine(std::string &line) {
                 line.clear();
                 continue;
             }
+            if(DSState_mode(state) != DS_EXEC_MODE_NORMAL) {
+                return false;
+            }
             line = "exit\n";
             return true;
         }
