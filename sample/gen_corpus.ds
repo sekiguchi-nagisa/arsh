@@ -13,6 +13,7 @@ let exec_test_dir = "$SCRIPT_DIR/../test/exec/cases".realpath()!
 # copy from exec_test
 for $d in $(ls $exec_test_dir) {
     var case_dir = "$exec_test_dir/$d"
+    !test -d $case_dir && { continue; }
     echo copying scripts at $case_dir
     for $a in $(ls $case_dir) {
         cp $case_dir/$a $dir/${d}_$a
