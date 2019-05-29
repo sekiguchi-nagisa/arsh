@@ -1142,6 +1142,16 @@ static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parse
 
         switch(e.getTokenKind()) {
         case EOS: {
+            if(!tokenPairs.empty()) {
+                auto kind = tokenPairs.back().first;
+                auto token = tokenPairs.back().second;
+                if(kind == APPLIED_NAME || kind == SPECIAL_NAME) {
+                    if(token.pos + token.size == cursor) {
+                        return {CompletorKind::VAR, lexer.toTokenText(token)};
+                    }
+                }
+            }
+
             if(strcmp(e.getErrorKind(), NO_VIABLE_ALTER) == 0) {
                 auto pair = selectWithCmd(parser, cursor, true);
                 if(pair.first != CompletorKind::NONE) {

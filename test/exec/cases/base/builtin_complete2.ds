@@ -61,6 +61,9 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     $assertArray($gvars, $(complete '"$'))
     $assertArray($gvars, $(complete 'echo $'))
     $assertArray($gvars2, $(complete 'echo $P'))
+    $assertArray($gvars2, $(complete '($P'))
+    $assertArray($gvars2, $(complete '{$P'))
+    $assertArray($gvars2, $(complete '$f($P'))
 }
 
 # env name
