@@ -577,17 +577,21 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     }
 }
 
-std::unique_ptr<Node> Parser::parse_statement() {
+std::unique_ptr<Node> Parser::parse_statement(bool allowEOS) {
     GUARD_DEEP_NESTING(guard);
 
     auto node = TRY(this->parse_statementImp());
-    TRY(this->parse_statementEnd());
+    TRY(this->parse_statementEnd(allowEOS));
     return node;
 }
 
-std::unique_ptr<Node> Parser::parse_statementEnd() {
+std::unique_ptr<Node> Parser::parse_statementEnd(bool allowEOS) {
     switch(CUR_KIND()) {
     case EOS:
+        if(!allowEOS) {
+            this->raiseTokenMismatchedError(NEW_LINE);
+        }
+        break;
     case RBC:
         break;
     case LINE_END:
