@@ -330,7 +330,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
     token = TRY(this->expect(RBC));
     node->updateToken(token);
 
-    return std::move(node);
+    return node;
 }
 
 TypeWrapper Parser::parse_basicOrReifiedType(Token token) {
@@ -469,7 +469,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     case FUNCTION: {
         auto node = TRY(this->parse_funcDecl());
         node->setBlockNode(TRY(this->parse_block()).release());
-        return std::move(node);
+        return node;
     }
     case INTERFACE:
         return this->parse_interface();
@@ -539,7 +539,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         auto node = std::make_unique<VarDeclNode>(startPos, this->lexer->toName(token),
                                         exprNode.release(), VarDeclNode::IMPORT_ENV);
         node->updateToken(token);
-        return std::move(node);
+        return node;
     }
     case RETURN: {
         Token token = this->expect(RETURN); // always success
@@ -566,7 +566,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
             Token token = TRY(this->expect(IDENTIFIER));
             node->setName(token, this->lexer->toName(token));
         }
-        return std::move(node);
+        return node;
     }
     EACH_LA_varDecl(GEN_LA_CASE)
         return this->parse_variableDeclaration();
@@ -674,7 +674,7 @@ std::unique_ptr<Node> Parser::parse_caseExpression() {
     } while(CUR_KIND() != RBC);
     Token token = this->expect(RBC);    // always success
     caseNode->updateToken(token);
-    return std::move(caseNode);
+    return caseNode;
 }
 
 std::unique_ptr<ArmNode> Parser::parse_armExpression() {
@@ -880,7 +880,7 @@ std::unique_ptr<Node> Parser::parse_command() {
             break;
         }
     }
-    return std::move(node);
+    return node;
 }
 
 std::unique_ptr<RedirNode> Parser::parse_redirOption() {
@@ -1139,7 +1139,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         Token token = args.getToken();
         auto node = std::make_unique<NewNode>(startPos, type.release(), ArgsWrapper::extract(std::move(args)));
         node->updateToken(token);
-        return std::move(node);
+        return node;
     }
     case BYTE_LITERAL: {
         auto pair = TRY(this->expectNum(BYTE_LITERAL, &Lexer::toUint8));
@@ -1299,7 +1299,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             auto blockNode = TRY(this->parse_block());
             tryNode->addFinallyNode(blockNode.release());
         }
-        return std::move(tryNode);
+        return tryNode;
     }
     default:
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
@@ -1432,7 +1432,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
 
     token = TRY(this->expect(CLOSE_DQUOTE));
     node->updateToken(token);
-    return std::move(node);
+    return node;
 }
 
 std::unique_ptr<Node> Parser::parse_interpolation() {

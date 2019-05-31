@@ -80,7 +80,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     (void) params; //FIXME: currently not used
 
     InitializeResult ret;   //FIXME: set supported capabilities
-    return std::move(ret);
+    return ret;
 }
 
 Reply<void> LSPServer::shutdown() {
