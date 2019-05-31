@@ -35,7 +35,7 @@ namespace ydsh {
  * if cannot open file, return always 0.
  */
 inline mode_t getStMode(const char *fileName) {
-    struct stat st;
+    struct stat st; //NOLINT
     if(stat(fileName, &st) != 0) {
         return 0;
     }
@@ -43,7 +43,7 @@ inline mode_t getStMode(const char *fileName) {
 }
 
 inline mode_t getStMode(int fd) {
-    struct stat st;
+    struct stat st; //NOLINT
     if(fstat(fd, &st) != 0) {
         return 0;
     }

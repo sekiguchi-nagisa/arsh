@@ -215,7 +215,7 @@ CStrBuffer completeLine(const DSState &st, const std::string &line);
 
 class SignalGuard {
 private:
-    sigset_t maskset;
+    sigset_t maskset{0};
 
 public:
     SignalGuard() {

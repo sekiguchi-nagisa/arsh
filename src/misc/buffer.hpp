@@ -103,7 +103,7 @@ public:
     }
 
     template <std::size_t N>
-    FlexBuffer(const T (&value)[N]) noexcept : FlexBuffer(N) {
+    FlexBuffer(const T (&value)[N]) noexcept : FlexBuffer(N) {  //NOLINT
         this->append(value, N);
     }
 

@@ -284,7 +284,7 @@ void exec_interactive(DSState *dsState) {
     int status = 0;
     for(std::string line; readLine(line);) {
         DSState_setScriptDir(dsState, ".");
-        DSError e{};
+        DSError e;  //NOLINT
         status = DSState_eval(dsState, nullptr, line.c_str(), line.size(), &e);
         auto kind = e.kind;
         DSError_release(&e);
