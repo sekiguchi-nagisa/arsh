@@ -12,7 +12,6 @@ var PS2 = '> '
 var HISTFILE = '~/.ydsh_history'
 var HISTSIZE = 0u
 var HISTFILESIZE = 1000u
-let HISTCMD = 1u
 
 # define boolean constant
 let TRUE = :

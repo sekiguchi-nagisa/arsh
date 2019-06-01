@@ -1230,10 +1230,8 @@ static int showHistory(DSState &state, const Array_Object &obj) {
         }
     }
 
-    const unsigned int histCmd = typeAs<Int_Object>(getGlobal(state, VAR_HISTCMD))->getValue();
-    const unsigned int base = histCmd - histSize;
     for(unsigned int i = histSize - printOffset; i < histSize; i++) {
-        fprintf(stdout, "%5d  %s\n", i + base, history->data[i]);
+        fprintf(stdout, "%5d  %s\n", i + 1, history->data[i]);
     }
     return 0;
 }

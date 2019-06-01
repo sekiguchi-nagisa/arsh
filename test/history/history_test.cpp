@@ -41,12 +41,6 @@ public:
         this->assignUintValue(VAR_HISTFILESIZE, size);
     }
 
-
-    void assertHistCmd(unsigned int expect) {
-        unsigned int value = typeAs<Int_Object>(getGlobal(*this->state, VAR_HISTCMD))->getValue();
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect, value));
-    }
-
     Output evalInChild(const std::string &code) {
         IOConfig config{IOConfig::INHERIT, IOConfig::INHERIT, IOConfig::INHERIT};
         return ProcBuilder::spawn(config, [&] {
@@ -124,14 +118,12 @@ TEST_F(HistoryTest, add) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, history->capacity));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", history->data[0]));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", history->data[1]));
-    ASSERT_(this->assertHistCmd(3));
 
     DSState_addHistory(this->state, "ccc");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, history->size));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, history->capacity));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", history->data[0]));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ccc", history->data[1]));
-    ASSERT_(this->assertHistCmd(4));
 
     DSState_addHistory(this->state, "ccc");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, history->size));
@@ -149,11 +141,9 @@ TEST_F(HistoryTest, set) {
     auto *history = DSState_history(this->state);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, history->size));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->capacity));
-    ASSERT_(this->assertHistCmd(3));
 
     DSState_setHistoryAt(this->state, 1, "ccc");
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ccc", history->data[1]));
-    ASSERT_(this->assertHistCmd(3));
 
     DSState_setHistoryAt(this->state, 3, "ccc");    // do nothing, if out of range
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, history->size));
@@ -182,7 +172,6 @@ TEST_F(HistoryTest, remove) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", history->data[1]));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", history->data[2]));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("eee", history->data[3]));
-    ASSERT_(this->assertHistCmd(5));
 
     DSState_deleteHistoryAt(this->state, 3);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, history->size));
@@ -190,7 +179,6 @@ TEST_F(HistoryTest, remove) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", history->data[0]));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", history->data[1]));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", history->data[2]));
-    ASSERT_(this->assertHistCmd(4));
 
     // do nothing, if out of range
     DSState_deleteHistoryAt(this->state, 6);
@@ -225,7 +213,6 @@ TEST_F(HistoryTest, clear) {
     DSState_clearHistory(this->state);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, history->size));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, history->capacity));
-    ASSERT_(this->assertHistCmd(1));
 }
 
 TEST_F(HistoryTest, resize) {

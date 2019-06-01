@@ -855,17 +855,6 @@ void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str) {
     }
 }
 
-static void updateHistCmd(DSState *st, unsigned int offset, bool inc) {
-    const unsigned int index = st->symbolTable.lookupHandle(VAR_HISTCMD)->getIndex();
-    unsigned int value = typeAs<Int_Object>(st->getGlobal(index))->getValue();
-    if(inc) {
-        value += offset;
-    } else {
-        value -= offset;
-    }
-    st->setGlobal(index, DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Uint32), value));
-}
-
 static void unsafeDeleteHistory(DSHistory &history, unsigned int index) {
     free(history.data[index]);
     memmove(history.data + index, history.data + index + 1,
@@ -883,19 +872,16 @@ void DSState_addHistory(DSState *st, const char *str) {
             unsafeDeleteHistory(st->history, 0);
         }
         st->history.data[st->history.size++] = strdup(str);
-        updateHistCmd(st, 1, true);
     }
 }
 
 void DSState_deleteHistoryAt(DSState *st, unsigned int index) {
     if(index < st->history.size) {
         unsafeDeleteHistory(st->history, index);
-        updateHistCmd(st, 1, false);
     }
 }
 
 void DSState_clearHistory(DSState *st) {
-    updateHistCmd(st, st->history.size, false);
     while(st->history.size > 0) {
         unsafeDeleteHistory(st->history, st->history.size - 1);
     }
@@ -917,7 +903,6 @@ void DSState_loadHistory(DSState *st, const char *fileName) {
                 st->history.data[st->history.size++] = strdup(line.c_str());
                 count++;
             }
-            updateHistCmd(st, count, true);
         }
     }
 }
