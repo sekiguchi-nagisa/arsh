@@ -158,7 +158,7 @@ Message MessageParser::operator()() {
     if(requestIface(validator, ret)) {
         Request req;
         fromJSON(std::move(ret), req);
-        return req;
+        return std::move(req);
     }
 
     validator.clearError();
@@ -171,7 +171,7 @@ Message MessageParser::operator()() {
 
     Response res;
     fromJSON(std::move(ret), res);
-    return res;
+    return std::move(res);
 }
 
 void ParamIfaceMap::add(const std::string &key, InterfaceWrapper &&wrapper) {

@@ -900,7 +900,7 @@ std::unique_ptr<TypeToken> Parser::parse_type() {
 
         TRY(this->expect(TYPE_CLOSE));
 
-        return funcType;
+        return std::move(funcType);
     } else {
         auto type(ReifiedTypeToken::newReifiedTypeToken(str));
         TRY(this->expect(TYPE_OPEN));
