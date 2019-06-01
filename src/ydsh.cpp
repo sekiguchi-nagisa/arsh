@@ -815,16 +815,14 @@ void DSCandidates_release(DSCandidates **c) {
 }
 
 void DSState_syncHistorySize(DSState *st) {
-    if(hasFlag(st->option, DS_OPTION_HISTORY)) {
-        unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
-        auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
-        if(cap > DS_HISTSIZE_LIMIT) {
-            cap = DS_HISTSIZE_LIMIT;
-        }
-        if(array.size() > cap) {
-            array.resize(cap);
-            array.shrink_to_fit();
-        }
+    unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
+    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
+    if(cap > DS_HISTSIZE_LIMIT) {
+        cap = DS_HISTSIZE_LIMIT;
+    }
+    if(array.size() > cap) {
+        array.resize(cap);
+        array.shrink_to_fit();
     }
 }
 

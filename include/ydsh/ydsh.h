@@ -130,9 +130,8 @@ int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target);
 #define DS_OPTION_ASSERT       ((unsigned short) (1u << 0u))
 #define DS_OPTION_TOPLEVEL     ((unsigned short) (1u << 1u))
 #define DS_OPTION_TRACE_EXIT   ((unsigned short) (1u << 2u))
-#define DS_OPTION_HISTORY      ((unsigned short) (1u << 3u))
-#define DS_OPTION_JOB_CONTROL  ((unsigned short) (1u << 4u))
-#define DS_OPTION_INTERACTIVE  ((unsigned short) (1u << 5u))
+#define DS_OPTION_JOB_CONTROL  ((unsigned short) (1u << 3u))
+#define DS_OPTION_INTERACTIVE  ((unsigned short) (1u << 4u))
 
 unsigned short DSState_option(const DSState *st);
 

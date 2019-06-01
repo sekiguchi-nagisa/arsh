@@ -176,12 +176,8 @@ TEST_F(APITest, option) {
     SCOPED_TRACE("");
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(this->state)));
-
-    DSState_setOption(this->state, DS_OPTION_HISTORY);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_HISTORY | DS_OPTION_ASSERT, DSState_option(this->state)));
-
     DSState_unsetOption(this->state, DS_OPTION_ASSERT);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_HISTORY, DSState_option(this->state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, DSState_option(this->state)));
 }
 
 TEST_F(APITest, scriptDir) {

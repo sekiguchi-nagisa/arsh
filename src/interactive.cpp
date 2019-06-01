@@ -275,7 +275,7 @@ void exec_interactive(DSState *dsState) {
 
     linenoiseSetHistoryCallback(historyCallback);
 
-    unsigned int option = DS_OPTION_TOPLEVEL | DS_OPTION_HISTORY | DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
+    unsigned int option = DS_OPTION_TOPLEVEL | DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
     DSState_setOption(dsState, option);
     DSState_syncHistorySize(dsState);
     DSState_loadHistory(dsState, nullptr);

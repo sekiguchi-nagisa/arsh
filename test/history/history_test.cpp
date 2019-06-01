@@ -17,8 +17,6 @@ protected:
 public:
     HistoryTest() {
         this->state = DSState_create();
-        DSState_setOption(this->state, DS_OPTION_HISTORY);
-
         std::string value;
         value += '"';
         value += this->tmpFileName;
