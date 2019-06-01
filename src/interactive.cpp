@@ -228,7 +228,7 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
 }
 
 static const char *historyCallback(const char *buf, int *historyIndex, historyOp op) {
-    const unsigned int size = DSState_history(state)->size;
+    const unsigned int size = DSState_historySize(state);
     switch(op) {
     case LINENOISE_HISTORY_OP_NEXT:
     case LINENOISE_HISTORY_OP_PREV: {
@@ -243,7 +243,7 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
                 *historyIndex = size - 1;
                 return nullptr;
             }
-            return DSState_history(state)->data[size - *historyIndex - 1];
+            return DSState_getHistoryAt(state, size - *historyIndex - 1);
         }
         break;
     }

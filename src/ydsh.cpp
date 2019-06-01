@@ -814,10 +814,6 @@ void DSCandidates_release(DSCandidates **c) {
     }
 }
 
-const DSHistory *DSState_history(const DSState *st) {
-    return &st->history;
-}
-
 static void resizeHistory(DSHistory &history, unsigned int cap) {
     if(cap == history.capacity) {
         return;
@@ -846,6 +842,17 @@ void DSState_syncHistorySize(DSState *st) {
         }
         resizeHistory(st->history, cap);
     }
+}
+
+unsigned int DSState_historySize(const DSState *st) {
+    return st->history.size;
+}
+
+const char *DSState_getHistoryAt(const DSState *st, unsigned int index) {
+    if(index < st->history.size) {
+        return st->history.data[index];
+    }
+    return nullptr;
 }
 
 void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str) {

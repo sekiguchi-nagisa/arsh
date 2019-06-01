@@ -53,20 +53,12 @@ static std::string initLogicalWorkingDir() {
     return expandDots(nullptr, dir);
 }
 
-static DSHistory initHistory() {
-    return DSHistory {
-            .capacity = 0,
-            .size = 0,
-            .data = nullptr,
-    };
-}
-
 DSState::DSState() :
         trueObj(DSValue::create<Boolean_Object>(this->symbolTable.get(TYPE::Boolean), true)),
         falseObj(DSValue::create<Boolean_Object>(this->symbolTable.get(TYPE::Boolean), false)),
         emptyStrObj(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::string())),
         emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.get(TYPE::UnixFD), -1)),
-        logicalWorkingDir(initLogicalWorkingDir()), history(initHistory()),
+        logicalWorkingDir(initLogicalWorkingDir()),
         callStack(new DSValue[DEFAULT_STACK_SIZE]),
         baseTime(std::chrono::system_clock::now()) { }
 

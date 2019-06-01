@@ -1207,10 +1207,10 @@ static int builtin_complete(DSState &state, Array_Object &argvObj) {
 }
 
 static int showHistory(DSState &state, const Array_Object &obj) {
-    auto *history = DSState_history(&state);
-    unsigned int printOffset = history->size;
-    const unsigned int histSize = history->size;
+    const unsigned int histSize = DSState_historySize(&state);
     const unsigned int argc = obj.getValues().size();
+    unsigned int printOffset = histSize;
+
     if(argc > 1) {
         if(argc > 2) {
             ERROR(obj, "too many arguments");
@@ -1231,7 +1231,7 @@ static int showHistory(DSState &state, const Array_Object &obj) {
     }
 
     for(unsigned int i = histSize - printOffset; i < histSize; i++) {
-        fprintf(stdout, "%5d  %s\n", i + 1, history->data[i]);
+        fprintf(stdout, "%5d  %s\n", i + 1, DSState_getHistoryAt(&state, i));
     }
     return 0;
 }
@@ -1283,11 +1283,10 @@ static int builtin_history(DSState &state, Array_Object &argvObj) {
         return invalidOptionError(argvObj, arg);
     }
 
-    auto *history = DSState_history(&state);
     if(deleteTarget != nullptr) {
         int s;
         int offset = convertToInt64(deleteTarget, s) - 1;
-        if(s != 0 || offset < 0 || static_cast<unsigned int>(offset) > history->size) {
+        if(s != 0 || offset < 0 || static_cast<unsigned int>(offset) > DSState_historySize(&state)) {
             ERROR(argvObj, "%s: history offset out of range", deleteTarget);
             return 1;
         }
