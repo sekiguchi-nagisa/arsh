@@ -66,30 +66,6 @@ struct ControlFrame {
     unsigned int recDepth{0};
 };
 
-struct DSHistory {
-    /**
-     * initial value is 0.
-     */
-    unsigned int capacity{0};
-
-    /**
-     * initial value is 0
-     */
-    unsigned int size{0};
-
-    /**
-     * initial value is null
-     */
-    char **data{nullptr};
-
-    ~DSHistory() {
-        for(unsigned int i = 0; i < this->size; i++) {
-            free(this->data[i]);
-        }
-        free(this->data);
-    }
-};
-
 struct DSState {
 public:
     SymbolTable symbolTable;
@@ -125,8 +101,6 @@ public:
     unsigned int lineNum{1};
 
     std::string logicalWorkingDir;
-
-    DSHistory history;
 
     SignalVector sigVector;
 

@@ -814,84 +814,63 @@ void DSCandidates_release(DSCandidates **c) {
     }
 }
 
-static void resizeHistory(DSHistory &history, unsigned int cap) {
-    if(cap == history.capacity) {
-        return;
-    }
-
-    if(cap < history.size) {
-        // if cap < history.size, free remain entry
-        for(unsigned int i = cap; i < history.size; i++) {
-            free(history.data[i]);
-        }
-        history.size = cap;
-    }
-
-    void *ret = realloc(history.data, sizeof(char *) * cap);
-    if(cap == 0 || ret != nullptr) {
-        history.capacity = cap;
-        history.data = reinterpret_cast<char **>(ret);
-    }
-}
-
 void DSState_syncHistorySize(DSState *st) {
     if(hasFlag(st->option, DS_OPTION_HISTORY)) {
         unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
+        auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
         if(cap > DS_HISTSIZE_LIMIT) {
             cap = DS_HISTSIZE_LIMIT;
         }
-        resizeHistory(st->history, cap);
+        if(array.size() > cap) {
+            array.resize(cap);
+            array.shrink_to_fit();
+        }
     }
 }
 
 unsigned int DSState_historySize(const DSState *st) {
-    return st->history.size;
+    return typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->getValues().size();
 }
 
 const char *DSState_getHistoryAt(const DSState *st, unsigned int index) {
-    if(index < st->history.size) {
-        return st->history.data[index];
+    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->getValues();
+    if(index < array.size()) {
+        return typeAs<String_Object>(array[index])->getValue();
     }
     return nullptr;
 }
 
 void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str) {
-    if(index < st->history.size) {
-        free(st->history.data[index]);
-        st->history.data[index] = strdup(str);
+    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
+    if(index < array.size()) {
+        array[index] = DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), str);
     }
 }
 
-static void unsafeDeleteHistory(DSHistory &history, unsigned int index) {
-    free(history.data[index]);
-    memmove(history.data + index, history.data + index + 1,
-            sizeof(char *) * (history.size - index - 1));
-    history.size--;
-}
-
 void DSState_addHistory(DSState *st, const char *str) {
-    if(st->history.capacity > 0) {
-        if(st->history.size > 0 && strcmp(str, st->history.data[st->history.size - 1]) == 0) {
+    unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
+    if(cap > 0) {
+        auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
+        if(!array.empty() && strcmp(str, typeAs<String_Object>(array.back())->getValue()) == 0) {
             return; // skip duplicated line
         }
-
-        if(st->history.size == st->history.capacity) {
-            unsafeDeleteHistory(st->history, 0);
+        if(array.size() == cap) {
+            array.erase(array.begin());
         }
-        st->history.data[st->history.size++] = strdup(str);
+        array.push_back(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), str));
     }
 }
 
 void DSState_deleteHistoryAt(DSState *st, unsigned int index) {
-    if(index < st->history.size) {
-        unsafeDeleteHistory(st->history, index);
+    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
+    if(index < array.size()) {
+        array.erase(array.begin() + index);
     }
 }
 
 void DSState_clearHistory(DSState *st) {
-    while(st->history.size > 0) {
-        unsafeDeleteHistory(st->history, st->history.size - 1);
-    }
+    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
+    array.clear();
 }
 
 static std::string histFile(const DSState *st) {
@@ -902,12 +881,14 @@ static std::string histFile(const DSState *st) {
 
 void DSState_loadHistory(DSState *st, const char *fileName) {
     DSState_syncHistorySize(st);
-    if(st->history.capacity > 0) {
+    unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
+    if(cap > 0) {
         std::ifstream input(fileName != nullptr ? fileName : histFile(st).c_str());
         if(input) {
+            auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
             unsigned int count = 0;
-            for(std::string line; st->history.size < st->history.capacity && std::getline(input, line);) {
-                st->history.data[st->history.size++] = strdup(line.c_str());
+            for(std::string line; array.size() < cap && std::getline(input, line);) {
+                array.push_back(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), line));
                 count++;
             }
         }
@@ -920,11 +901,12 @@ void DSState_saveHistory(const DSState *st, const char *fileName) {
         histFileSize = DS_HISTFILESIZE_LIMIT;
     }
 
-    if(histFileSize > 0 && st->history.size > 0) {
+    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->getValues();
+    if(histFileSize > 0 && array.size() > 0) {
         FILE *fp = fopen(fileName != nullptr ? fileName : histFile(st).c_str(), "w");
         if(fp != nullptr) {
-            for(unsigned int i = 0; i < histFileSize && i < st->history.size; i++) {
-                fprintf(fp, "%s\n", st->history.data[i]);
+            for(unsigned int i = 0; i < histFileSize && i < array.size(); i++) {
+                fprintf(fp, "%s\n", typeAs<String_Object>(array[i])->getValue());
             }
             fclose(fp);
         }

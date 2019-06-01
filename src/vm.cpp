@@ -58,8 +58,7 @@ DSState::DSState() :
         falseObj(DSValue::create<Boolean_Object>(this->symbolTable.get(TYPE::Boolean), false)),
         emptyStrObj(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::string())),
         emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.get(TYPE::UnixFD), -1)),
-        logicalWorkingDir(initLogicalWorkingDir()),
-        callStack(new DSValue[DEFAULT_STACK_SIZE]),
+        logicalWorkingDir(initLogicalWorkingDir()), callStack(new DSValue[DEFAULT_STACK_SIZE]),
         baseTime(std::chrono::system_clock::now()) { }
 
 void DSState::reserveLocalStackImpl(unsigned int needSize) {

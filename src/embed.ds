@@ -12,6 +12,7 @@ var PS2 = '> '
 var HISTFILE = '~/.ydsh_history'
 var HISTSIZE = 0u
 var HISTFILESIZE = 1000u
+let HISTORY = new [String]()
 
 # define boolean constant
 let TRUE = :
