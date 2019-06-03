@@ -591,6 +591,14 @@ int DSState_setScriptDir(DSState *st, const char *scriptDir) {
     return 0;
 }
 
+int DSState_getExitStatus(const DSState *st) {
+    return st->getExitStatus();
+}
+
+void DSState_setExitStatus(DSState *st, int status) {
+    st->updateExitStatus(status);
+}
+
 int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
     FilePtr file;
     if(target != nullptr) {

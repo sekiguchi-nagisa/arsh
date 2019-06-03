@@ -105,6 +105,22 @@ void DSState_setArguments(DSState *st, char *const *args);
  */
 int DSState_setScriptDir(DSState *st, const char *scriptDir);
 
+/**
+ * get current exit status (equivalent to $?)
+ * @param st
+ * not null
+ * @return
+ */
+int DSState_getExitStatus(const DSState *st);
+
+/**
+ * update exit status
+ * @param st
+ * not null
+ * @param status
+ */
+void DSState_setExitStatus(DSState *st, int status);
+
 /* for internal data structure dump */
 typedef enum {
     DS_DUMP_KIND_UAST = 0,  /* dump untyped abstract syntax tree */

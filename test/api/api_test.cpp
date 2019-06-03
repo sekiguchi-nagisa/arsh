@@ -187,6 +187,15 @@ TEST_F(APITest, scriptDir) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
 }
 
+TEST_F(APITest, status) {
+    int s = DSState_getExitStatus(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
+
+    DSState_setExitStatus(this->state, 34);
+    s = DSState_getExitStatus(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(34, s));
+}
+
 TEST_F(APITest, pid) {
     SCOPED_TRACE("");
 
