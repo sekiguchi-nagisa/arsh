@@ -173,7 +173,8 @@ TEST_F(CmdlineTest, exit) {
             ds("--trace-exit", "-c", "exit 23"), 23, "", "^Shell Exit: terminated by exit 23\n.*$"));
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(
             ds("--trace-exit", "-c", "exit 2300"), 2300 % 256, "", "^Shell Exit: terminated by exit 2300\n.*$"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--trace-exit", "-e", "exit", "34"), 34));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("--trace-exit", "-e", "exit", "34"), 34, "", "Shell Exit: terminated by exit 34\n"));
 }
 
 TEST_F(CmdlineTest, bytecode) {
@@ -284,13 +285,15 @@ TEST_F(CmdlineTest, exec) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "echo", "hello"), 0, "hello\n"));
 
     // not found builtin command
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "fhurehfurei"), 1, "", "ydsh: fhurehfurei: not builtin command\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "fhurehfurei"), 1, "", "[runtime error]\nSystemError: execution error: fhurehfurei: command not found\n"));
 
     // command
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "command", "hogehoge"), 1, "", "ydsh: hogehoge: command not found\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "command", "hogehoge"), 1, "", "[runtime error]\nSystemError: execution error: hogehoge: command not found\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "command", "exit", "999"), 231));
 
     // eval
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "eval", "hogehoge"), 1, "", "ydsh: hogehoge: command not found\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "eval", "hogehoge"), 1, "", "[runtime error]\nSystemError: execution error: hogehoge: command not found\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "eval", "exit", "45"), 45));
 
     // exit
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exit", "34"), 34));

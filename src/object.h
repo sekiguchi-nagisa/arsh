@@ -729,14 +729,23 @@ public:
 };
 
 /**
+ *
+ * @param elements
+ * @return
  * if stack trace elements is empty, return 0.
  */
 inline unsigned int getOccurredLineNum(const std::vector<StackTraceElement> &elements) {
     return elements.empty() ? 0 : elements.front().getLineNum();
 }
 
+/**
+ *
+ * @param elements
+ * @return
+ * fi stack trace elements is empty, return empty string
+ */
 inline const char *getOccurredSourceName(const std::vector<StackTraceElement> &elements) {
-    return elements.empty() ? nullptr : elements.front().getSourceName().c_str();
+    return elements.empty() ? "" : elements.front().getSourceName().c_str();
 }
 
 class Error_Object : public DSObject {

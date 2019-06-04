@@ -298,20 +298,19 @@ public:
      *
      * @param code
      * @return
-     * if has exception, return false
+     * if has error, return false
      */
     bool vmEval(const CompiledCode &code);
 
     /**
-     *
+     * execute command
      * @param argv
      * first element of argv is command name.
      * last element of argv is null.
      * @return
-     * exit status.
-     * if throw exception, return always 1.
+     * if has error, return false.
      */
-    int execBuiltinCommand(char *const argv[]);
+    bool execCommand(char *const argv[]);
 
     /**
      * call method.

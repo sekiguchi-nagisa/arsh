@@ -1556,13 +1556,8 @@ bool DSState::vmEval(const CompiledCode &code) {
     return this->runMainLoop();
 }
 
-int DSState::execBuiltinCommand(char *const argv[]) {
-    auto cmd = CmdResolver(CmdResolver::MASK_EXTERNAL | CmdResolver::MASK_UDC, 0)(*this, argv[0]);
-    if(cmd.builtinCmd == nullptr) {
-        fprintf(stderr, "ydsh: %s: not builtin command\n", argv[0]);
-        this->updateExitStatus(1);
-        return 1;
-    }
+bool DSState::execCommand(char *const *argv) {
+    auto cmd = CmdResolver()(*this, argv[0]);
 
     // init parameter
     std::vector<DSValue> values;
@@ -1573,20 +1568,12 @@ int DSState::execBuiltinCommand(char *const argv[]) {
 
     this->clearThrownObject();
     if(!this->callCommand(cmd, std::move(obj), DSValue())) {
-        this->loadThrownObject();   // force clear thrownObject
+        return false;
     }
     if(!this->controlStack.empty()) {
-        bool r = this->runMainLoop();
-        if(!r) {
-            if(this->symbolTable.get(TYPE::_InternalStatus).isSameOrBaseTypeOf(*this->getThrownObject()->getType())) {
-                this->loadThrownObject(); // force clear thrownObject
-            } else {
-                this->pushExitStatus(1);
-            }
-        }
+        return this->runMainLoop();
     }
-    this->popNoReturn();
-    return this->getExitStatus();
+    return true;
 }
 
 unsigned int DSState::prepareArguments(DSValue &&recv,

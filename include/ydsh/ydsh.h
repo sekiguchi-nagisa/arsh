@@ -276,7 +276,7 @@ int DSState_loadModule(DSState *st, const char *fileName,
                        const char *varName, unsigned short option, DSError *e);
 
 /**
- * execute builtin command.
+ * execute command.
  * @param st
  * not null.
  * @param argv

@@ -108,7 +108,6 @@ static DSError handleRuntimeError(DSState &state) {
         auto *obj = typeAs<Error_Object>(thrownObj);
         errorLineNum = getOccurredLineNum(obj->getStackTrace());
         const char *ptr = getOccurredSourceName(obj->getStackTrace());
-        assert(ptr != nullptr);
         sourceName = ptr;
     }
 
@@ -710,13 +709,11 @@ int DSState_loadModule(DSState *st, const char *fileName,
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
-    int status = st->execBuiltinCommand(argv);
-    if(st->getThrownObject()) {
-        auto &obj = typeAs<Error_Object>(st->getThrownObject())->getMessage();
-        const char *str = typeAs<String_Object>(obj)->getValue();
-        fprintf(stderr, "ydsh: %s\n", str + strlen(EXEC_ERROR));
+    if(!st->execCommand(argv)) {
+        auto ret = handleRuntimeError(*st);
+        DSError_release(&ret);
     }
-    return status;
+    return st->getExitStatus();
 }
 
 const char *DSState_prompt(DSState *st, unsigned int n) {

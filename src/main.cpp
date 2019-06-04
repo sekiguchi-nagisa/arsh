@@ -108,12 +108,12 @@ static void showFeature(FILE *fp) {
     OP(COMPILE_ONLY,   "--compile-only",      opt::NO_ARG, "not evaluate, compile only") \
     OP(DISABLE_ASSERT, "--disable-assertion", opt::NO_ARG, "disable assert statement") \
     OP(PRINT_TOPLEVEL, "--print-toplevel",    opt::NO_ARG, "print top level evaluated value") \
-    OP(TRACE_EXIT,     "--trace-exit",        opt::NO_ARG, "trace execution process to exit command (ignored in -e)") \
+    OP(TRACE_EXIT,     "--trace-exit",        opt::NO_ARG, "trace execution process to exit command") \
     OP(VERSION,        "--version",           opt::NO_ARG, "show version and copyright") \
     OP(HELP,           "--help",              opt::NO_ARG, "show this help message") \
     OP(COMMAND,        "-c",                  opt::HAS_ARG, "evaluate argument") \
     OP(NORC,           "--norc",              opt::NO_ARG, "not load rc file (only available interactive mode)") \
-    OP(EXEC,           "-e",                  opt::HAS_ARG, "execute builtin command (ignore some option)") \
+    OP(EXEC,           "-e",                  opt::HAS_ARG, "execute command (ignore some options)") \
     OP(STATUS_LOG,     "--status-log",        opt::HAS_ARG, "write execution status to specified file (ignored in interactive mode or -e)") \
     OP(FEATURE,        "--feature",           opt::NO_ARG, "show available features") \
     OP(RC_FILE,        "--rcfile",            opt::HAS_ARG, "load specified rc file (only available interactive mode)") \
