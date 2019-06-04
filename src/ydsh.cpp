@@ -711,6 +711,9 @@ int DSState_loadModule(DSState *st, const char *fileName,
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
+    if(st->execMode != DS_EXEC_MODE_NORMAL) {
+        return 0;   // do nothing
+    }
     if(!st->execCommand(argv)) {
         handleRuntimeError(*st, nullptr);
     }

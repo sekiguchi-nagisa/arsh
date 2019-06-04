@@ -276,7 +276,7 @@ int DSState_loadModule(DSState *st, const char *fileName,
                        const char *varName, unsigned short option, DSError *e);
 
 /**
- * execute command.
+ * execute command. if not DS_EXEC_MODE_NORMAL, do nothing (return always 0)
  * @param st
  * not null.
  * @param argv
