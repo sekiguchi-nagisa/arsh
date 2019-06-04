@@ -294,6 +294,12 @@ public:
     unsigned int getTermHookIndex();
 
     // entry point
+    /**
+     *
+     * @param code
+     * @return
+     * if has exception, return false
+     */
     bool vmEval(const CompiledCode &code);
 
     /**
@@ -583,8 +589,18 @@ private:
 
     bool checkVMEvent();
 
+    /**
+     *
+     * @return
+     * if has exception, return false.
+     */
     bool mainLoop();
 
+    /**
+     *
+     * @return
+     * if has exception, return false.
+     */
     bool runMainLoop();
 
     /**
