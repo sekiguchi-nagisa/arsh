@@ -112,6 +112,7 @@ static DSError handleRuntimeError(DSState &state) {
     }
 
     // print error message
+    int oldStatus = state.getExitStatus();
     if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
         fputs("[runtime error]\n", stderr);
         const bool bt = state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
@@ -129,6 +130,7 @@ static DSError handleRuntimeError(DSState &state) {
         typeAs<Error_Object>(thrownObj)->printStackTrace(state);
     }
     fflush(stderr);
+    state.updateExitStatus(oldStatus);
 
     // invoke termination hook.
     invokeTerminationHook(state, kind, std::move(thrownObj));
