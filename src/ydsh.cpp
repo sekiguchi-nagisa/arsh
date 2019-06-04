@@ -89,9 +89,11 @@ static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&ex
 /**
  * if called from child process, exit(1).
  * @param state
+ * @param dsError
+ * if not null, write error info
  * @return
  */
-static DSError handleRuntimeError(DSState &state) {
+static DSErrorKind handleRuntimeError(DSState &state, DSError *dsError) {
     auto thrownObj = state.getThrownObject();
     auto &errorType = *thrownObj->getType();
     DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
@@ -135,25 +137,23 @@ static DSError handleRuntimeError(DSState &state) {
     // invoke termination hook.
     invokeTerminationHook(state, kind, std::move(thrownObj));
 
-    return {
-            .kind = kind,
-            .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
-            .lineNum = errorLineNum,
-            .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? state.symbolTable.getTypeName(errorType) : "")
-    };
+
+    if(dsError != nullptr) {
+        *dsError = {
+                .kind = kind,
+                .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
+                .lineNum = errorLineNum,
+                .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? state.symbolTable.getTypeName(errorType) : "")
+        };
+    }
+    return kind;
 }
 
 static int evalCodeImpl(DSState &state, const CompiledCode &code, DSError *dsError) {
     bool s = state.vmEval(code);
     bool root = state.isRootShell();
     if(!s) {
-        auto ret = handleRuntimeError(state);
-        auto kind = ret.kind;
-        if(dsError != nullptr) {
-            *dsError = ret;
-        } else {
-            DSError_release(&ret);
-        }
+        auto kind = handleRuntimeError(state, dsError);
         if(kind == DS_ERROR_KIND_RUNTIME_ERROR && root) {
             state.symbolTable.abort(false);
         }
@@ -712,8 +712,7 @@ int DSState_loadModule(DSState *st, const char *fileName,
 
 int DSState_exec(DSState *st, char *const *argv) {
     if(!st->execCommand(argv)) {
-        auto ret = handleRuntimeError(*st);
-        DSError_release(&ret);
+        handleRuntimeError(*st, nullptr);
     }
     return st->getExitStatus();
 }
