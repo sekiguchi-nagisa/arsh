@@ -1,0 +1,9 @@
+#!/usr/bin/env ydsh
+
+for $a in $(git branch -a) {
+    var ss = $a.split("/")
+    if $ss.size() != 3 { continue; }
+    var n = $ss[2]
+    if $n == 'HEAD' || $n == 'master' { continue; }
+    git branch -r -d origin/$n
+}
