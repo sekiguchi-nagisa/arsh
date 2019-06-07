@@ -823,6 +823,43 @@ void DSCandidates_release(DSCandidates **c) {
     }
 }
 
+DSHistory *DSState_history(DSState *st) {
+    if(st->history.obj == nullptr) {
+        auto *handle = st->symbolTable.lookupHandle(VAR_HISTORY);
+        if(handle != nullptr) {
+            st->history.obj = typeAs<Array_Object>(st->getGlobal(handle->getIndex()));
+        }
+    }
+    if(st->history.obj != nullptr) {
+        return &st->history;
+    }
+    return nullptr;
+}
+
+unsigned int DSHistory_size(const DSHistory *history) {
+    return history->get().size();
+}
+
+const char *DSHistory_get(const DSHistory *history, unsigned int index) {
+    if(index < history->get().size()) {
+        return typeAs<String_Object>(history->get()[index])->getValue();
+    }
+    return nullptr;
+}
+
+void DSHistory_set(DSHistory *history, unsigned int index, const char *value) {
+    if(index < history->get().size()) {
+        DSType *type = static_cast<ReifiedType *>(history->obj->getType())->getElementTypes()[0];
+        history->get()[index] = DSValue::create<String_Object>(*type, value);
+    }
+}
+
+void DSHistory_delete(DSHistory *history, unsigned int index) {
+    if(index < history->get().size()) {
+        history->get().erase(history->get().begin() + index);
+    }
+}
+
 void DSState_syncHistorySize(DSState *st) {
     unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
     auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
@@ -832,25 +869,6 @@ void DSState_syncHistorySize(DSState *st) {
     if(array.size() > cap) {
         array.resize(cap);
         array.shrink_to_fit();
-    }
-}
-
-unsigned int DSState_historySize(const DSState *st) {
-    return typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->getValues().size();
-}
-
-const char *DSState_getHistoryAt(const DSState *st, unsigned int index) {
-    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->getValues();
-    if(index < array.size()) {
-        return typeAs<String_Object>(array[index])->getValue();
-    }
-    return nullptr;
-}
-
-void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str) {
-    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
-    if(index < array.size()) {
-        array[index] = DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), str);
     }
 }
 
@@ -865,13 +883,6 @@ void DSState_addHistory(DSState *st, const char *str) {
             array.erase(array.begin());
         }
         array.push_back(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), str));
-    }
-}
-
-void DSState_deleteHistoryAt(DSState *st, unsigned int index) {
-    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
-    if(index < array.size()) {
-        array.erase(array.begin() + index);
     }
 }
 

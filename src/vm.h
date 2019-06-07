@@ -66,6 +66,18 @@ struct ControlFrame {
     unsigned int recDepth{0};
 };
 
+struct DSHistory {
+    Array_Object *obj{nullptr};
+
+    std::vector<DSValue> &get() {
+        return this->obj->refValues();
+    }
+
+    const std::vector<DSValue> &get() const {
+        return this->obj->getValues();
+    }
+};
+
 struct DSState {
 public:
     SymbolTable symbolTable;
@@ -119,6 +131,8 @@ public:
     VMHook *hook{nullptr};
 
     std::vector<ControlFrame> controlStack;
+
+    DSHistory history;
 
 private:
     /**

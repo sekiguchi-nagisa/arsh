@@ -1206,8 +1206,8 @@ static int builtin_complete(DSState &state, Array_Object &argvObj) {
     return 0;
 }
 
-static int showHistory(DSState &state, const Array_Object &obj) {
-    const unsigned int histSize = DSState_historySize(&state);
+static int showHistory(DSHistory *history, const Array_Object &obj) {
+    const unsigned int histSize = DSHistory_size(history);
     const unsigned int argc = obj.getValues().size();
     unsigned int printOffset = histSize;
 
@@ -1231,17 +1231,17 @@ static int showHistory(DSState &state, const Array_Object &obj) {
     }
 
     for(unsigned int i = histSize - printOffset; i < histSize; i++) {
-        fprintf(stdout, "%5d  %s\n", i + 1, DSState_getHistoryAt(&state, i));
+        fprintf(stdout, "%5d  %s\n", i + 1, DSHistory_get(history, i));
     }
     return 0;
 }
 
 static int builtin_history(DSState &state, Array_Object &argvObj) {
     DSState_syncHistorySize(&state);
-
+    auto *history = DSState_history(&state);
     const unsigned int argc = argvObj.getValues().size();
     if(argc == 1 || str(argvObj.getValues()[1])[0] != '-') {
-        return showHistory(state, argvObj);
+        return showHistory(history, argvObj);
     }
 
     char op = '\0';
@@ -1286,11 +1286,11 @@ static int builtin_history(DSState &state, Array_Object &argvObj) {
     if(deleteTarget != nullptr) {
         int s;
         int offset = convertToInt64(deleteTarget, s) - 1;
-        if(s != 0 || offset < 0 || static_cast<unsigned int>(offset) > DSState_historySize(&state)) {
+        if(s != 0 || offset < 0 || static_cast<unsigned int>(offset) > DSHistory_size(history)) {
             ERROR(argvObj, "%s: history offset out of range", deleteTarget);
             return 1;
         }
-        DSState_deleteHistoryAt(&state, offset);
+        DSHistory_delete(history, offset);
         return 0;
     }
 

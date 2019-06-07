@@ -367,6 +367,53 @@ void DSCandidates_release(DSCandidates **c);
 #define DS_HISTSIZE_LIMIT       ((unsigned int) 4096)
 #define DS_HISTFILESIZE_LIMIT   ((unsigned int) 4096)
 
+struct DSHistory;
+typedef struct DSHistory DSHistory;
+
+/**
+ * get history view
+ * @param st
+ * not null
+ * @return
+ * return null, if not found HISTORY buffer.
+ */
+DSHistory *DSState_history(DSState *st);
+
+/**
+ *
+ * @param history
+ * not null
+ * @return
+ */
+unsigned int DSHistory_size(const DSHistory *history);
+
+/**
+ *
+ * @param history
+ * not null
+ * @param index
+ * @return
+ * if index out of range, return null.
+ */
+const char *DSHistory_get(const DSHistory *history, unsigned int index);
+
+/**
+ * if index out of range, do nothing.
+ * @param history
+ * not null
+ * @param index
+ * @param value
+ */
+void DSHistory_set(DSHistory *history, unsigned int index, const char *value);
+
+/**
+ * if index out of range, do nothing.
+ * @param history
+ * not null
+ * @param index
+ */
+void DSHistory_delete(DSHistory *history, unsigned int index);
+
 /**
  * synchronize history size with HISTSIZE.
  * if not set DS_OPTION_HISTORY, do nothing.
@@ -375,46 +422,11 @@ void DSCandidates_release(DSCandidates **c);
 void DSState_syncHistorySize(DSState *st);
 
 /**
- * get size of history.
- * @param st
- * not null
- * @return
- */
-unsigned int DSState_historySize(const DSState *st);
-
-/**
- * get history
- * @param st
- * not null
- * @param index
- * @return
- * if index out of range, return nullptr.
- */
-const char *DSState_getHistoryAt(const DSState *st, unsigned int index);
-
-/**
- * update history by index.
- * if index >= DSHistory.size, do nothing.
- * @param st
- * @param index
- * @param str
- */
-void DSState_setHistoryAt(DSState *st, unsigned int index, const char *str);
-
-/**
  *
  * @param st
  * @param str
  */
 void DSState_addHistory(DSState *st, const char *str);
-
-/**
- * delete history.
- * if index >= DSHistory.size, do nothing.
- * @param st
- * @param index
- */
-void DSState_deleteHistoryAt(DSState *st, unsigned int index);
 
 /**
  * clear history.

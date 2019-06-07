@@ -94,14 +94,15 @@ private:
 
 TEST_F(HistoryTest, base) {
     SCOPED_TRACE("");
+    auto *history = DSState_history(this->state);
 
     // default size
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSState_historySize(this->state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSHistory_size(history)));
 
     // after synchronization (call DSState_syncHistory)
     this->setHistSize(100, false);
     DSState_syncHistorySize(this->state);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSState_historySize(this->state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSHistory_size(history)));
 }
 
 TEST_F(HistoryTest, add) {
@@ -109,17 +110,19 @@ TEST_F(HistoryTest, add) {
     DSState_addHistory(this->state, "aaa");
     DSState_addHistory(this->state, "bbb");
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSState_historySize(this->state)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSState_getHistoryAt(this->state, 0)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSState_getHistoryAt(this->state, 1)));
+    auto *history = DSState_history(this->state);
+
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSHistory_get(history, 0)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 1)));
 
     DSState_addHistory(this->state, "ccc");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSState_historySize(this->state)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSState_getHistoryAt(this->state, 0)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ccc", DSState_getHistoryAt(this->state, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 0)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ccc", DSHistory_get(history, 1)));
 
     DSState_addHistory(this->state, "ccc");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSState_historySize(this->state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
 }
 
 
@@ -130,16 +133,17 @@ TEST_F(HistoryTest, set) {
     DSState_addHistory(this->state, "aaa");
     DSState_addHistory(this->state, "bbb");
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSState_historySize(this->state)));
+    auto *history = DSState_history(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
 
-    DSState_setHistoryAt(this->state, 1, "ccc");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ccc", DSState_getHistoryAt(this->state, 1)));
+    DSHistory_set(history, 1, "ccc");
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ccc", DSHistory_get(history, 1)));
 
-    DSState_setHistoryAt(this->state, 3, "ccc");    // do nothing, if out of range
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSState_historySize(this->state)));
+    DSHistory_set(history, 3, "ccc");    // do nothing, if out of range
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
 
-    DSState_setHistoryAt(this->state, 1000, "ccc");    // do nothing, if out of range
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSState_historySize(this->state)));
+    DSHistory_set(history, 1000, "ccc");    // do nothing, if out of range
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
 }
 
 TEST_F(HistoryTest, remove) {
@@ -152,32 +156,33 @@ TEST_F(HistoryTest, remove) {
     DSState_addHistory(this->state, "ddd");
     DSState_addHistory(this->state, "eee");
 
-    DSState_deleteHistoryAt(this->state, 2);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, DSState_historySize(this->state)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSState_getHistoryAt(this->state, 0)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSState_getHistoryAt(this->state, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", DSState_getHistoryAt(this->state, 2)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("eee", DSState_getHistoryAt(this->state, 3)));
+    auto *history = DSState_history(this->state);
+    DSHistory_delete(history, 2);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, DSHistory_size(history)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSHistory_get(history, 0)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", DSHistory_get(history, 2)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("eee", DSHistory_get(history, 3)));
 
-    DSState_deleteHistoryAt(this->state, 3);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_historySize(this->state)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSState_getHistoryAt(this->state, 0)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSState_getHistoryAt(this->state, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", DSState_getHistoryAt(this->state, 2)));
-
-    // do nothing, if out of range
-    DSState_deleteHistoryAt(this->state, 6);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_historySize(this->state)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSState_getHistoryAt(this->state, 0)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSState_getHistoryAt(this->state, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", DSState_getHistoryAt(this->state, 2)));
+    DSHistory_delete(history, 3);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSHistory_size(history)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSHistory_get(history, 0)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", DSHistory_get(history, 2)));
 
     // do nothing, if out of range
-    DSState_deleteHistoryAt(this->state, 600);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_historySize(this->state)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSState_getHistoryAt(this->state, 0)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSState_getHistoryAt(this->state, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", DSState_getHistoryAt(this->state, 2)));
+    DSHistory_delete(history, 6);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSHistory_size(history)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSHistory_get(history, 0)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", DSHistory_get(history, 2)));
+
+    // do nothing, if out of range
+    DSHistory_delete(history, 600);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSHistory_size(history)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSHistory_get(history, 0)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", DSHistory_get(history, 2)));
 }
 
 TEST_F(HistoryTest, clear) {
@@ -189,10 +194,12 @@ TEST_F(HistoryTest, clear) {
     DSState_addHistory(this->state, "ccc");
     DSState_addHistory(this->state, "ddd");
     DSState_addHistory(this->state, "eee");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, DSState_historySize(this->state)));
+
+    auto *history = DSState_history(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, DSHistory_size(history)));
 
     DSState_clearHistory(this->state);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSState_historySize(this->state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSHistory_size(history)));
 }
 
 TEST_F(HistoryTest, resize) {
@@ -200,15 +207,17 @@ TEST_F(HistoryTest, resize) {
     for(unsigned int i = 0; i < 10; i++) {
         DSState_addHistory(this->state, std::to_string(i).c_str());
     }
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSState_historySize(this->state)));
+
+    auto *history = DSState_history(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
 
     this->setHistSize(5);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, DSState_historySize(this->state)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("0", DSState_getHistoryAt(this->state, 0)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("1", DSState_getHistoryAt(this->state, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("2", DSState_getHistoryAt(this->state, 2)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("3", DSState_getHistoryAt(this->state, 3)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("4", DSState_getHistoryAt(this->state, 4)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, DSHistory_size(history)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("0", DSHistory_get(history, 0)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("1", DSHistory_get(history, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("2", DSHistory_get(history, 2)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("3", DSHistory_get(history, 3)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("4", DSHistory_get(history, 4)));
 }
 
 TEST_F(HistoryTest, file) {
@@ -217,6 +226,7 @@ TEST_F(HistoryTest, file) {
         DSState_addHistory(this->state, std::to_string(i).c_str());
     }
 
+    auto *history = DSState_history(this->state);
     this->setHistFileSize(15);
     /**
      * 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -224,10 +234,10 @@ TEST_F(HistoryTest, file) {
     DSState_saveHistory(this->state, nullptr);
     DSState_clearHistory(this->state);
     DSState_loadHistory(this->state, nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSState_historySize(this->state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
 
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i).c_str(), DSState_getHistoryAt(this->state, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i).c_str(), DSHistory_get(history, i)));
     }
 
     for(unsigned int i = 0; i < 5; i++) {
@@ -235,7 +245,7 @@ TEST_F(HistoryTest, file) {
     }
 
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSState_getHistoryAt(this->state, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSHistory_get(history, i)));
     }
 
     /**
@@ -252,18 +262,18 @@ TEST_F(HistoryTest, file) {
     DSState_clearHistory(this->state);
     this->setHistSize(15);
     DSState_loadHistory(this->state, nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSState_historySize(this->state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSState_getHistoryAt(this->state, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSHistory_get(history, i)));
     }
 
     // not overwrite history file when buffer size is 0
     DSState_clearHistory(this->state);
     DSState_saveHistory(this->state, nullptr);
     DSState_loadHistory(this->state, nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSState_historySize(this->state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSState_getHistoryAt(this->state, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSHistory_get(history, i)));
     }
 
     // not overwrite history file when hist file size is 0
@@ -272,10 +282,10 @@ TEST_F(HistoryTest, file) {
     DSState_addHistory(this->state, "hoge");
     DSState_saveHistory(this->state, nullptr);
     DSState_loadHistory(this->state, nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(11u, DSState_historySize(this->state)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hoge", DSState_getHistoryAt(this->state, 0)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(11u, DSHistory_size(history)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hoge", DSHistory_get(history, 0)));
     for(unsigned int i = 1; i < 11; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 4).c_str(), DSState_getHistoryAt(this->state, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 4).c_str(), DSHistory_get(history, i)));
     }
 }
 
@@ -286,15 +296,17 @@ TEST_F(HistoryTest, file2) {
     for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
         DSState_addHistory(this->state, std::to_string(i).c_str());
     }
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, DSState_historySize(this->state)));
+    
+    auto *history = DSState_history(this->state);
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, DSHistory_size(history)));
 
     DSState_saveHistory(this->state, nullptr);
     DSState_clearHistory(this->state);
     DSState_loadHistory(this->state, nullptr);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, DSState_historySize(this->state)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, DSHistory_size(history)));
     for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i).c_str(), DSState_getHistoryAt(this->state, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i).c_str(), DSHistory_get(history, i)));
     }
 }
 
