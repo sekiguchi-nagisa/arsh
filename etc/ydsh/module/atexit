@@ -1,22 +1,21 @@
 
-let __TERM_HOOKS = new [(Int32, typeof($TERM_HOOK!))]()
+let _TERM_HOOKS = new [(Int32, typeof($TERM_HOOK!))]()
 
-function __defaultHook($s : Int32, $e : Any) {
-    while !$__TERM_HOOKS.empty() {
-        var pair = $__TERM_HOOKS.pop()
-        if ($pair._0 and $s) > 0 {
-            $pair._1($s, $e)
+function _defaultHook($s : Int32, $e : Any) {
+    for $p in $_TERM_HOOKS {
+        if ($p._0 and $s) > 0 {
+            $p._1($s, $e)
         }
     }
 }
 
 function atexit($s : Int32, $h : typeof($TERM_HOOK!)) {
-    if !$TERM_HOOK || $TERM_HOOK! != $__defaultHook {
-        $__TERM_HOOKS.clear()
+    if !$TERM_HOOK || $TERM_HOOK! != $_defaultHook {
+        $_TERM_HOOKS.clear()
     }
-    $TERM_HOOK = $__defaultHook
-    if $h == $__defaultHook {
+    $TERM_HOOK = $_defaultHook
+    if $h == $_defaultHook {
         return
     }
-    $__TERM_HOOKS.add(($s, $h))
+    $_TERM_HOOKS.add(($s, $h))
 }
