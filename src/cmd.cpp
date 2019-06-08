@@ -175,11 +175,12 @@ static constexpr struct {
                 "    If option is not supplied, display all cached path."},
         {"help", builtin_help, "[-s] [pattern ...]",
                 "    Display helpful information about builtin commands."},
-        {"history", builtin_history, "[-c] [-d offset] or history [-rw] [file]",
+        {"history", builtin_history, "[-c] [-d offset] or history -s ARGs or history [-rw] [file]",
                 "    Display or manipulate history list.\n"
                 "    Options:\n"
                 "        -c        clear the history list\n"
                 "        -d offset delete the history entry at OFFSET\n"
+                "        -s        append the Args to history as single entry\n"
                 "\n"
                 "        -r        read the history list from history file\n"
                 "        -w        write the history list to history file"},
@@ -1264,6 +1265,17 @@ static int builtin_history(DSState &state, Array_Object &argvObj) {
                 ERROR(argvObj, "%s: option requires argument", arg);
                 return 2;
 
+            }
+            case 's': {
+                std::string line;
+                for(i++; i < argc; i++) {
+                    if(!line.empty()) {
+                        line += " ";
+                    }
+                    line += str(argvObj.getValues()[i]);    // ignore null character in arguments
+                }
+                DSState_addHistory(&state, line.c_str());
+                return 0;
             }
             case 'r':
             case 'w': {

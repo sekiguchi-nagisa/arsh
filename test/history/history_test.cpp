@@ -315,7 +315,7 @@ TEST_F(HistoryTest, cmd_invalid) {
             history -x
             assert $? == 2
             assert "$(history -xz 2>&1)" == "ydsh: history: -xz: invalid option
-history: history [-c] [-d offset] or history [-rw] [file]"
+history: history [-c] [-d offset] or history -s ARGs or history [-rw] [file]"
             true
     )EOF";
     ASSERT_NO_FATAL_FAILURE(ASSERT_(this->eval(code)));
