@@ -1,0 +1,118 @@
+
+# invalid option
+history -x
+assert $? == 2
+
+assert "$(history -xz 2>&1)" == "ydsh: history: -xz: invalid option
+history: history [-c] [-d offset] or history -s ARGs or history [-rw] [file]"
+
+# append
+$HISTSIZE = 100u
+
+assert $HISTORY.empty()
+history -s hello world
+assert $HISTORY.size() == 1
+assert $HISTORY[0] == 'hello world'
+
+# clear
+history -c
+assert $HISTORY.empty()
+
+# print all
+let OLD_IFS = $IFS
+function assertEach($expect : [String], $actual : [String]) {
+    assert $expect.size() == $actual.size() : "size: ${$expect.size()} != ${$actual.size()}"
+    let size = $expect.size()
+    for(var i = 0; $i < $size; $i++) {
+        assert $expect[$i] == $actual[$i] : "expect[$i] = ${$expect[$i]}, actual[$i] = ${$actual[$i]}"
+    }
+}
+
+for $s in ['a', 'b', 'c', 'd', 'e'] {
+    history -s $s
+}
+
+$IFS = $'\n'
+$assertEach(["    1  a",
+             "    2  b",
+             "    3  c",
+             "    4  d",
+             "    5  e"], $(history))
+
+# print latest entry
+for $s in ['a', 'b', 'c', 'd', 'e'] {
+    history -s ${s}@
+}
+
+$assertEach(["    6  a@",
+             "    7  b@",
+             "    8  c@",
+             "    9  d@",
+             "   10  e@"], $(history 5))
+
+# print out of range
+$assertEach(["    1  a",
+             "    2  b",
+             "    3  c",
+             "    4  d",
+             "    5  e",
+             "    6  a@",
+             "    7  b@",
+             "    8  c@",
+             "    9  d@",
+             "   10  e@"], $(history 500))
+
+# invalid number
+history hoge
+assert $? == 1
+assert "$(history hoge 2>&1)" == "ydsh: history: hoge: numeric argument required"
+true
+
+# too many arg
+history hoge
+assert $? == 1
+assert "$(history hoge 2 2>&1)" == "ydsh: history: too many arguments"
+true
+
+# delete
+$HISTSIZE = 10u
+history -c
+
+for $s in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'] {
+    history -s $s
+}
+
+history -d 3 -d 5
+$assertEach(["    1  a",
+             "    2  b",
+             "    3  c",
+             "    4  d",
+             "    5  f",
+             "    6  g",
+             "    7  h",
+             "    8  i",
+             "    9  j"], $(history))
+
+# delete history, but missing number
+history -d 3 -d
+assert $? == 2
+assert "$(history -d 2>&1)" == "ydsh: history: -d: option requires argument"
+true
+
+# delete history, but invalid number
+history -d hoge
+assert $? == 1
+assert "$(history -d hoge 2>&1)" == "ydsh: history: hoge: history offset out of range"
+true
+
+# delete history, but out of range
+history -d 999999
+assert $? == 1
+assert "$(history -d 999999 2>&1)" == "ydsh: history: 999999: history offset out of range"
+true
+
+# delete history, but out of range
+history -d 0
+assert $? == 1
+assert "$(history -d 0 2>&1)" == "ydsh: history: 0: history offset out of range"
+true
