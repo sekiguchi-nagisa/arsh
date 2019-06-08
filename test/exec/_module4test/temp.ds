@@ -1,0 +1,22 @@
+
+# for temp file creation
+
+let _TEMPS = new [String]()
+function _clear_temp($s : Int32, $e : Any) {
+    for $e in $_TEMPS {
+        rm -rf $e
+    }
+    $_TEMPS.clear()
+}
+
+
+source ../../../etc/ydsh/module/atexit
+
+$atexit($ON_EXIT or $ON_ASSERT or $ON_ERR, $_clear_temp)
+
+function file() : String {
+    let tmpfile = "$(mktemp 2> /dev/null || mktemp -t $RANDOM)"
+    assert !$tmpfile.empty()
+    $_TEMPS.add($tmpfile)
+    return $tmpfile
+}

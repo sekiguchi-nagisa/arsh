@@ -116,3 +116,69 @@ history -d 0
 assert $? == 1
 assert "$(history -d 0 2>&1)" == "ydsh: history: 0: history offset out of range"
 true
+
+
+# load history
+source ../../_module4test/temp.ds as temp
+history -c
+$HISTFILE = $temp.file()
+
+var prefix = $RANDOM
+for $e in ['a', 'b', 'c', 'd', 'e'] {
+    echo $prefix $e >> $HISTFILE
+}
+
+history -r
+$assertEach(["    1  $prefix a",
+             "    2  $prefix b",
+             "    3  $prefix c",
+             "    4  $prefix d",
+             "    5  $prefix e"], $(history))
+
+# load invalid file
+history -c
+history -r hfurehfurefewafzxc
+$assertEach(new [String](), $(history))
+
+# load specified file
+var fileName = $temp.file()
+for $e in ['a', 'b', 'c', 'd', 'e'] {
+    echo @@ $e >> $fileName
+}
+
+history -c
+history -r $fileName
+$assertEach(["    1  @@ a",
+             "    2  @@ b",
+             "    3  @@ c",
+             "    4  @@ d",
+             "    5  @@ e"], $(history))
+
+# save to specified file
+history -c
+echo -n > $fileName
+history -s hello history $prefix
+history -w $fileName
+history -c
+history -r $fileName
+assert $HISTORY.size() == 1
+assert $HISTORY[0] == "hello history $prefix"
+
+# save to default file
+history -c
+echo -n > $HISTFILE
+history -s hello history $prefix 1
+history -s hello history $prefix 2
+history -w
+history -c
+history -r
+assert $HISTORY.size() == 2
+assert $HISTORY[0] == "hello history $prefix 1"
+assert $HISTORY[1] == "hello history $prefix 2"
+
+# save and load
+history -c
+history -w -r
+assert $? == 1
+assert "$(history -w -r 2>&1)" == "ydsh: history: cannot use more than one of -rw"
+true
