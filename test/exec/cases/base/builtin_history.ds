@@ -28,7 +28,7 @@ function assertEach($expect : [String], $actual : [String]) {
     }
 }
 
-for $s in ['a', 'b', 'c', 'd', 'e'] {
+for $s in "abcde" {
     history -s $s
 }
 
@@ -40,7 +40,7 @@ $assertEach(["    1  a",
              "    5  e"], $(history))
 
 # print latest entry
-for $s in ['a', 'b', 'c', 'd', 'e'] {
+for $s in "abcde" {
     history -s ${s}@
 }
 
@@ -78,7 +78,7 @@ true
 $HISTSIZE = 10u
 history -c
 
-for $s in ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'] {
+for $s in "abcdefghij" {
     history -s $s
 }
 
@@ -124,7 +124,7 @@ history -c
 $HISTFILE = $temp.file()
 
 var prefix = $RANDOM
-for $e in ['a', 'b', 'c', 'd', 'e'] {
+for $e in 'abcde' {
     echo $prefix $e >> $HISTFILE
 }
 
@@ -142,7 +142,7 @@ $assertEach(new [String](), $(history))
 
 # load specified file
 var fileName = $temp.file()
-for $e in ['a', 'b', 'c', 'd', 'e'] {
+for $e in 'abcde' {
     echo @@ $e >> $fileName
 }
 
