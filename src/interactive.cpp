@@ -71,6 +71,33 @@ static bool checkLineContinuation(const StrWrapper &line) {
     return false;
 }
 
+static void exec(const char *argv[]) {
+    int s = DSState_getExitStatus(state);
+    DSState_exec(state, (char **)argv);
+    DSState_setExitStatus(state, s);
+}
+
+static void addHistory(const char *line = "") {
+    const char *argv[] = {
+            "history", "-s", line, nullptr
+    };
+    exec(argv);
+}
+
+static void loadHistory() {
+    const char *argv[] = {
+            "history", "-r", nullptr
+    };
+    exec(argv);
+}
+
+static void saveHistory() {
+    const char *argv[] = {
+            "history", "-w", nullptr
+    };
+    exec(argv);
+}
+
 static const std::string *lineBuf = nullptr;
 
 static bool readLine(std::string &line) {
@@ -107,7 +134,7 @@ static bool readLine(std::string &line) {
         break;
     }
 
-    DSState_addHistory(state, line.c_str());
+    addHistory(line.c_str());
     line += '\n';    // terminate newline
     return true;
 }
@@ -252,7 +279,7 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
         DSHistory_delete(history, size - 1);
         break;
     case LINENOISE_HISTORY_OP_INIT:
-        DSState_addHistory(state, "");
+        addHistory();
         break;
     }
     return nullptr;
@@ -262,6 +289,8 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
  * after execution, delete ctx
  */
 void exec_interactive(DSState *dsState) {
+    state = dsState;
+
     *linenoiseInputFD() = dup(STDIN_FILENO);
     *linenoiseOutputFD() = dup(STDOUT_FILENO);
     *linenoiseErrorFD() = dup(STDERR_FILENO);
@@ -279,8 +308,7 @@ void exec_interactive(DSState *dsState) {
     unsigned int option = DS_OPTION_TOPLEVEL | DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
     DSState_setOption(dsState, option);
     DSState_syncHistorySize(dsState);
-    DSState_loadHistory(dsState, nullptr);
-    state = dsState;
+    loadHistory();
 
     int status = 0;
     for(std::string line; readLine(line);) {
@@ -293,7 +321,7 @@ void exec_interactive(DSState *dsState) {
             break;
         }
     }
-    DSState_saveHistory(dsState, nullptr);
+    saveHistory();
     DSState_delete(&dsState);
     exit(status);
 }
