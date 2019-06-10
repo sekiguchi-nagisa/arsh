@@ -813,7 +813,7 @@ static DSValue newObject(Node &constNode) {
 }
 
 void ByteCodeGenerator::generateMapCase(CaseNode &node) {
-    bool hasDefault = !node.getType().isVoidType();
+    bool hasDefault = node.hasDefault();
     auto mergeLabel = makeLabel();
     auto elseLabel = makeLabel();
     auto value = DSValue::create<Map_Object>(this->symbolTable.get(TYPE::Void));

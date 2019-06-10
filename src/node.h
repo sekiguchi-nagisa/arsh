@@ -1596,6 +1596,8 @@ public:
         return this->caseKind;
     }
 
+    bool hasDefault() const;
+
     void dump(NodeDumper &dumper) const override;
 };
 

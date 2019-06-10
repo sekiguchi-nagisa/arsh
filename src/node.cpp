@@ -854,6 +854,15 @@ void CaseNode::addArmNode(ArmNode *armNode) {
     this->armNodes.push_back(armNode);
 }
 
+bool CaseNode::hasDefault() const {
+    for(auto &e : this->armNodes) {
+        if(e->isDefault()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void CaseNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     DUMP(armNodes);
