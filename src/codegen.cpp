@@ -830,9 +830,9 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
     }
 
     // generate case arm
-    unsigned int count = 0;
+    DSType *prevType = nullptr;
     for(auto &armNode : node.getArmNodes()) {
-        if(count++ > 0) {
+        if(prevType != nullptr && !prevType->isNothingType()) {
             this->emitJumpIns(mergeLabel);
         }
         if(armNode->isDefault()) {
@@ -841,6 +841,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
             this->generateCaseLabels(*armNode, *map);
         }
         this->visit(*armNode);
+        prevType = &armNode->getType();
     }
 
     this->markLabel(mergeLabel);
