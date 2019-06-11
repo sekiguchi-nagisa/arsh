@@ -206,7 +206,7 @@ add_custom_command(OUTPUT ${embed_src}
             -f ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
             -o ${embed_src} -v embed_script
     MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
-    DEPENDS str_to_str
+    DEPENDS src_to_str
 )
 
 
@@ -238,7 +238,8 @@ set(YDSH_SRC
         src/job.cpp
         src/redir.cpp
         ${lexer_src}
-        ${bind_src})
+        ${bind_src}
+        ${embed_src})
 
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
@@ -261,6 +262,7 @@ set_target_properties(ydsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC $<TARGET_OBJECTS:ydsh_obj>)
+add_dependencies(ydsh_obj gen_lexer)
 target_link_libraries(${YDSH_STATIC} ${HAVE_LIBPCRE})
 
 set(YDSH_LIB ydsh_lib)

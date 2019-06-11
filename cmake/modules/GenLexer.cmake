@@ -39,4 +39,5 @@ function(add_gen_lexer_target)
     add_custom_command(OUTPUT ${lexer_src}
             COMMAND ${RE2C_BIN} ${option} -o ${lexer_src} ${GL_ARGS_SOURCE_FILE}
             MAIN_DEPENDENCY ${GL_ARGS_SOURCE_FILE})
+    add_custom_target(${GL_ARGS_TARGET} DEPENDS ${lexer_src})
 endfunction()
