@@ -191,9 +191,9 @@ set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/bind.h)
 add_custom_command(OUTPUT ${bind_src}
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding
         ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_src}
+    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/src/builtin.h
+    DEPENDS gen_binding
 )
-add_custom_target(gen_bind DEPENDS ${bind_src})
-add_dependencies(gen_bind gen_binding)
 
 
 #=======================================#
@@ -256,7 +256,7 @@ SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(ydsh_obj OBJECT ${YDSH_SRC})
-add_dependencies(ydsh_obj gen_lexer gen_binding gen_bind embed_script)
+add_dependencies(ydsh_obj gen_lexer gen_binding embed_script)
 set_target_properties(ydsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 set(YDSH_STATIC ydsh_static)
