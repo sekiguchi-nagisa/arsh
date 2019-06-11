@@ -273,6 +273,7 @@ target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE})
 #     ydsh     #
 #==============#
 
+include(GNUInstallDirs)
 include_directories(ext/linenoise)
 add_executable(${BIN_NAME}
         src/main.cpp
@@ -281,10 +282,10 @@ add_executable(${BIN_NAME}
 target_link_libraries(${BIN_NAME} ${YDSH_LIB})
 
 install(TARGETS ${BIN_NAME} ${YDSH_LIB}
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib)
-install(DIRECTORY etc/ DESTINATION etc)
-install(DIRECTORY include/ DESTINATION include)
+        RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR})
+install(DIRECTORY etc/ DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR})
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_FULL_OLDINCLUDEDIR})
 
 
 #++++++++++++++++++++#

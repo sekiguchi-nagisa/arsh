@@ -11,7 +11,8 @@ mkdir -p build-rpm
 cd build-rpm
 cmake $root -G Ninja \
       -DCMAKE_CXX_COMPILER=/usr/bin/clang++ \
-      -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+      -DCMAKE_BUILD_TYPE=RELWITHDEBINFO \
+      -DCMAKE_INSTALL_PREFIX=/usr
 
 ninja || {
     echo build failed!!
