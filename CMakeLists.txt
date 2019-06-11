@@ -204,9 +204,10 @@ set(embed_src ${CMAKE_CURRENT_BINARY_DIR}/src/embed.h)
 add_custom_command(OUTPUT ${embed_src}
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/src_to_str/src_to_str
             -f ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
-            -o ${embed_src} -v embed_script)
-add_custom_target(embed_script DEPENDS ${embed_src})
-add_dependencies(embed_script src_to_str)
+            -o ${embed_src} -v embed_script
+    MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
+    DEPENDS str_to_str
+)
 
 
 #=================#
@@ -256,7 +257,6 @@ SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(ydsh_obj OBJECT ${YDSH_SRC})
-add_dependencies(ydsh_obj gen_lexer gen_binding embed_script)
 set_target_properties(ydsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 set(YDSH_STATIC ydsh_static)

@@ -17,4 +17,3 @@ add_gen_lexer_target(
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(gen_binding ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp ${lexer_src})
-add_dependencies(gen_binding gen_desc_lexer)
