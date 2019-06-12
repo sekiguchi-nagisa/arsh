@@ -307,7 +307,6 @@ void exec_interactive(DSState *dsState) {
 
     unsigned int option = DS_OPTION_TOPLEVEL | DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
     DSState_setOption(dsState, option);
-    DSState_syncHistorySize(dsState);
     loadHistory();
 
     int status = 0;
