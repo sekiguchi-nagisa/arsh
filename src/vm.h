@@ -581,6 +581,14 @@ private:
 
     int forkAndExec(const char *cmdName, Command cmd, char **argv, DSValue &&redirConfig);
 
+    /**
+     * after call it, push boolean value
+     * @param cmd
+     * @param argvObj
+     * @param redirConfig
+     * @param attr
+     * @return
+     */
     bool callCommand(Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
 
     bool callBuiltinCommand(DSValue &&argvObj, DSValue &&redir, flag8_set_t attr);

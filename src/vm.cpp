@@ -1567,7 +1567,9 @@ bool DSState::execCommand(char *const *argv) {
     auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray), std::move(values));
 
     this->clearThrownObject();
-    if(!this->callCommand(cmd, std::move(obj), DSValue())) {
+    bool s = this->callCommand(cmd, std::move(obj), DSValue());
+    this->popNoReturn();
+    if(!s) {
         return false;
     }
     if(!this->controlStack.empty()) {
