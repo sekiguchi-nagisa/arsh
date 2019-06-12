@@ -1255,7 +1255,7 @@ static int builtin_history(DSState &state, Array_Object &argvObj) {
             char ch = arg[1];
             switch(ch) {
             case 'c':
-                DSState_clearHistory(&state);
+                state.history.get().clear();
                 return 0;
             case 'd': {
                 if(i + 1 < argc) {

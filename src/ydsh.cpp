@@ -886,11 +886,6 @@ void DSState_addHistory(DSState *st, const char *str) {
     }
 }
 
-void DSState_clearHistory(DSState *st) {
-    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
-    array.clear();
-}
-
 static std::string histFile(const DSState *st) {
     std::string path = typeAs<String_Object>(getGlobal(*st, VAR_HISTFILE))->getValue();
     expandTilde(path);

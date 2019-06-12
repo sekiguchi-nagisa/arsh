@@ -429,12 +429,6 @@ void DSState_syncHistorySize(DSState *st);
 void DSState_addHistory(DSState *st, const char *str);
 
 /**
- * clear history.
- * @param st
- */
-void DSState_clearHistory(DSState *st);
-
-/**
  * load history from file.
  * @param st
  * @param fileName
