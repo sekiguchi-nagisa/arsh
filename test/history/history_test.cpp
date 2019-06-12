@@ -12,7 +12,6 @@
 class HistoryTest : public ExpectOutput, public TempFileFactory {
 protected:
     DSState *state{nullptr};
-    bool evaled{false};
 
 public:
     HistoryTest() {
@@ -39,38 +38,27 @@ public:
         this->assignUintValue(VAR_HISTFILESIZE, size);
     }
 
-    Output evalInChild(const std::string &code) {
-        IOConfig config{IOConfig::INHERIT, IOConfig::INHERIT, IOConfig::INHERIT};
-        return ProcBuilder::spawn(config, [&] {
-            int ret = DSState_eval(this->state, nullptr, code.c_str(), code.size(), nullptr);
-            return ret;
-        }).waitAndGetResult(true);
+    template <typename ...T>
+    void history(T && ...arg) {
+        constexpr auto size = sizeof...(T) + 2;
+        std::array<const char *, size> argv = { "history", std::forward<T>(arg)..., nullptr };
+        this->exec(argv.data());
     }
 
-    void eval(const char *code) {
-        if(!this->evaled) {
-            this->evaled = true;
-            const char *func = R"EOF(
-            function assertEach($expect : [String], $actual : [String]) {
-                assert $expect.size() == $actual.size() : "size: ${$expect.size()} != ${$actual.size()}"
-                let size = $expect.size()
-                for(var i = 0; $i < $size; $i++) {
-                    assert $expect[$i] == $actual[$i] : "expect[$i] = ${$expect[$i]}, actual[$i] = ${$actual[$i]}"
-                }
-            }
-            )EOF";
-            DSError e;
-            DSState_eval(this->state, "(builtin)", func, strlen(func), &e);
-            auto kind = e.kind;
-            DSError_release(&e);
-            ASSERT_EQ(DS_ERROR_KIND_SUCCESS, kind);
-        }
-        std::string c(code);
-        c += "\n";
-        c += "exit $?";
-
-        auto result = this->evalInChild(c);
-        ExpectOutput::expect(result, 0, WaitStatus::EXITED);
+    void addHistory(const char *value) {
+        this->history("-s", value);
+    }
+    
+    void clearHistory() {
+        this->history("-c");
+    }
+    
+    void loadHistory(const char *fileName = nullptr) {
+        this->history("-r", fileName);
+    }
+    
+    void saveHistory(const char *fileName = nullptr) {
+        this->history("-w", fileName);
     }
 
 private:
@@ -90,6 +78,12 @@ private:
         str += "u";
         this->assignValue(varName, std::move(str));
     }
+
+    void exec(const char **argv) {
+        int s = DSState_getExitStatus(this->state);
+        DSState_exec(this->state, (char **)argv);
+        DSState_setExitStatus(this->state, s);
+    }
 };
 
 TEST_F(HistoryTest, base) {
@@ -107,8 +101,8 @@ TEST_F(HistoryTest, base) {
 
 TEST_F(HistoryTest, add) {
     this->setHistSize(2);
-    DSState_addHistory(this->state, "aaa");
-    DSState_addHistory(this->state, "bbb");
+    this->addHistory("aaa");
+    this->addHistory("bbb");
 
     auto *history = DSState_history(this->state);
 
@@ -116,12 +110,12 @@ TEST_F(HistoryTest, add) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSHistory_get(history, 0)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 1)));
 
-    DSState_addHistory(this->state, "ccc");
+    this->addHistory("ccc");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 0)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ccc", DSHistory_get(history, 1)));
 
-    DSState_addHistory(this->state, "ccc");
+    this->addHistory("ccc");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
 }
 
@@ -130,8 +124,8 @@ TEST_F(HistoryTest, set) {
     SCOPED_TRACE("");
 
     this->setHistSize(10);
-    DSState_addHistory(this->state, "aaa");
-    DSState_addHistory(this->state, "bbb");
+    this->addHistory("aaa");
+    this->addHistory("bbb");
 
     auto *history = DSState_history(this->state);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
@@ -150,11 +144,11 @@ TEST_F(HistoryTest, remove) {
     SCOPED_TRACE("");
 
     this->setHistSize(10);
-    DSState_addHistory(this->state, "aaa");
-    DSState_addHistory(this->state, "bbb");
-    DSState_addHistory(this->state, "ccc");
-    DSState_addHistory(this->state, "ddd");
-    DSState_addHistory(this->state, "eee");
+    this->addHistory("aaa");
+    this->addHistory("bbb");
+    this->addHistory("ccc");
+    this->addHistory("ddd");
+    this->addHistory("eee");
 
     auto *history = DSState_history(this->state);
     DSHistory_delete(history, 2);
@@ -189,23 +183,23 @@ TEST_F(HistoryTest, clear) {
     SCOPED_TRACE("");
 
     this->setHistSize(10);
-    DSState_addHistory(this->state, "aaa");
-    DSState_addHistory(this->state, "bbb");
-    DSState_addHistory(this->state, "ccc");
-    DSState_addHistory(this->state, "ddd");
-    DSState_addHistory(this->state, "eee");
+    this->addHistory("aaa");
+    this->addHistory("bbb");
+    this->addHistory("ccc");
+    this->addHistory("ddd");
+    this->addHistory("eee");
 
     auto *history = DSState_history(this->state);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, DSHistory_size(history)));
 
-    DSState_clearHistory(this->state);
+    this->clearHistory();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSHistory_size(history)));
 }
 
 TEST_F(HistoryTest, resize) {
     this->setHistSize(10);
     for(unsigned int i = 0; i < 10; i++) {
-        DSState_addHistory(this->state, std::to_string(i).c_str());
+        this->addHistory(std::to_string(i).c_str());
     }
 
     auto *history = DSState_history(this->state);
@@ -223,7 +217,7 @@ TEST_F(HistoryTest, resize) {
 TEST_F(HistoryTest, file) {
     this->setHistSize(10);
     for(unsigned int i = 0; i < 10; i++) {
-        DSState_addHistory(this->state, std::to_string(i).c_str());
+        this->addHistory(std::to_string(i).c_str());
     }
 
     auto *history = DSState_history(this->state);
@@ -231,9 +225,9 @@ TEST_F(HistoryTest, file) {
     /**
      * 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
      */
-    DSState_saveHistory(this->state, nullptr);
-    DSState_clearHistory(this->state);
-    DSState_loadHistory(this->state, nullptr);
+    this->saveHistory();
+    this->clearHistory();
+    this->loadHistory();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
 
     for(unsigned int i = 0; i < 10; i++) {
@@ -241,7 +235,7 @@ TEST_F(HistoryTest, file) {
     }
 
     for(unsigned int i = 0; i < 5; i++) {
-        DSState_addHistory(this->state, std::to_string(i + 10).c_str());
+        this->addHistory(std::to_string(i + 10).c_str());
     }
 
     for(unsigned int i = 0; i < 10; i++) {
@@ -258,19 +252,19 @@ TEST_F(HistoryTest, file) {
      * current hist file content
      * 5, 6, 7, 8, 9, 10, 11, 12, 13, 14
      */
-    DSState_saveHistory(this->state, nullptr);
-    DSState_clearHistory(this->state);
+    this->saveHistory();
+    this->clearHistory();
     this->setHistSize(15);
-    DSState_loadHistory(this->state, nullptr);
+    this->loadHistory();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
     for(unsigned int i = 0; i < 10; i++) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSHistory_get(history, i)));
     }
 
     // not overwrite history file when buffer size is 0
-    DSState_clearHistory(this->state);
-    DSState_saveHistory(this->state, nullptr);
-    DSState_loadHistory(this->state, nullptr);
+    this->clearHistory();
+    this->saveHistory();
+    this->loadHistory();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
     for(unsigned int i = 0; i < 10; i++) {
         ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSHistory_get(history, i)));
@@ -278,10 +272,10 @@ TEST_F(HistoryTest, file) {
 
     // not overwrite history file when hist file size is 0
     this->setHistFileSize(0);
-    DSState_clearHistory(this->state);
-    DSState_addHistory(this->state, "hoge");
-    DSState_saveHistory(this->state, nullptr);
-    DSState_loadHistory(this->state, nullptr);
+    this->clearHistory();
+    this->addHistory("hoge");
+    this->saveHistory();
+    this->loadHistory();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(11u, DSHistory_size(history)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hoge", DSHistory_get(history, 0)));
     for(unsigned int i = 1; i < 11; i++) {
@@ -294,15 +288,15 @@ TEST_F(HistoryTest, file2) {
     this->setHistSize(DS_HISTFILESIZE_LIMIT);
 
     for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
-        DSState_addHistory(this->state, std::to_string(i).c_str());
+        this->addHistory(std::to_string(i).c_str());
     }
     
     auto *history = DSState_history(this->state);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, DSHistory_size(history)));
 
-    DSState_saveHistory(this->state, nullptr);
-    DSState_clearHistory(this->state);
-    DSState_loadHistory(this->state, nullptr);
+    this->saveHistory();
+    this->clearHistory();
+    this->loadHistory();
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, DSHistory_size(history)));
     for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
