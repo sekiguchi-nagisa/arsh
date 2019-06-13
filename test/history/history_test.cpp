@@ -41,7 +41,7 @@ public:
     template <typename ...T>
     void history(T && ...arg) {
         constexpr auto size = sizeof...(T) + 2;
-        std::array<const char *, size> argv = { "history", std::forward<T>(arg)..., nullptr };
+        std::array<const char *, size> argv = {{ "history", std::forward<T>(arg)..., nullptr }};
         this->exec(argv.data());
     }
 
