@@ -25,6 +25,6 @@ Language specification is subject to change without notice.
 
 ```
 $ cmake .
-$ make
-$ ./ydsh
+$ make && make install
+$ ydsh
 ```
