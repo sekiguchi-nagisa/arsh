@@ -1266,6 +1266,9 @@ static int builtin_history(DSState &state, Array_Object &argvObj) {
                 return 2;
 
             }
+            case 'i':
+                DSState_addHistory(&state, "");
+                return 0;
             case 's': {
                 std::string line;
                 for(i++; i < argc; i++) {

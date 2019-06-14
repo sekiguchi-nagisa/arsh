@@ -77,7 +77,14 @@ static void exec(const char *argv[]) {
     DSState_setExitStatus(state, s);
 }
 
-static void addHistory(const char *line = "") {
+static void initHistory() {
+    const char *argv[] = {
+            "history", "-i", nullptr
+    };
+    exec(argv);
+}
+
+static void addHistory(const char *line) {
     const char *argv[] = {
             "history", "-s", line, nullptr
     };
@@ -279,7 +286,7 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
         DSHistory_delete(history, size - 1);
         break;
     case LINENOISE_HISTORY_OP_INIT:
-        addHistory();
+        initHistory();
         break;
     }
     return nullptr;
