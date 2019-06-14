@@ -1567,13 +1567,14 @@ bool DSState::execCommand(char *const *argv) {
     auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray), std::move(values));
 
     this->clearThrownObject();
-    if(!this->callCommand(cmd, std::move(obj), DSValue())) {
-        return false;
+    bool ret = this->callCommand(cmd, std::move(obj), DSValue());
+    if(ret) {
+        if(!this->controlStack.empty()) {
+            ret = this->runMainLoop();
+        }
     }
-    if(!this->controlStack.empty()) {
-        return this->runMainLoop();
-    }
-    return true;
+    this->clearOperandStack();
+    return ret;
 }
 
 unsigned int DSState::prepareArguments(DSValue &&recv,
