@@ -1,0 +1,163 @@
+
+# for history manipulation
+
+function _sync() {
+    let limit = 4096u
+    if $HISTSIZE > $limit {
+        $HISTSIZE = $limit
+    }
+    while $HISTORY.size() as Uint > $HISTSIZE {
+        $HISTORY.pop()
+    }
+}
+
+function _error($s : String) {
+    echo 1>&2 ydsh: history: $s
+}
+
+function _usage($fd : UnixFD) : Int {
+    echo > $fd "history: history [-h] [-i] [-c] [-d offset] or history -s ARGs or history [-rw] [file]
+    Display or manipulate history list.
+    Options:
+        -c        clear the history list
+        -d offset delete the history entry at OFFSET
+        -h        show this help message
+        -i        append the empty string to history
+        -s        append the Args to history as single entry
+
+        -r        read the history list from history file
+        -w        write the history list to history file"
+
+    return 2
+}
+
+function _show($argv : [String]) : Int {
+    let histSize = $HISTORY.size()
+    let size = $argv.size()
+    var offset = $histSize
+
+    if $size > 0 {
+        if $size > 1 {
+            $_error("too many arguments")
+            return 1
+        }
+
+        $offset = $argv[0].toInt32() ?? {
+            $_error("${$argv[0]}: numeric argument required")
+            return 1
+        }
+
+        if $offset > $histSize {
+            $offset = $histSize
+        }
+    }
+
+    for(var i = $histSize - $offset; $i < $histSize; $i++) {
+        echo $HISTORY[$i]
+    } | command nl
+    return 0
+}
+
+function _add($s : String) {
+    if $HISTSIZE == 0u { return; }
+    if !$HISTORY.empty() && $HISTORY.peek() == $s { return; }
+
+    if $HISTORY.size() == $HISTSIZE as Int32 {
+        $HISTORY.shift()
+    }
+    $HISTORY.add($s)
+}
+
+function _load($path : String) {
+    if $HISTSIZE == 0u { return; }
+    if $path.empty() { $path = $HISTFILE; }
+    $path = $path.realpath() ?? { return; }
+    cat $path | while($HISTORY.size() < $HISTSIZE as Int && read) {
+        $HISTORY.add($REPLY)
+    }
+}
+
+function _save($path : String) {
+    let limit = 4096u
+    if $HISTFILESIZE > $limit {
+        $HISTFILESIZE = $limit
+    }
+
+    if $HISTFILESIZE == 0u || $HISTORY.empty() {
+        return;
+    }
+
+    if $path.empty() { $path = $HISTFILE; }
+    $path = $path.realpath() ?? { return; }
+    for(var i = 0; $i < $HISTFILESIZE as Int && $i < $HISTORY.size(); $i++) {
+        echo $HISTORY[$i]
+    } with > $path
+    chmod g-rw,o-rw $path
+}
+
+history() {
+    $_sync()
+
+    if($# == 0 || $@[0][0] != '-') {
+        return $_show($@)
+    }
+
+    var op = ""
+    var fileName = ""
+    var deleteTarget = ""
+
+    for(var i = 0; $i < $#; $i++) {
+        let arg = $@[$i]
+        case $arg {
+        '-c' => { $HISTORY.clear(); return 0; }
+        '-d' => {
+            if $i + 1 < $# {
+                $i++
+                $deleteTarget = $@[$i]
+                continue
+            }
+            $_error("$arg: option requires argument")
+            return 2
+        }
+        '-h' => { $_usage($STDOUT); return 0; }
+        '-i' => { $_add(""); return 0; }
+        '-s' => {
+            var line = ""
+            for($i++; $i < $#; $i++) {
+                if !$line.empty() { $line += " "; }
+                $line += $@[$i]
+            }
+            $_add($line)
+            return 0;
+        }
+        '-r' | '-w' => {
+            if !$op.empty() {
+                $_error("cannot use more than one of -rw")
+                return 1
+            }
+            $op = $arg
+            if $i + 1 < $# && $@[$i + 1][0] != "-" {
+                $i++;
+                $fileName = $@[$i]
+            }
+            continue
+        }
+        else => { $_error("$arg: invalid option"); return $_usage($STDERR); }
+        }
+    }
+
+    if !$deleteTarget.empty() {
+        var offset = $deleteTarget.toInt32() ?? {
+            $_error("$deleteTarget: history offset out of range")
+            return 1
+        }
+        $HISTORY.remove($offset)
+        return 0
+    }
+
+    case $op {
+    '-r' => $_load($fileName)
+    '-w' => $_save($fileName)
+    }
+    return 0
+}
