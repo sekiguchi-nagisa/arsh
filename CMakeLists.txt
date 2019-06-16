@@ -9,6 +9,8 @@ enable_language(CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
+include(GNUInstallDirs)
+
 include(Helper)
 include(DownloadProject)
 include(GetRE2C)
@@ -254,7 +256,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/server)
 
 
 set(CMAKE_MACOSX_RPATH ON)
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 add_library(ydsh_obj OBJECT ${YDSH_SRC})
@@ -275,7 +277,6 @@ target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE})
 #     ydsh     #
 #==============#
 
-include(GNUInstallDirs)
 include_directories(ext/linenoise)
 add_executable(${BIN_NAME}
         src/main.cpp
