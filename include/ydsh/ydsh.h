@@ -317,7 +317,17 @@ const char *DSState_version(DSVersion *version);
 
 const char *DSState_copyright();
 
+/**
+ * get full path of system config directory (/etc/ydsh)
+ * @return
+ */
 const char *DSState_systemConfigDir();
+
+/**
+ * get full path of system module directory (/etc/ydsh/module)
+ * @return
+ */
+const char *DSState_systemModDir();
 
 /* for feature detection */
 #define DS_FEATURE_LOGGING    ((unsigned int) (1u << 0u))

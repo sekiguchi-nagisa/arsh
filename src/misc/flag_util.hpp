@@ -31,17 +31,17 @@ using flag32_set_t = unsigned int;
 using flag32_t = unsigned int;
 
 template <typename T>
-inline void setFlag(T &set, T flag) {
+inline constexpr void setFlag(T &set, T flag) {
     set |= flag;
 }
 
 template <typename T>
-inline void unsetFlag(T &set, T flag) {
+inline constexpr void unsetFlag(T &set, T flag) {
     set &= ~flag;
 }
 
 template <typename T>
-inline bool hasFlag(T set, T flag) {
+inline constexpr bool hasFlag(T set, T flag) {
     return (set & flag) == flag;
 }
 

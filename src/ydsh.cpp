@@ -751,7 +751,11 @@ const char *DSState_systemConfigDir() {
     return SYSTEM_CONFIG_DIR;
 }
 
-unsigned int DSState_featureBit() {
+const char *DSState_systemModDir() {
+    return SYSTEM_MOD_DIR;
+}
+
+static constexpr unsigned int featureBit() {
     unsigned int featureBit = 0;
 
 #ifdef USE_LOGGING
@@ -766,6 +770,11 @@ unsigned int DSState_featureBit() {
     setFlag(featureBit, DS_FEATURE_FIXED_TIME);
 #endif
     return featureBit;
+}
+
+unsigned int DSState_featureBit() {
+    constexpr auto flag = featureBit();
+    return flag;
 }
 
 struct DSCandidates {
