@@ -824,38 +824,34 @@ void DSCandidates_release(DSCandidates **c) {
 }
 
 DSHistory *DSState_history(DSState *st) {
-    if(st->history.obj == nullptr) {
+    if(!st->history) {
         auto *handle = st->symbolTable.lookupHandle(VAR_HISTORY);
-        if(handle != nullptr) {
-            st->history.obj = typeAs<Array_Object>(st->getGlobal(handle->getIndex()));
-        }
+        st->history.initialize(
+                handle != nullptr ? typeAs<Array_Object>(st->getGlobal(handle->getIndex())) : nullptr);
     }
-    if(st->history.obj != nullptr) {
-        return &st->history;
-    }
-    return nullptr;
+    return st->history.hasValue() ? &st->history : nullptr;
 }
 
 unsigned int DSHistory_size(const DSHistory *history) {
-    return history->get().size();
+    return history != nullptr ? history->get().size() : 0;
 }
 
 const char *DSHistory_get(const DSHistory *history, unsigned int index) {
-    if(index < history->get().size()) {
+    if(history != nullptr && index < history->get().size()) {
         return typeAs<String_Object>(history->get()[index])->getValue();
     }
     return nullptr;
 }
 
 void DSHistory_set(DSHistory *history, unsigned int index, const char *value) {
-    if(index < history->get().size()) {
-        DSType *type = static_cast<ReifiedType *>(history->obj->getType())->getElementTypes()[0];
+    if(history != nullptr && index < history->get().size()) {
+        DSType *type = history->type()->getElementTypes()[0];
         history->get()[index] = DSValue::create<String_Object>(*type, value);
     }
 }
 
 void DSHistory_delete(DSHistory *history, unsigned int index) {
-    if(index < history->get().size()) {
+    if(history != nullptr && index < history->get().size()) {
         history->get().erase(history->get().begin() + index);
     }
 }

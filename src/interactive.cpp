@@ -71,7 +71,14 @@ static bool checkLineContinuation(const StrWrapper &line) {
     return false;
 }
 
+static bool hasHistory() {
+    return DSState_history(state) != nullptr;
+}
+
 static void exec(const char *argv[]) {
+    if(!hasHistory()) {
+        return;
+    }
     int s = DSState_getExitStatus(state);
     DSState_exec(state, (char **)argv);
     DSState_setExitStatus(state, s);
@@ -110,7 +117,6 @@ static const std::string *lineBuf = nullptr;
 static bool readLine(std::string &line) {
     line.clear();
     lineBuf = &line;
-    DSState_syncHistorySize(state);
 
     bool continuation = false;
     while(true) {
