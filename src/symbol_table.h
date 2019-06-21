@@ -520,6 +520,10 @@ public:
         return this->root().lookupHandle(name);
     }
 
+    const FieldHandle *lookupModHandle(const ModType &type) const {
+        return this->root().lookupHandle(type.toName());
+    }
+
     HandleOrError newModHandle(ModType &type) {
         return this->root().newHandle(type.toName(), type, FieldAttribute::READ_ONLY);
     }
