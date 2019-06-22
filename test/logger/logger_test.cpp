@@ -36,8 +36,6 @@ struct LoggerTest : public ExpectOutput {
     void expectRegex(const Output &output, int status = 0,
                      WaitStatus::Kind type = WaitStatus::EXITED,
                      const char *out = "", const char *err = "") {
-        SCOPED_TRACE("");
-
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
 

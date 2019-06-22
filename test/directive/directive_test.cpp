@@ -14,7 +14,6 @@ public:
     DirectiveTest() = default;
 
     virtual void parse(const char *line, bool status) {
-        SCOPED_TRACE("");
         ASSERT_TRUE(line != nullptr);
 
         bool s = Directive::init(this->getSourceName(), line, this->d);

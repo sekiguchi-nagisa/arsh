@@ -20,8 +20,6 @@ std::array<char *, sizeof...(T) + 2> make_argv(const char *name, T ...args) {
 
 
 TEST(BuiltinExecTest, case1) {
-    SCOPED_TRACE("");
-
     DSState *state = DSState_create();
 
     int ret = DSState_exec(state, make_argv("echo", "hello").data());
@@ -31,8 +29,6 @@ TEST(BuiltinExecTest, case1) {
 }
 
 TEST(BuiltinExecTest, case2) {
-    SCOPED_TRACE("");
-
     DSState *state = DSState_create();
 
     int ret = DSState_exec(state, make_argv("fheruifh", "hello").data());
@@ -54,8 +50,6 @@ struct APITest : public ExpectOutput, public TempFileFactory {
 };
 
 TEST_F(APITest, version) {
-    SCOPED_TRACE("");
-
     DSVersion version;
     DSState_version(&version);
 
@@ -69,8 +63,6 @@ TEST_F(APITest, config) {
 }
 
 TEST_F(APITest, lineNum1) {
-    SCOPED_TRACE("");
-
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, DSState_lineNum(this->state)));
 
     const char *str = "12 + 32\n $true\n";
@@ -84,8 +76,6 @@ TEST_F(APITest, lineNum1) {
 }
 
 TEST_F(APITest, lineNum2) {
-    SCOPED_TRACE("");
-
     DSError e;
     auto fileName1 = this->createTempFile("target1.ds", "true\ntrue\n");
     DSState_loadAndEval(this->state, fileName1.c_str(), &e);
@@ -102,8 +92,6 @@ TEST_F(APITest, lineNum2) {
 }
 
 TEST_F(APITest, prompt) {
-    SCOPED_TRACE("");
-
     const char *str = "$PS1 = 'hello>'; $PS2 = 'second>'";
     DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(this->state, 1)));
@@ -142,8 +130,6 @@ static std::vector<std::string> filter(const std::vector<std::string> &v, const 
 }
 
 TEST_F(APITest, complete) {
-    SCOPED_TRACE("");
-
     // null arguments
     auto *c = DSState_complete(nullptr, nullptr, 1); // do nothing
     ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c == nullptr));
@@ -173,16 +159,12 @@ TEST_F(APITest, complete) {
 }
 
 TEST_F(APITest, option) {
-    SCOPED_TRACE("");
-
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(this->state)));
     DSState_unsetOption(this->state, DS_OPTION_ASSERT);
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, DSState_option(this->state)));
 }
 
 TEST_F(APITest, scriptDir) {
-    SCOPED_TRACE("");
-
     int r = DSState_setScriptDir(this->state, "hfarefoiaji vfd");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
 }
@@ -197,8 +179,6 @@ TEST_F(APITest, status) {
 }
 
 TEST_F(APITest, pid) {
-    SCOPED_TRACE("");
-
     pid_t pid = getpid();
     std::string src("assert($$ == ");
     src += std::to_string(pid);
@@ -412,8 +392,6 @@ struct JobTest : public ExpectOutput {};
 #define PATTERN3 PATTERN " " PATTERN " " PATTERN
 
 TEST_F(JobTest, pid1) {    // enable job control
-    SCOPED_TRACE("");
-
     // normal
     auto result = EXEC("%s --first | %s | %s", PID_CHECK_PATH, PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN3));
@@ -476,8 +454,6 @@ TEST_F(JobTest, pid1) {    // enable job control
 }
 
 TEST_F(JobTest, pid2) {    // disable job control
-    SCOPED_TRACE("");
-
     // normal
     auto result = EXEC2("%s --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
@@ -528,8 +504,6 @@ TEST_F(JobTest, pid2) {    // disable job control
 #define EXEC(S) exec(std::string(S)).waitAndGetResult(true)
 
 TEST_F(JobTest, jobctrl1) {
-    SCOPED_TRACE("");
-
     // invalid
     auto result = EXEC("fg");
     ASSERT_NO_FATAL_FAILURE(
@@ -563,8 +537,6 @@ TEST_F(JobTest, jobctrl1) {
 }
 
 TEST_F(JobTest, jobctrl2) {
-    SCOPED_TRACE("");
-
     // invalid
     auto result = EXEC("bg");
     ASSERT_NO_FATAL_FAILURE(

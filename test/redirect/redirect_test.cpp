@@ -31,8 +31,6 @@ public:
     using ExpectOutput::expect;
 
     void contentEq(const char *str) {
-        SCOPED_TRACE("");
-
         // read file contents
         ByteBuffer buffer;
         char data[256];

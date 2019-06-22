@@ -170,8 +170,6 @@ public:
     PrecedenceTest() = default;
 
     virtual void equalsTokens(const std::vector<std::string> &expected, const std::vector<std::string> &actual) {
-        SCOPED_TRACE("");
-
         // check size
         unsigned int size = expected.size();
         ASSERT_EQ(size, actual.size());
@@ -183,8 +181,6 @@ public:
     }
 
     virtual void equals(const char *expected, const char *input) {
-        SCOPED_TRACE("");
-
         ASSERT_TRUE(expected != nullptr);
         ASSERT_TRUE(input != nullptr);
 

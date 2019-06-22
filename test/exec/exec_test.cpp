@@ -53,8 +53,6 @@ public:
     }
 
     virtual void doTest() {
-        SCOPED_TRACE("");
-
         // create directive
         Directive d;
         bool s = Directive::init(this->getSourceName().c_str(), d);
@@ -134,7 +132,6 @@ public:
 };
 
 TEST_P(ExecTest, baseTest) {
-    SCOPED_TRACE("");
     ASSERT_NO_FATAL_FAILURE(this->doTest());
 }
 
@@ -142,8 +139,6 @@ INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getSortedFileLis
 
 
 TEST(Base, case1) {
-    SCOPED_TRACE("");
-
     std::string line(R"(type=3 lineNum=1 kind="SystemError" fileName="../hoge.ds")");
     unsigned int type;
     unsigned int lineNum;
@@ -159,8 +154,6 @@ TEST(Base, case1) {
 }
 
 TEST(Base, case2) {
-    SCOPED_TRACE("");
-
     std::string line("type=0 lineNum=0 kind=\"\"");
     unsigned int type;
     unsigned int lineNum;
@@ -174,8 +167,6 @@ TEST(Base, case2) {
 }
 
 TEST(Base, case3) {
-    SCOPED_TRACE("");
-
     std::string line(R"(type=0 lineNum=0 kind="" fileName="" )");
     unsigned int type;
     unsigned int lineNum;

@@ -11,8 +11,6 @@ public:
     UnicodeTest() = default;
 
     void toCodePoint(const char *str, int &codePoint) {
-        SCOPED_TRACE("");
-
         ASSERT_TRUE(str != nullptr);
 
         int code = 0;
@@ -27,7 +25,6 @@ public:
 
     template <unsigned int N>
     void assertByteSize(const unsigned int size, const char (&str)[N]) {
-        SCOPED_TRACE("");
         ASSERT_EQ(size, UnicodeUtil::utf8ValidateChar(str, str + N));
     }
 
@@ -38,8 +35,6 @@ public:
     }
 
     void assertWidth(const int width, const char *str, bool ambiguousWidth2 = false) {
-        SCOPED_TRACE("");
-
         int codePoint = 0;
         this->toCodePoint(str, codePoint);
 
@@ -48,8 +43,6 @@ public:
     }
 
     void assertIllegal(const char *const buf, unsigned int bufSize) {
-        SCOPED_TRACE("");
-
         int codePoint = 0;
         ASSERT_EQ(0u, UnicodeUtil::utf8ToCodePoint(buf, bufSize, codePoint));
         ASSERT_EQ(-1, codePoint);
@@ -63,8 +56,6 @@ public:
     }
 
     void assertCodePoint2Utf8(const char *ch, unsigned int byteSize) {
-        SCOPED_TRACE("");
-
         char buf[4];
         int codePoint = UnicodeUtil::utf8ToCodePoint(ch, byteSize);
         unsigned int size = UnicodeUtil::codePointToUtf8(codePoint, buf);
@@ -76,8 +67,6 @@ public:
 };
 
 TEST_F(UnicodeTest, size) {
-    SCOPED_TRACE("");
-
     ASSERT_NO_FATAL_FAILURE(this->assertByteSize(1, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertByteSize(1, "1"));
     ASSERT_NO_FATAL_FAILURE(this->assertByteSize(1, "a"));
@@ -96,8 +85,6 @@ TEST_F(UnicodeTest, size) {
 }
 
 TEST_F(UnicodeTest, codepoint2utf8) {
-    SCOPED_TRACE("");
-
     char buf[4];
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, UnicodeUtil::codePointToUtf8(-3, buf)));
 
@@ -112,8 +99,6 @@ TEST_F(UnicodeTest, codepoint2utf8) {
 }
 
 TEST_F(UnicodeTest, base) {
-    SCOPED_TRACE("");
-
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, UnicodeUtil::width(0)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, UnicodeUtil::width('\n')));
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, UnicodeUtil::width('\t')));
@@ -124,8 +109,6 @@ TEST_F(UnicodeTest, base) {
 }
 
 TEST_F(UnicodeTest, codePoint) {
-    SCOPED_TRACE("");
-
     ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x40, "@"));
     ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x7E, "~"));
@@ -135,8 +118,6 @@ TEST_F(UnicodeTest, codePoint) {
 }
 
 TEST_F(UnicodeTest, multi) {
-    SCOPED_TRACE("");
-
     ASSERT_NO_FATAL_FAILURE(this->assertWidth(-1, "\n"));
     ASSERT_NO_FATAL_FAILURE(this->assertWidth(-1, "\n", true));
     ASSERT_NO_FATAL_FAILURE(this->assertWidth(-1, "\r"));
@@ -163,8 +144,6 @@ TEST_F(UnicodeTest, multi) {
 }
 
 TEST_F(UnicodeTest, multi2) {
-    SCOPED_TRACE("");
-
     int code = 0;
     this->toCodePoint("◯", code);
 
@@ -198,8 +177,6 @@ TEST_F(UnicodeTest, multi2) {
 }
 
 TEST_F(UnicodeTest, illegal) {
-    SCOPED_TRACE("");
-
     // 2byte
     {
         char b[] = {static_cast<char>(200)};

@@ -74,7 +74,6 @@ private:
         str += value;
 
         auto r = DSState_eval(this->state, "(dummy)", str.c_str(), str.size(), nullptr);
-        SCOPED_TRACE("");
         ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r == 0));
     }
 
@@ -119,8 +118,6 @@ TEST_F(HistoryTest, add) {
 
 
 TEST_F(HistoryTest, set) {
-    SCOPED_TRACE("");
-
     this->setHistSize(10);
     this->addHistory("aaa");
     this->addHistory("bbb");
@@ -143,8 +140,6 @@ TEST_F(HistoryTest, set) {
 }
 
 TEST_F(HistoryTest, remove) {
-    SCOPED_TRACE("");
-
     this->setHistSize(10);
     this->addHistory("aaa");
     this->addHistory("bbb");
@@ -185,8 +180,6 @@ TEST_F(HistoryTest, remove) {
 }
 
 TEST_F(HistoryTest, clear) {
-    SCOPED_TRACE("");
-
     this->setHistSize(10);
     this->addHistory("aaa");
     this->addHistory("bbb");

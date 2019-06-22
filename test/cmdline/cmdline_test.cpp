@@ -53,8 +53,6 @@ public:
     using ExpectOutput::expectRegex;
 
     void expect(InputWrapper &&wrapper, int status, const std::string &out = "", const std::string &err = "") {
-        SCOPED_TRACE("");
-
         auto handle = wrapper.builder
                 .setIn(IOConfig::PIPE)
                 .setOut(IOConfig::PIPE)

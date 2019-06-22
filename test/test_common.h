@@ -116,8 +116,6 @@ struct ExpectOutput : public ::testing::Test {
     void expect(const Output &output, int status = 0,
                 WaitStatus::Kind type = WaitStatus::EXITED,
                 const std::string &out = "", const std::string &err = "") {
-        SCOPED_TRACE("");
-
         EXPECT_EQ(out, output.out);
         EXPECT_EQ(err, output.err);
         EXPECT_EQ(status, output.status.value);
@@ -183,8 +181,6 @@ protected:
     }
 
     void expectRegex(const char *out = "", const char *err = "") {
-        SCOPED_TRACE("");
-
         ASSERT_TRUE(out != nullptr);
         ASSERT_TRUE(err != nullptr);
 
@@ -194,8 +190,6 @@ protected:
     }
 
     void expect(const char *out = "", const char *err = "") {
-        SCOPED_TRACE("");
-
         ASSERT_TRUE(out != nullptr);
         ASSERT_TRUE(err != nullptr);
 

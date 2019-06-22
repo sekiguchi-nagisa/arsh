@@ -20,8 +20,6 @@ public:
     virtual void TearDown() { }
 
     virtual void doTest() {
-        SCOPED_TRACE("");
-
         ProcBuilder builder = {
                 BIN_PATH,
                 this->targetName.c_str(),

@@ -50,12 +50,9 @@ public:
 
 private:
     virtual void tokenize() {
-        SCOPED_TRACE("");
-
         Token t;
         TokenKind k;
         do {
-            SCOPED_TRACE("");
             k = this->lexer->nextToken(t);
             this->tokens.emplace_back(k, t);
         } while(k != EOS && k != INVALID);
@@ -72,12 +69,10 @@ private:
     }
 
     virtual void assertKind(TokenKind expected, TokenKind actual) {
-        SCOPED_TRACE("");
         ASSERT_STREQ(this->toName(expected), this->toName(actual));
     }
 
     virtual void assertToken(unsigned int index, TokenKind expectedKind, const char *expectedText) {
-        SCOPED_TRACE("");
         ASSERT_TRUE(index < this->tokens.size());
         auto pair = this->tokens[index];
         this->assertKind(expectedKind, pair.first);
@@ -88,8 +83,6 @@ private:
 
 public:
     virtual void assertTokens(std::vector<std::pair<TokenKind, const char *>> expectedList) {
-        SCOPED_TRACE("");
-
         this->tokenize();
 
         const unsigned int size = expectedList.size();
@@ -294,7 +287,6 @@ TEST_F(LexerTest_Lv1, while_tok1) {
 
 TEST_F(LexerTest_Lv1, while_tok2) {
     const char *text = "while";
-    SCOPED_TRACE("");
     this->initLexer(text, yycEXPR);
     ASSERT_NO_FATAL_FAILURE(EXPECT(WHILE, text, EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
@@ -496,7 +488,6 @@ TEST_F(LexerTest_Lv1, estring_literal3) {
 
 TEST_F(LexerTest_Lv1, estring_literal4) {
     const char *text = "$'\\\\'";
-    SCOPED_TRACE("");
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(STRING_LITERAL, "$'\\\\'", EOS, ""));
@@ -852,7 +843,6 @@ TEST_F(LexerTest_Lv1, specialName12) {
  */
 TEST_F(LexerTest_Lv1, LP1) {
     const char *text = "(";
-    SCOPED_TRACE("");
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(LP, text, EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
@@ -1004,64 +994,48 @@ TEST_F(LexerTest_Lv1, CMD5) {
 
 TEST_F(LexerTest_Lv1, CMD6) {
     const char *text = "d#d";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD7) {
     const char *text = "d#";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD8) {
     const char *text = "d!!";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD9) {
     const char *text = "!hoge";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(NOT, "!", COMMAND, "hoge", EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD10) {
     const char *text = "\\$true";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD11) {
     const char *text = "\\[\\]true";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD12) {
     const char *text = "/usr/bin/[";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD13) {
     const char *text = "/usr/bin/]";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(COMMAND, text, EOS, ""));
 }
@@ -1075,8 +1049,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG1) {   // allow  '[' and ']'
 
 TEST_F(LexerTest_Lv1, CMD_ARG2) {
     const char *text = "abcd";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1084,8 +1056,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG2) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG3) {
     const char *text = "a2134:*";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1093,8 +1063,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG3) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG4) {
     const char *text = "\\;あω𪗱";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1102,8 +1070,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG4) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG5) {
     const char *text = "??\\\n";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1111,8 +1077,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG5) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG6) {
     const char *text = "{}}{";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1120,8 +1084,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG6) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG7) {
     const char *text = "hfeiru#fr";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1129,8 +1091,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG7) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG8) {
     const char *text = "ああ#";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1138,8 +1098,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG8) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG9) {
     const char *text = "!hoge";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1147,8 +1105,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG9) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG10) {
     const char *text = "qwwre!";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1156,8 +1112,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG10) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG11) {
     const char *text = "\\;q\\$wwre!";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1165,8 +1119,6 @@ TEST_F(LexerTest_Lv1, CMD_ARG11) {
 
 TEST_F(LexerTest_Lv1, CMD_ARG12) {
     const char *text = "q\\ w\\\twre!";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
@@ -1712,8 +1664,6 @@ TEST_F(LexerTest_Lv1, LINE_END1) {
 
 TEST_F(LexerTest_Lv1, LINE_END2) {
     const char *text = ";";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycEXPR);
     ASSERT_NO_FATAL_FAILURE(EXPECT(LINE_END, text, EOS, ""));
@@ -1722,8 +1672,6 @@ TEST_F(LexerTest_Lv1, LINE_END2) {
 
 TEST_F(LexerTest_Lv1, LINE_END3) {
     const char *text = ";";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(LINE_END, text, EOS, ""));
@@ -1738,24 +1686,18 @@ TEST_F(LexerTest_Lv1, COMMENT1) {
 
 TEST_F(LexerTest_Lv1, COMMENT2) {
     const char *text = "#ああ  あ";
-    SCOPED_TRACE("");
-
     this->initLexer(text, yycEXPR);
     ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, COMMENT3) {
     const char *text = "#hello  \t  ";
-    SCOPED_TRACE("");
-
     this->initLexer(text, yycNAME);
     ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, COMMENT4) {
     const char *text = "#hferu";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycTYPE);
     ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
@@ -1763,8 +1705,6 @@ TEST_F(LexerTest_Lv1, COMMENT4) {
 
 TEST_F(LexerTest_Lv1, COMMENT5) {
     const char *text = "#2345y;;::";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
@@ -1802,16 +1742,12 @@ TEST_F(LexerTest_Lv1, SPACE4) {
 
 TEST_F(LexerTest_Lv1, SPACE5) {
     const char *text = "    \t   \n  \\\n\\\r ";
-    SCOPED_TRACE("");
-
     this->initLexer(text, yycEXPR);
     ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, SPACE6) {
     const char *text = "     \t    \n  \\\n\\\r    \t";
-    SCOPED_TRACE("");
-
     this->initLexer(text);
     this->lexer->pushLexerMode(yycTYPE);
     ASSERT_NO_FATAL_FAILURE(EXPECT(EOS, ""));
@@ -1834,8 +1770,6 @@ TEST(LexerTest_Lv2, NEW_LINE) {
 }
 
 TEST(LexerTest_Lv3, IllegalChar) {
-    SCOPED_TRACE("");
-
     unsigned char str[] = {0x82, 0};    // broken UTF-8 code
 
     Lexer lexer("(string)", (char *)str);

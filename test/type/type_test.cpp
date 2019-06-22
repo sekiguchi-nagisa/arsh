@@ -119,8 +119,6 @@ public:
     TypeTest() : checker(this->pool, false) {}
 
     virtual void assertTypeName(const char *typeName, DSType &type) {
-        SCOPED_TRACE("");
-
         std::string name(typeName);
         // assert type name
         ASSERT_EQ(name, this->pool.getTypeName(type));
@@ -130,8 +128,6 @@ public:
     }
 
     virtual void assertSuperType(DSType &type, DSType &superType) {
-        SCOPED_TRACE("");
-
         DSType *actualSuperType = type.getSuperType();
         ASSERT_TRUE(actualSuperType != nullptr);
         ASSERT_STREQ(this->pool.getTypeName(*actualSuperType), this->pool.getTypeName(superType));
@@ -139,15 +135,12 @@ public:
     }
 
     virtual void assertAttribute(flag8_set_t set, DSType &type) {
-        SCOPED_TRACE("");
         ASSERT_EQ(hasFlag(set, DSType::EXTENDIBLE), type.isExtendible());
         ASSERT_EQ(hasFlag(set, DSType::FUNC_TYPE), type.isFuncType());
         ASSERT_EQ(hasFlag(set, DSType::RECORD_TYPE), type.isRecordType());
     }
 
     virtual void assertAlias(const char *aliasName, DSType &type) {
-        SCOPED_TRACE("");
-
         std::string name(aliasName);
         ASSERT_NE(name, this->pool.getTypeName(type));
 
@@ -157,8 +150,6 @@ public:
     }
 
     virtual void assertTemplateName(const char *templateName, const TypeTemplate &t, unsigned int size) {
-        SCOPED_TRACE("");
-
         std::string name(templateName);
         ASSERT_EQ(name, t.getName());
 

@@ -114,8 +114,6 @@ protected:
     JSON ret;
 
     void parse(const char *src) {
-        SCOPED_TRACE("");
-
         Parser parser(src);
         this->ret = parser();
         if(parser.hasError()) {
@@ -320,8 +318,6 @@ protected:
     bool ret{false};
 
     void tryValidate(const InterfaceWrapper &wrapper, const char *src) {
-        SCOPED_TRACE("");
-
         Parser parser(src);
         auto json = parser();
         if(parser.hasError()) {
