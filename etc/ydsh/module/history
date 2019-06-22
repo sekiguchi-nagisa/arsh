@@ -5,6 +5,7 @@ var HISTFILE = '~/.ydsh_history'
 var HISTSIZE = 0u
 var HISTFILESIZE = 1000u
 let HISTORY = new [String]()
+var HISTIGNORE = $/^history/ as Regex!
 
 function _sync() {
     let limit = 4096u
@@ -72,6 +73,7 @@ function _add($s : String, $p : Boolean) {
     if $p {
         if $s.empty() { return; }
         if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
+        if $HISTIGNORE && $HISTIGNORE! =~ $s { return; }
     }
 
     if $HISTORY.size() == $HISTSIZE as Int32 {

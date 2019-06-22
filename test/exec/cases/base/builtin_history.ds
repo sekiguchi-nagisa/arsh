@@ -25,6 +25,12 @@ history -s $'\thoge'
 assert $HISTORY.size() == 1
 assert $HISTORY[0] == 'hello world'
 
+# ignore history match HISTIGNORE
+assert $HISTIGNORE! =~ 'history | nl'
+history -s 'history | nl'
+assert $HISTORY.size() == 1
+assert $HISTORY[0] == 'hello world'
+
 # clear
 history -c
 assert $HISTORY.empty()
