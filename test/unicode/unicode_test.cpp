@@ -86,7 +86,7 @@ TEST_F(UnicodeTest, size) {
 
 TEST_F(UnicodeTest, codepoint2utf8) {
     char buf[4];
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, UnicodeUtil::codePointToUtf8(-3, buf)));
+    ASSERT_EQ(0, UnicodeUtil::codePointToUtf8(-3, buf));
 
     ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("\0"));
     ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("a"));
@@ -99,13 +99,13 @@ TEST_F(UnicodeTest, codepoint2utf8) {
 }
 
 TEST_F(UnicodeTest, base) {
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, UnicodeUtil::width(0)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, UnicodeUtil::width('\n')));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, UnicodeUtil::width('\t')));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, UnicodeUtil::width('1')));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, UnicodeUtil::width(' ')));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, UnicodeUtil::width('\\')));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, UnicodeUtil::width('~')));
+    ASSERT_EQ(0, UnicodeUtil::width(0));
+    ASSERT_EQ(-1, UnicodeUtil::width('\n'));
+    ASSERT_EQ(-1, UnicodeUtil::width('\t'));
+    ASSERT_EQ(1, UnicodeUtil::width('1'));
+    ASSERT_EQ(1, UnicodeUtil::width(' '));
+    ASSERT_EQ(1, UnicodeUtil::width('\\'));
+    ASSERT_EQ(1, UnicodeUtil::width('~'));
 }
 
 TEST_F(UnicodeTest, codePoint) {
@@ -150,25 +150,25 @@ TEST_F(UnicodeTest, multi2) {
     // C
     const char *r = nullptr;
     r = setlocale(LC_CTYPE, "C");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(r != nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, UnicodeUtil::localeAwareWidth(code)));
+    ASSERT_TRUE(r != nullptr);
+    ASSERT_EQ(1, UnicodeUtil::localeAwareWidth(code));
 
     // ja
     r = setlocale(LC_CTYPE, "ja_JP.UTF-8");
     if(r != nullptr) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+        ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code));
     }
 
     // zh
     r = setlocale(LC_CTYPE, "zh_CN.UTF-8");
     if(r != nullptr) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+        ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code));
     }
 
     // ko
     r = setlocale(LC_CTYPE, "ko_KR.UTF-8");
     if(r != nullptr) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code)));
+        ASSERT_EQ(2, UnicodeUtil::localeAwareWidth(code));
     }
 
 
@@ -207,29 +207,29 @@ TEST_F(UnicodeTest, illegal) {
     }
 
     // illegal code point
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-2, UnicodeUtil::width(-1, UnicodeUtil::ONE_WIDTH)));
+    ASSERT_EQ(-2, UnicodeUtil::width(-1, UnicodeUtil::ONE_WIDTH));
 }
 
 TEST_F(UnicodeTest, utf16) {
     unsigned short high = 0xD867;
     unsigned short low = 0xDE3D;
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isHighSurrogate(high)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(UnicodeUtil::isHighSurrogate(low)));
+    ASSERT_TRUE(UnicodeUtil::isHighSurrogate(high));
+    ASSERT_FALSE(UnicodeUtil::isHighSurrogate(low));
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isLowSurrogate(low)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(UnicodeUtil::isLowSurrogate(high)));
+    ASSERT_TRUE(UnicodeUtil::isLowSurrogate(low));
+    ASSERT_FALSE(UnicodeUtil::isLowSurrogate(high));
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isSurrogate(high)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isSurrogate(low)));
+    ASSERT_TRUE(UnicodeUtil::isSurrogate(high));
+    ASSERT_TRUE(UnicodeUtil::isSurrogate(low));
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isBmpCodePoint(high)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isBmpCodePoint(low)));
+    ASSERT_TRUE(UnicodeUtil::isBmpCodePoint(high));
+    ASSERT_TRUE(UnicodeUtil::isBmpCodePoint(low));
 
     int code = UnicodeUtil::utf16ToCodePoint(high, low);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(UnicodeUtil::isSupplementaryCodePoint(code)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(UnicodeUtil::isBmpCodePoint(code)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0x29E3D, code));
+    ASSERT_TRUE(UnicodeUtil::isSupplementaryCodePoint(code));
+    ASSERT_FALSE(UnicodeUtil::isBmpCodePoint(code));
+    ASSERT_EQ(0x29E3D, code);
 }
 
 int main(int argc, char **argv) {

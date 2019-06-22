@@ -36,14 +36,14 @@ struct LoggerTest : public ExpectOutput {
     void expectRegex(const Output &output, int status = 0,
                      WaitStatus::Kind type = WaitStatus::EXITED,
                      const char *out = "", const char *err = "") {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
+        ASSERT_TRUE(out != nullptr);
+        ASSERT_TRUE(err != nullptr);
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, output.status.value));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(type, output.status.kind));
+        ASSERT_EQ(status, output.status.value);
+        ASSERT_EQ(type, output.status.kind);
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(output.out, ::testing::MatchesRegex(out)));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(output.err, ::testing::MatchesRegex(err)));
+        ASSERT_THAT(output.out, ::testing::MatchesRegex(out));
+        ASSERT_THAT(output.err, ::testing::MatchesRegex(err));
     }
 };
 
@@ -100,16 +100,16 @@ TEST_F(LoggerTest, base) {
     this->envs.clear();
     this->addEnv("testlog_LEVEL", "INFO");
     ret = this->spawnAndWait(func);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, ret.status.kind));
+    ASSERT_EQ(0, ret.status.value);
+    ASSERT_EQ(WaitStatus::EXITED, ret.status.kind);
 
     auto outs = split(ret.out);
     outs.pop_back();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, outs.size()));
+    ASSERT_EQ(3, outs.size());
 
     auto errs = split(ret.err);
     errs.pop_back();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, errs.size()));
+    ASSERT_EQ(3, errs.size());
 
     const char *kind[] = {
             "error", "warning", "info"
@@ -120,8 +120,8 @@ TEST_F(LoggerTest, base) {
         str += "!!";
         auto errPattern = format(HEADER, kind[i], str.c_str());
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(outs[i], ::testing::MatchesRegex(outPattern)));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(errs[i], ::testing::MatchesRegex(errPattern)));
+        ASSERT_THAT(outs[i], ::testing::MatchesRegex(outPattern));
+        ASSERT_THAT(errs[i], ::testing::MatchesRegex(errPattern));
     }
 }
 
@@ -144,18 +144,18 @@ TEST_F(LoggerTest, thread) {
         return 0;
     });
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, ret.status.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", ret.out));
+    ASSERT_EQ(0, ret.status.value);
+    ASSERT_EQ(WaitStatus::EXITED, ret.status.kind);
+    ASSERT_EQ("", ret.out);
 
     auto errs = split(ret.err);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(errs.empty()));
+    ASSERT_FALSE(errs.empty());
     errs.pop_back();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4, errs.size()));
+    ASSERT_EQ(4, errs.size());
 
     for(auto &e : errs) {
         auto pattern = format(HEADER, "(info|warning)", "thread[12]-[12]");
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(e, ::testing::MatchesRegex(pattern)));
+        ASSERT_THAT(e, ::testing::MatchesRegex(pattern));
     }
 }
 

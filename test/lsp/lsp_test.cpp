@@ -16,14 +16,14 @@ TEST(LSPTest, Position) {
     }
 )";
     auto json = JSON::fromString(text);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(json.isInvalid()));
+    ASSERT_FALSE(json.isInvalid());
     auto line = json.serialize();
 
     Position pos;
     fromJSON(std::move(json), pos);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(23, pos.line));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(34, pos.character));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(line, toJSON(pos).serialize()));
+    ASSERT_EQ(23, pos.line);
+    ASSERT_EQ(34, pos.character);
+    ASSERT_EQ(line, toJSON(pos).serialize());
 }
 
 TEST(LSPTest, Range) {
@@ -38,16 +38,16 @@ TEST(LSPTest, Range) {
     }
 )";
     auto json = JSON::fromString(text);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(json.isInvalid()));
+    ASSERT_FALSE(json.isInvalid());
     auto line = json.serialize();
 
     Range range;
     fromJSON(std::move(json), range);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(90, range.start.line));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(100, range.start.character));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(100, range.end.line));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(24, range.end.character));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(line, toJSON(range).serialize()));
+    ASSERT_EQ(90, range.start.line);
+    ASSERT_EQ(100, range.start.character);
+    ASSERT_EQ(100, range.end.line);
+    ASSERT_EQ(24, range.end.character);
+    ASSERT_EQ(line, toJSON(range).serialize());
 }
 
 TEST(LSPTest, Location) {
@@ -65,17 +65,17 @@ TEST(LSPTest, Location) {
     }
 )";
     auto json = JSON::fromString(text);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(json.isInvalid()));
+    ASSERT_FALSE(json.isInvalid());
     auto line = json.serialize();
 
     Location location;
     fromJSON(std::move(json), location);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("/hoge/hoge", location.uri.uri));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(90, location.range.start.line));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15, location.range.start.character));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(100, location.range.end.line));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(24, location.range.end.character));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(line, toJSON(location).serialize()));
+    ASSERT_EQ("/hoge/hoge", location.uri.uri);
+    ASSERT_EQ(90, location.range.start.line);
+    ASSERT_EQ(15, location.range.start.character);
+    ASSERT_EQ(100, location.range.end.line);
+    ASSERT_EQ(24, location.range.end.character);
+    ASSERT_EQ(line, toJSON(location).serialize());
 }
 
 TEST(LSPTest, LocationLink) {
@@ -93,19 +93,19 @@ TEST(LSPTest, LocationLink) {
     }
 )";
     auto json = JSON::fromString(text);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(json.isInvalid()));
+    ASSERT_FALSE(json.isInvalid());
     auto line = json.serialize();
 
     LocationLink link;
     fromJSON(std::move(json), link);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(link.originSelectionRange.hasValue()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(link.targetSelectionRange.hasValue()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("/hoge", link.targetUri));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(90, link.targetRange.start.line));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15, link.targetRange.start.character));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(100, link.targetRange.end.line));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(24, link.targetRange.end.character));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(line, toJSON(link).serialize()));
+    ASSERT_FALSE(link.originSelectionRange.hasValue());
+    ASSERT_FALSE(link.targetSelectionRange.hasValue());
+    ASSERT_EQ("/hoge", link.targetUri);
+    ASSERT_EQ(90, link.targetRange.start.line);
+    ASSERT_EQ(15, link.targetRange.start.character);
+    ASSERT_EQ(100, link.targetRange.end.line);
+    ASSERT_EQ(24, link.targetRange.end.character);
+    ASSERT_EQ(line, toJSON(link).serialize());
 }
 
 TEST(LSPTest, Command) {
@@ -116,14 +116,14 @@ TEST(LSPTest, Command) {
     }
 )";
     auto json = JSON::fromString(text);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(json.isInvalid()));
+    ASSERT_FALSE(json.isInvalid());
     auto line = json.serialize();
 
     Command cmd;
     fromJSON(std::move(json), cmd);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("stop", cmd.title));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("/stop", cmd.command));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(line, toJSON(cmd).serialize()));
+    ASSERT_EQ("stop", cmd.title);
+    ASSERT_EQ("/stop", cmd.command);
+    ASSERT_EQ(line, toJSON(cmd).serialize());
 }
 
 TEST(LSPTest, TextEdit) {
@@ -141,17 +141,17 @@ TEST(LSPTest, TextEdit) {
     }
 )";
     auto json = JSON::fromString(text);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(json.isInvalid()));
+    ASSERT_FALSE(json.isInvalid());
     auto line = json.serialize();
 
     TextEdit edit;
     fromJSON(std::move(json), edit);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("hello world!!", edit.newText));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(90, edit.range.start.line));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(15, edit.range.start.character));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(100, edit.range.end.line));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(24, edit.range.end.character));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(line, toJSON(edit).serialize()));
+    ASSERT_EQ("hello world!!", edit.newText);
+    ASSERT_EQ(90, edit.range.start.line);
+    ASSERT_EQ(15, edit.range.start.character);
+    ASSERT_EQ(100, edit.range.end.line);
+    ASSERT_EQ(24, edit.range.end.character);
+    ASSERT_EQ(line, toJSON(edit).serialize());
 }
 
 static void writeAndSeekToHead(const FilePtr &file, const std::string &line) {
@@ -199,76 +199,76 @@ struct TransportTest : public ::testing::Test {
 TEST_F(TransportTest, case1) {
     this->setInput("hoge");
     int size = this->transport.recvSize();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, size));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+")));
+    ASSERT_EQ(-1, size);
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+"));
 }
 
 TEST_F(TransportTest, case2) {
     this->setInput("hoge\r");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+")));
+    ASSERT_EQ(-1, this->transport.recvSize());
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+"));
 }
 
 TEST_F(TransportTest, case3) {
     this->setInput("hoge\n");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+")));
+    ASSERT_EQ(-1, this->transport.recvSize());
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid header: hoge.+"));
 }
 
 TEST_F(TransportTest, case4) {
     this->setInput("hoge: 34\r\n");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+other header: hoge: 34.+")));
+    ASSERT_EQ(-1, this->transport.recvSize());
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+other header: hoge: 34.+"));
 }
 
 TEST_F(TransportTest, case5) {
     this->setInput("Content-Length: hey\r\n");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+may be broken content length.+")));
+    ASSERT_EQ(-1, this->transport.recvSize());
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+may be broken content length.+"));
 }
 
 TEST_F(TransportTest, case6) {
     this->setInput("Content-Length: 12\r\nContent-Length: 5600\r\n");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, this->transport.recvSize()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+previous read message length: 12.+")));
+    ASSERT_EQ(-1, this->transport.recvSize());
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+previous read message length: 12.+"));
 }
 
 TEST_F(TransportTest, case7) {
     this->setInput("Content-Length: 12\r\nContent-Length: 5\r\n\r\n12345");
     int size = this->transport.recvSize();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5, size));
+    ASSERT_EQ(5, size);
     auto logStr = this->readLog();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+")));
+    ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+"));
 
     char data[5];
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5, this->transport.recv(arraySize(data), data)));
+    ASSERT_EQ(5, this->transport.recv(arraySize(data), data));
     std::string str(data, 5);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("12345", str));
+    ASSERT_EQ("12345", str);
 }
 
 TEST_F(TransportTest, case8) {
     this->setInput("Content-Length: 5\r\n\r\n12345");
     int size = this->transport.recvSize();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5, size));
+    ASSERT_EQ(5, size);
     auto logStr = this->readLog();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+")));
+    ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+"));
 
     char data[3];
     int recvSize = this->transport.recv(arraySize(data), data);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, recvSize));
+    ASSERT_EQ(3, recvSize);
     std::string str(data, recvSize);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("123", str));
+    ASSERT_EQ("123", str);
 
     recvSize = this->transport.recv(arraySize(data), data);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, recvSize));
+    ASSERT_EQ(2, recvSize);
     str = std::string(data, recvSize);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("45", str));
+    ASSERT_EQ("45", str);
 }
 
 TEST_F(TransportTest, case9) {
     std::string str = "helllo";
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(str.size(), this->transport.send(str.size(), str.c_str())));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("Content-Length: 6\r\n\r\nhelllo", this->readOutput()));
+    ASSERT_EQ(str.size(), this->transport.send(str.size(), str.c_str()));
+    ASSERT_EQ("Content-Length: 6\r\n\r\nhelllo", this->readOutput());
 }
 
 
@@ -323,11 +323,11 @@ struct ServerTest : public InteractiveBase {
 TEST_F(ServerTest, invalid) {
     this->call("hello!!!", {{"de", 34}});
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+server not initialized.+"));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+must be initialized.+")));
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+must be initialized.+"));
 
     this->call("hello!!!", "de");
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+Invalid Request.+"));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid message.+")));
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid message.+"));
 
     this->call("initialize", {{"de", 34}});
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+require field .+"));
@@ -354,11 +354,11 @@ TEST_F(ServerTest, term1) {
 
     this->call("shutdown", nullptr);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+result.+null.+"));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+try to shutdown.+")));
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+try to shutdown.+"));
 
     this->notify("exit", nullptr);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+exit server: 0.+")));
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+exit server: 0.+"));
 }
 
 TEST_F(ServerTest, term2) {
@@ -366,13 +366,13 @@ TEST_F(ServerTest, term2) {
 
     this->notify("exit", nullptr);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+exit server: 1.+")));
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+exit server: 1.+"));
 }
 
 TEST_F(ServerTest, term3) {
     this->call("shutdown", nullptr);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+server not initialized.+"));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+must be initialized.+")));
+    ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+must be initialized.+"));
 }
 
 int main(int argc, char **argv) {

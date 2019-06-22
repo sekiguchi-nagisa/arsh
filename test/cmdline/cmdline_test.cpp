@@ -344,9 +344,9 @@ var a
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a   \n    \\\n   \t  \t  \n   "), 1, "", msg));
 
     auto result = ds("-c", "\n);").execAndGetResult(false);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, result.status.value));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(");\n^\n", strchr(result.err.c_str(), '\n') + 1));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", result.out));
+    ASSERT_EQ(1, result.status.value);
+    ASSERT_STREQ(");\n^\n", strchr(result.err.c_str(), '\n') + 1);
+    ASSERT_EQ("", result.out);
 
 
     // line marker of semantic error
@@ -495,12 +495,12 @@ TEST_F(CmdlineTest, toplevel_escape) {
     auto builder = ds("--print-toplevel", "-c", "$'hello\\x00world'");
     auto r = builder.execAndGetResult(false);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r.status.value));
+    ASSERT_EQ(0, r.status.value);
 
     const char msg[] = "(String) hello\0world\n";
     std::string out(msg, arraySize(msg) - 1);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(out, r.out));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", r.err.c_str()));
+    ASSERT_EQ(out, r.out);
+    ASSERT_STREQ("", r.err.c_str());
 }
 
 TEST_F(CmdlineTest, syntax) {
@@ -577,7 +577,7 @@ TEST_F(CmdlineTest2, exec) {
     auto mode = getStMode(fileName.c_str());
     mode |= S_IXUSR | S_IXGRP | S_IXOTH;
     chmod(fileName.c_str(), mode);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(strerror(0), strerror(errno)));
+    ASSERT_STREQ(strerror(0), strerror(errno));
 
     auto out = format("hey: %s: 11111 8888\n", fileName.c_str());
     auto cmd = format("%s 11111 8888", fileName.c_str());

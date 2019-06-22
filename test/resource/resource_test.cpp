@@ -16,7 +16,7 @@ TEST(resource, base) {
                 });
     }
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("delete12", s.str()));
+    ASSERT_EQ("delete12", s.str());
 }
 
 TEST(resource, move1) {
@@ -30,7 +30,7 @@ TEST(resource, move1) {
         auto r2(std::move(r));
     }
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("delete12", s.str()));
+    ASSERT_EQ("delete12", s.str());
 }
 
 TEST(resource, move2) {
@@ -45,7 +45,7 @@ TEST(resource, move2) {
         auto r3(std::move(r));
     }
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("delete12", s.str()));
+    ASSERT_EQ("delete12", s.str());
 }
 
 TEST(resource, moveAssign) {
@@ -68,7 +68,7 @@ TEST(resource, moveAssign) {
         r = std::move(r2);
     }
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("delete12", s.str()));
+    ASSERT_EQ("delete12", s.str());
 }
 
 TEST(resource, moveAssign2) {
@@ -92,7 +92,7 @@ TEST(resource, moveAssign2) {
         r = std::move(r2);
     }
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("delete12", s.str()));
+    ASSERT_EQ("delete12", s.str());
 }
 
 TEST(resource, rest) {
@@ -106,7 +106,7 @@ TEST(resource, rest) {
         r.reset(100);
     }
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("delete12delete100", s.str()));
+    ASSERT_EQ("delete12delete100", s.str());
 }
 
 TEST(resource, release) {
@@ -120,7 +120,7 @@ TEST(resource, release) {
         r.release();
     }
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", s.str()));
+    ASSERT_EQ("", s.str());
 }
 
 struct AAAOp;
@@ -173,13 +173,13 @@ TEST(intrusive, base) {
     static_assert(sizeof(BBB) == sizeof(long), "");
 
     auto a = AAA::create();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("AAA", a->name()));
+    ASSERT_STREQ("AAA", a->name());
     auto b = BBB::create();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("BBB", b->name()));
+    ASSERT_STREQ("BBB", b->name());
 
     a = b;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("BBB", a->name()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, a.useCount()));
+    ASSERT_STREQ("BBB", a->name());
+    ASSERT_EQ(2, a.useCount());
 }
 
 int main(int argc, char **argv) {

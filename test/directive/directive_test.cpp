@@ -34,18 +34,18 @@ public:
  */
 TEST_F(DirectiveTest, empty1) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#!/usr/bin/ydsh", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, this->getDirective().getParams().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, this->getDirective().getLineNum()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", this->getDirective().getErrorKind().c_str()));
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult());
+    ASSERT_EQ(0u, this->getDirective().getParams().size());
+    ASSERT_EQ(0u, this->getDirective().getLineNum());
+    ASSERT_STREQ("", this->getDirective().getErrorKind().c_str());
 }
 
 TEST_F(DirectiveTest, empty2) {
     ASSERT_NO_FATAL_FAILURE(this->parse("fhreuifre", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, this->getDirective().getParams().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, this->getDirective().getLineNum()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", this->getDirective().getErrorKind().c_str()));
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult());
+    ASSERT_EQ(0u, this->getDirective().getParams().size());
+    ASSERT_EQ(0u, this->getDirective().getLineNum());
+    ASSERT_STREQ("", this->getDirective().getErrorKind().c_str());
 }
 
 TEST_F(DirectiveTest, empty3) {
@@ -94,158 +94,158 @@ TEST_F(DirectiveTest, fail10) {
 
 TEST_F(DirectiveTest, result1) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'SUCCESS')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result2) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'SUCcESS')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result3) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'success')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result4) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'TYPE_ERROR')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result5) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'type')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result6) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'PARSE_ERROR')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result7) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'parse')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result8) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'RUNTIME_ERROR')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result9) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'runtime')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result10) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'THROW')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result11) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'throw')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result12) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'ASSERTION_ERROR')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_ASSERTION_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_ASSERTION_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result13) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'ASSERT')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_ASSERTION_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_ASSERTION_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result14) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'assert')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_ASSERTION_ERROR, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_ASSERTION_ERROR, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result15) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'EXIT')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_EXIT, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_EXIT, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, result16) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($result = 'exit')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_EXIT, this->getDirective().getResult()));
+    ASSERT_EQ(DS_ERROR_KIND_EXIT, this->getDirective().getResult());
 }
 
 TEST_F(DirectiveTest, param) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($params = ['1', 'hello'])", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, this->getDirective().getParams().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("1", this->getDirective().getParams()[0].c_str()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello", this->getDirective().getParams()[1].c_str()));
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, this->getDirective().getResult());
+    ASSERT_EQ(2u, this->getDirective().getParams().size());
+    ASSERT_STREQ("1", this->getDirective().getParams()[0].c_str());
+    ASSERT_STREQ("hello", this->getDirective().getParams()[1].c_str());
 }
 
 TEST_F(DirectiveTest, status) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($status = 23)", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(23u, this->getDirective().getStatus()));
+    ASSERT_EQ(23u, this->getDirective().getStatus());
 }
 
 TEST_F(DirectiveTest, lineNum) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($lineNum = 9)", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(9u, this->getDirective().getLineNum()));
+    ASSERT_EQ(9u, this->getDirective().getLineNum());
 }
 
 TEST_F(DirectiveTest, errorKind) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($errorKind = 'Error')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("Error", this->getDirective().getErrorKind().c_str()));
+    ASSERT_STREQ("Error", this->getDirective().getErrorKind().c_str());
 }
 
 TEST_F(DirectiveTest, out) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($out = $'hello\\nworld', $err = '12345')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello\nworld", this->getDirective().getOut()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("12345", this->getDirective().getErr()));
+    ASSERT_STREQ("hello\nworld", this->getDirective().getOut());
+    ASSERT_STREQ("12345", this->getDirective().getErr());
 }
 
 TEST_F(DirectiveTest, fileName1) {
     char buf[PATH_MAX];
     const char *dir = getcwd(buf, PATH_MAX);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(dir != nullptr));
+    ASSERT_TRUE(dir != nullptr);
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($fileName = './././')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!this->getDirective().getFileName().empty()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(dir, this->getDirective().getFileName().c_str()));
+    ASSERT_TRUE(!this->getDirective().getFileName().empty());
+    ASSERT_STREQ(dir, this->getDirective().getFileName().c_str());
 }
 
 TEST_F(DirectiveTest, fileName2) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($fileName = $0)", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!this->getDirective().getFileName().empty()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(this->getSourceName(), this->getDirective().getFileName().c_str()));
+    ASSERT_TRUE(!this->getDirective().getFileName().empty());
+    ASSERT_STREQ(this->getSourceName(), this->getDirective().getFileName().c_str());
 }
 
 TEST_F(DirectiveTest, envs1) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($envs = ['hoge' : '1', 'huga' : '2'])", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, this->getDirective().getEnvs().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("1", this->getDirective().getEnvs().find("hoge")->second));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2", this->getDirective().getEnvs().find("huga")->second));
+    ASSERT_EQ(2, this->getDirective().getEnvs().size());
+    ASSERT_EQ("1", this->getDirective().getEnvs().find("hoge")->second);
+    ASSERT_EQ("2", this->getDirective().getEnvs().find("huga")->second);
 }
 
 TEST_F(DirectiveTest, envs2) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($envs = ['hoge' : '1', 'hoge' : '2'])", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, this->getDirective().getEnvs().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2", this->getDirective().getEnvs().find("hoge")->second));
+    ASSERT_EQ(1, this->getDirective().getEnvs().size());
+    ASSERT_EQ("2", this->getDirective().getEnvs().find("hoge")->second);
 }
 
 TEST_F(DirectiveTest, envs3) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($env = ['hoge' : '1', 'huga' : '2', 'hoge' : '4'])", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, this->getDirective().getEnvs().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("4", this->getDirective().getEnvs().find("hoge")->second));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("2", this->getDirective().getEnvs().find("huga")->second));
+    ASSERT_EQ(2, this->getDirective().getEnvs().size());
+    ASSERT_EQ("4", this->getDirective().getEnvs().find("hoge")->second);
+    ASSERT_EQ("2", this->getDirective().getEnvs().find("huga")->second);
 }
 
 TEST_F(DirectiveTest, ignored1) {
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(this->getDirective().isIgnoredPlatform()));
+    ASSERT_FALSE(this->getDirective().isIgnoredPlatform());
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'linux|cygwin|wsl|darwin|container')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->getDirective().isIgnoredPlatform()));
+    ASSERT_TRUE(this->getDirective().isIgnoredPlatform());
 }
 
 TEST_F(DirectiveTest, ignored2) {
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(this->getDirective().isIgnoredPlatform()));
+    ASSERT_FALSE(this->getDirective().isIgnoredPlatform());
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'hogehohfueir345')", true));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(this->getDirective().isIgnoredPlatform()));
+    ASSERT_FALSE(this->getDirective().isIgnoredPlatform());
 }
 
 int main(int argc, char **argv) {

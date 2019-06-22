@@ -23,7 +23,7 @@ TEST(BuiltinExecTest, case1) {
     DSState *state = DSState_create();
 
     int ret = DSState_exec(state, make_argv("echo", "hello").data());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
+    ASSERT_EQ(0, ret);
 
     DSState_delete(&state);
 }
@@ -32,7 +32,7 @@ TEST(BuiltinExecTest, case2) {
     DSState *state = DSState_create();
 
     int ret = DSState_exec(state, make_argv("fheruifh", "hello").data());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, ret));
+    ASSERT_EQ(1, ret);
 
     DSState_delete(&state);
 }
@@ -53,50 +53,50 @@ TEST_F(APITest, version) {
     DSVersion version;
     DSState_version(&version);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, version.major));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, version.minor));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, version.patch));
+    ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, version.major);
+    ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, version.minor);
+    ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, version.patch);
 }
 
 TEST_F(APITest, config) {
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(ydsh::SYSTEM_CONFIG_DIR, DSState_systemConfigDir()));
+    ASSERT_STREQ(ydsh::SYSTEM_CONFIG_DIR, DSState_systemConfigDir());
 }
 
 TEST_F(APITest, lineNum1) {
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, DSState_lineNum(this->state)));
+    ASSERT_EQ(1u, DSState_lineNum(this->state));
 
     const char *str = "12 + 32\n $true\n";
     DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, DSState_lineNum(this->state)));
+    ASSERT_EQ(3u, DSState_lineNum(this->state));
 
     DSState_setLineNum(this->state, 49);
     str = "23";
     DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(50u, DSState_lineNum(this->state)));
+    ASSERT_EQ(50u, DSState_lineNum(this->state));
 }
 
 TEST_F(APITest, lineNum2) {
     DSError e;
     auto fileName1 = this->createTempFile("target1.ds", "true\ntrue\n");
     DSState_loadAndEval(this->state, fileName1.c_str(), &e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, DSState_lineNum(this->state)));
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    ASSERT_EQ(3, DSState_lineNum(this->state));
     DSError_release(&e);
 
     fileName1 = this->createTempFile("targe2.ds", "45/'de'");
     DSState_loadAndEval(this->state, fileName1.c_str(), &e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, e.lineNum));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2, DSState_lineNum(this->state)));
+    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
+    ASSERT_EQ(1, e.lineNum);
+    ASSERT_EQ(2, DSState_lineNum(this->state));
     DSError_release(&e);
 }
 
 TEST_F(APITest, prompt) {
     const char *str = "$PS1 = 'hello>'; $PS2 = 'second>'";
     DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hello>", DSState_prompt(this->state, 1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("second>", DSState_prompt(this->state, 2)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("", DSState_prompt(this->state, 5)));
+    ASSERT_STREQ("hello>", DSState_prompt(this->state, 1));
+    ASSERT_STREQ("second>", DSState_prompt(this->state, 2));
+    ASSERT_STREQ("", DSState_prompt(this->state, 5));
 }
 
 static std::vector<std::string> tilde() {
@@ -132,18 +132,18 @@ static std::vector<std::string> filter(const std::vector<std::string> &v, const 
 TEST_F(APITest, complete) {
     // null arguments
     auto *c = DSState_complete(nullptr, nullptr, 1); // do nothing
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(c == nullptr));
+    ASSERT_TRUE(c == nullptr);
 
     c = DSState_complete(this->state, "echo ~", 6);
     unsigned int size = DSCandidates_size(c);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(size > 0));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(nullptr, DSCandidates_get(c, size)));
+    ASSERT_TRUE(size > 0);
+    ASSERT_STREQ(nullptr, DSCandidates_get(c, size));
 
     auto expect = tilde();
     for(auto &e : expect) { std::cerr << e << std::endl; }
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), size));
+    ASSERT_EQ(expect.size(), size);
     for(unsigned int i = 0; i < size; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), DSCandidates_get(c, i)));
+        ASSERT_STREQ(expect[i].c_str(), DSCandidates_get(c, i));
     }
     DSCandidates_release(&c);
 
@@ -151,31 +151,31 @@ TEST_F(APITest, complete) {
     c = DSState_complete(this->state, "echo ~r", 7);
     size = DSCandidates_size(c);
     expect = filter(expect, "~r");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(expect.size(), size));
+    ASSERT_EQ(expect.size(), size);
     for(unsigned int i = 0; i < size; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(expect[i].c_str(), DSCandidates_get(c, i)));
+        ASSERT_STREQ(expect[i].c_str(), DSCandidates_get(c, i));
     }
     DSCandidates_release(&c);
 }
 
 TEST_F(APITest, option) {
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(this->state)));
+    ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(this->state));
     DSState_unsetOption(this->state, DS_OPTION_ASSERT);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, DSState_option(this->state)));
+    ASSERT_EQ(0, DSState_option(this->state));
 }
 
 TEST_F(APITest, scriptDir) {
     int r = DSState_setScriptDir(this->state, "hfarefoiaji vfd");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, r));
+    ASSERT_EQ(-1, r);
 }
 
 TEST_F(APITest, status) {
     int s = DSState_getExitStatus(this->state);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
+    ASSERT_EQ(0, s);
 
     DSState_setExitStatus(this->state, 34);
     s = DSState_getExitStatus(this->state);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(34, s));
+    ASSERT_EQ(34, s);
 }
 
 TEST_F(APITest, pid) {
@@ -188,17 +188,17 @@ TEST_F(APITest, pid) {
     int s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), &e);
     auto kind = e.kind;
     DSError_release(&e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, s));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, kind));
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, kind);
 }
 
 TEST_F(APITest, load1) {
     DSError e;
     int r = DSState_loadAndEval(this->state, "hogehuga", &e);
     int errorNum = errno;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(ENOENT, errorNum));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(ENOENT, errorNum);
+    ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
 
     DSError_release(&e);
 }
@@ -207,9 +207,9 @@ TEST_F(APITest, load2) {
     DSError e;
     int r = DSState_loadAndEval(this->state, ".", &e);
     int errorNum = errno;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(EISDIR, errorNum));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(EISDIR, errorNum);
+    ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
 
     DSError_release(&e);
 }
@@ -219,15 +219,15 @@ TEST_F(APITest, load3) {
 
     DSError e;
     int r = DSState_loadAndEval(this->state, modName.c_str(), &e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
     DSError_release(&e);
 
     r = DSState_loadAndEval(this->state, modName.c_str(), &e);    // file is already loaded
     int errorNum = errno;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(ETXTBSY, errorNum));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind));
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(ETXTBSY, errorNum);
+    ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
     DSError_release(&e);
 }
 
@@ -239,13 +239,13 @@ TEST_F(APITest, load4) {
 
     DSError e;
     int r = DSState_eval(this->state, "(string)", line.c_str(), line.size(), &e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
     DSError_release(&e);
 
     r = DSState_loadAndEval(this->state, modName.c_str(), &e);    // file is already loaded
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind));
+    ASSERT_EQ(0, r);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
     DSError_release(&e);
 }
 
@@ -263,8 +263,8 @@ static Output invoke(Func func) {
 TEST_F(APITest, module1) {
     DSError e;
     int r = DSState_loadModule(this->state, "fhuahfuiefer", "12", 0, &e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, e.kind));
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(DS_ERROR_KIND_PARSE_ERROR, e.kind);
     DSError_release(&e);
 
     auto ret = invoke([&]{
@@ -283,10 +283,10 @@ TEST_F(APITest, module2) {
 
     DSError e;
     int r = DSState_loadModule(this->state, "fhuahfuiefer", "hoge", 0, &e);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, r));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("NotFoundMod", e.name));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, e.lineNum));
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
+    ASSERT_STREQ("NotFoundMod", e.name);
+    ASSERT_EQ(0, e.lineNum);
     DSError_release(&e);
 
     ret = invoke([&]{
@@ -299,20 +299,20 @@ TEST_F(APITest, module3) {
     auto fileName = this->createTempFile("target.ds", "var OK_LOADING = true");
 
     int r = DSState_loadModule(this->state, fileName.c_str(), nullptr, 0, nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+    ASSERT_EQ(0, r);
     std::string src = "assert $OK_LOADING";
     r = DSState_eval(this->state, "(string)", src.c_str(), src.size(), nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+    ASSERT_EQ(0, r);
 }
 
 TEST_F(APITest, module4) {
     auto fileName = this->createTempFile("target.ds", "var OK_LOADING = true");
 
     int r = DSState_loadModule(this->state, fileName.c_str(), "hoge", DS_MOD_FULLPATH, nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+    ASSERT_EQ(0, r);
     std::string src = "assert $hoge.OK_LOADING";
     r = DSState_eval(this->state, "(string)", src.c_str(), src.size(), nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, r));
+    ASSERT_EQ(0, r);
 }
 
 struct Executor {
@@ -396,61 +396,61 @@ TEST_F(JobTest, pid1) {    // enable job control
     auto result = EXEC("%s --first | %s | %s", PID_CHECK_PATH, PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN3));
     auto pids = decompose(result.out);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, pids.size()));
+    ASSERT_EQ(3u, pids.size());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[1].ppid, pids[2].ppid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[2].ppid, pids[0].ppid));
+    ASSERT_EQ(pids[0].ppid, pids[1].ppid);
+    ASSERT_EQ(pids[1].ppid, pids[2].ppid);
+    ASSERT_EQ(pids[2].ppid, pids[0].ppid);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[1].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[2].pgid));
+    ASSERT_EQ(pids[0].pid, pids[0].pgid);
+    ASSERT_EQ(pids[0].pid, pids[1].pgid);
+    ASSERT_EQ(pids[0].pid, pids[2].pgid);
 
     // command, eval
     result = EXEC("command eval %s --first | eval command %s", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+    ASSERT_EQ(2u, pids.size());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+    ASSERT_EQ(pids[0].ppid, pids[1].ppid);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[1].pgid));
+    ASSERT_EQ(pids[0].pid, pids[0].pgid);
+    ASSERT_EQ(pids[0].pid, pids[1].pgid);
 
     // udc1
     result = EXEC("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+    ASSERT_EQ(2u, pids.size());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].ppid, pids[1].ppid));
+    ASSERT_NE(pids[0].ppid, pids[1].ppid);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[1].pgid));
+    ASSERT_EQ(pids[0].pid, pids[0].pgid);
+    ASSERT_EQ(pids[0].pid, pids[1].pgid);
 
     // udc2
     result = EXEC("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+    ASSERT_EQ(2u, pids.size());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].ppid, pids[1].ppid));
+    ASSERT_NE(pids[0].ppid, pids[1].ppid);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
+    ASSERT_NE(pids[0].pid, pids[0].pgid);
+    ASSERT_NE(pids[0].pid, pids[1].pgid);
+    ASSERT_EQ(pids[0].pgid, pids[1].pgid);
 
     // last pipe
     result = EXEC("%s --first | { %s; }", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+    ASSERT_EQ(2u, pids.size());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+    ASSERT_EQ(pids[0].ppid, pids[1].ppid);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pgid, pids[1].pgid));
+    ASSERT_EQ(pids[0].pid, pids[0].pgid);
+    ASSERT_NE(pids[0].pid, pids[1].pgid);
+    ASSERT_NE(pids[0].pgid, pids[1].pgid);
 }
 
 TEST_F(JobTest, pid2) {    // disable job control
@@ -458,46 +458,46 @@ TEST_F(JobTest, pid2) {    // disable job control
     auto result = EXEC2("%s --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     auto pids = decompose(result.out);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+    ASSERT_EQ(2u, pids.size());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[1].pid, pids[1].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
+    ASSERT_EQ(pids[0].ppid, pids[1].ppid);
+    ASSERT_NE(pids[0].pid, pids[0].pgid);
+    ASSERT_NE(pids[1].pid, pids[1].pgid);
+    ASSERT_EQ(pids[0].pgid, pids[1].pgid);
 
     // udc1
     result = EXEC2("pidcheck() { command %s $@; }; %s --first | pidcheck", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+    ASSERT_EQ(2u, pids.size());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].ppid, pids[1].ppid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[1].pid, pids[1].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
+    ASSERT_NE(pids[0].ppid, pids[1].ppid);
+    ASSERT_NE(pids[0].pid, pids[0].pgid);
+    ASSERT_NE(pids[1].pid, pids[1].pgid);
+    ASSERT_EQ(pids[0].pgid, pids[1].pgid);
 
     // udc2
     result = EXEC2("pidcheck() { command %s $@; }; pidcheck --first | %s", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+    ASSERT_EQ(2u, pids.size());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].ppid, pids[1].ppid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[1].pid, pids[1].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pgid, pids[1].pgid));
+    ASSERT_NE(pids[0].ppid, pids[1].ppid);
+    ASSERT_NE(pids[0].pid, pids[0].pgid);
+    ASSERT_NE(pids[1].pid, pids[1].pgid);
+    ASSERT_EQ(pids[0].pgid, pids[1].pgid);
 
     // last pipe
     result = EXEC("%s --first | { %s; }", PID_CHECK_PATH, PID_CHECK_PATH);
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
     pids = decompose(result.out);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, pids.size()));
+    ASSERT_EQ(2u, pids.size());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].ppid, pids[1].ppid));
+    ASSERT_EQ(pids[0].ppid, pids[1].ppid);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(pids[0].pid, pids[0].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pid, pids[1].pgid));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(pids[0].pgid, pids[1].pgid));
+    ASSERT_EQ(pids[0].pid, pids[0].pgid);
+    ASSERT_NE(pids[0].pid, pids[1].pgid);
+    ASSERT_NE(pids[0].pgid, pids[1].pgid);
 }
 
 #undef EXEC

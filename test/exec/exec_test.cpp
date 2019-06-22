@@ -146,11 +146,11 @@ TEST(Base, case1) {
     std::string fileName;
 
     int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind, "fileName", "=", fileName);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, type));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, lineNum));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("SystemError", kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("../hoge.ds", fileName));
+    ASSERT_EQ(0, ret);
+    ASSERT_EQ(3u, type);
+    ASSERT_EQ(1u, lineNum);
+    ASSERT_EQ("SystemError", kind);
+    ASSERT_EQ("../hoge.ds", fileName);
 }
 
 TEST(Base, case2) {
@@ -160,10 +160,10 @@ TEST(Base, case2) {
     std::string kind;
 
     int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, type));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, lineNum));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", kind));
+    ASSERT_EQ(0, ret);
+    ASSERT_EQ(0u, type);
+    ASSERT_EQ(0u, lineNum);
+    ASSERT_EQ("", kind);
 }
 
 TEST(Base, case3) {
@@ -174,10 +174,10 @@ TEST(Base, case3) {
     std::string fileName;
 
     int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind, "fileName", "=", fileName);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, type));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, lineNum));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", kind));
+    ASSERT_EQ(0, ret);
+    ASSERT_EQ(0u, type);
+    ASSERT_EQ(0u, lineNum);
+    ASSERT_EQ("", kind);
 }
 
 int main(int argc, char **argv) {

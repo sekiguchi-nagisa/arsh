@@ -71,8 +71,8 @@ protected:
         DSState_eval(this->state, "(dummy)", code, strlen(code), &e);
         auto actualKind = e.kind;
         DSError_release(&e);
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(kind, actualKind));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(this->inspector.getCalled()));
+        ASSERT_EQ(kind, actualKind);
+        ASSERT_TRUE(this->inspector.getCalled());
     }
 
     void eval(const char *code, DSErrorKind kind, OpCode breakOp, BreakPointHandler &&handler) {
@@ -89,21 +89,21 @@ protected:
     }
 
     void RefCount(const char *gvarName, unsigned int refCount) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(gvarName != nullptr));
+        ASSERT_TRUE(gvarName != nullptr);
 
         auto *handle = this->state->symbolTable.lookupHandle(gvarName);
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(handle != nullptr));
+        ASSERT_TRUE(handle != nullptr);
 
         auto &v = this->state->getGlobal(handle->getIndex());
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.isObject()));
+        ASSERT_TRUE(v.isObject());
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(refCount, v->getRefcount()));
+        ASSERT_EQ(refCount, v->getRefcount());
     }
 };
 
 TEST_F(VMTest, base) {
     ASSERT_(this->eval("12", DS_ERROR_KIND_SUCCESS, OpCode::POP, [&]{
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(12, typeAs<Int_Object>(this->state->peek())->getValue()));
+        ASSERT_EQ(12, typeAs<Int_Object>(this->state->peek())->getValue());
     }));
 }
 
@@ -195,47 +195,47 @@ TEST_F(VMTest, deinit10) {
 TEST_F(VMTest, sig1) {
     ASSERT_(this->eval("function f($s : Signal) {}"));
     auto func = this->getValue("f");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(func != nullptr));
+    ASSERT_TRUE(func != nullptr);
 
     SignalVector v;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, v.getData().size()));
+    ASSERT_EQ(0u, v.getData().size());
 
     // not found
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(SIGQUIT) == nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(SIGINT) == nullptr));
+    ASSERT_TRUE(v.lookup(SIGQUIT) == nullptr);
+    ASSERT_TRUE(v.lookup(SIGINT) == nullptr);
 
     // register
     v.insertOrUpdate(3, func);
     v.insertOrUpdate(1, func);
     v.insertOrUpdate(4, func);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, v.getData().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1, v.getData()[0].first));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3, v.getData()[1].first));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4, v.getData()[2].first));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func, v.lookup(1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func, v.lookup(3)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func, v.lookup(4)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(2) == nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(5) == nullptr));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(v.lookup(-3) == nullptr));
+    ASSERT_EQ(3u, v.getData().size());
+    ASSERT_EQ(1, v.getData()[0].first);
+    ASSERT_EQ(3, v.getData()[1].first);
+    ASSERT_EQ(4, v.getData()[2].first);
+    ASSERT_EQ(func, v.lookup(1));
+    ASSERT_EQ(func, v.lookup(3));
+    ASSERT_EQ(func, v.lookup(4));
+    ASSERT_TRUE(v.lookup(2) == nullptr);
+    ASSERT_TRUE(v.lookup(5) == nullptr);
+    ASSERT_TRUE(v.lookup(-3) == nullptr);
 
     // update
     auto func1 = this->getValue("SIG_DFL");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func, v.lookup(3)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_NE(func, func1));
+    ASSERT_EQ(func, v.lookup(3));
+    ASSERT_NE(func, func1);
     v.insertOrUpdate(3, func1);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(func1, v.lookup(3)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, v.getData().size()));
+    ASSERT_EQ(func1, v.lookup(3));
+    ASSERT_EQ(3u, v.getData().size());
 
     // remove
     v.insertOrUpdate(4, nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, v.getData().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DSValue(), v.lookup(4)));
+    ASSERT_EQ(2u, v.getData().size());
+    ASSERT_EQ(DSValue(), v.lookup(4));
 
     // do nothing
     v.insertOrUpdate(5, nullptr);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, v.getData().size()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DSValue(), v.lookup(5)));
+    ASSERT_EQ(2u, v.getData().size());
+    ASSERT_EQ(DSValue(), v.lookup(5));
 }
 
 TEST_F(VMTest, abort) {
@@ -266,90 +266,90 @@ TEST(JobTable, attach) {
     auto job6 = newJob();
 
     jobTable.attach(job1);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, job1->getJobID()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job1, jobTable.getLatestEntry()));
+    ASSERT_EQ(1u, job1->getJobID());
+    ASSERT_EQ(job1, jobTable.getLatestEntry());
 
     jobTable.attach(job2);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, job2->getJobID()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job2, jobTable.getLatestEntry()));
+    ASSERT_EQ(2u, job2->getJobID());
+    ASSERT_EQ(job2, jobTable.getLatestEntry());
 
     jobTable.attach(job3);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, job3->getJobID()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job3, jobTable.getLatestEntry()));
+    ASSERT_EQ(3u, job3->getJobID());
+    ASSERT_EQ(job3, jobTable.getLatestEntry());
 
     jobTable.attach(job4);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, job4->getJobID()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job4, jobTable.getLatestEntry()));
+    ASSERT_EQ(4u, job4->getJobID());
+    ASSERT_EQ(job4, jobTable.getLatestEntry());
 
     jobTable.attach(job5);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, job5->getJobID()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job5, jobTable.getLatestEntry()));
+    ASSERT_EQ(5u, job5->getJobID());
+    ASSERT_EQ(job5, jobTable.getLatestEntry());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job2, jobTable.detach(2, true)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job5, jobTable.getLatestEntry()));
+    ASSERT_EQ(job2, jobTable.detach(2, true));
+    ASSERT_EQ(job5, jobTable.getLatestEntry());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job3, jobTable.detach(3, false)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job5, jobTable.getLatestEntry()));
+    ASSERT_EQ(job3, jobTable.detach(3, false));
+    ASSERT_EQ(job5, jobTable.getLatestEntry());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job5, jobTable.detach(5, true)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job4, jobTable.getLatestEntry()));
+    ASSERT_EQ(job5, jobTable.detach(5, true));
+    ASSERT_EQ(job4, jobTable.getLatestEntry());
 
     // job entry layout
     auto begin = getBeginIter(jobTable);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->getJobID()));
+    ASSERT_EQ(1u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->getJobID()));
+    ASSERT_EQ(4u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(getEndIter(jobTable), begin));
+    ASSERT_EQ(getEndIter(jobTable), begin);
 
 
     // re-attach
     jobTable.attach(job5);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, job5->getJobID()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job5, jobTable.getLatestEntry()));
+    ASSERT_EQ(2u, job5->getJobID());
+    ASSERT_EQ(job5, jobTable.getLatestEntry());
 
     begin = getBeginIter(jobTable);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->getJobID()));
+    ASSERT_EQ(1u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, (*begin)->getJobID()));
+    ASSERT_EQ(2u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->getJobID()));
+    ASSERT_EQ(4u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(getEndIter(jobTable), begin));
+    ASSERT_EQ(getEndIter(jobTable), begin);
 
     // re-attach
     jobTable.attach(job2);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, job2->getJobID()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job2, jobTable.getLatestEntry()));
+    ASSERT_EQ(3u, job2->getJobID());
+    ASSERT_EQ(job2, jobTable.getLatestEntry());
 
     begin = getBeginIter(jobTable);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->getJobID()));
+    ASSERT_EQ(1u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, (*begin)->getJobID()));
+    ASSERT_EQ(2u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, (*begin)->getJobID()));
+    ASSERT_EQ(3u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->getJobID()));
+    ASSERT_EQ(4u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(getEndIter(jobTable), begin));
+    ASSERT_EQ(getEndIter(jobTable), begin);
 
     // re-attach
     jobTable.attach(job6);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, job6->getJobID()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(job6, jobTable.getLatestEntry()));
+    ASSERT_EQ(5u, job6->getJobID());
+    ASSERT_EQ(job6, jobTable.getLatestEntry());
 
     begin = getBeginIter(jobTable);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, (*begin)->getJobID()));
+    ASSERT_EQ(1u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, (*begin)->getJobID()));
+    ASSERT_EQ(2u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(3u, (*begin)->getJobID()));
+    ASSERT_EQ(3u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, (*begin)->getJobID()));
+    ASSERT_EQ(4u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, (*begin)->getJobID()));
+    ASSERT_EQ(5u, (*begin)->getJobID());
     ++begin;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(getEndIter(jobTable), begin));
+    ASSERT_EQ(getEndIter(jobTable), begin);
 }
 
 int main(int argc, char **argv) {

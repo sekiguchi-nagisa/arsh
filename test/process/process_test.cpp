@@ -113,12 +113,12 @@ TEST_F(ProcTest, pty3) {
     auto r = write(handle.in(), "p", 1);
     (void) r;
     auto output = handle.readAll(20);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("print\n", output.first));
+    ASSERT_EQ("print\n", output.first);
 
     r = write(handle.in(), "x", 1);
     (void) r;
     output = handle.readAll(20);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("ignore x\n", output.first));
+    ASSERT_EQ("ignore x\n", output.first);
 
     r = write(handle.in(), "b", 1);
     (void) r;
@@ -130,27 +130,27 @@ TEST(ANSITest, case1) {
     Screen screen;
     std::string line = "abc";
     screen.interpret(line.c_str(), line.size());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("abc", screen.toString()));
+    ASSERT_EQ("abc", screen.toString());
 
     screen = Screen();
     line = "a\bbc";
     screen.interpret(line.c_str(), line.size());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("bc", screen.toString()));
+    ASSERT_EQ("bc", screen.toString());
 
     screen = Screen();
     line = "ab\x1b[2Dc";
     screen.interpret(line.c_str(), line.size());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("cb", screen.toString()));
+    ASSERT_EQ("cb", screen.toString());
 
     screen = Screen();
     line = "abcdef\x1b[3D\x1b[0K0";
     screen.interpret(line.c_str(), line.size());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("abc0", screen.toString()));
+    ASSERT_EQ("abc0", screen.toString());
 
     screen = Screen();
     line = "abcdef\x1b[2J";
     screen.interpret(line.c_str(), line.size());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("", screen.toString()));
+    ASSERT_EQ("", screen.toString());
 
     std::string rep;
     screen = Screen();
@@ -159,8 +159,8 @@ TEST(ANSITest, case1) {
     });
     line = "abcdef\x1b[2J\x1b[6n0";
     screen.interpret(line.c_str(), line.size());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("      0", screen.toString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("\x1b[1;7R", rep));
+    ASSERT_EQ("      0", screen.toString());
+    ASSERT_EQ("\x1b[1;7R", rep);
 
     rep = "";
     screen = Screen();
@@ -169,8 +169,8 @@ TEST(ANSITest, case1) {
     });
     line = "abc\x1b[H\x1b[6nd";
     screen.interpret(line.c_str(), line.size());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("dbc", screen.toString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("\x1b[1;1R", rep));
+    ASSERT_EQ("dbc", screen.toString());
+    ASSERT_EQ("\x1b[1;1R", rep);
 
     rep = "";
     screen = Screen();
@@ -179,8 +179,8 @@ TEST(ANSITest, case1) {
     });
     line = "abc\x1b[H\x1b[1C\x1b[6nd";
     screen.interpret(line.c_str(), line.size());
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("adc", screen.toString()));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ("\x1b[1;2R", rep));
+    ASSERT_EQ("adc", screen.toString());
+    ASSERT_EQ("\x1b[1;2R", rep);
 }
 
 

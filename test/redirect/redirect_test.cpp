@@ -53,7 +53,7 @@ public:
 
         // compare
         std::string content(buffer.get(), buffer.size());
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(str, content.c_str()));
+        ASSERT_STREQ(str, content.c_str());
     }
 };
 
@@ -65,8 +65,8 @@ TEST_F(RedirectTest, STDIN) {
             "sh", "-c", format("echo hello world > %s", this->getTargetName()).c_str(),
     };
     auto pair = builder.exec();
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, pair.kind));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, pair.value));
+    ASSERT_EQ(WaitStatus::EXITED, pair.kind);
+    ASSERT_EQ(0, pair.value);
 
     // builtin
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("__gets < %s", this->getTargetName()), 0, "hello world\n"));

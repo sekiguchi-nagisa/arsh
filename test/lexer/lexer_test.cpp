@@ -16,7 +16,7 @@ using namespace ydsh;
  */
 TEST(LexerTest_Lv0, case1) {
     FILE *fp = fopen(LEXER_TEST_DIR  "/" "lexer_test.cpp", "r");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(fp == nullptr));
+    ASSERT_FALSE(fp == nullptr);
 }
 
 /**
@@ -1758,15 +1758,15 @@ TEST(LexerTest_Lv2, NEW_LINE) {
     Token t;
     TokenKind k = lexer.nextToken(t);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(TO_NAME(ASSERT), TO_NAME(k)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(lexer.isPrevNewLine()));
+    ASSERT_STREQ(TO_NAME(ASSERT), TO_NAME(k));
+    ASSERT_TRUE(lexer.isPrevNewLine());
 
     k = lexer.nextToken(t);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(lexer.isPrevNewLine()));
+    ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
+    ASSERT_TRUE(lexer.isPrevNewLine());
     k = lexer.nextToken(t);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(lexer.isPrevNewLine()));
+    ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
+    ASSERT_FALSE(lexer.isPrevNewLine());
 }
 
 TEST(LexerTest_Lv3, IllegalChar) {
@@ -1776,45 +1776,45 @@ TEST(LexerTest_Lv3, IllegalChar) {
     Token t;
     TokenKind k = lexer.nextToken(t);
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(TO_NAME(INVALID), TO_NAME(k)));
+    ASSERT_STREQ(TO_NAME(INVALID), TO_NAME(k));
 }
 
 TEST(LineNumTest, case1) {
     auto info = SourceInfo::create("dummy");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::string("dummy"), info->getSourceName()));
+    ASSERT_EQ(std::string("dummy"), info->getSourceName());
 }
 
 TEST(LineNumTest, case2) {
     auto info = SourceInfo::create("dummy");
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(12))); // empty
+    ASSERT_EQ(1u, info->getLineNum(12)); // empty
 }
 
 TEST(LineNumTest, case3) {
     auto info = SourceInfo::create("dummy");
     info->addNewlinePos(5);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(3)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(4)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(5)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, info->getLineNum(6)));
+    ASSERT_EQ(1u, info->getLineNum(3));
+    ASSERT_EQ(1u, info->getLineNum(4));
+    ASSERT_EQ(1u, info->getLineNum(5));
+    ASSERT_EQ(2u, info->getLineNum(6));
 }
 
 TEST(LineNumTest, case4) {
     auto info = SourceInfo::create("dummy");
     info->addNewlinePos(5);
     info->addNewlinePos(4);  // overwrite
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(3)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(4)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(1u, info->getLineNum(5)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, info->getLineNum(6)));
+    ASSERT_EQ(1u, info->getLineNum(3));
+    ASSERT_EQ(1u, info->getLineNum(4));
+    ASSERT_EQ(1u, info->getLineNum(5));
+    ASSERT_EQ(2u, info->getLineNum(6));
 }
 
 TEST(LineNumTest, case5) {
     auto info = SourceInfo::create("dummy");
     info->setLineNumOffset(4);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, info->getLineNum(5)));
+    ASSERT_EQ(4u, info->getLineNum(5));
     info->addNewlinePos(10);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(4u, info->getLineNum(5)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(5u, info->getLineNum(13)));
+    ASSERT_EQ(4u, info->getLineNum(5));
+    ASSERT_EQ(5u, info->getLineNum(13));
 }
 
 int main(int argc, char **argv) {

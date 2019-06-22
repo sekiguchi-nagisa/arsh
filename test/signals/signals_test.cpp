@@ -108,26 +108,26 @@ static std::string join(const std::vector<std::string> &values, char delim) {
 
 TEST(Signal, all) {
     std::string killOut = ProcBuilder{"/bin/kill", "-l"}.execAndGetResult().out;
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(!killOut.empty()));
+    ASSERT_TRUE(!killOut.empty());
 
     auto expected = toSignalList(killOut);
     auto actual = toList(ydsh::getSignalList());
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(join(expected, '\n'), join(actual, '\n')));
+    ASSERT_EQ(join(expected, '\n'), join(actual, '\n'));
 }
 
 TEST(Signal, base) {
     using namespace ydsh;
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(SIGQUIT, getSignalNum("quit")));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(SIGQUIT, getSignalNum("Sigquit")));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(SIGTSTP, getSignalNum("tStP")));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(SIGTSTP, getSignalNum("SigTStp")));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(-1, getSignalNum("HOGED")));
+    ASSERT_EQ(SIGQUIT, getSignalNum("quit"));
+    ASSERT_EQ(SIGQUIT, getSignalNum("Sigquit"));
+    ASSERT_EQ(SIGTSTP, getSignalNum("tStP"));
+    ASSERT_EQ(SIGTSTP, getSignalNum("SigTStp"));
+    ASSERT_EQ(-1, getSignalNum("HOGED"));
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("USR1", getSignalName(SIGUSR1)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("SEGV", getSignalName(SIGSEGV)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, getSignalName(-12)));
+    ASSERT_STREQ("USR1", getSignalName(SIGUSR1));
+    ASSERT_STREQ("SEGV", getSignalName(SIGSEGV));
+    ASSERT_EQ(nullptr, getSignalName(-12));
 }
 
 TEST(Signal, sigset) {
@@ -135,21 +135,21 @@ TEST(Signal, sigset) {
 
     SigSet set;
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(set.empty()));
+    ASSERT_TRUE(set.empty());
     set.add(SIGHUP);
     set.add(SIGCHLD);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(set.has(SIGHUP)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(set.has(SIGCHLD)));
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.has(SIGTERM)));
+    ASSERT_TRUE(set.has(SIGHUP));
+    ASSERT_TRUE(set.has(SIGCHLD));
+    ASSERT_FALSE(set.has(SIGTERM));
 
     set.del(SIGTERM);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.has(SIGTERM)));
+    ASSERT_FALSE(set.has(SIGTERM));
     set.del(SIGHUP);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.has(SIGHUP)));
+    ASSERT_FALSE(set.has(SIGHUP));
 
-    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(set.empty()));
+    ASSERT_FALSE(set.empty());
     set.del(SIGCHLD);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(set.empty()));
+    ASSERT_TRUE(set.empty());
 }
 
 int main(int argc, char **argv) {
