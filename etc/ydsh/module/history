@@ -71,6 +71,7 @@ function _add($s : String, $p : Boolean) {
 
     if $p {
         if $s.empty() { return; }
+        if $s.startsWith(" ") || $s.startsWith($'\t') { return; }
     }
 
     if $HISTORY.size() == $HISTSIZE as Int32 {
