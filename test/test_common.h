@@ -118,10 +118,7 @@ struct ExpectOutput : public ::testing::Test {
         EXPECT_EQ(err, output.err);
         EXPECT_EQ(status, output.status.value);
         EXPECT_EQ(type, output.status.kind);
-
-        if(this->HasFailure()) {
-            ASSERT_TRUE(false);
-        }
+        ASSERT_FALSE(this->HasFailure());
     }
 
     void expect(ProcBuilder &&builder, int status, const std::string &out = "", const std::string &err = "") {
@@ -135,10 +132,7 @@ struct ExpectOutput : public ::testing::Test {
         EXPECT_EQ(type, output.status.kind);
         EXPECT_THAT(output.out, ::testing::MatchesRegex(out));
         EXPECT_THAT(output.err, ::testing::MatchesRegex(err));
-
-        if(this->HasFailure()) {
-            ASSERT_TRUE(false);
-        }
+        ASSERT_FALSE(this->HasFailure());
     }
 
     void expectRegex(ProcBuilder &&builder, int status, const std::string &out, const std::string &err = "") {
@@ -191,10 +185,7 @@ protected:
         auto pair = this->readAll();
         EXPECT_THAT(pair.first, ::testing::MatchesRegex(out));
         EXPECT_THAT(pair.second, ::testing::MatchesRegex(err));
-
-        if(this->HasFailure()) {
-            ASSERT_TRUE(false);
-        }
+        ASSERT_FALSE(this->HasFailure());
     }
 
     void expect(const char *out = "", const char *err = "") {
@@ -204,10 +195,7 @@ protected:
         auto pair = this->readAll();
         EXPECT_EQ(out, pair.first);
         EXPECT_EQ(err, pair.second);
-
-        if(this->HasFailure()) {
-            ASSERT_TRUE(false);
-        }
+        ASSERT_FALSE(this->HasFailure());
     }
 
     void sendAndExpect(const char *str, const char *out = "", const char *err = "") {
