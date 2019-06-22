@@ -16,6 +16,15 @@ history -s hello world
 assert $HISTORY.size() == 1
 assert $HISTORY[0] == 'hello world'
 
+# ignore history starts with space
+history -s '  hoge'
+assert $HISTORY.size() == 1
+assert $HISTORY[0] == 'hello world'
+
+history -s $'\thoge'
+assert $HISTORY.size() == 1
+assert $HISTORY[0] == 'hello world'
+
 # clear
 history -c
 assert $HISTORY.empty()
