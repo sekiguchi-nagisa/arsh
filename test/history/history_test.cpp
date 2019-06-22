@@ -8,6 +8,9 @@
 
 #include "../test_common.h"
 
+#ifndef HISTORY_MOD_PATH
+#error "require HISTORY_MOD_PATH"
+#endif
 
 class HistoryTest : public ExpectOutput, public TempFileFactory {
 protected:
@@ -16,6 +19,8 @@ protected:
 public:
     HistoryTest() {
         this->state = DSState_create();
+        DSState_loadModule(this->state, HISTORY_MOD_PATH, nullptr, DS_MOD_FULLPATH, nullptr);
+
         std::string value;
         value += '"';
         value += this->tmpFileName;
@@ -30,7 +35,7 @@ public:
     void setHistSize(unsigned int size, bool sync = true) {
         this->assignUintValue(VAR_HISTSIZE, size);
         if(sync) {
-            DSState_syncHistorySize(this->state);
+            this->addHistory(nullptr);
         }
     }
 
@@ -86,19 +91,6 @@ private:
     }
 };
 
-TEST_F(HistoryTest, base) {
-    SCOPED_TRACE("");
-    auto *history = DSState_history(this->state);
-
-    // default size
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSHistory_size(history)));
-
-    // after synchronization (call DSState_syncHistory)
-    this->setHistSize(100, false);
-    DSState_syncHistorySize(this->state);
-    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSHistory_size(history)));
-}
-
 TEST_F(HistoryTest, add) {
     this->setHistSize(2);
     this->addHistory("aaa");
@@ -114,9 +106,15 @@ TEST_F(HistoryTest, add) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 0)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ccc", DSHistory_get(history, 1)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, DSHistory_get(history, 100)));
 
     this->addHistory("ccc");
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
+
+    // null
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0u, DSHistory_size(nullptr)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, DSHistory_get(nullptr, 0)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, DSHistory_get(nullptr, 100)));
 }
 
 
@@ -135,9 +133,13 @@ TEST_F(HistoryTest, set) {
 
     DSHistory_set(history, 3, "ccc");    // do nothing, if out of range
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(nullptr, DSHistory_get(history, 3)));
 
     DSHistory_set(history, 1000, "ccc");    // do nothing, if out of range
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(2u, DSHistory_size(history)));
+
+    // do nothing
+    DSHistory_set(nullptr, 1000, "ccc");
 }
 
 TEST_F(HistoryTest, remove) {
@@ -177,6 +179,9 @@ TEST_F(HistoryTest, remove) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("aaa", DSHistory_get(history, 0)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("bbb", DSHistory_get(history, 1)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("ddd", DSHistory_get(history, 2)));
+
+    // do nothing
+    DSHistory_delete(nullptr, 0);
 }
 
 TEST_F(HistoryTest, clear) {
@@ -231,7 +236,7 @@ TEST_F(HistoryTest, file) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
 
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i).c_str(), DSHistory_get(history, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::to_string(i), DSHistory_get(history, i)));
     }
 
     for(unsigned int i = 0; i < 5; i++) {
@@ -239,7 +244,7 @@ TEST_F(HistoryTest, file) {
     }
 
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSHistory_get(history, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::to_string(i + 5), DSHistory_get(history, i)));
     }
 
     /**
@@ -258,7 +263,7 @@ TEST_F(HistoryTest, file) {
     this->loadHistory();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSHistory_get(history, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::to_string(i + 5), DSHistory_get(history, i)));
     }
 
     // not overwrite history file when buffer size is 0
@@ -267,7 +272,7 @@ TEST_F(HistoryTest, file) {
     this->loadHistory();
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(10u, DSHistory_size(history)));
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 5).c_str(), DSHistory_get(history, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::to_string(i + 5), DSHistory_get(history, i)));
     }
 
     // not overwrite history file when hist file size is 0
@@ -279,7 +284,7 @@ TEST_F(HistoryTest, file) {
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(11u, DSHistory_size(history)));
     ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ("hoge", DSHistory_get(history, 0)));
     for(unsigned int i = 1; i < 11; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i + 4).c_str(), DSHistory_get(history, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::to_string(i + 4), DSHistory_get(history, i)));
     }
 }
 
@@ -300,7 +305,7 @@ TEST_F(HistoryTest, file2) {
 
     ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(DS_HISTFILESIZE_LIMIT, DSHistory_size(history)));
     for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_STREQ(std::to_string(i).c_str(), DSHistory_get(history, i)));
+        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(std::to_string(i), DSHistory_get(history, i)));
     }
 }
 

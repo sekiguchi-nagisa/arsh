@@ -6,6 +6,7 @@ set(TEST_NAME interactive_test)
 
 add_definitions(-DBIN_PATH="${CMAKE_BINARY_DIR}/${BIN_NAME}")
 add_definitions(-DINTERACTIVE_TEST_WORK_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+add_definitions(-DSTD_MOD_DIR="${PROJECT_SOURCE_DIR}/etc/ydsh/module")
 add_executable(${TEST_NAME}
     interactive_test.cpp
 )

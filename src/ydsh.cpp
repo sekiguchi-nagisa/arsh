@@ -834,7 +834,7 @@ void DSCandidates_release(DSCandidates **c) {
 
 DSHistory *DSState_history(DSState *st) {
     if(!st->history) {
-        auto *handle = st->symbolTable.lookupHandle(VAR_HISTORY);
+        auto *handle = st->execMode != DS_EXEC_MODE_NORMAL ? nullptr : st->symbolTable.lookupHandle(VAR_HISTORY);
         st->history.initialize(
                 handle != nullptr ? typeAs<Array_Object>(st->getGlobal(handle->getIndex())) : nullptr);
     }
@@ -862,71 +862,5 @@ void DSHistory_set(DSHistory *history, unsigned int index, const char *value) {
 void DSHistory_delete(DSHistory *history, unsigned int index) {
     if(history != nullptr && index < history->get().size()) {
         history->get().erase(history->get().begin() + index);
-    }
-}
-
-void DSState_syncHistorySize(DSState *st) {
-    unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
-    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
-    if(cap > DS_HISTSIZE_LIMIT) {
-        cap = DS_HISTSIZE_LIMIT;
-    }
-    if(array.size() > cap) {
-        array.resize(cap);
-        array.shrink_to_fit();
-    }
-}
-
-void DSState_addHistory(DSState *st, const char *str) {
-    unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
-    if(cap > 0) {
-        auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
-        if(!array.empty() && strcmp(str, typeAs<String_Object>(array.back())->getValue()) == 0) {
-            return; // skip duplicated line
-        }
-        if(array.size() == cap) {
-            array.erase(array.begin());
-        }
-        array.push_back(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), str));
-    }
-}
-
-static std::string histFile(const DSState *st) {
-    std::string path = typeAs<String_Object>(getGlobal(*st, VAR_HISTFILE))->getValue();
-    expandTilde(path);
-    return path;
-}
-
-void DSState_loadHistory(DSState *st, const char *fileName) {
-    DSState_syncHistorySize(st);
-    unsigned int cap = typeAs<Int_Object>(getGlobal(*st, VAR_HISTSIZE))->getValue();
-    if(cap > 0) {
-        std::ifstream input(fileName != nullptr ? fileName : histFile(st).c_str());
-        if(input) {
-            auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->refValues();
-            unsigned int count = 0;
-            for(std::string line; array.size() < cap && std::getline(input, line);) {
-                array.push_back(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), line));
-                count++;
-            }
-        }
-    }
-}
-
-void DSState_saveHistory(const DSState *st, const char *fileName) {
-    unsigned int histFileSize = typeAs<Int_Object>(getGlobal(*st, VAR_HISTFILESIZE))->getValue();
-    if(histFileSize > DS_HISTFILESIZE_LIMIT) {
-        histFileSize = DS_HISTFILESIZE_LIMIT;
-    }
-
-    auto &array = typeAs<Array_Object>(getGlobal(*st, VAR_HISTORY))->getValues();
-    if(histFileSize > 0 && array.size() > 0) {
-        FILE *fp = fopen(fileName != nullptr ? fileName : histFile(st).c_str(), "w");
-        if(fp != nullptr) {
-            for(unsigned int i = 0; i < histFileSize && i < array.size(); i++) {
-                fprintf(fp, "%s\n", typeAs<String_Object>(array[i])->getValue());
-            }
-            fclose(fp);
-        }
     }
 }

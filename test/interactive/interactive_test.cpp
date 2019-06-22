@@ -10,12 +10,16 @@
 
 
 #ifndef INTERACTIVE_TEST_WORK_DIR
-#error require INTERACTIVE_TEST_WORK_DIR
+#error "require INTERACTIVE_TEST_WORK_DIR"
 #endif
 
 
 #ifndef BIN_PATH
-#error require BIN_PATH
+#error "require BIN_PATH"
+#endif
+
+#ifndef STD_MOD_DIR
+#error "require STD_MOD_DIR"
 #endif
 
 using namespace ydsh;
@@ -23,6 +27,11 @@ using namespace ydsh;
 
 struct InteractiveTest : public InteractiveBase {
     InteractiveTest() : InteractiveBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {}
+
+    template <typename ... T>
+    void invoke(T && ...args) {
+        InteractiveBase::invoke("--std", STD_MOD_DIR, std::forward<T>(args)...);
+    }
 };
 
 #define CTRL_A "\x01"

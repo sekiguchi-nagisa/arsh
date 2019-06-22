@@ -14,11 +14,15 @@
 
 
 #ifndef BIN_PATH
-#define BIN_PATH "./ydsh"
+#define "require BIN_PATH"
 #endif
 
 #ifndef PID_CHECK_PATH
 #error "require PID_CHECK_PATH"
+#endif
+
+#ifndef STD_MOD_DIR
+#error "require STD_MOD_DIR"
 #endif
 
 using namespace ydsh;
@@ -184,10 +188,10 @@ DSCode: top level
   code size: 22
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 50
+  number of global variable: 46
 Code:
    8: LOAD_CONST  0
-  10: STORE_GLOBAL  49
+  10: STORE_GLOBAL  45
   13: LOAD_CONST  1
   15: CALL_METHOD  0  0
   20: POP
@@ -207,11 +211,11 @@ DSCode: top level
   code size: 35
   max stack depth: 3
   number of local variable: 0
-  number of global variable: 50
+  number of global variable: 46
 Code:
    8: LOAD_CONST  0
-  10: STORE_GLOBAL  49
-  13: LOAD_GLOBAL  49
+  10: STORE_GLOBAL  45
+  13: LOAD_GLOBAL  45
   16: LOAD_CONST  1
   18: CALL_FUNC  1
   21: ENTER_FINALLY  8
@@ -514,7 +518,7 @@ TEST_F(CmdlineTest, pipeline) {
             this->expect("assert($0 == 'ydsh' && $1 == 'hoge' && $2 == '123')" | ds("-s", "hoge", "123"), 0));
 
     // force interactive
-    ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, "(Boolean) true\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc", "--std", STD_MOD_DIR), 0, "(Boolean) true\n"));
 }
 
 #define DS(S) ds("-c", S)

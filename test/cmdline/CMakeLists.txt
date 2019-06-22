@@ -6,6 +6,7 @@ set(TEST_NAME cmdline_test)
 
 add_definitions(-DBIN_PATH="${CMAKE_BINARY_DIR}/${BIN_NAME}")
 add_definitions(-DPID_CHECK_PATH="${CMAKE_BINARY_DIR}/tools/pid_check/pid_check")
+add_definitions(-DSTD_MOD_DIR="${PROJECT_SOURCE_DIR}/etc/ydsh/module")
 add_executable(${TEST_NAME}
         cmdline_test.cpp
 )

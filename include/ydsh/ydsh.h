@@ -270,7 +270,7 @@ int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
  * @return
  * exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
- * if flleName is already loaded module, return always 0 and do nothing.
+ * if fileName is already loaded module, return always 0 and do nothing.
  */
 int DSState_loadModule(DSState *st, const char *fileName,
                        const char *varName, unsigned short option, DSError *e);
@@ -423,37 +423,6 @@ void DSHistory_set(DSHistory *history, unsigned int index, const char *value);
  * @param index
  */
 void DSHistory_delete(DSHistory *history, unsigned int index);
-
-/**
- * synchronize history size with HISTSIZE.
- * if not set DS_OPTION_HISTORY, do nothing.
- * @param st
- */
-void DSState_syncHistorySize(DSState *st);
-
-/**
- *
- * @param st
- * @param str
- */
-void DSState_addHistory(DSState *st, const char *str);
-
-/**
- * load history from file.
- * @param st
- * @param fileName
- * if null, use HISTFILE.
- */
-void DSState_loadHistory(DSState *st, const char *fileName);
-
-/**
- * save history to file.
- * @param st
- * @param fileName
- * if null, use HISTFILE.
- */
-void DSState_saveHistory(const DSState *st, const char *fileName);
-
 
 #ifdef __cplusplus
 }

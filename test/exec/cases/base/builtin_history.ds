@@ -1,10 +1,12 @@
 
+source ../../../../etc/ydsh/module/history
+
 # invalid option
 history -x
 assert $? == 2
 
 assert "$(history -xz 2>&1)" == "ydsh: history: -xz: invalid option
-history: history [-c] [-d offset] or history -s ARGs or history [-rw] [file]"
+history: history [-h] [-i] [-c] [-d offset] or history -s ARGs or history [-rw] [file]"
 
 # append
 $HISTSIZE = 100u
@@ -33,34 +35,34 @@ for $s in "abcde" {
 }
 
 $IFS = $'\n'
-$assertEach(["    1  a",
-             "    2  b",
-             "    3  c",
-             "    4  d",
-             "    5  e"], $(history))
+$assertEach(["a",
+             "b",
+             "c",
+             "d",
+             "e"], $(history))
 
 # print latest entry
 for $s in "abcde" {
     history -s ${s}@
 }
 
-$assertEach(["    6  a@",
-             "    7  b@",
-             "    8  c@",
-             "    9  d@",
-             "   10  e@"], $(history 5))
+$assertEach(["a@",
+             "b@",
+             "c@",
+             "d@",
+             "e@"], $(history 5))
 
 # print out of range
-$assertEach(["    1  a",
-             "    2  b",
-             "    3  c",
-             "    4  d",
-             "    5  e",
-             "    6  a@",
-             "    7  b@",
-             "    8  c@",
-             "    9  d@",
-             "   10  e@"], $(history 500))
+$assertEach(["a",
+             "b",
+             "c",
+             "d",
+             "e",
+             "a@",
+             "b@",
+             "c@",
+             "d@",
+             "e@"], $(history 500))
 
 # invalid number
 history hoge
@@ -83,15 +85,15 @@ for $s in "abcdefghij" {
 }
 
 history -d 3 -d 5
-$assertEach(["    1  a",
-             "    2  b",
-             "    3  c",
-             "    4  d",
-             "    5  f",
-             "    6  g",
-             "    7  h",
-             "    8  i",
-             "    9  j"], $(history))
+$assertEach(["a",
+             "b",
+             "c",
+             "d",
+             "f",
+             "g",
+             "h",
+             "i",
+             "j"], $(history))
 
 # delete history, but missing number
 history -d 3 -d
@@ -129,11 +131,11 @@ for $e in 'abcde' {
 }
 
 history -r
-$assertEach(["    1  $prefix a",
-             "    2  $prefix b",
-             "    3  $prefix c",
-             "    4  $prefix d",
-             "    5  $prefix e"], $(history))
+$assertEach(["$prefix a",
+             "$prefix b",
+             "$prefix c",
+             "$prefix d",
+             "$prefix e"], $(history))
 
 # load invalid file
 history -c
@@ -148,11 +150,11 @@ for $e in 'abcde' {
 
 history -c
 history -r $fileName
-$assertEach(["    1  @@ a",
-             "    2  @@ b",
-             "    3  @@ c",
-             "    4  @@ d",
-             "    5  @@ e"], $(history))
+$assertEach(["@@ a",
+             "@@ b",
+             "@@ c",
+             "@@ d",
+             "@@ e"], $(history))
 
 # save to specified file
 history -c

@@ -88,7 +88,6 @@ static int builtin_false(DSState &state, Array_Object &argvObj);
 static int builtin_fg_bg(DSState &state, Array_Object &argvObj);
 static int builtin_hash(DSState &state, Array_Object &argvObj);
 static int builtin_help(DSState &state, Array_Object &argvObj);
-static int builtin_history(DSState &state, Array_Object &argvObj);
 static int builtin_kill(DSState &state, Array_Object &argvObj);
 static int builtin_ps_intrp(DSState &state, Array_Object &argvObj);
 static int builtin_pwd(DSState &state, Array_Object &argvObj);
@@ -175,15 +174,6 @@ static constexpr struct {
                 "    If option is not supplied, display all cached path."},
         {"help", builtin_help, "[-s] [pattern ...]",
                 "    Display helpful information about builtin commands."},
-        {"history", builtin_history, "[-c] [-d offset] or history -s ARGs or history [-rw] [file]",
-                "    Display or manipulate history list.\n"
-                "    Options:\n"
-                "        -c        clear the history list\n"
-                "        -d offset delete the history entry at OFFSET\n"
-                "        -s        append the Args to history as single entry\n"
-                "\n"
-                "        -r        read the history list from history file\n"
-                "        -w        write the history list to history file"},
         {"kill", builtin_kill, "[-s signal] pid | jobspec ... or kill -l [signal...]",
                 "    Send a signal to a process or job.\n"
                 "    If signal is not specified, then SIGTERM is assumed.\n"
@@ -1203,121 +1193,6 @@ static int builtin_complete(DSState &state, Array_Object &argvObj) {
         fputc('\n', stdout);
 
         free(e);
-    }
-    return 0;
-}
-
-static int showHistory(DSHistory *history, const Array_Object &obj) {
-    const unsigned int histSize = DSHistory_size(history);
-    const unsigned int argc = obj.getValues().size();
-    unsigned int printOffset = histSize;
-
-    if(argc > 1) {
-        if(argc > 2) {
-            ERROR(obj, "too many arguments");
-            return 1;
-        }
-
-        int s;
-        const char *arg = str(obj.getValues()[1]);
-        printOffset = convertToUint64(arg, s);
-        if(s != 0) {
-            ERROR(obj, "%s: numeric argument required", arg);
-            return 1;
-        }
-
-        if(printOffset > histSize) {
-            printOffset = histSize;
-        }
-    }
-
-    for(unsigned int i = histSize - printOffset; i < histSize; i++) {
-        fprintf(stdout, "%5d  %s\n", i + 1, DSHistory_get(history, i));
-    }
-    return 0;
-}
-
-static int builtin_history(DSState &state, Array_Object &argvObj) {
-    DSState_syncHistorySize(&state);
-    auto *history = DSState_history(&state);
-    const unsigned int argc = argvObj.getValues().size();
-    if(argc == 1 || str(argvObj.getValues()[1])[0] != '-') {
-        return showHistory(history, argvObj);
-    }
-
-    char op = '\0';
-    const char *fileName = nullptr;
-    const char *deleteTarget = nullptr;
-
-    for(unsigned int i = 1; i < argc; i++) {
-        const char *arg = str(argvObj.getValues()[i]);
-        if(arg[0] == '-' && strlen(arg) == 2) {
-            char ch = arg[1];
-            switch(ch) {
-            case 'c':
-                state.history.get().clear();
-                return 0;
-            case 'd': {
-                if(i + 1 < argc) {
-                    deleteTarget = str(argvObj.getValues()[++i]);
-                    continue;
-                }
-                ERROR(argvObj, "%s: option requires argument", arg);
-                return 2;
-
-            }
-            case 'i':
-                DSState_addHistory(&state, "");
-                return 0;
-            case 's': {
-                std::string line;
-                for(i++; i < argc; i++) {
-                    if(!line.empty()) {
-                        line += " ";
-                    }
-                    line += str(argvObj.getValues()[i]);    // ignore null character in arguments
-                }
-                DSState_addHistory(&state, line.c_str());
-                return 0;
-            }
-            case 'r':
-            case 'w': {
-                if(op != '\0') {
-                    ERROR(argvObj, "cannot use more than one of -rw");
-                    return 1;
-                }
-                op = ch;
-                fileName = i + 1 < argc
-                           && str(argvObj.getValues()[i + 1])[0] != '-' ? str(argvObj.getValues()[++i]) : nullptr;
-                continue;
-            }
-            default:
-                break;
-            }
-        }
-        return invalidOptionError(argvObj, arg);
-    }
-
-    if(deleteTarget != nullptr) {
-        int s;
-        int offset = convertToInt64(deleteTarget, s) - 1;
-        if(s != 0 || offset < 0 || static_cast<unsigned int>(offset) > DSHistory_size(history)) {
-            ERROR(argvObj, "%s: history offset out of range", deleteTarget);
-            return 1;
-        }
-        DSHistory_delete(history, offset);
-        return 0;
-    }
-
-    switch(op) {
-    case 'r':
-        DSState_loadHistory(&state, fileName);
-        break;
-    case 'w':
-        DSState_saveHistory(&state, fileName);
-        break;
-    default:
-        break;
     }
     return 0;
 }
