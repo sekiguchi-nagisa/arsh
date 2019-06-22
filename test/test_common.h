@@ -118,10 +118,10 @@ struct ExpectOutput : public ::testing::Test {
                 const std::string &out = "", const std::string &err = "") {
         SCOPED_TRACE("");
 
-        ASSERT_EQ(out, output.out);
-        ASSERT_EQ(err, output.err);
-        ASSERT_EQ(status, output.status.value);
-        ASSERT_EQ(type, output.status.kind);
+        EXPECT_EQ(out, output.out);
+        EXPECT_EQ(err, output.err);
+        EXPECT_EQ(status, output.status.value);
+        EXPECT_EQ(type, output.status.kind);
     }
 
     void expect(ProcBuilder &&builder, int status, const std::string &out = "", const std::string &err = "") {
@@ -133,10 +133,10 @@ struct ExpectOutput : public ::testing::Test {
 
     void expectRegex(const Output &output, int status, WaitStatus::Kind type,
                      const std::string &out, const std::string &err = "") {
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(status, output.status.value));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(type, output.status.kind));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(output.out, ::testing::MatchesRegex(out)));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(output.err, ::testing::MatchesRegex(err)));
+        EXPECT_EQ(status, output.status.value);
+        EXPECT_EQ(type, output.status.kind);
+        EXPECT_THAT(output.out, ::testing::MatchesRegex(out));
+        EXPECT_THAT(output.err, ::testing::MatchesRegex(err));
     }
 
     void expectRegex(ProcBuilder &&builder, int status, const std::string &out, const std::string &err = "") {
@@ -185,23 +185,23 @@ protected:
     void expectRegex(const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
+        ASSERT_TRUE(out != nullptr);
+        ASSERT_TRUE(err != nullptr);
 
         auto pair = this->readAll();
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(pair.first, ::testing::MatchesRegex(out)));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(pair.second, ::testing::MatchesRegex(err)));
+        EXPECT_THAT(pair.first, ::testing::MatchesRegex(out));
+        EXPECT_THAT(pair.second, ::testing::MatchesRegex(err));
     }
 
     void expect(const char *out = "", const char *err = "") {
         SCOPED_TRACE("");
 
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(out != nullptr));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(err != nullptr));
+        ASSERT_TRUE(out != nullptr);
+        ASSERT_TRUE(err != nullptr);
 
         auto pair = this->readAll();
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(out, pair.first));
-        ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(err, pair.second));
+        EXPECT_EQ(out, pair.first);
+        EXPECT_EQ(err, pair.second);
     }
 
     void sendAndExpect(const char *str, const char *out = "", const char *err = "") {
