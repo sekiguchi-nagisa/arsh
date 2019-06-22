@@ -110,8 +110,6 @@ private:
 };
 
 
-#define ASSERT_(F) do { SCOPED_TRACE(""); F; } while(false)
-
 struct ExpectOutput : public ::testing::Test {
     void expect(const Output &output, int status = 0,
                 WaitStatus::Kind type = WaitStatus::EXITED,
@@ -123,8 +121,6 @@ struct ExpectOutput : public ::testing::Test {
     }
 
     void expect(ProcBuilder &&builder, int status, const std::string &out = "", const std::string &err = "") {
-        SCOPED_TRACE("");
-
         auto result = builder.execAndGetResult(false);
         this->expect(result, status, WaitStatus::EXITED, out, err);
     }

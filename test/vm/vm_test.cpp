@@ -102,98 +102,98 @@ protected:
 };
 
 TEST_F(VMTest, base) {
-    ASSERT_(this->eval("12", DS_ERROR_KIND_SUCCESS, OpCode::POP, [&]{
+    ASSERT_NO_FATAL_FAILURE(this->eval("12", DS_ERROR_KIND_SUCCESS, OpCode::POP, [&]{
         ASSERT_EQ(12, typeAs<Int_Object>(this->state->peek())->getValue());
     }));
 }
 
 TEST_F(VMTest, deinit1) {
-    ASSERT_(this->eval("var a = new [Int]()"));
-    ASSERT_(RefCount("a", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("var a = new [Int]()"));
+    ASSERT_NO_FATAL_FAILURE(RefCount("a", 1));
 
-    ASSERT_(this->eval("{ var b = $a}"));
-    ASSERT_(RefCount("a", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("{ var b = $a}"));
+    ASSERT_NO_FATAL_FAILURE(RefCount("a", 1));
 
-    ASSERT_(this->eval("{ var b = $a; if $true { var c = $a }; $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
-        ASSERT_(RefCount("a", 2));
+    ASSERT_NO_FATAL_FAILURE(this->eval("{ var b = $a; if $true { var c = $a }; $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
+        ASSERT_NO_FATAL_FAILURE(RefCount("a", 2));
     }));
 }
 
 TEST_F(VMTest, deinit2) {
-    ASSERT_(this->eval("{ var b = $@; throw 34; }", DS_ERROR_KIND_RUNTIME_ERROR));
-    ASSERT_(RefCount("@", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("{ var b = $@; throw 34; }", DS_ERROR_KIND_RUNTIME_ERROR));
+    ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 
-    ASSERT_(this->eval("{ var a = $@; { var b = $@; var c = $b; throw 34; }}", DS_ERROR_KIND_RUNTIME_ERROR));
-    ASSERT_(RefCount("@", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("{ var a = $@; { var b = $@; var c = $b; throw 34; }}", DS_ERROR_KIND_RUNTIME_ERROR));
+    ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 }
 
 TEST_F(VMTest, deinit3) {
-    ASSERT_(this->eval("var i = 0; while $i < 2 { var b = $@; $i++ }"));
-    ASSERT_(RefCount("@", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("var i = 0; while $i < 2 { var b = $@; $i++ }"));
+    ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 
-    ASSERT_(this->eval("while $true { var b = $@; break; }"));
-    ASSERT_(RefCount("@", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("while $true { var b = $@; break; }"));
+    ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 
-    ASSERT_(this->eval("for(var i = $@; $true;) { var b = $i; break; }"));
-    ASSERT_(RefCount("@", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("for(var i = $@; $true;) { var b = $i; break; }"));
+    ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 
-    ASSERT_(this->eval("for(var i = 0; $i < 3; $i++) { var b = $@; continue; }"));
-    ASSERT_(RefCount("@", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("for(var i = 0; $i < 3; $i++) { var b = $@; continue; }"));
+    ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 }
 
 TEST_F(VMTest, deinit4) {
-    ASSERT_(this->eval("function f($a : [String]) { $RANDOM; var b = $a; }; $f($@)",
+    ASSERT_NO_FATAL_FAILURE(this->eval("function f($a : [String]) { $RANDOM; var b = $a; }; $f($@)",
                        DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&] {
-                ASSERT_(RefCount("@", 2));
+                ASSERT_NO_FATAL_FAILURE(RefCount("@", 2));
             }));
 }
 
 TEST_F(VMTest, deinit5) {
-    ASSERT_(this->eval("function f($a : [String]) { var b = $a; { var c = $b; $RANDOM; }; var c = $b; }; $f($@)",
+    ASSERT_NO_FATAL_FAILURE(this->eval("function f($a : [String]) { var b = $a; { var c = $b; $RANDOM; }; var c = $b; }; $f($@)",
                        DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
-                ASSERT_(RefCount("@", 4));
+                ASSERT_NO_FATAL_FAILURE(RefCount("@", 4));
             }));
 }
 
 TEST_F(VMTest, deinit6) {
-    ASSERT_(this->eval("function f($a : [String]) { var b = $a; { var c = $b }; $RANDOM; var c = $b; }; $f($@)",
+    ASSERT_NO_FATAL_FAILURE(this->eval("function f($a : [String]) { var b = $a; { var c = $b }; $RANDOM; var c = $b; }; $f($@)",
                        DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&] {
-                ASSERT_(RefCount("@", 3));
+                ASSERT_NO_FATAL_FAILURE(RefCount("@", 3));
             }));
 }
 
 TEST_F(VMTest, deinit7) {
-    ASSERT_(this->eval("try { var a = $@; 34 / 0; var b = $a; } catch($e) {}"));
-    ASSERT_(RefCount("@", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0; var b = $a; } catch($e) {}"));
+    ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 
-    ASSERT_(this->eval("try { while $true { var a = $@; break; } } finally {  $RANDOM; }",
+    ASSERT_NO_FATAL_FAILURE(this->eval("try { while $true { var a = $@; break; } } finally {  $RANDOM; }",
                        DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
-                ASSERT_(RefCount("@", 1));
+                ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
             }));
 }
 
 TEST_F(VMTest, deinit8) {
-    ASSERT_(this->eval("try { var a = $@; 34 / 0 } catch $e { $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
-        ASSERT_(RefCount("@", 1));
+    ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
+        ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
     }));
 }
 
 TEST_F(VMTest, deinit9) {
-    ASSERT_(this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw 34; } finally {  $RANDOM; }",
+    ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw 34; } finally {  $RANDOM; }",
                     DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND, [&]{
-                ASSERT_(RefCount("@", 1));
+                ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
             }));
 }
 
 TEST_F(VMTest, deinit10) {
-    ASSERT_(this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : Int { var b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }",
+    ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : Int { var b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }",
                        DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND, [&]{
-                ASSERT_(RefCount("@", 1));
+                ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
             }));
 }
 
 TEST_F(VMTest, sig1) {
-    ASSERT_(this->eval("function f($s : Signal) {}"));
+    ASSERT_NO_FATAL_FAILURE(this->eval("function f($s : Signal) {}"));
     auto func = this->getValue("f");
     ASSERT_TRUE(func != nullptr);
 
@@ -239,8 +239,8 @@ TEST_F(VMTest, sig1) {
 }
 
 TEST_F(VMTest, abort) {
-    ASSERT_(this->eval("var a = 45 / 0;", DS_ERROR_KIND_RUNTIME_ERROR));
-    ASSERT_(this->eval("$a;", DS_ERROR_KIND_TYPE_ERROR));
+    ASSERT_NO_FATAL_FAILURE(this->eval("var a = 45 / 0;", DS_ERROR_KIND_RUNTIME_ERROR));
+    ASSERT_NO_FATAL_FAILURE(this->eval("$a;", DS_ERROR_KIND_TYPE_ERROR));
 }
 
 static Job newJob() {
