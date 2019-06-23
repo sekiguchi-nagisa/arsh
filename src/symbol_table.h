@@ -568,8 +568,8 @@ public:
         if(abortType) {
             this->typeMap.abort();
         }
-        this->cur().abort();
         this->resetCurModule();
+        this->cur().abort();
     }
 
     void clear() {
