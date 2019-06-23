@@ -74,6 +74,11 @@ private:
     WaitStatus status_{WaitStatus::EXITED, 0};
 
     /**
+     * only available when specified PTY option.
+     */
+    int pty_;
+
+    /**
      * after call wait, will be -1
      */
     int in_;
@@ -91,11 +96,14 @@ private:
 public:
     NON_COPYABLE(ProcHandle);
 
-    ProcHandle() : ProcHandle(-1, -1, -1, -1) {}
+    ProcHandle() : ProcHandle(-1, -1, -1, -1, -1) {}
 
-    ProcHandle(pid_t pid, int in, int out, int err) noexcept : pid_(pid), in_(in), out_(out), err_(err) {}
+    ProcHandle(pid_t pid, int pty, int in, int out, int err) noexcept :
+            pid_(pid), pty_(pty), in_(in), out_(out), err_(err) {}
 
-    ProcHandle(ProcHandle &&proc) noexcept : pid_(proc.pid_), status_(proc.status_), in_(proc.in_), out_(proc.out_), err_(proc.err_) {
+    ProcHandle(ProcHandle &&proc) noexcept :
+            pid_(proc.pid_), status_(proc.status_), pty_(proc.pty_),
+            in_(proc.in_), out_(proc.out_), err_(proc.err_) {
         proc.detach();
     }
 
@@ -136,6 +144,28 @@ public:
     }
 
     /**
+     * get pty file descriptor.
+     * not close it directly
+     * @return
+     * if not found, return -1.
+     */
+    int pty() const {
+        return this->pty_;
+    }
+
+    bool hasPty() const {
+        return this->pty() > -1;
+    }
+
+    /**
+     * get windows size of pty()
+     * represents {row, col}
+     * @return
+     * if not pty, return {0,0}
+     */
+    std::pair<unsigned short, unsigned short> getWinSize() const;
+
+    /**
      * wait process termination
      * @return
      */
@@ -144,6 +174,7 @@ public:
     pid_t detach() {
         pid_t pid = this->pid_;
         this->pid_ = -1;
+        this->pty_ = -1;
         this->in_ = -1;
         this->out_ = -1;
         this->err_ = -1;
@@ -181,7 +212,15 @@ struct IOConfig {
     FDWrapper out;
     FDWrapper err;
 
-    IOConfig(FDWrapper in, FDWrapper out, FDWrapper err) : in(in), out(out), err(err) {}
+    termios term{};
+
+    unsigned short row{24};
+    unsigned short col{80};
+
+    IOConfig(FDWrapper in, FDWrapper out, FDWrapper err) : in(in), out(out), err(err) {
+        cfmakeraw(&this->term);
+    }
+
     IOConfig() : IOConfig(INHERIT, INHERIT, INHERIT) {}
 };
 
@@ -196,28 +235,17 @@ private:
     std::string cwd;
 
     /**
-     * if IOConfig has PTY, set terminal setting.
-     */
-    termios term{};
-
-    unsigned short row{24};
-    unsigned short col{80};
-
-    /**
      * called before exec process
      */
     std::function<void()> beforeExec;
 
 public:
-    explicit ProcBuilder(const char *cmdName) : args{cmdName} {
-        cfmakeraw(&this->term);
-    }
+    explicit ProcBuilder(const char *cmdName) : args{cmdName} {}
 
     ProcBuilder(std::initializer_list<const char *> list) {
         for(auto &v : list) {
             this->args.emplace_back(v);
         }
-        cfmakeraw(&this->term);
     }
 
     ~ProcBuilder() = default;
@@ -261,13 +289,13 @@ public:
     }
 
     ProcBuilder &setTerm(termios &term) {
-        this->term = term;
+        this->config.term = term;
         return *this;
     }
 
     ProcBuilder &setWinSize(unsigned short row, unsigned short col) {
-        this->row = row;
-        this->col = col;
+        this->config.row = row;
+        this->config.col = col;
         return *this;
     }
 
@@ -279,19 +307,18 @@ public:
     ProcHandle operator()() const;
 
     /**
-     * if old out/err is INHERIT, set PIPE.
+     * if IOConfig out/err is INHERIT, set to PIPE.
      * @param removeLastSpace
      * @return
      */
-    Output execAndGetResult(bool removeLastSpace = true) const {
-        auto tmp = *this;
-        if(tmp.config.out.fd == IOConfig::INHERIT) {
-            tmp.config.out = IOConfig::PIPE;
+    Output execAndGetResult(bool removeLastSpace = true) {
+        if(this->config.out.fd == IOConfig::INHERIT) {
+            this->config.out = IOConfig::PIPE;
         }
-        if(tmp.config.err.fd == IOConfig::INHERIT) {
-            tmp.config.err = IOConfig::PIPE;
+        if(this->config.err.fd == IOConfig::INHERIT) {
+            this->config.err = IOConfig::PIPE;
         }
-        return tmp().waitAndGetResult(removeLastSpace);
+        return (*this)().waitAndGetResult(removeLastSpace);
     }
 
     WaitStatus exec() const {
@@ -299,7 +326,7 @@ public:
     }
 
     template <typename Func>
-    static ProcHandle spawn(IOConfig config, Func func) {
+    static ProcHandle spawn(const IOConfig &config, Func func) {
         ProcHandle handle = spawnImpl(config);
         if(handle) {
             return handle;
@@ -319,13 +346,11 @@ public:
     }
 
 private:
-    static ProcHandle spawnImpl(IOConfig config);
+    static ProcHandle spawnImpl(const IOConfig &config);
 
     void syncPWD() const;
 
     void syncEnv() const;
-
-    int findPTY() const;
 };
 
 } // namespace process

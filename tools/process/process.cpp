@@ -180,23 +180,6 @@ Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
 // ##     ProcBuilder     ##
 // #########################
 
-static void setPTYSetting(int fd, const termios &term, unsigned short row, unsigned short col) {
-    if(fd < 0) {
-        return;
-    }
-
-    if(tcsetattr(fd, TCSAFLUSH, &term) == -1) {
-        error_at("failed");
-    }
-
-    winsize ws{};
-    ws.ws_row = row;
-    ws.ws_col = col;
-    if(ioctl(fd, TIOCSWINSZ, &ws) == -1) {
-        error_at("failed");
-    }
-}
-
 ProcBuilder& ProcBuilder::addArgs(const std::vector<std::string> &values) {
     for(auto &e : values) {
         this->args.push_back(e);
@@ -214,7 +197,6 @@ ProcHandle ProcBuilder::operator()() const {
 
         this->syncEnv();
         this->syncPWD();
-        setPTYSetting(this->findPTY(), this->term, this->row, this->col);
         if(this->beforeExec) {
             this->beforeExec();
         }
@@ -329,7 +311,25 @@ void xcfmakesane(termios &term) {
     memcpy(term.c_cc, defchars, ydsh::arraySize(defchars) * sizeof(cc_t));
 }
 
-static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {
+static void setPTYSetting(int fd, const IOConfig &config) {
+    if(fd < 0) {
+        return;
+    }
+
+    if(tcsetattr(fd, TCSAFLUSH, &config.term) == -1) {
+        error_at("failed");
+    }
+
+    winsize ws {
+        .ws_row = config.row,
+        .ws_col = config.col
+    };
+    if(ioctl(fd, TIOCSWINSZ, &ws) == -1) {
+        error_at("failed");
+    }
+}
+
+static void openPTY(const IOConfig &config, int &masterFD, int &slaveFD) {
     if(config.in.is(IOConfig::PTY) ||
        config.out.is(IOConfig::PTY) ||
        config.err.is(IOConfig::PTY)) {
@@ -345,9 +345,7 @@ static void openPTY(IOConfig config, int &masterFD, int &slaveFD) {
         if(fd == -1) {
             error_at("open pty slave failed");
         }
-        termios term{};
-        cfmakeraw(&term);
-        setPTYSetting(fd, term, 24, 80);
+        setPTYSetting(fd, config);
         slaveFD = fd;
     }
 }
@@ -363,30 +361,22 @@ private:
     int slaveFD{-1};
 
 public:
-    explicit StreamBuilder(IOConfig config) : config(config),
-                                              inpipe{dup(this->config.in.fd), -1},
-                                              outpipe{-1, dup(this->config.out.fd)},
-                                              errpipe{-1, dup(this->config.err.fd)} {
-    }
+    // for parent process
 
-    void initPipe() {
-        if(this->config.in.is(IOConfig::PIPE) && pipe(this->inpipe) < 0) {
-            error_at("pipe creation failed");
-        }
-        if(this->config.out.is(IOConfig::PIPE) && pipe(this->outpipe) < 0) {
-            error_at("pipe creation failed");
-        }
-        if(this->config.err.is(IOConfig::PIPE) && pipe(this->errpipe) < 0) {
-            error_at("pipe creation failed");
-        }
-    }
-
-    void init() {
+    /**
+     * called in parent process
+     * @param config
+     */
+    explicit StreamBuilder(const IOConfig &config) :
+                config(config),
+                inpipe{dup(this->config.in.fd), -1},
+                outpipe{-1, dup(this->config.out.fd)},
+                errpipe{-1, dup(this->config.err.fd)} {
         openPTY(this->config, this->masterFD, this->slaveFD);
         this->initPipe();
     }
 
-    void setInParent() {
+    void setParentStream() {
         close(this->slaveFD);
         this->closeInParent();
         if(this->masterFD > -1) {
@@ -402,6 +392,65 @@ public:
             close(this->masterFD);
         }
     }
+
+    int findPTY() const {
+        if(this->config.in.is(IOConfig::PTY)) {
+            return inputWriter();
+        }
+        if(this->config.out.is(IOConfig::PTY)) {
+            return outputReader();
+        }
+        if(this->config.err.is(IOConfig::PTY)) {
+            return errorReader();
+        }
+        return -1;
+    }
+
+    int inputWriter() const {
+        return this->inpipe[WRITE_PIPE];
+    }
+
+    int outputReader() const {
+        return this->outpipe[READ_PIPE];
+    }
+
+    int errorReader() const {
+        return this->errpipe[READ_PIPE];
+    }
+
+    // for child process
+
+    /**
+     * called from child process
+     */
+    void setChildStream() {
+        close(this->masterFD);
+        this->initPTYSlave();
+        this->setInChild();
+    }
+
+private:
+    // for parent process
+
+    void initPipe() {
+        if(this->config.in.is(IOConfig::PIPE) && pipe(this->inpipe) < 0) {
+            error_at("pipe creation failed");
+        }
+        if(this->config.out.is(IOConfig::PIPE) && pipe(this->outpipe) < 0) {
+            error_at("pipe creation failed");
+        }
+        if(this->config.err.is(IOConfig::PIPE) && pipe(this->errpipe) < 0) {
+            error_at("pipe creation failed");
+        }
+    }
+
+    void closeInParent() {
+        close(this->inpipe[READ_PIPE]);
+        close(this->outpipe[WRITE_PIPE]);
+        close(this->errpipe[WRITE_PIPE]);
+    }
+
+    // for child process
 
     void initPTYSlave() {
         int fd = this->slaveFD;
@@ -419,12 +468,6 @@ public:
         close(fd);
     }
 
-    void closeInParent() {
-        close(this->inpipe[READ_PIPE]);
-        close(this->outpipe[WRITE_PIPE]);
-        close(this->errpipe[WRITE_PIPE]);
-    }
-
     void setInChild() {
         dup2(this->inpipe[READ_PIPE], STDIN_FILENO);
         dup2(this->outpipe[WRITE_PIPE], STDOUT_FILENO);
@@ -436,38 +479,19 @@ public:
             close(this->errpipe[i]);
         }
     }
-
-    void setChildStream() {
-        close(this->masterFD);
-        this->initPTYSlave();
-        this->setInChild();
-    }
-
-    int inputWriter() const {
-        return this->inpipe[WRITE_PIPE];
-    }
-
-    int outputReader() const {
-        return this->outpipe[READ_PIPE];
-    }
-
-    int errorReader() const {
-        return this->errpipe[READ_PIPE];
-    }
 };
 
-ProcHandle ProcBuilder::spawnImpl(IOConfig config) {
+ProcHandle ProcBuilder::spawnImpl(const IOConfig &config) {
     // flush standard stream due to prevent mixing io buffer
     fflush(stdin);
     fflush(stdout);
     fflush(stderr);
 
     StreamBuilder builder(config);
-    builder.init();
     pid_t pid = fork();
     if(pid > 0) {
-        builder.setInParent();
-        return ProcHandle(pid, builder.inputWriter(), builder.outputReader(), builder.errorReader());
+        builder.setParentStream();
+        return ProcHandle(pid, builder.findPTY(), builder.inputWriter(), builder.outputReader(), builder.errorReader());
     } else if(pid == 0) {
         builder.setChildStream();
         return ProcHandle();
@@ -497,19 +521,6 @@ void ProcBuilder::syncEnv() const {
     for(auto &pair : this->env) {
         setenv(pair.first.c_str(), pair.second.c_str(), 1);
     }
-}
-
-int ProcBuilder::findPTY() const {
-    if(this->config.in.is(IOConfig::PTY)) {
-        return STDIN_FILENO;
-    }
-    if(this->config.out.is(IOConfig::PTY)) {
-        return STDOUT_FILENO;
-    }
-    if(this->config.err.is(IOConfig::PTY)) {
-        return STDERR_FILENO;
-    }
-    return -1;
 }
 
 
