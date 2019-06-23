@@ -84,7 +84,7 @@ public:
         return this->checker.getSymbolTable();
     }
 
-    const SourceInfo &getSourceInfo() const {
+    const SourceInfo &getCurrentSourceInfo() const {
         return this->parser.getLexer()->getSourceInfo();
     }
 
@@ -92,8 +92,8 @@ public:
         return this->mode == DS_EXEC_MODE_PARSE_ONLY || this->mode == DS_EXEC_MODE_CHECK_ONLY;
     }
 
-    unsigned int lineNum() const {
-        return this->parser.getLexer()->getLineNum();
+    unsigned int getRootLineNum() const {
+        return this->lexer.getLineNum();
     }
 
     explicit operator bool() const {

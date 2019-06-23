@@ -473,6 +473,27 @@ TEST_F(InteractiveTest, printStackTop) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, moduleError1) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+    auto eout = format("" INTERACTIVE_TEST_WORK_DIR "/mod1.ds:6: [semantic error] require `Int32' type, but is `Boolean' type\n"
+                       "34 / /\n"
+                       "     ^\n"
+                       "(stdin):1: [note] at module import\n"
+                       "source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds\n"
+                       "       %s\n",
+                       makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", PROMPT, eout.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("f", PROMPT, "[runtime error]\n"
+                                                             "SystemError: execution error: f: command not found\n"
+                                                             "    from (stdin):2 '<toplevel>()'\n"));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

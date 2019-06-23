@@ -671,14 +671,6 @@ TEST_F(CmdlineTest2, cwd) {
                                             this->getTempDirName(), target.c_str()), 0));
 }
 
-static std::string makeLineMarker(const std::string &line) {
-    std::string str = "^";
-    for(unsigned int i = 1; i < line.size(); i++) {
-        str += "~";
-    }
-    return str;
-}
-
 TEST_F(CmdlineTest2, import1) {
     if(platform::detect() == platform::PlatformType::CYGWIN) {
         return;

@@ -74,6 +74,14 @@ public:
 
 std::string format(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
 
+inline std::string makeLineMarker(const std::string &line) {
+    std::string str = "^";
+    for(unsigned int i = 1; i < line.size(); i++) {
+        str += "~";
+    }
+    return str;
+}
+
 class Extractor {
 private:
     const char *str;

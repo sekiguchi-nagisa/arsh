@@ -161,8 +161,8 @@ DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
         }
     }
 
-    unsigned int errorLineNum = this->getSourceInfo()->getLineNum(errorToken.pos);
-    const char *sourceName = this->getSourceInfo()->getSourceName().c_str();
+    unsigned int errorLineNum = this->getCurrentSourceInfo()->getLineNum(errorToken.pos);
+    const char *sourceName = this->getCurrentSourceInfo()->getSourceName().c_str();
     return {
             .kind = type,
             .fileName = strdup(sourceName),
@@ -237,10 +237,10 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
 
 void FrontEnd::setupASTDump() {
     if(this->uastDumper) {
-        this->uastDumper.initialize(this->getSourceInfo()->getSourceName(), "### dump untyped AST ###");
+        this->uastDumper.initialize(this->getCurrentSourceInfo()->getSourceName(), "### dump untyped AST ###");
     }
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
-        this->astDumper.initialize(this->getSourceInfo()->getSourceName(), "### dump typed AST ###");
+        this->astDumper.initialize(this->getCurrentSourceInfo()->getSourceName(), "### dump typed AST ###");
     }
 }
 

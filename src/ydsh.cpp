@@ -199,7 +199,7 @@ public:
             codegen(symbolTable, hasFlag(state.option, DS_OPTION_ASSERT)) {}
 
     unsigned int lineNum() const {
-        return this->frontEnd.lineNum();
+        return this->frontEnd.getRootLineNum();
     }
 
     int operator()(DSError *dsError, CompiledCode &code);
@@ -212,7 +212,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
 
     this->frontEnd.setupASTDump();
     if(!this->frontEnd.frontEndOnly()) {
-        this->codegen.initialize(this->frontEnd.getSourceInfo());
+        this->codegen.initialize(this->frontEnd.getCurrentSourceInfo());
     }
     while(this->frontEnd) {
         auto ret = this->frontEnd(dsError);
@@ -227,7 +227,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
 
         switch(ret.second) {
         case FrontEnd::ENTER_MODULE:
-            this->codegen.enterModule(this->frontEnd.getSourceInfo());
+            this->codegen.enterModule(this->frontEnd.getCurrentSourceInfo());
             break;
         case FrontEnd::EXIT_MODULE:
             this->codegen.exitModule(static_cast<SourceNode&>(*ret.first));
