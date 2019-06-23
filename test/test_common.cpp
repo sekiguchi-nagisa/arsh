@@ -226,6 +226,7 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args) {
             .setIn(IOConfig::PTY)
             .setOut(IOConfig::PTY)
             .setErr(IOConfig::PIPE)
+            .setWinSize(24, 200)
             .setTerm(term)();
 }
 
