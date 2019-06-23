@@ -122,6 +122,9 @@ public:
         ASSERT_EQ(d.getLineNum(), lineNum);
         ASSERT_EQ(d.getStatus(), static_cast<unsigned int>(ret));
         ASSERT_EQ(d.getErrorKind(), name);
+        if(!d.getFileName().empty()) {
+            ASSERT_EQ(d.getFileName(), fileName);
+        }
         if(d.getOut()) {
             ASSERT_STREQ(d.getOut(), output.out.c_str());
         }
