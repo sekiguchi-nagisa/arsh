@@ -1178,6 +1178,7 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 void ByteCodeGenerator::visitSourceNode(SourceNode &node) {
     unsigned int index = node.getIndex();
     if(node.isFirstAppear()) {
+        this->emitSourcePos(node.getPathNode()->getPos());
         this->emit0byteIns(OpCode::INIT_MODULE);
         if(index > 0) {
             this->emit0byteIns(OpCode::DUP);

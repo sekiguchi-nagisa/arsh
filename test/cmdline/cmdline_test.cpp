@@ -716,6 +716,15 @@ TEST_F(CmdlineTest2, import4) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("source hogehuga"), 1, "", str));
 }
 
+TEST_F(CmdlineTest2, import5) {
+    auto modName = this->createTempFile("mod.ds", "var a = 0;\n\n34/$a");
+    auto str = format("[runtime error]\n"
+                      "ArithmeticError: zero division\n"
+                      "    from %s:3 '<toplevel>()'\n"
+                      "    from (string):2 '<toplevel>()'\n", modName.c_str());
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("34\nsource %s", modName.c_str()), 1, "", str));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
