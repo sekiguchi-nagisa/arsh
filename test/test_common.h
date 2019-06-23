@@ -123,7 +123,7 @@ struct ExpectOutput : public ::testing::Test {
 
     void expect(ProcBuilder &&builder, int status, const std::string &out = "", const std::string &err = "") {
         auto result = builder.execAndGetResult(false);
-        this->expect(result, status, WaitStatus::EXITED, out, err);
+        ASSERT_NO_FATAL_FAILURE(this->expect(result, status, WaitStatus::EXITED, out, err));
     }
 
     void expectRegex(const Output &output, int status, WaitStatus::Kind type,
@@ -137,7 +137,7 @@ struct ExpectOutput : public ::testing::Test {
 
     void expectRegex(ProcBuilder &&builder, int status, const std::string &out, const std::string &err = "") {
         auto result = builder.execAndGetResult(false);
-        this->expectRegex(result, status, WaitStatus::EXITED, out, err);
+        ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, status, WaitStatus::EXITED, out, err));
     }
 };
 
@@ -207,7 +207,19 @@ protected:
             eout += "\n";
             eout += out;
         }
-        this->expect(eout.c_str(), err);
+        ASSERT_NO_FATAL_FAILURE(this->expect(eout.c_str(), err));
+    }
+
+    void sendAndExpectRegex(const char *str, const char *out = "", const char *err = "") {
+        std::string eout = str;
+        this->send(str);
+
+        if(this->ttyEmulation) {
+            this->send("\r");
+            eout += "\n";
+            eout += out;
+        }
+        ASSERT_NO_FATAL_FAILURE(this->expectRegex(eout.c_str(), err));
     }
 
     void waitAndExpect(int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
@@ -216,7 +228,7 @@ protected:
         if(this->ttyEmulation) {
             this->interpret(ret.out);
         }
-        ExpectOutput::expect(ret, status, type, out, err);
+        ASSERT_NO_FATAL_FAILURE(ExpectOutput::expect(ret, status, type, out, err));
     }
 };
 
