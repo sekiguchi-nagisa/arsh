@@ -320,10 +320,9 @@ static void setPTYSetting(int fd, const IOConfig &config) {
         error_at("failed");
     }
 
-    winsize ws {
-        .ws_row = config.row,
-        .ws_col = config.col
-    };
+    winsize ws{};
+    ws.ws_row = config.row;
+    ws.ws_col = config.col;
     if(ioctl(fd, TIOCSWINSZ, &ws) == -1) {
         error_at("failed");
     }
