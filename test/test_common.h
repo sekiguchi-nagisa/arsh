@@ -218,18 +218,6 @@ protected:
         ASSERT_NO_FATAL_FAILURE(this->expect(eout.c_str(), err));
     }
 
-    void sendAndExpectRegex(const char *str, const char *out = "", const char *err = "") {
-        std::string eout = str;
-        this->send(str);
-
-        if(this->ttyEmulation) {
-            this->send("\r");
-            eout += "\n";
-            eout += out;
-        }
-        ASSERT_NO_FATAL_FAILURE(this->expectRegex(eout.c_str(), err));
-    }
-
     void waitAndExpect(int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
                        const char *out = "", const char *err = "") {
         auto pair = this->readAll();
