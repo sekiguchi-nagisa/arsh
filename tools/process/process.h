@@ -118,6 +118,7 @@ public:
     void swap(ProcHandle &proc) noexcept {
         std::swap(this->pid_, proc.pid_);
         std::swap(this->status_, proc.status_);
+        std::swap(this->pty_, proc.pty_);
         std::swap(this->in_, proc.in_);
         std::swap(this->out_, proc.out_);
         std::swap(this->err_, proc.err_);

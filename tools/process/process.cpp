@@ -68,6 +68,18 @@ ProcHandle::~ProcHandle() {
     this->wait();
 }
 
+std::pair<unsigned short, unsigned short> ProcHandle::getWinSize() const {
+    std::pair<unsigned short, unsigned short> ret{0, 0};
+    if(this->hasPty()) {
+        winsize ws{};
+        if(ioctl(this->pty(), TIOCGWINSZ, &ws) == 0) {
+            ret.first = ws.ws_row;
+            ret.second = ws.ws_col;
+        }
+    }
+    return ret;
+}
+
 WaitStatus ProcHandle::wait() {
     if(this->pid() > -1) {
         // wait for exit
@@ -394,13 +406,13 @@ public:
 
     int findPTY() const {
         if(this->config.in.is(IOConfig::PTY)) {
-            return inputWriter();
+            return this->inputWriter();
         }
         if(this->config.out.is(IOConfig::PTY)) {
-            return outputReader();
+            return this->outputReader();
         }
         if(this->config.err.is(IOConfig::PTY)) {
-            return errorReader();
+            return this->errorReader();
         }
         return -1;
     }

@@ -232,10 +232,13 @@ protected:
 
     void waitAndExpect(int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
                        const char *out = "", const char *err = "") {
-        auto ret = this->handle.waitAndGetResult(false);
-        if(this->ttyEmulation) {
-            this->interpret(ret.out);
-        }
+        auto pair = this->readAll();
+        auto s = this->handle.wait();
+        auto ret = Output {
+            .status = s,
+            .out = std::move(pair.first),
+            .err = std::move(pair.second)
+        };
         ASSERT_NO_FATAL_FAILURE(ExpectOutput::expect(ret, status, type, out, err));
     }
 };

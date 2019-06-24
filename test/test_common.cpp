@@ -231,7 +231,7 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args) {
 }
 
 void InteractiveBase::interpret(std::string &line) {
-    Screen screen(24, 200);
+    Screen screen(this->handle.getWinSize());
     screen.setReporter([&](std::string &&m) {
         this->send(m.c_str());
     });

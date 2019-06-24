@@ -54,6 +54,9 @@ public:
         }
     }
 
+    explicit Screen(std::pair<unsigned short, unsigned short> winsize) :
+                Screen(winsize.first, winsize.second) {}
+
     Screen() : Screen(24, 80) {}
 
     void setReporter(std::function<void(std::string &&)> func) {
