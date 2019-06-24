@@ -40,7 +40,7 @@ static std::vector<std::string> getSortedFileList(const char *dir) {
 }
 
 class ExecTest : public ::testing::TestWithParam<std::string>, public TempFileFactory {
-private:
+protected:
     std::string targetName;
 
 public:
@@ -135,6 +135,7 @@ public:
 };
 
 TEST_P(ExecTest, baseTest) {
+    printf("@@ test script %s\n", this->targetName.c_str());
     ASSERT_NO_FATAL_FAILURE(this->doTest());
 }
 
