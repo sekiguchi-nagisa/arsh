@@ -513,7 +513,20 @@ unsigned int getLineNum(const LineNumEntry *entries, unsigned int index) {  //FI
 // ########################
 
 std::string FuncObject::toString() const {
-    std::string str = this->code.is(CodeKind::FUNCTION) ? "function(" : "module(";
+    std::string str;
+    switch(this->code.getKind()) {
+    case CodeKind::TOPLEVEL:
+        str += "module(";
+        break;
+    case CodeKind::FUNCTION:
+        str += "function(";
+        break;
+    case CodeKind::USER_DEFINED_CMD:
+        str += "command(";
+        break;
+    default:
+        break;
+    }
     str += this->code.getName();
     str += ")";
     return str;
