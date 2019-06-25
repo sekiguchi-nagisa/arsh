@@ -200,6 +200,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address: 15
 Exception Table:
+
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", "var a = 34; 34 as String"), 0, msg));
 
@@ -243,6 +244,7 @@ Code:
 Constant Pool:
 Line Number Table:
 Exception Table:
+
 )";
     const char *s = "function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", s), 0, msg));

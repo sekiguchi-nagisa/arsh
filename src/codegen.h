@@ -19,6 +19,7 @@
 
 #include <cmath>
 #include <utility>
+#include <functional>
 
 #include "node.h"
 #include "object.h"
@@ -547,10 +548,26 @@ public:
     void exitModule(SourceNode &node);
 };
 
-/**
- * for debugging
- */
-void dumpCode(FILE *fp, const SymbolTable &symbolTable, const CompiledCode &c);
+class ByteCodeDumper {
+private:
+    FILE *fp;
+
+    const SymbolTable &symbolTable;
+
+    std::vector<std::reference_wrapper<const CompiledCode>> mods;
+    std::vector<std::reference_wrapper<const CompiledCode>> funcs;
+
+public:
+    ByteCodeDumper(FILE *fp, const SymbolTable &symbolTable) :
+            fp(fp), symbolTable(symbolTable) {}
+
+    void operator()(const CompiledCode &code);
+
+private:
+    void dumpModule(const CompiledCode &code);
+
+    void dumpCode(const CompiledCode &c);
+};
 
 } // namespace ydsh
 

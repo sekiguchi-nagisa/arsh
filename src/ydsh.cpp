@@ -168,7 +168,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
     if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
         auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");
-        dumpCode(fp, state.symbolTable, code);
+        ByteCodeDumper(fp, state.symbolTable)(code);
     }
 
     if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {

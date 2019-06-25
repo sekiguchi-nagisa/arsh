@@ -1268,6 +1268,10 @@ void ByteCodeGenerator::exitModule(SourceNode &node) {
     this->visit(node);
 }
 
+// ############################
+// ##     ByteCodeDumper     ##
+// ############################
+
 static unsigned int digit(unsigned int n) {
     unsigned int c;
     if(n == 0) {
@@ -1300,34 +1304,53 @@ static unsigned int getMaxLineNum(const LineNumEntry *table) {
     return max;
 }
 
-static void dumpCodeImpl(FILE *fp, const SymbolTable &symbolTable,
-                         const CompiledCode &c, std::vector<const CompiledCode *> *list) {
+void ByteCodeDumper::operator()(const CompiledCode &code) {
+    this->dumpModule(code);
+    while(!this->mods.empty()) {
+        auto ref = this->mods.front();
+        this->mods.erase(this->mods.begin());
+        this->dumpModule(ref.get());
+    }
+}
+
+void ByteCodeDumper::dumpModule(const CompiledCode &code) {
+    fprintf(this->fp, "Source File: %s\n", code.getSourceName());
+
+    this->dumpCode(code);
+    while(!this->funcs.empty()) {
+        auto func = this->funcs.front();
+        this->funcs.erase(this->funcs.begin());
+        this->dumpCode(func.get());
+    }
+}
+
+void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
     const unsigned int codeSize = c.getCodeSize();
 
-    fputs("DSCode: ", fp);
+    fputs("DSCode: ", this->fp);
     switch(c.getKind()) {
     case CodeKind::TOPLEVEL:
-        fputs("top level", fp);
+        fputs("top level", this->fp);
         break;
     case CodeKind::FUNCTION:
-        fprintf(fp, "function %s", c.getName());
+        fprintf(this->fp, "function %s", c.getName());
         break;
     case CodeKind::USER_DEFINED_CMD:
-        fprintf(fp, "command %s", c.getName());
+        fprintf(this->fp, "command %s", c.getName());
         break;
     default:
         break;
     }
-    fputc('\n', fp);
-    fprintf(fp, "  code size: %d\n", c.getCodeSize());
-    fprintf(fp, "  max stack depth: %d\n", c.getStackDepth());
-    fprintf(fp, "  number of local variable: %d\n", c.getLocalVarNum());
+    fputc('\n', this->fp);
+    fprintf(this->fp, "  code size: %d\n", c.getCodeSize());
+    fprintf(this->fp, "  max stack depth: %d\n", c.getStackDepth());
+    fprintf(this->fp, "  number of local variable: %d\n", c.getLocalVarNum());
     if(c.getKind() == CodeKind::TOPLEVEL) {
-        fprintf(fp, "  number of global variable: %d\n", symbolTable.getMaxGVarIndex());
+        fprintf(this->fp, "  number of global variable: %d\n", this->symbolTable.getMaxGVarIndex());
     }
 
 
-    fputs("Code:\n", fp);
+    fputs("Code:\n", this->fp);
     {
         const char *opName[] = {
 #define GEN_NAME(CODE, N, S) #CODE,
@@ -1337,38 +1360,38 @@ static void dumpCodeImpl(FILE *fp, const SymbolTable &symbolTable,
 
         for(unsigned int i = c.getCodeOffset(); i < codeSize; i++) {
             auto code = static_cast<OpCode>(c.getCode()[i]);
-            fprintf(fp, "  %s: %s", formatNum(digit(codeSize), i).c_str(), opName[static_cast<unsigned char>(code)]);
+            fprintf(this->fp, "  %s: %s", formatNum(digit(codeSize), i).c_str(), opName[static_cast<unsigned char>(code)]);
             if(isTypeOp(code)) {
                 unsigned int v = read32(c.getCode(), i + 1);
                 i += 4;
-                fprintf(fp, "  %s", symbolTable.getTypeName(symbolTable.get(v)));
+                fprintf(this->fp, "  %s", this->symbolTable.getTypeName(this->symbolTable.get(v)));
             } else {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD) {
-                    fprintf(fp, "  %d  %d", read16(c.getCode(), i + 1), read16(c.getCode(), i + 3));
+                    fprintf(this->fp, "  %d  %d", read16(c.getCode(), i + 1), read16(c.getCode(), i + 3));
                 } else if(code == OpCode::FORK) {
-                    fprintf(fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
+                    fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
                 } else if(code == OpCode::RECLAIM_LOCAL) {
-                    fprintf(fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
+                    fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
                 } else {
                     switch(byteSize) {
                     case 1:
-                        fprintf(fp, "  %d", static_cast<unsigned int>(read8(c.getCode(), i + 1)));
+                        fprintf(this->fp, "  %d", static_cast<unsigned int>(read8(c.getCode(), i + 1)));
                         break;
                     case 2:
-                        fprintf(fp, "  %d", read16(c.getCode(), i + 1));
+                        fprintf(this->fp, "  %d", read16(c.getCode(), i + 1));
                         break;
                     case 3:
-                        fprintf(fp, "  %d", read24(c.getCode(), i + 1));
+                        fprintf(this->fp, "  %d", read24(c.getCode(), i + 1));
                         break;
                     case 4:
-                        fprintf(fp, "  %d", read32(c.getCode(), i + 1));
+                        fprintf(this->fp, "  %d", read32(c.getCode(), i + 1));
                         break;
                     case -1: {
                         auto s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
-                        fprintf(fp, " %d", s);
+                        fprintf(this->fp, " %d", s);
                         for(unsigned int index = 0; index < s; index++) {
-                            fprintf(fp, "  %d", read16(c.getCode(), i + 2 + index * 2));
+                            fprintf(this->fp, "  %d", read16(c.getCode(), i + 2 + index * 2));
                         }
                         break;
                     }
@@ -1382,69 +1405,63 @@ static void dumpCodeImpl(FILE *fp, const SymbolTable &symbolTable,
                     i += -1 * byteSize + 2 * read8(c.getCode(), i + 1);
                 }
             }
-            fputc('\n', fp);
+            fputc('\n', this->fp);
         }
     }
 
 
-    fputs("Constant Pool:\n", fp);
+    fputs("Constant Pool:\n", this->fp);
     {
         unsigned int constSize;
         for(constSize = 0; c.getConstPool()[constSize]; constSize++);
         for(unsigned int i = 0; c.getConstPool()[i]; i++) {
-            fprintf(fp, "  %s: ", formatNum(digit(constSize), i).c_str());
+            fprintf(this->fp, "  %s: ", formatNum(digit(constSize), i).c_str());
             auto &v = c.getConstPool()[i];
             switch(v.kind()) {
             case DSValueKind::NUMBER:
-                fprintf(fp, "%lu", static_cast<unsigned long>(v.value()));
+                fprintf(this->fp, "%lu", static_cast<unsigned long>(v.value()));
                 break;
             case DSValueKind::OBJECT:
-                if(list != nullptr && (v->getType() == nullptr || v->getType()->isFuncType())) {
-                    list->push_back(&static_cast<FuncObject *>(v.get())->getCode());
+                if(v->getType() == nullptr) {
+                    this->funcs.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
+                } else if(v->getType()->isFuncType()) {
+                    this->funcs.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
+                } else if(v->getType()->isModType()) {
+                    this->mods.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
                 }
-                fprintf(fp, "%s %s",
-                        (v->getType() != nullptr ? symbolTable.getTypeName(*v->getType()) : "(null)"),
+
+                fprintf(this->fp, "%s %s",
+                        (v->getType() != nullptr ? this->symbolTable.getTypeName(*v->getType()) : "(null)"),
                         v->toString().c_str());
                 break;
             case DSValueKind::INVALID:
                 break;
             }
-            fputc('\n', fp);
+            fputc('\n', this->fp);
         }
     }
 
 
-    fputs("Line Number Table:\n", fp);
+    fputs("Line Number Table:\n", this->fp);
     {
         const unsigned int maxLineNum = getMaxLineNum(c.getLineNumEntries());
         for(unsigned int i = 0; c.getLineNumEntries()[i].address != 0; i++) {
             const auto &e = c.getLineNumEntries()[i];
-            fprintf(fp, "  lineNum: %s, address: %s\n",
+            fprintf(this->fp, "  lineNum: %s, address: %s\n",
                     formatNum(digit(maxLineNum), e.lineNum).c_str(),
                     formatNum(digit(codeSize), e.address).c_str());
         }
     }
 
-    fputs("Exception Table:\n", fp);
+    fputs("Exception Table:\n", this->fp);
     for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
         const auto &e = c.getExceptionEntries()[i];
-        fprintf(fp, "  begin: %d, end: %d, type: %s, dest: %d, offset: %d, size: %d\n",
+        fprintf(this->fp, "  begin: %d, end: %d, type: %s, dest: %d, offset: %d, size: %d\n",
                 e.begin, e.end, symbolTable.getTypeName(*e.type), e.dest, e.localOffset, e.localSize);
     }
 
-    fflush(fp);
-}
-
-void dumpCode(FILE *fp, const SymbolTable &symbolTable, const CompiledCode &c) {
-    fprintf(fp, "Source File: %s\n", c.getSourceName());
-
-    std::vector<const CompiledCode *> list;
-
-    dumpCodeImpl(fp, symbolTable, c, &list);
-    for(auto &e : list) {
-        fputc('\n', fp);
-        dumpCodeImpl(fp, symbolTable, *e, nullptr);
-    }
+    fputc('\n', this->fp);
+    fflush(this->fp);
 }
 
 } // namespace ydsh
