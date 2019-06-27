@@ -32,7 +32,9 @@ void exec_interactive(DSState *dsState);
 static void loadStd(DSState *state, const char *dir) {
     std::string path;
     if(dir) {
-        path += dir;
+        char *p = realpath(dir, nullptr);
+        path += p;
+        free(p);
     } else {
         path += DSState_systemModDir();
     }
