@@ -159,6 +159,8 @@ assert($? == 7) # after substitution, update exit status
 
 ## as string
 assert("$(echo a b)" == "a b")
+assert("$(echo a b ${[1,2]})" == "a b 1 2")
+assert("$(echo a b ${(1,2)})" == "a b 1 2")
 assert("$(echo '   ')" == "   ")
 assert("$(echo $'ab\n\n')" == "ab")  # ignore last newlines
 assert("$(echo $'ab \n')" == "ab ")
