@@ -446,16 +446,20 @@ struct StringIter_Object : public DSObject {
 
 class Regex_Object : public DSObject {
 private:
+    std::string str; // for string representation
     PCRE re;
 
 public:
-    Regex_Object(DSType &type, PCRE &&re) : DSObject(type), re(std::move(re)) {}
+    Regex_Object(DSType &type, const std::string &str, PCRE &&re) :
+            DSObject(type), str(str), re(std::move(re)) {}
 
     ~Regex_Object() override = default;
 
     const PCRE &getRe() const {
         return this->re;
     }
+
+    std::string toString() const override;
 };
 
 class Array_Object : public DSObject {

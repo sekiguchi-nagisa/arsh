@@ -504,7 +504,7 @@ public:
     }
 
     PCRE extractRE() {
-        return std::move(re);
+        return std::move(this->re);
     }
 
     void dump(NodeDumper &dumper) const override;

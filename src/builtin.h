@@ -1363,7 +1363,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
         raiseError(ctx, TYPE::RegexSyntaxError, std::string(errorStr));
         RET_ERROR;
     }
-    ctx.setLocal(0, DSValue::create<Regex_Object>(ctx.symbolTable.get(TYPE::Regex), std::move(re)));
+    ctx.setLocal(0, DSValue::create<Regex_Object>(ctx.symbolTable.get(TYPE::Regex), str->getValue(), std::move(re)));
     RET_VOID;
 }
 

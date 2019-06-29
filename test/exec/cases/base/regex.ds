@@ -52,3 +52,6 @@ assert $a[0] == 'ac'
 assert $a[1] == 'a'
 assert $a[2].empty()
 assert $a[3] == 'c'
+
+# toString
+assert $/\/de/ as String == '\/de'

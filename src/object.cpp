@@ -194,6 +194,14 @@ size_t String_Object::hash() const {
 }
 
 // ##########################
+// ##     Regex_Object     ##
+// ##########################
+
+std::string Regex_Object::toString() const {
+    return this->str;
+}
+
+// ##########################
 // ##     Array_Object     ##
 // ##########################
 
