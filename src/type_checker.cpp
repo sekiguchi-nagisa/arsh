@@ -804,6 +804,10 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
 
 void TypeChecker::visitPipelineNode(PipelineNode &node) {
     unsigned int size = node.getNodes().size();
+    if(size > 250) {
+        RAISE_TC_ERROR(PipeLimit, node);
+    }
+
     this->fctx.enterChild();
     for(unsigned int i = 0; i < size - 1; i++) {
         this->checkTypeExactly(node.getNodes()[i]);

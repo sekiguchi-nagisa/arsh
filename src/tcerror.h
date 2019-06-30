@@ -79,6 +79,7 @@ DEFINE_TCError(UselessBlock   , "useless block"                                 
 DEFINE_TCError(EmptyTry       , "empty try block"                                   );
 DEFINE_TCError(MeaninglessTry , "meaningless try block"                             );
 DEFINE_TCError(LocalLimit     , "too many local variables"                          );
+DEFINE_TCError(PipeLimit      , "too long pipeline chain"                           );
 DEFINE_TCError(Constant       , "must be constant expression"                       );
 DEFINE_TCError(DupPattern     , "duplicated pattern"                                );
 DEFINE_TCError(NeedDefault    , "the case expression needs default pattern"         );
