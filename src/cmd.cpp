@@ -577,7 +577,7 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
 }
 
 static int parseExitStatus(const DSState &state, const Array_Object &argvObj) {
-    int ret = typeAs<Int_Object>(state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
+    int ret = typeAs<Int_Object>(state.getGlobal(BuiltinVarOffset::EXIT_STATUS))->getValue();
     if(argvObj.getValues().size() > 1) {
         const char *num = str(argvObj.getValues()[1]);
         int status;
@@ -1014,14 +1014,14 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
 
     // check ifs
     if(ifs == nullptr) {
-        auto *strObj = typeAs<String_Object>(state.getGlobal(toIndex(BuiltinVarOffset::IFS)));
+        auto *strObj = typeAs<String_Object>(state.getGlobal(BuiltinVarOffset::IFS));
         ifs = strObj->getValue();
         ifsSize = strObj->size();
     }
 
     // clear old variable before read
     state.setGlobal(toIndex(BuiltinVarOffset::REPLY), state.emptyStrObj);    // clear REPLY
-    typeAs<Map_Object>(state.getGlobal(toIndex(BuiltinVarOffset::REPLY_VAR)))->clear();      // clear reply
+    typeAs<Map_Object>(state.getGlobal(BuiltinVarOffset::REPLY_VAR))->clear();      // clear reply
 
 
     const int varSize = argc - index;  // if zero, store line to REPLY

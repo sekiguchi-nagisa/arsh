@@ -214,7 +214,7 @@ public:
     }
 
     int getExitStatus() const {
-        return typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)))->getValue();
+        return typeAs<Int_Object>(this->getGlobal(BuiltinVarOffset::EXIT_STATUS))->getValue();
     }
 
     const DSValue &getThrownObject() const {
@@ -261,6 +261,10 @@ public:
         return this->callStack[index];
     }
 
+    const DSValue &getGlobal(BuiltinVarOffset offset) const {
+        return this->callStack[toIndex(offset)];
+    }
+
     void setLocal(unsigned char index, const DSValue &obj) {
         setLocal(index, DSValue(obj));
     }
@@ -287,8 +291,8 @@ public:
     }
 
     bool isRootShell() const {
-        int shellpid = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::SHELL_PID)))->getValue();
-        int pid = typeAs<Int_Object>(this->getGlobal(toIndex(BuiltinVarOffset::PID)))->getValue();
+        int shellpid = typeAs<Int_Object>(this->getGlobal(BuiltinVarOffset::SHELL_PID))->getValue();
+        int pid = typeAs<Int_Object>(this->getGlobal(BuiltinVarOffset::PID))->getValue();
         return shellpid == pid;
     }
 

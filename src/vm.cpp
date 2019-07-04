@@ -197,7 +197,7 @@ bool DSState::prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvOb
         eraseFirst(*argv);
         const unsigned int argSize = argv->getValues().size();
         this->setLocal(UDC_PARAM_ARGV + 1, DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), argSize));   // #
-        this->setLocal(UDC_PARAM_ARGV + 2, this->getGlobal(toIndex(BuiltinVarOffset::POS_0))); // 0
+        this->setLocal(UDC_PARAM_ARGV + 2, this->getGlobal(BuiltinVarOffset::POS_0)); // 0
         unsigned int limit = 9;
         if(argSize < limit) {
             limit = argSize;
@@ -242,7 +242,7 @@ static DSValue readAsStr(const DSState &state, int fd) {
 }
 
 static DSValue readAsStrArray(const DSState &state, int fd) {
-    auto *ifsObj = typeAs<String_Object>(state.getGlobal(toIndex(BuiltinVarOffset::IFS)));
+    auto *ifsObj = typeAs<String_Object>(state.getGlobal(BuiltinVarOffset::IFS));
     const char *ifs = ifsObj->getValue();
     const unsigned ifsSize = ifsObj->size();
     unsigned int skipCount = 1;
@@ -867,7 +867,7 @@ static auto signalTrampoline = initSignalTrampoline();
 
 bool DSState::kickSignalHandler(int sigNum, DSValue &&func) {
     this->reserveLocalStack(3);
-    this->push(this->getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS)));
+    this->push(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
     this->push(std::move(func));
     this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Signal), sigNum));
 
@@ -1455,7 +1455,7 @@ bool DSState::mainLoop() {
             auto now = std::chrono::system_clock::now();
             auto diff = now - this->baseTime;
             auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
-            unsigned long v = typeAs<Long_Object>(this->getGlobal(toIndex(BuiltinVarOffset::SECONDS)))->getValue();
+            unsigned long v = typeAs<Long_Object>(this->getGlobal(BuiltinVarOffset::SECONDS))->getValue();
             v += sec.count();
             this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Uint64), v));
             vmnext;

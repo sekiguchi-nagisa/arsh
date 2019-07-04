@@ -412,7 +412,7 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
                 ch = '\r';
                 break;
             case 's': {
-                auto &v = st.getGlobal(toIndex(BuiltinVarOffset::POS_0));    // script name
+                auto &v = st.getGlobal(BuiltinVarOffset::POS_0);    // script name
                 output += safeBasename(typeAs<String_Object>(v)->getValue());
                 continue;
             }
@@ -451,8 +451,7 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
 #undef STR
             }
             case 'V': {
-                const unsigned int index = toIndex(BuiltinVarOffset::VERSION);
-                const char *str = typeAs<String_Object>(st.getGlobal(index))->getValue();
+                const char *str = typeAs<String_Object>(st.getGlobal(BuiltinVarOffset::VERSION))->getValue();
                 output += str;
                 continue;
             }

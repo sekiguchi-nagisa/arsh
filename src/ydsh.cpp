@@ -72,7 +72,7 @@ static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&ex
         termKind = TERM_ON_ASSERT;
     }
 
-    auto oldExitStatus = state.getGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS));
+    auto oldExitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
     auto args = makeArgs(
             DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), termKind),
             termKind == TERM_ON_ERR ? std::move(except) : oldExitStatus
@@ -183,7 +183,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
 
 static const char *getScriptDir(const DSState &state, unsigned short option) {
     return hasFlag(option, DS_MOD_FULLPATH) ? "" :
-                typeAs<String_Object>(state.getGlobal(toIndex(BuiltinVarOffset::SCRIPT_DIR)))->getValue();
+                typeAs<String_Object>(state.getGlobal(BuiltinVarOffset::SCRIPT_DIR))->getValue();
 }
 
 class Compiler {
@@ -560,11 +560,10 @@ void DSState_setArguments(DSState *st, char *const *args) {
     }
 
     // clear previous arguments
-    unsigned int index = toIndex(BuiltinVarOffset::ARGS);
-    typeAs<Array_Object>(st->getGlobal(index))->refValues().clear();
+    typeAs<Array_Object>(st->getGlobal(BuiltinVarOffset::ARGS))->refValues().clear();
 
     for(unsigned int i = 0; args[i] != nullptr; i++) {
-        auto *array = typeAs<Array_Object>(st->getGlobal(toIndex(BuiltinVarOffset::ARGS)));
+        auto *array = typeAs<Array_Object>(st->getGlobal(BuiltinVarOffset::ARGS));
         array->append(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::string(args[i])));
     }
     finalizeScriptArg(st);
