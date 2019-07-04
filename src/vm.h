@@ -217,6 +217,10 @@ public:
         return typeAs<Int_Object>(this->getGlobal(BuiltinVarOffset::EXIT_STATUS))->getValue();
     }
 
+    const char *getScriptDir() const {
+        return typeAs<String_Object>(this->getGlobal(BuiltinVarOffset::SCRIPT_DIR))->getValue();
+    }
+
     const DSValue &getThrownObject() const {
         return this->thrownObject;
     }

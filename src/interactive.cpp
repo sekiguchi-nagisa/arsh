@@ -115,6 +115,7 @@ static void saveHistory() {
 static const std::string *lineBuf = nullptr;
 
 static bool readLine(std::string &line) {
+    DSState_setScriptDir(state, ".");
     line.clear();
     lineBuf = &line;
 
@@ -324,7 +325,6 @@ void exec_interactive(DSState *dsState) {
 
     int status = 0;
     for(std::string line; readLine(line);) {
-        DSState_setScriptDir(dsState, ".");
         DSError e;  //NOLINT
         status = DSState_eval(dsState, nullptr, line.c_str(), line.size(), &e);
         auto kind = e.kind;

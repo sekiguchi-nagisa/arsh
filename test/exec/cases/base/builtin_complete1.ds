@@ -16,6 +16,12 @@ function assertSEQ($a : String, $b : String) : Boolean {
 
 
 function assertArray($x : Array<String>, $y : Array<String>) {
+    if $x.size() != $y.size() {
+        echo expect:
+        for $a in $x { echo $a; }
+        echo actual
+        for $a in $y { echo $a; }
+    }
     assert($assertEQ($x.size(), $y.size()))
 
     let size = $x.size()
@@ -70,6 +76,7 @@ __cmd() {
     echo __cmd
     echo __file
     echo file
+    echo files
 
     help | cut -d ' ' -f 1
     for $dir in $@ {
@@ -143,6 +150,11 @@ file() {
     __file $@ | sort | uniq
 }
 
+files() {
+    for $p in $@ {
+        __file $p
+    } | sort | uniq
+}
 
 $assertArray($(file '/bin' 1), $(complete '/bin/'))
 $assertArray($(file '/usr/bin/' 1), $(complete '/usr/bin/'))
@@ -158,7 +170,7 @@ $assertArray($(file '.'), $(complete 'echo | echo < '))
 $assertArray($(file '.'), $(complete 'echo >'))
 $assertArray($(file '.'), $(complete 'echo | echo $TRUE '))
 $assertArray($(file '.'), $(complete 'echo ${34} '))
-$assertArray($(file '.'), $(complete 'source '))
+$assertArray($(files $CONFIG_DIR/module ~/.ydsh/module $SCRIPT_DIR), $(complete 'source '))
 $assertArray($(file '/bin' | grep '^l'), $(complete 'source /bin/l'))
 $assertArray($(file '.'), $(complete '34 with < '))
 $assertArray($(file '/bin'), $(complete '$true with >> /bin/'))

@@ -182,8 +182,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
 }
 
 static const char *getScriptDir(const DSState &state, unsigned short option) {
-    return hasFlag(option, DS_MOD_FULLPATH) ? "" :
-                typeAs<String_Object>(state.getGlobal(BuiltinVarOffset::SCRIPT_DIR))->getValue();
+    return hasFlag(option, DS_MOD_FULLPATH) ? "" : state.getScriptDir();
 }
 
 class Compiler {

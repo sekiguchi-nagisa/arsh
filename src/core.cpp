@@ -911,6 +911,14 @@ static CStrBuffer completeFileName(const DSState &st, const std::string &token, 
     return results;
 }
 
+static CStrBuffer completeModName(const char *scriptDir, const std::string &token) {
+    CStrBuffer results;
+    completeFileName(results, scriptDir, token, false); // complete in SCRIPT_DIR
+    completeFileName(results, LOCAL_MOD_DIR, token, false); // complete in local module dir
+    completeFileName(results, SYSTEM_MOD_DIR, token, false);    // complete in system module dir
+    return results;
+}
+
 static CStrBuffer completeGlobalVarName(const DSState &ctx, const std::string &token) {
     CStrBuffer results;
 
@@ -954,7 +962,8 @@ static CStrBuffer completeEnvName(const std::string &envName) {
     OP(FILE) \
     OP(VAR) /* complete global variable name */\
     OP(EXPECT) \
-    OP(ENV) /* complete environmental vairable name */
+    OP(ENV) /* complete environmental variable name */\
+    OP(MOD) /* complete module path */
 
 
 enum class CompletorKind : unsigned int {
@@ -1082,7 +1091,16 @@ static bool requireSingleCmdArg(const Node &node, unsigned int cursor) {
         auto kind = node.getNodeKind();
         if(kind == NodeKind::With) {
             return true;
-        } else if(kind == NodeKind::Source) {
+        }
+    }
+    return false;
+}
+
+static bool requireMod(const Node &node, unsigned int cursor) {
+    auto token = node.getToken();
+    if(token.pos + token.size == cursor) {
+        auto kind = node.getNodeKind();
+        if(kind == NodeKind::Source) {
             return static_cast<const SourceNode&>(node).getName().empty();
         }
     }
@@ -1138,6 +1156,9 @@ static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parse
         if(inCmdMode(*node) || requireSingleCmdArg(*node, cursor)) {
             return selectWithCmd(parser, cursor);
         }
+        if(requireMod(*node, cursor)) {
+            return {CompletorKind::MOD, lexer.toTokenText(token)};
+        }
     } else {
         const auto &e = parser.getError();
         LOG(DUMP_CONSOLE, "error kind: %s\nkind: %s, token: %s, text: %s",
@@ -1186,6 +1207,9 @@ static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parse
                 }
 
                 if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
+                    if(!tokenPairs.empty() && tokenPairs.back().first == SOURCE) {
+                        return {CompletorKind::MOD, ""};
+                    }
                     return {CompletorKind::FILE, ""};
                 }
 
@@ -1274,6 +1298,9 @@ CStrBuffer completeLine(const DSState &st, const std::string &line) {
         break;
     case CompletorKind::ENV:
         sbuf = completeEnvName(pair.second);
+        break;
+    case CompletorKind::MOD:
+        sbuf = completeModName(st.getScriptDir(), pair.second);
         break;
     }
     return sbuf;
