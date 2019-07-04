@@ -914,7 +914,9 @@ static CStrBuffer completeFileName(const DSState &st, const std::string &token, 
 static CStrBuffer completeModName(const char *scriptDir, const std::string &token) {
     CStrBuffer results;
     completeFileName(results, scriptDir, token, false); // complete in SCRIPT_DIR
-    completeFileName(results, LOCAL_MOD_DIR, token, false); // complete in local module dir
+    std::string localModDir = LOCAL_MOD_DIR;
+    expandTilde(localModDir);
+    completeFileName(results, localModDir.c_str(), token, false); // complete in local module dir
     completeFileName(results, SYSTEM_MOD_DIR, token, false);    // complete in system module dir
     return results;
 }
