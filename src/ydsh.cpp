@@ -183,7 +183,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
 
 static const char *getScriptDir(const DSState &state, unsigned short option) {
     return hasFlag(option, DS_MOD_FULLPATH) ? "" :
-            typeAs<String_Object>(getGlobal(state, VAR_SCRIPT_DIR))->getValue();
+                typeAs<String_Object>(state.getGlobal(toIndex(BuiltinVarOffset::SCRIPT_DIR)))->getValue();
 }
 
 class Compiler {
@@ -329,6 +329,13 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "IFS", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), " \t\n"), FieldAttributes());
 
     /**
+     * must be String_Object
+     */
+    std::string str = ".";
+    getWorkingDir(*state, false, str);
+    bindVariable(state, "SCRIPT_DIR", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
+
+    /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
@@ -423,13 +430,6 @@ static void initBuiltinVar(DSState *state) {
      * must be UnixFD_Object
      */
     bindVariable(state, VAR_STDERR, DSValue::create<UnixFD_Object>(state->symbolTable.get(TYPE::UnixFD), STDERR_FILENO));
-
-    /**
-     * must be String_Object
-     */
-    std::string str = ".";
-    getWorkingDir(*state, false, str);
-    bindVariable(state, VAR_SCRIPT_DIR, DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
 
     /**
      * must be Int_Object
@@ -577,7 +577,7 @@ void DSState_setArguments(DSState *st, char *const *args) {
  * full path
  */
 static void setScriptDir(DSState *st, const char *scriptDir) {
-    unsigned int index = st->symbolTable.lookupHandle(VAR_SCRIPT_DIR)->getIndex();
+    unsigned int index = toIndex(BuiltinVarOffset::SCRIPT_DIR);
     std::string str = scriptDir;
     st->setGlobal(index, DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::move(str)));
 }

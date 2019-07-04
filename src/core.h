@@ -49,6 +49,7 @@ enum class BuiltinVarOffset : unsigned int {
     PPID,           // PPID
     SECONDS,        // SECONDS
     IFS,            // IFS
+    SCRIPT_DIR,     // SCRIPT_DIR
     EXIT_STATUS,    // ?
     SHELL_PID,      // $
     ARGS,           // @
