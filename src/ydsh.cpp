@@ -331,6 +331,11 @@ static void initBuiltinVar(DSState *state) {
     /**
      * must be String_Object
      */
+    bindVariable(state, "CONFIG_DIR", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), SYSTEM_CONFIG_DIR));
+
+    /**
+     * must be String_Object
+     */
     std::string str = ".";
     getWorkingDir(*state, false, str);
     bindVariable(state, "SCRIPT_DIR", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));

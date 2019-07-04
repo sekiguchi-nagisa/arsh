@@ -318,7 +318,8 @@ const char *DSState_version(DSVersion *version);
 const char *DSState_copyright();
 
 /**
- * get full path of system config directory (/etc/ydsh)
+ * get full path of system config directory (/etc/ydsh).
+ * equivalent to $CONFIG_DIR
  * @return
  */
 const char *DSState_systemConfigDir();
