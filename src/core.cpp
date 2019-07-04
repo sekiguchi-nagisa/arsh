@@ -824,9 +824,15 @@ static CStrBuffer completeCommandName(const DSState &ctx, const std::string &tok
     return results;
 }
 
-static CStrBuffer completeFileName(const DSState &st, const std::string &token, bool onlyExec = true) {
-    CStrBuffer results;
-
+/**
+ * complete file in baseDir
+ * @param results
+ * @param baseDir
+ * @param token
+ * @param onlyExec
+ */
+static void completeFileName(CStrBuffer &results, const char *baseDir,
+                             const std::string &token, bool onlyExec) {
     const auto s = token.find_last_of('/');
 
     // complete tilde
@@ -841,7 +847,7 @@ static CStrBuffer completeFileName(const DSState &st, const std::string &token, 
             }
         }
         endpwent();
-        return results;
+        return;
     }
 
     // complete file name
@@ -855,9 +861,9 @@ static CStrBuffer completeFileName(const DSState &st, const std::string &token, 
     } else if(s != std::string::npos) {
         targetDir = token.substr(0, s);
         expandTilde(targetDir);
-        targetDir = expandDots(st.logicalWorkingDir.c_str(), targetDir.c_str());
+        targetDir = expandDots(baseDir, targetDir.c_str());
     } else {
-        targetDir = expandDots(st.logicalWorkingDir.c_str(), ".");
+        targetDir = expandDots(baseDir, ".");
     }
     LOG(DUMP_CONSOLE, "targetDir = %s", targetDir.c_str());
 
@@ -873,7 +879,7 @@ static CStrBuffer completeFileName(const DSState &st, const std::string &token, 
 
     DIR *dir = opendir(targetDir.c_str());
     if(dir == nullptr) {
-        return results;
+        return;
     }
 
     for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
@@ -898,6 +904,11 @@ static CStrBuffer completeFileName(const DSState &st, const std::string &token, 
         }
     }
     closedir(dir);
+}
+
+static CStrBuffer completeFileName(const DSState &st, const std::string &token, bool onlyExec = true) {
+    CStrBuffer results;
+    completeFileName(results, st.logicalWorkingDir.c_str(), token, onlyExec);
     return results;
 }
 
