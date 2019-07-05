@@ -322,13 +322,7 @@ const char *DSState_copyright();
  * equivalent to $CONFIG_DIR
  * @return
  */
-const char *DSState_systemConfigDir();
-
-/**
- * get full path of system module directory (/etc/ydsh/module)
- * @return
- */
-const char *DSState_systemModDir();
+const char *DSState_configDir();
 
 /* for feature detection */
 #define DS_FEATURE_LOGGING    ((unsigned int) (1u << 0u))

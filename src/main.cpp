@@ -36,7 +36,8 @@ static void loadStd(DSState *state, const char *dir) {
         path += p;
         free(p);
     } else {
-        path += DSState_systemModDir();
+        path += DSState_configDir();
+        path += "/module";
     }
     path += "/history";
     int ret = DSState_loadModule(state, path.c_str(), nullptr, DS_MOD_FULLPATH, nullptr);

@@ -750,12 +750,8 @@ const char *DSState_copyright() {
     return "Copyright (C) 2015-2019 Nagisa Sekiguchi";
 }
 
-const char *DSState_systemConfigDir() {
+const char *DSState_configDir() {
     return SYSTEM_CONFIG_DIR;
-}
-
-const char *DSState_systemModDir() {
-    return SYSTEM_MOD_DIR;
 }
 
 static constexpr unsigned int featureBit() {

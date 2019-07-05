@@ -59,7 +59,7 @@ TEST_F(APITest, version) {
 }
 
 TEST_F(APITest, config) {
-    ASSERT_STREQ(ydsh::SYSTEM_CONFIG_DIR, DSState_systemConfigDir());
+    ASSERT_STREQ(ydsh::SYSTEM_CONFIG_DIR, DSState_configDir());
 }
 
 TEST_F(APITest, lineNum1) {
