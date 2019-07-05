@@ -722,18 +722,18 @@ static void append(CStrBuffer &buf, const char *str, EscapeOp op) {
     std::string estr = escape(str, op);
 
     // find inserting position
-    for(auto iter = buf.begin(); iter != buf.end(); ++iter) {
-        int r = strcmp(estr.c_str(), *iter);
-        if(r <= 0) {
-            if(r < 0) {
-                buf.insert(iter, strdup(estr.c_str()));
-            }
-            return;
+    auto iter = std::lower_bound(buf.begin(), buf.end(),
+            estr.c_str(), [](const char *x, const char *y){
+        return strcmp(x, y) < 0;
+    });
+    if(iter != buf.end()) {
+        if(strcmp(estr.c_str(), *iter) < 0) {
+            buf.insert(iter, strdup(estr.c_str()));
         }
+    } else {
+        // not found, append to last
+        buf += strdup(estr.c_str());
     }
-
-    // not found, append to last
-    buf += strdup(estr.c_str());
 }
 
 static void append(CStrBuffer &buf, const std::string &str, EscapeOp op) {
