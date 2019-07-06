@@ -2099,7 +2099,6 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
         RET_VOID;
     }
     int e = errno;
-    close(fd);
     std::string msg = "open failed: ";
     msg += path;
     raiseSystemError(ctx, e, std::move(msg));
