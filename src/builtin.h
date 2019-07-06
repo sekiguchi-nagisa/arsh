@@ -2122,7 +2122,7 @@ YDSH_METHOD fd_close(RuntimeContext &ctx) {
 YDSH_METHOD fd_dup(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_dup);
     int fd = typeAs<UnixFD_Object>(LOCAL(0))->getValue();
-    int newfd = dup(fd);
+    int newfd = fcntl(fd, F_DUPFD_CLOEXEC, 0);
     if(newfd < 0) {
         int e = errno;
         raiseSystemError(ctx, e, std::to_string(fd));
