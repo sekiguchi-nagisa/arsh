@@ -18,6 +18,7 @@
 #define YDSH_LOGGER_BASE_HPP
 
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <cstring>
 #include <string>
@@ -172,10 +173,10 @@ void LoggerBase<T>::syncAppenderWithEnv() {
     const char *appender = getenv(key.c_str());
     FilePtr file;
     if(appender && *appender != '\0') {
-        file = createFilePtr(fopen, appender, "w");
+        file = createFilePtr(fopen, appender, "we");
     }
     if(!file) {
-        file = createFilePtr(fdopen, dup(STDERR_FILENO), "w");
+        file = createFilePtr(fdopen, fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 0), "w");
     }
     this->setAppender(std::move(file));
 }
