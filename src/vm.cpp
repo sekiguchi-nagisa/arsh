@@ -478,6 +478,7 @@ int DSState::forkAndExec(const char *cmdName, Command cmd, char **const argv, DS
         raiseCmdError(*this, cmdName, EAGAIN);
         return 1;
     } else if(proc.pid() == 0) {   // child
+        close(selfpipe[READ_PIPE]);
         xexecve(cmd.filePath, argv, nullptr);
 
         int errnum = errno;
