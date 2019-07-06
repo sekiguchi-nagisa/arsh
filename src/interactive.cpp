@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <csignal>
 #include <cstring>
 #include <string>
@@ -21,8 +24,6 @@
 #include <cerrno>
 #include <cstdlib>
 #include <climits>
-
-#include <unistd.h>
 
 #include <linenoise.h>
 
@@ -305,9 +306,9 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
 void exec_interactive(DSState *dsState) {
     state = dsState;
 
-    *linenoiseInputFD() = dup(STDIN_FILENO);
-    *linenoiseOutputFD() = dup(STDOUT_FILENO);
-    *linenoiseErrorFD() = dup(STDERR_FILENO);
+    *linenoiseInputFD() = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
+    *linenoiseOutputFD() = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
+    *linenoiseErrorFD() = fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 0);
 
     linenoiseSetEncodingFunctions(
             encoding_prevCharLen,
