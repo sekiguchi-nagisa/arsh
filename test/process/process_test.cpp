@@ -10,6 +10,11 @@ static Output spawnAndWait(IOConfig config, Func func, bool remove = false) {
     return ProcBuilder::spawn(config, func).waitAndGetResult(remove);
 }
 
+TEST_F(ProcTest, cmd) {
+    auto builder = ProcBuilder {"ls", "/dev/fd/"};
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, "0\n1\n2\n3\n"));
+}
+
 TEST_F(ProcTest, status) {
     auto ret = spawnAndWait(IOConfig{}, [&]{
         return 100;
