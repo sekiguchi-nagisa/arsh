@@ -82,6 +82,11 @@ std::pair<unsigned short, unsigned short> ProcHandle::getWinSize() const {
 
 WaitStatus ProcHandle::wait() {
     if(this->pid() > -1) {
+        // close fds before wait
+        close(this->in());
+        close(this->out());
+        close(this->err());
+
         // wait for exit
         int s;
         if(waitpid(this->pid(), &s, 0) < 0) {
@@ -91,10 +96,6 @@ WaitStatus ProcHandle::wait() {
         }
 
         if(this->status_.isTerminated()) {
-            close(this->in());
-            close(this->out());
-            close(this->err());
-
             this->detach();
         }
     }
