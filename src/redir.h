@@ -206,7 +206,7 @@ private:
     void backupFDs() {
         for(unsigned int i = 0; i < 3; i++) {
             if(this->backupFDset & (1u << i)) {
-                this->oldFds[i] = dup(i);
+                this->oldFds[i] = fcntl(i, F_DUPFD_CLOEXEC, 0);
             }
         }
     }

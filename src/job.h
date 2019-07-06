@@ -18,6 +18,7 @@
 #define YDSH_JOB_H
 
 #include <unistd.h>
+#include <fcntl.h>
 
 #include <vector>
 #include <type_traits>
@@ -143,7 +144,7 @@ private:
             this->procs[i] = procs[i];
         }
         if(saveStdin) {
-            this->oldStdin = dup(STDIN_FILENO);
+            this->oldStdin = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
         }
     }
 

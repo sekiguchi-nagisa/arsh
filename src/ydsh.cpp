@@ -606,7 +606,7 @@ void DSState_setExitStatus(DSState *st, int status) {
 int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
     FilePtr file;
     if(target != nullptr) {
-        file.reset(strlen(target) == 0 ? fdopen(STDOUT_FILENO, "w") : fopen(target, "w"));
+        file.reset(strlen(target) == 0 ? fdopen(fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0), "w") : fopen(target, "we"));
         if(!file) {
             return -1;
         }
