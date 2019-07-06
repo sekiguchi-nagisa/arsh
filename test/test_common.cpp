@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <fcntl.h>
 
 #include <cstdarg>
 #include <climits>
@@ -92,10 +93,10 @@ ydsh::FilePtr TempFileFactory::createTempFilePtr(std::string &name, const std::s
 
     if(!name.empty()) {
         fileName += name;
-        filePtr = createFilePtr(fopen, fileName.c_str(), "w+b");
+        filePtr = createFilePtr(fopen, fileName.c_str(), "w+be");
     } else {
         fileName += "temp_XXXXXX";
-        int fd = mkstemp(&fileName[0]);
+        int fd = mkostemp(&fileName[0], O_CLOEXEC);
         if(fd < 0) {
             error_at("");
         }

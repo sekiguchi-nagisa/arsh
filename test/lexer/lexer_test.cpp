@@ -17,6 +17,7 @@ using namespace ydsh;
 TEST(LexerTest_Lv0, case1) {
     FILE *fp = fopen(LEXER_TEST_DIR  "/" "lexer_test.cpp", "r");
     ASSERT_FALSE(fp == nullptr);
+    fclose(fp);
 }
 
 /**
