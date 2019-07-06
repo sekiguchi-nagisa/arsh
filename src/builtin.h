@@ -2092,16 +2092,11 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 YDSH_METHOD fd_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_init);
     const char *path = typeAs<String_Object>(LOCAL(1))->getValue();
-    int fd = open(path, O_CREAT | O_RDWR, 0666);
+    int fd = open(path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
     if(fd != -1) {
-        int flag = fcntl(fd, F_GETFD);
-        if(flag != -1) {
-            if(fcntl(fd, F_SETFD, flag | FD_CLOEXEC) != -1) {
-                auto obj = DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), fd);
-                ctx.setLocal(0, std::move(obj));
-                RET_VOID;
-            }
-        }
+        auto obj = DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), fd);
+        ctx.setLocal(0, std::move(obj));
+        RET_VOID;
     }
     int e = errno;
     close(fd);
