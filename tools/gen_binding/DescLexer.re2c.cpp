@@ -36,7 +36,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
       re2c:define:YYFILL:naked = 1;
       re2c:define:YYFILL@len = #;
       re2c:define:YYFILL = "if(!this->fill(#)) { REACH_EOS(); }";
-      re2c:yyfill:enable = 1;
+      re2c:yyfill:enable = 0;
       re2c:indent:top = 1;
       re2c:indent:string = "    ";
 
