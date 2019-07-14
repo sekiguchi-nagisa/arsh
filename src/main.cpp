@@ -319,6 +319,8 @@ int main(int argc, char **argv) {
         apply(DSState_eval, state, "(string)", evalText, strlen(evalText));
     }
     case InvocationKind::BUILTIN:
-        exit(DSState_exec(state, shellArgs));
+        int s = DSState_exec(state, shellArgs);
+        DSState_delete(&state);
+        exit(s);
     }
 }
