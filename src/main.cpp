@@ -284,12 +284,8 @@ int main(int argc, char **argv) {
 
 
     // set rest argument
-    const int size = end - begin;
-    char *shellArgs[size + 1];
-    memcpy(shellArgs, begin, sizeof(char *) * size);
-    shellArgs[size] = nullptr;
-
-    if(invocationKind == InvocationKind::FROM_FILE && (size == 0 || strcmp(shellArgs[0], "-") == 0)) {
+    char **shellArgs = begin;
+    if(invocationKind == InvocationKind::FROM_FILE && (shellArgs[0] == nullptr || strcmp(shellArgs[0], "-") == 0)) {
         invocationKind = InvocationKind::FROM_STDIN;
     }
 
@@ -319,7 +315,7 @@ int main(int argc, char **argv) {
     }
     case InvocationKind::FROM_STRING: {
         DSState_setShellName(state, shellArgs[0]);
-        DSState_setArguments(state, size == 0 ? nullptr : shellArgs + 1);
+        DSState_setArguments(state, shellArgs[0] == nullptr ? nullptr : shellArgs + 1);
         apply(DSState_eval, state, "(string)", evalText, strlen(evalText));
     }
     case InvocationKind::BUILTIN:
