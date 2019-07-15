@@ -75,9 +75,6 @@ public:
     Lexer(const char *sourceName, const char *source, unsigned int size) :
             LexerBase(sourceName, source, size), modeStack(1, yycSTMT) {}
 
-    Lexer(const char *sourceName, FilePtr &&file) :
-            LexerBase(sourceName, std::move(file)), modeStack(1, yycSTMT) {}
-
     /**
      * 
      * @param sourceName

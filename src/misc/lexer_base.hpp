@@ -108,12 +108,6 @@ protected:
 
     SourceInfo srcInfo;
 
-    /**
-     * may be null, if input source is string.
-     * must be binary mode.
-     */
-    FilePtr file;
-
     ByteBuffer buf;
 
     /**
@@ -152,16 +146,6 @@ public:
 
     /**
      *
-     * @param file
-     * must be opened with binary mode.
-     * @return
-     */
-    explicit LexerBase(const char *sourceName, FilePtr &&file) : LexerBase(sourceName) {
-        this->file = std::move(file);
-    }
-
-    /**
-     *
      * @param src
      * must be null terminated.
      * @return
@@ -195,7 +179,6 @@ public:
 
     void swap(LexerBase &lex) noexcept {
         std::swap(this->srcInfo, lex.srcInfo);
-        std::swap(this->file, lex.file);
         this->buf.swap(lex.buf);
         std::swap(this->cursor, lex.cursor);
         std::swap(this->limit, lex.limit);
@@ -231,7 +214,7 @@ public:
     }
 
     bool isEnd() const {
-        return this->file == nullptr && this->cursor == this->limit;
+        return this->cursor == this->limit;
     }
 
     bool withinRange(Token token) const {
@@ -310,11 +293,6 @@ private:
     }
 
 protected:
-    /**
-     * fill buffer. called from this->nextToken().
-     */
-    bool fill(int n);
-
     void updateNewline(unsigned int pos);
 };
 
@@ -474,20 +452,6 @@ void LexerBase<T>::appendToBuf(const char *data, unsigned int size, bool isEnd) 
     this->limit = this->buf.get() + this->buf.size();
     this->marker = this->buf.get() + markerPos;
     this->ctxMarker = this->buf.get() + ctxMarkerPos;
-}
-
-template<bool T>
-bool LexerBase<T>::fill(int n) {
-    if(this->file != nullptr) {
-        int needSize = (n > DEFAULT_READ_SIZE) ? n : DEFAULT_READ_SIZE;
-        char data[needSize];
-        int readSize = fread(data, sizeof(unsigned char), needSize, this->file.get());
-        if(readSize < needSize) {
-            this->file.reset();
-        }
-        this->appendToBuf(data, readSize, this->file == nullptr);
-    }
-    return !this->isEnd();
 }
 
 template<bool T>
