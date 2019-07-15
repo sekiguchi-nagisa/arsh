@@ -82,6 +82,7 @@ JSONTokenKind Lexer::nextToken(Token &token) {
     EOS:
     token.pos = this->getUsedSize() - 1;
     token.size = 0;
+    this->cursor--;
     return EOS;
 }
 
