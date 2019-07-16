@@ -184,7 +184,7 @@ static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize,
     // skip next combining character
     while(pos < bufSize) {
         byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, limit, codePoint);
-        if(UnicodeUtil::localeAwareWidth(codePoint) > 0) {
+        if(UnicodeUtil::localeAwareWidth(codePoint) != 0) {
             break;
         }
         pos += byteSize;
