@@ -695,6 +695,7 @@ static std::string escape(const char *str, EscapeOp op) {
         case ')':
         case '$':
         case '#':
+        case '~':
             found = true;
             break;
         case '{':
