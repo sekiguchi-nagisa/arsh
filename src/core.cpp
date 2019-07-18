@@ -1031,7 +1031,7 @@ static std::pair<CompletorKind, std::string> selectWithCmd(const Parser &parser,
              * or if spaces exist between current and previous
              */
             if(isRedirOp(prevKind) || prevToken.pos + prevToken.size < token.pos) {
-                return {CompletorKind::FILE, parser.getLexer()->toTokenText(token)};
+                return {CompletorKind::FILE, parser.getLexer()->toCmdArg(token)};
             }
             return {CompletorKind::NONE, ""};
         }
@@ -1160,7 +1160,7 @@ static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parse
             return selectWithCmd(parser, cursor);
         }
         if(requireMod(*node, cursor)) {
-            return {CompletorKind::MOD, lexer.toTokenText(token)};
+            return {CompletorKind::MOD, lexer.toCmdArg(token)};
         }
     } else {
         const auto &e = parser.getError();
