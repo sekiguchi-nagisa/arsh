@@ -1187,11 +1187,6 @@ static std::pair<CompletorKind, std::string> selectCompletor(const Parser &parse
             }
 
             if(strcmp(e.getErrorKind(), NO_VIABLE_ALTER) == 0) {
-                auto pair = selectWithCmd(parser, cursor, true);
-                if(pair.first != CompletorKind::NONE) {
-                    return pair;
-                }
-
                 if(findKind(e.getExpectedTokens(), COMMAND)) {
                     return {CompletorKind::CMD, ""};
                 }
