@@ -13,7 +13,6 @@ download_project(
         GIT_REPOSITORY      https://github.com/google/googletest.git
         GIT_TAG             release-1.8.1
         GIT_PROGRESS        1
-        ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )
 
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
