@@ -153,6 +153,7 @@ download_project(
         DOWNLOAD_DIR        ${CMAKE_SOURCE_DIR}/linenoise-download
         GIT_REPOSITORY      https://github.com/sekiguchi-nagisa/linenoise.git
         GIT_TAG             shell-patch
+        GIT_PROGRESS        1
         ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )
 include_directories(${linenoise_SOURCE_DIR})

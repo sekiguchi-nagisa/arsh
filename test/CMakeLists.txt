@@ -14,6 +14,7 @@ download_project(
         DOWNLOAD_DIR        ${CMAKE_SOURCE_DIR}/googletest-download
         GIT_REPOSITORY      https://github.com/google/googletest.git
         GIT_TAG             release-1.8.1
+        GIT_PROGRESS        1
         ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )
 

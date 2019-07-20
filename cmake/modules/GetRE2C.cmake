@@ -15,6 +15,7 @@ macro(getRE2C)
             BINARY_DIR          ${CMAKE_SOURCE_DIR}/re2c-build
             GIT_REPOSITORY      https://github.com/skvadrik/re2c.git
             GIT_TAG             1.1.1
+            GIT_PROGRESS        1
             ${UPDATE_DISCONNECTED_IF_AVAILABLE}
     )
 
