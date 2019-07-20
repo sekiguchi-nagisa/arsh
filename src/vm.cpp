@@ -312,8 +312,9 @@ bool DSState::forkAndEval() {
 
     // set in/out pipe
     auto pipeset = initPipeSet(forkKind);
-    pid_t pgid = this->isRootShell() ? 0 : getpgid(0);
-    auto proc = Proc::fork(*this, pgid, false);
+    const bool rootShell = this->isRootShell();
+    pid_t pgid = rootShell ? 0 : getpgid(0);
+    auto proc = Proc::fork(*this, pgid, needForeground(forkKind) && rootShell);
     if(proc.pid() > 0) {   // parent process
         tryToClose(pipeset.in[READ_PIPE]);
         tryToClose(pipeset.out[WRITE_PIPE]);
@@ -330,6 +331,7 @@ bool DSState::forkAndEval() {
             int ret = proc.wait(waitOp);   // wait exit
             tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
             this->updateExitStatus(ret);
+            tryToBeForeground(*this);
             break;
         }
         case ForkKind::IN_PIPE:

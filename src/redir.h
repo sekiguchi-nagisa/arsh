@@ -147,6 +147,10 @@ inline void redirInToNull() {
     close(fd);
 }
 
+inline bool needForeground(ForkKind kind) {
+    return kind == ForkKind::ARRAY || kind == ForkKind::STR;
+}
+
 constexpr unsigned int READ_PIPE = 0;
 constexpr unsigned int WRITE_PIPE = 1;
 
