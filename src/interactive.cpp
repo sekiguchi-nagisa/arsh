@@ -296,6 +296,8 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
     case LINENOISE_HISTORY_OP_INIT:
         initHistory();
         break;
+    case LINENOISE_HISTORY_OP_SEARCH:
+        break;
     }
     return nullptr;
 }
