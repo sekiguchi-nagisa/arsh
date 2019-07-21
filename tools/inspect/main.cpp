@@ -61,6 +61,17 @@ static void showPIDs(std::ostream &stream) {
     stream << std::endl;
 }
 
+static void showTCPGID(int fd, std::ostream &stream) {
+    std::string name = "TCPGID_";
+    name += std::to_string(fd);
+
+    errno = 0;
+    auto pid = tcgetpgrp(fd);
+    int errNum = errno;
+    stream << format << name << " => " << pid << std::endl;
+    stream << format << "errno" << " => " << errNum << std::endl;
+}
+
 static void showPGroup(std::ostream &stream) {
     stream << "+++++  foreground process group  +++++" << std::endl;
 
@@ -68,11 +79,9 @@ static void showPGroup(std::ostream &stream) {
     stream << format << "STDOUT" << " => " << (isatty(STDOUT_FILENO) ? "TTY" : "NOTTY") << std::endl;
     stream << format << "STDERR" << " => " << (isatty(STDERR_FILENO) ? "TTY" : "NOTTY") << std::endl;
 
-    errno = 0;
-    auto pid = tcgetpgrp(STDIN_FILENO);
-    int errNum = errno;
-    stream << format << "TCPGID" << " => " << pid << std::endl;
-    stream << format << "errno" << " => " << errNum << std::endl;
+    showTCPGID(STDIN_FILENO, stream);
+    showTCPGID(STDOUT_FILENO, stream);
+    showTCPGID(STDERR_FILENO, stream);
     stream << std::endl;
 }
 
