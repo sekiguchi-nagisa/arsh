@@ -294,6 +294,8 @@ function close($this : UnixFD) : Void
 
 function dup($this : UnixFD) : UnixFD
 
+function closeOnExec($this : UnixFD, $close : Boolean) : Void
+
 function %OP_BOOL($this : UnixFD) : Boolean
 
 function %OP_NOT($this : UnixFD) : Boolean
