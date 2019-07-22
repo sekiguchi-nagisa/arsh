@@ -2131,21 +2131,6 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
     RET(DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), newfd));
 }
 
-//!bind: function closeOnExec($this : UnixFD, $close : Boolean) : Void
-YDSH_METHOD fd_closeOnExec(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(fd_closeOnExec);
-    int fd = typeAs<UnixFD_Object>(LOCAL(0))->getValue();
-    bool close = typeAs<Boolean_Object>(LOCAL(1))->getValue();
-    int flag = fcntl(fd, F_GETFD);
-    if(close) {
-        setFlag(flag, FD_CLOEXEC);
-    } else {
-        unsetFlag(flag, FD_CLOEXEC);
-    }
-    fcntl(fd, F_SETFD, flag);
-    RET_VOID;
-}
-
 //!bind: function $OP_BOOL($this : UnixFD) : Boolean
 YDSH_METHOD fd_bool(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_bool);

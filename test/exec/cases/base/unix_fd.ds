@@ -38,12 +38,3 @@ try {
     $ex = $e
 }
 assert $ex is SystemError
-
-# close-on-exec
-$fd = <(echo hello)
-assert "$(cat $fd)" == "hello"
-$fd.close()
-
-$fd = <(echo world)
-$fd.closeOnExec($true)
-assert "$(cat $fd)".empty()
