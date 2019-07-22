@@ -337,7 +337,8 @@ struct UnixFD_Object : public Int_Object {
     }
 
     /**
-     *
+     * set close-on-exec flag to file descriptor.
+     * if fd is STDIN, STDOUT or STDERR, not set flag.
      * @param close
      * @return
      * if failed, return false

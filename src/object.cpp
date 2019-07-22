@@ -97,6 +97,10 @@ UnixFD_Object::~UnixFD_Object() {
 
 bool UnixFD_Object::closeOnExec(bool close) {
     int fd = this->getValue();
+    if(fd <= STDERR_FILENO) {
+        return false;
+    }
+
     int flag = fcntl(fd, F_GETFD);
     if(flag == -1) {
         return false;
