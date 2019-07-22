@@ -26,7 +26,7 @@
 
 #include <config.h>
 #include "vm.h"
-#include "constant.h"
+#include "redir.h"
 #include "parser.h"
 #include "logger.h"
 #include "misc/num.h"
@@ -1391,6 +1391,49 @@ void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler, b
     if(sigNum != SIGCHLD) {
         this->insertOrUpdate(sigNum, handler);
     }
+}
+
+int xexecve(const char *filePath, char **argv, char *const *envp, DSValue &redir) {
+    if(filePath == nullptr) {
+        errno = ENOENT;
+        return -1;
+    }
+
+    // set env
+    setenv("_", filePath, 1);
+    if(envp == nullptr) {
+        envp = environ;
+    }
+
+    LOG_EXPR(DUMP_EXEC, [&]{
+        std::string str = filePath;
+        str += ", [";
+        for(unsigned int i = 0; argv[i] != nullptr; i++) {
+            if(i > 0) {
+                str += ", ";
+            }
+            str += argv[i];
+        }
+        str += "]";
+        return str;
+    });
+
+    if(redir) {
+        typeAs<RedirConfig>(redir)->passFDToExtProc();
+    }
+
+    // execute external command
+    int ret = execve(filePath, argv, envp);
+    if(errno == ENOEXEC) {  // fallback to /bin/sh
+        unsigned int size = 0;
+        for(; argv[size]; size++);
+        size++;
+        char *newArgv[size + 1];
+        newArgv[0] = const_cast<char *>("/bin/sh");
+        memcpy(newArgv + 1, argv, sizeof(char *) * size);
+        return execve(newArgv[0], newArgv, envp);
+    }
+    return ret;
 }
 
 } // namespace ydsh

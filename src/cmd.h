@@ -23,19 +23,6 @@ namespace ydsh {
 
 class DSCode;
 
-/**
- *
- * @param filePath
- * if null, not execute and set ENOENT.
- * @param argv
- * not null
- * @param envp
- * may be null
- * @return
- * if success, not return.
- */
-int xexecve(const char *filePath, char **argv, char *const *envp);
-
 class Array_Object;
 
 /**

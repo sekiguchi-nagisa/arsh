@@ -30,14 +30,13 @@
 #include "misc/num.h"
 
 
-flag32_set_t DSState::eventDesc = 0;
-
-SigSet DSState::pendingSigSet;
-
-
 // #####################
 // ##     DSState     ##
 // #####################
+
+flag32_set_t DSState::eventDesc = 0;
+
+SigSet DSState::pendingSigSet;
 
 static std::string initLogicalWorkingDir() {
     const char *dir = getenv(ENV_PWD);
@@ -300,7 +299,9 @@ static DSValue newFD(const DSState &st, int &fd) {
     }
     int v = fd;
     fd = -1;
-    return DSValue::create<UnixFD_Object>(st.symbolTable.get(TYPE::UnixFD), v);
+    auto value = DSValue::create<UnixFD_Object>(st.symbolTable.get(TYPE::UnixFD), v);
+    typeAs<UnixFD_Object>(value)->closeOnExec(true);
+    return value;
 }
 
 bool DSState::forkAndEval() {
@@ -481,7 +482,7 @@ int DSState::forkAndExec(const char *cmdName, Command cmd, char **const argv, DS
         return 1;
     } else if(proc.pid() == 0) {   // child
         close(selfpipe[READ_PIPE]);
-        xexecve(cmd.filePath, argv, nullptr);
+        xexecve(cmd.filePath, argv, nullptr, redirConfig);
 
         int errnum = errno;
         int r = write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
@@ -556,7 +557,7 @@ bool DSState::callCommand(Command cmd, DSValue &&argvObj, DSValue &&redirConfig,
             int status = this->forkAndExec(cmdName, cmd, argv, std::move(redirConfig));
             this->pushExitStatus(status);
         } else {
-            xexecve(cmd.filePath, argv, nullptr);
+            xexecve(cmd.filePath, argv, nullptr, redirConfig);
             raiseCmdError(*this, cmdName, errno);
         }
         return !this->hasError();
@@ -709,7 +710,7 @@ void DSState::callBuiltinExec(DSValue &&array, DSValue &&redir) {
         }
 
         char *envp[] = {nullptr};
-        xexecve(filePath, argv2, clearEnv ? envp : nullptr);
+        xexecve(filePath, argv2, clearEnv ? envp : nullptr, redir);
         PERROR(argvObj, "%s", str(argvObj.getValues()[index]));
         exit(1);
     }

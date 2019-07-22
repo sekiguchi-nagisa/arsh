@@ -43,10 +43,22 @@ PipelineState::~PipelineState() {
     this->state.jobTable.updateStatus();
 }
 
+static bool isPassingFD(const std::pair<RedirOP, DSValue> &pair) {
+    return pair.first == RedirOP::NOP && pair.second.isValidObject()
+                && pair.second->getType()->is(TYPE::UnixFD);
+}
+
 RedirConfig::~RedirConfig() {
     this->restoreFDs();
     for(int fd : this->oldFds) {
         close(fd);
+    }
+
+    // set close-on-exec flag to fds
+    for(auto &e : this->ops) {
+        if(isPassingFD(e) && e.second->getRefcount() > 1) {
+            typeAs<UnixFD_Object>(e.second)->closeOnExec(true);
+        }
     }
 }
 
@@ -163,6 +175,14 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
         break;
     }
     return 0;   // do nothing
+}
+
+void RedirConfig::passFDToExtProc() {
+    for(auto &e : this->ops) {
+        if(isPassingFD(e)) {
+            typeAs<UnixFD_Object>(e.second)->closeOnExec(false);
+        }
+    }
 }
 
 bool RedirConfig::redirect(DSState &st) {

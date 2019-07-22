@@ -245,6 +245,10 @@ public:
         return this->val >= 0;
     }
 
+    bool isValidObject() const noexcept {
+        return this->isObject() && static_cast<bool>(*this);
+    }
+
     bool isInvalid() const noexcept {
         return this->kind() == DSValueKind::INVALID;
     }
@@ -331,6 +335,14 @@ struct UnixFD_Object : public Int_Object {
         this->value = -1;
         return s;
     }
+
+    /**
+     *
+     * @param close
+     * @return
+     * if failed, return false
+     */
+    bool closeOnExec(bool close);
 
     std::string toString() const override;
 };

@@ -323,6 +323,19 @@ inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {
     return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{ std::forward<T>(arg)...}});
 }
 
+/**
+ *
+ * @param filePath
+ * if null, not execute and set ENOENT.
+ * @param argv
+ * not null
+ * @param envp
+ * may be null
+ * @return
+ * if success, not return.
+ */
+int xexecve(const char *filePath, char **argv, char *const *envp, DSValue &redir);
+
 } // namespace ydsh
 
 #endif //YDSH_CORE_H

@@ -95,6 +95,20 @@ UnixFD_Object::~UnixFD_Object() {
     }
 }
 
+bool UnixFD_Object::closeOnExec(bool close) {
+    int fd = this->getValue();
+    int flag = fcntl(fd, F_GETFD);
+    if(flag == -1) {
+        return false;
+    }
+    if(close) {
+        setFlag(flag, FD_CLOEXEC);
+    } else {
+        unsetFlag(flag, FD_CLOEXEC);
+    }
+    return fcntl(fd, F_SETFD, flag) != -1;
+}
+
 std::string UnixFD_Object::toString() const {
     std::string str = "/dev/fd/";
     str += std::to_string(this->value);
