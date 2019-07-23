@@ -21,8 +21,6 @@ struct DSState;
 
 namespace ydsh {
 
-class DSCode;
-
 class Array_Object;
 
 /**
@@ -72,6 +70,8 @@ enum class CmdKind {
     BUILTIN,
     EXTERNAL,
 };
+
+class DSCode;
 
 struct Command {
     CmdKind kind;

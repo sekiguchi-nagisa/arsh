@@ -18,7 +18,6 @@
 #define YDSH_OBJECT_H
 
 #include <memory>
-#include <unordered_set>
 #include <tuple>
 #include <cxxabi.h>
 
@@ -34,8 +33,6 @@
 namespace ydsh {
 
 class DSValue;
-
-using VisitedSet = std::unordered_set<unsigned long>;
 
 class DSObject {
 protected:
