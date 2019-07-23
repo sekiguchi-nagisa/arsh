@@ -3,11 +3,23 @@
 #include "../test_common.h"
 #include "ansi.h"
 
+#ifndef INSPECT_PATH
+#error "require INSPECT_PATH"
+#endif
+
 class ProcTest : public ExpectOutput {};
 
 template <typename Func>
 static Output spawnAndWait(IOConfig config, Func func, bool remove = false) {
     return ProcBuilder::spawn(config, func).waitAndGetResult(remove);
+}
+
+TEST_F(ProcTest, base) {
+    auto ret = ProcBuilder(INSPECT_PATH).execAndGetResult();
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(WaitStatus::EXITED, ret.status.kind));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_EQ(0, ret.status.value));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_FALSE(ret.out.empty()));
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(ret.err.empty()));
 }
 
 TEST_F(ProcTest, status) {
