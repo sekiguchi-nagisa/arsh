@@ -231,7 +231,17 @@ int JobImpl::wait(Proc::WaitOp op) {
     if(terminateCount == this->procSize) {
         this->running = false;
     }
+    if(!this->available()) {
+        typeAs<UnixFD_Object>(this->inObj)->tryToClose(false);
+        typeAs<UnixFD_Object>(this->outObj)->tryToClose(false);
+    }
     return lastStatus;
+}
+
+std::string JobImpl::toString() const {
+    std::string str = "%";
+    str += std::to_string(this->getJobID());
+    return str;
 }
 
 // ######################

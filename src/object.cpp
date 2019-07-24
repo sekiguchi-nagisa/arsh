@@ -394,16 +394,6 @@ bool Map_Object::opStr(DSState &state) const {
 }
 
 // ########################
-// ##     Job_Object     ##
-// ########################
-
-std::string Job_Object::toString() const {
-    std::string str = "%";
-    str += std::to_string(this->entry->getJobID());
-    return str;
-}
-
-// ########################
 // ##     BaseObject     ##
 // ########################
 

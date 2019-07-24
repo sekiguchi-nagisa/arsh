@@ -337,24 +337,25 @@ bool DSState::forkAndEval() {
         }
         case ForkKind::IN_PIPE:
         case ForkKind::OUT_PIPE: {
-            auto entry = JobImpl::create(proc);
-            this->jobTable.attach(entry, true);
             int &fd = forkKind == ForkKind::IN_PIPE ? pipeset.in[WRITE_PIPE] : pipeset.out[READ_PIPE];
             obj = newFD(*this, fd);
+            auto entry = JobTable::create(
+                    this->symbolTable.get(TYPE::Job), proc,
+                    DSValue(forkKind == ForkKind::IN_PIPE ? obj : this->emptyFDObj),
+                    DSValue(forkKind == ForkKind::OUT_PIPE ? obj : this->emptyFDObj));
+            this->jobTable.attach(entry, true);
             break;
         }
         case ForkKind::COPROC:
         case ForkKind::JOB:
         case ForkKind::DISOWN: {
             bool disown = forkKind == ForkKind::DISOWN;
-            auto entry = JobImpl::create(proc);
-            this->jobTable.attach(entry, disown);
-            obj = DSValue::create<Job_Object>(
-                    this->symbolTable.get(TYPE::Job),
-                    entry,
+            auto entry = JobTable::create(
+                    this->symbolTable.get(TYPE::Job), proc,
                     newFD(*this, pipeset.in[WRITE_PIPE]),
-                    newFD(*this, pipeset.out[READ_PIPE])
-            );
+                    newFD(*this, pipeset.out[READ_PIPE]));
+            this->jobTable.attach(entry, disown);
+            obj = DSValue(entry.get());
             break;
         }
         }
@@ -509,7 +510,10 @@ int DSState::forkAndExec(const char *cmdName, Command cmd, char **const argv, DS
         auto waitOp = rootShell && this->isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
         status = proc.wait(waitOp);
         if(proc.state() != Proc::TERMINATED) {
-            this->jobTable.attach(JobImpl::create(proc));
+            this->jobTable.attach(JobTable::create(
+                    this->symbolTable.get(TYPE::Job), proc,
+                    DSValue(this->emptyFDObj),
+                    DSValue(this->emptyFDObj)));
         }
         int ret = tryToBeForeground(*this);
         LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
@@ -775,7 +779,10 @@ bool DSState::callPipeline(bool lastPipe) {
         /**
          * in last pipe, save current stdin before call dup2
          */
-        auto jobEntry = JobImpl::create(procSize, childs, lastPipe);
+        auto jobEntry = JobTable::create(
+                this->symbolTable.get(TYPE::Job),
+                procSize, childs, lastPipe,
+                DSValue(this->emptyFDObj), DSValue(this->emptyFDObj));
 
         if(lastPipe) {
             ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);

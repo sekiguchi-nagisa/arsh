@@ -17,6 +17,8 @@
 #ifndef YDSH_OBJECT_H
 #define YDSH_OBJECT_H
 
+#include <unistd.h>
+
 #include <memory>
 #include <tuple>
 #include <cxxabi.h>
@@ -28,7 +30,6 @@
 #include "lexer.h"
 #include "opcode.h"
 #include "regex_wrapper.h"
-#include "job.h"
 
 namespace ydsh {
 
@@ -629,56 +630,6 @@ public:
 
     std::string toString() const override;
     bool opStr(DSState &state) const override;
-};
-
-class Job_Object : public DSObject {
-private:
-    Job entry;
-
-    /**
-     * writable file descriptor (connected to STDIN of Job). must be UnixFD_Object
-     */
-    DSValue inObj;
-
-    /**
-     * readable file descriptor (connected to STDOUT of Job). must be UnixFD_Object
-     */
-    DSValue outObj;
-
-public:
-    Job_Object(DSType &type, Job entry, DSValue inObj, DSValue outObj) :
-            DSObject(type), entry(std::move(entry)), inObj(std::move(inObj)), outObj(std::move(outObj)) {}
-
-    ~Job_Object() override = default;
-
-    DSValue getInObj() const {
-        return this->inObj;
-    }
-
-    DSValue getOutObj() const {
-        return this->outObj;
-    }
-
-    const Job &getEntry() const {
-        return this->entry;
-    }
-
-    bool poll() {
-        this->entry->wait(Proc::NONBLOCKING);
-        return this->entry->available();
-    }
-
-    int wait(JobTable &jobTable, bool jobctrl) {
-        int s = jobTable.waitAndDetach(this->entry, jobctrl);
-        if(!this->entry->available()) {
-            typeAs<UnixFD_Object>(this->inObj)->tryToClose(false);
-            typeAs<UnixFD_Object>(this->outObj)->tryToClose(false);
-            jobTable.updateStatus();
-        }
-        return s;
-    }
-
-    std::string toString() const override;
 };
 
 class BaseObject : public DSObject {

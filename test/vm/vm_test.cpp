@@ -243,10 +243,6 @@ TEST_F(VMTest, abort) {
     ASSERT_NO_FATAL_FAILURE(this->eval("$a;", DS_ERROR_KIND_TYPE_ERROR));
 }
 
-static Job newJob() {
-    return JobImpl::create(Proc());
-}
-
 static JobTable::ConstEntryIter getBeginIter(const JobTable &table) {
     return table.beginJob();
 }
@@ -255,7 +251,16 @@ static JobTable::ConstEntryIter getEndIter(const JobTable &table) {
     return table.endJob();
 }
 
-TEST(JobTable, attach) {
+struct JobTableTest : public VMTest {
+    Job newJob() {
+        return JobTable::create(
+                this->state->symbolTable.get(TYPE::Job), Proc(),
+                DSValue(this->state->emptyFDObj),
+                DSValue(this->state->emptyFDObj));
+    }
+};
+
+TEST_F(JobTableTest, attach) {
     JobTable jobTable;
 
     auto job1 = newJob();

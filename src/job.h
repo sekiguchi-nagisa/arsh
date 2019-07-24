@@ -24,6 +24,7 @@
 #include <type_traits>
 
 #include "misc/resource.hpp"
+#include "object.h"
 
 struct DSState;
 
@@ -38,8 +39,6 @@ namespace ydsh {
  * if error, return -1 and set errno
  */
 int tryToBeForeground(const DSState &st);
-
-class JobTable;
 
 class Proc {
 public:
@@ -106,10 +105,11 @@ public:
     static Proc fork(DSState &st, pid_t pgid, bool foreground);
 };
 
-class JobImpl;
-using Job = IntrusivePtr<JobImpl>;
+class JobTable;
 
-class JobImpl : public RefCount<JobImpl> {
+struct JobRefCount;
+
+class JobImpl : public DSObject {
 private:
     static_assert(std::is_pod<Proc>::value, "failed");
 
@@ -123,7 +123,15 @@ private:
      */
     const pid_t ownerPid;
 
-    unsigned short procSize;
+    /**
+     * writable file descriptor (connected to STDIN of Job). must be UnixFD_Object
+     */
+    DSValue inObj;
+
+    /**
+     * readable file descriptor (connected to STDOUT of Job). must be UnixFD_Object
+     */
+    DSValue outObj;
 
     bool running{true};
 
@@ -132,14 +140,23 @@ private:
      */
     int oldStdin{-1};
 
+    unsigned short procSize;
+
     /**
      * initial size is procSize
      */
     Proc procs[];
 
     friend class JobTable;
+    friend struct JobRefCount;
 
-    JobImpl(unsigned int size, const Proc *procs, bool saveStdin) : ownerPid(getpid()), procSize(size) {
+public:
+    NON_COPYABLE(JobImpl);
+
+    JobImpl(DSType &type, unsigned int size, const Proc *procs, bool saveStdin,
+            DSValue &&inObj, DSValue &&outObj) :
+            DSObject(type), ownerPid(getpid()),
+            inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->procs[i] = procs[i];
         }
@@ -148,21 +165,7 @@ private:
         }
     }
 
-public:
-    NON_COPYABLE(JobImpl);
-
-    ~JobImpl() = default;
-
-    static Job create(unsigned int size, const Proc *procs, bool saveStdin) {
-        void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * size);
-        auto *entry = new(ptr) JobImpl(size, procs, saveStdin);
-        return Job(entry);
-    }
-
-    static Job create(Proc proc) {
-        Proc procs[1] = {proc};
-        return create(1, procs, false);
-    }
+    ~JobImpl() override = default;
 
     static void operator delete(void *ptr) noexcept {   //NOLINT
         free(ptr);
@@ -203,6 +206,14 @@ public:
         return this->getOwnerPid() == getpid();
     }
 
+    DSValue getInObj() const {
+        return this->inObj;
+    }
+
+    DSValue getOutObj() const {
+        return this->outObj;
+    }
+
     /**
      * restore STDIN_FD
      * if has no ownership, do nothing.
@@ -228,7 +239,34 @@ public:
      * if cannot terminate (has no-ownership), return -1.
      */
     int wait(Proc::WaitOp op);
+
+    bool poll() {
+        this->wait(Proc::NONBLOCKING);
+        return this->available();
+    }
+
+    std::string toString() const override;
 };
+
+struct JobRefCount {
+    static long useCount(const JobImpl *ptr) noexcept {
+        return ptr->refCount;
+    }
+
+    static void increase(JobImpl *ptr) noexcept {
+        if(ptr != nullptr) {
+            ptr->refCount++;
+        }
+    }
+
+    static void decrease(JobImpl *ptr) noexcept {
+        if(ptr != nullptr && --ptr->refCount == 0) {
+            delete ptr;
+        }
+    }
+};
+
+using Job = IntrusivePtr<JobImpl, JobRefCount>;
 
 class JobTable {    //FIXME: send signal to managed jobs
 private:
@@ -252,6 +290,18 @@ public:
 
     JobTable() = default;
     ~JobTable() = default;
+
+    static Job create(DSType &type, unsigned int size, const Proc *procs, bool saveStdin,
+                      DSValue &&inObj, DSValue &&outObj) {
+        void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * size);
+        auto *entry = new(ptr) JobImpl(type, size, procs, saveStdin, std::move(inObj), std::move(outObj));
+        return Job(entry);
+    }
+
+    static Job create(DSType &type, Proc proc, DSValue &&inObj, DSValue &&outObj) {
+        Proc procs[1] = {proc};
+        return create(type, 1, procs, false, std::move(inObj), std::move(outObj));
+    }
 
     void attach(Job job, bool disowned = false);
 

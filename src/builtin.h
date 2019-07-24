@@ -2152,21 +2152,21 @@ YDSH_METHOD fd_not(RuntimeContext &ctx) {
 //!bind: function in($this : Job) : UnixFD
 YDSH_METHOD job_in(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_in);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    auto *obj = typeAs<JobImpl>(LOCAL(0));
     RET(obj->getInObj());
 }
 
 //!bind: function out($this : Job) : UnixFD
 YDSH_METHOD job_out(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_out);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    auto *obj = typeAs<JobImpl>(LOCAL(0));
     RET(obj->getOutObj());
 }
 
 //!bind: function $OP_GET($this : Job, $index : Int32) : UnixFD
 YDSH_METHOD job_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_get);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    auto *obj = typeAs<JobImpl>(LOCAL(0));
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
     if(index == 0) {
         RET(obj->getInObj());
@@ -2182,47 +2182,49 @@ YDSH_METHOD job_get(RuntimeContext &ctx) {
 //!bind: function poll($this : Job) : Boolean
 YDSH_METHOD job_poll(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_poll);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    auto *obj = typeAs<JobImpl>(LOCAL(0));
     RET_BOOL(obj->poll());
 }
 
 //!bind: function wait($this : Job) : Int32
 YDSH_METHOD job_wait(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_wait);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    auto *obj = typeAs<JobImpl>(LOCAL(0));
     bool jobctrl = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
-    int s = obj->wait(ctx.jobTable, jobctrl);
+    auto entry = Job(obj);
+    int s = ctx.jobTable.waitAndDetach(entry, jobctrl);
+    ctx.jobTable.updateStatus();
     RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), s));
 }
 
 //!bind: function raise($this : Job, $s : Signal) : Void
 YDSH_METHOD job_raise(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_raise);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
+    auto *obj = typeAs<JobImpl>(LOCAL(0));
     auto *sig = typeAs<Int_Object>(LOCAL(1));
-    obj->getEntry()->send(sig->getValue());
+    obj->send(sig->getValue());
     RET_VOID;
 }
 
 //!bind: function detach($this : Job) : Void
 YDSH_METHOD job_detach(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_detach);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
-    ctx.jobTable.detach(obj->getEntry()->getJobID());
+    auto *obj = typeAs<JobImpl>(LOCAL(0));
+    ctx.jobTable.detach(obj->getJobID());
     RET_VOID;
 }
 
 //!bind: function size($this : Job) : Int32
 YDSH_METHOD job_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_size);
-    auto *obj = typeAs<Job_Object>(LOCAL(0));
-    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), obj->getEntry()->getProcSize()));
+    auto *obj = typeAs<JobImpl>(LOCAL(0));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), obj->getProcSize()));
 }
 
 //!bind: function pid($this : Job, $index : Int32) : Int32
 YDSH_METHOD job_pid(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_pid);
-    auto &entry = typeAs<Job_Object>(LOCAL(0))->getEntry();
+    auto *entry = typeAs<JobImpl>(LOCAL(0));
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
 
     if(index > -1 && static_cast<unsigned int>(index) < entry->getProcSize()) {
