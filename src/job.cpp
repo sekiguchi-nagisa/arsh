@@ -45,6 +45,9 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
         // clear JobTable entries
         st.jobTable.detachAll();
 
+        // clear signal handelr
+        st.sigVector.clear();
+
         // clear termination hook
         st.setGlobal(st.getTermHookIndex(), DSValue::createInvalid());
 

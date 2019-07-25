@@ -78,8 +78,8 @@ function handle($s : Signal) {
     echo ${$s.name()}
     exit $s
 }
-$SIG[%'cont'] = $handle
-$j = for(;;) { true; } &
+$j = { $SIG[%'cont'] = $handle; for(;;) { true; } } &
+sleep 1
 $j.raise(%'STOP')
 $j.raise(%'CONT')
 assert $j.wait() == %'cont'.value()

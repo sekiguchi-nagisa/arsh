@@ -315,6 +315,11 @@ public:
      * if true, set signal handler of SIGCHLD
      */
     void install(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD = false);
+
+    /**
+     * clear all handler and set to SIG_DFL.
+     */
+    void clear();
 };
 
 template <typename ...T>

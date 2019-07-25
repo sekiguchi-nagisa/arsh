@@ -341,7 +341,6 @@ void setJobControlSignalSetting(DSState &st, bool set) {
     st.sigVector.install(SIGCHLD, SignalVector::UnsafeSigOp::DFL, handler, true);
 }
 
-
 static const char *safeBasename(const char *str) {
     const char *ptr = strrchr(str, '/');
     return ptr == nullptr ? str : ptr + 1;
@@ -1391,6 +1390,15 @@ void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler, b
     if(sigNum != SIGCHLD) {
         this->insertOrUpdate(sigNum, handler);
     }
+}
+
+void SignalVector::clear() {
+    for(auto &e : this->data) {
+        struct sigaction action{};
+        action.sa_handler = SIG_DFL;
+        sigaction(e.first, &action, nullptr);
+    }
+    this->data.clear();
 }
 
 int xexecve(const char *filePath, char **argv, char *const *envp, DSValue &redir) {
