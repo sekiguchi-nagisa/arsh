@@ -236,7 +236,7 @@ private:
 
     unsigned long value{0};
 
-    unsigned int pendingIndex{1};
+    int pendingIndex{1};
 
 public:
     void add(int sigNum) {

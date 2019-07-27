@@ -239,7 +239,7 @@ TupleType::TupleType(unsigned int id, native_type_info_t info, DSType *superType
     const unsigned int size = this->elementTypes.size();
     const unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
-        FieldHandle *handle = new FieldHandle(this->elementTypes[i], i + baseIndex, FieldAttributes());
+        auto *handle = new FieldHandle(this->elementTypes[i], i + baseIndex, FieldAttributes());
         this->fieldHandleMap.insert(std::make_pair("_" + std::to_string(i), handle));
     }
 }

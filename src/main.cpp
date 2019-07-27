@@ -111,7 +111,7 @@ static void showFeature(FILE *fp) {
     };
 
     const unsigned int featureBit = DSState_featureBit();
-    for(unsigned int i = 0; i < arraySize(featureNames); i++) {
+    for(unsigned int i = 0; i < static_cast<unsigned int>(arraySize(featureNames)); i++) {
         if(hasFlag(featureBit, static_cast<unsigned int>(1u << i))) {
             fprintf(fp, "%s\n", featureNames[i]);
         }

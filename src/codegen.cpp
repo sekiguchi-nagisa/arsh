@@ -61,8 +61,8 @@ void ByteCodeGenerator::emitIns(OpCode op) {
 #undef GEN_SIZE_TABLE
     };
     int size = table[static_cast<unsigned int>(op)];
-    this->curBuilder().stackDepthCount += size;
-    int count = this->curBuilder().stackDepthCount;
+    this->curBuilder().stackDepthCount += static_cast<short>(size);
+    auto count = this->curBuilder().stackDepthCount;
     if(count > 0 && static_cast<unsigned short>(count) > this->curBuilder().maxStackDepth) {
         this->curBuilder().maxStackDepth = count;
     }

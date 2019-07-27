@@ -99,8 +99,8 @@ inline void initAllPipe(unsigned int size, pipe_t *pipes) {
     }
 }
 
-inline void closeAllPipe(int size, pipe_t *pipefds) {
-    for(int i = 0; i < size; i++) {
+inline void closeAllPipe(unsigned int size, pipe_t *pipefds) {
+    for(unsigned int i = 0; i < size; i++) {
         tryToClose(pipefds[i]);
     }
 }

@@ -107,7 +107,7 @@ public:
     void teardownASTDump();
 
 private:
-    const std::string getCurScriptDir() const {
+    const std::string &getCurScriptDir() const {
         return this->contexts.empty() ? this->scriptDir : this->contexts.back().scriptDir;
     }
 

@@ -28,7 +28,7 @@
 
 namespace ydsh {
 
-template <std::size_t N>
+template <unsigned int N>
 std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
     std::array<NativeCode, N> array;
     for(unsigned int i = 0; i < N; i++) {

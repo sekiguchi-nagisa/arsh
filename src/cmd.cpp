@@ -270,7 +270,7 @@ builtin_command_t lookupBuiltinCommand(const char *commandName) {
     static CStringHashMap<unsigned int> builtinMap;
 
     if(builtinMap.empty()) {
-        for(unsigned int i = 0; i < arraySize(builtinCommands); i++) {
+        for(unsigned int i = 0; i < static_cast<unsigned int>(arraySize(builtinCommands)); i++) {
             builtinMap.insert(std::make_pair(builtinCommands[i].commandName, i));
         }
     }
@@ -541,7 +541,7 @@ static int parseExitStatus(const DSState &state, const Array_Object &argvObj) {
         int status;
         long value = convertToInt64(num, status);
         if(status == 0) {
-            ret = value;
+            ret = static_cast<int>(value);
         }
     }
     return ret;
@@ -669,7 +669,7 @@ static int parseFD(const char *value) {
     if(s != 0 || t < 0 || t > INT32_MAX) {
         return -1;
     }
-    return t;
+    return static_cast<int>(t);
 }
 
 static int builtin_test(DSState &, Array_Object &argvObj) {
@@ -982,7 +982,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
     typeAs<Map_Object>(state.getGlobal(BuiltinVarOffset::REPLY_VAR))->clear();      // clear reply
 
 
-    const int varSize = argc - index;  // if zero, store line to REPLY
+    const unsigned int varSize = argc - index;  // if zero, store line to REPLY
     const unsigned int varIndex = toIndex(varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR);
     std::string strBuf;
 
@@ -1526,7 +1526,7 @@ private:
     bool update(int ch, const char *str) {
         this->count++;
         // search entry
-        for(unsigned int index = 0; index < arraySize(ulimitOps); index++) {
+        for(unsigned int index = 0; index < static_cast<unsigned int>(arraySize(ulimitOps)); index++) {
             if(ulimitOps[index].op == ch) {
                 auto &entry = this->entries[index];
                 if(str) {
@@ -1604,7 +1604,7 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
     if(table.printSet > 0 && (table.printSet & (table.printSet - 1)) != 0) {
         maxNameLen = computeMaxNameLen();
     }
-    for(unsigned int index = 0; index < table.entries.size(); index++) {
+    for(unsigned int index = 0; index < static_cast<unsigned int>(table.entries.size()); index++) {
         if(table.entries[index]) {
             const auto &op = ulimitOps[index];
             rlimit limit{};

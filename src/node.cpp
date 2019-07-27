@@ -805,10 +805,9 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
     }
     auto *varNode = static_cast<VarNode *>(isNode->getExprNode());
 
-    VarNode *exprNode = new VarNode({isNode->getPos(), 1}, std::string(varNode->getVarName()));
+    auto *exprNode = new VarNode({isNode->getPos(), 1}, std::string(varNode->getVarName()));
     auto *castNode = new TypeOpNode(exprNode, isNode->getTargetTypeNode(), TypeOpNode::NO_CAST, true);
-    VarDeclNode *declNode =
-            new VarDeclNode(isNode->getPos(), std::string(varNode->getVarName()), castNode, VarDeclNode::CONST);
+    auto *declNode = new VarDeclNode(isNode->getPos(), std::string(varNode->getVarName()), castNode, VarDeclNode::CONST);
     blockNode->insertNodeToFirst(declNode);
 }
 
@@ -1275,10 +1274,10 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
     auto *call_iter = ApplyNode::newMethodCall(exprNode, std::string(OP_ITER));
     std::string reset_var_name = "%reset_";
     reset_var_name += std::to_string(startPos);
-    VarDeclNode *reset_varDecl = new VarDeclNode(startPos, std::string(reset_var_name), call_iter, VarDeclNode::CONST);
+    auto *reset_varDecl = new VarDeclNode(startPos, std::string(reset_var_name), call_iter, VarDeclNode::CONST);
 
     // create for-cond
-    VarNode *reset_var = new VarNode(dummy, std::string(reset_var_name));
+    auto *reset_var = new VarNode(dummy, std::string(reset_var_name));
     auto *call_hasNext = ApplyNode::newMethodCall(reset_var, std::string(OP_HAS_NEXT));
 
     // create forIn-init
