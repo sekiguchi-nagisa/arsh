@@ -46,7 +46,7 @@ inline void fromJSON(JSON &&json, bool &value) {
 }
 
 inline void fromJSON(JSON &&json, int &value) {
-    value = json.asLong();
+    value = static_cast<int>(json.asLong());
 }
 
 inline void fromJSON(JSON &&json, std::string &value) {

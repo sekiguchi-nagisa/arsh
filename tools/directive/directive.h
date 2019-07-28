@@ -158,7 +158,7 @@ public:
         this->envs[name] = value;
     }
 
-    const std::unordered_map<std::string, std::string> getEnvs() const {
+    const std::unordered_map<std::string, std::string> &getEnvs() const {
         return this->envs;
     }
 

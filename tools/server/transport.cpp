@@ -50,7 +50,7 @@ static int parseContentLength(const std::string &line) {
     int s;
     long value = convertToInt64(ptr, s);
     if(s == 0 && value >= 0 && value <= INT32_MAX) {
-        return value;
+        return static_cast<int>(value);
     }
     return 0;
 }

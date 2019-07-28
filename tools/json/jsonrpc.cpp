@@ -67,7 +67,7 @@ JSON toJSON(const Error &error) {
 }
 
 void fromJSON(JSON &&json, Error &error) {
-    error.code = json["code"].asLong();
+    error.code = static_cast<int>(json["code"].asLong());
     error.message = std::move(json["message"].asString());
     error.data = std::move(json["data"]);
 }
