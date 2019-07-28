@@ -23,7 +23,7 @@
 
 namespace ydsh {
 
-template <typename T, std::size_t N>
+template <typename T, unsigned int N>
 constexpr std::size_t arraySize(const T (&)[N]) noexcept {
     return N;
 }

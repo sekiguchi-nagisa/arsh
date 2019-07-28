@@ -270,7 +270,7 @@ builtin_command_t lookupBuiltinCommand(const char *commandName) {
     static CStringHashMap<unsigned int> builtinMap;
 
     if(builtinMap.empty()) {
-        for(unsigned int i = 0; i < static_cast<unsigned int>(arraySize(builtinCommands)); i++) {
+        for(unsigned int i = 0; i < arraySize(builtinCommands); i++) {
             builtinMap.insert(std::make_pair(builtinCommands[i].commandName, i));
         }
     }
