@@ -38,3 +38,8 @@ $SIG[%'fpe'] = $SIG_IGN
 assert $SIG[%'fpe'] == $SIG_IGN
 $SIG[%'fpe'] = $f
 assert $SIG[%'fpe'] == $SIG_DFL
+
+$SIG[%'bus'] = $SIG_IGN
+assert $SIG[%'bus'] == $SIG_IGN
+$SIG[%'bus'] = $f
+assert $SIG[%'siGBuS'] == $SIG_DFL
