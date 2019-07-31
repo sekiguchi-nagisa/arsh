@@ -1270,7 +1270,7 @@ static std::pair<CompletorKind, std::string> selectCompletor(const std::string &
     return pair;
 }
 
-CStrBuffer completeLine(const DSState &st, const std::string &line) {
+CStrBuffer completeLine(DSState &st, const std::string &line) {
     assert(!line.empty() && line.back() == '\n');
 
     CStrBuffer sbuf;

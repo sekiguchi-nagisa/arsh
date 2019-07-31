@@ -788,7 +788,7 @@ struct DSCandidates {
     }
 };
 
-DSCandidates *DSState_complete(const DSState *st, const char *buf, size_t cursor) {
+DSCandidates *DSState_complete(DSState *st, const char *buf, size_t cursor) {
     if(st == nullptr || buf == nullptr || cursor == 0) {
         return nullptr;
     }

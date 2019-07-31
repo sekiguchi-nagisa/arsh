@@ -213,7 +213,7 @@ void expandTilde(std::string &str);
  * return completion candidates.
  * line must be terminate newline.
  */
-CStrBuffer completeLine(const DSState &st, const std::string &line);
+CStrBuffer completeLine(DSState &st, const std::string &line);
 
 class SignalGuard {
 private:

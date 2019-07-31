@@ -347,7 +347,7 @@ typedef struct DSCandidates DSCandidates;
  * @return
  * return null if no candidates.
  */
-DSCandidates *DSState_complete(const DSState *st, const char *buf, size_t cursor);
+DSCandidates *DSState_complete(DSState *st, const char *buf, size_t cursor);
 
 /**
  *
