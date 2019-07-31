@@ -238,6 +238,7 @@ set(YDSH_SRC
         src/signals.cpp
         src/job.cpp
         src/redir.cpp
+        src/comp.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

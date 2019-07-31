@@ -36,8 +36,6 @@ struct DSState;
 
 namespace ydsh {
 
-using CStrBuffer = FlexBuffer<char *>;
-
 /**
  * enum order is corresponding to builtin variable declaration order.
  */
@@ -208,6 +206,8 @@ std::string interpretPromptString(const DSState &st, const char *ps);
 std::string expandDots(const char *basePath, const char *path);
 
 void expandTilde(std::string &str);
+
+using CStrBuffer = FlexBuffer<char *>;
 
 /**
  * return completion candidates.
