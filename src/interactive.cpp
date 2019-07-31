@@ -17,13 +17,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include <csignal>
 #include <cstring>
 #include <string>
 #include <memory>
 #include <cerrno>
 #include <cstdlib>
-#include <climits>
 
 #include <linenoise.h>
 

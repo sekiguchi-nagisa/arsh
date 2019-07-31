@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <cmath>
-
 #include "misc/fatal.h"
 #include "misc/num.h"
 #include "misc/hash.hpp"

@@ -18,8 +18,6 @@
 #include <array>
 
 #include "symbol_table.h"
-#include "parser.h"
-#include "type_checker.h"
 #include "core.h"
 #include "object.h"
 #include "constant.h"

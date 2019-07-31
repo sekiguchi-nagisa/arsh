@@ -15,9 +15,7 @@
  */
 
 #include <cstring>
-#include <csignal>
 #include <algorithm>
-#include <fstream>
 
 #include <unistd.h>
 #include <sys/utsname.h>

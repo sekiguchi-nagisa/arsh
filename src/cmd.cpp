@@ -18,11 +18,9 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <poll.h>
-#include <sys/time.h>
 #include <sys/resource.h>
 
 #include <cstdlib>
-#include <cstdarg>
 #include <ydsh/ydsh.h>
 
 #include "logger.h"

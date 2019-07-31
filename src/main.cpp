@@ -17,8 +17,6 @@
 #include <unistd.h>
 
 #include <cstdlib>
-#include <string>
-#include <cerrno>
 
 #include <ydsh/ydsh.h>
 #include "misc/opt.hpp"
