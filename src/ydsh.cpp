@@ -777,22 +777,13 @@ unsigned int DSState_featureBit() {
 }
 
 struct DSCandidates {
-    /**
-     * size of values.
-     */
-    unsigned int size;
+    CStrBuffer buf;
 
-    /**
-     * if size is 0, it is null.
-     */
-    char **values;
+    explicit DSCandidates(CStrBuffer &&buf) : buf(std::move(buf)) {}
 
     ~DSCandidates() {
-        if(this->values != nullptr) {
-            for(unsigned int i = 0 ; i < this->size; i++) {
-                free(this->values[i]);
-            }
-            free(this->values);
+        for(auto &e : this->buf) {
+            free(e);
         }
     }
 };
@@ -806,22 +797,18 @@ DSCandidates *DSState_complete(const DSState *st, const char *buf, size_t cursor
     LOG(DUMP_CONSOLE, "line: %s, cursor: %zu", line.c_str(), cursor);
 
     line += '\n';
-    CStrBuffer sbuf = completeLine(*st, line);
-    return new DSCandidates {
-            .size = sbuf.size(),
-            .values = extract(std::move(sbuf))
-    };
+    return new DSCandidates(completeLine(*st, line));
 }
 
 const char *DSCandidates_get(const DSCandidates *c, unsigned int index) {
-    if(c != nullptr && index < c->size) {
-        return c->values[index];
+    if(c != nullptr && index < c->buf.size()) {
+        return c->buf[index];
     }
     return nullptr;
 }
 
 unsigned int DSCandidates_size(const DSCandidates *c) {
-    return c != nullptr ? c->size : 0;
+    return c != nullptr ? c->buf.size() : 0;
 }
 
 void DSCandidates_release(DSCandidates **c) {
