@@ -411,6 +411,8 @@ function from($this : Array<T0>, $from : Int32) : Array<T0>
 
 function to($this : Array<T0>, $to : Int32) : Array<T0>
 
+function copy($this : Array<T0>) : Array<T0>
+
 function reverse($this : Array<T0>) : Array<T0>
 
 function sort($this : Array<T0>) : Array<T0>
@@ -457,6 +459,8 @@ function find($this : Map<T0,T1>, $key : T0) : Boolean
 function remove($this : Map<T0,T1>, $key : T0) : Boolean
 
 function swap($this : Map<T0,T1>, $key : T0, $value : T1) : T1
+
+function copy($this : Map<T0,T1>) : Map<T0,T1>
 
 function clear($this : Map<T0,T1>) : Void
 

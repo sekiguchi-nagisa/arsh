@@ -563,6 +563,8 @@ private:
 public:
     explicit Map_Object(DSType &type) : DSObject(type) { }
 
+    Map_Object(DSType &type, HashMap &&map) : DSObject(type), valueMap(std::move(map)) {}
+
     ~Map_Object() override = default;
 
     const HashMap &getValueMap() const {

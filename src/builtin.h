@@ -1782,6 +1782,18 @@ YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
     return slice(ctx, obj, 0, stop);
 }
 
+//!bind: function copy($this : Array<T0>) : Array<T0>
+YDSH_METHOD array_copy(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(array_copy);
+    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    std::vector<DSValue> values;
+    values.reserve(obj->getValues().size());
+    for(auto &e : obj->getValues()) {
+        values.push_back(e);
+    }
+    RET(DSValue::create<Array_Object>(*obj->getType(), std::move(values)));
+}
+
 //!bind: function reverse($this : Array<T0>) : Array<T0>
 YDSH_METHOD array_reverse(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_reverse);
@@ -2009,6 +2021,14 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
         RET_ERROR;
     }
     RET(value);
+}
+
+//!bind: function copy($this : Map<T0, T1>) : Map<T0, T1>
+YDSH_METHOD map_copy(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(map_copy);
+    auto *obj = typeAs<Map_Object>(LOCAL(0));
+    HashMap map(obj->getValueMap());
+    RET(DSValue::create<Map_Object>(*obj->getType(), std::move(map)));
 }
 
 //!bind: function clear($this : Map<T0, T1>) : Void

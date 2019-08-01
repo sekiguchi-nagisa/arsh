@@ -178,6 +178,15 @@ assert $ex is OutOfRangeError
 assert "1,2,".split(",").join(",") == "1,2,"
 assert [[["h", "l"].join("e"), "lo"].join(""), "world", "!!"].join(" ") == "hello world !!"
 
+# copy
+var cc1 = [3, 4, 6]
+var cc2 = $cc1.copy()
+$cc1.clear()
+assert $cc1.empty()
+assert $cc2.size() == 3
+assert $cc2[0] == 3
+assert $cc2[1] == 4
+assert $cc2[2] == 6
 
 # inheritance
 assert([34, 43] is Array<Int32>)

@@ -54,6 +54,14 @@ $b.clear()
 assert($b.empty())
 assert(!$b.get(34))
 
+# copy
+var bb = ["s" : 1, "a" : 100]
+var bb2 = $bb.copy()
+$bb.clear()
+assert $bb.empty()
+assert $bb2.size() == 2
+assert $bb2["s"] == 1
+assert $bb2["a"] == 100
 
 # inheritance
 assert([23 : $true] is Map<Int, Boolean>)
