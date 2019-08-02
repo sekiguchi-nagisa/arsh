@@ -11,16 +11,16 @@ macro(getRE2C)
     download_project(
             PROJ                re2c
             GIT_REPOSITORY      https://github.com/skvadrik/re2c.git
-            GIT_TAG             1.2
+            GIT_TAG             1.1.1
             GIT_PROGRESS        1
     )
 
     set(RE2C_BIN "${re2c_BINARY_DIR}/re2c")
 
-    if(NOT EXISTS "${re2c_SOURCE_DIR}/configure")
-        execute_process(COMMAND ./autogen.sh WORKING_DIRECTORY ${re2c_SOURCE_DIR})
+    if(NOT EXISTS "${re2c_SOURCE_DIR}/re2c/configure")
+        execute_process(COMMAND ./autogen.sh WORKING_DIRECTORY ${re2c_SOURCE_DIR}/re2c)
     endif()
 
-    execute_process(COMMAND ${re2c_SOURCE_DIR}/configure WORKING_DIRECTORY ${re2c_BINARY_DIR})
+    execute_process(COMMAND ${re2c_SOURCE_DIR}/re2c/configure WORKING_DIRECTORY ${re2c_BINARY_DIR})
     execute_process(COMMAND make WORKING_DIRECTORY ${re2c_BINARY_DIR})
 endmacro()
