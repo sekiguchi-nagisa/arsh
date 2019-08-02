@@ -250,7 +250,7 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
 }
 
 const FieldHandle *TypeChecker::addEntry(Node &node, const std::string &symbolName,
-                                   DSType &type, FieldAttributes attribute) {
+                                   DSType &type, FieldAttribute attribute) {
     auto pair = this->symbolTable.newHandle(symbolName, type, attribute);
     if(!pair) {
         switch(pair.asErr()) {
@@ -1266,18 +1266,18 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
     DSType *exprType = nullptr;
-    FieldAttributes attr;
+    FieldAttribute attr{};
     switch(node.getKind()) {
     case VarDeclNode::CONST:
     case VarDeclNode::VAR:
         if(node.getKind() == VarDeclNode::CONST) {
-            attr.set(FieldAttribute::READ_ONLY);
+            setFlag(attr, FieldAttribute::READ_ONLY);
         }
         exprType = &this->checkTypeAsSomeExpr(node.getExprNode());
         break;
     case VarDeclNode::IMPORT_ENV:
     case VarDeclNode::EXPORT_ENV:
-        attr.set(FieldAttribute::ENV);
+        setFlag(attr, FieldAttribute::ENV);
         exprType = &this->symbolTable.get(TYPE::String);
         if(node.getExprNode() != nullptr) {
             this->checkType(*exprType, node.getExprNode());
@@ -1296,7 +1296,7 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
     }
     auto *leftNode = static_cast<AssignableNode *>(node.getLeftNode());
     auto &leftType = this->checkTypeAsExpr(leftNode);
-    if(leftNode->attr().has(FieldAttribute::READ_ONLY)) {
+    if(hasFlag(leftNode->attr(), FieldAttribute::READ_ONLY)) {
         RAISE_TC_ERROR(ReadOnly, *leftNode);
     }
 
@@ -1375,7 +1375,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     for(unsigned int i = 0; i < paramSize; i++) {
         VarNode *paramNode = node.getParamNodes()[i];
         auto fieldHandle = this->addEntry(*paramNode, paramNode->getVarName(),
-                                           *funcType.getParamTypes()[i], FieldAttributes());
+                                           *funcType.getParamTypes()[i], FieldAttribute());
         paramNode->setAttribute(*fieldHandle);
     }
 

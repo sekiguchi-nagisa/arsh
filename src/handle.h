@@ -45,38 +45,9 @@ enum class FieldAttribute : unsigned short {
 #undef GEN_ENUM
 };
 
-class FieldAttributes {
-private:
-    unsigned short value_{0};
+std::string toString(FieldAttribute attr);
 
-private:
-    FieldAttributes(unsigned short value) : value_(value) {}    //NOLINT
-
-public:
-    FieldAttributes() = default;
-    FieldAttributes(FieldAttribute attr) : value_(static_cast<unsigned short>(attr)) {} //NOLINT
-    ~FieldAttributes() = default;
-
-    friend inline FieldAttributes operator|(FieldAttribute x, FieldAttribute y);
-
-    FieldAttributes operator|(FieldAttribute attr) const {
-        return this->value_ | static_cast<unsigned short>(attr);
-    }
-
-    void set(FieldAttribute attr) {
-        setFlag(this->value_, static_cast<unsigned short>(attr));
-    }
-
-    bool has(FieldAttribute attr) const {
-        return hasFlag(this->value_, static_cast<unsigned short>(attr));
-    }
-
-    std::string str() const;
-};
-
-inline FieldAttributes operator|(FieldAttribute x, FieldAttribute y) {
-    return static_cast<unsigned short>(x) | static_cast<unsigned short>(y);
-}
+template <> struct allow_enum_bitop<FieldAttribute> : std::true_type {};
 
 /**
  * represent for class field or variable. field type may be function type.
@@ -87,7 +58,7 @@ private:
 
     unsigned int index;
 
-    FieldAttributes attribute;
+    FieldAttribute attribute;
 
     /**
      * if global module, id is 0.
@@ -95,9 +66,9 @@ private:
     unsigned short modID;
 
 public:
-    FieldHandle() : FieldHandle(nullptr, 0, FieldAttributes()) {}
+    FieldHandle() : FieldHandle(nullptr, 0, FieldAttribute()) {}
 
-    FieldHandle(DSType *fieldType, unsigned int fieldIndex, FieldAttributes attribute, unsigned short modID = 0) :
+    FieldHandle(DSType *fieldType, unsigned int fieldIndex, FieldAttribute attribute, unsigned short modID = 0) :
             type(fieldType), index(fieldIndex), attribute(attribute), modID(modID) {}
 
     ~FieldHandle() = default;
@@ -110,7 +81,7 @@ public:
         return this->index;
     }
 
-    FieldAttributes attr() const {
+    FieldAttribute attr() const {
         return this->attribute;
     }
 

@@ -600,7 +600,7 @@ class AssignableNode : public Node {
 protected:
     unsigned int index{0};
 
-    FieldAttributes attribute;
+    FieldAttribute attribute;
 
     AssignableNode(NodeKind kind, Token token) :
             Node(kind, token) { }
@@ -613,7 +613,7 @@ public:
         this->attribute = handle.attr();
     }
 
-    FieldAttributes attr() const {
+    FieldAttribute attr() const {
         return this->attribute;
     }
 

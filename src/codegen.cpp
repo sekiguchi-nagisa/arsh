@@ -390,20 +390,20 @@ void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
 }
 
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
-    if(node.attr().has(FieldAttribute::ENV)) {
-        if(node.attr().has(FieldAttribute::GLOBAL)) {
+    if(hasFlag(node.attr(), FieldAttribute::ENV)) {
+        if(hasFlag(node.attr(), FieldAttribute::GLOBAL)) {
             this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
         } else {
             this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
         }
 
         this->emit0byteIns(OpCode::LOAD_ENV);
-    } else if(node.attr().has(FieldAttribute::RANDOM)) {
+    } else if(hasFlag(node.attr(), FieldAttribute::RANDOM)) {
         this->emit0byteIns(OpCode::RAND);
-    } else if(node.attr().has(FieldAttribute::SECONDS)) {
+    } else if(hasFlag(node.attr(), FieldAttribute::SECONDS)) {
         this->emit0byteIns(OpCode::GET_SECOND);
     } else {
-        if(node.attr().has(FieldAttribute::GLOBAL)) {
+        if(hasFlag(node.attr(), FieldAttribute::GLOBAL)) {
             this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
         } else {
             this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
@@ -1123,8 +1123,8 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
         this->visit(*node.getRightNode());
         auto *varNode = static_cast<VarNode *>(node.getLeftNode());
 
-        if(varNode->attr().has(FieldAttribute::ENV)) {
-            if(varNode->attr().has(FieldAttribute::GLOBAL)) {
+        if(hasFlag(varNode->attr(), FieldAttribute::ENV)) {
+            if(hasFlag(varNode->attr(), FieldAttribute::GLOBAL)) {
                 this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
             } else {
                 this->emit1byteIns(OpCode::LOAD_LOCAL, index);
@@ -1132,10 +1132,10 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
 
             this->emit0byteIns(OpCode::SWAP);
             this->emit0byteIns(OpCode::STORE_ENV);
-        } else if(varNode->attr().has(FieldAttribute::SECONDS)) {
+        } else if(hasFlag(varNode->attr(), FieldAttribute::SECONDS)) {
             this->emit0byteIns(OpCode::SET_SECOND);
         } else {
-            if(varNode->attr().has(FieldAttribute::GLOBAL)) {
+            if(hasFlag(varNode->attr(), FieldAttribute::GLOBAL)) {
                 this->emit2byteIns(OpCode::STORE_GLOBAL, index);
             } else {
                 this->emit1byteIns(OpCode::STORE_LOCAL, index);

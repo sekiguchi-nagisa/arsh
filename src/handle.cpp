@@ -23,11 +23,7 @@
 
 namespace ydsh {
 
-// #############################
-// ##     FieldAttributes     ##
-// #############################
-
-std::string FieldAttributes::str() const {
+std::string toString(FieldAttribute attr) {
     const char *table[] = {
 #define GEN_STR(E, V) #E,
             EACH_FIELD_ATTR(GEN_STR)
@@ -36,14 +32,13 @@ std::string FieldAttributes::str() const {
 
     std::string value;
     for(unsigned short i = 0; i < arraySize(table); i++) {
-        if(hasFlag(this->value_, static_cast<unsigned short>(1u << i))) {
+        if(hasFlag(attr, static_cast<FieldAttribute>(1u << i))) {
             if(!value.empty()) {
                 value += " | ";
             }
             value += table[i];
         }
     }
-
     return value;
 }
 

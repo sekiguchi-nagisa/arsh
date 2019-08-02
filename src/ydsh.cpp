@@ -258,7 +258,7 @@ static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError, unsigned 
     return evalCode(state, code, dsError);
 }
 
-static void bindVariable(DSState *state, const char *varName, DSValue &&value, FieldAttributes attribute) {
+static void bindVariable(DSState *state, const char *varName, DSValue &&value, FieldAttribute attribute) {
     auto handle = state->symbolTable.newHandle(varName, *value->getType(), attribute);
     assert(static_cast<bool>(handle));
     state->setGlobal(handle.asOk()->getIndex(), std::move(value));
@@ -323,7 +323,7 @@ static void initBuiltinVar(DSState *state) {
      * for internal field splitting.
      * must be String_Object.
      */
-    bindVariable(state, "IFS", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), " \t\n"), FieldAttributes());
+    bindVariable(state, "IFS", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), " \t\n"), FieldAttribute());
 
     /**
      * must be String_Object
@@ -341,7 +341,7 @@ static void initBuiltinVar(DSState *state) {
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
-    bindVariable(state, "?", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0), FieldAttributes());
+    bindVariable(state, "?", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0), FieldAttribute());
 
     /**
      * process id of root shell. ($$)

@@ -320,7 +320,7 @@ void DirectiveInitializer::checkNode(NodeKind kind, const Node &node) {
 }
 
 void DirectiveInitializer::setVarName(const char *name, DSType &type) {
-    this->symbolTable.newHandle(name, type, FieldAttributes());
+    this->symbolTable.newHandle(name, type, FieldAttribute());
 }
 
 

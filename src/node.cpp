@@ -326,7 +326,7 @@ void TupleNode::dump(NodeDumper &dumper) const {
 
 void AssignableNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(index);
-    dumper.dump("attribute", this->attribute.str().c_str());
+    dumper.dump("attribute", toString(this->attribute));
 }
 
 // #####################
@@ -989,7 +989,7 @@ VarDeclNode::~VarDeclNode() {
 }
 
 void VarDeclNode::setAttribute(const FieldHandle &handle) {
-    this->global = handle.attr().has(FieldAttribute::GLOBAL);
+    this->global = hasFlag(handle.attr(), FieldAttribute::GLOBAL);
     this->varIndex = handle.getIndex();
 }
 

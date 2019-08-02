@@ -82,8 +82,8 @@ GlobalScope::GlobalScope(unsigned int &gvarCount) : gvarCount(gvarCount) {
 }
 
 HandleOrError GlobalScope::addNew(const std::string &symbolName, DSType &type,
-                                  FieldAttributes attribute, unsigned short modID) {
-    attribute.set(FieldAttribute::GLOBAL);
+                                  FieldAttribute attribute, unsigned short modID) {
+    setFlag(attribute, FieldAttribute::GLOBAL);
     FieldHandle handle(&type, this->gvarCount.get(), attribute, modID);
     auto pair = this->handleMap.emplace(symbolName, handle);
     if(!pair.second) {
@@ -111,10 +111,10 @@ const FieldHandle *ModuleScope::lookupHandle(const std::string &symbolName) cons
 }
 
 HandleOrError ModuleScope::newHandle(const std::string &symbolName,
-                                     DSType &type, FieldAttributes attribute) {
+                                     DSType &type, FieldAttribute attribute) {
     if(this->inGlobalScope()) {
         if(this->builtin) {
-            attribute.set(FieldAttribute::BUILTIN);
+            setFlag(attribute, FieldAttribute::BUILTIN);
         }
         return this->globalScope.addNew(symbolName, type, attribute, this->modID);
     }
@@ -156,7 +156,7 @@ void ModuleScope::exitFunc() {
 
 const char* ModuleScope::import(const ModType &type) {
     for(auto &e : type.handleMap) {
-        assert(!e.second.attr().has(FieldAttribute::BUILTIN));
+        assert(!hasFlag(e.second.attr(), FieldAttribute::BUILTIN));
         if(e.first[0] == '_' && this->getModID() != e.second.getModID()) {
             continue;
         }
@@ -431,7 +431,7 @@ const FieldHandle* SymbolTable::lookupHandle(const std::string &symbolName) cons
         if(&this->cur() != &this->root()) {
             assert(this->root().inGlobalScope());
             auto ret = this->root().lookupHandle(symbolName);
-            if(ret && ret->attr().has(FieldAttribute::BUILTIN)) {
+            if(ret && hasFlag(ret->attr(), FieldAttribute::BUILTIN)) {
                 handle = ret;
             }
         }
@@ -440,11 +440,11 @@ const FieldHandle* SymbolTable::lookupHandle(const std::string &symbolName) cons
 }
 
 HandleOrError SymbolTable::newHandle(const std::string &symbolName, DSType &type,
-                                     FieldAttributes attribute) {
+                                     FieldAttribute attribute) {
     if(this->cur().inGlobalScope() && &this->cur() != &this->root()) {
         assert(this->root().inGlobalScope());
         auto handle = this->root().lookupHandle(symbolName);
-        if(handle && handle->attr().has(FieldAttribute::BUILTIN)) {
+        if(handle && hasFlag(handle->attr(), FieldAttribute::BUILTIN)) {
             return Err(SymbolError::DEFINED);
         }
     }
