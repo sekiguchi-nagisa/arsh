@@ -86,8 +86,8 @@ function _load($p : String!) {
     if $HISTSIZE == 0u { return; }
     if !$p { $p = $HISTFILE; }
     let path = $p!.realpath() ?? { return; }
-    cat $path | while($HISTORY.size() < $HISTSIZE as Int && read) {
-        $HISTORY.add($REPLY)
+    cat $path | while(read -r -f '') {
+        $_add($REPLY, $true)
     }
 }
 
