@@ -8,9 +8,9 @@
 
 using namespace ydsh;
 
-class BaseTest : public ::testing::Test {
+class TimeTest : public ::testing::Test {
 public:
-    BaseTest() = default;
+    TimeTest() = default;
 
     virtual void dotest(struct tm *t) {
         ASSERT_TRUE(t != nullptr);
@@ -24,7 +24,7 @@ public:
     }
 };
 
-TEST_F(BaseTest, case1) {
+TEST_F(TimeTest, case1) {
     unsetenv("TZ");
     setenv("TIME_SOURCE", "2012-1-12T23:45:56Z", 1);
     struct tm *t = getLocalTime();
@@ -33,7 +33,7 @@ TEST_F(BaseTest, case1) {
     this->dotest(t);
 }
 
-TEST_F(BaseTest, case2) {
+TEST_F(TimeTest, case2) {
     unsetenv("TZ");
     setenv("TIME_SOURCE", "2012-1-12T23:45:56Z", 1);
     setenv("TZ", "JP", 1);
@@ -43,7 +43,7 @@ TEST_F(BaseTest, case2) {
     this->dotest(t);
 }
 
-TEST_F(BaseTest, case3) {
+TEST_F(TimeTest, case3) {
     unsetenv("TZ");
     setenv("TIME_SOURCE", "2012-1-12T23:45:", 1);   // bad format
     ASSERT_EXIT(getLocalTime(), ::testing::KilledBySignal(SIGABRT), "broken time source\n");
