@@ -165,6 +165,10 @@ $assertArray($(ls -pa . | grep '^\.' | sort | uniq), $(complete 'echo .'))
 $assertArray($(file '/' | grep '^b'), $(complete 'echo /b'))
 $assertArray($(file '/usr/bin'), $(complete 'echo > /usr/bin/'))
 $assertArray($(file ~), $(complete 'echo 23 ~/'))
+if !$OSTYPE.startsWith("CYGWIN") {
+    assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete 'echo ~' | grep '~root')"
+}
+$assertArray(new [String](), $(complete 'echo \~root'))
 $assertArray($(file '.'), $(complete '$(echo '))
 $assertArray($(file '.'), $(complete '{echo hello '))
 $assertArray($(file '.'), $(complete 'echo | echo < '))

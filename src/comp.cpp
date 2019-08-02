@@ -309,20 +309,35 @@ public:
     }
 };
 
+enum class FileNameCompOp : unsigned int {
+    ONLY_EXEC = 1 << 0,
+    TIDLE     = 1 << 1,
+};
+
+template <> struct allow_enum_bitop<FileNameCompOp> : std::true_type {};
+
 class FileNameCompleter : public Completer {
 protected:
     const char *baseDir;
 
     const std::string token;
 
-    const bool onlyExec;
+    const FileNameCompOp op;
 
 public:
-    FileNameCompleter(const char *baseDir, const std::string &token, bool onlyExec) :
-            baseDir(baseDir), token(token), onlyExec(onlyExec) {}
+    FileNameCompleter(const char *baseDir, const std::string &token, FileNameCompOp op = FileNameCompOp()) :
+            baseDir(baseDir), token(token), op(op) {}
 
 protected:
     void completeImpl(CStrBuffer &results);
+
+    bool onlyExec() const {
+        return hasFlag(this->op, FileNameCompOp::ONLY_EXEC);
+    }
+
+    bool tilde() const {
+        return hasFlag(this->op, FileNameCompOp::TIDLE);
+    }
 
 public:
     CStrBuffer operator()() override {
@@ -332,7 +347,7 @@ public:
     }
 
     const char *name() const override {
-        return this->onlyExec ? "QualifiedCommand" : "FileName";
+        return this->onlyExec() ? "QualifiedCommand" : "FileName";
     }
 };
 
@@ -340,7 +355,7 @@ void FileNameCompleter::completeImpl(CStrBuffer &results) {
     const auto s = this->token.find_last_of('/');
 
     // complete tilde
-    if(this->token[0] == '~' && s == std::string::npos) {
+    if(this->token[0] == '~' && s == std::string::npos && this->tilde()) {
         setpwent();
         for(struct passwd *entry = getpwent(); entry != nullptr; entry = getpwent()) {
             if(startsWith(entry->pw_name, this->token.c_str() + 1)) {
@@ -364,7 +379,9 @@ void FileNameCompleter::completeImpl(CStrBuffer &results) {
         targetDir = "/";
     } else if(s != std::string::npos) {
         targetDir = this->token.substr(0, s);
-        expandTilde(targetDir);
+        if(this->tilde()) {
+            expandTilde(targetDir);
+        }
         targetDir = expandDots(this->baseDir, targetDir.c_str());
     } else {
         targetDir = expandDots(this->baseDir, ".");
@@ -396,7 +413,7 @@ void FileNameCompleter::completeImpl(CStrBuffer &results) {
             fullpath += '/';
             fullpath += entry->d_name;
 
-            if(this->onlyExec && S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) != 0) {
+            if(this->onlyExec() && S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) != 0) {
                 continue;
             }
 
@@ -404,7 +421,7 @@ void FileNameCompleter::completeImpl(CStrBuffer &results) {
             if(S_ISDIR(getStMode(fullpath.c_str()))) {
                 fileName += '/';
             }
-            append(results, fileName, this->onlyExec ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
+            append(results, fileName,this->onlyExec() ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
         }
     }
     closedir(dir);
@@ -412,7 +429,7 @@ void FileNameCompleter::completeImpl(CStrBuffer &results) {
 
 struct ModNameCompleter : public FileNameCompleter {
     ModNameCompleter(const char *scriptDir, const std::string &token) :
-            FileNameCompleter(scriptDir, token, false) {}
+            FileNameCompleter(scriptDir, token) {}
 
     CStrBuffer operator()() override {
         CStrBuffer results;
@@ -435,10 +452,6 @@ struct ModNameCompleter : public FileNameCompleter {
         return "Module";
     }
 };
-
-static bool isFileName(const std::string &str) {
-    return !str.empty() && (str[0] == '~' || strchr(str.c_str(), '/') != nullptr);
-}
 
 static bool isRedirOp(TokenKind kind) {
     switch(kind) {
@@ -543,16 +556,34 @@ private:
         return std::make_unique<ModNameCompleter>(this->state.getScriptDir(), token);
     }
 
-    std::unique_ptr<Completer> createFileNameCompleter(const std::string &token) const {
-        return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), token, false);
+    std::unique_ptr<Completer> createFileNameCompleter() const {
+        return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), "");
     }
 
-    std::unique_ptr<Completer> createQualifiedCmdCompleter(const std::string &token) const {
-        return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), token, true);
+    std::unique_ptr<Completer> createFileNameCompleter(Token token) const {
+        FileNameCompOp op{};
+        if(this->lexer.startsWith(token, '~')) {
+            setFlag(op, FileNameCompOp::TIDLE);
+        }
+        return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), this->lexer.toCmdArg(token), op);
     }
 
-    std::unique_ptr<Completer> createCmdNameCompleter(const std::string &token) const {
-        return std::make_unique<CmdNameCompleter>(this->state.symbolTable, token);
+    std::unique_ptr<Completer> createCmdNameCompleter() const {
+        return std::make_unique<CmdNameCompleter>(this->state.symbolTable, "");
+    }
+
+    std::unique_ptr<Completer> createCmdNameCompleter(Token token) const {
+        auto arg = this->lexer.toCmdArg(token);
+        bool tilde = this->lexer.startsWith(token, '~');
+        bool isDir = strchr(arg.c_str(), '/') != nullptr;
+        if(tilde || isDir) {
+            auto op = FileNameCompOp::ONLY_EXEC;
+            if(tilde) {
+                setFlag(op, FileNameCompOp::TIDLE);
+            }
+            return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), arg, op);
+        }
+        return std::make_unique<CmdNameCompleter>(this->state.symbolTable, arg);
     }
 
     std::unique_ptr<Completer> createGlobalVarNameCompleter(const std::string &token) const {
@@ -619,11 +650,9 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) {
     switch(kind) {
     case COMMAND:
         if(token.pos + token.size == cursor) {
-            auto tokenStr = this->lexer.toTokenText(token);
-            return isFileName(tokenStr) ? this->createQualifiedCmdCompleter(tokenStr) :
-                    this->createCmdNameCompleter(tokenStr);
+            return this->createCmdNameCompleter(token);
         }
-        return this->createFileNameCompleter("");
+        return this->createFileNameCompleter();
     case CMD_ARG_PART:
         if(token.pos + token.size == cursor && tokenPairs.size() > 1) {
             unsigned int prevIndex = tokenPairs.size() - 2;
@@ -635,14 +664,14 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) {
              * or if spaces exist between current and previous
              */
             if(isRedirOp(prevKind) || prevToken.pos + prevToken.size < token.pos) {
-                return this->createFileNameCompleter(this->lexer.toCmdArg(token));
+                return this->createFileNameCompleter(token);
             }
             return nullptr;
         }
-        return this->createFileNameCompleter("");
+        return this->createFileNameCompleter();
     default:
         if(!exactly && token.pos + token.size < cursor) {
-            return this->createFileNameCompleter("");
+            return this->createFileNameCompleter();
         }
         return nullptr;
     }
@@ -662,7 +691,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
         case LINE_END:
         case BACKGROUND:
         case DISOWN_BG:
-            return this->createCmdNameCompleter("");
+            return this->createCmdNameCompleter();
         case RP:
             return std::make_unique<ExpectedTokenCompleter>(";");
         case APPLIED_NAME:
@@ -714,11 +743,11 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
 
             if(strcmp(e.getErrorKind(), NO_VIABLE_ALTER) == 0) {
                 if(findKind(e.getExpectedTokens(), COMMAND)) {
-                    return this->createCmdNameCompleter("");
+                    return this->createCmdNameCompleter();
                 }
 
                 if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
-                    return this->createFileNameCompleter("");
+                    return this->createFileNameCompleter();
                 }
             } else if(strcmp(e.getErrorKind(), TOKEN_MISMATCHED) == 0) {
                 assert(!e.getExpectedTokens().empty());
@@ -734,7 +763,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
                     if(!tokenPairs.empty() && tokenPairs.back().first == SOURCE) {
                         return this->createModNameCompleter("");
                     }
-                    return this->createFileNameCompleter("");
+                    return this->createFileNameCompleter();
                 }
 
                 if(!tokenPairs.empty() && tokenPairs.back().first == IMPORT_ENV
