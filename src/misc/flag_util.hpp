@@ -17,7 +17,7 @@
 #ifndef YDSH_MISC_FLAG_UTIL_H
 #define YDSH_MISC_FLAG_UTIL_H
 
-#include <type_traits>
+#include "misc/enum_util.hpp"
 
 namespace ydsh {
 

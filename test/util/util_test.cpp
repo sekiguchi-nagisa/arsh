@@ -5,6 +5,7 @@
 #endif
 
 #include <time_util.h>
+#include <misc/flag_util.hpp>
 
 using namespace ydsh;
 
@@ -30,7 +31,7 @@ TEST_F(TimeTest, case1) {
     struct tm *t = getLocalTime();
     ASSERT_TRUE(getenv("TZ") == nullptr);
 
-    this->dotest(t);
+    ASSERT_NO_FATAL_FAILURE(this->dotest(t));
 }
 
 TEST_F(TimeTest, case2) {
@@ -40,13 +41,39 @@ TEST_F(TimeTest, case2) {
     struct tm *t = getLocalTime();
     ASSERT_STREQ("JP", getenv("TZ"));
 
-    this->dotest(t);
+    ASSERT_NO_FATAL_FAILURE(this->dotest(t));
 }
 
 TEST_F(TimeTest, case3) {
     unsetenv("TZ");
     setenv("TIME_SOURCE", "2012-1-12T23:45:", 1);   // bad format
     ASSERT_EXIT(getLocalTime(), ::testing::KilledBySignal(SIGABRT), "broken time source\n");
+}
+
+enum class Flag : unsigned int {
+    AAA = 1 << 0,
+    BBB = 1 << 1,
+    CCC = 1 << 2,
+};
+
+namespace ydsh {
+
+template <> struct allow_enum_bitop<Flag> : std::true_type {};
+
+} // namespace
+
+TEST(EnumTest, base) {
+    Flag f = Flag::AAA | Flag::BBB;
+    ASSERT_EQ(3, static_cast<unsigned int>(f));
+    setFlag(f, Flag::CCC);
+    ASSERT_TRUE(hasFlag(f, Flag::AAA));
+    ASSERT_TRUE(hasFlag(f, Flag::BBB));
+    ASSERT_TRUE(hasFlag(f, Flag::CCC));
+
+    unsetFlag(f, Flag::BBB);
+    ASSERT_TRUE(hasFlag(f, Flag::AAA));
+    ASSERT_FALSE(hasFlag(f, Flag::BBB));
+    ASSERT_TRUE(hasFlag(f, Flag::CCC));
 }
 
 
