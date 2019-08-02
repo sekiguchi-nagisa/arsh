@@ -88,6 +88,16 @@ enum class TYPE : unsigned int {
     _AssertFail,
 };
 
+enum class TypeAttr : unsigned char {
+    EXTENDIBLE   = 1u << 0u,
+    FUNC_TYPE    = 1u << 1u,    // function type
+    RECORD_TYPE  = 1u << 2u,    // indicate user defined type
+    OPTION_TYPE  = 1u << 3u,    // Option<T>
+    MODULE_TYPE  = 1u << 4u,    // Module type
+};
+
+template <> struct allow_enum_bitop<TypeAttr> : std::true_type {};
+
 class DSType {
 protected:
     const unsigned int id;
@@ -97,21 +107,15 @@ protected:
      */
     DSType *superType;
 
-    flag8_set_t attributeSet;
+    TypeAttr attributeSet;
 
 public:
-    static constexpr flag8_t EXTENDIBLE   = 1u << 0u;
-    static constexpr flag8_t FUNC_TYPE    = 1u << 1u;  // function type
-    static constexpr flag8_t RECORD_TYPE  = 1u << 2u;  // indicate user defined type
-    static constexpr flag8_t OPTION_TYPE  = 1u << 3u;  // Option<T>
-    static constexpr flag8_t MODULE_TYPE  = 1u << 4u;  // Module type
-
     NON_COPYABLE(DSType);
 
     /**
      * not directly call it.
      */
-    DSType(unsigned int id, DSType *superType, flag8_set_t attribute) :
+    DSType(unsigned int id, DSType *superType, TypeAttr attribute) :
             id(id), superType(superType), attributeSet(attribute) { }
 
     virtual ~DSType() = default;
@@ -128,7 +132,7 @@ public:
      * if true, can extend this type
      */
     bool isExtendible() const {
-        return hasFlag(this->attributeSet, EXTENDIBLE);
+        return hasFlag(this->attributeSet, TypeAttr::EXTENDIBLE);
     }
 
     /**
@@ -142,11 +146,11 @@ public:
      * if this type is FunctionType, return true.
      */
     bool isFuncType() const {
-        return hasFlag(this->attributeSet, FUNC_TYPE);
+        return hasFlag(this->attributeSet, TypeAttr::FUNC_TYPE);
     }
 
     bool isRecordType() const {
-        return hasFlag(this->attributeSet, RECORD_TYPE);
+        return hasFlag(this->attributeSet, TypeAttr::RECORD_TYPE);
     }
 
     bool isNothingType() const {
@@ -154,11 +158,11 @@ public:
     }
 
     bool isOptionType() const {
-        return hasFlag(this->attributeSet, OPTION_TYPE);
+        return hasFlag(this->attributeSet, TypeAttr::OPTION_TYPE);
     }
 
     bool isModType() const {
-        return hasFlag(this->attributeSet, MODULE_TYPE);
+        return hasFlag(this->attributeSet, TypeAttr::MODULE_TYPE);
     }
 
     /**
@@ -240,7 +244,7 @@ private:
 
 public:
     FunctionType(unsigned int id, DSType *superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
-            DSType(id, superType, DSType::FUNC_TYPE),
+            DSType(id, superType, TypeAttr::FUNC_TYPE),
             returnType(returnType), paramTypes(std::move(paramTypes)) {}
 
     ~FunctionType() override = default;
@@ -324,7 +328,7 @@ protected:
     std::vector<const DSCode *> methodTable;
 
 public:
-    BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, flag8_set_t attribute);
+    BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute);
 
     ~BuiltinType() override;
 
@@ -355,7 +359,7 @@ public:
      * super type is AnyType or VariantType.
      */
     ReifiedType(unsigned int id, native_type_info_t info, DSType *superType,
-                std::vector<DSType *> &&elementTypes, flag8_set_t attribute = 0) :
+                std::vector<DSType *> &&elementTypes, TypeAttr attribute = TypeAttr()) :
             BuiltinType(id, superType, info, attribute), elementTypes(std::move(elementTypes)) { }
 
     ~ReifiedType() override = default;
@@ -397,7 +401,7 @@ private:
 
 public:
     ErrorType(unsigned int id, DSType *superType) :
-            DSType(id, superType, DSType::EXTENDIBLE),
+            DSType(id, superType, TypeAttr::EXTENDIBLE),
             constructorHandle() { }
 
     ~ErrorType() override;

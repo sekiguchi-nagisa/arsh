@@ -135,7 +135,7 @@ static const NativeCode *getCode(native_type_info_t info) {
 // ##     BuiltinType     ##
 // #########################
 
-BuiltinType::BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, flag8_set_t attribute) :
+BuiltinType::BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute) :
         DSType(id, superType, attribute),
         info(info), constructorHandle(), constructor(),
         methodTable(superType != nullptr ? superType->getMethodSize() + info.methodSize : info.methodSize) {

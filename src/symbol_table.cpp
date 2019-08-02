@@ -227,7 +227,7 @@ void TypeMap::abort() {
 
 ModType::ModType(unsigned int id, ydsh::DSType &superType, unsigned short modID,
                  const std::unordered_map<std::string, ydsh::FieldHandle> &handleMap) :
-        DSType(id, &superType, DSType::MODULE_TYPE), modID(modID) {
+        DSType(id, &superType, TypeAttr::MODULE_TYPE), modID(modID) {
     assert(modID > 0);
     for(auto &e : handleMap) {
         if(e.second.getModID() == modID) {
@@ -473,10 +473,13 @@ TypeOrError SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
         return this->createTupleType(std::move(elementTypes));
     }
 
-    flag8_set_t attr = this->optionTemplate.getName() == typeTemplate.getName() ? DSType::OPTION_TYPE : 0;
+    TypeAttr attr{};
+    if(this->optionTemplate.getName() == typeTemplate.getName()) {
+        setFlag(attr, TypeAttr::OPTION_TYPE);
+    }
 
     // check each element type
-    if(attr != 0u) {
+    if(hasFlag(attr, TypeAttr::OPTION_TYPE)) {
         auto *type = elementTypes[0];
         if(type->isVoidType() || type->isNothingType()) {
             RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type));
@@ -493,7 +496,7 @@ TypeOrError SymbolTable::createReifiedType(const TypeTemplate &typeTemplate,
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
     DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
-        DSType *superType = attr != 0u ? nullptr : &this->get(TYPE::Any);
+        DSType *superType = hasFlag(attr, TypeAttr::OPTION_TYPE) ? nullptr : &this->get(TYPE::Any);
         type = &this->typeMap.newType<ReifiedType>(
                 std::move(typeName),
                 typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
@@ -601,7 +604,7 @@ DSType *SymbolTable::getByNumTypeIndex(unsigned int index) const {
 void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
                                native_type_info_t info) {
     // create and register type
-    flag8_set_t attribute = extendable ? DSType::EXTENDIBLE : 0;
+    auto attribute = extendable ? TypeAttr::EXTENDIBLE : TypeAttr();
     auto &type = this->typeMap.newType<BuiltinType>(std::string(typeName), nullptr, info, attribute);
     (void) type;
     (void) t;
@@ -612,7 +615,7 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
                                   DSType &superType, native_type_info_t info) {
     // create and register type
     auto &type = this->typeMap.newType<BuiltinType>(
-            std::string(typeName), &superType, info, extendable ? DSType::EXTENDIBLE : 0);
+            std::string(typeName), &superType, info, extendable ? TypeAttr::EXTENDIBLE : TypeAttr());
     (void) type;
     (void) t;
     assert(type.is(t));
