@@ -13,7 +13,7 @@ function _sync() {
         $HISTSIZE = $limit
     }
     while $HISTORY.size() as Uint > $HISTSIZE {
-        $HISTORY.shift()
+        $HISTORY.pop()
     }
 }
 
