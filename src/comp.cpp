@@ -428,8 +428,8 @@ void FileNameCompleter::completeImpl(CStrBuffer &results) {
 }
 
 struct ModNameCompleter : public FileNameCompleter {
-    ModNameCompleter(const char *scriptDir, const std::string &token) :
-            FileNameCompleter(scriptDir, token) {}
+    ModNameCompleter(const char *scriptDir, const std::string &token, bool tilde) :
+            FileNameCompleter(scriptDir, token, tilde ? FileNameCompOp::TIDLE : FileNameCompOp{}) {}
 
     CStrBuffer operator()() override {
         CStrBuffer results;
@@ -552,8 +552,13 @@ public:
     CompleterFactory(DSState &st, const std::string &line);
 
 private:
-    std::unique_ptr<Completer> createModNameCompleter(const std::string &token) const {
-        return std::make_unique<ModNameCompleter>(this->state.getScriptDir(), token);
+    std::unique_ptr<Completer> createModNameCompleter() const {
+        return std::make_unique<ModNameCompleter>(this->state.getScriptDir(), "", false);
+    }
+
+    std::unique_ptr<Completer> createModNameCompleter(Token token) const {
+        bool tilde = this->lexer.startsWith(token, '~');
+        return std::make_unique<ModNameCompleter>(this->state.getScriptDir(), this->lexer.toCmdArg(token), tilde);
     }
 
     std::unique_ptr<Completer> createFileNameCompleter() const {
@@ -715,7 +720,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             return this->selectWithCmd();
         }
         if(requireMod(*node, this->cursor)) {
-            return this->createModNameCompleter(this->lexer.toCmdArg(token));
+            return this->createModNameCompleter(token);
         }
     } else {
         const auto &e = this->parser.getError();
@@ -761,7 +766,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
 
                 if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
                     if(!tokenPairs.empty() && tokenPairs.back().first == SOURCE) {
-                        return this->createModNameCompleter("");
+                        return this->createModNameCompleter();
                     }
                     return this->createFileNameCompleter();
                 }
