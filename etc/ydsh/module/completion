@@ -1,0 +1,32 @@
+
+# for tab completion
+
+function _empty($words : [String], $cursor : Int) : [String] {
+    return new [String]()
+}
+
+alias Completer = typeof($_empty)
+
+let _compMap = new [String : Completer]()
+
+function _defaultHook($words : [String], $cursor : Int) : [String] {
+    var comp = $_compMap.get($words[0]) ?? $_compMap.get("") ?? $_empty
+    return $comp($words, $cursor)
+}
+
+# if $cmd is empty string, treat as fallback handler
+function compAdd($cmd : String, $comp : Completer) : Completer! {
+    $COMP_HOOK = $_defaultHook
+    return $_compMap.put($cmd, $comp)
+}
+
+function compFilter($prefix : String, $list : [String]) : [String] {
+    var ret = new [String]()
+    for $e in $list {
+        if $e.startsWith($prefix) {
+            $ret.add($e)
+        }
+    }
+    return $ret
+}
+

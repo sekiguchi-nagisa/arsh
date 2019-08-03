@@ -31,3 +31,6 @@ $SIG[%'hup'] = $SIG_DFL
 
 # termination hook definition
 var TERM_HOOK = new Func<Void, [Int, Any]>!()
+
+# completer hook definition
+var COMP_HOOK = new Func<[String], [[String], Int]>!()
