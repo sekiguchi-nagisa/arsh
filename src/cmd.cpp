@@ -1144,11 +1144,9 @@ static int builtin_complete(DSState &state, Array_Object &argvObj) {
     std::string line = str(argvObj.getValues()[1]);
     line += '\n';
     auto c = completeLine(state, line);
-    for(const auto &e : c) {
+    for(const auto &e : c.buf) {
         fputs(e, stdout);
         fputc('\n', stdout);
-
-        free(e);
     }
     return 0;
 }

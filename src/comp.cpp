@@ -28,6 +28,26 @@
 
 extern char **environ;  //NOLINT
 
+// ##########################
+// ##     DSCandidates     ##
+// ##########################
+
+void DSCandidates::append(std::string &&str) {
+    // find inserting position
+    auto iter = std::lower_bound(this->buf.begin(), this->buf.end(),
+                                 str.c_str(), [](const char *x, const char *y){
+                return strcmp(x, y) < 0;
+            });
+    if(iter != this->buf.end()) {
+        if(strcmp(str.c_str(), *iter) < 0) {
+            this->buf.insert(iter, strdup(str.c_str()));
+        }
+    } else {
+        // not found, append to last
+        this->buf += strdup(str.c_str());
+    }
+}
+
 namespace ydsh {
 
 // for input completion
@@ -99,25 +119,12 @@ static std::string escape(const char *str, EscapeOp op) {
 }
 
 
-static void append(CStrBuffer &buf, const char *str, EscapeOp op) {
+static void append(DSCandidates &can, const char *str, EscapeOp op) {
     std::string estr = escape(str, op);
-
-    // find inserting position
-    auto iter = std::lower_bound(buf.begin(), buf.end(),
-                                 estr.c_str(), [](const char *x, const char *y){
-                return strcmp(x, y) < 0;
-            });
-    if(iter != buf.end()) {
-        if(strcmp(estr.c_str(), *iter) < 0) {
-            buf.insert(iter, strdup(estr.c_str()));
-        }
-    } else {
-        // not found, append to last
-        buf += strdup(estr.c_str());
-    }
+    can.append(std::move(estr));
 }
 
-static void append(CStrBuffer &buf, const std::string &str, EscapeOp op) {
+static void append(DSCandidates &buf, const std::string &str, EscapeOp op) {
     append(buf, str.c_str(), op);
 }
 
@@ -126,7 +133,7 @@ static bool startsWith(const char *s1, const char *s2) {
 }
 
 struct Completer {
-    virtual CStrBuffer operator()() = 0;
+    virtual DSCandidates operator()() = 0;
 
     /**
      * for debugging.
@@ -144,8 +151,8 @@ private:
 public:
     explicit ExpectedTokenCompleter(const std::string &token) : token(token) {}
 
-    CStrBuffer operator()() override {
-        CStrBuffer results;
+    DSCandidates operator()() override {
+        DSCandidates results;
 
         if(!this->token.empty()) {
             append(results, this->token, EscapeOp::NOP);
@@ -165,8 +172,8 @@ private:
 public:
     explicit EnvNameCompleter(const std::string &name) : envName(name) {}
 
-    CStrBuffer operator()() override {
-        CStrBuffer results;
+    DSCandidates operator()() override {
+        DSCandidates results;
         for(unsigned int i = 0; environ[i] != nullptr; i++) {
             const char *env = environ[i];
             if(startsWith(env, this->envName.c_str())) {
@@ -198,7 +205,7 @@ public:
     CmdNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
             symbolTable(symbolTable), token(std::move(token)) {}
 
-    CStrBuffer operator()() override;
+    DSCandidates operator()() override;
 
     const char *name() const override {
         return "Command";
@@ -227,8 +234,8 @@ static std::vector<std::string> computePathList(const char *pathVal) {
     return result;
 }
 
-CStrBuffer CmdNameCompleter::operator()() {
-    CStrBuffer results;
+DSCandidates CmdNameCompleter::operator()() {
+    DSCandidates results;
 
     // search user defined command
     for(const auto &iter : this->symbolTable.globalScope()) {
@@ -290,8 +297,8 @@ public:
     GlobalVarNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
             symbolTable(symbolTable), token(std::move(token)) {}
 
-    CStrBuffer operator()() override {
-        CStrBuffer results;
+    DSCandidates operator()() override {
+        DSCandidates results;
 
         for(const auto &iter : this->symbolTable.globalScope()) {
             const char *varName = iter.first.c_str();
@@ -329,7 +336,7 @@ public:
             baseDir(baseDir), token(std::move(token)), op(op) {}
 
 protected:
-    void completeImpl(CStrBuffer &results);
+    void completeImpl(DSCandidates &results);
 
     bool onlyExec() const {
         return hasFlag(this->op, FileNameCompOp::ONLY_EXEC);
@@ -340,8 +347,8 @@ protected:
     }
 
 public:
-    CStrBuffer operator()() override {
-        CStrBuffer results;
+    DSCandidates operator()() override {
+        DSCandidates results;
         this->completeImpl(results);
         return results;
     }
@@ -351,7 +358,7 @@ public:
     }
 };
 
-void FileNameCompleter::completeImpl(CStrBuffer &results) {
+void FileNameCompleter::completeImpl(DSCandidates &results) {
     const auto s = this->token.find_last_of('/');
 
     // complete tilde
@@ -431,8 +438,8 @@ struct ModNameCompleter : public FileNameCompleter {
     ModNameCompleter(const char *scriptDir, std::string &&token, bool tilde) :
             FileNameCompleter(scriptDir, std::move(token), tilde ? FileNameCompOp::TIDLE : FileNameCompOp{}) {}
 
-    CStrBuffer operator()() override {
-        CStrBuffer results;
+    DSCandidates operator()() override {
+        DSCandidates results;
         // complete in SCRIPT_DIR
         this->completeImpl(results);
 
@@ -798,16 +805,16 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
     return nullptr;
 }
 
-CStrBuffer completeLine(DSState &st, const std::string &line) {
+DSCandidates completeLine(DSState &st, const std::string &line) {
     assert(!line.empty() && line.back() == '\n');
 
-    CStrBuffer sbuf;
+    DSCandidates can;
     CompleterFactory factory(st, line);
     auto comp = factory();
     if(comp) {
-        sbuf = (*comp)();
+        can = (*comp)();
     }
-    return sbuf;
+    return can;
 }
 
 } // namespace ydsh

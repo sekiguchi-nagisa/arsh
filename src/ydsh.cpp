@@ -774,18 +774,6 @@ unsigned int DSState_featureBit() {
     return flag;
 }
 
-struct DSCandidates {
-    CStrBuffer buf;
-
-    explicit DSCandidates(CStrBuffer &&buf) : buf(std::move(buf)) {}
-
-    ~DSCandidates() {
-        for(auto &e : this->buf) {
-            free(e);
-        }
-    }
-};
-
 DSCandidates *DSState_complete(DSState *st, const char *buf, size_t cursor) {
     if(st == nullptr || buf == nullptr || cursor == 0) {
         return nullptr;
@@ -795,7 +783,9 @@ DSCandidates *DSState_complete(DSState *st, const char *buf, size_t cursor) {
     LOG(DUMP_CONSOLE, "line: %s, cursor: %zu", line.c_str(), cursor);
 
     line += '\n';
-    return new DSCandidates(completeLine(*st, line));
+    auto *can = new DSCandidates();
+    *can = completeLine(*st, line);
+    return can;
 }
 
 const char *DSCandidates_get(const DSCandidates *c, unsigned int index) {
