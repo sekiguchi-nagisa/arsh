@@ -40,12 +40,12 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
 
         // clear queued signal
         DSState::pendingSigSet.clear();
-        unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL | DSState::VM_EVENT_MASK);
+        unsetFlag(DSState::eventDesc, VMEvent::SIGNAL | VMEvent::MASK);
 
         // clear JobTable entries
         st.jobTable.detachAll();
 
-        // clear signal handelr
+        // clear signal handler
         st.sigVector.clear();
 
         // clear termination hook

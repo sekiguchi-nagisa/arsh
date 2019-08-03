@@ -59,6 +59,12 @@ constexpr T operator~(T x) {
 }
 
 template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
+constexpr bool empty(T x) {
+    auto x1 = static_cast<std::underlying_type_t<T>>(x);
+    return x1 == 0;
+}
+
+template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
 constexpr T &operator|=(T &x, T y) {
     x = x | y;
     return x;

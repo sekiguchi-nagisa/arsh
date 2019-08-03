@@ -76,12 +76,12 @@ static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&ex
             termKind == TERM_ON_ERR ? std::move(except) : oldExitStatus
     );
 
-    setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+    setFlag(DSState::eventDesc, VMEvent::MASK);
     state.callFunction(std::move(funcObj), std::move(args));
 
     // restore old value
     state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(oldExitStatus));
-    unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+    unsetFlag(DSState::eventDesc, VMEvent::MASK);
 }
 
 /**

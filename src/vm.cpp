@@ -34,7 +34,7 @@
 // ##     DSState     ##
 // #####################
 
-flag32_set_t DSState::eventDesc = 0;
+VMEvent DSState::eventDesc{};
 
 SigSet DSState::pendingSigSet;
 
@@ -886,19 +886,19 @@ bool DSState::kickSignalHandler(int sigNum, DSValue &&func) {
 }
 
 bool DSState::checkVMEvent() {
-    if(hasFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL) &&
-            !hasFlag(DSState::eventDesc, DSState::VM_EVENT_MASK)) {
+    if(hasFlag(DSState::eventDesc, VMEvent::SIGNAL) &&
+            !hasFlag(DSState::eventDesc, VMEvent::MASK)) {
         SignalGuard guard;
 
         int sigNum = DSState::pendingSigSet.popPendingSig();
         if(DSState::pendingSigSet.empty()) {
             DSState::pendingSigSet.clear();
-            unsetFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
+            unsetFlag(DSState::eventDesc, VMEvent::SIGNAL);
         }
 
         auto handler = this->sigVector.lookup(sigNum);
         if(handler != nullptr) {
-            setFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+            setFlag(DSState::eventDesc, VMEvent::MASK);
             if(!this->kickSignalHandler(sigNum, std::move(handler))) {
                 return false;
             }
@@ -906,7 +906,7 @@ bool DSState::checkVMEvent() {
     }
 
     if(this->hook != nullptr) {
-        assert(hasFlag(DSState::eventDesc, DSState::VM_EVENT_HOOK));
+        assert(hasFlag(DSState::eventDesc, VMEvent::HOOK));
         auto op = static_cast<OpCode>(GET_CODE(*this)[this->pc() + 1]);
         this->hook->vmFetchHook(*this, op);
     }
@@ -928,7 +928,7 @@ bool DSState::checkVMEvent() {
 
 bool DSState::mainLoop() {
     while(true) {
-        if(DSState::eventDesc != 0u) {
+        if(!empty(DSState::eventDesc)) {
             TRY(this->checkVMEvent());
         }
 
@@ -1196,7 +1196,7 @@ bool DSState::mainLoop() {
         vmcase(RETURN_SIG) {
             auto v = this->getLocal(0);   // old exit status
             this->unwindStackFrame();
-            unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+            unsetFlag(DSState::eventDesc, VMEvent::MASK);
             this->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
             vmnext;
         }
@@ -1541,7 +1541,7 @@ bool DSState::handleException(bool forceUnwind) {
                 }
             }
         } else if(CODE(*this) == &signalTrampoline) {   // within signal trampoline
-            unsetFlag(DSState::eventDesc, DSState::VM_EVENT_MASK);
+            unsetFlag(DSState::eventDesc, VMEvent::MASK);
         }
     }
     return false;

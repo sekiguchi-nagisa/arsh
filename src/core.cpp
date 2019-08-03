@@ -702,7 +702,7 @@ DSValue SignalVector::lookup(int sigNum) const {
 
 static void signalHandler(int sigNum) { // when called this handler, all signals are blocked due to signal mask
     DSState::pendingSigSet.add(sigNum);
-    setFlag(DSState::eventDesc, DSState::VM_EVENT_SIGNAL);
+    setFlag(DSState::eventDesc, VMEvent::SIGNAL);
 }
 
 void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD) {

@@ -98,6 +98,16 @@ public:
     }
 };
 
+enum class VMEvent : unsigned int {
+    HOOK   = 1u << 0u,
+    SIGNAL = 1u << 1u,
+    MASK   = 1u << 2u,
+};
+
+namespace ydsh {
+template <> struct allow_enum_bitop<VMEvent> : std::true_type {};
+}
+
 struct DSState {
 public:
     SymbolTable symbolTable;
@@ -197,11 +207,7 @@ private:
     unsigned int termHookIndex{0};
 
 public:
-    static constexpr flag32_t VM_EVENT_HOOK   = 1u << 0u;
-    static constexpr flag32_t VM_EVENT_SIGNAL = 1u << 1u;
-    static constexpr flag32_t VM_EVENT_MASK   = 1u << 2u;
-
-    static flag32_set_t eventDesc;
+    static VMEvent eventDesc;
 
     static SigSet pendingSigSet;
 
@@ -307,9 +313,9 @@ public:
     void setVMHook(VMHook *hook) {
         this->hook = hook;
         if(hook != nullptr) {
-            setFlag(eventDesc, VM_EVENT_HOOK);
+            setFlag(eventDesc, VMEvent::HOOK);
         } else {
-            unsetFlag(eventDesc, VM_EVENT_HOOK);
+            unsetFlag(eventDesc, VMEvent::HOOK);
         }
     }
 
