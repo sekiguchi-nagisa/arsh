@@ -91,6 +91,10 @@ bool isAssignOp(TokenKind kind) {
     }
 }
 
+bool isRightAssoc(TokenKind kind) {
+    return isAssignOp(kind) || kind == NULL_COALE;
+}
+
 const char *toModeName(LexerMode mode) {
     switch(mode) {
     case yycSTMT:

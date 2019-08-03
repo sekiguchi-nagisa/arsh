@@ -1037,7 +1037,7 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
             TokenKind op = this->scan();
             auto rightNode = TRY(this->parse_unaryExpression());
             for(unsigned int nextP = PRECEDENCE();
-                !HAS_NL() && (nextP > p || (nextP == p && isAssignOp(op))); nextP = PRECEDENCE()) {
+                !HAS_NL() && (nextP > p || (nextP == p && isRightAssoc(op))); nextP = PRECEDENCE()) {
                 rightNode = TRY(this->parse_binaryExpression(std::move(rightNode), nextP));
             }
             node = createBinaryNode(std::move(node), op, token, std::move(rightNode));

@@ -275,6 +275,10 @@ TEST_F(PrecedenceTest, case15) {
     ASSERT_NO_FATAL_FAILURE(this->equals("((12 ? 23 : 34) &)", "12 ? 23 : 34 &"));
 }
 
+TEST_F(PrecedenceTest, case16) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(12 ?? (23 ?? 34))", "12 ?? 23 ?? 34"));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

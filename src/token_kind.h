@@ -194,6 +194,8 @@ unsigned int getPrecedence(TokenKind kind);
 
 bool isAssignOp(TokenKind kind);
 
+bool isRightAssoc(TokenKind kind);
+
 } // namespace ydsh
 
 #endif //YDSH_TOKEN_KIND_H
