@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/sekiguchi-nagisa/ydsh/badge.svg?branch=master)](https://coveralls.io/github/sekiguchi-nagisa/ydsh?branch=master)
 
 # ydsh
-yet another dsh
+A statically typed shell language focusing on scripting usage
 
 Currently, under heavy development.
 Language specification is subject to change without notice. 
