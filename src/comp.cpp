@@ -161,7 +161,7 @@ public:
     }
 
     const char *name() const override {
-        return "Excepted";
+        return "Expected";
     }
 };
 
@@ -428,7 +428,7 @@ void FileNameCompleter::completeImpl(DSCandidates &results) {
             if(S_ISDIR(getStMode(fullpath.c_str()))) {
                 fileName += '/';
             }
-            append(results, fileName,this->onlyExec() ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
+            append(results, fileName, this->onlyExec() ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
         }
     }
     closedir(dir);
