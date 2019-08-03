@@ -308,7 +308,7 @@ void exec_interactive(DSState *dsState) {
 
     *linenoiseInputFD() = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
     *linenoiseOutputFD() = fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0);
-    *linenoiseErrorFD() = fcntl(STDERR_FILENO, F_DUPFD_CLOEXEC, 0);
+    *linenoiseErrorFD() = *linenoiseOutputFD();
 
     linenoiseSetEncodingFunctions(
             encoding_prevCharLen,
