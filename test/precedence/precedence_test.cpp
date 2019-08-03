@@ -170,14 +170,16 @@ public:
     PrecedenceTest() = default;
 
     virtual void equalsTokens(const std::vector<std::string> &expected, const std::vector<std::string> &actual) {
-        // check size
-        unsigned int size = expected.size();
-        ASSERT_EQ(size, actual.size());
-
-        // check each
-        for(unsigned int i = 0; i < size; i++) {
-            ASSERT_EQ(expected[i], actual[i]);
+        std::string eStr;
+        for(auto &e : expected) {
+            eStr += e;
         }
+
+        std::string aStr;
+        for(auto &e : actual) {
+            aStr += e;
+        }
+        ASSERT_EQ(eStr, aStr);
     }
 
     virtual void equals(const char *expected, const char *input) {
@@ -266,6 +268,10 @@ TEST_F(PrecedenceTest, case13) {
 }
 
 TEST_F(PrecedenceTest, case14) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(23 = (((45 | 56) && 78) &))", "23 = 45 | 56 && 78 &"));
+}
+
+TEST_F(PrecedenceTest, case15) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(23 = (((45 | 56) && 78) &))", "23 = 45 | 56 && 78 &"));
 }
 
