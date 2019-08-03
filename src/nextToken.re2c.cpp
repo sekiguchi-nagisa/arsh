@@ -285,8 +285,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> "<("               { PUSH_MODE(STMT); RET(START_OUT_SUB); }
 
       <CMD> "|"                { POP_MODE(); MODE(STMT); RET(PIPE); }
-      <CMD> "&"                { RET(BACKGROUND); }
-      <CMD> ("&!" | "&|")      { RET(DISOWN_BG); }
+      <CMD> "&"                { POP_MODE(); MODE(STMT); RET(BACKGROUND); }
+      <CMD> ("&!" | "&|")      { POP_MODE(); MODE(STMT); RET(DISOWN_BG); }
       <CMD> "||"               { POP_MODE(); MODE(STMT); RET(COND_OR); }
       <CMD> "&&"               { POP_MODE(); MODE(STMT); RET(COND_AND); }
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
