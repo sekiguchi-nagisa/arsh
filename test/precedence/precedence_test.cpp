@@ -272,7 +272,7 @@ TEST_F(PrecedenceTest, case14) {
 }
 
 TEST_F(PrecedenceTest, case15) {
-    ASSERT_NO_FATAL_FAILURE(this->equals("(23 = (((45 | 56) && 78) &))", "23 = 45 | 56 && 78 &"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("((12 ? 23 : 34) &)", "12 ? 23 : 34 &"));
 }
 
 int main(int argc, char **argv) {

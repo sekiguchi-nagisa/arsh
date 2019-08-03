@@ -950,11 +950,15 @@ std::unique_ptr<StringNode> Parser::parse_cmdArgPart(bool first, LexerMode mode)
 }
 
 // expression
-std::unique_ptr<Node> Parser::parse_expression() {
+std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
     GUARD_DEEP_NESTING(guard);
 
     return this->parse_binaryExpression(
-            TRY(this->parse_unaryExpression()), getPrecedence(ASSIGN));
+            TRY(this->parse_unaryExpression()), basePrecedence);
+}
+
+std::unique_ptr<Node> Parser::parse_expression() {
+    return this->parse_expression(getPrecedence(ASSIGN));
 }
 
 static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, TokenKind op,
@@ -1015,9 +1019,9 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
         }
         case TERNARY: {
             this->consume();    // TERNARY
-            auto tleftNode = TRY(this->parse_expression());
+            auto tleftNode = TRY(this->parse_expression(getPrecedence(TERNARY)));
             TRY(this->expectAndChangeMode(COLON, yycSTMT));
-            auto trightNode = TRY(this->parse_expression());
+            auto trightNode = TRY(this->parse_expression(getPrecedence(TERNARY)));
             unsigned int pos = node->getPos();
             node = std::make_unique<IfNode>(pos, node.release(), tleftNode.release(), trightNode.release());
             break;

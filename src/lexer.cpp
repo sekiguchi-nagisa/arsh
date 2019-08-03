@@ -67,13 +67,13 @@ unsigned int getPrecedence(TokenKind kind) {
         return 130;
     case COND_OR:
         return 120;
+    case TERNARY:
+        return 110;
     case BACKGROUND:
     case DISOWN_BG:
-        return 110;
-    case TERNARY:
         return 100;
     default:
-        return isAssignOp(kind) ? 100 : 0;
+        return isAssignOp(kind) ? 90 : 0;
     }
 }
 
