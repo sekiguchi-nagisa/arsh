@@ -195,8 +195,8 @@ public:
      * @param token
      * may be empty string
      */
-    CmdNameCompleter(const SymbolTable &symbolTable, const std::string &token) :
-            symbolTable(symbolTable), token(token) {}
+    CmdNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
+            symbolTable(symbolTable), token(std::move(token)) {}
 
     CStrBuffer operator()() override;
 
@@ -287,8 +287,8 @@ private:
     const std::string token;
 
 public:
-    GlobalVarNameCompleter(const SymbolTable &symbolTable, const std::string &token) :
-            symbolTable(symbolTable), token(token) {}
+    GlobalVarNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
+            symbolTable(symbolTable), token(std::move(token)) {}
 
     CStrBuffer operator()() override {
         CStrBuffer results;
@@ -325,8 +325,8 @@ protected:
     const FileNameCompOp op;
 
 public:
-    FileNameCompleter(const char *baseDir, const std::string &token, FileNameCompOp op = FileNameCompOp()) :
-            baseDir(baseDir), token(token), op(op) {}
+    FileNameCompleter(const char *baseDir, std::string &&token, FileNameCompOp op = FileNameCompOp()) :
+            baseDir(baseDir), token(std::move(token)), op(op) {}
 
 protected:
     void completeImpl(CStrBuffer &results);
@@ -428,8 +428,8 @@ void FileNameCompleter::completeImpl(CStrBuffer &results) {
 }
 
 struct ModNameCompleter : public FileNameCompleter {
-    ModNameCompleter(const char *scriptDir, const std::string &token, bool tilde) :
-            FileNameCompleter(scriptDir, token, tilde ? FileNameCompOp::TIDLE : FileNameCompOp{}) {}
+    ModNameCompleter(const char *scriptDir, std::string &&token, bool tilde) :
+            FileNameCompleter(scriptDir, std::move(token), tilde ? FileNameCompOp::TIDLE : FileNameCompOp{}) {}
 
     CStrBuffer operator()() override {
         CStrBuffer results;
@@ -586,13 +586,13 @@ private:
             if(tilde) {
                 setFlag(op, FileNameCompOp::TIDLE);
             }
-            return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), arg, op);
+            return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), std::move(arg), op);
         }
-        return std::make_unique<CmdNameCompleter>(this->state.symbolTable, arg);
+        return std::make_unique<CmdNameCompleter>(this->state.symbolTable, std::move(arg));
     }
 
-    std::unique_ptr<Completer> createGlobalVarNameCompleter(const std::string &token) const {
-        return std::make_unique<GlobalVarNameCompleter>(this->state.symbolTable, token);
+    std::unique_ptr<Completer> createGlobalVarNameCompleter(Token token) const {
+        return std::make_unique<GlobalVarNameCompleter>(this->state.symbolTable, this->lexer.toTokenText(token));
     }
 
     std::unique_ptr<Node> applyAndGetLatest() {
@@ -702,7 +702,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
         case APPLIED_NAME:
         case SPECIAL_NAME:
             if(token.pos + token.size == cursor) {
-                return this->createGlobalVarNameCompleter(this->lexer.toTokenText(token));
+                return this->createGlobalVarNameCompleter(token);
             }
             break;
         case IDENTIFIER:
@@ -741,7 +741,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
                 auto token = tokenPairs.back().second;
                 if(kind == APPLIED_NAME || kind == SPECIAL_NAME) {
                     if(token.pos + token.size == this->cursor) {
-                        return this->createGlobalVarNameCompleter(this->lexer.toTokenText(token));
+                        return this->createGlobalVarNameCompleter(token);
                     }
                 }
             }
@@ -784,11 +784,10 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             break;
         }
         case INVALID: {
-            std::string str = this->lexer.toTokenText(token);
-            if(str == "$" && token.pos + token.size == cursor &&
+            if(this->lexer.equals(token, "$") && token.pos + token.size == cursor &&
                findKind(e.getExpectedTokens(), APPLIED_NAME) &&
                findKind(e.getExpectedTokens(), SPECIAL_NAME)) {
-                return this->createGlobalVarNameCompleter(str);
+                return this->createGlobalVarNameCompleter(token);
             }
             break;
         }
