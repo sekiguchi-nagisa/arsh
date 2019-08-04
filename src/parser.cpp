@@ -1063,7 +1063,8 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     }
     case COPROC: {
         auto token = this->expect(COPROC);  // always success
-        return std::unique_ptr<Node>(ForkNode::newCoproc(token, TRY(this->parse_unaryExpression()).release()));
+        auto exprNode = TRY(this->parse_expression(getPrecedence(COPROC)));
+        return std::unique_ptr<Node>(ForkNode::newCoproc(token, exprNode.release()));
     }
     default:
         return this->parse_suffixExpression();

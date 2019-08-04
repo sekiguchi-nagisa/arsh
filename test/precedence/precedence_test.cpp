@@ -157,9 +157,13 @@ public:
 
     void visitForkNode(ForkNode &node) override {
         this->open();
-        assert(node.getOpKind() == ForkKind::JOB);
+        if(node.getOpKind() == ForkKind::COPROC) {
+            this->append("coproc");
+        }
         this->visit(*node.getExprNode());
-        this->append("&");
+        if(node.getOpKind() == ForkKind::JOB) {
+            this->append("&");
+        }
         this->close();
     }
 };
@@ -277,6 +281,10 @@ TEST_F(PrecedenceTest, case15) {
 
 TEST_F(PrecedenceTest, case16) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(12 ?? (23 ?? 34))", "12 ?? 23 ?? 34"));
+}
+
+TEST_F(PrecedenceTest, case17) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(12 = ((coproc ((34 | 45) && 56))&))", "12 = coproc 34 | 45 && 56 &"));
 }
 
 int main(int argc, char **argv) {

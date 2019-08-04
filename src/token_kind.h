@@ -177,31 +177,32 @@
     OP(MOD_ASSIGN, 1, INFIX|RASSOC)
 
 #define EACH_OPERATOR(OP) \
-    OP(IS        , 16, INFIX) \
-    OP(AS        , 16, INFIX) \
-    OP(MUL       , 15, INFIX) \
-    OP(DIV       , 15, INFIX) \
-    OP(MOD       , 15, INFIX) \
-    OP(ADD       , 14, INFIX) \
-    OP(SUB       , 14, INFIX) \
-    OP(AND       , 13, INFIX) \
-    OP(XOR       , 12, INFIX) \
-    OP(OR        , 11, INFIX) \
-    OP(NULL_COALE, 10, INFIX|RASSOC) \
-    OP(LT        ,  9, INFIX) \
-    OP(GT        ,  9, INFIX) \
-    OP(LE        ,  9, INFIX) \
-    OP(GE        ,  9, INFIX) \
-    OP(EQ        ,  9, INFIX) \
-    OP(NE        ,  9, INFIX) \
-    OP(MATCH     ,  9, INFIX) \
-    OP(UNMATCH   ,  9, INFIX) \
-    OP(WITH      ,  8, INFIX) \
-    OP(THROW     ,  7, PREFIX|RASSOC) \
-    OP(PIPE      ,  6, INFIX) \
-    OP(COND_AND  ,  5, INFIX) \
-    OP(COND_OR   ,  4, INFIX) \
-    OP(TERNARY   ,  3, INFIX) \
+    OP(IS        , 17, INFIX) \
+    OP(AS        , 17, INFIX) \
+    OP(MUL       , 16, INFIX) \
+    OP(DIV       , 16, INFIX) \
+    OP(MOD       , 16, INFIX) \
+    OP(ADD       , 15, INFIX) \
+    OP(SUB       , 15, INFIX) \
+    OP(AND       , 14, INFIX) \
+    OP(XOR       , 13, INFIX) \
+    OP(OR        , 12, INFIX) \
+    OP(NULL_COALE, 11, INFIX|RASSOC) \
+    OP(LT        ,  10, INFIX) \
+    OP(GT        ,  10, INFIX) \
+    OP(LE        ,  10, INFIX) \
+    OP(GE        ,  10, INFIX) \
+    OP(EQ        ,  10, INFIX) \
+    OP(NE        ,  10, INFIX) \
+    OP(MATCH     ,  10, INFIX) \
+    OP(UNMATCH   ,  10, INFIX) \
+    OP(WITH      ,  9, INFIX) \
+    OP(THROW     ,  8, PREFIX|RASSOC) \
+    OP(PIPE      ,  7, INFIX) \
+    OP(COND_AND  ,  6, INFIX) \
+    OP(COND_OR   ,  5, INFIX) \
+    OP(TERNARY   ,  4, INFIX) \
+    OP(COPROC    ,  3, PREFIX|RASSOC) \
     OP(BACKGROUND,  2, INFIX) \
     OP(DISOWN_BG ,  2, INFIX) \
     EACH_ASSIGN_OPERATOR(OP)
