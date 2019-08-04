@@ -150,8 +150,6 @@
 #define E_ALTER(...) \
 do { this->raiseNoViableAlterError((TokenKind[]) { __VA_ARGS__ }); return nullptr; } while(false)
 
-#define PRECEDENCE() getPrecedence(CUR_KIND())
-
 #define TRY(expr) \
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
@@ -1039,10 +1037,6 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
         }
     }
     return node;
-}
-
-std::unique_ptr<Node> Parser::parse_expression() {
-    return this->parse_expression(getPrecedence(ASSIGN));
 }
 
 std::unique_ptr<Node> Parser::parse_unaryExpression() {

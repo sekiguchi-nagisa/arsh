@@ -207,7 +207,9 @@ protected:
 
     std::unique_ptr<Node> parse_expression(unsigned basePrecedence);
 
-    std::unique_ptr<Node> parse_expression();
+    std::unique_ptr<Node> parse_expression() {
+        return this->parse_expression(getPrecedence(ASSIGN));
+    }
 
     std::unique_ptr<Node> parse_unaryExpression();
 
