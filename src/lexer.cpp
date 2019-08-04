@@ -17,6 +17,7 @@
 #include "misc/fatal.h"
 #include "misc/num.h"
 #include "misc/hash.hpp"
+#include "misc/flag_util.hpp"
 #include "lexer.h"
 
 namespace ydsh {
@@ -32,67 +33,38 @@ const char *toString(TokenKind kind) {
 
 unsigned int getPrecedence(TokenKind kind) {
     switch(kind) {
-    case IS:
-    case AS:
-        return 300;
-    case MUL:
-    case DIV:
-    case MOD:
-        return 280;
-    case ADD:
-    case SUB:
-        return 260;
-    case AND:
-        return 220;
-    case XOR:
-        return 200;
-    case OR:
-        return 180;
-    case NULL_COALE:
-        return 170;
-    case LT:
-    case GT:
-    case LE:
-    case GE:
-    case EQ:
-    case NE:
-    case MATCH:
-    case UNMATCH:
-        return 160;
-    case WITH:
-        return 150;
-    case PIPE:
-        return 140;
-    case COND_AND:
-        return 130;
-    case COND_OR:
-        return 120;
-    case TERNARY:
-        return 110;
-    case BACKGROUND:
-    case DISOWN_BG:
-        return 100;
+#define GEN_PRECE(K, P, A) case K: return P;
+    EACH_OPERATOR(GEN_PRECE)
+#undef GEN_PRECE
     default:
-        return isAssignOp(kind) ? 90 : 0;
+        return 0;
+    }
+}
+
+OperatorAttr getOpAttr(TokenKind kind) {
+    switch(kind) {
+#define INFIX OperatorAttr::INFIX
+#define PREFIX OperatorAttr::PREFIX
+#define RASSOC OperatorAttr::RASSOC
+#define GEN_ATTR(K, P, A) case K: return A;
+    EACH_OPERATOR(GEN_ATTR)
+#undef GEN_ATTR
+#undef INFIX
+#undef PREFIX
+#undef RASSOC
+    default:
+        return OperatorAttr();
     }
 }
 
 bool isAssignOp(TokenKind kind) {
     switch(kind) {
-    case ASSIGN:
-    case ADD_ASSIGN:
-    case SUB_ASSIGN:
-    case MUL_ASSIGN:
-    case DIV_ASSIGN:
-    case MOD_ASSIGN:
-        return true;
+#define GEN_OP(K, P, A) case K: return true;
+    EACH_ASSIGN_OPERATOR(GEN_OP)
+#undef GEN_OP
     default:
         return false;
     }
-}
-
-bool isRightAssoc(TokenKind kind) {
-    return isAssignOp(kind) || kind == NULL_COALE;
 }
 
 const char *toModeName(LexerMode mode) {

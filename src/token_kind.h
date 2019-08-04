@@ -17,6 +17,8 @@
 #ifndef YDSH_TOKEN_KIND_H
 #define YDSH_TOKEN_KIND_H
 
+#include "misc/flag_util.hpp"
+
 #define EACH_TOKEN(TOKEN) \
     TOKEN(INVALID                            , "<Invalid>") \
     TOKEN(EOS                                , "<EOS>") \
@@ -165,6 +167,45 @@
     TOKEN(TYPE_MSEP                          , ":") /* : */\
     TOKEN(TYPE_OPT                           , "!") /* ! */
 
+
+#define EACH_ASSIGN_OPERATOR(OP) \
+    OP(ASSIGN    , 50, INFIX|RASSOC) \
+    OP(ADD_ASSIGN, 50, INFIX|RASSOC) \
+    OP(SUB_ASSIGN, 50, INFIX|RASSOC) \
+    OP(MUL_ASSIGN, 50, INFIX|RASSOC) \
+    OP(DIV_ASSIGN, 50, INFIX|RASSOC) \
+    OP(MOD_ASSIGN, 50, INFIX|RASSOC)
+
+#define EACH_OPERATOR(OP) \
+    OP(IS        , 300, INFIX) \
+    OP(AS        , 300, INFIX) \
+    OP(MUL       , 280, INFIX) \
+    OP(DIV       , 280, INFIX) \
+    OP(MOD       , 280, INFIX) \
+    OP(ADD       , 260, INFIX) \
+    OP(SUB       , 260, INFIX) \
+    OP(AND       , 220, INFIX) \
+    OP(XOR       , 200, INFIX) \
+    OP(OR        , 180, INFIX) \
+    OP(NULL_COALE, 179, INFIX|RASSOC) \
+    OP(LT        , 160, INFIX) \
+    OP(GT        , 160, INFIX) \
+    OP(LE        , 160, INFIX) \
+    OP(GE        , 160, INFIX) \
+    OP(EQ        , 160, INFIX) \
+    OP(NE        , 160, INFIX) \
+    OP(MATCH     , 160, INFIX) \
+    OP(UNMATCH   , 160, INFIX) \
+    OP(WITH      , 150, INFIX) \
+    OP(PIPE      , 140, INFIX) \
+    OP(COND_AND  , 130, INFIX) \
+    OP(COND_OR   , 120, INFIX) \
+    OP(TERNARY   , 110, INFIX) \
+    OP(BACKGROUND, 100, INFIX) \
+    OP(DISOWN_BG , 100, INFIX) \
+    EACH_ASSIGN_OPERATOR(OP)
+
+
 namespace ydsh {
 
 enum TokenKind : unsigned int {
@@ -192,9 +233,25 @@ const char *toString(TokenKind kind);
  */
 unsigned int getPrecedence(TokenKind kind);
 
+enum class OperatorAttr : unsigned int {
+    INFIX  = 1 << 0,
+    PREFIX = 1 << 1,
+    RASSOC = 1 << 2,
+};
+
+template <> struct allow_enum_bitop<OperatorAttr> : std::true_type {};
+
+OperatorAttr getOpAttr(TokenKind kind);
+
 bool isAssignOp(TokenKind kind);
 
-bool isRightAssoc(TokenKind kind);
+inline bool isInfixOp(TokenKind kind) {
+    return hasFlag(getOpAttr(kind), OperatorAttr::INFIX);
+}
+
+inline bool isRightAssoc(TokenKind kind) {
+    return hasFlag(getOpAttr(kind), OperatorAttr::RASSOC);
+}
 
 } // namespace ydsh
 
