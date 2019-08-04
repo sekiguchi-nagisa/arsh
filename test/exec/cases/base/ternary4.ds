@@ -1,4 +1,4 @@
-##$test($result = 'parse', $lineNum = 4, $errorKind = 'TokenMismatched', $status = 1)
+#$test($result = 'type', $lineNum = 4, $errorKind = 'Assignable', $status = 1)
 
 var a = 45
-$true ? 23 : $a = 4 # assignment expression is void type
+$true ? 23 : $a = 4 # ternary expression is higher precedence than assignment
