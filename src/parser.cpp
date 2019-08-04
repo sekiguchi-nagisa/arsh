@@ -1058,7 +1058,8 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     }
     case THROW: {
         auto token = this->expect(THROW);   // always success
-        return std::unique_ptr<Node>(JumpNode::newThrow(token, TRY(this->parse_unaryExpression()).release()));
+        auto exprNode = TRY(this->parse_expression(getPrecedence(THROW)));
+        return std::unique_ptr<Node>(JumpNode::newThrow(token, exprNode.release()));
     }
     case COPROC: {
         auto token = this->expect(COPROC);  // always success

@@ -256,7 +256,7 @@ TEST_F(PrecedenceTest, case10) {
 }
 
 TEST_F(PrecedenceTest, case11) {
-    ASSERT_NO_FATAL_FAILURE(this->equals("(((throw 45) + 45) && 54)", "throw 45 + 45 && 54"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("((throw (45 + 45)) && 54)", "throw 45 + 45 && 54"));
 }
 
 TEST_F(PrecedenceTest, case12) {
