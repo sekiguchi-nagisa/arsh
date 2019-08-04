@@ -31,30 +31,22 @@ const char *toString(TokenKind kind) {
     return table[kind];
 }
 
-unsigned int getPrecedence(TokenKind kind) {
-    switch(kind) {
-#define GEN_PRECE(K, P, A) case K: return P;
-    EACH_OPERATOR(GEN_PRECE)
-#undef GEN_PRECE
-    default:
-        return 0;
-    }
-}
-
-OperatorAttr getOpAttr(TokenKind kind) {
-    switch(kind) {
+OperatorInfo getOpInfo(TokenKind kind) {
 #define INFIX OperatorAttr::INFIX
 #define PREFIX OperatorAttr::PREFIX
 #define RASSOC OperatorAttr::RASSOC
-#define GEN_ATTR(K, P, A) case K: return A;
-    EACH_OPERATOR(GEN_ATTR)
-#undef GEN_ATTR
+
+    switch(kind) {
+#define GEN_CASE(T, P, A) case T: return {P, A};
+    EACH_OPERATOR(GEN_CASE)
+#undef GEN_CASE
+    default:
+        return OperatorInfo();
+    }
+
 #undef INFIX
 #undef PREFIX
 #undef RASSOC
-    default:
-        return OperatorAttr();
-    }
 }
 
 bool isAssignOp(TokenKind kind) {

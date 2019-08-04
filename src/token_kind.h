@@ -169,40 +169,40 @@
 
 
 #define EACH_ASSIGN_OPERATOR(OP) \
-    OP(ASSIGN    , 50, INFIX|RASSOC) \
-    OP(ADD_ASSIGN, 50, INFIX|RASSOC) \
-    OP(SUB_ASSIGN, 50, INFIX|RASSOC) \
-    OP(MUL_ASSIGN, 50, INFIX|RASSOC) \
-    OP(DIV_ASSIGN, 50, INFIX|RASSOC) \
-    OP(MOD_ASSIGN, 50, INFIX|RASSOC)
+    OP(ASSIGN    , 1, INFIX|RASSOC) \
+    OP(ADD_ASSIGN, 1, INFIX|RASSOC) \
+    OP(SUB_ASSIGN, 1, INFIX|RASSOC) \
+    OP(MUL_ASSIGN, 1, INFIX|RASSOC) \
+    OP(DIV_ASSIGN, 1, INFIX|RASSOC) \
+    OP(MOD_ASSIGN, 1, INFIX|RASSOC)
 
 #define EACH_OPERATOR(OP) \
-    OP(IS        , 300, INFIX) \
-    OP(AS        , 300, INFIX) \
-    OP(MUL       , 280, INFIX) \
-    OP(DIV       , 280, INFIX) \
-    OP(MOD       , 280, INFIX) \
-    OP(ADD       , 260, INFIX) \
-    OP(SUB       , 260, INFIX) \
-    OP(AND       , 220, INFIX) \
-    OP(XOR       , 200, INFIX) \
-    OP(OR        , 180, INFIX) \
-    OP(NULL_COALE, 179, INFIX|RASSOC) \
-    OP(LT        , 160, INFIX) \
-    OP(GT        , 160, INFIX) \
-    OP(LE        , 160, INFIX) \
-    OP(GE        , 160, INFIX) \
-    OP(EQ        , 160, INFIX) \
-    OP(NE        , 160, INFIX) \
-    OP(MATCH     , 160, INFIX) \
-    OP(UNMATCH   , 160, INFIX) \
-    OP(WITH      , 150, INFIX) \
-    OP(PIPE      , 140, INFIX) \
-    OP(COND_AND  , 130, INFIX) \
-    OP(COND_OR   , 120, INFIX) \
-    OP(TERNARY   , 110, INFIX) \
-    OP(BACKGROUND, 100, INFIX) \
-    OP(DISOWN_BG , 100, INFIX) \
+    OP(IS        , 15, INFIX) \
+    OP(AS        , 15, INFIX) \
+    OP(MUL       , 14, INFIX) \
+    OP(DIV       , 14, INFIX) \
+    OP(MOD       , 14, INFIX) \
+    OP(ADD       , 13, INFIX) \
+    OP(SUB       , 13, INFIX) \
+    OP(AND       , 12, INFIX) \
+    OP(XOR       , 11, INFIX) \
+    OP(OR        , 10, INFIX) \
+    OP(NULL_COALE, 9, INFIX|RASSOC) \
+    OP(LT        , 8, INFIX) \
+    OP(GT        , 8, INFIX) \
+    OP(LE        , 8, INFIX) \
+    OP(GE        , 8, INFIX) \
+    OP(EQ        , 8, INFIX) \
+    OP(NE        , 8, INFIX) \
+    OP(MATCH     , 8, INFIX) \
+    OP(UNMATCH   , 8, INFIX) \
+    OP(WITH      , 7, INFIX) \
+    OP(PIPE      , 6, INFIX) \
+    OP(COND_AND  , 5, INFIX) \
+    OP(COND_OR   , 4, INFIX) \
+    OP(TERNARY   , 3, INFIX) \
+    OP(BACKGROUND, 2, INFIX) \
+    OP(DISOWN_BG , 2, INFIX) \
     EACH_ASSIGN_OPERATOR(OP)
 
 
@@ -228,12 +228,9 @@ const char *toString(TokenKind kind);
 //#define GT RA
 
 
-/**
- * get binary operator precedence.
- */
-unsigned int getPrecedence(TokenKind kind);
+// for operator precedence parsing
 
-enum class OperatorAttr : unsigned int {
+enum class OperatorAttr : unsigned short {
     INFIX  = 1 << 0,
     PREFIX = 1 << 1,
     RASSOC = 1 << 2,
@@ -241,7 +238,24 @@ enum class OperatorAttr : unsigned int {
 
 template <> struct allow_enum_bitop<OperatorAttr> : std::true_type {};
 
-OperatorAttr getOpAttr(TokenKind kind);
+struct OperatorInfo {
+    unsigned short prece;
+    OperatorAttr attr;
+
+    OperatorInfo(unsigned short prece, OperatorAttr attr) : prece(prece), attr(attr) {}
+
+    OperatorInfo() : OperatorInfo(0, OperatorAttr()) {}
+};
+
+OperatorInfo getOpInfo(TokenKind kind);
+
+inline unsigned short getPrecedence(TokenKind kind) {
+    return getOpInfo(kind).prece;
+}
+
+inline OperatorAttr getOpAttr(TokenKind kind) {
+    return getOpInfo(kind).attr;
+}
 
 bool isAssignOp(TokenKind kind);
 

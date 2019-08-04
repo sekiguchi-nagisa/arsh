@@ -949,18 +949,6 @@ std::unique_ptr<StringNode> Parser::parse_cmdArgPart(bool first, LexerMode mode)
     return std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
 }
 
-// expression
-std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
-    GUARD_DEEP_NESTING(guard);
-
-    return this->parse_binaryExpression(
-            TRY(this->parse_unaryExpression()), basePrecedence);
-}
-
-std::unique_ptr<Node> Parser::parse_expression() {
-    return this->parse_expression(getPrecedence(ASSIGN));
-}
-
 static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, TokenKind op,
                                               Token token, std::unique_ptr<Node> &&rightNode) {
     if(op == PIPE) {
@@ -977,14 +965,22 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, 
     return std::make_unique<BinaryOpNode>(leftNode.release(), op, token, rightNode.release());
 }
 
-std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&leftNode,
-                                                     unsigned int basePrecedence) {
+/**
+ * see. https://eli.thegreenplace.net/2012/08/02/parsing-expressions-by-precedence-climbing
+ * @param basePrecedence
+ * @return
+ */
+std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
     GUARD_DEEP_NESTING(guard);
 
-    std::unique_ptr<Node> node(std::move(leftNode));
-    for(unsigned int p = PRECEDENCE();
-        !HAS_NL() && p >= basePrecedence; p = PRECEDENCE()) {
-        switch(CUR_KIND()) {
+    auto node = TRY(this->parse_unaryExpression());
+    while(!HAS_NL()) {
+        const auto info = getOpInfo(this->curKind);
+        if(!hasFlag(info.attr, OperatorAttr::INFIX) || info.prece < basePrecedence) {
+            break;
+        }
+
+        switch(this->curKind) {
         case AS: {
             this->expect(AS, false);    // always success
             auto type = TRY(this->parse_typeName());
@@ -1035,17 +1031,18 @@ std::unique_ptr<Node> Parser::parse_binaryExpression(std::unique_ptr<Node> &&lef
         default: {
             Token token = this->curToken;
             TokenKind op = this->scan();
-            auto rightNode = TRY(this->parse_unaryExpression());
-            for(unsigned int nextP = PRECEDENCE();
-                !HAS_NL() && (nextP > p || (nextP == p && isRightAssoc(op))); nextP = PRECEDENCE()) {
-                rightNode = TRY(this->parse_binaryExpression(std::move(rightNode), nextP));
-            }
+            unsigned int nextPrece = info.prece + (hasFlag(info.attr, OperatorAttr::RASSOC) ? 0 : 1);
+            auto rightNode = TRY(this->parse_expression(nextPrece));
             node = createBinaryNode(std::move(node), op, token, std::move(rightNode));
             break;
         }
         }
     }
     return node;
+}
+
+std::unique_ptr<Node> Parser::parse_expression() {
+    return this->parse_expression(getPrecedence(ASSIGN));
 }
 
 std::unique_ptr<Node> Parser::parse_unaryExpression() {
