@@ -218,8 +218,7 @@ protected:
     std::unique_ptr<Node> parse_primaryExpression();
 
     template <typename Func>
-    auto expectNum(TokenKind kind, Func func) ->
-    std::pair<Token, decltype((this->lexer->*func)(std::declval<Token>(), std::declval<int &>()))> {
+    auto expectNum(TokenKind kind, Func func) {
         auto token = this->expect(kind);
         int status = 0;
         auto out = (this->lexer->*func)(token, status);
