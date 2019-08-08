@@ -1786,11 +1786,7 @@ YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
 YDSH_METHOD array_copy(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_copy);
     auto *obj = typeAs<Array_Object>(LOCAL(0));
-    std::vector<DSValue> values;
-    values.reserve(obj->getValues().size());
-    for(auto &e : obj->getValues()) {
-        values.push_back(e);
-    }
+    std::vector<DSValue> values = obj->getValues();
     RET(DSValue::create<Array_Object>(*obj->getType(), std::move(values)));
 }
 
