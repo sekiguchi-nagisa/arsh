@@ -56,7 +56,7 @@ TEST(BufferTest, case2) {
     ASSERT_EQ(cap, buffer.capacity());
 
     for(unsigned int i = 0; i < size; i++)  {
-        ASSERT_EQ(i, buffer[i]);;
+        ASSERT_EQ(i, buffer[i]);
     }
 
     buffer.clear();

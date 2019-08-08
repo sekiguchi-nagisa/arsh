@@ -1522,7 +1522,7 @@ private:
     bool update(int ch, const char *str) {
         this->count++;
         // search entry
-        for(unsigned int index = 0; index < static_cast<unsigned int>(arraySize(ulimitOps)); index++) {
+        for(unsigned int index = 0; index < arraySize(ulimitOps); index++) {
             if(ulimitOps[index].op == ch) {
                 auto &entry = this->entries[index];
                 if(str) {
