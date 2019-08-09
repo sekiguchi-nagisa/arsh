@@ -179,6 +179,10 @@ public:
         return this->running;
     }
 
+    const Proc *getProcs() const {
+        return this->procs;
+    }
+
     /**
      *
      * @param index

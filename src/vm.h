@@ -296,6 +296,8 @@ public:
         this->setGlobal(index, DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), status));
     }
 
+    void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);
+
     bool isJobControl() const {
         return hasFlag(this->option, DS_OPTION_JOB_CONTROL);
     }

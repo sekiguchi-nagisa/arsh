@@ -73,6 +73,7 @@ enum class BuiltinVarOffset : unsigned int {
     IFS,            // IFS
     CONFIG_DIR,     // CONFIG_DIR
     SCRIPT_DIR,     // SCRIPT_DIR
+    PIPESTATUS,     // PIPESTATUS
     EXIT_STATUS,    // ?
     SHELL_PID,      // $
     ARGS,           // @

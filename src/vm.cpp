@@ -74,6 +74,20 @@ void DSState::reserveLocalStackImpl(unsigned int needSize) {
     this->callStackSize = newSize;
 }
 
+void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
+    auto *obj = typeAs<Array_Object>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
+    obj->refValues().clear();
+    obj->refValues().reserve(size + (mergeExitStatus ? 1 : 0));
+
+    auto &type = *static_cast<ReifiedType *>(obj->getType())->getElementTypes()[0];
+    for(unsigned int i = 0; i < size; i++) {
+        obj->refValues().push_back(DSValue::create<Int_Object>(type, procs[i].exitStatus()));
+    }
+    if(mergeExitStatus) {
+        obj->refValues().push_back(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
+    }
+}
+
 unsigned int DSState::getTermHookIndex() {
     if(this->termHookIndex == 0) {
         auto *handle = this->symbolTable.lookupHandle(VAR_TERM_HOOK);
@@ -795,6 +809,7 @@ bool DSState::callPipeline(bool lastPipe) {
             // job termination
             auto waitOp = rootShell && this->isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
             int status = jobEntry->wait(waitOp);
+            this->updatePipeStatus(jobEntry->getProcSize(), jobEntry->getProcs(), false);
             if(jobEntry->available()) {
                 this->jobTable.attach(jobEntry);
             }

@@ -338,6 +338,15 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "SCRIPT_DIR", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
 
     /**
+     * contains latest executed pipeline status.
+     * must be Array_Object
+     */
+    bindVariable(state, "PIPESTATUS", DSValue::create<Array_Object>(
+            *state->symbolTable.createReifiedType(
+                    state->symbolTable.getArrayTemplate(),
+                    {&state->symbolTable.get(TYPE::Int32)}).take()));
+
+    /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */

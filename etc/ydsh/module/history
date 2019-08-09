@@ -89,6 +89,7 @@ function _load($p : String!) {
     cat $path | while(read -r -f '') {
         $_add($REPLY, $true)
     }
+    $PIPESTATUS.clear()
 }
 
 function _save($p : String!) {

@@ -31,6 +31,7 @@ PipelineState::~PipelineState() {
     bool restored = this->entry->restoreStdin();
     auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
     this->entry->wait(waitOp);
+    this->state.updatePipeStatus(this->entry->getProcSize(), this->entry->getProcs(), true);
 
     if(restored) {
         int ret = tryToBeForeground(this->state);
