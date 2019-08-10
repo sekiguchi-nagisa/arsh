@@ -24,7 +24,7 @@
 namespace ydsh {
 
 template <typename T, unsigned int N>
-constexpr std::size_t arraySize(const T (&)[N]) noexcept {
+constexpr unsigned int arraySize(const T (&)[N]) noexcept {
     return N;
 }
 
