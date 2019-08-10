@@ -149,7 +149,7 @@ private:
     const std::string token;
 
 public:
-    explicit ExpectedTokenCompleter(const std::string &token) : token(token) {}
+    explicit ExpectedTokenCompleter(std::string &&token) : token(std::move(token)) {}
 
     DSCandidates operator()() override {
         DSCandidates results;
@@ -170,7 +170,7 @@ private:
     const std::string envName;
 
 public:
-    explicit EnvNameCompleter(const std::string &name) : envName(name) {}
+    explicit EnvNameCompleter(std::string &&name) : envName(std::move(name)) {}
 
     DSCandidates operator()() override {
         DSCandidates results;
@@ -785,7 +785,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
 
                 std::string expectedStr = toString(expected);
                 if(expectedStr.size() < 2 || (expectedStr.front() != '<' && expectedStr.back() != '>')) {
-                    return std::make_unique<ExpectedTokenCompleter>(expectedStr);
+                    return std::make_unique<ExpectedTokenCompleter>(std::move(expectedStr));
                 }
             }
             break;

@@ -41,7 +41,7 @@ OperatorInfo getOpInfo(TokenKind kind) {
     EACH_OPERATOR(GEN_CASE)
 #undef GEN_CASE
     default:
-        return OperatorInfo();
+        return {};
     }
 
 #undef INFIX

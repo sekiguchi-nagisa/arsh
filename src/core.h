@@ -41,7 +41,7 @@ struct DSCandidates {
 
     DSCandidates() = default;
 
-    DSCandidates(DSCandidates &&can) : buf(std::move(can.buf)) {}
+    DSCandidates(DSCandidates &&can) noexcept : buf(std::move(can.buf)) {}
 
     DSCandidates &operator=(DSCandidates &&can) noexcept {
         auto tmp(std::move(can));

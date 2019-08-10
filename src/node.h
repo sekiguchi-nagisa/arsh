@@ -600,7 +600,7 @@ class AssignableNode : public Node {
 protected:
     unsigned int index{0};
 
-    FieldAttribute attribute;
+    FieldAttribute attribute{};
 
     AssignableNode(NodeKind kind, Token token) :
             Node(kind, token) { }

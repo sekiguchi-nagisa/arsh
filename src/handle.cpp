@@ -31,7 +31,7 @@ std::string toString(FieldAttribute attr) {
     };
 
     std::string value;
-    for(unsigned short i = 0; i < arraySize(table); i++) {
+    for(unsigned int i = 0; i < arraySize(table); i++) {
         if(hasFlag(attr, static_cast<FieldAttribute>(1u << i))) {
             if(!value.empty()) {
                 value += " | ";
