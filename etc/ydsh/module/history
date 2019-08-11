@@ -4,7 +4,6 @@
 var HISTFILE = '~/.ydsh_history'
 var HISTSIZE = 0u
 var HISTFILESIZE = 1000u
-let HISTORY = new [String]()
 var HISTIGNORE = $/^history/ as Regex!
 
 function _sync() {

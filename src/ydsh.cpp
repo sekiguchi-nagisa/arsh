@@ -338,6 +338,12 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "SCRIPT_DIR", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
 
     /**
+     * contains script argument(exclude script name). ($@)
+     * must be Array_Object
+     */
+    bindVariable(state, "HISTORY", DSValue::create<Array_Object>(state->symbolTable.get(TYPE::StringArray)));
+
+    /**
      * contains latest executed pipeline status.
      * must be Array_Object
      */
@@ -817,9 +823,7 @@ void DSCandidates_release(DSCandidates **c) {
 
 DSHistory *DSState_history(DSState *st) {
     if(!st->history) {
-        auto *handle = st->execMode != DS_EXEC_MODE_NORMAL ? nullptr : st->symbolTable.lookupHandle(VAR_HISTORY);
-        st->history.initialize(
-                handle != nullptr ? typeAs<Array_Object>(st->getGlobal(handle->getIndex())) : nullptr);
+        st->history.initialize(typeAs<Array_Object>(st->getGlobal(BuiltinVarOffset::HISTORY)));
     }
     return st->history.hasValue() ? &st->history : nullptr;
 }
