@@ -382,6 +382,7 @@ typedef enum {
     DS_HISTORY_ADD,     // add history to buffer
     DS_HISTORY_LOAD,    // load history from file
     DS_HISTORY_SAVE,    // save history to file
+    DS_HISTORY_SEARCH,  // search history
 } DSHistoryOp;
 
 /**

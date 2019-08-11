@@ -5,6 +5,7 @@ var HISTFILE = '~/.ydsh_history'
 var HISTSIZE = 0u
 var HISTFILESIZE = 1000u
 var HISTIGNORE = $/^history/ as Regex!
+var HISTSEARCH = new Func<String,[String]>!()
 
 function _sync() {
     let limit = 4096u
@@ -21,7 +22,7 @@ function _error($s : String) {
 }
 
 function _usage($fd : UnixFD, $short : Boolean) : Int {
-    echo > $fd "history: history [-h] [-i] [-c] [-d offset] or history -s ARGs or history [-rw] [file]"
+    echo > $fd "history: history [-h] [-i] [-c] [-d offset] or history -s ARGs or history -p ARGs or history [-rw] [file]"
     if $short { return 2; }
 
     echo > $fd "Display or manipulate history list.
@@ -31,6 +32,7 @@ function _usage($fd : UnixFD, $short : Boolean) : Int {
         -h        show this help message
         -i        append the empty string to history
         -s        append the Args to history as single entry
+        -p        search the history line with given pattern ARGs
 
         -r        read the history list from history file
         -w        write the history list to history file"
@@ -79,6 +81,18 @@ function _add($s : String, $p : Boolean) {
         $HISTORY.shift()
     }
     $HISTORY.add($s)
+}
+
+function _default_search($q : String) : String {
+    var fzf = command -v fzf 2>&1 > /dev/null
+    if !$fzf || $q.empty() { return ""; }
+    return "$(for $e in $HISTORY {
+        echo $e
+    } | fzf --layout=reverse --inline-info -q $q)"
+}
+
+function _search($q : String) : String {
+    return ($HISTSEARCH ?? $_default_search)($q)
 }
 
 function _load($p : String!) {
@@ -142,6 +156,16 @@ history() {
                 $line += $@[$i]
             }
             $_add($line, $true)
+            return 0;
+        }
+        '-p' => {
+            var line = ""
+            for($i++; $i < $#; $i++) {
+                if !$line.empty() { $line += " "; }
+                $line += $@[$i]
+            }
+            var ret = $_search($line)
+            read <<< $ret
             return 0;
         }
         '-r' | '-w' => {

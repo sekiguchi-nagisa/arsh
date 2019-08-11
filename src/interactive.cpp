@@ -271,7 +271,8 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
         initHistory();
         break;
     case LINENOISE_HISTORY_OP_SEARCH:
-        break;
+        DSState_historyOp(state, DS_HISTORY_SEARCH, size - *historyIndex - 1, &buf);
+        return buf;
     }
     return nullptr;
 }

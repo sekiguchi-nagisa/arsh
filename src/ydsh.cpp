@@ -886,6 +886,25 @@ int DSState_historyOp(DSState *st, DSHistoryOp op, unsigned int index, const cha
         };
         return exec(st, argv);
     }
+    case DS_HISTORY_SEARCH: {
+        const char *line = *buf;
+        *buf = nullptr;
+        if(index < size) {
+            auto old = st->getGlobal(BuiltinVarOffset::REPLY);
+            const char *argv[] = {
+                    "history", "-p", line, nullptr
+            };
+            int s = exec(st, argv);
+            if(s == 0) {
+                auto reply = st->getGlobal(BuiltinVarOffset::REPLY);
+                *buf = typeAs<String_Object>(reply)->getValue();
+                hist->refValues()[index] = std::move(reply);
+            }
+            st->setGlobal(toIndex(BuiltinVarOffset::REPLY), std::move(old));
+            return s;
+        }
+        break;
+    }
     }
     return 0;
 }
