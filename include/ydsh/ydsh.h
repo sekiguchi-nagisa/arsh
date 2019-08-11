@@ -372,52 +372,29 @@ void DSCandidates_release(DSCandidates **c);
 #define DS_HISTSIZE_LIMIT       ((unsigned int) 4096)
 #define DS_HISTFILESIZE_LIMIT   ((unsigned int) 4096)
 
-struct DSHistory;
-typedef struct DSHistory DSHistory;
+typedef enum {
+    DS_HISTORY_SIZE,    // current history buffer size
+    DS_HISTORY_GET,     // get history at index
+    DS_HISTORY_SET,     // set history at index
+    DS_HISTORY_DEL,     // delete history at index
+    DS_HISTORY_CLEAR,   // clear all of history
+    DS_HISTORY_INIT,    // add empty string to buffer
+    DS_HISTORY_ADD,     // add history to buffer
+    DS_HISTORY_LOAD,    // load history from file
+    DS_HISTORY_SAVE,    // save history to file
+} DSHistoryOp;
 
 /**
- * get history view
+ * do history operation
  * @param st
- * not null
- * @return
- * return null, if not found HISTORY buffer.
- */
-DSHistory *DSState_history(DSState *st);
-
-/**
- *
- * @param history
- * not null
- * @return
- */
-unsigned int DSHistory_size(const DSHistory *history);
-
-/**
- *
- * @param history
- * not null
+ * @param op
  * @param index
+ * @param buf
  * @return
- * if index out of range, return null.
+ * if op is DS_HISTORY_SIZE, return size of history.
+ * otherwise, return 0, if success.
  */
-const char *DSHistory_get(const DSHistory *history, unsigned int index);
-
-/**
- * if index out of range, do nothing.
- * @param history
- * not null
- * @param index
- * @param value
- */
-void DSHistory_set(DSHistory *history, unsigned int index, const char *value);
-
-/**
- * if index out of range, do nothing.
- * @param history
- * not null
- * @param index
- */
-void DSHistory_delete(DSHistory *history, unsigned int index);
+int DSState_historyOp(DSState *st, DSHistoryOp op, unsigned int index, const char **buf);
 
 #ifdef __cplusplus
 }

@@ -70,45 +70,20 @@ static bool checkLineContinuation(const StrWrapper &line) {
     return false;
 }
 
-static bool hasHistory() {
-    return DSState_history(state) != nullptr;
-}
-
-static void exec(const char *argv[]) {
-    if(!hasHistory()) {
-        return;
-    }
-    int s = DSState_getExitStatus(state);
-    DSState_exec(state, (char **)argv);
-    DSState_setExitStatus(state, s);
-}
-
 static void initHistory() {
-    const char *argv[] = {
-            "history", "-i", nullptr
-    };
-    exec(argv);
+    DSState_historyOp(state, DS_HISTORY_INIT, 0, nullptr);
 }
 
 static void addHistory(const char *line) {
-    const char *argv[] = {
-            "history", "-s", line, nullptr
-    };
-    exec(argv);
+    DSState_historyOp(state, DS_HISTORY_ADD, 0, &line);
 }
 
 static void loadHistory() {
-    const char *argv[] = {
-            "history", "-r", nullptr
-    };
-    exec(argv);
+    DSState_historyOp(state, DS_HISTORY_LOAD, 0, nullptr);
 }
 
 static void saveHistory() {
-    const char *argv[] = {
-            "history", "-w", nullptr
-    };
-    exec(argv);
+    DSState_historyOp(state, DS_HISTORY_SAVE, 0, nullptr);
 }
 
 static const std::string *lineBuf = nullptr;
@@ -268,13 +243,12 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
 }
 
 static const char *historyCallback(const char *buf, int *historyIndex, historyOp op) {
-    auto *history = DSState_history(state);
-    const unsigned int size = DSHistory_size(history);
+    const unsigned int size = DSState_historyOp(state, DS_HISTORY_SIZE, 0, nullptr);
     switch(op) {
     case LINENOISE_HISTORY_OP_NEXT:
     case LINENOISE_HISTORY_OP_PREV: {
         if(size > 1) {
-            DSHistory_set(history, size - *historyIndex - 1, buf);
+            DSState_historyOp(state, DS_HISTORY_SET, size - *historyIndex - 1, &buf);
             *historyIndex += (op == LINENOISE_HISTORY_OP_PREV) ? 1 : -1;
             if(*historyIndex < 0) {
                 *historyIndex = 0;
@@ -284,12 +258,14 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
                 *historyIndex = size - 1;
                 return nullptr;
             }
-            return DSHistory_get(history, size - *historyIndex - 1);
+            const char *ret = nullptr;
+            DSState_historyOp(state, DS_HISTORY_GET, size - *historyIndex - 1, &ret);
+            return ret;
         }
         break;
     }
     case LINENOISE_HISTORY_OP_DELETE:
-        DSHistory_delete(history, size - 1);
+        DSState_historyOp(state, DS_HISTORY_DEL, size - 1, nullptr);
         break;
     case LINENOISE_HISTORY_OP_INIT:
         initHistory();

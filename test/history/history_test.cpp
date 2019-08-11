@@ -43,27 +43,38 @@ public:
         this->assignUintValue(VAR_HISTFILESIZE, size);
     }
 
-    template <typename ...T>
-    void history(T && ...arg) {
-        constexpr auto size = sizeof...(T) + 2;
-        std::array<const char *, size> argv = {{ "history", std::forward<T>(arg)..., nullptr }};
-        this->exec(argv.data());
+    unsigned int historySize() {
+        return DSState_historyOp(this->state, DS_HISTORY_SIZE, 0, nullptr);
+    }
+
+    const char *getHistory(unsigned int index) {
+        const char *buf = nullptr;
+        DSState_historyOp(this->state, DS_HISTORY_GET, index, &buf);
+        return buf;
+    }
+
+    void setHistory(unsigned int index, const char *line) {
+        DSState_historyOp(this->state, DS_HISTORY_SET, index, &line);
+    }
+
+    void delHistory(unsigned int index) {
+        DSState_historyOp(this->state, DS_HISTORY_DEL, index, nullptr);
     }
 
     void addHistory(const char *value) {
-        this->history("-s", value);
+        DSState_historyOp(this->state, DS_HISTORY_ADD, 0, &value);
     }
-    
+
     void clearHistory() {
-        this->history("-c");
+        DSState_historyOp(this->state, DS_HISTORY_CLEAR, 0, nullptr);
     }
     
     void loadHistory(const char *fileName = nullptr) {
-        this->history("-r", fileName);
+        DSState_historyOp(this->state, DS_HISTORY_LOAD, 0, &fileName);
     }
-    
+
     void saveHistory(const char *fileName = nullptr) {
-        this->history("-w", fileName);
+        DSState_historyOp(this->state, DS_HISTORY_SAVE, 0, &fileName);
     }
 
 private:
@@ -82,12 +93,6 @@ private:
         str += "u";
         this->assignValue(varName, std::move(str));
     }
-
-    void exec(const char **argv) {
-        int s = DSState_getExitStatus(this->state);
-        DSState_exec(this->state, (char **)argv);
-        DSState_setExitStatus(this->state, s);
-    }
 };
 
 TEST_F(HistoryTest, add) {
@@ -95,48 +100,39 @@ TEST_F(HistoryTest, add) {
     this->addHistory("aaa");
     this->addHistory("bbb");
 
-    auto *history = DSState_history(this->state);
-
-    ASSERT_EQ(2u, DSHistory_size(history));
-    ASSERT_STREQ("aaa", DSHistory_get(history, 0));
-    ASSERT_STREQ("bbb", DSHistory_get(history, 1));
+    ASSERT_EQ(2u, this->historySize());
+    ASSERT_STREQ("aaa", this->getHistory(0));
+    ASSERT_STREQ("bbb", this->getHistory(1));
 
     this->addHistory("ccc");
-    ASSERT_EQ(2u, DSHistory_size(history));
-    ASSERT_STREQ("bbb", DSHistory_get(history, 0));
-    ASSERT_STREQ("ccc", DSHistory_get(history, 1));
-    ASSERT_EQ(nullptr, DSHistory_get(history, 100));
+    ASSERT_EQ(2u, this->historySize());
+    ASSERT_STREQ("bbb", this->getHistory(0));
+    ASSERT_STREQ("ccc", this->getHistory(1));
+    ASSERT_EQ(nullptr, this->getHistory(100));
 
     this->addHistory("ccc");
-    ASSERT_EQ(2u, DSHistory_size(history));
+    ASSERT_EQ(2u, this->historySize());
 
     // null
-    ASSERT_EQ(0u, DSHistory_size(nullptr));
-    ASSERT_EQ(nullptr, DSHistory_get(nullptr, 0));
-    ASSERT_EQ(nullptr, DSHistory_get(nullptr, 100));
+    ASSERT_EQ(nullptr, this->getHistory(100));
 }
-
 
 TEST_F(HistoryTest, set) {
     this->setHistSize(10);
     this->addHistory("aaa");
     this->addHistory("bbb");
 
-    auto *history = DSState_history(this->state);
-    ASSERT_EQ(2u, DSHistory_size(history));
+    ASSERT_EQ(2u, this->historySize());
 
-    DSHistory_set(history, 1, "ccc");
-    ASSERT_STREQ("ccc", DSHistory_get(history, 1));
+    this->setHistory(1, "ccc");
+    ASSERT_STREQ("ccc", this->getHistory(1));
 
-    DSHistory_set(history, 3, "ccc");    // do nothing, if out of range
-    ASSERT_EQ(2u, DSHistory_size(history));
-    ASSERT_EQ(nullptr, DSHistory_get(history, 3));
+    this->setHistory(3, "ccc");    // do nothing, if out of range
+    ASSERT_EQ(2u, this->historySize());
+    ASSERT_EQ(nullptr, this->getHistory(3));
 
-    DSHistory_set(history, 1000, "ccc");    // do nothing, if out of range
-    ASSERT_EQ(2u, DSHistory_size(history));
-
-    // do nothing
-    DSHistory_set(nullptr, 1000, "ccc");
+    this->setHistory(1000, "ccc");    // do nothing, if out of range
+    ASSERT_EQ(2u, this->historySize());
 }
 
 TEST_F(HistoryTest, remove) {
@@ -147,36 +143,32 @@ TEST_F(HistoryTest, remove) {
     this->addHistory("ddd");
     this->addHistory("eee");
 
-    auto *history = DSState_history(this->state);
-    DSHistory_delete(history, 2);
-    ASSERT_EQ(4u, DSHistory_size(history));
-    ASSERT_STREQ("aaa", DSHistory_get(history, 0));
-    ASSERT_STREQ("bbb", DSHistory_get(history, 1));
-    ASSERT_STREQ("ddd", DSHistory_get(history, 2));
-    ASSERT_STREQ("eee", DSHistory_get(history, 3));
+    this->delHistory(2);
+    ASSERT_EQ(4u, this->historySize());
+    ASSERT_STREQ("aaa", this->getHistory(0));
+    ASSERT_STREQ("bbb", this->getHistory(1));
+    ASSERT_STREQ("ddd", this->getHistory(2));
+    ASSERT_STREQ("eee", this->getHistory(3));
 
-    DSHistory_delete(history, 3);
-    ASSERT_EQ(3u, DSHistory_size(history));
-    ASSERT_STREQ("aaa", DSHistory_get(history, 0));
-    ASSERT_STREQ("bbb", DSHistory_get(history, 1));
-    ASSERT_STREQ("ddd", DSHistory_get(history, 2));
-
-    // do nothing, if out of range
-    DSHistory_delete(history, 6);
-    ASSERT_EQ(3u, DSHistory_size(history));
-    ASSERT_STREQ("aaa", DSHistory_get(history, 0));
-    ASSERT_STREQ("bbb", DSHistory_get(history, 1));
-    ASSERT_STREQ("ddd", DSHistory_get(history, 2));
+    this->delHistory(3);
+    ASSERT_EQ(3u, this->historySize());
+    ASSERT_STREQ("aaa", this->getHistory(0));
+    ASSERT_STREQ("bbb", this->getHistory(1));
+    ASSERT_STREQ("ddd", this->getHistory(2));
 
     // do nothing, if out of range
-    DSHistory_delete(history, 600);
-    ASSERT_EQ(3u, DSHistory_size(history));
-    ASSERT_STREQ("aaa", DSHistory_get(history, 0));
-    ASSERT_STREQ("bbb", DSHistory_get(history, 1));
-    ASSERT_STREQ("ddd", DSHistory_get(history, 2));
+    this->delHistory(6);
+    ASSERT_EQ(3u, this->historySize());
+    ASSERT_STREQ("aaa", this->getHistory(0));
+    ASSERT_STREQ("bbb", this->getHistory(1));
+    ASSERT_STREQ("ddd", this->getHistory(2));
 
-    // do nothing
-    DSHistory_delete(nullptr, 0);
+    // do nothing, if out of range
+    this->delHistory(600);
+    ASSERT_EQ(3u, this->historySize());
+    ASSERT_STREQ("aaa", this->getHistory(0));
+    ASSERT_STREQ("bbb", this->getHistory(1));
+    ASSERT_STREQ("ddd", this->getHistory(2));
 }
 
 TEST_F(HistoryTest, clear) {
@@ -187,11 +179,10 @@ TEST_F(HistoryTest, clear) {
     this->addHistory("ddd");
     this->addHistory("eee");
 
-    auto *history = DSState_history(this->state);
-    ASSERT_EQ(5u, DSHistory_size(history));
+    ASSERT_EQ(5u, this->historySize());
 
     this->clearHistory();
-    ASSERT_EQ(0u, DSHistory_size(history));
+    ASSERT_EQ(0u, this->historySize());
 }
 
 TEST_F(HistoryTest, resize) {
@@ -200,16 +191,15 @@ TEST_F(HistoryTest, resize) {
         this->addHistory(std::to_string(i).c_str());
     }
 
-    auto *history = DSState_history(this->state);
-    ASSERT_EQ(10u, DSHistory_size(history));
+    ASSERT_EQ(10u, this->historySize());
 
     this->setHistSize(5);
-    ASSERT_EQ(5u, DSHistory_size(history));
-    ASSERT_STREQ("0", DSHistory_get(history, 0));
-    ASSERT_STREQ("1", DSHistory_get(history, 1));
-    ASSERT_STREQ("2", DSHistory_get(history, 2));
-    ASSERT_STREQ("3", DSHistory_get(history, 3));
-    ASSERT_STREQ("4", DSHistory_get(history, 4));
+    ASSERT_EQ(5u, this->historySize());
+    ASSERT_STREQ("0", this->getHistory(0));
+    ASSERT_STREQ("1", this->getHistory(1));
+    ASSERT_STREQ("2", this->getHistory(2));
+    ASSERT_STREQ("3", this->getHistory(3));
+    ASSERT_STREQ("4", this->getHistory(4));
 }
 
 TEST_F(HistoryTest, file) {
@@ -218,7 +208,6 @@ TEST_F(HistoryTest, file) {
         this->addHistory(std::to_string(i).c_str());
     }
 
-    auto *history = DSState_history(this->state);
     this->setHistFileSize(15);
     /**
      * 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -226,10 +215,10 @@ TEST_F(HistoryTest, file) {
     this->saveHistory();
     this->clearHistory();
     this->loadHistory();
-    ASSERT_EQ(10u, DSHistory_size(history));
+    ASSERT_EQ(10u, this->historySize());
 
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_EQ(std::to_string(i), DSHistory_get(history, i));
+        ASSERT_EQ(std::to_string(i), this->getHistory(i));
     }
 
     for(unsigned int i = 0; i < 5; i++) {
@@ -237,7 +226,7 @@ TEST_F(HistoryTest, file) {
     }
 
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_EQ(std::to_string(i + 5), DSHistory_get(history, i));
+        ASSERT_EQ(std::to_string(i + 5), this->getHistory(i));
     }
 
     /**
@@ -254,18 +243,18 @@ TEST_F(HistoryTest, file) {
     this->clearHistory();
     this->setHistSize(15);
     this->loadHistory();
-    ASSERT_EQ(10u, DSHistory_size(history));
+    ASSERT_EQ(10u, this->historySize());
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_EQ(std::to_string(i + 5), DSHistory_get(history, i));
+        ASSERT_EQ(std::to_string(i + 5), this->getHistory(i));
     }
 
     // not overwrite history file when buffer size is 0
     this->clearHistory();
     this->saveHistory();
     this->loadHistory();
-    ASSERT_EQ(10u, DSHistory_size(history));
+    ASSERT_EQ(10u, this->historySize());
     for(unsigned int i = 0; i < 10; i++) {
-        ASSERT_EQ(std::to_string(i + 5), DSHistory_get(history, i));
+        ASSERT_EQ(std::to_string(i + 5), this->getHistory(i));
     }
 
     // not overwrite history file when hist file size is 0
@@ -274,10 +263,10 @@ TEST_F(HistoryTest, file) {
     this->addHistory("hoge");
     this->saveHistory();
     this->loadHistory();
-    ASSERT_EQ(11u, DSHistory_size(history));
-    ASSERT_STREQ("hoge", DSHistory_get(history, 0));
+    ASSERT_EQ(11u, this->historySize());
+    ASSERT_STREQ("hoge", this->getHistory(0));
     for(unsigned int i = 1; i < 11; i++) {
-        ASSERT_EQ(std::to_string(i + 4), DSHistory_get(history, i));
+        ASSERT_EQ(std::to_string(i + 4), this->getHistory(i));
     }
 }
 
@@ -288,17 +277,16 @@ TEST_F(HistoryTest, file2) {
     for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
         this->addHistory(std::to_string(i).c_str());
     }
-    
-    auto *history = DSState_history(this->state);
-    ASSERT_EQ(DS_HISTFILESIZE_LIMIT, DSHistory_size(history));
+
+    ASSERT_EQ(DS_HISTFILESIZE_LIMIT, this->historySize());
 
     this->saveHistory();
     this->clearHistory();
     this->loadHistory();
 
-    ASSERT_EQ(DS_HISTFILESIZE_LIMIT, DSHistory_size(history));
+    ASSERT_EQ(DS_HISTFILESIZE_LIMIT, this->historySize());
     for(unsigned int i = 0; i < DS_HISTFILESIZE_LIMIT; i++) {
-        ASSERT_EQ(std::to_string(i), DSHistory_get(history, i));
+        ASSERT_EQ(std::to_string(i), this->getHistory(i));
     }
 }
 

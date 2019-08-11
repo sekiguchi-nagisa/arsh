@@ -16,6 +16,7 @@
 
 #include <cstring>
 #include <algorithm>
+#include <cassert>
 
 #include <unistd.h>
 #include <sys/utsname.h>
@@ -821,33 +822,66 @@ void DSCandidates_release(DSCandidates **c) {
     }
 }
 
-DSHistory *DSState_history(DSState *st) {
-    if(!st->history) {
-        st->history.initialize(typeAs<Array_Object>(st->getGlobal(BuiltinVarOffset::HISTORY)));
-    }
-    return st->history.hasValue() ? &st->history : nullptr;
+static int exec(DSState *state, const char *argv[]) {
+    int old = DSState_getExitStatus(state);
+    int ret = DSState_exec(state, (char **)argv);
+    DSState_setExitStatus(state, old);
+    return ret;
 }
 
-unsigned int DSHistory_size(const DSHistory *history) {
-    return history != nullptr ? history->get().size() : 0;
-}
-
-const char *DSHistory_get(const DSHistory *history, unsigned int index) {
-    if(history != nullptr && index < history->get().size()) {
-        return typeAs<String_Object>(history->get()[index])->getValue();
+int DSState_historyOp(DSState *st, DSHistoryOp op, unsigned int index, const char **buf) {
+    if(st == nullptr) {
+        return -1;
     }
-    return nullptr;
-}
 
-void DSHistory_set(DSHistory *history, unsigned int index, const char *value) {
-    if(history != nullptr && index < history->get().size()) {
-        DSType *type = history->type()->getElementTypes()[0];
-        history->get()[index] = DSValue::create<String_Object>(*type, value);
-    }
-}
+    auto *hist = typeAs<Array_Object>(st->getGlobal(BuiltinVarOffset::HISTORY));
+    const unsigned int size = hist->getValues().size();
+    assert(size <= INT32_MAX);
 
-void DSHistory_delete(DSHistory *history, unsigned int index) {
-    if(history != nullptr && index < history->get().size()) {
-        history->get().erase(history->get().begin() + index);
+    switch(op) {
+    case DS_HISTORY_SIZE:
+        return size;
+    case DS_HISTORY_GET:
+        *buf = index < size ? typeAs<String_Object>(hist->getValues()[index])->getValue() : nullptr;
+        break;
+    case DS_HISTORY_SET:
+        if(*buf && index < size) {
+            DSType *type = static_cast<ReifiedType *>(hist->getType())->getElementTypes()[0];
+            hist->refValues()[index] = DSValue::create<String_Object>(*type, *buf);
+        }
+        break;
+    case DS_HISTORY_DEL:
+        if(index < size) {
+            hist->refValues().erase(hist->refValues().begin() + index);
+        }
+        break;
+    case DS_HISTORY_CLEAR:
+        hist->refValues().clear();
+        break;
+    case DS_HISTORY_INIT: {
+        const char *argv[] = {
+                "history", "-i", nullptr
+        };
+        return exec(st, argv);
     }
+    case DS_HISTORY_ADD: {
+        const char *argv[] = {
+                "history", "-s", *buf, nullptr
+        };
+        return exec(st, argv);
+    }
+    case DS_HISTORY_LOAD: {
+        const char *argv[] = {
+                "history", "-r", buf ? *buf : nullptr, nullptr
+        };
+        return exec(st, argv);
+    }
+    case DS_HISTORY_SAVE: {
+        const char *argv[] = {
+                "history", "-w", buf ? *buf : nullptr, nullptr
+        };
+        return exec(st, argv);
+    }
+    }
+    return 0;
 }

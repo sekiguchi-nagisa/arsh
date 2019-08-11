@@ -66,38 +66,6 @@ struct ControlFrame {
     unsigned int recDepth{0};
 };
 
-struct DSHistory {
-private:
-    bool init{false};
-    Array_Object *obj{nullptr};
-
-public:
-    std::vector<DSValue> &get() {
-        return this->obj->refValues();
-    }
-
-    const std::vector<DSValue> &get() const {
-        return this->obj->getValues();
-    }
-
-    const ReifiedType *type() const {
-        return static_cast<const ReifiedType *>(this->obj->getType());
-    }
-
-    explicit operator bool() const {
-        return this->init;
-    }
-
-    void initialize(Array_Object *obj) {
-        this->obj = obj;
-        this->init = true;
-    }
-
-    bool hasValue() const {
-        return this->obj != nullptr;
-    }
-};
-
 enum class VMEvent : unsigned int {
     HOOK   = 1u << 0u,
     SIGNAL = 1u << 1u,
@@ -161,8 +129,6 @@ public:
     VMHook *hook{nullptr};
 
     std::vector<ControlFrame> controlStack;
-
-    DSHistory history;
 
 private:
     /**
