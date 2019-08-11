@@ -124,7 +124,9 @@ TEST_F(InteractiveTest, tab) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    this->send("$F\t\t");
+    this->send("$F\t");
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+F"));
+    this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE  False.+"));
     this->send("\t\r");
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+FALSE.+\\(Boolean\\) false.+"));
@@ -165,10 +167,21 @@ TEST_F(InteractiveTest, history1) {
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", "(Int32) 2\n" PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", "(Int32) 3\n" PROMPT));
 
-    this->send(UP UP DOWN "\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3\n(Int32) 3\n" PROMPT));
-    this->send(UP UP "\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2\n(Int32) 2\n" PROMPT));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2"));
+    this->send(DOWN);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("\n(Int32) 3\n" PROMPT));
+
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("\n(Int32) 2\n" PROMPT));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -182,8 +195,16 @@ TEST_F(InteractiveTest, history2) {
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", "(Int32) 2\n" PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", "(Int32) 3\n" PROMPT));
 
-    this->send(UP UP DOWN DOWN "\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "\n" PROMPT));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2"));
+    this->send(DOWN);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
+    this->send(DOWN);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT ""));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("\n" PROMPT));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -197,10 +218,23 @@ TEST_F(InteractiveTest, history3) {
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", "(Int32) 2\n" PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", "(Int32) 3\n" PROMPT));
 
-    this->send(UP UP "\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2\n(Int32) 2\n" PROMPT));
-    this->send(UP UP UP UP "\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "1\n(Int32) 1\n" PROMPT));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("\n(Int32) 2\n" PROMPT));
+
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "1"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("\n(Int32) 1\n" PROMPT));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -214,8 +248,18 @@ TEST_F(InteractiveTest, history4) {
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", "(Int32) 2\n" PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", "(Int32) 3\n" PROMPT));
 
-    this->send(UP UP "4" DOWN UP "\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "24\n(Int32) 24\n" PROMPT));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2"));
+    this->send("4");
+    ASSERT_NO_FATAL_FAILURE(this->expect("4"));
+    this->send(DOWN);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "24"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("\n(Int32) 24\n" PROMPT));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
