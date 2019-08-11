@@ -61,13 +61,12 @@ static bool isSkipLine(const StrWrapper &line) {
  * line is not nullptr
  */
 static bool checkLineContinuation(const StrWrapper &line) {
-    const char *ptr = line.get();
-    for(unsigned int i = 0; ptr[i] != '\0'; i++) {
-        if(ptr[i] == '\\' && ptr[i + 1] == '\0') {
-            return true;
-        }
+    const char *begin = line.get();
+    unsigned int count = 0;
+    for(const char *ptr = begin + strlen(begin) - 1; ptr != begin && *ptr == '\\'; ptr--) {
+        count++;
     }
-    return false;
+    return count % 2 != 0;
 }
 
 static void initHistory() {
