@@ -1,5 +1,5 @@
 
-assert (echo | echo) is Boolean
+assert (echo hello | grep hello) is Boolean
 assert $PIPESTATUS.size() == 2
 assert $PIPESTATUS[0] == 0
 assert $PIPESTATUS[1] == 0
