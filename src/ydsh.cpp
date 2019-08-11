@@ -292,7 +292,7 @@ static void initBuiltinVar(DSState *state) {
      * default variable for read command.
      * must be String_Object
      */
-    bindVariable(state, "REPLY", state->emptyStrObj);
+    bindVariable(state, "REPLY", DSValue(state->emptyStrObj), FieldAttribute());
 
     std::vector<DSType *> types = {&state->symbolTable.get(TYPE::String), &state->symbolTable.get(TYPE::String)};
 

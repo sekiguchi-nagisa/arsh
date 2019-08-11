@@ -164,8 +164,7 @@ history() {
                 if !$line.empty() { $line += " "; }
                 $line += $@[$i]
             }
-            var ret = $_search($line)
-            read <<< $ret
+            $REPLY = $_search($line)
             return 0;
         }
         '-r' | '-w' => {
