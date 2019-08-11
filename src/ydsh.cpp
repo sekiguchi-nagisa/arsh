@@ -734,7 +734,11 @@ int DSState_exec(DSState *st, char *const *argv) {
     if(!st->execCommand(argv)) {
         handleRuntimeError(*st, nullptr);
     }
-    return st->getExitStatus();
+    int status = st->getExitStatus();
+    if(!st->isRootShell()) {
+        exit(status);
+    }
+    return status;
 }
 
 const char *DSState_prompt(DSState *st, unsigned int n) {
