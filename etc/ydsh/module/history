@@ -88,7 +88,7 @@ function _default_search($q : String) : String {
     if !$fzf || $q.empty() { return ""; }
     return "$(for $e in $HISTORY {
         echo $e
-    } | fzf --layout=reverse --inline-info -q $q)"
+    } | sort | uniq | fzf --layout=reverse --inline-info -q $q)"
 }
 
 function _search($q : String) : String {
