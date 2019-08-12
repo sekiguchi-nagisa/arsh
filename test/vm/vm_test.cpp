@@ -16,7 +16,7 @@ private:
     bool called;
 
 public:
-    VMInspector() : breakOp(OpCode::HALT), handler(), called(true) {}
+    VMInspector() : breakOp(OpCode::NOP), handler(), called(true) {}
 
     void setHandler(OpCode op, BreakPointHandler &&handler) {
         this->breakOp = op;

@@ -23,7 +23,7 @@ namespace ydsh {
  * see (doc/opcode.md)
  */
 #define OPCODE_LIST(OP) \
-    OP(HALT         , 0,  0) \
+    OP(NOP          , 0,  0) \
     OP(ASSERT       , 0, -2) \
     OP(PRINT        , 4, -1) \
     OP(INSTANCE_OF  , 4,  0) \
@@ -65,6 +65,7 @@ namespace ydsh {
     OP(RETURN_V     , 0,  0) \
     OP(RETURN_UDC   , 0,  0) \
     OP(RETURN_SIG   , 0,  0) \
+    OP(RETURN_CHILD , 0,  0) \
     OP(BRANCH       , 2, -1) \
     OP(GOTO         , 4,  0) \
     OP(THROW        , 0,  0) \

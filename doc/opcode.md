@@ -2,7 +2,7 @@
 
 | **Mnemonic**  | **Other bytes**                | **Stack (before -> after)**                  | **Description**                                    |
 |---------------|--------------------------------|----------------------------------------------|----------------------------------------------------|
-| HALT          |                                | [no change]                                  | stop evaluation of interpreter                     |
+| NOP           |                                | [no change]                                  | do nothing                                         |
 | ASSERT        |                                | value1 value2 ->                             | assertion that value1 is true.                     |
 | PRINT         | 4: byte1 ~ byte4               | value ->                                     | print specified type and value on top of the stack |
 | INSTANCE_OF   | 4: byte1 ~ byte4               | value -> value                               | check if a value is instance of a specified type   |
@@ -44,6 +44,7 @@
 | RETURN_V      |                                | value -> [empty]                             | return value from callable                         |
 | RETURN_UDC    |                                | value -> [empty]                             | return from user-defined command                   |
 | RETURN_SIG    |                                | -> [empty]                                   | return form signal handler                         |
+| RETURN_CHILD  |                                | -> [empty]                                   | return from subshell evaluation (child process)    |
 | BRANCH        | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset |
 | GOTO          | 4: byte1 ~ byte4               | [no change]                                  | go to instruction at a specified index             |
 | THROW         |                                | value -> [empty]                             | throw exception                                    |

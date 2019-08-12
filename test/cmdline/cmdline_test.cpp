@@ -193,7 +193,7 @@ Code:
   13: LOAD_CONST  1
   15: CALL_METHOD  0  0
   20: POP
-  21: HALT
+  21: RETURN
 Constant Pool:
   0: Int32 34
   1: Int32 34
@@ -223,7 +223,7 @@ Code:
   31: POP
   32: EXIT_FINALLY
   33: POP
-  34: HALT
+  34: RETURN
 Constant Pool:
   0: Func<Boolean,[Any]> function(f)
   1: Int32 1
