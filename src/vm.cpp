@@ -942,7 +942,7 @@ bool DSState::checkVMEvent() {
 #define TRY(E) do { if(!(E)) { vmerror; } } while(false)
 
 bool DSState::mainLoop() {
-    auto op = OpCode::NOP;
+    OpCode op = OpCode::HALT;
     while(true) {
         if(!empty(DSState::eventDesc)) {
             TRY(this->checkVMEvent());
@@ -953,8 +953,8 @@ bool DSState::mainLoop() {
 
         // dispatch instruction
         vmdispatch(op) {
-        vmcase(NOP) {
-            vmnext;
+        vmcase(HALT) {
+            return true;
         }
         vmcase(ASSERT) {
             TRY(this->checkAssertion());
@@ -1214,9 +1214,6 @@ bool DSState::mainLoop() {
             unsetFlag(DSState::eventDesc, VMEvent::MASK);
             this->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
             vmnext;
-        }
-        vmcase(RETURN_CHILD) {
-            return !this->getThrownObject();
         }
         vmcase(BRANCH) {
             unsigned short offset = read16(GET_CODE(*this), this->pc() + 1);
@@ -1556,12 +1553,18 @@ bool DSState::handleException(bool forceUnwind) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
                 if(occurredPC >= entry.begin && occurredPC < entry.end
                    && entry.type->isSameOrBaseTypeOf(*occurredType)) {
+                    if(entry.type->is(TYPE::_Root)) {
+                        /**
+                         * when exception entry indicate exception guard of sub-shell,
+                         * immediately break interpreter
+                         * (due to prevent signal handler interrupt and to load thrown object to stack)
+                         */
+                        return false;
+                    }
                     this->pc() = entry.dest - 1;
                     this->clearOperandStack();
-                    if(!entry.type->is(TYPE::_Root)) {
-                        this->reclaimLocals(entry.localOffset, entry.localSize);
-                        this->loadThrownObject();
-                    }
+                    this->reclaimLocals(entry.localOffset, entry.localSize);
+                    this->loadThrownObject();
                     return true;
                 }
             }
