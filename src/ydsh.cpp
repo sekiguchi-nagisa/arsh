@@ -58,111 +58,6 @@ static unsigned int originalShellLevel() {
     return level;
 }
 
-static void invokeTerminationHook(DSState &state, DSErrorKind kind, DSValue &&except) {
-    DSValue funcObj = state.getGlobal(state.getTermHookIndex());
-    if(funcObj.kind() == DSValueKind::INVALID) {
-        return;
-    }
-
-    int termKind = TERM_ON_EXIT;
-    if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
-        termKind = TERM_ON_ERR;
-    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR) {
-        termKind = TERM_ON_ASSERT;
-    }
-
-    auto oldExitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
-    auto args = makeArgs(
-            DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), termKind),
-            termKind == TERM_ON_ERR ? std::move(except) : oldExitStatus
-    );
-
-    setFlag(DSState::eventDesc, VMEvent::MASK);
-    state.callFunction(std::move(funcObj), std::move(args));
-
-    // restore old value
-    state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(oldExitStatus));
-    unsetFlag(DSState::eventDesc, VMEvent::MASK);
-}
-
-/**
- * if called from child process, exit(1).
- * @param state
- * @param dsError
- * if not null, write error info
- * @return
- */
-static DSErrorKind handleRuntimeError(DSState &state, DSError *dsError) {
-    auto thrownObj = state.getThrownObject();
-    auto &errorType = *thrownObj->getType();
-    DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
-    if(errorType.is(TYPE::_ShellExit)) {
-        kind = DS_ERROR_KIND_EXIT;
-    } else if(errorType.is(TYPE::_AssertFail)) {
-        kind = DS_ERROR_KIND_ASSERTION_ERROR;
-    }
-
-    // get error line number
-    unsigned int errorLineNum = 0;
-    std::string sourceName;
-    if(state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
-        auto *obj = typeAs<Error_Object>(thrownObj);
-        errorLineNum = getOccurredLineNum(obj->getStackTrace());
-        const char *ptr = getOccurredSourceName(obj->getStackTrace());
-        sourceName = ptr;
-    }
-
-    // print error message
-    int oldStatus = state.getExitStatus();
-    if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
-        fputs("[runtime error]\n", stderr);
-        const bool bt = state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
-        auto *handle = errorType.lookupMethodHandle(state.symbolTable, bt ? "backtrace" : OP_STR);
-
-        DSValue ret = state.callMethod(handle, DSValue(thrownObj), makeArgs());
-        if(state.getThrownObject()) {
-            fputs("cannot obtain string representation\n", stderr);
-        } else if(!bt) {
-            fwrite(typeAs<String_Object>(ret)->getValue(),
-                    sizeof(char), typeAs<String_Object>(ret)->size(), stderr);
-            fputc('\n', stderr);
-        }
-    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state.option, DS_OPTION_TRACE_EXIT)) {
-        typeAs<Error_Object>(thrownObj)->printStackTrace(state);
-    }
-    fflush(stderr);
-    state.updateExitStatus(oldStatus);
-
-    // invoke termination hook.
-    invokeTerminationHook(state, kind, std::move(thrownObj));
-
-
-    if(dsError != nullptr) {
-        *dsError = {
-                .kind = kind,
-                .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
-                .lineNum = errorLineNum,
-                .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? state.symbolTable.getTypeName(errorType) : "")
-        };
-    }
-    return kind;
-}
-
-static int evalCodeImpl(DSState &state, const CompiledCode &code, DSError *dsError) {
-    bool s = state.vmEval(code);
-    bool root = state.isRootShell();
-    if(!s) {
-        auto kind = handleRuntimeError(state, dsError);
-        if(kind == DS_ERROR_KIND_RUNTIME_ERROR && root) {
-            state.symbolTable.abort(false);
-        }
-    } else if(!hasFlag(state.option, DS_OPTION_INTERACTIVE) || !root) {
-        invokeTerminationHook(state, DS_ERROR_KIND_EXIT, DSValue());
-    }
-    state.symbolTable.commit();
-    return state.getExitStatus();
-}
-
 static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) {
     if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
         auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
@@ -173,11 +68,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
     if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
         return 0;
     }
-    int ret = evalCodeImpl(state, code, dsError);
-    if(!state.isRootShell()) {
-        exit(ret);
-    }
-    return ret;
+    return state.callToplevel(code, dsError);
 }
 
 static const char *getScriptDir(const DSState &state, unsigned short option) {
@@ -728,17 +619,11 @@ int DSState_loadModule(DSState *st, const char *fileName,
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
-    if(st->execMode != DS_EXEC_MODE_NORMAL) {
-        return 0;   // do nothing
+    std::vector<DSValue> values;
+    for(; *argv != nullptr; argv++) {
+        values.push_back(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::string(*argv)));
     }
-    if(!st->execCommand(argv)) {
-        handleRuntimeError(*st, nullptr);
-    }
-    int status = st->getExitStatus();
-    if(!st->isRootShell()) {
-        exit(status);
-    }
-    return status;
+    return st->execCommand(std::move(values), false);
 }
 
 const char *DSState_prompt(DSState *st, unsigned int n) {

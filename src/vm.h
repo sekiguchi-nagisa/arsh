@@ -72,8 +72,17 @@ enum class VMEvent : unsigned int {
     MASK   = 1u << 2u,
 };
 
+enum class EvalOP : unsigned int {
+    PROPAGATE  = 1u << 0u,    // propagate uncaught exception to caller (except for subshell).
+    SKIP_TERM  = 1u << 1u,    // not call termination handler (except for subshell).
+    HAS_RETURN = 1u << 2u,    // may have return value.
+    COMMIT     = 1u << 3u,    // after evaluation, commit/abort symbol table
+};
+
 namespace ydsh {
 template <> struct allow_enum_bitop<VMEvent> : std::true_type {};
+
+template <> struct allow_enum_bitop<EvalOP> : std::true_type {};
 }
 
 struct DSState {
@@ -109,6 +118,12 @@ public:
     FilePathCache pathCache;
 
     unsigned int lineNum{1};
+
+    /**
+     * if 0, current shell is not sub-shell.
+     * otherwise current shell is sub-shell.
+     */
+    unsigned int subshellLevel{0};
 
     std::string logicalWorkingDir;
 
@@ -311,22 +326,26 @@ public:
 
     // entry point
     /**
-     *
+     * entry point of toplevel code evaluation.
      * @param code
+     * must be toplevel compiled code.
+     * @param dsError
+     * if not null, set error information
      * @return
-     * if has error, return false
+     * exit status of latest executed command.
      */
-    bool vmEval(const CompiledCode &code);
+    int callToplevel(const CompiledCode &code, DSError *dsError);
 
     /**
-     * execute command
+     * execute command.
      * @param argv
-     * first element of argv is command name.
-     * last element of argv is null.
+     * DSValue must be String_Object
+     * @param propagate
+     * if true, not handle uncaught exception
      * @return
-     * if has error, return false.
+     * exit status of command
      */
-    bool execCommand(char *const argv[]);
+    int execCommand(std::vector<DSValue> &&argv, bool propagate);
 
     /**
      * call method.
@@ -612,21 +631,41 @@ private:
     bool mainLoop();
 
     /**
-     *
-     * @return
-     * if has exception, return false.
-     */
-    bool runMainLoop() {
-        return mainLoop();
-    }
-
-    /**
      * if found exception handler, return true.
      * otherwise return false.
      */
     bool handleException(bool forceUnwind);
 
+    /**
+     * actual entry point of interpreter.
+     * @param op
+     * @param dsError
+     * if not null, set error info
+     * @return
+     * if has error or not value, return null
+     * otherwise, return value
+     */
+    DSValue startEval(EvalOP op, DSError *dsError);
+
     unsigned int prepareArguments(DSValue &&recv, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+
+    /**
+     * print uncaught exception information.
+     * @param except
+     * uncaught exception
+     * @param dsError
+     * if not null, set error information
+     * @return
+     * if except is null, return always DS_ERROR_KIND_SUCCESS and not set error info
+     */
+    DSErrorKind handleUncaughtException(const DSValue &except, DSError *dsError);
+
+    /**
+     * call user-defined termination handler specified by TERM_HOOK.
+     * @param kind
+     * @param except
+     */
+    void callTermHook(DSErrorKind kind, DSValue &&except);
 };
 
 #endif //YDSH_VM_H

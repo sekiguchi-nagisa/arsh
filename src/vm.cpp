@@ -1572,34 +1572,93 @@ bool DSState::handleException(bool forceUnwind) {
     return false;
 }
 
-bool DSState::vmEval(const CompiledCode &code) {
+DSValue DSState::startEval(EvalOP op, DSError *dsError) {
+    DSValue value;
+    const unsigned int oldLevel = this->subshellLevel;
+
+    // run main loop
+    const auto ret = this->mainLoop();
+    /**
+     * if return form subshell, subshellLevel is greater than old.
+     */
+    const bool subshell = oldLevel != this->subshellLevel;
+    DSValue thrown;
+    if(ret) {
+        if(hasFlag(op, EvalOP::HAS_RETURN)) {
+            value = this->pop();
+        }
+    } else {
+        if(!subshell && hasFlag(op, EvalOP::PROPAGATE)) {
+            return value;
+        }
+        std::swap(thrown, this->thrownObject);
+    }
+
+    // handle uncaught exception and termination handler
+    auto kind = this->handleUncaughtException(thrown, dsError);
+    if(subshell || !hasFlag(op, EvalOP::SKIP_TERM) || !ret) {
+        this->callTermHook(kind, std::move(thrown));
+    }
+
+    if(subshell) {
+        _exit(this->getExitStatus());
+    }
+
+    if(hasFlag(op, EvalOP::COMMIT)) {
+        if(!ret) {
+            this->symbolTable.abort(false);
+        }
+        this->symbolTable.commit();
+    }
+    return value;
+}
+
+int DSState::callToplevel(const CompiledCode &code, DSError *dsError) {
     this->clearThrownObject();
     this->reserveGlobalVar();
 
     this->windStackFrame(0, 0, &code);
 
-    return this->runMainLoop();
+    EvalOP op = EvalOP::COMMIT;
+    if(hasFlag(this->option, DS_OPTION_INTERACTIVE)) {
+        setFlag(op, EvalOP::SKIP_TERM);
+    }
+    this->startEval(op, dsError);
+    return this->getExitStatus();
 }
 
-bool DSState::execCommand(char *const *argv) {
-    auto cmd = CmdResolver()(*this, argv[0]);
+static NativeCode initCmdTrampoline() noexcept {
+    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 7));
+    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
+    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
+    code[2] = static_cast<unsigned char>(0);
+    code[3] = static_cast<unsigned char>(OpCode::PUSH_NULL);
+    code[4] = static_cast<unsigned char>(OpCode::CALL_CMD);
+    code[5] = static_cast<unsigned char>(OpCode::POP);
+    code[6] = static_cast<unsigned char>(OpCode::RETURN);
+    return NativeCode(code);
+}
 
-    // init parameter
-    std::vector<DSValue> values;
-    for(; *argv != nullptr; argv++) {
-        values.push_back(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::string(*argv)));
-    }
-    auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray), std::move(values));
+static auto cmdTrampoline = initCmdTrampoline();
 
-    this->clearThrownObject();
-    bool ret = this->callCommand(cmd, std::move(obj), DSValue());
-    if(ret) {
-        if(!this->controlStack.empty()) {
-            ret = this->runMainLoop();
-        }
+int DSState::execCommand(std::vector<DSValue> &&argv, bool propagate) {
+    if(this->execMode != DS_EXEC_MODE_NORMAL) {
+        this->clearThrownObject();
+        return 0;   // do nothing.
     }
-    this->clearOperandStack();
-    return ret;
+
+    auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray), std::move(argv));
+    this->prepareArguments(std::move(obj), {0, {}});
+    if(this->windStackFrame(1, 1, &cmdTrampoline)) {
+        this->startEval(EvalOP::SKIP_TERM | EvalOP::PROPAGATE, nullptr);
+    }
+
+    if(!propagate) {
+        DSValue thrown;
+        std::swap(thrown, this->thrownObject);
+        this->handleUncaughtException(thrown, nullptr);
+    }
+    return this->getExitStatus();
 }
 
 unsigned int DSState::prepareArguments(DSValue &&recv,
@@ -1656,10 +1715,11 @@ DSValue DSState::callMethod(const MethodHandle *handle, DSValue &&recv,
 
     DSValue ret;
     if(this->prepareMethodCall(handle->getMethodIndex(), size)) {
-        bool s = this->runMainLoop();
-        if(!handle->getReturnType()->isVoidType() && s) {
-            ret = this->pop();
+        EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
+        if(!handle->getReturnType()->isVoidType()) {
+            setFlag(op, EvalOP::HAS_RETURN);
         }
+        ret = this->startEval(op, nullptr);
     }
     return ret;
 }
@@ -1672,11 +1732,96 @@ DSValue DSState::callFunction(DSValue &&funcObj, std::pair<unsigned int, std::ar
 
     DSValue ret;
     if(this->prepareFuncCall(size)) {
-        bool s = this->runMainLoop();
         assert(type->isFuncType());
-        if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType() && s) {
-            ret = this->pop();
+        EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
+        if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType()) {
+            setFlag(op, EvalOP::HAS_RETURN);
         }
+        ret = this->startEval(op, nullptr);
     }
     return ret;
+}
+
+DSErrorKind DSState::handleUncaughtException(const DSValue &except, DSError *dsError) {
+    if(!except) {
+        return DS_ERROR_KIND_SUCCESS;
+    }
+
+    auto &errorType = *except->getType();
+    DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
+    if(errorType.is(TYPE::_ShellExit)) {
+        kind = DS_ERROR_KIND_EXIT;
+    } else if(errorType.is(TYPE::_AssertFail)) {
+        kind = DS_ERROR_KIND_ASSERTION_ERROR;
+    }
+
+    // get error line number
+    unsigned int errorLineNum = 0;
+    std::string sourceName;
+    if(this->symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
+        auto *obj = typeAs<Error_Object>(except);
+        errorLineNum = getOccurredLineNum(obj->getStackTrace());
+        const char *ptr = getOccurredSourceName(obj->getStackTrace());
+        sourceName = ptr;
+    }
+
+    // print error message
+    int oldStatus = this->getExitStatus();
+    if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
+        fputs("[runtime error]\n", stderr);
+        const bool bt = this->symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
+        auto *handle = errorType.lookupMethodHandle(this->symbolTable, bt ? "backtrace" : OP_STR);
+
+        DSValue ret = this->callMethod(handle, DSValue(except), makeArgs());
+        if(this->getThrownObject()) {
+            this->clearThrownObject();
+            fputs("cannot obtain string representation\n", stderr);
+        } else if(!bt) {
+            fwrite(typeAs<String_Object>(ret)->getValue(),
+                   sizeof(char), typeAs<String_Object>(ret)->size(), stderr);
+            fputc('\n', stderr);
+        }
+    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(this->option, DS_OPTION_TRACE_EXIT)) {
+        typeAs<Error_Object>(except)->printStackTrace(*this);
+    }
+    fflush(stderr);
+    this->updateExitStatus(oldStatus);
+
+    if(dsError != nullptr) {
+        *dsError = {
+                .kind = kind,
+                .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
+                .lineNum = errorLineNum,
+                .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? this->symbolTable.getTypeName(errorType) : "")
+        };
+    }
+    return kind;
+}
+
+void DSState::callTermHook(DSErrorKind kind, DSValue &&except) {
+    auto funcObj = this->getGlobal(this->getTermHookIndex());
+    if(funcObj.kind() == DSValueKind::INVALID) {
+        return;
+    }
+
+    int termKind = TERM_ON_EXIT;
+    if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
+        termKind = TERM_ON_ERR;
+    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR) {
+        termKind = TERM_ON_ASSERT;
+    }
+
+    auto oldExitStatus = this->getGlobal(BuiltinVarOffset::EXIT_STATUS);
+    auto args = makeArgs(
+            DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), termKind),
+            termKind == TERM_ON_ERR ? std::move(except) : oldExitStatus
+    );
+
+    setFlag(DSState::eventDesc, VMEvent::MASK);
+    this->callFunction(std::move(funcObj), std::move(args));    // ignore exception
+    this->clearThrownObject();
+
+    // restore old value
+    this->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(oldExitStatus));
+    unsetFlag(DSState::eventDesc, VMEvent::MASK);
 }
