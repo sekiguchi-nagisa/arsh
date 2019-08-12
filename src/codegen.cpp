@@ -662,12 +662,15 @@ void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
     // generate pipeline (child)
     this->markLabel(begin);
     for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            this->emit0byteIns(OpCode::HALT);
+        }
         this->markLabel(labels[i]);
         this->visit(*node.getNodes()[i]);
-        this->emit0byteIns(OpCode::HALT);
     }
     this->markLabel(end);
     this->catchException(begin, end, this->symbolTable.get(TYPE::_Root));
+    this->emit0byteIns(OpCode::HALT);
 
     this->markLabel(labels.back());
 
@@ -702,8 +705,8 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     this->visit(*node.getExprNode());
     this->markLabel(endLabel);
 
-    this->emit0byteIns(OpCode::HALT);
     this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_Root));
+    this->emit0byteIns(OpCode::HALT);
     this->markLabel(mergeLabel);
 }
 
