@@ -616,7 +616,9 @@ private:
      * @return
      * if has exception, return false.
      */
-    bool runMainLoop();
+    bool runMainLoop() {
+        return mainLoop();
+    }
 
     /**
      * if found exception handler, return true.

@@ -937,18 +937,19 @@ bool DSState::checkVMEvent() {
 #endif
 
 #define vmnext continue
-#define vmerror return false
+#define vmerror goto EXCEPT
 
 #define TRY(E) do { if(!(E)) { vmerror; } } while(false)
 
 bool DSState::mainLoop() {
+    OpCode op = OpCode::HALT;
     while(true) {
         if(!empty(DSState::eventDesc)) {
             TRY(this->checkVMEvent());
         }
 
         // fetch next opcode
-        const auto op = static_cast<OpCode>(GET_CODE(*this)[++this->pc()]);
+        op = static_cast<OpCode>(GET_CODE(*this)[++this->pc()]);
 
         // dispatch instruction
         vmdispatch(op) {
@@ -1525,6 +1526,14 @@ bool DSState::mainLoop() {
             vmnext;
         }
         }
+
+        EXCEPT:
+        assert(this->getThrownObject());
+        bool forceUnwind = this->symbolTable.get(TYPE::_InternalStatus)
+                .isSameOrBaseTypeOf(*this->getThrownObject()->getType());
+        if(!this->handleException(forceUnwind)) {
+            return false;
+        }
     }
 }
 
@@ -1560,17 +1569,6 @@ bool DSState::handleException(bool forceUnwind) {
         }
     }
     return false;
-}
-
-bool DSState::runMainLoop() {
-    while(!this->mainLoop()) {
-        bool forceUnwind = this->symbolTable.get(TYPE::_InternalStatus)
-                .isSameOrBaseTypeOf(*this->getThrownObject()->getType());
-        if(!this->handleException(forceUnwind)) {
-            return false;
-        }
-    }
-    return true;
 }
 
 bool DSState::vmEval(const CompiledCode &code) {
