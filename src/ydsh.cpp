@@ -619,11 +619,16 @@ int DSState_loadModule(DSState *st, const char *fileName,
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
+    if(st->execMode != DS_EXEC_MODE_NORMAL) {
+        return 0;   // do nothing.
+    }
+
     std::vector<DSValue> values;
     for(; *argv != nullptr; argv++) {
         values.push_back(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::string(*argv)));
     }
-    return st->execCommand(std::move(values), false);
+    st->execCommand(std::move(values), false);
+    return st->getExitStatus();
 }
 
 const char *DSState_prompt(DSState *st, unsigned int n) {

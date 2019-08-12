@@ -343,9 +343,10 @@ public:
      * @param propagate
      * if true, not handle uncaught exception
      * @return
-     * exit status of command
+     * if exit status is 0, return true.
+     * otherwise, return false
      */
-    int execCommand(std::vector<DSValue> &&argv, bool propagate);
+    DSValue execCommand(std::vector<DSValue> &&argv, bool propagate);
 
     /**
      * call method.

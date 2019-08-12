@@ -1630,40 +1630,6 @@ int DSState::callToplevel(const CompiledCode &code, DSError *dsError) {
     return this->getExitStatus();
 }
 
-static NativeCode initCmdTrampoline() noexcept {
-    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 7));
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
-    code[2] = static_cast<unsigned char>(0);
-    code[3] = static_cast<unsigned char>(OpCode::PUSH_NULL);
-    code[4] = static_cast<unsigned char>(OpCode::CALL_CMD);
-    code[5] = static_cast<unsigned char>(OpCode::POP);
-    code[6] = static_cast<unsigned char>(OpCode::RETURN);
-    return NativeCode(code);
-}
-
-static auto cmdTrampoline = initCmdTrampoline();
-
-int DSState::execCommand(std::vector<DSValue> &&argv, bool propagate) {
-    if(this->execMode != DS_EXEC_MODE_NORMAL) {
-        this->clearThrownObject();
-        return 0;   // do nothing.
-    }
-
-    auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray), std::move(argv));
-    this->prepareArguments(std::move(obj), {0, {}});
-    if(this->windStackFrame(1, 1, &cmdTrampoline)) {
-        this->startEval(EvalOP::SKIP_TERM | EvalOP::PROPAGATE, nullptr);
-    }
-
-    if(!propagate) {
-        DSValue thrown;
-        std::swap(thrown, this->thrownObject);
-        this->handleUncaughtException(thrown, nullptr);
-    }
-    return this->getExitStatus();
-}
-
 unsigned int DSState::prepareArguments(DSValue &&recv,
                                        std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     this->clearThrownObject();
@@ -1706,6 +1672,37 @@ public:
     RecursionGuard _guard(state); \
     do { if(!_guard.checkLimit()) { return nullptr; } } while(false)
 
+
+static NativeCode initCmdTrampoline() noexcept {
+    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 6));
+    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
+    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
+    code[2] = static_cast<unsigned char>(0);
+    code[3] = static_cast<unsigned char>(OpCode::PUSH_NULL);
+    code[4] = static_cast<unsigned char>(OpCode::CALL_CMD);
+    code[5] = static_cast<unsigned char>(OpCode::RETURN_V);
+    return NativeCode(code);
+}
+
+static auto cmdTrampoline = initCmdTrampoline();
+
+DSValue DSState::execCommand(std::vector<DSValue> &&argv, bool propagate) {
+    GUARD_RECURSION(*this);
+
+    DSValue ret;
+    auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray), std::move(argv));
+    this->prepareArguments(std::move(obj), {0, {}});
+    if(this->windStackFrame(1, 1, &cmdTrampoline)) {
+        ret = this->startEval(EvalOP::SKIP_TERM | EvalOP::PROPAGATE | EvalOP::HAS_RETURN, nullptr);
+    }
+
+    if(!propagate) {
+        DSValue thrown;
+        std::swap(thrown, this->thrownObject);
+        this->handleUncaughtException(thrown, nullptr);
+    }
+    return ret;
+}
 
 DSValue DSState::callMethod(const MethodHandle *handle, DSValue &&recv,
                             std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
