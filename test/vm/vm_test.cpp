@@ -238,9 +238,19 @@ TEST_F(VMTest, sig1) {
     ASSERT_EQ(DSValue(), v.lookup(5));
 }
 
-TEST_F(VMTest, abort) {
+TEST_F(VMTest, error) {
     ASSERT_NO_FATAL_FAILURE(this->eval("var a = 45 / 0;", DS_ERROR_KIND_RUNTIME_ERROR));
     ASSERT_NO_FATAL_FAILURE(this->eval("$a;", DS_ERROR_KIND_TYPE_ERROR));
+}
+
+TEST_F(VMTest, abort) {
+    ASSERT_NO_FATAL_FAILURE(this->eval("assert $false; var b = 34", DS_ERROR_KIND_ASSERTION_ERROR));
+    ASSERT_NO_FATAL_FAILURE(this->eval("$b;", DS_ERROR_KIND_TYPE_ERROR));
+}
+
+TEST_F(VMTest, exit) {
+    ASSERT_NO_FATAL_FAILURE(this->eval("false || exit; var c = 34", DS_ERROR_KIND_EXIT));
+    ASSERT_NO_FATAL_FAILURE(this->eval("$c;", DS_ERROR_KIND_TYPE_ERROR));
 }
 
 static JobTable::ConstEntryIter getBeginIter(const JobTable &table) {
