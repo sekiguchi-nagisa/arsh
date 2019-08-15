@@ -845,13 +845,13 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         case BinaryOp::LE:
         case BinaryOp::GE: {
             int s = 0;
-            long n1 = convertToInt64(left, s);
+            long n1 = convertToInt64(left, s, 10);
             if(s != 0) {
                 ERROR(argvObj, "%s: must be integer", left);
                 return 2;
             }
 
-            long n2 = convertToInt64(right, s);
+            long n2 = convertToInt64(right, s, 10);
             if(s != 0) {
                 ERROR(argvObj, "%s: must be integer", right);
                 return 2;

@@ -31,13 +31,10 @@ namespace ydsh {
  * if cannot convert, status is -1.
  * if found illegal character, status is -2.
  */
-inline long convertToInt64(const char *str, int &status, bool skipIllegalChar = false) {
+inline long convertToInt64(const char *str, int &status, int base = 0, bool skipIllegalChar = false) {
     errno = 0;
 
-    int base = 10;
-    if(strstr(str, "0x") == str) {
-        base = 16;
-    } else if(strstr(str, "0o") == str) {
+    if(base == 0 && strstr(str, "0o") == str) {
         base = 8;
         str += 2;   // skip '0o'
     }
@@ -69,13 +66,10 @@ inline long convertToInt64(const char *str, int &status, bool skipIllegalChar = 
  * if cannot convert, status is -1.
  * if found illegal character, status is -2.
  */
-inline unsigned long convertToUint64(const char *str, int &status, bool skipIllegalChar = false) {
+inline unsigned long convertToUint64(const char *str, int &status, int base = 0, bool skipIllegalChar = false) {
     errno = 0;
 
-    int base = 10;
-    if(strstr(str, "0x") == str) {
-        base = 16;
-    } else if(strstr(str, "0o") == str) {
+    if(base == 0 && strstr(str, "0o") == str) {
         base = 8;
         str += 2;   // skip '0o'
     }

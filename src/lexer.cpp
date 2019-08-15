@@ -309,7 +309,7 @@ long Lexer::toInt64(Token token, int &status) const {
         }
         str[token.size] = '\0';
 
-        long value = convertToInt64(str, status, true);
+        long value = convertToInt64(str, status, 0, true);
         assert(status > -1);
         return value;
     }
@@ -325,7 +325,7 @@ unsigned long Lexer::toUint64(Token token, int &status) const {
     }
     str[token.size] = '\0';
 
-    unsigned long value = convertToUint64(str, status, true);
+    unsigned long value = convertToUint64(str, status, 0, true);
     assert(status > -1);
     return value;
 }

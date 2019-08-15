@@ -1194,7 +1194,7 @@ YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt32);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
     int status = 0;
-    long value = convertToInt64(str, status, false);
+    long value = convertToInt64(str, status);
 
     // range check
     if(status != 0 || value > INT32_MAX || value < INT32_MIN) {
@@ -1210,7 +1210,7 @@ YDSH_METHOD string_toUint32(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toUint32);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
     int status = 0;
-    long value = convertToInt64(str, status, false);
+    long value = convertToInt64(str, status);
 
     // range check
     if(status != 0 || value > UINT32_MAX || value < 0) {
@@ -1225,7 +1225,7 @@ YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt64);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
     int status = 0;
-    long value = convertToInt64(str, status, false);
+    long value = convertToInt64(str, status);
 
     RET(status == 0 ? DSValue::create<Long_Object>(ctx.symbolTable.get(TYPE::Int64), value) : DSValue::createInvalid());
 }
@@ -1235,7 +1235,7 @@ YDSH_METHOD string_toUint64(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toUint64);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
     int status = 0;
-    unsigned long value = convertToUint64(str, status, false);
+    unsigned long value = convertToUint64(str, status);
 
     RET(status == 0 ? DSValue::create<Long_Object>(ctx.symbolTable.get(TYPE::Uint64), value) : DSValue::createInvalid());
 }
