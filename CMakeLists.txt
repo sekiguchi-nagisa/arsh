@@ -93,6 +93,9 @@ if(NOT ("${SANITIZER}" STREQUAL ""))
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O1 -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
 endif()
 
+if("${lower_type}" STREQUAL "coverage")
+    add_definitions(-DCODE_COVERAGE=ON)
+endif()
 set(CMAKE_CXX_FLAGS_COVERAGE "-g -fprofile-arcs -ftest-coverage")
 
 

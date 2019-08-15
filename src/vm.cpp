@@ -1575,6 +1575,10 @@ bool DSState::handleException(bool forceUnwind) {
     return false;
 }
 
+#ifdef CODE_COVERAGE
+extern "C" void __gcov_flush(); // for coverage reporting
+#endif
+
 DSValue DSState::startEval(EvalOP op, DSError *dsError) {
     DSValue value;
     const unsigned int oldLevel = this->subshellLevel;
@@ -1604,6 +1608,13 @@ DSValue DSState::startEval(EvalOP op, DSError *dsError) {
     }
 
     if(subshell) {
+#ifdef CODE_COVERAGE
+        /*
+         * after call _exit(), not write coverage information due to skip atexit handler.
+         * in order to write coverage informationn manually call __gcove_flush()
+         */
+        __gcov_flush();
+#endif
         _exit(this->getExitStatus());
     }
 
