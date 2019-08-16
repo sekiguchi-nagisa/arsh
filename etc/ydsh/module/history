@@ -85,10 +85,12 @@ function _add($s : String, $p : Boolean) {
 
 function _default_search($q : String) : String {
     var fzf = command -v fzf 2>&1 > /dev/null
-    if !$fzf || $q.empty() { return ""; }
+    if !$fzf { return ""; }
+    var arg = ['-q', $q]
+    if $q.empty() { $arg.clear(); }
     return "$(for $e in $HISTORY {
         echo $e
-    } | sort | uniq | fzf --layout=reverse --inline-info -q $q)"
+    } | sort | uniq | fzf --layout=reverse --inline-info $arg)"
 }
 
 function _search($q : String) : String {
