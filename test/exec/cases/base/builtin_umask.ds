@@ -1,0 +1,68 @@
+
+
+function assertEQ($e : String, $a : String) {
+    assert $e == $a : "expect: $e, actual: $a"
+}
+
+# invalid option
+umask -P 2> /dev/null
+assert $? == 2
+$assertEQ("ydsh: umask: -y: invalid option
+umask: umask [-p] [-S] [mode]", "$(umask -y 2>&1)")
+
+# print mask
+$assertEQ("$(sh -c 'umask')", "$(umask)")
+$assertEQ("$(sh -c 'umask -S')", "$(umask -S)")
+$assertEQ("umask $(sh -c 'umask')", "$(umask -p)")
+$assertEQ("umask -S $(sh -c 'umask -S')", "$(umask -p -S)")
+
+# set mode
+$assertEQ("$(sh -c 'umask 111 && umask -S')", "$(umask 111 && umask -S)")
+$assertEQ("$(umask 111 && umask -S)", "$(umask -S 111)")
+$assertEQ("$(umask 0111 && umask -S)", "$(umask -S 111)")
+
+$assertEQ("$(sh -c 'umask u=r && umask -S')", "$(umask -p -S u=r)")
+$assertEQ("$(sh -c 'umask u=wxr,o= && umask -S')", "$(umask -S o=,u=wxr)")
+$assertEQ("$(sh -c 'umask u=wxr,o+ && umask -S')", "$(umask -S u=wxr)")
+$assertEQ("$(umask -S u=wxr,o+)", "$(umask -S u=wxr)")
+$assertEQ("$(umask -S u=wxr,a-)", "$(umask -S u=wxr)")
+$assertEQ("$(sh -c 'umask u=wxr,g= && umask -S')", "$(umask -S u=wxr,g=)")
+
+# invalid mode
+$? = 0
+umask 99999 2> /dev/null
+assert $? == 1
+$assertEQ("ydsh: umask: 99999: octal number out of range (0000~0777)", "$(umask 99999 2>&1)")
+
+$? = 0
+umask 9e9 2> /dev/null
+assert $? == 1
+$assertEQ("ydsh: umask: 9e9: octal number out of range (0000~0777)", "$(umask 9e9 2>&1)")
+
+
+$? = 0
+umask r 2> /dev/null
+assert $? == 1
+$assertEQ("ydsh: umask: r: invalid symbolic operator", "$(umask r 2>&1)")
+
+$? = 0
+umask o1 2> /dev/null
+assert $? == 1
+$assertEQ("ydsh: umask: 1: invalid symbolic operator", "$(umask o1 2>&1)")
+
+$? = 0
+umask o++ 2> /dev/null
+assert $? == 1
+$assertEQ("ydsh: umask: +: invalid symbolic operator", "$(umask o++ 2>&1)")
+
+$? = 0
+umask o=r1 2> /dev/null
+assert $? == 1
+$assertEQ("ydsh: umask: 1: invalid symbolic operator", "$(umask o=r1 2>&1)")
+
+$? = 0
+umask o=r, 2> /dev/null
+assert $? == 1
+$assertEQ("ydsh: umask: 0x00: invalid symbolic operator", "$(umask o=r, 2>&1)")
+
+true

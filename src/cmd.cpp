@@ -52,6 +52,7 @@ static int builtin_setenv(DSState &state, Array_Object &argvObj);
 static int builtin_test(DSState &state, Array_Object &argvObj);
 static int builtin_true(DSState &state, Array_Object &argvObj);
 static int builtin_ulimit(DSState &state, Array_Object &argvObj);
+static int builtin_umask(DSState &state, Array_Object &argvObj);
 static int builtin_unsetenv(DSState &state, Array_Object &argvObj);
 
 static constexpr struct {
@@ -245,6 +246,13 @@ static constexpr struct {
                 #include "ulimit-def.in"
 #undef DEF
                 },
+        {"umask", builtin_umask, "[-p] [-S] [mode]",
+                "    Display or set file mode creation mask.\n"
+                "    Set the calling process's file mode creation mask to MODE.\n"
+                "    If MODE is omitted, prints current value of mask.\n"
+                "    Options.\n"
+                "        -p    if mode is omitted, print current mask in a form that may be reused as input\n"
+                "        -S    print current mask in a symbolic form"},
         {"unset_env", builtin_unsetenv, "[name ...]",
                 "    Unset environmental variables."},
 };
@@ -1621,6 +1629,204 @@ static int builtin_ulimit(DSState &, Array_Object &argvObj) {
             ulimitOps[index].print(limOpt, maxNameLen);
         }
     }
+    return 0;
+}
+
+enum class PrintMaskOp : unsigned int {
+    ONLY_PRINT = 1 << 0,
+    REUSE      = 1 << 1,
+    SYMBOLIC   = 1 << 2,
+};
+
+template <> struct allow_enum_bitop<PrintMaskOp> : std::true_type {};
+
+static void printMask(mode_t mask, PrintMaskOp op) {
+    if(hasFlag(op, PrintMaskOp::SYMBOLIC)) {
+        char buf[arraySize("u=rwx,g=rwx,o=rwx")];
+        char *ptr = buf;
+
+        /**
+         *  u   g   o
+         * rwx|rwx|rwx
+         * 111 111 111
+         *
+         */
+        for(auto &user : {'u', 'g', 'o'}) {
+            if(ptr != buf) {
+                *(ptr++) = ',';
+            }
+            *(ptr++) = user;
+            *(ptr++) = '=';
+            for(auto &perm : {'r', 'w', 'x'}) {
+                if(!(mask & 0400)) {
+                    *(ptr++) = perm;
+                }
+                mask <<= 1;
+            }
+        }
+        *ptr = '\0';
+        fprintf(stdout, "%s%s\n", hasFlag(op, PrintMaskOp::REUSE) ? "umask -S " : "", buf);
+    } else if(hasFlag(op, PrintMaskOp::ONLY_PRINT)) {
+        fprintf(stdout, "%s%04o\n", hasFlag(op, PrintMaskOp::REUSE) ? "umask " : "", mask);
+    }
+}
+
+/**
+ * MODE = [ugoa]* [+-=] [rwx]*
+ *
+ * @param value
+ * @param mode
+ * @return
+ * if failed, return false
+ */
+static bool parseMode(const char *&value, mode_t &mode) {
+    // [ugoa]*
+    mode_t user = 0;
+    for(bool next = true; next; ) {
+        char ch = *(value++);
+        switch(ch) {
+        case 'u':
+            user |= 0700;
+            break;
+        case 'g':
+            user |= 0070;
+            break;
+        case 'o':
+            user |= 0007;
+            break;
+        case 'a':
+            user |= 0777;
+            break;
+        default:    // may be [-+=]
+            next = false;
+            --value;
+            break;
+        }
+    }
+    if(user == 0) {
+        user = 0777;
+    }
+
+    // [-+=]
+    char op = *(value++);
+    if(op != '-' && op != '+' && op != '=') {
+        return false;
+    }
+
+    // [rwx]*
+    mode_t newMode = 0;
+    while(*value && *value != ',') {
+        char ch = *(value++);
+        switch(ch) {
+        case 'r':
+            setFlag(newMode, 0444 & user);
+            break;
+        case 'w':
+            setFlag(newMode, 0222 & user);
+            break;
+        case 'x':
+            setFlag(newMode, 0111 & user);
+            break;
+        default:
+            return false;
+        }
+    }
+
+    // apply op
+    if(op == '+') {
+        unsetFlag(mode, newMode);
+    } else if(op == '-') {
+        setFlag(mode, newMode);
+    } else {
+        setFlag(mode, user);
+        unsetFlag(mode, newMode);
+    }
+    return true;
+}
+
+struct SymbolicParseResult {
+    bool success;
+    char invalid;
+    mode_t mode;
+};
+
+/**
+ * MODES = MODE (, MODE)*
+ *
+ * @param value
+ * @param mode
+ * @return
+ */
+static SymbolicParseResult parseSymbolicMode(const char *value, mode_t mode) {
+    SymbolicParseResult ret {
+        .success = true,
+        .invalid = 0,
+        .mode = mode,
+    };
+
+    if(!parseMode(value, ret.mode)) {
+        ret.success = false;
+        ret.invalid = *(--value);
+        return ret;
+    }
+    while(*value) {
+        if(*(value++) == ',' && parseMode(value, ret.mode)) {
+            continue;
+        }
+        ret.success = false;
+        ret.invalid = *(--value);
+        break;
+    }
+    return ret;
+}
+
+static int builtin_umask(DSState &, Array_Object &argvObj) {
+    auto op = PrintMaskOp::ONLY_PRINT;
+
+    GetOptState optState;
+    for(int opt; (opt = optState(argvObj, "pS")) != -1; ) {
+        switch(opt) {
+        case 'p':
+            setFlag(op, PrintMaskOp::REUSE);
+            break;
+        case 'S':
+            setFlag(op, PrintMaskOp::SYMBOLIC);
+            break;
+        default:
+            return invalidOptionError(argvObj, optState);
+        }
+    }
+
+    auto mask = umask(0);
+    umask(mask);
+
+    if(optState.index < argvObj.getValues().size()) {
+        unsetFlag(op, PrintMaskOp::ONLY_PRINT | PrintMaskOp::REUSE);
+        const char *value = str(argvObj.getValues()[optState.index]);
+        if(isDecimal(*value)) {
+            int status = 0;
+            long num = convertToInt64(value, status, 8);
+            if(status != 0 || num < 0 || num > 0777) {
+                ERROR(argvObj, "%s: octal number out of range (0000~0777)", value);
+                return 1;
+            }
+            mask = num;
+        } else {
+            auto ret = parseSymbolicMode(value, mask);
+            mask = ret.mode;
+            if(!ret.success) {
+                char ch = ret.invalid;
+                if(isascii(ch) && ch != 0) {
+                    ERROR(argvObj, "%c: invalid symbolic operator", ch);
+                } else {
+                    ERROR(argvObj, "0x%02x: invalid symbolic operator", ch);
+                }
+                return 1;
+            }
+        }
+        umask(mask);
+    }
+    printMask(mask, op);
     return 0;
 }
 
