@@ -1611,7 +1611,7 @@ DSValue DSState::startEval(EvalOP op, DSError *dsError) {
 #ifdef CODE_COVERAGE
         /*
          * after call _exit(), not write coverage information due to skip atexit handler.
-         * in order to write coverage informationn manually call __gcove_flush()
+         * in order to write coverage information, manually call __gcove_flush()
          */
         __gcov_flush();
 #endif

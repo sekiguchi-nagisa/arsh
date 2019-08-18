@@ -208,10 +208,6 @@ public:
         return typeAs<String_Object>(this->getGlobal(BuiltinVarOffset::SCRIPT_DIR))->getValue();
     }
 
-    const DSValue &getThrownObject() const {
-        return this->thrownObject;
-    }
-
     bool hasError() const {
         return static_cast<bool>(this->getThrownObject());
     }
@@ -229,10 +225,6 @@ public:
     void throwObject(DSValue &&except, int afterStatus) {
         this->setThrownObject(std::move(except));
         this->updateExitStatus(afterStatus);
-    }
-
-    DSValue pop() {
-        return std::move(this->callStack[this->stackTopIndex()--]);
     }
 
     const DSValue &peek() {
@@ -379,6 +371,10 @@ private:
         this->thrownObject = std::move(except);
     }
 
+    const DSValue &getThrownObject() const {
+        return this->thrownObject;
+    }
+
     /**
      * get thrownObject and push to callStack
      */
@@ -434,6 +430,10 @@ private:
     void pushExitStatus(int status) {
         this->updateExitStatus(status);
         this->push(status == 0 ? this->trueObj : this->falseObj);
+    }
+
+    DSValue pop() {
+        return std::move(this->callStack[this->stackTopIndex()--]);
     }
 
     void popNoReturn() {
