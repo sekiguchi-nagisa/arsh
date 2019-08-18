@@ -1719,13 +1719,13 @@ static bool parseMode(const char *&value, mode_t &mode) {
         char ch = *(value++);
         switch(ch) {
         case 'r':
-            setFlag(newMode, 0444 & user);
+            newMode |= 0444 & user;
             break;
         case 'w':
-            setFlag(newMode, 0222 & user);
+            newMode |= 0222 & user;
             break;
         case 'x':
-            setFlag(newMode, 0111 & user);
+            newMode |= 0111 & user;
             break;
         default:
             return false;
