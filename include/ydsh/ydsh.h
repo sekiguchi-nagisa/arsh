@@ -333,40 +333,27 @@ unsigned int DSState_featureBit();
 
 
 /* for input completion */
-struct DSCandidates;
-typedef struct DSCandidates DSCandidates;
 
-/**
- * get the candidates of possible token.
- * call DSCandidates_release() to release candidate.
- * @param st
- * may be null
- * @param buf
- * may be null
- * @param cursor
- * @return
- * return null if no candidates.
- */
-DSCandidates *DSState_complete(DSState *st, const char *buf, size_t cursor);
+typedef enum {
+    DS_COMP_INVOKE, // invoke completion
+    DS_COMP_GET,    // get completion result at index
+    DS_COMP_SIZE,   // get size of completion result
+    DS_COMP_CLEAR,  // clear completion result
+} DSCompletionOp;
 
 /**
  *
- * @param c
+ * @param st
+ * not null.
+ * @param op
  * @param index
+ * indicates index of completion result or cursor of completing line
+ * @param value
  * @return
- * return null, if index out of range.
+ * if op is 'DS_COMP_SIZE', return size of completion result.
+ * otherwise, return always 0.
  */
-const char *DSCandidates_get(const DSCandidates *c, unsigned int index);
-
-unsigned int DSCandidates_size(const DSCandidates *c);
-
-/**
- * release buffer of candidates.
- * if c is null, do nothing.
- * @param c
- * may be null.
- */
-void DSCandidates_release(DSCandidates **c);
+unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
 
 /* for history */
 #define DS_HISTSIZE_LIMIT       ((unsigned int) 4096)

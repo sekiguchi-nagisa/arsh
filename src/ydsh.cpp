@@ -225,10 +225,16 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "SCRIPT_DIR", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
 
     /**
-     * contains script argument(exclude script name). ($@)
+     * maintains HISTORY list
      * must be Array_Object
      */
     bindVariable(state, "HISTORY", DSValue::create<Array_Object>(state->symbolTable.get(TYPE::StringArray)));
+
+    /**
+     * maintain completion result.
+     * must be Array_Object
+     */
+    bindVariable(state, "COMPREPLY", DSValue::create<Array_Object>(state->symbolTable.get(TYPE::StringArray)));
 
     /**
      * contains latest executed pipeline status.
@@ -684,36 +690,41 @@ unsigned int DSState_featureBit() {
     return flag;
 }
 
-DSCandidates *DSState_complete(DSState *st, const char *buf, size_t cursor) {
-    if(st == nullptr || buf == nullptr || cursor == 0) {
-        return nullptr;
+unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int index, const char **value) {
+    if(st == nullptr) {
+        return 0;
     }
 
-    std::string line(buf, cursor);
-    LOG(DUMP_CONSOLE, "line: %s, cursor: %zu", line.c_str(), cursor);
+    auto *compreply = typeAs<Array_Object>(st->getGlobal(BuiltinVarOffset::COMPREPLY));
 
-    line += '\n';
-    auto *can = new DSCandidates();
-    *can = completeLine(*st, line);
-    return can;
-}
+    switch(op) {
+    case DS_COMP_INVOKE: {
+        assert(value);
+        if(value == nullptr || *value == nullptr || index == 0) {
+            return 0;
+        }
 
-const char *DSCandidates_get(const DSCandidates *c, unsigned int index) {
-    if(c != nullptr && index < c->buf.size()) {
-        return c->buf[index];
+        std::string line(*value, index);
+        LOG(DUMP_CONSOLE, "line: %s, cursor: %ud", line.c_str(), index);
+
+        line += '\n';
+        completeLine(*st, line);
+        break;
     }
-    return nullptr;
-}
-
-unsigned int DSCandidates_size(const DSCandidates *c) {
-    return c != nullptr ? c->buf.size() : 0;
-}
-
-void DSCandidates_release(DSCandidates **c) {
-    if(c != nullptr) {
-        delete *c;
-        *c = nullptr;
+    case DS_COMP_GET:
+        assert(value);
+        *value = nullptr;
+        if(index < compreply->getValues().size()) {
+            *value = typeAs<String_Object>(compreply->getValues()[index])->getValue();
+        }
+        break;
+    case DS_COMP_SIZE:
+        return compreply->getValues().size();
+    case DS_COMP_CLEAR:
+        compreply->refValues().clear();
+        break;
     }
+    return 0;
 }
 
 static int exec(DSState *state, const char *argv[]) {

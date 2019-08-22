@@ -131,31 +131,36 @@ static std::vector<std::string> filter(const std::vector<std::string> &v, const 
 
 TEST_F(APITest, complete) {
     // null arguments
-    auto *c = DSState_complete(nullptr, nullptr, 1); // do nothing
-    ASSERT_TRUE(c == nullptr);
+    DSState_completionOp(nullptr, DS_COMP_INVOKE, 1, nullptr);  // do nothing
 
-    c = DSState_complete(this->state, "echo ~", 6);
-    unsigned int size = DSCandidates_size(c);
+    const char *line = "echo ~";
+    DSState_completionOp(this->state, DS_COMP_INVOKE, 6, &line);
+
+    unsigned int size = DSState_completionOp(this->state, DS_COMP_SIZE, 0, nullptr);
     ASSERT_TRUE(size > 0);
-    ASSERT_STREQ(nullptr, DSCandidates_get(c, size));
+    DSState_completionOp(this->state, DS_COMP_GET, size, &line);
+    ASSERT_STREQ(nullptr, line);
 
     auto expect = tilde();
     for(auto &e : expect) { std::cerr << e << std::endl; }
     ASSERT_EQ(expect.size(), size);
     for(unsigned int i = 0; i < size; i++) {
-        ASSERT_STREQ(expect[i].c_str(), DSCandidates_get(c, i));
+        const char *ret = nullptr;
+        DSState_completionOp(this->state, DS_COMP_GET, i, &ret);
+        ASSERT_STREQ(expect[i].c_str(), ret);
     }
-    DSCandidates_release(&c);
+    DSState_completionOp(this->state, DS_COMP_CLEAR, 0, nullptr);
 
-
-    c = DSState_complete(this->state, "echo ~r", 7);
-    size = DSCandidates_size(c);
+    line = "echo ~r";
+    DSState_completionOp(this->state, DS_COMP_INVOKE, 7, &line);
+    size = DSState_completionOp(this->state, DS_COMP_SIZE, 0, nullptr);
     expect = filter(expect, "~r");
     ASSERT_EQ(expect.size(), size);
     for(unsigned int i = 0; i < size; i++) {
-        ASSERT_STREQ(expect[i].c_str(), DSCandidates_get(c, i));
+        const char *ret = nullptr;
+        DSState_completionOp(this->state, DS_COMP_GET, i, &ret);
+        ASSERT_STREQ(expect[i].c_str(), ret);
     }
-    DSCandidates_release(&c);
 }
 
 TEST_F(APITest, option) {

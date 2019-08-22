@@ -1151,9 +1151,10 @@ static int builtin_complete(DSState &state, Array_Object &argvObj) {
 
     std::string line = str(argvObj.getValues()[1]);
     line += '\n';
-    auto c = completeLine(state, line);
-    for(const auto &e : c.buf) {
-        fputs(e, stdout);
+    completeLine(state, line);
+    auto *ret = typeAs<Array_Object>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
+    for(const auto &e : ret->getValues()) {
+        fputs(str(e), stdout);
         fputc('\n', stdout);
     }
     return 0;

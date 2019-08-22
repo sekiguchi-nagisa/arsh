@@ -442,8 +442,17 @@ public:
     }
 
     std::string toString() const override;
-    bool equals(const DSValue &obj) const override;
-    bool compare(const DSValue &obj) const override;
+
+    bool equals(const DSValue &obj) const override {
+        return this->value == typeAs<String_Object>(obj)->value;
+    }
+
+    bool compare(const DSValue &obj) const override {
+        auto *str2 = typeAs<String_Object>(obj);
+        unsigned int size = std::min(this->size(), str2->size());
+        return memcmp(this->getValue(), str2->getValue(), size + 1) < 0;
+    }
+
     size_t hash() const override;
 };
 

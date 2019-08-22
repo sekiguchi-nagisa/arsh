@@ -197,16 +197,6 @@ std::string String_Object::toString() const {
     return this->value;
 }
 
-bool String_Object::equals(const DSValue &obj) const {
-    return this->value == typeAs<String_Object>(obj)->value;
-}
-
-bool String_Object::compare(const DSValue &obj) const {
-    auto *str2 = typeAs<String_Object>(obj);
-    unsigned int size = std::min(this->size(), str2->size());
-    return memcmp(this->getValue(), str2->getValue(), size + 1) < 0;
-}
-
 size_t String_Object::hash() const {
     return std::hash<std::string>()(this->value);
 }

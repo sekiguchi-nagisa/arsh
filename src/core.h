@@ -34,30 +34,6 @@
 
 struct DSState;
 
-struct DSCandidates {
-    using CStrBuffer = ydsh::FlexBuffer<char *>;
-
-    CStrBuffer buf;
-
-    DSCandidates() = default;
-
-    DSCandidates(DSCandidates &&can) noexcept : buf(std::move(can.buf)) {}
-
-    DSCandidates &operator=(DSCandidates &&can) noexcept {
-        auto tmp(std::move(can));
-        this->buf.swap(tmp.buf);
-        return *this;
-    }
-
-    ~DSCandidates() {
-        for(auto &e : this->buf) {
-            free(e);
-        }
-    }
-
-    void append(std::string &&str);
-};
-
 namespace ydsh {
 
 /**
@@ -73,6 +49,7 @@ enum class BuiltinVarOffset : unsigned int {
     IFS,            // IFS
     SCRIPT_DIR,     // SCRIPT_DIR
     HISTORY,        // HISTORY
+    COMPREPLY,      // COMPREPLY
     PIPESTATUS,     // PIPESTATUS
     EXIT_STATUS,    // ?
     SHELL_PID,      // $
@@ -233,10 +210,13 @@ std::string expandDots(const char *basePath, const char *path);
 void expandTilde(std::string &str);
 
 /**
- * return completion candidates.
- * line must be terminate newline.
+ * complete line.
+ * after completion, set results to COMPREPLY.
+ * @param st
+ * @param line
+ * must be terminate newline.
  */
-DSCandidates completeLine(DSState &st, const std::string &line);
+void completeLine(DSState &st, const std::string &line);
 
 class SignalGuard {
 private:

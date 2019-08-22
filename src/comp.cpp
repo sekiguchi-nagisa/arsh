@@ -28,26 +28,6 @@
 
 extern char **environ;  //NOLINT
 
-// ##########################
-// ##     DSCandidates     ##
-// ##########################
-
-void DSCandidates::append(std::string &&str) {
-    // find inserting position
-    auto iter = std::lower_bound(this->buf.begin(), this->buf.end(),
-                                 str.c_str(), [](const char *x, const char *y){
-                return strcmp(x, y) < 0;
-            });
-    if(iter != this->buf.end()) {
-        if(strcmp(str.c_str(), *iter) < 0) {
-            this->buf.insert(iter, strdup(str.c_str()));
-        }
-    } else {
-        // not found, append to last
-        this->buf += strdup(str.c_str());
-    }
-}
-
 namespace ydsh {
 
 // for input completion
@@ -119,12 +99,15 @@ static std::string escape(const char *str, EscapeOp op) {
 }
 
 
-static void append(DSCandidates &can, const char *str, EscapeOp op) {
+static void append(Array_Object &can, const char *str, EscapeOp op) {
+    assert(can.getType()->is(TYPE::StringArray));
+    auto *type = static_cast<ReifiedType *>(can.getType())->getElementTypes()[0];
+    assert(type->is(TYPE::String));
     std::string estr = escape(str, op);
-    can.append(std::move(estr));
+    can.append(DSValue::create<String_Object>(*type, std::move(estr)));
 }
 
-static void append(DSCandidates &buf, const std::string &str, EscapeOp op) {
+static void append(Array_Object &buf, const std::string &str, EscapeOp op) {
     append(buf, str.c_str(), op);
 }
 
@@ -133,7 +116,7 @@ static bool startsWith(const char *s1, const char *s2) {
 }
 
 struct Completer {
-    virtual DSCandidates operator()() = 0;
+    virtual void operator()(Array_Object &ret) = 0;
 
     /**
      * for debugging.
@@ -151,13 +134,10 @@ private:
 public:
     explicit ExpectedTokenCompleter(std::string &&token) : token(std::move(token)) {}
 
-    DSCandidates operator()() override {
-        DSCandidates results;
-
+    void operator()(Array_Object &results) override {
         if(!this->token.empty()) {
             append(results, this->token, EscapeOp::NOP);
         }
-        return results;
     }
 
     const char *name() const override {
@@ -172,8 +152,7 @@ private:
 public:
     explicit EnvNameCompleter(std::string &&name) : envName(std::move(name)) {}
 
-    DSCandidates operator()() override {
-        DSCandidates results;
+    void operator()(Array_Object &results) override {
         for(unsigned int i = 0; environ[i] != nullptr; i++) {
             const char *env = environ[i];
             if(startsWith(env, this->envName.c_str())) {
@@ -182,7 +161,6 @@ public:
                 append(results, std::string(env, ptr - env), EscapeOp::NOP);
             }
         }
-        return results;
     }
 
     const char *name() const override {
@@ -205,7 +183,7 @@ public:
     CmdNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
             symbolTable(symbolTable), token(std::move(token)) {}
 
-    DSCandidates operator()() override;
+    void operator()(Array_Object &results) override;
 
     const char *name() const override {
         return "Command";
@@ -234,9 +212,7 @@ static std::vector<std::string> computePathList(const char *pathVal) {
     return result;
 }
 
-DSCandidates CmdNameCompleter::operator()() {
-    DSCandidates results;
-
+void CmdNameCompleter::operator()(Array_Object &results) {
     // search user defined command
     for(const auto &iter : this->symbolTable.globalScope()) {
         const char *name = iter.first.c_str();
@@ -261,7 +237,7 @@ DSCandidates CmdNameCompleter::operator()() {
     // search external command
     const char *path = getenv(ENV_PATH);
     if(path == nullptr) {
-        return results;
+        return;
     }
 
     auto pathList(computePathList(path));
@@ -284,7 +260,6 @@ DSCandidates CmdNameCompleter::operator()() {
         }
         closedir(dir);
     }
-    return results;
 }
 
 class GlobalVarNameCompleter : public Completer {
@@ -297,9 +272,7 @@ public:
     GlobalVarNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
             symbolTable(symbolTable), token(std::move(token)) {}
 
-    DSCandidates operator()() override {
-        DSCandidates results;
-
+    void operator()(Array_Object &results) override {
         for(const auto &iter : this->symbolTable.globalScope()) {
             const char *varName = iter.first.c_str();
             if(!this->token.empty() && !startsWith(varName, CMD_SYMBOL_PREFIX)
@@ -308,7 +281,6 @@ public:
                 append(results, iter.first, EscapeOp::NOP);
             }
         }
-        return results;
     }
 
     const char *name() const override {
@@ -336,8 +308,6 @@ public:
             baseDir(baseDir), token(std::move(token)), op(op) {}
 
 protected:
-    void completeImpl(DSCandidates &results);
-
     bool onlyExec() const {
         return hasFlag(this->op, FileNameCompOp::ONLY_EXEC);
     }
@@ -347,18 +317,14 @@ protected:
     }
 
 public:
-    DSCandidates operator()() override {
-        DSCandidates results;
-        this->completeImpl(results);
-        return results;
-    }
+    void operator()(Array_Object &results) override;
 
     const char *name() const override {
         return this->onlyExec() ? "QualifiedCommand" : "FileName";
     }
 };
 
-void FileNameCompleter::completeImpl(DSCandidates &results) {
+void FileNameCompleter::operator()(Array_Object &results) {
     const auto s = this->token.find_last_of('/');
 
     // complete tilde
@@ -438,21 +404,19 @@ struct ModNameCompleter : public FileNameCompleter {
     ModNameCompleter(const char *scriptDir, std::string &&token, bool tilde) :
             FileNameCompleter(scriptDir, std::move(token), tilde ? FileNameCompOp::TIDLE : FileNameCompOp{}) {}
 
-    DSCandidates operator()() override {
-        DSCandidates results;
+    void operator()(Array_Object &results) override {
         // complete in SCRIPT_DIR
-        this->completeImpl(results);
+        FileNameCompleter::operator()(results);
 
         // complete in local module dir
         std::string localModDir = LOCAL_MOD_DIR;
         expandTilde(localModDir);
         this->baseDir = localModDir.c_str();
-        this->completeImpl(results);
+        FileNameCompleter::operator()(results);
 
         // complete in system module dir
         this->baseDir = SYSTEM_MOD_DIR;
-        this->completeImpl(results);
-        return results;
+        FileNameCompleter::operator()(results);
     }
 
     const char *name() const override {
@@ -805,16 +769,26 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
     return nullptr;
 }
 
-DSCandidates completeLine(DSState &st, const std::string &line) {
+void completeLine(DSState &st, const std::string &line) {
     assert(!line.empty() && line.back() == '\n');
 
-    DSCandidates can;
+    auto &compreply = *typeAs<Array_Object>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
+    compreply.refValues().clear();  // clear old values
+    compreply.refValues().shrink_to_fit();
+
     CompleterFactory factory(st, line);
     auto comp = factory();
     if(comp) {
-        can = (*comp)();
+        (*comp)(compreply);
+        auto &values = compreply.refValues();
+        std::sort(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
+            return typeAs<String_Object>(x)->compare(y);
+        });
+        auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
+            return typeAs<String_Object>(x)->equals(y);
+        });
+        values.erase(iter, values.end());
     }
-    return can;
 }
 
 } // namespace ydsh
