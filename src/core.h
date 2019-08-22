@@ -71,7 +71,6 @@ enum class BuiltinVarOffset : unsigned int {
     PPID,           // PPID
     SECONDS,        // SECONDS
     IFS,            // IFS
-    CONFIG_DIR,     // CONFIG_DIR
     SCRIPT_DIR,     // SCRIPT_DIR
     HISTORY,        // HISTORY
     PIPESTATUS,     // PIPESTATUS
