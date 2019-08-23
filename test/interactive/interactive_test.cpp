@@ -1,11 +1,9 @@
 #include "gtest/gtest.h"
 
 #include <csignal>
-#include <fstream>
 
 #include <config.h>
 #include <misc/files.h>
-#include <misc/num.h>
 #include "../test_common.h"
 
 

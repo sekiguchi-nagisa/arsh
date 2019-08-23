@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
 
-#include <cstdio>
 #include <cstring>
 #include <algorithm>
 #include <csignal>

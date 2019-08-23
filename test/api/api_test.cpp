@@ -8,7 +8,6 @@
 #include <misc/fatal.h>
 #include <constant.h>
 
-#include <sys/types.h>
 #include <pwd.h>
 
 #include "../test_common.h"

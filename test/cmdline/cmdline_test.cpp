@@ -1,14 +1,9 @@
 #include "gtest/gtest.h"
-#include "gmock/gmock.h"
-
-#include <sys/time.h>
-#include <sys/resource.h>
 
 #include <config.h>
 #include <misc/files.h>
 #include <misc/util.hpp>
 #include <misc/fatal.h>
-#include <misc/flag_util.hpp>
 #include "../test_common.h"
 #include "../../tools/platform/platform.h"
 
