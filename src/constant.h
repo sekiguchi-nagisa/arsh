@@ -28,10 +28,6 @@ namespace ydsh {
 
 // =====  builtin variable  =====
 
-// boolean
-constexpr const char *VAR_TRUE = "TRUE";
-constexpr const char *VAR_FALSE = "FALSE";
-
 // io
 constexpr const char *VAR_STDIN = "STDIN";
 constexpr const char *VAR_STDOUT = "STDOUT";
@@ -44,7 +40,6 @@ constexpr const char *VAR_PS2 = "PS2";
 constexpr const char *VAR_HISTFILE = "HISTFILE";
 constexpr const char *VAR_HISTSIZE = "HISTSIZE";
 constexpr const char *VAR_HISTFILESIZE = "HISTFILESIZE";
-constexpr const char *VAR_HISTORY = "HISTORY";
 
 constexpr const char *VAR_SIG_DFL = "SIG_DFL";
 constexpr const char *VAR_SIG_IGN = "SIG_IGN";
