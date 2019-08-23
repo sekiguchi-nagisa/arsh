@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <fstream>
+
 #include <ydsh/ydsh.h>
 #include <misc/files.h>
 #include <directive.h>
