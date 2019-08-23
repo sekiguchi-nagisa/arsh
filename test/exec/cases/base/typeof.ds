@@ -24,3 +24,15 @@ assert([34: "3"] is Map<
                typeof('')
                )
                >)
+
+
+        assert [45].get(8) is typeof
+
+
+        (
+             34
+
+
+                  )!
+
+

@@ -398,7 +398,7 @@ TypeWrapper Parser::parse_typeNameImpl() {
             unsigned int startPos = token.pos;
             auto exprNode(TRY(this->parse_expression()));
 
-            token = TRY(this->expect(RP, false));
+            token = TRY(this->expect(RP));
 
             return {std::make_unique<TypeOfNode>(startPos, std::move(exprNode).release()), token};
         }
