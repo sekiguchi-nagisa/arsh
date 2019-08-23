@@ -27,25 +27,6 @@ using namespace ydsh;
 [[noreturn]]
 void exec_interactive(DSState *dsState);
 
-static void loadStd(DSState *state, const char *dir) {
-    std::string path;
-    if(dir) {
-        char *p = realpath(dir, nullptr);
-        path += p;
-        free(p);
-    } else {
-        path += DSState_configDir();
-        path += "/module";
-    }
-    path += "/history";
-    int ret = DSState_loadModule(state, path.c_str(), nullptr, DS_MOD_FULLPATH, nullptr);
-    if(ret) {
-        exit(ret);
-    }
-    // reset line num
-    DSState_setLineNum(state, 1);
-}
-
 static void loadRC(DSState *state, const char *rcfile) {
     if(rcfile == nullptr) {
         rcfile = "~/.ydshrc";
@@ -135,7 +116,6 @@ static void showFeature(FILE *fp) {
     OP(FEATURE,        "--feature",           opt::NO_ARG, "show available features") \
     OP(RC_FILE,        "--rcfile",            opt::HAS_ARG, "load specified rc file (only available interactive mode)") \
     OP(QUIET,          "--quiet",             opt::NO_ARG, "suppress startup message (only available interactive mode)") \
-    OP(STD,            "--std",               opt::HAS_ARG, "specify standard module directory (only available interactive mode)") \
     OP(SET_ARGS,       "-s",                  opt::NO_ARG, "set arguments and read command from standard input") \
     OP(INTERACTIVE,    "-i",                  opt::NO_ARG, "run interactive mode") \
     OP(CHECK_ONLY2,    "-n",                  opt::NO_ARG, "equivalent to `--check-only' option")
@@ -177,7 +157,6 @@ int main(int argc, char **argv) {
     DSExecMode mode = DS_EXEC_MODE_NORMAL;
     unsigned short option = 0;
     bool noAssert = false;
-    const char *stdDir = nullptr;
     struct {
         const DSDumpKind kind;
         const char *path;
@@ -249,9 +228,6 @@ int main(int argc, char **argv) {
         case QUIET:
             quiet = true;
             break;
-        case STD:
-            stdDir = result.arg();
-            break;
         case SET_ARGS:
             invocationKind = InvocationKind::FROM_STDIN;
             goto INIT;
@@ -304,7 +280,6 @@ int main(int argc, char **argv) {
             if(!quiet) {
                 fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
             }
-            loadStd(state, stdDir);
             if(userc) {
                 loadRC(state, rcfile);
             }
