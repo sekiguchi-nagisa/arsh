@@ -1172,7 +1172,7 @@ bool DSState::mainLoop() {
             this->pc() += 8;
             auto func = (native_func_t) v;
             DSValue returnValue = func(*this);
-            TRY(!this->getThrownObject());
+            TRY(!this->hasError());
             if(returnValue) {
                 this->push(std::move(returnValue));
             }
@@ -1527,9 +1527,9 @@ bool DSState::mainLoop() {
         }
 
         EXCEPT:
-        assert(this->getThrownObject());
+        assert(this->hasError());
         bool forceUnwind = this->symbolTable.get(TYPE::_InternalStatus)
-                .isSameOrBaseTypeOf(*this->getThrownObject()->getType());
+                .isSameOrBaseTypeOf(*this->thrownObject->getType());
         if(!this->handleException(forceUnwind)) {
             return false;
         }
@@ -1547,7 +1547,7 @@ bool DSState::handleException(bool forceUnwind) {
 
             // search exception entry
             const unsigned int occurredPC = this->pc();
-            const DSType *occurredType = this->getThrownObject()->getType();
+            const DSType *occurredType = this->thrownObject->getType();
 
             for(unsigned int i = 0; cc->getExceptionEntries()[i].type != nullptr; i++) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
@@ -1784,7 +1784,7 @@ DSErrorKind DSState::handleUncaughtException(const DSValue &except, DSError *dsE
         auto *handle = errorType.lookupMethodHandle(this->symbolTable, bt ? "backtrace" : OP_STR);
 
         DSValue ret = this->callMethod(handle, DSValue(except), makeArgs());
-        if(this->getThrownObject()) {
+        if(this->hasError()) {
             this->clearThrownObject();
             fputs("cannot obtain string representation\n", stderr);
         } else if(!bt) {

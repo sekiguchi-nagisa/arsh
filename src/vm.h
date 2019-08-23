@@ -209,7 +209,7 @@ public:
     }
 
     bool hasError() const {
-        return static_cast<bool>(this->getThrownObject());
+        return static_cast<bool>(this->thrownObject);
     }
 
     unsigned int &recDepth() noexcept {
@@ -223,7 +223,7 @@ public:
      * set exit status to it
      */
     void throwObject(DSValue &&except, int afterStatus) {
-        this->setThrownObject(std::move(except));
+        this->thrownObject = std::move(except);
         this->updateExitStatus(afterStatus);
     }
 
@@ -364,18 +364,6 @@ public:
 private:
     // exception api
     /**
-     * for exception reporting
-     * @param except
-     */
-    void setThrownObject(DSValue &&except) {
-        this->thrownObject = std::move(except);
-    }
-
-    const DSValue &getThrownObject() const {
-        return this->thrownObject;
-    }
-
-    /**
      * get thrownObject and push to callStack
      */
     void loadThrownObject() {
@@ -383,7 +371,7 @@ private:
     }
 
     void storeThrownObject() {
-        this->setThrownObject(this->pop());
+        this->thrownObject = this->pop();
     }
 
     void clearThrownObject() {
