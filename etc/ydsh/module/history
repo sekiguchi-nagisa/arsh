@@ -99,7 +99,7 @@ function _search($q : String) : String {
 
 function _load($p : String!) {
     if $HISTSIZE == 0u { return; }
-    if !$p { $p = $HISTFILE; }
+    if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? { return; }
     cat $path | while(read -r -f '') {
         $_add($REPLY, $true)
@@ -117,7 +117,7 @@ function _save($p : String!) {
         return;
     }
 
-    if !$p { $p = $HISTFILE; }
+    if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? { return; }
     for(var i = 0; $i < $HISTFILESIZE as Int && $i < $HISTORY.size(); $i++) {
         echo $HISTORY[$i]
