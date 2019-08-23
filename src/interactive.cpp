@@ -69,20 +69,16 @@ static bool checkLineContinuation(const StrWrapper &line) {
     return count % 2 != 0;
 }
 
-static void initHistory() {
-    DSState_historyOp(state, DS_HISTORY_INIT, 0, nullptr);
-}
-
 static void addHistory(const char *line) {
-    DSState_historyOp(state, DS_HISTORY_ADD, 0, &line);
+    DSState_lineEditOp(state, DS_EDIT_HIST_ADD, 0, &line);
 }
 
 static void loadHistory() {
-    DSState_historyOp(state, DS_HISTORY_LOAD, 0, nullptr);
+    DSState_lineEditOp(state, DS_EDIT_HIST_LOAD, 0, nullptr);
 }
 
 static void saveHistory() {
-    DSState_historyOp(state, DS_HISTORY_SAVE, 0, nullptr);
+    DSState_lineEditOp(state, DS_EDIT_HIST_SAVE, 0, nullptr);
 }
 
 static const std::string *lineBuf = nullptr;
@@ -245,12 +241,12 @@ static void completeCallback(const char *buf, size_t cursor, linenoiseCompletion
 }
 
 static const char *historyCallback(const char *buf, int *historyIndex, historyOp op) {
-    const unsigned int size = DSState_historyOp(state, DS_HISTORY_SIZE, 0, nullptr);
+    const unsigned int size = DSState_lineEditOp(state, DS_EDIT_HIST_SIZE, 0, nullptr);
     switch(op) {
     case LINENOISE_HISTORY_OP_NEXT:
     case LINENOISE_HISTORY_OP_PREV: {
         if(size > 1) {
-            DSState_historyOp(state, DS_HISTORY_SET, size - *historyIndex - 1, &buf);
+            DSState_lineEditOp(state, DS_EDIT_HIST_SET, size - *historyIndex - 1, &buf);
             *historyIndex += (op == LINENOISE_HISTORY_OP_PREV) ? 1 : -1;
             if(*historyIndex < 0) {
                 *historyIndex = 0;
@@ -261,19 +257,19 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
                 return nullptr;
             }
             const char *ret = nullptr;
-            DSState_historyOp(state, DS_HISTORY_GET, size - *historyIndex - 1, &ret);
+            DSState_lineEditOp(state, DS_EDIT_HIST_GET, size - *historyIndex - 1, &ret);
             return ret;
         }
         break;
     }
     case LINENOISE_HISTORY_OP_DELETE:
-        DSState_historyOp(state, DS_HISTORY_DEL, size - 1, nullptr);
+        DSState_lineEditOp(state, DS_EDIT_HIST_DEL, size - 1, nullptr);
         break;
     case LINENOISE_HISTORY_OP_INIT:
-        initHistory();
+        DSState_lineEditOp(state, DS_EDIT_HIST_INIT, 0, nullptr);
         break;
     case LINENOISE_HISTORY_OP_SEARCH:
-        DSState_historyOp(state, DS_HISTORY_SEARCH, size - *historyIndex - 1, &buf);
+        DSState_lineEditOp(state, DS_EDIT_HIST_SEARCH, size - *historyIndex - 1, &buf);
         return buf;
     }
     return nullptr;

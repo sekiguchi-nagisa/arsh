@@ -48,7 +48,6 @@ enum class BuiltinVarOffset : unsigned int {
     SECONDS,        // SECONDS
     IFS,            // IFS
     SCRIPT_DIR,     // SCRIPT_DIR
-    HISTORY,        // HISTORY
     COMPREPLY,      // COMPREPLY
     PIPESTATUS,     // PIPESTATUS
     EXIT_STATUS,    // ?

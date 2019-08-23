@@ -6,6 +6,7 @@ var HISTSIZE = 0u
 var HISTFILESIZE = 1000u
 var HISTIGNORE = $/^history/ as Regex!
 var HISTSEARCH = new Func<String,[String]>!()
+let HISTORY = new [String]()
 
 function _sync() {
     let limit = 4096u
@@ -22,7 +23,7 @@ function _error($s : String) {
 }
 
 function _usage($fd : UnixFD, $short : Boolean) : Int {
-    echo > $fd "history: history [-h] [-i] [-c] [-d offset] or history -s ARGs or history -p ARGs or history [-rw] [file]"
+    echo > $fd "history: history [-h] [-c] [-d offset] or history -s ARGs or history [-rw] [file]"
     if $short { return 2; }
 
     echo > $fd "Display or manipulate history list.
@@ -30,9 +31,7 @@ function _usage($fd : UnixFD, $short : Boolean) : Int {
         -c        clear the history list
         -d offset delete the history entry at OFFSET
         -h        show this help message
-        -i        append the empty string to history
         -s        append the Args to history as single entry
-        -p        search the history line with given pattern ARGs
 
         -r        read the history list from history file
         -w        write the history list to history file"
@@ -150,7 +149,6 @@ history() {
             return 2
         }
         '-h' => { $_usage($STDOUT, $false); return 0; }
-        '-i' => { $_add("", $false); return 0; }
         '-s' => {
             var line = ""
             for($i++; $i < $#; $i++) {
@@ -158,15 +156,6 @@ history() {
                 $line += $@[$i]
             }
             $_add($line, $true)
-            return 0;
-        }
-        '-p' => {
-            var line = ""
-            for($i++; $i < $#; $i++) {
-                if !$line.empty() { $line += " "; }
-                $line += $@[$i]
-            }
-            $REPLY = $_search($line)
             return 0;
         }
         '-r' | '-w' => {
@@ -201,3 +190,40 @@ history() {
     }
     return 0
 }
+
+function _editHook($op : Int, $index : Int, $text : String) : Any {
+    case $op {
+        # DS_EDIT_HIST_SIZE
+        0 => { return $HISTORY.size(); }
+
+        # DS_EDIT_HIST_GET
+        1 => { return $HISTORY[$index]; }
+
+        # DS_EDIT_HIST_SET
+        2 => $HISTORY[$index] = $text;
+
+        # DS_EDIT_HIST_DEL
+        3 => $HISTORY.remove($index)
+
+        # DS_EDIT_HIST_CLEAR
+        4 => history -c
+
+        # DS_EDIT_HIST_INIT
+        5 => $_add("", $false)
+
+        # DS_EDIT_HIST_ADD
+        6 => history -s $text
+
+        # DS_EDIT_HIST_LOAD
+        7 => history -r $text
+
+        # DS_EDIT_HIST_SAVE
+        8 => history -w $text
+
+        # DS_EDIT_HIST_SEARCH
+        9 => { return $_search($text); }
+    }
+    return $text
+}
+
+$EDIT_HOOK = $_editHook

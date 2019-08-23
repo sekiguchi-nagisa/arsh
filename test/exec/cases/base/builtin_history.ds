@@ -6,7 +6,7 @@ history -x
 assert $? == 2
 
 assert "$(history -xz 2>&1)" == "ydsh: history: -xz: invalid option
-history: history [-h] [-i] [-c] [-d offset] or history -s ARGs or history -p ARGs or history [-rw] [file]"
+history: history [-h] [-c] [-d offset] or history -s ARGs or history [-rw] [file]"
 
 # append
 $HISTSIZE = 100u

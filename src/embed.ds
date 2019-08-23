@@ -34,3 +34,6 @@ var TERM_HOOK = new Func<Void, [Int, Any]>!()
 
 # completer hook definition
 var COMP_HOOK = new Func<[String], [[String], Int]>!()
+
+# line edit op hook definition.
+var EDIT_HOOK = new Func<Any, [Int, Int, String]>!()

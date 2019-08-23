@@ -355,34 +355,35 @@ typedef enum {
  */
 unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
 
-/* for history */
+/* for line editing (history, prompt) */
 #define DS_HISTSIZE_LIMIT       ((unsigned int) 4096)
 #define DS_HISTFILESIZE_LIMIT   ((unsigned int) 4096)
 
 typedef enum {
-    DS_HISTORY_SIZE,    // current history buffer size
-    DS_HISTORY_GET,     // get history at index
-    DS_HISTORY_SET,     // set history at index
-    DS_HISTORY_DEL,     // delete history at index
-    DS_HISTORY_CLEAR,   // clear all of history
-    DS_HISTORY_INIT,    // add empty string to buffer
-    DS_HISTORY_ADD,     // add history to buffer
-    DS_HISTORY_LOAD,    // load history from file
-    DS_HISTORY_SAVE,    // save history to file
-    DS_HISTORY_SEARCH,  // search history
-} DSHistoryOp;
+    DS_EDIT_HIST_SIZE,    // current history buffer size
+    DS_EDIT_HIST_GET,     // get history at index
+    DS_EDIT_HIST_SET,     // set history at index
+    DS_EDIT_HIST_DEL,     // delete history at index
+    DS_EDIT_HIST_CLEAR,   // clear all of history
+    DS_EDIT_HIST_INIT,    // add empty string to buffer
+    DS_EDIT_HIST_ADD,     // add history to buffer
+    DS_EDIT_HIST_LOAD,    // load history from file
+    DS_EDIT_HIST_SAVE,    // save history to file
+    DS_EDIT_HIST_SEARCH,  // search history
+} DSLineEditOp;
 
 /**
- * do history operation
+ * do line edit operation
  * @param st
  * @param op
  * @param index
  * @param buf
  * @return
- * if op is DS_HISTORY_SIZE, return size of history.
- * otherwise, return 0, if success.
+ * if failed, return 0.
+ * if op is DS_EDIT_HIST_SIZE, return size of history.
+ * otherwise, return non-zero value
  */
-int DSState_historyOp(DSState *st, DSHistoryOp op, unsigned int index, const char **buf);
+unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const char **buf);
 
 #ifdef __cplusplus
 }

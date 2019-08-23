@@ -44,37 +44,37 @@ public:
     }
 
     unsigned int historySize() {
-        return DSState_historyOp(this->state, DS_HISTORY_SIZE, 0, nullptr);
+        return DSState_lineEditOp(this->state, DS_EDIT_HIST_SIZE, 0, nullptr);
     }
 
     const char *getHistory(unsigned int index) {
         const char *buf = nullptr;
-        DSState_historyOp(this->state, DS_HISTORY_GET, index, &buf);
+        DSState_lineEditOp(this->state, DS_EDIT_HIST_GET, index, &buf);
         return buf;
     }
 
     void setHistory(unsigned int index, const char *line) {
-        DSState_historyOp(this->state, DS_HISTORY_SET, index, &line);
+        DSState_lineEditOp(this->state, DS_EDIT_HIST_SET, index, &line);
     }
 
     void delHistory(unsigned int index) {
-        DSState_historyOp(this->state, DS_HISTORY_DEL, index, nullptr);
+        DSState_lineEditOp(this->state, DS_EDIT_HIST_DEL, index, nullptr);
     }
 
     void addHistory(const char *value) {
-        DSState_historyOp(this->state, DS_HISTORY_ADD, 0, &value);
+        DSState_lineEditOp(this->state, DS_EDIT_HIST_ADD, 0, &value);
     }
 
     void clearHistory() {
-        DSState_historyOp(this->state, DS_HISTORY_CLEAR, 0, nullptr);
+        DSState_lineEditOp(this->state, DS_EDIT_HIST_CLEAR, 0, nullptr);
     }
     
     void loadHistory(const char *fileName = nullptr) {
-        DSState_historyOp(this->state, DS_HISTORY_LOAD, 0, &fileName);
+        DSState_lineEditOp(this->state, DS_EDIT_HIST_LOAD, 0, &fileName);
     }
 
     void saveHistory(const char *fileName = nullptr) {
-        DSState_historyOp(this->state, DS_HISTORY_SAVE, 0, &fileName);
+        DSState_lineEditOp(this->state, DS_EDIT_HIST_SAVE, 0, &fileName);
     }
 
 private:

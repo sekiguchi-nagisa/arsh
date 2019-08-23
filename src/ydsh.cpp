@@ -225,12 +225,6 @@ static void initBuiltinVar(DSState *state) {
     bindVariable(state, "SCRIPT_DIR", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
 
     /**
-     * maintains HISTORY list
-     * must be Array_Object
-     */
-    bindVariable(state, "HISTORY", DSValue::create<Array_Object>(state->symbolTable.get(TYPE::StringArray)));
-
-    /**
      * maintain completion result.
      * must be Array_Object
      */
@@ -730,85 +724,47 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
     return 0;
 }
 
-static int exec(DSState *state, const char *argv[]) {
-    int old = DSState_getExitStatus(state);
-    int ret = DSState_exec(state, (char **)argv);
-    DSState_setExitStatus(state, old);
-    return ret;
-}
-
-int DSState_historyOp(DSState *st, DSHistoryOp op, unsigned int index, const char **buf) {
+unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const char **buf) {
     if(st == nullptr) {
-        return -1;
+        return 0;
     }
 
-    auto *hist = typeAs<Array_Object>(st->getGlobal(BuiltinVarOffset::HISTORY));
-    const unsigned int size = hist->getValues().size();
-    assert(size <= INT32_MAX);
+    auto func = getGlobal(*st, VAR_EIDT_HOOK);
+    if(func.isInvalid()) {
+        return 0;
+    }
 
+    auto args = makeArgs(
+            DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), op),
+            DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), index),
+            (buf && *buf) ? DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), *buf) : st->emptyStrObj
+    );
+    auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
+    st->editOpReply = st->callFunction(std::move(func), std::move(args));
+    st->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(old));
+    if(st->hasError()) {
+        if(buf) {
+            *buf = nullptr;
+        }
+        return 0;
+    }
+
+    auto *type = st->editOpReply->getType();
     switch(op) {
-    case DS_HISTORY_SIZE:
-        return size;
-    case DS_HISTORY_GET:
-        *buf = index < size ? typeAs<String_Object>(hist->getValues()[index])->getValue() : nullptr;
-        break;
-    case DS_HISTORY_SET:
-        if(*buf && index < size) {
-            DSType *type = static_cast<ReifiedType *>(hist->getType())->getElementTypes()[0];
-            hist->refValues()[index] = DSValue::create<String_Object>(*type, *buf);
+    case DS_EDIT_HIST_SIZE:
+        if(type->is(TYPE::Int32)) {
+            return typeAs<Int_Object>(st->editOpReply)->getValue();
         }
-        break;
-    case DS_HISTORY_DEL:
-        if(index < size) {
-            hist->refValues().erase(hist->refValues().begin() + index);
+        return 0;
+    case DS_EDIT_HIST_GET:
+    case DS_EDIT_HIST_SEARCH:
+        if(!type->is(TYPE::String) || buf == nullptr) {
+            return 0;
         }
+        *buf = typeAs<String_Object>(st->editOpReply)->getValue();
         break;
-    case DS_HISTORY_CLEAR:
-        hist->refValues().clear();
-        break;
-    case DS_HISTORY_INIT: {
-        const char *argv[] = {
-                "history", "-i", nullptr
-        };
-        return exec(st, argv);
-    }
-    case DS_HISTORY_ADD: {
-        const char *argv[] = {
-                "history", "-s", *buf, nullptr
-        };
-        return exec(st, argv);
-    }
-    case DS_HISTORY_LOAD: {
-        const char *argv[] = {
-                "history", "-r", buf ? *buf : nullptr, nullptr
-        };
-        return exec(st, argv);
-    }
-    case DS_HISTORY_SAVE: {
-        const char *argv[] = {
-                "history", "-w", buf ? *buf : nullptr, nullptr
-        };
-        return exec(st, argv);
-    }
-    case DS_HISTORY_SEARCH: {
-        const char *line = *buf;
-        *buf = nullptr;
-        if(index < size) {
-            auto old = st->getGlobal(BuiltinVarOffset::REPLY);
-            const char *argv[] = {
-                    "history", "-p", line, nullptr
-            };
-            int s = exec(st, argv);
-            if(s == 0) {
-                auto reply = st->getGlobal(BuiltinVarOffset::REPLY);
-                *buf = typeAs<String_Object>(reply)->getValue();
-                hist->refValues()[index] = std::move(reply);
-            }
-            st->setGlobal(toIndex(BuiltinVarOffset::REPLY), std::move(old));
-            return s;
-        }
+    default:
         break;
     }
-    }
-    return 0;
+    return 1;
 }

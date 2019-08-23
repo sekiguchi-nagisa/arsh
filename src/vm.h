@@ -106,6 +106,11 @@ public:
 
     const DSValue emptyFDObj;
 
+    /**
+     * maintains latest result of EDIT_HOOK
+     */
+    DSValue editOpReply;
+
     unsigned short option{DS_OPTION_ASSERT};
 
     DSExecMode execMode{DS_EXEC_MODE_NORMAL};
