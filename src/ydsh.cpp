@@ -362,6 +362,9 @@ static void loadEmbeddedScript(DSState *state) {
     // rest some state
     state->lineNum = 1;
     state->updateExitStatus(0);
+
+    // force initialize 'termHookIndex'
+    state->getTermHookIndex();
 }
 
 static void initEnv(const DSState &state) {
