@@ -1621,11 +1621,13 @@ YDSH_METHOD array_peek(RuntimeContext &ctx) {
 
 static bool array_insertImpl(DSState &ctx, int index, const DSValue &v) {
     auto *obj = typeAs<Array_Object>(LOCAL(0));
-    int size = obj->getValues().size();
-    if(size == INT32_MAX) {
+    auto size0 = obj->getValues().size();
+    if(size0 == INT32_MAX) {
         raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
         return false;
     }
+
+    int size = static_cast<int>(size0);
     if(index != size && !checkRange(ctx, index, size)) {
         return false;
     }
