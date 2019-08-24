@@ -16,6 +16,7 @@
 
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/utsname.h>
 #include <pwd.h>
 #include <fcntl.h>
 
@@ -365,10 +366,10 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
 
     struct tm *local = getLocalTime();
 
-    constexpr unsigned int hostNameSize = 128;    // in linux environment, HOST_NAME_MAX is 64
-    char hostName[hostNameSize];
-    if(gethostname(hostName, hostNameSize) !=  0) {
-        hostName[0] = '\0';
+    struct utsname name{};
+    if(uname(&name) == -1) {
+        perror("cannot get utsname");
+        exit(1);
     }
 
     for(unsigned int i = 0; ps[i] != '\0'; i++) {
@@ -393,13 +394,13 @@ std::string interpretPromptString(const DSState &st, const char *ps) {
                 ch = '\033';
                 break;
             case 'h': {
-                for(unsigned int j = 0; hostName[j] != '\0' && hostName[j] != '.'; j++) {
-                    output += hostName[j];
+                for(const char *ptr = name.nodename; *ptr != '\0' && *ptr != '.'; ptr++) {
+                    output += *ptr;
                 }
                 continue;
             }
             case 'H':
-                output += hostName;
+                output += name.nodename;
                 continue;
             case 'n':
                 ch = '\n';
