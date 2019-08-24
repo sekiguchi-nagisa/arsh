@@ -725,6 +725,12 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
 }
 
 unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const char **buf) {
+    const char *value = nullptr;
+    if(buf) {
+        value = *buf;
+        *buf = nullptr;
+    }
+
     if(st == nullptr) {
         return 0;
     }
@@ -737,15 +743,13 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
     auto args = makeArgs(
             DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), op),
             DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), index),
-            (buf && *buf) ? DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), *buf) : st->emptyStrObj
+            (value && *value) ? DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), value)
+                    : st->emptyStrObj
     );
     auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
     st->editOpReply = st->callFunction(std::move(func), std::move(args));
     st->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(old));
     if(st->hasError()) {
-        if(buf) {
-            *buf = nullptr;
-        }
         return 0;
     }
 
