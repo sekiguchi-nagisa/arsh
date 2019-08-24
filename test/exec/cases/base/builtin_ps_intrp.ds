@@ -17,9 +17,8 @@ assert($? == 2)
 assert("$(ps_intrp 2>&1)" == 'ps_intrp: ps_intrp prompt')
 
 # interpret
-assert command -v hostname
-assert("$(ps_intrp '\H')" == "$(hostname)")
-assert("$(ps_intrp '\h')" == "$(hostname)".split('.')[0])
+assert("$(ps_intrp '\H')" == "$(uname -n)")
+assert("$(ps_intrp '\h')" == "$(uname -n)".split('.')[0])
 assert("$(ps_intrp '\n')" == "$(echo -e '\n')")
 assert("$(ps_intrp '\r')" == "$(echo -e '\r')")
 assert("$(ps_intrp '\s')" == "$(basename $0)")
