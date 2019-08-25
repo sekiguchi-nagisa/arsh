@@ -968,6 +968,26 @@ static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
 YDSH_METHOD string_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_get);
     auto strObj = typeAs<String_Object>(LOCAL(0));
+    const int index = typeAs<Int_Object>(LOCAL(1))->getValue();
+    const unsigned int size = strObj->size();
+
+    if(index > -1 && static_cast<unsigned int>(index) < size) {
+        RET(DSValue::create<String_Object>(
+                ctx.symbolTable.get(TYPE::String), std::string(strObj->getValue() + index, 1)));
+    }
+
+    std::string msg("size is ");
+    msg += std::to_string(size);
+    msg += ", but index is ";
+    msg += std::to_string(index);
+    raiseOutOfRangeError(ctx, std::move(msg));
+    RET_ERROR;
+}
+
+//!bind: function charAt($this : String, $index : Int32) : String
+YDSH_METHOD string_charAt(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_charAt);
+    auto strObj = typeAs<String_Object>(LOCAL(0));
     const int pos = typeAs<Int_Object>(LOCAL(1))->getValue();
     const unsigned int size = strObj->size();
 

@@ -44,9 +44,11 @@ assert($a == "hello" + ' ' + "world")
 
 assert("12あ90灘"[0] == "1")
 assert("12あ90灘"[1] == "2")
-assert("12あ90灘"[2] == 'あ')
-assert("12あ90灘"[5] == '灘')
-try { "12あ90灘"[6]; assert($false); } catch($e) { assert($e is OutOfRangeError); }
+assert("12あ90灘"[2] != 'あ')  # get ascii character encoding
+assert("12あ90灘".charAt(2) == "あ")   # get UTF8 character
+assert("12あ90灘"[5] != '灘')  # get get ascii character encoding
+assert("12あ90灘".charAt(5) == '灘')   # get UTF8 character
+try { "12あ90灘".charAt(6); assert($false); } catch($e) { assert($e is OutOfRangeError); }
 
 assert($a.slice(0, 4) == "hell");
 assert($a.slice(-3, -1) == "rl");
