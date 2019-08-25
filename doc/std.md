@@ -245,6 +245,8 @@ function count($this : String) : Int32
 
 function %OP_GET($this : String, $index : Int32) : String
 
+function charAt($this : String, $index : Int32) : String
+
 function slice($this : String, $start : Int32, $stop : Int32) : String
 
 function from($this : String, $start : Int32) : String
