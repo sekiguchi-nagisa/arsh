@@ -191,12 +191,20 @@ add_gen_lexer_target(
 #     generate builtin binding     #
 #==================================#
 
+set(bind_doc ${CMAKE_SOURCE_DIR}/doc/std.md)
+add_custom_command(OUTPUT ${bind_doc}
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding --doc
+        ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_doc}
+    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/src/builtin.h
+    DEPENDS gen_binding
+)
+
 set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/bind.h)
 add_custom_command(OUTPUT ${bind_src}
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding
         ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_src}
     MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/src/builtin.h
-    DEPENDS gen_binding
+    DEPENDS gen_binding ${bind_doc}
 )
 
 
