@@ -19,8 +19,8 @@ assert child
 # UID, EUID
 assert $UID == $EUID
 assert $UID as String == "$(id -u)"
-assert $UID is Uint
-assert $EUID is Uint
+assert $UID is Int  # uid and euid is Int32
+assert $EUID is Int
 
 # uname
 assert($OSTYPE == "$(uname -s)" || $/cygwin/i =~ $OSTYPE)

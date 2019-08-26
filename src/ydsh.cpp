@@ -283,13 +283,13 @@ static void initBuiltinVar(DSState *state) {
      * uid of shell
      * must be Int_Object
      */
-    bindVariable(state, "UID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Uint32), getuid()));
+    bindVariable(state, "UID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), getuid()));
 
     /**
      * euid of shell
      * must be Int_Object
      */
-    bindVariable(state, "EUID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Uint32), geteuid()));
+    bindVariable(state, "EUID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), geteuid()));
 
     struct utsname name{};
     if(uname(&name) == -1) {
