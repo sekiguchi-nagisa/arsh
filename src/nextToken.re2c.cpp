@@ -90,7 +90,6 @@ TokenKind Lexer::nextToken(Token &token) {
       OCTAL = "0o" [0-7]+;
       HEX = "0x" [0-9a-fA-F]+;
       INTEGER = NUM | OCTAL | HEX;
-      INTEGER_ = NUM | OCTAL "_" | HEX "_";
       DIGITS = [0-9]+;
       FLOAT_SUFFIX =  [eE] [+-]? NUM;
       FLOAT = NUM "." DIGITS FLOAT_SUFFIX?;
@@ -161,8 +160,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "!"               { RET(NOT); }
 
       <STMT> INTEGER           { MODE(EXPR); RET(INT32_LITERAL); }
-      <STMT> INTEGER_ "i32"    { MODE(EXPR); RET(INT32_LITERAL); }
-      <STMT> INTEGER_ "i64"    { MODE(EXPR); RET(INT64_LITERAL); }
+      <STMT> INTEGER [lL]      { MODE(EXPR); RET(INT64_LITERAL); }
       <STMT> FLOAT             { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT> STRING_LITERAL    { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
       <STMT> ESTRING_LITERAL   { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }

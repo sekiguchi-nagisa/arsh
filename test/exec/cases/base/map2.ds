@@ -4,9 +4,9 @@ assert $b[$true] == 34
 assert $b[$false] == 90
 
 # Int64
-var i64 = [900000000i64 : 'hello', -2222222222222i64 : 'world']
-assert $i64[900000000i64] == 'hello'
-assert $i64[-2222222222222i64] == 'world'
+var i64 = [900000000L : 'hello', -2222222222222l : 'world']
+assert $i64[900000000l] == 'hello'
+assert $i64[-2222222222222l] == 'world'
 
 # Float
 var f = [3.14 : 3.14, 0.1e-3: 34]

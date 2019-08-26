@@ -1,49 +1,46 @@
 #$test($status = 1)
 
 # Int32
-var i32 = 23i32
+var i32 = 23
 assert($i32 is Int)
 assert($i32 is Int32)
 assert(+43 is Int32)
 assert(2147483647 is Int32)
 assert(+2147483647 is Int32)
-assert(2147483647i32 is Int32)
 assert(-2147483647 is Int32)
-assert(-2147483647i32 is Int32)
 
 assert(0xFFFFFFFF is Int32)
-assert(0xFFFFFFFF_i32 is Int32)
 assert(0xfFFFfFfF == -1)
 assert(0x7fffffff is Int32)
 assert(0x7fffffff == 2147483647)
-assert(0x80000000_i32 is Int32)
-assert(0x80000000_i32 == -1 - 2147483647i32)
+assert(0x80000000 is Int32)
+assert(0x80000000 == -1 - 2147483647)
 assert(0o37777777777 is Int32)
-assert(0o37777777777_i32 == -1)
-assert(0o17777777777_i32 is Int32)
-assert(0o17777777777_i32 == 2147483647)
+assert(0o37777777777 == -1)
+assert(0o17777777777 is Int32)
+assert(0o17777777777 == 2147483647)
 assert(0o20000000000 is Int32)
-assert(0o20000000000_i32 == -1 - 2147483647i32)
+assert(0o20000000000 == -1 - 2147483647)
 
 #Int64
-var i64 = 63457i64
+var i64 = 63457l
 assert($i64 is Int64)
-assert(9223372036854775807i64 is Int64)
-assert(+9223372036854775807i64 is Int64)
-assert(-9223372036854775807i64 is Int64)
+assert(9223372036854775807L is Int64)
+assert(+9223372036854775807L is Int64)
+assert(-9223372036854775807l is Int64)
 
-assert(0xFFFFFFFFFFFFFFFF_i64 is Int64)
-assert(0xFFFFFFFFFFFFFFFF_i64 == -1i64)
-assert(0x7FFFFFFFFFFFFFFF_i64 is Int64)
-assert(0x7FFFFFFFFFFFFFFF_i64 == 9223372036854775807i64)
-assert(0x8000000000000000_i64 is Int64)
-assert(0x8000000000000000_i64 == -1i64 - 9223372036854775807i64)
-assert(0o1777777777777777777777_i64 is Int64)
-assert(0o1777777777777777777777_i64 == -1i64)
-assert(0o777777777777777777777_i64 is Int64)
-assert(0o777777777777777777777_i64 == 9223372036854775807i64)
-assert(0o1000000000000000000000_i64 is Int64)
-assert(0o1000000000000000000000_i64 == -1i64 - 9223372036854775807i64)
+assert(0xFFFFFFFFFFFFFFFFl is Int64)
+assert(0xFFFFFFFFFFFFFFFFL == -1l)
+assert(0x7FFFFFFFFFFFFFFFl is Int64)
+assert(0x7FFFFFFFFFFFFFFFL == 9223372036854775807L)
+assert(0x8000000000000000l is Int64)
+assert(0x8000000000000000l == -1L - 9223372036854775807l)
+assert(0o1777777777777777777777L is Int64)
+assert(0o1777777777777777777777L == -1l)
+assert(0o777777777777777777777l is Int64)
+assert(0o777777777777777777777l == 9223372036854775807l)
+assert(0o1000000000000000000000L is Int64)
+assert(0o1000000000000000000000L == -1l - 9223372036854775807l)
 
 # Int32 op
 assert((12 + 3) is Int32)
@@ -89,53 +86,53 @@ assert((1 xor 2) is Int32)
 assert((1 xor 2) == 3)
 
 # Int64 op
-assert((12i64 + 3i64) is Int64)
-assert(12i64 + 3i64 == 15i64)
+assert((12L + 3L) is Int64)
+assert(12l + 3L == 15l)
 
-assert((150i64 - 50i64) is Int64)
-assert(150i64 - 50i64 == 100i64)
+assert((150L - 50L) is Int64)
+assert(150L - 50L == 100L)
 
-assert((50i64 * 10i64) is Int64)
-assert(50i64 * 10i64 == 500i64)
+assert((50L * 10L) is Int64)
+assert(50L * 10L == 500L)
 
-assert((99i64 / 33i64) is Int64)
-assert(99i64 / 33i64 == 3i64)
+assert((99L / 33L) is Int64)
+assert(99L / 33L == 3L)
 $ex = 1
-try { 12i64/0i64 } catch($e) { $ex = $e}
+try { 12L/0L } catch($e) { $ex = $e}
 assert($ex is ArithmeticError)
 
-assert((99i64 % 33i64) is Int64)
-assert(99i64 % 33i64 == 0i64)
+assert((99L % 33L) is Int64)
+assert(99L % 33L == 0L)
 $ex = 123
-try { 12i64%0i64 } catch($e) { $ex = $e}
+try { 12L%0L } catch($e) { $ex = $e}
 assert($ex is ArithmeticError)
 
-assert(12i64 == + 12i64)
-assert(-12i64 == - 12i64)
-assert((! 43i64) is Int64)
+assert(12L == + 12L)
+assert(-12L == - 12L)
+assert((! 43L) is Int64)
 
-assert(3456i64 != 345i64)
-assert(3543i64 < 9999i64)
-assert(32i64 > -999i64)
-assert(43i64 <= 43i64)
-assert(! (43i64 <= 0i64))
-assert(55i64 >= 55i64)
-assert(43i64 >= -353i64)
+assert(3456L != 345L)
+assert(3543L < 9999L)
+assert(32L > -999L)
+assert(43L <= 43L)
+assert(! (43L <= 0L))
+assert(55L >= 55L)
+assert(43L >= -353L)
 
-assert((1i64 or 2i64) is Int64)
-assert((1i64 or 2i64) == 3i64)
+assert((1L or 2L) is Int64)
+assert((1L or 2L) == 3L)
 
-assert((3i64 and 3i64) is Int64)
-assert((3i64 and 3i64) == 3i64)
+assert((3L and 3L) is Int64)
+assert((3L and 3L) == 3L)
 
-assert((1i64 xor 2i64) is Int64)
-assert((1i64 xor 2i64) == 3i64)
+assert((1L xor 2L) is Int64)
+assert((1L xor 2L) == 3L)
 
 
 # int cast
-assert((234i32 - 5674i64) is Int64)
+assert((234 - 5674L) is Int64)
 
 # widening
-var a = 2345i64
+var a = 2345L
 $a = 12
-assert($a == 12i64)
+assert($a == 12L)

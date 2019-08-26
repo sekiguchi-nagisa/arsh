@@ -2,4 +2,4 @@
 
 #$test($result = 'type', $lineNum = 5, $errorKind = 'Required', $status = 1)
 
-23.0 * 78i64
+23.0 * 78l
