@@ -209,7 +209,7 @@ static void initBuiltinVar(DSState *state) {
     /**
      * must be Long_Object.
      */
-    bindVariable(state, "SECONDS", DSValue::create<Long_Object>(state->symbolTable.get(TYPE::Uint64), 0), FieldAttribute::SECONDS);
+    bindVariable(state, "SECONDS", DSValue::create<Long_Object>(state->symbolTable.get(TYPE::Int64), 0), FieldAttribute::SECONDS);
 
     /**
      * for internal field splitting.
@@ -316,7 +316,7 @@ static void initBuiltinVar(DSState *state) {
      * dummy object for random number
      * must be Int_Object
      */
-    bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Uint32), 0),
+    bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0),
                  FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
 
     /**

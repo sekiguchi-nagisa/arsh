@@ -1472,18 +1472,18 @@ bool DSState::mainLoop() {
         vmcase(RAND) {
             std::random_device rand;
             std::default_random_engine engine(rand());
-            std::uniform_int_distribution<unsigned int> dist;
-            unsigned int v = dist(engine);
-            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint32), v));
+            std::uniform_int_distribution<int> dist;
+            int v = dist(engine);
+            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
             vmnext;
         }
         vmcase(GET_SECOND) {
             auto now = std::chrono::system_clock::now();
             auto diff = now - this->baseTime;
             auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
-            unsigned long v = typeAs<Long_Object>(this->getGlobal(BuiltinVarOffset::SECONDS))->getValue();
+            long v = typeAs<Long_Object>(this->getGlobal(BuiltinVarOffset::SECONDS))->getValue();
             v += sec.count();
-            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Uint64), v));
+            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Int64), v));
             vmnext;
         }
         vmcase(SET_SECOND) {
