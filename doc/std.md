@@ -6,33 +6,6 @@ function %OP_STR($this : Any) : String
 function %OP_INTERP($this : Any) : String
 ```
 
-## Byte type
-```
-function %OP_PLUS($this : Byte) : Byte
-
-function %OP_MINUS($this : Byte) : Byte
-
-function %OP_NOT($this : Byte) : Byte
-```
-
-## Int16 type
-```
-function %OP_PLUS($this : Int16) : Int16
-
-function %OP_MINUS($this : Int16) : Int16
-
-function %OP_NOT($this : Int16) : Int16
-```
-
-## Uint16 type
-```
-function %OP_PLUS($this : Uint16) : Uint16
-
-function %OP_MINUS($this : Uint16) : Uint16
-
-function %OP_NOT($this : Uint16) : Uint16
-```
-
 ## Int32 type
 ```
 function %OP_PLUS($this : Int32) : Int32
@@ -70,43 +43,6 @@ function %OP_OR($this : Int32, $target : Int32) : Int32
 function %OP_XOR($this : Int32, $target : Int32) : Int32
 ```
 
-## Uint32 type
-```
-function %OP_PLUS($this : Uint32) : Uint32
-
-function %OP_MINUS($this : Uint32) : Uint32
-
-function %OP_NOT($this : Uint32) : Uint32
-
-function %OP_ADD($this : Uint32, $target : Uint32) : Uint32
-
-function %OP_SUB($this : Uint32, $target : Uint32) : Uint32
-
-function %OP_MUL($this : Uint32, $target : Uint32) : Uint32
-
-function %OP_DIV($this : Uint32, $target : Uint32) : Uint32
-
-function %OP_MOD($this : Uint32, $target : Uint32) : Uint32
-
-function %OP_EQ($this : Uint32, $target : Uint32) : Boolean
-
-function %OP_NE($this : Uint32, $target : Uint32) : Boolean
-
-function %OP_LT($this : Uint32, $target : Uint32) : Boolean
-
-function %OP_GT($this : Uint32, $target : Uint32) : Boolean
-
-function %OP_LE($this : Uint32, $target : Uint32) : Boolean
-
-function %OP_GE($this : Uint32, $target : Uint32) : Boolean
-
-function %OP_AND($this : Uint32, $target : Uint32) : Uint32
-
-function %OP_OR($this : Uint32, $target : Uint32) : Uint32
-
-function %OP_XOR($this : Uint32, $target : Uint32) : Uint32
-```
-
 ## Int64 type
 ```
 function %OP_PLUS($this : Int64) : Int64
@@ -142,43 +78,6 @@ function %OP_AND($this : Int64, $target : Int64) : Int64
 function %OP_OR($this : Int64, $target : Int64) : Int64
 
 function %OP_XOR($this : Int64, $target : Int64) : Int64
-```
-
-## Uint64 type
-```
-function %OP_PLUS($this : Uint64) : Uint64
-
-function %OP_MINUS($this : Uint64) : Uint64
-
-function %OP_NOT($this : Uint64) : Uint64
-
-function %OP_ADD($this : Uint64, $target : Uint64) : Uint64
-
-function %OP_SUB($this : Uint64, $target : Uint64) : Uint64
-
-function %OP_MUL($this : Uint64, $target : Uint64) : Uint64
-
-function %OP_DIV($this : Uint64, $target : Uint64) : Uint64
-
-function %OP_MOD($this : Uint64, $target : Uint64) : Uint64
-
-function %OP_EQ($this : Uint64, $target : Uint64) : Boolean
-
-function %OP_NE($this : Uint64, $target : Uint64) : Boolean
-
-function %OP_LT($this : Uint64, $target : Uint64) : Boolean
-
-function %OP_GT($this : Uint64, $target : Uint64) : Boolean
-
-function %OP_LE($this : Uint64, $target : Uint64) : Boolean
-
-function %OP_GE($this : Uint64, $target : Uint64) : Boolean
-
-function %OP_AND($this : Uint64, $target : Uint64) : Uint64
-
-function %OP_OR($this : Uint64, $target : Uint64) : Uint64
-
-function %OP_XOR($this : Uint64, $target : Uint64) : Uint64
 ```
 
 ## Float type
@@ -267,11 +166,7 @@ function replace($this : String, $target : String, $rep : String) : String
 
 function toInt32($this : String) : Option<Int32>
 
-function toUint32($this : String) : Option<Uint32>
-
 function toInt64($this : String) : Option<Int64>
-
-function toUint64($this : String) : Option<Uint64>
 
 function toFloat($this : String) : Option<Float>
 

@@ -63,9 +63,6 @@ size_t DSObject::hash() const {
 // ########################
 
 std::string Int_Object::toString() const {
-    if(this->type->is(TYPE::Uint32)) {
-        return std::to_string(static_cast<unsigned int>(this->value));
-    }
     return std::to_string(this->value);
 }
 
@@ -74,9 +71,6 @@ bool Int_Object::equals(const DSValue &obj) const {
 }
 
 bool Int_Object::compare(const DSValue &obj) const {
-    if(this->type->is(TYPE::Uint32)) {
-        return static_cast<unsigned int>(this->value) < static_cast<unsigned int>(typeAs<Int_Object>(obj)->value);
-    }
     return this->value < typeAs<Int_Object>(obj)->value;
 }
 
@@ -125,9 +119,6 @@ std::string UnixFD_Object::toString() const {
 // #########################
 
 std::string Long_Object::toString() const {
-    if(this->type->is(TYPE::Uint64)) {
-        return std::to_string(static_cast<unsigned long>(this->value));
-    }
     return std::to_string(this->value);
 }
 
@@ -136,9 +127,6 @@ bool Long_Object::equals(const DSValue &obj) const {
 }
 
 bool Long_Object::compare(const DSValue &obj) const {
-    if(this->type->is(TYPE::Uint64)) {
-        return static_cast<unsigned long>(this->value) < static_cast<unsigned long>(typeAs<Long_Object>(obj)->value);
-    }
     return this->value < typeAs<Long_Object>(obj)->value;
 }
 

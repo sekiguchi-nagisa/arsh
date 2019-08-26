@@ -320,13 +320,8 @@ SymbolTable::SymbolTable() :
      */
     this->initBuiltinType(TYPE::_Value, "Value%%", true, this->get(TYPE::Any), info_Dummy());
 
-    this->initBuiltinType(TYPE::Byte, "Byte", false, this->get(TYPE::_Value), info_ByteType());
-    this->initBuiltinType(TYPE::Int16, "Int16", false, this->get(TYPE::_Value), info_Int16Type());
-    this->initBuiltinType(TYPE::Uint16, "Uint16", false, this->get(TYPE::_Value), info_Uint16Type());
     this->initBuiltinType(TYPE::Int32, "Int32", false, this->get(TYPE::_Value), info_Int32Type());
-    this->initBuiltinType(TYPE::Uint32, "Uint32", false, this->get(TYPE::_Value), info_Uint32Type());
     this->initBuiltinType(TYPE::Int64, "Int64", false, this->get(TYPE::_Value), info_Int64Type());
-    this->initBuiltinType(TYPE::Uint64, "Uint64", false, this->get(TYPE::_Value), info_Uint64Type());
     this->initBuiltinType(TYPE::Float, "Float", false, this->get(TYPE::_Value), info_FloatType());
     this->initBuiltinType(TYPE::Boolean, "Boolean", false, this->get(TYPE::_Value), info_BooleanType());
     this->initBuiltinType(TYPE::String, "String", false, this->get(TYPE::_Value), info_StringType());
@@ -577,14 +572,9 @@ std::string SymbolTable::toFunctionTypeName(DSType *returnType, const std::vecto
 }
 
 static const TYPE numTypeTable[] = {
-        TYPE::Byte,   // 0
-        TYPE::Int16,  // 1
-        TYPE::Uint16, // 2
-        TYPE::Int32,  // 3
-        TYPE::Uint32, // 4
-        TYPE::Int64,  // 5
-        TYPE::Uint64, // 6
-        TYPE::Float,  // 7
+        TYPE::Int32,  // 0
+        TYPE::Int64,  // 1
+        TYPE::Float,  // 2
 };
 
 int SymbolTable::getNumTypeIndex(const DSType &type) const {

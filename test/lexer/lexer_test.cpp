@@ -360,20 +360,6 @@ TEST_F(LexerTest_Lv1, int_literal5) {
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
-TEST_F(LexerTest_Lv1, int_literal6) {
-    const char *text = "0xabcdef0123456789ABCDEF_u";
-    this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(UINT32_LITERAL, text, EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
-}
-
-TEST_F(LexerTest_Lv1, int_literal7) {
-    const char *text = "0o12345670_b";
-    this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(BYTE_LITERAL, text, EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
-}
-
 // invalid int literal
 TEST_F(LexerTest_Lv1, invaild_int_literal1) {
     const char *text = "014";

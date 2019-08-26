@@ -5,7 +5,6 @@ if !(check_env PATH) {
 }
 
 alias Int = Int32
-alias Uint = Uint32
 
 var PS1 = '\s-\v\$ '
 var PS2 = '> '

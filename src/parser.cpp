@@ -44,7 +44,6 @@
 
 #define EACH_LA_primaryPattern(OP) \
     OP(INT32_LITERAL) \
-    OP(UINT32_LITERAL) \
     OP(SIGNAL_LITERAL) \
     OP(OPEN_DQUOTE) \
     OP(STRING_LITERAL) \
@@ -57,13 +56,8 @@
 #define EACH_LA_primary(OP) \
     OP(COMMAND) \
     OP(NEW) \
-    OP(BYTE_LITERAL) \
-    OP(INT16_LITERAL) \
-    OP(UINT16_LITERAL) \
     OP(INT32_LITERAL) \
-    OP(UINT32_LITERAL) \
     OP(INT64_LITERAL) \
-    OP(UINT64_LITERAL) \
     OP(FLOAT_LITERAL) \
     OP(STRING_LITERAL) \
     OP(REGEX_LITERAL) \
@@ -730,10 +724,6 @@ std::unique_ptr<Node> Parser::parse_primaryPattern() {
         auto pair = TRY(this->expectNum(INT32_LITERAL, &Lexer::toInt32));
         return std::unique_ptr<Node>(NumberNode::newInt32(pair.first, pair.second));
     }
-    case UINT32_LITERAL: {
-        auto pair = TRY(this->expectNum(UINT32_LITERAL, &Lexer::toUint32));
-        return std::unique_ptr<Node>(NumberNode::newUint32(pair.first, pair.second));
-    }
     case SIGNAL_LITERAL:
         return this->parse_signalLiteral();
     case STRING_LITERAL:
@@ -1138,33 +1128,13 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         node->updateToken(token);
         return std::move(node);
     }
-    case BYTE_LITERAL: {
-        auto pair = TRY(this->expectNum(BYTE_LITERAL, &Lexer::toUint8));
-        return std::unique_ptr<Node>(NumberNode::newByte(pair.first, pair.second));
-    }
-    case INT16_LITERAL: {
-        auto pair = TRY(this->expectNum(INT16_LITERAL, &Lexer::toInt16));
-        return std::unique_ptr<Node>(NumberNode::newInt16(pair.first, pair.second));
-    }
-    case UINT16_LITERAL: {
-        auto pair = TRY(this->expectNum(UINT16_LITERAL, &Lexer::toUint16));
-        return std::unique_ptr<Node>(NumberNode::newUint16(pair.first, pair.second));
-    }
     case INT32_LITERAL: {
         auto pair = TRY(this->expectNum(INT32_LITERAL, &Lexer::toInt32));
         return std::unique_ptr<Node>(NumberNode::newInt32(pair.first, pair.second));
     }
-    case UINT32_LITERAL: {
-        auto pair = TRY(this->expectNum(UINT32_LITERAL, &Lexer::toUint32));
-        return std::unique_ptr<Node>(NumberNode::newUint32(pair.first, pair.second));
-    }
     case INT64_LITERAL: {
         auto pair = TRY(this->expectNum(INT64_LITERAL, &Lexer::toInt64));
         return std::unique_ptr<Node>(NumberNode::newInt64(pair.first, pair.second));
-    }
-    case UINT64_LITERAL: {
-        auto pair = TRY(this->expectNum(UINT64_LITERAL, &Lexer::toUint64));
-        return std::unique_ptr<Node>(NumberNode::newUint64(pair.first, pair.second));
     }
     case FLOAT_LITERAL: {
         auto pair = TRY(this->expectNum(FLOAT_LITERAL, &Lexer::toDouble));

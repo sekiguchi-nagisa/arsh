@@ -83,16 +83,9 @@ void DSType::copyAllMethodRef(std::vector<const DSCode *> &) {
 int DSType::getIntPrecision() const {
     switch(this->getTypeID()) {
     case static_cast<unsigned int>(TYPE::Int64):
-    case static_cast<unsigned int>(TYPE::Uint64):
         return INT64_PRECISION;
     case static_cast<unsigned int>(TYPE::Int32):
-    case static_cast<unsigned int>(TYPE::Uint32):
         return INT32_PRECISION;
-    case static_cast<unsigned int>(TYPE::Int16):
-    case static_cast<unsigned int>(TYPE::Uint16):
-        return INT16_PRECISION;
-    case static_cast<unsigned int>(TYPE::Byte):
-        return BYTE_PRECISION;
     default:
         return INVALID_PRECISION;
     }

@@ -28,5 +28,5 @@ assert($tt is ArithmeticError)
 var t2 = $true ? 12 : 34.0
 assert($t2 is Float)
 
-$t2 = $false ? 34.0 : 22b
+$t2 = $false ? 34.0 : 22
 assert($t2 == 22.0)

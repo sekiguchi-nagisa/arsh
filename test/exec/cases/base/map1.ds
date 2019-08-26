@@ -67,4 +67,4 @@ assert $bb2["a"] == 100
 assert([23 : $true] is Map<Int, Boolean>)
 assert(["fre" : 32] is Any)
 
-assert(new Map<Byte, Any>() is Map<Byte, Any>)
+assert(new Map<Boolean, Any>() is Map<Boolean, Any>)

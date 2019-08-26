@@ -23,13 +23,8 @@ namespace ydsh {
 #define EACH_HANDLE_INFO_TYPE(OP) \
     OP(Void) \
     OP(Any) \
-    OP(Byte) \
-    OP(Int16) \
-    OP(Uint16) \
     OP(Int32) \
-    OP(Uint32) \
     OP(Int64) \
-    OP(Uint64) \
     OP(Float) \
     OP(Boolean)  \
     OP(String) \

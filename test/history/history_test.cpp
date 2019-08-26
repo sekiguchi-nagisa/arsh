@@ -90,7 +90,6 @@ private:
 
     void assignUintValue(const char *varName, unsigned int value) {
         std::string str = std::to_string(value);
-        str += "u";
         this->assignValue(varName, std::move(str));
     }
 };

@@ -164,9 +164,6 @@ public:
     /**
      * if converted number is out of range, status is 1.
      */
-    unsigned char toUint8(Token token, int &status) const;
-    short toInt16(Token token, int &status) const;
-    unsigned short toUint16(Token token, int &status) const;
     int toInt32(Token token, int &status) const;
     unsigned int toUint32(Token token, int &status) const;
     long toInt64(Token token, int &status) const;

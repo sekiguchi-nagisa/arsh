@@ -9,7 +9,7 @@ assert "$(history -xz 2>&1)" == "ydsh: history: -xz: invalid option
 history: history [-h] [-c] [-d offset] or history -s ARGs or history [-rw] [file]"
 
 # append
-$HISTSIZE = 100u
+$HISTSIZE = 100
 
 assert $HISTORY.empty()
 history -s hello world
@@ -92,7 +92,7 @@ assert "$(history hoge 2 2>&1)" == "ydsh: history: too many arguments"
 true
 
 # delete
-$HISTSIZE = 10u
+$HISTSIZE = 10
 history -c
 
 for $s in "abcdefghij" {

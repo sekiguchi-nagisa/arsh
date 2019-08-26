@@ -50,21 +50,11 @@
 | ENTER_FINALLY | 2: offset1 offset2             | -> value                                     | save current pc and go to instruction              |
 | EXIT_FINALLY  |                                | value ->                                     | pop stack top and go to instruction                |
 | LOOKUP_HASH   |                                | hashmap key ->                               | jump to the offset from stack top hashmap          |
-| COPY_INT      | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| TO_BYTE       |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| TO_U16        |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| TO_I16        |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| NEW_LONG      | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| COPY_LONG     | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| I_NEW_LONG    | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| NEW_INT       | 1: byte1                       | value -> value                               | convert number (see. int-cast.md)                  |
-| U32_TO_D      |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| I32_TO_I64    |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| I64_TO_I32    |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | I32_TO_D      |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| U64_TO_D      |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | I64_TO_D      |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| D_TO_U32      |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | D_TO_I32      |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| D_TO_U64      |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | D_TO_I64      |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | REF_EQ        |                                | value1 value2 -> value                       | check referencial equality                         |
 | REF_NE        |                                | value1 value2 -> value                       | check referencial un-equality                      |

@@ -55,13 +55,8 @@
     TOKEN(MINUS                              , "-") \
     TOKEN(NOT                                , "!") \
     /* literal */\
-    TOKEN(BYTE_LITERAL                       , "<Byte Literal>") \
-    TOKEN(INT16_LITERAL                      , "<Int16 Literal>") \
-    TOKEN(UINT16_LITERAL                     , "<Uint16 Literal>") \
     TOKEN(INT32_LITERAL                      , "<Int32 Literal>") \
-    TOKEN(UINT32_LITERAL                     , "<Uint32 Literal>") \
     TOKEN(INT64_LITERAL                      , "<Int64 Literal>") \
-    TOKEN(UINT64_LITERAL                     , "<Uint64 Literal>") \
     TOKEN(FLOAT_LITERAL                      , "<Float Literal>") \
     TOKEN(STRING_LITERAL                     , "<String Literal>") \
     TOKEN(REGEX_LITERAL                      , "<Regex Literal>") \

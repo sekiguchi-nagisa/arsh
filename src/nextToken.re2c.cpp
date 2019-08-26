@@ -161,14 +161,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "!"               { RET(NOT); }
 
       <STMT> INTEGER           { MODE(EXPR); RET(INT32_LITERAL); }
-      <STMT> INTEGER_ "u"      { MODE(EXPR); RET(UINT32_LITERAL); }
-      <STMT> INTEGER_ "b"      { MODE(EXPR); RET(BYTE_LITERAL); }
-      <STMT> INTEGER_ "i16"    { MODE(EXPR); RET(INT16_LITERAL); }
       <STMT> INTEGER_ "i32"    { MODE(EXPR); RET(INT32_LITERAL); }
       <STMT> INTEGER_ "i64"    { MODE(EXPR); RET(INT64_LITERAL); }
-      <STMT> INTEGER_ "u16"    { MODE(EXPR); RET(UINT16_LITERAL); }
-      <STMT> INTEGER_ "u32"    { MODE(EXPR); RET(UINT32_LITERAL); }
-      <STMT> INTEGER_ "u64"    { MODE(EXPR); RET(UINT64_LITERAL); }
       <STMT> FLOAT             { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT> STRING_LITERAL    { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
       <STMT> ESTRING_LITERAL   { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }

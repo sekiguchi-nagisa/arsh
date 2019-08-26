@@ -221,7 +221,7 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, DSType &targetType) 
     if(targetPrecision > DSType::INVALID_PRECISION) {
         int requiredPrecision = requiredType.getIntPrecision();
         if(requiredType.is(TYPE::Float) && targetPrecision < DSType::INT64_PRECISION) {
-            return true;    // check int (except for Int64, Uint64) to float cast
+            return true;    // check int (except for Int64) to float cast
         }
         if(targetPrecision < requiredPrecision && requiredPrecision <= DSType::INT64_PRECISION) {
             return true;    // check int widening
@@ -437,26 +437,11 @@ void TypeChecker::visitTypeNode(TypeNode &node) {
 
 void TypeChecker::visitNumberNode(NumberNode &node) {
     switch(node.kind) {
-    case NumberNode::Byte:
-        node.setType(this->symbolTable.get(TYPE::Byte));
-        break;
-    case NumberNode::Int16:
-        node.setType(this->symbolTable.get(TYPE::Int16));
-        break;
-    case NumberNode::Uint16:
-        node.setType(this->symbolTable.get(TYPE::Uint16));
-        break;
     case NumberNode::Int32:
         node.setType(this->symbolTable.get(TYPE::Int32));
         break;
-    case NumberNode::Uint32:
-        node.setType(this->symbolTable.get(TYPE::Uint32));
-        break;
     case NumberNode::Int64:
         node.setType(this->symbolTable.get(TYPE::Int64));
-        break;
-    case NumberNode::Uint64:
-        node.setType(this->symbolTable.get(TYPE::Uint64));
         break;
     case NumberNode::Float:
         node.setType(this->symbolTable.get(TYPE::Float));
@@ -1088,13 +1073,6 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
             delete node;
             node = NumberNode::newInt32(token, value);
             node->setType(this->symbolTable.get(TYPE::Int32));
-            return true;
-        } else if(node->getType().is(TYPE::Uint32)) {
-            unsigned int value = numNode->getIntValue();
-            value = -value;
-            delete node;
-            node = NumberNode::newUint32(token, value);
-            node->setType(this->symbolTable.get(TYPE::Uint32));
             return true;
         }
         break;

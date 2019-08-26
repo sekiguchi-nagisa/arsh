@@ -2,18 +2,18 @@
 # for history manipulation
 
 var HISTFILE = '~/.ydsh_history'
-var HISTSIZE = 0u
-var HISTFILESIZE = 1000u
+var HISTSIZE = 0
+var HISTFILESIZE = 1000
 var HISTIGNORE = $/^history/ as Regex!
 var HISTSEARCH = new Func<String,[String]>!()
 let HISTORY = new [String]()
 
 function _sync() {
-    let limit = 4096u
+    let limit = 4096
     if $HISTSIZE > $limit {
         $HISTSIZE = $limit
     }
-    while $HISTORY.size() as Uint > $HISTSIZE {
+    while $HISTORY.size() > $HISTSIZE {
         $HISTORY.pop()
     }
 }
@@ -67,7 +67,7 @@ function _show($argv : [String]) : Int {
 }
 
 function _add($s : String, $p : Boolean) {
-    if $HISTSIZE == 0u { return; }
+    if $HISTSIZE == 0 { return; }
     if !$HISTORY.empty() && $HISTORY.peek() == $s { return; }
 
     if $p {
@@ -76,7 +76,7 @@ function _add($s : String, $p : Boolean) {
         if $HISTIGNORE && $HISTIGNORE! =~ $s { return; }
     }
 
-    if $HISTORY.size() == $HISTSIZE as Int32 {
+    if $HISTORY.size() == $HISTSIZE {
         $HISTORY.shift()
     }
     $HISTORY.add($s)
@@ -97,7 +97,7 @@ function _search($q : String) : String {
 }
 
 function _load($p : String!) {
-    if $HISTSIZE == 0u { return; }
+    if $HISTSIZE == 0 { return; }
     if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? { return; }
     cat $path | while(read -r -f '') {
@@ -107,18 +107,18 @@ function _load($p : String!) {
 }
 
 function _save($p : String!) {
-    let limit = 4096u
+    let limit = 4096
     if $HISTFILESIZE > $limit {
         $HISTFILESIZE = $limit
     }
 
-    if $HISTFILESIZE == 0u || $HISTORY.empty() {
+    if $HISTFILESIZE == 0 || $HISTORY.empty() {
         return;
     }
 
     if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? { return; }
-    for(var i = 0; $i < $HISTFILESIZE as Int && $i < $HISTORY.size(); $i++) {
+    for(var i = 0; $i < $HISTFILESIZE && $i < $HISTORY.size(); $i++) {
         echo $HISTORY[$i]
     } with > $path
     chmod g-rw,o-rw $path

@@ -183,15 +183,10 @@ void NumberNode::dump(NodeDumper &dumper) const {
     DUMP_ENUM(kind, EACH_NUMBER_NODE_KIND);
 
     switch(this->kind) {
-    case Byte:
-    case Int16:
-    case Uint16:
     case Int32:
-    case Uint32:
         DUMP_PRIM(intValue);
         break;
     case Int64:
-    case Uint64:
         DUMP_PRIM(longValue);
         break;
     case Float:

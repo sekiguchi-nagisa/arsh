@@ -68,9 +68,6 @@ try { (34, new Boolean!()) as String } catch $e { $ex = $e }
 assert $ex is UnwrappingError
 
 assert "${[3 as Int!]}" == '3'
-$ex = 43
-try { "${[1u : new String!()]}" }catch $e { $ex = $e }
-assert $ex is UnwrappingError
 $ex = 0
 try { "${(2, $false, new Error!())}" }  catch $e { $ex = $e}
 assert $ex is UnwrappingError
@@ -80,7 +77,7 @@ $ex = 34
 try { echo ${['s' : new Float!()]}; }  catch $e { $ex = $e }
 assert $ex is UnwrappingError
 $ex = 43
-try { echo ${(new Byte!(),)}; } catch $e { $ex = $e }
+try { echo ${(new Float!(),)}; } catch $e { $ex = $e }
 assert $ex is UnwrappingError
 
 # type

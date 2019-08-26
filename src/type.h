@@ -49,13 +49,8 @@ enum class TYPE : unsigned int {
 
     _Value,    // super type of value type(int, float, bool, string). not directly used it.
 
-    Byte,       // unsigned int 8
-    Int16,
-    Uint16,
     Int32,
-    Uint32,
     Int64,
-    Uint64,
     Float,
     Boolean,
     String,
@@ -223,8 +218,6 @@ public:
 
     static constexpr int INT64_PRECISION = 50;
     static constexpr int INT32_PRECISION = 40;
-    static constexpr int INT16_PRECISION = 30;
-    static constexpr int BYTE_PRECISION = 20;
     static constexpr int INVALID_PRECISION = 1;
 
     /**

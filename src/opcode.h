@@ -71,21 +71,11 @@ namespace ydsh {
     OP(ENTER_FINALLY, 2,  1) \
     OP(EXIT_FINALLY , 0, -1) \
     OP(LOOKUP_HASH  , 0, -2) \
-    OP(COPY_INT     , 1,  0) \
-    OP(TO_BYTE      , 0,  0) \
-    OP(TO_U16       , 0,  0) \
-    OP(TO_I16       , 0,  0) \
-    OP(NEW_LONG     , 1,  0) \
-    OP(COPY_LONG    , 1,  0) \
-    OP(I_NEW_LONG   , 1,  0) \
-    OP(NEW_INT      , 1,  0) \
-    OP(U32_TO_D     , 0,  0) \
+    OP(I32_TO_I64   , 0,  0) \
+    OP(I64_TO_I32   , 0,  0) \
     OP(I32_TO_D     , 0,  0) \
-    OP(U64_TO_D     , 0,  0) \
     OP(I64_TO_D     , 0,  0) \
-    OP(D_TO_U32     , 0,  0) \
     OP(D_TO_I32     , 0,  0) \
-    OP(D_TO_U64     , 0,  0) \
     OP(D_TO_I64     , 0,  0) \
     OP(REF_EQ       , 0, -1) \
     OP(REF_NE       , 0, -1) \

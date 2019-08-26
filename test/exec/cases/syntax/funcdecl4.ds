@@ -1,2 +1,2 @@
 
-function f() : Int16, Int32, Int64 { throw 23; }
+function f() : Float, Int32, Int64 { throw 23; }

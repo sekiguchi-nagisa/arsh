@@ -1267,74 +1267,20 @@ bool DSState::mainLoop() {
             }
             vmnext;
         }
-        vmcase(COPY_INT) {
-            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
-            int v = typeAs<Int_Object>(this->pop())->getValue();
-            this->push(DSValue::create<Int_Object>(*type, v));
-            vmnext;
-        }
-        vmcase(TO_BYTE) {
-            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
-            v &= 0xFF;  // fill higher bits (8th ~ 31) with 0
-            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Byte), v));
-            vmnext;
-        }
-        vmcase(TO_U16) {
-            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
-            v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
-            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint16), v));
-            vmnext;
-        }
-        vmcase(TO_I16) {
-            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
-            v &= 0xFFFF;    // fill higher bits (16th ~ 31th) with 0
-            if((v & 0x8000) != 0u) {    // if 15th bit is 1, fill higher bits with 1
-                v |= 0xFFFF0000;
-            }
-            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int16), v));
-            vmnext;
-        }
-        vmcase(NEW_LONG) {
-            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
-            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
-            unsigned long l = v;
-            this->push(DSValue::create<Long_Object>(*type, l));
-            vmnext;
-        }
-        vmcase(COPY_LONG) {
-            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
-            long v = typeAs<Long_Object>(this->pop())->getValue();
-            this->push(DSValue::create<Long_Object>(*type, v));
-            vmnext;
-        }
-        vmcase(I_NEW_LONG) {
-            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
+        vmcase(I32_TO_I64) {
             int v = typeAs<Int_Object>(this->pop())->getValue();
             long l = v;
-            this->push(DSValue::create<Long_Object>(*type, l));
+            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Int64), l));
             vmnext;
         }
-        vmcase(NEW_INT) {
-            DSType *type = this->symbolTable.getByNumTypeIndex(read8(GET_CODE(*this), ++this->pc()));
+        vmcase(I64_TO_I32) {
             unsigned long l = typeAs<Long_Object>(this->pop())->getValue();
             auto v = static_cast<unsigned int>(l);
-            this->push(DSValue::create<Int_Object>(*type, v));
-            vmnext;
-        }
-        vmcase(U32_TO_D) {
-            unsigned int v = typeAs<Int_Object>(this->pop())->getValue();
-            auto d = static_cast<double>(v);
-            this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
+            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
             vmnext;
         }
         vmcase(I32_TO_D) {
             int v = typeAs<Int_Object>(this->pop())->getValue();
-            auto d = static_cast<double>(v);
-            this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
-            vmnext;
-        }
-        vmcase(U64_TO_D) {
-            unsigned long v = typeAs<Long_Object>(this->pop())->getValue();
             auto d = static_cast<double>(v);
             this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
             vmnext;
@@ -1345,22 +1291,10 @@ bool DSState::mainLoop() {
             this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
             vmnext;
         }
-        vmcase(D_TO_U32) {
-            double d = typeAs<Float_Object>(this->pop())->getValue();
-            auto v = static_cast<unsigned int>(d);
-            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint32), v));
-            vmnext;
-        }
         vmcase(D_TO_I32) {
             double d = typeAs<Float_Object>(this->pop())->getValue();
             auto v = static_cast<int>(d);
             this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
-            vmnext;
-        }
-        vmcase(D_TO_U64) {
-            double d = typeAs<Float_Object>(this->pop())->getValue();
-            auto v = static_cast<unsigned long>(d);
-            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Uint64), v));
             vmnext;
         }
         vmcase(D_TO_I64) {

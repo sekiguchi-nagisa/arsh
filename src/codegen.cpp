@@ -96,52 +96,22 @@ void ByteCodeGenerator::generateToString() {
     this->emitCallIns(OpCode::CALL_METHOD, 0, this->handle_STR->getMethodIndex());
 }
 
-static constexpr unsigned short toShort(OpCode op) {
-    return static_cast<unsigned char>(op);
-}
-
-static constexpr unsigned short toShort(OpCode op1, OpCode op2) {
-    return toShort(op1) | toShort(op2) << 8;
-}
-
 void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &afterType) {
     const int beforeIndex = this->symbolTable.getNumTypeIndex(beforeType);
     const int afterIndex = this->symbolTable.getNumTypeIndex(afterType);
 
-    assert(beforeIndex > -1 && beforeIndex < 8);
-    assert(afterIndex > -1 && afterIndex < 8);
+    assert(beforeIndex > -1 && beforeIndex < 3);
+    assert(afterIndex > -1 && afterIndex < 3);
 
-#define _1(L) toShort(OpCode::L)
-#define _2(L, R) toShort(OpCode::L, OpCode::R)
-
-    const unsigned short table[8][8] = {
-            {_1(HALT),             _1(COPY_INT),        _1(COPY_INT),        _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
-            {_1(TO_BYTE),          _1(HALT),            _1(TO_U16),          _1(COPY_INT), _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
-            {_1(TO_BYTE),          _1(TO_I16),          _1(HALT),            _1(COPY_INT), _1(COPY_INT), _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
-            {_1(TO_BYTE),          _1(TO_I16),          _1(TO_U16),          _1(HALT),     _1(COPY_INT), _1(I_NEW_LONG), _1(I_NEW_LONG), _1(I32_TO_D)},
-            {_1(TO_BYTE),          _1(TO_I16),          _1(TO_U16),          _1(COPY_INT), _1(HALT),     _1(NEW_LONG),   _1(NEW_LONG),   _1(U32_TO_D)},
-            {_2(NEW_INT,TO_BYTE),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(HALT),       _1(COPY_LONG),  _1(I64_TO_D)},
-            {_2(NEW_INT,TO_BYTE),  _2(NEW_INT,TO_I16),  _2(NEW_INT,TO_U16),  _1(NEW_INT),  _1(NEW_INT),  _1(COPY_LONG),  _1(HALT),       _1(U64_TO_D)},
-            {_2(D_TO_U32,TO_BYTE), _2(D_TO_I32,TO_I16), _2(D_TO_U32,TO_U16), _1(D_TO_I32), _1(D_TO_U32), _1(D_TO_I64),   _1(D_TO_U64),   _1(HALT)},
+    const OpCode table[3][3] = {
+            {OpCode::HALT,       OpCode::I32_TO_I64, OpCode::I32_TO_D},
+            {OpCode::I64_TO_I32, OpCode::HALT,       OpCode::I64_TO_D},
+            {OpCode::D_TO_I32,   OpCode::D_TO_I64,   OpCode::HALT},
     };
 
-#undef _1
-#undef _2
-
-    const unsigned short v = table[beforeIndex][afterIndex];
-    for(unsigned int i = 0; i < 2; i++) {
-        const unsigned short mask = 0xFF << (i * 8);
-        auto op = static_cast<OpCode>((mask & v) >> (i * 8));
-        if(op != OpCode::HALT) {
-            int size = getByteSize(op);
-            assert(size == 0 || size == 1);
-            if(size != 0) {
-                this->emit1byteIns(op, afterIndex);
-            } else {
-                this->emit0byteIns(op);
-            }
-        }
-    }
+    OpCode op = table[beforeIndex][afterIndex];
+    assert(op != OpCode::HALT);
+    this->emit0byteIns(op);
 }
 
 void ByteCodeGenerator::emitBranchIns(OpCode op, const Label &label) {
@@ -319,15 +289,10 @@ void ByteCodeGenerator::visitTypeNode(TypeNode &) {
 void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     DSValue value;
     switch(node.kind) {
-    case NumberNode::Byte:
-    case NumberNode::Int16:
-    case NumberNode::Uint16:
     case NumberNode::Int32:
-    case NumberNode::Uint32:
         value = DSValue::create<Int_Object>(node.getType(), node.getIntValue());
         break;
     case NumberNode::Int64:
-    case NumberNode::Uint64:
         value = DSValue::create<Long_Object>(node.getType(), node.getLongValue());
         break;
     case NumberNode::Float:
@@ -852,7 +817,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
 
 void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, Map_Object &obj) {
     unsigned int offset = this->currentCodeOffset();
-    auto value = DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Uint32), offset);
+    auto value = DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), offset);
     for(auto &e : node.getPatternNodes()) {
         obj.set(newObject(*e), DSValue(value));
     }

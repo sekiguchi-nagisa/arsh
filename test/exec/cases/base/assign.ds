@@ -33,10 +33,6 @@ assert $s == "hello"
     $a -= 1
     assert($a == -1)
 
-    var b = 1u16
-    $b += 789
-    assert($b == 790)
-
     var s = ''
     $s += "ab"
     assert($s == 'ab')
@@ -45,7 +41,7 @@ assert $s == "hello"
 }
 
 # field
-var t = (0, 12i16, 4u64)
+var t = (0, 12, 4i64)
 $t._0 += 1
 assert($t._0 == 1)
 $t._0 *= 2
@@ -60,7 +56,7 @@ assert($t._0 == -1)
 $t._1 -= 10
 assert($t._1 == 2)
 $t._2 /= 4
-assert($t._2 == 1u64)
+assert($t._2 == 1i64)
 
 var t2 = ("", 23)
 $t2._0 += "abcd"
@@ -81,9 +77,9 @@ assert($i[0] == 0)
 $i[0] -= 1
 assert($i[0] == -1)
 
-var w = ["a" : 1b]
+var w = ["a" : 1]
 $w["a"] += 23
-assert($w["a"] == 24u)
+assert($w["a"] == 24)
 
 var i2 = [0 : "12"]
 $i2[0] += "34"

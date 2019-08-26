@@ -16,7 +16,7 @@ function g($s : Int) : Float {
     var a = try {
         (100 / $s) as Float
     } catch $e : ArithmeticError {
-        0u
+        0
     }
     return $a
 }

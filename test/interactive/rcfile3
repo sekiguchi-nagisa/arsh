@@ -3,5 +3,5 @@
 
 source ../../etc/ydsh/module/history
 
-$HISTSIZE = 500u
+$HISTSIZE = 500
 $HISTFILE = ""

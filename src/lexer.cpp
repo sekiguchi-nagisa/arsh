@@ -248,36 +248,6 @@ std::string Lexer::toName(Token token) const {
     return name;
 }
 
-unsigned char Lexer::toUint8(Token token, int &status) const {
-    long value = this->toInt64(token, status);
-    if(value > UINT8_MAX || value < 0) {
-        status = 1;
-        return 0;
-    }
-    return static_cast<unsigned char>(value);
-}
-
-short Lexer::toInt16(Token token, int &status) const {
-    if(this->isDecimal(token)) {
-        long value = this->toInt64(token, status);
-        if(value > INT16_MAX || value < INT16_MIN) {
-            status = 1;
-            return 0;
-        }
-        return static_cast<short>(value);
-    }
-    return static_cast<short>(this->toUint16(token, status));
-}
-
-unsigned short Lexer::toUint16(Token token, int &status) const {
-    long value = this->toInt64(token, status);
-    if(value > UINT16_MAX || value < 0) {
-        status = 1;
-        return 0;
-    }
-    return static_cast<unsigned short>(value);
-}
-
 int Lexer::toInt32(Token token, int &status) const {
     if(this->isDecimal(token)) {
         long value = this->toInt64(token, status);

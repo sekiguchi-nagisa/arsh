@@ -20,10 +20,9 @@ assert($f is Func<Void, [Int, Error]>)
 assert(!($f is Func<Float, [Int, Int]>))
 
 # generic type
-var g1 = [1u32, 2u32, 3u32]
+var g1 = [1, 2, 3]
 var g2 = ["a", "b", "c"]
-assert($g1 is Array<Uint>)
-assert($g1 is Array<Uint32>)
+assert($g1 is Array<Int>)
 assert($g2 is Array<String>)
 
 var g4 = ["a" : 1, "b" : 2]

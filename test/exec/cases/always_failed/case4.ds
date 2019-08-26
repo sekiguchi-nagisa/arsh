@@ -1,8 +1,8 @@
 #$test($result = 'type', $lineNum = 7, $errorKind = 'DupPattern', $status = 1)
 
-case 34u {
-    34u => 45
-    -12u => 54
-    0u => 0
-    -12u => 7
+case 34 {
+    34 => 45
+    -12 => 54
+    0 => 0
+    -12 => 7
 }
