@@ -206,19 +206,19 @@ function _editHook($op : Int, $index : Int, $text : String) : Any {
         3 => $HISTORY.remove($index)
 
         # DS_EDIT_HIST_CLEAR
-        4 => history -c
+        4 => $HISTORY.clear()
 
         # DS_EDIT_HIST_INIT
         5 => $_add("", $false)
 
         # DS_EDIT_HIST_ADD
-        6 => history -s $text
+        6 => $_add($text, $true)
 
         # DS_EDIT_HIST_LOAD
-        7 => history -r $text
+        7 => $_load($text)
 
         # DS_EDIT_HIST_SAVE
-        8 => history -w $text
+        8 => $_save($text)
 
         # DS_EDIT_HIST_SEARCH
         9 => { return $_search($text); }
