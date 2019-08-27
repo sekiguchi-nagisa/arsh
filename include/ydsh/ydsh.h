@@ -31,10 +31,10 @@ typedef struct DSState DSState;
 /*********************/
 
 typedef enum {
-    DS_EXEC_MODE_NORMAL       = 0,
-    DS_EXEC_MODE_PARSE_ONLY   = 1,
-    DS_EXEC_MODE_CHECK_ONLY   = 2,
-    DS_EXEC_MODE_COMPILE_ONLY = 3,
+    DS_EXEC_MODE_NORMAL,
+    DS_EXEC_MODE_PARSE_ONLY,
+    DS_EXEC_MODE_CHECK_ONLY,
+    DS_EXEC_MODE_COMPILE_ONLY,
 } DSExecMode;
 
 /**
@@ -123,9 +123,9 @@ void DSState_setExitStatus(DSState *st, int status);
 
 /* for internal data structure dump */
 typedef enum {
-    DS_DUMP_KIND_UAST = 0,  /* dump untyped abstract syntax tree */
-    DS_DUMP_KIND_AST  = 1,  /* dump typed abstract syntax tree */
-    DS_DUMP_KIND_CODE = 2,  /* dump byte code */
+    DS_DUMP_KIND_UAST,  /* dump untyped abstract syntax tree */
+    DS_DUMP_KIND_AST,   /* dump typed abstract syntax tree */
+    DS_DUMP_KIND_CODE,  /* dump byte code */
 } DSDumpKind;
 
 /**
