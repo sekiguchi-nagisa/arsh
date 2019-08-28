@@ -192,6 +192,8 @@ history() {
 }
 
 function _editHook($op : Int, $index : Int, $text : String) : Any {
+    $_sync()
+
     case $op {
         # DS_EDIT_HIST_SIZE
         0 => { return $HISTORY.size(); }
