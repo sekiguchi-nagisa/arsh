@@ -1330,7 +1330,9 @@ static bool array_pushImpl(RuntimeContext &ctx) {
 //!bind: function push($this : Array<T0>, $value : T0) : Void
 YDSH_METHOD array_push(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_push);
-    array_pushImpl(ctx);
+    if(!array_pushImpl(ctx)) {
+        RET_ERROR;
+    }
     RET_VOID;
 }
 
