@@ -59,9 +59,6 @@ static std::string escape(const char *str, EscapeOp op) {
         bool found = false;
         switch(ch) {
         case ' ':
-        case '\t':
-        case '\r':
-        case '\n':
         case '\\':
         case ';':
         case '\'':
@@ -85,6 +82,12 @@ static std::string escape(const char *str, EscapeOp op) {
             }
             break;
         default:
+            if((ch >= 0 && ch < 32) || ch == 127) { // escape unprintable character
+                char d[32];
+                snprintf(d, arraySize(d), "$'\\x%02x'", ch);
+                buf += d;
+                continue;
+            }
             break;
         }
 
