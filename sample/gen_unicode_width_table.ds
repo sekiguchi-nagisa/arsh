@@ -13,7 +13,9 @@ write() {
 }
 
 function table($n : String, $v : typeof([""])) {
-    write -n "static const struct Interval $n[] = {"
+    write "#ifdef USE_${$n.upper()}"
+    write
+    write -n "static const UNICODE_INTERVAL $n[] = {"
     var i = 0
     for $e in $v {
         if($i % 4 == 0) { write -n -e "\n   "; }
@@ -22,6 +24,8 @@ function table($n : String, $v : typeof([""])) {
     }
     write
     write "};"
+    write
+    write "#endif"
     write
 }
 
@@ -59,19 +63,14 @@ echo "/* this is a auto-generated file by using sample/$(basename $0)  */" > $ou
 write "/*"
 cat EastAsianWidth.txt | head -n 2 >> $out
 write "*/"
-write "#ifndef $g"
-write "#define $g"
-write ""
-write "struct Interval {"
-write "    int begin;"
-write "    int end;"
-write "};"
+#write "#ifndef $g"
+#write "#define $g"
 write ""
 
 $IFS = $'\n'
 $table("zero_width_table", $(./uniset/uniset --32 cat:Me,Mn,Cf + U+1160..U+11FF - U+00AD))
 $table("two_width_table", $(./uniset/uniset --32 eaw:F,W - cat:Me,Mn,Cf))
 $table("ambiguous_width_table", $(./uniset/uniset --32 eaw:A - cat:Me,Mn,Cf))
-write "#endif //$g"
+#write "#endif //$g"
 
 echo code generation success

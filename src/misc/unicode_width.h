@@ -3,15 +3,10 @@
 # EastAsianWidth-12.1.0.txt
 # Date: 2019-03-31, 22:01:58 GMT [KW, LI]
 */
-#ifndef AUTO_GENERATED_UNICODE_WIDTH_H
-#define AUTO_GENERATED_UNICODE_WIDTH_H
 
-struct Interval {
-    int begin;
-    int end;
-};
+#ifdef USE_ZERO_WIDTH_TABLE
 
-static const struct Interval zero_width_table[] = {
+static const UNICODE_INTERVAL zero_width_table[] = {
     { 0x0300, 0x036F }, { 0x0483, 0x0489 }, { 0x0591, 0x05BD }, { 0x05BF, 0x05BF },
     { 0x05C1, 0x05C2 }, { 0x05C4, 0x05C5 }, { 0x05C7, 0x05C7 }, { 0x0600, 0x0605 },
     { 0x0610, 0x061A }, { 0x061C, 0x061C }, { 0x064B, 0x065F }, { 0x0670, 0x0670 },
@@ -97,7 +92,11 @@ static const struct Interval zero_width_table[] = {
     { 0xE0001, 0xE0001 }, { 0xE0020, 0xE007F }, { 0xE0100, 0xE01EF }
 };
 
-static const struct Interval two_width_table[] = {
+#endif
+
+#ifdef USE_TWO_WIDTH_TABLE
+
+static const UNICODE_INTERVAL two_width_table[] = {
     { 0x1100, 0x115F }, { 0x231A, 0x231B }, { 0x2329, 0x232A }, { 0x23E9, 0x23EC },
     { 0x23F0, 0x23F0 }, { 0x23F3, 0x23F3 }, { 0x25FD, 0x25FE }, { 0x2614, 0x2615 },
     { 0x2648, 0x2653 }, { 0x267F, 0x267F }, { 0x2693, 0x2693 }, { 0x26A1, 0x26A1 },
@@ -129,7 +128,11 @@ static const struct Interval two_width_table[] = {
     { 0x20000, 0x2FFFD }, { 0x30000, 0x3FFFD }
 };
 
-static const struct Interval ambiguous_width_table[] = {
+#endif
+
+#ifdef USE_AMBIGUOUS_WIDTH_TABLE
+
+static const UNICODE_INTERVAL ambiguous_width_table[] = {
     { 0x00A1, 0x00A1 }, { 0x00A4, 0x00A4 }, { 0x00A7, 0x00A8 }, { 0x00AA, 0x00AA },
     { 0x00AE, 0x00AE }, { 0x00B0, 0x00B4 }, { 0x00B6, 0x00BA }, { 0x00BC, 0x00BF },
     { 0x00C6, 0x00C6 }, { 0x00D0, 0x00D0 }, { 0x00D7, 0x00D8 }, { 0x00DE, 0x00E1 },
@@ -176,4 +179,5 @@ static const struct Interval ambiguous_width_table[] = {
     { 0x1F18F, 0x1F190 }, { 0x1F19B, 0x1F1AC }, { 0xF0000, 0xFFFFD }, { 0x100000, 0x10FFFD }
 };
 
-#endif //AUTO_GENERATED_UNICODE_WIDTH_H
+#endif
+
