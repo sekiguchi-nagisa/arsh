@@ -27,7 +27,7 @@ test -d $SRC_BACKUP || $usage("require initial snapshot in `$SRC_BACKUP'")
 
 test -d $DEST_BACKUP || $usage("require initial backup in `$DEST_BACKUP'")
 
-$UID == 0u || $usage("require root privilege. use `sudo'")
+$UID == 0 || $usage("require root privilege. use `sudo'")
 
 assert command -V date > /dev/null
 mount | grep $SRC_BACKUP && umount $SRC_BACKUP
