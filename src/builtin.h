@@ -1220,17 +1220,34 @@ YDSH_METHOD array_init(RuntimeContext &ctx) {
     RET_VOID;
 }
 
-// check index range and throw exception.
-static bool checkRange(RuntimeContext &ctx, int index, int size) {
-    if(index < 0 || index >= size) {
+#define TRY(E) ({ auto value = E; if(!value) { RET_ERROR; } std::forward<decltype(value)>(value); })
+
+struct ArrayIndex {
+    unsigned int index;
+    bool s;
+
+    explicit operator bool() const {
+        return this->s;
+    }
+};
+
+// check index range and get resolved index
+static ArrayIndex resolveIndex(int index, int size) {
+    index += (index < 0 ? size : 0);
+    bool s = index > -1 && index < size;
+    return {static_cast<unsigned int>(index), s};
+}
+
+static ArrayIndex resolveIndex(RuntimeContext &ctx, int index, int size) {
+    auto ret = resolveIndex(index, size);
+    if(!ret) {
         std::string message("size is ");
         message += std::to_string(size);
         message += ", but index is ";
-        message += std::to_string(index);
+        message += std::to_string(ret.index);
         raiseOutOfRangeError(ctx, std::move(message));
-        return false;
     }
-    return true;
+    return ret;
 }
 
 //!bind: function $OP_GET($this : Array<T0>, $index : Int32) : T0
@@ -1240,10 +1257,8 @@ YDSH_METHOD array_get(RuntimeContext &ctx) {
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!checkRange(ctx, index, size)) {
-        RET_ERROR;
-    }
-    RET(obj->getValues()[index]);
+    auto ret = TRY(resolveIndex(ctx, index, size));
+    RET(obj->getValues()[ret.index]);
 }
 
 //!bind: function get($this : Array<T0>, $index : Int32) : Option<T0>
@@ -1253,10 +1268,11 @@ YDSH_METHOD array_get2(RuntimeContext &ctx) {
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(index < 0 || index >= size) {
+    auto ret = resolveIndex(index, size);
+    if(!ret) {
         RET(DSValue::createInvalid());
     }
-    RET(obj->getValues()[index]);
+    RET(obj->getValues()[ret.index]);
 }
 
 //!bind: function $OP_SET($this : Array<T0>, $index : Int32, $value : T0) : Void
@@ -1266,10 +1282,8 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!checkRange(ctx, index, size)) {
-        RET_ERROR;
-    }
-    obj->set(index, EXTRACT_LOCAL(2));
+    auto ret = TRY(resolveIndex(ctx, index, size));
+    obj->set(ret.index, EXTRACT_LOCAL(2));
     RET_VOID;
 }
 
@@ -1280,11 +1294,9 @@ YDSH_METHOD array_remove(RuntimeContext &ctx) {
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     int size = obj->getValues().size();
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!checkRange(ctx, index, size)) {
-        RET_ERROR;
-    }
-    auto v = obj->getValues()[index];
-    obj->refValues().erase(obj->refValues().begin() + index);
+    auto ret = TRY(resolveIndex(ctx, index, size));
+    auto v = obj->getValues()[ret.index];
+    obj->refValues().erase(obj->refValues().begin() + ret.index);
     RET(v);
 }
 
@@ -1314,11 +1326,12 @@ static bool array_insertImpl(DSState &ctx, int index, const DSValue &v) {
         return false;
     }
 
+    ArrayIndex ret{static_cast<unsigned int>(index), true};
     int size = static_cast<int>(size0);
-    if(index != size && !checkRange(ctx, index, size)) {
+    if(index != size && !(ret = resolveIndex(ctx, index, size))) {
         return false;
     }
-    obj->refValues().insert(obj->refValues().begin() + static_cast<unsigned int>(index), v);
+    obj->refValues().insert(obj->refValues().begin() + ret.index, v);
     return true;
 }
 
@@ -1330,9 +1343,7 @@ static bool array_pushImpl(RuntimeContext &ctx) {
 //!bind: function push($this : Array<T0>, $value : T0) : Void
 YDSH_METHOD array_push(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_push);
-    if(!array_pushImpl(ctx)) {
-        RET_ERROR;
-    }
+    TRY(array_pushImpl(ctx));
     RET_VOID;
 }
 
@@ -1340,9 +1351,7 @@ YDSH_METHOD array_push(RuntimeContext &ctx) {
 YDSH_METHOD array_pop(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_pop);
     DSValue v;
-    if(!array_fetch(ctx, v)) {
-        RET_ERROR;
-    }
+    TRY(array_fetch(ctx, v));
     typeAs<Array_Object>(LOCAL(0))->refValues().pop_back();
     RET(v);
 }
@@ -1351,9 +1360,7 @@ YDSH_METHOD array_pop(RuntimeContext &ctx) {
 YDSH_METHOD array_shift(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_shift);
     DSValue v;
-    if(!array_fetch(ctx, v, false)) {
-        RET_ERROR;
-    }
+    TRY(array_fetch(ctx, v, false));
     auto &values = typeAs<Array_Object>(LOCAL(0))->refValues();
     values.erase(values.begin());
     RET(v);
@@ -1362,27 +1369,21 @@ YDSH_METHOD array_shift(RuntimeContext &ctx) {
 //!bind: function unshift($this : Array<T0>, $value : T0) : Void
 YDSH_METHOD array_unshift(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_unshift);
-    if(!array_insertImpl(ctx, 0, LOCAL(1))) {
-        RET_ERROR;
-    }
+    TRY(array_insertImpl(ctx, 0, LOCAL(1)));
     RET_VOID;
 }
 
 //!bind: function insert($this : Array<T0>, $index : Int32, $value : T0) : Void
 YDSH_METHOD array_insert(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_insert);
-    if(!array_insertImpl(ctx, typeAs<Int_Object>(LOCAL(1))->getValue(), LOCAL(2))) {
-        RET_ERROR;
-    }
+    TRY(array_insertImpl(ctx, typeAs<Int_Object>(LOCAL(1))->getValue(), LOCAL(2)));
     RET_VOID;
 }
 
 //!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
 YDSH_METHOD array_add(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_add);
-    if(!array_pushImpl(ctx)) {
-        RET_ERROR;
-    }
+    TRY(array_pushImpl(ctx));
     RET(LOCAL(0));
 }
 
@@ -1409,11 +1410,9 @@ YDSH_METHOD array_swap(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_swap);
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     int index = typeAs<Int_Object>(LOCAL(1))->getValue();
-    if(!checkRange(ctx, index, obj->getValues().size())) {
-        RET_ERROR;
-    }
+    auto ret = TRY(resolveIndex(ctx, index, obj->getValues().size()));
     DSValue value = LOCAL(2);
-    std::swap(obj->refValues()[index], value);
+    std::swap(obj->refValues()[ret.index], value);
     RET(value);
 }
 
