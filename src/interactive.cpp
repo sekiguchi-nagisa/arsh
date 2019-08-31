@@ -139,20 +139,19 @@ static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize,
     const char *limit = buf + bufSize;
     int codePoint = 0;
     unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, limit, codePoint);
-    int width = UnicodeUtil::localeAwareWidth(codePoint);
-    if(width < 1) {
-        return 0;
+    if(UnicodeUtil::isCombiningChar(codePoint)) {
+        return 0;   // may be broken
     }
 
     if(columSize != nullptr) {
-        *columSize = width;
+        *columSize = UnicodeUtil::isWideChar(codePoint) ? 2 : 1;
     }
     pos += byteSize;
 
     // skip next combining character
     while(pos < bufSize) {
         byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, limit, codePoint);
-        if(UnicodeUtil::localeAwareWidth(codePoint) != 0) {
+        if(!UnicodeUtil::isCombiningChar(codePoint)) {
             break;
         }
         pos += byteSize;
@@ -167,10 +166,9 @@ static std::size_t encoding_prevCharLen(const char *buf, std::size_t,
         std::size_t len = prevUtf8CharLen(buf, pos);
         pos -= len;
         int codePoint = UnicodeUtil::utf8ToCodePoint(buf + pos, len);
-        int width = UnicodeUtil::localeAwareWidth(codePoint);
-        if(width > 0) {
+        if(!UnicodeUtil::isCombiningChar(codePoint)) {
             if(columSize != nullptr) {
-                *columSize = width;
+                *columSize = UnicodeUtil::isWideChar(codePoint) ? 2 : 1;
             }
             return end - pos;
         }
