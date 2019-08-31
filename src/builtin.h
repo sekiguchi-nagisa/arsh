@@ -1244,7 +1244,7 @@ static ArrayIndex resolveIndex(RuntimeContext &ctx, int index, int size) {
         std::string message("size is ");
         message += std::to_string(size);
         message += ", but index is ";
-        message += std::to_string(ret.index);
+        message += std::to_string(index);
         raiseOutOfRangeError(ctx, std::move(message));
     }
     return ret;
