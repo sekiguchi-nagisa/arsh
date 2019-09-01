@@ -23,7 +23,7 @@ function _error($s : String) {
 }
 
 function _usage($fd : UnixFD, $short : Boolean) : Int {
-    echo > $fd "history: history [-h] [-c] [-d offset] or history -s ARGs or history [-rw] [file]"
+    echo > $fd "history: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
     if $short { return 2; }
 
     echo > $fd "Display or manipulate history list.
