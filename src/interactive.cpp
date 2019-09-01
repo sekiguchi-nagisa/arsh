@@ -140,7 +140,7 @@ static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize,
     int codePoint = 0;
     unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, limit, codePoint);
     if(UnicodeUtil::isCombiningChar(codePoint)) {
-        return 0;   // may be broken
+        return 1;   // may be broken string
     }
 
     if(columSize != nullptr) {
@@ -173,7 +173,7 @@ static std::size_t encoding_prevCharLen(const char *buf, std::size_t,
             return end - pos;
         }
     }
-    return 0;
+    return 1;   // may be broken string
 }
 
 
