@@ -195,15 +195,15 @@ bool DSState::prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvOb
         this->updateExitStatus(0);
     }
 
-    // set stack stack
-    if(!this->windStackFrame(0, 0, code)) {
+    // set parameter
+    this->reserveLocalStack(3);
+    this->push(DSValue::createNum(attr));
+    this->push(std::move(restoreFD));
+    this->push(std::move(argvObj));
+
+    if(!this->windStackFrame(3, 3, code)) {
         return false;
     }
-
-    // set parameter
-    this->setLocal(UDC_PARAM_ATTR, DSValue::createNum(attr));
-    this->setLocal(UDC_PARAM_REDIR, std::move(restoreFD));
-    this->setLocal(UDC_PARAM_ARGV, std::move(argvObj));
 
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
         auto argv = typeAs<Array_Object>(this->getLocal(UDC_PARAM_ARGV));
