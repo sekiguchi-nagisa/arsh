@@ -139,12 +139,13 @@ static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize,
     const char *limit = buf + bufSize;
     int codePoint = 0;
     unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, limit, codePoint);
-    if(UnicodeUtil::isCombiningChar(codePoint)) {
+    int width = UnicodeUtil::localeAwareWidth(codePoint);
+    if(width == -2) {
         return 1;   // may be broken string
     }
 
     if(columSize != nullptr) {
-        *columSize = UnicodeUtil::isWideChar(codePoint) ? 2 : 1;
+        *columSize = width < 2 ? 1 : 2;
     }
     pos += byteSize;
 
@@ -166,9 +167,10 @@ static std::size_t encoding_prevCharLen(const char *buf, std::size_t,
         std::size_t len = prevUtf8CharLen(buf, pos);
         pos -= len;
         int codePoint = UnicodeUtil::utf8ToCodePoint(buf + pos, len);
-        if(!UnicodeUtil::isCombiningChar(codePoint)) {
+        int width = UnicodeUtil::localeAwareWidth(codePoint);
+        if(width != -2) {
             if(columSize != nullptr) {
-                *columSize = UnicodeUtil::isWideChar(codePoint) ? 2 : 1;
+                *columSize = width < 2 ? 1 : 2;
             }
             return end - pos;
         }
