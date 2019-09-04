@@ -136,8 +136,8 @@ TEST_F(UnicodeTest, multi) {
     ASSERT_NO_FATAL_FAILURE(this->assertWidth(2, "ま", true));
 
     unsigned char b[] = {0xCC, 0x88, 0};   // combining character
-    ASSERT_NO_FATAL_FAILURE(this->assertWidth(0, (char *)b));
-    ASSERT_NO_FATAL_FAILURE(this->assertWidth(0, (char *)b, true));
+    ASSERT_NO_FATAL_FAILURE(this->assertWidth(-2, (char *)b));
+    ASSERT_NO_FATAL_FAILURE(this->assertWidth(-2, (char *)b, true));
 
     ASSERT_NO_FATAL_FAILURE(this->assertWidth(1, "ｱ"));
     ASSERT_NO_FATAL_FAILURE(this->assertWidth(1, "ｱ", true));
@@ -207,7 +207,7 @@ TEST_F(UnicodeTest, illegal) {
     }
 
     // illegal code point
-    ASSERT_EQ(-2, UnicodeUtil::width(-1, UnicodeUtil::ONE_WIDTH));
+    ASSERT_EQ(-3, UnicodeUtil::width(-1, UnicodeUtil::ONE_WIDTH));
 }
 
 TEST_F(UnicodeTest, utf16) {

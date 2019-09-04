@@ -141,9 +141,10 @@ struct UnicodeUtil {
 
     /**
      * get width of unicode code point.
-     * return -2, if codePoint is negate.
+     * return -3, if codePoint is negate.
+     * return -2, if combining character
      * return -1, if control character.
-     * return 0, if combining character or null character.
+     * return 0, if null character.
      * return 2, if wide width character.
      * return 1, otherwise.
      *
@@ -345,7 +346,7 @@ bool UnicodeUtil<T>::isAmbiguousChar(int codePoint) {
 template <bool T>
 int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) {
     if(codePoint < 0) {
-        return -2;
+        return -3;
     }
     if(codePoint == 0) {
         return 0;   // null character width is 0
@@ -361,7 +362,7 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
 
     // search zero-width (combining) character
     if(isCombiningChar(codePoint)) {
-        return 0;
+        return -2;
     }
 
     // search ambiguous width character
