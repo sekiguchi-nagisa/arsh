@@ -302,14 +302,7 @@ unsigned long Lexer::toUint64(Token token, int &status) const {
 
 double Lexer::toDouble(Token token, int &status) const {
     assert(this->withinRange(token));
-
-    char str[token.size + 1];
-    for(unsigned int i = 0; i < token.size; i++) {
-        str[i] = this->buf[token.pos + i];
-    }
-    str[token.size] = '\0';
-
-    double value = convertToDouble(str, status);
+    double value = convertToDouble(this->toTokenText(token).c_str(), status);
     assert(status > -1);
     return value;
 }
