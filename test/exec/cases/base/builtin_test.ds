@@ -75,7 +75,14 @@ test -9 -ne 00
 assert($? == 0)
 
 test -90 -ne -0090
-assert($? == 1)
+assert($? == 2)
+
+test -90 -ne -0070
+assert($? == 0)
+
+assert test 0xFF -eq 0Xff
+
+assert test 076 -eq 0o0076
 
 test -9223372036854775808 -lt 23456767
 assert($? == 0)
