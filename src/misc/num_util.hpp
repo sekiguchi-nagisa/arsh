@@ -19,9 +19,27 @@
 
 #include "num.h"
 #include "detect.hpp"
-#include <numeric>
+#include <limits>
 
 namespace ydsh {
+
+// in clang 3.6/3.7, generic __builtin_mul_overflow and __builtin_add_overflow is not defined
+
+inline bool mul_overflow(uint32_t x, uint32_t y, uint32_t &r) {
+    return __builtin_umul_overflow(x, y, &r);
+}
+
+inline bool mul_overflow(uint64_t x, uint64_t y, uint64_t &r) {
+    return __builtin_umull_overflow(x, y, &r);
+}
+
+inline bool add_overflow(uint32_t x, uint32_t y, uint32_t &r) {
+    return __builtin_uadd_overflow(x, y, &r);
+}
+
+inline bool add_overflow(uint64_t x, uint64_t y, uint64_t &r) {
+    return __builtin_uaddl_overflow(x, y, &r);
+}
 
 inline int parseBase(const char *&begin, const char *end) {
     if(begin == end) {
@@ -70,7 +88,7 @@ inline std::pair<std::make_signed_t<U>, bool> makeSigned(U v, bool negate) {
             return {putSign(v), true};
         }
     } else {
-        if(v <= std::numeric_limits<T>::max()) {
+        if(v <= static_cast<U>(std::numeric_limits<T>::max())) {
             return {static_cast<T>(v), true};
         }
     }
@@ -107,8 +125,8 @@ inline std::pair<T, bool> parseDecimal(const char *&begin, const char *end) {
             status = false;
             break;
         }
-        if(__builtin_mul_overflow(ret, 10, &ret) ||  // ret = ret * 10
-           __builtin_add_overflow(ret, v, &ret)) {     // ret = ret + v
+        if(mul_overflow(ret, 10, ret) ||  // ret = ret * 10
+           add_overflow(ret, v, ret)) {     // ret = ret + v
             errno = ERANGE;
             status = false;
             break;
@@ -152,8 +170,8 @@ inline std::pair<T, bool> parseOctalOrHex(const char *&begin, const char *end, i
             break;
         }
 
-        if(__builtin_mul_overflow(ret, baseT, &ret) ||  // ret = ret * base
-           __builtin_add_overflow(ret, v, &ret)) {     // ret = ret + v
+        if(mul_overflow(ret, baseT, ret) ||  // ret = ret * base
+           add_overflow(ret, v, ret)) {     // ret = ret + v
             errno = ERANGE;
             status = false;
             break;
