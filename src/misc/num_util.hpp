@@ -27,20 +27,28 @@ namespace ydsh {
 
 // in clang 3.6/3.7, generic __builtin_mul_overflow and __builtin_add_overflow is not defined
 
-inline bool mul_overflow(uint32_t x, uint32_t y, uint32_t &r) {
+inline bool mul_overflow(unsigned int x, unsigned int y, unsigned int &r) {
     return __builtin_umul_overflow(x, y, &r);
 }
 
-inline bool mul_overflow(uint64_t x, uint64_t y, uint64_t &r) {
+inline bool mul_overflow(unsigned long x, unsigned long y, unsigned long &r) {
     return __builtin_umull_overflow(x, y, &r);
 }
 
-inline bool add_overflow(uint32_t x, uint32_t y, uint32_t &r) {
+inline bool mul_overflow(unsigned long long x, unsigned long long y, unsigned long long &r) {
+    return __builtin_umulll_overflow(x, y, &r);
+}
+
+inline bool add_overflow(unsigned int x, unsigned int y, unsigned int &r) {
     return __builtin_uadd_overflow(x, y, &r);
 }
 
-inline bool add_overflow(uint64_t x, uint64_t y, uint64_t &r) {
+inline bool add_overflow(unsigned long x, unsigned long y, unsigned long &r) {
     return __builtin_uaddl_overflow(x, y, &r);
+}
+
+inline bool add_overflow(unsigned long long x, unsigned long long y, unsigned long long &r) {
+    return __builtin_uaddll_overflow(x, y, &r);
 }
 
 inline int parseBase(const char *&begin, const char *end) {
