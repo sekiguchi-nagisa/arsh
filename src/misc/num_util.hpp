@@ -1,0 +1,240 @@
+/*
+ * Copyright (C) 2019 Nagisa Sekiguchi
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef YDSH_MISC_NUM_UTIL_HPP
+#define YDSH_MISC_NUM_UTIL_HPP
+
+#include "num.h"
+#include "detect.hpp"
+#include <numeric>
+
+namespace ydsh {
+
+inline int parseBase(const char *&begin, const char *end) {
+    if(begin == end) {
+        return -1;
+    }
+
+    if(*begin == '0') {
+        if(begin + 1 != end) {
+            switch(*++begin) {
+            case 'x':
+            case 'X':
+                ++begin;
+                return 16;
+            case 'o':
+            case 'O':
+                ++begin;
+                return 8;
+            }
+        }
+        return 8;
+    }
+    return 10;
+}
+
+template <typename T>
+inline auto dropSign(T v) {
+    static_assert(std::is_signed<T>::value, "must be signed type");
+    using UT = std::make_unsigned_t<T>;
+    return static_cast<UT>(~static_cast<UT>(v) + 1);
+}
+
+template <typename UT>
+inline auto putSign(UT v) {
+    static_assert(std::is_unsigned<UT>::value, "must be unsigned type");
+    using T = std::make_signed_t<UT>;
+    return static_cast<T>(~v + 1);
+}
+
+template <typename U>
+inline std::pair<std::make_signed_t<U>, bool> makeSigned(U v, bool negate) {
+    static_assert(std::is_unsigned<U>::value, "must be unsigned type");
+
+    using T = std::make_signed_t<U>;
+    if(negate) {
+        if(v <= dropSign(std::numeric_limits<T>::min())) {
+            return {putSign(v), true};
+        }
+    } else {
+        if(v <= std::numeric_limits<T>::max()) {
+            return {static_cast<T>(v), true};
+        }
+    }
+    return {static_cast<T>(v), false};
+}
+
+template <typename T, enable_when<std::is_unsigned<T>::value &&
+        (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
+inline std::pair<T, bool> parseDecimal(const char *&begin, const char *end) {
+    errno = 0;
+    if(begin == end) {
+        errno = EINVAL;
+        return {0, false};
+    }
+
+    if(*begin == '0') {
+        bool status = true;
+        if(++begin != end) {
+            status = false;
+            errno = EINVAL;
+        }
+        return {0, status};
+    }
+
+    T ret = 0;
+    bool status = true;
+    do {
+        char ch = *begin;
+        T v;
+        if(ch >= '0' && ch <= '9') {
+            v = ch - '0';
+        } else {
+            errno = EINVAL;
+            status = false;
+            break;
+        }
+        if(__builtin_mul_overflow(ret, 10, &ret) ||  // ret = ret * 10
+           __builtin_add_overflow(ret, v, &ret)) {     // ret = ret + v
+            errno = ERANGE;
+            status = false;
+            break;
+        }
+    } while(++begin != end);
+
+    return {ret, status};
+}
+
+template <typename T, enable_when<std::is_unsigned<T>::value &&
+        (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
+inline std::pair<T, bool> parseOctalOrHex(const char *&begin, const char *end, int base) {
+    errno = 0;
+
+    if(begin == end) {
+        errno = EINVAL;
+        return {0, false};
+    }
+
+    T baseT = static_cast<T>(base);
+    T ret = 0;
+    bool status = true;
+    do {
+        char ch = *begin;
+        T v;
+        if(ch >= '0' && ch <= '9') {
+            v = ch - '0';
+        } else if(ch >= 'a' && ch <= 'f') {
+            v = 10 + (ch - 'a');
+        } else if(ch >= 'A' && ch <= 'F') {
+            v = 10 + (ch - 'A');
+        } else {
+            errno = EINVAL;
+            status = false;
+            break;
+        }
+
+        if(v >= baseT) {
+            errno = EINVAL;
+            status = false;
+            break;
+        }
+
+        if(__builtin_mul_overflow(ret, baseT, &ret) ||  // ret = ret * base
+           __builtin_add_overflow(ret, v, &ret)) {     // ret = ret + v
+            errno = ERANGE;
+            status = false;
+            break;
+        }
+    } while(++begin != end);
+
+    return {ret, status};
+}
+
+
+template <typename T, enable_when<std::is_unsigned<T>::value &&
+        (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
+inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, int base) {
+    if(base == 0) {
+        base = parseBase(begin, end);
+    }
+
+    switch(base) {
+    case 8:
+    case 16:
+        return parseOctalOrHex<T>(begin, end, base);
+    case 10:
+        return parseDecimal<T>(begin, end);
+    default:
+        errno = EINVAL;
+        return {0, false};
+    }
+}
+
+template <typename T, enable_when<std::is_signed<T>::value &&
+        (sizeof(T) == sizeof(int32_t) || sizeof(T) == sizeof(int64_t))> = nullptr>
+inline std::pair<T, bool> parseInteger(const char *&begin, const char *end, int base) {
+    bool sign = false;
+    if(begin != end && *begin == '-') {
+        ++begin;
+        sign = true;
+    }
+
+    using UT = std::make_unsigned_t<T>;
+    auto ret = parseInteger<UT>(begin, end, base);
+    if(ret.second) {
+        return makeSigned(ret.first, sign);
+    }
+    return {static_cast<T>(ret.first), false};
+}
+
+/**
+ * for string to number conversion
+ * @tparam T
+ * @param begin
+ * @param end
+ * @param base
+ * if 0, auto detect radix
+ *   if starts with '0x', '0X', parse as hex number
+ *   if starts with '0', '0o', '0O', parse as octal number
+ * if 8, parse as octal number
+ * if 10, parse as decimal number
+ * if 16, parse as hex number
+ *
+ * if starts with '-' and T is signed type, negate number
+ * @return
+ * if detect overflow, return {0, false}
+ */
+template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
+inline std::pair<T, bool> convertToNum(const char *begin, const char *end, int base = 0) {
+    return parseInteger<T>(begin, end, base);
+}
+
+/**
+ *
+ * @tparam T
+ * @param str
+ * must be null terminated string
+ * @param base
+ * @return
+ */
+template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
+inline std::pair<T, bool> convertToNum(const char *str, int base = 0) {
+    return convertToNum<T>(str, str + strlen(str), base);
+}
+
+} // namespace ydsh
+
+#endif //YDSH_MISC_NUM_UTIL_HPP
