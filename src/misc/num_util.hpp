@@ -20,6 +20,8 @@
 #include "num.h"
 #include "detect.hpp"
 #include <limits>
+#include <cstdint>
+#include <utility>
 
 namespace ydsh {
 
