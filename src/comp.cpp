@@ -436,8 +436,9 @@ static bool isRedirOp(TokenKind kind) {
     case REDIR_ERR_2_FILE_APPEND:
     case REDIR_MERGE_ERR_2_OUT_2_FILE:
     case REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND:
-    case REDIR_MERGE_ERR_2_OUT:
-    case REDIR_MERGE_OUT_2_ERR:
+//    case REDIR_MERGE_ERR_2_OUT:
+//    case REDIR_MERGE_OUT_2_ERR:   // has no target
+    case REDIR_HERE_STR:
         return true;
     default:
         return false;
@@ -742,7 +743,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
                     if(!tokenPairs.empty() && tokenPairs.back().first == SOURCE) {
                         return this->createModNameCompleter();
                     }
-                    return this->createFileNameCompleter();
+                    return this->createFileNameCompleter(); // complete command argument
                 }
 
                 if(!tokenPairs.empty() && tokenPairs.back().first == IMPORT_ENV
