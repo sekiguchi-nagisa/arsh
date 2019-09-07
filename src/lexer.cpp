@@ -254,7 +254,7 @@ int Lexer::toInt32(Token token, int &status) const {
     status = ret.second ? 0 : 1;
     if(!this->startsWith(token, '0')) { // decimal integer is less than INT32_MAX
         if(ret.second) {
-            status = ret.first <= std::numeric_limits<int32_t>::max() ? 0 : 1;
+            status = ret.first <= static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ? 0 : 1;
         }
     }
     return static_cast<int>(ret.first);
@@ -269,7 +269,7 @@ long Lexer::toInt64(Token token, int &status) const {
     status = ret.second ? 0 : 1;
     if(!this->startsWith(token, '0')) { // decimal integer is less than INT32_MAX
         if(ret.second) {
-            status = ret.first <= std::numeric_limits<int64_t>::max() ? 0 : 1;
+            status = ret.first <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) ? 0 : 1;
         }
     }
     return static_cast<long>(ret.first);
