@@ -706,12 +706,13 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         break;
     }
     case 1: {
-        result = strlen(str(argvObj.getValues()[1])) != 0;  // check if string is not empty
+        result = !typeAs<String_Object>(argvObj.getValues()[1])->empty();  // check if string is not empty
         break;
     }
     case 2: {   // unary op
         const char *op = str(argvObj.getValues()[1]);
-        const char *value = str(argvObj.getValues()[2]);
+        const auto &obj = argvObj.getValues()[2];
+        const char *value = str(obj);
         if(strlen(op) != 2 || op[0] != '-') {
             ERROR(argvObj, "%s: invalid unary operator", op);
             return 2;
@@ -720,11 +721,11 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         const char opKind = op[1];  // ignore -
         switch(opKind) {
         case 'z': { // check if string is empty
-            result = strlen(value) == 0;
+            result = typeAs<String_Object>(obj)->empty();
             break;
         }
         case 'n': { // check if string not empty
-            result = strlen(value) != 0;
+            result = !typeAs<String_Object>(obj)->empty();
             break;
         }
         case 'a':
@@ -818,9 +819,9 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         break;
     }
     case 3: {   // binary op
-        const char *left = str(argvObj.getValues()[1]);
+        const auto &left = argvObj.getValues()[1];
         const char *op = str(argvObj.getValues()[2]);
-        const char *right = str(argvObj.getValues()[3]);
+        const auto &right = argvObj.getValues()[3];
         BinaryOp opKind = BinaryOp::INVALID;
         for(auto &e : binaryOpTable) {
             if(strcmp(op, e.k) == 0) {
@@ -830,20 +831,20 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         }
 
         switch(opKind) {
-        case BinaryOp::STR_EQ: {
-            result = strcmp(left, right) == 0;
+        case BinaryOp::STR_EQ: {    // x == y
+            result = left->equals(right);
             break;
         }
-        case BinaryOp::STR_NE: {
-            result = strcmp(left, right) != 0;
+        case BinaryOp::STR_NE: {    // x != y
+            result = !left->equals(right);
             break;
         }
-        case BinaryOp::STR_LT: {
-            result = strcmp(left, right) < 0;
+        case BinaryOp::STR_LT: {    // x < y
+            result = left->compare(right);
             break;
         }
-        case BinaryOp::STR_GT: {
-            result = strcmp(left, right) > 0;
+        case BinaryOp::STR_GT: {    // x > y  -->  y < x
+            result = right->compare(left);
             break;
         }
         case BinaryOp::EQ:
@@ -853,15 +854,15 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         case BinaryOp::LE:
         case BinaryOp::GE: {
             int s = 0;
-            long n1 = convertToInt64(left, s);
+            long n1 = convertToInt64(str(left), s);
             if(s != 0) {
-                ERROR(argvObj, "%s: must be integer", left);
+                ERROR(argvObj, "%s: must be integer", str(left));
                 return 2;
             }
 
-            long n2 = convertToInt64(right, s);
+            long n2 = convertToInt64(str(right), s);
             if(s != 0) {
-                ERROR(argvObj, "%s: must be integer", right);
+                ERROR(argvObj, "%s: must be integer", str(right));
                 return 2;
             }
             if(opKind == BinaryOp::EQ) {

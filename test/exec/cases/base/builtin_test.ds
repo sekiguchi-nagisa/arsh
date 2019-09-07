@@ -7,10 +7,16 @@ assert($? == 1) # always 1
 test hoge
 assert($? == 0)
 
+test $'\x00ss'
+assert($? == 0)
+
 test ""
 assert($? == 1)
 
 test -n hoge
+assert($? == 0)
+
+test -n $'\x00hoge'
 assert($? == 0)
 
 test -n ''
@@ -21,6 +27,9 @@ test -z ""
 assert($? == 0)
 
 test -z hfoe
+assert($? == 1)
+
+test -z $'\x00hfoe'
 assert($? == 1)
 
 # compare
@@ -38,6 +47,9 @@ assert($? == 0)
 
 test aa = "aa"
 assert($? == 0)
+
+test $'a\x0a' = "a"
+assert($? != 0)
 
 test aa == "a"
 assert($?  == 1)
