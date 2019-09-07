@@ -87,8 +87,8 @@ TokenKind Lexer::nextToken(Token &token) {
       re2c:indent:string = "    ";
 
       NUM = "0" | [1-9] [0-9]*;
-      OCTAL = "0o" [0-7]+;
-      HEX = "0x" [0-9a-fA-F]+;
+      OCTAL = "0" [oO]? [0-7]+;
+      HEX = "0" [xX] [0-9a-fA-F]+;
       INTEGER = NUM | OCTAL | HEX;
       DIGITS = [0-9]+;
       FLOAT_SUFFIX =  [eE] [+-]? NUM;

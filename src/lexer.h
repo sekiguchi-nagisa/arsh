@@ -165,17 +165,13 @@ public:
      * if converted number is out of range, status is 1.
      */
     int toInt32(Token token, int &status) const;
-    unsigned int toUint32(Token token, int &status) const;
+
     long toInt64(Token token, int &status) const;
-    unsigned long toUint64(Token token, int &status) const;
 
     /**
      * if converted number is out of range, status is 1.
      */
     double toDouble(Token token, int &status) const;
-
-private:
-    bool isDecimal(Token token) const;
 };
 
 } // namespace ydsh

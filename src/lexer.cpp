@@ -15,7 +15,7 @@
  */
 
 #include "misc/fatal.h"
-#include "misc/num.h"
+#include "misc/num_util.hpp"
 #include "misc/hash.hpp"
 #include "misc/flag_util.hpp"
 #include "lexer.h"
@@ -249,55 +249,30 @@ std::string Lexer::toName(Token token) const {
 }
 
 int Lexer::toInt32(Token token, int &status) const {
-    if(this->isDecimal(token)) {
-        long value = this->toInt64(token, status);
-        if(value > INT32_MAX || value < INT32_MIN) {
-            status = 1;
-            return 0;
+    auto range = this->getRange(token);
+    auto ret = convertToNum<uint32_t>(range.first, range.second);
+    status = ret.second ? 0 : 1;
+    if(!this->startsWith(token, '0')) { // decimal integer is less than INT32_MAX
+        if(ret.second) {
+            status = ret.first <= std::numeric_limits<int32_t>::max() ? 0 : 1;
         }
-        return static_cast<int>(value);
     }
-    return static_cast<int>(this->toUint32(token, status));
-}
-
-unsigned int Lexer::toUint32(Token token, int &status) const {
-    long value = this->toInt64(token, status);
-    if(value > UINT32_MAX || value < 0) {
-        status = 1;
-        return 0;
-    }
-    return static_cast<unsigned int>(value);
+    return static_cast<int>(ret.first);
 }
 
 long Lexer::toInt64(Token token, int &status) const {
-    if(this->isDecimal(token)) {
-        assert(this->withinRange(token));
+    // skip suffix [lL]
+    token.size--;
 
-        char str[token.size + 1];
-        for(unsigned int i = 0; i < token.size; i++) {
-            str[i] = this->buf[token.pos + i];
+    auto range = this->getRange(token);
+    auto ret = convertToNum<uint64_t>(range.first, range.second);
+    status = ret.second ? 0 : 1;
+    if(!this->startsWith(token, '0')) { // decimal integer is less than INT32_MAX
+        if(ret.second) {
+            status = ret.first <= std::numeric_limits<int64_t>::max() ? 0 : 1;
         }
-        str[token.size] = '\0';
-
-        long value = convertToInt64(str, status, 0, true);
-        assert(status > -1);
-        return value;
     }
-    return static_cast<long>(this->toUint64(token, status));
-}
-
-unsigned long Lexer::toUint64(Token token, int &status) const {
-    assert(this->withinRange(token));
-
-    char str[token.size + 1];
-    for(unsigned int i = 0; i < token.size; i++) {
-        str[i] = this->buf[token.pos + i];
-    }
-    str[token.size] = '\0';
-
-    unsigned long value = convertToUint64(str, status, 0, true);
-    assert(status > -1);
-    return value;
+    return static_cast<long>(ret.first);
 }
 
 double Lexer::toDouble(Token token, int &status) const {
@@ -305,17 +280,6 @@ double Lexer::toDouble(Token token, int &status) const {
     double value = convertToDouble(this->toTokenText(token).c_str(), status);
     assert(status > -1);
     return value;
-}
-
-bool Lexer::isDecimal(Token token) const {
-    assert(this->withinRange(token));
-    if(token.size > 2) {    // '0x' or '0o'
-        auto *str = reinterpret_cast<const char *>(this->buf.get() + token.pos);
-        if(str[0] == '0' && (str[1] == 'x' || str[1] == 'o')) {
-            return false;
-        }
-    }
-    return true;
 }
 
 } // namespace ydsh
