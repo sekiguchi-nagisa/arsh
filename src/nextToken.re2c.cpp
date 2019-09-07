@@ -306,8 +306,6 @@ TokenKind Lexer::nextToken(Token &token) {
     token.pos = startPos;
     token.size = this->getPos() - startPos;
     this->prevMode = prevMode;
-    this->prevNewLine = foundNewLine;
-    this->prevSpace = foundSpace;
     goto RET;
 
     EOS:
@@ -315,9 +313,13 @@ TokenKind Lexer::nextToken(Token &token) {
     token.pos = this->getUsedSize() - 1;
     token.size = 0;
     this->cursor--;
+    foundNewLine = true;   // previous char is always newline
     goto RET;
 
     RET:
+    this->prevNewLine = foundNewLine;
+    this->prevSpace = foundSpace;
+
     LOG(TRACE_TOKEN, "%s, %s, text = %s\n    lexer mode: %s",
             toString(kind), toString(token).c_str(),
             this->toTokenText(token).c_str(), toModeName(this->getLexerMode()));

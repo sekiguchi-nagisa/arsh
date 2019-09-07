@@ -1790,6 +1790,29 @@ TEST(LexerTest_Lv2, NEW_LINE) {
     ASSERT_TRUE(lexer.isPrevNewLine());
 }
 
+TEST(LexerTest_Lv2, NEW_LINE2) {
+    Lexer lexer("(string)", "  \n  var a");
+    Token t;
+    TokenKind k = lexer.nextToken(t);
+
+    ASSERT_STREQ(TO_NAME(VAR), TO_NAME(k));
+    ASSERT_TRUE(lexer.isPrevNewLine());
+
+    k = lexer.nextToken(t);
+    ASSERT_STREQ(TO_NAME(IDENTIFIER), TO_NAME(k));
+    ASSERT_FALSE(lexer.isPrevNewLine());
+
+    k = lexer.nextToken(t);
+    ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
+    ASSERT_TRUE(lexer.isPrevNewLine());
+    ASSERT_FALSE(lexer.isPrevSpace());
+
+    k = lexer.nextToken(t);
+    ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
+    ASSERT_TRUE(lexer.isPrevNewLine());
+    ASSERT_FALSE(lexer.isPrevSpace());
+}
+
 TEST(LexerTest_Lv3, IllegalChar) {
     unsigned char str[] = {0x82, 0};    // broken UTF-8 code
 
