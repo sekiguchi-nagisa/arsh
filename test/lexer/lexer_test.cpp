@@ -1787,7 +1787,7 @@ TEST(LexerTest_Lv2, NEW_LINE) {
     ASSERT_TRUE(lexer.isPrevNewLine());
     k = lexer.nextToken(t);
     ASSERT_STREQ(TO_NAME(EOS), TO_NAME(k));
-    ASSERT_FALSE(lexer.isPrevNewLine());
+    ASSERT_TRUE(lexer.isPrevNewLine());
 }
 
 TEST(LexerTest_Lv3, IllegalChar) {
