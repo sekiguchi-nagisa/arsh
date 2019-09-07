@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <clocale>
+#include <cstring>
 
 #include "util.hpp"
 

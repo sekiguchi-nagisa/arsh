@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <misc/num.h>
+#include <misc/num_util.hpp>
 #include <misc/unicode.hpp>
 
 #include "json.h"
@@ -383,16 +383,16 @@ JSON Parser::parseNumber() {
     memcpy(data, this->lexer->getRange(token).first, token.size);
     data[token.size] = '\0';
 
-    int status = 0;
     if(isFloat(data)) {
+        int status = 0;
         auto v = convertToDouble(data, status);
         if(status == 0) {
             return v;
         }
     } else {
-        auto v = convertToInt64(data, status);
-        if(status == 0) {
-            return v;
+        auto ret = convertToNum<int64_t>(data);
+        if(ret.second) {
+            return static_cast<long>(ret.first);
         }
     }
     this->raiseTokenFormatError(NUMBER, token, "out of range");

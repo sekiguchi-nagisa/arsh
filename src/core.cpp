@@ -28,7 +28,7 @@
 #include "redir.h"
 #include "logger.h"
 #include "time_util.h"
-#include "misc/num.h"
+#include "misc/num_util.hpp"
 #include "misc/files.h"
 
 extern char **environ;  //NOLINT

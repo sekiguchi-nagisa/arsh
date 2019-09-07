@@ -17,11 +17,15 @@
 #ifndef YDSH_MISC_NUM_UTIL_HPP
 #define YDSH_MISC_NUM_UTIL_HPP
 
-#include "num.h"
 #include "detect.hpp"
 #include <limits>
 #include <cstdint>
 #include <utility>
+#include <cerrno>
+#include <climits>
+#include <cmath>
+#include <cstdlib>
+#include <cstring>
 
 namespace ydsh {
 
@@ -262,6 +266,71 @@ template <typename T, enable_when<std::is_integral<T>::value> = nullptr>
 inline std::pair<T, bool> convertToNum(const char *str, int base = 0) {
     return convertToNum<T>(str, str + strlen(str), base);
 }
+
+
+/**
+ * if success, status is 0.
+ * if out of range, status is 1.
+ * if cannot convert, status is -1.
+ * if found illegal character, status is -2.
+ */
+inline double convertToDouble(const char *str, int &status, bool skipIllegalChar = false) {
+    errno = 0;
+
+    // convert to double
+    char *end;
+    const double value = strtod(str, &end);
+
+    // check error
+    if(value == 0 && end == str) {
+        status = -1;
+        return 0;
+    }
+    if(*end != '\0' && !skipIllegalChar) {
+        status = -2;
+        return 0;
+    }
+    if(value == 0 && errno == ERANGE) {
+        status = 1;
+        return 0;
+    }
+    if((value == HUGE_VAL || value == -HUGE_VAL) && errno == ERANGE) {
+        status = 1;
+        return 0;
+    }
+    status = 0;
+    return value;
+}
+
+inline bool isDecimal(char ch) {
+    return ch >= '0' && ch <= '9';
+}
+
+inline bool isOctal(char ch) {
+    return ch >= '0' && ch < '8';
+}
+
+inline bool isHex(char ch) {
+    return (ch >= '0' && ch <= '9') ||
+           (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
+}
+
+/**
+ * convert hex character to number
+ * @param ch
+ * @return
+ */
+inline int hexToNum(char ch) {
+    if(ch >= '0' && ch <= '9') {
+        return ch - '0';
+    } else if(ch >= 'a' && ch <= 'f') {
+        return 10 + (ch - 'a');
+    } else if(ch >= 'A' && ch <= 'F') {
+        return 10 + (ch - 'A');
+    }
+    return 0;
+}
+
 
 } // namespace ydsh
 

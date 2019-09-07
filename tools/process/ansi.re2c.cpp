@@ -17,7 +17,7 @@
 #include <cassert>
 
 #include <ansi.h>
-#include <misc/num.h>
+#include <misc/num_util.hpp>
 #include <misc/fatal.h>
 
 namespace process {

@@ -31,7 +31,7 @@
 #include "logger.h"
 #include "frontend.h"
 #include "codegen.h"
-#include "misc/num.h"
+#include "misc/num_util.hpp"
 
 using namespace ydsh;
 
@@ -42,12 +42,11 @@ static unsigned int getShellLevel() {
     char *shlvl = getenv(ENV_SHLVL);
     unsigned int level = 0;
     if(shlvl != nullptr) {
-        int status;
-        long value = convertToInt64(shlvl, status);
-        if(status != 0) {
+        auto pair = convertToNum<int64_t>(shlvl);
+        if(!pair.second) {
             level = 0;
         } else {
-            level = value;
+            level = pair.first;
         }
     }
     return level;

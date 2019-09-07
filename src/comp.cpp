@@ -23,7 +23,7 @@
 #include "vm.h"
 #include "parser.h"
 #include "logger.h"
-#include "misc/num.h"
+#include "misc/num_util.hpp"
 #include "misc/files.h"
 
 extern char **environ;  //NOLINT

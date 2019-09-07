@@ -27,7 +27,7 @@
 #include "vm.h"
 #include "constant.h"
 #include "signals.h"
-#include "misc/num.h"
+#include "misc/num_util.hpp"
 #include "misc/files.h"
 
 namespace ydsh {
@@ -544,10 +544,9 @@ static int parseExitStatus(const DSState &state, const Array_Object &argvObj) {
     int ret = typeAs<Int_Object>(state.getGlobal(BuiltinVarOffset::EXIT_STATUS))->getValue();
     if(argvObj.getValues().size() > 1) {
         const char *num = str(argvObj.getValues()[1]);
-        int status;
-        long value = convertToInt64(num, status);
-        if(status == 0) {
-            ret = static_cast<int>(value);
+        auto pair = convertToNum<int64_t>(num);
+        if(pair.second) {
+            ret = static_cast<int>(pair.first);
         }
     }
     return ret;
@@ -670,12 +669,11 @@ static int parseFD(const char *value) {
     if(value == strstr(value, "/dev/fd/")) {
         value += strlen("/dev/fd/");
     }
-    int s;
-    long t = convertToInt64(value, s);
-    if(s != 0 || t < 0 || t > INT32_MAX) {
+    auto ret = convertToNum<int32_t>(value);
+    if(!ret.second || ret.first < 0) {
         return -1;
     }
-    return static_cast<int>(t);
+    return ret.first;
 }
 
 static int builtin_test(DSState &, Array_Object &argvObj) {
@@ -853,15 +851,16 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         case BinaryOp::GT:
         case BinaryOp::LE:
         case BinaryOp::GE: {
-            int s = 0;
-            long n1 = convertToInt64(str(left), s);
-            if(s != 0) {
+            auto pair = convertToNum<int64_t>(str(left));
+            long n1 = pair.first;
+            if(!pair.second) {
                 ERROR(argvObj, "%s: must be integer", str(left));
                 return 2;
             }
 
-            long n2 = convertToInt64(str(right), s);
-            if(s != 0) {
+            pair = convertToNum<int64_t>(str(right));
+            long n2 = pair.first;
+            if(!pair.second) {
                 ERROR(argvObj, "%s: must be integer", str(right));
                 return 2;
             }
@@ -951,9 +950,9 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
             break;
         }
         case 't': {
-            int s;
-            long t = convertToInt64(optState.optArg, s);
-            if(s == 0) {
+            auto ret = convertToNum<int64_t>(optState.optArg);
+            long t = ret.first;
+            if(ret.second) {
                 if(t > -1 && t <= INT32_MAX) {
                     t *= 1000;
                     if(t > -1 && t <= INT32_MAX) {
@@ -1192,12 +1191,7 @@ static int builtin_unsetenv(DSState &, Array_Object &argvObj) {
 }
 
 static std::pair<int, bool> toInt32(const char *str) {
-    int s = 0;
-    long v = convertToInt64(str, s);
-    if(s != 0 || v < INT32_MIN || v > INT32_MAX) {
-        return {0, false};
-    }
-    return {static_cast<int>(v), true};
+    return convertToNum<int32_t>(str);
 }
 
 static int toSigNum(const char *str) {
@@ -1500,14 +1494,14 @@ static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &
         return true;
     }
 
-    int status = 0;
-    auto ret = convertToUint64(str, status);
-    if(status != 0) {
+    auto pair = convertToNum<uint64_t>(str);
+    if(!pair.second) {
         return false;
     }
-    ret <<= ulimitOps[index].shift;
+
+    entry.value = pair.first;
+    entry.value <<= ulimitOps[index].shift;
     entry.kind = UlimitOptEntry::NUM;
-    entry.value = ret;
     return true;
 }
 
@@ -1806,9 +1800,9 @@ static int builtin_umask(DSState &, Array_Object &argvObj) {
         unsetFlag(op, PrintMaskOp::ONLY_PRINT | PrintMaskOp::REUSE);
         const char *value = str(argvObj.getValues()[optState.index]);
         if(isDecimal(*value)) {
-            int status = 0;
-            long num = convertToInt64(value, status, 8);
-            if(status != 0 || num < 0 || num > 0777) {
+            auto pair = convertToNum<int32_t>(value, 8);
+            int num = pair.first;
+            if(!pair.second || num < 0 || num > 0777) {
                 ERROR(argvObj, "%s: octal number out of range (0000~0777)", value);
                 return 1;
             }

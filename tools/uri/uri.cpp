@@ -16,7 +16,7 @@
 
 #include "uri.h"
 
-#include <misc/num.h>
+#include <misc/num_util.hpp>
 
 namespace ydsh {
 namespace uri {

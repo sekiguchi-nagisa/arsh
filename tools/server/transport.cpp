@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include <misc/num.h>
+#include <misc/num_util.hpp>
 
 #include "transport.h"
 
@@ -47,10 +47,9 @@ static bool isContentLength(const std::string &line) {
 static int parseContentLength(const std::string &line) {
     const char *ptr = line.c_str();
     ptr += arraySize(HEADER_LENGTH) - 1;
-    int s;
-    long value = convertToInt64(ptr, s);
-    if(s == 0 && value >= 0 && value <= INT32_MAX) {
-        return static_cast<int>(value);
+    auto ret = convertToNum<int32_t>(ptr);
+    if(ret.second && ret.first >= 0) {
+        return ret.first;
     }
     return 0;
 }

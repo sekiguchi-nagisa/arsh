@@ -29,6 +29,7 @@
 #include "vm.h"
 #include "signals.h"
 #include "misc/unicode.hpp"
+#include "misc/num_util.hpp"
 #include "misc/num.h"
 
 // helper macro
