@@ -15,7 +15,6 @@
  */
 
 #include <dirent.h>
-#include <sys/types.h>
 #include <pwd.h>
 
 #include <vector>
@@ -132,7 +131,7 @@ struct Completer {
 
 class ExpectedTokenCompleter : public Completer {
 private:
-    std::vector <std::string> tokens;
+    std::vector<std::string> tokens;
 
 public:
     explicit ExpectedTokenCompleter(std::string &&token) {

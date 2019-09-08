@@ -15,7 +15,6 @@
  */
 
 #include <memory>
-#include <algorithm>
 
 #include "vm.h"
 #include "misc/num_util.hpp"
