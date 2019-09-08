@@ -171,11 +171,26 @@ assert("-2147483648".toInt32()! == -1 - 2147483647)
 assert(!"-2147483649".toInt32())
 assert("2147483647".toInt32()! == 2147483647)
 assert(!"2147483648".toInt32())
+assert "0xFFFFfaec".toInt32()!  == 0xFFFFfaec
+assert "0XFFFFfaec".toInt32()!  == 0XFFFFfaec
+assert "0XFFFFFFFF".toInt32()!  == 0XFFFFFFFF
+assert ! "0XFFFFFFFFa".toInt32()
+assert ! "-0xFFFFFFF".toInt32()
+assert "0012345".toInt32()!  == 0012345
+assert "0o12345".toInt32()!  == 0o12345
+assert "0O12345".toInt32()!  == 0O12345
+assert ! "-0O12345".toInt32()
 
 assert("-9223372036854775808".toInt64()! == -1 - 9223372036854775807L)
 assert(! "-9223372036854775809".toInt64())
 assert("9223372036854775807".toInt64()! == 9223372036854775807l)
 assert(!"9223372036854775808".toInt64())
+assert(!"9223372036854775L".toInt64())
+assert '0XFFFFFFFFFFFFFFFF'.toInt64()! == -1L
+assert ! '-0O222222'.toInt64()
+assert '0222222'.toInt64()! == 0222222l
+assert '0O2222234'.toInt64()! == 02222234l
+assert '0o2222234'.toInt64()! == 0o2222234L
 
 assert("3".toFloat()! == 3.0)
 assert("-3.14e+3".toFloat()! == -3.14E+3)

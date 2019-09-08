@@ -30,7 +30,6 @@
 #include "signals.h"
 #include "misc/unicode.hpp"
 #include "misc/num_util.hpp"
-#include "misc/num.h"
 
 // helper macro
 #define LOCAL(index) (ctx.getLocal(index))
@@ -906,26 +905,22 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
 YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt32);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
-    int status = 0;
-    long value = convertToInt64(str, status);
+    unsigned int size = typeAs<String_Object>(LOCAL(0))->size();
+    auto ret = fromIntLiteral<int32_t>(str, str + size);
 
-    // range check
-    if(status != 0 || value > INT32_MAX || value < INT32_MIN) {
-        status = 1;
-        value = 0;
-    }
-
-    RET(status == 0 ? DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), (int)value) : DSValue::createInvalid());
+    RET(ret.second ? DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), ret.first)
+            : DSValue::createInvalid());
 }
 
 //!bind: function toInt64($this : String) : Option<Int64>
 YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt64);
     const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
-    int status = 0;
-    long value = convertToInt64(str, status);
+    unsigned int size = typeAs<String_Object>(LOCAL(0))->size();
+    auto ret = fromIntLiteral<int64_t>(str, str + size);
 
-    RET(status == 0 ? DSValue::create<Long_Object>(ctx.symbolTable.get(TYPE::Int64), value) : DSValue::createInvalid());
+    RET(ret.second ? DSValue::create<Long_Object>(ctx.symbolTable.get(TYPE::Int64), static_cast<long>(ret.first))
+            : DSValue::createInvalid());
 }
 
 //!bind: function toFloat($this : String) : Option<Float>

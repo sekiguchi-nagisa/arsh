@@ -250,14 +250,9 @@ std::string Lexer::toName(Token token) const {
 
 int Lexer::toInt32(Token token, int &status) const {
     auto range = this->getRange(token);
-    auto ret = convertToNum<uint32_t>(range.first, range.second);
+    auto ret = fromIntLiteral<int32_t>(range.first, range.second);
     status = ret.second ? 0 : 1;
-    if(!this->startsWith(token, '0')) { // decimal integer is less than INT32_MAX
-        if(ret.second) {
-            status = ret.first <= static_cast<uint32_t>(std::numeric_limits<int32_t>::max()) ? 0 : 1;
-        }
-    }
-    return static_cast<int>(ret.first);
+    return ret.first;
 }
 
 long Lexer::toInt64(Token token, int &status) const {
@@ -265,13 +260,8 @@ long Lexer::toInt64(Token token, int &status) const {
     token.size--;
 
     auto range = this->getRange(token);
-    auto ret = convertToNum<uint64_t>(range.first, range.second);
+    auto ret = fromIntLiteral<int64_t>(range.first, range.second);
     status = ret.second ? 0 : 1;
-    if(!this->startsWith(token, '0')) { // decimal integer is less than INT32_MAX
-        if(ret.second) {
-            status = ret.first <= static_cast<uint64_t>(std::numeric_limits<int64_t>::max()) ? 0 : 1;
-        }
-    }
     return static_cast<long>(ret.first);
 }
 
