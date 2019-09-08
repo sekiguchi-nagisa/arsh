@@ -132,14 +132,16 @@ struct Completer {
 
 class ExpectedTokenCompleter : public Completer {
 private:
-    const std::string token;
+    std::vector <std::string> tokens;
 
 public:
-    explicit ExpectedTokenCompleter(std::string &&token) : token(std::move(token)) {}
+    explicit ExpectedTokenCompleter(std::string &&token) {
+        this->tokens.push_back(std::move(token));
+    }
 
     void operator()(Array_Object &results) override {
-        if(!this->token.empty()) {
-            append(results, this->token, EscapeOp::NOP);
+        for(auto &token : this->tokens) {
+            append(results, token, EscapeOp::NOP);
         }
     }
 
@@ -718,24 +720,27 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             toString(e.getErrorToken()).c_str(),
             this->lexer.toTokenText(e.getErrorToken()).c_str());
 
-        Token token = e.getErrorToken();
-        if(token.pos + token.size < this->cursor) {
+        Token errorToken = e.getErrorToken();
+        if(errorToken.pos + errorToken.size < this->cursor) {
             return nullptr;
         }
 
         switch(e.getTokenKind()) {
         case EOS: {
-            if(!tokenPairs.empty()) {
-                auto kind = tokenPairs.back().first;
-                auto token = tokenPairs.back().second;
-                if(kind == APPLIED_NAME || kind == SPECIAL_NAME) {
-                    if(token.pos + token.size == this->cursor) {
-                        return this->createGlobalVarNameCompleter(token);
-                    }
+            assert(!tokenPairs.empty());
+            auto kind = tokenPairs.back().first;
+            auto token = tokenPairs.back().second;
+            if(kind == APPLIED_NAME || kind == SPECIAL_NAME) {
+                if(token.pos + token.size == this->cursor) {
+                    return this->createGlobalVarNameCompleter(token);
                 }
             }
 
             if(strcmp(e.getErrorKind(), NO_VIABLE_ALTER) == 0) {
+                if(token.pos + token.size == this->cursor) {
+                    return std::make_unique<ExpectedTokenCompleter>("");
+                }
+
                 if(findKind(e.getExpectedTokens(), COMMAND)) {
                     return this->createCmdNameCompleter();
                 }
@@ -771,10 +776,10 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             break;
         }
         case INVALID: {
-            if(this->lexer.equals(token, "$") && token.pos + token.size == cursor &&
+            if(this->lexer.equals(errorToken, "$") && errorToken.pos + errorToken.size == cursor &&
                findKind(e.getExpectedTokens(), APPLIED_NAME) &&
                findKind(e.getExpectedTokens(), SPECIAL_NAME)) {
-                return this->createGlobalVarNameCompleter(token);
+                return this->createGlobalVarNameCompleter(errorToken);
             }
             break;
         }
