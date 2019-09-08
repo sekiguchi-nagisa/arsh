@@ -629,29 +629,43 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) {
 
     switch(kind) {
     case COMMAND:
-        if(token.pos + token.size == cursor) {
+        if(token.pos + token.size == this->cursor) {
             return this->createCmdNameCompleter(token);
         }
-        return this->createFileNameCompleter();
+        return this->createFileNameCompleter(); // complete command argument
     case CMD_ARG_PART:
-        if(token.pos + token.size == cursor && tokenPairs.size() > 1) {
+        if(token.pos + token.size == this->cursor) {
+            assert(tokenPairs.size() > 1);
+
             unsigned int prevIndex = tokenPairs.size() - 2;
             auto prevKind = tokenPairs[prevIndex].first;
             auto prevToken = tokenPairs[prevIndex].second;
 
             /**
-             * if previous token is redir op,
-             * or if spaces exist between current and previous
+             * > ./
+             * >./
+             *
+             * complete redirection target
              */
-            if(isRedirOp(prevKind) || prevToken.pos + prevToken.size < token.pos) {
+            if(isRedirOp(prevKind)) {
+                return this->createFileNameCompleter(token);
+            }
+
+            /**
+             * if spaces exist between current and previous
+             * echo ${false} ./
+             *
+             * complete command argument
+             */
+            if(prevToken.pos + prevToken.size < token.pos) {
                 return this->createFileNameCompleter(token);
             }
             return nullptr;
         }
-        return this->createFileNameCompleter();
+        return this->createFileNameCompleter(); // complete command argument
     default:
-        if(!exactly && token.pos + token.size < cursor) {
-            return this->createFileNameCompleter();
+        if(!exactly && token.pos + token.size < this->cursor) {
+            return this->createFileNameCompleter(); // complete command argument
         }
         return nullptr;
     }
@@ -734,21 +748,19 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
                 TokenKind expected = e.getExpectedTokens().back();
                 LOG(DUMP_CONSOLE, "expected: %s", toString(expected));
 
-                auto ret = this->selectWithCmd(true);
-                if(ret) {
-                    return ret;
-                }
-
-                if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
-                    if(!tokenPairs.empty() && tokenPairs.back().first == SOURCE) {
-                        return this->createModNameCompleter();
-                    }
-                    return this->createFileNameCompleter(); // complete command argument
+                if(!tokenPairs.empty() && tokenPairs.back().first == SOURCE
+                   && findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
+                    return this->createModNameCompleter();
                 }
 
                 if(!tokenPairs.empty() && tokenPairs.back().first == IMPORT_ENV
                    && findKind(e.getExpectedTokens(), IDENTIFIER)) {
                     return std::make_unique<EnvNameCompleter>("");
+                }
+
+                auto ret = this->selectWithCmd(true);
+                if(ret) {
+                    return ret;
                 }
 
                 std::string expectedStr = toString(expected);
