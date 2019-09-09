@@ -203,6 +203,116 @@
     EACH_ASSIGN_OPERATOR(OP)
 
 
+// for lookahead
+#define EACH_LA_interpolation(OP) \
+    OP(APPLIED_NAME) \
+    OP(SPECIAL_NAME) \
+    OP(START_INTERP)
+
+#define EACH_LA_paramExpansion(OP) \
+    OP(APPLIED_NAME_WITH_BRACKET) \
+    OP(SPECIAL_NAME_WITH_BRACKET) \
+    EACH_LA_interpolation(OP)
+
+#define EACH_LA_primaryPattern(OP) \
+    OP(INT32_LITERAL) \
+    OP(SIGNAL_LITERAL) \
+    OP(OPEN_DQUOTE) \
+    OP(STRING_LITERAL) \
+    OP(REGEX_LITERAL)
+
+#define EACH_LA_pattern(OP) \
+    OP(MINUS) \
+    EACH_LA_primaryPattern(OP)
+
+#define EACH_LA_primary(OP) \
+    OP(COMMAND) \
+    OP(NEW) \
+    OP(INT32_LITERAL) \
+    OP(INT64_LITERAL) \
+    OP(FLOAT_LITERAL) \
+    OP(STRING_LITERAL) \
+    OP(REGEX_LITERAL) \
+    OP(SIGNAL_LITERAL) \
+    OP(OPEN_DQUOTE) \
+    OP(START_SUB_CMD) \
+    OP(APPLIED_NAME) \
+    OP(SPECIAL_NAME) \
+    OP(START_IN_SUB) \
+    OP(START_OUT_SUB) \
+    OP(LP) \
+    OP(LB) \
+    OP(LBC) \
+    OP(DO) \
+    OP(FOR) \
+    OP(IF) \
+    OP(CASE) \
+    OP(TRY) \
+    OP(WHILE)
+
+#define EACH_LA_expression(OP) \
+    OP(NOT) \
+    OP(PLUS) \
+    OP(MINUS) \
+    OP(THROW) \
+    OP(COPROC) \
+    EACH_LA_primary(OP)
+
+#define EACH_LA_statement(OP) \
+    OP(FUNCTION) \
+    OP(INTERFACE) \
+    OP(ALIAS) \
+    OP(ASSERT) \
+    OP(BREAK) \
+    OP(CONTINUE) \
+    OP(EXPORT_ENV) \
+    OP(IMPORT_ENV) \
+    OP(LET) \
+    OP(RETURN) \
+    OP(SOURCE) \
+    OP(VAR) \
+    OP(LINE_END) \
+    EACH_LA_expression(OP)
+
+#define EACH_LA_varDecl(OP) \
+    OP(VAR) \
+    OP(LET)
+
+#define EACH_LA_redirFile(OP) \
+    OP(REDIR_IN_2_FILE) \
+    OP(REDIR_OUT_2_FILE) \
+    OP(REDIR_OUT_2_FILE_APPEND) \
+    OP(REDIR_ERR_2_FILE) \
+    OP(REDIR_ERR_2_FILE_APPEND) \
+    OP(REDIR_MERGE_ERR_2_OUT_2_FILE) \
+    OP(REDIR_MERGE_ERR_2_OUT_2_FILE_APPEND) \
+    OP(REDIR_HERE_STR)
+
+#define EACH_LA_redirNoFile(OP) \
+    OP(REDIR_MERGE_ERR_2_OUT) \
+    OP(REDIR_MERGE_OUT_2_ERR)
+
+#define EACH_LA_redir(OP) \
+    EACH_LA_redirFile(OP) \
+    EACH_LA_redirNoFile(OP)
+
+#define EACH_LA_cmdArg(OP) \
+    OP(CMD_ARG_PART) \
+    OP(STRING_LITERAL) \
+    OP(OPEN_DQUOTE) \
+    OP(START_SUB_CMD) \
+    OP(START_IN_SUB) \
+    OP(START_OUT_SUB) \
+    EACH_LA_paramExpansion(OP)
+
+#define EACH_LA_typeName(OP) \
+    OP(IDENTIFIER) \
+    OP(PTYPE_OPEN) \
+    OP(ATYPE_OPEN) \
+    OP(FUNC) \
+    OP(TYPEOF)
+
+
 namespace ydsh {
 
 enum TokenKind : unsigned int {

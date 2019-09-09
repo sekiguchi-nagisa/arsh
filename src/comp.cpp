@@ -95,8 +95,6 @@ static std::string escape(const char *str, EscapeOp op) {
         }
         buf += ch;
     }
-
-    buf += '\0';
     return buf;
 }
 
@@ -137,6 +135,8 @@ public:
     explicit ExpectedTokenCompleter(std::string &&token) {
         this->tokens.push_back(std::move(token));
     }
+
+    explicit ExpectedTokenCompleter(std::vector<std::string> &&tokens) : tokens(std::move(tokens)) {}
 
     void operator()(Array_Object &results) override {
         for(auto &token : this->tokens) {
@@ -428,6 +428,26 @@ struct ModNameCompleter : public FileNameCompleter {
     }
 };
 
+class AndCompleter : public Completer {
+private:
+    std::unique_ptr<Completer> first;
+
+    std::unique_ptr<Completer> second;
+
+public:
+    AndCompleter(std::unique_ptr<Completer> && first, std::unique_ptr<Completer> &&second) :
+            first(std::move(first)), second(std::move(second)) {}
+
+    void operator()(Array_Object &results) override {
+        (*this->first)(results);
+        (*this->second)(results);
+    }
+
+    const char *name() const override {
+        return "And";
+    }
+};
+
 static bool isRedirOp(TokenKind kind) {
     switch(kind) {
     case REDIR_IN_2_FILE:
@@ -569,6 +589,28 @@ private:
 
     std::unique_ptr<Completer> createGlobalVarNameCompleter(Token token) const {
         return std::make_unique<GlobalVarNameCompleter>(this->state.symbolTable, this->lexer.toTokenText(token));
+    }
+
+    std::unique_ptr<Completer> createExpectedTokenCompleter(const std::vector<TokenKind> &values) const {
+        std::vector<std::string> tokens;
+        for(auto &e : values) {
+            std::string expectedStr = toString(e);
+            if(expectedStr.front() != '<' || expectedStr.back() != '>') {
+                tokens.push_back(std::move(expectedStr));
+            }
+        }
+        return std::make_unique<ExpectedTokenCompleter>(std::move(tokens));
+    }
+
+    std::unique_ptr<Completer> createAndCompleter(std::unique_ptr<Completer> &&first,
+                                                    std::unique_ptr<Completer> && second) const {
+        if(!first) {
+            return std::move(second);
+        }
+        if(!second) {
+            return std::move(first);
+        }
+        return std::make_unique<AndCompleter>(std::move(first), std::move(second));
     }
 
     std::unique_ptr<Node> applyAndGetLatest() {
@@ -740,13 +782,14 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
                     return std::make_unique<ExpectedTokenCompleter>("");
                 }
 
+                std::unique_ptr<Completer> comp;
                 if(findKind(e.getExpectedTokens(), COMMAND)) {
-                    return this->createCmdNameCompleter();
+                    comp = this->createCmdNameCompleter();
+                } else if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) { // complete redirection target
+                    comp = this->createFileNameCompleter();
                 }
-
-                if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
-                    return this->createFileNameCompleter();
-                }
+                return this->createAndCompleter(std::move(comp),
+                        this->createExpectedTokenCompleter(e.getExpectedTokens()));
             } else if(strcmp(e.getErrorKind(), TOKEN_MISMATCHED) == 0) {
                 assert(!e.getExpectedTokens().empty());
                 TokenKind expected = e.getExpectedTokens().back();
@@ -766,11 +809,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
                 if(ret) {
                     return ret;
                 }
-
-                std::string expectedStr = toString(expected);
-                if(expectedStr.size() < 2 || (expectedStr.front() != '<' && expectedStr.back() != '>')) {
-                    return std::make_unique<ExpectedTokenCompleter>(std::move(expectedStr));
-                }
+                return this->createExpectedTokenCompleter(e.getExpectedTokens());
             }
             break;
         }

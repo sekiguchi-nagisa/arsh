@@ -17,10 +17,11 @@ function assertSEQ($a : String, $b : String) : Boolean {
 
 function assertArray($x : Array<String>, $y : Array<String>) {
     if $x.size() != $y.size() {
-        echo expect:
-        for $a in $x { echo $a; }
-        echo actual
-        for $a in $y { echo $a; }
+        #echo expect:
+        #for $a in $x { echo $a; }
+        #echo actual
+        #for $a in $y { echo $a; }
+        diff <({echo expect: ; for $a in $x { echo $a; }} ) <({ echo actual; for $a in $y { echo $a; } })
     }
     assert($assertEQ($x.size(), $y.size()))
 
@@ -70,8 +71,13 @@ function escape2($s : String) : String {
     return $buf
 }
 
+function eachEcho($list : [String]) {
+    for $e in $list { echo $e; }
+}
 
 __cmd() {
+    var type = new String!()
+
     echo cmd
     echo __cmd
     echo __file
@@ -80,12 +86,29 @@ __cmd() {
 
     help | cut -d ' ' -f 1
     for $dir in $@ {
+        if $dir.startsWith('--') { $type = $dir; continue; }
         for $a in $(ls $dir) {
             var name = $dir + '/' + $a
             if(test -f $name && test -x $name) {
                 echo ${$escape($a)};
             }
         }
+    }
+
+    # keywords
+    if(!$type) {
+        return 0;
+    }
+
+    case $type! {
+    '--expr' => $eachEcho(['new', '"', '$(', '>(', '<(', '(', '[', '{',
+                           'do', 'for', 'if', 'case', 'try', 'while'])
+    '--stmt' => $eachEcho(['new', '"', '$(', '>(', '<(', '(', '[', '{',
+                           'do', 'for', 'if', 'case', 'try', 'while',
+
+                           'function', 'interface', 'alias', 'assert',
+                           'break', 'continue', 'export-env', 'import-env',
+                           'let', 'return', 'source', 'var', ';', '!', '+', '-', 'throw', 'coproc'])
     }
 }
 
@@ -112,29 +135,31 @@ assert($(complete '     ').empty())
 $assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('l', '/bin:/usr/bin'))
 $assertArray($(cmd | grep '^p'), $comp('p', ''))
 $assertArray($(cmd /bin /usr/bin), $comp('echo; ', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin), $comp('35 | ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr), $comp('35 | ', '/bin:/usr/bin'))
 if(test -d ~/bin) {
     $assertArray($(cmd /bin /usr/bin ~/bin), $comp('echo; ', '/bin:/usr/bin:~/bin'))
 }
-$assertArray($(cmd /bin /usr/bin), $comp('{ ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --stmt), $comp('{ ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin), $comp('echo & ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin), $comp('echo &! ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin), $comp('echo &| ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('{l', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin), $comp('echo && ', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin), $comp('export-env HOGE = ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr), $comp('echo && ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr), $comp('export-env HOGE = ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('export-env HOGE = l', '/bin:/usr/bin'))
 
 
 # complete file name
 __file() {
+    var type = $# > 1 && $2.startsWith('--') ? $@.pop() : new String!()
+
     let dir = $@[0]
     for $a in $(ls -A $dir) {
         var name = $dir + '/' + $a
         if(test -d $name) {
             echo ${$escape2($a)}/
         } else {
-            if($# > 1) {
+            if($@.size() > 1) {
                 if(test -f $name) {
                     if(test -x $name) {} else {
                         continue
@@ -143,6 +168,11 @@ __file() {
             }
             echo ${$escape2($a)}
         }
+    }
+
+    if !$type { return 0; }
+    case $type! {
+    '--redir' => $eachEcho(['$(', '${', '<(', '>(', '"'])
     }
 }
 
@@ -173,18 +203,18 @@ if !$OSTYPE.startsWith("CYGWIN") {
 $assertArray(new [String](), $(complete 'echo \~root'))
 $assertArray($(file '.'), $(complete '$(echo '))
 $assertArray($(file '.'), $(complete '{echo hello '))
-$assertArray($(file '.'), $(complete 'echo | echo < '))
-$assertArray($(file '.'), $(complete 'echo > '))
+$assertArray($(file '.' --redir), $(complete 'echo | echo < '))
+$assertArray($(file '.' --redir), $(complete 'echo > '))
 $assertArray($(file '.'), $(complete 'echo >./'))
 $assertArray($(file '.'), $(complete 'echo <<<./'))
-$assertArray($(file '.'), $(complete 'echo <<< '))
+$assertArray($(file '.' --redir), $(complete 'echo <<< '))
 $assertArray(new [String](), $(complete 'echo 2>&1./'))
 $assertArray(new [String](), $(complete 'echo 1>&2./'))
 $assertArray($(file '.'), $(complete 'echo | echo $TRUE '))
 $assertArray($(file '.'), $(complete 'echo ${34} '))
 $assertArray(new [String](), $(complete 'echo ${34}'))
 $assertArray(new [String](), $(complete 'echo ${34}./'))
-$assertArray($(file '.'), $(complete '34 with < '))
+$assertArray($(file '.' --redir), $(complete '34 with < '))
 $assertArray($(file '/bin'), $(complete '$true with >> /bin/'))
 $assertArray(new [String](), $(complete 'import-env home '))
 $assertArray(new [String](), $(complete 'assert (ls) : "de" '))
