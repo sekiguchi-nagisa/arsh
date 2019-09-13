@@ -466,15 +466,6 @@ static bool isRedirOp(TokenKind kind) {
     }
 }
 
-static bool foundExpected(const ParseError &e, TokenKind kind) {
-    for(auto &value : e.getExpectedTokens()) {
-        if(value == kind) {
-            return true;
-        }
-    }
-    return false;
-}
-
 static bool inCmdMode(const Node &node) {
     switch(node.getNodeKind()) {
     case NodeKind::UnaryOp:
@@ -522,36 +513,43 @@ private:
 
     TokenTracker tracker;
 
+    enum class CompType {
+        NONE,
+        CUR,
+    };
+
 public:
     CompleterFactory(DSState &st, const std::string &line);
 
 private:
-    std::unique_ptr<Completer> createModNameCompleter() const {
-        return std::make_unique<ModNameCompleter>(this->state.getScriptDir(), "", false);
-    }
-
-    std::unique_ptr<Completer> createModNameCompleter(Token token) const {
+    std::unique_ptr<Completer> createModNameCompleter(CompType type) const {
+        if(type == CompType::NONE) {
+            return std::make_unique<ModNameCompleter>(this->state.getScriptDir(), "", false);
+        }
+        auto token = this->curToken();
         bool tilde = this->lexer.startsWith(token, '~');
         return std::make_unique<ModNameCompleter>(this->state.getScriptDir(), this->lexer.toCmdArg(token), tilde);
     }
 
-    std::unique_ptr<Completer> createFileNameCompleter() const {
-        return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), "");
-    }
+    std::unique_ptr<Completer> createFileNameCompleter(CompType type) const {
+        if(type == CompType::NONE) {
+            return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), "");
+        }
 
-    std::unique_ptr<Completer> createFileNameCompleter(Token token) const {
         FileNameCompOp op{};
+        auto token = this->curToken();
         if(this->lexer.startsWith(token, '~')) {
             setFlag(op, FileNameCompOp::TIDLE);
         }
         return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), this->lexer.toCmdArg(token), op);
     }
 
-    std::unique_ptr<Completer> createCmdNameCompleter() const {
-        return std::make_unique<CmdNameCompleter>(this->state.symbolTable, "");
-    }
+    std::unique_ptr<Completer> createCmdNameCompleter(CompType type) const {
+        if(type == CompType::NONE) {
+            return std::make_unique<CmdNameCompleter>(this->state.symbolTable, "");
+        }
 
-    std::unique_ptr<Completer> createCmdNameCompleter(Token token) const {
+        auto token = this->curToken();
         auto arg = this->lexer.toCmdArg(token);
         bool tilde = this->lexer.startsWith(token, '~');
         bool isDir = strchr(arg.c_str(), '/') != nullptr;
@@ -569,9 +567,14 @@ private:
         return std::make_unique<GlobalVarNameCompleter>(this->state.symbolTable, this->lexer.toTokenText(token));
     }
 
-    std::unique_ptr<Completer> createExpectedTokenCompleter(const std::vector<TokenKind> &values) const {
+    std::unique_ptr<Completer> createEnvNameCompleter(CompType type) const {
+        return std::make_unique<EnvNameCompleter>(type == CompType::CUR ? this->lexer.toTokenText(this->curToken()) : "");
+    }
+
+    std::unique_ptr<Completer> createExpectedTokenCompleter() const {
+        assert(this->parser.hasError());
         std::vector<std::string> tokens;
-        for(auto &e : values) {
+        for(auto &e : this->parser.getError().getExpectedTokens()) {
             std::string expectedStr = toString(e);
             if(expectedStr.front() != '<' || expectedStr.back() != '>') {
                 tokens.push_back(std::move(expectedStr));
@@ -602,11 +605,39 @@ private:
         return node;
     }
 
+    TokenKind curKind() const {
+        return this->tracker.getTokenPairs().back().first;
+    }
+
+    Token curToken() const {
+        return this->tracker.getTokenPairs().back().second;
+    }
+
+    TokenKind errorTokenKind() const {
+        assert(this->parser.hasError());
+        return this->parser.getError().getTokenKind();
+    }
+
+    Token errorToken() const {
+        assert(this->parser.hasError());
+        return this->parser.getError().getErrorToken();
+    }
+
+    bool isErrorKind(const char *value) const {
+        return strcmp(this->parser.getError().getErrorKind(), value) == 0;
+    }
+
+    bool inTyping() const {
+        auto token = this->curToken();
+        return token.pos + token.size == this->cursor;
+    }
+
     bool inTyping(Token token) const {
         return token.pos + token.size == this->cursor;
     }
 
-    bool afterTyping(Token token) const {
+    bool afterTyping() const {
+        auto token = this->curToken();
         return token.pos + token.size < this->cursor;
     }
 
@@ -634,7 +665,17 @@ private:
         return false;
     }
 
-    std::unique_ptr<Completer> selectWithCmd(bool exactly = false);
+    bool foundExpected(TokenKind kind) const {
+        assert(this->parser.hasError());
+        for(auto &value : this->parser.getError().getExpectedTokens()) {
+            if(value == kind) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::unique_ptr<Completer> selectWithCmd(bool exactly = false) const;
 
     std::unique_ptr<Completer> selectCompleter();
 
@@ -674,20 +715,17 @@ CompleterFactory::CompleterFactory(DSState &st, const std::string &line) :
     this->parser.setTracker(&this->tracker);
 }
 
-std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) {
-    auto &tokenPairs = this->tracker.getTokenPairs();
-    assert(!tokenPairs.empty());
-    TokenKind kind = tokenPairs.back().first;
-    Token token = tokenPairs.back().second;
-
-    switch(kind) {
+std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
+    switch(this->curKind()) {
     case COMMAND:
-        if(this->inTyping(token)) {
-            return this->createCmdNameCompleter(token);
+        if(this->inTyping()) {
+            return this->createCmdNameCompleter(CompType::CUR);
         }
-        return this->createFileNameCompleter(); // complete command argument
+        return this->createFileNameCompleter(CompType::NONE); // complete command argument
     case CMD_ARG_PART:
-        if(this->inTyping(token)) {
+        if(this->inTyping()) {
+            auto &tokenPairs = this->tracker.getTokenPairs();
+            Token token = tokenPairs.back().second;
             assert(tokenPairs.size() > 1);
 
             unsigned int prevIndex = tokenPairs.size() - 2;
@@ -701,7 +739,7 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) {
              * complete redirection target
              */
             if(isRedirOp(prevKind)) {
-                return this->createFileNameCompleter(token);
+                return this->createFileNameCompleter(CompType::CUR);
             }
 
             /**
@@ -711,14 +749,14 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) {
              * complete command argument
              */
             if(prevToken.pos + prevToken.size < token.pos) {
-                return this->createFileNameCompleter(token);
+                return this->createFileNameCompleter(CompType::CUR);
             }
             return nullptr;
         }
-        return this->createFileNameCompleter(); // complete command argument
+        return this->createFileNameCompleter(CompType::NONE); // complete command argument
     default:
-        if(!exactly && this->afterTyping(token)) {
-            return this->createFileNameCompleter(); // complete command argument
+        if(!exactly && this->afterTyping()) {
+            return this->createFileNameCompleter(CompType::NONE); // complete command argument
         }
         return nullptr;
     }
@@ -726,32 +764,31 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) {
 
 std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
     auto node = this->applyAndGetLatest();
-    const auto &tokenPairs = this->tracker.getTokenPairs();
 
     if(!this->parser.hasError()) {
-        if(tokenPairs.empty()) {
+        if(this->tracker.getTokenPairs().empty()) {
             return nullptr;
         }
 
-        auto token = tokenPairs.back().second;
-        switch(tokenPairs.back().first) {
+        auto token = this->curToken();
+        switch(this->curKind()) {
         case LINE_END:
         case BACKGROUND:
         case DISOWN_BG:
-            return this->createCmdNameCompleter();
+            return this->createCmdNameCompleter(CompType::NONE);
         case RP:
             return std::make_unique<ExpectedTokenCompleter>(";");
         case APPLIED_NAME:
         case SPECIAL_NAME:
-            if(this->inTyping(token)) {
+            if(this->inTyping()) {
                 return this->createGlobalVarNameCompleter(token);
             }
             break;
         case IDENTIFIER:
             if(node->getNodeKind() == NodeKind::VarDecl
                && static_cast<const VarDeclNode&>(*node).getKind() == VarDeclNode::IMPORT_ENV) {
-                if(inTyping(token)) {
-                    return std::make_unique<EnvNameCompleter>(this->lexer.toTokenText(token));
+                if(inTyping()) {
+                    return this->createEnvNameCompleter(CompType::CUR);
                 }
             }
             break;
@@ -762,53 +799,45 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             return this->selectWithCmd();
         }
         if(this->requireMod(*node)) {
-            return this->createModNameCompleter(token);
+            return this->createModNameCompleter(CompType::CUR);
         }
     } else {
-        const auto &e = this->parser.getError();
-        const Token errorToken = e.getErrorToken();
         LOG(DUMP_CONSOLE, "error kind: %s\nkind: %s, token: %s, text: %s",
-            e.getErrorKind(), toString(e.getTokenKind()),
-            toString(errorToken).c_str(), this->lexer.toTokenText(errorToken).c_str());
+            this->parser.getError().getErrorKind(), toString(this->errorTokenKind()),
+            toString(this->errorToken()).c_str(), this->lexer.toTokenText(this->errorToken()).c_str());
 
-        if(this->afterTyping(errorToken)) {
-            return nullptr;
-        }
-
-        switch(e.getTokenKind()) {
+        switch(this->errorTokenKind()) {
         case EOS: {
-            assert(!tokenPairs.empty());
-            auto kind = tokenPairs.back().first;
-            auto token = tokenPairs.back().second;
+            auto kind = this->curKind();
+            auto token = this->curToken();
             if(kind == APPLIED_NAME || kind == SPECIAL_NAME) {
-                if(this->inTyping(token)) {
+                if(this->inTyping()) {
                     return this->createGlobalVarNameCompleter(token);
                 }
             }
 
-            if(strcmp(e.getErrorKind(), NO_VIABLE_ALTER) == 0) {
-                if(this->inTyping(token)) {
+            if(this->isErrorKind(NO_VIABLE_ALTER)) {
+                if(this->inTyping()) {
                     return std::make_unique<ExpectedTokenCompleter>("");
                 }
 
                 std::unique_ptr<Completer> comp;
-                if(foundExpected(e, COMMAND)) {
-                    comp = this->createCmdNameCompleter();
-                } else if(foundExpected(e, CMD_ARG_PART)) { // complete redirection target
-                    comp = this->createFileNameCompleter();
+                if(this->foundExpected(COMMAND)) {
+                    comp = this->createCmdNameCompleter(CompType::NONE);
+                } else if(this->foundExpected(CMD_ARG_PART)) { // complete redirection target
+                    comp = this->createFileNameCompleter(CompType::NONE);
                 }
                 return this->createAndCompleter(std::move(comp),
-                        this->createExpectedTokenCompleter(e.getExpectedTokens()));
-            } else if(strcmp(e.getErrorKind(), TOKEN_MISMATCHED) == 0) {
-                assert(e.getExpectedTokens().size() == 1);
-                LOG(DUMP_CONSOLE, "expected: %s", toString(e.getExpectedTokens().back()));
+                        this->createExpectedTokenCompleter());
+            } else if(this->isErrorKind(TOKEN_MISMATCHED)) {
+                LOG(DUMP_CONSOLE, "expected: %s", toString(this->parser.getError().getExpectedTokens().back()));
 
-                if(kind == SOURCE && foundExpected(e, CMD_ARG_PART) && this->afterTyping(token)) {
-                    return this->createModNameCompleter();
+                if(kind == SOURCE && this->foundExpected(CMD_ARG_PART) && this->afterTyping()) {
+                    return this->createModNameCompleter(CompType::NONE);
                 }
 
-                if(kind == IMPORT_ENV && foundExpected(e, IDENTIFIER) && this->afterTyping(token)) {
-                    return std::make_unique<EnvNameCompleter>("");
+                if(kind == IMPORT_ENV && this->foundExpected(IDENTIFIER) && this->afterTyping()) {
+                    return this->createEnvNameCompleter(CompType::NONE);
                 }
 
                 auto ret = this->selectWithCmd(true);
@@ -816,13 +845,14 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
                     return ret;
                 }
 
-                return this->createExpectedTokenCompleter(e.getExpectedTokens());
+                return this->createExpectedTokenCompleter();
             }
             break;
         }
         case INVALID: {
+            const Token errorToken = this->errorToken();
             if(this->lexer.equals(errorToken, "$") && this->inTyping(errorToken) &&
-                foundExpected(e, APPLIED_NAME) && foundExpected(e, SPECIAL_NAME)) {
+                this->foundExpected(APPLIED_NAME) && this->foundExpected(SPECIAL_NAME)) {
                 return this->createGlobalVarNameCompleter(errorToken);
             }
             break;
