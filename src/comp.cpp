@@ -435,7 +435,7 @@ private:
     std::unique_ptr<Completer> second;
 
 public:
-    AndCompleter(std::unique_ptr<Completer> && first, std::unique_ptr<Completer> &&second) :
+    AndCompleter(std::unique_ptr<Completer> &&first, std::unique_ptr<Completer> &&second) :
             first(std::move(first)), second(std::move(second)) {}
 
     void operator()(Array_Object &results) override {
