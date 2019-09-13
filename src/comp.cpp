@@ -466,9 +466,9 @@ static bool isRedirOp(TokenKind kind) {
     }
 }
 
-static bool findKind(const std::vector<TokenKind> &values, TokenKind kind) {
-    for(auto &e : values) {
-        if(e == kind) {
+static bool foundExpected(const ParseError &e, TokenKind kind) {
+    for(auto &value : e.getExpectedTokens()) {
+        if(value == kind) {
             return true;
         }
     }
@@ -506,28 +506,6 @@ static bool inCmdMode(const Node &node) {
         return inCmdMode(*static_cast<const AssignNode &>(node).getRightNode());
     default:
         break;
-    }
-    return false;
-}
-
-static bool requireSingleCmdArg(const Node &node, unsigned int cursor) {
-    auto token = node.getToken();
-    if(token.pos + token.size == cursor) {
-        auto kind = node.getNodeKind();
-        if(kind == NodeKind::With) {
-            return true;
-        }
-    }
-    return false;
-}
-
-static bool requireMod(const Node &node, unsigned int cursor) {
-    auto token = node.getToken();
-    if(token.pos + token.size == cursor) {
-        auto kind = node.getNodeKind();
-        if(kind == NodeKind::Source) {
-            return static_cast<const SourceNode&>(node).getName().empty();
-        }
     }
     return false;
 }
@@ -624,6 +602,38 @@ private:
         return node;
     }
 
+    bool inTyping(Token token) const {
+        return token.pos + token.size == this->cursor;
+    }
+
+    bool afterTyping(Token token) const {
+        return token.pos + token.size < this->cursor;
+    }
+
+    bool requireSingleCmdArg(const Node &node) const {
+        if(this->inTyping(node.getToken())) {
+            auto kind = node.getNodeKind();
+            if(kind == NodeKind::With) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool requireMod(const Node &node) const {
+        if(this->inTyping(node.getToken())) {
+            auto kind = node.getNodeKind();
+            if(kind == NodeKind::Source) {
+                return static_cast<const SourceNode&>(node).getName().empty();
+            }
+        }
+        return false;
+    }
+
+    bool requireSpace() const {
+        return false;
+    }
+
     std::unique_ptr<Completer> selectWithCmd(bool exactly = false);
 
     std::unique_ptr<Completer> selectCompleter();
@@ -672,12 +682,12 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) {
 
     switch(kind) {
     case COMMAND:
-        if(token.pos + token.size == this->cursor) {
+        if(this->inTyping(token)) {
             return this->createCmdNameCompleter(token);
         }
         return this->createFileNameCompleter(); // complete command argument
     case CMD_ARG_PART:
-        if(token.pos + token.size == this->cursor) {
+        if(this->inTyping(token)) {
             assert(tokenPairs.size() > 1);
 
             unsigned int prevIndex = tokenPairs.size() - 2;
@@ -707,7 +717,7 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) {
         }
         return this->createFileNameCompleter(); // complete command argument
     default:
-        if(!exactly && token.pos + token.size < this->cursor) {
+        if(!exactly && this->afterTyping(token)) {
             return this->createFileNameCompleter(); // complete command argument
         }
         return nullptr;
@@ -733,14 +743,14 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             return std::make_unique<ExpectedTokenCompleter>(";");
         case APPLIED_NAME:
         case SPECIAL_NAME:
-            if(token.pos + token.size == cursor) {
+            if(this->inTyping(token)) {
                 return this->createGlobalVarNameCompleter(token);
             }
             break;
         case IDENTIFIER:
             if(node->getNodeKind() == NodeKind::VarDecl
                && static_cast<const VarDeclNode&>(*node).getKind() == VarDeclNode::IMPORT_ENV) {
-                if(token.pos + token.size == cursor) {
+                if(inTyping(token)) {
                     return std::make_unique<EnvNameCompleter>(this->lexer.toTokenText(token));
                 }
             }
@@ -748,21 +758,20 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
         default:
             break;
         }
-        if(inCmdMode(*node) || requireSingleCmdArg(*node, this->cursor)) {
+        if(inCmdMode(*node) || this->requireSingleCmdArg(*node)) {
             return this->selectWithCmd();
         }
-        if(requireMod(*node, this->cursor)) {
+        if(this->requireMod(*node)) {
             return this->createModNameCompleter(token);
         }
     } else {
         const auto &e = this->parser.getError();
+        const Token errorToken = e.getErrorToken();
         LOG(DUMP_CONSOLE, "error kind: %s\nkind: %s, token: %s, text: %s",
             e.getErrorKind(), toString(e.getTokenKind()),
-            toString(e.getErrorToken()).c_str(),
-            this->lexer.toTokenText(e.getErrorToken()).c_str());
+            toString(errorToken).c_str(), this->lexer.toTokenText(errorToken).c_str());
 
-        Token errorToken = e.getErrorToken();
-        if(errorToken.pos + errorToken.size < this->cursor) {
+        if(this->afterTyping(errorToken)) {
             return nullptr;
         }
 
@@ -772,36 +781,33 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             auto kind = tokenPairs.back().first;
             auto token = tokenPairs.back().second;
             if(kind == APPLIED_NAME || kind == SPECIAL_NAME) {
-                if(token.pos + token.size == this->cursor) {
+                if(this->inTyping(token)) {
                     return this->createGlobalVarNameCompleter(token);
                 }
             }
 
             if(strcmp(e.getErrorKind(), NO_VIABLE_ALTER) == 0) {
-                if(token.pos + token.size == this->cursor) {
+                if(this->inTyping(token)) {
                     return std::make_unique<ExpectedTokenCompleter>("");
                 }
 
                 std::unique_ptr<Completer> comp;
-                if(findKind(e.getExpectedTokens(), COMMAND)) {
+                if(foundExpected(e, COMMAND)) {
                     comp = this->createCmdNameCompleter();
-                } else if(findKind(e.getExpectedTokens(), CMD_ARG_PART)) { // complete redirection target
+                } else if(foundExpected(e, CMD_ARG_PART)) { // complete redirection target
                     comp = this->createFileNameCompleter();
                 }
                 return this->createAndCompleter(std::move(comp),
                         this->createExpectedTokenCompleter(e.getExpectedTokens()));
             } else if(strcmp(e.getErrorKind(), TOKEN_MISMATCHED) == 0) {
-                assert(!e.getExpectedTokens().empty());
-                TokenKind expected = e.getExpectedTokens().back();
-                LOG(DUMP_CONSOLE, "expected: %s", toString(expected));
+                assert(e.getExpectedTokens().size() == 1);
+                LOG(DUMP_CONSOLE, "expected: %s", toString(e.getExpectedTokens().back()));
 
-                if(!tokenPairs.empty() && tokenPairs.back().first == SOURCE
-                   && findKind(e.getExpectedTokens(), CMD_ARG_PART)) {
+                if(kind == SOURCE && foundExpected(e, CMD_ARG_PART) && this->afterTyping(token)) {
                     return this->createModNameCompleter();
                 }
 
-                if(!tokenPairs.empty() && tokenPairs.back().first == IMPORT_ENV
-                   && findKind(e.getExpectedTokens(), IDENTIFIER)) {
+                if(kind == IMPORT_ENV && foundExpected(e, IDENTIFIER) && this->afterTyping(token)) {
                     return std::make_unique<EnvNameCompleter>("");
                 }
 
@@ -809,14 +815,14 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
                 if(ret) {
                     return ret;
                 }
+
                 return this->createExpectedTokenCompleter(e.getExpectedTokens());
             }
             break;
         }
         case INVALID: {
-            if(this->lexer.equals(errorToken, "$") && errorToken.pos + errorToken.size == cursor &&
-               findKind(e.getExpectedTokens(), APPLIED_NAME) &&
-               findKind(e.getExpectedTokens(), SPECIAL_NAME)) {
+            if(this->lexer.equals(errorToken, "$") && this->inTyping(errorToken) &&
+                foundExpected(e, APPLIED_NAME) && foundExpected(e, SPECIAL_NAME)) {
                 return this->createGlobalVarNameCompleter(errorToken);
             }
             break;

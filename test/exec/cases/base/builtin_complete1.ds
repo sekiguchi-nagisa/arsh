@@ -34,6 +34,12 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     }
 }
 
+function assertEmptyComp($s : String) {
+    assert complete $s > /dev/null
+    assert $COMPREPLY.size() == 1
+    assert $COMPREPLY[0].empty()
+}
+
 function comp($a : String, $path : String) : Array<String> {
     import-env PATH
     let old = $PATH
@@ -232,8 +238,12 @@ $assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++'))
 $assertArray(['='], $(complete '34; var a'))
 $assertArray([')'], $(complete '$(echo $TRUE '))
 $assertArray([";"], $(complete '(ls) '))
-$assertArray(new [String](), $(complete '{'))
-$assertArray(new [String](), $(complete 'echo &&'))
-$assertArray(new [String](), $(complete 'echo >'))
+
+# complete empty token
+$assertEmptyComp('{')
+$assertEmptyComp('echo &&')
+$assertEmptyComp('echo >')
+#$assertEmptyComp('source')
+#$assertEmptyComp('import-env')
 
 true
