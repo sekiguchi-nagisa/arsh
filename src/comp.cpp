@@ -628,8 +628,7 @@ private:
     }
 
     bool inTyping() const {
-        auto token = this->curToken();
-        return token.pos + token.size == this->cursor;
+        return this->inTyping(this->curToken());
     }
 
     bool inTyping(Token token) const {
@@ -658,10 +657,6 @@ private:
                 return static_cast<const SourceNode&>(node).getName().empty();
             }
         }
-        return false;
-    }
-
-    bool requireSpace() const {
         return false;
     }
 
@@ -770,7 +765,6 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             return nullptr;
         }
 
-        auto token = this->curToken();
         switch(this->curKind()) {
         case LINE_END:
         case BACKGROUND:
@@ -781,7 +775,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
         case APPLIED_NAME:
         case SPECIAL_NAME:
             if(this->inTyping()) {
-                return this->createGlobalVarNameCompleter(token);
+                return this->createGlobalVarNameCompleter(this->curToken());
             }
             break;
         case IDENTIFIER:
@@ -809,10 +803,9 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
         switch(this->errorTokenKind()) {
         case EOS: {
             auto kind = this->curKind();
-            auto token = this->curToken();
             if(kind == APPLIED_NAME || kind == SPECIAL_NAME) {
                 if(this->inTyping()) {
-                    return this->createGlobalVarNameCompleter(token);
+                    return this->createGlobalVarNameCompleter(this->curToken());
                 }
             }
 
