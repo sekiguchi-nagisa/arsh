@@ -31,6 +31,45 @@ namespace ydsh {
 
 // in clang 3.6/3.7, generic __builtin_mul_overflow and __builtin_add_overflow is not defined
 
+// add
+inline bool add_overflow(unsigned int x, unsigned int y, unsigned int &r) {
+    return __builtin_uadd_overflow(x, y, &r);
+}
+
+inline bool add_overflow(unsigned long x, unsigned long y, unsigned long &r) {
+    return __builtin_uaddl_overflow(x, y, &r);
+}
+
+inline bool add_overflow(unsigned long long x, unsigned long long y, unsigned long long &r) {
+    return __builtin_uaddll_overflow(x, y, &r);
+}
+
+inline bool sadd_overflow(int x, int y, int &r) {
+    return __builtin_sadd_overflow(x, y, &r);
+}
+
+inline bool sadd_overflow(long x, long y, long &r) {
+    return __builtin_saddl_overflow(x, y, &r);
+}
+
+inline bool sadd_overflow(long long x, long long y, long long &r) {
+    return __builtin_saddll_overflow(x, y, &r);
+}
+
+// sub
+inline bool ssub_overflow(int x, int y, int &r) {
+    return __builtin_ssub_overflow(x, y, &r);
+}
+
+inline bool ssub_overflow(long x, long y, long &r) {
+    return __builtin_ssubl_overflow(x, y, &r);
+}
+
+inline bool ssub_overflow(long long x, long long y, long long &r) {
+    return __builtin_ssubll_overflow(x, y, &r);
+}
+
+// mul
 inline bool mul_overflow(unsigned int x, unsigned int y, unsigned int &r) {
     return __builtin_umul_overflow(x, y, &r);
 }
@@ -43,16 +82,16 @@ inline bool mul_overflow(unsigned long long x, unsigned long long y, unsigned lo
     return __builtin_umulll_overflow(x, y, &r);
 }
 
-inline bool add_overflow(unsigned int x, unsigned int y, unsigned int &r) {
-    return __builtin_uadd_overflow(x, y, &r);
+inline bool smul_overflow(int x, int y, int &r) {
+    return __builtin_smul_overflow(x, y, &r);
 }
 
-inline bool add_overflow(unsigned long x, unsigned long y, unsigned long &r) {
-    return __builtin_uaddl_overflow(x, y, &r);
+inline bool smul_overflow(long x, long y, long &r) {
+    return __builtin_smull_overflow(x, y, &r);
 }
 
-inline bool add_overflow(unsigned long long x, unsigned long long y, unsigned long long &r) {
-    return __builtin_uaddll_overflow(x, y, &r);
+inline bool smul_overflow(long long x, long long y, long long &r) {
+    return __builtin_smulll_overflow(x, y, &r);
 }
 
 inline int parseBase(const char *&begin, const char *end) {

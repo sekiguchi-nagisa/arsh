@@ -45,16 +45,25 @@ assert(0o1000000000000000000000L == -1l - 9223372036854775807l)
 # Int32 op
 assert((12 + 3) is Int32)
 assert(12 + 3 == 15)
+var ex = 34 as Any
+try { 2147483647 + 1 } catch $e { $ex = $e; }
+assert $ex is ArithmeticError
 
 assert((150 - 50) is Int32)
 assert(150 - 50 == 100)
+$ex = 56
+try { -2 - 2147483647 } catch $e { $ex = $e; }
+assert $ex is ArithmeticError
 
 assert((50 * 10) is Int32)
 assert(50 * 10 == 500)
+$ex = 560
+try { 2147483647 * 2 } catch $e { $ex = $e; }
+assert $ex is ArithmeticError
 
 assert((99 / 33) is Int32)
 assert(99 / 33 == 3)
-var ex = 34 as Any
+$ex = 33
 try { 12/0 } catch($e) { $ex = $e}
 assert($ex is ArithmeticError)
 
@@ -88,12 +97,21 @@ assert((1 xor 2) == 3)
 # Int64 op
 assert((12L + 3L) is Int64)
 assert(12l + 3L == 15l)
+$ex = 56
+try { 9223372036854775807L + 1L } catch $e { $ex = $e; }
+assert $ex is ArithmeticError
 
 assert((150L - 50L) is Int64)
 assert(150L - 50L == 100L)
+$ex = 56
+try { -2L - 9223372036854775807L } catch $e { $ex = $e; }
+assert $ex is ArithmeticError
 
 assert((50L * 10L) is Int64)
 assert(50L * 10L == 500L)
+$ex = 56
+try { 2L * 9223372036854775807L } catch $e { $ex = $e; }
+assert $ex is ArithmeticError
 
 assert((99L / 33L) is Int64)
 assert(99L / 33L == 3L)

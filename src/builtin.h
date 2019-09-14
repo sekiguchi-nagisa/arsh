@@ -58,7 +58,7 @@ template <typename T>
 using ObjTypeStub = typename std::conditional<
         std::is_same<double, T>::value,
         Float_Object,
-        typename std::conditional<std::is_same<long, T>::value || std::is_same<unsigned long, T>::value,
+        typename std::conditional<std::is_same<long, T>::value,
                 Long_Object, Int_Object>::type>::type;
 
 
@@ -116,6 +116,48 @@ static inline bool checkZeroMod(RuntimeContext &ctx, int right) {
         return false;
     }
     return true;
+}
+
+template <typename T>
+YDSH_METHOD basic_add(RuntimeContext &ctx) {
+    using ObjType = ObjTypeStub<T>;
+    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
+    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
+
+    T ret;
+    if(sadd_overflow(left, right, ret)) {
+        raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
+        RET_ERROR;
+    }
+    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), ret));
+}
+
+template <typename T>
+YDSH_METHOD basic_sub(RuntimeContext &ctx) {
+    using ObjType = ObjTypeStub<T>;
+    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
+    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
+
+    T ret;
+    if(ssub_overflow(left, right, ret)) {
+        raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
+        RET_ERROR;
+    }
+    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), ret));
+}
+
+template <typename T>
+YDSH_METHOD basic_mul(RuntimeContext &ctx) {
+    using ObjType = ObjTypeStub<T>;
+    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
+    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
+
+    T ret;
+    if(smul_overflow(left, right, ret)) {
+        raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
+        RET_ERROR;
+    }
+    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), ret));
 }
 
 template <typename T>
@@ -239,19 +281,19 @@ YDSH_METHOD int_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_add);
-    RET(basic_ADD<int>(ctx));
+    RET(basic_add<int>(ctx));
 }
 
 //!bind: function $OP_SUB($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_sub);
-    RET(basic_SUB<int>(ctx));
+    RET(basic_sub<int>(ctx));
 }
 
 //!bind: function $OP_MUL($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mul);
-    RET(basic_MUL<int>(ctx));
+    RET(basic_mul<int>(ctx));
 }
 
 //!bind: function $OP_DIV($this : Int32, $target : Int32) : Int32
@@ -359,19 +401,19 @@ YDSH_METHOD int64_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_add);
-    RET(basic_ADD<long>(ctx));
+    RET(basic_add<long>(ctx));
 }
 
 //!bind: function $OP_SUB($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_sub);
-    RET(basic_SUB<long>(ctx));
+    RET(basic_sub<long>(ctx));
 }
 
 //!bind: function $OP_MUL($this : Int64, $target : Int64) : Int64
 YDSH_METHOD int64_2_int64_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_mul);
-    RET(basic_MUL<long>(ctx));
+    RET(basic_mul<long>(ctx));
 }
 
 //!bind: function $OP_DIV($this : Int64, $target : Int64) : Int64
