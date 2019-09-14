@@ -513,6 +513,8 @@ private:
 
     TokenTracker tracker;
 
+    std::unique_ptr<Node> node; // if has error, is null
+
     enum class CompType {
         NONE,
         CUR,
@@ -595,14 +597,14 @@ private:
     }
 
     std::unique_ptr<Node> applyAndGetLatest() {
-        std::unique_ptr<Node> node;
+        std::unique_ptr<Node> lastNode;
         while(this->parser) {
-            node = this->parser();
+            lastNode = this->parser();
             if(this->parser.hasError()) {
                 break;
             }
         }
-        return node;
+        return lastNode;
     }
 
     TokenKind curKind() const {
@@ -640,9 +642,13 @@ private:
         return token.pos + token.size < this->cursor;
     }
 
-    bool requireSingleCmdArg(const Node &node) const {
-        if(this->inTyping(node.getToken())) {
-            auto kind = node.getNodeKind();
+    bool inCommand() const {
+        return inCmdMode(*this->node);
+    }
+
+    bool requireSingleCmdArg() const {
+        if(this->inTyping(this->node->getToken())) {
+            auto kind = this->node->getNodeKind();
             if(kind == NodeKind::With) {
                 return true;
             }
@@ -650,11 +656,11 @@ private:
         return false;
     }
 
-    bool requireMod(const Node &node) const {
-        if(this->inTyping(node.getToken())) {
-            auto kind = node.getNodeKind();
+    bool requireMod() const {
+        if(this->inTyping(this->node->getToken())) {
+            auto kind = this->node->getNodeKind();
             if(kind == NodeKind::Source) {
-                return static_cast<const SourceNode&>(node).getName().empty();
+                return static_cast<const SourceNode&>(*this->node).getName().empty();
             }
         }
         return false;
@@ -708,6 +714,7 @@ CompleterFactory::CompleterFactory(DSState &st, const std::string &line) :
         state(st), cursor(line.size() - 1),
         lexer("<line>", line.c_str()), parser(this->lexer) {
     this->parser.setTracker(&this->tracker);
+    this->node = this->applyAndGetLatest();
 }
 
 std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
@@ -758,8 +765,6 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
 }
 
 std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
-    auto node = this->applyAndGetLatest();
-
     if(!this->parser.hasError()) {
         if(this->tracker.getTokenPairs().empty()) {
             return nullptr;
@@ -779,8 +784,8 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             }
             break;
         case IDENTIFIER:
-            if(node->getNodeKind() == NodeKind::VarDecl
-               && static_cast<const VarDeclNode&>(*node).getKind() == VarDeclNode::IMPORT_ENV) {
+            if(this->node->getNodeKind() == NodeKind::VarDecl
+               && static_cast<const VarDeclNode&>(*this->node).getKind() == VarDeclNode::IMPORT_ENV) {
                 if(inTyping()) {
                     return this->createEnvNameCompleter(CompType::CUR);
                 }
@@ -789,10 +794,10 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
         default:
             break;
         }
-        if(inCmdMode(*node) || this->requireSingleCmdArg(*node)) {
+        if(this->inCommand() || this->requireSingleCmdArg()) {
             return this->selectWithCmd();
         }
-        if(this->requireMod(*node)) {
+        if(this->requireMod()) {
             return this->createModNameCompleter(CompType::CUR);
         }
     } else {
