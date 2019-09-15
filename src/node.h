@@ -57,6 +57,7 @@ class NodeDumper;
     OP(BinaryOp) \
     OP(Apply) \
     OP(New) \
+    OP(Embed) \
     OP(Cmd) \
     OP(CmdArg) \
     OP(Redir) \
@@ -867,6 +868,54 @@ public:
 
     std::vector<Node *> &refArgNodes() {
         return this->argNodes;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
+/**
+ * represents ${}
+ * for string interpolation.
+ */
+class EmbedNode : public Node {
+public:
+    enum Kind {
+        STR_EXPR,
+        CMD_ARG,
+    };
+
+private:
+    const Kind kind;
+
+    Node *exprNode;
+
+    MethodHandle *handle{nullptr}; // for method call
+
+public:
+    EmbedNode(unsigned int startPos, Kind kind, Node *exprNode, Token endToken) :
+        Node(NodeKind::Embed, {startPos, 1}), kind(kind), exprNode(exprNode) {
+        this->updateToken(endToken);
+    }
+
+    EmbedNode(Kind kind, Node *exprNode) :
+        Node(NodeKind::Embed, exprNode->getToken()), kind(kind), exprNode(exprNode) {}
+
+    ~EmbedNode();
+
+    Kind getKind() const {
+        return this->kind;
+    }
+
+    Node *getExprNode() const {
+        return this->exprNode;
+    }
+
+    void setHandle(MethodHandle *h) {
+        this->handle = h;
+    }
+
+    const MethodHandle *getHandle() const {
+        return this->handle;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2279,6 +2328,7 @@ struct NodeVisitor {
     virtual void visitUnaryOpNode(UnaryOpNode &node) = 0;
     virtual void visitBinaryOpNode(BinaryOpNode &node) = 0;
     virtual void visitApplyNode(ApplyNode &node) = 0;
+    virtual void visitEmbedNode(EmbedNode &node) = 0;
     virtual void visitNewNode(NewNode &node) = 0;
     virtual void visitForkNode(ForkNode &node) = 0;
     virtual void visitCmdNode(CmdNode &node) = 0;
@@ -2326,6 +2376,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitBinaryOpNode(BinaryOpNode &node) override { this->visitDefault(node); }
     void visitApplyNode(ApplyNode &node) override { this->visitDefault(node); }
     void visitNewNode(NewNode &node) override { this->visitDefault(node); }
+    void visitEmbedNode(EmbedNode &node) override { this->visitDefault(node); }
     void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
     void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
     void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }

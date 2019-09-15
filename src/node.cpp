@@ -489,6 +489,30 @@ void NewNode::dump(NodeDumper &dumper) const {
     DUMP(argNodes);
 }
 
+// #######################
+// ##     EmbedNode     ##
+// #######################
+
+EmbedNode::~EmbedNode() {
+    delete this->exprNode;
+}
+
+void EmbedNode::dump(ydsh::NodeDumper &dumper) const {
+#define EACH_ENUM(OP) \
+    OP(STR_EXPR) \
+    OP(CMD_ARG)
+
+    DUMP_ENUM(kind, EACH_ENUM);
+#undef EACH_ENUM
+
+    DUMP_PTR(exprNode);
+
+    unsigned int methodIndex =
+            this->handle != nullptr ? this->handle->getMethodIndex() : 0;
+    DUMP_PRIM(methodIndex);
+}
+
+
 // #########################
 // ##     UnaryOpNode     ##
 // #########################

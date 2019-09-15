@@ -457,27 +457,8 @@ void TypeChecker::visitStringNode(StringNode &node) {
 }
 
 void TypeChecker::visitStringExprNode(StringExprNode &node) {
-    const unsigned int size = node.getExprNodes().size();
-    for(unsigned int i = 0; i < size; i++) {
-        Node *exprNode = node.getExprNodes()[i];
-        auto &exprType = this->checkTypeAsExpr(exprNode);
-        if(!this->symbolTable.get(TYPE::String).isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
-            std::string methodName(OP_INTERP);
-            MethodHandle *handle = exprType.isOptionType() ? nullptr :
-                                   exprType.lookupMethodHandle(this->symbolTable, methodName);
-            if(handle == nullptr) { // if exprType is
-                RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName.c_str());
-            }
-
-            auto *callNode = ApplyNode::newMethodCall(exprNode, std::move(methodName));
-
-            // check type argument
-            this->checkTypeArgsNode(node, handle, callNode->refArgNodes());
-            callNode->setHandle(handle);
-            callNode->setType(*handle->getReturnType());
-
-            node.setExprNode(i, callNode);
-        }
+    for(auto &exprNode : node.getExprNodes()) {
+        this->checkTypeAsExpr(exprNode);
     }
     node.setType(this->symbolTable.get(TYPE::String));
 }
@@ -703,6 +684,45 @@ void TypeChecker::visitNewNode(NewNode &node) {
     node.setType(type);
 }
 
+void TypeChecker::visitEmbedNode(EmbedNode &node) {
+    auto &exprType = this->checkTypeAsExpr(node.getExprNode());
+    node.setType(exprType);
+
+    if(node.getKind() == EmbedNode::STR_EXPR) {
+        auto &type = this->symbolTable.get(TYPE::String);
+        if(!type.isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
+            std::string methodName(OP_INTERP);
+            auto *handle = exprType.isOptionType() ? nullptr :
+                    exprType.lookupMethodHandle(this->symbolTable, methodName);
+            if(handle == nullptr) { // if exprType is
+                RAISE_TC_ERROR(UndefinedMethod, *node.getExprNode(), methodName.c_str());
+            }
+            assert(*handle->getReturnType() == type);
+            node.setHandle(handle);
+        }
+    } else {
+        if(!this->symbolTable.get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
+           !this->symbolTable.get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
+           !this->symbolTable.get(TYPE::UnixFD).isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
+            // first try lookup __CMD_ARG__ method
+            std::string methodName(OP_CMD_ARG);
+            auto *handle = exprType.lookupMethodHandle(this->symbolTable, methodName);
+
+            if(handle == nullptr) { // if not found, lookup __STR__
+                methodName = OP_STR;
+                handle = exprType.isOptionType() ? nullptr :
+                        exprType.lookupMethodHandle(this->symbolTable, methodName);
+                if(handle == nullptr) {
+                    RAISE_TC_ERROR(UndefinedMethod, *node.getExprNode(), methodName.c_str());
+                }
+            }
+            assert(handle->getReturnType()->is(TYPE::String) || handle->getReturnType()->is(TYPE::StringArray));
+            node.setHandle(handle);
+            node.setType(*handle->getReturnType());
+        }
+    }
+}
+
 void TypeChecker::visitCmdNode(CmdNode &node) {
     this->checkType(this->symbolTable.get(TYPE::String), node.getNameNode());
     for(auto *argNode : node.getArgNodes()) {
@@ -717,37 +737,8 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
 }
 
 void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
-    const unsigned int size = node.getSegmentNodes().size();
-    for(unsigned int i = 0; i < size; i++) {
-        Node *exprNode = node.getSegmentNodes()[i];
-        auto &segmentType = this->checkTypeAsExpr(exprNode);
-
-        if(!this->symbolTable.get(TYPE::String).isSameOrBaseTypeOf(segmentType) &&
-                !this->symbolTable.get(TYPE::StringArray).isSameOrBaseTypeOf(segmentType) &&
-                !this->symbolTable.get(TYPE::UnixFD).isSameOrBaseTypeOf(segmentType)) { // call __STR__ or __CMD__ARG
-            // first try lookup __CMD_ARG__ method
-            std::string methodName(OP_CMD_ARG);
-            MethodHandle *handle = segmentType.lookupMethodHandle(this->symbolTable, methodName);
-
-            if(handle == nullptr) { // if not found, lookup __STR__
-                methodName = OP_STR;
-                handle = segmentType.isOptionType() ? nullptr :
-                         segmentType.lookupMethodHandle(this->symbolTable, methodName);
-                if(handle == nullptr) {
-                    RAISE_TC_ERROR(UndefinedMethod, *exprNode, methodName.c_str());
-                }
-            }
-            assert(handle->getReturnType()->is(TYPE::String) || handle->getReturnType()->is(TYPE::StringArray));
-
-            // create MethodCallNode and check type
-            auto *callNode = ApplyNode::newMethodCall(exprNode, std::move(methodName));
-            this->checkTypeArgsNode(node, handle, callNode->refArgNodes());
-            callNode->setHandle(handle);
-            callNode->setType(*handle->getReturnType());
-
-            // overwrite segmentNode
-            node.setSegmentNode(i, callNode);
-        }
+    for(auto &exprNode : node.getSegmentNodes()) {
+        this->checkTypeAsExpr(exprNode);
     }
 
     // not allow String Array and UnixFD type

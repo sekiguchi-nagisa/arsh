@@ -567,6 +567,14 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     this->emitCallIns(OpCode::CALL_INIT, paramSize);
 }
 
+void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {
+    this->visit(*node.getExprNode());
+    if(node.getHandle() != nullptr) {
+        this->emitSourcePos(node.getPos());
+        this->emitCallIns(OpCode::CALL_METHOD, 0, node.getHandle()->getMethodIndex());
+    }
+}
+
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     this->emitSourcePos(node.getPos());
 

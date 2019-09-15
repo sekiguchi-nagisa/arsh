@@ -428,6 +428,7 @@ protected:
     void visitBinaryOpNode(BinaryOpNode &node) override;
     void visitApplyNode(ApplyNode &node) override;
     void visitNewNode(NewNode &node) override;
+    void visitEmbedNode(EmbedNode &node) override;
     void visitCmdNode(CmdNode &node) override;
     void visitCmdArgNode(CmdArgNode &node) override;
     void visitRedirNode(RedirNode &node) override;

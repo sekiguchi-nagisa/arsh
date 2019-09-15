@@ -1271,7 +1271,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             break;
         }
         EACH_LA_interpolation(GEN_LA_CASE) {
-            auto interp = TRY(this->parse_interpolation());
+            auto interp = TRY(this->parse_interpolation(true));
             node->addExprNode(interp.release());
             break;
         }
@@ -1293,18 +1293,24 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     return std::move(node);
 }
 
-std::unique_ptr<Node> Parser::parse_interpolation() {
+std::unique_ptr<Node> Parser::parse_interpolation(bool strExpr) {
     GUARD_DEEP_NESTING(guard);
 
     switch(CUR_KIND()) {
     case APPLIED_NAME:
-    case SPECIAL_NAME:
-        return this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
+    case SPECIAL_NAME: {
+        auto node = this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
+        return std::make_unique<EmbedNode>(
+                strExpr ? EmbedNode::STR_EXPR : EmbedNode::CMD_ARG, node.release());
+    }
     default:
+        unsigned int pos = START_POS();
         TRY(this->expect(START_INTERP));
         auto node = TRY(this->parse_expression());
-        TRY(this->expect(RBC));
-        return node;
+        auto endToken = TRY(this->expect(RBC));
+        return std::make_unique<EmbedNode>(
+                pos, strExpr ? EmbedNode::STR_EXPR : EmbedNode::CMD_ARG,
+                node.release(), endToken);
     }
 }
 
@@ -1326,10 +1332,10 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
         token = TRY(this->expect(RB));
         auto node = std::unique_ptr<Node>(ApplyNode::newIndexCall(varNode.release(), opToken, indexNode.release()));
         node->updateToken(token);
-        return node;
+        return std::make_unique<EmbedNode>(EmbedNode::CMD_ARG, node.release());
     }
     default:
-        return this->parse_interpolation();
+        return this->parse_interpolation(false);
     }
 }
 
