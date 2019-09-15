@@ -448,6 +448,56 @@ public:
     }
 };
 
+class OrCompleter : public Completer {
+private:
+    std::unique_ptr<Completer> first;
+
+    std::unique_ptr<Completer> second;
+
+public:
+    OrCompleter(std::unique_ptr<Completer> &&first, std::unique_ptr<Completer> &&second) :
+            first(std::move(first)), second(std::move(second)) {}
+
+    void operator()(Array_Object &results) override {
+        (*this->first)(results);
+        if(results.getValues().empty()) {
+            (*this->second)(results);
+        }
+    }
+
+    const char *name() const override {
+        return "Or";
+    }
+};
+
+class UserDefinedCompleter : public Completer {
+private:
+    DSState &state;
+
+    DSValue hook;   // must be FuncObject
+
+    DSValue tokens; // must Array<String>
+
+    const unsigned int tokenIndex;
+
+public:
+    UserDefinedCompleter(DSState &state, DSValue &&hook, DSValue &&tokens, unsigned int tokenIndex) :
+            state(state), hook(std::move(hook)), tokens(std::move(tokens)), tokenIndex(tokenIndex) {}
+
+    void operator()(Array_Object &ret) override {
+        auto result = this->state.callFunction(std::move(this->hook),
+                makeArgs(std::move(this->tokens),
+                        DSValue::create<Int_Object>(this->state.symbolTable.get(TYPE::Int32), this->tokenIndex)));
+        for(auto &e : typeAs<Array_Object>(result)->getValues()) {
+            ret.append(e);
+        }
+    }
+
+    const char *name() const override {
+        return "UserDefined";
+    }
+};
+
 static bool isRedirOp(TokenKind kind) {
     switch(kind) {
     case REDIR_IN_2_FILE:
@@ -466,39 +516,43 @@ static bool isRedirOp(TokenKind kind) {
     }
 }
 
-static bool inCmdMode(const Node &node) {
+/**
+ * if found command, return CmdNode
+ * @param node
+ * @return
+ */
+static const CmdNode *inCmdMode(const Node &node) {
     switch(node.getNodeKind()) {
     case NodeKind::UnaryOp:
         return inCmdMode(*static_cast<const UnaryOpNode &>(node).getExprNode());
     case NodeKind::BinaryOp:
         return inCmdMode(*static_cast<const BinaryOpNode &>(node).getRightNode());
     case NodeKind::Cmd:
-        return true;
+        return static_cast<const CmdNode *>(&node);
     case NodeKind::Pipeline:
         return inCmdMode(*static_cast<const PipelineNode &>(node).getNodes().back());
     case NodeKind::Fork: {
         auto &forkNode = static_cast<const ForkNode &>(node);
-        return forkNode.getOpKind() == ForkKind::COPROC && inCmdMode(*forkNode.getExprNode());
+        return forkNode.getOpKind() == ForkKind::COPROC ? inCmdMode(*forkNode.getExprNode()) : nullptr;
     }
     case NodeKind::Assert: {
         auto &assertNode = static_cast<const AssertNode &>(node);
-        return assertNode.getMessageNode()->getToken().size == 0 && inCmdMode(*assertNode.getCondNode());
+        return assertNode.getMessageNode()->getToken().size == 0 ? inCmdMode(*assertNode.getCondNode()) : nullptr;
     }
     case NodeKind::Jump: {
         auto &jumpNode = static_cast<const JumpNode &>(node);
-        return (jumpNode.getOpKind() == JumpNode::THROW || jumpNode.getOpKind() == JumpNode::RETURN)
-               && inCmdMode(*jumpNode.getExprNode());
+        return jumpNode.getOpKind() != JumpNode::CONTINUE ? inCmdMode(*jumpNode.getExprNode()) : nullptr;
     }
     case NodeKind::VarDecl: {
         auto &vardeclNode = static_cast<const VarDeclNode &>(node);
-        return vardeclNode.getExprNode() != nullptr && inCmdMode(*vardeclNode.getExprNode());
+        return vardeclNode.getExprNode() != nullptr ? inCmdMode(*vardeclNode.getExprNode()) : nullptr;
     }
     case NodeKind::Assign:
         return inCmdMode(*static_cast<const AssignNode &>(node).getRightNode());
     default:
         break;
     }
-    return false;
+    return nullptr;
 }
 
 class CompleterFactory { //TODO: type aware completion
@@ -596,6 +650,19 @@ private:
         return std::make_unique<AndCompleter>(std::move(first), std::move(second));
     }
 
+    std::unique_ptr<Completer> createCmdArgCompleter(CompType type) const {
+        auto comp = this->createFileNameCompleter(type);
+        auto udc = this->createUserDefinedCompleter();
+        if(udc) {
+            comp = std::make_unique<OrCompleter>(std::move(udc), std::move(comp));
+        }
+        return comp;
+    }
+
+    std::unique_ptr<Completer> createUserDefinedCompleter() const;
+
+    std::vector<DSValue> resolveCmdTokens() const;
+
     std::unique_ptr<Node> applyAndGetLatest() {
         std::unique_ptr<Node> lastNode;
         while(this->parser) {
@@ -643,13 +710,12 @@ private:
     }
 
     bool inCommand() const {
-        return inCmdMode(*this->node);
+        return inCmdMode(*this->node) != nullptr;
     }
 
     bool requireSingleCmdArg() const {
         if(this->inTyping(this->node->getToken())) {
-            auto kind = this->node->getNodeKind();
-            if(kind == NodeKind::With) {
+            if(this->node->is(NodeKind::With)) {
                 return true;
             }
         }
@@ -658,8 +724,7 @@ private:
 
     bool requireMod() const {
         if(this->inTyping(this->node->getToken())) {
-            auto kind = this->node->getNodeKind();
-            if(kind == NodeKind::Source) {
+            if(this->node->is(NodeKind::Source)) {
                 return static_cast<const SourceNode&>(*this->node).getName().empty();
             }
         }
@@ -674,6 +739,11 @@ private:
             }
         }
         return false;
+    }
+
+    DSValue newStrObj(Token token) const {
+        std::string value = this->lexer.toTokenText(token);
+        return DSValue::create<String_Object>(this->state.symbolTable.get(TYPE::String), std::move(value));
     }
 
     std::unique_ptr<Completer> selectWithCmd(bool exactly = false) const;
@@ -717,13 +787,45 @@ CompleterFactory::CompleterFactory(DSState &st, const std::string &line) :
     this->node = this->applyAndGetLatest();
 }
 
+std::unique_ptr<Completer> CompleterFactory::createUserDefinedCompleter() const {
+    auto hook = getGlobal(this->state, VAR_COMP_HOOK);
+    if(hook.isInvalid()) {
+        return nullptr;
+    }
+    if(this->parser.hasError()) {  //FIXME
+        return nullptr;
+    }
+
+    auto tokens = this->resolveCmdTokens();
+    unsigned int index = tokens.size();
+    if(this->inTyping()) {
+        index--;
+    }
+    auto obj = DSValue::create<Array_Object>(this->state.symbolTable.get(TYPE::StringArray), std::move(tokens));
+    return std::make_unique<UserDefinedCompleter>(this->state, std::move(hook), std::move(obj), index);
+}
+
+std::vector<DSValue> CompleterFactory::resolveCmdTokens() const {
+    assert(this->node); //FIXME
+    std::vector<DSValue> tokens;
+    auto *cmdNode = inCmdMode(*this->node);
+    tokens.push_back(this->newStrObj(cmdNode->getNameNode()->getToken()));
+    for(auto &argNode : cmdNode->getArgNodes()) {
+        if(argNode->is(NodeKind::Redir)) {
+            continue;
+        }
+        tokens.push_back(this->newStrObj(argNode->getToken()));
+    }
+    return tokens;
+}
+
 std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
     switch(this->curKind()) {
     case COMMAND:
         if(this->inTyping()) {
             return this->createCmdNameCompleter(CompType::CUR);
         }
-        return this->createFileNameCompleter(CompType::NONE); // complete command argument
+        return this->createCmdArgCompleter(CompType::NONE); // complete command argument
     case CMD_ARG_PART:
         if(this->inTyping()) {
             auto &tokenPairs = this->tracker.getTokenPairs();
@@ -751,14 +853,14 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
              * complete command argument
              */
             if(prevToken.pos + prevToken.size < token.pos) {
-                return this->createFileNameCompleter(CompType::CUR);
+                return this->createCmdArgCompleter(CompType::CUR);
             }
             return nullptr;
         }
-        return this->createFileNameCompleter(CompType::NONE); // complete command argument
+        return this->createCmdArgCompleter(CompType::NONE); // complete command argument
     default:
         if(!exactly && this->afterTyping()) {
-            return this->createFileNameCompleter(CompType::NONE); // complete command argument
+            return this->createCmdArgCompleter(CompType::NONE); // complete command argument
         }
         return nullptr;
     }
@@ -784,7 +886,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
             }
             break;
         case IDENTIFIER:
-            if(this->node->getNodeKind() == NodeKind::VarDecl
+            if(this->node->is(NodeKind::VarDecl)
                && static_cast<const VarDeclNode&>(*this->node).getKind() == VarDeclNode::IMPORT_ENV) {
                 if(inTyping()) {
                     return this->createEnvNameCompleter(CompType::CUR);

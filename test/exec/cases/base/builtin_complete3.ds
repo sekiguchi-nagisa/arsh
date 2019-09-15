@@ -1,0 +1,25 @@
+
+# for user-defined completer
+
+function assertArray($e : [String], $a : [String]) {
+    assert diff <(for $i in $e {echo $i; }) <(for $i in $a {echo $i; })
+}
+
+function assertComp($s : String, $e : [String]) {
+    complete $s > /dev/null
+    $assertArray($e, $COMPREPLY)
+}
+
+function comp($words : [String], $cursor : Int) : [String] {
+    return $cursor == $words.size() ?
+                $words.add($cursor as String) : $words
+}
+
+$COMP_HOOK = $comp
+
+$assertComp('!echo hey', ['echo', 'hey'])
+$assertComp('throw echo hey ', ['2', 'echo', 'hey'])
+$assertComp('34 | ls hey', ['hey', 'ls'])
+$assertComp('ls && !echo hey 2>&1 > hoge sya', ['echo', 'hey', 'sya'])
+$assertComp('echo 2>&1 > hoge ', ['1', 'echo'])
+$assertComp('assert echo ${34 + 45}hoge "1234" aa', ['"1234"', '${34 + 45}hoge', 'aa', 'echo'])
