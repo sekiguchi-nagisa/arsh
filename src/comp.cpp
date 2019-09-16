@@ -485,9 +485,16 @@ public:
             state(state), hook(std::move(hook)), tokens(std::move(tokens)), tokenIndex(tokenIndex) {}
 
     void operator()(Array_Object &ret) override {
+        auto old = this->state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
         auto result = this->state.callFunction(std::move(this->hook),
                 makeArgs(std::move(this->tokens),
                         DSValue::create<Int_Object>(this->state.symbolTable.get(TYPE::Int32), this->tokenIndex)));
+        this->state.setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(old));
+        if(this->state.hasError()) {
+            return;
+        }
+
+        // set result to COMPREPLY
         for(auto &e : typeAs<Array_Object>(result)->getValues()) {
             ret.append(e);
         }
