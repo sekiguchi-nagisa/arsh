@@ -1,37 +1,6 @@
-function assertEQ($a : typeof($@.size()), $b : typeof($@.size())) : Boolean {
-    if($a != $b) {
-        echo 1>&2 expect: $a, but actual: $b
-        return $false
-    }
-    return $true
-}
-
-function assertSEQ($a : String, $b : String) : Boolean {
-    if($a != $b) {
-        echo 1>&2 expect: $a, but actual: $b
-        return $false
-    }
-    return $true
-}
-
 
 function assertArray($x : Array<String>, $y : Array<String>) {
-    if $x.size() != $y.size() {
-        #echo expect:
-        #for $a in $x { echo $a; }
-        #echo actual
-        #for $a in $y { echo $a; }
-        diff <({echo expect: ; for $a in $x { echo $a; }} ) <({ echo actual; for $a in $y { echo $a; } })
-    }
-    assert($assertEQ($x.size(), $y.size()))
-
-    let size = $x.size()
-    for(var i = 0; $i < $size; $i++) {
-        if(!$assertSEQ($x[$i], $y[$i])) {
-            for(var j = 0; $j < $i; $j++) { echo $x[$j] $y[$j] 1>&2; }
-            assert($false)
-        }
-    }
+    assert diff <(for $a in $x { echo $a; }) <(for $a in $y { echo $a; })
 }
 
 function assertEmptyComp($s : String) {

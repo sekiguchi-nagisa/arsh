@@ -1,38 +1,6 @@
-function z1($a : typeof($@.size()), $b : typeof($@.size())) : Boolean {
-    if($a != $b) {
-        echo 1>&2 expect: $a, but actual: $b
-        return $false
-    }
-    return $true
-}
-
-z2() {
-    let a = $1; let b = $2
-    if($a != $b) {
-        echo 1>&2 expect: $a, but actual: $b
-        return 1
-    }
-    return 0
-}
-
 
 function assertArray($x : Array<String>, $y : Array<String>) {
-    if $x.size() != $y.size() {
-        echo expect:
-        for $a in $x { echo $a; }
-        echo actual
-        for $a in $y { echo $a; }
-    }
-
-    assert($z1($x.size(), $y.size()))
-
-    let size = $x.size()
-    for(var i = 0; $i < $size; $i++) {
-        if(!z2 $x[$i] $y[$i]) {
-            for(var j = 0; $j < $size; $j++) { echo $x[$j] $y[$j]; }
-            assert($false)
-        }
-    }
+    assert diff <(for $a in $x { echo $a; }) <(for $a in $y { echo $a; })
 }
 
 { import-env _ : "a" }    # force set env '_'
@@ -47,7 +15,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         'OSTYPE', 'PID', 'PIPESTATUS', 'PPID',
         'PS1', 'PS2', 'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SECONDS', 'SIG', 'SIG_DFL', 'SIG_IGN',
         'STDERR', 'STDIN', 'STDOUT', 'TERM_HOOK',
-        'TRUE', 'True', 'UID', 'YDSH_VERSION', 'assertArray', 'false', 'reply', 'true', 'z1'
+        'TRUE', 'True', 'UID', 'YDSH_VERSION', 'assertArray', 'false', 'reply', 'true',
     ]
 
     $assertArray($gvars, $(complete '$'))
