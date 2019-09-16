@@ -32,4 +32,8 @@ function comp2($words : [String], $cursor : Int) : [String] {
 
 $COMP_HOOK = $comp2
 
-$assertComp('echo ', new [String]())
+var ex = 34 as Any
+try { complete 'echo ' > /dev/null; assert $false; } catch($e) { $ex = $e; }
+assert $ex is ArithmeticError
+
+true
