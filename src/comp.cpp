@@ -647,7 +647,7 @@ private:
     }
 
     std::unique_ptr<Completer> createAndCompleter(std::unique_ptr<Completer> &&first,
-                                                    std::unique_ptr<Completer> && second) const {
+                                                    std::unique_ptr<Completer> &&second) const {
         if(!first) {
             return std::move(second);
         }
@@ -721,7 +721,7 @@ private:
     }
 
     bool requireSingleCmdArg() const {
-        if(this->inTyping(this->node->getToken())) {
+        if(this->inTyping()) {
             if(this->node->is(NodeKind::With)) {
                 return true;
             }
@@ -730,7 +730,7 @@ private:
     }
 
     bool requireMod() const {
-        if(this->inTyping(this->node->getToken())) {
+        if(this->inTyping()) {
             if(this->node->is(NodeKind::Source)) {
                 return static_cast<const SourceNode&>(*this->node).getName().empty();
             }
