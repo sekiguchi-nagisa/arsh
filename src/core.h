@@ -212,10 +212,11 @@ void expandTilde(std::string &str);
  * complete line.
  * after completion, set results to COMPREPLY.
  * @param st
- * @param line
- * must be terminate newline.
+ * @param data
+ * @param size
+ * size of data
  */
-void completeLine(DSState &st, const std::string &line);
+void completeLine(DSState &st, const char *data, unsigned int size);
 
 class SignalGuard {
 private:

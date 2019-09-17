@@ -580,7 +580,7 @@ private:
     };
 
 public:
-    CompleterFactory(DSState &st, const std::string &line);
+    CompleterFactory(DSState &st, const char *data, unsigned int size);
 
 private:
     std::unique_ptr<Completer> createModNameCompleter(CompType type) const {
@@ -753,10 +753,10 @@ private:
 
     std::unique_ptr<Completer> selectWithCmd(bool exactly = false) const;
 
-    std::unique_ptr<Completer> selectCompleter();
+    std::unique_ptr<Completer> selectCompleter() const;
 
 public:
-    std::unique_ptr<Completer> operator()() {
+    std::unique_ptr<Completer> operator()() const {
         auto ret = this->selectCompleter();
 
         LOG_EXPR(DUMP_CONSOLE, [&]{
@@ -785,9 +785,10 @@ public:
 // ##     CompleterFactory     ##
 // ##############################
 
-CompleterFactory::CompleterFactory(DSState &st, const std::string &line) :
-        state(st), cursor(line.size() - 1),
-        lexer("<line>", line.c_str()), parser(this->lexer) {
+CompleterFactory::CompleterFactory(DSState &st, const char *data, unsigned int size) :
+        state(st), cursor(size),
+        lexer("<line>", data, size), parser(this->lexer) {
+    LOG(DUMP_CONSOLE, "line: %s, cursor: %ud", std::string(data, size).c_str(), size);
     this->parser.setTracker(&this->tracker);
     this->node = this->applyAndGetLatest();
 }
@@ -871,7 +872,7 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
     }
 }
 
-std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
+std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
     if(!this->parser.hasError()) {
         if(this->tracker.getTokenPairs().empty()) {
             return nullptr;
@@ -969,14 +970,12 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() {
     return nullptr;
 }
 
-void completeLine(DSState &st, const std::string &line) {
-    assert(!line.empty() && line.back() == '\n');
-
+void completeLine(DSState &st, const char *data, unsigned int size) {
     auto &compreply = *typeAs<Array_Object>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
     compreply.refValues().clear();  // clear old values
     compreply.refValues().shrink_to_fit();
 
-    CompleterFactory factory(st, line);
+    CompleterFactory factory(st, data, size);
     auto comp = factory();
     if(comp) {
         (*comp)(compreply);

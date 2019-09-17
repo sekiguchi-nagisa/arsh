@@ -700,12 +700,8 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
             return 0;
         }
 
-        std::string line(*value, index);
-        LOG(DUMP_CONSOLE, "line: %s, cursor: %ud", line.c_str(), index);
-        line += '\n';
-
         auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-        completeLine(*st, line);
+        completeLine(*st, *value, index);
         st->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(old));
         break;
     }
