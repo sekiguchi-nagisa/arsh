@@ -35,5 +35,6 @@ $COMP_HOOK = $comp2
 var ex = 34 as Any
 try { complete 'echo ' > /dev/null; assert $false; } catch($e) { $ex = $e; }
 assert $ex is ArithmeticError
+assert $? == 1  # if error happened
 
 true
