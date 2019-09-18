@@ -345,6 +345,12 @@ bool DSState::forkAndEval() {
             auto waitOp = this->isRootShell() && this->isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
             int ret = proc.wait(waitOp);   // wait exit
             tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
+            if(proc.state() != Proc::TERMINATED) {
+                this->jobTable.attach(JobTable::create(
+                        this->symbolTable.get(TYPE::Job), proc,
+                        DSValue(this->emptyFDObj),
+                        DSValue(this->emptyFDObj)));
+            }
             this->updateExitStatus(ret);
             tryToBeForeground(*this);
             break;
