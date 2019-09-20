@@ -1,0 +1,16 @@
+source completion
+
+var _list = $(help | while(read) {
+    echo ${$REPLY.split(' ')[0]}
+})
+
+function _help($t : [String], $c : Int) : [String] {
+    if $t.size() > 1 && $c < $t.size() {
+        return $compFilter($t.peek(), $_list)
+    }
+    return $_list
+}
+
+$compAdd("help", $_help) as Void
+
+
