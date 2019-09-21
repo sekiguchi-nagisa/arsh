@@ -11,6 +11,18 @@ function _help($t : [String], $c : Int) : [String] {
     return $_list
 }
 
+function _cmd($t : [String], $c : Int) : [String] {
+    if $t.size() > 1 && $c > 1 {
+        $t.shift()
+        return $COMP_HOOK!($t, $c - 1)
+    }
+    return new [String]()
+}
+
+
 $compAdd("help", $_help) as Void
+$compAdd("command", $_cmd) as Void
+$compAdd("eval", $_cmd) as Void
+$compAdd("exec", $_cmd) as Void
 
 
