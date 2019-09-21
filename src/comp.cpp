@@ -492,9 +492,8 @@ public:
             return;
         }
 
-        // set result to COMPREPLY
         for(auto &e : typeAs<Array_Object>(result)->getValues()) {
-            ret.append(e);
+            append(ret, str(e), EscapeOp::COMMAND_ARG);
         }
     }
 
