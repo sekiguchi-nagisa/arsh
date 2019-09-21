@@ -970,13 +970,12 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
 }
 
 void completeLine(DSState &st, const char *data, unsigned int size) {
-    auto &compreply = *typeAs<Array_Object>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
-    compreply.refValues().clear();  // clear old values
-    compreply.refValues().shrink_to_fit();
-
     CompleterFactory factory(st, data, size);
     auto comp = factory();
     if(comp) {
+        auto result = DSValue::create<Array_Object>(st.symbolTable.get(TYPE::StringArray));
+        auto &compreply = *typeAs<Array_Object>(result);
+
         (*comp)(compreply);
         auto &values = compreply.refValues();
         std::sort(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
@@ -986,6 +985,9 @@ void completeLine(DSState &st, const char *data, unsigned int size) {
             return typeAs<String_Object>(x)->equals(y);
         });
         values.erase(iter, values.end());
+
+        // override COMPREPLY
+        st.setGlobal(toIndex(BuiltinVarOffset::COMPREPLY), std::move(result));
     }
 }
 

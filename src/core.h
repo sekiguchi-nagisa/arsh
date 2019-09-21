@@ -210,7 +210,7 @@ void expandTilde(std::string &str);
 
 /**
  * complete line.
- * after completion, set results to COMPREPLY.
+ * after completion success, set results to COMPREPLY.
  * @param st
  * @param data
  * @param size
