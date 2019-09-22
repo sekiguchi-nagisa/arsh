@@ -571,21 +571,6 @@ std::string SymbolTable::toFunctionTypeName(DSType *returnType, const std::vecto
     return funcTypeName;
 }
 
-int SymbolTable::getNumTypeIndex(const DSType &type) const {
-    const TYPE numTypeTable[] = {
-            TYPE::Int32,  // 0
-            TYPE::Int64,  // 1
-            TYPE::Float,  // 2
-    };
-
-    for(unsigned int i = 0; i < arraySize(numTypeTable); i++) {
-        if(static_cast<unsigned int>(numTypeTable[i]) == type.getTypeID()) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
                                native_type_info_t info) {
     // create and register type
