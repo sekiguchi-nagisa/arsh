@@ -713,11 +713,6 @@ public:
      */
     int getNumTypeIndex(const DSType &type) const;
 
-    /**
-     * if not found, return null.
-     */
-    DSType *getByNumTypeIndex(unsigned int index) const;
-
 private:
     void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info);
 
