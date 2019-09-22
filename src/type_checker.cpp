@@ -1522,7 +1522,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
 
     if(mayBeCmd(*node)) {
         this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);  // pop stack top
-    } else if(this->toplevelPrinting) {
+    } else if(this->toplevelPrinting && this->symbolTable.isRootModule()) {
         this->checkTypeExactly(node);
         node = this->newPrintOpNode(node);
     } else {

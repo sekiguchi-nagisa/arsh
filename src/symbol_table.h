@@ -447,6 +447,10 @@ public:
         return this->cur().getModID();
     }
 
+    bool isRootModule() const {
+        return &this->root() == &this->cur();
+    }
+
     /**
      * if scriptDir is null, not search module dir
      * @param scriptDir
