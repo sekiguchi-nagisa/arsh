@@ -258,6 +258,10 @@
     OP(COPROC) \
     EACH_LA_primary(OP)
 
+#define EACH_LA_varDecl(OP) \
+    OP(VAR) \
+    OP(LET)
+
 #define EACH_LA_statement(OP) \
     OP(FUNCTION) \
     OP(INTERFACE) \
@@ -267,16 +271,11 @@
     OP(CONTINUE) \
     OP(EXPORT_ENV) \
     OP(IMPORT_ENV) \
-    OP(LET) \
     OP(RETURN) \
     OP(SOURCE) \
-    OP(VAR) \
     OP(LINE_END) \
+    EACH_LA_varDecl(OP) \
     EACH_LA_expression(OP)
-
-#define EACH_LA_varDecl(OP) \
-    OP(VAR) \
-    OP(LET)
 
 #define EACH_LA_redirFile(OP) \
     OP(REDIR_IN_2_FILE) \
