@@ -1,0 +1,10 @@
+#$test($result = 'type', $lineNum = 5, $errorKind = 'Required', $status = 1)
+
+var a = 23 as Any
+
+case $a {
+'s' => echo hello;
+#'a' => echo heyl;
+else => echo else;
+
+}

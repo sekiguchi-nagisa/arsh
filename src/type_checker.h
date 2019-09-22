@@ -352,13 +352,36 @@ protected:
     void checkTypeAsReturn(JumpNode &node);
 
     // for case-expression
-    class PatternCollector {
+    struct PatternMap {
+        virtual ~PatternMap() = default;
+
+        virtual bool collect(const Node &constNode) = 0;
+    };
+
+    class IntPatternMap : public PatternMap {
     private:
-        bool elsePattern{false};
+        std::unordered_set<unsigned int> set;
 
     public:
-        virtual ~PatternCollector() = default;
+        bool collect(const Node &constNode) override;
+    };
 
+    class StrPatternMap : public PatternMap {
+    private:
+        CStringHashSet set;
+
+    public:
+        bool collect(const Node &constNode) override;
+    };
+
+    class PatternCollector {
+    private:
+        CaseNode::Kind kind{CaseNode::MAP};
+        std::unique_ptr<PatternMap> map;
+        bool elsePattern{false};
+        DSType *type{nullptr};
+
+    public:
         bool hasElsePattern() const {
             return this->elsePattern;
         }
@@ -367,34 +390,32 @@ protected:
             this->elsePattern = set;
         }
 
+        void setKind(CaseNode::Kind k) {
+            this->kind = k;
+        }
+
+        auto getKind() const {
+            return this->kind;
+        }
+
+        void setType(DSType *t) {
+            this->type = t;
+        }
+
+        DSType *getType() const {
+            return this->type;
+        }
+
         /**
          * try to collect constant node.
          * if found duplicated constant, return false
          * @param constNode
          * @return
          */
-        virtual bool collect(const Node &constNode) = 0;
+        bool collect(const Node &constNode);
     };
 
-    class IntPatternCollector : public PatternCollector {
-    private:
-        std::unordered_set<unsigned int> set;
-
-    public:
-        bool collect(const Node &constNode) override;
-    };
-
-    class StrPatternCollector : public PatternCollector {
-    private:
-        CStringHashSet set;
-
-    public:
-        bool collect(const Node &constNode) override;
-    };
-
-    std::unique_ptr<PatternCollector> newCollector(const DSType &type) const;
-
-    CaseNode::Kind checkPatternType(DSType &exprType, ArmNode &node, PatternCollector &collector);
+    void checkPatternType(ArmNode &node, PatternCollector &collector);
 
     /**
      *

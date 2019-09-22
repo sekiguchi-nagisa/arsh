@@ -1,0 +1,13 @@
+ var called = -1
+function case1($s : String!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!) : Int {
+    $called = -1
+    return case $s {
+       ' A' => { $called = 1; 1; }
+        'B' | 'b' => { $called = 1; 2; }
+        'C' | ''=> { $called =  4; 3; }
+     '  c  um < ' => { $called= 3; 3; }
+      else => t;}
+    }
+}
+
+

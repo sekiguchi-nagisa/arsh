@@ -928,53 +928,71 @@ void TypeChecker::visitIfNode(IfNode &node) {
     }
 }
 
-bool TypeChecker::IntPatternCollector::collect(const Node &constNode) {
-    assert(constNode.is(NodeKind::Number));
+bool TypeChecker::IntPatternMap::collect(const Node &constNode) {
+    if(constNode.getNodeKind() != NodeKind::Number) {
+        return false;
+    }
     unsigned int value = static_cast<const NumberNode&>(constNode).getIntValue();
     auto pair = this->set.insert(value);
     return pair.second;
 }
 
-bool TypeChecker::StrPatternCollector::collect(const ydsh::Node &constNode) {
-    assert(constNode.is(NodeKind::String));
+bool TypeChecker::StrPatternMap::collect(const Node &constNode) {
+    if(constNode.getNodeKind() != NodeKind::String) {
+        return false;
+    }
     const char *str = static_cast<const StringNode&>(constNode).getValue().c_str();
     auto pair = this->set.insert(str);
     return pair.second;
 }
 
-std::unique_ptr<TypeChecker::PatternCollector> TypeChecker::newCollector(const DSType &type) const {
-    if(type.is(TYPE::String)) {
-        return std::make_unique<StrPatternCollector>();
-    }
-    return std::make_unique<IntPatternCollector>();
-}
-
-void TypeChecker::visitCaseNode(CaseNode &node) {
-    auto &exprType = this->checkTypeAsExpr(node.getExprNode());
-    auto collector = this->newCollector(exprType);
-
-    // check pattern type
-    for(auto &e : node.getArmNodes()) {
-        auto kind = this->checkPatternType(exprType, *e, *collector);
-        if(node.getCaseKind() < kind) {
-            node.setCaseKind(kind);
+bool TypeChecker::PatternCollector::collect(const Node &constNode) {
+    if(!this->map) {
+        switch(constNode.getNodeKind()) {
+        case NodeKind::Number:
+            this->map = std::make_unique<IntPatternMap>();
+            break;
+        case NodeKind::String:
+            this->map = std::make_unique<StrPatternMap>();
+            break;
+        default:
+            break;
         }
     }
+    return this->map ? this->map->collect(constNode) : false;
+}
 
+
+void TypeChecker::visitCaseNode(CaseNode &node) {
+    // check pattern type
+    PatternCollector collector;
+    for(auto &e : node.getArmNodes()) {
+        this->checkPatternType(*e, collector);
+    }
+
+    // check type expr
+    node.setCaseKind(collector.getKind());
+    auto *patternType = collector.getType();
+    if(!patternType) {
+        RAISE_TC_ERROR(NeedPattern, node);
+    }
+    this->checkType(*patternType, node.getExprNode());
+
+    // resolve arm expr type
     unsigned int size = node.getArmNodes().size();
     std::vector<DSType *> types(size);
     for(unsigned int i = 0; i < size; i++) {
         types[i] = &this->checkTypeExactly(node.getArmNodes()[i]);
     }
+    auto &type = this->resolveCommonSuperType(types);
 
     // apply coercion
-    auto &type = this->resolveCommonSuperType(types);
     for(auto &armNode : node.getArmNodes()) {
         this->checkTypeWithCoercion(type, armNode->refActionNode());
         armNode->setType(type);
     }
 
-    if(!type.isVoidType() && !collector->hasElsePattern()) {
+    if(!type.isVoidType() && !collector.hasElsePattern()) {
         RAISE_TC_ERROR(NeedDefault, node);
     }
     node.setType(type);
@@ -985,9 +1003,7 @@ void TypeChecker::visitArmNode(ArmNode &node) {
     node.setType(type);
 }
 
-CaseNode::Kind TypeChecker::checkPatternType(DSType &exprType, ArmNode &node, PatternCollector &collector) {
-    auto kind = CaseNode::MAP;
-
+void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
     if(node.getPatternNodes().empty()) {
         if(collector.hasElsePattern()) {
             Token token{node.getPos(), 4};
@@ -996,12 +1012,19 @@ CaseNode::Kind TypeChecker::checkPatternType(DSType &exprType, ArmNode &node, Pa
         }
         collector.setElsePattern(true);
     }
+
     for(auto &e : node.getPatternNodes()) {
-        auto &type = this->checkTypeAsExpr(e);
-        if(type.is(TYPE::Regex) && exprType.is(TYPE::String)) {
-            kind = CaseNode::IF_ELSE;
-        } else {
-            this->checkType(exprType, e);
+        auto *type = &this->checkTypeAsExpr(e);
+        if(type->is(TYPE::Regex)) {
+            collector.setKind(CaseNode::IF_ELSE);
+            type = &this->symbolTable.get(TYPE::String);
+        }
+        if(collector.getType() == nullptr) {
+            collector.setType(type);
+        }
+        if(*collector.getType() != *type) {
+            RAISE_TC_ERROR(Required, *e, this->symbolTable.getTypeName(*collector.getType()),
+                    this->symbolTable.getTypeName(*type));
         }
     }
 
@@ -1019,7 +1042,6 @@ CaseNode::Kind TypeChecker::checkPatternType(DSType &exprType, ArmNode &node, Pa
             RAISE_TC_ERROR(DupPattern, *e);
         }
     }
-    return kind;
 }
 
 DSType& TypeChecker::resolveCommonSuperType(const std::vector<DSType *> &types) {

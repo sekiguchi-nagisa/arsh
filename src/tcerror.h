@@ -82,6 +82,7 @@ DEFINE_TCError(LocalLimit     , "too many local variables"                      
 DEFINE_TCError(PipeLimit      , "too long pipeline chain"                           );
 DEFINE_TCError(Constant       , "must be constant expression"                       );
 DEFINE_TCError(DupPattern     , "duplicated pattern"                                );
+DEFINE_TCError(NeedPattern    , "require at least one pattern"                      );
 DEFINE_TCError(NeedDefault    , "the case expression needs default pattern"         );
 DEFINE_TCError(DefinedSymbol  , "already defined symbol: `%s'"                      );
 DEFINE_TCError(UndefinedSymbol, "undefined symbol: `%s'"                            );
