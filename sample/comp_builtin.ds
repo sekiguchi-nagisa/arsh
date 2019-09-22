@@ -20,9 +20,9 @@ function _cmd($t : [String], $c : Int) : [String] {
 }
 
 
-$compAdd("help", $_help) as Void
-$compAdd("command", $_cmd) as Void
-$compAdd("eval", $_cmd) as Void
-$compAdd("exec", $_cmd) as Void
+$compAdd("help", $_help)
+$compAdd("command", $_cmd)
+$compAdd("eval", $_cmd)
+$compAdd("exec", $_cmd)
 
 
