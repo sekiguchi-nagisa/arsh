@@ -127,20 +127,31 @@ struct Completer {
     virtual ~Completer() = default;
 };
 
+static bool isKeyword(const char *value) {
+    return *value != '<' || *(value + strlen(value) - 1) != '>';
+}
+
 class ExpectedTokenCompleter : public Completer {
 private:
-    std::vector<std::string> tokens;
+    const char *token{nullptr};
+    const std::vector<TokenKind> *tokens{nullptr};
 
 public:
-    explicit ExpectedTokenCompleter(std::string &&token) {
-        this->tokens.push_back(std::move(token));
-    }
+    explicit ExpectedTokenCompleter(const char *token) : token(token) {}
 
-    explicit ExpectedTokenCompleter(std::vector<std::string> &&tokens) : tokens(std::move(tokens)) {}
+    explicit ExpectedTokenCompleter(const std::vector<TokenKind > &tokens) : tokens(&tokens) {}
 
     void operator()(Array_Object &results) override {
-        for(auto &token : this->tokens) {
-            append(results, token, EscapeOp::NOP);
+        if(this->token) {
+            append(results, this->token, EscapeOp::NOP);
+        }
+        if(this->tokens) {
+            for(auto &e : *this->tokens) {
+                const char *value = toString(e);
+                if(isKeyword(value)) {
+                    append(results, value, EscapeOp::NOP);
+                }
+            }
         }
     }
 
@@ -626,14 +637,7 @@ private:
 
     std::unique_ptr<Completer> createExpectedTokenCompleter() const {
         assert(this->parser.hasError());
-        std::vector<std::string> tokens;
-        for(auto &e : this->parser.getError().getExpectedTokens()) {
-            std::string expectedStr = toString(e);
-            if(expectedStr.front() != '<' || expectedStr.back() != '>') {
-                tokens.push_back(std::move(expectedStr));
-            }
-        }
-        return std::make_unique<ExpectedTokenCompleter>(std::move(tokens));
+        return std::make_unique<ExpectedTokenCompleter>(this->parser.getError().getExpectedTokens());
     }
 
     std::unique_ptr<Completer> createAndCompleter(std::unique_ptr<Completer> &&first,
