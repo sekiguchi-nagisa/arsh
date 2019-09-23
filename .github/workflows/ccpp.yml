@@ -13,7 +13,7 @@ jobs:
       run: sudo apt-get install ninja-build
     - name: configure
       run: |
-        cmake . -DUSE_EXTRA_TEST=on
+        cmake . -G Ninja -DUSE_EXTRA_TEST=on
     - name: build
       run: |
         ninja
