@@ -18,6 +18,7 @@ jobs:
         cmake .. -DUSE_EXTRA_TEST=on
     - name: build
       run: |
+        cd build
         ninja
         sudo ninja install
         ./ydsh ./tools/scripts/copy_mod4extra.ds
