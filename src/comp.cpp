@@ -115,14 +115,27 @@ static bool startsWith(const char *s1, const char *s2) {
     return s1 != nullptr && s2 != nullptr && strstr(s1, s2) == s1;
 }
 
-struct Completer {
+class Completer {
+private:
+    const char *name;
+
+protected:
+    explicit Completer(const char *value) : name(value) {}
+
+    void setName(const char *v) {
+        this->name = v;
+    }
+
+public:
     virtual void operator()(Array_Object &ret) = 0;
 
     /**
      * for debugging.
      * @return
      */
-    virtual const char *name() const = 0;
+    const char *getName() const {
+        return this->name;
+    }
 
     virtual ~Completer() = default;
 };
@@ -133,13 +146,17 @@ static bool isKeyword(const char *value) {
 
 class ExpectedTokenCompleter : public Completer {
 private:
-    const char *token{nullptr};
-    const std::vector<TokenKind> *tokens{nullptr};
+    const char *token;
+    const std::vector<TokenKind> *tokens;
+
+    ExpectedTokenCompleter(const char *token, const std::vector<TokenKind> *tokens) :
+            Completer("Expected"), token(token), tokens(tokens) {}
 
 public:
-    explicit ExpectedTokenCompleter(const char *token) : token(token) {}
+    explicit ExpectedTokenCompleter(const char *token) : ExpectedTokenCompleter(token, nullptr) {}
 
-    explicit ExpectedTokenCompleter(const std::vector<TokenKind > &tokens) : tokens(&tokens) {}
+    explicit ExpectedTokenCompleter(const std::vector<TokenKind > &tokens) :
+            ExpectedTokenCompleter(nullptr, &tokens) {}
 
     void operator()(Array_Object &results) override {
         if(this->token) {
@@ -154,10 +171,6 @@ public:
             }
         }
     }
-
-    const char *name() const override {
-        return "Expected";
-    }
 };
 
 class EnvNameCompleter : public Completer {
@@ -165,7 +178,7 @@ private:
     const std::string envName;
 
 public:
-    explicit EnvNameCompleter(std::string &&name) : envName(std::move(name)) {}
+    explicit EnvNameCompleter(std::string &&name) : Completer("Env"), envName(std::move(name)) {}
 
     void operator()(Array_Object &results) override {
         for(unsigned int i = 0; environ[i] != nullptr; i++) {
@@ -176,10 +189,6 @@ public:
                 append(results, std::string(env, ptr - env), EscapeOp::NOP);
             }
         }
-    }
-
-    const char *name() const override {
-        return "Env";
     }
 };
 
@@ -196,13 +205,9 @@ public:
      * may be empty string
      */
     CmdNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
-            symbolTable(symbolTable), token(std::move(token)) {}
+            Completer("Command"), symbolTable(symbolTable), token(std::move(token)) {}
 
     void operator()(Array_Object &results) override;
-
-    const char *name() const override {
-        return "Command";
-    }
 };
 
 static std::vector<std::string> computePathList(const char *pathVal) {
@@ -285,7 +290,7 @@ private:
 
 public:
     GlobalVarNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
-            symbolTable(symbolTable), token(std::move(token)) {}
+            Completer("GlobalVar"), symbolTable(symbolTable), token(std::move(token)) {}
 
     void operator()(Array_Object &results) override {
         for(const auto &iter : this->symbolTable.globalScope()) {
@@ -296,10 +301,6 @@ public:
                 append(results, iter.first, EscapeOp::NOP);
             }
         }
-    }
-
-    const char *name() const override {
-        return "GlobalVar";
     }
 };
 
@@ -320,7 +321,9 @@ protected:
 
 public:
     FileNameCompleter(const char *baseDir, std::string &&token, FileNameCompOp op = FileNameCompOp()) :
-            baseDir(baseDir), token(std::move(token)), op(op) {}
+            Completer(""), baseDir(baseDir), token(std::move(token)), op(op) {
+        this->setName(this->onlyExec() ? "QualifiedCommand" : "FileName");
+    }
 
 protected:
     bool onlyExec() const {
@@ -333,10 +336,6 @@ protected:
 
 public:
     void operator()(Array_Object &results) override;
-
-    const char *name() const override {
-        return this->onlyExec() ? "QualifiedCommand" : "FileName";
-    }
 };
 
 void FileNameCompleter::operator()(Array_Object &results) {
@@ -417,7 +416,9 @@ void FileNameCompleter::operator()(Array_Object &results) {
 
 struct ModNameCompleter : public FileNameCompleter {
     ModNameCompleter(const char *scriptDir, std::string &&token, bool tilde) :
-            FileNameCompleter(scriptDir, std::move(token), tilde ? FileNameCompOp::TIDLE : FileNameCompOp{}) {}
+            FileNameCompleter(scriptDir, std::move(token), tilde ? FileNameCompOp::TIDLE : FileNameCompOp{}) {
+        this->setName("Module");
+    }
 
     void operator()(Array_Object &results) override {
         // complete in SCRIPT_DIR
@@ -433,10 +434,6 @@ struct ModNameCompleter : public FileNameCompleter {
         this->baseDir = SYSTEM_MOD_DIR;
         FileNameCompleter::operator()(results);
     }
-
-    const char *name() const override {
-        return "Module";
-    }
 };
 
 class AndCompleter : public Completer {
@@ -447,15 +444,11 @@ private:
 
 public:
     AndCompleter(std::unique_ptr<Completer> &&first, std::unique_ptr<Completer> &&second) :
-            first(std::move(first)), second(std::move(second)) {}
+            Completer("And"), first(std::move(first)), second(std::move(second)) {}
 
     void operator()(Array_Object &results) override {
         (*this->first)(results);
         (*this->second)(results);
-    }
-
-    const char *name() const override {
-        return "And";
     }
 };
 
@@ -467,17 +460,13 @@ private:
 
 public:
     OrCompleter(std::unique_ptr<Completer> &&first, std::unique_ptr<Completer> &&second) :
-            first(std::move(first)), second(std::move(second)) {}
+            Completer("Or"), first(std::move(first)), second(std::move(second)) {}
 
     void operator()(Array_Object &results) override {
         (*this->first)(results);
         if(results.getValues().empty()) {
             (*this->second)(results);
         }
-    }
-
-    const char *name() const override {
-        return "Or";
     }
 };
 
@@ -493,7 +482,8 @@ private:
 
 public:
     UserDefinedCompleter(DSState &state, DSValue &&hook, DSValue &&tokens, unsigned int tokenIndex) :
-            state(state), hook(std::move(hook)), tokens(std::move(tokens)), tokenIndex(tokenIndex) {}
+            Completer("UserDefined"), state(state),
+            hook(std::move(hook)), tokens(std::move(tokens)), tokenIndex(tokenIndex) {}
 
     void operator()(Array_Object &ret) override {
         auto result = this->state.callFunction(std::move(this->hook),
@@ -506,10 +496,6 @@ public:
         for(auto &e : typeAs<Array_Object>(result)->getValues()) {
             append(ret, str(e), EscapeOp::COMMAND_ARG);
         }
-    }
-
-    const char *name() const override {
-        return "UserDefined";
     }
 };
 
@@ -769,7 +755,7 @@ public:
                 str += "\n";
             }
             str += "ckind: ";
-            str += (ret ? ret->name() : "None");
+            str += (ret ? ret->getName() : "None");
             return str;
         });
 
