@@ -13,12 +13,9 @@ jobs:
       run: sudo apt-get install ninja-build
     - name: configure
       run: |
-        mkdir build
-        cd build
-        cmake .. -DUSE_EXTRA_TEST=on
+        cmake . -DUSE_EXTRA_TEST=on
     - name: build
       run: |
-        cd build
         ninja
         sudo ninja install
         ./ydsh ./tools/scripts/copy_mod4extra.ds
