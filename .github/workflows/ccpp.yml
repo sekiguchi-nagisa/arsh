@@ -9,9 +9,17 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name: prepare
+      run: apt-get install ninja-build
     - name: configure
-      run: cmake .
-    - name: make
-      run: make -j2
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DUSE_EXTRA_TEST=on
+    - name: build
+      run: |
+        ninja
+        sudo ninja install
+        ./ydsh ./tools/scripts/copy_mod4extra.ds
     - name: test
-      run: ctest
+      run: ctest --output-on-failure
