@@ -1,0 +1,14 @@
+
+function f($s : Int!) : String {
+    return case $s {
+        0|1|2|3|4|5 => { return $s! as String; }
+        6|7|8|9|10 => { return (-$s!) as String; }
+        else => { return "nothing"; }
+    }
+}
+
+assert $f("3".toInt32()) == "3"
+assert $f("5".toInt32()) == "5"
+assert $f("8".toInt32()) == "-8"
+assert $f("-1".toInt32()) == "nothing"
+assert $f("hoge".toInt32()) == "nothing"

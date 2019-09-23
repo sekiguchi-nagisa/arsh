@@ -1265,11 +1265,13 @@ bool DSState::mainLoop() {
         vmcase(LOOKUP_HASH) {
             auto key = this->pop();
             auto map = this->pop();
-            auto &valueMap = typeAs<Map_Object>(map)->getValueMap();
-            auto iter = valueMap.find(key);
-            if(iter != valueMap.end()) {
-                unsigned int index = typeAs<Int_Object>(iter->second)->getValue();
-                this->pc() = index - 1;
+            if(!key.isInvalid()) {
+                auto &valueMap = typeAs<Map_Object>(map)->getValueMap();
+                auto iter = valueMap.find(key);
+                if(iter != valueMap.end()) {
+                    unsigned int index = typeAs<Int_Object>(iter->second)->getValue();
+                    this->pc() = index - 1;
+                }
             }
             vmnext;
         }

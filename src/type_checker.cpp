@@ -964,6 +964,8 @@ bool TypeChecker::PatternCollector::collect(const Node &constNode) {
 
 
 void TypeChecker::visitCaseNode(CaseNode &node) {
+    auto *exprType = &this->checkTypeAsExpr(node.getExprNode());
+
     // check pattern type
     PatternCollector collector;
     for(auto &e : node.getArmNodes()) {
@@ -976,7 +978,13 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
     if(!patternType) {
         RAISE_TC_ERROR(NeedPattern, node);
     }
-    this->checkType(*patternType, node.getExprNode());
+    if(exprType->isOptionType()) {
+        exprType = static_cast<ReifiedType *>(exprType)->getElementTypes()[0];
+    }
+    if(!patternType->isSameOrBaseTypeOf(*exprType)) {
+        RAISE_TC_ERROR(Required, *node.getExprNode(),
+                this->symbolTable.getTypeName(*patternType), this->symbolTable.getTypeName(*exprType));
+    }
 
     // resolve arm expr type
     unsigned int size = node.getArmNodes().size();
