@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prepare
-      run: apt-get install ninja-build
+      run: sudo apt-get install ninja-build
     - name: configure
       run: |
         mkdir build
