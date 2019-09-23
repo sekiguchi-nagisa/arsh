@@ -211,7 +211,7 @@ $assertArray([";"], $(complete '(ls) '))
 # complete keyword
 $assertArray(["{"], $(complete '{'))
 $assertArray(["source"], $(complete 'sour'))
-$assertArray(["import-env"], $(complete 'import-'))
+$assertArray(["import-env"], $(complete 'import-e'))
 
 # complete empty token
 $assertEmptyComp('echo &&')
