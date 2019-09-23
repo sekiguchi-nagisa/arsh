@@ -107,21 +107,21 @@ assert($(complete '     ').empty())
 
 
 # complete command name
-$assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('l', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --stmt | grep '^l'), $comp('l', '/bin:/usr/bin'))
 $assertArray($(cmd | grep '^p'), $comp('p', ''))
-$assertArray($(cmd /bin /usr/bin), $comp('echo; ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --stmt), $comp('echo; ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('35 | ', '/bin:/usr/bin'))
 if(test -d ~/bin) {
-    $assertArray($(cmd /bin /usr/bin ~/bin), $comp('echo; ', '/bin:/usr/bin:~/bin'))
+    $assertArray($(cmd /bin /usr/bin ~/bin --stmt), $comp('echo; ', '/bin:/usr/bin:~/bin'))
 }
 $assertArray($(cmd /bin /usr/bin --stmt), $comp('{ ', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin), $comp('echo & ', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin), $comp('echo &! ', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin), $comp('echo &| ', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('{l', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --stmt), $comp('echo & ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --stmt), $comp('echo &! ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --stmt), $comp('echo &| ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr | grep '^l'), $comp('{l', '/bin:/usr/bin')) # FIXME: require statement keyword
 $assertArray($(cmd /bin /usr/bin --expr), $comp('echo && ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('export-env HOGE = ', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin | grep '^l'), $comp('export-env HOGE = l', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr | grep '^l'), $comp('export-env HOGE = l', '/bin:/usr/bin'))
 
 
 # complete file name
@@ -208,8 +208,12 @@ $assertArray(['='], $(complete '34; var a'))
 $assertArray([')'], $(complete '$(echo $TRUE '))
 $assertArray([";"], $(complete '(ls) '))
 
+# complete keyword
+$assertArray(["{"], $(complete '{'))
+$assertArray(["source"], $(complete 'sour'))
+$assertArray(["import-env"], $(complete 'import-'))
+
 # complete empty token
-$assertEmptyComp('{')
 $assertEmptyComp('echo &&')
 $assertEmptyComp('echo >')
 #$assertEmptyComp('source')

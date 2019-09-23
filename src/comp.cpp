@@ -173,6 +173,60 @@ public:
     }
 };
 
+static bool isStmtKeyword(TokenKind kind) {
+    switch(kind) {
+#define GEN_CASE(T) case T:
+    EACH_LA_statement(GEN_CASE)
+        return true;
+#undef GEN_CASE
+    default:
+        return false;
+    }
+}
+
+static bool isExprKeyword(TokenKind kind) {
+    switch(kind) {
+#define GEN_CASE(T) case T:
+    EACH_LA_expression(GEN_CASE)
+        return true;
+#undef GEN_CASE
+    default:
+        return false;
+    }
+}
+
+class KeywordCompleter : public Completer {
+private:
+    const std::string token;
+
+    /**
+     * if true, only complete expression keyword,
+     * otherwise complete statement keyword
+     */
+    bool onlyExpr;
+
+public:
+    KeywordCompleter(std::string &&value, bool expr) :
+            Completer("Keyword"), token(std::move(value)), onlyExpr(expr) {}
+
+    void operator()(Array_Object &results) override {
+        TokenKind table[] = {
+#define GEN_ITEM(T) T,
+            EACH_LA_statement(GEN_ITEM)
+#undef GEN_ITEM
+        };
+        for(auto &e : table) {
+            if(this->onlyExpr && !isExprKeyword(e)) {
+                continue;
+            }
+            const char *value = toString(e);
+            if(isKeyword(value) && startsWith(value, this->token.c_str())) {
+                append(results, value, EscapeOp::NOP);
+            }
+        }
+    }
+};
+
 class EnvNameCompleter : public Completer {
 private:
     const std::string envName;
@@ -626,6 +680,11 @@ private:
         return std::make_unique<ExpectedTokenCompleter>(this->parser.getError().getExpectedTokens());
     }
 
+    std::unique_ptr<Completer> createKeywordCompleter(CompType type, bool onlyExpr) const {
+        return std::make_unique<KeywordCompleter>(
+                type == CompType::CUR ? this->lexer.toTokenText(this->curToken()) : "", onlyExpr);
+    }
+
     std::unique_ptr<Completer> createAndCompleter(std::unique_ptr<Completer> &&first,
                                                     std::unique_ptr<Completer> &&second) const {
         if(!first) {
@@ -700,6 +759,10 @@ private:
         return inCmdMode(*this->node) != nullptr;
     }
 
+    bool inCmdStmt() const {    //FIXME: check lexer mode in error
+        return this->node && this->inCommand() && this->node->is(NodeKind::Cmd);
+    }
+
     bool requireSingleCmdArg() const {
         if(this->inTyping()) {
             if(this->node->is(NodeKind::With)) {
@@ -770,7 +833,7 @@ public:
 CompleterFactory::CompleterFactory(DSState &st, const char *data, unsigned int size) :
         state(st), cursor(size),
         lexer("<line>", data, size), parser(this->lexer) {
-    LOG(DUMP_CONSOLE, "line: %s, cursor: %ud", std::string(data, size).c_str(), size);
+    LOG(DUMP_CONSOLE, "line: %s, cursor: %u", std::string(data, size).c_str(), size);
     this->parser.setTracker(&this->tracker);
     this->node = this->applyAndGetLatest();
 }
@@ -811,7 +874,10 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
     switch(this->curKind()) {
     case COMMAND:
         if(this->inTyping()) {
-            return this->createCmdNameCompleter(CompType::CUR);
+            bool stmt = this->inCmdStmt();
+            return this->createAndCompleter(
+                    this->createCmdNameCompleter(CompType::CUR),
+                    this->createKeywordCompleter(CompType::CUR, !stmt));
         }
         return this->createCmdArgCompleter(CompType::NONE); // complete command argument
     case CMD_ARG_PART:
@@ -847,7 +913,13 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
         }
         return this->createCmdArgCompleter(CompType::NONE); // complete command argument
     default:
-        if(!exactly && this->afterTyping()) {
+        if(this->inTyping()) {
+            if(isStmtKeyword(this->curKind())) {
+                return this->createAndCompleter(
+                        this->createCmdNameCompleter(CompType::CUR),
+                        this->createKeywordCompleter(CompType::CUR, false));
+            }
+        } else if(!exactly && this->afterTyping()) {
             return this->createCmdArgCompleter(CompType::NONE); // complete command argument
         }
         return nullptr;
@@ -864,7 +936,9 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
         case LINE_END:
         case BACKGROUND:
         case DISOWN_BG:
-            return this->createCmdNameCompleter(CompType::NONE);
+            return this->createAndCompleter(
+                    this->createCmdNameCompleter(CompType::NONE),
+                    this->createKeywordCompleter(CompType::NONE, false));
         case RP:
             return std::make_unique<ExpectedTokenCompleter>(";");
         case APPLIED_NAME:
@@ -904,6 +978,11 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
                 }
             }
 
+            auto ret = this->selectWithCmd(true);
+            if(ret) {
+                return ret;
+            }
+
             if(this->isErrorKind(NO_VIABLE_ALTER)) {
                 if(this->inTyping()) {
                     return std::make_unique<ExpectedTokenCompleter>("");
@@ -927,12 +1006,6 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
                 if(kind == IMPORT_ENV && this->foundExpected(IDENTIFIER) && this->afterTyping()) {
                     return this->createEnvNameCompleter(CompType::NONE);
                 }
-
-                auto ret = this->selectWithCmd(true);
-                if(ret) {
-                    return ret;
-                }
-
                 return this->createExpectedTokenCompleter();
             }
             break;
