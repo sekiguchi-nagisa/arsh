@@ -983,11 +983,11 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
                 return ret;
             }
 
-            if(this->isErrorKind(NO_VIABLE_ALTER)) {
-                if(this->inTyping()) {
-                    return std::make_unique<ExpectedTokenCompleter>("");
-                }
+            if(this->inTyping()) {
+                return std::make_unique<ExpectedTokenCompleter>("");
+            }
 
+            if(this->isErrorKind(NO_VIABLE_ALTER)) {
                 std::unique_ptr<Completer> comp;
                 if(this->foundExpected(COMMAND)) {
                     comp = this->createCmdNameCompleter(CompType::NONE);

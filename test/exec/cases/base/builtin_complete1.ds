@@ -203,20 +203,21 @@ if !$OSTYPE.startsWith("CYGWIN") {
 $assertArray(new [String](), $(complete 'source \~root'))
 
 # complete expected token
-$assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++'))
-$assertArray(['='], $(complete '34; var a'))
+$assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++ '))
+$assertArray(['='], $(complete '34; var a '))
 $assertArray([')'], $(complete '$(echo $TRUE '))
 $assertArray([";"], $(complete '(ls) '))
 
 # complete keyword
 $assertArray(["{"], $(complete '{'))
 $assertArray(["source"], $(complete 'sour'))
+$assertArray(["source"], $(complete 'source'))
 $assertArray(["import-env"], $(complete 'import-e'))
 
 # complete empty token
+$assertEmptyComp('for(var i = 0; $i < 23; $i++')
+$assertEmptyComp('34; var a')
 $assertEmptyComp('echo &&')
 $assertEmptyComp('echo >')
-#$assertEmptyComp('source')
-#$assertEmptyComp('import-env')
 
 true
