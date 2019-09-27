@@ -900,7 +900,7 @@ public:
     EmbedNode(Kind kind, Node *exprNode) :
         Node(NodeKind::Embed, exprNode->getToken()), kind(kind), exprNode(exprNode) {}
 
-    ~EmbedNode();
+    ~EmbedNode() override;
 
     Kind getKind() const {
         return this->kind;
