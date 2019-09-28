@@ -712,8 +712,8 @@ public:
      * if type is not number type, return -1.
      */
     int getNumTypeIndex(const DSType &type) const {
-        assert(static_cast<unsigned int>(TYPE::Int32) + 1 == static_cast<unsigned int>(TYPE::Int64));
-        assert(static_cast<unsigned int>(TYPE::Int64) + 1 == static_cast<unsigned int>(TYPE::Float));
+        static_assert(static_cast<unsigned int>(TYPE::Int32) + 1 == static_cast<unsigned int>(TYPE::Int64), "");
+        static_assert(static_cast<unsigned int>(TYPE::Int64) + 1 == static_cast<unsigned int>(TYPE::Float), "");
         unsigned int id = type.getTypeID();
         if(id >= static_cast<unsigned int>(TYPE::Int32) && id <= static_cast<unsigned int>(TYPE::Float)) {
             return id - static_cast<unsigned int>(TYPE::Int32);

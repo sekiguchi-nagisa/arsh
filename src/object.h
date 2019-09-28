@@ -145,7 +145,7 @@ public:
      */
     explicit DSValue(DSObject *obj) noexcept : DSValue(reinterpret_cast<long>(obj)) { }
 
-    explicit DSValue(long val) noexcept : val(val) {
+    explicit DSValue(unsigned long val) noexcept : val(val) {
         if(this->val > 0) {
             this->obj->refCount++;
         }
