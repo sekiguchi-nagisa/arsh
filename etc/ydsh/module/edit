@@ -191,6 +191,8 @@ history() {
     return 0
 }
 
+# entry point for line editing op
+
 function _editHook($op : Int, $index : Int, $text : String) : Any {
     $_sync()
 
