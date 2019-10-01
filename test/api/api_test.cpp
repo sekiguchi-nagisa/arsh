@@ -90,12 +90,18 @@ TEST_F(APITest, lineNum2) {
     DSError_release(&e);
 }
 
+static const char *getPrompt(DSState *st, unsigned int n) {
+    const char *bug = "";
+    DSState_lineEditOp(st, DS_EDIT_PROMPT, n, &bug);
+    return bug;
+}
+
 TEST_F(APITest, prompt) {
     const char *str = "$PS1 = 'hello>'; $PS2 = 'second>'";
     DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
-    ASSERT_STREQ("hello>", DSState_prompt(this->state, 1));
-    ASSERT_STREQ("second>", DSState_prompt(this->state, 2));
-    ASSERT_STREQ("", DSState_prompt(this->state, 5));
+    ASSERT_STREQ("hello>", getPrompt(this->state, 1));
+    ASSERT_STREQ("second>", getPrompt(this->state, 2));
+    ASSERT_STREQ("", getPrompt(this->state, 5));
 }
 
 static std::vector<std::string> tilde() {

@@ -81,6 +81,12 @@ static void saveHistory() {
     DSState_lineEditOp(state, DS_EDIT_HIST_SAVE, 0, nullptr);
 }
 
+static const char *prompt(unsigned int n) {
+    const char *buf = "";
+    DSState_lineEditOp(state, DS_EDIT_PROMPT, n, &buf);
+    return buf;
+}
+
 static const std::string *lineBuf = nullptr;
 
 static bool readLine(std::string &line) {
@@ -91,7 +97,7 @@ static bool readLine(std::string &line) {
     bool continuation = false;
     while(true) {
         errno = 0;
-        auto str = StrWrapper(linenoise(DSState_prompt(state, continuation ? 2 : 1)));
+        auto str = StrWrapper(linenoise(prompt(continuation ? 2 : 1)));
         if(str == nullptr) {
             if(errno == EAGAIN) {
                 continuation = false;

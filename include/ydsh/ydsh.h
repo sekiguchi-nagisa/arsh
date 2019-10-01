@@ -288,18 +288,6 @@ int DSState_loadModule(DSState *st, const char *fileName,
  */
 int DSState_exec(DSState *st, char *const *argv);
 
-/**
- * get prompt string
- * @param st
- * not null.
- * @param n
- * @return
- * if n is 1, return primary prompt.
- * if n is 2, return secondary prompt.
- * otherwise, return empty string.
- */
-const char *DSState_prompt(DSState *st, unsigned int n);
-
 typedef struct {
     unsigned int major;
     unsigned int minor;
@@ -370,6 +358,7 @@ typedef enum {
     DS_EDIT_HIST_LOAD,    // load history from file
     DS_EDIT_HIST_SAVE,    // save history to file
     DS_EDIT_HIST_SEARCH,  // search history
+    DS_EDIT_PROMPT,       // get prompt
 } DSLineEditOp;
 
 /**

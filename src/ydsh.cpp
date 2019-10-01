@@ -633,7 +633,7 @@ int DSState_exec(DSState *st, char *const *argv) {
     return st->getExitStatus();
 }
 
-const char *DSState_prompt(DSState *st, unsigned int n) {
+static const char *DSState_prompt(DSState *st, unsigned int n) {
     const char *psName = nullptr;
     if(n == 1) {
         psName = VAR_PS1;
@@ -729,6 +729,11 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
     }
 
     if(st == nullptr) {
+        return 0;
+    }
+
+    if(op == DS_EDIT_PROMPT) {  //FIXME:
+        *buf = DSState_prompt(st, index);
         return 0;
     }
 
