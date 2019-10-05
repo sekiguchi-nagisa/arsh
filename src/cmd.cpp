@@ -45,7 +45,6 @@ static int builtin_fg_bg(DSState &state, Array_Object &argvObj);
 static int builtin_hash(DSState &state, Array_Object &argvObj);
 static int builtin_help(DSState &state, Array_Object &argvObj);
 static int builtin_kill(DSState &state, Array_Object &argvObj);
-static int builtin_ps_intrp(DSState &state, Array_Object &argvObj);
 static int builtin_pwd(DSState &state, Array_Object &argvObj);
 static int builtin_read(DSState &state, Array_Object &argvObj);
 static int builtin_setenv(DSState &state, Array_Object &argvObj);
@@ -137,31 +136,6 @@ static constexpr struct {
                 "    Options:\n"
                 "        -s sig    send a signal.  SIG is a signal name or signal number\n"
                 "        -l        list the signal names"},
-        {"ps_intrp", builtin_ps_intrp, "prompt",
-                "    Interpret prompt string.\n"
-                "    Escape Sequence:\n"
-                "        \\a    bell\n"
-                "        \\d    date\n"
-                "        \\e    escape sequence\n"
-                "        \\h    host name\n"
-                "        \\H    fully qualified host name\n"
-                "        \\n    newline\n"
-                "        \\r    carriage return\n"
-                "        \\s    base name of $0\n"
-                "        \\t    24 hour notation (HH:MM:SS)\n"
-                "        \\T    12 hour notation (HH:MM:SS)\n"
-                "        \\@    12 hour notation with AM/PM\n"
-                "        \\u    user name\n"
-                "        \\v    version\n"
-                "        \\V    version with patch level\n"
-                "        \\w    current directory\n"
-                "        \\W    base name of current directory($HOME is replaced by tilde)\n"
-                "        \\$    # if uid is 0, otherwise $\n"
-                "        \\\\    backslash\n"
-                "        \\[    begin of unprintable sequence\n"
-                "        \\]    end of unprintable sequence\n"
-                "        \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
-                "        \\xnn  N is hex number.  NN can be 1 to 2 number"},
         {"pwd", builtin_pwd, "[-LP]",
                 "    Print the current working directory(absolute path).\n"
                 "    If -L specified, print logical working directory.\n"
@@ -608,19 +582,6 @@ static int builtin___puts(DSState &, Array_Object &argvObj) {
             return 1;
         }
     }
-    return 0;
-}
-
-/**
- * for prompt string debugging
- */
-static int builtin_ps_intrp(DSState &state, Array_Object &argvObj) {
-    if(argvObj.getValues().size() != 2) {
-        return showUsage(argvObj);
-    }
-    std::string v = interpretPromptString(state, str(argvObj.getValues()[1]));
-    fputs(v.c_str(), stdout);
-    fputc('\n', stdout);
     return 0;
 }
 

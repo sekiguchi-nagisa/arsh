@@ -12,6 +12,10 @@
 
 #include "../test_common.h"
 
+#ifndef API_TEST_WORK_DIR
+#error "require API_TEST_WORK_DIR"
+#endif
+
 template <typename ...T>
 std::array<char *, sizeof...(T) + 2> make_argv(const char *name, T ...args) {
     return {{const_cast<char *>(name), const_cast<char *>(args)..., nullptr }};
@@ -97,11 +101,25 @@ static const char *getPrompt(DSState *st, unsigned int n) {
 }
 
 TEST_F(APITest, prompt) {
-    const char *str = "$PS1 = 'hello>'; $PS2 = 'second>'";
+    // default prompt
+    std::string p = "ydsh-";
+    p += std::to_string(X_INFO_MAJOR_VERSION);
+    p += ".";
+    p += std::to_string(X_INFO_MINOR_VERSION);
+    p += getuid() == 0 ? "# " : "$ ";
+    ASSERT_EQ(p , getPrompt(this->state, 1));
+    ASSERT_STREQ("> ", getPrompt(this->state, 2));
+    ASSERT_STREQ("", getPrompt(this->state, 5));
+    ASSERT_STREQ("", getPrompt(this->state, -82));
+
+    // use module
+    const char *str = "source " API_TEST_WORK_DIR "/../../etc/ydsh/module/edit;\n"
+                      "source " API_TEST_WORK_DIR "/../../etc/ydsh/module/prompt;\n"
+                      "$PS1 = 'hello>'; $PS2 = 'second>'";
     DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
     ASSERT_STREQ("hello>", getPrompt(this->state, 1));
     ASSERT_STREQ("second>", getPrompt(this->state, 2));
-    ASSERT_STREQ("", getPrompt(this->state, 5));
+    ASSERT_STREQ("", getPrompt(this->state, -82));
 }
 
 static std::vector<std::string> tilde() {

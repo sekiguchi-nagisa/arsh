@@ -1,5 +1,7 @@
 # for prompt string
 
+source ../../../../etc/ydsh/module/prompt
+
 function dirname($s : String) : String {
     import-env HOME
     if $s.startsWith($HOME) {
@@ -12,9 +14,9 @@ function dirname($s : String) : String {
 
 
 # invalid
-ps_intrp
-assert($? == 2)
-assert("$(ps_intrp 2>&1)" == 'ps_intrp: ps_intrp prompt')
+ps_intrp() {
+    echo ${$renderPrompt($1)}
+}
 
 # interpret
 assert("$(ps_intrp '\H')" == "$(uname -n)")

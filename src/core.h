@@ -199,11 +199,6 @@ DSValue getSignalHandler(const DSState &st, int sigNum);
  */
 void setJobControlSignalSetting(DSState &st, bool set);
 
-/**
- * n is 1 or 2
- */
-std::string interpretPromptString(const DSState &st, const char *ps);
-
 std::string expandDots(const char *basePath, const char *path);
 
 void expandTilde(std::string &str);

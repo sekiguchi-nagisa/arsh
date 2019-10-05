@@ -447,12 +447,12 @@ TEST_F(InteractiveTest, read) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("read -u 0 -p $PS2;", "", "> "));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("read -u 0 -p '> ';", "", "> "));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("hello", PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $REPLY == 'hello'", PROMPT));
 
     // disable echo
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("read -u 0 -s -p $PS2;", "", "> "));
+    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("read -u 0 -s -p '> ';", "", "> "));
     this->send("world!!\r");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $REPLY == 'world!!'", PROMPT));

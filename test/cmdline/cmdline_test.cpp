@@ -177,10 +177,10 @@ DSCode: top level
   code size: 22
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 51
+  number of global variable: 49
 Code:
    8: LOAD_CONST  0
-  10: STORE_GLOBAL  50
+  10: STORE_GLOBAL  48
   13: LOAD_CONST  1
   15: CALL_METHOD  0  0
   20: POP
@@ -201,11 +201,11 @@ DSCode: top level
   code size: 35
   max stack depth: 3
   number of local variable: 0
-  number of global variable: 51
+  number of global variable: 49
 Code:
    8: LOAD_CONST  0
-  10: STORE_GLOBAL  50
-  13: LOAD_GLOBAL  50
+  10: STORE_GLOBAL  48
+  13: LOAD_GLOBAL  48
   16: LOAD_CONST  1
   18: CALL_FUNC  1
   21: ENTER_FINALLY  8
@@ -304,9 +304,9 @@ TEST_F(CmdlineTest, exec) {
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PATH)\" == \"/bin:/usr/bin:/usr/local/bin\")"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv LOGNAME)\" == \"$(ps_intrp \\\\u)\")"), 0));
+            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv LOGNAME)\" == \"$(basename ~)\")"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv USER)\" == \"$(ps_intrp \\\\u)\")"), 0));
+            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv USER)\" == \"$(basename ~)\")"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv HOME)\" == \"$(echo ~)\")"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
@@ -388,31 +388,6 @@ TEST_F(CmdlineTest, version) {
     msg += X_INFO_VERSION;
     msg += ", build by .+\n";
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--version"), 0, msg));
-}
-
-
-TEST_F(CmdlineTest, prompt) {
-#ifdef USE_FIXED_TIME
-    bool useFixedTime = true;
-#else
-    bool useFixedTime = false;
-#endif
-
-    std::string cmd = BIN_PATH;
-    cmd += " --feature | grep USE_FIXED_TIME";
-    if(useFixedTime) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 0, "USE_FIXED_TIME\n"));
-
-        const char *name = "TIME_SOURCE";
-        const char *value = "2016-1-13T15:15:12Z";
-
-        ASSERT_NO_FATAL_FAILURE(this->expect(std::move(ds("-c", "ps_intrp '\\d'").addEnv(name, value)), 0, "Wed 01 13\n"));
-        ASSERT_NO_FATAL_FAILURE(this->expect(std::move(ds("-c", "ps_intrp '\\t'").addEnv(name, value)), 0, "15:15:12\n"));
-        ASSERT_NO_FATAL_FAILURE(this->expect(std::move(ds("-c", "ps_intrp '\\T'").addEnv(name, value)), 0, "03:15:12\n"));
-        ASSERT_NO_FATAL_FAILURE(this->expect(std::move(ds("-c", "ps_intrp '\\@'").addEnv(name, value)), 0, "03:15 PM\n"));
-    } else {
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd.c_str()), 1));
-    }
 }
 
 TEST_F(CmdlineTest, logger) {

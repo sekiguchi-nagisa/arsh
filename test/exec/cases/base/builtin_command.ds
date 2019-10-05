@@ -1,5 +1,5 @@
 # execute builtin command
-assert(command ps_intrp "")
+assert(command echo "")
 
 # execute external command
 assert(command ls)

@@ -633,20 +633,6 @@ int DSState_exec(DSState *st, char *const *argv) {
     return st->getExitStatus();
 }
 
-static const char *DSState_prompt(DSState *st, unsigned int n) {
-    const char *psName = nullptr;
-    if(n == 1) {
-        psName = VAR_PS1;
-    } else if(n == 2) {
-        psName = VAR_PS2;
-    } else {
-        return "";
-    }
-    const DSValue &obj = getGlobal(*st, psName);
-    st->prompt = interpretPromptString(*st, typeAs<String_Object>(obj)->getValue());
-    return st->prompt.c_str();
-}
-
 const char *DSState_version(DSVersion *version) {
     if(version != nullptr) {
         version->major = X_INFO_MAJOR_VERSION;
@@ -721,6 +707,27 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
     return 0;
 }
 
+#define XSTR(v) #v
+#define STR(v) XSTR(v)
+
+static const char *defaultPrompt(int n) {
+    switch(n) {
+    case 1:
+        if(getuid()) {
+            return "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ ";
+        } else {
+            return "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "# ";
+        }
+    case 2:
+        return "> ";
+    default:
+        return "";
+    }
+}
+
+#undef XSTR
+#undef STR
+
 unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const char **buf) {
     const char *value = nullptr;
     if(buf) {
@@ -732,13 +739,11 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
         return 0;
     }
 
-    if(op == DS_EDIT_PROMPT) {  //FIXME:
-        *buf = DSState_prompt(st, index);
-        return 0;
-    }
-
     auto func = getGlobal(*st, VAR_EIDT_HOOK);
     if(func.isInvalid()) {
+        if(op == DS_EDIT_PROMPT) {
+            *buf = defaultPrompt(index);
+        }
         return 0;
     }
 
@@ -764,8 +769,12 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
         return 0;
     case DS_EDIT_HIST_GET:
     case DS_EDIT_HIST_SEARCH:
+    case DS_EDIT_PROMPT:
         if(!type->is(TYPE::String) || buf == nullptr) {
             return 0;
+        }
+        if(op == DS_EDIT_PROMPT) {
+            st->prompt = st->editOpReply;
         }
         *buf = typeAs<String_Object>(st->editOpReply)->getValue();
         break;

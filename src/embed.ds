@@ -8,9 +8,6 @@ alias Int = Int32
 alias Long = Int64
 alias Bool = Boolean
 
-var PS1 = '\s-\v\$ '
-var PS2 = '> '
-
 # define boolean constant
 let TRUE = :
 let True = $TRUE

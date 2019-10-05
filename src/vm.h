@@ -111,6 +111,11 @@ public:
      */
     DSValue editOpReply;
 
+    /**
+     * maintain latest rendered prompt/
+     */
+    DSValue prompt;
+
     unsigned short option{DS_OPTION_ASSERT};
 
     DSExecMode execMode{DS_EXEC_MODE_NORMAL};
@@ -135,11 +140,6 @@ public:
     SignalVector sigVector;
 
     JobTable jobTable;
-
-    /**
-     * previously computed prompt (DSState_prompt() )
-     */
-    std::string prompt;
 
     /**
      * for OP_STR.

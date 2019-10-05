@@ -1,0 +1,98 @@
+
+let _SCRIPT_NAME = $0
+
+function _getPWD() : String {
+    return try {
+        import-env PWD
+        $PWD;
+    } catch $e : SystemError {
+        ".".realpath() ?? "."
+    }
+}
+
+function renderPrompt($p : String) : String {
+    var ret = ""
+    let size = $p.size()
+    for(var i = 0; $i < $size; $i++) {
+        var ch = $p[$i]
+        if $ch == '\' && $i + 1 < $size {
+            $i++
+            case $p[$i] {
+            'd' => {
+                var w = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"]["$(date +%w)".toInt32()!]
+                $ch = "$w$(date '+ %m %d')"
+            }
+            'h' => { $ch = "$(uname -n)".split(".")[0]; }
+            'H' => { $ch = "$(uname -n)"; }
+            's' => { $ch = "$(basename $_SCRIPT_NAME)"; }
+            't' => { $ch = "$(date +%T)"; }
+            'T' => { $ch = "$(date +'%I:%M:%S')"; }
+            '@' => {
+                var h = "$(date +%H)".toInt32()! < 12 ? "AM" : "PM"
+                $ch = "$(date +'%I:%M ')$h"
+            }
+            'u' => { $ch = "$(basename ~)"; }
+            'v' => { $ch = $YDSH_VERSION.to($YDSH_VERSION.lastIndexOf('.')); }
+            'V' => { $ch = $YDSH_VERSION; }
+            'w' => {
+                var pwd = $_getPWD()
+                var home = "$(echo ~)"
+                if $pwd.startsWith($home) {
+                    $pwd = "~" + $pwd.from($home.size())
+                }
+                $ch = $pwd
+            }
+            'W' => {
+                var pwd = $_getPWD()
+                if $pwd == "." { $ret += '.'; continue; }
+
+                var home = "$(echo ~)"
+                var real = $pwd.realpath()
+                if $real && $home == $real! {
+                    $ch = "~"
+                } else {
+                    $ch = "$(basename $pwd)"
+                }
+            }
+            '$' => { $ch = $UID == 0 ? '#' : '$'; }
+            '[' | ']' => { continue; }
+            else => { $i--; }
+            }
+        }
+        $ret += $ch
+    }
+
+    var old = $IFS
+    $IFS = ""
+    return try {
+        "$(echo -en $ret)"
+    } finally {
+        $IFS = $old
+    }
+}
+
+ps_escape() {
+    echo "Prompt Escape Sequence:
+    \a    bell
+    \d    date
+    \e    escape sequence
+    \h    host name
+    \H    fully qualified host name
+    \n    newline
+    \r    carriage return
+    \s    base name of \$0
+    \t    24 hour notation (HH:MM:SS)
+    \T    12 hour notation (HH:MM:SS)
+    \@    12 hour notation with AM/PM
+    \u    user name
+    \v    version
+    \V    version with patch level
+    \w    current directory
+    \W    base name of current directory(\$\$HOME is replaced by tilde)
+    \\\$    # if uid is 0, otherwise \$
+    \\\\    backslash
+    \[    begin of unprintable sequence
+    \]    end of unprintable sequence
+    \0nnn N is octal number.  NNN can be 0 to 3 number
+    \xnn  N is hex number.  NN can be 1 to 2 number"
+}

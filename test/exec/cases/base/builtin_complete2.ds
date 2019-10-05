@@ -13,7 +13,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         '?', '@', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_DIR', 'EDIT_HOOK',
         'EUID', 'FALSE', 'False', 'IFS', 'MACHTYPE', 'ON_ASSERT', 'ON_ERR', 'ON_EXIT',
         'OSTYPE', 'PID', 'PIPESTATUS', 'PPID',
-        'PS1', 'PS2', 'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SECONDS', 'SIG', 'SIG_DFL', 'SIG_IGN',
+        'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SECONDS', 'SIG', 'SIG_DFL', 'SIG_IGN',
         'STDERR', 'STDIN', 'STDOUT', 'TERM_HOOK',
         'TRUE', 'True', 'UID', 'YDSH_VERSION', 'assertArray', 'false', 'reply', 'true',
     ]
@@ -21,7 +21,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     $assertArray($gvars, $(complete '$'))
 
     var gvars2 = [
-        'PID', 'PIPESTATUS', 'PPID', 'PS1', 'PS2',
+        'PID', 'PIPESTATUS', 'PPID',
     ]
 
     $assertArray($gvars2, $(complete '$P'))

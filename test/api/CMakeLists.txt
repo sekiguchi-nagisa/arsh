@@ -5,6 +5,7 @@
 set(TEST_NAME api_test)
 
 add_definitions(-DPID_CHECK_PATH="${CMAKE_BINARY_DIR}/tools/pid_check/pid_check")
+add_definitions(-DAPI_TEST_WORK_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 add_executable(${TEST_NAME}
     api_test.cpp
 )
