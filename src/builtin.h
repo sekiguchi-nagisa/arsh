@@ -751,11 +751,19 @@ YDSH_METHOD string_charAt(RuntimeContext &ctx) {
 }
 
 /**
- * startIndex is inclusive.
- * stopIndex is exclusive.
+ *
+ * @tparam T
+ * @param ctx
+ * @param obj
+ * @param startIndex
+ * inclusive
+ * @param stopIndex
+ * exclusive
+ * @return
  */
-static DSValue sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIndex, int stopIndex) {
-    const unsigned int size = strObj->size();
+template <typename T>
+static auto slice(RuntimeContext &ctx, T *obj, int startIndex, int stopIndex) {
+    const unsigned int size = obj->size();
 
     // resolve actual index
     startIndex = (startIndex < 0 ? size : 0) + startIndex;
@@ -774,16 +782,13 @@ static DSValue sliceImpl(RuntimeContext &ctx, String_Object *strObj, int startIn
         raiseOutOfRangeError(ctx, std::move(msg));
         RET_ERROR;
     }
-
-    RET(DSValue::create<String_Object>(
-            ctx.symbolTable.get(TYPE::String),
-            std::string(strObj->getValue() + startIndex, stopIndex - startIndex)));
+    RET(obj->slice(static_cast<unsigned int>(startIndex), static_cast<unsigned int>(stopIndex)));
 }
 
 //!bind: function slice($this : String, $start : Int32, $stop : Int32) : String
 YDSH_METHOD string_slice(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_slice);
-    RET(sliceImpl(ctx, typeAs<String_Object>(LOCAL(0)),
+    RET(slice(ctx, typeAs<String_Object>(LOCAL(0)),
               typeAs<Int_Object>(LOCAL(1))->getValue(),
               typeAs<Int_Object>(LOCAL(2))->getValue()));
 }
@@ -792,14 +797,14 @@ YDSH_METHOD string_slice(RuntimeContext &ctx) {
 YDSH_METHOD string_sliceFrom(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceFrom);
     auto strObj = typeAs<String_Object>(LOCAL(0));
-    RET(sliceImpl(ctx, strObj, typeAs<Int_Object>(LOCAL(1))->getValue(), strObj->size()));
+    RET(slice(ctx, strObj, typeAs<Int_Object>(LOCAL(1))->getValue(), strObj->size()));
 }
 
 //!bind: function to($this : String, $stop : Int32) : String
 YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceTo);
     auto strObj = typeAs<String_Object>(LOCAL(0));
-    RET(sliceImpl(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue()));
+    RET(slice(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue()));
 }
 
 static const void *xmemmem(const void *haystack, size_t haystackSize, const void *needle, size_t needleSize) {
@@ -1452,37 +1457,6 @@ YDSH_METHOD array_swap(RuntimeContext &ctx) {
     DSValue value = LOCAL(2);
     std::swap(obj->refValues()[ret.index], value);
     RET(value);
-}
-
-/**
- * startIndex is inclusive.
- * stopIndex is exclusive.
- */
-static DSValue slice(RuntimeContext &ctx, Array_Object *arrayObj, int startIndex, int stopIndex) {
-    const unsigned int size = arrayObj->getValues().size();
-
-    // resolve actual index
-    startIndex = (startIndex < 0 ? size : 0) + startIndex;
-    stopIndex = (stopIndex < 0 ? size : 0) + stopIndex;
-
-    // check range
-    if(startIndex > stopIndex || startIndex < 0 || startIndex >= static_cast<int>(size) ||
-       stopIndex < 0 || stopIndex > static_cast<int>(size)) {
-        std::string msg("size is ");
-        msg += std::to_string(size);
-        msg += ", but range is [";
-        msg += std::to_string(startIndex);
-        msg += ", ";
-        msg += std::to_string(stopIndex);
-        msg += ")";
-        raiseOutOfRangeError(ctx, std::move(msg));
-        RET_ERROR;
-    }
-
-    auto begin = arrayObj->getValues().begin() + startIndex;
-    auto end = arrayObj->getValues().begin() + stopIndex;
-    std::vector<DSValue> values(begin, end);
-    RET(DSValue::create<Array_Object>(*arrayObj->getType(), std::move(values)));
 }
 
 //!bind: function slice($this : Array<T0>, $from : Int32, $to : Int32) : Array<T0>

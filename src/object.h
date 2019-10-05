@@ -454,6 +454,12 @@ public:
     }
 
     size_t hash() const override;
+
+    DSValue slice(unsigned int begin, unsigned int end) const {
+        return DSValue::create<String_Object>(
+                *this->getType(),
+                std::string(this->getValue() + begin, end - begin));
+    }
 };
 
 struct StringIter_Object : public DSObject {
@@ -505,6 +511,10 @@ public:
         return this->values;
     }
 
+    unsigned int size() const {
+        return this->values.size();
+    }
+
     std::string toString() const override;
     bool opStr(DSState &state) const override;
     bool opInterp(DSState &state) const override;
@@ -533,6 +543,12 @@ public:
 
     bool hasNext() const {
         return this->curIndex < this->values.size();
+    }
+
+    DSValue slice(unsigned int begin, unsigned int end) const {
+        auto b = this->getValues().begin() + begin;
+        auto e = this->getValues().begin() + end;
+        return DSValue::create<Array_Object>(*this->getType(), std::vector<DSValue>(b, e));
     }
 };
 
