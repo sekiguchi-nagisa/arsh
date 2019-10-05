@@ -315,7 +315,6 @@ const char *DSState_configDir();
 /* for feature detection */
 #define DS_FEATURE_LOGGING    ((unsigned int) (1u << 0u))
 #define DS_FEATURE_SAFE_CAST  ((unsigned int) (1u << 1u))
-#define DS_FEATURE_FIXED_TIME ((unsigned int) (1u << 2u))
 
 unsigned int DSState_featureBit();
 

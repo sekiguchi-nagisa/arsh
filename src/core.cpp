@@ -16,18 +16,15 @@
 
 #include <sys/stat.h>
 #include <sys/wait.h>
-#include <sys/utsname.h>
 #include <pwd.h>
 #include <fcntl.h>
 
 #include <algorithm>
 #include <cassert>
 
-#include <config.h>
 #include "vm.h"
 #include "redir.h"
 #include "logger.h"
-#include "time_util.h"
 #include "misc/num_util.hpp"
 #include "misc/files.h"
 

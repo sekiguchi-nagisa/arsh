@@ -26,8 +26,6 @@
 
 #cmakedefine USE_SAFE_CAST
 
-#cmakedefine USE_FIXED_TIME     // time_util.h
-
 #cmakedefine FUZZING_BUILD_MODE
 
 #endif //YDSH_CONFIG_H
