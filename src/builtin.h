@@ -770,7 +770,7 @@ static auto slice(RuntimeContext &ctx, T *obj, int startIndex, int stopIndex) {
     stopIndex = (stopIndex < 0 ? size : 0) + stopIndex;
 
     // check range
-    if(startIndex > stopIndex || startIndex < 0 || startIndex >= static_cast<int>(size) ||
+    if(startIndex > stopIndex || startIndex < 0 || startIndex > static_cast<int>(size) ||
        stopIndex < 0 || stopIndex > static_cast<int>(size)) {
         std::string msg("size is ");
         msg += std::to_string(size);

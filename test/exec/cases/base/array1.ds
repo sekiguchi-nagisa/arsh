@@ -84,6 +84,10 @@ $b = [$true, $false, $false]
 var bb = $b.slice(0, $b.size())
 $b.clear()
 assert $bb.size() == 3 && $b.size() == 0
+{
+    var r = [1,2,3].slice(3, 3)
+    assert $r.empty()
+}
 
 var ee = 34 as Any
 try { $bb.slice(0, 4); assert $false; } catch $e { $ee = $e; }
@@ -94,6 +98,10 @@ assert $bb.from(1) as String == [$false, $false] as String
 try { $bb.from(4); assert $false; } catch $e { $ee = $e; }
 assert $ee is OutOfRangeError
 $ee = 1
+{
+    var r = [1,2,3].from(3)
+    assert $r.empty()
+}
 
 assert [0, 1, 2, 3].to(2) as String == [0, 1] as String
 try {

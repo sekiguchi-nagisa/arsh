@@ -51,17 +51,19 @@ assert("12あ90灘".charAt(5) == '灘')   # get UTF8 character
 try { "12あ90灘".charAt(6); assert($false); } catch($e) { assert($e is OutOfRangeError); }
 
 assert($a.slice(0, 4) == "hell");
+assert "1234".slice(4, 4).empty()
 assert($a.slice(-3, -1) == "rl");
 try { assert("01234".slice(4, 3) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 try { assert("01234".slice(2, 100) == "A"); } catch($e) { assert($e is OutOfRangeError); }
-try { assert("01234".slice(5, 5) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("01234".slice(5, 6) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 try { assert("01234".slice(-1, 2) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 try { assert("01234".slice(-134, -5) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 
 assert("012345".from(3) == "345")
 assert("012345".from(-4) == "2345")
+assert "01234".from(5) == ""
 try { assert("012345".from(-9) == "A"); } catch($e) { assert($e is OutOfRangeError); }
-try { assert("012345".from(6) == "A"); } catch($e) { assert($e is OutOfRangeError); }
+try { assert("012345".from(7) == "A"); } catch($e) { assert($e is OutOfRangeError); }
 
 assert("012345".to(3) == "012")
 assert("012345".to(-4) == "01")
