@@ -118,7 +118,10 @@ function _save($p : String!) {
 
     if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? { return; }
-    for(var i = 0; $i < $HISTFILESIZE && $i < $HISTORY.size(); $i++) {
+    let size = $HISTORY.size()
+    var offset = $size < $HISTFILESIZE ? 0 : $size - $HISTFILESIZE
+
+    for(var i = $offset; $i < $size; $i++) {
         echo $HISTORY[$i]
     } with > $path
     chmod g-rw,o-rw $path
