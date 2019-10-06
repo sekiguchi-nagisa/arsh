@@ -31,8 +31,7 @@ using namespace lsp;
     OP(T, rootPath) \
     OP(T, rootUri) \
     OP(T, initializationOptions) \
-    OP(T, capabilities) \
-    OP(T, trace)
+    OP(T, capabilities) 
 
 template <>
 struct TypeMatcherConstructor<DocumentURI> {
