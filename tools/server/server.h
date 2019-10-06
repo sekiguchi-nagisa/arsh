@@ -95,6 +95,8 @@ public:
     // RPC method definition
     Reply<InitializeResult> initialize(const InitializeParams &params);
 
+    void initialized(const InitializedParams &params);
+
     Reply<void> shutdown();
 
     void exit();

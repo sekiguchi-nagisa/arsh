@@ -226,6 +226,8 @@ struct InitializeResult {
     ServerCapabilities capabilities;
 };
 
+struct InitializedParams {};
+
 } // namespace lsp
 
 namespace rpc {
@@ -327,6 +329,10 @@ JSON toJSON(const ServerCapabilities &cap);
 
 void fromJSON(JSON &&json, InitializeResult &ret);
 JSON toJSON(const InitializeResult &ret);
+
+inline void fromJSON(JSON &&, InitializedParams &) {}
+
+inline JSON toJSON(const InitializedParams) { return JSON(); }
 
 
 } // namespace rpc

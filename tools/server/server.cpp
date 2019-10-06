@@ -31,11 +31,16 @@ using namespace lsp;
     OP(T, rootPath) \
     OP(T, rootUri) \
     OP(T, initializationOptions) \
-    OP(T, capabilities) 
+    OP(T, capabilities)
 
 template <>
 struct TypeMatcherConstructor<DocumentURI> {
     static constexpr auto value = string;
+};
+
+template <>
+struct TypeMatcherConstructor<InitializedParams> {
+    static constexpr auto value = any;
 };
 
 DEFINE_JSON_VALIDATE_INTERFACE(ClientCapabilities); //NOLINT
@@ -61,6 +66,7 @@ void LSPServer::bindAll() {
     this->bind("shutdown", &LSPServer::shutdown);
     this->bind("exit", &LSPServer::exit);
     this->bind("initialize", &LSPServer::initialize);
+    this->bind("initialized", &LSPServer::initialized);
 }
 
 void LSPServer::run() {
@@ -80,6 +86,10 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
 
     InitializeResult ret;   //FIXME: set supported capabilities
     return std::move(ret);
+}
+
+void LSPServer::initialized(const ydsh::lsp::InitializedParams &) {
+    this->logger(LogLevel::INFO, "server initialized!!");
 }
 
 Reply<void> LSPServer::shutdown() {
