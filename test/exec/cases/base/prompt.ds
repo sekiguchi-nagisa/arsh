@@ -19,6 +19,8 @@ ps_intrp() {
 }
 
 # interpret
+assert "$(ps_intrp 'hello\!!')" == "hello\!!"
+assert "$(ps_intrp 'hello\cworld')" == "hello\cworld"
 assert("$(ps_intrp '\H')" == "$(uname -n)")
 assert("$(ps_intrp '\h')" == "$(uname -n)".split('.')[0])
 assert("$(ps_intrp '\n')" == "$(echo -e '\n')")

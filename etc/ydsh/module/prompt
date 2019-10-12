@@ -18,6 +18,7 @@ function renderPrompt($p : String) : String {
         if $ch == '\' && $i + 1 < $size {
             $i++
             case $p[$i] {
+            'c' => $ch = '\\c'
             'd' => {
                 var w = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"]["$(date +%w)".toInt32()!]
                 $ch = "$w$(date '+ %m %d')"
