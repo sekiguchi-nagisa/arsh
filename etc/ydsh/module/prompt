@@ -72,32 +72,6 @@ function renderPrompt($p : String) : String {
     }
 }
 
-ps_escape() {
-    echo "Prompt Escape Sequence:
-    \a    bell
-    \d    date
-    \e    escape sequence
-    \h    host name
-    \H    fully qualified host name
-    \n    newline
-    \r    carriage return
-    \s    base name of \$0
-    \t    24 hour notation (HH:MM:SS)
-    \T    12 hour notation (HH:MM:SS)
-    \@    12 hour notation with AM/PM
-    \u    user name
-    \v    version
-    \V    version with patch level
-    \w    current directory
-    \W    base name of current directory(\$\$HOME is replaced by tilde)
-    \\\$    # if uid is 0, otherwise \$
-    \\\\    backslash
-    \[    begin of unprintable sequence
-    \]    end of unprintable sequence
-    \0nnn N is octal number.  NNN can be 0 to 3 number
-    \xnn  N is hex number.  NN can be 1 to 2 number"
-}
-
 function _usage($fd : UnixFD, $short : Boolean) : Int  {
     echo > $fd usage: prompt [-h] [--help] [+prompt]
     if $short { return 2; }
