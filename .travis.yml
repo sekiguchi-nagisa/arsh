@@ -194,6 +194,21 @@ matrix:
             - ninja-build
       env: CXX_BIN=clang++-8
 
+    # clang 8.0, ARM64
+    - addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-8 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+            - g++-5
+            - clang-8
+            - ninja-build
+      arch: arm64
+      env: CXX_BIN=clang++-8
+
+
     # clang 8.0 (Release build)
     - addons:
         apt:
@@ -205,6 +220,20 @@ matrix:
             - g++-5
             - clang-8
             - ninja-build
+      env: CXX_BIN=clang++-8 BUILD_TYPE=release
+
+    # clang 8.0 (Release build), ARM64
+    - addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb https://apt.llvm.org/trusty/ llvm-toolchain-trusty-8 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+            - g++-5
+            - clang-8
+            - ninja-build
+      arch: arm64
       env: CXX_BIN=clang++-8 BUILD_TYPE=release
 
 #    # clang 6.0 with LTO
