@@ -1,6 +1,4 @@
 
-let _SCRIPT_NAME = $0
-
 function _getPWD() : String {
     return try {
         import-env PWD
@@ -10,6 +8,19 @@ function _getPWD() : String {
     }
 }
 
+source path
+
+let _cache = [
+    'c' : '\\c',
+    'h' : "$(uname -n)".split(".")[0],
+    'H' : "$(uname -n)",
+    's' : $basename($0),
+    'u' : $user,
+    'v' : $YDSH_VERSION.to($YDSH_VERSION.lastIndexOf('.')),
+    'V' : $YDSH_VERSION,
+    '$' : $UID == 0 ? '#' : '$',
+]
+
 function renderPrompt($p : String) : String {
     var ret = ""
     let size = $p.size()
@@ -17,24 +28,18 @@ function renderPrompt($p : String) : String {
         var ch = $p[$i]
         if $ch == '\' && $i + 1 < $size {
             $i++
-            case $p[$i] {
-            'c' => $ch = '\\c'
+            var k = $p[$i]
+            case $k {
             'd' => {
                 var w = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"]["$(date +%w)".toInt32()!]
                 $ch = "$w$(date '+ %m %d')"
             }
-            'h' => { $ch = "$(uname -n)".split(".")[0]; }
-            'H' => { $ch = "$(uname -n)"; }
-            's' => { $ch = "$(basename $_SCRIPT_NAME)"; }
             't' => { $ch = "$(date +%T)"; }
             'T' => { $ch = "$(date +'%I:%M:%S')"; }
             '@' => {
                 var h = "$(date +%H)".toInt32()! < 12 ? "AM" : "PM"
                 $ch = "$(date +'%I:%M ')$h"
             }
-            'u' => { $ch = "$(basename ~)"; }
-            'v' => { $ch = $YDSH_VERSION.to($YDSH_VERSION.lastIndexOf('.')); }
-            'V' => { $ch = $YDSH_VERSION; }
             'w' => {
                 var pwd = $_getPWD()
                 var home = "$(echo ~)"
@@ -55,9 +60,8 @@ function renderPrompt($p : String) : String {
                     $ch = "$(basename $pwd)"
                 }
             }
-            '$' => { $ch = $UID == 0 ? '#' : '$'; }
             '[' | ']' => { continue; }
-            else => { $i--; }
+            else => $ch = $_cache.get($k) ?? { $i--; $ch; }
             }
         }
         $ret += $ch
