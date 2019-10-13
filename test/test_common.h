@@ -151,6 +151,8 @@ struct ExpectOutput : public ::testing::Test {
 
 class InteractiveBase : public ExpectOutput {
 protected:
+    int timeout{80};
+
     ProcHandle handle;
 
     const std::string binPath;
@@ -179,7 +181,7 @@ protected:
     void interpret(std::string &line);
 
     std::pair<std::string, std::string> readAll() {
-        auto ret = this->handle.readAll(80);
+        auto ret = this->handle.readAll(this->timeout);
         if(this->ttyEmulation) {
             this->interpret(ret.first);
         }

@@ -20,7 +20,9 @@ using namespace ydsh;
 
 
 struct InteractiveTest : public InteractiveBase {
-    InteractiveTest() : InteractiveBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {}
+    InteractiveTest() : InteractiveBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {
+        this->timeout = 120;
+    }
 };
 
 #define CTRL_A "\x01"
