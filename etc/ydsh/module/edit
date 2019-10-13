@@ -19,11 +19,11 @@ function _sync() {
 }
 
 function _error($s : String) {
-    echo 1>&2 ydsh: history: $s
+    echo 1>&2 history: $s
 }
 
 function _usage($fd : UnixFD, $short : Boolean) : Int {
-    echo > $fd "history: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
+    echo > $fd "usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
     if $short { return 2; }
 
     echo > $fd "Display or manipulate history list.
