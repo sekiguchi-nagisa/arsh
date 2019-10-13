@@ -2,4 +2,8 @@
 #$test($status = 1)
 
 # timeout
+if $MACHTYPE == 'x86_64' {
 read -t 1
+} else {
+    false
+}
