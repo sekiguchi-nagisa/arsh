@@ -872,7 +872,7 @@ static int xfgetc(int fd, int timeout) {
         if(read(fd, &ch, 1) <= 0) {
             ch = EOF;
         }
-    } while(ch == EOF && (errno == EAGAIN || errno == EINTR));
+    } while(static_cast<int>(ch) == EOF && (errno == EAGAIN || errno == EINTR));
     return ch;
 }
 

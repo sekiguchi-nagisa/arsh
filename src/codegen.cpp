@@ -22,7 +22,7 @@
 namespace ydsh {
 
 int getByteSize(OpCode code) {
-    char table[] = {
+    int table[] = {
 #define GEN_BYTE_SIZE(CODE, N, S) N,
             OPCODE_LIST(GEN_BYTE_SIZE)
 #undef GEN_BYTE_SIZE
