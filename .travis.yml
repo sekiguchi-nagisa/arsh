@@ -201,6 +201,7 @@ matrix:
             - clang-8
             - ninja-build
             - libpcre3-dev
+            - libtool
       arch: arm64
       env: CXX_BIN=clang++-8
 
@@ -228,6 +229,7 @@ matrix:
             - clang-8
             - ninja-build
             - libpcre3-dev
+            - libtool
       arch: arm64
       env: CXX_BIN=clang++-8 BUILD_TYPE=release
 
