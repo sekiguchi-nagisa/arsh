@@ -23,5 +23,5 @@ add_library(json STATIC json.cpp ${lexer_src})
 #     jsonrpc     #
 #=================#
 
-add_library(jsonrpc STATIC jsonrpc.cpp validate.cpp)
+add_library(jsonrpc STATIC jsonrpc.cpp)
 target_link_libraries(jsonrpc json)

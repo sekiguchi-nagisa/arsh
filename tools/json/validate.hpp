@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_VALIDATE_H
-#define YDSH_TOOLS_VALIDATE_H
+#ifndef YDSH_TOOLS_VALIDATE_HPP
+#define YDSH_TOOLS_VALIDATE_HPP
 
 #include <unordered_map>
 #include <tuple>
@@ -32,7 +32,17 @@ private:
     std::vector<std::string> errors;
 
 public:
-    std::string formatError() const;
+    std::string formatError() const {
+        std::string str;
+        if(!this->errors.empty()) {
+            str = this->errors.back();
+            for(auto iter = this->errors.rbegin() + 1; iter != this->errors.rend(); ++iter) {
+                str += "\n    from: ";
+                str += *iter;
+            }
+        }
+        return str;
+    }
 
     void clearError() {
         this->errors.clear();
@@ -490,4 +500,4 @@ template <> struct InterfaceConstructor<iface> { \
 }; \
 constexpr InterfaceConstructor<iface>::type InterfaceConstructor<iface>::value
 
-#endif //YDSH_TOOLS_VALIDATE_H
+#endif //YDSH_TOOLS_VALIDATE_HPP
