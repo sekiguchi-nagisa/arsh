@@ -1,0 +1,22 @@
+
+source ../../../../etc/ydsh/module/path
+
+function assertBaseDir($s : String) {
+    # basename
+    assert diff <(echo ${$basename($s)}) <(basename "$s")
+
+    # dirname
+    assert diff <(echo ${$dirname($s)}) <(dirname "$s")
+}
+
+$assertBaseDir("hoge")
+$assertBaseDir("/")
+$assertBaseDir("/////")
+$assertBaseDir("")
+$assertBaseDir(".")
+$assertBaseDir("/hoge//")
+$assertBaseDir("/hoge//123")
+$assertBaseDir("hoge/6543/")
+$assertBaseDir("hoge///6543//")
+$assertBaseDir("///hoge/6543/")
+$assertBaseDir("/../  ge/f")
