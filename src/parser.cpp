@@ -1210,7 +1210,7 @@ std::unique_ptr<Node> Parser::parse_regexLiteral() {
      */
     int regexFlag = 0;
     while(str.back() != '/') {
-        char ch = str.back();
+        int ch = str.back();
         if(ch == 'i') {
             regexFlag |= PCRE_CASELESS;
         } else if(ch == 'm') {

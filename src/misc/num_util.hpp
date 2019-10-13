@@ -169,7 +169,7 @@ inline std::pair<T, bool> parseDecimal(const char *&begin, const char *end) {
     T ret = 0;
     bool status = true;
     do {
-        char ch = *begin;
+        int ch = *begin;
         T v;
         if(ch >= '0' && ch <= '9') {
             v = ch - '0';
@@ -203,7 +203,7 @@ inline std::pair<T, bool> parseOctalOrHex(const char *&begin, const char *end, i
     T ret = 0;
     bool status = true;
     do {
-        char ch = *begin;
+        int ch = *begin;
         T v;
         if(ch >= '0' && ch <= '9') {
             v = ch - '0';
@@ -362,15 +362,15 @@ inline double convertToDouble(const char *str, int &status, bool skipIllegalChar
     return value;
 }
 
-inline bool isDecimal(char ch) {
+inline bool isDecimal(int ch) {
     return ch >= '0' && ch <= '9';
 }
 
-inline bool isOctal(char ch) {
+inline bool isOctal(int ch) {
     return ch >= '0' && ch < '8';
 }
 
-inline bool isHex(char ch) {
+inline bool isHex(int ch) {
     return (ch >= '0' && ch <= '9') ||
            (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
 }
@@ -380,7 +380,7 @@ inline bool isHex(char ch) {
  * @param ch
  * @return
  */
-inline int hexToNum(char ch) {
+inline int hexToNum(int ch) {
     if(ch >= '0' && ch <= '9') {
         return ch - '0';
     } else if(ch >= 'a' && ch <= 'f') {

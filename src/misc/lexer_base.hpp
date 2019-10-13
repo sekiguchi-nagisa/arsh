@@ -243,7 +243,7 @@ public:
         memcpy(buf, this->buf.get() + token.pos, token.size);
     }
 
-    bool startsWith(Token token, char ch) const {
+    bool startsWith(Token token, int ch) const {
         assert(this->withinRange(token));
         return this->buf[token.pos] == ch;
     }
@@ -305,7 +305,7 @@ Token LexerBase<T>::shiftEOS(Token token) const {
     if(token.size == 0) {
         unsigned int startIndex = token.pos;
         for(; startIndex > 0; startIndex--) {
-            char ch = this->buf[startIndex];
+            int ch = this->buf[startIndex];
             if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\000') {
                 continue;
             }

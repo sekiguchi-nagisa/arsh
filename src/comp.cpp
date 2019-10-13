@@ -45,7 +45,7 @@ static std::string escape(const char *str, EscapeOp op) {
     }
 
     if(op == EscapeOp::COMMAND_NAME) {
-        char ch = *str;
+        int ch = *str;
         if(isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
             buf += '\\';
             buf += ch;
@@ -54,7 +54,7 @@ static std::string escape(const char *str, EscapeOp op) {
     }
 
     while(*str != '\0') {
-        char ch = *(str++);
+        int ch = *(str++);
         bool found = false;
         switch(ch) {
         case ' ':
@@ -270,7 +270,7 @@ static std::vector<std::string> computePathList(const char *pathVal) {
     assert(pathVal != nullptr);
 
     for(unsigned int i = 0; pathVal[i] != '\0'; i++) {
-        char ch = pathVal[i];
+        int ch = pathVal[i];
         if(ch == ':') {
             result.emplace_back();
         } else {

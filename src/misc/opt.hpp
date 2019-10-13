@@ -60,7 +60,7 @@ std::vector<std::string> Option<T>::getDetails() const {
     std::vector<std::string> bufs;
     bufs.emplace_back();
     for(unsigned int i = 0; this->detail[i] != '\0'; i++) {
-        char ch = this->detail[i];
+        int ch = this->detail[i];
         if(ch == '\n') {
             if(!bufs.back().empty()) {
                 bufs.emplace_back();

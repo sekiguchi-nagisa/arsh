@@ -275,7 +275,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
         }
 
         for(int i = 0; i < readSize; i++) {
-            char ch = buf[i];
+            int ch = buf[i];
             bool fieldSep = isFieldSep(ifsSize, ifs, ch);
             if(fieldSep && skipCount > 0) {
                 if(isSpace(ch)) {

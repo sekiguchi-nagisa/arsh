@@ -440,7 +440,7 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
         }
         const char *arg = str(argvObj.getValues()[index]);
         for(unsigned int i = 0; arg[i] != '\0'; i++) {
-            char ch = arg[i];
+            int ch = arg[i];
             if(ch == '\\' && arg[i + 1] != '\0') {
                 switch(arg[++i]) {
                 case '\\':
@@ -856,7 +856,7 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
 }
 
 static int xfgetc(int fd, int timeout) {
-    char ch;
+    signed char ch;
     do {
         errno = 0;
 
@@ -1639,7 +1639,7 @@ static bool parseMode(const char *&value, mode_t &mode) {
     // [ugoa]*
     mode_t user = 0;
     for(bool next = true; next; ) {
-        char ch = *(value++);
+        int ch = *(value++);
         switch(ch) {
         case 'u':
             user |= 0700;
@@ -1672,7 +1672,7 @@ static bool parseMode(const char *&value, mode_t &mode) {
     // [rwx]*
     mode_t newMode = 0;
     while(*value && *value != ',') {
-        char ch = *(value++);
+        int ch = *(value++);
         switch(ch) {
         case 'r':
             newMode |= 0444 & user;
@@ -1771,7 +1771,7 @@ static int builtin_umask(DSState &, Array_Object &argvObj) {
             auto ret = parseSymbolicMode(value, mask);
             mask = ret.mode;
             if(!ret.success) {
-                char ch = ret.invalid;
+                int ch = ret.invalid;
                 if(isascii(ch) && ch != 0) {
                     ERROR(argvObj, "%c: invalid symbolic operator", ch);
                 } else {

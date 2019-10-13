@@ -1358,7 +1358,7 @@ void NodeDumper::dump(const char *fieldName, const char *value) {
 
     this->append('"');
     while(*value != 0) {
-        char ch = *(value++);
+        int ch = *(value++);
         bool escape = true;
         switch(ch) {
         case '\t':
@@ -1471,7 +1471,7 @@ void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *co
     this->leaveIndent();
 }
 
-void NodeDumper::append(char ch) {
+void NodeDumper::append(int ch) {
     this->bufs.back().value += ch;
 }
 

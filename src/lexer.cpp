@@ -103,7 +103,7 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
 
     const unsigned int stopPos = token.pos + token.size - 1; // ignore suffix "'"
     for(unsigned int i = token.pos + 2; i < stopPos; i++) {  // ignore prefix "$'"
-        char ch = this->buf[i];
+        int ch = this->buf[i];
         if(ch == '\\' && i + 1 < stopPos) {
             switch(this->buf[++i]) {
             case '\\':
@@ -180,9 +180,9 @@ std::string Lexer::doubleElementToString(Token token) const {
 
     const unsigned int stopPos = token.pos + token.size;
     for(unsigned int i = token.pos; i < stopPos; i++) {
-        char ch = this->buf[i];
+        int ch = this->buf[i];
         if(ch == '\\' && i + 1 < stopPos) {
-            char next = this->buf[++i];
+            int next = this->buf[++i];
             switch(next) {
             case '"':
             case '$':
@@ -208,7 +208,7 @@ std::string Lexer::toCmdArg(Token token) const {
     str.reserve(token.size);
 
     for(unsigned int i = 0; i < token.size; i++) {
-        char ch = this->buf[token.pos + i];
+        int ch = this->buf[token.pos + i];
         if(ch == '\\') {
             char nextCh = this->buf[token.pos + ++i];
             switch(nextCh) {
@@ -231,7 +231,7 @@ std::string Lexer::toName(Token token) const {
     std::string name;
     name.reserve(token.size);
     for(unsigned int i = this->buf[token.pos] == '$' ? 1 : 0; i < token.size; i++) {
-        char ch = this->buf[token.pos + i];
+        int ch = this->buf[token.pos + i];
         switch(ch) {
         /**
          * ex. $true, ${true}, $@[

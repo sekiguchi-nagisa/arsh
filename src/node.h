@@ -2489,7 +2489,7 @@ private:
         this->append('\n');
     }
 
-    void append(char ch);
+    void append(int ch);
 
     void append(const char *str);
 

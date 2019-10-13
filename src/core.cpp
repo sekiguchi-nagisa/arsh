@@ -65,7 +65,7 @@ const char *FilePathCache::searchPath(const char *cmdName, flag8_t option) {
     // resolve path
     std::string resolvedPath;
     for(unsigned int i = 0; !resolvedPath.empty() || pathPrefix[i] != '\0'; i++) {
-        char ch = pathPrefix[i];
+        int ch = pathPrefix[i];
         bool stop = false;
 
         if(ch == '\0') {

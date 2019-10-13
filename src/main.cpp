@@ -49,7 +49,7 @@ static std::string escape(const char *str) {
     std::string value;
     value += '"';
     for(; str != nullptr && *str != '\0'; str++) {
-        char ch = *str;
+        int ch = *str;
         if(ch == '\\' || ch == '"') {
             value += '\\';
         }
