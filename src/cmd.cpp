@@ -912,7 +912,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
         }
         case 't': {
             auto ret = convertToNum<int64_t>(optState.optArg);
-            long t = ret.first;
+            int64_t t = ret.first;
             if(ret.second) {
                 if(t > -1 && t <= INT32_MAX) {
                     t *= 1000;
@@ -1007,7 +1007,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
             skipCount = isSpace(ch) ? 2 : 1;
             continue;
         }
-        strBuf += static_cast<char>(ch);
+        strBuf += ch;
     }
 
     // remove last spaces
