@@ -1,13 +1,4 @@
 
-function _getPWD() : String {
-    return try {
-        import-env PWD
-        $PWD;
-    } catch $e : SystemError {
-        ".".realpath() ?? "."
-    }
-}
-
 source path
 
 let _cache = [
@@ -22,6 +13,7 @@ let _cache = [
 ]
 
 function renderPrompt($p : String) : String {
+    import-env PWD : "."
     var ret = ""
     let size = $p.size()
     for(var i = 0; $i < $size; $i++) {
@@ -41,23 +33,18 @@ function renderPrompt($p : String) : String {
                 $ch = "$(date +'%I:%M ')$h"
             }
             'w' => {
-                var pwd = $_getPWD()
-                var home = "$(echo ~)"
-                if $pwd.startsWith($home) {
-                    $pwd = "~" + $pwd.from($home.size())
+                if $PWD.startsWith($home) {
+                    $ch = "~" + $PWD.from($home.size())
+                } else {
+                    $ch = $PWD
                 }
-                $ch = $pwd
             }
             'W' => {
-                var pwd = $_getPWD()
-                if $pwd == "." { $ret += '.'; continue; }
-
-                var home = "$(echo ~)"
-                var real = $pwd.realpath()
-                if $real && $home == $real! {
+                if $PWD == "." { $ret += '.'; continue; }
+                if $home == $PWD {
                     $ch = "~"
                 } else {
-                    $ch = "$(basename $pwd)"
+                    $ch = $basename($PWD)
                 }
             }
             '[' | ']' => { continue; }
