@@ -1,7 +1,5 @@
 #include "gtest/gtest.h"
 
-#include <csignal>
-
 #include <config.h>
 #include <misc/files.h>
 #include "../test_common.h"
@@ -151,6 +149,10 @@ TEST_F(InteractiveTest, edit1) {
 //}
 
 TEST_F(InteractiveTest, history1) {
+#ifdef CODE_COVERAGE
+    this->timeout = 500;
+#endif
+
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -179,6 +181,10 @@ TEST_F(InteractiveTest, history1) {
 }
 
 TEST_F(InteractiveTest, history2) {
+#ifdef CODE_COVERAGE
+    this->timeout = 500;
+#endif
+
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -202,6 +208,10 @@ TEST_F(InteractiveTest, history2) {
 }
 
 TEST_F(InteractiveTest, history3) {
+#ifdef CODE_COVERAGE
+    this->timeout = 500;
+#endif
+
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -232,6 +242,10 @@ TEST_F(InteractiveTest, history3) {
 }
 
 TEST_F(InteractiveTest, history4) {
+#ifdef CODE_COVERAGE
+    this->timeout = 500;
+#endif
+
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
