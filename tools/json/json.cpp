@@ -239,7 +239,7 @@ struct Serializer {
         this->leave('}');
     }
 
-    void enter(char ch) {
+    void enter(int ch) {
         this->str += ch;
         if(this->tab > 0) {
             this->str += '\n';
@@ -247,7 +247,7 @@ struct Serializer {
         this->level++;
     }
 
-    void leave(char ch) {
+    void leave(int ch) {
         if(this->tab > 0) {
             this->str += '\n';
         }
@@ -461,7 +461,7 @@ JSON Parser::parseObject() {
 static unsigned short parseHex(const char *&iter) {
     unsigned short v = 0;
     for(unsigned int i = 0; i < 4; i++) {
-        char ch = *(iter++);
+        int ch = *(iter++);
         assert(isHex(ch));
         v *= 16;
         v += hexToNum(ch);

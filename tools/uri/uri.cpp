@@ -54,7 +54,7 @@ std::string URI::toString() const {
     return value;
 }
 
-static bool isEscaped(char ch) {
+static bool isEscaped(int ch) {
     switch(ch) {
     case '-':
     case '.':
@@ -74,7 +74,7 @@ static bool isEscaped(char ch) {
 std::string URI::encode(const char *begin, const char *end) {
     std::string value;
     for(; begin != end; ++begin) {
-        char ch = *begin;
+        int ch = *begin;
         if(isEscaped(ch)) {
             value += '%';
             char buf[16];
@@ -90,15 +90,15 @@ std::string URI::encode(const char *begin, const char *end) {
 std::string URI::decode(const char *begin, const char *end) {
     std::string value;
     for(; begin != end; ++begin) {
-        char ch = *begin;
+        int ch = *begin;
         if(ch != '%') {
             value += ch;
             continue;
         }
 
         if(ch == '%' && begin + 2 < end && isHex(*(begin + 1)) && isHex(*(begin + 2))) {
-            char ch1 = *++begin;
-            char ch2 = *++begin;
+            int ch1 = *++begin;
+            int ch2 = *++begin;
             int v = 16 * hexToNum(ch1) + hexToNum(ch2);
             value += (char) v;
         } else {

@@ -71,7 +71,7 @@ public:
      */
     void interpret(const char *data, unsigned int size);
 
-    void addChar(char ch);
+    void addChar(int ch);
 
     /**
      * FIXME:
@@ -134,7 +134,7 @@ public:
     std::string toString() const;
 
 private:
-    void setChar(char ch) {
+    void setChar(int ch) {
         this->bufs.at(this->row).at(this->col) = ch;
     }
 };

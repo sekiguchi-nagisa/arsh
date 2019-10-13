@@ -91,7 +91,7 @@ bool LSPTransport::readHeader(std::string &header) {
     clearerr(this->input.get());
     char prev = '\0';
     while(true) {
-        char ch;
+        signed char ch;
         if(fread(&ch, 1, 1, this->input.get()) != 1) {
             if(ferror(this->input.get()) && (errno == EINTR || errno == EAGAIN)) {
                 continue;

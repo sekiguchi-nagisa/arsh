@@ -529,7 +529,7 @@ void ProcBuilder::syncEnv() const {
 // ##     Screen     ##
 // ####################
 
-void Screen::addChar(char ch) {
+void Screen::addChar(int ch) {
     switch(ch) {
     case '\0':
         break;
@@ -589,7 +589,7 @@ void Screen::clearLineFrom() {
 
 static std::string toStringAtLine(const ydsh::ByteBuffer &buf) {
     std::string ret;
-    for(char ch : buf) {
+    for(auto &ch : buf) {
         ret += ch;
     }
     for(; !ret.empty() && ret.back() == '\0'; ret.pop_back());

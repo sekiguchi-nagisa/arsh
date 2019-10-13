@@ -761,7 +761,7 @@ bool Parser::isDescriptor(const std::string &line) {
     unsigned int pos = 0;
     unsigned int size = line.size();
     for(; pos < size; pos++) {
-        char ch = line[pos];
+        int ch = line[pos];
         if(ch != ' ' && ch != '\t') {
             break;
         }
