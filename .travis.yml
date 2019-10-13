@@ -102,7 +102,6 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
           packages:
             - g++-5
             - clang-3.7
@@ -125,7 +124,6 @@ matrix:
         apt:
           sources:
             - ubuntu-toolchain-r-test
-            - llvm-toolchain-trusty-3.9
           packages:
             - g++-5
             - clang-3.9
