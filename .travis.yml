@@ -315,7 +315,7 @@ script:
   - ninja
   - sudo ninja install
   - ./ydsh ./tools/scripts/copy_mod4extra.ds
-  - ctest -V
+  - ctest --output-on-failure
 
 notifications:
   emails:
