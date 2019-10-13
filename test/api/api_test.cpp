@@ -386,7 +386,7 @@ struct PIDs {
     pid_t pgid;
 };
 
-static std::vector<std::string> split(const std::string &str, char delim = ' ') {
+static std::vector<std::string> split(const std::string &str, int delim = ' ') {
     std::vector<std::string> bufs;
     bufs.emplace_back();
 

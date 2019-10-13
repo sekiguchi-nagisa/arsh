@@ -144,7 +144,7 @@ void Extractor::consumeSpace() {
 int Extractor::extract(unsigned int &value) {
     std::string buf;
     for(; *this->str != '\0'; this->str++) {
-        char ch = *this->str;
+        int ch = *this->str;
         if(!isdigit(ch)) {
             break;
         }
@@ -161,7 +161,7 @@ int Extractor::extract(unsigned int &value) {
 int Extractor::extract(int &value) {
     std::string buf;
     for(; *this->str != '\0'; this->str++) {
-        char ch = *this->str;
+        int ch = *this->str;
         if(!isdigit(ch)) {
             break;
         }
