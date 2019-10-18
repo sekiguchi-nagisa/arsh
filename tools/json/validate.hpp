@@ -260,7 +260,8 @@ private:
                 str += matcher.str();
                 str += "' type in `";
                 str += this->getName();
-                str += "'";
+                str += "', but actual: ";
+                str += iter->second.serialize(2);
                 validator.appendError(std::move(str));
                 return false;
             }
