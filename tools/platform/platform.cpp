@@ -20,7 +20,6 @@
 #include <fstream>
 
 #include <misc/util.hpp>
-#include <misc/flag_util.hpp>
 #include "platform.h"
 
 namespace ydsh {
@@ -79,13 +78,54 @@ static PlatformType detectImpl() {
     return PlatformType::UNKNOWN;
 }
 
-PlatformType detect() {
+PlatformType platform() {
     static auto p = detectImpl();
     return p;
 }
 
-bool contain(const std::string &text) {
-    return reSearch(toString(detect()), text);
+bool containPlatform(const std::string &text, PlatformType type) {
+    return reSearch(toString(type), text);
+}
+
+const char *toString(ArchType c) {
+    const char *table[] = {
+#define GEN_STR(E, S) #E,
+            EACH_ARCH_TYPE(GEN_STR)
+#undef GEN_STR
+    };
+    return table[static_cast<unsigned int>(c)];
+}
+
+static ArchType archImpl() {
+    struct utsname name{};
+    if(uname(&name) == -1) {
+        return ArchType::UNKNOWN;
+    }
+    ArchType types[] = {
+#define GEN_ENUM(E, S) ArchType::E,
+        EACH_ARCH_TYPE(GEN_ENUM)
+#undef GEN_ENUM
+    };
+    for(auto &type : types) {
+        if(containArch(name.machine, type)) {
+            return type;
+        }
+    }
+    return ArchType::UNKNOWN;
+}
+
+ArchType arch() {
+    static auto a = archImpl();
+    return a;
+}
+
+bool containArch(const std::string &text, ArchType type) {
+    const char *table[] = {
+#define GEN_STR(E, S) #E "|" S,
+        EACH_ARCH_TYPE(GEN_STR)
+#undef GEN_STR
+    };
+    return reSearch(table[static_cast<unsigned int>(type)], text);
 }
 
 } // namespace platform

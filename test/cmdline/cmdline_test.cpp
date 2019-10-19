@@ -314,7 +314,7 @@ TEST_F(CmdlineTest, exec) {
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PWD)\" == \"$(printenv OLDPWD)\")"), 0));
 
-    if(platform::detect() == platform::PlatformType::CYGWIN) {
+    if(platform::platform() == platform::PlatformType::CYGWIN) {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env WINDIR)"), 0));
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env SYSTEMROOT)"), 0));
 
@@ -640,7 +640,7 @@ TEST_F(CmdlineTest2, cwd) {
 }
 
 TEST_F(CmdlineTest2, import1) {
-    if(platform::detect() == platform::PlatformType::CYGWIN) {
+    if(platform::platform() == platform::PlatformType::CYGWIN) {
         return;
     }
 

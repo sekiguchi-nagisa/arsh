@@ -20,6 +20,8 @@
 namespace ydsh {
 namespace platform {
 
+// for platform detection
+
 #define EACH_PLATFORM_TYPE(OP) \
     OP(UNKNOWN) /* unknown platform */\
     OP(LINUX) /* linux (not container) */\
@@ -45,14 +47,37 @@ inline bool isWindows(PlatformType type) {
 
 const char *toString(PlatformType c);
 
-PlatformType detect();
+PlatformType platform();
+
+bool containPlatform(const std::string &text, PlatformType type);
+
+// for processor architecture detection
+
+#define EACH_ARCH_TYPE(OP) \
+    OP(UNKNOWN, "unknown") \
+    OP(X86_64, "x64 | amd64 | x86-64") \
+    OP(AARCH64, "arm64 | a64")
+
+enum class ArchType : unsigned int {
+#define GEN_ENUM(E, S) E,
+    EACH_ARCH_TYPE(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(ArchType c);
+
+ArchType arch();
+
+bool containArch(const std::string &text, ArchType type);
 
 /**
  * if text contains platform constant, return true.
  * @param text
  * @return
  */
-bool contain(const std::string &text);
+inline bool contain(const std::string &text) {
+    return containPlatform(text, platform()) || containArch(text, arch());
+}
 
 } // namespace platform
 } // namespace ydsh
