@@ -248,6 +248,19 @@ TEST_F(DirectiveTest, ignored2) {
     ASSERT_FALSE(this->getDirective().isIgnoredPlatform());
 }
 
+TEST_F(DirectiveTest, ignored3) {
+    ASSERT_FALSE(this->getDirective().isIgnoredPlatform());
+
+#ifdef __x86_64__
+    printf("arch: x86_64\n");
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'x86-64')", true));
+#elif defined __aarch64__
+    printf("arch: aarch64\n");
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'arm64')", true));
+#endif
+    ASSERT_TRUE(this->getDirective().isIgnoredPlatform());
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

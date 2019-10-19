@@ -55,8 +55,8 @@ bool containPlatform(const std::string &text, PlatformType type);
 
 #define EACH_ARCH_TYPE(OP) \
     OP(UNKNOWN, "unknown") \
-    OP(X86_64, "x64 | amd64 | x86-64") \
-    OP(AARCH64, "arm64 | a64")
+    OP(X86_64, "x64|amd64|x86-64") \
+    OP(AARCH64, "arm64|a64")
 
 enum class ArchType : unsigned int {
 #define GEN_ENUM(E, S) E,
