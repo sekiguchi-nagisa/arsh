@@ -83,11 +83,20 @@ TEST_F(CmdlineTest, assert) {
 TEST_F(CmdlineTest, ast) {
     ASSERT_NO_FATAL_FAILURE( this->expectRegex(
             ds("--dump-ast", "-c", "[12, 32] is Array<Int>"), 0, "^### dump typed AST ###.*$"));
+
+    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
+            ds("--dump-ast", "-c", "23 / /"), 1, "", "^.+\\[semantic error\\].*$"));
+
+    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
+            ds("--dump-ast", "-c", "23 / "), 1, "", "^.+\\[syntax error\\].*$"));
 }
 
 TEST_F(CmdlineTest, uast) {
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(
             ds("--dump-untyped-ast", "-c", "12"), 0, "^### dump untyped AST ###.*$"));
+
+    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
+            ds("--dump-untyped-ast", "-c", "23 / "), 1, "", "^.+\\[syntax error\\].*$"));
 }
 
 TEST_F(CmdlineTest, cmd1) {

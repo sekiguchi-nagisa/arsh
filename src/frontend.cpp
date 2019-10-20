@@ -179,8 +179,7 @@ std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
         node = this->parser();
         if(this->parser.hasError()) {
             this->handleParseError(dsError);
-        }
-        if(this->uastDumper) {
+        } else if(this->uastDumper) {
             this->uastDumper(*node);
         }
     }
