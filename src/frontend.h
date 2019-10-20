@@ -113,7 +113,7 @@ private:
 
     std::unique_ptr<Node> tryToParse(DSError *dsError);
 
-    void tryToCheckType(std::unique_ptr<Node> &node);
+    bool tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError);
 
     /**
      * if module loading failed, throw TypeCheckError
@@ -121,7 +121,7 @@ private:
      * after call it, will be null
      * @return
      */
-    Status tryToCheckModule(std::unique_ptr<Node> &node);
+    Result<Status, std::unique_ptr<TypeCheckError>> tryToCheckModule(std::unique_ptr<Node> &node);
 
     /**
      *

@@ -186,16 +186,22 @@ std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
     return node;
 }
 
-void FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
+bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError) {
     if(this->mode == DS_EXEC_MODE_PARSE_ONLY) {
-        return;
+        return true;
     }
 
-    node = this->checker(this->prevType, std::move(node));
-    this->prevType = &node->getType();
+    try {
+        node = this->checker(this->prevType, std::move(node));
+        this->prevType = &node->getType();
 
-    if(this->astDumper) {
-        this->astDumper(*node);
+        if(this->astDumper) {
+            this->astDumper(*node);
+        }
+        return true;
+    } catch(const TypeCheckError &e) {
+        this->handleTypeError(e, dsError);
+        return false;
     }
 }
 
@@ -206,20 +212,23 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
         return {nullptr, IN_MODULE};
     }
 
-    // typecheck
-    try {
-        auto s = this->tryToCheckModule(node);
-        if(s != IN_MODULE) {
-            return {nullptr, s};
-        }
+    // load module
+    auto s = IN_MODULE;
+    auto ret = this->tryToCheckModule(node);
+    if(!ret) {
+        this->handleTypeError(*ret.asErr(), dsError);
+        return {nullptr, IN_MODULE};
+    }
+    s = ret.take();
+    if(s != IN_MODULE) {
+        return {nullptr, s};
+    }
 
-        this->tryToCheckType(node);
-    } catch(const TypeCheckError &e) {
-        this->handleTypeError(e, dsError);
+    // check type
+    if(!this->tryToCheckType(node, dsError)) {
         return {nullptr, IN_MODULE};
     }
 
-    auto s = IN_MODULE;
     if(node->is(NodeKind::Source) && static_cast<SourceNode&>(*node).isFirstAppear()) {
         s = EXIT_MODULE;
     }
@@ -244,14 +253,21 @@ void FrontEnd::teardownASTDump() {
     }
 }
 
-FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
+static ErrHolder<std::unique_ptr<TypeCheckError>> wrap(TypeCheckError &&e) {
+    auto ret = std::make_unique<TypeCheckError>();
+    *ret = std::move(e);
+    return Err(std::move(ret));
+}
+
+Result<FrontEnd::Status, std::unique_ptr<TypeCheckError>>
+FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     if(!node) {
         node = this->exitModule();
-        return IN_MODULE;
+        return Ok(IN_MODULE);
     }
 
     if(!node->is(NodeKind::Source)) {
-        return IN_MODULE;
+        return Ok(IN_MODULE);
     }
 
     auto &srcNode = static_cast<SourceNode&>(*node);
@@ -261,25 +277,28 @@ FrontEnd::Status FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     if(is<ModLoadingError>(ret)) {
         switch(get<ModLoadingError>(ret)) {
         case ModLoadingError::CIRCULAR:
-            RAISE_TC_ERROR(CircularMod, *srcNode.getPathNode(), modPath);
+            return wrap(createTCError<CircularMod>(*srcNode.getPathNode(), modPath));
         case ModLoadingError::NOT_OPEN:
-            RAISE_TC_ERROR(NotOpenMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno));
+            return wrap(createTCError<NotOpenMod>(
+                    *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
         case ModLoadingError::NOT_FOUND:
-            RAISE_TC_ERROR(NotFoundMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str());
+            return wrap(createTCError<NotFoundMod>(
+                    *srcNode.getPathNode(), srcNode.getPathStr().c_str()));
         }
     } else if(is<const char *>(ret)) {
         ByteBuffer buf;
         if(!readAll(filePtr, buf)) {
-            RAISE_TC_ERROR(NotOpenMod, *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno));
+            return wrap(createTCError<NotOpenMod>(
+                    *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
         }
         this->enterModule(get<const char*>(ret), std::move(buf),
                           std::unique_ptr<SourceNode>(static_cast<SourceNode *>(node.release())));
-        return ENTER_MODULE;
+        return Ok(ENTER_MODULE);
     } else if(is<ModType *>(ret)) {
         srcNode.setModType(*get<ModType *>(ret));
-        return IN_MODULE;
+        return Ok(IN_MODULE);
     }
-    return IN_MODULE;   // normally unreachable, due to suppress gcc warning
+    return Ok(IN_MODULE);   // normally unreachable, due to suppress gcc warning
 }
 
 void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf, std::unique_ptr<SourceNode> &&node) {

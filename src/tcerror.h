@@ -31,11 +31,13 @@ class TypeCheckError {
 private:
     Token token;
 
-    const char *kind;
+    const char *kind{nullptr};
 
     std::string message;
 
 public:
+    TypeCheckError() = default;
+
     TypeCheckError(Token token, const char *kind, const char *message) :
             token(token), kind(kind), message(message) { }
 
