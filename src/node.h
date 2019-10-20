@@ -2175,6 +2175,11 @@ private:
 
     bool nothing{false};
 
+    /**
+     * if true, ignore module not found error
+     */
+    bool optional{false};
+
     unsigned int modIndex{0};
 
     /**
@@ -2188,8 +2193,8 @@ private:
     unsigned int maxVarNum{0};
 
 public:
-    SourceNode(unsigned int startPos, StringNode *pathNode) :
-            Node(NodeKind::Source, {startPos, 1}), pathNode(pathNode) {
+    SourceNode(unsigned int startPos, StringNode *pathNode, bool optional) :
+            Node(NodeKind::Source, {startPos, 1}), pathNode(pathNode), optional(optional) {
         this->updateToken(pathNode->getToken());
     }
 
@@ -2234,6 +2239,10 @@ public:
 
     bool isNothing() const {
         return this->nothing;
+    }
+
+    bool isOptional() const {
+        return this->optional;
     }
 
     void setModIndex(unsigned int index) {

@@ -438,13 +438,15 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         }
         return std::unique_ptr<Node>(JumpNode::newReturn(token, exprNode.release()));
     }
-    case SOURCE: {
+    case SOURCE:
+    case SOURCE_OPT: {
+        bool optional = CUR_KIND() == SOURCE_OPT;
         unsigned int startPos = START_POS();
-        this->expect(SOURCE);   // always success
+        this->consume();   // always success
         auto pathNode = TRY(this->parse_cmdArgPart(true, yycEXPR));
         this->lexer->popLexerMode();
-        auto node = std::make_unique<SourceNode>(startPos, pathNode.release());
-        if(!HAS_NL() && CUR_KIND() == AS) {
+        auto node = std::make_unique<SourceNode>(startPos, pathNode.release(), optional);
+        if(!optional && !HAS_NL() && CUR_KIND() == AS) {
             this->expectAndChangeMode(AS, yycNAME); // always success
             Token token = TRY(this->expect(IDENTIFIER));
             node->setName(token, this->lexer->toName(token));

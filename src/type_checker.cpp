@@ -1468,6 +1468,10 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
         handle = pair.asOk();
     }
     if(handle == nullptr) {
+        if(!node.getModType()) {    // optional module import
+            node.setType(this->symbolTable.get(TYPE::Void));
+            return;
+        }
         handle = this->symbolTable.lookupModHandle(*node.getModType());
         assert(handle != nullptr);
     }

@@ -83,7 +83,8 @@ __cmd() {
 
                            'function', 'interface', 'alias', 'assert',
                            'break', 'continue', 'export-env', 'import-env',
-                           'let', 'return', 'source', 'var', ';', '!', '+', '-', 'throw', 'coproc'])
+                           'let', 'return', 'source', 'source!',
+                           'var', ';', '!', '+', '-', 'throw', 'coproc'])
     }
 }
 
@@ -195,12 +196,16 @@ $assertArray(new [String](), $(complete 'import-env home '))
 $assertArray(new [String](), $(complete 'assert (ls) : "de" '))
 
 $assertArray($(files $CONFIG_DIR/module ~/.ydsh/module $SCRIPT_DIR), $(complete 'source '))
+$assertArray($(files $CONFIG_DIR/module ~/.ydsh/module $SCRIPT_DIR), $(complete 'source! '))
 $assertArray($(file '/bin' | grep '^l'), $(complete 'source /bin/l'))
+$assertArray($(file '/bin' | grep '^l'), $(complete 'source! /bin/l'))
 $assertArray($(file ~), $(complete 'source ~/'))
+$assertArray($(file ~), $(complete 'source! ~/'))
 if !$OSTYPE.startsWith("CYGWIN") {
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete 'source ~' | grep '~root')"
 }
 $assertArray(new [String](), $(complete 'source \~root'))
+$assertArray(new [String](), $(complete 'source! \~root'))
 
 # complete expected token
 $assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++ '))
@@ -210,9 +215,10 @@ $assertArray([";"], $(complete '(ls) '))
 
 # complete keyword
 $assertArray(["{"], $(complete '{'))
-$assertArray(["source"], $(complete 'sour'))
-$assertArray(["source"], $(complete 'source'))
+$assertArray(["source", "source!"], $(complete 'sour'))
+$assertArray(["source", "source!"], $(complete 'source'))
 $assertArray(["import-env"], $(complete 'import-e'))
+$assertArray(["assert"], $(complete 'asser'))
 
 # complete empty token
 $assertEmptyComp('for(var i = 0; $i < 23; $i++')

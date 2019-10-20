@@ -999,7 +999,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
             } else if(this->isErrorKind(TOKEN_MISMATCHED)) {
                 LOG(DUMP_CONSOLE, "expected: %s", toString(this->parser.getError().getExpectedTokens().back()));
 
-                if(kind == SOURCE && this->foundExpected(CMD_ARG_PART) && this->afterTyping()) {
+                if((kind == SOURCE || kind == SOURCE_OPT) && this->foundExpected(CMD_ARG_PART) && this->afterTyping()) {
                     return this->createModNameCompleter(CompType::NONE);
                 }
 

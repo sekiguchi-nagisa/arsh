@@ -271,6 +271,7 @@ FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     }
 
     auto &srcNode = static_cast<SourceNode&>(*node);
+    bool optional = srcNode.isOptional();
     const char *modPath = srcNode.getPathStr().c_str();
     FilePtr filePtr;
     auto ret = this->getSymbolTable().tryToLoadModule(this->getCurScriptDir().c_str(), modPath, filePtr);
@@ -282,6 +283,9 @@ FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
             return wrap(createTCError<NotOpenMod>(
                     *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
         case ModLoadingError::NOT_FOUND:
+            if(optional) {
+                return Ok(IN_MODULE);
+            }
             return wrap(createTCError<NotFoundMod>(
                     *srcNode.getPathNode(), srcNode.getPathStr().c_str()));
         }

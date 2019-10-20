@@ -1199,6 +1199,7 @@ void SourceNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(modType);
     DUMP_PRIM(firstAppear);
     DUMP_PRIM(nothing);
+    DUMP_PRIM(optional);
     DUMP_PRIM(modIndex);
     DUMP_PRIM(index);
     DUMP_PRIM(maxVarNum);

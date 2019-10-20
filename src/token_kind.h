@@ -46,6 +46,7 @@
     TOKEN(NEW                                , "new") \
     TOKEN(RETURN                             , "return") \
     TOKEN(SOURCE                             , "source") \
+    TOKEN(SOURCE_OPT                         , "source!") \
     TOKEN(TRY                                , "try") \
     TOKEN(THROW                              , "throw") \
     TOKEN(VAR                                , "var") \
@@ -273,6 +274,7 @@
     OP(IMPORT_ENV) \
     OP(RETURN) \
     OP(SOURCE) \
+    OP(SOURCE_OPT) \
     OP(LINE_END) \
     EACH_LA_varDecl(OP) \
     EACH_LA_expression(OP)
