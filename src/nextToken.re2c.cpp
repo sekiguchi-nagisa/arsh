@@ -150,7 +150,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "new"             { MODE(EXPR); RET(NEW); }
       <STMT> "return"          { RET(RETURN); }
       <STMT> "source"          { MODE(EXPR); PUSH_MODE(CMD); RET(SOURCE); }
-      <STMT> "source!"          { MODE(EXPR); PUSH_MODE(CMD); RET(SOURCE_OPT); }
+      <STMT> "source!"         { MODE(EXPR); PUSH_MODE(CMD); RET(SOURCE_OPT); }
       <STMT> "try"             { RET(TRY); }
       <STMT> "throw"           { RET(THROW); }
       <STMT> "var"             { MODE(NAME); RET(VAR); }
