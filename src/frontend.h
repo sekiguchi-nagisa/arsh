@@ -135,17 +135,17 @@ private:
     std::unique_ptr<SourceNode> exitModule();
 
     // for error reporting
-    DSError handleError(DSErrorKind type, const char *errorKind,
-                        Token errorToken, const std::string &message) const;
+    void handleError(DSErrorKind type, const char *errorKind,
+            Token errorToken, const std::string &message, DSError *dsError) const;
 
-    DSError handleParseError() const {
+    void handleParseError(DSError *dsError) const {
         auto &e = this->parser.getError();
         Token errorToken = this->parser.getLexer()->shiftEOS(e.getErrorToken());
-        return this->handleError(DS_ERROR_KIND_PARSE_ERROR, e.getErrorKind(), errorToken, e.getMessage());
+        return this->handleError(DS_ERROR_KIND_PARSE_ERROR, e.getErrorKind(), errorToken, e.getMessage(), dsError);
     }
 
-    DSError handleTypeError(const TypeCheckError &e) const {
-        return this->handleError(DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage());
+    void handleTypeError(const TypeCheckError &e, DSError *dsError) const {
+        this->handleError(DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage(), dsError);
     }
 
     bool suppressError(const char *kind) const {

@@ -136,8 +136,8 @@ private:
     }
 };
 
-DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
-                              Token errorToken, const std::string &message) const {
+void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
+        Token errorToken, const std::string &message, DSError *dsError) const {
     if(!this->suppressError(errorKind)) {
 #ifdef FUZZING_BUILD_MODE
         bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
@@ -163,12 +163,14 @@ DSError FrontEnd::handleError(DSErrorKind type, const char *errorKind,
 
     unsigned int errorLineNum = this->getCurrentSourceInfo()->getLineNum(errorToken.pos);
     const char *sourceName = this->getCurrentSourceInfo()->getSourceName().c_str();
-    return {
-            .kind = type,
-            .fileName = strdup(sourceName),
-            .lineNum = errorLineNum,
-            .name = strdup(errorKind)
-    };
+    if(dsError) {
+        *dsError = {
+                .kind = type,
+                .fileName = strdup(sourceName),
+                .lineNum = errorLineNum,
+                .name = strdup(errorKind)
+        };
+    }
 }
 
 std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
@@ -176,12 +178,7 @@ std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
     if(this->parser) {
         node = this->parser();
         if(this->parser.hasError()) {
-            auto e = this->handleParseError();
-            if(dsError != nullptr) {
-                *dsError = e;
-            } else {
-                DSError_release(&e);
-            }
+            this->handleParseError(dsError);
         }
         if(this->uastDumper) {
             this->uastDumper(*node);
@@ -219,12 +216,7 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
 
         this->tryToCheckType(node);
     } catch(const TypeCheckError &e) {
-        auto ret = this->handleTypeError(e);
-        if(dsError != nullptr) {
-            *dsError = ret;
-        } else {
-            DSError_release(&ret);
-        }
+        this->handleTypeError(e, dsError);
         return {nullptr, IN_MODULE};
     }
 
