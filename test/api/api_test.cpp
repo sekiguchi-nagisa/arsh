@@ -318,9 +318,9 @@ TEST_F(APITest, module2) {
     DSError_release(&e);
 
     ret = invoke([&]{
-        return DSState_loadModule(this->state, "fhjreuhfurie", "hoge", DS_MOD_IGNORE_ENOENT, nullptr);
+        return DSState_loadModule(this->state, "fhjreuhfurie", nullptr, DS_MOD_IGNORE_ENOENT, nullptr);
     });
-    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 1, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED));
 }
 
 TEST_F(APITest, module3) {
@@ -341,6 +341,25 @@ TEST_F(APITest, module4) {
     std::string src = "assert $hoge.OK_LOADING";
     r = DSState_eval(this->state, "(string)", src.c_str(), src.size(), nullptr);
     ASSERT_EQ(0, r);
+}
+
+TEST_F(APITest, module5) {
+    auto fileName = this->createTempFile("target.ds", "source hoghreua");
+    DSError e;
+    int r = DSState_loadModule(this->state, fileName.c_str(), nullptr, DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
+    ASSERT_STREQ("NotFoundMod", e.name);
+    ASSERT_EQ(1, e.lineNum);
+    DSError_release(&e);
+
+    // check error message
+    auto ret = invoke([&]{
+        return DSState_loadModule(this->state, fileName.c_str(), nullptr,
+                DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, nullptr);
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ret, 1, WaitStatus::EXITED, "",
+                                         "^.+/target.ds:1: \\[semantic error\\] module not found: `hoghreua'.+$"));
 }
 
 struct Executor {

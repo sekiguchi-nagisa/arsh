@@ -34,7 +34,7 @@ static void loadRC(DSState *state, const char *rcfile) {
 
     DSError e{};
     int ret = DSState_loadModule(state, rcfile, nullptr, DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
-    if(e.kind != DS_ERROR_KIND_SUCCESS && strcmp(e.name, "NotFoundMod") != 0) {
+    if(e.kind != DS_ERROR_KIND_SUCCESS) {
         exit(ret);
     }
     DSError_release(&e);

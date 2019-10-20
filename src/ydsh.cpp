@@ -82,8 +82,7 @@ private:
 public:
     Compiler(const DSState &state, SymbolTable &symbolTable, Lexer &&lexer, unsigned short option) :
             frontEnd(getScriptDir(state, option), std::move(lexer), symbolTable, state.execMode,
-                    hasFlag(state.option, DS_OPTION_TOPLEVEL),
-                    state.dumpTarget, hasFlag(option, DS_MOD_IGNORE_ENOENT)),
+                    hasFlag(state.option, DS_OPTION_TOPLEVEL), state.dumpTarget),
             codegen(symbolTable, hasFlag(state.option, DS_OPTION_ASSERT)) {}
 
     unsigned int lineNum() const {
@@ -608,7 +607,8 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
 int DSState_loadModule(DSState *st, const char *fileName,
                        const char *varName, unsigned short option, DSError *e) {
     CompiledCode code;
-    std::string line = "source ";
+    std::string line = "source";
+    line += hasFlag(option, DS_MOD_IGNORE_ENOENT) ? "! " : " ";
     line += fileName;
     if(varName != nullptr) {
         line += " as ";

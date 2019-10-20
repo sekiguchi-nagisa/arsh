@@ -26,11 +26,11 @@
 namespace ydsh {
 
 FrontEnd::FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTable,
-                   DSExecMode mode, bool toplevel, const DumpTarget &target, bool ignore) :
+                   DSExecMode mode, bool toplevel, const DumpTarget &target) :
         scriptDir(scriptDir), lexer(std::move(lexer)), mode(mode),
         parser(this->lexer), checker(symbolTable, toplevel),
         uastDumper(target.files[DS_DUMP_KIND_UAST].get(), symbolTable),
-        astDumper(target.files[DS_DUMP_KIND_AST].get(), symbolTable), ignoreNotFoundMod(ignore) {
+        astDumper(target.files[DS_DUMP_KIND_AST].get(), symbolTable) {
 }
 
 #define EACH_TERM_COLOR(C) \
@@ -138,27 +138,25 @@ private:
 
 void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
         Token errorToken, const std::string &message, DSError *dsError) const {
-    if(!this->suppressError(errorKind)) {
 #ifdef FUZZING_BUILD_MODE
-        bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
-        FilePtr file(ignore ? fopen("/dev/null", "w") : fdopen(dup(STDERR_FILENO), "w"));
-        ErrorReporter stream(file.get());
+    bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
+    FilePtr file(ignore ? fopen("/dev/null", "w") : fdopen(dup(STDERR_FILENO), "w"));
+    ErrorReporter stream(file.get());
 #else
-        ErrorReporter stream(stderr);
+    ErrorReporter stream(stderr);
 #endif
 
-        /**
-         * show error message
-         */
-        stream(*this->parser.getLexer(),
-                   type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
-                   errorToken, TermColor::Magenta, message.c_str());
+    /**
+     * show error message
+     */
+    stream(*this->parser.getLexer(),
+           type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
+           errorToken, TermColor::Magenta, message.c_str());
 
-        for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
-            Token token = this->contexts[i].sourceNode->getPathNode()->getToken();
-            auto &lex = i > 0 ? this->contexts[i - 1].lexer : this->lexer;
-            stream(lex, "note", token, TermColor::Blue, "at module import");
-        }
+    for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
+        Token token = this->contexts[i].sourceNode->getPathNode()->getToken();
+        auto &lex = i > 0 ? this->contexts[i - 1].lexer : this->lexer;
+        stream(lex, "note", token, TermColor::Blue, "at module import");
     }
 
     unsigned int errorLineNum = this->getCurrentSourceInfo()->getLineNum(errorToken.pos);

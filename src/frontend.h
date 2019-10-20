@@ -70,11 +70,9 @@ private:
     NodeDumper uastDumper;
     NodeDumper astDumper;
 
-    bool ignoreNotFoundMod; // ignore 'NotFoundMod' error
-
 public:
     FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTable,
-             DSExecMode mode, bool toplevel, const DumpTarget &target, bool ignore);
+             DSExecMode mode, bool toplevel, const DumpTarget &target);
 
     ~FrontEnd() {
         this->getSymbolTable().clear();
@@ -146,10 +144,6 @@ private:
 
     void handleTypeError(const TypeCheckError &e, DSError *dsError) const {
         this->handleError(DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage(), dsError);
-    }
-
-    bool suppressError(const char *kind) const {
-        return this->ignoreNotFoundMod && strcmp(kind, NotFoundMod::kind) == 0;
     }
 };
 
