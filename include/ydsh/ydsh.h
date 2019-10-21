@@ -262,8 +262,6 @@ int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
  * not null.
  * @param fileName
  * not null
- * @param varName
- * if null, treat as globally imported module.
  * @param option
  * @param e
  * may be null
@@ -272,8 +270,7 @@ int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  * if fileName is already loaded module, return always 0 and do nothing.
  */
-int DSState_loadModule(DSState *st, const char *fileName,
-                       const char *varName, unsigned short option, DSError *e);
+int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e);
 
 /**
  * execute command. if not DS_EXEC_MODE_NORMAL, do nothing (return always 0)
