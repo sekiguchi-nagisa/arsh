@@ -211,13 +211,12 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
     }
 
     // load module
-    auto s = IN_MODULE;
     auto ret = this->tryToCheckModule(node);
     if(!ret) {
         this->handleTypeError(*ret.asErr(), dsError);
         return {nullptr, IN_MODULE};
     }
-    s = ret.take();
+    auto s = ret.take();
     if(s != IN_MODULE) {
         return {nullptr, s};
     }

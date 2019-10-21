@@ -604,11 +604,29 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     return evalScript(*st, Lexer(sourceName, std::move(buf)), e);
 }
 
+static void appendAsEscaped(std::string &line, const char *path) {  //FIXME: escape newline
+    while(*path) {
+        int ch = *(path++);
+        switch(ch) {
+        case ' ': case '\t': case '\r': case '\n':
+        case '\\': case ';': case '\'': case '"':
+        case '`': case '|': case '&': case '<':
+        case '>': case '(': case ')': case '$':
+        case '#':
+            line +='\\';
+            break;
+        default:
+            break;
+        }
+        line += ch;
+    }
+}
+
 int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e) {
     CompiledCode code;
     std::string line = "source";
     line += hasFlag(option, DS_MOD_IGNORE_ENOENT) ? "! " : " ";
-    line += fileName;
+    appendAsEscaped(line, fileName);
     st->lineNum = 0;
     Lexer lexer("ydsh", line.c_str(), line.size());
     lexer.setLineNum(st->lineNum);
