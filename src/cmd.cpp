@@ -1007,7 +1007,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
             skipCount = isSpace(ch) ? 2 : 1;
             continue;
         }
-        strBuf += ch;
+        strBuf += static_cast<char>(ch);
     }
 
     // remove last spaces

@@ -48,7 +48,7 @@ static std::string escape(const char *str, EscapeOp op) {
         int ch = *str;
         if(isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
             buf += '\\';
-            buf += ch;
+            buf += static_cast<char>(ch);
             str++;
         }
     }
@@ -93,7 +93,7 @@ static std::string escape(const char *str, EscapeOp op) {
         if(found) {
             buf += '\\';
         }
-        buf += ch;
+        buf += static_cast<char>(ch);
     }
     return buf;
 }
@@ -274,7 +274,7 @@ static std::vector<std::string> computePathList(const char *pathVal) {
         if(ch == ':') {
             result.emplace_back();
         } else {
-            result.back() += ch;
+            result.back() += static_cast<char>(ch);
         }
     }
 

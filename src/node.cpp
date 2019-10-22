@@ -1473,7 +1473,7 @@ void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *co
 }
 
 void NodeDumper::append(int ch) {
-    this->bufs.back().value += ch;
+    this->bufs.back().value += static_cast<char>(ch);
 }
 
 void NodeDumper::append(const char *str) {

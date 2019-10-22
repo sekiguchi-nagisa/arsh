@@ -71,7 +71,7 @@ const char *FilePathCache::searchPath(const char *cmdName, flag8_t option) {
         if(ch == '\0') {
             stop = true;
         } else if(ch != ':') {
-            resolvedPath += ch;
+            resolvedPath += static_cast<char>(ch);
             continue;
         }
         if(resolvedPath.empty()) {
