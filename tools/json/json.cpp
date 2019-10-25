@@ -239,7 +239,7 @@ struct Serializer {
         this->leave('}');
     }
 
-    void enter(int ch) {
+    void enter(char ch) {
         this->str += ch;
         if(this->tab > 0) {
             this->str += '\n';
@@ -247,7 +247,7 @@ struct Serializer {
         this->level++;
     }
 
-    void leave(int ch) {
+    void leave(char ch) {
         if(this->tab > 0) {
             this->str += '\n';
         }

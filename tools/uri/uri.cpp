@@ -81,7 +81,7 @@ std::string URI::encode(const char *begin, const char *end) {
             snprintf(buf, 16, "%02X", ch);
             value += buf;
         } else {
-            value += ch;
+            value += static_cast<char>(ch);
         }
     }
     return value;
@@ -92,7 +92,7 @@ std::string URI::decode(const char *begin, const char *end) {
     for(; begin != end; ++begin) {
         int ch = *begin;
         if(ch != '%') {
-            value += ch;
+            value += static_cast<char>(ch);
             continue;
         }
 
@@ -102,7 +102,7 @@ std::string URI::decode(const char *begin, const char *end) {
             int v = 16 * hexToNum(ch1) + hexToNum(ch2);
             value += (char) v;
         } else {
-            value += ch;
+            value += static_cast<char>(ch);
         }
     }
     return value;

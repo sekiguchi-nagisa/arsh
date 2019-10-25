@@ -618,7 +618,7 @@ static void appendAsEscaped(std::string &line, const char *path) {  //FIXME: esc
         default:
             break;
         }
-        line += ch;
+        line += static_cast<char>(ch);
     }
 }
 

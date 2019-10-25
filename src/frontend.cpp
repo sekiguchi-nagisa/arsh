@@ -251,9 +251,7 @@ void FrontEnd::teardownASTDump() {
 }
 
 static ErrHolder<std::unique_ptr<TypeCheckError>> wrap(TypeCheckError &&e) {
-    auto ret = std::make_unique<TypeCheckError>();
-    *ret = std::move(e);
-    return Err(std::move(ret));
+    return Err(std::make_unique<TypeCheckError>(std::move(e)));
 }
 
 Result<FrontEnd::Status, std::unique_ptr<TypeCheckError>>

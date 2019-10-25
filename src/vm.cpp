@@ -292,7 +292,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
                 skipCount = isSpace(ch) ? 2 : 1;
                 continue;
             }
-            str += ch;
+            str += static_cast<char>(ch);
         }
     }
 

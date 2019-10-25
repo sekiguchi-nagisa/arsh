@@ -53,7 +53,7 @@ static std::string escape(const char *str) {
         if(ch == '\\' || ch == '"') {
             value += '\\';
         }
-        value += ch;
+        value += static_cast<char>(ch);
     }
     value += '"';
     return value;

@@ -167,7 +167,7 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
                 break;
             }
         }
-        out += ch;
+        out += static_cast<char>(ch);
     }
     return true;
 }
@@ -196,7 +196,7 @@ std::string Lexer::doubleElementToString(Token token) const {
                 break;
             }
         }
-        str += ch;
+        str += static_cast<char>(ch);
     }
     return str;
 }
@@ -220,7 +220,7 @@ std::string Lexer::toCmdArg(Token token) const {
                 break;
             }
         }
-        str += ch;
+        str += static_cast<char>(ch);
     }
     return str;
 }
@@ -241,7 +241,7 @@ std::string Lexer::toName(Token token) const {
         case '[':
             continue;
         default:
-            name += ch;
+            name += static_cast<char>(ch);
             break;
         }
     }
