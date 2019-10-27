@@ -540,10 +540,10 @@ bool SymbolTable::setAlias(const char *alias, DSType &targetType) {
 }
 
 std::string SymbolTable::toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) const {
-    int elementSize = elementTypes.size();
+    unsigned int elementSize = elementTypes.size();
     std::string reifiedTypeName(name);
     reifiedTypeName += "<";
-    for(int i = 0; i < elementSize; i++) {
+    for(unsigned int i = 0; i < elementSize; i++) {
         if(i > 0) {
             reifiedTypeName += ",";
         }
@@ -554,12 +554,12 @@ std::string SymbolTable::toReifiedTypeName(const std::string &name, const std::v
 }
 
 std::string SymbolTable::toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const {
-    int paramSize = paramTypes.size();
+    unsigned int paramSize = paramTypes.size();
     std::string funcTypeName("Func<");
     funcTypeName += this->getTypeName(*returnType);
     if(paramSize > 0) {
         funcTypeName += ",[";
-        for(int i = 0; i < paramSize; i++) {
+        for(unsigned int i = 0; i < paramSize; i++) {
             if(i > 0) {
                 funcTypeName += ",";
             }
