@@ -202,20 +202,17 @@ matrix:
             - ninja-build
       env: CXX_BIN=clang++-8 BUILD_TYPE=release
 
-    # clang 8.0 (Release build)
+    # clang (Release build), ARM64
     - addons:
         apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-xenial-8
           packages:
-            - g++-5
-            - clang-8
+            - g++
+            - clang
             - ninja-build
             - libpcre3-dev
             - libtool
       arch: arm64
-      env: CXX_BIN=clang++-8 BUILD_TYPE=release
+      env: CXX_BIN=clang++ BUILD_TYPE=release
 
 #    # clang 6.0 with LTO
 #    - compiler: clang
