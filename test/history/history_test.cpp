@@ -94,6 +94,8 @@ private:
     }
 };
 
+#define DS_HISTFILESIZE_LIMIT   ((unsigned int) 4096)
+
 TEST_F(HistoryTest, add) {
     this->setHistSize(2);
     this->addHistory("aaa");

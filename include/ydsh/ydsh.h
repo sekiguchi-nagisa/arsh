@@ -340,8 +340,6 @@ typedef enum {
 unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
 
 /* for line editing (history, prompt) */
-#define DS_HISTSIZE_LIMIT       ((unsigned int) 4096)
-#define DS_HISTFILESIZE_LIMIT   ((unsigned int) 4096)
 
 typedef enum {
     DS_EDIT_HIST_SIZE,    // current history buffer size
