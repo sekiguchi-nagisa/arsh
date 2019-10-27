@@ -205,6 +205,8 @@ matrix:
     # clang (Release build), ARM64
     - addons:
         apt:
+          sources:
+            - ubuntu-toolchain-r-test
           packages:
             - g++
             - clang
