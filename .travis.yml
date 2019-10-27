@@ -214,6 +214,7 @@ matrix:
             - libpcre3-dev
             - libtool
       arch: arm64
+      dist: bionic
       env: CXX_BIN=clang++ BUILD_TYPE=release
 
 #    # clang 6.0 with LTO
