@@ -22,14 +22,14 @@
 #include <cstring>
 #include <cerrno>
 
-#define __FILE_NAME__ (strrchr(__FILE__, '/') != nullptr ? ((const char *)strrchr(__FILE__, '/') + 1) : __FILE__)
+#define __BASE_FILENAME__ (strrchr(__FILE__, '/') != nullptr ? ((const char *)strrchr(__FILE__, '/') + 1) : __FILE__)
 
 /**
  * report error and abort.
  */
 #define fatal(fmt, ...) \
     do {\
-        fprintf(stderr, "%s:%d: [fatal error] " fmt, __FILE_NAME__, __LINE__, ## __VA_ARGS__);\
+        fprintf(stderr, "%s:%d: [fatal error] " fmt, __BASE_FILENAME__, __LINE__, ## __VA_ARGS__);\
         abort();\
     } while(false)
 
