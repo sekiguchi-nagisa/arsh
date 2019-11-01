@@ -24,6 +24,7 @@
 #include <misc/fatal.h>
 
 #include <signals.h>
+#include "../platform/platform.h"
 
 using namespace ydsh;
 
@@ -104,7 +105,15 @@ static void showSignals(std::ostream &stream) {
     stream << std::endl;
 }
 
+static void showPlat(std::ostream &stream) {
+    stream << "+++++  platform info  +++++" << std::endl;
+    stream << format << "platform" << " => " << platform::toString(platform::platform()) << std::endl;
+    stream << format << "arch" << " => " << platform::toString(platform::arch()) << std::endl;
+    stream << std::endl;
+}
+
 static void showInfo(std::ostream &stream) {
+    showPlat(stream);
     showPIDs(stream);
     showPGroup(stream);
     showSignals(stream);
