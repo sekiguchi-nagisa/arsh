@@ -250,7 +250,7 @@ private:
 
 public:
     template <typename R>
-    static constexpr auto TAG = TypeTag<R, T...>::value;
+    static constexpr int TAG = TypeTag<R, T...>::value;
 
     Union() noexcept : tag_(-1) {}
 
