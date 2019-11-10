@@ -148,21 +148,21 @@ static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError, unsigned 
     return evalCode(state, code, dsError);
 }
 
-static void bindVariable(DSState *state, const char *varName, DSValue &&value, FieldAttribute attribute) {
-    auto handle = state->symbolTable.newHandle(varName, *value->getType(), attribute);
+static void bindVariable(DSState &state, const char *varName, DSValue &&value, FieldAttribute attribute) {
+    auto handle = state.symbolTable.newHandle(varName, *value->getType(), attribute);
     assert(static_cast<bool>(handle));
-    state->setGlobal(handle.asOk()->getIndex(), std::move(value));
+    state.setGlobal(handle.asOk()->getIndex(), std::move(value));
 }
 
-static void bindVariable(DSState *state, const char *varName, DSValue &&value) {
+static void bindVariable(DSState &state, const char *varName, DSValue &&value) {
     bindVariable(state, varName, std::move(value), FieldAttribute::READ_ONLY);
 }
 
-static void bindVariable(DSState *state, const char *varName, const DSValue &value) {
+static void bindVariable(DSState &state, const char *varName, const DSValue &value) {
     bindVariable(state, varName, DSValue(value));
 }
 
-static void initBuiltinVar(DSState *state) {
+static void initBuiltinVar(DSState &state) {
     // set builtin variables internally used
 
 #define XSTR(V) #V
@@ -172,7 +172,7 @@ static void initBuiltinVar(DSState *state) {
      * must be String_Object
      */
     bindVariable(state, "YDSH_VERSION", DSValue::create<String_Object>(
-            state->symbolTable.get(TYPE::String),
+            state.symbolTable.get(TYPE::String),
             STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "." STR(X_INFO_PATCH_VERSION)));
 #undef XSTR
 #undef STR
@@ -181,97 +181,97 @@ static void initBuiltinVar(DSState *state) {
      * default variable for read command.
      * must be String_Object
      */
-    bindVariable(state, "REPLY", DSValue(state->emptyStrObj), FieldAttribute());
+    bindVariable(state, "REPLY", DSValue(state.emptyStrObj), FieldAttribute());
 
-    std::vector<DSType *> types = {&state->symbolTable.get(TYPE::String), &state->symbolTable.get(TYPE::String)};
+    std::vector<DSType *> types = {&state.symbolTable.get(TYPE::String), &state.symbolTable.get(TYPE::String)};
 
     /**
      * holding read variable.
      * must be Map_Object
      */
     bindVariable(state, "reply", DSValue::create<Map_Object>(
-            *state->symbolTable.createReifiedType(state->symbolTable.getMapTemplate(), std::move(types)).take()));
+            *state.symbolTable.createReifiedType(state.symbolTable.getMapTemplate(), std::move(types)).take()));
 
     /**
      * process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), getpid()));
+    bindVariable(state, "PID", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), getpid()));
 
     /**
      * parent process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PPID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), getppid()));
+    bindVariable(state, "PPID", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), getppid()));
 
     /**
      * must be Long_Object.
      */
-    bindVariable(state, "SECONDS", DSValue::create<Long_Object>(state->symbolTable.get(TYPE::Int64), 0), FieldAttribute::SECONDS);
+    bindVariable(state, "SECONDS", DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Int64), 0), FieldAttribute::SECONDS);
 
     /**
      * for internal field splitting.
      * must be String_Object.
      */
-    bindVariable(state, "IFS", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), " \t\n"), FieldAttribute());
+    bindVariable(state, "IFS", DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), " \t\n"), FieldAttribute());
 
     /**
      * must be String_Object
      */
     std::string str = ".";
-    getWorkingDir(*state, false, str);
-    bindVariable(state, "SCRIPT_DIR", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), std::move(str)));
+    getWorkingDir(state, false, str);
+    bindVariable(state, "SCRIPT_DIR", DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str)));
 
     /**
      * maintain completion result.
      * must be Array_Object
      */
-    bindVariable(state, "COMPREPLY", DSValue::create<Array_Object>(state->symbolTable.get(TYPE::StringArray)));
+    bindVariable(state, "COMPREPLY", DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray)));
 
     /**
      * contains latest executed pipeline status.
      * must be Array_Object
      */
     bindVariable(state, "PIPESTATUS", DSValue::create<Array_Object>(
-            *state->symbolTable.createReifiedType(
-                    state->symbolTable.getArrayTemplate(),
-                    {&state->symbolTable.get(TYPE::Int32)}).take()));
+            *state.symbolTable.createReifiedType(
+                    state.symbolTable.getArrayTemplate(),
+                    {&state.symbolTable.get(TYPE::Int32)}).take()));
 
     /**
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
-    bindVariable(state, "?", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0), FieldAttribute());
+    bindVariable(state, "?", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), 0), FieldAttribute());
 
     /**
      * process id of root shell. ($$)
      * must be Int_Object
      */
-    bindVariable(state, "$", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), getpid()));
+    bindVariable(state, "$", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), getpid()));
 
     /**
      * contains script argument(exclude script name). ($@)
      * must be Array_Object
      */
-    bindVariable(state, "@", DSValue::create<Array_Object>(state->symbolTable.get(TYPE::StringArray)));
+    bindVariable(state, "@", DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray)));
 
     /**
      * contains size of argument. ($#)
      * must be Int_Object
      */
-    bindVariable(state, "#", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0));
+    bindVariable(state, "#", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), 0));
 
     /**
      * represent shell or shell script name.
      * must be String_Object
      */
-    bindVariable(state, "0", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), "ydsh"));
+    bindVariable(state, "0", DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), "ydsh"));
 
     /**
      * initialize positional parameter
      */
     for(unsigned int i = 0; i < 9; i++) {
-        bindVariable(state, std::to_string(i + 1).c_str(), state->emptyStrObj);
+        bindVariable(state, std::to_string(i + 1).c_str(), state.emptyStrObj);
     }
 
 
@@ -281,13 +281,13 @@ static void initBuiltinVar(DSState *state) {
      * uid of shell
      * must be Int_Object
      */
-    bindVariable(state, "UID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), getuid()));
+    bindVariable(state, "UID", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), getuid()));
 
     /**
      * euid of shell
      * must be Int_Object
      */
-    bindVariable(state, "EUID", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), geteuid()));
+    bindVariable(state, "EUID", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), geteuid()));
 
     struct utsname name{};
     if(uname(&name) == -1) {
@@ -298,52 +298,52 @@ static void initBuiltinVar(DSState *state) {
     /**
      * must be String_Object
      */
-    bindVariable(state, "OSTYPE", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), name.sysname));
+    bindVariable(state, "OSTYPE", DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), name.sysname));
 
     /**
      * must be String_Object
      */
-    bindVariable(state, "MACHTYPE", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), name.machine));
+    bindVariable(state, "MACHTYPE", DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), name.machine));
 
     /**
      * must be String_Object
      */
-    bindVariable(state, "CONFIG_DIR", DSValue::create<String_Object>(state->symbolTable.get(TYPE::String), SYSTEM_CONFIG_DIR));
+    bindVariable(state, "CONFIG_DIR", DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), SYSTEM_CONFIG_DIR));
 
     /**
      * dummy object for random number
      * must be Int_Object
      */
-    bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), 0),
+    bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), 0),
                  FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
 
     /**
      * dummy object for signal handler setting
      * must be DSObject
      */
-    bindVariable(state, "SIG", DSValue::create<DSObject>(state->symbolTable.get(TYPE::Signals)));
+    bindVariable(state, "SIG", DSValue::create<DSObject>(state.symbolTable.get(TYPE::Signals)));
 
     /**
      * must be UnixFD_Object
      */
-    bindVariable(state, VAR_STDIN, DSValue::create<UnixFD_Object>(state->symbolTable.get(TYPE::UnixFD), STDIN_FILENO));
+    bindVariable(state, VAR_STDIN, DSValue::create<UnixFD_Object>(state.symbolTable.get(TYPE::UnixFD), STDIN_FILENO));
 
     /**
      * must be UnixFD_Object
      */
-    bindVariable(state, VAR_STDOUT, DSValue::create<UnixFD_Object>(state->symbolTable.get(TYPE::UnixFD), STDOUT_FILENO));
+    bindVariable(state, VAR_STDOUT, DSValue::create<UnixFD_Object>(state.symbolTable.get(TYPE::UnixFD), STDOUT_FILENO));
 
     /**
      * must be UnixFD_Object
      */
-    bindVariable(state, VAR_STDERR, DSValue::create<UnixFD_Object>(state->symbolTable.get(TYPE::UnixFD), STDERR_FILENO));
+    bindVariable(state, VAR_STDERR, DSValue::create<UnixFD_Object>(state.symbolTable.get(TYPE::UnixFD), STDERR_FILENO));
 
     /**
      * must be Int_Object
      */
-    bindVariable(state, "ON_EXIT", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), TERM_ON_EXIT));
-    bindVariable(state, "ON_ERR", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), TERM_ON_ERR));
-    bindVariable(state, "ON_ASSERT", DSValue::create<Int_Object>(state->symbolTable.get(TYPE::Int32), TERM_ON_ASSERT));
+    bindVariable(state, "ON_EXIT", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), TERM_ON_EXIT));
+    bindVariable(state, "ON_ERR", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), TERM_ON_ERR));
+    bindVariable(state, "ON_ASSERT", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), TERM_ON_ASSERT));
 }
 
 static void loadEmbeddedScript(DSState *state) {
@@ -401,7 +401,7 @@ DSState *DSState_createWithMode(DSExecMode mode) {
     auto *ctx = new DSState();
 
     initEnv(*ctx);
-    initBuiltinVar(ctx);
+    initBuiltinVar(*ctx);
     loadEmbeddedScript(ctx);
 
     ctx->execMode = mode;
@@ -690,7 +690,6 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
 
     switch(op) {
     case DS_COMP_INVOKE: {
-        assert(value);
         if(value == nullptr || *value == nullptr || index == 0) {
             return 0;
         }
@@ -701,7 +700,9 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
         break;
     }
     case DS_COMP_GET:
-        assert(value);
+        if(value == nullptr) {
+            break;
+        }
         *value = nullptr;
         if(index < compreply->getValues().size()) {
             *value = typeAs<String_Object>(compreply->getValues()[index])->getValue();

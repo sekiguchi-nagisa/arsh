@@ -20,7 +20,6 @@
 #include <unordered_map>
 #include <tuple>
 
-#include <misc/hash.hpp>
 #include <misc/detect.hpp>
 #include "json.h"
 
