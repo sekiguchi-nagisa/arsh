@@ -14,10 +14,11 @@ function comp($a : String, $path : String) : Array<String> {
     let old = $PATH
     $PATH = $path
 
-    var r = $(complete $a)
-
-    $PATH = $old
-    return $r
+    return try {
+        $(complete $a)
+    } finally {
+        $PATH = $old
+    }
 }
 
 function escape($s : String) : String {
@@ -71,11 +72,7 @@ __cmd() {
     }
 
     # keywords
-    if(!$type) {
-        return 0;
-    }
-
-    case $type! {
+    case $type {
     '--expr' => $eachEcho(['new', '"', '$(', '>(', '<(', '(', '[', '{',
                            'do', 'for', 'if', 'case', 'try', 'while'])
     '--stmt' => $eachEcho(['new', '"', '$(', '>(', '<(', '(', '[', '{',
@@ -146,8 +143,7 @@ __file() {
         }
     }
 
-    if !$type { return 0; }
-    case $type! {
+    case $type {
     '--redir' => $eachEcho(['$(', '${', '<(', '>(', '"'])
     }
 }
