@@ -1500,7 +1500,7 @@ YDSH_METHOD array_reverse(RuntimeContext &ctx) {
     RET(LOCAL(0));
 }
 
-//!bind: function sort($this : Array<T0>) : Array<T0>
+//!bind: function sort($this : Array<T0>) : Array<T0> where T0 : _Value
 YDSH_METHOD array_sort(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_sort);
     auto *obj = typeAs<Array_Object>(LOCAL(0));

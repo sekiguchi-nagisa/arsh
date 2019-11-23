@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 4, $errorKind = 'UndefinedMethod', $status = 1)
+
+var s4 = [new Int!(), 34 as Int!, new Int!()]
+$s4.sort()
+assert $s4[0]! == 34
+assert !$s4[1]
+assert !$s4[2]

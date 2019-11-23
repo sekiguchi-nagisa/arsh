@@ -312,7 +312,7 @@ function copy($this : Array<T0>) : Array<T0>
 
 function reverse($this : Array<T0>) : Array<T0>
 
-function sort($this : Array<T0>) : Array<T0>
+function sort($this : Array<T0>) : Array<T0> where T0 : _Value
 
 function sortWith($this : Array<T0>, $comp : Func<Boolean,[T0,T0]>) : Array<T0>
 
