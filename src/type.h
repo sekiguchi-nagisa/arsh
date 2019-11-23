@@ -78,7 +78,7 @@ enum class TYPE : unsigned int {
      * for internal status reporting.
      * they are pseudo type, so must not use it from shell
      */
-            _InternalStatus,   // base type
+    _InternalStatus,   // base type
     _ShellExit,
     _AssertFail,
 };

@@ -873,7 +873,7 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
 
     std::unique_ptr<Element> element;
 
-    // parser function name
+    // parse function name
     switch(CUR_KIND()) {
     case IDENTIFIER: {
         Token token = TRY(this->expect(IDENTIFIER));
@@ -894,7 +894,7 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
     }
     }
 
-    // parser parameter decl
+    // parse parameter decl
     TRY(this->expect(LP));
     TRY(this->parse_params(element));
     TRY(this->expect(RP));
