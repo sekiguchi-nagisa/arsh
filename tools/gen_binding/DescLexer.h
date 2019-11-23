@@ -30,6 +30,7 @@
     OP(YDSH_METHOD)    /* YDSH_METHOD */\
     OP(YDSH_METHOD_DECL) /* YDSH_METHOD_DECL */\
     OP(RCTX)           /* RuntimeContext */\
+    OP(WHERE)          /* where */\
     OP(AND)            /* & */\
     OP(IDENTIFIER) \
     OP(TYPE_OPEN)      /* < */\

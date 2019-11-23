@@ -53,6 +53,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
       "YDSH_METHOD"          { RET(YDSH_METHOD); }
       "YDSH_METHOD_DECL"     { RET(YDSH_METHOD_DECL); }
       "RuntimeContext"       { RET(RCTX); }
+      "where"                { RET(WHERE); }
       IDENTIFIER             { RET(IDENTIFIER); }
       "<"                    { RET(TYPE_OPEN); }
       ">"                    { RET(TYPE_CLOSE); }

@@ -152,9 +152,20 @@ TypeOrError TypeDecoder::decode() {
 
 #define TRY2(E) ({ auto value = E; if(!value) { return false; } value.take(); })
 
+// FIXME: error reporting
 bool MethodHandle::init(SymbolTable &symbolTable, const NativeFuncInfo &info,
                         const std::vector<DSType *> *types) {
     TypeDecoder decoder(symbolTable, info.handleInfo, types);
+
+    // check type parameter constraint
+    const unsigned int constraintSize = decoder.decodeNum();
+    for(unsigned int i = 0; i < constraintSize; i++) {
+        auto *typeParam = TRY2(decoder.decode());
+        auto *reqType = TRY2(decoder.decode());
+        if(!reqType->isSameOrBaseTypeOf(*typeParam)) {
+            return false;
+        }
+    }
 
     auto *returnType = TRY2(decoder.decode());    // init return type
     const unsigned int paramSize = decoder.decodeNum();

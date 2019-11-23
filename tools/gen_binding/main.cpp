@@ -31,7 +31,7 @@ namespace {
 
 using namespace ydsh;
 
-HandleInfo toNum(unsigned int num) {
+HandleInfo fromNum(unsigned int num) {
     // check range
     if(num < 9) {
         auto info = (HandleInfo) (num + static_cast<int>(HandleInfo::P_N0));
@@ -194,6 +194,7 @@ public:
 private:
     static int getNum(const std::vector<HandleInfo> &infos, unsigned int &index);
     static bool isType(const std::vector<HandleInfo> &infos, unsigned int &index);
+    static bool isParamType(const std::vector<HandleInfo> &infos, unsigned int &index);
     static bool verifyHandleInfo(const std::vector<HandleInfo> &infos);
 };
 
@@ -243,6 +244,20 @@ bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned
 #undef GEN_CASE
 }
 
+bool HandleInfoSerializer::isParamType(const std::vector<HandleInfo> &infos, unsigned int &index) {
+    if(index < infos.size()) {
+        switch(infos[index++]) {
+#define GEN_CASE(ENUM) case HandleInfo::ENUM:
+        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
+#undef GEN_CASE
+            return true;
+        default:
+            return false;
+        }
+    }
+    return false;
+}
+
 int HandleInfoSerializer::getNum(const std::vector<HandleInfo> &infos, unsigned int &index) {
 #define GEN_CASE(ENUM) case HandleInfo::ENUM:
     if(index < infos.size()) {
@@ -266,6 +281,22 @@ int HandleInfoSerializer::getNum(const std::vector<HandleInfo> &infos, unsigned 
 
 bool HandleInfoSerializer::verifyHandleInfo(const std::vector<HandleInfo> &infos) {
     unsigned int index = 0;
+
+    /**
+     * check type constraints
+     */
+    int constraintSize = getNum(infos, index);
+    if(constraintSize < 0 || constraintSize > 8) {
+        return false;
+    }
+    for(int i = 0; i < constraintSize; i++) {
+        if(!isParamType(infos, index)) {
+            return false;
+        }
+        if(!isType(infos, index)) {
+            return false;
+        }
+    }
 
     /**
      * check return type
@@ -396,7 +427,7 @@ void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
     }
 
     typeTemp->serialize(s);
-    s.add(toNum(elementSize));
+    s.add(fromNum(elementSize));
     for(auto &tok : this->elements) {
         tok->serialize(s);
     }
@@ -468,11 +499,17 @@ public:
 void FuncTypeToken::serialize(HandleInfoSerializer &s) {
     this->typeTemp->serialize(s);
     this->returnType->serialize(s);
-    s.add(toNum(this->paramTypes.size()));
+    s.add(fromNum(this->paramTypes.size()));
     for(auto &tok : this->paramTypes) {
         tok->serialize(s);
     }
 }
+
+/**
+ * first: typeParam
+ * second: requiredType
+ */
+using TypeConstraint = std::pair<std::unique_ptr<TypeToken>, std::unique_ptr<TypeToken>>;
 
 class Element {
 protected:
@@ -491,6 +528,8 @@ protected:
      * if true, this function is operator
      */
     bool op;
+
+    std::vector<TypeConstraint> constraints;
 
     /**
      * owner type which this element belongs to
@@ -538,6 +577,14 @@ public:
         return this->func;
     }
 
+    void addConstraint(std::unique_ptr<TypeToken> &&typeParam, std::unique_ptr<TypeToken> &&req) {
+        this->constraints.emplace_back(std::move(typeParam), std::move(req));
+    }
+
+    const std::vector<TypeConstraint> &getConstraints() const {
+        return this->constraints;
+    }
+
     void addParam(std::string &&name, bool hasDefault, std::unique_ptr<TypeToken> &&type) {
         if(!this->ownerType) {  // treat first param type as receiver
             this->ownerType = std::move(type);
@@ -561,8 +608,13 @@ public:
 
     std::string toSerializedHandle() {
         HandleInfoSerializer s;
+        s.add(fromNum(this->constraints.size()));
+        for(auto &c : this->constraints) {
+            c.first->serialize(s);
+            c.second->serialize(s);
+        }
         this->returnType->serialize(s);
-        s.add(toNum(this->paramTypes.size() + 1));
+        s.add(fromNum(this->paramTypes.size() + 1));
         this->ownerType->serialize(s);
         for(const std::unique_ptr<TypeToken> &t : this->paramTypes) {
             t->serialize(s);
@@ -838,6 +890,16 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
     TRY(this->expect(COLON));
     element->setReturnType(TRY(this->parse_type()));
 
+    // parse constraints
+    if(CUR_KIND() == WHERE) {
+        do {
+            this->consume();
+            auto typeParam = TRY(this->parse_type());
+            TRY(this->expect(COLON));
+            auto reqType = TRY(this->parse_type());
+            element->addConstraint(std::move(typeParam), std::move(reqType));
+        } while(CUR_KIND() == COMMA);
+    }
     return element;
 }
 
@@ -1001,6 +1063,19 @@ std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elem
     return binds;
 }
 
+bool isDisallowType(HandleInfo info) {
+    const HandleInfo list[] = {
+            HandleInfo::Void,
+            HandleInfo::_Value
+    };
+    for(auto &e : list) {
+        if(e == info) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
     FILE *fp = fopen(outFileName, "w");
     if(fp == nullptr) {
@@ -1050,7 +1125,7 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
 
     // generate each native_type_info_t
     for(TypeBind *bind : binds) {
-        if(bind->name == "Void") {
+        if(isDisallowType(bind->info)) {
             continue;   // skip Void due to having no elements.
         }
 
