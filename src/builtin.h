@@ -1548,6 +1548,10 @@ YDSH_METHOD array_join(RuntimeContext &ctx) {
         if(count++ > 0) {
             ctx.toStrBuf.append(delim->getValue(), delim->size());
         }
+        if(e.isInvalid()) {
+            raiseError(ctx, TYPE::UnwrappingError, "invalid value");
+            RET_ERROR;
+        }
         if(!e->opStr(ctx)) {
             ctx.toStrBuf.clear();
             RET_ERROR;
