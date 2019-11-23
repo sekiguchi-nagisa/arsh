@@ -180,9 +180,8 @@ public:
             if(i > 0) {
                 str += ", ";
             }
-            str += "static_cast<char>(HandleInfo::";
+            str += "HandleInfo::";
             str += toTypeInfoName(this->infos[i]);
-            str += ")";
         }
         str += "}";
 
@@ -1014,7 +1013,7 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
 
     // generate NativeFuncInfo table
     OUT("static NativeFuncInfo infoTable[] = {\n");
-    OUT("    {nullptr, {0}, nullptr},\n");
+    OUT("    {nullptr, {}, nullptr},\n");
     for(TypeBind *bind : binds) {
         if(bind->initElement != nullptr) {
             OUT("    %s,\n", bind->initElement->emit().c_str());

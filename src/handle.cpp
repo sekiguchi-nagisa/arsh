@@ -57,25 +57,25 @@ void MethodHandle::addParamType(DSType &type) {
 class TypeDecoder {
 private:
     SymbolTable &symbolTable;
-    const char *pos;
+    const HandleInfo *cursor;
     const std::vector<DSType *> *types;
 
 public:
-    TypeDecoder(SymbolTable &pool, const char *pos, const std::vector<DSType *> *types) :
-            symbolTable(pool), pos(pos), types(types) {}
+    TypeDecoder(SymbolTable &pool, const HandleInfo *pos, const std::vector<DSType *> *types) :
+            symbolTable(pool), cursor(pos), types(types) {}
     ~TypeDecoder() = default;
 
     TypeOrError decode();
 
     unsigned int decodeNum() {
-        return static_cast<unsigned int>(*(this->pos++) - static_cast<int>(HandleInfo::P_N0));
+        return static_cast<unsigned int>(static_cast<int>(*(this->cursor++)) - static_cast<int>(HandleInfo::P_N0));
     }
 };
 
 #define TRY(E) ({ auto value = E; if(!value) { return value; } value.take(); })
 
 TypeOrError TypeDecoder::decode() {
-    switch(static_cast<HandleInfo>(*(this->pos++))) {
+    switch(*(this->cursor++)) {
 #define GEN_CASE(ENUM) case HandleInfo::ENUM: return Ok(&this->symbolTable.get(TYPE::ENUM));
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
