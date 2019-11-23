@@ -598,6 +598,10 @@ public:
         return this->actualFuncName.c_str();
     }
 
+    bool hasReturnValue() const {
+        return !this->returnType->isType(HandleInfo::Void);
+    }
+
     unsigned char toDefaultFlag() {
         unsigned char flag = 0;
         unsigned int size = this->paramNames.size();
@@ -620,6 +624,8 @@ public:
         str += this->getActualFuncName();
 //        str += ", ";
 //        str += std::to_string((int) this->toDefaultFlag());
+        str += ", ";
+        str += this->hasReturnValue() ? "true" : "false";
         str += "}";
         return str;
     }
@@ -1013,7 +1019,7 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
 
     // generate NativeFuncInfo table
     OUT("static NativeFuncInfo infoTable[] = {\n");
-    OUT("    {nullptr, {}, nullptr},\n");
+    OUT("    {nullptr, {}, nullptr, false},\n");
     for(TypeBind *bind : binds) {
         if(bind->initElement != nullptr) {
             OUT("    %s,\n", bind->initElement->emit().c_str());

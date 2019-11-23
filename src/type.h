@@ -271,12 +271,14 @@ struct NativeFuncInfo {
     /**
      * serialized function handle
      */
-    const HandleInfo handleInfo[24];
+    const HandleInfo handleInfo[30];
 
     /**
      * bool func(RuntimeContext &ctx)
      */
     const native_func_t func_ptr;
+
+    const bool hasRet;
 };
 
 struct native_type_info_t {
