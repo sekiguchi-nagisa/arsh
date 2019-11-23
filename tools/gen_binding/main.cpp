@@ -705,6 +705,18 @@ public:
         }
         str += ") : ";
         str += this->returnType->toString();
+
+        if(!this->constraints.empty()) {
+            str += " where ";
+            for(unsigned int i = 0; i < this->constraints.size(); i++) {
+                if(i > 0) {
+                    str += ", ";
+                }
+                str += this->constraints[i].first->toString();
+                str += " : ";
+                str += this->constraints[i].second->toString();
+            }
+        }
         return str;
     }
 };
