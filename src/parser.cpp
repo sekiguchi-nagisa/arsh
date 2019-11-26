@@ -233,7 +233,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
         reified->updateToken(token);
         return std::move(reified);
     }
-    return typeToken;
+    return std::move(typeToken);
 }
 
 std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
