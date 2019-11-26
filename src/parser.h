@@ -27,16 +27,6 @@
 
 namespace ydsh {
 
-struct TypeWrapper {
-    std::unique_ptr<TypeNode> typeNode;
-    Token token;
-
-    TypeWrapper(std::unique_ptr<TypeNode> &&typeNode, Token token) :
-            typeNode(std::move(typeNode)), token(token) {}
-
-    TypeWrapper(std::nullptr_t) : typeNode(), token() {}    //NOLINT
-};
-
 class ArgsWrapper {
 private:
     Token token;
@@ -146,14 +136,17 @@ protected:
     /**
      * not call it directory
      */
-    TypeWrapper parse_basicOrReifiedType(Token token);
+    std::unique_ptr<TypeNode> parse_basicOrReifiedType(Token token);
 
-    TypeWrapper parse_typeNameImpl();
+    std::unique_ptr<TypeNode> parse_typeNameImpl();
 
     /**
-     * not call NEXT_TOKEN, before call it.
+     * parse type
+     * @param enterTYPEMode
+     * if true, push lexer mode 'TYPE' and fetch next. after parsing, pop lexer mode and refetch
+     * @return
      */
-    std::unique_ptr<TypeNode> parse_typeName();
+    std::unique_ptr<TypeNode> parse_typeName(bool enterTYPEMode = true);
 
     /**
      * not call it directory
