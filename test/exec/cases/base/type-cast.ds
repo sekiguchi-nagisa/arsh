@@ -13,6 +13,8 @@ assert($b2 == 3)
 # to string
 var a3 = 12
 var b3 = $a3 as String
+assert $b3 is (String)
+assert $b3 is ((String))
 assert($b3 == "12")
 
 # cast

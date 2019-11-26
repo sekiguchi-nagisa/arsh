@@ -244,15 +244,24 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
     }
     case PTYPE_OPEN: {
         Token token = this->expect(PTYPE_OPEN);  // always success
-        auto reified = std::make_unique<ReifiedTypeNode>(new BaseTypeNode(token, TYPE_TUPLE));
-        reified->addElementTypeNode(TRY(this->parse_typeName(false)).release());
-        while(CUR_KIND() == TYPE_SEP) {
+        auto typeNode = TRY(this->parse_typeName(false));
+        if(CUR_KIND() == TYPE_SEP) {
+            auto reified = std::make_unique<ReifiedTypeNode>(new BaseTypeNode(token, TYPE_TUPLE));
+            reified->addElementTypeNode(typeNode.release());
+
             this->consume();
-            reified->addElementTypeNode(TRY(this->parse_typeName(false)).release());
+            if(CUR_KIND() != PTYPE_CLOSE) {
+                reified->addElementTypeNode(TRY(this->parse_typeName(false)).release());
+                while(CUR_KIND() == TYPE_SEP) {
+                    this->consume();
+                    reified->addElementTypeNode(TRY(this->parse_typeName(false)).release());
+                }
+            }
+            typeNode = std::move(reified);
         }
         token = TRY(this->expect(PTYPE_CLOSE));
-        reified->updateToken(token);
-        return std::move(reified);
+        typeNode->updateToken(token);
+        return typeNode;
     }
     case ATYPE_OPEN: {
         Token token = this->expect(ATYPE_OPEN);  // always success
