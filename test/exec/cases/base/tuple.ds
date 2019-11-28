@@ -7,6 +7,7 @@ $a._0 = 100
 assert($a._0 == 100)
 $a._1 = "world"
 assert($a._1 == "world")
+assert $a as String == "(100, world)"
 
 assert(! ($false,
 		3.14)._0
@@ -17,6 +18,7 @@ var b = ("hello",)
 assert($b._0 == "hello")
 assert $b is (String,)
 assert !($b is (String) )
+assert $b as String == "(hello,)"
 
 
 var c = ($true,

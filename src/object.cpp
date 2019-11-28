@@ -395,6 +395,9 @@ std::string Tuple_Object::toString() const {
         }
         str += this->fieldTable[i]->toString();
     }
+    if(size == 1) {
+        str += ",";
+    }
     str += ")";
     return str;
 }
@@ -411,6 +414,9 @@ bool Tuple_Object::opStr(DSState &state) const {
         if(!ret.isInvalid()) {
             state.toStrBuf += typeAs<String_Object>(ret)->getValue();
         }
+    }
+    if(size == 1) {
+        state.toStrBuf += ",";
     }
     state.toStrBuf += ")";
     return true;
