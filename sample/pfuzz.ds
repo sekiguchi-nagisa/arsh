@@ -2,4 +2,9 @@
 
 var bin = $@.shift()
 
-exec env YDSH_SUPPRESS_COMPILE_ERROR=on $bin -jobs=4 -workers=4 $@
+import-env FUZZ_JOBS : 4
+
+var N = $FUZZ_JOBS.toInt32() ?? 4
+
+
+exec env YDSH_SUPPRESS_COMPILE_ERROR=on $bin -jobs=$N -workers=$N $@
