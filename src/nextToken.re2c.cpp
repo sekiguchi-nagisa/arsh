@@ -27,25 +27,11 @@
 
 #define ERROR() do { RET(INVALID); } while(false)
 
-#define POP_MODE() \
-    do {\
-        if(this->modeStack.size() > 1) {\
-            this->modeStack.pop_back();\
-        } else {\
-            ERROR();\
-        }\
-    } while(false)
+#define POP_MODE() this->popLexerMode()
 
-#define PUSH_MODE(m) this->modeStack.push_back(yyc ## m)
+#define PUSH_MODE(m) this->pushLexerMode(yyc ## m)
 
-#define MODE(m) \
-    do {\
-        if(!this->modeStack.empty()) {\
-            this->modeStack.back() = yyc ## m;\
-        } else {\
-            ERROR();\
-        }\
-    } while(false)
+#define MODE(m) this->setLexerMode(yyc ## m)
 
 /*
  * update line number table
@@ -66,7 +52,7 @@
 
 
 
-#define YYGETCONDITION() this->modeStack.back()
+#define YYGETCONDITION() this->getLexerMode()
 
 namespace ydsh {
 
@@ -125,7 +111,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
     INIT:
     unsigned int startPos = this->getPos();
-    LexerMode prevMode = this->modeStack.back();
+    LexerMode prevMode = this->getLexerMode();
     TokenKind kind = INVALID;
     /*!re2c
       <STMT> "alias"           { MODE(NAME); RET(ALIAS); }

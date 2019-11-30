@@ -32,9 +32,8 @@ const char *toModeName(LexerMode mode);
 
 class Lexer : public ydsh::LexerBase {
 private:
-    /**
-     * default mode is yycSTMT
-     */
+    LexerMode curMode{yycSTMT};
+
     std::vector<LexerMode> modeStack;
 
     bool prevNewLine{false};
@@ -73,7 +72,7 @@ public:
      * @return
      */
     Lexer(const char *sourceName, const char *source, unsigned int size) :
-            LexerBase(sourceName, source, size), modeStack(1, yycSTMT) {}
+            LexerBase(sourceName, source, size) {}
 
     /**
      * 
@@ -83,7 +82,7 @@ public:
      * @return
      */
     Lexer(const char *sourceName, ByteBuffer &&buf) :
-            LexerBase(sourceName, std::move(buf)), modeStack(1, yycSTMT) {}
+            LexerBase(sourceName, std::move(buf)) {}
 
     ~Lexer() = default;
 
@@ -105,23 +104,23 @@ public:
     }
 
     void setLexerMode(LexerMode mode) {
-        this->modeStack.back() = mode;
+        this->curMode = mode;
     }
 
     void pushLexerMode(LexerMode mode) {
-        this->modeStack.push_back(mode);
+        this->modeStack.push_back(this->curMode);
+        this->setLexerMode(mode);
     }
 
     void popLexerMode() {
-        this->modeStack.pop_back();
+        if(!this->modeStack.empty()) {
+            this->curMode = this->modeStack.back();
+            this->modeStack.pop_back();
+        }
     }
 
     LexerMode getLexerMode() const {
-        return this->modeStack.back();
-    }
-
-    unsigned int lexerModeSize() const {
-        return this->modeStack.size();
+        return this->curMode;
     }
 
     /**

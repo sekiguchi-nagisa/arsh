@@ -883,7 +883,8 @@ TEST_F(LexerTest_Lv1, LP2) {
 TEST_F(LexerTest_Lv1, RP1) {
     const char *text = ")";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, ")"));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(RP, ")", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, RP2) {
@@ -920,7 +921,8 @@ TEST_F(LexerTest_Lv1, LB2) {
 TEST_F(LexerTest_Lv1, RB1) {
     const char *text = "]";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, text));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(RB, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, RB2) {
@@ -961,7 +963,8 @@ TEST_F(LexerTest_Lv1, LBC2) {
 TEST_F(LexerTest_Lv1, RBC1) {
     const char *text = "}";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INVALID, "}"));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(RBC, "}", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
 }
 
 TEST_F(LexerTest_Lv1, RBC2) {
