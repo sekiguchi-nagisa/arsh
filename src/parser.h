@@ -88,7 +88,7 @@ public:
     ~Parser() = default;
 
     std::unique_ptr<Node> operator()() {
-        return this->parse_statement(true);
+        return this->parse_statement(false);
     }
 
     explicit operator bool() const {
@@ -154,7 +154,7 @@ protected:
      */
     std::unique_ptr<Node> parse_statementImp();
 
-    std::unique_ptr<Node> parse_statement(bool allowEOS = false);
+    std::unique_ptr<Node> parse_statement(bool disallowEOS = true);
 
     /**
      *
@@ -162,7 +162,7 @@ protected:
      * @return
      * always nullptr
      */
-    std::unique_ptr<Node> parse_statementEnd(bool allowEOS = false);
+    std::unique_ptr<Node> parse_statementEnd(bool disallowEOS = true);
 
     std::unique_ptr<BlockNode> parse_block();
 
