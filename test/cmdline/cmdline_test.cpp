@@ -438,8 +438,8 @@ TEST_F(CmdlineTest, pid) {
 }
 
 TEST_F(CmdlineTest, toplevel) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "23 as String"), 0, "(String) 23\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "$true"), 0, "(Boolean) true\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "23 as String"), 0, ": String = 23\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "$true"), 0, ": Boolean = true\n"));
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "true"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "true | true"), 0));
 
@@ -459,13 +459,13 @@ cannot obtain string representation
 
     // option type
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = $true as Option<Boolean>; $a"), 0, "(Option<Boolean>) true\n"));
+            ds("--print-toplevel", "-c", "var a = $true as Option<Boolean>; $a"), 0, ": Option<Boolean> = true\n"));
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "new Option<Boolean>()"), 0, "(Option<Boolean>) (invalid)\n"));
+            ds("--print-toplevel", "-c", "new Option<Boolean>()"), 0, ": Option<Boolean> = (invalid)\n"));
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = $true as String as Option<String>; $a"), 0, "(Option<String>) true\n"));
+            ds("--print-toplevel", "-c", "var a = $true as String as Option<String>; $a"), 0, ": Option<String> = true\n"));
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "new Option<String>()"), 0, "(Option<String>) (invalid)\n"));
+            ds("--print-toplevel", "-c", "new Option<String>()"), 0, ": Option<String> = (invalid)\n"));
 }
 
 TEST_F(CmdlineTest, toplevel_escape) {
@@ -474,7 +474,7 @@ TEST_F(CmdlineTest, toplevel_escape) {
 
     ASSERT_EQ(0, r.status.value);
 
-    const char msg[] = "(String) hello\0world\n";
+    const char msg[] = ": String = hello\0world\n";
     std::string out(msg, arraySize(msg) - 1);
     ASSERT_EQ(out, r.out);
     ASSERT_STREQ("", r.err.c_str());
@@ -494,7 +494,7 @@ TEST_F(CmdlineTest, pipeline) {
 
     if(platform::arch() != platform::ArchType::AARCH64) {
         // force interactive
-        ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, "(Boolean) true\n"));
+        ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, ": Boolean = true\n"));
     }
 }
 
