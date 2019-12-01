@@ -437,6 +437,10 @@ public:
 
     ~TypeTemplate() = default;
 
+    bool operator==(const TypeTemplate &o) const {
+        return this->name == o.name;
+    }
+
     const std::string &getName() const {
         return this->name;
     }

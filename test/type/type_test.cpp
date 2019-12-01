@@ -185,7 +185,7 @@ TEST_F(TypeTest, builtinName) {
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("String", this->pool.get(TYPE::String)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("UnixFD", this->pool.get(TYPE::UnixFD)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Array<String>", this->pool.get(TYPE::StringArray)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("[String]", this->pool.get(TYPE::StringArray)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Error", this->pool.get(TYPE::Error)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("ArithmeticError", this->pool.get(TYPE::ArithmeticError)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("OutOfRangeError", this->pool.get(TYPE::OutOfRangeError)));

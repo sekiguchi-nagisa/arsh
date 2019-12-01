@@ -539,35 +539,72 @@ bool SymbolTable::setAlias(const char *alias, DSType &targetType) {
     return this->typeMap.setAlias(std::string(alias), targetType.getTypeID());
 }
 
-std::string SymbolTable::toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) const {
-    unsigned int elementSize = elementTypes.size();
-    std::string reifiedTypeName(name);
-    reifiedTypeName += "<";
-    for(unsigned int i = 0; i < elementSize; i++) {
-        if(i > 0) {
-            reifiedTypeName += ",";
+std::string SymbolTable::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
+                                           const std::vector<DSType *> &elementTypes) const {
+    if(typeTemplate == this->getArrayTemplate()) {
+        std::string str = "[";
+        str += this->getTypeName(*elementTypes[0]);
+        str += "]";
+        return str;
+    } else if(typeTemplate == this->getMapTemplate()) {
+        std::string str = "[";
+        str += this->getTypeName(*elementTypes[0]);
+        str += " : ";
+        str += this->getTypeName(*elementTypes[1]);
+        str += "]";
+        return str;
+    } else if(typeTemplate == this->getOptionTemplate()) {
+        auto *type = elementTypes[0];
+        std::string str;
+        if(type->isFuncType()) {
+            str += "(";
         }
-        reifiedTypeName += this->getTypeName(*elementTypes[i]);
+        str += this->getTypeName(*type);
+        if(type->isFuncType()) {
+            str += ")";
+        }
+        str += "!";
+        return str;
+    } else {
+        unsigned int elementSize = elementTypes.size();
+        std::string str = typeTemplate.getName();
+        str += "<";
+        for(unsigned int i = 0; i < elementSize; i++) {
+            if(i > 0) {
+                str += ",";
+            }
+            str += this->getTypeName(*elementTypes[i]);
+        }
+        str += ">";
+        return str;
     }
-    reifiedTypeName += ">";
-    return reifiedTypeName;
+}
+
+std::string SymbolTable::toTupleTypeName(const std::vector<DSType *> &elementTypes) const {
+    std::string str = "(";
+    for(unsigned int i = 0; i < elementTypes.size(); i++) {
+        if(i > 0) {
+            str += ", ";
+        }
+        str += this->getTypeName(*elementTypes[i]);
+    }
+    if(elementTypes.size() == 1) {
+        str += ",";
+    }
+    str += ")";
+    return str;
 }
 
 std::string SymbolTable::toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const {
-    unsigned int paramSize = paramTypes.size();
-    std::string funcTypeName("Func<");
-    funcTypeName += this->getTypeName(*returnType);
-    if(paramSize > 0) {
-        funcTypeName += ",[";
-        for(unsigned int i = 0; i < paramSize; i++) {
-            if(i > 0) {
-                funcTypeName += ",";
-            }
-            funcTypeName += this->getTypeName(*paramTypes[i]);
+    std::string funcTypeName = "(";
+    for(unsigned int i = 0; i < paramTypes.size(); i++) {
+        if(i > 0) {
+            funcTypeName += ", ";
         }
-        funcTypeName += "]";
+        funcTypeName += this->getTypeName(*paramTypes[i]);
     }
-    funcTypeName += ">";
+    funcTypeName += ") -> ";
+    funcTypeName += this->getTypeName(*returnType);
     return funcTypeName;
 }
 

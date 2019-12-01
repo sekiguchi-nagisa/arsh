@@ -693,15 +693,9 @@ public:
      * create reified type name
      * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
      */
-    std::string toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes) const {
-        return this->toReifiedTypeName(typeTemplate.getName(), elementTypes);
-    }
+    std::string toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes) const;
 
-    std::string toReifiedTypeName(const std::string &name, const std::vector<DSType *> &elementTypes) const;
-
-    std::string toTupleTypeName(const std::vector<DSType *> &elementTypes) const {
-        return this->toReifiedTypeName(TYPE_TUPLE, elementTypes);
-    }
+    std::string toTupleTypeName(const std::vector<DSType *> &elementTypes) const;
 
     /**
      * create function type name

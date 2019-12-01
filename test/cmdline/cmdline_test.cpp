@@ -225,7 +225,7 @@ Code:
   33: POP
   34: RETURN
 Constant Pool:
-  0: Func<Boolean,[Any]> function(f)
+  0: (Any) -> Boolean function(f)
   1: Int32 1
   2: Int32 3
 Line Number Table:
@@ -239,7 +239,7 @@ DSCode: function f
   number of local variable: 1
 Code:
    8: LOAD_LOCAL  0
-  10: INSTANCE_OF  Array<Int32>
+  10: INSTANCE_OF  [Int32]
   15: RETURN_V
 Constant Pool:
 Line Number Table:
@@ -459,13 +459,13 @@ cannot obtain string representation
 
     // option type
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = $true as Option<Boolean>; $a"), 0, ": Option<Boolean> = true\n"));
+            ds("--print-toplevel", "-c", "var a = $true as Option<Boolean>; $a"), 0, ": Boolean! = true\n"));
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "new Option<Boolean>()"), 0, ": Option<Boolean> = (invalid)\n"));
+            ds("--print-toplevel", "-c", "new Option<Boolean>()"), 0, ": Boolean! = (invalid)\n"));
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = $true as String as Option<String>; $a"), 0, ": Option<String> = true\n"));
+            ds("--print-toplevel", "-c", "var a = $true as String as Option<String>; $a"), 0, ": String! = true\n"));
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "new Option<String>()"), 0, ": Option<String> = (invalid)\n"));
+            ds("--print-toplevel", "-c", "new Option<String>()"), 0, ": String! = (invalid)\n"));
 }
 
 TEST_F(CmdlineTest, toplevel_escape) {
