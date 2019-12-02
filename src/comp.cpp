@@ -685,8 +685,8 @@ private:
                 type == CompType::CUR ? this->lexer.toTokenText(this->curToken()) : "", onlyExpr);
     }
 
-    std::unique_ptr<Completer> createAndCompleter(std::unique_ptr<Completer> &&first,
-                                                    std::unique_ptr<Completer> &&second) const {
+    static std::unique_ptr<Completer> createAndCompleter(std::unique_ptr<Completer> &&first,
+                                                    std::unique_ptr<Completer> &&second) {
         if(!first) {
             return std::move(second);
         }

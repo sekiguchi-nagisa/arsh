@@ -224,6 +224,18 @@ public:
      * get integer precision. if type is not int type, return INVALID_PRECISION.
      */
     int getIntPrecision() const;
+
+    /**
+     * if type is not number type, return -1.
+     */
+    int getNumTypeIndex() const {
+        static_assert(static_cast<unsigned int>(TYPE::Int32) + 1 == static_cast<unsigned int>(TYPE::Int64), "");
+        static_assert(static_cast<unsigned int>(TYPE::Int64) + 1 == static_cast<unsigned int>(TYPE::Float), "");
+        if(this->id >= static_cast<unsigned int>(TYPE::Int32) && this->id <= static_cast<unsigned int>(TYPE::Float)) {
+            return this->id - static_cast<unsigned int>(TYPE::Int32);
+        }
+        return -1;
+    }
 };
 
 class FunctionType : public DSType {

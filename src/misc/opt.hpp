@@ -66,7 +66,7 @@ std::vector<std::string> Option<T>::getDetails() const {
                 bufs.emplace_back();
             }
         } else {
-            bufs.back() += ch;
+            bufs.back() += static_cast<char>(ch);
         }
     }
     return bufs;

@@ -278,7 +278,9 @@ public:
     }
 
     Union &operator=(const Union &value) {
-        this->copyAssign(value);
+        if(this != std::addressof(value)) {
+            this->copyAssign(value);
+        }
         return *this;
     }
 

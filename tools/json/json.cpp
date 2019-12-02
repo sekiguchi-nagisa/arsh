@@ -469,7 +469,7 @@ static unsigned short parseHex(const char *&iter) {
     return v;
 }
 
-int Parser::unescape(const char *&iter, const char *end) const {
+static int unescape(const char *&iter, const char *end) {
     if(iter == end) {
         return -1;
     }
@@ -529,7 +529,7 @@ bool Parser::unescapeStr(Token token, std::string &str) {
 
     auto range = this->lexer->getRange(actual);
     for(auto iter = range.first; iter != range.second;) {
-        int codePoint = this->unescape(iter, range.second);
+        int codePoint = unescape(iter, range.second);
         if(codePoint < 0) {
             this->raiseTokenFormatError(STRING, token, "illegal string format");
             return false;

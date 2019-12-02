@@ -357,8 +357,8 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
     /**
      * number cast
      */
-    int beforeIndex = this->symbolTable.getNumTypeIndex(exprType);
-    int afterIndex = this->symbolTable.getNumTypeIndex(targetType);
+    int beforeIndex = exprType.getNumTypeIndex();
+    int afterIndex = targetType.getNumTypeIndex();
     if(beforeIndex > -1 && afterIndex > -1) {
         assert(beforeIndex < 8 && afterIndex < 8);
         node.setOpKind(TypeOpNode::NUM_CAST);
@@ -1532,13 +1532,11 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
         RAISE_TC_ERROR(Unreachable, *node);
     }
 
-    if(mayBeCmd(*node)) {
-        this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);  // pop stack top
-    } else if(this->toplevelPrinting && this->symbolTable.isRootModule()) {
+    if(this->toplevelPrinting && this->symbolTable.isRootModule() && !mayBeCmd(*node)) {
         this->checkTypeExactly(node);
         node = this->newPrintOpNode(node);
     } else {
-        this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);
+        this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);// pop stack top
     }
 
     // check empty block

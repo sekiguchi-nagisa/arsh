@@ -277,8 +277,6 @@ private:
 
     JSON parseObject();
 
-    int unescape(const char *&iter, const char *end) const;
-
     bool unescapeStr(Token token, std::string &str);
 };
 

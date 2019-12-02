@@ -97,8 +97,8 @@ void ByteCodeGenerator::generateToString() {
 }
 
 void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &afterType) {
-    const int beforeIndex = this->symbolTable.getNumTypeIndex(beforeType);
-    const int afterIndex = this->symbolTable.getNumTypeIndex(afterType);
+    const int beforeIndex = beforeType.getNumTypeIndex();
+    const int afterIndex = afterType.getNumTypeIndex();
 
     assert(beforeIndex > -1 && beforeIndex < 3);
     assert(afterIndex > -1 && afterIndex < 3);
@@ -1397,19 +1397,16 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             case DSValueKind::NUMBER:
                 fprintf(this->fp, "%lu", static_cast<unsigned long>(v.value()));
                 break;
-            case DSValueKind::OBJECT:
-                if(v->getType() == nullptr) {
+            case DSValueKind::OBJECT: {
+                auto *type = v->getType();
+                if(type == nullptr || type->isFuncType() || type->isModType()) {
                     this->funcs.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
-                } else if(v->getType()->isFuncType()) {
-                    this->funcs.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
-                } else if(v->getType()->isModType()) {
-                    this->mods.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
                 }
-
                 fprintf(this->fp, "%s %s",
-                        (v->getType() != nullptr ? this->symbolTable.getTypeName(*v->getType()) : "(null)"),
+                        (type != nullptr ? this->symbolTable.getTypeName(*type) : "(null)"),
                         v->toString().c_str());
                 break;
+            }
             case DSValueKind::INVALID:
                 break;
             }

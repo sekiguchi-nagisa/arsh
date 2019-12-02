@@ -78,9 +78,7 @@ public:
 
 template <bool T>
 void SourceInfoImpl<T>::addNewlinePos(unsigned int pos) {
-    if(this->lineNumTable.empty()) {
-        this->lineNumTable.push_back(pos);
-    } else if(pos > this->lineNumTable.back()) {
+    if(this->lineNumTable.empty() || pos > this->lineNumTable.back()) {
         this->lineNumTable.push_back(pos);
     }
 }
