@@ -29,6 +29,11 @@ assert($c._0)
 assert($c._1 == 23)
 assert($c._2 == "hello")
 
+var d = (234, $true, )
+assert $d._0 == 234
+assert $d._1
+
+
 # inheritance
 assert((23, "") is Tuple<Int, String>)
 assert((23, "") is Any)

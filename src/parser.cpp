@@ -1014,6 +1014,24 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
     return node;
 }
 
+static std::unique_ptr<Node> createTupleOrGroup(
+        Token open,
+        std::vector<std::unique_ptr<Node>> &&nodes,
+        Token close, unsigned int commaCount) {
+    auto node = std::move(nodes[0]);
+    if(commaCount == 0) {
+        node->setPos(open.pos);
+    } else {
+        auto tuple = std::make_unique<TupleNode>(open.pos, node.release());
+        for(unsigned int i = 1; i < nodes.size(); i++) {
+            tuple->addNode(nodes[i].release());
+        }
+        node = std::move(tuple);
+    }
+    node->updateToken(close);
+    return node;
+}
+
 std::unique_ptr<Node> Parser::parse_primaryExpression() {
     GUARD_DEEP_NESTING(guard);
 
@@ -1059,30 +1077,20 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case START_OUT_SUB:
         return this->parse_procSubstitution();
     case LP: {  // group or tuple
-        Token token = this->expect(LP); // always success
-        auto node = TRY(this->parse_expression());
-        if(CUR_KIND() == COMMA) {   // tuple
-            this->consume();    // COMMA
-            auto tuple = std::make_unique<TupleNode>(token.pos, node.release());
-            if(CUR_KIND() != RP) {
-                tuple->addNode(TRY(this->parse_expression()).release());
-                while(CUR_KIND() != RP) {
-                    if(CUR_KIND() == COMMA) {
-                        this->consume();    // COMMA
-                        tuple->addNode(TRY(this->parse_expression()).release());
-                    } else {
-                        E_ALTER(COMMA, RP);
-                    }
-                }
+        Token openToken = this->expect(LP); // always success
+        unsigned int count = 0;
+        std::vector<std::unique_ptr<Node>> nodes;
+        do {
+            nodes.push_back(TRY(this->parse_expression()));
+            if(CUR_KIND() == COMMA) {
+                this->consume();    // COMMA
+                count++;
+            } else if(CUR_KIND() != RP) {
+                E_ALTER(COMMA, RP);
             }
-            node = std::move(tuple);
-        } else {
-            node->setPos(token.pos);
-        }
-
-        token = TRY(this->expect(RP));
-        node->updateToken(token);
-        return node;
+        } while(CUR_KIND() != RP);
+        Token closeToken = TRY(this->expect(RP));
+        return createTupleOrGroup(openToken, std::move(nodes), closeToken, count);
     }
     case LB: {  // array or map
         Token token = this->expect(LB); // always success
