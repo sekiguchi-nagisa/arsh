@@ -1581,20 +1581,6 @@ TEST_F(LexerTest_Lv1, AS3) {
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
-TEST_F(LexerTest_Lv1, ARM1) {
-    const char *text = "=>";
-    this->initLexer(text, yycEXPR);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CASE_ARM, text, EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
-}
-
-TEST_F(LexerTest_Lv1, ARM2) {
-    const char *text = "->";
-    this->initLexer(text, yycEXPR);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CASE_ARM, text, EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
-}
-
 TEST_F(LexerTest_Lv1, FUNC1) {
     const char *text = "Func";
     this->initLexer(text);
