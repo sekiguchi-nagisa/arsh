@@ -100,10 +100,11 @@ unsigned int DSState::getTermHookIndex() {
 bool DSState::checkCast(DSType *targetType) {
     if(!this->peek()->introspect(*this, targetType)) {
         DSType *stackTopType = this->pop()->getType();
-        std::string str("cannot cast ");
+        std::string str("cannot cast `");
         str += this->symbolTable.getTypeName(*stackTopType);
-        str += " to ";
+        str += "' to `";
         str += this->symbolTable.getTypeName(*targetType);
+        str += "'";
         raiseError(*this, TYPE::TypeCastError, std::move(str));
         return false;
     }
