@@ -58,6 +58,16 @@ function make_pair($a : Float) : String, Int32 {
 }
 
 assert($make_pair is Func<Tuple<String, Int32>, [Float]>)
+assert $make_pair is
+    (Float,
+       )
+
+          ->
+              (String,
+                  Int32
+                  ,
+                 )
+
 
 assert $void == $void
 assert $void != $void2

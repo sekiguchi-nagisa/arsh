@@ -1,0 +1,7 @@
+#$test($result = 'parse', $lineNum = 7, $errorKind = 'NoViableAlter', $status = 1)
+
+34 is
+     (
+
+         )
+          ->

@@ -236,6 +236,24 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
     return std::move(typeToken);
 }
 
+static std::unique_ptr<TypeNode> createTupleOrBasicType(
+        Token open, std::vector<std::unique_ptr<TypeNode>> &&types,
+        Token close, unsigned int commaCount) {
+    auto type = std::move(types[0]);
+    if(commaCount == 0) {
+        type->setPos(open.pos);
+    } else {
+        auto reified = std::make_unique<ReifiedTypeNode>(new BaseTypeNode(open, TYPE_TUPLE));
+        reified->addElementTypeNode(type.release());
+        for(unsigned int i = 1; i < types.size(); i++) {
+            reified->addElementTypeNode(types[i].release());
+        }
+        type = std::move(reified);
+    }
+    type->updateToken(close);
+    return type;
+}
+
 std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
     switch(CUR_KIND()) {
     case IDENTIFIER: {
@@ -243,25 +261,34 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
         return this->parse_basicOrReifiedType(token);
     }
     case PTYPE_OPEN: {
-        Token token = this->expect(PTYPE_OPEN);  // always success
-        auto typeNode = TRY(this->parse_typeName(false));
-        if(CUR_KIND() == TYPE_SEP) {
-            auto reified = std::make_unique<ReifiedTypeNode>(new BaseTypeNode(token, TYPE_TUPLE));
-            reified->addElementTypeNode(typeNode.release());
-
-            this->consume();
-            if(CUR_KIND() != PTYPE_CLOSE) {
-                reified->addElementTypeNode(TRY(this->parse_typeName(false)).release());
-                while(CUR_KIND() == TYPE_SEP) {
-                    this->consume();
-                    reified->addElementTypeNode(TRY(this->parse_typeName(false)).release());
-                }
+        Token openToken = this->expect(PTYPE_OPEN);  // always success
+        unsigned int count = 0;
+        std::vector<std::unique_ptr<TypeNode>> types;
+        while(CUR_KIND() != PTYPE_CLOSE) {
+            types.push_back(TRY(this->parse_typeName(false)));
+            if(CUR_KIND() == TYPE_SEP) {
+                this->consume();    // COMMA
+                count++;
+            } else if(CUR_KIND() != PTYPE_CLOSE) {
+                E_ALTER(TYPE_SEP, PTYPE_CLOSE);
             }
-            typeNode = std::move(reified);
         }
-        token = TRY(this->expect(PTYPE_CLOSE));
-        typeNode->updateToken(token);
-        return typeNode;
+        Token closeToken = TRY(this->expect(PTYPE_CLOSE));
+
+        if(types.empty() || CUR_KIND() == TYPE_ARROW) {
+            TRY(this->expect(TYPE_ARROW));
+            auto type = TRY(this->parse_typeName(false));
+            Token token = type->getToken();
+            auto func = std::make_unique<FuncTypeNode>(openToken.pos, type.release());
+            for(auto &e : types) {
+                func->addParamTypeNode(e.release());
+            }
+            func->updateToken(token);
+            type = std::move(func);
+            return type;
+        } else {
+            return createTupleOrBasicType(openToken, std::move(types), closeToken, count);
+        }
     }
     case ATYPE_OPEN: {
         Token token = this->expect(ATYPE_OPEN);  // always success

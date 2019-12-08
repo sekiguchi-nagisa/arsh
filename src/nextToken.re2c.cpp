@@ -283,6 +283,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <TYPE> ")"               { RET(PTYPE_CLOSE); }
       <TYPE> ":"               { RET(TYPE_MSEP); }
       <TYPE> "!" / [^=~]       { RET(TYPE_OPT); }
+      <TYPE> "->"              { RET(TYPE_ARROW); }
 
 
       <STMT,EXPR,NAME,DSTRING,CMD,TYPE> "\000" { REACH_EOS();}
