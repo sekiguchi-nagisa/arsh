@@ -356,7 +356,7 @@ static void loadEmbeddedScript(DSState *state) {
     state->updateExitStatus(0);
 
     // force initialize 'termHookIndex'
-    state->getTermHookIndex();
+    state->symbolTable.getTermHookIndex();
 }
 
 static void initEnv(const DSState &state) {

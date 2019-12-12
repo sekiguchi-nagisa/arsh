@@ -190,8 +190,6 @@ private:
 
     decltype(std::chrono::system_clock::now()) baseTime;
 
-    unsigned int termHookIndex{0};
-
 public:
     static VMEvent eventDesc;
 
@@ -311,15 +309,6 @@ public:
     bool checkVMReturn() const {
         return this->controlStack.empty() || this->recDepth() != this->controlStack.back().recDepth;
     }
-
-    /**
-     *
-     * @return
-     * offset + 0 EXIT_HOOK
-     * offset + 1 ERR_HOOK
-     * offset + 2 ASSERT_HOOK
-     */
-    unsigned int getTermHookIndex();
 
     // entry point
     /**

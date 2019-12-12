@@ -395,6 +395,8 @@ private:
     ModuleScope rootModule;
     ModuleScope *curModule;
 
+    unsigned int termHookIndex{0};
+
     TypeMap typeMap;
 
     // type template definition
@@ -503,6 +505,15 @@ public:
     void closeBuiltin() {
         this->root().setBuiltin(false);
     }
+
+    /**
+     *
+     * @return
+     * offset + 0 EXIT_HOOK
+     * offset + 1 ERR_HOOK
+     * offset + 2 ASSERT_HOOK
+     */
+    unsigned int getTermHookIndex();
 
     /**
      * if already registered, return null.

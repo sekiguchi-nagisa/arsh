@@ -88,15 +88,6 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
     }
 }
 
-unsigned int DSState::getTermHookIndex() {
-    if(this->termHookIndex == 0) {
-        auto *handle = this->symbolTable.lookupHandle(VAR_TERM_HOOK);
-        assert(handle != nullptr);
-        this->termHookIndex = handle->getIndex();
-    }
-    return this->termHookIndex;
-}
-
 bool DSState::checkCast(DSType *targetType) {
     if(!this->peek()->introspect(*this, targetType)) {
         DSType *stackTopType = this->pop()->getType();
@@ -1753,7 +1744,7 @@ DSErrorKind DSState::handleUncaughtException(const DSValue &except, DSError *dsE
 }
 
 void DSState::callTermHook(DSErrorKind kind, DSValue &&except) {
-    auto funcObj = this->getGlobal(this->getTermHookIndex());
+    auto funcObj = this->getGlobal(this->symbolTable.getTermHookIndex());
     if(funcObj.kind() == DSValueKind::INVALID) {
         return;
     }

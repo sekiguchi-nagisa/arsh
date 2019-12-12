@@ -446,6 +446,15 @@ HandleOrError SymbolTable::newHandle(const std::string &symbolName, DSType &type
     return this->cur().newHandle(symbolName, type, attribute);
 }
 
+unsigned int SymbolTable::getTermHookIndex() {
+    if(this->termHookIndex == 0) {
+        auto *handle = this->lookupHandle(VAR_TERM_HOOK);
+        assert(handle != nullptr);
+        this->termHookIndex = handle->getIndex();
+    }
+    return this->termHookIndex;
+}
+
 TypeOrError SymbolTable::getTypeOrError(const std::string &typeName) const {
     DSType *type = this->getType(typeName);
     if(type == nullptr) {
