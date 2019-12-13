@@ -42,14 +42,14 @@ FilePathCache::~FilePathCache() {
     }
 }
 
-const char *FilePathCache::searchPath(const char *cmdName, flag8_t option) {
+const char *FilePathCache::searchPath(const char *cmdName, FilePathCache::SearchOp op) {
     // if found '/', return fileName
     if(strchr(cmdName, '/') != nullptr) {
         return cmdName;
     }
 
     // search cache
-    if(!hasFlag(option, DIRECT_SEARCH)) {
+    if(!hasFlag(op, DIRECT_SEARCH)) {
         auto iter = this->map.find(cmdName);
         if(iter != this->map.end()) {
             return iter->second.c_str();
@@ -58,7 +58,7 @@ const char *FilePathCache::searchPath(const char *cmdName, flag8_t option) {
 
     // get PATH
     const char *pathPrefix = getenv(ENV_PATH);
-    if(pathPrefix == nullptr || hasFlag(option, USE_DEFAULT_PATH)) {
+    if(pathPrefix == nullptr || hasFlag(op, USE_DEFAULT_PATH)) {
         pathPrefix = VAL_DEFAULT_PATH;
     }
 
@@ -86,7 +86,7 @@ const char *FilePathCache::searchPath(const char *cmdName, flag8_t option) {
 
         struct stat st{};
         if(stat(resolvedPath.c_str(), &st) == 0 && (st.st_mode & S_IXUSR) == S_IXUSR) {
-            if(hasFlag(option, DIRECT_SEARCH)) {
+            if(hasFlag(op, DIRECT_SEARCH)) {
                 this->prevPath = std::move(resolvedPath);
                 return this->prevPath.c_str();
             }

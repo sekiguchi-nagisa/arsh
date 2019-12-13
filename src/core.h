@@ -66,7 +66,7 @@ inline unsigned int toIndex(BuiltinVarOffset offset) {
 class FilePathCache {
 private:
     /**
-     * contains previously resolved path (for directive search)
+     * contains previously resolved path (for direct search)
      */
     std::string prevPath;
 
@@ -81,14 +81,17 @@ public:
 
     ~FilePathCache();
 
-    static constexpr flag8_t USE_DEFAULT_PATH = 1u << 0u;
-    static constexpr flag8_t DIRECT_SEARCH    = 1u << 1u;
+    enum SearchOp {
+        NON              = 0u,
+        USE_DEFAULT_PATH = 1u << 0u,
+        DIRECT_SEARCH    = 1u << 1u,
+    };
 
     /**
      * search file path by using PATH
      * if cannot resolve path (file not found), return null.
      */
-    const char *searchPath(const char *cmdName, flag8_set_t option = 0);
+    const char *searchPath(const char *cmdName, SearchOp op = NON);
 
     void removePath(const char *cmdName);
 
@@ -113,6 +116,8 @@ public:
         return this->map.cend();
     }
 };
+
+template <> struct allow_enum_bitop<FilePathCache::SearchOp> : std::true_type {};
 
 struct GetOptState : public opt::GetOptState {
     /**

@@ -401,14 +401,14 @@ bool DSState::forkAndEval() {
 class CmdResolver {
 private:
     flag8_set_t mask;
-    flag8_set_t searchOp;
+    FilePathCache::SearchOp searchOp;
 
 public:
     static constexpr flag8_t MASK_UDC      = 1u << 0u;
     static constexpr flag8_t MASK_EXTERNAL = 1u << 1u;
 
-    CmdResolver(flag8_set_t mask, flag8_set_t op) : mask(mask), searchOp(op) {}
-    CmdResolver() : CmdResolver(0, 0) {}
+    CmdResolver(flag8_set_t mask, FilePathCache::SearchOp op) : mask(mask), searchOp(op) {}
+    CmdResolver() : CmdResolver(0, FilePathCache::NON) {}
     ~CmdResolver() = default;
 
     Command operator()(DSState &state, const char *cmdName) const;
@@ -629,7 +629,8 @@ bool DSState::callBuiltinCommand(DSValue &&argvObj, DSValue &&redir, flag8_set_t
             auto &values = arrayObj.refValues();
             values.erase(values.begin(), values.begin() + index);
 
-            auto resolve = CmdResolver(CmdResolver::MASK_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : 0);
+            auto resolve = CmdResolver(CmdResolver::MASK_UDC,
+                    useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
             return this->callCommand(resolve(*this, cmdName), std::move(argvObj), std::move(redir), attr);
         }
 
