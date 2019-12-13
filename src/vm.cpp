@@ -427,7 +427,9 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
 
     // first, check user-defined command
     if(!hasFlag(this->mask, MASK_UDC)) {
-        auto *udcObj = state.lookupUserDefinedCommand(cmdName);
+        auto handle = state.symbolTable.lookupUdc(cmdName);
+        auto *udcObj = handle != nullptr ?
+                &typeAs<FuncObject>(state.getGlobal(handle->getIndex()))->getCode() : nullptr;
         if(udcObj != nullptr) {
             cmd.kind = CmdKind::USER_DEFINED;
             cmd.udc = udcObj;

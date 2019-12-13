@@ -302,11 +302,6 @@ public:
         return this->frame;
     }
 
-    const DSCode *lookupUserDefinedCommand(const char *commandName) const {
-        auto handle = this->symbolTable.lookupUdc(commandName);
-        return handle == nullptr ? nullptr : &typeAs<FuncObject>(this->getGlobal(handle->getIndex()))->getCode();
-    }
-
     bool checkVMReturn() const {
         return this->controlStack.empty() || this->recDepth() != this->controlStack.back().recDepth;
     }
