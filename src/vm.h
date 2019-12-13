@@ -31,7 +31,7 @@
 #include "misc/buffer.hpp"
 #include "misc/noncopyable.h"
 
-using namespace ydsh;
+namespace ydsh {
 
 struct ControlFrame {
     /**
@@ -79,11 +79,12 @@ enum class EvalOP : unsigned int {
     COMMIT     = 1u << 3u,    // after evaluation, commit/abort symbol table
 };
 
-namespace ydsh {
 template <> struct allow_enum_bitop<VMEvent> : std::true_type {};
 
 template <> struct allow_enum_bitop<EvalOP> : std::true_type {};
 }
+
+using namespace ydsh;
 
 struct DSState {
 public:
