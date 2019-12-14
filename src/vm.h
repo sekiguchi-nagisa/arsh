@@ -177,7 +177,7 @@ private:
     static constexpr unsigned int DEFAULT_STACK_SIZE = 256;
     static constexpr unsigned int MAX_CONTROL_STACK_SIZE = 2048;
 
-    unsigned int globalVarSize{0};
+    std::vector<DSValue> globals{64};
 
     /**
      * currently executed frame
@@ -241,15 +241,15 @@ public:
     }
 
     void setGlobal(unsigned int index, DSValue &&obj) {
-        this->callStack[index] = std::move(obj);
+        this->globals[index] = std::move(obj);
     }
 
     const DSValue &getGlobal(unsigned int index) const {
-        return this->callStack[index];
+        return this->globals[index];
     }
 
     const DSValue &getGlobal(BuiltinVarOffset offset) const {
-        return this->callStack[toIndex(offset)];
+        return this->getGlobal(toIndex(offset));
     }
 
     void setLocal(unsigned char index, const DSValue &obj) {
@@ -449,12 +449,12 @@ private:
     }
 
     void storeGlobal(unsigned int index) {
-        this->callStack[index] = this->pop();
+        this->setGlobal(index, this->pop());
     }
 
     void loadGlobal(unsigned int index) {
-        auto v(this->callStack[index]);
-        this->push(std::move(v));   // callStack may be expanded.
+        auto v = this->getGlobal(index);
+        this->push(std::move(v));
     }
 
     void storeLocal(unsigned char index) {
@@ -498,14 +498,11 @@ private:
      * reserve global variable entry and set local variable offset.
      */
     void reserveGlobalVar() {
-        unsigned int size = this->symbolTable.getMaxGVarIndex();
-        this->reserveLocalStack(size - this->globalVarSize);
-        this->globalVarSize = size;
-        this->localVarOffset() = size;
-        this->stackTopIndex() = size;
-        this->stackBottomIndex() = size;
+        this->globals.resize(this->symbolTable.getMaxGVarIndex());
+        this->localVarOffset() = 0;
+        this->stackTopIndex() = 0;
+        this->stackBottomIndex() = 0;
     }
-
 
     /**
      * expand stack size to at least needSize
