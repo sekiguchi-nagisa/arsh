@@ -184,8 +184,9 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
 }
 
 void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace) {
-    auto frame = st.getFrame();
-    for(unsigned int callDepth = st.controlStack.size(); callDepth > 0; frame = st.controlStack[--callDepth]) {
+    auto &callStack = st.getCallStack();
+    auto frame = callStack.getFrame();
+    for(unsigned int callDepth = callStack.getFrames().size(); callDepth > 0; frame = callStack.getFrames()[--callDepth]) {
         auto &callable = frame.code;
         if(!callable->is(CodeKind::NATIVE)) {
             const auto *cc = static_cast<const CompiledCode *>(callable);

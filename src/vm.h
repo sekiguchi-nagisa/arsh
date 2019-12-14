@@ -23,48 +23,15 @@
 #include <ydsh/ydsh.h>
 
 #include "cmd.h"
-#include "object.h"
 #include "symbol_table.h"
 #include "signals.h"
 #include "core.h"
 #include "job.h"
 #include "misc/buffer.hpp"
 #include "misc/noncopyable.h"
+#include "call_stack.h"
 
 namespace ydsh {
-
-struct ControlFrame {
-    /**
-     * currently executed code
-     */
-    const DSCode *code{nullptr};
-
-    /**
-     * initial value is 0. increment index before push
-     */
-    unsigned int stackTopIndex{0};
-
-    /**
-     * indicate lower limit of stack top index (bottom <= top)
-     */
-    unsigned int stackBottomIndex{0};
-
-    /**
-     * offset of current local variable index.
-     * initial value is equivalent to globalVarSize.
-     */
-    unsigned int localVarOffset{0};
-
-    /**
-     * indicate the index of currently evaluating op code.
-     */
-    unsigned int pc{0};
-
-    /**
-     * interpreter recursive depth
-     */
-    unsigned int recDepth{0};
-};
 
 enum class VMEvent : unsigned int {
     HOOK   = 1u << 0u,
@@ -147,42 +114,12 @@ public:
      */
     std::string toStrBuf;
 
-    VMHook *hook{nullptr};
-
-    std::vector<ControlFrame> controlStack;
-
 private:
-    /**
-     * contains operand, global variable(may be function) or local variable.
-     *
-     * stack grow ==>
-     * +--------+   +--------+-------+   +-------+
-     * | gvar 1 | ~ | gvar N | var 1 | ~ | var N | ~
-     * +--------+   +--------+-------+   +-------+
-     * |   global variable   |   local variable  | operand stack
-     *
-     *
-     * stack layout within callable
-     *
-     * stack grow ==>
-     *   +-----------------+   +-----------------+-----------+   +-------+--------------+
-     * ~ | var 1 (param 1) | ~ | var M (param M) | var M + 1 | ~ | var N | ~
-     *   +-----------------+   +-----------------+-----------+   +-------+--------------+
-     *   |                           local variable                      | operand stack
-     */
-    DSValue *callStack;
-
-    unsigned int callStackSize{DEFAULT_STACK_SIZE};
-
-    static constexpr unsigned int DEFAULT_STACK_SIZE = 256;
-    static constexpr unsigned int MAX_CONTROL_STACK_SIZE = 2048;
+    VMHook *hook{nullptr};
 
     std::vector<DSValue> globals{64};
 
-    /**
-     * currently executed frame
-     */
-    ControlFrame frame;
+    CallStack stack;
 
     /**
      * if not null ptr, thrown exception.
@@ -200,9 +137,7 @@ public:
 
     DSState();
 
-    ~DSState() {
-        delete[] this->callStack;
-    }
+    ~DSState() = default;
 
     int getExitStatus() const {
         return typeAs<Int_Object>(this->getGlobal(BuiltinVarOffset::EXIT_STATUS))->getValue();
@@ -216,8 +151,12 @@ public:
         return static_cast<bool>(this->thrownObject);
     }
 
-    unsigned int &recDepth() noexcept {
-        return this->frame.recDepth;
+    void incRecDepth() {
+        this->stack.incRecDepth();
+    }
+
+    void decRecDepth() {
+        this->stack.decRecDepth();
     }
 
     /**
@@ -231,13 +170,13 @@ public:
         this->updateExitStatus(afterStatus);
     }
 
-    const DSValue &peek() {
-        return this->callStack[this->stackTopIndex()];
-    }
-
     // variable manipulation
     void setGlobal(unsigned int index, const DSValue &obj) {
         this->setGlobal(index, DSValue(obj));
+    }
+
+    void setGlobal(BuiltinVarOffset offset, DSValue &&obj) {
+        this->setGlobal(toIndex(offset), std::move(obj));
     }
 
     void setGlobal(unsigned int index, DSValue &&obj) {
@@ -252,25 +191,21 @@ public:
         return this->getGlobal(toIndex(offset));
     }
 
-    void setLocal(unsigned char index, const DSValue &obj) {
-        setLocal(index, DSValue(obj));
-    }
-
     void setLocal(unsigned char index, DSValue &&obj) {
-        this->callStack[this->localVarOffset() + index] = std::move(obj);
+        this->stack.setLocal(index, std::move(obj));
     }
 
     const DSValue &getLocal(unsigned char index) const {
-        return this->callStack[this->localVarOffset() + index];
+        return this->stack.getLocal(index);
     }
 
     DSValue moveLocal(unsigned char index) {
-        return std::move(this->callStack[this->localVarOffset() + index]);
+        return this->stack.moveLocal(index);
     }
 
     void updateExitStatus(unsigned int status) {
-        unsigned int index = toIndex(BuiltinVarOffset::EXIT_STATUS);
-        this->setGlobal(index, DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), status));
+        this->setGlobal(BuiltinVarOffset::EXIT_STATUS,
+                DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), status));
     }
 
     void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);
@@ -298,12 +233,8 @@ public:
         }
     }
 
-    const ControlFrame &getFrame() const {
-        return this->frame;
-    }
-
-    bool checkVMReturn() const {
-        return this->controlStack.empty() || this->recDepth() != this->controlStack.back().recDepth;
+    const CallStack &getCallStack() const {
+        return this->stack;
     }
 
     // entry point
@@ -357,162 +288,29 @@ private:
      * get thrownObject and push to callStack
      */
     void loadThrownObject() {
-        this->push(std::move(this->thrownObject));
+        this->stack.push(std::move(this->thrownObject));
     }
 
     void storeThrownObject() {
-        this->thrownObject = this->pop();
+        this->thrownObject = this->stack.pop();
     }
 
     void clearThrownObject() {
         this->thrownObject.reset();
     }
 
-    // stack manipulation api
-    unsigned int &stackTopIndex() noexcept {
-        return this->frame.stackTopIndex;
-    }
-
-    unsigned int &stackBottomIndex() noexcept {
-        return this->frame.stackBottomIndex;
-    }
-
-    unsigned int &localVarOffset() noexcept {
-        return this->frame.localVarOffset;
-    }
-
-    unsigned int localVarOffset() const noexcept {
-        return this->frame.localVarOffset;
-    }
-
-    unsigned int &pc() noexcept {
-        return this->frame.pc;
-    }
-
-    const DSCode *&code() noexcept {
-        return this->frame.code;
-    }
-
-    unsigned int recDepth() const noexcept {
-        return this->frame.recDepth;
-    }
-
-    void push(const DSValue &value) {
-        this->push(DSValue(value));
-    }
-
-    void push(DSValue &&value) {
-        this->callStack[++this->stackTopIndex()] = std::move(value);
-    }
-
     void pushExitStatus(int status) {
         this->updateExitStatus(status);
-        this->push(status == 0 ? this->trueObj : this->falseObj);
+        this->stack.push(status == 0 ? this->trueObj : this->falseObj);
     }
 
-    DSValue pop() {
-        return std::move(this->callStack[this->stackTopIndex()--]);
-    }
-
-    void popNoReturn() {
-        this->callStack[this->stackTopIndex()--].reset();
-    }
-
-    void dup() {
-        auto v = this->callStack[this->stackTopIndex()];
-        this->callStack[++this->stackTopIndex()] = std::move(v);
-    }
-
-    void dup2() {
-        auto v1 = this->callStack[this->stackTopIndex() - 1];
-        auto v2 = this->callStack[this->stackTopIndex()];
-        this->callStack[++this->stackTopIndex()] = std::move(v1);
-        this->callStack[++this->stackTopIndex()] = std::move(v2);
-    }
-
-    void swap() {
-        this->callStack[this->stackTopIndex()].swap(this->callStack[this->stackTopIndex() - 1]);
-    }
-
-    void clearOperandStack() {
-        while(this->stackTopIndex() > this->stackBottomIndex()) {
-            this->popNoReturn();
+    bool windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
+        auto ret = this->stack.wind(stackTopOffset, paramSize, code);
+        if(!ret) {
+            raiseError(*this, TYPE::StackOverflowError, "local stack size reaches limit");
         }
+        return ret;
     }
-
-    void reclaimLocals(unsigned char offset, unsigned char size) {
-        auto *limit = this->callStack + this->localVarOffset() + offset;
-        auto *cur = limit + size - 1;
-        while(cur >= limit) {
-            (cur--)->reset();
-        }
-    }
-
-    void storeGlobal(unsigned int index) {
-        this->setGlobal(index, this->pop());
-    }
-
-    void loadGlobal(unsigned int index) {
-        auto v = this->getGlobal(index);
-        this->push(std::move(v));
-    }
-
-    void storeLocal(unsigned char index) {
-        this->callStack[this->localVarOffset() + index] = this->pop();
-    }
-
-    void loadLocal(unsigned char index) {
-        auto v(this->callStack[this->localVarOffset() + index]); // callStack may be expanded.
-        this->push(std::move(v));
-    }
-
-    // field manipulation
-
-    void storeField(unsigned int index) {
-        DSValue value(this->pop());
-        this->pop()->getFieldTable()[index] = std::move(value);
-    }
-
-    /**
-     * get field from stack top value.
-     */
-    void loadField(unsigned int index) {
-        this->callStack[this->stackTopIndex()] =
-                this->callStack[this->stackTopIndex()]->getFieldTable()[index];
-    }
-
-    /**
-     * expand stack size to at least (stackTopIndex + add)
-     * @param add
-     * additional size
-     */
-    void reserveLocalStack(unsigned int add) {
-        unsigned int needSize = this->stackTopIndex() + add;
-        if(needSize < this->callStackSize) {
-            return;
-        }
-        this->reserveLocalStackImpl(needSize);
-    }
-
-    /**
-     * reserve global variable entry and set local variable offset.
-     */
-    void reserveGlobalVar() {
-        this->globals.resize(this->symbolTable.getMaxGVarIndex());
-        this->localVarOffset() = 0;
-        this->stackTopIndex() = 0;
-        this->stackBottomIndex() = 0;
-    }
-
-    /**
-     * expand stack size to at least needSize
-     * @param needSize
-     */
-    void reserveLocalStackImpl(unsigned int needSize);
-
-    bool windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code);
-
-    void unwindStackFrame();
 
     // runtime api
     bool checkCast(DSType *targetType);
@@ -530,7 +328,7 @@ private:
      *                       | offset |   |        |
      */
     bool prepareFuncCall(unsigned int paramSize) {
-        auto *func = typeAs<FuncObject>(this->callStack[this->stackTopIndex() - paramSize]);
+        auto *func = typeAs<FuncObject>(this->stack.peekByOffset(paramSize));
         return this->windStackFrame(paramSize + 1, paramSize, &func->getCode());
     }
 
@@ -544,9 +342,8 @@ private:
      */
     bool prepareMethodCall(unsigned short index, unsigned short paramSize) {
         const unsigned int actualParamSize = paramSize + 1; // include receiver
-        const unsigned int recvIndex = this->stackTopIndex() - paramSize;
-
-        return this->windStackFrame(actualParamSize, actualParamSize, this->callStack[recvIndex]->getType()->getMethodRef(index));
+        return this->windStackFrame(actualParamSize, actualParamSize,
+                this->stack.peekByOffset(paramSize)->getType()->getMethodRef(index));
     }
 
     /**
@@ -558,9 +355,8 @@ private:
      *             |    new offset    |
      */
     bool prepareConstructorCall(unsigned short paramSize) {
-        const unsigned int recvIndex = this->stackTopIndex() - paramSize;
-
-        return this->windStackFrame(paramSize, paramSize + 1, this->callStack[recvIndex]->getType()->getConstructor());
+        return this->windStackFrame(paramSize, paramSize + 1,
+                this->stack.peekByOffset(paramSize)->getType()->getConstructor());
     }
 
     /**

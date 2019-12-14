@@ -430,20 +430,19 @@ unsigned int DSState_lineNum(const DSState *st) {
 
 void DSState_setShellName(DSState *st, const char *shellName) {
     if(shellName != nullptr) {
-        unsigned int index = toIndex(BuiltinVarOffset::POS_0);
-        st->setGlobal(index, DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::string(shellName)));
+        st->setGlobal(BuiltinVarOffset::POS_0,
+                DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::string(shellName)));
     }
 }
 
 // set positional parameters
 static void finalizeScriptArg(DSState *st) {
-    unsigned int index = toIndex(BuiltinVarOffset::ARGS);
-    auto *array = typeAs<Array_Object>(st->getGlobal(index));
+    auto *array = typeAs<Array_Object>(st->getGlobal(BuiltinVarOffset::ARGS));
 
     // update argument size
     const unsigned int size = array->getValues().size();
-    index = toIndex(BuiltinVarOffset::ARGS_SIZE);
-    st->setGlobal(index, DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), size));
+    st->setGlobal(BuiltinVarOffset::ARGS_SIZE,
+            DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), size));
 
     unsigned int limit = 9;
     if(size < limit) {
@@ -451,7 +450,8 @@ static void finalizeScriptArg(DSState *st) {
     }
 
     // update positional parameter
-    for(index = 0; index < limit; index++) {
+    unsigned int index = 0;
+    for(; index < limit; index++) {
         unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
         st->setGlobal(i, array->getValues()[index]);
     }
@@ -486,9 +486,9 @@ void DSState_setArguments(DSState *st, char *const *args) {
  * full path
  */
 static void setScriptDir(DSState *st, const char *scriptDir) {
-    unsigned int index = toIndex(BuiltinVarOffset::SCRIPT_DIR);
     std::string str = scriptDir;
-    st->setGlobal(index, DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::move(str)));
+    st->setGlobal(BuiltinVarOffset::SCRIPT_DIR,
+            DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::move(str)));
 }
 
 int DSState_setScriptDir(DSState *st, const char *scriptDir) {
@@ -696,7 +696,7 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
 
         auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
         completeLine(*st, *value, index);
-        st->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(old));
+        st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
         break;
     }
     case DS_COMP_GET:
@@ -765,7 +765,7 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
     );
     auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
     st->editOpReply = st->callFunction(std::move(func), std::move(args));
-    st->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(old));
+    st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
     if(st->hasError()) {
         return 0;
     }

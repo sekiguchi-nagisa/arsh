@@ -29,7 +29,6 @@
 #include "misc/files.h"
 #include "misc/num_util.hpp"
 
-
 // #####################
 // ##     DSState     ##
 // #####################
@@ -57,22 +56,9 @@ DSState::DSState() :
         falseObj(DSValue::create<Boolean_Object>(this->symbolTable.get(TYPE::Boolean), false)),
         emptyStrObj(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::string())),
         emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.get(TYPE::UnixFD), -1)),
-        logicalWorkingDir(initLogicalWorkingDir()), callStack(new DSValue[DEFAULT_STACK_SIZE]),
+        logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()) { }
 
-void DSState::reserveLocalStackImpl(unsigned int needSize) {
-    unsigned int newSize = this->callStackSize;
-    do {
-        newSize += (newSize >> 1u);
-    } while(newSize < needSize);
-    auto newTable = new DSValue[newSize];
-    for(unsigned int i = 0; i < this->stackTopIndex() + 1; i++) {
-        newTable[i] = std::move(this->callStack[i]);
-    }
-    delete[] this->callStack;
-    this->callStack = newTable;
-    this->callStackSize = newSize;
-}
 
 void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
     auto *obj = typeAs<Array_Object>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
@@ -89,8 +75,8 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
 }
 
 bool DSState::checkCast(DSType *targetType) {
-    if(!this->peek()->introspect(*this, targetType)) {
-        DSType *stackTopType = this->pop()->getType();
+    if(!this->stack.peek()->introspect(*this, targetType)) {
+        DSType *stackTopType = this->stack.pop()->getType();
         std::string str("cannot cast `");
         str += this->symbolTable.getTypeName(*stackTopType);
         str += "' to `";
@@ -103,10 +89,10 @@ bool DSState::checkCast(DSType *targetType) {
 }
 
 bool DSState::checkAssertion() {
-    auto msg(this->pop());
+    auto msg(this->stack.pop());
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
-    if(!typeAs<Boolean_Object>(this->pop())->getValue()) {
+    if(!typeAs<Boolean_Object>(this->stack.pop())->getValue()) {
         raiseError(*this, TYPE::_AssertFail, std::string(typeAs<String_Object>(msg)->getValue()));
         return false;
     }
@@ -116,9 +102,9 @@ bool DSState::checkAssertion() {
 const char *DSState::loadEnv(bool hasDefault) {
     DSValue dValue;
     if(hasDefault) {
-        dValue = this->pop();
+        dValue = this->stack.pop();
     }
-    DSValue nameObj(this->pop());
+    DSValue nameObj(this->stack.pop());
     const char *name = typeAs<String_Object>(nameObj)->getValue();
 
     const char *env = getenv(name);
@@ -136,50 +122,6 @@ const char *DSState::loadEnv(bool hasDefault) {
     return env;
 }
 
-bool DSState::windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
-    const unsigned int maxVarSize = code->is(CodeKind::NATIVE) ? paramSize :
-                                    static_cast<const CompiledCode *>(code)->getLocalVarNum();
-    const unsigned int localVarOffset = this->stackTopIndex() - paramSize + 1;
-    const unsigned int operandSize = code->is(CodeKind::NATIVE) ? 4 :
-                                     static_cast<const CompiledCode *>(code)->getStackDepth();
-
-    if(this->controlStack.size() == DSState::MAX_CONTROL_STACK_SIZE) {
-        raiseError(*this, TYPE::StackOverflowError, "local stack size reaches limit");
-        return false;
-    }
-
-    // save current control frame
-    this->stackTopIndex() -= stackTopOffset;
-    this->controlStack.push_back(this->getFrame());
-    this->stackTopIndex() += stackTopOffset;
-
-    // reallocate stack
-    this->reserveLocalStack(maxVarSize - paramSize + operandSize);
-
-    // prepare control frame
-    this->code() = code;
-    this->stackTopIndex() = this->stackTopIndex() + maxVarSize - paramSize;
-    this->stackBottomIndex() = this->stackTopIndex();
-    this->localVarOffset() = localVarOffset;
-    this->pc() = this->code()->getCodeOffset() - 1;
-    return true;
-}
-
-void DSState::unwindStackFrame() {
-    auto frame = this->controlStack.back();
-
-    this->code() = frame.code;
-    this->stackBottomIndex() = frame.stackBottomIndex;
-    this->localVarOffset() = frame.localVarOffset;
-    this->pc() = frame.pc;
-
-    unsigned int oldStackTopIndex = frame.stackTopIndex;
-    while(this->stackTopIndex() > oldStackTopIndex) {
-        this->popNoReturn();
-    }
-    this->controlStack.pop_back();
-}
-
 bool DSState::prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvObj,
                                             DSValue &&restoreFD, const flag8_set_t attr) {
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {
@@ -188,21 +130,23 @@ bool DSState::prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvOb
     }
 
     // set parameter
-    this->reserveLocalStack(3);
-    this->push(DSValue::createNum(attr));
-    this->push(std::move(restoreFD));
-    this->push(std::move(argvObj));
+    this->stack.reserve(3);
+    this->stack.push(DSValue::createNum(attr));
+    this->stack.push(std::move(restoreFD));
+    this->stack.push(std::move(argvObj));
 
     if(!this->windStackFrame(3, 3, code)) {
         return false;
     }
 
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
-        auto argv = typeAs<Array_Object>(this->getLocal(UDC_PARAM_ARGV));
+        auto argv = typeAs<Array_Object>(this->stack.getLocal(UDC_PARAM_ARGV));
         eraseFirst(*argv);
         const unsigned int argSize = argv->getValues().size();
-        this->setLocal(UDC_PARAM_ARGV + 1, DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), argSize));   // #
-        this->setLocal(UDC_PARAM_ARGV + 2, this->getGlobal(BuiltinVarOffset::POS_0)); // 0
+        this->stack.setLocal(UDC_PARAM_ARGV + 1,
+                DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), argSize));   // #
+        this->stack.setLocal(UDC_PARAM_ARGV + 2,
+                this->getGlobal(BuiltinVarOffset::POS_0)); // 0
         unsigned int limit = 9;
         if(argSize < limit) {
             limit = argSize;
@@ -210,17 +154,17 @@ bool DSState::prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvOb
 
         unsigned int index = 0;
         for(; index < limit; index++) {
-            this->setLocal(index + UDC_PARAM_ARGV + 3, argv->getValues()[index]);
+            this->stack.setLocal(index + UDC_PARAM_ARGV + 3, argv->getValues()[index]);
         }
 
         for(; index < 9; index++) {
-            this->setLocal(index + UDC_PARAM_ARGV + 3, this->emptyStrObj);  // set remain
+            this->stack.setLocal(index + UDC_PARAM_ARGV + 3, this->emptyStrObj);  // set remain
         }
     }
     return true;
 }
 
-#define CODE(ctx) ((ctx).code())
+#define CODE(ctx) ((ctx).stack.code())
 #define GET_CODE(ctx) (CODE(ctx)->getCode())
 #define CONST_POOL(ctx) (static_cast<const CompiledCode *>(CODE(ctx))->getConstPool())
 
@@ -311,8 +255,8 @@ static DSValue newFD(const DSState &st, int &fd) {
 }
 
 bool DSState::forkAndEval() {
-    const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(*this), this->pc() + 1));
-    const unsigned short offset = read16(GET_CODE(*this), this->pc() + 2);
+    const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(*this), this->stack.pc() + 1));
+    const unsigned short offset = read16(GET_CODE(*this), this->stack.pc() + 2);
 
     // flush standard stream due to prevent mixing io buffer
     flushStdFD();
@@ -374,10 +318,10 @@ bool DSState::forkAndEval() {
 
         // push object
         if(obj) {
-            this->push(std::move(obj));
+            this->stack.push(std::move(obj));
         }
 
-        this->pc() += offset - 1;
+        this->stack.pc() += offset - 1;
     } else if(proc.pid() == 0) {   // child process
         tryToDup(pipeset.in[READ_PIPE], STDIN_FILENO);
         tryToClose(pipeset.in);
@@ -388,7 +332,7 @@ bool DSState::forkAndEval() {
             redirInToNull();
         }
 
-        this->pc() += 3;
+        this->stack.pc() += 3;
     } else {
         raiseSystemError(*this, EAGAIN, "fork failed");
         return false;
@@ -746,7 +690,7 @@ bool DSState::callPipeline(bool lastPipe) {
      * ls | { grep . ;}
      * ==> pipeSize == 1, procSize == 1
      */
-    const unsigned int procSize = read8(GET_CODE(*this), this->pc() + 1) - 1;
+    const unsigned int procSize = read8(GET_CODE(*this), this->stack.pc() + 1) - 1;
     const unsigned int pipeSize = procSize - (lastPipe ? 0 : 1);
 
     assert(pipeSize > 0);
@@ -789,7 +733,7 @@ bool DSState::callPipeline(bool lastPipe) {
         closeAllPipe(pipeSize, pipefds);
 
         // set pc to next instruction
-        this->pc() += read16(GET_CODE(*this), this->pc() + 2 + procIndex * 2) - 1;
+        this->stack.pc() += read16(GET_CODE(*this), this->stack.pc() + 2 + procIndex * 2) - 1;
     } else if(procIndex == procSize) { // parent (last pipeline)
         /**
          * in last pipe, save current stdin before call dup2
@@ -805,7 +749,7 @@ bool DSState::callPipeline(bool lastPipe) {
         closeAllPipe(pipeSize, pipefds);
 
         if(lastPipe) {
-            this->push(DSValue::create<PipelineState>(*this, std::move(jobEntry)));
+            this->stack.push(DSValue::create<PipelineState>(*this, std::move(jobEntry)));
         } else {
             // job termination
             auto waitOp = rootShell && this->isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
@@ -820,7 +764,7 @@ bool DSState::callPipeline(bool lastPipe) {
         }
 
         // set pc to next instruction
-        this->pc() += read16(GET_CODE(*this), this->pc() + 2 + procIndex * 2) - 1;
+        this->stack.pc() += read16(GET_CODE(*this), this->stack.pc() + 2 + procIndex * 2) - 1;
     } else {
         // force terminate forked process.
         for(unsigned int i = 0; i < procIndex; i++) {
@@ -842,10 +786,10 @@ void DSState::addCmdArg(bool skipEmptyStr) {
      * | argv | redir | value |
      * +------+-------+-------+
      */
-    DSValue value = this->pop();
+    DSValue value = this->stack.pop();
     DSType *valueType = value->getType();
 
-    auto *argv = typeAs<Array_Object>(this->callStack[this->stackTopIndex() - 1]);
+    auto *argv = typeAs<Array_Object>(this->stack.peekByOffset(1));
     if(valueType->is(TYPE::String)) {  // String
         if(skipEmptyStr && typeAs<String_Object>(value)->empty()) {
             return;
@@ -855,13 +799,13 @@ void DSState::addCmdArg(bool skipEmptyStr) {
     }
 
     if(valueType->is(TYPE::UnixFD)) { // UnixFD
-        if(!this->peek()) {
-            this->pop();
-            this->push(DSValue::create<RedirConfig>());
+        if(!this->stack.peek()) {
+            this->stack.pop();
+            this->stack.push(DSValue::create<RedirConfig>());
         }
         auto fdPath = typeAs<UnixFD_Object>(value)->toString();
         auto strObj = DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::move(fdPath));
-        typeAs<RedirConfig>(this->peek())->addRedirOp(RedirOP::NOP, std::move(value));
+        typeAs<RedirConfig>(this->stack.peek())->addRedirOp(RedirOP::NOP, std::move(value));
         argv->append(std::move(strObj));
         return;
     }
@@ -893,10 +837,10 @@ static NativeCode initSignalTrampoline() noexcept {
 static auto signalTrampoline = initSignalTrampoline();
 
 bool DSState::kickSignalHandler(int sigNum, DSValue &&func) {
-    this->reserveLocalStack(3);
-    this->push(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
-    this->push(std::move(func));
-    this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Signal), sigNum));
+    this->stack.reserve(3);
+    this->stack.push(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
+    this->stack.push(std::move(func));
+    this->stack.push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Signal), sigNum));
 
     return this->windStackFrame(3, 3, &signalTrampoline);
 }
@@ -923,7 +867,7 @@ bool DSState::checkVMEvent() {
 
     if(this->hook != nullptr) {
         assert(hasFlag(DSState::eventDesc, VMEvent::HOOK));
-        auto op = static_cast<OpCode>(GET_CODE(*this)[this->pc() + 1]);
+        auto op = static_cast<OpCode>(GET_CODE(*this)[this->stack.pc() + 1]);
         this->hook->vmFetchHook(*this, op);
     }
     return true;
@@ -950,7 +894,7 @@ bool DSState::mainLoop() {
         }
 
         // fetch next opcode
-        op = static_cast<OpCode>(GET_CODE(*this)[++this->pc()]);
+        op = static_cast<OpCode>(GET_CODE(*this)[++this->stack.pc()]);
 
         // dispatch instruction
         vmdispatch(op) {
@@ -962,12 +906,12 @@ bool DSState::mainLoop() {
             vmnext;
         }
         vmcase(PRINT) {
-            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 4;
+            unsigned int v = read32(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 4;
 
             auto &stackTopType = this->symbolTable.get(v);
             assert(!stackTopType.isVoidType());
-            auto *strObj = typeAs<String_Object>(this->peek());
+            auto *strObj = typeAs<String_Object>(this->stack.peek());
             std::string value = ": ";
             value += this->symbolTable.getTypeName(stackTopType);
             value += " = ";
@@ -975,347 +919,348 @@ bool DSState::mainLoop() {
             value += "\n";
             fwrite(value.c_str(), sizeof(char), value.size(), stdout);
             fflush(stdout);
-            this->popNoReturn();
+            this->stack.popNoReturn();
             vmnext;
         }
         vmcase(INSTANCE_OF) {
-            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 4;
+            unsigned int v = read32(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 4;
 
             auto &targetType = this->symbolTable.get(v);
-            if(this->pop()->introspect(*this, &targetType)) {
-                this->push(this->trueObj);
+            if(this->stack.pop()->introspect(*this, &targetType)) {
+                this->stack.push(this->trueObj);
             } else {
-                this->push(this->falseObj);
+                this->stack.push(this->falseObj);
             }
             vmnext;
         }
         vmcase(CHECK_CAST) {
-            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 4;
+            unsigned int v = read32(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 4;
             TRY(this->checkCast(&this->symbolTable.get(v)));
             vmnext;
         }
         vmcase(PUSH_NULL) {
-            this->push(nullptr);
+            this->stack.push(nullptr);
             vmnext;
         }
         vmcase(PUSH_TRUE) {
-            this->push(this->trueObj);
+            this->stack.push(this->trueObj);
             vmnext;
         }
         vmcase(PUSH_FALSE) {
-            this->push(this->falseObj);
+            this->stack.push(this->falseObj);
             vmnext;
         }
         vmcase(PUSH_ESTRING) {
-            this->push(this->emptyStrObj);
+            this->stack.push(this->emptyStrObj);
             vmnext;
         }
         vmcase(LOAD_CONST) {
-            unsigned char index = read8(GET_CODE(*this), ++this->pc());
-            this->push(CONST_POOL(*this)[index]);
+            unsigned char index = read8(GET_CODE(*this), ++this->stack.pc());
+            this->stack.push(CONST_POOL(*this)[index]);
             vmnext;
         }
         vmcase(LOAD_CONST_W) {
-            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 2;
-            this->push(CONST_POOL(*this)[index]);
+            unsigned short index = read16(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 2;
+            this->stack.push(CONST_POOL(*this)[index]);
             vmnext;
         }
         vmcase(LOAD_CONST_T) {
-            unsigned int index = read24(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 3;
-            this->push(CONST_POOL(*this)[index]);
+            unsigned int index = read24(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 3;
+            this->stack.push(CONST_POOL(*this)[index]);
             vmnext;
         }
         vmcase(LOAD_GLOBAL) {
-            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 2;
-            this->loadGlobal(index);
+            unsigned short index = read16(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 2;
+            auto v = this->getGlobal(index);
+            this->stack.push(std::move(v));
             vmnext;
         }
         vmcase(STORE_GLOBAL) {
-            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 2;
-            this->storeGlobal(index);
+            unsigned short index = read16(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 2;
+            this->setGlobal(index, this->stack.pop());
             vmnext;
         }
         vmcase(LOAD_LOCAL) {
-            unsigned char index = read8(GET_CODE(*this), ++this->pc());
-            this->loadLocal(index);
+            unsigned char index = read8(GET_CODE(*this), ++this->stack.pc());
+            this->stack.loadLocal(index);
             vmnext;
         }
         vmcase(STORE_LOCAL) {
-            unsigned char index = read8(GET_CODE(*this), ++this->pc());
-            this->storeLocal(index);
+            unsigned char index = read8(GET_CODE(*this), ++this->stack.pc());
+            this->stack.storeLocal(index);
             vmnext;
         }
         vmcase(LOAD_FIELD) {
-            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 2;
-            this->loadField(index);
+            unsigned short index = read16(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 2;
+            this->stack.loadField(index);
             vmnext;
         }
         vmcase(STORE_FIELD) {
-            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 2;
-            this->storeField(index);
+            unsigned short index = read16(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 2;
+            this->stack.storeField(index);
             vmnext;
         }
         vmcase(IMPORT_ENV) {
-            unsigned char b = read8(GET_CODE(*this), ++this->pc());
+            unsigned char b = read8(GET_CODE(*this), ++this->stack.pc());
             TRY(this->loadEnv(b > 0));
             vmnext;
         }
         vmcase(LOAD_ENV) {
             const char *value = this->loadEnv(false);
             TRY(value);
-            this->push(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), value));
+            this->stack.push(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), value));
             vmnext;
         }
         vmcase(STORE_ENV) {
-            DSValue value = this->pop();
-            DSValue name = this->pop();
+            DSValue value = this->stack.pop();
+            DSValue name = this->stack.pop();
 
             setenv(typeAs<String_Object>(name)->getValue(),
                    typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
             vmnext;
         }
         vmcase(POP) {
-            this->popNoReturn();
+            this->stack.popNoReturn();
             vmnext;
         }
         vmcase(DUP) {
-            this->dup();
+            this->stack.dup();
             vmnext;
         }
         vmcase(DUP2) {
-            this->dup2();
+            this->stack.dup2();
             vmnext;
         }
         vmcase(SWAP) {
-            this->swap();
+            this->stack.swap();
             vmnext;
         }
         vmcase(NEW_STRING) {
-            this->push(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String)));
+            this->stack.push(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String)));
             vmnext;
         }
         vmcase(APPEND_STRING) {
-            DSValue v = this->pop();
-            typeAs<String_Object>(this->peek())->append(std::move(v));
+            DSValue v = this->stack.pop();
+            typeAs<String_Object>(this->stack.peek())->append(std::move(v));
             vmnext;
         }
         vmcase(NEW_ARRAY) {
-            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 4;
-            this->push(DSValue::create<Array_Object>(this->symbolTable.get(v)));
+            unsigned int v = read32(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 4;
+            this->stack.push(DSValue::create<Array_Object>(this->symbolTable.get(v)));
             vmnext;
         }
         vmcase(APPEND_ARRAY) {
-            DSValue v = this->pop();
-            typeAs<Array_Object>(this->peek())->append(std::move(v));
+            DSValue v = this->stack.pop();
+            typeAs<Array_Object>(this->stack.peek())->append(std::move(v));
             vmnext;
         }
         vmcase(NEW_MAP) {
-            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 4;
-            this->push(DSValue::create<Map_Object>(this->symbolTable.get(v)));
+            unsigned int v = read32(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 4;
+            this->stack.push(DSValue::create<Map_Object>(this->symbolTable.get(v)));
             vmnext;
         }
         vmcase(APPEND_MAP) {
-            DSValue value = this->pop();
-            DSValue key = this->pop();
-            typeAs<Map_Object>(this->peek())->set(std::move(key), std::move(value));
+            DSValue value = this->stack.pop();
+            DSValue key = this->stack.pop();
+            typeAs<Map_Object>(this->stack.peek())->set(std::move(key), std::move(value));
             vmnext;
         }
         vmcase(NEW_TUPLE) {
-            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 4;
-            this->push(DSValue::create<Tuple_Object>(this->symbolTable.get(v)));
+            unsigned int v = read32(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 4;
+            this->stack.push(DSValue::create<Tuple_Object>(this->symbolTable.get(v)));
             vmnext;
         }
         vmcase(NEW) {
-            unsigned int v = read32(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 4;
+            unsigned int v = read32(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 4;
 
             auto &type = this->symbolTable.get(v);
             if(!type.isRecordType()) {
-                this->push(DSValue::create<DSObject>(type));
+                this->stack.push(DSValue::create<DSObject>(type));
             } else {
                 fatal("currently, DSObject allocation not supported\n");
             }
             vmnext;
         }
         vmcase(CALL_INIT) {
-            unsigned short paramSize = read16(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 2;
+            unsigned short paramSize = read16(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 2;
             TRY(this->prepareConstructorCall(paramSize));
             vmnext;
         }
         vmcase(CALL_METHOD) {
-            unsigned short paramSize = read16(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 2;
-            unsigned short index = read16(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 2;
+            unsigned short paramSize = read16(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 2;
+            unsigned short index = read16(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 2;
             TRY(this->prepareMethodCall(index, paramSize));
             vmnext;
         }
         vmcase(CALL_FUNC) {
-            unsigned short paramSize = read16(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 2;
+            unsigned short paramSize = read16(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 2;
             TRY(this->prepareFuncCall(paramSize));
             vmnext;
         }
         vmcase(CALL_NATIVE) {
-            unsigned long v = read64(GET_CODE(*this), this->pc() + 1);
-            this->pc() += 8;
+            unsigned long v = read64(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() += 8;
             auto func = (native_func_t) v;
             DSValue returnValue = func(*this);
             TRY(!this->hasError());
             if(returnValue) {
-                this->push(std::move(returnValue));
+                this->stack.push(std::move(returnValue));
             }
             vmnext;
         }
         vmcase(INIT_MODULE) {
-            auto &code = typeAs<FuncObject>(this->peek())->getCode();
+            auto &code = typeAs<FuncObject>(this->stack.peek())->getCode();
             this->windStackFrame(0, 0, &code);
             vmnext;
         }
         vmcase(RETURN) {
-            this->unwindStackFrame();
-            if(this->checkVMReturn()) {
+            this->stack.unwind();
+            if(this->stack.checkVMReturn()) {
                 return true;
             }
             vmnext;
         }
         vmcase(RETURN_V) {
-            DSValue v = this->pop();
-            this->unwindStackFrame();
-            this->push(std::move(v));
-            if(this->checkVMReturn()) {
+            DSValue v = this->stack.pop();
+            this->stack.unwind();
+            this->stack.push(std::move(v));
+            if(this->stack.checkVMReturn()) {
                 return true;
             }
             vmnext;
         }
         vmcase(RETURN_UDC) {
-            auto v = this->pop();
-            this->unwindStackFrame();
+            auto v = this->stack.pop();
+            this->stack.unwind();
             this->pushExitStatus(typeAs<Int_Object>(v)->getValue());
-            if(this->checkVMReturn()) {
+            if(this->stack.checkVMReturn()) {
                 return true;
             }
             vmnext;
         }
         vmcase(RETURN_SIG) {
-            auto v = this->getLocal(0);   // old exit status
-            this->unwindStackFrame();
+            auto v = this->stack.getLocal(0);   // old exit status
+            this->stack.unwind();
             unsetFlag(DSState::eventDesc, VMEvent::MASK);
-            this->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(v));
+            this->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
             vmnext;
         }
         vmcase(BRANCH) {
-            unsigned short offset = read16(GET_CODE(*this), this->pc() + 1);
-            if(typeAs<Boolean_Object>(this->pop())->getValue()) {
-                this->pc() += 2;
+            unsigned short offset = read16(GET_CODE(*this), this->stack.pc() + 1);
+            if(typeAs<Boolean_Object>(this->stack.pop())->getValue()) {
+                this->stack.pc() += 2;
             } else {
-                this->pc() += offset - 1;
+                this->stack.pc() += offset - 1;
             }
             vmnext;
         }
         vmcase(GOTO) {
-            unsigned int index = read32(GET_CODE(*this), this->pc() + 1);
-            this->pc() = index - 1;
+            unsigned int index = read32(GET_CODE(*this), this->stack.pc() + 1);
+            this->stack.pc() = index - 1;
             vmnext;
         }
         vmcase(THROW) {
-            auto obj = this->pop();
+            auto obj = this->stack.pop();
             this->throwObject(std::move(obj), 1);
             vmerror;
         }
         vmcase(ENTER_FINALLY) {
-            const unsigned int offset = read16(GET_CODE(*this), this->pc() + 1);
-            const unsigned int savedIndex = this->pc() + 2;
-            this->push(DSValue::createNum(savedIndex));
-            this->pc() += offset - 1;
+            const unsigned int offset = read16(GET_CODE(*this), this->stack.pc() + 1);
+            const unsigned int savedIndex = this->stack.pc() + 2;
+            this->stack.push(DSValue::createNum(savedIndex));
+            this->stack.pc() += offset - 1;
             vmnext;
         }
         vmcase(EXIT_FINALLY) {
-            switch(this->peek().kind()) {
+            switch(this->stack.peek().kind()) {
             case DSValueKind::OBJECT:
             case DSValueKind::INVALID: {
                 this->storeThrownObject();
                 vmerror;
             }
             case DSValueKind::NUMBER: {
-                unsigned int index = static_cast<unsigned int>(this->pop().value());
-                this->pc() = index;
+                unsigned int index = static_cast<unsigned int>(this->stack.pop().value());
+                this->stack.pc() = index;
                 vmnext;
             }
             }
             vmnext;
         }
         vmcase(LOOKUP_HASH) {
-            auto key = this->pop();
-            auto map = this->pop();
+            auto key = this->stack.pop();
+            auto map = this->stack.pop();
             if(!key.isInvalid()) {
                 auto &valueMap = typeAs<Map_Object>(map)->getValueMap();
                 auto iter = valueMap.find(key);
                 if(iter != valueMap.end()) {
                     unsigned int index = typeAs<Int_Object>(iter->second)->getValue();
-                    this->pc() = index - 1;
+                    this->stack.pc() = index - 1;
                 }
             }
             vmnext;
         }
         vmcase(I32_TO_I64) {
-            int v = typeAs<Int_Object>(this->pop())->getValue();
+            int v = typeAs<Int_Object>(this->stack.pop())->getValue();
             long l = v;
-            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Int64), l));
+            this->stack.push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Int64), l));
             vmnext;
         }
         vmcase(I64_TO_I32) {
-            unsigned long l = typeAs<Long_Object>(this->pop())->getValue();
+            unsigned long l = typeAs<Long_Object>(this->stack.pop())->getValue();
             auto v = static_cast<unsigned int>(l);
-            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
+            this->stack.push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
             vmnext;
         }
         vmcase(I32_TO_D) {
-            int v = typeAs<Int_Object>(this->pop())->getValue();
+            int v = typeAs<Int_Object>(this->stack.pop())->getValue();
             auto d = static_cast<double>(v);
-            this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
+            this->stack.push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(I64_TO_D) {
-            long v = typeAs<Long_Object>(this->pop())->getValue();
+            long v = typeAs<Long_Object>(this->stack.pop())->getValue();
             auto d = static_cast<double>(v);
-            this->push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
+            this->stack.push(DSValue::create<Float_Object>(this->symbolTable.get(TYPE::Float), d));
             vmnext;
         }
         vmcase(D_TO_I32) {
-            double d = typeAs<Float_Object>(this->pop())->getValue();
+            double d = typeAs<Float_Object>(this->stack.pop())->getValue();
             auto v = static_cast<int>(d);
-            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
+            this->stack.push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
             vmnext;
         }
         vmcase(D_TO_I64) {
-            double d = typeAs<Float_Object>(this->pop())->getValue();
+            double d = typeAs<Float_Object>(this->stack.pop())->getValue();
             auto v = static_cast<long>(d);
-            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Int64), v));
+            this->stack.push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Int64), v));
             vmnext;
         }
         vmcase(REF_EQ) {
-            auto v1 = this->pop();
-            auto v2 = this->pop();
-            this->push(v1 == v2 ? this->trueObj : this->falseObj);
+            auto v1 = this->stack.pop();
+            auto v2 = this->stack.pop();
+            this->stack.push(v1 == v2 ? this->trueObj : this->falseObj);
             vmnext;
         }
         vmcase(REF_NE) {
-            auto v1 = this->pop();
-            auto v2 = this->pop();
-            this->push(v1 != v2 ? this->trueObj : this->falseObj);
+            auto v1 = this->stack.pop();
+            auto v2 = this->stack.pop();
+            this->stack.push(v1 != v2 ? this->trueObj : this->falseObj);
             vmnext;
         }
         vmcase(FORK) {
@@ -1329,21 +1274,21 @@ bool DSState::mainLoop() {
             vmnext;
         }
         vmcase(EXPAND_TILDE) {
-            std::string str = typeAs<String_Object>(this->pop())->getValue();
+            std::string str = typeAs<String_Object>(this->stack.pop())->getValue();
             expandTilde(str);
-            this->push(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::move(str)));
+            this->stack.push(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::move(str)));
             vmnext;
         }
         vmcase(NEW_CMD) {
-            auto v = this->pop();
+            auto v = this->stack.pop();
             auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray));
             auto *argv = typeAs<Array_Object>(obj);
             argv->append(std::move(v));
-            this->push(std::move(obj));
+            this->stack.push(std::move(obj));
             vmnext;
         }
         vmcase(ADD_CMD_ARG) {
-            unsigned char v = read8(GET_CODE(*this), ++this->pc());
+            unsigned char v = read8(GET_CODE(*this), ++this->stack.pc());
             this->addCmdArg(v > 0);
             vmnext;
         }
@@ -1355,26 +1300,26 @@ bool DSState::mainLoop() {
                 setFlag(attr, UDC_ATTR_NEED_FORK);
             }
 
-            auto redir = this->pop();
-            auto argv = this->pop();
+            auto redir = this->stack.pop();
+            auto argv = this->stack.pop();
 
             const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
             TRY(this->callCommand(CmdResolver()(*this, cmdName), std::move(argv), std::move(redir), attr));
             vmnext;
         }
         vmcase(BUILTIN_CMD) {
-            auto attr = this->getLocal(UDC_PARAM_ATTR).value();
-            DSValue redir = this->getLocal(UDC_PARAM_REDIR);
-            DSValue argv = this->getLocal(UDC_PARAM_ARGV);
+            auto attr = this->stack.getLocal(UDC_PARAM_ATTR).value();
+            DSValue redir = this->stack.getLocal(UDC_PARAM_REDIR);
+            DSValue argv = this->stack.getLocal(UDC_PARAM_ARGV);
             bool ret = this->callBuiltinCommand(std::move(argv), std::move(redir), attr);
             flushStdFD();
             TRY(ret);
             vmnext;
         }
         vmcase(BUILTIN_EVAL) {
-            auto attr = this->getLocal(UDC_PARAM_ATTR).value();
-            DSValue redir = this->getLocal(UDC_PARAM_REDIR);
-            DSValue argv = this->getLocal(UDC_PARAM_ARGV);
+            auto attr = this->stack.getLocal(UDC_PARAM_ATTR).value();
+            DSValue redir = this->stack.getLocal(UDC_PARAM_REDIR);
+            DSValue argv = this->stack.getLocal(UDC_PARAM_ARGV);
 
             eraseFirst(*typeAs<Array_Object>(argv));
             auto *array = typeAs<Array_Object>(argv);
@@ -1387,23 +1332,23 @@ bool DSState::mainLoop() {
             vmnext;
         }
         vmcase(BUILTIN_EXEC) {
-            DSValue redir = this->getLocal(UDC_PARAM_REDIR);
-            DSValue argv = this->getLocal(UDC_PARAM_ARGV);
+            DSValue redir = this->stack.getLocal(UDC_PARAM_REDIR);
+            DSValue argv = this->stack.getLocal(UDC_PARAM_ARGV);
             this->callBuiltinExec(std::move(argv), std::move(redir));
             vmnext;
         }
         vmcase(NEW_REDIR) {
-            this->push(DSValue::create<RedirConfig>());
+            this->stack.push(DSValue::create<RedirConfig>());
             vmnext;
         }
         vmcase(ADD_REDIR_OP) {
-            unsigned char v = read8(GET_CODE(*this), ++this->pc());
-            auto value = this->pop();
-            typeAs<RedirConfig>(this->peek())->addRedirOp(static_cast<RedirOP>(v), std::move(value));
+            unsigned char v = read8(GET_CODE(*this), ++this->stack.pc());
+            auto value = this->stack.pop();
+            typeAs<RedirConfig>(this->stack.peek())->addRedirOp(static_cast<RedirOP>(v), std::move(value));
             vmnext;
         }
         vmcase(DO_REDIR) {
-            TRY(typeAs<RedirConfig>(this->peek())->redirect(*this));
+            TRY(typeAs<RedirConfig>(this->stack.peek())->redirect(*this));
             vmnext;
         }
         vmcase(RAND) {
@@ -1411,7 +1356,7 @@ bool DSState::mainLoop() {
             std::default_random_engine engine(rand());
             std::uniform_int_distribution<int> dist;
             int v = dist(engine);
-            this->push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
+            this->stack.push(DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), v));
             vmnext;
         }
         vmcase(GET_SECOND) {
@@ -1420,45 +1365,46 @@ bool DSState::mainLoop() {
             auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
             long v = typeAs<Long_Object>(this->getGlobal(BuiltinVarOffset::SECONDS))->getValue();
             v += sec.count();
-            this->push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Int64), v));
+            this->stack.push(DSValue::create<Long_Object>(this->symbolTable.get(TYPE::Int64), v));
             vmnext;
         }
         vmcase(SET_SECOND) {
             this->baseTime = std::chrono::system_clock::now();
-            this->storeGlobal(toIndex(BuiltinVarOffset::SECONDS));
+            auto v = this->stack.pop();
+            this->setGlobal(BuiltinVarOffset::SECONDS, std::move(v));
             vmnext;
         }
         vmcase(UNWRAP) {
-            if(this->peek().kind() == DSValueKind::INVALID) {
+            if(this->stack.peek().kind() == DSValueKind::INVALID) {
                 raiseError(*this, TYPE::UnwrappingError, std::string("invalid value"));
                 vmerror;
             }
             vmnext;
         }
         vmcase(CHECK_UNWRAP) {
-            bool b = this->pop().kind() != DSValueKind::INVALID;
-            this->push(b ? this->trueObj : this->falseObj);
+            bool b = this->stack.pop().kind() != DSValueKind::INVALID;
+            this->stack.push(b ? this->trueObj : this->falseObj);
             vmnext;
         }
         vmcase(TRY_UNWRAP) {
-            unsigned short offset = read16(GET_CODE(*this), this->pc() + 1);
-            if(this->peek().kind() == DSValueKind::INVALID) {
-                this->popNoReturn();
-                this->pc() += 2;
+            unsigned short offset = read16(GET_CODE(*this), this->stack.pc() + 1);
+            if(this->stack.peek().kind() == DSValueKind::INVALID) {
+                this->stack.popNoReturn();
+                this->stack.pc() += 2;
             } else {
-                this->pc() += offset - 1;
+                this->stack.pc() += offset - 1;
             }
             vmnext;
         }
         vmcase(NEW_INVALID) {
-            this->push(DSValue::createInvalid());
+            this->stack.push(DSValue::createInvalid());
             vmnext;
         }
         vmcase(RECLAIM_LOCAL) {
-            unsigned char offset = read8(GET_CODE(*this), ++this->pc());
-            unsigned char size = read8(GET_CODE(*this), ++this->pc());
+            unsigned char offset = read8(GET_CODE(*this), ++this->stack.pc());
+            unsigned char size = read8(GET_CODE(*this), ++this->stack.pc());
 
-            this->reclaimLocals(offset, size);
+            this->stack.reclaimLocals(offset, size);
             vmnext;
         }
         }
@@ -1478,12 +1424,12 @@ bool DSState::handleException(bool forceUnwind) {
         this->hook->vmThrowHook(*this);
     }
 
-    for(; !this->checkVMReturn(); this->unwindStackFrame()) {
+    for(; !this->stack.checkVMReturn(); this->stack.unwind()) {
         if(!forceUnwind && !CODE(*this)->is(CodeKind::NATIVE)) {
             auto *cc = static_cast<const CompiledCode *>(CODE(*this));
 
             // search exception entry
-            const unsigned int occurredPC = this->pc();
+            const unsigned int occurredPC = this->stack.pc();
             const DSType *occurredType = this->thrownObject->getType();
 
             for(unsigned int i = 0; cc->getExceptionEntries()[i].type != nullptr; i++) {
@@ -1498,9 +1444,9 @@ bool DSState::handleException(bool forceUnwind) {
                          */
                         return false;
                     }
-                    this->pc() = entry.dest - 1;
-                    this->clearOperandStack();
-                    this->reclaimLocals(entry.localOffset, entry.localSize);
+                    this->stack.pc() = entry.dest - 1;
+                    this->stack.clearOperands();
+                    this->stack.reclaimLocals(entry.localOffset, entry.localSize);
                     this->loadThrownObject();
                     return true;
                 }
@@ -1529,7 +1475,7 @@ DSValue DSState::startEval(EvalOP op, DSError *dsError) {
     DSValue thrown;
     if(ret) {
         if(hasFlag(op, EvalOP::HAS_RETURN)) {
-            value = this->pop();
+            value = this->stack.pop();
         }
     } else {
         if(!subshell && hasFlag(op, EvalOP::PROPAGATE)) {
@@ -1566,9 +1512,10 @@ DSValue DSState::startEval(EvalOP op, DSError *dsError) {
 
 int DSState::callToplevel(const CompiledCode &code, DSError *dsError) {
     this->clearThrownObject();
-    this->reserveGlobalVar();
+    this->globals.resize(this->symbolTable.getMaxGVarIndex());
+    this->stack.reset();
 
-    this->windStackFrame(0, 0, &code);
+    this->stack.wind(0, 0, &code);
 
     EvalOP op = EvalOP::COMMIT;
     if(hasFlag(this->option, DS_OPTION_INTERACTIVE)) {
@@ -1584,10 +1531,10 @@ unsigned int DSState::prepareArguments(DSValue &&recv,
 
     // push arguments
     unsigned int size = args.first;
-    this->reserveLocalStack(size + 1);
-    this->push(std::move(recv));
+    this->stack.reserve(size + 1);
+    this->stack.push(std::move(recv));
     for(unsigned int i = 0; i < size; i++) {
-        this->push(std::move(args.second[i]));
+        this->stack.push(std::move(args.second[i]));
     }
     return size;
 }
@@ -1599,15 +1546,15 @@ private:
 
 public:
     explicit RecursionGuard(DSState &state) : state(state) {
-        this->state.recDepth()++;
+        this->state.incRecDepth();
     }
 
     ~RecursionGuard() {
-        this->state.recDepth()--;
+        this->state.decRecDepth();
     }
 
     bool checkLimit() {
-        if(this->state.recDepth() == LIMIT) {
+        if(this->state.getCallStack().recDepth() == LIMIT) {
             raiseError(this->state, TYPE::StackOverflowError,
                        "interpreter recursion depth reaches limit");
             return false;
@@ -1770,6 +1717,6 @@ void DSState::callTermHook(DSErrorKind kind, DSValue &&except) {
     this->clearThrownObject();
 
     // restore old value
-    this->setGlobal(toIndex(BuiltinVarOffset::EXIT_STATUS), std::move(oldExitStatus));
+    this->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldExitStatus));
     unsetFlag(DSState::eventDesc, VMEvent::MASK);
 }
