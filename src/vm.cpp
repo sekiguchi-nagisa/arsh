@@ -1539,33 +1539,15 @@ unsigned int DSState::prepareArguments(DSValue &&recv,
     return size;
 }
 
-class RecursionGuard {
-private:
-    static constexpr unsigned int LIMIT = 256;
-    DSState &state;
+#define RAISE_STACK_OVERFLOW() \
+    do { \
+        raiseError(*this, TYPE::StackOverflowError, "interpreter recursion depth reaches limit"); \
+        return nullptr; \
+    } while(false)
 
-public:
-    explicit RecursionGuard(DSState &state) : state(state) {
-        this->state.incRecDepth();
-    }
-
-    ~RecursionGuard() {
-        this->state.decRecDepth();
-    }
-
-    bool checkLimit() {
-        if(this->state.getCallStack().recDepth() == LIMIT) {
-            raiseError(this->state, TYPE::StackOverflowError,
-                       "interpreter recursion depth reaches limit");
-            return false;
-        }
-        return true;
-    }
-};
-
-#define GUARD_RECURSION(state) \
-    RecursionGuard _guard(state); \
-    do { if(!_guard.checkLimit()) { return nullptr; } } while(false)
+#define GUARD_RECURSION() \
+    RecursionGuard _guard(this->stack); \
+    do { if(!_guard.checkLimit()) { RAISE_STACK_OVERFLOW(); } } while(false)
 
 
 static NativeCode initCmdTrampoline() noexcept {
@@ -1582,7 +1564,7 @@ static NativeCode initCmdTrampoline() noexcept {
 static auto cmdTrampoline = initCmdTrampoline();
 
 DSValue DSState::execCommand(std::vector<DSValue> &&argv, bool propagate) {
-    GUARD_RECURSION(*this);
+    GUARD_RECURSION();
 
     DSValue ret;
     auto obj = DSValue::create<Array_Object>(this->symbolTable.get(TYPE::StringArray), std::move(argv));
@@ -1604,7 +1586,7 @@ DSValue DSState::callMethod(const MethodHandle *handle, DSValue &&recv,
     assert(handle != nullptr);
     assert(handle->getParamTypes().size() == args.first);
 
-    GUARD_RECURSION(*this);
+    GUARD_RECURSION();
 
     unsigned int size = this->prepareArguments(std::move(recv), std::move(args));
 
@@ -1620,7 +1602,7 @@ DSValue DSState::callMethod(const MethodHandle *handle, DSValue &&recv,
 }
 
 DSValue DSState::callFunction(DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
-    GUARD_RECURSION(*this);
+    GUARD_RECURSION();
 
     auto *type = funcObj->getType();
     unsigned int size = this->prepareArguments(std::move(funcObj), std::move(args));

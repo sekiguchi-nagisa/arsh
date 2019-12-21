@@ -151,14 +151,6 @@ public:
         return static_cast<bool>(this->thrownObject);
     }
 
-    void incRecDepth() {
-        this->stack.incRecDepth();
-    }
-
-    void decRecDepth() {
-        this->stack.decRecDepth();
-    }
-
     /**
      * set thrownObject and update exit status
      * @param except

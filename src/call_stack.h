@@ -21,6 +21,8 @@
 
 namespace ydsh {
 
+class RecursionGuard;
+
 struct ControlFrame {
     /**
      * currently executed code
@@ -56,6 +58,8 @@ struct ControlFrame {
 
 class CallStack {
 private:
+    friend class RecursionGuard;
+
     ControlFrame frame{};
     FlexBuffer<ControlFrame> frames;
 
@@ -187,14 +191,6 @@ public:
         return this->frame.recDepth;
     }
 
-    void incRecDepth() {
-        this->frame.recDepth++;
-    }
-
-    void decRecDepth() {
-        this->frame.recDepth--;
-    }
-
     bool checkVMReturn() const {
         return this->frames.empty() || this->recDepth() != this->frames.back().recDepth;
     }
@@ -241,7 +237,34 @@ public:
     void unwind();
 
 private:
+    void incRecDepth() {
+        this->frame.recDepth++;
+    }
+
+    void decRecDepth() {
+        this->frame.recDepth--;
+    }
+
     void resize(unsigned int afterSize);
+};
+
+class RecursionGuard {
+private:
+    static constexpr unsigned int LIMIT = 256;
+    CallStack &st;
+
+public:
+    explicit RecursionGuard(CallStack &st) : st(st) {
+        this->st.incRecDepth();
+    }
+
+    ~RecursionGuard() {
+        this->st.decRecDepth();
+    }
+
+    bool checkLimit() {
+        return this->st.recDepth() != LIMIT;
+    }
 };
 
 } // namespace ydsh
