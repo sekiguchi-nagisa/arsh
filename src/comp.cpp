@@ -540,7 +540,7 @@ public:
             hook(std::move(hook)), tokens(std::move(tokens)), tokenIndex(tokenIndex) {}
 
     void operator()(Array_Object &ret) override {
-        auto result = this->state.callFunction(std::move(this->hook),
+        auto result = callFunction(this->state, std::move(this->hook),
                 makeArgs(std::move(this->tokens),
                         DSValue::create<Int_Object>(this->state.symbolTable.get(TYPE::Int32), this->tokenIndex)));
         if(this->state.hasError()) {

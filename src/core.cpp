@@ -183,39 +183,6 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
     raiseError(st, TYPE::SystemError, std::move(str));
 }
 
-void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace) {
-    auto &callStack = st.getCallStack();
-    auto frame = callStack.getFrame();
-    for(unsigned int callDepth = callStack.getFrames().size(); callDepth > 0; frame = callStack.getFrames()[--callDepth]) {
-        auto &callable = frame.code;
-        if(!callable->is(CodeKind::NATIVE)) {
-            const auto *cc = static_cast<const CompiledCode *>(callable);
-
-            // create stack trace element
-            const char *sourceName = cc->getSourceName();
-            unsigned int lineNum = cc->getLineNum(frame.pc);
-
-            std::string callableName;
-            switch(callable->getKind()) {
-            case CodeKind::TOPLEVEL:
-                callableName += "<toplevel>";
-                break;
-            case CodeKind::FUNCTION:
-                callableName += "function ";
-                callableName += cc->getName();
-                break;
-            case CodeKind::USER_DEFINED_CMD:
-                callableName += "command ";
-                callableName += cc->getName();
-                break;
-            default:
-                break;
-            }
-            stackTrace.emplace_back(sourceName, lineNum, std::move(callableName));
-        }
-    }
-}
-
 const char *getWorkingDir(const DSState &st, bool useLogical, std::string &buf) {
     if(useLogical) {
         if(!S_ISDIR(getStMode(st.logicalWorkingDir.c_str()))) {

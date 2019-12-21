@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_CALL_STACK_H
-#define YDSH_CALL_STACK_H
+#ifndef YDSH_STATE_H
+#define YDSH_STATE_H
 
 #include "object.h"
 
@@ -56,12 +56,14 @@ struct ControlFrame {
     unsigned int recDepth;
 };
 
-class CallStack {
+class VMState {
 private:
     friend class RecursionGuard;
 
     ControlFrame frame{};
     FlexBuffer<ControlFrame> frames;
+
+    static constexpr unsigned int MAX_FRAME_SIZE = 2048;
 
     unsigned int operandsSize;
 
@@ -85,12 +87,15 @@ private:
      */
     DSValue *operands;
 
-    static constexpr unsigned int MAX_FRAME_SIZE = 2048;
+    /**
+     * for exception handling
+     */
+    DSValue thrown;
 
 public:
-    CallStack() : operandsSize(64), operands(new DSValue[this->operandsSize]) {}
+    VMState() : operandsSize(64), operands(new DSValue[this->operandsSize]) {}
 
-    ~CallStack() {
+    ~VMState() {
         delete[] this->operands;
     }
 
@@ -147,6 +152,37 @@ public:
         while(cur >= limit) {
             (cur--)->reset();
         }
+    }
+
+    // for exception handling
+    const DSValue &getThrownObject() const {
+        return this->thrown;
+    }
+
+    void setThrownObject(DSValue &&obj) {
+        this->thrown = std::move(obj);
+    }
+
+    DSValue takeThrownObject() {
+        DSValue tmp;
+        std::swap(tmp, this->thrown);
+        return tmp;
+    }
+
+    bool hasError() const {
+        return static_cast<bool>(this->thrown);
+    }
+
+    void loadThrownObject() {
+        this->push(this->takeThrownObject());
+    }
+
+    void storeThrownObject() {
+        this->setThrownObject(this->pop());
+    }
+
+    void clearThrownObject() {
+        this->thrown.reset();
     }
 
     // for local variable access
@@ -222,6 +258,7 @@ public:
     void reset() {
         this->frames.clear();
         this->frame = {};
+        this->thrown.reset();
     }
 
     /**
@@ -235,6 +272,8 @@ public:
     bool wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code);
 
     void unwind();
+
+    std::vector<StackTraceElement> createStackTrace() const;
 
 private:
     void incRecDepth() {
@@ -251,10 +290,10 @@ private:
 class RecursionGuard {
 private:
     static constexpr unsigned int LIMIT = 256;
-    CallStack &st;
+    VMState &st;
 
 public:
-    explicit RecursionGuard(CallStack &st) : st(st) {
+    explicit RecursionGuard(VMState &st) : st(st) {
         this->st.incRecDepth();
     }
 
@@ -269,4 +308,4 @@ public:
 
 } // namespace ydsh
 
-#endif //YDSH_CALL_STACK_H
+#endif //YDSH_STATE_H

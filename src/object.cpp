@@ -233,7 +233,7 @@ static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
     if(!ret->getType()->is(TYPE::String)) {
         auto *handle = ret->getType()->lookupMethodHandle(state.symbolTable, op);
         assert(handle != nullptr);
-        ret = state.callMethod(handle, std::move(ret), makeArgs());
+        ret = callMethod(state, handle, std::move(ret), makeArgs());
     }
     return ret;
 }
@@ -286,7 +286,7 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
     if(!ret->getType()->is(TYPE::String) && !ret->getType()->is(TYPE::StringArray)) {
         auto *handle = lookupCmdArg(ret->getType(), state.symbolTable);
         assert(handle != nullptr);
-        ret = TRY(state.callMethod(handle, std::move(ret), makeArgs()));
+        ret = TRY(callMethod(state, handle, std::move(ret), makeArgs()));
     }
     auto *retType = ret->getType();
     if(retType->is(TYPE::String)) {
@@ -470,7 +470,7 @@ void Error_Object::printStackTrace(DSState &ctx) {
 
 DSValue Error_Object::newError(const DSState &ctx, DSType &type, DSValue &&message) {
     DSValue obj(new Error_Object(type, std::move(message)));
-    fillInStackTrace(ctx, typeAs<Error_Object>(obj)->stackTrace);
+    typeAs<Error_Object>(obj)->stackTrace = ctx.getCallStack().createStackTrace();
     typeAs<Error_Object>(obj)->name = DSValue::create<String_Object>(
             ctx.symbolTable.get(TYPE::String), ctx.symbolTable.getTypeName(type));
     return obj;

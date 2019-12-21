@@ -67,7 +67,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
     if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
         return 0;
     }
-    return state.callToplevel(code, dsError);
+    return callToplevel(state, code, dsError);
 }
 
 static const char *getScriptDir(const DSState &state, unsigned short option) {
@@ -642,7 +642,7 @@ int DSState_exec(DSState *st, char *const *argv) {
     for(; *argv != nullptr; argv++) {
         values.push_back(DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), std::string(*argv)));
     }
-    st->execCommand(std::move(values), false);
+    execCommand(*st, std::move(values), false);
     return st->getExitStatus();
 }
 
@@ -764,7 +764,7 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
                     : st->emptyStrObj
     );
     auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-    st->editOpReply = st->callFunction(std::move(func), std::move(args));
+    st->editOpReply = callFunction(*st, std::move(func), std::move(args));
     st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
     if(st->hasError()) {
         return 0;

@@ -27,9 +27,8 @@
 #include "signals.h"
 #include "core.h"
 #include "job.h"
-#include "misc/buffer.hpp"
 #include "misc/noncopyable.h"
-#include "call_stack.h"
+#include "state.h"
 
 namespace ydsh {
 
@@ -119,12 +118,7 @@ private:
 
     std::vector<DSValue> globals{64};
 
-    CallStack stack;
-
-    /**
-     * if not null ptr, thrown exception.
-     */
-    DSValue thrownObject;
+    VMState stack;
 
     decltype(std::chrono::system_clock::now()) baseTime;
 
@@ -148,7 +142,7 @@ public:
     }
 
     bool hasError() const {
-        return static_cast<bool>(this->thrownObject);
+        return this->stack.hasError();
     }
 
     /**
@@ -158,7 +152,7 @@ public:
      * set exit status to it
      */
     void throwObject(DSValue &&except, int afterStatus) {
-        this->thrownObject = std::move(except);
+        this->stack.setThrownObject(std::move(except));
         this->updateExitStatus(afterStatus);
     }
 
@@ -225,7 +219,7 @@ public:
         }
     }
 
-    const CallStack &getCallStack() const {
+    const VMState &getCallStack() const {
         return this->stack;
     }
 
@@ -239,7 +233,7 @@ public:
      * @return
      * exit status of latest executed command.
      */
-    int callToplevel(const CompiledCode &code, DSError *dsError);
+    static int callToplevel(DSState &state, const CompiledCode &code, DSError *dsError);
 
     /**
      * execute command.
@@ -251,7 +245,7 @@ public:
      * if exit status is 0, return true.
      * otherwise, return false
      */
-    DSValue execCommand(std::vector<DSValue> &&argv, bool propagate);
+    static DSValue execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate);
 
     /**
      * call method.
@@ -262,7 +256,7 @@ public:
      * @return
      * return value of method (if no return value, return null).
      */
-    DSValue callMethod(const MethodHandle *handle, DSValue &&recv,
+    static DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
                         std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 
     /**
@@ -272,44 +266,29 @@ public:
      * @return
      * return value of method (if no return value, return null).
      */
-    DSValue callFunction(DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+    static DSValue callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 
 private:
-    // exception api
-    /**
-     * get thrownObject and push to callStack
-     */
-    void loadThrownObject() {
-        this->stack.push(std::move(this->thrownObject));
+    static void pushExitStatus(DSState &state, int status) {
+        state.updateExitStatus(status);
+        state.stack.push(status == 0 ? state.trueObj : state.falseObj);
     }
 
-    void storeThrownObject() {
-        this->thrownObject = this->stack.pop();
-    }
-
-    void clearThrownObject() {
-        this->thrownObject.reset();
-    }
-
-    void pushExitStatus(int status) {
-        this->updateExitStatus(status);
-        this->stack.push(status == 0 ? this->trueObj : this->falseObj);
-    }
-
-    bool windStackFrame(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code) {
-        auto ret = this->stack.wind(stackTopOffset, paramSize, code);
+    static bool windStackFrame(DSState &state, unsigned int stackTopOffset,
+            unsigned int paramSize, const DSCode *code) {
+        auto ret = state.stack.wind(stackTopOffset, paramSize, code);
         if(!ret) {
-            raiseError(*this, TYPE::StackOverflowError, "local stack size reaches limit");
+            raiseError(state, TYPE::StackOverflowError, "local stack size reaches limit");
         }
         return ret;
     }
 
     // runtime api
-    bool checkCast(DSType *targetType);
+    static bool checkCast(DSState &state, DSType *targetType);
 
-    bool checkAssertion();
+    static bool checkAssertion(DSState &state);
 
-    const char *loadEnv(bool hasDefault);
+    static const char *loadEnv(DSState &state, bool hasDefault);
 
     /**
      * stack state in function apply    stack grow ===>
@@ -319,9 +298,9 @@ private:
      * +-----------+---------+--------+   +--------+
      *                       | offset |   |        |
      */
-    bool prepareFuncCall(unsigned int paramSize) {
-        auto *func = typeAs<FuncObject>(this->stack.peekByOffset(paramSize));
-        return this->windStackFrame(paramSize + 1, paramSize, &func->getCode());
+    static bool prepareFuncCall(DSState &state, unsigned int paramSize) {
+        auto *func = typeAs<FuncObject>(state.stack.peekByOffset(paramSize));
+        return windStackFrame(state, paramSize + 1, paramSize, &func->getCode());
     }
 
     /**
@@ -332,10 +311,10 @@ private:
      * +-----------+------------------+   +--------+
      *             | offset           |   |        |
      */
-    bool prepareMethodCall(unsigned short index, unsigned short paramSize) {
+    static bool prepareMethodCall(DSState &state, unsigned short index, unsigned short paramSize) {
         const unsigned int actualParamSize = paramSize + 1; // include receiver
-        return this->windStackFrame(actualParamSize, actualParamSize,
-                this->stack.peekByOffset(paramSize)->getType()->getMethodRef(index));
+        return windStackFrame(state, actualParamSize, actualParamSize,
+                state.stack.peekByOffset(paramSize)->getType()->getMethodRef(index));
     }
 
     /**
@@ -346,9 +325,9 @@ private:
      * +-----------+------------------+   +--------+
      *             |    new offset    |
      */
-    bool prepareConstructorCall(unsigned short paramSize) {
-        return this->windStackFrame(paramSize, paramSize + 1,
-                this->stack.peekByOffset(paramSize)->getType()->getConstructor());
+    static bool prepareConstructorCall(DSState &state, unsigned short paramSize) {
+        return windStackFrame(state, paramSize, paramSize + 1,
+                state.stack.peekByOffset(paramSize)->getType()->getConstructor());
     }
 
     /**
@@ -359,18 +338,18 @@ private:
      * +-----------+---------------+--------------+
      *             |     offset    |
      */
-    bool prepareUserDefinedCommandCall(const DSCode *code, DSValue &&argvObj,
-                                       DSValue &&restoreFD, flag8_set_t attr);
+    static bool prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
+                                    DSValue &&restoreFD, flag8_set_t attr);
 
-    bool forkAndEval();
+    static bool forkAndEval(DSState &state);
 
-    int forkAndExec(const char *cmdName, Command cmd, char **argv, DSValue &&redirConfig);
+    static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **argv, DSValue &&redirConfig);
 
-    bool callCommand(Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
+    static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
 
-    bool callBuiltinCommand(DSValue &&argvObj, DSValue &&redir, flag8_set_t attr);
+    static bool callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr);
 
-    void callBuiltinExec(DSValue &&array, DSValue &&redir);
+    static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir);
 
     /**
      *
@@ -379,26 +358,26 @@ private:
      * @return
      * if has error, return false.
      */
-    bool callPipeline(bool lastPipe);
+    static bool callPipeline(DSState &state, bool lastPipe);
 
-    void addCmdArg(bool skipEmptyStr);
+    static void addCmdArg(DSState &state, bool skipEmptyStr);
 
-    bool kickSignalHandler(int sigNum, DSValue &&func);
+    static bool kickSignalHandler(DSState &state, int sigNum, DSValue &&func);
 
-    bool checkVMEvent();
+    static bool checkVMEvent(DSState &state);
 
     /**
      *
      * @return
      * if has exception, return false.
      */
-    bool mainLoop();
+    static bool mainLoop(DSState &state);
 
     /**
      * if found exception handler, return true.
      * otherwise return false.
      */
-    bool handleException(bool forceUnwind);
+    static bool handleException(DSState &state, bool forceUnwind);
 
     /**
      * actual entry point of interpreter.
@@ -409,9 +388,10 @@ private:
      * if has error or not value, return null
      * otherwise, return value
      */
-    DSValue startEval(EvalOP op, DSError *dsError);
+    static DSValue startEval(DSState &state, EvalOP op, DSError *dsError);
 
-    unsigned int prepareArguments(DSValue &&recv, std::pair<unsigned int, std::array<DSValue, 3>> &&args);
+    static unsigned int prepareArguments(VMState &state, DSValue &&recv,
+            std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 
     /**
      * print uncaught exception information.
@@ -422,14 +402,70 @@ private:
      * @return
      * if except is null, return always DS_ERROR_KIND_SUCCESS and not set error info
      */
-    DSErrorKind handleUncaughtException(const DSValue &except, DSError *dsError);
+    static DSErrorKind handleUncaughtException(DSState &state, const DSValue &except, DSError *dsError);
 
     /**
      * call user-defined termination handler specified by TERM_HOOK.
      * @param kind
      * @param except
      */
-    void callTermHook(DSErrorKind kind, DSValue &&except);
+    static void callTermHook(DSState &state, DSErrorKind kind, DSValue &&except);
 };
+
+// entry point of code evaluation
+/**
+ * entry point of toplevel code evaluation.
+ * @param code
+ * must be toplevel compiled code.
+ * @param dsError
+ * if not null, set error information
+ * @return
+ * exit status of latest executed command.
+ */
+inline int callToplevel(DSState &state, const CompiledCode &code, DSError *dsError) {
+    return DSState::callToplevel(state, code, dsError);
+}
+
+/**
+ * execute command.
+ * @param argv
+ * DSValue must be String_Object
+ * @param propagate
+ * if true, not handle uncaught exception
+ * @return
+ * if exit status is 0, return true.
+ * otherwise, return false
+ */
+inline DSValue execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate) {
+    return DSState::execCommand(state, std::move(argv), propagate);
+}
+
+/**
+ * call method.
+ * @param handle
+ * must not be null
+ * @param recv
+ * @param args
+ * @return
+ * return value of method (if no return value, return null).
+ */
+inline DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
+                          std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+    return DSState::callMethod(state, handle, std::move(recv), std::move(args));
+}
+
+/**
+ *
+ * @param funcObj
+ * @param args
+ * @return
+ * return value of method (if no return value, return null).
+ */
+inline DSValue callFunction(DSState &state, DSValue &&funcObj,
+        std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+    return DSState::callFunction(state, std::move(funcObj), std::move(args));
+}
+
+
 
 #endif //YDSH_VM_H

@@ -247,7 +247,7 @@ set(YDSH_SRC
         src/job.cpp
         src/redir.cpp
         src/comp.cpp
-        src/call_stack.cpp
+        src/state.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

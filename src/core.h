@@ -161,8 +161,6 @@ void raiseError(DSState &st, TYPE type, std::string &&message, int status = 1);
 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message);
 
-void fillInStackTrace(const DSState &st, std::vector<StackTraceElement> &stackTrace);
-
 /**
  *
  * @param st

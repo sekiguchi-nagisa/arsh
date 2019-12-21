@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "call_stack.h"
+#include "state.h"
 
 namespace ydsh {
 
-bool CallStack::wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode * code) {
+bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode * code) {
     const unsigned int maxVarSize = code->is(CodeKind::NATIVE) ? paramSize :
                                     static_cast<const CompiledCode *>(code)->getLocalVarNum();
     const unsigned int localVarOffset = this->frame.stackTopIndex - paramSize + 1;
@@ -46,7 +46,7 @@ bool CallStack::wind(unsigned int stackTopOffset, unsigned int paramSize, const 
     return true;
 }
 
-void CallStack::unwind() {
+void VMState::unwind() {
     auto savedFrame = this->frames.back();
 
     this->frame.code = savedFrame.code;
@@ -61,7 +61,7 @@ void CallStack::unwind() {
     this->frames.pop_back();
 }
 
-void CallStack::resize(unsigned int afterSize) {
+void VMState::resize(unsigned int afterSize) {
     unsigned int newSize = this->operandsSize;
     do {
         newSize += (newSize >> 1u);
@@ -74,6 +74,40 @@ void CallStack::resize(unsigned int afterSize) {
     delete[] this->operands;
     this->operands = newStack;
     this->operandsSize = newSize;
+}
+
+std::vector<StackTraceElement> VMState::createStackTrace() const {
+    std::vector<StackTraceElement> stackTrace;
+    auto curFrame = this->frame;
+    for(unsigned int callDepth = this->frames.size(); callDepth > 0; curFrame = frames[--callDepth]) {
+        auto &callable = curFrame.code;
+        if(!callable->is(CodeKind::NATIVE)) {
+            const auto *cc = static_cast<const CompiledCode *>(callable);
+
+            // create stack trace element
+            const char *sourceName = cc->getSourceName();
+            unsigned int lineNum = cc->getLineNum(curFrame.pc);
+
+            std::string callableName;
+            switch(callable->getKind()) {
+            case CodeKind::TOPLEVEL:
+                callableName += "<toplevel>";
+                break;
+            case CodeKind::FUNCTION:
+                callableName += "function ";
+                callableName += cc->getName();
+                break;
+            case CodeKind::USER_DEFINED_CMD:
+                callableName += "command ";
+                callableName += cc->getName();
+                break;
+            default:
+                break;
+            }
+            stackTrace.emplace_back(sourceName, lineNum, std::move(callableName));
+        }
+    }
+    return stackTrace;
 }
 
 } // namespace ydsh
