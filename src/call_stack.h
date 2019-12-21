@@ -25,39 +25,39 @@ struct ControlFrame {
     /**
      * currently executed code
      */
-    const DSCode *code{nullptr};
+    const DSCode *code;
 
     /**
      * initial value is 0. increment index before push
      */
-    unsigned int stackTopIndex{0};
+    unsigned int stackTopIndex;
 
     /**
      * indicate lower limit of stack top index (bottom <= top)
      */
-    unsigned int stackBottomIndex{0};
+    unsigned int stackBottomIndex;
 
     /**
      * offset of current local variable index.
      * initial value is equivalent to globalVarSize.
      */
-    unsigned int localVarOffset{0};
+    unsigned int localVarOffset;
 
     /**
      * indicate the index of currently evaluating op code.
      */
-    unsigned int pc{0};
+    unsigned int pc;
 
     /**
      * interpreter recursive depth
      */
-    unsigned int recDepth{0};
+    unsigned int recDepth;
 };
 
 class CallStack {
 private:
-    ControlFrame frame;
-    std::vector<ControlFrame> frames;
+    ControlFrame frame{};
+    FlexBuffer<ControlFrame> frames;
 
     unsigned int operandsSize;
 
@@ -203,7 +203,7 @@ public:
         return this->frame;
     }
 
-    const std::vector<ControlFrame> &getFrames() const {
+    const FlexBuffer<ControlFrame> &getFrames() const {
         return this->frames;
     }
 
@@ -225,9 +225,7 @@ public:
 
     void reset() {
         this->frames.clear();
-        this->frame.stackTopIndex = 0;
-        this->frame.stackBottomIndex = 0;
-        this->frame.localVarOffset = 0;
+        this->frame = {};
     }
 
     /**
