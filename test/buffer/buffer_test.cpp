@@ -64,7 +64,7 @@ TEST(BufferTest, case2) {
     ASSERT_EQ(cap, buffer.capacity());
 
     // remove
-    free(extract(std::move(buffer)));
+    free(buffer.take());
     ASSERT_EQ(0u, buffer.size());
     ASSERT_EQ(0u, buffer.capacity());
     ASSERT_TRUE(buffer.get() == nullptr);

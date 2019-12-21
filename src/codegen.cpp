@@ -1192,7 +1192,7 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const std::string &name) {
     // extract code
     const unsigned int codeSize = this->curBuilder().codeBuffer.size();
     this->curBuilder().emit32(1, codeSize);
-    unsigned char *code = extract(std::move(this->curBuilder().codeBuffer));
+    unsigned char *code = this->curBuilder().codeBuffer.take();
 
     // create constant pool
     const unsigned int constSize = this->curBuilder().constBuffer.size();
@@ -1204,7 +1204,7 @@ CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const std::string &name) {
 
     // extract source pos entry
     this->curBuilder().lineNumEntries.push_back({0, 0});
-    auto *entries = extract(std::move(this->curBuilder().lineNumEntries));
+    auto *entries = this->curBuilder().lineNumEntries.take();
 
     // create exception entry
     const unsigned int exceptEntrySize = this->curBuilder().catchBuilders.size();

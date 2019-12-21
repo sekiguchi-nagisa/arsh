@@ -113,7 +113,7 @@ public:
     FlexBuffer() noexcept : maxSize(0), usedSize(0), data(nullptr) { }
 
     FlexBuffer(FlexBuffer &&buffer) noexcept :
-            maxSize(buffer.maxSize), usedSize(buffer.usedSize), data(extract(std::move(buffer))) { }
+            maxSize(buffer.maxSize), usedSize(buffer.usedSize), data(buffer.take()) { }
 
     ~FlexBuffer() {
         free(this->data);
@@ -277,14 +277,15 @@ public:
     }
 
     /**
-     * extract data. after call it, maxSize and usedSize is 0, and data is null.
+     * after call it, maxSize and usedSize is 0, and data is null.
      * call free() to release returned pointer.
+     * @return
      */
-    friend T *extract(FlexBuffer &&buf) noexcept {
-        buf.maxSize = 0;
-        buf.usedSize = 0;
-        T *ptr = buf.data;
-        buf.data = nullptr;
+    T *take() noexcept {
+        this->maxSize = 0;
+        this->usedSize = 0;
+        auto *ptr = this->data;
+        this->data = nullptr;
         return ptr;
     }
 };
