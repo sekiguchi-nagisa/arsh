@@ -57,8 +57,6 @@ using namespace ydsh;
 
 struct DSState {
 public:
-    friend class VM;
-
     SymbolTable symbolTable;
 
     /**
@@ -119,6 +117,8 @@ public:
     std::string toStrBuf;
 
 private:
+    friend class VM;
+
     VMHook *hook{nullptr};
 
     std::vector<DSValue> globals{64};
