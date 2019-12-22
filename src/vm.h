@@ -117,7 +117,7 @@ public:
     std::string toStrBuf;
 
 private:
-    friend class VM;
+    friend class ydsh::VM;
 
     VMHook *hook{nullptr};
 
