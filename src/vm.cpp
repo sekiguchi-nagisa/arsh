@@ -74,7 +74,9 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
     }
 }
 
-bool DSState::checkCast(DSState &state, DSType *targetType) {
+namespace ydsh {
+
+bool VM::checkCast(DSState &state, DSType *targetType) {
     if(!state.stack.peek()->introspect(state, targetType)) {
         DSType *stackTopType = state.stack.pop()->getType();
         std::string str("cannot cast `");
@@ -88,7 +90,7 @@ bool DSState::checkCast(DSState &state, DSType *targetType) {
     return true;
 }
 
-bool DSState::checkAssertion(DSState &state) {
+bool VM::checkAssertion(DSState &state) {
     auto msg(state.stack.pop());
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
@@ -99,7 +101,7 @@ bool DSState::checkAssertion(DSState &state) {
     return true;
 }
 
-const char *DSState::loadEnv(DSState &state, bool hasDefault) {
+const char *VM::loadEnv(DSState &state, bool hasDefault) {
     DSValue dValue;
     if(hasDefault) {
         dValue = state.stack.pop();
@@ -122,7 +124,7 @@ const char *DSState::loadEnv(DSState &state, bool hasDefault) {
     return env;
 }
 
-bool DSState::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
+bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
                                             DSValue &&restoreFD, const flag8_set_t attr) {
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {
         // reset exit status
@@ -144,9 +146,9 @@ bool DSState::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, 
         eraseFirst(*argv);
         const unsigned int argSize = argv->getValues().size();
         state.stack.setLocal(UDC_PARAM_ARGV + 1,
-                DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), argSize));   // #
+                             DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), argSize));   // #
         state.stack.setLocal(UDC_PARAM_ARGV + 2,
-                state.getGlobal(BuiltinVarOffset::POS_0)); // 0
+                             state.getGlobal(BuiltinVarOffset::POS_0)); // 0
         unsigned int limit = 9;
         if(argSize < limit) {
             limit = argSize;
@@ -254,7 +256,7 @@ static DSValue newFD(const DSState &st, int &fd) {
     return value;
 }
 
-bool DSState::forkAndEval(DSState &state) {
+bool VM::forkAndEval(DSState &state) {
     const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), state.stack.pc() + 1));
     const unsigned short offset = read16(GET_CODE(state), state.stack.pc() + 2);
 
@@ -348,11 +350,13 @@ private:
     FilePathCache::SearchOp searchOp;
 
 public:
-    static constexpr flag8_t MASK_UDC      = 1u << 0u;
+    static constexpr flag8_t MASK_UDC = 1u << 0u;
     static constexpr flag8_t MASK_EXTERNAL = 1u << 1u;
 
     CmdResolver(flag8_set_t mask, FilePathCache::SearchOp op) : mask(mask), searchOp(op) {}
+
     CmdResolver() : CmdResolver(0, FilePathCache::NON) {}
+
     ~CmdResolver() = default;
 
     Command operator()(DSState &state, const char *cmdName) const;
@@ -373,7 +377,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     if(!hasFlag(this->mask, MASK_UDC)) {
         auto handle = state.symbolTable.lookupUdc(cmdName);
         auto *udcObj = handle != nullptr ?
-                &typeAs<FuncObject>(state.getGlobal(handle->getIndex()))->getCode() : nullptr;
+                       &typeAs<FuncObject>(state.getGlobal(handle->getIndex()))->getCode() : nullptr;
         if(udcObj != nullptr) {
             cmd.kind = CmdKind::USER_DEFINED;
             cmd.udc = udcObj;
@@ -392,8 +396,8 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
 
         static std::pair<const char *, NativeCode> sb[] = {
                 {"command", initCode(OpCode::BUILTIN_CMD)},
-                {"eval", initCode(OpCode::BUILTIN_EVAL)},
-                {"exec", initCode(OpCode::BUILTIN_EXEC)},
+                {"eval",    initCode(OpCode::BUILTIN_EVAL)},
+                {"exec",    initCode(OpCode::BUILTIN_EXEC)},
         };
         for(auto &e : sb) {
             if(strcmp(cmdName, e.first) == 0) {
@@ -421,7 +425,7 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
     }
 }
 
-int DSState::forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv, DSValue &&redirConfig) {
+int VM::forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv, DSValue &&redirConfig) {
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
@@ -484,7 +488,7 @@ int DSState::forkAndExec(DSState &state, const char *cmdName, Command cmd, char 
     }
 }
 
-bool DSState::callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr) {
+bool VM::callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr) {
     auto *array = typeAs<Array_Object>(argvObj);
     const unsigned int size = array->getValues().size();
     auto &first = array->getValues()[0];
@@ -528,15 +532,12 @@ bool DSState::callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValu
     return true;    // normally unreachable, but need to suppress gcc warning.
 }
 
-namespace ydsh {
 
 int invalidOptionError(const Array_Object &obj, const GetOptState &s);
 
 const NativeCode *getNativeCode(unsigned int index);
 
-}
-
-bool DSState::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
+bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
     auto &arrayObj = *typeAs<Array_Object>(argvObj);
 
     bool useDefaultPath = false;
@@ -576,7 +577,7 @@ bool DSState::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&re
             values.erase(values.begin(), values.begin() + index);
 
             auto resolve = CmdResolver(CmdResolver::MASK_UDC,
-                    useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
+                                       useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
             return callCommand(state, resolve(state, cmdName), std::move(argvObj), std::move(redir), attr);
         }
 
@@ -633,7 +634,7 @@ bool DSState::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&re
     return true;
 }
 
-void DSState::callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
+void VM::callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     auto &argvObj = *typeAs<Array_Object>(array);
     bool clearEnv = false;
     const char *progName = nullptr;
@@ -680,7 +681,7 @@ void DSState::callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) 
     pushExitStatus(state, 0);
 }
 
-bool DSState::callPipeline(DSState &state, bool lastPipe) {
+bool VM::callPipeline(DSState &state, bool lastPipe) {
     /**
      * ls | grep .
      * ==> pipeSize == 1, procSize == 2
@@ -777,7 +778,7 @@ bool DSState::callPipeline(DSState &state, bool lastPipe) {
     return true;
 }
 
-void DSState::addCmdArg(DSState &state, bool skipEmptyStr) {
+void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
     /**
      * stack layout
      *
@@ -836,7 +837,7 @@ static NativeCode initSignalTrampoline() noexcept {
 
 static auto signalTrampoline = initSignalTrampoline();
 
-bool DSState::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
+bool VM::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
     state.stack.reserve(3);
     state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
     state.stack.push(std::move(func));
@@ -845,9 +846,9 @@ bool DSState::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
     return windStackFrame(state, 3, 3, &signalTrampoline);
 }
 
-bool DSState::checkVMEvent(DSState &state) {
+bool VM::checkVMEvent(DSState &state) {
     if(hasFlag(DSState::eventDesc, VMEvent::SIGNAL) &&
-            !hasFlag(DSState::eventDesc, VMEvent::MASK)) {
+       !hasFlag(DSState::eventDesc, VMEvent::MASK)) {
         SignalGuard guard;
 
         int sigNum = DSState::pendingSigSet.popPendingSig();
@@ -886,7 +887,7 @@ bool DSState::checkVMEvent(DSState &state) {
 
 #define TRY(E) do { if(!(E)) { vmerror; } } while(false)
 
-bool DSState::mainLoop(DSState &state) {
+bool VM::mainLoop(DSState &state) {
     OpCode op = OpCode::HALT;
     while(true) {
         if(!empty(DSState::eventDesc)) {
@@ -1419,7 +1420,7 @@ bool DSState::mainLoop(DSState &state) {
     }
 }
 
-bool DSState::handleException(DSState &state, bool forceUnwind) {
+bool VM::handleException(DSState &state, bool forceUnwind) {
     if(state.hook != nullptr) {
         state.hook->vmThrowHook(state);
     }
@@ -1462,7 +1463,7 @@ bool DSState::handleException(DSState &state, bool forceUnwind) {
 extern "C" void __gcov_flush(); // for coverage reporting
 #endif
 
-DSValue DSState::startEval(DSState &state, EvalOP op, DSError *dsError) {
+DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError) {
     DSValue value;
     const unsigned int oldLevel = state.subshellLevel;
 
@@ -1510,7 +1511,7 @@ DSValue DSState::startEval(DSState &state, EvalOP op, DSError *dsError) {
     return value;
 }
 
-int DSState::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError) {
+int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError) {
     state.globals.resize(state.symbolTable.getMaxGVarIndex());
     state.stack.reset();
 
@@ -1524,7 +1525,7 @@ int DSState::callToplevel(DSState &state, const CompiledCode &code, DSError *dsE
     return state.getExitStatus();
 }
 
-unsigned int DSState::prepareArguments(VMState &state, DSValue &&recv,
+unsigned int VM::prepareArguments(VMState &state, DSValue &&recv,
                                        std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     state.clearThrownObject();
 
@@ -1562,7 +1563,7 @@ static NativeCode initCmdTrampoline() noexcept {
 
 static auto cmdTrampoline = initCmdTrampoline();
 
-DSValue DSState::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate) {
+DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate) {
     GUARD_RECURSION(state);
 
     DSValue ret;
@@ -1579,7 +1580,7 @@ DSValue DSState::execCommand(DSState &state, std::vector<DSValue> &&argv, bool p
     return ret;
 }
 
-DSValue DSState::callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
+DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
                             std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     assert(handle != nullptr);
     assert(handle->getParamTypes().size() == args.first);
@@ -1599,7 +1600,8 @@ DSValue DSState::callMethod(DSState &state, const MethodHandle *handle, DSValue 
     return ret;
 }
 
-DSValue DSState::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+DSValue
+VM::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     GUARD_RECURSION(state);
 
     auto *type = funcObj->getType();
@@ -1617,7 +1619,7 @@ DSValue DSState::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsig
     return ret;
 }
 
-DSErrorKind DSState::handleUncaughtException(DSState &state, const DSValue &except, DSError *dsError) {
+DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, DSError *dsError) {
     if(!except) {
         return DS_ERROR_KIND_SUCCESS;
     }
@@ -1647,7 +1649,7 @@ DSErrorKind DSState::handleUncaughtException(DSState &state, const DSValue &exce
         const bool bt = state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
         auto *handle = errorType.lookupMethodHandle(state.symbolTable, bt ? "backtrace" : OP_STR);
 
-        DSValue ret = DSState::callMethod(state, handle, DSValue(except), makeArgs());
+        DSValue ret = VM::callMethod(state, handle, DSValue(except), makeArgs());
         if(state.hasError()) {
             state.stack.clearThrownObject();
             fputs("cannot obtain string representation\n", stderr);
@@ -1673,7 +1675,7 @@ DSErrorKind DSState::handleUncaughtException(DSState &state, const DSValue &exce
     return kind;
 }
 
-void DSState::callTermHook(DSState &state, DSErrorKind kind, DSValue &&except) {
+void VM::callTermHook(DSState &state, DSErrorKind kind, DSValue &&except) {
     auto funcObj = state.getGlobal(state.symbolTable.getTermHookIndex());
     if(funcObj.kind() == DSValueKind::INVALID) {
         return;
@@ -1693,10 +1695,12 @@ void DSState::callTermHook(DSState &state, DSErrorKind kind, DSValue &&except) {
     );
 
     setFlag(DSState::eventDesc, VMEvent::MASK);
-    DSState::callFunction(state, std::move(funcObj), std::move(args));    // ignore exception
+    VM::callFunction(state, std::move(funcObj), std::move(args));    // ignore exception
     state.stack.clearThrownObject();
 
     // restore old value
     state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldExitStatus));
     unsetFlag(DSState::eventDesc, VMEvent::MASK);
 }
+
+} // namespace
