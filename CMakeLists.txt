@@ -227,6 +227,7 @@ set(BIN_NAME ydsh)
 
 include_directories(src)
 include_directories(include)
+include_directories(/usr/local/include) # for osx Catalina
 
 set(YDSH_SRC
         src/ydsh.cpp
