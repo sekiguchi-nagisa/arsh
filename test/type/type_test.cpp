@@ -207,6 +207,8 @@ TEST_F(TypeTest, superType) {
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Int32), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Int64), this->pool.get(TYPE::_Value)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Signal), this->pool.get(TYPE::_Value)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Signals), this->pool.get(TYPE::Any)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Boolean), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Float), this->pool.get(TYPE::_Value)));

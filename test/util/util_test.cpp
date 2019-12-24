@@ -1,9 +1,5 @@
 #include "gtest/gtest.h"
 
-#ifndef USE_FIXED_TIME
-#define USE_FIXED_TIME
-#endif
-
 #include <misc/flag_util.hpp>
 #include <misc/num_util.hpp>
 
