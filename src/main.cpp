@@ -86,7 +86,6 @@ static void showFeature(FILE *fp) {
     const char *featureNames[] = {
             "USE_LOGGING",
             "USE_SAFE_CAST",
-            "USE_FIXED_TIME"
     };
 
     const unsigned int featureBit = DSState_featureBit();
