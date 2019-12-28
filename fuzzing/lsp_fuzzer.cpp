@@ -8,18 +8,32 @@
 #include "server.h"
 #include <misc/files.h>
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    using namespace ydsh;
-    using namespace lsp;
+using namespace ydsh;
+using namespace lsp;
 
-    TempFileFactory factory;
-    std::string inputName = "";
+static auto openDevNull() {
+    return createFilePtr(fopen, "/dev/null", "wb");
+}
+
+static FilePtr newRequest(TempFileFactory &factory, const char *data, unsigned int size) {
+    std::string inputName;
     auto input = factory.createTempFilePtr(inputName, (const char *)data, size);
 
     LSPLogger logger;
+    LSPTransport transport(logger, openDevNull(), std::move(input));
+    transport.send(size, data);
+
+    return createFilePtr(fopen, inputName.c_str(), "rb");
+}
+
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
+    TempFileFactory factory;
+    auto req = newRequest(factory, (const char *)data, size);
+
+    LSPLogger logger;
     logger.setSeverity(LogLevel::INFO);
-    logger.setAppender(createFilePtr(fopen, "/dev/null", "wb"));
-    LSPServer server(logger, std::move(input), createFilePtr(fopen, factory.getTempFileName(), "wb"));
+    logger.setAppender(openDevNull());
+    LSPServer server(logger, std::move(req), openDevNull());
     server.runOnlyOnce();
     return 0;
 }
