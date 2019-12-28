@@ -83,7 +83,7 @@ function _add($s : String, $p : Boolean) {
 }
 
 function _default_search($q : String) : String {
-    var fzf = command -v fzf 2>&1 > /dev/null
+    var fzf = command -v fzf &> /dev/null
     if !$fzf { return ""; }
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
