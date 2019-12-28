@@ -14,105 +14,10 @@
  * limitations under the License.
  */
 
-#include <fcntl.h>
-
 #include <cstdarg>
-#include <climits>
 
-#include <misc/files.h>
 #include <misc/fatal.h>
-
 #include "test_common.h"
-
-#define error_at fatal_perror
-
-// #############################
-// ##     TempFileFactory     ##
-// #############################
-
-static char *getTempRoot() {
-    const char *tmpdir = getenv("TMPDIR");
-    if(tmpdir == nullptr) {
-        tmpdir = "/tmp";
-    }
-    return realpath(tmpdir, nullptr);
-}
-
-static std::string makeTempDir() {
-    char *tmpdir = getTempRoot();
-    std::string name = tmpdir;
-    free(tmpdir);
-    name += "/test_tmp_dirXXXXXX";
-    char *dirName = mkdtemp(&name[0]);
-    assert(dirName != nullptr);
-    assert(dirName == name);
-    (void) dirName;
-    return name;
-}
-
-TempFileFactory::TempFileFactory() :
-        tmpDirName(makeTempDir()), tmpFileName(this->createTempFile("", "")) {}
-
-static void removeRecursive(const char *currentDir) {
-    DIR *dir = opendir(currentDir);
-    if(dir == nullptr) {
-        error_at("cannot open dir: %s", currentDir);
-    }
-
-    for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
-        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
-        }
-        std::string fullpath = currentDir;
-        fullpath += '/';
-        fullpath += entry->d_name;
-        const char *name = fullpath.c_str();
-        if(S_ISDIR(ydsh::getStMode(name))) {
-            removeRecursive(name);
-        } else if(remove(name) < 0) {
-            error_at("cannot remove: %s", name);
-        }
-    }
-    closedir(dir);
-
-    if(remove(currentDir) < 0) {
-        error_at("cannot remove: %s", currentDir);
-    }
-}
-
-TempFileFactory::~TempFileFactory() {
-    removeRecursive(this->tmpDirName.c_str());
-}
-
-ydsh::FilePtr TempFileFactory::createTempFilePtr(std::string &name, const std::string &content) const {
-    using namespace ydsh;
-
-    FilePtr filePtr;
-    std::string fileName = this->getTempDirName();
-    fileName += '/';
-
-    if(!name.empty()) {
-        fileName += name;
-        filePtr = createFilePtr(fopen, fileName.c_str(), "w+be");
-    } else {
-        fileName += "temp_XXXXXX";
-        int fd = mkostemp(&fileName[0], O_CLOEXEC);
-        if(fd < 0) {
-            error_at("");
-        }
-        filePtr = createFilePtr(fdopen, fd, "w+b");
-        if(!filePtr) {
-            close(fd);
-        }
-    }
-
-    if(filePtr) {
-        name = std::move(fileName);
-        fwrite(content.c_str(), sizeof(char), content.size(), filePtr.get());
-        fflush(filePtr.get());
-    }
-    return filePtr;
-}
 
 std::string format(const char *fmt, ...) {
     va_list arg;

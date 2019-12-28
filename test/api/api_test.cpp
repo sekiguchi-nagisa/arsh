@@ -40,7 +40,7 @@ TEST(BuiltinExecTest, case2) {
     DSState_delete(&state);
 }
 
-struct APITest : public ExpectOutput, public TempFileFactory {
+struct APITest : public ExpectOutput, public ydsh::TempFileFactory {
     DSState *state{nullptr};
 
     APITest() {

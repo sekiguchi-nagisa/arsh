@@ -18,6 +18,8 @@
 #define YDSH_MISC_FILES_H
 
 #include <dirent.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <sys/stat.h>
 
 #include <cstdlib>
@@ -28,6 +30,7 @@
 #include <cerrno>
 
 #include "fatal.h"
+#include "resource.hpp"
 
 namespace ydsh {
 
@@ -87,6 +90,124 @@ inline std::vector<std::string> getFileList(const char *dirPath, bool recursive 
     getFileList(dirPath, recursive, fileList);
     return fileList;
 }
+
+inline void removeDirWithRecursively(const char *currentDir) {
+    DIR *dir = opendir(currentDir);
+    if(dir == nullptr) {
+        fatal_perror("cannot open dir: %s", currentDir);
+    }
+
+    for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
+        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        std::string fullpath = currentDir;
+        fullpath += '/';
+        fullpath += entry->d_name;
+        const char *name = fullpath.c_str();
+        if(S_ISDIR(ydsh::getStMode(name))) {
+            removeDirWithRecursively(name);
+        } else if(remove(name) < 0) {
+            fatal_perror("cannot remove: %s", name);
+        }
+    }
+    closedir(dir);
+
+    if(remove(currentDir) < 0) {
+        fatal_perror("cannot remove: %s", currentDir);
+    }
+}
+
+class TempFileFactory {
+protected:
+    std::string tmpDirName;
+    std::string tmpFileName;
+
+public:
+    TempFileFactory() : tmpDirName(makeTempDir()), tmpFileName(this->createTempFile("", "")) {}
+
+    virtual ~TempFileFactory() {
+        removeDirWithRecursively(this->tmpDirName.c_str());
+    }
+
+    const char *getTempDirName() const {
+        return this->tmpDirName.c_str();
+    }
+
+    const char *getTempFileName() const {
+        return this->tmpFileName.c_str();
+    }
+
+    /**
+     * create temp file with content
+     * @param name
+     * if empty string, generate random name. after file creation, write full path to it.
+     * @param content
+     * @return
+     * opened file ptr with 'w+b' mode.
+     */
+    FilePtr createTempFilePtr(std::string &name, const char *data, unsigned int size) const {
+        FilePtr filePtr;
+        std::string fileName = this->getTempDirName();
+        fileName += '/';
+
+        if(!name.empty()) {
+            fileName += name;
+            filePtr = createFilePtr(fopen, fileName.c_str(), "w+be");
+        } else {
+            fileName += "temp_XXXXXX";
+            int fd = mkostemp(&fileName[0], O_CLOEXEC);
+            if(fd < 0) {
+                fatal_perror("");
+            }
+            filePtr = createFilePtr(fdopen, fd, "w+b");
+            if(!filePtr) {
+                close(fd);
+            }
+        }
+
+        if(filePtr) {
+            name = std::move(fileName);
+            fwrite(data, sizeof(char), size, filePtr.get());
+            fflush(filePtr.get());
+        }
+        return filePtr;
+    }
+
+    FilePtr createTempFilePtr(std::string &name, const std::string &content) const {
+        return this->createTempFilePtr(name, content.data(), content.size());
+    }
+
+    /**
+     * create temp file with content
+     * @param baseName
+     * if null or empty string, generate random name.
+     * @param content
+     * @return
+     * full path of temp file
+     */
+    std::string createTempFile(const char *baseName, const std::string &content) const {
+        std::string name = baseName != nullptr ? baseName : "";
+        this->createTempFilePtr(name, content);
+        return name;
+    }
+
+    static std::string makeTempDir() {
+        const char *env = getenv("TMPDIR");
+        if(env == nullptr) {
+            env = "/tmp";
+        }
+        char *ptr = realpath(env, nullptr);
+        std::string name = ptr;
+        free(ptr);
+        name += "/test_tmp_dirXXXXXX";
+        if(!mkdtemp(&name[0])) {
+            fatal_perror("temp directory creation failed");
+        }
+        return name;
+    }
+};
+
 
 } // namespace ydsh
 

@@ -22,55 +22,11 @@
 
 #include <process.h>
 #include <ansi.h>
-
-#include "misc/resource.hpp"
+#include "misc/files.h"
 
 using namespace process;
 
 // common utility for test
-
-class TempFileFactory {
-protected:
-    std::string tmpDirName;
-    std::string tmpFileName;
-
-public:
-    TempFileFactory();
-
-    virtual ~TempFileFactory();
-
-    const char *getTempDirName() const {
-        return this->tmpDirName.c_str();
-    }
-
-    const char *getTempFileName() const {
-        return this->tmpFileName.c_str();
-    }
-
-    /**
-     * create temp file with content
-     * @param name
-     * if empty string, generate random name. after file creation, write full path to it.
-     * @param content
-     * @return
-     * opened file ptr with 'w+b' mode.
-     */
-    ydsh::FilePtr createTempFilePtr(std::string &name, const std::string &content) const;
-
-    /**
-     * create temp file with content
-     * @param baseName
-     * if null or empty string, generate random name.
-     * @param content
-     * @return
-     * full path of temp file
-     */
-    std::string createTempFile(const char *baseName, const std::string &content) const {
-        std::string name = baseName != nullptr ? baseName : "";
-        this->createTempFilePtr(name, content);
-        return name;
-    }
-};
 
 std::string format(const char *fmt, ...) __attribute__ ((format(printf, 1, 2)));
 
