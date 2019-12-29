@@ -80,6 +80,7 @@ protected:
         auto ret = ProcBuilder {
                 BIN_PATH,
                 dump.c_str(),
+                "--compile-only",
                 "-c",
                 this->param.cmd
         }.exec();
@@ -267,6 +268,242 @@ nodes:
       intValue: "1"
     op: "+"
     optNode:
+)"},
+
+        {DumpOp::untyped, R"(function f() : typeof($/d/) {return new Regex("$true"); })", 0, 1, R"(
+nodes:
+  - nodeKind: Function
+    token:
+      pos: 0
+      size: 57
+    type:
+    funcName: "f"
+    paramNodes:
+    paramTypeNodes:
+    returnTypeNode:
+      nodeKind: Type
+      token:
+        pos: 15
+        size: 12
+      type:
+      typeKind: "Return"
+      typeNodes:
+        - nodeKind: Type
+          token:
+            pos: 15
+            size: 12
+          type:
+          typeKind: "TypeOf"
+          exprNode:
+            nodeKind: Regex
+            token:
+              pos: 22
+              size: 4
+            type:
+            reStr: "d"
+    blockNode:
+      nodeKind: Block
+      token:
+        pos: 28
+        size: 29
+      type:
+      nodes:
+        - nodeKind: Jump
+          token:
+            pos: 29
+            size: 25
+          type:
+          opKind: "RETURN"
+          exprNode:
+            nodeKind: New
+            token:
+              pos: 36
+              size: 18
+            type:
+            targetTypeNode:
+              nodeKind: Type
+              token:
+                pos: 40
+                size: 5
+              type:
+              typeKind: "Base"
+              typeName: "Regex"
+            argNodes:
+              - nodeKind: StringExpr
+                token:
+                  pos: 46
+                  size: 7
+                type:
+                nodes:
+                  - nodeKind: Embed
+                    token:
+                      pos: 47
+                      size: 5
+                    type:
+                    kind: "STR_EXPR"
+                    exprNode:
+                      nodeKind: Var
+                      token:
+                        pos: 47
+                        size: 5
+                      type:
+                      varName: "true"
+                      index: "0"
+                      attribute: ""
+                    methodIndex: "0"
+          leavingBlock: "0"
+      baseIndex: "0"
+      varSize: "0"
+      maxVarSize: "0"
+    maxVarNum: "0"
+    varIndex: "0"
+    funcType:
+)"},
+
+        {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 2, 0, R"(
+nodes:
+  - nodeKind: Assert
+    token:
+      pos: 0
+      size: 1
+    type:
+    condNode:
+      nodeKind: Apply
+      token:
+        pos: 7
+        size: 39
+      type:
+      exprNode:
+        nodeKind: Access
+        token:
+          pos: 7
+          size: 32
+        type:
+        recvNode:
+          nodeKind: Fork
+          token:
+            pos: 7
+            size: 32
+          type:
+          exprNode:
+            nodeKind: Pipeline
+            token:
+              pos: 8
+              size: 28
+            type:
+            nodes:
+              - nodeKind: UnaryOp
+                token:
+                  pos: 8
+                  size: 8
+                type:
+                op: "!"
+                exprNode:
+                  nodeKind: Cmd
+                  token:
+                    pos: 9
+                    size: 7
+                  type:
+                  nameNode:
+                    nodeKind: String
+                    token:
+                      pos: 9
+                      size: 2
+                    type:
+                    kind: "STRING"
+                    value: "ls"
+                  argNodes:
+                    - nodeKind: Redir
+                      token:
+                        pos: 14
+                        size: 2
+                      type:
+                      op: "1>"
+                      targetNode:
+                        nodeKind: CmdArg
+                        token:
+                          pos: 14
+                          size: 2
+                        type:
+                        segmentNodes:
+                          - nodeKind: String
+                            token:
+                              pos: 14
+                              size: 2
+                            type:
+                            kind: "STRING"
+                            value: "34"
+                  redirCount: "1"
+                  inPipe: "0"
+                methodCallNode:
+              - nodeKind: With
+                token:
+                  pos: 19
+                  size: 17
+                type:
+                exprNode:
+                  nodeKind: Number
+                  token:
+                    pos: 19
+                    size: 2
+                  type:
+                  kind: "Int32"
+                  intValue: "34"
+                redirNodes:
+                  - nodeKind: Redir
+                    token:
+                      pos: 29
+                      size: 7
+                    type:
+                    op: "<"
+                    targetNode:
+                      nodeKind: CmdArg
+                      token:
+                        pos: 29
+                        size: 7
+                      type:
+                      segmentNodes:
+                        - nodeKind: Embed
+                          token:
+                            pos: 29
+                            size: 7
+                          type:
+                          kind: "CMD_ARG"
+                          exprNode:
+                            nodeKind: Number
+                            token:
+                              pos: 31
+                              size: 4
+                            type:
+                            kind: "Float"
+                            floatValue: "34.100000"
+                          methodIndex: "0"
+                baseIndex: "0"
+            baseIndex: "0"
+          opKind: "ForkKind::JOB"
+        nameNode:
+          nodeKind: Var
+          token:
+            pos: 40
+            size: 4
+          type:
+          varName: "poll"
+          index: "0"
+          attribute: ""
+        index: "0"
+        attribute: ""
+        additionalOp: "NOP"
+      argNodes:
+      methodIndex: "0"
+      kind: "UNRESOLVED"
+    messageNode:
+      nodeKind: String
+      token:
+        pos: 0
+        size: 0
+      type:
+      kind: "STRING"
+      value: "`(!ls > 34 | 34 with < ${34.1} &).poll()'"
 )"},
 };
 
