@@ -1357,7 +1357,7 @@ const Node *findInnerNode(NodeKind kind, const Node *node) {
 void NodeDumper::dump(const char *fieldName, const char *value) {
     this->writeName(fieldName);
 
-    this->append('"');
+    this->append(" \"");
     while(*value != 0) {
         int ch = *(value++);
         bool escape = true;
@@ -1441,13 +1441,17 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
         this->enterIndent();
     }
 
-    this->indent(); this->appendAs("token: \n");
+    this->indent(); this->appendAs("token:\n");
     this->enterIndent();
     this->indent(); this->appendAs("pos: %d\n", node.getPos());
     this->indent(); this->appendAs("size: %d\n", node.getSize());
     this->leaveIndent();
-    this->indent(); this->appendAs("type: %s\n",
-                                   (!node.isUntyped() ? this->symbolTable.getTypeName(node.getType()) : ""));
+    this->indent();
+    if(node.isUntyped()) {
+        this->append("type:\n");
+    } else {
+        this->appendAs("type: %s\n", this->symbolTable.getTypeName(node.getType()));
+    }
 
     if(inArray) {
         this->leaveIndent();
@@ -1495,7 +1499,7 @@ void NodeDumper::appendAs(const char *fmt, ...) {
 }
 
 void NodeDumper::writeName(const char *fieldName) {
-    this->indent(); this->appendAs("%s: ", fieldName);
+    this->indent(); this->appendAs("%s:", fieldName);
 }
 
 void NodeDumper::enterModule(const char *sourceName, const char *header) {
