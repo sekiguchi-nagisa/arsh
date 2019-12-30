@@ -90,8 +90,9 @@ TokenKind Lexer::nextToken(Token &token) {
       APPLIED_NAME = "$" VAR_NAME;
       SPECIAL_NAME = "$" SPECIAL_NAMES;
 
-      INNER_NAME = APPLIED_NAME | '${' VAR_NAME '}';
-      INNER_SPECIAL_NAME = SPECIAL_NAME | '${' SPECIAL_NAMES '}';
+      INNER_NAME = APPLIED_NAME | "${" VAR_NAME "}";
+      INNER_SPECIAL_NAME = SPECIAL_NAME | "${" SPECIAL_NAMES "}";
+      INNER_FIELD = "${" VAR_NAME "." VAR_NAME "}";
 
       CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#[\]!+\-0-9\000];
       CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$\000];
@@ -235,6 +236,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <DSTRING,CMD> INNER_NAME { RET(APPLIED_NAME); }
       <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }
+      <DSTRING,CMD> INNER_FIELD { RET(APPLIED_NAME_WITH_FIELD); }
       <DSTRING,CMD> "${"       { PUSH_MODE(STMT); RET(START_INTERP); }
       <DSTRING,CMD> "$("       { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 

@@ -253,6 +253,23 @@ public:
     }
 
     /**
+     * get the first index at which a given element can be found
+     * @param token
+     * @param ch
+     * @return
+     * if not found, return token.size
+     */
+    unsigned int indexOf(Token token, int ch) const {
+        unsigned int index = 0;
+        for(; index < token.size; index++) {
+            if(this->buf[token.pos + index] == ch) {
+                break;
+            }
+        }
+        return index;
+    }
+
+    /**
      * shift EOS token to left.
      * @param token
      * @return

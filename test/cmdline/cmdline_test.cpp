@@ -392,6 +392,20 @@ $e
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 }
 
+TEST_F(CmdlineTest, marker3) {
+    const char *msg = R"((string):1: [semantic error] undefined symbol: `a'
+"${a.b}"
+   ^
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF("${a.b}")EOF"), 1, "", msg));
+
+    msg = R"((string):1: [semantic error] undefined field: `t'
+echo ${true.t}
+            ^
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF(echo ${true.t})EOF"), 1, "", msg));
+}
+
 TEST_F(CmdlineTest, version) {
     std::string msg = "^ydsh, version ";
     msg += X_INFO_VERSION;

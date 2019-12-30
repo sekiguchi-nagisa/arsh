@@ -138,6 +138,7 @@
     TOKEN(CMD_ARG_PART                       , "<Argument Part>") \
     TOKEN(APPLIED_NAME_WITH_BRACKET          , "<$ Name[>") \
     TOKEN(SPECIAL_NAME_WITH_BRACKET          , "<$ Char[>") \
+    TOKEN(APPLIED_NAME_WITH_FIELD            , "<$ Name.field>") \
     /* redir op */\
     TOKEN(REDIR_IN_2_FILE                    , "<") \
     TOKEN(REDIR_OUT_2_FILE                   , "1>") \
@@ -209,6 +210,7 @@
 #define EACH_LA_interpolation(OP) \
     OP(APPLIED_NAME) \
     OP(SPECIAL_NAME) \
+    OP(APPLIED_NAME_WITH_FIELD) \
     OP(START_INTERP)
 
 #define EACH_LA_paramExpansion(OP) \

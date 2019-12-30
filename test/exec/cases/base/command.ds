@@ -77,6 +77,9 @@ assert($? == 0)
 echo 12$true | grep 12true
 assert($? == 0)
 
+var pair = ('he','lo')
+assert "$(echo ${pair._0}l${pair._1})" == 'hello'
+
 echo "$true" | grep true
 assert($? == 0)
 

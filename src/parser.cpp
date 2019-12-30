@@ -1348,6 +1348,38 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
         auto node = this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
         return std::make_unique<EmbedNode>(kind, node.release());
     }
+    case APPLIED_NAME_WITH_FIELD: {
+        Token token = this->expect(APPLIED_NAME_WITH_FIELD);
+
+        // split '${recv.field}'
+        // split begin token '${'
+        Token beginToken = token;
+        beginToken.size = 2;
+
+        // split recv token
+        Token recvToken = token;
+        unsigned int i = this->lexer->indexOf(token, '.');
+        assert(i < token.size);
+        recvToken.size = i;
+        recvToken.pos += 2; // skip '${'
+        recvToken.size -= 2;
+
+        // split field token
+        Token fieldToken = token;
+        fieldToken.pos += i + 1;
+        fieldToken.size -= i + 2;   // skip last '}'
+
+        // split end token '}'
+        Token endToken = token;
+        endToken.pos += endToken.size - 1;
+        endToken.size = 1;
+
+        // create node
+        auto recvNode = std::make_unique<VarNode>(recvToken, this->lexer->toName(recvToken));
+        auto fieldNode = std::make_unique<VarNode>(fieldToken, this->lexer->toName(fieldToken));
+        return std::make_unique<EmbedNode>(beginToken.pos, kind,
+                new AccessNode(recvNode.release(), fieldNode.release()), endToken);
+    }
     default:
         unsigned int pos = START_POS();
         TRY(this->expect(START_INTERP));
