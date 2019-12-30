@@ -233,7 +233,7 @@ protected:
 
     std::unique_ptr<Node> parse_stringExpression();
 
-    std::unique_ptr<Node> parse_interpolation(bool strExpr);
+    std::unique_ptr<Node> parse_interpolation(EmbedNode::Kind kind);
 
     std::unique_ptr<Node> parse_paramExpansion();
 

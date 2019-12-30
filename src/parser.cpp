@@ -1317,7 +1317,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             break;
         }
         EACH_LA_interpolation(GEN_LA_CASE) {
-            auto interp = TRY(this->parse_interpolation(true));
+            auto interp = TRY(this->parse_interpolation(EmbedNode::STR_EXPR));
             node->addExprNode(interp.release());
             break;
         }
@@ -1339,24 +1339,21 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     return std::move(node);
 }
 
-std::unique_ptr<Node> Parser::parse_interpolation(bool strExpr) {
+std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
     GUARD_DEEP_NESTING(guard);
 
     switch(CUR_KIND()) {
     case APPLIED_NAME:
     case SPECIAL_NAME: {
         auto node = this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
-        return std::make_unique<EmbedNode>(
-                strExpr ? EmbedNode::STR_EXPR : EmbedNode::CMD_ARG, node.release());
+        return std::make_unique<EmbedNode>(kind, node.release());
     }
     default:
         unsigned int pos = START_POS();
         TRY(this->expect(START_INTERP));
         auto node = TRY(this->parse_expression());
         auto endToken = TRY(this->expect(RBC));
-        return std::make_unique<EmbedNode>(
-                pos, strExpr ? EmbedNode::STR_EXPR : EmbedNode::CMD_ARG,
-                node.release(), endToken);
+        return std::make_unique<EmbedNode>(pos, kind, node.release(), endToken);
     }
 }
 
@@ -1381,7 +1378,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
         return std::make_unique<EmbedNode>(EmbedNode::CMD_ARG, node.release());
     }
     default:
-        return this->parse_interpolation(false);
+        return this->parse_interpolation(EmbedNode::CMD_ARG);
     }
 }
 
