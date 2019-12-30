@@ -1332,6 +1332,25 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     return std::move(node);
 }
 
+static std::unique_ptr<Node> toAccessNode(const Lexer &lexer, Token token) {
+    std::unique_ptr<Node> node;
+    std::vector<std::unique_ptr<VarNode>> nodes;
+
+    const char *ptr = lexer.getRange(token).first;
+    for(unsigned int index = token.size - 1; index != 0; index--) {
+        if(ptr[index] == '.') {
+            Token fieldToken = token.sliceFrom(index + 1);
+            nodes.push_back(std::make_unique<VarNode>(fieldToken, lexer.toName(fieldToken)));
+            token = token.slice(0, index);
+        }
+    }
+    node = std::make_unique<VarNode>(token, lexer.toName(token));
+    for(; !nodes.empty(); nodes.pop_back()) {
+        node = std::make_unique<AccessNode>(node.release(), nodes.back().release());
+    }
+    return node;
+}
+
 std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
     GUARD_DEEP_NESTING(guard);
 
@@ -1344,26 +1363,18 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
     case APPLIED_NAME_WITH_FIELD: {
         const Token token = this->expect(APPLIED_NAME_WITH_FIELD);
 
-        // split '${recv.field}'
+        // split '${recv.field1.field2}'
         // split begin token '${'
         Token beginToken = token.slice(0, 2);
 
-        // split recv token
-        unsigned int i = this->lexer->indexOf(token, '.');
-        assert(i < token.size);
-        Token recvToken = token.slice(2, i);    // skip '${'
-
-        // split field token
-        Token fieldToken = token.slice(i + 1, token.size - 1);  // skip last '}'
+        // split inner names
+        Token innerToken = token.slice(2, token.size - 1);
 
         // split end token '}'
         Token endToken = token.sliceFrom(token.size - 1);
 
-        // create node
-        auto recvNode = std::make_unique<VarNode>(recvToken, this->lexer->toName(recvToken));
-        auto fieldNode = std::make_unique<VarNode>(fieldToken, this->lexer->toName(fieldToken));
         return std::make_unique<EmbedNode>(beginToken.pos, kind,
-                new AccessNode(recvNode.release(), fieldNode.release()), endToken);
+                toAccessNode(*this->lexer, innerToken).release(), endToken);
     }
     default:
         unsigned int pos = START_POS();

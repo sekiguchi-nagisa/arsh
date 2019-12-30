@@ -92,7 +92,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
       INNER_NAME = APPLIED_NAME | "${" VAR_NAME "}";
       INNER_SPECIAL_NAME = SPECIAL_NAME | "${" SPECIAL_NAMES "}";
-      INNER_FIELD = "${" VAR_NAME "." VAR_NAME "}";
+      INNER_FIELD = "${" VAR_NAME ("." VAR_NAME)+ "}";
 
       CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#[\]!+\-0-9\000];
       CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$\000];

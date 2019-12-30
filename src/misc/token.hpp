@@ -17,6 +17,7 @@
 #ifndef YDSH_TOKEN_HPP
 #define YDSH_TOKEN_HPP
 
+#include <cassert>
 #include <string>
 
 namespace ydsh {

@@ -80,6 +80,9 @@ assert($? == 0)
 var pair = ('he','lo')
 assert "$(echo ${pair._0}l${pair._1})" == 'hello'
 
+var pair2 = ($pair, '!!')
+assert "$(echo ${pair2._0._0}l${pair2._0._1} world${pair2._1})" == 'hello world!!'
+
 echo "$true" | grep true
 assert($? == 0)
 
