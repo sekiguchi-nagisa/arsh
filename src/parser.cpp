@@ -1242,14 +1242,7 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
 
 std::unique_ptr<Node> Parser::parse_regexLiteral() {
     Token token = this->expect(REGEX_LITERAL);  // always success
-    auto old = token;
-
-    /**
-     * skip prefix '$/'
-     */
-    token.pos += 2;
-    token.size -= 2;
-    std::string str = this->lexer->toTokenText(token);
+    std::string str = this->lexer->toTokenText(token.sliceFrom(2)); // skip prefix '$/'
 
     /**
      * parse regex flag
@@ -1269,10 +1262,10 @@ std::unique_ptr<Node> Parser::parse_regexLiteral() {
     const char *errorStr;
     auto re = compileRegex(str.c_str(), errorStr, regexFlag);
     if(!re) {
-        raiseTokenFormatError(REGEX_LITERAL, old, errorStr);
+        raiseTokenFormatError(REGEX_LITERAL, token, errorStr);
         return nullptr;
     }
-    return std::make_unique<RegexNode>(old, std::move(str), std::move(re));
+    return std::make_unique<RegexNode>(token, std::move(str), std::move(re));
 }
 
 ArgsWrapper Parser::parse_arguments() {
@@ -1349,30 +1342,22 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
         return std::make_unique<EmbedNode>(kind, node.release());
     }
     case APPLIED_NAME_WITH_FIELD: {
-        Token token = this->expect(APPLIED_NAME_WITH_FIELD);
+        const Token token = this->expect(APPLIED_NAME_WITH_FIELD);
 
         // split '${recv.field}'
         // split begin token '${'
-        Token beginToken = token;
-        beginToken.size = 2;
+        Token beginToken = token.slice(0, 2);
 
         // split recv token
-        Token recvToken = token;
         unsigned int i = this->lexer->indexOf(token, '.');
         assert(i < token.size);
-        recvToken.size = i;
-        recvToken.pos += 2; // skip '${'
-        recvToken.size -= 2;
+        Token recvToken = token.slice(2, i);    // skip '${'
 
         // split field token
-        Token fieldToken = token;
-        fieldToken.pos += i + 1;
-        fieldToken.size -= i + 2;   // skip last '}'
+        Token fieldToken = token.slice(i + 1, token.size - 1);  // skip last '}'
 
         // split end token '}'
-        Token endToken = token;
-        endToken.pos += endToken.size - 1;
-        endToken.size = 1;
+        Token endToken = token.sliceFrom(token.size - 1);
 
         // create node
         auto recvNode = std::make_unique<VarNode>(recvToken, this->lexer->toName(recvToken));
@@ -1399,10 +1384,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
         this->consume();    // always success
         auto varNode = std::make_unique<VarNode>(token, this->lexer->toName(token));
         auto indexNode = TRY(this->parse_expression());
-
-        Token opToken = token;
-        opToken.pos += opToken.size - 1;
-        opToken.size = 1;
+        Token opToken = token.sliceFrom(token.size - 1);    // last ']'
 
         token = TRY(this->expect(RB));
         auto node = std::unique_ptr<Node>(ApplyNode::newIndexCall(varNode.release(), opToken, indexNode.release()));

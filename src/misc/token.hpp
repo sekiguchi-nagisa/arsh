@@ -33,6 +33,29 @@ struct Token {
         return !(*this == token);
     }
 
+    /**
+     *
+     * @param startIndex
+     * inclusive
+     * @param stopIndex
+     * exclusive
+     * @return
+     */
+    Token slice(unsigned int startIndex, unsigned int stopIndex) const {
+        assert(startIndex <= stopIndex);
+        assert(startIndex < this->size);
+        assert(stopIndex <= this->size);
+
+        Token newToken{this->pos, this->size};
+        newToken.pos += startIndex;
+        newToken.size = stopIndex - startIndex;
+        return newToken;
+    }
+
+    Token sliceFrom(unsigned int startIndex) const {
+        return this->slice(startIndex, this->size);
+    }
+
     std::string str() const {
         std::string str = "(pos = ";
         str += std::to_string(this->pos);
