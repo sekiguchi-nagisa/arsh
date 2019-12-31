@@ -550,17 +550,13 @@ public:
         auto e = this->getValues().begin() + end;
         return DSValue::create<Array_Object>(*this->getType(), std::vector<DSValue>(b, e));
     }
-};
 
-/**
- *
- * @param v
- * must be Array_Object
- */
-inline void eraseFirst(Array_Object &v) {
-    auto &values = v.refValues();
-    values.erase(values.begin());
-}
+    DSValue takeFirst() {
+        auto v = this->values.front();
+        this->values.erase(values.begin());
+        return v;
+    }
+};
 
 inline const char *str(const DSValue &v) {
     return typeAs<String_Object>(v)->getValue();

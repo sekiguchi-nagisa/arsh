@@ -143,12 +143,11 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSVal
 
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
         auto argv = typeAs<Array_Object>(state.stack.getLocal(UDC_PARAM_ARGV));
-        eraseFirst(*argv);
+        auto cmdName = argv->takeFirst();
         const unsigned int argSize = argv->getValues().size();
         state.stack.setLocal(UDC_PARAM_ARGV + 1,
                              DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), argSize));   // #
-        state.stack.setLocal(UDC_PARAM_ARGV + 2,
-                             state.getGlobal(BuiltinVarOffset::POS_0)); // 0
+        state.stack.setLocal(UDC_PARAM_ARGV + 2, std::move(cmdName)); // 0
         unsigned int limit = 9;
         if(argSize < limit) {
             limit = argSize;
@@ -1322,7 +1321,7 @@ bool VM::mainLoop(DSState &state) {
             DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
             DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
 
-            eraseFirst(*typeAs<Array_Object>(argv));
+            typeAs<Array_Object>(argv)->takeFirst();
             auto *array = typeAs<Array_Object>(argv);
             if(!array->getValues().empty()) {
                 const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);

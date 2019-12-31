@@ -38,7 +38,8 @@ assert("$(echo2 a b c)" == "a b c")
 
 let oldshell = $0
 echo3() {
-    assert $0 == $oldshell
+    assert $0 != $oldshell
+    assert $0 == 'echo3'    # set user-defined command name to $0
     assert $# == $@.size()
 }
 assert echo3 a b c
