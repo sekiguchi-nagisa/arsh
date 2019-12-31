@@ -369,14 +369,19 @@ static NativeCode initCode(OpCode op) {
     return NativeCode(code);
 }
 
+static const DSCode *lookupUdc(const DSState &state, const char *name) {
+    auto handle = state.symbolTable.lookupUdc(name);
+    auto *udcObj = handle != nullptr ?
+            &typeAs<FuncObject>(state.getGlobal(handle->getIndex()))->getCode() : nullptr;
+    return udcObj;
+}
+
 Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     Command cmd{};
 
     // first, check user-defined command
     if(!hasFlag(this->mask, MASK_UDC)) {
-        auto handle = state.symbolTable.lookupUdc(cmdName);
-        auto *udcObj = handle != nullptr ?
-                       &typeAs<FuncObject>(state.getGlobal(handle->getIndex()))->getCode() : nullptr;
+        auto *udcObj = lookupUdc(state, cmdName);
         if(udcObj != nullptr) {
             cmd.kind = CmdKind::USER_DEFINED;
             cmd.udc = udcObj;
@@ -409,7 +414,21 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
 
     // resolve external command path
     cmd.kind = CmdKind::EXTERNAL;
-    cmd.filePath = hasFlag(this->mask, MASK_EXTERNAL) ? nullptr : state.pathCache.searchPath(cmdName, this->searchOp);
+    cmd.filePath = nullptr;
+    if(!hasFlag(this->mask, MASK_EXTERNAL)) {
+        cmd.filePath = state.pathCache.searchPath(cmdName, this->searchOp);
+
+        // if command not found or directory, lookup _cmd_fallback_handler
+        if(cmd.filePath == nullptr || S_ISDIR(getStMode(cmd.filePath))) {
+            auto handle = state.symbolTable.lookupHandle(VAR_CMD_FALLBACK);
+            unsigned int index = handle->getIndex();
+            if(state.getGlobal(index).isValidObject()) {
+                cmd.kind = CmdKind::USER_DEFINED;
+                cmd.udc = lookupUdc(state, CMD_FALLBACK_HANDLER);
+                assert(cmd.udc);
+            }
+        }
+    }
     return cmd;
 }
 

@@ -50,7 +50,7 @@ struct NodeDumpParam {
 
 class NodeDumpTest : public ::testing::TestWithParam<NodeDumpParam>, public TempFileFactory {
 protected:
-    static constexpr unsigned int GVAR_NUM = 48;
+    static constexpr unsigned int GVAR_NUM = 50;
 
     NodeDumpParam param;
 
@@ -175,7 +175,7 @@ nodes:
     type: Void
     varName: "a"
     global: "1"
-    varIndex: "48"
+    varIndex: "50"
     exprNode:
       nodeKind: String
       token:

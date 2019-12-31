@@ -148,10 +148,17 @@ static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError, unsigned 
     return evalCode(state, code, dsError);
 }
 
-static void bindVariable(DSState &state, const char *varName, DSValue &&value, FieldAttribute attribute) {
-    auto handle = state.symbolTable.newHandle(varName, *value->getType(), attribute);
+static void bindVariable(DSState &state, const char *varName,
+        DSType *type, DSValue &&value, FieldAttribute attribute) {
+    assert(type != nullptr);
+    auto handle = state.symbolTable.newHandle(varName, *type, attribute);
     assert(static_cast<bool>(handle));
     state.setGlobal(handle.asOk()->getIndex(), std::move(value));
+}
+
+static void bindVariable(DSState &state, const char *varName, DSValue &&value, FieldAttribute attribute) {
+    auto *type = value->getType();
+    return bindVariable(state, varName, type, std::move(value), attribute);
 }
 
 static void bindVariable(DSState &state, const char *varName, DSValue &&value) {

@@ -34,10 +34,9 @@ constexpr const char *VAR_STDOUT = "STDOUT";
 constexpr const char *VAR_STDERR = "STDERR";
 
 // shell builtin
-constexpr const char *VAR_PS1 = "PS1";
-constexpr const char *VAR_PS2 = "PS2";
-
 constexpr const char *VAR_EIDT_HOOK = "EDIT_HOOK";
+constexpr const char *VAR_CMD_FALLBACK = "CMD_FALLBACK";
+constexpr const char *CMD_FALLBACK_HANDLER = "_cmd_fallback_handler";
 
 constexpr const char *VAR_HISTFILE = "HISTFILE";
 constexpr const char *VAR_HISTSIZE = "HISTSIZE";

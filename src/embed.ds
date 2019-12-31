@@ -35,3 +35,10 @@ var COMP_HOOK = new Func<[String], [[String], Int]>!()
 
 # line edit op hook definition.
 var EDIT_HOOK = new Func<Any, [Int, Int, String]>!()
+
+# command fallback handler definition
+var CMD_FALLBACK = new ((String, [String]) -> Void)!()
+
+_cmd_fallback_handler() {
+    ($CMD_FALLBACK ?? { return 0; })($0, $@)
+}

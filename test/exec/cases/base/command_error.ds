@@ -48,3 +48,18 @@ try {
     assert($e is SystemError)
     assert(echo ${$e.message()} | grep "io redirection error: $a:")
 }
+
+
+# command fallback
+function fallback($a : String, $s : [String]) {
+    echo fallback $a: $s
+}
+$CMD_FALLBACK = $fallback
+
+hogehuga
+assert $? == 0
+assert hogehuga12 a b c | grep 'fallback hogehuga12: a b c'
+
+..
+assert $? == 0
+assert .. 1 | grep 'fallback ..: 1'
