@@ -166,25 +166,83 @@ nodes:
 
 )"},
 
-        {DumpOp::typed, R"(var a = 'false')", 0, 1, R"(
+        {DumpOp::untyped, R"(try { var a = 'false'; } catch $e {} finally {1l; })", 1, 0, R"(
 nodes:
-  - nodeKind: VarDecl
+  - nodeKind: Try
     token:
       pos: 0
-      size: 15
-    type: Void
-    varName: "a"
-    global: "1"
-    varIndex: "50"
+      size: 51
+    type:
     exprNode:
-      nodeKind: String
+      nodeKind: Block
       token:
-        pos: 8
-        size: 7
-      type: String
-      kind: "STRING"
-      value: "false"
-    kind: "VAR"
+        pos: 4
+        size: 20
+      type:
+      nodes:
+        - nodeKind: VarDecl
+          token:
+            pos: 6
+            size: 15
+          type:
+          varName: "a"
+          global: "0"
+          varIndex: "0"
+          exprNode:
+            nodeKind: String
+            token:
+              pos: 14
+              size: 7
+            type:
+            kind: "STRING"
+            value: "false"
+          kind: "VAR"
+      baseIndex: "0"
+      varSize: "0"
+      maxVarSize: "0"
+    catchNodes:
+      - nodeKind: Catch
+        token:
+          pos: 25
+          size: 11
+        type:
+        exceptionName: "e"
+        typeNode:
+          nodeKind: Type
+          token:
+            pos: 0
+            size: 0
+          type:
+          typeKind: "Base"
+          typeName: "Any"
+        blockNode:
+          nodeKind: Block
+          token:
+            pos: 34
+            size: 2
+          type:
+          nodes:
+          baseIndex: "0"
+          varSize: "0"
+          maxVarSize: "0"
+        varIndex: "0"
+    finallyNode:
+      nodeKind: Block
+      token:
+        pos: 45
+        size: 6
+      type:
+      nodes:
+        - nodeKind: Number
+          token:
+            pos: 46
+            size: 2
+          type:
+          kind: "Int64"
+          longValue: "1"
+      baseIndex: "0"
+      varSize: "0"
+      maxVarSize: "0"
 )"},
 
         {DumpOp::typed, R"({;})", 0, 0, R"(
