@@ -38,5 +38,5 @@ function dirname($s : String) : String {
     return $i == 0 ? "." : $s.slice(0, $i)
 }
 
-let home = "$(echo ~)"
-let user = "$(whoami)"
+let home = "$(command echo ~)"
+let user = "$(command whoami)"

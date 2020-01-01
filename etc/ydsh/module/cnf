@@ -6,12 +6,12 @@ var CNF_HOOK = new ((String, [String]) -> Void)!()
 var ISDIR_HOOK = new ((String) -> Void)!()
 
 function _default_cnf($s : String, $a : [String]) {
-    echo 1>&2 $s: command not found
+    command echo 1>&2 $s: command not found
     $? = 1
 }
 
 function _default_isdir($s : String) {
-    echo 1>&2 $s: is a directory
+    command echo 1>&2 $s: is a directory
     $? = 1
 }
 
