@@ -663,7 +663,7 @@ const char *DSState_version(DSVersion *version) {
 }
 
 const char *DSState_copyright() {
-    return "Copyright (C) 2015-2019 Nagisa Sekiguchi";
+    return "Copyright (C) 2015-2020 Nagisa Sekiguchi";
 }
 
 const char *DSState_configDir() {
