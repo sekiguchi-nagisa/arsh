@@ -563,6 +563,97 @@ nodes:
       kind: "STRING"
       value: "`(!ls > 34 | 34 with < ${34.1} &).poll()'"
 )"},
+
+        {DumpOp::typed, R"(case %'int' { %'int' => [34:34]; else => (34,)})", 0, 0, R"(
+nodes:
+  - nodeKind: Case
+    token:
+      pos: 0
+      size: 47
+    type: Void
+    exprNode:
+      nodeKind: Number
+      token:
+        pos: 5
+        size: 6
+      type: Signal
+      kind: "Signal"
+      intValue: "2"
+    armNodes:
+      - nodeKind: Arm
+        token:
+          pos: 14
+          size: 17
+        type: Void
+        this->patternNodes:
+          - nodeKind: Number
+            token:
+              pos: 14
+              size: 6
+            type: Signal
+            kind: "Signal"
+            intValue: "2"
+        this->actionNode:
+          nodeKind: TypeOp
+          token:
+            pos: 24
+            size: 7
+          type: Void
+          exprNode:
+            nodeKind: Map
+            token:
+              pos: 24
+              size: 7
+            type: [Int32 : Int32]
+            keyNodes:
+              - nodeKind: Number
+                token:
+                  pos: 25
+                  size: 2
+                type: Int32
+                kind: "Int32"
+                intValue: "34"
+            valueNodes:
+              - nodeKind: Number
+                token:
+                  pos: 28
+                  size: 2
+                type: Int32
+                kind: "Int32"
+                intValue: "34"
+          targetTypeToken:
+          opKind: "TO_VOID"
+      - nodeKind: Arm
+        token:
+          pos: 33
+          size: 13
+        type: Void
+        this->patternNodes:
+        this->actionNode:
+          nodeKind: TypeOp
+          token:
+            pos: 41
+            size: 5
+          type: Void
+          exprNode:
+            nodeKind: Tuple
+            token:
+              pos: 41
+              size: 5
+            type: (Int32,)
+            nodes:
+              - nodeKind: Number
+                token:
+                  pos: 42
+                  size: 2
+                type: Int32
+                kind: "Int32"
+                intValue: "34"
+          targetTypeToken:
+          opKind: "TO_VOID"
+    caseKind: "MAP"
+
+)"},
 };
 
 
