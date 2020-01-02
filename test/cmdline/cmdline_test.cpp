@@ -512,6 +512,20 @@ TEST_F(CmdlineTest, pipeline) {
     }
 }
 
+TEST_F(CmdlineTest, pipelineCode) {
+    auto ret1 = ds("--compile-only", "--dump-code", "-c", "1|2|3").execAndGetResult();
+    ASSERT_FALSE(ret1.out.empty());
+
+    auto ret2 = ds("--compile-only", "--dump-code", "-c", "(1|2)|3").execAndGetResult();
+    ASSERT_FALSE(ret2.out.empty());
+
+    auto ret3 = ds("--compile-only", "--dump-code", "-c", "1|(2|3)").execAndGetResult();
+    ASSERT_FALSE(ret3.out.empty());
+
+    ASSERT_EQ(ret1.out, ret2.out);
+    ASSERT_EQ(ret1.out, ret3.out);
+}
+
 #define DS(S) ds("-c", S)
 
 TEST_F(CmdlineTest, termHook) {
