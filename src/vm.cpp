@@ -787,7 +787,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe) {
     } else {
         // force terminate forked process.
         for(unsigned int i = 0; i < procIndex; i++) {
-            kill(childs[i].pid(), SIGKILL);
+            childs[i].send(SIGKILL);
         }
 
         raiseSystemError(state, EAGAIN, "fork failed");

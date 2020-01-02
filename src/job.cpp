@@ -184,6 +184,13 @@ int Proc::wait(WaitOp op, bool showSignal) {
     return this->exitStatus_;
 }
 
+int Proc::send(int sigNum) const {
+    if(this->pid() > 0) {
+        return kill(this->pid(), sigNum);
+    }
+    return 0;
+}
+
 
 // #####################
 // ##     JobImpl     ##
@@ -209,10 +216,7 @@ void JobImpl::send(int sigNum) const {
         return;
     }
     for(unsigned int i = 0; i < this->procSize; i++) {
-        pid = this->getPid(i);
-        if(pid > 0) {
-            kill(pid, sigNum);
-        }
+        this->procs[i].send(sigNum);
     }
 }
 

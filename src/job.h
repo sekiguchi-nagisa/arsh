@@ -95,6 +95,14 @@ public:
     int wait(WaitOp op, bool showSignal = true);
 
     /**
+     * send signal to proc
+     * @param sigNum
+     * @return
+     * if success, return 0.
+     */
+    int send(int sigNum) const;
+
+    /**
      * after fork, reset signal setting in child process.
      * if Proc#pid() is -1, fork failed due to EAGAIN.
      * @param st
