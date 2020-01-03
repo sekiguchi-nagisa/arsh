@@ -661,7 +661,7 @@ TEST_P(NodeDumpTest, base) {
     ASSERT_NO_FATAL_FAILURE(this->test());
 }
 
-INSTANTIATE_TEST_CASE_P(NodeDumpTest, NodeDumpTest, ::testing::ValuesIn(paramTable));
+INSTANTIATE_TEST_SUITE_P(NodeDumpTest, NodeDumpTest, ::testing::ValuesIn(paramTable));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

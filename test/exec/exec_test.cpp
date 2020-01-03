@@ -139,7 +139,7 @@ TEST_P(ExecTest, baseTest) {
     ASSERT_NO_FATAL_FAILURE(this->doTest());
 }
 
-INSTANTIATE_TEST_CASE_P(ExecTest, ExecTest, ::testing::ValuesIn(getSortedFileList(EXEC_TEST_DIR)));
+INSTANTIATE_TEST_SUITE_P(ExecTest, ExecTest, ::testing::ValuesIn(getSortedFileList(EXEC_TEST_DIR)));
 
 
 TEST(Base, case1) {
