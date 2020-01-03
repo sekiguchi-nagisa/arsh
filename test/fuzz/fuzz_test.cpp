@@ -29,7 +29,7 @@ public:
     }
 };
 
-INSTANTIATE_TEST_CASE_P(FuzzTest, FuzzTest, ::testing::ValuesIn(getFileList(FUZZ_TEST_DIR, true)));
+INSTANTIATE_TEST_SUITE_P(FuzzTest, FuzzTest, ::testing::ValuesIn(getFileList(FUZZ_TEST_DIR, true)));
 
 TEST_P(FuzzTest, base) {
     ASSERT_NO_FATAL_FAILURE(this->doTest());
