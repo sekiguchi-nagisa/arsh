@@ -19,14 +19,14 @@ function _sync() {
 }
 
 function _error($s : String) {
-    command echo 1>&2 history: $s
+    echo 1>&2 history: $s
 }
 
 function _usage($fd : UnixFD, $short : Boolean) : Int {
-    command echo > $fd "usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
+    echo > $fd "usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
     if $short { return 2; }
 
-    command echo > $fd "Display or manipulate history list.
+    echo > $fd "Display or manipulate history list.
     Options:
         -c        clear the history list
         -d offset delete the history entry at OFFSET
@@ -61,7 +61,7 @@ function _show($argv : [String]) : Int {
     }
 
     for(var i = $histSize - $offset; $i < $histSize; $i++) {
-        command echo $HISTORY[$i]
+        echo $HISTORY[$i]
     }
     return 0
 }
@@ -83,11 +83,12 @@ function _add($s : String, $p : Boolean) {
 }
 
 function _default_search($q : String) : String {
-    command -v fzf &> /dev/null || { return ""; }
+    var fzf = command -v fzf &> /dev/null
+    if !$fzf { return ""; }
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
     return "$(for $e in $HISTORY {
-        command echo $e
+        echo $e
     } | sort | uniq | fzf --layout=reverse --inline-info $arg)"
 }
 
@@ -99,7 +100,7 @@ function _load($p : String!) {
     if $HISTSIZE == 0 { return; }
     if !$p || $p!.empty() { $p = $HISTFILE; }
     let path = $p!.realpath() ?? { return; }
-    cat $path | while(command read -r -f '') {
+    cat $path | while(read -r -f '') {
         $_add($REPLY, $true)
     }
     $PIPESTATUS.clear()
@@ -121,9 +122,9 @@ function _save($p : String!) {
     var offset = $size < $HISTFILESIZE ? 0 : $size - $HISTFILESIZE
 
     for(var i = $offset; $i < $size; $i++) {
-        command echo $HISTORY[$i]
+        echo $HISTORY[$i]
     } with > $path
-    command chmod g-rw,o-rw $path
+    chmod g-rw,o-rw $path
 }
 
 history() {

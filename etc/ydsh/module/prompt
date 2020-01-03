@@ -3,8 +3,8 @@ source path
 
 let _cache = [
     'c' : '\\c',
-    'h' : "$(command uname -n)".split(".")[0],
-    'H' : "$(command uname -n)",
+    'h' : "$(uname -n)".split(".")[0],
+    'H' : "$(uname -n)",
     's' : $basename($0),
     'u' : $user,
     'v' : $YDSH_VERSION.to($YDSH_VERSION.lastIndexOf('.')),
@@ -23,14 +23,14 @@ function renderPrompt($p : String) : String {
             var k = $p[$i]
             case $k {
             'd' => {
-                var w = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"]["$(command date +%w)".toInt32()!]
-                $ch = "$w$(command date '+ %m %d')"
+                var w = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"]["$(date +%w)".toInt32()!]
+                $ch = "$w$(date '+ %m %d')"
             }
-            't' => { $ch = "$(command date +%T)"; }
-            'T' => { $ch = "$(command date +'%I:%M:%S')"; }
+            't' => { $ch = "$(date +%T)"; }
+            'T' => { $ch = "$(date +'%I:%M:%S')"; }
             '@' => {
-                var h = "$(command date +%H)".toInt32()! < 12 ? "AM" : "PM"
-                $ch = "$(command date +'%I:%M ')$h"
+                var h = "$(date +%H)".toInt32()! < 12 ? "AM" : "PM"
+                $ch = "$(date +'%I:%M ')$h"
             }
             'w' => {
                 if $PWD.startsWith($home) {
@@ -57,14 +57,14 @@ function renderPrompt($p : String) : String {
     var old = $IFS
     $IFS = ""
     return try {
-        "$(command echo -en $ret)"
+        "$(echo -en $ret)"
     } finally {
         $IFS = $old
     }
 }
 
 function _usage($fd : UnixFD, $short : Boolean) : Int  {
-    command echo > $fd usage: prompt [-h] [--help] [+prompt]
+    echo > $fd usage: prompt [-h] [--help] [+prompt]
     if $short { return 2; }
 
     echo > $fd "Prompt Escape Sequence:
@@ -101,7 +101,7 @@ prompt() {
     '-h' | '--help' => { return $_usage($STDOUT, $false); }
     else => {
         if $1.startsWith('+') { echo ${$renderPrompt($1.from(1))}; return 0; }
-       command  echo > $STDERR prompt: $1: invalid option;
+        echo > $STDERR prompt: $1: invalid option;
         return $_usage($STDERR, $true);
     }
     }
