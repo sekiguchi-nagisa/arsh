@@ -364,7 +364,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     if(!hasFlag(this->mask, MASK_UDC)) {
         auto *udcObj = lookupUdc(state, cmdName);
         if(udcObj != nullptr) {
-            cmd.kind = CmdKind::USER_DEFINED;
+            cmd.kind = Command::USER_DEFINED;
             cmd.udc = udcObj;
             return cmd;
         }
@@ -374,7 +374,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     {
         builtin_command_t bcmd = lookupBuiltinCommand(cmdName);
         if(bcmd != nullptr) {
-            cmd.kind = CmdKind::BUILTIN;
+            cmd.kind = Command::BUILTIN;
             cmd.builtinCmd = bcmd;
             return cmd;
         }
@@ -386,7 +386,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
         };
         for(auto &e : sb) {
             if(strcmp(cmdName, e.first) == 0) {
-                cmd.kind = CmdKind::BUILTIN_S;
+                cmd.kind = Command::BUILTIN_S;
                 cmd.udc = &e.second;
                 return cmd;
             }
@@ -394,7 +394,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     }
 
     // resolve external command path
-    cmd.kind = CmdKind::EXTERNAL;
+    cmd.kind = Command::EXTERNAL;
     cmd.filePath = nullptr;
     if(!hasFlag(this->mask, MASK_EXTERNAL)) {
         cmd.filePath = state.pathCache.searchPath(cmdName, this->searchOp);
@@ -407,7 +407,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
             auto handle = state.symbolTable.lookupHandle(VAR_CMD_FALLBACK);
             unsigned int index = handle->getIndex();
             if(state.getGlobal(index).isValidObject()) {
-                cmd.kind = CmdKind::USER_DEFINED;
+                cmd.kind = Command::USER_DEFINED;
                 cmd.udc = lookupUdc(state, CMD_FALLBACK_HANDLER);
                 assert(cmd.udc);
             }
@@ -495,14 +495,14 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
     auto cmd = resolver(state, str(array->getValues()[0]));
 
     switch(cmd.kind) {
-    case CmdKind::USER_DEFINED:
-    case CmdKind::BUILTIN_S: {
-        if(cmd.kind == CmdKind::USER_DEFINED) {
+    case Command::USER_DEFINED:
+    case Command::BUILTIN_S: {
+        if(cmd.kind == Command::USER_DEFINED) {
             setFlag(attr, UDC_ATTR_SETVAR);
         }
         return prepareUserDefinedCommandCall(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
     }
-    case CmdKind::BUILTIN: {
+    case Command::BUILTIN: {
         int status = cmd.builtinCmd(state, *array);
         flushStdFD();
         if(state.hasError()) {
@@ -511,7 +511,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
         pushExitStatus(state, status);
         return true;
     }
-    case CmdKind::EXTERNAL: {
+    case Command::EXTERNAL: {
         // create argv
         const unsigned int size = array->getValues().size();
         char *argv[size + 1];
@@ -587,7 +587,7 @@ bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, 
             const char *commandName = str(arrayObj.getValues()[index]);
             auto cmd = CmdResolver(CmdResolver::MASK_FALLBACK, FilePathCache::DIRECT_SEARCH)(state, commandName);
             switch(cmd.kind) {
-            case CmdKind::USER_DEFINED: {
+            case Command::USER_DEFINED: {
                 successCount++;
                 fputs(commandName, stdout);
                 if(showDesc == 2) {
@@ -596,8 +596,8 @@ bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, 
                 fputc('\n', stdout);
                 continue;
             }
-            case CmdKind::BUILTIN_S:
-            case CmdKind::BUILTIN: {
+            case Command::BUILTIN_S:
+            case Command::BUILTIN: {
                 successCount++;
                 fputs(commandName, stdout);
                 if(showDesc == 2) {
@@ -606,7 +606,7 @@ bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, 
                 fputc('\n', stdout);
                 continue;
             }
-            case CmdKind::EXTERNAL: {
+            case Command::EXTERNAL: {
                 const char *path = cmd.filePath;
                 if(path != nullptr) {
                     successCount++;

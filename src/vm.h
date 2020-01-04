@@ -231,15 +231,14 @@ public:
 
 namespace ydsh {
 
-enum class CmdKind {
-    USER_DEFINED,
-    BUILTIN_S,
-    BUILTIN,
-    EXTERNAL,
-};
-
 struct Command {
-    CmdKind kind;
+    enum CmdKind {
+        USER_DEFINED,
+        BUILTIN_S,
+        BUILTIN,
+        EXTERNAL,
+    } kind;
+
     union {
         const DSCode *udc;
         builtin_command_t builtinCmd;
@@ -250,7 +249,7 @@ struct Command {
 class CmdResolver {
 public:
     enum ResolveOp {
-        MASK_UDC = 1u << 0u,
+        MASK_UDC      = 1u << 0u,
         MASK_EXTERNAL = 1u << 1u,
         MASK_FALLBACK = 1u << 2u,
     };
