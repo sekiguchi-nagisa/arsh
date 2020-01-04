@@ -755,7 +755,7 @@ private:
     /**
      * for method call
      */
-    MethodHandle *handle{nullptr};
+    const MethodHandle *handle{nullptr};
 
     Kind kind;
 
@@ -824,11 +824,11 @@ public:
         return this->getKind() == INDEX_CALL;
     }
 
-    void setHandle(MethodHandle *handle) {
+    void setHandle(const MethodHandle *handle) {
         this->handle = handle;
     }
 
-    MethodHandle *getHandle() const {
+    const MethodHandle *getHandle() const {
         return this->handle;
     }
 
@@ -889,7 +889,7 @@ private:
 
     Node *exprNode;
 
-    MethodHandle *handle{nullptr}; // for method call
+    const MethodHandle *handle{nullptr}; // for method call
 
 public:
     EmbedNode(unsigned int startPos, Kind kind, Node *exprNode, Token endToken) :
@@ -910,7 +910,7 @@ public:
         return this->exprNode;
     }
 
-    void setHandle(MethodHandle *h) {
+    void setHandle(const MethodHandle *h) {
         this->handle = h;
     }
 

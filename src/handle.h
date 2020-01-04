@@ -162,7 +162,7 @@ public:
         this->next = handle;
     }
 
-    MethodHandle *getNext() const {
+    const MethodHandle *getNext() const {
         return this->next;
     }
 };

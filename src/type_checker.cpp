@@ -210,7 +210,7 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, DSType &targetType) 
         if(targetType.isOptionType()) {
             return true;
         }
-        auto *handle = targetType.lookupMethodHandle(this->symbolTable, OP_BOOL);
+        auto *handle = this->symbolTable.lookupMethod(targetType, OP_BOOL);
         if(handle != nullptr) {
             return true;
         }
@@ -270,7 +270,7 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
         auto &accessNode = static_cast<AccessNode &>(exprNode);
         if(!this->checkAccessNode(accessNode)) {
             auto &recvType = accessNode.getRecvNode()->getType();
-            auto *handle = recvType.lookupMethodHandle(this->symbolTable, accessNode.getFieldName());
+            auto *handle = this->symbolTable.lookupMethod(recvType, accessNode.getFieldName());
             if(handle == nullptr) {
                 const char *name = accessNode.getFieldName().c_str();
                 RAISE_TC_ERROR(UndefinedMethod, *accessNode.getNameNode(), name);
@@ -311,7 +311,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     return static_cast<FunctionType *>(type);
 }
 
-void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vector<Node *> &argNodes) {
+void TypeChecker::checkTypeArgsNode(Node &node, const MethodHandle *handle, std::vector<Node *> &argNodes) {
     unsigned int argSize = argNodes.size();
     do {
         // check param size
@@ -329,7 +329,7 @@ void TypeChecker::checkTypeArgsNode(Node &node, MethodHandle *handle, std::vecto
 
 bool TypeChecker::checkAccessNode(AccessNode &node) {
     auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
-    auto handle = recvType.lookupFieldHandle(this->symbolTable, node.getFieldName());
+    auto *handle = this->symbolTable.lookupField(recvType, node.getFieldName());
     if(handle == nullptr) {
         return false;
     }
@@ -375,8 +375,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
             node.setOpKind(TypeOpNode::TO_STRING);
             return;
         }
-        if(targetType.is(TYPE::Boolean) &&
-                exprType.lookupMethodHandle(this->symbolTable, OP_BOOL) != nullptr) {
+        if(targetType.is(TYPE::Boolean) && this->symbolTable.lookupMethod(exprType, OP_BOOL) != nullptr) {
             node.setOpKind(TypeOpNode::TO_BOOL);
             return;
         }
@@ -630,7 +629,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     node.setType(this->checkTypeAsExpr(node.getOptNode()));
 }
 
-void TypeChecker::checkTypeAsMethodCall(ApplyNode &node, MethodHandle *handle) {
+void TypeChecker::checkTypeAsMethodCall(ApplyNode &node, const MethodHandle *handle) {
     // check type argument
     this->checkTypeArgsNode(node, handle, node.refArgNodes());
     node.setHandle(handle);
@@ -642,8 +641,8 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
      * resolve handle
      */
     HandleOrFuncType hf = this->resolveCallee(node);
-    if(is<MethodHandle *>(hf)) {
-        this->checkTypeAsMethodCall(node, get<MethodHandle *>(hf));
+    if(is<const MethodHandle *>(hf)) {
+        this->checkTypeAsMethodCall(node, get<const MethodHandle *>(hf));
         return;
     }
 
@@ -673,7 +672,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
             RAISE_TC_ERROR(UnmatchParam, node, 0, size);
         }
     } else {
-        MethodHandle *handle = type.getConstructorHandle(this->symbolTable);
+        auto *handle = this->symbolTable.lookupConstructor(type);
         if(handle == nullptr) {
             RAISE_TC_ERROR(UndefinedInit, node, this->symbolTable.getTypeName(type));
         }
@@ -693,7 +692,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
         if(!type.isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
             std::string methodName(OP_INTERP);
             auto *handle = exprType.isOptionType() ? nullptr :
-                    exprType.lookupMethodHandle(this->symbolTable, methodName);
+                    this->symbolTable.lookupMethod(exprType, methodName);
             if(handle == nullptr) { // if exprType is
                 RAISE_TC_ERROR(UndefinedMethod, *node.getExprNode(), methodName.c_str());
             }
@@ -706,12 +705,12 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
            !this->symbolTable.get(TYPE::UnixFD).isSameOrBaseTypeOf(exprType)) { // call __STR__ or __CMD__ARG
             // first try lookup __CMD_ARG__ method
             std::string methodName(OP_CMD_ARG);
-            auto *handle = exprType.lookupMethodHandle(this->symbolTable, methodName);
+            auto *handle = this->symbolTable.lookupMethod(exprType, methodName);
 
             if(handle == nullptr) { // if not found, lookup __STR__
                 methodName = OP_STR;
                 handle = exprType.isOptionType() ? nullptr :
-                        exprType.lookupMethodHandle(this->symbolTable, methodName);
+                        this->symbolTable.lookupMethod(exprType, methodName);
                 if(handle == nullptr) {
                     RAISE_TC_ERROR(UndefinedMethod, *node.getExprNode(), methodName.c_str());
                 }

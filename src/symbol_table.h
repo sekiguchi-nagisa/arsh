@@ -543,6 +543,22 @@ public:
         return this->root().newHandle(type.toName(), type, FieldAttribute::READ_ONLY);
     }
 
+    const FieldHandle *lookupField(DSType &recvType, const std::string &fieldName);
+
+    const MethodHandle *lookupMethod(DSType &recvType, const std::string &methodName);
+
+    const MethodHandle *lookupMethod(unsigned int typeId, const std::string &methodName) {
+        return this->lookupMethod(this->get(typeId), methodName);
+    }
+
+    const MethodHandle *lookupMethod(TYPE type, const std::string &methodName) {
+        return this->lookupMethod(static_cast<unsigned int>(type), methodName);
+    }
+
+    const MethodHandle *lookupConstructor(DSType &recvType) {
+        return recvType.getConstructorHandle(*this);
+    }
+
     /**
      * create new local scope.
      */
@@ -694,12 +710,15 @@ public:
         return this->setAlias(alias.c_str(), targetType);
     }
 
-    bool setAlias(const char *alias, DSType &targetType);
+    bool setAlias(const char *alias, DSType &targetType) {
+        return this->typeMap.setAlias(std::string(alias), targetType.getTypeID());
+    }
 
     const char *getTypeName(const DSType &type) const {
         return this->typeMap.getTypeName(type).c_str();
     }
 
+private:
     /**
      * create reified type name
      * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
@@ -713,11 +732,9 @@ public:
      */
     std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const;
 
-private:
     void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info);
 
-    void initBuiltinType(TYPE t, const char *typeName, bool extendible,
-                         DSType &superType, native_type_info_t info);
+    void initBuiltinType(TYPE t, const char *typeName, bool extendible, TYPE super, native_type_info_t info);
 
     void initTypeTemplate(TypeTemplate &temp, const char *typeName,
                           std::vector<DSType*> &&elementTypes, native_type_info_t info);

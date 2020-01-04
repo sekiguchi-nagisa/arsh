@@ -297,7 +297,7 @@ private:
 
     bool assertion;
 
-    MethodHandle *handle_STR{nullptr};
+    const MethodHandle *handle_STR{nullptr};
 
     std::vector<CodeBuilder> builders;
 

@@ -231,7 +231,7 @@ static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
         return DSValue();
     }
     if(!ret->getType()->is(TYPE::String)) {
-        auto *handle = ret->getType()->lookupMethodHandle(state.symbolTable, op);
+        auto *handle = state.symbolTable.lookupMethod(*ret->getType(), op);
         assert(handle != nullptr);
         ret = callMethod(state, handle, std::move(ret), makeArgs());
     }
@@ -270,10 +270,10 @@ bool Array_Object::opInterp(DSState &state) const {
     return true;
 }
 
-static MethodHandle *lookupCmdArg(DSType *recvType, SymbolTable &symbolTable) {
-    auto *handle = recvType->lookupMethodHandle(symbolTable, OP_CMD_ARG);
+static const MethodHandle *lookupCmdArg(DSType &recvType, SymbolTable &symbolTable) {
+    auto *handle = symbolTable.lookupMethod(recvType, OP_CMD_ARG);
     if(handle == nullptr) {
-        handle = recvType->lookupMethodHandle(symbolTable, OP_STR);
+        handle = symbolTable.lookupMethod(recvType, OP_STR);
     }
     return handle;
 }
@@ -284,7 +284,7 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
         return false;
     }
     if(!ret->getType()->is(TYPE::String) && !ret->getType()->is(TYPE::StringArray)) {
-        auto *handle = lookupCmdArg(ret->getType(), state.symbolTable);
+        auto *handle = lookupCmdArg(*ret->getType(), state.symbolTable);
         assert(handle != nullptr);
         ret = TRY(callMethod(state, handle, std::move(ret), makeArgs()));
     }

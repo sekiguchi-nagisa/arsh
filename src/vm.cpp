@@ -1645,7 +1645,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
     if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
         fputs("[runtime error]\n", stderr);
         const bool bt = state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
-        auto *handle = errorType.lookupMethodHandle(state.symbolTable, bt ? "backtrace" : OP_STR);
+        auto *handle = state.symbolTable.lookupMethod(errorType, bt ? "backtrace" : OP_STR);
 
         DSValue ret = VM::callMethod(state, handle, DSValue(except), makeArgs());
         if(state.hasError()) {

@@ -90,7 +90,7 @@ void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
 
 void ByteCodeGenerator::generateToString() {
     if(this->handle_STR == nullptr) {
-        this->handle_STR = this->symbolTable.get(TYPE::Any).lookupMethodHandle(this->symbolTable, std::string(OP_STR));
+        this->handle_STR = this->symbolTable.lookupMethod(TYPE::Any, OP_STR);
     }
 
     this->emitCallIns(OpCode::CALL_METHOD, 0, this->handle_STR->getMethodIndex());
@@ -416,7 +416,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         break;
     case TypeOpNode::TO_BOOL: {
         this->emitSourcePos(node.getPos());
-        auto *handle = node.getExprNode()->getType().lookupMethodHandle(this->symbolTable, OP_BOOL);
+        auto *handle = this->symbolTable.lookupMethod(node.getExprNode()->getType(), OP_BOOL);
         assert(handle != nullptr);
         this->emitCallIns(OpCode::CALL_METHOD, 0, handle->getMethodIndex());
         break;
@@ -839,8 +839,8 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
     this->visit(*node.getExprNode());
 
     // generate if-else chain
-    unsigned int eqIndex = exprType.lookupMethodHandle(this->symbolTable, OP_EQ)->getMethodIndex();
-    unsigned int matchIndex = exprType.lookupMethodHandle(this->symbolTable, OP_MATCH)->getMethodIndex();
+    unsigned int eqIndex = this->symbolTable.lookupMethod(exprType, OP_EQ)->getMethodIndex();
+    unsigned int matchIndex = this->symbolTable.lookupMethod(exprType, OP_MATCH)->getMethodIndex();
 
     int defaultIndex = -1;
     auto mergeLabel = makeLabel();

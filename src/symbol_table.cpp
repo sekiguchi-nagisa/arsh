@@ -311,29 +311,29 @@ SymbolTable::SymbolTable() :
     // initialize type
     this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, info_Dummy()); // pseudo base type
 
-    this->initBuiltinType(TYPE::Any, "Any", true, this->get(TYPE::_Root), info_AnyType());
+    this->initBuiltinType(TYPE::Any, "Any", true, TYPE::_Root, info_AnyType());
     this->initBuiltinType(TYPE::Void, "Void", false, info_Dummy());
     this->initBuiltinType(TYPE::Nothing, "Nothing", false, info_Dummy());
 
     /**
      * hidden from script.
      */
-    this->initBuiltinType(TYPE::_Value, "Value%%", true, this->get(TYPE::Any), info_Dummy());
+    this->initBuiltinType(TYPE::_Value, "Value%%", true, TYPE::Any, info_Dummy());
 
-    this->initBuiltinType(TYPE::Int32, "Int32", false, this->get(TYPE::_Value), info_Int32Type());
-    this->initBuiltinType(TYPE::Int64, "Int64", false, this->get(TYPE::_Value), info_Int64Type());
-    this->initBuiltinType(TYPE::Float, "Float", false, this->get(TYPE::_Value), info_FloatType());
-    this->initBuiltinType(TYPE::Boolean, "Boolean", false, this->get(TYPE::_Value), info_BooleanType());
-    this->initBuiltinType(TYPE::String, "String", false, this->get(TYPE::_Value), info_StringType());
+    this->initBuiltinType(TYPE::Int32, "Int32", false, TYPE::_Value, info_Int32Type());
+    this->initBuiltinType(TYPE::Int64, "Int64", false, TYPE::_Value, info_Int64Type());
+    this->initBuiltinType(TYPE::Float, "Float", false, TYPE::_Value, info_FloatType());
+    this->initBuiltinType(TYPE::Boolean, "Boolean", false, TYPE::_Value, info_BooleanType());
+    this->initBuiltinType(TYPE::String, "String", false, TYPE::_Value, info_StringType());
 
-    this->initBuiltinType(TYPE::Regex, "Regex", false, this->get(TYPE::Any), info_RegexType());
-    this->initBuiltinType(TYPE::Signal, "Signal", false, this->get(TYPE::_Value), info_SignalType());
-    this->initBuiltinType(TYPE::Signals, "Signals", false, this->get(TYPE::Any), info_SignalsType());
-    this->initBuiltinType(TYPE::Error, "Error", true, this->get(TYPE::Any), info_ErrorType());
-    this->initBuiltinType(TYPE::Job, "Job", false, this->get(TYPE::Any), info_JobType());
-    this->initBuiltinType(TYPE::Func, "Func", false, this->get(TYPE::Any), info_Dummy());
-    this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, this->get(TYPE::Any), info_StringIterType());
-    this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, this->get(TYPE::Any), info_UnixFDType());
+    this->initBuiltinType(TYPE::Regex, "Regex", false, TYPE::Any, info_RegexType());
+    this->initBuiltinType(TYPE::Signal, "Signal", false, TYPE::_Value, info_SignalType());
+    this->initBuiltinType(TYPE::Signals, "Signals", false, TYPE::Any, info_SignalsType());
+    this->initBuiltinType(TYPE::Error, "Error", true, TYPE::Any, info_ErrorType());
+    this->initBuiltinType(TYPE::Job, "Job", false, TYPE::Any, info_JobType());
+    this->initBuiltinType(TYPE::Func, "Func", false, TYPE::Any, info_Dummy());
+    this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, TYPE::Any, info_StringIterType());
+    this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, TYPE::Any, info_UnixFDType());
 
     // register NativeFuncInfo to ErrorType
     ErrorType::registerFuncInfo(info_ErrorType());
@@ -370,9 +370,9 @@ SymbolTable::SymbolTable() :
     this->initErrorType(TYPE::UnwrappingError, "UnwrappingError");
 
     // init internal status type
-    this->initBuiltinType(TYPE::_InternalStatus, "internal status%%", false, this->get(TYPE::_Root), info_Dummy());
-    this->initBuiltinType(TYPE::_ShellExit, "Shell Exit", false, this->get(TYPE::_InternalStatus), info_Dummy());
-    this->initBuiltinType(TYPE::_AssertFail, "Assertion Error", false, this->get(TYPE::_InternalStatus), info_Dummy());
+    this->initBuiltinType(TYPE::_InternalStatus, "internal status%%", false, TYPE::_Root, info_Dummy());
+    this->initBuiltinType(TYPE::_ShellExit, "Shell Exit", false, TYPE::_InternalStatus, info_Dummy());
+    this->initBuiltinType(TYPE::_AssertFail, "Assertion Error", false, TYPE::_InternalStatus, info_Dummy());
 
     // commit generated type
     this->typeMap.commit();
@@ -453,6 +453,14 @@ unsigned int SymbolTable::getTermHookIndex() {
         this->termHookIndex = handle->getIndex();
     }
     return this->termHookIndex;
+}
+
+const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string &fieldName) {
+    return recvType.lookupFieldHandle(*this, fieldName);    //FIXME:
+}
+
+const MethodHandle *SymbolTable::lookupMethod(DSType &recvType, const std::string &methodName) {
+    return recvType.lookupMethodHandle(*this, methodName);  //FIXME:
 }
 
 TypeOrError SymbolTable::getTypeOrError(const std::string &typeName) const {
@@ -544,10 +552,6 @@ TypeOrError SymbolTable::createFuncType(DSType *returnType, std::vector<DSType *
     return Ok(type);
 }
 
-bool SymbolTable::setAlias(const char *alias, DSType &targetType) {
-    return this->typeMap.setAlias(std::string(alias), targetType.getTypeID());
-}
-
 std::string SymbolTable::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
                                            const std::vector<DSType *> &elementTypes) const {
     if(typeTemplate == this->getArrayTemplate()) {
@@ -628,10 +632,10 @@ void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
 }
 
 void SymbolTable::initBuiltinType(TYPE t, const char *typeName, bool extendable,
-                                  DSType &superType, native_type_info_t info) {
+                                TYPE super, native_type_info_t info) {
     // create and register type
     auto &type = this->typeMap.newType<BuiltinType>(
-            std::string(typeName), &superType, info, extendable ? TypeAttr::EXTENDIBLE : TypeAttr());
+            std::string(typeName), &this->get(super), info, extendable ? TypeAttr::EXTENDIBLE : TypeAttr());
     (void) type;
     (void) t;
     assert(type.is(t));
