@@ -65,3 +65,5 @@ assert $? == 0
 assert .. 1 | grep 'fallback ..: 1'
 
 assert "$(command -V hgoe)" == ""
+
+true

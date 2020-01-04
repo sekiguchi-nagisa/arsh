@@ -342,26 +342,6 @@ bool VM::forkAndEval(DSState &state) {
 }
 
 /* for pipeline evaluation */
-
-class CmdResolver {
-private:
-    flag8_set_t mask;
-    FilePathCache::SearchOp searchOp;
-
-public:
-    static constexpr flag8_t MASK_UDC = 1u << 0u;
-    static constexpr flag8_t MASK_EXTERNAL = 1u << 1u;
-    static constexpr flag8_t MASK_FALLBACK = 1u << 2u;
-
-    CmdResolver(flag8_set_t mask, FilePathCache::SearchOp op) : mask(mask), searchOp(op) {}
-
-    CmdResolver() : CmdResolver(0, FilePathCache::NON) {}
-
-    ~CmdResolver() = default;
-
-    Command operator()(DSState &state, const char *cmdName) const;
-};
-
 static NativeCode initCode(OpCode op) {
     auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 3));
     code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
@@ -447,7 +427,7 @@ static void raiseCmdError(DSState &state, const char *cmdName, int errnum) {
     }
 }
 
-int VM::forkAndExec(DSState &state, const char *cmdName, Command cmd, char **const argv, DSValue &&redirConfig) {
+int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSValue &&redirConfig) {
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
@@ -463,11 +443,11 @@ int VM::forkAndExec(DSState &state, const char *cmdName, Command cmd, char **con
     pid_t pgid = rootShell ? 0 : getpgid(0);
     auto proc = Proc::fork(state, pgid, rootShell);
     if(proc.pid() == -1) {
-        raiseCmdError(state, cmdName, EAGAIN);
+        raiseCmdError(state, argv[0], EAGAIN);
         return 1;
     } else if(proc.pid() == 0) {   // child
         close(selfpipe[READ_PIPE]);
-        xexecve(cmd.filePath, argv, nullptr, redirConfig);
+        xexecve(filePath, argv, nullptr, redirConfig);
 
         int errnum = errno;
         int r = write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
@@ -503,18 +483,16 @@ int VM::forkAndExec(DSState &state, const char *cmdName, Command cmd, char **con
         LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
         state.jobTable.updateStatus();
         if(errnum != 0) {
-            raiseCmdError(state, cmdName, errnum);
+            raiseCmdError(state, argv[0], errnum);
             return 1;
         }
         return status;
     }
 }
 
-bool VM::callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr) {
+bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr) {
     auto *array = typeAs<Array_Object>(argvObj);
-    const unsigned int size = array->getValues().size();
-    auto &first = array->getValues()[0];
-    const char *cmdName = typeAs<String_Object>(first)->getValue();
+    auto cmd = resolver(state, str(array->getValues()[0]));
 
     switch(cmd.kind) {
     case CmdKind::USER_DEFINED:
@@ -535,6 +513,7 @@ bool VM::callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&r
     }
     case CmdKind::EXTERNAL: {
         // create argv
+        const unsigned int size = array->getValues().size();
         char *argv[size + 1];
         for(unsigned int i = 0; i < size; i++) {
             argv[i] = const_cast<char *>(str(array->getValues()[i]));
@@ -542,11 +521,11 @@ bool VM::callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&r
         argv[size] = nullptr;
 
         if(hasFlag(attr, UDC_ATTR_NEED_FORK)) {
-            int status = forkAndExec(state, cmdName, cmd, argv, std::move(redirConfig));
+            int status = forkAndExec(state, cmd.filePath, argv, std::move(redirConfig));
             pushExitStatus(state, status);
         } else {
             xexecve(cmd.filePath, argv, nullptr, redirConfig);
-            raiseCmdError(state, cmdName, errno);
+            raiseCmdError(state, argv[0], errno);
         }
         return !state.hasError();
     }
@@ -594,13 +573,12 @@ bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, 
     const unsigned int argc = arrayObj.getValues().size();
     if(index < argc) {
         if(showDesc == 0) { // execute command
-            const char *cmdName = str(arrayObj.getValues()[index]);
             auto &values = arrayObj.refValues();
             values.erase(values.begin(), values.begin() + index);
 
             auto resolve = CmdResolver(CmdResolver::MASK_UDC,
                                        useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
-            return callCommand(state, resolve(state, cmdName), std::move(argvObj), std::move(redir), attr);
+            return callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
         }
 
         // show command description
@@ -1326,8 +1304,7 @@ bool VM::mainLoop(DSState &state) {
             auto redir = state.stack.pop();
             auto argv = state.stack.pop();
 
-            const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-            TRY(callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr));
+            TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
             vmnext;
         }
         vmcase(BUILTIN_CMD) {
@@ -1347,8 +1324,7 @@ bool VM::mainLoop(DSState &state) {
             typeAs<Array_Object>(argv)->takeFirst();
             auto *array = typeAs<Array_Object>(argv);
             if(!array->getValues().empty()) {
-                const char *cmdName = str(typeAs<Array_Object>(argv)->getValues()[0]);
-                TRY(callCommand(state, CmdResolver()(state, cmdName), std::move(argv), std::move(redir), attr));
+                TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
             } else {
                 pushExitStatus(state, 0);
             }

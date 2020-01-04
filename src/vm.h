@@ -231,6 +231,46 @@ public:
 
 namespace ydsh {
 
+enum class CmdKind {
+    USER_DEFINED,
+    BUILTIN_S,
+    BUILTIN,
+    EXTERNAL,
+};
+
+struct Command {
+    CmdKind kind;
+    union {
+        const DSCode *udc;
+        builtin_command_t builtinCmd;
+        const char *filePath;   // may be null if not found file
+    };
+};
+
+class CmdResolver {
+public:
+    enum ResolveOp {
+        MASK_UDC = 1u << 0u,
+        MASK_EXTERNAL = 1u << 1u,
+        MASK_FALLBACK = 1u << 2u,
+    };
+
+private:
+    ResolveOp mask;
+    FilePathCache::SearchOp searchOp;
+
+public:
+    CmdResolver(ResolveOp mask, FilePathCache::SearchOp op) : mask(mask), searchOp(op) {}
+
+    CmdResolver() : CmdResolver({}, FilePathCache::NON) {}
+
+    ~CmdResolver() = default;
+
+    Command operator()(DSState &state, const char *cmdName) const;
+};
+
+template <> struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};
+
 class VM {
 private:
     static void pushExitStatus(DSState &state, int status) {
@@ -307,9 +347,10 @@ private:
 
     static bool forkAndEval(DSState &state);
 
-    static int forkAndExec(DSState &state, const char *cmdName, Command cmd, char **argv, DSValue &&redirConfig);
+    static int forkAndExec(DSState &state, const char *fillPath, char *const *argv, DSValue &&redirConfig);
 
-    static bool callCommand(DSState &state, Command cmd, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
+    static bool callCommand(DSState &state, CmdResolver resolver,
+                            DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
 
     static bool callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr);
 

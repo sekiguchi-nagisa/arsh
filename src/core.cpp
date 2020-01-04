@@ -514,7 +514,7 @@ void SignalVector::clear() {
     this->data.clear();
 }
 
-int xexecve(const char *filePath, char **argv, char *const *envp, DSValue &redir) {
+int xexecve(const char *filePath, char *const *argv, char *const *envp, DSValue &redir) {
     if(filePath == nullptr) {
         errno = ENOENT;
         return -1;

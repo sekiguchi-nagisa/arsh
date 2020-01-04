@@ -64,24 +64,6 @@ inline bool isFieldSep(unsigned int size, const char *ifs, int ch) {
     return false;
 }
 
-enum class CmdKind {
-    USER_DEFINED,
-    BUILTIN_S,
-    BUILTIN,
-    EXTERNAL,
-};
-
-class DSCode;
-
-struct Command {
-    CmdKind kind;
-    union {
-        const DSCode *udc;
-        builtin_command_t builtinCmd;
-        const char *filePath;   // may be null if not found file
-    };
-};
-
 } // namespace ydsh
 
 #define PERROR(obj, fmt, ...) fprintf(stderr, "ydsh: %s: " fmt ": %s\n", str(obj.getValues()[0]), ## __VA_ARGS__, strerror(errno))
