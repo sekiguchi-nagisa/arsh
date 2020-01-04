@@ -662,20 +662,12 @@ public:
     }
 
     // for type lookup
-
-    /**
-     * return null, if type is not defined.
-     */
-    DSType *getType(const std::string &typeName) const {
-        return this->typeMap.getType(typeName);
-    }
-
     /**
      *
      * @param typeName
      * @return
      */
-    TypeOrError getTypeOrError(const std::string &typeName) const;
+    TypeOrError getType(const std::string &typeName) const;
 
     /**
      * get template type.

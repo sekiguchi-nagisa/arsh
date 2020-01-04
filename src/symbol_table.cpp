@@ -463,8 +463,8 @@ const MethodHandle *SymbolTable::lookupMethod(DSType &recvType, const std::strin
     return recvType.lookupMethodHandle(*this, methodName);  //FIXME:
 }
 
-TypeOrError SymbolTable::getTypeOrError(const std::string &typeName) const {
-    DSType *type = this->getType(typeName);
+TypeOrError SymbolTable::getType(const std::string &typeName) const {
+    DSType *type = this->typeMap.getType(typeName);
     if(type == nullptr) {
         RAISE_TL_ERROR(UndefinedType, typeName.c_str());
     }

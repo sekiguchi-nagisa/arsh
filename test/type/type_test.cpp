@@ -124,7 +124,9 @@ public:
         ASSERT_EQ(name, this->pool.getTypeName(type));
 
         // assert type
-        ASSERT_TRUE(type == *this->pool.getType(name));
+        auto ret = this->pool.getType(name);
+        ASSERT_TRUE(ret);
+        ASSERT_TRUE(type == *ret.take());
     }
 
     virtual void assertSuperType(DSType &type, DSType &superType) {
@@ -145,8 +147,9 @@ public:
         ASSERT_NE(name, this->pool.getTypeName(type));
 
         this->pool.setAlias(name, type);
-        ASSERT_TRUE(this->pool.getType(name) != nullptr);
-        ASSERT_TRUE(*this->pool.getType(name) == type);
+        auto ret = this->pool.getType(name);
+        ASSERT_TRUE(ret);
+        ASSERT_TRUE(*ret.take() == type);
     }
 
     virtual void assertTemplateName(const char *templateName, const TypeTemplate &t, unsigned int size) {
@@ -253,7 +256,7 @@ TEST_F(TypeTest, attribute) {
 
 TEST_F(TypeTest, alias) {
     ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int", this->pool.get(TYPE::Int32)));
-    ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int_2", *this->pool.getType(std::string("Int"))));
+    ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int_2", *this->pool.getType(std::string("Int")).take()));
 }
 
 TEST_F(TypeTest, templateName) {
