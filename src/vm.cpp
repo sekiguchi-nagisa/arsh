@@ -351,6 +351,7 @@ private:
 public:
     static constexpr flag8_t MASK_UDC = 1u << 0u;
     static constexpr flag8_t MASK_EXTERNAL = 1u << 1u;
+    static constexpr flag8_t MASK_FALLBACK = 1u << 2u;
 
     CmdResolver(flag8_set_t mask, FilePathCache::SearchOp op) : mask(mask), searchOp(op) {}
 
@@ -419,6 +420,9 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
         cmd.filePath = state.pathCache.searchPath(cmdName, this->searchOp);
 
         // if command not found or directory, lookup _cmd_fallback_handler
+        if(hasFlag(this->mask, MASK_FALLBACK)) {
+            return cmd;
+        }
         if(cmd.filePath == nullptr || S_ISDIR(getStMode(cmd.filePath))) {
             auto handle = state.symbolTable.lookupHandle(VAR_CMD_FALLBACK);
             unsigned int index = handle->getIndex();
@@ -603,7 +607,7 @@ bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, 
         unsigned int successCount = 0;
         for(; index < argc; index++) {
             const char *commandName = str(arrayObj.getValues()[index]);
-            auto cmd = CmdResolver(0, FilePathCache::DIRECT_SEARCH)(state, commandName);
+            auto cmd = CmdResolver(CmdResolver::MASK_FALLBACK, FilePathCache::DIRECT_SEARCH)(state, commandName);
             switch(cmd.kind) {
             case CmdKind::USER_DEFINED: {
                 successCount++;

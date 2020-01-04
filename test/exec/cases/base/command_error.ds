@@ -63,3 +63,5 @@ assert hogehuga12 a b c | grep 'fallback hogehuga12: a b c'
 ..
 assert $? == 0
 assert .. 1 | grep 'fallback ..: 1'
+
+assert "$(command -V hgoe)" == ""
