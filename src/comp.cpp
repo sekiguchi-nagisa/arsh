@@ -875,7 +875,7 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
     case COMMAND:
         if(this->inTyping()) {
             bool stmt = this->inCmdStmt();
-            return this->createAndCompleter(
+            return createAndCompleter(
                     this->createCmdNameCompleter(CompType::CUR),
                     this->createKeywordCompleter(CompType::CUR, !stmt));
         }
@@ -915,7 +915,7 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
     default:
         if(this->inTyping()) {
             if(isStmtKeyword(this->curKind())) {
-                return this->createAndCompleter(
+                return createAndCompleter(
                         this->createCmdNameCompleter(CompType::CUR),
                         this->createKeywordCompleter(CompType::CUR, false));
             }
@@ -936,7 +936,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
         case LINE_END:
         case BACKGROUND:
         case DISOWN_BG:
-            return this->createAndCompleter(
+            return createAndCompleter(
                     this->createCmdNameCompleter(CompType::NONE),
                     this->createKeywordCompleter(CompType::NONE, false));
         case RP:
@@ -994,7 +994,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
                 } else if(this->foundExpected(CMD_ARG_PART)) { // complete redirection target
                     comp = this->createFileNameCompleter(CompType::NONE);
                 }
-                return this->createAndCompleter(std::move(comp),
+                return createAndCompleter(std::move(comp),
                         this->createExpectedTokenCompleter());
             } else if(this->isErrorKind(TOKEN_MISMATCHED)) {
                 LOG(DUMP_CONSOLE, "expected: %s", toString(this->parser.getError().getExpectedTokens().back()));

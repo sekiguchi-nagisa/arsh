@@ -476,8 +476,8 @@ private:
     PCRE re;
 
 public:
-    Regex_Object(DSType &type, const std::string &str, PCRE &&re) :
-            DSObject(type), str(str), re(std::move(re)) {}
+    Regex_Object(DSType &type, std::string str, PCRE &&re) :
+            DSObject(type), str(std::move(str)), re(std::move(re)) {}
 
     ~Regex_Object() override = default;
 

@@ -284,7 +284,7 @@ struct CodeBuilder : public CodeEmitter<true> {
     signed short stackDepthCount{0};
     signed short maxStackDepth{0};
 
-    explicit CodeBuilder(const SourceInfo &info) : srcInfo(info) {}
+    explicit CodeBuilder(SourceInfo info) : srcInfo(std::move(info)) {}
 
     CodeKind getCodeKind() const {
         return static_cast<CodeKind>(this->codeBuffer[0]);

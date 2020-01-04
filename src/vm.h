@@ -346,7 +346,7 @@ private:
 
     static bool forkAndEval(DSState &state);
 
-    static int forkAndExec(DSState &state, const char *fillPath, char *const *argv, DSValue &&redirConfig);
+    static int forkAndExec(DSState &state, const char *filePath, char *const *argv, DSValue &&redirConfig);
 
     static bool callCommand(DSState &state, CmdResolver resolver,
                             DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
