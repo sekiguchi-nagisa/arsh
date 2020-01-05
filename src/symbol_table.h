@@ -42,17 +42,15 @@ public:
     Scope() = default;
     Scope(Scope&&) = default;
 
-    using const_iterator = decltype(handleMap)::const_iterator;
-
     const std::unordered_map<std::string, FieldHandle> &getHandleMap() const {
         return this->handleMap;
     }
 
-    const_iterator begin() const {
+    auto begin() const {
         return this->handleMap.begin();
     }
 
-    const_iterator end() const {
+    auto end() const {
         return this->handleMap.end();
     }
 
