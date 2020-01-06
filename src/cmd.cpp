@@ -240,6 +240,14 @@ const char *getBuiltinCommandName(unsigned int index) {
     return builtinCommands[index].commandName;
 }
 
+static CStringHashMap<unsigned int> initBuiltinMap() {
+    CStringHashMap<unsigned int> map;
+    for(unsigned int i = 0; i < arraySize(builtinCommands); i++) {
+        map.insert(std::make_pair(builtinCommands[i].commandName, i));
+    }
+    return map;
+}
+
 /**
  * return null, if not found builtin command.
  */
@@ -247,13 +255,7 @@ builtin_command_t lookupBuiltinCommand(const char *commandName) {
     /**
      * builtin command name and index.
      */
-    static CStringHashMap<unsigned int> builtinMap;
-
-    if(builtinMap.empty()) {
-        for(unsigned int i = 0; i < arraySize(builtinCommands); i++) {
-            builtinMap.insert(std::make_pair(builtinCommands[i].commandName, i));
-        }
-    }
+    static auto builtinMap = initBuiltinMap();
 
     auto iter = builtinMap.find(commandName);
     if(iter == builtinMap.end()) {
