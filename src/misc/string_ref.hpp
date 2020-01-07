@@ -113,6 +113,12 @@ public:
         return (*this)[this->size_ - 1];
     }
 
+    StringRefBase substr(size_type pos = 0, size_type size = npos) const {
+        assert(pos < this->size());
+        size = std::min(this->size() - pos, size);
+        return StringRefBase(this->data() + pos, size);
+    }
+
     /**
      *
      * @param startIndex
@@ -121,12 +127,10 @@ public:
      * exclusive
      * @return
      */
-    StringRefBase slice(size_type startIndex, size_t stopIndex) const {
+    StringRefBase slice(size_type startIndex, size_type stopIndex) const {
         assert(startIndex <= stopIndex);
-        assert(stopIndex <= this->size_);
         assert(startIndex < this->size_);
-
-        return StringRefBase(this->ptr_ + startIndex, stopIndex - startIndex);
+        return this->substr(startIndex, stopIndex - startIndex);
     }
 
     size_type find(StringRefBase ref, size_type pos = 0) const {
