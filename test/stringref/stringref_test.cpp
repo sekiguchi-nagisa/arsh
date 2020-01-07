@@ -44,7 +44,8 @@ TEST_F(StringRefTest, base3) {
 
     StringRef ref = value;
     ASSERT_EQ(5UL, ref.size());
-    ASSERT_NO_FATAL_FAILURE(this->equals({'1', '2', '\0', '3', '4', '\0'}, ref));
+    char data[] = {'1', '2', '\0', '3', '4', '\0'};
+    ASSERT_NO_FATAL_FAILURE(this->equals(data, ref));
     ASSERT_EQ(value.c_str(), ref.data());
 
     auto *ptr = ref.take();

@@ -177,7 +177,7 @@ constexpr const typename StringRefBase<T>::size_type StringRefBase<T>::npos;
 using StringRef = StringRefBase<true>;
 
 inline bool operator==(StringRef left, StringRef right) {
-    return right.size() == right.size() && memcmp(left.data(), right.data(), left.size()) == 0;
+    return left.size() == right.size() && memcmp(left.data(), right.data(), left.size()) == 0;
 }
 
 inline bool operator!=(StringRef left, StringRef right) {
