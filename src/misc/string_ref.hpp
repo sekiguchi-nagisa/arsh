@@ -153,8 +153,7 @@ public:
                 break;
             }
             ret = tmp;
-            pos = tmp + ref.size_;
-        } while(pos != this->size_);
+        } while(++pos != this->size_);
         return ret;
     }
 

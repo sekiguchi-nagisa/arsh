@@ -132,8 +132,17 @@ TEST_F(StringRefTest, find) {
     StringRef ref = "hello world!!";
     ASSERT_EQ(0, ref.indexOf("h"));
     ASSERT_EQ(2, ref.indexOf("ll"));
+    ASSERT_EQ(0, ref.indexOf(""));
+    ASSERT_EQ(StringRef::npos, ref.indexOf("hello world!! hey"));
+    ASSERT_EQ(StringRef::npos, StringRef("").indexOf("h"));
+    ASSERT_EQ(0, StringRef("").indexOf(""));
+
     ASSERT_EQ(ref.size() - 1, ref.lastIndexOf("!"));
     ASSERT_EQ(StringRef::npos, ref.lastIndexOf("?"));
+    ASSERT_EQ(StringRef::npos, ref.lastIndexOf("hello world!! hey"));
+    ASSERT_EQ(ref.size() - 1, ref.lastIndexOf(""));
+    ASSERT_EQ(0, StringRef("").lastIndexOf(""));
+    ASSERT_EQ(StringRef::npos, StringRef("").lastIndexOf("l"));
 }
 
 int main(int argc, char **argv) {
