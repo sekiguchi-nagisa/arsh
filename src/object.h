@@ -27,6 +27,7 @@
 #include <config.h>
 #include "misc/fatal.h"
 #include "misc/buffer.hpp"
+#include "misc/string_ref.hpp"
 #include "lexer.h"
 #include "opcode.h"
 #include "regex_wrapper.h"
@@ -447,15 +448,7 @@ public:
         return this->value == typeAs<String_Object>(obj)->value;
     }
 
-    bool compare(const DSValue &obj) const override {
-        auto *str2 = typeAs<String_Object>(obj);
-        unsigned int size = std::min(this->size(), str2->size());
-        int ret = memcmp(this->getValue(), str2->getValue(), size);
-        if(ret) {
-            return ret < 0;
-        }
-        return this->size() < str2->size();
-    }
+    bool compare(const DSValue &obj) const override;
 
     size_t hash() const override;
 
@@ -465,6 +458,17 @@ public:
                 std::string(this->getValue() + begin, end - begin));
     }
 };
+
+/**
+ * create StringRef
+ * @param value
+ * msut be String_Object
+ * @return
+ */
+inline StringRef createStrRef(const DSValue &value) {
+    auto *obj = typeAs<String_Object>(value);
+    return StringRef(obj->getValue(), obj->size());
+}
 
 struct StringIter_Object : public DSObject {
     unsigned int curIndex;

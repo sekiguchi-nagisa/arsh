@@ -632,58 +632,72 @@ YDSH_METHOD boolean_ne(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : String, $target : String) : Boolean
 YDSH_METHOD string_eq(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_eq);
-    RET_BOOL(binary_eq(ctx));
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    RET_BOOL(left == right);
 }
 
 //!bind: function $OP_NE($this : String, $target : String) : Boolean
 YDSH_METHOD string_ne(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_ne);
-    RET_BOOL(binary_ne(ctx));
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    RET_BOOL(left != right);
 }
 
 //!bind: function $OP_LT($this : String, $target : String) : Boolean
 YDSH_METHOD string_lt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lt);
-    RET_BOOL(binary_lt(ctx));
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    RET_BOOL(left < right);
 }
 
 //!bind: function $OP_GT($this : String, $target : String) : Boolean
 YDSH_METHOD string_gt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_gt);
-    RET_BOOL(binary_gt(ctx));
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    RET_BOOL(left > right);
 }
 
 //!bind: function $OP_LE($this : String, $target : String) : Boolean
 YDSH_METHOD string_le(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_le);
-    RET_BOOL(binary_le(ctx));
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    RET_BOOL(left <= right);
 }
 
 //!bind: function $OP_GE($this : String, $target : String) : Boolean
 YDSH_METHOD string_ge(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_ge);
-    RET_BOOL(binary_ge(ctx));
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    RET_BOOL(left >= right);
 }
 
 //!bind: function size($this : String) : Int32
 YDSH_METHOD string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
-    int size = typeAs<String_Object>(LOCAL(0))->size();
-    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), size));
+    auto size = createStrRef(LOCAL(0)).size();
+    assert(size <= INT32_MAX);
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), static_cast<int>(size)));
 }
 
 //!bind: function empty($this : String) : Boolean
 YDSH_METHOD string_empty(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_empty);
-    bool empty = typeAs<String_Object>(LOCAL(0))->empty();
+    bool empty = createStrRef(LOCAL(0)).empty();
     RET_BOOL(empty);
 }
 
 //!bind: function count($this : String) : Int32
 YDSH_METHOD string_count(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_count);
-    const char *ptr = typeAs<String_Object>(LOCAL(0))->getValue();
-    const unsigned int size = typeAs<String_Object>(LOCAL(0))->size();
+    auto ref = createStrRef(LOCAL(0));
+    const char *ptr = ref.data();
+    unsigned int size = ref.size();
     unsigned int count = 0;
     for(unsigned int i = 0; i < size; i = UnicodeUtil::utf8NextPos(i, ptr[i])) {
         count++;
@@ -701,13 +715,13 @@ static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
 //!bind: function $OP_GET($this : String, $index : Int32) : String
 YDSH_METHOD string_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_get);
-    auto strObj = typeAs<String_Object>(LOCAL(0));
+    auto ref = createStrRef(LOCAL(0));
+    const unsigned int size = ref.size();
     const int index = typeAs<Int_Object>(LOCAL(1))->getValue();
-    const unsigned int size = strObj->size();
 
     if(index > -1 && static_cast<unsigned int>(index) < size) {
         RET(DSValue::create<String_Object>(
-                ctx.symbolTable.get(TYPE::String), std::string(strObj->getValue() + index, 1)));
+                ctx.symbolTable.get(TYPE::String), std::string(ref.data() + index, 1)));
     }
 
     std::string msg("size is ");
@@ -721,24 +735,24 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
 //!bind: function charAt($this : String, $index : Int32) : String
 YDSH_METHOD string_charAt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_charAt);
-    auto strObj = typeAs<String_Object>(LOCAL(0));
+    auto ref = createStrRef(LOCAL(0));
     const int pos = typeAs<Int_Object>(LOCAL(1))->getValue();
-    const unsigned int size = strObj->size();
+    const unsigned int size = ref.size();
 
     if(pos >= 0 && static_cast<unsigned int>(pos) < size) {
         const unsigned int limit = pos;
         unsigned int index = 0;
         unsigned int count = 0;
-        for(; index < size; index = UnicodeUtil::utf8NextPos(index, strObj->getValue()[index])) {
+        for(; index < size; index = UnicodeUtil::utf8NextPos(index, ref[index])) {
             if(count == limit) {
                 break;
             }
             count++;
         }
         if(count == limit && index < size) {
-            unsigned int nextIndex = UnicodeUtil::utf8NextPos(index, strObj->getValue()[index]);
+            unsigned int nextIndex = UnicodeUtil::utf8NextPos(index, ref[index]);
             RET(DSValue::create<String_Object>(
-                    ctx.symbolTable.get(TYPE::String), std::string(strObj->getValue() + index, nextIndex - index)));
+                    ctx.symbolTable.get(TYPE::String), std::string(ref.data() + index, nextIndex - index)));
         }
     }
 
@@ -762,8 +776,8 @@ YDSH_METHOD string_charAt(RuntimeContext &ctx) {
  * @return
  */
 template <typename T>
-static auto slice(RuntimeContext &ctx, T *obj, int startIndex, int stopIndex) {
-    const unsigned int size = obj->size();
+static auto slice(RuntimeContext &ctx, const T &obj, int startIndex, int stopIndex) {
+    const unsigned int size = obj.size();
 
     // resolve actual index
     startIndex = (startIndex < 0 ? size : 0) + startIndex;
@@ -782,13 +796,13 @@ static auto slice(RuntimeContext &ctx, T *obj, int startIndex, int stopIndex) {
         raiseOutOfRangeError(ctx, std::move(msg));
         RET_ERROR;
     }
-    RET(obj->slice(static_cast<unsigned int>(startIndex), static_cast<unsigned int>(stopIndex)));
+    RET(obj.slice(static_cast<unsigned int>(startIndex), static_cast<unsigned int>(stopIndex)));
 }
 
 //!bind: function slice($this : String, $start : Int32, $stop : Int32) : String
 YDSH_METHOD string_slice(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_slice);
-    RET(slice(ctx, typeAs<String_Object>(LOCAL(0)),
+    RET(slice(ctx, *typeAs<String_Object>(LOCAL(0)),
               typeAs<Int_Object>(LOCAL(1))->getValue(),
               typeAs<Int_Object>(LOCAL(2))->getValue()));
 }
@@ -796,14 +810,14 @@ YDSH_METHOD string_slice(RuntimeContext &ctx) {
 //!bind: function from($this : String, $start : Int32) : String
 YDSH_METHOD string_sliceFrom(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceFrom);
-    auto strObj = typeAs<String_Object>(LOCAL(0));
-    RET(slice(ctx, strObj, typeAs<Int_Object>(LOCAL(1))->getValue(), strObj->size()));
+    auto &strObj = *typeAs<String_Object>(LOCAL(0));
+    RET(slice(ctx, strObj, typeAs<Int_Object>(LOCAL(1))->getValue(), strObj.size()));
 }
 
 //!bind: function to($this : String, $stop : Int32) : String
 YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceTo);
-    auto strObj = typeAs<String_Object>(LOCAL(0));
+    auto &strObj = *typeAs<String_Object>(LOCAL(0));
     RET(slice(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue()));
 }
 
@@ -814,75 +828,40 @@ static const void *xmemmem(const void *haystack, size_t haystackSize, const void
     return memmem(haystack, haystackSize, needle, needleSize);
 }
 
-static bool startsWith(const String_Object *thisObj, const String_Object *targetObj, int offset) {
-    if(offset < 0) {
-        return false;
-    }
-    const char *thisStr = thisObj->getValue() + offset;
-    const char *targetStr = targetObj->getValue();
-    const unsigned int thisSize = thisObj->size() - offset;
-    const unsigned int targetSize = targetObj->size();
-
-    return xmemmem(thisStr, thisSize, targetStr, targetSize) == thisStr;
-}
-
 //!bind: function startsWith($this : String, $target : String) : Boolean
 YDSH_METHOD string_startsWith(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_startsWith);
-    auto thisObj = typeAs<String_Object>(LOCAL(0));
-    auto targetObj = typeAs<String_Object>(LOCAL(1));
-
-    bool r = startsWith(thisObj, targetObj, 0);
-    RET_BOOL(r);
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    RET_BOOL(left.startsWith(right));
 }
 
 //!bind: function endsWith($this : String, $target : String) : Boolean
 YDSH_METHOD string_endsWith(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_endsWith);
-    auto thisObj = typeAs<String_Object>(LOCAL(0));
-    auto targetObj = typeAs<String_Object>(LOCAL(1));
-
-    bool r = startsWith(thisObj, targetObj, thisObj->size() - targetObj->size());
-    RET_BOOL(r);
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    RET_BOOL(left.endsWith(right));
 }
 
 //!bind: function indexOf($this : String, $target : String) : Int32
 YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_indexOf);
-    auto *thisObj = typeAs<String_Object>(LOCAL(0));
-    auto *targetObj = typeAs<String_Object>(LOCAL(1));
-
-    const void *ptr = xmemmem(thisObj->getValue(), thisObj->size(),
-                        targetObj->getValue(), targetObj->size());
-    int index = -1;
-    if(ptr != nullptr) {
-        index = reinterpret_cast<const char *>(ptr) - thisObj->getValue();
-    }
-    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), index));
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    auto index = left.indexOf(right);
+    assert(index == StringRef::npos || index <= INT32_MAX);
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), static_cast<int>(index)));
 }
 
 //!bind: function lastIndexOf($this : String, $target : String) : Int32
 YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lastIndexOf);
-    const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
-    const char *targetStr = typeAs<String_Object>(LOCAL(1))->getValue();
-    const unsigned int thisSize = typeAs<String_Object>(LOCAL(0))->size();
-    const unsigned int targetSize = typeAs<String_Object>(LOCAL(1))->size();
-    const char *end = thisStr + thisSize;
-
-    int index = -1;
-    for(const char *ptr = thisStr; ptr != end; ptr++) {
-        ptr = reinterpret_cast<const char *>(xmemmem(ptr, thisSize - (ptr - thisStr), targetStr, targetSize));
-        if(ptr == nullptr) {
-            break;
-        }
-        index = ptr - thisStr;
-    }
-
-    if(thisSize == targetSize && targetSize == 0) {
-        index = 0;
-    }
-    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), index));
+    auto left = createStrRef(LOCAL(0));
+    auto right = createStrRef(LOCAL(1));
+    auto index = left.lastIndexOf(right);
+    assert(index == StringRef::npos || index <= INT32_MAX);
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), static_cast<int>(index)));
 }
 
 //!bind: function split($this : String, $delim : String) : Array<String>
@@ -951,9 +930,8 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
 //!bind: function toInt32($this : String) : Option<Int32>
 YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt32);
-    const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
-    unsigned int size = typeAs<String_Object>(LOCAL(0))->size();
-    auto ret = fromIntLiteral<int32_t>(str, str + size);
+    auto ref = createStrRef(LOCAL(0));
+    auto ret = fromIntLiteral<int32_t>(ref.begin(), ref.end());
 
     RET(ret.second ? DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), ret.first)
             : DSValue::createInvalid());
@@ -962,9 +940,8 @@ YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
 //!bind: function toInt64($this : String) : Option<Int64>
 YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt64);
-    const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
-    unsigned int size = typeAs<String_Object>(LOCAL(0))->size();
-    auto ret = fromIntLiteral<int64_t>(str, str + size);
+    auto ref = createStrRef(LOCAL(0));
+    auto ret = fromIntLiteral<int64_t>(ref.begin(), ref.end());
 
     RET(ret.second ? DSValue::create<Long_Object>(ctx.symbolTable.get(TYPE::Int64), static_cast<long>(ret.first))
             : DSValue::createInvalid());
@@ -973,9 +950,9 @@ YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
 //!bind: function toFloat($this : String) : Option<Float>
 YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toFloat);
-    const char *str = typeAs<String_Object>(LOCAL(0))->getValue();
+    auto ref = createStrRef(LOCAL(0));;
     int status = 0;
-    double value = convertToDouble(str, status, false);
+    double value = convertToDouble(ref.data(), status, false);
 
     RET(status == 0 ? DSValue::create<Float_Object>(ctx.symbolTable.get(TYPE::Float), value) : DSValue::createInvalid());
 }
@@ -1010,8 +987,8 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
 //!bind: function realpath($this : String) : Option<String>
 YDSH_METHOD string_realpath(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_realpath);
-    auto *obj = typeAs<String_Object>(LOCAL(0));
-    std::string str = obj->getValue();
+    auto ref = createStrRef(LOCAL(0));
+    std::string str = ref.data();
     expandTilde(str);
     char *buf = realpath(str.c_str(), nullptr);
     if(buf == nullptr) {
@@ -1020,7 +997,7 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
 
     str = buf;
     free(buf);
-    RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
+    RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(str)));
 }
 
 //!bind: function lower($this : String) : String
@@ -1462,7 +1439,7 @@ YDSH_METHOD array_swap(RuntimeContext &ctx) {
 //!bind: function slice($this : Array<T0>, $from : Int32, $to : Int32) : Array<T0>
 YDSH_METHOD array_slice(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_slice);
-    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    auto &obj = *typeAs<Array_Object>(LOCAL(0));
     int start = typeAs<Int_Object>(LOCAL(1))->getValue();
     int stop = typeAs<Int_Object>(LOCAL(2))->getValue();
     return slice(ctx, obj, start, stop);
@@ -1471,15 +1448,15 @@ YDSH_METHOD array_slice(RuntimeContext &ctx) {
 //!bind: function from($this : Array<T0>, $from : Int32) : Array<T0>
 YDSH_METHOD array_sliceFrom(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_sliceFrom);
-    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    auto &obj = *typeAs<Array_Object>(LOCAL(0));
     int start = typeAs<Int_Object>(LOCAL(1))->getValue();
-    return slice(ctx, obj, start, obj->getValues().size());
+    return slice(ctx, obj, start, obj.getValues().size());
 }
 
 //!bind: function to($this : Array<T0>, $to : Int32) : Array<T0>
 YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_sliceTo);
-    auto *obj = typeAs<Array_Object>(LOCAL(0));
+    auto &obj = *typeAs<Array_Object>(LOCAL(0));
     int stop = typeAs<Int_Object>(LOCAL(1))->getValue();
     return slice(ctx, obj, 0, stop);
 }

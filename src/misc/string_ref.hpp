@@ -184,6 +184,22 @@ inline bool operator!=(StringRef left, StringRef right) {
     return !(left == right);
 }
 
+inline bool operator<(StringRef left, StringRef right) {
+    return left.compare(right) < 0;
+}
+
+inline bool operator>(StringRef left, StringRef right) {
+    return left.compare(right) > 0;
+}
+
+inline bool operator<=(StringRef left, StringRef right) {
+    return left.compare(right) <= 0;
+}
+
+inline bool operator>=(StringRef left, StringRef right) {
+    return left.compare(right) >= 0;
+}
+
 } // namespace ydsh
 
 namespace std {

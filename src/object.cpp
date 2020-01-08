@@ -188,6 +188,12 @@ size_t String_Object::hash() const {
     return std::hash<std::string>()(this->value);
 }
 
+bool String_Object::compare(const DSValue &obj) const {
+    auto left = StringRef(this->getValue(), this->size());
+    auto right = createStrRef(obj);
+    return left < right;
+}
+
 // ##########################
 // ##     Regex_Object     ##
 // ##########################
