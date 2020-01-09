@@ -77,6 +77,15 @@ using ObjTypeStub = typename std::conditional<
     OP(NOT, ~)
 
 
+#define EACH_COMPARE_OP(OP) \
+    OP(EQ, ==) \
+    OP(NE, !=) \
+    OP(LT, <) \
+    OP(GT, >) \
+    OP(LE, <=) \
+    OP(GE, >=)
+
+
 #define GEN_BASIC_OP(NAME, OPERATOR) \
 template <typename T> \
 YDSH_METHOD basic_##NAME(RuntimeContext &ctx) { \
@@ -96,10 +105,20 @@ YDSH_METHOD unary_##NAME(RuntimeContext &ctx) { \
     RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result)); \
 }
 
+#define GEN_COMPARE_OP(NAME, OPERATOR) \
+template <typename T> \
+bool compare_##NAME(RuntimeContext &ctx) { \
+    using ObjType = ObjTypeStub<T>; \
+    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
+    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue(); \
+    return left OPERATOR right; \
+}
 
 EACH_BASIC_OP(GEN_BASIC_OP)
 
 EACH_UNARY_OP(GEN_UNARY_OP)
+
+EACH_COMPARE_OP(GEN_COMPARE_OP)
 
 
 static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
@@ -190,22 +209,6 @@ static bool binary_eq(RuntimeContext &ctx) {
 
 static bool binary_ne(RuntimeContext &ctx) {
     return !binary_eq(ctx);
-}
-
-static bool binary_lt(RuntimeContext &ctx) {    // x < y
-    return LOCAL(0)->compare(LOCAL(1));
-}
-
-static bool binary_gt(RuntimeContext &ctx) {    // x > y  =  y < x
-    return LOCAL(1)->compare(LOCAL(0));
-}
-
-static bool binary_le(RuntimeContext &ctx) {    // x <= y  =  !(x > y)
-    return !binary_gt(ctx);
-}
-
-static bool binary_ge(RuntimeContext &ctx) {    // x >= y  =  !(x < y)
-    return !binary_lt(ctx);
 }
 
 
@@ -313,13 +316,13 @@ YDSH_METHOD int_2_int_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_eq);
-    RET_BOOL(binary_eq(ctx));
+    RET_BOOL(compare_EQ<int>(ctx));
 }
 
 //!bind: function $OP_NE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ne);
-    RET_BOOL(binary_ne(ctx));
+    RET_BOOL(compare_NE<int>(ctx));
 }
 
 //   =====  relational  =====
@@ -327,25 +330,25 @@ YDSH_METHOD int_2_int_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_lt);
-    RET_BOOL(binary_lt(ctx));
+    RET_BOOL(compare_LT<int>(ctx));
 }
 
 //!bind: function $OP_GT($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_gt);
-    RET_BOOL(binary_gt(ctx));
+    RET_BOOL(compare_GT<int>(ctx));
 }
 
 //!bind: function $OP_LE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_le);
-    RET_BOOL(binary_le(ctx));
+    RET_BOOL(compare_LE<int>(ctx));
 }
 
 //!bind: function $OP_GE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ge);
-    RET_BOOL(binary_ge(ctx));
+    RET_BOOL(compare_GE<int>(ctx));
 }
 
 //   =====  logical  =====
@@ -433,13 +436,13 @@ YDSH_METHOD int64_2_int64_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_eq);
-    RET_BOOL(binary_eq(ctx));
+    RET_BOOL(compare_EQ<long>(ctx));
 }
 
 //!bind: function $OP_NE($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_ne);
-    RET_BOOL(binary_ne(ctx));
+    RET_BOOL(compare_NE<long>(ctx));
 }
 
 //   =====  relational  =====
@@ -447,25 +450,25 @@ YDSH_METHOD int64_2_int64_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_lt);
-    RET_BOOL(binary_lt(ctx));
+    RET_BOOL(compare_LT<long>(ctx));
 }
 
 //!bind: function $OP_GT($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_gt);
-    RET_BOOL(binary_gt(ctx));
+    RET_BOOL(compare_GT<long>(ctx));
 }
 
 //!bind: function $OP_LE($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_le);
-    RET_BOOL(binary_le(ctx));
+    RET_BOOL(compare_LE<long>(ctx));
 }
 
 //!bind: function $OP_GE($this : Int64, $target : Int64) : Boolean
 YDSH_METHOD int64_2_int64_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int64_2_int64_ge);
-    RET_BOOL(binary_ge(ctx));
+    RET_BOOL(compare_GE<long>(ctx));
 }
 
 //   =====  logical  =====
@@ -543,13 +546,13 @@ YDSH_METHOD float_2_float_div(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_eq);
-    RET_BOOL(binary_eq(ctx));
+    RET_BOOL(compare_EQ<double>(ctx));
 }
 
 //!bind: function $OP_NE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ne);
-    RET_BOOL(binary_ne(ctx));
+    RET_BOOL(compare_NE<double>(ctx));
 }
 
 //   =====  relational  =====
@@ -557,25 +560,25 @@ YDSH_METHOD float_2_float_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_lt);
-    RET_BOOL(binary_lt(ctx));
+    RET_BOOL(compare_LT<double >(ctx));
 }
 
 //!bind: function $OP_GT($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_gt);
-    RET_BOOL(binary_gt(ctx));
+    RET_BOOL(compare_GT<double>(ctx));
 }
 
 //!bind: function $OP_LE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_le);
-    RET_BOOL(binary_le(ctx));
+    RET_BOOL(compare_LE<double>(ctx));
 }
 
 //!bind: function $OP_GE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ge);
-    RET_BOOL(binary_ge(ctx));
+    RET_BOOL(compare_GE<double>(ctx));
 }
 
 // =====  additional float op  ======
