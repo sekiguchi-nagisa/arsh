@@ -870,33 +870,22 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
 //!bind: function split($this : String, $delim : String) : Array<String>
 YDSH_METHOD string_split(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_split);
-    const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
-    const char *delimStr = typeAs<String_Object>(LOCAL(1))->getValue();
-    const unsigned int thisSize = typeAs<String_Object>(LOCAL(0))->size();
-    const unsigned int delimSize = typeAs<String_Object>(LOCAL(1))->size();
-
     auto results = DSValue::create<Array_Object>(ctx.symbolTable.get(TYPE::StringArray));
     auto ptr = typeAs<Array_Object>(results);
 
-    const char *remain = thisStr;
-    if(delimSize > 0) {
-        while(true) {
-            auto *ret = reinterpret_cast<const char *>(
-                    xmemmem(remain, thisSize - (remain - thisStr), delimStr, delimSize));
-            if(ret == nullptr) {
-                break;
-            }
-            ptr->append(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::string(remain, ret - remain)));
-            remain = ret + delimSize;
-        }
-    }
+    auto thisStr = createStrRef(LOCAL(0));
+    auto delimStr = createStrRef(LOCAL(1));
 
-    if(remain == thisStr) {
+    if(delimStr.empty()) {
         ptr->append(LOCAL(0));
     } else {
-        ptr->append(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::string(remain, thisSize - (remain - thisStr))));
+        for(StringRef::size_type pos = 0; pos != StringRef::npos; ) {
+            auto ret = thisStr.find(delimStr, pos);
+            auto value = thisStr.slice(pos, ret);
+            ptr->append(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), value.toString()));
+            pos = ret != StringRef::npos ? ret + delimStr.size() : ret;
+        }
     }
-
     RET(results);
 }
 

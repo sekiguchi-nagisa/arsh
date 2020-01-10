@@ -169,6 +169,10 @@ public:
         return this->size_ >= ref.size_ &&
             memcmp(this->ptr_ + (this->size_ - ref.size_), ref.ptr_, ref.size_) == 0;
     }
+
+    std::string toString() const {
+        return std::string(this->data(), this->size());
+    }
 };
 
 template <bool T>
