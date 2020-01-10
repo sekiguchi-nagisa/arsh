@@ -824,13 +824,6 @@ YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
     RET(slice(ctx, strObj, 0, typeAs<Int_Object>(LOCAL(1))->getValue()));
 }
 
-static const void *xmemmem(const void *haystack, size_t haystackSize, const void *needle, size_t needleSize) {
-    if(needleSize == 0) {
-        return haystack;
-    }
-    return memmem(haystack, haystackSize, needle, needleSize);
-}
-
 //!bind: function startsWith($this : String, $target : String) : Boolean
 YDSH_METHOD string_startsWith(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_startsWith);
@@ -892,28 +885,26 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
 //!bind: function replace($this : String, $target : String, $rep : String) : String
 YDSH_METHOD string_replace(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_replace);
-    const char *thisStr = typeAs<String_Object>(LOCAL(0))->getValue();
-    const char *delimStr = typeAs<String_Object>(LOCAL(1))->getValue();
-    const char *repStr = typeAs<String_Object>(LOCAL(2))->getValue();
-    const unsigned int thisSize = typeAs<String_Object>(LOCAL(0))->size();
-    const unsigned int delimSize = typeAs<String_Object>(LOCAL(1))->size();
-    const unsigned int repSize = typeAs<String_Object>(LOCAL(2))->size();
 
-    auto *ret = reinterpret_cast<const char *>(xmemmem(thisStr, thisSize, delimStr, delimSize));
-    if(ret == nullptr || delimSize == 0) {
+    auto delimStr = createStrRef(LOCAL(1));
+    if(delimStr.empty()) {
         RET(LOCAL(0));
     }
 
-    const char *remain = thisStr;
+    auto thisStr = createStrRef(LOCAL(0));
+    auto repStr = createStrRef(LOCAL(2));
     std::string buf;
-    do {
-        buf.append(remain, ret - remain);
-        remain = ret + delimSize;
-        buf.append(repStr, repSize);
-    } while((ret = reinterpret_cast<const char *>(
-            xmemmem(remain, thisSize - (remain - thisStr), delimStr, delimSize))) != nullptr);
-    if(remain != thisStr + thisSize) {
-        buf.append(remain, thisSize - (remain - thisStr));
+
+    for(StringRef::size_type pos = 0; pos != StringRef::npos; ) {
+        auto ret = thisStr.find(delimStr, pos);
+        auto value = thisStr.slice(pos, ret);
+        buf.append(value.data(), value.size());
+        if(ret != StringRef::npos) {
+            buf.append(repStr.data(), repStr.size());
+            pos = ret + delimStr.size();
+        } else {
+            pos = ret;
+        }
     }
     RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(buf)));
 }
