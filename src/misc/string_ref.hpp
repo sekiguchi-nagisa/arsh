@@ -114,7 +114,7 @@ public:
     }
 
     StringRefBase substr(size_type pos = 0, size_type size = npos) const {
-        assert(pos < this->size());
+        assert(pos <= this->size());
         size = std::min(this->size() - pos, size);
         return StringRefBase(this->data() + pos, size);
     }
@@ -129,7 +129,7 @@ public:
      */
     StringRefBase slice(size_type startIndex, size_type stopIndex) const {
         assert(startIndex <= stopIndex);
-        assert(startIndex < this->size_);
+        assert(startIndex <= this->size_);
         return this->substr(startIndex, stopIndex - startIndex);
     }
 
