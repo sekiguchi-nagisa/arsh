@@ -145,8 +145,15 @@ public:
     }
 };
 
+#define XSTR(v) #v
+#define STR(v) XSTR(v)
+
+#define PROMPT "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ "
+
 struct RCTest : public InteractiveShellBase {
-    RCTest() : InteractiveShellBase(BIN_PATH, ".") {}
+    RCTest() : InteractiveShellBase(BIN_PATH, ".") {
+        this->setPrompt(PROMPT);
+    }
 };
 
 static std::string getHOME() {
@@ -159,11 +166,6 @@ static std::string getHOME() {
     return str;
 }
 
-#define XSTR(v) #v
-#define STR(v) XSTR(v)
-
-#define PROMPT "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ "
-
 TEST_F(RCTest, rcfile1) {
     std::string rcpath = getHOME();
     rcpath += "/.ydshrc";
@@ -171,8 +173,7 @@ TEST_F(RCTest, rcfile1) {
 
     this->invoke("--quiet");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23"));
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(23, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23", 23, WaitStatus::EXITED));
 }
 
 int main(int argc, char **argv) {

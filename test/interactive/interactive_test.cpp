@@ -17,12 +17,6 @@
 using namespace ydsh;
 
 
-struct InteractiveTest : public InteractiveShellBase {
-    InteractiveTest() : InteractiveShellBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {
-        this->timeout = 120;
-    }
-};
-
 #define CTRL_A "\x01"
 #define CTRL_B "\x02"
 #define CTRL_C "\x03"
@@ -38,13 +32,19 @@ struct InteractiveTest : public InteractiveShellBase {
 #define PROMPT "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ "
 
 
+struct InteractiveTest : public InteractiveShellBase {
+    InteractiveTest() : InteractiveShellBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {
+        this->timeout = 120;
+        this->setPrompt(PROMPT);
+    }
+};
+
 
 TEST_F(InteractiveTest, exit) {
      this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("exit 30"));
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(30, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit 30", 30, WaitStatus::EXITED));
 }
 
 TEST_F(InteractiveTest, ctrld1) {
@@ -60,8 +60,8 @@ TEST_F(InteractiveTest, ctrld2) {
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("'hey'", ": String = hey\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("false", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("'hey'", ": String = hey"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("false"));
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
@@ -78,11 +78,12 @@ TEST_F(InteractiveTest, arg) {
     this->invoke("--quiet", "--norc", "-s", "hello", "world");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $0 == 'ydsh'; assert $1 == 'hello';", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $@.size() == 2; assert $# == 2;", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $2 == 'world'", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $@[0] == 'hello'; assert $@[1] == 'world'; exit"));
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $0 == 'ydsh'; assert $1 == 'hello';"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $@.size() == 2; assert $# == 2;"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $2 == 'world'"));
+    ASSERT_NO_FATAL_FAILURE(
+            this->sendLineAndWait("assert $@[0] == 'hello'; assert $@[1] == 'world'; exit",
+                    0, WaitStatus::EXITED));
 }
 
 TEST_F(InteractiveTest, assert) {
@@ -92,8 +93,7 @@ TEST_F(InteractiveTest, assert) {
 
     const char *e = "Assertion Error: `(1 == 2)'\n"
                     "    from (stdin):1 '<toplevel>()'\n";
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert(1 == 2)", "", e));
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert(1 == 2)", 1, WaitStatus::EXITED, "", e));
 }
 
 TEST_F(InteractiveTest, ctrlc) {
@@ -104,7 +104,7 @@ TEST_F(InteractiveTest, ctrlc) {
     std::string str = "throw 34";
     str += CTRL_C;
     this->send(str.c_str());
-    ASSERT_NO_FATAL_FAILURE(this->expect("throw 34\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "throw 34\n" PROMPT));
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
@@ -156,9 +156,9 @@ TEST_F(InteractiveTest, history1) {
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("1", ": Int32 = 1\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", ": Int32 = 2\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", ": Int32 = 3\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int32 = 1"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int32 = 2"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int32 = 3"));
 
     this->send(UP);
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
@@ -188,9 +188,9 @@ TEST_F(InteractiveTest, history2) {
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("1", ": Int32 = 1\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", ": Int32 = 2\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", ": Int32 = 3\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int32 = 1"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int32 = 2"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int32 = 3"));
 
     this->send(UP);
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
@@ -215,9 +215,9 @@ TEST_F(InteractiveTest, history3) {
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("1", ": Int32 = 1\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", ": Int32 = 2\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", ": Int32 = 3\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int32 = 1"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int32 = 2"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int32 = 3"));
 
     this->send(UP);
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
@@ -249,16 +249,16 @@ TEST_F(InteractiveTest, history4) {
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("1", ": Int32 = 1\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("2", ": Int32 = 2\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("3", ": Int32 = 3\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int32 = 1"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int32 = 2"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int32 = 3"));
 
     this->send(UP);
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
     this->send(UP);
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "2"));
     this->send("4");
-    ASSERT_NO_FATAL_FAILURE(this->expect("4"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "24"));
     this->send(DOWN);
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "3"));
     this->send(UP);
@@ -276,10 +276,10 @@ TEST_F(InteractiveTest, status) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("true", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $? == 0", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("false", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $? == 1", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("false"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
@@ -295,7 +295,7 @@ ArithmeticError: zero division
     from (stdin):1 '<toplevel>()'
 )";
 
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("45 / 0", PROMPT, estr));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("45 / 0", "", estr));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
@@ -306,7 +306,7 @@ TEST_F(InteractiveTest, except2) {
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("throw 2", PROMPT, "[runtime error]\n2\n"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("throw 2", "", "[runtime error]\n2\n"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
@@ -322,10 +322,8 @@ ArithmeticError: zero division
     from (stdin):1 '<toplevel>()'
 )";
 
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("45 / 0", PROMPT, estr));
-
-    this->send("exit\r");
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "exit\n"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("45 / 0", "", estr));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1, WaitStatus::EXITED));
 }
 
 TEST_F(InteractiveTest, except4) {
@@ -333,21 +331,19 @@ TEST_F(InteractiveTest, except4) {
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("throw 2", PROMPT, "[runtime error]\n2\n"));
-
-    this->send("exit\r");
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "exit\n"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("throw 2", "", "[runtime error]\n2\n"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1, WaitStatus::EXITED));
 }
 
 TEST_F(InteractiveTest, signal) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert ($SIG[%'int'] as String) == $SIG_IGN as String", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert ($SIG[%'quit'] as String) == $SIG_IGN as String", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert ($SIG[%'tstp'] as String) == $SIG_IGN as String", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert ($SIG[%'ttin'] as String) == $SIG_IGN as String", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert ($SIG[%'ttou'] as String) == $SIG_IGN as String", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'int'] as String) == $SIG_IGN as String"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'quit'] as String) == $SIG_IGN as String"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'tstp'] as String) == $SIG_IGN as String"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'ttin'] as String) == $SIG_IGN as String"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'ttou'] as String) == $SIG_IGN as String"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -357,14 +353,14 @@ TEST_F(InteractiveTest, standardInput) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert test -t 0;", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert test -t $STDIN", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert test -t 0;"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert test -t $STDIN"));
 
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert test -t 1;", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert test -t $STDOUT", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert test -t 1;"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert test -t $STDOUT"));
 
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert !test -t 2;", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert !test -t $STDERR", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert !test -t 2;"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert !test -t $STDERR"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
@@ -374,8 +370,8 @@ TEST_F(InteractiveTest, rc1) {
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $RC_VAR == 'rc file'; exit 23;"));
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(23, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait(
+            "assert $RC_VAR == 'rc file'; exit 23;", 23, WaitStatus::EXITED));
 }
 
 TEST_F(InteractiveTest, rc2) {
@@ -387,7 +383,7 @@ TEST_F(InteractiveTest, rc3) {
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/faiurehfianf325d");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $? == 0", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -403,8 +399,8 @@ TEST_F(InteractiveTest, termHook1) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("false", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("false"));
 
     this->send(CTRL_D); // automatically insert 'exit'
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\nhello\n"));
@@ -414,35 +410,33 @@ TEST_F(InteractiveTest, termHook2) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("exit 56", "hello\n"));
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(56, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit 56", 56, WaitStatus::EXITED, "hello\n"));
 }
 
 TEST_F(InteractiveTest, termHook3) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;"));
 
     const char *estr = R"(Assertion Error: `false'
     from (stdin):2 '<toplevel>()'
 )";
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert false", "hello\n", estr));
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert false", 1, WaitStatus::EXITED, "hello\n", estr));
 }
 
 TEST_F(InteractiveTest, termHook4) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("function f($s : Int, $a : Any) { echo hello; }; $TERM_HOOK=$f;"));
 
     const char *estr = R"([runtime error]
 ArithmeticError: zero division
     from (stdin):2 '<toplevel>()'
 )";
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("34 / 0", "hello\n" PROMPT, estr));   // call term hook in interactive mode
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("34 / 0", "hello", estr));   // call term hook in interactive mode
 
     this->send(CTRL_D); // automatically insert 'exit'
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\nhello\n"));
@@ -452,8 +446,8 @@ TEST_F(InteractiveTest, skip) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("      ", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("      "));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -463,15 +457,18 @@ TEST_F(InteractiveTest, read) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("read -u 0 -p '> ';", "", "> "));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("hello", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $REPLY == 'hello'", PROMPT));
+    this->sendLine("read -u 0 -p '> ';");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "read -u 0 -p '> ';\n", "> "));
+    this->sendLine("hello");
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $REPLY == 'hello'"));
 
     // disable echo
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("read -u 0 -s -p '> ';", "", "> "));
-    this->send("world!!\r");
+    this->sendLine("read -u 0 -s -p '> ';");
+    this->expect(PROMPT "read -u 0 -s -p '> ';\n", "> ");
+    this->sendLine("world!!");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $REPLY == 'world!!'", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $REPLY == 'world!!'"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -481,8 +478,10 @@ TEST_F(InteractiveTest, continuation) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("echo \\", "> "));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("world", "world\n" PROMPT));
+    this->sendLine("echo \\");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "echo \\\n> "));
+    this->sendLine("world");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> world\nworld\n" PROMPT));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -492,7 +491,7 @@ TEST_F(InteractiveTest, throwFromLastPipe) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("true | throw 12", PROMPT, "[runtime error]\n12\n"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true | throw 12", "", "[runtime error]\n12\n"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
@@ -502,9 +501,11 @@ TEST_F(InteractiveTest, readAfterLastPipe) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("var a = 23|'>> '; read -u 0 -p $a;", "", ">> "));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("hello", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("assert $REPLY == 'hello'", PROMPT));
+    this->sendLine("var a = 23|'>> '; read -u 0 -p $a;");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "var a = 23|'>> '; read -u 0 -p $a;\n", ">> "));
+    this->sendLine("hello");
+    ASSERT_NO_FATAL_FAILURE(this->expect("hello\n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $REPLY == 'hello'"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -514,9 +515,9 @@ TEST_F(InteractiveTest, printStackTop) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("34|$false", ": Boolean = false\n" PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("34|true", PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("true", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("34|$false", ": Boolean = false"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("34|true"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -526,7 +527,7 @@ TEST_F(InteractiveTest, cmdSubstitution) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("\"$(stty sane)\"", ": String = \n" PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("\"$(stty sane)\"", ": String = "));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -536,7 +537,7 @@ TEST_F(InteractiveTest, procSubstitution) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("echo <(ls) > /dev/null", PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("echo <(ls) > /dev/null"));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -554,8 +555,8 @@ TEST_F(InteractiveTest, moduleError1) {
                        "source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds\n"
                        "       %s\n",
                        makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", PROMPT, eout.c_str()));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("f", PROMPT, "[runtime error]\n"
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", "", eout.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("f", "", "[runtime error]\n"
                                                              "SystemError: execution error: f: command not found\n"
                                                              "    from (stdin):2 '<toplevel>()'\n"));
 
@@ -575,8 +576,8 @@ TEST_F(InteractiveTest, moduleError2) {
                        "source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds\n"
                        "       %s\n",
                        makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", PROMPT, eout.c_str()));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("hey", PROMPT, "[runtime error]\n"
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", "", eout.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("hey", "", "[runtime error]\n"
                                                                "SystemError: execution error: hey: command not found\n"
                                                                "    from (stdin):2 '<toplevel>()'\n"));
 
@@ -593,8 +594,8 @@ TEST_F(InteractiveTest, moduleError3) {
                        "ArithmeticError: zero division\n"
                        "    from " INTERACTIVE_TEST_WORK_DIR "/mod2.ds:6 '<toplevel>()'\n"
                        "    from (stdin):1 '<toplevel>()'\n";
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod2.ds", PROMPT, eout));
-    ASSERT_NO_FATAL_FAILURE(this->sendAndExpect("hey", PROMPT, "[runtime error]\n"
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod2.ds", "", eout));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("hey", "", "[runtime error]\n"
                                                                "SystemError: execution error: hey: command not found\n"
                                                                "    from (stdin):2 '<toplevel>()'\n"));
 

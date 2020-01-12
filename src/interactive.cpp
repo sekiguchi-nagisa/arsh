@@ -300,6 +300,8 @@ void exec_interactive(DSState *dsState) {
             encoding_readCode,
             encoding_strLen);
 
+    linenoiseSetMultiLine(1);
+
     linenoiseSetCompletionCallback(completeCallback);
 
     linenoiseSetHistoryCallback(historyCallback);

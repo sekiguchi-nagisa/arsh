@@ -170,10 +170,18 @@ public:
     }
 };
 
-struct InteractiveShellBase : public InteractiveBase {
+class InteractiveShellBase : public InteractiveBase {
+protected:
+    std::string prompt{"> "};
+
+public:
     InteractiveShellBase(const char *binPath, const char *dir) : InteractiveBase(binPath, dir) {}
 
     void interpret(std::string &line);
+
+    void setPrompt(const char *p) {
+        this->prompt = p;
+    }
 
     std::pair<std::string, std::string> readAll() override {
         auto ret = InteractiveBase::readAll();
@@ -181,16 +189,38 @@ struct InteractiveShellBase : public InteractiveBase {
         return ret;
     }
 
-    void sendAndExpect(const char *str, const char *out = "", const char *err = "") {
-        std::string eout = str;
-        this->send(str);
+    void sendLine(const char *line) {
+        this->send(line);
+        this->send("\r");
+    }
 
-//        if(this->ttyEmulation) {
-            this->send("\r");
+    void sendLineAndExpect(const char *line, const char *out = "", const char *err = "") {
+        this->sendLine(line);
+
+        std::string eout;
+        if(strlen(line) != 0) {
+            eout = this->prompt;
+        }
+        eout += line;
+        eout += "\n";
+        eout += out;
+        if(strlen(out) != 0) {
             eout += "\n";
-            eout += out;
-//        }
+        }
+        eout += this->prompt;
         ASSERT_NO_FATAL_FAILURE(this->expect(eout.c_str(), err));
+    }
+
+    void sendLineAndWait(const char *line, int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
+                         const char *out = "", const char *err = "") {
+        this->send(line);
+        this->send("\r");
+
+        std::string eout = this->prompt;
+        eout += line;
+        eout += "\n";
+        eout += out;
+        ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(status, type, eout.c_str(), err));
     }
 };
 
