@@ -145,8 +145,8 @@ public:
     }
 };
 
-struct RCTest : public InteractiveBase {
-    RCTest() : InteractiveBase(BIN_PATH, ".") {}
+struct RCTest : public InteractiveShellBase {
+    RCTest() : InteractiveShellBase(BIN_PATH, ".") {}
 };
 
 static std::string getHOME() {

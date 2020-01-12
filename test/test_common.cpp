@@ -136,7 +136,7 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args) {
             .setTerm(term)();
 }
 
-void InteractiveBase::interpret(std::string &line) {
+void InteractiveShellBase::interpret(std::string &line) {
     Screen screen(this->handle.getWinSize());
     screen.setReporter([&](std::string &&m) {
         this->send(m.c_str());

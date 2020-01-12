@@ -17,8 +17,8 @@
 using namespace ydsh;
 
 
-struct InteractiveTest : public InteractiveBase {
-    InteractiveTest() : InteractiveBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {
+struct InteractiveTest : public InteractiveShellBase {
+    InteractiveTest() : InteractiveShellBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {
         this->timeout = 120;
     }
 };

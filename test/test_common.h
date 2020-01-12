@@ -115,10 +115,9 @@ protected:
 
     const std::string workingDir;
 
-    const bool ttyEmulation;
-
-    InteractiveBase(const char *binPath, const char *dir, bool ttyEmulation = true) :
-                    binPath(binPath), workingDir(dir), ttyEmulation(ttyEmulation) {}
+public:
+    InteractiveBase(const char *binPath, const char *dir) :
+                    binPath(binPath), workingDir(dir) {}
 
     template <typename ... T>
     void invoke(T && ...args) {
@@ -134,14 +133,8 @@ protected:
         fsync(this->handle.in());
     }
 
-    void interpret(std::string &line);
-
-    std::pair<std::string, std::string> readAll() {
-        auto ret = this->handle.readAll(this->timeout);
-        if(this->ttyEmulation) {
-            this->interpret(ret.first);
-        }
-        return ret;
+    virtual std::pair<std::string, std::string> readAll() {
+        return this->handle.readAll(this->timeout);
     }
 
     void expectRegex(const char *out = "", const char *err = "") {
@@ -164,18 +157,6 @@ protected:
         ASSERT_FALSE(this->HasFailure());
     }
 
-    void sendAndExpect(const char *str, const char *out = "", const char *err = "") {
-        std::string eout = str;
-        this->send(str);
-
-        if(this->ttyEmulation) {
-            this->send("\r");
-            eout += "\n";
-            eout += out;
-        }
-        ASSERT_NO_FATAL_FAILURE(this->expect(eout.c_str(), err));
-    }
-
     void waitAndExpect(int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
                        const char *out = "", const char *err = "") {
         auto pair = this->readAll();
@@ -189,5 +170,28 @@ protected:
     }
 };
 
+struct InteractiveShellBase : public InteractiveBase {
+    InteractiveShellBase(const char *binPath, const char *dir) : InteractiveBase(binPath, dir) {}
+
+    void interpret(std::string &line);
+
+    std::pair<std::string, std::string> readAll() override {
+        auto ret = InteractiveBase::readAll();
+        this->interpret(ret.first);
+        return ret;
+    }
+
+    void sendAndExpect(const char *str, const char *out = "", const char *err = "") {
+        std::string eout = str;
+        this->send(str);
+
+//        if(this->ttyEmulation) {
+            this->send("\r");
+            eout += "\n";
+            eout += out;
+//        }
+        ASSERT_NO_FATAL_FAILURE(this->expect(eout.c_str(), err));
+    }
+};
 
 #endif //YDSH_TEST_COMMON_H

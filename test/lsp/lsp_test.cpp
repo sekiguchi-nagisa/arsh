@@ -278,7 +278,7 @@ struct ServerTest : public InteractiveBase {
     NullLogger clLogger;    //FIXME: record client log?
     std::unique_ptr<Transport> client;  // for lazy initialization
 
-    ServerTest() : InteractiveBase("", "", false), logFile(createFilePtr(tmpfile)) {
+    ServerTest() : InteractiveBase("", ""), logFile(createFilePtr(tmpfile)) {
         IOConfig config;
         config.in = IOConfig::PIPE;
         config.out = IOConfig::PIPE;
