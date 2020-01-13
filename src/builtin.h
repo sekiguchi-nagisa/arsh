@@ -947,12 +947,12 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
     RET(DSValue::create<StringIter_Object>(ctx.symbolTable.get(TYPE::StringIter), str));
 }
 
-static bool regexSearch(const Regex_Object *re, const String_Object *str);
+static bool regexSearch(const Regex_Object *re, StringRef ref);
 
 //!bind: function $OP_MATCH($this : String, $re : Regex) : Boolean
 YDSH_METHOD string_match(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_match);
-    auto *str = typeAs<String_Object>(LOCAL(0));
+    auto str = createStrRef(LOCAL(0));
     auto *re = typeAs<Regex_Object>(LOCAL(1));
     bool r = regexSearch(re, str);
     RET_BOOL(r);
@@ -961,7 +961,7 @@ YDSH_METHOD string_match(RuntimeContext &ctx) {
 //!bind: function $OP_UNMATCH($this : String, $re : Regex) : Boolean
 YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_unmatch);
-    auto *str = typeAs<String_Object>(LOCAL(0));
+    auto str = createStrRef(LOCAL(0));
     auto *re = typeAs<Regex_Object>(LOCAL(1));
     bool r = !regexSearch(re, str);
     RET_BOOL(r);
@@ -986,19 +986,17 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
 //!bind: function lower($this : String) : String
 YDSH_METHOD string_lower(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lower);
-    auto *obj = typeAs<String_Object>(LOCAL(0));
-    std::string str = obj->getValue();
+    std::string str = createStrRef(LOCAL(0)).toString();
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-    RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
+    RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(str)));
 }
 
 //!bind: function upper($this : String) : String
 YDSH_METHOD string_upper(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_upper);
-    auto *obj = typeAs<String_Object>(LOCAL(0));
-    std::string str = obj->getValue();
+    std::string str = createStrRef(LOCAL(0)).toString();
     std::transform(str.begin(), str.end(), str.begin(), ::toupper);
-    RET(DSValue::create<String_Object>(*obj->getType(), std::move(str)));
+    RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), std::move(str)));
 }
 
 // ########################
@@ -1037,23 +1035,23 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
 // ##     Regex     ##
 // ###################
 
-static bool regexSearch(const Regex_Object *re, const String_Object *str) {
+static bool regexSearch(const Regex_Object *re, StringRef ref) {
     int ovec[1];
-    int match = pcre_exec(re->getRe().get(), nullptr, str->getValue(), str->size(), 0, 0, ovec, arraySize(ovec));
+    int match = pcre_exec(re->getRe().get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, arraySize(ovec));
     return match >= 0;
 }
 
 //!bind: constructor ($this : Regex, $str : String)
 YDSH_METHOD regex_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_init);
-    auto *str = typeAs<String_Object>(LOCAL(1));
+    auto ref = createStrRef(LOCAL(1));
     const char *errorStr;
-    auto re = compileRegex(str->getValue(), errorStr, 0);
+    auto re = compileRegex(ref.data(), errorStr, 0);
     if(!re) {
         raiseError(ctx, TYPE::RegexSyntaxError, std::string(errorStr));
         RET_ERROR;
     }
-    ctx.setLocal(0, DSValue::create<Regex_Object>(ctx.symbolTable.get(TYPE::Regex), str->getValue(), std::move(re)));
+    ctx.setLocal(0, DSValue::create<Regex_Object>(ctx.symbolTable.get(TYPE::Regex), ref.data(), std::move(re)));
     RET_VOID;
 }
 
@@ -1061,8 +1059,8 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
 YDSH_METHOD regex_search(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_search);
     auto *re = typeAs<Regex_Object>(LOCAL(0));
-    auto *str = typeAs<String_Object>(LOCAL(1));
-    bool r = regexSearch(re, str);
+    auto ref = createStrRef(LOCAL(1));
+    bool r = regexSearch(re, ref);
     RET_BOOL(r);
 }
 
@@ -1070,8 +1068,8 @@ YDSH_METHOD regex_search(RuntimeContext &ctx) {
 YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_unmatch);
     auto *re = typeAs<Regex_Object>(LOCAL(0));
-    auto *str = typeAs<String_Object>(LOCAL(1));
-    bool r = !regexSearch(re, str);
+    auto ref = createStrRef(LOCAL(1));
+    bool r = !regexSearch(re, ref);
     RET_BOOL(r);
 }
 
@@ -1079,12 +1077,12 @@ YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
 YDSH_METHOD regex_match(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_match);
     auto *re = typeAs<Regex_Object>(LOCAL(0));
-    auto *str = typeAs<String_Object>(LOCAL(1));
+    auto ref = createStrRef(LOCAL(1));
 
     int captureSize;
     pcre_fullinfo(re->getRe().get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
     auto *ovec = static_cast<int *>(malloc(sizeof(int) * (captureSize + 1) * 3));
-    int matchSize = pcre_exec(re->getRe().get(), nullptr, str->getValue(), str->size(), 0, 0, ovec, (captureSize + 1) * 3);
+    int matchSize = pcre_exec(re->getRe().get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, (captureSize + 1) * 3);
 
     auto ret = DSValue::create<Array_Object>(ctx.symbolTable.get(TYPE::StringArray));
     auto *array = typeAs<Array_Object>(ret);
@@ -1096,7 +1094,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
         unsigned int size = ovec[i * 2 + 1] - ovec[i * 2];
         auto v = size == 0 ? ctx.emptyStrObj :
                  DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String),
-                                                std::string(str->getValue() + ovec[i * 2], size));
+                                                std::string(ref.data() + ovec[i * 2], size));
         array->refValues().push_back(std::move(v));
     }
     free(ovec);
@@ -1187,7 +1185,7 @@ YDSH_METHOD signals_set(RuntimeContext &ctx) {
 //!bind: function signal($this : Signals, $key : String) : Option<Signal>
 YDSH_METHOD signals_signal(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_signal);
-    const char *key = typeAs<String_Object>(LOCAL(1))->getValue();
+    const char *key = createStrRef(LOCAL(1)).data();
     int sigNum = getSignalNum(key);
     if(sigNum < 0) {
         RET(DSValue::createInvalid());
@@ -1500,13 +1498,13 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
 YDSH_METHOD array_join(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_join);
     auto *obj = typeAs<Array_Object>(LOCAL(0));
-    auto *delim = typeAs<String_Object>(LOCAL(1));
+    auto delim = createStrRef(LOCAL(1));
 
     bool hasRet = ctx.toStrBuf.empty();
     unsigned int count = 0;
     for(auto &e : obj->getValues()) {
         if(count++ > 0) {
-            ctx.toStrBuf.append(delim->getValue(), delim->size());
+            ctx.toStrBuf.append(delim.data(), delim.size());
         }
         if(e.isInvalid()) {
             raiseError(ctx, TYPE::UnwrappingError, "invalid value");
@@ -1773,7 +1771,7 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 //!bind: constructor ($this : UnixFD, $path : String)
 YDSH_METHOD fd_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_init);
-    const char *path = typeAs<String_Object>(LOCAL(1))->getValue();
+    const char *path = createStrRef(LOCAL(1)).data();
     int fd = open(path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
     if(fd != -1) {
         auto obj = DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), fd);
