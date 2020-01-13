@@ -667,7 +667,7 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         break;
     }
     case 1: {
-        result = !typeAs<String_Object>(argvObj.getValues()[1])->empty();  // check if string is not empty
+        result = !createStrRef(argvObj.getValues()[1]).empty();  // check if string is not empty
         break;
     }
     case 2: {   // unary op
@@ -682,11 +682,11 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
         const char opKind = op[1];  // ignore -
         switch(opKind) {
         case 'z': { // check if string is empty
-            result = typeAs<String_Object>(obj)->empty();
+            result = createStrRef(obj).empty();
             break;
         }
         case 'n': { // check if string not empty
-            result = !typeAs<String_Object>(obj)->empty();
+            result = !createStrRef(obj).empty();
             break;
         }
         case 'a':
@@ -895,7 +895,7 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
             break;
         case 'f':
             ifs = optState.optArg;
-            ifsSize = typeAs<String_Object>(argvObj.getValues()[optState.index - 1])->size();
+            ifsSize = createStrRef(argvObj.getValues()[optState.index - 1]).size();
             break;
         case 'r':
             backslash = false;
@@ -941,9 +941,9 @@ static int builtin_read(DSState &state, Array_Object &argvObj) {  //FIXME: timeo
 
     // check ifs
     if(ifs == nullptr) {
-        auto *strObj = typeAs<String_Object>(state.getGlobal(BuiltinVarOffset::IFS));
-        ifs = strObj->getValue();
-        ifsSize = strObj->size();
+        auto strRef = createStrRef(state.getGlobal(BuiltinVarOffset::IFS));
+        ifs = strRef.data();
+        ifsSize = strRef.size();
     }
 
     // clear old variable before read
@@ -1112,8 +1112,8 @@ static int builtin_complete(DSState &state, Array_Object &argvObj) {
         return showUsage(argvObj);
     }
 
-    auto *strObj = typeAs<String_Object>(argvObj.getValues()[1]);
-    completeLine(state, strObj->getValue(), strObj->size());
+    auto strRef = createStrRef(argvObj.getValues()[1]);
+    completeLine(state, strRef.data(), strRef.size());
     auto *ret = typeAs<Array_Object>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for(const auto &e : ret->getValues()) {
         fputs(str(e), stdout);

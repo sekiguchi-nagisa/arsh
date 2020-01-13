@@ -567,7 +567,7 @@ public:
 };
 
 inline const char *str(const DSValue &v) {
-    return typeAs<String_Object>(v)->getValue();
+    return createStrRef(v).data();
 }
 
 struct KeyCompare {
