@@ -28,7 +28,6 @@ namespace ydsh {
 
 const NativeFuncInfo *nativeFuncInfoTable();
 
-struct NativeCode;
 const NativeCode *getNativeCode(unsigned int index);
 
 // ####################

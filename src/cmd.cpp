@@ -23,7 +23,6 @@
 #include <cstdlib>
 #include <ydsh/ydsh.h>
 
-#include "logger.h"
 #include "vm.h"
 #include "constant.h"
 #include "signals.h"

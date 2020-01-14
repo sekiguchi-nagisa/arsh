@@ -933,7 +933,7 @@ YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
 //!bind: function toFloat($this : String) : Option<Float>
 YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toFloat);
-    auto ref = createStrRef(LOCAL(0));;
+    auto ref = createStrRef(LOCAL(0));
     int status = 0;
     double value = convertToDouble(ref.data(), status, false);
 
