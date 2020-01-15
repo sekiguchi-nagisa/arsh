@@ -83,13 +83,12 @@ function _add($s : String, $p : Boolean) {
 }
 
 function _default_search($q : String) : String {
-    var fzf = command -v fzf &> /dev/null
-    if !$fzf { return ""; }
+    command -v fzf &> /dev/null || { return ""; }
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
     return "$(for $e in $HISTORY {
         echo $e
-    } | sort | uniq | fzf --layout=reverse --inline-info $arg)"
+    } | fzf --inline-info $arg)"
 }
 
 function _search($q : String) : String {
