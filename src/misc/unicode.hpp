@@ -153,10 +153,25 @@ struct UnicodeUtil {
      */
     static int width(int codePoint, AmbiguousCharWidth ambiguousCharWidth = ONE_WIDTH);
 
+    static bool isCJKLocale() {
+        const char *ctype = setlocale(LC_CTYPE, nullptr);
+        if(ctype != nullptr) {
+            const char *cjk[] = {"ja", "zh", "ko"};
+            for(const auto &l : cjk) {
+                if(strstr(ctype, l) != nullptr) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /**
      * if LC_CTYPE is CJK, call width(codePoint, TWO_WIDTH)
      */
-    static int localeAwareWidth(int codePoint);
+    static int localeAwareWidth(int codePoint) {
+        return width(codePoint, isCJKLocale() ? TWO_WIDTH : ONE_WIDTH);
+    }
 };
 
 
@@ -381,22 +396,6 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
     }
 
     return 1;
-}
-
-template <bool T>
-int UnicodeUtil<T>::localeAwareWidth(int codePoint) {
-    auto e = ONE_WIDTH;
-    const char *ctype = setlocale(LC_CTYPE, nullptr);
-    if(ctype != nullptr) {
-        const char *cjk[] = {"ja", "zh", "ko"};
-        for(const auto &l : cjk) {
-            if(strstr(ctype, l) != nullptr) {
-                e = TWO_WIDTH;
-                break;
-            }
-        }
-    }
-    return width(codePoint, e);
 }
 
 } // namespace __detail_unicode
