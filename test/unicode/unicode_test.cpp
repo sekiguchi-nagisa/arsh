@@ -38,7 +38,7 @@ public:
         int codePoint = 0;
         this->toCodePoint(str, codePoint);
 
-        auto e = ambiguousWidth2 ? UnicodeUtil::TWO_WIDTH : UnicodeUtil::ONE_WIDTH;
+        auto e = ambiguousWidth2 ? UnicodeUtil::FULL_WIDTH : UnicodeUtil::HALF_WIDTH;
         ASSERT_EQ(width, UnicodeUtil::width(codePoint, e));
     }
 
@@ -207,7 +207,7 @@ TEST_F(UnicodeTest, illegal) {
     }
 
     // illegal code point
-    ASSERT_EQ(-3, UnicodeUtil::width(-1, UnicodeUtil::ONE_WIDTH));
+    ASSERT_EQ(-3, UnicodeUtil::width(-1, UnicodeUtil::HALF_WIDTH));
 }
 
 TEST_F(UnicodeTest, utf16) {

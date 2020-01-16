@@ -273,7 +273,18 @@ public:
      */
     std::string formatTokenText(Token token) const;
 
-    std::string formatLineMarker(Token lineToken, Token token) const;
+    /**
+     *
+     * @param lineToken
+     * @param token
+     * @param eaw
+     * width of east asian Ambiguous character.
+     * if 0, auto set width (CJK aware).
+     * if 1, halfwidth.
+     * if 2, fullwidth
+     * @return
+     */
+    std::string formatLineMarker(Token lineToken, Token token, int eaw = 0) const;
 
     /**
      *
@@ -373,8 +384,13 @@ std::string LexerBase<T>::formatTokenText(Token token) const {
 }
 
 template<bool T>
-std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
+std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token, int eaw) const {
     assert(lineToken.pos <= token.pos);
+
+    auto charWidth = UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
+    if(eaw == 2 || (eaw != 1 && UnicodeUtil::isCJKLocale())) {
+        charWidth = UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH;
+    }
 
     std::string lineMarker;
     for(unsigned int i = lineToken.pos; i < token.pos;) {
@@ -387,7 +403,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
             lineMarker += static_cast<char>(code);
             continue;
         }
-        int width = UnicodeUtil::localeAwareWidth(code);
+        int width = UnicodeUtil::width(code, charWidth);
         if(width == 1) {
             lineMarker += " ";
         } else if(width == 2) {
@@ -409,7 +425,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token) const {
             lineMarker += static_cast<char>(code);
             continue;
         }
-        int width = UnicodeUtil::localeAwareWidth(code);
+        int width = UnicodeUtil::width(code, charWidth);
         if(width == 1) {
             lineMarker += (prev == token.pos ? "^" : "~");
         } else if(width == 2) {
