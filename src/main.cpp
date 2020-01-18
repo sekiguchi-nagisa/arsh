@@ -117,7 +117,7 @@ static void showFeature(FILE *fp) {
     OP(QUIET,          "--quiet",             opt::NO_ARG, "suppress startup message (only available interactive mode)") \
     OP(SET_ARGS,       "-s",                  opt::NO_ARG, "set arguments and read command from standard input") \
     OP(INTERACTIVE,    "-i",                  opt::NO_ARG, "run interactive mode") \
-    OP(CHECK_ONLY2,    "-n",                  opt::NO_ARG, "equivalent to `--check-only' option")
+    OP(NOEXEC,         "-n",                  opt::NO_ARG, "equivalent to `--compile-only' option")
 
 enum OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -181,10 +181,10 @@ int main(int argc, char **argv) {
             mode = DS_EXEC_MODE_PARSE_ONLY;
             break;
         case CHECK_ONLY:
-        case CHECK_ONLY2:
             mode = DS_EXEC_MODE_CHECK_ONLY;
             break;
         case COMPILE_ONLY:
+        case NOEXEC:
             mode = DS_EXEC_MODE_COMPILE_ONLY;
             break;
         case DISABLE_ASSERT:
