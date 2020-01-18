@@ -335,9 +335,6 @@ SymbolTable::SymbolTable() :
     this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, TYPE::Any, info_StringIterType());
     this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, TYPE::Any, info_UnixFDType());
 
-    // register NativeFuncInfo to ErrorType
-    ErrorType::registerFuncInfo(info_ErrorType());
-
     // initialize type template
     std::vector<DSType *> elements = {&this->get(TYPE::Any)};
      this->initTypeTemplate(this->arrayTemplate, TYPE_ARRAY, std::move(elements), info_ArrayType());

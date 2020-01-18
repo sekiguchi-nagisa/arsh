@@ -38,15 +38,15 @@ MethodHandle *DSType::getConstructorHandle(SymbolTable &) {
     return nullptr;
 }
 
-const DSCode *DSType::getConstructor() {
+const DSCode *DSType::getConstructor() const {
     return nullptr;
 }
 
-unsigned int DSType::getFieldSize() {
+unsigned int DSType::getFieldSize() const {
     return this->superType != nullptr ? this->superType->getFieldSize() : 0;
 }
 
-unsigned int DSType::getMethodSize() {
+unsigned int DSType::getMethodSize() const {
     return this->superType != nullptr ? this->superType->getMethodSize() : 0;
 }
 
@@ -72,7 +72,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     return superType != nullptr && this->isSameOrBaseTypeOf(*superType);
 }
 
-const DSCode *DSType::getMethodRef(unsigned int methodIndex) {
+const DSCode *DSType::getMethodRef(unsigned int methodIndex) const {
     return this->superType != nullptr ? this->superType->getMethodRef(methodIndex) : nullptr;
 }
 
@@ -129,8 +129,7 @@ static const NativeCode *getCode(native_type_info_t info) {
 
 BuiltinType::BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute) :
         DSType(id, superType, attribute),
-        info(info), constructorHandle(), constructor(),
-        methodTable(superType != nullptr ? superType->getMethodSize() + info.methodSize : info.methodSize) {
+        info(info), methodTable(this->getMethodSize()) {
 
     // copy super type methodRef to method table
     if(this->superType != nullptr) {
@@ -148,6 +147,11 @@ BuiltinType::BuiltinType(unsigned int id, DSType *superType, native_type_info_t 
         // set to method table
         this->methodTable[methodIndex] = getCode(this->info, i);
     }
+
+    // init constructor handle
+    if(this->info.constructorSize != 0) {
+        this->constructor = getCode(this->info);
+    }
 }
 
 BuiltinType::~BuiltinType() {
@@ -164,12 +168,11 @@ MethodHandle *BuiltinType::getConstructorHandle(SymbolTable &symbolTable) {
         if(!this->initMethodHandle(this->constructorHandle, symbolTable, this->info.getInitInfo())) {
             return nullptr;
         }
-        this->constructor = getCode(this->info);
     }
     return this->constructorHandle;
 }
 
-const DSCode *BuiltinType::getConstructor() {
+const DSCode *BuiltinType::getConstructor() const {
     return this->constructor;
 }
 
@@ -190,14 +193,11 @@ MethodHandle *BuiltinType::lookupMethodHandle(SymbolTable &symbolTable, const st
     return handle;
 }
 
-unsigned int BuiltinType::getMethodSize() {
-    if(this->superType != nullptr) {
-        return this->superType->getMethodSize() + this->methodHandleMap.size();
-    }
-    return this->methodHandleMap.size();
+unsigned int BuiltinType::getMethodSize() const {
+    return this->info.methodSize + (this->superType != nullptr ? this->superType->getMethodSize() : 0);
 }
 
-const DSCode *BuiltinType::getMethodRef(unsigned int methodIndex) {
+const DSCode *BuiltinType::getMethodRef(unsigned int methodIndex) const {
     return this->methodTable[methodIndex];
 }
 
@@ -242,7 +242,7 @@ TupleType::~TupleType() {
     }
 }
 
-unsigned int TupleType::getFieldSize() {
+unsigned int TupleType::getFieldSize() const {
     return this->elementTypes.size();
 }
 
@@ -262,23 +262,21 @@ ErrorType::~ErrorType() {
     delete this->constructorHandle;
 }
 
-const NativeFuncInfo *ErrorType::funcInfo = nullptr;
-const DSCode *ErrorType::initRef;
-
 MethodHandle *ErrorType::getConstructorHandle(SymbolTable &symbolTable) {
     if(this->constructorHandle == nullptr) {
         this->constructorHandle = new MethodHandle(0);
-        this->constructorHandle->init(symbolTable, *funcInfo);
+        auto info = static_cast<BuiltinType *>(this->superType)->getNativeTypeInfo().getInitInfo();
+        this->constructorHandle->init(symbolTable, info);
         this->constructorHandle->setRecvType(*this);
     }
     return this->constructorHandle;
 }
 
-const DSCode *ErrorType::getConstructor() {
-    return initRef;
+const DSCode *ErrorType::getConstructor() const {
+    return this->superType->getConstructor();
 }
 
-unsigned int ErrorType::getFieldSize() {
+unsigned int ErrorType::getFieldSize() const {
     return this->superType->getFieldSize();
 }
 
@@ -288,16 +286,6 @@ FieldHandle *ErrorType::lookupFieldHandle(SymbolTable &symbolTable, const std::s
 
 MethodHandle *ErrorType::lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) {
     return this->superType->lookupMethodHandle(symbolTable, methodName);
-}
-
-/**
- * call only once.
- */
-void ErrorType::registerFuncInfo(native_type_info_t info) {
-    if(funcInfo == nullptr) {
-        funcInfo = &info.getInitInfo();
-        initRef = getCode(info);
-    }
 }
 
 std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {
