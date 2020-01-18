@@ -409,9 +409,7 @@ private:
 
 public:
     ErrorType(unsigned int id, DSType *superType) :
-            DSType(id, superType, TypeAttr::EXTENDIBLE) {
-        assert(this->superType->is(TYPE::Error));
-    }
+            DSType(id, superType, TypeAttr::EXTENDIBLE) {}
 
     ~ErrorType() override;
 
