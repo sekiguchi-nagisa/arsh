@@ -27,16 +27,15 @@ struct FNVHash64 {
     static constexpr uint64_t FNV_offset_basis = 0xcbf29ce484222325;
     static constexpr uint64_t FNV_prime = 0x100000001b3;
 
-    static uint64_t update(uint64_t hash, uint8_t value) {
-        hash = hash * FNV_prime;
-        hash = hash ^ value;
-        return hash;
+    static void update(uint64_t &hash, uint8_t value) {
+        hash *= FNV_prime;
+        hash ^= value;
     }
 
     static uint64_t compute(const char *begin, const char *end) {
         uint64_t hash = FNV_offset_basis;
         for(; begin != end; ++begin) {
-            hash = update(hash, *begin);
+            update(hash, *begin);
         }
         return hash;
     }
@@ -50,9 +49,9 @@ struct CStringComparator {
 
 struct CStringHash {
     std::size_t operator()(const char *key) const {
-        std::size_t hash = FNVHash64::FNV_offset_basis;
+        uint64_t hash = FNVHash64::FNV_offset_basis;
         while(*key != '\0') {
-            hash = FNVHash64::update(hash, static_cast<uint8_t>(*key++));
+            FNVHash64::update(hash, static_cast<uint8_t>(*key++));
         }
         return hash;
     }

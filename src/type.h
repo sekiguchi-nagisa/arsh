@@ -87,8 +87,9 @@ enum class TypeAttr : unsigned char {
     EXTENDIBLE   = 1u << 0u,
     FUNC_TYPE    = 1u << 1u,    // function type
     RECORD_TYPE  = 1u << 2u,    // indicate user defined type
-    OPTION_TYPE  = 1u << 3u,    // Option<T>
-    MODULE_TYPE  = 1u << 4u,    // Module type
+    REIFIED_TYPE = 1u << 3u,    // reified type (Array, Map, Tuple, Option)
+    OPTION_TYPE  = 1u << 4u,    // Option<T>
+    MODULE_TYPE  = 1u << 5u,    // Module type
 };
 
 template <> struct allow_enum_bitop<TypeAttr> : std::true_type {};
@@ -102,7 +103,7 @@ protected:
      */
     DSType *superType;
 
-    TypeAttr attributeSet;
+    const TypeAttr attributeSet;
 
 public:
     NON_COPYABLE(DSType);
@@ -123,11 +124,15 @@ public:
         return this->id == static_cast<unsigned int>(type);
     }
 
+    TypeAttr attr() const {
+        return this->attributeSet;
+    }
+
     /**
      * if true, can extend this type
      */
     bool isExtendible() const {
-        return hasFlag(this->attributeSet, TypeAttr::EXTENDIBLE);
+        return hasFlag(this->attr(), TypeAttr::EXTENDIBLE);
     }
 
     /**
@@ -141,23 +146,27 @@ public:
      * if this type is FunctionType, return true.
      */
     bool isFuncType() const {
-        return hasFlag(this->attributeSet, TypeAttr::FUNC_TYPE);
+        return hasFlag(this->attr(), TypeAttr::FUNC_TYPE);
     }
 
     bool isRecordType() const {
-        return hasFlag(this->attributeSet, TypeAttr::RECORD_TYPE);
+        return hasFlag(this->attr(), TypeAttr::RECORD_TYPE);
     }
 
     bool isNothingType() const {
         return this->is(TYPE::Nothing);
     }
 
+    bool isReifiedType() const {
+        return hasFlag(this->attr(), TypeAttr::REIFIED_TYPE);
+    }
+
     bool isOptionType() const {
-        return hasFlag(this->attributeSet, TypeAttr::OPTION_TYPE);
+        return hasFlag(this->attr(), TypeAttr::OPTION_TYPE);
     }
 
     bool isModType() const {
-        return hasFlag(this->attributeSet, TypeAttr::MODULE_TYPE);
+        return hasFlag(this->attr(), TypeAttr::MODULE_TYPE);
     }
 
     /**
@@ -371,7 +380,8 @@ public:
      */
     ReifiedType(unsigned int id, native_type_info_t info, DSType *superType,
                 std::vector<DSType *> &&elementTypes, TypeAttr attribute = TypeAttr()) :
-            BuiltinType(id, superType, info, attribute), elementTypes(std::move(elementTypes)) { }
+            BuiltinType(id, superType, info, attribute | TypeAttr::REIFIED_TYPE),
+            elementTypes(std::move(elementTypes)) { }
 
     ~ReifiedType() override = default;
 

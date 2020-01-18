@@ -20,13 +20,8 @@
 #include <cassert>
 #include <functional>
 
-#include "type.h"
-#include "handle.h"
-#include "constant.h"
-#include "tlerror.h"
-#include "misc/buffer.hpp"
+#include "type_pool.h"
 #include "misc/resource.hpp"
-#include "misc/result.hpp"
 
 namespace ydsh {
 
@@ -257,62 +252,6 @@ public:
     }
 };
 
-class TypeMap {
-private:
-    unsigned int oldIDCount{0};
-    FlexBuffer<DSType *> typeTable;
-    std::vector<std::string> nameTable; //   maintain type name
-    std::unordered_map<std::string, unsigned int> aliasMap;
-
-public:
-    NON_COPYABLE(TypeMap);
-
-    TypeMap() = default;
-    ~TypeMap();
-
-    template <typename T, typename ...A>
-    T &newType(std::string &&name, A &&...arg) {
-        unsigned int id = this->typeTable.size();
-        return *static_cast<T *>(this->addType(std::move(name), new T(id, std::forward<A>(arg)...)));
-    }
-
-    DSType *get(unsigned int index) const {
-        return this->typeTable[index];
-    }
-
-    /**
-     * return null, if has no type.
-     */
-    DSType *getType(const std::string &typeName) const;
-
-    /**
-     * type must not be null.
-     */
-    const std::string &getTypeName(const DSType &type) const {
-        return this->nameTable[type.getTypeID()];
-    }
-
-    /**
-     * return false, if duplicated
-     */
-    bool setAlias(std::string &&alias, unsigned int typeID) {
-        auto pair = this->aliasMap.emplace(std::move(alias), typeID);
-        return pair.second;
-    }
-
-    void commit() {
-        this->oldIDCount = this->typeTable.size();
-    }
-
-    void abort();
-
-private:
-    /**
-     * return added type. type must not be null.
-     */
-    DSType *addType(std::string &&typeName, DSType *type);
-};
-
 class SymbolTable;
 
 class ModType : public DSType {
@@ -382,9 +321,6 @@ private:
     ModResult load(const char *scriptDir, const std::string &modPath, FilePtr &filePtr);
 };
 
-using TypeOrError = Result<DSType *, std::unique_ptr<TypeLookupError>>;
-using TypeTempOrError = Result<const TypeTemplate*, std::unique_ptr<TypeLookupError>>;
-
 class SymbolTable {
 private:
     ModuleLoader modLoader;
@@ -395,23 +331,12 @@ private:
 
     unsigned int termHookIndex{0};
 
-    TypeMap typeMap;
-
-    // type template definition
-    TypeTemplate arrayTemplate;
-    TypeTemplate mapTemplate;
-    TypeTemplate tupleTemplate;
-    TypeTemplate optionTemplate;
-
-    /**
-     * for type template
-     */
-    std::unordered_map<std::string, const TypeTemplate *> templateMap;
+    TypePool typePool;
 
 public:
     NON_COPYABLE(SymbolTable);
 
-    SymbolTable();
+    SymbolTable() : rootModule(this->gvarCount), curModule(&this->rootModule) {}
 
     ~SymbolTable() = default;
 
@@ -586,7 +511,7 @@ public:
     }
 
     void commit() {
-        this->typeMap.commit();
+        this->typePool.commit();
         this->modLoader.commit();
         this->oldGvarCount = this->gvarCount;
     }
@@ -595,7 +520,7 @@ public:
         this->modLoader.abort();
         this->gvarCount = this->oldGvarCount;
         if(abortType) {
-            this->typeMap.abort();
+            this->typePool.abort();
         }
         this->resetCurModule();
         this->cur().abort();
@@ -628,6 +553,13 @@ public:
     }
 
     // for type lookup
+    const TypePool &getTypePool() const {
+        return this->typePool;
+    }
+
+    TypePool &getTypePool() {
+        return this->typePool;
+    }
 
     /**
      * unsafe api. normally unused
@@ -635,7 +567,7 @@ public:
      * @return
      */
     DSType &get(unsigned int index) const {
-        return *this->typeMap.get(index);
+        return *this->typePool.get(index);
     }
 
     DSType &get(TYPE type) const {
@@ -644,42 +576,49 @@ public:
 
     // for reified type.
     const TypeTemplate &getArrayTemplate() const {
-        return this->arrayTemplate;
+        return this->typePool.getArrayTemplate();
     }
 
     const TypeTemplate &getMapTemplate() const {
-        return this->mapTemplate;
+        return this->typePool.getMapTemplate();
     }
 
     const TypeTemplate &getTupleTemplate() const {
-        return this->tupleTemplate;
+        return this->typePool.getTupleTemplate();
     }
 
     const TypeTemplate &getOptionTemplate() const {
-        return this->optionTemplate;
+        return this->typePool.getOptionTemplate();
     }
 
-    // for type lookup
     /**
      *
      * @param typeName
      * @return
      */
-    TypeOrError getType(const std::string &typeName) const;
+    TypeOrError getType(const std::string &typeName) const {
+        return this->typePool.getType(typeName);
+    }
 
     /**
      * get template type.
      * @param typeName
      * @return
      */
-    TypeTempOrError getTypeTemplate(const std::string &typeName) const;
+    TypeTempOrError getTypeTemplate(const std::string &typeName) const {
+        return this->typePool.getTypeTemplate(typeName);
+    }
 
     /**
      * if type template is Tuple, call createTupleType()
      */
-    TypeOrError createReifiedType(const TypeTemplate &typeTemplate, std::vector<DSType *> &&elementTypes);
+    TypeOrError createReifiedType(const TypeTemplate &typeTemplate, std::vector<DSType *> &&elementTypes) {
+        return this->typePool.createReifiedType(typeTemplate, std::move(elementTypes));
+    }
 
-    TypeOrError createTupleType(std::vector<DSType *> &&elementTypes);
+    TypeOrError createTupleType(std::vector<DSType *> &&elementTypes) {
+        return this->typePool.createTupleType(std::move(elementTypes));
+    }
 
     /**
      *
@@ -688,7 +627,9 @@ public:
      * @return
      * must be FunctionType
      */
-    TypeOrError createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
+    TypeOrError createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
+        return this->typePool.createFuncType(returnType, std::move(paramTypes));
+    }
 
     /**
      * set type name alias. if alias name has alreadt defined, return false
@@ -696,57 +637,13 @@ public:
      * @param targetType
      * @return
      */
-    bool setAlias(const std::string &alias, DSType &targetType) {
-        return this->setAlias(alias.c_str(), targetType);
-    }
-
-    bool setAlias(const char *alias, DSType &targetType) {
-        return this->typeMap.setAlias(std::string(alias), targetType.getTypeID());
+    bool setAlias(const std::string &alias, const DSType &targetType) {
+        return this->typePool.setAlias(std::string(alias), targetType);
     }
 
     const char *getTypeName(const DSType &type) const {
-        return this->typeMap.getTypeName(type).c_str();
+        return this->typePool.getTypeName(type).c_str();
     }
-
-private:
-    /**
-     * create reified type name
-     * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
-     */
-    std::string toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes) const;
-
-    std::string toTupleTypeName(const std::vector<DSType *> &elementTypes) const;
-
-    /**
-     * create function type name
-     */
-    std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const;
-
-    void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info);
-
-    void initBuiltinType(TYPE t, const char *typeName, bool extendible, TYPE super, native_type_info_t info);
-
-    void initTypeTemplate(TypeTemplate &temp, const char *typeName,
-                          std::vector<DSType*> &&elementTypes, native_type_info_t info);
-
-    void initErrorType(TYPE t, const char *typeName);
-
-    /**
-     *
-     * @param elementTypes
-     * @return
-     * if success, return null
-     */
-    TypeOrError checkElementTypes(const std::vector<DSType *> &elementTypes) const;
-
-    /**
-     *
-     * @param t
-     * @param elementTypes
-     * @return
-     * if success, return null
-     */
-    TypeOrError checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
 };
 
 } // namespace ydsh

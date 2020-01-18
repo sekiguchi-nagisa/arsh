@@ -107,24 +107,15 @@ protected:
      */
     std::vector<DSType *> paramTypes;
 
-    /**
-     * may be null, if has no overloaded method.
-     */
-    MethodHandle *next{nullptr};
-
 public:
     NON_COPYABLE(MethodHandle);
 
     explicit MethodHandle(unsigned int methodIndex) : methodIndex(methodIndex) { }
 
-    ~MethodHandle();
+    ~MethodHandle() = default;
 
     unsigned int getMethodIndex() const {
         return this->methodIndex;
-    }
-
-    void setReturnType(DSType &type) {
-        this->returnType = &type;
     }
 
     DSType *getReturnType() const {
@@ -134,12 +125,6 @@ public:
     void setRecvType(DSType &type) {
         this->recvType = &type;
     }
-
-    DSType *getRecvType() const {
-        return this->recvType;
-    }
-
-    void addParamType(DSType &type);
 
     const std::vector<DSType *> &getParamTypes() const {
         return this->paramTypes;
@@ -156,14 +141,6 @@ public:
      */
     bool initialized() const {
         return this->returnType != nullptr;
-    }
-
-    void setNext(MethodHandle *handle) {
-        this->next = handle;
-    }
-
-    const MethodHandle *getNext() const {
-        return this->next;
     }
 };
 

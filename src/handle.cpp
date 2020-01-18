@@ -46,23 +46,15 @@ std::string toString(FieldAttribute attr) {
 // ##     MethodHandle     ##
 // ##########################
 
-MethodHandle::~MethodHandle() {
-    delete this->next;
-}
-
-void MethodHandle::addParamType(DSType &type) {
-    this->paramTypes.push_back(&type);
-}
-
 class TypeDecoder {
 private:
-    SymbolTable &symbolTable;
+    TypePool &pool;
     const HandleInfo *cursor;
     const std::vector<DSType *> *types;
 
 public:
-    TypeDecoder(SymbolTable &pool, const HandleInfo *pos, const std::vector<DSType *> *types) :
-            symbolTable(pool), cursor(pos), types(types) {}
+    TypeDecoder(TypePool &pool, const HandleInfo *pos, const std::vector<DSType *> *types) :
+            pool(pool), cursor(pos), types(types) {}
     ~TypeDecoder() = default;
 
     TypeOrError decode();
@@ -76,26 +68,26 @@ public:
 
 TypeOrError TypeDecoder::decode() {
     switch(*(this->cursor++)) {
-#define GEN_CASE(ENUM) case HandleInfo::ENUM: return Ok(&this->symbolTable.get(TYPE::ENUM));
+#define GEN_CASE(ENUM) case HandleInfo::ENUM: return Ok(this->pool.get(TYPE::ENUM));
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
     case HandleInfo::Array: {
-        auto &t = this->symbolTable.getArrayTemplate();
+        auto &t = this->pool.getArrayTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 1);
         std::vector<DSType *> elementTypes(size);
         elementTypes[0] = TRY(decode());
-        return this->symbolTable.createReifiedType(t, std::move(elementTypes));
+        return this->pool.createReifiedType(t, std::move(elementTypes));
     }
     case HandleInfo::Map: {
-        auto &t = this->symbolTable.getMapTemplate();
+        auto &t = this->pool.getMapTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 2);
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = TRY(this->decode());
         }
-        return this->symbolTable.createReifiedType(t, std::move(elementTypes));
+        return this->pool.createReifiedType(t, std::move(elementTypes));
     }
     case HandleInfo::Tuple: {
         unsigned int size = this->decodeNum();
@@ -105,22 +97,22 @@ TypeOrError TypeDecoder::decode() {
             for(unsigned int i = 0; i < size; i++) {
                 elementTypes[i] = (*this->types)[i];
             }
-            return this->symbolTable.createTupleType(std::move(elementTypes));
+            return this->pool.createTupleType(std::move(elementTypes));
         }
 
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = TRY(this->decode());
         }
-        return this->symbolTable.createTupleType(std::move(elementTypes));
+        return this->pool.createTupleType(std::move(elementTypes));
     }
     case HandleInfo::Option: {
-        auto &t = this->symbolTable.getOptionTemplate();
+        auto &t = this->pool.getOptionTemplate();
         unsigned int size = this->decodeNum();
         assert(size == 1);
         std::vector<DSType *> elementTypes(size);
         elementTypes[0] = TRY(this->decode());
-        return this->symbolTable.createReifiedType(t, std::move(elementTypes));
+        return this->pool.createReifiedType(t, std::move(elementTypes));
     }
     case HandleInfo::Func: {
         auto *retType = TRY(this->decode());
@@ -129,7 +121,7 @@ TypeOrError TypeDecoder::decode() {
         for(unsigned int i = 0; i < size; i++) {
             paramTypes[i] = TRY(this->decode());
         }
-        return this->symbolTable.createFuncType(retType, std::move(paramTypes));
+        return this->pool.createFuncType(retType, std::move(paramTypes));
     }
     case HandleInfo::P_N0:
     case HandleInfo::P_N1:
@@ -155,7 +147,7 @@ TypeOrError TypeDecoder::decode() {
 // FIXME: error reporting
 bool MethodHandle::init(SymbolTable &symbolTable, const NativeFuncInfo &info,
                         const std::vector<DSType *> *types) {
-    TypeDecoder decoder(symbolTable, info.handleInfo, types);
+    TypeDecoder decoder(symbolTable.getTypePool(), info.handleInfo, types);
 
     // check type parameter constraint
     const unsigned int constraintSize = decoder.decodeNum();

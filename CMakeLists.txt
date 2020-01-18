@@ -238,6 +238,7 @@ set(YDSH_SRC
         src/cmd.cpp
         src/core.cpp
         src/symbol_table.cpp
+        src/type_pool.cpp
         src/codegen.cpp
         src/vm.cpp
         src/lexer.cpp
