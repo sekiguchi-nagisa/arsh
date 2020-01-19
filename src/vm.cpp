@@ -431,12 +431,10 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
     // setup self pipe
     int selfpipe[2];
     if(pipe(selfpipe) < 0) {
-        perror("pipe creation error");
-        exit(1);
+        fatal_perror("pipe creation error");
     }
     if(fcntl(selfpipe[WRITE_PIPE], F_SETFD, fcntl(selfpipe[WRITE_PIPE], F_GETFD) | FD_CLOEXEC) != 0) {
-        perror("fcntl error");
-        exit(1);
+        fatal_perror("fcntl error");
     }
 
     bool rootShell = state.isRootShell();

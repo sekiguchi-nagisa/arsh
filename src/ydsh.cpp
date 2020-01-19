@@ -298,8 +298,7 @@ static void initBuiltinVar(DSState &state) {
 
     struct utsname name{};
     if(uname(&name) == -1) {
-        perror("cannot get utsname");
-        exit(1);
+        fatal_perror("cannot get utsname");
     }
 
     /**
@@ -379,8 +378,7 @@ static void initEnv(const DSState &state) {
     // set HOME
     struct passwd *pw = getpwuid(getuid());
     if(pw == nullptr) {
-        perror("getpwuid failed\n");
-        exit(1);
+        fatal_perror("getpwuid failed\n");
     }
     setenv(ENV_HOME, pw->pw_dir, 0);
 
