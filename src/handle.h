@@ -18,9 +18,7 @@
 #define YDSH_HANDLE_H
 
 #include <string>
-#include <utility>
 #include <vector>
-#include <unordered_map>
 
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
@@ -28,7 +26,6 @@
 namespace ydsh {
 
 class DSType;
-class TypePool;
 struct NativeFuncInfo;
 
 #define EACH_FIELD_ATTR(OP) \
@@ -99,9 +96,9 @@ class MethodHandle {
 protected:
     unsigned int methodIndex;
 
-    const DSType *returnType{nullptr};
+    const DSType *returnType;
 
-    const DSType *recvType{nullptr};
+    const DSType *recvType;
 
     /**
      * not contains receiver type
@@ -111,9 +108,8 @@ protected:
 public:
     NON_COPYABLE(MethodHandle);
 
-    explicit MethodHandle(unsigned int methodIndex) : methodIndex(methodIndex) { }
-
-//    MethodHandle(unsigned int methodIndex, DSType *)
+    MethodHandle(unsigned int methodIndex, const DSType *ret, const DSType *recv, std::vector<DSType *> &&param) :
+        methodIndex(methodIndex), returnType(ret), recvType(recv), paramTypes(std::move(param)) {}
 
     ~MethodHandle() = default;
 
@@ -132,12 +128,6 @@ public:
     const std::vector<DSType *> &getParamTypes() const {
         return this->paramTypes;
     }
-
-    /**
-     * initialize internal types.
-     */
-    bool init(TypePool &pool, const NativeFuncInfo &info,
-              const std::vector<DSType *> *types = nullptr);
 };
 
 } // namespace ydsh

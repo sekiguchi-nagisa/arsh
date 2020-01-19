@@ -248,6 +248,131 @@ TypeOrError TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &
     return Ok(type);
 }
 
+class TypeDecoder {
+private:
+    TypePool &pool;
+    const HandleInfo *cursor;
+    const std::vector<DSType *> *types;
+
+public:
+    TypeDecoder(TypePool &pool, const HandleInfo *pos, const std::vector<DSType *> *types) :
+            pool(pool), cursor(pos), types(types) {}
+    ~TypeDecoder() = default;
+
+    TypeOrError decode();
+
+    unsigned int decodeNum() {
+        return static_cast<unsigned int>(static_cast<int>(*(this->cursor++)) - static_cast<int>(HandleInfo::P_N0));
+    }
+};
+
+#undef TRY
+#define TRY(E) ({ auto value = E; if(!value) { return value; } value.take(); })
+
+TypeOrError TypeDecoder::decode() {
+    switch(*(this->cursor++)) {
+#define GEN_CASE(ENUM) case HandleInfo::ENUM: return Ok(this->pool.get(TYPE::ENUM));
+    EACH_HANDLE_INFO_TYPE(GEN_CASE)
+#undef GEN_CASE
+    case HandleInfo::Array: {
+        auto &t = this->pool.getArrayTemplate();
+        unsigned int size = this->decodeNum();
+        assert(size == 1);
+        std::vector<DSType *> elementTypes(size);
+        elementTypes[0] = TRY(decode());
+        return this->pool.createReifiedType(t, std::move(elementTypes));
+    }
+    case HandleInfo::Map: {
+        auto &t = this->pool.getMapTemplate();
+        unsigned int size = this->decodeNum();
+        assert(size == 2);
+        std::vector<DSType *> elementTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            elementTypes[i] = TRY(this->decode());
+        }
+        return this->pool.createReifiedType(t, std::move(elementTypes));
+    }
+    case HandleInfo::Tuple: {
+        unsigned int size = this->decodeNum();
+        if(size == 0) { // variable length type
+            size = this->types->size();
+            std::vector<DSType *> elementTypes(size);
+            for(unsigned int i = 0; i < size; i++) {
+                elementTypes[i] = (*this->types)[i];
+            }
+            return this->pool.createTupleType(std::move(elementTypes));
+        }
+
+        std::vector<DSType *> elementTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            elementTypes[i] = TRY(this->decode());
+        }
+        return this->pool.createTupleType(std::move(elementTypes));
+    }
+    case HandleInfo::Option: {
+        auto &t = this->pool.getOptionTemplate();
+        unsigned int size = this->decodeNum();
+        assert(size == 1);
+        std::vector<DSType *> elementTypes(size);
+        elementTypes[0] = TRY(this->decode());
+        return this->pool.createReifiedType(t, std::move(elementTypes));
+    }
+    case HandleInfo::Func: {
+        auto *retType = TRY(this->decode());
+        unsigned int size = this->decodeNum();
+        std::vector<DSType *> paramTypes(size);
+        for(unsigned int i = 0; i < size; i++) {
+            paramTypes[i] = TRY(this->decode());
+        }
+        return this->pool.createFuncType(retType, std::move(paramTypes));
+    }
+    case HandleInfo::P_N0:
+    case HandleInfo::P_N1:
+    case HandleInfo::P_N2:
+    case HandleInfo::P_N3:
+    case HandleInfo::P_N4:
+    case HandleInfo::P_N5:
+    case HandleInfo::P_N6:
+    case HandleInfo::P_N7:
+    case HandleInfo::P_N8:
+        fatal("must be type\n");
+    case HandleInfo::T0:
+        return Ok((*this->types)[0]);
+    case HandleInfo::T1:
+        return Ok((*this->types)[1]);
+    default:
+        return Ok(static_cast<DSType *>(nullptr)); // normally unreachable due to suppress gcc warning
+    }
+}
+
+#define TRY2(E) ({ auto value = E; if(!value) { return nullptr; } value.take(); })
+
+// FIXME: error reporting
+static MethodHandle *newMethodHandle(TypePool &pool, unsigned int index, const NativeFuncInfo &info,
+                        const std::vector<DSType *> *types) {
+    TypeDecoder decoder(pool, info.handleInfo, types);
+
+    // check type parameter constraint
+    const unsigned int constraintSize = decoder.decodeNum();
+    for(unsigned int i = 0; i < constraintSize; i++) {
+        auto *typeParam = TRY2(decoder.decode());
+        auto *reqType = TRY2(decoder.decode());
+        if(!reqType->isSameOrBaseTypeOf(*typeParam)) {
+            return nullptr;
+        }
+    }
+
+    auto *returnType = TRY2(decoder.decode());    // init return type
+    const unsigned int paramSize = decoder.decodeNum();
+    auto *recvType = TRY2(decoder.decode());
+    std::vector<DSType *> paramTypes(paramSize - 1);
+    for(unsigned int i = 1; i < paramSize; i++) {   // init param types
+        paramTypes[i - 1] = TRY2(decoder.decode());
+    }
+    return new MethodHandle(index, returnType, recvType, std::move(paramTypes));
+}
+
+
 static auto getMethodInfo(const DSType &recv, const std::string &name, unsigned int index) {
     auto &type = static_cast<const BuiltinType &>(recv);
     if(name.empty()) {  // constructor
@@ -268,12 +393,11 @@ const MethodHandle* TypePool::lookupMethod(const DSType &recvType, const std::st
                 unsigned int methodIndex = iter->second.index();
                 auto info = getMethodInfo(*type, methodName, methodIndex);
                 assert(methodName == info.funcName);
-                MethodHandle *handle = new MethodHandle(methodIndex);
-                if(handle->init(*this, info, types)) {
+                auto *handle = newMethodHandle(*this, methodIndex, info, types);
+                if(handle) {
                     iter->second = Value(handle);
                     assert(iter->second);
                 } else {
-                    delete handle;
                     return nullptr;
                 }
             }
