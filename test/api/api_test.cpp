@@ -206,6 +206,48 @@ TEST_F(APITest, status) {
     ASSERT_EQ(34, s);
 }
 
+struct Deleter {
+    void operator()(DSError *e) const {
+        DSError_release(e);
+    }
+};
+
+static auto newError() {
+    return std::unique_ptr<DSError, Deleter>(new DSError());
+}
+
+TEST_F(APITest, abort) {
+    std::string src = "function f( $a : String, $b : String) : Int { exit 54; }";
+    auto e = newError();
+    int s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+
+    src = R"(["d", ""].sortBy($f))";
+    e = newError();
+    s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+
+    src = R"(["d", ""].sortWith($f))";
+    e = newError();
+    s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e->kind);
+
+    src = R"(function g( $a : String, $b : String) : Boolean { exit 54; })";
+    e = newError();
+    s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e->kind);
+
+    src = R"(["d", ""].sortWith($g))";
+    e = newError();
+    s = DSState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
+    ASSERT_EQ(54, s);
+    ASSERT_EQ(DS_ERROR_KIND_EXIT, e->kind);
+}
+
 TEST_F(APITest, pid) {
     pid_t pid = getpid();
     std::string src("assert($$ == ");

@@ -33,6 +33,7 @@ using TypeTempOrError = Result<const TypeTemplate*, std::unique_ptr<TypeLookupEr
 class TypePool {
 private:
     unsigned int oldIDCount{0};
+    unsigned int methodID{0};
     FlexBuffer<DSType *> typeTable;
     std::vector<std::string> nameTable; //   maintain type name
     std::unordered_map<std::string, unsigned int> aliasMap;
@@ -204,8 +205,13 @@ public:
         return this->lookupMethod(revType, "");
     }
 
+    unsigned int getMethodID() const {
+        return this->methodID;
+    }
+
     void commit() {
         this->oldIDCount = this->typeTable.size();
+        this->methodID++;
     }
 
     void abort();

@@ -97,11 +97,11 @@ class TypePool;
 
 class MethodHandle {
 private:
-    friend class TypePool;
+    unsigned int id;
 
-    unsigned int methodIndex;
+    unsigned short methodIndex;
 
-    unsigned int paramSize;
+    unsigned short paramSize;
 
     const DSType *returnType;
 
@@ -112,12 +112,14 @@ private:
      */
     const DSType *paramTypes[];
 
-    MethodHandle(const DSType *recv, unsigned int index, const DSType *ret, unsigned int paramSize) :
-            methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {}
+    MethodHandle(unsigned int id, const DSType *recv, unsigned short index,
+            const DSType *ret, unsigned short paramSize) :
+            id(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {}
 
-    static MethodHandle *alloc(const DSType *recv, unsigned int index, const DSType *ret, unsigned int paramSize) {
+    static MethodHandle *alloc(unsigned int count, const DSType *recv, unsigned int index,
+            const DSType *ret, unsigned int paramSize) {
         void *ptr = malloc(sizeof(MethodHandle) + sizeof(const DSType *) * paramSize);
-        return new(ptr) MethodHandle(recv, index, ret, paramSize);
+        return new(ptr) MethodHandle(count, recv, index, ret, paramSize);
     }
 
 public:
@@ -129,7 +131,11 @@ public:
         free(ptr);
     }
 
-    unsigned int getMethodIndex() const {
+    unsigned int getID() const {
+        return this->id;
+    }
+
+    unsigned short getMethodIndex() const {
         return this->methodIndex;
     }
 

@@ -153,14 +153,20 @@ void TypePool::abort() {
     assert(this->oldIDCount == this->nameTable.size());
 
     // abort method handle
-//    for(auto iter = this->methodMap.begin(); iter != this->methodMap.end(); ) {
-//        if(iter->first.id >= this->oldIDCount) {
-//            const_cast<Key&>(iter->first).dispose();
-//            iter = this->methodMap.erase(iter);
-//        } else {
-//            ++iter;
-//        }
-//    }
+    for(auto iter = this->methodMap.begin(); iter != this->methodMap.end(); ) {
+        if(iter->first.id >= this->oldIDCount) {
+            const_cast<Key &>(iter->first).dispose();
+            iter = this->methodMap.erase(iter);
+            continue;
+        } else if(iter->second) {
+            auto *ptr = iter->second.handle();
+            if(ptr != nullptr && ptr->getID() >= this->methodID) {
+                iter->second = Value(ptr->getMethodIndex());
+                assert(!iter->second);
+            }
+        }
+        ++iter;
+    }
 }
 
 TypeTempOrError TypePool::getTypeTemplate(const std::string &typeName) const {
@@ -381,7 +387,8 @@ MethodHandle* MethodHandle::create(TypePool &pool, const DSType &recv,
     auto *recvType = TRY2(decoder.decode());
     assert(*recvType == recv);
 
-    std::unique_ptr<MethodHandle> handle(MethodHandle::alloc(recvType, index, returnType, paramSize - 1));
+    std::unique_ptr<MethodHandle> handle(
+            MethodHandle::alloc(pool.getMethodID(), recvType, index, returnType, paramSize - 1));
     for(unsigned int i = 1; i < paramSize; i++) {   // init param types
         handle->paramTypes[i - 1] = TRY2(decoder.decode());
     }
