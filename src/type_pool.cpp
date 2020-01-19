@@ -397,6 +397,17 @@ void TypePool::initErrorType(TYPE t, const char *typeName) {
     assert(type.is(t));
 }
 
+/**
+ * for suppress false positive of address/leak sanitizer
+ * @param name
+ * @return
+ */
+static StringRef dup(const char *name) {
+    ByteBuffer buffer;
+    buffer.append(name, strlen(name) + 1);
+    return StringRef(buffer.take());
+}
+
 void TypePool::registerHandle(const BuiltinType &type) {
     // init method handle
     unsigned int baseIndex = type.getBaseIndex();
@@ -404,7 +415,7 @@ void TypePool::registerHandle(const BuiltinType &type) {
     for(unsigned int i = 0; i < info.methodSize; i++) {
         const NativeFuncInfo *funcInfo = &info.getMethodInfo(i);
         unsigned int methodIndex = baseIndex + i;
-        auto ret = this->methodMap.emplace(Key(type, strdup(funcInfo->funcName)), Value(methodIndex));
+        auto ret = this->methodMap.emplace(Key(type, dup(funcInfo->funcName)), Value(methodIndex));
         (void) ret;
         assert(ret.second);
     }
