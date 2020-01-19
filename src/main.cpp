@@ -17,6 +17,7 @@
 #include <unistd.h>
 
 #include <cstdlib>
+#include <memory>
 
 #include <ydsh/ydsh.h>
 #include "misc/opt.hpp"
@@ -24,23 +25,35 @@
 
 using namespace ydsh;
 
-[[noreturn]]
-void exec_interactive(DSState *dsState);
+struct Deleter {
+    void operator()(DSState *state) const {
+        DSState_delete(&state);
+    }
+};
 
-static void loadRC(DSState *state, const char *rcfile) {
+using DSStateHandle = std::unique_ptr<DSState, Deleter>;
+
+template <typename ...Arg>
+static auto createState(Arg && ...arg) {
+    return DSStateHandle(DSState_createWithMode(std::forward<Arg>(arg)...));
+}
+
+int exec_interactive(DSState *dsState);
+
+static std::pair<DSErrorKind, int> loadRC(const DSStateHandle &handle, const char *rcfile) {
     if(rcfile == nullptr) {
         rcfile = "~/.ydshrc";
     }
 
     DSError e{};
-    int ret = DSState_loadModule(state, rcfile, DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
-    if(e.kind != DS_ERROR_KIND_SUCCESS) {
-        exit(ret);
-    }
+    int ret = DSState_loadModule(handle.get(), rcfile, DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
+    auto kind = e.kind;
     DSError_release(&e);
 
     // reset line num
-    DSState_setLineNum(state, 1);
+    DSState_setLineNum(handle.get(), 1);
+
+    return {kind, ret};
 }
 
 static const char *statusLogPath = nullptr;
@@ -73,13 +86,12 @@ static void writeStatusLog(DSError &error) {
 }
 
 template <typename Func, typename ...T>
-[[noreturn]]
-static void apply(Func func, DSState *state, T&& ... args) {
+static int apply(Func func, const DSStateHandle &handle, T&& ... args) {
     DSError error{};
-    int ret = func(state, std::forward<T>(args)..., &error);
+    int ret = func(handle.get(), std::forward<T>(args)..., &error);
     writeStatusLog(error);
     DSError_release(&error);
-    exit(ret);
+    return ret;
 }
 
 static void showFeature(FILE *fp) {
@@ -198,11 +210,11 @@ int main(int argc, char **argv) {
             break;
         case VERSION:
             fprintf(stdout, "%s\n", version());
-            exit(0);
+            return 0;
         case HELP:
             fprintf(stdout, "%s\n", version());
             parser.printOption(stdout);
-            exit(0);
+            return 0;
         case COMMAND:
             invocationKind = InvocationKind::FROM_STRING;
             evalText = result.arg();
@@ -220,7 +232,7 @@ int main(int argc, char **argv) {
             break;
         case FEATURE:
             showFeature(stdout);
-            exit(0);
+            return 0;
         case RC_FILE:
             rcfile = result.arg();
             break;
@@ -238,21 +250,21 @@ int main(int argc, char **argv) {
     if(result.error() != opt::END) {
         fprintf(stderr, "%s\n%s\n", result.formatError().c_str(), version());
         parser.printOption(stderr);
-        exit(1);
+        return 1;
     }
 
     INIT:
 
     // init state
-    DSState *state = DSState_createWithMode(mode);
-    DSState_setOption(state, option);
+    auto state = createState(mode);
+    DSState_setOption(state.get(), option);
     for(auto &e : dumpTarget) {
         if(e.path != nullptr) {
-            DSState_setDumpTarget(state, e.kind, e.path);
+            DSState_setDumpTarget(state.get(), e.kind, e.path);
         }
     }
     if(noAssert) {
-        DSState_unsetOption(state, DS_OPTION_ASSERT);
+        DSState_unsetOption(state.get(), DS_OPTION_ASSERT);
     }
 
 
@@ -266,33 +278,34 @@ int main(int argc, char **argv) {
     switch(invocationKind) {
     case InvocationKind::FROM_FILE: {
         const char *scriptName = shellArgs[0];
-        DSState_setShellName(state, scriptName);
-        DSState_setArguments(state, shellArgs + 1);
-        apply(DSState_loadAndEval, state, scriptName);
+        DSState_setShellName(state.get(), scriptName);
+        DSState_setArguments(state.get(), shellArgs + 1);
+        return apply(DSState_loadAndEval, state, scriptName);
     }
     case InvocationKind::FROM_STDIN: {
-        DSState_setArguments(state, shellArgs);
+        DSState_setArguments(state.get(), shellArgs);
 
         if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
-            apply(DSState_loadAndEval, state, nullptr);
+            return apply(DSState_loadAndEval, state, nullptr);
         } else {    // interactive mode
             if(!quiet) {
                 fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
             }
             if(userc) {
-                loadRC(state, rcfile);
+                auto ret = loadRC(state, rcfile);
+                if(ret.first != DS_ERROR_KIND_SUCCESS) {
+                    return ret.second;
+                }
             }
-            exec_interactive(state);
+            return exec_interactive(state.get());
         }
     }
     case InvocationKind::FROM_STRING: {
-        DSState_setShellName(state, shellArgs[0]);
-        DSState_setArguments(state, shellArgs[0] == nullptr ? nullptr : shellArgs + 1);
-        apply(DSState_eval, state, "(string)", evalText, strlen(evalText));
+        DSState_setShellName(state.get(), shellArgs[0]);
+        DSState_setArguments(state.get(), shellArgs[0] == nullptr ? nullptr : shellArgs + 1);
+        return apply(DSState_eval, state, "(string)", evalText, strlen(evalText));
     }
     case InvocationKind::BUILTIN:
-        int s = DSState_exec(state, shellArgs);
-        DSState_delete(&state);
-        exit(s);
+        return DSState_exec(state.get(), shellArgs);
     }
 }
