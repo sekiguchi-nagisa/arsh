@@ -458,17 +458,17 @@ TEST_F(CmdlineTest, toplevel) {
 
     // runtime error
     const char *msg = R"([runtime error]
-StackOverflowError: interpreter recursion depth reaches limit
+UnwrappingError: invalid value
     from (string):1 '<toplevel>()'
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = (9 as Any,); $a._0 = $a; $a"), 1, "", msg));
+            ds("--print-toplevel", "-c", "var a = (9, new Int!()); $a"), 1, "", msg));
 
     msg = R"([runtime error]
 cannot obtain string representation
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = (9 as Any,); $a._0 = $a; throw $a"), 1, "", msg));
+            ds("--print-toplevel", "-c", "var a = (9, new Int!()); throw $a"), 1, "", msg));
 
     // option type
     ASSERT_NO_FATAL_FAILURE(this->expect(
