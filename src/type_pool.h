@@ -82,43 +82,46 @@ private:
     private:
         static constexpr uint64_t TAG = 1UL << 63;
 
-        uint64_t value;
+        union {
+            MethodHandle *handle_;
+            int64_t index_;
+        };
 
     public:
         NON_COPYABLE(Value);
 
-        Value() : value(0) {}
+        Value() : handle_(nullptr) {}
 
-        explicit Value(uint64_t index) : value(index) {}
+        explicit Value(unsigned int index) : index_(index | TAG) {}
 
-        explicit Value(MethodHandle *ptr) : value(reinterpret_cast<uint64_t>(ptr) | TAG) {}
+        explicit Value(MethodHandle *ptr) : handle_(ptr) {}
 
-        Value(Value &&v) noexcept : value(v.value) {
-            v.value = 0;
+        Value(Value &&v) noexcept : handle_(v.handle_) {
+            v.handle_ = nullptr;
         }
 
         ~Value() {
-            if(this->initialized()) {
-                delete this->ptr();
+            if(this->index_ > 0) {
+                delete this->handle_;
             }
         }
 
-        Value &operator=(Value &&v) {
+        Value &operator=(Value &&v) noexcept {
             auto tmp(std::move(v));
-            std::swap(this->value, tmp.value);
+            std::swap(this->handle_, tmp.handle_);
             return *this;
         }
 
-        bool initialized() const {
-            return hasFlag(this->value, TAG);
+        explicit operator bool() const {
+            return this->index_ > 0;
         }
 
-        uint64_t index() const {
-            return this->value;
+        unsigned int index() const {
+            return ~TAG & this->index_;
         }
 
-        const MethodHandle *ptr() const {
-            return reinterpret_cast<MethodHandle *>(~TAG & this->value);
+        const MethodHandle *handle() const {
+            return this->handle_;
         }
     };
 

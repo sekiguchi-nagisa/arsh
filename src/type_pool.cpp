@@ -253,7 +253,7 @@ const MethodHandle* TypePool::lookupMethod(DSType &recvType, const std::string &
         Key key(*type, methodName);
         auto iter = this->methodMap.find(key);
         if(iter != this->methodMap.end()) {
-            if(!iter->second.initialized()) {
+            if(!iter->second) {
                 auto *types = type->isReifiedType() ? &static_cast<ReifiedType *>(type)->getElementTypes() : nullptr;
                 unsigned int methodIndex = iter->second.index();
                 unsigned int infoIndex = methodIndex - static_cast<BuiltinType *>(type)->getBaseIndex();
@@ -262,13 +262,13 @@ const MethodHandle* TypePool::lookupMethod(DSType &recvType, const std::string &
                 MethodHandle *handle = new MethodHandle(methodIndex);
                 if(handle->init(*this, info, types)) {
                     iter->second = Value(handle);
-                    assert(iter->second.initialized());
+                    assert(iter->second);
                 } else {
                     delete handle;
                     return nullptr;
                 }
             }
-            return iter->second.ptr();
+            return iter->second.handle();
         }
     }
     return nullptr;
