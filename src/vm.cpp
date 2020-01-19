@@ -1579,7 +1579,7 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
 DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
                             std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     assert(handle != nullptr);
-    assert(handle->getParamTypes().size() == args.first);
+    assert(handle->getParamSize() == args.first);
 
     GUARD_RECURSION(state);
 

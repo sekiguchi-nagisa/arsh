@@ -19,6 +19,7 @@
 
 #include <string>
 #include <vector>
+#include <cassert>
 
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
@@ -92,9 +93,15 @@ public:
     }
 };
 
+class TypePool;
+
 class MethodHandle {
-protected:
+private:
+    friend class TypePool;
+
     unsigned int methodIndex;
+
+    unsigned int paramSize;
 
     const DSType *returnType;
 
@@ -103,15 +110,24 @@ protected:
     /**
      * not contains receiver type
      */
-    std::vector<DSType *> paramTypes;
+    const DSType *paramTypes[];
+
+    MethodHandle(const DSType *recv, unsigned int index, const DSType *ret, unsigned int paramSize) :
+            methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {}
+
+    static MethodHandle *alloc(const DSType *recv, unsigned int index, const DSType *ret, unsigned int paramSize) {
+        void *ptr = malloc(sizeof(MethodHandle) + sizeof(const DSType *) * paramSize);
+        return new(ptr) MethodHandle(recv, index, ret, paramSize);
+    }
 
 public:
     NON_COPYABLE(MethodHandle);
 
-    MethodHandle(unsigned int methodIndex, const DSType *ret, const DSType *recv, std::vector<DSType *> &&param) :
-        methodIndex(methodIndex), returnType(ret), recvType(recv), paramTypes(std::move(param)) {}
+    static MethodHandle *create(TypePool &pool, const DSType &recv, const std::string &name, unsigned int index);
 
-    ~MethodHandle() = default;
+    static void operator delete(void *ptr) noexcept {   //NOLINT
+        free(ptr);
+    }
 
     unsigned int getMethodIndex() const {
         return this->methodIndex;
@@ -125,8 +141,13 @@ public:
         return *this->recvType;
     }
 
-    const std::vector<DSType *> &getParamTypes() const {
-        return this->paramTypes;
+    unsigned short getParamSize() const {
+        return this->paramSize;
+    }
+
+    const DSType &getParamTypeAt(unsigned int index) const {
+        assert(index < this->getParamSize());
+        return *this->paramTypes[index];
     }
 };
 

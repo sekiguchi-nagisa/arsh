@@ -345,11 +345,24 @@ TypeOrError TypeDecoder::decode() {
     }
 }
 
+static auto getMethodInfo(const DSType &recv, const std::string &name, unsigned int index) {
+    auto &type = static_cast<const BuiltinType &>(recv);
+    if(name.empty()) {  // constructor
+        return type.getNativeTypeInfo().getInitInfo();
+    } else {
+        unsigned int infoIndex = index - type.getBaseIndex();
+        return type.getNativeTypeInfo().getMethodInfo(infoIndex);
+    }
+}
+
 #define TRY2(E) ({ auto value = E; if(!value) { return nullptr; } value.take(); })
 
 // FIXME: error reporting
-static MethodHandle *newMethodHandle(TypePool &pool, unsigned int index, const NativeFuncInfo &info,
-                        const std::vector<DSType *> *types) {
+MethodHandle* MethodHandle::create(TypePool &pool, const DSType &recv,
+                                   const std::string &name, unsigned int index) {
+    auto *types = recv.isReifiedType() ? &static_cast<const ReifiedType &>(recv).getElementTypes() : nullptr;
+    auto info = getMethodInfo(recv, name, index);
+    assert(name == info.funcName);
     TypeDecoder decoder(pool, info.handleInfo, types);
 
     // check type parameter constraint
@@ -364,23 +377,15 @@ static MethodHandle *newMethodHandle(TypePool &pool, unsigned int index, const N
 
     auto *returnType = TRY2(decoder.decode());    // init return type
     const unsigned int paramSize = decoder.decodeNum();
+    assert(paramSize > 0);
     auto *recvType = TRY2(decoder.decode());
-    std::vector<DSType *> paramTypes(paramSize - 1);
+    assert(*recvType == recv);
+
+    std::unique_ptr<MethodHandle> handle(MethodHandle::alloc(recvType, index, returnType, paramSize - 1));
     for(unsigned int i = 1; i < paramSize; i++) {   // init param types
-        paramTypes[i - 1] = TRY2(decoder.decode());
+        handle->paramTypes[i - 1] = TRY2(decoder.decode());
     }
-    return new MethodHandle(index, returnType, recvType, std::move(paramTypes));
-}
-
-
-static auto getMethodInfo(const DSType &recv, const std::string &name, unsigned int index) {
-    auto &type = static_cast<const BuiltinType &>(recv);
-    if(name.empty()) {  // constructor
-        return type.getNativeTypeInfo().getInitInfo();
-    } else {
-        unsigned int infoIndex = index - type.getBaseIndex();
-        return type.getNativeTypeInfo().getMethodInfo(infoIndex);
-    }
+    return handle.release();
 }
 
 const MethodHandle* TypePool::lookupMethod(const DSType &recvType, const std::string &methodName) {
@@ -389,17 +394,13 @@ const MethodHandle* TypePool::lookupMethod(const DSType &recvType, const std::st
         auto iter = this->methodMap.find(key);
         if(iter != this->methodMap.end()) {
             if(!iter->second) {
-                auto *types = type->isReifiedType() ? &static_cast<const ReifiedType *>(type)->getElementTypes() : nullptr;
-                unsigned int methodIndex = iter->second.index();
-                auto info = getMethodInfo(*type, methodName, methodIndex);
-                assert(methodName == info.funcName);
-                auto *handle = newMethodHandle(*this, methodIndex, info, types);
-                if(handle) {
-                    iter->second = Value(handle);
-                    assert(iter->second);
-                } else {
+                auto *handle = MethodHandle::create(*this, *type, methodName, iter->second.index());
+                if(!handle) {
                     return nullptr;
                 }
+                assert(handle->getRecvType() == *type);
+                iter->second = Value(handle);
+                assert(iter->second);
             }
             return iter->second.handle();
         }

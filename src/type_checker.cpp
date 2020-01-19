@@ -314,14 +314,14 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
 void TypeChecker::checkTypeArgsNode(Node &node, const MethodHandle *handle, std::vector<Node *> &argNodes) {
     unsigned int argSize = argNodes.size();
     // check param size
-    unsigned int paramSize = handle->getParamTypes().size();
+    unsigned int paramSize = handle->getParamSize();
     if(paramSize != argSize) {
         RAISE_TC_ERROR(UnmatchParam, node, paramSize, argSize);
     }
 
     // check type each node
     for(unsigned int i = 0; i < paramSize; i++) {
-        this->checkTypeWithCoercion(*handle->getParamTypes()[i], argNodes[i]);
+        this->checkTypeWithCoercion(handle->getParamTypeAt(i), argNodes[i]);
     }
 }
 
