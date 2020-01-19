@@ -181,11 +181,6 @@ public:
     /**
      * return null, if has no constructor
      */
-    virtual MethodHandle *getConstructorHandle(TypePool &pool);
-
-    /**
-     * return null, if has no constructor
-     */
     virtual const DSCode *getConstructor() const;
 
     /**
@@ -322,11 +317,6 @@ protected:
     const native_type_info_t info;
 
     /**
-     * may be null, if has no constructor.
-     */
-    MethodHandle *constructorHandle{nullptr};
-
-    /**
      * may be null, if has no constructor
      */
     const DSCode *constructor{nullptr};
@@ -336,9 +326,8 @@ protected:
 public:
     BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute);
 
-    ~BuiltinType() override;
+    ~BuiltinType() = default;
 
-    MethodHandle *getConstructorHandle(TypePool &pool) override;
     const DSCode *getConstructor() const override;
 
     unsigned int getMethodSize() const override;
@@ -352,9 +341,6 @@ public:
     unsigned int getBaseIndex() const {
         return this->superType != nullptr ? this->superType->getMethodSize() : 0;
     }
-
-protected:
-    virtual bool initMethodHandle(MethodHandle *handle, TypePool &pool, const NativeFuncInfo &info);
 };
 
 /**
@@ -381,9 +367,6 @@ public:
     const std::vector<DSType *> &getElementTypes() const {
         return this->elementTypes;
     }
-
-protected:
-    bool initMethodHandle(MethodHandle *handle, TypePool &pool, const NativeFuncInfo &info) override;
 };
 
 
@@ -407,16 +390,10 @@ public:
 };
 
 class ErrorType : public DSType {
-private:
-    MethodHandle *constructorHandle{nullptr};
-
 public:
     ErrorType(unsigned int id, DSType *superType) :
             DSType(id, superType, TypeAttr::EXTENDIBLE) {}
 
-    ~ErrorType() override;
-
-    MethodHandle *getConstructorHandle(TypePool &pool) override;
     const DSCode *getConstructor() const override;
 
     /**

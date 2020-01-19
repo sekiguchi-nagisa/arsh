@@ -34,10 +34,6 @@ const NativeCode *getNativeCode(unsigned int index);
 // ##     DSType     ##
 // ####################
 
-MethodHandle *DSType::getConstructorHandle(TypePool &) {
-    return nullptr;
-}
-
 const DSCode *DSType::getConstructor() const {
     return nullptr;
 }
@@ -135,20 +131,6 @@ BuiltinType::BuiltinType(unsigned int id, DSType *superType, native_type_info_t 
     }
 }
 
-BuiltinType::~BuiltinType() {
-    delete this->constructorHandle;
-}
-
-MethodHandle *BuiltinType::getConstructorHandle(TypePool &pool) {
-    if(this->constructorHandle == nullptr && this->info.constructorSize != 0) {
-        this->constructorHandle = new MethodHandle(0);
-        if(!this->initMethodHandle(this->constructorHandle, pool, this->info.getInitInfo())) {
-            return nullptr;
-        }
-    }
-    return this->constructorHandle;
-}
-
 const DSCode *BuiltinType::getConstructor() const {
     return this->constructor;
 }
@@ -168,18 +150,6 @@ void BuiltinType::copyAllMethodRef(std::vector<const DSCode *> &methodTable) {
     for(unsigned int i = 0; i < size; i++) {
         methodTable[i] = this->methodTable[i];
     }
-}
-
-bool BuiltinType::initMethodHandle(MethodHandle *handle, TypePool &pool, const NativeFuncInfo &info) {
-    return handle->init(pool, info);
-}
-
-// #########################
-// ##     ReifiedType     ##
-// #########################
-
-bool ReifiedType::initMethodHandle(MethodHandle *handle, TypePool &pool, const NativeFuncInfo &info) {
-    return handle->init(pool, info, &this->elementTypes);
 }
 
 // #######################
@@ -217,20 +187,6 @@ FieldHandle *TupleType::lookupFieldHandle(SymbolTable &symbolTable, const std::s
 // #######################
 // ##     ErrorType     ##
 // #######################
-
-ErrorType::~ErrorType() {
-    delete this->constructorHandle;
-}
-
-MethodHandle *ErrorType::getConstructorHandle(TypePool &pool) {
-    if(this->constructorHandle == nullptr) {
-        this->constructorHandle = new MethodHandle(0);
-        auto info = static_cast<BuiltinType *>(this->superType)->getNativeTypeInfo().getInitInfo();
-        this->constructorHandle->init(pool, info);
-        this->constructorHandle->setRecvType(*this);
-    }
-    return this->constructorHandle;
-}
 
 const DSCode *ErrorType::getConstructor() const {
     return this->superType->getConstructor();

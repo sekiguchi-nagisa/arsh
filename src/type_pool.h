@@ -198,7 +198,11 @@ public:
         return pair.second;
     }
 
-    const MethodHandle *lookupMethod(DSType &recvType, const std::string &methodName);
+    const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
+
+    const MethodHandle *lookupConstructor(const DSType &revType) {
+        return this->lookupMethod(revType, "");
+    }
 
     void commit() {
         this->oldIDCount = this->typeTable.size();
@@ -266,7 +270,9 @@ private:
 
     void initErrorType(TYPE t, const char *typeName);
 
-    void registerHandle(const BuiltinType &type);
+    void registerHandle(const BuiltinType &recv, const char *name, unsigned int index);
+
+    void registerHandles(const BuiltinType &type);
 };
 
 

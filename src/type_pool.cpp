@@ -204,7 +204,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
         auto &reified = this->newType<ReifiedType>(
                 std::move(typeName),
                 typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
-        this->registerHandle(reified);
+        this->registerHandles(reified);
         type = &reified;
     }
     return Ok(type);
@@ -225,7 +225,7 @@ TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
         auto &tuple = this->newType<TupleType>(
                 std::move(typeName),
                 this->tupleTemplate.getInfo(), superType, std::move(elementTypes));
-        this->registerHandle(tuple);
+        this->registerHandles(tuple);
         type = &tuple;
     }
     return Ok(type);
@@ -248,16 +248,25 @@ TypeOrError TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &
     return Ok(type);
 }
 
-const MethodHandle* TypePool::lookupMethod(DSType &recvType, const std::string &methodName) {
+static auto getMethodInfo(const DSType &recv, const std::string &name, unsigned int index) {
+    auto &type = static_cast<const BuiltinType &>(recv);
+    if(name.empty()) {  // constructor
+        return type.getNativeTypeInfo().getInitInfo();
+    } else {
+        unsigned int infoIndex = index - type.getBaseIndex();
+        return type.getNativeTypeInfo().getMethodInfo(infoIndex);
+    }
+}
+
+const MethodHandle* TypePool::lookupMethod(const DSType &recvType, const std::string &methodName) {
     for(auto *type = &recvType; type != nullptr; type = type->getSuperType()) {
         Key key(*type, methodName);
         auto iter = this->methodMap.find(key);
         if(iter != this->methodMap.end()) {
             if(!iter->second) {
-                auto *types = type->isReifiedType() ? &static_cast<ReifiedType *>(type)->getElementTypes() : nullptr;
+                auto *types = type->isReifiedType() ? &static_cast<const ReifiedType *>(type)->getElementTypes() : nullptr;
                 unsigned int methodIndex = iter->second.index();
-                unsigned int infoIndex = methodIndex - static_cast<BuiltinType *>(type)->getBaseIndex();
-                auto info = static_cast<BuiltinType *>(type)->getNativeTypeInfo().getMethodInfo(infoIndex);
+                auto info = getMethodInfo(*type, methodName, methodIndex);
                 assert(methodName == info.funcName);
                 MethodHandle *handle = new MethodHandle(methodIndex);
                 if(handle->init(*this, info, types)) {
@@ -379,7 +388,7 @@ void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool extendib
     // create and register type
     auto &type = this->newType<BuiltinType>(
             std::string(typeName), super, info, extendible ? TypeAttr::EXTENDIBLE : TypeAttr());
-    this->registerHandle(type);
+    this->registerHandles(type);
     (void) t;
     assert(type.is(t));
 }
@@ -397,16 +406,25 @@ void TypePool::initErrorType(TYPE t, const char *typeName) {
     assert(type.is(t));
 }
 
-void TypePool::registerHandle(const BuiltinType &type) {
+void TypePool::registerHandle(const BuiltinType &recv, const char *name, unsigned int index) {
+    auto ret = this->methodMap.emplace(Key(recv, strdup(name)), Value(index));
+    (void) ret;
+    assert(ret.second);
+}
+
+void TypePool::registerHandles(const BuiltinType &type) {
     // init method handle
     unsigned int baseIndex = type.getBaseIndex();
     auto info = type.getNativeTypeInfo();
     for(unsigned int i = 0; i < info.methodSize; i++) {
         const NativeFuncInfo *funcInfo = &info.getMethodInfo(i);
         unsigned int methodIndex = baseIndex + i;
-        auto ret = this->methodMap.emplace(Key(type, strdup(funcInfo->funcName)), Value(methodIndex));
-        (void) ret;
-        assert(ret.second);
+        this->registerHandle(type, funcInfo->funcName, methodIndex);
+    }
+
+    // init constructor handle
+    if(info.constructorSize != 0) {
+        this->registerHandle(type, info.getInitInfo().funcName, 0);
     }
 }
 

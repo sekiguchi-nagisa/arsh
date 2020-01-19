@@ -468,7 +468,7 @@ public:
 
     const FieldHandle *lookupField(DSType &recvType, const std::string &fieldName);
 
-    const MethodHandle *lookupMethod(DSType &recvType, const std::string &methodName) {
+    const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName) {
         return this->typePool.lookupMethod(recvType, methodName);
     }
 
@@ -480,8 +480,8 @@ public:
         return this->lookupMethod(static_cast<unsigned int>(type), methodName);
     }
 
-    const MethodHandle *lookupConstructor(DSType &recvType) {
-        return recvType.getConstructorHandle(this->typePool);
+    const MethodHandle *lookupConstructor(const DSType &recvType) {
+        return this->typePool.lookupConstructor(recvType);
     }
 
     /**
