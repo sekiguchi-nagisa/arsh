@@ -34,7 +34,7 @@ const NativeCode *getNativeCode(unsigned int index);
 // ##     DSType     ##
 // ####################
 
-MethodHandle *DSType::getConstructorHandle(SymbolTable &) {
+MethodHandle *DSType::getConstructorHandle(TypePool &) {
     return nullptr;
 }
 
@@ -51,10 +51,6 @@ unsigned int DSType::getMethodSize() const {
 }
 
 FieldHandle *DSType::lookupFieldHandle(SymbolTable &, const std::string &) {
-    return nullptr;
-}
-
-MethodHandle *DSType::lookupMethodHandle(SymbolTable &, const std::string &) {
     return nullptr;
 }
 
@@ -90,15 +86,6 @@ int DSType::getIntPrecision() const {
     }
 }
 
-
-// ##########################
-// ##     FunctionType     ##
-// ##########################
-
-MethodHandle *FunctionType::lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) {
-    return this->superType->lookupMethodHandle(symbolTable, methodName);
-}
-
 // ################################
 // ##     native_type_info_t     ##
 // ################################
@@ -128,23 +115,17 @@ static const NativeCode *getCode(native_type_info_t info) {
 // #########################
 
 BuiltinType::BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute) :
-        DSType(id, superType, attribute),
-        info(info), methodTable(this->getMethodSize()) {
+        DSType(id, superType, attribute), info(info), methodTable(this->getMethodSize()) {
 
     // copy super type methodRef to method table
     if(this->superType != nullptr) {
         this->superType->copyAllMethodRef(this->methodTable);
     }
 
-    // init method handle
-    unsigned int baseIndex = superType != nullptr ? superType->getMethodSize() : 0;
+    // set to method table
+    unsigned int baseIndex = this->getBaseIndex();
     for(unsigned int i = 0; i < info.methodSize; i++) {
-        const NativeFuncInfo *funcInfo = &info.getMethodInfo(i);
         unsigned int methodIndex = baseIndex + i;
-        auto *handle = new MethodHandle(methodIndex);
-        this->methodHandleMap.insert(std::make_pair(std::string(funcInfo->funcName), handle));
-
-        // set to method table
         this->methodTable[methodIndex] = getCode(this->info, i);
     }
 
@@ -156,16 +137,12 @@ BuiltinType::BuiltinType(unsigned int id, DSType *superType, native_type_info_t 
 
 BuiltinType::~BuiltinType() {
     delete this->constructorHandle;
-
-    for(auto &pair : this->methodHandleMap) {
-        delete pair.second;
-    }
 }
 
-MethodHandle *BuiltinType::getConstructorHandle(SymbolTable &symbolTable) {
+MethodHandle *BuiltinType::getConstructorHandle(TypePool &pool) {
     if(this->constructorHandle == nullptr && this->info.constructorSize != 0) {
         this->constructorHandle = new MethodHandle(0);
-        if(!this->initMethodHandle(this->constructorHandle, symbolTable, this->info.getInitInfo())) {
+        if(!this->initMethodHandle(this->constructorHandle, pool, this->info.getInitInfo())) {
             return nullptr;
         }
     }
@@ -174,23 +151,6 @@ MethodHandle *BuiltinType::getConstructorHandle(SymbolTable &symbolTable) {
 
 const DSCode *BuiltinType::getConstructor() const {
     return this->constructor;
-}
-
-MethodHandle *BuiltinType::lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) {
-    auto iter = this->methodHandleMap.find(methodName);
-    if(iter == this->methodHandleMap.end()) {
-        return this->superType != nullptr ? this->superType->lookupMethodHandle(symbolTable, methodName) : nullptr;
-    }
-
-    MethodHandle *handle = iter->second;
-    if(!handle->initialized()) { // init handle
-        unsigned int baseIndex = this->superType != nullptr ? this->superType->getMethodSize() : 0;
-        unsigned int infoIndex = handle->getMethodIndex() - baseIndex;
-        if(!this->initMethodHandle(handle, symbolTable, this->info.getMethodInfo(infoIndex))) {
-            return nullptr;
-        }
-    }
-    return handle;
 }
 
 unsigned int BuiltinType::getMethodSize() const {
@@ -210,16 +170,16 @@ void BuiltinType::copyAllMethodRef(std::vector<const DSCode *> &methodTable) {
     }
 }
 
-bool BuiltinType::initMethodHandle(MethodHandle *handle, SymbolTable &symbolTable, const NativeFuncInfo &info) {
-    return handle->init(symbolTable, info);
+bool BuiltinType::initMethodHandle(MethodHandle *handle, TypePool &pool, const NativeFuncInfo &info) {
+    return handle->init(pool, info);
 }
 
 // #########################
 // ##     ReifiedType     ##
 // #########################
 
-bool ReifiedType::initMethodHandle(MethodHandle *handle, SymbolTable &symbolTable, const NativeFuncInfo &info) {
-    return handle->init(symbolTable, info, &this->elementTypes);
+bool ReifiedType::initMethodHandle(MethodHandle *handle, TypePool &pool, const NativeFuncInfo &info) {
+    return handle->init(pool, info, &this->elementTypes);
 }
 
 // #######################
@@ -262,11 +222,11 @@ ErrorType::~ErrorType() {
     delete this->constructorHandle;
 }
 
-MethodHandle *ErrorType::getConstructorHandle(SymbolTable &symbolTable) {
+MethodHandle *ErrorType::getConstructorHandle(TypePool &pool) {
     if(this->constructorHandle == nullptr) {
         this->constructorHandle = new MethodHandle(0);
         auto info = static_cast<BuiltinType *>(this->superType)->getNativeTypeInfo().getInitInfo();
-        this->constructorHandle->init(symbolTable, info);
+        this->constructorHandle->init(pool, info);
         this->constructorHandle->setRecvType(*this);
     }
     return this->constructorHandle;
@@ -282,10 +242,6 @@ unsigned int ErrorType::getFieldSize() const {
 
 FieldHandle *ErrorType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) {
     return this->superType->lookupFieldHandle(symbolTable, fieldName);
-}
-
-MethodHandle *ErrorType::lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) {
-    return this->superType->lookupMethodHandle(symbolTable, methodName);
 }
 
 std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {

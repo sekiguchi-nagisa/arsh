@@ -110,6 +110,10 @@ TypePool::~TypePool() {
     for(auto &e : this->typeTable) {
         delete e;
     }
+
+    for(auto &e : this->methodMap) {
+        const_cast<Key&>(e.first).dispose();
+    }
 }
 
 DSType *TypePool::addType(std::string &&typeName, DSType *type) {
@@ -147,6 +151,16 @@ void TypePool::abort() {
 
     assert(this->oldIDCount == this->typeTable.size());
     assert(this->oldIDCount == this->nameTable.size());
+
+    // abort method handle
+//    for(auto iter = this->methodMap.begin(); iter != this->methodMap.end(); ) {
+//        if(iter->first.id >= this->oldIDCount) {
+//            const_cast<Key&>(iter->first).dispose();
+//            iter = this->methodMap.erase(iter);
+//        } else {
+//            ++iter;
+//        }
+//    }
 }
 
 TypeTempOrError TypePool::getTypeTemplate(const std::string &typeName) const {
@@ -187,9 +201,11 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     DSType *type = this->get(typeName);
     if(type == nullptr) {
         DSType *superType = hasFlag(attr, TypeAttr::OPTION_TYPE) ? nullptr : this->get(TYPE::Any);
-        type = &this->newType<ReifiedType>(
+        auto &reified = this->newType<ReifiedType>(
                 std::move(typeName),
                 typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
+        this->registerHandle(reified);
+        type = &reified;
     }
     return Ok(type);
 }
@@ -206,9 +222,11 @@ TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
     DSType *type = this->get(typeName);
     if(type == nullptr) {
         DSType *superType = this->get(TYPE::Any);
-        type = &this->newType<TupleType>(
+        auto &tuple = this->newType<TupleType>(
                 std::move(typeName),
                 this->tupleTemplate.getInfo(), superType, std::move(elementTypes));
+        this->registerHandle(tuple);
+        type = &tuple;
     }
     return Ok(type);
 }
@@ -228,6 +246,32 @@ TypeOrError TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &
     }
     assert(type->isFuncType());
     return Ok(type);
+}
+
+const MethodHandle* TypePool::lookupMethod(DSType &recvType, const std::string &methodName) {
+    for(auto *type = &recvType; type != nullptr; type = type->getSuperType()) {
+        Key key(*type, methodName);
+        auto iter = this->methodMap.find(key);
+        if(iter != this->methodMap.end()) {
+            if(!iter->second.initialized()) {
+                auto *types = type->isReifiedType() ? &static_cast<ReifiedType *>(type)->getElementTypes() : nullptr;
+                unsigned int methodIndex = iter->second.index();
+                unsigned int infoIndex = methodIndex - static_cast<BuiltinType *>(type)->getBaseIndex();
+                auto info = static_cast<BuiltinType *>(type)->getNativeTypeInfo().getMethodInfo(infoIndex);
+                assert(methodName == info.funcName);
+                MethodHandle *handle = new MethodHandle(methodIndex);
+                if(handle->init(*this, info, types)) {
+                    iter->second = Value(handle);
+                    assert(iter->second.initialized());
+                } else {
+                    delete handle;
+                    return nullptr;
+                }
+            }
+            return iter->second.ptr();
+        }
+    }
+    return nullptr;
 }
 
 std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
@@ -330,23 +374,12 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t, const std::vector
     return Ok(static_cast<DSType *>(nullptr));
 }
 
-
-void TypePool::initBuiltinType(TYPE t, const char *typeName, bool extendable,
-                                  native_type_info_t info) {
-    // create and register type
-    auto attribute = extendable ? TypeAttr::EXTENDIBLE : TypeAttr();
-    auto &type = this->newType<BuiltinType>(std::string(typeName), nullptr, info, attribute);
-    (void) type;
-    (void) t;
-    assert(type.is(t));
-}
-
-void TypePool::initBuiltinType(TYPE t, const char *typeName, bool extendable,
-                                  TYPE super, native_type_info_t info) {
+void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool extendible, ydsh::DSType *super,
+                               ydsh::native_type_info_t info) {
     // create and register type
     auto &type = this->newType<BuiltinType>(
-            std::string(typeName), this->get(super), info, extendable ? TypeAttr::EXTENDIBLE : TypeAttr());
-    (void) type;
+            std::string(typeName), super, info, extendible ? TypeAttr::EXTENDIBLE : TypeAttr());
+    this->registerHandle(type);
     (void) t;
     assert(type.is(t));
 }
@@ -362,6 +395,19 @@ void TypePool::initErrorType(TYPE t, const char *typeName) {
     (void) type;
     (void) t;
     assert(type.is(t));
+}
+
+void TypePool::registerHandle(const BuiltinType &type) {
+    // init method handle
+    unsigned int baseIndex = type.getBaseIndex();
+    auto info = type.getNativeTypeInfo();
+    for(unsigned int i = 0; i < info.methodSize; i++) {
+        const NativeFuncInfo *funcInfo = &info.getMethodInfo(i);
+        unsigned int methodIndex = baseIndex + i;
+        auto ret = this->methodMap.emplace(Key(type, strdup(funcInfo->funcName)), Value(methodIndex));
+        (void) ret;
+        assert(ret.second);
+    }
 }
 
 } // namespace ydsh

@@ -145,9 +145,9 @@ TypeOrError TypeDecoder::decode() {
 #define TRY2(E) ({ auto value = E; if(!value) { return false; } value.take(); })
 
 // FIXME: error reporting
-bool MethodHandle::init(SymbolTable &symbolTable, const NativeFuncInfo &info,
+bool MethodHandle::init(TypePool &pool, const NativeFuncInfo &info,
                         const std::vector<DSType *> *types) {
-    TypeDecoder decoder(symbolTable.getTypePool(), info.handleInfo, types);
+    TypeDecoder decoder(pool, info.handleInfo, types);
 
     // check type parameter constraint
     const unsigned int constraintSize = decoder.decodeNum();

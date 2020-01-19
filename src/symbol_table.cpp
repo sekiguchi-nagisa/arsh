@@ -324,8 +324,4 @@ const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string 
     return recvType.lookupFieldHandle(*this, fieldName);    //FIXME:
 }
 
-const MethodHandle *SymbolTable::lookupMethod(DSType &recvType, const std::string &methodName) {
-    return recvType.lookupMethodHandle(*this, methodName);  //FIXME:
-}
-
 } // namespace ydsh

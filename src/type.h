@@ -38,6 +38,7 @@ class DSValue;
 class DSCode;
 using native_func_t = DSValue (*)(DSState &);
 
+class TypePool;
 class SymbolTable;
 
 enum class TYPE : unsigned int {
@@ -180,7 +181,7 @@ public:
     /**
      * return null, if has no constructor
      */
-    virtual MethodHandle *getConstructorHandle(SymbolTable &symbolTable);
+    virtual MethodHandle *getConstructorHandle(TypePool &pool);
 
     /**
      * return null, if has no constructor
@@ -201,11 +202,6 @@ public:
      * return null, if has no field
      */
     virtual FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName);
-
-    /**
-     * return null, if has no field.
-     */
-    virtual MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName);
 
     bool operator==(const DSType &type) const {
         return (unsigned long) this == (unsigned long) &type;
@@ -273,11 +269,6 @@ public:
     const std::vector<DSType *> &getParamTypes() const {
         return this->paramTypes;
     }
-
-    /**
-     * lookup from super type
-     */
-    MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
 };
 
 /**
@@ -340,7 +331,6 @@ protected:
      */
     const DSCode *constructor{nullptr};
 
-    std::unordered_map<std::string, MethodHandle *> methodHandleMap;
     std::vector<const DSCode *> methodTable;
 
 public:
@@ -348,9 +338,8 @@ public:
 
     ~BuiltinType() override;
 
-    MethodHandle *getConstructorHandle(SymbolTable &symbolTable) override;
+    MethodHandle *getConstructorHandle(TypePool &pool) override;
     const DSCode *getConstructor() const override;
-    MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
 
     unsigned int getMethodSize() const override;
     const DSCode *getMethodRef(unsigned int methodIndex) const override;
@@ -360,8 +349,12 @@ public:
         return this->info;
     }
 
+    unsigned int getBaseIndex() const {
+        return this->superType != nullptr ? this->superType->getMethodSize() : 0;
+    }
+
 protected:
-    virtual bool initMethodHandle(MethodHandle *handle, SymbolTable &symbolTable, const NativeFuncInfo &info);
+    virtual bool initMethodHandle(MethodHandle *handle, TypePool &pool, const NativeFuncInfo &info);
 };
 
 /**
@@ -390,7 +383,7 @@ public:
     }
 
 protected:
-    bool initMethodHandle(MethodHandle *handle, SymbolTable &symbolTable, const NativeFuncInfo &info) override;
+    bool initMethodHandle(MethodHandle *handle, TypePool &pool, const NativeFuncInfo &info) override;
 };
 
 
@@ -423,7 +416,7 @@ public:
 
     ~ErrorType() override;
 
-    MethodHandle *getConstructorHandle(SymbolTable &symbolTable) override;
+    MethodHandle *getConstructorHandle(TypePool &pool) override;
     const DSCode *getConstructor() const override;
 
     /**
@@ -432,7 +425,6 @@ public:
     unsigned int getFieldSize() const override;
 
     FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
-    MethodHandle *lookupMethodHandle(SymbolTable &symbolTable, const std::string &methodName) override;
 };
 
 /**

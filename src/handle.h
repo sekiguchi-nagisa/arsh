@@ -28,6 +28,7 @@
 namespace ydsh {
 
 class DSType;
+class TypePool;
 struct NativeFuncInfo;
 
 #define EACH_FIELD_ATTR(OP) \
@@ -133,7 +134,7 @@ public:
     /**
      * initialize internal types.
      */
-    bool init(SymbolTable &symbolTable, const NativeFuncInfo &info,
+    bool init(TypePool &pool, const NativeFuncInfo &info,
               const std::vector<DSType *> *types = nullptr);
 
     /**

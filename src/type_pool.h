@@ -22,6 +22,7 @@
 #include "constant.h"
 #include "tlerror.h"
 #include "misc/buffer.hpp"
+#include "misc/string_ref.hpp"
 #include "misc/result.hpp"
 
 namespace ydsh {
@@ -46,6 +47,82 @@ private:
      * for type template
      */
     std::unordered_map<std::string, const TypeTemplate *> templateMap;
+
+    struct Key {
+        unsigned int id;
+        StringRef ref;
+
+        Key(const DSType &recv, StringRef ref) : id(recv.getTypeID()), ref(ref) {}
+
+        void dispose() {
+            free(const_cast<char *>(this->ref.take()));
+        }
+
+        bool operator==(const Key &key) const {
+            return this->id == key.id && this->ref == key.ref;
+        }
+    };
+
+    struct Hash {
+        std::size_t operator()(const Key &key) const {
+            auto hash = FNVHash64::compute(key.ref.begin(), key.ref.end());
+            union {
+                char b[4];
+                unsigned int i;
+            } wrap;
+            wrap.i = key.id;
+            for(auto b : wrap.b) {
+                FNVHash64::update(hash, b);
+            }
+            return hash;
+        }
+    };
+
+    class Value {
+    private:
+        static constexpr uint64_t TAG = 1UL << 63;
+
+        uint64_t value;
+
+    public:
+        NON_COPYABLE(Value);
+
+        Value() : value(0) {}
+
+        explicit Value(uint64_t index) : value(index) {}
+
+        explicit Value(MethodHandle *ptr) : value(reinterpret_cast<uint64_t>(ptr) | TAG) {}
+
+        Value(Value &&v) noexcept : value(v.value) {
+            v.value = 0;
+        }
+
+        ~Value() {
+            if(this->initialized()) {
+                delete this->ptr();
+            }
+        }
+
+        Value &operator=(Value &&v) {
+            auto tmp(std::move(v));
+            std::swap(this->value, tmp.value);
+            return *this;
+        }
+
+        bool initialized() const {
+            return hasFlag(this->value, TAG);
+        }
+
+        uint64_t index() const {
+            return this->value;
+        }
+
+        const MethodHandle *ptr() const {
+            return reinterpret_cast<MethodHandle *>(~TAG & this->value);
+        }
+    };
+
+    std::unordered_map<Key, Value, Hash> methodMap;
 
 public:
     NON_COPYABLE(TypePool);
@@ -118,6 +195,8 @@ public:
         return pair.second;
     }
 
+    const MethodHandle *lookupMethod(DSType &recvType, const std::string &methodName);
+
     void commit() {
         this->oldIDCount = this->typeTable.size();
     }
@@ -169,14 +248,22 @@ private:
      */
     TypeOrError checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
 
-    void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info);
+    void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info) {
+        this->initBuiltinType(t, typeName, extendible, nullptr, info);
+    }
 
-    void initBuiltinType(TYPE t, const char *typeName, bool extendible, TYPE super, native_type_info_t info);
+    void initBuiltinType(TYPE t, const char *typeName, bool extendible, TYPE super, native_type_info_t info) {
+        this->initBuiltinType(t, typeName, extendible, this->get(super), info);
+    }
+
+    void initBuiltinType(TYPE t, const char *typeName, bool extendible, DSType *super, native_type_info_t info);
 
     void initTypeTemplate(TypeTemplate &temp, const char *typeName,
                           std::vector<DSType*> &&elementTypes, native_type_info_t info);
 
     void initErrorType(TYPE t, const char *typeName);
+
+    void registerHandle(const BuiltinType &type);
 };
 
 
