@@ -99,7 +99,7 @@ protected:
     /**
      * initial value is null.
      */
-    DSType *type{nullptr};
+    const DSType *type{nullptr};
 
     Node(NodeKind kind, Token token) : nodeKind(kind), token(token) { }
 
@@ -138,7 +138,7 @@ public:
         }
     }
 
-    void setType(DSType &type) {
+    void setType(const DSType &type) {
         this->type = &type;
     }
 
@@ -146,7 +146,7 @@ public:
      * must not call it before type checking
      */
     DSType &getType() const {
-        return *this->type;
+        return const_cast<DSType&>(*this->type);
     }
 
     bool isUntyped() const {
@@ -734,7 +734,7 @@ public:
  * @param type
  * @return
  */
-TypeOpNode *newTypedCastNode(Node *targetNode, DSType &type);
+TypeOpNode *newTypedCastNode(Node *targetNode, const DSType &type);
 
 /**
  * for function object apply or method call

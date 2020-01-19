@@ -211,7 +211,7 @@ protected:
      * if requiredType is not equivalent to node type, throw exception.
      * return resolved type.
      */
-    DSType &checkType(DSType &requiredType, Node *targetNode) {
+    DSType &checkType(const DSType &requiredType, Node *targetNode) {
         return this->checkType(&requiredType, targetNode, nullptr);
     }
 
@@ -234,7 +234,7 @@ protected:
      * and if unacceptableType is equivalent to node type, throw exception.
      * return resolved type.
      */
-    DSType &checkType(DSType *requiredType, Node *targetNode, DSType *unacceptableType) {
+    DSType &checkType(const DSType *requiredType, Node *targetNode, const DSType *unacceptableType) {
         CoercionKind kind = CoercionKind::NOP;
         return this->checkType(requiredType, targetNode, unacceptableType, kind);
     }
@@ -242,14 +242,14 @@ protected:
     /**
      * root method of checkType
      */
-    DSType &checkType(DSType *requiredType, Node *targetNode,
-                      DSType *unacceptableType, CoercionKind &kind);
+    DSType &checkType(const DSType *requiredType, Node *targetNode,
+                      const DSType *unacceptableType, CoercionKind &kind);
 
     void checkTypeWithCurrentScope(BlockNode *blockNode) {
         this->checkTypeWithCurrentScope(&this->symbolTable.get(TYPE::Void), blockNode);
     }
 
-    void checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blockNode);
+    void checkTypeWithCurrentScope(const DSType *requiredType, BlockNode *blockNode);
 
     /**
      * after type checking.
@@ -258,15 +258,15 @@ protected:
      * wrap targetNode with CastNode.
      * if requiredType is VoidType, wrap targetNode with CastNode
      */
-    void checkTypeWithCoercion(DSType &requiredType, Node * &targetNode);
+    void checkTypeWithCoercion(const DSType &requiredType, Node * &targetNode);
 
     /**
      * for int type conversion.
      * return true if allow target type to required type implicit cast.
      */
-    bool checkCoercion(const DSType &requiredType, DSType &targetType);
+    bool checkCoercion(const DSType &requiredType, const DSType &targetType);
 
-    void resolveCoercion(DSType &requiredType, Node * &targetNode) {
+    void resolveCoercion(const DSType &requiredType, Node * &targetNode) {
         targetNode = newTypedCastNode(targetNode, requiredType);
         this->resolveCastOp(*static_cast<TypeOpNode *>(targetNode));
     }

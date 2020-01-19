@@ -104,8 +104,8 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
     return Ok(static_cast<DSType *>(nullptr)); // for suppressing gcc warning (normally unreachable).
 }
 
-DSType &TypeChecker::checkType(DSType *requiredType, Node *targetNode,
-                               DSType *unacceptableType, CoercionKind &kind) {
+DSType &TypeChecker::checkType(const DSType *requiredType, Node *targetNode,
+                               const DSType *unacceptableType, CoercionKind &kind) {
     /**
      * if target node is expr node and type is null,
      * try type check.
@@ -160,7 +160,7 @@ DSType& TypeChecker::checkTypeAsSomeExpr(Node *targetNode) {
     return type;
 }
 
-void TypeChecker::checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blockNode) {
+void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNode *blockNode) {
     DSType *blockType = &this->symbolTable.get(TYPE::Void);
     for(auto iter = blockNode->refNodes().begin(); iter != blockNode->refNodes().end(); ++iter) {
         auto &targetNode = *iter;
@@ -193,7 +193,7 @@ void TypeChecker::checkTypeWithCurrentScope(DSType *requiredType, BlockNode *blo
     blockNode->setType(*blockType);
 }
 
-void TypeChecker::checkTypeWithCoercion(DSType &requiredType, Node * &targetNode) {
+void TypeChecker::checkTypeWithCoercion(const DSType &requiredType, Node * &targetNode) {
     CoercionKind kind = CoercionKind::INVALID_COERCION;
     this->checkType(&requiredType, targetNode, nullptr, kind);
     if(kind != CoercionKind::INVALID_COERCION && kind != CoercionKind::NOP) {
@@ -201,7 +201,7 @@ void TypeChecker::checkTypeWithCoercion(DSType &requiredType, Node * &targetNode
     }
 }
 
-bool TypeChecker::checkCoercion(const DSType &requiredType, DSType &targetType) {
+bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &targetType) {
     if(requiredType.isVoidType()) {  // pop stack top
         return true;
     }
@@ -299,16 +299,16 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     }
     recvNode.setAttribute(*handle);
 
-    DSType *type = handle->getType();
-    if(!type->isFuncType()) {
-        if(type->is(TYPE::Func)) {
+    auto &type = handle->getType();
+    if(!type.isFuncType()) {
+        if(type.is(TYPE::Func)) {
             RAISE_TC_ERROR(NotCallable, recvNode);
         } else {
             RAISE_TC_ERROR(Required, recvNode, this->symbolTable.getTypeName(this->symbolTable.get(TYPE::Func)),
-                           this->symbolTable.getTypeName(*type));
+                           this->symbolTable.getTypeName(type));
         }
     }
-    return static_cast<FunctionType *>(type);
+    return static_cast<FunctionType *>(const_cast<DSType *>(&type));
 }
 
 void TypeChecker::checkTypeArgsNode(Node &node, const MethodHandle *handle, std::vector<Node *> &argNodes) {
@@ -332,7 +332,7 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
         return false;
     }
     node.setAttribute(*handle);
-    node.setType(*handle->getType());
+    node.setType(handle->getType());
     return true;
 }
 
@@ -523,7 +523,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
     }
 
     node.setAttribute(*handle);
-    node.setType(*handle->getType());
+    node.setType(handle->getType());
 }
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
@@ -631,7 +631,7 @@ void TypeChecker::checkTypeAsMethodCall(ApplyNode &node, const MethodHandle *han
     // check type argument
     this->checkTypeArgsNode(node, handle, node.refArgNodes());
     node.setHandle(handle);
-    node.setType(*handle->getReturnType());
+    node.setType(handle->getReturnType());
 }
 
 void TypeChecker::visitApplyNode(ApplyNode &node) {
@@ -694,7 +694,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
             if(handle == nullptr) { // if exprType is
                 RAISE_TC_ERROR(UndefinedMethod, *node.getExprNode(), methodName.c_str());
             }
-            assert(*handle->getReturnType() == type);
+            assert(handle->getReturnType() == type);
             node.setHandle(handle);
         }
     } else {
@@ -713,9 +713,9 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
                     RAISE_TC_ERROR(UndefinedMethod, *node.getExprNode(), methodName.c_str());
                 }
             }
-            assert(handle->getReturnType()->is(TYPE::String) || handle->getReturnType()->is(TYPE::StringArray));
+            assert(handle->getReturnType().is(TYPE::String) || handle->getReturnType().is(TYPE::StringArray));
             node.setHandle(handle);
-            node.setType(*handle->getReturnType());
+            node.setType(handle->getReturnType());
         }
     }
 }

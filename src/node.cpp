@@ -393,7 +393,7 @@ TypeNode *TypeOpNode::getTargetTypeNode() const {
     return this->targetTypeNode;
 }
 
-TypeOpNode *newTypedCastNode(Node *targetNode, DSType &type) {
+TypeOpNode *newTypedCastNode(Node *targetNode, const DSType &type) {
     assert(!targetNode->isUntyped());
     auto *castNode = new TypeOpNode(targetNode, nullptr, TypeOpNode::NO_CAST);
     castNode->setType(type);

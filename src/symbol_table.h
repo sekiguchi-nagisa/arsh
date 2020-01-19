@@ -275,7 +275,7 @@ public:
         return toModName(this->modID);
     }
 
-    FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
+    const FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const override;
 
     static std::string toModName(unsigned short modID);
 };

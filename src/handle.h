@@ -74,8 +74,8 @@ public:
 
     ~FieldHandle() = default;
 
-    DSType *getType() const {
-        return this->type;
+    const DSType &getType() const {
+        return *this->type;
     }
 
     unsigned int getIndex() const {
@@ -99,9 +99,9 @@ class MethodHandle {
 protected:
     unsigned int methodIndex;
 
-    DSType *returnType{nullptr};
+    const DSType *returnType{nullptr};
 
-    DSType *recvType{nullptr};
+    const DSType *recvType{nullptr};
 
     /**
      * not contains receiver type
@@ -113,18 +113,20 @@ public:
 
     explicit MethodHandle(unsigned int methodIndex) : methodIndex(methodIndex) { }
 
+//    MethodHandle(unsigned int methodIndex, DSType *)
+
     ~MethodHandle() = default;
 
     unsigned int getMethodIndex() const {
         return this->methodIndex;
     }
 
-    DSType *getReturnType() const {
-        return this->returnType;
+    const DSType &getReturnType() const {
+        return *this->returnType;
     }
 
-    void setRecvType(DSType &type) {
-        this->recvType = &type;
+    const DSType &getRecvType() const {
+        return *this->recvType;
     }
 
     const std::vector<DSType *> &getParamTypes() const {
@@ -136,13 +138,6 @@ public:
      */
     bool init(TypePool &pool, const NativeFuncInfo &info,
               const std::vector<DSType *> *types = nullptr);
-
-    /**
-     * return always true, after call init().
-     */
-    bool initialized() const {
-        return this->returnType != nullptr;
-    }
 };
 
 } // namespace ydsh

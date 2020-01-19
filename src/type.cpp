@@ -46,7 +46,7 @@ unsigned int DSType::getMethodSize() const {
     return this->superType != nullptr ? this->superType->getMethodSize() : 0;
 }
 
-FieldHandle *DSType::lookupFieldHandle(SymbolTable &, const std::string &) {
+const FieldHandle *DSType::lookupFieldHandle(SymbolTable &, const std::string &) const {
     return nullptr;
 }
 
@@ -68,7 +68,7 @@ const DSCode *DSType::getMethodRef(unsigned int methodIndex) const {
     return this->superType != nullptr ? this->superType->getMethodRef(methodIndex) : nullptr;
 }
 
-void DSType::copyAllMethodRef(std::vector<const DSCode *> &) {
+void DSType::copyAllMethodRef(std::vector<const DSCode *> &) const {
 }
 
 int DSType::getIntPrecision() const {
@@ -143,7 +143,7 @@ const DSCode *BuiltinType::getMethodRef(unsigned int methodIndex) const {
     return this->methodTable[methodIndex];
 }
 
-void BuiltinType::copyAllMethodRef(std::vector<const DSCode *> &methodTable) {
+void BuiltinType::copyAllMethodRef(std::vector<const DSCode *> &methodTable) const {
     unsigned int size = this->getMethodSize();
     assert(size <= methodTable.size());
 
@@ -176,7 +176,7 @@ unsigned int TupleType::getFieldSize() const {
     return this->elementTypes.size();
 }
 
-FieldHandle *TupleType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) {
+const FieldHandle *TupleType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const {
     auto iter = this->fieldHandleMap.find(fieldName);
     if(iter == this->fieldHandleMap.end()) {
         return this->superType->lookupFieldHandle(symbolTable, fieldName);
@@ -196,7 +196,7 @@ unsigned int ErrorType::getFieldSize() const {
     return this->superType->getFieldSize();
 }
 
-FieldHandle *ErrorType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) {
+const FieldHandle *ErrorType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const {
     return this->superType->lookupFieldHandle(symbolTable, fieldName);
 }
 

@@ -196,7 +196,7 @@ public:
     /**
      * return null, if has no field
      */
-    virtual FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName);
+    virtual const FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const;
 
     bool operator==(const DSType &type) const {
         return (unsigned long) this == (unsigned long) &type;
@@ -214,7 +214,6 @@ public:
     bool isSameOrBaseTypeOf(const DSType &targetType) const;
 
     virtual const DSCode *getMethodRef(unsigned int methodIndex) const;
-    virtual void copyAllMethodRef(std::vector<const DSCode *> &methodTable);
 
     static constexpr int INT64_PRECISION = 50;
     static constexpr int INT32_PRECISION = 40;
@@ -236,6 +235,8 @@ public:
         }
         return -1;
     }
+
+    virtual void copyAllMethodRef(std::vector<const DSCode *> &methodTable) const;
 };
 
 class FunctionType : public DSType {
@@ -332,7 +333,6 @@ public:
 
     unsigned int getMethodSize() const override;
     const DSCode *getMethodRef(unsigned int methodIndex) const override;
-    void copyAllMethodRef(std::vector<const DSCode *> &methodTable) override;
 
     native_type_info_t getNativeTypeInfo() const {
         return this->info;
@@ -341,6 +341,8 @@ public:
     unsigned int getBaseIndex() const {
         return this->superType != nullptr ? this->superType->getMethodSize() : 0;
     }
+
+    void copyAllMethodRef(std::vector<const DSCode *> &methodTable) const override;
 };
 
 /**
@@ -386,7 +388,7 @@ public:
      */
     unsigned int getFieldSize() const override;
 
-    FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
+    const FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const override;
 };
 
 class ErrorType : public DSType {
@@ -401,7 +403,7 @@ public:
      */
     unsigned int getFieldSize() const override;
 
-    FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) override;
+    const FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const override;
 };
 
 /**

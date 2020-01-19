@@ -1588,7 +1588,7 @@ DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&rec
     DSValue ret;
     if(prepareMethodCall(state, handle->getMethodIndex(), size)) {
         EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
-        if(!handle->getReturnType()->isVoidType()) {
+        if(!handle->getReturnType().isVoidType()) {
             setFlag(op, EvalOP::HAS_RETURN);
         }
         ret = startEval(state, op, nullptr);
