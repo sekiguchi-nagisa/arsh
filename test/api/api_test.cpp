@@ -209,6 +209,7 @@ TEST_F(APITest, status) {
 struct Deleter {
     void operator()(DSError *e) const {
         DSError_release(e);
+        delete e;
     }
 };
 
