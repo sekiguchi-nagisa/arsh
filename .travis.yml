@@ -241,6 +241,7 @@ matrix:
           packages:
             - g++-5
             - clang-9
+            - llvm-9
             - ninja-build
       env: CXX_BIN=clang++-9 OPTION="-DSANITIZER=address"
 
