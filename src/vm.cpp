@@ -1500,7 +1500,7 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError) {
 
     if(hasFlag(op, EvalOP::COMMIT)) {
         if(!ret) {
-            state.symbolTable.abort(false);
+            state.symbolTable.abort();
         }
         state.symbolTable.commit();
     }

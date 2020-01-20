@@ -518,12 +518,10 @@ public:
         this->oldGvarCount = this->gvarCount;
     }
 
-    void abort(bool abortType = true) {
+    void abort() {
         this->modLoader.abort();
         this->gvarCount = this->oldGvarCount;
-        if(abortType) {
-            this->typePool.abort();
-        }
+        this->typePool.abort();
         this->resetCurModule();
         this->cur().abort();
     }
