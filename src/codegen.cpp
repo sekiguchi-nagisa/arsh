@@ -576,8 +576,6 @@ void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {
 }
 
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
-    this->emitSourcePos(node.getPos());
-
     this->visit(*node.getNameNode());
     this->emit0byteIns(OpCode::NEW_CMD);
     this->emit0byteIns(node.hasRedir() ? OpCode::NEW_REDIR : OpCode::PUSH_NULL);
@@ -590,6 +588,7 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
         this->emit0byteIns(OpCode::DO_REDIR);
     }
 
+    this->emitSourcePos(node.getPos());
     OpCode ins = node.getInPipe() ? OpCode::CALL_CMD_P : OpCode::CALL_CMD;
     this->emit0byteIns(ins);
 }

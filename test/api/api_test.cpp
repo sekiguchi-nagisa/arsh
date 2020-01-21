@@ -94,6 +94,22 @@ TEST_F(APITest, lineNum2) {
     DSError_release(&e);
 }
 
+TEST_F(APITest, lineNum3) {
+    const char *src = R"(
+var a = 34
+
+   $a += 45
+echoechodwe \
+    $a
+)";
+    DSError e;
+    int s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, e.kind);
+    ASSERT_EQ(5, e.lineNum);
+    DSError_release(&e);
+}
+
 static const char *getPrompt(DSState *st, unsigned int n) {
     const char *bug = "";
     DSState_lineEditOp(st, DS_EDIT_PROMPT, n, &bug);
