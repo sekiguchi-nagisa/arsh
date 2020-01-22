@@ -39,8 +39,7 @@ private:
     unsigned int row{0};
     unsigned int col{0};
 
-//    ydsh::ByteBuffer buf;
-    std::vector<ydsh::ByteBuffer> bufs;
+    std::vector<ydsh::FlexBuffer<int>> bufs;
 
     std::function<void(std::string &&)> reporter;
 
@@ -64,14 +63,28 @@ public:
     }
 
     /**
-     * entry point.
+     * entry point
      * @param data
      * @param size
-     * size of data.
+     * size of data
+     * @return
+     * if data has invalid UTF8 sequence, return false
      */
-    void interpret(const char *data, unsigned int size);
+    bool interpret(const char *data, unsigned int size);
 
+    /**
+     *
+     * @param ch
+     * must be ascii
+     */
     void addChar(int ch);
+
+    /**
+     * currently not support combining character
+     * @param begin
+     * @param end
+     */
+    void addCodePoint(const char *begin, const char *end);
 
     /**
      * FIXME:
@@ -103,6 +116,8 @@ public:
      * clear line from current cursor.
      */
     void clearLineFrom();
+
+    void clearLine();
 
     // move cursor ops
     void left(unsigned int offset) {

@@ -43,7 +43,7 @@ static unsigned int toNum(const char *begin, const char *end) {
     return value;
 }
 
-void Screen::interpret(const char *data, unsigned int size) {
+bool Screen::interpret(const char *data, unsigned int size) {
     const char *begin = data;
     const char *end = begin + size;
     const char *marker = nullptr;
@@ -56,9 +56,9 @@ void Screen::interpret(const char *data, unsigned int size) {
 
     /*!stags:re2c format = "const char *@@;\n"; */
 
-#define YYCTYPE      char
+#define YYCTYPE      unsigned char
 #define YYPEEK()     *begin
-#define YYSKIP()     do { if(begin++ == end) { return; } } while(false)
+#define YYSKIP()     do { if(begin++ == end) { return true; } } while(false)
 #define YYBACKUP()   marker = begin
 #define YYRESTORE()  begin = marker
 #define YYSTAGP(t)   t = begin
@@ -76,19 +76,23 @@ void Screen::interpret(const char *data, unsigned int size) {
 
       DECIMAL = '0' | [1-9][0-9]*;
 
-      "\x1b[" @s0 DECIMAL @s1 'A'                     { ERROR("\\e[PnA"); }
-      "\x1b[" @s0 DECIMAL @s1 'B'                     { ERROR("\\e[PnB"); }
-      "\x1b[" @s0 DECIMAL @s1 'C'                     { this->right(toNum(s0, s1)); NEXT(); }
-      "\x1b[" @s0 DECIMAL @s1 'D'                     { this->left(toNum(s0, s1)); NEXT(); }
-      "\x1b[" @s0 DECIMAL @s1 ';' @s2 DECIMAL @s3 'H' { this->setCursor(toNum(s0, s1), toNum(s2, s3)); NEXT(); }
+      "\x1b[" @s0 DECIMAL @s1 "A"                     { ERROR("\\e[PnA"); }
+      "\x1b[" @s0 DECIMAL @s1 "B"                     { ERROR("\\e[PnB"); }
+      "\x1b[" @s0 DECIMAL @s1 "C"                     { this->right(toNum(s0, s1)); NEXT(); }
+      "\x1b[" @s0 DECIMAL @s1 "D"                     { this->left(toNum(s0, s1)); NEXT(); }
+      "\x1b[" @s0 DECIMAL @s1 ";" @s2 DECIMAL @s3 "H" { this->setCursor(toNum(s0, s1), toNum(s2, s3)); NEXT(); }
+      "\x1b[" DECIMAL (";" DECIMAL)* "m"              { NEXT(); }
       "\x1b[H"                                        { this->setCursor(); NEXT(); }
       "\x1b[2J"                                       { this->clear(); NEXT(); }
       "\x1b[0K"                                       { this->clearLineFrom(); NEXT(); }
+      "\x1b[2K"                                       { this->clearLine(); NEXT(); }
       "\x1b[6n"                                       { this->reportPos(); NEXT(); }
 
-      *                                               { assert(begin - start == 1); this->addChar(*start); NEXT(); }
+      [^]                                             { this->addCodePoint(start, begin); NEXT(); }
+      *                                               { return false; }
     */
     }
+    return true;
 }
 
 } // namespace process

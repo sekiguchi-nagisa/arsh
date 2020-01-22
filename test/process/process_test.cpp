@@ -138,7 +138,7 @@ TEST_F(ProcTest, pty3) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED, "break!!\n"));
 }
 
-TEST(ANSITest, case1) {
+TEST(ANSITest, base) {
     Screen screen;
     std::string line = "abc";
     screen.interpret(line.c_str(), line.size());
@@ -193,6 +193,38 @@ TEST(ANSITest, case1) {
     screen.interpret(line.c_str(), line.size());
     ASSERT_EQ("adc", screen.toString());
     ASSERT_EQ("\x1b[1;2R", rep);
+}
+
+TEST(ANSITest, utf8) {
+    Screen screen;
+    std::string line = "あ13gｵ";
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_EQ("あ13gｵ", screen.toString());
+}
+
+TEST(ANSITest, width) {
+    const char *r = setlocale(LC_CTYPE, "C");
+    ASSERT_TRUE(r != nullptr);
+    Screen screen;
+    std::string line = "1○\x1b[6n";
+    std::string rep;
+    screen.setReporter([&](std::string &&m){
+        rep = std::move(m);
+    });
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_EQ("1○", screen.toString());
+    ASSERT_EQ("\x1b[1;3R", rep);
+
+    r = setlocale(LC_CTYPE, "ja_JP.UTF-8");
+    ASSERT_TRUE(r != nullptr);
+    screen = Screen();
+    rep = "";
+    screen.setReporter([&](std::string &&m){
+        rep = std::move(m);
+    });
+    screen.interpret(line.c_str(), line.size());
+    ASSERT_EQ("1○", screen.toString());
+    ASSERT_EQ("\x1b[1;4R", rep);
 }
 
 

@@ -31,6 +31,7 @@
 #include <misc/util.hpp>
 #include <misc/fatal.h>
 #include <misc/logger_base.hpp>
+#include <misc/unicode.hpp>
 
 #include "process.h"
 #include "ansi.h"
@@ -565,6 +566,29 @@ void Screen::addChar(int ch) {
     }
 }
 
+void Screen::addCodePoint(const char *begin, const char *end) {
+    int code = ydsh::UnicodeUtil::utf8ToCodePoint(begin, end);
+    if(isascii(code)) {
+        this->addChar(code);
+    } else {
+        int width = ydsh::UnicodeUtil::localeAwareWidth(code);
+        switch(width) {
+        case 1:
+            this->setChar(code);
+            this->col++;
+            break;
+        case 2:
+            this->setChar(code);
+            this->col++;
+            this->setChar(-1);  // dummy
+            this->col++;
+            break;
+        default:
+            break;
+        }
+    }
+}
+
 void Screen::reportPos() {
     if(this->reporter) {
         auto pos = this->getPos();
@@ -593,17 +617,24 @@ void Screen::clearLineFrom() {
     }
 }
 
-static std::string toStringAtLine(const ydsh::ByteBuffer &buf) {
+void Screen::clearLine() {
+    for(auto &ch : this->bufs[this->row]) {
+        ch = '\0';
+    }
+}
+
+static std::string toStringAtLine(const ydsh::FlexBuffer<int> &buf) {
     std::string ret;
-    for(auto &ch : buf) {
-        ret += ch;
+    for(int ch : buf) {
+        if(ch == -1) {
+            continue;
+        }
+        char data[8] = {};
+        unsigned int r = ydsh::UnicodeUtil::codePointToUtf8(ch, data);
+        ret.append(data, r);
     }
     for(; !ret.empty() && ret.back() == '\0'; ret.pop_back());
-    for(auto &ch : ret) {
-        if(ch == '\0') {
-            ch = ' ';
-        }
-    }
+    std::replace(ret.begin(), ret.end(), '\0', ' ');
     return ret;
 }
 

@@ -85,7 +85,7 @@ struct UnicodeUtil {
      * @param codePoint
      * must be unicode code point
      * @param buf
-     * atleast 4byte
+     * at least 4byte
      * @return
      * size of written byte.
      * if invalid code point, return 0 and do nothing
