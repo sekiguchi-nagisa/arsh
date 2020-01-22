@@ -183,11 +183,7 @@ public:
         this->prompt = p;
     }
 
-    std::pair<std::string, std::string> readAll() override {
-        auto ret = InteractiveBase::readAll();
-        this->interpret(ret.first);
-        return ret;
-    }
+    std::pair<std::string, std::string> readAll() override;
 
     void sendLine(const char *line) {
         this->send(line);

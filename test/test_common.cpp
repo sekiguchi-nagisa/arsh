@@ -144,3 +144,19 @@ void InteractiveShellBase::interpret(std::string &line) {
     screen.interpret(line.c_str(), line.size());
     line = screen.toString();
 }
+
+std::pair<std::string, std::string> InteractiveShellBase::readAll() {
+    std::string err;
+    Screen screen(this->handle.getWinSize());
+    screen.setReporter([&](std::string &&m) {
+        this->send(m.c_str());
+    });
+    this->handle.readAll(this->timeout, [&](unsigned int index, const char *buf, unsigned int size) {
+        if(index == 0) {
+            screen.interpret(buf, size);
+        } else {
+            err.append(buf, size);
+        }
+    });
+    return {screen.toString(), std::move(err)};
+}
