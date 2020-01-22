@@ -43,6 +43,7 @@ private:
 
     std::function<void(std::string &&)> reporter;
 
+    unsigned int eaw{1};
 
 public:
     Screen(unsigned int row, unsigned int col) : maxRow(row), maxCol(col) {
@@ -60,6 +61,10 @@ public:
 
     void setReporter(std::function<void(std::string &&)> func) {
         this->reporter = std::move(func);
+    }
+
+    void setEAW(unsigned int v) {
+        this->eaw = v;
     }
 
     /**

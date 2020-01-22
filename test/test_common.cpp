@@ -148,6 +148,7 @@ void InteractiveShellBase::interpret(std::string &line) {
 std::pair<std::string, std::string> InteractiveShellBase::readAll() {
     std::string err;
     Screen screen(this->handle.getWinSize());
+    screen.setEAW(2);
     screen.setReporter([&](std::string &&m) {
         this->send(m.c_str());
     });

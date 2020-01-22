@@ -203,8 +203,6 @@ TEST(ANSITest, utf8) {
 }
 
 TEST(ANSITest, width) {
-    const char *r = setlocale(LC_CTYPE, "C");
-    ASSERT_TRUE(r != nullptr);
     Screen screen;
     std::string line = "1○\x1b[6n";
     std::string rep;
@@ -215,9 +213,8 @@ TEST(ANSITest, width) {
     ASSERT_EQ("1○", screen.toString());
     ASSERT_EQ("\x1b[1;3R", rep);
 
-    r = setlocale(LC_CTYPE, "ja_JP.UTF-8");
-    ASSERT_TRUE(r != nullptr);
     screen = Screen();
+    screen.setEAW(2);
     rep = "";
     screen.setReporter([&](std::string &&m){
         rep = std::move(m);

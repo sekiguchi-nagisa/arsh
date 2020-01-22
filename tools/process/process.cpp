@@ -567,11 +567,16 @@ void Screen::addChar(int ch) {
 }
 
 void Screen::addCodePoint(const char *begin, const char *end) {
+    auto charWidth = ydsh::UnicodeUtil::HALF_WIDTH;
+    if(this->eaw != 1) {
+        charWidth = ydsh::UnicodeUtil::FULL_WIDTH;
+    }
+
     int code = ydsh::UnicodeUtil::utf8ToCodePoint(begin, end);
     if(isascii(code)) {
         this->addChar(code);
     } else {
-        int width = ydsh::UnicodeUtil::localeAwareWidth(code);
+        int width = ydsh::UnicodeUtil::width(code, charWidth);
         switch(width) {
         case 1:
             this->setChar(code);
