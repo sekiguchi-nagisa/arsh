@@ -153,7 +153,8 @@ std::pair<std::string, std::string> InteractiveShellBase::readAll() {
     });
     this->handle.readAll(this->timeout, [&](unsigned int index, const char *buf, unsigned int size) {
         if(index == 0) {
-            screen.interpret(buf, size);
+            std::string line(buf, size);    //FIXME
+            screen.interpret(line.c_str(), line.size());
         } else {
             err.append(buf, size);
         }
