@@ -101,23 +101,18 @@ WaitStatus ProcHandle::wait() {
     return this->status_;
 }
 
-static bool recvData(int fd, std::string &str) {
+static bool readData(int index, int fd, ProcHandle::ReadCallback readCallback) {
     char buf[64];
     unsigned int bufSize = ydsh::arraySize(buf);
     int readSize = read(fd, buf, bufSize);
     if(readSize <= 0) {
         return readSize == -1 && (errno == EAGAIN || errno == EINTR);
     }
-    str.append(buf, readSize);
+    readCallback(index, buf, readSize);
     return true;
 }
 
-std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
-    std::pair<std::string, std::string> output;
-    if(this->out() < 0 && this->err() < 0) {
-        return output;
-    }
-
+void ProcHandle::readAll(int timeout, ReadCallback readCallback) const {
     struct pollfd pollfds[2]{};
     pollfds[0].fd = this->out();
     pollfds[0].events = POLLIN;
@@ -137,7 +132,7 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
         unsigned int breakCount = 0;
         for(unsigned int i = 0; i < pollfdSize; i++) {
             if(pollfds[i].revents & POLLIN) {
-                if(!recvData(pollfds[i].fd, (i == 0 ? output.first : output.second))) {
+                if(!readData(i, pollfds[i].fd, readCallback)) {
                     breakCount++;
                     continue;
                 }
@@ -149,6 +144,17 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
             break;
         }
     }
+}
+
+std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
+    std::pair<std::string, std::string> output;
+    if(this->out() < 0 && this->err() < 0) {
+        return output;
+    }
+
+    this->readAll(timeout, [&](unsigned int index, const char *buf, unsigned int size) {
+        (index == 0 ? output.first : output.second).append(buf, size);
+    });
     return output;
 }
 
