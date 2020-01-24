@@ -1,0 +1,37 @@
+
+# undefined subcommand
+shctl hogera
+assert $? == 2
+assert "$(shctl hoge 2>&1)" == "ydsh: shctl: undefined subcommand: hoge"
+
+# source
+shctl is-sourced
+assert $? == 1
+source ../../_module4test/sourced.ds as S
+assert $S.SOURCED == 0
+assert $S.sourced() == 0
+
+function f() : Int {
+    $? = 0
+    shctl is-sourced
+    return $?
+}
+assert $f() == 1
+
+# function
+function gg() : String {
+    return "$(shctl function)"
+}
+
+cc() {
+    shctl function
+}
+assert $gg() == "gg"
+assert cc
+assert "$(cc)" == "cc"
+
+# interactive
+$? = 0
+shctl is-interactive
+assert $? == 1
+assert shctl backtrace

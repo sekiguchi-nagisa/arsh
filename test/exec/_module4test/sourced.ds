@@ -1,0 +1,8 @@
+
+let SOURCED = { shctl is-sourced; $?; }
+
+function sourced() : Int {
+    $? = 0
+    shctl is-sourced
+    return $?
+}

@@ -40,6 +40,20 @@ TEST(BuiltinExecTest, case2) {
     DSState_delete(&state);
 }
 
+TEST(BuiltinExecTest, shctl) {
+    DSState *state = DSState_create();
+
+    int ret = DSState_exec(state, make_argv("shctl", "is-interactive").data());
+    ASSERT_EQ(1, ret);
+
+    DSState_setOption(state, DS_OPTION_INTERACTIVE);
+    ret = DSState_exec(state, make_argv("shctl", "is-interactive").data());
+    ASSERT_EQ(0, ret);
+
+
+    DSState_delete(&state);
+}
+
 struct APITest : public ExpectOutput, public ydsh::TempFileFactory {
     DSState *state{nullptr};
 

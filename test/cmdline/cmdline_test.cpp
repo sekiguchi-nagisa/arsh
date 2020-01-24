@@ -731,6 +731,15 @@ TEST_F(CmdlineTest2, import5) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("34\nsource %s", modName.c_str()), 1, "", str));
 }
 
+TEST_F(CmdlineTest2, backtrace) {
+    auto fileName = this->createTempFile("file.ds", "function f() { shctl backtrace; }");
+    auto str = format("from %s:1 'function f()'\n"
+                      "from (string):2 '<toplevel>()'\n", fileName.c_str());
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source %s; 34\n$f()", fileName.c_str()), 0, str));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "shctl", "backtrace"), 0));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

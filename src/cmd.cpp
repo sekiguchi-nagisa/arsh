@@ -47,6 +47,7 @@ static int builtin_kill(DSState &state, Array_Object &argvObj);
 static int builtin_pwd(DSState &state, Array_Object &argvObj);
 static int builtin_read(DSState &state, Array_Object &argvObj);
 static int builtin_setenv(DSState &state, Array_Object &argvObj);
+static int builtin_shctl(DSState &state, Array_Object &argvObj);
 static int builtin_test(DSState &state, Array_Object &argvObj);
 static int builtin_true(DSState &state, Array_Object &argvObj);
 static int builtin_ulimit(DSState &state, Array_Object &argvObj);
@@ -151,6 +152,13 @@ static constexpr struct {
                 "        -t timeout set timeout second (only available if input fd is a tty)"},
         {"set_env", builtin_setenv, "[name=env ...]",
                 "    Set environmental variables."},
+        {"shctl", builtin_shctl, "[subcommand]",
+                "    Query and set runtime information\n"
+                "    Subcommands:\n"
+                "        is-interactive  return 0 if shell is interactive mode.\n"
+                "        is-sourced      return 0 if current script is sourced.\n"
+                "        backtrace       print stack trace.\n"
+                "        function        print current function/command name."},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
@@ -1784,6 +1792,58 @@ static int builtin_umask(DSState &, Array_Object &argvObj) {
         umask(mask);
     }
     printMask(mask, op);
+    return 0;
+}
+
+static int printBacktrace(const VMState &state) {
+    auto traces = state.createStackTrace();
+    for(auto &s : traces) {
+        fprintf(stdout, "from %s:%d '%s()'\n",
+                s.getSourceName().c_str(), s.getLineNum(), s.getCallerName().c_str());
+    }
+    return 0;
+}
+
+static int checkSourced(const VMState &state) {
+    bool sourced = false;
+    auto *curCode = state.getFrame().code;
+    auto *initCode = state.getFrames().size() == 1 ? curCode : state.getFrames()[1].code;
+    if(!initCode->is(CodeKind::NATIVE)) {
+        assert(!curCode->is(CodeKind::NATIVE));
+        const char *initPath = static_cast<const CompiledCode *>(initCode)->getSourceName();
+        const char *curPath = static_cast<const CompiledCode *>(curCode)->getSourceName();
+        sourced = strcmp(initPath, curPath) != 0;
+    }
+    return sourced ? 0 : 1;
+}
+
+static int printFuncName(const VMState &state) {
+    auto *code = state.getFrame().code;
+    const char *name = "<toplevel>";
+    if(!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
+        name = static_cast<const CompiledCode *>(code)->getName();
+    }
+    fprintf(stdout, "%s\n", name);
+
+    return 0;
+}
+
+static int builtin_shctl(DSState &state, Array_Object &argvObj) {
+    if(argvObj.size() > 1) {
+        auto ref = createStrRef(argvObj.getValues()[1]);
+        if(ref == "backtrace") {
+            return printBacktrace(state.getCallStack());
+        } else if(ref == "is-sourced") {
+            return checkSourced(state.getCallStack());
+        } else if(ref == "is-interactive") {
+            return hasFlag(state.option, DS_OPTION_INTERACTIVE) ? 0 : 1;
+        } else if(ref == "function") {
+            return printFuncName(state.getCallStack());
+        } else {
+            ERROR(argvObj, "undefined subcommand: %s", ref.data());
+            return 2;
+        }
+    }
     return 0;
 }
 
