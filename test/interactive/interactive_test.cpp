@@ -41,9 +41,10 @@ struct InteractiveTest : public InteractiveShellBase {
 
 
 TEST_F(InteractiveTest, exit) {
-     this->invoke("--quiet", "--norc");
-
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    this->invoke("--quiet", "--norc");
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&]{
+        this->expect(PROMPT);
+    }));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit 30", 30, WaitStatus::EXITED));
 }
 
@@ -155,7 +156,9 @@ TEST_F(InteractiveTest, history1) {
 
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(800, [&]{
+        this->expect(PROMPT);
+    }));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int32 = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int32 = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int32 = 3"));
@@ -187,7 +190,9 @@ TEST_F(InteractiveTest, history2) {
 
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(800, [&]{
+        this->expect(PROMPT);
+    }));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int32 = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int32 = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int32 = 3"));
@@ -214,7 +219,9 @@ TEST_F(InteractiveTest, history3) {
 
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(800, [&]{
+        this->expect(PROMPT);
+    }));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int32 = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int32 = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int32 = 3"));
@@ -248,7 +255,9 @@ TEST_F(InteractiveTest, history4) {
 
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(800, [&]{
+        this->expect(PROMPT);
+    }));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1", ": Int32 = 1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("2", ": Int32 = 2"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("3", ": Int32 = 3"));
@@ -514,9 +523,15 @@ TEST_F(InteractiveTest, readAfterLastPipe) {
 TEST_F(InteractiveTest, printStackTop) {
     this->invoke("--quiet", "--norc");
 
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("34|$false", ": Boolean = false"));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("34|true"));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&]{
+        this->expect(PROMPT);
+    }));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&]{
+        this->sendLineAndExpect("34|$false", ": Boolean = false");
+    }));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&]{
+        this->sendLineAndExpect("34|true");
+    }));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true"));
 
     this->send(CTRL_D);
@@ -527,7 +542,9 @@ TEST_F(InteractiveTest, cmdSubstitution) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("\"$(stty sane)\"", ": String = "));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&]{
+        this->sendLineAndExpect("\"$(stty sane)\"", ": String = ");
+    }));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));

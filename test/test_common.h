@@ -137,6 +137,14 @@ public:
         return this->handle.readAll(this->timeout);
     }
 
+    template <typename Func>
+    void withTimeout(int time, Func func) {
+        auto old = this->timeout;
+        this->timeout = time;
+        func();
+        this->timeout = old;
+    }
+
     void expectRegex(const char *out = "", const char *err = "") {
         ASSERT_TRUE(out != nullptr);
         ASSERT_TRUE(err != nullptr);
