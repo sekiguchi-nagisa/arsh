@@ -856,7 +856,8 @@ private:
 public:
     NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes);
 
-    explicit NewNode(TypeNode *targetTypeNode) : NewNode(targetTypeNode->getPos(), targetTypeNode, {}) {}
+    explicit NewNode(TypeNode *targetTypeNode) :
+        Node(NodeKind::New, targetTypeNode->getToken()), targetTypeNode(targetTypeNode) {}
 
     ~NewNode() override;
 
