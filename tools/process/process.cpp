@@ -103,7 +103,7 @@ WaitStatus ProcHandle::wait() {
 }
 
 static bool readData(int index, int fd, ProcHandle::ReadCallback readCallback) {
-    char buf[256];
+    char buf[1024];
     unsigned int bufSize = ydsh::arraySize(buf);
     int readSize = read(fd, buf, bufSize);
     if(readSize <= 0) {

@@ -51,7 +51,9 @@ TEST_F(InteractiveTest, exit) {
 TEST_F(InteractiveTest, ctrld1) {
     this->invoke("--norc");
 
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex("ydsh, version .+, build by .+\nCopy.+\nydsh-.+\\$ "));
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&]{
+    this->expectRegex("ydsh, version .+, build by .+\nCopy.+\nydsh-.+\\$ ");
+    }));
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
