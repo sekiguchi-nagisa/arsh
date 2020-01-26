@@ -558,8 +558,16 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
 
     Token token = TRY(this->expect(IDENTIFIER));
     std::string name = this->lexer->toName(token);
-    TRY(this->expect(ASSIGN));
-    return std::make_unique<VarDeclNode>(startPos, std::move(name), TRY(this->parse_expression()).release(), readOnly);
+    std::unique_ptr<Node> exprNode;
+    if(CUR_KIND() == COLON) {
+        this->expect(COLON, false);
+        auto typeNode = TRY(this->parse_typeName());
+        exprNode = std::make_unique<NewNode>(typeNode.release());
+    } else {
+        TRY(this->expect(ASSIGN));
+        exprNode = TRY(this->parse_expression());
+    }
+    return std::make_unique<VarDeclNode>(startPos, std::move(name), exprNode.release(), readOnly);
 }
 
 std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {

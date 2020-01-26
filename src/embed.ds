@@ -28,16 +28,16 @@ $SIG[%'hup'] = $SIG_DFL
 
 
 # termination hook definition
-var TERM_HOOK = new Func<Void, [Int, Any]>!()
+var TERM_HOOK : Func<Void, [Int, Any]>!
 
 # completer hook definition
-var COMP_HOOK = new Func<[String], [[String], Int]>!()
+var COMP_HOOK : Func<[String], [[String], Int]>!
 
 # line edit op hook definition.
-var EDIT_HOOK = new Func<Any, [Int, Int, String]>!()
+var EDIT_HOOK : Func<Any, [Int, Int, String]>!
 
 # command fallback handler definition
-var CMD_FALLBACK = new ((String, [String]) -> Void)!()
+var CMD_FALLBACK : ((String, [String]) -> Void)!
 
 _cmd_fallback_handler() {
     ($CMD_FALLBACK ?? { return 0; })($0, $@)
