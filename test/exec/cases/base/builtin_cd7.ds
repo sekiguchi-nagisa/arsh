@@ -1,5 +1,5 @@
 
-unset_env OLDPWD
+unsetenv OLDPWD
 cd -
 assert $? == 1
 

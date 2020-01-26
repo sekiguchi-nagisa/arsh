@@ -1,5 +1,5 @@
 
-unset_env HOME
+unsetenv HOME
 cd
 assert $? == 1
 

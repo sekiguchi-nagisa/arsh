@@ -1,33 +1,33 @@
 #$test($status = 1)
 
 # set env
-assert set_env
-set_env AAA=aaa BBB=bbb
+assert setenv
+setenv AAA=aaa BBB=bbb
 assert $? == 0
-assert check_env AAA BBB
+assert checkenv AAA BBB
 
-set_env EEE= CCC DDD=ddd
+setenv EEE= CCC DDD=ddd
 assert $? == 1
-assert !check_env CCC
-assert ! check_env EEE
+assert !checkenv CCC
+assert ! checkenv EEE
 assert { import-env EEE; $EEE; }.empty()
-assert ! check_env DDD
+assert ! checkenv DDD
 
-assert "$(set_env CCC 2>&1)" == "ydsh: set_env: CCC: Invalid argument"
-assert "$(set_env =CCC 2>&1)" == "ydsh: set_env: =CCC: Invalid argument"
+assert "$(setenv CCC 2>&1)" == "ydsh: setenv: CCC: Invalid argument"
+assert "$(setenv =CCC 2>&1)" == "ydsh: setenv: =CCC: Invalid argument"
 
 # unset env
-assert unset_env
-unset_env H=
+assert unsetenv
+unsetenv H=
 assert $? == 1
-assert "$(unset_env =CCC 2>&1)" == "ydsh: unset_env: =CCC: Invalid argument"
+assert "$(unsetenv =CCC 2>&1)" == "ydsh: unsetenv: =CCC: Invalid argument"
 
 import-env AAA
 import-env BBB
 assert $AAA == 'aaa'
 assert $BBB == 'bbb'
 
-assert unset_env AAA BBB
+assert unsetenv AAA BBB
 
 var f = $false as Any
 try { $AAA; } catch $e { $f = $e; }

@@ -1,6 +1,6 @@
 # eval builtin command
 
-eval check_env HOME
+eval checkenv HOME
 assert($? == 0)
 
 

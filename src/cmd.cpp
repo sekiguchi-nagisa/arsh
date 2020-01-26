@@ -78,7 +78,7 @@ static constexpr struct {
                 "    the current directory.  If -L is specified, use logical directory \n"
                 "    (with symbolic link).  If -P is specified, use physical directory \n"
                 "    (without symbolic link).  Default is -L."},
-        {"check_env", builtin_check_env, "variable ...",
+        {"checkenv", builtin_check_env, "variable ...",
                 "    Check existence of specified environmental variables.\n"
                 "    If all of variables are exist and not empty string, exit with 0."},
         {"command", nullptr, "[-pVv] command [arg ...]",
@@ -150,7 +150,7 @@ static constexpr struct {
                 "        -s         disable echo back\n"
                 "        -u         specify file descriptor\n"
                 "        -t timeout set timeout second (only available if input fd is a tty)"},
-        {"set_env", builtin_setenv, "[name=env ...]",
+        {"setenv", builtin_setenv, "[name=env ...]",
                 "    Set environmental variables."},
         {"shctl", builtin_shctl, "[subcommand]",
                 "    Query and set runtime information\n"
@@ -234,7 +234,7 @@ static constexpr struct {
                 "    Options.\n"
                 "        -p    if mode is omitted, print current mask in a form that may be reused as input\n"
                 "        -S    print current mask in a symbolic form"},
-        {"unset_env", builtin_unsetenv, "[name ...]",
+        {"unsetenv", builtin_unsetenv, "[name ...]",
                 "    Unset environmental variables."},
 };
 

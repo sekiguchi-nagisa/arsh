@@ -1,22 +1,22 @@
-assert(check_env HOME)
+assert(checkenv HOME)
 
 # undefined env
-check_env HFUIR
+checkenv HFUIR
 assert($? != 0)
 
 # empty env
 export-env AAAA = ""
-check_env AAAA
+checkenv AAAA
 assert($? == 1)
 
 # multiple env
-check_env HOME PATH
+checkenv HOME PATH
 assert($? == 0)
 
-check_env HOME PATH HDUWEGDFE
+checkenv HOME PATH HDUWEGDFE
 assert($? == 1)
 
-assert(help check_env | grep '^check_env: check_env variable ...$')
-check_env
+assert(help checkenv | grep '^checkenv: checkenv variable ...$')
+checkenv
 assert $? == 2
-assert(check_env 2>&1 | grep '^check_env: check_env variable ...$')
+assert(checkenv 2>&1 | grep '^checkenv: checkenv variable ...$')

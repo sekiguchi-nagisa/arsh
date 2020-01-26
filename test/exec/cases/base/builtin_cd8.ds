@@ -1,6 +1,6 @@
 
 
-assert unset_env OLDPWD PWD
+assert unsetenv OLDPWD PWD
 
 cd ~
 

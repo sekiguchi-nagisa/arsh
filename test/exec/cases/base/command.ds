@@ -245,7 +245,7 @@ assert($HOME + "/hoge" == "$(echo ~/hoge)")
 assert("~g" == "$(echo ~'g')")
 assert($HOME + "/h" == "$(echo ~/'h')")
 var home = $HOME
-unset_env HOME
+unsetenv HOME
 assert $home == "$(echo ~)"
 $HOME = $home
 
@@ -258,7 +258,7 @@ assert($PWD + "/huge" == "$(echo ~+/"huge")")
 assert("~+e" == "$(echo ~+e)")
 assert("~+e" == "$(echo ~+'e')")
 var pwd = $PWD
-unset_env PWD
+unsetenv PWD
 assert $pwd == "$(echo ~+)"
 $PWD = $pwd
 
@@ -271,7 +271,7 @@ assert($OLDPWD + "/false" == "$(echo ~-/$false)")
 assert("~-yfr" == "$(echo ~-yfr)")
 assert("~-true" == "$(echo ~-$true)")
 var oldpwd = $OLDPWD
-unset_env OLDPWD
+unsetenv OLDPWD
 assert "~-" == "$(echo ~-)"
 $OLDPWD = $oldpwd
 
