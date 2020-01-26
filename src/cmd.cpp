@@ -29,6 +29,8 @@
 #include "misc/num_util.hpp"
 #include "misc/files.h"
 
+extern char **environ;
+
 namespace ydsh {
 
 // builtin command definition
@@ -1130,6 +1132,14 @@ static int builtin_complete(DSState &state, Array_Object &argvObj) {
 }
 
 static int builtin_setenv(DSState &, Array_Object &argvObj) {
+    if(argvObj.size() == 1) {
+        for(unsigned int i = 0; environ[i] != nullptr; i++) {
+            const char *e = environ[i];
+            fprintf(stdout, "%s\n", e);
+        }
+        return 0;
+    }
+
     auto end = argvObj.getValues().end();
     for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
         const char *kv = str(*iter);
