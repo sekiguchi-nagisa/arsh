@@ -7,7 +7,7 @@ function _empty($words : [String], $cursor : Int) : [String] {
 
 alias Completer = typeof($_empty)
 
-let _compMap = new [String : Completer]()
+let _compMap : [String : Completer]
 
 function _defaultHook($words : [String], $cursor : Int) : [String] {
     var comp = $_compMap.get($words[0]) ?? $_compMap.get("") ?? $_empty

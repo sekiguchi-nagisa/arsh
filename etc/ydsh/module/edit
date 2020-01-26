@@ -5,8 +5,8 @@ var HISTFILE = '~/.ydsh_history'
 var HISTSIZE = 0
 var HISTFILESIZE = 1000
 var HISTIGNORE = $/^history/ as Regex!
-var HISTSEARCH = new Func<String,[String]>!()
-let HISTORY = new [String]()
+var HISTSEARCH : Func<String,[String]>!
+let HISTORY : [String]
 
 function _sync() {
     let limit = 4096
@@ -197,7 +197,7 @@ history() {
 var PS1 = '\s-\v\$ '
 var PS2 = '> '
 
-var PROMPT_HOOK = new ((String) -> String)!()
+var PROMPT_HOOK : ((String) -> String)!
 
 source prompt
 
