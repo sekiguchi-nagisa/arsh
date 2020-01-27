@@ -102,17 +102,6 @@ void BaseTypeNode::dump(NodeDumper &dumper) const {
 // ##     ReifiedTypeNode     ##
 // #############################
 
-ReifiedTypeNode::~ReifiedTypeNode() {
-    delete this->templateTypeNode;
-    for(TypeNode *t : this->elementTypeNodes) {
-        delete t;
-    }
-}
-
-void ReifiedTypeNode::addElementTypeNode(TypeNode *typeNode) {
-    this->elementTypeNodes.push_back(typeNode);
-}
-
 void ReifiedTypeNode::dump(NodeDumper &dumper) const {
     TypeNode::dump(dumper);
     DUMP_PTR(templateTypeNode);
@@ -122,18 +111,6 @@ void ReifiedTypeNode::dump(NodeDumper &dumper) const {
 // ##########################
 // ##     FuncTypeNode     ##
 // ##########################
-
-FuncTypeNode::~FuncTypeNode() {
-    delete this->returnTypeNode;
-
-    for(TypeNode *t : this->paramTypeNodes) {
-        delete t;
-    }
-}
-
-void FuncTypeNode::addParamTypeNode(TypeNode *typeNode) {
-    this->paramTypeNodes.push_back(typeNode);
-}
 
 void FuncTypeNode::dump(NodeDumper &dumper) const {
     TypeNode::dump(dumper);
@@ -145,17 +122,6 @@ void FuncTypeNode::dump(NodeDumper &dumper) const {
 // ##     ReturnTypeNode     ##
 // ############################
 
-ReturnTypeNode::~ReturnTypeNode() {
-    for(auto t : this->typeNodes) {
-        delete t;
-    }
-}
-
-void ReturnTypeNode::addTypeNode(TypeNode *typeNode) {
-    this->typeNodes.push_back(typeNode);
-    this->updateToken(typeNode->getToken());
-}
-
 void ReturnTypeNode::dump(NodeDumper &dumper) const {
     TypeNode::dump(dumper);
     DUMP(typeNodes);
@@ -164,10 +130,6 @@ void ReturnTypeNode::dump(NodeDumper &dumper) const {
 // ########################
 // ##     TypeOfNode     ##
 // ########################
-
-TypeOfNode::~TypeOfNode() {
-    delete this->exprNode;
-}
 
 void TypeOfNode::dump(NodeDumper &dumper) const {
     TypeNode::dump(dumper);

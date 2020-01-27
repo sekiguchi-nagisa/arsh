@@ -208,23 +208,23 @@ public:
  */
 class ReifiedTypeNode : public TypeNode {
 private:
-    BaseTypeNode *templateTypeNode;
-    std::vector<TypeNode *> elementTypeNodes;
+    std::unique_ptr<BaseTypeNode> templateTypeNode;
+    std::vector<std::unique_ptr<TypeNode>> elementTypeNodes;
 
 public:
-    explicit ReifiedTypeNode(BaseTypeNode *templateTypeNode) :
+    explicit ReifiedTypeNode(std::unique_ptr<BaseTypeNode> &&templateTypeNode) :
             TypeNode(TypeNode::Reified, templateTypeNode->getToken()),
-            templateTypeNode(templateTypeNode) { }
+            templateTypeNode(std::move(templateTypeNode)) { }
 
-    ~ReifiedTypeNode() override;
-
-    void addElementTypeNode(TypeNode *typeNode);
-
-    BaseTypeNode *getTemplate() const {
-        return this->templateTypeNode;
+    void addElementTypeNode(std::unique_ptr<TypeNode> &&typeNode) {
+        this->elementTypeNodes.push_back(std::move(typeNode));
     }
 
-    const std::vector<TypeNode *> &getElementTypeNodes() const {
+    BaseTypeNode *getTemplate() const {
+        return this->templateTypeNode.get();
+    }
+
+    const std::vector<std::unique_ptr<TypeNode>> &getElementTypeNodes() const {
         return this->elementTypeNodes;
     }
 
@@ -233,28 +233,28 @@ public:
 
 class FuncTypeNode : public TypeNode {
 private:
-    TypeNode *returnTypeNode;
+    std::unique_ptr<TypeNode> returnTypeNode;
 
     /**
      * may be empty vector, if has no parameter
      */
-    std::vector<TypeNode *> paramTypeNodes;
+    std::vector<std::unique_ptr<TypeNode>> paramTypeNodes;
 
 public:
-    FuncTypeNode(unsigned int startPos, TypeNode *returnTypeNode) :
+    FuncTypeNode(unsigned int startPos, std::unique_ptr<TypeNode> &&returnTypeNode) :
             TypeNode(TypeNode::Func, {startPos, 0}),
-            returnTypeNode(returnTypeNode) { }
+            returnTypeNode(std::move(returnTypeNode)) { }
 
-    ~FuncTypeNode() override;
+    void addParamTypeNode(std::unique_ptr<TypeNode> &&typeNode) {
+        this->paramTypeNodes.push_back(std::move(typeNode));
+    }
 
-    void addParamTypeNode(TypeNode *typeNode);
-
-    const std::vector<TypeNode *> &getParamTypeNodes() const {
+    const std::vector<std::unique_ptr<TypeNode>> &getParamTypeNodes() const {
         return this->paramTypeNodes;
     }
 
     TypeNode *getReturnTypeNode() const {
-        return this->returnTypeNode;
+        return this->returnTypeNode.get();
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -265,19 +265,20 @@ public:
  */
 class ReturnTypeNode : public TypeNode {
 private:
-    std::vector<TypeNode *> typeNodes;
+    std::vector<std::unique_ptr<TypeNode>> typeNodes;
 
 public:
-    explicit ReturnTypeNode(TypeNode *typeNode) :
+    explicit ReturnTypeNode(std::unique_ptr<TypeNode> &&typeNode) :
             TypeNode(TypeNode::Return, typeNode->getToken()) {
-        this->addTypeNode(typeNode);
+        this->addTypeNode(std::move(typeNode));
     }
 
-    ~ReturnTypeNode() override;
+    void addTypeNode(std::unique_ptr<TypeNode> &&typeNode) {
+        this->updateToken(typeNode->getToken());
+        this->typeNodes.push_back(std::move(typeNode));
+    }
 
-    void addTypeNode(TypeNode *typeNode);
-
-    const std::vector<TypeNode *> &getTypeNodes() const {
+    const std::vector<std::unique_ptr<TypeNode>> &getTypeNodes() const {
         return this->typeNodes;
     }
 
@@ -290,18 +291,16 @@ public:
 
 class TypeOfNode : public TypeNode {
 private:
-    Node *exprNode;
+    std::unique_ptr<Node> exprNode;
 
 public:
-    TypeOfNode(unsigned int startPos, Node *exprNode) :
-            TypeNode(TypeNode::TypeOf, {startPos, 0}), exprNode(exprNode) {
-        this->updateToken(exprNode->getToken());
+    TypeOfNode(unsigned int startPos, std::unique_ptr<Node> &&exprNode) :
+            TypeNode(TypeNode::TypeOf, {startPos, 0}), exprNode(std::move(exprNode)) {
+        this->updateToken(this->exprNode->getToken());
     }
 
-    ~TypeOfNode() override;
-
     Node *getExprNode() const {
-        return this->exprNode;
+        return this->exprNode.get();
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2450,6 +2449,15 @@ public:
     }
 
     template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
+    void dump(const char *fieldName, const std::vector<std::unique_ptr<T>> &nodes) {
+        this->dumpNodesHead(fieldName);
+        for(auto &e : nodes) {
+            this->dumpNodesBody(*e);
+        }
+        this->dumpNodesTail();
+    }
+
+    template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
     void dump(const char *fieldName, const std::vector<T *> &nodes) {
         this->dumpNodesHead(fieldName);
         for(auto &e : nodes) {
@@ -2534,6 +2542,8 @@ private:
     void dumpNodesTail() {
         this->leaveIndent();
     }
+
+    void dumpNodes(const char *fieldName, Node* const* begin, Node* const* end);
 
     void writeName(const char *fieldName);
 };

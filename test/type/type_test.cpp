@@ -76,7 +76,7 @@ std::unique_ptr<ReifiedTypeNode> addElement(std::unique_ptr<ReifiedTypeNode> &&t
 template <typename First, typename ... E>
 std::unique_ptr<ReifiedTypeNode> addElement(std::unique_ptr<ReifiedTypeNode> &&type, First &&, E&& ...rest) {
     auto e = TypeFactory<First>{}();
-    type->addElementTypeNode(e.release());
+    type->addElementTypeNode(std::move(e));
     return addElement(std::move(type), std::forward<E>(rest)...);
 }
 
@@ -84,7 +84,7 @@ template <const char *&Name, unsigned int N, typename ...P>
 struct TypeFactory<TypeTemp<Name, N, P...>> {
     std::unique_ptr<TypeNode> operator()() const {
         std::unique_ptr<ReifiedTypeNode> reified(
-                new ReifiedTypeNode(new BaseTypeNode({0, 1}, std::string(Name))));
+                new ReifiedTypeNode(std::make_unique<BaseTypeNode>(Token{0, 1}, std::string(Name))));
         return addElement(std::move(reified), P()...);
     }
 };
@@ -96,7 +96,7 @@ std::unique_ptr<FuncTypeNode> addParam(std::unique_ptr<FuncTypeNode> &&type) {
 template <typename First, typename ... P>
 std::unique_ptr<FuncTypeNode> addParam(std::unique_ptr<FuncTypeNode> &&type, First &&, P && ...rest) {
     auto e = TypeFactory<First>{}();
-    type->addParamTypeNode(e.release());
+    type->addParamTypeNode(std::move(e));
     return addParam(std::move(type), std::forward<P>(rest)...);
 }
 
@@ -104,7 +104,7 @@ template <typename R, typename ...P>
 struct TypeFactory<Func_t<R, P...>> {
     std::unique_ptr<TypeNode> operator()() const {
         auto ret = TypeFactory<R>{}();
-        std::unique_ptr<FuncTypeNode> func(new FuncTypeNode(0, ret.release()));
+        std::unique_ptr<FuncTypeNode> func(new FuncTypeNode(0, std::move(ret)));
         return addParam(std::move(func), P()...);
     }
 };

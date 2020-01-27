@@ -139,10 +139,10 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     std::unique_ptr<TypeNode> retTypeNode;
     if(CUR_KIND() == COLON) {
         this->expect(COLON, false); // always success
-        auto type = std::make_unique<ReturnTypeNode>(TRY(this->parse_typeName()).release());
+        auto type = std::make_unique<ReturnTypeNode>(TRY(this->parse_typeName()));
         while(CUR_KIND() == COMMA) {
             this->expectAndChangeMode(COMMA, yycEXPR, false); // always success
-            type->addTypeNode(TRY(this->parse_typeName()).release());
+            type->addTypeNode(TRY(this->parse_typeName()));
         }
         retTypeNode = std::move(type);
     }
@@ -222,12 +222,12 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
     auto typeToken = std::make_unique<BaseTypeNode>(token, this->lexer->toName(token));
     if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
         this->consume();
-        auto reified = std::make_unique<ReifiedTypeNode>(typeToken.release());
-        reified->addElementTypeNode(TRY(this->parse_typeName(false)).release());
+        auto reified = std::make_unique<ReifiedTypeNode>(std::move(typeToken));
+        reified->addElementTypeNode(TRY(this->parse_typeName(false)));
 
         while(CUR_KIND() == TYPE_SEP) {
             this->consume();
-            reified->addElementTypeNode(TRY(this->parse_typeName(false)).release());
+            reified->addElementTypeNode(TRY(this->parse_typeName(false)));
         }
         token = TRY(this->expect(TYPE_CLOSE));
         reified->updateToken(token);
@@ -243,10 +243,10 @@ static std::unique_ptr<TypeNode> createTupleOrBasicType(
     if(commaCount == 0) {
         type->setPos(open.pos);
     } else {
-        auto reified = std::make_unique<ReifiedTypeNode>(new BaseTypeNode(open, TYPE_TUPLE));
-        reified->addElementTypeNode(type.release());
+        auto reified = std::make_unique<ReifiedTypeNode>(std::make_unique<BaseTypeNode>(open, TYPE_TUPLE));
+        reified->addElementTypeNode(std::move(type));
         for(unsigned int i = 1; i < types.size(); i++) {
-            reified->addElementTypeNode(types[i].release());
+            reified->addElementTypeNode(std::move(types[i]));
         }
         type = std::move(reified);
     }
@@ -279,9 +279,9 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
             TRY(this->expect(TYPE_ARROW));
             auto type = TRY(this->parse_typeName(false));
             Token token = type->getToken();
-            auto func = std::make_unique<FuncTypeNode>(openToken.pos, type.release());
+            auto func = std::make_unique<FuncTypeNode>(openToken.pos, std::move(type));
             for(auto &e : types) {
-                func->addParamTypeNode(e.release());
+                func->addParamTypeNode(std::move(e));
             }
             func->updateToken(token);
             type = std::move(func);
@@ -294,11 +294,12 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
         Token token = this->expect(ATYPE_OPEN);  // always success
         auto left = TRY(this->parse_typeName(false));
         bool isMap = CUR_KIND() == TYPE_MSEP;
-        auto reified = std::make_unique<ReifiedTypeNode>(new BaseTypeNode(token, isMap ? TYPE_MAP : TYPE_ARRAY));
-        reified->addElementTypeNode(left.release());
+        auto reified = std::make_unique<ReifiedTypeNode>(
+                std::make_unique<BaseTypeNode>(token, isMap ? TYPE_MAP : TYPE_ARRAY));
+        reified->addElementTypeNode(std::move(left));
         if(isMap) {
             this->consume();
-            reified->addElementTypeNode(TRY(this->parse_typeName(false)).release());
+            reified->addElementTypeNode(TRY(this->parse_typeName(false)));
         }
         token = TRY(this->expect(ATYPE_CLOSE));
         reified->updateToken(token);
@@ -314,7 +315,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
             auto exprNode(TRY(this->parse_expression()));
 
             token = TRY(this->expect(RP));
-            auto typeNode = std::make_unique<TypeOfNode>(startPos, std::move(exprNode).release());
+            auto typeNode = std::make_unique<TypeOfNode>(startPos, std::move(exprNode));
             typeNode->updateToken(token);
             return std::move(typeNode);
         }
@@ -326,19 +327,19 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
             this->expect(TYPE_OPEN); // always success
 
             // parse return type
-            auto func = std::make_unique<FuncTypeNode>(token.pos, TRY(this->parse_typeName(false)).release());
+            auto func = std::make_unique<FuncTypeNode>(token.pos, TRY(this->parse_typeName(false)));
 
             if(CUR_KIND() == TYPE_SEP) {   // ,[
                 this->consume();    // TYPE_SEP
                 TRY(this->expect(ATYPE_OPEN));
 
                 // parse first arg type
-                func->addParamTypeNode(TRY(this->parse_typeName(false)).release());
+                func->addParamTypeNode(TRY(this->parse_typeName(false)));
 
                 // rest arg type
                 while(CUR_KIND() == TYPE_SEP) {
                     this->consume();
-                    func->addParamTypeNode(TRY(this->parse_typeName(false)).release());
+                    func->addParamTypeNode(TRY(this->parse_typeName(false)));
                 }
                 TRY(this->expect(ATYPE_CLOSE));
             }
@@ -364,9 +365,9 @@ std::unique_ptr<TypeNode> Parser::parse_typeName(bool enterTYPEMode) {
     auto typeNode = TRY(this->parse_typeNameImpl());
     while(!HAS_NL() && CUR_KIND() == TYPE_OPT) {
         Token token = this->expect(TYPE_OPT); // always success
-        auto reified = std::make_unique<ReifiedTypeNode>(new BaseTypeNode(token, TYPE_OPTION));
+        auto reified = std::make_unique<ReifiedTypeNode>(std::make_unique<BaseTypeNode>(token, TYPE_OPTION));
         reified->setPos(typeNode->getPos());
-        reified->addElementTypeNode(typeNode.release());
+        reified->addElementTypeNode(std::move(typeNode));
         reified->updateToken(token);
         typeNode = std::move(reified);
     }

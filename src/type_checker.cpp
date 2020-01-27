@@ -69,7 +69,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         auto typeTemplate = tempOrError.take();
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = &this->checkTypeExactly(typeNode.getElementTypeNodes()[i]);
+            elementTypes[i] = &this->checkTypeExactly(typeNode.getElementTypeNodes()[i].get());
         }
         return this->symbolTable.createReifiedType(*typeTemplate, std::move(elementTypes));
     }
@@ -79,7 +79,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         unsigned int size = typeNode.getParamTypeNodes().size();
         std::vector<DSType *> paramTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            paramTypes[i] = &this->checkTypeExactly(typeNode.getParamTypeNodes()[i]);
+            paramTypes[i] = &this->checkTypeExactly(typeNode.getParamTypeNodes()[i].get());
         }
         return this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
     }
@@ -87,12 +87,12 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         auto &typeNode = static_cast<ReturnTypeNode&>(node);
         unsigned int size = typeNode.getTypeNodes().size();
         if(size == 1) {
-            return Ok(&this->checkTypeExactly(typeNode.getTypeNodes()[0]));
+            return Ok(&this->checkTypeExactly(typeNode.getTypeNodes()[0].get()));
         }
 
         std::vector<DSType *> types(size);
         for(unsigned int i = 0; i < size; i++) {
-            types[i] = &this->checkTypeExactly(typeNode.getTypeNodes()[i]);
+            types[i] = &this->checkTypeExactly(typeNode.getTypeNodes()[i].get());
         }
         return this->symbolTable.createTupleType(std::move(types));
     }
