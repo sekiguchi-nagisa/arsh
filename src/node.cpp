@@ -1458,24 +1458,6 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     }
 }
 
-void NodeDumper::dumpNodes(const char *fieldName, Node * const * begin, Node *const * end) {
-    this->writeName(fieldName);
-    this->newline();
-
-    this->enterIndent();
-    for(; begin != end; ++begin) {
-        Node *node = *begin;
-
-        this->indent();
-        this->append("- ");
-        this->dumpNodeHeader(*node, true);
-        this->enterIndent();
-        node->dump(*this);
-        this->leaveIndent();
-    }
-    this->leaveIndent();
-}
-
 void NodeDumper::append(int ch) {
     this->bufs.back().value += static_cast<char>(ch);
 }

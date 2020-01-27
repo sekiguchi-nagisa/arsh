@@ -2442,13 +2442,20 @@ public:
     }
 
     void dump(const char *fieldName, const std::vector<Node *> &nodes) {
-        this->dumpNodes(fieldName, nodes.data(), nodes.data() + nodes.size());
+        this->dumpNodesHead(fieldName);
+        for(auto &e : nodes) {
+            this->dumpNodesBody(*e);
+        }
+        this->dumpNodesTail();
     }
 
     template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
     void dump(const char *fieldName, const std::vector<T *> &nodes) {
-        this->dumpNodes(fieldName, reinterpret_cast<Node *const*>(nodes.data()),
-                        reinterpret_cast<Node *const*>(nodes.data() + nodes.size()));
+        this->dumpNodesHead(fieldName);
+        for(auto &e : nodes) {
+            this->dumpNodesBody(*e);
+        }
+        this->dumpNodesTail();
     }
 
     /**
@@ -2509,7 +2516,24 @@ private:
 
     void dumpNodeHeader(const Node &node, bool inArray = false);
 
-    void dumpNodes(const char *fieldName, Node* const* begin, Node* const* end);
+    void dumpNodesHead(const char *fieldName) {
+        this->writeName(fieldName);
+        this->newline();
+        this->enterIndent();
+    }
+
+    void dumpNodesBody(const Node &node) {
+        this->indent();
+        this->append("- ");
+        this->dumpNodeHeader(node, true);
+        this->enterIndent();
+        node.dump(*this);
+        this->leaveIndent();
+    }
+
+    void dumpNodesTail() {
+        this->leaveIndent();
+    }
 
     void writeName(const char *fieldName);
 };
