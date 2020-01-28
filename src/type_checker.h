@@ -220,8 +220,8 @@ protected:
      * @param targetNode
      * @return
      */
-    DSType &checkTypeExactly(Node *targetNode) {
-        return this->checkType(nullptr, targetNode, nullptr);
+    DSType &checkTypeExactly(Node &targetNode) {
+        return this->checkType(nullptr, &targetNode, nullptr);
     }
 
     /**
@@ -245,11 +245,11 @@ protected:
     DSType &checkType(const DSType *requiredType, Node *targetNode,
                       const DSType *unacceptableType, CoercionKind &kind);
 
-    void checkTypeWithCurrentScope(BlockNode *blockNode) {
+    void checkTypeWithCurrentScope(BlockNode &blockNode) {
         this->checkTypeWithCurrentScope(&this->symbolTable.get(TYPE::Void), blockNode);
     }
 
-    void checkTypeWithCurrentScope(const DSType *requiredType, BlockNode *blockNode);
+    void checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode);
 
     /**
      * after type checking.

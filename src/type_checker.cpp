@@ -69,17 +69,17 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         auto typeTemplate = tempOrError.take();
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            elementTypes[i] = &this->checkTypeExactly(typeNode.getElementTypeNodes()[i].get());
+            elementTypes[i] = &this->checkTypeExactly(*typeNode.getElementTypeNodes()[i]);
         }
         return this->symbolTable.createReifiedType(*typeTemplate, std::move(elementTypes));
     }
     case TypeNode::Func: {
         auto &typeNode = static_cast<FuncTypeNode&>(node);
-        auto &returnType = this->checkTypeExactly(typeNode.getReturnTypeNode());
+        auto &returnType = this->checkTypeExactly(*typeNode.getReturnTypeNode());
         unsigned int size = typeNode.getParamTypeNodes().size();
         std::vector<DSType *> paramTypes(size);
         for(unsigned int i = 0; i < size; i++) {
-            paramTypes[i] = &this->checkTypeExactly(typeNode.getParamTypeNodes()[i].get());
+            paramTypes[i] = &this->checkTypeExactly(*typeNode.getParamTypeNodes()[i]);
         }
         return this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
     }
@@ -87,12 +87,12 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         auto &typeNode = static_cast<ReturnTypeNode&>(node);
         unsigned int size = typeNode.getTypeNodes().size();
         if(size == 1) {
-            return Ok(&this->checkTypeExactly(typeNode.getTypeNodes()[0].get()));
+            return Ok(&this->checkTypeExactly(*typeNode.getTypeNodes()[0]));
         }
 
         std::vector<DSType *> types(size);
         for(unsigned int i = 0; i < size; i++) {
-            types[i] = &this->checkTypeExactly(typeNode.getTypeNodes()[i].get());
+            types[i] = &this->checkTypeExactly(*typeNode.getTypeNodes()[i]);
         }
         return this->symbolTable.createTupleType(std::move(types));
     }
@@ -160,18 +160,18 @@ DSType& TypeChecker::checkTypeAsSomeExpr(Node *targetNode) {
     return type;
 }
 
-void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNode *blockNode) {
+void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode) {
     DSType *blockType = &this->symbolTable.get(TYPE::Void);
-    for(auto iter = blockNode->refNodes().begin(); iter != blockNode->refNodes().end(); ++iter) {
+    for(auto iter = blockNode.refNodes().begin(); iter != blockNode.refNodes().end(); ++iter) {
         auto &targetNode = *iter;
         if(blockType->isNothingType()) {
             RAISE_TC_ERROR(Unreachable, *targetNode);
         }
-        if(iter == blockNode->refNodes().end() - 1) {
+        if(iter == blockNode.refNodes().end() - 1) {
             if(requiredType != nullptr) {
                 this->checkTypeWithCoercion(*requiredType, targetNode);
             } else {
-                this->checkTypeExactly(targetNode);
+                this->checkTypeExactly(*targetNode);
             }
         } else {
             this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), targetNode);
@@ -185,12 +185,12 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
     }
 
     // set base index of current scope
-    blockNode->setBaseIndex(this->symbolTable.curScope().getBaseIndex());
-    blockNode->setVarSize(this->symbolTable.curScope().getVarSize());
-    blockNode->setMaxVarSize(this->symbolTable.getMaxVarIndex() - blockNode->getBaseIndex());
+    blockNode.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
+    blockNode.setVarSize(this->symbolTable.curScope().getVarSize());
+    blockNode.setMaxVarSize(this->symbolTable.getMaxVarIndex() - blockNode.getBaseIndex());
 
     assert(blockType != nullptr);
-    blockNode->setType(*blockType);
+    blockNode.setType(*blockType);
 }
 
 void TypeChecker::checkTypeWithCoercion(const DSType &requiredType, Node * &targetNode) {
@@ -534,7 +534,7 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
 
 void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
     auto &exprType = this->checkTypeAsExpr(node.getExprNode());
-    auto &targetType = this->checkTypeExactly(node.getTargetTypeNode());
+    auto &targetType = this->checkTypeExactly(*node.getTargetTypeNode());
 
     if(node.isCastOp()) {
         node.setType(targetType);
@@ -783,7 +783,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
 
     this->fctx.enterChild();
     for(unsigned int i = 0; i < size - 1; i++) {
-        this->checkTypeExactly(node.getNodes()[i]);
+        this->checkTypeExactly(*node.getNodes()[i]);
     }
     this->fctx.leave();
 
@@ -793,7 +793,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
         this->addEntry(node, "%%pipe", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
         node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
     }
-    auto &type = this->checkTypeExactly(node.getNodes()[size - 1]);
+    auto &type = this->checkTypeExactly(*node.getNodes()[size - 1]);
 
     this->symbolTable.exitScope();
     node.setType(node.isLastPipe() ? type : this->symbolTable.get(TYPE::Boolean));
@@ -805,7 +805,7 @@ void TypeChecker::visitWithNode(WithNode &node) {
     // register redir config
     this->addEntry(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
-    auto &type = this->checkTypeExactly(node.getExprNode());
+    auto &type = this->checkTypeExactly(*node.getExprNode());
     for(auto &e : node.getRedirNodes()) {
         this->checkTypeAsExpr(e);
     }
@@ -849,7 +849,7 @@ void TypeChecker::visitAssertNode(AssertNode &node) {
 
 void TypeChecker::visitBlockNode(BlockNode &node) {
     this->symbolTable.enterScope();
-    this->checkTypeWithCurrentScope(nullptr, &node);
+    this->checkTypeWithCurrentScope(nullptr, node);
     this->symbolTable.exitScope();
 }
 
@@ -859,7 +859,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
     }
 
     TypeNode *typeToken = node.getTargetTypeNode();
-    if(!this->symbolTable.setAlias(node.getAlias(), this->checkTypeExactly(typeToken))) {
+    if(!this->symbolTable.setAlias(node.getAlias(), this->checkTypeExactly(*typeToken))) {
         RAISE_TC_ERROR(DefinedSymbol, node, node.getAlias().c_str());
     }
     node.setType(this->symbolTable.get(TYPE::Void));
@@ -884,7 +884,7 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
     this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node.refIterNode());
 
     this->enterLoop();
-    this->checkTypeWithCurrentScope(node.getBlockNode());
+    this->checkTypeWithCurrentScope(*node.getBlockNode());
     auto &type = this->resolveCoercionOfJumpValue();
     this->exitLoop();
 
@@ -903,8 +903,8 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
 
 void TypeChecker::visitIfNode(IfNode &node) {
     this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Boolean), node.refCondNode());
-    auto &thenType = this->checkTypeExactly(node.getThenNode());
-    auto &elseType = this->checkTypeExactly(node.getElseNode());
+    auto &thenType = this->checkTypeExactly(*node.getThenNode());
+    auto &elseType = this->checkTypeExactly(*node.getElseNode());
 
     if(thenType.isNothingType() && elseType.isNothingType()) {
         node.setType(thenType);
@@ -987,7 +987,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
     unsigned int size = node.getArmNodes().size();
     std::vector<DSType *> types(size);
     for(unsigned int i = 0; i < size; i++) {
-        types[i] = &this->checkTypeExactly(node.getArmNodes()[i]);
+        types[i] = &this->checkTypeExactly(*node.getArmNodes()[i]);
     }
     auto &type = this->resolveCommonSuperType(types);
 
@@ -1004,7 +1004,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
 }
 
 void TypeChecker::visitArmNode(ArmNode &node) {
-    auto &type = this->checkTypeExactly(node.getActionNode());
+    auto &type = this->checkTypeExactly(*node.getActionNode());
     node.setType(type);
 }
 
@@ -1195,7 +1195,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
     this->symbolTable.enterScope();
     auto handle = this->addEntry(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
     node.setAttribute(*handle);
-    this->checkTypeWithCurrentScope(nullptr, node.getBlockNode());
+    this->checkTypeWithCurrentScope(nullptr, *node.getBlockNode());
     this->symbolTable.exitScope();
     node.setType(node.getBlockNode()->getType());
 }
@@ -1211,13 +1211,13 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
     // check type try block
     this->fctx.enterTry();
-    auto *exprType = &this->checkTypeExactly(node.getExprNode());
+    auto *exprType = &this->checkTypeExactly(*node.getExprNode());
     this->fctx.leave();
 
     // check type catch block
     for(auto &c : node.getCatchNodes()) {
         this->fctx.enterTry();
-        auto &catchType = this->checkTypeExactly(c);
+        auto &catchType = this->checkTypeExactly(*c);
         this->fctx.leave();
 
         if(!exprType->isSameOrBaseTypeOf(catchType) && !this->checkCoercion(*exprType, catchType)) {
@@ -1345,7 +1345,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     }
 
     // resolve return type, param type
-    auto &returnType = this->checkTypeExactly(node.getReturnTypeToken());
+    auto &returnType = this->checkTypeExactly(*node.getReturnTypeToken());
     unsigned int paramSize = node.getParamTypeNodes().size();
     std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
@@ -1376,7 +1376,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     }
 
     // check type func body
-    this->checkTypeWithCurrentScope(node.getBlockNode());
+    this->checkTypeWithCurrentScope(*node.getBlockNode());
     this->symbolTable.exitScope();
 
     node.setMaxVarNum(this->symbolTable.getMaxVarIndex());
@@ -1427,7 +1427,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     }
 
     // check type command body
-    this->checkTypeWithCurrentScope(node.getBlockNode());
+    this->checkTypeWithCurrentScope(*node.getBlockNode());
     this->symbolTable.exitScope();
 
     node.setMaxVarNum(this->symbolTable.getMaxVarIndex());
@@ -1530,7 +1530,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
     }
 
     if(this->toplevelPrinting && this->symbolTable.isRootModule() && !mayBeCmd(*node)) {
-        this->checkTypeExactly(node);
+        this->checkTypeExactly(*node);
         node = this->newPrintOpNode(node);
     } else {
         this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);// pop stack top
