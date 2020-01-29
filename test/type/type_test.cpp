@@ -69,43 +69,42 @@ struct TypeFactory<BaseType<Name>> {
     }
 };
 
-std::unique_ptr<ReifiedTypeNode> addElement(std::unique_ptr<ReifiedTypeNode> &&type) {
-    return std::move(type);
-}
+static void addElement(std::vector<std::unique_ptr<TypeNode>> &) {}
 
 template <typename First, typename ... E>
-std::unique_ptr<ReifiedTypeNode> addElement(std::unique_ptr<ReifiedTypeNode> &&type, First &&, E&& ...rest) {
+void addElement(std::vector<std::unique_ptr<TypeNode>> &types, First &&, E&& ...rest) {
     auto e = TypeFactory<First>{}();
-    type->addElementTypeNode(std::move(e));
-    return addElement(std::move(type), std::forward<E>(rest)...);
+    types.push_back(std::move(e));
+    addElement(types, std::forward<E>(rest)...);
 }
 
 template <const char *&Name, unsigned int N, typename ...P>
 struct TypeFactory<TypeTemp<Name, N, P...>> {
     std::unique_ptr<TypeNode> operator()() const {
-        std::unique_ptr<ReifiedTypeNode> reified(
-                new ReifiedTypeNode(std::make_unique<BaseTypeNode>(Token{0, 1}, std::string(Name))));
-        return addElement(std::move(reified), P()...);
+        std::vector<std::unique_ptr<TypeNode>> types;
+        addElement(types, P()...);
+        return std::make_unique<ReifiedTypeNode>(
+                std::make_unique<BaseTypeNode>(Token{0, 1}, std::string(Name)),
+                std::move(types), Token{0, 0});
     }
 };
 
-std::unique_ptr<FuncTypeNode> addParam(std::unique_ptr<FuncTypeNode> &&type) {
-    return std::move(type);
-}
+static void addParam(std::vector<std::unique_ptr<TypeNode>> &) {}
 
 template <typename First, typename ... P>
-std::unique_ptr<FuncTypeNode> addParam(std::unique_ptr<FuncTypeNode> &&type, First &&, P && ...rest) {
+void addParam(std::vector<std::unique_ptr<TypeNode>> &types, First &&, P && ...rest) {
     auto e = TypeFactory<First>{}();
-    type->addParamTypeNode(std::move(e));
-    return addParam(std::move(type), std::forward<P>(rest)...);
+    types.push_back(std::move(e));
+    addParam(types, std::forward<P>(rest)...);
 }
 
 template <typename R, typename ...P>
 struct TypeFactory<Func_t<R, P...>> {
     std::unique_ptr<TypeNode> operator()() const {
         auto ret = TypeFactory<R>{}();
-        std::unique_ptr<FuncTypeNode> func(new FuncTypeNode(0, std::move(ret)));
-        return addParam(std::move(func), P()...);
+        std::vector<std::unique_ptr<TypeNode>> types;
+        addParam(types, P()...);
+        return std::make_unique<FuncTypeNode>(0, std::move(ret), std::move(types), Token {0,0});
     }
 };
 

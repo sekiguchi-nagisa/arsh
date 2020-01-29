@@ -212,16 +212,22 @@ private:
     std::vector<std::unique_ptr<TypeNode>> elementTypeNodes;
 
 public:
-    explicit ReifiedTypeNode(std::unique_ptr<BaseTypeNode> &&templateTypeNode) :
+    ReifiedTypeNode(std::unique_ptr<BaseTypeNode> &&templateTypeNode,
+            std::vector<std::unique_ptr<TypeNode>> &&elementNodes, Token endToken) :
             TypeNode(TypeNode::Reified, templateTypeNode->getToken()),
-            templateTypeNode(std::move(templateTypeNode)) { }
-
-    void addElementTypeNode(std::unique_ptr<TypeNode> &&typeNode) {
-        this->elementTypeNodes.push_back(std::move(typeNode));
+            templateTypeNode(std::move(templateTypeNode)), elementTypeNodes(std::move(elementNodes)) {
+        this->updateToken(endToken);
     }
 
-    BaseTypeNode *getTemplate() const {
-        return this->templateTypeNode.get();
+    ReifiedTypeNode(std::unique_ptr<TypeNode> &&elementNode, std::unique_ptr<BaseTypeNode> &&tempNode) :
+            TypeNode(TypeNode::Reified, elementNode->getToken()),
+            templateTypeNode(std::move(tempNode)), elementTypeNodes(1) {
+        this->elementTypeNodes[0] = std::move(elementNode);
+        this->updateToken(this->templateTypeNode->getToken());
+    }
+
+    const std::unique_ptr<BaseTypeNode> &getTemplate() const {
+        return this->templateTypeNode;
     }
 
     const std::vector<std::unique_ptr<TypeNode>> &getElementTypeNodes() const {
@@ -241,20 +247,26 @@ private:
     std::vector<std::unique_ptr<TypeNode>> paramTypeNodes;
 
 public:
-    FuncTypeNode(unsigned int startPos, std::unique_ptr<TypeNode> &&returnTypeNode) :
+    FuncTypeNode(unsigned int startPos, std::unique_ptr<TypeNode> &&returnTypeNode,
+                std::vector<std::unique_ptr<TypeNode>> paramTypeNodes, Token endToken) :
             TypeNode(TypeNode::Func, {startPos, 0}),
-            returnTypeNode(std::move(returnTypeNode)) { }
+            returnTypeNode(std::move(returnTypeNode)), paramTypeNodes(std::move(paramTypeNodes)) {
+        this->updateToken(endToken);
+    }
 
-    void addParamTypeNode(std::unique_ptr<TypeNode> &&typeNode) {
-        this->paramTypeNodes.push_back(std::move(typeNode));
+    FuncTypeNode(unsigned int startPos, std::vector<std::unique_ptr<TypeNode>> paramTypeNodes,
+                std::unique_ptr<TypeNode> &&returnTypeNode) :
+            TypeNode(TypeNode::Func, {startPos, 0}),
+            returnTypeNode(std::move(returnTypeNode)), paramTypeNodes(std::move(paramTypeNodes)) {
+        this->updateToken(this->returnTypeNode->getToken());
     }
 
     const std::vector<std::unique_ptr<TypeNode>> &getParamTypeNodes() const {
         return this->paramTypeNodes;
     }
 
-    TypeNode *getReturnTypeNode() const {
-        return this->returnTypeNode.get();
+    const std::unique_ptr<TypeNode> &getReturnTypeNode() const {
+        return this->returnTypeNode;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -294,9 +306,9 @@ private:
     std::unique_ptr<Node> exprNode;
 
 public:
-    TypeOfNode(unsigned int startPos, std::unique_ptr<Node> &&exprNode) :
+    TypeOfNode(unsigned int startPos, std::unique_ptr<Node> &&exprNode, Token endToken) :
             TypeNode(TypeNode::TypeOf, {startPos, 0}), exprNode(std::move(exprNode)) {
-        this->updateToken(this->exprNode->getToken());
+        this->updateToken(endToken);
     }
 
     Node *getExprNode() const {

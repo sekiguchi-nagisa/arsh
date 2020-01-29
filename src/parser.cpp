@@ -222,16 +222,15 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
     auto typeToken = std::make_unique<BaseTypeNode>(token, this->lexer->toName(token));
     if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
         this->consume();
-        auto reified = std::make_unique<ReifiedTypeNode>(std::move(typeToken));
-        reified->addElementTypeNode(TRY(this->parse_typeName(false)));
+        std::vector<std::unique_ptr<TypeNode>> types;
+        types.push_back(TRY(this->parse_typeName(false)));
 
         while(CUR_KIND() == TYPE_SEP) {
             this->consume();
-            reified->addElementTypeNode(TRY(this->parse_typeName(false)));
+            types.push_back(TRY(this->parse_typeName(false)));
         }
         token = TRY(this->expect(TYPE_CLOSE));
-        reified->updateToken(token);
-        return std::move(reified);
+        return std::make_unique<ReifiedTypeNode>(std::move(typeToken), std::move(types), token);
     }
     return std::move(typeToken);
 }
@@ -239,19 +238,13 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
 static std::unique_ptr<TypeNode> createTupleOrBasicType(
         Token open, std::vector<std::unique_ptr<TypeNode>> &&types,
         Token close, unsigned int commaCount) {
-    auto type = std::move(types[0]);
     if(commaCount == 0) {
+        auto type = std::move(types[0]);
         type->setPos(open.pos);
-    } else {
-        auto reified = std::make_unique<ReifiedTypeNode>(std::make_unique<BaseTypeNode>(open, TYPE_TUPLE));
-        reified->addElementTypeNode(std::move(type));
-        for(unsigned int i = 1; i < types.size(); i++) {
-            reified->addElementTypeNode(std::move(types[i]));
-        }
-        type = std::move(reified);
+        type->updateToken(close);
+        return type;
     }
-    type->updateToken(close);
-    return type;
+    return std::make_unique<ReifiedTypeNode>(std::make_unique<BaseTypeNode>(open, TYPE_TUPLE), std::move(types), close);
 }
 
 std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
@@ -277,33 +270,24 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
 
         if(types.empty() || CUR_KIND() == TYPE_ARROW) {
             TRY(this->expect(TYPE_ARROW));
-            auto type = TRY(this->parse_typeName(false));
-            Token token = type->getToken();
-            auto func = std::make_unique<FuncTypeNode>(openToken.pos, std::move(type));
-            for(auto &e : types) {
-                func->addParamTypeNode(std::move(e));
-            }
-            func->updateToken(token);
-            type = std::move(func);
-            return type;
+            return std::make_unique<FuncTypeNode>(openToken.pos, std::move(types),
+                    TRY(this->parse_typeName(false)));
         } else {
             return createTupleOrBasicType(openToken, std::move(types), closeToken, count);
         }
     }
     case ATYPE_OPEN: {
         Token token = this->expect(ATYPE_OPEN);  // always success
-        auto left = TRY(this->parse_typeName(false));
+        std::vector<std::unique_ptr<TypeNode>> types;
+        types.push_back(TRY(this->parse_typeName(false)));
         bool isMap = CUR_KIND() == TYPE_MSEP;
-        auto reified = std::make_unique<ReifiedTypeNode>(
-                std::make_unique<BaseTypeNode>(token, isMap ? TYPE_MAP : TYPE_ARRAY));
-        reified->addElementTypeNode(std::move(left));
+        auto tempNode = std::make_unique<BaseTypeNode>(token, isMap ? TYPE_MAP : TYPE_ARRAY);
         if(isMap) {
             this->consume();
-            reified->addElementTypeNode(TRY(this->parse_typeName(false)));
+            types.push_back(TRY(this->parse_typeName(false)));
         }
         token = TRY(this->expect(ATYPE_CLOSE));
-        reified->updateToken(token);
-        return std::move(reified);
+        return std::make_unique<ReifiedTypeNode>(std::move(tempNode), std::move(types), token);
     }
     case TYPEOF: {
         Token token = this->expect(TYPEOF); // always success
@@ -315,9 +299,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
             auto exprNode(TRY(this->parse_expression()));
 
             token = TRY(this->expect(RP));
-            auto typeNode = std::make_unique<TypeOfNode>(startPos, std::move(exprNode));
-            typeNode->updateToken(token);
-            return std::move(typeNode);
+            return std::make_unique<TypeOfNode>(startPos, std::move(exprNode), token);
         }
         return this->parse_basicOrReifiedType(token);
     }
@@ -327,26 +309,27 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
             this->expect(TYPE_OPEN); // always success
 
             // parse return type
-            auto func = std::make_unique<FuncTypeNode>(token.pos, TRY(this->parse_typeName(false)));
+            unsigned int pos = token.pos;
+            auto retNode = TRY(this->parse_typeName(false));
+            std::vector<std::unique_ptr<TypeNode>> types;
 
             if(CUR_KIND() == TYPE_SEP) {   // ,[
                 this->consume();    // TYPE_SEP
                 TRY(this->expect(ATYPE_OPEN));
 
                 // parse first arg type
-                func->addParamTypeNode(TRY(this->parse_typeName(false)));
+                types.push_back(TRY(this->parse_typeName(false)));
 
                 // rest arg type
                 while(CUR_KIND() == TYPE_SEP) {
                     this->consume();
-                    func->addParamTypeNode(TRY(this->parse_typeName(false)));
+                    types.push_back(TRY(this->parse_typeName(false)));
                 }
                 TRY(this->expect(ATYPE_CLOSE));
             }
 
             token = TRY(this->expect(TYPE_CLOSE));
-            func->updateToken(token);
-            return std::move(func);
+            return std::make_unique<FuncTypeNode>(pos, std::move(retNode), std::move(types), token);
         }
         return std::make_unique<BaseTypeNode>(token, this->lexer->toName(token));
     }
@@ -365,11 +348,8 @@ std::unique_ptr<TypeNode> Parser::parse_typeName(bool enterTYPEMode) {
     auto typeNode = TRY(this->parse_typeNameImpl());
     while(!HAS_NL() && CUR_KIND() == TYPE_OPT) {
         Token token = this->expect(TYPE_OPT); // always success
-        auto reified = std::make_unique<ReifiedTypeNode>(std::make_unique<BaseTypeNode>(token, TYPE_OPTION));
-        reified->setPos(typeNode->getPos());
-        reified->addElementTypeNode(std::move(typeNode));
-        reified->updateToken(token);
-        typeNode = std::move(reified);
+        typeNode = std::make_unique<ReifiedTypeNode>(std::move(typeNode),
+                std::make_unique<BaseTypeNode>(token, TYPE_OPTION));
     }
 
     if(enterTYPEMode) {
