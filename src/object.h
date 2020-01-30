@@ -494,6 +494,19 @@ public:
     }
 
     std::string toString() const override;
+
+    bool search(StringRef ref) const {
+        int ovec[1];
+        int match = pcre_exec(this->getRe().get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, arraySize(ovec));
+        return match >= 0;
+    }
+
+    int match(StringRef ref, FlexBuffer<int> &ovec) const {
+        int captureSize;
+        pcre_fullinfo(this->getRe().get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
+        ovec = FlexBuffer<int>((captureSize + 1) * 3, 0);
+        return pcre_exec(this->getRe().get(), nullptr, ref.data(), ref.size(), 0, 0, ovec.get(), (captureSize + 1) * 3);
+    }
 };
 
 class Array_Object : public DSObject {

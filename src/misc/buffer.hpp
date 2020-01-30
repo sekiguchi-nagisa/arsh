@@ -102,6 +102,12 @@ public:
         }
     }
 
+    FlexBuffer(size_type n, const T &value) noexcept : FlexBuffer(n) {
+        while(this->usedSize < n) {
+            this->data[this->usedSize++] = value;
+        }
+    }
+
     template <std::size_t N>
     FlexBuffer(const T (&value)[N]) noexcept : FlexBuffer(N) {  //NOLINT
         this->append(value, N);

@@ -947,14 +947,12 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
     RET(DSValue::create<StringIter_Object>(ctx.symbolTable.get(TYPE::StringIter), str));
 }
 
-static bool regexSearch(const Regex_Object *re, StringRef ref);
-
 //!bind: function $OP_MATCH($this : String, $re : Regex) : Boolean
 YDSH_METHOD string_match(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_match);
     auto str = createStrRef(LOCAL(0));
     auto *re = typeAs<Regex_Object>(LOCAL(1));
-    bool r = regexSearch(re, str);
+    bool r = re->search(str);
     RET_BOOL(r);
 }
 
@@ -963,7 +961,7 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_unmatch);
     auto str = createStrRef(LOCAL(0));
     auto *re = typeAs<Regex_Object>(LOCAL(1));
-    bool r = !regexSearch(re, str);
+    bool r = !re->search(str);
     RET_BOOL(r);
 }
 
@@ -1035,12 +1033,6 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
 // ##     Regex     ##
 // ###################
 
-static bool regexSearch(const Regex_Object *re, StringRef ref) {
-    int ovec[1];
-    int match = pcre_exec(re->getRe().get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, arraySize(ovec));
-    return match >= 0;
-}
-
 //!bind: constructor ($this : Regex, $str : String)
 YDSH_METHOD regex_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_init);
@@ -1060,7 +1052,7 @@ YDSH_METHOD regex_search(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_search);
     auto *re = typeAs<Regex_Object>(LOCAL(0));
     auto ref = createStrRef(LOCAL(1));
-    bool r = regexSearch(re, ref);
+    bool r = re->search(ref);
     RET_BOOL(r);
 }
 
@@ -1069,7 +1061,7 @@ YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_unmatch);
     auto *re = typeAs<Regex_Object>(LOCAL(0));
     auto ref = createStrRef(LOCAL(1));
-    bool r = !regexSearch(re, ref);
+    bool r = !re->search(ref);
     RET_BOOL(r);
 }
 
@@ -1079,10 +1071,8 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     auto *re = typeAs<Regex_Object>(LOCAL(0));
     auto ref = createStrRef(LOCAL(1));
 
-    int captureSize;
-    pcre_fullinfo(re->getRe().get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
-    auto *ovec = static_cast<int *>(malloc(sizeof(int) * (captureSize + 1) * 3));
-    int matchSize = pcre_exec(re->getRe().get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, (captureSize + 1) * 3);
+    FlexBuffer<int> ovec;
+    int matchSize = re->match(ref, ovec);
 
     auto ret = DSValue::create<Array_Object>(ctx.symbolTable.get(TYPE::StringArray));
     auto *array = typeAs<Array_Object>(ret);
@@ -1097,7 +1087,6 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
                                                 std::string(ref.data() + ovec[i * 2], size));
         array->refValues().push_back(std::move(v));
     }
-    free(ovec);
 
     RET(ret);
 }
