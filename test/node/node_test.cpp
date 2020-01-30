@@ -687,6 +687,60 @@ nodes:
           typeKind: "Base"
           typeName: "Int"
 )"},
+
+        {DumpOp::typed, R"(while($false){})", 0, 0, R"(
+nodes:
+  - nodeKind: Loop
+    token:
+      pos: 0
+      size: 15
+    type: Void
+    initNode:
+      nodeKind: Empty
+      token:
+        pos: 0
+        size: 0
+      type: Void
+    condNode:
+      nodeKind: Var
+      token:
+        pos: 5
+        size: 8
+      type: Boolean
+      varName: "false"
+      index: "42"
+      attribute: "READ_ONLY | GLOBAL | BUILTIN"
+    iterNode:
+      nodeKind: Empty
+      token:
+        pos: 0
+        size: 0
+      type: Void
+    blockNode:
+      nodeKind: Block
+      token:
+        pos: 13
+        size: 2
+      type: Nothing
+      nodes:
+        - nodeKind: Jump
+          token:
+            pos: 0
+            size: 0
+          type: Nothing
+          opKind: "CONTINUE"
+          exprNode:
+            nodeKind: Empty
+            token:
+              pos: 0
+              size: 0
+            type: Void
+          leavingBlock: "0"
+      baseIndex: "0"
+      varSize: "0"
+      maxVarSize: "0"
+    asDoWhile: "0"
+)"},
 };
 
 
