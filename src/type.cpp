@@ -20,7 +20,6 @@
 
 #include "type.h"
 #include "object.h"
-#include "handle.h"
 #include "tcerror.h"
 #include "core.h"
 
@@ -224,6 +223,25 @@ TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char 
     TypeCheckError error(node.getToken(), kind, str);
     free(str);
     return error;
+}
+
+std::string toString(FieldAttribute attr) {
+    const char *table[] = {
+#define GEN_STR(E, V) #E,
+            EACH_FIELD_ATTR(GEN_STR)
+#undef GEN_STR
+    };
+
+    std::string value;
+    for(unsigned int i = 0; i < arraySize(table); i++) {
+        if(hasFlag(attr, static_cast<FieldAttribute>(1u << i))) {
+            if(!value.empty()) {
+                value += " | ";
+            }
+            value += table[i];
+        }
+    }
+    return value;
 }
 
 } // namespace ydsh

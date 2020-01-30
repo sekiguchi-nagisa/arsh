@@ -24,7 +24,6 @@
 #include "node.h"
 #include "object.h"
 #include "opcode.h"
-#include "handle.h"
 #include "misc/resource.hpp"
 
 #define ASSERT_BYTE_SIZE(op, size) assert(getByteSize(op) == (size))

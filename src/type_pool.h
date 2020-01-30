@@ -18,7 +18,6 @@
 #define YDSH_TYPE_POOL_H
 
 #include "type.h"
-#include "handle.h"
 #include "constant.h"
 #include "tlerror.h"
 #include "misc/buffer.hpp"

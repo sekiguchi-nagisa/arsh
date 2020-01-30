@@ -28,7 +28,6 @@
 #include "misc/token.hpp"
 #include "token_kind.h"
 #include "type.h"
-#include "handle.h"
 #include "constant.h"
 #include "regex_wrapper.h"
 
@@ -2452,14 +2451,6 @@ public:
         this->dump(fieldName, value.c_str());
     }
 
-    void dump(const char *fieldName, const std::vector<Node *> &nodes) {
-        this->dumpNodesHead(fieldName);
-        for(auto &e : nodes) {
-            this->dumpNodesBody(*e);
-        }
-        this->dumpNodesTail();
-    }
-
     template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
     void dump(const char *fieldName, const std::vector<std::unique_ptr<T>> &nodes) {
         this->dumpNodesHead(fieldName);
@@ -2554,8 +2545,6 @@ private:
     void dumpNodesTail() {
         this->leaveIndent();
     }
-
-    void dumpNodes(const char *fieldName, Node* const* begin, Node* const* end);
 
     void writeName(const char *fieldName);
 };

@@ -234,7 +234,6 @@ set(YDSH_SRC
         src/node.cpp
         src/object.cpp
         src/type.cpp
-        src/handle.cpp
         src/cmd.cpp
         src/core.cpp
         src/symbol_table.cpp
