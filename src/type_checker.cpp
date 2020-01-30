@@ -1339,6 +1339,16 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
     node.setType(this->symbolTable.get(TYPE::Void));
 }
 
+static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool, Node *exprNode) {
+    assert(!blockNode.isUntyped() && !blockNode.getType().isNothingType());
+    assert(!exprNode->isUntyped());
+
+    auto *returnNode = JumpNode::newReturn(exprNode->getToken(), exprNode);
+    returnNode->setType(*pool.get(TYPE::Nothing));
+    blockNode.addNode(returnNode);
+    blockNode.setType(returnNode->getType());
+}
+
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
         RAISE_TC_ERROR(OutsideToplevel, node);
@@ -1388,7 +1398,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     if(returnType.isVoidType() && !blockNode->getType().isNothingType()) {
         auto *emptyNode = new EmptyNode();
         emptyNode->setType(this->symbolTable.get(TYPE::Void));
-        blockNode->addReturnNodeToLast(this->symbolTable, emptyNode);
+        addReturnNodeToLast(*blockNode, this->symbolTable.getTypePool(), emptyNode);
     }
     if(!blockNode->getType().isNothingType()) {
         RAISE_TC_ERROR(UnfoundReturn, *blockNode);
@@ -1439,7 +1449,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
             !node.getBlockNode()->getNodes().back()->getType().isNothingType()) {
         VarNode *varNode = new VarNode({0, 1}, "?");
         this->checkTypeAsExpr(varNode);
-        node.getBlockNode()->addReturnNodeToLast(this->symbolTable, varNode);
+        addReturnNodeToLast(*node.getBlockNode(), this->symbolTable.getTypePool(), varNode);
     }
 
     node.setType(this->symbolTable.get(TYPE::Void));

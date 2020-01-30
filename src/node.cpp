@@ -704,16 +704,6 @@ void BlockNode::insertNodeToFirst(Node *node) {
     this->nodes.insert(this->nodes.begin(), node);
 }
 
-void BlockNode::addReturnNodeToLast(const SymbolTable &symbolTable, Node *exprNode) {
-    assert(!this->isUntyped() && !this->getType().isNothingType());
-    assert(!exprNode->isUntyped());
-
-    auto *returnNode = JumpNode::newReturn(exprNode->getToken(), exprNode);
-    returnNode->setType(symbolTable.get(TYPE::Nothing));
-    this->addNode(returnNode);
-    this->setType(returnNode->getType());
-}
-
 void BlockNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
     DUMP_PRIM(baseIndex);

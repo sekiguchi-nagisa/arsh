@@ -1397,12 +1397,6 @@ public:
         this->maxVarSize = size;
     }
 
-    /**
-     * this node and exprNode must be typed.
-     * this node must not be bottom type.
-     */
-    void addReturnNodeToLast(const SymbolTable &symbolTable, Node *exprNode);
-
     void dump(NodeDumper &dumper) const override;
 };
 
