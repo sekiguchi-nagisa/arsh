@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 #include <memory>
+#include <cassert>
 
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
