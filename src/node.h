@@ -1269,28 +1269,28 @@ private:
             Node(NodeKind::Fork, token), opKind(kind), exprNode(exprNode) { }
 
 public:
-    static ForkNode *newCmdSubstitution(unsigned int pos, Node *exprNode, Token token, bool strExpr) {
+    static std::unique_ptr<ForkNode> newCmdSubstitution(unsigned int pos, Node *exprNode, Token token, bool strExpr) {
         auto *node = new ForkNode({pos, 1}, strExpr ?  ForkKind::STR : ForkKind::ARRAY, exprNode);
         node->updateToken(token);
-        return node;
+        return std::unique_ptr<ForkNode>(node);
     }
 
-    static ForkNode *newProcSubstitution(unsigned int pos, Node *exprNode, Token token, bool inPipe) {
+    static std::unique_ptr<ForkNode> newProcSubstitution(unsigned int pos, Node *exprNode, Token token, bool inPipe) {
         auto *node = new ForkNode({pos, 1}, inPipe ?  ForkKind::IN_PIPE : ForkKind::OUT_PIPE, exprNode);
         node->updateToken(token);
-        return node;
+        return std::unique_ptr<ForkNode>(node);
     }
 
-    static ForkNode *newBackground(Node *exprNode, Token token, bool disown) {
+    static std::unique_ptr<ForkNode> newBackground(Node *exprNode, Token token, bool disown) {
         auto *node = new ForkNode(exprNode->getToken(), disown ? ForkKind::DISOWN : ForkKind::JOB, exprNode);
         node->updateToken(token);
-        return node;
+        return std::unique_ptr<ForkNode>(node);
     }
 
-    static ForkNode *newCoproc(Token token, Node *exprNode) {
+    static std::unique_ptr<ForkNode> newCoproc(Token token, Node *exprNode) {
         auto *node = new ForkNode(token, ForkKind::COPROC, exprNode);
         node->updateToken(exprNode->getToken());
-        return node;
+        return std::unique_ptr<ForkNode>(node);
     }
 
     ~ForkNode() override;

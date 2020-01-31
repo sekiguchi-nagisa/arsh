@@ -932,7 +932,7 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
         case DISOWN_BG: {
             Token token = this->curToken;
             bool disown = this->scan() == DISOWN_BG;
-            return std::unique_ptr<Node>(ForkNode::newBackground(node.release(), token, disown));
+            return ForkNode::newBackground(node.release(), token, disown);
         }
         default: {
             Token token = this->curToken;
@@ -966,7 +966,7 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case COPROC: {
         auto token = this->expect(COPROC);  // always success
         auto exprNode = TRY(this->parse_expression(getPrecedence(COPROC)));
-        return std::unique_ptr<Node>(ForkNode::newCoproc(token, exprNode.release()));
+        return ForkNode::newCoproc(token, exprNode.release());
     }
     default:
         return this->parse_suffixExpression();
@@ -1404,7 +1404,7 @@ std::unique_ptr<Node> Parser::parse_cmdSubstitution(bool strExpr) {
     this->consume();    // START_SUB_CMD
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(RP));
-    return std::unique_ptr<Node>(ForkNode::newCmdSubstitution(pos, exprNode.release(), token, strExpr));
+    return ForkNode::newCmdSubstitution(pos, exprNode.release(), token, strExpr);
 }
 
 std::unique_ptr<Node> Parser::parse_procSubstitution() {
@@ -1415,7 +1415,7 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
     bool inPipe = this->scan() == START_IN_SUB;
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(RP));
-    return std::unique_ptr<Node>(ForkNode::newProcSubstitution(pos, exprNode.release(), token, inPipe));
+    return ForkNode::newProcSubstitution(pos, exprNode.release(), token, inPipe);
 }
 
 } // namespace ydsh
