@@ -203,14 +203,6 @@ YDSH_METHOD basic_mod(RuntimeContext &ctx) {
     RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result));
 }
 
-static bool binary_eq(RuntimeContext &ctx) {
-    return LOCAL(0)->equals(LOCAL(1));
-}
-
-static bool binary_ne(RuntimeContext &ctx) {
-    return !binary_eq(ctx);
-}
-
 
 // #################
 // ##     Any     ##
@@ -618,13 +610,17 @@ YDSH_METHOD boolean_not(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Boolean, $target : Boolean) : Boolean
 YDSH_METHOD boolean_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_eq);
-    RET_BOOL(binary_eq(ctx));
+    auto *left = typeAs<Boolean_Object>(LOCAL(0));
+    auto *right = typeAs<Boolean_Object>(LOCAL(1));
+    RET_BOOL(left->getValue() == right->getValue());
 }
 
 //!bind: function $OP_NE($this : Boolean, $target : Boolean) : Boolean
 YDSH_METHOD boolean_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_ne);
-    RET_BOOL(binary_ne(ctx));
+    auto *left = typeAs<Boolean_Object>(LOCAL(0));
+    auto *right = typeAs<Boolean_Object>(LOCAL(1));
+    RET_BOOL(left->getValue() != right->getValue());
 }
 
 
