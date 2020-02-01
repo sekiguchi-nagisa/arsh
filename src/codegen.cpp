@@ -551,6 +551,12 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     if(node.getType().isOptionType()) {
         this->emit0byteIns(OpCode::NEW_INVALID);
         return;
+    } else if(this->symbolTable.getTypePool().isArrayType(node.getType())) {
+        this->emitTypeIns(OpCode::NEW_ARRAY, node.getType());
+        return;
+    } else if(this->symbolTable.getTypePool().isMapType(node.getType())) {
+        this->emitTypeIns(OpCode::NEW_MAP, node.getType());
+        return;
     }
 
     unsigned int paramSize = node.getArgNodes().size();

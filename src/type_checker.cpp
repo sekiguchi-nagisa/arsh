@@ -664,7 +664,9 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
 
 void TypeChecker::visitNewNode(NewNode &node) {
     auto &type = this->checkTypeAsExpr(node.getTargetTypeNode());
-    if(type.isOptionType()) {
+    if(type.isOptionType() ||
+        this->symbolTable.getTypePool().isArrayType(type) ||
+        this->symbolTable.getTypePool().isMapType(type)) {
         unsigned int size = node.getArgNodes().size();
         if(size > 0) {
             RAISE_TC_ERROR(UnmatchParam, node, 0, size);
@@ -674,7 +676,6 @@ void TypeChecker::visitNewNode(NewNode &node) {
         if(handle == nullptr) {
             RAISE_TC_ERROR(UndefinedInit, node, this->symbolTable.getTypeName(type));
         }
-
         this->checkTypeArgsNode(node, handle, node.refArgNodes());
     }
 

@@ -1198,14 +1198,6 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
 // ##     Array     ##
 // ###################
 
-//!bind: constructor ($this : Array<T0>)
-YDSH_METHOD array_init(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(array_init);
-    DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, DSValue::create<Array_Object>(*type));
-    RET_VOID;
-}
-
 #define TRY(E) ({ auto value = E; if(!value) { RET_ERROR; } std::forward<decltype(value)>(value); })
 
 struct ArrayIndex {
@@ -1567,14 +1559,6 @@ YDSH_METHOD array_cmdArg(RuntimeContext &ctx) {
 // #################
 // ##     Map     ##
 // #################
-
-//!bind: constructor ($this : Map<T0, T1>)
-YDSH_METHOD map_init(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(map_init);
-    DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, DSValue::create<Map_Object>(*type));
-    RET_VOID;
-}
 
 //!bind: function $OP_GET($this : Map<T0, T1>, $key : T0) : T1
 YDSH_METHOD map_get(RuntimeContext &ctx) {

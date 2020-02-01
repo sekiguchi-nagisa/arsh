@@ -274,8 +274,6 @@ function list($this : Signals) : Array<Signal>
 
 ## Array type
 ```
-constructor($this : Array<T0>) : Void
-
 function %OP_GET($this : Array<T0>, $index : Int32) : T0
 
 function get($this : Array<T0>, $index : Int32) : Option<T0>
@@ -335,8 +333,6 @@ function %OP_CMD_ARG($this : Array<T0>) : Array<String>
 
 ## Map type
 ```
-constructor($this : Map<T0,T1>) : Void
-
 function %OP_GET($this : Map<T0,T1>, $key : T0) : T1
 
 function %OP_SET($this : Map<T0,T1>, $key : T0, $value : T1) : Void

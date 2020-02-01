@@ -306,6 +306,16 @@ struct native_type_info_t {
      * not call it if constructorSize is 0
      */
     const NativeFuncInfo &getInitInfo() const;
+
+    bool operator==(native_type_info_t info) const {
+        return this->offset == info.offset &&
+            this->constructorSize == info.constructorSize &&
+            this->methodSize == info.methodSize;
+    }
+
+    bool operator!=(native_type_info_t info) const {
+        return !(*this == info);
+    }
 };
 
 /**
