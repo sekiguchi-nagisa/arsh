@@ -885,10 +885,10 @@ JumpNode::~JumpNode() {
 
 void JumpNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP) \
-    OP(BREAK) \
-    OP(CONTINUE) \
-    OP(THROW) \
-    OP(RETURN)
+    OP(BREAK_) \
+    OP(CONTINUE_) \
+    OP(THROW_) \
+    OP(RETURN_)
 
     DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM

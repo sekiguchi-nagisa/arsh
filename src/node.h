@@ -1625,10 +1625,10 @@ public:
 class JumpNode : public Node {
 public:
     enum OpKind : unsigned int {
-        BREAK,
-        CONTINUE,
-        THROW,
-        RETURN,
+        BREAK_,
+        CONTINUE_,
+        THROW_,
+        RETURN_,
     };
 
 private:
@@ -1639,12 +1639,12 @@ private:
     JumpNode(Token token, OpKind kind, Node *exprNode);
 
 public:
-    static JumpNode *newBreak(Token token, Node *exprNode) {
-        return new JumpNode(token, BREAK, exprNode);
+    static std::unique_ptr<JumpNode> newBreak(Token token, Node *exprNode) {
+        return std::unique_ptr<JumpNode>(new JumpNode(token, BREAK_, exprNode));
     }
 
-    static JumpNode *newContinue(Token token) {
-        return new JumpNode(token, CONTINUE, nullptr);
+    static std::unique_ptr<JumpNode> newContinue(Token token) {
+        return std::unique_ptr<JumpNode>(new JumpNode(token, CONTINUE_, nullptr));
     }
 
     /**
@@ -1654,8 +1654,8 @@ public:
      * not null
      * @return
      */
-    static JumpNode *newThrow(Token token, Node *exprNode) {
-        return new JumpNode(token, THROW, exprNode);
+    static std::unique_ptr<JumpNode> newThrow(Token token, Node *exprNode) {
+        return std::unique_ptr<JumpNode>(new JumpNode(token, THROW_, exprNode));
     }
 
     /**
@@ -1665,8 +1665,8 @@ public:
      * may be null
      * @return
      */
-    static JumpNode *newReturn(Token token, Node *exprNode) {
-        return new JumpNode(token, RETURN, exprNode);
+    static std::unique_ptr<JumpNode> newReturn(Token token, Node *exprNode) {
+        return std::unique_ptr<JumpNode>(new JumpNode(token, RETURN_, exprNode));
     }
 
     ~JumpNode() override;

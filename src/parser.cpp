@@ -411,11 +411,11 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
                 break;
             }
         }
-        return std::unique_ptr<Node>(JumpNode::newBreak(token, exprNode.release()));
+        return JumpNode::newBreak(token, exprNode.release());
     }
     case CONTINUE: {
         Token token = this->expect(CONTINUE);  // always success
-        return std::unique_ptr<Node>(JumpNode::newContinue(token));
+        return JumpNode::newContinue(token);
     }
     case EXPORT_ENV: {
         unsigned int startPos = START_POS();
@@ -453,7 +453,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
                 break;
             }
         }
-        return std::unique_ptr<Node>(JumpNode::newReturn(token, exprNode.release()));
+        return JumpNode::newReturn(token, exprNode.release());
     }
     case SOURCE:
     case SOURCE_OPT: {
@@ -961,7 +961,7 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case THROW: {
         auto token = this->expect(THROW);   // always success
         auto exprNode = TRY(this->parse_expression(getPrecedence(THROW)));
-        return std::unique_ptr<Node>(JumpNode::newThrow(token, exprNode.release()));
+        return JumpNode::newThrow(token, exprNode.release());
     }
     case COPROC: {
         auto token = this->expect(COPROC);  // always success

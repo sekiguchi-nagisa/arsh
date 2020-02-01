@@ -892,11 +892,11 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
     this->symbolTable.exitScope();
 
     if(!node.getBlockNode()->getType().isNothingType()) {    // insert continue to block end
-        auto *jumpNode = JumpNode::newContinue({0, 0});
+        auto jumpNode = JumpNode::newContinue({0, 0});
         jumpNode->setType(this->symbolTable.get(TYPE::Nothing));
         jumpNode->getExprNode()->setType(this->symbolTable.get(TYPE::Void));
-        node.getBlockNode()->addNode(jumpNode);
         node.getBlockNode()->setType(jumpNode->getType());
+        node.getBlockNode()->addNode(jumpNode.release());
     }
     node.setType(type);
 }
@@ -1131,7 +1131,7 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
 
     if(node.getExprNode()->is(NodeKind::Empty)) {
         this->checkType(this->symbolTable.get(TYPE::Void), node.getExprNode());
-    } else if(node.getOpKind() == JumpNode::BREAK) {
+    } else if(node.getOpKind() == JumpNode::BREAK_) {
         this->checkTypeAsSomeExpr(node.getExprNode());
         this->breakGather.addJumpNode(&node);
     }
@@ -1161,18 +1161,18 @@ void TypeChecker::checkTypeAsReturn(JumpNode &node) {
 
 void TypeChecker::visitJumpNode(JumpNode &node) {
     switch(node.getOpKind()) {
-    case JumpNode::BREAK:
-    case JumpNode::CONTINUE:
+    case JumpNode::BREAK_:
+    case JumpNode::CONTINUE_:
         this->checkTypeAsBreakContinue(node);
         break;
-    case JumpNode::THROW: {
+    case JumpNode::THROW_: {
         if(this->fctx.finallyLevel() > 0) {
             RAISE_TC_ERROR(InsideFinally, node);
         }
         this->checkType(this->symbolTable.get(TYPE::Any), node.getExprNode());
         break;
     }
-    case JumpNode::RETURN: {
+    case JumpNode::RETURN_: {
         this->checkTypeAsReturn(node);
         break;
     }
@@ -1343,10 +1343,10 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool, Node
     assert(!blockNode.isUntyped() && !blockNode.getType().isNothingType());
     assert(!exprNode->isUntyped());
 
-    auto *returnNode = JumpNode::newReturn(exprNode->getToken(), exprNode);
+    auto returnNode = JumpNode::newReturn(exprNode->getToken(), exprNode);
     returnNode->setType(*pool.get(TYPE::Nothing));
-    blockNode.addNode(returnNode);
     blockNode.setType(returnNode->getType());
+    blockNode.addNode(returnNode.release());
 }
 
 void TypeChecker::visitFunctionNode(FunctionNode &node) {

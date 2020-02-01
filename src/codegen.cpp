@@ -929,7 +929,7 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
         this->enterFinally();
     }
 
-    if(node.getOpKind() == JumpNode::BREAK) {
+    if(node.getOpKind() == JumpNode::BREAK_) {
         if(node.getExprNode()->getType().isVoidType()) {
             this->emitJumpIns(this->peekLoopLabels().breakLabel);
         } else {
@@ -943,16 +943,16 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
 
 void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     switch(node.getOpKind()) {
-    case JumpNode::BREAK:
-    case JumpNode::CONTINUE:
+    case JumpNode::BREAK_:
+    case JumpNode::CONTINUE_:
         this->generateBreakContinue(node);
         break;
-    case JumpNode::THROW: {
+    case JumpNode::THROW_: {
         this->visit(*node.getExprNode());
         this->emit0byteIns(OpCode::THROW);
         break;
     }
-    case JumpNode::RETURN: {
+    case JumpNode::RETURN_: {
         this->visit(*node.getExprNode());
 
         // add finally before return
