@@ -1034,11 +1034,9 @@ void completeLine(DSState &st, const char *data, unsigned int size) {
 
         (*comp)(compreply);
         auto &values = compreply.refValues();
-        std::sort(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
-            return typeAs<String_Object>(x)->compare(y);
-        });
+        compreply.sortAsStrArray();
         auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
-            return typeAs<String_Object>(x)->equals(y);
+            return createStrRef(x) == createStrRef(y);
         });
         values.erase(iter, values.end());
 

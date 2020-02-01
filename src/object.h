@@ -573,6 +573,12 @@ public:
         this->values.erase(values.begin());
         return v;
     }
+
+    void sortAsStrArray() {
+        std::sort(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
+            return createStrRef(x) < createStrRef(y);
+        });
+    }
 };
 
 inline const char *str(const DSValue &v) {
