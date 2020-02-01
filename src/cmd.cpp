@@ -623,19 +623,73 @@ static int builtin_pwd(DSState &state, Array_Object &argvObj) {
     return 0;
 }
 
+#define EACH_STR_COMP_OP(OP) \
+    OP(STR_EQ, "==", ==) \
+    OP(STR_EQ2, "=", ==) \
+    OP(STR_NE, "!=", !=) \
+    OP(STR_LT, "<", <) \
+    OP(STR_GT, ">", >)
+
+
+#define EACH_INT_COMP_OP(OP) \
+    OP(EQ, "-eq", ==) \
+    OP(NE, "-ne", !=) \
+    OP(LT, "-lt", <) \
+    OP(GT, "-gt", >) \
+    OP(LE, "-le", <=) \
+    OP(GE, "-ge", >=)
+
+
 enum class BinaryOp : unsigned int {
     INVALID,
-    STR_EQ,
-    STR_NE,
-    STR_LT,
-    STR_GT,
-    EQ,
-    NE,
-    LT,
-    GT,
-    LE,
-    GE,
+#define GEN_ENUM(E, S, O) E,
+    EACH_STR_COMP_OP(GEN_ENUM)
+    EACH_INT_COMP_OP(GEN_ENUM)
+#undef GEN_ENUM
 };
+
+static BinaryOp resolveBinaryOp(StringRef opStr) {
+    const struct {
+        const char *k;
+        BinaryOp op;
+    } table[] = {
+#define GEN_ENTRY(E, S, O) {S, BinaryOp::E},
+            EACH_INT_COMP_OP(GEN_ENTRY)
+            EACH_STR_COMP_OP(GEN_ENTRY)
+#undef GEN_ENTRY
+    };
+    for(auto &e : table) {
+        if(opStr == e.k) {
+            return e.op;
+        }
+    }
+    return BinaryOp::INVALID;
+}
+
+static bool compareStr(const DSValue &left, BinaryOp op, const DSValue &right) {
+    auto x = createStrRef(left);
+    auto y = createStrRef(right);
+
+    switch(op) {
+#define GEN_CASE(E, S, O) case BinaryOp::E: return x O y;
+    EACH_STR_COMP_OP(GEN_CASE)
+#undef GEN_CASE
+    default:
+        break;
+    }
+    return false;
+}
+
+static bool compareInt(long x, BinaryOp op, long y) {
+    switch(op) {
+#define GEN_CASE(E, S, O) case BinaryOp::E: return x O y;
+    EACH_INT_COMP_OP(GEN_CASE)
+#undef GEN_CASE
+    default:
+        break;
+    }
+    return false;
+}
 
 static int parseFD(const char *value) {
     if(value == strstr(value, "/dev/fd/")) {
@@ -649,23 +703,6 @@ static int parseFD(const char *value) {
 }
 
 static int builtin_test(DSState &, Array_Object &argvObj) {
-    const struct {
-        const char *k;
-        BinaryOp op;
-    } binaryOpTable[] = {
-            {"=", BinaryOp::STR_EQ},
-            {"==", BinaryOp::STR_EQ},
-            {"!=", BinaryOp::STR_NE},
-            {"<", BinaryOp::STR_LT},
-            {">", BinaryOp::STR_GT},
-            {"-eq", BinaryOp::EQ},
-            {"-ne", BinaryOp::NE},
-            {"-lt", BinaryOp::LT},
-            {"-gt", BinaryOp::GT},
-            {"-le", BinaryOp::LE},
-            {"-ge", BinaryOp::GE},
-    };
-
     bool result = false;
     unsigned int argc = argvObj.getValues().size();
     const unsigned int argSize = argc - 1;
@@ -790,39 +827,17 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
     }
     case 3: {   // binary op
         const auto &left = argvObj.getValues()[1];
-        const char *op = str(argvObj.getValues()[2]);
+        auto op = createStrRef(argvObj.getValues()[2]);
+        auto opKind = resolveBinaryOp(op);
         const auto &right = argvObj.getValues()[3];
-        BinaryOp opKind = BinaryOp::INVALID;
-        for(auto &e : binaryOpTable) {
-            if(strcmp(op, e.k) == 0) {
-                opKind = e.op;
-                break;
-            }
-        }
 
         switch(opKind) {
-        case BinaryOp::STR_EQ: {    // x == y
-            result = left->equals(right);
+#define GEN_CASE(E, S, O) case BinaryOp::E:
+        EACH_STR_COMP_OP(GEN_CASE) {
+            result = compareStr(left, opKind, right);
             break;
         }
-        case BinaryOp::STR_NE: {    // x != y
-            result = !left->equals(right);
-            break;
-        }
-        case BinaryOp::STR_LT: {    // x < y
-            result = left->compare(right);
-            break;
-        }
-        case BinaryOp::STR_GT: {    // x > y  -->  y < x
-            result = right->compare(left);
-            break;
-        }
-        case BinaryOp::EQ:
-        case BinaryOp::NE:
-        case BinaryOp::LT:
-        case BinaryOp::GT:
-        case BinaryOp::LE:
-        case BinaryOp::GE: {
+        EACH_INT_COMP_OP(GEN_CASE) {
             auto pair = convertToNum<int64_t>(str(left));
             long n1 = pair.first;
             if(!pair.second) {
@@ -836,25 +851,14 @@ static int builtin_test(DSState &, Array_Object &argvObj) {
                 ERROR(argvObj, "%s: must be integer", str(right));
                 return 2;
             }
-            if(opKind == BinaryOp::EQ) {
-                result = n1 == n2;
-            } else if(opKind == BinaryOp::NE) {
-                result = n1 != n2;
-            } else if(opKind == BinaryOp::LT) {
-                result = n1 < n2;
-            } else if(opKind == BinaryOp::GT) {
-                result = n1 > n2;
-             } else if(opKind == BinaryOp::LE) {
-                result = n1 <= n2;
-            } else if(opKind == BinaryOp::GE) {
-                result = n1 >= n2;
-            }
+
+            result = compareInt(n1, opKind, n2);
             break;
         }
-        case BinaryOp::INVALID: {
-            ERROR(argvObj, "%s: invalid binary operator", op);
+#undef GEN_CASE
+        case BinaryOp::INVALID:
+            ERROR(argvObj, "%s: invalid binary operator", op.data());   //FIXME:
             return 2;
-        }
         }
         break;
     }
