@@ -25,8 +25,6 @@
 
 namespace ydsh {
 
-const NativeFuncInfo *nativeFuncInfoTable();
-
 const NativeCode *getNativeCode(unsigned int index);
 
 // ####################
@@ -84,17 +82,6 @@ int DSType::getIntPrecision() const {
 // ################################
 // ##     native_type_info_t     ##
 // ################################
-
-const NativeFuncInfo &native_type_info_t::getMethodInfo(unsigned int index) const {
-    return nativeFuncInfoTable()[this->offset + this->constructorSize + index];
-}
-
-/**
- * not call it if constructorSize is 0
- */
-const NativeFuncInfo &native_type_info_t::getInitInfo() const {
-    return nativeFuncInfoTable()[this->offset];
-}
 
 static const NativeCode *getCode(native_type_info_t info, unsigned int index) {
     return getNativeCode(info.offset + info.constructorSize + index);

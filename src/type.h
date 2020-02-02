@@ -289,6 +289,8 @@ struct NativeFuncInfo {
     const bool hasRet;
 };
 
+const NativeFuncInfo *nativeFuncInfoTable();
+
 struct native_type_info_t {
     unsigned short offset;
 
@@ -299,13 +301,24 @@ struct native_type_info_t {
 
     unsigned char methodSize;
 
+    unsigned int getActualMethodIndex(unsigned int index) const {
+        return this->offset + this->constructorSize + index;
+    }
 
-    const NativeFuncInfo &getMethodInfo(unsigned int index) const;
+    unsigned int getActualInitIndex() const {
+        return this->offset;
+    }
+
+    const NativeFuncInfo &getMethodInfo(unsigned int index) const {
+        return nativeFuncInfoTable()[this->getActualMethodIndex(index)];
+    }
 
     /**
      * not call it if constructorSize is 0
      */
-    const NativeFuncInfo &getInitInfo() const;
+    const NativeFuncInfo &getInitInfo() const {
+        return nativeFuncInfoTable()[this->getActualInitIndex()];
+    }
 
     bool operator==(native_type_info_t info) const {
         return this->offset == info.offset &&
