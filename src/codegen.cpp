@@ -1349,7 +1349,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             } else {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD) {
-                    fprintf(this->fp, "  %d  %d", read16(c.getCode(), i + 1), read16(c.getCode(), i + 3));
+                    fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
                 } else if(code == OpCode::FORK) {
                     fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
                 } else if(code == OpCode::RECLAIM_LOCAL) {

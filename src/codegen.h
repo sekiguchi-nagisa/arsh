@@ -367,9 +367,10 @@ private:
     void emitCallIns(OpCode op, unsigned short paramSize) {
         assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_INIT
                || op == OpCode::CALL_METHOD);
+        assert(paramSize <= UINT8_MAX);
         this->curBuilder().stackDepthCount -= static_cast<short>(paramSize + 1);
         this->emitIns(op);
-        this->curBuilder().append16(paramSize);
+        this->curBuilder().append8(paramSize);
     }
 
     void emitCallIns(OpCode op, unsigned short paramSize, unsigned short index) {

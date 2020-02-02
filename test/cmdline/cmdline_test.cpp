@@ -183,7 +183,7 @@ TEST_F(CmdlineTest, bytecode) {
     const char *msg = R"(### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 22
+  code size: 21
   max stack depth: 1
   number of local variable: 0
   number of global variable: 51
@@ -192,8 +192,8 @@ Code:
   10: STORE_GLOBAL  50
   13: LOAD_CONST  1
   15: CALL_METHOD  0  0
-  20: POP
-  21: RETURN
+  19: POP
+  20: RETURN
 Constant Pool:
   0: Int32 34
   1: Int32 34
@@ -207,7 +207,7 @@ Exception Table:
     msg = R"(### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 35
+  code size: 34
   max stack depth: 3
   number of local variable: 0
   number of global variable: 51
@@ -217,13 +217,13 @@ Code:
   13: LOAD_GLOBAL  50
   16: LOAD_CONST  1
   18: CALL_FUNC  1
-  21: ENTER_FINALLY  8
-  24: GOTO  33
-  29: LOAD_CONST  2
-  31: POP
-  32: EXIT_FINALLY
-  33: POP
-  34: RETURN
+  20: ENTER_FINALLY  8
+  23: GOTO  32
+  28: LOAD_CONST  2
+  30: POP
+  31: EXIT_FINALLY
+  32: POP
+  33: RETURN
 Constant Pool:
   0: (Any) -> Boolean function(f)
   1: Int32 1
@@ -231,7 +231,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address: 18
 Exception Table:
-  begin: 13, end: 29, type: Any, dest: 29, offset: 0, size: 0
+  begin: 13, end: 28, type: Any, dest: 28, offset: 0, size: 0
 
 DSCode: function f
   code size: 16

@@ -56,9 +56,9 @@ namespace ydsh {
     OP(APPEND_MAP   , 0, -1) \
     OP(NEW_TUPLE    , 4,  1) \
     OP(NEW          , 4,  1) \
-    OP(CALL_INIT    , 2,  0) \
-    OP(CALL_METHOD  , 4,  1) \
-    OP(CALL_FUNC    , 2,  1) \
+    OP(CALL_INIT    , 1,  0) \
+    OP(CALL_METHOD  , 3,  1) \
+    OP(CALL_FUNC    , 1,  1) \
     OP(CALL_NATIVE  , 8,  1) \
     OP(INIT_MODULE  , 0,  0) \
     OP(RETURN       , 0,  0) \

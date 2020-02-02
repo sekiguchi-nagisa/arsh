@@ -820,16 +820,15 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
 }
 
 static NativeCode initSignalTrampoline() noexcept {
-    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 9));
+    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 8));
     code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
     code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
     code[2] = static_cast<unsigned char>(1);
     code[3] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
     code[4] = static_cast<unsigned char>(2);
     code[5] = static_cast<unsigned char>(OpCode::CALL_FUNC);
-    code[6] = code[7] = 0;
-    write16(code + 6, 1);
-    code[8] = static_cast<unsigned char>(OpCode::RETURN_SIG);
+    code[6] = 1;
+    code[7] = static_cast<unsigned char>(OpCode::RETURN_SIG);
     return NativeCode(code);
 }
 
@@ -1093,22 +1092,19 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CALL_INIT) {
-            unsigned short paramSize = read16(GET_CODE(state), state.stack.pc() + 1);
-            state.stack.pc() += 2;
+            unsigned short paramSize = read8(GET_CODE(state), ++state.stack.pc());
             TRY(prepareConstructorCall(state, paramSize));
             vmnext;
         }
         vmcase(CALL_METHOD) {
-            unsigned short paramSize = read16(GET_CODE(state), state.stack.pc() + 1);
-            state.stack.pc() += 2;
+            unsigned short paramSize = read8(GET_CODE(state), ++state.stack.pc());
             unsigned short index = read16(GET_CODE(state), state.stack.pc() + 1);
             state.stack.pc() += 2;
             TRY(prepareMethodCall(state, index, paramSize));
             vmnext;
         }
         vmcase(CALL_FUNC) {
-            unsigned short paramSize = read16(GET_CODE(state), state.stack.pc() + 1);
-            state.stack.pc() += 2;
+            unsigned int paramSize = read8(GET_CODE(state), ++state.stack.pc());
             TRY(prepareFuncCall(state, paramSize));
             vmnext;
         }
