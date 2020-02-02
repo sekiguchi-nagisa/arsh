@@ -120,8 +120,8 @@ inline void removeDirWithRecursively(const char *currentDir) {
 
 class TempFileFactory {
 protected:
-    std::string tmpDirName;
-    std::string tmpFileName;
+    const std::string tmpDirName;
+    const std::string tmpFileName;
 
 public:
     TempFileFactory() : tmpDirName(makeTempDir()), tmpFileName(this->createTempFile("", "")) {}
