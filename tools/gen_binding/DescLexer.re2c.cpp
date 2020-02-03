@@ -49,7 +49,6 @@ DescTokenKind DescLexer::nextToken(Token &token) {
     /*!re2c
       "//!bind:"             { RET(DESC_PREFIX); }
       "function"             { RET(FUNC); }
-      "constructor"          { RET(INIT); }
       "YDSH_METHOD"          { RET(YDSH_METHOD); }
       "YDSH_METHOD_DECL"     { RET(YDSH_METHOD_DECL); }
       "RuntimeContext"       { RET(RCTX); }

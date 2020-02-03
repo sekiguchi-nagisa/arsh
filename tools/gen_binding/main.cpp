@@ -556,26 +556,10 @@ protected:
      */
     std::string actualFuncName;
 
-    Element(std::string &&funcName, bool func, bool op) :
-            func(func), funcName(std::move(funcName)), op(op), ownerType(), returnType(){
-    }
-
 public:
-    static std::unique_ptr<Element> newFuncElement(std::string &&funcName, bool op) {
-        return std::unique_ptr<Element>(new Element(std::move(funcName), true, op));
-    }
-
-    static std::unique_ptr<Element> newInitElement() {
-        std::unique_ptr<Element> element(new Element(std::string(""), false, false));
-        element->setReturnType(std::unique_ptr<TypeToken>(new CommonTypeToken(HandleInfo::Void)));
-        return element;
-    }
+    Element(std::string &&funcName, bool op) : funcName(std::move(funcName)), op(op) {}
 
     virtual ~Element() = default;
-
-    bool isFunc() {
-        return this->func;
-    }
 
     void addConstraint(std::unique_ptr<TypeToken> &&typeParam, std::unique_ptr<TypeToken> &&req) {
         this->constraints.emplace_back(std::move(typeParam), std::move(req));
@@ -684,15 +668,11 @@ public:
 
     std::string toString() {
         std::string str;
-        if(this->isFunc()) {
-            str += "function ";
-            if(this->op) {
-                str += "%";
-            }
-            str += this->funcName;
-        } else {
-            str += "constructor";
+        str += "function ";
+        if(this->op) {
+            str += "%";
         }
+        str += this->funcName;
 
         str += "(";
         str += "$this : ";
@@ -755,8 +735,6 @@ private:
     std::unique_ptr<Element> parse_descriptor(const std::string &line);
 
     std::unique_ptr<Element> parse_funcDesc();
-
-    std::unique_ptr<Element> parse_initDesc();
 
     /**
      *
@@ -857,11 +835,9 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
     switch(CUR_KIND()) {
     case FUNC:
         return this->parse_funcDesc();
-    case INIT:
-        return this->parse_initDesc();
     default:
         const DescTokenKind alters[] = {
-                FUNC, INIT,
+                FUNC,
         };
         this->raiseNoViableAlterError(alters);
         return nullptr;
@@ -877,12 +853,12 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
     switch(CUR_KIND()) {
     case IDENTIFIER: {
         Token token = TRY(this->expect(IDENTIFIER));
-        element = Element::newFuncElement(this->lexer->toTokenText(token), false);
+        element = std::make_unique<Element>(this->lexer->toTokenText(token), false);
         break;
     }
     case VAR_NAME: {
         Token token = TRY(this->expect(VAR_NAME));
-        element = Element::newFuncElement(this->toName(token), true);
+        element = std::make_unique<Element>(this->toName(token), true);
         break;
     }
     default: {
@@ -912,17 +888,6 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
             element->addConstraint(std::move(typeParam), std::move(reqType));
         } while(CUR_KIND() == COMMA);
     }
-    return element;
-}
-
-std::unique_ptr<Element> Parser::parse_initDesc() {
-    TRY(this->expect(INIT));
-
-    std::unique_ptr<Element> element(Element::newInitElement());
-    TRY(this->expect(LP));
-    TRY(this->parse_params(element));
-    TRY(this->expect(RP));
-
     return element;
 }
 
@@ -1035,15 +1000,10 @@ struct TypeBind {
     HandleInfo info;
     std::string name;
 
-    /**
-     * may be nullptr,if has no constructor.
-     */
-    Element *initElement;
-
     std::vector<Element *> funcElements;
 
     explicit TypeBind(HandleInfo info) :
-            info(info), name(HandleInfoMap::getInstance().getName(info)), initElement() { }
+            info(info), name(HandleInfoMap::getInstance().getName(info)) { }
 
     ~TypeBind() = default;
 };
@@ -1060,11 +1020,7 @@ std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elem
         for(TypeBind *bind : binds) {
             if(element->isOwnerType(bind->info)) {
                 matched = true;
-                if(element->isFunc()) {
-                    bind->funcElements.push_back(element.get());
-                } else {
-                    bind->initElement = element.get();
-                }
+                bind->funcElements.push_back(element.get());
                 break;
             }
         }
@@ -1108,9 +1064,6 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
     OUT("static NativeFuncInfo infoTable[] = {\n");
     OUT("    {nullptr, {}, nullptr, false},\n");
     for(TypeBind *bind : binds) {
-        if(bind->initElement != nullptr) {
-            OUT("    %s,\n", bind->initElement->emit().c_str());
-        }
         for(Element *e : bind->funcElements) {
             OUT("    %s,\n", e->emit().c_str());
         }
@@ -1160,16 +1113,12 @@ void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
 
     OUT("# Standard Library Interface Definition\n");
     for(auto &bind : binds) {
-        if(bind->initElement == nullptr && bind->funcElements.empty()) {
+        if(bind->funcElements.empty()) {
             continue;
         }
 
         OUT("## %s type\n", bind->name.c_str());
         OUT("```");
-        if(bind->initElement != nullptr) {
-            OUT("\n");
-            OUT("%s\n", bind->initElement->toString().c_str());
-        }
 
         for(auto &e : bind->funcElements) {
             OUT("\n");

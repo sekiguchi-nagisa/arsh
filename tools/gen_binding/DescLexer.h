@@ -26,7 +26,6 @@
     OP(EOS) \
     OP(DESC_PREFIX)    /* //!bind: */\
     OP(FUNC)           /* function */\
-    OP(INIT)           /* constructor */\
     OP(YDSH_METHOD)    /* YDSH_METHOD */\
     OP(YDSH_METHOD_DECL) /* YDSH_METHOD_DECL */\
     OP(RCTX)           /* RuntimeContext */\
