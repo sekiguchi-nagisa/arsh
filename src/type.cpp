@@ -25,22 +25,12 @@
 
 namespace ydsh {
 
-const NativeCode *getNativeCode(unsigned int index);
-
 // ####################
 // ##     DSType     ##
 // ####################
 
-const DSCode *DSType::getConstructor() const {
-    return nullptr;
-}
-
 unsigned int DSType::getFieldSize() const {
     return this->superType != nullptr ? this->superType->getFieldSize() : 0;
-}
-
-unsigned int DSType::getMethodSize() const {
-    return this->superType != nullptr ? this->superType->getMethodSize() : 0;
 }
 
 const FieldHandle *DSType::lookupFieldHandle(SymbolTable &, const std::string &) const {
@@ -61,13 +51,6 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     return superType != nullptr && this->isSameOrBaseTypeOf(*superType);
 }
 
-const DSCode *DSType::getMethodRef(unsigned int methodIndex) const {
-    return this->superType != nullptr ? this->superType->getMethodRef(methodIndex) : nullptr;
-}
-
-void DSType::copyAllMethodRef(std::vector<const DSCode *> &) const {
-}
-
 int DSType::getIntPrecision() const {
     switch(this->getTypeID()) {
     case static_cast<unsigned int>(TYPE::Int64):
@@ -76,65 +59,6 @@ int DSType::getIntPrecision() const {
         return INT32_PRECISION;
     default:
         return INVALID_PRECISION;
-    }
-}
-
-// ################################
-// ##     native_type_info_t     ##
-// ################################
-
-static const NativeCode *getCode(native_type_info_t info, unsigned int index) {
-    return getNativeCode(info.offset + info.constructorSize + index);
-}
-
-static const NativeCode *getCode(native_type_info_t info) {
-    return getNativeCode(info.offset);
-}
-
-
-// #########################
-// ##     BuiltinType     ##
-// #########################
-
-BuiltinType::BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute) :
-        DSType(id, superType, attribute), info(info), methodTable(this->getMethodSize()) {
-
-    // copy super type methodRef to method table
-    if(this->superType != nullptr) {
-        this->superType->copyAllMethodRef(this->methodTable);
-    }
-
-    // set to method table
-    unsigned int baseIndex = this->getBaseIndex();
-    for(unsigned int i = 0; i < info.methodSize; i++) {
-        unsigned int methodIndex = baseIndex + i;
-        this->methodTable[methodIndex] = getCode(this->info, i);
-    }
-
-    // init constructor handle
-    if(this->info.constructorSize != 0) {
-        this->constructor = getCode(this->info);
-    }
-}
-
-const DSCode *BuiltinType::getConstructor() const {
-    return this->constructor;
-}
-
-unsigned int BuiltinType::getMethodSize() const {
-    return this->info.methodSize + (this->superType != nullptr ? this->superType->getMethodSize() : 0);
-}
-
-const DSCode *BuiltinType::getMethodRef(unsigned int methodIndex) const {
-    return this->methodTable[methodIndex];
-}
-
-void BuiltinType::copyAllMethodRef(std::vector<const DSCode *> &methodTable) const {
-    unsigned int size = this->getMethodSize();
-    assert(size <= methodTable.size());
-
-    for(unsigned int i = 0; i < size; i++) {
-        methodTable[i] = this->methodTable[i];
     }
 }
 
@@ -173,10 +97,6 @@ const FieldHandle *TupleType::lookupFieldHandle(SymbolTable &symbolTable, const 
 // #######################
 // ##     ErrorType     ##
 // #######################
-
-const DSCode *ErrorType::getConstructor() const {
-    return this->superType->getConstructor();
-}
 
 unsigned int ErrorType::getFieldSize() const {
     return this->superType->getFieldSize();

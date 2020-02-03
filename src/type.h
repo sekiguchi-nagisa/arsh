@@ -35,7 +35,6 @@ namespace ydsh {
 
 class FieldHandle;
 class DSValue;
-class DSCode;
 using native_func_t = DSValue (*)(DSState &);
 
 class TypePool;
@@ -179,19 +178,9 @@ public:
     }
 
     /**
-     * return null, if has no constructor
-     */
-    virtual const DSCode *getConstructor() const;
-
-    /**
      * get size of the all fields(include superType fieldSize).
      */
     virtual unsigned int getFieldSize() const;
-
-    /**
-     * get size of the all methods(include superType method size)
-     */
-    virtual unsigned int getMethodSize() const;
 
     /**
      * return null, if has no field
@@ -213,8 +202,6 @@ public:
      */
     bool isSameOrBaseTypeOf(const DSType &targetType) const;
 
-    virtual const DSCode *getMethodRef(unsigned int methodIndex) const;
-
     static constexpr int INT64_PRECISION = 50;
     static constexpr int INT32_PRECISION = 40;
     static constexpr int INVALID_PRECISION = 1;
@@ -235,8 +222,6 @@ public:
         }
         return -1;
     }
-
-    virtual void copyAllMethodRef(std::vector<const DSCode *> &methodTable) const;
 };
 
 class FunctionType : public DSType {
@@ -305,25 +290,12 @@ struct native_type_info_t {
         return this->offset + this->constructorSize + index;
     }
 
-    unsigned int getActualInitIndex() const {
-        return this->offset;
-    }
-
     const NativeFuncInfo &getMethodInfo(unsigned int index) const {
         return nativeFuncInfoTable()[this->getActualMethodIndex(index)];
     }
 
-    /**
-     * not call it if constructorSize is 0
-     */
-    const NativeFuncInfo &getInitInfo() const {
-        return nativeFuncInfoTable()[this->getActualInitIndex()];
-    }
-
     bool operator==(native_type_info_t info) const {
-        return this->offset == info.offset &&
-            this->constructorSize == info.constructorSize &&
-            this->methodSize == info.methodSize;
+        return this->offset == info.offset && this->methodSize == info.methodSize;
     }
 
     bool operator!=(native_type_info_t info) const {
@@ -340,32 +312,15 @@ class BuiltinType : public DSType {
 protected:
     const native_type_info_t info;
 
-    /**
-     * may be null, if has no constructor
-     */
-    const DSCode *constructor{nullptr};
-
-    std::vector<const DSCode *> methodTable;
-
 public:
-    BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute);
+    BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute) :
+            DSType(id, superType, attribute), info(info) {}
 
     ~BuiltinType() = default;
-
-    const DSCode *getConstructor() const override;
-
-    unsigned int getMethodSize() const override;
-    const DSCode *getMethodRef(unsigned int methodIndex) const override;
 
     native_type_info_t getNativeTypeInfo() const {
         return this->info;
     }
-
-    unsigned int getBaseIndex() const {
-        return this->superType != nullptr ? this->superType->getMethodSize() : 0;
-    }
-
-    void copyAllMethodRef(std::vector<const DSCode *> &methodTable) const override;
 };
 
 /**
@@ -418,8 +373,6 @@ class ErrorType : public DSType {
 public:
     ErrorType(unsigned int id, DSType *superType) :
             DSType(id, superType, TypeAttr::EXTENDIBLE) {}
-
-    const DSCode *getConstructor() const override;
 
     /**
      * return types.size()
