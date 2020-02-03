@@ -15,22 +15,6 @@
  */
 
 #include "type_pool.h"
-#include "object.h" //FIXME: remove it
-
-namespace ydsh {
-
-template <unsigned int N>
-std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
-    static_assert(N <= UINT8_MAX, "must be 8bit");
-    std::array<NativeCode, N> array;
-    for(unsigned int i = 0; i < N; i++) {
-        array[i] = NativeCode(i, e[i].hasRet);
-    }
-    return array;
-}
-
-} // namespace ydsh
-
 #include "bind.h"
 
 namespace ydsh {

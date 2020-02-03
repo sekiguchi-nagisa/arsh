@@ -279,15 +279,10 @@ const NativeFuncInfo *nativeFuncInfoTable();
 struct native_type_info_t {
     unsigned short offset;
 
-    /**
-     * may be 0.
-     */
-    unsigned char constructorSize;
-
-    unsigned char methodSize;
+    unsigned short methodSize;
 
     unsigned int getActualMethodIndex(unsigned int index) const {
-        return this->offset + this->constructorSize + index;
+        return this->offset + index;
     }
 
     const NativeFuncInfo &getMethodInfo(unsigned int index) const {

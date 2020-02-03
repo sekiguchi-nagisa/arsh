@@ -1121,15 +1121,9 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
                 "}\n");
     OUT("\n");
 
-    OUT("const NativeCode *getNativeCode(unsigned int index) {\n");
-    OUT("    static auto codes(initNative(infoTable));\n");
-    OUT("    return &codes[index];\n");
-    OUT("}\n");
-    OUT("\n");
-
     // generate dummy
     OUT("static native_type_info_t info_Dummy() {\n");
-    OUT("    return { .offset = 0, .constructorSize = 0, .methodSize = 0 };\n");
+    OUT("    return { .offset = 0, .methodSize = 0 };\n");
     OUT("}\n");
     OUT("\n");
 
@@ -1141,18 +1135,14 @@ void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
             continue;   // skip Void due to having no elements.
         }
 
-
-        unsigned int constructorSize = bind->initElement != nullptr ? 1 : 0;
         unsigned int methodSize = bind->funcElements.size();
 
         OUT("static native_type_info_t info_%sType() {\n", bind->name.c_str());
-        OUT("    return { .offset = %u, .constructorSize = %u, .methodSize = %u };\n",
-            bind->initElement == nullptr && bind->funcElements.empty() ? 0 : offsetCount,
-            constructorSize, methodSize);
+        OUT("    return { .offset = %u, .methodSize = %u };\n",
+            bind->funcElements.empty() ? 0 : offsetCount, methodSize);
         OUT("}\n");
         OUT("\n");
 
-        offsetCount += constructorSize;
         offsetCount += methodSize;
     }
 

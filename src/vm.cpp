@@ -534,8 +534,6 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
 
 int invalidOptionError(const Array_Object &obj, const GetOptState &s);
 
-const NativeCode *getNativeCode(unsigned int index);
-
 bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
     auto &arrayObj = *typeAs<Array_Object>(argvObj);
 
