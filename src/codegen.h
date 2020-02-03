@@ -366,7 +366,7 @@ private:
 
     void emitCallIns(OpCode op, unsigned short paramSize) {
         assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_INIT
-               || op == OpCode::CALL_METHOD);
+               || op == OpCode::CALL_METHOD || op == OpCode::CALL_NATIVE2);
         assert(paramSize <= UINT8_MAX);
         this->curBuilder().stackDepthCount -= static_cast<short>(paramSize + 1);
         this->emitIns(op);
@@ -378,6 +378,21 @@ private:
         this->emitCallIns(op, paramSize);
         this->curBuilder().append16(index);
     }
+
+    void emitCallNativeIns(unsigned short paramSize, unsigned short index) {
+        assert(index <= UINT8_MAX);
+        this->emitCallIns(OpCode::CALL_NATIVE2, paramSize);
+        this->curBuilder().append8(index);
+    }
+
+    /**
+     *
+     * @param paramSize
+     * not include receiver
+     * @param handle
+     * target method
+     */
+    void emitMethodCallIns(unsigned int paramSize, const MethodHandle &handle);
 
     /**
      * write instruction having type. (ex. PRINT).
@@ -397,7 +412,7 @@ private:
     }
 
     void emitLdcIns(DSValue &&value);
-    void generateToString();
+    void emitToString();
     void emitNumCastIns(const DSType &beforeType, const DSType &afterType);
     void emitBranchIns(OpCode op, const Label &label);
 
@@ -477,7 +492,8 @@ private:
     void generateMapCase(CaseNode &node);
     void generateCaseLabels(const ArmNode &node, Map_Object &obj);
     void generateIfElseCase(CaseNode &node);
-    void generateIfElseArm(ArmNode &node, unsigned int eqIndex, unsigned int matchIndex, const Label &mergeLabel);
+    void generateIfElseArm(ArmNode &node, const MethodHandle &eqHandle,
+            const MethodHandle &matchHandle, const Label &mergeLabel);
 
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
         auto info = this->builders.back().srcInfo;

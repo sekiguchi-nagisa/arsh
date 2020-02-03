@@ -183,7 +183,7 @@ TEST_F(CmdlineTest, bytecode) {
     const char *msg = R"(### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 21
+  code size: 20
   max stack depth: 1
   number of local variable: 0
   number of global variable: 51
@@ -191,9 +191,9 @@ Code:
    8: LOAD_CONST  0
   10: STORE_GLOBAL  50
   13: LOAD_CONST  1
-  15: CALL_METHOD  0  0
-  19: POP
-  20: RETURN
+  15: CALL_NATIVE2  1  1
+  18: POP
+  19: RETURN
 Constant Pool:
   0: Int32 34
   1: Int32 34

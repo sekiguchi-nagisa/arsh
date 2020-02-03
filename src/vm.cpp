@@ -871,6 +871,8 @@ bool VM::checkVMEvent(DSState &state) {
     return true;
 }
 
+static auto nativeCallDummy = initCode(OpCode::HALT);
+
 #define vmdispatch(V) switch(V)
 
 #if 0
@@ -1109,13 +1111,23 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CALL_NATIVE) {
-            unsigned long v = read64(GET_CODE(state), state.stack.pc() + 1);
-            state.stack.pc() += 8;
-            auto func = (native_func_t) v;
-            DSValue returnValue = func(state);
+            unsigned int index = read8(GET_CODE(state), ++state.stack.pc());
+            DSValue returnValue = nativeFuncInfoTable()[index].func_ptr(state);
             TRY(!state.hasError());
             if(returnValue) {
                 state.stack.push(std::move(returnValue));
+            }
+            vmnext;
+        }
+        vmcase(CALL_NATIVE2) {
+            unsigned int paramSize = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned int index = read8(GET_CODE(state), ++state.stack.pc());
+            TRY(windStackFrame(state, paramSize, paramSize, &nativeCallDummy));
+            auto ret = nativeFuncInfoTable()[index].func_ptr(state);
+            TRY(!state.hasError());
+            state.stack.unwind();
+            if(ret) {
+                state.stack.push(std::move(ret));
             }
             vmnext;
         }
@@ -1582,7 +1594,13 @@ DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&rec
     unsigned int size = prepareArguments(state.stack, std::move(recv), std::move(args));
 
     DSValue ret;
-    if(prepareMethodCall(state, handle->getMethodIndex(), size)) {
+    NativeCode code;
+    if(handle->isNative()) {
+        code = NativeCode(handle->getMethodIndex(), !handle->getReturnType().isVoidType());
+    }
+
+    if(handle->isNative() ? windStackFrame(state, size + 1, size + 1, &code)
+                        : prepareMethodCall(state, handle->getMethodIndex(), size)) {
         EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
         if(!handle->getReturnType().isVoidType()) {
             setFlag(op, EvalOP::HAS_RETURN);
@@ -1592,8 +1610,7 @@ DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&rec
     return ret;
 }
 
-DSValue
-VM::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
+DSValue VM::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     GUARD_RECURSION(state);
 
     auto *type = funcObj->getType();

@@ -59,7 +59,8 @@ namespace ydsh {
     OP(CALL_INIT    , 1,  0) \
     OP(CALL_METHOD  , 3,  1) \
     OP(CALL_FUNC    , 1,  1) \
-    OP(CALL_NATIVE  , 8,  1) \
+    OP(CALL_NATIVE  , 1,  1) \
+    OP(CALL_NATIVE2 , 2,  1) \
     OP(INIT_MODULE  , 0,  0) \
     OP(RETURN       , 0,  0) \
     OP(RETURN_V     , 0,  0) \

@@ -77,6 +77,14 @@ unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
     return index;
 }
 
+void ByteCodeGenerator::emitMethodCallIns(unsigned int paramSize, const ydsh::MethodHandle &handle) {
+    if(handle.isNative()) {
+        this->emitCallNativeIns(paramSize + 1, handle.getMethodIndex());
+    } else {
+        this->emitCallIns(OpCode::CALL_METHOD, paramSize, handle.getMethodIndex());
+    }
+}
+
 void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
     unsigned int index = this->emitConstant(std::move(value));
     if(index <= UINT8_MAX) {
@@ -88,12 +96,11 @@ void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
     }
 }
 
-void ByteCodeGenerator::generateToString() {
+void ByteCodeGenerator::emitToString() {
     if(this->handle_STR == nullptr) {
         this->handle_STR = this->symbolTable.lookupMethod(TYPE::Any, OP_STR);
     }
-
-    this->emitCallIns(OpCode::CALL_METHOD, 0, this->handle_STR->getMethodIndex());
+    this->emitMethodCallIns(0, *this->handle_STR);
 }
 
 void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &afterType) {
@@ -412,13 +419,13 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         break;
     case TypeOpNode::TO_STRING:
         this->emitSourcePos(node.getPos());
-        this->generateToString();
+        this->emitToString();
         break;
     case TypeOpNode::TO_BOOL: {
         this->emitSourcePos(node.getPos());
         auto *handle = this->symbolTable.lookupMethod(node.getExprNode()->getType(), OP_BOOL);
         assert(handle != nullptr);
-        this->emitCallIns(OpCode::CALL_METHOD, 0, handle->getMethodIndex());
+        this->emitMethodCallIns(0, *handle);
         break;
     }
     case TypeOpNode::CHECK_CAST:
@@ -443,12 +450,12 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
 
             this->markLabel(thenLabel);
             if(!elementType->is(TYPE::String)) {
-                this->generateToString();
+                this->emitToString();
             }
 
             this->markLabel(mergeLabel);
         } else if(!exprType.is(TYPE::String)) {
-            this->generateToString();
+            this->emitToString();
         }
         this->emitTypeIns(OpCode::PRINT, exprType);
         break;
@@ -533,8 +540,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
         }
 
         this->emitSourcePos(node.getPos());
-        this->emitCallIns(OpCode::CALL_METHOD, node.getArgNodes().size(), node.getHandle()->getMethodIndex());
-        return;
+        this->emitMethodCallIns(node.getArgNodes().size(), *node.getHandle());
     } else {
         this->visit(*node.getExprNode());
 
@@ -577,7 +583,7 @@ void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {
     this->visit(*node.getExprNode());
     if(node.getHandle() != nullptr) {
         this->emitSourcePos(node.getPos());
-        this->emitCallIns(OpCode::CALL_METHOD, 0, node.getHandle()->getMethodIndex());
+        this->emitMethodCallIns(0, *node.getHandle());
     }
 }
 
@@ -844,8 +850,8 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
     this->visit(*node.getExprNode());
 
     // generate if-else chain
-    unsigned int eqIndex = this->symbolTable.lookupMethod(exprType, OP_EQ)->getMethodIndex();
-    unsigned int matchIndex = this->symbolTable.lookupMethod(exprType, OP_MATCH)->getMethodIndex();
+    auto &eqHandle = *this->symbolTable.lookupMethod(exprType, OP_EQ);
+    auto &matchHandle = *this->symbolTable.lookupMethod(exprType, OP_MATCH);
 
     int defaultIndex = -1;
     auto mergeLabel = makeLabel();
@@ -854,7 +860,7 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
             defaultIndex = static_cast<int>(index);
             continue;
         }
-        this->generateIfElseArm(*node.getArmNodes()[index], eqIndex, matchIndex, mergeLabel);
+        this->generateIfElseArm(*node.getArmNodes()[index], eqHandle, matchHandle, mergeLabel);
     }
     if(defaultIndex > -1) { // generate default
         this->emit0byteIns(OpCode::POP);    // pop stack top 'expr'
@@ -863,8 +869,8 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
     this->markLabel(mergeLabel);
 }
 
-void ByteCodeGenerator::generateIfElseArm(ArmNode &node, unsigned int eqIndex,
-                                          unsigned int matchIndex, const Label &mergeLabel) {
+void ByteCodeGenerator::generateIfElseArm(ArmNode &node, const MethodHandle &eqHandle,
+                                          const MethodHandle &matchHandle, const Label &mergeLabel) {
     auto armElse = makeLabel();
     auto armMerge = makeLabel();
     unsigned int size = node.getPatternNodes().size();
@@ -882,7 +888,7 @@ void ByteCodeGenerator::generateIfElseArm(ArmNode &node, unsigned int eqIndex,
         auto &patternNode = node.getPatternNodes()[index];
         this->visit(*patternNode);
         assert(patternNode->getType().is(TYPE::String) || patternNode->getType().is(TYPE::Regex));
-        this->emitCallIns(OpCode::CALL_METHOD, 1, patternNode->getType().is(TYPE::String) ? eqIndex : matchIndex);
+        this->emitMethodCallIns(1, patternNode->getType().is(TYPE::String) ? eqHandle : matchHandle);
     }
 
     // generate arm action
@@ -1348,11 +1354,9 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                 fprintf(this->fp, "  %s", this->symbolTable.getTypeName(this->symbolTable.get(v)));
             } else {
                 const int byteSize = getByteSize(code);
-                if(code == OpCode::CALL_METHOD) {
+                if(code == OpCode::CALL_METHOD || code == OpCode::FORK) {
                     fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
-                } else if(code == OpCode::FORK) {
-                    fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
-                } else if(code == OpCode::RECLAIM_LOCAL) {
+                } else if(code == OpCode::RECLAIM_LOCAL || code == OpCode::CALL_NATIVE2) {
                     fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
                 } else {
                     switch(byteSize) {

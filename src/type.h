@@ -539,7 +539,9 @@ private:
 
     unsigned short methodIndex;
 
-    unsigned short paramSize;
+    unsigned char paramSize;
+
+    bool native{true};  // currently only support native method
 
     const DSType *returnType;
 
@@ -552,7 +554,9 @@ private:
 
     MethodHandle(unsigned int id, const DSType *recv, unsigned short index,
                  const DSType *ret, unsigned short paramSize) :
-            id(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {}
+            id(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
+        assert(paramSize <= UINT8_MAX);
+    }
 
     static MethodHandle *alloc(unsigned int count, const DSType *recv, unsigned int index,
                                const DSType *ret, unsigned int paramSize) {
@@ -592,6 +596,10 @@ public:
     const DSType &getParamTypeAt(unsigned int index) const {
         assert(index < this->getParamSize());
         return *this->paramTypes[index];
+    }
+
+    bool isNative() const {
+        return this->native;
     }
 };
 

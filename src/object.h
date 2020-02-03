@@ -859,12 +859,12 @@ public:
 struct NativeCode : public DSCode {
     NativeCode() : DSCode(nullptr) {}
 
-    NativeCode(native_func_t func, bool hasRet) :
-            DSCode(static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 11))) {
+    NativeCode(unsigned int index, bool hasRet) :
+            DSCode(static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 4))) {
         this->code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
         this->code[1] = static_cast<unsigned char>(OpCode::CALL_NATIVE);
-        write64(this->code + 2, reinterpret_cast<unsigned long>(func));
-        this->code[10] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
+        this->code[2] = index;
+        this->code[3] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
     }
 
     explicit NativeCode(unsigned char *code) : DSCode(code) {}

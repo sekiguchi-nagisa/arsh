@@ -316,8 +316,10 @@ private:
      */
     static bool prepareMethodCall(DSState &state, unsigned short index, unsigned short paramSize) {
         const unsigned int actualParamSize = paramSize + 1; // include receiver
-        return windStackFrame(state, actualParamSize, actualParamSize,
-                              state.stack.peekByOffset(paramSize)->getType()->getMethodRef(index));
+        (void) index;
+        /*return */windStackFrame(state, actualParamSize, actualParamSize,
+                              /*state.stack.peekByOffset(paramSize)->getType()->getMethodRef(index)*/nullptr);
+        fatal("FIXME: normal method call is not implemented!!\n");
     }
 
     /**

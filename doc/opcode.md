@@ -38,7 +38,8 @@
 | CALL_INIT     | 1: param                       | recv param1 ~ paramN -> value                | call constructor                                   |
 | CALL_METHOD   | 3: param index1 index2         | recv param1 ~ paramN -> result               | call virtual method                                |
 | CALL_FUNC     | 1: param                       | func param1 ~ paramN -> result               | apply function object                              |
-| CALL_NATIVE   | 8: ptr1 ~ ptr8                 | -> value                                     | call native function                               |
+| CALL_NATIVE   | 1: index                       | -> value                                     | call native function                               |
+| CALL_NATIVE2  | 2: param index                 | param1 ~ paramN -> result                    | call native function                               |
 | INIT_MODULE   |                                | value -> value                               | initialize module                                  |
 | RETURN        |                                | -> [empty]                                   | return from callable                               |
 | RETURN_V      |                                | value -> [empty]                             | return value from callable                         |

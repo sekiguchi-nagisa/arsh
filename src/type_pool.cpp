@@ -21,9 +21,10 @@ namespace ydsh {
 
 template <unsigned int N>
 std::array<NativeCode, N> initNative(const NativeFuncInfo (&e)[N]) {
+    static_assert(N <= UINT8_MAX, "must be 8bit");
     std::array<NativeCode, N> array;
     for(unsigned int i = 0; i < N; i++) {
-        array[i] = NativeCode(e[i].func_ptr, e[i].hasRet);
+        array[i] = NativeCode(i, e[i].hasRet);
     }
     return array;
 }
@@ -356,8 +357,9 @@ static auto getMethodInfo(const DSType &recv, const std::string &name, unsigned 
     if(name.empty()) {  // constructor
         return type.getNativeTypeInfo().getInitInfo();
     } else {
-        unsigned int infoIndex = index - type.getBaseIndex();
-        return type.getNativeTypeInfo().getMethodInfo(infoIndex);
+//        unsigned int infoIndex = index - type.getBaseIndex();
+//        return type.getNativeTypeInfo().getMethodInfo(infoIndex);
+        return nativeFuncInfoTable()[index];
     }
 }
 
@@ -546,11 +548,10 @@ void TypePool::registerHandle(const BuiltinType &recv, const char *name, unsigne
 
 void TypePool::registerHandles(const BuiltinType &type) {
     // init method handle
-    unsigned int baseIndex = type.getBaseIndex();
     auto info = type.getNativeTypeInfo();
     for(unsigned int i = 0; i < info.methodSize; i++) {
         const NativeFuncInfo *funcInfo = &info.getMethodInfo(i);
-        unsigned int methodIndex = baseIndex + i;
+        unsigned int methodIndex = info.getActualMethodIndex(i);
         this->registerHandle(type, funcInfo->funcName, methodIndex);
     }
 
