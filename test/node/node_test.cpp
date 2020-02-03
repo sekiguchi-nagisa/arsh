@@ -297,7 +297,7 @@ nodes:
       attribute: ""
       additionalOp: "NOP"
     argNodes:
-    methodIndex: "0"
+    handle:
     kind: "UNRESOLVED"
 )"},
 
@@ -408,7 +408,8 @@ nodes:
                       varName: "true"
                       index: "0"
                       attribute: ""
-                    methodIndex: "0"
+                    handle:
+            handle:
           leavingBlock: "0"
       baseIndex: "0"
       varSize: "0"
@@ -535,7 +536,7 @@ nodes:
                             type:
                             kind: "Float"
                             floatValue: "34.100000"
-                          methodIndex: "0"
+                          handle:
                 baseIndex: "0"
             baseIndex: "0"
           opKind: "ForkKind::JOB"
@@ -552,7 +553,7 @@ nodes:
         attribute: ""
         additionalOp: "NOP"
       argNodes:
-      methodIndex: "0"
+      handle:
       kind: "UNRESOLVED"
     messageNode:
       nodeKind: String

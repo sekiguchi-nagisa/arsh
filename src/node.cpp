@@ -412,10 +412,7 @@ ApplyNode::~ApplyNode() {
 void ApplyNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     DUMP(argNodes);
-
-    unsigned int methodIndex =
-            this->handle != nullptr ? this->handle->getMethodIndex() : 0;
-    DUMP_PRIM(methodIndex);
+    DUMP_PTR(handle);
 
 #define EACH_ENUM(OP) \
     OP(UNRESOLVED) \
@@ -449,6 +446,7 @@ NewNode::~NewNode() {
 void NewNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(targetTypeNode);
     DUMP(argNodes);
+    DUMP_PTR(handle);
 }
 
 // #######################
@@ -468,10 +466,7 @@ void EmbedNode::dump(ydsh::NodeDumper &dumper) const {
 #undef EACH_ENUM
 
     DUMP_PTR(exprNode);
-
-    unsigned int methodIndex =
-            this->handle != nullptr ? this->handle->getMethodIndex() : 0;
-    DUMP_PRIM(methodIndex);
+    DUMP_PTR(handle);
 }
 
 
@@ -1358,6 +1353,10 @@ void NodeDumper::dump(const char *fieldName, const DSType &type) {
 
 void NodeDumper::dump(const char *fieldName, TokenKind kind) {
     this->dump(fieldName, toString(kind));
+}
+
+void NodeDumper::dump(const char *fieldName, const MethodHandle &handle) {
+    this->dump(fieldName, std::to_string(handle.getMethodIndex()));
 }
 
 void NodeDumper::dumpNull(const char *fieldName) {

@@ -35,8 +35,6 @@ namespace ydsh {
 
 class SymbolTable;
 class ModType;
-class FieldHandle;
-class MethodHandle;
 struct NodeVisitor;
 class NodeDumper;
 
@@ -863,6 +861,8 @@ private:
     TypeNode *targetTypeNode;
     std::vector<Node *> argNodes;
 
+    const MethodHandle *handle{nullptr};
+
 public:
     NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes);
 
@@ -881,6 +881,14 @@ public:
 
     std::vector<Node *> &refArgNodes() {
         return this->argNodes;
+    }
+
+    void setHandle(const MethodHandle *h) {
+        this->handle = h;
+    }
+
+    const MethodHandle *getHandle() const {
+        return this->handle;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2471,6 +2479,8 @@ public:
     void dump(const char *fieldName, const DSType &type);
 
     void dump(const char *fieldName, TokenKind kind);
+
+    void dump(const char *fieldName, const MethodHandle &handle);
 
     void dumpNull(const char *fieldName);
 
