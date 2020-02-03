@@ -320,20 +320,7 @@ private:
         /*return */windStackFrame(state, actualParamSize, actualParamSize,
                               /*state.stack.peekByOffset(paramSize)->getType()->getMethodRef(index)*/nullptr);
         fatal("FIXME: normal method call is not implemented!!\n");
-    }
-
-    /**
-     * stack state in constructor call     stack grow ===>
-     *
-     * +-----------+------------------+   +--------+
-     * | stack top | param1(receiver) | ~ | paramN |
-     * +-----------+------------------+   +--------+
-     *             |    new offset    |
-     */
-    static bool prepareConstructorCall(DSState &state, unsigned short paramSize) {
-        return windStackFrame(state, paramSize, paramSize + 1,
-                              state.stack.peekByOffset(paramSize)->getType()->getConstructor());
-    }
+    } 
 
     /**
      * stack state in function apply    stack grow ===>

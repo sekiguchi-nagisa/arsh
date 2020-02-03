@@ -185,7 +185,7 @@ function upper($this : String) : String
 
 ## UnixFD type
 ```
-constructor($this : UnixFD, $path : String) : Void
+function %OP_INIT($this : UnixFD, $path : String) : UnixFD
 
 function close($this : UnixFD) : Void
 
@@ -198,7 +198,7 @@ function %OP_NOT($this : UnixFD) : Boolean
 
 ## Error type
 ```
-constructor($this : Error, $message : String) : Void
+function %OP_INIT($this : Error, $message : String) : Error
 
 function message($this : Error) : String
 
@@ -237,7 +237,7 @@ function %OP_HAS_NEXT($this : StringIter) : Boolean
 
 ## Regex type
 ```
-constructor($this : Regex, $str : String) : Void
+function %OP_INIT($this : Regex, $str : String) : Regex
 
 function %OP_MATCH($this : Regex, $target : String) : Boolean
 

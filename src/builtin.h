@@ -1029,7 +1029,7 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
 // ##     Regex     ##
 // ###################
 
-//!bind: constructor ($this : Regex, $str : String)
+//!bind: function $OP_INIT($this : Regex, $str : String) : Regex
 YDSH_METHOD regex_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_init);
     auto ref = createStrRef(LOCAL(1));
@@ -1039,8 +1039,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
         raiseError(ctx, TYPE::RegexSyntaxError, std::string(errorStr));
         RET_ERROR;
     }
-    ctx.setLocal(0, DSValue::create<Regex_Object>(ctx.symbolTable.get(TYPE::Regex), ref.data(), std::move(re)));
-    RET_VOID;
+    RET(DSValue::create<Regex_Object>(ctx.symbolTable.get(TYPE::Regex), ref.data(), std::move(re)));
 }
 
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Boolean
@@ -1706,12 +1705,11 @@ YDSH_METHOD tuple_cmdArg(RuntimeContext &ctx) {
 // ##     Error     ##
 // ###################
 
-//!bind: constructor ($this : Error, $message : String)
+//!bind: function $OP_INIT($this : Error, $message : String) : Error
 YDSH_METHOD error_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_init);
     DSType *type = LOCAL(0)->getType();
-    ctx.setLocal(0, DSValue(Error_Object::newError(ctx, *type, LOCAL(1))));
-    RET_VOID;
+    RET(DSValue(Error_Object::newError(ctx, *type, LOCAL(1))));
 }
 
 //!bind: function message($this : Error) : String
@@ -1737,15 +1735,13 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 // ##     UnixFD     ##
 // ####################
 
-//!bind: constructor ($this : UnixFD, $path : String)
+//!bind: function $OP_INIT($this : UnixFD, $path : String) : UnixFD
 YDSH_METHOD fd_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_init);
     const char *path = createStrRef(LOCAL(1)).data();
     int fd = open(path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
     if(fd != -1) {
-        auto obj = DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), fd);
-        ctx.setLocal(0, std::move(obj));
-        RET_VOID;
+        RET(DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), fd));
     }
     int e = errno;
     std::string msg = "open failed: ";

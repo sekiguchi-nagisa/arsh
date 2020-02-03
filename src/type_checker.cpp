@@ -677,6 +677,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
             RAISE_TC_ERROR(UndefinedInit, node, this->symbolTable.getTypeName(type));
         }
         this->checkTypeArgsNode(node, handle, node.refArgNodes());
+        node.setHandle(handle);
     }
 
     node.setType(type);

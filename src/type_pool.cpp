@@ -352,25 +352,12 @@ TypeOrError TypeDecoder::decode() {
     }
 }
 
-static auto getMethodInfo(const DSType &recv, const std::string &name, unsigned int index) {
-    auto &type = static_cast<const BuiltinType &>(recv);
-    if(name.empty()) {  // constructor
-        return type.getNativeTypeInfo().getInitInfo();
-    } else {
-//        unsigned int infoIndex = index - type.getBaseIndex();
-//        return type.getNativeTypeInfo().getMethodInfo(infoIndex);
-        return nativeFuncInfoTable()[index];
-    }
-}
-
 #define TRY2(E) ({ auto value = E; if(!value) { return nullptr; } value.take(); })
 
 // FIXME: error reporting
-MethodHandle* MethodHandle::create(TypePool &pool, const DSType &recv,
-                                   const std::string &name, unsigned int index) {
+MethodHandle* MethodHandle::create(TypePool &pool, const DSType &recv, unsigned int index) {
     auto *types = recv.isReifiedType() ? &static_cast<const ReifiedType &>(recv).getElementTypes() : nullptr;
-    auto info = getMethodInfo(recv, name, index);
-    assert(name == info.funcName);
+    auto info = nativeFuncInfoTable()[index];
     TypeDecoder decoder(pool, info.handleInfo, types);
 
     // check type parameter constraint
@@ -403,7 +390,8 @@ const MethodHandle* TypePool::lookupMethod(const DSType &recvType, const std::st
         auto iter = this->methodMap.find(key);
         if(iter != this->methodMap.end()) {
             if(!iter->second) {
-                auto *handle = MethodHandle::create(*this, *type, methodName, iter->second.index());
+                assert(methodName == nativeFuncInfoTable()[iter->second.index()].funcName);
+                auto *handle = MethodHandle::create(*this, *type, iter->second.index());
                 if(!handle) {
                     return nullptr;
                 }
@@ -553,11 +541,6 @@ void TypePool::registerHandles(const BuiltinType &type) {
         const NativeFuncInfo *funcInfo = &info.getMethodInfo(i);
         unsigned int methodIndex = info.getActualMethodIndex(i);
         this->registerHandle(type, funcInfo->funcName, methodIndex);
-    }
-
-    // init constructor handle
-    if(info.constructorSize != 0) {
-        this->registerHandle(type, info.getInitInfo().funcName, 0);
     }
 }
 

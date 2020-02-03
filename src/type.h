@@ -567,7 +567,7 @@ private:
 public:
     NON_COPYABLE(MethodHandle);
 
-    static MethodHandle *create(TypePool &pool, const DSType &recv, const std::string &name, unsigned int index);
+    static MethodHandle *create(TypePool &pool, const DSType &recv, unsigned int index);
 
     static void operator delete(void *ptr) noexcept {   //NOLINT
         free(ptr);

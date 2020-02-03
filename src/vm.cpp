@@ -1093,11 +1093,6 @@ bool VM::mainLoop(DSState &state) {
             }
             vmnext;
         }
-        vmcase(CALL_INIT) {
-            unsigned short paramSize = read8(GET_CODE(state), ++state.stack.pc());
-            TRY(prepareConstructorCall(state, paramSize));
-            vmnext;
-        }
         vmcase(CALL_METHOD) {
             unsigned short paramSize = read8(GET_CODE(state), ++state.stack.pc());
             unsigned short index = read16(GET_CODE(state), state.stack.pc() + 1);

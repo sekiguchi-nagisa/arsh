@@ -576,7 +576,8 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
 
     // call constructor
     this->emitSourcePos(node.getPos());
-    this->emitCallIns(OpCode::CALL_INIT, paramSize);
+    assert(node.getHandle() && node.getHandle()->isNative());   //FIXME: normal constructor call
+    this->emitCallNativeIns(paramSize + 1, node.getHandle()->getMethodIndex());
 }
 
 void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {

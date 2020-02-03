@@ -50,6 +50,9 @@ constexpr const char *VAR_COMP_HOOK = "COMP_HOOK";
 
 // =====  magic method  =====
 
+// constructor
+constexpr const char *OP_INIT = "";
+
 // unary op definition
 constexpr const char *OP_PLUS = "%plus";     // +
 constexpr const char *OP_MINUS = "%minus";    // -
