@@ -254,6 +254,8 @@ public:
         std::swap(this->obj, value.obj);
     }
 
+    bool asBool() const;    //FIXME: replace it
+
     template <typename T, typename ...A>
     static DSValue create(A &&...args) {
         static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");

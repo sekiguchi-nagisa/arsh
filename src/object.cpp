@@ -53,6 +53,10 @@ size_t DSObject::hash() const {
     return std::hash<long>()(reinterpret_cast<long>(this));
 }
 
+bool DSValue::asBool() const {
+    return typeAs<Boolean_Object>(*this)->getValue();
+}
+
 // ########################
 // ##     Int_Object     ##
 // ########################

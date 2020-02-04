@@ -94,7 +94,7 @@ bool VM::checkAssertion(DSState &state) {
     auto msg(state.stack.pop());
     assert(typeAs<String_Object>(msg)->getValue() != nullptr);
 
-    if(!typeAs<Boolean_Object>(state.stack.pop())->getValue()) {
+    if(!state.stack.pop().asBool()) {
         raiseError(state, TYPE::_AssertFail, std::string(typeAs<String_Object>(msg)->getValue()));
         return false;
     }
@@ -1163,7 +1163,7 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(BRANCH) {
             unsigned short offset = read16(GET_CODE(state), state.stack.pc() + 1);
-            if(typeAs<Boolean_Object>(state.stack.pop())->getValue()) {
+            if(state.stack.pop().asBool()) {
                 state.stack.pc() += 2;
             } else {
                 state.stack.pc() += offset - 1;

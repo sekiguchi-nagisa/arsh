@@ -604,23 +604,19 @@ YDSH_METHOD float_isFinite(RuntimeContext &ctx) {
 //!bind: function $OP_NOT($this : Boolean) : Boolean
 YDSH_METHOD boolean_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_not);
-    RET_BOOL(!typeAs<Boolean_Object>(LOCAL(0))->getValue());
+    RET_BOOL(!LOCAL(0).asBool());
 }
 
 //!bind: function $OP_EQ($this : Boolean, $target : Boolean) : Boolean
 YDSH_METHOD boolean_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_eq);
-    auto *left = typeAs<Boolean_Object>(LOCAL(0));
-    auto *right = typeAs<Boolean_Object>(LOCAL(1));
-    RET_BOOL(left->getValue() == right->getValue());
+    RET_BOOL(LOCAL(0).asBool() == LOCAL(1).asBool());
 }
 
 //!bind: function $OP_NE($this : Boolean, $target : Boolean) : Boolean
 YDSH_METHOD boolean_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(boolean_ne);
-    auto *left = typeAs<Boolean_Object>(LOCAL(0));
-    auto *right = typeAs<Boolean_Object>(LOCAL(1));
-    RET_BOOL(left->getValue() != right->getValue());
+    RET_BOOL(LOCAL(0).asBool() != LOCAL(1).asBool());
 }
 
 
@@ -1462,7 +1458,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
             if(ctx.hasError()) {
                 throw std::runtime_error("");    //FIXME: not use exception
             }
-            return typeAs<Boolean_Object>(ret)->getValue();
+            return ret.asBool();
         });
         RET(LOCAL(0));
     } catch(...) {
