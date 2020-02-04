@@ -110,8 +110,8 @@ public:
 
 enum class DSValueKind : unsigned char {
     OBJECT = 0,
-    NUMBER = 129,
-    INVALID = 130,
+    NUMBER = 130,
+    INVALID = 132,
 };
 
 class DSValue {
@@ -130,21 +130,21 @@ private:
          * +-------+---------------------------------+
          * |  tag  |    DSObject pointer or value    |
          * +-------+---------------------------------+
-         *   8bit                   56bit
+         *   7bit                   57bit
          *
-         * significant 8bit represents tag (DSValueKind).
+         * significant 7bit represents tag (DSValueKind).
          *
          */
-        long val;
+        int64_t val;
     };
 
 public:
     /**
      * obj may be null
      */
-    explicit DSValue(DSObject *obj) noexcept : DSValue(reinterpret_cast<long>(obj)) { }
+    explicit DSValue(DSObject *obj) noexcept : DSValue(reinterpret_cast<int64_t>(obj)) { }
 
-    explicit DSValue(unsigned long val) noexcept : val(val) {
+    explicit DSValue(uint64_t val) noexcept : val(val) {
         if(this->val > 0) {
             this->obj->refCount++;
         }
@@ -195,12 +195,12 @@ public:
     /**
      * mask tag and get actual value.
      */
-    long value() const noexcept {
-        return this->val & 0xFFFFFFFFFFFFFF;
+    int64_t value() const noexcept {
+        return this->val & 0x1FFFFFFFFFFFFFF;
     }
 
     DSValueKind kind() const noexcept {
-        return static_cast<DSValueKind>((this->val & 0xFF00000000000000) >> 56);
+        return static_cast<DSValueKind>((this->val & 0xFE00000000000000) >> 56);
     }
 
     DSObject *get() const noexcept {
@@ -264,12 +264,12 @@ public:
     }
 
     static DSValue createNum(unsigned int v) {
-        unsigned long mask = static_cast<unsigned long>(DSValueKind::NUMBER) << 56;
+        auto mask = static_cast<uint64_t>(DSValueKind::NUMBER) << 56;
         return DSValue(mask | v);
     }
 
     static DSValue createInvalid() {
-        return DSValue(static_cast<unsigned long>(DSValueKind::INVALID) << 56);
+        return DSValue(static_cast<uint64_t>(DSValueKind::INVALID) << 56);
     }
 };
 
