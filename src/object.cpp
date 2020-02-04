@@ -25,10 +25,6 @@ namespace ydsh {
 // ##     DSObject     ##
 // ######################
 
-DSValue *DSObject::getFieldTable() {
-    return nullptr;
-}
-
 std::string DSObject::toString() const {
     std::string str("DSObject(");
     str += std::to_string(reinterpret_cast<long>(this));
@@ -328,8 +324,8 @@ DSValue Map_Object::nextElement(DSState &ctx) {
     types[1] = this->iter->second->getType();
 
     auto entry = DSValue::create<Tuple_Object>(*ctx.symbolTable.createTupleType(std::move(types)).take());
-    typeAs<Tuple_Object>(entry)->set(0, this->iter->first);
-    typeAs<Tuple_Object>(entry)->set(1, this->iter->second);
+    (*typeAs<Tuple_Object>(entry))[0] = this->iter->first;
+    (*typeAs<Tuple_Object>(entry))[1] = this->iter->second;
     ++this->iter;
 
     return entry;
@@ -384,9 +380,6 @@ BaseObject::~BaseObject() {
     delete[] this->fieldTable;
 }
 
-DSValue *BaseObject::getFieldTable() {
-    return this->fieldTable;
-}
 
 // ##########################
 // ##     Tuple_Object     ##

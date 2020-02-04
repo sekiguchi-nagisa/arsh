@@ -62,8 +62,6 @@ public:
         return this->refCount;
     }
 
-    virtual DSValue *getFieldTable();
-
     /**
      * for printing
      */
@@ -688,7 +686,9 @@ public:
 
     ~BaseObject() override;
 
-    DSValue *getFieldTable() override;
+    DSValue &operator[](unsigned int index) {
+        return this->fieldTable[index];
+    }
 };
 
 struct Tuple_Object : public BaseObject {
@@ -703,14 +703,6 @@ struct Tuple_Object : public BaseObject {
 
     unsigned int getElementSize() const {
         return this->type->getFieldSize();
-    }
-
-    void set(unsigned int elementIndex, const DSValue &obj) {
-        this->fieldTable[elementIndex] = obj;
-    }
-
-    const DSValue &get(unsigned int elementIndex) {
-        return this->fieldTable[elementIndex];
     }
 };
 

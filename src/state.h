@@ -214,12 +214,12 @@ public:
     // for field access
     void storeField(unsigned int index) {
         auto value = this->pop();
-        this->pop()->getFieldTable()[index] = std::move(value);
+        (*typeAs<BaseObject>(this->pop()))[index] = std::move(value);
     }
 
     void loadField(unsigned int index) {
         this->operands[this->frame.stackTopIndex] =
-                this->operands[this->frame.stackTopIndex]->getFieldTable()[index];
+                (*typeAs<BaseObject>(this->operands[this->frame.stackTopIndex]))[index];
     }
 
     // for recursive depth count
