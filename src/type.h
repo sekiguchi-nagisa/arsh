@@ -368,13 +368,6 @@ class ErrorType : public DSType {
 public:
     ErrorType(unsigned int id, DSType *superType) :
             DSType(id, superType, TypeAttr::EXTENDIBLE) {}
-
-    /**
-     * return types.size()
-     */
-    unsigned int getFieldSize() const override;
-
-    const FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const override;
 };
 
 /**

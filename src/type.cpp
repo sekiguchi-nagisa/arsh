@@ -94,18 +94,6 @@ const FieldHandle *TupleType::lookupFieldHandle(SymbolTable &symbolTable, const 
     return iter->second;
 }
 
-// #######################
-// ##     ErrorType     ##
-// #######################
-
-unsigned int ErrorType::getFieldSize() const {
-    return this->superType->getFieldSize();
-}
-
-const FieldHandle *ErrorType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const {
-    return this->superType->lookupFieldHandle(symbolTable, fieldName);
-}
-
 std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {
     va_list arg;
 
