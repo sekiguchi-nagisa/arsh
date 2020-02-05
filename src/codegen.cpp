@@ -46,6 +46,48 @@ bool isTypeOp(OpCode code) {
     }
 }
 
+CompiledCode CodeBuilder::build(const std::string &name) {
+    this->finalize();
+
+    // set max stack depth
+    this->emit16(6, this->maxStackDepth);
+
+    // extract code
+    const unsigned int codeSize = this->codeBuffer.size();
+    this->emit32(1, codeSize);
+    unsigned char *code = this->codeBuffer.take();
+
+    // create constant pool
+    const unsigned int constSize = this->constBuffer.size();
+    auto *constPool = new DSValue[constSize + 1];
+    for(unsigned int i = 0; i < constSize; i++) {
+        constPool[i] = std::move(this->constBuffer[i]);
+    }
+    constPool[constSize] = nullptr; // sentinel
+
+    // extract source pos entry
+    this->lineNumEntries.push_back({0, 0});
+    auto *entries = this->lineNumEntries.take();
+
+    // create exception entry
+    const unsigned int exceptEntrySize = this->catchBuilders.size();
+    auto *except = new ExceptionEntry[exceptEntrySize + 1];
+    for(unsigned int i = 0; i < exceptEntrySize; i++) {
+        except[i] = this->catchBuilders[i].toEntry();
+    }
+    except[exceptEntrySize] = {
+            .type = nullptr,
+            .begin = 0,
+            .end = 0,
+            .dest = 0,
+            .localOffset = 0,
+            .localSize = 0,
+    };  // sentinel
+
+    return CompiledCode(this->srcInfo, name.empty() ? nullptr : name.c_str(),
+                        code, constPool, entries, except);
+}
+
 
 // ###############################
 // ##     ByteCodeGenerator     ##
@@ -1193,52 +1235,6 @@ void ByteCodeGenerator::initCodeBuilder(CodeKind kind, const SourceInfo &srcInfo
     this->curBuilder().append32(0);
     this->curBuilder().append8(localVarNum);
     this->curBuilder().append16(0);
-}
-
-CompiledCode ByteCodeGenerator::finalizeCodeBuilder(const std::string &name) {
-    this->curBuilder().finalize();
-
-    // set max stack depth
-    this->curBuilder().emit16(6, this->curBuilder().maxStackDepth);
-
-    // extract code
-    const unsigned int codeSize = this->curBuilder().codeBuffer.size();
-    this->curBuilder().emit32(1, codeSize);
-    unsigned char *code = this->curBuilder().codeBuffer.take();
-
-    // create constant pool
-    const unsigned int constSize = this->curBuilder().constBuffer.size();
-    auto *constPool = new DSValue[constSize + 1];
-    for(unsigned int i = 0; i < constSize; i++) {
-        constPool[i] = std::move(this->curBuilder().constBuffer[i]);
-    }
-    constPool[constSize] = nullptr; // sentinel
-
-    // extract source pos entry
-    this->curBuilder().lineNumEntries.push_back({0, 0});
-    auto *entries = this->curBuilder().lineNumEntries.take();
-
-    // create exception entry
-    const unsigned int exceptEntrySize = this->curBuilder().catchBuilders.size();
-    auto *except = new ExceptionEntry[exceptEntrySize + 1];
-    for(unsigned int i = 0; i < exceptEntrySize; i++) {
-        except[i] = this->curBuilder().catchBuilders[i].toEntry();
-    }
-    except[exceptEntrySize] = {
-            .type = nullptr,
-            .begin = 0,
-            .end = 0,
-            .dest = 0,
-            .localOffset = 0,
-            .localSize = 0,
-    };  // sentinel
-
-    // remove current builder
-    auto srcInfo = this->builders.back().srcInfo;
-    this->builders.pop_back();
-
-    return CompiledCode(srcInfo, name.empty() ? nullptr : name.c_str(),
-                        code, constPool, entries, except);
 }
 
 CompiledCode ByteCodeGenerator::finalize() {

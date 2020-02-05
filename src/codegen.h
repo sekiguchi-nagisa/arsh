@@ -288,6 +288,11 @@ struct CodeBuilder : public CodeEmitter<true> {
     CodeKind getCodeKind() const {
         return static_cast<CodeKind>(this->codeBuffer[0]);
     }
+
+    /**
+     * after build, remove allocated buffer.
+     */
+    CompiledCode build(const std::string &name);
 };
 
 class ByteCodeGenerator : protected NodeVisitor {
@@ -501,7 +506,11 @@ private:
 
     void initCodeBuilder(CodeKind kind, const SourceInfo &srcInfo, unsigned short localVarNum);
 
-    CompiledCode finalizeCodeBuilder(const std::string &name);
+    CompiledCode finalizeCodeBuilder(const std::string &name) {
+        auto code = this->curBuilder().build(name);
+        this->builders.pop_back();
+        return code;
+    }
 
     // visitor api
     void visit(Node &node) override;
