@@ -586,11 +586,11 @@ public:
         this->actualFuncName = std::move(name);
     }
 
-    bool isOwnerType(HandleInfo info) {
+    bool isOwnerType(HandleInfo info) const {
         return this->ownerType->isType(info);
     }
 
-    std::string toSerializedHandle() {
+    std::string toSerializedHandle() const {
         HandleInfoSerializer s;
         s.add(fromNum(this->constraints.size()));
         for(auto &c : this->constraints) {
@@ -606,7 +606,7 @@ public:
         return s.toString();
     }
 
-    std::string toParamNames() {
+    std::string toParamNames() const {
         std::string str("{");
         str += "\"\"";
         for(auto &pair : this->paramNames) {
@@ -619,7 +619,7 @@ public:
         return str;
     }
 
-    std::string toFuncName() {
+    std::string toFuncName() const {
         if(this->op) {
             return this->funcName;
         }
@@ -630,7 +630,7 @@ public:
         return str;
     }
 
-    const char *getActualFuncName() {
+    const char *getActualFuncName() const {
         return this->actualFuncName.c_str();
     }
 
@@ -720,7 +720,7 @@ public:
 private:
     static bool isDescriptor(const std::string &line);
 
-    std::string toName(const Token &token) {
+    std::string toName(const Token &token) const {
         Token t = token;
         t.pos++;
         t.size--;
