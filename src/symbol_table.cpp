@@ -19,7 +19,6 @@
 
 #include "symbol_table.h"
 #include "core.h"
-#include "object.h"
 #include "constant.h"
 #include "logger.h"
 #include "misc/files.h"

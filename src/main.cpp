@@ -16,7 +16,6 @@
 
 #include <unistd.h>
 
-#include <cstdlib>
 #include <memory>
 
 #include <ydsh/ydsh.h>

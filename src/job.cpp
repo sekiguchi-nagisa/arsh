@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <cerrno>
-#include <csignal>
 
 #include "vm.h"
 #include "logger.h"
