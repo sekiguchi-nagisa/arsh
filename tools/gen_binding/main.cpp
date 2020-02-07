@@ -638,7 +638,7 @@ public:
         return !this->returnType->isType(HandleInfo::Void);
     }
 
-    unsigned char toDefaultFlag() {
+    unsigned char toDefaultFlag() const {
         unsigned char flag = 0;
         unsigned int size = this->paramNames.size();
         for(unsigned int i = 0; i < size; i++) {
@@ -649,7 +649,7 @@ public:
         return flag;
     }
 
-    std::string emit() {
+    std::string emit() const {
         std::string str("{");
         str += this->toFuncName();
         str += ", ";
@@ -666,7 +666,7 @@ public:
         return str;
     }
 
-    std::string toString() {
+    std::string toString() const {
         std::string str;
         str += "function ";
         if(this->op) {
