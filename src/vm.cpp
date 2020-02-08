@@ -343,11 +343,11 @@ bool VM::forkAndEval(DSState &state) {
 
 /* for pipeline evaluation */
 static NativeCode initCode(OpCode op) {
-    NativeCode::CodeArray code = {
+    NativeCode::CodeArray code = {{
             static_cast<unsigned char>(CodeKind::NATIVE),
             static_cast<unsigned char>(op),
             static_cast<unsigned char>(OpCode::RETURN_V),
-    };
+    }};
     return NativeCode(code);
 }
 
@@ -819,7 +819,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
 }
 
 static NativeCode initSignalTrampoline() noexcept {
-    NativeCode::CodeArray code = {
+    NativeCode::CodeArray code = {{
             static_cast<unsigned char>(CodeKind::NATIVE),
             static_cast<unsigned char>(OpCode::LOAD_LOCAL),
             static_cast<unsigned char>(1),
@@ -828,7 +828,7 @@ static NativeCode initSignalTrampoline() noexcept {
             static_cast<unsigned char>(OpCode::CALL_FUNC),
             1,
             static_cast<unsigned char>(OpCode::RETURN_SIG),
-    };
+    }};
     return NativeCode(code);
 }
 
@@ -1550,14 +1550,14 @@ unsigned int VM::prepareArguments(VMState &state, DSValue &&recv,
 
 
 static NativeCode initCmdTrampoline() noexcept {
-    NativeCode::CodeArray code = {
+    NativeCode::CodeArray code = {{
             static_cast<unsigned char>(CodeKind::NATIVE),
             static_cast<unsigned char>(OpCode::LOAD_LOCAL),
             static_cast<unsigned char>(0),
             static_cast<unsigned char>(OpCode::PUSH_NULL),
             static_cast<unsigned char>(OpCode::CALL_CMD),
             static_cast<unsigned char>(OpCode::RETURN_V),
-    };
+    }};
     return NativeCode(code);
 }
 
