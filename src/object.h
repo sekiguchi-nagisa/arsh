@@ -21,7 +21,6 @@
 
 #include <memory>
 #include <tuple>
-#include <array>
 #include <cxxabi.h>
 
 #include "type.h"
@@ -850,25 +849,21 @@ public:
 };
 
 class NativeCode : public DSCode {
-public:
-    using CodeArray = std::array<unsigned char, 8>;
-
 private:
-    CodeArray value;
+    std::string value;
 
 public:
     NativeCode() : DSCode(nullptr) {}
 
-    NativeCode(unsigned int index, bool hasRet) {
-        this->value.fill(0);
-        this->value[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-        this->value[1] = static_cast<unsigned char>(OpCode::CALL_NATIVE);
+    NativeCode(unsigned int index, bool hasRet) : value(8, '\0'){
+        this->value[0] = static_cast<char>(CodeKind::NATIVE);
+        this->value[1] = static_cast<char>(OpCode::CALL_NATIVE);
         this->value[2] = index;
-        this->value[3] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
+        this->value[3] = static_cast<char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
         this->setCode();
     }
 
-    explicit NativeCode(CodeArray &value) {
+    explicit NativeCode(std::string &&value) {
         std::swap(this->value, value);
         this->setCode();
     }
@@ -894,7 +889,7 @@ public:
 
 private:
     void setCode() {
-        this->code = this->value.data();
+        this->code = reinterpret_cast<unsigned char *>(const_cast<char *>(this->value.c_str()));
     }
 };
 
