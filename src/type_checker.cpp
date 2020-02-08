@@ -789,32 +789,29 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
     }
     this->fctx.leave();
 
-    this->symbolTable.enterScope();
-
-    if(node.isLastPipe()) { // register pipeline state
-        this->addEntry(node, "%%pipe", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
-        node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
-    }
-    auto &type = this->checkTypeExactly(*node.getNodes()[size - 1]);
-
-    this->symbolTable.exitScope();
-    node.setType(node.isLastPipe() ? type : this->symbolTable.get(TYPE::Boolean));
+    this->inScope([&]{
+        if(node.isLastPipe()) { // register pipeline state
+            this->addEntry(node, "%%pipe", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+            node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
+        }
+        auto &type = this->checkTypeExactly(*node.getNodes()[size - 1]);
+        node.setType(node.isLastPipe() ? type : this->symbolTable.get(TYPE::Boolean));
+    });
 }
 
 void TypeChecker::visitWithNode(WithNode &node) {
-    this->symbolTable.enterScope();
+    this->inScope([&]{
+        // register redir config
+        this->addEntry(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
-    // register redir config
-    this->addEntry(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+        auto &type = this->checkTypeExactly(*node.getExprNode());
+        for(auto &e : node.getRedirNodes()) {
+            this->checkTypeAsExpr(e);
+        }
 
-    auto &type = this->checkTypeExactly(*node.getExprNode());
-    for(auto &e : node.getRedirNodes()) {
-        this->checkTypeAsExpr(e);
-    }
-
-    node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
-    this->symbolTable.exitScope();
-    node.setType(type);
+        node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
+        node.setType(type);
+    });
 }
 
 void TypeChecker::visitForkNode(ForkNode &node) {
@@ -850,9 +847,9 @@ void TypeChecker::visitAssertNode(AssertNode &node) {
 }
 
 void TypeChecker::visitBlockNode(BlockNode &node) {
-    this->symbolTable.enterScope();
-    this->checkTypeWithCurrentScope(nullptr, node);
-    this->symbolTable.exitScope();
+    this->inScope([&]{
+        this->checkTypeWithCurrentScope(nullptr, node);
+    });
 }
 
 void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
@@ -868,30 +865,28 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
 }
 
 void TypeChecker::visitLoopNode(LoopNode &node) {
-    this->symbolTable.enterScope();
+    this->inScope([&]{
+        this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node.refInitNode());
 
-    this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node.refInitNode());
+        this->inScope([&]{
+            if(node.getInitNode()->is(NodeKind::VarDecl)) {
+                bool b = this->symbolTable.disallowShadowing(static_cast<VarDeclNode *>(node.getInitNode())->getVarName());
+                (void) b;
+                assert(b);
+            }
 
-    this->symbolTable.enterScope();
+            if(node.getCondNode() != nullptr) {
+                this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Boolean), node.refCondNode());
+            }
+            this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node.refIterNode());
 
-    if(node.getInitNode()->is(NodeKind::VarDecl)) {
-        bool b = this->symbolTable.disallowShadowing(static_cast<VarDeclNode *>(node.getInitNode())->getVarName());
-        (void) b;
-        assert(b);
-    }
-
-    if(node.getCondNode() != nullptr) {
-        this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Boolean), node.refCondNode());
-    }
-    this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node.refIterNode());
-
-    this->enterLoop();
-    this->checkTypeWithCurrentScope(*node.getBlockNode());
-    auto &type = this->resolveCoercionOfJumpValue();
-    this->exitLoop();
-
-    this->symbolTable.exitScope();
-    this->symbolTable.exitScope();
+            this->inLoop([&]{
+                this->checkTypeWithCurrentScope(*node.getBlockNode());
+                auto &type = this->resolveCoercionOfJumpValue();
+                node.setType(type);
+            });
+        });
+    });
 
     if(!node.getBlockNode()->getType().isNothingType()) {    // insert continue to block end
         auto jumpNode = JumpNode::newContinue({0, 0});
@@ -900,7 +895,6 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
         node.getBlockNode()->setType(jumpNode->getType());
         node.getBlockNode()->addNode(jumpNode.release());
     }
-    node.setType(type);
 }
 
 void TypeChecker::visitIfNode(IfNode &node) {
@@ -1149,7 +1143,7 @@ void TypeChecker::checkTypeAsReturn(JumpNode &node) {
         RAISE_TC_ERROR(InsideChild, node);
     }
 
-    DSType *returnType = this->getCurrentReturnType();
+    auto *returnType = this->getCurrentReturnType();
     if(returnType == nullptr) {
         RAISE_TC_ERROR(InsideFunc, node);
     }
@@ -1191,14 +1185,14 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
         RAISE_TC_ERROR(Unacceptable, *node.getTypeNode(), this->symbolTable.getTypeName(exceptionType));
     }
 
-    /**
-     * check type catch block
-     */
-    this->symbolTable.enterScope();
-    auto handle = this->addEntry(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
-    node.setAttribute(*handle);
-    this->checkTypeWithCurrentScope(nullptr, *node.getBlockNode());
-    this->symbolTable.exitScope();
+    this->inScope([&]{
+        /**
+         * check type catch block
+         */
+        auto handle = this->addEntry(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
+        node.setAttribute(*handle);
+        this->checkTypeWithCurrentScope(nullptr, *node.getBlockNode());
+    });
     node.setType(node.getBlockNode()->getType());
 }
 
@@ -1374,26 +1368,18 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
                                  FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
     node.setVarIndex(handle->getIndex());
 
-    // prepare type checking
-    this->pushReturnType(returnType);
-    this->symbolTable.enterFunc();
-    this->symbolTable.enterScope();
-
-    // register parameter
-    for(unsigned int i = 0; i < paramSize; i++) {
-        VarNode *paramNode = node.getParamNodes()[i];
-        auto fieldHandle = this->addEntry(*paramNode, paramNode->getVarName(),
-                                           *funcType.getParamTypes()[i], FieldAttribute());
-        paramNode->setAttribute(*fieldHandle);
-    }
-
-    // check type func body
-    this->checkTypeWithCurrentScope(*node.getBlockNode());
-    this->symbolTable.exitScope();
-
-    node.setMaxVarNum(this->symbolTable.getMaxVarIndex());
-    this->symbolTable.exitFunc();
-    this->popReturnType();
+    unsigned int varIndex = this->inFunc(returnType, [&]{
+        // register parameter
+        for(unsigned int i = 0; i < paramSize; i++) {
+            VarNode *paramNode = node.getParamNodes()[i];
+            auto fieldHandle = this->addEntry(*paramNode, paramNode->getVarName(),
+                                              *funcType.getParamTypes()[i], FieldAttribute());
+            paramNode->setAttribute(*fieldHandle);
+        }
+        // check type func body
+        this->checkTypeWithCurrentScope(*node.getBlockNode());
+    });
+    node.setMaxVarNum(varIndex);
 
     // insert terminal node if not found
     BlockNode *blockNode = node.getBlockNode();
@@ -1421,30 +1407,24 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     }
     node.setUdcIndex(pair.asOk()->getIndex());
 
-    this->pushReturnType(this->symbolTable.get(TYPE::Int32));    // pseudo return type
-    this->symbolTable.enterFunc();
-    this->symbolTable.enterScope();
+    unsigned int varIndex = this->inFunc(this->symbolTable.get(TYPE::Int32), [&]{   // pseudo return type
+        // register dummy parameter (for propagating command attr)
+        this->addEntry(node, "%%attr", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
-    // register dummy parameter (for propagating command attr)
-    this->addEntry(node, "%%attr", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+        // register dummy parameter (for closing file descriptor)
+        this->addEntry(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
-    // register dummy parameter (for closing file descriptor)
-    this->addEntry(node, "%%redir", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+        // register special characters (@, #, 0, 1, ... 9)
+        this->addEntry(node, "@", this->symbolTable.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
+        this->addEntry(node, "#", this->symbolTable.get(TYPE::Int32), FieldAttribute::READ_ONLY);
+        for(unsigned int i = 0; i < 10; i++) {
+            this->addEntry(node, std::to_string(i), this->symbolTable.get(TYPE::String), FieldAttribute::READ_ONLY);
+        }
 
-    // register special characters (@, #, 0, 1, ... 9)
-    this->addEntry(node, "@", this->symbolTable.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
-    this->addEntry(node, "#", this->symbolTable.get(TYPE::Int32), FieldAttribute::READ_ONLY);
-    for(unsigned int i = 0; i < 10; i++) {
-        this->addEntry(node, std::to_string(i), this->symbolTable.get(TYPE::String), FieldAttribute::READ_ONLY);
-    }
-
-    // check type command body
-    this->checkTypeWithCurrentScope(*node.getBlockNode());
-    this->symbolTable.exitScope();
-
-    node.setMaxVarNum(this->symbolTable.getMaxVarIndex());
-    this->symbolTable.exitFunc();
-    this->popReturnType();
+        // check type command body
+        this->checkTypeWithCurrentScope(*node.getBlockNode());
+    });
+    node.setMaxVarNum(varIndex);
 
     // insert return node if not found
     if(node.getBlockNode()->getNodes().empty() ||

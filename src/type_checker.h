@@ -162,7 +162,7 @@ protected:
     /**
      * contains current return type of current function
      */
-    DSType *curReturnType{nullptr};
+    const DSType *curReturnType{nullptr};
 
     int visitingDepth{0};
 
@@ -279,33 +279,44 @@ protected:
         return this->visitingDepth == 1;
     }
 
-    void enterLoop() {
-        this->fctx.enterLoop();
-        this->breakGather.enter();
+    template <typename Func>
+    void inScope(Func func) {
+        this->symbolTable.enterScope();
+
+        func();
+
+        this->symbolTable.exitScope();
     }
 
-    void exitLoop() {
+    template <typename Func>
+    void inLoop(Func func) {
+        this->fctx.enterLoop();
+        this->breakGather.enter();
+
+        func();
+
         this->fctx.leave();
         this->breakGather.leave();
     }
 
-    void pushReturnType(DSType &returnType) {
+    template <typename Func>
+    unsigned int inFunc(const DSType &returnType, Func func) {
         this->curReturnType = &returnType;
-    }
 
-    /**
-     * return null, if outside of function
-     */
-    DSType *popReturnType() {
-        DSType *returnType = this->curReturnType;
+        this->symbolTable.enterFunc();
+        this->inScope([&]{
+            func();
+        });
+        unsigned int num = this->symbolTable.getMaxVarIndex();
+        this->symbolTable.exitFunc();
         this->curReturnType = nullptr;
-        return returnType;
+        return num;
     }
 
     /**
      * return null, if outside of function
      */
-    DSType *getCurrentReturnType() const {
+    const DSType *getCurrentReturnType() const {
         return this->curReturnType;
     }
 
