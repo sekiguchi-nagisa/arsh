@@ -107,8 +107,7 @@ private:
         }
 
         Value &operator=(Value &&v) noexcept {
-            auto tmp(std::move(v));
-            std::swap(this->handle_, tmp.handle_);
+            std::swap(this->handle_, v.handle_);
             return *this;
         }
 
