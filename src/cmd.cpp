@@ -29,6 +29,8 @@
 #include "misc/num_util.hpp"
 #include "misc/files.h"
 
+extern char **environ;  //NOLINT
+
 namespace ydsh {
 
 // builtin command definition
