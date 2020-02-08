@@ -231,6 +231,14 @@ matrix:
       dist: bionic
       env: CXX_BIN=clang++ BUILD_TYPE=release
 
+    # MacOS
+    - os: osx
+      osx_image: xcode11.3
+      compiler: clang
+      env: CXX_BIN=clang++ BUILD_TYPE=release
+      before_script:
+        - brew install pcre ninja
+
     # clang 9.0 with address sanitizer
     - addons:
         apt:
