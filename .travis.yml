@@ -237,7 +237,7 @@ matrix:
       compiler: clang
       env: CXX_BIN=clang++ BUILD_TYPE=release
       before_script:
-        - brew install pcre ninja
+        - brew install pcre ninja autoconf libtool
 
     # clang 9.0 with address sanitizer
     - addons:
