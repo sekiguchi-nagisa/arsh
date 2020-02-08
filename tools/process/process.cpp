@@ -102,7 +102,7 @@ WaitStatus ProcHandle::wait() {
     return this->status_;
 }
 
-static bool readData(int index, int fd, ProcHandle::ReadCallback readCallback) {
+static bool readData(int index, int fd, const ProcHandle::ReadCallback &readCallback) {
     char buf[1024];
     unsigned int bufSize = ydsh::arraySize(buf);
     int readSize = read(fd, buf, bufSize);
@@ -113,7 +113,7 @@ static bool readData(int index, int fd, ProcHandle::ReadCallback readCallback) {
     return true;
 }
 
-void ProcHandle::readAll(int timeout, ReadCallback readCallback) const {
+void ProcHandle::readAll(int timeout, const ReadCallback &readCallback) const {
     struct pollfd pollfds[2]{};
     pollfds[0].fd = this->out();
     pollfds[0].events = POLLIN;

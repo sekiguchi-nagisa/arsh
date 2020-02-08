@@ -311,7 +311,7 @@ public:
     BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute) :
             DSType(id, superType, attribute), info(info) {}
 
-    ~BuiltinType() = default;
+    ~BuiltinType() override = default;
 
     native_type_info_t getNativeTypeInfo() const {
         return this->info;

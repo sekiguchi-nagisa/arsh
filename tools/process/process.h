@@ -184,7 +184,7 @@ public:
 
     using ReadCallback = std::function<void (unsigned int, const char *, unsigned int)>;
 
-    void readAll(int timeout, ReadCallback readCallback) const;
+    void readAll(int timeout, const ReadCallback &readCallback) const;
 
     std::pair<std::string, std::string> readAll(int timeout = -1) const;
 
