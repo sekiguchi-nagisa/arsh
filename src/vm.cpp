@@ -343,10 +343,11 @@ bool VM::forkAndEval(DSState &state) {
 
 /* for pipeline evaluation */
 static NativeCode initCode(OpCode op) {
-    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 3));
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(op);
-    code[2] = static_cast<unsigned char>(OpCode::RETURN_V);
+    NativeCode::CodeArray code = {
+            static_cast<unsigned char>(CodeKind::NATIVE),
+            static_cast<unsigned char>(op),
+            static_cast<unsigned char>(OpCode::RETURN_V),
+    };
     return NativeCode(code);
 }
 
@@ -818,15 +819,16 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
 }
 
 static NativeCode initSignalTrampoline() noexcept {
-    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 8));
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
-    code[2] = static_cast<unsigned char>(1);
-    code[3] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
-    code[4] = static_cast<unsigned char>(2);
-    code[5] = static_cast<unsigned char>(OpCode::CALL_FUNC);
-    code[6] = 1;
-    code[7] = static_cast<unsigned char>(OpCode::RETURN_SIG);
+    NativeCode::CodeArray code = {
+            static_cast<unsigned char>(CodeKind::NATIVE),
+            static_cast<unsigned char>(OpCode::LOAD_LOCAL),
+            static_cast<unsigned char>(1),
+            static_cast<unsigned char>(OpCode::LOAD_LOCAL),
+            static_cast<unsigned char>(2),
+            static_cast<unsigned char>(OpCode::CALL_FUNC),
+            1,
+            static_cast<unsigned char>(OpCode::RETURN_SIG),
+    };
     return NativeCode(code);
 }
 
@@ -1548,13 +1550,14 @@ unsigned int VM::prepareArguments(VMState &state, DSValue &&recv,
 
 
 static NativeCode initCmdTrampoline() noexcept {
-    auto *code = static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 6));
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
-    code[2] = static_cast<unsigned char>(0);
-    code[3] = static_cast<unsigned char>(OpCode::PUSH_NULL);
-    code[4] = static_cast<unsigned char>(OpCode::CALL_CMD);
-    code[5] = static_cast<unsigned char>(OpCode::RETURN_V);
+    NativeCode::CodeArray code = {
+            static_cast<unsigned char>(CodeKind::NATIVE),
+            static_cast<unsigned char>(OpCode::LOAD_LOCAL),
+            static_cast<unsigned char>(0),
+            static_cast<unsigned char>(OpCode::PUSH_NULL),
+            static_cast<unsigned char>(OpCode::CALL_CMD),
+            static_cast<unsigned char>(OpCode::RETURN_V),
+    };
     return NativeCode(code);
 }
 

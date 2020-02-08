@@ -21,6 +21,7 @@
 
 #include <memory>
 #include <tuple>
+#include <array>
 #include <cxxabi.h>
 
 #include "type.h"
@@ -824,9 +825,7 @@ protected:
 
     explicit DSCode(unsigned char *code) : code(code) {}
 
-    ~DSCode() {
-        free(this->code);
-    }
+    DSCode() : code(nullptr) {}
 
 public:
     const unsigned char *getCode() const {
@@ -850,30 +849,52 @@ public:
     }
 };
 
-struct NativeCode : public DSCode {
+class NativeCode : public DSCode {
+public:
+    using CodeArray = std::array<unsigned char, 8>;
+
+private:
+    CodeArray value;
+
+public:
     NativeCode() : DSCode(nullptr) {}
 
-    NativeCode(unsigned int index, bool hasRet) :
-            DSCode(static_cast<unsigned char *>(malloc(sizeof(unsigned char) * 4))) {
-        this->code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-        this->code[1] = static_cast<unsigned char>(OpCode::CALL_NATIVE);
-        this->code[2] = index;
-        this->code[3] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
+    NativeCode(unsigned int index, bool hasRet) {
+        this->value.fill(0);
+        this->value[0] = static_cast<unsigned char>(CodeKind::NATIVE);
+        this->value[1] = static_cast<unsigned char>(OpCode::CALL_NATIVE);
+        this->value[2] = index;
+        this->value[3] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
+        this->setCode();
     }
 
-    explicit NativeCode(unsigned char *code) : DSCode(code) {}
+    explicit NativeCode(CodeArray &value) {
+        std::swap(this->value, value);
+        this->setCode();
+    }
 
-    NativeCode(NativeCode &&o) noexcept : DSCode(o.code) {
+    NativeCode(NativeCode &&o) noexcept {
+        std::swap(this->value, o.value);
         o.code = nullptr;
+        this->setCode();
     }
-
-    ~NativeCode() = default;
 
     NON_COPYABLE(NativeCode);
 
     NativeCode &operator=(NativeCode &&o) noexcept {
-        std::swap(this->code, o.code);
+        this->swap(o);
         return *this;
+    }
+
+    void swap(NativeCode &o) noexcept {
+        std::swap(this->value, o.value);
+        this->setCode();
+        o.setCode();
+    }
+
+private:
+    void setCode() {
+        this->code = this->value.data();
     }
 };
 
@@ -944,6 +965,7 @@ public:
     ~CompiledCode() {
         free(this->sourceName);
         free(this->name);
+        free(this->code);
         delete[] this->constPool;
         free(this->lineNumEntries);
         delete[] this->exceptionEntries;
