@@ -233,7 +233,6 @@ matrix:
 
     # MacOS
     - os: osx
-      osx_image: xcode11.2
       compiler: clang
       env: CXX_BIN=clang++ BUILD_TYPE=release
       before_script:
