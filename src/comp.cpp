@@ -589,7 +589,7 @@ static const CmdNode *inCmdMode(const Node &node) {
     }
     case NodeKind::Jump: {
         auto &jumpNode = static_cast<const JumpNode &>(node);
-        return jumpNode.getOpKind() != JumpNode::CONTINUE_ ? inCmdMode(*jumpNode.getExprNode()) : nullptr;
+        return jumpNode.getOpKind() != JumpNode::CONTINUE_ ? inCmdMode(jumpNode.getExprNode()) : nullptr;
     }
     case NodeKind::VarDecl: {
         auto &vardeclNode = static_cast<const VarDeclNode &>(node);

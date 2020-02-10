@@ -308,8 +308,8 @@ public:
         this->updateToken(endToken);
     }
 
-    Node *getExprNode() const {
-        return this->exprNode.get();
+    Node &getExprNode() const {
+        return *this->exprNode;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -1682,8 +1682,8 @@ public:
         return this->opKind;
     }
 
-    Node *getExprNode() const {
-        return this->exprNode;
+    Node &getExprNode() const {
+        return *this->exprNode;
     }
 
     Node *&refExprNode() {
@@ -1724,8 +1724,8 @@ public:
         return this->exceptionName;
     }
 
-    TypeNode *getTypeNode() const {
-        return this->typeNode;
+    TypeNode &getTypeNode() const {
+        return *this->typeNode;
     }
 
     void setAttribute(const FieldHandle &handle) {

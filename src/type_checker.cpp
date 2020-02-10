@@ -152,10 +152,10 @@ DSType &TypeChecker::checkType(const DSType *requiredType, Node *targetNode,
                    this->symbolTable.getTypeName(type));
 }
 
-DSType& TypeChecker::checkTypeAsSomeExpr(Node *targetNode) {
-    auto &type = this->checkTypeAsExpr(targetNode);
+DSType& TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
+    auto &type = this->checkTypeAsExpr(&targetNode);
     if(type.isNothingType()) {
-        RAISE_TC_ERROR(Unacceptable, *targetNode, this->symbolTable.getTypeName(type));
+        RAISE_TC_ERROR(Unacceptable, targetNode, this->symbolTable.getTypeName(type));
     }
     return type;
 }
@@ -236,11 +236,11 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
         return this->symbolTable.get(TYPE::Void);
     }
 
-    auto &firstType = jumpNodes[0]->getExprNode()->getType();
+    auto &firstType = jumpNodes[0]->getExprNode().getType();
     assert(!firstType.isNothingType() && !firstType.isVoidType());
 
     for(auto &jumpNode : jumpNodes) {
-        if(firstType != jumpNode->getExprNode()->getType()) {
+        if(firstType != jumpNode->getExprNode().getType()) {
             this->checkTypeWithCoercion(firstType, jumpNode->refExprNode());
         }
     }
@@ -468,7 +468,7 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
     unsigned int size = node.getExprNodes().size();
     assert(size != 0);
     Node *firstElementNode = node.getExprNodes()[0];
-    auto &elementType = this->checkTypeAsSomeExpr(firstElementNode);
+    auto &elementType = this->checkTypeAsSomeExpr(*firstElementNode);
 
     for(unsigned int i = 1; i < size; i++) {
         this->checkTypeWithCoercion(elementType, node.refExprNodes()[i]);
@@ -486,10 +486,10 @@ void TypeChecker::visitMapNode(MapNode &node) {
     unsigned int size = node.getValueNodes().size();
     assert(size != 0);
     Node *firstKeyNode = node.getKeyNodes()[0];
-    this->checkTypeAsSomeExpr(firstKeyNode);
+    this->checkTypeAsSomeExpr(*firstKeyNode);
     auto &keyType = this->checkType(this->symbolTable.get(TYPE::_Value), firstKeyNode);
     Node *firstValueNode = node.getValueNodes()[0];
-    auto &valueType = this->checkTypeAsSomeExpr(firstValueNode);
+    auto &valueType = this->checkTypeAsSomeExpr(*firstValueNode);
 
     for(unsigned int i = 1; i < size; i++) {
         this->checkTypeWithCoercion(keyType, node.refKeyNodes()[i]);
@@ -509,7 +509,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
     unsigned int size = node.getNodes().size();
     std::vector<DSType *> types(size);
     for(unsigned int i = 0; i < size; i++) {
-        types[i] = &this->checkTypeAsSomeExpr(node.getNodes()[i].get());
+        types[i] = &this->checkTypeAsSomeExpr(*node.getNodes()[i]);
     }
     auto typeOrError = this->symbolTable.createTupleType(std::move(types));
     assert(typeOrError);
@@ -891,7 +891,7 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
     if(!node.getBlockNode()->getType().isNothingType()) {    // insert continue to block end
         auto jumpNode = JumpNode::newContinue({0, 0});
         jumpNode->setType(this->symbolTable.get(TYPE::Nothing));
-        jumpNode->getExprNode()->setType(this->symbolTable.get(TYPE::Void));
+        jumpNode->getExprNode().setType(this->symbolTable.get(TYPE::Void));
         node.getBlockNode()->setType(jumpNode->getType());
         node.getBlockNode()->addNode(jumpNode.release());
     }
@@ -1124,13 +1124,13 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
         node.setLeavingBlock(true);
     }
 
-    if(node.getExprNode()->is(NodeKind::Empty)) {
-        this->checkType(this->symbolTable.get(TYPE::Void), node.getExprNode());
+    if(node.getExprNode().is(NodeKind::Empty)) {
+        this->checkType(this->symbolTable.get(TYPE::Void), &node.getExprNode());
     } else if(node.getOpKind() == JumpNode::BREAK_) {
         this->checkTypeAsSomeExpr(node.getExprNode());
         this->breakGather.addJumpNode(&node);
     }
-    assert(!node.getExprNode()->isUntyped());
+    assert(!node.getExprNode().isUntyped());
 }
 
 void TypeChecker::checkTypeAsReturn(JumpNode &node) {
@@ -1146,9 +1146,9 @@ void TypeChecker::checkTypeAsReturn(JumpNode &node) {
     if(returnType == nullptr) {
         RAISE_TC_ERROR(InsideFunc, node);
     }
-    auto &exprType = this->checkType(*returnType, node.getExprNode());
+    auto &exprType = this->checkType(*returnType, &node.getExprNode());
     if(exprType.isVoidType()) {
-        if(!node.getExprNode()->is(NodeKind::Empty)) {
+        if(!node.getExprNode().is(NodeKind::Empty)) {
             RAISE_TC_ERROR(NotNeedExpr, node);
         }
     }
@@ -1164,7 +1164,7 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
         if(this->fctx.finallyLevel() > 0) {
             RAISE_TC_ERROR(InsideFinally, node);
         }
-        this->checkType(this->symbolTable.get(TYPE::Any), node.getExprNode());
+        this->checkType(this->symbolTable.get(TYPE::Any), &node.getExprNode());
         break;
     }
     case JumpNode::RETURN_: {
@@ -1181,7 +1181,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
      * not allow Void, Nothing and Option type.
      */
     if(exceptionType.isOptionType()) {
-        RAISE_TC_ERROR(Unacceptable, *node.getTypeNode(), this->symbolTable.getTypeName(exceptionType));
+        RAISE_TC_ERROR(Unacceptable, node.getTypeNode(), this->symbolTable.getTypeName(exceptionType));
     }
 
     this->inScope([&]{
@@ -1245,8 +1245,8 @@ void TypeChecker::visitTryNode(TryNode &node) {
      */
     const int size = node.getCatchNodes().size();
     for(int i = 0; i < size - 1; i++) {
-        auto &curType = findInnerNode<CatchNode>(node.getCatchNodes()[i])->getTypeNode()->getType();
-        auto &nextType = findInnerNode<CatchNode>(node.getCatchNodes()[i + 1])->getTypeNode()->getType();
+        auto &curType = findInnerNode<CatchNode>(node.getCatchNodes()[i])->getTypeNode().getType();
+        auto &nextType = findInnerNode<CatchNode>(node.getCatchNodes()[i + 1])->getTypeNode().getType();
         if(curType.isSameOrBaseTypeOf(nextType)) {
             auto &nextNode = node.getCatchNodes()[i + 1];
             RAISE_TC_ERROR(Unreachable, *nextNode);
@@ -1264,7 +1264,7 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
         if(node.getKind() == VarDeclNode::CONST) {
             setFlag(attr, FieldAttribute::READ_ONLY);
         }
-        exprType = &this->checkTypeAsSomeExpr(node.getExprNode());
+        exprType = &this->checkTypeAsSomeExpr(*node.getExprNode());
         break;
     case VarDeclNode::IMPORT_ENV:
     case VarDeclNode::EXPORT_ENV:
@@ -1354,7 +1354,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     unsigned int paramSize = node.getParamTypeNodes().size();
     std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
-        auto &type = this->checkTypeAsSomeExpr(node.getParamTypeNodes()[i]);
+        auto &type = this->checkTypeAsSomeExpr(*node.getParamTypeNodes()[i]);
         paramTypes[i] = &type;
     }
 

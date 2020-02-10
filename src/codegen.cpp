@@ -962,7 +962,7 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
     assert(!this->curBuilder().loopLabels.empty());
 
     // for break with value
-    this->visit(*node.getExprNode());
+    this->visit(node.getExprNode());
 
     // reclaim local before jump
     unsigned int blockIndex = this->curBuilder().loopLabels.back().blockIndex;
@@ -985,13 +985,13 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
     }
 
     if(node.getOpKind() == JumpNode::BREAK_) {
-        if(node.getExprNode()->getType().isVoidType()) {
+        if(node.getExprNode().getType().isVoidType()) {
             this->emitJumpIns(this->peekLoopLabels().breakLabel);
         } else {
             this->emitJumpIns(this->peekLoopLabels().breakWithValueLabel);
         }
     } else {
-        assert(node.getExprNode()->getType().isVoidType());
+        assert(node.getExprNode().getType().isVoidType());
         this->emitJumpIns(this->peekLoopLabels().continueLabel);
     }
 }
@@ -1003,20 +1003,20 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
         this->generateBreakContinue(node);
         break;
     case JumpNode::THROW_: {
-        this->visit(*node.getExprNode());
+        this->visit(node.getExprNode());
         this->emit0byteIns(OpCode::THROW);
         break;
     }
     case JumpNode::RETURN_: {
-        this->visit(*node.getExprNode());
+        this->visit(node.getExprNode());
 
         // add finally before return
         this->enterFinally();
 
         if(this->inUDC()) {
-            assert(node.getExprNode()->getType().is(TYPE::Int32));
+            assert(node.getExprNode().getType().is(TYPE::Int32));
             this->emit0byteIns(OpCode::RETURN_UDC);
-        } else if(node.getExprNode()->getType().isVoidType()) {
+        } else if(node.getExprNode().getType().isVoidType()) {
             this->emit0byteIns(OpCode::RETURN);
         } else {
             this->emit0byteIns(OpCode::RETURN_V);
@@ -1067,7 +1067,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
             maxLocalSize = varSize;
         }
 
-        auto &catchType = findInnerNode<CatchNode>(catchNode)->getTypeNode()->getType();
+        auto &catchType = findInnerNode<CatchNode>(catchNode)->getTypeNode().getType();
         this->catchException(beginLabel, endLabel, catchType, blockNode.getBaseIndex(), blockNode.getVarSize());
         this->visit(*catchNode);
         if(!catchNode->getType().isNothingType()) {

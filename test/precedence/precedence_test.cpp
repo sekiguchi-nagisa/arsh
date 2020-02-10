@@ -119,7 +119,7 @@ public:
         this->open();
         assert(node.getOpKind() == JumpNode::THROW_);
         this->append("throw");
-        this->visit(*node.getExprNode());
+        this->visit(node.getExprNode());
         this->close();
     }
 

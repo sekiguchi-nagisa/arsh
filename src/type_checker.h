@@ -202,7 +202,7 @@ protected:
      * @param targetNode
      * @return
      */
-    DSType &checkTypeAsSomeExpr(Node *targetNode);
+    DSType &checkTypeAsSomeExpr(Node &targetNode);
 
     /**
      * check node type
