@@ -180,28 +180,20 @@ void StringNode::dump(NodeDumper &dumper) const {
 // ##     StringExprNode     ##
 // ############################
 
-StringExprNode::~StringExprNode() {
-    for(Node *e : this->nodes) {
-        delete e;
-    }
-}
-
-void StringExprNode::addExprNode(Node *node) {
+void StringExprNode::addExprNode(std::unique_ptr<Node> &&node) {
     if(node->is(NodeKind::StringExpr)) {
-        auto *exprNode = static_cast<StringExprNode *>(node);
-        for(auto &e : exprNode->nodes) {
-            this->nodes.push_back(e);
+        auto &exprNode = static_cast<StringExprNode&>(*node);
+        for(auto &e : exprNode.nodes) {
+            this->nodes.push_back(std::move(e));
         }
-        exprNode->nodes.clear();
-        delete node;
+        exprNode.nodes.clear();
     } else if(node->is(NodeKind::String) &&
-            static_cast<StringNode *>(node)->getValue().empty()) { // ignore empty string value node
+            static_cast<StringNode&>(*node).getValue().empty()) { // ignore empty string value node
         /**
          * node must not be empty string value except for calling BinaryOpNode::toStringExpr()
          */
-        delete node;
     } else {
-        this->nodes.push_back(node);
+        this->nodes.push_back(std::move(node));
     }
 }
 
@@ -262,16 +254,6 @@ void MapNode::dump(NodeDumper &dumper) const {
 // #######################
 // ##     TupleNode     ##
 // #######################
-
-TupleNode::~TupleNode() {
-    for(Node *node : this->nodes) {
-        delete node;
-    }
-}
-
-void TupleNode::addNode(Node *node) {
-    this->nodes.push_back(node);
-}
 
 void TupleNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
@@ -1006,7 +988,7 @@ ElementSelfAssignNode::ElementSelfAssignNode(ApplyNode *leftNode, BinaryOpNode *
 
     // init recv, indexNode
     assert(leftNode->isIndexCall());
-    auto opToken = static_cast<AccessNode *>(leftNode->getExprNode())->getNameNode()->getToken();
+    auto opToken = static_cast<AccessNode *>(leftNode->getExprNode())->getNameNode().getToken();
     auto pair = ApplyNode::split(leftNode);
     this->recvNode = pair.first;
     this->indexNode = pair.second;

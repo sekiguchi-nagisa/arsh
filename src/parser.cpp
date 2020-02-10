@@ -640,7 +640,7 @@ std::unique_ptr<Node> Parser::parse_primaryPattern() {
     switch(CUR_KIND()) {
     case INT32_LITERAL: {
         auto pair = TRY(this->expectNum(INT32_LITERAL, &Lexer::toInt32));
-        return std::unique_ptr<Node>(NumberNode::newInt32(pair.first, pair.second));
+        return NumberNode::newInt32(pair.first, pair.second);
     }
     case SIGNAL_LITERAL:
         return this->parse_signalLiteral();
@@ -1034,18 +1034,14 @@ static std::unique_ptr<Node> createTupleOrGroup(
         Token open,
         std::vector<std::unique_ptr<Node>> &&nodes,
         Token close, unsigned int commaCount) {
-    auto node = std::move(nodes[0]);
     if(commaCount == 0) {
+        auto node = std::move(nodes[0]);
         node->setPos(open.pos);
+        node->updateToken(close);
+        return node;
     } else {
-        auto tuple = std::make_unique<TupleNode>(open.pos, node.release());
-        for(unsigned int i = 1; i < nodes.size(); i++) {
-            tuple->addNode(nodes[i].release());
-        }
-        node = std::move(tuple);
+        return std::make_unique<TupleNode>(open.pos, std::move(nodes), close);
     }
-    node->updateToken(close);
-    return node;
 }
 
 std::unique_ptr<Node> Parser::parse_primaryExpression() {
@@ -1066,15 +1062,15 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case INT32_LITERAL: {
         auto pair = TRY(this->expectNum(INT32_LITERAL, &Lexer::toInt32));
-        return std::unique_ptr<Node>(NumberNode::newInt32(pair.first, pair.second));
+        return NumberNode::newInt32(pair.first, pair.second);
     }
     case INT64_LITERAL: {
         auto pair = TRY(this->expectNum(INT64_LITERAL, &Lexer::toInt64));
-        return std::unique_ptr<Node>(NumberNode::newInt64(pair.first, pair.second));
+        return NumberNode::newInt64(pair.first, pair.second);
     }
     case FLOAT_LITERAL: {
         auto pair = TRY(this->expectNum(FLOAT_LITERAL, &Lexer::toDouble));
-        return std::unique_ptr<Node>(NumberNode::newFloat(pair.first, pair.second));
+        return NumberNode::newFloat(pair.first, pair.second);
     }
     case STRING_LITERAL:
         return this->parse_stringLiteral();
@@ -1209,7 +1205,7 @@ std::unique_ptr<Node> Parser::parse_signalLiteral() {
         raiseTokenFormatError(SIGNAL_LITERAL, token, "unsupported signal");
         return nullptr;
     }
-    return std::unique_ptr<Node>(NumberNode::newSignal(token, num));
+    return NumberNode::newSignal(token, num);
 }
 
 std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {
@@ -1295,17 +1291,17 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
         case STR_ELEMENT: {
             token = this->expect(STR_ELEMENT);  // always success
             node->addExprNode(
-                    new StringNode(token, this->lexer->doubleElementToString(token)));
+                    std::make_unique<StringNode>(token, this->lexer->doubleElementToString(token)));
             break;
         }
         EACH_LA_interpolation(GEN_LA_CASE) {
             auto interp = TRY(this->parse_interpolation(EmbedNode::STR_EXPR));
-            node->addExprNode(interp.release());
+            node->addExprNode(std::move(interp));
             break;
         }
         case START_SUB_CMD: {
             auto subNode = TRY(this->parse_cmdSubstitution(true));
-            node->addExprNode(subNode.release());
+            node->addExprNode(std::move(subNode));
             break;
         }
         case CLOSE_DQUOTE:

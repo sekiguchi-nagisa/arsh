@@ -347,30 +347,30 @@ private:
         double floatValue;
     };
 
-     NumberNode(Token token, Kind kind) :
+public:
+    NumberNode(Token token, Kind kind) :
             Node(NodeKind::Number, token), kind(kind), intValue(0) { }
 
-public:
-    static NumberNode *newInt32(Token token, int value) {
-        auto *node = new NumberNode(token, Int32);
+    static std::unique_ptr<NumberNode> newInt32(Token token, int value) {
+        auto node = std::make_unique<NumberNode>(token, Int32);
         node->intValue = value;
         return node;
     }
 
-    static NumberNode *newInt64(Token token, long value) {
-        auto *node = new NumberNode(token, Int64);
+    static std::unique_ptr<NumberNode> newInt64(Token token, long value) {
+        auto node = std::make_unique<NumberNode>(token, Int64);
         node->longValue = value;
         return node;
     }
 
-    static NumberNode *newFloat(Token token, double value) {
-        auto *node = new NumberNode(token, Float);
+    static std::unique_ptr<NumberNode> newFloat(Token token, double value) {
+        auto node = std::make_unique<NumberNode>(token, Float);
         node->floatValue = value;
         return node;
     }
 
-    static NumberNode *newSignal(Token token, int value) {
-        auto *node = new NumberNode(token, Signal);
+    static std::unique_ptr<NumberNode> newSignal(Token token, int value) {
+        auto node = std::make_unique<NumberNode>(token, Signal);
         node->intValue = value;
         return node;
     }
@@ -436,22 +436,22 @@ public:
 
 class StringExprNode : public Node {
 private:
-    std::vector<Node *> nodes;
+    std::vector<std::unique_ptr<Node>> nodes;
 
 public:
     explicit StringExprNode(unsigned int startPos) :
             Node(NodeKind::StringExpr, {startPos, 1}) { }
 
-    ~StringExprNode() override;
+    ~StringExprNode() override = default;
 
-    void addExprNode(Node *node);
+    void addExprNode(std::unique_ptr<Node> &&node);
 
-    const std::vector<Node *> &getExprNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getExprNodes() const {
         return this->nodes;
     }
 
-    void setExprNode(unsigned int index, Node *exprNode) {
-        this->nodes[index] = exprNode;
+    std::vector<std::unique_ptr<Node>> &refExprNodes() {
+        return this->nodes;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -546,21 +546,19 @@ public:
 class TupleNode : public Node {
 private:
     /**
-     * at least two nodes
+     * at least one nodes
      */
-    std::vector<Node *> nodes;
+    std::vector<std::unique_ptr<Node>> nodes;
 
 public:
-    TupleNode(unsigned int startPos, Node *node) :
-            Node(NodeKind::Tuple, {startPos, 0}) {
-        this->addNode(node);
+    TupleNode(unsigned int startPos, std::vector<std::unique_ptr<Node>> &&nodes, Token endToken) :
+            Node(NodeKind::Tuple, {startPos, 0}), nodes(std::move(nodes)) {
+        this->updateToken(endToken);
     }
 
-    ~TupleNode() override;
+    ~TupleNode() override = default;
 
-    void addNode(Node *node);
-
-    const std::vector<Node *> &getNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getNodes() const {
         return this->nodes;
     }
 
@@ -646,8 +644,8 @@ public:
 
     ~AccessNode() override;
 
-    Node *getRecvNode() const {
-        return this->recvNode;
+    Node &getRecvNode() const {
+        return *this->recvNode;
     }
 
     void setRecvNode(Node *recvNode) {
@@ -658,8 +656,8 @@ public:
         return this->nameNode->getVarName();
     }
 
-    VarNode *getNameNode() const {
-        return this->nameNode;
+    VarNode &getNameNode() const {
+        return *this->nameNode;
     }
 
     void setAdditionalOp(AdditionalOp op) {
@@ -799,17 +797,17 @@ public:
 
     const std::string &getMethodName() const {
         assert(this->isMethodCall());
-        return static_cast<AccessNode *>(this->exprNode)->getNameNode()->getVarName();
+        return static_cast<AccessNode *>(this->exprNode)->getNameNode().getVarName();
     }
 
     void setMethodName(std::string &&name) {
         assert(this->isIndexCall());
-        static_cast<AccessNode *>(this->exprNode)->getNameNode()->setVarName(std::move(name));
+        static_cast<AccessNode *>(this->exprNode)->getNameNode().setVarName(std::move(name));
     }
 
     Node *getRecvNode() const {
         assert(this->isMethodCall());
-        return static_cast<AccessNode *>(this->exprNode)->getRecvNode();
+        return &static_cast<AccessNode *>(this->exprNode)->getRecvNode();
     }
 
     Kind getKind() const {
@@ -2309,7 +2307,7 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
 Node *createAssignNode(Node *leftNode, TokenKind op, Token token, Node *rightNode);
 
 inline Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
-    return createAssignNode(leftNode, op, token, NumberNode::newInt32(token, 1));
+    return createAssignNode(leftNode, op, token, NumberNode::newInt32(token, 1).release());
 }
 
 template <typename T>

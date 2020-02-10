@@ -269,11 +269,11 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
     if(exprNode.is(NodeKind::Access) && !node.isFuncCall()) {
         auto &accessNode = static_cast<AccessNode &>(exprNode);
         if(!this->checkAccessNode(accessNode)) {
-            auto &recvType = accessNode.getRecvNode()->getType();
+            auto &recvType = accessNode.getRecvNode().getType();
             auto *handle = this->symbolTable.lookupMethod(recvType, accessNode.getFieldName());
             if(handle == nullptr) {
                 const char *name = accessNode.getFieldName().c_str();
-                RAISE_TC_ERROR(UndefinedMethod, *accessNode.getNameNode(), name);
+                RAISE_TC_ERROR(UndefinedMethod, accessNode.getNameNode(), name);
             }
             node.setKind(ApplyNode::METHOD_CALL);
             return handle;
@@ -326,7 +326,7 @@ void TypeChecker::checkTypeArgsNode(Node &node, const MethodHandle *handle, std:
 }
 
 bool TypeChecker::checkAccessNode(AccessNode &node) {
-    auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
+    auto &recvType = this->checkTypeAsExpr(&node.getRecvNode());
     auto *handle = this->symbolTable.lookupField(recvType, node.getFieldName());
     if(handle == nullptr) {
         return false;
@@ -412,8 +412,8 @@ void TypeChecker::convertToStringExpr(BinaryOpNode &node) {
     }
 
     auto *exprNode = new StringExprNode(node.getLeftNode()->getPos());
-    exprNode->addExprNode(node.getLeftNode());
-    exprNode->addExprNode(node.getRightNode());
+    exprNode->addExprNode(std::unique_ptr<Node>(node.getLeftNode()));
+    exprNode->addExprNode(std::unique_ptr<Node>(node.getRightNode()));
 
     // assign null to prevent double free
     node.refLeftNode() = nullptr;
@@ -455,7 +455,7 @@ void TypeChecker::visitStringNode(StringNode &node) {
 
 void TypeChecker::visitStringExprNode(StringExprNode &node) {
     for(auto &exprNode : node.getExprNodes()) {
-        this->checkTypeAsExpr(exprNode);
+        this->checkTypeAsExpr(exprNode.get());
     }
     node.setType(this->symbolTable.get(TYPE::String));
 }
@@ -509,7 +509,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
     unsigned int size = node.getNodes().size();
     std::vector<DSType *> types(size);
     for(unsigned int i = 0; i < size; i++) {
-        types[i] = &this->checkTypeAsSomeExpr(node.getNodes()[i]);
+        types[i] = &this->checkTypeAsSomeExpr(node.getNodes()[i].get());
     }
     auto typeOrError = this->symbolTable.createTupleType(std::move(types));
     assert(typeOrError);
@@ -528,7 +528,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
     if(!this->checkAccessNode(node)) {
-        RAISE_TC_ERROR(UndefinedField, *node.getNameNode(), node.getFieldName().c_str());
+        RAISE_TC_ERROR(UndefinedField, node.getNameNode(), node.getFieldName().c_str());
     }
 }
 
@@ -1078,14 +1078,14 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
         auto *applyNode = static_cast<UnaryOpNode*>(node)->refApplyNode();
         assert(applyNode->getExprNode()->is(NodeKind::Access));
         auto *accessNode = static_cast<AccessNode*>(applyNode->getExprNode());
-        assert(accessNode->getRecvNode()->is(NodeKind::Number));
-        auto *numNode = static_cast<NumberNode*>(accessNode->getRecvNode());
+        assert(accessNode->getRecvNode().is(NodeKind::Number));
+        auto &numNode = static_cast<NumberNode&>(accessNode->getRecvNode());
 
         if(node->getType().is(TYPE::Int32)) {
-            int value = numNode->getIntValue();
+            int value = numNode.getIntValue();
             value = -value;
             delete node;
-            node = NumberNode::newInt32(token, value);
+            node = NumberNode::newInt32(token, value).release();
             node->setType(this->symbolTable.get(TYPE::Int32));
             return true;
         }
@@ -1094,8 +1094,7 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
     case NodeKind::StringExpr: {
         auto *exprNode = static_cast<StringExprNode *>(node);
         if(exprNode->getExprNodes().size() == 1 && exprNode->getExprNodes()[0]->is(NodeKind::String)) {
-            auto *strNode = static_cast<StringNode *>(exprNode->getExprNodes()[0]);
-            exprNode->setExprNode(0, nullptr);
+            auto *strNode = static_cast<StringNode*>(exprNode->refExprNodes()[0].release());
             delete exprNode;
             node = strNode;
             return true;

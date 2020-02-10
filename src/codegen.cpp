@@ -286,11 +286,11 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
             this->emit0byteIns(OpCode::NEW_STRING);
         }
         unsigned int count = 0;
-        for(Node *e : node.getExprNodes()) {
+        for(auto &e : node.getExprNodes()) {
             if(e->is(NodeKind::BinaryOp)) {
-                auto *binary = static_cast<BinaryOpNode *>(e);
-                if(binary->getOptNode()->is(NodeKind::StringExpr)) {
-                    for(Node *e2 : static_cast<StringExprNode *>(binary->getOptNode())->getExprNodes()) {
+                auto &binary = static_cast<BinaryOpNode&>(*e);
+                if(binary.getOptNode()->is(NodeKind::StringExpr)) {
+                    for(auto &e2 : static_cast<StringExprNode *>(binary.getOptNode())->getExprNodes()) {
                         this->visit(*e2);
                         this->emit0byteIns(OpCode::APPEND_STRING);
                     }
@@ -426,9 +426,9 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
 }
 
 void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
-    this->visit(*node.getRecvNode());
+    this->visit(node.getRecvNode());
 
-    if(node.getRecvNode()->getType().isModType()) {
+    if(node.getRecvNode().getType().isModType()) {
         this->emit0byteIns(OpCode::POP);
         this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
         return;
@@ -1134,14 +1134,14 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
         if(node.isSelfAssignment()) {
             this->visit(*node.getLeftNode());
         } else {
-            this->visit(*accessNode->getRecvNode());
-            if(accessNode->getRecvNode()->getType().isModType()) {
+            this->visit(accessNode->getRecvNode());
+            if(accessNode->getRecvNode().getType().isModType()) {
                 this->emit0byteIns(OpCode::POP);
             }
         }
         this->visit(*node.getRightNode());
 
-        if(accessNode->getRecvNode()->getType().isModType()) {
+        if(accessNode->getRecvNode().getType().isModType()) {
             this->emit2byteIns(OpCode::STORE_GLOBAL, index);
         } else {
             this->emit2byteIns(OpCode::STORE_FIELD, index);
