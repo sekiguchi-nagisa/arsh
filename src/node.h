@@ -1989,16 +1989,16 @@ private:
     /**
      * for parameter definition.
      */
-    std::vector<VarNode *> paramNodes;
+    std::vector<std::unique_ptr<VarNode>> paramNodes;
 
     /**
      * type token of each parameter
      */
-    std::vector<TypeNode *> paramTypeNodes;
+    std::vector<std::unique_ptr<TypeNode>> paramTypeNodes;
 
-    TypeNode *returnTypeNode{nullptr};
+    std::unique_ptr<TypeNode> returnTypeNode;
 
-    BlockNode *blockNode{nullptr};
+    std::unique_ptr<BlockNode> blockNode;
 
     /**
      * maximum number of local variable in function
@@ -2016,41 +2016,44 @@ public:
     FunctionNode(unsigned int startPos, std::string &&funcName) :
             Node(NodeKind::Function, {startPos, 0}), funcName(std::move(funcName)) { }
 
-    ~FunctionNode() override;
+    ~FunctionNode() override = default;
 
     const std::string &getFuncName() const {
         return this->funcName;
     }
 
-    void addParamNode(VarNode *node, TypeNode *paramType);
+    void addParamNode(std::unique_ptr<VarNode> &&node, std::unique_ptr<TypeNode> &&paramType) {
+        this->paramNodes.push_back(std::move(node));
+        this->paramTypeNodes.push_back(std::move(paramType));
+    }
 
-    const std::vector<VarNode *> &getParamNodes() const {
+    const std::vector<std::unique_ptr<VarNode>> &getParamNodes() const {
         return this->paramNodes;
     }
 
-    const std::vector<TypeNode *> &getParamTypeNodes() const {
+    const std::vector<std::unique_ptr<TypeNode>> &getParamTypeNodes() const {
         return this->paramTypeNodes;
     }
 
-    void setReturnTypeToken(TypeNode *typeToken) {
-        this->returnTypeNode = typeToken;
-        this->updateToken(typeToken->getToken());
+    void setReturnTypeToken(std::unique_ptr<TypeNode> &&typeToken) {
+        this->returnTypeNode = std::move(typeToken);
+        this->updateToken(this->returnTypeNode->getToken());
     }
 
-    TypeNode *getReturnTypeToken() {
-        return this->returnTypeNode;
+    TypeNode &getReturnTypeToken() {
+        return *this->returnTypeNode;
     }
 
-    void setBlockNode(BlockNode *blockNode) {
-        this->blockNode = blockNode;
-        this->updateToken(blockNode->getToken());
+    void setBlockNode(std::unique_ptr<BlockNode> &&blockNode) {
+        this->blockNode = std::move(blockNode);
+        this->updateToken(this->blockNode->getToken());
     }
 
     /**
      * return null before call setBlockNode()
      */
-    BlockNode *getBlockNode() const {
-        return this->blockNode;
+    BlockNode &getBlockNode() const {
+        return *this->blockNode;
     }
 
     void setMaxVarNum(unsigned int maxVarNum) {
@@ -2130,18 +2133,19 @@ private:
     std::string cmdName;
 
     unsigned int udcIndex{0};
-    BlockNode *blockNode;
+    std::unique_ptr<BlockNode> blockNode;
 
     unsigned int maxVarNum{0};
 
 public:
-    UserDefinedCmdNode(unsigned int startPos, std::string &&commandName, BlockNode *blockNode) :
+    UserDefinedCmdNode(unsigned int startPos, std::string &&commandName,
+            std::unique_ptr<BlockNode> &&blockNode) :
             Node(NodeKind::UserDefinedCmd, {startPos, 0}),
-            cmdName(std::move(commandName)), blockNode(blockNode) {
-        this->updateToken(blockNode->getToken());
+            cmdName(std::move(commandName)), blockNode(std::move(blockNode)) {
+        this->updateToken(this->blockNode->getToken());
     }
 
-    ~UserDefinedCmdNode() override;
+    ~UserDefinedCmdNode() override = default;
 
     const std::string &getCmdName() const {
         return this->cmdName;
@@ -2155,8 +2159,8 @@ public:
         this->udcIndex = index;
     }
 
-    BlockNode *getBlockNode() const {
-        return this->blockNode;
+    BlockNode &getBlockNode() const {
+        return *this->blockNode;
     }
 
     void setMaxVarNum(unsigned int maxVarNum) {
@@ -2172,7 +2176,7 @@ public:
 
 class SourceNode : public Node {
 private:
-    StringNode *pathNode;
+    std::unique_ptr<StringNode> pathNode;
 
     /**
      * may be empty string
@@ -2206,15 +2210,15 @@ private:
     unsigned int maxVarNum{0};
 
 public:
-    SourceNode(unsigned int startPos, StringNode *pathNode, bool optional) :
-            Node(NodeKind::Source, {startPos, 1}), pathNode(pathNode), optional(optional) {
-        this->updateToken(pathNode->getToken());
+    SourceNode(unsigned int startPos, std::unique_ptr<StringNode> &&pathNode, bool optional) :
+            Node(NodeKind::Source, {startPos, 1}), pathNode(std::move(pathNode)), optional(optional) {
+        this->updateToken(this->pathNode->getToken());
     }
 
-    ~SourceNode() override;
+    ~SourceNode() override = default;
 
-    StringNode *getPathNode() {
-        return this->pathNode;
+    StringNode &getPathNode() const {
+        return *this->pathNode;
     }
 
     const std::string &getPathStr() const {
@@ -2304,10 +2308,11 @@ TokenKind resolveAssignOp(TokenKind op);
 
 LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode);
 
-Node *createAssignNode(Node *leftNode, TokenKind op, Token token, Node *rightNode);
+std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode,
+        TokenKind op, Token token, std::unique_ptr<Node> &&rightNode);
 
-inline Node *createSuffixNode(Node *leftNode, TokenKind op, Token token) {
-    return createAssignNode(leftNode, op, token, NumberNode::newInt32(token, 1).release());
+inline std::unique_ptr<Node> createSuffixNode(std::unique_ptr<Node> &&leftNode, TokenKind op, Token token) {
+    return createAssignNode(std::move(leftNode), op, token, NumberNode::newInt32(token, 1));
 }
 
 template <typename T>

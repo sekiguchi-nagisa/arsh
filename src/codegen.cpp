@@ -1187,7 +1187,7 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
     this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
-    this->visit(*node.getBlockNode());
+    this->visit(node.getBlockNode());
     auto func = DSValue::create<FuncObject>(node.getFuncType(), this->finalizeCodeBuilder(node.getFuncName()));
 
     this->emitLdcIns(func);
@@ -1198,7 +1198,7 @@ void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) { } // do nothing
 
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->initCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
-    this->visit(*node.getBlockNode());
+    this->visit(node.getBlockNode());
     auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node.getCmdName()));
 
     this->emitLdcIns(func);
@@ -1208,7 +1208,7 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 void ByteCodeGenerator::visitSourceNode(SourceNode &node) {
     unsigned int index = node.getIndex();
     if(node.isFirstAppear()) {
-        this->emitSourcePos(node.getPathNode()->getPos());
+        this->emitSourcePos(node.getPathNode().getPos());
         this->emit0byteIns(OpCode::INIT_MODULE);
         if(index > 0) {
             this->emit0byteIns(OpCode::DUP);

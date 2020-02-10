@@ -1034,24 +1034,6 @@ void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
 // ##     FunctionNode     ##
 // ##########################
 
-FunctionNode::~FunctionNode() {
-    for(auto &n : this->paramNodes) {
-        delete n;
-    }
-
-    for(auto &t : this->paramTypeNodes) {
-        delete t;
-    }
-
-    delete this->returnTypeNode;
-    delete this->blockNode;
-}
-
-void FunctionNode::addParamNode(VarNode *node, TypeNode *paramType) {
-    this->paramNodes.push_back(node);
-    this->paramTypeNodes.push_back(paramType);
-}
-
 void FunctionNode::dump(NodeDumper &dumper) const {
     DUMP(funcName);
     DUMP(paramNodes);
@@ -1103,10 +1085,6 @@ void InterfaceNode::dump(NodeDumper &dumper) const {
 // ##     UserDefinedCmdNode     ##
 // ################################
 
-UserDefinedCmdNode::~UserDefinedCmdNode() {
-    delete this->blockNode;
-}
-
 void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
     DUMP(cmdName);
     DUMP_PRIM(udcIndex);
@@ -1117,10 +1095,6 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
 // ########################
 // ##     SourceNode     ##
 // ########################
-
-SourceNode::~SourceNode() {
-    delete this->pathNode;
-}
 
 void SourceNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(pathNode);
@@ -1240,35 +1214,35 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
     return new LoopNode(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
 }
 
-Node *createAssignNode(Node *leftNode, TokenKind op, Token token, Node *rightNode) {
+std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKind op, Token token, std::unique_ptr<Node> &&rightNode) {
     /*
      * basic assignment
      */
     if(op == ASSIGN) {
         // assign to element(actually call SET)
         if(leftNode->is(NodeKind::Apply) &&
-                static_cast<ApplyNode *>(leftNode)->isIndexCall()) {
-            auto *indexNode = static_cast<ApplyNode *>(leftNode);
-            indexNode->setMethodName(std::string(OP_SET));
-            indexNode->refArgNodes().push_back(rightNode);
-            return indexNode;
+                static_cast<ApplyNode&>(*leftNode).isIndexCall()) {
+            auto &indexNode = static_cast<ApplyNode&>(*leftNode);
+            indexNode.setMethodName(std::string(OP_SET));
+            indexNode.refArgNodes().push_back(rightNode.release());
+            return std::move(leftNode);
         }
         // assign to variable or field
-        return new AssignNode(leftNode, rightNode);
+        return std::make_unique<AssignNode>(leftNode.release(), rightNode.release());
     }
 
     /**
      * self assignment
      */
     // assign to element
-    auto *opNode = new BinaryOpNode(new EmptyNode(rightNode->getToken()), resolveAssignOp(op), token, rightNode);
+    auto *opNode = new BinaryOpNode(new EmptyNode(rightNode->getToken()), resolveAssignOp(op), token, rightNode.release());
     if(leftNode->is(NodeKind::Apply) &&
-            static_cast<ApplyNode *>(leftNode)->isIndexCall()) {
-        auto *indexNode = static_cast<ApplyNode *>(leftNode);
-        return new ElementSelfAssignNode(indexNode, opNode);
+            static_cast<ApplyNode&>(*leftNode).isIndexCall()) {
+        auto *indexNode = static_cast<ApplyNode*>(leftNode.release());
+        return std::make_unique<ElementSelfAssignNode>(indexNode, opNode);
     }
     // assign to variable or field
-    return new AssignNode(leftNode, opNode, true);
+    return std::make_unique<AssignNode>(leftNode.release(), opNode, true);
 }
 
 const Node *findInnerNode(NodeKind kind, const Node *node) {

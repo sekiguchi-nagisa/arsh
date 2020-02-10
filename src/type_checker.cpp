@@ -1350,7 +1350,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     }
 
     // resolve return type, param type
-    auto &returnType = this->checkTypeExactly(*node.getReturnTypeToken());
+    auto &returnType = this->checkTypeExactly(node.getReturnTypeToken());
     unsigned int paramSize = node.getParamTypeNodes().size();
     std::vector<DSType *> paramTypes(paramSize);
     for(unsigned int i = 0; i < paramSize; i++) {
@@ -1370,25 +1370,25 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     unsigned int varIndex = this->inFunc(returnType, [&]{
         // register parameter
         for(unsigned int i = 0; i < paramSize; i++) {
-            VarNode *paramNode = node.getParamNodes()[i];
-            auto fieldHandle = this->addEntry(*paramNode, paramNode->getVarName(),
+            VarNode &paramNode = *node.getParamNodes()[i];
+            auto fieldHandle = this->addEntry(paramNode, paramNode.getVarName(),
                                               *funcType.getParamTypes()[i], FieldAttribute());
-            paramNode->setAttribute(*fieldHandle);
+            paramNode.setAttribute(*fieldHandle);
         }
         // check type func body
-        this->checkTypeWithCurrentScope(*node.getBlockNode());
+        this->checkTypeWithCurrentScope(node.getBlockNode());
     });
     node.setMaxVarNum(varIndex);
 
     // insert terminal node if not found
-    BlockNode *blockNode = node.getBlockNode();
-    if(returnType.isVoidType() && !blockNode->getType().isNothingType()) {
+    BlockNode &blockNode = node.getBlockNode();
+    if(returnType.isVoidType() && !blockNode.getType().isNothingType()) {
         auto *emptyNode = new EmptyNode();
         emptyNode->setType(this->symbolTable.get(TYPE::Void));
-        addReturnNodeToLast(*blockNode, this->symbolTable.getTypePool(), emptyNode);
+        addReturnNodeToLast(blockNode, this->symbolTable.getTypePool(), emptyNode);
     }
-    if(!blockNode->getType().isNothingType()) {
-        RAISE_TC_ERROR(UnfoundReturn, *blockNode);
+    if(!blockNode.getType().isNothingType()) {
+        RAISE_TC_ERROR(UnfoundReturn, blockNode);
     }
 
     node.setType(this->symbolTable.get(TYPE::Void));
@@ -1421,16 +1421,16 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
         }
 
         // check type command body
-        this->checkTypeWithCurrentScope(*node.getBlockNode());
+        this->checkTypeWithCurrentScope(node.getBlockNode());
     });
     node.setMaxVarNum(varIndex);
 
     // insert return node if not found
-    if(node.getBlockNode()->getNodes().empty() ||
-            !node.getBlockNode()->getNodes().back()->getType().isNothingType()) {
+    if(node.getBlockNode().getNodes().empty() ||
+            !node.getBlockNode().getNodes().back()->getType().isNothingType()) {
         VarNode *varNode = new VarNode({0, 1}, "?");
         this->checkTypeAsExpr(varNode);
-        addReturnNodeToLast(*node.getBlockNode(), this->symbolTable.getTypePool(), varNode);
+        addReturnNodeToLast(node.getBlockNode(), this->symbolTable.getTypePool(), varNode);
     }
 
     node.setType(this->symbolTable.get(TYPE::Void));
@@ -1469,7 +1469,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     if(node.getName().empty()) {    // global import
         const char *ret = this->symbolTable.import(*node.getModType());
         if(ret) {
-            RAISE_TC_ERROR(ConflictSymbol, *node.getPathNode(), ret);
+            RAISE_TC_ERROR(ConflictSymbol, node.getPathNode(), ret);
         }
     } else {    // scoped import
         // register actual module handle

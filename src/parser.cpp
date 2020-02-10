@@ -128,7 +128,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
             auto type = TRY(this->parse_typeName());
 
-            node->addParamNode(nameNode.release(), type.release());
+            node->addParamNode(std::move(nameNode), std::move(type));
         } else {
             E_ALTER(APPLIED_NAME, RP);
         }
@@ -149,7 +149,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     if(!retTypeNode) {
         retTypeNode.reset(newVoidTypeNode());
     }
-    node->setReturnTypeToken(retTypeNode.release());
+    node->setReturnTypeToken(std::move(retTypeNode));
 
     return node;
 }
@@ -368,7 +368,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     }
     case FUNCTION: {
         auto node = TRY(this->parse_funcDecl());
-        node->setBlockNode(TRY(this->parse_block()).release());
+        node->setBlockNode(TRY(this->parse_block()));
         return std::move(node);
     }
     case INTERFACE:
@@ -462,7 +462,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         this->consume();   // always success
         auto pathNode = TRY(this->parse_cmdArgPart(true, yycEXPR));
         this->lexer->popLexerMode();
-        auto node = std::make_unique<SourceNode>(startPos, pathNode.release(), optional);
+        auto node = std::make_unique<SourceNode>(startPos, std::move(pathNode), optional);
         if(!optional && !HAS_NL() && CUR_KIND() == AS) {
             this->expectAndChangeMode(AS, yycNAME); // always success
             Token token = TRY(this->expect(IDENTIFIER));
@@ -760,7 +760,7 @@ std::unique_ptr<Node> Parser::parse_command() {
         this->consume();    // LP
         TRY(this->expect(RP));
         auto blockNode = TRY(this->parse_block());
-        return std::make_unique<UserDefinedCmdNode>(token.pos, this->lexer->toCmdArg(token), blockNode.release());
+        return std::make_unique<UserDefinedCmdNode>(token.pos, this->lexer->toCmdArg(token), std::move(blockNode));
     }
 
     auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
@@ -865,7 +865,7 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, 
         return std::make_unique<PipelineNode>(leftNode.release(), rightNode.release());
     }
     if(isAssignOp(op)) {
-        return std::unique_ptr<Node>(createAssignNode(leftNode.release(), op, token, rightNode.release()));
+        return createAssignNode(std::move(leftNode), op, token, std::move(rightNode));
     }
 
     return std::make_unique<BinaryOpNode>(leftNode.release(), op, token, rightNode.release());
@@ -1013,7 +1013,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         case DEC: {
             Token token = this->curToken;
             TokenKind op = this->scan();
-            node.reset(createSuffixNode(node.release(), op, token));
+            node = createSuffixNode(std::move(node), op, token);
             break;
         }
         case UNWRAP: {

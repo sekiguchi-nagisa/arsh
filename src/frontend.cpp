@@ -154,7 +154,7 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
            errorToken, TermColor::Magenta, message.c_str());
 
     for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
-        Token token = this->contexts[i].sourceNode->getPathNode()->getToken();
+        Token token = this->contexts[i].sourceNode->getPathNode().getToken();
         auto &lex = i > 0 ? this->contexts[i - 1].lexer : this->lexer;
         stream(lex, "note", token, TermColor::Blue, "at module import");
     }
@@ -273,22 +273,22 @@ FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     if(is<ModLoadingError>(ret)) {
         switch(get<ModLoadingError>(ret)) {
         case ModLoadingError::CIRCULAR:
-            return wrap(createTCError<CircularMod>(*srcNode.getPathNode(), modPath));
+            return wrap(createTCError<CircularMod>(srcNode.getPathNode(), modPath));
         case ModLoadingError::NOT_OPEN:
             return wrap(createTCError<NotOpenMod>(
-                    *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
+                    srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
         case ModLoadingError::NOT_FOUND:
             if(optional) {
                 return Ok(IN_MODULE);
             }
             return wrap(createTCError<NotFoundMod>(
-                    *srcNode.getPathNode(), srcNode.getPathStr().c_str()));
+                    srcNode.getPathNode(), srcNode.getPathStr().c_str()));
         }
     } else if(is<const char *>(ret)) {
         ByteBuffer buf;
         if(!readAll(filePtr, buf)) {
             return wrap(createTCError<NotOpenMod>(
-                    *srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
+                    srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
         }
         this->enterModule(get<const char*>(ret), std::move(buf),
                           std::unique_ptr<SourceNode>(static_cast<SourceNode *>(node.release())));
