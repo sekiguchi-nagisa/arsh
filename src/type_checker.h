@@ -194,7 +194,7 @@ protected:
      * return resolved type.
      */
     DSType &checkTypeAsExpr(Node *targetNode) {
-        return this->checkType(nullptr, targetNode, &this->symbolTable.get(TYPE::Void));
+        return this->checkType(nullptr, *targetNode, &this->symbolTable.get(TYPE::Void));
     }
 
     /**
@@ -210,7 +210,7 @@ protected:
      * if requiredType is not equivalent to node type, throw exception.
      * return resolved type.
      */
-    DSType &checkType(const DSType &requiredType, Node *targetNode) {
+    DSType &checkType(const DSType &requiredType, Node &targetNode) {
         return this->checkType(&requiredType, targetNode, nullptr);
     }
 
@@ -220,7 +220,7 @@ protected:
      * @return
      */
     DSType &checkTypeExactly(Node &targetNode) {
-        return this->checkType(nullptr, &targetNode, nullptr);
+        return this->checkType(nullptr, targetNode, nullptr);
     }
 
     /**
@@ -233,7 +233,7 @@ protected:
      * and if unacceptableType is equivalent to node type, throw exception.
      * return resolved type.
      */
-    DSType &checkType(const DSType *requiredType, Node *targetNode, const DSType *unacceptableType) {
+    DSType &checkType(const DSType *requiredType, Node &targetNode, const DSType *unacceptableType) {
         CoercionKind kind = CoercionKind::NOP;
         return this->checkType(requiredType, targetNode, unacceptableType, kind);
     }
@@ -241,7 +241,7 @@ protected:
     /**
      * root method of checkType
      */
-    DSType &checkType(const DSType *requiredType, Node *targetNode,
+    DSType &checkType(const DSType *requiredType, Node &targetNode,
                       const DSType *unacceptableType, CoercionKind &kind);
 
     void checkTypeWithCurrentScope(BlockNode &blockNode) {

@@ -631,7 +631,7 @@ void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {
 }
 
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
-    this->visit(*node.getNameNode());
+    this->visit(node.getNameNode());
     this->emit0byteIns(OpCode::NEW_CMD);
     this->emit0byteIns(node.hasRedir() ? OpCode::NEW_REDIR : OpCode::PUSH_NULL);
 
@@ -718,7 +718,7 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
         this->emit0byteIns(OpCode::DO_REDIR);
         this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
 
-        this->visit(*node.getExprNode());
+        this->visit(node.getExprNode());
     });
 }
 
@@ -729,7 +729,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
 
     this->markLabel(beginLabel);
     this->emitForkIns(node.getOpKind(), mergeLabel);
-    this->visit(*node.getExprNode());
+    this->visit(node.getExprNode());
     this->markLabel(endLabel);
 
     this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_Root));

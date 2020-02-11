@@ -125,7 +125,7 @@ public:
 
     void visitWithNode(WithNode &node) override {
         this->open();
-        this->visit(*node.getExprNode());
+        this->visit(node.getExprNode());
         this->append("with");
         this->visit(*node.getRedirNodes().back());
         this->close();
@@ -160,7 +160,7 @@ public:
         if(node.getOpKind() == ForkKind::COPROC) {
             this->append("coproc");
         }
-        this->visit(*node.getExprNode());
+        this->visit(node.getExprNode());
         if(node.getOpKind() == ForkKind::JOB) {
             this->append("&");
         }

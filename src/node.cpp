@@ -531,22 +531,14 @@ void RedirNode::dump(NodeDumper &dumper) const {
 // ##     CmdNode     ##
 // #####################
 
-CmdNode::~CmdNode() {
-    delete this->nameNode;
-
-    for(auto &e : this->argNodes) {
-        delete e;
-    }
+void CmdNode::addArgNode(std::unique_ptr<CmdArgNode> &&node) {
+    this->updateToken(node->getToken());
+    this->argNodes.push_back(std::move(node));
 }
 
-void CmdNode::addArgNode(CmdArgNode *node) {
-    this->argNodes.push_back(node);
+void CmdNode::addRedirNode(std::unique_ptr<RedirNode> &&node) {
     this->updateToken(node->getToken());
-}
-
-void CmdNode::addRedirNode(RedirNode *node) {
-    this->argNodes.push_back(node);
-    this->updateToken(node->getToken());
+    this->argNodes.push_back(std::move(node));
     this->redirCount++;
 }
 
@@ -561,22 +553,14 @@ void CmdNode::dump(NodeDumper &dumper) const {
 // ##     PipelineNode     ##
 // ##########################
 
-PipelineNode::~PipelineNode() {
-    for(auto &p : this->nodes) {
-        delete p;
-    }
-}
-
-void PipelineNode::addNode(Node *node) {
+void PipelineNode::addNode(std::unique_ptr<Node> &&node) {
     if(node->is(NodeKind::Pipeline)) {
-        auto *pipe = static_cast<PipelineNode *>(node);
-        for(auto &e : pipe->nodes) {
-            this->addNodeImpl(e);
-            e = nullptr;
+        auto &pipe = static_cast<PipelineNode&>(*node);
+        for(auto &e : pipe.nodes) {
+            this->addNodeImpl(std::move(e));
         }
-        delete pipe;
     } else {
-        this->addNodeImpl(node);
+        this->addNodeImpl(std::move(node));
     }
 }
 
@@ -585,25 +569,17 @@ void PipelineNode::dump(NodeDumper &dumper) const {
     DUMP_PRIM(baseIndex);
 }
 
-void PipelineNode::addNodeImpl(Node *node) {
+void PipelineNode::addNodeImpl(std::unique_ptr<Node> &&node) {
     if(node->is(NodeKind::Cmd)) {
-        static_cast<CmdNode *>(node)->setInPipe(true);
+        static_cast<CmdNode&>(*node).setInPipe(true);
     }
-    this->nodes.push_back(node);
     this->updateToken(node->getToken());
+    this->nodes.push_back(std::move(node));
 }
 
 // ######################
 // ##     WithNode     ##
 // ######################
-
-WithNode::~WithNode() {
-    delete this->exprNode;
-
-    for(auto &e : this->redirNodes) {
-        delete e;
-    }
-}
 
 void WithNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
@@ -614,10 +590,6 @@ void WithNode::dump(NodeDumper &dumper) const {
 // ######################
 // ##     ForkNode     ##
 // ######################
-
-ForkNode::~ForkNode() {
-    delete this->exprNode;
-}
 
 void ForkNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
@@ -677,10 +649,6 @@ void BlockNode::dump(NodeDumper &dumper) const {
 // ###########################
 // ##     TypeAliasNode     ##
 // ###########################
-
-TypeAliasNode::~TypeAliasNode() {
-    delete this->targetTypeNode;
-}
 
 void TypeAliasNode::dump(NodeDumper &dumper) const {
     DUMP(alias);

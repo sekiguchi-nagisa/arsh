@@ -1135,34 +1135,31 @@ public:
 
 class CmdNode : public Node {
 private:
-    /**
-     * must be StringNode.
-     */
-    Node *nameNode;
+    std::unique_ptr<StringNode> nameNode;
 
     /**
      * may be CmdArgNode, RedirNode
      */
-    std::vector<Node *> argNodes;
+    std::vector<std::unique_ptr<Node>> argNodes;
 
     unsigned int redirCount{0};
 
     bool inPipe{false};
 
 public:
-    explicit CmdNode(StringNode *nameNode) :
+    explicit CmdNode(std::unique_ptr<StringNode> &&nameNode) :
             Node(NodeKind::Cmd, nameNode->getToken()),
-            nameNode(nameNode) { }
+            nameNode(std::move(nameNode)) { }
 
-    ~CmdNode() override;
+    ~CmdNode() override = default;
 
-    Node *getNameNode() const {
-        return this->nameNode;
+    StringNode &getNameNode() const {
+        return *this->nameNode;
     }
 
-    void addArgNode(CmdArgNode *node);
+    void addArgNode(std::unique_ptr<CmdArgNode> &&node);
 
-    const std::vector<Node *> &getArgNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getArgNodes() const {
         return this->argNodes;
     }
 
@@ -1178,29 +1175,29 @@ public:
         return this->inPipe;
     }
 
-    void addRedirNode(RedirNode *node);
+    void addRedirNode(std::unique_ptr<RedirNode> &&node);
 
     void dump(NodeDumper &dumper) const override;
 };
 
 class PipelineNode : public Node {
 private:
-    std::vector<Node *> nodes;
+    std::vector<std::unique_ptr<Node>> nodes;
 
     unsigned int baseIndex{0}; // for indicating internal pipeline state index
 
 public:
-    PipelineNode(Node *leftNode, Node *rightNode) :
+    PipelineNode(std::unique_ptr<Node> &&leftNode, std::unique_ptr<Node> &&rightNode) :
             Node(NodeKind::Pipeline, leftNode->getToken()) {
-        this->addNode(leftNode);
-        this->addNode(rightNode);
+        this->addNode(std::move(leftNode));
+        this->addNode(std::move(rightNode));
     }
 
-    ~PipelineNode() override;
+    ~PipelineNode() override = default;
 
-    void addNode(Node *node);
+    void addNode(std::unique_ptr<Node> &&node);
 
-    const std::vector<Node *> &getNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getNodes() const {
         return this->nodes;
     }
 
@@ -1219,35 +1216,35 @@ public:
     void dump(NodeDumper &dumper) const override;
 
 private:
-    void addNodeImpl(Node *node);
+    void addNodeImpl(std::unique_ptr<Node> &&node);
 };
 
 class WithNode : public Node {
 private:
-    Node *exprNode;
+    std::unique_ptr<Node> exprNode;
 
-    std::vector<Node *> redirNodes;
+    std::vector<std::unique_ptr<RedirNode>> redirNodes;
 
     unsigned int baseIndex{0};
 
 public:
-    WithNode(Node *exprNode, RedirNode *redirNode) :
-            Node(NodeKind::With, exprNode->getToken()), exprNode(exprNode) {
-        this->addRedirNode(redirNode);
+    WithNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<RedirNode> &&redirNode) :
+            Node(NodeKind::With, exprNode->getToken()), exprNode(std::move(exprNode)) {
+        this->addRedirNode(std::move(redirNode));
     }
 
-    ~WithNode() override;
+    ~WithNode() override = default;
 
-    Node *getExprNode() const {
-        return this->exprNode;
+    Node &getExprNode() const {
+        return *this->exprNode;
     }
 
-    void addRedirNode(RedirNode *node) {
-        this->redirNodes.push_back(node);
+    void addRedirNode(std::unique_ptr<RedirNode> &&node) {
         this->updateToken(node->getToken());
+        this->redirNodes.push_back(std::move(node));
     }
 
-    const std::vector<Node *> &getRedirNodes() const {
+    const std::vector<std::unique_ptr<RedirNode>> &getRedirNodes() const {
         return this->redirNodes;
     }
 
@@ -1265,44 +1262,44 @@ public:
 class ForkNode : public Node {
 private:
     ForkKind opKind;
-    Node *exprNode;
-
-    ForkNode(Token token, ForkKind kind, Node *exprNode) :
-            Node(NodeKind::Fork, token), opKind(kind), exprNode(exprNode) { }
+    std::unique_ptr<Node> exprNode;
 
 public:
-    static std::unique_ptr<ForkNode> newCmdSubstitution(unsigned int pos, Node *exprNode, Token token, bool strExpr) {
-        auto *node = new ForkNode({pos, 1}, strExpr ?  ForkKind::STR : ForkKind::ARRAY, exprNode);
-        node->updateToken(token);
-        return std::unique_ptr<ForkNode>(node);
+    ForkNode(Token token, ForkKind kind, std::unique_ptr<Node> &&exprNode, Token endToken) :
+            Node(NodeKind::Fork, token), opKind(kind), exprNode(std::move(exprNode)) {
+        this->updateToken(endToken);
     }
 
-    static std::unique_ptr<ForkNode> newProcSubstitution(unsigned int pos, Node *exprNode, Token token, bool inPipe) {
-        auto *node = new ForkNode({pos, 1}, inPipe ?  ForkKind::IN_PIPE : ForkKind::OUT_PIPE, exprNode);
-        node->updateToken(token);
-        return std::unique_ptr<ForkNode>(node);
+    static auto newCmdSubstitution(unsigned int pos,
+            std::unique_ptr<Node> &&exprNode, Token token, bool strExpr) {
+        return std::make_unique<ForkNode>(Token{pos, 1},
+                strExpr ?  ForkKind::STR : ForkKind::ARRAY, std::move(exprNode), token);
     }
 
-    static std::unique_ptr<ForkNode> newBackground(Node *exprNode, Token token, bool disown) {
-        auto *node = new ForkNode(exprNode->getToken(), disown ? ForkKind::DISOWN : ForkKind::JOB, exprNode);
-        node->updateToken(token);
-        return std::unique_ptr<ForkNode>(node);
+    static auto newProcSubstitution(unsigned int pos,
+            std::unique_ptr<Node> &&exprNode, Token token, bool inPipe) {
+        return std::make_unique<ForkNode>(Token{pos, 1},
+                inPipe ?  ForkKind::IN_PIPE : ForkKind::OUT_PIPE, std::move(exprNode), token);
     }
 
-    static std::unique_ptr<ForkNode> newCoproc(Token token, Node *exprNode) {
-        auto *node = new ForkNode(token, ForkKind::COPROC, exprNode);
-        node->updateToken(exprNode->getToken());
-        return std::unique_ptr<ForkNode>(node);
+    static auto newBackground(std::unique_ptr<Node> &&exprNode, Token token, bool disown) {
+        auto tok = exprNode->getToken();
+        return std::make_unique<ForkNode>(tok, disown ? ForkKind::DISOWN : ForkKind::JOB, std::move(exprNode), token);
     }
 
-    ~ForkNode() override;
+    static auto newCoproc(Token token, std::unique_ptr<Node> &&exprNode) {
+        auto end = exprNode->getToken();
+        return std::make_unique<ForkNode>(token, ForkKind::COPROC, std::move(exprNode), end);
+    }
+
+    ~ForkNode() override = default;
 
     ForkKind getOpKind() const {
         return this->opKind;
     }
 
-    Node *getExprNode() const {
-        return this->exprNode;
+    Node &getExprNode() const {
+        return *this->exprNode;
     }
 
     bool isJob() const {
@@ -1405,22 +1402,23 @@ public:
 class TypeAliasNode : public Node {
 private:
     std::string alias;
-    TypeNode *targetTypeNode;
+    std::unique_ptr<TypeNode> targetTypeNode;
 
 public:
-    TypeAliasNode(unsigned int startPos, std::string &&alias, TypeNode *targetTypeNode) :
-            Node(NodeKind::TypeAlias, {startPos, 0}), alias(std::move(alias)), targetTypeNode(targetTypeNode) {
-        this->updateToken(targetTypeNode->getToken());
+    TypeAliasNode(unsigned int startPos, std::string &&alias, std::unique_ptr<TypeNode>  &&targetTypeNode) :
+            Node(NodeKind::TypeAlias, {startPos, 0}),
+            alias(std::move(alias)), targetTypeNode(std::move(targetTypeNode)) {
+        this->updateToken(this->targetTypeNode->getToken());
     }
 
-    ~TypeAliasNode() override;
+    ~TypeAliasNode() override = default;
 
     const std::string &getAlias() const {
         return this->alias;
     }
 
-    TypeNode *getTargetTypeNode() const {
-        return this->targetTypeNode;
+    TypeNode &getTargetTypeNode() const {
+        return *this->targetTypeNode;
     }
 
     void dump(NodeDumper &dumper) const override;

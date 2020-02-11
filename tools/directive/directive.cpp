@@ -244,7 +244,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
 
         // check type attribute
         try {
-            this->checkType(*pair->first, assignNode->getRightNode());
+            this->checkType(*pair->first, *assignNode->getRightNode());
         } catch(const TypeCheckError &e) {
             this->error = std::make_unique<TypeCheckError>(e);
             return;

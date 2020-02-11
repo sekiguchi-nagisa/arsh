@@ -379,7 +379,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         Token token = TRY(this->expect(IDENTIFIER));
         TRY(this->expect(ASSIGN, false));
         auto typeToken = TRY(this->parse_typeName());
-        return std::make_unique<TypeAliasNode>(startPos, this->lexer->toTokenText(token), typeToken.release());
+        return std::make_unique<TypeAliasNode>(startPos, this->lexer->toTokenText(token), std::move(typeToken));
     }
     case ASSERT: {
         unsigned int pos = START_POS();
@@ -764,15 +764,15 @@ std::unique_ptr<Node> Parser::parse_command() {
     }
 
     auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
-    auto node = std::make_unique<CmdNode>(new StringNode(token, this->lexer->toCmdArg(token), kind));
+    auto node = std::make_unique<CmdNode>(std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind));
 
     for(bool next = true; next && HAS_SPACE() && !HAS_NL();) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg(GEN_LA_CASE)
-            node->addArgNode(TRY(this->parse_cmdArg()).release());
+            node->addArgNode(TRY(this->parse_cmdArg()));
             break;
         EACH_LA_redir(GEN_LA_CASE)
-            node->addRedirNode(TRY(this->parse_redirOption()).release());
+            node->addRedirNode(TRY(this->parse_redirOption()));
             break;
         case INVALID:
 #define EACH_LA_cmdArgs(E) \
@@ -859,10 +859,10 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, 
                                               Token token, std::unique_ptr<Node> &&rightNode) {
     if(op == PIPE) {
         if(leftNode->is(NodeKind::Pipeline)) {
-            static_cast<PipelineNode *>(leftNode.get())->addNode(rightNode.release());
+            static_cast<PipelineNode *>(leftNode.get())->addNode(std::move(rightNode));
             return std::move(leftNode);
         }
-        return std::make_unique<PipelineNode>(leftNode.release(), rightNode.release());
+        return std::make_unique<PipelineNode>(std::move(leftNode), std::move(rightNode));
     }
     if(isAssignOp(op)) {
         return createAssignNode(std::move(leftNode), op, token, std::move(rightNode));
@@ -902,11 +902,11 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
         case WITH: {
             this->consume();    // WITH
             auto redirNode = TRY(this->parse_redirOption());
-            auto withNode = std::make_unique<WithNode>(node.release(), redirNode.release());
+            auto withNode = std::make_unique<WithNode>(std::move(node), std::move(redirNode));
             for(bool next = true; next && HAS_SPACE();) {
                 switch(CUR_KIND()) {
                 EACH_LA_redir(GEN_LA_CASE) {
-                    withNode->addRedirNode(TRY(this->parse_redirOption()).release());
+                    withNode->addRedirNode(TRY(this->parse_redirOption()));
                     break;
                 }
                 case INVALID:
@@ -932,7 +932,7 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
         case DISOWN_BG: {
             Token token = this->curToken;
             bool disown = this->scan() == DISOWN_BG;
-            return ForkNode::newBackground(node.release(), token, disown);
+            return ForkNode::newBackground(std::move(node), token, disown);
         }
         default: {
             Token token = this->curToken;
@@ -966,7 +966,7 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     case COPROC: {
         auto token = this->expect(COPROC);  // always success
         auto exprNode = TRY(this->parse_expression(getPrecedence(COPROC)));
-        return ForkNode::newCoproc(token, exprNode.release());
+        return ForkNode::newCoproc(token, std::move(exprNode));
     }
     default:
         return this->parse_suffixExpression();
@@ -1400,7 +1400,7 @@ std::unique_ptr<Node> Parser::parse_cmdSubstitution(bool strExpr) {
     this->consume();    // START_SUB_CMD
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(RP));
-    return ForkNode::newCmdSubstitution(pos, exprNode.release(), token, strExpr);
+    return ForkNode::newCmdSubstitution(pos, std::move(exprNode), token, strExpr);
 }
 
 std::unique_ptr<Node> Parser::parse_procSubstitution() {
@@ -1411,7 +1411,7 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
     bool inPipe = this->scan() == START_IN_SUB;
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(RP));
-    return ForkNode::newProcSubstitution(pos, exprNode.release(), token, inPipe);
+    return ForkNode::newProcSubstitution(pos, std::move(exprNode), token, inPipe);
 }
 
 } // namespace ydsh

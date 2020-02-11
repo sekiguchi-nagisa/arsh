@@ -581,7 +581,7 @@ static const CmdNode *inCmdMode(const Node &node) {
         return inCmdMode(*static_cast<const PipelineNode &>(node).getNodes().back());
     case NodeKind::Fork: {
         auto &forkNode = static_cast<const ForkNode &>(node);
-        return forkNode.getOpKind() == ForkKind::COPROC ? inCmdMode(*forkNode.getExprNode()) : nullptr;
+        return forkNode.getOpKind() == ForkKind::COPROC ? inCmdMode(forkNode.getExprNode()) : nullptr;
     }
     case NodeKind::Assert: {
         auto &assertNode = static_cast<const AssertNode &>(node);
@@ -860,7 +860,7 @@ std::vector<DSValue> CompleterFactory::resolveCmdTokens() const {
     assert(this->node); //FIXME
     std::vector<DSValue> tokens;
     auto *cmdNode = inCmdMode(*this->node);
-    tokens.push_back(this->newStrObj(cmdNode->getNameNode()->getToken()));
+    tokens.push_back(this->newStrObj(cmdNode->getNameNode().getToken()));
     for(auto &argNode : cmdNode->getArgNodes()) {
         if(argNode->is(NodeKind::Redir)) {
             continue;
