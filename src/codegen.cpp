@@ -221,8 +221,8 @@ void ByteCodeGenerator::enterFinally() {
     }
 }
 
-static bool isTildeExpansion(const Node *node) {
-    return node->is(NodeKind::String) && static_cast<const StringNode *>(node)->isTilde();
+static bool isTildeExpansion(const Node &node) {
+    return node.is(NodeKind::String) && static_cast<const StringNode&>(node).isTilde();
 }
 
 void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
@@ -234,20 +234,20 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         this->emit0byteIns(OpCode::NEW_STRING);
 
         unsigned int index = 0;
-        const bool tildeExpansion = isTildeExpansion(node.getSegmentNodes()[0]);
+        const bool tildeExpansion = isTildeExpansion(*node.getSegmentNodes()[0]);
         if(tildeExpansion) {
             this->emitLdcIns(DSValue::create<String_Object>(
-                    this->symbolTable.get(TYPE::String), static_cast<StringNode *>(node.getSegmentNodes()[0])->getValue()));
+                    this->symbolTable.get(TYPE::String), static_cast<StringNode&>(*node.getSegmentNodes()[0]).getValue()));
             this->emit0byteIns(OpCode::APPEND_STRING);
             index++;
         }
 
         for(; index < size; index++) {
-            auto *e = node.getSegmentNodes()[index];
-            if(e->is(NodeKind::StringExpr) && static_cast<StringExprNode *>(e)->getExprNodes().size() > 1) {
-                this->generateStringExpr(*static_cast<StringExprNode *>(e), true);
+            auto &e = *node.getSegmentNodes()[index];
+            if(e.is(NodeKind::StringExpr) && static_cast<StringExprNode&>(e).getExprNodes().size() > 1) {
+                this->generateStringExpr(static_cast<StringExprNode&>(e), true);
             } else {
-                this->visit(*e);
+                this->visit(e);
                 this->emit0byteIns(OpCode::APPEND_STRING);
             }
         }
@@ -623,7 +623,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
 }
 
 void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {
-    this->visit(*node.getExprNode());
+    this->visit(node.getExprNode());
     if(node.getHandle() != nullptr) {
         this->emitSourcePos(node.getPos());
         this->emitMethodCallIns(0, *node.getHandle());
@@ -664,7 +664,7 @@ static RedirOP resolveRedirOp(TokenKind kind) {
 }
 
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
-    this->generateCmdArg(*node.getTargetNode());
+    this->generateCmdArg(node.getTargetNode());
     this->emit1byteIns(OpCode::ADD_REDIR_OP, static_cast<unsigned char>(resolveRedirOp(node.getRedirectOP())));
 }
 

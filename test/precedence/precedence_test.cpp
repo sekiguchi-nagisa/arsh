@@ -133,7 +133,7 @@ public:
 
     void visitRedirNode(RedirNode &node) override {
         this->append(TO_NAME(node.getRedirectOP()));
-        this->visit(*node.getTargetNode());
+        this->visit(node.getTargetNode());
     }
 
     void visitCmdArgNode(CmdArgNode &node) override {

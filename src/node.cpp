@@ -435,10 +435,6 @@ void NewNode::dump(NodeDumper &dumper) const {
 // ##     EmbedNode     ##
 // #######################
 
-EmbedNode::~EmbedNode() {
-    delete this->exprNode;
-}
-
 void EmbedNode::dump(ydsh::NodeDumper &dumper) const {
 #define EACH_ENUM(OP) \
     OP(STR_EXPR) \
@@ -507,22 +503,16 @@ void BinaryOpNode::dump(NodeDumper &dumper) const {
 // ##     CmdArgNode     ##
 // ########################
 
-CmdArgNode::~CmdArgNode() {
-    for(Node *e : this->segmentNodes) {
-        delete e;
-    }
-}
-
-void CmdArgNode::addSegmentNode(Node *node) {
-    this->segmentNodes.push_back(node);
+void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
     this->updateToken(node->getToken());
+    this->segmentNodes.push_back(std::move(node));
 }
 
 void CmdArgNode::dump(NodeDumper &dumper) const {
     DUMP(segmentNodes);
 }
 
-bool CmdArgNode::isIgnorableEmptyString() {
+bool CmdArgNode::isIgnorableEmptyString() const {
     return this->segmentNodes.size() > 1 ||
             (!this->segmentNodes.back()->is(NodeKind::String) &&
                     !this->segmentNodes.back()->is(NodeKind::StringExpr));
@@ -531,10 +521,6 @@ bool CmdArgNode::isIgnorableEmptyString() {
 // #######################
 // ##     RedirNode     ##
 // #######################
-
-RedirNode::~RedirNode() {
-    delete this->targetNode;
-}
 
 void RedirNode::dump(NodeDumper &dumper) const {
     DUMP(op);

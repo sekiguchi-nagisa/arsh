@@ -906,27 +906,27 @@ public:
 private:
     const Kind kind;
 
-    Node *exprNode;
+    std::unique_ptr<Node> exprNode;
 
     const MethodHandle *handle{nullptr}; // for method call
 
 public:
-    EmbedNode(unsigned int startPos, Kind kind, Node *exprNode, Token endToken) :
-        Node(NodeKind::Embed, {startPos, 1}), kind(kind), exprNode(exprNode) {
+    EmbedNode(unsigned int startPos, Kind kind, std::unique_ptr<Node> &&exprNode, Token endToken) :
+        Node(NodeKind::Embed, {startPos, 1}), kind(kind), exprNode(std::move(exprNode)) {
         this->updateToken(endToken);
     }
 
-    EmbedNode(Kind kind, Node *exprNode) :
-        Node(NodeKind::Embed, exprNode->getToken()), kind(kind), exprNode(exprNode) {}
+    EmbedNode(Kind kind, std::unique_ptr<Node> &&exprNode) :
+        Node(NodeKind::Embed, exprNode->getToken()), kind(kind), exprNode(std::move(exprNode)) {}
 
-    ~EmbedNode() override;
+    ~EmbedNode() override = default;
 
     Kind getKind() const {
         return this->kind;
     }
 
-    Node *getExprNode() const {
-        return this->exprNode;
+    Node &getExprNode() const {
+        return *this->exprNode;
     }
 
     void setHandle(const MethodHandle *h) {
@@ -1080,24 +1080,20 @@ public:
  */
 class CmdArgNode : public Node {
 private:
-    std::vector<Node *> segmentNodes;
+    std::vector<std::unique_ptr<Node>> segmentNodes;
 
 public:
-    explicit CmdArgNode(Node *segmentNode) :
+    explicit CmdArgNode(std::unique_ptr<Node> &&segmentNode) :
             Node(NodeKind::CmdArg, segmentNode->getToken()) {
-        this->addSegmentNode(segmentNode);
+        this->addSegmentNode(std::move(segmentNode));
     }
 
-    ~CmdArgNode() override;
+    ~CmdArgNode() override = default;
 
-    void addSegmentNode(Node *node);
+    void addSegmentNode(std::unique_ptr<Node> &&node);
 
-    const std::vector<Node *> &getSegmentNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getSegmentNodes() const {
         return this->segmentNodes;
-    }
-    
-    void setSegmentNode(unsigned int index, Node *segmentNode) {
-        this->segmentNodes[index] = segmentNode;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -1105,29 +1101,29 @@ public:
     /**
      * if true, ignore evaluated empty string.
      */
-    bool isIgnorableEmptyString();
+    bool isIgnorableEmptyString() const;
 };
 
 class RedirNode : public Node {
 private:
     TokenKind op;
-    CmdArgNode *targetNode;
+    std::unique_ptr<CmdArgNode> targetNode;
 
 public:
-    RedirNode(TokenKind kind, CmdArgNode *node) :
-            Node(NodeKind::Redir, node->getToken()), op(kind), targetNode(node) {}
+    RedirNode(TokenKind kind, std::unique_ptr<CmdArgNode> &&node) :
+            Node(NodeKind::Redir, node->getToken()), op(kind), targetNode(std::move(node)) {}
 
     RedirNode(TokenKind kind, Token token) :
-            RedirNode(kind, new CmdArgNode(new StringNode(token, std::string("")))) {}
+            RedirNode(kind, std::make_unique<CmdArgNode>(std::make_unique<StringNode>(token, std::string("")))) {}
 
-    ~RedirNode() override;
+    ~RedirNode() override = default;
 
-    TokenKind getRedirectOP() {
+    TokenKind getRedirectOP() const {
         return this->op;
     }
 
-    CmdArgNode *getTargetNode() {
-        return this->targetNode;
+    CmdArgNode &getTargetNode() {
+        return *this->targetNode;
     }
 
     bool isHereStr() const {

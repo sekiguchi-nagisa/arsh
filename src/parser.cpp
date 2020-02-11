@@ -795,7 +795,7 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
         TokenKind kind = this->scan();
-        return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg()).release());
+        return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg()));
     }
     EACH_LA_redirNoFile(GEN_LA_CASE) {
         Token token = this->curToken;
@@ -810,12 +810,12 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
 std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     GUARD_DEEP_NESTING(guard);
 
-    auto node = std::make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(true)).release());
+    auto node = std::make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(true)));
 
     for(bool next = true; !HAS_SPACE() && !HAS_NL() && next;) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg(GEN_LA_CASE)
-            node->addSegmentNode(TRY(this->parse_cmdArgSeg(false)).release());
+            node->addSegmentNode(TRY(this->parse_cmdArgSeg(false)));
             break;
         default:
             next = false;
@@ -1343,7 +1343,7 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
     case APPLIED_NAME:
     case SPECIAL_NAME: {
         auto node = this->parse_appliedName(CUR_KIND() == SPECIAL_NAME);
-        return std::make_unique<EmbedNode>(kind, node.release());
+        return std::make_unique<EmbedNode>(kind, std::move(node));
     }
     case APPLIED_NAME_WITH_FIELD: {
         const Token token = this->expect(APPLIED_NAME_WITH_FIELD);
@@ -1359,14 +1359,14 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
         Token endToken = token.sliceFrom(token.size - 1);
 
         return std::make_unique<EmbedNode>(beginToken.pos, kind,
-                toAccessNode(*this->lexer, innerToken).release(), endToken);
+                toAccessNode(*this->lexer, innerToken), endToken);
     }
     default:
         unsigned int pos = START_POS();
         TRY(this->expect(START_INTERP));
         auto node = TRY(this->parse_expression());
         auto endToken = TRY(this->expect(RBC));
-        return std::make_unique<EmbedNode>(pos, kind, node.release(), endToken);
+        return std::make_unique<EmbedNode>(pos, kind, std::move(node), endToken);
     }
 }
 
@@ -1385,7 +1385,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
         token = TRY(this->expect(RB));
         auto node = std::unique_ptr<Node>(ApplyNode::newIndexCall(varNode.release(), opToken, indexNode.release()));
         node->updateToken(token);
-        return std::make_unique<EmbedNode>(EmbedNode::CMD_ARG, node.release());
+        return std::make_unique<EmbedNode>(EmbedNode::CMD_ARG, std::move(node));
     }
     default:
         return this->parse_interpolation(EmbedNode::CMD_ARG);

@@ -684,7 +684,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
 }
 
 void TypeChecker::visitEmbedNode(EmbedNode &node) {
-    auto &exprType = this->checkTypeAsExpr(node.getExprNode());
+    auto &exprType = this->checkTypeAsExpr(&node.getExprNode());
     node.setType(exprType);
 
     if(node.getKind() == EmbedNode::STR_EXPR) {
@@ -694,7 +694,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
             auto *handle = exprType.isOptionType() ? nullptr :
                     this->symbolTable.lookupMethod(exprType, methodName);
             if(handle == nullptr) { // if exprType is
-                RAISE_TC_ERROR(UndefinedMethod, *node.getExprNode(), methodName.c_str());
+                RAISE_TC_ERROR(UndefinedMethod, node.getExprNode(), methodName.c_str());
             }
             assert(handle->getReturnType() == type);
             node.setHandle(handle);
@@ -712,7 +712,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
                 handle = exprType.isOptionType() ? nullptr :
                         this->symbolTable.lookupMethod(exprType, methodName);
                 if(handle == nullptr) {
-                    RAISE_TC_ERROR(UndefinedMethod, *node.getExprNode(), methodName.c_str());
+                    RAISE_TC_ERROR(UndefinedMethod, node.getExprNode(), methodName.c_str());
                 }
             }
             assert(handle->getReturnType().is(TYPE::String) || handle->getReturnType().is(TYPE::StringArray));
@@ -737,21 +737,21 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
 
 void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
     for(auto &exprNode : node.getSegmentNodes()) {
-        this->checkTypeAsExpr(exprNode);
+        this->checkTypeAsExpr(exprNode.get());
     }
 
     // not allow String Array and UnixFD type
     if(node.getSegmentNodes().size() > 1) {
-        for(Node *exprNode : node.getSegmentNodes()) {
-            this->checkType(nullptr, exprNode, &this->symbolTable.get(TYPE::StringArray));
-            this->checkType(nullptr, exprNode, &this->symbolTable.get(TYPE::UnixFD));
+        for(auto &exprNode : node.getSegmentNodes()) {
+            this->checkType(nullptr, exprNode.get(), &this->symbolTable.get(TYPE::StringArray));
+            this->checkType(nullptr, exprNode.get(), &this->symbolTable.get(TYPE::UnixFD));
         }
     }
     node.setType(this->symbolTable.get(TYPE::Any));   //FIXME
 }
 
 void TypeChecker::visitRedirNode(RedirNode &node) {
-    CmdArgNode *argNode = node.getTargetNode();
+    CmdArgNode *argNode = &node.getTargetNode();
 
     // check UnixFD
     if(argNode->getSegmentNodes().size() == 1) {
@@ -759,7 +759,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
         if(node.isHereStr()) {
             unacceptType = &this->symbolTable.get(TYPE::UnixFD);
         }
-        auto &type = this->checkType(nullptr, argNode->getSegmentNodes()[0], unacceptType);
+        auto &type = this->checkType(nullptr, argNode->getSegmentNodes()[0].get(), unacceptType);
         if(type.is(TYPE::UnixFD)) {
             argNode->setType(type);
             node.setType(this->symbolTable.get(TYPE::Any));
@@ -771,7 +771,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
 
     // not allow String Array type
     if(argNode->getSegmentNodes().size() == 1) {
-        this->checkType(nullptr, argNode->getSegmentNodes()[0], &this->symbolTable.get(TYPE::StringArray));
+        this->checkType(nullptr, argNode->getSegmentNodes()[0].get(), &this->symbolTable.get(TYPE::StringArray));
     }
 
     node.setType(this->symbolTable.get(TYPE::Any));   //FIXME
