@@ -496,7 +496,9 @@ public:
 
     ~ArrayNode() override;
 
-    void addExprNode(Node *node);
+    void addExprNode(Node *node) {
+        this->nodes.push_back(node);
+    }
 
     const std::vector<Node *> &getExprNodes() const {
         return this->nodes;
@@ -1360,7 +1362,9 @@ public:
 
     ~BlockNode() override;
 
-    void addNode(Node *node);
+    void addNode(Node *node) {
+        this->nodes.push_back(node);
+    }
 
     void insertNodeToFirst(Node *node);
 
@@ -1557,7 +1561,9 @@ public:
         this->updateToken(this->actionNode->getToken());
     }
 
-    void addPatternNode(Node *node);
+    void addPatternNode(ydsh::Node *node) {
+        this->patternNodes.push_back(node);
+    }
 
     const std::vector<Node *> &getPatternNodes() const {
         return this->patternNodes;
@@ -1603,7 +1609,9 @@ public:
         return this->exprNode;
     }
 
-    void addArmNode(ArmNode *armNode);
+    void addArmNode(ArmNode *armNode) {
+        this->armNodes.push_back(armNode);
+    }
 
     const std::vector<ArmNode *> &getArmNodes() const {
         return this->armNodes;

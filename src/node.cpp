@@ -219,10 +219,6 @@ ArrayNode::~ArrayNode() {
     }
 }
 
-void ArrayNode::addExprNode(Node *node) {
-    this->nodes.push_back(node);
-}
-
 void ArrayNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
 }
@@ -631,10 +627,6 @@ BlockNode::~BlockNode() {
     }
 }
 
-void BlockNode::addNode(Node *node) {
-    this->nodes.push_back(node);
-}
-
 void BlockNode::insertNodeToFirst(Node *node) {
     this->nodes.insert(this->nodes.begin(), node);
 }
@@ -751,10 +743,6 @@ CaseNode::~CaseNode() {
     }
 }
 
-void CaseNode::addArmNode(ArmNode *armNode) {
-    this->armNodes.push_back(armNode);
-}
-
 bool CaseNode::hasDefault() const {
     for(auto &e : this->armNodes) {
         if(e->isDefault()) {
@@ -785,10 +773,6 @@ ArmNode::~ArmNode() {
         delete e;
     }
     delete this->actionNode;
-}
-
-void ArmNode::addPatternNode(ydsh::Node *node) {
-    this->patternNodes.push_back(node);
 }
 
 void ArmNode::dump(ydsh::NodeDumper &dumper) const {
