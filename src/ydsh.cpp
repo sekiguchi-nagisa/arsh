@@ -327,7 +327,7 @@ static void initBuiltinVar(DSState &state) {
      * dummy object for signal handler setting
      * must be DSObject
      */
-    bindVariable(state, "SIG", DSValue::create<DSObject>(state.symbolTable.get(TYPE::Signals)));
+    bindVariable(state, "SIG", DSValue::create<DSObject>(ObjectKind::DUMMY, state.symbolTable.get(TYPE::Signals)));
 
     /**
      * must be UnixFD_Object

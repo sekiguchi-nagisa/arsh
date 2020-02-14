@@ -163,7 +163,7 @@ public:
 
     JobImpl(DSType &type, unsigned int size, const Proc *procs, bool saveStdin,
             DSValue &&inObj, DSValue &&outObj) :
-            DSObject(type), ownerPid(getpid()),
+            DSObject(ObjectKind::JOB, type), ownerPid(getpid()),
             inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->procs[i] = procs[i];

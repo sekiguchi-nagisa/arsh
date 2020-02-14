@@ -36,18 +36,42 @@ namespace ydsh {
 
 class DSValue;
 
+enum ObjectKind {
+    DUMMY,
+    INT,
+    LONG,
+    FLOAT,
+    BOOL,
+    STRING,
+    STRITER,
+    FD,
+    REGEX,
+    ARRAY,
+    MAP,
+    BASE,
+    TUPLE,
+    ERROR,
+    FUNC_OBJ,
+    JOB,
+    PIPESTATE,
+    REDIR,
+};
+
 class DSObject {
 protected:
-    DSType *type;
     unsigned int refCount{0};
+
+    const ObjectKind kind;
+
+    DSType *type;
 
     friend class DSValue;
 
 public:
     NON_COPYABLE(DSObject);
 
-    explicit DSObject(DSType &type) : type(&type) { }
-    explicit DSObject(DSType *type) : type(type) { }
+    DSObject(ObjectKind kind, DSType &type) : kind(kind), type(&type) { }
+    DSObject(ObjectKind kind, DSType *type) : kind(kind), type(type) { }
 
     virtual ~DSObject() = default;
 
@@ -60,6 +84,10 @@ public:
 
     unsigned int getRefcount() const {
         return this->refCount;
+    }
+
+    ObjectKind getKind() const {
+        return this->kind;
     }
 
     /**
@@ -326,8 +354,11 @@ class Int_Object : public DSObject {
 protected:
     int value;
 
+    Int_Object(ObjectKind kind, DSType &type, int value) :
+            DSObject(kind, type), value(value) {}
+
 public:
-    Int_Object(DSType &type, int value) : DSObject(type), value(value) { }
+    Int_Object(DSType &type, int value) : Int_Object(ObjectKind::INT, type, value) { }
 
     ~Int_Object() override = default;
 
@@ -346,7 +377,7 @@ private:
 };
 
 struct UnixFD_Object : public Int_Object {
-    UnixFD_Object(DSType &type, int fd) : Int_Object(type, fd) {}
+    UnixFD_Object(DSType &type, int fd) : Int_Object(ObjectKind::FD, type, fd) {}
     ~UnixFD_Object() override;
 
     int tryToClose(bool forceClose) {
@@ -375,7 +406,7 @@ private:
     long value;
 
 public:
-    Long_Object(DSType &type, long value) : DSObject(type), value(value) { }
+    Long_Object(DSType &type, long value) : DSObject(ObjectKind::LONG, type), value(value) { }
 
     ~Long_Object() override = default;
 
@@ -398,7 +429,7 @@ private:
     double value;
 
 public:
-    Float_Object(DSType &type, double value) : DSObject(type), value(value) { }
+    Float_Object(DSType &type, double value) : DSObject(ObjectKind::FLOAT, type), value(value) { }
 
     ~Float_Object() override = default;
 
@@ -421,7 +452,7 @@ private:
     bool value;
 
 public:
-    Boolean_Object(DSType &type, bool value) : DSObject(type), value(value) { }
+    Boolean_Object(DSType &type, bool value) : DSObject(ObjectKind::BOOL, type), value(value) { }
 
     ~Boolean_Object() override = default;
 
@@ -445,13 +476,13 @@ private:
 
 public:
     explicit String_Object(DSType &type) :
-            DSObject(type) { }
+            DSObject(ObjectKind::STRING, type) { }
 
     String_Object(DSType &type, std::string &&value) :
-            DSObject(type), value(std::move(value)) { }
+            DSObject(ObjectKind::STRING, type), value(std::move(value)) { }
 
     String_Object(DSType &type, const std::string &value) :
-            DSObject(type), value(value) { }
+            DSObject(ObjectKind::STRING, type), value(value) { }
 
     ~String_Object() override = default;
 
@@ -511,7 +542,7 @@ struct StringIter_Object : public DSObject {
     DSValue strObj;
 
     StringIter_Object(DSType &type, String_Object *str) :
-            DSObject(type), curIndex(0), strObj(DSValue(str)) { }
+            DSObject(ObjectKind::STRITER, type), curIndex(0), strObj(DSValue(str)) { }
 };
 
 class Regex_Object : public DSObject {
@@ -521,7 +552,7 @@ private:
 
 public:
     Regex_Object(DSType &type, std::string str, PCRE &&re) :
-            DSObject(type), str(std::move(str)), re(std::move(re)) {}
+            DSObject(ObjectKind::REGEX, type), str(std::move(str)), re(std::move(re)) {}
 
     ~Regex_Object() override = default;
 
@@ -549,10 +580,10 @@ private:
 public:
     using IterType = std::vector<DSValue>::const_iterator;
 
-    explicit Array_Object(DSType &type) : DSObject(type), curIndex(0) { }
+    explicit Array_Object(DSType &type) : DSObject(ObjectKind::ARRAY, type), curIndex(0) { }
 
     Array_Object(DSType &type, std::vector<DSValue> &&values) :
-            DSObject(type), curIndex(0), values(std::move(values)) { }
+            DSObject(ObjectKind::ARRAY, type), curIndex(0), values(std::move(values)) { }
 
     ~Array_Object() override = default;
 
@@ -641,9 +672,9 @@ private:
     HashMap::const_iterator iter;
 
 public:
-    explicit Map_Object(DSType &type) : DSObject(type) { }
+    explicit Map_Object(DSType &type) : DSObject(ObjectKind::MAP, type) { }
 
-    Map_Object(DSType &type, HashMap &&map) : DSObject(type), valueMap(std::move(map)) {}
+    Map_Object(DSType &type, HashMap &&map) : DSObject(ObjectKind::MAP, type), valueMap(std::move(map)) {}
 
     ~Map_Object() override = default;
 
@@ -718,9 +749,11 @@ class BaseObject : public DSObject {
 protected:
     DSValue *fieldTable;
 
+    BaseObject(ObjectKind kind, DSType &type) :
+        DSObject(kind, type), fieldTable(new DSValue[type.getFieldSize()]) { }
+
 public:
-    explicit BaseObject(DSType &type) :
-            DSObject(type), fieldTable(new DSValue[type.getFieldSize()]) { }
+    explicit BaseObject(DSType &type) : BaseObject(ObjectKind::BASE, type) {}
 
     ~BaseObject() override;
 
@@ -730,7 +763,7 @@ public:
 };
 
 struct Tuple_Object : public BaseObject {
-    explicit Tuple_Object(DSType &type) : BaseObject(type) { }
+    explicit Tuple_Object(DSType &type) : BaseObject(ObjectKind::TUPLE, type) { }
 
     ~Tuple_Object() override = default;
 
@@ -796,7 +829,7 @@ private:
     std::vector<StackTraceElement> stackTrace;
 
     Error_Object(DSType &type, DSValue &&message) :
-            DSObject(type), message(std::move(message)) { }
+            DSObject(ObjectKind::ERROR, type), message(std::move(message)) { }
 
 public:
     ~Error_Object() override = default;
@@ -1060,7 +1093,7 @@ private:
 
 public:
     FuncObject(DSType *funcType, CompiledCode &&callable) :
-            DSObject(funcType), code(std::move(callable)) {}
+            DSObject(ObjectKind::FUNC_OBJ, funcType), code(std::move(callable)) {}
 
     explicit FuncObject(CompiledCode &&callable) : FuncObject(nullptr, std::move(callable)) { }
 

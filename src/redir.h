@@ -172,7 +172,7 @@ public:
     NON_COPYABLE(PipelineState);
 
     PipelineState(DSState &state, Job &&entry) :
-            DSObject(nullptr), state(state), entry(std::move(entry)) {}
+            DSObject(ObjectKind::PIPESTATE, nullptr), state(state), entry(std::move(entry)) {}
 
     ~PipelineState() override;
 };
@@ -191,7 +191,7 @@ private:
 public:
     NON_COPYABLE(RedirConfig);
 
-    RedirConfig() : DSObject(nullptr), oldFds{-1, -1, -1} {}
+    RedirConfig() : DSObject(ObjectKind::REDIR, nullptr), oldFds{-1, -1, -1} {}
 
     ~RedirConfig() override;
 
