@@ -193,8 +193,8 @@ protected:
      * if node type is void type, throw exception.
      * return resolved type.
      */
-    DSType &checkTypeAsExpr(Node *targetNode) {
-        return this->checkType(nullptr, *targetNode, &this->symbolTable.get(TYPE::Void));
+    DSType &checkTypeAsExpr(Node &targetNode) {
+        return this->checkType(nullptr, targetNode, &this->symbolTable.get(TYPE::Void));
     }
 
     /**
