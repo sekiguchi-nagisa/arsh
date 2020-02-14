@@ -84,16 +84,17 @@ public:
     virtual bool opInterp(DSState &state) const;
 
     /**
+     * check if this type is instance of targetType.
+     */
+    bool introspect(DSState &, DSType *targetType) const {
+        return targetType->isSameOrBaseTypeOf(*this->type);
+    }
+
+private:
+    /**
      * EQ method implementation.
      */
     virtual bool equals(const DSValue &obj) const;
-
-    /**
-     * for Array#sort
-     * @param obj
-     * @return
-     */
-    virtual bool compare(const DSValue &obj) const;
 
     /**
      * for Map_Object
@@ -101,11 +102,11 @@ public:
     virtual size_t hash() const;
 
     /**
-     * check if this type is instance of targetType.
+     * for Array#sort
+     * @param obj
+     * @return
      */
-    bool introspect(DSState &, DSType *targetType) const {
-        return targetType->isSameOrBaseTypeOf(*this->type);
-    }
+    virtual bool compare(const DSValue &obj) const;
 };
 
 enum class DSValueKind : unsigned char {
@@ -256,6 +257,24 @@ public:
 
     bool asBool() const;    //FIXME: replace it
 
+    /**
+     * for HashMap
+     */
+    bool equals(const DSValue &o) const;
+
+    /**
+     * for HashMap
+     * @return
+     */
+    size_t hash() const;
+
+    /**
+     * for Array#sort
+     * @param o
+     * @return
+     */
+    bool compare(const DSValue &o) const;
+
     template <typename T, typename ...A>
     static DSValue create(A &&...args) {
         static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
@@ -317,9 +336,13 @@ public:
     }
 
     std::string toString() const override;
+
+private:
     bool equals(const DSValue &obj) const override;
-    bool compare(const DSValue &obj) const override;
+
     size_t hash() const override;
+
+    bool compare(const DSValue &obj) const override;
 };
 
 struct UnixFD_Object : public Int_Object {
@@ -361,9 +384,13 @@ public:
     }
 
     std::string toString() const override;
+
+private:
     bool equals(const DSValue &obj) const override;
-    bool compare(const DSValue &obj) const override;
+
     size_t hash() const override;
+
+    bool compare(const DSValue &obj) const override;
 };
 
 class Float_Object : public DSObject {
@@ -380,9 +407,13 @@ public:
     }
 
     std::string toString() const override;
+
+private:
     bool equals(const DSValue &obj) const override;
-    bool compare(const DSValue &obj) const override;
+
     size_t hash() const override;
+
+    bool compare(const DSValue &obj) const override;
 };
 
 class Boolean_Object : public DSObject {
@@ -399,9 +430,13 @@ public:
     }
 
     std::string toString() const override;
+
+private:
     bool equals(const DSValue &obj) const override;
-    bool compare(const DSValue &obj) const override;
+
     size_t hash() const override;
+
+    bool compare(const DSValue &obj) const override;
 };
 
 class String_Object : public DSObject {
@@ -444,19 +479,20 @@ public:
 
     std::string toString() const override;
 
-    bool equals(const DSValue &obj) const override {
-        return this->value == typeAs<String_Object>(obj)->value;
-    }
-
-    bool compare(const DSValue &obj) const override;
-
-    size_t hash() const override;
-
     DSValue slice(unsigned int begin, unsigned int end) const {
         return DSValue::create<String_Object>(
                 *this->getType(),
                 std::string(this->getValue() + begin, end - begin));
     }
+
+private:
+    bool equals(const DSValue &obj) const override {
+        return this->value == typeAs<String_Object>(obj)->value;
+    }
+
+    size_t hash() const override;
+
+    bool compare(const DSValue &obj) const override;
 };
 
 /**
@@ -587,13 +623,13 @@ inline const char *str(const DSValue &v) {
 
 struct KeyCompare {
     bool operator()(const DSValue &x, const DSValue &y) const {
-        return x->equals(y);
+        return x.equals(y);
     }
 };
 
 struct GenHash {
     std::size_t operator()(const DSValue &key) const {
-        return key->hash();
+        return key.hash();
     }
 };
 

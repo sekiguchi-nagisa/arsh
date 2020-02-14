@@ -1442,7 +1442,7 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
         if(y.kind() == DSValueKind::INVALID) {  // x < (invalid y) => true
             return true;
         }
-        return x->compare(y);
+        return x.compare(y);
     });
     RET(LOCAL(0));
 }

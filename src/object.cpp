@@ -57,6 +57,18 @@ bool DSValue::asBool() const {
     return typeAs<Boolean_Object>(*this)->getValue();
 }
 
+bool DSValue::equals(const DSValue &o) const {
+    return this->get()->equals(o);  //FIXME:
+}
+
+size_t DSValue::hash() const {
+    return this->get()->hash(); //FIXME:
+}
+
+bool DSValue::compare(const DSValue &o) const {
+    return this->get()->compare(o); //FIXME:
+}
+
 // ########################
 // ##     Int_Object     ##
 // ########################
