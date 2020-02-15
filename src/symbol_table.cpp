@@ -65,10 +65,10 @@ GlobalScope::GlobalScope(unsigned int &gvarCount) : gvarCount(gvarCount) {
     }
 }
 
-HandleOrError GlobalScope::addNew(const std::string &symbolName, DSType &type,
+HandleOrError GlobalScope::addNew(const std::string &symbolName, const DSType &type,
                                   FieldAttribute attribute, unsigned short modID) {
     setFlag(attribute, FieldAttribute::GLOBAL);
-    FieldHandle handle(&type, this->gvarCount.get(), attribute, modID);
+    FieldHandle handle(type, this->gvarCount.get(), attribute, modID);
     auto pair = this->handleMap.emplace(symbolName, handle);
     if(!pair.second) {
         return Err(SymbolError::DEFINED);
@@ -95,7 +95,7 @@ const FieldHandle *ModuleScope::lookupHandle(const std::string &symbolName) cons
 }
 
 HandleOrError ModuleScope::newHandle(const std::string &symbolName,
-                                     DSType &type, FieldAttribute attribute) {
+                                     const DSType &type, FieldAttribute attribute) {
     if(this->inGlobalScope()) {
         if(this->builtin) {
             setFlag(attribute, FieldAttribute::BUILTIN);
@@ -103,7 +103,7 @@ HandleOrError ModuleScope::newHandle(const std::string &symbolName,
         return this->globalScope.addNew(symbolName, type, attribute, this->modID);
     }
 
-    FieldHandle handle(&type, this->scopes.back().getCurVarIndex(), attribute, this->modID);
+    FieldHandle handle(type, this->scopes.back().getCurVarIndex(), attribute, this->modID);
     auto ret = this->scopes.back().add(symbolName, handle);
     if(ret) {
         unsigned int varIndex = this->scopes.back().getCurVarIndex();
@@ -298,7 +298,7 @@ const FieldHandle* SymbolTable::lookupHandle(const std::string &symbolName) cons
     return handle;
 }
 
-HandleOrError SymbolTable::newHandle(const std::string &symbolName, DSType &type,
+HandleOrError SymbolTable::newHandle(const std::string &symbolName, const DSType &type,
                                      FieldAttribute attribute) {
     if(this->cur().inGlobalScope() && &this->cur() != &this->root()) {
         assert(this->root().inGlobalScope());

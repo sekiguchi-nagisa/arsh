@@ -119,7 +119,7 @@ public:
     ~GlobalScope() = default;
 
 private:
-    HandleOrError addNew(const std::string &symbolName, DSType &type,
+    HandleOrError addNew(const std::string &symbolName, const DSType &type,
                          FieldAttribute attribute, unsigned short modID);
 
     /**
@@ -180,7 +180,7 @@ public:
     /**
      * return null, if found duplicated handle.
      */
-    HandleOrError newHandle(const std::string &symbolName, DSType &type, FieldAttribute attribute);
+    HandleOrError newHandle(const std::string &symbolName, const DSType &type, FieldAttribute attribute);
 
     bool disallowShadowing(const std::string &symbolName) {
         assert(!this->inGlobalScope());
@@ -419,7 +419,7 @@ public:
     /**
      * return null, if found duplicated handle.
      */
-    HandleOrError newHandle(const std::string &symbolName, DSType &type, FieldAttribute attribute);
+    HandleOrError newHandle(const std::string &symbolName, const DSType &type, FieldAttribute attribute);
 
     bool disallowShadowing(const std::string &symbolName) {
         return this->cur().disallowShadowing(symbolName);
@@ -442,7 +442,7 @@ public:
      * if already registered, return null.
      * type must be any type
      */
-    HandleOrError registerUdc(const std::string &cmdName, DSType &type) {
+    HandleOrError registerUdc(const std::string &cmdName, const DSType &type) {
         assert(this->root().inGlobalScope());
         std::string name = CMD_SYMBOL_PREFIX;
         name += cmdName;
@@ -462,7 +462,7 @@ public:
         return this->root().lookupHandle(type.toName());
     }
 
-    HandleOrError newModHandle(ModType &type) {
+    HandleOrError newModHandle(const ModType &type) {
         return this->root().newHandle(type.toName(), type, FieldAttribute::READ_ONLY);
     }
 

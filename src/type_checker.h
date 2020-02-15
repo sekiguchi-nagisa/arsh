@@ -272,8 +272,8 @@ protected:
 
     DSType &resolveCoercionOfJumpValue();
 
-    const FieldHandle *addEntry(Node &node, const std::string &symbolName,
-                          DSType &type, FieldAttribute attribute);
+    const FieldHandle *addEntry(const Node &node, const std::string &symbolName,
+                          const DSType &type, FieldAttribute attribute);
 
     bool isTopLevel() const {
         return this->visitingDepth == 1;

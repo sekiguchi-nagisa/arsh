@@ -434,7 +434,7 @@ template <> struct allow_enum_bitop<FieldAttribute> : std::true_type {};
  */
 class FieldHandle {
 private:
-    DSType *type;
+    const DSType *type;
 
     unsigned int index;
 
@@ -446,10 +446,10 @@ private:
     unsigned short modID;
 
 public:
-    FieldHandle() : FieldHandle(nullptr, 0, FieldAttribute()) {}
+    FieldHandle() : type(nullptr), index(0), attribute(), modID(0) {}
 
-    FieldHandle(DSType *fieldType, unsigned int fieldIndex, FieldAttribute attribute, unsigned short modID = 0) :
-            type(fieldType), index(fieldIndex), attribute(attribute), modID(modID) {}
+    FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute, unsigned short modID = 0) :
+            type(&fieldType), index(fieldIndex), attribute(attribute), modID(modID) {}
 
     ~FieldHandle() = default;
 
