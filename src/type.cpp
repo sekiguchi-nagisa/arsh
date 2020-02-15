@@ -71,14 +71,8 @@ TupleType::TupleType(unsigned int id, native_type_info_t info, DSType *superType
     const unsigned int size = this->elementTypes.size();
     const unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
-        auto *handle = new FieldHandle(*this->elementTypes[i], i + baseIndex, FieldAttribute());
-        this->fieldHandleMap.insert(std::make_pair("_" + std::to_string(i), handle));
-    }
-}
-
-TupleType::~TupleType() {
-    for(auto &pair : this->fieldHandleMap) {
-        delete pair.second;
+        FieldHandle handle(*this->elementTypes[i], i + baseIndex, FieldAttribute());
+        this->fieldHandleMap.emplace("_" + std::to_string(i), std::move(handle));
     }
 }
 
@@ -91,7 +85,7 @@ const FieldHandle *TupleType::lookupFieldHandle(SymbolTable &symbolTable, const 
     if(iter == this->fieldHandleMap.end()) {
         return this->superType->lookupFieldHandle(symbolTable, fieldName);
     }
-    return iter->second;
+    return &iter->second;
 }
 
 std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {

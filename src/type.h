@@ -224,6 +224,72 @@ public:
     }
 };
 
+
+#define EACH_FIELD_ATTR(OP) \
+    OP(READ_ONLY  , (1u << 0u)) \
+    OP(GLOBAL     , (1u << 1u)) \
+    OP(ENV        , (1u << 2u)) \
+    OP(FUNC_HANDLE, (1u << 3u)) \
+    OP(RANDOM     , (1u << 4u)) \
+    OP(SECONDS    , (1u << 5u)) \
+    OP(BUILTIN    , (1u << 6u))
+
+enum class FieldAttribute : unsigned short {
+#define GEN_ENUM(E, V) E = (V),
+    EACH_FIELD_ATTR(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+std::string toString(FieldAttribute attr);
+
+template <> struct allow_enum_bitop<FieldAttribute> : std::true_type {};
+
+/**
+ * represent for class field or variable. field type may be function type.
+ */
+class FieldHandle {
+private:
+    const DSType *type;
+
+    unsigned int index;
+
+    FieldAttribute attribute;
+
+    /**
+     * if global module, id is 0.
+     */
+    unsigned short modID;
+
+public:
+    FieldHandle() : type(nullptr), index(0), attribute(), modID(0) {}
+
+    FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute, unsigned short modID = 0) :
+            type(&fieldType), index(fieldIndex), attribute(attribute), modID(modID) {}
+
+    ~FieldHandle() = default;
+
+    const DSType &getType() const {
+        return *this->type;
+    }
+
+    unsigned int getIndex() const {
+        return this->index;
+    }
+
+    FieldAttribute attr() const {
+        return this->attribute;
+    }
+
+    explicit operator bool() const {
+        return this->type != nullptr;
+    }
+
+    unsigned short getModID() const {
+        return this->modID;
+    }
+};
+
+
 class FunctionType : public DSType {
 private:
     DSType *returnType;
@@ -347,14 +413,13 @@ public:
 
 class TupleType : public ReifiedType {
 private:
-    std::unordered_map<std::string, FieldHandle *> fieldHandleMap;
+    std::unordered_map<std::string, FieldHandle> fieldHandleMap;
 
 public:
     /**
      * superType is AnyType ot VariantType
      */
     TupleType(unsigned int id, native_type_info_t info, DSType *superType, std::vector<DSType *> &&types);
-    ~TupleType() override;
 
     /**
      * return types.size()
@@ -407,70 +472,6 @@ public:
 
     const std::vector<DSType *> &getAcceptableTypes() const {
         return this->acceptableTypes;
-    }
-};
-
-#define EACH_FIELD_ATTR(OP) \
-    OP(READ_ONLY  , (1u << 0u)) \
-    OP(GLOBAL     , (1u << 1u)) \
-    OP(ENV        , (1u << 2u)) \
-    OP(FUNC_HANDLE, (1u << 3u)) \
-    OP(RANDOM     , (1u << 4u)) \
-    OP(SECONDS    , (1u << 5u)) \
-    OP(BUILTIN    , (1u << 6u))
-
-enum class FieldAttribute : unsigned short {
-#define GEN_ENUM(E, V) E = (V),
-    EACH_FIELD_ATTR(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-std::string toString(FieldAttribute attr);
-
-template <> struct allow_enum_bitop<FieldAttribute> : std::true_type {};
-
-/**
- * represent for class field or variable. field type may be function type.
- */
-class FieldHandle {
-private:
-    const DSType *type;
-
-    unsigned int index;
-
-    FieldAttribute attribute;
-
-    /**
-     * if global module, id is 0.
-     */
-    unsigned short modID;
-
-public:
-    FieldHandle() : type(nullptr), index(0), attribute(), modID(0) {}
-
-    FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute, unsigned short modID = 0) :
-            type(&fieldType), index(fieldIndex), attribute(attribute), modID(modID) {}
-
-    ~FieldHandle() = default;
-
-    const DSType &getType() const {
-        return *this->type;
-    }
-
-    unsigned int getIndex() const {
-        return this->index;
-    }
-
-    FieldAttribute attr() const {
-        return this->attribute;
-    }
-
-    explicit operator bool() const {
-        return this->type != nullptr;
-    }
-
-    unsigned short getModID() const {
-        return this->modID;
     }
 };
 
