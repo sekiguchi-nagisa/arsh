@@ -129,6 +129,17 @@ protected:
      */
     Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
 
+    /**
+     * helper function for VarNode creation.
+     * @param token
+     * @return
+     */
+    std::unique_ptr<VarNode> newVarNode(Token token) const {
+        return std::make_unique<VarNode>(token, this->lexer->toName(token));
+    }
+
+    std::unique_ptr<Node> toAccessNode(Token token) const;
+
     // parser rule definition.
     std::unique_ptr<FunctionNode> parse_funcDecl();
     std::unique_ptr<Node> parse_interface();

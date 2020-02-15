@@ -101,7 +101,6 @@ Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext
     return token;
 }
 
-
 // parse rule definition
 std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     GUARD_DEEP_NESTING(guard);
@@ -123,7 +122,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
 
         if(CUR_KIND() == APPLIED_NAME) {
             token = this->expect(APPLIED_NAME); // always success
-            auto nameNode = std::make_unique<VarNode>(token, this->lexer->toName(token));
+            auto nameNode = this->newVarNode(token);
             TRY(this->expect(COLON, false));
 
             auto type = TRY(this->parse_typeName());
@@ -983,8 +982,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         case ACCESSOR: {
             this->consume();    // ACCESSOR
             Token token = TRY(this->expect(IDENTIFIER));
-            std::string name = this->lexer->toName(token);
-            node = std::make_unique<AccessNode>(node.release(), new VarNode(token, std::move(name)));
+            node = std::make_unique<AccessNode>(node.release(), this->newVarNode(token).release());
             if(CUR_KIND() == LP && !HAS_NL()) {  // treat as method call
                 auto args = TRY(this->parse_arguments());
                 token = args.getToken();
@@ -1210,7 +1208,7 @@ std::unique_ptr<Node> Parser::parse_signalLiteral() {
 
 std::unique_ptr<Node> Parser::parse_appliedName(bool asSpecialName) {
     Token token = TRY(this->expect(asSpecialName ? SPECIAL_NAME : APPLIED_NAME));
-    return std::make_unique<VarNode>(token, this->lexer->toName(token));
+    return this->newVarNode(token);
 }
 
 std::unique_ptr<Node> Parser::parse_stringLiteral() {
@@ -1317,19 +1315,19 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     return std::move(node);
 }
 
-static std::unique_ptr<Node> toAccessNode(const Lexer &lexer, Token token) {
+std::unique_ptr<Node> Parser::toAccessNode(Token token) const {
     std::unique_ptr<Node> node;
     std::vector<std::unique_ptr<VarNode>> nodes;
 
-    const char *ptr = lexer.getRange(token).first;
+    const char *ptr = this->lexer->getRange(token).first;
     for(unsigned int index = token.size - 1; index != 0; index--) {
         if(ptr[index] == '.') {
             Token fieldToken = token.sliceFrom(index + 1);
-            nodes.push_back(std::make_unique<VarNode>(fieldToken, lexer.toName(fieldToken)));
+            nodes.push_back(this->newVarNode(fieldToken));
             token = token.slice(0, index);
         }
     }
-    node = std::make_unique<VarNode>(token, lexer.toName(token));
+    node = this->newVarNode(token);
     for(; !nodes.empty(); nodes.pop_back()) {
         node = std::make_unique<AccessNode>(node.release(), nodes.back().release());
     }
@@ -1358,8 +1356,7 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
         // split end token '}'
         Token endToken = token.sliceFrom(token.size - 1);
 
-        return std::make_unique<EmbedNode>(beginToken.pos, kind,
-                toAccessNode(*this->lexer, innerToken), endToken);
+        return std::make_unique<EmbedNode>(beginToken.pos, kind, this->toAccessNode(innerToken), endToken);
     }
     default:
         unsigned int pos = START_POS();
@@ -1378,7 +1375,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     case SPECIAL_NAME_WITH_BRACKET: {
         Token token = this->curToken;
         this->consume();    // always success
-        auto varNode = std::make_unique<VarNode>(token, this->lexer->toName(token));
+        auto varNode = this->newVarNode(token);
         auto indexNode = TRY(this->parse_expression());
         Token opToken = token.sliceFrom(token.size - 1);    // last ']'
 
