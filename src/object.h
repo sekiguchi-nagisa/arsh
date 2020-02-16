@@ -128,13 +128,6 @@ private:
      * for Map_Object
      */
     virtual size_t hash() const;
-
-    /**
-     * for Array#sort
-     * @param obj
-     * @return
-     */
-    virtual bool compare(const DSValue &obj) const;
 };
 
 enum class DSValueKind : unsigned char {
@@ -372,8 +365,6 @@ private:
     bool equals(const DSValue &obj) const override;
 
     size_t hash() const override;
-
-    bool compare(const DSValue &obj) const override;
 };
 
 struct UnixFD_Object : public Int_Object {
@@ -420,8 +411,6 @@ private:
     bool equals(const DSValue &obj) const override;
 
     size_t hash() const override;
-
-    bool compare(const DSValue &obj) const override;
 };
 
 class Float_Object : public DSObject {
@@ -443,8 +432,6 @@ private:
     bool equals(const DSValue &obj) const override;
 
     size_t hash() const override;
-
-    bool compare(const DSValue &obj) const override;
 };
 
 class Boolean_Object : public DSObject {
@@ -466,8 +453,6 @@ private:
     bool equals(const DSValue &obj) const override;
 
     size_t hash() const override;
-
-    bool compare(const DSValue &obj) const override;
 };
 
 class String_Object : public DSObject {
@@ -522,8 +507,6 @@ private:
     }
 
     size_t hash() const override;
-
-    bool compare(const DSValue &obj) const override;
 };
 
 /**

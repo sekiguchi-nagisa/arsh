@@ -45,10 +45,6 @@ bool DSObject::equals(const DSValue &obj) const {
     return reinterpret_cast<long>(this) == reinterpret_cast<long>(obj.get());
 }
 
-bool DSObject::compare(const ydsh::DSValue &obj) const {
-    return reinterpret_cast<long>(this) < reinterpret_cast<long>(obj.get());
-}
-
 size_t DSObject::hash() const {
     return std::hash<long>()(reinterpret_cast<long>(this));
 }
@@ -66,7 +62,28 @@ size_t DSValue::hash() const {
 }
 
 bool DSValue::compare(const DSValue &o) const {
-    return this->get()->compare(o); //FIXME:
+    assert(this->get()->getKind() == o->getKind());
+    switch(o->getKind()) {
+    case ObjectKind::INT:
+        return static_cast<Int_Object*>(this->get())->getValue() < typeAs<Int_Object>(o)->getValue();
+    case ObjectKind::LONG:
+        return static_cast<Long_Object*>(this->get())->getValue() < typeAs<Long_Object>(o)->getValue();
+    case ObjectKind::FLOAT:
+        return static_cast<Float_Object*>(this->get())->getValue() < typeAs<Float_Object>(o)->getValue();
+    case ObjectKind::BOOL: {
+        unsigned int left = this->asBool() ? 1 : 0;
+        unsigned int right = o.asBool() ? 1 : 0;
+        return left < right;
+    }
+    case ObjectKind::STRING: {
+        auto left = createStrRef(*this);
+        auto right = createStrRef(o);
+        return left < right;
+    }
+    default:
+        break;
+    }
+    return this < &o;
 }
 
 // ########################
@@ -79,10 +96,6 @@ std::string Int_Object::toString() const {
 
 bool Int_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Int_Object>(obj)->value;
-}
-
-bool Int_Object::compare(const DSValue &obj) const {
-    return this->value < typeAs<Int_Object>(obj)->value;
 }
 
 size_t Int_Object::hash() const {
@@ -137,10 +150,6 @@ bool Long_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Long_Object>(obj)->value;
 }
 
-bool Long_Object::compare(const DSValue &obj) const {
-    return this->value < typeAs<Long_Object>(obj)->value;
-}
-
 size_t Long_Object::hash() const {
     return std::hash<long>()(this->value);
 }
@@ -155,10 +164,6 @@ std::string Float_Object::toString() const {
 
 bool Float_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Float_Object>(obj)->value;
-}
-
-bool Float_Object::compare(const DSValue &obj) const {
-    return this->value < typeAs<Float_Object>(obj)->value;
 }
 
 size_t Float_Object::hash() const {
@@ -178,12 +183,6 @@ bool Boolean_Object::equals(const DSValue &obj) const {
     return this->value == typeAs<Boolean_Object>(obj)->value;
 }
 
-bool Boolean_Object::compare(const DSValue &obj) const {
-    unsigned int left = this->value ? 1 : 0;
-    unsigned int right = typeAs<Boolean_Object>(obj)->value ? 1 : 0;
-    return left < right;
-}
-
 size_t Boolean_Object::hash() const {
     return std::hash<bool>()(this->value);
 }
@@ -198,12 +197,6 @@ std::string String_Object::toString() const {
 
 size_t String_Object::hash() const {
     return std::hash<std::string>()(this->value);
-}
-
-bool String_Object::compare(const DSValue &obj) const {
-    auto left = StringRef(this->getValue(), this->size());
-    auto right = createStrRef(obj);
-    return left < right;
 }
 
 // ##########################
