@@ -117,17 +117,6 @@ public:
     bool introspect(DSState &, DSType *targetType) const {
         return targetType->isSameOrBaseTypeOf(*this->type);
     }
-
-private:
-    /**
-     * EQ method implementation.
-     */
-    virtual bool equals(const DSValue &obj) const;
-
-    /**
-     * for Map_Object
-     */
-    virtual size_t hash() const;
 };
 
 enum class DSValueKind : unsigned char {
@@ -360,11 +349,6 @@ public:
     }
 
     std::string toString() const override;
-
-private:
-    bool equals(const DSValue &obj) const override;
-
-    size_t hash() const override;
 };
 
 struct UnixFD_Object : public Int_Object {
@@ -406,11 +390,6 @@ public:
     }
 
     std::string toString() const override;
-
-private:
-    bool equals(const DSValue &obj) const override;
-
-    size_t hash() const override;
 };
 
 class Float_Object : public DSObject {
@@ -427,11 +406,6 @@ public:
     }
 
     std::string toString() const override;
-
-private:
-    bool equals(const DSValue &obj) const override;
-
-    size_t hash() const override;
 };
 
 class Boolean_Object : public DSObject {
@@ -448,11 +422,6 @@ public:
     }
 
     std::string toString() const override;
-
-private:
-    bool equals(const DSValue &obj) const override;
-
-    size_t hash() const override;
 };
 
 class String_Object : public DSObject {
@@ -500,13 +469,6 @@ public:
                 *this->getType(),
                 std::string(this->getValue() + begin, end - begin));
     }
-
-private:
-    bool equals(const DSValue &obj) const override {
-        return this->value == typeAs<String_Object>(obj)->value;
-    }
-
-    size_t hash() const override;
 };
 
 /**

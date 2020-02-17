@@ -41,29 +41,53 @@ bool DSObject::opInterp(DSState &state) const {
     return this->opStr(state);
 }
 
-bool DSObject::equals(const DSValue &obj) const {
-    return reinterpret_cast<long>(this) == reinterpret_cast<long>(obj.get());
-}
-
-size_t DSObject::hash() const {
-    return std::hash<long>()(reinterpret_cast<long>(this));
-}
-
 bool DSValue::asBool() const {
     return typeAs<Boolean_Object>(*this)->getValue();
 }
 
 bool DSValue::equals(const DSValue &o) const {
-    return this->get()->equals(o);  //FIXME:
+    assert(this->get()->getKind() == o->getKind());
+    switch(this->get()->getKind()) {
+    case ObjectKind::INT:
+        return static_cast<Int_Object*>(this->get())->getValue() == typeAs<Int_Object>(o)->getValue();
+    case ObjectKind::LONG:
+        return static_cast<Long_Object*>(this->get())->getValue() == typeAs<Long_Object>(o)->getValue();
+    case ObjectKind::FLOAT:
+        return static_cast<Float_Object*>(this->get())->getValue() == typeAs<Float_Object>(o)->getValue();
+    case ObjectKind::BOOL:
+        return this->asBool() == o.asBool();
+    case ObjectKind::STRING: {
+        auto left = createStrRef(*this);
+        auto right = createStrRef(o);
+        return left == right;
+    }
+    default:
+        break;
+    }
+    return reinterpret_cast<long>(this->obj) == reinterpret_cast<long>(o.get());
 }
 
 size_t DSValue::hash() const {
-    return this->get()->hash(); //FIXME:
+    switch(this->get()->getKind()) {
+    case ObjectKind::INT:
+        return std::hash<int>()(static_cast<Int_Object*>(this->get())->getValue());
+    case ObjectKind::LONG:
+        return std::hash<long>()(static_cast<Long_Object*>(this->get())->getValue());
+    case ObjectKind::FLOAT:
+        return std::hash<double>()(static_cast<Float_Object*>(this->get())->getValue());
+    case ObjectKind::BOOL:
+        return std::hash<bool>()(this->asBool());
+    case ObjectKind::STRING:
+        return std::hash<StringRef>()(createStrRef(*this));
+    default:
+        break;
+    }
+    return std::hash<long>()(this->val);
 }
 
 bool DSValue::compare(const DSValue &o) const {
     assert(this->get()->getKind() == o->getKind());
-    switch(o->getKind()) {
+    switch(this->get()->getKind()) {
     case ObjectKind::INT:
         return static_cast<Int_Object*>(this->get())->getValue() < typeAs<Int_Object>(o)->getValue();
     case ObjectKind::LONG:
@@ -83,7 +107,7 @@ bool DSValue::compare(const DSValue &o) const {
     default:
         break;
     }
-    return this < &o;
+    return false;
 }
 
 // ########################
@@ -92,14 +116,6 @@ bool DSValue::compare(const DSValue &o) const {
 
 std::string Int_Object::toString() const {
     return std::to_string(this->value);
-}
-
-bool Int_Object::equals(const DSValue &obj) const {
-    return this->value == typeAs<Int_Object>(obj)->value;
-}
-
-size_t Int_Object::hash() const {
-    return std::hash<int>()(this->value);
 }
 
 // ###########################
@@ -146,28 +162,12 @@ std::string Long_Object::toString() const {
     return std::to_string(this->value);
 }
 
-bool Long_Object::equals(const DSValue &obj) const {
-    return this->value == typeAs<Long_Object>(obj)->value;
-}
-
-size_t Long_Object::hash() const {
-    return std::hash<long>()(this->value);
-}
-
 // ##########################
 // ##     Float_Object     ##
 // ##########################
 
 std::string Float_Object::toString() const {
     return std::to_string(this->value);
-}
-
-bool Float_Object::equals(const DSValue &obj) const {
-    return this->value == typeAs<Float_Object>(obj)->value;
-}
-
-size_t Float_Object::hash() const {
-    return std::hash<double>()(this->value);
 }
 
 
@@ -179,24 +179,12 @@ std::string Boolean_Object::toString() const {
     return this->value ? "true" : "false";
 }
 
-bool Boolean_Object::equals(const DSValue &obj) const {
-    return this->value == typeAs<Boolean_Object>(obj)->value;
-}
-
-size_t Boolean_Object::hash() const {
-    return std::hash<bool>()(this->value);
-}
-
 // ###########################
 // ##     String_Object     ##
 // ###########################
 
 std::string String_Object::toString() const {
     return this->value;
-}
-
-size_t String_Object::hash() const {
-    return std::hash<std::string>()(this->value);
 }
 
 // ##########################
