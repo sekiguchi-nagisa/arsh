@@ -110,13 +110,6 @@ public:
      * if has error, return false
      */
     virtual bool opInterp(DSState &state) const;
-
-    /**
-     * check if this type is instance of targetType.
-     */
-    bool introspect(DSState &, DSType *targetType) const {
-        return targetType->isSameOrBaseTypeOf(*this->type);
-    }
 };
 
 enum class DSValueKind : unsigned char {
@@ -260,6 +253,13 @@ public:
     bool isInvalid() const noexcept {
         return this->kind() == DSValueKind::INVALID;
     }
+
+    /**
+     * check if DSValue/DSObject is instance of `targetType`
+     * @param targetType
+     * @return
+     */
+    bool instanceOf(const DSType &targetType) const;
 
     void swap(DSValue &value) noexcept {
         std::swap(this->obj, value.obj);

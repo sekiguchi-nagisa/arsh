@@ -76,13 +76,13 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
 
 namespace ydsh {
 
-bool VM::checkCast(DSState &state, DSType *targetType) {
-    if(!state.stack.peek()->introspect(state, targetType)) {
+bool VM::checkCast(DSState &state, const DSType &targetType) {
+    if(!state.stack.peek().instanceOf(targetType)) {
         DSType *stackTopType = state.stack.pop()->getType();
         std::string str("cannot cast `");
         str += state.symbolTable.getTypeName(*stackTopType);
         str += "' to `";
-        str += state.symbolTable.getTypeName(*targetType);
+        str += state.symbolTable.getTypeName(targetType);
         str += "'";
         raiseError(state, TYPE::TypeCastError, std::move(str));
         return false;
@@ -925,7 +925,7 @@ bool VM::mainLoop(DSState &state) {
             state.stack.pc() += 4;
 
             auto &targetType = state.symbolTable.get(v);
-            if(state.stack.pop()->introspect(state, &targetType)) {
+            if(state.stack.pop().instanceOf(targetType)) {
                 state.stack.push(state.trueObj);
             } else {
                 state.stack.push(state.falseObj);
@@ -935,7 +935,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(CHECK_CAST) {
             unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
             state.stack.pc() += 4;
-            TRY(checkCast(state, &state.symbolTable.get(v)));
+            TRY(checkCast(state, state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(PUSH_NULL) {

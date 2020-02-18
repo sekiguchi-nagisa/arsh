@@ -287,7 +287,7 @@ private:
     }
 
     // runtime api
-    static bool checkCast(DSState &state, DSType *targetType);
+    static bool checkCast(DSState &state, const DSType &targetType);
 
     static bool checkAssertion(DSState &state);
 

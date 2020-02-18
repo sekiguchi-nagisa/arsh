@@ -42,7 +42,11 @@ bool DSObject::opInterp(DSState &state) const {
 }
 
 bool DSValue::asBool() const {
-    return typeAs<Boolean_Object>(*this)->getValue();
+    return typeAs<Boolean_Object>(*this)->getValue();   //FIXME:
+}
+
+bool DSValue::instanceOf(const DSType &targetType) const {
+    return targetType.isSameOrBaseTypeOf(*this->get()->getType());  //FIXME:
 }
 
 bool DSValue::equals(const DSValue &o) const {
