@@ -97,7 +97,7 @@ protected:
         auto &v = this->state->getGlobal(handle->getIndex());
         ASSERT_TRUE(v.isObject());
 
-        ASSERT_EQ(refCount, v->getRefcount());
+        ASSERT_EQ(refCount, v.get()->getRefcount());
     }
 };
 

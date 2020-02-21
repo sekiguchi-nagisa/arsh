@@ -77,7 +77,7 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
 namespace ydsh {
 
 bool VM::checkCast(DSState &state, const DSType &targetType) {
-    if(!state.stack.peek().instanceOf(targetType)) {
+    if(!instanceOf(state.symbolTable.getTypePool(), state.stack.peek(), targetType)) {
         DSType *stackTopType = state.stack.pop()->getType();
         std::string str("cannot cast `");
         str += state.symbolTable.getTypeName(*stackTopType);
@@ -925,7 +925,8 @@ bool VM::mainLoop(DSState &state) {
             state.stack.pc() += 4;
 
             auto &targetType = state.symbolTable.get(v);
-            if(state.stack.pop().instanceOf(targetType)) {
+            auto value = state.stack.pop();
+            if(instanceOf(state.symbolTable.getTypePool(), value, targetType)) {
                 state.stack.push(state.trueObj);
             } else {
                 state.stack.push(state.falseObj);

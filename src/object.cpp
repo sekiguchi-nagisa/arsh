@@ -45,8 +45,8 @@ bool DSValue::asBool() const {
     return typeAs<Boolean_Object>(*this)->getValue();   //FIXME:
 }
 
-bool DSValue::instanceOf(const DSType &targetType) const {
-    return targetType.isSameOrBaseTypeOf(*this->get()->getType());  //FIXME:
+unsigned int DSValue::getTypeID() const {
+    return this->get()->getType()->getTypeID(); //FIXME:
 }
 
 bool DSValue::equals(const DSValue &o) const {

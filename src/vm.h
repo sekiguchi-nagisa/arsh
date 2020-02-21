@@ -287,6 +287,10 @@ private:
     }
 
     // runtime api
+    static bool instanceOf(const TypePool &pool, const DSValue &value, const DSType &targetType) {
+        return targetType.isSameOrBaseTypeOf(*pool.get(value.getTypeID()));
+    }
+
     static bool checkCast(DSState &state, const DSType &targetType);
 
     static bool checkAssertion(DSState &state);

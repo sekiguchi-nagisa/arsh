@@ -211,10 +211,6 @@ public:
         return this->obj;
     }
 
-    DSObject &operator*() const noexcept {
-        return *this->obj;
-    }
-
     DSObject *operator->() const noexcept {
         return this->obj;
     }
@@ -254,12 +250,7 @@ public:
         return this->kind() == DSValueKind::INVALID;
     }
 
-    /**
-     * check if DSValue/DSObject is instance of `targetType`
-     * @param targetType
-     * @return
-     */
-    bool instanceOf(const DSType &targetType) const;
+    unsigned int getTypeID() const;
 
     void swap(DSValue &value) noexcept {
         std::swap(this->obj, value.obj);
@@ -318,7 +309,7 @@ inline T *typeAs(const DSValue &value) noexcept {
         }
         auto *r = dynamic_cast<T*>(value.get());
         if(r == nullptr) {
-            DSObject &v = *value;
+            DSObject &v = *value.get();
             int status;
             char *target = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, &status);
             char *actual = abi::__cxa_demangle(typeid(v).name(), nullptr, nullptr, &status);
