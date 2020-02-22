@@ -89,27 +89,6 @@ public:
     ObjectKind getKind() const {
         return this->kind;
     }
-
-    /**
-     * for printing
-     */
-    virtual std::string toString() const;
-
-    /**
-     * OP_STR method implementation. write result to `toStrBuf'
-     * @param state
-     * @return
-     * if has error, return false
-     */
-    virtual bool opStr(DSState &state) const;
-
-    /**
-     * OP_INTERP method implementation. write result to 'toStrBuf'
-     * @param state
-     * @return
-     * if has error, return false
-     */
-    virtual bool opInterp(DSState &state) const;
 };
 
 enum class DSValueKind : unsigned char {
@@ -211,10 +190,6 @@ public:
         return this->obj;
     }
 
-    DSObject *operator->() const noexcept {
-        return this->obj;
-    }
-
     bool operator==(std::nullptr_t) const noexcept {
         return this->obj == nullptr;
     }
@@ -252,11 +227,37 @@ public:
 
     unsigned int getTypeID() const;
 
+    bool hasType(TYPE t) const {
+        return hasType(static_cast<unsigned int>(t));
+    }
+
+    bool hasType(unsigned int id) const {
+        return this->getTypeID() == id;
+    }
+
     void swap(DSValue &value) noexcept {
         std::swap(this->obj, value.obj);
     }
 
     bool asBool() const;    //FIXME: replace it
+
+    std::string toString() const;
+
+    /**
+     * OP_STR method implementation. write result to `toStrBuf'
+     * @param state
+     * @return
+     * if has error, return false
+     */
+    bool opStr(DSState &state) const;
+
+    /**
+     * OP_INTERP method implementation. write result to 'toStrBuf'
+     * @param state
+     * @return
+     * if has error, return false
+     */
+    bool opInterp(DSState &state) const;
 
     /**
      * for HashMap
@@ -338,8 +339,6 @@ public:
     int getValue() const {
         return this->value;
     }
-
-    std::string toString() const override;
 };
 
 struct UnixFD_Object : public Int_Object {
@@ -363,8 +362,6 @@ struct UnixFD_Object : public Int_Object {
      * if failed, return false
      */
     bool closeOnExec(bool close);
-
-    std::string toString() const override;
 };
 
 class Long_Object : public DSObject {
@@ -379,8 +376,6 @@ public:
     long getValue() const {
         return this->value;
     }
-
-    std::string toString() const override;
 };
 
 class Float_Object : public DSObject {
@@ -395,8 +390,6 @@ public:
     double getValue() const {
         return this->value;
     }
-
-    std::string toString() const override;
 };
 
 class Boolean_Object : public DSObject {
@@ -411,8 +404,6 @@ public:
     bool getValue() const {
         return this->value;
     }
-
-    std::string toString() const override;
 };
 
 class String_Object : public DSObject {
@@ -453,8 +444,6 @@ public:
         this->value += typeAs<String_Object>(obj)->value;
     }
 
-    std::string toString() const override;
-
     DSValue slice(unsigned int begin, unsigned int end) const {
         return DSValue::create<String_Object>(
                 *this->getType(),
@@ -492,8 +481,6 @@ public:
 
     ~Regex_Object() override = default;
 
-    std::string toString() const override;
-
     bool search(StringRef ref) const {
         int ovec[1];
         int match = pcre_exec(this->re.get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, arraySize(ovec));
@@ -505,6 +492,10 @@ public:
         pcre_fullinfo(this->re.get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
         ovec = FlexBuffer<int>((captureSize + 1) * 3, 0);
         return pcre_exec(this->re.get(), nullptr, ref.data(), ref.size(), 0, 0, ovec.get(), (captureSize + 1) * 3);
+    }
+
+    const std::string &getStr() const {
+        return this->str;
     }
 };
 
@@ -535,9 +526,9 @@ public:
         return this->values.size();
     }
 
-    std::string toString() const override;
-    bool opStr(DSState &state) const override;
-    bool opInterp(DSState &state) const override;
+    std::string toString() const;
+    bool opStr(DSState &state) const;
+    bool opInterp(DSState &state) const;
     DSValue opCmdArg(DSState &state) const;
 
     void append(DSValue &&obj) {
@@ -677,8 +668,8 @@ public:
         return this->iter != this->valueMap.cend();
     }
 
-    std::string toString() const override;
-    bool opStr(DSState &state) const override;
+    std::string toString() const;
+    bool opStr(DSState &state) const;
 };
 
 class BaseObject : public DSObject {
@@ -703,9 +694,9 @@ struct Tuple_Object : public BaseObject {
 
     ~Tuple_Object() override = default;
 
-    std::string toString() const override;
-    bool opStr(DSState &state) const override;
-    bool opInterp(DSState &state) const override;
+    std::string toString() const;
+    bool opStr(DSState &state) const;
+    bool opInterp(DSState &state) const;
     DSValue opCmdArg(DSState &state) const;
 
     unsigned int getElementSize() const {
@@ -770,7 +761,7 @@ private:
 public:
     ~Error_Object() override = default;
 
-    bool opStr(DSState &state) const override;
+    bool opStr(DSState &state) const;
 
     const DSValue &getMessage() const {
         return this->message;
@@ -1039,7 +1030,7 @@ public:
         return this->code;
     }
 
-    std::string toString() const override;
+    std::string toString() const;
 };
 
 } // namespace ydsh

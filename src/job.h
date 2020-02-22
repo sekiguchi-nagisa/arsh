@@ -256,8 +256,6 @@ public:
         this->wait(Proc::NONBLOCKING);
         return this->available();
     }
-
-    std::string toString() const override;
 };
 
 struct JobRefCount {

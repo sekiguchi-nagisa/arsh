@@ -246,12 +246,6 @@ int JobImpl::wait(Proc::WaitOp op) {
     return lastStatus;
 }
 
-std::string JobImpl::toString() const {
-    std::string str = "%";
-    str += std::to_string(this->getJobID());
-    return str;
-}
-
 // ######################
 // ##     JobTable     ##
 // ######################

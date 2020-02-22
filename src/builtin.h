@@ -212,7 +212,7 @@ YDSH_METHOD basic_mod(RuntimeContext &ctx) {
 YDSH_METHOD to_str(RuntimeContext & ctx) {
     SUPPRESS_WARNING(to_str);
     bool hasRet = ctx.toStrBuf.empty();
-    if(!LOCAL(0)->opStr(ctx)) {
+    if(!LOCAL(0).opStr(ctx)) {
         ctx.toStrBuf.clear();
         RET_ERROR;
     }
@@ -230,7 +230,7 @@ YDSH_METHOD to_str(RuntimeContext & ctx) {
 YDSH_METHOD to_interp(RuntimeContext & ctx) {
     SUPPRESS_WARNING(to_interp);
     bool hasRet = ctx.toStrBuf.empty();
-    if(!LOCAL(0)->opInterp(ctx)) {
+    if(!LOCAL(0).opInterp(ctx)) {
         ctx.toStrBuf.clear();
         RET_ERROR;
     }
@@ -1482,7 +1482,7 @@ YDSH_METHOD array_join(RuntimeContext &ctx) {
             raiseError(ctx, TYPE::UnwrappingError, "invalid value");
             RET_ERROR;
         }
-        if(!e->opStr(ctx)) {
+        if(!e.opStr(ctx)) {
             ctx.toStrBuf.clear();
             RET_ERROR;
         }
@@ -1562,7 +1562,7 @@ YDSH_METHOD map_get(RuntimeContext &ctx) {
     auto iter = obj->getValueMap().find(LOCAL(1));
     if(iter == obj->getValueMap().end()) {
         std::string msg("not found key: ");
-        msg += LOCAL(1)->toString();
+        msg += LOCAL(1).toString();
         raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
         RET_ERROR;
     }
@@ -1640,7 +1640,7 @@ YDSH_METHOD map_swap(RuntimeContext &ctx) {
     DSValue value = LOCAL(2);
     if(!obj->trySwap(LOCAL(1), value)) {
         std::string msg("not found key: ");
-        msg += LOCAL(1)->toString();
+        msg += LOCAL(1).toString();
         raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
         RET_ERROR;
     }
@@ -1704,8 +1704,8 @@ YDSH_METHOD tuple_cmdArg(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : Error, $message : String) : Error
 YDSH_METHOD error_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_init);
-    DSType *type = LOCAL(0)->getType();
-    RET(DSValue(Error_Object::newError(ctx, *type, LOCAL(1))));
+    auto &type = ctx.symbolTable.get(LOCAL(0).getTypeID());
+    RET(DSValue(Error_Object::newError(ctx, type, LOCAL(1))));
 }
 
 //!bind: function message($this : Error) : String

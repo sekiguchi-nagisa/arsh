@@ -157,8 +157,8 @@ static void bindVariable(DSState &state, const char *varName,
 }
 
 static void bindVariable(DSState &state, const char *varName, DSValue &&value, FieldAttribute attribute) {
-    auto *type = value->getType();
-    return bindVariable(state, varName, type, std::move(value), attribute);
+    auto id = value.getTypeID();
+    return bindVariable(state, varName, &state.symbolTable.get(id), std::move(value), attribute);
 }
 
 static void bindVariable(DSState &state, const char *varName, DSValue &&value) {
@@ -775,17 +775,17 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
         return 0;
     }
 
-    auto *type = st->editOpReply->getType();
+    auto &type = st->symbolTable.get(st->editOpReply.getTypeID());
     switch(op) {
     case DS_EDIT_HIST_SIZE:
-        if(type->is(TYPE::Int32)) {
+        if(type.is(TYPE::Int32)) {
             return typeAs<Int_Object>(st->editOpReply)->getValue();
         }
         return 0;
     case DS_EDIT_HIST_GET:
     case DS_EDIT_HIST_SEARCH:
     case DS_EDIT_PROMPT:
-        if(!type->is(TYPE::String) || buf == nullptr) {
+        if(!type.is(TYPE::String) || buf == nullptr) {
             return 0;
         }
         if(op == DS_EDIT_PROMPT) {

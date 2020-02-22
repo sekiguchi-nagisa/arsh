@@ -1404,13 +1404,13 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                 fprintf(this->fp, "%lu", static_cast<unsigned long>(v.value()));
                 break;
             case DSValueKind::OBJECT: {
-                auto *type = v->getType();
+                auto *type = v.get()->getType();
                 if(type == nullptr || type->isFuncType() || type->isModType()) {
                     this->funcs.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
                 }
                 fprintf(this->fp, "%s %s",
                         (type != nullptr ? this->symbolTable.getTypeName(*type) : "(null)"),
-                        v->toString().c_str());
+                        v.toString().c_str());
                 break;
             }
             case DSValueKind::INVALID:

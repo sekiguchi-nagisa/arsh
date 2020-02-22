@@ -25,22 +25,6 @@ namespace ydsh {
 // ##     DSObject     ##
 // ######################
 
-std::string DSObject::toString() const {
-    std::string str("DSObject(");
-    str += std::to_string(reinterpret_cast<long>(this));
-    str += ")";
-    return str;
-}
-
-bool DSObject::opStr(DSState &state) const {
-    state.toStrBuf += this->toString();
-    return true;
-}
-
-bool DSObject::opInterp(DSState &state) const {
-    return this->opStr(state);
-}
-
 bool DSValue::asBool() const {
     return typeAs<Boolean_Object>(*this)->getValue();   //FIXME:
 }
@@ -49,8 +33,79 @@ unsigned int DSValue::getTypeID() const {
     return this->get()->getType()->getTypeID(); //FIXME:
 }
 
+std::string DSValue::toString() const {
+    switch(this->get()->getKind()) {
+    case ObjectKind::INT:
+        return std::to_string(typeAs<Int_Object>(*this)->getValue());
+    case ObjectKind::LONG:
+        return std::to_string(typeAs<Long_Object>(*this)->getValue());
+    case ObjectKind::FLOAT:
+        return std::to_string(typeAs<Float_Object>(*this)->getValue());
+    case ObjectKind::BOOL:
+        return this->asBool() ? "true" : "false";
+    case ObjectKind::STRING:
+        return createStrRef(*this).toString();
+    case ObjectKind::FD: {
+        std::string str = "/dev/fd/";
+        str += std::to_string(typeAs<Int_Object>(*this)->getValue());
+        return str;
+    }
+    case ObjectKind::REGEX:
+        return typeAs<Regex_Object>(*this)->getStr();
+    case ObjectKind::ARRAY:
+        return typeAs<Array_Object>(*this)->toString();
+    case ObjectKind::MAP:
+        return typeAs<Map_Object>(*this)->toString();
+    case ObjectKind::TUPLE:
+        return typeAs<Tuple_Object>(*this)->toString();
+    case ObjectKind::FUNC_OBJ:
+        return typeAs<FuncObject>(*this)->toString();
+    case ObjectKind::JOB: {
+        std::string str = "%";
+        str += std::to_string(typeAs<JobImpl>(*this)->getJobID());
+        return str;
+    }
+    default:
+        break;
+    }
+
+    std::string str("DSObject(");
+    str += std::to_string(reinterpret_cast<long>(this));
+    str += ")";
+    return str;
+}
+
+bool DSValue::opStr(DSState &state) const {
+    switch(this->get()->getKind()) {
+    case ObjectKind::ARRAY:
+        return typeAs<Array_Object>(*this)->opStr(state);
+    case ObjectKind::MAP:
+        return typeAs<Map_Object>(*this)->opStr(state);
+    case ObjectKind::TUPLE:
+        return typeAs<Tuple_Object>(*this)->opStr(state);
+    case ObjectKind::ERROR:
+        return typeAs<Error_Object>(*this)->opStr(state);
+    default:
+        state.toStrBuf += this->toString();
+        break;
+    }
+    return true;
+}
+
+bool DSValue::opInterp(DSState &state) const {
+    switch(this->get()->getKind()) {
+    case ObjectKind::ARRAY:
+        return typeAs<Array_Object>(*this)->opInterp(state);
+    case ObjectKind::TUPLE:
+        return typeAs<Tuple_Object>(*this)->opInterp(state);
+    default:
+        break;
+    }
+    return this->opStr(state);
+}
+
 bool DSValue::equals(const DSValue &o) const {
-    assert(this->get()->getKind() == o->getKind());
+    assert(this->get()->getKind() == o.get()->getKind());
     switch(this->get()->getKind()) {
     case ObjectKind::INT:
         return static_cast<Int_Object*>(this->get())->getValue() == typeAs<Int_Object>(o)->getValue();
@@ -90,7 +145,7 @@ size_t DSValue::hash() const {
 }
 
 bool DSValue::compare(const DSValue &o) const {
-    assert(this->get()->getKind() == o->getKind());
+    assert(this->get()->getKind() == o.get()->getKind());
     switch(this->get()->getKind()) {
     case ObjectKind::INT:
         return static_cast<Int_Object*>(this->get())->getValue() < typeAs<Int_Object>(o)->getValue();
@@ -112,14 +167,6 @@ bool DSValue::compare(const DSValue &o) const {
         break;
     }
     return false;
-}
-
-// ########################
-// ##     Int_Object     ##
-// ########################
-
-std::string Int_Object::toString() const {
-    return std::to_string(this->value);
 }
 
 // ###########################
@@ -151,54 +198,6 @@ bool UnixFD_Object::closeOnExec(bool close) {
     return fcntl(fd, F_SETFD, flag) != -1;
 }
 
-std::string UnixFD_Object::toString() const {
-    std::string str = "/dev/fd/";
-    str += std::to_string(this->value);
-    return str;
-}
-
-
-// #########################
-// ##     Long_Object     ##
-// #########################
-
-std::string Long_Object::toString() const {
-    return std::to_string(this->value);
-}
-
-// ##########################
-// ##     Float_Object     ##
-// ##########################
-
-std::string Float_Object::toString() const {
-    return std::to_string(this->value);
-}
-
-
-// ############################
-// ##     Boolean_Object     ##
-// ############################
-
-std::string Boolean_Object::toString() const {
-    return this->value ? "true" : "false";
-}
-
-// ###########################
-// ##     String_Object     ##
-// ###########################
-
-std::string String_Object::toString() const {
-    return this->value;
-}
-
-// ##########################
-// ##     Regex_Object     ##
-// ##########################
-
-std::string Regex_Object::toString() const {
-    return this->str;
-}
-
 // ##########################
 // ##     Array_Object     ##
 // ##########################
@@ -222,7 +221,7 @@ std::string Array_Object::toString() const {
         if(i > 0) {
             str += ", ";
         }
-        str += this->values[i]->toString();
+        str += this->values[i].toString();
     }
     str += "]";
     return str;
@@ -233,8 +232,9 @@ static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
     if(!checkInvalid(state, ret)) {
         return DSValue();
     }
-    if(!ret->getType()->is(TYPE::String)) {
-        auto *handle = state.symbolTable.lookupMethod(*ret->getType(), op);
+    auto &type = state.symbolTable.get(ret.getTypeID());
+    if(!type.is(TYPE::String)) {
+        auto *handle = state.symbolTable.lookupMethod(type, op);
         assert(handle != nullptr);
         ret = callMethod(state, handle, std::move(ret), makeArgs());
     }
@@ -273,7 +273,7 @@ bool Array_Object::opInterp(DSState &state) const {
     return true;
 }
 
-static const MethodHandle *lookupCmdArg(DSType &recvType, SymbolTable &symbolTable) {
+static const MethodHandle *lookupCmdArg(const DSType &recvType, SymbolTable &symbolTable) {
     auto *handle = symbolTable.lookupMethod(recvType, OP_CMD_ARG);
     if(handle == nullptr) {
         handle = symbolTable.lookupMethod(recvType, OP_STR);
@@ -286,16 +286,17 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
     if(!checkInvalid(state, ret)) {
         return false;
     }
-    if(!ret->getType()->is(TYPE::String) && !ret->getType()->is(TYPE::StringArray)) {
-        auto *handle = lookupCmdArg(*ret->getType(), state.symbolTable);
+    if(!ret.hasType(TYPE::String) && !ret.hasType(TYPE::StringArray)) {
+        auto &recv = state.symbolTable.get(ret.getTypeID());
+        auto *handle = lookupCmdArg(recv, state.symbolTable);
         assert(handle != nullptr);
         ret = TRY(callMethod(state, handle, std::move(ret), makeArgs()));
     }
-    auto *retType = ret->getType();
-    if(retType->is(TYPE::String)) {
+
+    if(ret.hasType(TYPE::String)) {
         result.push_back(std::move(ret));
     } else {
-        assert(retType->is(TYPE::StringArray));
+        assert(ret.hasType(TYPE::StringArray));
         auto *tempArray = typeAs<Array_Object>(ret);
         for(auto &tempValue : tempArray->getValues()) {
             result.push_back(tempValue);
@@ -321,8 +322,8 @@ DSValue Array_Object::opCmdArg(DSState &state) const {
 
 DSValue Map_Object::nextElement(DSState &ctx) {
     std::vector<DSType *> types(2);
-    types[0] = this->iter->first->getType();
-    types[1] = this->iter->second->getType();
+    types[0] = &ctx.symbolTable.get(this->iter->first.getTypeID());
+    types[1] = &ctx.symbolTable.get(this->iter->second.getTypeID());
 
     auto entry = DSValue::create<Tuple_Object>(*ctx.symbolTable.createTupleType(std::move(types)).take());
     (*typeAs<Tuple_Object>(entry))[0] = this->iter->first;
@@ -339,9 +340,9 @@ std::string Map_Object::toString() const {
         if(count++ > 0) {
             str += ", ";
         }
-        str += e.first->toString();
+        str += e.first.toString();
         str += " : ";
-        str += e.second->toString();
+        str += e.second.toString();
     }
     str += "]";
     return str;
@@ -393,7 +394,7 @@ std::string Tuple_Object::toString() const {
         if(i > 0) {
             str += ", ";
         }
-        str += this->fieldTable[i]->toString();
+        str += this->fieldTable[i].toString();
     }
     if(size == 1) {
         str += ",";

@@ -78,9 +78,9 @@ namespace ydsh {
 
 bool VM::checkCast(DSState &state, const DSType &targetType) {
     if(!instanceOf(state.symbolTable.getTypePool(), state.stack.peek(), targetType)) {
-        DSType *stackTopType = state.stack.pop()->getType();
+        auto &stackTopType = state.symbolTable.get(state.stack.pop().getTypeID());
         std::string str("cannot cast `");
-        str += state.symbolTable.getTypeName(*stackTopType);
+        str += state.symbolTable.getTypeName(stackTopType);
         str += "' to `";
         str += state.symbolTable.getTypeName(targetType);
         str += "'";
@@ -784,10 +784,10 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
      * +------+-------+-------+
      */
     DSValue value = state.stack.pop();
-    DSType *valueType = value->getType();
+    auto &valueType = state.symbolTable.get(value.getTypeID());
 
     auto *argv = typeAs<Array_Object>(state.stack.peekByOffset(1));
-    if(valueType->is(TYPE::String)) {  // String
+    if(valueType.is(TYPE::String)) {  // String
         if(skipEmptyStr && typeAs<String_Object>(value)->empty()) {
             return;
         }
@@ -795,19 +795,18 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
         return;
     }
 
-    if(valueType->is(TYPE::UnixFD)) { // UnixFD
+    if(valueType.is(TYPE::UnixFD)) { // UnixFD
         if(!state.stack.peek()) {
             state.stack.pop();
             state.stack.push(DSValue::create<RedirConfig>());
         }
-        auto fdPath = typeAs<UnixFD_Object>(value)->toString();
-        auto strObj = DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(fdPath));
+        auto strObj = DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), value.toString());
         typeAs<RedirConfig>(state.stack.peek())->addRedirOp(RedirOP::NOP, std::move(value));
         argv->append(std::move(strObj));
         return;
     }
 
-    assert(valueType->is(TYPE::StringArray));  // Array<String>
+    assert(valueType.is(TYPE::StringArray));  // Array<String>
     auto *arrayObj = typeAs<Array_Object>(value);
     for(auto &element : arrayObj->getValues()) {
         if(typeAs<String_Object>(element)->empty()) {
@@ -1410,8 +1409,8 @@ bool VM::mainLoop(DSState &state) {
 
         EXCEPT:
         assert(state.hasError());
-        bool forceUnwind = state.symbolTable.get(TYPE::_InternalStatus)
-                .isSameOrBaseTypeOf(*state.stack.getThrownObject()->getType());
+        auto &thrownType = state.symbolTable.get(state.stack.getThrownObject().getTypeID());
+        bool forceUnwind = state.symbolTable.get(TYPE::_InternalStatus).isSameOrBaseTypeOf(thrownType);
         if(!handleException(state, forceUnwind)) {
             return false;
         }
@@ -1429,12 +1428,12 @@ bool VM::handleException(DSState &state, bool forceUnwind) {
 
             // search exception entry
             const unsigned int occurredPC = state.stack.pc();
-            const DSType *occurredType = state.stack.getThrownObject()->getType();
+            const DSType &occurredType = state.symbolTable.get(state.stack.getThrownObject().getTypeID());
 
             for(unsigned int i = 0; cc->getExceptionEntries()[i].type != nullptr; i++) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
                 if(occurredPC >= entry.begin && occurredPC < entry.end
-                   && entry.type->isSameOrBaseTypeOf(*occurredType)) {
+                   && entry.type->isSameOrBaseTypeOf(occurredType)) {
                     if(entry.type->is(TYPE::_Root)) {
                         /**
                          * when exception entry indicate exception guard of sub-shell,
@@ -1607,14 +1606,14 @@ DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&rec
 DSValue VM::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     GUARD_RECURSION(state);
 
-    auto *type = funcObj->getType();
+    auto &type = state.symbolTable.get(funcObj.getTypeID());
     unsigned int size = prepareArguments(state.stack, std::move(funcObj), std::move(args));
 
     DSValue ret;
     if(prepareFuncCall(state, size)) {
-        assert(type->isFuncType());
+        assert(type.isFuncType());
         EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
-        if(!static_cast<FunctionType *>(type)->getReturnType()->isVoidType()) {
+        if(!static_cast<FunctionType&>(type).getReturnType()->isVoidType()) {
             setFlag(op, EvalOP::HAS_RETURN);
         }
         ret = startEval(state, op, nullptr);
@@ -1627,7 +1626,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
         return DS_ERROR_KIND_SUCCESS;
     }
 
-    auto &errorType = *except->getType();
+    auto &errorType = state.symbolTable.get(except.getTypeID());
     DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
     if(errorType.is(TYPE::_ShellExit)) {
         kind = DS_ERROR_KIND_EXIT;

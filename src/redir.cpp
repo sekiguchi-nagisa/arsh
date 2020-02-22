@@ -46,7 +46,7 @@ PipelineState::~PipelineState() {
 
 static bool isPassingFD(const std::pair<RedirOP, DSValue> &pair) {
     return pair.first == RedirOP::NOP && pair.second.isValidObject()
-                && pair.second->getType()->is(TYPE::UnixFD);
+                && pair.second.get()->getKind() == ObjectKind::FD;
 }
 
 RedirConfig::~RedirConfig() {
@@ -57,7 +57,7 @@ RedirConfig::~RedirConfig() {
 
     // set close-on-exec flag to fds
     for(auto &e : this->ops) {
-        if(isPassingFD(e) && e.second->getRefcount() > 1) {
+        if(isPassingFD(e) && e.second.get()->getRefcount() > 1) {
             typeAs<UnixFD_Object>(e.second)->closeOnExec(true);
         }
     }
@@ -108,9 +108,8 @@ static int doIOHere(const String_Object &value) {
  * if failed, return non-zero value(errno)
  */
 static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
-    auto &type = *fileName->getType();
-    if(type.is(TYPE::String)) {
-        FILE *fp = fopen(typeAs<String_Object>(fileName)->getValue(), mode);
+    if(fileName.hasType(TYPE::String)) {
+        FILE *fp = fopen(createStrRef(fileName).data(), mode);
         if(fp == nullptr) {
             return errno;
         }
@@ -122,7 +121,7 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
         }
         fclose(fp);
     } else {
-        assert(type.is(TYPE::UnixFD));
+        assert(fileName.hasType(TYPE::UnixFD));
         int fd = typeAs<UnixFD_Object>(fileName)->getValue();
         if(strchr(mode, 'a') != nullptr) {
             if(lseek(fd, 0, SEEK_END) == -1) {
@@ -193,13 +192,13 @@ bool RedirConfig::redirect(DSState &st) {
         if(this->backupFDset > 0 && r != 0) {
             std::string msg = REDIR_ERROR;
             if(pair.second) {
-                auto *type = pair.second->getType();
-                if(type->is(TYPE::String)) {
-                    if(!typeAs<String_Object>(pair.second)->empty()) {
+                if(pair.second.hasType(TYPE::String)) {
+                    auto ref = createStrRef(pair.second);
+                    if(!ref.empty()) {
                         msg += ": ";
-                        msg += typeAs<String_Object>(pair.second)->getValue();
+                        msg += ref.data();
                     }
-                } else if(type->is(TYPE::UnixFD)) {
+                } else if(pair.second.hasType(TYPE::UnixFD)) {
                     msg += ": ";
                     msg += std::to_string(typeAs<UnixFD_Object>(pair.second)->getValue());
                 }
