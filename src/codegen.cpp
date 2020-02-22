@@ -1413,6 +1413,11 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                         v.toString().c_str());
                 break;
             }
+            case DSValueKind::BOOL: {
+                auto &type = this->symbolTable.get(v.getTypeID());
+                fprintf(this->fp, "%s %s", this->symbolTable.getTypeName(type), v.toString().c_str());
+                break;
+            }
             case DSValueKind::INVALID:
                 break;
             }

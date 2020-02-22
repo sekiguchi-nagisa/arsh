@@ -60,16 +60,6 @@ public:
     SymbolTable symbolTable;
 
     /**
-     * must be Boolean_Object
-     */
-    const DSValue trueObj;
-
-    /**
-     * must be Boolean_Object
-     */
-    const DSValue falseObj;
-
-    /**
      * must be String_Object
      */
     const DSValue emptyStrObj;
@@ -274,7 +264,7 @@ class VM {
 private:
     static void pushExitStatus(DSState &state, int status) {
         state.updateExitStatus(status);
-        state.stack.push(status == 0 ? state.trueObj : state.falseObj);
+        state.stack.push(DSValue::createBool(status == 0));
     }
 
     static bool windStackFrame(DSState &state, unsigned int stackTopOffset,

@@ -35,7 +35,7 @@
 #define LOCAL(index) (ctx.getLocal(index))
 #define EXTRACT_LOCAL(index) (ctx.moveLocal(index))
 #define RET(value) return value
-#define RET_BOOL(value) return ((value) ? ctx.trueObj : ctx.falseObj)
+#define RET_BOOL(value) return DSValue::createBool(value)
 #define RET_VOID return DSValue()
 #define RET_ERROR return DSValue()
 

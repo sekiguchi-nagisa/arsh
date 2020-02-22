@@ -41,7 +41,6 @@ enum ObjectKind {
     INT,
     LONG,
     FLOAT,
-    BOOL,
     STRING,
     STRITER,
     FD,
@@ -95,6 +94,7 @@ enum class DSValueKind : unsigned char {
     OBJECT = 0,
     NUMBER = 130,
     INVALID = 132,
+    BOOL = 134,
 };
 
 class DSValue {
@@ -239,7 +239,10 @@ public:
         std::swap(this->obj, value.obj);
     }
 
-    bool asBool() const;    //FIXME: replace it
+    bool asBool() const {
+        assert(this->kind() == DSValueKind::BOOL);
+        return this->value() == 1;
+    }
 
     std::string toString() const;
 
@@ -291,6 +294,11 @@ public:
 
     static DSValue createInvalid() {
         return DSValue(static_cast<uint64_t>(DSValueKind::INVALID) << 56);
+    }
+
+    static DSValue createBool(bool v) {
+        auto mask = static_cast<uint64_t>(DSValueKind::BOOL) << 56;
+        return DSValue(mask | (v ? 1 : 0));
     }
 };
 
@@ -388,20 +396,6 @@ public:
     ~Float_Object() override = default;
 
     double getValue() const {
-        return this->value;
-    }
-};
-
-class Boolean_Object : public DSObject {
-private:
-    bool value;
-
-public:
-    Boolean_Object(DSType &type, bool value) : DSObject(ObjectKind::BOOL, type), value(value) { }
-
-    ~Boolean_Object() override = default;
-
-    bool getValue() const {
         return this->value;
     }
 };

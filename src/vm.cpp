@@ -52,8 +52,6 @@ static std::string initLogicalWorkingDir() {
 }
 
 DSState::DSState() :
-        trueObj(DSValue::create<Boolean_Object>(this->symbolTable.get(TYPE::Boolean), true)),
-        falseObj(DSValue::create<Boolean_Object>(this->symbolTable.get(TYPE::Boolean), false)),
         emptyStrObj(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::string())),
         emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.get(TYPE::UnixFD), -1)),
         logicalWorkingDir(initLogicalWorkingDir()),
@@ -925,11 +923,8 @@ bool VM::mainLoop(DSState &state) {
 
             auto &targetType = state.symbolTable.get(v);
             auto value = state.stack.pop();
-            if(instanceOf(state.symbolTable.getTypePool(), value, targetType)) {
-                state.stack.push(state.trueObj);
-            } else {
-                state.stack.push(state.falseObj);
-            }
+            bool ret = instanceOf(state.symbolTable.getTypePool(), value, targetType);
+            state.stack.push(DSValue::createBool(ret));
             vmnext;
         }
         vmcase(CHECK_CAST) {
@@ -943,11 +938,11 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(PUSH_TRUE) {
-            state.stack.push(state.trueObj);
+            state.stack.push(DSValue::createBool(true));
             vmnext;
         }
         vmcase(PUSH_FALSE) {
-            state.stack.push(state.falseObj);
+            state.stack.push(DSValue::createBool(false));
             vmnext;
         }
         vmcase(PUSH_ESTRING) {
@@ -1190,7 +1185,8 @@ bool VM::mainLoop(DSState &state) {
         vmcase(EXIT_FINALLY) {
             switch(state.stack.peek().kind()) {
             case DSValueKind::OBJECT:
-            case DSValueKind::INVALID: {
+            case DSValueKind::INVALID:
+            case DSValueKind::BOOL: {
                 state.stack.storeThrownObject();
                 vmerror;
             }
@@ -1254,13 +1250,13 @@ bool VM::mainLoop(DSState &state) {
         vmcase(REF_EQ) {
             auto v1 = state.stack.pop();
             auto v2 = state.stack.pop();
-            state.stack.push(v1 == v2 ? state.trueObj : state.falseObj);
+            state.stack.push(DSValue::createBool(v1 == v2));
             vmnext;
         }
         vmcase(REF_NE) {
             auto v1 = state.stack.pop();
             auto v2 = state.stack.pop();
-            state.stack.push(v1 != v2 ? state.trueObj : state.falseObj);
+            state.stack.push(DSValue::createBool(v1 != v2));
             vmnext;
         }
         vmcase(FORK) {
@@ -1381,7 +1377,7 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(CHECK_UNWRAP) {
             bool b = state.stack.pop().kind() != DSValueKind::INVALID;
-            state.stack.push(b ? state.trueObj : state.falseObj);
+            state.stack.push(DSValue::createBool(b));
             vmnext;
         }
         vmcase(TRY_UNWRAP) {

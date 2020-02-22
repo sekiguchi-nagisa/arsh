@@ -21,19 +21,22 @@
 
 namespace ydsh {
 
-// ######################
-// ##     DSObject     ##
-// ######################
-
-bool DSValue::asBool() const {
-    return typeAs<Boolean_Object>(*this)->getValue();   //FIXME:
-}
+// #####################
+// ##     DSValue     ##
+// #####################
 
 unsigned int DSValue::getTypeID() const {
+    if(this->kind() == DSValueKind::BOOL) {
+        return static_cast<unsigned int>(TYPE::Boolean);
+    }
     return this->get()->getType()->getTypeID(); //FIXME:
 }
 
 std::string DSValue::toString() const {
+    if(this->kind() == DSValueKind::BOOL) {
+        return this->asBool() ? "true" : "false";
+    }
+
     switch(this->get()->getKind()) {
     case ObjectKind::INT:
         return std::to_string(typeAs<Int_Object>(*this)->getValue());
@@ -41,8 +44,6 @@ std::string DSValue::toString() const {
         return std::to_string(typeAs<Long_Object>(*this)->getValue());
     case ObjectKind::FLOAT:
         return std::to_string(typeAs<Float_Object>(*this)->getValue());
-    case ObjectKind::BOOL:
-        return this->asBool() ? "true" : "false";
     case ObjectKind::STRING:
         return createStrRef(*this).toString();
     case ObjectKind::FD: {
@@ -76,35 +77,44 @@ std::string DSValue::toString() const {
 }
 
 bool DSValue::opStr(DSState &state) const {
-    switch(this->get()->getKind()) {
-    case ObjectKind::ARRAY:
-        return typeAs<Array_Object>(*this)->opStr(state);
-    case ObjectKind::MAP:
-        return typeAs<Map_Object>(*this)->opStr(state);
-    case ObjectKind::TUPLE:
-        return typeAs<Tuple_Object>(*this)->opStr(state);
-    case ObjectKind::ERROR:
-        return typeAs<Error_Object>(*this)->opStr(state);
-    default:
-        state.toStrBuf += this->toString();
-        break;
+    if(this->isValidObject()) {
+        switch(this->get()->getKind()) {
+        case ObjectKind::ARRAY:
+            return typeAs<Array_Object>(*this)->opStr(state);
+        case ObjectKind::MAP:
+            return typeAs<Map_Object>(*this)->opStr(state);
+        case ObjectKind::TUPLE:
+            return typeAs<Tuple_Object>(*this)->opStr(state);
+        case ObjectKind::ERROR:
+            return typeAs<Error_Object>(*this)->opStr(state);
+        default:
+            break;
+        }
     }
+    state.toStrBuf += this->toString();
     return true;
 }
 
 bool DSValue::opInterp(DSState &state) const {
-    switch(this->get()->getKind()) {
-    case ObjectKind::ARRAY:
-        return typeAs<Array_Object>(*this)->opInterp(state);
-    case ObjectKind::TUPLE:
-        return typeAs<Tuple_Object>(*this)->opInterp(state);
-    default:
-        break;
+    if(this->isValidObject()) {
+        switch(this->get()->getKind()) {
+        case ObjectKind::ARRAY:
+            return typeAs<Array_Object>(*this)->opInterp(state);
+        case ObjectKind::TUPLE:
+            return typeAs<Tuple_Object>(*this)->opInterp(state);
+        default:
+            break;
+        }
     }
     return this->opStr(state);
 }
 
 bool DSValue::equals(const DSValue &o) const {
+    assert(this->kind() == o.kind());
+    if(this->kind() == DSValueKind::BOOL) {
+        return this->asBool() == o.asBool();
+    }
+
     assert(this->get()->getKind() == o.get()->getKind());
     switch(this->get()->getKind()) {
     case ObjectKind::INT:
@@ -113,8 +123,6 @@ bool DSValue::equals(const DSValue &o) const {
         return static_cast<Long_Object*>(this->get())->getValue() == typeAs<Long_Object>(o)->getValue();
     case ObjectKind::FLOAT:
         return static_cast<Float_Object*>(this->get())->getValue() == typeAs<Float_Object>(o)->getValue();
-    case ObjectKind::BOOL:
-        return this->asBool() == o.asBool();
     case ObjectKind::STRING: {
         auto left = createStrRef(*this);
         auto right = createStrRef(o);
@@ -127,6 +135,10 @@ bool DSValue::equals(const DSValue &o) const {
 }
 
 size_t DSValue::hash() const {
+    if(this->kind() == DSValueKind::BOOL) {
+        return std::hash<bool>()(this->asBool());
+    }
+
     switch(this->get()->getKind()) {
     case ObjectKind::INT:
         return std::hash<int>()(static_cast<Int_Object*>(this->get())->getValue());
@@ -134,8 +146,6 @@ size_t DSValue::hash() const {
         return std::hash<long>()(static_cast<Long_Object*>(this->get())->getValue());
     case ObjectKind::FLOAT:
         return std::hash<double>()(static_cast<Float_Object*>(this->get())->getValue());
-    case ObjectKind::BOOL:
-        return std::hash<bool>()(this->asBool());
     case ObjectKind::STRING:
         return std::hash<StringRef>()(createStrRef(*this));
     default:
@@ -145,6 +155,13 @@ size_t DSValue::hash() const {
 }
 
 bool DSValue::compare(const DSValue &o) const {
+    assert(this->kind() == o.kind());
+    if(this->kind() == DSValueKind::BOOL) {
+        int left = this->value();
+        int right = o.value();
+        return left < right;
+    }
+
     assert(this->get()->getKind() == o.get()->getKind());
     switch(this->get()->getKind()) {
     case ObjectKind::INT:
@@ -153,11 +170,6 @@ bool DSValue::compare(const DSValue &o) const {
         return static_cast<Long_Object*>(this->get())->getValue() < typeAs<Long_Object>(o)->getValue();
     case ObjectKind::FLOAT:
         return static_cast<Float_Object*>(this->get())->getValue() < typeAs<Float_Object>(o)->getValue();
-    case ObjectKind::BOOL: {
-        unsigned int left = this->asBool() ? 1 : 0;
-        unsigned int right = o.asBool() ? 1 : 0;
-        return left < right;
-    }
     case ObjectKind::STRING: {
         auto left = createStrRef(*this);
         auto right = createStrRef(o);
