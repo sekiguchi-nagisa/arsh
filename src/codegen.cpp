@@ -1399,27 +1399,28 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
         for(unsigned int i = 0; c.getConstPool()[i]; i++) {
             fprintf(this->fp, "  %s: ", formatNum(digit(constSize), i).c_str());
             auto &v = c.getConstPool()[i];
+            std::string value = v.toString();
             switch(v.kind()) {
             case DSValueKind::NUMBER:
-                fprintf(this->fp, "%lu", static_cast<unsigned long>(v.value()));
+                fprintf(this->fp, "%s", value.c_str());
                 break;
-            case DSValueKind::OBJECT: {
-                auto *type = v.get()->getType();
-                if(type == nullptr || type->isFuncType() || type->isModType()) {
-                    this->funcs.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
+            case DSValueKind::INVALID:
+                break;
+            default: {
+                DSType *type = nullptr;
+                if(v.isObject()) {
+                    type = v.get()->getType();
+                    if(type == nullptr || type->isFuncType() || type->isModType()) {
+                        this->funcs.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
+                    }
+                } else {
+                    type = &this->symbolTable.get(v.getTypeID());
                 }
                 fprintf(this->fp, "%s %s",
                         (type != nullptr ? this->symbolTable.getTypeName(*type) : "(null)"),
-                        v.toString().c_str());
+                        value.c_str());
                 break;
             }
-            case DSValueKind::BOOL: {
-                auto &type = this->symbolTable.get(v.getTypeID());
-                fprintf(this->fp, "%s %s", this->symbolTable.getTypeName(type), v.toString().c_str());
-                break;
-            }
-            case DSValueKind::INVALID:
-                break;
             }
             fputc('\n', this->fp);
         }

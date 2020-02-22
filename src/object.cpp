@@ -26,15 +26,24 @@ namespace ydsh {
 // #####################
 
 unsigned int DSValue::getTypeID() const {
-    if(this->kind() == DSValueKind::BOOL) {
+    switch(this->kind()) {
+    case DSValueKind::BOOL:
         return static_cast<unsigned int>(TYPE::Boolean);
+    default:
+        assert(this->kind() == DSValueKind::OBJECT);
+        return this->get()->getType()->getTypeID();
     }
-    return this->get()->getType()->getTypeID(); //FIXME:
 }
 
 std::string DSValue::toString() const {
-    if(this->kind() == DSValueKind::BOOL) {
+    switch(this->kind()) {
+    case DSValueKind::NUMBER:
+        return std::to_string(static_cast<uint64_t>(this->val));
+    case DSValueKind::BOOL:
         return this->asBool() ? "true" : "false";
+    default:
+        assert(this->kind() == DSValueKind::OBJECT);
+        break;
     }
 
     switch(this->get()->getKind()) {
@@ -77,7 +86,7 @@ std::string DSValue::toString() const {
 }
 
 bool DSValue::opStr(DSState &state) const {
-    if(this->isValidObject()) {
+    if(this->isObject()) {
         switch(this->get()->getKind()) {
         case ObjectKind::ARRAY:
             return typeAs<Array_Object>(*this)->opStr(state);
@@ -96,7 +105,7 @@ bool DSValue::opStr(DSState &state) const {
 }
 
 bool DSValue::opInterp(DSState &state) const {
-    if(this->isValidObject()) {
+    if(this->isObject()) {
         switch(this->get()->getKind()) {
         case ObjectKind::ARRAY:
             return typeAs<Array_Object>(*this)->opInterp(state);
@@ -111,55 +120,56 @@ bool DSValue::opInterp(DSState &state) const {
 
 bool DSValue::equals(const DSValue &o) const {
     assert(this->kind() == o.kind());
-    if(this->kind() == DSValueKind::BOOL) {
-        return this->asBool() == o.asBool();
+    if(this->isObject()) {
+        assert(this->get()->getKind() == o.get()->getKind());
+        switch(this->get()->getKind()) {
+        case ObjectKind::INT:
+            return static_cast<Int_Object*>(this->get())->getValue() == typeAs<Int_Object>(o)->getValue();
+        case ObjectKind::LONG:
+            return static_cast<Long_Object*>(this->get())->getValue() == typeAs<Long_Object>(o)->getValue();
+        case ObjectKind::FLOAT:
+            return static_cast<Float_Object*>(this->get())->getValue() == typeAs<Float_Object>(o)->getValue();
+        case ObjectKind::STRING: {
+            auto left = createStrRef(*this);
+            auto right = createStrRef(o);
+            return left == right;
+        }
+        default:
+            break;
+        }
     }
-
-    assert(this->get()->getKind() == o.get()->getKind());
-    switch(this->get()->getKind()) {
-    case ObjectKind::INT:
-        return static_cast<Int_Object*>(this->get())->getValue() == typeAs<Int_Object>(o)->getValue();
-    case ObjectKind::LONG:
-        return static_cast<Long_Object*>(this->get())->getValue() == typeAs<Long_Object>(o)->getValue();
-    case ObjectKind::FLOAT:
-        return static_cast<Float_Object*>(this->get())->getValue() == typeAs<Float_Object>(o)->getValue();
-    case ObjectKind::STRING: {
-        auto left = createStrRef(*this);
-        auto right = createStrRef(o);
-        return left == right;
-    }
-    default:
-        break;
-    }
-    return reinterpret_cast<long>(this->obj) == reinterpret_cast<long>(o.get());
+    return this->val == o.val;
 }
 
 size_t DSValue::hash() const {
-    if(this->kind() == DSValueKind::BOOL) {
-        return std::hash<bool>()(this->asBool());
-    }
-
-    switch(this->get()->getKind()) {
-    case ObjectKind::INT:
-        return std::hash<int>()(static_cast<Int_Object*>(this->get())->getValue());
-    case ObjectKind::LONG:
-        return std::hash<long>()(static_cast<Long_Object*>(this->get())->getValue());
-    case ObjectKind::FLOAT:
-        return std::hash<double>()(static_cast<Float_Object*>(this->get())->getValue());
-    case ObjectKind::STRING:
-        return std::hash<StringRef>()(createStrRef(*this));
-    default:
-        break;
+    if(this->isObject()) {
+        switch(this->get()->getKind()) {
+        case ObjectKind::INT:
+            return std::hash<int>()(static_cast<Int_Object*>(this->get())->getValue());
+        case ObjectKind::LONG:
+            return std::hash<long>()(static_cast<Long_Object*>(this->get())->getValue());
+        case ObjectKind::FLOAT:
+            return std::hash<double>()(static_cast<Float_Object*>(this->get())->getValue());
+        case ObjectKind::STRING:
+            return std::hash<StringRef>()(createStrRef(*this));
+        default:
+            break;
+        }
     }
     return std::hash<long>()(this->val);
 }
 
 bool DSValue::compare(const DSValue &o) const {
     assert(this->kind() == o.kind());
-    if(this->kind() == DSValueKind::BOOL) {
+    switch(this->kind()) {
+    case DSValueKind::BOOL: {
         int left = this->value();
         int right = o.value();
         return left < right;
+    }
+    default:
+        assert(this->kind() == DSValueKind::OBJECT);
+        break;
     }
 
     assert(this->get()->getKind() == o.get()->getKind());
