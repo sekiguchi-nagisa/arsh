@@ -1206,7 +1206,8 @@ bool VM::mainLoop(DSState &state) {
                 auto &valueMap = typeAs<Map_Object>(map)->getValueMap();
                 auto iter = valueMap.find(key);
                 if(iter != valueMap.end()) {
-                    unsigned int index = typeAs<Int_Object>(iter->second)->getValue();
+                    assert(iter->second.kind() == DSValueKind::NUMBER);
+                    unsigned int index = iter->second.value();
                     state.stack.pc() = index - 1;
                 }
             }

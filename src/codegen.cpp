@@ -882,9 +882,8 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
 
 void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, Map_Object &obj) {
     unsigned int offset = this->currentCodeOffset();
-    auto value = DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), offset);
     for(auto &e : node.getPatternNodes()) {
-        obj.set(newObject(*e), DSValue(value));
+        obj.set(newObject(*e), DSValue::createNum(offset));
     }
 }
 

@@ -40,7 +40,7 @@ unsigned int DSValue::getTypeID() const {
 std::string DSValue::toString() const {
     switch(this->kind()) {
     case DSValueKind::NUMBER:
-        return std::to_string(static_cast<uint64_t>(this->val));
+        return std::to_string(static_cast<uint64_t>(this->value()));
     case DSValueKind::BOOL:
         return this->asBool() ? "true" : "false";
     case DSValueKind::SIG:
