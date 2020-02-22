@@ -29,6 +29,8 @@ unsigned int DSValue::getTypeID() const {
     switch(this->kind()) {
     case DSValueKind::BOOL:
         return static_cast<unsigned int>(TYPE::Boolean);
+    case DSValueKind::SIG:
+        return static_cast<unsigned int>(TYPE::Signal);
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         return this->get()->getType()->getTypeID();
@@ -41,6 +43,8 @@ std::string DSValue::toString() const {
         return std::to_string(static_cast<uint64_t>(this->val));
     case DSValueKind::BOOL:
         return this->asBool() ? "true" : "false";
+    case DSValueKind::SIG:
+        return std::to_string(this->asSig());
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         break;
@@ -156,13 +160,14 @@ size_t DSValue::hash() const {
             break;
         }
     }
-    return std::hash<long>()(this->val);
+    return std::hash<int64_t>()(this->val);
 }
 
 bool DSValue::compare(const DSValue &o) const {
     assert(this->kind() == o.kind());
     switch(this->kind()) {
-    case DSValueKind::BOOL: {
+    case DSValueKind::BOOL:
+    case DSValueKind::SIG: {
         int left = this->value();
         int right = o.value();
         return left < right;

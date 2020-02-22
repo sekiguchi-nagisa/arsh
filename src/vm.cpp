@@ -833,7 +833,7 @@ bool VM::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
     state.stack.reserve(3);
     state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
     state.stack.push(std::move(func));
-    state.stack.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Signal), sigNum));
+    state.stack.push(DSValue::createSig(sigNum));
 
     return windStackFrame(state, 3, 3, &signalTrampoline);
 }
@@ -1186,7 +1186,8 @@ bool VM::mainLoop(DSState &state) {
             switch(state.stack.peek().kind()) {
             case DSValueKind::OBJECT:
             case DSValueKind::INVALID:
-            case DSValueKind::BOOL: {
+            case DSValueKind::BOOL:
+            case DSValueKind::SIG: {
                 state.stack.storeThrownObject();
                 vmerror;
             }

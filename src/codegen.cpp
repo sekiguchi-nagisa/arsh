@@ -348,7 +348,7 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
         value = DSValue::create<Float_Object>(node.getType(), node.getFloatValue());
         break;
     case NumberNode::Signal:
-        value = DSValue::create<Int_Object>(node.getType(), node.getIntValue());
+        value = DSValue::createSig(node.getIntValue());
         break;
     }
     this->emitLdcIns(std::move(value));
@@ -837,6 +837,9 @@ static DSValue newObject(Node &constNode) {
     auto kind = constNode.getNodeKind();
     assert(kind == NodeKind::Number || kind == NodeKind::String);
     if(kind == NodeKind::Number) {
+        if(constNode.getType().is(TYPE::Signal)) {
+            return DSValue::createSig(static_cast<NumberNode&>(constNode).getIntValue());
+        }
         return DSValue::create<Int_Object>(constNode.getType(), static_cast<NumberNode&>(constNode).getIntValue());
     }
     return DSValue::create<String_Object>(constNode.getType(), static_cast<StringNode&>(constNode).getValue());

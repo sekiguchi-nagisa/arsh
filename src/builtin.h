@@ -1089,8 +1089,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
 //!bind: function name($this : Signal) : String
 YDSH_METHOD signal_name(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_name);
-    auto *obj = typeAs<Int_Object>(LOCAL(0));
-    const char *name = getSignalName(obj->getValue());
+    const char *name = getSignalName(LOCAL(0).asSig());
     assert(name != nullptr);
     RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), name));
 }
@@ -1098,22 +1097,20 @@ YDSH_METHOD signal_name(RuntimeContext &ctx) {
 //!bind: function value($this : Signal) : Int32
 YDSH_METHOD signal_value(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_value);
-    auto *obj = typeAs<Int_Object>(LOCAL(0));
-    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), obj->getValue()));
+    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Int32), LOCAL(0).asSig()));
 }
 
 //!bind: function message($this : Signal) : String
 YDSH_METHOD signal_message(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_message);
-    auto *obj = typeAs<Int_Object>(LOCAL(0));
-    const char *value = strsignal(obj->getValue());
+    const char *value = strsignal(LOCAL(0).asSig());
     RET(DSValue::create<String_Object>(ctx.symbolTable.get(TYPE::String), value));
 }
 
 //!bind: function kill($this : Signal, $pid : Int32) : Void
 YDSH_METHOD signal_kill(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_kill);
-    int sigNum = typeAs<Int_Object>(LOCAL(0))->getValue();
+    int sigNum = LOCAL(0).asSig();
     int pid = typeAs<Int_Object>(LOCAL(1))->getValue();
     if(kill(pid, sigNum) != 0) {
         int num = errno;
@@ -1127,19 +1124,13 @@ YDSH_METHOD signal_kill(RuntimeContext &ctx) {
 //!bind: function $OP_EQ($this : Signal, $target : Signal) : Boolean
 YDSH_METHOD signal_eq(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_eq);
-    int left = typeAs<Int_Object>(LOCAL(0))->getValue();
-    int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    bool ret = left == right;
-    RET_BOOL(ret);
+    RET_BOOL(LOCAL(0).asSig() == LOCAL(1).asSig());
 }
 
 //!bind: function $OP_NE($this : Signal, $target : Signal) : Boolean
 YDSH_METHOD signal_ne(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_ne);
-    int left = typeAs<Int_Object>(LOCAL(0))->getValue();
-    int right = typeAs<Int_Object>(LOCAL(1))->getValue();
-    bool ret = left != right;
-    RET_BOOL(ret);
+    RET_BOOL(LOCAL(0).asSig() != LOCAL(1).asSig());
 }
 
 
@@ -1150,15 +1141,14 @@ YDSH_METHOD signal_ne(RuntimeContext &ctx) {
 //!bind: function $OP_GET($this : Signals, $s : Signal) : Func<Void,[Signal]>
 YDSH_METHOD signals_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_get);
-    int sigNum = typeAs<Int_Object>(LOCAL(1))->getValue();
+    int sigNum = LOCAL(1).asSig();
     RET(getSignalHandler(ctx, sigNum));
 }
 
 //!bind: function $OP_SET($this : Signals, $s : Signal, $action : Func<Void,[Signal]>) : Void
 YDSH_METHOD signals_set(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_set);
-    auto *obj = typeAs<Int_Object>(LOCAL(1));
-    installSignalHandler(ctx, obj->getValue(), LOCAL(2));
+    installSignalHandler(ctx, LOCAL(1).asSig(), LOCAL(2));
     RET_VOID;
 }
 
@@ -1170,7 +1160,7 @@ YDSH_METHOD signals_signal(RuntimeContext &ctx) {
     if(sigNum < 0) {
         RET(DSValue::createInvalid());
     }
-    RET(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Signal), sigNum));
+    RET(DSValue::createSig(sigNum));
 }
 
 //!bind: function list($this : Signals) : Array<Signal>
@@ -1183,7 +1173,7 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
     auto v = DSValue::create<Array_Object>(*type);
     auto *array = typeAs<Array_Object>(v);
     for(auto &e : getUniqueSignalList()) {
-        array->append(DSValue::create<Int_Object>(ctx.symbolTable.get(TYPE::Signal), e));
+        array->append(DSValue::createSig(e));
     }
     RET(v);
 }
@@ -1842,8 +1832,7 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
 YDSH_METHOD job_raise(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_raise);
     auto *obj = typeAs<JobImpl>(LOCAL(0));
-    auto *sig = typeAs<Int_Object>(LOCAL(1));
-    obj->send(sig->getValue());
+    obj->send(LOCAL(1).asSig());
     RET_VOID;
 }
 

@@ -95,6 +95,7 @@ enum class DSValueKind : unsigned char {
     NUMBER = 130,
     INVALID = 132,
     BOOL = 134,
+    SIG = 136,
 };
 
 class DSValue {
@@ -244,6 +245,12 @@ public:
         return this->value() == 1;
     }
 
+    int asSig() const {
+        assert(this->kind() == DSValueKind::SIG);
+        unsigned int v = this->value();
+        return v;
+    }
+
     std::string toString() const;
 
     /**
@@ -299,6 +306,12 @@ public:
     static DSValue createBool(bool v) {
         auto mask = static_cast<uint64_t>(DSValueKind::BOOL) << 56;
         return DSValue(mask | (v ? 1 : 0));
+    }
+
+    static DSValue createSig(int num) {
+        auto mask = static_cast<uint64_t>(DSValueKind::SIG) << 56;
+        unsigned int v = num;
+        return DSValue(mask | v);
     }
 };
 
