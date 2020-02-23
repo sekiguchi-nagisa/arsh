@@ -129,7 +129,7 @@ public:
     ~DSState() = default;
 
     int getExitStatus() const {
-        return typeAs<Int_Object>(this->getGlobal(BuiltinVarOffset::EXIT_STATUS))->getValue();
+        return this->getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
     }
 
     const char *getScriptDir() const {
@@ -185,8 +185,7 @@ public:
     }
 
     void updateExitStatus(unsigned int status) {
-        this->setGlobal(BuiltinVarOffset::EXIT_STATUS,
-                DSValue::create<Int_Object>(this->symbolTable.get(TYPE::Int32), status));
+        this->setGlobal(BuiltinVarOffset::EXIT_STATUS, DSValue::createInt(status));
     }
 
     void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);
@@ -196,8 +195,8 @@ public:
     }
 
     bool isRootShell() const {
-        int shellpid = typeAs<Int_Object>(this->getGlobal(BuiltinVarOffset::SHELL_PID))->getValue();
-        int pid = typeAs<Int_Object>(this->getGlobal(BuiltinVarOffset::PID))->getValue();
+        int shellpid = this->getGlobal(BuiltinVarOffset::SHELL_PID).asInt();
+        int pid = this->getGlobal(BuiltinVarOffset::PID).asInt();
         return shellpid == pid;
     }
 

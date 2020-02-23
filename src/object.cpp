@@ -31,6 +31,8 @@ unsigned int DSValue::getTypeID() const {
         return static_cast<unsigned int>(TYPE::Boolean);
     case DSValueKind::SIG:
         return static_cast<unsigned int>(TYPE::Signal);
+    case DSValueKind::INT:
+        return static_cast<unsigned int>(TYPE::Int32);
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         return this->get()->getType()->getTypeID();
@@ -45,14 +47,14 @@ std::string DSValue::toString() const {
         return this->asBool() ? "true" : "false";
     case DSValueKind::SIG:
         return std::to_string(this->asSig());
+    case DSValueKind::INT:
+        return std::to_string(this->asInt());
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         break;
     }
 
     switch(this->get()->getKind()) {
-    case ObjectKind::INT:
-        return std::to_string(typeAs<Int_Object>(*this)->getValue());
     case ObjectKind::LONG:
         return std::to_string(typeAs<Long_Object>(*this)->getValue());
     case ObjectKind::FLOAT:
@@ -127,8 +129,6 @@ bool DSValue::equals(const DSValue &o) const {
     if(this->isObject()) {
         assert(this->get()->getKind() == o.get()->getKind());
         switch(this->get()->getKind()) {
-        case ObjectKind::INT:
-            return static_cast<Int_Object*>(this->get())->getValue() == typeAs<Int_Object>(o)->getValue();
         case ObjectKind::LONG:
             return static_cast<Long_Object*>(this->get())->getValue() == typeAs<Long_Object>(o)->getValue();
         case ObjectKind::FLOAT:
@@ -148,8 +148,6 @@ bool DSValue::equals(const DSValue &o) const {
 size_t DSValue::hash() const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
-        case ObjectKind::INT:
-            return std::hash<int>()(static_cast<Int_Object*>(this->get())->getValue());
         case ObjectKind::LONG:
             return std::hash<long>()(static_cast<Long_Object*>(this->get())->getValue());
         case ObjectKind::FLOAT:
@@ -172,6 +170,8 @@ bool DSValue::compare(const DSValue &o) const {
         int right = o.value();
         return left < right;
     }
+    case DSValueKind::INT:
+        return this->asInt() < o.asInt();
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         break;
@@ -179,8 +179,6 @@ bool DSValue::compare(const DSValue &o) const {
 
     assert(this->get()->getKind() == o.get()->getKind());
     switch(this->get()->getKind()) {
-    case ObjectKind::INT:
-        return static_cast<Int_Object*>(this->get())->getValue() < typeAs<Int_Object>(o)->getValue();
     case ObjectKind::LONG:
         return static_cast<Long_Object*>(this->get())->getValue() < typeAs<Long_Object>(o)->getValue();
     case ObjectKind::FLOAT:

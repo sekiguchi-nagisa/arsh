@@ -51,8 +51,8 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
         st.setGlobal(st.symbolTable.getTermHookIndex(), DSValue::createInvalid());
 
         // update PID, PPID
-        st.setGlobal(BuiltinVarOffset::PID, DSValue::create<Int_Object>(st.symbolTable.get(TYPE::Int32), getpid()));
-        st.setGlobal(BuiltinVarOffset::PPID, DSValue::create<Int_Object>(st.symbolTable.get(TYPE::Int32), getppid()));
+        st.setGlobal(BuiltinVarOffset::PID, DSValue::createInt(getpid()));
+        st.setGlobal(BuiltinVarOffset::PPID, DSValue::createInt(getppid()));
 
         st.subshellLevel++;
     } else if(pid > 0) {

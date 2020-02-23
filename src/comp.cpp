@@ -541,8 +541,7 @@ public:
 
     void operator()(Array_Object &ret) override {
         auto result = callFunction(this->state, std::move(this->hook),
-                makeArgs(std::move(this->tokens),
-                        DSValue::create<Int_Object>(this->state.symbolTable.get(TYPE::Int32), this->tokenIndex)));
+                makeArgs(std::move(this->tokens), DSValue::createInt(this->tokenIndex)));
         if(this->state.hasError()) {
             return;
         }

@@ -63,9 +63,8 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
     obj->refValues().clear();
     obj->refValues().reserve(size + (mergeExitStatus ? 1 : 0));
 
-    auto &type = *static_cast<ReifiedType *>(obj->getType())->getElementTypes()[0];
     for(unsigned int i = 0; i < size; i++) {
-        obj->refValues().push_back(DSValue::create<Int_Object>(type, procs[i].exitStatus()));
+        obj->refValues().push_back(DSValue::createInt(procs[i].exitStatus()));
     }
     if(mergeExitStatus) {
         obj->refValues().push_back(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
@@ -143,8 +142,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSVal
         auto argv = typeAs<Array_Object>(state.stack.getLocal(UDC_PARAM_ARGV));
         auto cmdName = argv->takeFirst();
         const unsigned int argSize = argv->getValues().size();
-        state.stack.setLocal(UDC_PARAM_ARGV + 1,
-                             DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), argSize));   // #
+        state.stack.setLocal(UDC_PARAM_ARGV + 1, DSValue::createInt(argSize));   // #
         state.stack.setLocal(UDC_PARAM_ARGV + 2, std::move(cmdName)); // 0
         unsigned int limit = 9;
         if(argSize < limit) {
@@ -1143,7 +1141,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(RETURN_UDC) {
             auto v = state.stack.pop();
             state.stack.unwind();
-            pushExitStatus(state, typeAs<Int_Object>(v)->getValue());
+            pushExitStatus(state, v.asInt());
             if(state.stack.checkVMReturn()) {
                 return true;
             }
@@ -1187,7 +1185,8 @@ bool VM::mainLoop(DSState &state) {
             case DSValueKind::OBJECT:
             case DSValueKind::INVALID:
             case DSValueKind::BOOL:
-            case DSValueKind::SIG: {
+            case DSValueKind::SIG:
+            case DSValueKind::INT: {
                 state.stack.storeThrownObject();
                 vmerror;
             }
@@ -1214,7 +1213,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(I32_TO_I64) {
-            int v = typeAs<Int_Object>(state.stack.pop())->getValue();
+            int v = state.stack.pop().asInt();
             long l = v;
             state.stack.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Int64), l));
             vmnext;
@@ -1222,11 +1221,11 @@ bool VM::mainLoop(DSState &state) {
         vmcase(I64_TO_I32) {
             unsigned long l = typeAs<Long_Object>(state.stack.pop())->getValue();
             auto v = static_cast<unsigned int>(l);
-            state.stack.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), v));
+            state.stack.push(DSValue::createInt(v));
             vmnext;
         }
         vmcase(I32_TO_D) {
-            int v = typeAs<Int_Object>(state.stack.pop())->getValue();
+            int v = state.stack.pop().asInt();
             auto d = static_cast<double>(v);
             state.stack.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
             vmnext;
@@ -1240,7 +1239,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(D_TO_I32) {
             double d = typeAs<Float_Object>(state.stack.pop())->getValue();
             auto v = static_cast<int>(d);
-            state.stack.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), v));
+            state.stack.push(DSValue::createInt(v));
             vmnext;
         }
         vmcase(D_TO_I64) {
@@ -1352,7 +1351,7 @@ bool VM::mainLoop(DSState &state) {
             std::default_random_engine engine(rand());
             std::uniform_int_distribution<int> dist;
             int v = dist(engine);
-            state.stack.push(DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), v));
+            state.stack.push(DSValue::createInt(v));
             vmnext;
         }
         vmcase(GET_SECOND) {
@@ -1690,7 +1689,7 @@ void VM::callTermHook(DSState &state, DSErrorKind kind, DSValue &&except) {
 
     auto oldExitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
     auto args = makeArgs(
-            DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), termKind),
+            DSValue::createInt(termKind),
             termKind == TERM_ON_ERR ? std::move(except) : oldExitStatus
     );
 

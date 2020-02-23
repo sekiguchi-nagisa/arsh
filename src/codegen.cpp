@@ -339,7 +339,7 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     DSValue value;
     switch(node.kind) {
     case NumberNode::Int32:
-        value = DSValue::create<Int_Object>(node.getType(), node.getIntValue());
+        value = DSValue::createInt(node.getIntValue());
         break;
     case NumberNode::Int64:
         value = DSValue::create<Long_Object>(node.getType(), node.getLongValue());
@@ -840,7 +840,7 @@ static DSValue newObject(Node &constNode) {
         if(constNode.getType().is(TYPE::Signal)) {
             return DSValue::createSig(static_cast<NumberNode&>(constNode).getIntValue());
         }
-        return DSValue::create<Int_Object>(constNode.getType(), static_cast<NumberNode&>(constNode).getIntValue());
+        return DSValue::createInt(static_cast<NumberNode&>(constNode).getIntValue());
     }
     return DSValue::create<String_Object>(constNode.getType(), static_cast<StringNode&>(constNode).getValue());
 }

@@ -203,13 +203,13 @@ static void initBuiltinVar(DSState &state) {
      * process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PID", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), getpid()));
+    bindVariable(state, "PID", DSValue::createInt(getpid()));
 
     /**
      * parent process id of current process.
      * must be Int_Object
      */
-    bindVariable(state, "PPID", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), getppid()));
+    bindVariable(state, "PPID", DSValue::createInt(getppid()));
 
     /**
      * must be Long_Object.
@@ -248,13 +248,13 @@ static void initBuiltinVar(DSState &state) {
      * contains exit status of most recent executed process. ($?)
      * must be Int_Object
      */
-    bindVariable(state, "?", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), 0), FieldAttribute());
+    bindVariable(state, "?", DSValue::createInt(0), FieldAttribute());
 
     /**
      * process id of root shell. ($$)
      * must be Int_Object
      */
-    bindVariable(state, "$", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), getpid()));
+    bindVariable(state, "$", DSValue::createInt(getpid()));
 
     /**
      * contains script argument(exclude script name). ($@)
@@ -266,7 +266,7 @@ static void initBuiltinVar(DSState &state) {
      * contains size of argument. ($#)
      * must be Int_Object
      */
-    bindVariable(state, "#", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), 0));
+    bindVariable(state, "#", DSValue::createInt(0));
 
     /**
      * represent shell or shell script name.
@@ -288,13 +288,13 @@ static void initBuiltinVar(DSState &state) {
      * uid of shell
      * must be Int_Object
      */
-    bindVariable(state, "UID", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), getuid()));
+    bindVariable(state, "UID", DSValue::createInt(getuid()));
 
     /**
      * euid of shell
      * must be Int_Object
      */
-    bindVariable(state, "EUID", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), geteuid()));
+    bindVariable(state, "EUID", DSValue::createInt(geteuid()));
 
     struct utsname name{};
     if(uname(&name) == -1) {
@@ -320,7 +320,7 @@ static void initBuiltinVar(DSState &state) {
      * dummy object for random number
      * must be Int_Object
      */
-    bindVariable(state, "RANDOM", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), 0),
+    bindVariable(state, "RANDOM", DSValue::createInt(0),
                  FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
 
     /**
@@ -347,9 +347,9 @@ static void initBuiltinVar(DSState &state) {
     /**
      * must be Int_Object
      */
-    bindVariable(state, "ON_EXIT", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), TERM_ON_EXIT));
-    bindVariable(state, "ON_ERR", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), TERM_ON_ERR));
-    bindVariable(state, "ON_ASSERT", DSValue::create<Int_Object>(state.symbolTable.get(TYPE::Int32), TERM_ON_ASSERT));
+    bindVariable(state, "ON_EXIT", DSValue::createInt(TERM_ON_EXIT));
+    bindVariable(state, "ON_ERR", DSValue::createInt(TERM_ON_ERR));
+    bindVariable(state, "ON_ASSERT", DSValue::createInt(TERM_ON_ASSERT));
 }
 
 static void loadEmbeddedScript(DSState *state) {
@@ -446,8 +446,7 @@ static void finalizeScriptArg(DSState *st) {
 
     // update argument size
     const unsigned int size = array->getValues().size();
-    st->setGlobal(BuiltinVarOffset::ARGS_SIZE,
-            DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), size));
+    st->setGlobal(BuiltinVarOffset::ARGS_SIZE, DSValue::createInt(size));
 
     unsigned int limit = 9;
     if(size < limit) {
@@ -763,8 +762,7 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
     }
 
     auto args = makeArgs(
-            DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), op),
-            DSValue::create<Int_Object>(st->symbolTable.get(TYPE::Int32), index),
+            DSValue::createInt(op), DSValue::createInt(index),
             (value && *value) ? DSValue::create<String_Object>(st->symbolTable.get(TYPE::String), value)
                     : st->emptyStrObj
     );
@@ -779,7 +777,7 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
     switch(op) {
     case DS_EDIT_HIST_SIZE:
         if(type.is(TYPE::Int32)) {
-            return typeAs<Int_Object>(st->editOpReply)->getValue();
+            return st->editOpReply.asInt();
         }
         return 0;
     case DS_EDIT_HIST_GET:

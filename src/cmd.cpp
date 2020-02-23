@@ -526,7 +526,7 @@ static int builtin_echo(DSState &, Array_Object &argvObj) {
 }
 
 static int parseExitStatus(const DSState &state, const Array_Object &argvObj) {
-    int ret = typeAs<Int_Object>(state.getGlobal(BuiltinVarOffset::EXIT_STATUS))->getValue();
+    int ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
     if(argvObj.getValues().size() > 1) {
         const char *num = str(argvObj.getValues()[1]);
         auto pair = convertToNum<int64_t>(num);

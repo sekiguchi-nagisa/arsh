@@ -38,7 +38,6 @@ class DSValue;
 
 enum ObjectKind {
     DUMMY,
-    INT,
     LONG,
     FLOAT,
     STRING,
@@ -92,10 +91,11 @@ public:
 
 enum class DSValueKind : unsigned char {
     OBJECT = 0,
-    NUMBER = 130,
+    NUMBER = 130,   // uint32_t
     INVALID = 132,
     BOOL = 134,
-    SIG = 136,
+    SIG = 136,  // int32_t
+    INT = 138,  // int32_t
 };
 
 class DSValue {
@@ -251,6 +251,12 @@ public:
         return v;
     }
 
+    int asInt() const {
+        assert(this->kind() == DSValueKind::INT);
+        unsigned int v = this->value();
+        return v;
+    }
+
     std::string toString() const;
 
     /**
@@ -313,6 +319,12 @@ public:
         unsigned int v = num;
         return DSValue(mask | v);
     }
+
+    static DSValue createInt(int num) {
+        auto mask = static_cast<uint64_t>(DSValueKind::INT) << 56;
+        unsigned int v = num;
+        return DSValue(mask | v);
+    }
 };
 
 template <typename T>
@@ -344,23 +356,6 @@ inline T *typeAs(const DSValue &value) noexcept {
     return static_cast<T*>(value.get());
 
 }
-
-class Int_Object : public DSObject {
-protected:
-    int value;
-
-    Int_Object(ObjectKind kind, DSType &type, int value) :
-            DSObject(kind, type), value(value) {}
-
-public:
-    Int_Object(DSType &type, int value) : Int_Object(ObjectKind::INT, type, value) { }
-
-    ~Int_Object() override = default;
-
-    int getValue() const {
-        return this->value;
-    }
-};
 
 class UnixFD_Object : public DSObject {
 private:

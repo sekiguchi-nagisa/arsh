@@ -103,7 +103,7 @@ protected:
 
 TEST_F(VMTest, base) {
     ASSERT_NO_FATAL_FAILURE(this->eval("12", DS_ERROR_KIND_SUCCESS, OpCode::POP, [&]{
-        ASSERT_EQ(12, typeAs<Int_Object>(this->state->getCallStack().peek())->getValue());
+        ASSERT_EQ(12, this->state->getCallStack().peek().asInt());
     }));
 }
 
