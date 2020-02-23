@@ -61,7 +61,7 @@ std::string DSValue::toString() const {
         return createStrRef(*this).toString();
     case ObjectKind::FD: {
         std::string str = "/dev/fd/";
-        str += std::to_string(typeAs<Int_Object>(*this)->getValue());
+        str += std::to_string(typeAs<UnixFD_Object>(*this)->getValue());
         return str;
     }
     case ObjectKind::REGEX:
@@ -201,19 +201,17 @@ bool DSValue::compare(const DSValue &o) const {
 // ###########################
 
 UnixFD_Object::~UnixFD_Object() {
-    int fd = this->getValue();
-    if(fd > STDERR_FILENO) {
-        close(this->getValue());    // do not close standard io file descriptor
+    if(this->fd > STDERR_FILENO) {
+        close(this->fd);    // do not close standard io file descriptor
     }
 }
 
 bool UnixFD_Object::closeOnExec(bool close) {
-    int fd = this->getValue();
-    if(fd <= STDERR_FILENO) {
+    if(this->fd <= STDERR_FILENO) {
         return false;
     }
 
-    int flag = fcntl(fd, F_GETFD);
+    int flag = fcntl(this->fd, F_GETFD);
     if(flag == -1) {
         return false;
     }
@@ -222,7 +220,7 @@ bool UnixFD_Object::closeOnExec(bool close) {
     } else {
         unsetFlag(flag, FD_CLOEXEC);
     }
-    return fcntl(fd, F_SETFD, flag) != -1;
+    return fcntl(this->fd, F_SETFD, flag) != -1;
 }
 
 // ##########################

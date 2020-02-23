@@ -362,16 +362,20 @@ public:
     }
 };
 
-struct UnixFD_Object : public Int_Object {
-    UnixFD_Object(DSType &type, int fd) : Int_Object(ObjectKind::FD, type, fd) {}
+class UnixFD_Object : public DSObject {
+private:
+    int fd;
+
+public:
+    UnixFD_Object(DSType &type, int fd) : DSObject(ObjectKind::FD, type), fd(fd) {}
     ~UnixFD_Object() override;
 
     int tryToClose(bool forceClose) {
-        if(!forceClose && this->value < 0) {
+        if(!forceClose && this->fd < 0) {
             return 0;
         }
-        int s = close(this->value);
-        this->value = -1;
+        int s = close(this->fd);
+        this->fd = -1;
         return s;
     }
 
@@ -383,6 +387,10 @@ struct UnixFD_Object : public Int_Object {
      * if failed, return false
      */
     bool closeOnExec(bool close);
+
+    int getValue() const {
+        return this->fd;
+    }
 };
 
 class Long_Object : public DSObject {
