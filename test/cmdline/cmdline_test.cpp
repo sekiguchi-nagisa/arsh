@@ -188,15 +188,13 @@ DSCode: top level
   number of local variable: 0
   number of global variable: 51
 Code:
-   8: LOAD_CONST  0
+   8: PUSH_INT  34
   10: STORE_GLOBAL  50
-  13: LOAD_CONST  1
+  13: PUSH_INT  34
   15: CALL_NATIVE2  1  1
   18: POP
   19: RETURN
 Constant Pool:
-  0: Int32 34
-  1: Int32 34
 Line Number Table:
   lineNum: 1, address: 15
 Exception Table:
@@ -215,19 +213,17 @@ Code:
    8: LOAD_CONST  0
   10: STORE_GLOBAL  50
   13: LOAD_GLOBAL  50
-  16: LOAD_CONST  1
+  16: PUSH_INT  1
   18: CALL_FUNC  1
   20: ENTER_FINALLY  8
   23: GOTO  32
-  28: LOAD_CONST  2
+  28: PUSH_INT  3
   30: POP
   31: EXIT_FINALLY
   32: POP
   33: RETURN
 Constant Pool:
   0: (Any) -> Boolean function(f)
-  1: Int32 1
-  2: Int32 3
 Line Number Table:
   lineNum: 1, address: 18
 Exception Table:

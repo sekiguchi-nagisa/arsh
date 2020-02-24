@@ -338,9 +338,15 @@ void ByteCodeGenerator::visitTypeNode(TypeNode &) {
 void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     DSValue value;
     switch(node.kind) {
-    case NumberNode::Int32:
-        value = DSValue::createInt(node.getIntValue());
+    case NumberNode::Int32: {
+        int num = node.getIntValue();
+        if(num >= 0 && num <= UINT8_MAX) {
+            this->emit1byteIns(OpCode::PUSH_INT, static_cast<unsigned char>(num));
+            return;
+        }
+        value = DSValue::createInt(num);
         break;
+    }
     case NumberNode::Int64:
         value = DSValue::create<Long_Object>(node.getType(), node.getLongValue());
         break;
