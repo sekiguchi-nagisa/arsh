@@ -354,8 +354,9 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
         value = DSValue::create<Float_Object>(node.getType(), node.getFloatValue());
         break;
     case NumberNode::Signal:
-        value = DSValue::createSig(node.getIntValue());
-        break;
+        assert(node.getIntValue() >= 0 && node.getIntValue() <= UINT8_MAX);
+        this->emit1byteIns(OpCode::PUSH_SIG, node.getIntValue());
+        return;
     }
     this->emitLdcIns(std::move(value));
 }

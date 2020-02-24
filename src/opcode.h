@@ -31,6 +31,7 @@ namespace ydsh {
     OP(PUSH_NULL    , 0,  1) \
     OP(PUSH_TRUE    , 0,  1) \
     OP(PUSH_FALSE   , 0,  1) \
+    OP(PUSH_SIG     , 1,  1) \
     OP(PUSH_INT     , 1,  1) \
     OP(PUSH_ESTRING , 0,  1) \
     OP(LOAD_CONST   , 1,  1) \

@@ -943,6 +943,11 @@ bool VM::mainLoop(DSState &state) {
             state.stack.push(DSValue::createBool(false));
             vmnext;
         }
+        vmcase(PUSH_SIG) {
+            unsigned char value = read8(GET_CODE(state), ++state.stack.pc());
+            state.stack.push(DSValue::createSig(value));
+            vmnext;
+        }
         vmcase(PUSH_INT) {
             unsigned char value = read8(GET_CODE(state), ++state.stack.pc());
             state.stack.push(DSValue::createInt(value));

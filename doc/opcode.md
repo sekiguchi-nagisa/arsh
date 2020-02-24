@@ -10,6 +10,7 @@
 | PUSH_NULL     |                                | -> value                                     | push the null value onto the stack                 |
 | PUSH_TRUE     |                                | -> value                                     | push the true value onto the stack                 |
 | PUSH_FALSE    |                                | -> value                                     | push the false value onto the stack                |
+| PUSH_SIG      | 1: byte1                       | -> value                                     | push signal literal onto the stack                 |
 | PUSH_INT      | 1: byte1                       | -> value                                     | push 8bit int value onto the stack                 |
 | PUSH_ESTRING  |                                | -> value                                     | push the empty string value onto the stack         |
 | LOAD_CONST    | 1: byte1                       | -> value                                     | load a constant from the constant pool             |
