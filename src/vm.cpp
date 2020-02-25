@@ -88,11 +88,10 @@ bool VM::checkCast(DSState &state, const DSType &targetType) {
 }
 
 bool VM::checkAssertion(DSState &state) {
-    auto msg(state.stack.pop());
-    assert(typeAs<String_Object>(msg)->getValue() != nullptr);
-
+    auto msg = state.stack.pop();
+    auto ref = createStrRef(msg);
     if(!state.stack.pop().asBool()) {
-        raiseError(state, TYPE::_AssertFail, std::string(typeAs<String_Object>(msg)->getValue()));
+        raiseError(state, TYPE::_AssertFail, ref.toString());
         return false;
     }
     return true;
@@ -103,12 +102,11 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
     if(hasDefault) {
         dValue = state.stack.pop();
     }
-    DSValue nameObj(state.stack.pop());
-    const char *name = typeAs<String_Object>(nameObj)->getValue();
-
+    auto nameObj = state.stack.pop();
+    const char *name = createStrRef(nameObj).data();
     const char *env = getenv(name);
     if(env == nullptr && hasDefault) {
-        setenv(name, typeAs<String_Object>(dValue)->getValue(), 1);
+        setenv(name, createStrRef(dValue).data(), 1);
         env = getenv(name);
     }
 
@@ -188,9 +186,9 @@ static DSValue readAsStr(const DSState &state, int fd) {
 }
 
 static DSValue readAsStrArray(const DSState &state, int fd) {
-    auto *ifsObj = typeAs<String_Object>(state.getGlobal(BuiltinVarOffset::IFS));
-    const char *ifs = ifsObj->getValue();
-    const unsigned ifsSize = ifsObj->size();
+    auto ifsRef = createStrRef(state.getGlobal(BuiltinVarOffset::IFS));
+    const char *ifs = ifsRef.data();
+    const unsigned ifsSize = ifsRef.size();
     unsigned int skipCount = 1;
 
     char buf[256];
@@ -904,11 +902,11 @@ bool VM::mainLoop(DSState &state) {
 
             auto &stackTopType = state.symbolTable.get(v);
             assert(!stackTopType.isVoidType());
-            auto *strObj = typeAs<String_Object>(state.stack.peek());
+            auto ref = createStrRef(state.stack.peek());
             std::string value = ": ";
             value += state.symbolTable.getTypeName(stackTopType);
             value += " = ";
-            value.append(strObj->getValue(), strObj->size());
+            value.append(ref.data(), ref.size());
             value += "\n";
             fwrite(value.c_str(), sizeof(char), value.size(), stdout);
             fflush(stdout);
@@ -1024,8 +1022,7 @@ bool VM::mainLoop(DSState &state) {
             DSValue value = state.stack.pop();
             DSValue name = state.stack.pop();
 
-            setenv(typeAs<String_Object>(name)->getValue(),
-                   typeAs<String_Object>(value)->getValue(), 1);//FIXME: check return value and throw
+            setenv(str(name), str(value), 1);//FIXME: check return value and throw
             vmnext;
         }
         vmcase(POP) {
@@ -1281,7 +1278,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(EXPAND_TILDE) {
-            std::string str = typeAs<String_Object>(state.stack.pop())->getValue();
+            std::string str = createStrRef(state.stack.pop()).toString();
             expandTilde(str);
             state.stack.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str)));
             vmnext;
@@ -1663,8 +1660,8 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
             state.stack.clearThrownObject();
             fputs("cannot obtain string representation\n", stderr);
         } else if(!bt) {
-            fwrite(typeAs<String_Object>(ret)->getValue(),
-                   sizeof(char), typeAs<String_Object>(ret)->size(), stderr);
+            auto ref = createStrRef(ret);
+            fwrite(ref.data(), sizeof(char), ref.size(), stderr);
             fputc('\n', stderr);
         }
     } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state.option, DS_OPTION_TRACE_EXIT)) {

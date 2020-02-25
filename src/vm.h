@@ -133,7 +133,7 @@ public:
     }
 
     const char *getScriptDir() const {
-        return typeAs<String_Object>(this->getGlobal(BuiltinVarOffset::SCRIPT_DIR))->getValue();
+        return createStrRef(this->getGlobal(BuiltinVarOffset::SCRIPT_DIR)).data();
     }
 
     bool hasError() const {

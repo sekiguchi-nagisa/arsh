@@ -709,7 +709,7 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
         }
         *value = nullptr;
         if(index < compreply->getValues().size()) {
-            *value = typeAs<String_Object>(compreply->getValues()[index])->getValue();
+            *value = createStrRef(compreply->getValues()[index]).data();
         }
         break;
     case DS_COMP_SIZE:
@@ -789,7 +789,7 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
         if(op == DS_EDIT_PROMPT) {
             st->prompt = st->editOpReply;
         }
-        *buf = typeAs<String_Object>(st->editOpReply)->getValue();
+        *buf = createStrRef(st->editOpReply).data();
         break;
     default:
         break;

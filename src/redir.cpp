@@ -63,7 +63,7 @@ RedirConfig::~RedirConfig() {
     }
 }
 
-static int doIOHere(const String_Object &value) {
+static int doIOHere(const StringRef &value) {
     pipe_t pipe[1];
     initAllPipe(1, pipe);
 
@@ -71,7 +71,7 @@ static int doIOHere(const String_Object &value) {
 
     if(value.size() + 1 <= PIPE_BUF) {
         int errnum = 0;
-        if(write(pipe[0][WRITE_PIPE], value.getValue(), sizeof(char) * value.size()) < 0) {
+        if(write(pipe[0][WRITE_PIPE], value.data(), sizeof(char) * value.size()) < 0) {
             errnum = errno;
         }
         if(errnum == 0 && write(pipe[0][WRITE_PIPE], "\n", 1) < 0) {
@@ -89,7 +89,7 @@ static int doIOHere(const String_Object &value) {
             if(pid == 0) {  // child
                 close(pipe[0][READ_PIPE]);
                 dup2(pipe[0][WRITE_PIPE], STDOUT_FILENO);
-                if(write(STDOUT_FILENO, value.getValue(), value.size()) < 0) {
+                if(write(STDOUT_FILENO, value.data(), value.size()) < 0) {
                     exit(1);
                 }
                 if(write(STDOUT_FILENO, "\n", 1) < 0) {
@@ -170,7 +170,7 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
         if(dup2(STDERR_FILENO, STDOUT_FILENO) < 0) { return errno; }
         return 0;
     case RedirOP::HERE_STR:
-        return doIOHere(*typeAs<String_Object>(pair.second));
+        return doIOHere(createStrRef(pair.second));
     case RedirOP::NOP:
         break;
     }
