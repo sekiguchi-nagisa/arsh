@@ -782,7 +782,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
 
     auto *argv = typeAs<Array_Object>(state.stack.peekByOffset(1));
     if(valueType.is(TYPE::String)) {  // String
-        if(skipEmptyStr && typeAs<String_Object>(value)->empty()) {
+        if(skipEmptyStr && createStrRef(value).empty()) {
             return;
         }
         argv->append(std::move(value));
@@ -803,7 +803,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
     assert(valueType.is(TYPE::StringArray));  // Array<String>
     auto *arrayObj = typeAs<Array_Object>(value);
     for(auto &element : arrayObj->getValues()) {
-        if(typeAs<String_Object>(element)->empty()) {
+        if(createStrRef(element).empty()) {
             continue;
         }
         argv->append(element);

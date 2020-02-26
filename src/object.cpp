@@ -274,7 +274,7 @@ bool Array_Object::opStr(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->values[i], OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
+            state.toStrBuf += createStrRef(ret).data();
         }
     }
     state.toStrBuf += "]";
@@ -290,7 +290,7 @@ bool Array_Object::opInterp(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->values[i], OP_INTERP));
         if(!ret.isInvalid()) {
-            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
+            state.toStrBuf += createStrRef(ret).data();
         }
     }
     return true;
@@ -382,7 +382,7 @@ bool Map_Object::opStr(DSState &state) const {
         // key
         auto ret = TRY(callOP(state, e.first, OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
+            state.toStrBuf += createStrRef(ret).data();
         }
 
         state.toStrBuf += " : ";
@@ -390,7 +390,7 @@ bool Map_Object::opStr(DSState &state) const {
         // value
         ret = TRY(callOP(state, e.second, OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
+            state.toStrBuf += createStrRef(ret).data();
         }
     }
     state.toStrBuf += "]";
@@ -436,7 +436,7 @@ bool Tuple_Object::opStr(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->fieldTable[i], OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
+            state.toStrBuf += createStrRef(ret).data();
         }
     }
     if(size == 1) {
@@ -455,7 +455,7 @@ bool Tuple_Object::opInterp(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->fieldTable[i], OP_INTERP));
         if(!ret.isInvalid()) {
-            state.toStrBuf += typeAs<String_Object>(ret)->getValue();
+            state.toStrBuf += createStrRef(ret).data();
         }
     }
     return true;
@@ -503,7 +503,7 @@ DSValue Error_Object::newError(const DSState &ctx, DSType &type, DSValue &&messa
 std::string Error_Object::createHeader(const DSState &state) const {
     std::string str = state.symbolTable.getTypeName(*this->type);
     str += ": ";
-    str += typeAs<String_Object>(this->message)->getValue();
+    str += createStrRef(this->message).data();
     return str;
 }
 
