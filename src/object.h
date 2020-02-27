@@ -76,8 +76,8 @@ public:
     /**
      * get object type
      */
-    const DSType *getType() const {
-        return this->type;
+    const DSType &getType() const {
+        return *this->type;
     }
 
     unsigned int getRefcount() const {
@@ -456,7 +456,7 @@ public:
 
     DSValue slice(unsigned int begin, unsigned int end) const {
         return DSValue::create<String_Object>(
-                *this->getType(),
+                this->getType(),
                 std::string(this->getValue() + begin, end - begin));
     }
 };
@@ -569,7 +569,7 @@ public:
     DSValue slice(unsigned int begin, unsigned int end) const {
         auto b = this->getValues().begin() + begin;
         auto e = this->getValues().begin() + end;
-        return DSValue::create<Array_Object>(*this->getType(), std::vector<DSValue>(b, e));
+        return DSValue::create<Array_Object>(this->getType(), std::vector<DSValue>(b, e));
     }
 
     DSValue takeFirst() {

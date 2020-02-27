@@ -93,7 +93,7 @@ YDSH_METHOD basic_##NAME(RuntimeContext &ctx) { \
     auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
     auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue(); \
     T result = left OPERATOR right; \
-    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result)); \
+    RET(DSValue::create<ObjType>(typeAs<ObjType>(LOCAL(0))->getType(), result)); \
 }
 
 #define GEN_UNARY_OP(NAME, OPERATOR) \
@@ -102,7 +102,7 @@ YDSH_METHOD unary_##NAME(RuntimeContext &ctx) { \
     using ObjType = ObjTypeStub<T>; \
     auto right = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
     T result = OPERATOR right; \
-    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result)); \
+    RET(DSValue::create<ObjType>(typeAs<ObjType>(LOCAL(0))->getType(), result)); \
 }
 
 #define GEN_COMPARE_OP(NAME, OPERATOR) \
@@ -148,7 +148,7 @@ YDSH_METHOD basic_add(RuntimeContext &ctx) {
         raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
         RET_ERROR;
     }
-    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), ret));
+    RET(DSValue::create<ObjType>(typeAs<ObjType>(LOCAL(0))->getType(), ret));
 }
 
 template <typename T>
@@ -162,7 +162,7 @@ YDSH_METHOD basic_sub(RuntimeContext &ctx) {
         raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
         RET_ERROR;
     }
-    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), ret));
+    RET(DSValue::create<ObjType>(typeAs<ObjType>(LOCAL(0))->getType(), ret));
 }
 
 template <typename T>
@@ -176,7 +176,7 @@ YDSH_METHOD basic_mul(RuntimeContext &ctx) {
         raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
         RET_ERROR;
     }
-    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), ret));
+    RET(DSValue::create<ObjType>(typeAs<ObjType>(LOCAL(0))->getType(), ret));
 }
 
 template <typename T>
@@ -188,7 +188,7 @@ YDSH_METHOD basic_div(RuntimeContext &ctx) {
         RET_ERROR;
     }
     T result = left / right;
-    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result));
+    RET(DSValue::create<ObjType>(typeAs<ObjType>(LOCAL(0))->getType(), result));
 }
 
 template <typename T>
@@ -200,7 +200,7 @@ YDSH_METHOD basic_mod(RuntimeContext &ctx) {
         RET_ERROR;
     }
     T result = left % right;
-    RET(DSValue::create<ObjType>(*(typeAs<ObjType>(LOCAL(0))->getType()), result));
+    RET(DSValue::create<ObjType>(typeAs<ObjType>(LOCAL(0))->getType(), result));
 }
 
 
@@ -1462,7 +1462,7 @@ YDSH_METHOD array_copy(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_copy);
     auto *obj = typeAs<Array_Object>(LOCAL(0));
     std::vector<DSValue> values = obj->getValues();
-    RET(DSValue::create<Array_Object>(*obj->getType(), std::move(values)));
+    RET(DSValue::create<Array_Object>(obj->getType(), std::move(values)));
 }
 
 //!bind: function reverse($this : Array<T0>) : Array<T0>
@@ -1695,7 +1695,7 @@ YDSH_METHOD map_copy(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_copy);
     auto *obj = typeAs<Map_Object>(LOCAL(0));
     HashMap map(obj->getValueMap());
-    RET(DSValue::create<Map_Object>(*obj->getType(), std::move(map)));
+    RET(DSValue::create<Map_Object>(obj->getType(), std::move(map)));
 }
 
 //!bind: function clear($this : Map<T0, T1>) : Void

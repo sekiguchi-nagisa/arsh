@@ -35,7 +35,7 @@ unsigned int DSValue::getTypeID() const {
         return static_cast<unsigned int>(TYPE::Int32);
     default:
         assert(this->kind() == DSValueKind::OBJECT);
-        return this->get()->getType()->getTypeID();
+        return this->get()->getType().getTypeID();
     }
 }
 

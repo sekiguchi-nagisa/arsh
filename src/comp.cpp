@@ -100,8 +100,8 @@ static std::string escape(const char *str, EscapeOp op) {
 
 
 static void append(Array_Object &can, const char *str, EscapeOp op) {
-    assert(can.getType()->is(TYPE::StringArray));
-    auto *type = static_cast<const ReifiedType *>(can.getType())->getElementTypes()[0];
+    assert(can.getType().is(TYPE::StringArray));
+    auto *type = static_cast<const ReifiedType&>(can.getType()).getElementTypes()[0];
     assert(type->is(TYPE::String));
     std::string estr = escape(str, op);
     can.append(DSValue::create<String_Object>(*type, std::move(estr)));
