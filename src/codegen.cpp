@@ -1416,18 +1416,13 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             case DSValueKind::INVALID:
                 break;
             default: {
-                const DSType *type = nullptr;
+                const auto &type = this->symbolTable.get(v.getTypeID());
                 if(v.isObject()) {
-                    type = v.get()->getType();
-                    if(type == nullptr || type->isFuncType() || type->isModType()) {
+                    if(v.get()->getKind() == ObjectKind::FUNC_OBJ) {
                         this->funcs.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
                     }
-                } else {
-                    type = &this->symbolTable.get(v.getTypeID());
                 }
-                fprintf(this->fp, "%s %s",
-                        (type != nullptr ? this->symbolTable.getTypeName(*type) : "(null)"),
-                        value.c_str());
+                fprintf(this->fp, "%s %s", this->symbolTable.getTypeName(type), value.c_str());
                 break;
             }
             }
