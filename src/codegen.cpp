@@ -1416,7 +1416,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             case DSValueKind::INVALID:
                 break;
             default: {
-                DSType *type = nullptr;
+                const DSType *type = nullptr;
                 if(v.isObject()) {
                     type = v.get()->getType();
                     if(type == nullptr || type->isFuncType() || type->isModType()) {

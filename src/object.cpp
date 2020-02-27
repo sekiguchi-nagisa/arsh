@@ -492,7 +492,7 @@ void Error_Object::printStackTrace(DSState &ctx) {
     }
 }
 
-DSValue Error_Object::newError(const DSState &ctx, DSType &type, DSValue &&message) {
+DSValue Error_Object::newError(const DSState &ctx, const DSType &type, DSValue &&message) {
     DSValue obj(new Error_Object(type, std::move(message)));
     typeAs<Error_Object>(obj)->stackTrace = ctx.getCallStack().createStackTrace();
     typeAs<Error_Object>(obj)->name = DSValue::create<String_Object>(
