@@ -1197,7 +1197,7 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
     this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
     this->visit(node.getBlockNode());
-    auto func = DSValue::create<FuncObject>(node.getFuncType(), this->finalizeCodeBuilder(node.getFuncName()));
+    auto func = DSValue::create<FuncObject>(*node.getFuncType(), this->finalizeCodeBuilder(node.getFuncName()));
 
     this->emitLdcIns(func);
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
@@ -1208,7 +1208,9 @@ void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) { } // do nothing
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->initCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
     this->visit(node.getBlockNode());
-    auto func = DSValue::create<FuncObject>(this->finalizeCodeBuilder(node.getCmdName()));
+    auto func = DSValue::create<FuncObject>(
+            this->symbolTable.get(TYPE::Void),
+            this->finalizeCodeBuilder(node.getCmdName()));
 
     this->emitLdcIns(func);
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
@@ -1256,7 +1258,7 @@ CompiledCode ByteCodeGenerator::finalize() {
 void ByteCodeGenerator::exitModule(SourceNode &node) {
     this->curBuilder().emit8(5, node.getMaxVarNum());
     this->emitIns(OpCode::RETURN);
-    auto func = DSValue::create<FuncObject>(node.getModType(), this->finalizeCodeBuilder(node.getModType()->toName()));
+    auto func = DSValue::create<FuncObject>(*node.getModType(), this->finalizeCodeBuilder(node.getModType()->toName()));
     this->emitLdcIns(func);
     this->visit(node);
 }

@@ -1029,10 +1029,8 @@ private:
     CompiledCode code;
 
 public:
-    FuncObject(const DSType *funcType, CompiledCode &&callable) :
+    FuncObject(const DSType &funcType, CompiledCode &&callable) :
             DSObject(ObjectKind::FUNC_OBJ, funcType), code(std::move(callable)) {}
-
-    explicit FuncObject(CompiledCode &&callable) : FuncObject(nullptr, std::move(callable)) { }
 
     ~FuncObject() override = default;
 
