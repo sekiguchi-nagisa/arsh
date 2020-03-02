@@ -360,7 +360,7 @@ private:
     int fd;
 
 public:
-    UnixFD_Object(const DSType &type, int fd) : DSObject(ObjectKind::FD, type), fd(fd) {}
+    explicit UnixFD_Object(int fd) : DSObject(ObjectKind::FD, TYPE::UnixFD), fd(fd) {}
     ~UnixFD_Object() override;
 
     int tryToClose(bool forceClose) {
@@ -485,8 +485,8 @@ private:
     PCRE re;
 
 public:
-    Regex_Object(const DSType &type, std::string str, PCRE &&re) :
-            DSObject(ObjectKind::REGEX, type), str(std::move(str)), re(std::move(re)) {}
+    Regex_Object(std::string str, PCRE &&re) :
+            DSObject(ObjectKind::REGEX, TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
 
     ~Regex_Object() override = default;
 

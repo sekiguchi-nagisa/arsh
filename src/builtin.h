@@ -1088,7 +1088,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
         raiseError(ctx, TYPE::RegexSyntaxError, std::string(errorStr));
         RET_ERROR;
     }
-    RET(DSValue::create<Regex_Object>(ctx.symbolTable.get(TYPE::Regex), ref.data(), std::move(re)));
+    RET(DSValue::create<Regex_Object>(ref.data(), std::move(re)));
 }
 
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Boolean
@@ -1780,7 +1780,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
     const char *path = createStrRef(LOCAL(1)).data();
     int fd = open(path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
     if(fd != -1) {
-        RET(DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), fd));
+        RET(DSValue::create<UnixFD_Object>(fd));
     }
     int e = errno;
     std::string msg = "open failed: ";
@@ -1812,7 +1812,7 @@ YDSH_METHOD fd_dup(RuntimeContext &ctx) {
         raiseSystemError(ctx, e, std::to_string(fd));
         RET_ERROR;
     }
-    RET(DSValue::create<UnixFD_Object>(ctx.symbolTable.get(TYPE::UnixFD), newfd));
+    RET(DSValue::create<UnixFD_Object>(newfd));
 }
 
 //!bind: function $OP_BOOL($this : UnixFD) : Boolean

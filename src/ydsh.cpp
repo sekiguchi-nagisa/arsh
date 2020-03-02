@@ -332,17 +332,17 @@ static void initBuiltinVar(DSState &state) {
     /**
      * must be UnixFD_Object
      */
-    bindVariable(state, VAR_STDIN, DSValue::create<UnixFD_Object>(state.symbolTable.get(TYPE::UnixFD), STDIN_FILENO));
+    bindVariable(state, VAR_STDIN, DSValue::create<UnixFD_Object>(STDIN_FILENO));
 
     /**
      * must be UnixFD_Object
      */
-    bindVariable(state, VAR_STDOUT, DSValue::create<UnixFD_Object>(state.symbolTable.get(TYPE::UnixFD), STDOUT_FILENO));
+    bindVariable(state, VAR_STDOUT, DSValue::create<UnixFD_Object>(STDOUT_FILENO));
 
     /**
      * must be UnixFD_Object
      */
-    bindVariable(state, VAR_STDERR, DSValue::create<UnixFD_Object>(state.symbolTable.get(TYPE::UnixFD), STDERR_FILENO));
+    bindVariable(state, VAR_STDERR, DSValue::create<UnixFD_Object>(STDERR_FILENO));
 
     /**
      * must be Int_Object

@@ -52,8 +52,8 @@ static std::string initLogicalWorkingDir() {
 }
 
 DSState::DSState() :
-        emptyStrObj(DSValue::create<String_Object>(this->symbolTable.get(TYPE::String), std::string())),
-        emptyFDObj(DSValue::create<UnixFD_Object>(this->symbolTable.get(TYPE::UnixFD), -1)),
+        emptyStrObj(DSValue::create<String_Object>(std::string())),
+        emptyFDObj(DSValue::create<UnixFD_Object>(-1)),
         logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()) { }
 
@@ -244,7 +244,7 @@ static DSValue newFD(const DSState &st, int &fd) {
     }
     int v = fd;
     fd = -1;
-    auto value = DSValue::create<UnixFD_Object>(st.symbolTable.get(TYPE::UnixFD), v);
+    auto value = DSValue::create<UnixFD_Object>(v);
     typeAs<UnixFD_Object>(value)->closeOnExec(true);
     return value;
 }

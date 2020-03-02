@@ -379,7 +379,7 @@ void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) {
 }
 
 void ByteCodeGenerator::visitRegexNode(RegexNode &node) {
-    this->emitLdcIns(DSValue::create<Regex_Object>(node.getType(), node.getReStr(), node.extractRE()));
+    this->emitLdcIns(DSValue::create<Regex_Object>(node.getReStr(), node.extractRE()));
 }
 
 void ByteCodeGenerator::visitArrayNode(ArrayNode &node) {
