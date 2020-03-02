@@ -348,10 +348,10 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
         break;
     }
     case NumberNode::Int64:
-        value = DSValue::create<Long_Object>(node.getType(), node.getLongValue());
+        value = DSValue::create<Long_Object>(node.getLongValue());
         break;
     case NumberNode::Float:
-        value = DSValue::create<Float_Object>(node.getType(), node.getFloatValue());
+        value = DSValue::create<Float_Object>(node.getFloatValue());
         break;
     case NumberNode::Signal:
         assert(node.getIntValue() >= 0 && node.getIntValue() <= UINT8_MAX);

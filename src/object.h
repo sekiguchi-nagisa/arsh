@@ -61,27 +61,21 @@ protected:
 
     const ObjectKind kind;
 
-    const DSType *type;
+    const unsigned int typeID;
 
     friend class DSValue;
 
 public:
     NON_COPYABLE(DSObject);
 
-    DSObject(ObjectKind kind, const DSType &type) : kind(kind), type(&type) { }
-    DSObject(ObjectKind kind, const DSType *type) : kind(kind), type(type) { }
+    DSObject(ObjectKind kind, const DSType &type) : DSObject(kind, type.getTypeID()){ }
+    DSObject(ObjectKind kind, TYPE type) : DSObject(kind, static_cast<unsigned int>(type)) { }
+    DSObject(ObjectKind kind, unsigned int typeID) : kind(kind), typeID(typeID) {}
 
     virtual ~DSObject() = default;
 
-    /**
-     * get object type
-     */
-    const DSType &getType() const {
-        return *this->type;
-    }
-
     unsigned int getTypeID() const {
-        return this->getType().getTypeID();
+        return this->typeID;
     }
 
     unsigned int getRefcount() const {
@@ -397,7 +391,7 @@ private:
     long value;
 
 public:
-    Long_Object(const DSType &type, long value) : DSObject(ObjectKind::LONG, type), value(value) { }
+    explicit Long_Object(long value) : DSObject(ObjectKind::LONG, TYPE::Int64), value(value) { }
 
     ~Long_Object() override = default;
 
@@ -411,7 +405,7 @@ private:
     double value;
 
 public:
-    Float_Object(const DSType &type, double value) : DSObject(ObjectKind::FLOAT, type), value(value) { }
+    explicit Float_Object(double value) : DSObject(ObjectKind::FLOAT, TYPE::Float), value(value) { }
 
     ~Float_Object() override = default;
 
@@ -430,6 +424,9 @@ public:
 
     String_Object(const DSType &type, std::string &&value) :
             DSObject(ObjectKind::STRING, type), value(std::move(value)) { }
+
+    explicit String_Object(std::string &&value) :
+            DSObject(ObjectKind::STRING, TYPE::String), value(std::move(value)) { }
 
     String_Object(const DSType &type, const std::string &value) :
             DSObject(ObjectKind::STRING, type), value(value) { }
@@ -459,9 +456,7 @@ public:
     }
 
     DSValue slice(unsigned int begin, unsigned int end) const {
-        return DSValue::create<String_Object>(
-                this->getType(),
-                std::string(this->getValue() + begin, end - begin));
+        return DSValue::create<String_Object>(std::string(this->getValue() + begin, end - begin));
     }
 };
 
@@ -524,7 +519,10 @@ public:
     explicit Array_Object(const DSType &type) : DSObject(ObjectKind::ARRAY, type), curIndex(0) { }
 
     Array_Object(const DSType &type, std::vector<DSValue> &&values) :
-            DSObject(ObjectKind::ARRAY, type), curIndex(0), values(std::move(values)) { }
+            Array_Object(type.getTypeID(), std::move(values)) {}
+
+    Array_Object(unsigned int typeID, std::vector<DSValue> &&values) :
+            DSObject(ObjectKind::ARRAY, typeID), curIndex(0), values(std::move(values)) { }
 
     ~Array_Object() override = default;
 
@@ -573,7 +571,7 @@ public:
     DSValue slice(unsigned int begin, unsigned int end) const {
         auto b = this->getValues().begin() + begin;
         auto e = this->getValues().begin() + end;
-        return DSValue::create<Array_Object>(this->getType(), std::vector<DSValue>(b, e));
+        return DSValue::create<Array_Object>(this->getTypeID(), std::vector<DSValue>(b, e));
     }
 
     DSValue takeFirst() {
@@ -615,7 +613,9 @@ private:
 public:
     explicit Map_Object(const DSType &type) : DSObject(ObjectKind::MAP, type) { }
 
-    Map_Object(const DSType &type, HashMap &&map) : DSObject(ObjectKind::MAP, type), valueMap(std::move(map)) {}
+    Map_Object(const DSType &type, HashMap &&map) : Map_Object(type.getTypeID(), std::move(map)) {}
+
+    Map_Object(unsigned int typeID, HashMap &&map) : DSObject(ObjectKind::MAP, typeID), valueMap(std::move(map)) {}
 
     ~Map_Object() override = default;
 

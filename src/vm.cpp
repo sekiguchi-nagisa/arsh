@@ -1222,7 +1222,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(I32_TO_I64) {
             int v = state.stack.pop().asInt();
             long l = v;
-            state.stack.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Int64), l));
+            state.stack.push(DSValue::create<Long_Object>(l));
             vmnext;
         }
         vmcase(I64_TO_I32) {
@@ -1234,13 +1234,13 @@ bool VM::mainLoop(DSState &state) {
         vmcase(I32_TO_D) {
             int v = state.stack.pop().asInt();
             auto d = static_cast<double>(v);
-            state.stack.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
+            state.stack.push(DSValue::create<Float_Object>(d));
             vmnext;
         }
         vmcase(I64_TO_D) {
             long v = typeAs<Long_Object>(state.stack.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.stack.push(DSValue::create<Float_Object>(state.symbolTable.get(TYPE::Float), d));
+            state.stack.push(DSValue::create<Float_Object>(d));
             vmnext;
         }
         vmcase(D_TO_I32) {
@@ -1252,7 +1252,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(D_TO_I64) {
             double d = typeAs<Float_Object>(state.stack.pop())->getValue();
             auto v = static_cast<long>(d);
-            state.stack.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Int64), v));
+            state.stack.push(DSValue::create<Long_Object>(v));
             vmnext;
         }
         vmcase(REF_EQ) {
@@ -1367,7 +1367,7 @@ bool VM::mainLoop(DSState &state) {
             auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
             long v = typeAs<Long_Object>(state.getGlobal(BuiltinVarOffset::SECONDS))->getValue();
             v += sec.count();
-            state.stack.push(DSValue::create<Long_Object>(state.symbolTable.get(TYPE::Int64), v));
+            state.stack.push(DSValue::create<Long_Object>(v));
             vmnext;
         }
         vmcase(SET_SECOND) {
