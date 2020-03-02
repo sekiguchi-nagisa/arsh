@@ -80,6 +80,10 @@ public:
         return *this->type;
     }
 
+    unsigned int getTypeID() const {
+        return this->getType().getTypeID();
+    }
+
     unsigned int getRefcount() const {
         return this->refCount;
     }
@@ -684,10 +688,11 @@ public:
 
 class BaseObject : public DSObject {
 protected:
+    unsigned int fieldSize;
     DSValue *fieldTable;
 
     BaseObject(ObjectKind kind, const DSType &type) :
-        DSObject(kind, type), fieldTable(new DSValue[type.getFieldSize()]) { }
+        DSObject(kind, type), fieldSize(type.getFieldSize()), fieldTable(new DSValue[this->fieldSize]) { }
 
 public:
     explicit BaseObject(const DSType &type) : BaseObject(ObjectKind::BASE, type) {}
@@ -696,6 +701,10 @@ public:
 
     DSValue &operator[](unsigned int index) {
         return this->fieldTable[index];
+    }
+
+    unsigned int getFieldSize() const {
+        return this->fieldSize;
     }
 };
 
@@ -708,10 +717,6 @@ struct Tuple_Object : public BaseObject {
     bool opStr(DSState &state) const;
     bool opInterp(DSState &state) const;
     DSValue opCmdArg(DSState &state) const;
-
-    unsigned int getElementSize() const {
-        return this->type->getFieldSize();
-    }
 };
 
 class StackTraceElement {

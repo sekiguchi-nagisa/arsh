@@ -35,7 +35,7 @@ unsigned int DSValue::getTypeID() const {
         return static_cast<unsigned int>(TYPE::Int32);
     default:
         assert(this->kind() == DSValueKind::OBJECT);
-        return this->get()->getType().getTypeID();
+        return this->get()->getTypeID();
     }
 }
 
@@ -412,7 +412,7 @@ BaseObject::~BaseObject() {
 
 std::string Tuple_Object::toString() const {
     std::string str = "(";
-    unsigned int size = this->getElementSize();
+    unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             str += ", ";
@@ -428,7 +428,7 @@ std::string Tuple_Object::toString() const {
 
 bool Tuple_Object::opStr(DSState &state) const {
     state.toStrBuf += "(";
-    unsigned int size = this->getElementSize();
+    unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             state.toStrBuf += ", ";
@@ -447,7 +447,7 @@ bool Tuple_Object::opStr(DSState &state) const {
 }
 
 bool Tuple_Object::opInterp(DSState &state) const {
-    unsigned int size = this->getElementSize();
+    unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
             state.toStrBuf += " ";
@@ -463,7 +463,7 @@ bool Tuple_Object::opInterp(DSState &state) const {
 
 DSValue Tuple_Object::opCmdArg(DSState &state) const {
     auto result = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
-    unsigned int size = this->getElementSize();
+    unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         if(!appendAsCmdArg(typeAs<Array_Object>(result)->refValues(), state, this->fieldTable[i])) {
             return DSValue();
@@ -501,7 +501,7 @@ DSValue Error_Object::newError(const DSState &ctx, const DSType &type, DSValue &
 }
 
 std::string Error_Object::createHeader(const DSState &state) const {
-    std::string str = state.symbolTable.getTypeName(*this->type);
+    std::string str = state.symbolTable.getTypeName(state.symbolTable.get(this->getTypeID()));
     str += ": ";
     str += createStrRef(this->message).data();
     return str;
