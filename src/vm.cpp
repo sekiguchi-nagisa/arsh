@@ -278,7 +278,7 @@ bool VM::forkAndEval(DSState &state) {
             tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
             if(proc.state() != Proc::TERMINATED) {
                 state.jobTable.attach(JobTable::create(
-                        state.symbolTable.get(TYPE::Job), proc,
+                        proc,
                         DSValue(state.emptyFDObj),
                         DSValue(state.emptyFDObj)));
             }
@@ -291,7 +291,7 @@ bool VM::forkAndEval(DSState &state) {
             int &fd = forkKind == ForkKind::IN_PIPE ? pipeset.in[WRITE_PIPE] : pipeset.out[READ_PIPE];
             obj = newFD(state, fd);
             auto entry = JobTable::create(
-                    state.symbolTable.get(TYPE::Job), proc,
+                    proc,
                     DSValue(forkKind == ForkKind::IN_PIPE ? obj : state.emptyFDObj),
                     DSValue(forkKind == ForkKind::OUT_PIPE ? obj : state.emptyFDObj));
             state.jobTable.attach(entry, true);
@@ -302,7 +302,7 @@ bool VM::forkAndEval(DSState &state) {
         case ForkKind::DISOWN: {
             bool disown = forkKind == ForkKind::DISOWN;
             auto entry = JobTable::create(
-                    state.symbolTable.get(TYPE::Job), proc,
+                    proc,
                     newFD(state, pipeset.in[WRITE_PIPE]),
                     newFD(state, pipeset.out[READ_PIPE]));
             state.jobTable.attach(entry, disown);
@@ -467,7 +467,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
         status = proc.wait(waitOp);
         if(proc.state() != Proc::TERMINATED) {
             state.jobTable.attach(JobTable::create(
-                    state.symbolTable.get(TYPE::Job), proc,
+                    proc,
                     DSValue(state.emptyFDObj),
                     DSValue(state.emptyFDObj)));
         }
@@ -730,7 +730,6 @@ bool VM::callPipeline(DSState &state, bool lastPipe) {
          * in last pipe, save current stdin before call dup2
          */
         auto jobEntry = JobTable::create(
-                state.symbolTable.get(TYPE::Job),
                 procSize, childs, lastPipe,
                 DSValue(state.emptyFDObj), DSValue(state.emptyFDObj));
 

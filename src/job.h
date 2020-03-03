@@ -161,9 +161,9 @@ private:
 public:
     NON_COPYABLE(JobImpl);
 
-    JobImpl(DSType &type, unsigned int size, const Proc *procs, bool saveStdin,
+    JobImpl(unsigned int size, const Proc *procs, bool saveStdin,
             DSValue &&inObj, DSValue &&outObj) :
-            DSObject(ObjectKind::JOB, type), ownerPid(getpid()),
+            DSObject(ObjectKind::JOB, TYPE::Job), ownerPid(getpid()),
             inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->procs[i] = procs[i];
@@ -301,16 +301,16 @@ public:
     JobTable() = default;
     ~JobTable() = default;
 
-    static Job create(DSType &type, unsigned int size, const Proc *procs, bool saveStdin,
+    static Job create(unsigned int size, const Proc *procs, bool saveStdin,
                       DSValue &&inObj, DSValue &&outObj) {
         void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * size);
-        auto *entry = new(ptr) JobImpl(type, size, procs, saveStdin, std::move(inObj), std::move(outObj));
+        auto *entry = new(ptr) JobImpl(size, procs, saveStdin, std::move(inObj), std::move(outObj));
         return Job(entry);
     }
 
-    static Job create(DSType &type, Proc proc, DSValue &&inObj, DSValue &&outObj) {
+    static Job create(Proc proc, DSValue &&inObj, DSValue &&outObj) {
         Proc procs[1] = {proc};
-        return create(type, 1, procs, false, std::move(inObj), std::move(outObj));
+        return create(1, procs, false, std::move(inObj), std::move(outObj));
     }
 
     void attach(Job job, bool disowned = false);
