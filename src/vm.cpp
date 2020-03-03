@@ -1084,7 +1084,7 @@ bool VM::mainLoop(DSState &state) {
 
             auto &type = state.symbolTable.get(v);
             if(!type.isRecordType()) {
-                state.stack.push(DSValue::create<DSObject>(ObjectKind::DUMMY, type));
+                state.stack.push(DSValue::create<Dummy_Object>(type));
             } else {
                 fatal("currently, DSObject allocation not supported\n");
             }

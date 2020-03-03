@@ -65,13 +65,14 @@ protected:
 
     friend class DSValue;
 
-public:
+
     NON_COPYABLE(DSObject);
 
     DSObject(ObjectKind kind, const DSType &type) : DSObject(kind, type.getTypeID()){ }
     DSObject(ObjectKind kind, TYPE type) : DSObject(kind, static_cast<unsigned int>(type)) { }
     DSObject(ObjectKind kind, unsigned int typeID) : kind(kind), typeID(typeID) {}
 
+public:
     virtual ~DSObject() = default;
 
     unsigned int getTypeID() const {
@@ -354,6 +355,10 @@ inline T *typeAs(const DSValue &value) noexcept {
     return static_cast<T*>(value.get());
 
 }
+
+struct Dummy_Object : public DSObject {
+    explicit Dummy_Object(const DSType &type) : DSObject(ObjectKind::DUMMY, type) {}
+};
 
 class UnixFD_Object : public DSObject {
 private:
