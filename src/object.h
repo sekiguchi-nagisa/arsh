@@ -36,26 +36,31 @@ namespace ydsh {
 
 class DSValue;
 
-enum ObjectKind {
-    DUMMY,
-    LONG,
-    FLOAT,
-    STRING,
-    STRITER,
-    FD,
-    REGEX,
-    ARRAY,
-    MAP,
-    BASE,
-    TUPLE,
-    ERROR,
-    FUNC_OBJ,
-    JOB,
-    PIPESTATE,
-    REDIR,
-};
-
 class DSObject {
+public:
+    /**
+     * for LLVM-style RTTI
+     * see. https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
+     */
+    enum ObjectKind {
+        DUMMY,
+        LONG,
+        FLOAT,
+        STRING,
+        STRITER,
+        FD,
+        REGEX,
+        ARRAY,
+        MAP,
+        BASE,
+        TUPLE,
+        ERROR,
+        FUNC_OBJ,
+        JOB,
+        PIPESTATE,
+        REDIR,
+    };
+
 protected:
     unsigned int refCount{0};
 
@@ -87,6 +92,33 @@ public:
         return this->kind;
     }
 };
+
+template <typename T>
+inline bool isa(const DSObject *obj) {
+    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+    return obj != nullptr && T::classof(obj);
+}
+
+template <typename T>
+inline bool isa(const DSObject &obj) {
+    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+    return T::classof(&obj);
+}
+
+template <typename T>
+inline T *cast(DSObject *obj) {
+    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+    assert(isa<T>(obj));
+    return static_cast<T*>(obj);
+}
+
+template <typename T>
+inline const T *cast(const DSObject *obj) {
+    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
+    assert(isa<T>(obj));
+    return static_cast<const T*>(obj);
+}
+
 
 enum class DSValueKind : unsigned char {
     OBJECT = 0,
@@ -358,6 +390,10 @@ inline T *typeAs(const DSValue &value) noexcept {
 
 struct Dummy_Object : public DSObject {
     explicit Dummy_Object(const DSType &type) : DSObject(ObjectKind::DUMMY, type) {}
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == DUMMY;
+    }
 };
 
 class UnixFD_Object : public DSObject {
@@ -365,8 +401,12 @@ private:
     int fd;
 
 public:
-    explicit UnixFD_Object(int fd) : DSObject(ObjectKind::FD, TYPE::UnixFD), fd(fd) {}
+    explicit UnixFD_Object(int fd) : DSObject(FD, TYPE::UnixFD), fd(fd) {}
     ~UnixFD_Object() override;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == FD;
+    }
 
     int tryToClose(bool forceClose) {
         if(!forceClose && this->fd < 0) {
@@ -396,9 +436,13 @@ private:
     long value;
 
 public:
-    explicit Long_Object(long value) : DSObject(ObjectKind::LONG, TYPE::Int64), value(value) { }
+    explicit Long_Object(long value) : DSObject(LONG, TYPE::Int64), value(value) { }
 
     ~Long_Object() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == LONG;
+    }
 
     long getValue() const {
         return this->value;
@@ -410,9 +454,13 @@ private:
     double value;
 
 public:
-    explicit Float_Object(double value) : DSObject(ObjectKind::FLOAT, TYPE::Float), value(value) { }
+    explicit Float_Object(double value) : DSObject(FLOAT, TYPE::Float), value(value) { }
 
     ~Float_Object() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == FLOAT;
+    }
 
     double getValue() const {
         return this->value;
@@ -437,6 +485,10 @@ public:
             DSObject(ObjectKind::STRING, type), value(value) { }
 
     ~String_Object() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == STRING;
+    }
 
     const char *getValue() const {
         return this->value.c_str();
@@ -482,6 +534,10 @@ struct StringIter_Object : public DSObject {
 
     StringIter_Object(const DSType &type, String_Object *str) :
             DSObject(ObjectKind::STRITER, type), curIndex(0), strObj(DSValue(str)) { }
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == STRITER;
+    }
 };
 
 class Regex_Object : public DSObject {
@@ -494,6 +550,10 @@ public:
             DSObject(ObjectKind::REGEX, TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
 
     ~Regex_Object() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == REGEX;
+    }
 
     bool search(StringRef ref) const {
         int ovec[1];
@@ -521,15 +581,19 @@ private:
 public:
     using IterType = std::vector<DSValue>::const_iterator;
 
-    explicit Array_Object(const DSType &type) : DSObject(ObjectKind::ARRAY, type), curIndex(0) { }
+    explicit Array_Object(const DSType &type) : DSObject(ARRAY, type), curIndex(0) { }
 
     Array_Object(const DSType &type, std::vector<DSValue> &&values) :
             Array_Object(type.getTypeID(), std::move(values)) {}
 
     Array_Object(unsigned int typeID, std::vector<DSValue> &&values) :
-            DSObject(ObjectKind::ARRAY, typeID), curIndex(0), values(std::move(values)) { }
+            DSObject(ARRAY, typeID), curIndex(0), values(std::move(values)) { }
 
     ~Array_Object() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == ARRAY;
+    }
 
     const std::vector<DSValue> &getValues() const {
         return this->values;
@@ -616,13 +680,17 @@ private:
     HashMap::const_iterator iter;
 
 public:
-    explicit Map_Object(const DSType &type) : DSObject(ObjectKind::MAP, type) { }
+    explicit Map_Object(const DSType &type) : DSObject(MAP, type) { }
 
     Map_Object(const DSType &type, HashMap &&map) : Map_Object(type.getTypeID(), std::move(map)) {}
 
-    Map_Object(unsigned int typeID, HashMap &&map) : DSObject(ObjectKind::MAP, typeID), valueMap(std::move(map)) {}
+    Map_Object(unsigned int typeID, HashMap &&map) : DSObject(MAP, typeID), valueMap(std::move(map)) {}
 
     ~Map_Object() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == MAP;
+    }
 
     const HashMap &getValueMap() const {
         return this->valueMap;
@@ -700,9 +768,13 @@ protected:
         DSObject(kind, type), fieldSize(type.getFieldSize()), fieldTable(new DSValue[this->fieldSize]) { }
 
 public:
-    explicit BaseObject(const DSType &type) : BaseObject(ObjectKind::BASE, type) {}
+    explicit BaseObject(const DSType &type) : BaseObject(BASE, type) {}
 
     ~BaseObject() override;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() >= BASE && obj->getKind() <= TUPLE;
+    }
 
     DSValue &operator[](unsigned int index) {
         return this->fieldTable[index];
@@ -714,9 +786,13 @@ public:
 };
 
 struct Tuple_Object : public BaseObject {
-    explicit Tuple_Object(const DSType &type) : BaseObject(ObjectKind::TUPLE, type) { }
+    explicit Tuple_Object(const DSType &type) : BaseObject(TUPLE, type) { }
 
     ~Tuple_Object() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == TUPLE;
+    }
 
     std::string toString() const;
     bool opStr(DSState &state) const;
@@ -776,10 +852,14 @@ private:
     std::vector<StackTraceElement> stackTrace;
 
     Error_Object(const DSType &type, DSValue &&message) :
-            DSObject(ObjectKind::ERROR, type), message(std::move(message)) { }
+            DSObject(ERROR, type), message(std::move(message)) { }
 
 public:
     ~Error_Object() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == ERROR;
+    }
 
     bool opStr(DSState &state) const;
 
@@ -1040,9 +1120,13 @@ private:
 
 public:
     FuncObject(const DSType &funcType, CompiledCode &&callable) :
-            DSObject(ObjectKind::FUNC_OBJ, funcType), code(std::move(callable)) {}
+            DSObject(FUNC_OBJ, funcType), code(std::move(callable)) {}
 
     ~FuncObject() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == FUNC_OBJ;
+    }
 
     const CompiledCode &getCode() const {
         return this->code;

@@ -163,7 +163,7 @@ public:
 
     JobImpl(unsigned int size, const Proc *procs, bool saveStdin,
             DSValue &&inObj, DSValue &&outObj) :
-            DSObject(ObjectKind::JOB, TYPE::Job), ownerPid(getpid()),
+            DSObject(JOB, TYPE::Job), ownerPid(getpid()),
             inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->procs[i] = procs[i];
@@ -174,6 +174,10 @@ public:
     }
 
     ~JobImpl() override = default;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == JOB;
+    }
 
     static void operator delete(void *ptr) noexcept {   //NOLINT
         free(ptr);

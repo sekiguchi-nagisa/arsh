@@ -1420,8 +1420,8 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             default: {
                 const auto &type = this->symbolTable.get(v.getTypeID());
                 if(v.isObject()) {
-                    if(v.get()->getKind() == ObjectKind::FUNC_OBJ) {
-                        this->funcs.push_back(std::ref(static_cast<FuncObject *>(v.get())->getCode()));
+                    if(isa<FuncObject>(v.get())) {
+                        this->funcs.push_back(std::ref(cast<FuncObject>(v.get())->getCode()));
                     }
                 }
                 fprintf(this->fp, "%s %s", this->symbolTable.getTypeName(type), value.c_str());

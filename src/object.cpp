@@ -55,28 +55,28 @@ std::string DSValue::toString() const {
     }
 
     switch(this->get()->getKind()) {
-    case ObjectKind::LONG:
+    case DSObject::LONG:
         return std::to_string(typeAs<Long_Object>(*this)->getValue());
-    case ObjectKind::FLOAT:
+    case DSObject::FLOAT:
         return std::to_string(typeAs<Float_Object>(*this)->getValue());
-    case ObjectKind::STRING:
+    case DSObject::STRING:
         return createStrRef(*this).toString();
-    case ObjectKind::FD: {
+    case DSObject::FD: {
         std::string str = "/dev/fd/";
         str += std::to_string(typeAs<UnixFD_Object>(*this)->getValue());
         return str;
     }
-    case ObjectKind::REGEX:
+    case DSObject::REGEX:
         return typeAs<Regex_Object>(*this)->getStr();
-    case ObjectKind::ARRAY:
+    case DSObject::ARRAY:
         return typeAs<Array_Object>(*this)->toString();
-    case ObjectKind::MAP:
+    case DSObject::MAP:
         return typeAs<Map_Object>(*this)->toString();
-    case ObjectKind::TUPLE:
+    case DSObject::TUPLE:
         return typeAs<Tuple_Object>(*this)->toString();
-    case ObjectKind::FUNC_OBJ:
+    case DSObject::FUNC_OBJ:
         return typeAs<FuncObject>(*this)->toString();
-    case ObjectKind::JOB: {
+    case DSObject::JOB: {
         std::string str = "%";
         str += std::to_string(typeAs<JobImpl>(*this)->getJobID());
         return str;
@@ -94,13 +94,13 @@ std::string DSValue::toString() const {
 bool DSValue::opStr(DSState &state) const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
-        case ObjectKind::ARRAY:
+        case DSObject::ARRAY:
             return typeAs<Array_Object>(*this)->opStr(state);
-        case ObjectKind::MAP:
+        case DSObject::MAP:
             return typeAs<Map_Object>(*this)->opStr(state);
-        case ObjectKind::TUPLE:
+        case DSObject::TUPLE:
             return typeAs<Tuple_Object>(*this)->opStr(state);
-        case ObjectKind::ERROR:
+        case DSObject::ERROR:
             return typeAs<Error_Object>(*this)->opStr(state);
         default:
             break;
@@ -113,9 +113,9 @@ bool DSValue::opStr(DSState &state) const {
 bool DSValue::opInterp(DSState &state) const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
-        case ObjectKind::ARRAY:
+        case DSObject::ARRAY:
             return typeAs<Array_Object>(*this)->opInterp(state);
-        case ObjectKind::TUPLE:
+        case DSObject::TUPLE:
             return typeAs<Tuple_Object>(*this)->opInterp(state);
         default:
             break;
@@ -129,11 +129,11 @@ bool DSValue::equals(const DSValue &o) const {
     if(this->isObject()) {
         assert(this->get()->getKind() == o.get()->getKind());
         switch(this->get()->getKind()) {
-        case ObjectKind::LONG:
-            return static_cast<Long_Object*>(this->get())->getValue() == typeAs<Long_Object>(o)->getValue();
-        case ObjectKind::FLOAT:
-            return static_cast<Float_Object*>(this->get())->getValue() == typeAs<Float_Object>(o)->getValue();
-        case ObjectKind::STRING: {
+        case DSObject::LONG:
+            return cast<Long_Object>(this->get())->getValue() == typeAs<Long_Object>(o)->getValue();
+        case DSObject::FLOAT:
+            return cast<Float_Object>(this->get())->getValue() == typeAs<Float_Object>(o)->getValue();
+        case DSObject::STRING: {
             auto left = createStrRef(*this);
             auto right = createStrRef(o);
             return left == right;
@@ -148,11 +148,11 @@ bool DSValue::equals(const DSValue &o) const {
 size_t DSValue::hash() const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
-        case ObjectKind::LONG:
-            return std::hash<long>()(static_cast<Long_Object*>(this->get())->getValue());
-        case ObjectKind::FLOAT:
-            return std::hash<double>()(static_cast<Float_Object*>(this->get())->getValue());
-        case ObjectKind::STRING:
+        case DSObject::LONG:
+            return std::hash<long>()(cast<Long_Object>(this->get())->getValue());
+        case DSObject::FLOAT:
+            return std::hash<double>()(cast<Float_Object>(this->get())->getValue());
+        case DSObject::STRING:
             return std::hash<StringRef>()(createStrRef(*this));
         default:
             break;
@@ -179,11 +179,11 @@ bool DSValue::compare(const DSValue &o) const {
 
     assert(this->get()->getKind() == o.get()->getKind());
     switch(this->get()->getKind()) {
-    case ObjectKind::LONG:
-        return static_cast<Long_Object*>(this->get())->getValue() < typeAs<Long_Object>(o)->getValue();
-    case ObjectKind::FLOAT:
-        return static_cast<Float_Object*>(this->get())->getValue() < typeAs<Float_Object>(o)->getValue();
-    case ObjectKind::STRING: {
+    case DSObject::LONG:
+        return cast<Long_Object>(this->get())->getValue() < typeAs<Long_Object>(o)->getValue();
+    case DSObject::FLOAT:
+        return cast<Float_Object>(this->get())->getValue() < typeAs<Float_Object>(o)->getValue();
+    case DSObject::STRING: {
         auto left = createStrRef(*this);
         auto right = createStrRef(o);
         return left < right;

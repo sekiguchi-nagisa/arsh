@@ -172,9 +172,13 @@ public:
     NON_COPYABLE(PipelineState);
 
     PipelineState(DSState &state, Job &&entry) :
-            DSObject(ObjectKind::PIPESTATE, TYPE::Void), state(state), entry(std::move(entry)) {}
+            DSObject(PIPESTATE, TYPE::Void), state(state), entry(std::move(entry)) {}
 
     ~PipelineState() override;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == PIPESTATE;
+    }
 };
 
 /**
@@ -191,9 +195,13 @@ private:
 public:
     NON_COPYABLE(RedirConfig);
 
-    RedirConfig() : DSObject(ObjectKind::REDIR, TYPE::Void), oldFds{-1, -1, -1} {}
+    RedirConfig() : DSObject(REDIR, TYPE::Void), oldFds{-1, -1, -1} {}
 
     ~RedirConfig() override;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == REDIR;
+    }
 
     void addRedirOp(RedirOP op, DSValue &&arg) {
         this->ops.emplace_back(op, std::move(arg));
