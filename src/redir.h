@@ -163,7 +163,7 @@ inline void flushStdFD() {
 /**
  * for pipeline
  */
-class PipelineObject : public DSObject {
+class PipelineObject : public ObjectWithRtti<DSObject::Pipeline> {
 private:
     DSState &state;
     Job entry;
@@ -172,19 +172,15 @@ public:
     NON_COPYABLE(PipelineObject);
 
     PipelineObject(DSState &state, Job &&entry) :
-            DSObject(Pipeline, TYPE::Void), state(state), entry(std::move(entry)) {}
+            ObjectWithRtti(TYPE::Void), state(state), entry(std::move(entry)) {}
 
     ~PipelineObject() override;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Pipeline;
-    }
 };
 
 /**
  * for io redirection
  */
-class RedirObject : public DSObject {
+class RedirObject : public ObjectWithRtti<DSObject::Redir> {
 private:
     unsigned int backupFDset{0};   // if corresponding bit is set, backup old fd
 
@@ -195,13 +191,9 @@ private:
 public:
     NON_COPYABLE(RedirObject);
 
-    RedirObject() : DSObject(Redir, TYPE::Void), oldFds{-1, -1, -1} {}
+    RedirObject() : ObjectWithRtti(TYPE::Void), oldFds{-1, -1, -1} {}
 
     ~RedirObject() override;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Redir;
-    }
 
     void addRedirOp(RedirOP op, DSValue &&arg) {
         this->ops.emplace_back(op, std::move(arg));

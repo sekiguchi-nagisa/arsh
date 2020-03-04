@@ -117,7 +117,7 @@ class JobTable;
 
 struct JobRefCount;
 
-class JobImplObject : public DSObject {
+class JobImplObject : public ObjectWithRtti<DSObject::JobImpl> {
 private:
     static_assert(std::is_pod<Proc>::value, "failed");
 
@@ -163,7 +163,7 @@ public:
 
     JobImplObject(unsigned int size, const Proc *procs, bool saveStdin,
                   DSValue &&inObj, DSValue &&outObj) :
-            DSObject(JobImpl, TYPE::Job), ownerPid(getpid()),
+            ObjectWithRtti(TYPE::Job), ownerPid(getpid()),
             inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->procs[i] = procs[i];
@@ -174,10 +174,6 @@ public:
     }
 
     ~JobImplObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == JobImpl;
-    }
 
     static void operator delete(void *ptr) noexcept {   //NOLINT
         free(ptr);

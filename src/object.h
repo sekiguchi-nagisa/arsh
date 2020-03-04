@@ -94,6 +94,36 @@ public:
     }
 };
 
+template <DSObject::ObjectKind K>
+struct ObjectWithRtti : public DSObject {
+protected:
+    ObjectWithRtti(const DSType &type) : DSObject(K, type) {}
+    ObjectWithRtti(TYPE type) : DSObject(K, type) {}
+    ObjectWithRtti(unsigned int type) : DSObject(K, type) {}
+
+public:
+    static constexpr auto value = K;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() == K;
+    }
+};
+
+template <DSObject::ObjectKind K1, DSObject::ObjectKind K2>
+struct ObjectWithRtti2 : public DSObject {
+protected:
+    ObjectWithRtti2(ObjectKind kind, const DSType &type) : DSObject(kind, type) {
+        assert(kind >= K1 && kind <= K2);
+    }
+
+public:
+    static constexpr auto value = K1;
+
+    static bool classof(const DSObject *obj) {
+        return obj->getKind() >= K1 && obj->getKind() <= K2;
+    }
+};
+
 enum class DSValueKind : unsigned char {
     OBJECT = 0,
     NUMBER = 130,   // uint32_t
@@ -346,7 +376,7 @@ inline T *typeAs(const DSValue &value) noexcept {
         if(!value.isObject()) {
             fatal("must be represent DSObject\n");
         }
-        auto *r = dynamic_cast<T*>(value.get());
+        auto *r = checked_cast<T>(value.get());
         if(r == nullptr) {
             DSObject &v = *value.get();
             int status;
@@ -358,29 +388,21 @@ inline T *typeAs(const DSValue &value) noexcept {
         return r;
     }
 
-    return static_cast<T*>(value.get());
+    return cast<T>(value.get());
 
 }
 
-struct DummyObject : public DSObject {
-    explicit DummyObject(const DSType &type) : DSObject(ObjectKind::Dummy, type) {}
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Dummy;
-    }
+struct DummyObject : public ObjectWithRtti<DSObject::Dummy> {
+    explicit DummyObject(const DSType &type) : ObjectWithRtti(type) {}
 };
 
-class UnixFdObject : public DSObject {
+class UnixFdObject : public ObjectWithRtti<DSObject::UnixFd> {
 private:
     int fd;
 
 public:
-    explicit UnixFdObject(int fd) : DSObject(UnixFd, TYPE::UnixFD), fd(fd) {}
+    explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::UnixFD), fd(fd) {}
     ~UnixFdObject() override;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == UnixFd;
-    }
 
     int tryToClose(bool forceClose) {
         if(!forceClose && this->fd < 0) {
@@ -405,64 +427,51 @@ public:
     }
 };
 
-class LongObject : public DSObject {
+class LongObject : public ObjectWithRtti<DSObject::Long> {
 private:
     long value;
 
 public:
-    explicit LongObject(long value) : DSObject(Long, TYPE::Int64), value(value) { }
+    explicit LongObject(long value) : ObjectWithRtti(TYPE::Int64), value(value) { }
 
     ~LongObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Long;
-    }
 
     long getValue() const {
         return this->value;
     }
 };
 
-class FloatObject : public DSObject {
+class FloatObject : public ObjectWithRtti<DSObject::Float> {
 private:
     double value;
 
 public:
-    explicit FloatObject(double value) : DSObject(Float, TYPE::Float), value(value) { }
+    explicit FloatObject(double value) : ObjectWithRtti(TYPE::Float), value(value) { }
 
     ~FloatObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Float;
-    }
 
     double getValue() const {
         return this->value;
     }
 };
 
-class StringObject : public DSObject {
+class StringObject : public ObjectWithRtti<DSObject::String> {
 private:
     std::string value;
 
 public:
-    explicit StringObject(const DSType &type) :
-            DSObject(ObjectKind::String, type) { }
+    explicit StringObject(const DSType &type) : ObjectWithRtti(type) { }
 
     StringObject(const DSType &type, std::string &&value) :
-            DSObject(ObjectKind::String, type), value(std::move(value)) { }
+            ObjectWithRtti(type), value(std::move(value)) { }
 
     explicit StringObject(std::string &&value) :
-            DSObject(ObjectKind::String, TYPE::String), value(std::move(value)) { }
+            ObjectWithRtti(TYPE::String), value(std::move(value)) { }
 
     StringObject(const DSType &type, const std::string &value) :
-            DSObject(ObjectKind::String, type), value(value) { }
+            ObjectWithRtti(type), value(value) { }
 
     ~StringObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == String;
-    }
 
     const char *getValue() const {
         return this->value.c_str();
@@ -502,32 +511,24 @@ inline StringRef createStrRef(const DSValue &value) {
     return StringRef(obj->getValue(), obj->size());
 }
 
-struct StrIterObject : public DSObject {
+struct StrIterObject : public ObjectWithRtti<DSObject::StrIter> {
     unsigned int curIndex;
     DSValue strObj;
 
     StrIterObject(const DSType &type, StringObject *str) :
-            DSObject(ObjectKind::StrIter, type), curIndex(0), strObj(DSValue(str)) { }
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == StrIter;
-    }
+            ObjectWithRtti(type), curIndex(0), strObj(DSValue(str)) { }
 };
 
-class RegexObject : public DSObject {
+class RegexObject : public ObjectWithRtti<DSObject::Regex> {
 private:
     std::string str; // for string representation
     PCRE re;
 
 public:
     RegexObject(std::string str, PCRE &&re) :
-            DSObject(ObjectKind::Regex, TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
+            ObjectWithRtti(TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
 
     ~RegexObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Regex;
-    }
 
     bool search(StringRef ref) const {
         int ovec[1];
@@ -547,7 +548,7 @@ public:
     }
 };
 
-class ArrayObject : public DSObject {
+class ArrayObject : public ObjectWithRtti<DSObject::Array> {
 private:
     unsigned int curIndex;
     std::vector<DSValue> values;
@@ -555,19 +556,15 @@ private:
 public:
     using IterType = std::vector<DSValue>::const_iterator;
 
-    explicit ArrayObject(const DSType &type) : DSObject(Array, type), curIndex(0) { }
+    explicit ArrayObject(const DSType &type) : ObjectWithRtti(type), curIndex(0) { }
 
     ArrayObject(const DSType &type, std::vector<DSValue> &&values) :
             ArrayObject(type.getTypeID(), std::move(values)) {}
 
     ArrayObject(unsigned int typeID, std::vector<DSValue> &&values) :
-            DSObject(Array, typeID), curIndex(0), values(std::move(values)) { }
+            ObjectWithRtti(typeID), curIndex(0), values(std::move(values)) { }
 
     ~ArrayObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Array;
-    }
 
     const std::vector<DSValue> &getValues() const {
         return this->values;
@@ -648,23 +645,19 @@ struct GenHash {
 
 using HashMap = std::unordered_map<DSValue, DSValue, GenHash, KeyCompare>;
 
-class MapObject : public DSObject {
+class MapObject : public ObjectWithRtti<DSObject::Map> {
 private:
     HashMap valueMap;
     HashMap::const_iterator iter;
 
 public:
-    explicit MapObject(const DSType &type) : DSObject(Map, type) { }
+    explicit MapObject(const DSType &type) : ObjectWithRtti(type) { }
 
     MapObject(const DSType &type, HashMap &&map) : MapObject(type.getTypeID(), std::move(map)) {}
 
-    MapObject(unsigned int typeID, HashMap &&map) : DSObject(Map, typeID), valueMap(std::move(map)) {}
+    MapObject(unsigned int typeID, HashMap &&map) : ObjectWithRtti(typeID), valueMap(std::move(map)) {}
 
     ~MapObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Map;
-    }
 
     const HashMap &getValueMap() const {
         return this->valueMap;
@@ -733,22 +726,18 @@ public:
     bool opStr(DSState &state) const;
 };
 
-class BaseObject : public DSObject {
+class BaseObject : public ObjectWithRtti2<DSObject::Base, DSObject::Tuple> {
 protected:
     unsigned int fieldSize;
     DSValue *fieldTable;
 
     BaseObject(ObjectKind kind, const DSType &type) :
-        DSObject(kind, type), fieldSize(type.getFieldSize()), fieldTable(new DSValue[this->fieldSize]) { }
+            ObjectWithRtti2(kind, type), fieldSize(type.getFieldSize()), fieldTable(new DSValue[this->fieldSize]) { }
 
 public:
     explicit BaseObject(const DSType &type) : BaseObject(Base, type) {}
 
     ~BaseObject() override;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() >= Base && obj->getKind() <= Tuple;
-    }
 
     DSValue &operator[](unsigned int index) {
         return this->fieldTable[index];
@@ -819,21 +808,17 @@ inline const char *getOccurredSourceName(const std::vector<StackTraceElement> &e
     return elements.empty() ? "" : elements.front().getSourceName().c_str();
 }
 
-class ErrorObject : public DSObject {
+class ErrorObject : public ObjectWithRtti<DSObject::Error> {
 private:
     DSValue message;
     DSValue name;
     std::vector<StackTraceElement> stackTrace;
 
     ErrorObject(const DSType &type, DSValue &&message) :
-            DSObject(Error, type), message(std::move(message)) { }
+            ObjectWithRtti(type), message(std::move(message)) { }
 
 public:
     ~ErrorObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Error;
-    }
 
     bool opStr(DSState &state) const;
 
@@ -1088,19 +1073,15 @@ public:
     }
 };
 
-class FuncObject : public DSObject {
+class FuncObject : public ObjectWithRtti<DSObject::Func> {
 private:
     CompiledCode code;
 
 public:
     FuncObject(const DSType &funcType, CompiledCode &&callable) :
-            DSObject(Func, funcType), code(std::move(callable)) {}
+            ObjectWithRtti(funcType), code(std::move(callable)) {}
 
     ~FuncObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Func;
-    }
 
     const CompiledCode &getCode() const {
         return this->code;
