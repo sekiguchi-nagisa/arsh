@@ -71,11 +71,8 @@ protected:
 
     friend class DSValue;
 
-
     NON_COPYABLE(DSObject);
 
-    DSObject(ObjectKind kind, const DSType &type) : DSObject(kind, type.getTypeID()){ }
-    DSObject(ObjectKind kind, TYPE type) : DSObject(kind, static_cast<unsigned int>(type)) { }
     DSObject(ObjectKind kind, unsigned int typeID) : kind(kind), typeID(typeID) {}
 
 public:
@@ -97,9 +94,9 @@ public:
 template <DSObject::ObjectKind K>
 struct ObjectWithRtti : public DSObject {
 protected:
-    ObjectWithRtti(const DSType &type) : DSObject(K, type) {}
-    ObjectWithRtti(TYPE type) : DSObject(K, type) {}
-    ObjectWithRtti(unsigned int type) : DSObject(K, type) {}
+    ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.getTypeID()) {}
+    ObjectWithRtti(TYPE type) : ObjectWithRtti(static_cast<unsigned int>(type)) {}
+    ObjectWithRtti(unsigned int id) : DSObject(K, id) {}
 
 public:
     static constexpr auto value = K;
@@ -112,7 +109,7 @@ public:
 template <DSObject::ObjectKind K1, DSObject::ObjectKind K2>
 struct ObjectWithRtti2 : public DSObject {
 protected:
-    ObjectWithRtti2(ObjectKind kind, const DSType &type) : DSObject(kind, type) {
+    ObjectWithRtti2(ObjectKind kind, const DSType &type) : DSObject(kind, type.getTypeID()) {
         assert(kind >= K1 && kind <= K2);
     }
 
@@ -387,9 +384,7 @@ inline T *typeAs(const DSValue &value) noexcept {
         }
         return r;
     }
-
     return cast<T>(value.get());
-
 }
 
 struct DummyObject : public ObjectWithRtti<DSObject::Dummy> {
