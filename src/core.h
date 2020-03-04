@@ -125,7 +125,7 @@ struct GetOptState : public opt::GetOptState {
      */
     unsigned int index{1};
 
-    int operator()(const Array_Object &obj, const char *optStr);
+    int operator()(const ArrayObject &obj, const char *optStr);
 };
 
 struct VMHook {

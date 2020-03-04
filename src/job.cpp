@@ -195,7 +195,7 @@ int Proc::send(int sigNum) const {
 // ##     JobImpl     ##
 // #####################
 
-bool JobImpl::restoreStdin() {
+bool JobImplObject::restoreStdin() {
     if(this->oldStdin > -1 && this->hasOwnership()) {
         dup2(this->oldStdin, STDIN_FILENO);
         close(this->oldStdin);
@@ -204,7 +204,7 @@ bool JobImpl::restoreStdin() {
     return false;
 }
 
-void JobImpl::send(int sigNum) const {
+void JobImplObject::send(int sigNum) const {
     if(!this->available()) {
         return;
     }
@@ -219,7 +219,7 @@ void JobImpl::send(int sigNum) const {
     }
 }
 
-int JobImpl::wait(Proc::WaitOp op) {
+int JobImplObject::wait(Proc::WaitOp op) {
     if(!hasOwnership()) {
         return -1;
     }
@@ -240,8 +240,8 @@ int JobImpl::wait(Proc::WaitOp op) {
         this->running = false;
     }
     if(!this->available()) {
-        typeAs<UnixFD_Object>(this->inObj)->tryToClose(false);
-        typeAs<UnixFD_Object>(this->outObj)->tryToClose(false);
+        typeAs<UnixFdObject>(this->inObj)->tryToClose(false);
+        typeAs<UnixFdObject>(this->outObj)->tryToClose(false);
     }
     return lastStatus;
 }

@@ -117,7 +117,7 @@ class JobTable;
 
 struct JobRefCount;
 
-class JobImpl : public DSObject {
+class JobImplObject : public DSObject {
 private:
     static_assert(std::is_pod<Proc>::value, "failed");
 
@@ -159,11 +159,11 @@ private:
     friend struct JobRefCount;
 
 public:
-    NON_COPYABLE(JobImpl);
+    NON_COPYABLE(JobImplObject);
 
-    JobImpl(unsigned int size, const Proc *procs, bool saveStdin,
-            DSValue &&inObj, DSValue &&outObj) :
-            DSObject(JOB, TYPE::Job), ownerPid(getpid()),
+    JobImplObject(unsigned int size, const Proc *procs, bool saveStdin,
+                  DSValue &&inObj, DSValue &&outObj) :
+            DSObject(JobImpl, TYPE::Job), ownerPid(getpid()),
             inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->procs[i] = procs[i];
@@ -173,10 +173,10 @@ public:
         }
     }
 
-    ~JobImpl() override = default;
+    ~JobImplObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == JOB;
+        return obj->getKind() == JobImpl;
     }
 
     static void operator delete(void *ptr) noexcept {   //NOLINT
@@ -263,24 +263,24 @@ public:
 };
 
 struct JobRefCount {
-    static long useCount(const JobImpl *ptr) noexcept {
+    static long useCount(const JobImplObject *ptr) noexcept {
         return ptr->refCount;
     }
 
-    static void increase(JobImpl *ptr) noexcept {
+    static void increase(JobImplObject *ptr) noexcept {
         if(ptr != nullptr) {
             ptr->refCount++;
         }
     }
 
-    static void decrease(JobImpl *ptr) noexcept {
+    static void decrease(JobImplObject *ptr) noexcept {
         if(ptr != nullptr && --ptr->refCount == 0) {
             delete ptr;
         }
     }
 };
 
-using Job = IntrusivePtr<JobImpl, JobRefCount>;
+using Job = IntrusivePtr<JobImplObject, JobRefCount>;
 
 class JobTable {    //FIXME: send signal to managed jobs
 private:
@@ -307,8 +307,8 @@ public:
 
     static Job create(unsigned int size, const Proc *procs, bool saveStdin,
                       DSValue &&inObj, DSValue &&outObj) {
-        void *ptr = malloc(sizeof(JobImpl) + sizeof(Proc) * size);
-        auto *entry = new(ptr) JobImpl(size, procs, saveStdin, std::move(inObj), std::move(outObj));
+        void *ptr = malloc(sizeof(JobImplObject) + sizeof(Proc) * size);
+        auto *entry = new(ptr) JobImplObject(size, procs, saveStdin, std::move(inObj), std::move(outObj));
         return Job(entry);
     }
 

@@ -494,7 +494,7 @@ private:
     void generateBreakContinue(JumpNode &node);
 
     void generateMapCase(CaseNode &node);
-    void generateCaseLabels(const ArmNode &node, Map_Object &obj);
+    void generateCaseLabels(const ArmNode &node, MapObject &obj);
     void generateIfElseCase(CaseNode &node);
     void generateIfElseArm(ArmNode &node, const MethodHandle &eqHandle,
             const MethodHandle &matchHandle, const Label &mergeLabel);

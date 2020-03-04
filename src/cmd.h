@@ -21,13 +21,13 @@ struct DSState;
 
 namespace ydsh {
 
-class Array_Object;
+class ArrayObject;
 
 /**
  * return exit status.
  * argvObj must be Array_Object
  */
-using builtin_command_t = int (*)(DSState &state, Array_Object &argvObj);
+using builtin_command_t = int (*)(DSState &state, ArrayObject &argvObj);
 
 unsigned int getBuiltinCommandSize();
 

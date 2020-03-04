@@ -52,14 +52,14 @@ static std::string initLogicalWorkingDir() {
 }
 
 DSState::DSState() :
-        emptyStrObj(DSValue::create<String_Object>(std::string())),
-        emptyFDObj(DSValue::create<UnixFD_Object>(-1)),
+        emptyStrObj(DSValue::create<StringObject>(std::string())),
+        emptyFDObj(DSValue::create<UnixFdObject>(-1)),
         logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()) { }
 
 
 void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
-    auto *obj = typeAs<Array_Object>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
+    auto *obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
     obj->refValues().clear();
     obj->refValues().reserve(size + (mergeExitStatus ? 1 : 0));
 
@@ -137,7 +137,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSVal
     }
 
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
-        auto argv = typeAs<Array_Object>(state.stack.getLocal(UDC_PARAM_ARGV));
+        auto argv = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
         auto cmdName = argv->takeFirst();
         const unsigned int argSize = argv->getValues().size();
         state.stack.setLocal(UDC_PARAM_ARGV + 1, DSValue::createInt(argSize));   // #
@@ -182,7 +182,7 @@ static DSValue readAsStr(const DSState &state, int fd) {
     // remove last newlines
     for(; !str.empty() && str.back() == '\n'; str.pop_back());
 
-    return DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str));
+    return DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(str));
 }
 
 static DSValue readAsStrArray(const DSState &state, int fd) {
@@ -193,8 +193,8 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
     char buf[256];
     std::string str;
-    auto obj = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
-    auto *array = typeAs<Array_Object>(obj);
+    auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
+    auto *array = typeAs<ArrayObject>(obj);
 
     while(true) {
         int readSize = read(fd, buf, arraySize(buf));
@@ -218,7 +218,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
             }
             skipCount = 0;
             if(fieldSep) {
-                array->append(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str)));
+                array->append(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(str)));
                 str = "";
                 skipCount = isSpace(ch) ? 2 : 1;
                 continue;
@@ -232,7 +232,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
     // append remain
     if(!str.empty() || !hasSpace(ifsSize, ifs)) {
-        array->append(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str)));
+        array->append(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(str)));
     }
 
     return obj;
@@ -244,8 +244,8 @@ static DSValue newFD(const DSState &st, int &fd) {
     }
     int v = fd;
     fd = -1;
-    auto value = DSValue::create<UnixFD_Object>(v);
-    typeAs<UnixFD_Object>(value)->closeOnExec(true);
+    auto value = DSValue::create<UnixFdObject>(v);
+    typeAs<UnixFdObject>(value)->closeOnExec(true);
     return value;
 }
 
@@ -483,7 +483,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
 }
 
 bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr) {
-    auto *array = typeAs<Array_Object>(argvObj);
+    auto *array = typeAs<ArrayObject>(argvObj);
     auto cmd = resolver(state, str(array->getValues()[0]));
 
     switch(cmd.kind) {
@@ -526,10 +526,10 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
 }
 
 
-int invalidOptionError(const Array_Object &obj, const GetOptState &s);
+int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
 
 bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
-    auto &arrayObj = *typeAs<Array_Object>(argvObj);
+    auto &arrayObj = *typeAs<ArrayObject>(argvObj);
 
     bool useDefaultPath = false;
 
@@ -625,13 +625,13 @@ bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, 
 }
 
 void VM::callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
-    auto &argvObj = *typeAs<Array_Object>(array);
+    auto &argvObj = *typeAs<ArrayObject>(array);
     bool clearEnv = false;
     const char *progName = nullptr;
     GetOptState optState;
 
     if(redir) {
-        typeAs<RedirConfig>(redir)->ignoreBackup();
+        typeAs<RedirObject>(redir)->ignoreBackup();
     }
 
     for(int opt; (opt = optState(argvObj, "ca:")) != -1;) {
@@ -739,7 +739,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe) {
         closeAllPipe(pipeSize, pipefds);
 
         if(lastPipe) {
-            state.stack.push(DSValue::create<PipelineState>(state, std::move(jobEntry)));
+            state.stack.push(DSValue::create<PipelineObject>(state, std::move(jobEntry)));
         } else {
             // job termination
             auto waitOp = rootShell && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
@@ -779,7 +779,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
     DSValue value = state.stack.pop();
     auto &valueType = state.symbolTable.get(value.getTypeID());
 
-    auto *argv = typeAs<Array_Object>(state.stack.peekByOffset(1));
+    auto *argv = typeAs<ArrayObject>(state.stack.peekByOffset(1));
     if(valueType.is(TYPE::String)) {  // String
         if(skipEmptyStr && createStrRef(value).empty()) {
             return;
@@ -791,16 +791,16 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
     if(valueType.is(TYPE::UnixFD)) { // UnixFD
         if(!state.stack.peek()) {
             state.stack.pop();
-            state.stack.push(DSValue::create<RedirConfig>());
+            state.stack.push(DSValue::create<RedirObject>());
         }
-        auto strObj = DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), value.toString());
-        typeAs<RedirConfig>(state.stack.peek())->addRedirOp(RedirOP::NOP, std::move(value));
+        auto strObj = DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), value.toString());
+        typeAs<RedirObject>(state.stack.peek())->addRedirOp(RedirOP::NOP, std::move(value));
         argv->append(std::move(strObj));
         return;
     }
 
     assert(valueType.is(TYPE::StringArray));  // Array<String>
-    auto *arrayObj = typeAs<Array_Object>(value);
+    auto *arrayObj = typeAs<ArrayObject>(value);
     for(auto &element : arrayObj->getValues()) {
         if(createStrRef(element).empty()) {
             continue;
@@ -1014,7 +1014,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(LOAD_ENV) {
             const char *value = loadEnv(state, false);
             TRY(value);
-            state.stack.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), value));
+            state.stack.push(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), value));
             vmnext;
         }
         vmcase(STORE_ENV) {
@@ -1041,41 +1041,41 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_STRING) {
-            state.stack.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String)));
+            state.stack.push(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String)));
             vmnext;
         }
         vmcase(APPEND_STRING) {
             DSValue v = state.stack.pop();
-            typeAs<String_Object>(state.stack.peek())->append(std::move(v));
+            typeAs<StringObject>(state.stack.peek())->append(std::move(v));
             vmnext;
         }
         vmcase(NEW_ARRAY) {
             unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
             state.stack.pc() += 4;
-            state.stack.push(DSValue::create<Array_Object>(state.symbolTable.get(v)));
+            state.stack.push(DSValue::create<ArrayObject>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(APPEND_ARRAY) {
             DSValue v = state.stack.pop();
-            typeAs<Array_Object>(state.stack.peek())->append(std::move(v));
+            typeAs<ArrayObject>(state.stack.peek())->append(std::move(v));
             vmnext;
         }
         vmcase(NEW_MAP) {
             unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
             state.stack.pc() += 4;
-            state.stack.push(DSValue::create<Map_Object>(state.symbolTable.get(v)));
+            state.stack.push(DSValue::create<MapObject>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(APPEND_MAP) {
             DSValue value = state.stack.pop();
             DSValue key = state.stack.pop();
-            typeAs<Map_Object>(state.stack.peek())->set(std::move(key), std::move(value));
+            typeAs<MapObject>(state.stack.peek())->set(std::move(key), std::move(value));
             vmnext;
         }
         vmcase(NEW_TUPLE) {
             unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
             state.stack.pc() += 4;
-            state.stack.push(DSValue::create<Tuple_Object>(state.symbolTable.get(v)));
+            state.stack.push(DSValue::create<TupleObject>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(NEW) {
@@ -1084,7 +1084,7 @@ bool VM::mainLoop(DSState &state) {
 
             auto &type = state.symbolTable.get(v);
             if(!type.isRecordType()) {
-                state.stack.push(DSValue::create<Dummy_Object>(type));
+                state.stack.push(DSValue::create<DummyObject>(type));
             } else {
                 fatal("currently, DSObject allocation not supported\n");
             }
@@ -1208,7 +1208,7 @@ bool VM::mainLoop(DSState &state) {
             auto key = state.stack.pop();
             auto map = state.stack.pop();
             if(!key.isInvalid()) {
-                auto &valueMap = typeAs<Map_Object>(map)->getValueMap();
+                auto &valueMap = typeAs<MapObject>(map)->getValueMap();
                 auto iter = valueMap.find(key);
                 if(iter != valueMap.end()) {
                     assert(iter->second.kind() == DSValueKind::NUMBER);
@@ -1221,11 +1221,11 @@ bool VM::mainLoop(DSState &state) {
         vmcase(I32_TO_I64) {
             int v = state.stack.pop().asInt();
             long l = v;
-            state.stack.push(DSValue::create<Long_Object>(l));
+            state.stack.push(DSValue::create<LongObject>(l));
             vmnext;
         }
         vmcase(I64_TO_I32) {
-            unsigned long l = typeAs<Long_Object>(state.stack.pop())->getValue();
+            unsigned long l = typeAs<LongObject>(state.stack.pop())->getValue();
             auto v = static_cast<unsigned int>(l);
             state.stack.push(DSValue::createInt(v));
             vmnext;
@@ -1233,25 +1233,25 @@ bool VM::mainLoop(DSState &state) {
         vmcase(I32_TO_D) {
             int v = state.stack.pop().asInt();
             auto d = static_cast<double>(v);
-            state.stack.push(DSValue::create<Float_Object>(d));
+            state.stack.push(DSValue::create<FloatObject>(d));
             vmnext;
         }
         vmcase(I64_TO_D) {
-            long v = typeAs<Long_Object>(state.stack.pop())->getValue();
+            long v = typeAs<LongObject>(state.stack.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.stack.push(DSValue::create<Float_Object>(d));
+            state.stack.push(DSValue::create<FloatObject>(d));
             vmnext;
         }
         vmcase(D_TO_I32) {
-            double d = typeAs<Float_Object>(state.stack.pop())->getValue();
+            double d = typeAs<FloatObject>(state.stack.pop())->getValue();
             auto v = static_cast<int>(d);
             state.stack.push(DSValue::createInt(v));
             vmnext;
         }
         vmcase(D_TO_I64) {
-            double d = typeAs<Float_Object>(state.stack.pop())->getValue();
+            double d = typeAs<FloatObject>(state.stack.pop())->getValue();
             auto v = static_cast<long>(d);
-            state.stack.push(DSValue::create<Long_Object>(v));
+            state.stack.push(DSValue::create<LongObject>(v));
             vmnext;
         }
         vmcase(REF_EQ) {
@@ -1279,13 +1279,13 @@ bool VM::mainLoop(DSState &state) {
         vmcase(EXPAND_TILDE) {
             std::string str = createStrRef(state.stack.pop()).toString();
             expandTilde(str);
-            state.stack.push(DSValue::create<String_Object>(state.symbolTable.get(TYPE::String), std::move(str)));
+            state.stack.push(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(str)));
             vmnext;
         }
         vmcase(NEW_CMD) {
             auto v = state.stack.pop();
-            auto obj = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
-            auto *argv = typeAs<Array_Object>(obj);
+            auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
+            auto *argv = typeAs<ArrayObject>(obj);
             argv->append(std::move(v));
             state.stack.push(std::move(obj));
             vmnext;
@@ -1323,8 +1323,8 @@ bool VM::mainLoop(DSState &state) {
             DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
             DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
 
-            typeAs<Array_Object>(argv)->takeFirst();
-            auto *array = typeAs<Array_Object>(argv);
+            typeAs<ArrayObject>(argv)->takeFirst();
+            auto *array = typeAs<ArrayObject>(argv);
             if(!array->getValues().empty()) {
                 TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
             } else {
@@ -1339,17 +1339,17 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_REDIR) {
-            state.stack.push(DSValue::create<RedirConfig>());
+            state.stack.push(DSValue::create<RedirObject>());
             vmnext;
         }
         vmcase(ADD_REDIR_OP) {
             unsigned char v = read8(GET_CODE(state), ++state.stack.pc());
             auto value = state.stack.pop();
-            typeAs<RedirConfig>(state.stack.peek())->addRedirOp(static_cast<RedirOP>(v), std::move(value));
+            typeAs<RedirObject>(state.stack.peek())->addRedirOp(static_cast<RedirOP>(v), std::move(value));
             vmnext;
         }
         vmcase(DO_REDIR) {
-            TRY(typeAs<RedirConfig>(state.stack.peek())->redirect(state));
+            TRY(typeAs<RedirObject>(state.stack.peek())->redirect(state));
             vmnext;
         }
         vmcase(RAND) {
@@ -1364,9 +1364,9 @@ bool VM::mainLoop(DSState &state) {
             auto now = std::chrono::system_clock::now();
             auto diff = now - state.baseTime;
             auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
-            long v = typeAs<Long_Object>(state.getGlobal(BuiltinVarOffset::SECONDS))->getValue();
+            long v = typeAs<LongObject>(state.getGlobal(BuiltinVarOffset::SECONDS))->getValue();
             v += sec.count();
-            state.stack.push(DSValue::create<Long_Object>(v));
+            state.stack.push(DSValue::create<LongObject>(v));
             vmnext;
         }
         vmcase(SET_SECOND) {
@@ -1567,7 +1567,7 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
     GUARD_RECURSION(state);
 
     DSValue ret;
-    auto obj = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray), std::move(argv));
+    auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray), std::move(argv));
     prepareArguments(state.stack, std::move(obj), {0, {}});
     if(windStackFrame(state, 1, 1, &cmdTrampoline)) {
         ret = startEval(state, EvalOP::SKIP_TERM | EvalOP::PROPAGATE | EvalOP::HAS_RETURN, nullptr);
@@ -1641,7 +1641,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
     unsigned int errorLineNum = 0;
     std::string sourceName;
     if(state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
-        auto *obj = typeAs<Error_Object>(except);
+        auto *obj = typeAs<ErrorObject>(except);
         errorLineNum = getOccurredLineNum(obj->getStackTrace());
         const char *ptr = getOccurredSourceName(obj->getStackTrace());
         sourceName = ptr;
@@ -1664,7 +1664,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
             fputc('\n', stderr);
         }
     } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state.option, DS_OPTION_TRACE_EXIT)) {
-        typeAs<Error_Object>(except)->printStackTrace(state);
+        typeAs<ErrorObject>(except)->printStackTrace(state);
     }
     fflush(stderr);
     state.updateExitStatus(oldStatus);

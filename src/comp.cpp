@@ -99,13 +99,13 @@ static std::string escape(const char *str, EscapeOp op) {
 }
 
 
-static void append(Array_Object &can, const char *str, EscapeOp op) {
+static void append(ArrayObject &can, const char *str, EscapeOp op) {
     assert(can.getTypeID() == static_cast<unsigned int>(TYPE::StringArray));
     std::string estr = escape(str, op);
-    can.append(DSValue::create<String_Object>(std::move(estr)));
+    can.append(DSValue::create<StringObject>(std::move(estr)));
 }
 
-static void append(Array_Object &buf, const std::string &str, EscapeOp op) {
+static void append(ArrayObject &buf, const std::string &str, EscapeOp op) {
     append(buf, str.c_str(), op);
 }
 
@@ -125,7 +125,7 @@ protected:
     }
 
 public:
-    virtual void operator()(Array_Object &ret) = 0;
+    virtual void operator()(ArrayObject &ret) = 0;
 
     /**
      * for debugging.
@@ -156,7 +156,7 @@ public:
     explicit ExpectedTokenCompleter(const std::vector<TokenKind > &tokens) :
             ExpectedTokenCompleter(nullptr, &tokens) {}
 
-    void operator()(Array_Object &results) override {
+    void operator()(ArrayObject &results) override {
         if(this->token) {
             append(results, this->token, EscapeOp::NOP);
         }
@@ -207,7 +207,7 @@ public:
     KeywordCompleter(std::string &&value, bool expr) :
             Completer("Keyword"), token(std::move(value)), onlyExpr(expr) {}
 
-    void operator()(Array_Object &results) override {
+    void operator()(ArrayObject &results) override {
         TokenKind table[] = {
 #define GEN_ITEM(T) T,
             EACH_LA_statement(GEN_ITEM)
@@ -232,7 +232,7 @@ private:
 public:
     explicit EnvNameCompleter(std::string &&name) : Completer("Env"), envName(std::move(name)) {}
 
-    void operator()(Array_Object &results) override {
+    void operator()(ArrayObject &results) override {
         for(unsigned int i = 0; environ[i] != nullptr; i++) {
             const char *env = environ[i];
             if(startsWith(env, this->envName.c_str())) {
@@ -259,7 +259,7 @@ public:
     CmdNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
             Completer("Command"), symbolTable(symbolTable), token(std::move(token)) {}
 
-    void operator()(Array_Object &results) override;
+    void operator()(ArrayObject &results) override;
 };
 
 static std::vector<std::string> computePathList(const char *pathVal) {
@@ -284,7 +284,7 @@ static std::vector<std::string> computePathList(const char *pathVal) {
     return result;
 }
 
-void CmdNameCompleter::operator()(Array_Object &results) {
+void CmdNameCompleter::operator()(ArrayObject &results) {
     // search user defined command
     for(const auto &iter : this->symbolTable.globalScope()) {
         const char *name = iter.first.c_str();
@@ -344,7 +344,7 @@ public:
     GlobalVarNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
             Completer("GlobalVar"), symbolTable(symbolTable), token(std::move(token)) {}
 
-    void operator()(Array_Object &results) override {
+    void operator()(ArrayObject &results) override {
         for(const auto &iter : this->symbolTable.globalScope()) {
             const char *varName = iter.first.c_str();
             if(!this->token.empty() && !startsWith(varName, CMD_SYMBOL_PREFIX)
@@ -387,10 +387,10 @@ protected:
     }
 
 public:
-    void operator()(Array_Object &results) override;
+    void operator()(ArrayObject &results) override;
 };
 
-void FileNameCompleter::operator()(Array_Object &results) {
+void FileNameCompleter::operator()(ArrayObject &results) {
     const auto s = this->token.find_last_of('/');
 
     // complete tilde
@@ -472,7 +472,7 @@ struct ModNameCompleter : public FileNameCompleter {
         this->setName("Module");
     }
 
-    void operator()(Array_Object &results) override {
+    void operator()(ArrayObject &results) override {
         // complete in SCRIPT_DIR
         FileNameCompleter::operator()(results);
 
@@ -498,7 +498,7 @@ public:
     AndCompleter(std::unique_ptr<Completer> &&first, std::unique_ptr<Completer> &&second) :
             Completer("And"), first(std::move(first)), second(std::move(second)) {}
 
-    void operator()(Array_Object &results) override {
+    void operator()(ArrayObject &results) override {
         (*this->first)(results);
         (*this->second)(results);
     }
@@ -514,7 +514,7 @@ public:
     OrCompleter(std::unique_ptr<Completer> &&first, std::unique_ptr<Completer> &&second) :
             Completer("Or"), first(std::move(first)), second(std::move(second)) {}
 
-    void operator()(Array_Object &results) override {
+    void operator()(ArrayObject &results) override {
         (*this->first)(results);
         if(results.getValues().empty()) {
             (*this->second)(results);
@@ -537,14 +537,14 @@ public:
             Completer("UserDefined"), state(state),
             hook(std::move(hook)), tokens(std::move(tokens)), tokenIndex(tokenIndex) {}
 
-    void operator()(Array_Object &ret) override {
+    void operator()(ArrayObject &ret) override {
         auto result = callFunction(this->state, std::move(this->hook),
                 makeArgs(std::move(this->tokens), DSValue::createInt(this->tokenIndex)));
         if(this->state.hasError()) {
             return;
         }
 
-        for(auto &e : typeAs<Array_Object>(result)->getValues()) {
+        for(auto &e : typeAs<ArrayObject>(result)->getValues()) {
             append(ret, str(e), EscapeOp::COMMAND_ARG);
         }
     }
@@ -790,7 +790,7 @@ private:
 
     DSValue newStrObj(Token token) const {
         std::string value = this->lexer.toTokenText(token);
-        return DSValue::create<String_Object>(this->state.symbolTable.get(TYPE::String), std::move(value));
+        return DSValue::create<StringObject>(this->state.symbolTable.get(TYPE::String), std::move(value));
     }
 
     std::unique_ptr<Completer> selectWithCmd(bool exactly = false) const;
@@ -849,7 +849,7 @@ std::unique_ptr<Completer> CompleterFactory::createUserDefinedCompleter() const 
     if(this->inTyping()) {
         index--;
     }
-    auto obj = DSValue::create<Array_Object>(this->state.symbolTable.get(TYPE::StringArray), std::move(tokens));
+    auto obj = DSValue::create<ArrayObject>(this->state.symbolTable.get(TYPE::StringArray), std::move(tokens));
     return std::make_unique<UserDefinedCompleter>(this->state, std::move(hook), std::move(obj), index);
 }
 
@@ -1026,8 +1026,8 @@ void completeLine(DSState &st, const char *data, unsigned int size) {
     CompleterFactory factory(st, data, size);
     auto comp = factory();
     if(comp) {
-        auto result = DSValue::create<Array_Object>(st.symbolTable.get(TYPE::StringArray));
-        auto &compreply = *typeAs<Array_Object>(result);
+        auto result = DSValue::create<ArrayObject>(st.symbolTable.get(TYPE::StringArray));
+        auto &compreply = *typeAs<ArrayObject>(result);
 
         (*comp)(compreply);
         auto &values = compreply.refValues();

@@ -23,7 +23,7 @@
 
 namespace ydsh {
 
-PipelineState::~PipelineState() {
+PipelineObject::~PipelineObject() {
     /**
      * due to prevent write blocking of child processes, force to restore stdin before call wait.
      * in some situation, raise SIGPIPE in child processes.
@@ -46,10 +46,10 @@ PipelineState::~PipelineState() {
 
 static bool isPassingFD(const std::pair<RedirOP, DSValue> &pair) {
     return pair.first == RedirOP::NOP && pair.second.isValidObject()
-                && isa<UnixFD_Object>(pair.second.get());
+                && isa<UnixFdObject>(pair.second.get());
 }
 
-RedirConfig::~RedirConfig() {
+RedirObject::~RedirObject() {
     this->restoreFDs();
     for(int fd : this->oldFds) {
         close(fd);
@@ -58,7 +58,7 @@ RedirConfig::~RedirConfig() {
     // set close-on-exec flag to fds
     for(auto &e : this->ops) {
         if(isPassingFD(e) && e.second.get()->getRefcount() > 1) {
-            typeAs<UnixFD_Object>(e.second)->closeOnExec(true);
+            typeAs<UnixFdObject>(e.second)->closeOnExec(true);
         }
     }
 }
@@ -122,7 +122,7 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
         fclose(fp);
     } else {
         assert(fileName.hasType(TYPE::UnixFD));
-        int fd = typeAs<UnixFD_Object>(fileName)->getValue();
+        int fd = typeAs<UnixFdObject>(fileName)->getValue();
         if(strchr(mode, 'a') != nullptr) {
             if(lseek(fd, 0, SEEK_END) == -1) {
                 return errno;
@@ -177,15 +177,15 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
     return 0;   // do nothing
 }
 
-void RedirConfig::passFDToExtProc() {
+void RedirObject::passFDToExtProc() {
     for(auto &e : this->ops) {
         if(isPassingFD(e)) {
-            typeAs<UnixFD_Object>(e.second)->closeOnExec(false);
+            typeAs<UnixFdObject>(e.second)->closeOnExec(false);
         }
     }
 }
 
-bool RedirConfig::redirect(DSState &st) {
+bool RedirObject::redirect(DSState &st) {
     this->backupFDs();
     for(auto &pair : this->ops) {
         int r = redirectImpl(pair);
@@ -200,7 +200,7 @@ bool RedirConfig::redirect(DSState &st) {
                     }
                 } else if(pair.second.hasType(TYPE::UnixFD)) {
                     msg += ": ";
-                    msg += std::to_string(typeAs<UnixFD_Object>(pair.second)->getValue());
+                    msg += std::to_string(typeAs<UnixFdObject>(pair.second)->getValue());
                 }
             }
             raiseSystemError(st, r, std::move(msg));

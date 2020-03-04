@@ -163,28 +163,28 @@ inline void flushStdFD() {
 /**
  * for pipeline
  */
-class PipelineState : public DSObject {
+class PipelineObject : public DSObject {
 private:
     DSState &state;
     Job entry;
 
 public:
-    NON_COPYABLE(PipelineState);
+    NON_COPYABLE(PipelineObject);
 
-    PipelineState(DSState &state, Job &&entry) :
-            DSObject(PIPESTATE, TYPE::Void), state(state), entry(std::move(entry)) {}
+    PipelineObject(DSState &state, Job &&entry) :
+            DSObject(Pipeline, TYPE::Void), state(state), entry(std::move(entry)) {}
 
-    ~PipelineState() override;
+    ~PipelineObject() override;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == PIPESTATE;
+        return obj->getKind() == Pipeline;
     }
 };
 
 /**
  * for io redirection
  */
-class RedirConfig : public DSObject {
+class RedirObject : public DSObject {
 private:
     unsigned int backupFDset{0};   // if corresponding bit is set, backup old fd
 
@@ -193,14 +193,14 @@ private:
     int oldFds[3];
 
 public:
-    NON_COPYABLE(RedirConfig);
+    NON_COPYABLE(RedirObject);
 
-    RedirConfig() : DSObject(REDIR, TYPE::Void), oldFds{-1, -1, -1} {}
+    RedirObject() : DSObject(Redir, TYPE::Void), oldFds{-1, -1, -1} {}
 
-    ~RedirConfig() override;
+    ~RedirObject() override;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == REDIR;
+        return obj->getKind() == Redir;
     }
 
     void addRedirOp(RedirOP op, DSValue &&arg) {

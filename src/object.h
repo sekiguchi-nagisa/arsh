@@ -43,22 +43,22 @@ public:
      * see. https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
      */
     enum ObjectKind {
-        DUMMY,
-        LONG,
-        FLOAT,
-        STRING,
-        STRITER,
-        FD,
-        REGEX,
-        ARRAY,
-        MAP,
-        BASE,
-        TUPLE,
-        ERROR,
-        FUNC_OBJ,
-        JOB,
-        PIPESTATE,
-        REDIR,
+        Dummy,
+        Long,
+        Float,
+        String,
+        StrIter,
+        UnixFd,
+        Regex,
+        Array,
+        Map,
+        Base,
+        Tuple,
+        Error,
+        Func,
+        JobImpl,
+        Pipeline,
+        Redir,
     };
 
 protected:
@@ -388,24 +388,24 @@ inline T *typeAs(const DSValue &value) noexcept {
 
 }
 
-struct Dummy_Object : public DSObject {
-    explicit Dummy_Object(const DSType &type) : DSObject(ObjectKind::DUMMY, type) {}
+struct DummyObject : public DSObject {
+    explicit DummyObject(const DSType &type) : DSObject(ObjectKind::Dummy, type) {}
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == DUMMY;
+        return obj->getKind() == Dummy;
     }
 };
 
-class UnixFD_Object : public DSObject {
+class UnixFdObject : public DSObject {
 private:
     int fd;
 
 public:
-    explicit UnixFD_Object(int fd) : DSObject(FD, TYPE::UnixFD), fd(fd) {}
-    ~UnixFD_Object() override;
+    explicit UnixFdObject(int fd) : DSObject(UnixFd, TYPE::UnixFD), fd(fd) {}
+    ~UnixFdObject() override;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == FD;
+        return obj->getKind() == UnixFd;
     }
 
     int tryToClose(bool forceClose) {
@@ -431,17 +431,17 @@ public:
     }
 };
 
-class Long_Object : public DSObject {
+class LongObject : public DSObject {
 private:
     long value;
 
 public:
-    explicit Long_Object(long value) : DSObject(LONG, TYPE::Int64), value(value) { }
+    explicit LongObject(long value) : DSObject(Long, TYPE::Int64), value(value) { }
 
-    ~Long_Object() override = default;
+    ~LongObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == LONG;
+        return obj->getKind() == Long;
     }
 
     long getValue() const {
@@ -449,17 +449,17 @@ public:
     }
 };
 
-class Float_Object : public DSObject {
+class FloatObject : public DSObject {
 private:
     double value;
 
 public:
-    explicit Float_Object(double value) : DSObject(FLOAT, TYPE::Float), value(value) { }
+    explicit FloatObject(double value) : DSObject(Float, TYPE::Float), value(value) { }
 
-    ~Float_Object() override = default;
+    ~FloatObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == FLOAT;
+        return obj->getKind() == Float;
     }
 
     double getValue() const {
@@ -467,27 +467,27 @@ public:
     }
 };
 
-class String_Object : public DSObject {
+class StringObject : public DSObject {
 private:
     std::string value;
 
 public:
-    explicit String_Object(const DSType &type) :
-            DSObject(ObjectKind::STRING, type) { }
+    explicit StringObject(const DSType &type) :
+            DSObject(ObjectKind::String, type) { }
 
-    String_Object(const DSType &type, std::string &&value) :
-            DSObject(ObjectKind::STRING, type), value(std::move(value)) { }
+    StringObject(const DSType &type, std::string &&value) :
+            DSObject(ObjectKind::String, type), value(std::move(value)) { }
 
-    explicit String_Object(std::string &&value) :
-            DSObject(ObjectKind::STRING, TYPE::String), value(std::move(value)) { }
+    explicit StringObject(std::string &&value) :
+            DSObject(ObjectKind::String, TYPE::String), value(std::move(value)) { }
 
-    String_Object(const DSType &type, const std::string &value) :
-            DSObject(ObjectKind::STRING, type), value(value) { }
+    StringObject(const DSType &type, const std::string &value) :
+            DSObject(ObjectKind::String, type), value(value) { }
 
-    ~String_Object() override = default;
+    ~StringObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == STRING;
+        return obj->getKind() == String;
     }
 
     const char *getValue() const {
@@ -509,11 +509,11 @@ public:
      * for string expression
      */
     void append(DSValue &&obj) {
-        this->value += typeAs<String_Object>(obj)->value;
+        this->value += typeAs<StringObject>(obj)->value;
     }
 
     DSValue slice(unsigned int begin, unsigned int end) const {
-        return DSValue::create<String_Object>(std::string(this->getValue() + begin, end - begin));
+        return DSValue::create<StringObject>(std::string(this->getValue() + begin, end - begin));
     }
 };
 
@@ -524,35 +524,35 @@ public:
  * @return
  */
 inline StringRef createStrRef(const DSValue &value) {
-    auto *obj = typeAs<String_Object>(value);
+    auto *obj = typeAs<StringObject>(value);
     return StringRef(obj->getValue(), obj->size());
 }
 
-struct StringIter_Object : public DSObject {
+struct StrIterObject : public DSObject {
     unsigned int curIndex;
     DSValue strObj;
 
-    StringIter_Object(const DSType &type, String_Object *str) :
-            DSObject(ObjectKind::STRITER, type), curIndex(0), strObj(DSValue(str)) { }
+    StrIterObject(const DSType &type, StringObject *str) :
+            DSObject(ObjectKind::StrIter, type), curIndex(0), strObj(DSValue(str)) { }
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == STRITER;
+        return obj->getKind() == StrIter;
     }
 };
 
-class Regex_Object : public DSObject {
+class RegexObject : public DSObject {
 private:
     std::string str; // for string representation
     PCRE re;
 
 public:
-    Regex_Object(std::string str, PCRE &&re) :
-            DSObject(ObjectKind::REGEX, TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
+    RegexObject(std::string str, PCRE &&re) :
+            DSObject(ObjectKind::Regex, TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
 
-    ~Regex_Object() override = default;
+    ~RegexObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == REGEX;
+        return obj->getKind() == Regex;
     }
 
     bool search(StringRef ref) const {
@@ -573,7 +573,7 @@ public:
     }
 };
 
-class Array_Object : public DSObject {
+class ArrayObject : public DSObject {
 private:
     unsigned int curIndex;
     std::vector<DSValue> values;
@@ -581,18 +581,18 @@ private:
 public:
     using IterType = std::vector<DSValue>::const_iterator;
 
-    explicit Array_Object(const DSType &type) : DSObject(ARRAY, type), curIndex(0) { }
+    explicit ArrayObject(const DSType &type) : DSObject(Array, type), curIndex(0) { }
 
-    Array_Object(const DSType &type, std::vector<DSValue> &&values) :
-            Array_Object(type.getTypeID(), std::move(values)) {}
+    ArrayObject(const DSType &type, std::vector<DSValue> &&values) :
+            ArrayObject(type.getTypeID(), std::move(values)) {}
 
-    Array_Object(unsigned int typeID, std::vector<DSValue> &&values) :
-            DSObject(ARRAY, typeID), curIndex(0), values(std::move(values)) { }
+    ArrayObject(unsigned int typeID, std::vector<DSValue> &&values) :
+            DSObject(Array, typeID), curIndex(0), values(std::move(values)) { }
 
-    ~Array_Object() override = default;
+    ~ArrayObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == ARRAY;
+        return obj->getKind() == Array;
     }
 
     const std::vector<DSValue> &getValues() const {
@@ -640,7 +640,7 @@ public:
     DSValue slice(unsigned int begin, unsigned int end) const {
         auto b = this->getValues().begin() + begin;
         auto e = this->getValues().begin() + end;
-        return DSValue::create<Array_Object>(this->getTypeID(), std::vector<DSValue>(b, e));
+        return DSValue::create<ArrayObject>(this->getTypeID(), std::vector<DSValue>(b, e));
     }
 
     DSValue takeFirst() {
@@ -674,22 +674,22 @@ struct GenHash {
 
 using HashMap = std::unordered_map<DSValue, DSValue, GenHash, KeyCompare>;
 
-class Map_Object : public DSObject {
+class MapObject : public DSObject {
 private:
     HashMap valueMap;
     HashMap::const_iterator iter;
 
 public:
-    explicit Map_Object(const DSType &type) : DSObject(MAP, type) { }
+    explicit MapObject(const DSType &type) : DSObject(Map, type) { }
 
-    Map_Object(const DSType &type, HashMap &&map) : Map_Object(type.getTypeID(), std::move(map)) {}
+    MapObject(const DSType &type, HashMap &&map) : MapObject(type.getTypeID(), std::move(map)) {}
 
-    Map_Object(unsigned int typeID, HashMap &&map) : DSObject(MAP, typeID), valueMap(std::move(map)) {}
+    MapObject(unsigned int typeID, HashMap &&map) : DSObject(Map, typeID), valueMap(std::move(map)) {}
 
-    ~Map_Object() override = default;
+    ~MapObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == MAP;
+        return obj->getKind() == Map;
     }
 
     const HashMap &getValueMap() const {
@@ -768,12 +768,12 @@ protected:
         DSObject(kind, type), fieldSize(type.getFieldSize()), fieldTable(new DSValue[this->fieldSize]) { }
 
 public:
-    explicit BaseObject(const DSType &type) : BaseObject(BASE, type) {}
+    explicit BaseObject(const DSType &type) : BaseObject(Base, type) {}
 
     ~BaseObject() override;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() >= BASE && obj->getKind() <= TUPLE;
+        return obj->getKind() >= Base && obj->getKind() <= Tuple;
     }
 
     DSValue &operator[](unsigned int index) {
@@ -785,13 +785,13 @@ public:
     }
 };
 
-struct Tuple_Object : public BaseObject {
-    explicit Tuple_Object(const DSType &type) : BaseObject(TUPLE, type) { }
+struct TupleObject : public BaseObject {
+    explicit TupleObject(const DSType &type) : BaseObject(Tuple, type) { }
 
-    ~Tuple_Object() override = default;
+    ~TupleObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == TUPLE;
+        return obj->getKind() == Tuple;
     }
 
     std::string toString() const;
@@ -845,20 +845,20 @@ inline const char *getOccurredSourceName(const std::vector<StackTraceElement> &e
     return elements.empty() ? "" : elements.front().getSourceName().c_str();
 }
 
-class Error_Object : public DSObject {
+class ErrorObject : public DSObject {
 private:
     DSValue message;
     DSValue name;
     std::vector<StackTraceElement> stackTrace;
 
-    Error_Object(const DSType &type, DSValue &&message) :
-            DSObject(ERROR, type), message(std::move(message)) { }
+    ErrorObject(const DSType &type, DSValue &&message) :
+            DSObject(Error, type), message(std::move(message)) { }
 
 public:
-    ~Error_Object() override = default;
+    ~ErrorObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == ERROR;
+        return obj->getKind() == Error;
     }
 
     bool opStr(DSState &state) const;
@@ -1120,12 +1120,12 @@ private:
 
 public:
     FuncObject(const DSType &funcType, CompiledCode &&callable) :
-            DSObject(FUNC_OBJ, funcType), code(std::move(callable)) {}
+            DSObject(Func, funcType), code(std::move(callable)) {}
 
     ~FuncObject() override = default;
 
     static bool classof(const DSObject *obj) {
-        return obj->getKind() == FUNC_OBJ;
+        return obj->getKind() == Func;
     }
 
     const CompiledCode &getCode() const {

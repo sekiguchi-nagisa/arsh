@@ -55,30 +55,30 @@ std::string DSValue::toString() const {
     }
 
     switch(this->get()->getKind()) {
-    case DSObject::LONG:
-        return std::to_string(typeAs<Long_Object>(*this)->getValue());
-    case DSObject::FLOAT:
-        return std::to_string(typeAs<Float_Object>(*this)->getValue());
-    case DSObject::STRING:
+    case DSObject::Long:
+        return std::to_string(typeAs<LongObject>(*this)->getValue());
+    case DSObject::Float:
+        return std::to_string(typeAs<FloatObject>(*this)->getValue());
+    case DSObject::String:
         return createStrRef(*this).toString();
-    case DSObject::FD: {
+    case DSObject::UnixFd: {
         std::string str = "/dev/fd/";
-        str += std::to_string(typeAs<UnixFD_Object>(*this)->getValue());
+        str += std::to_string(typeAs<UnixFdObject>(*this)->getValue());
         return str;
     }
-    case DSObject::REGEX:
-        return typeAs<Regex_Object>(*this)->getStr();
-    case DSObject::ARRAY:
-        return typeAs<Array_Object>(*this)->toString();
-    case DSObject::MAP:
-        return typeAs<Map_Object>(*this)->toString();
-    case DSObject::TUPLE:
-        return typeAs<Tuple_Object>(*this)->toString();
-    case DSObject::FUNC_OBJ:
+    case DSObject::Regex:
+        return typeAs<RegexObject>(*this)->getStr();
+    case DSObject::Array:
+        return typeAs<ArrayObject>(*this)->toString();
+    case DSObject::Map:
+        return typeAs<MapObject>(*this)->toString();
+    case DSObject::Tuple:
+        return typeAs<TupleObject>(*this)->toString();
+    case DSObject::Func:
         return typeAs<FuncObject>(*this)->toString();
-    case DSObject::JOB: {
+    case DSObject::JobImpl: {
         std::string str = "%";
-        str += std::to_string(typeAs<JobImpl>(*this)->getJobID());
+        str += std::to_string(typeAs<JobImplObject>(*this)->getJobID());
         return str;
     }
     default:
@@ -94,14 +94,14 @@ std::string DSValue::toString() const {
 bool DSValue::opStr(DSState &state) const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
-        case DSObject::ARRAY:
-            return typeAs<Array_Object>(*this)->opStr(state);
-        case DSObject::MAP:
-            return typeAs<Map_Object>(*this)->opStr(state);
-        case DSObject::TUPLE:
-            return typeAs<Tuple_Object>(*this)->opStr(state);
-        case DSObject::ERROR:
-            return typeAs<Error_Object>(*this)->opStr(state);
+        case DSObject::Array:
+            return typeAs<ArrayObject>(*this)->opStr(state);
+        case DSObject::Map:
+            return typeAs<MapObject>(*this)->opStr(state);
+        case DSObject::Tuple:
+            return typeAs<TupleObject>(*this)->opStr(state);
+        case DSObject::Error:
+            return typeAs<ErrorObject>(*this)->opStr(state);
         default:
             break;
         }
@@ -113,10 +113,10 @@ bool DSValue::opStr(DSState &state) const {
 bool DSValue::opInterp(DSState &state) const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
-        case DSObject::ARRAY:
-            return typeAs<Array_Object>(*this)->opInterp(state);
-        case DSObject::TUPLE:
-            return typeAs<Tuple_Object>(*this)->opInterp(state);
+        case DSObject::Array:
+            return typeAs<ArrayObject>(*this)->opInterp(state);
+        case DSObject::Tuple:
+            return typeAs<TupleObject>(*this)->opInterp(state);
         default:
             break;
         }
@@ -129,11 +129,11 @@ bool DSValue::equals(const DSValue &o) const {
     if(this->isObject()) {
         assert(this->get()->getKind() == o.get()->getKind());
         switch(this->get()->getKind()) {
-        case DSObject::LONG:
-            return typeAs<Long_Object>(*this)->getValue() == typeAs<Long_Object>(o)->getValue();
-        case DSObject::FLOAT:
-            return typeAs<Float_Object>(*this)->getValue() == typeAs<Float_Object>(o)->getValue();
-        case DSObject::STRING: {
+        case DSObject::Long:
+            return typeAs<LongObject>(*this)->getValue() == typeAs<LongObject>(o)->getValue();
+        case DSObject::Float:
+            return typeAs<FloatObject>(*this)->getValue() == typeAs<FloatObject>(o)->getValue();
+        case DSObject::String: {
             auto left = createStrRef(*this);
             auto right = createStrRef(o);
             return left == right;
@@ -148,11 +148,11 @@ bool DSValue::equals(const DSValue &o) const {
 size_t DSValue::hash() const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
-        case DSObject::LONG:
-            return std::hash<long>()(typeAs<Long_Object>(*this)->getValue());
-        case DSObject::FLOAT:
-            return std::hash<double>()(typeAs<Float_Object>(*this)->getValue());
-        case DSObject::STRING:
+        case DSObject::Long:
+            return std::hash<long>()(typeAs<LongObject>(*this)->getValue());
+        case DSObject::Float:
+            return std::hash<double>()(typeAs<FloatObject>(*this)->getValue());
+        case DSObject::String:
             return std::hash<StringRef>()(createStrRef(*this));
         default:
             break;
@@ -179,11 +179,11 @@ bool DSValue::compare(const DSValue &o) const {
 
     assert(this->get()->getKind() == o.get()->getKind());
     switch(this->get()->getKind()) {
-    case DSObject::LONG:
-        return typeAs<Long_Object>(*this)->getValue() < typeAs<Long_Object>(o)->getValue();
-    case DSObject::FLOAT:
-        return typeAs<Float_Object>(*this)->getValue() < typeAs<Float_Object>(o)->getValue();
-    case DSObject::STRING: {
+    case DSObject::Long:
+        return typeAs<LongObject>(*this)->getValue() < typeAs<LongObject>(o)->getValue();
+    case DSObject::Float:
+        return typeAs<FloatObject>(*this)->getValue() < typeAs<FloatObject>(o)->getValue();
+    case DSObject::String: {
         auto left = createStrRef(*this);
         auto right = createStrRef(o);
         return left < right;
@@ -198,13 +198,13 @@ bool DSValue::compare(const DSValue &o) const {
 // ##     UnixFD_Object     ##
 // ###########################
 
-UnixFD_Object::~UnixFD_Object() {
+UnixFdObject::~UnixFdObject() {
     if(this->fd > STDERR_FILENO) {
         close(this->fd);    // do not close standard io file descriptor
     }
 }
 
-bool UnixFD_Object::closeOnExec(bool close) {
+bool UnixFdObject::closeOnExec(bool close) {
     if(this->fd <= STDERR_FILENO) {
         return false;
     }
@@ -237,7 +237,7 @@ static bool checkInvalid(DSState &st, DSValue &v) {
 ({ auto v = E; if(state.hasError()) { return false; } std::forward<decltype(v)>(v); })
 
 
-std::string Array_Object::toString() const {
+std::string ArrayObject::toString() const {
     std::string str = "[";
     unsigned int size = this->values.size();
     for(unsigned int i = 0; i < size; i++) {
@@ -264,7 +264,7 @@ static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
     return ret;
 }
 
-bool Array_Object::opStr(DSState &state) const {
+bool ArrayObject::opStr(DSState &state) const {
     state.toStrBuf += "[";
     unsigned int size = this->values.size();
     for(unsigned int i = 0; i < size; i++) {
@@ -281,7 +281,7 @@ bool Array_Object::opStr(DSState &state) const {
     return true;
 }
 
-bool Array_Object::opInterp(DSState &state) const {
+bool ArrayObject::opInterp(DSState &state) const {
     unsigned int size = this->values.size();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
@@ -320,7 +320,7 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
         result.push_back(std::move(ret));
     } else {
         assert(ret.hasType(TYPE::StringArray));
-        auto *tempArray = typeAs<Array_Object>(ret);
+        auto *tempArray = typeAs<ArrayObject>(ret);
         for(auto &tempValue : tempArray->getValues()) {
             result.push_back(tempValue);
         }
@@ -328,10 +328,10 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
     return true;
 }
 
-DSValue Array_Object::opCmdArg(DSState &state) const {
-    auto result = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
+DSValue ArrayObject::opCmdArg(DSState &state) const {
+    auto result = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
     for(auto &e : this->values) {
-        if(!appendAsCmdArg(typeAs<Array_Object>(result)->values, state, e)) {
+        if(!appendAsCmdArg(typeAs<ArrayObject>(result)->values, state, e)) {
             return DSValue();
         }
     }
@@ -343,20 +343,20 @@ DSValue Array_Object::opCmdArg(DSState &state) const {
 // ##     Map_Object     ##
 // ########################
 
-DSValue Map_Object::nextElement(DSState &ctx) {
+DSValue MapObject::nextElement(DSState &ctx) {
     std::vector<DSType *> types(2);
     types[0] = &ctx.symbolTable.get(this->iter->first.getTypeID());
     types[1] = &ctx.symbolTable.get(this->iter->second.getTypeID());
 
-    auto entry = DSValue::create<Tuple_Object>(*ctx.symbolTable.createTupleType(std::move(types)).take());
-    (*typeAs<Tuple_Object>(entry))[0] = this->iter->first;
-    (*typeAs<Tuple_Object>(entry))[1] = this->iter->second;
+    auto entry = DSValue::create<TupleObject>(*ctx.symbolTable.createTupleType(std::move(types)).take());
+    (*typeAs<TupleObject>(entry))[0] = this->iter->first;
+    (*typeAs<TupleObject>(entry))[1] = this->iter->second;
     ++this->iter;
 
     return entry;
 }
 
-std::string Map_Object::toString() const {
+std::string MapObject::toString() const {
     std::string str = "[";
     unsigned int count = 0;
     for(auto &e : this->valueMap) {
@@ -371,7 +371,7 @@ std::string Map_Object::toString() const {
     return str;
 }
 
-bool Map_Object::opStr(DSState &state) const {
+bool MapObject::opStr(DSState &state) const {
     state.toStrBuf += "[";
     unsigned int count = 0;
     for(auto &e : this->valueMap) {
@@ -410,7 +410,7 @@ BaseObject::~BaseObject() {
 // ##     Tuple_Object     ##
 // ##########################
 
-std::string Tuple_Object::toString() const {
+std::string TupleObject::toString() const {
     std::string str = "(";
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
@@ -426,7 +426,7 @@ std::string Tuple_Object::toString() const {
     return str;
 }
 
-bool Tuple_Object::opStr(DSState &state) const {
+bool TupleObject::opStr(DSState &state) const {
     state.toStrBuf += "(";
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
@@ -446,7 +446,7 @@ bool Tuple_Object::opStr(DSState &state) const {
     return true;
 }
 
-bool Tuple_Object::opInterp(DSState &state) const {
+bool TupleObject::opInterp(DSState &state) const {
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
@@ -461,11 +461,11 @@ bool Tuple_Object::opInterp(DSState &state) const {
     return true;
 }
 
-DSValue Tuple_Object::opCmdArg(DSState &state) const {
-    auto result = DSValue::create<Array_Object>(state.symbolTable.get(TYPE::StringArray));
+DSValue TupleObject::opCmdArg(DSState &state) const {
+    auto result = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
-        if(!appendAsCmdArg(typeAs<Array_Object>(result)->refValues(), state, this->fieldTable[i])) {
+        if(!appendAsCmdArg(typeAs<ArrayObject>(result)->refValues(), state, this->fieldTable[i])) {
             return DSValue();
         }
     }
@@ -476,12 +476,12 @@ DSValue Tuple_Object::opCmdArg(DSState &state) const {
 // ##     Error_Object     ##
 // ##########################
 
-bool Error_Object::opStr(DSState &state) const {
+bool ErrorObject::opStr(DSState &state) const {
     state.toStrBuf += this->createHeader(state);
     return true;
 }
 
-void Error_Object::printStackTrace(DSState &ctx) {
+void ErrorObject::printStackTrace(DSState &ctx) {
     // print header
     fprintf(stderr, "%s\n", this->createHeader(ctx).c_str());
 
@@ -492,15 +492,15 @@ void Error_Object::printStackTrace(DSState &ctx) {
     }
 }
 
-DSValue Error_Object::newError(const DSState &ctx, const DSType &type, DSValue &&message) {
-    DSValue obj(new Error_Object(type, std::move(message)));
-    typeAs<Error_Object>(obj)->stackTrace = ctx.getCallStack().createStackTrace();
-    typeAs<Error_Object>(obj)->name = DSValue::create<String_Object>(
+DSValue ErrorObject::newError(const DSState &ctx, const DSType &type, DSValue &&message) {
+    DSValue obj(new ErrorObject(type, std::move(message)));
+    typeAs<ErrorObject>(obj)->stackTrace = ctx.getCallStack().createStackTrace();
+    typeAs<ErrorObject>(obj)->name = DSValue::create<StringObject>(
             ctx.symbolTable.get(TYPE::String), ctx.symbolTable.getTypeName(type));
     return obj;
 }
 
-std::string Error_Object::createHeader(const DSState &state) const {
+std::string ErrorObject::createHeader(const DSState &state) const {
     std::string str = state.symbolTable.getTypeName(state.symbolTable.get(this->getTypeID()));
     str += ": ";
     str += createStrRef(this->message).data();

@@ -132,9 +132,9 @@ void FilePathCache::clear() {
 }
 
 struct StrArrayIter {
-    Array_Object::IterType actual;
+    ArrayObject::IterType actual;
 
-    explicit StrArrayIter(Array_Object::IterType actual) : actual(actual) {}
+    explicit StrArrayIter(ArrayObject::IterType actual) : actual(actual) {}
 
     const char *operator*() const {
         return str(*actual);
@@ -154,7 +154,7 @@ struct StrArrayIter {
     }
 };
 
-int GetOptState::operator()(const Array_Object &obj, const char *optStr) {
+int GetOptState::operator()(const ArrayObject &obj, const char *optStr) {
     auto iter = StrArrayIter(obj.getValues().begin() + this->index);
     auto end = StrArrayIter(obj.getValues().end());
     int ret = opt::GetOptState::operator()(iter, end, optStr);
@@ -170,7 +170,7 @@ const DSValue &getGlobal(const DSState &st, const char *varName) {
 }
 
 void raiseError(DSState &st, TYPE type, std::string &&message, int status) {
-    auto except = Error_Object::newError(st, st.symbolTable.get(type), DSValue::create<String_Object>(
+    auto except = ErrorObject::newError(st, st.symbolTable.get(type), DSValue::create<StringObject>(
             st.symbolTable.get(TYPE::String), std::move(message)));
     st.throwObject(std::move(except), status);
 }
@@ -540,7 +540,7 @@ int xexecve(const char *filePath, char *const *argv, char *const *envp, DSValue 
     });
 
     if(redir) {
-        typeAs<RedirConfig>(redir)->passFDToExtProc();
+        typeAs<RedirObject>(redir)->passFDToExtProc();
     }
 
     // execute external command
