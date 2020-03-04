@@ -130,9 +130,9 @@ bool DSValue::equals(const DSValue &o) const {
         assert(this->get()->getKind() == o.get()->getKind());
         switch(this->get()->getKind()) {
         case DSObject::LONG:
-            return cast<Long_Object>(this->get())->getValue() == typeAs<Long_Object>(o)->getValue();
+            return typeAs<Long_Object>(*this)->getValue() == typeAs<Long_Object>(o)->getValue();
         case DSObject::FLOAT:
-            return cast<Float_Object>(this->get())->getValue() == typeAs<Float_Object>(o)->getValue();
+            return typeAs<Float_Object>(*this)->getValue() == typeAs<Float_Object>(o)->getValue();
         case DSObject::STRING: {
             auto left = createStrRef(*this);
             auto right = createStrRef(o);
@@ -149,9 +149,9 @@ size_t DSValue::hash() const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
         case DSObject::LONG:
-            return std::hash<long>()(cast<Long_Object>(this->get())->getValue());
+            return std::hash<long>()(typeAs<Long_Object>(*this)->getValue());
         case DSObject::FLOAT:
-            return std::hash<double>()(cast<Float_Object>(this->get())->getValue());
+            return std::hash<double>()(typeAs<Float_Object>(*this)->getValue());
         case DSObject::STRING:
             return std::hash<StringRef>()(createStrRef(*this));
         default:
@@ -180,9 +180,9 @@ bool DSValue::compare(const DSValue &o) const {
     assert(this->get()->getKind() == o.get()->getKind());
     switch(this->get()->getKind()) {
     case DSObject::LONG:
-        return cast<Long_Object>(this->get())->getValue() < typeAs<Long_Object>(o)->getValue();
+        return typeAs<Long_Object>(*this)->getValue() < typeAs<Long_Object>(o)->getValue();
     case DSObject::FLOAT:
-        return cast<Float_Object>(this->get())->getValue() < typeAs<Float_Object>(o)->getValue();
+        return typeAs<Float_Object>(*this)->getValue() < typeAs<Float_Object>(o)->getValue();
     case DSObject::STRING: {
         auto left = createStrRef(*this);
         auto right = createStrRef(o);
