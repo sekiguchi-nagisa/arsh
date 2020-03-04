@@ -28,6 +28,7 @@
 #include "misc/fatal.h"
 #include "misc/buffer.hpp"
 #include "misc/string_ref.hpp"
+#include "misc/rtti.hpp"
 #include "lexer.h"
 #include "opcode.h"
 #include "regex_wrapper.h"
@@ -92,33 +93,6 @@ public:
         return this->kind;
     }
 };
-
-template <typename T>
-inline bool isa(const DSObject *obj) {
-    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
-    return obj != nullptr && T::classof(obj);
-}
-
-template <typename T>
-inline bool isa(const DSObject &obj) {
-    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
-    return T::classof(&obj);
-}
-
-template <typename T>
-inline T *cast(DSObject *obj) {
-    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
-    assert(isa<T>(obj));
-    return static_cast<T*>(obj);
-}
-
-template <typename T>
-inline const T *cast(const DSObject *obj) {
-    static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
-    assert(isa<T>(obj));
-    return static_cast<const T*>(obj);
-}
-
 
 enum class DSValueKind : unsigned char {
     OBJECT = 0,

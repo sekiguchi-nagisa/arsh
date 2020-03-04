@@ -22,7 +22,7 @@
 #include <list>
 #include <cassert>
 
-#include "misc/detect.hpp"
+#include "misc/rtti.hpp"
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
 #include "misc/token.hpp"
