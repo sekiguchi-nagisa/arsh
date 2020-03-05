@@ -545,19 +545,19 @@ public:
 
 class ArrayObject : public ObjectWithRtti<DSObject::Array> {
 private:
-    unsigned int curIndex;
+    unsigned int curIndex{0};
     std::vector<DSValue> values;
 
 public:
     using IterType = std::vector<DSValue>::const_iterator;
 
-    explicit ArrayObject(const DSType &type) : ObjectWithRtti(type), curIndex(0) { }
+    explicit ArrayObject(const DSType &type) : ObjectWithRtti(type) { }
 
     ArrayObject(const DSType &type, std::vector<DSValue> &&values) :
             ArrayObject(type.getTypeID(), std::move(values)) {}
 
     ArrayObject(unsigned int typeID, std::vector<DSValue> &&values) :
-            ObjectWithRtti(typeID), curIndex(0), values(std::move(values)) { }
+            ObjectWithRtti(typeID), values(std::move(values)) { }
 
     ~ArrayObject() override = default;
 
@@ -671,7 +671,7 @@ public:
      * old element. if not found (first time insertion), return invalid
      */
     DSValue set(DSValue &&key, DSValue &&value) {
-        auto pair = this->valueMap.insert(std::make_pair(std::move(key), value));
+        auto pair = this->valueMap.emplace(std::move(key), value);
         if(pair.second) {
             this->iter = ++pair.first;
             return DSValue::createInvalid();
@@ -681,7 +681,7 @@ public:
     }
 
     DSValue setDefault(DSValue &&key, DSValue &&value) {
-        auto pair = this->valueMap.insert(std::make_pair(std::move(key), std::move(value)));
+        auto pair = this->valueMap.emplace(std::move(key), std::move(value));
         if(pair.second) {
             this->iter = pair.first;
             this->iter++;
