@@ -18,6 +18,7 @@
 #define YDSH_TCERROR_H
 
 #include <string>
+#include <stdexcept>
 
 #include "node.h"
 #include "tlerror.h"
@@ -27,7 +28,7 @@ namespace ydsh {
 /**
  * for type error reporting
  */
-class TypeCheckError {
+class TypeCheckError : public std::exception {  //FIXME: not use exception
 private:
     Token token;
 

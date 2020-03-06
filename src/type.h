@@ -502,7 +502,7 @@ private:
 
     static MethodHandle *alloc(unsigned int count, const DSType *recv, unsigned int index,
                                const DSType *ret, unsigned int paramSize) {
-        void *ptr = malloc(sizeof(MethodHandle) + sizeof(const DSType *) * paramSize);
+        void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
         return new(ptr) MethodHandle(count, recv, index, ret, paramSize);
     }
 
