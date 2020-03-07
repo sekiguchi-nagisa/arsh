@@ -1449,7 +1449,7 @@ private:
 public:
     /**
      * initNode may be null.
-     * condNide may be null.
+     * condNode may be null.
      * iterNode may be null.
      */
     LoopNode(unsigned int startPos, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode, bool asDoWhile = false);
@@ -2308,7 +2308,7 @@ const char *resolveBinaryOpName(TokenKind op);
 
 TokenKind resolveAssignOp(TokenKind op);
 
-LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode);
+std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode);
 
 std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode,
         TokenKind op, Token token, std::unique_ptr<Node> &&rightNode);

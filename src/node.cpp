@@ -1128,7 +1128,7 @@ TokenKind resolveAssignOp(TokenKind op) {
     }
 }
 
-LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode) {
+std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode) {
     Token dummy = {startPos, 1};
 
     // create for-init
@@ -1149,7 +1149,7 @@ LoopNode *createForInNode(unsigned int startPos, std::string &&varName, Node *ex
     // insert init to block
     blockNode->insertNodeToFirst(init_var);
 
-    return new LoopNode(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
+    return std::make_unique<LoopNode>(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
 }
 
 std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKind op, Token token, std::unique_ptr<Node> &&rightNode) {

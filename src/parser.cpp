@@ -682,8 +682,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     auto exprNode = TRY(this->parse_expression());
     auto blockNode = TRY(this->parse_block());
 
-    return std::unique_ptr<Node>(
-            createForInNode(startPos, this->lexer->toName(token), exprNode.release(), blockNode.release()));
+    return createForInNode(startPos, this->lexer->toName(token), exprNode.release(), blockNode.release());
 }
 
 std::unique_ptr<Node> Parser::parse_forInit() {
