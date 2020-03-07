@@ -988,8 +988,19 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
 //!bind: function $OP_ITER($this : String) : StringIter
 YDSH_METHOD string_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_iter);
-    auto *str = typeAs<StringObject>(LOCAL(0));
-    RET(DSValue::create<StrIterObject>(ctx.symbolTable.get(TYPE::StringIter), str));
+
+    /**
+     * record StringIter {
+     *      var ref : String
+     *      var index : Int
+     * }
+     *
+     */
+     auto value = DSValue::create<BaseObject>(ctx.symbolTable.get(TYPE::StringIter), 2);
+     auto &obj = *typeAs<BaseObject>(value);
+     obj[0] = LOCAL(0);
+     obj[1] = DSValue::createInt(0);
+     RET(value);
 }
 
 //!bind: function $OP_MATCH($this : String, $re : Regex) : Boolean
@@ -1049,29 +1060,33 @@ YDSH_METHOD string_upper(RuntimeContext &ctx) {
 //!bind: function $OP_NEXT($this : StringIter) : String
 YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(stringIter_next);
-    auto strIter = typeAs<StrIterObject>(LOCAL(0));
-    auto strObj = typeAs<StringObject>(strIter->strObj);
-    if(strIter->curIndex >= strObj->size()) {
+    auto &iter = *typeAs<BaseObject>(LOCAL(0));
+    auto ref = createStrRef(iter[0]);
+    assert(iter[1].asInt() > -1);
+    unsigned int curIndex = iter[1].asInt();
+    if(curIndex >= ref.size()) {
         raiseOutOfRangeError(ctx, std::string("string iterator reach end of string"));
         RET_ERROR;
     }
-    unsigned int curIndex = strIter->curIndex;
-    strIter->curIndex = UnicodeUtil::utf8NextPos(curIndex, strObj->getValue()[curIndex]);
-    if(strIter->curIndex > strObj->size()) {
+    unsigned int newIndex = UnicodeUtil::utf8NextPos(curIndex, ref[curIndex]);
+    if(newIndex > ref.size()) {
         fatal("broken string iterator\n");
     }
 
-    unsigned int size = strIter->curIndex - curIndex;
+    unsigned int size = newIndex - curIndex;
+    iter[1] = DSValue::createInt(newIndex);
     RET(DSValue::create<StringObject>(
-            ctx.symbolTable.get(TYPE::String), std::string(strObj->getValue() + curIndex, size)));
+            ctx.symbolTable.get(TYPE::String), std::string(ref.data() + curIndex, size)));
 }
 
 //!bind: function $OP_HAS_NEXT($this : StringIter) : Boolean
 YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
     SUPPRESS_WARNING(stringIter_hasNext);
-    auto strIter = typeAs<StrIterObject>(LOCAL(0));
-    bool r = strIter->curIndex < typeAs<StringObject>(strIter->strObj)->size();
-    RET_BOOL(r);
+    auto &obj = *typeAs<BaseObject>(LOCAL(0));
+    auto ref = createStrRef(obj[0]);
+    assert(obj[1].asInt() > -1);
+    unsigned int index = obj[1].asInt();
+    RET_BOOL(index < ref.size());
 }
 
 // ###################

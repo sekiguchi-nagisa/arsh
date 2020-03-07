@@ -48,7 +48,6 @@ public:
         Long,
         Float,
         String,
-        StrIter,
         UnixFd,
         Regex,
         Array,
@@ -506,14 +505,6 @@ inline StringRef createStrRef(const DSValue &value) {
     return StringRef(obj->getValue(), obj->size());
 }
 
-struct StrIterObject : public ObjectWithRtti<DSObject::StrIter> {
-    unsigned int curIndex;
-    DSValue strObj;
-
-    StrIterObject(const DSType &type, StringObject *str) :
-            ObjectWithRtti(type), curIndex(0), strObj(DSValue(str)) { }
-};
-
 class RegexObject : public ObjectWithRtti<DSObject::Regex> {
 private:
     std::string str; // for string representation
@@ -726,11 +717,11 @@ protected:
     unsigned int fieldSize;
     DSValue *fieldTable;
 
-    BaseObject(ObjectKind kind, const DSType &type) :
-            ObjectWithRtti2(kind, type), fieldSize(type.getFieldSize()), fieldTable(new DSValue[this->fieldSize]) { }
+    BaseObject(ObjectKind kind, const DSType &type, unsigned int size) :
+            ObjectWithRtti2(kind, type), fieldSize(size), fieldTable(new DSValue[this->fieldSize]) { }
 
 public:
-    explicit BaseObject(const DSType &type) : BaseObject(Base, type) {}
+    explicit BaseObject(const DSType &type, unsigned int size) : BaseObject(Base, type, size) {}
 
     ~BaseObject() override;
 
@@ -744,7 +735,7 @@ public:
 };
 
 struct TupleObject : public BaseObject {
-    explicit TupleObject(const DSType &type) : BaseObject(Tuple, type) { }
+    explicit TupleObject(const DSType &type) : BaseObject(Tuple, type, type.getFieldSize()) { }
 
     ~TupleObject() override = default;
 
