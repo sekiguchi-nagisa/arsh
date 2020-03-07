@@ -72,8 +72,6 @@ std::string DSValue::toString() const {
         return typeAs<ArrayObject>(*this)->toString();
     case DSObject::Map:
         return typeAs<MapObject>(*this)->toString();
-    case DSObject::Tuple:
-        return typeAs<TupleObject>(*this)->toString();
     case DSObject::Func:
         return typeAs<FuncObject>(*this)->toString();
     case DSObject::JobImpl: {
@@ -98,8 +96,13 @@ bool DSValue::opStr(DSState &state) const {
             return typeAs<ArrayObject>(*this)->opStr(state);
         case DSObject::Map:
             return typeAs<MapObject>(*this)->opStr(state);
-        case DSObject::Tuple:
-            return typeAs<TupleObject>(*this)->opStr(state);
+        case DSObject::Base: {
+            auto &type = state.symbolTable.get(this->getTypeID());
+            if(state.symbolTable.getTypePool().isTupleType(type)) {
+                return typeAs<BaseObject>(*this)->opStrAsTuple(state);
+            }
+            break;
+        }
         case DSObject::Error:
             return typeAs<ErrorObject>(*this)->opStr(state);
         default:
@@ -115,8 +118,13 @@ bool DSValue::opInterp(DSState &state) const {
         switch(this->get()->getKind()) {
         case DSObject::Array:
             return typeAs<ArrayObject>(*this)->opInterp(state);
-        case DSObject::Tuple:
-            return typeAs<TupleObject>(*this)->opInterp(state);
+        case DSObject::Base: {
+            auto &type = state.symbolTable.get(this->getTypeID());
+            if(state.symbolTable.getTypePool().isTupleType(type)) {
+                return typeAs<BaseObject>(*this)->opInterpAsTuple(state);
+            }
+            break;
+        }
         default:
             break;
         }
@@ -348,9 +356,9 @@ DSValue MapObject::nextElement(DSState &ctx) {
     types[0] = &ctx.symbolTable.get(this->iter->first.getTypeID());
     types[1] = &ctx.symbolTable.get(this->iter->second.getTypeID());
 
-    auto entry = DSValue::create<TupleObject>(*ctx.symbolTable.createTupleType(std::move(types)).take());
-    (*typeAs<TupleObject>(entry))[0] = this->iter->first;
-    (*typeAs<TupleObject>(entry))[1] = this->iter->second;
+    auto entry = DSValue::create<BaseObject>(*ctx.symbolTable.createTupleType(std::move(types)).take());
+    (*typeAs<BaseObject>(entry))[0] = this->iter->first;
+    (*typeAs<BaseObject>(entry))[1] = this->iter->second;
     ++this->iter;
 
     return entry;
@@ -405,28 +413,9 @@ BaseObject::~BaseObject() {
     delete[] this->fieldTable;
 }
 
+bool BaseObject::opStrAsTuple(DSState &state) const {
+    assert(state.symbolTable.getTypePool().isTupleType(state.symbolTable.get(this->getTypeID())));
 
-// ##########################
-// ##     Tuple_Object     ##
-// ##########################
-
-std::string TupleObject::toString() const {
-    std::string str = "(";
-    unsigned int size = this->getFieldSize();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            str += ", ";
-        }
-        str += this->fieldTable[i].toString();
-    }
-    if(size == 1) {
-        str += ",";
-    }
-    str += ")";
-    return str;
-}
-
-bool TupleObject::opStr(DSState &state) const {
     state.toStrBuf += "(";
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
@@ -446,7 +435,9 @@ bool TupleObject::opStr(DSState &state) const {
     return true;
 }
 
-bool TupleObject::opInterp(DSState &state) const {
+bool BaseObject::opInterpAsTuple(DSState &state) const {
+    assert(state.symbolTable.getTypePool().isTupleType(state.symbolTable.get(this->getTypeID())));
+
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         if(i > 0) {
@@ -461,7 +452,9 @@ bool TupleObject::opInterp(DSState &state) const {
     return true;
 }
 
-DSValue TupleObject::opCmdArg(DSState &state) const {
+DSValue BaseObject::opCmdArgAsTuple(DSState &state) const {
+    assert(state.symbolTable.getTypePool().isTupleType(state.symbolTable.get(this->getTypeID())));
+
     auto result = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {

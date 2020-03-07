@@ -53,7 +53,6 @@ public:
         Array,
         Map,
         Base,
-        Tuple,
         Error,
         Func,
         JobImpl,
@@ -102,21 +101,6 @@ public:
 
     static bool classof(const DSObject *obj) {
         return obj->getKind() == K;
-    }
-};
-
-template <DSObject::ObjectKind K1, DSObject::ObjectKind K2>
-struct ObjectWithRtti2 : public DSObject {
-protected:
-    ObjectWithRtti2(ObjectKind kind, const DSType &type) : DSObject(kind, type.getTypeID()) {
-        assert(kind >= K1 && kind <= K2);
-    }
-
-public:
-    static constexpr auto value = K1;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() >= K1 && obj->getKind() <= K2;
     }
 };
 
@@ -712,16 +696,21 @@ public:
     bool opStr(DSState &state) const;
 };
 
-class BaseObject : public ObjectWithRtti2<DSObject::Base, DSObject::Tuple> {
-protected:
+class BaseObject : public ObjectWithRtti<DSObject::Base> {
+private:
     unsigned int fieldSize;
     DSValue *fieldTable;
 
-    BaseObject(ObjectKind kind, const DSType &type, unsigned int size) :
-            ObjectWithRtti2(kind, type), fieldSize(size), fieldTable(new DSValue[this->fieldSize]) { }
-
 public:
-    explicit BaseObject(const DSType &type, unsigned int size) : BaseObject(Base, type, size) {}
+    BaseObject(const DSType &type, unsigned int size) :
+            ObjectWithRtti(type), fieldSize(size), fieldTable(new DSValue[this->fieldSize]) { }
+
+    /**
+     * for tuple object construction
+     * @param type
+     * must be tuple type
+     */
+    BaseObject(const DSType &type) : BaseObject(type, type.getFieldSize()) {}
 
     ~BaseObject() override;
 
@@ -732,21 +721,11 @@ public:
     unsigned int getFieldSize() const {
         return this->fieldSize;
     }
-};
 
-struct TupleObject : public BaseObject {
-    explicit TupleObject(const DSType &type) : BaseObject(Tuple, type, type.getFieldSize()) { }
-
-    ~TupleObject() override = default;
-
-    static bool classof(const DSObject *obj) {
-        return obj->getKind() == Tuple;
-    }
-
-    std::string toString() const;
-    bool opStr(DSState &state) const;
-    bool opInterp(DSState &state) const;
-    DSValue opCmdArg(DSState &state) const;
+    // for tuple type
+    bool opStrAsTuple(DSState &state) const;
+    bool opInterpAsTuple(DSState &state) const;
+    DSValue opCmdArgAsTuple(DSState &state) const;
 };
 
 class StackTraceElement {

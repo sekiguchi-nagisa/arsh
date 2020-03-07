@@ -181,7 +181,12 @@ public:
 
     bool isMapType(const DSType &type) const {
         return type.isReifiedType() &&
-               static_cast<const ReifiedType&>(type).getNativeTypeInfo() == this->mapTemplate.getInfo();
+            static_cast<const ReifiedType&>(type).getNativeTypeInfo() == this->mapTemplate.getInfo();
+    }
+
+    bool isTupleType(const DSType &type) const {
+        return type.isReifiedType() &&
+            static_cast<const ReifiedType&>(type).getNativeTypeInfo() == this->tupleTemplate.getInfo();
     }
 
     TypeTempOrError getTypeTemplate(const std::string &typeName) const;

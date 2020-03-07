@@ -1751,7 +1751,7 @@ YDSH_METHOD map_hasNext(RuntimeContext &ctx) {
 //!bind: function $OP_CMD_ARG($this : Tuple<>) : Array<String>
 YDSH_METHOD tuple_cmdArg(RuntimeContext &ctx) {
     SUPPRESS_WARNING(tuple_cmdArg);
-    RET(typeAs<TupleObject>(LOCAL(0))->opCmdArg(ctx));
+    RET(typeAs<BaseObject>(LOCAL(0))->opCmdArgAsTuple(ctx));
 }
 
 

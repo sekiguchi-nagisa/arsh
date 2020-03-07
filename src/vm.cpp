@@ -1075,7 +1075,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(NEW_TUPLE) {
             unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
             state.stack.pc() += 4;
-            state.stack.push(DSValue::create<TupleObject>(state.symbolTable.get(v)));
+            state.stack.push(DSValue::create<BaseObject>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(NEW) {
