@@ -298,7 +298,8 @@ bool ArrayObject::opStr(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->values[i], OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += ret.asStrRef().data();
+            auto ref = ret.asStrRef();
+            state.toStrBuf.append(ref.data(), ref.size());
         }
     }
     state.toStrBuf += "]";
@@ -314,7 +315,8 @@ bool ArrayObject::opInterp(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->values[i], OP_INTERP));
         if(!ret.isInvalid()) {
-            state.toStrBuf += ret.asStrRef().data();
+            auto ref = ret.asStrRef();
+            state.toStrBuf.append(ref.data(), ref.size());
         }
     }
     return true;
@@ -406,7 +408,8 @@ bool MapObject::opStr(DSState &state) const {
         // key
         auto ret = TRY(callOP(state, e.first, OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += ret.asStrRef().data();
+            auto ref = ret.asStrRef();
+            state.toStrBuf.append(ref.data(), ref.size());
         }
 
         state.toStrBuf += " : ";
@@ -414,7 +417,8 @@ bool MapObject::opStr(DSState &state) const {
         // value
         ret = TRY(callOP(state, e.second, OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += ret.asStrRef().data();
+            auto ref = ret.asStrRef();
+            state.toStrBuf.append(ref.data(), ref.size());
         }
     }
     state.toStrBuf += "]";
@@ -441,7 +445,8 @@ bool BaseObject::opStrAsTuple(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->fieldTable[i], OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += ret.asStrRef().data();
+            auto ref = ret.asStrRef();
+            state.toStrBuf.append(ref.data(), ref.size());
         }
     }
     if(size == 1) {
@@ -462,7 +467,8 @@ bool BaseObject::opInterpAsTuple(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->fieldTable[i], OP_INTERP));
         if(!ret.isInvalid()) {
-            state.toStrBuf += ret.asStrRef().data();
+            auto ref = ret.asStrRef();
+            state.toStrBuf.append(ref.data(), ref.size());
         }
     }
     return true;
@@ -509,9 +515,10 @@ DSValue ErrorObject::newError(const DSState &ctx, const DSType &type, DSValue &&
 }
 
 std::string ErrorObject::createHeader(const DSState &state) const {
+    auto ref = this->message.asStrRef();
     std::string str = state.symbolTable.getTypeName(state.symbolTable.get(this->getTypeID()));
     str += ": ";
-    str += this->message.asStrRef().data();
+    str.append(ref.data(), ref.size());
     return str;
 }
 

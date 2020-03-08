@@ -1032,7 +1032,7 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
 YDSH_METHOD string_realpath(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_realpath);
     auto ref = LOCAL(0).asStrRef();
-    std::string str = ref.data();
+    std::string str = ref.toString();
     expandTilde(str);
     char *buf = realpath(str.c_str(), nullptr);
     if(buf == nullptr) {
