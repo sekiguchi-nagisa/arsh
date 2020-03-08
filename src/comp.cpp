@@ -789,8 +789,8 @@ private:
     }
 
     DSValue newStrObj(Token token) const {
-        std::string value = this->lexer.toTokenText(token);
-        return DSValue::createStr(std::move(value));
+        auto *ptr = this->lexer.getRange(token).first;
+        return DSValue::createStr(StringRef(ptr, token.size));
     }
 
     std::unique_ptr<Completer> selectWithCmd(bool exactly = false) const;

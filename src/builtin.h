@@ -946,20 +946,20 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
 
     auto thisStr = LOCAL(0).asStrRef();
     auto repStr = LOCAL(2).asStrRef();
-    std::string buf;
+    auto buf = DSValue::createStr();
 
     for(StringRef::size_type pos = 0; pos != StringRef::npos; ) {
         auto ret = thisStr.find(delimStr, pos);
         auto value = thisStr.slice(pos, ret);
-        buf.append(value.data(), value.size());
+        appendAsStr(buf, value);
         if(ret != StringRef::npos) {
-            buf.append(repStr.data(), repStr.size());
+            appendAsStr(buf, repStr);
             pos = ret + delimStr.size();
         } else {
             pos = ret;
         }
     }
-    RET(DSValue::createStr(std::move(buf)));
+    RET(buf);
 }
 
 
@@ -1047,17 +1047,19 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
 //!bind: function lower($this : String) : String
 YDSH_METHOD string_lower(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lower);
-    std::string str = LOCAL(0).asStrRef().toString();
-    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-    RET(DSValue::createStr(std::move(str)));
+    auto ret = DSValue::createStr(LOCAL(0).asStrRef());
+    auto ref = ret.asStrRef();
+    std::transform(ref.begin(), ref.end(), const_cast<char*>(ref.begin()), ::tolower);
+    RET(ret);
 }
 
 //!bind: function upper($this : String) : String
 YDSH_METHOD string_upper(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_upper);
-    std::string str = LOCAL(0).asStrRef().toString();
-    std::transform(str.begin(), str.end(), str.begin(), ::toupper);
-    RET(DSValue::createStr(std::move(str)));
+    auto ret = DSValue::createStr(LOCAL(0).asStrRef());
+    auto ref = ret.asStrRef();
+    std::transform(ref.begin(), ref.end(), const_cast<char*>(ref.begin()), ::toupper);
+    RET(ret);
 }
 
 // ########################
