@@ -104,6 +104,96 @@ public:
     }
 };
 
+struct DummyObject : public ObjectWithRtti<DSObject::Dummy> {
+    explicit DummyObject(const DSType &type) : ObjectWithRtti(type) {}
+};
+
+class UnixFdObject : public ObjectWithRtti<DSObject::UnixFd> {
+private:
+    int fd;
+
+public:
+    explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::UnixFD), fd(fd) {}
+    ~UnixFdObject() override;
+
+    int tryToClose(bool forceClose) {
+        if(!forceClose && this->fd < 0) {
+            return 0;
+        }
+        int s = close(this->fd);
+        this->fd = -1;
+        return s;
+    }
+
+    /**
+     * set close-on-exec flag to file descriptor.
+     * if fd is STDIN, STDOUT or STDERR, not set flag.
+     * @param close
+     * @return
+     * if failed, return false
+     */
+    bool closeOnExec(bool close);
+
+    int getValue() const {
+        return this->fd;
+    }
+};
+
+class LongObject : public ObjectWithRtti<DSObject::Long> {
+private:
+    long value;
+
+public:
+    explicit LongObject(long value) : ObjectWithRtti(TYPE::Int64), value(value) { }
+
+    ~LongObject() override = default;
+
+    long getValue() const {
+        return this->value;
+    }
+};
+
+class FloatObject : public ObjectWithRtti<DSObject::Float> {
+private:
+    double value;
+
+public:
+    explicit FloatObject(double value) : ObjectWithRtti(TYPE::Float), value(value) { }
+
+    ~FloatObject() override = default;
+
+    double getValue() const {
+        return this->value;
+    }
+};
+
+class StringObject : public ObjectWithRtti<DSObject::String> {
+private:
+    std::string value;
+
+public:
+    static constexpr size_t MAX_SIZE = INT32_MAX;
+
+    explicit StringObject(std::string &&value) :
+            ObjectWithRtti(TYPE::String), value(std::move(value)) { }
+
+    explicit StringObject(const StringRef &ref) : StringObject(ref.toString()) {}
+
+    ~StringObject() override = default;
+
+    const char *getValue() const {
+        return this->value.c_str();
+    }
+
+    unsigned int size() const {
+        return this->value.size();
+    }
+
+    void append(StringRef v) {
+        this->value.append(v.data(), v.size());
+    }
+};
+
 enum class DSValueKind : unsigned char {
     OBJECT = 0,
     NUMBER = 130,   // uint32_t
@@ -272,6 +362,8 @@ public:
         return v;
     }
 
+    StringRef asStrRef() const;
+
     std::string toString() const;
 
     /**
@@ -340,6 +432,23 @@ public:
         unsigned int v = num;
         return DSValue(mask | v);
     }
+
+    // for string construction
+    static DSValue createStr() {
+        return createStr(StringRef());
+    }
+
+    static DSValue createStr(const char *str) {
+        return createStr(StringRef(str));
+    }
+
+    static DSValue createStr(StringRef ref) {
+        return DSValue::create<StringObject>(ref);
+    }
+
+    static DSValue createStr(std::string &&value) {
+        return DSValue::create<StringObject>(std::move(value));
+    }
 };
 
 template <typename T>
@@ -370,123 +479,10 @@ inline T *typeAs(const DSValue &value) noexcept {
     return cast<T>(value.get());
 }
 
-struct DummyObject : public ObjectWithRtti<DSObject::Dummy> {
-    explicit DummyObject(const DSType &type) : ObjectWithRtti(type) {}
-};
+bool appendAsStr(DSValue &left, StringRef right);
 
-class UnixFdObject : public ObjectWithRtti<DSObject::UnixFd> {
-private:
-    int fd;
-
-public:
-    explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::UnixFD), fd(fd) {}
-    ~UnixFdObject() override;
-
-    int tryToClose(bool forceClose) {
-        if(!forceClose && this->fd < 0) {
-            return 0;
-        }
-        int s = close(this->fd);
-        this->fd = -1;
-        return s;
-    }
-
-    /**
-     * set close-on-exec flag to file descriptor.
-     * if fd is STDIN, STDOUT or STDERR, not set flag.
-     * @param close
-     * @return
-     * if failed, return false
-     */
-    bool closeOnExec(bool close);
-
-    int getValue() const {
-        return this->fd;
-    }
-};
-
-class LongObject : public ObjectWithRtti<DSObject::Long> {
-private:
-    long value;
-
-public:
-    explicit LongObject(long value) : ObjectWithRtti(TYPE::Int64), value(value) { }
-
-    ~LongObject() override = default;
-
-    long getValue() const {
-        return this->value;
-    }
-};
-
-class FloatObject : public ObjectWithRtti<DSObject::Float> {
-private:
-    double value;
-
-public:
-    explicit FloatObject(double value) : ObjectWithRtti(TYPE::Float), value(value) { }
-
-    ~FloatObject() override = default;
-
-    double getValue() const {
-        return this->value;
-    }
-};
-
-class StringObject : public ObjectWithRtti<DSObject::String> {
-private:
-    std::string value;
-
-public:
-    explicit StringObject(const DSType &type) : ObjectWithRtti(type) { }
-
-    StringObject(const DSType &type, std::string &&value) :
-            ObjectWithRtti(type), value(std::move(value)) { }
-
-    explicit StringObject(std::string &&value) :
-            ObjectWithRtti(TYPE::String), value(std::move(value)) { }
-
-    StringObject(const DSType &type, const std::string &value) :
-            ObjectWithRtti(type), value(value) { }
-
-    ~StringObject() override = default;
-
-    const char *getValue() const {
-        return this->value.c_str();
-    }
-
-    /**
-     * equivalent to strlen(this->getValue())
-     */
-    unsigned int size() const {
-        return this->value.size();
-    }
-
-    bool empty() const {
-        return this->size() == 0;
-    }
-
-    /**
-     * for string expression
-     */
-    void append(DSValue &&obj) {
-        this->value += typeAs<StringObject>(obj)->value;
-    }
-
-    DSValue slice(unsigned int begin, unsigned int end) const {
-        return DSValue::create<StringObject>(std::string(this->getValue() + begin, end - begin));
-    }
-};
-
-/**
- * create StringRef
- * @param value
- * msut be String_Object
- * @return
- */
-inline StringRef createStrRef(const DSValue &value) {
-    auto *obj = typeAs<StringObject>(value);
-    return StringRef(obj->getValue(), obj->size());
+inline bool appendAsStr(DSValue &left, const DSValue &right) {
+    return appendAsStr(left, right.asStrRef());
 }
 
 class RegexObject : public ObjectWithRtti<DSObject::Regex> {
@@ -524,6 +520,8 @@ private:
     std::vector<DSValue> values;
 
 public:
+    static constexpr size_t MAX_SIZE = INT32_MAX;
+
     using IterType = std::vector<DSValue>::const_iterator;
 
     explicit ArrayObject(const DSType &type) : ObjectWithRtti(type) { }
@@ -578,12 +576,6 @@ public:
         return this->curIndex < this->values.size();
     }
 
-    DSValue slice(unsigned int begin, unsigned int end) const {
-        auto b = this->getValues().begin() + begin;
-        auto e = this->getValues().begin() + end;
-        return DSValue::create<ArrayObject>(this->getTypeID(), std::vector<DSValue>(b, e));
-    }
-
     DSValue takeFirst() {
         auto v = this->values.front();
         this->values.erase(values.begin());
@@ -592,13 +584,13 @@ public:
 
     void sortAsStrArray() {
         std::sort(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
-            return createStrRef(x) < createStrRef(y);
+            return x.asStrRef() < y.asStrRef();
         });
     }
 };
 
 inline const char *str(const DSValue &v) {
-    return createStrRef(v).data();
+    return v.asStrRef().data();
 }
 
 struct KeyCompare {

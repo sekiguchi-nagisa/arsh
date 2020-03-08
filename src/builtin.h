@@ -220,7 +220,7 @@ YDSH_METHOD to_str(RuntimeContext & ctx) {
     if(hasRet) {
         std::string value;
         std::swap(value, ctx.toStrBuf);
-        RET(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), std::move(value)));
+        RET(DSValue::createStr(std::move(value)));
     } else {
         RET(DSValue::createInvalid());  // dummy
     }
@@ -238,7 +238,7 @@ YDSH_METHOD to_interp(RuntimeContext & ctx) {
     if(hasRet) {
         std::string value;
         std::swap(value, ctx.toStrBuf);
-        RET(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), std::move(value)));
+        RET(DSValue::createStr(std::move(value)));
     } else {
         RET(DSValue::createInvalid());  // dummy
     }
@@ -683,70 +683,70 @@ YDSH_METHOD boolean_ne(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : String, $target : String) : Boolean
 YDSH_METHOD string_eq(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_eq);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     RET_BOOL(left == right);
 }
 
 //!bind: function $OP_NE($this : String, $target : String) : Boolean
 YDSH_METHOD string_ne(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_ne);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     RET_BOOL(left != right);
 }
 
 //!bind: function $OP_LT($this : String, $target : String) : Boolean
 YDSH_METHOD string_lt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lt);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     RET_BOOL(left < right);
 }
 
 //!bind: function $OP_GT($this : String, $target : String) : Boolean
 YDSH_METHOD string_gt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_gt);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     RET_BOOL(left > right);
 }
 
 //!bind: function $OP_LE($this : String, $target : String) : Boolean
 YDSH_METHOD string_le(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_le);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     RET_BOOL(left <= right);
 }
 
 //!bind: function $OP_GE($this : String, $target : String) : Boolean
 YDSH_METHOD string_ge(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_ge);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     RET_BOOL(left >= right);
 }
 
 //!bind: function size($this : String) : Int32
 YDSH_METHOD string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
-    auto size = createStrRef(LOCAL(0)).size();
-    assert(size <= INT32_MAX);
+    auto size = LOCAL(0).asStrRef().size();
+    assert(size <= ArrayObject::MAX_SIZE);
     RET(DSValue::createInt(static_cast<int>(size)));
 }
 
 //!bind: function empty($this : String) : Boolean
 YDSH_METHOD string_empty(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_empty);
-    bool empty = createStrRef(LOCAL(0)).empty();
+    bool empty = LOCAL(0).asStrRef().empty();
     RET_BOOL(empty);
 }
 
 //!bind: function count($this : String) : Int32
 YDSH_METHOD string_count(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_count);
-    auto ref = createStrRef(LOCAL(0));
+    auto ref = LOCAL(0).asStrRef();
     const char *ptr = ref.data();
     unsigned int size = ref.size();
     unsigned int count = 0;
@@ -766,13 +766,12 @@ static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
 //!bind: function $OP_GET($this : String, $index : Int32) : String
 YDSH_METHOD string_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_get);
-    auto ref = createStrRef(LOCAL(0));
+    auto ref = LOCAL(0).asStrRef();
     const unsigned int size = ref.size();
     const int index = LOCAL(1).asInt();
 
     if(index > -1 && static_cast<unsigned int>(index) < size) {
-        RET(DSValue::create<StringObject>(
-                ctx.symbolTable.get(TYPE::String), std::string(ref.data() + index, 1)));
+        RET(DSValue::createStr(ref.substr(index, 1)));
     }
 
     std::string msg("size is ");
@@ -786,7 +785,7 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
 //!bind: function charAt($this : String, $index : Int32) : String
 YDSH_METHOD string_charAt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_charAt);
-    auto ref = createStrRef(LOCAL(0));
+    auto ref = LOCAL(0).asStrRef();
     const int pos = LOCAL(1).asInt();
     const unsigned int size = ref.size();
 
@@ -802,8 +801,7 @@ YDSH_METHOD string_charAt(RuntimeContext &ctx) {
         }
         if(count == limit && index < size) {
             unsigned int nextIndex = UnicodeUtil::utf8NextPos(index, ref[index]);
-            RET(DSValue::create<StringObject>(
-                    ctx.symbolTable.get(TYPE::String), std::string(ref.data() + index, nextIndex - index)));
+            RET(DSValue::createStr(ref.slice(index, nextIndex)));
         }
     }
 
@@ -813,6 +811,16 @@ YDSH_METHOD string_charAt(RuntimeContext &ctx) {
     msg += std::to_string(pos);
     raiseOutOfRangeError(ctx, std::move(msg));
     RET_ERROR;
+}
+
+static auto sliceImpl(const ArrayObject &obj, unsigned int begin, unsigned int end) {
+    auto b = obj.getValues().begin() + begin;
+    auto e = obj.getValues().begin() + end;
+    return DSValue::create<ArrayObject>(obj.getTypeID(), std::vector<DSValue>(b, e));
+}
+
+static auto sliceImpl(const StringRef &ref, unsigned int begin, unsigned int end) {
+    return DSValue::createStr(ref.slice(begin, end));
 }
 
 /**
@@ -847,62 +855,62 @@ static auto slice(RuntimeContext &ctx, const T &obj, int startIndex, int stopInd
         raiseOutOfRangeError(ctx, std::move(msg));
         RET_ERROR;
     }
-    RET(obj.slice(static_cast<unsigned int>(startIndex), static_cast<unsigned int>(stopIndex)));
+    RET(sliceImpl(obj, static_cast<unsigned int>(startIndex), static_cast<unsigned int>(stopIndex)));
 }
 
 //!bind: function slice($this : String, $start : Int32, $stop : Int32) : String
 YDSH_METHOD string_slice(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_slice);
-    RET(slice(ctx, *typeAs<StringObject>(LOCAL(0)), LOCAL(1).asInt(), LOCAL(2).asInt()));
+    RET(slice(ctx, LOCAL(0).asStrRef(), LOCAL(1).asInt(), LOCAL(2).asInt()));
 }
 
 //!bind: function from($this : String, $start : Int32) : String
 YDSH_METHOD string_sliceFrom(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceFrom);
-    auto &strObj = *typeAs<StringObject>(LOCAL(0));
+    auto strObj = LOCAL(0).asStrRef();
     RET(slice(ctx, strObj, LOCAL(1).asInt(), strObj.size()));
 }
 
 //!bind: function to($this : String, $stop : Int32) : String
 YDSH_METHOD string_sliceTo(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_sliceTo);
-    auto &strObj = *typeAs<StringObject>(LOCAL(0));
+    auto strObj = LOCAL(0).asStrRef();
     RET(slice(ctx, strObj, 0, LOCAL(1).asInt()));
 }
 
 //!bind: function startsWith($this : String, $target : String) : Boolean
 YDSH_METHOD string_startsWith(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_startsWith);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     RET_BOOL(left.startsWith(right));
 }
 
 //!bind: function endsWith($this : String, $target : String) : Boolean
 YDSH_METHOD string_endsWith(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_endsWith);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     RET_BOOL(left.endsWith(right));
 }
 
 //!bind: function indexOf($this : String, $target : String) : Int32
 YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_indexOf);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     auto index = left.indexOf(right);
-    assert(index == StringRef::npos || index <= INT32_MAX);
+    assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
     RET(DSValue::createInt(static_cast<int>(index)));
 }
 
 //!bind: function lastIndexOf($this : String, $target : String) : Int32
 YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lastIndexOf);
-    auto left = createStrRef(LOCAL(0));
-    auto right = createStrRef(LOCAL(1));
+    auto left = LOCAL(0).asStrRef();
+    auto right = LOCAL(1).asStrRef();
     auto index = left.lastIndexOf(right);
-    assert(index == StringRef::npos || index <= INT32_MAX);
+    assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
     RET(DSValue::createInt(static_cast<int>(index)));
 }
 
@@ -912,16 +920,15 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
     auto results = DSValue::create<ArrayObject>(ctx.symbolTable.get(TYPE::StringArray));
     auto ptr = typeAs<ArrayObject>(results);
 
-    auto thisStr = createStrRef(LOCAL(0));
-    auto delimStr = createStrRef(LOCAL(1));
+    auto thisStr = LOCAL(0).asStrRef();
+    auto delimStr = LOCAL(1).asStrRef();
 
     if(delimStr.empty()) {
         ptr->append(LOCAL(0));
     } else {
         for(StringRef::size_type pos = 0; pos != StringRef::npos; ) {
             auto ret = thisStr.find(delimStr, pos);
-            auto value = thisStr.slice(pos, ret);
-            ptr->append(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), value.toString()));
+            ptr->append(DSValue::createStr(thisStr.slice(pos, ret)));
             pos = ret != StringRef::npos ? ret + delimStr.size() : ret;
         }
     }
@@ -932,13 +939,13 @@ YDSH_METHOD string_split(RuntimeContext &ctx) {
 YDSH_METHOD string_replace(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_replace);
 
-    auto delimStr = createStrRef(LOCAL(1));
+    auto delimStr = LOCAL(1).asStrRef();
     if(delimStr.empty()) {
         RET(LOCAL(0));
     }
 
-    auto thisStr = createStrRef(LOCAL(0));
-    auto repStr = createStrRef(LOCAL(2));
+    auto thisStr = LOCAL(0).asStrRef();
+    auto repStr = LOCAL(2).asStrRef();
     std::string buf;
 
     for(StringRef::size_type pos = 0; pos != StringRef::npos; ) {
@@ -952,14 +959,14 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
             pos = ret;
         }
     }
-    RET(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), std::move(buf)));
+    RET(DSValue::createStr(std::move(buf)));
 }
 
 
 //!bind: function toInt32($this : String) : Option<Int32>
 YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt32);
-    auto ref = createStrRef(LOCAL(0));
+    auto ref = LOCAL(0).asStrRef();
     auto ret = fromIntLiteral<int32_t>(ref.begin(), ref.end());
 
     RET(ret.second ? DSValue::createInt(ret.first) : DSValue::createInvalid());
@@ -968,7 +975,7 @@ YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
 //!bind: function toInt64($this : String) : Option<Int64>
 YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt64);
-    auto ref = createStrRef(LOCAL(0));
+    auto ref = LOCAL(0).asStrRef();
     auto ret = fromIntLiteral<int64_t>(ref.begin(), ref.end());
 
     RET(ret.second ? DSValue::create<LongObject>(static_cast<long>(ret.first))
@@ -978,7 +985,7 @@ YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
 //!bind: function toFloat($this : String) : Option<Float>
 YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toFloat);
-    auto ref = createStrRef(LOCAL(0));
+    auto ref = LOCAL(0).asStrRef();
     int status = 0;
     double value = convertToDouble(ref.data(), status, false);
 
@@ -1006,7 +1013,7 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
 //!bind: function $OP_MATCH($this : String, $re : Regex) : Boolean
 YDSH_METHOD string_match(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_match);
-    auto str = createStrRef(LOCAL(0));
+    auto str = LOCAL(0).asStrRef();
     auto *re = typeAs<RegexObject>(LOCAL(1));
     bool r = re->search(str);
     RET_BOOL(r);
@@ -1015,7 +1022,7 @@ YDSH_METHOD string_match(RuntimeContext &ctx) {
 //!bind: function $OP_UNMATCH($this : String, $re : Regex) : Boolean
 YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_unmatch);
-    auto str = createStrRef(LOCAL(0));
+    auto str = LOCAL(0).asStrRef();
     auto *re = typeAs<RegexObject>(LOCAL(1));
     bool r = !re->search(str);
     RET_BOOL(r);
@@ -1024,7 +1031,7 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
 //!bind: function realpath($this : String) : Option<String>
 YDSH_METHOD string_realpath(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_realpath);
-    auto ref = createStrRef(LOCAL(0));
+    auto ref = LOCAL(0).asStrRef();
     std::string str = ref.data();
     expandTilde(str);
     char *buf = realpath(str.c_str(), nullptr);
@@ -1032,25 +1039,25 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
         RET(DSValue::createInvalid());
     }
 
-    str = buf;
+    auto ret = DSValue::createStr(buf);
     free(buf);
-    RET(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), std::move(str)));
+    RET(ret);
 }
 
 //!bind: function lower($this : String) : String
 YDSH_METHOD string_lower(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_lower);
-    std::string str = createStrRef(LOCAL(0)).toString();
+    std::string str = LOCAL(0).asStrRef().toString();
     std::transform(str.begin(), str.end(), str.begin(), ::tolower);
-    RET(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), std::move(str)));
+    RET(DSValue::createStr(std::move(str)));
 }
 
 //!bind: function upper($this : String) : String
 YDSH_METHOD string_upper(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_upper);
-    std::string str = createStrRef(LOCAL(0)).toString();
+    std::string str = LOCAL(0).asStrRef().toString();
     std::transform(str.begin(), str.end(), str.begin(), ::toupper);
-    RET(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), std::move(str)));
+    RET(DSValue::createStr(std::move(str)));
 }
 
 // ########################
@@ -1061,7 +1068,7 @@ YDSH_METHOD string_upper(RuntimeContext &ctx) {
 YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(stringIter_next);
     auto &iter = *typeAs<BaseObject>(LOCAL(0));
-    auto ref = createStrRef(iter[0]);
+    auto ref = iter[0].asStrRef();
     assert(iter[1].asInt() > -1);
     unsigned int curIndex = iter[1].asInt();
     if(curIndex >= ref.size()) {
@@ -1075,15 +1082,14 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
 
     unsigned int size = newIndex - curIndex;
     iter[1] = DSValue::createInt(newIndex);
-    RET(DSValue::create<StringObject>(
-            ctx.symbolTable.get(TYPE::String), std::string(ref.data() + curIndex, size)));
+    RET(DSValue::createStr(ref.substr(curIndex, size)));
 }
 
 //!bind: function $OP_HAS_NEXT($this : StringIter) : Boolean
 YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
     SUPPRESS_WARNING(stringIter_hasNext);
     auto &obj = *typeAs<BaseObject>(LOCAL(0));
-    auto ref = createStrRef(obj[0]);
+    auto ref = obj[0].asStrRef();
     assert(obj[1].asInt() > -1);
     unsigned int index = obj[1].asInt();
     RET_BOOL(index < ref.size());
@@ -1096,7 +1102,7 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : Regex, $str : String) : Regex
 YDSH_METHOD regex_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_init);
-    auto ref = createStrRef(LOCAL(1));
+    auto ref = LOCAL(1).asStrRef();
     const char *errorStr;
     auto re = compileRegex(ref.data(), errorStr, 0);
     if(!re) {
@@ -1110,7 +1116,7 @@ YDSH_METHOD regex_init(RuntimeContext &ctx) {
 YDSH_METHOD regex_search(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_search);
     auto *re = typeAs<RegexObject>(LOCAL(0));
-    auto ref = createStrRef(LOCAL(1));
+    auto ref = LOCAL(1).asStrRef();
     bool r = re->search(ref);
     RET_BOOL(r);
 }
@@ -1119,7 +1125,7 @@ YDSH_METHOD regex_search(RuntimeContext &ctx) {
 YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_unmatch);
     auto *re = typeAs<RegexObject>(LOCAL(0));
-    auto ref = createStrRef(LOCAL(1));
+    auto ref = LOCAL(1).asStrRef();
     bool r = !re->search(ref);
     RET_BOOL(r);
 }
@@ -1128,7 +1134,7 @@ YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
 YDSH_METHOD regex_match(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_match);
     auto *re = typeAs<RegexObject>(LOCAL(0));
-    auto ref = createStrRef(LOCAL(1));
+    auto ref = LOCAL(1).asStrRef();
 
     FlexBuffer<int> ovec;
     int matchSize = re->match(ref, ovec);
@@ -1141,9 +1147,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     }
     for(int i = 0; i < matchSize; i++) {
         unsigned int size = ovec[i * 2 + 1] - ovec[i * 2];
-        auto v = size == 0 ? ctx.emptyStrObj :
-                 DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String),
-                                               std::string(ref.data() + ovec[i * 2], size));
+        auto v = size == 0 ? ctx.emptyStrObj : DSValue::createStr(ref.substr(ovec[i * 2], size));
         array->refValues().push_back(std::move(v));
     }
 
@@ -1159,7 +1163,7 @@ YDSH_METHOD signal_name(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_name);
     const char *name = getSignalName(LOCAL(0).asSig());
     assert(name != nullptr);
-    RET(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), name));
+    RET(DSValue::createStr(name));
 }
 
 //!bind: function value($this : Signal) : Int32
@@ -1172,7 +1176,7 @@ YDSH_METHOD signal_value(RuntimeContext &ctx) {
 YDSH_METHOD signal_message(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_message);
     const char *value = strsignal(LOCAL(0).asSig());
-    RET(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), value));
+    RET(DSValue::createStr(value));
 }
 
 //!bind: function kill($this : Signal, $pid : Int32) : Void
@@ -1223,7 +1227,7 @@ YDSH_METHOD signals_set(RuntimeContext &ctx) {
 //!bind: function signal($this : Signals, $key : String) : Option<Signal>
 YDSH_METHOD signals_signal(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_signal);
-    const char *key = createStrRef(LOCAL(1)).data();
+    const char *key = LOCAL(1).asStrRef().data();
     int sigNum = getSignalNum(key);
     if(sigNum < 0) {
         RET(DSValue::createInvalid());
@@ -1352,7 +1356,7 @@ YDSH_METHOD array_peek(RuntimeContext &ctx) {
 static bool array_insertImpl(DSState &ctx, int index, const DSValue &v) {
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
     auto size0 = obj->getValues().size();
-    if(size0 == INT32_MAX) {
+    if(size0 == ArrayObject::MAX_SIZE) {
         raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
         return false;
     }
@@ -1426,7 +1430,7 @@ YDSH_METHOD array_extend(RuntimeContext &ctx) {
     if(obj != value) {
         unsigned int valueSize = value->getValues().size();
         for(unsigned int i = 0; i < valueSize; i++) {
-            if(obj->getValues().size() == INT32_MAX) {
+            if(obj->getValues().size() == ArrayObject::MAX_SIZE) {
                 raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
                 RET_ERROR;
             }
@@ -1528,7 +1532,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
 YDSH_METHOD array_join(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_join);
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
-    auto delim = createStrRef(LOCAL(1));
+    auto delim = LOCAL(1).asStrRef();
 
     bool hasRet = ctx.toStrBuf.empty();
     unsigned int count = 0;
@@ -1549,7 +1553,7 @@ YDSH_METHOD array_join(RuntimeContext &ctx) {
     if(hasRet) {
         std::string value;
         std::swap(value, ctx.toStrBuf);
-        RET(DSValue::create<StringObject>(ctx.symbolTable.get(TYPE::String), std::move(value)));
+        RET(DSValue::createStr(std::move(value)));
     } else {
         RET(DSValue::createInvalid());  // dummy
     }
@@ -1792,7 +1796,7 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : UnixFD, $path : String) : UnixFD
 YDSH_METHOD fd_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_init);
-    const char *path = createStrRef(LOCAL(1)).data();
+    const char *path = LOCAL(1).asStrRef().data();
     int fd = open(path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
     if(fd != -1) {
         RET(DSValue::create<UnixFdObject>(fd));

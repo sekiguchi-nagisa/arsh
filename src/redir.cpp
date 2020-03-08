@@ -109,7 +109,7 @@ static int doIOHere(const StringRef &value) {
  */
 static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
     if(fileName.hasType(TYPE::String)) {
-        FILE *fp = fopen(createStrRef(fileName).data(), mode);
+        FILE *fp = fopen(fileName.asStrRef().data(), mode);
         if(fp == nullptr) {
             return errno;
         }
@@ -170,7 +170,7 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
         if(dup2(STDERR_FILENO, STDOUT_FILENO) < 0) { return errno; }
         return 0;
     case RedirOP::HERE_STR:
-        return doIOHere(createStrRef(pair.second));
+        return doIOHere(pair.second.asStrRef());
     case RedirOP::NOP:
         break;
     }
@@ -193,7 +193,7 @@ bool RedirObject::redirect(DSState &st) {
             std::string msg = REDIR_ERROR;
             if(pair.second) {
                 if(pair.second.hasType(TYPE::String)) {
-                    auto ref = createStrRef(pair.second);
+                    auto ref = pair.second.asStrRef();
                     if(!ref.empty()) {
                         msg += ": ";
                         msg += ref.data();

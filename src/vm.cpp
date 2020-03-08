@@ -52,7 +52,7 @@ static std::string initLogicalWorkingDir() {
 }
 
 DSState::DSState() :
-        emptyStrObj(DSValue::create<StringObject>(std::string())),
+        emptyStrObj(DSValue::createStr()),
         emptyFDObj(DSValue::create<UnixFdObject>(-1)),
         logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()) { }
@@ -89,7 +89,7 @@ bool VM::checkCast(DSState &state, const DSType &targetType) {
 
 bool VM::checkAssertion(DSState &state) {
     auto msg = state.stack.pop();
-    auto ref = createStrRef(msg);
+    auto ref = msg.asStrRef();
     if(!state.stack.pop().asBool()) {
         raiseError(state, TYPE::_AssertFail, ref.toString());
         return false;
@@ -103,10 +103,10 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
         dValue = state.stack.pop();
     }
     auto nameObj = state.stack.pop();
-    const char *name = createStrRef(nameObj).data();
+    const char *name = nameObj.asStrRef().data();
     const char *env = getenv(name);
     if(env == nullptr && hasDefault) {
-        setenv(name, createStrRef(dValue).data(), 1);
+        setenv(name, dValue.asStrRef().data(), 1);
         env = getenv(name);
     }
 
@@ -165,7 +165,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSVal
 
 /* for substitution */
 
-static DSValue readAsStr(const DSState &state, int fd) {
+static DSValue readAsStr(int fd) {
     char buf[256];
     std::string str;
     while(true) {
@@ -182,11 +182,11 @@ static DSValue readAsStr(const DSState &state, int fd) {
     // remove last newlines
     for(; !str.empty() && str.back() == '\n'; str.pop_back());
 
-    return DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(str));
+    return DSValue::createStr(std::move(str));
 }
 
 static DSValue readAsStrArray(const DSState &state, int fd) {
-    auto ifsRef = createStrRef(state.getGlobal(BuiltinVarOffset::IFS));
+    auto ifsRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
     const char *ifs = ifsRef.data();
     const unsigned ifsSize = ifsRef.size();
     unsigned int skipCount = 1;
@@ -218,7 +218,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
             }
             skipCount = 0;
             if(fieldSep) {
-                array->append(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(str)));
+                array->append(DSValue::createStr(std::move(str)));
                 str = "";
                 skipCount = isSpace(ch) ? 2 : 1;
                 continue;
@@ -232,7 +232,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
     // append remain
     if(!str.empty() || !hasSpace(ifsSize, ifs)) {
-        array->append(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(str)));
+        array->append(DSValue::createStr(std::move(str)));
     }
 
     return obj;
@@ -272,7 +272,7 @@ bool VM::forkAndEval(DSState &state) {
         case ForkKind::ARRAY: {
             tryToClose(pipeset.in[WRITE_PIPE]);
             const bool isStr = forkKind == ForkKind::STR;
-            obj = isStr ? readAsStr(state, pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
+            obj = isStr ? readAsStr(pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
             auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
             int ret = proc.wait(waitOp);   // wait exit
             tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
@@ -781,7 +781,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
 
     auto *argv = typeAs<ArrayObject>(state.stack.peekByOffset(1));
     if(valueType.is(TYPE::String)) {  // String
-        if(skipEmptyStr && createStrRef(value).empty()) {
+        if(skipEmptyStr && value.asStrRef().empty()) {
             return;
         }
         argv->append(std::move(value));
@@ -793,7 +793,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
             state.stack.pop();
             state.stack.push(DSValue::create<RedirObject>());
         }
-        auto strObj = DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), value.toString());
+        auto strObj = DSValue::createStr(value.toString());
         typeAs<RedirObject>(state.stack.peek())->addRedirOp(RedirOP::NOP, std::move(value));
         argv->append(std::move(strObj));
         return;
@@ -802,7 +802,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
     assert(valueType.is(TYPE::StringArray));  // Array<String>
     auto *arrayObj = typeAs<ArrayObject>(value);
     for(auto &element : arrayObj->getValues()) {
-        if(createStrRef(element).empty()) {
+        if(element.asStrRef().empty()) {
             continue;
         }
         argv->append(element);
@@ -901,7 +901,7 @@ bool VM::mainLoop(DSState &state) {
 
             auto &stackTopType = state.symbolTable.get(v);
             assert(!stackTopType.isVoidType());
-            auto ref = createStrRef(state.stack.peek());
+            auto ref = state.stack.peek().asStrRef();
             std::string value = ": ";
             value += state.symbolTable.getTypeName(stackTopType);
             value += " = ";
@@ -1014,7 +1014,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(LOAD_ENV) {
             const char *value = loadEnv(state, false);
             TRY(value);
-            state.stack.push(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), value));
+            state.stack.push(DSValue::createStr(value));
             vmnext;
         }
         vmcase(STORE_ENV) {
@@ -1041,12 +1041,17 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_STRING) {
-            state.stack.push(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String)));
+            state.stack.push(DSValue::createStr());
             vmnext;
         }
         vmcase(APPEND_STRING) {
             DSValue v = state.stack.pop();
-            typeAs<StringObject>(state.stack.peek())->append(std::move(v));
+            DSValue left = state.stack.pop();
+            if(!appendAsStr(left, v)) {
+                raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
+                vmerror;
+            }
+            state.stack.push(std::move(left));
             vmnext;
         }
         vmcase(NEW_ARRAY) {
@@ -1277,9 +1282,9 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(EXPAND_TILDE) {
-            std::string str = createStrRef(state.stack.pop()).toString();
+            std::string str = state.stack.pop().asStrRef().toString();
             expandTilde(str);
-            state.stack.push(DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(str)));
+            state.stack.push(DSValue::createStr(std::move(str)));
             vmnext;
         }
         vmcase(NEW_CMD) {
@@ -1659,7 +1664,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
             state.stack.clearThrownObject();
             fputs("cannot obtain string representation\n", stderr);
         } else if(!bt) {
-            auto ref = createStrRef(ret);
+            auto ref = ret.asStrRef();
             fwrite(ref.data(), sizeof(char), ref.size(), stderr);
             fputc('\n', stderr);
         }

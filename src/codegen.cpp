@@ -236,8 +236,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         unsigned int index = 0;
         const bool tildeExpansion = isTildeExpansion(*node.getSegmentNodes()[0]);
         if(tildeExpansion) {
-            this->emitLdcIns(DSValue::create<StringObject>(
-                    this->symbolTable.get(TYPE::String), static_cast<StringNode&>(*node.getSegmentNodes()[0]).getValue()));
+            this->emitLdcIns(DSValue::createStr(static_cast<StringNode&>(*node.getSegmentNodes()[0]).getValue()));
             this->emit0byteIns(OpCode::APPEND_STRING);
             index++;
         }
@@ -366,8 +365,7 @@ void ByteCodeGenerator::visitStringNode(StringNode &node) {
         this->emit0byteIns(OpCode::PUSH_ESTRING);
     } else {
         bool isTilde = node.isTilde();
-        auto &type = node.getType();
-        this->emitLdcIns(DSValue::create<StringObject>(type, StringNode::extract(std::move(node))));
+        this->emitLdcIns(DSValue::createStr(StringNode::extract(std::move(node))));
         if(isTilde) {
             this->emit0byteIns(OpCode::EXPAND_TILDE);
         }
@@ -494,7 +492,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
             auto thenLabel = makeLabel();
             auto mergeLabel = makeLabel();
             this->emitBranchIns(OpCode::TRY_UNWRAP, thenLabel);
-            this->emitLdcIns(DSValue::create<StringObject>(this->symbolTable.get(TYPE::String), "(invalid)"));
+            this->emitLdcIns(DSValue::createStr("(invalid)"));
             this->emitJumpIns(mergeLabel);
 
             this->markLabel(thenLabel);
@@ -849,7 +847,7 @@ static DSValue newObject(Node &constNode) {
         }
         return DSValue::createInt(static_cast<NumberNode&>(constNode).getIntValue());
     }
-    return DSValue::create<StringObject>(constNode.getType(), static_cast<StringNode&>(constNode).getValue());
+    return DSValue::createStr(static_cast<StringNode&>(constNode).getValue());
 }
 
 void ByteCodeGenerator::generateMapCase(CaseNode &node) {
@@ -1108,7 +1106,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
         this->visit(*node.getExprNode());
         break;
     case VarDeclNode::IMPORT_ENV: {
-        this->emitLdcIns(DSValue::create<StringObject>(this->symbolTable.get(TYPE::String), node.getVarName()));
+        this->emitLdcIns(DSValue::createStr(node.getVarName()));
         this->emit0byteIns(OpCode::DUP);
         const bool hashDefault = node.getExprNode() != nullptr;
         if(hashDefault) {
@@ -1120,7 +1118,7 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
         break;
     }
     case VarDeclNode::EXPORT_ENV: {
-        this->emitLdcIns(DSValue::create<StringObject>(this->symbolTable.get(TYPE::String), node.getVarName()));
+        this->emitLdcIns(DSValue::createStr(node.getVarName()));
         this->emit0byteIns(OpCode::DUP);
         this->visit(*node.getExprNode());
         this->emit0byteIns(OpCode::STORE_ENV);

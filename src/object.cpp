@@ -39,6 +39,11 @@ unsigned int DSValue::getTypeID() const {
     }
 }
 
+StringRef DSValue::asStrRef() const {
+    auto *obj = typeAs<StringObject>(*this);
+    return StringRef(obj->getValue(), obj->size());
+}
+
 std::string DSValue::toString() const {
     switch(this->kind()) {
     case DSValueKind::NUMBER:
@@ -60,7 +65,7 @@ std::string DSValue::toString() const {
     case DSObject::Float:
         return std::to_string(typeAs<FloatObject>(*this)->getValue());
     case DSObject::String:
-        return createStrRef(*this).toString();
+        return this->asStrRef().toString();
     case DSObject::UnixFd: {
         std::string str = "/dev/fd/";
         str += std::to_string(typeAs<UnixFdObject>(*this)->getValue());
@@ -142,8 +147,8 @@ bool DSValue::equals(const DSValue &o) const {
         case DSObject::Float:
             return typeAs<FloatObject>(*this)->getValue() == typeAs<FloatObject>(o)->getValue();
         case DSObject::String: {
-            auto left = createStrRef(*this);
-            auto right = createStrRef(o);
+            auto left = this->asStrRef();
+            auto right = o.asStrRef();
             return left == right;
         }
         default:
@@ -161,7 +166,7 @@ size_t DSValue::hash() const {
         case DSObject::Float:
             return std::hash<double>()(typeAs<FloatObject>(*this)->getValue());
         case DSObject::String:
-            return std::hash<StringRef>()(createStrRef(*this));
+            return std::hash<StringRef>()(this->asStrRef());
         default:
             break;
         }
@@ -192,14 +197,25 @@ bool DSValue::compare(const DSValue &o) const {
     case DSObject::Float:
         return typeAs<FloatObject>(*this)->getValue() < typeAs<FloatObject>(o)->getValue();
     case DSObject::String: {
-        auto left = createStrRef(*this);
-        auto right = createStrRef(o);
+        auto left = this->asStrRef();
+        auto right = o.asStrRef();
         return left < right;
     }
     default:
         break;
     }
     return false;
+}
+
+bool appendAsStr(DSValue &left, StringRef right) {
+    assert(left.getTypeID() == static_cast<unsigned int>(TYPE::String));
+    assert(left.get()->getRefcount() == 1);
+    unsigned int leftSize = left.asStrRef().size();
+    if(leftSize + right.size() >= StringObject::MAX_SIZE) {
+        return false;
+    }
+    typeAs<StringObject>(left)->append(right);
+    return true;
 }
 
 // ###########################
@@ -282,7 +298,7 @@ bool ArrayObject::opStr(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->values[i], OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += createStrRef(ret).data();
+            state.toStrBuf += ret.asStrRef().data();
         }
     }
     state.toStrBuf += "]";
@@ -298,7 +314,7 @@ bool ArrayObject::opInterp(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->values[i], OP_INTERP));
         if(!ret.isInvalid()) {
-            state.toStrBuf += createStrRef(ret).data();
+            state.toStrBuf += ret.asStrRef().data();
         }
     }
     return true;
@@ -390,7 +406,7 @@ bool MapObject::opStr(DSState &state) const {
         // key
         auto ret = TRY(callOP(state, e.first, OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += createStrRef(ret).data();
+            state.toStrBuf += ret.asStrRef().data();
         }
 
         state.toStrBuf += " : ";
@@ -398,7 +414,7 @@ bool MapObject::opStr(DSState &state) const {
         // value
         ret = TRY(callOP(state, e.second, OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += createStrRef(ret).data();
+            state.toStrBuf += ret.asStrRef().data();
         }
     }
     state.toStrBuf += "]";
@@ -425,7 +441,7 @@ bool BaseObject::opStrAsTuple(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->fieldTable[i], OP_STR));
         if(!ret.isInvalid()) {
-            state.toStrBuf += createStrRef(ret).data();
+            state.toStrBuf += ret.asStrRef().data();
         }
     }
     if(size == 1) {
@@ -446,7 +462,7 @@ bool BaseObject::opInterpAsTuple(DSState &state) const {
 
         auto ret = TRY(callOP(state, this->fieldTable[i], OP_INTERP));
         if(!ret.isInvalid()) {
-            state.toStrBuf += createStrRef(ret).data();
+            state.toStrBuf += ret.asStrRef().data();
         }
     }
     return true;
@@ -488,15 +504,14 @@ void ErrorObject::printStackTrace(DSState &ctx) {
 DSValue ErrorObject::newError(const DSState &ctx, const DSType &type, DSValue &&message) {
     DSValue obj(new ErrorObject(type, std::move(message)));
     typeAs<ErrorObject>(obj)->stackTrace = ctx.getCallStack().createStackTrace();
-    typeAs<ErrorObject>(obj)->name = DSValue::create<StringObject>(
-            ctx.symbolTable.get(TYPE::String), ctx.symbolTable.getTypeName(type));
+    typeAs<ErrorObject>(obj)->name = DSValue::createStr(ctx.symbolTable.getTypeName(type));
     return obj;
 }
 
 std::string ErrorObject::createHeader(const DSState &state) const {
     std::string str = state.symbolTable.getTypeName(state.symbolTable.get(this->getTypeID()));
     str += ": ";
-    str += createStrRef(this->message).data();
+    str += this->message.asStrRef().data();
     return str;
 }
 

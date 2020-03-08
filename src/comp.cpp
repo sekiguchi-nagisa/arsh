@@ -102,7 +102,7 @@ static std::string escape(const char *str, EscapeOp op) {
 static void append(ArrayObject &can, const char *str, EscapeOp op) {
     assert(can.getTypeID() == static_cast<unsigned int>(TYPE::StringArray));
     std::string estr = escape(str, op);
-    can.append(DSValue::create<StringObject>(std::move(estr)));
+    can.append(DSValue::createStr(std::move(estr)));
 }
 
 static void append(ArrayObject &buf, const std::string &str, EscapeOp op) {
@@ -790,7 +790,7 @@ private:
 
     DSValue newStrObj(Token token) const {
         std::string value = this->lexer.toTokenText(token);
-        return DSValue::create<StringObject>(this->state.symbolTable.get(TYPE::String), std::move(value));
+        return DSValue::createStr(std::move(value));
     }
 
     std::unique_ptr<Completer> selectWithCmd(bool exactly = false) const;
@@ -1033,7 +1033,7 @@ void completeLine(DSState &st, const char *data, unsigned int size) {
         auto &values = compreply.refValues();
         compreply.sortAsStrArray();
         auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
-            return createStrRef(x) == createStrRef(y);
+            return x.asStrRef() == y.asStrRef();
         });
         values.erase(iter, values.end());
 

@@ -178,8 +178,7 @@ static void initBuiltinVar(DSState &state) {
      * for version detection
      * must be String_Object
      */
-    bindVariable(state, "YDSH_VERSION", DSValue::create<StringObject>(
-            state.symbolTable.get(TYPE::String),
+    bindVariable(state, "YDSH_VERSION", DSValue::createStr(
             STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "." STR(X_INFO_PATCH_VERSION)));
 #undef XSTR
 #undef STR
@@ -220,14 +219,14 @@ static void initBuiltinVar(DSState &state) {
      * for internal field splitting.
      * must be String_Object.
      */
-    bindVariable(state, "IFS", DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), " \t\n"), FieldAttribute());
+    bindVariable(state, "IFS", DSValue::createStr(" \t\n"), FieldAttribute());
 
     /**
      * must be String_Object
      */
     std::string str = ".";
     getWorkingDir(state, false, str);
-    bindVariable(state, "SCRIPT_DIR", DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(str)));
+    bindVariable(state, "SCRIPT_DIR", DSValue::createStr(std::move(str)));
 
     /**
      * maintain completion result.
@@ -272,7 +271,7 @@ static void initBuiltinVar(DSState &state) {
      * represent shell or shell script name.
      * must be String_Object
      */
-    bindVariable(state, "0", DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), "ydsh"));
+    bindVariable(state, "0", DSValue::createStr("ydsh"));
 
     /**
      * initialize positional parameter
@@ -304,17 +303,17 @@ static void initBuiltinVar(DSState &state) {
     /**
      * must be String_Object
      */
-    bindVariable(state, "OSTYPE", DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), name.sysname));
+    bindVariable(state, "OSTYPE", DSValue::createStr(name.sysname));
 
     /**
      * must be String_Object
      */
-    bindVariable(state, "MACHTYPE", DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), name.machine));
+    bindVariable(state, "MACHTYPE", DSValue::createStr(name.machine));
 
     /**
      * must be String_Object
      */
-    bindVariable(state, "CONFIG_DIR", DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), SYSTEM_CONFIG_DIR));
+    bindVariable(state, "CONFIG_DIR", DSValue::createStr(SYSTEM_CONFIG_DIR));
 
     /**
      * dummy object for random number
@@ -435,8 +434,7 @@ unsigned int DSState_lineNum(const DSState *st) {
 
 void DSState_setShellName(DSState *st, const char *shellName) {
     if(shellName != nullptr) {
-        st->setGlobal(BuiltinVarOffset::POS_0,
-                DSValue::create<StringObject>(st->symbolTable.get(TYPE::String), std::string(shellName)));
+        st->setGlobal(BuiltinVarOffset::POS_0, DSValue::createStr(shellName));
     }
 }
 
@@ -478,7 +476,7 @@ void DSState_setArguments(DSState *st, char *const *args) {
 
     for(unsigned int i = 0; args[i] != nullptr; i++) {
         auto *array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
-        array->append(DSValue::create<StringObject>(st->symbolTable.get(TYPE::String), std::string(args[i])));
+        array->append(DSValue::createStr(args[i]));
     }
     finalizeScriptArg(st);
 }
@@ -490,9 +488,7 @@ void DSState_setArguments(DSState *st, char *const *args) {
  * full path
  */
 static void setScriptDir(DSState *st, const char *scriptDir) {
-    std::string str = scriptDir;
-    st->setGlobal(BuiltinVarOffset::SCRIPT_DIR,
-            DSValue::create<StringObject>(st->symbolTable.get(TYPE::String), std::move(str)));
+    st->setGlobal(BuiltinVarOffset::SCRIPT_DIR, DSValue::createStr(scriptDir));
 }
 
 int DSState_setScriptDir(DSState *st, const char *scriptDir) {
@@ -644,7 +640,7 @@ int DSState_exec(DSState *st, char *const *argv) {
 
     std::vector<DSValue> values;
     for(; *argv != nullptr; argv++) {
-        values.push_back(DSValue::create<StringObject>(st->symbolTable.get(TYPE::String), std::string(*argv)));
+        values.push_back(DSValue::createStr(*argv));
     }
     execCommand(*st, std::move(values), false);
     return st->getExitStatus();
@@ -709,7 +705,7 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
         }
         *value = nullptr;
         if(index < compreply->getValues().size()) {
-            *value = createStrRef(compreply->getValues()[index]).data();
+            *value = compreply->getValues()[index].asStrRef().data();
         }
         break;
     case DS_COMP_SIZE:
@@ -763,8 +759,7 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
 
     auto args = makeArgs(
             DSValue::createInt(op), DSValue::createInt(index),
-            (value && *value) ? DSValue::create<StringObject>(st->symbolTable.get(TYPE::String), value)
-                    : st->emptyStrObj
+            (value && *value) ? DSValue::createStr(value) : st->emptyStrObj
     );
     auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
     st->editOpReply = callFunction(*st, std::move(func), std::move(args));
@@ -789,7 +784,7 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
         if(op == DS_EDIT_PROMPT) {
             st->prompt = st->editOpReply;
         }
-        *buf = createStrRef(st->editOpReply).data();
+        *buf = st->editOpReply.asStrRef().data();
         break;
     default:
         break;

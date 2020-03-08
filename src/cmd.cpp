@@ -667,8 +667,8 @@ static BinaryOp resolveBinaryOp(StringRef opStr) {
 }
 
 static bool compareStr(const DSValue &left, BinaryOp op, const DSValue &right) {
-    auto x = createStrRef(left);
-    auto y = createStrRef(right);
+    auto x = left.asStrRef();
+    auto y = right.asStrRef();
 
     switch(op) {
 #define GEN_CASE(E, S, O) case BinaryOp::E: return x O y;
@@ -713,7 +713,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         break;
     }
     case 1: {
-        result = !createStrRef(argvObj.getValues()[1]).empty();  // check if string is not empty
+        result = !argvObj.getValues()[1].asStrRef().empty();  // check if string is not empty
         break;
     }
     case 2: {   // unary op
@@ -728,11 +728,11 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         const char opKind = op[1];  // ignore -
         switch(opKind) {
         case 'z': { // check if string is empty
-            result = createStrRef(obj).empty();
+            result = obj.asStrRef().empty();
             break;
         }
         case 'n': { // check if string not empty
-            result = !createStrRef(obj).empty();
+            result = !obj.asStrRef().empty();
             break;
         }
         case 'a':
@@ -827,7 +827,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
     }
     case 3: {   // binary op
         const auto &left = argvObj.getValues()[1];
-        auto op = createStrRef(argvObj.getValues()[2]);
+        auto op = argvObj.getValues()[2].asStrRef();
         auto opKind = resolveBinaryOp(op);
         const auto &right = argvObj.getValues()[3];
 
@@ -908,7 +908,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
             break;
         case 'f':
             ifs = optState.optArg;
-            ifsSize = createStrRef(argvObj.getValues()[optState.index - 1]).size();
+            ifsSize = argvObj.getValues()[optState.index - 1].asStrRef().size();
             break;
         case 'r':
             backslash = false;
@@ -954,7 +954,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
 
     // check ifs
     if(ifs == nullptr) {
-        auto strRef = createStrRef(state.getGlobal(BuiltinVarOffset::IFS));
+        auto strRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
         ifs = strRef.data();
         ifsSize = strRef.size();
     }
@@ -1015,7 +1015,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
         if(fieldSep && index < argc - 1) {
             auto obj = typeAs<MapObject>(state.getGlobal(varIndex));
             auto varObj = argvObj.getValues()[index];
-            auto valueObj = DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(strBuf));
+            auto valueObj = DSValue::createStr(std::move(strBuf));
             obj->set(std::move(varObj), std::move(valueObj));
             strBuf = "";
             index++;
@@ -1043,8 +1043,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
     }
 
     if(varSize == 0) {
-        state.setGlobal(varIndex, DSValue::create<StringObject>(
-                state.symbolTable.get(TYPE::String), std::move(strBuf)));
+        state.setGlobal(varIndex, DSValue::createStr(std::move(strBuf)));
         strBuf = "";
     }
 
@@ -1052,7 +1051,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
     for(; index < argc; index++) {
         auto obj = typeAs<MapObject>(state.getGlobal(varIndex));
         auto varObj = argvObj.getValues()[index];
-        auto valueObj = DSValue::create<StringObject>(state.symbolTable.get(TYPE::String), std::move(strBuf));
+        auto valueObj = DSValue::createStr(std::move(strBuf));
         obj->set(std::move(varObj), std::move(valueObj));
         strBuf = "";
     }
@@ -1125,7 +1124,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
         return showUsage(argvObj);
     }
 
-    auto strRef = createStrRef(argvObj.getValues()[1]);
+    auto strRef = argvObj.getValues()[1].asStrRef();
     completeLine(state, strRef.data(), strRef.size());
     auto *ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for(const auto &e : ret->getValues()) {
@@ -1844,7 +1843,7 @@ static int printFuncName(const VMState &state) {
 
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     if(argvObj.size() > 1) {
-        auto ref = createStrRef(argvObj.getValues()[1]);
+        auto ref = argvObj.getValues()[1].asStrRef();
         if(ref == "backtrace") {
             return printBacktrace(state.getCallStack());
         } else if(ref == "is-sourced") {
