@@ -243,7 +243,7 @@ function %OP_MATCH($this : Regex, $target : String) : Boolean
 
 function %OP_UNMATCH($this : Regex, $target : String) : Boolean
 
-function match($this : Regex, $target : String) : Array<String>
+function match($this : Regex, $target : String) : Array<Option<String>>
 ```
 
 ## Signal type

@@ -1132,7 +1132,7 @@ YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
     RET_BOOL(r);
 }
 
-//!bind: function match($this: Regex, $target : String) : Array<String>
+//!bind: function match($this: Regex, $target : String) : Array<Option<String>>
 YDSH_METHOD regex_match(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_match);
     auto *re = typeAs<RegexObject>(LOCAL(0));
@@ -1141,15 +1141,20 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     FlexBuffer<int> ovec;
     int matchSize = re->match(ref, ovec);
 
-    auto ret = DSValue::create<ArrayObject>(ctx.symbolTable.get(TYPE::StringArray));
+    auto ret = DSValue::create<ArrayObject>(
+            *ctx.symbolTable.createArrayType(
+                    *ctx.symbolTable.createOptionType(
+                            ctx.symbolTable.get(TYPE::String)).take()).take());
     auto *array = typeAs<ArrayObject>(ret);
 
     if(matchSize > 0) {
         array->refValues().reserve(matchSize);
     }
     for(int i = 0; i < matchSize; i++) {
-        unsigned int size = ovec[i * 2 + 1] - ovec[i * 2];
-        auto v = size == 0 ? DSValue::createStr() : DSValue::createStr(ref.substr(ovec[i * 2], size));
+        int begin = ovec[i * 2];
+        int end = ovec[i * 2 + 1];
+        bool hasGroup = begin > -1 && end > -1;
+        auto v = hasGroup ? DSValue::createStr(ref.slice(begin, end)) : DSValue::createInvalid();
         array->refValues().push_back(std::move(v));
     }
 
