@@ -479,10 +479,23 @@ inline T *typeAs(const DSValue &value) noexcept {
     return cast<T>(value.get());
 }
 
-bool appendAsStr(DSValue &left, StringRef right);
+/**
+ * concat string values. concatenation result is assigned to 'left'
+ * @param left
+ * if RefCount is 1,
+ * @param right
+ * @return
+ * if success, return true.
+ */
+bool concatAsStr(DSValue &left, StringRef right);
 
-inline bool appendAsStr(DSValue &left, const DSValue &right) {
-    return appendAsStr(left, right.asStrRef());
+inline bool concatAsStr(DSValue &left, const DSValue &right) {
+    return concatAsStr(left, right.asStrRef());
+}
+
+inline bool appendAsStr(DSValue &left, StringRef right) {
+    assert(left.get()->getRefcount() == 1);
+    return concatAsStr(left, right);
 }
 
 class RegexObject : public ObjectWithRtti<DSObject::Regex> {

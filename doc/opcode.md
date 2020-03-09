@@ -30,7 +30,7 @@
 | DUP2          |                                | value1 value2 -> value1 value2 value1 value2 | duplicate top two value                            |
 | SWAP          |                                | value1 value2 -> value2 value1               | swap top two value                                 |
 | NEW_STRING    |                                | -> value                                     | create an empty string value                       |
-| APPEND_STRING |                                | value1 value2 -> value1                      | append value2 into value1                          |
+| CONCAT        |                                | value1 value2 -> value3                      | concat string value1 and string value2.            |
 | NEW_ARRAY     | 4: byte1 ~ byte4               | -> value                                     | create an empty array value                        |
 | APPEND_ARRAY  |                                | value1 value2 -> value1                      | append value2 into value1                          |
 | NEW_MAP       | 4: byte1 ~ byte4               | -> value                                     | create an empty map value                          |

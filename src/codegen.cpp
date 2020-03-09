@@ -237,7 +237,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         const bool tildeExpansion = isTildeExpansion(*node.getSegmentNodes()[0]);
         if(tildeExpansion) {
             this->emitLdcIns(DSValue::createStr(static_cast<StringNode&>(*node.getSegmentNodes()[0]).getValue()));
-            this->emit0byteIns(OpCode::APPEND_STRING);
+            this->emit0byteIns(OpCode::CONCAT);
             index++;
         }
 
@@ -247,7 +247,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
                 this->generateStringExpr(static_cast<StringExprNode&>(e), true);
             } else {
                 this->visit(e);
-                this->emit0byteIns(OpCode::APPEND_STRING);
+                this->emit0byteIns(OpCode::CONCAT);
             }
         }
 
@@ -284,42 +284,19 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
         if(!fragment) {
             this->emit0byteIns(OpCode::NEW_STRING);
         }
-        unsigned int count = 0;
         for(auto &e : node.getExprNodes()) {
             if(e->is(NodeKind::BinaryOp)) {
                 auto &binary = static_cast<BinaryOpNode&>(*e);
                 if(binary.getOptNode()->is(NodeKind::StringExpr)) {
                     for(auto &e2 : static_cast<StringExprNode *>(binary.getOptNode())->getExprNodes()) {
                         this->visit(*e2);
-                        this->emit0byteIns(OpCode::APPEND_STRING);
+                        this->emit0byteIns(OpCode::CONCAT);
                     }
                     continue;
                 }
             }
             this->visit(*e);
-            if(count++ == 0 && e->is(NodeKind::Empty)) {
-                /**
-                 * When calling `APPEND_STRING' ins, the operand stack layout is the following
-                 *
-                 * +-----------------------------+-------+
-                 * | buf (created by NEW_STRING) | value |
-                 * +-----------------------------+-------+
-                 *
-                 * However, when string self assignment, first expr is empty expression
-                 * (due to self assignment implementation, see. AssignNode).
-                 * As a result, the stack layout will be the following
-                 *
-                 * +-------+-----+
-                 * | value | buf |
-                 * +-------+-----+
-                 *
-                 * In this situation `APPEND_STRING' ins breaks stack top string object (due to appending buf to value).
-                 * To prevent it, swap stack top two values.
-                 */
-                this->emit0byteIns(OpCode::SWAP);
-            }
-
-            this->emit0byteIns(OpCode::APPEND_STRING);
+            this->emit0byteIns(OpCode::CONCAT);
         }
     }
 }

@@ -207,12 +207,14 @@ bool DSValue::compare(const DSValue &o) const {
     return false;
 }
 
-bool appendAsStr(DSValue &left, StringRef right) {
+bool concatAsStr(DSValue &left, StringRef right) {
     assert(left.getTypeID() == static_cast<unsigned int>(TYPE::String));
-    assert(left.get()->getRefcount() == 1);
     unsigned int leftSize = left.asStrRef().size();
     if(leftSize + right.size() >= StringObject::MAX_SIZE) {
         return false;
+    }
+    if(left.get()->getRefcount() > 1) {
+        left = DSValue::createStr(left.asStrRef());
     }
     typeAs<StringObject>(left)->append(right);
     return true;

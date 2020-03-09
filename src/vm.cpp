@@ -1044,10 +1044,10 @@ bool VM::mainLoop(DSState &state) {
             state.stack.push(DSValue::createStr());
             vmnext;
         }
-        vmcase(APPEND_STRING) {
-            DSValue v = state.stack.pop();
-            DSValue left = state.stack.pop();
-            if(!appendAsStr(left, v)) {
+        vmcase(CONCAT) {
+            auto right = state.stack.pop();
+            auto left = state.stack.pop();
+            if(!concatAsStr(left, right)) {
                 raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
                 vmerror;
             }
