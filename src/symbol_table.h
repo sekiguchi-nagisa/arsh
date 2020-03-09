@@ -616,6 +616,18 @@ public:
         return this->typePool.createReifiedType(typeTemplate, std::move(elementTypes));
     }
 
+    TypeOrError createArrayType(DSType &elementType) {
+        return this->createReifiedType(this->getArrayTemplate(), {&elementType});
+    }
+
+    TypeOrError createMapType(DSType &keyType, DSType &valueType) {
+        return this->createReifiedType(this->getMapTemplate(), {&keyType, &valueType});
+    }
+
+    TypeOrError createOptionType(DSType &elementType) {
+        return this->createReifiedType(this->getOptionTemplate(), {&elementType});
+    }
+
     TypeOrError createTupleType(std::vector<DSType *> &&elementTypes) {
         return this->typePool.createTupleType(std::move(elementTypes));
     }

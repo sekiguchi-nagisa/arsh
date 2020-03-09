@@ -185,14 +185,13 @@ static void initBuiltinVar(DSState &state) {
      */
     bindVariable(state, "REPLY", DSValue::createStr(), FieldAttribute());
 
-    std::vector<DSType *> types = {&state.symbolTable.get(TYPE::String), &state.symbolTable.get(TYPE::String)};
-
     /**
      * holding read variable.
      * must be Map_Object
      */
     bindVariable(state, "reply", DSValue::create<MapObject>(
-            *state.symbolTable.createReifiedType(state.symbolTable.getMapTemplate(), std::move(types)).take()));
+            *state.symbolTable.createMapType(state.symbolTable.get(TYPE::String),
+                    state.symbolTable.get(TYPE::String)).take()));
 
     /**
      * process id of current process.
@@ -235,9 +234,7 @@ static void initBuiltinVar(DSState &state) {
      * must be Array_Object
      */
     bindVariable(state, "PIPESTATUS", DSValue::create<ArrayObject>(
-            *state.symbolTable.createReifiedType(
-                    state.symbolTable.getArrayTemplate(),
-                    {&state.symbolTable.get(TYPE::Int32)}).take()));
+            *state.symbolTable.createArrayType(state.symbolTable.get(TYPE::Int32)).take()));
 
     /**
      * contains exit status of most recent executed process. ($?)

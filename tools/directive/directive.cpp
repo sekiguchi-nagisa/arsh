@@ -117,9 +117,8 @@ private:
      * @return
      */
     DSType &getMapType() {
-        return *this->symbolTable.createReifiedType(this->symbolTable.getMapTemplate(), {
-            &this->symbolTable.get(TYPE::String), &this->symbolTable.get(TYPE::String)
-        }).take();
+        return *this->symbolTable.createMapType(
+                this->symbolTable.get(TYPE::String), this->symbolTable.get(TYPE::String)).take();
     }
 
     void createError(const Node &node, const std::string &str) {

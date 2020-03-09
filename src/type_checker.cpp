@@ -244,7 +244,7 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
             this->checkTypeWithCoercion(firstType, jumpNode->refExprNode());
         }
     }
-    auto ret = this->symbolTable.createReifiedType(this->symbolTable.getOptionTemplate(), {&firstType});
+    auto ret = this->symbolTable.createOptionType(firstType);
     assert(ret);
     return *ret.take();
 }
@@ -474,10 +474,7 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
         this->checkTypeWithCoercion(elementType, node.refExprNodes()[i]);
     }
 
-    auto &arrayTemplate = this->symbolTable.getArrayTemplate();
-    std::vector<DSType *> elementTypes(1);
-    elementTypes[0] = &elementType;
-    auto typeOrError = this->symbolTable.createReifiedType(arrayTemplate, std::move(elementTypes));
+    auto typeOrError = this->symbolTable.createArrayType(elementType);
     assert(typeOrError);
     node.setType(*typeOrError.take());
 }
@@ -496,11 +493,7 @@ void TypeChecker::visitMapNode(MapNode &node) {
         this->checkTypeWithCoercion(valueType, node.refValueNodes()[i]);
     }
 
-    auto &mapTemplate = this->symbolTable.getMapTemplate();
-    std::vector<DSType *> elementTypes(2);
-    elementTypes[0] = &keyType;
-    elementTypes[1] = &valueType;
-    auto typeOrError = this->symbolTable.createReifiedType(mapTemplate, std::move(elementTypes));
+    auto typeOrError = this->symbolTable.createMapType(keyType, valueType);
     assert(typeOrError);
     node.setType(*typeOrError.take());
 }

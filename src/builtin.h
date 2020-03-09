@@ -1241,7 +1241,7 @@ YDSH_METHOD signals_signal(RuntimeContext &ctx) {
 YDSH_METHOD signals_list(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_list);
 
-    auto ret = ctx.symbolTable.createReifiedType(ctx.symbolTable.getArrayTemplate(), {&ctx.symbolTable.get(TYPE::Signal)});
+    auto ret = ctx.symbolTable.createArrayType(ctx.symbolTable.get(TYPE::Signal));
     assert(ret);
     auto type = ret.take();
     auto v = DSValue::create<ArrayObject>(*type);
