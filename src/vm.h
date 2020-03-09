@@ -59,11 +59,6 @@ struct DSState {
 public:
     SymbolTable symbolTable;
 
-    /**
-     * must be String_Object
-     */
-    const DSValue emptyStrObj;
-
     const DSValue emptyFDObj;
 
     /**

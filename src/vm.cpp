@@ -52,7 +52,6 @@ static std::string initLogicalWorkingDir() {
 }
 
 DSState::DSState() :
-        emptyStrObj(DSValue::createStr()),
         emptyFDObj(DSValue::create<UnixFdObject>(-1)),
         logicalWorkingDir(initLogicalWorkingDir()),
         baseTime(std::chrono::system_clock::now()) { }
@@ -153,7 +152,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSVal
         }
 
         for(; index < 9; index++) {
-            state.stack.setLocal(index + UDC_PARAM_ARGV + 3, state.emptyStrObj);  // set remain
+            state.stack.setLocal(index + UDC_PARAM_ARGV + 3, DSValue::createStr());  // set remain
         }
     }
     return true;
@@ -951,7 +950,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(PUSH_ESTRING) {
-            state.stack.push(state.emptyStrObj);
+            state.stack.push(DSValue::createStr());
             vmnext;
         }
         vmcase(LOAD_CONST) {
@@ -1038,10 +1037,6 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(SWAP) {
             state.stack.swap();
-            vmnext;
-        }
-        vmcase(NEW_STRING) {
-            state.stack.push(DSValue::createStr());
             vmnext;
         }
         vmcase(CONCAT) {

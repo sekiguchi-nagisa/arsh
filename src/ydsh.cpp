@@ -165,10 +165,6 @@ static void bindVariable(DSState &state, const char *varName, DSValue &&value) {
     bindVariable(state, varName, std::move(value), FieldAttribute::READ_ONLY);
 }
 
-static void bindVariable(DSState &state, const char *varName, const DSValue &value) {
-    bindVariable(state, varName, DSValue(value));
-}
-
 static void initBuiltinVar(DSState &state) {
     // set builtin variables internally used
 
@@ -187,7 +183,7 @@ static void initBuiltinVar(DSState &state) {
      * default variable for read command.
      * must be String_Object
      */
-    bindVariable(state, "REPLY", DSValue(state.emptyStrObj), FieldAttribute());
+    bindVariable(state, "REPLY", DSValue::createStr(), FieldAttribute());
 
     std::vector<DSType *> types = {&state.symbolTable.get(TYPE::String), &state.symbolTable.get(TYPE::String)};
 
@@ -277,7 +273,7 @@ static void initBuiltinVar(DSState &state) {
      * initialize positional parameter
      */
     for(unsigned int i = 0; i < 9; i++) {
-        bindVariable(state, std::to_string(i + 1).c_str(), state.emptyStrObj);
+        bindVariable(state, std::to_string(i + 1).c_str(), DSValue::createStr());
     }
 
 
@@ -461,7 +457,7 @@ static void finalizeScriptArg(DSState *st) {
     if(index < 9) {
         for(; index < 9; index++) {
             unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
-            st->setGlobal(i, st->emptyStrObj);
+            st->setGlobal(i, DSValue::createStr());
         }
     }
 }
@@ -759,7 +755,7 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
 
     auto args = makeArgs(
             DSValue::createInt(op), DSValue::createInt(index),
-            (value && *value) ? DSValue::createStr(value) : st->emptyStrObj
+            DSValue::createStr((value && *value) ? value : "")
     );
     auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
     st->editOpReply = callFunction(*st, std::move(func), std::move(args));

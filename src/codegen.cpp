@@ -231,7 +231,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     if(size == 1) {
         this->visit(*node.getSegmentNodes()[0]);
     } else {
-        this->emit0byteIns(OpCode::NEW_STRING);
+        this->emit0byteIns(OpCode::PUSH_ESTRING);
 
         unsigned int index = 0;
         const bool tildeExpansion = isTildeExpansion(*node.getSegmentNodes()[0]);
@@ -282,7 +282,7 @@ void ByteCodeGenerator::generateStringExpr(StringExprNode &node, bool fragment) 
         this->visit(*node.getExprNodes()[0]);
     } else {
         if(!fragment) {
-            this->emit0byteIns(OpCode::NEW_STRING);
+            this->emit0byteIns(OpCode::PUSH_ESTRING);
         }
         for(auto &e : node.getExprNodes()) {
             if(e->is(NodeKind::BinaryOp)) {

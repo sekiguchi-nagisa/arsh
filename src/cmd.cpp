@@ -960,7 +960,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
     }
 
     // clear old variable before read
-    state.setGlobal(toIndex(BuiltinVarOffset::REPLY), state.emptyStrObj);    // clear REPLY
+    state.setGlobal(toIndex(BuiltinVarOffset::REPLY), DSValue::createStr());    // clear REPLY
     typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR))->clear();      // clear reply
 
 
