@@ -232,16 +232,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         this->visit(*node.getSegmentNodes()[0]);
     } else {
         this->emit0byteIns(OpCode::PUSH_ESTRING);
-
-        unsigned int index = 0;
-        const bool tildeExpansion = isTildeExpansion(*node.getSegmentNodes()[0]);
-        if(tildeExpansion) {
-            this->emitLdcIns(DSValue::createStr(static_cast<StringNode&>(*node.getSegmentNodes()[0]).getValue()));
-            this->emit0byteIns(OpCode::CONCAT);
-            index++;
-        }
-
-        for(; index < size; index++) {
+        for(unsigned int index = 0; index < size; index++) {
             auto &e = *node.getSegmentNodes()[index];
             if(e.is(NodeKind::StringExpr) && static_cast<StringExprNode&>(e).getExprNodes().size() > 1) {
                 this->generateStringExpr(static_cast<StringExprNode&>(e), true);
@@ -250,10 +241,9 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
                 this->emit0byteIns(OpCode::CONCAT);
             }
         }
-
-        if(tildeExpansion) {
-            this->emit0byteIns(OpCode::EXPAND_TILDE);
-        }
+    }
+    if(isTildeExpansion(*node.getSegmentNodes()[0])) {
+        this->emit0byteIns(OpCode::EXPAND_TILDE);
     }
 }
 
@@ -341,11 +331,7 @@ void ByteCodeGenerator::visitStringNode(StringNode &node) {
     if(node.getValue().empty()) {
         this->emit0byteIns(OpCode::PUSH_ESTRING);
     } else {
-        bool isTilde = node.isTilde();
         this->emitLdcIns(DSValue::createStr(StringNode::extract(std::move(node))));
-        if(isTilde) {
-            this->emit0byteIns(OpCode::EXPAND_TILDE);
-        }
     }
 }
 
@@ -614,6 +600,10 @@ void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {
 
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     this->visit(node.getNameNode());
+    if(node.getNameNode().isTilde()) {
+        this->emit0byteIns(OpCode::EXPAND_TILDE);
+    }
+
     this->emit0byteIns(OpCode::NEW_CMD);
     this->emit0byteIns(node.hasRedir() ? OpCode::NEW_REDIR : OpCode::PUSH_NULL);
 
