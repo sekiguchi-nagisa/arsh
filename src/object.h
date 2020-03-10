@@ -490,6 +490,10 @@ inline T *typeAs(const DSValue &value) noexcept {
 bool concatAsStr(DSValue &left, StringRef right);
 
 inline bool concatAsStr(DSValue &left, const DSValue &right) {
+    if(left.asStrRef().empty()) {
+        left = right;
+        return true;
+    }
     return concatAsStr(left, right.asStrRef());
 }
 
