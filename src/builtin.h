@@ -948,18 +948,30 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
     auto repStr = LOCAL(2).asStrRef();
     auto buf = DSValue::createStr();
 
+    bool s = true;
     for(StringRef::size_type pos = 0; pos != StringRef::npos; ) {
         auto ret = thisStr.find(delimStr, pos);
         auto value = thisStr.slice(pos, ret);
-        appendAsStr(buf, value);
+        s = concatAsStr(buf, value);
+        if(!s) {
+            break;
+        }
         if(ret != StringRef::npos) {
-            appendAsStr(buf, repStr);
+            s = concatAsStr(buf, repStr);
+            if(!s) {
+                break;
+            }
             pos = ret + delimStr.size();
         } else {
             pos = ret;
         }
     }
-    RET(buf);
+    if(s) {
+        RET(buf);
+    } else {
+        raiseOutOfRangeError(ctx, std::string("reach String size limit"));
+        RET_ERROR;
+    }
 }
 
 

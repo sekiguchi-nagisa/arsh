@@ -497,11 +497,6 @@ inline bool concatAsStr(DSValue &left, const DSValue &right) {
     return concatAsStr(left, right.asStrRef());
 }
 
-inline bool appendAsStr(DSValue &left, StringRef right) {
-    assert(left.get()->getRefcount() == 1);
-    return concatAsStr(left, right);
-}
-
 class RegexObject : public ObjectWithRtti<DSObject::Regex> {
 private:
     std::string str; // for string representation
