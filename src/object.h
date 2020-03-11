@@ -92,9 +92,9 @@ public:
 template <DSObject::ObjectKind K>
 struct ObjectWithRtti : public DSObject {
 protected:
-    ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.getTypeID()) {}
-    ObjectWithRtti(TYPE type) : ObjectWithRtti(static_cast<unsigned int>(type)) {}
-    ObjectWithRtti(unsigned int id) : DSObject(K, id) {}
+    explicit ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.getTypeID()) {}
+    explicit ObjectWithRtti(TYPE type) : ObjectWithRtti(static_cast<unsigned int>(type)) {}
+    explicit ObjectWithRtti(unsigned int id) : DSObject(K, id) {}
 
 public:
     static constexpr auto value = K;
@@ -353,13 +353,13 @@ public:
     int asSig() const {
         assert(this->kind() == DSValueKind::SIG);
         unsigned int v = this->value();
-        return v;
+        return static_cast<int>(v);
     }
 
     int asInt() const {
         assert(this->kind() == DSValueKind::INT);
         unsigned int v = this->value();
-        return v;
+        return static_cast<int>(v);
     }
 
     StringRef asStrRef() const;
@@ -714,7 +714,7 @@ public:
      * @param type
      * must be tuple type
      */
-    BaseObject(const DSType &type) : BaseObject(type, type.getFieldSize()) {}
+    explicit BaseObject(const DSType &type) : BaseObject(type, type.getFieldSize()) {}
 
     ~BaseObject() override;
 
