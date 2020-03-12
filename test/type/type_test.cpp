@@ -129,7 +129,7 @@ public:
     }
 
     virtual void assertSuperType(DSType &type, DSType &superType) {
-        DSType *actualSuperType = type.getSuperType();
+        auto *actualSuperType = type.getSuperType();
         ASSERT_TRUE(actualSuperType != nullptr);
         ASSERT_STREQ(this->pool.getTypeName(*actualSuperType), this->pool.getTypeName(superType));
         ASSERT_TRUE(*actualSuperType == superType);

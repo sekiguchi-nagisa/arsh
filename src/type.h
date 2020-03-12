@@ -101,7 +101,7 @@ protected:
     /**
      * if this type is Void or Any type, superType is null
      */
-    DSType *superType;
+    const DSType *superType;
 
     const TypeAttr attributeSet;
 
@@ -111,7 +111,7 @@ public:
     /**
      * not directly call it.
      */
-    DSType(unsigned int id, DSType *superType, TypeAttr attribute) :
+    DSType(unsigned int id, const DSType *superType, TypeAttr attribute) :
             id(id), superType(superType), attributeSet(attribute) { }
 
     virtual ~DSType() = default;
@@ -173,7 +173,7 @@ public:
      * get super type of this type.
      * return null, if has no super type(ex. AnyType, VoidType).
      */
-    DSType *getSuperType() const {
+     const DSType *getSuperType() const {
         return this->superType;
     }
 

@@ -47,7 +47,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     if(this->isOptionType()) {
         return static_cast<const ReifiedType *>(this)->getElementTypes()[0]->isSameOrBaseTypeOf(targetType);
     }
-    DSType *superType = targetType.getSuperType();
+    auto *superType = targetType.getSuperType();
     return superType != nullptr && this->isSameOrBaseTypeOf(*superType);
 }
 
