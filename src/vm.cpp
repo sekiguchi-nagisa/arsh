@@ -340,7 +340,7 @@ static NativeCode initCode(OpCode op) {
     code[0] = static_cast<char>(CodeKind::NATIVE);
     code[1] = static_cast<char>(op);
     code[2] = static_cast<char>(OpCode::RETURN_V);
-    return NativeCode(std::move(code));
+    return NativeCode(code);
 }
 
 static const DSCode *lookupUdc(const DSState &state, const char *name) {
@@ -818,7 +818,7 @@ static NativeCode initSignalTrampoline() noexcept {
     code[5] = static_cast<char>(OpCode::CALL_FUNC);
     code[6] = 1;
     code[7] = static_cast<char>(OpCode::RETURN_SIG);
-    return NativeCode(std::move(code));
+    return NativeCode(code);
 }
 
 static auto signalTrampoline = initSignalTrampoline();
@@ -1558,7 +1558,7 @@ static NativeCode initCmdTrampoline() noexcept {
     code[3] = static_cast<char>(OpCode::PUSH_NULL);
     code[4] = static_cast<char>(OpCode::CALL_CMD);
     code[5] = static_cast<char>(OpCode::RETURN_V);
-    return NativeCode(std::move(code));
+    return NativeCode(code);
 }
 
 static auto cmdTrampoline = initCmdTrampoline();

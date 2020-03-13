@@ -891,14 +891,11 @@ public:
         this->setCode();
     }
 
-    explicit NativeCode(ArrayType &&value) {
-        std::swap(this->value, value);
+    explicit NativeCode(const ArrayType &value) : value(value) {
         this->setCode();
     }
 
-    NativeCode(NativeCode &&o) noexcept {
-        std::swap(this->value, o.value);
-        o.code = nullptr;
+    NativeCode(NativeCode &&o) noexcept : value(o.value) {
         this->setCode();
     }
 
