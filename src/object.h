@@ -22,6 +22,7 @@
 #include <memory>
 #include <tuple>
 #include <array>
+#include <algorithm>
 #include <cxxabi.h>
 
 #include "type.h"
@@ -892,12 +893,12 @@ public:
     }
 
     explicit NativeCode(const ArrayType &value) noexcept {
-        this->value = value;
+        std::copy(value.begin(), value.end(), this->value.begin());
         this->setCode();
     }
 
     NativeCode(NativeCode &&o) noexcept {
-        this->value = o.value;
+        std::copy(o.value.begin(), o.value.end(), this->value.begin());
         this->setCode();
     }
 
