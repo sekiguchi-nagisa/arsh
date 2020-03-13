@@ -22,7 +22,6 @@
 #include <memory>
 #include <tuple>
 #include <array>
-#include <algorithm>
 #include <cxxabi.h>
 
 #include "type.h"
@@ -876,7 +875,7 @@ public:
 
 class NativeCode : public DSCode {
 public:
-    using ArrayType = std::array<unsigned char, 8>;
+    using ArrayType = std::array<char, 8>;
 
 private:
     ArrayType value;
@@ -884,21 +883,19 @@ private:
 public:
     NativeCode() : DSCode(nullptr) {}
 
-    NativeCode(unsigned int index, bool hasRet) noexcept {
-        this->value[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-        this->value[1] = static_cast<unsigned char>(OpCode::CALL_NATIVE);
+    NativeCode(unsigned int index, bool hasRet) {
+        this->value[0] = static_cast<char>(CodeKind::NATIVE);
+        this->value[1] = static_cast<char>(OpCode::CALL_NATIVE);
         this->value[2] = index;
-        this->value[3] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
+        this->value[3] = static_cast<char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
         this->setCode();
     }
 
-    explicit NativeCode(const ArrayType &value) noexcept {
-        std::copy(value.begin(), value.end(), this->value.begin());
+    explicit NativeCode(const ArrayType &value) : value(value) {
         this->setCode();
     }
 
-    NativeCode(NativeCode &&o) noexcept {
-        std::copy(o.value.begin(), o.value.end(), this->value.begin());
+    NativeCode(NativeCode &&o) noexcept : value(o.value) {
         this->setCode();
     }
 
@@ -917,7 +914,7 @@ public:
 
 private:
     void setCode() {
-        this->code = this->value.data();
+        this->code = reinterpret_cast<unsigned char *>(this->value.data());
     }
 };
 

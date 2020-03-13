@@ -72,19 +72,6 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
 
 namespace ydsh {
 
-static NativeCode initCode(OpCode op) {
-    NativeCode::ArrayType code;
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(op);
-    code[2] = static_cast<unsigned char>(OpCode::RETURN_V);
-    return NativeCode(code);
-}
-
-static const NativeCode *nativeCodeDummy() {
-    static auto code = initCode(OpCode::HALT);
-    return &code;
-}
-
 bool VM::checkCast(DSState &state, const DSType &targetType) {
     if(!instanceOf(state.symbolTable.getTypePool(), state.stack.peek(), targetType)) {
         auto &stackTopType = state.symbolTable.get(state.stack.pop().getTypeID());
@@ -348,6 +335,13 @@ bool VM::forkAndEval(DSState &state) {
 }
 
 /* for pipeline evaluation */
+static NativeCode initCode(OpCode op) {
+    NativeCode::ArrayType code;
+    code[0] = static_cast<char>(CodeKind::NATIVE);
+    code[1] = static_cast<char>(op);
+    code[2] = static_cast<char>(OpCode::RETURN_V);
+    return NativeCode(code);
+}
 
 static const DSCode *lookupUdc(const DSState &state, const char *name) {
     auto handle = state.symbolTable.lookupUdc(name);
@@ -816,21 +810,18 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
 
 static NativeCode initSignalTrampoline() noexcept {
     NativeCode::ArrayType code;
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
+    code[0] = static_cast<char>(CodeKind::NATIVE);
+    code[1] = static_cast<char>(OpCode::LOAD_LOCAL);
     code[2] = 1;
-    code[3] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
+    code[3] = static_cast<char>(OpCode::LOAD_LOCAL);
     code[4] = 2;
-    code[5] = static_cast<unsigned char>(OpCode::CALL_FUNC);
+    code[5] = static_cast<char>(OpCode::CALL_FUNC);
     code[6] = 1;
-    code[7] = static_cast<unsigned char>(OpCode::RETURN_SIG);
+    code[7] = static_cast<char>(OpCode::RETURN_SIG);
     return NativeCode(code);
 }
 
-static const NativeCode *signalTrampoline() {
-    static auto code = initSignalTrampoline();
-    return &code;
-}
+static auto signalTrampoline = initSignalTrampoline();
 
 bool VM::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
     state.stack.reserve(3);
@@ -838,7 +829,7 @@ bool VM::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
     state.stack.push(std::move(func));
     state.stack.push(DSValue::createSig(sigNum));
 
-    return windStackFrame(state, 3, 3, signalTrampoline());
+    return windStackFrame(state, 3, 3, &signalTrampoline);
 }
 
 bool VM::checkVMEvent(DSState &state) {
@@ -868,6 +859,8 @@ bool VM::checkVMEvent(DSState &state) {
     }
     return true;
 }
+
+static auto nativeCallDummy = initCode(OpCode::HALT);
 
 #define vmdispatch(V) switch(V)
 
@@ -1121,7 +1114,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(CALL_NATIVE2) {
             unsigned int paramSize = read8(GET_CODE(state), ++state.stack.pc());
             unsigned int index = read8(GET_CODE(state), ++state.stack.pc());
-            TRY(windStackFrame(state, paramSize, paramSize, nativeCodeDummy()));
+            TRY(windStackFrame(state, paramSize, paramSize, &nativeCallDummy));
             auto ret = nativeFuncInfoTable()[index].func_ptr(state);
             TRY(!state.hasError());
             state.stack.unwind();
@@ -1459,7 +1452,7 @@ bool VM::handleException(DSState &state, bool forceUnwind) {
                     return true;
                 }
             }
-        } else if(CODE(state) == signalTrampoline()) {   // within signal trampoline
+        } else if(CODE(state) == &signalTrampoline) {   // within signal trampoline
             unsetFlag(DSState::eventDesc, VMEvent::MASK);
         }
     }
@@ -1559,19 +1552,19 @@ unsigned int VM::prepareArguments(VMState &state, DSValue &&recv,
 
 static NativeCode initCmdTrampoline() noexcept {
     NativeCode::ArrayType code;
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
+    code[0] = static_cast<char>(CodeKind::NATIVE);
+    code[1] = static_cast<char>(OpCode::LOAD_LOCAL);
     code[2] = 0;
-    code[3] = static_cast<unsigned char>(OpCode::PUSH_NULL);
-    code[4] = static_cast<unsigned char>(OpCode::CALL_CMD);
-    code[5] = static_cast<unsigned char>(OpCode::RETURN_V);
+    code[3] = static_cast<char>(OpCode::PUSH_NULL);
+    code[4] = static_cast<char>(OpCode::CALL_CMD);
+    code[5] = static_cast<char>(OpCode::RETURN_V);
     return NativeCode(code);
 }
 
+static auto cmdTrampoline = initCmdTrampoline();
+
 DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate) {
     GUARD_RECURSION(state);
-
-    static auto cmdTrampoline = initCmdTrampoline();
 
     DSValue ret;
     auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray), std::move(argv));
