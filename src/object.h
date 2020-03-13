@@ -875,7 +875,7 @@ public:
 
 class NativeCode : public DSCode {
 public:
-    using ArrayType = std::array<char, 8>;
+    using ArrayType = std::array<unsigned char, 8>;
 
 private:
     ArrayType value;
@@ -884,10 +884,10 @@ public:
     NativeCode() : DSCode(nullptr) {}
 
     NativeCode(unsigned int index, bool hasRet) {
-        this->value[0] = static_cast<char>(CodeKind::NATIVE);
-        this->value[1] = static_cast<char>(OpCode::CALL_NATIVE);
+        this->value[0] = static_cast<unsigned char>(CodeKind::NATIVE);
+        this->value[1] = static_cast<unsigned char>(OpCode::CALL_NATIVE);
         this->value[2] = index;
-        this->value[3] = static_cast<char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
+        this->value[3] = static_cast<unsigned char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
         this->setCode();
     }
 
@@ -914,7 +914,7 @@ public:
 
 private:
     void setCode() {
-        this->code = reinterpret_cast<unsigned char *>(this->value.data());
+        this->code = this->value.data();
     }
 };
 
