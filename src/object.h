@@ -907,7 +907,7 @@ public:
     }
 
     void swap(NativeCode &o) noexcept {
-        std::swap(this->value, o.value);
+        this->value.swap(o.value);
         this->setCode();
         o.setCode();
     }
