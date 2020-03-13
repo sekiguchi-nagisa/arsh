@@ -336,11 +336,11 @@ bool VM::forkAndEval(DSState &state) {
 
 /* for pipeline evaluation */
 static NativeCode initCode(OpCode op) {
-    NativeCode::ArrayType code;
+    std::string code(8, '\0');
     code[0] = static_cast<char>(CodeKind::NATIVE);
     code[1] = static_cast<char>(op);
     code[2] = static_cast<char>(OpCode::RETURN_V);
-    return NativeCode(code);
+    return NativeCode(std::move(code));
 }
 
 static const DSCode *lookupUdc(const DSState &state, const char *name) {
@@ -809,7 +809,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
 }
 
 static NativeCode initSignalTrampoline() noexcept {
-    NativeCode::ArrayType code;
+    std::string code(8, '\0');
     code[0] = static_cast<char>(CodeKind::NATIVE);
     code[1] = static_cast<char>(OpCode::LOAD_LOCAL);
     code[2] = 1;
@@ -818,7 +818,7 @@ static NativeCode initSignalTrampoline() noexcept {
     code[5] = static_cast<char>(OpCode::CALL_FUNC);
     code[6] = 1;
     code[7] = static_cast<char>(OpCode::RETURN_SIG);
-    return NativeCode(code);
+    return NativeCode(std::move(code));
 }
 
 static auto signalTrampoline = initSignalTrampoline();
@@ -1551,14 +1551,14 @@ unsigned int VM::prepareArguments(VMState &state, DSValue &&recv,
 
 
 static NativeCode initCmdTrampoline() noexcept {
-    NativeCode::ArrayType code;
+    std::string code(8, '\0');
     code[0] = static_cast<char>(CodeKind::NATIVE);
     code[1] = static_cast<char>(OpCode::LOAD_LOCAL);
     code[2] = 0;
     code[3] = static_cast<char>(OpCode::PUSH_NULL);
     code[4] = static_cast<char>(OpCode::CALL_CMD);
     code[5] = static_cast<char>(OpCode::RETURN_V);
-    return NativeCode(code);
+    return NativeCode(std::move(code));
 }
 
 static auto cmdTrampoline = initCmdTrampoline();

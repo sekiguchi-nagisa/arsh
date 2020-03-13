@@ -21,7 +21,6 @@
 
 #include <memory>
 #include <tuple>
-#include <array>
 #include <cxxabi.h>
 
 #include "type.h"
@@ -874,16 +873,13 @@ public:
 };
 
 class NativeCode : public DSCode {
-public:
-    using ArrayType = std::array<char, 8>;
-
 private:
-    ArrayType value;
+    std::string value;
 
 public:
     NativeCode() : DSCode(nullptr) {}
 
-    NativeCode(unsigned int index, bool hasRet) {
+    NativeCode(unsigned int index, bool hasRet) : value(8, '\0'){
         this->value[0] = static_cast<char>(CodeKind::NATIVE);
         this->value[1] = static_cast<char>(OpCode::CALL_NATIVE);
         this->value[2] = index;
@@ -891,11 +887,14 @@ public:
         this->setCode();
     }
 
-    explicit NativeCode(const ArrayType &value) : value(value) {
+    explicit NativeCode(std::string &&value) {
+        std::swap(this->value, value);
         this->setCode();
     }
 
-    NativeCode(NativeCode &&o) noexcept : value(o.value) {
+    NativeCode(NativeCode &&o) noexcept {
+        std::swap(this->value, o.value);
+        o.code = nullptr;
         this->setCode();
     }
 
@@ -907,14 +906,14 @@ public:
     }
 
     void swap(NativeCode &o) noexcept {
-        this->value.swap(o.value);
+        std::swap(this->value, o.value);
         this->setCode();
         o.setCode();
     }
 
 private:
     void setCode() {
-        this->code = reinterpret_cast<unsigned char *>(this->value.data());
+        this->code = reinterpret_cast<unsigned char *>(const_cast<char *>(this->value.c_str()));
     }
 };
 
