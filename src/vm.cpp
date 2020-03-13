@@ -80,22 +80,10 @@ static NativeCode initCode(OpCode op) {
     return NativeCode(code);
 }
 
-const NativeCode VM::nativeCallDummy = initCode(OpCode::HALT);
-
-static NativeCode initSignalTrampoline() noexcept {
-    NativeCode::ArrayType code;
-    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
-    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
-    code[2] = 1;
-    code[3] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
-    code[4] = 2;
-    code[5] = static_cast<unsigned char>(OpCode::CALL_FUNC);
-    code[6] = 1;
-    code[7] = static_cast<unsigned char>(OpCode::RETURN_SIG);
-    return NativeCode(code);
+static const NativeCode *nativeCodeDummy() {
+    static auto code = initCode(OpCode::HALT);
+    return &code;
 }
-
-const NativeCode VM::signalTrampoline = initSignalTrampoline();
 
 bool VM::checkCast(DSState &state, const DSType &targetType) {
     if(!instanceOf(state.symbolTable.getTypePool(), state.stack.peek(), targetType)) {
@@ -826,13 +814,31 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
     }
 }
 
+static NativeCode initSignalTrampoline() noexcept {
+    NativeCode::ArrayType code;
+    code[0] = static_cast<unsigned char>(CodeKind::NATIVE);
+    code[1] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
+    code[2] = 1;
+    code[3] = static_cast<unsigned char>(OpCode::LOAD_LOCAL);
+    code[4] = 2;
+    code[5] = static_cast<unsigned char>(OpCode::CALL_FUNC);
+    code[6] = 1;
+    code[7] = static_cast<unsigned char>(OpCode::RETURN_SIG);
+    return NativeCode(code);
+}
+
+static const NativeCode *signalTrampoline() {
+    static auto code = initSignalTrampoline();
+    return &code;
+}
+
 bool VM::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
     state.stack.reserve(3);
     state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
     state.stack.push(std::move(func));
     state.stack.push(DSValue::createSig(sigNum));
 
-    return windStackFrame(state, 3, 3, &signalTrampoline);
+    return windStackFrame(state, 3, 3, signalTrampoline());
 }
 
 bool VM::checkVMEvent(DSState &state) {
@@ -1115,7 +1121,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(CALL_NATIVE2) {
             unsigned int paramSize = read8(GET_CODE(state), ++state.stack.pc());
             unsigned int index = read8(GET_CODE(state), ++state.stack.pc());
-            TRY(windStackFrame(state, paramSize, paramSize, &nativeCallDummy));
+            TRY(windStackFrame(state, paramSize, paramSize, nativeCodeDummy()));
             auto ret = nativeFuncInfoTable()[index].func_ptr(state);
             TRY(!state.hasError());
             state.stack.unwind();
@@ -1453,7 +1459,7 @@ bool VM::handleException(DSState &state, bool forceUnwind) {
                     return true;
                 }
             }
-        } else if(CODE(state) == &signalTrampoline) {   // within signal trampoline
+        } else if(CODE(state) == signalTrampoline()) {   // within signal trampoline
             unsetFlag(DSState::eventDesc, VMEvent::MASK);
         }
     }

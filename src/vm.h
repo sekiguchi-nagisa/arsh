@@ -256,10 +256,6 @@ template <> struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};
 
 class VM {
 private:
-    static const NativeCode nativeCallDummy;
-
-    static const NativeCode signalTrampoline;
-
     static void pushExitStatus(DSState &state, int status) {
         state.updateExitStatus(status);
         state.stack.push(DSValue::createBool(status == 0));
