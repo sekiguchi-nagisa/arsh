@@ -140,7 +140,7 @@ matrix:
             - g++-5
             - clang-4.0
             - ninja-build
-      env: CXX_BIN=clang++-4.0 OPTION="-DSANITIZER=address"
+      env: CXX_BIN=clang++-4.0
 
     # clang 5.0
     - addons:
