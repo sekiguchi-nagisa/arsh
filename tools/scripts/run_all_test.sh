@@ -1,8 +1,14 @@
 #!/bin/sh
 
+CC=$1
+if [ -z $CC ]; then
+  CC=clang++
+fi
+
 mkdir -p build-all
 cd build-all
-cmake .. -G Ninja -DCMAKE_CXX_COMPILER=clang++ -DUSE_EXTRA_TEST=on
+echo using compiler: $CC
+cmake .. -G Ninja -DCMAKE_CXX_COMPILER=$CC -DUSE_EXTRA_TEST=on
 
 ninja
 sudo ninja install

@@ -1,16 +1,29 @@
 #!/usr/bin/env ydsh
 
-let debug = $# > 0
+source path
 
-var root = "$SCRIPT_DIR/../../".realpath()!
+var debug = $false
+var file = "."
 
-echo project root: "`$root'"
+for $arg in $@ {
+    case $arg {
+    '--debug' => $debug = $true;
+    else => if !$arg.startsWith('-') { $file = $arg; }
+    }
+}
 
-echo build docker image
+var root = $file.realpath()!
+if !(test -d $root) {
+    $root = $dirname($root)
+}
 
+let workdir = "$SCRIPT_DIR/../../".realpath()!
 
-var name = "ydsh_build:1"
-docker build -t $name $root
+var name = "build_${$basename($root)}:1"
+echo Dockfile path: "`$root/Dockerfile'"
+echo build docker image: "`$name'"
+
+docker build -t $name -f $root/Dockerfile $workdir
 
 if $debug {
     docker run --rm -it $name /bin/bash
