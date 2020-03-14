@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CC=$1
-if [ -z $CC ]; then
+if [ -z "$CC" ]; then
   CC=clang++
 fi
 
