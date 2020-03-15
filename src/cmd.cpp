@@ -1832,13 +1832,12 @@ static int checkSourced(const VMState &state) {
 
 static int printFuncName(const VMState &state) {
     auto *code = state.getFrame().code;
-    const char *name = "<toplevel>";
+    const char *name = nullptr;
     if(!code->is(CodeKind::NATIVE) && !code->is(CodeKind::TOPLEVEL)) {
         name = static_cast<const CompiledCode *>(code)->getName();
     }
-    fprintf(stdout, "%s\n", name);
-
-    return 0;
+    fprintf(stdout, "%s\n", name != nullptr ? name : "<toplevel>");
+    return name != nullptr ? 0 : 1;
 }
 
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {

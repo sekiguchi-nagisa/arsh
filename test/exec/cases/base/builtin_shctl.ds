@@ -28,7 +28,11 @@ cc() {
 }
 assert $gg() == "gg"
 assert cc
+assert $? == 0
 assert "$(cc)" == "cc"
+assert "$(shctl function)" == "<toplevel>"
+shctl function
+assert $? == 1
 
 # interactive
 $? = 0
