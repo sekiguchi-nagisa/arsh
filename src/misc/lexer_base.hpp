@@ -28,6 +28,7 @@
 #include "token.hpp"
 #include "buffer.hpp"
 #include "resource.hpp"
+#include "string_ref.hpp"
 
 namespace ydsh {
 
@@ -219,10 +220,9 @@ public:
         return token.pos + token.size <= this->getUsedSize();
     }
 
-    std::pair<const char *, const char *> getRange(Token token) const {
-        const char *begin = this->buf.get() + token.pos;
-        const char *end = begin + token.size;
-        return {begin, end};
+    StringRef getStrRef(Token token) const {
+        assert(this->withinRange(token));
+        return StringRef(this->buf.get() + token.pos, token.size);
     }
 
     /**
@@ -233,23 +233,9 @@ public:
         return std::string(this->buf.get() + token.pos, token.size);
     }
 
-    /**
-     * buf size must be equivalent to base.size
-     */
-    void copyTokenText(Token token, char *buf) const {
-        assert(this->withinRange(token));
-        memcpy(buf, this->buf.get() + token.pos, token.size);
-    }
-
     bool startsWith(Token token, int ch) const {
         assert(this->withinRange(token));
         return this->buf[token.pos] == ch;
-    }
-
-    bool equals(Token token, const char *str) const {
-        assert(this->withinRange(token));
-        return strlen(str) == token.size &&
-                memcmp(this->buf.get() + token.pos, str, token.size) == 0;
     }
 
     /**

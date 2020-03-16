@@ -1318,7 +1318,7 @@ std::unique_ptr<Node> Parser::toAccessNode(Token token) const {
     std::unique_ptr<Node> node;
     std::vector<std::unique_ptr<VarNode>> nodes;
 
-    const char *ptr = this->lexer->getRange(token).first;
+    const char *ptr = this->lexer->getStrRef(token).data();
     for(unsigned int index = token.size - 1; index != 0; index--) {
         if(ptr[index] == '.') {
             Token fieldToken = token.sliceFrom(index + 1);

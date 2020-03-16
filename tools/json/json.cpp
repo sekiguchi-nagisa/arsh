@@ -380,7 +380,8 @@ static bool isFloat(const char *str) {
 JSON Parser::parseNumber() {
     auto token = this->expect(NUMBER);  // always success
     char data[token.size + 1];
-    memcpy(data, this->lexer->getRange(token).first, token.size);
+    auto ref = this->lexer->getStrRef(token);
+    memcpy(data, ref.data(), ref.size());
     data[token.size] = '\0';
 
     if(isFloat(data)) {
@@ -527,9 +528,9 @@ bool Parser::unescapeStr(Token token, std::string &str) {
     actual.pos++;
     actual.size -= 2;
 
-    auto range = this->lexer->getRange(actual);
-    for(auto iter = range.first; iter != range.second;) {
-        int codePoint = unescape(iter, range.second);
+    auto range = this->lexer->getStrRef(actual);
+    for(auto iter = range.begin(); iter != range.end();) {
+        int codePoint = unescape(iter, range.end());
         if(codePoint < 0) {
             this->raiseTokenFormatError(STRING, token, "illegal string format");
             return false;

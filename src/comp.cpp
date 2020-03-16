@@ -789,8 +789,7 @@ private:
     }
 
     DSValue newStrObj(Token token) const {
-        auto *ptr = this->lexer.getRange(token).first;
-        return DSValue::createStr(StringRef(ptr, token.size));
+        return DSValue::createStr(this->lexer.getStrRef(token));
     }
 
     std::unique_ptr<Completer> selectWithCmd(bool exactly = false) const;
@@ -1009,7 +1008,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
         }
         case INVALID: {
             const Token errorToken = this->errorToken();
-            if(this->lexer.equals(errorToken, "$") && this->inTyping(errorToken) &&
+            if(this->lexer.getStrRef(errorToken) == "$" && this->inTyping(errorToken) &&
                 this->foundExpected(APPLIED_NAME) && this->foundExpected(SPECIAL_NAME)) {
                 return this->createGlobalVarNameCompleter(errorToken);
             }
