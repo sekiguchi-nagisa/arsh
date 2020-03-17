@@ -317,7 +317,7 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
         value = DSValue::create<LongObject>(node.getLongValue());
         break;
     case NumberNode::Float:
-        value = DSValue::create<FloatObject>(node.getFloatValue());
+        value = DSValue::createFloat(node.getFloatValue());
         break;
     case NumberNode::Signal:
         assert(node.getIntValue() >= 0 && node.getIntValue() <= UINT8_MAX);

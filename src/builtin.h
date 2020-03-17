@@ -555,7 +555,7 @@ YDSH_METHOD float_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Float) : Float
 YDSH_METHOD float_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_minus);
-    RET(unary_MINUS<double>(ctx));
+    RET(DSValue::createFloat(-LOCAL(0).asFloat()));
 }
 
 // =====  binary op  =====
@@ -565,28 +565,34 @@ YDSH_METHOD float_minus(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Float, $target : Float) : Float
 YDSH_METHOD float_2_float_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_add);
-    RET(basic_ADD<double>(ctx));
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
+    RET(DSValue::createFloat(left + right));
 }
 
 //!bind: function $OP_SUB($this : Float, $target : Float) : Float
 YDSH_METHOD float_2_float_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_sub);
-    RET(basic_SUB<double>(ctx));
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
+    RET(DSValue::createFloat(left - right));
 }
 
 //!bind: function $OP_MUL($this : Float, $target : Float) : Float
 YDSH_METHOD float_2_float_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_mul);
-    RET(basic_MUL<double>(ctx));
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
+    RET(DSValue::createFloat(left * right));
 }
 
 //!bind: function $OP_DIV($this : Float, $target : Float) : Float
 YDSH_METHOD float_2_float_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_div);
-    double left = typeAs<FloatObject>(LOCAL(0))->getValue();
-    double right = typeAs<FloatObject>(LOCAL(1))->getValue();
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
     double value = left / right;
-    RET(DSValue::create<FloatObject>(value));
+    RET(DSValue::createFloat(value));
 }
 
 //   =====  equality  =====
@@ -594,13 +600,17 @@ YDSH_METHOD float_2_float_div(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_eq);
-    RET_BOOL(compare_EQ<double>(ctx));
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
+    RET_BOOL(left == right);
 }
 
 //!bind: function $OP_NE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ne);
-    RET_BOOL(compare_NE<double>(ctx));
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
+    RET_BOOL(left != right);
 }
 
 //   =====  relational  =====
@@ -608,25 +618,33 @@ YDSH_METHOD float_2_float_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_lt);
-    RET_BOOL(compare_LT<double >(ctx));
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
+    RET_BOOL(left < right);
 }
 
 //!bind: function $OP_GT($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_gt);
-    RET_BOOL(compare_GT<double>(ctx));
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
+    RET_BOOL(left > right);
 }
 
 //!bind: function $OP_LE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_le);
-    RET_BOOL(compare_LE<double>(ctx));
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
+    RET_BOOL(left <= right);
 }
 
 //!bind: function $OP_GE($this : Float, $target : Float) : Boolean
 YDSH_METHOD float_2_float_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(float_2_float_ge);
-    RET_BOOL(compare_GE<double>(ctx));
+    double left = LOCAL(0).asFloat();
+    double right = LOCAL(1).asFloat();
+    RET_BOOL(left >= right);
 }
 
 // =====  additional float op  ======
@@ -634,21 +652,21 @@ YDSH_METHOD float_2_float_ge(RuntimeContext & ctx) {
 //!bind: function isNan($this : Float): Boolean
 YDSH_METHOD float_isNan(RuntimeContext &ctx) {
     SUPPRESS_WARNING(float_isNan);
-    double value = typeAs<FloatObject>(LOCAL(0))->getValue();
+    double value = LOCAL(0).asFloat();
     RET_BOOL(std::isnan(value));
 }
 
 //!bind: function isInf($this : Float): Boolean
 YDSH_METHOD float_isInf(RuntimeContext &ctx) {
     SUPPRESS_WARNING(float_isInf);
-    double value = typeAs<FloatObject>(LOCAL(0))->getValue();
+    double value = LOCAL(0).asFloat();
     RET_BOOL(std::isinf(value));
 }
 
 //!bind: function isFinite($this : Float): Boolean
 YDSH_METHOD float_isFinite(RuntimeContext &ctx) {
     SUPPRESS_WARNING(float_isFinite);
-    double value = typeAs<FloatObject>(LOCAL(0))->getValue();
+    double value = LOCAL(0).asFloat();
     RET_BOOL(std::isfinite(value));
 }
 
@@ -1001,7 +1019,7 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
     int status = 0;
     double value = convertToDouble(ref.data(), status, false);
 
-    RET(status == 0 ? DSValue::create<FloatObject>(value) : DSValue::createInvalid());
+    RET(status == 0 ? DSValue::createFloat(value) : DSValue::createInvalid());
 }
 
 //!bind: function $OP_ITER($this : String) : StringIter

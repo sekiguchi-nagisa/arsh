@@ -1233,23 +1233,23 @@ bool VM::mainLoop(DSState &state) {
         vmcase(I32_TO_D) {
             int v = state.stack.pop().asInt();
             auto d = static_cast<double>(v);
-            state.stack.push(DSValue::create<FloatObject>(d));
+            state.stack.push(DSValue::createFloat(d));
             vmnext;
         }
         vmcase(I64_TO_D) {
             long v = typeAs<LongObject>(state.stack.pop())->getValue();
             auto d = static_cast<double>(v);
-            state.stack.push(DSValue::create<FloatObject>(d));
+            state.stack.push(DSValue::createFloat(d));
             vmnext;
         }
         vmcase(D_TO_I32) {
-            double d = typeAs<FloatObject>(state.stack.pop())->getValue();
+            double d = state.stack.pop().asFloat();
             auto v = static_cast<int>(d);
             state.stack.push(DSValue::createInt(v));
             vmnext;
         }
         vmcase(D_TO_I64) {
-            double d = typeAs<FloatObject>(state.stack.pop())->getValue();
+            double d = state.stack.pop().asFloat();
             auto v = static_cast<long>(d);
             state.stack.push(DSValue::create<LongObject>(v));
             vmnext;

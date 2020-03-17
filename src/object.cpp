@@ -39,6 +39,10 @@ unsigned int DSValue::getTypeID() const {
     }
 }
 
+double DSValue::asFloat() const {
+    return typeAs<FloatObject>(*this)->getValue();
+}
+
 StringRef DSValue::asStrRef() const {
     auto *obj = typeAs<StringObject>(*this);
     return StringRef(obj->getValue(), obj->size());
@@ -63,7 +67,7 @@ std::string DSValue::toString() const {
     case DSObject::Long:
         return std::to_string(typeAs<LongObject>(*this)->getValue());
     case DSObject::Float:
-        return std::to_string(typeAs<FloatObject>(*this)->getValue());
+        return std::to_string(this->asFloat());
     case DSObject::String:
         return this->asStrRef().toString();
     case DSObject::UnixFd: {
@@ -145,7 +149,7 @@ bool DSValue::equals(const DSValue &o) const {
         case DSObject::Long:
             return typeAs<LongObject>(*this)->getValue() == typeAs<LongObject>(o)->getValue();
         case DSObject::Float:
-            return typeAs<FloatObject>(*this)->getValue() == typeAs<FloatObject>(o)->getValue();
+            return this->asFloat() == o.asFloat();
         case DSObject::String: {
             auto left = this->asStrRef();
             auto right = o.asStrRef();
@@ -164,7 +168,7 @@ size_t DSValue::hash() const {
         case DSObject::Long:
             return std::hash<long>()(typeAs<LongObject>(*this)->getValue());
         case DSObject::Float:
-            return std::hash<double>()(typeAs<FloatObject>(*this)->getValue());
+            return std::hash<double>()(this->asFloat());
         case DSObject::String:
             return std::hash<StringRef>()(this->asStrRef());
         default:
@@ -195,7 +199,7 @@ bool DSValue::compare(const DSValue &o) const {
     case DSObject::Long:
         return typeAs<LongObject>(*this)->getValue() < typeAs<LongObject>(o)->getValue();
     case DSObject::Float:
-        return typeAs<FloatObject>(*this)->getValue() < typeAs<FloatObject>(o)->getValue();
+        return this->asFloat() < o.asFloat();
     case DSObject::String: {
         auto left = this->asStrRef();
         auto right = o.asStrRef();

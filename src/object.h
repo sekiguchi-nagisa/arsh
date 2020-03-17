@@ -363,6 +363,8 @@ public:
         return static_cast<int>(v);
     }
 
+    double asFloat() const;
+
     StringRef asStrRef() const;
 
     std::string toString() const;
@@ -432,6 +434,10 @@ public:
         auto mask = static_cast<uint64_t>(DSValueKind::INT) << 56;
         unsigned int v = num;
         return DSValue(mask | v);
+    }
+
+    static DSValue createFloat(double v) {
+        return DSValue::create<FloatObject>(v);
     }
 
     // for string construction
