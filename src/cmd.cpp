@@ -546,7 +546,6 @@ static int builtin_exit(DSState &state, ArrayObject &argvObj) {
 
     std::string str("terminated by exit ");
     str += std::to_string(ret);
-    ret %= 256;
     raiseError(state, TYPE::_ShellExit, std::move(str), ret);
     return ret;
 }
