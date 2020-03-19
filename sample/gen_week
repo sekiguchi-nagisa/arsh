@@ -6,7 +6,7 @@
 assert $OSTYPE =~ $/darwin/i
 
 
-var w = "$(date +%w)".toInt32()!
+var w = "$(date +%w)".toInt()!
 if $w < 1 || $w > 5 {
     echo today is holiday!!
     exit 1

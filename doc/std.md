@@ -164,7 +164,7 @@ function split($this : String, $delim : String) : Array<String>
 
 function replace($this : String, $target : String, $rep : String) : String
 
-function toInt32($this : String) : Option<Int32>
+function toInt($this : String) : Option<Int32>
 
 function toInt64($this : String) : Option<Int64>
 

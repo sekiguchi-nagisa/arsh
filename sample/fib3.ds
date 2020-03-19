@@ -1,7 +1,7 @@
 #!/usr/bin/env ydsh
 
 fib() {
-    var n = $@[0].toInt32()!
+    var n = $@[0].toInt()!
     if $n < 3 {
         return 1;
     }

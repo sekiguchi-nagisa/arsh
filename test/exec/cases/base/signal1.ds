@@ -2,7 +2,7 @@
 assert %'HUP' is Signal
 assert %'HuP' as Any is Signal
 assert %'Sighup'.name() == 'HUP'
-assert %'INT'.value() == (%'int' as String).toInt32()!
+assert %'INT'.value() == (%'int' as String).toInt()!
 
 assert %'TRAP' is Signal
 assert %'tRAp'.name() == 'TRAP'

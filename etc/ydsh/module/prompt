@@ -23,13 +23,13 @@ function renderPrompt($p : String) : String {
             var k = $p[$i]
             case $k {
             'd' => {
-                var w = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"]["$(date +%w)".toInt32()!]
+                var w = ["Sun", "Mon", "Tue", "Wed", "Thurs", "Fri", "Sat"]["$(date +%w)".toInt()!]
                 $ch = "$w$(date '+ %m %d')"
             }
             't' => { $ch = "$(date +%T)"; }
             'T' => { $ch = "$(date +'%I:%M:%S')"; }
             '@' => {
-                var h = "$(date +%H)".toInt32()! < 12 ? "AM" : "PM"
+                var h = "$(date +%H)".toInt()! < 12 ? "AM" : "PM"
                 $ch = "$(date +'%I:%M ')$h"
             }
             'w' => {

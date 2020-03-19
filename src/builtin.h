@@ -994,9 +994,9 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
 }
 
 
-//!bind: function toInt32($this : String) : Option<Int32>
-YDSH_METHOD string_toInt32(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(string_toInt32);
+//!bind: function toInt($this : String) : Option<Int32>
+YDSH_METHOD string_toInt(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_toInt);
     auto ref = LOCAL(0).asStrRef();
     auto ret = fromIntLiteral<int32_t>(ref.begin(), ref.end());
 

@@ -50,7 +50,7 @@ function _show($argv : [String]) : Int {
             return 1
         }
 
-        $offset = $argv[0].toInt32() ?? {
+        $offset = $argv[0].toInt() ?? {
             $_error("${$argv[0]}: numeric argument required")
             return 1
         }
@@ -177,7 +177,7 @@ history() {
     }
 
     if !$deleteTarget.empty() {
-        var offset = $deleteTarget.toInt32()
+        var offset = $deleteTarget.toInt()
         if !$offset || $offset! < 1 || $offset! > $HISTORY.size() {
             $_error("$deleteTarget: history offset out of range")
             return 1

@@ -169,19 +169,19 @@ assert "".replace("a", "34") == ""
 assert "".replace("", "") == ""
 assert "".replace("", "hoge") == ""
 
-assert("-2147483648".toInt32()! == -1 - 2147483647)
-assert(!"-2147483649".toInt32())
-assert("2147483647".toInt32()! == 2147483647)
-assert(!"2147483648".toInt32())
-assert "0xFFFFfaec".toInt32()!  == 0xFFFFfaec
-assert "0XFFFFfaec".toInt32()!  == 0XFFFFfaec
-assert "0XFFFFFFFF".toInt32()!  == 0XFFFFFFFF
-assert ! "0XFFFFFFFFa".toInt32()
-assert ! "-0xFFFFFFF".toInt32()
-assert "0012345".toInt32()!  == 0012345
-assert "0o12345".toInt32()!  == 0o12345
-assert "0O12345".toInt32()!  == 0O12345
-assert ! "-0O12345".toInt32()
+assert("-2147483648".toInt()! == -1 - 2147483647)
+assert(!"-2147483649".toInt())
+assert("2147483647".toInt()! == 2147483647)
+assert(!"2147483648".toInt())
+assert "0xFFFFfaec".toInt()!  == 0xFFFFfaec
+assert "0XFFFFfaec".toInt()!  == 0XFFFFfaec
+assert "0XFFFFFFFF".toInt()!  == 0XFFFFFFFF
+assert ! "0XFFFFFFFFa".toInt()
+assert ! "-0xFFFFFFF".toInt()
+assert "0012345".toInt()!  == 0012345
+assert "0o12345".toInt()!  == 0o12345
+assert "0O12345".toInt()!  == 0O12345
+assert ! "-0O12345".toInt()
 
 assert("-9223372036854775808".toInt64()! == -1 - 9223372036854775807L)
 assert(! "-9223372036854775809".toInt64())
