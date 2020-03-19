@@ -190,8 +190,8 @@ public:
     }
 
     bool isRootShell() const {
-        int shellpid = this->getGlobal(BuiltinVarOffset::SHELL_PID).asInt();
-        int pid = this->getGlobal(BuiltinVarOffset::PID).asInt();
+        auto shellpid = this->getGlobal(BuiltinVarOffset::SHELL_PID).asInt();
+        auto pid = this->getGlobal(BuiltinVarOffset::PID).asInt();
         return shellpid == pid;
     }
 

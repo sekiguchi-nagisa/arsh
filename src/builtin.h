@@ -259,14 +259,14 @@ YDSH_METHOD int_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Int32) : Int32
 YDSH_METHOD int_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_minus);
-    int v = - LOCAL(0).asInt();
+    auto v = - LOCAL(0).asInt();
     RET(DSValue::createInt(v));
 }
 
 //!bind: function $OP_NOT($this : Int32) : Int32
 YDSH_METHOD int_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_not);
-    int v = ~ LOCAL(0).asInt();
+    auto v = ~ LOCAL(0).asInt();
     RET(DSValue::createInt(v));
 }
 
@@ -278,8 +278,8 @@ YDSH_METHOD int_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_add);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
 
     int ret;
     if(sadd_overflow(left, right, ret)) {
@@ -292,8 +292,8 @@ YDSH_METHOD int_2_int_add(RuntimeContext & ctx) {
 //!bind: function $OP_SUB($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_sub);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
 
     int ret;
     if(ssub_overflow(left, right, ret)) {
@@ -306,8 +306,8 @@ YDSH_METHOD int_2_int_sub(RuntimeContext & ctx) {
 //!bind: function $OP_MUL($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mul);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
 
     int ret;
     if(smul_overflow(left, right, ret)) {
@@ -320,8 +320,8 @@ YDSH_METHOD int_2_int_mul(RuntimeContext & ctx) {
 //!bind: function $OP_DIV($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_div);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
 
     if(!checkZeroDiv(ctx, right)) {
         RET_ERROR;
@@ -332,8 +332,8 @@ YDSH_METHOD int_2_int_div(RuntimeContext & ctx) {
 //!bind: function $OP_MOD($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mod);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
 
     if(!checkZeroMod(ctx, right)) {
         RET_ERROR;
@@ -346,16 +346,16 @@ YDSH_METHOD int_2_int_mod(RuntimeContext & ctx) {
 //!bind: function $OP_EQ($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_eq(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_eq);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
     RET_BOOL(left == right);
 }
 
 //!bind: function $OP_NE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_ne(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ne);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
     RET_BOOL(left != right);
 }
 
@@ -364,32 +364,32 @@ YDSH_METHOD int_2_int_ne(RuntimeContext & ctx) {
 //!bind: function $OP_LT($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_lt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_lt);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
     RET_BOOL(left < right);
 }
 
 //!bind: function $OP_GT($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_gt(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_gt);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
     RET_BOOL(left > right);
 }
 
 //!bind: function $OP_LE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_le(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_le);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
     RET_BOOL(left <= right);
 }
 
 //!bind: function $OP_GE($this : Int32, $target : Int32) : Boolean
 YDSH_METHOD int_2_int_ge(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_ge);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
     RET_BOOL(left >= right);
 }
 
@@ -398,24 +398,24 @@ YDSH_METHOD int_2_int_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_and);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
     RET(DSValue::createInt(left & right));
 }
 
 //!bind: function $OP_OR($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_or);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
     RET(DSValue::createInt(left | right));
 }
 
 //!bind: function $OP_XOR($this : Int32, $target : Int32) : Int32
 YDSH_METHOD int_2_int_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_xor);
-    int left = LOCAL(0).asInt();
-    int right = LOCAL(1).asInt();
+    auto left = LOCAL(0).asInt();
+    auto right = LOCAL(1).asInt();
     RET(DSValue::createInt(left ^ right));
 }
 
@@ -749,9 +749,9 @@ YDSH_METHOD string_ge(RuntimeContext &ctx) {
 //!bind: function size($this : String) : Int32
 YDSH_METHOD string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
-    auto size = LOCAL(0).asStrRef().size();
+    size_t size = LOCAL(0).asStrRef().size();
     assert(size <= ArrayObject::MAX_SIZE);
-    RET(DSValue::createInt(static_cast<int>(size)));
+    RET(DSValue::createInt(size));
 }
 
 //!bind: function empty($this : String) : Boolean
@@ -766,11 +766,12 @@ YDSH_METHOD string_count(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_count);
     auto ref = LOCAL(0).asStrRef();
     const char *ptr = ref.data();
-    unsigned int size = ref.size();
-    unsigned int count = 0;
-    for(unsigned int i = 0; i < size; i = UnicodeUtil::utf8NextPos(i, ptr[i])) {
+    size_t size = ref.size();
+    size_t count = 0;
+    for(size_t i = 0; i < size; i = UnicodeUtil::utf8NextPos(i, ptr[i])) {
         count++;
     }
+    assert(count <= StringObject::MAX_SIZE);
     RET(DSValue::createInt(count));
 }
 
@@ -785,10 +786,10 @@ static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
 YDSH_METHOD string_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_get);
     auto ref = LOCAL(0).asStrRef();
-    const unsigned int size = ref.size();
-    const int index = LOCAL(1).asInt();
+    const size_t size = ref.size();
+    const auto index = LOCAL(1).asInt();
 
-    if(index > -1 && static_cast<unsigned int>(index) < size) {
+    if(index > -1 && static_cast<size_t>(index) < size) {
         RET(DSValue::createStr(ref.substr(index, 1)));
     }
 
@@ -804,10 +805,10 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
 YDSH_METHOD string_charAt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_charAt);
     auto ref = LOCAL(0).asStrRef();
-    const int pos = LOCAL(1).asInt();
-    const unsigned int size = ref.size();
+    const auto pos = LOCAL(1).asInt();
+    const size_t size = ref.size();
 
-    if(pos >= 0 && static_cast<unsigned int>(pos) < size) {
+    if(pos >= 0 && static_cast<size_t>(pos) < size) {
         const unsigned int limit = pos;
         unsigned int index = 0;
         unsigned int count = 0;
@@ -831,13 +832,13 @@ YDSH_METHOD string_charAt(RuntimeContext &ctx) {
     RET_ERROR;
 }
 
-static auto sliceImpl(const ArrayObject &obj, unsigned int begin, unsigned int end) {
+static auto sliceImpl(const ArrayObject &obj, size_t begin, size_t end) {
     auto b = obj.getValues().begin() + begin;
     auto e = obj.getValues().begin() + end;
     return DSValue::create<ArrayObject>(obj.getTypeID(), std::vector<DSValue>(b, e));
 }
 
-static auto sliceImpl(const StringRef &ref, unsigned int begin, unsigned int end) {
+static auto sliceImpl(const StringRef &ref, size_t begin, size_t end) {
     return DSValue::createStr(ref.slice(begin, end));
 }
 
@@ -853,16 +854,16 @@ static auto sliceImpl(const StringRef &ref, unsigned int begin, unsigned int end
  * @return
  */
 template <typename T>
-static auto slice(RuntimeContext &ctx, const T &obj, int startIndex, int stopIndex) {
-    const unsigned int size = obj.size();
+static auto slice(RuntimeContext &ctx, const T &obj, long startIndex, long stopIndex) {
+    const size_t size = obj.size();
 
     // resolve actual index
     startIndex = (startIndex < 0 ? size : 0) + startIndex;
     stopIndex = (stopIndex < 0 ? size : 0) + stopIndex;
 
     // check range
-    if(startIndex > stopIndex || startIndex < 0 || startIndex > static_cast<int>(size) ||
-       stopIndex < 0 || stopIndex > static_cast<int>(size)) {
+    if(startIndex > stopIndex || startIndex < 0 || static_cast<size_t>(startIndex) > size ||
+       stopIndex < 0 || static_cast<size_t>(stopIndex) > size) {
         std::string msg("size is ");
         msg += std::to_string(size);
         msg += ", but range is [";
@@ -873,7 +874,7 @@ static auto slice(RuntimeContext &ctx, const T &obj, int startIndex, int stopInd
         raiseOutOfRangeError(ctx, std::move(msg));
         RET_ERROR;
     }
-    RET(sliceImpl(obj, static_cast<unsigned int>(startIndex), static_cast<unsigned int>(stopIndex)));
+    RET(sliceImpl(obj, static_cast<size_t>(startIndex), static_cast<size_t>(stopIndex)));
 }
 
 //!bind: function slice($this : String, $start : Int32, $stop : Int32) : String
@@ -1123,7 +1124,7 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
     auto &obj = *typeAs<BaseObject>(LOCAL(0));
     auto ref = obj[0].asStrRef();
     assert(obj[1].asInt() > -1);
-    unsigned int index = obj[1].asInt();
+    size_t index = obj[1].asInt();
     RET_BOOL(index < ref.size());
 }
 
@@ -1295,7 +1296,7 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
 #define TRY(E) ({ auto value = E; if(!value) { RET_ERROR; } std::forward<decltype(value)>(value); })
 
 struct ArrayIndex {
-    unsigned int index;
+    size_t index;
     bool s;
 
     explicit operator bool() const {
@@ -1304,13 +1305,14 @@ struct ArrayIndex {
 };
 
 // check index range and get resolved index
-static ArrayIndex resolveIndex(int index, int size) {
+static ArrayIndex resolveIndex(long index, size_t size) {
+    assert(size <= ArrayObject::MAX_SIZE);
     index += (index < 0 ? size : 0);
-    bool s = index > -1 && index < size;
-    return {static_cast<unsigned int>(index), s};
+    bool s = index > -1 && static_cast<size_t>(index) < size;
+    return {static_cast<size_t>(index), s};
 }
 
-static ArrayIndex resolveIndex(RuntimeContext &ctx, int index, int size) {
+static ArrayIndex resolveIndex(RuntimeContext &ctx, long index, size_t size) {
     auto ret = resolveIndex(index, size);
     if(!ret) {
         std::string message("size is ");
@@ -1327,8 +1329,8 @@ YDSH_METHOD array_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_get);
 
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
-    int size = obj->getValues().size();
-    int index = LOCAL(1).asInt();
+    size_t size = obj->getValues().size();
+    auto index = LOCAL(1).asInt();
     auto ret = TRY(resolveIndex(ctx, index, size));
     RET(obj->getValues()[ret.index]);
 }
@@ -1338,8 +1340,8 @@ YDSH_METHOD array_get2(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_get);
 
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
-    int size = obj->getValues().size();
-    int index = LOCAL(1).asInt();
+    size_t size = obj->getValues().size();
+    auto index = LOCAL(1).asInt();
     auto ret = resolveIndex(index, size);
     if(!ret) {
         RET(DSValue::createInvalid());
@@ -1352,10 +1354,10 @@ YDSH_METHOD array_set(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_set);
 
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
-    int size = obj->getValues().size();
-    int index = LOCAL(1).asInt();
+    size_t size = obj->getValues().size();
+    auto index = LOCAL(1).asInt();
     auto ret = TRY(resolveIndex(ctx, index, size));
-    obj->set(ret.index, EXTRACT_LOCAL(2));
+    obj->refValues()[ret.index] = EXTRACT_LOCAL(2);
     RET_VOID;
 }
 
@@ -1364,8 +1366,8 @@ YDSH_METHOD array_remove(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_remove);
 
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
-    int size = obj->getValues().size();
-    int index = LOCAL(1).asInt();
+    size_t size = obj->getValues().size();
+    auto index = LOCAL(1).asInt();
     auto ret = TRY(resolveIndex(ctx, index, size));
     auto v = obj->getValues()[ret.index];
     obj->refValues().erase(obj->refValues().begin() + ret.index);
@@ -1390,17 +1392,17 @@ YDSH_METHOD array_peek(RuntimeContext &ctx) {
     return value;
 }
 
-static bool array_insertImpl(DSState &ctx, int index, const DSValue &v) {
+static bool array_insertImpl(DSState &ctx, long index, const DSValue &v) {
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
-    auto size0 = obj->getValues().size();
+    size_t size0 = obj->getValues().size();
     if(size0 == ArrayObject::MAX_SIZE) {
         raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
         return false;
     }
 
     ArrayIndex ret{static_cast<unsigned int>(index), true};
-    int size = static_cast<int>(size0);
-    if(index != size && !(ret = resolveIndex(ctx, index, size))) {
+    long size = static_cast<long>(size0);
+    if(index != size && !(ret = resolveIndex(ctx, index, size0))) {
         return false;
     }
     obj->refValues().insert(obj->refValues().begin() + ret.index, v);
@@ -1408,7 +1410,7 @@ static bool array_insertImpl(DSState &ctx, int index, const DSValue &v) {
 }
 
 static bool array_pushImpl(RuntimeContext &ctx) {
-    int index = typeAs<ArrayObject>(LOCAL(0))->getValues().size();
+    size_t index = typeAs<ArrayObject>(LOCAL(0))->getValues().size();
     return array_insertImpl(ctx, index, LOCAL(1));
 }
 
@@ -1465,8 +1467,8 @@ YDSH_METHOD array_extend(RuntimeContext &ctx) {
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
     auto *value = typeAs<ArrayObject>(LOCAL(1));
     if(obj != value) {
-        unsigned int valueSize = value->getValues().size();
-        for(unsigned int i = 0; i < valueSize; i++) {
+        size_t valueSize = value->getValues().size();
+        for(size_t i = 0; i < valueSize; i++) {
             if(obj->getValues().size() == ArrayObject::MAX_SIZE) {
                 raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
                 RET_ERROR;
@@ -1481,7 +1483,7 @@ YDSH_METHOD array_extend(RuntimeContext &ctx) {
 YDSH_METHOD array_swap(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_swap);
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
-    int index = LOCAL(1).asInt();
+    auto index = LOCAL(1).asInt();
     auto ret = TRY(resolveIndex(ctx, index, obj->getValues().size()));
     DSValue value = LOCAL(2);
     std::swap(obj->refValues()[ret.index], value);
@@ -1492,8 +1494,8 @@ YDSH_METHOD array_swap(RuntimeContext &ctx) {
 YDSH_METHOD array_slice(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_slice);
     auto &obj = *typeAs<ArrayObject>(LOCAL(0));
-    int start = LOCAL(1).asInt();
-    int stop = LOCAL(2).asInt();
+    auto start = LOCAL(1).asInt();
+    auto stop = LOCAL(2).asInt();
     return slice(ctx, obj, start, stop);
 }
 
@@ -1501,7 +1503,7 @@ YDSH_METHOD array_slice(RuntimeContext &ctx) {
 YDSH_METHOD array_sliceFrom(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_sliceFrom);
     auto &obj = *typeAs<ArrayObject>(LOCAL(0));
-    int start = LOCAL(1).asInt();
+    auto start = LOCAL(1).asInt();
     return slice(ctx, obj, start, obj.getValues().size());
 }
 
@@ -1509,7 +1511,7 @@ YDSH_METHOD array_sliceFrom(RuntimeContext &ctx) {
 YDSH_METHOD array_sliceTo(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_sliceTo);
     auto &obj = *typeAs<ArrayObject>(LOCAL(0));
-    int stop = LOCAL(1).asInt();
+    auto stop = LOCAL(1).asInt();
     return slice(ctx, obj, 0, stop);
 }
 
@@ -1572,7 +1574,7 @@ YDSH_METHOD array_join(RuntimeContext &ctx) {
     auto delim = LOCAL(1).asStrRef();
 
     bool hasRet = ctx.toStrBuf.empty();
-    unsigned int count = 0;
+    size_t count = 0;
     for(auto &e : obj->getValues()) {
         if(count++ > 0) {
             ctx.toStrBuf.append(delim.data(), delim.size());
@@ -1599,7 +1601,8 @@ YDSH_METHOD array_join(RuntimeContext &ctx) {
 //!bind: function size($this : Array<T0>) : Int32
 YDSH_METHOD array_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_size);
-    int size = typeAs<ArrayObject>(LOCAL(0))->getValues().size();
+    size_t size = typeAs<ArrayObject>(LOCAL(0))->getValues().size();
+    assert(size <= ArrayObject::MAX_SIZE);
     RET(DSValue::createInt(size));
 }
 
@@ -1696,7 +1699,7 @@ YDSH_METHOD map_default(RuntimeContext &ctx) {
 YDSH_METHOD map_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_size);
     auto *obj = typeAs<MapObject>(LOCAL(0));
-    int value = obj->getValueMap().size();
+    size_t value = obj->getValueMap().size();
     RET(DSValue::createInt(value));
 }
 
@@ -1907,7 +1910,7 @@ YDSH_METHOD job_out(RuntimeContext &ctx) {
 YDSH_METHOD job_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_get);
     auto *obj = typeAs<JobImplObject>(LOCAL(0));
-    int index = LOCAL(1).asInt();
+    auto index = LOCAL(1).asInt();
     if(index == 0) {
         RET(obj->getInObj());
     }
@@ -1964,9 +1967,9 @@ YDSH_METHOD job_size(RuntimeContext &ctx) {
 YDSH_METHOD job_pid(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_pid);
     auto *entry = typeAs<JobImplObject>(LOCAL(0));
-    int index = LOCAL(1).asInt();
+    auto index = LOCAL(1).asInt();
 
-    if(index > -1 && static_cast<unsigned int>(index) < entry->getProcSize()) {
+    if(index > -1 && static_cast<size_t>(index) < entry->getProcSize()) {
         int pid = entry->getPid(index);
         RET(DSValue::createInt(pid));
     }

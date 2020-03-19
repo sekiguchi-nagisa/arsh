@@ -578,10 +578,6 @@ public:
         this->values.push_back(obj);
     }
 
-    void set(unsigned int index, DSValue &&obj) {
-        this->values[index] = std::move(obj);
-    }
-
     void initIterator() {
         this->curIndex = 0;
     }
