@@ -32,7 +32,7 @@ function find_todo($a : String) : String! {
     $a =~ $/^today$/i && { return $path; }
 
     var r = $/^\-([1-9][0-9]*)$/.match($a)
-    $r.size() > 0 && { return $find_todo_at($r[1].toInt()!) }
+    $r.size() > 0 && { return $find_todo_at($r[1]!.toInt()!) }
 
     if $a =~ $/^[1-9][0-9]?/ { 
         var b = $a.toInt()!
