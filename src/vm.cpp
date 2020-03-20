@@ -399,7 +399,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
         if(cmd.filePath == nullptr || S_ISDIR(getStMode(cmd.filePath))) {
             auto handle = state.symbolTable.lookupHandle(VAR_CMD_FALLBACK);
             unsigned int index = handle->getIndex();
-            if(state.getGlobal(index).isValidObject()) {
+            if(state.getGlobal(index).isObject()) {
                 cmd.kind = Command::USER_DEFINED;
                 cmd.udc = lookupUdc(state, CMD_FALLBACK_HANDLER);
                 assert(cmd.udc);
@@ -1188,6 +1188,7 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(EXIT_FINALLY) {
             switch(state.stack.peek().kind()) {
+            case DSValueKind::EMPTY:
             case DSValueKind::OBJECT:
             case DSValueKind::INVALID:
             case DSValueKind::BOOL:
@@ -1197,7 +1198,7 @@ bool VM::mainLoop(DSState &state) {
                 vmerror;
             }
             case DSValueKind::NUMBER: {
-                unsigned int index = static_cast<unsigned int>(state.stack.pop().value());
+                unsigned int index = state.stack.pop().asNum();
                 state.stack.pc() = index;
                 vmnext;
             }
@@ -1212,7 +1213,7 @@ bool VM::mainLoop(DSState &state) {
                 auto iter = valueMap.find(key);
                 if(iter != valueMap.end()) {
                     assert(iter->second.kind() == DSValueKind::NUMBER);
-                    unsigned int index = iter->second.value();
+                    unsigned int index = iter->second.asNum();
                     state.stack.pc() = index - 1;
                 }
             }
@@ -1310,7 +1311,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(BUILTIN_CMD) {
-            auto attr = state.stack.getLocal(UDC_PARAM_ATTR).value();
+            auto attr = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
             DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
             DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
             bool ret = callBuiltinCommand(state, std::move(argv), std::move(redir), attr);
@@ -1319,7 +1320,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(BUILTIN_EVAL) {
-            auto attr = state.stack.getLocal(UDC_PARAM_ATTR).value();
+            auto attr = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
             DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
             DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
 

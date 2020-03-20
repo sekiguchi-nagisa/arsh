@@ -51,7 +51,7 @@ StringRef DSValue::asStrRef() const {
 std::string DSValue::toString() const {
     switch(this->kind()) {
     case DSValueKind::NUMBER:
-        return std::to_string(static_cast<uint64_t>(this->value()));
+        return std::to_string(this->asNum());
     case DSValueKind::BOOL:
         return this->asBool() ? "true" : "false";
     case DSValueKind::SIG:
@@ -93,7 +93,7 @@ std::string DSValue::toString() const {
     }
 
     std::string str("DSObject(");
-    str += std::to_string(reinterpret_cast<long>(this));
+    str += std::to_string(reinterpret_cast<long>(this->get()));
     str += ")";
     return str;
 }
@@ -142,51 +142,77 @@ bool DSValue::opInterp(DSState &state) const {
 }
 
 bool DSValue::equals(const DSValue &o) const {
-    assert(this->kind() == o.kind());
-    if(this->isObject()) {
-        assert(this->get()->getKind() == o.get()->getKind());
-        switch(this->get()->getKind()) {
-        case DSObject::Long:
-            return typeAs<LongObject>(*this)->getValue() == typeAs<LongObject>(o)->getValue();
-        case DSObject::Float:
-            return this->asFloat() == o.asFloat();
-        case DSObject::String: {
-            auto left = this->asStrRef();
-            auto right = o.asStrRef();
-            return left == right;
-        }
-        default:
-            break;
-        }
+    if(this->kind() != o.kind()) {
+        return false;
     }
-    return this->val == o.val;
+    switch(this->kind()) {
+    case DSValueKind::EMPTY:
+        return true;
+    case DSValueKind::BOOL:
+        return this->asBool() == o.asBool();
+    case DSValueKind::SIG:
+        return this->asSig() == o.asSig();
+    case DSValueKind::INT:
+        return this->asInt() == o.asInt();
+    default:
+        assert(this->kind() == DSValueKind::OBJECT);
+        break;
+    }
+
+    if(this->get()->getKind() != o.get()->getKind()) {
+        return false;
+    }
+
+    switch(this->get()->getKind()) {
+    case DSObject::Long:
+        return typeAs<LongObject>(*this)->getValue() == typeAs<LongObject>(o)->getValue();
+    case DSObject::Float:
+        return this->asFloat() == o.asFloat();
+    case DSObject::String: {
+        auto left = this->asStrRef();
+        auto right = o.asStrRef();
+        return left == right;
+    }
+    default:
+        return reinterpret_cast<uint64_t>(this->get()) == reinterpret_cast<uint64_t>(o.get());
+    }
 }
 
 size_t DSValue::hash() const {
-    if(this->isObject()) {
-        switch(this->get()->getKind()) {
-        case DSObject::Long:
-            return std::hash<long>()(typeAs<LongObject>(*this)->getValue());
-        case DSObject::Float:
-            return std::hash<double>()(this->asFloat());
-        case DSObject::String:
-            return std::hash<StringRef>()(this->asStrRef());
-        default:
-            break;
-        }
+    switch(this->kind()) {
+    case DSValueKind::BOOL:
+        return std::hash<bool>()(this->asBool());
+    case DSValueKind::SIG:
+        return std::hash<int64_t>()(this->asSig());
+    case DSValueKind::INT:
+        return std::hash<int64_t>()(this->asInt());
+    default:
+        assert(this->isObject());
+        break;
     }
-    return std::hash<int64_t>()(this->val);
+
+    switch(this->get()->getKind()) {
+    case DSObject::Long:
+        return std::hash<long>()(typeAs<LongObject>(*this)->getValue());
+    case DSObject::Float:
+        return std::hash<double>()(this->asFloat());
+    case DSObject::String:
+        return std::hash<StringRef>()(this->asStrRef());
+    default:
+        return std::hash<uint64_t>()(reinterpret_cast<uint64_t>(this->get()));
+    }
 }
 
 bool DSValue::compare(const DSValue &o) const {
     assert(this->kind() == o.kind());
     switch(this->kind()) {
-    case DSValueKind::BOOL:
-    case DSValueKind::SIG: {
-        int left = this->value();
-        int right = o.value();
+    case DSValueKind::BOOL: {
+        int left = this->asBool() ? 1 : 0;
+        int right = o.asBool() ? 1 : 0;
         return left < right;
     }
+    case DSValueKind::SIG:
+        return this->asSig() < o.asSig();
     case DSValueKind::INT:
         return this->asInt() < o.asInt();
     default:

@@ -45,7 +45,7 @@ PipelineObject::~PipelineObject() {
 }
 
 static bool isPassingFD(const std::pair<RedirOP, DSValue> &pair) {
-    return pair.first == RedirOP::NOP && pair.second.isValidObject()
+    return pair.first == RedirOP::NOP && pair.second.isObject()
                 && isa<UnixFdObject>(pair.second.get());
 }
 

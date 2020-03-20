@@ -196,70 +196,79 @@ public:
 };
 
 enum class DSValueKind : unsigned char {
-    OBJECT = 0,
-    NUMBER = 130,   // uint32_t
-    INVALID = 132,
-    BOOL = 134,
-    SIG = 136,  // int32_t
-    INT = 138,  // int32_t
+    EMPTY,
+    OBJECT, // not null
+    NUMBER,   // uint32_t
+    INVALID,
+    BOOL,
+    SIG,  // int32_t
+    INT,  // int32_t
 };
 
-class DSValue {
-private:
-    union {
-        /**
-         * may be null
-         */
-        DSObject *obj;
+struct DSValueBase {
+    DSValueKind k;
 
-        /**
-         * if most significant bit is 0, represents DSObject' pointer(may be nullptr).
-         * otherwise, represents native pointer, number ... etc.
-         *
-         *               DSValue format
-         * +-------+---------------------------------+
-         * |  tag  |    DSObject pointer or value    |
-         * +-------+---------------------------------+
-         *   7bit                   57bit
-         *
-         * significant 7bit represents tag (DSValueKind).
-         *
-         */
-        int64_t val;
+    union {
+        DSObject *obj;
+        uint64_t u64;
+        int64_t i64;
+        bool b;
     };
 
-    explicit DSValue(uint64_t val) noexcept : val(val) {
-        if(this->val > 0) {
-            this->obj->refCount++;
-        }
+    void swap(DSValueBase &o) noexcept {
+        std::swap(*this, o);
     }
+
+    DSValueKind kind() const {
+        return this->k;
+    }
+};
+
+class DSValue : public DSValueBase {
+private:
+    explicit DSValue(uint64_t u64) noexcept : DSValueBase{.k = DSValueKind::NUMBER, .u64 = u64} {}
+
+    explicit DSValue(int64_t i64) noexcept : DSValueBase{.k = DSValueKind::INT, .i64 = i64} {}
+
+    explicit DSValue(bool b) noexcept : DSValueBase{.k = DSValueKind::BOOL, .b = b} {}
 
 public:
     /**
      * obj may be null
      */
-    explicit DSValue(DSObject *obj) noexcept : DSValue(reinterpret_cast<int64_t>(obj)) { }
+    explicit DSValue(DSObject *obj) noexcept : DSValueBase{.k = DSValueKind::EMPTY, .obj = obj} {
+        if(this->obj) {
+            this->k = DSValueKind::OBJECT;
+            this->obj->refCount++;
+        }
+    }
 
     /**
      * equivalent to DSValue(nullptr)
      */
-    constexpr DSValue() noexcept: obj(nullptr) { }
+    constexpr DSValue() noexcept: DSValueBase{.k = DSValueKind::EMPTY} { }
 
-    constexpr DSValue(std::nullptr_t) noexcept: obj(nullptr) { }    //NOLINT
+    constexpr DSValue(std::nullptr_t) noexcept: DSValueBase() { }    //NOLINT
 
-    DSValue(const DSValue &value) noexcept : DSValue(value.obj) { }
+    DSValue(const DSValue &value) noexcept : DSValueBase(value) {
+        if(this->isObject()) {
+            this->obj->refCount++;
+        }
+    }
 
     /**
      * not increment refCount
      */
-    DSValue(DSValue &&value) noexcept : obj(value.obj) { value.obj = nullptr; }
+    DSValue(DSValue &&value) noexcept : DSValueBase(value) {
+        value.k = DSValueKind::EMPTY;
+    }
 
     ~DSValue() {
-        if(this->val > 0) {
+        if(this->isObject()) {
             if(--this->obj->refCount == 0) {
                 delete this->obj;
             }
-            this->obj = nullptr;
+            this->k = DSValueKind::EMPTY;
         }
     }
 
@@ -282,42 +291,27 @@ public:
         this->swap(tmp);
     }
 
-    /**
-     * mask tag and get actual value.
-     */
-    int64_t value() const noexcept {
-        return this->val & 0x1FFFFFFFFFFFFFF;
-    }
-
-    DSValueKind kind() const noexcept {
-        return static_cast<DSValueKind>((this->val & 0xFE00000000000000) >> 56);
-    }
-
     DSObject *get() const noexcept {
         return this->obj;
     }
 
     bool operator==(const DSValue &v) const noexcept {
-        return this->val == v.val;
+        return this->equals(v);
     }
 
     bool operator!=(const DSValue &v) const noexcept {
-        return this->val != v.val;
+        return !this->equals(v);
     }
 
     explicit operator bool() const noexcept {
-        return this->obj != nullptr;
+        return this->kind() != DSValueKind::EMPTY;
     }
 
     /**
-     * if represents DSObject(may be nullptr), return true.
+     * if represents DSObject, return true.
      */
     bool isObject() const noexcept {
-        return this->val >= 0;
-    }
-
-    bool isValidObject() const noexcept {
-        return this->isObject() && static_cast<bool>(*this);
+        return this->kind() == DSValueKind::OBJECT;
     }
 
     bool isInvalid() const noexcept {
@@ -334,25 +328,24 @@ public:
         return this->getTypeID() == id;
     }
 
-    void swap(DSValue &value) noexcept {
-        std::swap(this->obj, value.obj);
+    unsigned int asNum() const {
+        assert(this->kind() == DSValueKind::NUMBER);
+        return this->u64;
     }
 
     bool asBool() const {
         assert(this->kind() == DSValueKind::BOOL);
-        return this->value() == 1;
+        return this->b;
     }
 
     int asSig() const {
         assert(this->kind() == DSValueKind::SIG);
-        unsigned int v = this->value();
-        return static_cast<int>(v);
+        return this->i64;
     }
 
     int asInt() const {
         assert(this->kind() == DSValueKind::INT);
-        unsigned int v = this->value();
-        return static_cast<int>(v);
+        return this->i64;
     }
 
     double asFloat() const;
@@ -403,29 +396,27 @@ public:
     }
 
     static DSValue createNum(unsigned int v) {
-        auto mask = static_cast<uint64_t>(DSValueKind::NUMBER) << 56;
-        return DSValue(mask | v);
+        return DSValue(static_cast<uint64_t>(v));
     }
 
     static DSValue createInvalid() {
-        return DSValue(static_cast<uint64_t>(DSValueKind::INVALID) << 56);
+        DSValue ret;
+        ret.k = DSValueKind::INVALID;
+        return ret;
     }
 
     static DSValue createBool(bool v) {
-        auto mask = static_cast<uint64_t>(DSValueKind::BOOL) << 56;
-        return DSValue(mask | (v ? 1 : 0));
+        return DSValue(v);
     }
 
     static DSValue createSig(int num) {
-        auto mask = static_cast<uint64_t>(DSValueKind::SIG) << 56;
-        unsigned int v = num;
-        return DSValue(mask | v);
+        DSValue ret(static_cast<int64_t>(num));
+        ret.k = DSValueKind::SIG;
+        return ret;
     }
 
     static DSValue createInt(int num) {
-        auto mask = static_cast<uint64_t>(DSValueKind::INT) << 56;
-        unsigned int v = num;
-        return DSValue(mask | v);
+        return DSValue(static_cast<int64_t>(num));
     }
 
     static DSValue createFloat(double v) {
