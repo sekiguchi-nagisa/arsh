@@ -47,7 +47,6 @@ public:
     enum ObjectKind {
         Dummy,
         Long,
-        Float,
         String,
         UnixFd,
         Regex,
@@ -154,20 +153,6 @@ public:
     }
 };
 
-class FloatObject : public ObjectWithRtti<DSObject::Float> {
-private:
-    double value;
-
-public:
-    explicit FloatObject(double value) : ObjectWithRtti(TYPE::Float), value(value) { }
-
-    ~FloatObject() override = default;
-
-    double getValue() const {
-        return this->value;
-    }
-};
-
 class StringObject : public ObjectWithRtti<DSObject::String> {
 private:
     std::string value;
@@ -203,6 +188,7 @@ enum class DSValueKind : unsigned char {
     BOOL,
     SIG,  // int32_t
     INT,  // int32_t
+    FLOAT,
 };
 
 struct DSValueBase {
@@ -213,6 +199,7 @@ struct DSValueBase {
         uint64_t u64;
         int64_t i64;
         bool b;
+        double d;
     };
 
     void swap(DSValueBase &o) noexcept {
@@ -231,6 +218,8 @@ private:
     explicit DSValue(int64_t i64) noexcept : DSValueBase{.k = DSValueKind::INT, .i64 = i64} {}
 
     explicit DSValue(bool b) noexcept : DSValueBase{.k = DSValueKind::BOOL, .b = b} {}
+
+    explicit DSValue(double d) noexcept : DSValueBase{.k = DSValueKind::FLOAT, .d = d} {}
 
 public:
     /**
@@ -348,7 +337,10 @@ public:
         return this->i64;
     }
 
-    double asFloat() const;
+    double asFloat() const {
+        assert(this->kind() == DSValueKind::FLOAT);
+        return this->d;
+    }
 
     StringRef asStrRef() const;
 
@@ -420,7 +412,7 @@ public:
     }
 
     static DSValue createFloat(double v) {
-        return DSValue::create<FloatObject>(v);
+        return DSValue(v);
     }
 
     // for string construction

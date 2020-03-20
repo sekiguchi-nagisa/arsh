@@ -33,14 +33,12 @@ unsigned int DSValue::getTypeID() const {
         return static_cast<unsigned int>(TYPE::Signal);
     case DSValueKind::INT:
         return static_cast<unsigned int>(TYPE::Int);
+    case DSValueKind::FLOAT:
+        return static_cast<unsigned int>(TYPE::Float);
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         return this->get()->getTypeID();
     }
-}
-
-double DSValue::asFloat() const {
-    return typeAs<FloatObject>(*this)->getValue();
 }
 
 StringRef DSValue::asStrRef() const {
@@ -58,6 +56,8 @@ std::string DSValue::toString() const {
         return std::to_string(this->asSig());
     case DSValueKind::INT:
         return std::to_string(this->asInt());
+    case DSValueKind::FLOAT:
+        return std::to_string(this->asFloat());
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         break;
@@ -66,8 +66,6 @@ std::string DSValue::toString() const {
     switch(this->get()->getKind()) {
     case DSObject::Long:
         return std::to_string(typeAs<LongObject>(*this)->getValue());
-    case DSObject::Float:
-        return std::to_string(this->asFloat());
     case DSObject::String:
         return this->asStrRef().toString();
     case DSObject::UnixFd: {
@@ -154,6 +152,8 @@ bool DSValue::equals(const DSValue &o) const {
         return this->asSig() == o.asSig();
     case DSValueKind::INT:
         return this->asInt() == o.asInt();
+    case DSValueKind::FLOAT:
+        return this->asFloat() == o.asFloat();
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         break;
@@ -166,8 +166,6 @@ bool DSValue::equals(const DSValue &o) const {
     switch(this->get()->getKind()) {
     case DSObject::Long:
         return typeAs<LongObject>(*this)->getValue() == typeAs<LongObject>(o)->getValue();
-    case DSObject::Float:
-        return this->asFloat() == o.asFloat();
     case DSObject::String: {
         auto left = this->asStrRef();
         auto right = o.asStrRef();
@@ -186,6 +184,8 @@ size_t DSValue::hash() const {
         return std::hash<int64_t>()(this->asSig());
     case DSValueKind::INT:
         return std::hash<int64_t>()(this->asInt());
+    case DSValueKind::FLOAT:
+        return std::hash<double>()(this->asFloat());
     default:
         assert(this->isObject());
         break;
@@ -194,8 +194,6 @@ size_t DSValue::hash() const {
     switch(this->get()->getKind()) {
     case DSObject::Long:
         return std::hash<long>()(typeAs<LongObject>(*this)->getValue());
-    case DSObject::Float:
-        return std::hash<double>()(this->asFloat());
     case DSObject::String:
         return std::hash<StringRef>()(this->asStrRef());
     default:
@@ -215,6 +213,8 @@ bool DSValue::compare(const DSValue &o) const {
         return this->asSig() < o.asSig();
     case DSValueKind::INT:
         return this->asInt() < o.asInt();
+    case DSValueKind::FLOAT:
+        return this->asFloat() < o.asFloat();
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         break;
@@ -224,8 +224,6 @@ bool DSValue::compare(const DSValue &o) const {
     switch(this->get()->getKind()) {
     case DSObject::Long:
         return typeAs<LongObject>(*this)->getValue() < typeAs<LongObject>(o)->getValue();
-    case DSObject::Float:
-        return this->asFloat() < o.asFloat();
     case DSObject::String: {
         auto left = this->asStrRef();
         auto right = o.asStrRef();

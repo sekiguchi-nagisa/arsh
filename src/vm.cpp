@@ -1187,23 +1187,13 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(EXIT_FINALLY) {
-            switch(state.stack.peek().kind()) {
-            case DSValueKind::EMPTY:
-            case DSValueKind::OBJECT:
-            case DSValueKind::INVALID:
-            case DSValueKind::BOOL:
-            case DSValueKind::SIG:
-            case DSValueKind::INT: {
-                state.stack.storeThrownObject();
-                vmerror;
-            }
-            case DSValueKind::NUMBER: {
+            if(state.stack.peek().kind() == DSValueKind::NUMBER) {
                 unsigned int index = state.stack.pop().asNum();
                 state.stack.pc() = index;
                 vmnext;
             }
-            }
-            vmnext;
+            state.stack.storeThrownObject();
+            vmerror;
         }
         vmcase(LOOKUP_HASH) {
             auto key = state.stack.pop();
