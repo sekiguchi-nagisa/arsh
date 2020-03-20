@@ -136,7 +136,7 @@ nodes:
       pos: 0
       size: 1
     type:
-    kind: "Int32"
+    kind: "Int"
     intValue: "1"
 )"},
 
@@ -314,7 +314,7 @@ nodes:
         pos: 0
         size: 2
       type:
-      kind: "Int32"
+      kind: "Int"
       intValue: "34"
     rightNode:
       nodeKind: Number
@@ -322,7 +322,7 @@ nodes:
         pos: 3
         size: 1
       type:
-      kind: "Int32"
+      kind: "Int"
       intValue: "1"
     op: "+"
     optNode:
@@ -506,7 +506,7 @@ nodes:
                     pos: 19
                     size: 2
                   type:
-                  kind: "Int32"
+                  kind: "Int"
                   intValue: "34"
                 redirNodes:
                   - nodeKind: Redir
@@ -605,22 +605,22 @@ nodes:
             token:
               pos: 24
               size: 7
-            type: [Int32 : Int32]
+            type: [Int : Int]
             keyNodes:
               - nodeKind: Number
                 token:
                   pos: 25
                   size: 2
-                type: Int32
-                kind: "Int32"
+                type: Int
+                kind: "Int"
                 intValue: "34"
             valueNodes:
               - nodeKind: Number
                 token:
                   pos: 28
                   size: 2
-                type: Int32
-                kind: "Int32"
+                type: Int
+                kind: "Int"
                 intValue: "34"
           targetTypeToken:
           opKind: "TO_VOID"
@@ -641,14 +641,14 @@ nodes:
             token:
               pos: 41
               size: 5
-            type: (Int32,)
+            type: (Int,)
             nodes:
               - nodeKind: Number
                 token:
                   pos: 42
                   size: 2
-                type: Int32
-                kind: "Int32"
+                type: Int
+                kind: "Int"
                 intValue: "34"
           targetTypeToken:
           opKind: "TO_VOID"

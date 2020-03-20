@@ -1,16 +1,16 @@
 
-#################
-#     Int32     #
-#################
+###############
+#     Int     #
+###############
 
 var i32 = -1
-assert($i32 is Int32)
+assert($i32 is Int)
 
-# to Int32
-assert($i32 as Int32 is Int32)
-assert($i32 as Int32 as String == '-1')
+# to Int
+assert($i32 as Int is Int)
+assert($i32 as Int as String == '-1')
 $i32 = -976
-assert($i32 as Int32 as String == '-976')
+assert($i32 as Int as String == '-976')
 
 # to Int64
 assert($i32 as Int64 is Int64)
@@ -32,13 +32,13 @@ assert($i32 as Float as String == '-2345.000000')
 var i64 = -1l
 assert($i64 is Int64)
 
-# to Int32
-assert($i64 as Int32 is Int32)
-assert($i64 as Int32 as String == '-1')
+# to Int
+assert($i64 as Int is Int)
+assert($i64 as Int as String == '-1')
 $i64 = 12345L
-assert($i64 as Int32 as String == '12345')
+assert($i64 as Int as String == '12345')
 $i64 = 1030792151049L
-assert($i64 as Int32 as String == '9')
+assert($i64 as Int as String == '9')
 
 # to Int64
 assert($i64 as Int64 is Int64)
@@ -60,11 +60,11 @@ assert($i64 as Float as String == '-12344.000000')
 var f = -1.0
 assert($f is Float)
 
-# to Int32
-assert($f as Int32 is Int32)
-assert($f as Int32 as String == '-1')
+# to Int
+assert($f as Int is Int)
+assert($f as Int as String == '-1')
 $f = 65535.9234
-assert($f as Int32 as String == '65535')
+assert($f as Int as String == '65535')
 
 # to Int64
 assert($f as Int64 is Int64)

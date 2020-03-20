@@ -55,7 +55,7 @@ int DSType::getIntPrecision() const {
     switch(this->getTypeID()) {
     case static_cast<unsigned int>(TYPE::Int64):
         return INT64_PRECISION;
-    case static_cast<unsigned int>(TYPE::Int32):
+    case static_cast<unsigned int>(TYPE::Int):
         return INT32_PRECISION;
     default:
         return INVALID_PRECISION;

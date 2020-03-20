@@ -29,8 +29,8 @@ assert 'he12' == 'he' + '' + 12 + ''
 # string method
 assert("".empty())
 assert("".size() == 0)
-assert("".size() is Int32)
-assert("hello".count() is Int32)
+assert("".size() is Int)
+assert("hello".count() is Int)
 assert("hello".count() == "hello".size())
 assert("あいうえお90".count() == 7)
 

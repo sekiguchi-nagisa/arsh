@@ -304,7 +304,7 @@ void ByteCodeGenerator::visitTypeNode(TypeNode &) {
 void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     DSValue value;
     switch(node.kind) {
-    case NumberNode::Int32: {
+    case NumberNode::Int: {
         int num = node.getIntValue();
         if(num >= 0 && num <= UINT8_MAX) {
             this->emit1byteIns(OpCode::PUSH_INT, static_cast<unsigned char>(num));
@@ -988,7 +988,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
         this->enterFinally();
 
         if(this->inUDC()) {
-            assert(node.getExprNode().getType().is(TYPE::Int32));
+            assert(node.getExprNode().getType().is(TYPE::Int));
             this->emit0byteIns(OpCode::RETURN_UDC);
         } else if(node.getExprNode().getType().isVoidType()) {
             this->emit0byteIns(OpCode::RETURN);

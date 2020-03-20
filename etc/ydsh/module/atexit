@@ -1,7 +1,7 @@
 
-let _TERM_HOOKS : [(Int32, typeof($TERM_HOOK!))]
+let _TERM_HOOKS : [(Int, typeof($TERM_HOOK!))]
 
-function _defaultHook($s : Int32, $e : Any) {
+function _defaultHook($s : Int, $e : Any) {
     for $p in $_TERM_HOOKS {
         if ($p._0 and $s) > 0 {
             $p._1($s, $e)
@@ -9,7 +9,7 @@ function _defaultHook($s : Int32, $e : Any) {
     }
 }
 
-function atexit($s : Int32, $h : typeof($TERM_HOOK!)) {
+function atexit($s : Int, $h : typeof($TERM_HOOK!)) {
     if !$TERM_HOOK || $TERM_HOOK! != $_defaultHook {
         $_TERM_HOOKS.clear()
     }

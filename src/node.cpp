@@ -145,7 +145,7 @@ void NumberNode::dump(NodeDumper &dumper) const {
     DUMP_ENUM(kind, EACH_NUMBER_NODE_KIND);
 
     switch(this->kind) {
-    case Int32:
+    case Int:
         DUMP_PRIM(intValue);
         break;
     case Int64:

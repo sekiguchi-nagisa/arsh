@@ -434,8 +434,8 @@ void TypeChecker::visitTypeNode(TypeNode &node) {
 
 void TypeChecker::visitNumberNode(NumberNode &node) {
     switch(node.kind) {
-    case NumberNode::Int32:
-        node.setType(this->symbolTable.get(TYPE::Int32));
+    case NumberNode::Int:
+        node.setType(this->symbolTable.get(TYPE::Int));
         break;
     case NumberNode::Int64:
         node.setType(this->symbolTable.get(TYPE::Int64));
@@ -610,8 +610,8 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
        leftPrecision < DSType::INT32_PRECISION &&
        rightPrecision > DSType::INVALID_PRECISION &&
        rightPrecision < DSType::INT32_PRECISION) {   // int widening
-        this->resolveCoercion(this->symbolTable.get(TYPE::Int32), node.refLeftNode());
-        this->resolveCoercion(this->symbolTable.get(TYPE::Int32), node.refRightNode());
+        this->resolveCoercion(this->symbolTable.get(TYPE::Int), node.refLeftNode());
+        this->resolveCoercion(this->symbolTable.get(TYPE::Int), node.refRightNode());
     } else if(leftPrecision != rightPrecision && this->checkCoercion(rightType, leftType)) {    // cast left
         this->resolveCoercion(rightType, node.refLeftNode());
     }
@@ -1073,12 +1073,12 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
         assert(accessNode->getRecvNode().is(NodeKind::Number));
         auto &numNode = static_cast<NumberNode&>(accessNode->getRecvNode());
 
-        if(node->getType().is(TYPE::Int32)) {
+        if(node->getType().is(TYPE::Int)) {
             int value = numNode.getIntValue();
             value = -value;
             delete node;
             node = NumberNode::newInt32(token, value).release();
-            node->setType(this->symbolTable.get(TYPE::Int32));
+            node->setType(this->symbolTable.get(TYPE::Int));
             return true;
         }
         break;
@@ -1398,7 +1398,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     }
     node.setUdcIndex(pair.asOk()->getIndex());
 
-    unsigned int varIndex = this->inFunc(this->symbolTable.get(TYPE::Int32), [&]{   // pseudo return type
+    unsigned int varIndex = this->inFunc(this->symbolTable.get(TYPE::Int), [&]{   // pseudo return type
         // register dummy parameter (for propagating command attr)
         this->addEntry(node, "%%attr", this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
@@ -1407,7 +1407,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 
         // register special characters (@, #, 0, 1, ... 9)
         this->addEntry(node, "@", this->symbolTable.get(TYPE::StringArray), FieldAttribute::READ_ONLY);
-        this->addEntry(node, "#", this->symbolTable.get(TYPE::Int32), FieldAttribute::READ_ONLY);
+        this->addEntry(node, "#", this->symbolTable.get(TYPE::Int), FieldAttribute::READ_ONLY);
         for(unsigned int i = 0; i < 10; i++) {
             this->addEntry(node, std::to_string(i), this->symbolTable.get(TYPE::String), FieldAttribute::READ_ONLY);
         }

@@ -1,4 +1,4 @@
-function func($num : Int32) : Int32 {
+function func($num : Int) : Int {
 	if $num == 1  {
 		return $num * 10
 	} elif $num == 2 {

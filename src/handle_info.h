@@ -24,7 +24,7 @@ namespace ydsh {
     OP(Void) \
     OP(Any) \
     OP(_Value) \
-    OP(Int32) \
+    OP(Int) \
     OP(Int64) \
     OP(Float) \
     OP(Boolean)  \

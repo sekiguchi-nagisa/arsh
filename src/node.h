@@ -327,7 +327,7 @@ inline TypeNode *newVoidTypeNode() {
 // expression definition
 
 #define EACH_NUMBER_NODE_KIND(OP) \
-    OP(Int32) \
+    OP(Int) \
     OP(Int64) \
     OP(Float) \
     OP(Signal)
@@ -352,7 +352,7 @@ public:
             Node(NodeKind::Number, token), kind(kind), intValue(0) { }
 
     static std::unique_ptr<NumberNode> newInt32(Token token, int value) {
-        auto node = std::make_unique<NumberNode>(token, Int32);
+        auto node = std::make_unique<NumberNode>(token, Int);
         node->intValue = value;
         return node;
     }

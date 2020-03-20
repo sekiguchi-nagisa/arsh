@@ -33,17 +33,11 @@ template<typename ...T> using name ## _t = TypeTemp<__detail_type::name ## _v, s
 template <typename R, typename ... P>
 struct Func_t : Type {};
 
-DEFINE_TYPE(Int32);
 DEFINE_TYPE(Int);
 DEFINE_TYPE(String);
 DEFINE_TYPE(Error);
-DEFINE_TYPE(Byte);
 DEFINE_TYPE(Boolean);
-DEFINE_TYPE(Uint64);
 DEFINE_TYPE(Int64);
-DEFINE_TYPE(Uint32);
-DEFINE_TYPE(Int16);
-DEFINE_TYPE(Uint16);
 DEFINE_TYPE(Float);
 DEFINE_TYPE(Void);
 
@@ -178,7 +172,7 @@ TEST_F(TypeTest, builtinName) {
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Void", this->pool.get(TYPE::Void)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Nothing", this->pool.get(TYPE::Nothing)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int32", this->pool.get(TYPE::Int32)));
+    ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int", this->pool.get(TYPE::Int)));
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Int64", this->pool.get(TYPE::Int64)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertTypeName("Boolean", this->pool.get(TYPE::Boolean)));
@@ -207,7 +201,7 @@ TEST_F(TypeTest, superType) {
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Any), this->pool.get(TYPE::_Root)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::_Value), this->pool.get(TYPE::Any)));
 
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Int32), this->pool.get(TYPE::_Value)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Int), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Int64), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Signal), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->pool.get(TYPE::Signals), this->pool.get(TYPE::Any)));
@@ -232,7 +226,7 @@ TEST_F(TypeTest, superType) {
 TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::Any)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::_Value)));
-    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Int32)));
+    ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Int)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Int64)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Boolean)));
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Float)));
@@ -250,12 +244,11 @@ TEST_F(TypeTest, attribute) {
     ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Regex)));
 
     ASSERT_NO_FATAL_FAILURE(
-            this->assertAttribute(TypeAttr::FUNC_TYPE, this->toType<Func_t<Int32_t>>()));
+            this->assertAttribute(TypeAttr::FUNC_TYPE, this->toType<Func_t<Int_t>>()));
 }
 
 TEST_F(TypeTest, alias) {
-    ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int", this->pool.get(TYPE::Int32)));
-    ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int_2", *this->pool.getType(std::string("Int")).take()));
+    ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int_2", this->pool.get(TYPE::Int)));
 }
 
 TEST_F(TypeTest, templateName) {
@@ -266,8 +259,7 @@ TEST_F(TypeTest, templateName) {
 }
 
 TEST_F(TypeTest, typeToken) {
-    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Int32_t>(), this->pool.get(TYPE::_Value)));
-    ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int", this->pool.get(TYPE::Int32)));
+    ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Int_t>(), this->pool.get(TYPE::_Value)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Int_t>(), this->pool.get(TYPE::_Value)));
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<String_t>>(), this->pool.get(TYPE::Any)));
@@ -282,7 +274,7 @@ TEST_F(TypeTest, typeToken) {
 }
 
 TEST_F(TypeTest, pool) {
-    auto &t = this->toType<Array_t<Int32_t>>();
+    auto &t = this->toType<Array_t<Int_t>>();
     std::string typeName = this->pool.getTypeName(t);
     std::string alias = "IArray";
     ASSERT_NO_FATAL_FAILURE(this->assertAlias(alias.c_str(), t));
@@ -298,9 +290,9 @@ TEST_F(TypeTest, api) {
     ASSERT_TRUE(this->pool.get(TYPE::Boolean).isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing)));
     ASSERT_FALSE(this->pool.get(TYPE::Nothing).isSameOrBaseTypeOf(this->pool.get(TYPE::Boolean)));
     ASSERT_TRUE(this->pool.get(TYPE::Void).isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing)));
-    ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing)));
-    ASSERT_FALSE(this->pool.get(TYPE::Any).isSameOrBaseTypeOf(this->toType<Option_t<Int32_t>>()));
-    ASSERT_TRUE(this->toType<Option_t<Int32_t>>().isSameOrBaseTypeOf(this->pool.get(TYPE::Int32)));
+    ASSERT_TRUE(this->toType<Option_t<Int_t>>().isSameOrBaseTypeOf(this->pool.get(TYPE::Nothing)));
+    ASSERT_FALSE(this->pool.get(TYPE::Any).isSameOrBaseTypeOf(this->toType<Option_t<Int_t>>()));
+    ASSERT_TRUE(this->toType<Option_t<Int_t>>().isSameOrBaseTypeOf(this->pool.get(TYPE::Int)));
     ASSERT_TRUE(this->toType<Option_t<Error_t>>().isSameOrBaseTypeOf(this->pool.get(TYPE::ArithmeticError)));
 }
 

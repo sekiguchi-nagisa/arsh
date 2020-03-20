@@ -2,5 +2,5 @@
 
 case 34 {
     else => 'de'
-    -123 => new [Int32](); else => echo hello!!
+    -123 => new [Int](); else => echo hello!!
 }

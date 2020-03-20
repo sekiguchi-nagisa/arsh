@@ -3,7 +3,6 @@
 # primitive type
 var a = 1
 assert($a is Int)
-assert($a is Int32)
 var b = $true
 assert($b is Boolean)
 var c = 3.23

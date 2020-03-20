@@ -17,7 +17,7 @@ assert child
 # UID, EUID
 assert $UID == $EUID
 assert $UID as String == "$(id -u)"
-assert $UID is Int  # uid and euid is Int32
+assert $UID is Int  # uid and euid is Int
 assert $EUID is Int
 
 # uname

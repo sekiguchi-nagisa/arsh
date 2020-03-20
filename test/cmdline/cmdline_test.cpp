@@ -235,7 +235,7 @@ DSCode: function f
   number of local variable: 1
 Code:
    8: LOAD_LOCAL  0
-  10: INSTANCE_OF  [Int32]
+  10: INSTANCE_OF  [Int]
   15: RETURN_V
 Constant Pool:
 Line Number Table:
@@ -347,7 +347,7 @@ var a
 
 
     // line marker of semantic error
-    msg = R"((string):1: [semantic error] require `Int32' type, but is `String' type
+    msg = R"((string):1: [semantic error] require `Int' type, but is `String' type
 [34, "hey"]
      ^~~~~
 )";
@@ -359,7 +359,7 @@ var a = 34
 $a = 34 +
      'de'
 )";
-    msg = R"((string):3: [semantic error] require `Int32' type, but is `String' type
+    msg = R"((string):3: [semantic error] require `Int' type, but is `String' type
 $a = 34 +
      ^~~~
      'de'

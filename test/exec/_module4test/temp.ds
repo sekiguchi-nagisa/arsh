@@ -2,7 +2,7 @@
 # for temp file creation
 
 let _TEMPS = new [String]()
-function _clear_temp($s : Int32, $e : Any) {
+function _clear_temp($s : Int, $e : Any) {
     for $e in $_TEMPS {
         rm -rf $e
     }

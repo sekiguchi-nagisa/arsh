@@ -36,7 +36,7 @@ TypePool::TypePool() {
      */
     this->initBuiltinType(TYPE::_Value, "Value%%", true, TYPE::Any, info_Dummy());
 
-    this->initBuiltinType(TYPE::Int32, "Int32", false, TYPE::_Value, info_Int32Type());
+    this->initBuiltinType(TYPE::Int, "Int", false, TYPE::_Value, info_IntType());
     this->initBuiltinType(TYPE::Int64, "Int64", false, TYPE::_Value, info_Int64Type());
     this->initBuiltinType(TYPE::Float, "Float", false, TYPE::_Value, info_FloatType());
     this->initBuiltinType(TYPE::Boolean, "Boolean", false, TYPE::_Value, info_BooleanType());

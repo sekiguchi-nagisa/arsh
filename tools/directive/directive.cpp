@@ -151,7 +151,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         return this->createError(node, str);
     }
 
-    this->addHandler("status", TYPE::Int32, [&](Node &node, Directive &d) {
+    this->addHandler("status", TYPE::Int, [&](Node &node, Directive &d) {
         d.setStatus(TRY(this->checkedCast<NumberNode>(node))->getIntValue());
     });
 
@@ -167,7 +167,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         }
     });
 
-    this->addHandler("lineNum", TYPE::Int32, [&](Node &node, Directive &d) {
+    this->addHandler("lineNum", TYPE::Int, [&](Node &node, Directive &d) {
         d.setLineNum(TRY(this->checkedCast<NumberNode>(node))->getIntValue());
     });
 

@@ -49,7 +49,7 @@ enum class TYPE : unsigned int {
 
     _Value,    // super type of value type(int, float, bool, string). not directly used it.
 
-    Int32,
+    Int,
     Int64,
     Float,
     Boolean,
@@ -215,10 +215,10 @@ public:
      * if type is not number type, return -1.
      */
     int getNumTypeIndex() const {
-        static_assert(static_cast<unsigned int>(TYPE::Int32) + 1 == static_cast<unsigned int>(TYPE::Int64), "");
+        static_assert(static_cast<unsigned int>(TYPE::Int) + 1 == static_cast<unsigned int>(TYPE::Int64), "");
         static_assert(static_cast<unsigned int>(TYPE::Int64) + 1 == static_cast<unsigned int>(TYPE::Float), "");
-        if(this->id >= static_cast<unsigned int>(TYPE::Int32) && this->id <= static_cast<unsigned int>(TYPE::Float)) {
-            return this->id - static_cast<unsigned int>(TYPE::Int32);
+        if(this->id >= static_cast<unsigned int>(TYPE::Int) && this->id <= static_cast<unsigned int>(TYPE::Float)) {
+            return this->id - static_cast<unsigned int>(TYPE::Int);
         }
         return -1;
     }

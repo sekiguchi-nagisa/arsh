@@ -32,7 +32,7 @@ unsigned int DSValue::getTypeID() const {
     case DSValueKind::SIG:
         return static_cast<unsigned int>(TYPE::Signal);
     case DSValueKind::INT:
-        return static_cast<unsigned int>(TYPE::Int32);
+        return static_cast<unsigned int>(TYPE::Int);
     default:
         assert(this->kind() == DSValueKind::OBJECT);
         return this->get()->getTypeID();

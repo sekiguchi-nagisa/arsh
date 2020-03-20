@@ -23,6 +23,6 @@ try {
 } catch($e : String) {
     assert($false)
 } catch($e) {
-    assert($e is Int32)
+    assert($e is Int)
     assert($e as Int == 23)
 }

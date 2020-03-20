@@ -1,7 +1,7 @@
 #$test($status = 1)
 
 var a = ["a" : 1]
-assert($a["a"] is Int32)
+assert($a["a"] is Int)
 assert($a["a"] == 1)
 var ex = 34 as Any
 try { $a["b"]; assert($false) } catch($e) { $ex = $e }
@@ -13,7 +13,7 @@ assert($a["a"] == 54)
 $a["b"] = -456
 assert($a["b"] == -456)
 
-assert($a.size() is Int32)
+assert($a.size() is Int)
 assert($a.size() == 2)
 assert(!$a.empty())
 

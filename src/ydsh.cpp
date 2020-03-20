@@ -234,7 +234,7 @@ static void initBuiltinVar(DSState &state) {
      * must be Array_Object
      */
     bindVariable(state, "PIPESTATUS", DSValue::create<ArrayObject>(
-            *state.symbolTable.createArrayType(state.symbolTable.get(TYPE::Int32)).take()));
+            *state.symbolTable.createArrayType(state.symbolTable.get(TYPE::Int)).take()));
 
     /**
      * contains exit status of most recent executed process. ($?)
@@ -764,7 +764,7 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
     auto &type = st->symbolTable.get(st->editOpReply.getTypeID());
     switch(op) {
     case DS_EDIT_HIST_SIZE:
-        if(type.is(TYPE::Int32)) {
+        if(type.is(TYPE::Int)) {
             return st->editOpReply.asInt();
         }
         return 0;
