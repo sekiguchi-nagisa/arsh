@@ -213,31 +213,48 @@ struct DSValueBase {
 
 class DSValue : public DSValueBase {
 private:
-    explicit DSValue(uint64_t u64) noexcept : DSValueBase{.k = DSValueKind::NUMBER, .u64 = u64} {}
+    explicit DSValue(uint64_t value) noexcept {
+        this->k = DSValueKind::NUMBER;
+        this->u64 = value;
+    }
 
-    explicit DSValue(int64_t i64) noexcept : DSValueBase{.k = DSValueKind::INT, .i64 = i64} {}
+    explicit DSValue(int64_t value) noexcept {
+        this->k = DSValueKind::INT;
+        this->i64 = value;
+    }
 
-    explicit DSValue(bool b) noexcept : DSValueBase{.k = DSValueKind::BOOL, .b = b} {}
+    explicit DSValue(bool value) noexcept {
+        this->k = DSValueKind::BOOL;
+        this->b = value;
+    }
 
-    explicit DSValue(double d) noexcept : DSValueBase{.k = DSValueKind::FLOAT, .d = d} {}
+    explicit DSValue(double value) noexcept {
+        this->k = DSValueKind::FLOAT;
+        this->d = value;
+    }
 
 public:
     /**
      * obj may be null
      */
-    explicit DSValue(DSObject *obj) noexcept : DSValueBase{.k = DSValueKind::EMPTY, .obj = obj} {
+    explicit DSValue(DSObject *o) noexcept {
+        this->obj = o;
         if(this->obj) {
             this->k = DSValueKind::OBJECT;
             this->obj->refCount++;
+        } else {
+            this->k = DSValueKind::EMPTY;
         }
     }
 
     /**
      * equivalent to DSValue(nullptr)
      */
-    constexpr DSValue() noexcept: DSValueBase{.k = DSValueKind::EMPTY} { }
+    DSValue() noexcept {
+        this->k = DSValueKind::EMPTY;
+    }
 
-    constexpr DSValue(std::nullptr_t) noexcept: DSValueBase() { }    //NOLINT
+    DSValue(std::nullptr_t) noexcept: DSValue() { }    //NOLINT
 
     DSValue(const DSValue &value) noexcept : DSValueBase(value) {
         if(this->isObject()) {
