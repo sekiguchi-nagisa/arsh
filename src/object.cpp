@@ -513,11 +513,10 @@ void ErrorObject::printStackTrace(DSState &ctx) {
     }
 }
 
-DSValue ErrorObject::newError(const DSState &ctx, const DSType &type, DSValue &&message) {
-    DSValue obj(new ErrorObject(type, std::move(message)));
-    typeAs<ErrorObject>(obj)->stackTrace = ctx.getCallStack().createStackTrace();
-    typeAs<ErrorObject>(obj)->name = DSValue::createStr(ctx.symbolTable.getTypeName(type));
-    return obj;
+DSValue ErrorObject::newError(const DSState &state, const DSType &type, DSValue &&message) {
+    auto traces = state.getCallStack().createStackTrace();
+    auto name = DSValue::createStr(state.symbolTable.getTypeName(type));
+    return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), std::move(traces));
 }
 
 std::string ErrorObject::createHeader(const DSState &state) const {

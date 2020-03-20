@@ -228,17 +228,17 @@ private:
         int64_t val;
     };
 
-public:
-    /**
-     * obj may be null
-     */
-    explicit DSValue(DSObject *obj) noexcept : DSValue(reinterpret_cast<int64_t>(obj)) { }
-
     explicit DSValue(uint64_t val) noexcept : val(val) {
         if(this->val > 0) {
             this->obj->refCount++;
         }
     }
+
+public:
+    /**
+     * obj may be null
+     */
+    explicit DSValue(DSObject *obj) noexcept : DSValue(reinterpret_cast<int64_t>(obj)) { }
 
     /**
      * equivalent to DSValue(nullptr)
@@ -295,14 +295,6 @@ public:
 
     DSObject *get() const noexcept {
         return this->obj;
-    }
-
-    bool operator==(std::nullptr_t) const noexcept {
-        return this->obj == nullptr;
-    }
-
-    bool operator!=(std::nullptr_t) const noexcept {
-        return this->obj != nullptr;
     }
 
     bool operator==(const DSValue &v) const noexcept {
@@ -786,10 +778,12 @@ private:
     DSValue name;
     std::vector<StackTraceElement> stackTrace;
 
-    ErrorObject(const DSType &type, DSValue &&message) :
-            ObjectWithRtti(type), message(std::move(message)) { }
-
 public:
+    ErrorObject(const DSType &type, DSValue &&message, DSValue &&name,
+            std::vector<StackTraceElement> &&stackTrace) :
+            ObjectWithRtti(type), message(std::move(message)),
+            name(std::move(name)), stackTrace(std::move(stackTrace)) { }
+
     ~ErrorObject() override = default;
 
     bool opStr(DSState &state) const;
@@ -814,11 +808,11 @@ public:
     /**
      * create new Error_Object and create stack trace
      */
-    static DSValue newError(const DSState &ctx, const DSType &type, const DSValue &message) {
-        return newError(ctx, type, DSValue(message));
+    static DSValue newError(const DSState &state, const DSType &type, const DSValue &message) {
+        return newError(state, type, DSValue(message));
     }
 
-    static DSValue newError(const DSState &ctx, const DSType &type, DSValue &&message);
+    static DSValue newError(const DSState &state, const DSType &type, DSValue &&message);
 
 private:
     std::string createHeader(const DSState &state) const;
