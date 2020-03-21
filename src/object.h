@@ -279,16 +279,13 @@ public:
     }
 
     DSValue &operator=(const DSValue &value) noexcept {
-        this->~DSValue();
-        new (this) DSValue(value);
+        DSValue tmp(value);
+        this->swap(tmp);
         return *this;
     }
 
     DSValue &operator=(DSValue &&value) noexcept {
-        if(this != std::addressof(value)) {
-            this->~DSValue();
-            new (this) DSValue(std::move(value));
-        }
+        this->swap(value);
         return *this;
     }
 
