@@ -287,18 +287,21 @@ public:
             if(--this->obj.value->refCount == 0) {
                 delete this->obj.value;
             }
-            this->obj.kind = DSValueKind::EMPTY;
         }
     }
 
     DSValue &operator=(const DSValue &value) noexcept {
-        DSValue tmp(value);
-        this->swap(tmp);
+        auto tmp(value);
+        this->~DSValue();
+        new (this) DSValue(std::move(tmp));
         return *this;
     }
 
     DSValue &operator=(DSValue &&value) noexcept {
-        this->swap(value);
+        if(this != std::addressof(value)) {
+            this->~DSValue();
+            new (this) DSValue(std::move(value));
+        }
         return *this;
     }
 
@@ -306,8 +309,8 @@ public:
      * release current pointer.
      */
     void reset() noexcept {
-        DSValue tmp;
-        this->swap(tmp);
+        this->~DSValue();
+        this->obj.kind = DSValueKind::EMPTY;
     }
 
     DSObject *get() const noexcept {

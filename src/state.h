@@ -218,8 +218,8 @@ public:
     }
 
     void loadField(unsigned int index) {
-        this->operands[this->frame.stackTopIndex] =
-                (*typeAs<BaseObject>(this->operands[this->frame.stackTopIndex]))[index];
+        auto value = (*typeAs<BaseObject>(this->pop()))[index];
+        this->push(std::move(value));
     }
 
     // for recursive depth count
