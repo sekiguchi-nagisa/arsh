@@ -93,13 +93,10 @@ private:
     DSValue thrown;
 
 public:
-    VMState() : operandsSize(64), operands(VMState::alloc(this->operandsSize)) {}
+    VMState() : operandsSize(64), operands(new DSValue[this->operandsSize]) {}
 
     ~VMState() {
-        for(unsigned int i = 0; i < this->frame.stackTopIndex + 1; i++) {
-            this->operands[i].~DSValue();
-        }
-        this->dealloc(this->operands);
+        delete[] this->operands;
     }
 
     // for stack manipulation op
@@ -112,11 +109,11 @@ public:
     }
 
     void push(const DSValue &value) {
-        new (&this->operands[++this->frame.stackTopIndex]) DSValue(value);
+        this->push(DSValue(value));
     }
 
     void push(DSValue &&value) {
-        new (&this->operands[++this->frame.stackTopIndex]) DSValue(std::move(value));
+        this->operands[++this->frame.stackTopIndex] = std::move(value);
     }
 
     DSValue pop() {
@@ -124,7 +121,7 @@ public:
     }
 
     void popNoReturn() {
-        this->operands[this->frame.stackTopIndex--].~DSValue();
+        this->operands[this->frame.stackTopIndex--].reset();
     }
 
     void dup() {
@@ -153,7 +150,7 @@ public:
         auto *limit = this->operands + this->frame.localVarOffset + offset;
         auto *cur = limit + size - 1;
         while(cur >= limit) {
-            (cur--)->~DSValue();
+            (cur--)->reset();
         }
     }
 
@@ -168,7 +165,7 @@ public:
 
     DSValue takeThrownObject() {
         DSValue tmp;
-        this->thrown.swap(tmp);
+        std::swap(tmp, this->thrown);
         return tmp;
     }
 
@@ -221,8 +218,8 @@ public:
     }
 
     void loadField(unsigned int index) {
-        auto value = (*typeAs<BaseObject>(this->operands[this->frame.stackTopIndex]))[index];
-        this->operands[this->frame.stackTopIndex] = std::move(value);
+        this->operands[this->frame.stackTopIndex] =
+                (*typeAs<BaseObject>(this->operands[this->frame.stackTopIndex]))[index];
     }
 
     // for recursive depth count
@@ -279,14 +276,6 @@ public:
     std::vector<StackTraceElement> createStackTrace() const;
 
 private:
-    static DSValue *alloc(unsigned int size) {
-        return reinterpret_cast<DSValue*>(malloc(sizeof(DSValue) * size));
-    }
-
-    static void dealloc(DSValue *ptr) {
-        free(ptr);
-    }
-
     void incRecDepth() {
         this->frame.recDepth++;
     }
