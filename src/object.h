@@ -183,15 +183,16 @@ public:
 enum class DSValueKind : unsigned char {
     EMPTY,
     OBJECT, // not null
-    NUMBER,   // uint32_t
+    NUMBER,   // uint64_t
     INVALID,
     BOOL,
-    SIG,  // int32_t
-    INT,  // int32_t
-    FLOAT,
+    SIG,  // int64_t
+    INT,  // int64_t
+    FLOAT,  // double
 };
 
-struct DSValueBase {
+class DSValueBase {
+protected:
     union {
         struct {
             DSValueKind kind;
@@ -219,6 +220,7 @@ struct DSValueBase {
         } d;
     };
 
+public:
     void swap(DSValueBase &o) noexcept {
         std::swap(*this, o);
     }
