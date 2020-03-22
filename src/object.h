@@ -189,14 +189,43 @@ enum class DSValueKind : unsigned char {
     SIG,  // int64_t
     INT,  // int64_t
     FLOAT,  // double
+
+    // for small string (up to 14 characters)
+    SSTR0, SSTR1, SSTR2, SSTR3,
+    SSTR4, SSTR5, SSTR6, SSTR7,
+    SSTR8, SSTR9, SSTR10, SSTR11,
+    SSTR12, SSTR13, SSTR14,
 };
+
+inline bool isSmallStr(DSValueKind kind) {
+    switch(kind) {
+    case DSValueKind::SSTR0:
+    case DSValueKind::SSTR1:
+    case DSValueKind::SSTR2:
+    case DSValueKind::SSTR3:
+    case DSValueKind::SSTR4:
+    case DSValueKind::SSTR5:
+    case DSValueKind::SSTR6:
+    case DSValueKind::SSTR7:
+    case DSValueKind::SSTR8:
+    case DSValueKind::SSTR9:
+    case DSValueKind::SSTR10:
+    case DSValueKind::SSTR11:
+    case DSValueKind::SSTR12:
+    case DSValueKind::SSTR13:
+    case DSValueKind::SSTR14:
+        return true;
+    default:
+        return false;
+    }
+}
 
 class DSValueBase {
 protected:
     union {
         struct {
             DSValueKind kind;
-            DSObject *value;
+            DSObject *value;    // not null
         } obj;
 
         struct {
@@ -218,6 +247,11 @@ protected:
             DSValueKind kind;
             double value;
         } d;
+
+        struct {
+            DSValueKind kind;
+            char value[15]; // null terminated
+        } str;
     };
 
 public:
@@ -227,6 +261,17 @@ public:
 
     DSValueKind kind() const {
         return this->obj.kind;
+    }
+
+    static unsigned int smallStrSize(DSValueKind kind) {
+        assert(isSmallStr(kind));
+        return static_cast<unsigned int>(kind) - static_cast<unsigned int>(DSValueKind::SSTR0);
+    }
+
+    static DSValueKind toSmallStrKind(unsigned int size) {
+        assert(size <= smallStrSize(DSValueKind::SSTR14));
+        unsigned int base = static_cast<unsigned int>(DSValueKind::SSTR0);
+        return static_cast<DSValueKind>(base + size);
     }
 };
 
@@ -252,6 +297,16 @@ private:
     explicit DSValue(double value) noexcept {
         this->d.kind = DSValueKind::FLOAT;
         this->d.value = value;
+    }
+
+    /**
+     * for small string construction
+     */
+    DSValue(const char *data, unsigned int size) noexcept {
+        assert(size <= smallStrSize(DSValueKind::SSTR14));
+        this->str.kind = toSmallStrKind(size);
+        memcpy(this->str.value, data, size);
+        this->str.value[size] = '\0';
     }
 
 public:
@@ -353,6 +408,11 @@ public:
         return this->getTypeID() == id;
     }
 
+    bool hasStrRef() const {
+        return isSmallStr(this->kind()) ||
+            (this->isObject() && this->get()->getKind() == DSObject::String);
+    }
+
     unsigned int asNum() const {
         assert(this->kind() == DSValueKind::NUMBER);
         return this->u64.value;
@@ -416,6 +476,14 @@ public:
      */
     bool compare(const DSValue &o) const;
 
+    /**
+     * force mutate string.
+     * @param value
+     * @return
+     * if new size is greater than limit, return false
+     */
+    bool appendAsStr(StringRef value);
+
     template <typename T, typename ...A>
     static DSValue create(A &&...args) {
         static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
@@ -453,7 +521,7 @@ public:
 
     // for string construction
     static DSValue createStr() {
-        return createStr(StringRef());
+        return DSValue("", 0);
     }
 
     static DSValue createStr(const char *str) {
@@ -461,10 +529,16 @@ public:
     }
 
     static DSValue createStr(StringRef ref) {
+        if(ref.size() <= smallStrSize(DSValueKind::SSTR14)) {
+            return DSValue(ref.data(), ref.size());
+        }
         return DSValue::create<StringObject>(ref);
     }
 
     static DSValue createStr(std::string &&value) {
+        if(value.size() <= smallStrSize(DSValueKind::SSTR14)) {
+            return DSValue(value.data(), value.size());
+        }
         return DSValue::create<StringObject>(std::move(value));
     }
 };
@@ -497,22 +571,15 @@ inline T *typeAs(const DSValue &value) noexcept {
     return cast<T>(value.get());
 }
 
-/**
- * concat string values. concatenation result is assigned to 'left'
- * @param left
- * if RefCount is 1,
- * @param right
- * @return
- * if success, return true.
- */
-bool concatAsStr(DSValue &left, StringRef right);
-
 inline bool concatAsStr(DSValue &left, const DSValue &right) {
-    if(left.asStrRef().empty()) {
+    if(left.kind() == DSValueKind::SSTR0) {
         left = right;
         return true;
     }
-    return concatAsStr(left, right.asStrRef());
+    if(left.isObject() && left.get()->getRefcount() > 1) {
+        left = DSValue::createStr(left.asStrRef());
+    }
+    return left.appendAsStr(right.asStrRef());
 }
 
 class RegexObject : public ObjectWithRtti<DSObject::Regex> {

@@ -971,12 +971,12 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
     for(StringRef::size_type pos = 0; pos != StringRef::npos; ) {
         auto ret = thisStr.find(delimStr, pos);
         auto value = thisStr.slice(pos, ret);
-        s = concatAsStr(buf, value);
+        s = buf.appendAsStr(value);
         if(!s) {
             break;
         }
         if(ret != StringRef::npos) {
-            s = concatAsStr(buf, repStr);
+            s = buf.appendAsStr(repStr);
             if(!s) {
                 break;
             }

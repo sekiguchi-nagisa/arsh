@@ -776,8 +776,10 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
         }
         if(op == DS_EDIT_PROMPT) {
             st->prompt = st->editOpReply;
+            *buf = st->prompt.asStrRef().data();
+        } else {
+            *buf = st->editOpReply.asStrRef().data();
         }
-        *buf = st->editOpReply.asStrRef().data();
         break;
     default:
         break;

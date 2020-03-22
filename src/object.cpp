@@ -36,12 +36,19 @@ unsigned int DSValue::getTypeID() const {
     case DSValueKind::FLOAT:
         return static_cast<unsigned int>(TYPE::Float);
     default:
+        if(isSmallStr(this->kind())) {
+            return static_cast<unsigned int>(TYPE::String);
+        }
         assert(this->kind() == DSValueKind::OBJECT);
         return this->get()->getTypeID();
     }
 }
 
 StringRef DSValue::asStrRef() const {
+    assert(this->hasStrRef());
+    if(isSmallStr(this->kind())) {
+        return StringRef(this->str.value, smallStrSize(this->kind()));
+    }
     auto *obj = typeAs<StringObject>(*this);
     return StringRef(obj->getValue(), obj->size());
 }
@@ -59,6 +66,9 @@ std::string DSValue::toString() const {
     case DSValueKind::FLOAT:
         return std::to_string(this->asFloat());
     default:
+        if(this->hasStrRef()) {
+            return this->asStrRef().toString();
+        }
         assert(this->kind() == DSValueKind::OBJECT);
         break;
     }
@@ -66,8 +76,6 @@ std::string DSValue::toString() const {
     switch(this->get()->getKind()) {
     case DSObject::Long:
         return std::to_string(typeAs<LongObject>(*this)->getValue());
-    case DSObject::String:
-        return this->asStrRef().toString();
     case DSObject::UnixFd: {
         std::string str = "/dev/fd/";
         str += std::to_string(typeAs<UnixFdObject>(*this)->getValue());
@@ -140,6 +148,13 @@ bool DSValue::opInterp(DSState &state) const {
 }
 
 bool DSValue::equals(const DSValue &o) const {
+    // for String
+    if(this->hasStrRef() && o.hasStrRef()) {
+        auto left = this->asStrRef();
+        auto right = o.asStrRef();
+        return left == right;
+    }
+
     if(this->kind() != o.kind()) {
         return false;
     }
@@ -166,11 +181,6 @@ bool DSValue::equals(const DSValue &o) const {
     switch(this->get()->getKind()) {
     case DSObject::Long:
         return typeAs<LongObject>(*this)->getValue() == typeAs<LongObject>(o)->getValue();
-    case DSObject::String: {
-        auto left = this->asStrRef();
-        auto right = o.asStrRef();
-        return left == right;
-    }
     default:
         return reinterpret_cast<uint64_t>(this->get()) == reinterpret_cast<uint64_t>(o.get());
     }
@@ -187,6 +197,9 @@ size_t DSValue::hash() const {
     case DSValueKind::FLOAT:
         return std::hash<double>()(this->asFloat());
     default:
+        if(this->hasStrRef()) {
+            return std::hash<StringRef>()(this->asStrRef());
+        }
         assert(this->isObject());
         break;
     }
@@ -194,14 +207,19 @@ size_t DSValue::hash() const {
     switch(this->get()->getKind()) {
     case DSObject::Long:
         return std::hash<long>()(typeAs<LongObject>(*this)->getValue());
-    case DSObject::String:
-        return std::hash<StringRef>()(this->asStrRef());
     default:
         return std::hash<uint64_t>()(reinterpret_cast<uint64_t>(this->get()));
     }
 }
 
 bool DSValue::compare(const DSValue &o) const {
+    // for String
+    if(this->hasStrRef() && o.hasStrRef()) {
+        auto left = this->asStrRef();
+        auto right = o.asStrRef();
+        return left < right;
+    }
+
     assert(this->kind() == o.kind());
     switch(this->kind()) {
     case DSValueKind::BOOL: {
@@ -224,27 +242,32 @@ bool DSValue::compare(const DSValue &o) const {
     switch(this->get()->getKind()) {
     case DSObject::Long:
         return typeAs<LongObject>(*this)->getValue() < typeAs<LongObject>(o)->getValue();
-    case DSObject::String: {
-        auto left = this->asStrRef();
-        auto right = o.asStrRef();
-        return left < right;
-    }
     default:
         break;
     }
     return false;
 }
 
-bool concatAsStr(DSValue &left, StringRef right) {
-    assert(left.getTypeID() == static_cast<unsigned int>(TYPE::String));
-    unsigned int leftSize = left.asStrRef().size();
-    if(leftSize + right.size() >= StringObject::MAX_SIZE) {
+bool DSValue::appendAsStr(StringRef value) {
+    assert(this->hasStrRef());
+
+    const bool small = isSmallStr(this->kind());
+    const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this)->size();
+    if(size > StringObject::MAX_SIZE - value.size()) {
         return false;
     }
-    if(left.get()->getRefcount() > 1) {
-        left = DSValue::createStr(left.asStrRef());
+
+    if(small) {
+        size_t newSize = size + value.size();
+        if(newSize <= smallStrSize(DSValueKind::SSTR14)) {
+            memcpy(this->str.value + size, value.data(), value.size());
+            this->str.kind = toSmallStrKind(newSize);
+            this->str.value[newSize] = '\0';
+            return true;
+        }
+        (*this) = DSValue::create<StringObject>(StringRef(this->str.value, size));
     }
-    typeAs<StringObject>(left)->append(right);
+    typeAs<StringObject>(*this)->append(value);
     return true;
 }
 
