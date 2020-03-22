@@ -1103,17 +1103,17 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
     auto &iter = *typeAs<BaseObject>(LOCAL(0));
     auto ref = iter[0].asStrRef();
     assert(iter[1].asInt() > -1);
-    unsigned int curIndex = iter[1].asInt();
+    size_t curIndex = iter[1].asInt();
     if(curIndex >= ref.size()) {
         raiseOutOfRangeError(ctx, std::string("string iterator reach end of string"));
         RET_ERROR;
     }
-    unsigned int newIndex = UnicodeUtil::utf8NextPos(curIndex, ref[curIndex]);
+    size_t newIndex = UnicodeUtil::utf8NextPos(curIndex, ref[curIndex]);
     if(newIndex > ref.size()) {
         fatal("broken string iterator\n");
     }
 
-    unsigned int size = newIndex - curIndex;
+    size_t size = newIndex - curIndex;
     iter[1] = DSValue::createInt(newIndex);
     RET(DSValue::createStr(ref.substr(curIndex, size)));
 }

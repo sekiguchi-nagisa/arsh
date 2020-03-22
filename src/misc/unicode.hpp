@@ -34,7 +34,7 @@ struct UnicodeUtil {
     /**
      * if b is illegal start byte of UTF-8, skip it.
      */
-    static unsigned int utf8NextPos(unsigned int pos, unsigned char b) {
+    static size_t utf8NextPos(size_t pos, unsigned char b) {
         unsigned int size = utf8ByteSize(b);
         return pos + (size > 0 ? size : 1);
     }
