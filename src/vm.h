@@ -124,7 +124,7 @@ public:
     ~DSState() = default;
 
     int getExitStatus() const {
-        return this->getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
+        return this->getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt() & 0xFF;
     }
 
     const char *getScriptDir() const {
@@ -180,7 +180,7 @@ public:
     }
 
     void updateExitStatus(unsigned int status) {
-        this->setGlobal(BuiltinVarOffset::EXIT_STATUS, DSValue::createInt(status));
+        this->setGlobal(BuiltinVarOffset::EXIT_STATUS, DSValue::createInt(status & 0xFF));
     }
 
     void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);

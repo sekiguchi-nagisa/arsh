@@ -40,6 +40,15 @@ TEST(BuiltinExecTest, case2) {
     DSState_delete(&state);
 }
 
+TEST(BuiltinExecTest, case3) {
+    DSState *state = DSState_create();
+
+    int ret = DSState_exec(state, make_argv("exit", "12000").data());
+    ASSERT_EQ(224, ret);
+
+    DSState_delete(&state);
+}
+
 TEST(BuiltinExecTest, shctl) {
     DSState *state = DSState_create();
 
@@ -234,6 +243,15 @@ TEST_F(APITest, status) {
     DSState_setExitStatus(this->state, 34);
     s = DSState_getExitStatus(this->state);
     ASSERT_EQ(34, s);
+
+    DSState_setExitStatus(this->state, 3400);
+    s = DSState_getExitStatus(this->state);
+    ASSERT_EQ(72, s);
+
+    std::string src = "$? = 9876";
+    int ret = DSState_eval(this->state, "", src.c_str(), src.size(), nullptr);
+    ASSERT_EQ(148, ret);
+    ASSERT_EQ(ret, DSState_getExitStatus(this->state));
 }
 
 struct Deleter {

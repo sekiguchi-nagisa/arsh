@@ -106,7 +106,7 @@ void DSState_setArguments(DSState *st, char *const *args);
 int DSState_setScriptDir(DSState *st, const char *scriptDir);
 
 /**
- * get current exit status (equivalent to $?)
+ * get current exit status ($? & 0xFF)
  * @param st
  * not null
  * @return
@@ -114,7 +114,7 @@ int DSState_setScriptDir(DSState *st, const char *scriptDir);
 int DSState_getExitStatus(const DSState *st);
 
 /**
- * update exit status
+ * update exit status (status & 0xFF)
  * @param st
  * not null
  * @param status
