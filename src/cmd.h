@@ -64,6 +64,16 @@ inline bool isFieldSep(unsigned int size, const char *ifs, int ch) {
     return false;
 }
 
+/**
+ * see. http://man7.org/linux/man-pages/man3/exit.3.html
+ * @param status
+ * @return
+ * 0-255
+ */
+inline int maskExitStatus(int64_t status) {
+    return status & 0xFF;
+}
+
 } // namespace ydsh
 
 #define PERROR(obj, fmt, ...) fprintf(stderr, "ydsh: %s: " fmt ": %s\n", str(obj.getValues()[0]), ## __VA_ARGS__, strerror(errno))

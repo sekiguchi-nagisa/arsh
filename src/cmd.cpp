@@ -526,15 +526,15 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
 }
 
 static int parseExitStatus(const DSState &state, const ArrayObject &argvObj) {
-    int ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
+    int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
     if(argvObj.getValues().size() > 1) {
         const char *num = str(argvObj.getValues()[1]);
         auto pair = convertToNum<int64_t>(num);
         if(pair.second) {
-            ret = static_cast<int>(pair.first);
+            ret = pair.first;
         }
     }
-    return ret;
+    return maskExitStatus(ret);
 }
 
 static int builtin_exit(DSState &state, ArrayObject &argvObj) {
