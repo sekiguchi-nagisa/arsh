@@ -148,9 +148,6 @@ void NumberNode::dump(NodeDumper &dumper) const {
     case Int:
         DUMP_PRIM(intValue);
         break;
-    case Int64:
-        DUMP_PRIM(longValue);
-        break;
     case Float:
         DUMP_PRIM(floatValue);
         break;

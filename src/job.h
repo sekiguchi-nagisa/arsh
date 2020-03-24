@@ -81,7 +81,7 @@ public:
         return this->state_;
     }
 
-    unsigned char exitStatus() const {
+    int exitStatus() const {
         return this->exitStatus_;
     }
 

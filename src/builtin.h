@@ -54,74 +54,8 @@ namespace ydsh {
 
 using RuntimeContext = DSState;
 
-template <typename T>
-using ObjTypeStub = typename std::conditional<
-        std::is_same<double, T>::value,
-        void,
-        typename std::conditional<std::is_same<long, T>::value,
-                LongObject, void>::type>::type;
 
-
-// for binary op
-#define EACH_BASIC_OP(OP) \
-    OP(ADD, +) \
-    OP(SUB, -) \
-    OP(MUL, *) \
-    OP(AND, &) \
-    OP(OR,  |) \
-    OP(XOR, ^)
-
-
-#define EACH_UNARY_OP(OP) \
-    OP(MINUS, -) \
-    OP(NOT, ~)
-
-
-#define EACH_COMPARE_OP(OP) \
-    OP(EQ, ==) \
-    OP(NE, !=) \
-    OP(LT, <) \
-    OP(GT, >) \
-    OP(LE, <=) \
-    OP(GE, >=)
-
-
-#define GEN_BASIC_OP(NAME, OPERATOR) \
-template <typename T> \
-YDSH_METHOD basic_##NAME(RuntimeContext &ctx) { \
-    using ObjType = ObjTypeStub<T>; \
-    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
-    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue(); \
-    T result = left OPERATOR right; \
-    RET(DSValue::create<ObjType>(result)); \
-}
-
-#define GEN_UNARY_OP(NAME, OPERATOR) \
-template <typename T> \
-YDSH_METHOD unary_##NAME(RuntimeContext &ctx) { \
-    using ObjType = ObjTypeStub<T>; \
-    auto right = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
-    T result = OPERATOR right; \
-    RET(DSValue::create<ObjType>(result)); \
-}
-
-#define GEN_COMPARE_OP(NAME, OPERATOR) \
-template <typename T> \
-bool compare_##NAME(RuntimeContext &ctx) { \
-    using ObjType = ObjTypeStub<T>; \
-    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue(); \
-    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue(); \
-    return left OPERATOR right; \
-}
-
-EACH_BASIC_OP(GEN_BASIC_OP)
-
-EACH_UNARY_OP(GEN_UNARY_OP)
-
-EACH_COMPARE_OP(GEN_COMPARE_OP)
-
-
-static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
+static inline bool checkZeroDiv(RuntimeContext &ctx, int64_t right) {
     if(right == 0) {
         raiseError(ctx, TYPE::ArithmeticError, "zero division");
         return false;
@@ -129,78 +63,12 @@ static inline bool checkZeroDiv(RuntimeContext &ctx, int right) {
     return true;
 }
 
-static inline bool checkZeroMod(RuntimeContext &ctx, int right) {
+static inline bool checkZeroMod(RuntimeContext &ctx, int64_t right) {
     if(right == 0) {
         raiseError(ctx, TYPE::ArithmeticError, "zero modulo");
         return false;
     }
     return true;
-}
-
-template <typename T>
-YDSH_METHOD basic_add(RuntimeContext &ctx) {
-    using ObjType = ObjTypeStub<T>;
-    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
-    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
-
-    T ret;
-    if(sadd_overflow(left, right, ret)) {
-        raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
-        RET_ERROR;
-    }
-    RET(DSValue::create<ObjType>(ret));
-}
-
-template <typename T>
-YDSH_METHOD basic_sub(RuntimeContext &ctx) {
-    using ObjType = ObjTypeStub<T>;
-    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
-    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
-
-    T ret;
-    if(ssub_overflow(left, right, ret)) {
-        raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
-        RET_ERROR;
-    }
-    RET(DSValue::create<ObjType>(ret));
-}
-
-template <typename T>
-YDSH_METHOD basic_mul(RuntimeContext &ctx) {
-    using ObjType = ObjTypeStub<T>;
-    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
-    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
-
-    T ret;
-    if(smul_overflow(left, right, ret)) {
-        raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
-        RET_ERROR;
-    }
-    RET(DSValue::create<ObjType>(ret));
-}
-
-template <typename T>
-YDSH_METHOD basic_div(RuntimeContext &ctx) {
-    using ObjType = ObjTypeStub<T>;
-    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
-    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
-    if(!checkZeroDiv(ctx, (int) right)) {
-        RET_ERROR;
-    }
-    T result = left / right;
-    RET(DSValue::create<ObjType>(result));
-}
-
-template <typename T>
-YDSH_METHOD basic_mod(RuntimeContext &ctx) {
-    using ObjType = ObjTypeStub<T>;
-    auto left = (T) typeAs<ObjType>(LOCAL(0))->getValue();
-    auto right = (T) typeAs<ObjType>(LOCAL(1))->getValue();
-    if(!checkZeroMod(ctx, (int) right)) {
-        RET_ERROR;
-    }
-    T result = left % right;
-    RET(DSValue::create<ObjType>(result));
 }
 
 
@@ -259,14 +127,14 @@ YDSH_METHOD int_plus(RuntimeContext & ctx) {
 //!bind: function $OP_MINUS($this : Int) : Int
 YDSH_METHOD int_minus(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_minus);
-    auto v = - LOCAL(0).asInt();
+    int64_t v = - LOCAL(0).asInt();
     RET(DSValue::createInt(v));
 }
 
 //!bind: function $OP_NOT($this : Int) : Int
 YDSH_METHOD int_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_not);
-    auto v = ~ LOCAL(0).asInt();
+    int64_t v = ~ LOCAL(0).asInt();
     RET(DSValue::createInt(v));
 }
 
@@ -278,10 +146,10 @@ YDSH_METHOD int_not(RuntimeContext & ctx) {
 //!bind: function $OP_ADD($this : Int, $target : Int) : Int
 YDSH_METHOD int_2_int_add(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_add);
-    auto left = LOCAL(0).asInt();
-    auto right = LOCAL(1).asInt();
+    int64_t left = LOCAL(0).asInt();
+    int64_t right = LOCAL(1).asInt();
 
-    int ret;
+    int64_t ret;
     if(sadd_overflow(left, right, ret)) {
         raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
         RET_ERROR;
@@ -292,10 +160,10 @@ YDSH_METHOD int_2_int_add(RuntimeContext & ctx) {
 //!bind: function $OP_SUB($this : Int, $target : Int) : Int
 YDSH_METHOD int_2_int_sub(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_sub);
-    auto left = LOCAL(0).asInt();
-    auto right = LOCAL(1).asInt();
+    int64_t left = LOCAL(0).asInt();
+    int64_t right = LOCAL(1).asInt();
 
-    int ret;
+    int64_t ret;
     if(ssub_overflow(left, right, ret)) {
         raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
         RET_ERROR;
@@ -306,10 +174,10 @@ YDSH_METHOD int_2_int_sub(RuntimeContext & ctx) {
 //!bind: function $OP_MUL($this : Int, $target : Int) : Int
 YDSH_METHOD int_2_int_mul(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mul);
-    auto left = LOCAL(0).asInt();
-    auto right = LOCAL(1).asInt();
+    int64_t left = LOCAL(0).asInt();
+    int64_t right = LOCAL(1).asInt();
 
-    int ret;
+    int64_t ret;
     if(smul_overflow(left, right, ret)) {
         raiseError(ctx, TYPE::ArithmeticError, "integer overflow");
         RET_ERROR;
@@ -320,8 +188,8 @@ YDSH_METHOD int_2_int_mul(RuntimeContext & ctx) {
 //!bind: function $OP_DIV($this : Int, $target : Int) : Int
 YDSH_METHOD int_2_int_div(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_div);
-    auto left = LOCAL(0).asInt();
-    auto right = LOCAL(1).asInt();
+    int64_t left = LOCAL(0).asInt();
+    int64_t right = LOCAL(1).asInt();
 
     if(!checkZeroDiv(ctx, right)) {
         RET_ERROR;
@@ -332,8 +200,8 @@ YDSH_METHOD int_2_int_div(RuntimeContext & ctx) {
 //!bind: function $OP_MOD($this : Int, $target : Int) : Int
 YDSH_METHOD int_2_int_mod(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_mod);
-    auto left = LOCAL(0).asInt();
-    auto right = LOCAL(1).asInt();
+    int64_t left = LOCAL(0).asInt();
+    int64_t right = LOCAL(1).asInt();
 
     if(!checkZeroMod(ctx, right)) {
         RET_ERROR;
@@ -417,126 +285,6 @@ YDSH_METHOD int_2_int_xor(RuntimeContext & ctx) {
     auto left = LOCAL(0).asInt();
     auto right = LOCAL(1).asInt();
     RET(DSValue::createInt(left ^ right));
-}
-
-
-// ###################
-// ##     Int64     ##
-// ###################
-
-// =====  unary op  =====
-
-//!bind: function $OP_PLUS($this : Int64) : Int64
-YDSH_METHOD int64_plus(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_plus);
-    RET(LOCAL(0));
-}
-
-//!bind: function $OP_MINUS($this : Int64) : Int64
-YDSH_METHOD int64_minus(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_minus);
-    RET(unary_MINUS<long>(ctx));
-}
-
-//!bind: function $OP_NOT($this : Int64) : Int64
-YDSH_METHOD int64_not(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_not);
-    RET(unary_NOT<long>(ctx));
-}
-
-
-// =====  binary op  =====
-
-//   =====  arithmetic  =====
-
-//!bind: function $OP_ADD($this : Int64, $target : Int64) : Int64
-YDSH_METHOD int64_2_int64_add(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_add);
-    RET(basic_add<long>(ctx));
-}
-
-//!bind: function $OP_SUB($this : Int64, $target : Int64) : Int64
-YDSH_METHOD int64_2_int64_sub(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_sub);
-    RET(basic_sub<long>(ctx));
-}
-
-//!bind: function $OP_MUL($this : Int64, $target : Int64) : Int64
-YDSH_METHOD int64_2_int64_mul(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_mul);
-    RET(basic_mul<long>(ctx));
-}
-
-//!bind: function $OP_DIV($this : Int64, $target : Int64) : Int64
-YDSH_METHOD int64_2_int64_div(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_div);
-    RET(basic_div<long>(ctx));
-}
-
-//!bind: function $OP_MOD($this : Int64, $target : Int64) : Int64
-YDSH_METHOD int64_2_int64_mod(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_mod);
-    RET(basic_mod<long>(ctx));
-}
-
-//   =====  equality  =====
-
-//!bind: function $OP_EQ($this : Int64, $target : Int64) : Boolean
-YDSH_METHOD int64_2_int64_eq(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_eq);
-    RET_BOOL(compare_EQ<long>(ctx));
-}
-
-//!bind: function $OP_NE($this : Int64, $target : Int64) : Boolean
-YDSH_METHOD int64_2_int64_ne(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_ne);
-    RET_BOOL(compare_NE<long>(ctx));
-}
-
-//   =====  relational  =====
-
-//!bind: function $OP_LT($this : Int64, $target : Int64) : Boolean
-YDSH_METHOD int64_2_int64_lt(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_lt);
-    RET_BOOL(compare_LT<long>(ctx));
-}
-
-//!bind: function $OP_GT($this : Int64, $target : Int64) : Boolean
-YDSH_METHOD int64_2_int64_gt(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_gt);
-    RET_BOOL(compare_GT<long>(ctx));
-}
-
-//!bind: function $OP_LE($this : Int64, $target : Int64) : Boolean
-YDSH_METHOD int64_2_int64_le(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_le);
-    RET_BOOL(compare_LE<long>(ctx));
-}
-
-//!bind: function $OP_GE($this : Int64, $target : Int64) : Boolean
-YDSH_METHOD int64_2_int64_ge(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_ge);
-    RET_BOOL(compare_GE<long>(ctx));
-}
-
-//   =====  logical  =====
-
-//!bind: function $OP_AND($this : Int64, $target : Int64) : Int64
-YDSH_METHOD int64_2_int64_and(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_and);
-    RET(basic_AND<long>(ctx));
-}
-
-//!bind: function $OP_OR($this : Int64, $target : Int64) : Int64
-YDSH_METHOD int64_2_int64_or(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_or);
-    RET(basic_OR<long>(ctx));
-}
-
-//!bind: function $OP_XOR($this : Int64, $target : Int64) : Int64
-YDSH_METHOD int64_2_int64_xor(RuntimeContext & ctx) {
-    SUPPRESS_WARNING(int64_2_int64_xor);
-    RET(basic_XOR<long>(ctx));
 }
 
 
@@ -920,7 +668,7 @@ YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
     auto right = LOCAL(1).asStrRef();
     auto index = left.indexOf(right);
     assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
-    RET(DSValue::createInt(static_cast<int>(index)));
+    RET(DSValue::createInt(static_cast<int64_t>(index)));
 }
 
 //!bind: function lastIndexOf($this : String, $target : String) : Int
@@ -930,7 +678,7 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
     auto right = LOCAL(1).asStrRef();
     auto index = left.lastIndexOf(right);
     assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
-    RET(DSValue::createInt(static_cast<int>(index)));
+    RET(DSValue::createInt(static_cast<int64_t>(index)));
 }
 
 //!bind: function split($this : String, $delim : String) : Array<String>
@@ -998,19 +746,9 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
 YDSH_METHOD string_toInt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_toInt);
     auto ref = LOCAL(0).asStrRef();
-    auto ret = fromIntLiteral<int32_t>(ref.begin(), ref.end());
-
-    RET(ret.second ? DSValue::createInt(ret.first) : DSValue::createInvalid());
-}
-
-//!bind: function toInt64($this : String) : Option<Int64>
-YDSH_METHOD string_toInt64(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(string_toInt64);
-    auto ref = LOCAL(0).asStrRef();
     auto ret = fromIntLiteral<int64_t>(ref.begin(), ref.end());
 
-    RET(ret.second ? DSValue::create<LongObject>(static_cast<long>(ret.first))
-            : DSValue::createInvalid());
+    RET(ret.second ? DSValue::createInt(ret.first) : DSValue::createInvalid());
 }
 
 //!bind: function toFloat($this : String) : Option<Float>
@@ -1113,6 +851,7 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
         fatal("broken string iterator\n");
     }
 
+    assert(curIndex <= newIndex);
     size_t size = newIndex - curIndex;
     iter[1] = DSValue::createInt(newIndex);
     RET(DSValue::createStr(ref.substr(curIndex, size)));
@@ -1217,18 +956,26 @@ YDSH_METHOD signal_message(RuntimeContext &ctx) {
     RET(DSValue::createStr(value));
 }
 
+static bool checkPidLimit(int64_t value) {
+    if(value <= std::numeric_limits<pid_t>::max()) {
+        return true;
+    }
+    errno = ESRCH;
+    return false;
+}
+
 //!bind: function kill($this : Signal, $pid : Int) : Void
 YDSH_METHOD signal_kill(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signal_kill);
     int sigNum = LOCAL(0).asSig();
-    int pid = LOCAL(1).asInt();
-    if(kill(pid, sigNum) != 0) {
-        int num = errno;
-        std::string str = getSignalName(sigNum);
-        raiseSystemError(ctx, num, std::move(str));
-        RET_ERROR;
+    int64_t pid = LOCAL(1).asInt();
+    if(checkPidLimit(pid) && kill(static_cast<pid_t>(pid), sigNum) == 0) {
+        RET_VOID;
     }
-    RET_VOID;
+    int num = errno;
+    std::string str = getSignalName(sigNum);
+    raiseSystemError(ctx, num, std::move(str));
+    RET_ERROR;
 }
 
 //!bind: function $OP_EQ($this : Signal, $target : Signal) : Boolean
@@ -1305,14 +1052,14 @@ struct ArrayIndex {
 };
 
 // check index range and get resolved index
-static ArrayIndex resolveIndex(long index, size_t size) {
+static ArrayIndex resolveIndex(int64_t index, size_t size) {
     assert(size <= ArrayObject::MAX_SIZE);
     index += (index < 0 ? size : 0);
     bool s = index > -1 && static_cast<size_t>(index) < size;
     return {static_cast<size_t>(index), s};
 }
 
-static ArrayIndex resolveIndex(RuntimeContext &ctx, long index, size_t size) {
+static ArrayIndex resolveIndex(RuntimeContext &ctx, int64_t index, size_t size) {
     auto ret = resolveIndex(index, size);
     if(!ret) {
         std::string message("size is ");

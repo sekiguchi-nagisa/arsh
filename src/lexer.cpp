@@ -248,21 +248,11 @@ std::string Lexer::toName(Token token) const {
     return name;
 }
 
-int Lexer::toInt32(Token token, int &status) const {
-    auto ref = this->getStrRef(token);
-    auto ret = fromIntLiteral<int32_t>(ref.begin(), ref.end());
-    status = ret.second ? 0 : 1;
-    return ret.first;
-}
-
-long Lexer::toInt64(Token token, int &status) const {
-    // skip suffix [lL]
-    token.size--;
-
+int64_t Lexer::toInt64(Token token, int &status) const {
     auto ref = this->getStrRef(token);
     auto ret = fromIntLiteral<int64_t>(ref.begin(), ref.end());
     status = ret.second ? 0 : 1;
-    return static_cast<long>(ret.first);
+    return ret.first;
 }
 
 double Lexer::toDouble(Token token, int &status) const {

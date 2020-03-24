@@ -11,10 +11,6 @@ assert($a == 0)
 $a -= 1
 assert($a == -1)
 
-var b = 1L
-$b *= 99
-assert($b == 99)
-
 var s = 'he'
 $s += 'llo'
 assert $s == "hello"
@@ -41,7 +37,7 @@ assert $s == "hello"
 }
 
 # field
-var t = (0, 12, 4L)
+var t = (0, 12)
 $t._0 += 1
 assert($t._0 == 1)
 $t._0 *= 2
@@ -55,8 +51,6 @@ assert($t._0 == -1)
 
 $t._1 -= 10
 assert($t._1 == 2)
-$t._2 /= 4
-assert($t._2 == 1L)
 
 var t2 = ("", 23)
 $t2._0 += "abcd"

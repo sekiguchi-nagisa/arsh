@@ -166,12 +166,12 @@ nodes:
 
 )"},
 
-        {DumpOp::untyped, R"(try { var a = 'false'; } catch $e {} finally {1l; })", 1, 0, R"(
+        {DumpOp::untyped, R"(try { var a = 'false'; } catch $e {} finally {1; })", 1, 0, R"(
 nodes:
   - nodeKind: Try
     token:
       pos: 0
-      size: 51
+      size: 50
     type:
     exprNode:
       nodeKind: Block
@@ -230,16 +230,16 @@ nodes:
       nodeKind: Block
       token:
         pos: 45
-        size: 6
+        size: 5
       type:
       nodes:
         - nodeKind: Number
           token:
             pos: 46
-            size: 2
+            size: 1
           type:
-          kind: "Int64"
-          longValue: "1"
+          kind: "Int"
+          intValue: "1"
       baseIndex: "0"
       varSize: "0"
       maxVarSize: "0"

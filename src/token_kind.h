@@ -56,8 +56,7 @@
     TOKEN(MINUS                              , "-") \
     TOKEN(NOT                                , "!") \
     /* literal */\
-    TOKEN(INT32_LITERAL                      , "<Int32 Literal>") \
-    TOKEN(INT64_LITERAL                      , "<Int64 Literal>") \
+    TOKEN(INT_LITERAL                      , "<Int Literal>") \
     TOKEN(FLOAT_LITERAL                      , "<Float Literal>") \
     TOKEN(STRING_LITERAL                     , "<String Literal>") \
     TOKEN(REGEX_LITERAL                      , "<Regex Literal>") \
@@ -219,7 +218,7 @@
     EACH_LA_interpolation(OP)
 
 #define EACH_LA_primaryPattern(OP) \
-    OP(INT32_LITERAL) \
+    OP(INT_LITERAL) \
     OP(SIGNAL_LITERAL) \
     OP(OPEN_DQUOTE) \
     OP(STRING_LITERAL) \
@@ -232,8 +231,7 @@
 #define EACH_LA_primary(OP) \
     OP(COMMAND) \
     OP(NEW) \
-    OP(INT32_LITERAL) \
-    OP(INT64_LITERAL) \
+    OP(INT_LITERAL) \
     OP(FLOAT_LITERAL) \
     OP(STRING_LITERAL) \
     OP(REGEX_LITERAL) \

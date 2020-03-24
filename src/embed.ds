@@ -4,7 +4,6 @@ if !(checkenv PATH) {
     export-env PATH = '/bin:/usr/bin:/usr/local/bin'
 }
 
-alias Long = Int64
 alias Bool = Boolean
 
 # define boolean constant

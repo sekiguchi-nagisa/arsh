@@ -328,63 +328,49 @@ TEST_F(LexerTest_Lv1, minus_tok2) {
 TEST_F(LexerTest_Lv1, int_literal1) {
     const char *text = "0";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT32_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INT_LITERAL, text, EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, int_literal2) {
     const char *text = "123408";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT32_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INT_LITERAL, text, EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, int_literal3) {
     const char *text = "9";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT32_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INT_LITERAL, text, EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, int_literal4) {
     const char *text = "759801";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT32_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INT_LITERAL, text, EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, int_literal5) {
     const char *text = "0xabcdef0123456789ABCDEF";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT32_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INT_LITERAL, text, EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, int_literal6) {
     const char *text = "014";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT32_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INT_LITERAL, text, EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, int_literal7) {
     const char *text = "0O14";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT32_LITERAL, text, EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
-}
-
-TEST_F(LexerTest_Lv1, int_literal8) {
-    const char *text = "0o000l";
-    this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT64_LITERAL, text, EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
-}
-
-TEST_F(LexerTest_Lv1, int_literal9) {
-    const char *text = "0X000L";
-    this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT64_LITERAL, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INT_LITERAL, text, EOS, ""));
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
@@ -392,19 +378,19 @@ TEST_F(LexerTest_Lv1, int_literal9) {
 TEST_F(LexerTest_Lv1, invalid_int_literal1) {
     const char *text = "+23";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(PLUS, "+", INT32_LITERAL, "23", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(PLUS, "+", INT_LITERAL, "23", EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, invalid_int_literal2) {
     const char *text = "-23";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(MINUS, "-", INT32_LITERAL, "23", EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(MINUS, "-", INT_LITERAL, "23", EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, invalid_int_literal3) {
     const char *text = "008";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT32_LITERAL, "00", INVALID, "8"));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INT_LITERAL, "00", INVALID, "8"));
 }
 
 // float literal
@@ -453,7 +439,7 @@ TEST_F(LexerTest_Lv1, invalid_float_literal1) {
 TEST_F(LexerTest_Lv1, invalid_float_literal2) {
     const char *text = "0012.04e-78";
     this->initLexer(text);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(INT32_LITERAL, "0012", ACCESSOR, ".", INVALID, "0"));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(INT_LITERAL, "0012", ACCESSOR, ".", INVALID, "0"));
 }
 
 // string literal

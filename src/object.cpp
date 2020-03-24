@@ -74,8 +74,6 @@ std::string DSValue::toString() const {
     }
 
     switch(this->get()->getKind()) {
-    case DSObject::Long:
-        return std::to_string(typeAs<LongObject>(*this)->getValue());
     case DSObject::UnixFd: {
         std::string str = "/dev/fd/";
         str += std::to_string(typeAs<UnixFdObject>(*this)->getValue());
@@ -177,13 +175,7 @@ bool DSValue::equals(const DSValue &o) const {
     if(this->get()->getKind() != o.get()->getKind()) {
         return false;
     }
-
-    switch(this->get()->getKind()) {
-    case DSObject::Long:
-        return typeAs<LongObject>(*this)->getValue() == typeAs<LongObject>(o)->getValue();
-    default:
-        return reinterpret_cast<uint64_t>(this->get()) == reinterpret_cast<uint64_t>(o.get());
-    }
+    return reinterpret_cast<uint64_t>(this->get()) == reinterpret_cast<uint64_t>(o.get());
 }
 
 size_t DSValue::hash() const {
@@ -201,13 +193,6 @@ size_t DSValue::hash() const {
             return std::hash<StringRef>()(this->asStrRef());
         }
         assert(this->isObject());
-        break;
-    }
-
-    switch(this->get()->getKind()) {
-    case DSObject::Long:
-        return std::hash<long>()(typeAs<LongObject>(*this)->getValue());
-    default:
         return std::hash<uint64_t>()(reinterpret_cast<uint64_t>(this->get()));
     }
 }
@@ -233,15 +218,6 @@ bool DSValue::compare(const DSValue &o) const {
         return this->asInt() < o.asInt();
     case DSValueKind::FLOAT:
         return this->asFloat() < o.asFloat();
-    default:
-        assert(this->kind() == DSValueKind::OBJECT);
-        break;
-    }
-
-    assert(this->get()->getKind() == o.get()->getKind());
-    switch(this->get()->getKind()) {
-    case DSObject::Long:
-        return typeAs<LongObject>(*this)->getValue() < typeAs<LongObject>(o)->getValue();
     default:
         break;
     }

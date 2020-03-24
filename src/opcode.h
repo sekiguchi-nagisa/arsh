@@ -72,12 +72,8 @@ namespace ydsh {
     OP(ENTER_FINALLY, 2,  1) \
     OP(EXIT_FINALLY , 0, -1) \
     OP(LOOKUP_HASH  , 0, -2) \
-    OP(I32_TO_I64   , 0,  0) \
-    OP(I64_TO_I32   , 0,  0) \
-    OP(I32_TO_D     , 0,  0) \
-    OP(I64_TO_D     , 0,  0) \
-    OP(D_TO_I32     , 0,  0) \
-    OP(D_TO_I64     , 0,  0) \
+    OP(INT_TO_FLOAT , 0,  0) \
+    OP(FLOAT_TO_INT , 0,  0) \
     OP(REF_EQ       , 0, -1) \
     OP(REF_NE       , 0, -1) \
     OP(FORK         , 3,  1) \

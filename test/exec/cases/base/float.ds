@@ -33,14 +33,6 @@ assert(3.14 <= 3.14E0)
 assert(3.14 != -4.5)
 
 
-# int to float, float to int op
-assert(6 + 3.14 == 9.14)
-assert(3.14 + 6 == 9.14)
-
-assert((6l as Float) + 3.14 == 9.14)
-assert(3.14 + (6l as Float) == 9.14)
-
-
 # nan, inf, finite
 let nan = 0.0 / 0.0   # nan
 let inf = 23.0 / 0.0 # inf

@@ -16,10 +16,10 @@ function g($s : Int) : Float {
     var a = try {
         (100 / $s) as Float
     } catch $e : ArithmeticError {
-        0
+        0.0
     }
     return $a
 }
 
 assert $g(100) == 1.0
-assert $g(0) == 0
+assert $g(0) == 0.0

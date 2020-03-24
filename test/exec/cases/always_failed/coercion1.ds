@@ -2,4 +2,4 @@
 
 #$test($result = 'type', $lineNum = 5, $errorKind = 'Required', $status = 1)
 
-34l - 54.0   # not allow same precision cast
+34 - 54.0   # not allow same precision cast

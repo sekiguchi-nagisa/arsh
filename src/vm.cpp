@@ -940,12 +940,12 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(PUSH_SIG) {
-            unsigned char value = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned int value = read8(GET_CODE(state), ++state.stack.pc());
             state.stack.push(DSValue::createSig(value));
             vmnext;
         }
         vmcase(PUSH_INT) {
-            unsigned char value = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned int value = read8(GET_CODE(state), ++state.stack.pc());
             state.stack.push(DSValue::createInt(value));
             vmnext;
         }
@@ -1209,40 +1209,16 @@ bool VM::mainLoop(DSState &state) {
             }
             vmnext;
         }
-        vmcase(I32_TO_I64) {
-            int v = state.stack.pop().asInt();
-            long l = v;
-            state.stack.push(DSValue::create<LongObject>(l));
-            vmnext;
-        }
-        vmcase(I64_TO_I32) {
-            unsigned long l = typeAs<LongObject>(state.stack.pop())->getValue();
-            auto v = static_cast<unsigned int>(l);
-            state.stack.push(DSValue::createInt(v));
-            vmnext;
-        }
-        vmcase(I32_TO_D) {
-            int v = state.stack.pop().asInt();
+        vmcase(INT_TO_FLOAT) {
+            int64_t v = state.stack.pop().asInt();
             auto d = static_cast<double>(v);
             state.stack.push(DSValue::createFloat(d));
             vmnext;
         }
-        vmcase(I64_TO_D) {
-            long v = typeAs<LongObject>(state.stack.pop())->getValue();
-            auto d = static_cast<double>(v);
-            state.stack.push(DSValue::createFloat(d));
-            vmnext;
-        }
-        vmcase(D_TO_I32) {
+        vmcase(FLOAT_TO_INT) {
             double d = state.stack.pop().asFloat();
-            auto v = static_cast<int>(d);
+            auto v = static_cast<int64_t>(d);
             state.stack.push(DSValue::createInt(v));
-            vmnext;
-        }
-        vmcase(D_TO_I64) {
-            double d = state.stack.pop().asFloat();
-            auto v = static_cast<long>(d);
-            state.stack.push(DSValue::create<LongObject>(v));
             vmnext;
         }
         vmcase(REF_EQ) {
@@ -1346,8 +1322,8 @@ bool VM::mainLoop(DSState &state) {
         vmcase(RAND) {
             std::random_device rand;
             std::default_random_engine engine(rand());
-            std::uniform_int_distribution<int> dist;
-            int v = dist(engine);
+            std::uniform_int_distribution<int64_t> dist;
+            int64_t v = dist(engine);
             state.stack.push(DSValue::createInt(v));
             vmnext;
         }
@@ -1355,9 +1331,9 @@ bool VM::mainLoop(DSState &state) {
             auto now = std::chrono::system_clock::now();
             auto diff = now - state.baseTime;
             auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
-            long v = typeAs<LongObject>(state.getGlobal(BuiltinVarOffset::SECONDS))->getValue();
+            int64_t v = state.getGlobal(BuiltinVarOffset::SECONDS).asInt();
             v += sec.count();
-            state.stack.push(DSValue::create<LongObject>(v));
+            state.stack.push(DSValue::createInt(v));
             vmnext;
         }
         vmcase(SET_SECOND) {

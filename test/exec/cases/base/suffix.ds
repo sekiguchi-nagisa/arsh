@@ -10,10 +10,6 @@ var s = "he"
 $s++
 assert($s == "he1")
 
-var f = 12.0
-$f++
-assert($f == 13)
-
 # local
 {
     var a = 0
@@ -25,23 +21,17 @@ assert($f == 13)
     var s = "he"
     $s++
     assert($s == "he1")
-
-    var f = 12.0
-    $f++
-    assert($f == 13)
 }
 
 # field
-var t = (0, 1.2, "a", 1)
+var t = (0, "a", 1)
 $t._0++
 $t._1++
 $t._2++
-$t._3++
 
 assert($t._0 == 1)
-assert($t._1 == 2.2)
-assert($t._2 == "a1")
-assert($t._3 == 2)
+assert($t._1 == "a1")
+assert($t._2 == 2)
 
 # indexer
 var i = [0]

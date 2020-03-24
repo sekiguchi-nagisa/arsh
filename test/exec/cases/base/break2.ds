@@ -17,12 +17,18 @@ assert ! do { if $i > 100 { break 'de'; }; } while $false
 $i = 120
 assert (do { if $i > 100 { break 'de'; }; } while $false)! == 'de'
 
-assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12; } } while $false) is Float!
-assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12; } } while $false)! == 12.0
+assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.0; } } while $false) is Float!
+assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.0; } } while $false)! == 12.0
 $i = 0
-assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12; } } while $false)! == 45.3
+assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.0; } } while $false)! == 45.3
 $i = -1
-assert !(do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12; } } while $false)
+assert !(do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.0; } } while $false)
+
+$i = 0
+assert (do { if $i < 0 { break; } elif $i == 0 { break new Boolean!(); } else { break $true; } } while $false) is Boolean!
+assert ! (do { if $i < 0 { break; } elif $i == 0 { break new Boolean!(); } else { break $true; } } while $false)
+$i = 1
+assert (do { if $i < 0 { break; } elif $i == 0 { break new Boolean!(); } else { break $true; } } while $false)! == $true
 
 
 # for

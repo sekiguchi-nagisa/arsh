@@ -370,7 +370,7 @@ protected:
 
     class IntPatternMap : public PatternMap {
     private:
-        std::unordered_set<unsigned int> set;
+        std::unordered_set<int64_t> set;
 
     public:
         bool collect(const Node &constNode) override;

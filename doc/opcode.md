@@ -51,12 +51,8 @@
 | ENTER_FINALLY | 2: offset1 offset2             | -> value                                     | save current pc and go to instruction              |
 | EXIT_FINALLY  |                                | value ->                                     | pop stack top and go to instruction                |
 | LOOKUP_HASH   |                                | hashmap key ->                               | jump to the offset from stack top hashmap          |
-| I32_TO_I64    |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| I64_TO_I32    |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| I32_TO_D      |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| I64_TO_D      |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| D_TO_I32      |                                | value -> value                               | convert number (see. int-cast.md)                  |
-| D_TO_I64      |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| INT_TO_FLOAT  |                                | value -> value                               | convert number (see. int-cast.md)                  |
+| FLOAT_TO_INT  |                                | value -> value                               | convert number (see. int-cast.md)                  |
 | REF_EQ        |                                | value1 value2 -> value                       | check referencial equality                         |
 | REF_NE        |                                | value1 value2 -> value                       | check referencial un-equality                      |
 | FORK          | 1: byte1 2: offset1 offset2    | -> value                                     | evaluate code in child shell                       |

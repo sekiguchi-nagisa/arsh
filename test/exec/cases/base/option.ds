@@ -45,7 +45,7 @@ assert $in
 # null coalescing
 assert $opt(3) ?? "de" == "hello"
 assert $opt(-1) ?? "de" == "de"
-assert new Float!() ?? 34 == 34.0
+assert new Float!() ?? 34.0 == 34.0
 
 
 # assign

@@ -147,8 +147,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "-"               { RET(MINUS); }
       <STMT> "!"               { RET(NOT); }
 
-      <STMT> INTEGER           { MODE(EXPR); RET(INT32_LITERAL); }
-      <STMT> INTEGER [lL]      { MODE(EXPR); RET(INT64_LITERAL); }
+      <STMT> INTEGER           { MODE(EXPR); RET(INT_LITERAL); }
       <STMT> FLOAT             { MODE(EXPR); RET(FLOAT_LITERAL); }
       <STMT> STRING_LITERAL    { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }
       <STMT> ESTRING_LITERAL   { UPDATE_LN(); MODE(EXPR); RET(STRING_LITERAL); }

@@ -44,10 +44,10 @@ $b[34] = 34.56
 assert($b.size() == 1)
 assert($b[34] == 34.56)
 
-assert($b.swap(34, 100) == 34.56)
-assert($b[34] == 100)
+assert($b.swap(34, 100.0) == 34.56)
+assert($b[34] == 100.0)
 $ex = 23
-try { $b.swap(777, 23); assert($false) } catch($e) { $ex = $e}
+try { $b.swap(777, 23.0); assert($false) } catch($e) { $ex = $e}
 assert($ex is KeyNotFoundError)
 
 $b.clear()

@@ -25,8 +25,8 @@ assert($tt is Error)
 $tt = $false ? new Error("") : new ArithmeticError("")
 assert($tt is ArithmeticError)
 
-var t2 = $true ? 12 : 34.0
-assert($t2 is Float)
+var t2 = $true ? $STDOUT : $false
+assert($t2 is Boolean)
 
-$t2 = $false ? 34.0 : 22
-assert($t2 == 22.0)
+$t2 = $false ? $false : $STDIN
+assert $t2

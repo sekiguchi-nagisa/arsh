@@ -328,7 +328,6 @@ inline TypeNode *newVoidTypeNode() {
 
 #define EACH_NUMBER_NODE_KIND(OP) \
     OP(Int) \
-    OP(Int64) \
     OP(Float) \
     OP(Signal)
 
@@ -342,8 +341,7 @@ public:
 
 private:
     union {
-        int intValue;
-        long longValue;
+        int64_t intValue;
         double floatValue;
     };
 
@@ -351,15 +349,9 @@ public:
     NumberNode(Token token, Kind kind) :
             Node(NodeKind::Number, token), kind(kind), intValue(0) { }
 
-    static std::unique_ptr<NumberNode> newInt32(Token token, int value) {
+    static std::unique_ptr<NumberNode> newInt(Token token, int64_t value) {
         auto node = std::make_unique<NumberNode>(token, Int);
         node->intValue = value;
-        return node;
-    }
-
-    static std::unique_ptr<NumberNode> newInt64(Token token, long value) {
-        auto node = std::make_unique<NumberNode>(token, Int64);
-        node->longValue = value;
         return node;
     }
 
@@ -377,12 +369,8 @@ public:
 
     ~NumberNode() override = default;
 
-    int getIntValue() const {
+    int64_t getIntValue() const {
         return this->intValue;
-    }
-
-    long getLongValue() const {
-        return this->longValue;
     }
 
     double getFloatValue() const {
@@ -2314,7 +2302,7 @@ std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode,
         TokenKind op, Token token, std::unique_ptr<Node> &&rightNode);
 
 inline std::unique_ptr<Node> createSuffixNode(std::unique_ptr<Node> &&leftNode, TokenKind op, Token token) {
-    return createAssignNode(std::move(leftNode), op, token, NumberNode::newInt32(token, 1));
+    return createAssignNode(std::move(leftNode), op, token, NumberNode::newInt(token, 1));
 }
 
 template <typename T>

@@ -679,7 +679,7 @@ static bool compareStr(const DSValue &left, BinaryOp op, const DSValue &right) {
     return false;
 }
 
-static bool compareInt(long x, BinaryOp op, long y) {
+static bool compareInt(int64_t x, BinaryOp op, int64_t y) {
     switch(op) {
 #define GEN_CASE(E, S, O) case BinaryOp::E: return x O y;
     EACH_INT_COMP_OP(GEN_CASE)
@@ -838,7 +838,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         }
         EACH_INT_COMP_OP(GEN_CASE) {
             auto pair = convertToNum<int64_t>(str(left));
-            long n1 = pair.first;
+            int64_t n1 = pair.first;
             if(!pair.second) {
                 ERROR(argvObj, "%s: must be integer", str(left));
                 return 2;

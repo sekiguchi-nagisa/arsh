@@ -208,7 +208,7 @@ static void initBuiltinVar(DSState &state) {
     /**
      * must be Long_Object.
      */
-    bindVariable(state, "SECONDS", DSValue::create<LongObject>(0), FieldAttribute::SECONDS);
+    bindVariable(state, "SECONDS", DSValue::createInt(0), FieldAttribute::SECONDS);
 
     /**
      * for internal field splitting.

@@ -1,12 +1,12 @@
 
 var a = case 1 {
-    else => -9
+    else => -9.0
     34 => 3.14;
-    12 => 34;
+    12 => 34 as Float;
 }
 
 assert $a is Float
-assert $a == -9
+assert $a == -9.000
 
 var called = -1
 function case1($s : String) : Int {

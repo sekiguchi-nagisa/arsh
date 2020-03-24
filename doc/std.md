@@ -43,43 +43,6 @@ function %OP_OR($this : Int, $target : Int) : Int
 function %OP_XOR($this : Int, $target : Int) : Int
 ```
 
-## Int64 type
-```
-function %OP_PLUS($this : Int64) : Int64
-
-function %OP_MINUS($this : Int64) : Int64
-
-function %OP_NOT($this : Int64) : Int64
-
-function %OP_ADD($this : Int64, $target : Int64) : Int64
-
-function %OP_SUB($this : Int64, $target : Int64) : Int64
-
-function %OP_MUL($this : Int64, $target : Int64) : Int64
-
-function %OP_DIV($this : Int64, $target : Int64) : Int64
-
-function %OP_MOD($this : Int64, $target : Int64) : Int64
-
-function %OP_EQ($this : Int64, $target : Int64) : Boolean
-
-function %OP_NE($this : Int64, $target : Int64) : Boolean
-
-function %OP_LT($this : Int64, $target : Int64) : Boolean
-
-function %OP_GT($this : Int64, $target : Int64) : Boolean
-
-function %OP_LE($this : Int64, $target : Int64) : Boolean
-
-function %OP_GE($this : Int64, $target : Int64) : Boolean
-
-function %OP_AND($this : Int64, $target : Int64) : Int64
-
-function %OP_OR($this : Int64, $target : Int64) : Int64
-
-function %OP_XOR($this : Int64, $target : Int64) : Int64
-```
-
 ## Float type
 ```
 function %OP_PLUS($this : Float) : Float
@@ -165,8 +128,6 @@ function split($this : String, $delim : String) : Array<String>
 function replace($this : String, $target : String, $rep : String) : String
 
 function toInt($this : String) : Option<Int>
-
-function toInt64($this : String) : Option<Int64>
 
 function toFloat($this : String) : Option<Float>
 

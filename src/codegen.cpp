@@ -149,13 +149,12 @@ void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &a
     const int beforeIndex = beforeType.getNumTypeIndex();
     const int afterIndex = afterType.getNumTypeIndex();
 
-    assert(beforeIndex > -1 && beforeIndex < 3);
-    assert(afterIndex > -1 && afterIndex < 3);
+    assert(beforeIndex > -1 && beforeIndex < 2);
+    assert(afterIndex > -1 && afterIndex < 2);
 
-    const OpCode table[3][3] = {
-            {OpCode::HALT,       OpCode::I32_TO_I64, OpCode::I32_TO_D},
-            {OpCode::I64_TO_I32, OpCode::HALT,       OpCode::I64_TO_D},
-            {OpCode::D_TO_I32,   OpCode::D_TO_I64,   OpCode::HALT},
+    const OpCode table[2][2] = {
+            {OpCode::HALT,         OpCode::INT_TO_FLOAT},
+            {OpCode::FLOAT_TO_INT, OpCode::HALT},
     };
 
     OpCode op = table[beforeIndex][afterIndex];
@@ -305,7 +304,7 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
     DSValue value;
     switch(node.kind) {
     case NumberNode::Int: {
-        int num = node.getIntValue();
+        auto num = node.getIntValue();
         if(num >= 0 && num <= UINT8_MAX) {
             this->emit1byteIns(OpCode::PUSH_INT, static_cast<unsigned char>(num));
             return;
@@ -313,9 +312,6 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
         value = DSValue::createInt(num);
         break;
     }
-    case NumberNode::Int64:
-        value = DSValue::create<LongObject>(node.getLongValue());
-        break;
     case NumberNode::Float:
         value = DSValue::createFloat(node.getFloatValue());
         break;

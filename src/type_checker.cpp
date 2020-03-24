@@ -215,18 +215,6 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
             return true;
         }
     }
-
-    // int widening or float cast
-    int targetPrecision = targetType.getIntPrecision();
-    if(targetPrecision > DSType::INVALID_PRECISION) {
-        int requiredPrecision = requiredType.getIntPrecision();
-        if(requiredType.is(TYPE::Float) && targetPrecision < DSType::INT64_PRECISION) {
-            return true;    // check int (except for Int64) to float cast
-        }
-        if(targetPrecision < requiredPrecision && requiredPrecision <= DSType::INT64_PRECISION) {
-            return true;    // check int widening
-        }
-    }
     return false;
 }
 
@@ -437,9 +425,6 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
     case NumberNode::Int:
         node.setType(this->symbolTable.get(TYPE::Int));
         break;
-    case NumberNode::Int64:
-        node.setType(this->symbolTable.get(TYPE::Int64));
-        break;
     case NumberNode::Float:
         node.setType(this->symbolTable.get(TYPE::Float));
         break;
@@ -601,21 +586,6 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
         node.setType(this->checkTypeAsExpr(*node.getOptNode()));
         return;
     }
-
-    int leftPrecision = leftType.getIntPrecision();
-    int rightPrecision = rightType.getIntPrecision();
-
-    // check int cats
-    if(leftPrecision > DSType::INVALID_PRECISION &&
-       leftPrecision < DSType::INT32_PRECISION &&
-       rightPrecision > DSType::INVALID_PRECISION &&
-       rightPrecision < DSType::INT32_PRECISION) {   // int widening
-        this->resolveCoercion(this->symbolTable.get(TYPE::Int), node.refLeftNode());
-        this->resolveCoercion(this->symbolTable.get(TYPE::Int), node.refRightNode());
-    } else if(leftPrecision != rightPrecision && this->checkCoercion(rightType, leftType)) {    // cast left
-        this->resolveCoercion(rightType, node.refLeftNode());
-    }
-
     node.createApplyNode();
     node.setType(this->checkTypeAsExpr(*node.getOptNode()));
 }
@@ -917,7 +887,7 @@ bool TypeChecker::IntPatternMap::collect(const Node &constNode) {
     if(constNode.getNodeKind() != NodeKind::Number) {
         return false;
     }
-    unsigned int value = static_cast<const NumberNode&>(constNode).getIntValue();
+    int64_t value = static_cast<const NumberNode&>(constNode).getIntValue();
     auto pair = this->set.insert(value);
     return pair.second;
 }
@@ -1074,10 +1044,10 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
         auto &numNode = static_cast<NumberNode&>(accessNode->getRecvNode());
 
         if(node->getType().is(TYPE::Int)) {
-            int value = numNode.getIntValue();
+            int64_t value = numNode.getIntValue();
             value = -value;
             delete node;
-            node = NumberNode::newInt32(token, value).release();
+            node = NumberNode::newInt(token, value).release();
             node->setType(this->symbolTable.get(TYPE::Int));
             return true;
         }

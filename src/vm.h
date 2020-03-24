@@ -183,7 +183,7 @@ public:
         return maskExitStatus(this->getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt());
     }
 
-    void setExitStatus(int status) {
+    void setExitStatus(int64_t status) {
         this->setGlobal(BuiltinVarOffset::EXIT_STATUS, DSValue::createInt(status));
     }
 
@@ -260,7 +260,7 @@ template <> struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};
 
 class VM {
 private:
-    static void pushExitStatus(DSState &state, int status) {
+    static void pushExitStatus(DSState &state, int64_t status) {
         state.setExitStatus(status);
         state.stack.push(DSValue::createBool(status == 0));
     }

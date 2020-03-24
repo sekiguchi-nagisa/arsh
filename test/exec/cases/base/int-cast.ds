@@ -3,51 +3,13 @@
 #     Int     #
 ###############
 
-var i32 = -1
-assert($i32 is Int)
-
-# to Int
-assert($i32 as Int is Int)
-assert($i32 as Int as String == '-1')
-$i32 = -976
-assert($i32 as Int as String == '-976')
-
-# to Int64
-assert($i32 as Int64 is Int64)
-assert($i32 as Int64 as String == '-976')
-$i32 = -1
-assert($i32 as Int64 as String == '-1')
-
-# to Float
-assert($i32 as Float is Float)
-assert($i32 as Float as String == '-1.000000')
-$i32 = -2345
-assert($i32 as Float as String == '-2345.000000')
-
-
-#################
-#     Int64     #
-#################
-
-var i64 = -1l
-assert($i64 is Int64)
-
-# to Int
-assert($i64 as Int is Int)
-assert($i64 as Int as String == '-1')
-$i64 = 12345L
-assert($i64 as Int as String == '12345')
-$i64 = 1030792151049L
-assert($i64 as Int as String == '9')
-
-# to Int64
-assert($i64 as Int64 is Int64)
-assert($i64 as Int64 as String == '1030792151049')
+var i64 = 1030792151049
+assert($i64 is Int)
 
 # to Float
 assert($i64 as Float is Float)
 assert($i64 as Float as String == '1030792151049.000000')
-$i64 = 7865l
+$i64 = 7865
 assert($i64 as Float as String == '7865.000000')
 $i64 = -12344
 assert($i64 as Float as String == '-12344.000000')
@@ -66,12 +28,6 @@ assert($f as Int as String == '-1')
 $f = 65535.9234
 assert($f as Int as String == '65535')
 
-# to Int64
-assert($f as Int64 is Int64)
-assert($f as Int64 as String == '65535')
-$f = 999999.045343
-assert($f as Int64 as String == '999999')
-
 # to Float
 assert($f as Float is Float)
-assert($f as Float as String == '999999.045343')
+assert($f as Float as String == '65535.923400')

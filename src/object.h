@@ -46,7 +46,6 @@ public:
      */
     enum ObjectKind {
         Dummy,
-        Long,
         String,
         UnixFd,
         Regex,
@@ -136,20 +135,6 @@ public:
 
     int getValue() const {
         return this->fd;
-    }
-};
-
-class LongObject : public ObjectWithRtti<DSObject::Long> {
-private:
-    long value;
-
-public:
-    explicit LongObject(long value) : ObjectWithRtti(TYPE::Int64), value(value) { }
-
-    ~LongObject() override = default;
-
-    long getValue() const {
-        return this->value;
     }
 };
 
@@ -428,7 +413,7 @@ public:
         return this->i64.value;
     }
 
-    int asInt() const {
+    int64_t asInt() const {
         assert(this->kind() == DSValueKind::INT);
         return this->i64.value;
     }
@@ -511,8 +496,8 @@ public:
         return ret;
     }
 
-    static DSValue createInt(int num) {
-        return DSValue(static_cast<int64_t>(num));
+    static DSValue createInt(int64_t num) {
+        return DSValue(num);
     }
 
     static DSValue createFloat(double v) {

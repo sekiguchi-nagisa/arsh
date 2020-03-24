@@ -50,7 +50,6 @@ enum class TYPE : unsigned int {
     _Value,    // super type of value type(int, float, bool, string). not directly used it.
 
     Int,
-    Int64,
     Float,
     Boolean,
     String,
@@ -202,21 +201,11 @@ public:
      */
     bool isSameOrBaseTypeOf(const DSType &targetType) const;
 
-    static constexpr int INT64_PRECISION = 50;
-    static constexpr int INT32_PRECISION = 40;
-    static constexpr int INVALID_PRECISION = 1;
-
-    /**
-     * get integer precision. if type is not int type, return INVALID_PRECISION.
-     */
-    int getIntPrecision() const;
-
     /**
      * if type is not number type, return -1.
      */
     int getNumTypeIndex() const {
-        static_assert(static_cast<unsigned int>(TYPE::Int) + 1 == static_cast<unsigned int>(TYPE::Int64), "");
-        static_assert(static_cast<unsigned int>(TYPE::Int64) + 1 == static_cast<unsigned int>(TYPE::Float), "");
+        static_assert(static_cast<unsigned int>(TYPE::Int) + 1 == static_cast<unsigned int>(TYPE::Float), "");
         if(this->id >= static_cast<unsigned int>(TYPE::Int) && this->id <= static_cast<unsigned int>(TYPE::Float)) {
             return this->id - static_cast<unsigned int>(TYPE::Int);
         }

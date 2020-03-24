@@ -163,9 +163,7 @@ public:
     /**
      * if converted number is out of range, status is 1.
      */
-    int toInt32(Token token, int &status) const;
-
-    long toInt64(Token token, int &status) const;
+    int64_t toInt64(Token token, int &status) const;
 
     /**
      * if converted number is out of range, status is 1.

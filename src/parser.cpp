@@ -637,9 +637,9 @@ std::unique_ptr<Node> Parser::parse_patternExpression() {
 
 std::unique_ptr<Node> Parser::parse_primaryPattern() {
     switch(CUR_KIND()) {
-    case INT32_LITERAL: {
-        auto pair = TRY(this->expectNum(INT32_LITERAL, &Lexer::toInt32));
-        return NumberNode::newInt32(pair.first, pair.second);
+    case INT_LITERAL: {
+        auto pair = TRY(this->expectNum(INT_LITERAL, &Lexer::toInt64));
+        return NumberNode::newInt(pair.first, pair.second);
     }
     case SIGNAL_LITERAL:
         return this->parse_signalLiteral();
@@ -1057,13 +1057,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         node->updateToken(token);
         return std::move(node);
     }
-    case INT32_LITERAL: {
-        auto pair = TRY(this->expectNum(INT32_LITERAL, &Lexer::toInt32));
-        return NumberNode::newInt32(pair.first, pair.second);
-    }
-    case INT64_LITERAL: {
-        auto pair = TRY(this->expectNum(INT64_LITERAL, &Lexer::toInt64));
-        return NumberNode::newInt64(pair.first, pair.second);
+    case INT_LITERAL: {
+        auto pair = TRY(this->expectNum(INT_LITERAL, &Lexer::toInt64));
+        return NumberNode::newInt(pair.first, pair.second);
     }
     case FLOAT_LITERAL: {
         auto pair = TRY(this->expectNum(FLOAT_LITERAL, &Lexer::toDouble));

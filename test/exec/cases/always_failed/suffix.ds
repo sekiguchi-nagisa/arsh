@@ -1,5 +1,6 @@
-# long to long cast
 
 #$test($result = 'type', $lineNum = 5, $errorKind = 'Required', $status = 1)
 
-34.0 - 54   # not allow same precision cast
+var f = 12.0
+$f++    # not allow float increment
+assert($f == 13.0)
