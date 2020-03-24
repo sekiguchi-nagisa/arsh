@@ -765,7 +765,8 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
     switch(op) {
     case DS_EDIT_HIST_SIZE:
         if(type.is(TYPE::Int)) {
-            return st->editOpReply.asInt();
+            auto ret = st->editOpReply.asInt();
+            return ret <= 0 ? 0 : static_cast<unsigned int>(ret);
         }
         return 0;
     case DS_EDIT_HIST_GET:
