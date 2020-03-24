@@ -122,7 +122,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSVal
                                             DSValue &&restoreFD, const flag8_set_t attr) {
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {
         // reset exit status
-        state.updateExitStatus(0);
+        state.setExitStatus(0);
     }
 
     // set parameter
@@ -281,7 +281,7 @@ bool VM::forkAndEval(DSState &state) {
                         DSValue(state.emptyFDObj),
                         DSValue(state.emptyFDObj)));
             }
-            state.updateExitStatus(ret);
+            state.setExitStatus(ret);
             tryToBeForeground(state);
             break;
         }
@@ -1490,7 +1490,7 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError) {
          */
         __gcov_flush();
 #endif
-        _exit(state.getExitStatus());
+        _exit(state.getMaskedExitStatus());
     }
 
     if(hasFlag(op, EvalOP::COMMIT)) {
@@ -1513,7 +1513,7 @@ int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError)
         setFlag(op, EvalOP::SKIP_TERM);
     }
     startEval(state, op, dsError);
-    return state.getExitStatus();
+    return state.getMaskedExitStatus();
 }
 
 unsigned int VM::prepareArguments(VMState &state, DSValue &&recv,
@@ -1639,7 +1639,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
     }
 
     // print error message
-    int oldStatus = state.getExitStatus();
+    auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
     if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
         fputs("[runtime error]\n", stderr);
         const bool bt = state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
@@ -1658,7 +1658,8 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
         typeAs<ErrorObject>(except)->printStackTrace(state);
     }
     fflush(stderr);
-    state.updateExitStatus(oldStatus);
+    state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
+
 
     if(dsError != nullptr) {
         *dsError = {

@@ -123,10 +123,6 @@ public:
 
     ~DSState() = default;
 
-    int getExitStatus() const {
-        return maskExitStatus(this->getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt());
-    }
-
     const char *getScriptDir() const {
         return this->getGlobal(BuiltinVarOffset::SCRIPT_DIR).asStrRef().data();
     }
@@ -143,7 +139,7 @@ public:
      */
     void throwObject(DSValue &&except, int afterStatus) {
         this->stack.setThrownObject(std::move(except));
-        this->updateExitStatus(afterStatus);
+        this->setExitStatus(afterStatus);
     }
 
     // variable manipulation
@@ -179,8 +175,16 @@ public:
         return this->stack.moveLocal(index);
     }
 
-    void updateExitStatus(unsigned int status) {
-        this->setGlobal(BuiltinVarOffset::EXIT_STATUS, DSValue::createInt(maskExitStatus(status)));
+    /**
+     * get exit status ($? & 0xFF)
+     * @return
+     */
+    int getMaskedExitStatus() const {
+        return maskExitStatus(this->getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt());
+    }
+
+    void setExitStatus(int status) {
+        this->setGlobal(BuiltinVarOffset::EXIT_STATUS, DSValue::createInt(status));
     }
 
     void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);
@@ -257,7 +261,7 @@ template <> struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};
 class VM {
 private:
     static void pushExitStatus(DSState &state, int status) {
-        state.updateExitStatus(status);
+        state.setExitStatus(status);
         state.stack.push(DSValue::createBool(status == 0));
     }
 

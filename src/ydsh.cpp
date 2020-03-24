@@ -351,7 +351,7 @@ static void loadEmbeddedScript(DSState *state) {
 
     // rest some state
     state->lineNum = 1;
-    state->updateExitStatus(0);
+    state->setExitStatus(0);
 
     // force initialize 'termHookIndex'
     state->symbolTable.getTermHookIndex();
@@ -495,11 +495,11 @@ int DSState_setScriptDir(DSState *st, const char *scriptDir) {
 }
 
 int DSState_getExitStatus(const DSState *st) {
-    return st->getExitStatus();
+    return st->getMaskedExitStatus();
 }
 
 void DSState_setExitStatus(DSState *st, int status) {
-    st->updateExitStatus(status);
+    st->setExitStatus(status);
 }
 
 int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
@@ -636,7 +636,7 @@ int DSState_exec(DSState *st, char *const *argv) {
         values.push_back(DSValue::createStr(*argv));
     }
     execCommand(*st, std::move(values), false);
-    return st->getExitStatus();
+    return st->getMaskedExitStatus();
 }
 
 const char *DSState_version(DSVersion *version) {
