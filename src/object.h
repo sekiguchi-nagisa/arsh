@@ -255,7 +255,7 @@ public:
 
     static DSValueKind toSmallStrKind(unsigned int size) {
         assert(size <= smallStrSize(DSValueKind::SSTR14));
-        unsigned int base = static_cast<unsigned int>(DSValueKind::SSTR0);
+        auto base = static_cast<unsigned int>(DSValueKind::SSTR0);
         return static_cast<DSValueKind>(base + size);
     }
 };

@@ -134,8 +134,8 @@ YDSH_METHOD int_minus(RuntimeContext & ctx) {
 //!bind: function $OP_NOT($this : Int) : Int
 YDSH_METHOD int_not(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_not);
-    int64_t v = ~ LOCAL(0).asInt();
-    RET(DSValue::createInt(v));
+    uint64_t v = ~static_cast<uint64_t>(LOCAL(0).asInt());
+    RET(DSValue::createInt(static_cast<int64_t>(v)));
 }
 
 
@@ -266,24 +266,24 @@ YDSH_METHOD int_2_int_ge(RuntimeContext & ctx) {
 //!bind: function $OP_AND($this : Int, $target : Int) : Int
 YDSH_METHOD int_2_int_and(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_and);
-    auto left = LOCAL(0).asInt();
-    auto right = LOCAL(1).asInt();
+    auto left = static_cast<uint64_t>(LOCAL(0).asInt());
+    auto right = static_cast<uint64_t>(LOCAL(1).asInt());
     RET(DSValue::createInt(left & right));
 }
 
 //!bind: function $OP_OR($this : Int, $target : Int) : Int
 YDSH_METHOD int_2_int_or(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_or);
-    auto left = LOCAL(0).asInt();
-    auto right = LOCAL(1).asInt();
+    auto left = static_cast<uint64_t>(LOCAL(0).asInt());
+    auto right = static_cast<uint64_t>(LOCAL(1).asInt());
     RET(DSValue::createInt(left | right));
 }
 
 //!bind: function $OP_XOR($this : Int, $target : Int) : Int
 YDSH_METHOD int_2_int_xor(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_2_int_xor);
-    auto left = LOCAL(0).asInt();
-    auto right = LOCAL(1).asInt();
+    auto left = static_cast<uint64_t>(LOCAL(0).asInt());
+    auto right = static_cast<uint64_t>(LOCAL(1).asInt());
     RET(DSValue::createInt(left ^ right));
 }
 
