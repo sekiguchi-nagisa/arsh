@@ -93,13 +93,11 @@ std::string DSValue::toString() const {
         return str;
     }
     default:
-        break;
+        std::string str("DSObject(");
+        str += std::to_string(reinterpret_cast<long>(this->get()));
+        str += ")";
+        return str;
     }
-
-    std::string str("DSObject(");
-    str += std::to_string(reinterpret_cast<long>(this->get()));
-    str += ")";
-    return str;
 }
 
 bool DSValue::opStr(DSState &state) const {
@@ -169,13 +167,11 @@ bool DSValue::equals(const DSValue &o) const {
         return this->asFloat() == o.asFloat();
     default:
         assert(this->kind() == DSValueKind::OBJECT);
-        break;
+        if(this->get()->getKind() != o.get()->getKind()) {
+            return false;
+        }
+        return reinterpret_cast<uint64_t>(this->get()) == reinterpret_cast<uint64_t>(o.get());
     }
-
-    if(this->get()->getKind() != o.get()->getKind()) {
-        return false;
-    }
-    return reinterpret_cast<uint64_t>(this->get()) == reinterpret_cast<uint64_t>(o.get());
 }
 
 size_t DSValue::hash() const {
@@ -219,9 +215,8 @@ bool DSValue::compare(const DSValue &o) const {
     case DSValueKind::FLOAT:
         return this->asFloat() < o.asFloat();
     default:
-        break;
+        return false;
     }
-    return false;
 }
 
 bool DSValue::appendAsStr(StringRef value) {
