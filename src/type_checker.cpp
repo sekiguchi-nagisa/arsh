@@ -1390,7 +1390,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     // insert return node if not found
     if(node.getBlockNode().getNodes().empty() ||
             !node.getBlockNode().getNodes().back()->getType().isNothingType()) {
-        VarNode *varNode = new VarNode({0, 1}, "?");
+        auto *varNode = new VarNode({0, 1}, "?");
         this->checkTypeAsExpr(*varNode);
         addReturnNodeToLast(node.getBlockNode(), this->symbolTable.getTypePool(), varNode);
     }

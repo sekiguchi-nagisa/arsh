@@ -948,9 +948,9 @@ private:
     ArrayType value;
 
 public:
-    NativeCode() : DSCode(nullptr) {}
+    NativeCode() noexcept : DSCode(nullptr) {}
 
-    NativeCode(unsigned int index, bool hasRet) {
+    NativeCode(unsigned int index, bool hasRet) noexcept {
         this->value[0] = static_cast<char>(CodeKind::NATIVE);
         this->value[1] = static_cast<char>(OpCode::CALL_NATIVE);
         this->value[2] = index;
@@ -958,7 +958,7 @@ public:
         this->setCode();
     }
 
-    explicit NativeCode(const ArrayType &value) : value(value) {
+    explicit NativeCode(const ArrayType &value) noexcept : value(value) {
         this->setCode();
     }
 

@@ -45,7 +45,7 @@ public:
     TypeCheckError(Token token, TypeLookupError &e) noexcept :
             token(token), kind(e.getKind()), message(extract(std::move(e))) { }
 
-    ~TypeCheckError() = default;
+    ~TypeCheckError() override = default;
 
     Token getToken() const {
         return this->token;

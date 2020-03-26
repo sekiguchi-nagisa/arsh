@@ -61,7 +61,7 @@ TupleType::TupleType(unsigned int id, native_type_info_t info, DSType *superType
     const unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         FieldHandle handle(*this->elementTypes[i], i + baseIndex, FieldAttribute());
-        this->fieldHandleMap.emplace("_" + std::to_string(i), std::move(handle));
+        this->fieldHandleMap.emplace("_" + std::to_string(i), handle);
     }
 }
 
