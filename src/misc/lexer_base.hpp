@@ -107,31 +107,31 @@ protected:
 
     SourceInfo srcInfo;
 
+    /**
+     * must be terminated with null character
+     */
     ByteBuffer buf;
 
     /**
      * current reading pointer of buf.
      */
-    char *cursor{nullptr};
+    const char *cursor{nullptr};
 
     /**
      * limit of buf.
      */
-    char *limit{nullptr};
+    const char *limit{nullptr};
 
     /**
      * for backtracking.
      */
-    char *marker{nullptr};
+    const char *marker{nullptr};
 
     /**
      * for trailing context
      */
-    char *ctxMarker{nullptr};
+    const char *ctxMarker{nullptr};
 
-    static constexpr int DEFAULT_READ_SIZE = 128;
-
-protected:
     LexerBase() = default;
 
     ~LexerBase() = default;
@@ -168,7 +168,7 @@ public:
         }
         this->buf += '\0';
         this->cursor = this->buf.get();
-        this->limit = this->cursor + this->buf.size();
+        this->limit = this->cursor + this->getUsedSize();
     }
 
     LexerBase &operator=(LexerBase &&lex) noexcept {
@@ -209,11 +209,11 @@ public:
      * used size of buf. must be this->getUsedSize() <= this->getBufSize().
      */
     unsigned int getUsedSize() const {
-        return this->buf.size();
+        return this->buf.size() - 1;
     }
 
     bool isEnd() const {
-        return this->cursor == this->limit;
+        return this->cursor - 1 == this->limit;
     }
 
     bool withinRange(Token token) const {
@@ -428,28 +428,18 @@ void LexerBase<T>::appendToBuf(const char *data, unsigned int size, bool isEnd) 
     const unsigned int markerPos = this->marker - this->buf.get();
     const unsigned int ctxMarkerPos = this->ctxMarker - this->buf.get();
 
-    this->buf.appendBy(size + 2, [&](char *ptr){
-        unsigned int writeSize = size;
-        memcpy(ptr, data, size);
-        if(isEnd) {
-            if(size == 0) {
-                if(this->buf.empty() || this->buf.back() != '\n') {
-                    *(ptr + writeSize) = '\n';
-                    writeSize++;
-                }
-            } else if(data[size - 1] != '\n') {
-                *(ptr + writeSize) = '\n';
-                writeSize++;
-            }
-            *(ptr + writeSize) = '\0';
-            writeSize++;
-        }
-        return writeSize;
-    });
+    if(!this->buf.empty()) {
+        this->buf.pop_back();   // pop null character
+    }
+    this->buf.append(data, size);
+    if(isEnd && (this->buf.empty() || this->buf.back() != '\n')) {
+        this->buf += '\n';
+    }
+    this->buf += '\0';
 
     // restore position
     this->cursor = this->buf.get() + pos;
-    this->limit = this->buf.get() + this->buf.size();
+    this->limit = this->buf.get() + this->getUsedSize();
     this->marker = this->buf.get() + markerPos;
     this->ctxMarker = this->buf.get() + ctxMarkerPos;
 }

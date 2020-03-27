@@ -46,43 +46,13 @@ private:
     LexerMode prevMode{yycSTMT};
 
 public:
+    using LexerBase::LexerBase;
+
     NON_COPYABLE(Lexer);
 
     Lexer(Lexer&&) = default;
 
     Lexer() = default;
-
-    /**
-     *
-     * @param sourceName
-     * must not be null.
-     * @param source
-     * must be null terminated.
-     * @return
-     */
-    Lexer(const char *sourceName, const char *source) : Lexer(sourceName, source, strlen(source)) {}
-
-    /**
-     *
-     * @param sourceName
-     * must not be null
-     * @param source
-     * must not be null
-     * @param size
-     * @return
-     */
-    Lexer(const char *sourceName, const char *source, unsigned int size) :
-            LexerBase(sourceName, source, size) {}
-
-    /**
-     * 
-     * @param sourceName
-     * must not be null.
-     * @param buf
-     * @return
-     */
-    Lexer(const char *sourceName, ByteBuffer &&buf) :
-            LexerBase(sourceName, std::move(buf)) {}
 
     ~Lexer() = default;
 

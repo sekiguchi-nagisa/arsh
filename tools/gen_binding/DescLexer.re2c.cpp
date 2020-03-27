@@ -80,7 +80,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
     return kind;
 
     EOS:
-    token.pos = this->getUsedSize() - 1;
+    token.pos = this->getUsedSize();
     token.size = 0;
     this->cursor--;
     return EOS;
