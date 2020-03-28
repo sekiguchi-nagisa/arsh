@@ -556,12 +556,13 @@ inline T *typeAs(const DSValue &value) noexcept {
     return cast<T>(value.get());
 }
 
-inline bool concatAsStr(DSValue &left, const DSValue &right) {
+inline bool concatAsStr(DSValue &left, const DSValue &right, bool selfConcat) {
     if(left.kind() == DSValueKind::SSTR0) {
         left = right;
         return true;
     }
-    if(left.isObject() && left.get()->getRefcount() > 1) {
+    unsigned int copyCount = selfConcat ? 2 : 1;
+    if(left.isObject() && left.get()->getRefcount() > copyCount) {
         left = DSValue::createStr(left.asStrRef());
     }
     return left.appendAsStr(right.asStrRef());

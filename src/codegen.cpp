@@ -310,7 +310,7 @@ void ByteCodeGenerator::generateConcat(Node &node, const ConcatOp op) {
     // default
     this->visit(node);
     if(hasFlag(op, ConcatOp::FRAGMENT)) {
-        this->emit0byteIns(OpCode::CONCAT);
+        this->emit0byteIns(hasFlag(op, ConcatOp::SELF) ? OpCode::APPEND : OpCode::CONCAT);
     }
 }
 
@@ -556,7 +556,8 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
         }
     } else if(kind == TokenKind::ADD && node.getLeftNode() &&
             node.getLeftNode()->getType().is(TYPE::String)) {
-        this->generateConcat(node, ConcatOp{});
+        ConcatOp op = node.getLeftNode()->is(NodeKind::Empty) ? ConcatOp::SELF : ConcatOp{};
+        this->generateConcat(node, op);
     } else {
         this->visit(*node.getOptNode());
     }

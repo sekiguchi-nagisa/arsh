@@ -51,6 +51,7 @@ namespace ydsh {
     OP(DUP2         , 0,  2) \
     OP(SWAP         , 0,  0) \
     OP(CONCAT       , 0, -1) \
+    OP(APPEND       , 0, -1) \
     OP(NEW_ARRAY    , 4,  1) \
     OP(APPEND_ARRAY , 0, -1) \
     OP(NEW_MAP      , 4,  1) \

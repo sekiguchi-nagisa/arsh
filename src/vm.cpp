@@ -1039,10 +1039,12 @@ bool VM::mainLoop(DSState &state) {
             state.stack.swap();
             vmnext;
         }
-        vmcase(CONCAT) {
+        vmcase(CONCAT)
+        vmcase(APPEND) {
+            const bool selfConcat = op == OpCode::APPEND;
             auto right = state.stack.pop();
             auto left = state.stack.pop();
-            if(!concatAsStr(left, right)) {
+            if(!concatAsStr(left, right, selfConcat)) {
                 raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
                 vmerror;
             }
