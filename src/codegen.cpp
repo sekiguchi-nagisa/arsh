@@ -259,6 +259,7 @@ static bool isBinaryStrConcat(const Node &node) {
         auto &bin = static_cast<const BinaryOpNode&>(node);
         if(bin.getOp() == TokenKind::ADD && bin.getLeftNode() &&
             bin.getLeftNode()->getType().is(TYPE::String)) {
+            assert(!bin.getLeftNode()->is(NodeKind::Empty));
             return true;
         }
     }

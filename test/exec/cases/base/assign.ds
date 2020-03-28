@@ -17,9 +17,9 @@ assert $s == "hello"
 
 $s = '0123456789abcdefghijk'
 $s += ''
-$s += ''
+$s += 'l'
 $s += '##' + $s
-assert $s == '0123456789abcdefghijk##0123456789abcdefghijk'
+assert $s == '0123456789abcdefghijkl##0123456789abcdefghijkl'
 
 # local
 {

@@ -557,6 +557,10 @@ inline T *typeAs(const DSValue &value) noexcept {
 }
 
 inline bool concatAsStr(DSValue &left, const DSValue &right, bool selfConcat) {
+    assert(right.hasStrRef());
+    if(right.kind() == DSValueKind::SSTR0) {
+        return true;
+    }
     if(left.kind() == DSValueKind::SSTR0) {
         left = right;
         return true;
