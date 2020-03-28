@@ -356,8 +356,6 @@ protected:
      */
     Node *newPrintOpNode(Node *node);
 
-    void convertToStringExpr(BinaryOpNode &node);
-
     void checkTypeAsBreakContinue(JumpNode &node);
     void checkTypeAsReturn(JumpNode &node);
 

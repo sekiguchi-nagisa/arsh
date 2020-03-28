@@ -383,33 +383,6 @@ Node *TypeChecker::newPrintOpNode(Node *node) {
     return node;
 }
 
-void TypeChecker::convertToStringExpr(BinaryOpNode &node) {
-    int needCast = 0;
-    if(!node.getLeftNode()->getType().is(TYPE::String)) {
-        needCast--;
-    }
-    if(!node.getRightNode()->getType().is(TYPE::String)) {
-        needCast++;
-    }
-
-    // perform string cast
-    if(needCast == -1) {
-        this->resolveCoercion(this->symbolTable.get(TYPE::String), node.refLeftNode());
-    } else if(needCast == 1) {
-        this->resolveCoercion(this->symbolTable.get(TYPE::String), node.refRightNode());
-    }
-
-    auto *exprNode = new StringExprNode(node.getLeftNode()->getPos());
-    exprNode->addExprNode(std::unique_ptr<Node>(node.getLeftNode()));
-    exprNode->addExprNode(std::unique_ptr<Node>(node.getRightNode()));
-
-    // assign null to prevent double free
-    node.refLeftNode() = nullptr;
-    node.refRightNode() = nullptr;
-
-    node.setOptNode(exprNode);
-}
-
 // visitor api
 void TypeChecker::visitTypeNode(TypeNode &node) {
     auto ret = this->toTypeImpl(node);
@@ -582,10 +555,16 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     // string concatenation
     if(node.getOp() == TokenKind::ADD &&
                 (leftType.is(TYPE::String) || rightType.is(TYPE::String))) {
-        this->convertToStringExpr(node);
-        node.setType(this->checkTypeAsExpr(*node.getOptNode()));
+        if(!leftType.is(TYPE::String)) {
+            this->resolveCoercion(this->symbolTable.get(TYPE::String), node.refLeftNode());
+        }
+        if(!rightType.is(TYPE::String)) {
+            this->resolveCoercion(this->symbolTable.get(TYPE::String), node.refRightNode());
+        }
+        node.setType(this->symbolTable.get(TYPE::String));
         return;
     }
+
     node.createApplyNode();
     node.setType(this->checkTypeAsExpr(*node.getOptNode()));
 }
