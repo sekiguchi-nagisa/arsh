@@ -231,8 +231,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
         this->visit(*node.getSegmentNodes()[0]);
     } else {
         for(unsigned int i = 0; i < size; i++) {
-            ConcatOp op = i > 0 ? ConcatOp::FRAGMENT : ConcatOp{};
-            this->generateConcat(*node.getSegmentNodes()[i], op);
+            this->generateConcat(*node.getSegmentNodes()[i], i > 0);
         }
     }
     if(isTildeExpansion(*node.getSegmentNodes()[0])) {
@@ -266,31 +265,27 @@ static bool isBinaryStrConcat(const Node &node) {
     return false;
 }
 
-void ByteCodeGenerator::generateConcat(Node &node, const ConcatOp op) {
+void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
     switch(node.getNodeKind()) {
     case NodeKind::StringExpr: {
         auto &strExprNode = static_cast<StringExprNode&>(node);
         const unsigned int size = strExprNode.getExprNodes().size();
         if(size == 0) {
-            if(!hasFlag(op, ConcatOp::FRAGMENT)) {
+            if(!fragment) {
                 this->emit0byteIns(OpCode::PUSH_ESTRING);
             }
             return;
         }
         for(unsigned int i = 0; i < size; i++) {
-            ConcatOp next = op;
-            if(i > 0) {
-                setFlag(next, ConcatOp::FRAGMENT);
-            }
-            this->generateConcat(*strExprNode.getExprNodes()[i], next);
+            this->generateConcat(*strExprNode.getExprNodes()[i], fragment || i > 0);
         }
         return;
     }
     case NodeKind::BinaryOp: {
         if(isBinaryStrConcat(node)) {
             auto &binaryNode = static_cast<BinaryOpNode&>(node);
-            this->generateConcat(*binaryNode.getLeftNode(), op);
-            this->generateConcat(*binaryNode.getRightNode(), op | ConcatOp::FRAGMENT);
+            this->generateConcat(*binaryNode.getLeftNode(), fragment);
+            this->generateConcat(*binaryNode.getRightNode(), true);
             return;
         }
         break;
@@ -298,7 +293,7 @@ void ByteCodeGenerator::generateConcat(Node &node, const ConcatOp op) {
     case NodeKind::Embed: {
         auto &exprNode = static_cast<EmbedNode&>(node).getExprNode();
         if(isBinaryStrConcat(exprNode) || exprNode.is(NodeKind::StringExpr)) {
-            this->generateConcat(exprNode, op);
+            this->generateConcat(exprNode, fragment);
             return;
         }
         break;
@@ -309,8 +304,8 @@ void ByteCodeGenerator::generateConcat(Node &node, const ConcatOp op) {
 
     // default
     this->visit(node);
-    if(hasFlag(op, ConcatOp::FRAGMENT)) {
-        this->emit0byteIns(hasFlag(op, ConcatOp::SELF) ? OpCode::APPEND : OpCode::CONCAT);
+    if(fragment) {
+        this->emit0byteIns(OpCode::CONCAT);
     }
 }
 
@@ -355,7 +350,7 @@ void ByteCodeGenerator::visitStringNode(StringNode &node) {
 }
 
 void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) {
-    this->generateConcat(node, ConcatOp{});
+    this->generateConcat(node);
 }
 
 void ByteCodeGenerator::visitRegexNode(RegexNode &node) {
@@ -556,8 +551,12 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
         }
     } else if(kind == TokenKind::ADD && node.getLeftNode() &&
             node.getLeftNode()->getType().is(TYPE::String)) {
-        ConcatOp op = node.getLeftNode()->is(NodeKind::Empty) ? ConcatOp::SELF : ConcatOp{};
-        this->generateConcat(node, op);
+        if(node.getLeftNode()->is(NodeKind::Empty)) {
+            this->visit(*node.getRightNode());
+            this->emit0byteIns(OpCode::APPEND);
+        } else {
+            this->generateConcat(node);
+        }
     } else {
         this->visit(*node.getOptNode());
     }

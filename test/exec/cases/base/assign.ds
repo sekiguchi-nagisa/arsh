@@ -15,6 +15,12 @@ var s = 'he'
 $s += 'llo'
 assert $s == "hello"
 
+$s = '0123456789abcdefghijk'
+$s += ''
+$s += ''
+$s += '##' + $s
+assert $s == '0123456789abcdefghijk##0123456789abcdefghijk'
+
 # local
 {
     var a = 0
@@ -78,3 +84,5 @@ assert($w["a"] == 24)
 var i2 = [0 : "12"]
 $i2[0] += "34"
 assert $i2[0] == "1234"
+$i2[0] += -5 + $i2[0]
+assert $i2[0] == "1234-51234"

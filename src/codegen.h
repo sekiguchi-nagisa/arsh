@@ -491,12 +491,7 @@ private:
     void generateCmdArg(CmdArgNode &node);
     void emitPipelineIns(const std::vector<Label> &labels, bool lastPipe);
 
-    enum class ConcatOp : unsigned int {
-        FRAGMENT = 1 << 0,
-        SELF     = 1 << 1,
-    };
-
-    void generateConcat(Node &node, const ConcatOp op);
+    void generateConcat(Node &node, const bool fragment = false);
 
     void generateBreakContinue(JumpNode &node);
 
@@ -579,9 +574,6 @@ public:
 
     void exitModule(SourceNode &node);
 };
-
-template <>
-struct allow_enum_bitop<ByteCodeGenerator::ConcatOp> : std::true_type {};
 
 class ByteCodeDumper {
 private:
