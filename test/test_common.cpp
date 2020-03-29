@@ -154,8 +154,7 @@ std::pair<std::string, std::string> InteractiveShellBase::readAll() {
     });
     this->handle.readAll(this->timeout, [&](unsigned int index, const char *buf, unsigned int size) {
         if(index == 0) {
-            std::string line(buf, size);    //FIXME
-            screen.interpret(line.c_str(), line.size());
+            screen.interpret(buf, size);
         } else {
             err.append(buf, size);
         }

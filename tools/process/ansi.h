@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2020 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@
 #include <string>
 #include <functional>
 
-#include "misc/buffer.hpp"
+#include "misc/lexer_base.hpp"
 
 namespace process {
 
@@ -31,7 +31,7 @@ namespace process {
  * see. http://bkclass.web.fc2.com/doc_vt100.html
  *      https://vt100.net/docs/vt100-ug/chapter3.html
  */
-class Screen {
+class Screen : public ydsh::LexerBase {
 private:
     unsigned int maxRow; // y
     unsigned int maxCol; // x
@@ -45,8 +45,19 @@ private:
 
     unsigned int eaw{1};
 
+    unsigned char yych{0};
+    unsigned int yyaccept{0};
+    const char *start{nullptr};
+    int state{-1};
+
 public:
-    Screen(unsigned int row, unsigned int col) : maxRow(row), maxCol(col) {
+    enum Result {
+        NEED_MORE,
+        REACH_EOS,
+        INVALID,
+    };
+
+    Screen(unsigned int row, unsigned int col) : LexerBase("<screen>"), maxRow(row), maxCol(col) {
         this->bufs.reserve(this->maxRow);
         for(unsigned int i = 0; i < this->maxRow; i++) {
             this->bufs.emplace_back();
@@ -73,9 +84,9 @@ public:
      * @param size
      * size of data
      * @return
-     * if data has invalid UTF8 sequence, return false
+     * if data has invalid UTF8 sequence, return INVALID.
      */
-    bool interpret(const char *data, unsigned int size);
+    Result interpret(const char *data, unsigned int size);
 
     /**
      *
@@ -156,6 +167,12 @@ public:
 private:
     void setChar(int ch) {
         this->bufs.at(this->row).at(this->col) = ch;
+    }
+
+    void appendToBuf(const char *data, unsigned int size) {
+        unsigned int old = this->start - this->buf.get();
+        LexerBase::appendToBuf(data, size, false);
+        this->start = this->buf.get() + old;
     }
 };
 

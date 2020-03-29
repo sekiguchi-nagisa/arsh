@@ -8,7 +8,7 @@ add_gen_lexer_target(
         TARGET      gen_ansi_parser
         SOURCE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/ansi.re2c.cpp
         OUTPUT_FILE ${ansi_parser_src}
-        RE2C_OPTION "--input custom -W -Werror -s -8 --tags"
+        RE2C_OPTION "-W -Werror -s -8 -f"
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

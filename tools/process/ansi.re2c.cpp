@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2020 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,9 @@
 
 namespace process {
 
-#define NEXT() continue
-#define ERROR(m) fatal("unsupported escape sequence: %s\n", m);
+#define NEXT() do { this->state = -1; goto INIT; } while(false)
+#define ERROR(m) fatal("unsupported escape sequence: %s\n", m)
+#define RET(S) do { this->start = this->cursor; return S; } while(false)
 
 /**
  * must be valid number
@@ -43,56 +44,66 @@ static unsigned int toNum(const char *begin, const char *end) {
     return value;
 }
 
-bool Screen::interpret(const char *data, unsigned int size) {
-    const char *begin = data;
-    const char *end = begin + size;
-    const char *marker = nullptr;
+static unsigned int parseEscape(const char *begin, const char *end) {
+    assert(strstr(begin, "\x1b[") == begin);
+    begin += strlen("\x1b[");
+    end -= 1;
+    return toNum(begin, end);
+}
 
-    const char *s0 = nullptr;
-    const char *s1 = nullptr;
-    const char *s2 = nullptr;
-    const char *s3 = nullptr;
+static std::pair<unsigned int, unsigned int> parseEscape2(const char *begin, const char *end) {
+    assert(strstr(begin, "\x1b[") == begin);
+    begin += strlen("\x1b[");
+    end -= 1;
+    auto *ptr = strchr(begin, ';');
+    assert(ptr);
+    auto v1 = toNum(begin, ptr);
+    auto v2 = toNum(ptr + 1, end);
+    return {v1, v2};
+}
 
+Screen::Result Screen::interpret(const char *data, unsigned int size) {
+    this->appendToBuf(data, size);
 
-    /*!stags:re2c format = "const char *@@;\n"; */
+#define YYGETSTATE() this->state
+#define YYSETSTATE(s) this->state = s
+#define YYFILL(n) return Result::NEED_MORE
 
-#define YYCTYPE      unsigned char
-#define YYPEEK()     *begin
-#define YYSKIP()     do { if(begin++ == end) { return true; } } while(false)
-#define YYBACKUP()   marker = begin
-#define YYRESTORE()  begin = marker
-#define YYSTAGP(t)   t = begin
-
-
-    while(true) {
-        const char *start = begin;
+    INIT:
+    if(this->state == -1) {
+        this->start = this->cursor;
+    }
 
     /*!re2c
-      re2c:define:YYFILL:naked = 1;
-      re2c:define:YYFILL@len = #;
-      re2c:yyfill:enable = 0;
+      re2c:define:YYCTYPE = "unsigned char";
+      re2c:define:YYCURSOR = this->cursor;
+      re2c:define:YYLIMIT = this->limit;
+      re2c:define:YYMARKER = this->marker;
+      re2c:variable:yych = this->yych;
+      re2c:eof = 0;
       re2c:indent:top = 1;
       re2c:indent:string = "    ";
 
-      DECIMAL = '0' | [1-9][0-9]*;
+      DECIMAL = "0" | [1-9][0-9]*;
 
-      "\x1b[" @s0 DECIMAL @s1 "A"                     { ERROR("\\e[PnA"); }
-      "\x1b[" @s0 DECIMAL @s1 "B"                     { ERROR("\\e[PnB"); }
-      "\x1b[" @s0 DECIMAL @s1 "C"                     { this->right(toNum(s0, s1)); NEXT(); }
-      "\x1b[" @s0 DECIMAL @s1 "D"                     { this->left(toNum(s0, s1)); NEXT(); }
-      "\x1b[" @s0 DECIMAL @s1 ";" @s2 DECIMAL @s3 "H" { this->setCursor(toNum(s0, s1), toNum(s2, s3)); NEXT(); }
-      "\x1b[" DECIMAL (";" DECIMAL)* "m"              { NEXT(); }
-      "\x1b[H"                                        { this->setCursor(); NEXT(); }
-      "\x1b[2J"                                       { this->clear(); NEXT(); }
-      "\x1b[0K"                                       { this->clearLineFrom(); NEXT(); }
-      "\x1b[2K"                                       { this->clearLine(); NEXT(); }
-      "\x1b[6n"                                       { this->reportPos(); NEXT(); }
+      "\x1b[" DECIMAL "A"                     { ERROR("\\e[PnA"); }
+      "\x1b[" DECIMAL "B"                     { ERROR("\\e[PnB"); }
+      "\x1b[" DECIMAL "C"                     { this->right(parseEscape(start, cursor)); NEXT(); }
+      "\x1b[" DECIMAL "D"                     { this->left(parseEscape(start, cursor)); NEXT(); }
+      "\x1b[" DECIMAL ";" DECIMAL "H"         { auto p = parseEscape2(start, cursor); this->setCursor(p.first, p.second); NEXT(); }
+      "\x1b[" DECIMAL (";" DECIMAL)* "m"      { NEXT(); }
+      "\x1b[H"                                { this->setCursor(); NEXT(); }
+      "\x1b[2J"                               { this->clear(); NEXT(); }
+      "\x1b[0K"                               { this->clearLineFrom(); NEXT(); }
+      "\x1b[2K"                               { this->clearLine(); NEXT(); }
+      "\x1b[6n"                               { this->reportPos(); NEXT(); }
 
-      [^]                                             { this->addCodePoint(start, begin); NEXT(); }
-      *                                               { return false; }
+      [^]                                     { this->addCodePoint(start, cursor); NEXT(); }
+      *                                       { RET(Result::INVALID); }
+      $                                       { RET(Result::REACH_EOS); }
     */
-    }
-    return true;
+
+    fatal("normally unreachable\n");
 }
 
 } // namespace process
