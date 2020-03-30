@@ -4,6 +4,7 @@ var a = 3.14
 var b = 0.5e3
 var c = -23.456789
 var d = 3.0540
+assert $d as Any is Float
 
 assert($a == 3.14)
 assert($a == 3.14e0)
