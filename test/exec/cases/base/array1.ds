@@ -162,6 +162,19 @@ assert $s3[0] == "1"
 assert $s3[1] == "AA"
 assert $s3[2] == "a"
 
+var s4 = [3.14, 0.0, -23.5]
+$s4.sort()
+assert $s4[0] == -23.5
+assert $s4[1] == 0.0
+assert $s4[2] == 3.14
+
+var s5 = [%'int', %'kill', %'HUp']
+$s5.sort()
+assert $s5[0] == %'hUp'
+assert $s5[1] == %'INt'
+assert $s5[2] == %'KiLl'
+
+
 # remove
 var r2 = [3,4,5,6]
 assert $r2.remove(2) == 5
