@@ -14,6 +14,12 @@ assert($'\x09\x7E' == $'\t~')  # hex
 assert($'\x09\x7e' == $'\t~')  # hex
 assert($'\r' == $'\x0D')    # hex
 assert $'\x00' != ''        # nul character
+assert $'\a' == $'\x07'
+assert $'\b' == $'\x08'
+assert $'\e' == $'\x1b'
+assert $'\E' == $'\x1b'
+assert $'\f' == $'\x0C'
+assert $'\'' == "'"
 assert('a
 b' == "a
 b")  # allow new line
