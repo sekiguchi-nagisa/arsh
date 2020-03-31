@@ -177,23 +177,6 @@ void StringNode::dump(NodeDumper &dumper) const {
 // ##     StringExprNode     ##
 // ############################
 
-void StringExprNode::addExprNode(std::unique_ptr<Node> &&node) {
-    if(node->is(NodeKind::StringExpr)) {
-        auto &exprNode = static_cast<StringExprNode&>(*node);
-        for(auto &e : exprNode.nodes) {
-            this->nodes.push_back(std::move(e));
-        }
-        exprNode.nodes.clear();
-    } else if(node->is(NodeKind::String) &&
-            static_cast<StringNode&>(*node).getValue().empty()) { // ignore empty string value node
-        /**
-         * node must not be empty string value except for calling BinaryOpNode::toStringExpr()
-         */
-    } else {
-        this->nodes.push_back(std::move(node));
-    }
-}
-
 void StringExprNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
 }

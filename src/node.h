@@ -432,7 +432,9 @@ public:
 
     ~StringExprNode() override = default;
 
-    void addExprNode(std::unique_ptr<Node> &&node);
+    void addExprNode(std::unique_ptr<Node> &&node) {
+        this->nodes.push_back(std::move(node));
+    }
 
     const std::vector<std::unique_ptr<Node>> &getExprNodes() const {
         return this->nodes;
