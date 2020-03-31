@@ -268,6 +268,11 @@ static bool isBinaryStrConcat(const Node &node) {
 
 void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
     switch(node.getNodeKind()) {
+    case NodeKind::String:
+        if(static_cast<StringNode&>(node).getValue().empty() && fragment) {
+            return;
+        }
+        break;
     case NodeKind::StringExpr: {
         auto &strExprNode = static_cast<StringExprNode&>(node);
         const unsigned int size = strExprNode.getExprNodes().size();
@@ -282,7 +287,7 @@ void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
         }
         return;
     }
-    case NodeKind::BinaryOp: {
+    case NodeKind::BinaryOp:
         if(isBinaryStrConcat(node)) {
             auto &binaryNode = static_cast<BinaryOpNode&>(node);
             this->generateConcat(*binaryNode.getLeftNode(), fragment);
@@ -290,10 +295,10 @@ void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
             return;
         }
         break;
-    }
     case NodeKind::Embed: {
         auto &exprNode = static_cast<EmbedNode&>(node).getExprNode();
-        if(isBinaryStrConcat(exprNode) || exprNode.is(NodeKind::StringExpr)) {
+        if(isBinaryStrConcat(exprNode) ||
+                exprNode.is(NodeKind::StringExpr) || exprNode.is(NodeKind::String)) {
             this->generateConcat(exprNode, fragment);
             return;
         }
