@@ -280,7 +280,7 @@ void AccessNode::dump(NodeDumper &dumper) const {
 // ########################
 
 TypeOpNode::TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupTypeToken) :
-        Node(NodeKind::TypeOp, exprNode->getToken()), exprNode(exprNode), targetTypeNode(nullptr),
+        WithRtti(exprNode->getToken()), exprNode(exprNode), targetTypeNode(nullptr),
         opKind(init) {
     constexpr unsigned long tag = 1UL << 63u;
 
@@ -347,7 +347,7 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
 // #######################
 
 ApplyNode::ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes, Kind kind) :
-        Node(NodeKind::Apply, exprNode->getToken()),
+        WithRtti(exprNode->getToken()),
         exprNode(exprNode), argNodes(std::move(argNodes)), kind(kind) {
     if(!this->argNodes.empty()) {
         this->updateToken(this->argNodes.back()->getToken());
@@ -387,7 +387,7 @@ void ApplyNode::dump(NodeDumper &dumper) const {
 // #####################
 
 NewNode::NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes) :
-        Node(NodeKind::New, {startPos, 0}), targetTypeNode(targetTypeNode), argNodes(std::move(argNodes)) {
+        WithRtti({startPos, 0}), targetTypeNode(targetTypeNode), argNodes(std::move(argNodes)) {
     if(!this->argNodes.empty()) {
         this->updateToken(this->argNodes.back()->getToken());
     }
@@ -490,8 +490,8 @@ void CmdArgNode::dump(NodeDumper &dumper) const {
 
 bool CmdArgNode::isIgnorableEmptyString() const {
     return this->segmentNodes.size() > 1 ||
-            (!this->segmentNodes.back()->is(NodeKind::String) &&
-                    !this->segmentNodes.back()->is(NodeKind::StringExpr));
+            (!isa<StringNode>(*this->segmentNodes.back()) &&
+                    !isa<StringExprNode>(*this->segmentNodes.back()));
 }
 
 // #######################
@@ -530,8 +530,8 @@ void CmdNode::dump(NodeDumper &dumper) const {
 // ##########################
 
 void PipelineNode::addNode(std::unique_ptr<Node> &&node) {
-    if(node->is(NodeKind::Pipeline)) {
-        auto &pipe = static_cast<PipelineNode&>(*node);
+    if(isa<PipelineNode>(*node)) {
+        auto &pipe = cast<PipelineNode>(*node);
         for(auto &e : pipe.nodes) {
             this->addNodeImpl(std::move(e));
         }
@@ -546,8 +546,8 @@ void PipelineNode::dump(NodeDumper &dumper) const {
 }
 
 void PipelineNode::addNodeImpl(std::unique_ptr<Node> &&node) {
-    if(node->is(NodeKind::Cmd)) {
-        static_cast<CmdNode&>(*node).setInPipe(true);
+    if(isa<CmdNode>(*node)) {
+        cast<CmdNode>(*node).setInPipe(true);
     }
     this->updateToken(node->getToken());
     this->nodes.push_back(std::move(node));
@@ -633,7 +633,7 @@ void TypeAliasNode::dump(NodeDumper &dumper) const {
 
 LoopNode::LoopNode(unsigned int startPos, Node *initNode,
                  Node *condNode, Node *iterNode, BlockNode *blockNode, bool asDoWhile) :
-        Node(NodeKind::Loop, {startPos, 0}), initNode(initNode), condNode(condNode),
+        WithRtti({startPos, 0}), initNode(initNode), condNode(condNode),
         iterNode(iterNode), blockNode(blockNode), asDoWhile(asDoWhile) {
     if(this->initNode == nullptr) {
         this->initNode = new EmptyNode();
@@ -669,15 +669,15 @@ void LoopNode::dump(NodeDumper &dumper) const {
  * if condNode is InstanceOfNode and targetNode is VarNode, insert VarDeclNode to blockNode.
  */
 static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
-    if(!condNode->is(NodeKind::TypeOp) || !static_cast<TypeOpNode *>(condNode)->isInstanceOfOp()) {
+    if(!isa<TypeOpNode>(condNode) || !cast<TypeOpNode>(condNode)->isInstanceOfOp()) {
         return;
     }
-    auto *isNode = static_cast<TypeOpNode *>(condNode);
+    auto *isNode = cast<TypeOpNode>(condNode);
 
-    if(!isNode->getExprNode()->is(NodeKind::Var)) {
+    if(!isa<VarNode>(isNode->getExprNode())) {
         return;
     }
-    auto *varNode = static_cast<VarNode *>(isNode->getExprNode());
+    auto *varNode = cast<VarNode>(isNode->getExprNode());
 
     auto *exprNode = new VarNode({isNode->getPos(), 1}, std::string(varNode->getVarName()));
     auto *castNode = new TypeOpNode(exprNode, isNode->getTargetTypeNode(), TypeOpNode::NO_CAST, true);
@@ -686,10 +686,10 @@ static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
 }
 
 IfNode::IfNode(unsigned int startPos, Node *condNode, Node *thenNode, Node *elseNode) :
-        Node(NodeKind::If, {startPos, 0}), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
+        WithRtti({startPos, 0}), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
 
-    if(this->thenNode->is(NodeKind::Block)) {
-        resolveIfIsStatement(this->condNode, static_cast<BlockNode *>(this->thenNode));
+    if(isa<BlockNode>(this->thenNode)) {
+        resolveIfIsStatement(this->condNode, cast<BlockNode>(this->thenNode));
     }
     this->updateToken(thenNode->getToken());
     if(this->elseNode != nullptr) {
@@ -766,7 +766,7 @@ void ArmNode::dump(ydsh::NodeDumper &dumper) const {
 // ######################
 
 JumpNode::JumpNode(Token token, OpKind kind, Node *exprNode) :
-        Node(NodeKind::Jump, token), opKind(kind), exprNode(exprNode) {
+        WithRtti(token), opKind(kind), exprNode(exprNode) {
     if(this->exprNode == nullptr) {
         this->exprNode = new EmptyNode(token);
     } else {
@@ -843,7 +843,7 @@ void TryNode::dump(NodeDumper &dumper) const {
 // #########################
 
 VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName, Node *exprNode, Kind kind) :
-        Node(NodeKind::VarDecl, {startPos, 0}),
+        WithRtti({startPos, 0}),
         varName(std::move(varName)), kind(kind), exprNode(exprNode) {
     if(this->exprNode != nullptr) {
         this->updateToken(exprNode->getToken());
@@ -901,7 +901,7 @@ void AssignNode::dump(NodeDumper &dumper) const {
 // ###################################
 
 ElementSelfAssignNode::ElementSelfAssignNode(ApplyNode *leftNode, BinaryOpNode *binaryNode) :
-        Node(NodeKind::ElementSelfAssign, leftNode->getToken()), rightNode(binaryNode) {
+        WithRtti(leftNode->getToken()), rightNode(binaryNode) {
     this->updateToken(binaryNode->getToken());
 
     // init recv, indexNode
@@ -1138,9 +1138,8 @@ std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKi
      */
     if(op == ASSIGN) {
         // assign to element(actually call SET)
-        if(leftNode->is(NodeKind::Apply) &&
-                static_cast<ApplyNode&>(*leftNode).isIndexCall()) {
-            auto &indexNode = static_cast<ApplyNode&>(*leftNode);
+        if(isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexCall()) {
+            auto &indexNode = cast<ApplyNode>(*leftNode);
             indexNode.setMethodName(std::string(OP_SET));
             indexNode.refArgNodes().push_back(rightNode.release());
             return std::move(leftNode);
@@ -1154,9 +1153,8 @@ std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKi
      */
     // assign to element
     auto *opNode = new BinaryOpNode(new EmptyNode(rightNode->getToken()), resolveAssignOp(op), token, rightNode.release());
-    if(leftNode->is(NodeKind::Apply) &&
-            static_cast<ApplyNode&>(*leftNode).isIndexCall()) {
-        auto *indexNode = static_cast<ApplyNode*>(leftNode.release());
+    if(isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexCall()) {
+        auto *indexNode = cast<ApplyNode>(leftNode.release());
         return std::make_unique<ElementSelfAssignNode>(indexNode, opNode);
     }
     // assign to variable or field
@@ -1165,8 +1163,8 @@ std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKi
 
 const Node *findInnerNode(NodeKind kind, const Node *node) {
     while(!node->is(kind)) {
-        assert(node->is(NodeKind::TypeOp));
-        node = static_cast<const TypeOpNode *>(node)->getExprNode();
+        assert(isa<TypeOpNode>(node));
+        node = cast<const TypeOpNode>(node)->getExprNode();
     }
     return node;
 }

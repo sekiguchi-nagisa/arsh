@@ -155,6 +155,18 @@ public:
     void accept(NodeVisitor &visitor);
 };
 
+template <typename T, NodeKind K, enable_when<std::is_base_of<Node, T>::value> = nullptr>
+class WithRtti : public T {
+protected:
+    explicit WithRtti(Token token) : T(K, token) {}
+
+public:
+    static bool classof(const Node *node) {
+        return node->getNodeKind() == K;
+    }
+};
+
+
 // type definition
 #define EACH_TYPE_NODE_KIND(OP) \
     OP(Base) \
@@ -166,7 +178,7 @@ public:
 /**
  * represent for parsed type.
  */
-class TypeNode : public Node {
+class TypeNode : public WithRtti<Node, NodeKind::Type> {
 public:
     const enum Kind : unsigned char {
 #define GEN_ENUM(OP) OP,
@@ -175,7 +187,7 @@ public:
     } typeKind;
 
 protected:
-    TypeNode(Kind typeKind, Token token) : Node(NodeKind::Type, token), typeKind(typeKind) { }
+    TypeNode(Kind typeKind, Token token) : WithRtti(token), typeKind(typeKind) { }
 
 public:
     ~TypeNode() override = default;
@@ -331,7 +343,7 @@ inline TypeNode *newVoidTypeNode() {
     OP(Float) \
     OP(Signal)
 
-class NumberNode : public Node {
+class NumberNode : public WithRtti<Node, NodeKind::Number> {
 public:
     const enum Kind : unsigned char {
 #define GEN_ENUM(OP) OP,
@@ -346,8 +358,7 @@ private:
     };
 
 public:
-    NumberNode(Token token, Kind kind) :
-            Node(NodeKind::Number, token), kind(kind), intValue(0) { }
+    NumberNode(Token token, Kind kind) : WithRtti(token), kind(kind), intValue(0) { }
 
     static std::unique_ptr<NumberNode> newInt(Token token, int64_t value) {
         auto node = std::make_unique<NumberNode>(token, Int);
@@ -380,7 +391,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class StringNode : public Node {
+class StringNode : public WithRtti<Node, NodeKind::String> {
 public:
     enum StringKind {
         STRING,
@@ -399,7 +410,7 @@ public:
             StringNode({0, 0}, std::move(value)) { }
 
     StringNode(Token token, std::string &&value, StringKind kind = STRING) :
-            Node(NodeKind::String, token), value(std::move(value)), kind(kind) { }
+            WithRtti(token), value(std::move(value)), kind(kind) { }
 
     ~StringNode() override = default;
 
@@ -422,13 +433,12 @@ public:
     }
 };
 
-class StringExprNode : public Node {
+class StringExprNode : public WithRtti<Node, NodeKind::StringExpr> {
 private:
     std::vector<std::unique_ptr<Node>> nodes;
 
 public:
-    explicit StringExprNode(unsigned int startPos) :
-            Node(NodeKind::StringExpr, {startPos, 1}) { }
+    explicit StringExprNode(unsigned int startPos) : WithRtti({startPos, 1}) { }
 
     ~StringExprNode() override = default;
 
@@ -447,7 +457,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class RegexNode : public Node {
+class RegexNode : public WithRtti<Node, NodeKind::Regex> {
 private:
     /**
      * string representation of regex.
@@ -459,7 +469,7 @@ private:
 
 public:
     RegexNode(Token token, std::string &&str, PCRE &&re) :
-            Node(NodeKind::Regex, token), reStr(std::move(str)), re(std::move(re)) { }
+            WithRtti(token), reStr(std::move(str)), re(std::move(re)) { }
 
     ~RegexNode() override = default;
 
@@ -474,13 +484,12 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class ArrayNode : public Node {
+class ArrayNode : public WithRtti<Node, NodeKind::Array> {
 private:
     std::vector<Node *> nodes;
 
 public:
-    ArrayNode(unsigned int startPos, Node *node) :
-            Node(NodeKind::Array, {startPos, 0}) {
+    ArrayNode(unsigned int startPos, Node *node) : WithRtti({startPos, 0}) {
         this->addExprNode(node);
     }
 
@@ -501,14 +510,14 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class MapNode : public Node {
+class MapNode : public WithRtti<Node, NodeKind::Map> {
 private:
     std::vector<Node *> keyNodes;
     std::vector<Node *> valueNodes;
 
 public:
     MapNode(unsigned int startPos, Node *keyNode, Node *valueNode) :
-            Node(NodeKind::Map, {startPos, 0}) {
+            WithRtti({startPos, 0}) {
         this->addEntry(keyNode, valueNode);
     }
 
@@ -535,7 +544,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class TupleNode : public Node {
+class TupleNode : public WithRtti<Node, NodeKind::Tuple> {
 private:
     /**
      * at least one nodes
@@ -544,7 +553,7 @@ private:
 
 public:
     TupleNode(unsigned int startPos, std::vector<std::unique_ptr<Node>> &&nodes, Token endToken) :
-            Node(NodeKind::Tuple, {startPos, 0}), nodes(std::move(nodes)) {
+            WithRtti({startPos, 0}), nodes(std::move(nodes)) {
         this->updateToken(endToken);
     }
 
@@ -592,13 +601,13 @@ inline bool isAssignable(const Node &node) {
     return node.is(NodeKind::Var) || node.is(NodeKind::Access);
 }
 
-class VarNode : public AssignableNode {
+class VarNode : public WithRtti<AssignableNode, NodeKind::Var> {
 private:
     std::string varName;
 
 public:
     VarNode(Token token, std::string &&varName) :
-            AssignableNode(NodeKind::Var, token), varName(std::move(varName)) { }
+            WithRtti(token), varName(std::move(varName)) { }
 
     ~VarNode() override = default;
 
@@ -617,7 +626,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class AccessNode : public AssignableNode {
+class AccessNode : public WithRtti<AssignableNode, NodeKind::Access> {
 public:
     enum AdditionalOp {
         NOP,
@@ -631,8 +640,7 @@ private:
 
 public:
     AccessNode(Node *recvNode, VarNode *nameNode) :
-            AssignableNode(NodeKind::Access, recvNode->getToken()),
-            recvNode(recvNode), nameNode(nameNode) { }
+            WithRtti(recvNode->getToken()), recvNode(recvNode), nameNode(nameNode) { }
 
     ~AccessNode() override;
 
@@ -640,8 +648,8 @@ public:
         return *this->recvNode;
     }
 
-    void setRecvNode(Node *recvNode) {
-        this->recvNode = recvNode;
+    void setRecvNode(Node *node) {
+        this->recvNode = node;
     }
 
     const std::string &getFieldName() const {
@@ -663,7 +671,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class TypeOpNode : public Node {
+class TypeOpNode : public WithRtti<Node, NodeKind::TypeOp> {
 public:
     /**
      * do not change definition order
@@ -706,8 +714,8 @@ public:
 
     TypeNode *getTargetTypeNode() const;
 
-    void setOpKind(OpKind opKind) {
-        this->opKind = opKind;
+    void setOpKind(OpKind op) {
+        this->opKind = op;
     }
 
     OpKind getOpKind() const {
@@ -737,7 +745,7 @@ TypeOpNode *newTypedCastNode(Node *targetNode, const DSType &type);
 /**
  * for function object apply or method call
  */
-class ApplyNode : public Node {
+class ApplyNode : public WithRtti<Node, NodeKind::Apply> {
 public:
     enum Kind : unsigned int {
         UNRESOLVED,
@@ -806,8 +814,8 @@ public:
         return this->kind;
     }
 
-    void setKind(Kind kind) {
-        this->kind = kind;
+    void setKind(Kind k) {
+        this->kind = k;
     }
 
     bool isFuncCall() const {
@@ -822,8 +830,8 @@ public:
         return this->getKind() == INDEX_CALL;
     }
 
-    void setHandle(const MethodHandle *handle) {
-        this->handle = handle;
+    void setHandle(const MethodHandle *h) {
+        this->handle = h;
     }
 
     const MethodHandle *getHandle() const {
@@ -846,7 +854,7 @@ public:
 /**
  * allocate new DSObject and call constructor.
  */
-class NewNode : public Node {
+class NewNode : public WithRtti<Node, NodeKind::New> {
 private:
     TypeNode *targetTypeNode;
     std::vector<Node *> argNodes;
@@ -857,7 +865,7 @@ public:
     NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes);
 
     explicit NewNode(TypeNode *targetTypeNode) :
-        Node(NodeKind::New, targetTypeNode->getToken()), targetTypeNode(targetTypeNode) {}
+            WithRtti(targetTypeNode->getToken()), targetTypeNode(targetTypeNode) {}
 
     ~NewNode() override;
 
@@ -888,7 +896,7 @@ public:
  * represents ${}
  * for string interpolation.
  */
-class EmbedNode : public Node {
+class EmbedNode : public WithRtti<Node, NodeKind::Embed> {
 public:
     enum Kind {
         STR_EXPR,
@@ -904,12 +912,12 @@ private:
 
 public:
     EmbedNode(unsigned int startPos, Kind kind, std::unique_ptr<Node> &&exprNode, Token endToken) :
-        Node(NodeKind::Embed, {startPos, 1}), kind(kind), exprNode(std::move(exprNode)) {
+        WithRtti({startPos, 1}), kind(kind), exprNode(std::move(exprNode)) {
         this->updateToken(endToken);
     }
 
     EmbedNode(Kind kind, std::unique_ptr<Node> &&exprNode) :
-        Node(NodeKind::Embed, exprNode->getToken()), kind(kind), exprNode(std::move(exprNode)) {}
+        WithRtti(exprNode->getToken()), kind(kind), exprNode(std::move(exprNode)) {}
 
     ~EmbedNode() override = default;
 
@@ -935,7 +943,7 @@ public:
 /**
  * for unary operator call
  */
-class UnaryOpNode : public Node {
+class UnaryOpNode : public WithRtti<Node, NodeKind::UnaryOp> {
 private:
     TokenKind op;
 
@@ -953,7 +961,7 @@ private:
 
 public:
     UnaryOpNode(TokenKind op, Token opToken, Node *exprNode) :
-            Node(NodeKind::UnaryOp, opToken), op(op), opToken(opToken),
+            WithRtti(opToken), op(op), opToken(opToken),
             exprNode(exprNode), methodCallNode(nullptr) {
         this->updateToken(exprNode->getToken());
     }
@@ -1004,7 +1012,7 @@ public:
 /**
  * binary operator call.
  */
-class BinaryOpNode : public Node {
+class BinaryOpNode : public WithRtti<Node, NodeKind::BinaryOp> {
 private:
     /**
      * will be null.
@@ -1027,7 +1035,7 @@ private:
 
 public:
     BinaryOpNode(Node *leftNode, TokenKind op, Token opToken, Node *rightNode) :
-            Node(NodeKind::BinaryOp, leftNode->getToken()),
+            WithRtti(leftNode->getToken()),
             leftNode(leftNode), rightNode(rightNode), op(op), opToken(opToken), optNode(nullptr) {
         this->updateToken(rightNode->getToken());
     }
@@ -1070,13 +1078,13 @@ public:
 /**
  * for command argument
  */
-class CmdArgNode : public Node {
+class CmdArgNode : public WithRtti<Node, NodeKind::CmdArg> {
 private:
     std::vector<std::unique_ptr<Node>> segmentNodes;
 
 public:
     explicit CmdArgNode(std::unique_ptr<Node> &&segmentNode) :
-            Node(NodeKind::CmdArg, segmentNode->getToken()) {
+            WithRtti(segmentNode->getToken()) {
         this->addSegmentNode(std::move(segmentNode));
     }
 
@@ -1096,14 +1104,14 @@ public:
     bool isIgnorableEmptyString() const;
 };
 
-class RedirNode : public Node {
+class RedirNode : public WithRtti<Node, NodeKind::Redir> {
 private:
     TokenKind op;
     std::unique_ptr<CmdArgNode> targetNode;
 
 public:
     RedirNode(TokenKind kind, std::unique_ptr<CmdArgNode> &&node) :
-            Node(NodeKind::Redir, node->getToken()), op(kind), targetNode(std::move(node)) {}
+            WithRtti(node->getToken()), op(kind), targetNode(std::move(node)) {}
 
     RedirNode(TokenKind kind, Token token) :
             RedirNode(kind, std::make_unique<CmdArgNode>(std::make_unique<StringNode>(token, std::string("")))) {}
@@ -1125,7 +1133,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class CmdNode : public Node {
+class CmdNode : public WithRtti<Node, NodeKind::Cmd> {
 private:
     std::unique_ptr<StringNode> nameNode;
 
@@ -1140,8 +1148,7 @@ private:
 
 public:
     explicit CmdNode(std::unique_ptr<StringNode> &&nameNode) :
-            Node(NodeKind::Cmd, nameNode->getToken()),
-            nameNode(std::move(nameNode)) { }
+            WithRtti(nameNode->getToken()), nameNode(std::move(nameNode)) { }
 
     ~CmdNode() override = default;
 
@@ -1159,8 +1166,8 @@ public:
         return this->redirCount > 0;
     }
 
-    void setInPipe(bool inPipe) {
-        this->inPipe = inPipe;
+    void setInPipe(bool in) {
+        this->inPipe = in;
     }
 
     bool getInPipe() const {
@@ -1172,7 +1179,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class PipelineNode : public Node {
+class PipelineNode : public WithRtti<Node, NodeKind::Pipeline> {
 private:
     std::vector<std::unique_ptr<Node>> nodes;
 
@@ -1180,7 +1187,7 @@ private:
 
 public:
     PipelineNode(std::unique_ptr<Node> &&leftNode, std::unique_ptr<Node> &&rightNode) :
-            Node(NodeKind::Pipeline, leftNode->getToken()) {
+            WithRtti(leftNode->getToken()) {
         this->addNode(std::move(leftNode));
         this->addNode(std::move(rightNode));
     }
@@ -1202,7 +1209,7 @@ public:
     }
 
     bool isLastPipe() const {
-        return !this->nodes.back()->is(NodeKind::Cmd);
+        return !isa<CmdNode>(*this->nodes.back());
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -1211,7 +1218,7 @@ private:
     void addNodeImpl(std::unique_ptr<Node> &&node);
 };
 
-class WithNode : public Node {
+class WithNode : public WithRtti<Node, NodeKind::With> {
 private:
     std::unique_ptr<Node> exprNode;
 
@@ -1221,7 +1228,7 @@ private:
 
 public:
     WithNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<RedirNode> &&redirNode) :
-            Node(NodeKind::With, exprNode->getToken()), exprNode(std::move(exprNode)) {
+            WithRtti(exprNode->getToken()), exprNode(std::move(exprNode)) {
         this->addRedirNode(std::move(redirNode));
     }
 
@@ -1251,14 +1258,14 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class ForkNode : public Node {
+class ForkNode : public WithRtti<Node, NodeKind::Fork> {
 private:
     ForkKind opKind;
     std::unique_ptr<Node> exprNode;
 
 public:
     ForkNode(Token token, ForkKind kind, std::unique_ptr<Node> &&exprNode, Token endToken) :
-            Node(NodeKind::Fork, token), opKind(kind), exprNode(std::move(exprNode)) {
+            WithRtti(token), opKind(kind), exprNode(std::move(exprNode)) {
         this->updateToken(endToken);
     }
 
@@ -1310,7 +1317,7 @@ public:
 
 // statement definition
 
-class AssertNode : public Node {
+class AssertNode : public WithRtti<Node, NodeKind::Assert> {
 private:
     Node *condNode;
 
@@ -1318,7 +1325,7 @@ private:
 
 public:
     AssertNode(unsigned int pos, Node *condNode, Node *messageNode) :
-            Node(NodeKind::Assert, {pos, 1}), condNode(condNode), messageNode(messageNode) {
+            WithRtti({pos, 1}), condNode(condNode), messageNode(messageNode) {
         this->updateToken(messageNode->getToken());
     }
 
@@ -1339,7 +1346,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class BlockNode : public Node {
+class BlockNode : public WithRtti<Node, NodeKind::Block> {
 private:
     std::vector<Node *> nodes;
     unsigned int baseIndex{0};
@@ -1347,8 +1354,7 @@ private:
     unsigned int maxVarSize{0};
 
 public:
-    explicit BlockNode(unsigned int startPos) :
-            Node(NodeKind::Block, {startPos, 1}) { }
+    explicit BlockNode(unsigned int startPos) : WithRtti({startPos, 1}) { }
 
     ~BlockNode() override;
 
@@ -1393,15 +1399,15 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class TypeAliasNode : public Node {
+class TypeAliasNode : public WithRtti<Node, NodeKind::TypeAlias> {
 private:
     std::string alias;
     std::unique_ptr<TypeNode> targetTypeNode;
 
 public:
     TypeAliasNode(unsigned int startPos, std::string &&alias, std::unique_ptr<TypeNode>  &&targetTypeNode) :
-            Node(NodeKind::TypeAlias, {startPos, 0}),
-            alias(std::move(alias)), targetTypeNode(std::move(targetTypeNode)) {
+            WithRtti({startPos, 0}), alias(std::move(alias)),
+            targetTypeNode(std::move(targetTypeNode)) {
         this->updateToken(this->targetTypeNode->getToken());
     }
 
@@ -1421,7 +1427,7 @@ public:
 /**
  * indicating for, while, do-while statement
  */
-class LoopNode : public Node {
+class LoopNode : public WithRtti<Node, NodeKind::Loop> {
 private:
     Node *initNode;
 
@@ -1484,7 +1490,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class IfNode : public Node {
+class IfNode : public WithRtti<Node, NodeKind::If> {
 private:
     Node *condNode;
     Node *thenNode;
@@ -1525,7 +1531,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class ArmNode : public Node {
+class ArmNode : public WithRtti<Node, NodeKind::Arm> {
 private:
     /**
      * if represents default pattern, size is 0
@@ -1538,11 +1544,11 @@ private:
     Node *actionNode{nullptr};
 
 public:
-    explicit ArmNode(Node *patternNode) : Node(NodeKind::Arm, patternNode->getToken()) {
+    explicit ArmNode(Node *patternNode) : WithRtti(patternNode->getToken()) {
         this->addPatternNode(patternNode);
     }
 
-    explicit ArmNode(unsigned int pos) : Node(NodeKind::Arm, {pos, 1}) {}
+    explicit ArmNode(unsigned int pos) : WithRtti({pos, 1}) {}
 
     ~ArmNode() override;
 
@@ -1578,7 +1584,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class CaseNode : public Node {
+class CaseNode : public WithRtti<Node, NodeKind::Case> {
 public:
     enum Kind : unsigned int {
         MAP = 0,
@@ -1591,7 +1597,7 @@ private:
     Kind caseKind{MAP};
 
 public:
-    CaseNode(unsigned int pos, Node *exprNode) : Node(NodeKind::Case, {pos, 1}), exprNode(exprNode) {}
+    CaseNode(unsigned int pos, Node *exprNode) : WithRtti({pos, 1}), exprNode(exprNode) {}
 
     ~CaseNode() override;
 
@@ -1620,7 +1626,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class JumpNode : public Node {
+class JumpNode : public WithRtti<Node, NodeKind::Jump> {
 public:
     enum OpKind : unsigned int {
         BREAK_,
@@ -1693,7 +1699,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class CatchNode : public Node {
+class CatchNode : public WithRtti<Node, NodeKind::Catch> {
 private:
     std::string exceptionName;
     TypeNode *typeNode;
@@ -1705,7 +1711,7 @@ private:
 public:
     CatchNode(unsigned int startPos, std::string &&exceptionName,
               TypeNode *typeNode, BlockNode *blockNode) :
-            Node(NodeKind::Catch, {startPos, 0}), exceptionName(std::move(exceptionName)),
+            WithRtti({startPos, 0}), exceptionName(std::move(exceptionName)),
             typeNode(typeNode != nullptr ? typeNode : newAnyTypeNode()), blockNode(blockNode) {
         this->updateToken(blockNode->getToken());
     }
@@ -1735,7 +1741,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class TryNode : public Node {
+class TryNode : public WithRtti<Node, NodeKind::Try> {
 private:
     /**
      * initial value is BlockNode
@@ -1754,7 +1760,7 @@ private:
 
 public:
     TryNode(unsigned int startPos, BlockNode *blockNode) :
-            Node(NodeKind::Try, {startPos, 0}), exprNode(blockNode) {
+            WithRtti({startPos, 0}), exprNode(blockNode) {
         this->updateToken(blockNode->getToken());
     }
 
@@ -1794,7 +1800,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class VarDeclNode : public Node {
+class VarDeclNode : public WithRtti<Node, NodeKind::VarDecl> {
 public:
     enum Kind : unsigned char {
         VAR,
@@ -1856,7 +1862,7 @@ public:
  * assignment is statement.
  * so, after type checking, type is always VoidType
  */
-class AssignNode : public Node {
+class AssignNode : public WithRtti<Node, NodeKind::Assign> {
 private:
     /**
      * must be VarNode or AccessNode
@@ -1871,8 +1877,7 @@ public:
     static constexpr flag8_t FIELD_ASSIGN = 1u << 1u;
 
     AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false) :
-            Node(NodeKind::Assign, leftNode->getToken()),
-            leftNode(leftNode), rightNode(rightNode) {
+            WithRtti(leftNode->getToken()), leftNode(leftNode), rightNode(rightNode) {
         if(selfAssign) {
             setFlag(this->attributeSet, SELF_ASSIGN);
         }
@@ -1908,7 +1913,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class ElementSelfAssignNode : public Node {
+class ElementSelfAssignNode : public WithRtti<Node, NodeKind::ElementSelfAssign> {
 private:
     Node *recvNode;
     Node *indexNode;
@@ -1974,7 +1979,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class FunctionNode : public Node {
+class FunctionNode : public WithRtti<Node, NodeKind::Function> {
 private:
     std::string funcName;
 
@@ -2006,7 +2011,7 @@ private:
 
 public:
     FunctionNode(unsigned int startPos, std::string &&funcName) :
-            Node(NodeKind::Function, {startPos, 0}), funcName(std::move(funcName)) { }
+            WithRtti({startPos, 0}), funcName(std::move(funcName)) { }
 
     ~FunctionNode() override = default;
 
@@ -2036,8 +2041,8 @@ public:
         return *this->returnTypeNode;
     }
 
-    void setBlockNode(std::unique_ptr<BlockNode> &&blockNode) {
-        this->blockNode = std::move(blockNode);
+    void setBlockNode(std::unique_ptr<BlockNode> &&node) {
+        this->blockNode = std::move(node);
         this->updateToken(this->blockNode->getToken());
     }
 
@@ -2048,24 +2053,24 @@ public:
         return *this->blockNode;
     }
 
-    void setMaxVarNum(unsigned int maxVarNum) {
-        this->maxVarNum = maxVarNum;
+    void setMaxVarNum(unsigned int num) {
+        this->maxVarNum = num;
     }
 
     unsigned int getMaxVarNum() const {
         return this->maxVarNum;
     }
 
-    void setVarIndex(unsigned int varIndex) {
-        this->varIndex = varIndex;
+    void setVarIndex(unsigned int index) {
+        this->varIndex = index;
     }
 
     unsigned int getVarIndex() const {
         return this->varIndex;
     }
 
-    void setFuncType(FunctionType *funcType) {
-        this->funcType = funcType;
+    void setFuncType(FunctionType *type) {
+        this->funcType = type;
     }
 
     /**
@@ -2080,7 +2085,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class InterfaceNode : public Node {
+class InterfaceNode : public WithRtti<Node, NodeKind::Interface> {
 private:
     std::string interfaceName;
 
@@ -2090,7 +2095,7 @@ private:
 
 public:
     InterfaceNode(unsigned int startPos, std::string &&interfaceName) :
-            Node(NodeKind::Interface, {startPos, 0}), interfaceName(std::move(interfaceName)) { }
+            WithRtti({startPos, 0}), interfaceName(std::move(interfaceName)) { }
 
     ~InterfaceNode() override;
 
@@ -2120,7 +2125,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class UserDefinedCmdNode : public Node {
+class UserDefinedCmdNode : public WithRtti<Node, NodeKind::UserDefinedCmd> {
 private:
     std::string cmdName;
 
@@ -2132,7 +2137,7 @@ private:
 public:
     UserDefinedCmdNode(unsigned int startPos, std::string &&commandName,
             std::unique_ptr<BlockNode> &&blockNode) :
-            Node(NodeKind::UserDefinedCmd, {startPos, 0}),
+            WithRtti({startPos, 0}),
             cmdName(std::move(commandName)), blockNode(std::move(blockNode)) {
         this->updateToken(this->blockNode->getToken());
     }
@@ -2155,8 +2160,8 @@ public:
         return *this->blockNode;
     }
 
-    void setMaxVarNum(unsigned int maxVarNum) {
-        this->maxVarNum = maxVarNum;
+    void setMaxVarNum(unsigned int num) {
+        this->maxVarNum = num;
     }
 
     unsigned int getMaxVarNum() const {
@@ -2166,7 +2171,7 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class SourceNode : public Node {
+class SourceNode : public WithRtti<Node, NodeKind::Source> {
 private:
     std::unique_ptr<StringNode> pathNode;
 
@@ -2203,7 +2208,7 @@ private:
 
 public:
     SourceNode(unsigned int startPos, std::unique_ptr<StringNode> &&pathNode, bool optional) :
-            Node(NodeKind::Source, {startPos, 1}), pathNode(std::move(pathNode)), optional(optional) {
+            WithRtti({startPos, 1}), pathNode(std::move(pathNode)), optional(optional) {
         this->updateToken(this->pathNode->getToken());
     }
 
@@ -2217,9 +2222,9 @@ public:
         return this->pathNode->getValue();
     }
 
-    void setName(Token token, std::string &&name) {
+    void setName(Token token, std::string &&value) {
         this->updateToken(token);
-        this->name = std::move(name);
+        this->name = std::move(value);
     }
 
     const std::string &getName() const {
@@ -2254,16 +2259,16 @@ public:
         return this->optional;
     }
 
-    void setModIndex(unsigned int index) {
-        this->modIndex = index;
+    void setModIndex(unsigned int value) {
+        this->modIndex = value;
     }
 
     unsigned int getModIndex() const {
         return this->modIndex;
     }
 
-    void setIndex(unsigned int index) {
-        this->index = index;
+    void setIndex(unsigned int value) {
+        this->index = value;
     }
 
     unsigned int getIndex() const {
@@ -2281,10 +2286,10 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-class EmptyNode : public Node {
+class EmptyNode : public WithRtti<Node, NodeKind::Empty> {
 public:
     EmptyNode() : EmptyNode({0, 0}) { }
-    explicit EmptyNode(Token token) : Node(NodeKind::Empty, token) { }
+    explicit EmptyNode(Token token) : WithRtti(token) { }
     ~EmptyNode() override = default;
 
     void dump(NodeDumper &dumper) const override;

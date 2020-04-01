@@ -221,7 +221,7 @@ void ByteCodeGenerator::enterFinally() {
 }
 
 static bool isTildeExpansion(const Node &node) {
-    return node.is(NodeKind::String) && static_cast<const StringNode&>(node).isTilde();
+    return isa<StringNode>(node) && cast<const StringNode>(node).isTilde();
 }
 
 void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
@@ -255,11 +255,11 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool l
 }
 
 static bool isBinaryStrConcat(const Node &node) {
-    if(node.is(NodeKind::BinaryOp)) {
-        auto &bin = static_cast<const BinaryOpNode&>(node);
+    if(isa<BinaryOpNode>(node)) {
+        auto &bin = cast<const BinaryOpNode>(node);
         if(bin.getOp() == TokenKind::ADD && bin.getLeftNode() &&
             bin.getLeftNode()->getType().is(TYPE::String)) {
-            assert(!bin.getLeftNode()->is(NodeKind::Empty));
+            assert(!isa<EmptyNode>(bin.getLeftNode()));
             return true;
         }
     }
@@ -269,12 +269,12 @@ static bool isBinaryStrConcat(const Node &node) {
 void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
     switch(node.getNodeKind()) {
     case NodeKind::String:
-        if(static_cast<StringNode&>(node).getValue().empty() && fragment) {
+        if(cast<StringNode>(node).getValue().empty() && fragment) {
             return;
         }
         break;
     case NodeKind::StringExpr: {
-        auto &strExprNode = static_cast<StringExprNode&>(node);
+        auto &strExprNode = cast<StringExprNode>(node);
         const unsigned int size = strExprNode.getExprNodes().size();
         if(size == 0) {
             if(!fragment) {
@@ -289,16 +289,16 @@ void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
     }
     case NodeKind::BinaryOp:
         if(isBinaryStrConcat(node)) {
-            auto &binaryNode = static_cast<BinaryOpNode&>(node);
+            auto &binaryNode = cast<BinaryOpNode>(node);
             this->generateConcat(*binaryNode.getLeftNode(), fragment);
             this->generateConcat(*binaryNode.getRightNode(), true);
             return;
         }
         break;
     case NodeKind::Embed: {
-        auto &exprNode = static_cast<EmbedNode&>(node).getExprNode();
+        auto &exprNode = cast<EmbedNode>(node).getExprNode();
         if(isBinaryStrConcat(exprNode) ||
-                exprNode.is(NodeKind::StringExpr) || exprNode.is(NodeKind::String)) {
+                isa<StringExprNode>(exprNode) || isa<StringNode>(exprNode)) {
             this->generateConcat(exprNode, fragment);
             return;
         }
@@ -557,7 +557,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
         }
     } else if(kind == TokenKind::ADD && node.getLeftNode() &&
             node.getLeftNode()->getType().is(TYPE::String)) {
-        if(node.getLeftNode()->is(NodeKind::Empty)) {
+        if(isa<EmptyNode>(node.getLeftNode())) {
             this->visit(*node.getRightNode());
             this->emit0byteIns(OpCode::APPEND);
         } else {
@@ -761,16 +761,16 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
 void ByteCodeGenerator::visitTypeAliasNode(TypeAliasNode &) { } // do nothing
 
 static bool isEmptyCode(Node &node) {
-    return node.is(NodeKind::Empty) ||
-           (node.is(NodeKind::Block) && static_cast<BlockNode &>(node).getNodes().empty());
+    return isa<EmptyNode>(node) ||
+           (isa<BlockNode>(node) && cast<BlockNode>(node).getNodes().empty());
 }
 
 void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
     // generate code
     unsigned short localOffset = 0;
     unsigned short localSize = 0;
-    if(node.getInitNode()->is(NodeKind::VarDecl)) {
-        localOffset = static_cast<VarDeclNode *>(node.getInitNode())->getVarIndex();
+    if(isa<VarDeclNode>(node.getInitNode())) {
+        localOffset = cast<VarDeclNode>(node.getInitNode())->getVarIndex();
         localSize = 1;
     }
 

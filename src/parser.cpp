@@ -856,8 +856,8 @@ std::unique_ptr<StringNode> Parser::parse_cmdArgPart(bool first, LexerMode mode)
 static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, TokenKind op,
                                               Token token, std::unique_ptr<Node> &&rightNode) {
     if(op == PIPE) {
-        if(leftNode->is(NodeKind::Pipeline)) {
-            static_cast<PipelineNode *>(leftNode.get())->addNode(std::move(rightNode));
+        if(isa<PipelineNode>(*leftNode)) {
+            cast<PipelineNode>(leftNode.get())->addNode(std::move(rightNode));
             return std::move(leftNode);
         }
         return std::make_unique<PipelineNode>(std::move(leftNode), std::move(rightNode));

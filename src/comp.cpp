@@ -757,12 +757,12 @@ private:
     }
 
     bool inCmdStmt() const {    //FIXME: check lexer mode in error
-        return this->node && this->inCommand() && this->node->is(NodeKind::Cmd);
+        return this->node && this->inCommand() && isa<CmdNode>(*this->node);
     }
 
     bool requireSingleCmdArg() const {
         if(this->inTyping()) {
-            if(this->node->is(NodeKind::With)) {
+            if(isa<WithNode>(*this->node)) {
                 return true;
             }
         }
@@ -771,8 +771,8 @@ private:
 
     bool requireMod() const {
         if(this->inTyping()) {
-            if(this->node->is(NodeKind::Source)) {
-                return static_cast<const SourceNode&>(*this->node).getName().empty();
+            if(isa<SourceNode>(*this->node)) {
+                return cast<const SourceNode>(*this->node).getName().empty();
             }
         }
         return false;
@@ -858,7 +858,7 @@ std::vector<DSValue> CompleterFactory::resolveCmdTokens() const {
     auto *cmdNode = inCmdMode(*this->node);
     tokens.push_back(this->newStrObj(cmdNode->getNameNode().getToken()));
     for(auto &argNode : cmdNode->getArgNodes()) {
-        if(argNode->is(NodeKind::Redir)) {
+        if(isa<RedirNode>(*argNode)) {
             continue;
         }
         tokens.push_back(this->newStrObj(argNode->getToken()));
@@ -944,8 +944,8 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
             }
             break;
         case IDENTIFIER:
-            if(this->node->is(NodeKind::VarDecl)
-               && static_cast<const VarDeclNode&>(*this->node).getKind() == VarDeclNode::IMPORT_ENV) {
+            if(isa<VarDeclNode>(*this->node)
+               && cast<const VarDeclNode>(*this->node).getKind() == VarDeclNode::IMPORT_ENV) {
                 if(inTyping()) {
                     return this->createEnvNameCompleter(CompType::CUR);
                 }

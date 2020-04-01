@@ -226,7 +226,7 @@ std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError 
         return {nullptr, IN_MODULE};
     }
 
-    if(node->is(NodeKind::Source) && static_cast<SourceNode&>(*node).isFirstAppear()) {
+    if(isa<SourceNode>(*node) && cast<SourceNode>(*node).isFirstAppear()) {
         s = EXIT_MODULE;
     }
     return {std::move(node), s};
@@ -261,11 +261,11 @@ FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
         return Ok(IN_MODULE);
     }
 
-    if(!node->is(NodeKind::Source)) {
+    if(!isa<SourceNode>(*node)) {
         return Ok(IN_MODULE);
     }
 
-    auto &srcNode = static_cast<SourceNode&>(*node);
+    auto &srcNode = cast<SourceNode>(*node);
     bool optional = srcNode.isOptional();
     const char *modPath = srcNode.getPathStr().c_str();
     FilePtr filePtr;
@@ -291,7 +291,7 @@ FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
                     srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
         }
         this->enterModule(get<const char*>(ret), std::move(buf),
-                          std::unique_ptr<SourceNode>(static_cast<SourceNode *>(node.release())));
+                          std::unique_ptr<SourceNode>(cast<SourceNode>(node.release())));
         return Ok(ENTER_MODULE);
     } else if(is<ModType *>(ret)) {
         srcNode.setModType(*get<ModType *>(ret));

@@ -40,7 +40,7 @@ inline bool isa(const From *obj) {
 
 template <typename To, typename From, enable_when<std::is_base_of<From, To>::value> = nullptr>
 inline bool isa(const From &obj) {
-    return To::classof(obj);
+    return To::classof(&obj);
 }
 
 template <typename To, typename From, enable_when<std::is_base_of<From, To>::value> = nullptr>
