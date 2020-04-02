@@ -569,31 +569,31 @@ static bool isRedirOp(TokenKind kind) {
 static const CmdNode *inCmdMode(const Node &node) {
     switch(node.getNodeKind()) {
     case NodeKind::UnaryOp:
-        return inCmdMode(*static_cast<const UnaryOpNode &>(node).getExprNode());
+        return inCmdMode(*cast<const UnaryOpNode>(node).getExprNode());
     case NodeKind::BinaryOp:
-        return inCmdMode(*static_cast<const BinaryOpNode &>(node).getRightNode());
+        return inCmdMode(*cast<const BinaryOpNode>(node).getRightNode());
     case NodeKind::Cmd:
-        return static_cast<const CmdNode *>(&node);
+        return cast<const CmdNode>(&node);
     case NodeKind::Pipeline:
-        return inCmdMode(*static_cast<const PipelineNode &>(node).getNodes().back());
+        return inCmdMode(*cast<const PipelineNode>(node).getNodes().back());
     case NodeKind::Fork: {
-        auto &forkNode = static_cast<const ForkNode &>(node);
+        auto &forkNode = cast<const ForkNode>(node);
         return forkNode.getOpKind() == ForkKind::COPROC ? inCmdMode(forkNode.getExprNode()) : nullptr;
     }
     case NodeKind::Assert: {
-        auto &assertNode = static_cast<const AssertNode &>(node);
+        auto &assertNode = cast<const AssertNode>(node);
         return assertNode.getMessageNode()->getToken().size == 0 ? inCmdMode(*assertNode.getCondNode()) : nullptr;
     }
     case NodeKind::Jump: {
-        auto &jumpNode = static_cast<const JumpNode &>(node);
+        auto &jumpNode = cast<const JumpNode>(node);
         return jumpNode.getOpKind() != JumpNode::CONTINUE_ ? inCmdMode(jumpNode.getExprNode()) : nullptr;
     }
     case NodeKind::VarDecl: {
-        auto &vardeclNode = static_cast<const VarDeclNode &>(node);
+        auto &vardeclNode = cast<const VarDeclNode>(node);
         return vardeclNode.getExprNode() != nullptr ? inCmdMode(*vardeclNode.getExprNode()) : nullptr;
     }
     case NodeKind::Assign:
-        return inCmdMode(*static_cast<const AssignNode &>(node).getRightNode());
+        return inCmdMode(*cast<const AssignNode>(node).getRightNode());
     default:
         break;
     }

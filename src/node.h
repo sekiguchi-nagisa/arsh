@@ -797,17 +797,17 @@ public:
 
     const std::string &getMethodName() const {
         assert(this->isMethodCall());
-        return static_cast<AccessNode *>(this->exprNode)->getNameNode().getVarName();
+        return cast<AccessNode>(this->exprNode)->getNameNode().getVarName();
     }
 
     void setMethodName(std::string &&name) {
         assert(this->isIndexCall());
-        static_cast<AccessNode *>(this->exprNode)->getNameNode().setVarName(std::move(name));
+        cast<AccessNode>(this->exprNode)->getNameNode().setVarName(std::move(name));
     }
 
     Node *getRecvNode() const {
         assert(this->isMethodCall());
-        return &static_cast<AccessNode *>(this->exprNode)->getRecvNode();
+        return &cast<AccessNode>(this->exprNode)->getRecvNode();
     }
 
     Kind getKind() const {
@@ -840,7 +840,7 @@ public:
 
     static std::pair<Node *, Node *> split(ApplyNode *&node) {
         auto *first = node->getRecvNode();
-        static_cast<AccessNode *>(node->getExprNode())->setRecvNode(nullptr);
+        cast<AccessNode>(node->getExprNode())->setRecvNode(nullptr);
         auto *second = node->getArgNodes()[0];
         node->refArgNodes()[0] = nullptr;
         delete node;

@@ -57,10 +57,10 @@ void BreakGather::addJumpNode(JumpNode *node) {
 TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
     switch(node.typeKind) {
     case TypeNode::Base: {
-        return this->symbolTable.getType(static_cast<BaseTypeNode &>(node).getTokenText());
+        return this->symbolTable.getType(cast<BaseTypeNode>(node).getTokenText());
     }
     case TypeNode::Reified: {
-        auto &typeNode = static_cast<ReifiedTypeNode&>(node);
+        auto &typeNode = cast<ReifiedTypeNode>(node);
         unsigned int size = typeNode.getElementTypeNodes().size();
         auto tempOrError = this->symbolTable.getTypeTemplate(typeNode.getTemplate()->getTokenText());
         if(!tempOrError) {
@@ -74,7 +74,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         return this->symbolTable.createReifiedType(*typeTemplate, std::move(elementTypes));
     }
     case TypeNode::Func: {
-        auto &typeNode = static_cast<FuncTypeNode&>(node);
+        auto &typeNode = cast<FuncTypeNode>(node);
         auto &returnType = this->checkTypeExactly(*typeNode.getReturnTypeNode());
         unsigned int size = typeNode.getParamTypeNodes().size();
         std::vector<DSType *> paramTypes(size);
@@ -84,7 +84,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         return this->symbolTable.createFuncType(&returnType, std::move(paramTypes));
     }
     case TypeNode::Return: {
-        auto &typeNode = static_cast<ReturnTypeNode&>(node);
+        auto &typeNode = cast<ReturnTypeNode>(node);
         unsigned int size = typeNode.getTypeNodes().size();
         if(size == 1) {
             return Ok(&this->checkTypeExactly(*typeNode.getTypeNodes()[0]));
@@ -97,7 +97,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         return this->symbolTable.createTupleType(std::move(types));
     }
     case TypeNode::TypeOf:
-        auto &typeNode = static_cast<TypeOfNode&>(node);
+        auto &typeNode = cast<TypeOfNode>(node);
         auto &type = this->checkTypeAsSomeExpr(typeNode.getExprNode());
         return Ok(&type);
     }
@@ -179,7 +179,7 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
         blockType = &targetNode->getType();
 
         // check empty block
-        if(targetNode->is(NodeKind::Block) && static_cast<BlockNode *>(targetNode)->getNodes().empty()) {
+        if(isa<BlockNode>(targetNode) && cast<BlockNode>(targetNode)->getNodes().empty()) {
             RAISE_TC_ERROR(UselessBlock, *targetNode);
         }
     }
@@ -255,7 +255,7 @@ const FieldHandle *TypeChecker::addEntry(const Node &node, const std::string &sy
 HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
     auto &exprNode = *node.getExprNode();
     if(exprNode.is(NodeKind::Access) && !node.isFuncCall()) {
-        auto &accessNode = static_cast<AccessNode &>(exprNode);
+        auto &accessNode = cast<AccessNode>(exprNode);
         if(!this->checkAccessNode(accessNode)) {
             auto &recvType = accessNode.getRecvNode().getType();
             auto *handle = this->symbolTable.lookupMethod(recvType, accessNode.getFieldName());
@@ -270,7 +270,7 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
 
     node.setKind(ApplyNode::FUNC_CALL);
     if(exprNode.is(NodeKind::Var)) {
-        return this->resolveCallee(static_cast<VarNode &>(exprNode));
+        return this->resolveCallee(cast<VarNode>(exprNode));
     }
 
     auto &type = this->checkType(this->symbolTable.get(TYPE::Func), exprNode);
@@ -811,7 +811,7 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
 
         this->inScope([&]{
             if(node.getInitNode()->is(NodeKind::VarDecl)) {
-                bool b = this->symbolTable.disallowShadowing(static_cast<VarDeclNode *>(node.getInitNode())->getVarName());
+                bool b = this->symbolTable.disallowShadowing(cast<VarDeclNode>(node.getInitNode())->getVarName());
                 (void) b;
                 assert(b);
             }
@@ -866,7 +866,7 @@ bool TypeChecker::IntPatternMap::collect(const Node &constNode) {
     if(constNode.getNodeKind() != NodeKind::Number) {
         return false;
     }
-    int64_t value = static_cast<const NumberNode&>(constNode).getIntValue();
+    int64_t value = cast<const NumberNode>(constNode).getIntValue();
     auto pair = this->set.insert(value);
     return pair.second;
 }
@@ -875,7 +875,7 @@ bool TypeChecker::StrPatternMap::collect(const Node &constNode) {
     if(constNode.getNodeKind() != NodeKind::String) {
         return false;
     }
-    const char *str = static_cast<const StringNode&>(constNode).getValue().c_str();
+    const char *str = cast<const StringNode>(constNode).getValue().c_str();
     auto pair = this->set.insert(str);
     return pair.second;
 }
@@ -1015,12 +1015,12 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
         return true;
     case NodeKind::UnaryOp: {
         Token token = node->getToken();
-        assert(static_cast<UnaryOpNode*>(node)->getOp() == MINUS);
-        auto *applyNode = static_cast<UnaryOpNode*>(node)->refApplyNode();
+        assert(cast<UnaryOpNode>(node)->getOp() == MINUS);
+        auto *applyNode = cast<UnaryOpNode>(node)->refApplyNode();
         assert(applyNode->getExprNode()->is(NodeKind::Access));
-        auto *accessNode = static_cast<AccessNode*>(applyNode->getExprNode());
+        auto *accessNode = cast<AccessNode>(applyNode->getExprNode());
         assert(accessNode->getRecvNode().is(NodeKind::Number));
-        auto &numNode = static_cast<NumberNode&>(accessNode->getRecvNode());
+        auto &numNode = cast<NumberNode>(accessNode->getRecvNode());
 
         if(node->getType().is(TYPE::Int)) {
             int64_t value = numNode.getIntValue();
@@ -1033,9 +1033,9 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
         break;
     }
     case NodeKind::StringExpr: {
-        auto *exprNode = static_cast<StringExprNode *>(node);
+        auto *exprNode = cast<StringExprNode>(node);
         if(exprNode->getExprNodes().size() == 1 && exprNode->getExprNodes()[0]->is(NodeKind::String)) {
-            auto *strNode = static_cast<StringNode*>(exprNode->refExprNodes()[0].release());
+            auto *strNode = cast<StringNode>(exprNode->refExprNodes()[0].release());
             delete exprNode;
             node = strNode;
             return true;
@@ -1141,7 +1141,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
         RAISE_TC_ERROR(MeaninglessTry, node);
     }
     assert(node.getExprNode()->is(NodeKind::Block));
-    if(static_cast<BlockNode*>(node.getExprNode())->getNodes().empty()) {
+    if(cast<BlockNode>(node.getExprNode())->getNodes().empty()) {
         RAISE_TC_ERROR(EmptyTry, *node.getExprNode());
     }
 
@@ -1237,10 +1237,10 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
     }
     if(node.isSelfAssignment()) {
         assert(node.getRightNode()->is(NodeKind::BinaryOp));
-        auto *opNode = static_cast<BinaryOpNode *>(node.getRightNode());
+        auto *opNode = cast<BinaryOpNode>(node.getRightNode());
         opNode->getLeftNode()->setType(leftType);
-        if(leftNode->is(NodeKind::Access)) {
-            static_cast<AccessNode *>(leftNode)->setAdditionalOp(AccessNode::DUP_RECV);
+        if(isa<AccessNode>(leftNode)) {
+            cast<AccessNode>(leftNode)->setAdditionalOp(AccessNode::DUP_RECV);
         }
         auto &rightType = this->checkTypeAsExpr(*node.getRightNode());
         if(leftType != rightType) { // convert right hand-side type to left type
@@ -1261,7 +1261,7 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
     node.setIndexType(indexType);
 
     auto &elementType = this->checkTypeAsExpr(*node.getGetterNode());
-    static_cast<BinaryOpNode *>(node.getRightNode())->getLeftNode()->setType(elementType);
+    cast<BinaryOpNode>(node.getRightNode())->getLeftNode()->setType(elementType);
 
     // convert right hand-side type to element type
     auto &rightType = this->checkTypeAsExpr(*node.getRightNode());
@@ -1446,7 +1446,7 @@ static bool mayBeCmd(const Node &node) {
         return true;
     }
     if(node.is(NodeKind::Pipeline)) {
-        if(static_cast<const PipelineNode&>(node).getNodes().back()->is(NodeKind::Cmd)) {
+        if(cast<const PipelineNode>(node).getNodes().back()->is(NodeKind::Cmd)) {
             return true;
         }
     }
@@ -1469,7 +1469,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
     }
 
     // check empty block
-    if(node->is(NodeKind::Block) && static_cast<BlockNode *>(node)->getNodes().empty()) {
+    if(isa<BlockNode>(node) && cast<BlockNode>(node)->getNodes().empty()) {
         RAISE_TC_ERROR(UselessBlock, *node);
     }
 

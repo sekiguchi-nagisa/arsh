@@ -74,7 +74,7 @@ namespace ydsh {
 
 void Node::accept(NodeVisitor &visitor) {
     switch(this->nodeKind) {
-#define DISPATCH(K) case NodeKind::K: visitor.visit ## K ## Node(*static_cast<K ## Node *>(this)); break;
+#define DISPATCH(K) case NodeKind::K: visitor.visit ## K ## Node(*cast<K ## Node>(this)); break;
     EACH_NODE_KIND(DISPATCH)
 #undef DISPATCH
     }
@@ -906,7 +906,7 @@ ElementSelfAssignNode::ElementSelfAssignNode(ApplyNode *leftNode, BinaryOpNode *
 
     // init recv, indexNode
     assert(leftNode->isIndexCall());
-    auto opToken = static_cast<AccessNode *>(leftNode->getExprNode())->getNameNode().getToken();
+    auto opToken = cast<AccessNode>(leftNode->getExprNode())->getNameNode().getToken();
     auto pair = ApplyNode::split(leftNode);
     this->recvNode = pair.first;
     this->indexNode = pair.second;
