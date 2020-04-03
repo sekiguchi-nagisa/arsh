@@ -214,11 +214,11 @@ public:
     // for field access
     void storeField(unsigned int index) {
         auto value = this->pop();
-        (*typeAs<BaseObject>(this->pop()))[index] = std::move(value);
+        typeAs<BaseObject>(this->pop())[index] = std::move(value);
     }
 
     void loadField(unsigned int index) {
-        auto value = (*typeAs<BaseObject>(this->pop()))[index];
+        auto value = typeAs<BaseObject>(this->pop())[index];
         this->push(std::move(value));
     }
 

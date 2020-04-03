@@ -58,7 +58,7 @@ RedirObject::~RedirObject() {
     // set close-on-exec flag to fds
     for(auto &e : this->ops) {
         if(isPassingFD(e) && e.second.get()->getRefcount() > 1) {
-            typeAs<UnixFdObject>(e.second)->closeOnExec(true);
+            typeAs<UnixFdObject>(e.second).closeOnExec(true);
         }
     }
 }
@@ -122,7 +122,7 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
         fclose(fp);
     } else {
         assert(fileName.hasType(TYPE::UnixFD));
-        int fd = typeAs<UnixFdObject>(fileName)->getValue();
+        int fd = typeAs<UnixFdObject>(fileName).getValue();
         if(strchr(mode, 'a') != nullptr) {
             if(lseek(fd, 0, SEEK_END) == -1) {
                 return errno;
@@ -180,7 +180,7 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
 void RedirObject::passFDToExtProc() {
     for(auto &e : this->ops) {
         if(isPassingFD(e)) {
-            typeAs<UnixFdObject>(e.second)->closeOnExec(false);
+            typeAs<UnixFdObject>(e.second).closeOnExec(false);
         }
     }
 }
@@ -200,7 +200,7 @@ bool RedirObject::redirect(DSState &st) {
                     }
                 } else if(pair.second.hasType(TYPE::UnixFD)) {
                     msg += ": ";
-                    msg += std::to_string(typeAs<UnixFdObject>(pair.second)->getValue());
+                    msg += std::to_string(typeAs<UnixFdObject>(pair.second).getValue());
                 }
             }
             raiseSystemError(st, r, std::move(msg));

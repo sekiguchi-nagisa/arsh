@@ -850,7 +850,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
     auto mergeLabel = makeLabel();
     auto elseLabel = makeLabel();
     auto value = DSValue::create<MapObject>(this->symbolTable.get(TYPE::Void));
-    auto map = typeAs<MapObject>(value);
+    auto &map = typeAs<MapObject>(value);
 
     this->emitLdcIns(value);
     this->visit(*node.getExprNode());
@@ -871,7 +871,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
         if(armNode->isDefault()) {
             this->markLabel(elseLabel);
         } else {
-            this->generateCaseLabels(*armNode, *map);
+            this->generateCaseLabels(*armNode, map);
         }
         this->visit(*armNode);
         prevType = &armNode->getType();

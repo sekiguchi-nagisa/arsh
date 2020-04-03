@@ -529,7 +529,7 @@ public:
 };
 
 template <typename T>
-inline T *typeAs(const DSValue &value) noexcept {
+inline T &typeAs(const DSValue &value) noexcept {
     static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
 
 #ifdef USE_SAFE_CAST
@@ -551,9 +551,9 @@ inline T *typeAs(const DSValue &value) noexcept {
 
             fatal("target type is: %s, but actual is: %s\n", target, actual);
         }
-        return r;
+        return *r;
     }
-    return cast<T>(value.get());
+    return cast<T>(*value.get());
 }
 
 inline bool concatAsStr(DSValue &left, const DSValue &right, bool selfConcat) {

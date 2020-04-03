@@ -960,7 +960,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
 
     // clear old variable before read
     state.setGlobal(toIndex(BuiltinVarOffset::REPLY), DSValue::createStr());    // clear REPLY
-    typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR))->clear();      // clear reply
+    typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR)).clear();      // clear reply
 
 
     const unsigned int varSize = argc - index;  // if zero, store line to REPLY
@@ -1012,10 +1012,10 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
         }
         skipCount = 0;
         if(fieldSep && index < argc - 1) {
-            auto obj = typeAs<MapObject>(state.getGlobal(varIndex));
+            auto &obj = typeAs<MapObject>(state.getGlobal(varIndex));
             auto varObj = argvObj.getValues()[index];
             auto valueObj = DSValue::createStr(std::move(strBuf));
-            obj->set(std::move(varObj), std::move(valueObj));
+            obj.set(std::move(varObj), std::move(valueObj));
             strBuf = "";
             index++;
             skipCount = isSpace(ch) ? 2 : 1;
@@ -1048,10 +1048,10 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
 
     // set rest variable
     for(; index < argc; index++) {
-        auto obj = typeAs<MapObject>(state.getGlobal(varIndex));
+        auto &obj = typeAs<MapObject>(state.getGlobal(varIndex));
         auto varObj = argvObj.getValues()[index];
         auto valueObj = DSValue::createStr(std::move(strBuf));
-        obj->set(std::move(varObj), std::move(valueObj));
+        obj.set(std::move(varObj), std::move(valueObj));
         strBuf = "";
     }
 
@@ -1125,8 +1125,8 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
 
     auto strRef = argvObj.getValues()[1].asStrRef();
     completeLine(state, strRef.data(), strRef.size());
-    auto *ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
-    for(const auto &e : ret->getValues()) {
+    auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
+    for(const auto &e : ret.getValues()) {
         fputs(str(e), stdout);
         fputc('\n', stdout);
     }

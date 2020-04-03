@@ -544,7 +544,7 @@ public:
             return;
         }
 
-        for(auto &e : typeAs<ArrayObject>(result)->getValues()) {
+        for(auto &e : typeAs<ArrayObject>(result).getValues()) {
             append(ret, str(e), EscapeOp::COMMAND_ARG);
         }
     }
@@ -1026,7 +1026,7 @@ void completeLine(DSState &st, const char *data, unsigned int size) {
     auto comp = factory();
     if(comp) {
         auto result = DSValue::create<ArrayObject>(st.symbolTable.get(TYPE::StringArray));
-        auto &compreply = *typeAs<ArrayObject>(result);
+        auto &compreply = typeAs<ArrayObject>(result);
 
         (*comp)(compreply);
         auto &values = compreply.refValues();

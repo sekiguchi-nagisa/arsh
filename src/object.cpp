@@ -49,8 +49,8 @@ StringRef DSValue::asStrRef() const {
     if(isSmallStr(this->kind())) {
         return StringRef(this->str.value, smallStrSize(this->kind()));
     }
-    auto *obj = typeAs<StringObject>(*this);
-    return StringRef(obj->getValue(), obj->size());
+    auto &obj = typeAs<StringObject>(*this);
+    return StringRef(obj.getValue(), obj.size());
 }
 
 std::string DSValue::toString() const {
@@ -76,20 +76,20 @@ std::string DSValue::toString() const {
     switch(this->get()->getKind()) {
     case DSObject::UnixFd: {
         std::string str = "/dev/fd/";
-        str += std::to_string(typeAs<UnixFdObject>(*this)->getValue());
+        str += std::to_string(typeAs<UnixFdObject>(*this).getValue());
         return str;
     }
     case DSObject::Regex:
-        return typeAs<RegexObject>(*this)->getStr();
+        return typeAs<RegexObject>(*this).getStr();
     case DSObject::Array:
-        return typeAs<ArrayObject>(*this)->toString();
+        return typeAs<ArrayObject>(*this).toString();
     case DSObject::Map:
-        return typeAs<MapObject>(*this)->toString();
+        return typeAs<MapObject>(*this).toString();
     case DSObject::Func:
-        return typeAs<FuncObject>(*this)->toString();
+        return typeAs<FuncObject>(*this).toString();
     case DSObject::JobImpl: {
         std::string str = "%";
-        str += std::to_string(typeAs<JobImplObject>(*this)->getJobID());
+        str += std::to_string(typeAs<JobImplObject>(*this).getJobID());
         return str;
     }
     default:
@@ -104,18 +104,18 @@ bool DSValue::opStr(DSState &state) const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
         case DSObject::Array:
-            return typeAs<ArrayObject>(*this)->opStr(state);
+            return typeAs<ArrayObject>(*this).opStr(state);
         case DSObject::Map:
-            return typeAs<MapObject>(*this)->opStr(state);
+            return typeAs<MapObject>(*this).opStr(state);
         case DSObject::Base: {
             auto &type = state.symbolTable.get(this->getTypeID());
             if(state.symbolTable.getTypePool().isTupleType(type)) {
-                return typeAs<BaseObject>(*this)->opStrAsTuple(state);
+                return typeAs<BaseObject>(*this).opStrAsTuple(state);
             }
             break;
         }
         case DSObject::Error:
-            return typeAs<ErrorObject>(*this)->opStr(state);
+            return typeAs<ErrorObject>(*this).opStr(state);
         default:
             break;
         }
@@ -128,11 +128,11 @@ bool DSValue::opInterp(DSState &state) const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
         case DSObject::Array:
-            return typeAs<ArrayObject>(*this)->opInterp(state);
+            return typeAs<ArrayObject>(*this).opInterp(state);
         case DSObject::Base: {
             auto &type = state.symbolTable.get(this->getTypeID());
             if(state.symbolTable.getTypePool().isTupleType(type)) {
-                return typeAs<BaseObject>(*this)->opInterpAsTuple(state);
+                return typeAs<BaseObject>(*this).opInterpAsTuple(state);
             }
             break;
         }
@@ -223,7 +223,7 @@ bool DSValue::appendAsStr(StringRef value) {
     assert(this->hasStrRef());
 
     const bool small = isSmallStr(this->kind());
-    const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this)->size();
+    const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this).size();
     if(size > StringObject::MAX_SIZE - value.size()) {
         return false;
     }
@@ -238,7 +238,7 @@ bool DSValue::appendAsStr(StringRef value) {
         }
         (*this) = DSValue::create<StringObject>(StringRef(this->str.value, size));
     }
-    typeAs<StringObject>(*this)->append(value);
+    typeAs<StringObject>(*this).append(value);
     return true;
 }
 
@@ -370,8 +370,8 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
         result.push_back(std::move(ret));
     } else {
         assert(ret.hasType(TYPE::StringArray));
-        auto *tempArray = typeAs<ArrayObject>(ret);
-        for(auto &tempValue : tempArray->getValues()) {
+        auto &tempArray = typeAs<ArrayObject>(ret);
+        for(auto &tempValue : tempArray.getValues()) {
             result.push_back(tempValue);
         }
     }
@@ -381,7 +381,7 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
 DSValue ArrayObject::opCmdArg(DSState &state) const {
     auto result = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
     for(auto &e : this->values) {
-        if(!appendAsCmdArg(typeAs<ArrayObject>(result)->values, state, e)) {
+        if(!appendAsCmdArg(typeAs<ArrayObject>(result).values, state, e)) {
             return DSValue();
         }
     }
@@ -399,8 +399,8 @@ DSValue MapObject::nextElement(DSState &ctx) {
     types[1] = &ctx.symbolTable.get(this->iter->second.getTypeID());
 
     auto entry = DSValue::create<BaseObject>(*ctx.symbolTable.createTupleType(std::move(types)).take());
-    (*typeAs<BaseObject>(entry))[0] = this->iter->first;
-    (*typeAs<BaseObject>(entry))[1] = this->iter->second;
+    typeAs<BaseObject>(entry)[0] = this->iter->first;
+    typeAs<BaseObject>(entry)[1] = this->iter->second;
     ++this->iter;
 
     return entry;
@@ -504,7 +504,7 @@ DSValue BaseObject::opCmdArgAsTuple(DSState &state) const {
     auto result = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
-        if(!appendAsCmdArg(typeAs<ArrayObject>(result)->refValues(), state, this->fieldTable[i])) {
+        if(!appendAsCmdArg(typeAs<ArrayObject>(result).refValues(), state, this->fieldTable[i])) {
             return DSValue();
         }
     }

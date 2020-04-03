@@ -539,7 +539,7 @@ int xexecve(const char *filePath, char *const *argv, char *const *envp, DSValue 
     });
 
     if(redir) {
-        typeAs<RedirObject>(redir)->passFDToExtProc();
+        typeAs<RedirObject>(redir).passFDToExtProc();
     }
 
     // execute external command

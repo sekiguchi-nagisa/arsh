@@ -58,15 +58,15 @@ DSState::DSState() :
 
 
 void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
-    auto *obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
-    obj->refValues().clear();
-    obj->refValues().reserve(size + (mergeExitStatus ? 1 : 0));
+    auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
+    obj.refValues().clear();
+    obj.refValues().reserve(size + (mergeExitStatus ? 1 : 0));
 
     for(unsigned int i = 0; i < size; i++) {
-        obj->refValues().push_back(DSValue::createInt(procs[i].exitStatus()));
+        obj.refValues().push_back(DSValue::createInt(procs[i].exitStatus()));
     }
     if(mergeExitStatus) {
-        obj->refValues().push_back(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
+        obj.refValues().push_back(this->getGlobal(BuiltinVarOffset::EXIT_STATUS));
     }
 }
 
@@ -136,9 +136,9 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSVal
     }
 
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
-        auto argv = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
-        auto cmdName = argv->takeFirst();
-        const unsigned int argSize = argv->getValues().size();
+        auto &argv = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
+        auto cmdName = argv.takeFirst();
+        const unsigned int argSize = argv.getValues().size();
         state.stack.setLocal(UDC_PARAM_ARGV + 1, DSValue::createInt(argSize));   // #
         state.stack.setLocal(UDC_PARAM_ARGV + 2, std::move(cmdName)); // 0
         unsigned int limit = 9;
@@ -148,7 +148,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSVal
 
         unsigned int index = 0;
         for(; index < limit; index++) {
-            state.stack.setLocal(index + UDC_PARAM_ARGV + 3, argv->getValues()[index]);
+            state.stack.setLocal(index + UDC_PARAM_ARGV + 3, argv.getValues()[index]);
         }
 
         for(; index < 9; index++) {
@@ -193,7 +193,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
     char buf[256];
     std::string str;
     auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
-    auto *array = typeAs<ArrayObject>(obj);
+    auto &array = typeAs<ArrayObject>(obj);
 
     while(true) {
         int readSize = read(fd, buf, arraySize(buf));
@@ -217,7 +217,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
             }
             skipCount = 0;
             if(fieldSep) {
-                array->append(DSValue::createStr(std::move(str)));
+                array.append(DSValue::createStr(std::move(str)));
                 str = "";
                 skipCount = isSpace(ch) ? 2 : 1;
                 continue;
@@ -231,7 +231,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
     // append remain
     if(!str.empty() || !hasSpace(ifsSize, ifs)) {
-        array->append(DSValue::createStr(std::move(str)));
+        array.append(DSValue::createStr(std::move(str)));
     }
 
     return obj;
@@ -244,7 +244,7 @@ static DSValue newFD(const DSState &st, int &fd) {
     int v = fd;
     fd = -1;
     auto value = DSValue::create<UnixFdObject>(v);
-    typeAs<UnixFdObject>(value)->closeOnExec(true);
+    typeAs<UnixFdObject>(value).closeOnExec(true);
     return value;
 }
 
@@ -346,7 +346,7 @@ static NativeCode initCode(OpCode op) {
 static const DSCode *lookupUdc(const DSState &state, const char *name) {
     auto handle = state.symbolTable.lookupUdc(name);
     auto *udcObj = handle != nullptr ?
-            &typeAs<FuncObject>(state.getGlobal(handle->getIndex()))->getCode() : nullptr;
+            &typeAs<FuncObject>(state.getGlobal(handle->getIndex())).getCode() : nullptr;
     return udcObj;
 }
 
@@ -482,8 +482,8 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
 }
 
 bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr) {
-    auto *array = typeAs<ArrayObject>(argvObj);
-    auto cmd = resolver(state, str(array->getValues()[0]));
+    auto &array = typeAs<ArrayObject>(argvObj);
+    auto cmd = resolver(state, str(array.getValues()[0]));
 
     switch(cmd.kind) {
     case Command::USER_DEFINED:
@@ -494,7 +494,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
         return prepareUserDefinedCommandCall(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
     }
     case Command::BUILTIN: {
-        int status = cmd.builtinCmd(state, *array);
+        int status = cmd.builtinCmd(state, array);
         flushStdFD();
         if(state.hasError()) {
             return false;
@@ -504,10 +504,10 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
     }
     case Command::EXTERNAL: {
         // create argv
-        const unsigned int size = array->getValues().size();
+        const unsigned int size = array.getValues().size();
         char *argv[size + 1];
         for(unsigned int i = 0; i < size; i++) {
-            argv[i] = const_cast<char *>(str(array->getValues()[i]));
+            argv[i] = const_cast<char *>(str(array.getValues()[i]));
         }
         argv[size] = nullptr;
 
@@ -528,7 +528,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
 int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
 
 bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
-    auto &arrayObj = *typeAs<ArrayObject>(argvObj);
+    auto &arrayObj = typeAs<ArrayObject>(argvObj);
 
     bool useDefaultPath = false;
 
@@ -624,13 +624,13 @@ bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, 
 }
 
 void VM::callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
-    auto &argvObj = *typeAs<ArrayObject>(array);
+    auto &argvObj = typeAs<ArrayObject>(array);
     bool clearEnv = false;
     const char *progName = nullptr;
     GetOptState optState;
 
     if(redir) {
-        typeAs<RedirObject>(redir)->ignoreBackup();
+        typeAs<RedirObject>(redir).ignoreBackup();
     }
 
     for(int opt; (opt = optState(argvObj, "ca:")) != -1;) {
@@ -778,12 +778,12 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
     DSValue value = state.stack.pop();
     auto &valueType = state.symbolTable.get(value.getTypeID());
 
-    auto *argv = typeAs<ArrayObject>(state.stack.peekByOffset(1));
+    auto &argv = typeAs<ArrayObject>(state.stack.peekByOffset(1));
     if(valueType.is(TYPE::String)) {  // String
         if(skipEmptyStr && value.asStrRef().empty()) {
             return;
         }
-        argv->append(std::move(value));
+        argv.append(std::move(value));
         return;
     }
 
@@ -793,18 +793,18 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
             state.stack.push(DSValue::create<RedirObject>());
         }
         auto strObj = DSValue::createStr(value.toString());
-        typeAs<RedirObject>(state.stack.peek())->addRedirOp(RedirOP::NOP, std::move(value));
-        argv->append(std::move(strObj));
+        typeAs<RedirObject>(state.stack.peek()).addRedirOp(RedirOP::NOP, std::move(value));
+        argv.append(std::move(strObj));
         return;
     }
 
     assert(valueType.is(TYPE::StringArray));  // Array<String>
-    auto *arrayObj = typeAs<ArrayObject>(value);
-    for(auto &element : arrayObj->getValues()) {
+    auto &arrayObj = typeAs<ArrayObject>(value);
+    for(auto &element : arrayObj.getValues()) {
         if(element.asStrRef().empty()) {
             continue;
         }
-        argv->append(element);
+        argv.append(element);
     }
 }
 
@@ -1059,7 +1059,7 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(APPEND_ARRAY) {
             DSValue v = state.stack.pop();
-            typeAs<ArrayObject>(state.stack.peek())->append(std::move(v));
+            typeAs<ArrayObject>(state.stack.peek()).append(std::move(v));
             vmnext;
         }
         vmcase(NEW_MAP) {
@@ -1071,7 +1071,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(APPEND_MAP) {
             DSValue value = state.stack.pop();
             DSValue key = state.stack.pop();
-            typeAs<MapObject>(state.stack.peek())->set(std::move(key), std::move(value));
+            typeAs<MapObject>(state.stack.peek()).set(std::move(key), std::move(value));
             vmnext;
         }
         vmcase(NEW_TUPLE) {
@@ -1126,7 +1126,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(INIT_MODULE) {
-            auto &code = typeAs<FuncObject>(state.stack.peek())->getCode();
+            auto &code = typeAs<FuncObject>(state.stack.peek()).getCode();
             windStackFrame(state, 0, 0, &code);
             vmnext;
         }
@@ -1201,7 +1201,7 @@ bool VM::mainLoop(DSState &state) {
             auto key = state.stack.pop();
             auto map = state.stack.pop();
             if(!key.isInvalid()) {
-                auto &valueMap = typeAs<MapObject>(map)->getValueMap();
+                auto &valueMap = typeAs<MapObject>(map).getValueMap();
                 auto iter = valueMap.find(key);
                 if(iter != valueMap.end()) {
                     assert(iter->second.kind() == DSValueKind::NUMBER);
@@ -1254,8 +1254,8 @@ bool VM::mainLoop(DSState &state) {
         vmcase(NEW_CMD) {
             auto v = state.stack.pop();
             auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
-            auto *argv = typeAs<ArrayObject>(obj);
-            argv->append(std::move(v));
+            auto &argv = typeAs<ArrayObject>(obj);
+            argv.append(std::move(v));
             state.stack.push(std::move(obj));
             vmnext;
         }
@@ -1292,9 +1292,9 @@ bool VM::mainLoop(DSState &state) {
             DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
             DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
 
-            typeAs<ArrayObject>(argv)->takeFirst();
-            auto *array = typeAs<ArrayObject>(argv);
-            if(!array->getValues().empty()) {
+            typeAs<ArrayObject>(argv).takeFirst();
+            auto &array = typeAs<ArrayObject>(argv);
+            if(!array.getValues().empty()) {
                 TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
             } else {
                 pushExitStatus(state, 0);
@@ -1314,11 +1314,11 @@ bool VM::mainLoop(DSState &state) {
         vmcase(ADD_REDIR_OP) {
             unsigned char v = read8(GET_CODE(state), ++state.stack.pc());
             auto value = state.stack.pop();
-            typeAs<RedirObject>(state.stack.peek())->addRedirOp(static_cast<RedirOP>(v), std::move(value));
+            typeAs<RedirObject>(state.stack.peek()).addRedirOp(static_cast<RedirOP>(v), std::move(value));
             vmnext;
         }
         vmcase(DO_REDIR) {
-            TRY(typeAs<RedirObject>(state.stack.peek())->redirect(state));
+            TRY(typeAs<RedirObject>(state.stack.peek()).redirect(state));
             vmnext;
         }
         vmcase(RAND) {
@@ -1610,9 +1610,9 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
     unsigned int errorLineNum = 0;
     std::string sourceName;
     if(state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
-        auto *obj = typeAs<ErrorObject>(except);
-        errorLineNum = getOccurredLineNum(obj->getStackTrace());
-        const char *ptr = getOccurredSourceName(obj->getStackTrace());
+        auto &obj = typeAs<ErrorObject>(except);
+        errorLineNum = getOccurredLineNum(obj.getStackTrace());
+        const char *ptr = getOccurredSourceName(obj.getStackTrace());
         sourceName = ptr;
     }
 
@@ -1633,7 +1633,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
             fputc('\n', stderr);
         }
     } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state.option, DS_OPTION_TRACE_EXIT)) {
-        typeAs<ErrorObject>(except)->printStackTrace(state);
+        typeAs<ErrorObject>(except).printStackTrace(state);
     }
     fflush(stderr);
     state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));

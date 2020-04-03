@@ -433,10 +433,10 @@ void DSState_setShellName(DSState *st, const char *shellName) {
 
 // set positional parameters
 static void finalizeScriptArg(DSState *st) {
-    auto *array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
+    auto &array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
 
     // update argument size
-    const unsigned int size = array->getValues().size();
+    const unsigned int size = array.getValues().size();
     st->setGlobal(BuiltinVarOffset::ARGS_SIZE, DSValue::createInt(size));
 
     unsigned int limit = 9;
@@ -448,7 +448,7 @@ static void finalizeScriptArg(DSState *st) {
     unsigned int index = 0;
     for(; index < limit; index++) {
         unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
-        st->setGlobal(i, array->getValues()[index]);
+        st->setGlobal(i, array.getValues()[index]);
     }
 
     if(index < 9) {
@@ -465,11 +465,11 @@ void DSState_setArguments(DSState *st, char *const *args) {
     }
 
     // clear previous arguments
-    typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS))->refValues().clear();
+    typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS)).refValues().clear();
 
     for(unsigned int i = 0; args[i] != nullptr; i++) {
-        auto *array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
-        array->append(DSValue::createStr(args[i]));
+        auto &array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
+        array.append(DSValue::createStr(args[i]));
     }
     finalizeScriptArg(st);
 }
@@ -679,7 +679,7 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
         return 0;
     }
 
-    auto *compreply = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::COMPREPLY));
+    auto &compreply = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::COMPREPLY));
 
     switch(op) {
     case DS_COMP_INVOKE: {
@@ -697,14 +697,14 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
             break;
         }
         *value = nullptr;
-        if(index < compreply->getValues().size()) {
-            *value = compreply->getValues()[index].asStrRef().data();
+        if(index < compreply.getValues().size()) {
+            *value = compreply.getValues()[index].asStrRef().data();
         }
         break;
     case DS_COMP_SIZE:
-        return compreply->getValues().size();
+        return compreply.getValues().size();
     case DS_COMP_CLEAR:
-        compreply->refValues().clear();
+        compreply.refValues().clear();
         break;
     }
     return 0;

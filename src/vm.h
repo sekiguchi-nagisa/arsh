@@ -294,8 +294,8 @@ private:
      *                       | offset |   |        |
      */
     static bool prepareFuncCall(DSState &state, unsigned int paramSize) {
-        auto *func = typeAs<FuncObject>(state.stack.peekByOffset(paramSize));
-        return windStackFrame(state, paramSize + 1, paramSize, &func->getCode());
+        auto &func = typeAs<FuncObject>(state.stack.peekByOffset(paramSize));
+        return windStackFrame(state, paramSize + 1, paramSize, &func.getCode());
     }
 
     /**

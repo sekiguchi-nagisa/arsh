@@ -240,8 +240,8 @@ int JobImplObject::wait(Proc::WaitOp op) {
         this->running = false;
     }
     if(!this->available()) {
-        typeAs<UnixFdObject>(this->inObj)->tryToClose(false);
-        typeAs<UnixFdObject>(this->outObj)->tryToClose(false);
+        typeAs<UnixFdObject>(this->inObj).tryToClose(false);
+        typeAs<UnixFdObject>(this->outObj).tryToClose(false);
     }
     return lastStatus;
 }
