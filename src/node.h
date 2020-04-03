@@ -129,14 +129,14 @@ public:
         return this->token.size;
     }
 
-    void updateToken(Token token) {
-        if(token.pos > this->token.pos) {
-            this->token.size = token.pos + token.size - this->token.pos;
+    void updateToken(Token t) {
+        if(t.pos > this->token.pos) {
+            this->token.size = t.pos + t.size - this->token.pos;
         }
     }
 
-    void setType(const DSType &type) {
-        this->type = &type;
+    void setType(const DSType &t) {
+        this->type = &t;
     }
 
     /**

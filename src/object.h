@@ -740,20 +740,20 @@ public:
     }
 
     bool trySwap(const DSValue &key, DSValue &value) {
-        auto iter = this->valueMap.find(key);
-        if(iter != this->valueMap.end()) {
-            std::swap(iter->second, value);
+        auto ret = this->valueMap.find(key);
+        if(ret != this->valueMap.end()) {
+            std::swap(ret->second, value);
             return true;
         }
         return false;
     }
 
     bool remove(const DSValue &key) {
-        auto iter = this->valueMap.find(key);
-        if(iter == this->valueMap.end()) {
+        auto ret = this->valueMap.find(key);
+        if(ret == this->valueMap.end()) {
             return false;
         }
-        this->iter = this->valueMap.erase(iter);
+        this->iter = this->valueMap.erase(ret);
         return true;
     }
 
