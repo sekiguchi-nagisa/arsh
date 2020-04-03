@@ -1364,7 +1364,6 @@ YDSH_METHOD array_empty(RuntimeContext &ctx) {
 YDSH_METHOD array_clear(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_clear);
     auto *obj = typeAs<ArrayObject>(LOCAL(0));
-    obj->initIterator();
     obj->refValues().clear();
     RET_VOID;
 }
@@ -1372,25 +1371,46 @@ YDSH_METHOD array_clear(RuntimeContext &ctx) {
 //!bind: function $OP_ITER($this : Array<T0>) : Array<T0>
 YDSH_METHOD array_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_iter);
-    typeAs<ArrayObject>(LOCAL(0))->initIterator();
-    RET(LOCAL(0));
+
+    /**
+     * record ArrayIter<T0> {
+     *      var ref : Array<T0>
+     *      var index : Int
+     * }
+     *
+     */
+    auto &type = ctx.symbolTable.get(LOCAL(0).getTypeID()); //FIXME: object layout and type is mismatched
+    auto value = DSValue::create<BaseObject>(type, 2);
+    auto &obj = *typeAs<BaseObject>(value);
+    obj[0] = LOCAL(0);
+    obj[1] = DSValue::createInt(0);
+    RET(value);
 }
 
 //!bind: function $OP_NEXT($this : Array<T0>) : T0
 YDSH_METHOD array_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_next);
-    auto *obj = typeAs<ArrayObject>(LOCAL(0));
-    if(!obj->hasNext()) {
+    auto &iterObj = *typeAs<BaseObject>(LOCAL(0));
+    auto &obj = *typeAs<ArrayObject>(iterObj[0]);
+    assert(iterObj[1].asInt() > -1);
+    size_t index = iterObj[1].asInt();
+    if(index >= obj.size()) {
         raiseOutOfRangeError(ctx, std::string("array iterator has already reached end"));
         RET_ERROR;
     }
-    RET(obj->nextElement());
+    auto value = obj.getValues()[index++];
+    iterObj[1] = DSValue::createInt(index);
+    RET(value);
 }
 
 //!bind: function $OP_HAS_NEXT($this : Array<T0>) : Boolean
 YDSH_METHOD array_hasNext(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_hasNext);
-    RET_BOOL(typeAs<ArrayObject>(LOCAL(0))->hasNext());
+    auto &iterObj = *typeAs<BaseObject>(LOCAL(0));
+    auto &obj = *typeAs<ArrayObject>(iterObj[0]);
+    assert(iterObj[1].asInt() > -1);
+    size_t index = iterObj[1].asInt();
+    RET_BOOL(index < obj.size());
 }
 
 //!bind: function $OP_CMD_ARG($this : Array<T0>) : Array<String>

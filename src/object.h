@@ -603,7 +603,6 @@ public:
 
 class ArrayObject : public ObjectWithRtti<DSObject::Array> {
 private:
-    unsigned int curIndex{0};
     std::vector<DSValue> values;
 
 public:
@@ -629,7 +628,7 @@ public:
         return this->values;
     }
 
-    unsigned int size() const {
+    size_t size() const {
         return this->values.size();
     }
 
@@ -644,19 +643,6 @@ public:
 
     void append(const DSValue &obj) {
         this->values.push_back(obj);
-    }
-
-    void initIterator() {
-        this->curIndex = 0;
-    }
-
-    const DSValue &nextElement() {
-        unsigned int index = this->curIndex++;
-        return this->values[index];
-    }
-
-    bool hasNext() const {
-        return this->curIndex < this->values.size();
     }
 
     DSValue takeFirst() {
