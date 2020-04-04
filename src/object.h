@@ -260,6 +260,13 @@ public:
     }
 };
 
+template <typename T, typename ...Arg>
+struct ObjectConstructor {
+    static DSObject *construct(Arg && ...arg) {
+        return new T(std::forward<Arg>(arg)...);
+    }
+};
+
 class DSValue : public DSValueBase {
 private:
     static_assert(sizeof(DSValueBase) == 16, "");
@@ -473,7 +480,7 @@ public:
     static DSValue create(A &&...args) {
         static_assert(std::is_base_of<DSObject, T>::value, "must be subtype of DSObject");
 
-        return DSValue(new T(std::forward<A>(args)...));
+        return DSValue(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...));
     }
 
     static DSValue createNum(unsigned int v) {
@@ -760,23 +767,42 @@ public:
 class BaseObject : public ObjectWithRtti<DSObject::Base> {
 private:
     unsigned int fieldSize;
-    DSValue *fieldTable;
+    DSValueBase fields[];
+
+    BaseObject(const DSType &type, unsigned int size) :
+            ObjectWithRtti(type), fieldSize(size) {
+        for(unsigned int i = 0; i < this->fieldSize; i++) {
+            new (&this->fields[i]) DSValue();
+        }
+    }
 
 public:
-    BaseObject(const DSType &type, unsigned int size) :
-            ObjectWithRtti(type), fieldSize(size), fieldTable(new DSValue[this->fieldSize]) { }
+    static BaseObject *create(const DSType &type, unsigned int size) {
+        void *ptr = malloc(sizeof(BaseObject) + sizeof(DSValueBase) * size);
+        return new(ptr) BaseObject(type, size);
+    }
 
     /**
      * for tuple object construction
      * @param type
      * must be tuple type
      */
-    explicit BaseObject(const DSType &type) : BaseObject(type, type.getFieldSize()) {}
+    static BaseObject *create(const DSType &type) {
+        return create(type, type.getFieldSize());
+    }
 
     ~BaseObject() override;
 
     DSValue &operator[](unsigned int index) {
-        return this->fieldTable[index];
+        return static_cast<DSValue&>(this->fields[index]);
+    }
+
+    const DSValue &operator[](unsigned int index) const {
+        return static_cast<const DSValue&>(this->fields[index]);
+    }
+
+    static void operator delete(void *ptr) noexcept {   //NOLINT
+        free(ptr);
     }
 
     unsigned int getFieldSize() const {
@@ -787,6 +813,13 @@ public:
     bool opStrAsTuple(DSState &state) const;
     bool opInterpAsTuple(DSState &state) const;
     DSValue opCmdArgAsTuple(DSState &state) const;
+};
+
+template <typename ...Arg>
+struct ObjectConstructor<BaseObject, Arg...> {
+    static DSObject *construct(Arg && ...arg) {
+        return BaseObject::create(std::forward<Arg>(arg)...);
+    }
 };
 
 class StackTraceElement {

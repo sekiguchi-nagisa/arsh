@@ -454,7 +454,9 @@ bool MapObject::opStr(DSState &state) const {
 // ########################
 
 BaseObject::~BaseObject() {
-    delete[] this->fieldTable;
+    for(unsigned int i = 0; i < this->fieldSize; i++) {
+        (*this)[i].~DSValue();
+    }
 }
 
 bool BaseObject::opStrAsTuple(DSState &state) const {
@@ -467,7 +469,7 @@ bool BaseObject::opStrAsTuple(DSState &state) const {
             state.toStrBuf += ", ";
         }
 
-        auto ret = TRY(callOP(state, this->fieldTable[i], OP_STR));
+        auto ret = TRY(callOP(state, (*this)[i], OP_STR));
         if(!ret.isInvalid()) {
             auto ref = ret.asStrRef();
             state.toStrBuf.append(ref.data(), ref.size());
@@ -489,7 +491,7 @@ bool BaseObject::opInterpAsTuple(DSState &state) const {
             state.toStrBuf += " ";
         }
 
-        auto ret = TRY(callOP(state, this->fieldTable[i], OP_INTERP));
+        auto ret = TRY(callOP(state, (*this)[i], OP_INTERP));
         if(!ret.isInvalid()) {
             auto ref = ret.asStrRef();
             state.toStrBuf.append(ref.data(), ref.size());
@@ -504,7 +506,7 @@ DSValue BaseObject::opCmdArgAsTuple(DSState &state) const {
     auto result = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
-        if(!appendAsCmdArg(typeAs<ArrayObject>(result).refValues(), state, this->fieldTable[i])) {
+        if(!appendAsCmdArg(typeAs<ArrayObject>(result).refValues(), state, (*this)[i])) {
             return DSValue();
         }
     }
