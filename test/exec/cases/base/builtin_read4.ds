@@ -1,5 +1,5 @@
 
-#$test($status = 1, $ignored = 'arm64')
+#$test($status = 1)
 
 # timeout
 read -t 1

@@ -503,10 +503,8 @@ TEST_F(CmdlineTest, pipeline) {
     ASSERT_NO_FATAL_FAILURE(
             this->expect("assert($0 == 'ydsh' && $1 == 'hoge' && $2 == '123')" | ds("-s", "hoge", "123"), 0));
 
-    if(platform::arch() != platform::ArchType::AARCH64) {
-        // force interactive
-        ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, ": Boolean = true\n"));
-    }
+    // force interactive
+    ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, ": Boolean = true\n"));
 }
 
 TEST_F(CmdlineTest, pipelineCode) {
