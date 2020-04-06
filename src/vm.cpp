@@ -1125,10 +1125,10 @@ bool VM::mainLoop(DSState &state) {
             state.stack.pc()++;
             unsigned int index = read8(GET_CODE(state), state.stack.pc());
             state.stack.pc()++;
-            TRY(windStackFrame(state, paramSize, paramSize, &nativeCallDummy));
+            auto old = state.stack.nativeWind(paramSize);
             auto ret = nativeFuncInfoTable()[index].func_ptr(state);
+            state.stack.nativeUnwind(old);
             TRY(!state.hasError());
-            state.stack.unwind();
             if(ret) {
                 state.stack.push(std::move(ret));
             }

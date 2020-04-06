@@ -273,6 +273,25 @@ public:
 
     void unwind();
 
+    std::tuple<unsigned int, unsigned int, unsigned int> nativeWind(unsigned int paramSize) {
+        auto old = std::make_tuple(
+                this->frame.stackTopIndex - paramSize,
+                this->frame.stackBottomIndex,
+                this->frame.localVarOffset);
+        this->frame.stackBottomIndex = this->frame.stackTopIndex;
+        this->frame.localVarOffset = this->frame.stackTopIndex - paramSize + 1;
+        return old;
+    }
+
+    void nativeUnwind(const std::tuple<unsigned int, unsigned int, unsigned int> &tuple) {
+        unsigned int oldStackTopIndex = std::get<0>(tuple);
+        while(this->frame.stackTopIndex > oldStackTopIndex) {
+            this->popNoReturn();
+        }
+        this->frame.stackBottomIndex = std::get<1>(tuple);
+        this->frame.localVarOffset = std::get<2>(tuple);
+    }
+
     std::vector<StackTraceElement> createStackTrace() const;
 
 private:
