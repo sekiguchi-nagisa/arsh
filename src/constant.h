@@ -18,6 +18,7 @@
 #define YDSH_SYMBOL_H
 
 #include <cstdint>
+#include <cstddef>
 
 #include <config.h>
 #include "misc/flag_util.hpp"
