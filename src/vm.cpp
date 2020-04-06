@@ -249,8 +249,8 @@ static DSValue newFD(const DSState &st, int &fd) {
 }
 
 bool VM::forkAndEval(DSState &state) {
-    const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), state.stack.pc() + 1));
-    const unsigned short offset = read16(GET_CODE(state), state.stack.pc() + 2);
+    const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), state.stack.pc()));
+    const unsigned short offset = read16(GET_CODE(state), state.stack.pc() + 1);
 
     // flush standard stream due to prevent mixing io buffer
     flushStdFD();
@@ -680,7 +680,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe) {
      * ls | { grep . ;}
      * ==> pipeSize == 1, procSize == 1
      */
-    const unsigned int procSize = read8(GET_CODE(state), state.stack.pc() + 1) - 1;
+    const unsigned int procSize = read8(GET_CODE(state), state.stack.pc()) - 1;
     const unsigned int pipeSize = procSize - (lastPipe ? 0 : 1);
 
     assert(pipeSize > 0);
@@ -723,7 +723,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe) {
         closeAllPipe(pipeSize, pipefds);
 
         // set pc to next instruction
-        state.stack.pc() += read16(GET_CODE(state), state.stack.pc() + 2 + procIndex * 2) - 1;
+        state.stack.pc() += read16(GET_CODE(state), state.stack.pc() + 1 + procIndex * 2) - 1;
     } else if(procIndex == procSize) { // parent (last pipeline)
         /**
          * in last pipe, save current stdin before call dup2
@@ -753,7 +753,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe) {
         }
 
         // set pc to next instruction
-        state.stack.pc() += read16(GET_CODE(state), state.stack.pc() + 2 + procIndex * 2) - 1;
+        state.stack.pc() += read16(GET_CODE(state), state.stack.pc() + 1 + procIndex * 2) - 1;
     } else {
         // force terminate forked process.
         for(unsigned int i = 0; i < procIndex; i++) {
@@ -854,7 +854,7 @@ bool VM::checkVMEvent(DSState &state) {
 
     if(state.hook != nullptr) {
         assert(hasFlag(DSState::eventDesc, VMEvent::HOOK));
-        auto op = static_cast<OpCode>(GET_CODE(state)[state.stack.pc() + 1]);
+        auto op = static_cast<OpCode>(GET_CODE(state)[state.stack.pc()]);
         state.hook->vmFetchHook(state, op);
     }
     return true;
@@ -876,14 +876,14 @@ static auto nativeCallDummy = initCode(OpCode::HALT);
 #define TRY(E) do { if(!(E)) { vmerror; } } while(false)
 
 bool VM::mainLoop(DSState &state) {
-    OpCode op = OpCode::HALT;
+    OpCode op;
     while(true) {
         if(!empty(DSState::eventDesc)) {
             TRY(checkVMEvent(state));
         }
 
         // fetch next opcode
-        op = static_cast<OpCode>(GET_CODE(state)[++state.stack.pc()]);
+        op = static_cast<OpCode>(GET_CODE(state)[state.stack.pc()++]);
 
         // dispatch instruction
         vmdispatch(op) {
@@ -895,7 +895,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(PRINT) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
+            unsigned int v = read32(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 4;
 
             auto &stackTopType = state.symbolTable.get(v);
@@ -912,7 +912,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(INSTANCE_OF) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
+            unsigned int v = read32(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 4;
 
             auto &targetType = state.symbolTable.get(v);
@@ -922,7 +922,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CHECK_CAST) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
+            unsigned int v = read32(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 4;
             TRY(checkCast(state, state.symbolTable.get(v)));
             vmnext;
@@ -940,12 +940,14 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(PUSH_SIG) {
-            unsigned int value = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned int value = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             state.stack.push(DSValue::createSig(value));
             vmnext;
         }
         vmcase(PUSH_INT) {
-            unsigned int value = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned int value = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             state.stack.push(DSValue::createInt(value));
             vmnext;
         }
@@ -954,59 +956,63 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(LOAD_CONST) {
-            unsigned char index = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned char index = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             state.stack.push(CONST_POOL(state)[index]);
             vmnext;
         }
         vmcase(LOAD_CONST_W) {
-            unsigned short index = read16(GET_CODE(state), state.stack.pc() + 1);
+            unsigned short index = read16(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 2;
             state.stack.push(CONST_POOL(state)[index]);
             vmnext;
         }
         vmcase(LOAD_CONST_T) {
-            unsigned int index = read24(GET_CODE(state), state.stack.pc() + 1);
+            unsigned int index = read24(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 3;
             state.stack.push(CONST_POOL(state)[index]);
             vmnext;
         }
         vmcase(LOAD_GLOBAL) {
-            unsigned short index = read16(GET_CODE(state), state.stack.pc() + 1);
+            unsigned short index = read16(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 2;
             auto v = state.getGlobal(index);
             state.stack.push(std::move(v));
             vmnext;
         }
         vmcase(STORE_GLOBAL) {
-            unsigned short index = read16(GET_CODE(state), state.stack.pc() + 1);
+            unsigned short index = read16(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 2;
             state.setGlobal(index, state.stack.pop());
             vmnext;
         }
         vmcase(LOAD_LOCAL) {
-            unsigned char index = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned char index = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             state.stack.loadLocal(index);
             vmnext;
         }
         vmcase(STORE_LOCAL) {
-            unsigned char index = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned char index = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             state.stack.storeLocal(index);
             vmnext;
         }
         vmcase(LOAD_FIELD) {
-            unsigned short index = read16(GET_CODE(state), state.stack.pc() + 1);
+            unsigned short index = read16(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 2;
             state.stack.loadField(index);
             vmnext;
         }
         vmcase(STORE_FIELD) {
-            unsigned short index = read16(GET_CODE(state), state.stack.pc() + 1);
+            unsigned short index = read16(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 2;
             state.stack.storeField(index);
             vmnext;
         }
         vmcase(IMPORT_ENV) {
-            unsigned char b = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned char b = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             TRY(loadEnv(state, b > 0));
             vmnext;
         }
@@ -1052,7 +1058,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_ARRAY) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
+            unsigned int v = read32(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 4;
             state.stack.push(DSValue::create<ArrayObject>(state.symbolTable.get(v)));
             vmnext;
@@ -1063,7 +1069,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_MAP) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
+            unsigned int v = read32(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 4;
             state.stack.push(DSValue::create<MapObject>(state.symbolTable.get(v)));
             vmnext;
@@ -1075,13 +1081,13 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_TUPLE) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
+            unsigned int v = read32(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 4;
             state.stack.push(DSValue::create<BaseObject>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(NEW) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc() + 1);
+            unsigned int v = read32(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 4;
 
             auto &type = state.symbolTable.get(v);
@@ -1093,19 +1099,22 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CALL_METHOD) {
-            unsigned short paramSize = read8(GET_CODE(state), ++state.stack.pc());
-            unsigned short index = read16(GET_CODE(state), state.stack.pc() + 1);
+            unsigned short paramSize = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
+            unsigned short index = read16(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 2;
             TRY(prepareMethodCall(state, index, paramSize));
             vmnext;
         }
         vmcase(CALL_FUNC) {
-            unsigned int paramSize = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned int paramSize = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             TRY(prepareFuncCall(state, paramSize));
             vmnext;
         }
         vmcase(CALL_NATIVE) {
-            unsigned int index = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned int index = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             DSValue returnValue = nativeFuncInfoTable()[index].func_ptr(state);
             TRY(!state.hasError());
             if(returnValue) {
@@ -1114,8 +1123,10 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CALL_NATIVE2) {
-            unsigned int paramSize = read8(GET_CODE(state), ++state.stack.pc());
-            unsigned int index = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned int paramSize = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
+            unsigned int index = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             TRY(windStackFrame(state, paramSize, paramSize, &nativeCallDummy));
             auto ret = nativeFuncInfoTable()[index].func_ptr(state);
             TRY(!state.hasError());
@@ -1163,7 +1174,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(BRANCH) {
-            unsigned short offset = read16(GET_CODE(state), state.stack.pc() + 1);
+            unsigned short offset = read16(GET_CODE(state), state.stack.pc());
             if(state.stack.pop().asBool()) {
                 state.stack.pc() += 2;
             } else {
@@ -1172,8 +1183,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(GOTO) {
-            unsigned int index = read32(GET_CODE(state), state.stack.pc() + 1);
-            state.stack.pc() = index - 1;
+            unsigned int index = read32(GET_CODE(state), state.stack.pc());
+            state.stack.pc() = index;
             vmnext;
         }
         vmcase(THROW) {
@@ -1182,7 +1193,7 @@ bool VM::mainLoop(DSState &state) {
             vmerror;
         }
         vmcase(ENTER_FINALLY) {
-            const unsigned int offset = read16(GET_CODE(state), state.stack.pc() + 1);
+            const unsigned int offset = read16(GET_CODE(state), state.stack.pc());
             const unsigned int savedIndex = state.stack.pc() + 2;
             state.stack.push(DSValue::createNum(savedIndex));
             state.stack.pc() += offset - 1;
@@ -1206,7 +1217,7 @@ bool VM::mainLoop(DSState &state) {
                 if(iter != valueMap.end()) {
                     assert(iter->second.kind() == DSValueKind::NUMBER);
                     unsigned int index = iter->second.asNum();
-                    state.stack.pc() = index - 1;
+                    state.stack.pc() = index;
                 }
             }
             vmnext;
@@ -1260,7 +1271,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(ADD_CMD_ARG) {
-            unsigned char v = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned char v = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             addCmdArg(state, v > 0);
             vmnext;
         }
@@ -1312,7 +1324,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(ADD_REDIR_OP) {
-            unsigned char v = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned char v = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
             auto value = state.stack.pop();
             typeAs<RedirObject>(state.stack.peek()).addRedirOp(static_cast<RedirOP>(v), std::move(value));
             vmnext;
@@ -1357,7 +1370,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(TRY_UNWRAP) {
-            unsigned short offset = read16(GET_CODE(state), state.stack.pc() + 1);
+            unsigned short offset = read16(GET_CODE(state), state.stack.pc());
             if(state.stack.peek().kind() == DSValueKind::INVALID) {
                 state.stack.popNoReturn();
                 state.stack.pc() += 2;
@@ -1371,8 +1384,10 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(RECLAIM_LOCAL) {
-            unsigned char offset = read8(GET_CODE(state), ++state.stack.pc());
-            unsigned char size = read8(GET_CODE(state), ++state.stack.pc());
+            unsigned char offset = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
+            unsigned char size = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
 
             state.stack.reclaimLocals(offset, size);
             vmnext;
@@ -1399,7 +1414,7 @@ bool VM::handleException(DSState &state, bool forceUnwind) {
             auto *cc = static_cast<const CompiledCode *>(CODE(state));
 
             // search exception entry
-            const unsigned int occurredPC = state.stack.pc();
+            const unsigned int occurredPC = state.stack.pc() - 1;
             const DSType &occurredType = state.symbolTable.get(state.stack.getThrownObject().getTypeID());
 
             for(unsigned int i = 0; cc->getExceptionEntries()[i].type != nullptr; i++) {
@@ -1414,7 +1429,7 @@ bool VM::handleException(DSState &state, bool forceUnwind) {
                          */
                         return false;
                     }
-                    state.stack.pc() = entry.dest - 1;
+                    state.stack.pc() = entry.dest;
                     state.stack.clearOperands();
                     state.stack.reclaimLocals(entry.localOffset, entry.localSize);
                     state.stack.loadThrownObject();
