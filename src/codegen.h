@@ -232,8 +232,8 @@ public:
         assert(this->begin);
         assert(this->end);
 
-        assert(this->begin->getIndex() > 0);
-        assert(this->end->getIndex() > 0);
+//        assert(this->begin->getIndex() > -1);
+//        assert(this->end->getIndex() > -1);
         assert(this->address > 0);
         assert(this->type != nullptr);
 
@@ -264,6 +264,10 @@ struct LoopState {
 struct CodeBuilder : public CodeEmitter<true> {
     SourceInfo srcInfo;
 
+    CodeKind kind;
+
+    unsigned char localVarNum;
+
     std::vector<DSValue> constBuffer;
     FlexBuffer<LineNumEntry> lineNumEntries;
     std::vector<CatchBuilder> catchBuilders;
@@ -283,10 +287,11 @@ struct CodeBuilder : public CodeEmitter<true> {
     signed short stackDepthCount{0};
     signed short maxStackDepth{0};
 
-    explicit CodeBuilder(SourceInfo info) : srcInfo(std::move(info)) {}
+    explicit CodeBuilder(SourceInfo info, CodeKind kind, unsigned char localVarNum) :
+            srcInfo(std::move(info)), kind(kind), localVarNum(localVarNum) {}
 
     CodeKind getCodeKind() const {
-        return static_cast<CodeKind>(this->codeBuffer[0]);
+        return this->kind;
     }
 
     /**
@@ -506,7 +511,9 @@ private:
         this->initCodeBuilder(kind, info, localVarNum);
     }
 
-    void initCodeBuilder(CodeKind kind, const SourceInfo &srcInfo, unsigned short localVarNum);
+    void initCodeBuilder(CodeKind kind, const SourceInfo &srcInfo, unsigned short localVarNum) {
+        this->builders.emplace_back(srcInfo, kind, localVarNum);
+    }
 
     CompiledCode finalizeCodeBuilder(const std::string &name) {
         auto code = this->curBuilder().build(name);

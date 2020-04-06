@@ -19,11 +19,9 @@
 namespace ydsh {
 
 bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode * code) {
-    const unsigned int maxVarSize = code->is(CodeKind::NATIVE) ? paramSize :
-                                    static_cast<const CompiledCode *>(code)->getLocalVarNum();
+    const unsigned int maxVarSize = code->getLocalVarNum();
     const unsigned int localVarOffset = this->frame.stackTopIndex - paramSize + 1;
-    const unsigned int operandSize = code->is(CodeKind::NATIVE) ? 4 :
-                                     static_cast<const CompiledCode *>(code)->getStackDepth();
+    const unsigned int operandSize = code->getStackDepth();
 
     if(this->frames.size() == MAX_FRAME_SIZE) {
         return false;
@@ -42,7 +40,7 @@ bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DS
     this->frame.stackTopIndex += maxVarSize - paramSize;
     this->frame.stackBottomIndex = this->frame.stackTopIndex;
     this->frame.localVarOffset = localVarOffset;
-    this->frame.pc = code->getCodeOffset();
+    this->frame.pc = 0;
     return true;
 }
 

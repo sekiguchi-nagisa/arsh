@@ -49,13 +49,14 @@ bool isTypeOp(OpCode code) {
 CompiledCode CodeBuilder::build(const std::string &name) {
     this->finalize();
 
-    // set max stack depth
-    this->emit16(6, this->maxStackDepth);
-
-    // extract code
     const unsigned int codeSize = this->codeBuffer.size();
-    this->emit32(1, codeSize);
-    unsigned char *code = this->codeBuffer.take();
+    DSCode code {
+        .codeKind = this->kind,
+        .localVarNum = this->localVarNum,
+        .stackDepth = static_cast<unsigned short>(this->maxStackDepth),
+        .size = codeSize,
+        .code = this->codeBuffer.take(),
+    };
 
     // create constant pool
     const unsigned int constSize = this->constBuffer.size();
@@ -66,7 +67,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
     constPool[constSize] = nullptr; // sentinel
 
     // extract source pos entry
-    this->lineNumEntries.push_back({0, 0});
+    this->lineNumEntries.push_back({CODE_MAX_LEN, 0});
     auto *entries = this->lineNumEntries.take();
 
     // create exception entry
@@ -85,7 +86,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
     };  // sentinel
 
     return CompiledCode(this->srcInfo, name.empty() ? nullptr : name.c_str(),
-                        code, constPool, entries, except);
+                        std::move(code), constPool, entries, except);
 }
 
 
@@ -1229,27 +1230,15 @@ void ByteCodeGenerator::visitSourceNode(SourceNode &node) {
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
-void ByteCodeGenerator::initCodeBuilder(CodeKind kind, const SourceInfo &srcInfo,
-                                        unsigned short localVarNum) {
-    // push new builder
-    this->builders.emplace_back(srcInfo);
-
-    // generate header
-    this->curBuilder().append8(static_cast<unsigned char>(kind));
-    this->curBuilder().append32(0);
-    this->curBuilder().append8(localVarNum);
-    this->curBuilder().append16(0);
-}
-
 CompiledCode ByteCodeGenerator::finalize() {
     unsigned char maxLocalSize = this->symbolTable.getMaxVarIndex();
-    this->curBuilder().emit8(5, maxLocalSize);
+    this->curBuilder().localVarNum = maxLocalSize;
     this->emitIns(OpCode::RETURN);
     return this->finalizeCodeBuilder("");
 }
 
 void ByteCodeGenerator::exitModule(SourceNode &node) {
-    this->curBuilder().emit8(5, node.getMaxVarNum());
+    this->curBuilder().localVarNum = node.getMaxVarNum();
     this->emitIns(OpCode::RETURN);
     auto func = DSValue::create<FuncObject>(*node.getModType(), this->finalizeCodeBuilder(node.getModType()->toName()));
     this->emitLdcIns(func);
@@ -1283,7 +1272,7 @@ static std::string formatNum(unsigned int width, unsigned int num) {
 
 static unsigned int getMaxLineNum(const LineNumEntry *table) {
     unsigned int max = 1;
-    for(unsigned int i = 0; table[i].address != 0; i++) {
+    for(unsigned int i = 0; table[i]; i++) {
         unsigned int value = table[i].lineNum;
         if(value > max) {
             max = value;
@@ -1313,8 +1302,6 @@ void ByteCodeDumper::dumpModule(const CompiledCode &code) {
 }
 
 void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
-    const unsigned int codeSize = c.getCodeSize();
-
     fputs("DSCode: ", this->fp);
     switch(c.getKind()) {
     case CodeKind::TOPLEVEL:
@@ -1346,9 +1333,9 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
 #undef GEN_NAME
         };
 
-        for(unsigned int i = c.getCodeOffset(); i < codeSize; i++) {
+        for(unsigned int i = 0; i < c.getCodeSize(); i++) {
             auto code = static_cast<OpCode>(c.getCode()[i]);
-            fprintf(this->fp, "  %s: %s", formatNum(digit(codeSize), i).c_str(), opName[static_cast<unsigned char>(code)]);
+            fprintf(this->fp, "  %s: %s", formatNum(digit(c.getCodeSize()), i).c_str(), opName[static_cast<unsigned char>(code)]);
             if(isTypeOp(code)) {
                 unsigned int v = read32(c.getCode(), i + 1);
                 i += 4;
@@ -1429,11 +1416,11 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
     fputs("Line Number Table:\n", this->fp);
     {
         const unsigned int maxLineNum = getMaxLineNum(c.getLineNumEntries());
-        for(unsigned int i = 0; c.getLineNumEntries()[i].address != 0; i++) {
+        for(unsigned int i = 0; c.getLineNumEntries()[i]; i++) {
             const auto &e = c.getLineNumEntries()[i];
             fprintf(this->fp, "  lineNum: %s, address: %s\n",
                     formatNum(digit(maxLineNum), e.lineNum).c_str(),
-                    formatNum(digit(codeSize), e.address).c_str());
+                    formatNum(digit(c.getCodeSize()), e.address).c_str());
         }
     }
 

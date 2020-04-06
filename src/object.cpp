@@ -553,7 +553,7 @@ std::string ErrorObject::createHeader(const DSState &state) const {
 
 unsigned int CompiledCode::getLineNum(unsigned int index) const {   //FIXME: binary search
     unsigned int i = 0;
-    for(; this->lineNumEntries[i].address > 0; i++) {
+    for(; this->lineNumEntries[i]; i++) {
         if(index < this->lineNumEntries[i].address) {
             break;
         }

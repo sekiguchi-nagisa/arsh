@@ -185,20 +185,20 @@ TEST_F(CmdlineTest, bytecode) {
     const char *msg = R"(### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 20
+  code size: 12
   max stack depth: 1
   number of local variable: 0
   number of global variable: 51
 Code:
-   8: PUSH_INT  34
-  10: STORE_GLOBAL  50
-  13: PUSH_INT  34
-  15: CALL_NATIVE2  1  1
-  18: POP
-  19: RETURN
+   0: PUSH_INT  34
+   2: STORE_GLOBAL  50
+   5: PUSH_INT  34
+   7: CALL_NATIVE2  1  1
+  10: POP
+  11: RETURN
 Constant Pool:
 Line Number Table:
-  lineNum: 1, address: 15
+  lineNum: 1, address:  7
 Exception Table:
 
 )";
@@ -207,38 +207,38 @@ Exception Table:
     msg = R"(### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 34
+  code size: 26
   max stack depth: 3
   number of local variable: 0
   number of global variable: 51
 Code:
-   8: LOAD_CONST  0
-  10: STORE_GLOBAL  50
-  13: LOAD_GLOBAL  50
-  16: PUSH_INT  1
-  18: CALL_FUNC  1
-  20: ENTER_FINALLY  8
-  23: GOTO  32
-  28: PUSH_INT  3
-  30: POP
-  31: EXIT_FINALLY
-  32: POP
-  33: RETURN
+   0: LOAD_CONST  0
+   2: STORE_GLOBAL  50
+   5: LOAD_GLOBAL  50
+   8: PUSH_INT  1
+  10: CALL_FUNC  1
+  12: ENTER_FINALLY  8
+  15: GOTO  24
+  20: PUSH_INT  3
+  22: POP
+  23: EXIT_FINALLY
+  24: POP
+  25: RETURN
 Constant Pool:
   0: (Any) -> Boolean function(f)
 Line Number Table:
-  lineNum: 1, address: 18
+  lineNum: 1, address: 10
 Exception Table:
-  begin: 13, end: 28, type: Any, dest: 28, offset: 0, size: 0
+  begin: 5, end: 20, type: Any, dest: 20, offset: 0, size: 0
 
 DSCode: function f
-  code size: 16
+  code size: 8
   max stack depth: 1
   number of local variable: 1
 Code:
-   8: LOAD_LOCAL  0
-  10: INSTANCE_OF  [Int]
-  15: RETURN_V
+  0: LOAD_LOCAL  0
+  2: INSTANCE_OF  [Int]
+  7: RETURN_V
 Constant Pool:
 Line Number Table:
 Exception Table:

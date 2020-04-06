@@ -33,6 +33,7 @@
 #include "lexer.h"
 #include "opcode.h"
 #include "regex_wrapper.h"
+#include "constant.h"
 
 namespace ydsh {
 
@@ -914,53 +915,45 @@ private:
 };
 
 enum class CodeKind : unsigned char {
-    TOPLEVEL         = 8,
-    FUNCTION         = (1u << 4) + 8,
-    USER_DEFINED_CMD = (2u << 4) + 8,
-    NATIVE           = (3u << 4) + 1,
+    TOPLEVEL,
+    FUNCTION,
+    USER_DEFINED_CMD,
+    NATIVE,
 };
 
-class DSCode {
-protected:
-    /**
-     *
-     * if indicate compiled code
-     *
-     * +----------------------+-------------------+-------------------------------+---------------------+
-     * | CallableKind (1byte) | code size (4byte) | local variable number (1byte) | stack depth (2byte) |
-     * +----------------------+-------------------+-------------------------------+---------------------+
-     *
-     * if indicate native
-     *
-     * +----------------------+
-     * | CallableKind (1byte) |
-     * +----------------------+
-     */
+struct DSCode {
+    CodeKind codeKind;
+
+    unsigned char localVarNum;
+
+    unsigned short stackDepth;
+
+    unsigned int size;
+
     unsigned char *code;
 
-    explicit DSCode(unsigned char *code) : code(code) {}
-
-    DSCode() : code(nullptr) {}
-
-public:
     const unsigned char *getCode() const {
         return this->code;
     }
 
     CodeKind getKind() const {
-        return static_cast<CodeKind>(this->code[0]);
+        return this->codeKind;
     }
 
     bool is(CodeKind kind) const {
         return this->getKind() == kind;
     }
 
-    unsigned int getCodeSize() const {
-        return read32(this->code, 1);
+    unsigned short getLocalVarNum() const {
+        return this->localVarNum;
     }
 
-    unsigned int getCodeOffset() const {
-        return this->code[0] & 0xF;
+    unsigned short getStackDepth() const {
+        return this->stackDepth;
+    }
+
+    unsigned int getCodeSize() const {
+        return this->size;
     }
 };
 
@@ -972,21 +965,27 @@ private:
     ArrayType value;
 
 public:
-    NativeCode() noexcept : DSCode(nullptr) {}
+    NativeCode() noexcept {
+        this->codeKind = CodeKind::NATIVE;
+        this->localVarNum = 8;
+        this->stackDepth = 4;
+        this->size = 0;
+    }
 
-    NativeCode(unsigned int index, bool hasRet) noexcept {
-        this->value[0] = static_cast<char>(CodeKind::NATIVE);
-        this->value[1] = static_cast<char>(OpCode::CALL_NATIVE);
-        this->value[2] = index;
-        this->value[3] = static_cast<char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
+    NativeCode(unsigned int index, bool hasRet) noexcept : NativeCode() {
+        this->value[0] = static_cast<char>(OpCode::CALL_NATIVE);
+        this->value[1] = index;
+        this->value[2] = static_cast<char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
         this->setCode();
     }
 
-    explicit NativeCode(const ArrayType &value) noexcept : value(value) {
+    explicit NativeCode(const ArrayType &value) noexcept : NativeCode() {
+        this->value = value;
         this->setCode();
     }
 
-    NativeCode(NativeCode &&o) noexcept : value(o.value) {
+    NativeCode(NativeCode &&o) noexcept : NativeCode() {
+        this->value = o.value;
         this->setCode();
     }
 
@@ -1012,6 +1011,10 @@ private:
 struct LineNumEntry {
     unsigned int address;
     unsigned int lineNum;
+
+    explicit operator bool() const {
+        return this->address != CODE_MAX_LEN;
+    }
 };
 
 struct ExceptionEntry {
@@ -1055,13 +1058,13 @@ private:
 public:
     NON_COPYABLE(CompiledCode);
 
-    CompiledCode(const SourceInfo &srcInfo, const char *name, unsigned char *code,
+    CompiledCode(const SourceInfo &srcInfo, const char *name, DSCode &&code,
                  DSValue *constPool, LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
-            DSCode(code), sourceName(strdup(srcInfo->getSourceName().c_str())), name(name == nullptr ? nullptr : strdup(name)),
+            DSCode(std::move(code)), sourceName(strdup(srcInfo->getSourceName().c_str())), name(name == nullptr ? nullptr : strdup(name)),
             constPool(constPool), lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
 
     CompiledCode(CompiledCode &&c) noexcept :
-            DSCode(c.code), sourceName(c.sourceName), name(c.name),
+            DSCode(std::move(c)), sourceName(c.sourceName), name(c.name),
             constPool(c.constPool), lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries) {
         c.sourceName = nullptr;
         c.name = nullptr;
@@ -1071,7 +1074,9 @@ public:
         c.exceptionEntries = nullptr;
     }
 
-    CompiledCode() noexcept : DSCode(nullptr) {}
+    CompiledCode() noexcept : DSCode() {
+        this->code = nullptr;
+    }
 
     ~CompiledCode() {
         free(this->sourceName);
@@ -1088,20 +1093,12 @@ public:
     }
 
     void swap(CompiledCode &o) noexcept {
-        std::swap(this->code, o.code);
+        std::swap(static_cast<DSCode&>(*this), static_cast<DSCode&>(o));
         std::swap(this->sourceName, o.sourceName);
         std::swap(this->name, o.name);
         std::swap(this->constPool, o.constPool);
         std::swap(this->lineNumEntries, o.lineNumEntries);
         std::swap(this->exceptionEntries, o.exceptionEntries);
-    }
-
-    unsigned short getLocalVarNum() const {
-        return read8(this->code, 5);
-    }
-
-    unsigned short getStackDepth() const {
-        return read16(this->code, 6);
     }
 
     const char *getSourceName() const {
