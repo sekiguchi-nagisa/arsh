@@ -967,7 +967,7 @@ private:
 public:
     NativeCode() noexcept {
         this->codeKind = CodeKind::NATIVE;
-        this->localVarNum = 8;
+        this->localVarNum = 4;
         this->stackDepth = 4;
         this->size = 0;
     }
