@@ -106,7 +106,7 @@ private:
 
     template <typename T>
     T *checkedCast(Node &node) {
-        if(!this->checkNode(type2info<T>::value, node)) {
+        if(!this->checkNode(T::KIND, node)) {
             return nullptr;
         }
         return static_cast<T *>(&node);

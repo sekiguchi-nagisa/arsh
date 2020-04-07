@@ -161,6 +161,8 @@ protected:
     explicit WithRtti(Token token) : T(K, token) {}
 
 public:
+    static constexpr auto KIND = K;
+
     static bool classof(const Node *node) {
         return node->getNodeKind() == K;
     }
@@ -2312,13 +2314,6 @@ inline std::unique_ptr<Node> createSuffixNode(std::unique_ptr<Node> &&leftNode, 
     return createAssignNode(std::move(leftNode), op, token, NumberNode::newInt(token, 1));
 }
 
-template <typename T>
-struct type2info {};
-
-#define GEN_TO_INFO(T) template <> struct type2info<T ## Node> { static constexpr auto value = NodeKind::T; };
-
-EACH_NODE_KIND(GEN_TO_INFO)
-
 /**
  *
  * @param kind
@@ -2330,7 +2325,7 @@ const Node *findInnerNode(NodeKind kind, const Node *node);
 
 template <typename T>
 inline const T *findInnerNode(const Node *node) {
-    return static_cast<const T *>(findInnerNode(type2info<T>::value, node));
+    return static_cast<const T *>(findInnerNode(T::KIND, node));
 }
 
 
