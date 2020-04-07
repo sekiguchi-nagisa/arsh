@@ -22,7 +22,6 @@
 #include <memory>
 #include <tuple>
 #include <array>
-#include <cxxabi.h>
 
 #include "type.h"
 #include <config.h>
@@ -97,6 +96,8 @@ private:
     void destroy();
 };
 
+const char *toString(DSObject::ObjectKind kind);
+
 template <DSObject::ObjectKind K>
 struct ObjectWithRtti : public DSObject {
 protected:
@@ -105,7 +106,7 @@ protected:
     explicit ObjectWithRtti(unsigned int id) : DSObject(K, id) {}
 
 public:
-    static constexpr auto value = K;
+    static constexpr auto KIND = K;
 
     static bool classof(const DSObject *obj) {
         return obj->getKind() == K;
@@ -558,11 +559,8 @@ inline T &typeAs(const DSValue &value) noexcept {
         }
         auto *r = checked_cast<T>(value.get());
         if(r == nullptr) {
-            DSObject &v = *value.get();
-            int status;
-            char *target = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, &status);
-            char *actual = abi::__cxa_demangle(typeid(v).name(), nullptr, nullptr, &status);
-
+            const char *target = toString(T::KIND);
+            const char *actual = toString(value.get()->getKind());
             fatal("target type is: %s, but actual is: %s\n", target, actual);
         }
         return *r;

@@ -31,6 +31,14 @@ void DSObject::destroy() {
     }
 }
 
+const char *toString(DSObject::ObjectKind kind) {
+    const char *table[] = {
+#define GEN_STR(E) #E,
+            EACH_OBJECT_KIND(GEN_STR)
+#undef GEN_STR
+    };
+    return table[kind];
+}
 
 // #####################
 // ##     DSValue     ##
