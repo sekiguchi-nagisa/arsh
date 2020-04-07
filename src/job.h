@@ -173,8 +173,6 @@ public:
         }
     }
 
-    ~JobImplObject() override = default;
-
     static void operator delete(void *ptr) noexcept {   //NOLINT
         free(ptr);
     }

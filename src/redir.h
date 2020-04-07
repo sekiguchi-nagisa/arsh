@@ -174,7 +174,7 @@ public:
     PipelineObject(DSState &state, Job &&entry) :
             ObjectWithRtti(TYPE::Void), state(state), entry(std::move(entry)) {}
 
-    ~PipelineObject() override;
+    ~PipelineObject();
 };
 
 /**
@@ -193,7 +193,7 @@ public:
 
     RedirObject() : ObjectWithRtti(TYPE::Void), oldFds{-1, -1, -1} {}
 
-    ~RedirObject() override;
+    ~RedirObject();
 
     void addRedirOp(RedirOP op, DSValue &&arg) {
         this->ops.emplace_back(op, std::move(arg));

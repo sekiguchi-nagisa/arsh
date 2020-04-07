@@ -17,9 +17,20 @@
 #include <memory>
 
 #include "vm.h"
+#include "job.h"
+#include "redir.h"
 #include "misc/num_util.hpp"
 
 namespace ydsh {
+
+void DSObject::destroy() {
+    switch(this->getKind()) {
+#define GEN_CASE(K) case K: delete static_cast<K ## Object*>(this); break;
+    EACH_OBJECT_KIND(GEN_CASE)
+#undef GEN_CASE
+    }
+}
+
 
 // #####################
 // ##     DSValue     ##

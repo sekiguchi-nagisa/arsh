@@ -39,6 +39,20 @@ namespace ydsh {
 
 class DSValue;
 
+#define EACH_OBJECT_KIND(OP) \
+    OP(Dummy) \
+    OP(String) \
+    OP(UnixFd) \
+    OP(Regex) \
+    OP(Array) \
+    OP(Map) \
+    OP(Base) \
+    OP(Error) \
+    OP(Func) \
+    OP(JobImpl) \
+    OP(Pipeline) \
+    OP(Redir)
+
 class DSObject {
 public:
     /**
@@ -46,18 +60,9 @@ public:
      * see. https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
      */
     enum ObjectKind {
-        Dummy,
-        String,
-        UnixFd,
-        Regex,
-        Array,
-        Map,
-        Base,
-        Error,
-        Func,
-        JobImpl,
-        Pipeline,
-        Redir,
+#define GEN_ENUM(K) K,
+        EACH_OBJECT_KIND(GEN_ENUM)
+#undef GEN_ENUM
     };
 
 protected:
@@ -73,9 +78,9 @@ protected:
 
     DSObject(ObjectKind kind, unsigned int typeID) : kind(kind), typeID(typeID) {}
 
-public:
-    virtual ~DSObject() = default;
+    ~DSObject() = default;
 
+public:
     unsigned int getTypeID() const {
         return this->typeID;
     }
@@ -87,6 +92,9 @@ public:
     ObjectKind getKind() const {
         return this->kind;
     }
+
+private:
+    void destroy();
 };
 
 template <DSObject::ObjectKind K>
@@ -114,7 +122,7 @@ private:
 
 public:
     explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::UnixFD), fd(fd) {}
-    ~UnixFdObject() override;
+    ~UnixFdObject();
 
     int tryToClose(bool forceClose) {
         if(!forceClose && this->fd < 0) {
@@ -150,8 +158,6 @@ public:
             ObjectWithRtti(TYPE::String), value(std::move(value)) { }
 
     explicit StringObject(const StringRef &ref) : StringObject(ref.toString()) {}
-
-    ~StringObject() override = default;
 
     const char *getValue() const {
         return this->value.c_str();
@@ -335,7 +341,7 @@ public:
     ~DSValue() {
         if(this->isObject()) {
             if(--this->obj.value->refCount == 0) {
-                delete this->obj.value;
+                this->obj.value->destroy();
             }
         }
     }
@@ -589,8 +595,6 @@ public:
     RegexObject(std::string str, PCRE &&re) :
             ObjectWithRtti(TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
 
-    ~RegexObject() override = default;
-
     bool search(StringRef ref) const {
         int ovec[1];
         int match = pcre_exec(this->re.get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, arraySize(ovec));
@@ -625,8 +629,6 @@ public:
 
     ArrayObject(unsigned int typeID, std::vector<DSValue> &&values) :
             ObjectWithRtti(typeID), values(std::move(values)) { }
-
-    ~ArrayObject() override = default;
 
     const std::vector<DSValue> &getValues() const {
         return this->values;
@@ -695,8 +697,6 @@ public:
     MapObject(const DSType &type, HashMap &&map) : MapObject(type.getTypeID(), std::move(map)) {}
 
     MapObject(unsigned int typeID, HashMap &&map) : ObjectWithRtti(typeID), valueMap(std::move(map)) {}
-
-    ~MapObject() override = default;
 
     const HashMap &getValueMap() const {
         return this->valueMap;
@@ -792,7 +792,7 @@ public:
         return create(type, type.getFieldSize());
     }
 
-    ~BaseObject() override;
+    ~BaseObject();
 
     DSValue &operator[](unsigned int index) {
         return static_cast<DSValue&>(this->fields[index]);
@@ -879,8 +879,6 @@ public:
             std::vector<StackTraceElement> &&stackTrace) :
             ObjectWithRtti(type), message(std::move(message)),
             name(std::move(name)), stackTrace(std::move(stackTrace)) { }
-
-    ~ErrorObject() override = default;
 
     bool opStr(DSState &state) const;
 
@@ -1138,8 +1136,6 @@ private:
 public:
     FuncObject(const DSType &funcType, CompiledCode &&callable) :
             ObjectWithRtti(funcType), code(std::move(callable)) {}
-
-    ~FuncObject() override = default;
 
     const CompiledCode &getCode() const {
         return this->code;
