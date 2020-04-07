@@ -858,8 +858,6 @@ bool VM::checkVMEvent(DSState &state) {
     return true;
 }
 
-static auto nativeCallDummy = initCode(OpCode::HALT);
-
 #define vmdispatch(V) switch(V)
 
 #if 0
