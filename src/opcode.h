@@ -52,11 +52,8 @@ namespace ydsh {
     OP(SWAP         , 0,  0) \
     OP(CONCAT       , 0, -1) \
     OP(APPEND       , 0, -1) \
-    OP(NEW_ARRAY    , 3,  1) \
     OP(APPEND_ARRAY , 0, -1) \
-    OP(NEW_MAP      , 3,  1) \
     OP(APPEND_MAP   , 0, -1) \
-    OP(NEW_TUPLE    , 3,  1) \
     OP(NEW          , 3,  1) \
     OP(CALL_METHOD  , 3,  1) \
     OP(CALL_FUNC    , 1,  1) \

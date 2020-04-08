@@ -285,6 +285,8 @@ private:
 
     static const char *loadEnv(DSState &state, bool hasDefault);
 
+    static void pushNewObject(DSState &state, const DSType &type);
+
     /**
      * stack state in function apply    stack grow ===>
      *

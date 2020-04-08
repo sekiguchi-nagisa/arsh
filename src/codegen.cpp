@@ -35,9 +35,6 @@ bool isTypeOp(OpCode code) {
     case OpCode::PRINT:
     case OpCode::INSTANCE_OF:
     case OpCode::CHECK_CAST:
-    case OpCode::NEW_ARRAY:
-    case OpCode::NEW_MAP:
-    case OpCode::NEW_TUPLE:
     case OpCode::NEW:
         ASSERT_BYTE_SIZE(code, 3);
         return true;
@@ -365,7 +362,7 @@ void ByteCodeGenerator::visitRegexNode(RegexNode &node) {
 }
 
 void ByteCodeGenerator::visitArrayNode(ArrayNode &node) {
-    this->emitTypeIns(OpCode::NEW_ARRAY, node.getType());
+    this->emitTypeIns(OpCode::NEW, node.getType());
     for(Node *e : node.getExprNodes()) {
         this->visit(*e);
         this->emit0byteIns(OpCode::APPEND_ARRAY);
@@ -373,7 +370,7 @@ void ByteCodeGenerator::visitArrayNode(ArrayNode &node) {
 }
 
 void ByteCodeGenerator::visitMapNode(MapNode &node) {
-    this->emitTypeIns(OpCode::NEW_MAP, node.getType());
+    this->emitTypeIns(OpCode::NEW, node.getType());
     const unsigned int size = node.getKeyNodes().size();
     for(unsigned int i = 0; i < size; i++) {
         this->visit(*node.getKeyNodes()[i]);
@@ -383,7 +380,7 @@ void ByteCodeGenerator::visitMapNode(MapNode &node) {
 }
 
 void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
-    this->emitTypeIns(OpCode::NEW_TUPLE, node.getType());
+    this->emitTypeIns(OpCode::NEW, node.getType());
     const unsigned int size = node.getNodes().size();
     for(unsigned int i = 0; i < size; i++) {
         this->emit0byteIns(OpCode::DUP);
@@ -596,17 +593,15 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     if(node.getType().isOptionType()) {
         this->emit0byteIns(OpCode::NEW_INVALID);
         return;
-    } else if(this->symbolTable.getTypePool().isArrayType(node.getType())) {
-        this->emitTypeIns(OpCode::NEW_ARRAY, node.getType());
-        return;
-    } else if(this->symbolTable.getTypePool().isMapType(node.getType())) {
-        this->emitTypeIns(OpCode::NEW_MAP, node.getType());
-        return;
     }
 
     unsigned int paramSize = node.getArgNodes().size();
 
     this->emitTypeIns(OpCode::NEW, node.getType());
+    if(this->symbolTable.getTypePool().isArrayType(node.getType()) ||
+        this->symbolTable.getTypePool().isMapType(node.getType())) {
+        return; // Array, Map type has no constructor
+    }
 
     // push arguments
     for(Node *argNode : node.getArgNodes()) {

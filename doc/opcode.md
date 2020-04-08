@@ -31,11 +31,8 @@
 | SWAP          |                                | value1 value2 -> value2 value1               | swap top two value                                 |
 | CONCAT        |                                | value1 value2 -> value3                      | concat string value1 and string value2             |
 | APPEND        |                                | value1 value2 -> value1                      | append string value2 with string value1            |
-| NEW_ARRAY     | 3: byte1 ~ byte3               | -> value                                     | create an empty array value                        |
 | APPEND_ARRAY  |                                | value1 value2 -> value1                      | append value2 into value1                          |
-| NEW_MAP       | 3: byte1 ~ byte3               | -> value                                     | create an empty map value                          |
 | APPEND_MAP    |                                | value1 value2 value3 -> value1               | append value2 and value3 into value1               |
-| NEW_TUPLE     | 3: byte1 ~ byte3               | -> value                                     | create an empty tuple value                        |
 | NEW           | 3: byte1 ~ byte3               | -> value                                     | create an empty object of a specified type         |
 | CALL_METHOD   | 3: param index1 index2         | recv param1 ~ paramN -> result               | call virtual method                                |
 | CALL_FUNC     | 1: param                       | func param1 ~ paramN -> result               | apply function object                              |

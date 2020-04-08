@@ -118,6 +118,22 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
     return env;
 }
 
+void VM::pushNewObject(DSState &state, const DSType &type) {
+    DSValue value;
+    if(state.symbolTable.getTypePool().isArrayType(type)) {
+        value = DSValue::create<ArrayObject>(type);
+    } else if(state.symbolTable.getTypePool().isMapType(type)) {
+        value = DSValue::create<MapObject>(type);
+    } else if(state.symbolTable.getTypePool().isTupleType(type)) {
+        value = DSValue::create<BaseObject>(type);
+    } else if(!type.isRecordType()) {
+        value = DSValue::create<DummyObject>(type);
+    } else {
+        fatal("currently, DSObject allocation not supported\n");
+    }
+    state.stack.push(std::move(value));
+}
+
 bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
                                             DSValue &&restoreFD, const flag8_set_t attr) {
     if(hasFlag(attr, UDC_ATTR_SETVAR)) {
@@ -1053,21 +1069,9 @@ bool VM::mainLoop(DSState &state) {
             state.stack.push(std::move(left));
             vmnext;
         }
-        vmcase(NEW_ARRAY) {
-            unsigned int v = read24(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 3;
-            state.stack.push(DSValue::create<ArrayObject>(state.symbolTable.get(v)));
-            vmnext;
-        }
         vmcase(APPEND_ARRAY) {
             DSValue v = state.stack.pop();
             typeAs<ArrayObject>(state.stack.peek()).append(std::move(v));
-            vmnext;
-        }
-        vmcase(NEW_MAP) {
-            unsigned int v = read24(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 3;
-            state.stack.push(DSValue::create<MapObject>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(APPEND_MAP) {
@@ -1076,22 +1080,11 @@ bool VM::mainLoop(DSState &state) {
             typeAs<MapObject>(state.stack.peek()).set(std::move(key), std::move(value));
             vmnext;
         }
-        vmcase(NEW_TUPLE) {
-            unsigned int v = read24(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 3;
-            state.stack.push(DSValue::create<BaseObject>(state.symbolTable.get(v)));
-            vmnext;
-        }
         vmcase(NEW) {
             unsigned int v = read24(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 3;
-
             auto &type = state.symbolTable.get(v);
-            if(!type.isRecordType()) {
-                state.stack.push(DSValue::create<DummyObject>(type));
-            } else {
-                fatal("currently, DSObject allocation not supported\n");
-            }
+            pushNewObject(state, type);
             vmnext;
         }
         vmcase(CALL_METHOD) {
