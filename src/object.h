@@ -39,7 +39,6 @@ namespace ydsh {
 class DSValue;
 
 #define EACH_OBJECT_KIND(OP) \
-    OP(Dummy) \
     OP(String) \
     OP(UnixFd) \
     OP(Regex) \
@@ -113,10 +112,6 @@ public:
     }
 };
 
-struct DummyObject : public ObjectWithRtti<DSObject::Dummy> {
-    explicit DummyObject(const DSType &type) : ObjectWithRtti(type) {}
-};
-
 class UnixFdObject : public ObjectWithRtti<DSObject::UnixFd> {
 private:
     int fd;
@@ -177,6 +172,7 @@ enum class DSValueKind : unsigned char {
     EMPTY,
     OBJECT, // not null
     NUMBER,   // uint64_t
+    DUMMY,      // uint64_t
     INVALID,
     BOOL,
     SIG,  // int64_t
@@ -418,6 +414,11 @@ public:
         return this->u64.value;
     }
 
+    unsigned int asTypeId() const {
+        assert(this->kind() == DSValueKind::DUMMY);
+        return this->u64.value;
+    }
+
     bool asBool() const {
         assert(this->kind() == DSValueKind::BOOL);
         return this->b.value;
@@ -493,6 +494,12 @@ public:
 
     static DSValue createNum(unsigned int v) {
         return DSValue(static_cast<uint64_t>(v));
+    }
+
+    static DSValue createDummy(const DSType &type) {
+        DSValue ret(static_cast<uint64_t>(type.getTypeID()));
+        ret.u64.kind = DSValueKind::DUMMY;
+        return ret;
     }
 
     static DSValue createInvalid() {

@@ -46,6 +46,8 @@ const char *toString(DSObject::ObjectKind kind) {
 
 unsigned int DSValue::getTypeID() const {
     switch(this->kind()) {
+    case DSValueKind::DUMMY:
+        return this->asTypeId();
     case DSValueKind::BOOL:
         return static_cast<unsigned int>(TYPE::Boolean);
     case DSValueKind::SIG:
@@ -76,6 +78,12 @@ std::string DSValue::toString() const {
     switch(this->kind()) {
     case DSValueKind::NUMBER:
         return std::to_string(this->asNum());
+    case DSValueKind::DUMMY: {
+        std::string str("DSObject(");
+        str += std::to_string(this->asTypeId());
+        str += ")";
+        return str;
+    }
     case DSValueKind::BOOL:
         return this->asBool() ? "true" : "false";
     case DSValueKind::SIG:

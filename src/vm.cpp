@@ -127,7 +127,7 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
     } else if(state.symbolTable.getTypePool().isTupleType(type)) {
         value = DSValue::create<BaseObject>(type);
     } else if(!type.isRecordType()) {
-        value = DSValue::create<DummyObject>(type);
+        value = DSValue::createDummy(type);
     } else {
         fatal("currently, DSObject allocation not supported\n");
     }
