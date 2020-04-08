@@ -232,13 +232,13 @@ Exception Table:
   begin: 5, end: 20, type: Any, dest: 20, offset: 0, size: 0
 
 DSCode: function f
-  code size: 8
+  code size: 7
   max stack depth: 1
   number of local variable: 1
 Code:
   0: LOAD_LOCAL  0
   2: INSTANCE_OF  [Int]
-  7: RETURN_V
+  6: RETURN_V
 Constant Pool:
 Line Number Table:
 Exception Table:

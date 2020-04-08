@@ -126,6 +126,8 @@ private:
 
     std::unordered_map<Key, Value, Hash> methodMap;
 
+    static constexpr unsigned int MAX_TYPE_NUM = 0xFFFFFF;
+
 public:
     NON_COPYABLE(TypePool);
 

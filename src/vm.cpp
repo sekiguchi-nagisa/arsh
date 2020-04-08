@@ -891,8 +891,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(PRINT) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 4;
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
 
             auto &stackTopType = state.symbolTable.get(v);
             assert(!stackTopType.isVoidType());
@@ -908,8 +908,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(INSTANCE_OF) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 4;
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
 
             auto &targetType = state.symbolTable.get(v);
             auto value = state.stack.pop();
@@ -918,8 +918,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CHECK_CAST) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 4;
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
             TRY(checkCast(state, state.symbolTable.get(v)));
             vmnext;
         }
@@ -1054,8 +1054,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_ARRAY) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 4;
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
             state.stack.push(DSValue::create<ArrayObject>(state.symbolTable.get(v)));
             vmnext;
         }
@@ -1065,8 +1065,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_MAP) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 4;
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
             state.stack.push(DSValue::create<MapObject>(state.symbolTable.get(v)));
             vmnext;
         }
@@ -1077,14 +1077,14 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(NEW_TUPLE) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 4;
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
             state.stack.push(DSValue::create<BaseObject>(state.symbolTable.get(v)));
             vmnext;
         }
         vmcase(NEW) {
-            unsigned int v = read32(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 4;
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
 
             auto &type = state.symbolTable.get(v);
             if(!type.isRecordType()) {

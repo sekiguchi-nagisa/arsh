@@ -107,6 +107,9 @@ DSType *TypePool::addType(std::string &&typeName, DSType *type) {
     bool s = this->setAlias(std::move(typeName), *type);
     (void) s;
     assert(s);
+    if(this->typeTable.size() == MAX_TYPE_NUM) {
+        fatal("type id reaches limit(%u)", MAX_TYPE_NUM);
+    }
     return type;
 }
 

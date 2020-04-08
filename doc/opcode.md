@@ -4,9 +4,9 @@
 |---------------|--------------------------------|----------------------------------------------|----------------------------------------------------|
 | HALT          |                                | [no change]                                  | stop evaluation of interpreter immediately         |
 | ASSERT        |                                | value1 value2 ->                             | assertion that value1 is true.                     |
-| PRINT         | 4: byte1 ~ byte4               | value ->                                     | print specified type and value on top of the stack |
-| INSTANCE_OF   | 4: byte1 ~ byte4               | value -> value                               | check if a value is instance of a specified type   |
-| CHECK_CAST    | 4: byte1 ~ byte4               | value -> value                               | check if a value is instance of a specified type   |
+| PRINT         | 3: byte1 ~ byte3               | value ->                                     | print specified type and value on top of the stack |
+| INSTANCE_OF   | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type   |
+| CHECK_CAST    | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type   |
 | PUSH_NULL     |                                | -> value                                     | push the null value onto the stack                 |
 | PUSH_TRUE     |                                | -> value                                     | push the true value onto the stack                 |
 | PUSH_FALSE    |                                | -> value                                     | push the false value onto the stack                |
@@ -31,12 +31,12 @@
 | SWAP          |                                | value1 value2 -> value2 value1               | swap top two value                                 |
 | CONCAT        |                                | value1 value2 -> value3                      | concat string value1 and string value2             |
 | APPEND        |                                | value1 value2 -> value1                      | append string value2 with string value1            |
-| NEW_ARRAY     | 4: byte1 ~ byte4               | -> value                                     | create an empty array value                        |
+| NEW_ARRAY     | 3: byte1 ~ byte3               | -> value                                     | create an empty array value                        |
 | APPEND_ARRAY  |                                | value1 value2 -> value1                      | append value2 into value1                          |
-| NEW_MAP       | 4: byte1 ~ byte4               | -> value                                     | create an empty map value                          |
+| NEW_MAP       | 3: byte1 ~ byte3               | -> value                                     | create an empty map value                          |
 | APPEND_MAP    |                                | value1 value2 value3 -> value1               | append value2 and value3 into value1               |
-| NEW_TUPLE     | 4: byte1 ~ byte4               | -> value                                     | create an empty tuple value                        |
-| NEW           | 4: byte1 ~ byte4               | -> value                                     | create an empty object of a specified type         |
+| NEW_TUPLE     | 3: byte1 ~ byte3               | -> value                                     | create an empty tuple value                        |
+| NEW           | 3: byte1 ~ byte3               | -> value                                     | create an empty object of a specified type         |
 | CALL_METHOD   | 3: param index1 index2         | recv param1 ~ paramN -> result               | call virtual method                                |
 | CALL_FUNC     | 1: param                       | func param1 ~ paramN -> result               | apply function object                              |
 | CALL_NATIVE   | 1: index                       | -> value                                     | call native function                               |

@@ -407,7 +407,7 @@ private:
      * write instruction having type. (ex. PRINT).
      */
     void emitTypeIns(OpCode op, const DSType &type) {
-        this->emit4byteIns(op, type.getTypeID());
+        this->emit3byteIns(op, type.getTypeID());
     }
 
     unsigned int currentCodeOffset() const {

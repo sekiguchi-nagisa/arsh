@@ -39,7 +39,7 @@ bool isTypeOp(OpCode code) {
     case OpCode::NEW_MAP:
     case OpCode::NEW_TUPLE:
     case OpCode::NEW:
-        ASSERT_BYTE_SIZE(code, 4);
+        ASSERT_BYTE_SIZE(code, 3);
         return true;
     default:
         return false;
@@ -1337,8 +1337,8 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             auto code = static_cast<OpCode>(c.getCode()[i]);
             fprintf(this->fp, "  %s: %s", formatNum(digit(c.getCodeSize()), i).c_str(), opName[static_cast<unsigned char>(code)]);
             if(isTypeOp(code)) {
-                unsigned int v = read32(c.getCode(), i + 1);
-                i += 4;
+                unsigned int v = read24(c.getCode(), i + 1);
+                i += 3;
                 fprintf(this->fp, "  %s", this->symbolTable.getTypeName(this->symbolTable.get(v)));
             } else {
                 const int byteSize = getByteSize(code);
