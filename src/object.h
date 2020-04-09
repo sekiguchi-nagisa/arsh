@@ -57,7 +57,7 @@ public:
      * for LLVM-style RTTI
      * see. https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
      */
-    enum ObjectKind {
+    enum ObjectKind : unsigned char {
 #define GEN_ENUM(K) K,
         EACH_OBJECT_KIND(GEN_ENUM)
 #undef GEN_ENUM
@@ -66,29 +66,31 @@ public:
 protected:
     unsigned int refCount{0};
 
-    const ObjectKind kind;
-
-    const unsigned int typeID;
+    /**
+     * |  24bit  |  8bit       |
+     *   TypeID    ObjectKind
+     */
+    const unsigned int tag{0};
 
     friend class DSValue;
 
     NON_COPYABLE(DSObject);
 
-    DSObject(ObjectKind kind, unsigned int typeID) : kind(kind), typeID(typeID) {}
+    DSObject(ObjectKind kind, unsigned int typeID) : tag(typeID << 8 | kind) {}
 
     ~DSObject() = default;
 
 public:
-    unsigned int getTypeID() const {
-        return this->typeID;
-    }
-
     unsigned int getRefcount() const {
         return this->refCount;
     }
 
+    unsigned int getTypeID() const {
+        return this->tag >> 8;
+    }
+
     ObjectKind getKind() const {
-        return this->kind;
+        return static_cast<ObjectKind>(this->tag & 0xFF);
     }
 
 private:
@@ -100,6 +102,8 @@ const char *toString(DSObject::ObjectKind kind);
 template <DSObject::ObjectKind K>
 struct ObjectWithRtti : public DSObject {
 protected:
+    static_assert(sizeof(DSObject) == 8, "");
+
     explicit ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.getTypeID()) {}
     explicit ObjectWithRtti(TYPE type) : ObjectWithRtti(static_cast<unsigned int>(type)) {}
     explicit ObjectWithRtti(unsigned int id) : DSObject(K, id) {}
