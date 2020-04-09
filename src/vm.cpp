@@ -831,7 +831,8 @@ static NativeCode initSignalTrampoline() noexcept {
     code[3] = 2;
     code[4] = static_cast<char>(OpCode::CALL_FUNC);
     code[5] = 1;
-    code[6] = static_cast<char>(OpCode::RETURN_SIG);
+    code[6] = static_cast<char>(OpCode::EXIT_SIG);
+    code[7] = static_cast<char>(OpCode::RETURN);
     return NativeCode(code);
 }
 
@@ -1150,9 +1151,8 @@ bool VM::mainLoop(DSState &state) {
             }
             vmnext;
         }
-        vmcase(RETURN_SIG) {
+        vmcase(EXIT_SIG) {
             auto v = state.stack.getLocal(0);   // old exit status
-            state.stack.unwind();
             unsetFlag(DSState::eventDesc, VMEvent::MASK);
             state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
             vmnext;

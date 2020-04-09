@@ -41,7 +41,7 @@
 | RETURN        |                                | -> [empty]                                   | return from callable                               |
 | RETURN_V      |                                | value -> [empty]                             | return value from callable                         |
 | RETURN_UDC    |                                | value -> [empty]                             | return from user-defined command                   |
-| RETURN_SIG    |                                | -> [empty]                                   | return form signal handler                         |
+| EXIT_SIG      |                                | [no change]                                  | exit from signal handler                           |
 | BRANCH        | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset |
 | GOTO          | 4: byte1 ~ byte4               | [no change]                                  | go to instruction at a specified index             |
 | THROW         |                                | value -> [empty]                             | throw exception                                    |

@@ -966,7 +966,7 @@ struct DSCode {
 
 class NativeCode : public DSCode {
 public:
-    using ArrayType = std::array<char, 16>;
+    using ArrayType = std::array<char, 8>;
 
 private:
     ArrayType value;
