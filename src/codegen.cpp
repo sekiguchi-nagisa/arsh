@@ -1206,18 +1206,9 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 }
 
 void ByteCodeGenerator::visitSourceNode(SourceNode &node) {
+    assert(!node.isFirstAppear());
     unsigned int index = node.getIndex();
-    if(node.isFirstAppear()) {
-        this->emitSourcePos(node.getPathNode().getPos());
-        this->emit0byteIns(OpCode::INIT_MODULE);
-        if(index > 0) {
-            this->emit0byteIns(OpCode::DUP);
-        }
-        this->emit2byteIns(OpCode::STORE_GLOBAL, node.getModIndex());
-        if(index > 0) {
-            this->emit2byteIns(OpCode::STORE_GLOBAL, index);
-        }
-    } else if(index > 0) {
+    if(index > 0) {
         this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getModIndex());
         this->emit2byteIns(OpCode::STORE_GLOBAL, index);
     }
@@ -1237,7 +1228,18 @@ void ByteCodeGenerator::exitModule(SourceNode &node) {
     this->emitIns(OpCode::RETURN);
     auto func = DSValue::create<FuncObject>(*node.getModType(), this->finalizeCodeBuilder(node.getModType()->toName()));
     this->emitLdcIns(func);
-    this->visit(node);
+
+    this->emitSourcePos(node.getPathNode().getPos());
+    this->emit0byteIns(OpCode::DUP);
+    this->emit1byteIns(OpCode::CALL_FUNC, 0);
+    unsigned int index = node.getIndex();
+    if(index > 0) {
+        this->emit0byteIns(OpCode::DUP);
+    }
+    this->emit2byteIns(OpCode::STORE_GLOBAL, node.getModIndex());
+    if(index > 0) {
+        this->emit2byteIns(OpCode::STORE_GLOBAL, index);
+    }
 }
 
 // ############################

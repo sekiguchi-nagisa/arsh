@@ -1125,11 +1125,6 @@ bool VM::mainLoop(DSState &state) {
             }
             vmnext;
         }
-        vmcase(INIT_MODULE) {
-            auto &code = typeAs<FuncObject>(state.stack.peek()).getCode();
-            windStackFrame(state, 0, 0, &code);
-            vmnext;
-        }
         vmcase(RETURN) {
             state.stack.unwind();
             if(state.stack.checkVMReturn()) {

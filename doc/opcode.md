@@ -38,7 +38,6 @@
 | CALL_FUNC     | 1: param                       | func param1 ~ paramN -> result               | apply function object                              |
 | CALL_NATIVE   | 1: index                       | -> value                                     | call native function                               |
 | CALL_NATIVE2  | 2: param index                 | param1 ~ paramN -> result                    | call native function                               |
-| INIT_MODULE   |                                | value -> value                               | initialize module                                  |
 | RETURN        |                                | -> [empty]                                   | return from callable                               |
 | RETURN_V      |                                | value -> [empty]                             | return value from callable                         |
 | RETURN_UDC    |                                | value -> [empty]                             | return from user-defined command                   |
