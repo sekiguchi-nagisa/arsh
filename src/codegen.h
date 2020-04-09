@@ -422,7 +422,6 @@ private:
 
     void emitLdcIns(DSValue &&value);
     void emitToString();
-    void emitNumCastIns(const DSType &beforeType, const DSType &afterType);
     void emitBranchIns(OpCode op, const Label &label);
 
     void emitBranchIns(const Label &label) {

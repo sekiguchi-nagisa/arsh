@@ -287,6 +287,14 @@ YDSH_METHOD int_2_int_xor(RuntimeContext & ctx) {
     RET(DSValue::createInt(left ^ right));
 }
 
+//!bind: function $OP_TO_FLOAT($this : Int) : Float
+YDSH_METHOD int_toFloat(RuntimeContext & ctx) {
+    SUPPRESS_WARNING(int_toFloat);
+    int64_t v = LOCAL(0).asInt();
+    auto d = static_cast<double>(v);
+    RET(DSValue::createFloat(d));
+}
+
 
 // ###################
 // ##     Float     ##
@@ -418,6 +426,13 @@ YDSH_METHOD float_isFinite(RuntimeContext &ctx) {
     RET_BOOL(std::isfinite(value));
 }
 
+//!bind: function $OP_TO_INT($this : Float): Int
+YDSH_METHOD float_toInt(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_toInt);
+    double d = LOCAL(0).asFloat();
+    auto v = static_cast<int64_t>(d);
+    RET(DSValue::createInt(v));
+}
 
 // #####################
 // ##     Boolean     ##

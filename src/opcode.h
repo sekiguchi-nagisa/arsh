@@ -69,8 +69,6 @@ namespace ydsh {
     OP(ENTER_FINALLY, 2,  1) \
     OP(EXIT_FINALLY , 0, -1) \
     OP(LOOKUP_HASH  , 0, -2) \
-    OP(INT_TO_FLOAT , 0,  0) \
-    OP(FLOAT_TO_INT , 0,  0) \
     OP(REF_EQ       , 0, -1) \
     OP(REF_NE       , 0, -1) \
     OP(FORK         , 3,  1) \

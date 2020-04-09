@@ -41,6 +41,8 @@ function %OP_AND($this : Int, $target : Int) : Int
 function %OP_OR($this : Int, $target : Int) : Int
 
 function %OP_XOR($this : Int, $target : Int) : Int
+
+function %OP_TO_FLOAT($this : Int) : Float
 ```
 
 ## Float type
@@ -74,6 +76,8 @@ function isNan($this : Float) : Boolean
 function isInf($this : Float) : Boolean
 
 function isFinite($this : Float) : Boolean
+
+function %OP_TO_INT($this : Float) : Int
 ```
 
 ## Boolean type

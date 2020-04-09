@@ -1206,18 +1206,6 @@ bool VM::mainLoop(DSState &state) {
             }
             vmnext;
         }
-        vmcase(INT_TO_FLOAT) {
-            int64_t v = state.stack.pop().asInt();
-            auto d = static_cast<double>(v);
-            state.stack.push(DSValue::createFloat(d));
-            vmnext;
-        }
-        vmcase(FLOAT_TO_INT) {
-            double d = state.stack.pop().asFloat();
-            auto v = static_cast<int64_t>(d);
-            state.stack.push(DSValue::createInt(v));
-            vmnext;
-        }
         vmcase(REF_EQ) {
             auto v1 = state.stack.pop();
             auto v2 = state.stack.pop();

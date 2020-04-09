@@ -143,23 +143,6 @@ void ByteCodeGenerator::emitToString() {
     this->emitMethodCallIns(0, *this->handle_STR);
 }
 
-void ByteCodeGenerator::emitNumCastIns(const DSType &beforeType, const DSType &afterType) {
-    const int beforeIndex = beforeType.getNumTypeIndex();
-    const int afterIndex = afterType.getNumTypeIndex();
-
-    assert(beforeIndex > -1 && beforeIndex < 2);
-    assert(afterIndex > -1 && afterIndex < 2);
-
-    const OpCode table[2][2] = {
-            {OpCode::HALT,         OpCode::INT_TO_FLOAT},
-            {OpCode::FLOAT_TO_INT, OpCode::HALT},
-    };
-
-    OpCode op = table[beforeIndex][afterIndex];
-    assert(op != OpCode::HALT);
-    this->emit0byteIns(op);
-}
-
 void ByteCodeGenerator::emitBranchIns(OpCode op, const Label &label) {
     const unsigned int index = this->currentCodeOffset();    //FIXME: check index range
     this->emit2byteIns(op, 0);
@@ -442,9 +425,14 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     case TypeOpNode::TO_VOID:
         this->emit0byteIns(OpCode::POP);
         break;
-    case TypeOpNode::NUM_CAST:
-        this->emitNumCastIns(node.getExprNode()->getType(), node.getType());
+    case TypeOpNode::NUM_CAST: {
+        auto &type = node.getExprNode()->getType();
+        assert(type.is(TYPE::Int) || type.is(TYPE::Float));
+        auto *handle = this->symbolTable.lookupMethod(type, type.is(TYPE::Int) ? OP_TO_FLOAT : OP_TO_INT);
+        assert(handle != nullptr);
+        this->emitMethodCallIns(0, *handle);
         break;
+    }
     case TypeOpNode::TO_STRING:
         this->emitSourcePos(node.getPos());
         this->emitToString();

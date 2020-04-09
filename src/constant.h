@@ -101,6 +101,10 @@ constexpr const char *OP_INTERP = "%interp";    // for interpolation
 // to command argument
 constexpr const char *OP_CMD_ARG = "%cmd_arg";  // for command argument
 
+// num cast
+constexpr const char *OP_TO_INT = "toInt";
+constexpr const char *OP_TO_FLOAT = "toFloat";
+
 // =====  environmental variable  =====
 
 constexpr const char *ENV_HOME = "HOME";
