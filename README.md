@@ -11,7 +11,7 @@ Currently, under heavy development.
 Language specification is subject to change without notice. 
 
 ## Build Requirement
-* Linux x64
+* Linux x86-64 / aarch64
 * cmake 2.8.12 or later
 * autotools, libtool (for building re2c)
 * make/ninja
