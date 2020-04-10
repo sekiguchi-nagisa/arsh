@@ -1516,10 +1516,10 @@ static NativeCode initCmdTrampoline() noexcept {
     return NativeCode(code);
 }
 
-static auto cmdTrampoline = initCmdTrampoline();
-
 DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propagate) {
     GUARD_RECURSION(state);
+
+    static auto cmdTrampoline = initCmdTrampoline();
 
     DSValue ret;
     auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray), std::move(argv));
