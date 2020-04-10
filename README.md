@@ -11,7 +11,7 @@ Currently, under heavy development.
 Language specification is subject to change without notice. 
 
 ## Build Requirement
-* Linux x86-64 / aarch64
+* Linux x86-64
 * cmake 2.8.12 or later
 * autotools, libtool (for building re2c)
 * make/ninja
@@ -24,6 +24,13 @@ Language specification is subject to change without notice.
 ### Tested Compiler
 * gcc (5, 6, 7, 8, 9)
 * clang (3.6, 3.7, 3.8, 3.9, 4, 5, 6, 7, 8, 9)
+
+### Other Supported platform
+* Linux AArch64
+* macOS
+* Windows
+  * Cygwin
+  * WSL
 
 ## How to use
 
