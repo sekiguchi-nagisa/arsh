@@ -29,7 +29,7 @@ Language specification is subject to change without notice.
 * Linux AArch64
 * macOS
 * Windows
-  * Cygwin
+  * Cygwin (some test cases still failed)
   * WSL
 
 ## How to use
