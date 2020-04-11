@@ -495,7 +495,7 @@ private:
     void generateCmdArg(CmdArgNode &node);
     void emitPipelineIns(const std::vector<Label> &labels, bool lastPipe);
 
-    void generateConcat(Node &node, const bool fragment = false);
+    void generateConcat(Node &node, bool fragment = false);
 
     void generateBreakContinue(JumpNode &node);
 

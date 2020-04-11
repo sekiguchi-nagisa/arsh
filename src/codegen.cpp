@@ -83,7 +83,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
     };  // sentinel
 
     return CompiledCode(this->srcInfo, name.empty() ? nullptr : name.c_str(),
-                        std::move(code), constPool, entries, except);
+                        code, constPool, entries, except);
 }
 
 
@@ -822,11 +822,11 @@ static DSValue newObject(Node &constNode) {
     assert(kind == NodeKind::Number || kind == NodeKind::String);
     if(kind == NodeKind::Number) {
         if(constNode.getType().is(TYPE::Signal)) {
-            return DSValue::createSig(static_cast<NumberNode&>(constNode).getIntValue());
+            return DSValue::createSig(cast<NumberNode>(constNode).getIntValue());
         }
-        return DSValue::createInt(static_cast<NumberNode&>(constNode).getIntValue());
+        return DSValue::createInt(cast<NumberNode>(constNode).getIntValue());
     }
-    return DSValue::createStr(static_cast<StringNode&>(constNode).getValue());
+    return DSValue::createStr(cast<StringNode>(constNode).getValue());
 }
 
 void ByteCodeGenerator::generateMapCase(CaseNode &node) {
@@ -1116,7 +1116,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     auto *assignableNode = static_cast<AssignableNode *>(node.getLeftNode());
     unsigned int index = assignableNode->getIndex();
     if(node.isFieldAssign()) {
-        auto *accessNode = static_cast<AccessNode *>(node.getLeftNode());
+        auto *accessNode = cast<AccessNode>(node.getLeftNode());
         if(node.isSelfAssignment()) {
             this->visit(*node.getLeftNode());
         } else {
@@ -1137,7 +1137,7 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
             this->visit(*node.getLeftNode());
         }
         this->visit(*node.getRightNode());
-        auto *varNode = static_cast<VarNode *>(node.getLeftNode());
+        auto *varNode = cast<VarNode>(node.getLeftNode());
 
         if(hasFlag(varNode->attr(), FieldAttribute::ENV)) {
             if(hasFlag(varNode->attr(), FieldAttribute::GLOBAL)) {

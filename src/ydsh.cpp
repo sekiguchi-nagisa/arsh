@@ -117,7 +117,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
             this->codegen.enterModule(this->frontEnd.getCurrentSourceInfo());
             break;
         case FrontEnd::EXIT_MODULE:
-            this->codegen.exitModule(static_cast<SourceNode&>(*ret.first));
+            this->codegen.exitModule(cast<SourceNode>(*ret.first));
             break;
         case FrontEnd::IN_MODULE:
             this->codegen.generate(ret.first.get());

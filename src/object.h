@@ -1065,9 +1065,9 @@ private:
 public:
     NON_COPYABLE(CompiledCode);
 
-    CompiledCode(const SourceInfo &srcInfo, const char *name, DSCode &&code,
+    CompiledCode(const SourceInfo &srcInfo, const char *name, DSCode code,
                  DSValue *constPool, LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
-            DSCode(std::move(code)), sourceName(strdup(srcInfo->getSourceName().c_str())), name(name == nullptr ? nullptr : strdup(name)),
+            DSCode(code), sourceName(strdup(srcInfo->getSourceName().c_str())), name(name == nullptr ? nullptr : strdup(name)),
             constPool(constPool), lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
 
     CompiledCode(CompiledCode &&c) noexcept :
