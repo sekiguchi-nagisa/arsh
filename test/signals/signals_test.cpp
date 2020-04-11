@@ -27,70 +27,79 @@ static std::vector<std::string> split(const std::string &str) {
     return bufs;
 }
 
-static void toUpperCase(std::string &str) {
-    for(auto &ch : str) {
-        if(ch >= 'a' && ch <= 'z') {
-            ch -= static_cast<int>('a') - static_cast<int>('A');   // convert to upper character
-        }
-    }
-}
-
 static bool startsWith(const char *s1, const char *s2) {
     return s1 != nullptr && s2 != nullptr && strstr(s1, s2) == s1;
 }
 
-static bool excludeRT(const std::string &str) {
+static bool isRT(const std::string &str) {
     return startsWith(str.c_str(), "RT");
 }
 
-static void trim(std::string &str) {
-    if(startsWith(str.c_str(), "SIG")) {
-        str = str.c_str() + 3;
+static std::string normalize(const std::string &str) {
+    std::string ret = str;
+    std::transform(str.begin(), str.end(), ret.begin(), ::toupper);
+    if(startsWith(ret.c_str(), "SIG")) {
+        ret = ret.substr(3);
     }
+    return ret;
 }
 
-/**
- * exclude other signal (non-standard signal) and real time signal
- *
- */
-struct SigFilter {
-    bool operator()(const std::string &str) const {
-        const char *v[] = {
-                "IOT", "EMT", "STKFLT", "IO","CLD", "PWR", "INFO", "LOST", "WINCH", "UNUSED"
-        };
-        for(auto &e : v) {
-            if(str == e) {
-                return true;
-            }
-        }
-        return false;
+static std::string format(const char *name, int num) {
+    char value[64];
+    snprintf(value, ydsh::arraySize(value), "%s(%d)", name, num);
+    return std::string(value);
+}
+
+struct SigEntry {
+    std::string name;
+    int num;
+
+    friend bool operator<(const SigEntry &x, const SigEntry &y) {
+        return x.num < y.num;
+    }
+
+    friend bool operator==(const SigEntry &x, const SigEntry &y) {
+        return x.num == y.num;
     }
 };
 
-static std::vector<std::string> toSignalList(const std::string &str) {
-    auto values = split(str);
-    for(auto iter = values.begin(); iter != values.end();) {
-        toUpperCase(*iter);
-        trim(*iter);
-        auto &e = *iter;
-        if(e.empty() || !std::isalpha(e[0]) || excludeRT(e)) {
-            iter = values.erase(iter);
-            continue;
-        }
-        ++iter;
-    }
-    std::sort(values.begin(), values.end());
-    values.erase(std::remove_if(values.begin(), values.end(), SigFilter()), values.end());
-    return values;
+static std::string formatEntry(const SigEntry &e) {
+    return format(e.name.c_str(), e.num);
 }
 
-static std::vector<std::string> toList(const ydsh::SignalPair *pairs) {
-    std::vector<std::string> values;
-    for(; pairs->name; pairs++) {
-        values.emplace_back(pairs->name);
+static std::vector<std::string> toSignalList(const std::string &str) {
+    unsigned int invalidCount = 0;
+    std::vector<SigEntry> entries;
+    for(auto &e : split(str)) {
+        auto v = normalize(e);
+        if(v.empty() || !std::isalpha(v[0]) || isRT(v)) {
+            continue;
+        }
+        int num = ydsh::getSignalNum(v.c_str());
+        if(num < 0) {
+            invalidCount++;
+            num = -invalidCount;
+        }
+        if(num > -1) {
+            v = ydsh::getSignalName(num);
+        }
+        entries.push_back({ .name = std::move(v), .num = num});
     }
-    std::sort(values.begin(), values.end());
-    values.erase(std::remove_if(values.begin(), values.end(), SigFilter()), values.end());
+
+    // dedup
+    std::sort(entries.begin(), entries.end());
+    entries.erase(std::unique(entries.begin(), entries.end()), entries.end());
+
+    std::vector<std::string> ret;
+    std::transform(entries.begin(), entries.end(), std::back_inserter(ret), formatEntry);
+    return ret;
+}
+
+static std::vector<std::string> getSignalList() {
+    std::vector<std::string> values;
+    for(auto &e : ydsh::getUniqueSignalList()) {
+        values.push_back(format(ydsh::getSignalName(e), e));
+    }
     return values;
 }
 
@@ -110,7 +119,7 @@ TEST(Signal, all) {
     ASSERT_TRUE(!killOut.empty());
 
     auto expected = toSignalList(killOut);
-    auto actual = toList(ydsh::getSignalList());
+    auto actual = getSignalList();
 
     ASSERT_EQ(join(expected, '\n'), join(actual, '\n'));
 }
