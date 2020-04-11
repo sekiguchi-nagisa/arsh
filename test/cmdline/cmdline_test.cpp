@@ -321,8 +321,8 @@ TEST_F(CmdlineTest, exec) {
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PWD)\" == \"$(printenv OLDPWD)\")"), 0));
 
     if(platform::platform() == platform::PlatformType::CYGWIN) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env WINDIR)"), 0));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(check_env SYSTEMROOT)"), 0));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(checkenv WINDIR)"), 0));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(checkenv SYSTEMROOT)"), 0));
 
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 10"), 0));
     } else {
