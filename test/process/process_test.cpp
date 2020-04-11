@@ -2,6 +2,7 @@
 
 #include "../test_common.h"
 #include "ansi.h"
+#include "../../tools/platform/platform.h"
 
 #ifndef INSPECT_PATH
 #error "require INSPECT_PATH"
@@ -103,6 +104,10 @@ TEST_F(ProcTest, pty2) {
 }
 
 TEST_F(ProcTest, pty3) {
+    if(ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
+        return;
+    }
+
     IOConfig config;
     config.in = IOConfig::PTY;
     config.out = IOConfig::PTY;
