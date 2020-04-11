@@ -56,5 +56,6 @@ mv $DEST_BACKUP_NEW $DEST_BACKUP || error "subvolume move failed"
 
 # keep history of backup
 btrfs subvolume snapshot -r $DEST_BACKUP "${DEST_PATH}.$(date +%Y%m%d-%H%M%S)"
+sync
 
 echo -e "\033[0;32mBackup succeed!!\033[0m"
