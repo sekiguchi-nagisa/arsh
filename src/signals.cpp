@@ -142,6 +142,9 @@ const SignalPair *getSignalList() {
 #ifdef SIGWINCH
             SIG_(WINCH)
 #endif
+#ifdef SIGUNUSED
+            SIG_(UNUSED)
+#endif
 
             // sentinel
             {nullptr, -1}
