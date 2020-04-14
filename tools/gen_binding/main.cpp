@@ -839,7 +839,7 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
         const DescTokenKind alters[] = {
                 FUNC,
         };
-        this->raiseNoViableAlterError(alters);
+        this->reportNoViableAlterError(alters);
         return nullptr;
     }
 }
@@ -865,7 +865,7 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
         const DescTokenKind alters[] = {
                 IDENTIFIER, VAR_NAME,
         };
-        this->raiseNoViableAlterError(alters);
+        this->reportNoViableAlterError(alters);
         return nullptr;
     }
     }

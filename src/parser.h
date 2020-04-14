@@ -227,7 +227,7 @@ protected:
         int status = 0;
         auto out = (this->lexer->*func)(token, status);
         if(status != 0) {
-            this->raiseTokenFormatError(kind, token, "out of range");
+            this->reportTokenFormatError(kind, token, "out of range");
         }
         return std::make_pair(token, out);
     }

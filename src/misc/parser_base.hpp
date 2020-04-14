@@ -157,19 +157,19 @@ protected:
     }
 
     template <std::size_t N>
-    void raiseNoViableAlterError(const T (&alters)[N]) {
-        this->raiseNoViableAlterError(N, alters);
+    void reportNoViableAlterError(const T (&alters)[N]) {
+        this->reportNoViableAlterError(N, alters);
     }
 
-    void raiseTokenMismatchedError(T expected);
+    void reportTokenMismatchedError(T expected);
 
-    void raiseNoViableAlterError(unsigned int size, const T *alters);
+    void reportNoViableAlterError(unsigned int size, const T *alters);
 
-    void raiseInvalidTokenError(unsigned int size, const T *alters);
+    void reportInvalidTokenError(unsigned int size, const T *alters);
 
-    void raiseTokenFormatError(T kind, Token token, const char *msg);
+    void reportTokenFormatError(T kind, Token token, const char *msg);
 
-    void raiseDeepNestingError();
+    void reportDeepNestingError();
 
     template <typename ...Arg>
     void createError(Arg && ...arg) {
@@ -185,7 +185,7 @@ template<typename T, typename LexerImpl, typename Tracker>
 Token ParserBase<T, LexerImpl, Tracker>::expect(T kind, bool fetchNext) {
     auto token = this->curToken;
     if(this->curKind != kind) {
-        this->raiseTokenMismatchedError(kind);
+        this->reportTokenMismatchedError(kind);
         return token;
     }
     this->trace();
@@ -202,10 +202,10 @@ void ParserBase<T, LexerImpl, Tracker>::consume() {
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void ParserBase<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T expected) {
+void ParserBase<T, LexerImpl, Tracker>::reportTokenMismatchedError(T expected) {
     if(isInvalidToken(this->curKind)) {
         T alter[1] = { expected };
-        this->raiseInvalidTokenError(1, alter);
+        this->reportInvalidTokenError(1, alter);
     } else {
         std::string message("mismatched token: ");
         message += toString(this->curKind);
@@ -220,9 +220,9 @@ void ParserBase<T, LexerImpl, Tracker>::raiseTokenMismatchedError(T expected) {
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void ParserBase<T, LexerImpl, Tracker>::raiseNoViableAlterError(unsigned int size, const T *alters) {
+void ParserBase<T, LexerImpl, Tracker>::reportNoViableAlterError(unsigned int size, const T *alters) {
     if(isInvalidToken(this->curKind)) {
-        this->raiseInvalidTokenError(size, alters);
+        this->reportInvalidTokenError(size, alters);
     } else {
         std::string message = "no viable alternative: ";
         message += toString(this->curKind);
@@ -243,7 +243,7 @@ void ParserBase<T, LexerImpl, Tracker>::raiseNoViableAlterError(unsigned int siz
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void ParserBase<T, LexerImpl, Tracker>::raiseInvalidTokenError(unsigned int size, const T *alters) {
+void ParserBase<T, LexerImpl, Tracker>::reportInvalidTokenError(unsigned int size, const T *alters) {
     std::string message = "invalid token, expected: ";
     if(size > 0 && alters != nullptr) {
         for(unsigned int i = 0; i < size; i++) {
@@ -260,7 +260,7 @@ void ParserBase<T, LexerImpl, Tracker>::raiseInvalidTokenError(unsigned int size
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void ParserBase<T, LexerImpl, Tracker>::raiseTokenFormatError(T kind, Token token, const char *msg) {
+void ParserBase<T, LexerImpl, Tracker>::reportTokenFormatError(T kind, Token token, const char *msg) {
     std::string message(msg);
     message += ": ";
     message += toString(kind);
@@ -269,7 +269,7 @@ void ParserBase<T, LexerImpl, Tracker>::raiseTokenFormatError(T kind, Token toke
 }
 
 template<typename T, typename LexerImpl, typename Tracker>
-void ParserBase<T, LexerImpl, Tracker>::raiseDeepNestingError() {
+void ParserBase<T, LexerImpl, Tracker>::reportDeepNestingError() {
     std::string message = "parser recursion depth exceeded";
     this->createError(this->curKind, this->curToken, DEEP_NESTING, std::move(message));
 }

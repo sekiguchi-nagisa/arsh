@@ -315,7 +315,7 @@ const char *toString(JSONTokenKind kind) {
 #define GEN_LA_ALTER(CASE) CASE,
 
 #define E_ALTER(...) \
-do { this->raiseNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return JSON(); } while(false)
+do { this->reportNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return JSON(); } while(false)
 
 #define TRY(expr) \
 ({ auto v = expr; if(this->hasError()) { return JSON(); } std::forward<decltype(v)>(v); })
@@ -332,7 +332,7 @@ struct CallCounter {
 
 #define MAX_NESTING_DEPTH 8000
 #define GUARD_DEEP_NESTING(name) \
-if(++this->callCount == MAX_NESTING_DEPTH) { this->raiseDeepNestingError(); return JSON(); } \
+if(++this->callCount == MAX_NESTING_DEPTH) { this->reportDeepNestingError(); return JSON(); } \
 CallCounter name(this->callCount)
 
 
@@ -396,7 +396,7 @@ JSON Parser::parseNumber() {
             return static_cast<long>(ret.first);
         }
     }
-    this->raiseTokenFormatError(NUMBER, token, "out of range");
+    this->reportTokenFormatError(NUMBER, token, "out of range");
     return JSON();
 }
 
@@ -532,7 +532,7 @@ bool Parser::unescapeStr(Token token, std::string &str) {
     for(auto iter = range.begin(); iter != range.end();) {
         int codePoint = unescape(iter, range.end());
         if(codePoint < 0) {
-            this->raiseTokenFormatError(STRING, token, "illegal string format");
+            this->reportTokenFormatError(STRING, token, "illegal string format");
             return false;
         }
         char buf[4];

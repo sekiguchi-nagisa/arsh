@@ -33,7 +33,7 @@
 
 
 #define E_ALTER(...) \
-do { this->raiseNoViableAlterError((TokenKind[]) { __VA_ARGS__ }); return nullptr; } while(false)
+do { this->reportNoViableAlterError((TokenKind[]) { __VA_ARGS__ }); return nullptr; } while(false)
 
 #define TRY(expr) \
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
@@ -43,7 +43,7 @@ namespace ydsh {
 
 #define GUARD_DEEP_NESTING(name) \
 CallCounter name(this->callCount); \
-if(this->callCount == MAX_NESTING_DEPTH) { this->raiseDeepNestingError(); return nullptr; } \
+if(this->callCount == MAX_NESTING_DEPTH) { this->reportDeepNestingError(); return nullptr; } \
 (void) name
 
 
@@ -490,7 +490,7 @@ std::unique_ptr<Node> Parser::parse_statementEnd(bool disallowEOS) {
     switch(CUR_KIND()) {
     case EOS:
         if(disallowEOS) {
-            this->raiseTokenMismatchedError(NEW_LINE);
+            this->reportTokenMismatchedError(NEW_LINE);
         }
         break;
     case RBC:
@@ -503,7 +503,7 @@ std::unique_ptr<Node> Parser::parse_statementEnd(bool disallowEOS) {
             break;
         }
         if(!HAS_NL()) {
-            this->raiseTokenMismatchedError(NEW_LINE);
+            this->reportTokenMismatchedError(NEW_LINE);
         }
         break;
     }
@@ -1195,7 +1195,7 @@ std::unique_ptr<Node> Parser::parse_signalLiteral() {
     str.pop_back(); // skip suffix [']
     int num = getSignalNum(str.c_str() + 2); // skip prefix [%']
     if(num < 0) {
-        raiseTokenFormatError(SIGNAL_LITERAL, token, "unsupported signal");
+        reportTokenFormatError(SIGNAL_LITERAL, token, "unsupported signal");
         return nullptr;
     }
     return NumberNode::newSignal(token, num);
@@ -1212,7 +1212,7 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
     std::string str;
     bool s = this->lexer->singleToString(token, str);
     if(!s) {
-        raiseTokenFormatError(STRING_LITERAL, token, "illegal escape sequence");
+        reportTokenFormatError(STRING_LITERAL, token, "illegal escape sequence");
         return nullptr;
     }
     return std::make_unique<StringNode>(token, std::move(str));
@@ -1240,7 +1240,7 @@ std::unique_ptr<Node> Parser::parse_regexLiteral() {
     const char *errorStr;
     auto re = compileRegex(str.c_str(), errorStr, regexFlag);
     if(!re) {
-        raiseTokenFormatError(REGEX_LITERAL, token, errorStr);
+        reportTokenFormatError(REGEX_LITERAL, token, errorStr);
         return nullptr;
     }
     return std::make_unique<RegexNode>(token, std::move(str), std::move(re));
