@@ -193,6 +193,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "||"              { MODE(STMT); RET(COND_OR); }
       <EXPR> "=~"              { MODE(STMT); RET(MATCH); }
       <EXPR> "!~"              { MODE(STMT); RET(UNMATCH); }
+      <EXPR> ":-"              { MODE(STMT); RET(STR_CHECK); }
       <EXPR> "?"               { MODE(STMT); RET(TERNARY); }
       <EXPR> "??"              { MODE(STMT); RET(NULL_COALE); }
       <EXPR> "|"               { MODE(STMT); RET(PIPE); }
@@ -207,6 +208,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "*="              { MODE(STMT); RET(MUL_ASSIGN); }
       <EXPR> "/="              { MODE(STMT); RET(DIV_ASSIGN); }
       <EXPR> "%="              { MODE(STMT); RET(MOD_ASSIGN); }
+      <EXPR> ":="              { MODE(STMT); RET(STR_ASSIGN); }
       <EXPR> "=>"              { MODE(STMT); RET(CASE_ARM); }
 
       <EXPR> "as"              { RET(AS); }

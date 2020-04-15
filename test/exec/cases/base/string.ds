@@ -225,6 +225,18 @@ assert !("A" >= "AB")
 assert "AB" > "A"
 assert !("AB" <= "A")
 
+# check empty
+var icount = 0
+function getstr() : String {
+    $icount++;
+    return "check empty"
+}
+assert $c :- $getstr() == 'ccc'
+assert $icount == 0
+$c = ''
+assert $c :- $getstr() == 'check empty'
+assert $icount == 1
+
 # case
 assert "AbcDEf".lower() == "abcdef"
 assert "AbcDEf".upper() == "ABCDEF"

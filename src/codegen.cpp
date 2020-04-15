@@ -523,6 +523,23 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
         }
 
         this->markLabel(mergeLabel);
+    } else if(kind == STR_CHECK) {
+        auto elseLabel = makeLabel();
+        auto mergeLabel = makeLabel();
+
+        this->visit(*node.getLeftNode());
+        this->emit0byteIns(OpCode::DUP);
+        auto *handle = this->symbolTable.lookupMethod(this->symbolTable.get(TYPE::String), "empty");
+        assert(handle != nullptr);
+        this->emitMethodCallIns(0, *handle);
+
+        // check left is empty
+        this->emitBranchIns(elseLabel);
+        // if left is empty eval right
+        this->emit0byteIns(OpCode::POP);
+        this->visit(*node.getRightNode());
+
+        this->markLabel(elseLabel);
     } else if(kind == NULL_COALE) {
         auto mergeLabel = makeLabel();
 

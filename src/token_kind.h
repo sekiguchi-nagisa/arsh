@@ -100,6 +100,7 @@
     TOKEN(NULL_COALE                         , "??") \
     TOKEN(MATCH                              , "=~") \
     TOKEN(UNMATCH                            , "!~") \
+    TOKEN(STR_CHECK                          , ":-") \
     /* ternary op */\
     TOKEN(TERNARY                            , "?") \
     /* suffix op */\
@@ -113,6 +114,7 @@
     TOKEN(MUL_ASSIGN                         , "*=") \
     TOKEN(DIV_ASSIGN                         , "/=") \
     TOKEN(MOD_ASSIGN                         , "%=") \
+    TOKEN(STR_ASSIGN                         , ":=") \
     /* for case expression */\
     TOKEN(CASE_ARM                           , "=>") \
     /* context dependent key word */\
@@ -171,7 +173,8 @@
     OP(SUB_ASSIGN, 1, INFIX|RASSOC) \
     OP(MUL_ASSIGN, 1, INFIX|RASSOC) \
     OP(DIV_ASSIGN, 1, INFIX|RASSOC) \
-    OP(MOD_ASSIGN, 1, INFIX|RASSOC)
+    OP(MOD_ASSIGN, 1, INFIX|RASSOC) \
+    OP(STR_ASSIGN, 1, INFIX|RASSOC)
 
 #define EACH_OPERATOR(OP) \
     OP(IS        , 17, INFIX) \
@@ -185,23 +188,24 @@
     OP(XOR       , 13, INFIX) \
     OP(OR        , 12, INFIX) \
     OP(NULL_COALE, 11, INFIX|RASSOC) \
-    OP(LT        ,  10, INFIX) \
-    OP(GT        ,  10, INFIX) \
-    OP(LE        ,  10, INFIX) \
-    OP(GE        ,  10, INFIX) \
-    OP(EQ        ,  10, INFIX) \
-    OP(NE        ,  10, INFIX) \
-    OP(MATCH     ,  10, INFIX) \
-    OP(UNMATCH   ,  10, INFIX) \
-    OP(WITH      ,  9, INFIX) \
-    OP(THROW     ,  8, PREFIX|RASSOC) \
-    OP(PIPE      ,  7, INFIX) \
-    OP(COND_AND  ,  6, INFIX) \
-    OP(COND_OR   ,  5, INFIX) \
-    OP(TERNARY   ,  4, INFIX) \
-    OP(COPROC    ,  3, PREFIX|RASSOC) \
-    OP(BACKGROUND,  2, INFIX) \
-    OP(DISOWN_BG ,  2, INFIX) \
+    OP(LT        , 10, INFIX) \
+    OP(GT        , 10, INFIX) \
+    OP(LE        , 10, INFIX) \
+    OP(GE        , 10, INFIX) \
+    OP(EQ        , 10, INFIX) \
+    OP(NE        , 10, INFIX) \
+    OP(MATCH     , 10, INFIX) \
+    OP(UNMATCH   , 10, INFIX) \
+    OP(STR_CHECK , 10, INFIX) \
+    OP(WITH      , 9, INFIX) \
+    OP(THROW     , 8, PREFIX|RASSOC) \
+    OP(PIPE      , 7, INFIX) \
+    OP(COND_AND  , 6, INFIX) \
+    OP(COND_OR   , 5, INFIX) \
+    OP(TERNARY   , 4, INFIX) \
+    OP(COPROC    , 3, PREFIX|RASSOC) \
+    OP(BACKGROUND, 2, INFIX) \
+    OP(DISOWN_BG , 2, INFIX) \
     EACH_ASSIGN_OPERATOR(OP)
 
 

@@ -21,6 +21,19 @@ $s += 'l'
 $s += '##' + $s
 assert $s == '0123456789abcdefghijkl##0123456789abcdefghijkl'
 
+var icount = 0;
+function getstr() : String {
+    $icount++;
+    return "check empty and assign"
+}
+$s := $getstr()
+assert $icount == 0
+assert $s == '0123456789abcdefghijkl##0123456789abcdefghijkl'
+$s = ''
+$s := $getstr()
+assert $icount == 1
+assert $s == 'check empty and assign'
+
 # local
 {
     var a = 0
@@ -40,6 +53,10 @@ assert $s == '0123456789abcdefghijkl##0123456789abcdefghijkl'
     assert($s == 'ab')
     $s = ''
     assert $s.empty()
+
+    $s := $getstr()
+    assert $s == 'check empty and assign'
+    assert $icount == 2
 }
 
 # field
@@ -64,6 +81,10 @@ assert $t2._0 == "abcd"
 $t2._0 = ''
 assert $t2._0.empty()
 
+$t2._0 := $getstr()
+assert $t2._0 == 'check empty and assign'
+assert $icount == 3
+
 # indexer
 var i = [0]
 $i[0] += 1
@@ -86,3 +107,18 @@ $i2[0] += "34"
 assert $i2[0] == "1234"
 $i2[0] += -5 + $i2[0]
 assert $i2[0] == "1234-51234"
+
+$i2[0] := $getstr()
+assert $i2[0] == "1234-51234"
+assert $icount == 3
+
+$i2[0] = ''
+$i2[0] := $getstr()
+assert $i2[0] == "check empty and assign"
+assert $icount == 4
+
+# env
+export-env ABCD = ""
+$ABCD := $getstr()
+assert $ABCD == 'check empty and assign'
+assert $icount == 5

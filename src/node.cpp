@@ -1103,6 +1103,8 @@ TokenKind resolveAssignOp(TokenKind op) {
         return DIV;
     case MOD_ASSIGN:
         return MOD;
+    case STR_ASSIGN:
+        return STR_CHECK;
     default:
         fatal("unsupported assign op: %s\n", TO_NAME(op));
     }

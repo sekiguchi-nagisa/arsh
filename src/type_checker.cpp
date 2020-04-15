@@ -531,6 +531,13 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
         return;
     }
 
+    if(node.getOp() == STR_CHECK) {
+        this->checkType(this->symbolTable.get(TYPE::String), *node.getLeftNode());
+        this->checkType(this->symbolTable.get(TYPE::String), *node.getRightNode());
+        node.setType(this->symbolTable.get(TYPE::String));
+        return;
+    }
+
     if(node.getOp() == NULL_COALE) {
         auto &leftType = this->checkTypeAsExpr(*node.getLeftNode());
         if(!leftType.isOptionType()) {
