@@ -313,7 +313,7 @@ static std::vector<std::string> createPathStack(const char *path) {
         path++;
     }
 
-    for(const char *ptr = nullptr; (ptr = strchr(path, '/')) != nullptr;) {
+    for(const char *ptr; (ptr = strchr(path, '/')) != nullptr;) {
         const unsigned int size = ptr - path;
         if(size == 0) {
             path++;
@@ -421,7 +421,7 @@ void expandTilde(std::string &str) {
 
 int SigSet::popPendingSig() {
     assert(!this->empty());
-    int sigNum = 0;
+    int sigNum;
     do {
         sigNum = this->pendingIndex++;
         if(this->pendingIndex == NSIG) {
