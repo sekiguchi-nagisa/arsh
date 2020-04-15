@@ -524,7 +524,6 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
 
         this->markLabel(mergeLabel);
     } else if(kind == STR_CHECK) {
-        auto elseLabel = makeLabel();
         auto mergeLabel = makeLabel();
 
         this->visit(*node.getLeftNode());
@@ -534,12 +533,12 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
         this->emitMethodCallIns(0, *handle);
 
         // check left is empty
-        this->emitBranchIns(elseLabel);
+        this->emitBranchIns(mergeLabel);
         // if left is empty eval right
         this->emit0byteIns(OpCode::POP);
         this->visit(*node.getRightNode());
 
-        this->markLabel(elseLabel);
+        this->markLabel(mergeLabel);
     } else if(kind == NULL_COALE) {
         auto mergeLabel = makeLabel();
 
