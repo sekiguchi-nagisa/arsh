@@ -103,7 +103,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     }
     while(this->frontEnd) {
         auto ret = this->frontEnd(dsError);
-        if(ret.first == nullptr && ret.second == FrontEnd::IN_MODULE) {
+        if(!ret) {
             this->frontEnd.getSymbolTable().abort();
             return 1;
         }
@@ -112,15 +112,15 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
             continue;
         }
 
-        switch(ret.second) {
+        switch(ret.status) {
         case FrontEnd::ENTER_MODULE:
             this->codegen.enterModule(this->frontEnd.getCurrentSourceInfo());
             break;
         case FrontEnd::EXIT_MODULE:
-            this->codegen.exitModule(cast<SourceNode>(*ret.first));
+            this->codegen.exitModule(cast<SourceNode>(*ret.node));
             break;
         case FrontEnd::IN_MODULE:
-            this->codegen.generate(ret.first.get());
+            this->codegen.generate(ret.node.get());
             break;
         }
     }

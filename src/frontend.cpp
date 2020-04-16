@@ -203,7 +203,7 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError) {
     }
 }
 
-std::pair<std::unique_ptr<Node>, FrontEnd::Status> FrontEnd::operator()(DSError *dsError) {
+FrontEnd::Ret FrontEnd::operator()(DSError *dsError) {
     // parse
     auto node = this->tryToParse(dsError);
     if(this->parser.hasError()) {

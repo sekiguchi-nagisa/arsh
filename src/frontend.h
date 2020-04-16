@@ -33,6 +33,15 @@ public:
         EXIT_MODULE,
     };
 
+    struct Ret {
+        std::unique_ptr<Node> node;
+        Status status;
+
+        explicit operator bool() const {
+            return this->node != nullptr || this->status != Status::IN_MODULE;
+        }
+    };
+
 private:
     struct Context {
         std::string scriptDir;
@@ -98,7 +107,7 @@ public:
         return static_cast<bool>(this->parser) || !this->contexts.empty();
     }
 
-    std::pair<std::unique_ptr<Node>, Status> operator()(DSError *dsError);
+    Ret operator()(DSError *dsError);
 
     void setupASTDump();
 
