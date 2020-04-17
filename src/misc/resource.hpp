@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-2018 Nagisa Sekiguchi
+ * Copyright (C) 2016-2020 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -132,6 +132,31 @@ public:
     template <typename ... A>
     static IntrusivePtr create(A && ...arg) {
         return IntrusivePtr(new T(std::forward<A>(arg)...));
+    }
+};
+
+template <typename T>
+class ObserverPtr {
+private:
+    T *ptr;
+
+public:
+    explicit ObserverPtr(T *ptr) noexcept : ptr(ptr) {}
+
+    ObserverPtr(std::nullptr_t) noexcept : ptr(nullptr) {}
+
+    ObserverPtr() noexcept : ptr(nullptr) {}
+
+    explicit operator bool() const {
+        return this->ptr != nullptr;
+    }
+
+    T *operator->() const {
+        return this->ptr;
+    }
+
+    T &operator*() const {
+        return *this->ptr;
     }
 };
 
