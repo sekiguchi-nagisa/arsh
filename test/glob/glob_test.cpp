@@ -234,6 +234,9 @@ TEST_F(GlobTest, base_onlyDir) {    // match only dir
 }
 
 TEST_F(GlobTest, base_fullpath) {
+    fprintf(stderr, "%s\n", GLOB_TEST_WORK_DIR);
+    fprintf(stdout, "%s\n", GLOB_TEST_WORK_DIR);
+
     auto ret = testGlobBase(GLOB_TEST_WORK_DIR, "bbb/*");
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/AA21", ret[0]);
