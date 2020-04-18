@@ -233,18 +233,6 @@ TEST_F(GlobTest, base_onlyDir) {    // match only dir
     ASSERT_TRUE(ret.empty());
 }
 
-static std::string join(const std::vector<std::string> &values) {
-    std::string ret;
-    for(auto &v : values) {
-        ret += v;
-        ret += ';';
-    }
-    if(!ret.empty()) {
-        ret.pop_back();
-    }
-    return ret;
-}
-
 TEST_F(GlobTest, base_fullpath) {
     auto ret = testGlobBase(GLOB_TEST_WORK_DIR, "bbb/*");
     ASSERT_EQ(2, ret.size());
@@ -257,12 +245,9 @@ TEST_F(GlobTest, base_fullpath) {
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
 
     ret = testGlobBase(GLOB_TEST_WORK_DIR, "../*/*/*");
-//    ASSERT_EQ(2, ret.size());
-//    ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
-//    ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
-    auto expect = join({GLOB_TEST_WORK_DIR "/../dir/bbb/AA21",
-                        GLOB_TEST_WORK_DIR "/../dir/bbb/b21"});
-    ASSERT_EQ(expect, join(ret));
+    ASSERT_EQ(2, ret.size());
+    ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
+    ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
 }
 
 int main(int argc, char **argv) {
