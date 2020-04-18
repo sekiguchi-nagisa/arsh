@@ -193,7 +193,7 @@ Code:
    0: PUSH_INT  34
    2: STORE_GLOBAL  50
    5: PUSH_INT  34
-   7: CALL_NATIVE2  1  1
+   7: CALL_NATIVE2  1  %str
   10: POP
   11: RETURN
 Constant Pool:

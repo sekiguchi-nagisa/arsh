@@ -1345,8 +1345,12 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD || code == OpCode::FORK) {
                     fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
-                } else if(code == OpCode::RECLAIM_LOCAL || code == OpCode::CALL_NATIVE2) {
+                } else if(code == OpCode::RECLAIM_LOCAL) {
                     fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
+                } else if(code == OpCode::CALL_NATIVE2) {
+                    unsigned int paramSize = read8(c.getCode(), i + 1);
+                    const char *name = nativeFuncInfoTable()[read8(c.getCode(), i + 2)].funcName;
+                    fprintf(this->fp, "  %d  %s", paramSize, name);
                 } else {
                     switch(byteSize) {
                     case 1:
