@@ -30,10 +30,8 @@ static bool matchPattern(const char *name, const char *p, WildMatchOption option
 
 class GlobTest : public ::testing::Test {
 public:
-    static constexpr const char *workdir = GLOB_TEST_WORK_DIR;
-
     GlobTest() {
-        if(chdir(workdir) == -1) {
+        if(chdir(GLOB_TEST_WORK_DIR) == -1) {
             fatal_perror("broken directory: %s", GLOB_TEST_WORK_DIR);
         }
     }
@@ -236,17 +234,17 @@ TEST_F(GlobTest, base_onlyDir) {    // match only dir
 }
 
 TEST_F(GlobTest, base_fullpath) {
-    auto ret = testGlobBase(this->workdir, "bbb/*");
+    auto ret = testGlobBase(GLOB_TEST_WORK_DIR, "bbb/*");
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/AA21", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/b21", ret[1]);
 
-    ret = testGlobBase(this->workdir, "../*/bbb/*");
+    ret = testGlobBase(GLOB_TEST_WORK_DIR, "../*/bbb/*");
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
 
-    ret = testGlobBase(this->workdir, "../*/*/*");
+    ret = testGlobBase(GLOB_TEST_WORK_DIR, "../*/*/*");
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
