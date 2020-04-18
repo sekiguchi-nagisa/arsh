@@ -4,6 +4,7 @@
 
 set(TEST_NAME glob_test)
 
+add_definitions(-DGLOB_TEST_WORK_DIR="${CMAKE_CURRENT_SOURCE_DIR}/dir")
 add_executable(${TEST_NAME}
     glob_test.cpp
 )
