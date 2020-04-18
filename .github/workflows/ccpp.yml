@@ -13,11 +13,13 @@ jobs:
       run: sudo apt-get install ninja-build
     - name: configure
       run: |
-        cmake . -G Ninja -DUSE_EXTRA_TEST=on
+        mkdir build
+        cd build
+        cmake .. -G Ninja -DUSE_EXTRA_TEST=on
     - name: build
       run: |
         ninja
         sudo ninja install
-        ./ydsh ./tools/scripts/copy_mod4extra.ds
+        ./ydsh ../tools/scripts/copy_mod4extra.ds
     - name: test
       run: ctest --output-on-failure
