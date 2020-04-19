@@ -334,7 +334,7 @@ matrix:
       before_script:
         - pip install --user cpp-coveralls
       after_success:
-        - coveralls -r ../ -b . --gcov-options '\-lp' --exclude test --exclude fuzzing --exclude-pattern .*-src --exclude-pattern '.*\.re2c\.cpp' --exclude nextToken.cpp --exclude tools/json/lexer.cpp --exclude tools/uri/uri_parser.cpp --exclude tools/process/ansi.cpp
+        - coveralls -r ../ -b . --gcov-options '\-lp' --exclude build --exclude test --exclude fuzzing --exclude-pattern .*-src --exclude-pattern '.*\.re2c\.cpp' --exclude nextToken.cpp --exclude tools/json/lexer.cpp --exclude tools/uri/uri_parser.cpp --exclude tools/process/ansi.cpp
 
 script:
   - uname -a
