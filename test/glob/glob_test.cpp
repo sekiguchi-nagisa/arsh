@@ -21,6 +21,8 @@ struct StrMetaChar {
     static bool isZeroOrMore(const char *iter) {
         return *iter == '*';
     }
+
+    static void preExpand(std::string &) {}
 };
 
 static bool matchPattern(const char *name, const char *p, WildMatchOption option = {}) {
@@ -28,27 +30,38 @@ static bool matchPattern(const char *name, const char *p, WildMatchOption option
     return matcher(name) != WildMatchResult::FAILED;
 }
 
+struct Appender {
+    std::vector<std::string> &ref;
+
+    explicit Appender(std::vector<std::string> &value) : ref(value) {
+        this->ref.clear();
+    }
+
+    void operator()(std::string &&path) {
+        this->ref.push_back(path);
+        std::sort(this->ref.begin(), this->ref.end());
+    }
+};
+
 class GlobTest : public ::testing::Test {
+protected:
+    std::vector<std::string> ret; // result paths
+
 public:
     GlobTest() {
         if(chdir(GLOB_TEST_WORK_DIR) == -1) {
             fatal_perror("broken directory: %s", GLOB_TEST_WORK_DIR);
         }
     }
-};
 
-class Appender {
-private:
-    std::vector<std::string> paths;
-
-public:
-    void operator()(std::string &&path) {
-        this->paths.push_back(std::move(path));
+    unsigned int testGlobBase(const char *dir, const char *pattern, WildMatchOption option = {}) {
+        Appender appender(this->ret);
+        return globBase<StrMetaChar>(dir, pattern, pattern + strlen(pattern), appender, option);
     }
 
-    std::vector<std::string> take() {
-        std::sort(this->paths.begin(), this->paths.end());
-        return std::move(this->paths);
+    unsigned int testGlob(const char *pattern, WildMatchOption option = {}) {
+        Appender appender(this->ret);
+        return glob<StrMetaChar>(pattern, pattern + strlen(pattern), appender, option);
     }
 };
 
@@ -105,75 +118,82 @@ TEST_F(GlobTest, pattern2) {
     ASSERT_TRUE(matchPattern(".hoge", ".?*", WildMatchOption::DOTGLOB));
 }
 
-static std::vector<std::string> testGlobBase(const char *dir,
-                                const char *pattern, WildMatchOption option = {}) {
-    Appender appender;
-    globBase<StrMetaChar>(dir, pattern, pattern + strlen(pattern), appender, option);
-    return appender.take();
-}
-
 // test `globBase' api
 
 TEST_F(GlobTest, base_invalid) {    // invalid base dir
-    auto ret = testGlobBase("", "");
+    auto s = testGlobBase("", "");
+    ASSERT_EQ(0, s);
     ASSERT_TRUE(ret.empty());
 
-    ret = testGlobBase("", "*");
+    s = testGlobBase("", "*");
+    ASSERT_EQ(0, s);
     ASSERT_TRUE(ret.empty());
 
-    ret = testGlobBase("", "AAA");
+    s = testGlobBase("", "AAA");
+    ASSERT_EQ(0, s);
     ASSERT_TRUE(ret.empty());
 
-    ret = testGlobBase("hfuierhtfnv", "*");
+    s = testGlobBase("hfuierhtfnv", "*");
+    ASSERT_EQ(0, s);
     ASSERT_TRUE(ret.empty());
 }
 
 TEST_F(GlobTest, base_fileOrDir1) {    // match file or dir
-    auto ret = testGlobBase(".", "*");
+    auto s = testGlobBase(".", "*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ("AAA", ret[0]);
     ASSERT_EQ("bbb", ret[1]);
 
-    ret = testGlobBase("./", "*");
+    s = testGlobBase("./", "*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ("./AAA", ret[0]);
     ASSERT_EQ("./bbb", ret[1]);
 
-    ret = testGlobBase(".//", "*");
+    s = testGlobBase(".//", "*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(".//AAA", ret[0]);
     ASSERT_EQ(".//bbb", ret[1]);
 
-    ret = testGlobBase(".///", "*");
+    s = testGlobBase(".///", "*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(".///AAA", ret[0]);
     ASSERT_EQ(".///bbb", ret[1]);
 
-    ret = testGlobBase("././/.//", "*");
+    s = testGlobBase("././/.//", "*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ("././/.//AAA", ret[0]);
     ASSERT_EQ("././/.//bbb", ret[1]);
 
-    ret = testGlobBase("././/.//", "*");
+    s = testGlobBase("././/.//", "*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ("././/.//AAA", ret[0]);
     ASSERT_EQ("././/.//bbb", ret[1]);
 
-    ret = testGlobBase(".", "*/../*");
+    s = testGlobBase(".", "*/../*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ("bbb/../AAA", ret[0]);
     ASSERT_EQ("bbb/../bbb", ret[1]);
 
-    ret = testGlobBase(".", "*/./*");
+    s = testGlobBase(".", "*/./*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ("bbb/./AA21", ret[0]);
     ASSERT_EQ("bbb/./b21", ret[1]);
 
-    ret = testGlobBase(".", "*/./.?*");
+    s = testGlobBase(".", "*/./.?*");
+    ASSERT_EQ(1, s);
     ASSERT_EQ(1, ret.size());
     ASSERT_EQ("bbb/./.hidden", ret[0]);
 
-    ret = testGlobBase(".", "*/./*", WildMatchOption::DOTGLOB);
+    s = testGlobBase(".", "*/./*", WildMatchOption::DOTGLOB);
+    ASSERT_EQ(3, s);
     ASSERT_EQ(3, ret.size());
     ASSERT_EQ("bbb/./.hidden", ret[0]);
     ASSERT_EQ("bbb/./AA21", ret[1]);
@@ -181,73 +201,163 @@ TEST_F(GlobTest, base_fileOrDir1) {    // match file or dir
 }
 
 TEST_F(GlobTest, base_fileOrDir2) {    // match file or dir
-    auto ret = testGlobBase(".", "bbb/*");
+    auto s = testGlobBase(".", "bbb/*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ("bbb/AA21", ret[0]);
     ASSERT_EQ("bbb/b21", ret[1]);
 
-    ret = testGlobBase(".", "./././bbb/?*");
+    s = testGlobBase(".", "./././bbb/?*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ("./././bbb/AA21", ret[0]);
     ASSERT_EQ("./././bbb/b21", ret[1]);
 
-    ret = testGlobBase("./", "*//*/*");
+    s = testGlobBase("./", "*//*/*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ("./bbb/b21/A321", ret[0]);
     ASSERT_EQ("./bbb/b21/D", ret[1]);
 }
 
-TEST_F(GlobTest, base_onlyDir) {    // match only dir
-    auto ret = testGlobBase("./", "*/");
-    ASSERT_EQ(1, ret.size());
-    ASSERT_EQ("./bbb/", ret[0]);
+TEST_F(GlobTest, base_fileOrDir3) {    // match file or dir
+    auto s = testGlobBase("bbb", "*");
+    ASSERT_EQ(2, s);
+    ASSERT_EQ(2, ret.size());
+    ASSERT_EQ("bbb/AA21", ret[0]);
+    ASSERT_EQ("bbb/b21", ret[1]);
 
-    ret = testGlobBase(".", "*//");
-    ASSERT_EQ(1, ret.size());
-    ASSERT_EQ("bbb/", ret[0]);
-
-    ret = testGlobBase(".", "*////");
-    ASSERT_EQ(1, ret.size());
-    ASSERT_EQ("bbb/", ret[0]);
-
-    ret = testGlobBase(".", "*/.");
-    ASSERT_EQ(1, ret.size());
-    ASSERT_EQ("bbb/.", ret[0]);
-
-    ret = testGlobBase(".", "*/..");
-    ASSERT_EQ(1, ret.size());
-    ASSERT_EQ("bbb/..", ret[0]);
-
-    ret = testGlobBase("./", "*//.//..");
-    ASSERT_EQ(1, ret.size());
-    ASSERT_EQ("./bbb/./..", ret[0]);
-
-    ret = testGlobBase(".", "*//*/");
+    s = testGlobBase("bbb", "*/");
+    ASSERT_EQ(1, s);
     ASSERT_EQ(1, ret.size());
     ASSERT_EQ("bbb/b21/", ret[0]);
 
-    ret = testGlobBase(".", "*//*/*/");
+    s = testGlobBase("bbb/", "*/");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/b21/", ret[0]);
+}
+
+TEST_F(GlobTest, base_onlyDir) {    // match only dir
+    auto s = testGlobBase("./", "*/");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("./bbb/", ret[0]);
+
+    s = testGlobBase(".", "*//");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/", ret[0]);
+
+    s = testGlobBase(".", "*////");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/", ret[0]);
+
+    s = testGlobBase(".", "*/.");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/.", ret[0]);
+
+    s = testGlobBase(".", "*/..");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/..", ret[0]);
+
+    s = testGlobBase("./", "*//.//..");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("./bbb/./..", ret[0]);
+
+    s = testGlobBase(".", "*//*/");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/b21/", ret[0]);
+
+    s = testGlobBase(".", "*//*/*/");
+    ASSERT_EQ(0, s);
     ASSERT_TRUE(ret.empty());
 
-    ret = testGlobBase(".", "*//*./");
+    s = testGlobBase(".", "*//*./");
+    ASSERT_EQ(0, s);
     ASSERT_TRUE(ret.empty());
 }
 
 TEST_F(GlobTest, base_fullpath) {
-    auto ret = testGlobBase(GLOB_TEST_WORK_DIR, "bbb/*");
+    auto s = testGlobBase(GLOB_TEST_WORK_DIR, "bbb/*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/AA21", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/b21", ret[1]);
 
-    ret = testGlobBase(GLOB_TEST_WORK_DIR, "../*/bbb/*");
+    s = testGlobBase(GLOB_TEST_WORK_DIR, "../*/bbb/*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
 
-    ret = testGlobBase(GLOB_TEST_WORK_DIR, "../d*/*/*");
+    s = testGlobBase(GLOB_TEST_WORK_DIR, "..//d*///*//*");
+    ASSERT_EQ(2, s);
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
+}
+
+TEST_F(GlobTest, glob) {
+    auto s = testGlob("*");
+    ASSERT_EQ(2, s);
+    ASSERT_EQ(2, ret.size());
+    ASSERT_EQ("AAA", ret[0]);
+    ASSERT_EQ("bbb", ret[1]);
+
+    s = testGlob("b*");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb", ret[0]);
+
+    s = testGlob("./././*");
+    ASSERT_EQ(2, s);
+    ASSERT_EQ(2, ret.size());
+    ASSERT_EQ("./././AAA", ret[0]);
+    ASSERT_EQ("./././bbb", ret[1]);
+
+    s = testGlob("bbb/*");
+    ASSERT_EQ(2, s);
+    ASSERT_EQ(2, ret.size());
+    ASSERT_EQ("bbb/AA21", ret[0]);
+    ASSERT_EQ("bbb/b21", ret[1]);
+
+    s = testGlob("bbb/*", WildMatchOption::DOTGLOB);
+    ASSERT_EQ(3, s);
+    ASSERT_EQ(3, ret.size());
+    ASSERT_EQ("bbb/.hidden", ret[0]);
+    ASSERT_EQ("bbb/AA21", ret[1]);
+    ASSERT_EQ("bbb/b21", ret[2]);
+
+    s = testGlob("bbb///*//", WildMatchOption::DOTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/b21/", ret[0]);
+
+    s = testGlob("bbb/././/./*/");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/./././b21/", ret[0]);
+
+    s = testGlob("bbb/*2?");
+    ASSERT_EQ(2, s);
+    ASSERT_EQ(2, ret.size());
+    ASSERT_EQ("bbb/AA21", ret[0]);
+    ASSERT_EQ("bbb/b21", ret[1]);
+
+    s = testGlob("bbb/A*");
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/AA21", ret[0]);
+
+    s = testGlob("bbb/A*/");
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(0, ret.size());
 }
 
 int main(int argc, char **argv) {

@@ -230,6 +230,36 @@ unsigned int globBase(const char *baseDir, Iter iter, Iter end,
     return matchCount;
 }
 
+template <typename Meta, typename Iter, typename Appender>
+unsigned int glob(Iter iter, Iter end, Appender &appender, WildMatchOption option) {
+    auto begin = iter;
+    auto latestSep = end;
+
+    // resolve base dir
+    std::string baseDir;
+    for(; iter != end; ++iter) {
+        if(Meta::isZeroOrMore(iter) || Meta::isAny(iter)) {
+            break;
+        } else if(*iter == '/') {
+            latestSep = iter;
+            if(!baseDir.empty() && baseDir.back() == '/') {
+                continue;   // skip redundant '/'
+            }
+        }
+        baseDir += *iter;
+    }
+
+    if(latestSep == end) {  // not found '/'
+        iter = begin;
+        baseDir = '.';
+    } else {
+        iter = latestSep + 1;
+        for(; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back());
+        Meta::preExpand(baseDir);
+    }
+    return globBase<Meta>(baseDir.c_str(), iter, end, appender, option);
+}
+
 } // namespace ydsh
 
 #endif //YDSH_MISC_GLOB_HPP
