@@ -339,7 +339,8 @@ matrix:
                     --exclude test --exclude fuzzing \
                     --exclude-pattern .*-src \
                     --exclude-pattern .*-build \
-                    --exclude-pattern build/.*cpp \
+                    --exclude-pattern build/CMakeFiles \
+                    --exclude-pattern 'build/.*\.cpp' \
                     --exclude-pattern '.*\.re2c\.cpp'
 
 script:
