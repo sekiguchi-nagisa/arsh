@@ -244,7 +244,7 @@ TEST_F(GlobTest, base_fullpath) {
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
 
-    ret = testGlobBase(GLOB_TEST_WORK_DIR, "../*/*/*");
+    ret = testGlobBase(GLOB_TEST_WORK_DIR, "../d*/*/*");
     ASSERT_EQ(2, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
