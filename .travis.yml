@@ -336,12 +336,14 @@ matrix:
       after_success:
         - |
           coveralls -r ../ -b . --gcov-options '\-lp' \
-                    --exclude test --exclude fuzzing \
+                    --exclude test --exclude fuzzing --exclude include \
                     --exclude-pattern .*-src \
                     --exclude-pattern .*-build \
-                    --exclude-pattern 'build/CMakeFiles*' \
-                    --exclude-pattern 'build/.*\.cpp' \
-                    --exclude-pattern 'build/*' \
+                    --exclude-pattern '.*/CMakeFiles*' \
+                    --exclude-pattern '.*/nextToken\.cpp' \
+                    --exclude-pattern '.*/tools/json/lexer\.cpp' \
+                    --exclude-pattern '.*/tools/uri/uri_parser\.cpp' \
+                    --exclude-pattern '.*/tools/process/ansi\.cpp' \
                     --exclude-pattern '.*\.re2c\.cpp'
 
 script:
