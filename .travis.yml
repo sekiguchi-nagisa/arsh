@@ -344,6 +344,7 @@ matrix:
                     --exclude-pattern '.*/tools/json/lexer\.cpp' \
                     --exclude-pattern '.*/tools/uri/uri_parser\.cpp' \
                     --exclude-pattern '.*/tools/process/ansi\.cpp' \
+                    --exclude-pattern '.*/tools/gen_binding/DescLexer\.cpp' \
                     --exclude-pattern '.*\.re2c\.cpp'
 
 script:
