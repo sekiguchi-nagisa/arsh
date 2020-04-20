@@ -686,6 +686,10 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
 void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
     for(auto &exprNode : node.getSegmentNodes()) {
         this->checkTypeAsExpr(*exprNode);
+        assert(exprNode->getType().is(TYPE::String) ||
+            exprNode->getType().is(TYPE::StringArray) ||
+            exprNode->getType().is(TYPE::UnixFD) ||
+            exprNode->getType().isNothingType());
     }
 
     // not allow String Array and UnixFD type
@@ -695,34 +699,24 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
             this->checkType(nullptr, *exprNode, &this->symbolTable.get(TYPE::UnixFD));
         }
     }
-    node.setType(this->symbolTable.get(TYPE::Any));   //FIXME
+    assert(!node.getSegmentNodes().empty());
+    node.setType(node.getSegmentNodes()[0]->getType());
 }
 
 void TypeChecker::visitRedirNode(RedirNode &node) {
-    CmdArgNode *argNode = &node.getTargetNode();
-
-    // check UnixFD
-    if(argNode->getSegmentNodes().size() == 1) {
-        DSType *unacceptType = nullptr;
-        if(node.isHereStr()) {
-            unacceptType = &this->symbolTable.get(TYPE::UnixFD);
-        }
-        auto &type = this->checkType(nullptr, *argNode->getSegmentNodes()[0], unacceptType);
-        if(type.is(TYPE::UnixFD)) {
-            argNode->setType(type);
-            node.setType(this->symbolTable.get(TYPE::Any));
-            return;
-        }
-    }
-
-    this->checkTypeAsExpr(*argNode);
+    auto &argNode = node.getTargetNode();
+    this->checkTypeAsExpr(argNode);
 
     // not allow String Array type
-    if(argNode->getSegmentNodes().size() == 1) {
-        this->checkType(nullptr, *argNode->getSegmentNodes()[0], &this->symbolTable.get(TYPE::StringArray));
-    }
+    this->checkType(nullptr, argNode, &this->symbolTable.get(TYPE::StringArray));
 
-    node.setType(this->symbolTable.get(TYPE::Any));   //FIXME
+    // not UnixFD type, if IOHere
+    if(node.isHereStr()) {
+        this->checkType(nullptr, argNode, &this->symbolTable.get(TYPE::UnixFD));
+    }
+    assert(argNode.getType().isNothingType() ||
+        argNode.getType().is(TYPE::String) || argNode.getType().is(TYPE::UnixFD));
+    node.setType(this->symbolTable.get(TYPE::Any)); //FIXME:
 }
 
 void TypeChecker::visitPipelineNode(PipelineNode &node) {
