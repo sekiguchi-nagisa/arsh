@@ -20,7 +20,6 @@
 #include <dirent.h>
 
 #include <string>
-#include <vector>
 
 #include "files.h"
 #include "flag_util.hpp"
@@ -95,13 +94,20 @@ public:
             }
         }
 
+        if(*name) {
+            switch(this->matchDots()) { // check '.' or '..'
+            case 1:
+                return WildMatchResult::DOT;
+            case 2:
+                return WildMatchResult::DOTDOT;
+            default:
+                break;
+            }
+        }
+
         while(*name) {
             if(this->isEndOrSep()) {
                 return WildMatchResult::FAILED;
-            } else if(this->matchDot()) {
-                return WildMatchResult::DOT;
-            } else if(this->matchDotDot()) {
-                return WildMatchResult::DOTDOT;
             } else if(Meta::isZeroOrMore(this->iter)) {
                 break;
             } else if(*name != *this->iter && !Meta::isAny(this->iter)) {
@@ -140,31 +146,29 @@ private:
         return this->isEnd() || *this->iter == '/';
     }
 
-    bool matchDot() {
+    /**
+     *
+     * @return
+     * return 0, if not match '.' or '..'
+     * return 1, if match '.'
+     * return 2, if match '..'
+     */
+    unsigned int matchDots() {
         auto old = this->iter;
         if(*this->iter == '.') {
             ++this->iter;
             if(this->isEndOrSep()) {
-                return true;
+                return 1;
             }
-        }
-        this->iter = old;
-        return false;
-    }
-
-    bool matchDotDot() {
-        auto old = this->iter;
-        if(*this->iter == '.') {
-            ++this->iter;
             if(*this->iter == '.') {
                 ++this->iter;
                 if(this->isEndOrSep()) {
-                    return true;
+                    return 2;
                 }
             }
         }
         this->iter = old;
-        return false;
+        return 0;
     }
 };
 

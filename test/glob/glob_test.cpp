@@ -1,5 +1,6 @@
 #include <string>
 #include <algorithm>
+#include <vector>
 
 #include "gtest/gtest.h"
 
@@ -25,9 +26,12 @@ struct StrMetaChar {
     static void preExpand(std::string &) {}
 };
 
+static WildMatchResult matchPatternRaw(const char *name, const char *p, WildMatchOption option = {}) {
+    return createWildCardMatcher<StrMetaChar>(p, p + strlen(p), option)(name);
+}
+
 static bool matchPattern(const char *name, const char *p, WildMatchOption option = {}) {
-    auto matcher = createWildCardMatcher<StrMetaChar>(p, p + strlen(p), option);
-    return matcher(name) != WildMatchResult::FAILED;
+    return matchPatternRaw(name, p, option) != WildMatchResult::FAILED;
 }
 
 struct Appender {
@@ -98,10 +102,12 @@ TEST_F(GlobTest, pattern1) {
 }
 
 TEST_F(GlobTest, pattern2) {
-    ASSERT_TRUE(matchPattern(".", "."));
-    ASSERT_TRUE(matchPattern(".", ".", WildMatchOption::DOTGLOB));
+    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", "."));
+    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", ".", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".", "*"));
     ASSERT_TRUE(matchPattern(".", "*", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern(".conf", "*"));
+    ASSERT_TRUE(matchPattern(".conf", "*", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".", "?"));
     ASSERT_TRUE(matchPattern(".", "?", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", "*"));
@@ -116,6 +122,12 @@ TEST_F(GlobTest, pattern2) {
     ASSERT_TRUE(matchPattern("..", ".*?", WildMatchOption::DOTGLOB));
     ASSERT_TRUE(matchPattern(".hoge", ".?*"));
     ASSERT_TRUE(matchPattern(".hoge", ".?*", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern("h.log", "h."));
+    ASSERT_FALSE(matchPattern("h.log", "h.."));
+    ASSERT_FALSE(matchPattern("", "."));
+    ASSERT_FALSE(matchPattern("", ".."));
+    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw("hgoe", ".")); // always match
+    ASSERT_EQ(WildMatchResult::DOTDOT, matchPatternRaw("huga", ".."));    // always match
 }
 
 // test `globBase' api
