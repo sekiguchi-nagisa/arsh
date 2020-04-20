@@ -2442,10 +2442,21 @@ public:
     /**
      * dump field
      */
-    void dump(const char *fieldName, const char *value);
+    void dump(const char *fieldName, const char *value) {
+        this->dumpEscaped(fieldName, value);
+    }
 
     void dump(const char *fieldName, const std::string &value) {
         this->dump(fieldName, value.c_str());
+    }
+
+    void dump(const char *fieldName, bool value) {
+        this->dumpRaw(fieldName, value ? "true" : "false");
+    }
+
+    template <typename T, enable_when<std::is_arithmetic<T>::value> = nullptr>
+    void dump(const char *fieldName, T value) {
+        this->dumpRaw(fieldName, std::to_string(value).c_str());
     }
 
     template <typename T, enable_when<std::is_convertible<T *, Node *>::value> = nullptr>
@@ -2477,7 +2488,9 @@ public:
 
     void dump(const char *fieldName, const MethodHandle &handle);
 
-    void dumpNull(const char *fieldName);
+    void dumpNull(const char *fieldName) {
+        this->dumpRaw(fieldName, "null");
+    }
 
     /**
      * dump node without indent
@@ -2504,6 +2517,15 @@ public:
     }
 
 private:
+    void dumpRaw(const char *fieldName, const char *value) {
+        this->writeName(fieldName);
+        this->append(' ');
+        this->append(value);
+        this->newline();
+    }
+
+    void dumpEscaped(const char *fieldName, const char *value);
+
     void enterIndent() {
         this->bufs.back().indentLevel++;
     }

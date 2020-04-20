@@ -28,7 +28,6 @@
 #define NAME(f) #f
 
 #define DUMP(field) dumper.dump(NAME(field), field)
-#define DUMP_PRIM(field) dumper.dump(NAME(field), std::to_string(field))
 #define DUMP_PTR(field) \
     do {\
         if((field) == nullptr) {\
@@ -146,13 +145,13 @@ void NumberNode::dump(NodeDumper &dumper) const {
 
     switch(this->kind) {
     case Int:
-        DUMP_PRIM(intValue);
+        DUMP(intValue);
         break;
     case Float:
-        DUMP_PRIM(floatValue);
+        DUMP(floatValue);
         break;
     case Signal:
-        DUMP_PRIM(intValue);
+        DUMP(intValue);
         break;
     }
 }
@@ -240,7 +239,7 @@ void TupleNode::dump(NodeDumper &dumper) const {
 // ############################
 
 void AssignableNode::dump(NodeDumper &dumper) const {
-    DUMP_PRIM(index);
+    DUMP(index);
     dumper.dump("attribute", toString(this->attribute));
 }
 
@@ -521,8 +520,8 @@ void CmdNode::addRedirNode(std::unique_ptr<RedirNode> &&node) {
 void CmdNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(nameNode);
     DUMP(argNodes);
-    DUMP_PRIM(redirCount);
-    DUMP_PRIM(inPipe);
+    DUMP(redirCount);
+    DUMP(inPipe);
 }
 
 // ##########################
@@ -542,7 +541,7 @@ void PipelineNode::addNode(std::unique_ptr<Node> &&node) {
 
 void PipelineNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
-    DUMP_PRIM(baseIndex);
+    DUMP(baseIndex);
 }
 
 void PipelineNode::addNodeImpl(std::unique_ptr<Node> &&node) {
@@ -560,7 +559,7 @@ void PipelineNode::addNodeImpl(std::unique_ptr<Node> &&node) {
 void WithNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     DUMP(redirNodes);
-    DUMP_PRIM(baseIndex);
+    DUMP(baseIndex);
 }
 
 // ######################
@@ -613,9 +612,9 @@ void BlockNode::insertNodeToFirst(Node *node) {
 
 void BlockNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
-    DUMP_PRIM(baseIndex);
-    DUMP_PRIM(varSize);
-    DUMP_PRIM(maxVarSize);
+    DUMP(baseIndex);
+    DUMP(varSize);
+    DUMP(maxVarSize);
 }
 
 // ###########################
@@ -658,7 +657,7 @@ void LoopNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(condNode);
     DUMP_PTR(iterNode);
     DUMP_PTR(blockNode);
-    DUMP_PRIM(asDoWhile);
+    DUMP(asDoWhile);
 }
 
 // ####################
@@ -789,7 +788,7 @@ void JumpNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 
     DUMP_PTR(exprNode);
-    DUMP_PRIM(leavingBlock);
+    DUMP(leavingBlock);
 }
 
 // #######################
@@ -805,7 +804,7 @@ void CatchNode::dump(NodeDumper &dumper) const {
     DUMP(exceptionName);
     DUMP_PTR(typeNode);
     DUMP_PTR(blockNode);
-    DUMP_PRIM(varIndex);
+    DUMP(varIndex);
 }
 
 // #####################
@@ -861,8 +860,8 @@ void VarDeclNode::setAttribute(const FieldHandle &handle) {
 
 void VarDeclNode::dump(NodeDumper &dumper) const {
     DUMP(varName);
-    DUMP_PRIM(global);
-    DUMP_PRIM(varIndex);
+    DUMP(global);
+    DUMP(varIndex);
     DUMP_PTR(exprNode);
 
 #define EACH_ENUM(OP) \
@@ -959,8 +958,8 @@ void FunctionNode::dump(NodeDumper &dumper) const {
 
     DUMP_PTR(returnTypeNode);
     DUMP_PTR(blockNode);
-    DUMP_PRIM(maxVarNum);
-    DUMP_PRIM(varIndex);
+    DUMP(maxVarNum);
+    DUMP(varIndex);
     DUMP_PTR(funcType);
 }
 
@@ -1005,9 +1004,9 @@ void InterfaceNode::dump(NodeDumper &dumper) const {
 
 void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
     DUMP(cmdName);
-    DUMP_PRIM(udcIndex);
+    DUMP(udcIndex);
     DUMP_PTR(blockNode);
-    DUMP_PRIM(maxVarNum);
+    DUMP(maxVarNum);
 }
 
 // ########################
@@ -1018,12 +1017,12 @@ void SourceNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(pathNode);
     DUMP(name);
     DUMP_PTR(modType);
-    DUMP_PRIM(firstAppear);
-    DUMP_PRIM(nothing);
-    DUMP_PRIM(optional);
-    DUMP_PRIM(modIndex);
-    DUMP_PRIM(index);
-    DUMP_PRIM(maxVarNum);
+    DUMP(firstAppear);
+    DUMP(nothing);
+    DUMP(optional);
+    DUMP(modIndex);
+    DUMP(index);
+    DUMP(maxVarNum);
 }
 
 // #######################
@@ -1175,7 +1174,7 @@ const Node *findInnerNode(NodeKind kind, const Node *node) {
 // ##     NodeDumper     ##
 // ########################
 
-void NodeDumper::dump(const char *fieldName, const char *value) {
+void NodeDumper::dumpEscaped(const char *fieldName, const char *value) {
     this->writeName(fieldName);
 
     this->append(" \"");
@@ -1231,11 +1230,6 @@ void NodeDumper::dump(const char *fieldName, TokenKind kind) {
 
 void NodeDumper::dump(const char *fieldName, const MethodHandle &handle) {
     this->dump(fieldName, std::to_string(handle.getMethodIndex()));
-}
-
-void NodeDumper::dumpNull(const char *fieldName) {
-    this->writeName(fieldName);
-    this->newline();
 }
 
 void NodeDumper::dump(const Node &node) {

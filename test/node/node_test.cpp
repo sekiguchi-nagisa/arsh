@@ -137,7 +137,7 @@ nodes:
       size: 1
     type:
     kind: "Int"
-    intValue: "1"
+    intValue: 1
 )"},
 
         {DumpOp::typed, R"("hello")", 0, 0, R"(
@@ -161,7 +161,7 @@ nodes:
           type: String
           kind: "STRING"
           value: "hello"
-    targetTypeToken:
+    targetTypeToken: null
     opKind: "TO_VOID"
 
 )"},
@@ -186,8 +186,8 @@ nodes:
             size: 15
           type:
           varName: "a"
-          global: "0"
-          varIndex: "0"
+          global: false
+          varIndex: 0
           exprNode:
             nodeKind: String
             token:
@@ -197,9 +197,9 @@ nodes:
             kind: "STRING"
             value: "false"
           kind: "VAR"
-      baseIndex: "0"
-      varSize: "0"
-      maxVarSize: "0"
+      baseIndex: 0
+      varSize: 0
+      maxVarSize: 0
     catchNodes:
       - nodeKind: Catch
         token:
@@ -222,10 +222,10 @@ nodes:
             size: 2
           type:
           nodes:
-          baseIndex: "0"
-          varSize: "0"
-          maxVarSize: "0"
-        varIndex: "0"
+          baseIndex: 0
+          varSize: 0
+          maxVarSize: 0
+        varIndex: 0
     finallyNode:
       nodeKind: Block
       token:
@@ -239,10 +239,10 @@ nodes:
             size: 1
           type:
           kind: "Int"
-          intValue: "1"
-      baseIndex: "0"
-      varSize: "0"
-      maxVarSize: "0"
+          intValue: 1
+      baseIndex: 0
+      varSize: 0
+      maxVarSize: 0
 )"},
 
         {DumpOp::typed, R"({;})", 0, 0, R"(
@@ -258,9 +258,9 @@ nodes:
           pos: 1
           size: 1
         type: Void
-    baseIndex: "0"
-    varSize: "0"
-    maxVarSize: "0"
+    baseIndex: 0
+    varSize: 0
+    maxVarSize: 0
 )"},
 
         {DumpOp::untyped, R"('hey'.size())", 0, 0, R"(
@@ -291,13 +291,13 @@ nodes:
           size: 4
         type:
         varName: "size"
-        index: "0"
+        index: 0
         attribute: ""
-      index: "0"
+      index: 0
       attribute: ""
       additionalOp: "NOP"
     argNodes:
-    handle:
+    handle: null
     kind: "UNRESOLVED"
 )"},
 
@@ -315,7 +315,7 @@ nodes:
         size: 2
       type:
       kind: "Int"
-      intValue: "34"
+      intValue: 34
     rightNode:
       nodeKind: Number
       token:
@@ -323,9 +323,9 @@ nodes:
         size: 1
       type:
       kind: "Int"
-      intValue: "1"
+      intValue: 1
     op: "+"
-    optNode:
+    optNode: null
 )"},
 
         {DumpOp::untyped, R"(function f() : typeof($/d/) {return new Regex("$true"); })", 0, 1, R"(
@@ -406,17 +406,17 @@ nodes:
                         size: 5
                       type:
                       varName: "true"
-                      index: "0"
+                      index: 0
                       attribute: ""
-                    handle:
-            handle:
-          leavingBlock: "0"
-      baseIndex: "0"
-      varSize: "0"
-      maxVarSize: "0"
-    maxVarNum: "0"
-    varIndex: "0"
-    funcType:
+                    handle: null
+            handle: null
+          leavingBlock: false
+      baseIndex: 0
+      varSize: 0
+      maxVarSize: 0
+    maxVarNum: 0
+    varIndex: 0
+    funcType: null
 )"},
 
         {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 2, 0, R"(
@@ -492,9 +492,9 @@ nodes:
                             type:
                             kind: "STRING"
                             value: "34"
-                  redirCount: "1"
-                  inPipe: "0"
-                methodCallNode:
+                  redirCount: 1
+                  inPipe: false
+                methodCallNode: null
               - nodeKind: With
                 token:
                   pos: 19
@@ -507,7 +507,7 @@ nodes:
                     size: 2
                   type:
                   kind: "Int"
-                  intValue: "34"
+                  intValue: 34
                 redirNodes:
                   - nodeKind: Redir
                     token:
@@ -535,10 +535,10 @@ nodes:
                               size: 4
                             type:
                             kind: "Float"
-                            floatValue: "34.100000"
-                          handle:
-                baseIndex: "0"
-            baseIndex: "0"
+                            floatValue: 34.100000
+                          handle: null
+                baseIndex: 0
+            baseIndex: 0
           opKind: "ForkKind::JOB"
         nameNode:
           nodeKind: Var
@@ -547,13 +547,13 @@ nodes:
             size: 4
           type:
           varName: "poll"
-          index: "0"
+          index: 0
           attribute: ""
-        index: "0"
+        index: 0
         attribute: ""
         additionalOp: "NOP"
       argNodes:
-      handle:
+      handle: null
       kind: "UNRESOLVED"
     messageNode:
       nodeKind: String
@@ -579,7 +579,7 @@ nodes:
         size: 6
       type: Signal
       kind: "Signal"
-      intValue: "2"
+      intValue: 2
     armNodes:
       - nodeKind: Arm
         token:
@@ -593,7 +593,7 @@ nodes:
               size: 6
             type: Signal
             kind: "Signal"
-            intValue: "2"
+            intValue: 2
         this->actionNode:
           nodeKind: TypeOp
           token:
@@ -613,7 +613,7 @@ nodes:
                   size: 2
                 type: Int
                 kind: "Int"
-                intValue: "34"
+                intValue: 34
             valueNodes:
               - nodeKind: Number
                 token:
@@ -621,8 +621,8 @@ nodes:
                   size: 2
                 type: Int
                 kind: "Int"
-                intValue: "34"
-          targetTypeToken:
+                intValue: 34
+          targetTypeToken: null
           opKind: "TO_VOID"
       - nodeKind: Arm
         token:
@@ -649,8 +649,8 @@ nodes:
                   size: 2
                 type: Int
                 kind: "Int"
-                intValue: "34"
-          targetTypeToken:
+                intValue: 34
+          targetTypeToken: null
           opKind: "TO_VOID"
     caseKind: "MAP"
 
@@ -709,7 +709,7 @@ nodes:
         size: 8
       type: Boolean
       varName: "false"
-      index: "42"
+      index: 42
       attribute: "READ_ONLY | GLOBAL | BUILTIN"
     iterNode:
       nodeKind: Empty
@@ -736,11 +736,11 @@ nodes:
               pos: 0
               size: 0
             type: Void
-          leavingBlock: "0"
-      baseIndex: "0"
-      varSize: "0"
-      maxVarSize: "0"
-    asDoWhile: "0"
+          leavingBlock: false
+      baseIndex: 0
+      varSize: 0
+      maxVarSize: 0
+    asDoWhile: false
 )"},
 };
 
