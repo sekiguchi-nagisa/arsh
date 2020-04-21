@@ -81,8 +81,8 @@ DEFINE_TCError(NotCallable    , "Func type object is not directly callable"     
 DEFINE_TCError(UselessBlock   , "useless block"                                     );
 DEFINE_TCError(EmptyTry       , "empty try block"                                   );
 DEFINE_TCError(MeaninglessTry , "meaningless try block"                             );
-DEFINE_TCError(LocalLimit     , "too many local variables"                          );
-DEFINE_TCError(PipeLimit      , "too long pipeline chain"                           );
+DEFINE_TCError(LocalLimit     , "local variables length reaches limit"              );
+DEFINE_TCError(PipeLimit      , "pipeline lenght reaches limit"                     );
 DEFINE_TCError(Constant       , "must be constant expression"                       );
 DEFINE_TCError(DupPattern     , "duplicated pattern"                                );
 DEFINE_TCError(NeedPattern    , "require at least one pattern"                      );
