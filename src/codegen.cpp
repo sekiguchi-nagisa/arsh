@@ -208,13 +208,8 @@ static bool isTildeExpansion(const Node &node) {
 
 void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     const unsigned int size = node.getSegmentNodes().size();
-
-    if(size == 1) {
-        this->visit(*node.getSegmentNodes()[0]);
-    } else {
-        for(unsigned int i = 0; i < size; i++) {
-            this->generateConcat(*node.getSegmentNodes()[i], i > 0);
-        }
+    for(unsigned int i = 0; i < size; i++) {
+        this->generateConcat(*node.getSegmentNodes()[i], i > 0);
     }
     if(isTildeExpansion(*node.getSegmentNodes()[0])) {
         this->emit0byteIns(OpCode::EXPAND_TILDE);
