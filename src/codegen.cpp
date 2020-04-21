@@ -117,11 +117,12 @@ unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
     return index;
 }
 
-void ByteCodeGenerator::emitMethodCallIns(unsigned int paramSize, const ydsh::MethodHandle &handle) {
+void ByteCodeGenerator::emitMethodCallIns(unsigned int paramSize, const MethodHandle &handle) {
     if(handle.isNative()) {
-        this->emitCallNativeIns(paramSize + 1, handle.getMethodIndex());
+        this->emitNativeCallIns(paramSize + 1, handle.getMethodIndex(), !handle.getReturnType().isVoidType());
     } else {
-        this->emitCallIns(OpCode::CALL_METHOD, paramSize, handle.getMethodIndex());
+        this->emitValIns(OpCode::CALL_METHOD, paramSize, handle.getReturnType().isVoidType() ? 1 : 0);
+        this->curBuilder().append16(handle.getMethodIndex());
     }
 }
 
@@ -589,7 +590,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
         }
 
         this->emitSourcePos(node.getPos());
-        this->emitCallIns(OpCode::CALL_FUNC, paramSize);
+        this->emitFuncCallIns(paramSize, !node.getType().isVoidType());
     }
 }
 
@@ -615,7 +616,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     // call constructor
     this->emitSourcePos(node.getPos());
     assert(node.getHandle() && node.getHandle()->isNative());   //FIXME: normal constructor call
-    this->emitCallNativeIns(paramSize + 1, node.getHandle()->getMethodIndex());
+    this->emitMethodCallIns(paramSize, *node.getHandle());
 }
 
 void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {

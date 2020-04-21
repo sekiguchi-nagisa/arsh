@@ -55,10 +55,10 @@ namespace ydsh {
     OP(APPEND_ARRAY , 0, -1) \
     OP(APPEND_MAP   , 0, -1) \
     OP(NEW          , 3,  1) \
-    OP(CALL_METHOD  , 3,  1) \
-    OP(CALL_FUNC    , 1,  1) \
+    OP(CALL_METHOD  , 3,  0) \
+    OP(CALL_FUNC    , 1,  0) \
     OP(CALL_NATIVE  , 1,  1) \
-    OP(CALL_NATIVE2 , 2,  1) \
+    OP(CALL_NATIVE2 , 2,  0) \
     OP(RETURN       , 0,  0) \
     OP(RETURN_V     , 0,  0) \
     OP(RETURN_UDC   , 0,  0) \

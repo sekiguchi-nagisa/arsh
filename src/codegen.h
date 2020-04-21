@@ -374,23 +374,30 @@ private:
         this->curBuilder().append32(v);
     }
 
-    void emitCallIns(OpCode op, unsigned short paramSize) {
+    /**
+     * for variable length operands
+     * @param op
+     * @param paramSize
+     * variable length operands size
+     * @param restSize
+     * rest operands size
+     */
+    void emitValIns(OpCode op, unsigned char paramSize, short restSize) {
         assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_METHOD || op == OpCode::CALL_NATIVE2);
-        assert(paramSize <= UINT8_MAX);
-        this->curBuilder().stackDepthCount -= static_cast<short>(paramSize + 1);
-        this->emitIns(op);
+        this->curBuilder().append8(static_cast<unsigned char>(op));
         this->curBuilder().append8(paramSize);
+
+        int size = static_cast<int>(paramSize) + restSize;
+        this->curBuilder().stackDepthCount -= static_cast<short>(size);
     }
 
-    void emitCallIns(OpCode op, unsigned short paramSize, unsigned short index) {
-        assert(op == OpCode::CALL_METHOD);
-        this->emitCallIns(op, paramSize);
-        this->curBuilder().append16(index);
+    void emitFuncCallIns(unsigned char paramSize, bool hasRet) {
+        this->emitValIns(OpCode::CALL_FUNC, paramSize, hasRet ? 0 : 1);
     }
 
-    void emitCallNativeIns(unsigned short paramSize, unsigned short index) {
+    void emitNativeCallIns(unsigned char paramSize, unsigned short index, bool hasRet) {
         assert(index <= UINT8_MAX);
-        this->emitCallIns(OpCode::CALL_NATIVE2, paramSize);
+        this->emitValIns(OpCode::CALL_NATIVE2, paramSize, hasRet ? -1 : 0);
         this->curBuilder().append8(index);
     }
 
