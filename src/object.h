@@ -566,7 +566,7 @@ inline T &typeAs(const DSValue &value) noexcept {
 
     if(useSafeCast) {
         if(!value.isObject()) {
-            fatal("must be represent DSObject\n");
+            fatal("must be represent DSObject, but actual is: %d\n", static_cast<unsigned int>(value.kind()));
         }
         auto *r = checked_cast<T>(value.get());
         if(r == nullptr) {
