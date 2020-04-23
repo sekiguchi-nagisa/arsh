@@ -20,10 +20,11 @@ assert $ex is GlobbingError
 
 assert "$(echo *)" == "$(sh -c 'echo *')"
 assert "$(echo ~/*)" == "$(sh -c 'echo ~/*')"
-assert "$(echo ~+/*)" == "$(sh -c 'echo ~+/*')"
-assert "$(echo ~-/*)" == "$(sh -c 'echo ~-/*')"
 assert "$(echo ./*)" == "$(sh -c 'echo ./*')"
-
+assert "$(echo ./././*)" == "$(sh -c 'echo ./././*')"
+assert "$(echo /us*/)" == "$(sh -c 'echo /us*/')"
+assert "$(echo ///us*///)" == "$(echo /us*/)"
+assert "$(echo ///us*///././)" == "$(echo /us*/././)"
 assert "$(echo ~/*)" == "$(echo ~"/"*)"
 assert "$(echo ~/*)" == "$(echo ~'/'*)"
 
