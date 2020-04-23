@@ -34,6 +34,7 @@ namespace ydsh {
     OP(PUSH_SIG     , 1,  1) \
     OP(PUSH_INT     , 1,  1) \
     OP(PUSH_ESTRING , 0,  1) \
+    OP(PUSH_META    , 1,  1) \
     OP(LOAD_CONST   , 1,  1) \
     OP(LOAD_CONST_W , 2,  1) \
     OP(LOAD_CONST_T , 3,  1) \
@@ -77,6 +78,7 @@ namespace ydsh {
     OP(EXPAND_TILDE , 0,  0) \
     OP(NEW_CMD      , 0,  0) \
     OP(ADD_CMD_ARG  , 1, -1) \
+    OP(ADD_GLOBBING , 2,  0) \
     OP(CALL_CMD     , 0, -1) \
     OP(CALL_CMD_P   , 0, -1) \
     OP(BUILTIN_CMD  , 0,  1) \

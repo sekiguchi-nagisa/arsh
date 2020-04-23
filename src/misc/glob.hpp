@@ -27,7 +27,8 @@
 namespace ydsh {
 
 enum class WildMatchOption {
-    DOTGLOB = 1u << 0u, // match file names start with '.'
+    TILDE   = 1u << 0u, // apply tilde expansion before globbing
+    DOTGLOB = 1u << 1u, // match file names start with '.'
 };
 
 template <> struct allow_enum_bitop<WildMatchOption> : std::true_type {};
@@ -137,7 +138,7 @@ public:
             }
         }
 
-        for(; !this->isEndOrSep() && Meta::isZeroOrMore(this->iter); this->iter++);
+        for(; !this->isEndOrSep() && Meta::isZeroOrMore(this->iter); ++this->iter);
         return this->isEndOrSep() ? WildMatchResult::MATCHED : WildMatchResult::FAILED;
     }
 
@@ -257,9 +258,12 @@ unsigned int glob(Iter iter, Iter end, Appender &appender, WildMatchOption optio
         iter = begin;
         baseDir = '.';
     } else {
-        iter = latestSep + 1;
+        iter = latestSep;
+        ++iter;
         for(; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back());
-        Meta::preExpand(baseDir);
+        if(hasFlag(option, WildMatchOption::TILDE)) {
+            Meta::preExpand(baseDir);
+        }
     }
     return globBase<Meta>(baseDir.c_str(), iter, end, appender, option);
 }

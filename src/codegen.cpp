@@ -645,8 +645,27 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
 }
 
 void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
-    this->generateCmdArg(node);
-    this->emit1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);
+    if(node.getGlobPathSize() > 0) {
+        const unsigned int size = node.getSegmentNodes().size();
+        unsigned int firstIndex = 0;
+        for(unsigned int i = 0; i < size; i++) {
+            auto &e = node.getSegmentNodes()[i];
+            if(isa<WildCardNode>(*e)) {
+                this->visit(*e);
+                firstIndex = i + 1;
+            } else {
+                this->generateConcat(*e, i > firstIndex);
+            }
+        }
+        this->emit0byteIns(OpCode::PUSH_NULL);    // sentinel
+        bool tilde = isa<StringNode>(*node.getSegmentNodes()[0])
+                && cast<StringNode>(*node.getSegmentNodes()[0]).isTilde();
+        assert(node.getGlobPathSize() <= UINT8_MAX);
+        this->emitGlobIns(node.getGlobPathSize(), tilde);
+    } else {
+        this->generateCmdArg(node);
+        this->emit1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);
+    }
 }
 
 static RedirOP resolveRedirOp(TokenKind kind) {
@@ -662,6 +681,10 @@ static RedirOP resolveRedirOp(TokenKind kind) {
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
     this->generateCmdArg(node.getTargetNode());
     this->emit1byteIns(OpCode::ADD_REDIR_OP, static_cast<unsigned char>(resolveRedirOp(node.getRedirectOP())));
+}
+
+void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
+    this->emit1byteIns(OpCode::PUSH_META, static_cast<unsigned char>(node.meta));
 }
 
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
@@ -1341,7 +1364,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD || code == OpCode::FORK) {
                     fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
-                } else if(code == OpCode::RECLAIM_LOCAL) {
+                } else if(code == OpCode::RECLAIM_LOCAL || code == OpCode::ADD_GLOBBING) {
                     fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
                 } else if(code == OpCode::CALL_NATIVE2) {
                     unsigned int paramSize = read8(c.getCode(), i + 1);

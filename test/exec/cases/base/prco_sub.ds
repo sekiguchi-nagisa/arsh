@@ -4,4 +4,4 @@ assert $f is UnixFD
 assert $f is typeof(>(echo hello))
 assert "$(cat $f)" == "hello"
 
-assert "$(cat <(echo world?))" == "world?"
+assert "$(cat <(echo world!))" == "world!"

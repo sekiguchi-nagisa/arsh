@@ -177,6 +177,7 @@ enum class DSValueKind : unsigned char {
     OBJECT, // not null
     NUMBER,   // uint64_t
     DUMMY,      // uint64_t
+    GLOB_META,  // uint64_t, for glob meta character, '?', '*'
     INVALID,
     BOOL,
     SIG,  // int64_t
@@ -423,6 +424,11 @@ public:
         return this->u64.value;
     }
 
+    GlobMeta asGlobMeta() const {
+        assert(this->kind() == DSValueKind::GLOB_META);
+        return static_cast<GlobMeta>(this->u64.value);
+    }
+
     bool asBool() const {
         assert(this->kind() == DSValueKind::BOOL);
         return this->b.value;
@@ -503,6 +509,13 @@ public:
     static DSValue createDummy(const DSType &type) {
         DSValue ret(static_cast<uint64_t>(type.getTypeID()));
         ret.u64.kind = DSValueKind::DUMMY;
+        return ret;
+    }
+
+    static DSValue createGlobMeta(GlobMeta meta) {
+        DSValue ret;
+        ret.u64.kind = DSValueKind::GLOB_META;
+        ret.u64.value = static_cast<unsigned int>(meta);
         return ret;
     }
 
@@ -670,8 +683,8 @@ public:
         return v;
     }
 
-    void sortAsStrArray() {
-        std::sort(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
+    void sortAsStrArray(unsigned int beginOffset = 0) {
+        std::sort(values.begin() + beginOffset, values.end(), [](const DSValue &x, const DSValue &y) {
             return x.asStrRef() < y.asStrRef();
         });
     }

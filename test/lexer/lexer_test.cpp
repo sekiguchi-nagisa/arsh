@@ -1068,7 +1068,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG3) {
     const char *text = "a2134:*";
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, "a2134:", GLOB_ZERO_OR_MORE, "*", EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG4) {
@@ -1082,7 +1082,7 @@ TEST_F(LexerTest_Lv1, CMD_ARG5) {
     const char *text = "??\\\n";
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
-    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(EXPECT(GLOB_ANY, "?", GLOB_ANY, "?", EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG6) {
@@ -1132,6 +1132,27 @@ TEST_F(LexerTest_Lv1, CMD_ARG12) {
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, text, EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG13) {
+    const char *text = "AA\\\n";
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, "AA\\\n", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG14) {
+    const char *text = "\\?\\?";
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, "\\?\\?", EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, CMD_ARG15) {
+    const char *text = "\\?\\*\\??";
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(CMD_ARG_PART, "\\?\\*\\?", GLOB_ANY, "?", EOS, ""));
 }
 
 /**

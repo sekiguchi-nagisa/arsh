@@ -167,6 +167,21 @@ enum class ForkKind : unsigned char {
     DISOWN,     // launch as disowned background job. ex. echo &!
 };
 
+enum class GlobMeta : unsigned char {
+    ANY,
+    ZERO_OR_MORE,
+};
+
+inline const char *toString(GlobMeta meta) {
+    switch(meta) {
+    case GlobMeta::ANY:
+        return "?";
+    case GlobMeta::ZERO_OR_MORE:
+        return "*";
+    }
+    return "";  // normally unreachable
+}
+
 
 // ===== for configuration =====
 constexpr const char *LOCAL_CONFIG_DIR = "~/.ydsh";

@@ -484,6 +484,7 @@ nodes:
                           pos: 14
                           size: 2
                         type:
+                        globPathSize: 0
                         segmentNodes:
                           - nodeKind: String
                             token:
@@ -521,6 +522,7 @@ nodes:
                         pos: 29
                         size: 7
                       type:
+                      globPathSize: 0
                       segmentNodes:
                         - nodeKind: Embed
                           token:

@@ -692,6 +692,10 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
             exprNode->getType().isNothingType());
     }
 
+    if(node.getGlobPathSize() > UINT8_MAX) {
+        RAISE_TC_ERROR(GlobLimit, node);
+    }
+
     // not allow String Array and UnixFD type
     if(node.getSegmentNodes().size() > 1) {
         for(auto &exprNode : node.getSegmentNodes()) {
@@ -700,7 +704,9 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
         }
     }
     assert(!node.getSegmentNodes().empty());
-    node.setType(node.getSegmentNodes()[0]->getType());
+    node.setType(node.getGlobPathSize() > 0
+            ? this->symbolTable.get(TYPE::StringArray)
+            : node.getSegmentNodes()[0]->getType());
 }
 
 void TypeChecker::visitRedirNode(RedirNode &node) {
@@ -717,6 +723,10 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     assert(argNode.getType().isNothingType() ||
         argNode.getType().is(TYPE::String) || argNode.getType().is(TYPE::UnixFD));
     node.setType(this->symbolTable.get(TYPE::Any)); //FIXME:
+}
+
+void TypeChecker::visitWildCardNode(WildCardNode &node) {
+    node.setType(this->symbolTable.get(TYPE::String));
 }
 
 void TypeChecker::visitPipelineNode(PipelineNode &node) {

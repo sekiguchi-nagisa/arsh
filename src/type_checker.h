@@ -461,6 +461,7 @@ protected:
     void visitCmdNode(CmdNode &node) override;
     void visitCmdArgNode(CmdArgNode &node) override;
     void visitRedirNode(RedirNode &node) override;
+    void visitWildCardNode(WildCardNode &node) override;
     void visitPipelineNode(PipelineNode &node) override;
     void visitWithNode(WithNode &node) override;
     void visitForkNode(ForkNode &node) override;

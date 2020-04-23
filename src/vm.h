@@ -349,6 +349,17 @@ private:
 
     static void addCmdArg(DSState &state, bool skipEmptyStr);
 
+    /**
+     *
+     * @param state
+     * @param size
+     * @param tilde
+     * if true, apply tilde expansion
+     * @return
+     * if has error, return false.
+     */
+    static bool addGlobbingPath(DSState &state, unsigned int size, bool tilde);
+
     static bool kickSignalHandler(DSState &state, int sigNum, DSValue &&func);
 
     static bool checkVMEvent(DSState &state);

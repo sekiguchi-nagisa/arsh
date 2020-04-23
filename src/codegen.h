@@ -383,7 +383,8 @@ private:
      * rest operands size
      */
     void emitValIns(OpCode op, unsigned char paramSize, short restSize) {
-        assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_METHOD || op == OpCode::CALL_NATIVE2);
+        assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_METHOD ||
+                op == OpCode::CALL_NATIVE2 || op == OpCode::ADD_GLOBBING);
         this->curBuilder().append8(static_cast<unsigned char>(op));
         this->curBuilder().append8(paramSize);
 
@@ -409,6 +410,11 @@ private:
      * target method
      */
     void emitMethodCallIns(unsigned int paramSize, const MethodHandle &handle);
+
+    void emitGlobIns(unsigned char paramSize, bool tilde) {
+        this->emitValIns(OpCode::ADD_GLOBBING, paramSize, 1);
+        this->curBuilder().append8(tilde ? 1 : 0);
+    }
 
     /**
      * write instruction having type. (ex. PRINT).
@@ -548,6 +554,7 @@ private:
     void visitCmdNode(CmdNode &node) override;
     void visitCmdArgNode(CmdArgNode &node) override;
     void visitRedirNode(RedirNode &node) override;
+    void visitWildCardNode(WildCardNode &node) override;
     void visitPipelineNode(PipelineNode &node) override;
     void visitWithNode(WithNode &node) override;
     void visitForkNode(ForkNode &node) override;

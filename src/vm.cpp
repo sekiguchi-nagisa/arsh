@@ -28,6 +28,7 @@
 #include "redir.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
+#include "misc/glob.hpp"
 
 // #####################
 // ##     DSState     ##
@@ -823,6 +824,140 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
     }
 }
 
+class GlobIter {
+private:
+    const DSValue *cur;
+    const char *ptr{nullptr};
+
+public:
+    explicit GlobIter(const DSValue &value) : cur(&value) {
+        if(this->cur->hasStrRef()) {
+            this->ptr = this->cur->asStrRef().begin();
+        }
+    }
+
+    char operator*() const {
+        return this->ptr == nullptr ? '\0' : *this->ptr;
+    }
+
+    bool operator==(const GlobIter &other) const {
+        return this->cur == other.cur && this->ptr == other.ptr;
+    }
+
+    bool operator!=(const GlobIter &other) const {
+        return !(*this == other);
+    }
+
+    GlobIter &operator++() {
+        if(this->ptr) {
+            this->ptr++;
+            if(*this->ptr == '\0') {  // if StringRef iterator reaches null, increment DSValue iterator
+                this->ptr = nullptr;
+            }
+        }
+        if(!this->ptr) {
+            this->cur++;
+            if(this->cur->hasStrRef()) {
+                this->ptr = this->cur->asStrRef().begin();
+            }
+        }
+        return *this;
+    }
+
+    const DSValue *getIter() const {
+        return this->cur;
+    }
+};
+
+struct DSValueGlobMeta {
+    static bool isAny(GlobIter iter) {
+        auto &v = *iter.getIter();
+        return v.kind() == DSValueKind::GLOB_META && v.asGlobMeta() == GlobMeta::ANY;
+    }
+
+    static bool isZeroOrMore(GlobIter iter) {
+        auto &v = *iter.getIter();
+        return v.kind() == DSValueKind::GLOB_META && v.asGlobMeta() == GlobMeta::ZERO_OR_MORE;
+    }
+
+    static void preExpand(std::string &path) {
+        expandTilde(path);
+    }
+};
+
+static void raiseGlobingError(DSState &state, const VMState &st, unsigned int size, const char *message) {
+    std::string value = message;
+    value += " `";
+    for(unsigned int i = 0; i < size; i++) {
+        auto &v = st.peekByOffset(size - i);
+        if(v.hasStrRef()) {
+            for(auto &e : v.asStrRef()) {
+                if(e != '\0') {
+                    value += e;
+                } else {
+                    value += "\\x00";
+                }
+            }
+        } else {
+            value += v.toString();
+        }
+    }
+    value += "'";
+    raiseError(state, TYPE::GlobbingError, std::move(value));
+}
+
+bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
+    /**
+     * stack layout
+     *
+     * ===========> stack grow
+     * +------+-------+--------+     +--------+----------+
+     * | argv | redir | param1 | ~~~ | paramN | paramN+1 |
+     * +------+-------+--------+     +--------+----------+
+     *
+     * after evaluation
+     * +------+-------+
+     * | argv | redir |
+     * +------+-------+
+     */
+    GlobIter begin(state.stack.peekByOffset(size));
+    GlobIter end(state.stack.peek());
+
+    // check if glob path fragments have null character
+    StringRef nulRef("\0", 1);
+    for(unsigned int i = 0; i < size; i++) {
+        auto &v = state.stack.peekByOffset(size - i);
+        if(v.hasStrRef()) {
+            auto ref = v.asStrRef();
+            if(ref.find(nulRef) != StringRef::npos) {
+                raiseGlobingError(state, state.stack, size, "glob pattern has null characters");
+                return false;
+            }
+        }
+    }
+
+    auto &argv = state.stack.peekByOffset(size + 2);
+    const unsigned int oldSize = typeAs<ArrayObject>(argv).size();
+    auto appender = [&](std::string &&path) {
+        typeAs<ArrayObject>(argv).append(DSValue::createStr(std::move(path)));
+    };
+    WildMatchOption option{};
+    if(tilde) {
+        setFlag(option, WildMatchOption::TILDE);
+    }
+    unsigned int ret = glob<DSValueGlobMeta>(begin, end, appender, option);
+    if(ret) {
+        typeAs<ArrayObject>(argv).sortAsStrArray(oldSize);
+        for(unsigned int i = 0; i <= size; i++) {
+            state.stack.popNoReturn();
+        }
+        return true;
+    } else {
+        raiseGlobingError(state, state.stack, size, "No matches for glob pattern");
+        return false;
+    }
+}
+
 static NativeCode initSignalTrampoline() noexcept {
     NativeCode::ArrayType code;
     code[0] = static_cast<char>(OpCode::LOAD_LOCAL);
@@ -966,6 +1101,12 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(PUSH_ESTRING) {
             state.stack.push(DSValue::createStr());
+            vmnext;
+        }
+        vmcase(PUSH_META) {
+            unsigned int value = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
+            state.stack.push(DSValue::createGlobMeta(static_cast<GlobMeta>(value)));
             vmnext;
         }
         vmcase(LOAD_CONST) {
@@ -1246,6 +1387,14 @@ bool VM::mainLoop(DSState &state) {
             unsigned char v = read8(GET_CODE(state), state.stack.pc());
             state.stack.pc()++;
             addCmdArg(state, v > 0);
+            vmnext;
+        }
+        vmcase(ADD_GLOBBING) {
+            unsigned int size = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
+            unsigned int v = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
+            TRY(addGlobbingPath(state, size, v > 0));
             vmnext;
         }
         vmcase(CALL_CMD)

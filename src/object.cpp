@@ -84,6 +84,8 @@ std::string DSValue::toString() const {
         str += ")";
         return str;
     }
+    case DSValueKind::GLOB_META:
+        return ::toString(this->asGlobMeta());
     case DSValueKind::BOOL:
         return this->asBool() ? "true" : "false";
     case DSValueKind::SIG:

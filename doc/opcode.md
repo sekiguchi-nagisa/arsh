@@ -13,6 +13,7 @@
 | PUSH_SIG      | 1: byte1                       | -> value                                     | push signal literal onto the stack                 |
 | PUSH_INT      | 1: byte1                       | -> value                                     | push 8bit int value onto the stack                 |
 | PUSH_ESTRING  |                                | -> value                                     | push the empty string value onto the stack         |
+| PUSH_META     | 1: byte1                       | -> value                                     | push glob meta character onto the stack            |
 | LOAD_CONST    | 1: byte1                       | -> value                                     | load a constant from the constant pool             |
 | LOAD_CONST_W  | 2: byte1 byte2                 | -> value                                     | load a constant from the constant pool             |
 | LOAD_CONST_T  | 3: byte1 byte2 byte3           | -> value                                     | load a constant from the constant pool             |
@@ -55,7 +56,8 @@
 | PIPELINE_LP   | 1: len 2: offset1 offset2 ...  | -> value                                     | call pipeline (lastPipe is true)                   |
 | EXPAND_TILDE  |                                | value -> value                               | perform tilde expansion                            |
 | NEW_CMD       |                                | value -> value                               | pop stack top and store it to new argv             |
-| ADD_CMD_ARG   | 1: byte1                       | value1 value2 value3 -> value1 value2        | add stack top value as command argument            |
+| ADD_CMD_ARG   | 1: byte1                       | argv redir value -> argv redir               | add stack top value as command argument            |
+| ADD_GLOBBING  | 1: len 2: option               | argv redir value1 ~ valueN+1 -> argv redir   | apply glob expansion and add results to value0     |
 | CALL_CMD      |                                | value1 value2 -> value                       | call command. value1 is parameter, value2 is redir |
 | CALL_CMD_P    |                                | value1 value2 -> value                       | call command in child                              |
 | BUILTIN_CMD   |                                | -> value                                     | call builtin command command                       |

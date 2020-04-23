@@ -1,0 +1,30 @@
+
+var ex = 34 as Any
+
+# if not match pattern, throw GlobbingError
+try { echo ~????????; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+
+$ex = 2
+try { echo "~/"*; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+
+$ex = 2
+try { echo '~/'*; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+
+# glob pattern have null characters, throw GlobbingError
+$ex = 34
+try { echo *$'\x00'*; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+
+assert "$(echo *)" == "$(sh -c 'echo *')"
+assert "$(echo ~/*)" == "$(sh -c 'echo ~/*')"
+assert "$(echo ~+/*)" == "$(sh -c 'echo ~+/*')"
+assert "$(echo ~-/*)" == "$(sh -c 'echo ~-/*')"
+assert "$(echo ./*)" == "$(sh -c 'echo ./*')"
+
+assert "$(echo ~/*)" == "$(echo ~"/"*)"
+assert "$(echo ~/*)" == "$(echo ~'/'*)"
+
+true

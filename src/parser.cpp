@@ -829,6 +829,16 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool first) {
     switch(CUR_KIND()) {
     case CMD_ARG_PART:
         return this->parse_cmdArgPart(first);
+    case GLOB_ANY: {
+        Token token = this->curToken;
+        this->consume();
+        return std::make_unique<WildCardNode>(token, GlobMeta::ANY);
+    }
+    case GLOB_ZERO_OR_MORE: {
+        Token token = this->curToken;
+        this->consume();
+        return std::make_unique<WildCardNode>(token, GlobMeta::ZERO_OR_MORE);
+    }
     case STRING_LITERAL:
         return this->parse_stringLiteral();
     case OPEN_DQUOTE:

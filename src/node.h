@@ -58,6 +58,7 @@ class NodeDumper;
     OP(Cmd) \
     OP(CmdArg) \
     OP(Redir) \
+    OP(WildCard) \
     OP(Pipeline) \
     OP(With) \
     OP(Fork) \
@@ -1082,6 +1083,7 @@ public:
  */
 class CmdArgNode : public WithRtti<Node, NodeKind::CmdArg> {
 private:
+    unsigned int globPathSize{0};
     std::vector<std::unique_ptr<Node>> segmentNodes;
 
 public:
@@ -1104,6 +1106,10 @@ public:
      * if true, ignore evaluated empty string.
      */
     bool isIgnorableEmptyString() const;
+
+    unsigned int getGlobPathSize() const {
+        return this->globPathSize;
+    }
 };
 
 class RedirNode : public WithRtti<Node, NodeKind::Redir> {
@@ -1131,6 +1137,17 @@ public:
     bool isHereStr() const {
         return this->op == REDIR_HERE_STR;
     }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
+class WildCardNode : public WithRtti<Node, NodeKind::WildCard> {
+public:
+    const GlobMeta meta;
+
+    WildCardNode(Token token, GlobMeta p) : WithRtti(token), meta(p) {}
+
+    ~WildCardNode() override = default;
 
     void dump(NodeDumper &dumper) const override;
 };
@@ -2353,6 +2370,7 @@ struct NodeVisitor {
     virtual void visitCmdNode(CmdNode &node) = 0;
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
     virtual void visitRedirNode(RedirNode &node) = 0;
+    virtual void visitWildCardNode(WildCardNode &node) = 0;
     virtual void visitPipelineNode(PipelineNode &node) = 0;
     virtual void visitWithNode(WithNode &node) = 0;
     virtual void visitAssertNode(AssertNode &node) = 0;
@@ -2399,6 +2417,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
     void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
     void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
+    void visitWildCardNode(WildCardNode &node) override { this->visitDefault(node); }
     void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }
     void visitWithNode(WithNode &node) override { this->visitDefault(node); }
     void visitForkNode(ForkNode &node) override { this->visitDefault(node); }

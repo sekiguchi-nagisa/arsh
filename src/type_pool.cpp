@@ -79,6 +79,7 @@ TypePool::TypePool() {
     this->initErrorType(TYPE::SystemError, "SystemError");
     this->initErrorType(TYPE::StackOverflowError, "StackOverflowError");
     this->initErrorType(TYPE::RegexSyntaxError, "RegexSyntaxError");
+    this->initErrorType(TYPE::GlobbingError, "GlobbingError");
     this->initErrorType(TYPE::UnwrappingError, "UnwrappingError");
 
     // init internal status type
