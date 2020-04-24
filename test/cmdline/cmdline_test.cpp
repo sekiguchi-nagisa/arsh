@@ -26,6 +26,18 @@ static ProcBuilder ds(T && ...args) {
 struct InputWrapper {
     std::string value;
     ProcBuilder builder;
+
+    auto execAndGetResult() {
+        auto handle = this->builder
+                .setIn(IOConfig::PIPE)
+                .setOut(IOConfig::PIPE)
+                .setErr(IOConfig::PIPE)();
+        if(write(handle.in(), this->value.c_str(), this->value.size()) < 0) {
+            fatal_perror("");
+        }
+        close(handle.in());
+        return handle.waitAndGetResult(false);
+    }
 };
 
 template <unsigned int N>
@@ -44,15 +56,7 @@ public:
     using ExpectOutput::expectRegex;
 
     void expect(InputWrapper &&wrapper, int status, const std::string &out = "", const std::string &err = "") {
-        auto handle = wrapper.builder
-                .setIn(IOConfig::PIPE)
-                .setOut(IOConfig::PIPE)
-                .setErr(IOConfig::PIPE)();
-        if(write(handle.in(), wrapper.value.c_str(), wrapper.value.size()) < 0) {
-            fatal_perror("");
-        }
-        close(handle.in());
-        auto result = handle.waitAndGetResult(false);
+        auto result = wrapper.execAndGetResult();
         ExpectOutput::expect(result, status, WaitStatus::EXITED, out, err);
     }
 };
@@ -448,49 +452,6 @@ TEST_F(CmdlineTest, pid) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("%s --pid $PID --ppid $PPID | grep .", PID_CHECK_PATH), 0, "OK\n"));
 }
 
-TEST_F(CmdlineTest, toplevel) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "23 as String"), 0, ": String = 23\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "$true"), 0, ": Boolean = true\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "true"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--print-toplevel", "-c", "true | true"), 0));
-
-    // runtime error
-    const char *msg = R"([runtime error]
-UnwrappingError: invalid value
-    from (string):1 '<toplevel>()'
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = (9, new Int!()); $a"), 1, "", msg));
-
-    msg = R"([runtime error]
-cannot obtain string representation
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = (9, new Int!()); throw $a"), 1, "", msg));
-
-    // option type
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = $true as Option<Boolean>; $a"), 0, ": Boolean! = true\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "new Option<Boolean>()"), 0, ": Boolean! = (invalid)\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "var a = $true as String as Option<String>; $a"), 0, ": String! = true\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--print-toplevel", "-c", "new Option<String>()"), 0, ": String! = (invalid)\n"));
-}
-
-TEST_F(CmdlineTest, toplevel_escape) {
-    auto builder = ds("--print-toplevel", "-c", "$'hello\\x00world'");
-    auto r = builder.execAndGetResult(false);
-
-    ASSERT_EQ(0, r.status.value);
-
-    const char msg[] = ": String = hello\0world\n";
-    std::string out(msg, arraySize(msg) - 1);
-    ASSERT_EQ(out, r.out);
-    ASSERT_STREQ("", r.err.c_str());
-}
-
 TEST_F(CmdlineTest, syntax) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo  \n$true"), 0, "\n"));
 }
@@ -502,9 +463,52 @@ TEST_F(CmdlineTest, pipeline) {
     // with argument
     ASSERT_NO_FATAL_FAILURE(
             this->expect("assert($0 == 'ydsh' && $1 == 'hoge' && $2 == '123')" | ds("-s", "hoge", "123"), 0));
+}
 
-    // force interactive
-    ASSERT_NO_FATAL_FAILURE(this->expect("$true\n" | ds("-i", "--quiet", "--norc"), 0, ": Boolean = true\n"));
+static auto interactive() {
+    return ds("-i", "--quiet", "--norc");
+}
+
+TEST_F(CmdlineTest, forceInteractive1) {
+    ASSERT_NO_FATAL_FAILURE(this->expect("23 as String" | interactive(), 0, ": String = 23\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("$true" | interactive(), 0, ": Boolean = true\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("true" | interactive(), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect("true | false" | interactive(), 1));
+
+    // runtime error
+    const char *msg = R"([runtime error]
+UnwrappingError: invalid value
+    from (stdin):1 '<toplevel>()'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("var a = (9, new Int!()); $a" | interactive(), 1, "", msg));
+
+    msg = R"([runtime error]
+cannot obtain string representation
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("var a = (9, new Int!()); throw $a" | interactive(), 1, "", msg));
+
+    // option type
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect("var a = $true as Option<Boolean>; $a" | interactive(), 0, ": Boolean! = true\n"));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect("new Option<Boolean>()" | interactive(), 0, ": Boolean! = (invalid)\n"));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect("var a = $true as String as Option<String>; $a" | interactive(), 0, ": String! = true\n"));
+    ASSERT_NO_FATAL_FAILURE(
+            this->expect("new Option<String>()" | interactive(), 0, ": String! = (invalid)\n"));
+}
+
+TEST_F(CmdlineTest, forceInteractive2) {
+    // escape
+    auto wrapper = "$'hello\\x00world'" | interactive();
+    auto r = wrapper.execAndGetResult();
+
+    ASSERT_EQ(0, r.status.value);
+
+    const char msg[] = ": String = hello\0world\n";
+    std::string out(msg, arraySize(msg) - 1);
+    ASSERT_EQ(out, r.out);
+    ASSERT_STREQ("", r.err.c_str());
 }
 
 TEST_F(CmdlineTest, pipelineCode) {

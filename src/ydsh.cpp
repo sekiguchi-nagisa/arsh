@@ -82,7 +82,7 @@ private:
 public:
     Compiler(const DSState &state, SymbolTable &symbolTable, Lexer &&lexer, unsigned short option) :
             frontEnd(getScriptDir(state, option), std::move(lexer), symbolTable, state.execMode,
-                    hasFlag(state.option, DS_OPTION_TOPLEVEL), state.dumpTarget),
+                    hasFlag(state.option, DS_OPTION_INTERACTIVE), state.dumpTarget),
             codegen(symbolTable, hasFlag(state.option, DS_OPTION_ASSERT)) {}
 
     unsigned int lineNum() const {

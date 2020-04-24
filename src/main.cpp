@@ -115,7 +115,6 @@ static void showFeature(FILE *fp) {
     OP(CHECK_ONLY,     "--check-only",        opt::NO_ARG, "not evaluate, type check only") \
     OP(COMPILE_ONLY,   "--compile-only",      opt::NO_ARG, "not evaluate, compile only") \
     OP(DISABLE_ASSERT, "--disable-assertion", opt::NO_ARG, "disable assert statement") \
-    OP(PRINT_TOPLEVEL, "--print-toplevel",    opt::NO_ARG, "print top level evaluated value") \
     OP(TRACE_EXIT,     "--trace-exit",        opt::NO_ARG, "trace execution process to exit command") \
     OP(VERSION,        "--version",           opt::NO_ARG, "show version and copyright") \
     OP(HELP,           "--help",              opt::NO_ARG, "show this help message") \
@@ -200,9 +199,6 @@ int main(int argc, char **argv) {
             break;
         case DISABLE_ASSERT:
             noAssert = true;
-            break;
-        case PRINT_TOPLEVEL:
-            setFlag(option, DS_OPTION_TOPLEVEL);
             break;
         case TRACE_EXIT:
             setFlag(option, DS_OPTION_TRACE_EXIT);
