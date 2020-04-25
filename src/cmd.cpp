@@ -1842,7 +1842,7 @@ static int printFuncName(const VMState &state) {
     return name != nullptr ? 0 : 1;
 }
 
-static struct {
+static constexpr struct {
     RuntimeOption option;
     const char *name;
 } runtimeOptions[] = {
