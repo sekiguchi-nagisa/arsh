@@ -2,7 +2,7 @@
 # for history manipulation
 
 var HISTFILE = '~/.ydsh_history'
-var HISTSIZE = 0
+var HISTSIZE = 1000
 var HISTFILESIZE = 1000
 var HISTIGNORE = $/^history/ as Regex!
 var HISTSEARCH : Func<String,[String]>!
