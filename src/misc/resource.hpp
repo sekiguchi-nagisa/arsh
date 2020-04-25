@@ -272,6 +272,14 @@ inline bool writeAll(const FilePtr &filePtr, const std::string &str) {
     return fwrite(str.c_str(), sizeof(char), str.size(), filePtr.get()) == str.size();
 }
 
+struct CStrDeleter {
+    void operator()(char *ptr) const {
+        free(ptr);
+    }
+};
+
+using CStrPtr = std::unique_ptr<char, CStrDeleter>;
+
 template <typename T>
 class Singleton {
 protected:

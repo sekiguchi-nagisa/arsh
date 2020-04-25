@@ -27,21 +27,14 @@
 
 #include <ydsh/ydsh.h>
 #include "misc/unicode.hpp"
+#include "misc/resource.hpp"
 
 static DSState *state;
-
-struct Deleter {
-    void operator()(char *ptr) {
-        free(ptr);
-    }
-};
-
-using StrWrapper = std::unique_ptr<char, Deleter>;
 
 /**
  * line is not nullptr
  */
-static bool isSkipLine(const StrWrapper &line) {
+static bool isSkipLine(const ydsh::CStrPtr &line) {
     const char *ptr = line.get();
     for(int i = 0; ptr[i] != '\0'; i++) {
         switch(ptr[i]) {
@@ -60,7 +53,7 @@ static bool isSkipLine(const StrWrapper &line) {
 /**
  * line is not nullptr
  */
-static bool checkLineContinuation(const StrWrapper &line) {
+static bool checkLineContinuation(const ydsh::CStrPtr &line) {
     const char *begin = line.get();
     unsigned int count = 0;
     for(const char *ptr = begin + strlen(begin) - 1; ptr != begin && *ptr == '\\'; ptr--) {
@@ -100,7 +93,7 @@ static bool readLine(std::string &line) {
     bool continuation = false;
     while(true) {
         errno = 0;
-        auto str = StrWrapper(linenoise(prompt(continuation ? 2 : 1)));
+        auto str = ydsh::CStrPtr(linenoise(prompt(continuation ? 2 : 1)));
         if(str == nullptr) {
             if(errno == EAGAIN) {
                 continuation = false;
