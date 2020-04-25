@@ -28,4 +28,18 @@ assert "$(echo ///us*///././)" == "$(echo /us*/././)"
 assert "$(echo ~/*)" == "$(echo ~"/"*)"
 assert "$(echo ~/*)" == "$(echo ~'/'*)"
 
+# null glob
+shctl set nullglob
+$ex = 2
+try { echo "~/"*; } catch $e { $ex = $e; }
+assert $ex is Int   # no error
+assert $(echo "~/"*).empty()
+
+# dot glob
+shctl unset nullglob
+var a = $(echo ~/.* ~/*).sort().join(" ")
+assert $(echo ~/*).sort().join(" ") != $a
+shctl set dotglob
+assert $(echo ~/*).sort().join(" ") == $a
+
 true

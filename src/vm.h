@@ -39,7 +39,9 @@ enum class CompileOption : unsigned short {
 
 #define EACH_RUNTIME_OPTION(OP) \
     OP(TRACE_EXIT, (1u << 0u), "traceonexit") \
-    OP(MONITOR   , (1u << 1u), "monitor")
+    OP(MONITOR   , (1u << 1u), "monitor") \
+    OP(NULLGLOB  , (1u << 2u), "nullglob") \
+    OP(DOTGLOB   , (1u << 3u), "dotglob")
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {

@@ -945,8 +945,11 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
     if(tilde) {
         setFlag(option, WildMatchOption::TILDE);
     }
+    if(hasFlag(state.runtimeOption, RuntimeOption::DOTGLOB)) {
+        setFlag(option, WildMatchOption::DOTGLOB);
+    }
     unsigned int ret = glob<DSValueGlobMeta>(begin, end, appender, option);
-    if(ret) {
+    if(ret || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
         typeAs<ArrayObject>(argv).sortAsStrArray(oldSize);
         for(unsigned int i = 0; i <= size; i++) {
             state.stack.popNoReturn();
