@@ -32,6 +32,22 @@
 
 namespace ydsh {
 
+enum class CompileOption : unsigned short {
+    ASSERT      = 1u << 0u,
+    INTERACTIVE = 1u << 1u,
+};
+
+#define EACH_RUNTIME_OPTION(OP) \
+    OP(TRACE_EXIT, (1u << 0u), "traceonexit") \
+    OP(MONITOR   , (1u << 1u), "monitor")
+
+// set/unset via 'shctl' command
+enum class RuntimeOption : unsigned short {
+#define GEN_ENUM(E, V, N) E = V,
+    EACH_RUNTIME_OPTION(GEN_ENUM)
+#undef GEN_ENUM
+};
+
 enum class VMEvent : unsigned int {
     HOOK   = 1u << 0u,
     SIGNAL = 1u << 1u,
@@ -44,6 +60,10 @@ enum class EvalOP : unsigned int {
     HAS_RETURN = 1u << 2u,    // may have return value.
     COMMIT     = 1u << 3u,    // after evaluation, commit/abort symbol table
 };
+
+template <> struct allow_enum_bitop<CompileOption> : std::true_type {};
+
+template <> struct allow_enum_bitop<RuntimeOption> : std::true_type {};
 
 template <> struct allow_enum_bitop<VMEvent> : std::true_type {};
 
@@ -71,7 +91,9 @@ public:
      */
     DSValue prompt;
 
-    unsigned short option{DS_OPTION_ASSERT};
+    CompileOption compileOption{CompileOption::ASSERT};
+
+    RuntimeOption runtimeOption{};
 
     DSExecMode execMode{DS_EXEC_MODE_NORMAL};
 
@@ -190,7 +212,7 @@ public:
     void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);
 
     bool isJobControl() const {
-        return hasFlag(this->option, DS_OPTION_JOB_CONTROL);
+        return hasFlag(this->runtimeOption, RuntimeOption::MONITOR);
     }
 
     bool isRootShell() const {

@@ -1715,9 +1715,8 @@ YDSH_METHOD job_poll(RuntimeContext &ctx) {
 YDSH_METHOD job_wait(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_wait);
     auto &obj = typeAs<JobImplObject>(LOCAL(0));
-    bool jobctrl = hasFlag(DSState_option(&ctx), DS_OPTION_JOB_CONTROL);
     auto entry = Job(&obj);
-    int s = ctx.jobTable.waitAndDetach(entry, jobctrl);
+    int s = ctx.jobTable.waitAndDetach(entry, ctx.isJobControl());
     ctx.jobTable.updateStatus();
     RET(DSValue::createInt(s));
 }

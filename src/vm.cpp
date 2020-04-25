@@ -1623,7 +1623,7 @@ int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError)
     state.stack.wind(0, 0, &code);
 
     EvalOP op = EvalOP::COMMIT;
-    if(hasFlag(state.option, DS_OPTION_INTERACTIVE)) {
+    if(hasFlag(state.compileOption, CompileOption::INTERACTIVE)) {
         setFlag(op, EvalOP::SKIP_TERM);
     }
     startEval(state, op, dsError);
@@ -1767,7 +1767,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
             fwrite(ref.data(), sizeof(char), ref.size(), stderr);
             fputc('\n', stderr);
         }
-    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state.option, DS_OPTION_TRACE_EXIT)) {
+    } else if(kind == DS_ERROR_KIND_ASSERTION_ERROR || hasFlag(state.runtimeOption, RuntimeOption::TRACE_EXIT)) {
         typeAs<ErrorObject>(except).printStackTrace(state);
     }
     fflush(stderr);

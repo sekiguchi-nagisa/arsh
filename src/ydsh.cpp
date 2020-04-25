@@ -82,8 +82,8 @@ private:
 public:
     Compiler(const DSState &state, SymbolTable &symbolTable, Lexer &&lexer, unsigned short option) :
             frontEnd(getScriptDir(state, option), std::move(lexer), symbolTable, state.execMode,
-                    hasFlag(state.option, DS_OPTION_INTERACTIVE), state.dumpTarget),
-            codegen(symbolTable, hasFlag(state.option, DS_OPTION_ASSERT)) {}
+                     hasFlag(state.compileOption, CompileOption::INTERACTIVE), state.dumpTarget),
+            codegen(symbolTable, hasFlag(state.compileOption, CompileOption::ASSERT)) {}
 
     unsigned int lineNum() const {
         return this->frontEnd.getRootLineNum();
@@ -515,21 +515,60 @@ int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
 }
 
 unsigned short DSState_option(const DSState *st) {
-    return st->option;
+    unsigned short option = 0;
+
+    // get compile option
+    if(hasFlag(st->compileOption, CompileOption::ASSERT)) {
+        setFlag(option, DS_OPTION_ASSERT);
+    }
+    if(hasFlag(st->compileOption, CompileOption::INTERACTIVE)) {
+        setFlag(option, DS_OPTION_INTERACTIVE);
+    }
+
+    // get runtime option
+    if(hasFlag(st->runtimeOption, RuntimeOption::TRACE_EXIT)) {
+        setFlag(option, DS_OPTION_TRACE_EXIT);
+    }
+    if(hasFlag(st->runtimeOption, RuntimeOption::MONITOR)) {
+        setFlag(option, DS_OPTION_JOB_CONTROL);
+    }
+    return option;
 }
 
 void DSState_setOption(DSState *st, unsigned short optionSet) {
-    setFlag(st->option, optionSet);
+    // set compile option
+    if(hasFlag(optionSet, DS_OPTION_ASSERT)) {
+        setFlag(st->compileOption, CompileOption::ASSERT);
+    }
+    if(hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
+        setFlag(st->compileOption, CompileOption::INTERACTIVE);
+    }
 
+    // set runtime option
+    if(hasFlag(optionSet, DS_OPTION_TRACE_EXIT)) {
+        setFlag(st->runtimeOption, RuntimeOption::TRACE_EXIT);
+    }
     if(hasFlag(optionSet, DS_OPTION_JOB_CONTROL)) {
+        setFlag(st->runtimeOption, RuntimeOption::MONITOR);
         setJobControlSignalSetting(*st, true);
     }
 }
 
 void DSState_unsetOption(DSState *st, unsigned short optionSet) {
-    unsetFlag(st->option, optionSet);
+    // unset compile option
+    if(hasFlag(optionSet, DS_OPTION_ASSERT)) {
+        unsetFlag(st->compileOption, CompileOption::ASSERT);
+    }
+    if(hasFlag(optionSet, DS_OPTION_INTERACTIVE)) {
+        unsetFlag(st->compileOption, CompileOption::INTERACTIVE);
+    }
 
+    // unset runtime option
+    if(hasFlag(optionSet, DS_OPTION_TRACE_EXIT)) {
+        unsetFlag(st->runtimeOption, RuntimeOption::TRACE_EXIT);
+    }
     if(hasFlag(optionSet, DS_OPTION_JOB_CONTROL)) {
+        unsetFlag(st->runtimeOption, RuntimeOption::MONITOR);
         setJobControlSignalSetting(*st, false);
     }
 }

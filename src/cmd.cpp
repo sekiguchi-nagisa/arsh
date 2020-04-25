@@ -157,10 +157,13 @@ static constexpr struct {
         {"shctl", builtin_shctl, "[subcommand]",
                 "    Query and set runtime information\n"
                 "    Subcommands:\n"
-                "        is-interactive  return 0 if shell is interactive mode.\n"
-                "        is-sourced      return 0 if current script is sourced.\n"
-                "        backtrace       print stack trace.\n"
-                "        function        print current function/command name."},
+                "        is-interactive      return 0 if shell is interactive mode.\n"
+                "        is-sourced          return 0 if current script is sourced.\n"
+                "        backtrace           print stack trace.\n"
+                "        function            print current function/command name.\n"
+                "        show  [OPTION ...]  print runtime option setting.\n"
+                "        set   OPTION ...    set/enable/on runtime option.\n"
+                "        unset OPTION ...    unset/disable/off runtime option"},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
@@ -540,7 +543,7 @@ static int parseExitStatus(const DSState &state, const ArrayObject &argvObj) {
 static int builtin_exit(DSState &state, ArrayObject &argvObj) {
     int ret = parseExitStatus(state, argvObj);
 
-    if(hasFlag(state.option, DS_OPTION_INTERACTIVE)) {
+    if(hasFlag(state.compileOption, CompileOption::INTERACTIVE)) {
         state.jobTable.send(SIGHUP);
     }
 
@@ -1329,7 +1332,7 @@ static Job tryToGetJob(const JobTable &table, const char *name) {
 }
 
 static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
-    if(!hasFlag(DSState_option(&state), DS_OPTION_JOB_CONTROL)) {
+    if(!state.isJobControl()) {
         ERROR(argvObj, "no job control in this shell");
         return 1;
     }
@@ -1839,6 +1842,98 @@ static int printFuncName(const VMState &state) {
     return name != nullptr ? 0 : 1;
 }
 
+static struct {
+    RuntimeOption option;
+    const char *name;
+} runtimeOptions[] = {
+#define GEN_OPT(E, V, N) {RuntimeOption::E, N},
+        EACH_RUNTIME_OPTION(GEN_OPT)
+#undef GEN_OPT
+};
+
+static RuntimeOption lookupRuntimeOption(const char *name) {
+    for(auto &e : runtimeOptions) {
+        if(strcmp(name, e.name) == 0) {
+            return e.option;
+        }
+    }
+    return RuntimeOption{};
+}
+
+static unsigned int computeMaxOptionNameSize() {
+    unsigned int maxSize = 0;
+    for(auto &e : runtimeOptions) {
+        unsigned int size = strlen(e.name) + 2;
+        if(size > maxSize) {
+            maxSize = size;
+        }
+    }
+    return maxSize;
+}
+
+static void printRuntimeOpt(const char *name, unsigned int size, bool set) {
+    std::string value = name;
+    value.append(size - strlen(name), ' ');
+    value += (set ? "on" : "off");
+    value += "\n";
+    fputs(value.c_str(), stdout);
+}
+
+static int showOption(const DSState &state, const ArrayObject &argvObj) {
+    const unsigned int size = argvObj.size();
+    RuntimeOption foundSet{};
+    if(size == 2) {
+        foundSet = static_cast<RuntimeOption>(static_cast<unsigned int>(-1));
+    } else {
+        for(unsigned int i = 2; i < size; i++) {
+            const char *name = str(argvObj.getValues()[i]);
+            auto option = lookupRuntimeOption(name);
+            if(empty(option)) {
+                ERROR(argvObj, "undefined runtime option: %s", name);
+                return 1;
+            }
+            setFlag(foundSet, option);
+        }
+    }
+
+    // print
+    const unsigned int maxNameSize = computeMaxOptionNameSize();
+    for(auto &e : runtimeOptions) {
+        if(hasFlag(foundSet, e.option)) {
+            printRuntimeOpt(e.name, maxNameSize, hasFlag(state.runtimeOption, e.option));
+        }
+    }
+    return 0;
+}
+
+static int setOption(DSState &state, const ArrayObject &argvObj, const bool set) {
+    const unsigned int size = argvObj.size();
+    if(size == 2) {
+        ERROR(argvObj, "`%s' subcommand requires argument", set ? "set" : "unset");
+        return 2;
+    }
+
+    bool foundMonitor = false;
+    for(unsigned int i = 2; i < size; i++) {
+        const char *name = str(argvObj.getValues()[i]);
+        auto option = lookupRuntimeOption(name);
+        if(empty(option)) {
+            ERROR(argvObj, "undefined runtime option: %s", name);
+            return 1;
+        }
+        if(option == RuntimeOption::MONITOR && !foundMonitor) {
+            foundMonitor = true;
+            setJobControlSignalSetting(state, set);
+        }
+        if(set) {
+            setFlag(state.runtimeOption, option);
+        } else {
+            unsetFlag(state.runtimeOption, option);
+        }
+    }
+    return 0;
+}
+
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     if(argvObj.size() > 1) {
         auto ref = argvObj.getValues()[1].asStrRef();
@@ -1847,9 +1942,15 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
         } else if(ref == "is-sourced") {
             return checkSourced(state.getCallStack());
         } else if(ref == "is-interactive") {
-            return hasFlag(state.option, DS_OPTION_INTERACTIVE) ? 0 : 1;
+            return hasFlag(state.compileOption, CompileOption::INTERACTIVE) ? 0 : 1;
         } else if(ref == "function") {
             return printFuncName(state.getCallStack());
+        } else if(ref == "show") {
+            return showOption(state, argvObj);
+        } else if(ref == "set") {
+            return setOption(state, argvObj, true);
+        } else if(ref == "unset") {
+            return setOption(state, argvObj, false);
         } else {
             ERROR(argvObj, "undefined subcommand: %s", ref.data());
             return 2;
