@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2019 Nagisa Sekiguchi
+ * Copyright (C) 2015-2020 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -245,13 +245,21 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
  * exit status of most recently executed command(include exit).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  * if fileName is already loaded file, return 1.
- * if flleName is already loaded module, return always 0 and do nothing.
+ * if fileName is already loaded module, return always 0 and do nothing.
  */
 int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
 
 
 /* for module loading option */
+/**
+ * load module as fullpath. so not allow cascading module search
+ * (not search from LOCAL_MOD_DIR and SYSTEM_MOD_DIR)
+ */
 #define DS_MOD_FULLPATH      ((unsigned short) (1u << 0u))
+
+/**
+ * ignore ENOENT error
+ */
 #define DS_MOD_IGNORE_ENOENT ((unsigned short) (1u << 1u))
 
 /**

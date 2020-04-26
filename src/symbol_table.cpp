@@ -250,7 +250,7 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path, 
     std::string modPath = path;
     expandTilde(modPath);
     auto ret = this->modLoader.load(scriptDir, modPath, filePtr);
-    if(modPath[0] == '/' || scriptDir == nullptr) {   // if full path, not search next path
+    if(modPath[0] == '/' || scriptDir == nullptr || scriptDir[0] == '\0') {   // if full path, not search next path
         return ret;
     }
     if(strcmp(scriptDir, SYSTEM_MOD_DIR) == 0) {

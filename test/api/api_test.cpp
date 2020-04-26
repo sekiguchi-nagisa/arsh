@@ -429,6 +429,24 @@ TEST_F(APITest, module4) {
                                          "^.+/target.ds:1: \\[semantic error\\] module not found: `hoghreua'.+$"));
 }
 
+TEST_F(APITest, module5) {
+    DSError e;
+    int r = DSState_loadModule(this->state, "hfeurhfiurhefuie", DS_MOD_FULLPATH , &e);
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
+    ASSERT_STREQ("NotFoundMod", e.name);
+    ASSERT_EQ(0, e.lineNum);
+    DSError_release(&e);
+
+    // check error message
+    auto ret = invoke([&]{
+        return DSState_loadModule(this->state, "freijjfeir",
+                                  DS_MOD_FULLPATH, nullptr);
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 1, WaitStatus::EXITED, "",
+                    "ydsh: [semantic error] module not found: `freijjfeir'"));
+}
+
 struct Executor {
     std::string str;
     bool jobctrl;

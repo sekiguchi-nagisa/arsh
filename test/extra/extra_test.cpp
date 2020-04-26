@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include <ydsh/ydsh.h>
 #include <config.h>
 #include "../test_common.h"
 #include "../../src/constant.h"
@@ -175,6 +176,29 @@ TEST_F(RCTest, rcfile1) {
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23", 23, WaitStatus::EXITED));
 }
+
+struct APITest : public ExpectOutput {
+    DSState *state{nullptr};
+
+    APITest() {
+        this->state = DSState_create();
+    }
+
+    ~APITest() override {
+        DSState_delete(&this->state);
+    }
+};
+
+TEST_F(APITest, modFullpath) {
+    DSError e;
+    int r = DSState_loadModule(this->state, "edit", DS_MOD_FULLPATH, &e);   // not load 'edit'
+    ASSERT_EQ(1, r);
+    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
+    ASSERT_STREQ("NotFoundMod", e.name);
+    ASSERT_EQ(0, e.lineNum);
+    DSError_release(&e);
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
