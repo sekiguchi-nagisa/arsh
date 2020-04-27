@@ -355,7 +355,7 @@ private:
     }
 
     void emit2byteIns(OpCode op, unsigned char v1, unsigned char v2) {
-        assert(op == OpCode::RECLAIM_LOCAL);
+        assert(op == OpCode::RECLAIM_LOCAL || op == OpCode::PUSH_STR2);
         ASSERT_BYTE_SIZE(op, 2);
         this->emitIns(op);
         this->curBuilder().append8(v1);
@@ -369,6 +369,7 @@ private:
     }
 
     void emit3byteIns(OpCode op, unsigned char v1, unsigned char v2, unsigned char v3) {
+        assert(op == OpCode::PUSH_STR3);
         ASSERT_BYTE_SIZE(op, 3);
         this->emitIns(op);
         this->curBuilder().append8(v1);
