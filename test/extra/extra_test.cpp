@@ -199,6 +199,15 @@ TEST_F(APITest, modFullpath) {
     DSError_release(&e);
 }
 
+TEST_F(APITest, mod) {
+    DSError e;
+    int r = DSState_loadModule(this->state, "edit", 0, &e);
+    ASSERT_EQ(0, r);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    ASSERT_EQ(0, e.lineNum);
+    DSError_release(&e);
+}
+
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
