@@ -368,6 +368,14 @@ private:
         this->curBuilder().append24(v);
     }
 
+    void emit3byteIns(OpCode op, unsigned char v1, unsigned char v2, unsigned char v3) {
+        ASSERT_BYTE_SIZE(op, 3);
+        this->emitIns(op);
+        this->curBuilder().append8(v1);
+        this->curBuilder().append8(v2);
+        this->curBuilder().append8(v3);
+    }
+
     void emit4byteIns(OpCode op, unsigned int v) {
         ASSERT_BYTE_SIZE(op, 4);
         this->emitIns(op);

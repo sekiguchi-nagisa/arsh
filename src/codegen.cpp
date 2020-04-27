@@ -255,7 +255,7 @@ void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
         const unsigned int size = strExprNode.getExprNodes().size();
         if(size == 0) {
             if(!fragment) {
-                this->emit0byteIns(OpCode::PUSH_ESTRING);
+                this->emit0byteIns(OpCode::PUSH_STR0);
             }
             return;
         }
@@ -325,10 +325,22 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
 }
 
 void ByteCodeGenerator::visitStringNode(StringNode &node) {
-    if(node.getValue().empty()) {
-        this->emit0byteIns(OpCode::PUSH_ESTRING);
-    } else {
+    switch(node.getValue().size()) {
+    case 0:
+        this->emit0byteIns(OpCode::PUSH_STR0);
+        break;
+    case 1:
+        this->emit1byteIns(OpCode::PUSH_STR1, node.getValue()[0]);
+        break;
+    case 2:
+        this->emit2byteIns(OpCode::PUSH_STR2, node.getValue()[0], node.getValue()[1]);
+        break;
+    case 3:
+        this->emit3byteIns(OpCode::PUSH_STR3, node.getValue()[0], node.getValue()[1], node.getValue()[2]);
+        break;
+    default:
         this->emitLdcIns(DSValue::createStr(StringNode::extract(std::move(node))));
+        break;
     }
 }
 
@@ -1370,6 +1382,14 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                     unsigned int paramSize = read8(c.getCode(), i + 1);
                     const char *name = nativeFuncInfoTable()[read8(c.getCode(), i + 2)].funcName;
                     fprintf(this->fp, "  %d  %s", paramSize, name);
+                } else if(code == OpCode::PUSH_STR1 || code == OpCode::PUSH_STR2 || code == OpCode::PUSH_STR3) {
+                    char data[4];
+                    unsigned int size = code == OpCode::PUSH_STR1 ? 1 : code == OpCode::PUSH_STR2 ? 2 : 3;
+                    for(unsigned int index = 0; index < size; index++) {
+                        data[index] = read8(c.getCode(), i + 1 + index);
+                    }
+                    data[size] = '\0';
+                    fprintf(this->fp, "  `%s'", data);
                 } else {
                     switch(byteSize) {
                     case 1:

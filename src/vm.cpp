@@ -1102,8 +1102,20 @@ bool VM::mainLoop(DSState &state) {
             state.stack.push(DSValue::createInt(value));
             vmnext;
         }
-        vmcase(PUSH_ESTRING) {
+        vmcase(PUSH_STR0) {
             state.stack.push(DSValue::createStr());
+            vmnext;
+        }
+        vmcase(PUSH_STR1)
+        vmcase(PUSH_STR2)
+        vmcase(PUSH_STR3) {
+            char data[3];
+            unsigned int size = op == OpCode::PUSH_STR1 ? 1 : op == OpCode::PUSH_STR2 ? 2 : 3;
+            for(unsigned int i = 0; i < size; i++) {
+                data[i] = read8(GET_CODE(state), state.stack.pc());
+                state.stack.pc()++;
+            }
+            state.stack.push(DSValue::createStr(StringRef(data, size)));
             vmnext;
         }
         vmcase(PUSH_META) {
