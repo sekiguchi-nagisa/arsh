@@ -113,6 +113,13 @@ public:
         this->append(value, N);
     }
 
+    template <typename Iter>
+    FlexBuffer(Iter begin, Iter end) noexcept : FlexBuffer(end - begin) {
+        for(; begin != end; ++begin) {
+            this->data[this->usedSize++] = *begin;
+        }
+    }
+
     /**
      * for lazy allocation
      */
