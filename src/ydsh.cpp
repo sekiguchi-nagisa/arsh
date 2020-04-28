@@ -474,26 +474,6 @@ void DSState_setArguments(DSState *st, char *const *args) {
     finalizeScriptArg(st);
 }
 
-/**
- *
- * @param st
- * @param scriptDir
- * full path
- */
-static void setScriptDir(DSState *st, const char *scriptDir) {
-    st->setGlobal(BuiltinVarOffset::SCRIPT_DIR, DSValue::createStr(scriptDir));
-}
-
-int DSState_setScriptDir(DSState *st, const char *scriptDir) {
-    char *real = realpath(scriptDir, nullptr);
-    if(real == nullptr) {
-        return -1;
-    }
-    setScriptDir(st, real);
-    free(real);
-    return 0;
-}
-
 int DSState_getExitStatus(const DSState *st) {
     return st->getMaskedExitStatus();
 }
@@ -585,6 +565,10 @@ void DSError_release(DSError *e) {
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, data, size);
     lexer.setLineNum(st->lineNum);
+    char *real = realpath(".", nullptr);
+    assert(real);
+    st->setScriptDir(real);
+    free(real);
     return evalScript(*st, std::move(lexer), e);
 }
 
@@ -620,7 +604,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         }
         char *real = strdup(get<const char *>(ret));
         const char *dirName = dirname(real);
-        setScriptDir(st, dirName);
+        st->setScriptDir(dirName);
         free(real);
     }
 

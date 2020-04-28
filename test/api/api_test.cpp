@@ -231,11 +231,6 @@ TEST_F(APITest, option) {
     ASSERT_EQ(0, DSState_option(this->state));
 }
 
-TEST_F(APITest, scriptDir) {
-    int r = DSState_setScriptDir(this->state, "hfarefoiaji vfd");
-    ASSERT_EQ(-1, r);
-}
-
 TEST_F(APITest, status) {
     int s = DSState_getExitStatus(this->state);
     ASSERT_EQ(0, s);

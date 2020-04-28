@@ -86,7 +86,6 @@ static bool readLine(std::string &line) {
     // force set locale
     setlocale(LC_CTYPE, "");
 
-    DSState_setScriptDir(state, ".");
     line.clear();
     lineBuf = &line;
 

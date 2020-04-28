@@ -95,17 +95,6 @@ void DSState_setShellName(DSState *st, const char *shellName);
 void DSState_setArguments(DSState *st, char *const *args);
 
 /**
- *
- * @param st
- * not null
- * @param scriptDir
- * @return
- * if scriptDir is not found, return -1 and do nothing. (set errno)
- * if success, return 0.
- */
-int DSState_setScriptDir(DSState *st, const char *scriptDir);
-
-/**
  * get current exit status ($? & 0xFF)
  * @param st
  * not null
@@ -215,6 +204,7 @@ void DSError_release(DSError *e);
 
 /**
  * evaluate string. if e is not null, set error info.
+ * SCRIPT_DIR is always current working directory
  * @param st
  * not null
  * @param sourceName
