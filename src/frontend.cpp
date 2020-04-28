@@ -25,9 +25,9 @@
 
 namespace ydsh {
 
-FrontEnd::FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTable,
+FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable,
                    DSExecMode mode, bool toplevel, const DumpTarget &target) :
-        scriptDir(scriptDir), lexer(std::move(lexer)), mode(mode),
+        lexer(std::move(lexer)), mode(mode),
         parser(this->lexer), checker(symbolTable, toplevel),
         uastDumper(target.files[DS_DUMP_KIND_UAST].get(), symbolTable),
         astDumper(target.files[DS_DUMP_KIND_AST].get(), symbolTable) {
@@ -300,10 +300,16 @@ FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
     return Ok(IN_MODULE);   // normally unreachable, due to suppress gcc warning
 }
 
+static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
+    assert(*fullPath == '/');
+    const char *ptr = strrchr(fullPath, '/');
+    std::string value(fullPath, ptr == fullPath ? 1 : ptr - fullPath);
+    return Lexer(fullPath, std::move(buf), std::move(value));
+}
+
 void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf, std::unique_ptr<SourceNode> &&node) {
     {
-        assert(*fullPath == '/');
-        Lexer lex(fullPath, std::move(buf));
+        auto lex = createLexer(fullPath, std::move(buf));
         node->setFirstAppear(true);
         auto state = this->parser.saveLexicalState();
         auto scope = this->getSymbolTable().createModuleScope();

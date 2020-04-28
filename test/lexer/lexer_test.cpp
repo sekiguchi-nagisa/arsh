@@ -41,7 +41,7 @@ public:
 
     // for test
     virtual void initLexer(const char *text) {
-        this->lexer = new Lexer("(string)", text);
+        this->lexer = new Lexer("(string)", ByteBuffer(text, text + strlen(text)), std::string());
     }
 
     virtual void initLexer(const char *text, LexerMode mode) {
@@ -1785,7 +1785,8 @@ TEST_F(LexerTest_Lv1, SPACE6) {
 }
 
 TEST(LexerTest_Lv2, NEW_LINE) {
-    Lexer lexer("(string)", "  \n  \n   assert  \n ");
+    std::string line = "  \n  \n   assert  \n ";
+    Lexer lexer("(string)", ByteBuffer(line.c_str(), line.c_str() + line.size()), std::string());
     Token t;
     TokenKind k = lexer.nextToken(t);
 
@@ -1801,7 +1802,8 @@ TEST(LexerTest_Lv2, NEW_LINE) {
 }
 
 TEST(LexerTest_Lv2, NEW_LINE2) {
-    Lexer lexer("(string)", "  \n  var a");
+    std::string line = "  \n  var a";
+    Lexer lexer("(string)", ByteBuffer(line.c_str(), line.c_str() + line.size()), std::string());
     Token t;
     TokenKind k = lexer.nextToken(t);
 
@@ -1826,7 +1828,9 @@ TEST(LexerTest_Lv2, NEW_LINE2) {
 TEST(LexerTest_Lv3, IllegalChar) {
     unsigned char str[] = {0x82, 0};    // broken UTF-8 code
 
-    Lexer lexer("(string)", (char *)str);
+    ByteBuffer buf;
+    buf.append((char*)str, arraySize(str));
+    Lexer lexer("(string)", std::move(buf), std::string());
     Token t;
     TokenKind k = lexer.nextToken(t);
 

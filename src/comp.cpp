@@ -828,7 +828,7 @@ public:
 
 CompleterFactory::CompleterFactory(DSState &st, const char *data, unsigned int size) :
         state(st), cursor(size),
-        lexer("<line>", data, size), parser(this->lexer) {
+        lexer("<line>", ByteBuffer(data, data + size), std::string()), parser(this->lexer) {
     LOG(DUMP_CONSOLE, "line: %s, cursor: %u", std::string(data, size).c_str(), size);
     this->parser.setTracker(&this->tracker);
     this->node = this->applyAndGetLatest();

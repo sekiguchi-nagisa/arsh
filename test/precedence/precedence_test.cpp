@@ -191,7 +191,7 @@ public:
         ASSERT_TRUE(input != nullptr);
 
         // parse
-        Lexer lexer("(string)", input);
+        Lexer lexer("(string)", ByteBuffer(input, input + strlen(input)), std::string());
         Parser parser(lexer);
         auto rootNode = parser();
         ASSERT_FALSE(parser.hasError());

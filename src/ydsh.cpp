@@ -70,18 +70,14 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
     return callToplevel(state, code, dsError);
 }
 
-static const char *getScriptDir(const DSState &state, unsigned short option) {
-    return hasFlag(option, DS_MOD_FULLPATH) ? "" : state.getScriptDir();
-}
-
 class Compiler {
 private:
     FrontEnd frontEnd;
     ByteCodeGenerator codegen;
 
 public:
-    Compiler(const DSState &state, SymbolTable &symbolTable, Lexer &&lexer, unsigned short option) :
-            frontEnd(getScriptDir(state, option), std::move(lexer), symbolTable, state.execMode,
+    Compiler(const DSState &state, SymbolTable &symbolTable, Lexer &&lexer) :
+            frontEnd(std::move(lexer), symbolTable, state.execMode,
                      hasFlag(state.compileOption, CompileOption::INTERACTIVE), state.dumpTarget),
             codegen(symbolTable, hasFlag(state.compileOption, CompileOption::ASSERT)) {}
 
@@ -131,17 +127,16 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     return 0;
 }
 
-static int compile(DSState &state, Lexer &&lexer, DSError *dsError,
-                   CompiledCode &code, unsigned short option) {
-    Compiler compiler(state, state.symbolTable, std::move(lexer), option);
+static int compile(DSState &state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
+    Compiler compiler(state, state.symbolTable, std::move(lexer));
     int ret = compiler(dsError, code);
     state.lineNum = compiler.lineNum();
     return ret;
 }
 
-static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError, unsigned short modOption = 0) {
+static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError) {
     CompiledCode code;
-    int ret = compile(state, std::move(lexer), dsError, code, modOption);
+    int ret = compile(state, std::move(lexer), dsError, code);
     if(!code) {
         return ret;
     }
@@ -562,13 +557,19 @@ void DSError_release(DSError *e) {
     }
 }
 
-int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
-    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, data, size);
-    lexer.setLineNumOffset(st->lineNum);
-    char *real = realpath(".", nullptr);
+static void setRealScriptDir(DSState &st, const char *dir) {
+    char *real = realpath(dir, nullptr);
     assert(real);
-    st->setScriptDir(real);
+    st.setScriptDir(real);
     free(real);
+}
+
+int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
+    setRealScriptDir(*st, ".");
+
+    Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName,
+            ByteBuffer(data, data + size), std::string(st->getScriptDir()));
+    lexer.setLineNumOffset(st->lineNum);
     return evalScript(*st, std::move(lexer), e);
 }
 
@@ -590,6 +591,7 @@ static void reportFileError(const char *sourceName, bool isIO, DSError *e) {
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     FilePtr filePtr;
     if(sourceName == nullptr) {
+        setRealScriptDir(*st, ".");
         filePtr = createFilePtr(fdopen, dup(STDIN_FILENO), "rb");
     } else {
         auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr);
@@ -617,7 +619,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         return 1;
     }
     filePtr.reset(nullptr);
-    return evalScript(*st, Lexer(sourceName, std::move(buf)), e);
+    return evalScript(*st, Lexer(sourceName, std::move(buf), std::string(st->getScriptDir())), e);
 }
 
 static void appendAsEscaped(std::string &line, const char *path) {  //FIXME: escape newline
@@ -639,14 +641,20 @@ static void appendAsEscaped(std::string &line, const char *path) {  //FIXME: esc
 }
 
 int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e) {
-    CompiledCode code;
+    if(hasFlag(option, DS_MOD_FULLPATH)) {
+        st->setScriptDir("");
+    } else {
+        setRealScriptDir(*st, ".");
+    }
+
     std::string line = "source";
     line += hasFlag(option, DS_MOD_IGNORE_ENOENT) ? "! " : " ";
     appendAsEscaped(line, fileName);
+
     st->lineNum = 0;
-    Lexer lexer("ydsh", line.c_str(), line.size());
+    Lexer lexer("ydsh", ByteBuffer(line.c_str(), line.c_str() + line.size()), std::string(st->getScriptDir()));
     lexer.setLineNumOffset(st->lineNum);
-    return evalScript(*st, std::move(lexer), e, option);
+    return evalScript(*st, std::move(lexer), e);
 }
 
 int DSState_exec(DSState *st, char *const *argv) {

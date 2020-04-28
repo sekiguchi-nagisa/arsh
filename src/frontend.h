@@ -44,7 +44,6 @@ public:
 
 private:
     struct Context {
-        std::string scriptDir;
         Lexer lexer;
         ModuleScope scope;
 
@@ -58,14 +57,8 @@ private:
                 std::tuple<TokenKind, Token, TokenKind > &&state, std::unique_ptr<SourceNode> &&oldSourceNode) :
                 lexer(std::move(lexer)), scope(std::move(scope)),
                 kind(std::get<0>(state)), token(std::get<1>(state)),
-                consumedKind(std::get<2>(state)), sourceNode(std::move(oldSourceNode)) {
-            const char *fileName = this->lexer.getSourceName().c_str();
-            const char *ptr = strrchr(fileName, '/');
-            this->scriptDir.append(fileName, ptr == fileName ? 1 : ptr - fileName);
-        }
+                consumedKind(std::get<2>(state)), sourceNode(std::move(oldSourceNode)) {}
     };
-
-    const std::string scriptDir;
 
     // root lexer state
     Lexer lexer;
@@ -80,7 +73,7 @@ private:
     NodeDumper astDumper;
 
 public:
-    FrontEnd(const char *scriptDir, Lexer &&lexer, SymbolTable &symbolTable,
+    FrontEnd(Lexer &&lexer, SymbolTable &symbolTable,
              DSExecMode mode, bool toplevel, const DumpTarget &target);
 
     ~FrontEnd() {
@@ -115,7 +108,7 @@ public:
 
 private:
     const std::string &getCurScriptDir() const {
-        return this->contexts.empty() ? this->scriptDir : this->contexts.back()->scriptDir;
+        return (this->contexts.empty() ? this->lexer : this->contexts.back()->lexer).getScriptDir();
     }
 
     std::unique_ptr<Node> tryToParse(DSError *dsError);

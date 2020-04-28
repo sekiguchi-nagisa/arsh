@@ -357,7 +357,7 @@ struct Dummy {
 TEST(BufferTest, case15) {
     FlexBuffer<Dummy> buffer;
 
-    buffer += {0, nullptr};
+    buffer += Dummy{0, nullptr};
     buffer.push_back({0, nullptr});
 
     Dummy d;

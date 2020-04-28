@@ -32,6 +32,8 @@ const char *toModeName(LexerMode mode);
 
 class Lexer : public ydsh::LexerBase {
 private:
+    std::string scriptDir;
+
     LexerMode curMode{yycSTMT};
 
     std::vector<LexerMode> modeStack;
@@ -46,15 +48,20 @@ private:
     LexerMode prevMode{yycSTMT};
 
 public:
-    using LexerBase::LexerBase;
-
     NON_COPYABLE(Lexer);
 
     Lexer(Lexer&&) = default;
 
     Lexer() = default;
 
+    Lexer(const char *sourceName, ByteBuffer &&buf, std::string &&scriptDir) :
+            LexerBase(sourceName, std::move(buf)), scriptDir(std::move(scriptDir)) {}
+
     ~Lexer() = default;
+
+    const std::string &getScriptDir() const {
+        return this->scriptDir;
+    }
 
     void setPos(unsigned int pos) {
         assert(this->buf.get() + pos <= this->limit);
