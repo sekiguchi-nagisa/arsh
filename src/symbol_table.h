@@ -391,11 +391,9 @@ public:
      * create new module scope and assign it to curModule
      * @return
      */
-    std::unique_ptr<ModuleScope> createModuleScope() {
+    ModuleScope createModuleScope() {
         auto id = ++this->modLoader.modIDCount;
-        auto *ptr = new ModuleScope(this->gvarCount, id);
-        this->curModule = ptr;
-        return std::unique_ptr<ModuleScope>(ptr);
+        return ModuleScope(this->gvarCount, id);
     }
 
     /**

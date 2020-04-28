@@ -99,7 +99,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
 
     this->frontEnd.setupASTDump();
     if(!this->frontEnd.frontEndOnly()) {
-        this->codegen.initialize(this->frontEnd.getCurrentSourceInfo());
+        this->codegen.initialize(this->frontEnd.getCurrentLexer());
     }
     while(this->frontEnd) {
         auto ret = this->frontEnd(dsError);
@@ -114,7 +114,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
 
         switch(ret.status) {
         case FrontEnd::ENTER_MODULE:
-            this->codegen.enterModule(this->frontEnd.getCurrentSourceInfo());
+            this->codegen.enterModule(this->frontEnd.getCurrentLexer());
             break;
         case FrontEnd::EXIT_MODULE:
             this->codegen.exitModule(cast<SourceNode>(*ret.node));
@@ -564,7 +564,7 @@ void DSError_release(DSError *e) {
 
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName, data, size);
-    lexer.setLineNum(st->lineNum);
+    lexer.setLineNumOffset(st->lineNum);
     char *real = realpath(".", nullptr);
     assert(real);
     st->setScriptDir(real);
@@ -645,7 +645,7 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned short option,
     appendAsEscaped(line, fileName);
     st->lineNum = 0;
     Lexer lexer("ydsh", line.c_str(), line.size());
-    lexer.setLineNum(st->lineNum);
+    lexer.setLineNumOffset(st->lineNum);
     return evalScript(*st, std::move(lexer), e, option);
 }
 

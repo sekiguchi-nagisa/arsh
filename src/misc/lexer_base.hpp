@@ -32,68 +32,45 @@
 
 namespace ydsh {
 
-template <bool T>
-class SourceInfoImpl : public RefCount<SourceInfoImpl<T>> {
+class LineNumTable {
 private:
-    static_assert(T, "not allowed instantiation");
+    unsigned int offset{1};
 
-    std::string sourceName;
-
-    /**
-     * default value is 1.
-     */
-    unsigned int lineNumOffset{1};
-
-    /**
-     * contains newline character position.
-     */
-    std::vector<unsigned int> lineNumTable;
+    std::vector<unsigned int> table;
 
 public:
-    explicit SourceInfoImpl(const char *sourceName) : sourceName(sourceName) { }
-    ~SourceInfoImpl() = default;
-
-    const std::string &getSourceName() const {
-        return this->sourceName;
+    void setOffset(unsigned int v) {
+        this->offset = v;
     }
 
-    void setLineNumOffset(unsigned int offset) {
-        this->lineNumOffset = offset;
+    unsigned int getOffset() const {
+        return this->offset;
     }
 
-    unsigned int getLineNumOffset() const {
-        return this->lineNumOffset;
+    void addNewlinePos(unsigned int pos) {
+        if(this->table.empty() || pos > this->table.back()) {
+            this->table.push_back(pos);
+        }
     }
 
-    const std::vector<unsigned int> &getLineNumTable() const {
-        return this->lineNumTable;
+    /**
+     * get line number at source pos
+     * @param pos
+     * @return
+     */
+    unsigned int lookup(unsigned int pos) const {
+        auto iter = std::lower_bound(this->table.begin(), this->table.end(), pos);
+        if(this->table.end() == iter) {
+            return this->getMaxLineNum();
+        }
+        return iter - this->table.begin() + this->offset;
     }
 
-    void addNewlinePos(unsigned int pos);
-    unsigned int getLineNum(unsigned int pos) const;
+    unsigned int getMaxLineNum() const {
+        return this->table.size() + this->offset;
+    }
 };
 
-// ############################
-// ##     SourceInfoImpl     ##
-// ############################
-
-template <bool T>
-void SourceInfoImpl<T>::addNewlinePos(unsigned int pos) {
-    if(this->lineNumTable.empty() || pos > this->lineNumTable.back()) {
-        this->lineNumTable.push_back(pos);
-    }
-}
-
-template <bool T>
-unsigned int SourceInfoImpl<T>::getLineNum(unsigned int pos) const {
-    auto iter = std::lower_bound(this->lineNumTable.begin(), this->lineNumTable.end(), pos);
-    if(this->lineNumTable.end() == iter) {
-        return this->lineNumTable.size() + this->lineNumOffset;
-    }
-    return iter - this->lineNumTable.begin() + this->lineNumOffset;
-}
-
-using SourceInfo = IntrusivePtr<SourceInfoImpl<true>>;
 
 namespace __detail {
 
@@ -105,7 +82,9 @@ class LexerBase {
 protected:
     static_assert(T, "not allowed instantiation");
 
-    SourceInfo srcInfo;
+    std::string sourceName;
+
+    LineNumTable lineNumTable;
 
     /**
      * must be terminated with null character
@@ -139,7 +118,7 @@ protected:
 public:
     NON_COPYABLE(LexerBase);
 
-    explicit LexerBase(const char *sourceName) : srcInfo(SourceInfo::create(sourceName)) {}
+    explicit LexerBase(const char *sourceName) : sourceName(sourceName) {}
 
     LexerBase(LexerBase &&) noexcept = default;
 
@@ -177,7 +156,8 @@ public:
     }
 
     void swap(LexerBase &lex) noexcept {
-        std::swap(this->srcInfo, lex.srcInfo);
+        std::swap(this->sourceName, lex.sourceName);
+        std::swap(this->lineNumTable, lex.lineNumTable);
         this->buf.swap(lex.buf);
         std::swap(this->cursor, lex.cursor);
         std::swap(this->limit, lex.limit);
@@ -185,17 +165,24 @@ public:
         std::swap(this->ctxMarker, lex.ctxMarker);
     }
 
-    const SourceInfo &getSourceInfo() const {
-        return this->srcInfo;
+    const std::string &getSourceName() const {
+        return this->sourceName;
     }
 
-    void setLineNum(unsigned int lineNum) {
-        this->srcInfo->setLineNumOffset(lineNum);
+    void setLineNumOffset(unsigned int lineNum) {
+        this->lineNumTable.setOffset(lineNum);
     }
 
-    unsigned int getLineNum() const {
-        return this->srcInfo->getLineNumOffset() +
-               this->srcInfo->getLineNumTable().size();
+    unsigned int getLineNumOffset() const {
+        return this->lineNumTable.getOffset();
+    }
+
+    unsigned int getLineNumByPos(unsigned int pos) const {
+        return this->lineNumTable.lookup(pos);
+    }
+
+    unsigned int getMaxLineNum() const {
+        return this->lineNumTable.getMaxLineNum();
     }
 
     /**
@@ -449,7 +436,7 @@ void LexerBase<T>::updateNewline(unsigned int pos) {
     const unsigned int stopPos = this->getPos();
     for(unsigned int i = pos; i < stopPos; ++i) {
         if(this->buf[i] == '\n') {
-            this->srcInfo->addNewlinePos(i);
+            this->lineNumTable.addNewlinePos(i);
         }
     }
 }

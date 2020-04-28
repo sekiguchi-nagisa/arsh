@@ -82,7 +82,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
             .localSize = 0,
     };  // sentinel
 
-    return CompiledCode(this->srcInfo, name.empty() ? nullptr : name.c_str(),
+    return CompiledCode(this->sourceName.release(), name.empty() ? nullptr : name.c_str(),
                         code, constPool, entries, except);
 }
 
@@ -181,7 +181,7 @@ void ByteCodeGenerator::pushLoopLabels(Label breakLabel, Label continueLabel, La
 
 void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
     const unsigned int index = this->currentCodeOffset();
-    unsigned int lineNum = this->curBuilder().srcInfo->getLineNum(pos);
+    unsigned int lineNum = this->curBuilder().lexer.getLineNumByPos(pos);
     if(this->curBuilder().lineNumEntries.empty() || this->curBuilder().lineNumEntries.back().lineNum != lineNum) {
         this->curBuilder().lineNumEntries.push_back({index, lineNum});
     }

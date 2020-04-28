@@ -262,7 +262,9 @@ struct LoopState {
 };
 
 struct CodeBuilder : public CodeEmitter<true> {
-    SourceInfo srcInfo;
+    const Lexer &lexer;
+
+    CStrPtr sourceName;
 
     CodeKind kind;
 
@@ -287,8 +289,9 @@ struct CodeBuilder : public CodeEmitter<true> {
     signed short stackDepthCount{0};
     signed short maxStackDepth{0};
 
-    explicit CodeBuilder(SourceInfo info, CodeKind kind, unsigned char localVarNum) :
-            srcInfo(std::move(info)), kind(kind), localVarNum(localVarNum) {}
+    explicit CodeBuilder(const Lexer &lexer, CodeKind kind, unsigned char localVarNum) :
+            lexer(lexer), sourceName(strdup(this->lexer.getSourceName().c_str())),
+            kind(kind), localVarNum(localVarNum) {}
 
     CodeKind getCodeKind() const {
         return this->kind;
@@ -528,12 +531,12 @@ private:
             const MethodHandle &matchHandle, const Label &mergeLabel);
 
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
-        auto info = this->builders.back().srcInfo;
-        this->initCodeBuilder(kind, info, localVarNum);
+        auto &lex = this->builders.back().lexer;
+        this->initCodeBuilder(kind, lex, localVarNum);
     }
 
-    void initCodeBuilder(CodeKind kind, const SourceInfo &srcInfo, unsigned short localVarNum) {
-        this->builders.emplace_back(srcInfo, kind, localVarNum);
+    void initCodeBuilder(CodeKind kind, const Lexer &lex, unsigned short localVarNum) {
+        this->builders.emplace_back(lex, kind, localVarNum);
     }
 
     CompiledCode finalizeCodeBuilder(const std::string &name) {
@@ -587,8 +590,8 @@ private:
     void visitEmptyNode(EmptyNode &node) override;
 
 public:
-    void initialize(const SourceInfo &srcInfo) {
-        this->initCodeBuilder(CodeKind::TOPLEVEL, srcInfo, 0);
+    void initialize(const Lexer &lexer) {
+        this->initCodeBuilder(CodeKind::TOPLEVEL, lexer, 0);
     }
 
     void generate(Node *node) {
@@ -597,8 +600,8 @@ public:
 
     CompiledCode finalize();
 
-    void enterModule(const SourceInfo &srcInfo) {
-        this->initCodeBuilder(CodeKind::TOPLEVEL, srcInfo, 0);
+    void enterModule(const Lexer &lexer) {
+        this->initCodeBuilder(CodeKind::TOPLEVEL, lexer, 0);
     }
 
     void exitModule(SourceNode &node);

@@ -46,7 +46,7 @@ private:
     struct Context {
         std::string scriptDir;
         Lexer lexer;
-        std::unique_ptr<ModuleScope> scope;
+        ModuleScope scope;
 
         // for saving old state
         TokenKind kind;
@@ -54,12 +54,12 @@ private:
         TokenKind consumedKind;
         std::unique_ptr<SourceNode> sourceNode;
 
-        Context(Lexer &&lexer, std::unique_ptr<ModuleScope> &&scope,
+        Context(Lexer &&lexer, ModuleScope &&scope,
                 std::tuple<TokenKind, Token, TokenKind > &&state, std::unique_ptr<SourceNode> &&oldSourceNode) :
                 lexer(std::move(lexer)), scope(std::move(scope)),
                 kind(std::get<0>(state)), token(std::get<1>(state)),
                 consumedKind(std::get<2>(state)), sourceNode(std::move(oldSourceNode)) {
-            const char *fileName = this->lexer.getSourceInfo()->getSourceName().c_str();
+            const char *fileName = this->lexer.getSourceName().c_str();
             const char *ptr = strrchr(fileName, '/');
             this->scriptDir.append(fileName, ptr == fileName ? 1 : ptr - fileName);
         }
@@ -70,7 +70,7 @@ private:
     // root lexer state
     Lexer lexer;
 
-    std::vector<Context> contexts;
+    std::vector<std::unique_ptr<Context>> contexts;
 
     const DSExecMode mode;
     Parser parser;
@@ -91,8 +91,8 @@ public:
         return this->checker.getSymbolTable();
     }
 
-    const SourceInfo &getCurrentSourceInfo() const {
-        return this->parser.getLexer()->getSourceInfo();
+    const Lexer &getCurrentLexer() const {
+        return *this->parser.getLexer();
     }
 
     bool frontEndOnly() const {
@@ -100,7 +100,7 @@ public:
     }
 
     unsigned int getRootLineNum() const {
-        return this->lexer.getLineNum();
+        return this->lexer.getMaxLineNum();
     }
 
     explicit operator bool() const {
@@ -115,7 +115,7 @@ public:
 
 private:
     const std::string &getCurScriptDir() const {
-        return this->contexts.empty() ? this->scriptDir : this->contexts.back().scriptDir;
+        return this->contexts.empty() ? this->scriptDir : this->contexts.back()->scriptDir;
     }
 
     std::unique_ptr<Node> tryToParse(DSError *dsError);

@@ -547,9 +547,9 @@ std::string Parser::formatError() const {
 
     std::string str;
 
-    unsigned int lineNum = this->lexer->getSourceInfo()->getLineNum(this->getError().getErrorToken().pos);
+    unsigned int lineNum = this->lexer->getLineNumByPos(this->getError().getErrorToken().pos);
 
-    str += this->lexer->getSourceInfo()->getSourceName();
+    str += this->lexer->getSourceName();
     str += ':';
     str += std::to_string(lineNum);
     str += ": [error] ";

@@ -1834,41 +1834,45 @@ TEST(LexerTest_Lv3, IllegalChar) {
 }
 
 TEST(LineNumTest, case1) {
-    auto info = SourceInfo::create("dummy");
-    ASSERT_EQ(std::string("dummy"), info->getSourceName());
+    LineNumTable lineNumTable;
+    ASSERT_EQ(1u, lineNumTable.getOffset());
+    ASSERT_EQ(1u, lineNumTable.lookup(12)); // empty
+    ASSERT_EQ(1u, lineNumTable.getMaxLineNum()); // empty
 }
 
 TEST(LineNumTest, case2) {
-    auto info = SourceInfo::create("dummy");
-    ASSERT_EQ(1u, info->getLineNum(12)); // empty
+    LineNumTable table;
+    table.addNewlinePos(5);
+    ASSERT_EQ(1u, table.lookup(3));
+    ASSERT_EQ(1u, table.lookup(4));
+    ASSERT_EQ(1u, table.lookup(5));
+    ASSERT_EQ(2u, table.lookup(6));
+
+    table.setOffset(2);
+    ASSERT_EQ(2u, table.getOffset());
+    ASSERT_EQ(2u, table.lookup(3));
+    ASSERT_EQ(2u, table.lookup(4));
+    ASSERT_EQ(2u, table.lookup(5));
+    ASSERT_EQ(3u, table.lookup(6));
 }
 
 TEST(LineNumTest, case3) {
-    auto info = SourceInfo::create("dummy");
-    info->addNewlinePos(5);
-    ASSERT_EQ(1u, info->getLineNum(3));
-    ASSERT_EQ(1u, info->getLineNum(4));
-    ASSERT_EQ(1u, info->getLineNum(5));
-    ASSERT_EQ(2u, info->getLineNum(6));
+    LineNumTable table;
+    table.addNewlinePos(5);
+    table.addNewlinePos(4);  // overwrite
+    ASSERT_EQ(1u, table.lookup(3));
+    ASSERT_EQ(1u, table.lookup(4));
+    ASSERT_EQ(1u, table.lookup(5));
+    ASSERT_EQ(2u, table.lookup(6));
 }
 
 TEST(LineNumTest, case4) {
-    auto info = SourceInfo::create("dummy");
-    info->addNewlinePos(5);
-    info->addNewlinePos(4);  // overwrite
-    ASSERT_EQ(1u, info->getLineNum(3));
-    ASSERT_EQ(1u, info->getLineNum(4));
-    ASSERT_EQ(1u, info->getLineNum(5));
-    ASSERT_EQ(2u, info->getLineNum(6));
-}
-
-TEST(LineNumTest, case5) {
-    auto info = SourceInfo::create("dummy");
-    info->setLineNumOffset(4);
-    ASSERT_EQ(4u, info->getLineNum(5));
-    info->addNewlinePos(10);
-    ASSERT_EQ(4u, info->getLineNum(5));
-    ASSERT_EQ(5u, info->getLineNum(13));
+    LineNumTable table;
+    table.setOffset(4);
+    ASSERT_EQ(4u, table.lookup(5));
+    table.addNewlinePos(10);
+    ASSERT_EQ(4u, table.lookup(5));
+    ASSERT_EQ(5u, table.lookup(13));
 }
 
 int main(int argc, char **argv) {

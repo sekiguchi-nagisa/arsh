@@ -81,10 +81,10 @@ public:
     explicit ErrorReporter(FILE *fp) : fp(fp), tty(isSupportedTerminal(fileno(fp))) {}
 
     void operator()(const Lexer &lex, const char *kind, Token token, TermColor c, const char *message) const {
-        unsigned lineNumOffset = lex.getSourceInfo()->getLineNumOffset();
-        fprintf(this->fp, "%s:", lex.getSourceInfo()->getSourceName().c_str());
+        unsigned lineNumOffset = lex.getLineNumOffset();
+        fprintf(this->fp, "%s:", lex.getSourceName().c_str());
         if(lineNumOffset > 0) {
-            unsigned int lineNum = lex.getSourceInfo()->getLineNum(token.pos);
+            unsigned int lineNum = lex.getLineNumByPos(token.pos);
             fprintf(this->fp, "%d:", lineNum);
         }
         fprintf(this->fp, " %s%s[%s]%s %s\n",
@@ -154,13 +154,13 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
            errorToken, TermColor::Magenta, message.c_str());
 
     for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
-        Token token = this->contexts[i].sourceNode->getPathNode().getToken();
-        auto &lex = i > 0 ? this->contexts[i - 1].lexer : this->lexer;
+        Token token = this->contexts[i]->sourceNode->getPathNode().getToken();
+        auto &lex = i > 0 ? this->contexts[i - 1]->lexer : this->lexer;
         stream(lex, "note", token, TermColor::Blue, "at module import");
     }
 
-    unsigned int errorLineNum = this->getCurrentSourceInfo()->getLineNum(errorToken.pos);
-    const char *sourceName = this->getCurrentSourceInfo()->getSourceName().c_str();
+    unsigned int errorLineNum = this->getCurrentLexer().getLineNumByPos(errorToken.pos);
+    const char *sourceName = this->getCurrentLexer().getSourceName().c_str();
     if(dsError) {
         *dsError = {
                 .kind = type,
@@ -234,10 +234,10 @@ FrontEnd::Ret FrontEnd::operator()(DSError *dsError) {
 
 void FrontEnd::setupASTDump() {
     if(this->uastDumper) {
-        this->uastDumper.initialize(this->getCurrentSourceInfo()->getSourceName(), "### dump untyped AST ###");
+        this->uastDumper.initialize(this->getCurrentLexer().getSourceName(), "### dump untyped AST ###");
     }
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
-        this->astDumper.initialize(this->getCurrentSourceInfo()->getSourceName(), "### dump typed AST ###");
+        this->astDumper.initialize(this->getCurrentLexer().getSourceName(), "### dump typed AST ###");
     }
 }
 
@@ -307,12 +307,15 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf, std::unique_p
         node->setFirstAppear(true);
         auto state = this->parser.saveLexicalState();
         auto scope = this->getSymbolTable().createModuleScope();
-        this->contexts.emplace_back(std::move(lex), std::move(scope), std::move(state), std::move(node));
+        this->contexts.push_back(
+                std::make_unique<Context>(
+                        std::move(lex), std::move(scope), std::move(state), std::move(node)));
+        this->getSymbolTable().setModuleScope(this->contexts.back()->scope);
     }
     Token token{};
-    TokenKind kind = this->contexts.back().lexer.nextToken(token);
+    TokenKind kind = this->contexts.back()->lexer.nextToken(token);
     TokenKind ckind{};
-    this->parser.restoreLexicalState(this->contexts.back().lexer, kind, token, ckind);
+    this->parser.restoreLexicalState(this->contexts.back()->lexer, kind, token, ckind);
 
     if(this->uastDumper) {
         this->uastDumper.enterModule(fullPath);
@@ -323,25 +326,24 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf, std::unique_p
 }
 
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
-    auto &ctx = this->contexts.back();
+    auto &ctx = *this->contexts.back();
     TokenKind kind = ctx.kind;
     Token token = ctx.token;
     TokenKind consumedKind = ctx.consumedKind;
     std::unique_ptr<SourceNode> node(ctx.sourceNode.release());
-    auto &modType = this->getSymbolTable().createModType(ctx.lexer.getSourceInfo()->getSourceName());
-    auto scope = std::move(ctx.scope);
+    auto &modType = this->getSymbolTable().createModType(ctx.lexer.getSourceName());
+    const unsigned int varNum = ctx.scope.getMaxVarIndex();
     this->contexts.pop_back();
 
-    auto &lex = this->contexts.empty() ? this->lexer : this->contexts.back().lexer;
+    auto &lex = this->contexts.empty() ? this->lexer : this->contexts.back()->lexer;
     this->parser.restoreLexicalState(lex, kind, token, consumedKind);
     if(this->contexts.empty()) {
         this->getSymbolTable().resetCurModule();
     } else {
-        this->getSymbolTable().setModuleScope(*this->contexts.back().scope);
+        this->getSymbolTable().setModuleScope(this->contexts.back()->scope);
     }
 
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY) {
-        unsigned int varNum = scope->getMaxVarIndex();
         node->setMaxVarNum(varNum);
         node->setModType(modType);
         if(prevType != nullptr && this->prevType->isNothingType()) {
