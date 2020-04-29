@@ -70,16 +70,39 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
     return callToplevel(state, code, dsError);
 }
 
+static ErrorReporter newReporter() {
+#ifdef FUZZING_BUILD_MODE
+    bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
+    return ErrorReporter(ignore ? fopen("/dev/null", "w") : stderr, ignore);
+#else
+    return ErrorReporter(stderr, false);
+#endif
+}
+
 class Compiler {
 private:
     FrontEnd frontEnd;
+    ErrorReporter reporter;
+    NodeDumper uastDumper;
+    NodeDumper astDumper;
     ByteCodeGenerator codegen;
 
 public:
     Compiler(const DSState &state, SymbolTable &symbolTable, Lexer &&lexer) :
             frontEnd(std::move(lexer), symbolTable, state.execMode,
-                     hasFlag(state.compileOption, CompileOption::INTERACTIVE), state.dumpTarget),
-            codegen(symbolTable, hasFlag(state.compileOption, CompileOption::ASSERT)) {}
+                     hasFlag(state.compileOption, CompileOption::INTERACTIVE)),
+            reporter(newReporter()),
+            uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get(), symbolTable),
+            astDumper(state.dumpTarget.files[DS_DUMP_KIND_AST].get(), symbolTable),
+            codegen(symbolTable, hasFlag(state.compileOption, CompileOption::ASSERT)) {
+        this->frontEnd.setErrorReporter(this->reporter);
+        if(this->uastDumper) {
+            this->frontEnd.setUASTDumper(this->uastDumper);
+        }
+        if(this->astDumper) {
+            this->frontEnd.setASTDumper(this->astDumper);
+        }
+    }
 
     unsigned int lineNum() const {
         return this->frontEnd.getRootLineNum();

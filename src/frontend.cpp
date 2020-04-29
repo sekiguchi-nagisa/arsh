@@ -25,31 +25,9 @@
 
 namespace ydsh {
 
-FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable,
-                   DSExecMode mode, bool toplevel, const DumpTarget &target) :
-        lexer(std::move(lexer)), mode(mode),
-        parser(this->lexer), checker(symbolTable, toplevel),
-        uastDumper(target.files[DS_DUMP_KIND_UAST].get(), symbolTable),
-        astDumper(target.files[DS_DUMP_KIND_AST].get(), symbolTable) {
-}
-
-#define EACH_TERM_COLOR(C) \
-    C(Reset,    0) \
-    C(Bold,     1) \
-    /*C(Black,   30)*/ \
-    /*C(Red,     31)*/ \
-    C(Green,   32) \
-    /*C(Yellow,  33)*/ \
-    C(Blue,    34) \
-    C(Magenta, 35) \
-    C(Cyan,    36) /*\
-    C(white,   37)*/
-
-enum class TermColor : unsigned int {   // ansi color code
-#define GEN_ENUM(E, N) E,
-    EACH_TERM_COLOR(GEN_ENUM)
-#undef GEN_ENUM
-};
+// ###########################
+// ##     ErrorReporter     ##
+// ###########################
 
 /**
  * not allow dumb terminal
@@ -72,91 +50,94 @@ static std::vector<std::string> split(const std::string &str) {
     return bufs;
 }
 
-class ErrorReporter {
-private:
-    FILE *fp;
-    bool tty;
+ErrorReporter::ErrorReporter(FILE *fp, bool close) :
+        fp(fp), close(close), tty(isSupportedTerminal(fileno(fp))) {}
 
-public:
-    explicit ErrorReporter(FILE *fp) : fp(fp), tty(isSupportedTerminal(fileno(fp))) {}
-
-    void operator()(const Lexer &lex, const char *kind, Token token, TermColor c, const char *message) const {
-        unsigned lineNumOffset = lex.getLineNumOffset();
-        fprintf(this->fp, "%s:", lex.getSourceName().c_str());
-        if(lineNumOffset > 0) {
-            unsigned int lineNum = lex.getLineNumByPos(token.pos);
-            fprintf(this->fp, "%d:", lineNum);
-        }
-        fprintf(this->fp, " %s%s[%s]%s %s\n",
-                this->color(c), this->color(TermColor::Bold), kind, this->color(TermColor::Reset), message);
-
-        if(lineNumOffset > 0) {
-            this->printErrorLine(lex, token);
-        }
-        fflush(this->fp);
+ErrorReporter::~ErrorReporter() {
+    if(this->close) {
+        fclose(this->fp);
     }
+}
 
-private:
-    const char *color(TermColor c) const {
-        if(this->tty) {
+void ErrorReporter::operator()(const Lexer &lex, const char *kind, Token token, TermColor c, const char *message) const {
+    unsigned lineNumOffset = lex.getLineNumOffset();
+    fprintf(this->fp, "%s:", lex.getSourceName().c_str());
+    if(lineNumOffset > 0) {
+        unsigned int lineNum = lex.getLineNumByPos(token.pos);
+        fprintf(this->fp, "%d:", lineNum);
+    }
+    fprintf(this->fp, " %s%s[%s]%s %s\n",
+            this->color(c), this->color(TermColor::Bold), kind, this->color(TermColor::Reset), message);
+
+    if(lineNumOffset > 0) {
+        this->printErrorLine(lex, token);
+    }
+    fflush(this->fp);
+}
+
+const char* ErrorReporter::color(ydsh::TermColor c) const {
+    if(this->tty) {
 #define GEN_STR(E, C) "\033[" #C "m",
-            const char *ansi[] = {
-                    EACH_TERM_COLOR(GEN_STR)
-            };
+        const char *ansi[] = {
+                EACH_TERM_COLOR(GEN_STR)
+        };
 #undef GEN_STR
-            return ansi[static_cast<unsigned int>(c)];
-        }
-        return "";
+        return ansi[static_cast<unsigned int>(c)];
+    }
+    return "";
+}
+
+void ErrorReporter::printErrorLine(const ydsh::Lexer &lexer, ydsh::Token token) const {
+    if(token.pos + token.size == 0) {
+        return;
     }
 
-    void printErrorLine(const Lexer &lexer, Token token) const {
-        if(token.pos + token.size == 0) {
-            return;
-        }
+    Token errorToken = lexer.shiftEOS(token);
+    Token lineToken = lexer.getLineToken(errorToken);
+    auto line = lexer.formatTokenText(lineToken);
+    auto marker = lexer.formatLineMarker(lineToken, errorToken);
 
-        Token errorToken = lexer.shiftEOS(token);
-        Token lineToken = lexer.getLineToken(errorToken);
-        auto line = lexer.formatTokenText(lineToken);
-        auto marker = lexer.formatLineMarker(lineToken, errorToken);
+    auto lines = split(line);
+    auto markers = split(marker);
+    unsigned int size = lines.size();
+    assert(size == markers.size());
+    for(unsigned int i = 0; i < size; i++) {
+        // print error line
+        fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Cyan), lines[i].c_str(), this->color(TermColor::Reset));
 
-        auto lines = split(line);
-        auto markers = split(marker);
-        unsigned int size = lines.size();
-        assert(size == markers.size());
-        for(unsigned int i = 0; i < size; i++) {
-            // print error line
-            fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Cyan), lines[i].c_str(), this->color(TermColor::Reset));
-
-            // print line marker
-            fprintf(this->fp, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
-                    markers[i].c_str(), this->color(TermColor::Reset));
-        }
-
-        fflush(this->fp);
+        // print line marker
+        fprintf(this->fp, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
+                markers[i].c_str(), this->color(TermColor::Reset));
     }
-};
+
+    fflush(this->fp);
+}
+
+// ######################
+// ##     FrontEnd     ##
+// ######################
+
+FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel) :
+        lexer(std::move(lexer)), mode(mode),
+        parser(this->lexer), checker(symbolTable, toplevel){}
 
 void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
         Token errorToken, const std::string &message, DSError *dsError) const {
-#ifdef FUZZING_BUILD_MODE
-    bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
-    FilePtr file(ignore ? fopen("/dev/null", "w") : fdopen(dup(STDERR_FILENO), "w"));
-    ErrorReporter stream(file.get());
-#else
-    ErrorReporter stream(stderr);
-#endif
+    if(!this->reporter) {
+        return;
+    }
 
     /**
      * show error message
      */
-    stream(*this->parser.getLexer(),
+    (*this->reporter)(*this->parser.getLexer(),
            type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
            errorToken, TermColor::Magenta, message.c_str());
 
     for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
         Token token = this->contexts[i]->sourceNode->getPathNode().getToken();
         auto &lex = i > 0 ? this->contexts[i - 1]->lexer : this->lexer;
-        stream(lex, "note", token, TermColor::Blue, "at module import");
+        (*this->reporter)(lex, "note", token, TermColor::Blue, "at module import");
     }
 
     unsigned int errorLineNum = this->getCurrentLexer().getLineNumByPos(errorToken.pos);
@@ -178,7 +159,7 @@ std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
         if(this->parser.hasError()) {
             this->handleParseError(dsError);
         } else if(this->uastDumper) {
-            this->uastDumper(*node);
+            (*this->uastDumper)(*node);
         }
     }
     return node;
@@ -194,7 +175,7 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError) {
         this->prevType = &node->getType();
 
         if(this->astDumper) {
-            this->astDumper(*node);
+            (*this->astDumper)(*node);
         }
         return true;
     } catch(const TypeCheckError &e) {
@@ -234,19 +215,19 @@ FrontEnd::Ret FrontEnd::operator()(DSError *dsError) {
 
 void FrontEnd::setupASTDump() {
     if(this->uastDumper) {
-        this->uastDumper.initialize(this->getCurrentLexer().getSourceName(), "### dump untyped AST ###");
+        this->uastDumper->initialize(this->getCurrentLexer().getSourceName(), "### dump untyped AST ###");
     }
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
-        this->astDumper.initialize(this->getCurrentLexer().getSourceName(), "### dump typed AST ###");
+        this->astDumper->initialize(this->getCurrentLexer().getSourceName(), "### dump typed AST ###");
     }
 }
 
 void FrontEnd::teardownASTDump() {
     if(this->uastDumper) {
-        this->uastDumper.finalize();
+        this->uastDumper->finalize();
     }
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
-        this->astDumper.finalize();
+        this->astDumper->finalize();
     }
 }
 
@@ -324,10 +305,10 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf, std::unique_p
     this->parser.restoreLexicalState(this->contexts.back()->lexer, kind, token, ckind);
 
     if(this->uastDumper) {
-        this->uastDumper.enterModule(fullPath);
+        this->uastDumper->enterModule(fullPath);
     }
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
-        this->astDumper.enterModule(fullPath);
+        this->astDumper->enterModule(fullPath);
     }
 }
 
@@ -359,10 +340,10 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     }
 
     if(this->uastDumper) {
-        this->uastDumper.leaveModule();
+        this->uastDumper->leaveModule();
     }
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
-        this->astDumper.leaveModule();
+        this->astDumper->leaveModule();
     }
     return node;
 }

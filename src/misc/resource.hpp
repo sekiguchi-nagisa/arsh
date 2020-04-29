@@ -158,6 +158,10 @@ public:
     T &operator*() const {
         return *this->ptr;
     }
+
+    void reset(T *p) {
+        this->ptr = p;
+    }
 };
 
 template <typename R, typename D>

@@ -23,7 +23,42 @@
 
 namespace ydsh {
 
-struct DumpTarget;
+#define EACH_TERM_COLOR(C) \
+    C(Reset,    0) \
+    C(Bold,     1) \
+    /*C(Black,   30)*/ \
+    /*C(Red,     31)*/ \
+    C(Green,   32) \
+    /*C(Yellow,  33)*/ \
+    C(Blue,    34) \
+    C(Magenta, 35) \
+    C(Cyan,    36) /*\
+    C(white,   37)*/
+
+enum class TermColor : unsigned int {   // ansi color code
+#define GEN_ENUM(E, N) E,
+    EACH_TERM_COLOR(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+class ErrorReporter {
+private:
+    FILE *fp;
+    bool close;
+    bool tty;
+
+public:
+    ErrorReporter(FILE *fp, bool close);
+
+    ~ErrorReporter();
+
+    void operator()(const Lexer &lex, const char *kind, Token token, TermColor c, const char *message) const;
+
+private:
+    const char *color(TermColor c) const;
+
+    void printErrorLine(const Lexer &lexer, Token token) const;
+};
 
 class FrontEnd {
 public:
@@ -69,15 +104,30 @@ private:
     Parser parser;
     TypeChecker checker;
     DSType *prevType{nullptr};
-    NodeDumper uastDumper;
-    NodeDumper astDumper;
+
+    ObserverPtr<ErrorReporter> reporter;
+    ObserverPtr<NodeDumper> uastDumper;
+    ObserverPtr<NodeDumper> astDumper;
 
 public:
-    FrontEnd(Lexer &&lexer, SymbolTable &symbolTable,
-             DSExecMode mode, bool toplevel, const DumpTarget &target);
+    FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel);
 
     ~FrontEnd() {
         this->getSymbolTable().clear();
+    }
+
+    void setErrorReporter(ErrorReporter &r) {
+        this->reporter.reset(&r);
+    }
+
+    void setUASTDumper(NodeDumper &dumper) {
+        assert(dumper);
+        this->uastDumper.reset(&dumper);
+    }
+
+    void setASTDumper(NodeDumper &dumper) {
+        assert(dumper);
+        this->astDumper.reset(&dumper);
     }
 
     SymbolTable &getSymbolTable() {
