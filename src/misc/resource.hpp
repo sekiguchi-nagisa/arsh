@@ -159,6 +159,11 @@ public:
         return *this->ptr;
     }
 
+    template <typename ...Arg>
+    auto operator()(Arg && ...arg) const {
+        return (*this->ptr)(std::forward<Arg>(arg)...);
+    }
+
     void reset(T *p) {
         this->ptr = p;
     }

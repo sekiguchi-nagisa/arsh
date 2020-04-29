@@ -130,14 +130,14 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
     /**
      * show error message
      */
-    (*this->reporter)(*this->parser.getLexer(),
+    this->reporter(*this->parser.getLexer(),
            type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
            errorToken, TermColor::Magenta, message.c_str());
 
     for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
         Token token = this->contexts[i]->sourceNode->getPathNode().getToken();
         auto &lex = i > 0 ? this->contexts[i - 1]->lexer : this->lexer;
-        (*this->reporter)(lex, "note", token, TermColor::Blue, "at module import");
+        this->reporter(lex, "note", token, TermColor::Blue, "at module import");
     }
 
     unsigned int errorLineNum = this->getCurrentLexer().getLineNumByPos(errorToken.pos);
@@ -159,7 +159,7 @@ std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
         if(this->parser.hasError()) {
             this->handleParseError(dsError);
         } else if(this->uastDumper) {
-            (*this->uastDumper)(*node);
+            this->uastDumper(*node);
         }
     }
     return node;
@@ -175,7 +175,7 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError) {
         this->prevType = &node->getType();
 
         if(this->astDumper) {
-            (*this->astDumper)(*node);
+            this->astDumper(*node);
         }
         return true;
     } catch(const TypeCheckError &e) {
