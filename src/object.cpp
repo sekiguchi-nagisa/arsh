@@ -17,7 +17,6 @@
 #include <memory>
 
 #include "vm.h"
-#include "job.h"
 #include "redir.h"
 #include "misc/num_util.hpp"
 

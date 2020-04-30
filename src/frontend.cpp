@@ -20,7 +20,6 @@
 #include <unistd.h>
 
 #include "frontend.h"
-#include "constant.h"
 #include "core.h"
 
 namespace ydsh {

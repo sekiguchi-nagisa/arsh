@@ -27,7 +27,6 @@
 #include <embed.h>
 
 #include "vm.h"
-#include "constant.h"
 #include "logger.h"
 #include "frontend.h"
 #include "codegen.h"

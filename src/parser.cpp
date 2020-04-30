@@ -15,9 +15,7 @@
  */
 
 #include "parser.h"
-#include "constant.h"
 #include "signals.h"
-#include "misc/resource.hpp"
 
 // helper macro
 #define HAS_NL() (this->lexer->isPrevNewLine())

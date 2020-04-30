@@ -19,7 +19,6 @@
 #include "constant.h"
 #include "object.h"
 #include "type_checker.h"
-#include "misc/util.hpp"
 
 namespace ydsh {
 
