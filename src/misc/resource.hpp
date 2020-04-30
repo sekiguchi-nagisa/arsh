@@ -315,6 +315,28 @@ struct CallCounter {
     }
 };
 
+template <typename Func>
+class Finally {
+private:
+    Func func;
+
+public:
+    NON_COPYABLE(Finally);
+
+    explicit Finally(Func &&func) : func(std::move(func)) {}
+
+    Finally(Finally &&o) = default;
+
+    ~Finally() {
+        this->func();
+    }
+};
+
+template <typename Func>
+inline auto finally(Func &&func) {
+    return Finally<Func>(std::move(func));
+}
+
 } // namespace ydsh
 
 #endif //YDSH_MISC_RESOURCE_HPP

@@ -279,38 +279,52 @@ protected:
         return this->visitingDepth == 1;
     }
 
-    template <typename Func>
-    void inScope(Func func) {
+    auto inScope() {
         this->symbolTable.enterScope();
-
-        func();
-
-        this->symbolTable.exitScope();
+        return finally([&]{
+            this->symbolTable.exitScope();
+        });
     }
 
-    template <typename Func>
-    void inLoop(Func func) {
+    auto inLoop() {
         this->fctx.enterLoop();
         this->breakGather.enter();
-
-        func();
-
-        this->fctx.leave();
-        this->breakGather.leave();
+        return finally([&]{
+            this->fctx.leave();
+            this->breakGather.leave();
+        });
     }
 
-    template <typename Func>
-    unsigned int inFunc(const DSType &returnType, Func func) {
+    auto inFunc(const DSType &returnType) {
         this->curReturnType = &returnType;
-
         this->symbolTable.enterFunc();
-        this->inScope([&]{
-            func();
+        this->symbolTable.enterScope();
+        return finally([&]{
+            this->symbolTable.exitScope();
+            this->symbolTable.exitFunc();
+            this->curReturnType = nullptr;
         });
-        unsigned int num = this->symbolTable.getMaxVarIndex();
-        this->symbolTable.exitFunc();
-        this->curReturnType = nullptr;
-        return num;
+    }
+
+    auto inChild() {
+        this->fctx.enterChild();
+        return finally([&]{
+            this->fctx.leave();
+        });
+    }
+
+    auto inTry() {
+        this->fctx.enterTry();
+        return finally([&]{
+            this->fctx.leave();
+        });
+    }
+
+    auto inFinally() {
+        this->fctx.enterFinally();
+        return finally([&]{
+            this->fctx.leave();
+        });
     }
 
     /**
