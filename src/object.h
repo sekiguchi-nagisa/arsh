@@ -140,7 +140,7 @@ public:
      * @return
      * if failed, return false
      */
-    bool closeOnExec(bool close);
+    bool closeOnExec(bool close) const;
 
     int getValue() const {
         return this->fd;

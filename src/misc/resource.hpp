@@ -143,7 +143,7 @@ private:
 public:
     explicit ObserverPtr(T *ptr) noexcept : ptr(ptr) {}
 
-    ObserverPtr(std::nullptr_t) noexcept : ptr(nullptr) {}
+    ObserverPtr(std::nullptr_t) noexcept : ptr(nullptr) {}  //NOLINT
 
     ObserverPtr() noexcept : ptr(nullptr) {}
 

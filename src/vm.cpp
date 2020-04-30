@@ -56,7 +56,7 @@ DSState::DSState() :
         baseTime(std::chrono::system_clock::now()) { }
 
 
-void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
+void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) const {
     auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
     obj.refValues().clear();
     obj.refValues().reserve(size + (mergeExitStatus ? 1 : 0));

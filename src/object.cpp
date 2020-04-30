@@ -280,7 +280,7 @@ UnixFdObject::~UnixFdObject() {
     }
 }
 
-bool UnixFdObject::closeOnExec(bool close) {
+bool UnixFdObject::closeOnExec(bool close) const {
     if(this->fd <= STDERR_FILENO) {
         return false;
     }

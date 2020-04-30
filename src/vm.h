@@ -215,7 +215,7 @@ public:
         this->setGlobal(BuiltinVarOffset::EXIT_STATUS, DSValue::createInt(status));
     }
 
-    void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);
+    void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) const;
 
     bool isJobControl() const {
         return hasFlag(this->runtimeOption, RuntimeOption::MONITOR);
