@@ -652,7 +652,7 @@ static void appendAsEscaped(std::string &line, const char *path) {  //FIXME: esc
         case '\\': case ';': case '\'': case '"':
         case '`': case '|': case '&': case '<':
         case '>': case '(': case ')': case '$':
-        case '#':
+        case '#': case '*': case '?':
             line +='\\';
             break;
         default:
