@@ -134,7 +134,8 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
            errorToken, TermColor::Magenta, message.c_str());
 
     for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
-        Token token = this->contexts[i]->sourceNode->getPathNode().getToken();
+        auto &node = i > 0 ? this->contexts[i - 1]->srcListNode : this->srcListNode;
+        Token token = node->getPathNode().getToken();
         auto &lex = i > 0 ? this->contexts[i - 1]->lexer : this->lexer;
         this->reporter(lex, "note", token, TermColor::Blue, "at module import");
     }
@@ -184,32 +185,40 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError) {
 }
 
 FrontEnd::Ret FrontEnd::operator()(DSError *dsError) {
-    // parse
-    auto node = this->tryToParse(dsError);
-    if(this->parser.hasError()) {
-        return {nullptr, IN_MODULE};
-    }
+    do {
+        // load module
+        Ret ret = this->loadModule(dsError);
+        if(!ret || ret.status == ENTER_MODULE) {
+            return ret;
+        }
 
-    // load module
-    auto ret = this->tryToCheckModule(node);
-    if(!ret) {
-        this->handleTypeError(*ret.asErr(), dsError);
-        return {nullptr, IN_MODULE};
-    }
-    auto s = ret.take();
-    if(s != IN_MODULE) {
-        return {nullptr, s};
-    }
+        // parse
+        if(!ret.node) {
+            ret.node = this->tryToParse(dsError);
+            if(this->parser.hasError()) {
+                return {nullptr, FAILED};
+            }
+        }
 
-    // check type
-    if(!this->tryToCheckType(node, dsError)) {
-        return {nullptr, IN_MODULE};
-    }
+        if(!ret.node) { // when parse reach EOS
+            ret.node = this->exitModule();
+        }
 
-    if(isa<SourceNode>(*node) && cast<SourceNode>(*node).isFirstAppear()) {
-        s = EXIT_MODULE;
-    }
-    return {std::move(node), s};
+        // check type
+        if(!this->tryToCheckType(ret.node, dsError)) {
+            return {nullptr, FAILED};
+        }
+
+        if(isa<SourceListNode>(*ret.node)) {
+            this->getCurSrcListNode().reset(cast<SourceListNode>(ret.node.release()));
+            continue;
+        }
+
+        if(isa<SourceNode>(*ret.node) && cast<SourceNode>(*ret.node).isFirstAppear()) {
+            ret.status = EXIT_MODULE;
+        }
+        return ret;
+    } while(true);
 }
 
 void FrontEnd::setupASTDump() {
@@ -230,54 +239,55 @@ void FrontEnd::teardownASTDump() {
     }
 }
 
-static ErrHolder<std::unique_ptr<TypeCheckError>> wrap(TypeCheckError &&e) {
-    return Err(std::make_unique<TypeCheckError>(std::move(e)));
+static auto createModLoadingError(const Node &node, const char *path, ModLoadingError e) {
+    switch(e) {
+    case ModLoadingError::CIRCULAR:
+        return createTCError<CircularMod>(node, path);
+    case ModLoadingError::NOT_OPEN:
+        return createTCError<NotOpenMod>(node, path, strerror(errno));
+    default:
+        assert(e == ModLoadingError::NOT_FOUND);
+        return createTCError<NotFoundMod>(node, path);
+    }
 }
 
-Result<FrontEnd::Status, std::unique_ptr<TypeCheckError>>
-FrontEnd::tryToCheckModule(std::unique_ptr<Node> &node) {
-    if(!node) {
-        node = this->exitModule();
-        return Ok(IN_MODULE);
+FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
+    if(!this->getCurSrcListNode()) {
+        return {nullptr, IN_MODULE};
     }
 
-    if(!isa<SourceNode>(*node)) {
-        return Ok(IN_MODULE);
+    if(!this->getCurSrcListNode()->hasUnconsumedPath()) {
+        this->getCurSrcListNode().reset();
+        return {nullptr, IN_MODULE};
     }
 
-    auto &srcNode = cast<SourceNode>(*node);
-    bool optional = srcNode.isOptional();
-    const char *modPath = srcNode.getPathStr().c_str();
+    auto &node = *this->getCurSrcListNode();
+    unsigned int pathIndex = node.getCurIndex();
+    const char *modPath = node.getPathList()[pathIndex].c_str();
+    node.setCurIndex(pathIndex + 1);
     FilePtr filePtr;
     auto ret = this->getSymbolTable().tryToLoadModule(this->getCurScriptDir().c_str(), modPath, filePtr);
     if(is<ModLoadingError>(ret)) {
-        switch(get<ModLoadingError>(ret)) {
-        case ModLoadingError::CIRCULAR:
-            return wrap(createTCError<CircularMod>(srcNode.getPathNode(), modPath));
-        case ModLoadingError::NOT_OPEN:
-            return wrap(createTCError<NotOpenMod>(
-                    srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
-        case ModLoadingError::NOT_FOUND:
-            if(optional) {
-                return Ok(IN_MODULE);
-            }
-            return wrap(createTCError<NotFoundMod>(
-                    srcNode.getPathNode(), srcNode.getPathStr().c_str()));
+        auto e = get<ModLoadingError>(ret);
+        if(e == ModLoadingError::NOT_FOUND && node.isOptional()) {
+            return {std::make_unique<EmptyNode>(), IN_MODULE};
         }
+        auto error = createModLoadingError(node.getPathNode(), modPath, e);
+        this->handleTypeError(error, dsError);
+        return {nullptr, FAILED};
     } else if(is<const char *>(ret)) {
         ByteBuffer buf;
         if(!readAll(filePtr, buf)) {
-            return wrap(createTCError<NotOpenMod>(
-                    srcNode.getPathNode(), srcNode.getPathStr().c_str(), strerror(errno)));
+            auto e = createTCError<NotOpenMod>(node.getPathNode(), modPath, strerror(errno));
+            this->handleTypeError(e, dsError);
+            return {nullptr, FAILED};
         }
-        this->enterModule(get<const char*>(ret), std::move(buf),
-                          std::unique_ptr<SourceNode>(cast<SourceNode>(node.release())));
-        return Ok(ENTER_MODULE);
+        this->enterModule(get<const char*>(ret), std::move(buf));
+        return {nullptr, ENTER_MODULE};
     } else if(is<ModType *>(ret)) {
-        srcNode.setModType(*get<ModType *>(ret));
-        return Ok(IN_MODULE);
+        return {node.create(*get<ModType *>(ret), false), IN_MODULE};
     }
-    return Ok(IN_MODULE);   // normally unreachable, due to suppress gcc warning
+    return {nullptr, FAILED};
 }
 
 static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
@@ -287,15 +297,13 @@ static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
     return Lexer(fullPath, std::move(buf), std::move(value));
 }
 
-void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf, std::unique_ptr<SourceNode> &&node) {
+void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
     {
         auto lex = createLexer(fullPath, std::move(buf));
-        node->setFirstAppear(true);
         auto state = this->parser.saveLexicalState();
         auto scope = this->getSymbolTable().createModuleScope();
         this->contexts.push_back(
-                std::make_unique<Context>(
-                        std::move(lex), std::move(scope), std::move(state), std::move(node)));
+                std::make_unique<Context>(std::move(lex), std::move(scope), std::move(state)));
         this->getSymbolTable().setModuleScope(this->contexts.back()->scope);
     }
     Token token{};
@@ -316,7 +324,6 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     TokenKind kind = ctx.kind;
     Token token = ctx.token;
     TokenKind consumedKind = ctx.consumedKind;
-    std::unique_ptr<SourceNode> node(ctx.sourceNode.release());
     auto &modType = this->getSymbolTable().createModType(ctx.lexer.getSourceName());
     const unsigned int varNum = ctx.scope.getMaxVarIndex();
     this->contexts.pop_back();
@@ -329,9 +336,9 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
         this->getSymbolTable().setModuleScope(this->contexts.back()->scope);
     }
 
+    auto node = this->getCurSrcListNode()->create(modType, true);
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY) {
         node->setMaxVarNum(varNum);
-        node->setModType(modType);
         if(prevType != nullptr && this->prevType->isNothingType()) {
             this->prevType = &this->getSymbolTable().get(TYPE::Void);
             node->setNothing(true);

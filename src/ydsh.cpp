@@ -140,6 +140,8 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
         case FrontEnd::IN_MODULE:
             this->codegen.generate(ret.node.get());
             break;
+        default:
+            break;
         }
     }
     this->frontEnd.teardownASTDump();

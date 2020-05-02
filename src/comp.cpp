@@ -771,8 +771,8 @@ private:
 
     bool requireMod() const {
         if(this->inTyping()) {
-            if(isa<SourceNode>(*this->node)) {
-                return cast<const SourceNode>(*this->node).getName().empty();
+            if(isa<SourceListNode>(*this->node)) {
+                return cast<const SourceListNode>(*this->node).getName().empty();
             }
         }
         return false;

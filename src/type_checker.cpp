@@ -1400,40 +1400,43 @@ void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
 }
 
 void TypeChecker::visitSourceNode(SourceNode &node) {
-    if(!this->isTopLevel()) {   // only available toplevel scope
-        RAISE_TC_ERROR(OutsideToplevel, node);
-    }
+    assert(this->isTopLevel());
 
     // register module placeholder
     const FieldHandle *handle = nullptr;
     if(node.isFirstAppear()) {
-        auto pair = this->symbolTable.newModHandle(*node.getModType());
+        auto pair = this->symbolTable.newModHandle(node.getModType());
         assert(static_cast<bool>(pair));
         handle = pair.asOk();
     }
     if(handle == nullptr) {
-        if(!node.getModType()) {    // optional module import
-            node.setType(this->symbolTable.get(TYPE::Void));
-            return;
-        }
-        handle = this->symbolTable.lookupModHandle(*node.getModType());
+        handle = this->symbolTable.lookupModHandle(node.getModType());
         assert(handle != nullptr);
     }
 
     // register actual module handle
     node.setModIndex(handle->getIndex());
     if(node.getName().empty()) {    // global import
-        const char *ret = this->symbolTable.import(*node.getModType());
+        const char *ret = this->symbolTable.import(node.getModType());
         if(ret) {
-            RAISE_TC_ERROR(ConflictSymbol, node.getPathNode(), ret);
+            RAISE_TC_ERROR(ConflictSymbol, node, ret);
         }
     } else {    // scoped import
         // register actual module handle
-        auto handle = this->addEntry(node, node.getName(), *node.getModType(), FieldAttribute::READ_ONLY);
+        handle = this->addEntry(node, node.getName(), node.getModType(), FieldAttribute::READ_ONLY);
         assert(handle != nullptr);
         node.setIndex(handle->getIndex());
     }
     node.setType(this->symbolTable.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
+}
+
+void TypeChecker::visitSourceListNode(SourceListNode &node) {
+    if(!this->isTopLevel()) {   // only available toplevel scope
+        RAISE_TC_ERROR(OutsideToplevel, node);
+    }
+    this->checkType(this->symbolTable.get(TYPE::String), node.getPathNode());
+    node.setPathList({ node.getPathNode().getValue() });    //FIXME:
+    node.setType(this->symbolTable.get(TYPE::Void));
 }
 
 void TypeChecker::visitEmptyNode(EmptyNode &node) {

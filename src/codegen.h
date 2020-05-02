@@ -587,6 +587,7 @@ private:
     void visitInterfaceNode(InterfaceNode &node) override;
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
     void visitSourceNode(SourceNode &node) override;
+    void visitSourceListNode(SourceListNode &node) override;
     void visitEmptyNode(EmptyNode &node) override;
 
 public:
@@ -604,7 +605,7 @@ public:
         this->initCodeBuilder(CodeKind::TOPLEVEL, lexer, 0);
     }
 
-    void exitModule(SourceNode &node);
+    void exitModule(const SourceNode &node);
 };
 
 class ByteCodeDumper {

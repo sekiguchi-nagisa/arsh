@@ -66,6 +66,7 @@ public:
         IN_MODULE,
         ENTER_MODULE,
         EXIT_MODULE,
+        FAILED,
     };
 
     struct Ret {
@@ -73,7 +74,7 @@ public:
         Status status;
 
         explicit operator bool() const {
-            return this->node != nullptr || this->status != Status::IN_MODULE;
+            return this->status != FAILED;
         }
     };
 
@@ -86,13 +87,12 @@ private:
         TokenKind kind;
         Token token;
         TokenKind consumedKind;
-        std::unique_ptr<SourceNode> sourceNode;
+        std::unique_ptr<SourceListNode> srcListNode;
 
-        Context(Lexer &&lexer, ModuleScope &&scope,
-                std::tuple<TokenKind, Token, TokenKind > &&state, std::unique_ptr<SourceNode> &&oldSourceNode) :
+        Context(Lexer &&lexer, ModuleScope &&scope, std::tuple<TokenKind, Token, TokenKind > &&state) :
                 lexer(std::move(lexer)), scope(std::move(scope)),
                 kind(std::get<0>(state)), token(std::get<1>(state)),
-                consumedKind(std::get<2>(state)), sourceNode(std::move(oldSourceNode)) {}
+                consumedKind(std::get<2>(state)){}
     };
 
     // root lexer state
@@ -104,6 +104,8 @@ private:
     Parser parser;
     TypeChecker checker;
     DSType *prevType{nullptr};
+
+    std::unique_ptr<SourceListNode> srcListNode;
 
     ObserverPtr<ErrorReporter> reporter;
     ObserverPtr<NodeDumper> uastDumper;
@@ -161,26 +163,17 @@ private:
         return (this->contexts.empty() ? this->lexer : this->contexts.back()->lexer).getScriptDir();
     }
 
+    std::unique_ptr<SourceListNode> &getCurSrcListNode() {
+        return this->contexts.empty() ? this->srcListNode : this->contexts.back()->srcListNode;
+    }
+
     std::unique_ptr<Node> tryToParse(DSError *dsError);
 
     bool tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError);
 
-    /**
-     * if module loading failed, throw TypeCheckError
-     * @param node
-     * after call it, will be null
-     * @return
-     */
-    Result<Status, std::unique_ptr<TypeCheckError>> tryToCheckModule(std::unique_ptr<Node> &node);
+    Ret loadModule(DSError *dsError);
 
-    /**
-     *
-     * @param fullPath
-     * must be full file path (not directory)
-     * @param buf
-     * @param node
-     */
-    void enterModule(const char *fullPath, ByteBuffer &&buf, std::unique_ptr<SourceNode> &&node);
+    void enterModule(const char *fullPath, ByteBuffer &&buf);
 
     std::unique_ptr<SourceNode> exitModule();
 

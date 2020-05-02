@@ -1248,6 +1248,8 @@ void ByteCodeGenerator::visitSourceNode(SourceNode &node) {
     }
 }
 
+void ByteCodeGenerator::visitSourceListNode(SourceListNode &) { }   // do nothing
+
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
 CompiledCode ByteCodeGenerator::finalize() {
@@ -1257,13 +1259,13 @@ CompiledCode ByteCodeGenerator::finalize() {
     return this->finalizeCodeBuilder("");
 }
 
-void ByteCodeGenerator::exitModule(SourceNode &node) {
+void ByteCodeGenerator::exitModule(const SourceNode &node) {
     this->curBuilder().localVarNum = node.getMaxVarNum();
     this->emitIns(OpCode::RETURN);
-    auto func = DSValue::create<FuncObject>(*node.getModType(), this->finalizeCodeBuilder(node.getModType()->toName()));
+    auto func = DSValue::create<FuncObject>(node.getModType(), this->finalizeCodeBuilder(node.getModType().toName()));
     this->emitLdcIns(func);
 
-    this->emitSourcePos(node.getPathNode().getPos());
+    this->emitSourcePos(node.getPathToken().pos);
     this->emit0byteIns(OpCode::DUP);
     this->emit1byteIns(OpCode::CALL_FUNC, 0);
     unsigned int index = node.getIndex();

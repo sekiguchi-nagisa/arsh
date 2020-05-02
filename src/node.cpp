@@ -1032,15 +1032,25 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
 // ########################
 
 void SourceNode::dump(NodeDumper &dumper) const {
-    DUMP_PTR(pathNode);
     DUMP(name);
-    DUMP_PTR(modType);
+    DUMP(modType);
     DUMP(firstAppear);
     DUMP(nothing);
-    DUMP(optional);
     DUMP(modIndex);
     DUMP(index);
     DUMP(maxVarNum);
+}
+
+// ############################
+// ##     SourceListNode     ##
+// ############################
+
+void SourceListNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(pathNode);
+    DUMP(name);
+    DUMP(optional);
+    DUMP(curIndex);
+    DUMP(pathList);
 }
 
 // #######################
@@ -1192,41 +1202,6 @@ const Node *findInnerNode(NodeKind kind, const Node *node) {
 // ##     NodeDumper     ##
 // ########################
 
-void NodeDumper::dumpEscaped(const char *fieldName, const char *value) {
-    this->writeName(fieldName);
-
-    this->append(" \"");
-    while(*value != 0) {
-        int ch = *(value++);
-        bool escape = true;
-        switch(ch) {
-        case '\t':
-            ch = 't';
-            break;
-        case '\r':
-            ch = 'r';
-            break;
-        case '\n':
-            ch = 'n';
-            break;
-        case '"':
-            ch = '"';
-            break;
-        case '\\':
-            ch = '\\';
-            break;
-        default:
-            escape = false;
-            break;
-        }
-        if(escape) {
-            this->append('\\');
-        }
-        this->append(ch);
-    }
-    this->append("\"\n");
-}
-
 void NodeDumper::dump(const char *fieldName, const Node &node) {
     // write field name
     this->writeName(fieldName);
@@ -1301,6 +1276,39 @@ void NodeDumper::append(int ch) {
 
 void NodeDumper::append(const char *str) {
     this->bufs.back().value += str;
+}
+
+void NodeDumper::appendEscaped(const char *value) {
+    this->append('"');
+    while(*value != 0) {
+        int ch = *(value++);
+        bool escape = true;
+        switch(ch) {
+        case '\t':
+            ch = 't';
+            break;
+        case '\r':
+            ch = 'r';
+            break;
+        case '\n':
+            ch = 'n';
+            break;
+        case '"':
+            ch = '"';
+            break;
+        case '\\':
+            ch = '\\';
+            break;
+        default:
+            escape = false;
+            break;
+        }
+        if(escape) {
+            this->append('\\');
+        }
+        this->append(ch);
+    }
+    this->append('"');
 }
 
 void NodeDumper::appendAs(const char *fmt, ...) {

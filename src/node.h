@@ -79,6 +79,7 @@ class NodeDumper;
     OP(Interface) \
     OP(UserDefinedCmd) \
     OP(Source) \
+    OP(SourceList) \
     OP(Empty)
 
 enum class NodeKind : unsigned char {
@@ -2192,26 +2193,21 @@ public:
 
 class SourceNode : public WithRtti<Node, NodeKind::Source> {
 private:
-    std::unique_ptr<StringNode> pathNode;
+    Token pathToken;
 
     /**
      * may be empty string
      */
-    std::string name;
+    const std::string &name;
 
     /**
      * resolved module type.
      */
-    ModType *modType{nullptr};
+    ModType &modType;
 
-    bool firstAppear{false};
+    bool firstAppear;
 
     bool nothing{false};
-
-    /**
-     * if true, ignore module not found error
-     */
-    bool optional{false};
 
     unsigned int modIndex{0};
 
@@ -2226,40 +2222,23 @@ private:
     unsigned int maxVarNum{0};
 
 public:
-    SourceNode(unsigned int startPos, std::unique_ptr<StringNode> &&pathNode, bool optional) :
-            WithRtti({startPos, 1}), pathNode(std::move(pathNode)), optional(optional) {
-        this->updateToken(this->pathNode->getToken());
-    }
+    SourceNode(Token token, Token pathToken, const std::string &name,
+            ModType &modType, bool firstAppear) :
+            WithRtti(token), pathToken(pathToken), name(name),
+            modType(modType), firstAppear(firstAppear) {}
 
     ~SourceNode() override = default;
 
-    StringNode &getPathNode() const {
-        return *this->pathNode;
-    }
-
-    const std::string &getPathStr() const {
-        return this->pathNode->getValue();
-    }
-
-    void setName(Token token, std::string &&value) {
-        this->updateToken(token);
-        this->name = std::move(value);
+    Token getPathToken() const {
+        return this->pathToken;
     }
 
     const std::string &getName() const {
         return this->name;
     }
 
-    void setModType(ModType &type) {
-        this->modType = &type;
-    }
-
-    ModType *getModType() {
+    ModType &getModType() const {
         return this->modType;
-    }
-
-    void setFirstAppear(bool b) {
-        this->firstAppear = b;
     }
 
     bool isFirstAppear() const {
@@ -2272,10 +2251,6 @@ public:
 
     bool isNothing() const {
         return this->nothing;
-    }
-
-    bool isOptional() const {
-        return this->optional;
     }
 
     void setModIndex(unsigned int value) {
@@ -2300,6 +2275,76 @@ public:
 
     unsigned int getMaxVarNum() const {
         return this->maxVarNum;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
+class SourceListNode : public WithRtti<Node, NodeKind::SourceList> {
+private:
+    std::unique_ptr<StringNode> pathNode;
+
+    /**
+     * may be empty string
+     */
+    std::string name;
+
+    /**
+     * if true, ignore module not found error
+     */
+    bool optional;
+
+    unsigned int curIndex{0};   // index of currently evaluating source path
+
+    std::vector<std::string> pathList;  // evaluated path list
+
+public:
+    SourceListNode(unsigned int pos, std::unique_ptr<StringNode> &&pathNode, bool optional) :
+            WithRtti({pos, 1}), pathNode(std::move(pathNode)), optional(optional) {
+        this->updateToken(this->pathNode->getToken());
+    }
+
+    StringNode &getPathNode() const {
+        return *this->pathNode;
+    }
+
+    void setName(Token token, std::string &&value) {
+        this->updateToken(token);
+        this->name = std::move(value);
+    }
+
+    const std::string &getName() const {
+        return this->name;
+    }
+
+    bool isOptional() const {
+        return this->optional;
+    }
+
+    unsigned int getCurIndex() const {
+        return this->curIndex;
+    }
+
+    void setCurIndex(unsigned int index) {
+        this->curIndex = index;
+    }
+
+    void setPathList(std::vector<std::string> &&list) {
+        this->pathList = std::move(list);
+    }
+
+    const std::vector<std::string> &getPathList() const {
+        return this->pathList;
+    }
+
+    bool hasUnconsumedPath() const {
+        return this->curIndex < this->pathList.size();
+    }
+
+    std::unique_ptr<SourceNode> create(ModType &modType, bool first) const {
+        return std::make_unique<SourceNode>(
+                this->token, this->getPathNode().getToken(),
+                this->name, modType, first);
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2390,6 +2435,7 @@ struct NodeVisitor {
     virtual void visitInterfaceNode(InterfaceNode &node) = 0;
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
     virtual void visitSourceNode(SourceNode &node) = 0;
+    virtual void visitSourceListNode(SourceListNode &node) = 0;
     virtual void visitEmptyNode(EmptyNode &node) = 0;
 };
 
@@ -2438,6 +2484,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
     void visitSourceNode(SourceNode &node) override { this->visitDefault(node); }
+    void visitSourceListNode(SourceListNode &node) override { this->visitDefault(node); }
     void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
 };
 
@@ -2496,6 +2543,17 @@ public:
         this->dumpNodesTail();
     }
 
+    void dump(const char *fieldName, const std::vector<std::string> &values) {
+        this->dumpNodesHead(fieldName);
+        for(auto &e : values) {
+            this->indent();
+            this->append("- ");
+            this->appendEscaped(e.c_str());
+            this->newline();
+        }
+        this->dumpNodesTail();
+    }
+
     /**
      * dump node with indent
      */
@@ -2543,7 +2601,12 @@ private:
         this->newline();
     }
 
-    void dumpEscaped(const char *fieldName, const char *value);
+    void dumpEscaped(const char *fieldName, const char *value) {
+        this->writeName(fieldName);
+        this->append(' ');
+        this->appendEscaped(value);
+        this->newline();
+    }
 
     void enterIndent() {
         this->bufs.back().indentLevel++;
@@ -2562,6 +2625,8 @@ private:
     void append(int ch);
 
     void append(const char *str);
+
+    void appendEscaped(const char *value);
 
     void appendAs(const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
 

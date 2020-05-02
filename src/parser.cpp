@@ -459,7 +459,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         this->consume();   // always success
         auto pathNode = TRY(this->parse_cmdArgPart(true, yycEXPR));
         this->lexer->popLexerMode();
-        auto node = std::make_unique<SourceNode>(startPos, std::move(pathNode), optional);
+        auto node = std::make_unique<SourceListNode>(startPos, std::move(pathNode), optional);
         if(!optional && !HAS_NL() && CUR_KIND() == AS) {
             this->expectAndChangeMode(AS, yycNAME); // always success
             Token token = TRY(this->expect(IDENTIFIER));
