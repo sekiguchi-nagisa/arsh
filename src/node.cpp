@@ -1360,8 +1360,8 @@ void NodeDumper::operator()(const Node &node) {
 void NodeDumper::finalize() {
     this->leaveIndent();
 
-    this->dump("maxVarNum", std::to_string(this->symbolTable.getMaxVarIndex()));
-    this->dump("maxGVarNum", std::to_string(this->symbolTable.getMaxGVarIndex()));
+    this->dumpRaw("maxVarNum", std::to_string(this->symbolTable.getMaxVarIndex()).c_str());
+    this->dumpRaw("maxGVarNum", std::to_string(this->symbolTable.getMaxGVarIndex()).c_str());
 
     this->leaveModule();
 

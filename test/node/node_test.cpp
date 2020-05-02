@@ -117,8 +117,8 @@ sourceName: "(string)"
         }
 
         value += format(R"EOF(
-maxVarNum: "%d"
-maxGVarNum: "%d"
+maxVarNum: %d
+maxGVarNum: %d
 
 )EOF", this->param.local, GVAR_NUM + this->param.global);
 
@@ -163,7 +163,6 @@ nodes:
           value: "hello"
     targetTypeToken: null
     opKind: "TO_VOID"
-
 )"},
 
         {DumpOp::untyped, R"(try { var a = 'false'; } catch $e {} finally {1; })", 1, 0, R"(
@@ -655,7 +654,6 @@ nodes:
           targetTypeToken: null
           opKind: "TO_VOID"
     caseKind: "MAP"
-
 )"},
 
         {DumpOp::untyped, R"(alias i = (Int) -> Int)", 0, 0, R"(
