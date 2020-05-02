@@ -883,7 +883,7 @@ struct DSValueGlobMeta {
     }
 };
 
-static void raiseGlobingError(DSState &state, const VMState &st, unsigned int size, const char *message) {
+static void raiseGlobbingError(DSState &state, const VMState &st, unsigned int size, const char *message) {
     std::string value = message;
     value += " `";
     for(unsigned int i = 0; i < size; i++) {
@@ -928,7 +928,7 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
         if(v.hasStrRef()) {
             auto ref = v.asStrRef();
             if(ref.find(nulRef) != StringRef::npos) {
-                raiseGlobingError(state, state.stack, size, "glob pattern has null characters");
+                raiseGlobbingError(state, state.stack, size, "glob pattern has null characters");
                 return false;
             }
         }
@@ -954,7 +954,7 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
         }
         return true;
     } else {
-        raiseGlobingError(state, state.stack, size, "No matches for glob pattern");
+        raiseGlobbingError(state, state.stack, size, "No matches for glob pattern");
         return false;
     }
 }
