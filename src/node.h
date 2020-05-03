@@ -1101,6 +1101,10 @@ public:
         return this->segmentNodes;
     }
 
+    std::vector<std::unique_ptr<Node>> &refSegmentNodes() {
+        return this->segmentNodes;
+    }
+
     void dump(NodeDumper &dumper) const override;
 
     /**
@@ -2282,7 +2286,7 @@ public:
 
 class SourceListNode : public WithRtti<Node, NodeKind::SourceList> {
 private:
-    std::unique_ptr<StringNode> pathNode;
+    std::unique_ptr<CmdArgNode> pathNode;
 
     /**
      * may be empty string
@@ -2299,12 +2303,12 @@ private:
     std::vector<std::string> pathList;  // evaluated path list
 
 public:
-    SourceListNode(unsigned int pos, std::unique_ptr<StringNode> &&pathNode, bool optional) :
+    SourceListNode(unsigned int pos, std::unique_ptr<CmdArgNode> &&pathNode, bool optional) :
             WithRtti({pos, 1}), pathNode(std::move(pathNode)), optional(optional) {
         this->updateToken(this->pathNode->getToken());
     }
 
-    StringNode &getPathNode() const {
+    CmdArgNode &getPathNode() const {
         return *this->pathNode;
     }
 

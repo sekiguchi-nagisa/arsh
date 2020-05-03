@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "constant.h"
-#include "object.h"
+#include "core.h"
 #include "type_checker.h"
 
 namespace ydsh {
@@ -1430,12 +1430,41 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     node.setType(this->symbolTable.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
 }
 
+void TypeChecker::checkSourcePath(CmdArgNode &node) {
+    for(auto &e : node.getSegmentNodes()) {
+        if(!isa<StringNode>(*e)) {
+            RAISE_TC_ERROR(Constant, *e);
+        }
+    }
+}
+
+void TypeChecker::resolvePathList(SourceListNode &node) {
+    std::vector<std::string> ret;
+    if(node.getPathNode().getGlobPathSize() == 0) {
+        std::string path;
+        for(auto &e : node.getPathNode().getSegmentNodes()) {
+            assert(isa<StringNode>(*e));
+            path += cast<StringNode>(*e).getValue();
+        }
+
+        auto &first = *node.getPathNode().getSegmentNodes()[0];
+        if(isa<StringNode>(first) && cast<StringNode>(first).isTilde()) {
+            expandTilde(path);
+        }
+        ret.push_back(std::move(path));
+    } else {
+        fatal("unsupported\n");
+    }
+    node.setPathList(std::move(ret));
+}
+
 void TypeChecker::visitSourceListNode(SourceListNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
         RAISE_TC_ERROR(OutsideToplevel, node);
     }
     this->checkType(this->symbolTable.get(TYPE::String), node.getPathNode());
-    node.setPathList({ node.getPathNode().getValue() });    //FIXME:
+    this->checkSourcePath(node.getPathNode());
+    this->resolvePathList(node);
     node.setType(this->symbolTable.get(TYPE::Void));
 }
 

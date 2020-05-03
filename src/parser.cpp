@@ -457,12 +457,12 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         bool optional = CUR_KIND() == SOURCE_OPT;
         unsigned int startPos = START_POS();
         this->consume();   // always success
-        auto pathNode = TRY(this->parse_cmdArgPart(true, yycEXPR));
-        this->lexer->popLexerMode();
+        auto pathNode = TRY(this->parse_cmdArg());
         auto node = std::make_unique<SourceListNode>(startPos, std::move(pathNode), optional);
-        if(!optional && !HAS_NL() && CUR_KIND() == AS) {
-            this->expectAndChangeMode(AS, yycNAME); // always success
-            Token token = TRY(this->expect(IDENTIFIER));
+        if(!optional && CUR_KIND() == CMD_ARG_PART && this->lexer->getStrRef(this->curToken) == "as") {
+            this->lexer->popLexerMode();
+            this->expectAndChangeMode(CMD_ARG_PART, yycNAME); // always success
+            Token token = TRY(this->expectAndChangeMode(IDENTIFIER, yycSTMT));
             node->setName(token, this->lexer->toName(token));
         }
         return std::move(node);
@@ -853,10 +853,10 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool first) {
     }
 }
 
-std::unique_ptr<StringNode> Parser::parse_cmdArgPart(bool first, LexerMode mode) {
+std::unique_ptr<StringNode> Parser::parse_cmdArgPart(bool first) {
     GUARD_DEEP_NESTING(guard);
 
-    Token token = TRY(this->expectAndChangeMode(CMD_ARG_PART, mode));
+    Token token = TRY(this->expect(CMD_ARG_PART));
     auto kind = first && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
     return std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
 }

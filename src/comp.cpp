@@ -984,6 +984,10 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
             }
 
             if(this->isErrorKind(NO_VIABLE_ALTER)) {
+                if((kind == SOURCE || kind == SOURCE_OPT) && this->foundExpected(CMD_ARG_PART) && this->afterTyping()) {
+                    return this->createModNameCompleter(CompType::NONE);
+                }
+
                 std::unique_ptr<Completer> comp;
                 if(this->foundExpected(COMMAND)) {
                     comp = this->createCmdNameCompleter(CompType::NONE);
@@ -994,10 +998,6 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
                         this->createExpectedTokenCompleter());
             } else if(this->isErrorKind(TOKEN_MISMATCHED)) {
                 LOG(DUMP_CONSOLE, "expected: %s", toString(this->parser.getError().getExpectedTokens().back()));
-
-                if((kind == SOURCE || kind == SOURCE_OPT) && this->foundExpected(CMD_ARG_PART) && this->afterTyping()) {
-                    return this->createModNameCompleter(CompType::NONE);
-                }
 
                 if(kind == IMPORT_ENV && this->foundExpected(IDENTIFIER) && this->afterTyping()) {
                     return this->createEnvNameCompleter(CompType::NONE);
