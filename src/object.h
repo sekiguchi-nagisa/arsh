@@ -1053,8 +1053,6 @@ struct ExceptionEntry {
 
 class CompiledCode : public DSCode {
 private:
-    char *sourceName{nullptr};
-
     /**
      * if CallableKind is toplevel, it is null
      */
@@ -1078,15 +1076,14 @@ private:
 public:
     NON_COPYABLE(CompiledCode);
 
-    CompiledCode(char *sourceName, const char *name, DSCode code,
-                 DSValue *constPool, LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
-            DSCode(code), sourceName(sourceName), name(name == nullptr ? nullptr : strdup(name)),
+    CompiledCode(const char *name, DSCode code, DSValue *constPool,
+                LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
+            DSCode(code), name(name == nullptr ? nullptr : strdup(name)),
             constPool(constPool), lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
 
     CompiledCode(CompiledCode &&c) noexcept :
-            DSCode(std::move(c)), sourceName(c.sourceName), name(c.name),
-            constPool(c.constPool), lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries) {
-        c.sourceName = nullptr;
+            DSCode(std::move(c)), name(c.name), constPool(c.constPool),
+            lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries) {
         c.name = nullptr;
         c.code = nullptr;
         c.constPool = nullptr;
@@ -1099,7 +1096,6 @@ public:
     }
 
     ~CompiledCode() {
-        free(this->sourceName);
         free(this->name);
         free(this->code);
         delete[] this->constPool;
@@ -1114,7 +1110,6 @@ public:
 
     void swap(CompiledCode &o) noexcept {
         std::swap(static_cast<DSCode&>(*this), static_cast<DSCode&>(o));
-        std::swap(this->sourceName, o.sourceName);
         std::swap(this->name, o.name);
         std::swap(this->constPool, o.constPool);
         std::swap(this->lineNumEntries, o.lineNumEntries);
@@ -1122,7 +1117,7 @@ public:
     }
 
     const char *getSourceName() const {
-        return this->sourceName;
+        return this->constPool[0].asStrRef().data();
     }
 
     /**

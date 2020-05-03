@@ -203,16 +203,17 @@ DSCode: top level
   code size: 12
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 51
+  number of global variable: 52
 Code:
    0: PUSH_INT  34
-   2: STORE_GLOBAL  50
+   2: STORE_GLOBAL  51
    5: PUSH_INT  34
    7: CALL_NATIVE2  1  %s
   10: POP
   11: RETURN
 Constant Pool:
-  0: String %s
+  0: String (string)
+  1: String %s
 Line Number Table:
   lineNum: 1, address:  7
 Exception Table:
@@ -226,11 +227,11 @@ DSCode: top level
   code size: 26
   max stack depth: 3
   number of local variable: 0
-  number of global variable: 51
+  number of global variable: 52
 Code:
-   0: LOAD_CONST  1
-   2: STORE_GLOBAL  50
-   5: LOAD_GLOBAL  50
+   0: LOAD_CONST  2
+   2: STORE_GLOBAL  51
+   5: LOAD_GLOBAL  51
    8: PUSH_INT  1
   10: CALL_FUNC  1
   12: ENTER_FINALLY  8
@@ -241,8 +242,9 @@ Code:
   24: POP
   25: RETURN
 Constant Pool:
-  0: String %s
-  1: (Any) -> Boolean function(f)
+  0: String (string)
+  1: String %s
+  2: (Any) -> Boolean function(f)
 Line Number Table:
   lineNum: 1, address: 10
 Exception Table:
@@ -257,7 +259,8 @@ Code:
   2: INSTANCE_OF  [Int]
   6: RETURN_V
 Constant Pool:
-  0: String %s
+  0: String (string)
+  1: String %s
 Line Number Table:
 Exception Table:
 

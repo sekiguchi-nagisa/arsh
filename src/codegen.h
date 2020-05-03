@@ -264,8 +264,6 @@ struct LoopState {
 struct CodeBuilder : public CodeEmitter<true> {
     const Lexer &lexer;
 
-    CStrPtr sourceName;
-
     CodeKind kind;
 
     unsigned char localVarNum;
@@ -290,8 +288,7 @@ struct CodeBuilder : public CodeEmitter<true> {
     signed short maxStackDepth{0};
 
     explicit CodeBuilder(const Lexer &lexer, CodeKind kind, unsigned char localVarNum) :
-            lexer(lexer), sourceName(strdup(this->lexer.getSourceName().c_str())),
-            kind(kind), localVarNum(localVarNum) {}
+            lexer(lexer), kind(kind), localVarNum(localVarNum) {}
 
     CodeKind getCodeKind() const {
         return this->kind;
@@ -305,14 +302,19 @@ struct CodeBuilder : public CodeEmitter<true> {
 
 class ModuleCommon {
 private:
+    DSValue scriptName;
     DSValue scriptDir;
-
 
 public:
     ModuleCommon() = default;
 
-    explicit ModuleCommon(const std::string &scriptDir) :
+    ModuleCommon(const std::string &name, const std::string &scriptDir) :
+            scriptName(DSValue::createStr(name)),
             scriptDir(DSValue::createStr(scriptDir)) {}
+
+    DSValue getScriptName() const {
+        return this->scriptName;
+    }
 
     DSValue getScriptDir() const {
         return this->scriptDir;
@@ -549,7 +551,7 @@ private:
             const MethodHandle &matchHandle, const Label &mergeLabel);
 
     void initToplevelCodeBuilder(const Lexer &lex, unsigned short localVarNum) {
-        this->commons.emplace_back(lex.getScriptDir());
+        this->commons.emplace_back(lex.getSourceName(), lex.getScriptDir());
         this->initCodeBuilder(CodeKind::TOPLEVEL, lex, localVarNum);
     }
 
@@ -560,6 +562,7 @@ private:
 
     void initCodeBuilder(CodeKind kind, const Lexer &lex, unsigned short localVarNum) {
         this->builders.emplace_back(lex, kind, localVarNum);
+        this->curBuilder().constBuffer.push_back(this->commons.back().getScriptName());
         this->curBuilder().constBuffer.push_back(this->commons.back().getScriptDir());
     }
 

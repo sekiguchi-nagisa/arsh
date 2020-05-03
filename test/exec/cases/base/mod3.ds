@@ -14,11 +14,16 @@ assert !$mod.test($false, $mod.scriptName)
 echo ${$scriptName()} 1>&2
 assert $mod.test($true, $scriptName)! == 'hello!!'
 
-# script dir
+# script dir / name
 assert $SCRIPT_DIR != $mod.path
 assert $SCRIPT_DIR != $mod.dir()
-assert $mod.path == $mod.path
+assert $SCRIPT_NAME.endsWith('/exec/cases/base/mod3.ds')
+assert $SCRIPT_NAME != $mod.script()
+assert $SCRIPT_NAME != $mod.name
+assert $mod.path == $mod.dir()
+assert $mod.name == $mod.script()
 assert $mod.path.endsWith('/exec/_module4test')
+assert $mod.name.endsWith('/exec/_module4test/module3.ds')
 
 source ../../'_module4test/module4.ds' as mod1
 
@@ -27,3 +32,4 @@ assert $SCRIPT_DIR != $mod1.dir()
 assert $mod1.path == $mod1.dir()
 assert $mod1.path == $mod1.mod3.path
 assert $mod.path == $mod1.mod3.path
+assert $mod.name == $mod1.mod3.name

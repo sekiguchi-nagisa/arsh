@@ -81,8 +81,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
             .localSize = 0,
     };  // sentinel
 
-    return CompiledCode(this->sourceName.release(), name.empty() ? nullptr : name.c_str(),
-                        code, constPool, entries, except);
+    return CompiledCode(name.empty() ? nullptr : name.c_str(), code, constPool, entries, except);
 }
 
 

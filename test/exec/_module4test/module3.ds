@@ -17,3 +17,13 @@ function dir() : String {
 }
 
 assert $SCRIPT_DIR == $dir()
+
+
+let name = $SCRIPT_NAME
+assert $SCRIPT_NAME.endsWith('/exec/_module4test/module3.ds')
+
+function script() : String {
+    return $SCRIPT_NAME
+}
+
+assert $SCRIPT_NAME == $script()

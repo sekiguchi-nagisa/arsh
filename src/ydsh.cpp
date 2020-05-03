@@ -190,6 +190,12 @@ static void initBuiltinVar(DSState &state) {
     /**
      * must be String_Object
      */
+    bindVariable(state, "SCRIPT_NAME", DSValue::createStr(),
+                 FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
+
+    /**
+     * must be String_Object
+     */
     bindVariable(state, "SCRIPT_DIR", DSValue::createStr(),
             FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
 
