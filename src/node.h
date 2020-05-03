@@ -26,6 +26,7 @@
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
 #include "misc/token.hpp"
+#include "misc/result.hpp"
 #include "token_kind.h"
 #include "type.h"
 #include "constant.h"
@@ -331,12 +332,12 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
-inline TypeNode *newAnyTypeNode() {
-    return new BaseTypeNode({0, 0}, std::string("Any"));
+inline std::unique_ptr<TypeNode> newAnyTypeNode() {
+    return std::make_unique<BaseTypeNode>(Token{0, 0}, std::string("Any"));
 }
 
-inline TypeNode *newVoidTypeNode() {
-    return new BaseTypeNode({0, 0}, std::string("Void"));
+inline std::unique_ptr<TypeNode> newVoidTypeNode() {
+    return std::make_unique<BaseTypeNode>(Token{0, 0}, std::string("Void"));
 }
 
 
@@ -490,24 +491,22 @@ public:
 
 class ArrayNode : public WithRtti<Node, NodeKind::Array> {
 private:
-    std::vector<Node *> nodes;
+    std::vector<std::unique_ptr<Node>> nodes;
 
 public:
-    ArrayNode(unsigned int startPos, Node *node) : WithRtti({startPos, 0}) {
-        this->addExprNode(node);
+    ArrayNode(unsigned int startPos, std::unique_ptr<Node> &&node) : WithRtti({startPos, 0}) {
+        this->addExprNode(std::move(node));
     }
 
-    ~ArrayNode() override;
-
-    void addExprNode(Node *node) {
-        this->nodes.push_back(node);
+    void addExprNode(std::unique_ptr<Node> &&node) {
+        this->nodes.push_back(std::move(node));
     }
 
-    const std::vector<Node *> &getExprNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getExprNodes() const {
         return this->nodes;
     }
 
-    std::vector<Node *> &refExprNodes() {
+    std::vector<std::unique_ptr<Node>> &refExprNodes() {
         return this->nodes;
     }
 
@@ -516,32 +515,30 @@ public:
 
 class MapNode : public WithRtti<Node, NodeKind::Map> {
 private:
-    std::vector<Node *> keyNodes;
-    std::vector<Node *> valueNodes;
+    std::vector<std::unique_ptr<Node>> keyNodes;
+    std::vector<std::unique_ptr<Node>> valueNodes;
 
 public:
-    MapNode(unsigned int startPos, Node *keyNode, Node *valueNode) :
+    MapNode(unsigned int startPos, std::unique_ptr<Node> &&keyNode, std::unique_ptr<Node> &&valueNode) :
             WithRtti({startPos, 0}) {
-        this->addEntry(keyNode, valueNode);
+        this->addEntry(std::move(keyNode), std::move(valueNode));
     }
 
-    ~MapNode() override;
+    void addEntry(std::unique_ptr<Node> &&keyNode, std::unique_ptr<Node> &&valueNode);
 
-    void addEntry(Node *keyNode, Node *valueNode);
-
-    const std::vector<Node *> &getKeyNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getKeyNodes() const {
         return this->keyNodes;
     }
 
-    std::vector<Node *> &refKeyNodes() {
+    std::vector<std::unique_ptr<Node>> &refKeyNodes() {
         return this->keyNodes;
     }
 
-    const std::vector<Node *> &getValueNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getValueNodes() const {
         return this->valueNodes;
     }
 
-    std::vector<Node *> &refValueNodes() {
+    std::vector<std::unique_ptr<Node>> &refValueNodes() {
         return this->valueNodes;
     }
 
@@ -638,22 +635,20 @@ public:
     };
 
 private:
-    Node *recvNode;
-    VarNode *nameNode;
+    std::unique_ptr<Node> recvNode;
+    std::unique_ptr<VarNode> nameNode;
     AdditionalOp additionalOp{NOP};
 
 public:
-    AccessNode(Node *recvNode, VarNode *nameNode) :
-            WithRtti(recvNode->getToken()), recvNode(recvNode), nameNode(nameNode) { }
-
-    ~AccessNode() override;
+    AccessNode(std::unique_ptr<Node> &&recvNode, std::unique_ptr<VarNode> &&nameNode) :
+            WithRtti(recvNode->getToken()), recvNode(std::move(recvNode)), nameNode(std::move(nameNode)) { }
 
     Node &getRecvNode() const {
         return *this->recvNode;
     }
 
-    void setRecvNode(Node *node) {
-        this->recvNode = node;
+    std::unique_ptr<Node> &refRecvNode() {
+        return this->recvNode;
     }
 
     const std::string &getFieldName() const {
@@ -698,25 +693,51 @@ public:
     };
 
 private:
-    Node *exprNode;
+    std::unique_ptr<Node> exprNode;
+
+    using LeftType = std::reference_wrapper<TypeNode>;
+
+    using RightType = std::unique_ptr<TypeNode>;
 
     /**
-     * may be tagged pointer
+     * may be null
      */
-    TypeNode *targetTypeNode;
+    Union<LeftType , RightType> targetTypeNode;
 
     OpKind opKind;
 
 public:
-     TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupTypeToken = false);
-
-    ~TypeOpNode() override;
-
-    Node *getExprNode() const {
-        return this->exprNode;
+    TypeOpNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<TypeNode> &&type, OpKind init) :
+            WithRtti(exprNode->getToken()), exprNode(std::move(exprNode)),
+            targetTypeNode(std::move(type)), opKind(init) {
+        if(get<RightType>(this->targetTypeNode)) {
+            this->updateToken(get<RightType>(this->targetTypeNode)->getToken());
+        }
     }
 
-    TypeNode *getTargetTypeNode() const;
+    TypeOpNode(std::unique_ptr<Node> &&exprNode, TypeNode &type, OpKind init) :
+            WithRtti(exprNode->getToken()), exprNode(std::move(exprNode)),
+            targetTypeNode(std::ref(type)), opKind(init) {
+        this->updateToken(type.getToken());
+    }
+
+    Node &getExprNode() const {
+        return *this->exprNode;
+    }
+
+    /**
+     *
+     * @return
+     * may be null
+     */
+    TypeNode *getTargetTypeNode() const {
+        if(ydsh::is<LeftType>(this->targetTypeNode)) {
+            return &get<LeftType>(this->targetTypeNode).get();
+        } else {
+            assert(ydsh::is<RightType>(this->targetTypeNode));
+            return get<RightType>(this->targetTypeNode).get();
+        }
+    }
 
     void setOpKind(OpKind op) {
         this->opKind = op;
@@ -744,7 +765,7 @@ public:
  * @param type
  * @return
  */
-TypeOpNode *newTypedCastNode(Node *targetNode, const DSType &type);
+std::unique_ptr<TypeOpNode> newTypedCastNode(std::unique_ptr<Node> &&targetNode, const DSType &type);
 
 /**
  * for function object apply or method call
@@ -759,8 +780,8 @@ public:
     };
 
 private:
-    Node *exprNode;
-    std::vector<Node *> argNodes;
+    std::unique_ptr<Node> exprNode;
+    std::vector<std::unique_ptr<Node>> argNodes;
 
     /**
      * for method call
@@ -770,48 +791,50 @@ private:
     Kind kind;
 
 public:
-    ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes, Kind kind = UNRESOLVED);
+    ApplyNode(std::unique_ptr<Node> &&exprNode, std::vector<std::unique_ptr<Node>> &&argNodes, Kind kind = UNRESOLVED);
 
-    static ApplyNode *newMethodCall(Node *recvNode, Token token, std::string &&methodName);
+    static std::unique_ptr<ApplyNode> newMethodCall(std::unique_ptr<Node> &&recvNode,
+            Token token, std::string &&methodName);
 
-    static ApplyNode *newMethodCall(Node *recvNode, std::string &&methodName) {
-        return newMethodCall(recvNode, recvNode->getToken(), std::move(methodName));
+    static std::unique_ptr<ApplyNode> newMethodCall(std::unique_ptr<Node> &&recvNode,
+            std::string &&methodName) {
+        Token token = recvNode->getToken();
+        return newMethodCall(std::move(recvNode), token, std::move(methodName));
     }
 
-    static ApplyNode *newIndexCall(Node *recvNode, Token token, Node *indexNode) {
-        auto *node = newMethodCall(recvNode, token, std::string(OP_GET));
+    static std::unique_ptr<ApplyNode> newIndexCall(std::unique_ptr<Node> &&recvNode,
+            Token token, std::unique_ptr<Node> &&indexNode) {
+        auto node = newMethodCall(std::move(recvNode), token, std::string(OP_GET));
         node->setKind(INDEX_CALL);
-        node->argNodes.push_back(indexNode);
+        node->argNodes.push_back(std::move(indexNode));
         return node;
     }
 
-    ~ApplyNode() override;
-
-    Node *getExprNode() const {
-        return this->exprNode;
+    Node &getExprNode() const {
+        return *this->exprNode;
     }
 
-    const std::vector<Node *> &getArgNodes() {
+    const std::vector<std::unique_ptr<Node>> &getArgNodes() const {
         return this->argNodes;
     }
 
-    std::vector<Node *> &refArgNodes() {
+    std::vector<std::unique_ptr<Node>> &refArgNodes() {
         return this->argNodes;
     }
 
     const std::string &getMethodName() const {
         assert(this->isMethodCall());
-        return cast<AccessNode>(this->exprNode)->getNameNode().getVarName();
+        return cast<AccessNode>(*this->exprNode).getNameNode().getVarName();
     }
 
     void setMethodName(std::string &&name) {
         assert(this->isIndexCall());
-        cast<AccessNode>(this->exprNode)->getNameNode().setVarName(std::move(name));
+        cast<AccessNode>(*this->exprNode).getNameNode().setVarName(std::move(name));
     }
 
-    Node *getRecvNode() const {
+    Node &getRecvNode() const {
         assert(this->isMethodCall());
-        return &cast<AccessNode>(this->exprNode)->getRecvNode();
+        return cast<AccessNode>(*this->exprNode).getRecvNode();
     }
 
     Kind getKind() const {
@@ -842,14 +865,10 @@ public:
         return this->handle;
     }
 
-    static std::pair<Node *, Node *> split(ApplyNode *&node) {
-        auto *first = node->getRecvNode();
-        cast<AccessNode>(node->getExprNode())->setRecvNode(nullptr);
-        auto *second = node->getArgNodes()[0];
-        node->refArgNodes()[0] = nullptr;
-        delete node;
-        node = nullptr;
-        return {first, second};
+    static std::pair<std::unique_ptr<Node>, std::unique_ptr<Node>> split(std::unique_ptr<ApplyNode> &&node) {
+        auto first = std::move(cast<AccessNode>(*node->exprNode).refRecvNode());
+        auto second = std::move(node->refArgNodes()[0]);
+        return {std::move(first), std::move(second)};
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -860,28 +879,27 @@ public:
  */
 class NewNode : public WithRtti<Node, NodeKind::New> {
 private:
-    TypeNode *targetTypeNode;
-    std::vector<Node *> argNodes;
+    std::unique_ptr<TypeNode> targetTypeNode;
+    std::vector<std::unique_ptr<Node>> argNodes;
 
     const MethodHandle *handle{nullptr};
 
 public:
-    NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes);
+    NewNode(unsigned int startPos, std::unique_ptr<TypeNode> &&targetTypeNode,
+            std::vector<std::unique_ptr<Node>> &&argNodes);
 
-    explicit NewNode(TypeNode *targetTypeNode) :
-            WithRtti(targetTypeNode->getToken()), targetTypeNode(targetTypeNode) {}
+    explicit NewNode(std::unique_ptr<TypeNode> &&targetTypeNode) :
+            WithRtti(targetTypeNode->getToken()), targetTypeNode(std::move(targetTypeNode)) {}
 
-    ~NewNode() override;
-
-    TypeNode *getTargetTypeNode() const {
-        return this->targetTypeNode;
+    TypeNode &getTargetTypeNode() const {
+        return *this->targetTypeNode;
     }
 
-    const std::vector<Node *> &getArgNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getArgNodes() const {
         return this->argNodes;
     }
 
-    std::vector<Node *> &refArgNodes() {
+    std::vector<std::unique_ptr<Node>> &refArgNodes() {
         return this->argNodes;
     }
 
@@ -956,32 +974,32 @@ private:
     /**
      * after call this->createApplyNode(), will be null.
      */
-    Node *exprNode;
+    std::unique_ptr<Node> exprNode;
 
     /**
      * before call this->createApplyNode(), it is null.
      */
-    ApplyNode *methodCallNode;
+    std::unique_ptr<ApplyNode> methodCallNode;
 
 public:
-    UnaryOpNode(TokenKind op, Token opToken, Node *exprNode) :
+    UnaryOpNode(TokenKind op, Token opToken, std::unique_ptr<Node> &&exprNode) :
             WithRtti(opToken), op(op), opToken(opToken),
-            exprNode(exprNode), methodCallNode(nullptr) {
-        this->updateToken(exprNode->getToken());
+            exprNode(std::move(exprNode)) {
+        this->updateToken(this->exprNode->getToken());
     }
 
-    UnaryOpNode(Node *exprNode, TokenKind op, Token opToken) :
-            UnaryOpNode(op, exprNode->getToken(), exprNode) {
+    UnaryOpNode(std::unique_ptr<Node> &&exprNode, TokenKind op, Token opToken) :
+            WithRtti(exprNode->getToken()), op(op), opToken(opToken),
+            exprNode(std::move(exprNode)) {
         this->updateToken(opToken);
     }
 
-    ~UnaryOpNode() override;
 
     Node *getExprNode() const {
-        return this->exprNode;
+        return this->exprNode.get();
     }
 
-    Node *&refExprNode() {
+    std::unique_ptr<Node> &refExprNode() {
         return this->exprNode;
     }
 
@@ -997,16 +1015,16 @@ public:
      * create ApplyNode and set to this->applyNode.
      * exprNode will be null.
      */
-    ApplyNode *createApplyNode();
+    ApplyNode &createApplyNode();
 
     /**
      * return null, before call this->createApplyNode().
      */
     ApplyNode *getApplyNode() const {
-        return this->methodCallNode;
+        return this->methodCallNode.get();
     }
 
-    ApplyNode *&refApplyNode() {
+    std::unique_ptr<ApplyNode> &refApplyNode() {
         return this->methodCallNode;
     }
 
@@ -1021,12 +1039,12 @@ private:
     /**
      * will be null.
      */
-    Node *leftNode;
+    std::unique_ptr<Node> leftNode;
 
     /**
      * will be null.
      */
-    Node *rightNode;
+    std::unique_ptr<Node> rightNode;
 
     TokenKind op;
 
@@ -1035,30 +1053,40 @@ private:
     /**
      * initial value is null
      */
-    Node *optNode;
+    std::unique_ptr<Node>optNode;
 
 public:
-    BinaryOpNode(Node *leftNode, TokenKind op, Token opToken, Node *rightNode) :
+    BinaryOpNode(std::unique_ptr<Node> &&leftNode,
+            TokenKind op, Token opToken, std::unique_ptr<Node> &&rightNode) :
             WithRtti(leftNode->getToken()),
-            leftNode(leftNode), rightNode(rightNode), op(op), opToken(opToken), optNode(nullptr) {
-        this->updateToken(rightNode->getToken());
+            leftNode(std::move(leftNode)), rightNode(std::move(rightNode)),
+            op(op), opToken(opToken) {
+        this->updateToken(this->rightNode->getToken());
     }
 
-    ~BinaryOpNode() override;
-
+    /**
+     *
+     * @return
+     * may be null
+     */
     Node *getLeftNode() const {
+        return this->leftNode.get();
+    }
+
+    std::unique_ptr<Node> &refLeftNode() {
         return this->leftNode;
     }
 
-    Node *&refLeftNode() {
-        return this->leftNode;
-    }
-
+    /**
+     *
+     * @return
+     * may be null
+     */
     Node *getRightNode() const {
-        return this->rightNode;
+        return this->rightNode.get();
     }
 
-    Node *&refRightNode() {
+    std::unique_ptr<Node> &refRightNode() {
         return this->rightNode;
     }
 
@@ -1066,12 +1094,17 @@ public:
         return this->op;
     }
 
+    /**
+     *
+     * @return
+     * may be null
+     */
     Node *getOptNode() const {
-        return this->optNode;
+        return this->optNode.get();
     }
 
-    void setOptNode(Node *node) {
-        this->optNode = node;
+    void setOptNode(std::unique_ptr<Node> &&node) {
+        this->optNode = std::move(node);
     }
 
     void createApplyNode();
@@ -1343,28 +1376,26 @@ public:
 
 class AssertNode : public WithRtti<Node, NodeKind::Assert> {
 private:
-    Node *condNode;
+    std::unique_ptr<Node> condNode;
 
-    Node *messageNode;
+    std::unique_ptr<Node> messageNode;
 
 public:
-    AssertNode(unsigned int pos, Node *condNode, Node *messageNode) :
-            WithRtti({pos, 1}), condNode(condNode), messageNode(messageNode) {
-        this->updateToken(messageNode->getToken());
+    AssertNode(unsigned int pos, std::unique_ptr<Node> &&condNode, std::unique_ptr<Node> &&messageNode) :
+            WithRtti({pos, 1}), condNode(std::move(condNode)), messageNode(std::move(messageNode)) {
+        this->updateToken(this->messageNode->getToken());
     }
 
-    ~AssertNode() override;
+    Node &getCondNode() const {
+        return *this->condNode;
+    }
 
-    Node *getCondNode() const {
+    std::unique_ptr<Node> &refCondNode() {
         return this->condNode;
     }
 
-    Node *&refCondNode() {
-        return this->condNode;
-    }
-
-    Node *getMessageNode() const {
-        return this->messageNode;
+    Node &getMessageNode() const {
+        return *this->messageNode;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -1372,7 +1403,7 @@ public:
 
 class BlockNode : public WithRtti<Node, NodeKind::Block> {
 private:
-    std::vector<Node *> nodes;
+    std::vector<std::unique_ptr<Node>> nodes;
     unsigned int baseIndex{0};
     unsigned int varSize{0};
     unsigned int maxVarSize{0};
@@ -1380,19 +1411,17 @@ private:
 public:
     explicit BlockNode(unsigned int startPos) : WithRtti({startPos, 1}) { }
 
-    ~BlockNode() override;
-
-    void addNode(Node *node) {
-        this->nodes.push_back(node);
+    void addNode(std::unique_ptr<Node> &&node) {
+        this->nodes.push_back(std::move(node));
     }
 
-    void insertNodeToFirst(Node *node);
+    void insertNodeToFirst(std::unique_ptr<Node> &&node);
 
-    const std::vector<Node *> &getNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getNodes() const {
         return this->nodes;
     }
 
-    std::vector<Node *> &refNodes() {
+    std::vector<std::unique_ptr<Node>> &refNodes() {
         return this->nodes;
     }
 
@@ -1453,16 +1482,16 @@ public:
  */
 class LoopNode : public WithRtti<Node, NodeKind::Loop> {
 private:
-    Node *initNode;
+    std::unique_ptr<Node> initNode;
 
     /**
      * may be null
      */
-    Node *condNode;
+    std::unique_ptr<Node> condNode;
 
-    Node *iterNode;
+    std::unique_ptr<Node> iterNode;
 
-    BlockNode *blockNode;
+    std::unique_ptr<BlockNode> blockNode;
 
     bool asDoWhile;
 
@@ -1472,39 +1501,45 @@ public:
      * condNode may be null.
      * iterNode may be null.
      */
-    LoopNode(unsigned int startPos, Node *initNode, Node *condNode, Node *iterNode, BlockNode *blockNode, bool asDoWhile = false);
+    LoopNode(unsigned int startPos, std::unique_ptr<Node> &&initNode,
+             std::unique_ptr<Node> &&condNode, std::unique_ptr<Node> &&iterNode,
+             std::unique_ptr<BlockNode> &&blockNode, bool asDoWhile = false);
 
-    LoopNode(unsigned int startPos, Node *condNode, BlockNode *blockNode, bool asDoWhile = false) :
-            LoopNode(startPos, nullptr, condNode, nullptr, blockNode, asDoWhile) {}
+    LoopNode(unsigned int startPos, std::unique_ptr<Node> &&condNode,
+            std::unique_ptr<BlockNode> &&blockNode, bool asDoWhile = false) :
+            LoopNode(startPos, nullptr, std::move(condNode), nullptr, std::move(blockNode), asDoWhile) {}
 
-    ~LoopNode() override;
+    Node &getInitNode() const {
+        return *this->initNode;
+    }
 
-    Node *getInitNode() const {
+    std::unique_ptr<Node> &refInitNode() {
         return this->initNode;
     }
 
-    Node *&refInitNode() {
-        return this->initNode;
-    }
-
+    /**
+     *
+     * @return
+     * may be null
+     */
     Node *getCondNode() const {
+        return this->condNode.get();
+    }
+
+    std::unique_ptr<Node> &refCondNode() {
         return this->condNode;
     }
 
-    Node *&refCondNode() {
-        return this->condNode;
+    Node &getIterNode() const {
+        return *this->iterNode;
     }
 
-    Node *getIterNode() const {
+    std::unique_ptr<Node> &refIterNode() {
         return this->iterNode;
     }
 
-    Node * &refIterNode() {
-        return this->iterNode;
-    }
-
-    BlockNode *getBlockNode() const {
-        return this->blockNode;
+    BlockNode &getBlockNode() const {
+        return *this->blockNode;
     }
 
     bool isDoWhile() const {
@@ -1516,39 +1551,38 @@ public:
 
 class IfNode : public WithRtti<Node, NodeKind::If> {
 private:
-    Node *condNode;
-    Node *thenNode;
-    Node *elseNode;
+    std::unique_ptr<Node> condNode;
+    std::unique_ptr<Node> thenNode;
+    std::unique_ptr<Node> elseNode;
 
 public:
     /**
      * elseNode may be null
      */
-    IfNode(unsigned int startPos, Node *condNode, Node *thenNode, Node *elseNode);
+    IfNode(unsigned int startPos, std::unique_ptr<Node> &&condNode,
+            std::unique_ptr<Node> &&thenNode, std::unique_ptr<Node> &&elseNode);
 
-    ~IfNode() override;
+    Node &getCondNode() const {
+        return *this->condNode;
+    }
 
-    Node *getCondNode() const {
+    std::unique_ptr<Node> &refCondNode() {
         return this->condNode;
     }
 
-    Node *&refCondNode() {
-        return this->condNode;
+    Node &getThenNode() const {
+        return *this->thenNode;
     }
 
-    Node *getThenNode() const {
+    std::unique_ptr<Node> &refThenNode() {
         return this->thenNode;
     }
 
-    Node *&refThenNode() {
-        return this->thenNode;
+    Node &getElseNode() const {
+        return *this->elseNode;
     }
 
-    Node *getElseNode() const {
-        return this->elseNode;
-    }
-
-    Node *&refElseNode() {
+    std::unique_ptr<Node> &refElseNode() {
         return this->elseNode;
     }
 
@@ -1560,44 +1594,42 @@ private:
     /**
      * if represents default pattern, size is 0
      */
-    std::vector<Node *> patternNodes;
+    std::vector<std::unique_ptr<Node>> patternNodes;
 
     /**
      * initial value is null.
      */
-    Node *actionNode{nullptr};
+    std::unique_ptr<Node> actionNode{nullptr};
 
 public:
-    explicit ArmNode(Node *patternNode) : WithRtti(patternNode->getToken()) {
-        this->addPatternNode(patternNode);
+    explicit ArmNode(std::unique_ptr<Node> &&patternNode) : WithRtti(patternNode->getToken()) {
+        this->addPatternNode(std::move(patternNode));
     }
 
     explicit ArmNode(unsigned int pos) : WithRtti({pos, 1}) {}
 
-    ~ArmNode() override;
-
-    void setActionNode(Node *node) {
-        this->actionNode = node;
+    void setActionNode(std::unique_ptr<Node> &&node) {
+        this->actionNode = std::move(node);
         this->updateToken(this->actionNode->getToken());
     }
 
-    void addPatternNode(ydsh::Node *node) {
-        this->patternNodes.push_back(node);
+    void addPatternNode(std::unique_ptr<Node> &&node) {
+        this->patternNodes.push_back(std::move(node));
     }
 
-    const std::vector<Node *> &getPatternNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getPatternNodes() const {
         return this->patternNodes;
     }
 
-    std::vector<Node *> &refPatternNodes() {
+    std::vector<std::unique_ptr<Node>> &refPatternNodes() {
         return this->patternNodes;
     }
 
-    Node *getActionNode() const {
-        return this->actionNode;
+    Node &getActionNode() const {
+        return *this->actionNode;
     }
 
-    Node *&refActionNode() {
+    std::unique_ptr<Node> &refActionNode() {
         return this->actionNode;
     }
 
@@ -1616,24 +1648,23 @@ public:
     };
 
 private:
-    Node *exprNode;
-    std::vector<ArmNode *> armNodes;
+    std::unique_ptr<Node> exprNode;
+    std::vector<std::unique_ptr<ArmNode>> armNodes;
     Kind caseKind{MAP};
 
 public:
-    CaseNode(unsigned int pos, Node *exprNode) : WithRtti({pos, 1}), exprNode(exprNode) {}
+    CaseNode(unsigned int pos, std::unique_ptr<Node> &&exprNode) :
+            WithRtti({pos, 1}), exprNode(std::move(exprNode)) {}
 
-    ~CaseNode() override;
-
-    Node *getExprNode() const {
-        return this->exprNode;
+    Node &getExprNode() const {
+        return *this->exprNode;
     }
 
-    void addArmNode(ArmNode *armNode) {
-        this->armNodes.push_back(armNode);
+    void addArmNode(std::unique_ptr<ArmNode> &&armNode) {
+        this->armNodes.push_back(std::move(armNode));
     }
 
-    const std::vector<ArmNode *> &getArmNodes() const {
+    const std::vector<std::unique_ptr<ArmNode>> &getArmNodes() const {
         return this->armNodes;
     }
 
@@ -1661,14 +1692,14 @@ public:
 
 private:
     OpKind opKind;
-    Node *exprNode;
+    std::unique_ptr<Node> exprNode;
     bool leavingBlock{false};
 
-    JumpNode(Token token, OpKind kind, Node *exprNode);
+    JumpNode(Token token, OpKind kind, std::unique_ptr<Node> &&exprNode);
 
 public:
-    static std::unique_ptr<JumpNode> newBreak(Token token, Node *exprNode) {
-        return std::unique_ptr<JumpNode>(new JumpNode(token, BREAK_, exprNode));
+    static std::unique_ptr<JumpNode> newBreak(Token token, std::unique_ptr<Node>exprNode) {
+        return std::unique_ptr<JumpNode>(new JumpNode(token, BREAK_, std::move(exprNode)));
     }
 
     static std::unique_ptr<JumpNode> newContinue(Token token) {
@@ -1682,8 +1713,8 @@ public:
      * not null
      * @return
      */
-    static std::unique_ptr<JumpNode> newThrow(Token token, Node *exprNode) {
-        return std::unique_ptr<JumpNode>(new JumpNode(token, THROW_, exprNode));
+    static std::unique_ptr<JumpNode> newThrow(Token token, std::unique_ptr<Node> &&exprNode) {
+        return std::unique_ptr<JumpNode>(new JumpNode(token, THROW_, std::move(exprNode)));
     }
 
     /**
@@ -1693,12 +1724,9 @@ public:
      * may be null
      * @return
      */
-    static std::unique_ptr<JumpNode> newReturn(Token token, Node *exprNode) {
-        return std::unique_ptr<JumpNode>(new JumpNode(token, RETURN_, exprNode));
+    static std::unique_ptr<JumpNode> newReturn(Token token, std::unique_ptr<Node> &&exprNode) {
+        return std::unique_ptr<JumpNode>(new JumpNode(token, RETURN_, std::move(exprNode)));
     }
-
-    ~JumpNode() override;
-
 
     OpKind getOpKind() const {
         return this->opKind;
@@ -1708,7 +1736,7 @@ public:
         return *this->exprNode;
     }
 
-    Node *&refExprNode() {
+    std::unique_ptr<Node> &refExprNode() {
         return this->exprNode;
     }
 
@@ -1726,21 +1754,20 @@ public:
 class CatchNode : public WithRtti<Node, NodeKind::Catch> {
 private:
     std::string exceptionName;
-    TypeNode *typeNode;
+    std::unique_ptr<TypeNode> typeNode;
 
     unsigned int varIndex{0};
 
-    BlockNode *blockNode;
+    std::unique_ptr<BlockNode> blockNode;
 
 public:
     CatchNode(unsigned int startPos, std::string &&exceptionName,
-              TypeNode *typeNode, BlockNode *blockNode) :
+              std::unique_ptr<TypeNode> &&typeNode, std::unique_ptr<BlockNode> &&blockNode) :
             WithRtti({startPos, 0}), exceptionName(std::move(exceptionName)),
-            typeNode(typeNode != nullptr ? typeNode : newAnyTypeNode()), blockNode(blockNode) {
-        this->updateToken(blockNode->getToken());
+            typeNode(typeNode != nullptr ? std::move(typeNode) : newAnyTypeNode()),
+            blockNode(std::move(blockNode)) {
+        this->updateToken(this->blockNode->getToken());
     }
-
-    ~CatchNode() override;
 
     const std::string &getExceptionName() const {
         return this->exceptionName;
@@ -1758,8 +1785,8 @@ public:
         return this->varIndex;
     }
 
-    BlockNode *getBlockNode() const {
-        return this->blockNode;
+    BlockNode &getBlockNode() const {
+        return *this->blockNode;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -1770,54 +1797,58 @@ private:
     /**
      * initial value is BlockNode
      */
-    Node *exprNode;
+    std::unique_ptr<Node> exprNode;
 
     /**
      * may be empty
      */
-    std::vector<Node *> catchNodes;
+    std::vector<std::unique_ptr<Node>> catchNodes;
 
     /**
      * may be null
      */
-    Node *finallyNode{nullptr};
+    std::unique_ptr<Node> finallyNode;
 
 public:
-    TryNode(unsigned int startPos, BlockNode *blockNode) :
-            WithRtti({startPos, 0}), exprNode(blockNode) {
-        this->updateToken(blockNode->getToken());
+    TryNode(unsigned int startPos, std::unique_ptr<BlockNode> &&blockNode) :
+            WithRtti({startPos, 0}), exprNode(std::move(blockNode)) {
+        this->updateToken(this->exprNode->getToken());
     }
 
-    ~TryNode() override;
+    Node &getExprNode() const {
+        return *this->exprNode;
+    }
 
-    Node *getExprNode() const {
+    std::unique_ptr<Node> &refExprNode() {
         return this->exprNode;
     }
 
-    Node *&refExprNode() {
-        return this->exprNode;
+    void addCatchNode(std::unique_ptr<CatchNode> &&catchNode) {
+        this->updateToken(catchNode->getToken());
+        this->catchNodes.push_back(std::move(catchNode));
     }
 
-    void addCatchNode(CatchNode *catchNode);
-
-    const std::vector<Node *> &getCatchNodes() const {
+    const std::vector<std::unique_ptr<Node>> &getCatchNodes() const {
         return this->catchNodes;
     }
 
-    std::vector<Node *> &refCatchNodes() {
+    std::vector<std::unique_ptr<Node>> &refCatchNodes() {
         return this->catchNodes;
     }
 
-    void addFinallyNode(BlockNode *finallyNode);
+    void addFinallyNode(std::unique_ptr<BlockNode> &&node) {
+        this->finallyNode = std::move(node);
+        this->updateToken(this->finallyNode->getToken());
+    }
 
     /**
      * if has no finally block, return null
      */
     Node *getFinallyNode() const {
-        return this->finallyNode;
+        return this->finallyNode.get();
     }
 
-    Node *&refFinallyNode() {
+    std::unique_ptr<Node> &refFinallyNode() {
         return this->finallyNode;
     }
 
@@ -1842,12 +1873,10 @@ private:
     /**
      * may be null
      */
-    Node *exprNode;
+    std::unique_ptr<Node> exprNode;
 
 public:
-    VarDeclNode(unsigned int startPos, std::string &&varName, Node *exprNode, Kind kind);
-
-    ~VarDeclNode() override;
+    VarDeclNode(unsigned int startPos, std::string &&varName, std::unique_ptr<Node> &&exprNode, Kind kind);
 
     const std::string &getVarName() const {
         return this->varName;
@@ -1871,7 +1900,7 @@ public:
      * may be null
      */
     Node *getExprNode() const {
-        return this->exprNode;
+        return this->exprNode.get();
     }
 
     unsigned int getVarIndex() const {
@@ -1891,34 +1920,34 @@ private:
     /**
      * must be VarNode or AccessNode
      */
-    Node *leftNode;
+    std::unique_ptr<Node> leftNode;
 
-    Node *rightNode;
+    std::unique_ptr<Node> rightNode;
     flag8_set_t attributeSet{0};
 
 public:
     static constexpr flag8_t SELF_ASSIGN  = 1u << 0u;
     static constexpr flag8_t FIELD_ASSIGN = 1u << 1u;
 
-    AssignNode(Node *leftNode, Node *rightNode, bool selfAssign = false) :
-            WithRtti(leftNode->getToken()), leftNode(leftNode), rightNode(rightNode) {
+    AssignNode(std::unique_ptr<Node> &&leftNode,
+            std::unique_ptr<Node> &&rightNode, bool selfAssign = false) :
+            WithRtti(leftNode->getToken()),
+            leftNode(std::move(leftNode)), rightNode(std::move(rightNode)) {
         if(selfAssign) {
             setFlag(this->attributeSet, SELF_ASSIGN);
         }
-        this->updateToken(rightNode->getToken());
+        this->updateToken(this->rightNode->getToken());
     }
 
-    ~AssignNode() override;
-
-    Node *getLeftNode() const {
-        return this->leftNode;
+    Node &getLeftNode() const {
+        return *this->leftNode;
     }
 
-    Node *getRightNode() const {
-        return this->rightNode;
+    Node &getRightNode() const {
+        return *this->rightNode;
     }
 
-    Node * &refRightNode() {
+    std::unique_ptr<Node> &refRightNode() {
         return this->rightNode;
     }
 
@@ -1939,55 +1968,55 @@ public:
 
 class ElementSelfAssignNode : public WithRtti<Node, NodeKind::ElementSelfAssign> {
 private:
-    Node *recvNode;
-    Node *indexNode;
+    std::unique_ptr<Node> recvNode;
+    std::unique_ptr<Node> indexNode;
 
     /**
      * receiver and argument are dummy node
      */
-    ApplyNode *getterNode;
+    std::unique_ptr<ApplyNode> getterNode;
 
     /**
      * receiver and argument are dummy node
      */
-    ApplyNode *setterNode;
+    std::unique_ptr<ApplyNode> setterNode;
 
     /**
      * before type checking, rightNode is BinaryOpNode.
      * after type checking, rightNode may be CastNode.
      * if rightNode is BinaryOpNode, left node is dummy node.
      */
-    Node *rightNode;
+    std::unique_ptr<Node> rightNode;
 
 public:
-    ElementSelfAssignNode(ApplyNode *leftNode, BinaryOpNode *binaryNode);
-    ~ElementSelfAssignNode() override;
+    ElementSelfAssignNode(std::unique_ptr<ApplyNode> &&leftNode,
+            std::unique_ptr<BinaryOpNode> &&binaryNode);
 
-    Node *getRecvNode() const {
-        return this->recvNode;
+    Node &getRecvNode() const {
+        return *this->recvNode;
     }
 
-    Node *getIndexNode() const {
-        return this->indexNode;
+    Node &getIndexNode() const {
+        return *this->indexNode;
     }
 
     /**
      * may be BinaryOpNode or CastNode
      */
-    Node *getRightNode() const {
+    Node &getRightNode() const {
+        return *this->rightNode;
+    }
+
+    std::unique_ptr<Node> &refRightNode() {
         return this->rightNode;
     }
 
-    Node * &refRightNode() {
-        return this->rightNode;
+    ApplyNode &getGetterNode() const {
+        return *this->getterNode;
     }
 
-    ApplyNode *getGetterNode() const {
-        return this->getterNode;
-    }
-
-    ApplyNode *getSetterNode() const {
-        return this->setterNode;
+    ApplyNode &getSetterNode() const {
+        return *this->setterNode;
     }
 
     /**
@@ -2371,7 +2400,8 @@ const char *resolveBinaryOpName(TokenKind op);
 
 TokenKind resolveAssignOp(TokenKind op);
 
-std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode);
+std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&varName,
+        std::unique_ptr<Node> &&exprNode, std::unique_ptr<BlockNode> &&blockNode);
 
 std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode,
         TokenKind op, Token token, std::unique_ptr<Node> &&rightNode);

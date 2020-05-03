@@ -81,11 +81,11 @@ public:
 
     void visitTypeOpNode(TypeOpNode &node) override {
         this->open();
-        this->visit(*node.getExprNode());
+        this->visit(node.getExprNode());
         this->append(node.isCastOp() ? "as" : "is");
         auto *typeNode = node.getTargetTypeNode();
         assert(typeNode->typeKind == TypeNode::Base);
-        this->append(static_cast<BaseTypeNode *>(typeNode)->getTokenText());
+        this->append(static_cast<BaseTypeNode*>(typeNode)->getTokenText());
         this->close();
     }
 
@@ -99,19 +99,19 @@ public:
 
     void visitIfNode(IfNode &node) override {
         this->open();
-        this->visit(*node.getCondNode());
+        this->visit(node.getCondNode());
         this->append("?");
-        this->visit(*node.getThenNode());
+        this->visit(node.getThenNode());
         this->append(":");
-        this->visit(*node.getElseNode());
+        this->visit(node.getElseNode());
         this->close();
     }
 
     void visitAssignNode(AssignNode &node) override {
         this->open();
-        this->visit(*node.getLeftNode());
+        this->visit(node.getLeftNode());
         this->append("=");
-        this->visit(*node.getRightNode());
+        this->visit(node.getRightNode());
         this->close();
     }
 

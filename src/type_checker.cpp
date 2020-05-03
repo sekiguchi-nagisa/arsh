@@ -178,7 +178,7 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
         blockType = &targetNode->getType();
 
         // check empty block
-        if(isa<BlockNode>(targetNode) && cast<BlockNode>(targetNode)->getNodes().empty()) {
+        if(isa<BlockNode>(*targetNode) && cast<BlockNode>(*targetNode).getNodes().empty()) {
             RAISE_TC_ERROR(UselessBlock, *targetNode);
         }
     }
@@ -192,7 +192,7 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
     blockNode.setType(*blockType);
 }
 
-void TypeChecker::checkTypeWithCoercion(const DSType &requiredType, Node * &targetNode) {
+void TypeChecker::checkTypeWithCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode) {
     CoercionKind kind = CoercionKind::INVALID_COERCION;
     this->checkType(&requiredType, *targetNode, nullptr, kind);
     if(kind != CoercionKind::INVALID_COERCION && kind != CoercionKind::NOP) {
@@ -252,7 +252,7 @@ const FieldHandle *TypeChecker::addEntry(const Node &node, const std::string &sy
 
 // for ApplyNode type checking
 HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
-    auto &exprNode = *node.getExprNode();
+    auto &exprNode = node.getExprNode();
     if(exprNode.is(NodeKind::Access) && !node.isFuncCall()) {
         auto &accessNode = cast<AccessNode>(exprNode);
         if(!this->checkAccessNode(accessNode)) {
@@ -298,7 +298,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     return static_cast<FunctionType *>(const_cast<DSType *>(&type));
 }
 
-void TypeChecker::checkTypeArgsNode(Node &node, const MethodHandle *handle, std::vector<Node *> &argNodes) {
+void TypeChecker::checkTypeArgsNode(Node &node, const MethodHandle *handle, std::vector<std::unique_ptr<Node>> &argNodes) {
     unsigned int argSize = argNodes.size();
     // check param size
     unsigned int paramSize = handle->getParamSize();
@@ -324,7 +324,7 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
 }
 
 void TypeChecker::resolveCastOp(TypeOpNode &node) {
-    auto &exprType = node.getExprNode()->getType();
+    auto &exprType = node.getExprNode().getType();
     auto &targetType = node.getType();
 
     if(node.getType().isVoidType()) {
@@ -373,13 +373,13 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
     RAISE_TC_ERROR(CastOp, node, this->symbolTable.getTypeName(exprType), this->symbolTable.getTypeName(targetType));
 }
 
-Node *TypeChecker::newPrintOpNode(Node *node) {
+std::unique_ptr<Node> TypeChecker::newPrintOpNode(std::unique_ptr<Node> &&node) {
     if(!node->getType().isVoidType() && !node->getType().isNothingType()) {
-        auto *castNode = newTypedCastNode(node, this->symbolTable.get(TYPE::Void));
+        auto castNode = newTypedCastNode(std::move(node), this->symbolTable.get(TYPE::Void));
         castNode->setOpKind(TypeOpNode::PRINT);
-        node = castNode;
+        node = std::move(castNode);
     }
-    return node;
+    return std::move(node);
 }
 
 // visitor api
@@ -424,7 +424,7 @@ void TypeChecker::visitRegexNode(RegexNode &node) {
 void TypeChecker::visitArrayNode(ArrayNode &node) {
     unsigned int size = node.getExprNodes().size();
     assert(size != 0);
-    Node *firstElementNode = node.getExprNodes()[0];
+    auto &firstElementNode = node.getExprNodes()[0];
     auto &elementType = this->checkTypeAsSomeExpr(*firstElementNode);
 
     for(unsigned int i = 1; i < size; i++) {
@@ -439,10 +439,10 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
 void TypeChecker::visitMapNode(MapNode &node) {
     unsigned int size = node.getValueNodes().size();
     assert(size != 0);
-    Node *firstKeyNode = node.getKeyNodes()[0];
+    auto &firstKeyNode = node.getKeyNodes()[0];
     this->checkTypeAsSomeExpr(*firstKeyNode);
     auto &keyType = this->checkType(this->symbolTable.get(TYPE::_Value), *firstKeyNode);
-    Node *firstValueNode = node.getValueNodes()[0];
+    auto &firstValueNode = node.getValueNodes()[0];
     auto &valueType = this->checkTypeAsSomeExpr(*firstValueNode);
 
     for(unsigned int i = 1; i < size; i++) {
@@ -483,7 +483,7 @@ void TypeChecker::visitAccessNode(AccessNode &node) {
 }
 
 void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
-    auto &exprType = this->checkTypeAsExpr(*node.getExprNode());
+    auto &exprType = this->checkTypeAsExpr(node.getExprNode());
     auto &targetType = this->checkTypeExactly(*node.getTargetTypeNode());
 
     if(node.isCastOp()) {
@@ -512,8 +512,8 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
         if(exprType.isOptionType()) {
             this->resolveCoercion(this->symbolTable.get(TYPE::Boolean), node.refExprNode());
         }
-        auto *applyNode = node.createApplyNode();
-        node.setType(this->checkTypeAsExpr(*applyNode));
+        auto &applyNode = node.createApplyNode();
+        node.setType(this->checkTypeAsExpr(applyNode));
     }
 }
 
@@ -611,7 +611,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
-    auto &type = this->checkTypeAsExpr(*node.getTargetTypeNode());
+    auto &type = this->checkTypeAsExpr(node.getTargetTypeNode());
     if(type.isOptionType() ||
         this->symbolTable.getTypePool().isArrayType(type) ||
         this->symbolTable.getTypePool().isMapType(type)) {
@@ -794,7 +794,7 @@ void TypeChecker::visitForkNode(ForkNode &node) {
 
 void TypeChecker::visitAssertNode(AssertNode &node) {
     this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Boolean), node.refCondNode());
-    this->checkType(this->symbolTable.get(TYPE::String), *node.getMessageNode());
+    this->checkType(this->symbolTable.get(TYPE::String), node.getMessageNode());
     node.setType(this->symbolTable.get(TYPE::Void));
 }
 
@@ -822,8 +822,8 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
 
         {
             auto scope2 = this->inScope();
-            if(node.getInitNode()->is(NodeKind::VarDecl)) {
-                bool b = this->symbolTable.disallowShadowing(cast<VarDeclNode>(node.getInitNode())->getVarName());
+            if(node.getInitNode().is(NodeKind::VarDecl)) {
+                bool b = this->symbolTable.disallowShadowing(cast<VarDeclNode>(node.getInitNode()).getVarName());
                 (void) b;
                 assert(b);
             }
@@ -835,26 +835,26 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
 
             {
                 auto loop = this->inLoop();
-                this->checkTypeWithCurrentScope(*node.getBlockNode());
+                this->checkTypeWithCurrentScope(node.getBlockNode());
                 auto &type = this->resolveCoercionOfJumpValue();
                 node.setType(type);
             }
         }
     }
 
-    if(!node.getBlockNode()->getType().isNothingType()) {    // insert continue to block end
+    if(!node.getBlockNode().getType().isNothingType()) {    // insert continue to block end
         auto jumpNode = JumpNode::newContinue({0, 0});
         jumpNode->setType(this->symbolTable.get(TYPE::Nothing));
         jumpNode->getExprNode().setType(this->symbolTable.get(TYPE::Void));
-        node.getBlockNode()->setType(jumpNode->getType());
-        node.getBlockNode()->addNode(jumpNode.release());
+        node.getBlockNode().setType(jumpNode->getType());
+        node.getBlockNode().addNode(std::move(jumpNode));
     }
 }
 
 void TypeChecker::visitIfNode(IfNode &node) {
     this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Boolean), node.refCondNode());
-    auto &thenType = this->checkTypeExactly(*node.getThenNode());
-    auto &elseType = this->checkTypeExactly(*node.getElseNode());
+    auto &thenType = this->checkTypeExactly(node.getThenNode());
+    auto &elseType = this->checkTypeExactly(node.getElseNode());
 
     if(thenType.isNothingType() && elseType.isNothingType()) {
         node.setType(thenType);
@@ -911,7 +911,7 @@ bool TypeChecker::PatternCollector::collect(const Node &constNode) {
 
 
 void TypeChecker::visitCaseNode(CaseNode &node) {
-    auto *exprType = &this->checkTypeAsExpr(*node.getExprNode());
+    auto *exprType = &this->checkTypeAsExpr(node.getExprNode());
 
     // check pattern type
     PatternCollector collector;
@@ -929,7 +929,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
         exprType = static_cast<ReifiedType *>(exprType)->getElementTypes()[0];
     }
     if(!patternType->isSameOrBaseTypeOf(*exprType)) {
-        RAISE_TC_ERROR(Required, *node.getExprNode(),
+        RAISE_TC_ERROR(Required, node.getExprNode(),
                 this->symbolTable.getTypeName(*patternType), this->symbolTable.getTypeName(*exprType));
     }
 
@@ -954,7 +954,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
 }
 
 void TypeChecker::visitArmNode(ArmNode &node) {
-    auto &type = this->checkTypeExactly(*node.getActionNode());
+    auto &type = this->checkTypeExactly(node.getActionNode());
     node.setType(type);
 }
 
@@ -1020,7 +1020,7 @@ DSType& TypeChecker::resolveCommonSuperType(const std::vector<DSType *> &types) 
     return this->symbolTable.get(TYPE::Void);
 }
 
-bool TypeChecker::applyConstFolding(Node *&node) const {
+bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) const {
     switch(node->getNodeKind()) {
     case NodeKind::String:
     case NodeKind::Number:
@@ -1028,29 +1028,27 @@ bool TypeChecker::applyConstFolding(Node *&node) const {
         return true;
     case NodeKind::UnaryOp: {
         Token token = node->getToken();
-        assert(cast<UnaryOpNode>(node)->getOp() == MINUS);
-        auto *applyNode = cast<UnaryOpNode>(node)->refApplyNode();
-        assert(applyNode->getExprNode()->is(NodeKind::Access));
-        auto *accessNode = cast<AccessNode>(applyNode->getExprNode());
-        assert(accessNode->getRecvNode().is(NodeKind::Number));
-        auto &numNode = cast<NumberNode>(accessNode->getRecvNode());
+        assert(cast<UnaryOpNode>(*node).getOp() == MINUS);
+        auto &applyNode = cast<UnaryOpNode>(*node).refApplyNode();
+        assert(applyNode->getExprNode().is(NodeKind::Access));
+        auto &accessNode = cast<AccessNode>(applyNode->getExprNode());
+        assert(accessNode.getRecvNode().is(NodeKind::Number));
+        auto &numNode = cast<NumberNode>(accessNode.getRecvNode());
 
         if(node->getType().is(TYPE::Int)) {
             int64_t value = numNode.getIntValue();
             value = -value;
-            delete node;
-            node = NumberNode::newInt(token, value).release();
+            node = NumberNode::newInt(token, value);
             node->setType(this->symbolTable.get(TYPE::Int));
             return true;
         }
         break;
     }
     case NodeKind::StringExpr: {
-        auto *exprNode = cast<StringExprNode>(node);
-        if(exprNode->getExprNodes().size() == 1 && exprNode->getExprNodes()[0]->is(NodeKind::String)) {
-            auto *strNode = cast<StringNode>(exprNode->refExprNodes()[0].release());
-            delete exprNode;
-            node = strNode;
+        auto &exprNode = cast<StringExprNode>(*node);
+        if(exprNode.getExprNodes().size() == 1 && exprNode.getExprNodes()[0]->is(NodeKind::String)) {
+            auto *strNode = exprNode.refExprNodes()[0].release();
+            node.reset(strNode);
             return true;
         }
         break;
@@ -1145,25 +1143,25 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
          */
         auto handle = this->addEntry(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
         node.setAttribute(*handle);
-        this->checkTypeWithCurrentScope(nullptr, *node.getBlockNode());
+        this->checkTypeWithCurrentScope(nullptr, node.getBlockNode());
     }
-    node.setType(node.getBlockNode()->getType());
+    node.setType(node.getBlockNode().getType());
 }
 
 void TypeChecker::visitTryNode(TryNode &node) {
     if(node.getCatchNodes().empty() && node.getFinallyNode() == nullptr) {
         RAISE_TC_ERROR(MeaninglessTry, node);
     }
-    assert(node.getExprNode()->is(NodeKind::Block));
-    if(cast<BlockNode>(node.getExprNode())->getNodes().empty()) {
-        RAISE_TC_ERROR(EmptyTry, *node.getExprNode());
+    assert(node.getExprNode().is(NodeKind::Block));
+    if(cast<BlockNode>(node.getExprNode()).getNodes().empty()) {
+        RAISE_TC_ERROR(EmptyTry, node.getExprNode());
     }
 
     // check type try block
     const DSType *exprType = nullptr;
     {
         auto try1 = this->inTry();
-        exprType = &this->checkTypeExactly(*node.getExprNode());
+        exprType = &this->checkTypeExactly(node.getExprNode());
     }
 
     // check type catch block
@@ -1199,8 +1197,8 @@ void TypeChecker::visitTryNode(TryNode &node) {
      */
     const int size = node.getCatchNodes().size();
     for(int i = 0; i < size - 1; i++) {
-        auto &curType = findInnerNode<CatchNode>(node.getCatchNodes()[i])->getTypeNode().getType();
-        auto &nextType = findInnerNode<CatchNode>(node.getCatchNodes()[i + 1])->getTypeNode().getType();
+        auto &curType = findInnerNode<CatchNode>(node.getCatchNodes()[i].get())->getTypeNode().getType();
+        auto &nextType = findInnerNode<CatchNode>(node.getCatchNodes()[i + 1].get())->getTypeNode().getType();
         if(curType.isSameOrBaseTypeOf(nextType)) {
             auto &nextNode = node.getCatchNodes()[i + 1];
             RAISE_TC_ERROR(Unreachable, *nextNode);
@@ -1236,26 +1234,26 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
 }
 
 void TypeChecker::visitAssignNode(AssignNode &node) {
-    if(!isAssignable(*node.getLeftNode())) {
-        RAISE_TC_ERROR(Assignable, *node.getLeftNode());
+    if(!isAssignable(node.getLeftNode())) {
+        RAISE_TC_ERROR(Assignable, node.getLeftNode());
     }
-    auto *leftNode = static_cast<AssignableNode *>(node.getLeftNode());
-    auto &leftType = this->checkTypeAsExpr(*leftNode);
-    if(hasFlag(leftNode->attr(), FieldAttribute::READ_ONLY)) {
-        RAISE_TC_ERROR(ReadOnly, *leftNode);
+    auto &leftNode = static_cast<AssignableNode&>(node.getLeftNode());
+    auto &leftType = this->checkTypeAsExpr(leftNode);
+    if(hasFlag(leftNode.attr(), FieldAttribute::READ_ONLY)) {
+        RAISE_TC_ERROR(ReadOnly, leftNode);
     }
 
-    if(leftNode->is(NodeKind::Access)) {
+    if(leftNode.is(NodeKind::Access)) {
         node.setAttribute(AssignNode::FIELD_ASSIGN);
     }
     if(node.isSelfAssignment()) {
-        assert(node.getRightNode()->is(NodeKind::BinaryOp));
-        auto *opNode = cast<BinaryOpNode>(node.getRightNode());
-        opNode->getLeftNode()->setType(leftType);
+        assert(node.getRightNode().is(NodeKind::BinaryOp));
+        auto &opNode = cast<BinaryOpNode>(node.getRightNode());
+        opNode.getLeftNode()->setType(leftType);
         if(isa<AccessNode>(leftNode)) {
-            cast<AccessNode>(leftNode)->setAdditionalOp(AccessNode::DUP_RECV);
+            cast<AccessNode>(leftNode).setAdditionalOp(AccessNode::DUP_RECV);
         }
-        auto &rightType = this->checkTypeAsExpr(*node.getRightNode());
+        auto &rightType = this->checkTypeAsExpr(node.getRightNode());
         if(leftType != rightType) { // convert right hand-side type to left type
             this->resolveCoercion(leftType, node.refRightNode());
         }
@@ -1267,35 +1265,35 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
 }
 
 void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
-    auto &recvType = this->checkTypeAsExpr(*node.getRecvNode());
-    auto &indexType = this->checkTypeAsExpr(*node.getIndexNode());
+    auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
+    auto &indexType = this->checkTypeAsExpr(node.getIndexNode());
 
     node.setRecvType(recvType);
     node.setIndexType(indexType);
 
-    auto &elementType = this->checkTypeAsExpr(*node.getGetterNode());
-    cast<BinaryOpNode>(node.getRightNode())->getLeftNode()->setType(elementType);
+    auto &elementType = this->checkTypeAsExpr(node.getGetterNode());
+    cast<BinaryOpNode>(node.getRightNode()).getLeftNode()->setType(elementType);
 
     // convert right hand-side type to element type
-    auto &rightType = this->checkTypeAsExpr(*node.getRightNode());
+    auto &rightType = this->checkTypeAsExpr(node.getRightNode());
     if(elementType != rightType) {
         this->resolveCoercion(elementType, node.refRightNode());
     }
 
-    node.getSetterNode()->getArgNodes()[1]->setType(elementType);
-    this->checkType(this->symbolTable.get(TYPE::Void), *node.getSetterNode());
+    node.getSetterNode().getArgNodes()[1]->setType(elementType);
+    this->checkType(this->symbolTable.get(TYPE::Void), node.getSetterNode());
 
     node.setType(this->symbolTable.get(TYPE::Void));
 }
 
-static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool, Node *exprNode) {
+static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool, std::unique_ptr<Node> exprNode) {
     assert(!blockNode.isUntyped() && !blockNode.getType().isNothingType());
     assert(!exprNode->isUntyped());
 
-    auto returnNode = JumpNode::newReturn(exprNode->getToken(), exprNode);
+    auto returnNode = JumpNode::newReturn(exprNode->getToken(), std::move(exprNode));
     returnNode->setType(*pool.get(TYPE::Nothing));
     blockNode.setType(returnNode->getType());
-    blockNode.addNode(returnNode.release());
+    blockNode.addNode(std::move(returnNode));
 }
 
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
@@ -1338,9 +1336,9 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     // insert terminal node if not found
     BlockNode &blockNode = node.getBlockNode();
     if(returnType.isVoidType() && !blockNode.getType().isNothingType()) {
-        auto *emptyNode = new EmptyNode();
+        auto emptyNode = std::make_unique<EmptyNode>();
         emptyNode->setType(this->symbolTable.get(TYPE::Void));
-        addReturnNodeToLast(blockNode, this->symbolTable.getTypePool(), emptyNode);
+        addReturnNodeToLast(blockNode, this->symbolTable.getTypePool(), std::move(emptyNode));
     }
     if(!blockNode.getType().isNothingType()) {
         RAISE_TC_ERROR(UnfoundReturn, blockNode);
@@ -1384,9 +1382,9 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     // insert return node if not found
     if(node.getBlockNode().getNodes().empty() ||
             !node.getBlockNode().getNodes().back()->getType().isNothingType()) {
-        auto *varNode = new VarNode({0, 1}, "?");
+        auto varNode = std::make_unique<VarNode>(Token{0, 1}, "?");
         this->checkTypeAsExpr(*varNode);
-        addReturnNodeToLast(node.getBlockNode(), this->symbolTable.getTypePool(), varNode);
+        addReturnNodeToLast(node.getBlockNode(), this->symbolTable.getTypePool(), std::move(varNode));
     }
 
     node.setType(this->symbolTable.get(TYPE::Void));
@@ -1500,27 +1498,24 @@ static bool mayBeCmd(const Node &node) {
     return false;
 }
 
-std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&ptr) {
-    NodeWrapper wrap(std::move(ptr));
-    Node *&node = wrap.ptr;
-
+std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&node) {
     if(prevType != nullptr && prevType->isNothingType()) {
         RAISE_TC_ERROR(Unreachable, *node);
     }
 
     if(this->toplevelPrinting && this->symbolTable.isRootModule() && !mayBeCmd(*node)) {
         this->checkTypeExactly(*node);
-        node = this->newPrintOpNode(node);
+        node = this->newPrintOpNode(std::move(node));
     } else {
         this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);// pop stack top
     }
 
     // check empty block
-    if(isa<BlockNode>(node) && cast<BlockNode>(node)->getNodes().empty()) {
+    if(isa<BlockNode>(*node) && cast<BlockNode>(*node).getNodes().empty()) {
         RAISE_TC_ERROR(UselessBlock, *node);
     }
 
-    return wrap.release();
+    return std::move(node);
 }
 
 } // namespace ydsh

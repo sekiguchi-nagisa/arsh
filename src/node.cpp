@@ -192,12 +192,6 @@ void RegexNode::dump(NodeDumper &dumper) const {
 // ##     ArrayNode     ##
 // #######################
 
-ArrayNode::~ArrayNode() {
-    for(auto &e : this->nodes) {
-        delete e;
-    }
-}
-
 void ArrayNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
 }
@@ -206,19 +200,9 @@ void ArrayNode::dump(NodeDumper &dumper) const {
 // ##     MapNode     ##
 // #####################
 
-MapNode::~MapNode() {
-    for(auto &e : this->keyNodes) {
-        delete e;
-    }
-
-    for(auto &e : this->valueNodes) {
-        delete e;
-    }
-}
-
-void MapNode::addEntry(Node *keyNode, Node *valueNode) {
-    this->keyNodes.push_back(keyNode);
-    this->valueNodes.push_back(valueNode);
+void MapNode::addEntry(std::unique_ptr<Node> &&keyNode, std::unique_ptr<Node> &&valueNode) {
+    this->keyNodes.push_back(std::move(keyNode));
+    this->valueNodes.push_back(std::move(valueNode));
 }
 
 void MapNode::dump(NodeDumper &dumper) const {
@@ -256,11 +240,6 @@ void VarNode::dump(NodeDumper &dumper) const {
 // ##     AccessNode     ##
 // ########################
 
-AccessNode::~AccessNode() {
-    delete this->recvNode;
-    delete this->nameNode;
-}
-
 void AccessNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(recvNode);
     DUMP_PTR(nameNode);
@@ -278,50 +257,16 @@ void AccessNode::dump(NodeDumper &dumper) const {
 // ##     TypeOpNode     ##
 // ########################
 
-TypeOpNode::TypeOpNode(Node *exprNode, TypeNode *type, OpKind init, bool dupTypeToken) :
-        WithRtti(exprNode->getToken()), exprNode(exprNode), targetTypeNode(nullptr),
-        opKind(init) {
-    constexpr unsigned long tag = 1UL << 63u;
-
-    if(dupTypeToken) {
-        auto *tok = reinterpret_cast<TypeNode *>(tag | reinterpret_cast<unsigned long>(type));
-        this->targetTypeNode = tok;
-    } else {
-        this->targetTypeNode = type;
-    }
-
-    if(this->getTargetTypeNode() != nullptr) {
-        this->updateToken(this->getTargetTypeNode()->getToken());
-    }
-}
-
-TypeOpNode::~TypeOpNode() {
-    delete this->exprNode;
-
-    if(reinterpret_cast<long>(this->targetTypeNode) >= 0) {
-        delete this->targetTypeNode;
-    }
-}
-
-TypeNode *TypeOpNode::getTargetTypeNode() const {
-    constexpr unsigned long mask = ~(1UL << 63u);
-    if(reinterpret_cast<long>(this->targetTypeNode) < 0) {
-        auto *tok = reinterpret_cast<TypeNode *>(mask & reinterpret_cast<unsigned long>(this->targetTypeNode));
-        return tok;
-    }
-    return this->targetTypeNode;
-}
-
-TypeOpNode *newTypedCastNode(Node *targetNode, const DSType &type) {
+std::unique_ptr<TypeOpNode> newTypedCastNode(std::unique_ptr<Node> &&targetNode, const DSType &type) {
     assert(!targetNode->isUntyped());
-    auto *castNode = new TypeOpNode(targetNode, nullptr, TypeOpNode::NO_CAST);
+    auto castNode = std::make_unique<TypeOpNode>(std::move(targetNode), nullptr, TypeOpNode::NO_CAST);
     castNode->setType(type);
     return castNode;
 }
 
 void TypeOpNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
-    TypeNode *targetTypeToken = this->getTargetTypeNode();
+    auto *targetTypeToken = this->getTargetTypeNode();
     DUMP_PTR(targetTypeToken);
 
 #define EACH_ENUM(OP) \
@@ -345,25 +290,18 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
 // ##     ApplyNode     ##
 // #######################
 
-ApplyNode::ApplyNode(Node *exprNode, std::vector<Node *> &&argNodes, Kind kind) :
+ApplyNode::ApplyNode(std::unique_ptr<Node> &&exprNode, std::vector<std::unique_ptr<Node>> &&argNodes, Kind kind) :
         WithRtti(exprNode->getToken()),
-        exprNode(exprNode), argNodes(std::move(argNodes)), kind(kind) {
+        exprNode(std::move(exprNode)), argNodes(std::move(argNodes)), kind(kind) {
     if(!this->argNodes.empty()) {
         this->updateToken(this->argNodes.back()->getToken());
     }
 }
 
-ApplyNode* ApplyNode::newMethodCall(Node *recvNode, Token token, std::string &&methodName) {
-    auto *exprNode = new AccessNode(recvNode, new VarNode(token, std::move(methodName)));
-    return new ApplyNode(exprNode, std::vector<Node *>(), METHOD_CALL);
-}
-
-ApplyNode::~ApplyNode() {
-    delete this->exprNode;
-
-    for(auto &n : this->argNodes) {
-        delete n;
-    }
+std::unique_ptr<ApplyNode> ApplyNode::newMethodCall(std::unique_ptr<Node> &&recvNode, Token token, std::string &&methodName) {
+    auto exprNode = std::make_unique<AccessNode>(
+            std::move(recvNode), std::make_unique<VarNode>(token, std::move(methodName)));
+    return std::make_unique<ApplyNode>(std::move(exprNode), std::vector<std::unique_ptr<Node>>(), METHOD_CALL);
 }
 
 void ApplyNode::dump(NodeDumper &dumper) const {
@@ -385,18 +323,11 @@ void ApplyNode::dump(NodeDumper &dumper) const {
 // ##     NewNode     ##
 // #####################
 
-NewNode::NewNode(unsigned int startPos, TypeNode *targetTypeNode, std::vector<Node *> &&argNodes) :
-        WithRtti({startPos, 0}), targetTypeNode(targetTypeNode), argNodes(std::move(argNodes)) {
+NewNode::NewNode(unsigned int startPos, std::unique_ptr<TypeNode> &&targetTypeNode,
+        std::vector<std::unique_ptr<Node>> &&argNodes) :
+        WithRtti({startPos, 0}), targetTypeNode(std::move(targetTypeNode)), argNodes(std::move(argNodes)) {
     if(!this->argNodes.empty()) {
         this->updateToken(this->argNodes.back()->getToken());
-    }
-}
-
-NewNode::~NewNode() {
-    delete this->targetTypeNode;
-
-    for(auto &n : this->argNodes) {
-        delete n;
     }
 }
 
@@ -427,18 +358,10 @@ void EmbedNode::dump(ydsh::NodeDumper &dumper) const {
 // ##     UnaryOpNode     ##
 // #########################
 
-UnaryOpNode::~UnaryOpNode() {
-    delete this->exprNode;
-    delete this->methodCallNode;
-}
-
-ApplyNode *UnaryOpNode::createApplyNode() {
-    this->methodCallNode = ApplyNode::newMethodCall(this->exprNode, this->opToken, resolveUnaryOpName(this->op));
-
-    // assign null to prevent double free
-    this->exprNode = nullptr;
-
-    return this->methodCallNode;
+ApplyNode &UnaryOpNode::createApplyNode() {
+    this->methodCallNode = ApplyNode::newMethodCall(
+            std::move(this->exprNode), this->opToken, resolveUnaryOpName(this->op));
+    return *this->methodCallNode;
 }
 
 void UnaryOpNode::dump(NodeDumper &dumper) const {
@@ -452,18 +375,10 @@ void UnaryOpNode::dump(NodeDumper &dumper) const {
 // ##     BinaryOpNode     ##
 // ##########################
 
-BinaryOpNode::~BinaryOpNode() {
-    delete this->leftNode;
-    delete this->rightNode;
-    delete this->optNode;
-}
-
 void BinaryOpNode::createApplyNode() {
-    auto *applyNode = ApplyNode::newMethodCall(this->leftNode, this->opToken, resolveBinaryOpName(this->op));
-    applyNode->refArgNodes().push_back(this->rightNode);
-    this->leftNode = nullptr;
-    this->rightNode = nullptr;
-    this->setOptNode(applyNode);
+    auto applyNode = ApplyNode::newMethodCall(std::move(this->leftNode), this->opToken, resolveBinaryOpName(this->op));
+    applyNode->refArgNodes().push_back(std::move(this->rightNode));
+    this->setOptNode(std::move(applyNode));
 }
 
 void BinaryOpNode::dump(NodeDumper &dumper) const {
@@ -604,11 +519,6 @@ void ForkNode::dump(NodeDumper &dumper) const {
 // ##     AssertNode     ##
 // ########################
 
-AssertNode::~AssertNode() {
-    delete this->condNode;
-    delete this->messageNode;
-}
-
 void AssertNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(condNode);
     DUMP_PTR(messageNode);
@@ -618,14 +528,8 @@ void AssertNode::dump(NodeDumper &dumper) const {
 // ##     BlockNode     ##
 // #######################
 
-BlockNode::~BlockNode() {
-    for(Node *n : this->nodes) {
-        delete n;
-    }
-}
-
-void BlockNode::insertNodeToFirst(Node *node) {
-    this->nodes.insert(this->nodes.begin(), node);
+void BlockNode::insertNodeToFirst(std::unique_ptr<Node> &&node) {
+    this->nodes.insert(this->nodes.begin(), std::move(node));
 }
 
 void BlockNode::dump(NodeDumper &dumper) const {
@@ -648,26 +552,20 @@ void TypeAliasNode::dump(NodeDumper &dumper) const {
 // ##     LoopNode     ##
 // ######################
 
-LoopNode::LoopNode(unsigned int startPos, Node *initNode,
-                 Node *condNode, Node *iterNode, BlockNode *blockNode, bool asDoWhile) :
-        WithRtti({startPos, 0}), initNode(initNode), condNode(condNode),
-        iterNode(iterNode), blockNode(blockNode), asDoWhile(asDoWhile) {
+LoopNode::LoopNode(unsigned int startPos, std::unique_ptr<Node> &&initNode,
+                   std::unique_ptr<Node> &&condNode, std::unique_ptr<Node> &&iterNode,
+                   std::unique_ptr<BlockNode> &&blockNode, bool asDoWhile) :
+        WithRtti({startPos, 0}), initNode(std::move(initNode)), condNode(std::move(condNode)),
+        iterNode(std::move(iterNode)), blockNode(std::move(blockNode)), asDoWhile(asDoWhile) {
     if(this->initNode == nullptr) {
-        this->initNode = new EmptyNode();
+        this->initNode = std::make_unique<EmptyNode>();
     }
 
     if(this->iterNode == nullptr) {
-        this->iterNode = new EmptyNode();
+        this->iterNode = std::make_unique<EmptyNode>();
     }
 
     this->updateToken(this->asDoWhile ? this->condNode->getToken() : this->blockNode->getToken());
-}
-
-LoopNode::~LoopNode() {
-    delete this->initNode;
-    delete this->condNode;
-    delete this->iterNode;
-    delete this->blockNode;
 }
 
 void LoopNode::dump(NodeDumper &dumper) const {
@@ -685,42 +583,39 @@ void LoopNode::dump(NodeDumper &dumper) const {
 /**
  * if condNode is InstanceOfNode and targetNode is VarNode, insert VarDeclNode to blockNode.
  */
-static void resolveIfIsStatement(Node *condNode, BlockNode *blockNode) {
-    if(!isa<TypeOpNode>(condNode) || !cast<TypeOpNode>(condNode)->isInstanceOfOp()) {
+static void resolveIfIsStatement(Node &condNode, BlockNode &blockNode) {
+    if(!isa<TypeOpNode>(condNode) || !cast<TypeOpNode>(condNode).isInstanceOfOp()) {
         return;
     }
-    auto *isNode = cast<TypeOpNode>(condNode);
+    auto &isNode = cast<TypeOpNode>(condNode);
 
-    if(!isa<VarNode>(isNode->getExprNode())) {
+    if(!isa<VarNode>(isNode.getExprNode())) {
         return;
     }
-    auto *varNode = cast<VarNode>(isNode->getExprNode());
+    auto &varNode = cast<VarNode>(isNode.getExprNode());
 
-    auto *exprNode = new VarNode({isNode->getPos(), 1}, std::string(varNode->getVarName()));
-    auto *castNode = new TypeOpNode(exprNode, isNode->getTargetTypeNode(), TypeOpNode::NO_CAST, true);
-    auto *declNode = new VarDeclNode(isNode->getPos(), std::string(varNode->getVarName()), castNode, VarDeclNode::CONST);
-    blockNode->insertNodeToFirst(declNode);
+    auto exprNode = std::make_unique<VarNode>(Token{isNode.getPos(), 1}, std::string(varNode.getVarName()));
+    auto castNode = std::make_unique<TypeOpNode>(std::move(exprNode), *isNode.getTargetTypeNode(), TypeOpNode::NO_CAST);
+    auto declNode = std::make_unique<VarDeclNode>(
+            isNode.getPos(), std::string(varNode.getVarName()), std::move(castNode), VarDeclNode::CONST);
+    blockNode.insertNodeToFirst(std::move(declNode));
 }
 
-IfNode::IfNode(unsigned int startPos, Node *condNode, Node *thenNode, Node *elseNode) :
-        WithRtti({startPos, 0}), condNode(condNode), thenNode(thenNode), elseNode(elseNode) {
+IfNode::IfNode(unsigned int startPos, std::unique_ptr<Node> &&condNode,
+               std::unique_ptr<Node> &&thenNode, std::unique_ptr<Node> &&elseNode) :
+        WithRtti({startPos, 0}), condNode(std::move(condNode)),
+        thenNode(std::move(thenNode)), elseNode(std::move(elseNode)) {
 
-    if(isa<BlockNode>(this->thenNode)) {
-        resolveIfIsStatement(this->condNode, cast<BlockNode>(this->thenNode));
+    if(isa<BlockNode>(*this->thenNode)) {
+        resolveIfIsStatement(*this->condNode, cast<BlockNode>(*this->thenNode));
     }
-    this->updateToken(thenNode->getToken());
+    this->updateToken(this->thenNode->getToken());
     if(this->elseNode != nullptr) {
         this->updateToken(this->elseNode->getToken());
     }
     if(this->elseNode == nullptr) {
-        this->elseNode = new EmptyNode(this->getToken());
+        this->elseNode = std::make_unique<EmptyNode>(this->getToken());
     }
-}
-
-IfNode::~IfNode() {
-    delete this->condNode;
-    delete this->thenNode;
-    delete this->elseNode;
 }
 
 void IfNode::dump(NodeDumper &dumper) const {
@@ -732,13 +627,6 @@ void IfNode::dump(NodeDumper &dumper) const {
 // ######################
 // ##     CaseNode     ##
 // ######################
-
-CaseNode::~CaseNode() {
-    delete this->exprNode;
-    for(auto &e : this->armNodes) {
-        delete e;
-    }
-}
 
 bool CaseNode::hasDefault() const {
     for(auto &e : this->armNodes) {
@@ -765,13 +653,6 @@ void CaseNode::dump(NodeDumper &dumper) const {
 // ##     ArmNode     ##
 // #####################
 
-ArmNode::~ArmNode() {
-    for(auto &e : this->patternNodes) {
-        delete e;
-    }
-    delete this->actionNode;
-}
-
 void ArmNode::dump(ydsh::NodeDumper &dumper) const {
     DUMP(this->patternNodes);
     DUMP_PTR(this->actionNode);
@@ -782,17 +663,13 @@ void ArmNode::dump(ydsh::NodeDumper &dumper) const {
 // ##     JumpNode     ##
 // ######################
 
-JumpNode::JumpNode(Token token, OpKind kind, Node *exprNode) :
-        WithRtti(token), opKind(kind), exprNode(exprNode) {
+JumpNode::JumpNode(Token token, OpKind kind, std::unique_ptr<Node> &&exprNode) :
+        WithRtti(token), opKind(kind), exprNode(std::move(exprNode)) {
     if(this->exprNode == nullptr) {
-        this->exprNode = new EmptyNode(token);
+        this->exprNode = std::make_unique<EmptyNode>(token);
     } else {
         this->updateToken(this->exprNode->getToken());
     }
-}
-
-JumpNode::~JumpNode() {
-    delete this->exprNode;
 }
 
 void JumpNode::dump(NodeDumper &dumper) const {
@@ -813,11 +690,6 @@ void JumpNode::dump(NodeDumper &dumper) const {
 // ##     CatchNode     ##
 // #######################
 
-CatchNode::~CatchNode() {
-    delete this->typeNode;
-    delete this->blockNode;
-}
-
 void CatchNode::dump(NodeDumper &dumper) const {
     DUMP(exceptionName);
     DUMP_PTR(typeNode);
@@ -829,26 +701,6 @@ void CatchNode::dump(NodeDumper &dumper) const {
 // ##     TryNode     ##
 // #####################
 
-TryNode::~TryNode() {
-    delete this->exprNode;
-
-    for(auto &e : this->catchNodes) {
-        delete e;
-    }
-
-    delete this->finallyNode;
-}
-
-void TryNode::addCatchNode(CatchNode *catchNode) {
-    this->catchNodes.push_back(catchNode);
-    this->updateToken(catchNode->getToken());
-}
-
-void TryNode::addFinallyNode(BlockNode *finallyNode) {
-    this->finallyNode = finallyNode;
-    this->updateToken(finallyNode->getToken());
-}
-
 void TryNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
     DUMP(catchNodes);
@@ -859,16 +711,13 @@ void TryNode::dump(NodeDumper &dumper) const {
 // ##     VarDeclNode     ##
 // #########################
 
-VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName, Node *exprNode, Kind kind) :
+VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName,
+        std::unique_ptr<Node> &&exprNode, Kind kind) :
         WithRtti({startPos, 0}),
-        varName(std::move(varName)), kind(kind), exprNode(exprNode) {
+        varName(std::move(varName)), kind(kind), exprNode(std::move(exprNode)) {
     if(this->exprNode != nullptr) {
-        this->updateToken(exprNode->getToken());
+        this->updateToken(this->exprNode->getToken());
     }
-}
-
-VarDeclNode::~VarDeclNode() {
-    delete this->exprNode;
 }
 
 void VarDeclNode::setAttribute(const FieldHandle &handle) {
@@ -896,11 +745,6 @@ void VarDeclNode::dump(NodeDumper &dumper) const {
 // ##     AssignNode     ##
 // ########################
 
-AssignNode::~AssignNode() {
-    delete this->leftNode;
-    delete this->rightNode;
-}
-
 void AssignNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(leftNode);
     DUMP_PTR(rightNode);
@@ -917,38 +761,31 @@ void AssignNode::dump(NodeDumper &dumper) const {
 // ##     ElementSelfAssignNode     ##
 // ###################################
 
-ElementSelfAssignNode::ElementSelfAssignNode(ApplyNode *leftNode, BinaryOpNode *binaryNode) :
-        WithRtti(leftNode->getToken()), rightNode(binaryNode) {
-    this->updateToken(binaryNode->getToken());
+ElementSelfAssignNode::ElementSelfAssignNode(std::unique_ptr<ApplyNode> &&leftNode,
+                                             std::unique_ptr<BinaryOpNode> &&binaryNode) :
+        WithRtti(leftNode->getToken()), rightNode(std::move(binaryNode)) {
+    this->updateToken(this->rightNode->getToken());
 
     // init recv, indexNode
     assert(leftNode->isIndexCall());
-    auto opToken = cast<AccessNode>(leftNode->getExprNode())->getNameNode().getToken();
-    auto pair = ApplyNode::split(leftNode);
-    this->recvNode = pair.first;
-    this->indexNode = pair.second;
+    auto opToken = cast<AccessNode>(leftNode->getExprNode()).getNameNode().getToken();
+    auto pair = ApplyNode::split(std::move(leftNode));
+    this->recvNode = std::move(pair.first);
+    this->indexNode = std::move(pair.second);
 
     // init getter node
-    this->getterNode = ApplyNode::newMethodCall(new EmptyNode(), opToken, std::string(OP_GET));
-    this->getterNode->refArgNodes().push_back(new EmptyNode());
+    this->getterNode = ApplyNode::newMethodCall(std::make_unique<EmptyNode>(), opToken, std::string(OP_GET));
+    this->getterNode->refArgNodes().push_back(std::make_unique<EmptyNode>());
 
     // init setter node
-    this->setterNode = ApplyNode::newMethodCall(new EmptyNode(), opToken, std::string(OP_SET));
-    this->setterNode->refArgNodes().push_back(new EmptyNode());
-    this->setterNode->refArgNodes().push_back(new EmptyNode());
-}
-
-ElementSelfAssignNode::~ElementSelfAssignNode() {
-    delete this->recvNode;
-    delete this->indexNode;
-    delete this->getterNode;
-    delete this->setterNode;
-    delete this->rightNode;
+    this->setterNode = ApplyNode::newMethodCall(std::make_unique<EmptyNode>(), opToken, std::string(OP_SET));
+    this->setterNode->refArgNodes().push_back(std::make_unique<EmptyNode>());
+    this->setterNode->refArgNodes().push_back(std::make_unique<EmptyNode>());
 }
 
 void ElementSelfAssignNode::setRecvType(DSType &type) {
-    this->getterNode->getRecvNode()->setType(type);
-    this->setterNode->getRecvNode()->setType(type);
+    this->getterNode->getRecvNode().setType(type);
+    this->setterNode->getRecvNode().setType(type);
 }
 
 void ElementSelfAssignNode::setIndexType(DSType &type) {
@@ -1137,28 +974,31 @@ TokenKind resolveAssignOp(TokenKind op) {
     }
 }
 
-std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&varName, Node *exprNode, BlockNode *blockNode) {
+std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&varName,
+                                          std::unique_ptr<Node> &&exprNode, std::unique_ptr<BlockNode> &&blockNode) {
     Token dummy = {startPos, 1};
 
     // create for-init
-    auto *call_iter = ApplyNode::newMethodCall(exprNode, std::string(OP_ITER));
+    auto call_iter = ApplyNode::newMethodCall(std::move(exprNode), std::string(OP_ITER));
     std::string reset_var_name = "%reset_";
     reset_var_name += std::to_string(startPos);
-    auto *reset_varDecl = new VarDeclNode(startPos, std::string(reset_var_name), call_iter, VarDeclNode::CONST);
+    auto reset_varDecl = std::make_unique<VarDeclNode>(startPos, std::string(reset_var_name),
+            std::move(call_iter), VarDeclNode::CONST);
 
     // create for-cond
-    auto *reset_var = new VarNode(dummy, std::string(reset_var_name));
-    auto *call_hasNext = ApplyNode::newMethodCall(reset_var, std::string(OP_HAS_NEXT));
+    auto reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
+    auto call_hasNext = ApplyNode::newMethodCall(std::move(reset_var), std::string(OP_HAS_NEXT));
 
     // create forIn-init
-    reset_var = new VarNode(dummy, std::string(reset_var_name));
-    auto *call_next = ApplyNode::newMethodCall(reset_var, std::string(OP_NEXT));
-    auto *init_var = new VarDeclNode(startPos, std::move(varName), call_next, VarDeclNode::VAR);
+    reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
+    auto call_next = ApplyNode::newMethodCall(std::move(reset_var), std::string(OP_NEXT));
+    auto init_var = std::make_unique<VarDeclNode>(startPos, std::move(varName), std::move(call_next), VarDeclNode::VAR);
 
     // insert init to block
-    blockNode->insertNodeToFirst(init_var);
+    blockNode->insertNodeToFirst(std::move(init_var));
 
-    return std::make_unique<LoopNode>(startPos, reset_varDecl, call_hasNext, nullptr, blockNode);
+    return std::make_unique<LoopNode>(startPos, std::move(reset_varDecl),
+            std::move(call_hasNext), nullptr, std::move(blockNode));
 }
 
 std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKind op, Token token, std::unique_ptr<Node> &&rightNode) {
@@ -1170,30 +1010,31 @@ std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKi
         if(isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexCall()) {
             auto &indexNode = cast<ApplyNode>(*leftNode);
             indexNode.setMethodName(std::string(OP_SET));
-            indexNode.refArgNodes().push_back(rightNode.release());
+            indexNode.refArgNodes().push_back(std::move(rightNode));
             return std::move(leftNode);
         }
         // assign to variable or field
-        return std::make_unique<AssignNode>(leftNode.release(), rightNode.release());
+        return std::make_unique<AssignNode>(std::move(leftNode), std::move(rightNode));
     }
 
     /**
      * self assignment
      */
     // assign to element
-    auto *opNode = new BinaryOpNode(new EmptyNode(rightNode->getToken()), resolveAssignOp(op), token, rightNode.release());
+    auto opNode = std::make_unique<BinaryOpNode>(
+            std::make_unique<EmptyNode>(rightNode->getToken()), resolveAssignOp(op), token, std::move(rightNode));
     if(isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexCall()) {
         auto *indexNode = cast<ApplyNode>(leftNode.release());
-        return std::make_unique<ElementSelfAssignNode>(indexNode, opNode);
+        return std::make_unique<ElementSelfAssignNode>(std::unique_ptr<ApplyNode>(indexNode), std::move(opNode));
     }
     // assign to variable or field
-    return std::make_unique<AssignNode>(leftNode.release(), opNode, true);
+    return std::make_unique<AssignNode>(std::move(leftNode), std::move(opNode), true);
 }
 
 const Node *findInnerNode(NodeKind kind, const Node *node) {
     while(!node->is(kind)) {
         assert(isa<TypeOpNode>(node));
-        node = cast<const TypeOpNode>(node)->getExprNode();
+        node = &cast<const TypeOpNode>(node)->getExprNode();
     }
     return node;
 }

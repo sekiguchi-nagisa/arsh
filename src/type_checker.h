@@ -257,7 +257,7 @@ protected:
      * wrap targetNode with CastNode.
      * if requiredType is VoidType, wrap targetNode with CastNode
      */
-    void checkTypeWithCoercion(const DSType &requiredType, Node * &targetNode);
+    void checkTypeWithCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode);
 
     /**
      * for int type conversion.
@@ -265,9 +265,9 @@ protected:
      */
     bool checkCoercion(const DSType &requiredType, const DSType &targetType);
 
-    void resolveCoercion(const DSType &requiredType, Node * &targetNode) {
-        targetNode = newTypedCastNode(targetNode, requiredType);
-        this->resolveCastOp(*cast<TypeOpNode>(targetNode));
+    void resolveCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode) {
+        targetNode = newTypedCastNode(std::move(targetNode), requiredType);
+        this->resolveCastOp(cast<TypeOpNode>(*targetNode));
     }
 
     DSType &resolveCoercionOfJumpValue();
@@ -346,7 +346,7 @@ protected:
     HandleOrFuncType resolveCallee(VarNode &recvNode);
 
     // helper for argument type checking
-    void checkTypeArgsNode(Node &node, const MethodHandle *handle, std::vector<Node *> &argNodes);
+    void checkTypeArgsNode(Node &node, const MethodHandle *handle, std::vector<std::unique_ptr<Node>> &argNodes);
 
     void checkTypeAsMethodCall(ApplyNode &node, const MethodHandle *handle);
 
@@ -368,7 +368,7 @@ protected:
      * @return
      *
      */
-    Node *newPrintOpNode(Node *node);
+    std::unique_ptr<Node> newPrintOpNode(std::unique_ptr<Node> &&node);
 
     void checkTypeAsBreakContinue(JumpNode &node);
     void checkTypeAsReturn(JumpNode &node);
@@ -453,7 +453,7 @@ protected:
      * must be typed node
      * @return
      */
-    bool applyConstFolding(Node *&node) const;
+    bool applyConstFolding(std::unique_ptr<Node> &node) const;
 
     /**
      * if node have non-constant expressions, throw error.

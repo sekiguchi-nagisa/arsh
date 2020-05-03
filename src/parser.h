@@ -30,7 +30,7 @@ namespace ydsh {
 class ArgsWrapper {
 private:
     Token token;
-    std::vector<Node *> nodes;
+    std::vector<std::unique_ptr<Node>> nodes;
 
 public:
     NON_COPYABLE(ArgsWrapper);
@@ -38,8 +38,6 @@ public:
     explicit ArgsWrapper(unsigned int pos) : token({pos, 1}) {}
     ArgsWrapper(ArgsWrapper &&) = default;
     ArgsWrapper(std::nullptr_t) : ArgsWrapper(-1) {}    //NOLINT
-
-    ~ArgsWrapper();
 
     Token getToken() const {
         return this->token;
@@ -49,9 +47,11 @@ public:
         this->token.size = token.pos + token.size - this->token.pos;
     }
 
-    void addArgNode(std::unique_ptr<Node> &&node);
+    void addArgNode(std::unique_ptr<Node> &&node) {
+        this->nodes.push_back(std::move(node));
+    }
 
-    static std::vector<Node *> extract(ArgsWrapper &&argsWrapper) {
+    static std::vector<std::unique_ptr<Node>> extract(ArgsWrapper &&argsWrapper) {
         return std::move(argsWrapper.nodes);
     }
 };

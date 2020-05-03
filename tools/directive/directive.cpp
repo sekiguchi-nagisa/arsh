@@ -40,7 +40,7 @@ struct DirectiveParser : public Parser {
         auto exprNode = TRY(this->parse_appliedName(false));
         auto args = TRY(this->parse_arguments());
         TRY(this->expect(EOS));
-        return std::make_unique<ApplyNode>(exprNode.release(), ArgsWrapper::extract(std::move(args)));
+        return std::make_unique<ApplyNode>(std::move(exprNode), ArgsWrapper::extract(std::move(args)));
     }
 };
 
@@ -134,9 +134,9 @@ private:
 // ##################################
 
 static bool checkDirectiveName(ApplyNode &node) {
-    assert(node.getExprNode()->is(NodeKind::Var));
-    auto *exprNode = static_cast<VarNode *>(node.getExprNode());    //NOLINT
-    return exprNode->getVarName() == "test";
+    assert(node.getExprNode().is(NodeKind::Var));
+    auto &exprNode = static_cast<VarNode&>(node.getExprNode());    //NOLINT
+    return exprNode.getVarName() == "test";
 }
 
 DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &symbolTable) :
@@ -147,7 +147,7 @@ DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &
 void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     if(!checkDirectiveName(node)) {
         std::string str("unsupported directive: ");
-        str += static_cast<VarNode *>(node.getExprNode())->getVarName();    //NOLINT
+        str += static_cast<VarNode&>(node.getExprNode()).getVarName();    //NOLINT
         return this->createError(node, str);
     }
 
@@ -225,12 +225,12 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     std::unordered_set<std::string> foundAttrSet;
     for(auto &attrNode : node.getArgNodes()) {
         auto *assignNode = TRY(this->checkedCast<AssignNode>(*attrNode));
-        auto &attrName = TRY(this->checkedCast<VarNode>(*assignNode->getLeftNode()))->getVarName();
+        auto &attrName = TRY(this->checkedCast<VarNode>(assignNode->getLeftNode()))->getVarName();
         auto *pair = this->lookupHandler(attrName);
         if(pair == nullptr) {
             std::string str("unsupported attribute: ");
             str += attrName;
-            return this->createError(*assignNode->getLeftNode(), str);
+            return this->createError(assignNode->getLeftNode(), str);
         }
 
         // check duplication
@@ -238,19 +238,19 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         if(iter != foundAttrSet.end()) {
             std::string str("duplicated attribute: ");
             str += attrName;
-            return this->createError(*assignNode->getLeftNode(), str);
+            return this->createError(assignNode->getLeftNode(), str);
         }
 
         // check type attribute
         try {
-            this->checkType(*pair->first, *assignNode->getRightNode());
+            this->checkType(*pair->first, assignNode->getRightNode());
         } catch(const TypeCheckError &e) {
             this->error = std::make_unique<TypeCheckError>(e);
             return;
         }
 
         // invoke handler
-        (pair->second)(*assignNode->getRightNode(), d);
+        (pair->second)(assignNode->getRightNode(), d);
         if(this->hasError()) {
             return;
         }

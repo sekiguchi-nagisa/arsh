@@ -161,7 +161,7 @@ public:
         auto t = TypeFactory<T>{}();
         auto node = this->checker(nullptr, std::move(t));
         assert(node->is(NodeKind::TypeOp));
-        return static_cast<TypeOpNode &>(*node).getExprNode()->getType();
+        return static_cast<TypeOpNode &>(*node).getExprNode().getType();
     }
 };
 

@@ -582,7 +582,7 @@ static const CmdNode *inCmdMode(const Node &node) {
     }
     case NodeKind::Assert: {
         auto &assertNode = cast<const AssertNode>(node);
-        return assertNode.getMessageNode()->getToken().size == 0 ? inCmdMode(*assertNode.getCondNode()) : nullptr;
+        return assertNode.getMessageNode().getToken().size == 0 ? inCmdMode(assertNode.getCondNode()) : nullptr;
     }
     case NodeKind::Jump: {
         auto &jumpNode = cast<const JumpNode>(node);
@@ -593,7 +593,7 @@ static const CmdNode *inCmdMode(const Node &node) {
         return vardeclNode.getExprNode() != nullptr ? inCmdMode(*vardeclNode.getExprNode()) : nullptr;
     }
     case NodeKind::Assign:
-        return inCmdMode(*cast<const AssignNode>(node).getRightNode());
+        return inCmdMode(cast<const AssignNode>(node).getRightNode());
     default:
         break;
     }

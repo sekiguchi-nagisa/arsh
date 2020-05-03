@@ -353,7 +353,7 @@ void ByteCodeGenerator::visitRegexNode(RegexNode &node) {
 
 void ByteCodeGenerator::visitArrayNode(ArrayNode &node) {
     this->emitTypeIns(OpCode::NEW, node.getType());
-    for(Node *e : node.getExprNodes()) {
+    for(auto &e : node.getExprNodes()) {
         this->visit(*e);
         this->emit0byteIns(OpCode::APPEND_ARRAY);
     }
@@ -424,7 +424,7 @@ void ByteCodeGenerator::visitAccessNode(AccessNode &node) {
 }
 
 void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
-    this->visit(*node.getExprNode());
+    this->visit(node.getExprNode());
 
     switch(node.getOpKind()) {
     case TypeOpNode::NO_CAST:
@@ -433,7 +433,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         this->emit0byteIns(OpCode::POP);
         break;
     case TypeOpNode::NUM_CAST: {
-        auto &type = node.getExprNode()->getType();
+        auto &type = node.getExprNode().getType();
         assert(type.is(TYPE::Int) || type.is(TYPE::Float));
         auto *handle = this->symbolTable.lookupMethod(type, type.is(TYPE::Int) ? OP_TO_FLOAT : OP_TO_INT);
         assert(handle != nullptr);
@@ -446,7 +446,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         break;
     case TypeOpNode::TO_BOOL: {
         this->emitSourcePos(node.getPos());
-        auto *handle = this->symbolTable.lookupMethod(node.getExprNode()->getType(), OP_BOOL);
+        auto *handle = this->symbolTable.lookupMethod(node.getExprNode().getType(), OP_BOOL);
         assert(handle != nullptr);
         this->emitMethodCallIns(0, *handle);
         break;
@@ -461,7 +461,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         break;
     case TypeOpNode::PRINT: {
         this->emitSourcePos(node.getPos());
-        auto &exprType = node.getExprNode()->getType();
+        auto &exprType = node.getExprNode().getType();
         if(exprType.isOptionType()) {
             auto elementType = static_cast<ReifiedType &>(exprType).getElementTypes()[0];
 
@@ -580,18 +580,18 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
 void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
     const unsigned int paramSize = node.getArgNodes().size();
     if(node.isMethodCall()) {
-        this->visit(*node.getRecvNode());
+        this->visit(node.getRecvNode());
 
-        for(Node *e : node.getArgNodes()) {
+        for(auto &e : node.getArgNodes()) {
             this->visit(*e);
         }
 
         this->emitSourcePos(node.getPos());
         this->emitMethodCallIns(node.getArgNodes().size(), *node.getHandle());
     } else {
-        this->visit(*node.getExprNode());
+        this->visit(node.getExprNode());
 
-        for(Node *e : node.getArgNodes()) {
+        for(auto &e : node.getArgNodes()) {
             this->visit(*e);
         }
 
@@ -615,7 +615,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     }
 
     // push arguments
-    for(Node *argNode : node.getArgNodes()) {
+    for(auto &argNode : node.getArgNodes()) {
         this->visit(*argNode);
     }
 
@@ -769,9 +769,9 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
 
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
     if(this->assertion) {
-        this->visit(*node.getCondNode());
-        this->emitSourcePos(node.getCondNode()->getPos());
-        this->visit(*node.getMessageNode());
+        this->visit(node.getCondNode());
+        this->emitSourcePos(node.getCondNode().getPos());
+        this->visit(node.getMessageNode());
         this->emit0byteIns(OpCode::ASSERT);
     }
 }
@@ -800,7 +800,7 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
     unsigned short localOffset = 0;
     unsigned short localSize = 0;
     if(isa<VarDeclNode>(node.getInitNode())) {
-        localOffset = cast<VarDeclNode>(node.getInitNode())->getVarIndex();
+        localOffset = cast<VarDeclNode>(node.getInitNode()).getVarIndex();
         localSize = 1;
     }
 
@@ -813,8 +813,8 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
         auto breakWithValueLabel = makeLabel();
         this->pushLoopLabels(breakLabel, continueLabel, breakWithValueLabel);
 
-        this->visit(*node.getInitNode());
-        if(!isEmptyCode(*node.getIterNode())) {
+        this->visit(node.getInitNode());
+        if(!isEmptyCode(node.getIterNode())) {
             this->emitJumpIns(initLabel);
         }
 
@@ -822,7 +822,7 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
             this->emitJumpIns(startLabel);
         }
         this->markLabel(continueLabel);
-        this->visit(*node.getIterNode());
+        this->visit(node.getIterNode());
 
         this->markLabel(initLabel);
         if(node.getCondNode() != nullptr) {
@@ -833,7 +833,7 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
         this->emitBranchIns(breakLabel);
 
         this->markLabel(startLabel);
-        this->visit(*node.getBlockNode());
+        this->visit(node.getBlockNode());
 
         this->markLabel(breakLabel);
         if(!node.getType().isVoidType()) {
@@ -850,15 +850,15 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
     auto elseLabel = makeLabel();
     auto mergeLabel = makeLabel();
 
-    this->visit(*node.getCondNode());
+    this->visit(node.getCondNode());
     this->emitBranchIns(elseLabel);
-    this->visit(*node.getThenNode());
-    if(!isEmptyCode(*node.getElseNode()) && !node.getThenNode()->getType().isNothingType()) {
+    this->visit(node.getThenNode());
+    if(!isEmptyCode(node.getElseNode()) && !node.getThenNode().getType().isNothingType()) {
         this->emitJumpIns(mergeLabel);
     }
 
     this->markLabel(elseLabel);
-    this->visit(*node.getElseNode());
+    this->visit(node.getElseNode());
 
     this->markLabel(mergeLabel);
 }
@@ -883,7 +883,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
     auto &map = typeAs<MapObject>(value);
 
     this->emitLdcIns(value);
-    this->visit(*node.getExprNode());
+    this->visit(node.getExprNode());
     this->emit0byteIns(OpCode::LOOKUP_HASH);
 
     if(hasDefault) {
@@ -918,11 +918,11 @@ void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, MapObject &obj) 
 }
 
 void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
-    auto &exprType = node.getExprNode()->getType();
+    auto &exprType = node.getExprNode().getType();
     assert(exprType.is(TYPE::String));
 
     // generate expr
-    this->visit(*node.getExprNode());
+    this->visit(node.getExprNode());
 
     // generate if-else chain
     auto &eqHandle = *this->symbolTable.lookupMethod(exprType, OP_EQ);
@@ -987,7 +987,7 @@ void ByteCodeGenerator::visitCaseNode(CaseNode &node) {
 }
 
 void ByteCodeGenerator::visitArmNode(ArmNode &node) {
-    this->visit(*node.getActionNode());
+    this->visit(node.getActionNode());
 }
 
 void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
@@ -1059,11 +1059,11 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
 }
 
 void ByteCodeGenerator::visitCatchNode(CatchNode &node) {
-    if(node.getBlockNode()->getNodes().empty()) {
+    if(node.getBlockNode().getNodes().empty()) {
         this->emit0byteIns(OpCode::POP);
     } else {
         this->emit1byteIns(OpCode::STORE_LOCAL, node.getVarIndex());
-        this->visit(*node.getBlockNode());
+        this->visit(node.getBlockNode());
     }
 }
 
@@ -1081,9 +1081,9 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
     // generate try block
     this->markLabel(beginLabel);
-    this->visit(*node.getExprNode());
+    this->visit(node.getExprNode());
     this->markLabel(endLabel);
-    if(!node.getExprNode()->getType().isNothingType()) {
+    if(!node.getExprNode().getType().isNothingType()) {
         if(hasFinally) {
             this->enterFinally();
         }
@@ -1091,15 +1091,16 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     }
 
     // generate catch
-    auto &blockNode = *findInnerNode<BlockNode>(node.getExprNode());
+    auto &blockNode = *findInnerNode<BlockNode>(&node.getExprNode());
     auto maxLocalSize = blockNode.getMaxVarSize();
     for(auto &catchNode : node.getCatchNodes()) {
-        unsigned int varSize = findInnerNode<CatchNode>(catchNode)->getBlockNode()->getMaxVarSize();
+        auto *innerNode = findInnerNode<CatchNode>(catchNode.get());
+        unsigned int varSize = innerNode->getBlockNode().getMaxVarSize();
         if(maxLocalSize < varSize) {
             maxLocalSize = varSize;
         }
 
-        auto &catchType = findInnerNode<CatchNode>(catchNode)->getTypeNode().getType();
+        auto &catchType = innerNode->getTypeNode().getType();
         this->catchException(beginLabel, endLabel, catchType, blockNode.getBaseIndex(), blockNode.getVarSize());
         this->visit(*catchNode);
         if(!catchNode->getType().isNothingType()) {
@@ -1159,34 +1160,34 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
 }
 
 void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
-    auto *assignableNode = static_cast<AssignableNode *>(node.getLeftNode());
-    unsigned int index = assignableNode->getIndex();
+    auto &assignableNode = static_cast<AssignableNode&>(node.getLeftNode());
+    unsigned int index = assignableNode.getIndex();
     if(node.isFieldAssign()) {
-        auto *accessNode = cast<AccessNode>(node.getLeftNode());
+        auto &accessNode = cast<AccessNode>(node.getLeftNode());
         if(node.isSelfAssignment()) {
-            this->visit(*node.getLeftNode());
+            this->visit(node.getLeftNode());
         } else {
-            this->visit(accessNode->getRecvNode());
-            if(accessNode->getRecvNode().getType().isModType()) {
+            this->visit(accessNode.getRecvNode());
+            if(accessNode.getRecvNode().getType().isModType()) {
                 this->emit0byteIns(OpCode::POP);
             }
         }
-        this->visit(*node.getRightNode());
+        this->visit(node.getRightNode());
 
-        if(accessNode->getRecvNode().getType().isModType()) {
+        if(accessNode.getRecvNode().getType().isModType()) {
             this->emit2byteIns(OpCode::STORE_GLOBAL, index);
         } else {
             this->emit2byteIns(OpCode::STORE_FIELD, index);
         }
     } else {
         if(node.isSelfAssignment()) {
-            this->visit(*node.getLeftNode());
+            this->visit(node.getLeftNode());
         }
-        this->visit(*node.getRightNode());
-        auto *varNode = cast<VarNode>(node.getLeftNode());
+        this->visit(node.getRightNode());
+        auto &varNode = cast<VarNode>(node.getLeftNode());
 
-        if(hasFlag(varNode->attr(), FieldAttribute::ENV)) {
-            if(hasFlag(varNode->attr(), FieldAttribute::GLOBAL)) {
+        if(hasFlag(varNode.attr(), FieldAttribute::ENV)) {
+            if(hasFlag(varNode.attr(), FieldAttribute::GLOBAL)) {
                 this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
             } else {
                 this->emit1byteIns(OpCode::LOAD_LOCAL, index);
@@ -1194,10 +1195,10 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
 
             this->emit0byteIns(OpCode::SWAP);
             this->emit0byteIns(OpCode::STORE_ENV);
-        } else if(hasFlag(varNode->attr(), FieldAttribute::SECONDS)) {
+        } else if(hasFlag(varNode.attr(), FieldAttribute::SECONDS)) {
             this->emit0byteIns(OpCode::SET_SECOND);
         } else {
-            if(hasFlag(varNode->attr(), FieldAttribute::GLOBAL)) {
+            if(hasFlag(varNode.attr(), FieldAttribute::GLOBAL)) {
                 this->emit2byteIns(OpCode::STORE_GLOBAL, index);
             } else {
                 this->emit1byteIns(OpCode::STORE_LOCAL, index);
@@ -1207,14 +1208,14 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
 }
 
 void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
-    this->visit(*node.getRecvNode());
-    this->visit(*node.getIndexNode());
+    this->visit(node.getRecvNode());
+    this->visit(node.getIndexNode());
     this->emit0byteIns(OpCode::DUP2);
 
-    this->visit(*node.getGetterNode());
-    this->visit(*node.getRightNode());
+    this->visit(node.getGetterNode());
+    this->visit(node.getRightNode());
 
-    this->visit(*node.getSetterNode());
+    this->visit(node.getSetterNode());
 }
 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
