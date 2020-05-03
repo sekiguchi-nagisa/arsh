@@ -222,7 +222,8 @@ public:
     OP(FUNC_HANDLE, (1u << 3u)) \
     OP(RANDOM     , (1u << 4u)) \
     OP(SECONDS    , (1u << 5u)) \
-    OP(BUILTIN    , (1u << 6u))
+    OP(BUILTIN    , (1u << 6u)) \
+    OP(MOD_CONST  , (1u << 7u))
 
 enum class FieldAttribute : unsigned short {
 #define GEN_ENUM(E, V) E = (V),

@@ -392,6 +392,8 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
         this->emit0byteIns(OpCode::RAND);
     } else if(hasFlag(node.attr(), FieldAttribute::SECONDS)) {
         this->emit0byteIns(OpCode::GET_SECOND);
+    } else if(hasFlag(node.attr(), FieldAttribute::MOD_CONST)) {
+        this->emit1byteIns(OpCode::LOAD_CONST, node.getIndex());
     } else {
         if(hasFlag(node.attr(), FieldAttribute::GLOBAL)) {
             this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
@@ -1257,6 +1259,7 @@ CompiledCode ByteCodeGenerator::finalize() {
     unsigned char maxLocalSize = this->symbolTable.getMaxVarIndex();
     this->curBuilder().localVarNum = maxLocalSize;
     this->emitIns(OpCode::RETURN);
+    this->commons.pop_back();
     return this->finalizeCodeBuilder("");
 }
 
@@ -1264,8 +1267,9 @@ void ByteCodeGenerator::exitModule(const SourceNode &node) {
     this->curBuilder().localVarNum = node.getMaxVarNum();
     this->emitIns(OpCode::RETURN);
     auto func = DSValue::create<FuncObject>(node.getModType(), this->finalizeCodeBuilder(node.getModType().toName()));
-    this->emitLdcIns(func);
+    this->commons.pop_back();
 
+    this->emitLdcIns(func);
     this->emitSourcePos(node.getPathToken().pos);
     this->emit0byteIns(OpCode::DUP);
     this->emit1byteIns(OpCode::CALL_FUNC, 0);

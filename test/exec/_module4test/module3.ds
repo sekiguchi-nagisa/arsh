@@ -8,3 +8,12 @@ function test($cond : typeof($true), $f : typeof($scriptName)) : String! {
     return $cond == $TRUE ? $f() : new String!()
 }
 
+let path = $SCRIPT_DIR
+
+assert $SCRIPT_DIR.endsWith('/exec/_module4test')
+
+function dir() : String {
+    return $SCRIPT_DIR
+}
+
+assert $SCRIPT_DIR == $dir()

@@ -40,14 +40,14 @@ namespace ydsh {
  * enum order is corresponding to builtin variable declaration order.
  */
 enum class BuiltinVarOffset : unsigned int {
-    VERSION,        // YDSH_VERSION (equivalent to ps_intrp '\V')
+    SCRIPT_DIR,     // SCRIPT_DIR
+    VERSION,        // YDSH_VERSION
     REPLY,          // REPLY (for read command)
     REPLY_VAR,      // reply (fo read command)
     PID,            // PID (current process)
     PPID,           // PPID
     SECONDS,        // SECONDS
     IFS,            // IFS
-    SCRIPT_DIR,     // SCRIPT_DIR
     COMPREPLY,      // COMPREPLY
     PIPESTATUS,     // PIPESTATUS
     EXIT_STATUS,    // ?

@@ -189,8 +189,15 @@ TEST_F(CmdlineTest, exit) {
             ds("--trace-exit", "-e", "exit", "34"), 34, "", "Shell Exit: terminated by exit 34\n"));
 }
 
+static std::string getCwd() {
+    char *ptr = realpath(".", nullptr);
+    std::string ret = ptr;
+    free(ptr);
+    return ret;
+}
+
 TEST_F(CmdlineTest, bytecode) {
-    const char *msg = R"(### dump compiled code ###
+    std::string msg = format(R"(### dump compiled code ###
 Source File: (string)
 DSCode: top level
   code size: 12
@@ -201,18 +208,19 @@ Code:
    0: PUSH_INT  34
    2: STORE_GLOBAL  50
    5: PUSH_INT  34
-   7: CALL_NATIVE2  1  %str
+   7: CALL_NATIVE2  1  %s
   10: POP
   11: RETURN
 Constant Pool:
+  0: String %s
 Line Number Table:
   lineNum: 1, address:  7
 Exception Table:
 
-)";
+)", "%str", getCwd().c_str());
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", "var a = 34; 34 as String"), 0, msg));
 
-    msg = R"(### dump compiled code ###
+    msg = format(R"(### dump compiled code ###
 Source File: (string)
 DSCode: top level
   code size: 26
@@ -220,7 +228,7 @@ DSCode: top level
   number of local variable: 0
   number of global variable: 51
 Code:
-   0: LOAD_CONST  0
+   0: LOAD_CONST  1
    2: STORE_GLOBAL  50
    5: LOAD_GLOBAL  50
    8: PUSH_INT  1
@@ -233,7 +241,8 @@ Code:
   24: POP
   25: RETURN
 Constant Pool:
-  0: (Any) -> Boolean function(f)
+  0: String %s
+  1: (Any) -> Boolean function(f)
 Line Number Table:
   lineNum: 1, address: 10
 Exception Table:
@@ -248,10 +257,11 @@ Code:
   2: INSTANCE_OF  [Int]
   6: RETURN_V
 Constant Pool:
+  0: String %s
 Line Number Table:
 Exception Table:
 
-)";
+)", getCwd().c_str(), getCwd().c_str());
     const char *s = "function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", s), 0, msg));
 }

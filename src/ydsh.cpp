@@ -187,6 +187,12 @@ static void bindVariable(DSState &state, const char *varName, DSValue &&value) {
 static void initBuiltinVar(DSState &state) {
     // set builtin variables internally used
 
+    /**
+     * must be String_Object
+     */
+    bindVariable(state, "SCRIPT_DIR", DSValue::createStr(),
+            FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
+
 #define XSTR(V) #V
 #define STR(V) XSTR(V)
     /**
@@ -234,13 +240,6 @@ static void initBuiltinVar(DSState &state) {
      * must be String_Object.
      */
     bindVariable(state, "IFS", DSValue::createStr(" \t\n"), FieldAttribute());
-
-    /**
-     * must be String_Object
-     */
-    std::string str = ".";
-    getWorkingDir(state, false, str);
-    bindVariable(state, "SCRIPT_DIR", DSValue::createStr(std::move(str)));
 
     /**
      * maintain completion result.

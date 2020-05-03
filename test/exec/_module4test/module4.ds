@@ -1,0 +1,13 @@
+
+source module3.ds as mod3
+
+let path = $SCRIPT_DIR
+
+assert $SCRIPT_DIR.endsWith('/exec/_module4test')
+
+function dir() : String {
+    return $SCRIPT_DIR
+}
+
+assert $SCRIPT_DIR == $dir()
+assert $SCRIPT_DIR == $mod3.path

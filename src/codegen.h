@@ -303,6 +303,22 @@ struct CodeBuilder : public CodeEmitter<true> {
     CompiledCode build(const std::string &name);
 };
 
+class ModuleCommon {
+private:
+    DSValue scriptDir;
+
+
+public:
+    ModuleCommon() = default;
+
+    explicit ModuleCommon(const std::string &scriptDir) :
+            scriptDir(DSValue::createStr(scriptDir)) {}
+
+    DSValue getScriptDir() const {
+        return this->scriptDir;
+    }
+};
+
 class ByteCodeGenerator : protected NodeVisitor {
 private:
     SymbolTable &symbolTable;
@@ -312,6 +328,8 @@ private:
     const MethodHandle *handle_STR{nullptr};
 
     std::vector<CodeBuilder> builders;
+
+    std::vector<ModuleCommon> commons;
 
 public:
     ByteCodeGenerator(SymbolTable &symbolTable, bool assertion) :
@@ -530,6 +548,11 @@ private:
     void generateIfElseArm(ArmNode &node, const MethodHandle &eqHandle,
             const MethodHandle &matchHandle, const Label &mergeLabel);
 
+    void initToplevelCodeBuilder(const Lexer &lex, unsigned short localVarNum) {
+        this->commons.emplace_back(lex.getScriptDir());
+        this->initCodeBuilder(CodeKind::TOPLEVEL, lex, localVarNum);
+    }
+
     void initCodeBuilder(CodeKind kind, unsigned short localVarNum) {
         auto &lex = this->builders.back().lexer;
         this->initCodeBuilder(kind, lex, localVarNum);
@@ -537,6 +560,7 @@ private:
 
     void initCodeBuilder(CodeKind kind, const Lexer &lex, unsigned short localVarNum) {
         this->builders.emplace_back(lex, kind, localVarNum);
+        this->curBuilder().constBuffer.push_back(this->commons.back().getScriptDir());
     }
 
     CompiledCode finalizeCodeBuilder(const std::string &name) {
@@ -592,7 +616,7 @@ private:
 
 public:
     void initialize(const Lexer &lexer) {
-        this->initCodeBuilder(CodeKind::TOPLEVEL, lexer, 0);
+        this->initToplevelCodeBuilder(lexer, 0);
     }
 
     void generate(Node *node) {
@@ -602,7 +626,7 @@ public:
     CompiledCode finalize();
 
     void enterModule(const Lexer &lexer) {
-        this->initCodeBuilder(CodeKind::TOPLEVEL, lexer, 0);
+        this->initToplevelCodeBuilder(lexer, 0);
     }
 
     void exitModule(const SourceNode &node);
