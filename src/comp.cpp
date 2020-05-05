@@ -604,6 +604,8 @@ class CompleterFactory { //TODO: type aware completion
 private:
     DSState &state;
 
+    CStrPtr cwd;
+
     const unsigned int cursor;
 
     Lexer lexer;
@@ -625,11 +627,11 @@ public:
 private:
     std::unique_ptr<Completer> createModNameCompleter(CompType type) const {
         if(type == CompType::NONE) {
-            return std::make_unique<ModNameCompleter>(this->state.getScriptDir(), "", false);
+            return std::make_unique<ModNameCompleter>(this->cwd.get(), "", false);
         }
         auto token = this->curToken();
         bool tilde = this->lexer.startsWith(token, '~');
-        return std::make_unique<ModNameCompleter>(this->state.getScriptDir(), this->lexer.toCmdArg(token), tilde);
+        return std::make_unique<ModNameCompleter>(this->cwd.get(), this->lexer.toCmdArg(token), tilde);
     }
 
     std::unique_ptr<Completer> createFileNameCompleter(CompType type) const {
@@ -827,7 +829,7 @@ public:
 // ##############################
 
 CompleterFactory::CompleterFactory(DSState &st, const char *data, unsigned int size) :
-        state(st), cursor(size),
+        state(st), cwd(getCWD()), cursor(size),
         lexer("<line>", ByteBuffer(data, data + size), std::string()), parser(this->lexer) {
     LOG(DUMP_CONSOLE, "line: %s, cursor: %u", std::string(data, size).c_str(), size);
     this->parser.setTracker(&this->tracker);
