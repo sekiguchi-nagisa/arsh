@@ -248,7 +248,7 @@ std::string Lexer::toName(Token token) const {
 }
 
 int64_t Lexer::toInt64(Token token, int &status) const {
-    auto ref = this->getStrRef(token);
+    auto ref = this->toStrRef(token);
     auto ret = fromIntLiteral<int64_t>(ref.begin(), ref.end());
     status = ret.second ? 0 : 1;
     return ret.first;

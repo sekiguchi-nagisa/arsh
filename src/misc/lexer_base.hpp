@@ -207,7 +207,7 @@ public:
         return token.pos + token.size <= this->getUsedSize();
     }
 
-    StringRef getStrRef(Token token) const {
+    StringRef toStrRef(Token token) const {
         assert(this->withinRange(token));
         return StringRef(this->buf.get() + token.pos, token.size);
     }

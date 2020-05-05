@@ -443,7 +443,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         this->consume();   // always success
         auto pathNode = TRY(this->parse_cmdArg());
         auto node = std::make_unique<SourceListNode>(startPos, std::move(pathNode), optional);
-        if(!optional && CUR_KIND() == CMD_ARG_PART && this->lexer->getStrRef(this->curToken) == "as") {
+        if(!optional && CUR_KIND() == CMD_ARG_PART && this->lexer->toStrRef(this->curToken) == "as") {
             this->lexer->popLexerMode();
             this->expectAndChangeMode(CMD_ARG_PART, yycNAME); // always success
             Token token = TRY(this->expectAndChangeMode(IDENTIFIER, yycSTMT));
@@ -1304,7 +1304,7 @@ std::unique_ptr<Node> Parser::toAccessNode(Token token) const {
     std::unique_ptr<Node> node;
     std::vector<std::unique_ptr<VarNode>> nodes;
 
-    const char *ptr = this->lexer->getStrRef(token).data();
+    const char *ptr = this->lexer->toStrRef(token).data();
     for(unsigned int index = token.size - 1; index != 0; index--) {
         if(ptr[index] == '.') {
             Token fieldToken = token.sliceFrom(index + 1);
