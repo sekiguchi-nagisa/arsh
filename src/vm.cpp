@@ -39,9 +39,8 @@ SigSet DSState::pendingSigSet;
 static std::string initLogicalWorkingDir() {
     const char *dir = getenv(ENV_PWD);
     if(dir == nullptr || !S_ISDIR(getStMode(dir))) {
-        char *ptr = realpath(".", nullptr);
-        std::string str = ptr == nullptr ? "" : ptr;
-        free(ptr);
+        auto path = getCWD();
+        std::string str = path ? path.get() : "";
         return str;
     }
     if(dir[0] == '/') {

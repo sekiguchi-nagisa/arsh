@@ -30,6 +30,7 @@
 #include "signals.h"
 #include "misc/unicode.hpp"
 #include "misc/num_util.hpp"
+#include "misc/files.h"
 
 // helper macro
 #define LOCAL(index) (ctx.getLocal(index))
@@ -818,14 +819,11 @@ YDSH_METHOD string_realpath(RuntimeContext &ctx) {
     auto ref = LOCAL(0).asStrRef();
     std::string str = ref.toString();
     expandTilde(str);
-    char *buf = realpath(str.c_str(), nullptr);
+    auto buf = getRealpath(str.c_str());
     if(buf == nullptr) {
         RET(DSValue::createInvalid());
     }
-
-    auto ret = DSValue::createStr(buf);
-    free(buf);
-    RET(ret);
+    RET(DSValue::createStr(buf.get()));
 }
 
 //!bind: function lower($this : String) : String

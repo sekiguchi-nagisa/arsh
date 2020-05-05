@@ -189,12 +189,11 @@ const char *getWorkingDir(const DSState &st, bool useLogical, std::string &buf) 
         }
         buf = st.logicalWorkingDir;
     } else {
-        char *ptr = realpath(".", nullptr);
+        auto ptr = getCWD();
         if(ptr == nullptr) {
             return nullptr;
         }
-        buf = ptr;
-        free(ptr);
+        buf = ptr.get();
     }
     return buf.c_str();
 }
@@ -229,11 +228,10 @@ bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
             setenv(ENV_PWD, actualDest.c_str(), 1);
             st.logicalWorkingDir = std::move(actualDest);
         } else {
-            char *cwd = realpath(".", nullptr);
+            auto cwd = getCWD();
             if(cwd != nullptr) {
-                setenv(ENV_PWD, cwd, 1);
-                st.logicalWorkingDir = cwd;
-                free(cwd);
+                setenv(ENV_PWD, cwd.get(), 1);
+                st.logicalWorkingDir = cwd.get();
             }
         }
     }
@@ -343,10 +341,9 @@ std::string expandDots(const char *basePath, const char *path) {
         if(basePath != nullptr && *basePath != '\0') {
             resolvedPathStack = createPathStack(basePath);
         } else {
-            char *ptr = realpath(".", nullptr);
+            auto ptr = getCWD();
             if(ptr) {
-                resolvedPathStack = createPathStack(ptr);
-                free(ptr);
+                resolvedPathStack = createPathStack(ptr.get());
             }
         }
     }
@@ -391,10 +388,9 @@ void expandTilde(std::string &str) {
             expanded = pw->pw_dir;
         }
     } else if(expanded == "~+") {
-        char *ptr = realpath(".", nullptr);
-        if(ptr) {
-            expanded = ptr;
-            free(ptr);
+        auto cwd = getCWD();
+        if(cwd) {
+            expanded = cwd.get();
         }
     } else if(expanded == "~-") {
         const char *env = getenv(ENV_OLDPWD);

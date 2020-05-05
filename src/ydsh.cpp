@@ -31,6 +31,7 @@
 #include "frontend.h"
 #include "codegen.h"
 #include "misc/num_util.hpp"
+#include "misc/files.h"
 
 using namespace ydsh;
 
@@ -587,10 +588,9 @@ void DSError_release(DSError *e) {
 }
 
 static void setRealScriptDir(DSState &st, const char *dir) {
-    char *real = realpath(dir, nullptr);
+    auto real = getRealpath(dir);
     assert(real);
-    st.setScriptDir(real);
-    free(real);
+    st.setScriptDir(real.get());
 }
 
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {

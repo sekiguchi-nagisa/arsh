@@ -55,6 +55,14 @@ inline mode_t getStMode(int fd) {
 
 #define S_IS_PERM_(mode, flag) (((mode) & (flag)) == (flag))
 
+inline CStrPtr getRealpath(const char *path) {
+    return CStrPtr(realpath(path, nullptr));
+}
+
+inline CStrPtr getCWD() {
+    return getRealpath(".");
+}
+
 inline int getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
     for(std::list<std::string> dirList = {dirPath}; !dirList.empty();) {
         std::string path = std::move(dirList.front());
@@ -197,9 +205,8 @@ public:
         if(env == nullptr) {
             env = "/tmp";
         }
-        char *ptr = realpath(env, nullptr);
-        std::string name = ptr;
-        free(ptr);
+        auto ptr = getRealpath(env);
+        std::string name = ptr.get();
         name += "/test_tmp_dirXXXXXX";
         if(!mkdtemp(&name[0])) {
             fatal_perror("temp directory creation failed");
