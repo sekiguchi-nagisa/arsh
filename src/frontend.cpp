@@ -266,7 +266,7 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
     const char *modPath = node.getPathList()[pathIndex].c_str();
     node.setCurIndex(pathIndex + 1);
     FilePtr filePtr;
-    auto ret = this->getSymbolTable().tryToLoadModule(this->getCurScriptDir().c_str(), modPath, filePtr);
+    auto ret = this->getSymbolTable().tryToLoadModule(this->getCurScriptDir(), modPath, filePtr);
     if(is<ModLoadingError>(ret)) {
         auto e = get<ModLoadingError>(ret);
         if(e == ModLoadingError::NOT_FOUND && node.isOptional()) {
@@ -292,9 +292,10 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
 
 static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
     assert(*fullPath == '/');
-    const char *ptr = strrchr(fullPath, '/');
-    std::string value(fullPath, ptr == fullPath ? 1 : ptr - fullPath);
-    return Lexer(fullPath, std::move(buf), std::move(value));
+    char *path = strdup(fullPath);
+    const char *ptr = strrchr(path, '/');
+    path[ptr == path ? 1 : ptr - path] = '\0';
+    return Lexer(fullPath, std::move(buf), CStrPtr(path));
 }
 
 void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {

@@ -308,7 +308,7 @@ private:
 public:
     ModuleCommon() = default;
 
-    ModuleCommon(const std::string &name, const std::string &scriptDir) :
+    ModuleCommon(const std::string &name, const char *scriptDir) :
             scriptName(DSValue::createStr(name)),
             scriptDir(DSValue::createStr(scriptDir)) {}
 

@@ -147,14 +147,6 @@ public:
 
     ~DSState() = default;
 
-    const char *getScriptDir() const {
-        return this->getGlobal(BuiltinVarOffset::SCRIPT_DIR).asStrRef().data();
-    }
-
-    void setScriptDir(const char *value) {
-        this->setGlobal(BuiltinVarOffset::SCRIPT_DIR, DSValue::createStr(value));
-    }
-
     bool hasError() const {
         return this->stack.hasError();
     }

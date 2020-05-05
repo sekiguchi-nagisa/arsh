@@ -374,7 +374,7 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
 
     ByteBuffer buf;
     buf.append(ret.first.c_str(), ret.first.size());
-    Lexer lexer(fileName, std::move(buf), std::string());
+    Lexer lexer(fileName, std::move(buf), nullptr);
     lexer.setLineNumOffset(ret.second);
 
     DirectiveParser parser(lexer);

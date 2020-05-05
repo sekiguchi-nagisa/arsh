@@ -159,7 +159,7 @@ public:
     void teardownASTDump();
 
 private:
-    const std::string &getCurScriptDir() const {
+    const char *getCurScriptDir() const {
         return (this->contexts.empty() ? this->lexer : this->contexts.back()->lexer).getScriptDir();
     }
 

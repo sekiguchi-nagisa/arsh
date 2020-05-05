@@ -189,12 +189,14 @@ static void initBuiltinVar(DSState &state) {
     // set builtin variables internally used
 
     /**
+     * dummy object.
      * must be String_Object
      */
     bindVariable(state, "SCRIPT_NAME", DSValue::createStr(),
                  FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
 
     /**
+     * dummy object
      * must be String_Object
      */
     bindVariable(state, "SCRIPT_DIR", DSValue::createStr(),
@@ -587,17 +589,9 @@ void DSError_release(DSError *e) {
     }
 }
 
-static void setRealScriptDir(DSState &st, const char *dir) {
-    auto real = getRealpath(dir);
-    assert(real);
-    st.setScriptDir(real.get());
-}
-
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
-    setRealScriptDir(*st, ".");
-
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName,
-            ByteBuffer(data, data + size), std::string(st->getScriptDir()));
+            ByteBuffer(data, data + size), getCWD());
     lexer.setLineNumOffset(st->lineNum);
     return evalScript(*st, std::move(lexer), e);
 }
@@ -619,8 +613,9 @@ static void reportFileError(const char *sourceName, bool isIO, DSError *e) {
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     FilePtr filePtr;
+    CStrPtr scriptDir;
     if(sourceName == nullptr) {
-        setRealScriptDir(*st, ".");
+        scriptDir = getCWD();
         filePtr = createFilePtr(fdopen, dup(STDIN_FILENO), "rb");
     } else {
         auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr);
@@ -634,9 +629,10 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
             return 0;   // do nothing.
         }
         char *real = strdup(get<const char *>(ret));
-        const char *dirName = dirname(real);
-        st->setScriptDir(dirName);
-        free(real);
+        assert(*real == '/');
+        const char *ptr = strrchr(real, '/');
+        real[ptr == real ? 1 : (ptr - real)] = '\0';
+        scriptDir.reset(real);
     }
 
     // read data
@@ -648,7 +644,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         return 1;
     }
     filePtr.reset(nullptr);
-    return evalScript(*st, Lexer(sourceName, std::move(buf), std::string(st->getScriptDir())), e);
+    return evalScript(*st, Lexer(sourceName, std::move(buf), std::move(scriptDir)), e);
 }
 
 static void appendAsEscaped(std::string &line, const char *path) {  //FIXME: escape newline
@@ -670,10 +666,11 @@ static void appendAsEscaped(std::string &line, const char *path) {  //FIXME: esc
 }
 
 int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e) {
+    CStrPtr scriptDir;
     if(hasFlag(option, DS_MOD_FULLPATH)) {
-        st->setScriptDir("");
+        scriptDir.reset(strdup(""));
     } else {
-        setRealScriptDir(*st, ".");
+        scriptDir = getCWD();
     }
 
     std::string line = "source";
@@ -681,7 +678,7 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned short option,
     appendAsEscaped(line, fileName);
 
     st->lineNum = 0;
-    Lexer lexer("ydsh", ByteBuffer(line.c_str(), line.c_str() + line.size()), std::string(st->getScriptDir()));
+    Lexer lexer("ydsh", ByteBuffer(line.c_str(), line.c_str() + line.size()), std::move(scriptDir));
     lexer.setLineNumOffset(st->lineNum);
     return evalScript(*st, std::move(lexer), e);
 }
