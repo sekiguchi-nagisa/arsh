@@ -15,6 +15,7 @@
  */
 
 #include <unistd.h>
+#include <pwd.h>
 
 #include <memory>
 
@@ -39,13 +40,9 @@ static auto createState(Arg && ...arg) {
 
 int exec_interactive(DSState *dsState);
 
-static std::pair<DSErrorKind, int> loadRC(const DSStateHandle &handle, const char *rcfile) {
-    if(rcfile == nullptr) {
-        rcfile = "~/.ydshrc";
-    }
-
+static std::pair<DSErrorKind, int> loadRC(const DSStateHandle &handle, const std::string &rcfile) {
     DSError e{};
-    int ret = DSState_loadModule(handle.get(), rcfile, DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
+    int ret = DSState_loadModule(handle.get(), rcfile.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
     auto kind = e.kind;
     DSError_release(&e);
 
@@ -147,6 +144,13 @@ static const char *version() {
     return DSState_version(nullptr);
 }
 
+static std::string getDefaultRCFilePath() {
+    struct passwd *pw = getpwuid(getuid());
+    std::string path = pw->pw_dir;
+    path += "/.ydshrc";
+    return path;
+}
+
 int main(int argc, char **argv) {
     opt::Parser<OptionKind> parser = {
 #define GEN_OPT(E, S, F, D) {E, S, F, D},
@@ -160,7 +164,7 @@ int main(int argc, char **argv) {
     InvocationKind invocationKind = InvocationKind::FROM_FILE;
     const char *evalText = nullptr;
     bool userc = true;
-    const char *rcfile = nullptr;
+    std::string rcfile = getDefaultRCFilePath();
     bool quiet = false;
     bool forceInteractive = false;
     DSExecMode mode = DS_EXEC_MODE_NORMAL;

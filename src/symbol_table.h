@@ -313,12 +313,12 @@ private:
      * @param scriptDir
      * may be null
      * @param modPath
-     * must be applied tilde expansion
+     * not null
      * @param filePtr
      * write resolved file pointer
      * @return
      */
-    ModResult load(const char *scriptDir, const std::string &modPath, FilePtr &filePtr);
+    ModResult load(const char *scriptDir, const char *modPath, FilePtr &filePtr);
 };
 
 class SymbolTable {

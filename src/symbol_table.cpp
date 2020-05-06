@@ -204,10 +204,12 @@ void ModuleLoader::abort() {
     this->modIDCount = this->oldIDCount;
 }
 
-ModResult ModuleLoader::load(const char *scriptDir, const std::string &modPath, FilePtr &filePtr) {
-    std::string str = expandDots(scriptDir, modPath.c_str());
+ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr &filePtr) {
+    assert(modPath);
+
+    std::string str = expandDots(scriptDir, modPath);
     LOG(TRACE_MODULE, "\n    scriptDir: `%s'\n    modPath: `%s'\n    fullPath: `%s'",
-                       (scriptDir == nullptr ? "" : scriptDir), modPath.c_str(), str.c_str());
+                       (scriptDir == nullptr ? "" : scriptDir), modPath, str.c_str());
 
     auto pair = this->typeMap.emplace(std::move(str), nullptr);
     if(!pair.second) {
@@ -246,10 +248,8 @@ static bool isFileNotFound(const ModResult &ret) {
 }
 
 ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path, FilePtr &filePtr) {
-    std::string modPath = path;
-    expandTilde(modPath);
-    auto ret = this->modLoader.load(scriptDir, modPath, filePtr);
-    if(modPath[0] == '/' || scriptDir == nullptr || scriptDir[0] == '\0') {   // if full path, not search next path
+    auto ret = this->modLoader.load(scriptDir, path, filePtr);
+    if(path[0] == '/' || scriptDir == nullptr || scriptDir[0] == '\0') {   // if full path, not search next path
         return ret;
     }
     if(strcmp(scriptDir, SYSTEM_MOD_DIR) == 0) {
@@ -262,10 +262,10 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path, 
         expandTilde(dir);
         errno = old;
         if(strcmp(scriptDir, dir.c_str()) != 0) {
-            ret = this->modLoader.load(dir.c_str(), modPath, filePtr);
+            ret = this->modLoader.load(dir.c_str(), path, filePtr);
         }
         if(isFileNotFound(ret)) {
-            ret = this->modLoader.load(SYSTEM_MOD_DIR, modPath, filePtr);
+            ret = this->modLoader.load(SYSTEM_MOD_DIR, path, filePtr);
         }
     }
     return ret;
