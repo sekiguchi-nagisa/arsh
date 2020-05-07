@@ -202,7 +202,7 @@ public:
 
     static std::string makeTempDir() {
         const char *env = getenv("TMPDIR");
-        if(env == nullptr) {
+        if(env == nullptr || !S_ISDIR(getStMode(env))) {
             env = "/tmp";
         }
         auto ptr = getRealpath(env);
