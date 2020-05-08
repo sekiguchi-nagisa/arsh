@@ -209,8 +209,8 @@ assert $? == 1
 test . -ef /dev/null
 assert $? == 1
 
-assert "/dev/stdin" != "/dev/stdout".realpath()!
-test /dev/stdin -ef ${"/dev/stdout".realpath()!}
+assert "/dev/stdin" != "/dev/stdin".realpath()!
+test /dev/stdin -ef ${"/dev/stdin".realpath()!}
 assert $? == 0
 
 ## compare timestamp
