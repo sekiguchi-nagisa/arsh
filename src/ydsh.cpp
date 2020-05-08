@@ -384,6 +384,19 @@ static void loadEmbeddedScript(DSState *state) {
     state->symbolTable.getTermHookIndex();
 }
 
+static void updatePWDs(const char *value) {
+    const char *pwd = getenv(ENV_PWD);
+    if(strcmp(value, ".") == 0 || !pwd || *pwd != '/' || !isSameFile(pwd, value)) {
+        setenv(ENV_PWD, value, 1);
+        pwd = value;
+    }
+
+    const char *oldpwd = getenv(ENV_OLDPWD);
+    if(!oldpwd || *oldpwd != '/' || !S_ISDIR(getStMode(oldpwd))) {
+        setenv(ENV_OLDPWD, pwd, 1);
+    }
+}
+
 static void initEnv(const DSState &state) {
     // set locale
     setlocale(LC_ALL, "");
@@ -413,8 +426,7 @@ static void initEnv(const DSState &state) {
     if(ptr == nullptr) {
         ptr = ".";
     }
-    setenv(ENV_PWD, ptr, 0);
-    setenv(ENV_OLDPWD, ptr, 0);
+    updatePWDs(ptr);
 }
 
 // ###################################

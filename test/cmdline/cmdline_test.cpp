@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <config.h>
+#include <constant.h>
 #include <misc/files.h>
 #include <misc/util.hpp>
 #include <misc/fatal.h>
@@ -755,6 +756,246 @@ TEST_F(CmdlineTest2, backtrace) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("source %s; 34\n$f()", fileName.c_str()), 0, str));
 
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "shctl", "backtrace"), 0));
+}
+
+struct CmdlineTest3 : public CmdlineTest2 {
+    using Pair = std::pair<std::string, std::string>;
+
+    using ExpectOutput::expect;
+
+    struct Param {
+        std::string workdir;
+        std::function<void()> beforeExec;
+        std::pair<std::string, std::string> before;
+        std::pair<std::string, std::string> after;
+    };
+
+    void expect(Param &&p) {
+        auto builder = CL("import-env PWD; import-env OLDPWD; echo -n $PWD $OLDPWD")
+                .setWorkingDir(p.workdir.c_str())
+                .setBeforeExec([&]{
+                    if(p.beforeExec) {
+                        p.beforeExec();
+                    }
+
+                    // set PWD
+                    if(p.before.first.empty()) {
+                        unsetenv(ENV_PWD);
+                    } else {
+                        setenv(ENV_PWD, p.before.first.c_str(), 1);
+                    }
+
+                    // set OLDPWD
+                    if(p.before.second.empty()) {
+                        unsetenv(ENV_OLDPWD);
+                    } else {
+                        setenv(ENV_OLDPWD, p.before.second.c_str(), 1);
+                    }
+                });
+
+        std::string out = p.after.first;
+        out += " ";
+        out += p.after.second;
+        this->expect(std::move(builder), 0, out);
+    }
+};
+
+TEST_F(CmdlineTest3, pwd) {
+    std::string target = this->getTempDirName();
+    target += "/work/actual";
+    std::string link = this->getTempDirName();
+    link += "/link";
+
+    // create working dir
+    auto builder = CL("mkdir -p %s; ln -s %s ./link", target.c_str(), target.c_str())
+            .setWorkingDir(this->getTempDirName());
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
+
+    // [PWD, OLDWD] is [valid, valid]
+    // [PWD, OLDPWD] is [valid, valid] => [not update, not update]
+    Param p = {
+            .workdir = target,
+            .beforeExec = {},
+            .before = {target, this->getTempDirName()},
+            .after = {target, this->getTempDirName()}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [valid with symlink, valid] => [not update, not update]
+    p = {
+            .workdir = link,
+            .beforeExec = {},
+            .before = {link, this->getTempDirName()},
+            .after = {link, this->getTempDirName()}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [valid, valid with symlink] => [not update, not update]
+    p = {
+            .workdir = target,
+            .beforeExec = {},
+            .before = {target, link},
+            .after = {target, link}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [valid, invalid]
+    // [PWD, OLDPWD] is [valid, not set] => [not update, PWD]
+    p = {
+            .workdir = target,
+            .beforeExec = {},
+            .before = {target, ""},
+            .after = {target, target}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [valid, not dir] => [not update, PWD]
+    p = {
+            .workdir = target,
+            .beforeExec = {},
+            .before = {target, BIN_PATH},
+            .after = {target, target}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [valid, not full path] => [not update, PWD]
+    p = {
+            .workdir = target,
+            .beforeExec = {},
+            .before = {target, "."},
+            .after = {target, target}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [valid with symlink, not set] => [not update, PWD]
+    p = {
+            .workdir = link,
+            .beforeExec = {},
+            .before = {link, ""},
+            .after = {link, link}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [invalid, valid]
+    // [PWD, OLDPWD] is [not set, valid] => [cwd, not update]
+    p = {
+            .workdir = target,
+            .beforeExec = {},
+            .before = {"", this->getTempDirName()},
+            .after = {target, this->getTempDirName()}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [invalid, valid] => [cwd, not update]
+    p = {
+            .workdir = target,
+            .beforeExec = {},
+            .before = {"hgoehgoa", this->getTempDirName()},
+            .after = {target, this->getTempDirName()}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [not full path, valid] => [cwd, not update]
+    p = {
+            .workdir = link,
+            .beforeExec = {},
+            .before = {".", this->getTempDirName()},
+            .after = {target, this->getTempDirName()}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [not full path, valid with symlink] => [cwd, not update]
+    p = {
+            .workdir = this->getTempDirName(),
+            .beforeExec = {},
+            .before = {".", link},
+            .after = {this->getTempDirName(), link}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [not dir, valid] => [cwd, not update]
+    p = {
+            .workdir = target,
+            .beforeExec = {},
+            .before = {BIN_PATH, this->getTempDirName()},
+            .after = {target, this->getTempDirName()}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [invalid, invalid]
+    // [PWD, OLDPWD] is [not set, not set] => [cwd, cwd]
+    p = {
+            .workdir = target,
+            .beforeExec = {},
+            .before = {"", ""},
+            .after = {target, target}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [not dir, not dir] => [cwd, cwd]
+    p = {
+            .workdir = link,
+            .beforeExec = {},
+            .before = {BIN_PATH, BIN_PATH},
+            .after = {target, target}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [not dir, not dir] => [cwd, cwd]
+    p = {
+            .workdir = link,
+            .beforeExec = {},
+            .before = {BIN_PATH, "."},
+            .after = {target, target}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // cwd is not removed
+    // [PWD, OLDPWD] is [valid with symlink, valid with symlink] => [cwd, cwd]
+    p = {
+            .workdir = link,
+            .beforeExec = [&]{ removeDirWithRecursively(link.c_str()); },
+            .before = {link, link},
+            .after = {target, target}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+    // [PWD, OLDPWD] is [valid, valid] => [., not update]
+    p = {
+            .workdir = target,
+            .beforeExec = [&]{ removeDirWithRecursively(target.c_str()); },
+            .before = {target, this->getTempDirName()},
+            .after = {".", this->getTempDirName()}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+
+    builder = CL("mkdir -p %s; ln -s %s ./link", target.c_str(), target.c_str())
+            .setWorkingDir(this->getTempDirName());
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
+
+    // [PWD, OLDPWD] is [valid with symlink, valid with symlink] => [., .]
+    p = {
+            .workdir = link,
+            .beforeExec = [&]{ removeDirWithRecursively(target.c_str()); },
+            .before = {link, link},
+            .after = {".", "."}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
+
+
+    builder = CL("mkdir -p %s", target.c_str())
+            .setWorkingDir(this->getTempDirName());
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
+
+    // [PWD, OLDPWD] is [valid, valid with symlink] => [not update, PWD]
+    p = {
+            .workdir = this->getTempDirName(),
+            .beforeExec = [&]{ removeDirWithRecursively(link.c_str()); },
+            .before = {this->getTempDirName(), link},
+            .after = {this->getTempDirName(), this->getTempDirName()}
+    };
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(p)));
 }
 
 int main(int argc, char **argv) {
