@@ -211,7 +211,11 @@ static constexpr struct {
                 "        -w FILE        check if file is writable\n"
                 "        -x FILE        check if file is executable\n"
                 "        -O FILE        check if file is effectively owned by user\n"
-                "        -G FILE        check if file is effectively owned by group"},
+                "        -G FILE        check if file is effectively owned by group\n"
+                "\n"
+                "        FILE1 -nt FILE2  check if file1 is newer than file2\n"
+                "        FILE1 -ot FILE2  check if file1 is older than file2\n"
+                "        FILE1 -ef FILE2  check if file1 and file2 refer to the same file"},
         {"true", builtin_true, "",
                 "    Always success (exit status is 0)."},
         {"ulimit", builtin_ulimit, "[-H | -S] [-a | -"
@@ -639,12 +643,18 @@ static int builtin_pwd(DSState &state, ArrayObject &argvObj) {
     OP(LE, "-le", <=) \
     OP(GE, "-ge", >=)
 
+#define EACH_FILE_COMP_OP(OP) \
+    OP(NT, "-nt", %) \
+    OP(OT, "-ot", %) \
+    OP(EF, "-ef", %)
+
 
 enum class BinaryOp : unsigned int {
     INVALID,
 #define GEN_ENUM(E, S, O) E,
     EACH_STR_COMP_OP(GEN_ENUM)
     EACH_INT_COMP_OP(GEN_ENUM)
+    EACH_FILE_COMP_OP(GEN_ENUM)
 #undef GEN_ENUM
 };
 
@@ -656,6 +666,7 @@ static BinaryOp resolveBinaryOp(StringRef opStr) {
 #define GEN_ENTRY(E, S, O) {S, BinaryOp::E},
             EACH_INT_COMP_OP(GEN_ENTRY)
             EACH_STR_COMP_OP(GEN_ENTRY)
+            EACH_FILE_COMP_OP(GEN_ENTRY)
 #undef GEN_ENTRY
     };
     for(auto &e : table) {
@@ -689,6 +700,39 @@ static bool compareInt(int64_t x, BinaryOp op, int64_t y) {
         break;
     }
     return false;
+}
+
+static bool operator<(const timespec &left, const timespec &right) {
+    if(left.tv_sec == right.tv_sec) {
+        return left.tv_nsec < right.tv_nsec;
+    }
+    return left.tv_sec < right.tv_sec;
+}
+
+static bool compareFile(const DSValue &left, BinaryOp op, const DSValue &right) {
+    auto x = left.asStrRef();
+    auto y = right.asStrRef();
+
+    struct stat st1;
+    struct stat st2;
+
+    if(stat(x.data(), &st1) != 0) {
+        return false;
+    }
+    if(stat(y.data(), &st2) != 0) {
+        return false;
+    }
+
+    switch(op) {
+    case BinaryOp::NT:
+        return st2.st_mtim < st1.st_mtim;
+    case BinaryOp::OT:
+        return st1.st_mtim < st2.st_mtim;
+    case BinaryOp::EF:
+        return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
+    default:
+        return false;
+    }
 }
 
 static int parseFD(const char *value) {
@@ -853,6 +897,10 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             }
 
             result = compareInt(n1, opKind, n2);
+            break;
+        }
+        EACH_FILE_COMP_OP(GEN_CASE) {
+            result = compareFile(left, opKind, right);
             break;
         }
 #undef GEN_CASE

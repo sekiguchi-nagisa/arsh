@@ -192,6 +192,83 @@ assert($? == 0)
 
 rm -f $pipe
 
+# binary file op
+## compare file
+test hfuerhfueria -ef fhaerfhure
+assert $? == 1
+
+test . -ef .
+assert $? == 0
+
+test . -ef fherufhiae
+assert $? == 1
+
+test fhurefe -ef .
+assert $? == 1
+
+test . -ef /dev/null
+assert $? == 1
+
+assert "/dev/stdin" != "/dev/stdout".realpath()!
+test /dev/stdin -ef ${"/dev/stdout".realpath()!}
+assert $? == 0
+
+## compare timestamp
+let AAA = "$tmp_dir/AAA"
+let BBB = "$tmp_dir/BBB"
+
+echo hello >> $AAA
+assert test -f $AAA
+touch $AAA
+sync
+
+sleep 1
+
+echo world >> $BBB
+assert test -f $BBB
+touch $BBB
+echo hgeoho >> $BBB
+sync
+
+### newer timestamp
+test hfarieo -nt fhnreufhreui
+assert $? == 1
+
+test $AAA -nt fhnreufhreui
+assert $? == 1
+
+test fhurehfe -nt $AAA
+assert $? == 1
+
+test $AAA -nt $AAA
+assert $? == 1 : "$(stat $AAA $BBB)"
+
+test $AAA -nt $BBB
+assert $? == 1 : "$(stat $AAA $BBB)"
+
+test $BBB -nt $AAA
+assert $? == 0 : "$(stat $AAA $BBB)"
+
+### older timestamp
+test hfarieo -ot fhnreufhreui
+assert $? == 1
+
+test $AAA -ot fhnreufhreui
+assert $? == 1
+
+test fhurehfe -ot $BBB
+assert $? == 1
+
+test $BBB -ot $BBB
+assert $? == 1 : "$(stat $AAA $BBB)"
+
+test $AAA -ot $BBB
+assert $? == 0 : "$(stat $AAA $BBB)"
+
+test $BBB -ot $AAA
+assert $? == 1 : "$(stat $AAA $BBB)"
+
+
 # invalid option
 test 34 -h 34
 assert($? == 2)
