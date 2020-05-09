@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <pwd.h>
+#include <libgen.h>
 
 #include <cstdlib>
 #include <cerrno>
@@ -27,6 +27,7 @@
 #include "redir.h"
 #include "misc/files.h"
 #include "misc/glob.hpp"
+#include "misc/num_util.hpp"
 
 // #####################
 // ##     DSState     ##
@@ -36,23 +37,82 @@ VMEvent DSState::eventDesc{};
 
 SigSet DSState::pendingSigSet;
 
-static std::string initLogicalWorkingDir() {
-    const char *dir = getenv(ENV_PWD);
-    if(dir == nullptr || !S_ISDIR(getStMode(dir))) {
-        auto path = getCWD();
-        std::string str = path ? path.get() : "";
-        return str;
+/**
+ * if environmental variable SHLVL dose not exist, set 0.
+ */
+static unsigned int getShellLevel() {
+    char *shlvl = getenv(ENV_SHLVL);
+    unsigned int level = 0;
+    if(shlvl != nullptr) {
+        auto pair = convertToNum<int64_t>(shlvl);
+        if(!pair.second) {
+            level = 0;
+        } else {
+            level = pair.first;
+        }
     }
-    if(dir[0] == '/') {
-        return std::string(dir);
+    return level;
+}
+
+static unsigned int originalShellLevel() {
+    static unsigned int level = getShellLevel();
+    return level;
+}
+
+static void setPWDs() {
+    auto v = getCWD();
+    const char *cwd = v ? v.get() : ".";
+
+    const char *pwd = getenv(ENV_PWD);
+    if(strcmp(cwd, ".") == 0 || !pwd || *pwd != '/' || !isSameFile(pwd, cwd)) {
+        setenv(ENV_PWD, cwd, 1);
+        pwd = cwd;
     }
-    return expandDots(nullptr, dir);
+
+    const char *oldpwd = getenv(ENV_OLDPWD);
+    if(!oldpwd || *oldpwd != '/' || !S_ISDIR(getStMode(oldpwd))) {
+        setenv(ENV_OLDPWD, pwd, 1);
+    }
+}
+
+static void initEnv() {
+    // set locale
+    setlocale(LC_ALL, "");
+    setlocale(LC_MESSAGES, "C");
+
+    // set environmental variables
+
+    // update shell level
+    setenv(ENV_SHLVL, std::to_string(originalShellLevel() + 1).c_str(), 1);
+
+    // set HOME
+    struct passwd *pw = getpwuid(getuid());
+    if(pw == nullptr) {
+        fatal_perror("getpwuid failed\n");
+    }
+    setenv(ENV_HOME, pw->pw_dir, 0);
+
+    // set LOGNAME
+    setenv(ENV_LOGNAME, pw->pw_name, 0);
+
+    // set USER
+    setenv(ENV_USER, pw->pw_name, 0);
+
+    // set PWD/OLDPWD
+    setPWDs();
 }
 
 DSState::DSState() :
         emptyFDObj(DSValue::create<UnixFdObject>(-1)),
-        logicalWorkingDir(initLogicalWorkingDir()),
-        baseTime(std::chrono::system_clock::now()) { }
+        baseTime(std::chrono::system_clock::now()) {
+    // init envs
+    initEnv();
+    const char *pwd = getenv(ENV_PWD);
+    assert(pwd);
+    if(*pwd == '/') {
+        this->logicalWorkingDir = expandDots(nullptr, pwd);
+    }
+}
 
 
 void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) const {
