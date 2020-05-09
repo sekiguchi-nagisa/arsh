@@ -383,15 +383,29 @@ void expandTilde(std::string &str) {
             expanded = pw->pw_dir;
         }
     } else if(expanded == "~+") {
+        /**
+         * if PWD indicates valid dir, use PWD.
+         * if PWD is invalid, use cwd
+         * if cwd is removed, not expand
+         */
         auto cwd = getCWD();
         if(cwd) {
-            expanded = cwd.get();
+            const char *pwd = getenv(ENV_PWD);
+            if(pwd && *pwd == '/' && isSameFile(pwd, cwd.get())) {
+                expanded = pwd;
+            } else {
+                expanded = cwd.get();
+            }
         }
     } else if(expanded == "~-") {
-        const char *env = getenv(ENV_OLDPWD);
-        if(env != nullptr) {
-            expanded = env;
-        }
+        /**
+         * if OLDPWD indicates valid dir, use OLDPWD
+         * if OLDPWD is invalid, not expand
+         */
+         const char *oldpwd = getenv(ENV_OLDPWD);
+         if(oldpwd && *oldpwd == '/' && S_ISDIR(getStMode(oldpwd))) {
+             expanded = oldpwd;
+         }
     } else {
         struct passwd *pw = getpwnam(expanded.c_str() + 1);
         if(pw != nullptr) {

@@ -257,7 +257,17 @@ assert($PWD + "/huge" == "$(echo ~+/huge)")
 assert($PWD + "/huge" == "$(echo ~+/"huge")")
 assert("~+e" == "$(echo ~+e)")
 assert("~+e" == "$(echo ~+'e')")
-var pwd = $PWD
+
+let pwd = $PWD
+$PWD='.'
+assert $pwd == "$(echo ~+)"
+
+$PWD='frieja'
+assert $pwd == "$(echo ~+)"
+
+$PWD='/'
+assert $pwd == "$(echo ~+)"
+
 unsetenv PWD
 assert $pwd == "$(echo ~+)"
 $PWD = $pwd
@@ -270,10 +280,27 @@ assert($OLDPWD + "/we" == "$(echo ~-/we)")
 assert($OLDPWD + "/false" == "$(echo ~-/$false)")
 assert("~-yfr" == "$(echo ~-yfr)")
 assert("~-true" == "$(echo ~-$true)")
-var oldpwd = $OLDPWD
+
+let oldpwd = $OLDPWD
+$OLDPWD = 'hgiraheo'
+assert "~-" == "$(echo ~-)"
+
+$OLDPWD = '.'
+assert "~-" == "$(echo ~-)"
+
 unsetenv OLDPWD
 assert "~-" == "$(echo ~-)"
 $OLDPWD = $oldpwd
+
+## expand to PWD in removed cwd
+let tmp_dir = "$(mktemp -d 2> /dev/null || mktemp -d -t lfreop)"
+assert !$tmp_dir.empty()
+cd $tmp_dir
+assert $tmp_dir == "$(echo ~+)"
+rm -rf $tmp_dir
+assert '~+' == "$(echo ~+)"
+
+cd $pwd
 
 ## expand to user home
 if ! $OSTYPE.startsWith("CYGWIN") {
