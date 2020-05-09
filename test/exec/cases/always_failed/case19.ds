@@ -1,0 +1,6 @@
+
+#$test($result = 'type', $lineNum = 5, $errorKind = 'Constant', $status = 1)
+
+case $PID  {
+!(34 + 43) => 34
+}

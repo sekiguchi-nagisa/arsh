@@ -185,10 +185,6 @@ protected:
 
     std::unique_ptr<ArmNode> parse_armExpression();
 
-    std::unique_ptr<Node> parse_patternExpression();
-
-    std::unique_ptr<Node> parse_primaryPattern();
-
     std::unique_ptr<Node> parse_forExpression();
 
     std::unique_ptr<Node> parse_forInit();

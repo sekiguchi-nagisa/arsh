@@ -223,17 +223,6 @@
     OP(SPECIAL_NAME_WITH_BRACKET) \
     EACH_LA_interpolation(OP)
 
-#define EACH_LA_primaryPattern(OP) \
-    OP(INT_LITERAL) \
-    OP(SIGNAL_LITERAL) \
-    OP(OPEN_DQUOTE) \
-    OP(STRING_LITERAL) \
-    OP(REGEX_LITERAL)
-
-#define EACH_LA_pattern(OP) \
-    OP(MINUS) \
-    EACH_LA_primaryPattern(OP)
-
 #define EACH_LA_primary(OP) \
     OP(COMMAND) \
     OP(NEW) \

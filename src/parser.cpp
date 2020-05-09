@@ -579,10 +579,11 @@ std::unique_ptr<ArmNode> Parser::parse_armExpression() {
         this->consume();    // ELSE
         armNode = std::make_unique<ArmNode>(pos);
     } else {
-        armNode = std::make_unique<ArmNode>(TRY(this->parse_patternExpression()));
+        auto base = getPrecedence(PIPE) + 1;
+        armNode = std::make_unique<ArmNode>(TRY(this->parse_expression(base)));
         while(CUR_KIND() == PIPE) {
             this->expect(PIPE); // always success
-            armNode->addPatternNode(TRY(this->parse_patternExpression()));
+            armNode->addPatternNode(TRY(this->parse_expression(base)));
         }
     }
 
@@ -591,47 +592,6 @@ std::unique_ptr<ArmNode> Parser::parse_armExpression() {
     TRY(this->parse_statementEnd());
 
     return armNode;
-}
-
-std::unique_ptr<Node> Parser::parse_patternExpression() {
-    Token unaryToken = {0,0};
-    TokenKind unaryOp = EOS;
-
-    if(CUR_KIND() == MINUS) {
-        unaryToken = this->curToken;
-        unaryOp = this->scan(); // MINUS
-    }
-
-    std::unique_ptr<Node> node;
-    switch(CUR_KIND()) {
-    EACH_LA_primaryPattern(GEN_LA_CASE)
-        node = TRY(this->parse_primaryPattern());
-        break;
-    default:
-        E_ALTER(EACH_LA_pattern(GEN_LA_ALTER));
-    }
-
-    if(unaryOp != EOS) {
-        node = std::make_unique<UnaryOpNode>(unaryOp, unaryToken, std::move(node));
-    }
-    return node;
-}
-
-std::unique_ptr<Node> Parser::parse_primaryPattern() {
-    switch(CUR_KIND()) {
-    case INT_LITERAL: {
-        auto pair = TRY(this->expectNum(INT_LITERAL, &Lexer::toInt64));
-        return NumberNode::newInt(pair.first, pair.second);
-    }
-    case SIGNAL_LITERAL:
-        return this->parse_signalLiteral();
-    case STRING_LITERAL:
-        return this->parse_stringLiteral();
-    case REGEX_LITERAL:
-        return this->parse_regexLiteral();
-    default:
-        return this->parse_stringExpression();
-    }
 }
 
 std::unique_ptr<Node> Parser::parse_forExpression() {

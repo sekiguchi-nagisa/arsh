@@ -1,0 +1,7 @@
+
+#$test($result = 'type', $lineNum = 6, $errorKind = 'Constant', $status = 1)
+
+var a = "23".toInt()
+case $PID as String {
+"${1234234}" => 34
+}

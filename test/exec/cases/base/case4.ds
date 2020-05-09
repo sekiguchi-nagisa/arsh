@@ -1,8 +1,8 @@
 
 function f($s : Int!) : String {
     return case $s {
-        0|1|2|3|4|5 => { return $s! as String; }
-        6|7|8|9|10 => { return (-$s!) as String; }
+        0|1|2|!!3|4|5 => { return $s! as String; }
+        6|7|(8)|9|10 => { return (-$s!) as String; }
         else => { return "nothing"; }
     }
 }

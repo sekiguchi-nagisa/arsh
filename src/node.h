@@ -34,8 +34,6 @@
 
 namespace ydsh {
 
-class SymbolTable;
-class ModType;
 struct NodeVisitor;
 class NodeDumper;
 
@@ -949,6 +947,10 @@ public:
 
     Node &getExprNode() const {
         return *this->exprNode;
+    }
+
+    std::unique_ptr<Node> &refExprNode() {
+        return this->exprNode;
     }
 
     void setHandle(const MethodHandle *h) {
@@ -2224,6 +2226,8 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
+class ModType;
+
 class SourceNode : public WithRtti<Node, NodeKind::Source> {
 private:
     Token pathToken;
@@ -2521,6 +2525,8 @@ struct BaseVisitor : public NodeVisitor {
     void visitSourceListNode(SourceListNode &node) override { this->visitDefault(node); }
     void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
 };
+
+class SymbolTable;
 
 class NodeDumper {
 private:
