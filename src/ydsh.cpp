@@ -587,15 +587,12 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     return evalScript(*st, Lexer(sourceName, std::move(buf), std::move(scriptDir)), e);
 }
 
-static void appendAsEscaped(std::string &line, const char *path) {  //FIXME: escape newline
+static void appendAsEscaped(std::string &line, const char *path) {
+    line += '"';
     while(*path) {
         int ch = *(path++);
         switch(ch) {
-        case ' ': case '\t': case '\r': case '\n':
-        case '\\': case ';': case '\'': case '"':
-        case '`': case '|': case '&': case '<':
-        case '>': case '(': case ')': case '$':
-        case '#': case '*': case '?':
+        case '"': case '$': case '\\':
             line +='\\';
             break;
         default:
@@ -603,6 +600,7 @@ static void appendAsEscaped(std::string &line, const char *path) {  //FIXME: esc
         }
         line += static_cast<char>(ch);
     }
+    line += '"';
 }
 
 int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e) {
