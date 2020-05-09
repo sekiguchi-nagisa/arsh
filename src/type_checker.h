@@ -456,12 +456,6 @@ protected:
     bool applyConstFolding(std::unique_ptr<Node> &node) const;
 
     /**
-     * if node have non-constant expressions, throw error.
-     * @param node
-     */
-    void checkSourcePath(CmdArgNode &node);
-
-    /**
      * apply constant folding and generate source path list.
      * if cannot resolve path, throw error.
      * @param node

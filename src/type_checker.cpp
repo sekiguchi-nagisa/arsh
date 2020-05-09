@@ -1449,14 +1449,6 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     node.setType(this->symbolTable.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
 }
 
-void TypeChecker::checkSourcePath(CmdArgNode &node) {
-    for(auto &e : node.getSegmentNodes()) {
-        if(!isa<StringNode>(*e)) {
-            RAISE_TC_ERROR(Constant, *e);
-        }
-    }
-}
-
 void TypeChecker::resolvePathList(SourceListNode &node) {
     std::vector<std::string> ret;
     if(node.getPathNode().getGlobPathSize() == 0) {
@@ -1482,7 +1474,9 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
         RAISE_TC_ERROR(OutsideToplevel, node);
     }
     this->checkType(this->symbolTable.get(TYPE::String), node.getPathNode());
-    this->checkSourcePath(node.getPathNode());
+    for(auto &e : node.getPathNode().refSegmentNodes()) {
+        this->applyConstFolding(e);
+    }
     this->resolvePathList(node);
     node.setType(this->symbolTable.get(TYPE::Void));
 }
