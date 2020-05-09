@@ -308,9 +308,15 @@ private:
 public:
     ModuleCommon() = default;
 
+    /**
+     *
+     * @param name
+     * @param scriptDir
+     * may be null
+     */
     ModuleCommon(const std::string &name, const char *scriptDir) :
             scriptName(DSValue::createStr(name)),
-            scriptDir(DSValue::createStr(scriptDir)) {}
+            scriptDir(DSValue::createStr(scriptDir ? scriptDir : "")) {}
 
     DSValue getScriptName() const {
         return this->scriptName;

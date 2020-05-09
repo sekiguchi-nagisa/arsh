@@ -32,6 +32,9 @@ const char *toModeName(LexerMode mode);
 
 class Lexer : public ydsh::LexerBase {
 private:
+    /**
+     * may be null
+     */
     CStrPtr scriptDir;
 
     LexerMode curMode{yycSTMT};
@@ -59,6 +62,11 @@ public:
 
     ~Lexer() = default;
 
+    /**
+     *
+     * @return
+     * may be null
+     */
     const char *getScriptDir() const {
         return this->scriptDir.get();
     }

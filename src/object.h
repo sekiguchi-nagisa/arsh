@@ -304,6 +304,7 @@ private:
      * for small string construction
      */
     DSValue(const char *data, unsigned int size) noexcept {
+        assert(data);
         assert(size <= smallStrSize(DSValueKind::SSTR14));
         this->str.kind = toSmallStrKind(size);
         memcpy(this->str.value, data, size);
@@ -549,6 +550,7 @@ public:
     }
 
     static DSValue createStr(const char *str) {
+        assert(str);
         return createStr(StringRef(str));
     }
 

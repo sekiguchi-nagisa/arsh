@@ -219,6 +219,7 @@ public:
             env = "/tmp";
         }
         auto ptr = getRealpath(env);
+        assert(ptr);
         std::string name = ptr.get();
         name += "/test_tmp_dirXXXXXX";
         if(!mkdtemp(&name[0])) {

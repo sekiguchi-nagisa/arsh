@@ -159,6 +159,11 @@ public:
     void teardownASTDump();
 
 private:
+    /**
+     *
+     * @return
+     * may be null
+     */
     const char *getCurScriptDir() const {
         return (this->contexts.empty() ? this->lexer : this->contexts.back()->lexer).getScriptDir();
     }
