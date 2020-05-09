@@ -166,11 +166,10 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message);
  *
  * @param st
  * @param useLogical
- * @param buf
  * @return
  * if has error, return null and set errno.
  */
-const char *getWorkingDir(const DSState &st, bool useLogical, std::string &buf);
+CStrPtr getWorkingDir(const DSState &st, bool useLogical);
 
 /**
  * change current working directory and update OLDPWD, PWD.

@@ -182,20 +182,14 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
     raiseError(st, TYPE::SystemError, std::move(str));
 }
 
-const char *getWorkingDir(const DSState &st, bool useLogical, std::string &buf) {
+CStrPtr getWorkingDir(const DSState &st, bool useLogical) {
     if(useLogical) {
         if(!S_ISDIR(getStMode(st.logicalWorkingDir.c_str()))) {
             return nullptr;
         }
-        buf = st.logicalWorkingDir;
-    } else {
-        auto ptr = getCWD();
-        if(ptr == nullptr) {
-            return nullptr;
-        }
-        buf = ptr.get();
+        return CStrPtr(strdup(st.logicalWorkingDir.c_str()));
     }
-    return buf.c_str();
+    return getCWD();
 }
 
 bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {

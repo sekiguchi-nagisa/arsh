@@ -617,13 +617,12 @@ static int builtin_pwd(DSState &state, ArrayObject &argvObj) {
         }
     }
 
-    std::string buf;
-    const char *ptr = getWorkingDir(state, useLogical, buf);
-    if(ptr == nullptr) {
+    auto workdir = getWorkingDir(state, useLogical);
+    if(!workdir) {
         PERROR(argvObj, ".");
         return 1;
     }
-    printf("%s\n", ptr);
+    printf("%s\n", workdir.get());
     return 0;
 }
 
