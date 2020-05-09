@@ -118,7 +118,7 @@ void ErrorReporter::printErrorLine(const ydsh::Lexer &lexer, ydsh::Token token) 
 
 FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel) :
         lexer(std::move(lexer)), mode(mode),
-        parser(this->lexer), checker(symbolTable, toplevel){}
+        parser(this->lexer), checker(symbolTable, toplevel, &this->lexer){}
 
 void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
         Token errorToken, const std::string &message, DSError *dsError) const {
@@ -311,6 +311,7 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
     TokenKind kind = this->contexts.back()->lexer.nextToken(token);
     TokenKind ckind{};
     this->parser.restoreLexicalState(this->contexts.back()->lexer, kind, token, ckind);
+    this->checker.setLexer(this->contexts.back()->lexer);
 
     if(this->uastDumper) {
         this->uastDumper->enterModule(fullPath);

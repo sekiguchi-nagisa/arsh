@@ -42,7 +42,6 @@ namespace ydsh {
 enum class BuiltinVarOffset : unsigned int {
     SCRIPT_NAME,    // SCRIPT_NAME
     SCRIPT_DIR,     // SCRIPT_DIR
-    VERSION,        // YDSH_VERSION
     REPLY,          // REPLY (for read command)
     REPLY_VAR,      // reply (fo read command)
     PID,            // PID (current process)

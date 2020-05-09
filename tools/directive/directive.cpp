@@ -140,7 +140,7 @@ static bool checkDirectiveName(ApplyNode &node) {
 }
 
 DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &symbolTable) :
-        TypeChecker(symbolTable, false), sourceName(sourceName) {
+        TypeChecker(symbolTable, false, nullptr), sourceName(sourceName) {
     this->setVarName("0", this->symbolTable.get(TYPE::String));
 }
 

@@ -51,6 +51,14 @@ constexpr const char *VAR_SIG_IGN = "SIG_IGN";
 constexpr const char *VAR_TERM_HOOK = "TERM_HOOK";
 constexpr const char *VAR_COMP_HOOK = "COMP_HOOK";
 
+// used in constant expression
+constexpr const char *CVAR_SCRIPT_DIR = "SCRIPT_DIR";
+constexpr const char *CVAR_SCRIPT_NAME = "SCRIPT_NAME";
+constexpr const char *CVAR_VERSION = "YDSH_VERSION";
+constexpr const char *CVAR_CONFIG_DIR = "CONFIG_DIR";
+constexpr const char *CVAR_OSTYPE = "OSTYPE";
+constexpr const char *CVAR_MACHTYPE = "MACHTYPE";
+
 // =====  magic method  =====
 
 // constructor

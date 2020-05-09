@@ -167,26 +167,15 @@ static void initBuiltinVar(DSState &state) {
      * dummy object.
      * must be String_Object
      */
-    bindVariable(state, "SCRIPT_NAME", DSValue::createStr(),
+    bindVariable(state, CVAR_SCRIPT_NAME, DSValue::createStr(),
                  FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
 
     /**
      * dummy object
      * must be String_Object
      */
-    bindVariable(state, "SCRIPT_DIR", DSValue::createStr(),
+    bindVariable(state, CVAR_SCRIPT_DIR, DSValue::createStr(),
             FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
-
-#define XSTR(V) #V
-#define STR(V) XSTR(V)
-    /**
-     * for version detection
-     * must be String_Object
-     */
-    bindVariable(state, "YDSH_VERSION", DSValue::createStr(
-            STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "." STR(X_INFO_PATCH_VERSION)));
-#undef XSTR
-#undef STR
 
     /**
      * default variable for read command.
@@ -277,6 +266,11 @@ static void initBuiltinVar(DSState &state) {
 
 
     // set builtin variables
+    /**
+     * for version detection
+     * must be String_Object
+     */
+    bindVariable(state, CVAR_VERSION, DSValue::createStr(X_INFO_VERSION_CORE));
 
     /**
      * uid of shell
@@ -298,17 +292,17 @@ static void initBuiltinVar(DSState &state) {
     /**
      * must be String_Object
      */
-    bindVariable(state, "OSTYPE", DSValue::createStr(name.sysname));
+    bindVariable(state, CVAR_OSTYPE, DSValue::createStr(name.sysname));
 
     /**
      * must be String_Object
      */
-    bindVariable(state, "MACHTYPE", DSValue::createStr(name.machine));
+    bindVariable(state, CVAR_MACHTYPE, DSValue::createStr(name.machine));
 
     /**
      * must be String_Object
      */
-    bindVariable(state, "CONFIG_DIR", DSValue::createStr(SYSTEM_CONFIG_DIR));
+    bindVariable(state, CVAR_CONFIG_DIR, DSValue::createStr(SYSTEM_CONFIG_DIR));
 
     /**
      * dummy object for random number

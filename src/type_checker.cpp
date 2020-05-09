@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <sys/utsname.h>
+
 #include <vector>
 
 #include "constant.h"
@@ -1018,6 +1020,21 @@ DSType& TypeChecker::resolveCommonSuperType(const std::vector<DSType *> &types) 
     return this->symbolTable.get(TYPE::Void);
 }
 
+static auto initConstVarMap() {
+    struct utsname name{};
+    if(uname(&name) == -1) {
+        fatal_perror("cannot get utsname");
+    }
+
+    CStringHashMap<std::string> map = {
+            {CVAR_VERSION, X_INFO_VERSION_CORE},
+            {CVAR_CONFIG_DIR, SYSTEM_CONFIG_DIR},
+            {CVAR_OSTYPE, name.sysname},
+            {CVAR_MACHTYPE, name.machine},
+    };
+    return map;
+}
+
 bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) const {
     switch(node->getNodeKind()) {
     case NodeKind::String:
@@ -1073,6 +1090,32 @@ bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) const {
             return true;
         }
         break;
+    }
+    case NodeKind::Var: {
+        assert(this->lexer);
+        static const auto constMap = initConstVarMap();
+        auto &varNode = cast<VarNode>(*node);
+        Token token = varNode.getToken();
+        std::string value;
+        if(hasFlag(varNode.attr(), FieldAttribute::MOD_CONST)) {
+            if(varNode.getVarName() == CVAR_SCRIPT_NAME) {
+                value = this->lexer->getSourceName();
+            } else if(varNode.getVarName() == CVAR_SCRIPT_DIR) {
+                value = this->lexer->getScriptDir();
+            } else {
+                break;
+            }
+        } else {
+            auto iter = constMap.find(varNode.getVarName().c_str());
+            if(iter == constMap.end()) {
+                break;
+            }
+            value = iter->second;
+        }
+        assert(varNode.getType().is(TYPE::String));
+        node = std::make_unique<StringNode>(token, std::move(value));
+        node->setType(this->symbolTable.get(TYPE::String));
+        return true;
     }
     default:
         break;

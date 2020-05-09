@@ -1,0 +1,20 @@
+
+function f($s : String) : String! {
+    return case $s {
+        $OSTYPE => { return "$OSTYPE-1"; }
+        "$MACHTYPE" => { return "$MACHTYPE-1"; }
+        "${CONFIG_DIR}" => { return "$CONFIG_DIR-1"; }
+        "${$YDSH_VERSION}" => { return "$YDSH_VERSION-1"; }
+        $SCRIPT_DIR => { return "$SCRIPT_DIR-1" }
+        $SCRIPT_NAME => { return "${SCRIPT_NAME}-1" }
+        else => { return new String!(); }
+    }
+}
+
+assert $f($OSTYPE)! == "$OSTYPE-1"
+assert $f($MACHTYPE)! == "$MACHTYPE-1"
+assert $f($YDSH_VERSION)! == "$YDSH_VERSION-1"
+assert $f($CONFIG_DIR)! == "$CONFIG_DIR-1"
+assert $f($SCRIPT_DIR)! == "$SCRIPT_DIR-1"
+assert $f($SCRIPT_NAME)! == "$SCRIPT_NAME-1"
+assert !$f("hello")

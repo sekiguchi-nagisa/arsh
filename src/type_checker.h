@@ -18,6 +18,7 @@
 #define YDSH_TYPE_CHECKER_H
 
 #include "node.h"
+#include "lexer.h"
 #include "symbol_table.h"
 #include "tcerror.h"
 #include "misc/buffer.hpp"
@@ -166,15 +167,17 @@ protected:
 
     int visitingDepth{0};
 
+    bool toplevelPrinting;
+
     FlowContext fctx;
 
     BreakGather breakGather;
 
-    bool toplevelPrinting;
+    ObserverPtr<const Lexer> lexer;
 
 public:
-    TypeChecker(SymbolTable &symbolTable, bool toplevelPrinting) :
-            symbolTable(symbolTable), toplevelPrinting(toplevelPrinting) { }
+    TypeChecker(SymbolTable &symbolTable, bool toplevelPrinting, const Lexer *lex) :
+            symbolTable(symbolTable), toplevelPrinting(toplevelPrinting), lexer(lex) { }
 
     ~TypeChecker() override = default;
 
@@ -182,6 +185,10 @@ public:
 
     SymbolTable &getSymbolTable() {
         return this->symbolTable;
+    }
+
+    void setLexer(const Lexer &lex) {
+        this->lexer.reset(&lex);
     }
 
 protected:

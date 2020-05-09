@@ -108,7 +108,7 @@ public:
     TypeChecker checker;
 
 public:
-    TypeTest() : checker(this->pool, false) {}
+    TypeTest() : checker(this->pool, false, nullptr) {}
 
     virtual void assertTypeName(const char *typeName, DSType &type) {
         std::string name(typeName);
