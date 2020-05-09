@@ -202,6 +202,15 @@ DSValue getSignalHandler(const DSState &st, int sigNum);
  */
 void setJobControlSignalSetting(DSState &st, bool set);
 
+/**
+ * expand dot '.' '..'
+ * @param basePath
+ * may be null. must be full path.
+ * @param path
+ * may be null
+ * @return
+ * if expansion failed, return empty string
+ */
 std::string expandDots(const char *basePath, const char *path);
 
 void expandTilde(std::string &str);

@@ -332,13 +332,14 @@ std::string expandDots(const char *basePath, const char *path) {
 
     // fill resolvedPathStack
     if(!pathStack.empty() && pathStack.front() != "/") {
-        if(basePath != nullptr && *basePath != '\0') {
+        if(basePath != nullptr && *basePath == '/') {
             resolvedPathStack = createPathStack(basePath);
         } else {
             auto ptr = getCWD();
-            if(ptr) {
-                resolvedPathStack = createPathStack(ptr.get());
+            if(!ptr) {
+                return str;
             }
+            resolvedPathStack = createPathStack(ptr.get());
         }
     }
 
