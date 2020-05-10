@@ -312,11 +312,10 @@ public:
      *
      * @param name
      * @param scriptDir
-     * may be null
      */
     ModuleCommon(const std::string &name, const char *scriptDir) :
             scriptName(DSValue::createStr(name)),
-            scriptDir(DSValue::createStr(scriptDir ? scriptDir : "")) {}
+            scriptDir(DSValue::createStr(scriptDir)) {}
 
     DSValue getScriptName() const {
         return this->scriptName;
@@ -557,6 +556,7 @@ private:
             const MethodHandle &matchHandle, const Label &mergeLabel);
 
     void initToplevelCodeBuilder(const Lexer &lex, unsigned short localVarNum) {
+        assert(lex.getScriptDir());
         this->commons.emplace_back(lex.getSourceName(), lex.getScriptDir());
         this->initCodeBuilder(CodeKind::TOPLEVEL, lex, localVarNum);
     }

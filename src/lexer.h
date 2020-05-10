@@ -32,9 +32,6 @@ const char *toModeName(LexerMode mode);
 
 class Lexer : public ydsh::LexerBase {
 private:
-    /**
-     * may be null
-     */
     CStrPtr scriptDir;
 
     LexerMode curMode{yycSTMT};
@@ -58,14 +55,18 @@ public:
     Lexer() = default;
 
     Lexer(const char *sourceName, ByteBuffer &&buf, CStrPtr &&scriptDir) :
-            LexerBase(sourceName, std::move(buf)), scriptDir(std::move(scriptDir)) {}
+            LexerBase(sourceName, std::move(buf)), scriptDir(std::move(scriptDir)) {
+        if(!this->scriptDir || *this->scriptDir == '\0') {
+            this->scriptDir.reset(strdup("."));
+        }
+    }
 
     ~Lexer() = default;
 
     /**
      *
      * @return
-     * may be null
+     * not null
      */
     const char *getScriptDir() const {
         return this->scriptDir.get();

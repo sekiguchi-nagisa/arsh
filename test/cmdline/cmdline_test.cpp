@@ -758,6 +758,15 @@ TEST_F(CmdlineTest2, backtrace) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "shctl", "backtrace"), 0));
 }
 
+TEST_F(CmdlineTest2, nocwd) {
+    auto builder = CL("assert '.' == $SCRIPT_DIR")
+            .setWorkingDir(this->getTempDirName())
+            .setBeforeExec([&]{
+                removeDirWithRecursively(this->getTempDirName());
+            });
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
+}
+
 struct CmdlineTest3 : public CmdlineTest2 {
     using Pair = std::pair<std::string, std::string>;
 

@@ -113,6 +113,10 @@ inline std::vector<std::string> getFileList(const char *dirPath, bool recursive 
 }
 
 inline void removeDirWithRecursively(const char *currentDir) {
+    if(!S_ISDIR(getStMode(currentDir))) {
+        return;
+    }
+
     DIR *dir = opendir(currentDir);
     if(dir == nullptr) {
         fatal_perror("cannot open dir: %s", currentDir);

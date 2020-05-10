@@ -599,9 +599,7 @@ static void appendAsEscaped(std::string &line, const char *path) {
 
 int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e) {
     CStrPtr scriptDir;
-    if(hasFlag(option, DS_MOD_FULLPATH)) {
-        scriptDir.reset(strdup(""));
-    } else {
+    if(!hasFlag(option, DS_MOD_FULLPATH)) {
         scriptDir = getCWD();
     }
 
