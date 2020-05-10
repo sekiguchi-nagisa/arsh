@@ -1519,6 +1519,13 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     this->checkType(this->symbolTable.get(TYPE::String), node.getPathNode());
     for(auto &e : node.getPathNode().refSegmentNodes()) {
         this->applyConstFolding(e);
+        assert(isa<StringNode>(*e) || isa<WildCardNode>(*e));
+        if(isa<StringNode>(*e)) {
+            auto ref = StringRef(cast<StringNode>(*e).getValue());
+            if(ref.find(StringRef("\0",  1)) != StringRef::npos) {
+                RAISE_TC_ERROR(NullInPath, node.getPathNode());
+            }
+        }
     }
     this->resolvePathList(node);
     node.setType(this->symbolTable.get(TYPE::Void));

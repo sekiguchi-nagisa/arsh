@@ -84,6 +84,7 @@ DEFINE_TCError(MeaninglessTry , "meaningless try block"                         
 DEFINE_TCError(LocalLimit     , "local variable length reaches limit"               );
 DEFINE_TCError(PipeLimit      , "pipeline length reaches limit"                     );
 DEFINE_TCError(GlobLimit      , "glob path fragment length reaches limit"           );
+DEFINE_TCError(NullInPath     , "found null characters in source path"              );
 DEFINE_TCError(Constant       , "must be constant expression"                       );
 DEFINE_TCError(DupPattern     , "duplicated pattern"                                );
 DEFINE_TCError(NeedPattern    , "require at least one pattern"                      );
