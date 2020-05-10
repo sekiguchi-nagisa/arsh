@@ -981,12 +981,11 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
     GlobIter end(state.stack.peek());
 
     // check if glob path fragments have null character
-    StringRef nulRef("\0", 1);
     for(unsigned int i = 0; i < size; i++) {
         auto &v = state.stack.peekByOffset(size - i);
         if(v.hasStrRef()) {
             auto ref = v.asStrRef();
-            if(ref.find(nulRef) != StringRef::npos) {
+            if(ref.find(nullStrRef) != StringRef::npos) {
                 raiseGlobbingError(state, state.stack, size, "glob pattern has null characters");
                 return false;
             }

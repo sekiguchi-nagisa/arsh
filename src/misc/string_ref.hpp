@@ -42,7 +42,7 @@ private:
     size_type size_{0};
 
 public:
-    StringRefBase() noexcept : ptr_(nullptr), size_(0) {}
+    constexpr StringRefBase() noexcept : ptr_(nullptr), size_(0) {}
 
     StringRefBase(const StringRefBase &ref) noexcept = default;
 
@@ -51,13 +51,13 @@ public:
      * @param value
      * may be null. if not null, must be null-terminated string.
      */
-    StringRefBase(const char *value) : ptr_(value), size_(0) { //NOLINT
+    constexpr StringRefBase(const char *value) noexcept : ptr_(value), size_(0) { //NOLINT
         if(this->ptr_) {
             this->size_ = strlen(this->ptr_);
         }
     }
 
-    StringRefBase(const char *value, size_type size) noexcept : ptr_(value), size_(size) {}
+    constexpr StringRefBase(const char *value, size_type size) noexcept : ptr_(value), size_(size) {}
 
     StringRefBase(const std::string &value) noexcept : ptr_(value.c_str()), size_(value.size()) {} //NOLINT
 
@@ -203,6 +203,8 @@ inline bool operator<=(StringRef left, StringRef right) {
 inline bool operator>=(StringRef left, StringRef right) {
     return left.compare(right) >= 0;
 }
+
+constexpr StringRef nullStrRef = StringRef("\0", 1);
 
 } // namespace ydsh
 
