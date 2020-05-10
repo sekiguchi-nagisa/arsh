@@ -377,10 +377,11 @@ public:
     }
 
     /**
-     * if scriptDir is null, not search module dir
+     * search module from scriptDir => LOCAL_MOD_DIR => SYSTEM_MOD_DIR
      * @param scriptDir
-     * may be null
+     * may be null. if not full path, not search next module path
      * @param modPath
+     * if full path, not search next module path
      * @param filePtr
      * if module loading failed, will be null
      * @return
