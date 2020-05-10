@@ -249,7 +249,7 @@ static bool isFileNotFound(const ModResult &ret) {
 
 ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path, FilePtr &filePtr) {
     auto ret = this->modLoader.load(scriptDir, path, filePtr);
-    if(path[0] == '/' || scriptDir == nullptr || scriptDir[0] == '\0') {   // if full path, not search next path
+    if(path[0] == '/' || scriptDir == nullptr || scriptDir[0] != '/') {   // if full path, not search next path
         return ret;
     }
     if(strcmp(scriptDir, SYSTEM_MOD_DIR) == 0) {
