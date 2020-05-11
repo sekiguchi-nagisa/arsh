@@ -724,9 +724,17 @@ static bool compareFile(const DSValue &left, BinaryOp op, const DSValue &right) 
 
     switch(op) {
     case BinaryOp::NT:
+#ifdef __APPLE__
+        return st2.st_mtimespec < st1.st_mtimespec;
+#else
         return st2.st_mtim < st1.st_mtim;
+#endif
     case BinaryOp::OT:
+#ifdef __APPLE__
+        return st1.st_mtimespec < st2.st_mtimespec;
+#else
         return st1.st_mtim < st2.st_mtim;
+#endif
     case BinaryOp::EF:
         return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
     default:
