@@ -209,7 +209,7 @@ FrontEnd::Ret FrontEnd::operator()(DSError *dsError) {
             return {nullptr, FAILED};
         }
 
-        if(isa<SourceListNode>(*ret.node)) {
+        if(isa<SourceListNode>(*ret.node) && !ret.node->isUntyped()) {  // when specified, PARSE_ONLY option, node is untyped
             this->getCurSrcListNode().reset(cast<SourceListNode>(ret.node.release()));
             continue;
         }
