@@ -801,6 +801,9 @@ void TypeChecker::visitAssertNode(AssertNode &node) {
 }
 
 void TypeChecker::visitBlockNode(BlockNode &node) {
+    if(this->isTopLevel() && node.getNodes().empty()) {
+        RAISE_TC_ERROR(UselessBlock, node);
+    }
     auto scope = this->inScope();
     this->checkTypeWithCurrentScope(nullptr, node);
 }
@@ -1558,12 +1561,6 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
     } else {
         this->checkTypeWithCoercion(this->symbolTable.get(TYPE::Void), node);// pop stack top
     }
-
-    // check empty block
-    if(isa<BlockNode>(*node) && cast<BlockNode>(*node).getNodes().empty()) {
-        RAISE_TC_ERROR(UselessBlock, *node);
-    }
-
     return std::move(node);
 }
 
