@@ -95,7 +95,7 @@ public:
         return this->curKind != EOS;
     }
 
-    void restoreLexicalState(Lexer &lexer, TokenKind kind, Token token, TokenKind ckind) {
+    void restoreLexicalState(Lexer &lexer, TokenKind kind, Token token, TokenKind ckind = {}) {
         this->lexer = &lexer;
         this->curKind = kind;
         this->curToken = token;

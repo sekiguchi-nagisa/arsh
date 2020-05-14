@@ -309,8 +309,7 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
     }
     Token token{};
     TokenKind kind = this->contexts.back()->lexer.nextToken(token);
-    TokenKind ckind{};
-    this->parser.restoreLexicalState(this->contexts.back()->lexer, kind, token, ckind);
+    this->parser.restoreLexicalState(this->contexts.back()->lexer, kind, token);
     this->checker.setLexer(this->contexts.back()->lexer);
 
     if(this->uastDumper) {
