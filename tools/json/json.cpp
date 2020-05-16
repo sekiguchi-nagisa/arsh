@@ -63,7 +63,7 @@ bool JSON::operator==(const JSON &json) const {
         return true;
     case JSON::TAG<bool>:
         return this->asBool() == json.asBool();
-    case JSON::TAG<long>:
+    case JSON::TAG<int64_t>:
         return this->asLong() == json.asLong();
     case JSON::TAG<double>:
         return this->asDouble() == json.asDouble();
@@ -84,8 +84,8 @@ size_t JSON::hash() const {
         break;
     case JSON::TAG<bool>:
         return std::hash<bool>()(this->asBool());
-    case JSON::TAG<long>:
-        return std::hash<long>()(this->asLong());
+    case JSON::TAG<int64_t>:
+        return std::hash<int64_t>()(this->asLong());
     case JSON::TAG<double>:
         return std::hash<double>()(this->asDouble());
     case JSON::TAG<String>:
@@ -129,7 +129,7 @@ static unsigned int actualSize(const Object &value) {
 #define EACH_JSON_TYPE(T) \
     T(std::nullptr_t) \
     T(bool) \
-    T(long) \
+    T(int64_t) \
     T(double) \
     T(String) \
     T(Array) \
@@ -171,7 +171,7 @@ struct Serializer {
         this->str += value ? "true" : "false";
     }
 
-    void serialize(long value) {
+    void serialize(int64_t value) {
         this->str += std::to_string(value);
     }
 
@@ -393,7 +393,7 @@ JSON Parser::parseNumber() {
     } else {
         auto ret = convertToNum<int64_t>(data);
         if(ret.second) {
-            return static_cast<long>(ret.first);
+            return static_cast<int64_t>(ret.first);
         }
     }
     this->reportTokenFormatError(NUMBER, token, "out of range");

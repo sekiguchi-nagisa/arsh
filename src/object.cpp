@@ -122,7 +122,7 @@ std::string DSValue::toString() const {
     }
     default:
         std::string str("DSObject(");
-        str += std::to_string(reinterpret_cast<long>(this->get()));
+        str += std::to_string(reinterpret_cast<uintptr_t>(this->get()));
         str += ")";
         return str;
     }

@@ -188,11 +188,11 @@ public:
     virtual const FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const;
 
     bool operator==(const DSType &type) const {
-        return (unsigned long) this == (unsigned long) &type;
+        return reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&type);
     }
 
     bool operator!=(const DSType &type) const {
-        return (unsigned long) this != (unsigned long) &type;
+        return !(*this == type);
     }
 
     /**

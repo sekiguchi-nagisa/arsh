@@ -897,7 +897,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             }
 
             pair = convertToNum<int64_t>(str(right));
-            long n2 = pair.first;
+            int64_t n2 = pair.first;
             if(!pair.second) {
                 ERROR(argvObj, "%s: must be integer", str(right));
                 return 2;

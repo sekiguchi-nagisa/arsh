@@ -39,15 +39,15 @@ using Object = std::map<std::string, JSON>;
 
 struct Member;
 
-class JSON : public Union<std::nullptr_t, bool, long, double, String, Array, Object> {
+class JSON : public Union<std::nullptr_t, bool, int64_t , double, String, Array, Object> {
 public:
-    using Base = Union<std::nullptr_t, bool, long, double, String, Array, Object>;
+    using Base = Union<std::nullptr_t, bool, int64_t , double, String, Array, Object>;
 
     explicit JSON() : Base() {}
 
     JSON(bool v) : Base(v) {}   //NOLINT
-    JSON(long v) : Base(v) {}   //NOLINT
-    JSON(int v) : JSON(static_cast<long>(v)) {} //NOLINT
+    JSON(int64_t v) : Base(v) {}   //NOLINT
+    JSON(int v) : JSON(static_cast<int64_t>(v)) {} //NOLINT
     JSON(double v) : Base(v) {} //NOLINT
     JSON(const char *str) : JSON(std::string(str)) {}   //NOLINT
     JSON(const std::string &str) : JSON(std::string(str)) {}    //NOLINT
@@ -77,7 +77,7 @@ public:
     }
 
     bool isLong() const {
-        return is<long>(*this);
+        return is<int64_t>(*this);
     }
 
     bool isDouble() const {
@@ -104,8 +104,8 @@ public:
         return get<bool>(*this);
     }
 
-    long asLong() const {
-        return get<long>(*this);
+    int64_t asLong() const {
+        return get<int64_t>(*this);
     }
 
     double asDouble() const {

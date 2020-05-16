@@ -421,13 +421,13 @@ using ByteBuffer = FlexBuffer<char>;
 
 // for byte reading
 template <unsigned int N>
-inline unsigned long readN(const unsigned char *ptr, unsigned int index) noexcept {
+inline uint64_t readN(const unsigned char *ptr, unsigned int index) noexcept {
     static_assert(N > 0 && N < 9, "out of range");
 
     ptr += index;
-    unsigned long v = 0;
+    uint64_t v = 0;
     for(int i = N; i > 0; i--) {
-        v |= static_cast<unsigned long>(*(ptr++)) << (static_cast<unsigned int>(i - 1) * 8);
+        v |= static_cast<uint64_t>(*(ptr++)) << (static_cast<unsigned int>(i - 1) * 8);
     }
     return v;
 }
@@ -448,17 +448,17 @@ inline unsigned int read32(const unsigned char *const code, unsigned int index) 
     return readN<4>(code, index);
 }
 
-inline unsigned long read64(const unsigned char *const code, unsigned int index) noexcept {
+inline uint64_t read64(const unsigned char *const code, unsigned int index) noexcept {
     return readN<8>(code, index);
 }
 
 // for byte writing
 template <unsigned int N>
-inline void writeN(unsigned char *ptr, unsigned long b) noexcept {
+inline void writeN(unsigned char *ptr, uint64_t b) noexcept {
     static_assert(N > 0 && N < 9, "out of range");
 
     for(unsigned int i = N; i > 0; --i) {
-        const unsigned long mask = static_cast<unsigned long>(0xFF) << ((i - 1) * 8);
+        const uint64_t mask = static_cast<uint64_t>(0xFF) << ((i - 1) * 8);
         *(ptr++) = (b & mask) >> ((i - 1) * 8);
     }
 }
@@ -479,7 +479,7 @@ inline void write32(unsigned char *ptr, unsigned int b) noexcept {
     writeN<4>(ptr, b);
 }
 
-inline void write64(unsigned char *ptr, unsigned long b) noexcept {
+inline void write64(unsigned char *ptr, uint64_t b) noexcept {
     writeN<8>(ptr, b);
 }
 

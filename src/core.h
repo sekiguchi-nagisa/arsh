@@ -241,9 +241,9 @@ public:
 
 class SigSet {
 private:
-    static_assert(NSIG - 1 <= sizeof(unsigned long) * 8, "huge signal number");
+    static_assert(NSIG - 1 <= sizeof(uint64_t) * 8, "huge signal number");
 
-    unsigned long value{0};
+    uint64_t value{0};
 
     int pendingIndex{1};
 
