@@ -110,17 +110,6 @@ show_option(USE_LTO)
 show_option(USE_EXTRA_TEST)
 
 
-#++++++++++++++++++++++++++++#
-#     check integer size     #
-#++++++++++++++++++++++++++++#
-
-assert_type_size(char 1 SIZEOF_CHAR)
-assert_type_size(short 2 SIZEOF_SHORT)
-assert_type_size(int 4 SIZEOF_INT)
-assert_type_size(long 8 SIZEOF_LONG)
-assert_type_size("void *" 8 SIZEOF_PTR)
-
-
 #+++++++++++++++++++++++++++#
 #     find some command     #
 #+++++++++++++++++++++++++++#
