@@ -209,9 +209,12 @@ FrontEnd::Ret FrontEnd::operator()(DSError *dsError) {
             return {nullptr, FAILED};
         }
 
-        if(isa<SourceListNode>(*ret.node) && !ret.node->isUntyped()) {  // when specified, PARSE_ONLY option, node is untyped
-            this->getCurSrcListNode().reset(cast<SourceListNode>(ret.node.release()));
-            continue;
+        if(isa<SourceListNode>(*ret.node)) {
+            auto &src = cast<SourceListNode>(*ret.node);
+            if(!src.getPathList().empty()) {
+                this->getCurSrcListNode().reset(cast<SourceListNode>(ret.node.release()));
+                continue;
+            }
         }
 
         if(isa<SourceNode>(*ret.node) && cast<SourceNode>(*ret.node).isFirstAppear()) {
@@ -266,7 +269,8 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
     const char *modPath = node.getPathList()[pathIndex].c_str();
     node.setCurIndex(pathIndex + 1);
     FilePtr filePtr;
-    auto ret = this->getSymbolTable().tryToLoadModule(this->getCurScriptDir(), modPath, filePtr);
+    auto ret = this->getSymbolTable().tryToLoadModule(
+            node.getPathNode().getType().is(TYPE::String) ? this->getCurScriptDir() : nullptr, modPath, filePtr);
     if(is<ModLoadingError>(ret)) {
         auto e = get<ModLoadingError>(ret);
         if(e == ModLoadingError::NOT_FOUND && node.isOptional()) {
@@ -307,10 +311,12 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
                 std::make_unique<Context>(std::move(lex), std::move(scope), std::move(state)));
         this->getSymbolTable().setModuleScope(this->contexts.back()->scope);
     }
+
+    auto &lex = this->contexts.back()->lexer;
     Token token{};
-    TokenKind kind = this->contexts.back()->lexer.nextToken(token);
-    this->parser.restoreLexicalState(this->contexts.back()->lexer, kind, token);
-    this->checker.setLexer(this->contexts.back()->lexer);
+    TokenKind kind = lex.nextToken(token);
+    this->parser.restoreLexicalState(lex, kind, token);
+    this->checker.setLexer(lex);
 
     if(this->uastDumper) {
         this->uastDumper->enterModule(fullPath);
@@ -331,6 +337,7 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
 
     auto &lex = this->contexts.empty() ? this->lexer : this->contexts.back()->lexer;
     this->parser.restoreLexicalState(lex, kind, token, consumedKind);
+    this->checker.setLexer(lex);
     if(this->contexts.empty()) {
         this->getSymbolTable().resetCurModule();
     } else {

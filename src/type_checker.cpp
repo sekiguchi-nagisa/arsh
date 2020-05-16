@@ -21,6 +21,7 @@
 #include "constant.h"
 #include "core.h"
 #include "type_checker.h"
+#include "misc/glob.hpp"
 
 namespace ydsh {
 
@@ -1495,22 +1496,114 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     node.setType(this->symbolTable.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
 }
 
-void TypeChecker::resolvePathList(SourceListNode &node) {
-    std::vector<std::string> ret;
-    if(node.getPathNode().getGlobPathSize() == 0) {
-        std::string path;
-        for(auto &e : node.getPathNode().getSegmentNodes()) {
-            assert(isa<StringNode>(*e));
-            path += cast<StringNode>(*e).getValue();
-        }
+class SourceGlobIter {
+private:
+    using iterator = SourceListNode::path_iterator;
 
-        auto &first = *node.getPathNode().getSegmentNodes()[0];
+    iterator cur;
+    const char *ptr{nullptr};
+
+public:
+    explicit SourceGlobIter(iterator begin) : cur(begin) {
+        if(isa<StringNode>(**this->cur)) {
+            this->ptr = cast<StringNode>(**this->cur).getValue().c_str();
+        }
+    }
+
+    char operator*() const {
+        return this->ptr == nullptr ? '\0' : *this->ptr;
+    }
+
+    bool operator==(const SourceGlobIter &other) const {
+        return this->cur == other.cur && this->ptr == other.ptr;
+    }
+
+    bool operator!=(const SourceGlobIter &other) const {
+        return !(*this == other);
+    }
+
+    SourceGlobIter &operator++() {
+        if(this->ptr) {
+            this->ptr++;
+            if(*this->ptr == '\0') {  // if reaches null, increment iterator
+                this->ptr = nullptr;
+            }
+        }
+        if(!this->ptr) {
+            ++this->cur;
+            if(isa<StringNode>(**this->cur)) {
+                this->ptr = cast<StringNode>(**this->cur).getValue().c_str();
+            }
+        }
+        return *this;
+    }
+
+    iterator getIter() const {
+        return this->cur;
+    }
+};
+
+struct SourceGlobMeta {
+    static bool isAny(SourceGlobIter iter) {
+        auto &node = **iter.getIter();
+        return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == GlobMeta::ANY;
+    }
+
+    static bool isZeroOrMore(SourceGlobIter iter) {
+        auto &node = **iter.getIter();
+        return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == GlobMeta::ZERO_OR_MORE;
+    }
+
+    static void preExpand(std::string &path) {
+        expandTilde(path);
+    }
+};
+
+static std::string concat(const CmdArgNode &node, const unsigned int endOffset) {
+    std::string path;
+    for(unsigned int i = 0; i < endOffset; i++) {
+        auto &e = node.getSegmentNodes()[i];
+        assert(isa<StringNode>(*e) || isa<WildCardNode>(*e));
+        if(isa<StringNode>(*e)) {
+            path += cast<StringNode>(*e).getValue();
+        } else {
+            path += toString(cast<WildCardNode>(*e).meta);
+        }
+    }
+    return path;
+}
+
+void TypeChecker::resolvePathList(SourceListNode &node) {
+    auto &pathNode = node.getPathNode();
+    std::vector<std::string> ret;
+    if(pathNode.getGlobPathSize() == 0) {
+        std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
+        auto &first = *pathNode.getSegmentNodes()[0];
         if(isa<StringNode>(first) && cast<StringNode>(first).isTilde()) {
             expandTilde(path);
         }
         ret.push_back(std::move(path));
     } else {
-        fatal("unsupported\n");
+        pathNode.addSegmentNode(std::make_unique<EmptyNode>()); // sentinel
+        auto begin = SourceGlobIter(pathNode.getSegmentNodes().cbegin());
+        auto end = SourceGlobIter(pathNode.getSegmentNodes().cend() - 1);
+        auto appender = [&](std::string &&path) {
+            ret.push_back(std::move(path));
+        };
+        WildMatchOption option{};
+        if(isa<StringNode>(*pathNode.getSegmentNodes().front())) {
+            if(cast<StringNode>(*pathNode.getSegmentNodes().front()).isTilde()) {
+                setFlag(option, WildMatchOption::TILDE);
+            }
+        }
+        unsigned int globRet = globAt<SourceGlobMeta>(
+                this->lexer->getScriptDir(), begin, end, appender, option);
+        if(globRet || node.isOptional()) {
+            std::sort(ret.begin(), ret.end());
+        } else {
+            std::string path = concat(pathNode, pathNode.getSegmentNodes().size() - 1); // skip sentinel
+            RAISE_TC_ERROR(NoGlobMatch, pathNode, path.c_str());
+        }
     }
     node.setPathList(std::move(ret));
 }
@@ -1519,13 +1612,16 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     if(!this->isTopLevel()) {   // only available toplevel scope
         RAISE_TC_ERROR(OutsideToplevel, node);
     }
-    this->checkType(this->symbolTable.get(TYPE::String), node.getPathNode());
+    bool isGlob = node.getPathNode().getGlobPathSize() > 0 && node.getName().empty();
+    auto &exprType = this->symbolTable.get(isGlob ? TYPE::StringArray : TYPE::String);
+    this->checkType(exprType, node.getPathNode());
+
     for(auto &e : node.getPathNode().refSegmentNodes()) {
         this->applyConstFolding(e);
         assert(isa<StringNode>(*e) || isa<WildCardNode>(*e));
         if(isa<StringNode>(*e)) {
             auto ref = StringRef(cast<StringNode>(*e).getValue());
-            if(ref.find(StringRef("\0",  1)) != StringRef::npos) {
+            if(ref.find(nullStrRef) != StringRef::npos) {
                 RAISE_TC_ERROR(NullInPath, node.getPathNode());
             }
         }

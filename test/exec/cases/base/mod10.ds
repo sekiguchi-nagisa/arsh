@@ -1,0 +1,10 @@
+
+source! ../../_module4test/fjiejfriefre*
+
+source! ../../_module4test/nest.ds
+
+source ../../_module4test/ne*
+
+source ../../_modu*/mod*1.ds
+
+assert $hello == "hello module!!"

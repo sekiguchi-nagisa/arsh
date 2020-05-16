@@ -2336,6 +2336,8 @@ private:
     std::vector<std::string> pathList;  // evaluated path list
 
 public:
+    using path_iterator = decltype(pathNode->getSegmentNodes().cbegin());
+
     SourceListNode(unsigned int pos, std::unique_ptr<CmdArgNode> &&pathNode, bool optional) :
             WithRtti({pos, 1}), pathNode(std::move(pathNode)), optional(optional) {
         this->updateToken(this->pathNode->getToken());
