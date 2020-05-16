@@ -236,7 +236,8 @@ unsigned int globBase(const char *baseDir, Iter iter, Iter end,
 }
 
 template <typename Meta, typename Iter, typename Appender>
-unsigned int glob(Iter iter, Iter end, Appender &appender, WildMatchOption option) {
+unsigned int globAt(const char *dir, Iter iter, Iter end,
+        Appender &appender, WildMatchOption option) {
     auto begin = iter;
     auto latestSep = end;
 
@@ -265,7 +266,19 @@ unsigned int glob(Iter iter, Iter end, Appender &appender, WildMatchOption optio
             Meta::preExpand(baseDir);
         }
     }
+
+    if(dir && *dir == '/' && baseDir[0] != '/') {
+        std::string tmp = dir;
+        tmp += "/";
+        tmp += baseDir;
+        baseDir = tmp;
+    }
     return globBase<Meta>(baseDir.c_str(), iter, end, appender, option);
+}
+
+template <typename Meta, typename Iter, typename Appender>
+unsigned int glob(Iter iter, Iter end, Appender &appender, WildMatchOption option) {
+    return globAt<Meta>(nullptr, iter, end, appender, option);
 }
 
 } // namespace ydsh
