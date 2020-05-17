@@ -1543,7 +1543,7 @@ static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &
 }
 
 struct UlimitOptEntryTable {
-    unsigned long printSet{0};
+    uint64_t printSet{0};
     std::array<UlimitOptEntry, arraySize(ulimitOps)> entries;
     unsigned int count{0};
 
