@@ -90,14 +90,14 @@ private:
     public:
         NON_COPYABLE(Value);
 
-        Value() : handle_(nullptr) {}
+        Value() : index_(0) {}
 
         explicit Value(unsigned int index) : index_(index | TAG) {}
 
         explicit Value(MethodHandle *ptr) : handle_(ptr) {}
 
         Value(Value &&v) noexcept : handle_(v.handle_) {
-            v.handle_ = nullptr;
+            v.index_ = 0;
         }
 
         ~Value() {
@@ -107,7 +107,7 @@ private:
         }
 
         Value &operator=(Value &&v) noexcept {
-            std::swap(this->handle_, v.handle_);
+            std::swap(this->index_, v.index_);
             return *this;
         }
 
