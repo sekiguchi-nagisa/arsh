@@ -309,7 +309,7 @@ Token LexerBase<T>::getLineToken(Token token) const {
     assert(this->withinRange(token));
 
     // find start index of line.
-    long startIndex = token.pos;
+    int64_t startIndex = token.pos;
     for(; startIndex > -1; startIndex--) {
         if(this->buf[startIndex] == '\n') {
             startIndex += (startIndex == token.pos) ? 0 : 1;

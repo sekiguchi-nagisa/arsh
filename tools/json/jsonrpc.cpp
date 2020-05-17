@@ -369,7 +369,7 @@ long Handler::callImpl(Transport &transport, const std::string &methodName, JSON
         fatal("not found response type corresponding to '%s'\n", methodName.c_str());
     }
     long id = this->callbackMap.add(methodName, std::move(func));
-    transport.call(id, methodName, std::move(json));
+    transport.call(static_cast<int64_t>(id), methodName, std::move(json));
     return id;
 }
 

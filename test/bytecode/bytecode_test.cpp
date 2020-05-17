@@ -214,7 +214,7 @@ TEST(writer, read) {
         writer.codeBuffer += 34;
     }
     {
-        const auto v = static_cast<unsigned long>(-456789);
+        const auto v = static_cast<uint64_t>(-456789);
         writer.emit(0, v);
         ASSERT_EQ(v, ydsh::read64(writer.codeBuffer.get(), 0));
     }

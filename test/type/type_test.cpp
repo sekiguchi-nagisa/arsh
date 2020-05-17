@@ -153,7 +153,8 @@ public:
         auto gotten = ret.take();
         ASSERT_EQ(size, t.getElementTypeSize());
         ASSERT_EQ(size, gotten->getElementTypeSize());
-        ASSERT_TRUE((unsigned long)this->pool.getTypeTemplate(name).take() == (unsigned long)&t);
+        ASSERT_TRUE(reinterpret_cast<uintptr_t>(this->pool.getTypeTemplate(name).take()) ==
+                            reinterpret_cast<uintptr_t>(&t));
     }
 
     template <typename T>

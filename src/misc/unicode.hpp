@@ -263,19 +263,19 @@ unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin, const char *end,
         codePoint = begin[0];
         break;
     case 2:
-        codePoint = (static_cast<unsigned long>(begin[0] & 0x1F) << 6) |
-                    (static_cast<unsigned long>(begin[1] & 0x3F));
+        codePoint = (static_cast<unsigned int>(begin[0] & 0x1F) << 6) |
+                    (static_cast<unsigned int>(begin[1] & 0x3F));
         break;
     case 3:
-        codePoint = (static_cast<unsigned long>(begin[0] & 0x0F) << 12) |
-                    (static_cast<unsigned long>(begin[1] & 0x3F) << 6) |
-                    (static_cast<unsigned long>(begin[2] & 0x3F));
+        codePoint = (static_cast<unsigned int>(begin[0] & 0x0F) << 12) |
+                    (static_cast<unsigned int>(begin[1] & 0x3F) << 6) |
+                    (static_cast<unsigned int>(begin[2] & 0x3F));
         break;
     case 4:
-        codePoint = (static_cast<unsigned long>(begin[0] & 0x07) << 18) |
-                    (static_cast<unsigned long>(begin[1] & 0x3F) << 12) |
-                    (static_cast<unsigned long>(begin[2] & 0x3F) << 6) |
-                    (static_cast<unsigned long>(begin[3] & 0x3F));
+        codePoint = (static_cast<unsigned int>(begin[0] & 0x07) << 18) |
+                    (static_cast<unsigned int>(begin[1] & 0x3F) << 12) |
+                    (static_cast<unsigned int>(begin[2] & 0x3F) << 6) |
+                    (static_cast<unsigned int>(begin[3] & 0x3F));
         break;
     default:
         codePoint = -1;

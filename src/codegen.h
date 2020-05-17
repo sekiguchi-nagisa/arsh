@@ -43,7 +43,7 @@ private:
 
 public:
     bool operator==(const LabelImpl &l) const noexcept {
-        return reinterpret_cast<unsigned long>(this) == reinterpret_cast<unsigned long>(&l);
+        return reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&l);
     }
 
     void setIndex(unsigned int index) {
@@ -75,7 +75,7 @@ struct CodeEmitter {
 
     struct GenHash {
         std::size_t operator()(const Label &l) const noexcept {
-            return std::hash<unsigned long>()(reinterpret_cast<unsigned long>(l.get()));
+            return std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(l.get()));
         }
     };
 
@@ -109,11 +109,11 @@ struct CodeEmitter {
         ydsh::write32(this->codeBuffer.begin() + index, b);
     }
 
-    void emit64(unsigned int index, unsigned long b) noexcept {
+    void emit64(unsigned int index, uint64_t b) noexcept {
         ydsh::write64(this->codeBuffer.begin() + index, b);
     }
 
-    void emit(unsigned int index, unsigned long b) noexcept {
+    void emit(unsigned int index, uint64_t b) noexcept {
         if(b <= UINT8_MAX) {
             this->emit8(index, static_cast<unsigned char>(b));
         } else if(b <= UINT16_MAX) {
@@ -149,13 +149,13 @@ struct CodeEmitter {
         this->emit32(index, b);
     }
 
-    void append64(unsigned long b) {
+    void append64(uint64_t b) {
         const unsigned int index = this->codeBuffer.size();
         this->codeBuffer.assign(8, 0);
         this->emit64(index, b);
     }
 
-    void append(unsigned long b) {
+    void append(uint64_t b) {
         if(b <= UINT8_MAX) {
             this->append8(static_cast<unsigned char>(b));
         } else if(b <= UINT16_MAX) {

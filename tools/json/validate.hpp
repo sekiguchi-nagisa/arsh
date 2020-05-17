@@ -336,10 +336,10 @@ constexpr auto opt(T matcher) {
     return OptMatcher<T>(matcher);
 }
 
-constexpr auto integer = PrimitiveMatcher("integer", JSON::TAG<long>);
+constexpr auto integer = PrimitiveMatcher("integer", JSON::TAG<int64_t>);
 constexpr auto number = UnionMatcher<PrimitiveMatcher, PrimitiveMatcher>(
         "number",
-        PrimitiveMatcher("long", JSON::TAG<long>),
+        PrimitiveMatcher("long", JSON::TAG<int64_t>),
         PrimitiveMatcher("double", JSON::TAG<double>)
 );
 

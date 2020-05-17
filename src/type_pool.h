@@ -65,14 +65,14 @@ private:
 
     struct Hash {
         std::size_t operator()(const Key &key) const {
-            auto hash = FNVHash64::compute(key.ref.begin(), key.ref.end());
+            auto hash = FNVHash::compute(key.ref.begin(), key.ref.end());
             union {
                 char b[4];
                 unsigned int i;
             } wrap;
             wrap.i = key.id;
             for(auto b : wrap.b) {
-                FNVHash64::update(hash, b);
+                FNVHash::update(hash, b);
             }
             return hash;
         }
@@ -80,7 +80,7 @@ private:
 
     class Value {
     private:
-        static constexpr uint64_t TAG = 1UL << 63;
+        static constexpr uint64_t TAG = static_cast<uint64_t>(1) << 63;
 
         union {
             MethodHandle *handle_;
@@ -90,14 +90,16 @@ private:
     public:
         NON_COPYABLE(Value);
 
-        Value() : handle_(nullptr) {}
+        Value() : index_(0) {}
 
         explicit Value(unsigned int index) : index_(index | TAG) {}
 
-        explicit Value(MethodHandle *ptr) : handle_(ptr) {}
+        explicit Value(MethodHandle *ptr) : index_(0) {
+            this->handle_ = ptr;
+        }
 
-        Value(Value &&v) noexcept : handle_(v.handle_) {
-            v.handle_ = nullptr;
+        Value(Value &&v) noexcept : index_(v.index_) {
+            v.index_ = 0;
         }
 
         ~Value() {
@@ -107,7 +109,7 @@ private:
         }
 
         Value &operator=(Value &&v) noexcept {
-            std::swap(this->handle_, v.handle_);
+            std::swap(this->index_, v.index_);
             return *this;
         }
 

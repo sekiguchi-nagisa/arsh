@@ -23,6 +23,24 @@
 
 namespace ydsh {
 
+struct FNVHash32 {
+    static constexpr uint32_t FNV_offset_basis = 0x811c9dc5;
+    static constexpr uint32_t FNV_prime = 0x01000193;
+
+    static void update(uint32_t &hash, uint8_t value) {
+        hash *= FNV_prime;
+        hash ^= value;
+    }
+
+    static uint32_t compute(const char *begin, const char *end) {
+        uint32_t hash = FNV_offset_basis;
+        for(; begin != end; ++begin) {
+            update(hash, *begin);
+        }
+        return hash;
+    }
+};
+
 struct FNVHash64 {
     static constexpr uint64_t FNV_offset_basis = 0xcbf29ce484222325;
     static constexpr uint64_t FNV_prime = 0x100000001b3;
@@ -41,6 +59,9 @@ struct FNVHash64 {
     }
 };
 
+using FNVHash = std::conditional<sizeof(std::size_t) == sizeof(uint64_t),
+        FNVHash64, std::conditional<sizeof(std::size_t) == sizeof(uint32_t), FNVHash32, void>::type>::type;
+
 struct CStringComparator {
     bool operator()(const char *x, const char *y) const {
         return strcmp(x, y) == 0;
@@ -49,9 +70,9 @@ struct CStringComparator {
 
 struct CStringHash {
     std::size_t operator()(const char *key) const {
-        uint64_t hash = FNVHash64::FNV_offset_basis;
+        size_t hash = FNVHash::FNV_offset_basis;
         while(*key != '\0') {
-            FNVHash64::update(hash, static_cast<uint8_t>(*key++));
+            FNVHash::update(hash, static_cast<uint8_t>(*key++));
         }
         return hash;
     }

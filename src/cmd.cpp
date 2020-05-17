@@ -897,7 +897,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             }
 
             pair = convertToNum<int64_t>(str(right));
-            long n2 = pair.first;
+            int64_t n2 = pair.first;
             if(!pair.second) {
                 ERROR(argvObj, "%s: must be integer", str(right));
                 return 2;
@@ -1518,7 +1518,8 @@ static unsigned int computeMaxNameLen() {
 }
 
 static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &entry) {
-    static_assert(sizeof(rlim_t) == sizeof(uint64_t), "must be uint64");
+    using underlying_t = std::conditional<sizeof(rlim_t) == sizeof(uint64_t),
+            uint64_t, std::conditional<sizeof(rlim_t) == sizeof(uint32_t), uint32_t, void>::type>::type;
 
     if(strcasecmp(str, "soft") == 0) {
         entry.kind = UlimitOptEntry::SOFT;
@@ -1531,7 +1532,7 @@ static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &
         return true;
     }
 
-    auto pair = convertToNum<uint64_t>(str);
+    auto pair = convertToNum<underlying_t>(str);
     if(!pair.second) {
         return false;
     }
@@ -1543,7 +1544,7 @@ static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &
 }
 
 struct UlimitOptEntryTable {
-    unsigned long printSet{0};
+    uint64_t printSet{0};
     std::array<UlimitOptEntry, arraySize(ulimitOps)> entries;
     unsigned int count{0};
 
@@ -1571,7 +1572,7 @@ private:
                         return false;
                     }
                 } else {
-                    setFlag(this->printSet, 1LU << index);
+                    setFlag(this->printSet, static_cast<uint64_t>(1) << index);
                 }
             }
         }
@@ -1658,7 +1659,7 @@ static int builtin_ulimit(DSState &, ArrayObject &argvObj) {
                 return 1;
             }
         }
-        if(hasFlag(table.printSet, 1LU << index)) {
+        if(hasFlag(table.printSet, static_cast<uint64_t>(1) << index)) {
             ulimitOps[index].print(limOpt, maxNameLen);
         }
     }

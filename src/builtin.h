@@ -618,16 +618,16 @@ static auto sliceImpl(const StringRef &ref, size_t begin, size_t end) {
  * @return
  */
 template <typename T>
-static auto slice(RuntimeContext &ctx, const T &obj, long startIndex, long stopIndex) {
-    const size_t size = obj.size();
+static auto slice(RuntimeContext &ctx, const T &obj, int64_t startIndex, int64_t stopIndex) {
+    const uint64_t size = obj.size();
 
     // resolve actual index
     startIndex = (startIndex < 0 ? size : 0) + startIndex;
     stopIndex = (stopIndex < 0 ? size : 0) + stopIndex;
 
     // check range
-    if(startIndex > stopIndex || startIndex < 0 || static_cast<size_t>(startIndex) > size ||
-       stopIndex < 0 || static_cast<size_t>(stopIndex) > size) {
+    if(startIndex > stopIndex || startIndex < 0 || static_cast<uint64_t>(startIndex) > size ||
+       stopIndex < 0 || static_cast<uint64_t>(stopIndex) > size) {
         std::string msg("size is ");
         msg += std::to_string(size);
         msg += ", but range is [";
@@ -638,7 +638,7 @@ static auto slice(RuntimeContext &ctx, const T &obj, long startIndex, long stopI
         raiseOutOfRangeError(ctx, std::move(msg));
         RET_ERROR;
     }
-    RET(sliceImpl(obj, static_cast<size_t>(startIndex), static_cast<size_t>(stopIndex)));
+    RET(sliceImpl(obj, static_cast<uint64_t>(startIndex), static_cast<uint64_t>(stopIndex)));
 }
 
 //!bind: function slice($this : String, $start : Int, $stop : Int) : String
@@ -1152,7 +1152,7 @@ YDSH_METHOD array_peek(RuntimeContext &ctx) {
     return value;
 }
 
-static bool array_insertImpl(DSState &ctx, long index, const DSValue &v) {
+static bool array_insertImpl(DSState &ctx, int64_t index, const DSValue &v) {
     auto &obj = typeAs<ArrayObject>(LOCAL(0));
     size_t size0 = obj.getValues().size();
     if(size0 == ArrayObject::MAX_SIZE) {
@@ -1161,7 +1161,7 @@ static bool array_insertImpl(DSState &ctx, long index, const DSValue &v) {
     }
 
     ArrayIndex ret{static_cast<unsigned int>(index), true};
-    long size = static_cast<long>(size0);
+    auto size = static_cast<int64_t>(size0);
     if(index != size && !(ret = resolveIndex(ctx, index, size0))) {
         return false;
     }

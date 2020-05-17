@@ -241,25 +241,25 @@ public:
 
 class SigSet {
 private:
-    static_assert(NSIG - 1 <= sizeof(unsigned long) * 8, "huge signal number");
+    static_assert(NSIG - 1 <= sizeof(uint64_t) * 8, "huge signal number");
 
-    unsigned long value{0};
+    uint64_t value{0};
 
     int pendingIndex{1};
 
 public:
     void add(int sigNum) {
-        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
+        uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
         setFlag(this->value, f);
     }
 
     void del(int sigNum) {
-        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
+        uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
         unsetFlag(this->value, f);
     }
 
     bool has(int sigNum) const {
-        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
+        uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
         return hasFlag(this->value, f);
     }
 
