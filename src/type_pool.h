@@ -80,7 +80,7 @@ private:
 
     class Value {
     private:
-        static constexpr uint64_t TAG = 1UL << 63;
+        static constexpr uint64_t TAG = static_cast<uint64_t>(1) << 63;
 
         union {
             MethodHandle *handle_;

@@ -249,17 +249,17 @@ private:
 
 public:
     void add(int sigNum) {
-        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
+        uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
         setFlag(this->value, f);
     }
 
     void del(int sigNum) {
-        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
+        uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
         unsetFlag(this->value, f);
     }
 
     bool has(int sigNum) const {
-        auto f = 1UL << static_cast<unsigned int>(sigNum - 1);
+        uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
         return hasFlag(this->value, f);
     }
 
