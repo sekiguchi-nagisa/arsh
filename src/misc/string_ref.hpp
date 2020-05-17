@@ -213,7 +213,7 @@ namespace std {
 template <>
 struct hash<ydsh::StringRef> {
     std::size_t operator()(const ydsh::StringRef &ref) const {
-        return ydsh::FNVHash64::compute(ref.begin(), ref.end());
+        return ydsh::FNVHash::compute(ref.begin(), ref.end());
     }
 };
 

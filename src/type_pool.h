@@ -65,14 +65,14 @@ private:
 
     struct Hash {
         std::size_t operator()(const Key &key) const {
-            auto hash = FNVHash64::compute(key.ref.begin(), key.ref.end());
+            auto hash = FNVHash::compute(key.ref.begin(), key.ref.end());
             union {
                 char b[4];
                 unsigned int i;
             } wrap;
             wrap.i = key.id;
             for(auto b : wrap.b) {
-                FNVHash64::update(hash, b);
+                FNVHash::update(hash, b);
             }
             return hash;
         }
