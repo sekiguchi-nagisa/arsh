@@ -2,3 +2,5 @@
 # dummy RC file
 
 let RC_VAR = "rc file"
+
+let IS_REPL = shctl is-interactive

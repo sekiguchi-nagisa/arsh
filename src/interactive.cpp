@@ -291,7 +291,23 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
     return nullptr;
 }
 
-int exec_interactive(DSState *dsState) {
+static std::pair<DSErrorKind, int> loadRC(const std::string &rcfile) {
+    if(rcfile.empty()) {
+        return {DS_ERROR_KIND_SUCCESS, 0};
+    }
+
+    DSError e{};
+    int ret = DSState_loadModule(state, rcfile.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
+    auto kind = e.kind;
+    DSError_release(&e);
+
+    // reset line num
+    DSState_setLineNum(state, 1);
+
+    return {kind, ret};
+}
+
+int exec_interactive(DSState *dsState, const std::string &rcfile) {
     state = dsState;
 
     *linenoiseInputFD() = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
@@ -312,6 +328,12 @@ int exec_interactive(DSState *dsState) {
 
     unsigned int option = DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
     DSState_setOption(dsState, option);
+
+    auto ret = loadRC(rcfile);
+    if(ret.first != DS_ERROR_KIND_SUCCESS) {
+        return ret.second;
+    }
+
     loadHistory();
 
     int status = 0;

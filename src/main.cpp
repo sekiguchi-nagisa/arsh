@@ -38,19 +38,7 @@ static auto createState(Arg && ...arg) {
     return DSStateHandle(DSState_createWithMode(std::forward<Arg>(arg)...));
 }
 
-int exec_interactive(DSState *dsState);
-
-static std::pair<DSErrorKind, int> loadRC(const DSStateHandle &handle, const std::string &rcfile) {
-    DSError e{};
-    int ret = DSState_loadModule(handle.get(), rcfile.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
-    auto kind = e.kind;
-    DSError_release(&e);
-
-    // reset line num
-    DSState_setLineNum(handle.get(), 1);
-
-    return {kind, ret};
-}
+int exec_interactive(DSState *dsState, const std::string &rcfile);
 
 static const char *statusLogPath = nullptr;
 
@@ -163,7 +151,6 @@ int main(int argc, char **argv) {
 
     InvocationKind invocationKind = InvocationKind::FROM_FILE;
     const char *evalText = nullptr;
-    bool userc = true;
     std::string rcfile = getDefaultRCFilePath();
     bool quiet = false;
     bool forceInteractive = false;
@@ -219,7 +206,7 @@ int main(int argc, char **argv) {
             evalText = result.arg();
             goto INIT;
         case NORC:
-            userc = false;
+            rcfile = "";
             break;
         case EXEC:
             invocationKind = InvocationKind::BUILTIN;
@@ -290,13 +277,7 @@ int main(int argc, char **argv) {
             if(!quiet) {
                 fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());
             }
-            if(userc) {
-                auto ret = loadRC(state, rcfile);
-                if(ret.first != DS_ERROR_KIND_SUCCESS) {
-                    return ret.second;
-                }
-            }
-            return exec_interactive(state.get());
+            return exec_interactive(state.get(), rcfile);
         }
     }
     case InvocationKind::FROM_STRING: {

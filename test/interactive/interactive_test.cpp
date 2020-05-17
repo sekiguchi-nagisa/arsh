@@ -381,6 +381,7 @@ TEST_F(InteractiveTest, rc1) {
     this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $IS_REPL"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait(
             "assert $RC_VAR == 'rc file'; exit 23;", 23, WaitStatus::EXITED));
 }
