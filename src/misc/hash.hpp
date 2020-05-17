@@ -24,6 +24,8 @@
 namespace ydsh {
 
 struct FNVHash32 {
+    using type = uint32_t;
+
     static constexpr uint32_t FNV_offset_basis = 0x811c9dc5;
     static constexpr uint32_t FNV_prime = 0x01000193;
 
@@ -42,6 +44,8 @@ struct FNVHash32 {
 };
 
 struct FNVHash64 {
+    using type = uint64_t;
+
     static constexpr uint64_t FNV_offset_basis = 0xcbf29ce484222325;
     static constexpr uint64_t FNV_prime = 0x100000001b3;
 
@@ -70,7 +74,7 @@ struct CStringComparator {
 
 struct CStringHash {
     std::size_t operator()(const char *key) const {
-        size_t hash = FNVHash::FNV_offset_basis;
+        FNVHash::type hash = FNVHash::FNV_offset_basis;
         while(*key != '\0') {
             FNVHash::update(hash, static_cast<uint8_t>(*key++));
         }
