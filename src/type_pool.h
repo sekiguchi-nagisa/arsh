@@ -94,9 +94,11 @@ private:
 
         explicit Value(unsigned int index) : index_(index | TAG) {}
 
-        explicit Value(MethodHandle *ptr) : handle_(ptr) {}
+        explicit Value(MethodHandle *ptr) : index_(0) {
+            this->handle_ = ptr;
+        }
 
-        Value(Value &&v) noexcept : handle_(v.handle_) {
+        Value(Value &&v) noexcept : index_(v.index_) {
             v.index_ = 0;
         }
 
