@@ -55,7 +55,7 @@ int Extractor::extract(unsigned int &value) {
         }
         buf += ch;
     }
-    long v = std::stol(buf);
+    auto v = std::stoll(buf);
     if(v < 0 || v > UINT32_MAX) {
         return 1;
     }
@@ -72,11 +72,7 @@ int Extractor::extract(int &value) {
         }
         buf += ch;
     }
-    long v = std::stol(buf);
-    if(v < INT32_MIN || v > INT32_MAX) {
-        return 1;
-    }
-    value = static_cast<int>(v);
+    value = std::stoi(buf);
     return 0;
 }
 
