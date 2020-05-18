@@ -240,7 +240,14 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
 
     DSValue actualHandler;
     auto op = SignalVector::UnsafeSigOp::SET;
-    if(handler == DFL_handler) {
+    if(sigNum == SIGBUS || sigNum == SIGSEGV || sigNum == SIGILL || sigNum == SIGFPE) {
+        /**
+         * not handle or ignore these signals due to prevent undefined behavior.
+         * see. https://wiki.sei.cmu.edu/confluence/display/c/SIG35-C.+Do+not+return+from+a+computational+exception+signal+handler
+         *      http://man7.org/linux/man-pages/man2/sigaction.2.html
+         */
+        return;
+    } else if(handler == DFL_handler) {
         if(sigNum == SIGHUP) {
             actualHandler = handler;
         } else {
@@ -248,12 +255,6 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
         }
     } else if(handler == IGN_handler) {
         op = SignalVector::UnsafeSigOp::IGN;
-    } else if(sigNum == SIGBUS || sigNum == SIGSEGV || sigNum == SIGILL || sigNum == SIGFPE) {
-        /**
-         * always set default due to prevent undefined behavior.
-         * see. https://wiki.sei.cmu.edu/confluence/display/c/SIG35-C.+Do+not+return+from+a+computational+exception+signal+handler
-         */
-        op = SignalVector::UnsafeSigOp::DFL;
     } else {
         actualHandler = handler;
     }

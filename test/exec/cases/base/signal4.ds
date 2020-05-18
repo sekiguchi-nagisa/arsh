@@ -25,21 +25,21 @@ assert $SIG[%'CHLD'] as String == $SIG_DFL as String
 
 # when set custom signal handler for SIGSEGV, SIGILL or SIGFPE, always set SIG_DFL
 $SIG[%'segv'] = $SIG_IGN
-assert $SIG[%'segv'] == $SIG_IGN
+assert $SIG[%'segv'] == $SIG_DFL
 $SIG[%'segv'] = $f
 assert $SIG[%'segv'] == $SIG_DFL
 
 $SIG[%'ill'] = $SIG_IGN
-assert $SIG[%'ill'] == $SIG_IGN
+assert $SIG[%'ill'] == $SIG_DFL
 $SIG[%'ill'] = $f
 assert $SIG[%'ill'] == $SIG_DFL
 
 $SIG[%'fpe'] = $SIG_IGN
-assert $SIG[%'fpe'] == $SIG_IGN
+assert $SIG[%'fpe'] == $SIG_DFL
 $SIG[%'fpe'] = $f
 assert $SIG[%'fpe'] == $SIG_DFL
 
 $SIG[%'bus'] = $SIG_IGN
-assert $SIG[%'bus'] == $SIG_IGN
+assert $SIG[%'bus'] == $SIG_DFL
 $SIG[%'bus'] = $f
 assert $SIG[%'siGBuS'] == $SIG_DFL
