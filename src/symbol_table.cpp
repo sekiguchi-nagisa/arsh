@@ -195,7 +195,7 @@ std::string ModType::toModName(unsigned short id) {
 
 void ModuleLoader::abort() {
     for(auto iter = this->typeMap.begin(); iter != this->typeMap.end();) {
-        if(!iter->second || iter->second->getModID() > this->oldIDCount) {
+        if(!iter->second.second || iter->second.second->getModID() > this->oldIDCount) {
             iter = this->typeMap.erase(iter);
         } else {
             ++iter;
@@ -204,23 +204,40 @@ void ModuleLoader::abort() {
     this->modIDCount = this->oldIDCount;
 }
 
+static CStrPtr expandToRealpath(const char *baseDir, const char *path) {
+    std::string value;
+    if(!baseDir || *path == '/') {
+        value = path;
+    } else {
+        value = baseDir;
+        value += '/';
+        value += path;
+    }
+    return getRealpath(value.c_str());
+}
+
 ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr &filePtr) {
     assert(modPath);
 
-    std::string str = expandDots(scriptDir, modPath);
+    auto str = expandToRealpath(scriptDir, modPath);
     LOG(TRACE_MODULE, "\n    scriptDir: `%s'\n    modPath: `%s'\n    fullPath: `%s'",
-                       (scriptDir == nullptr ? "" : scriptDir), modPath, str.c_str());
+                       (scriptDir == nullptr ? "(null)" : scriptDir),
+                       modPath, str ? str.get() : "(null)");
+    if(!str) {
+        errno = ENOENT;
+        return ModLoadingError::NOT_FOUND;
+    }
 
-    auto pair = this->typeMap.emplace(std::move(str), nullptr);
+    StringRef key(str.get());
+    auto pair = this->typeMap.emplace(key, std::make_pair(std::move(str), nullptr));
     if(!pair.second) {
-        if(pair.first->second) {
-            return pair.first->second;
+        if(pair.first->second.second) {
+            return pair.first->second.second;
         }
         return ModLoadingError::CIRCULAR;
     }
 
-    const char *resolvedPath = pair.first->first.c_str();
-    filePtr = createFilePtr(fopen, resolvedPath, "rb");
+    filePtr = createFilePtr(fopen, key.data(), "rb");
     if(!filePtr) {
         int old = errno;
         this->typeMap.erase(pair.first);
@@ -235,7 +252,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath, FilePtr
         errno = EISDIR;
         return ModLoadingError::NOT_OPEN;
     }
-    return resolvedPath;
+    return key.data();
 }
 
 
@@ -274,12 +291,9 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path, 
 ModType& SymbolTable::createModType(const std::string &fullpath) {
     std::string name = ModType::toModName(this->cur().getModID());
     auto &modType = this->typePool.newType<ModType>(std::move(name),
-                                                    this->get(TYPE::Any), this->cur().getModID(), this->cur().global().getHandleMap());
+            this->get(TYPE::Any), this->cur().getModID(), this->cur().global().getHandleMap());
     this->curModule = nullptr;
-    auto iter = this->modLoader.typeMap.find(fullpath);
-    assert(iter != this->modLoader.typeMap.end());
-    assert(iter->second == nullptr);
-    iter->second = &modType;
+    this->modLoader.setModType(fullpath, modType);
     return modType;
 }
 

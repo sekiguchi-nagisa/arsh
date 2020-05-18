@@ -187,8 +187,8 @@ public:
         return static_cast<bool>(this->scopes.back().add(symbolName, FieldHandle()));
     }
 
-    void setBuiltin(bool set) {
-        this->builtin = set;
+    void closeBuiltin() {
+        this->builtin = false;
     }
 
     /**
@@ -292,10 +292,9 @@ class ModuleLoader {
 private:
     unsigned short oldIDCount{0};
     unsigned short modIDCount{0};
-    std::unordered_map<std::string, ModType *> typeMap;
+    std::unordered_map<StringRef, std::pair<CStrPtr, ModType *>> typeMap;
 
-    friend class SymbolTable;
-
+public:
     NON_COPYABLE(ModuleLoader);
 
     ModuleLoader() = default;
@@ -319,6 +318,17 @@ private:
      * @return
      */
     ModResult load(const char *scriptDir, const char *modPath, FilePtr &filePtr);
+
+    unsigned short newModId() {
+        return ++this->modIDCount;
+    }
+
+    void setModType(const std::string &fullpath, ModType &type) {
+        auto iter = this->typeMap.find(fullpath);
+        assert(iter != this->typeMap.end());
+        assert(iter->second.second == nullptr);
+        iter->second.second = &type;
+    }
 };
 
 class SymbolTable {
@@ -393,7 +403,7 @@ public:
      * @return
      */
     ModuleScope createModuleScope() {
-        auto id = ++this->modLoader.modIDCount;
+        auto id = this->modLoader.newModId();
         return ModuleScope(this->gvarCount, id);
     }
 
@@ -425,7 +435,7 @@ public:
     }
 
     void closeBuiltin() {
-        this->root().setBuiltin(false);
+        this->root().closeBuiltin();
     }
 
     /**
