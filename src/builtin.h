@@ -684,7 +684,7 @@ YDSH_METHOD string_indexOf(RuntimeContext &ctx) {
     auto right = LOCAL(1).asStrRef();
     auto index = left.indexOf(right);
     assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
-    RET(DSValue::createInt(static_cast<int64_t>(index)));
+    RET(DSValue::createInt(static_cast<ssize_t>(index)));
 }
 
 //!bind: function lastIndexOf($this : String, $target : String) : Int
@@ -694,7 +694,7 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
     auto right = LOCAL(1).asStrRef();
     auto index = left.lastIndexOf(right);
     assert(index == StringRef::npos || index <= StringObject::MAX_SIZE);
-    RET(DSValue::createInt(static_cast<int64_t>(index)));
+    RET(DSValue::createInt(static_cast<ssize_t>(index)));
 }
 
 //!bind: function split($this : String, $delim : String) : Array<String>
