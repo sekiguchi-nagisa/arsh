@@ -198,7 +198,7 @@ bool DSValue::equals(const DSValue &o) const {
         if(this->get()->getKind() != o.get()->getKind()) {
             return false;
         }
-        return reinterpret_cast<uint64_t>(this->get()) == reinterpret_cast<uint64_t>(o.get());
+        return reinterpret_cast<uintptr_t>(this->get()) == reinterpret_cast<uintptr_t>(o.get());
     }
 }
 
@@ -217,7 +217,7 @@ size_t DSValue::hash() const {
             return std::hash<StringRef>()(this->asStrRef());
         }
         assert(this->isObject());
-        return std::hash<uint64_t>()(reinterpret_cast<uint64_t>(this->get()));
+        return std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(this->get()));
     }
 }
 
