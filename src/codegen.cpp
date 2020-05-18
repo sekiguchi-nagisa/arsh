@@ -42,7 +42,7 @@ bool isTypeOp(OpCode code) {
     }
 }
 
-CompiledCode CodeBuilder::build(const std::string &name) {
+CompiledCode CodeBuilder::build(const std::string &name, bool sourced) {
     this->finalize();
 
     const unsigned int codeSize = this->codeBuffer.size();
@@ -81,7 +81,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
             .localSize = 0,
     };  // sentinel
 
-    return CompiledCode(name.empty() ? nullptr : name.c_str(), code, constPool, entries, except);
+    return CompiledCode(name.empty() ? nullptr : name.c_str(), code, constPool, entries, except, sourced);
 }
 
 

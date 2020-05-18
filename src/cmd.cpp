@@ -1873,19 +1873,6 @@ static int printBacktrace(const VMState &state) {
     return 0;
 }
 
-static int checkSourced(const VMState &state) {
-    bool sourced = false;
-    auto *curCode = state.getFrame().code;
-    auto *initCode = state.getFrames().size() == 1 ? curCode : state.getFrames()[1].code;
-    if(!initCode->is(CodeKind::NATIVE)) {
-        assert(!curCode->is(CodeKind::NATIVE));
-        const char *initPath = static_cast<const CompiledCode *>(initCode)->getSourceName();
-        const char *curPath = static_cast<const CompiledCode *>(curCode)->getSourceName();
-        sourced = strcmp(initPath, curPath) != 0;
-    }
-    return sourced ? 0 : 1;
-}
-
 static int printFuncName(const VMState &state) {
     auto *code = state.getFrame().code;
     const char *name = nullptr;
@@ -1994,7 +1981,8 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
         if(ref == "backtrace") {
             return printBacktrace(state.getCallStack());
         } else if(ref == "is-sourced") {
-            return checkSourced(state.getCallStack());
+            auto curCode = state.getCallStack().getFrame().code;
+            return static_cast<const CompiledCode *>(curCode)->isSourced() ? 0 : 1;
         } else if(ref == "is-interactive") {
             return hasFlag(state.compileOption, CompileOption::INTERACTIVE) ? 0 : 1;
         } else if(ref == "function") {

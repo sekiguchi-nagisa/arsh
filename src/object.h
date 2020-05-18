@@ -1071,21 +1071,24 @@ private:
     LineNumEntry *lineNumEntries{nullptr};
 
     /**
-     * lats element is sentinel.
+     * last element is sentinel.
      */
     ExceptionEntry *exceptionEntries{nullptr};
+
+    bool sourced;
 
 public:
     NON_COPYABLE(CompiledCode);
 
     CompiledCode(const char *name, DSCode code, DSValue *constPool,
-                LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
+                LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries, bool sourced) noexcept :
             DSCode(code), name(name == nullptr ? nullptr : strdup(name)),
-            constPool(constPool), lineNumEntries(sourcePosEntries), exceptionEntries(exceptionEntries) { }
+            constPool(constPool), lineNumEntries(sourcePosEntries),
+            exceptionEntries(exceptionEntries), sourced(sourced) { }
 
     CompiledCode(CompiledCode &&c) noexcept :
             DSCode(std::move(c)), name(c.name), constPool(c.constPool),
-            lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries) {
+            lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries), sourced(c.sourced) {
         c.name = nullptr;
         c.code = nullptr;
         c.constPool = nullptr;
@@ -1116,6 +1119,7 @@ public:
         std::swap(this->constPool, o.constPool);
         std::swap(this->lineNumEntries, o.lineNumEntries);
         std::swap(this->exceptionEntries, o.exceptionEntries);
+        std::swap(this->sourced, o.sourced);
     }
 
     const char *getSourceName() const {
@@ -1141,6 +1145,10 @@ public:
 
     const ExceptionEntry *getExceptionEntries() const {
         return this->exceptionEntries;
+    }
+
+    bool isSourced() const {
+        return this->sourced;
     }
 
     explicit operator bool() const noexcept {
