@@ -1075,7 +1075,7 @@ private:
      */
     ExceptionEntry *exceptionEntries{nullptr};
 
-    bool sourced;
+    bool sourced{false};
 
 public:
     NON_COPYABLE(CompiledCode);
