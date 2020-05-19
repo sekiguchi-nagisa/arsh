@@ -20,6 +20,7 @@
 #include <fstream>
 
 #include <misc/util.hpp>
+#include <constant.h>
 #include "platform.h"
 
 namespace ydsh {
@@ -97,17 +98,13 @@ const char *toString(ArchType c) {
 }
 
 static ArchType archImpl() {
-    struct utsname name{};
-    if(uname(&name) == -1) {
-        return ArchType::UNKNOWN;
-    }
     ArchType types[] = {
 #define GEN_ENUM(E, S) ArchType::E,
         EACH_ARCH_TYPE(GEN_ENUM)
 #undef GEN_ENUM
     };
     for(auto &type : types) {
-        if(containArch(name.machine, type)) {
+        if(containArch(BUILD_ARCH, type)) {
             return type;
         }
     }

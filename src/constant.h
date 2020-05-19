@@ -162,8 +162,21 @@ constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 constexpr flag8_t UDC_ATTR_SETVAR    = 1u << 0u;
 constexpr flag8_t UDC_ATTR_NEED_FORK = 1u << 1u;
 
-// =====  for code generation  =====
+// =====  other constants  =====
 constexpr size_t CODE_MAX_LEN = UINT32_MAX;
+
+constexpr const char *BUILD_ARCH =
+#ifdef __x86_64__
+"x86_64"
+#elif defined __i386__
+"i386"
+#elif defined __aarch64__
+"aarch64"
+#else
+#error "unsupported architecture"
+#endif
+;
+
 
 enum class ForkKind : unsigned char {
     STR,        // capture stdout as string. ex. "$(echo)"

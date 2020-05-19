@@ -1034,7 +1034,7 @@ static auto initConstVarMap() {
             {CVAR_VERSION, X_INFO_VERSION_CORE},
             {CVAR_CONFIG_DIR, SYSTEM_CONFIG_DIR},
             {CVAR_OSTYPE, name.sysname},
-            {CVAR_MACHTYPE, name.machine},
+            {CVAR_MACHTYPE, BUILD_ARCH},
     };
     return map;
 }

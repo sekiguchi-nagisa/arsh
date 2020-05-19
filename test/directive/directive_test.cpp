@@ -3,6 +3,7 @@
 #include "gtest/gtest.h"
 
 #include <directive.h>
+#include "../../src/constant.h"
 
 using namespace ydsh::directive;
 
@@ -251,12 +252,16 @@ TEST_F(DirectiveTest, ignored2) {
 TEST_F(DirectiveTest, ignored3) {
     ASSERT_FALSE(this->getDirective().isIgnoredPlatform());
 
+    printf("arch: %s\n", ydsh::BUILD_ARCH);
+
 #ifdef __x86_64__
-    printf("arch: x86_64\n");
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'x86-64')", true));
+#elif defined __i386__
+    ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'x86')", true));
 #elif defined __aarch64__
-    printf("arch: aarch64\n");
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($ignored = 'arm64')", true));
+#else
+#error "unsupported arch"
 #endif
     ASSERT_TRUE(this->getDirective().isIgnoredPlatform());
 }

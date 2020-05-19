@@ -297,7 +297,7 @@ static void initBuiltinVar(DSState &state) {
     /**
      * must be String_Object
      */
-    bindVariable(state, CVAR_MACHTYPE, DSValue::createStr(name.machine));
+    bindVariable(state, CVAR_MACHTYPE, DSValue::createStr(BUILD_ARCH));
 
     /**
      * must be String_Object
