@@ -77,7 +77,11 @@ public:
 
 class Parser : public ydsh::ParserBase<TokenKind, Lexer, TokenTracker> {
 private:
+#ifdef __SANITIZE_ADDRESS__
+    static constexpr unsigned int MAX_NESTING_DEPTH = 2500;
+#else
     static constexpr unsigned int MAX_NESTING_DEPTH = 5000;
+#endif
 
 public:
     explicit Parser(Lexer &lexer) {
