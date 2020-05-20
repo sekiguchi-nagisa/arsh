@@ -26,7 +26,9 @@ Language specification is subject to change without notice.
 * clang (3.6, 3.7, 3.8, 3.9, 4, 5, 6, 7, 8, 9, 10)
 
 ### Other Tested platform
-* Linux AArch64
+* Linux
+  * x86
+  * AArch64
 * macOS
 * Windows x64
   * Cygwin
