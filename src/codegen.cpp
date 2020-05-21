@@ -210,6 +210,46 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     }
 }
 
+void ByteCodeGenerator::generatePipeline(PipelineNode &node, bool lastPipe) {
+    const unsigned int size = node.getNodes().size() - (lastPipe ? 1 : 0);
+    const unsigned int labelSize = node.getNodes().size() + (lastPipe ? 0 : 1);
+
+    // init label
+    std::vector<Label> labels(labelSize);
+    for(unsigned int i = 0; i < labelSize; i++) {
+        labels[i] = makeLabel();
+    }
+
+    // generate pipeline
+    this->emitSourcePos(node.getPos());
+    this->emitPipelineIns(labels, lastPipe);
+
+    auto begin = makeLabel();
+    auto end = makeLabel();
+
+    // generate pipeline (child)
+    this->markLabel(begin);
+    for(unsigned int i = 0; i < size; i++) {
+        if(i > 0) {
+            this->emit0byteIns(OpCode::HALT);
+        }
+        this->markLabel(labels[i]);
+        this->visit(*node.getNodes()[i]);
+    }
+    this->markLabel(end);
+    this->catchException(begin, end, this->symbolTable.get(TYPE::_Root));
+    this->emit0byteIns(OpCode::HALT);
+
+    this->markLabel(labels.back());
+
+    if(lastPipe) {  // generate last pipe
+        this->generateBlock(node.getBaseIndex(), 1, true, [&] {
+            this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
+            this->visit(*node.getNodes().back());
+        });
+    }
+}
+
 void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool lastPipe) {
     const unsigned int size = labels.size();
     if(size > UINT8_MAX) {
@@ -694,44 +734,7 @@ void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
 }
 
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
-    const bool lastPipe = node.isLastPipe();
-    const unsigned int size = node.getNodes().size() - (lastPipe ? 1 : 0);
-    const unsigned int labelSize = node.getNodes().size() + (lastPipe ? 0 : 1);
-
-    // init label
-    std::vector<Label> labels(labelSize);
-    for(unsigned int i = 0; i < labelSize; i++) {
-        labels[i] = makeLabel();
-    }
-
-    // generate pipeline
-    this->emitSourcePos(node.getPos());
-    this->emitPipelineIns(labels, lastPipe);
-
-    auto begin = makeLabel();
-    auto end = makeLabel();
-
-    // generate pipeline (child)
-    this->markLabel(begin);
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            this->emit0byteIns(OpCode::HALT);
-        }
-        this->markLabel(labels[i]);
-        this->visit(*node.getNodes()[i]);
-    }
-    this->markLabel(end);
-    this->catchException(begin, end, this->symbolTable.get(TYPE::_Root));
-    this->emit0byteIns(OpCode::HALT);
-
-    this->markLabel(labels.back());
-
-    if(lastPipe) {  // generate last pipe
-        this->generateBlock(node.getBaseIndex(), 1, true, [&] {
-            this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
-            this->visit(*node.getNodes().back());
-        });
-    }
+    this->generatePipeline(node, node.isLastPipe());
 }
 
 void ByteCodeGenerator::visitWithNode(WithNode &node) {
@@ -754,7 +757,12 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
 
     this->markLabel(beginLabel);
     this->emitForkIns(node.getOpKind(), mergeLabel);
-    this->visit(node.getExprNode());
+    if(isa<PipelineNode>(node.getExprNode())) {
+        auto &pipeNode = cast<PipelineNode>(node.getExprNode());
+        this->generatePipeline(pipeNode, false);
+    } else {
+        this->visit(node.getExprNode());
+    }
     this->markLabel(endLabel);
 
     this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_Root));

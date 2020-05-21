@@ -543,6 +543,7 @@ private:
                         unsigned short localOffset = 0, unsigned short localSize = 0);
     void enterFinally();
     void generateCmdArg(CmdArgNode &node);
+    void generatePipeline(PipelineNode &node, bool lastPipe);
     void emitPipelineIns(const std::vector<Label> &labels, bool lastPipe);
 
     void generateConcat(Node &node, bool fragment = false);
