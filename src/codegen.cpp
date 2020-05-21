@@ -200,16 +200,12 @@ void ByteCodeGenerator::enterFinally() {
     }
 }
 
-static bool isTildeExpansion(const Node &node) {
-    return isa<StringNode>(node) && cast<const StringNode>(node).isTilde();
-}
-
 void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     const unsigned int size = node.getSegmentNodes().size();
     for(unsigned int i = 0; i < size; i++) {
         this->generateConcat(*node.getSegmentNodes()[i], i > 0);
     }
-    if(isTildeExpansion(*node.getSegmentNodes()[0])) {
+    if(node.isTilde()) {
         this->emit0byteIns(OpCode::EXPAND_TILDE);
     }
 }
@@ -670,10 +666,8 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
             }
         }
         this->emit0byteIns(OpCode::PUSH_NULL);    // sentinel
-        bool tilde = isa<StringNode>(*node.getSegmentNodes()[0])
-                && cast<StringNode>(*node.getSegmentNodes()[0]).isTilde();
         assert(node.getGlobPathSize() <= UINT8_MAX);
-        this->emitGlobIns(node.getGlobPathSize(), tilde);
+        this->emitGlobIns(node.getGlobPathSize(), node.isTilde());
     } else {
         this->generateCmdArg(node);
         this->emit1byteIns(OpCode::ADD_CMD_ARG, node.isIgnorableEmptyString() ? 1 : 0);

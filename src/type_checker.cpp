@@ -1578,8 +1578,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
     std::vector<std::string> ret;
     if(pathNode.getGlobPathSize() == 0) {
         std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
-        auto &first = *pathNode.getSegmentNodes()[0];
-        if(isa<StringNode>(first) && cast<StringNode>(first).isTilde()) {
+        if(pathNode.isTilde()) {
             expandTilde(path);
         }
         ret.push_back(std::move(path));
@@ -1590,12 +1589,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
         auto appender = [&](std::string &&path) {
             ret.push_back(std::move(path));
         };
-        WildMatchOption option{};
-        if(isa<StringNode>(*pathNode.getSegmentNodes().front())) {
-            if(cast<StringNode>(*pathNode.getSegmentNodes().front()).isTilde()) {
-                setFlag(option, WildMatchOption::TILDE);
-            }
-        }
+        auto option = pathNode.isTilde() ? WildMatchOption::TILDE : WildMatchOption{};
         unsigned int globRet = globAt<SourceGlobMeta>(
                 this->lexer->getScriptDir(), begin, end, appender, option);
         if(globRet || node.isOptional()) {

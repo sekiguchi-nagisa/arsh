@@ -1147,6 +1147,11 @@ public:
      */
     bool isIgnorableEmptyString() const;
 
+    bool isTilde() const {
+        return isa<StringNode>(*this->segmentNodes.front())
+                && cast<StringNode>(*this->segmentNodes.front()).isTilde();
+    }
+
     unsigned int getGlobPathSize() const {
         return this->globPathSize;
     }
