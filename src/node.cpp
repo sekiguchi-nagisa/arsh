@@ -475,6 +475,7 @@ void PipelineNode::addNode(std::unique_ptr<Node> &&node) {
 void PipelineNode::dump(NodeDumper &dumper) const {
     DUMP(nodes);
     DUMP(baseIndex);
+    DUMP(inFork);
 }
 
 void PipelineNode::addNodeImpl(std::unique_ptr<Node> &&node) {

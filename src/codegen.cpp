@@ -210,7 +210,8 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     }
 }
 
-void ByteCodeGenerator::generatePipeline(PipelineNode &node, bool lastPipe) {
+void ByteCodeGenerator::generatePipeline(PipelineNode &node) {
+    const bool lastPipe = node.isLastPipe();
     const unsigned int size = node.getNodes().size() - (lastPipe ? 1 : 0);
     const unsigned int labelSize = node.getNodes().size() + (lastPipe ? 0 : 1);
 
@@ -734,7 +735,7 @@ void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
 }
 
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
-    this->generatePipeline(node, node.isLastPipe());
+    this->generatePipeline(node);
 }
 
 void ByteCodeGenerator::visitWithNode(WithNode &node) {
@@ -757,12 +758,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
 
     this->markLabel(beginLabel);
     this->emitForkIns(node.getOpKind(), mergeLabel);
-    if(isa<PipelineNode>(node.getExprNode())) {
-        auto &pipeNode = cast<PipelineNode>(node.getExprNode());
-        this->generatePipeline(pipeNode, false);
-    } else {
-        this->visit(node.getExprNode());
-    }
+    this->visit(node.getExprNode());
     this->markLabel(endLabel);
 
     this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_Root));

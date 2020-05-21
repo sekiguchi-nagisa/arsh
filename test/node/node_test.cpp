@@ -418,7 +418,7 @@ nodes:
     funcType: null
 )"},
 
-        {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 2, 0, R"(
+        {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 1, 0, R"(
 nodes:
   - nodeKind: Assert
     token:
@@ -540,6 +540,7 @@ nodes:
                           handle: null
                 baseIndex: 0
             baseIndex: 0
+            inFork: true
           opKind: "ForkKind::JOB"
         nameNode:
           nodeKind: Var

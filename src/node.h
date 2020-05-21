@@ -1248,6 +1248,7 @@ private:
     std::vector<std::unique_ptr<Node>> nodes;
 
     unsigned int baseIndex{0}; // for indicating internal pipeline state index
+    bool inFork{false};
 
 public:
     PipelineNode(std::unique_ptr<Node> &&leftNode, std::unique_ptr<Node> &&rightNode) :
@@ -1272,8 +1273,12 @@ public:
         return this->baseIndex;
     }
 
+    void setInFork(bool in) {
+        this->inFork = in;
+    }
+
     bool isLastPipe() const {
-        return !isa<CmdNode>(*this->nodes.back());
+        return !this->inFork && !isa<CmdNode>(*this->nodes.back());
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -1333,6 +1338,8 @@ public:
         this->updateToken(endToken);
         if(isa<CmdNode>(*this->exprNode)) {
             cast<CmdNode>(*this->exprNode).setNeedFork(false);
+        } else if(isa<PipelineNode>(*this->exprNode)) {
+            cast<PipelineNode>(*this->exprNode).setInFork(true);
         }
     }
 
