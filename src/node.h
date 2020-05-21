@@ -1203,7 +1203,7 @@ private:
 
     unsigned int redirCount{0};
 
-    bool inPipe{false};
+    bool needFork{true};
 
 public:
     explicit CmdNode(std::unique_ptr<StringNode> &&nameNode) :
@@ -1225,12 +1225,12 @@ public:
         return this->redirCount > 0;
     }
 
-    void setInPipe(bool in) {
-        this->inPipe = in;
+    void setNeedFork(bool in) {
+        this->needFork = in;
     }
 
-    bool getInPipe() const {
-        return this->inPipe;
+    bool getNeedFork() const {
+        return this->needFork;
     }
 
     void addRedirNode(std::unique_ptr<RedirNode> &&node);
@@ -1326,6 +1326,9 @@ public:
     ForkNode(Token token, ForkKind kind, std::unique_ptr<Node> &&exprNode, Token endToken) :
             WithRtti(token), opKind(kind), exprNode(std::move(exprNode)) {
         this->updateToken(endToken);
+        if(isa<CmdNode>(*this->exprNode)) {
+            cast<CmdNode>(*this->exprNode).setNeedFork(false);
+        }
     }
 
     static auto newCmdSubstitution(unsigned int pos,

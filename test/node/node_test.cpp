@@ -493,7 +493,7 @@ nodes:
                             kind: "STRING"
                             value: "34"
                   redirCount: 1
-                  inPipe: false
+                  needFork: true
                 methodCallNode: null
               - nodeKind: With
                 token:

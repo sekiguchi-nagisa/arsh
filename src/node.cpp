@@ -454,7 +454,7 @@ void CmdNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(nameNode);
     DUMP(argNodes);
     DUMP(redirCount);
-    DUMP(inPipe);
+    DUMP(needFork);
 }
 
 // ##########################
@@ -479,7 +479,7 @@ void PipelineNode::dump(NodeDumper &dumper) const {
 
 void PipelineNode::addNodeImpl(std::unique_ptr<Node> &&node) {
     if(isa<CmdNode>(*node)) {
-        cast<CmdNode>(*node).setInPipe(true);
+        cast<CmdNode>(*node).setNeedFork(false);
     }
     this->updateToken(node->getToken());
     this->nodes.push_back(std::move(node));

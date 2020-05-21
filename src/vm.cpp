@@ -1469,8 +1469,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(CALL_CMD)
-        vmcase(CALL_CMD_P) {
-            bool needFork = op != OpCode::CALL_CMD_P;
+        vmcase(CALL_CMD_NOFORK) {
+            bool needFork = op != OpCode::CALL_CMD_NOFORK;
             flag8_set_t attr = 0;
             if(needFork) {
                 setFlag(attr, UDC_ATTR_NEED_FORK);

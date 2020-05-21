@@ -652,7 +652,7 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
     }
 
     this->emitSourcePos(node.getPos());
-    OpCode ins = node.getInPipe() ? OpCode::CALL_CMD_P : OpCode::CALL_CMD;
+    OpCode ins = node.getNeedFork() ? OpCode::CALL_CMD : OpCode::CALL_CMD_NOFORK;
     this->emit0byteIns(ins);
 }
 
