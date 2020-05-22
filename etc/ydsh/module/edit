@@ -13,9 +13,7 @@ function _sync() {
     if $HISTSIZE > $limit {
         $HISTSIZE = $limit
     }
-    while $HISTORY.size() > $HISTSIZE {
-        $HISTORY.pop()
-    }
+    for(; $HISTORY.size() > $HISTSIZE; $HISTORY.pop()) {}
 }
 
 function _error($s : String) {
