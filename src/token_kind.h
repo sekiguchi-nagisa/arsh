@@ -200,11 +200,11 @@
     OP(UNMATCH   , 10, INFIX) \
     OP(STR_CHECK , 10, INFIX) \
     OP(WITH      , 9, INFIX) \
-    OP(THROW     , 8, PREFIX|RASSOC) \
     OP(PIPE      , 7, INFIX) \
     OP(COND_AND  , 6, INFIX) \
     OP(COND_OR   , 5, INFIX) \
     OP(TERNARY   , 4, INFIX) \
+    OP(THROW     , 3, PREFIX|RASSOC) \
     OP(COPROC    , 3, PREFIX|RASSOC) \
     OP(BACKGROUND, 2, INFIX) \
     OP(DISOWN_BG , 2, INFIX) \
