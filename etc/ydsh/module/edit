@@ -81,7 +81,7 @@ function _add($s : String, $p : Boolean) {
 }
 
 function _default_search($q : String) : String {
-    command -v fzf &> /dev/null || { return ""; }
+    command -v fzf &> /dev/null || return ""
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
     return "$(for $e in $HISTORY {
@@ -114,7 +114,7 @@ function _save($p : String!) {
     }
 
     if !$p || $p!.empty() { $p = $HISTFILE; }
-    let path = $p!.realpath() ?? { return; }
+    let path = $p!.realpath() ?? return
     let size = $HISTORY.size()
     var offset = $size < $HISTFILESIZE ? 0 : $size - $HISTFILESIZE
 
@@ -217,10 +217,10 @@ function _editHook($op : Int, $index : Int, $text : String) : Any {
 
     case $op {
         # DS_EDIT_HIST_SIZE
-        0 => { return $HISTORY.size(); }
+        0 => return $HISTORY.size();
 
         # DS_EDIT_HIST_GET
-        1 => { return $HISTORY[$index]; }
+        1 => return $HISTORY[$index];
 
         # DS_EDIT_HIST_SET
         2 => $HISTORY[$index] = $text;
@@ -244,10 +244,10 @@ function _editHook($op : Int, $index : Int, $text : String) : Any {
         8 => $_save($text)
 
         # DS_EDIT_HIST_SEARCH
-        9 => { return $_search($text); }
+        9 => return $_search($text)
 
         # DS_EDIT_PROMPT
-        10 => { return $_prompt($index); }
+        10 => return $_prompt($index);
     }
     return $text
 }

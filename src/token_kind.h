@@ -245,7 +245,10 @@
     OP(IF) \
     OP(CASE) \
     OP(TRY) \
-    OP(WHILE)
+    OP(WHILE) \
+    OP(BREAK) \
+    OP(CONTINUE) \
+    OP(RETURN) \
 
 #define EACH_LA_expression(OP) \
     OP(NOT) \
@@ -264,11 +267,8 @@
     OP(INTERFACE) \
     OP(ALIAS) \
     OP(ASSERT) \
-    OP(BREAK) \
-    OP(CONTINUE) \
     OP(EXPORT_ENV) \
     OP(IMPORT_ENV) \
-    OP(RETURN) \
     OP(SOURCE) \
     OP(SOURCE_OPT) \
     OP(LINE_END) \

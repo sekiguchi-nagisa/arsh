@@ -379,25 +379,6 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         }
         return std::make_unique<AssertNode>(pos, std::move(condNode), std::move(messageNode));
     }
-    case BREAK: {
-        Token token = this->expect(BREAK); // always success
-        std::unique_ptr<Node> exprNode;
-        if(!HAS_NL()) {
-            switch(CUR_KIND()) {
-            EACH_LA_expression(GEN_LA_CASE) {
-                exprNode = TRY(this->parse_expression());
-                break;
-            }
-            default:
-                break;
-            }
-        }
-        return JumpNode::newBreak(token, std::move(exprNode));
-    }
-    case CONTINUE: {
-        Token token = this->expect(CONTINUE);  // always success
-        return JumpNode::newContinue(token);
-    }
     case EXPORT_ENV: {
         unsigned int startPos = START_POS();
         this->consume();    // EXPORT_ENV
@@ -421,20 +402,6 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
                                         std::move(exprNode), VarDeclNode::IMPORT_ENV);
         node->updateToken(token);
         return std::move(node);
-    }
-    case RETURN: {
-        Token token = this->expect(RETURN); // always success
-        std::unique_ptr<Node> exprNode;
-        if(!HAS_NL()) {
-            switch(CUR_KIND()) {
-            EACH_LA_expression(GEN_LA_CASE)
-                exprNode = TRY(this->parse_expression());
-                break;
-            default:
-                break;
-            }
-        }
-        return JumpNode::newReturn(token, std::move(exprNode));
     }
     case SOURCE:
     case SOURCE_OPT: {
@@ -1132,6 +1099,39 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             tryNode->addFinallyNode(TRY(this->parse_block()));
         }
         return std::move(tryNode);
+    }
+    case BREAK: {
+        Token token = this->expect(BREAK); // always success
+        std::unique_ptr<Node> exprNode;
+        if(!HAS_NL()) {
+            switch(CUR_KIND()) {
+            EACH_LA_expression(GEN_LA_CASE) {
+                exprNode = TRY(this->parse_expression());
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        return JumpNode::newBreak(token, std::move(exprNode));
+    }
+    case CONTINUE: {
+        Token token = this->expect(CONTINUE);  // always success
+        return JumpNode::newContinue(token);
+    }
+    case RETURN: {
+        Token token = this->expect(RETURN); // always success
+        std::unique_ptr<Node> exprNode;
+        if(!HAS_NL()) {
+            switch(CUR_KIND()) {
+            EACH_LA_expression(GEN_LA_CASE)
+                exprNode = TRY(this->parse_expression());
+                break;
+            default:
+                break;
+            }
+        }
+        return JumpNode::newReturn(token, std::move(exprNode));
     }
     default:
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
