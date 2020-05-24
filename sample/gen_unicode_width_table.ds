@@ -30,47 +30,38 @@ function table($n : String, $v : typeof([""])) {
 }
 
 
-if !(test -d $work_dir) {
-    mkdir $work_dir
-}
+test -d $work_dir || mkdir $work_dir
 
 cd $work_dir
 
-if !(test -f UnicodeData.txt) {
+test -f UnicodeData.txt ||
     curl http://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt -o ./UnicodeData.txt
-}
 
-if !(test -f EastAsianWidth.txt) {
+test -f EastAsianWidth.txt ||
     curl http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt -o ./EastAsianWidth.txt
-}
 
-if !(test -d uniset) {
-    assert(git clone https://github.com/depp/uniset.git)
-}
+test -d uniset ||
+    git clone https://github.com/depp/uniset.git || throw new Error("")
 
 cd uniset
 git checkout 4b186196dd
-assert(autoreconf -i && ./configure && make)
+(autoreconf -i && ./configure && make) || throw new Error("")
 cd ../
 
 ## generate code
-echo "generate file: $out"
+echo generate file: $out
 
 export-env UNICODE_DIR = "."
-let g = "AUTO_GENERATED_$(echo $(basename $out) | tr [a-z.] [A-Z_])"
 
 echo "/* this is a auto-generated file by using sample/$(basename $0)  */" > $out
 write "/*"
 cat EastAsianWidth.txt | head -n 2 >> $out
 write "*/"
-#write "#ifndef $g"
-#write "#define $g"
 write ""
 
 $IFS = $'\n'
 $table("zero_width_table", $(./uniset/uniset --32 cat:Me,Mn,Cf + U+1160..U+11FF - U+00AD))
 $table("two_width_table", $(./uniset/uniset --32 eaw:F,W - cat:Me,Mn,Cf))
 $table("ambiguous_width_table", $(./uniset/uniset --32 eaw:A - cat:Me,Mn,Cf))
-#write "#endif //$g"
 
 echo code generation success

@@ -1,8 +1,8 @@
 #!/usr/bin/env ydsh
 
 for $a in $(find $SCRIPT_DIR) {
-    $a =~ $/\.xml$/ && { continue; }
-    !test -f $a && { continue; }
+    $a =~ $/\.xml$/ && continue
+    !test -f $a && continue
 
     var r = ydsh --compile-only $a
     echo ${$r ? "[OK]" : "[NG]"} $a
