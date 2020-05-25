@@ -1,11 +1,13 @@
 
+#$test($status = 0, $out = $'hello\nworld\nAAA\nCONT\n')
+
 # background job
-var j = ls &
+var j = (/usr/bin/echo world && /usr/bin/echo hello) | sort &
 assert ! $j[0]
 assert ! $j[1]
 assert !$j.in()
 assert ! $j.out()
-assert $j.size() == 1
+assert $j.size() == 2
 
 var ex = 34 as Any
 try { $j[2]; } catch $e { $ex = $e; }
@@ -16,7 +18,7 @@ assert $j.wait() == 0
 
 
 # disowned background job
-$j = ls &!
+$j = /usr/bin/echo AAA &!
 assert ! $j[0]
 assert ! $j[1]
 assert !$j.in()

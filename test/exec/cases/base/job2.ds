@@ -1,0 +1,24 @@
+
+var j = coproc sort | uniq
+assert $j[0]
+assert $j[1]
+assert $j.in()
+assert $j.out()
+assert $j.size() == 2
+
+echo -e 'world\nhello\nworld' > $j[0]
+$j[0].close()
+var r = new [String]()
+while(read -u $j[1]) {
+    $r.add($REPLY)
+}
+assert $r.size() == 2
+assert $r[0] == 'hello'
+assert $r[1] == 'world'
+
+assert $j.wait() == 0
+assert ! $j.in()
+assert !$j.out()
+assert $j.size() == 2
+
+true

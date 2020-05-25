@@ -210,7 +210,7 @@ void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
     }
 }
 
-void ByteCodeGenerator::generatePipeline(PipelineNode &node) {
+void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) {
     const bool lastPipe = node.isLastPipe();
     const unsigned int size = node.getNodes().size() - (lastPipe ? 1 : 0);
     const unsigned int labelSize = node.getNodes().size() + (lastPipe ? 0 : 1);
@@ -223,7 +223,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node) {
 
     // generate pipeline
     this->emitSourcePos(node.getPos());
-    this->emitPipelineIns(labels, lastPipe);
+    this->emitPipelineIns(labels, lastPipe, forkKind);
 
     auto begin = makeLabel();
     auto end = makeLabel();
@@ -251,14 +251,20 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node) {
     }
 }
 
-void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool lastPipe) {
+void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels,
+                                        bool lastPipe, ForkKind forkKind) {
     const unsigned int size = labels.size();
     if(size > UINT8_MAX) {
         fatal("reach limit\n");
     }
 
-    const unsigned int offset = this->currentCodeOffset();
-    this->emitIns(lastPipe ? OpCode::PIPELINE_LP : OpCode::PIPELINE);
+    unsigned int offset = this->currentCodeOffset();
+    this->emitIns(lastPipe ? OpCode::PIPELINE_LP :
+                    forkKind == ForkKind::NONE ? OpCode::PIPELINE : OpCode::PIPELINE_ASYNC);
+    if(forkKind != ForkKind::NONE) {
+        offset++;
+        this->curBuilder().append(static_cast<unsigned char>(forkKind));
+    }
     this->curBuilder().append8(size);
     for(unsigned int i = 0; i < size; i++) {
         this->curBuilder().append16(0);
@@ -735,7 +741,7 @@ void ByteCodeGenerator::visitWildCardNode(WildCardNode &node) {
 }
 
 void ByteCodeGenerator::visitPipelineNode(PipelineNode &node) {
-    this->generatePipeline(node);
+    this->generatePipeline(node, ForkKind::NONE);
 }
 
 void ByteCodeGenerator::visitWithNode(WithNode &node) {
@@ -752,18 +758,23 @@ void ByteCodeGenerator::visitWithNode(WithNode &node) {
 }
 
 void ByteCodeGenerator::visitForkNode(ForkNode &node) {
-    auto beginLabel = makeLabel();
-    auto endLabel = makeLabel();
-    auto mergeLabel = makeLabel();
+    if(isa<PipelineNode>(node.getExprNode())
+            && node.getOpKind() != ForkKind::ARRAY && node.getOpKind() != ForkKind::STR) {
+        this->generatePipeline(cast<PipelineNode>(node.getExprNode()), node.getOpKind());
+    } else {
+        auto beginLabel = makeLabel();
+        auto endLabel = makeLabel();
+        auto mergeLabel = makeLabel();
 
-    this->markLabel(beginLabel);
-    this->emitForkIns(node.getOpKind(), mergeLabel);
-    this->visit(node.getExprNode());
-    this->markLabel(endLabel);
+        this->markLabel(beginLabel);
+        this->emitForkIns(node.getOpKind(), mergeLabel);
+        this->visit(node.getExprNode());
+        this->markLabel(endLabel);
 
-    this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_Root));
-    this->emit0byteIns(OpCode::HALT);
-    this->markLabel(mergeLabel);
+        this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_Root));
+        this->emit0byteIns(OpCode::HALT);
+        this->markLabel(mergeLabel);
+    }
 }
 
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
@@ -1408,10 +1419,14 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                         fprintf(this->fp, "  %d", read32(c.getCode(), i + 1));
                         break;
                     case -1: {
-                        auto s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
+                        unsigned int offset = code == OpCode::PIPELINE_ASYNC ? 1 : 0;
+                        if(offset) {
+                            fprintf(this->fp, " %d", read8(c.getCode(), i + 1));
+                        }
+                        auto s = static_cast<unsigned int>(read8(c.getCode(), i + offset + 1));
                         fprintf(this->fp, " %d", s);
                         for(unsigned int index = 0; index < s; index++) {
-                            fprintf(this->fp, "  %d", read16(c.getCode(), i + 2 + index * 2));
+                            fprintf(this->fp, "  %d", read16(c.getCode(), i + offset + 2 + index * 2));
                         }
                         break;
                     }

@@ -1458,9 +1458,16 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(PIPELINE)
-        vmcase(PIPELINE_LP) {
+        vmcase(PIPELINE_LP)
+        vmcase(PIPELINE_ASYNC) {
             bool lastPipe = op == OpCode::PIPELINE_LP;
-            TRY(callPipeline(state, lastPipe, ForkKind::NONE));
+            auto kind = ForkKind::NONE;
+            if(op == OpCode::PIPELINE_ASYNC) {
+                unsigned char v = read8(GET_CODE(state), state.stack.pc());
+                state.stack.pc()++;
+                kind = static_cast<ForkKind>(v);
+            }
+            TRY(callPipeline(state, lastPipe, kind));
             vmnext;
         }
         vmcase(EXPAND_TILDE) {

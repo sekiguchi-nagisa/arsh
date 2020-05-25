@@ -1,7 +1,8 @@
 
-var f = <(echo hello)
+var f = <(echo -e 'hello\naaa' | sort)
 assert $f is UnixFD
-assert $f is typeof(>(echo hello))
-assert "$(cat $f)" == "hello"
+assert $f is typeof(>(echo -e 'hello\naaa' | sort))
+assert "$(cat $f)" == "aaa
+hello"
 
 assert "$(cat <(echo world!))" == "world!"

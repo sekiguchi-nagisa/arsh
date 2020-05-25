@@ -543,8 +543,8 @@ private:
                         unsigned short localOffset = 0, unsigned short localSize = 0);
     void enterFinally();
     void generateCmdArg(CmdArgNode &node);
-    void generatePipeline(PipelineNode &node);
-    void emitPipelineIns(const std::vector<Label> &labels, bool lastPipe);
+    void generatePipeline(PipelineNode &node, ForkKind forkKind);
+    void emitPipelineIns(const std::vector<Label> &labels, bool lastPipe, ForkKind forkKind);
 
     void generateConcat(Node &node, bool fragment = false);
 

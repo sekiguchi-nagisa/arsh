@@ -78,6 +78,7 @@ namespace ydsh {
     OP(FORK           , 3,  1) \
     OP(PIPELINE       , -1, 1) \
     OP(PIPELINE_LP    , -1, 1) \
+    OP(PIPELINE_ASYNC , -1, 1) \
     OP(EXPAND_TILDE   , 0,  0) \
     OP(NEW_CMD        , 0,  0) \
     OP(ADD_CMD_ARG    , 1, -1) \
