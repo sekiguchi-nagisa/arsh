@@ -179,6 +179,7 @@ constexpr const char *BUILD_ARCH =
 
 
 enum class ForkKind : unsigned char {
+    NONE,       // do nothing
     STR,        // capture stdout as string. ex. "$(echo)"
     ARRAY,      // capture stdout as string array. ex. $(echo)
     IN_PIPE,    // capture stdin as pipe. ex. >(echo)

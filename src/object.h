@@ -610,6 +610,10 @@ inline bool concatAsStr(DSValue &left, const DSValue &right, bool selfConcat) {
     return left.appendAsStr(right.asStrRef());
 }
 
+inline DSValue exitStatusToBool(int64_t s) {
+    return DSValue::createBool(s == 0);
+}
+
 class RegexObject : public ObjectWithRtti<DSObject::Regex> {
 private:
     std::string str; // for string representation

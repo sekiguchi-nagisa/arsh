@@ -504,6 +504,7 @@ void ForkNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
 
 #define EACH_ENUM(OP) \
+    OP(ForkKind::NONE) \
     OP(ForkKind::STR) \
     OP(ForkKind::ARRAY) \
     OP(ForkKind::IN_PIPE) \

@@ -62,6 +62,9 @@ inline unsigned int getChangedFD(RedirOP op) {
     return 0;
 }
 
+constexpr unsigned int READ_PIPE = 0;
+constexpr unsigned int WRITE_PIPE = 1;
+
 inline void tryToDup(int srcFd, int targetFd) {
     if(srcFd > -1) {
         dup2(srcFd, targetFd);
@@ -105,54 +108,73 @@ inline void closeAllPipe(unsigned int size, pipe_t *pipefds) {
     }
 }
 
-struct PipeSet {
-    pipe_t in;
-    pipe_t out;
-};
-
-// FIXME: error reporting
-inline PipeSet initPipeSet(ForkKind kind) {
-    bool useInPipe = false;
-    bool useOutPipe = false;
-
-    switch(kind) {
-    case ForkKind::STR:
-    case ForkKind::ARRAY:
-        useOutPipe = true;
-        break;
-    case ForkKind::IN_PIPE:
-        useInPipe = true;
-        break;
-    case ForkKind::OUT_PIPE:
-        useOutPipe = true;
-        break;
-    case ForkKind::COPROC:
-        useInPipe = true;
-        useOutPipe = true;
-        break;
-    case ForkKind::JOB:
-    case ForkKind::DISOWN:
-        break;
-    }
-
-    PipeSet set;    //NOLINT
-    tryToPipe(set.in, useInPipe);
-    tryToPipe(set.out, useOutPipe);
-    return set;
-}
-
 inline void redirInToNull() {
     int fd = open("/dev/null", O_WRONLY);
     dup2(fd, STDIN_FILENO);
     close(fd);
 }
 
+struct PipeSet {
+    pipe_t in;
+    pipe_t out;
+
+    PipeSet(ForkKind kind) {    //FIXME: error reporting
+        bool useInPipe = false;
+        bool useOutPipe = false;
+
+        switch(kind) {
+        case ForkKind::STR:
+        case ForkKind::ARRAY:
+            useOutPipe = true;
+            break;
+        case ForkKind::IN_PIPE:
+            useInPipe = true;
+            break;
+        case ForkKind::OUT_PIPE:
+            useOutPipe = true;
+            break;
+        case ForkKind::COPROC:
+            useInPipe = true;
+            useOutPipe = true;
+            break;
+        case ForkKind::JOB:
+        case ForkKind::DISOWN:
+        case ForkKind::NONE:
+            break;
+        }
+        tryToPipe(this->in, useInPipe);
+        tryToPipe(this->out, useOutPipe);
+    }
+
+    /**
+     * only call once in child
+     */
+    void setupChildStdin(ForkKind forkKind, bool jobctl) {
+        tryToDup(this->in[READ_PIPE], STDIN_FILENO);
+        if(forkKind == ForkKind::DISOWN || (forkKind == ForkKind::JOB && !jobctl)) {
+            redirInToNull();
+        }
+    }
+
+    /**
+     * only call once in child
+     */
+    void setupChildStdout() {
+        tryToDup(this->out[WRITE_PIPE], STDOUT_FILENO);
+    }
+
+    /**
+     * call in parent and child
+     */
+    void closeAll() {
+        tryToClose(this->in);
+        tryToClose(this->out);
+    }
+};
+
 inline bool needForeground(ForkKind kind) {
     return kind == ForkKind::ARRAY || kind == ForkKind::STR;
 }
-
-constexpr unsigned int READ_PIPE = 0;
-constexpr unsigned int WRITE_PIPE = 1;
 
 inline void flushStdFD() {
     fflush(stdin);

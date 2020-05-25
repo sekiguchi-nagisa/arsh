@@ -322,6 +322,56 @@ static DSValue newFD(const DSState &st, int &fd) {
     return value;
 }
 
+DSValue VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs,
+                           ForkKind forkKind, PipeSet &pipeSet) {
+    DSValue obj;
+    switch(forkKind) {
+    case ForkKind::NONE: {
+        auto entry = JobTable::create(
+                procSize, procs, false,
+                DSValue(state.emptyFDObj), DSValue(state.emptyFDObj));
+        // job termination
+        auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+        int status = entry->wait(waitOp);
+        state.updatePipeStatus(entry->getProcSize(), entry->getProcs(), false);
+        if(entry->available()) {
+            state.jobTable.attach(entry);
+        }
+        tryToBeForeground(state);
+        state.jobTable.updateStatus();
+        state.setExitStatus(status);
+        obj = exitStatusToBool(status);
+        break;
+    }
+    case ForkKind::IN_PIPE:
+    case ForkKind::OUT_PIPE: {
+        int &fd = forkKind == ForkKind::IN_PIPE ? pipeSet.in[WRITE_PIPE] : pipeSet.out[READ_PIPE];
+        obj = newFD(state, fd);
+        auto entry = JobTable::create(
+                procSize, procs, false,
+                DSValue(forkKind == ForkKind::IN_PIPE ? obj : state.emptyFDObj),
+                DSValue(forkKind == ForkKind::OUT_PIPE ? obj : state.emptyFDObj));
+        state.jobTable.attach(entry, true);
+        break;
+    }
+    case ForkKind::COPROC:
+    case ForkKind::JOB:
+    case ForkKind::DISOWN: {
+        bool disown = forkKind == ForkKind::DISOWN;
+        auto entry = JobTable::create(
+                procSize, procs, false,
+                newFD(state, pipeSet.in[WRITE_PIPE]),
+                newFD(state, pipeSet.out[READ_PIPE]));
+        state.jobTable.attach(entry, disown);
+        obj = DSValue(entry.get());
+        break;
+    }
+    default:
+        break;
+    }
+    return obj;
+}
+
 bool VM::forkAndEval(DSState &state) {
     const auto forkKind = static_cast<ForkKind >(read8(GET_CODE(state), state.stack.pc()));
     const unsigned short offset = read16(GET_CODE(state), state.stack.pc() + 1);
@@ -330,7 +380,7 @@ bool VM::forkAndEval(DSState &state) {
     flushStdFD();
 
     // set in/out pipe
-    auto pipeset = initPipeSet(forkKind);
+    PipeSet pipeset(forkKind);
     const bool rootShell = state.isRootShell();
     pid_t pgid = rootShell ? 0 : getpgid(0);
     auto proc = Proc::fork(state, pgid, needForeground(forkKind) && rootShell);
@@ -359,29 +409,10 @@ bool VM::forkAndEval(DSState &state) {
             tryToBeForeground(state);
             break;
         }
-        case ForkKind::IN_PIPE:
-        case ForkKind::OUT_PIPE: {
-            int &fd = forkKind == ForkKind::IN_PIPE ? pipeset.in[WRITE_PIPE] : pipeset.out[READ_PIPE];
-            obj = newFD(state, fd);
-            auto entry = JobTable::create(
-                    proc,
-                    DSValue(forkKind == ForkKind::IN_PIPE ? obj : state.emptyFDObj),
-                    DSValue(forkKind == ForkKind::OUT_PIPE ? obj : state.emptyFDObj));
-            state.jobTable.attach(entry, true);
+        default:
+            Proc procs[1] = {proc};
+            obj = attachAsyncJob(state, 1, procs, forkKind, pipeset);
             break;
-        }
-        case ForkKind::COPROC:
-        case ForkKind::JOB:
-        case ForkKind::DISOWN: {
-            bool disown = forkKind == ForkKind::DISOWN;
-            auto entry = JobTable::create(
-                    proc,
-                    newFD(state, pipeset.in[WRITE_PIPE]),
-                    newFD(state, pipeset.out[READ_PIPE]));
-            state.jobTable.attach(entry, disown);
-            obj = DSValue(entry.get());
-            break;
-        }
         }
 
         // push object
@@ -391,14 +422,9 @@ bool VM::forkAndEval(DSState &state) {
 
         state.stack.pc() += offset - 1;
     } else if(proc.pid() == 0) {   // child process
-        tryToDup(pipeset.in[READ_PIPE], STDIN_FILENO);
-        tryToClose(pipeset.in);
-        tryToDup(pipeset.out[WRITE_PIPE], STDOUT_FILENO);
-        tryToClose(pipeset.out);
-
-        if(forkKind == ForkKind::DISOWN || (forkKind == ForkKind::JOB && !state.isJobControl())) {
-            redirInToNull();
-        }
+        pipeset.setupChildStdin(forkKind, state.isJobControl());
+        pipeset.setupChildStdout();
+        pipeset.closeAll();
 
         state.stack.pc() += 3;
     } else {
@@ -743,7 +769,7 @@ void VM::callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     pushExitStatus(state, 0);
 }
 
-bool VM::callPipeline(DSState &state, bool lastPipe) {
+bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
     /**
      * ls | grep .
      * ==> pipeSize == 1, procSize == 2
@@ -758,6 +784,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe) {
 
     assert(pipeSize > 0);
 
+    PipeSet pipeset(forkKind);
     int pipefds[pipeSize][2];
     initAllPipe(pipeSize, pipefds);
 
@@ -785,6 +812,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe) {
     if(proc.pid() == 0) {   // child
         if(procIndex == 0) {    // first process
             ::dup2(pipefds[procIndex][WRITE_PIPE], STDOUT_FILENO);
+            pipeset.setupChildStdin(forkKind, state.isJobControl());
         }
         if(procIndex > 0 && procIndex < pipeSize) {   // other process.
             ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
@@ -792,37 +820,32 @@ bool VM::callPipeline(DSState &state, bool lastPipe) {
         }
         if(procIndex == pipeSize && !lastPipe) {    // last process
             ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+            pipeset.setupChildStdout();
         }
+        pipeset.closeAll();
         closeAllPipe(pipeSize, pipefds);
 
         // set pc to next instruction
         state.stack.pc() += read16(GET_CODE(state), state.stack.pc() + 1 + procIndex * 2) - 1;
     } else if(procIndex == procSize) { // parent (last pipeline)
-        /**
-         * in last pipe, save current stdin before call dup2
-         */
-        auto jobEntry = JobTable::create(
-                procSize, childs, lastPipe,
-                DSValue(state.emptyFDObj), DSValue(state.emptyFDObj));
-
         if(lastPipe) {
+            /**
+             * in last pipe, save current stdin before call dup2
+             */
+            auto jobEntry = JobTable::create(
+                    procSize, childs, true,
+                    DSValue(state.emptyFDObj), DSValue(state.emptyFDObj));
             ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-        }
-        closeAllPipe(pipeSize, pipefds);
-
-        if(lastPipe) {
+            closeAllPipe(pipeSize, pipefds);
             state.stack.push(DSValue::create<PipelineObject>(state, std::move(jobEntry)));
         } else {
-            // job termination
-            auto waitOp = rootShell && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
-            int status = jobEntry->wait(waitOp);
-            state.updatePipeStatus(jobEntry->getProcSize(), jobEntry->getProcs(), false);
-            if(jobEntry->available()) {
-                state.jobTable.attach(jobEntry);
+            tryToClose(pipeset.in[READ_PIPE]);
+            tryToClose(pipeset.out[WRITE_PIPE]);
+            closeAllPipe(pipeSize, pipefds);
+            auto obj = attachAsyncJob(state, procSize, childs, forkKind, pipeset);
+            if(obj) {
+                state.stack.push(std::move(obj));
             }
-            tryToBeForeground(state);
-            state.jobTable.updateStatus();
-            pushExitStatus(state, status);
         }
 
         // set pc to next instruction
@@ -1437,7 +1460,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(PIPELINE)
         vmcase(PIPELINE_LP) {
             bool lastPipe = op == OpCode::PIPELINE_LP;
-            TRY(callPipeline(state, lastPipe));
+            TRY(callPipeline(state, lastPipe, ForkKind::NONE));
             vmnext;
         }
         vmcase(EXPAND_TILDE) {

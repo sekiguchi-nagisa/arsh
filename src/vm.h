@@ -32,6 +32,8 @@
 
 namespace ydsh {
 
+struct PipeSet;
+
 enum class CompileOption : unsigned short {
     ASSERT      = 1u << 0u,
     INTERACTIVE = 1u << 1u,
@@ -282,7 +284,7 @@ class VM {
 private:
     static void pushExitStatus(DSState &state, int64_t status) {
         state.setExitStatus(status);
-        state.stack.push(DSValue::createBool(status == 0));
+        state.stack.push(exitStatusToBool(status));
     }
 
     static bool windStackFrame(DSState &state, unsigned int stackTopOffset,
@@ -347,6 +349,9 @@ private:
     static bool prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
                                               DSValue &&restoreFD, flag8_set_t attr);
 
+    static DSValue attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs,
+                                  ForkKind forkKind, PipeSet &pipeSet);
+
     static bool forkAndEval(DSState &state);
 
     static int forkAndExec(DSState &state, const char *filePath, char *const *argv, DSValue &&redirConfig);
@@ -365,7 +370,7 @@ private:
      * @return
      * if has error, return false.
      */
-    static bool callPipeline(DSState &state, bool lastPipe);
+    static bool callPipeline(DSState &state, bool lastPipe, ForkKind forkKind);
 
     static void addCmdArg(DSState &state, bool skipEmptyStr);
 

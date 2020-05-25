@@ -789,6 +789,7 @@ void TypeChecker::visitForkNode(ForkNode &node) {
     case ForkKind::JOB:
     case ForkKind::COPROC:
     case ForkKind::DISOWN:
+    case ForkKind::NONE:
         type = &this->symbolTable.get(TYPE::Job);
         break;
     }
