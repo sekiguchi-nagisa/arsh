@@ -2,7 +2,7 @@
 #$test($status = 0, $out = $'hello\nworld\nAAA\nCONT\n')
 
 # background job
-var j = (/usr/bin/echo world && /usr/bin/echo hello) | sort &
+var j = (/bin/sh -c 'echo world' && /bin/sh -c 'echo hello') | sort &
 assert ! $j[0]
 assert ! $j[1]
 assert !$j.in()
@@ -18,7 +18,7 @@ assert $j.wait() == 0
 
 
 # disowned background job
-$j = /usr/bin/echo AAA &!
+$j = /bin/sh -c 'echo AAA' &!
 assert ! $j[0]
 assert ! $j[1]
 assert !$j.in()
