@@ -20,9 +20,23 @@ for $d in $(ls $exec_test_dir) {
     }
 }
 
+# copy from module dir
+let mod = "$SCRIPT_DIR/../etc/ydsh/module".realpath()!
+echo copy scripts from $mod
+for $d in $(ls $mod) {
+    cp $mod/$d $dir/mod_$d
+}
+
 # copy from interest input
 let interest = "$SCRIPT_DIR/../fuzzing/interest_input".realpath()!
-echo copying scripts at $interest
+echo copying scripts from $interest
 for $d in $(ls $interest) {
     cp $interest/$d $dir/interest_$d 
+}
+
+# copy from sample
+let sample = "$SCRIPT_DIR"
+echo copy scripts from $sample
+for $d in $(ls $sample) {
+    cp $sample/$d $dir/sample_$d
 }
