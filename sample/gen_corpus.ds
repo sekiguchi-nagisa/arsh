@@ -40,3 +40,8 @@ echo copy scripts from $sample
 for $d in $(ls $sample) {
     cp $sample/$d $dir/sample_$d
 }
+
+# copy current rcfile
+echo copy ydshrc
+cp ~/.ydshrc $dir/rcfile_ydshrc
+
