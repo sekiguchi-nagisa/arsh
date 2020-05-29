@@ -1715,7 +1715,12 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
     auto &obj = typeAs<JobImplObject>(LOCAL(0));
     auto entry = Job(&obj);
     int s = ctx.jobTable.waitAndDetach(entry, ctx.isJobControl());
+    int errNum = errno;
     ctx.jobTable.updateStatus();
+    if(errNum != 0) {
+        raiseSystemError(ctx, errNum, "wait failed");
+        RET_ERROR;
+    }
     RET(DSValue::createInt(s));
 }
 

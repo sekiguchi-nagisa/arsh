@@ -349,8 +349,8 @@ private:
     static bool prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
                                               DSValue &&restoreFD, flag8_set_t attr);
 
-    static DSValue attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs,
-                                  ForkKind forkKind, PipeSet &pipeSet);
+    static bool attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs,
+                                  ForkKind forkKind, PipeSet &pipeSet, DSValue &ret);
 
     static bool forkAndEval(DSState &state);
 

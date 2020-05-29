@@ -91,6 +91,8 @@ public:
      * @param showSignal
      * if true, print signal message when terminated by signal.
      * @return
+     * if waitpid return 0, set 'exitStatus_' and return it.
+     * if waitpid return -1, return -1.
      */
     int wait(WaitOp op, bool showSignal = true);
 
@@ -246,7 +248,7 @@ public:
      * @param op
      * @return
      * exit status of last process.
-     * if cannot terminate (has no-ownership), return -1.
+     * if cannot terminate (has no-ownership or has error), return -1 and set errno
      */
     int wait(Proc::WaitOp op);
 

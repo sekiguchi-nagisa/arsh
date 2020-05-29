@@ -58,7 +58,7 @@ $j = {
  var s = $j2.wait()
  exit $s;
 } &
-assert $j.wait() == 255
+assert $j.wait() == 1 : "${$j.wait()}"  # raise system error
 assert $j2.wait() == 0
 
 

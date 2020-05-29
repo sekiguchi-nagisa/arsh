@@ -108,10 +108,9 @@ static const char *toString(Proc::WaitOp op) {
 int Proc::wait(WaitOp op, bool showSignal) {
     if(this->state() != TERMINATED) {
         int status = 0;
+        errno = 0;
         int ret = waitpid(this->pid_, &status, toOption(op));
-        if(ret == -1) {
-            fatal_perror("");
-        }
+        int errNum = errno;
 
         // dump waitpid result
         LOG_EXPR(DUMP_WAIT, [&]{
@@ -144,6 +143,9 @@ int Proc::wait(WaitOp op, bool showSignal) {
                 } else if(WIFCONTINUED(status)) {
                     str += "RUNNING\nkind: CONTINUED";
                 }
+            } else {
+                str += "FAILED\n";
+                str += strerror(errNum);
             }
             return str;
         });
@@ -178,6 +180,9 @@ int Proc::wait(WaitOp op, bool showSignal) {
             if(this->state_ == TERMINATED) {
                 this->pid_ = -1;
             }
+        } else {
+            errno = errNum;
+            return -1;
         }
     }
     return this->exitStatus_;
@@ -220,7 +225,9 @@ void JobImplObject::send(int sigNum) const {
 }
 
 int JobImplObject::wait(Proc::WaitOp op) {
+    errno = 0;
     if(!hasOwnership()) {
+        errno = ECHILD;
         return -1;
     }
     if(!this->available()) {
@@ -232,6 +239,9 @@ int JobImplObject::wait(Proc::WaitOp op) {
     for(unsigned short i = 0; i < this->procSize; i++) {
         auto &proc = this->procs[i];
         lastStatus = proc.wait(op, i == this->procSize - 1);
+        if(lastStatus < 0) {
+            return lastStatus;
+        }
         if(proc.state() == Proc::TERMINATED) {
             terminateCount++;
         }

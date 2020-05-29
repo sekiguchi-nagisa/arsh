@@ -322,9 +322,8 @@ static DSValue newFD(const DSState &st, int &fd) {
     return value;
 }
 
-DSValue VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs,
-                           ForkKind forkKind, PipeSet &pipeSet) {
-    DSValue obj;
+bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs,
+                           ForkKind forkKind, PipeSet &pipeSet, DSValue &ret) {
     switch(forkKind) {
     case ForkKind::NONE: {
         auto entry = JobTable::create(
@@ -333,6 +332,7 @@ DSValue VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *pr
         // job termination
         auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
         int status = entry->wait(waitOp);
+        int errNum = errno;
         state.updatePipeStatus(entry->getProcSize(), entry->getProcs(), false);
         if(entry->available()) {
             state.jobTable.attach(entry);
@@ -340,17 +340,21 @@ DSValue VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *pr
         tryToBeForeground(state);
         state.jobTable.updateStatus();
         state.setExitStatus(status);
-        obj = exitStatusToBool(status);
+        if(errNum != 0) {
+            raiseSystemError(state, errNum, "wait failed");
+            return false;
+        }
+        ret = exitStatusToBool(status);
         break;
     }
     case ForkKind::IN_PIPE:
     case ForkKind::OUT_PIPE: {
         int &fd = forkKind == ForkKind::IN_PIPE ? pipeSet.in[WRITE_PIPE] : pipeSet.out[READ_PIPE];
-        obj = newFD(state, fd);
+        ret = newFD(state, fd);
         auto entry = JobTable::create(
                 procSize, procs, false,
-                DSValue(forkKind == ForkKind::IN_PIPE ? obj : state.emptyFDObj),
-                DSValue(forkKind == ForkKind::OUT_PIPE ? obj : state.emptyFDObj));
+                DSValue(forkKind == ForkKind::IN_PIPE ? ret : state.emptyFDObj),
+                DSValue(forkKind == ForkKind::OUT_PIPE ? ret : state.emptyFDObj));
         state.jobTable.attach(entry, true);
         break;
     }
@@ -363,13 +367,13 @@ DSValue VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *pr
                 newFD(state, pipeSet.in[WRITE_PIPE]),
                 newFD(state, pipeSet.out[READ_PIPE]));
         state.jobTable.attach(entry, disown);
-        obj = DSValue(entry.get());
+        ret = DSValue(entry.get());
         break;
     }
     default:
         break;
     }
-    return obj;
+    return true;
 }
 
 bool VM::forkAndEval(DSState &state) {
@@ -398,6 +402,7 @@ bool VM::forkAndEval(DSState &state) {
             obj = isStr ? readAsStr(pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
             auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
             int ret = proc.wait(waitOp);   // wait exit
+            int errNum = errno;
             tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
             if(proc.state() != Proc::TERMINATED) {
                 state.jobTable.attach(JobTable::create(
@@ -407,12 +412,17 @@ bool VM::forkAndEval(DSState &state) {
             }
             state.setExitStatus(ret);
             tryToBeForeground(state);
+            if(ret < 0) {
+                raiseSystemError(state, errNum, "wait failed");
+                return false;
+            }
             break;
         }
         default:
             Proc procs[1] = {proc};
-            obj = attachAsyncJob(state, 1, procs, forkKind, pipeset);
-            break;
+            if(!attachAsyncJob(state, 1, procs, forkKind, pipeset, obj)) {
+                return false;
+            }
         }
 
         // push object
@@ -563,6 +573,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
         int status;
         auto waitOp = rootShell && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
         status = proc.wait(waitOp);
+        int errNum2 = errno;
         if(proc.state() != Proc::TERMINATED) {
             state.jobTable.attach(JobTable::create(
                     proc,
@@ -573,7 +584,10 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
         LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
         state.jobTable.updateStatus();
         if(errnum != 0) {
-            raiseCmdError(state, argv[0], errnum);
+            errNum2 = errnum;
+        }
+        if(errNum2 != 0) {
+            raiseCmdError(state, argv[0], errNum2);
             return 1;
         }
         return status;
@@ -842,7 +856,10 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
             tryToClose(pipeset.in[READ_PIPE]);
             tryToClose(pipeset.out[WRITE_PIPE]);
             closeAllPipe(pipeSize, pipefds);
-            auto obj = attachAsyncJob(state, procSize, childs, forkKind, pipeset);
+            DSValue obj;
+            if(!attachAsyncJob(state, procSize, childs, forkKind, pipeset, obj)) {
+                return false;
+            }
             if(obj) {
                 state.stack.push(std::move(obj));
             }
