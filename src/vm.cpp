@@ -337,7 +337,7 @@ bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs
         if(entry->available()) {
             state.jobTable.attach(entry);
         }
-        tryToBeForeground(state);
+        state.tryToBeForeground();
         state.jobTable.updateStatus();
         state.setExitStatus(status);
         if(errNum != 0) {
@@ -411,7 +411,7 @@ bool VM::forkAndEval(DSState &state) {
                         DSValue(state.emptyFDObj)));
             }
             state.setExitStatus(ret);
-            tryToBeForeground(state);
+            state.tryToBeForeground();
             if(ret < 0) {
                 raiseSystemError(state, errNum, "wait failed");
                 return false;
@@ -580,7 +580,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
                     DSValue(state.emptyFDObj),
                     DSValue(state.emptyFDObj)));
         }
-        int ret = tryToBeForeground(state);
+        int ret = state.tryToBeForeground();
         LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
         state.jobTable.updateStatus();
         if(errnum != 0) {

@@ -30,15 +30,15 @@ struct DSState;
 
 namespace ydsh {
 
-/**
- *
- * @param st
- * @return
- * if success, return 0.
- * if not DSState::isForeground is false, return 1.
- * if error, return -1 and set errno
- */
-int tryToBeForeground(const DSState &st);
+inline int beForeground(pid_t pid) {
+    errno = 0;
+    int ttyFd = open("/dev/tty", O_RDONLY);
+    int r =  tcsetpgrp(ttyFd, getpgid(pid));
+    int old = errno;
+    close(ttyFd);
+    errno = old;
+    return r;
+}
 
 class Proc {
 public:

@@ -1405,7 +1405,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     int ret = 0;
     if(job) {
         if(fg) {
-            tcsetpgrp(STDIN_FILENO, getpgid(job->getPid(0)));
+            beForeground(job->getPid(0));
         }
         job->send(SIGCONT);
     } else {
@@ -1419,7 +1419,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     if(fg) {
         int s = state.jobTable.waitAndDetach(job, true);    //FIXME: check root shell
         int errNum = errno;
-        tryToBeForeground(state);
+        state.tryToBeForeground();
         if(errNum != 0) {
             PERROR(argvObj, "wait failed");
         }

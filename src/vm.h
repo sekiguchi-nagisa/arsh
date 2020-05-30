@@ -225,6 +225,20 @@ public:
         return this->isJobControl() && this->isRootShell();
     }
 
+    /**
+     *
+     * @return
+     * if success, return 0.
+     * if not DSState::isForeground is false, return 1.
+     * if error, return -1 and set errno
+     */
+    int tryToBeForeground() const {
+        if(this->isForeground()) {
+            return beForeground(0);
+        }
+        return 1;
+    }
+
     void setVMHook(VMHook *hook) {
         this->hook = hook;
         if(hook != nullptr) {

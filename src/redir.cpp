@@ -34,7 +34,7 @@ PipelineObject::~PipelineObject() {
     this->state.updatePipeStatus(this->entry->getProcSize(), this->entry->getProcs(), true);
 
     if(restored) {
-        int ret = tryToBeForeground(this->state);
+        int ret = this->state.tryToBeForeground();
         LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
     }
     if(this->entry->available()) {

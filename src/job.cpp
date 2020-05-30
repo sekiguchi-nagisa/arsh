@@ -32,7 +32,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
         if(st.isJobControl()) {
             setpgid(0, pgid);
             if(foreground) {
-                tcsetpgrp(STDIN_FILENO, getpgid(0));
+                beForeground(0);
             }
             setJobControlSignalSetting(st, false);
         }
@@ -59,19 +59,11 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
         if(st.isJobControl()) {
             setpgid(pid, pgid);
             if(foreground) {
-                tcsetpgrp(STDIN_FILENO, getpgid(pid));
+                beForeground(pid);
             }
         }
     }
     return Proc(pid);
-}
-
-int tryToBeForeground(const DSState &st) {
-    errno = 0;
-    if(st.isForeground()) {
-        return tcsetpgrp(STDIN_FILENO, getpgid(0));
-    }
-    return 1;
 }
 
 // ##################
