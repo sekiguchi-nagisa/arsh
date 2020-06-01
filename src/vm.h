@@ -143,6 +143,11 @@ public:
 
     static SigSet pendingSigSet;
 
+    static void clearPendingSignal() {
+        DSState::pendingSigSet.clear();
+        unsetFlag(DSState::eventDesc, VMEvent::SIGNAL);
+    }
+
     NON_COPYABLE(DSState);
 
     DSState();

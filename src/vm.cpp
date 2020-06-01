@@ -1088,8 +1088,7 @@ bool VM::checkVMEvent(DSState &state) {
 
         int sigNum = DSState::pendingSigSet.popPendingSig();
         if(DSState::pendingSigSet.empty()) {
-            DSState::pendingSigSet.clear();
-            unsetFlag(DSState::eventDesc, VMEvent::SIGNAL);
+            DSState::clearPendingSignal();
         }
 
         auto handler = state.sigVector.lookup(sigNum);

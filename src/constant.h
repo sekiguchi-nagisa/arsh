@@ -39,6 +39,7 @@ constexpr const char *VAR_STDERR = "STDERR";
 // shell builtin
 constexpr const char *VAR_EIDT_HOOK = "EDIT_HOOK";
 constexpr const char *VAR_CMD_FALLBACK = "CMD_FALLBACK";
+constexpr const char *VAR_DEF_SIGINT = "_DEF_SIGINT";
 constexpr const char *CMD_FALLBACK_HANDLER = "_cmd_fallback_handler";
 
 constexpr const char *VAR_HISTFILE = "HISTFILE";

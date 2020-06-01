@@ -126,6 +126,40 @@ TEST_F(InteractiveTest, ctrlc2) {
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
+TEST_F(InteractiveTest, ctrlc3) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    this->sendLine("cat < /dev/zero > /dev/null");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "cat < /dev/zero > /dev/null\n"));
+    sleep(1);
+    this->send(CTRL_C);
+    std::string err = strsignal(SIGINT);
+    err += "\n";
+    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
+TEST_F(InteractiveTest, ctrlc4) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    this->sendLine("read");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "read\n"));
+    sleep(1);
+    this->send(CTRL_C);
+
+    std::string err = format(R"(ydsh: read: 0: %s
+[runtime error]
+SystemError: %s
+    from (embed):17 'function _DEF_SIGINT()'
+    from (stdin):1 '<toplevel>()'
+)", strerror(EINTR), strsignal(SIGINT));
+
+    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
+}
+
 TEST_F(InteractiveTest, tab) {
     this->invoke("--quiet", "--norc");
 
@@ -364,7 +398,7 @@ TEST_F(InteractiveTest, signal) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'int'] as String) == $SIG_IGN as String"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'int'] as String) == $_DEF_SIGINT as String"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'quit'] as String) == $SIG_IGN as String"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'tstp'] as String) == $SIG_IGN as String"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'ttin'] as String) == $SIG_IGN as String"));

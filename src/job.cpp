@@ -38,8 +38,8 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
         }
 
         // clear queued signal
-        DSState::pendingSigSet.clear();
-        unsetFlag(DSState::eventDesc, VMEvent::SIGNAL | VMEvent::MASK);
+        DSState::clearPendingSignal();
+        unsetFlag(DSState::eventDesc, VMEvent::MASK);
 
         // clear JobTable entries
         st.jobTable.detachAll();
@@ -135,8 +135,8 @@ int Proc::wait(WaitOp op, bool showSignal) {
                 } else if(WIFCONTINUED(status)) {
                     str += "RUNNING\nkind: CONTINUED";
                 }
-            } else {
-                str += "FAILED\n";
+            } else if(ret < 0) {
+                str += "\nFAILED\n";
                 str += strerror(errNum);
             }
             return str;
@@ -172,7 +172,7 @@ int Proc::wait(WaitOp op, bool showSignal) {
             if(this->state_ == TERMINATED) {
                 this->pid_ = -1;
             }
-        } else {
+        } else if(ret < 0) {
             errno = errNum;
             return -1;
         }

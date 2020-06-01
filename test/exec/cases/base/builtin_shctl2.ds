@@ -39,7 +39,7 @@ assert $? == 1
 
 ## for `monitor' option
 ### in monitor off
-assert $SIG[%'INT'] == $SIG_DFL
+assert $SIG[%'INT'] == $SIG_DFL : "${$SIG[%'INT']}"
 assert $SIG[%'QUIT'] == $SIG_DFL
 assert $SIG[%'TSTP'] == $SIG_DFL
 assert $SIG[%'TTIN'] == $SIG_DFL
@@ -50,7 +50,7 @@ assert bg 2>&1 | grep 'ydsh: bg: no job control in this shell'
 
 ### in monitor on
 shctl set monitor
-assert $SIG[%'INT'] == $SIG_IGN
+assert $SIG[%'INT'] == $_DEF_SIGINT
 assert $SIG[%'QUIT'] == $SIG_IGN
 assert $SIG[%'TSTP'] == $SIG_IGN
 assert $SIG[%'TTIN'] == $SIG_IGN

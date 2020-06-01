@@ -204,10 +204,10 @@ DSCode: top level
   code size: 12
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 52
+  number of global variable: 53
 Code:
    0: PUSH_INT  34
-   2: STORE_GLOBAL  51
+   2: STORE_GLOBAL  52
    5: PUSH_INT  34
    7: CALL_NATIVE2  1  %s
   10: POP
@@ -228,11 +228,11 @@ DSCode: top level
   code size: 26
   max stack depth: 3
   number of local variable: 0
-  number of global variable: 52
+  number of global variable: 53
 Code:
    0: LOAD_CONST  2
-   2: STORE_GLOBAL  51
-   5: LOAD_GLOBAL  51
+   2: STORE_GLOBAL  52
+   5: LOAD_GLOBAL  52
    8: PUSH_INT  1
   10: CALL_FUNC  1
   12: ENTER_FINALLY  8

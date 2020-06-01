@@ -12,13 +12,13 @@ function g($s : Signal) {
     exit $s
 }
 
-$SIG[%'int'] = $f
+$SIG[%'hup'] = $f
 
 try {
-    $raise('int')
+    $raise('hup')
 } catch $e {
-    assert $e is Signal
-    assert ($e as Signal).name() == %'int'.name()
+    assert $e is Signal : "$e"
+    assert ($e as Signal).name() == %'hup'.name()
 }
 
 $SIG[%'hup'] = $g

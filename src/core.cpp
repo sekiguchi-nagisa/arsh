@@ -176,6 +176,17 @@ void raiseError(DSState &st, TYPE type, std::string &&message, int status) {
 
 void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
     assert(errorNum != 0);
+    if(errorNum == EINTR) {
+        /**
+         * if EINTR, already raised SIGINT. and SIGINT handler also raises SystemError.
+         * due to eliminate redundant SystemError, force clear SIGINT
+         */
+        SignalGuard guard;
+        DSState::pendingSigSet.del(SIGINT);
+        if(DSState::pendingSigSet.empty()) {
+            DSState::clearPendingSignal();
+        }
+    }
     std::string str(std::move(message));
     str += ": ";
     str += strerror(errorNum);
@@ -286,7 +297,11 @@ void setJobControlSignalSetting(DSState &st, bool set) {
     auto op = set ? SignalVector::UnsafeSigOp::IGN : SignalVector::UnsafeSigOp::DFL;
     DSValue handler;
 
-    st.sigVector.install(SIGINT, op, handler);
+    if(set) {
+        st.sigVector.install(SIGINT, SignalVector::UnsafeSigOp::SET, getGlobal(st, VAR_DEF_SIGINT));
+    } else {
+        st.sigVector.install(SIGINT, op, handler);
+    }
     st.sigVector.install(SIGQUIT, op, handler);
     st.sigVector.install(SIGTSTP, op, handler);
     st.sigVector.install(SIGTTIN, op, handler);
@@ -488,7 +503,9 @@ void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler, b
 
     // set posix signal handler
     struct sigaction action{};
-    action.sa_flags = SA_RESTART;
+    if(sigNum != SIGINT) {  // always restart system call except for SIGINT
+        action.sa_flags = SA_RESTART;
+    }
     sigfillset(&action.sa_mask);
 
     switch(op) {
