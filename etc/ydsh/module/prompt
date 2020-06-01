@@ -47,7 +47,7 @@ function renderPrompt($p : String) : String {
                     $ch = $basename($PWD)
                 }
             }
-            '[' | ']' => { continue; }
+            '[' | ']' => continue;
             else => $ch = $_cache.get($k) ?? { $i--; $ch; }
             }
         }
@@ -98,7 +98,7 @@ prompt() {
     if $# == 0 { return 0; }
 
     case $1 {
-    '-h' | '--help' => { return $_usage($STDOUT, $false); }
+    '-h' | '--help' => return $_usage($STDOUT, $false); 
     else => {
         if $1.startsWith('+') { echo ${$renderPrompt($1.from(1))}; return 0; }
         echo > $STDERR prompt: $1: invalid option;
