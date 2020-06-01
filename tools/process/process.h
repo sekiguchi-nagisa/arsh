@@ -293,7 +293,7 @@ public:
         return *this;
     }
 
-    ProcBuilder &setTerm(termios &term) {
+    ProcBuilder &setTerm(const termios &term) {
         this->config.term = term;
         return *this;
     }

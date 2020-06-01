@@ -99,7 +99,7 @@ TEST_F(InteractiveTest, assert) {
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert(1 == 2)", 1, WaitStatus::EXITED, "", e));
 }
 
-TEST_F(InteractiveTest, ctrlc) {
+TEST_F(InteractiveTest, ctrlc1) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -110,6 +110,20 @@ TEST_F(InteractiveTest, ctrlc) {
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "throw 34\n" PROMPT));
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, ctrlc2) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    this->sendLine("cat");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "cat\n"));
+    sleep(1);
+    this->send(CTRL_C);
+    std::string err = strsignal(SIGINT);
+    err += "\n";
+    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
 TEST_F(InteractiveTest, tab) {

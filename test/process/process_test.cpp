@@ -105,7 +105,7 @@ TEST_F(ProcTest, pty2) {
 
 TEST_F(ProcTest, pty3) {
     if(ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
-        return;
+        return; // workaround for Cygwin
     }
 
     IOConfig config;
@@ -141,6 +141,33 @@ TEST_F(ProcTest, pty3) {
     (void) r;
     auto ret = handle.waitAndGetResult(false);
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 0, WaitStatus::EXITED, "break!!\n"));
+}
+
+TEST_F(ProcTest, pty4) {
+    IOConfig config;
+    config.in = IOConfig::PTY;
+    config.out = IOConfig::PTY;
+    config.err = IOConfig::PIPE;
+    xcfmakesane(config.term);
+
+    // start with raw mode
+    auto handle = ProcBuilder::spawn(config, [&]{
+        FILE *fp = fopen("/dev/null", "r");
+        if(!fp) {
+            fatal_perror("open failed");
+        }
+        while(true) {
+            fputs("do nothing", fp);
+        }
+        return true;
+    });
+    sleep(1);
+    std::string str = "\x03";   // CTRL-C
+    auto r = write(handle.in(), str.c_str(), str.size());
+    (void) r;
+    fsync(handle.in());
+    auto ret2 = handle.waitAndGetResult(false);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret2, SIGINT, WaitStatus::SIGNALED, "^C"));
 }
 
 TEST(ANSITest, base) {
