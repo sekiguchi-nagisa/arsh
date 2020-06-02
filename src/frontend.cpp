@@ -270,7 +270,8 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
     node.setCurIndex(pathIndex + 1);
     FilePtr filePtr;
     auto ret = this->getSymbolTable().tryToLoadModule(
-            node.getPathNode().getType().is(TYPE::String) ? this->getCurScriptDir() : nullptr, modPath, filePtr);
+            node.getPathNode().getType().is(TYPE::String) ? this->getCurScriptDir() : nullptr,
+            modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
     if(is<ModLoadingError>(ret)) {
         auto e = get<ModLoadingError>(ret);
         if(e == ModLoadingError::NOT_FOUND && node.isOptional()) {

@@ -552,7 +552,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         scriptDir = getCWD();
         filePtr = createFilePtr(fdopen, dup(STDIN_FILENO), "rb");
     } else {
-        auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr);
+        auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr, ModLoadOption{});
         if(is<ModLoadingError>(ret)) {
             if(get<ModLoadingError>(ret) == ModLoadingError::CIRCULAR) {
                 errno = ETXTBSY;

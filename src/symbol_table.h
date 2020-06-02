@@ -288,6 +288,12 @@ enum class ModLoadingError {
 
 using ModResult = Union<const char *, ModType *, ModLoadingError>;
 
+enum class ModLoadOption {
+    IGNORE_NON_REG_FILE = 1 << 0,
+};
+
+template <> struct allow_enum_bitop<ModLoadOption> : std::true_type {};
+
 class ModuleLoader {
 private:
     unsigned short oldIDCount{0};
@@ -317,7 +323,7 @@ public:
      * write resolved file pointer
      * @return
      */
-    ModResult load(const char *scriptDir, const char *modPath, FilePtr &filePtr);
+    ModResult load(const char *scriptDir, const char *modPath, FilePtr &filePtr, ModLoadOption option);
 
     unsigned short newModId() {
         return ++this->modIDCount;
@@ -394,9 +400,11 @@ public:
      * if full path, not search next module path
      * @param filePtr
      * if module loading failed, will be null
+     * @param option
      * @return
      */
-    ModResult tryToLoadModule(const char *scriptDir, const char *modPath, FilePtr &filePtr);
+    ModResult tryToLoadModule(const char *scriptDir, const char *modPath,
+            FilePtr &filePtr, ModLoadOption option);
 
     /**
      * create new module scope and assign it to curModule
