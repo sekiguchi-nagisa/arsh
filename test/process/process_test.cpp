@@ -167,7 +167,11 @@ TEST_F(ProcTest, pty4) {
     (void) r;
     fsync(handle.in());
     auto ret2 = handle.waitAndGetResult(false);
-    ASSERT_NO_FATAL_FAILURE(this->expect(ret2, SIGINT, WaitStatus::SIGNALED, "^C"));
+    if(ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
+        ASSERT_NO_FATAL_FAILURE(this->expect(ret2, SIGINT, WaitStatus::SIGNALED));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(this->expect(ret2, SIGINT, WaitStatus::SIGNALED, "^C"));
+    }
 }
 
 TEST(ANSITest, base) {

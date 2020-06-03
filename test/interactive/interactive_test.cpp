@@ -3,7 +3,7 @@
 #include <config.h>
 #include <misc/files.h>
 #include "../test_common.h"
-
+#include "../../tools/platform/platform.h"
 
 #ifndef INTERACTIVE_TEST_WORK_DIR
 #error "require INTERACTIVE_TEST_WORK_DIR"
@@ -122,7 +122,12 @@ TEST_F(InteractiveTest, ctrlc2) {
     this->send(CTRL_C);
     std::string err = strsignal(SIGINT);
     err += "\n";
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+
+    if(platform::platform() == platform::PlatformType::CYGWIN) {
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    }
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
@@ -136,7 +141,11 @@ TEST_F(InteractiveTest, ctrlc3) {
     this->send(CTRL_C);
     std::string err = strsignal(SIGINT);
     err += "\n";
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    if(platform::platform() == platform::PlatformType::CYGWIN) {
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    }
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
@@ -156,7 +165,11 @@ SystemError: %s
     from (stdin):1 '<toplevel>()'
 )", strerror(EINTR), strsignal(SIGINT));
 
-    ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    if(platform::platform() == platform::PlatformType::CYGWIN) {
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+    } else{
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    }
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
