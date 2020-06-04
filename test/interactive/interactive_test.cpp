@@ -173,6 +173,67 @@ SystemError: %s
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
+TEST_F(InteractiveTest, ctrlc5) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    this->sendLine("read | grep hoge");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "read | grep hoge\n"));
+    sleep(1);
+    this->send(CTRL_C);
+    std::string err = strsignal(SIGINT);
+    err += "\n";
+    if(platform::platform() == platform::PlatformType::CYGWIN) {
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+    } else {
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    }
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
+TEST_F(InteractiveTest, wait_ctrlc1) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &"));
+    this->sendLine("$j.wait()");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "$j.wait()\n"));
+    sleep(1);
+    this->send(CTRL_C);
+
+    std::string err = format(R"([runtime error]
+SystemError: wait failed: %s
+    from (stdin):2 '<toplevel>()'
+)", strerror(EINTR));
+
+    if(platform::platform() == platform::PlatformType::CYGWIN) {
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+    } else{
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    }
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
+}
+
+TEST_F(InteractiveTest, wait_ctrlc2) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("while(true){} &", ": Job = %1"));
+    this->sendLine("fg");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT "fg\n"));
+    sleep(1);
+    this->send(CTRL_C);
+
+    std::string err = strsignal(SIGINT);
+    err += "\n";
+    if(platform::platform() == platform::PlatformType::CYGWIN) {
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+    } else{
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" PROMPT, err.c_str()));
+    }
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
 TEST_F(InteractiveTest, tab) {
     this->invoke("--quiet", "--norc");
 
