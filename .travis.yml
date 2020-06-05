@@ -70,9 +70,9 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-9
+            - g++-10
             - ninja-build
-      env: CXX_BIN=g++-9
+      env: CXX_BIN=g++-10
       dist: bionic
 
     # gcc 10 (Release build)
