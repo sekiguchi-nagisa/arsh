@@ -545,7 +545,7 @@ public:
         }
 
         for(auto &e : typeAs<ArrayObject>(result).getValues()) {
-            append(ret, str(e), EscapeOp::COMMAND_ARG);
+            append(ret, e.asCStr(), EscapeOp::COMMAND_ARG);
         }
     }
 };

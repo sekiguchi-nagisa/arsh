@@ -109,7 +109,7 @@ static int doIOHere(const StringRef &value) {
  */
 static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
     if(fileName.hasType(TYPE::String)) {
-        FILE *fp = fopen(fileName.asStrRef().data(), mode);
+        FILE *fp = fopen(fileName.asCStr(), mode);
         if(fp == nullptr) {
             return errno;
         }

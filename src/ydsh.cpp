@@ -685,7 +685,7 @@ unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int i
         }
         *value = nullptr;
         if(index < compreply.getValues().size()) {
-            *value = compreply.getValues()[index].asStrRef().data();
+            *value = compreply.getValues()[index].asCStr();
         }
         break;
     case DS_COMP_SIZE:
@@ -764,9 +764,9 @@ unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const c
         }
         if(op == DS_EDIT_PROMPT) {
             st->prompt = st->editOpReply;
-            *buf = st->prompt.asStrRef().data();
+            *buf = st->prompt.asCStr();
         } else {
-            *buf = st->editOpReply.asStrRef().data();
+            *buf = st->editOpReply.asCStr();
         }
         break;
     default:

@@ -887,14 +887,14 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : Regex, $str : String) : Regex
 YDSH_METHOD regex_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_init);
-    auto ref = LOCAL(1).asStrRef();
+    const char *value = LOCAL(1).asCStr();
     const char *errorStr;
-    auto re = compileRegex(ref.data(), errorStr, 0);
+    auto re = compileRegex(value, errorStr, 0);
     if(!re) {
         raiseError(ctx, TYPE::RegexSyntaxError, std::string(errorStr));
         RET_ERROR;
     }
-    RET(DSValue::create<RegexObject>(ref.data(), std::move(re)));
+    RET(DSValue::create<RegexObject>(value, std::move(re)));
 }
 
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Boolean
@@ -1025,7 +1025,7 @@ YDSH_METHOD signals_set(RuntimeContext &ctx) {
 //!bind: function signal($this : Signals, $key : String) : Option<Signal>
 YDSH_METHOD signals_signal(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_signal);
-    const char *key = LOCAL(1).asStrRef().data();
+    const char *key = LOCAL(1).asCStr();
     int sigNum = getSignalNum(key);
     if(sigNum < 0) {
         RET(DSValue::createInvalid());
@@ -1616,7 +1616,7 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : UnixFD, $path : String) : UnixFD
 YDSH_METHOD fd_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_init);
-    const char *path = LOCAL(1).asStrRef().data();
+    const char *path = LOCAL(1).asCStr();
     int fd = open(path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
     if(fd != -1) {
         RET(DSValue::create<UnixFdObject>(fd));

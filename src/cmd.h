@@ -76,8 +76,8 @@ inline int maskExitStatus(int64_t status) {
 
 } // namespace ydsh
 
-#define PERROR(obj, fmt, ...) fprintf(stderr, "ydsh: %s: " fmt ": %s\n", str(obj.getValues()[0]), ## __VA_ARGS__, strerror(errno))
-#define ERROR(obj, fmt, ...)  fprintf(stderr, "ydsh: %s: " fmt "\n", str(obj.getValues()[0]), ## __VA_ARGS__)
+#define PERROR(obj, fmt, ...) fprintf(stderr, "ydsh: %s: " fmt ": %s\n", obj.getValues()[0].asCStr(), ## __VA_ARGS__, strerror(errno))
+#define ERROR(obj, fmt, ...)  fprintf(stderr, "ydsh: %s: " fmt "\n", obj.getValues()[0].asCStr(), ## __VA_ARGS__)
 
 
 #endif //YDSH_CMD_H

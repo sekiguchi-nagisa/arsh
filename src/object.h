@@ -452,6 +452,10 @@ public:
 
     StringRef asStrRef() const;
 
+    const char *asCStr() const {
+        return this->asStrRef().data();
+    }
+
     std::string toString() const;
 
     /**
@@ -696,9 +700,6 @@ public:
     }
 };
 
-inline const char *str(const DSValue &v) {
-    return v.asStrRef().data();
-}
 
 struct KeyCompare {
     bool operator()(const DSValue &x, const DSValue &y) const {
@@ -1127,7 +1128,7 @@ public:
     }
 
     const char *getSourceName() const {
-        return this->constPool[0].asStrRef().data();
+        return this->constPool[0].asCStr();
     }
 
     /**

@@ -137,7 +137,7 @@ struct StrArrayIter {
     explicit StrArrayIter(ArrayObject::IterType actual) : actual(actual) {}
 
     const char *operator*() const {
-        return str(*actual);
+        return this->actual->asCStr();
     }
 
     bool operator==(const StrArrayIter &o) const {

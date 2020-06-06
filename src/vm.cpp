@@ -160,10 +160,10 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
         dValue = state.stack.pop();
     }
     auto nameObj = state.stack.pop();
-    const char *name = nameObj.asStrRef().data();
+    const char *name = nameObj.asCStr();
     const char *env = getenv(name);
     if(env == nullptr && hasDefault) {
-        setenv(name, dValue.asStrRef().data(), 1);
+        setenv(name, dValue.asCStr(), 1);
         env = getenv(name);
     }
 
@@ -596,7 +596,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
 
 bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr) {
     auto &array = typeAs<ArrayObject>(argvObj);
-    auto cmd = resolver(state, str(array.getValues()[0]));
+    auto cmd = resolver(state, array.getValues()[0].asCStr());
 
     switch(cmd.kind) {
     case Command::USER_DEFINED:
@@ -620,7 +620,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
         const unsigned int size = array.getValues().size();
         char *argv[size + 1];
         for(unsigned int i = 0; i < size; i++) {
-            argv[i] = const_cast<char *>(str(array.getValues()[i]));
+            argv[i] = const_cast<char *>(array.getValues()[i].asCStr());
         }
         argv[size] = nullptr;
 
@@ -686,7 +686,7 @@ bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, 
         // show command description
         unsigned int successCount = 0;
         for(; index < argc; index++) {
-            const char *commandName = str(arrayObj.getValues()[index]);
+            const char *commandName = arrayObj.getValues()[index].asCStr();
             auto cmd = CmdResolver(CmdResolver::MASK_FALLBACK, FilePathCache::DIRECT_SEARCH)(state, commandName);
             switch(cmd.kind) {
             case Command::USER_DEFINED: {
@@ -766,7 +766,7 @@ void VM::callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     if(index < argc) { // exec
         char *argv2[argc - index + 1];
         for(unsigned int i = index; i < argc; i++) {
-            argv2[i - index] = const_cast<char *>(str(argvObj.getValues()[i]));
+            argv2[i - index] = const_cast<char *>(argvObj.getValues()[i].asCStr());
         }
         argv2[argc - index] = nullptr;
 
@@ -777,7 +777,7 @@ void VM::callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
 
         char *envp[] = {nullptr};
         xexecve(filePath, argv2, clearEnv ? envp : nullptr, redir);
-        PERROR(argvObj, "%s", str(argvObj.getValues()[index]));
+        PERROR(argvObj, "%s", argvObj.getValues()[index].asCStr());
         exit(1);
     }
     pushExitStatus(state, 0);
@@ -1290,7 +1290,7 @@ bool VM::mainLoop(DSState &state) {
             DSValue value = state.stack.pop();
             DSValue name = state.stack.pop();
 
-            setenv(str(name), str(value), 1);//FIXME: check return value and throw
+            setenv(name.asCStr(), value.asCStr(), 1);//FIXME: check return value and throw
             vmnext;
         }
         vmcase(POP) {

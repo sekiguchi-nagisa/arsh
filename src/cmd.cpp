@@ -318,7 +318,7 @@ static int builtin_help(DSState &, ArrayObject &argvObj) {
     bool isShortHelp = false;
     bool foundValidCommand = false;
     for(unsigned int i = 1; i < size; i++) {
-        const char *arg = str(argvObj.getValues()[i]);
+        const char *arg = argvObj.getValues()[i].asCStr();
         if(strcmp(arg, "-s") == 0 && size == 2) {
             printAllUsage(stdout);
             foundValidCommand = true;
@@ -331,14 +331,14 @@ static int builtin_help(DSState &, ArrayObject &argvObj) {
         }
     }
     if(!foundValidCommand) {
-        ERROR(argvObj, "no help topics match `%s'.  Try `help help'.", str(argvObj.getValues()[size - 1]));
+        ERROR(argvObj, "no help topics match `%s'.  Try `help help'.", argvObj.getValues()[size - 1].asCStr());
         return 1;
     }
     return 0;
 }
 
 static int showUsage(const ArrayObject &obj) {
-    printUsage(stderr, str(obj.getValues()[0]));
+    printUsage(stderr, obj.getValues()[0].asCStr());
     return 2;
 }
 
@@ -372,7 +372,7 @@ static int builtin_cd(DSState &state, ArrayObject &argvObj) {
     const char *dest = nullptr;
     bool useOldpwd = false;
     if(index < argvObj.getValues().size()) {
-        dest = str(argvObj.getValues()[index]);
+        dest = argvObj.getValues()[index].asCStr();
         if(strcmp(dest, "-") == 0) {
             dest = getenv(ENV_OLDPWD);
             if(dest == nullptr) {
@@ -406,7 +406,7 @@ static int builtin_check_env(DSState &, ArrayObject &argvObj) {
         return showUsage(argvObj);
     }
     for(unsigned int i = 1; i < size; i++) {
-        const char *env = getenv(str(argvObj.getValues()[i]));
+        const char *env = getenv(argvObj.getValues()[i].asCStr());
         if(env == nullptr || strlen(env) == 0) {
             return 1;
         }
@@ -437,7 +437,7 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
 
     END:
     // print argument
-    if(optState.index > 1 && strcmp(str(argvObj.getValues()[optState.index - 1]), "--") == 0) {
+    if(optState.index > 1 && argvObj.getValues()[optState.index - 1].asStrRef() == "--") {
         optState.index--;
     }
 
@@ -451,10 +451,10 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
             fputc(' ', stdout);
         }
         if(!interpEscape) {
-            fputs(str(argvObj.getValues()[index]), stdout);
+            fputs(argvObj.getValues()[index].asCStr(), stdout);
             continue;
         }
-        const char *arg = str(argvObj.getValues()[index]);
+        const char *arg = argvObj.getValues()[index].asCStr();
         for(unsigned int i = 0; arg[i] != '\0'; i++) {
             int ch = arg[i];
             if(ch == '\\' && arg[i + 1] != '\0') {
@@ -533,7 +533,7 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
 static int parseExitStatus(const DSState &state, const ArrayObject &argvObj) {
     int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
     if(argvObj.getValues().size() > 1) {
-        const char *num = str(argvObj.getValues()[1]);
+        const char *num = argvObj.getValues()[1].asCStr();
         auto pair = convertToNum<int64_t>(num);
         if(pair.second) {
             ret = pair.first;
@@ -708,17 +708,14 @@ static bool operator<(const timespec &left, const timespec &right) {
     return left.tv_sec < right.tv_sec;
 }
 
-static bool compareFile(const DSValue &left, BinaryOp op, const DSValue &right) {
-    auto x = left.asStrRef();
-    auto y = right.asStrRef();
-
+static bool compareFile(const char *x, BinaryOp op, const char *y) {
     struct stat st1;
     struct stat st2;
 
-    if(stat(x.data(), &st1) != 0) {
+    if(stat(x, &st1) != 0) {
         return false;
     }
-    if(stat(y.data(), &st2) != 0) {
+    if(stat(y, &st2) != 0) {
         return false;
     }
 
@@ -768,9 +765,9 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         break;
     }
     case 2: {   // unary op
-        const char *op = str(argvObj.getValues()[1]);
+        const char *op = argvObj.getValues()[1].asCStr();
         const auto &obj = argvObj.getValues()[2];
-        const char *value = str(obj);
+        const char *value = obj.asCStr();
         if(strlen(op) != 2 || op[0] != '-') {
             ERROR(argvObj, "%s: invalid unary operator", op);
             return 2;
@@ -889,17 +886,17 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             break;
         }
         EACH_INT_COMP_OP(GEN_CASE) {
-            auto pair = convertToNum<int64_t>(str(left));
+            auto pair = convertToNum<int64_t>(left.asCStr());
             int64_t n1 = pair.first;
             if(!pair.second) {
-                ERROR(argvObj, "%s: must be integer", str(left));
+                ERROR(argvObj, "%s: must be integer", left.asCStr());
                 return 2;
             }
 
-            pair = convertToNum<int64_t>(str(right));
+            pair = convertToNum<int64_t>(right.asCStr());
             int64_t n2 = pair.first;
             if(!pair.second) {
-                ERROR(argvObj, "%s: must be integer", str(right));
+                ERROR(argvObj, "%s: must be integer", right.asCStr());
                 return 2;
             }
 
@@ -907,7 +904,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             break;
         }
         EACH_FILE_COMP_OP(GEN_CASE) {
-            result = compareFile(left, opKind, right);
+            result = compareFile(left.asCStr(), opKind, right.asCStr());
             break;
         }
 #undef GEN_CASE
@@ -1131,7 +1128,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     const unsigned int argc = argvObj.getValues().size();
     unsigned int index = 1;
     for(; index < argc; index++) {
-        const char *arg = str(argvObj.getValues()[index]);
+        const char *arg = argvObj.getValues()[index].asCStr();
         if(arg[0] != '-') {
             break;
         }
@@ -1145,7 +1142,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     const bool hasNames = index < argc;
     if(hasNames) {
         for(; index < argc; index++) {
-            const char *name = str(argvObj.getValues()[index]);
+            const char *name = argvObj.getValues()[index].asCStr();
             if(remove) {
                 state.pathCache.removePath(name);
             } else {
@@ -1183,7 +1180,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     completeLine(state, strRef.data(), strRef.size());
     auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for(const auto &e : ret.getValues()) {
-        fputs(str(e), stdout);
+        fputs(e.asCStr(), stdout);
         fputc('\n', stdout);
     }
     return 0;
@@ -1200,7 +1197,7 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
 
     auto end = argvObj.getValues().end();
     for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
-        const char *kv = str(*iter);
+        const char *kv = iter->asCStr();
         auto *ptr = strchr(kv, '=');
         errno = EINVAL;
         if(ptr != nullptr && ptr != kv) {
@@ -1218,7 +1215,7 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
 static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
     auto end = argvObj.getValues().end();
     for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
-        const char *envName = str(*iter);
+        const char *envName = iter->asCStr();
         if(unsetenv(envName) != 0) {
             PERROR(argvObj, "%s", envName);
             return 1;
@@ -1312,7 +1309,7 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
     case '?': {
         const char *sigStr = optState.optArg;
         if(opt == '?') {
-            sigStr = str(argvObj.getValues()[optState.index++]) + 1;
+            sigStr = argvObj.getValues()[optState.index++].asCStr() + 1;
         }
         sigNum = toSigNum(sigStr);
         if(sigNum == -1) {
@@ -1350,7 +1347,7 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
 
     unsigned int count = 0;
     for(; begin != end; ++begin) {
-        const char *arg = str(*begin);
+        const char *arg = begin->asCStr();
         if(listing) {
             if(!printNumOrName(arg)) {
                 count++;
@@ -1390,7 +1387,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
         return 1;
     }
 
-    bool fg = strcmp("fg", str(argvObj.getValues()[0])) == 0;
+    bool fg = argvObj.getValues()[0].asStrRef() == "fg";
     unsigned int size = argvObj.getValues().size();
     assert(size > 0);
     Job job;
@@ -1398,7 +1395,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     if(size == 1) {
         job = state.jobTable.getLatestEntry();
     } else {
-        arg = str(argvObj.getValues()[1]);
+        arg = argvObj.getValues()[1].asCStr();
         job = tryToGetJob(state.jobTable, arg);
     }
 
@@ -1429,7 +1426,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
 
     // process remain arguments
     for(unsigned int i = 2; i < size; i++) {
-        arg = str(argvObj.getValues()[i]);
+        arg = argvObj.getValues()[i].asCStr();
         job = tryToGetJob(state.jobTable, arg);
         if(job) {
             job->send(SIGCONT);
@@ -1554,8 +1551,8 @@ struct UlimitOptEntryTable {
 
     int tryToUpdate(GetOptState &optState, ArrayObject &argvObj, int opt) {
         const char *arg = nullptr;
-        if(optState.index < argvObj.getValues().size() && *str(argvObj.getValues()[optState.index]) != '-') {
-            arg = str(argvObj.getValues()[optState.index++]);
+        if(optState.index < argvObj.getValues().size() && *argvObj.getValues()[optState.index].asCStr() != '-') {
+            arg = argvObj.getValues()[optState.index++].asCStr();
         }
         if(!this->update(opt, arg)) {
             ERROR(argvObj, "%s: invalid number", arg);
@@ -1840,7 +1837,7 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
 
     if(optState.index < argvObj.getValues().size()) {
         unsetFlag(op, PrintMaskOp::ONLY_PRINT | PrintMaskOp::REUSE);
-        const char *value = str(argvObj.getValues()[optState.index]);
+        const char *value = argvObj.getValues()[optState.index].asCStr();
         if(isDecimal(*value)) {
             auto pair = convertToNum<int32_t>(value, 8);
             int num = pair.first;
@@ -1931,7 +1928,7 @@ static int showOption(const DSState &state, const ArrayObject &argvObj) {
         foundSet = static_cast<RuntimeOption>(static_cast<unsigned int>(-1));
     } else {
         for(unsigned int i = 2; i < size; i++) {
-            const char *name = str(argvObj.getValues()[i]);
+            const char *name = argvObj.getValues()[i].asCStr();
             auto option = lookupRuntimeOption(name);
             if(empty(option)) {
                 ERROR(argvObj, "undefined runtime option: %s", name);
@@ -1960,7 +1957,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
 
     bool foundMonitor = false;
     for(unsigned int i = 2; i < size; i++) {
-        const char *name = str(argvObj.getValues()[i]);
+        const char *name = argvObj.getValues()[i].asCStr();
         auto option = lookupRuntimeOption(name);
         if(empty(option)) {
             ERROR(argvObj, "undefined runtime option: %s", name);
