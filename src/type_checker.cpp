@@ -1594,7 +1594,10 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
             ret.push_back(std::move(path));
             return true;
         };
-        auto option = pathNode.isTilde() ? WildMatchOption::TILDE : WildMatchOption{};
+        auto option = WildMatchOption::IGNORE_SYS_DIR;
+        if(pathNode.isTilde()) {
+            setFlag(option, WildMatchOption::TILDE);
+        }
         int globRet = globAt<SourceGlobMeta>(
                 this->lexer->getScriptDir(), begin, end, appender, option);
         if(globRet > 0 || node.isOptional()) {

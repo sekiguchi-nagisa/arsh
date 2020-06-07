@@ -27,8 +27,9 @@
 namespace ydsh {
 
 enum class WildMatchOption {
-    TILDE   = 1u << 0u, // apply tilde expansion before globbing
-    DOTGLOB = 1u << 1u, // match file names start with '.'
+    TILDE          = 1u << 0u,  // apply tilde expansion before globbing
+    DOTGLOB        = 1u << 1u,  // match file names start with '.'
+    IGNORE_SYS_DIR = 1u << 2u,  // ignore system directory (/dev, /proc, /sys)
 };
 
 template <> struct allow_enum_bitop<WildMatchOption> : std::true_type {};
@@ -194,7 +195,17 @@ inline auto createWildCardMatcher(Iter begin, Iter end, WildMatchOption option) 
  */
 template <typename Meta, typename Iter, typename Appender>
 int globBase(const char *baseDir, Iter iter, Iter end,
-                            Appender &appender, WildMatchOption option) {
+            Appender &appender, WildMatchOption option) {
+    if(hasFlag(option, WildMatchOption::IGNORE_SYS_DIR)) {
+        const char *ignore[] = {
+                "/dev", "/proc", "/sys"
+        };
+        for(auto &i : ignore) {
+            if(isSameFile(i, baseDir)) {
+                return 0;
+            }
+        }
+    }
     DIR *dir = opendir(baseDir);
     if(!dir) {
         return 0;
