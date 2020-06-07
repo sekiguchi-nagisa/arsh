@@ -41,9 +41,10 @@ struct Appender {
         this->ref.clear();
     }
 
-    void operator()(std::string &&path) {
+    bool operator()(std::string &&path) {
         this->ref.push_back(path);
         std::sort(this->ref.begin(), this->ref.end());
+        return true;
     }
 };
 
@@ -58,17 +59,17 @@ public:
         }
     }
 
-    unsigned int testGlobBase(const char *dir, const char *pattern, WildMatchOption option = {}) {
+    int testGlobBase(const char *dir, const char *pattern, WildMatchOption option = {}) {
         Appender appender(this->ret);
         return globBase<StrMetaChar>(dir, pattern, pattern + strlen(pattern), appender, option);
     }
 
-    unsigned int testGlob(const char *pattern, WildMatchOption option = {}) {
+    int testGlob(const char *pattern, WildMatchOption option = {}) {
         Appender appender(this->ret);
         return glob<StrMetaChar>(pattern, pattern + strlen(pattern), appender, option);
     }
 
-    unsigned int testGlobAt(const char *baseDir, const char *pattern, WildMatchOption option = {}) {
+    int testGlobAt(const char *baseDir, const char *pattern, WildMatchOption option = {}) {
         Appender appender(this->ret);
         return globAt<StrMetaChar>(baseDir, pattern, pattern + strlen(pattern), appender, option);
     }

@@ -1588,16 +1588,24 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
         auto begin = SourceGlobIter(pathNode.getSegmentNodes().cbegin());
         auto end = SourceGlobIter(pathNode.getSegmentNodes().cend() - 1);
         auto appender = [&](std::string &&path) {
+            if(ret.size() == 4096) {
+                return false;
+            }
             ret.push_back(std::move(path));
+            return true;
         };
         auto option = pathNode.isTilde() ? WildMatchOption::TILDE : WildMatchOption{};
-        unsigned int globRet = globAt<SourceGlobMeta>(
+        int globRet = globAt<SourceGlobMeta>(
                 this->lexer->getScriptDir(), begin, end, appender, option);
-        if(globRet || node.isOptional()) {
+        if(globRet > 0 || node.isOptional()) {
             std::sort(ret.begin(), ret.end());
         } else {
             std::string path = concat(pathNode, pathNode.getSegmentNodes().size() - 1); // skip sentinel
-            RAISE_TC_ERROR(NoGlobMatch, pathNode, path.c_str());
+            if(globRet == 0) {
+                RAISE_TC_ERROR(NoGlobMatch, pathNode, path.c_str());
+            } else {
+                RAISE_TC_ERROR(GlobRetLimit, pathNode, path.c_str());
+            }
         }
     }
     node.setPathList(std::move(ret));

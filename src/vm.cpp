@@ -1036,6 +1036,7 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
     const unsigned int oldSize = typeAs<ArrayObject>(argv).size();
     auto appender = [&](std::string &&path) {
         typeAs<ArrayObject>(argv).append(DSValue::createStr(std::move(path)));
+        return true;    //FIXME: check array size limit
     };
     WildMatchOption option{};
     if(tilde) {
@@ -1044,15 +1045,16 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
     if(hasFlag(state.runtimeOption, RuntimeOption::DOTGLOB)) {
         setFlag(option, WildMatchOption::DOTGLOB);
     }
-    unsigned int ret = glob<DSValueGlobMeta>(begin, end, appender, option);
-    if(ret || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
+    int ret = glob<DSValueGlobMeta>(begin, end, appender, option);
+    if(ret > 0 || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
         typeAs<ArrayObject>(argv).sortAsStrArray(oldSize);
         for(unsigned int i = 0; i <= size; i++) {
             state.stack.popNoReturn();
         }
         return true;
     } else {
-        raiseGlobbingError(state, state.stack, size, "No matches for glob pattern");
+        const char *msg = ret == 0 ? "No matches for glob pattern" : "number of glob results reaches limit";
+        raiseGlobbingError(state, state.stack, size, msg);
         return false;
     }
 }

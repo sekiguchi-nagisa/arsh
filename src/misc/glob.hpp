@@ -178,15 +178,29 @@ inline auto createWildCardMatcher(Iter begin, Iter end, WildMatchOption option) 
     return WildCardMatcher<Meta, Iter>(begin, end, option);
 }
 
+/**
+ *
+ * @tparam Meta
+ * @tparam Iter
+ * @tparam Appender
+ * @param baseDir
+ * @param iter
+ * @param end
+ * @param appender
+ * @param option
+ * @return
+ * return number of matched files.
+ * if reach number of matched files limits, return -1.
+ */
 template <typename Meta, typename Iter, typename Appender>
-unsigned int globBase(const char *baseDir, Iter iter, Iter end,
+int globBase(const char *baseDir, Iter iter, Iter end,
                             Appender &appender, WildMatchOption option) {
     DIR *dir = opendir(baseDir);
     if(!dir) {
         return 0;
     }
 
-    unsigned int matchCount = 0;
+    int matchCount = 0;
     for(dirent *entry; (entry = readdir(dir)); ) {
         if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
             continue;
@@ -219,11 +233,18 @@ unsigned int globBase(const char *baseDir, Iter iter, Iter end,
                 name += '/';
             }
             if(!matcher.isEnd()) {
-                matchCount += globBase<Meta>(name.c_str(), matcher.getIter(), end, appender, option);
+                int globRet = globBase<Meta>(name.c_str(), matcher.getIter(), end, appender, option);
+                if(globRet < 0) {
+                    return globRet;
+                }
+                matchCount += globRet;
             }
         }
         if(matcher.isEnd()) {
-            appender(std::move(name));
+            if(!appender(std::move(name))) {
+                matchCount = -1;
+                break;
+            }
             matchCount++;
         }
 
@@ -236,7 +257,7 @@ unsigned int globBase(const char *baseDir, Iter iter, Iter end,
 }
 
 template <typename Meta, typename Iter, typename Appender>
-unsigned int globAt(const char *dir, Iter iter, Iter end,
+int globAt(const char *dir, Iter iter, Iter end,
         Appender &appender, WildMatchOption option) {
     auto begin = iter;
     auto latestSep = end;
@@ -277,7 +298,7 @@ unsigned int globAt(const char *dir, Iter iter, Iter end,
 }
 
 template <typename Meta, typename Iter, typename Appender>
-unsigned int glob(Iter iter, Iter end, Appender &appender, WildMatchOption option) {
+int glob(Iter iter, Iter end, Appender &appender, WildMatchOption option) {
     return globAt<Meta>(nullptr, iter, end, appender, option);
 }
 
