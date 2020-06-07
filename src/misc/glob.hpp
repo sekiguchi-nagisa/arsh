@@ -235,7 +235,8 @@ int globBase(const char *baseDir, Iter iter, Iter end,
             if(!matcher.isEnd()) {
                 int globRet = globBase<Meta>(name.c_str(), matcher.getIter(), end, appender, option);
                 if(globRet < 0) {
-                    return globRet;
+                    matchCount = -1;
+                    break;
                 }
                 matchCount += globRet;
             }
