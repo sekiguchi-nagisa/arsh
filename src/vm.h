@@ -244,9 +244,9 @@ public:
         return 1;
     }
 
-    void setVMHook(VMHook *hook) {
-        this->hook = hook;
-        if(hook != nullptr) {
+    void setVMHook(VMHook *h) {
+        this->hook = h;
+        if(this->hook != nullptr) {
             setFlag(eventDesc, VMEvent::HOOK);
         } else {
             unsetFlag(eventDesc, VMEvent::HOOK);

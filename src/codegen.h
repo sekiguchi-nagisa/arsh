@@ -46,8 +46,8 @@ public:
         return reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&l);
     }
 
-    void setIndex(unsigned int index) {
-        this->index = index;
+    void setIndex(unsigned int i) {
+        this->index = i;
     }
 
     unsigned int getIndex() const {

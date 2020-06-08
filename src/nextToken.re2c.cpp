@@ -112,7 +112,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
     INIT:
     unsigned int startPos = this->getPos();
-    LexerMode prevMode = this->getLexerMode();
+    LexerMode mode = this->getLexerMode();
     TokenKind kind = INVALID;
     /*!re2c
       <STMT> "alias"           { MODE(NAME); RET(ALIAS); }
@@ -298,7 +298,7 @@ TokenKind Lexer::nextToken(Token &token) {
     END:
     token.pos = startPos;
     token.size = this->getPos() - startPos;
-    this->prevMode = prevMode;
+    this->prevMode = mode;
     goto RET;
 
     EOS:
