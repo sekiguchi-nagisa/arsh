@@ -224,9 +224,21 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
     LOG(TRACE_MODULE, "\n    scriptDir: `%s'\n    modPath: `%s'\n    fullPath: `%s'",
                        (scriptDir == nullptr ? "(null)" : scriptDir),
                        modPath, str ? str.get() : "(null)");
+    // check file type
     if(!str) {
         errno = ENOENT;
         return ModLoadingError::NOT_FOUND;
+    }
+    mode_t mode = getStMode(str.get());
+    if(!mode) {
+        return ModLoadingError::NOT_FOUND;
+    }
+    if(S_ISDIR(mode)) {
+        errno = EISDIR;
+        return ModLoadingError::NOT_OPEN;
+    } else if(hasFlag(option, ModLoadOption::IGNORE_NON_REG_FILE) && !S_ISREG(mode)) {
+        errno = EINVAL;
+        return ModLoadingError::NOT_OPEN;
     }
 
     StringRef key(str.get());
@@ -237,29 +249,12 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
         }
         return ModLoadingError::CIRCULAR;
     }
-
     filePtr = createFilePtr(fopen, key.data(), "rb");
     if(!filePtr) {
         int old = errno;
         this->typeMap.erase(pair.first);
         errno = old;
-        if(errno == ENOENT) {
-            return ModLoadingError::NOT_FOUND;
-        }
         return ModLoadingError::NOT_OPEN;
-    } else {
-        mode_t mode = getStMode(fileno(filePtr.get()));
-        if(S_ISDIR(mode)) {
-            this->typeMap.erase(pair.first);
-            filePtr.reset();
-            errno = EISDIR;
-            return ModLoadingError::NOT_OPEN;
-        } else if(hasFlag(option, ModLoadOption::IGNORE_NON_REG_FILE) && !S_ISREG(mode)) {
-            this->typeMap.erase(pair.first);
-            filePtr.reset();
-            errno = EINVAL;
-            return ModLoadingError::NOT_OPEN;
-        }
     }
     return key.data();
 }
