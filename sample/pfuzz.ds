@@ -7,4 +7,4 @@ import-env FUZZ_JOBS : "4"
 var N = $FUZZ_JOBS.toInt() ?? 4
 
 
-exec env YDSH_SUPPRESS_COMPILE_ERROR=on $bin -jobs=$N -workers=$N $@
+exec env YDSH_SUPPRESS_COMPILE_ERROR=on $bin -jobs=$N -workers=$N -rss_limit_mb=4096 $@
