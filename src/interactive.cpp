@@ -83,9 +83,6 @@ static const char *prompt(unsigned int n) {
 static const std::string *lineBuf = nullptr;
 
 static bool readLine(std::string &line) {
-    // force set locale
-    setlocale(LC_CTYPE, "");
-
     line.clear();
     lineBuf = &line;
 
