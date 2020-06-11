@@ -16,15 +16,11 @@
 
 #include <poll.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 
 #include <cstdlib>
-#include <cassert>
-#include <climits>
-#include <csignal>
 #include <cctype>
 
 #include <constant.h>

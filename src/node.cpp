@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <pwd.h>
-
 #include <cstdarg>
 #include <cerrno>
 

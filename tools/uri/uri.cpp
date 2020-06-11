@@ -56,7 +56,6 @@ std::string URI::toString() const {
 
 static bool isEscaped(int ch) {
     switch(ch) {
-    case '-':
     case '.':
     case '_':
     case '~':

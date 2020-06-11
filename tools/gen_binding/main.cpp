@@ -514,12 +514,6 @@ using TypeConstraint = std::pair<std::unique_ptr<TypeToken>, std::unique_ptr<Typ
 class Element {
 protected:
     /**
-     * if true, treat as function,
-     * if false, treat as constructor
-     */
-    bool func;
-
-    /**
      * if this element is constructor, it is empty string
      */
     std::string funcName;
