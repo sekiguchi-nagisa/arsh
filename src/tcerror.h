@@ -34,16 +34,19 @@ private:
 
     const char *kind{nullptr};
 
-    std::string message;
+    CStrPtr message;
 
 public:
     TypeCheckError() = default;
 
-    TypeCheckError(Token token, const char *kind, const char *message) :
-            token(token), kind(kind), message(message) { }
+    TypeCheckError(Token token, const char *kind, CStrPtr &&message) :
+            token(token), kind(kind), message(std::move(message)) { }
 
     TypeCheckError(Token token, TypeLookupError &e) noexcept :
-            token(token), kind(e.getKind()), message(extract(std::move(e))) { }
+            token(token), kind(e.getKind()), message(e.takeMessage()) { }
+
+    TypeCheckError(const TypeCheckError &o) noexcept :
+            token(o.token), kind(o.kind), message(strdup(o.message.get())) {}
 
     ~TypeCheckError() override = default;
 
@@ -55,8 +58,8 @@ public:
         return this->kind;
     }
 
-    const std::string &getMessage() const {
-        return this->message;
+    const char *getMessage() const {
+        return this->message.get();
     }
 };
 

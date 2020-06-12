@@ -121,7 +121,7 @@ FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, boo
         parser(this->lexer), checker(symbolTable, toplevel, &this->lexer){}
 
 void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
-        Token errorToken, const std::string &message, DSError *dsError) const {
+        Token errorToken, const char *message, DSError *dsError) const {
     if(!this->reporter) {
         return;
     }
@@ -131,7 +131,7 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
      */
     this->reporter(*this->parser.getLexer(),
            type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
-           errorToken, TermColor::Magenta, message.c_str());
+           errorToken, TermColor::Magenta, message);
 
     for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
         auto &node = i > 0 ? this->contexts[i - 1]->srcListNode : this->srcListNode;

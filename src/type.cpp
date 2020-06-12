@@ -85,9 +85,7 @@ std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char 
     if(vasprintf(&str, fmt, arg) == -1) { abort(); }
     va_end(arg);
 
-    auto error = std::make_unique<TypeLookupError>(kind, str);
-    free(str);
-    return error;
+    return std::make_unique<TypeLookupError>(kind, CStrPtr(str));
 }
 
 TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char *fmt, ...) {
@@ -98,9 +96,7 @@ TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char 
     if(vasprintf(&str, fmt, arg) == -1) { abort(); }
     va_end(arg);
 
-    TypeCheckError error(node.getToken(), kind, str);
-    free(str);
-    return error;
+    return TypeCheckError(node.getToken(), kind, CStrPtr(str));
 }
 
 std::string toString(FieldAttribute attr) {

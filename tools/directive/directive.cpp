@@ -122,7 +122,7 @@ private:
     }
 
     void createError(const Node &node, const std::string &str) {
-        this->error = std::make_unique<TypeCheckError>(node.getToken(), "", str.c_str());
+        this->error = std::make_unique<TypeCheckError>(node.getToken(), "", CStrPtr(strdup(str.c_str())));
     }
 };
 

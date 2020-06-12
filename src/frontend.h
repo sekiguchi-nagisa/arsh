@@ -183,12 +183,13 @@ private:
 
     // for error reporting
     void handleError(DSErrorKind type, const char *errorKind,
-            Token errorToken, const std::string &message, DSError *dsError) const;
+            Token errorToken, const char *message, DSError *dsError) const;
 
     void handleParseError(DSError *dsError) const {
         auto &e = this->parser.getError();
         Token errorToken = this->parser.getLexer()->shiftEOS(e.getErrorToken());
-        return this->handleError(DS_ERROR_KIND_PARSE_ERROR, e.getErrorKind(), errorToken, e.getMessage(), dsError);
+        return this->handleError(DS_ERROR_KIND_PARSE_ERROR,
+                e.getErrorKind(), errorToken, e.getMessage().c_str(), dsError);
     }
 
     void handleTypeError(const TypeCheckError &e, DSError *dsError) const {

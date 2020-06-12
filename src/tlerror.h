@@ -20,16 +20,18 @@
 #include <string>
 #include <memory>
 
+#include "misc/resource.hpp"
+
 namespace ydsh {
 
 class TypeLookupError {
 private:
     const char *kind;
-    std::string message;
+    CStrPtr message;
 
 public:
-    TypeLookupError(const char *kind, const char *message) :
-            kind(kind), message(message) { }
+    TypeLookupError(const char *kind, CStrPtr &&message) :
+            kind(kind), message(std::move(message)) { }
 
     ~TypeLookupError() = default;
 
@@ -37,12 +39,12 @@ public:
         return this->kind;
     }
 
-    const std::string &getMessage() const {
-        return this->message;
+    const char *getMessage() const {
+        return this->message.get();
     }
 
-    friend std::string extract(TypeLookupError &&e) {
-        return std::move(e.message);
+    CStrPtr takeMessage() {
+        return std::move(this->message);
     }
 };
 
