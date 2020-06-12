@@ -18,6 +18,7 @@
 #define YDSH_MISC_RESOURCE_HPP
 
 #include <cstdio>
+#include <cerrno>
 #include <type_traits>
 #include <memory>
 
