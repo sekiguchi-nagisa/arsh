@@ -146,7 +146,7 @@ public:
             this->buf += '\n';
         }
         this->buf += '\0';
-        this->cursor = this->buf.get();
+        this->cursor = this->buf.data();
         this->limit = this->cursor + this->getUsedSize();
     }
 
@@ -189,7 +189,7 @@ public:
      * get current reading position.
      */
     unsigned int getPos() const {
-        return this->cursor - this->buf.get();
+        return this->cursor - this->buf.data();
     }
 
     /**
@@ -209,7 +209,7 @@ public:
 
     StringRef toStrRef(Token token) const {
         assert(this->withinRange(token));
-        return StringRef(this->buf.get() + token.pos, token.size);
+        return StringRef(this->buf.data() + token.pos, token.size);
     }
 
     /**
@@ -217,7 +217,7 @@ public:
      */
     std::string toTokenText(Token token) const {
         assert(this->withinRange(token));
-        return std::string(this->buf.get() + token.pos, token.size);
+        return std::string(this->buf.data() + token.pos, token.size);
     }
 
     bool startsWith(Token token, int ch) const {
@@ -271,7 +271,7 @@ public:
 
 private:
     unsigned int toCodePoint(unsigned int offset, int &code) const {
-        return UnicodeUtil::utf8ToCodePoint(this->buf.get() + offset, this->getUsedSize() - offset, code);
+        return UnicodeUtil::utf8ToCodePoint(this->buf.data() + offset, this->getUsedSize() - offset, code);
     }
 
 protected:
@@ -350,7 +350,7 @@ std::string LexerBase<T>::formatTokenText(Token token) const {
         if(code < 0) {
             break;
         }
-        str.append(this->buf.get() + i, size);
+        str.append(this->buf.data() + i, size);
         i += size;
     }
     return str;
@@ -412,8 +412,8 @@ template <bool T>
 void LexerBase<T>::appendToBuf(const char *data, unsigned int size, bool isEnd) {
     // save position
     const unsigned int pos = this->getPos();
-    const unsigned int markerPos = this->marker - this->buf.get();
-    const unsigned int ctxMarkerPos = this->ctxMarker - this->buf.get();
+    const unsigned int markerPos = this->marker - this->buf.data();
+    const unsigned int ctxMarkerPos = this->ctxMarker - this->buf.data();
 
     if(!this->buf.empty()) {
         this->buf.pop_back();   // pop null character
@@ -425,10 +425,10 @@ void LexerBase<T>::appendToBuf(const char *data, unsigned int size, bool isEnd) 
     this->buf += '\0';
 
     // restore position
-    this->cursor = this->buf.get() + pos;
-    this->limit = this->buf.get() + this->getUsedSize();
-    this->marker = this->buf.get() + markerPos;
-    this->ctxMarker = this->buf.get() + ctxMarkerPos;
+    this->cursor = this->buf.data() + pos;
+    this->limit = this->buf.data() + this->getUsedSize();
+    this->marker = this->buf.data() + markerPos;
+    this->ctxMarker = this->buf.data() + ctxMarkerPos;
 }
 
 template<bool T>

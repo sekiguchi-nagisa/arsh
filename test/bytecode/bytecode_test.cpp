@@ -192,21 +192,21 @@ TEST(writer, read) {
     {
         const unsigned char v = 68;
         writer.emit(0, v);
-        ASSERT_EQ(v, ydsh::read8(writer.codeBuffer.get(), 0));
+        ASSERT_EQ(v, ydsh::read8(writer.codeBuffer.data(), 0));
     }
 
     // 16 bit
     {
         const unsigned short v = 2784;
         writer.emit(1, v);
-        ASSERT_EQ(v, ydsh::read16(writer.codeBuffer.get(), 1));
+        ASSERT_EQ(v, ydsh::read16(writer.codeBuffer.data(), 1));
     }
 
     // 32 bit
     {
         const unsigned int v = 0x12345678;
         writer.emit(0, v);
-        ASSERT_EQ(v, ydsh::read32(writer.codeBuffer.get(), 0));
+        ASSERT_EQ(v, ydsh::read32(writer.codeBuffer.data(), 0));
     }
 
     // 64 bit
@@ -216,7 +216,7 @@ TEST(writer, read) {
     {
         const auto v = static_cast<uint64_t>(-456789);
         writer.emit(0, v);
-        ASSERT_EQ(v, ydsh::read64(writer.codeBuffer.get(), 0));
+        ASSERT_EQ(v, ydsh::read64(writer.codeBuffer.data(), 0));
     }
 }
 
@@ -286,7 +286,7 @@ TEST(writer, label1) {
 TEST(writer, label2) {
     ByteCodeWriter writer;
 
-    writer.codeBuffer.assign(8, 0);
+    writer.codeBuffer.insert(writer.codeBuffer.end(), 8, 0);
 
     auto label = makeLabel();
     writer.writeLabel(3, label, 1, ByteCodeWriter::LabelTarget::_8);

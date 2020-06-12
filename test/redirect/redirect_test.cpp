@@ -52,7 +52,7 @@ public:
         fclose(fp);
 
         // compare
-        std::string content(buffer.get(), buffer.size());
+        std::string content(buffer.data(), buffer.size());
         ASSERT_STREQ(str, content.c_str());
     }
 };

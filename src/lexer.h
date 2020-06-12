@@ -73,8 +73,8 @@ public:
     }
 
     void setPos(unsigned int pos) {
-        assert(this->buf.get() + pos <= this->limit);
-        this->cursor = this->buf.get() + pos;
+        assert(this->buf.data() + pos <= this->limit);
+        this->cursor = this->buf.data() + pos;
     }
 
     bool isPrevNewLine() const {

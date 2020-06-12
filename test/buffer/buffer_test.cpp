@@ -15,15 +15,15 @@ TEST(BufferTest, case1) {
     ASSERT_TRUE(buffer.empty());
 
     // append
-    for(unsigned int i = 0; i < IBuffer::MINIMUM_CAPACITY; i++) {
+    for(unsigned int i = 0; i < 8; i++) {
         buffer += i;
     }
 
-    ASSERT_EQ(IBuffer::MINIMUM_CAPACITY, buffer.size());
-    ASSERT_EQ(IBuffer::MINIMUM_CAPACITY, buffer.capacity());
+    ASSERT_EQ(8, buffer.size());
+    ASSERT_TRUE(buffer.size() <= buffer.capacity());
 
     // get
-    for(unsigned int i = 0; i < IBuffer::MINIMUM_CAPACITY; i++) {
+    for(unsigned int i = 0; i < 8; i++) {
         ASSERT_EQ(i, buffer[i]);
         ASSERT_EQ(i, buffer.at(i));
     }
@@ -46,14 +46,14 @@ TEST(BufferTest, case1) {
 TEST(BufferTest, case2) {
     IBuffer buffer;
 
-    unsigned int size = IBuffer::MINIMUM_CAPACITY + 2;
+    unsigned int size = 10;
     for(unsigned int i = 0; i < size; i++) {
         buffer += i;    // expand buffer.
     }
 
-    unsigned int cap = IBuffer::MINIMUM_CAPACITY + (IBuffer::MINIMUM_CAPACITY >> 1);
     ASSERT_EQ(size, buffer.size());
-    ASSERT_EQ(cap, buffer.capacity());
+    ASSERT_TRUE(buffer.size() <= buffer.capacity());
+    auto cap = buffer.capacity();
 
     for(unsigned int i = 0; i < size; i++)  {
         ASSERT_EQ(i, buffer[i]);
@@ -67,13 +67,13 @@ TEST(BufferTest, case2) {
     free(buffer.take());
     ASSERT_EQ(0u, buffer.size());
     ASSERT_EQ(0u, buffer.capacity());
-    ASSERT_TRUE(buffer.get() == nullptr);
+    ASSERT_TRUE(buffer.data() == nullptr);
 
     unsigned int v[] = {10, 20, 30};
     // reuse
     buffer += v;
     ASSERT_EQ(3u, buffer.size());
-    ASSERT_EQ(IBuffer::MINIMUM_CAPACITY, buffer.capacity());
+    ASSERT_TRUE(buffer.size() <= buffer.capacity());
     ASSERT_EQ(v[0], buffer[0]);
     ASSERT_EQ(v[1], buffer[1]);
     ASSERT_EQ(v[2], buffer[2]);
@@ -95,11 +95,11 @@ TEST(BufferTest, case3) {
     // after move
     ASSERT_EQ(0u, buffer.size());
     ASSERT_EQ(0u, buffer.capacity());
-    ASSERT_TRUE(buffer.get() == nullptr);
+    ASSERT_TRUE(buffer.data() == nullptr);
 
     ASSERT_EQ(len, buffer2.size());
     ASSERT_EQ(cap, buffer2.capacity());
-    ASSERT_TRUE(memcmp(s, buffer2.get(), buffer2.size()) == 0);
+    ASSERT_TRUE(memcmp(s, buffer2.data(), buffer2.size()) == 0);
 
     buffer2 += buffer;
     // do nothing
@@ -112,8 +112,8 @@ TEST(BufferTest, case3) {
     buffer3 += buffer2;
     buffer3 += '\0';
 
-    ASSERT_TRUE(memcmp(s, buffer2.get(), buffer2.size()) == 0);
-    ASSERT_STREQ("hello world!! hello world!!", buffer3.get());
+    ASSERT_TRUE(memcmp(s, buffer2.data(), buffer2.size()) == 0);
+    ASSERT_STREQ("hello world!! hello world!!", buffer3.data());
 }
 
 typedef FlexBuffer<const char *, unsigned char> StrBuffer;
@@ -126,14 +126,14 @@ TEST(BufferTest, case4) {
     };
 
     ASSERT_EXIT({ for(unsigned int i = 0; i < 30; i++) { buffer.append(v, arraySize(v)); } },
-            ::testing::KilledBySignal(SIGABRT), "reach maximum capacity\n");
+            ::testing::KilledBySignal(SIGABRT), "reach max size\n");
 }
 
 TEST(BufferTest, case5) {
     const StrBuffer::size_type size = 254;
     StrBuffer buffer(size);
 
-    ASSERT_EQ(StrBuffer::MAXIMUM_CAPACITY - 1, buffer.capacity());
+    ASSERT_EQ(StrBuffer::MAX_SIZE - 1, buffer.capacity());
 
     const char *v[size];
     buffer.append(v, size);
@@ -332,8 +332,8 @@ TEST(BufferTest, case13) {
     IBuffer buffer;
     buffer += 45;
 
-    // assign
-    buffer.assign(8, 12345);
+    // insert
+    buffer.insert(buffer.end(), 8, 12345);
     ASSERT_EQ(9u, buffer.size());
     for(unsigned int i = 0; i < 8; i++) {
         ASSERT_EQ(12345u, buffer[i + 1]);

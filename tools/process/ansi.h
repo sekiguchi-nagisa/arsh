@@ -61,7 +61,7 @@ public:
         this->bufs.reserve(this->maxRow);
         for(unsigned int i = 0; i < this->maxRow; i++) {
             this->bufs.emplace_back();
-            this->bufs.back().assign(this->maxCol, '\0');
+            this->bufs.back().insert(this->bufs.back().end(), this->maxCol, '\0');
         }
     }
 
@@ -170,9 +170,9 @@ private:
     }
 
     void appendToBuf(const char *data, unsigned int size) {
-        unsigned int old = this->start - this->buf.get();
+        unsigned int old = this->start - this->buf.data();
         LexerBase::appendToBuf(data, size, false);
-        this->start = this->buf.get() + old;
+        this->start = this->buf.data() + old;
     }
 };
 

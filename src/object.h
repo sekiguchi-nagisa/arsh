@@ -637,7 +637,7 @@ public:
         int captureSize;
         pcre_fullinfo(this->re.get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
         ovec = FlexBuffer<int>((captureSize + 1) * 3, 0);
-        return pcre_exec(this->re.get(), nullptr, ref.data(), ref.size(), 0, 0, ovec.get(), (captureSize + 1) * 3);
+        return pcre_exec(this->re.get(), nullptr, ref.data(), ref.size(), 0, 0, ovec.data(), (captureSize + 1) * 3);
     }
 
     const std::string &getStr() const {
