@@ -17,9 +17,6 @@
 #ifndef YDSH_TLERROR_H
 #define YDSH_TLERROR_H
 
-#include <string>
-#include <memory>
-
 #include "misc/resource.hpp"
 
 namespace ydsh {

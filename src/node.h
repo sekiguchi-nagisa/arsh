@@ -2257,6 +2257,11 @@ private:
      */
     ModType &modType;
 
+    /**
+     * resolved module path
+     */
+    const std::string &pathName;
+
     bool firstAppear;
 
     bool nothing{false};
@@ -2275,9 +2280,9 @@ private:
 
 public:
     SourceNode(Token token, Token pathToken, const std::string &name,
-            ModType &modType, bool firstAppear) :
+            ModType &modType, const std::string &pathName, bool firstAppear) :
             WithRtti(token), pathToken(pathToken), name(name),
-            modType(modType), firstAppear(firstAppear) {}
+            modType(modType), pathName(pathName), firstAppear(firstAppear) {}
 
     ~SourceNode() override = default;
 
@@ -2291,6 +2296,10 @@ public:
 
     ModType &getModType() const {
         return this->modType;
+    }
+
+    const std::string &getPathName() const {
+        return this->pathName;
     }
 
     bool isFirstAppear() const {
@@ -2398,7 +2407,8 @@ public:
     std::unique_ptr<SourceNode> create(ModType &modType, bool first) const {
         return std::make_unique<SourceNode>(
                 this->token, this->getPathNode().getToken(),
-                this->name, modType, first);
+                this->name, modType,
+                this->pathList[this->curIndex - 1], first);
     }
 
     void dump(NodeDumper &dumper) const override;

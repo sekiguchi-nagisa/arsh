@@ -871,6 +871,7 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
 void SourceNode::dump(NodeDumper &dumper) const {
     DUMP(name);
     DUMP(modType);
+    DUMP(pathName);
     DUMP(firstAppear);
     DUMP(nothing);
     DUMP(modIndex);

@@ -29,7 +29,7 @@ namespace ydsh {
     /*C(Black,   30)*/ \
     /*C(Red,     31)*/ \
     C(Green,   32) \
-    /*C(Yellow,  33)*/ \
+    C(Yellow,  33) \
     C(Blue,    34) \
     C(Magenta, 35) \
     C(Cyan,    36) /*\
@@ -158,6 +158,9 @@ public:
 
     void teardownASTDump();
 
+    void handleError(DSErrorKind type, const char *errorKind,
+                     Token errorToken, const char *message, DSError *dsError) const;
+
 private:
     /**
      *
@@ -182,9 +185,6 @@ private:
     std::unique_ptr<SourceNode> exitModule();
 
     // for error reporting
-    void handleError(DSErrorKind type, const char *errorKind,
-            Token errorToken, const char *message, DSError *dsError) const;
-
     void handleParseError(DSError *dsError) const {
         auto &e = this->parser.getError();
         Token errorToken = this->parser.getLexer()->shiftEOS(e.getErrorToken());

@@ -283,6 +283,7 @@ unsigned int DirectiveInitializer::resolveStatus(const StringNode &node) {
             {"parse",           _E(PARSE_ERROR)},
             {"type_error",      _E(TYPE_ERROR)},
             {"type",            _E(TYPE_ERROR)},
+            {"codegen",         _E(CODEGEN_ERROR)},
             {"runtime_error",   _E(RUNTIME_ERROR)},
             {"runtime",         _E(RUNTIME_ERROR)},
             {"throw",           _E(RUNTIME_ERROR)},

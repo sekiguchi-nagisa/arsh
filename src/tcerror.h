@@ -17,7 +17,6 @@
 #ifndef YDSH_TCERROR_H
 #define YDSH_TCERROR_H
 
-#include <string>
 #include <stdexcept>
 
 #include "node.h"

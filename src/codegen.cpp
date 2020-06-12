@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cstdarg>
+
 #include "codegen.h"
 #include "symbol_table.h"
 #include "redir.h"
@@ -43,7 +45,9 @@ bool isTypeOp(OpCode code) {
 }
 
 CompiledCode CodeBuilder::build(const std::string &name, bool sourced) {
-    this->finalize();
+    if(!this->finalize()) {
+        return CompiledCode();
+    }
 
     const unsigned int codeSize = this->codeBuffer.size();
     DSCode code {
@@ -1231,7 +1235,12 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
     this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
     this->visit(node.getBlockNode());
-    auto func = DSValue::create<FuncObject>(*node.getFuncType(), this->finalizeCodeBuilder(node.getFuncName()));
+
+    auto code = this->finalizeCodeBuilder(node.getFuncName());
+    if(!code) {
+        this->reportError<TooLargeFunc>(node, node.getFuncName().c_str());
+    }
+    auto func = DSValue::create<FuncObject>(*node.getFuncType(), std::move(code));
 
     this->emitLdcIns(func);
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getVarIndex());
@@ -1242,9 +1251,12 @@ void ByteCodeGenerator::visitInterfaceNode(InterfaceNode &) { } // do nothing
 void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->initCodeBuilder(CodeKind::USER_DEFINED_CMD, node.getMaxVarNum());
     this->visit(node.getBlockNode());
-    auto func = DSValue::create<FuncObject>(
-            this->symbolTable.get(TYPE::Void),
-            this->finalizeCodeBuilder(node.getCmdName()));
+
+    auto code = this->finalizeCodeBuilder(node.getCmdName());
+    if(!code) {
+        this->reportError<TooLargeUdc>(node, node.getCmdName().c_str());
+    }
+    auto func = DSValue::create<FuncObject>(this->symbolTable.get(TYPE::Void), std::move(code));
 
     this->emitLdcIns(func);
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
@@ -1263,18 +1275,38 @@ void ByteCodeGenerator::visitSourceListNode(SourceListNode &) { }   // do nothin
 
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
+void ByteCodeGenerator::reportErrorImpl(Token token, const char *kind, const char *fmt, ...) {
+    va_list arg;
+
+    va_start(arg, fmt);
+    char *str = nullptr;
+    if(vasprintf(&str, fmt, arg) == -1) { abort(); }
+    va_end(arg);
+
+    this->error = CodeGenError(token, kind, CStrPtr(str));
+}
+
 CompiledCode ByteCodeGenerator::finalize() {
     unsigned char maxLocalSize = this->symbolTable.getMaxVarIndex();
     this->curBuilder().localVarNum = maxLocalSize;
     this->emitIns(OpCode::RETURN);
+    auto code = this->finalizeCodeBuilder("");
+    if(!code) {
+        this->reportError<TooLargeToplevel>({0,0}, this->commons.back().getScriptName().asCStr());
+    }
     this->commons.pop_back();
-    return this->finalizeCodeBuilder("");
+    return code;
 }
 
-void ByteCodeGenerator::exitModule(const SourceNode &node) {
+bool ByteCodeGenerator::exitModule(const SourceNode &node) {
     this->curBuilder().localVarNum = node.getMaxVarNum();
     this->emitIns(OpCode::RETURN);
-    auto func = DSValue::create<FuncObject>(node.getModType(), this->finalizeCodeBuilder(node.getModType().toName()));
+
+    auto code = this->finalizeCodeBuilder(node.getModType().toName());
+    if(!code) {
+        this->reportError<TooLargeModule>(node, node.getPathName().c_str());
+    }
+    auto func = DSValue::create<FuncObject>(node.getModType(), std::move(code));
     this->commons.pop_back();
 
     this->emitLdcIns(func);
@@ -1289,6 +1321,7 @@ void ByteCodeGenerator::exitModule(const SourceNode &node) {
     if(index > 0) {
         this->emit2byteIns(OpCode::STORE_GLOBAL, index);
     }
+    return !this->hasError();
 }
 
 // ############################

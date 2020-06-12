@@ -24,6 +24,7 @@
 #include "node.h"
 #include "object.h"
 #include "opcode.h"
+#include "cgerror.h"
 #include "misc/resource.hpp"
 
 #define ASSERT_BYTE_SIZE(op, size) assert(getByteSize(op) == (size))
@@ -177,7 +178,7 @@ struct CodeEmitter {
         this->labelMap[label].push_back({index, baseIndex, len});
     }
 
-    void finalize() {
+    bool finalize() {
         // write labeled index.
         for(auto &e : this->labelMap) {
             const unsigned int location = e.first->getIndex();
@@ -190,13 +191,15 @@ struct CodeEmitter {
                 switch(u.offsetLen) {
                 case LabelTarget::_8:
                     if(offset > UINT8_MAX) {
-                        fatal("offset is greater than UINT8_MAX\n");
+//                        fatal("offset is greater than UINT8_MAX\n");
+                        return false;
                     }
                     this->emit8(targetIndex, offset);
                     break;
                 case LabelTarget::_16:
                     if(offset > UINT16_MAX) {
-                        fatal("offset is greater than UINT16_MAX\n");
+//                        fatal("offset is greater than UINT16_MAX\n");
+                        return false;
                     }
                     this->emit16(targetIndex, offset);
                     break;
@@ -207,6 +210,7 @@ struct CodeEmitter {
             }
         }
         this->labelMap.clear();
+        return true;
     }
 };
 
@@ -231,9 +235,6 @@ public:
     ExceptionEntry toEntry() const {
         assert(this->begin);
         assert(this->end);
-
-//        assert(this->begin->getIndex() > -1);
-//        assert(this->end->getIndex() > -1);
         assert(this->address > 0);
         assert(this->type != nullptr);
 
@@ -337,6 +338,8 @@ private:
     std::vector<CodeBuilder> builders;
 
     std::vector<ModuleCommon> commons;
+
+    CodeGenError error;
 
 public:
     ByteCodeGenerator(SymbolTable &symbolTable, bool assertion) :
@@ -579,6 +582,19 @@ private:
         return code;
     }
 
+    void reportErrorImpl(Token token, const char *kind,
+                                const char *fmt, ...) __attribute__ ((format(printf, 4, 5)));
+
+    template <typename T, typename ... Arg, typename = base_of_t<T, CGError>>
+    void reportError(const Node &node, Arg && ...arg) {
+        return this->reportErrorImpl(node.getToken(), T::kind, T::value, std::forward<Arg>(arg)...);
+    }
+
+    template <typename T, typename ... Arg, typename = base_of_t<T, CGError>>
+    void reportError(Token token, Arg && ...arg) {
+        return this->reportErrorImpl(token, T::kind, T::value, std::forward<Arg>(arg)...);
+    }
+
     // visitor api
     void visit(Node &node) override;
     void visitTypeNode(TypeNode &node) override;
@@ -625,12 +641,21 @@ private:
     void visitEmptyNode(EmptyNode &node) override;
 
 public:
+    bool hasError() const {
+        return static_cast<bool>(this->error);
+    }
+
+    const CodeGenError &getError() const {
+        return this->error;
+    }
+
     void initialize(const Lexer &lexer) {
         this->initToplevelCodeBuilder(lexer, 0);
     }
 
-    void generate(Node *node) {
+    bool generate(Node *node) {
         this->visit(*node);
+        return !this->hasError();
     }
 
     CompiledCode finalize();
@@ -639,7 +664,7 @@ public:
         this->initToplevelCodeBuilder(lexer, 0);
     }
 
-    void exitModule(const SourceNode &node);
+    bool exitModule(const SourceNode &node);
 };
 
 class ByteCodeDumper {

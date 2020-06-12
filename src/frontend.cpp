@@ -74,7 +74,7 @@ void ErrorReporter::operator()(const Lexer &lex, const char *kind, Token token, 
     fflush(this->fp);
 }
 
-const char* ErrorReporter::color(ydsh::TermColor c) const {
+const char* ErrorReporter::color(TermColor c) const {
     if(this->tty) {
 #define GEN_STR(E, C) "\033[" #C "m",
         const char *ansi[] = {
@@ -86,7 +86,7 @@ const char* ErrorReporter::color(ydsh::TermColor c) const {
     return "";
 }
 
-void ErrorReporter::printErrorLine(const ydsh::Lexer &lexer, ydsh::Token token) const {
+void ErrorReporter::printErrorLine(const Lexer &lexer, Token token) const {
     if(token.pos + token.size == 0) {
         return;
     }
@@ -98,17 +98,30 @@ void ErrorReporter::printErrorLine(const ydsh::Lexer &lexer, ydsh::Token token) 
 
     auto lines = split(line);
     auto markers = split(marker);
-    unsigned int size = lines.size();
+    size_t size = lines.size();
     assert(size == markers.size());
-    for(unsigned int i = 0; i < size; i++) {
-        // print error line
-        fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Cyan), lines[i].c_str(), this->color(TermColor::Reset));
+    bool omitLine = size > 30;
+    std::pair<size_t, size_t> pairs[2] = {
+            {0, omitLine ? 15 : size},
+            {omitLine ? size - 10 : size, size}
+    };
+    for(unsigned int i = 0; i < 2; i++) {
+        if(i == 1 && omitLine) {
+            fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Yellow), "\n| ~~~ omit error lines ~~~ |\n",
+                    this->color(TermColor::Reset));
+        }
 
-        // print line marker
-        fprintf(this->fp, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
-                markers[i].c_str(), this->color(TermColor::Reset));
+        size_t start = pairs[i].first;
+        size_t stop = pairs[i].second;
+        for(size_t index = start; index < stop; index++) {
+            // print error line
+            fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Cyan), lines[index].c_str(), this->color(TermColor::Reset));
+
+            // print line marker
+            fprintf(this->fp, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
+                    markers[index].c_str(), this->color(TermColor::Reset));
+        }
     }
-
     fflush(this->fp);
 }
 
@@ -120,6 +133,19 @@ FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, boo
         lexer(std::move(lexer)), mode(mode),
         parser(this->lexer), checker(symbolTable, toplevel, &this->lexer){}
 
+static const char *toString(DSErrorKind kind) {
+    switch(kind) {
+    case DS_ERROR_KIND_PARSE_ERROR:
+        return "syntax error";
+    case DS_ERROR_KIND_TYPE_ERROR:
+        return "semantic error";
+    case DS_ERROR_KIND_CODEGEN_ERROR:
+        return "codegen error";
+    default:
+        return "";
+    }
+}
+
 void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
         Token errorToken, const char *message, DSError *dsError) const {
     if(!this->reporter) {
@@ -129,9 +155,7 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
     /**
      * show error message
      */
-    this->reporter(*this->parser.getLexer(),
-           type == DS_ERROR_KIND_PARSE_ERROR ? "syntax error" : "semantic error",
-           errorToken, TermColor::Magenta, message);
+    this->reporter(*this->parser.getLexer(), toString(type), errorToken, TermColor::Magenta, message);
 
     for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
         auto &node = i > 0 ? this->contexts[i - 1]->srcListNode : this->srcListNode;

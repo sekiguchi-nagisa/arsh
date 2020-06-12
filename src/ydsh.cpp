@@ -111,10 +111,14 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
             this->codegen.enterModule(this->frontEnd.getCurrentLexer());
             break;
         case FrontEnd::EXIT_MODULE:
-            this->codegen.exitModule(cast<SourceNode>(*ret.node));
+            if(!this->codegen.exitModule(cast<SourceNode>(*ret.node))) {
+                goto END;
+            }
             break;
         case FrontEnd::IN_MODULE:
-            this->codegen.generate(ret.node.get());
+            if(!this->codegen.generate(ret.node.get())) {
+                goto END;
+            }
             break;
         default:
             break;
@@ -123,6 +127,15 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     this->frontEnd.teardownASTDump();
     if(!this->frontEnd.frontEndOnly()) {
         code = this->codegen.finalize();
+    }
+
+    END:
+    if(this->codegen.hasError()) {
+        auto &e = this->codegen.getError();
+        this->frontEnd.handleError(DS_ERROR_KIND_CODEGEN_ERROR,
+                e.getKind(), e.getToken(), e.getMessage(), dsError);
+        this->frontEnd.getSymbolTable().abort();
+        return 1;
     }
     return 0;
 }
