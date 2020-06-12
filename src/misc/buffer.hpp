@@ -52,18 +52,6 @@ private:
 
     T *data_;
 
-    /**
-     * expand memory of old.
-     * if old is null, only allocate.
-     */
-    static T *allocArray(T *old, SIZE_T size) noexcept {
-        auto *ptr = static_cast<T *>(realloc(old, sizeof(T) * size));
-        if(ptr == nullptr) {
-            fatal("memory allocation failed\n");
-        }
-        return ptr;
-    }
-
     void moveElements(iterator src, iterator dest) noexcept {
         if(src == dest) {
             return;
@@ -92,9 +80,9 @@ private:
 public:
     NON_COPYABLE(FlexBuffer);
 
-    explicit FlexBuffer(size_type initSize) noexcept :
-            cap_(initSize), size_(0),
-            data_(allocArray(nullptr, this->cap_)) { }
+    explicit FlexBuffer(size_type initSize) noexcept : FlexBuffer() {
+        this->reserve(initSize);
+    }
 
     FlexBuffer(std::initializer_list<T> list) noexcept : FlexBuffer(list.size()) {
         for(auto iter = list.begin(); iter != list.end(); ++iter) {
@@ -338,7 +326,10 @@ template <typename T, typename SIZE_T>
 void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) noexcept {
     if(reservingSize > this->cap_) {
         this->cap_ = reservingSize;
-        this->data_ = allocArray(this->data_, this->cap_);
+        this->data_ = static_cast<T *>(realloc(this->data(), sizeof(T) * this->capacity()));
+        if(!this->data_) {
+            fatal_perror("memory allocation failed");
+        }
     }
 }
 
