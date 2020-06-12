@@ -22,6 +22,7 @@
 
 #include <cstdlib>
 #include <cctype>
+#include <csignal>
 
 #include <constant.h>
 #include <misc/util.hpp>
