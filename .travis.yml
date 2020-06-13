@@ -86,16 +86,17 @@ matrix:
       env: CXX_BIN=g++-10 BUILD_TYPE=release
       dist: bionic
 
-#    # gcc 8 with LTO
-#    - compiler: gcc
-#      addons:
-#        apt:
-#          sources:
-#          - ubuntu-toolchain-r-test
-#          packages:
-#          - g++-8
-#          - ninja-build
-#      env: CXX_BIN=g++-8 -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
+    # gcc 10 with LTO
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+          - ubuntu-toolchain-r-test
+          packages:
+          - g++-10
+          - ninja-build
+      env: CXX_BIN=g++-10 -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
+      dist: bionic
 
 
     # clang 3.6
@@ -240,6 +241,21 @@ matrix:
             - clang-10
             - ninja-build
       env: CXX_BIN=clang++-10 BUILD_TYPE=release
+
+    # clang 10.0 with LTO
+    - addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb https://apt.llvm.org/xenial/ llvm-toolchain-xenial-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+            - g++-5
+            - clang-10
+            - lld-10
+            - llvm-10
+            - ninja-build
+      env: CXX_BIN=clang++-10 -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
 
     # clang (Release build), ARM64
     - addons:

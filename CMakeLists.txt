@@ -4,13 +4,17 @@ if(POLICY CMP0048)
     cmake_policy(SET CMP0048 NEW)
 endif()
 
+if(POLICY CMP0069)
+    cmake_policy(SET CMP0069 NEW)
+endif()
+
 project(ydsh)
 enable_language(CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
 
 include(GNUInstallDirs)
-
+include(CheckIPOSupported)
 include(Helper)
 include(DownloadProject)
 include(GetRE2C)
@@ -74,11 +78,6 @@ if(("${lower_type}" STREQUAL "debug") OR ("${lower_type}" STREQUAL "coverage"))
 elseif("${lower_type}" STREQUAL "release" OR "${lower_type}" STREQUAL "relwithdebinfo")
     if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_definitions(-D_FORTIFY_SOURCE=2)
-    endif()
-
-    if(USE_LTO)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -flto")
-        set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -flto")
     endif()
 endif()
 
@@ -266,6 +265,20 @@ add_library(${YDSH_LIB} SHARED ${YDSH_SRC})
 add_dependencies(${YDSH_LIB} gen_lexer)
 set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
 target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE})
+
+if(USE_LTO)
+    check_ipo_supported(RESULT ipo_supported OUTPUT output)
+    if(ipo_supported)
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+            check_program(lld)
+            set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
+        endif()
+
+        set_property(TARGET ${YDSH_LIB} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else()
+        message(WARNING "IPO is not supported: ${output}")
+    endif()
+endif()
 
 
 #==============#
