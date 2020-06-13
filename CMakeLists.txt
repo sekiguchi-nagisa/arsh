@@ -276,7 +276,7 @@ if(USE_LTO)
 
         set_property(TARGET ${YDSH_LIB} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
     else()
-        message(WARNING "IPO is not supported: ${output}")
+        message(FATAL_ERROR "IPO is not supported: ${output}")
     endif()
 endif()
 
