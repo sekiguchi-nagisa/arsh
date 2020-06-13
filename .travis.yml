@@ -254,6 +254,7 @@ matrix:
             - clang-10
             - lld-10
             - llvm-10
+            - llvm-10-dev
             - ninja-build
       env: CXX_BIN=clang++-10 BUILD_TYPE=release -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
 
