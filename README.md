@@ -41,3 +41,9 @@ $ cmake .
 $ make && make install
 $ ydsh
 ```
+
+### Note
+if run ``ctest`` in Cygwin, set ``PATH`` to the following
+```sh
+$ PATH=$(pwd):$PATH ctest
+```
