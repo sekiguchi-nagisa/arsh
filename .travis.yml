@@ -86,7 +86,7 @@ matrix:
       env: CXX_BIN=g++-10 BUILD_TYPE=release
       dist: bionic
 
-    # gcc 10 with LTO
+    # gcc 10 Release with LTO
     - compiler: gcc
       addons:
         apt:
@@ -95,7 +95,7 @@ matrix:
           packages:
           - g++-10
           - ninja-build
-      env: CXX_BIN=g++-10 -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
+      env: CXX_BIN=g++-10 BUILD_TYPE=release -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
       dist: bionic
 
 
@@ -242,7 +242,7 @@ matrix:
             - ninja-build
       env: CXX_BIN=clang++-10 BUILD_TYPE=release
 
-    # clang 10.0 with LTO
+    # clang 10.0 Release with LTO
     - addons:
         apt:
           sources:
@@ -255,7 +255,7 @@ matrix:
             - lld-10
             - llvm-10
             - ninja-build
-      env: CXX_BIN=clang++-10 -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
+      env: CXX_BIN=clang++-10 BUILD_TYPE=release -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
 
     # clang (Release build), ARM64
     - addons:
