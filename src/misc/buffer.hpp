@@ -29,7 +29,7 @@ namespace ydsh {
 
 /**
  * only available POD type.
- * default maximum capacity is 2GB
+ * default maximum capacity is 4GB
  */
 template <typename T, typename SIZE_T = unsigned int>
 class FlexBuffer {
@@ -96,7 +96,7 @@ public:
         }
     }
 
-    template <std::size_t N>
+    template <size_type N>
     FlexBuffer(const T (&value)[N]) noexcept : FlexBuffer(N) {  //NOLINT
         this->append(value, N);
     }
@@ -139,7 +139,7 @@ public:
 
     FlexBuffer &operator+=(FlexBuffer &&buffer) noexcept;
 
-    template <std::size_t N>
+    template <size_type N>
     FlexBuffer &operator+=(const T (&value)[N]) noexcept {
         return this->append(value, N);
     }
