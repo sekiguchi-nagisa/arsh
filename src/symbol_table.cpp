@@ -229,14 +229,20 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
         errno = ENOENT;
         return ModLoadingError::NOT_FOUND;
     }
-    mode_t mode = getStMode(str.get());
-    if(!mode) {
+
+    struct stat st;
+    if(stat(str.get(), &st) != 0) {
         return ModLoadingError::NOT_FOUND;
     }
-    if(S_ISDIR(mode)) {
+    if(S_ISDIR(st.st_mode)) {
         errno = EISDIR;
         return ModLoadingError::NOT_OPEN;
-    } else if(hasFlag(option, ModLoadOption::IGNORE_NON_REG_FILE) && !S_ISREG(mode)) {
+    } else if(S_ISREG(st.st_mode)) {
+        if(st.st_size > (static_cast<uint32_t>(-1) >> 2)) {
+            errno = EFBIG;
+            return ModLoadingError::NOT_OPEN;
+        }
+    } else if(hasFlag(option, ModLoadOption::IGNORE_NON_REG_FILE)) {
         errno = EINVAL;
         return ModLoadingError::NOT_OPEN;
     }
