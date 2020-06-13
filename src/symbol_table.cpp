@@ -238,7 +238,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
         errno = EISDIR;
         return ModLoadingError::NOT_OPEN;
     } else if(S_ISREG(st.st_mode)) {
-        if(st.st_size > (static_cast<uint32_t>(-1) >> 2)) {
+        if(st.st_size > static_cast<off_t>(static_cast<uint32_t>(-1) >> 2)) {
             errno = EFBIG;
             return ModLoadingError::NOT_OPEN;
         }
