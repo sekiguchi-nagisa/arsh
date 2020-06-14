@@ -14,13 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
-        uses: sekiguchi-nagisa/cpack-rpm-build-action@v0.1
+        uses: sekiguchi-nagisa/cpack-rpm-build-action@v0.10
       - name: Get the package name
         id: get_rpm_name
         run: |
           cd build
           echo ::set-output name=RPM_NAME::$(ls | grep .rpm | grep -v debug) 
-          echo ::set-output name=RPM_DEBUGINFO_NAME::$(ls | grep .rpm | grep debug)                       
+          echo ::set-output name=RPM_DEBUGINFO_NAME::$(ls | grep .rpm | grep debug)
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -29,7 +29,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          draft: false
+          draft: true
           prerelease: false
       - name: Upload RPM
         id: upload-release-rpm-asset 
