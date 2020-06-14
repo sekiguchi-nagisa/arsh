@@ -13,27 +13,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: prepare
-        run: sudo apt-get install ninja-build rpm elfutils
       - name: Build project
+        uses: sekiguchi-nagisa/action-on-opensuse
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
-                -DCMAKE_CXX_COMPILER=g++-9 \
                 -DCMAKE_BUILD_TYPE=RELWITHDEBINFO \
-                -DUSE_LTO=on \
                 -DCMAKE_INSTALL_PREFIX=/usr 
           ninja
-      - name: Test asset
-        run: |
-          cd build
-          ctest --output-on-failure
-      - name: Build Package
-        run: |
-          cd build
-          cpack -G RPM
-          ls | grep rpm    
+          ctest --output-on-failure \
+            && cpack -G RPM \
+            && mkdir /github/workspace/build
+            && cp *.rpm /github/workspace/build/
+            && ls /github/workspace/build/
       - name: Get the package name
         id: get_rpm_name
         run: |
