@@ -48,7 +48,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          draft: false
+          draft: true
           prerelease: false
       - name: Upload RPM
         id: upload-release-rpm-asset 
