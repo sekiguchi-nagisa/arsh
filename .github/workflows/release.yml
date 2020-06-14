@@ -14,19 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
-        uses: sekiguchi-nagisa/action-on-opensuse
-        run: |
-          mkdir build
-          cd build
-          cmake .. -G Ninja \
-                -DCMAKE_BUILD_TYPE=RELWITHDEBINFO \
-                -DCMAKE_INSTALL_PREFIX=/usr 
-          ninja
-          ctest --output-on-failure \
-            && cpack -G RPM \
-            && mkdir /github/workspace/build
-            && cp *.rpm /github/workspace/build/
-            && ls /github/workspace/build/
+        uses: sekiguchi-nagisa/cpack-rpm-build-action
       - name: Get the package name
         id: get_rpm_name
         run: |
