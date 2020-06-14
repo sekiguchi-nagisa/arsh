@@ -14,8 +14,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: prepare
-        run: sudo apt-get install ninja-build rpm
-      - name: Build project # This would actually build your project, using zip for an example artifact
+        run: sudo apt-get install ninja-build rpm elfutils
+      - name: Build project
         run: |
           mkdir build
           cd build
@@ -25,11 +25,21 @@ jobs:
                 -DUSE_LTO=on \
                 -DCMAKE_INSTALL_PREFIX=/usr 
           ninja
+      - name: Test asset
+        run: |
+          cd build
+          ctest --output-on-failure
+      - name: Build Package
+        run: |
+          cd build
           cpack -G RPM
-          ls
-      - name: Get the version
+          ls | grep rpm    
+      - name: Get the package name
         id: get_rpm_name
-        run: echo ::set-output name=RPM_NAME::$(cd build && echo ydsh-*.rpm)                    
+        run: |
+          cd build
+          echo ::set-output name=RPM_NAME::$(ls | grep .rpm | grep -v debug) 
+          echo ::set-output name=RPM_DEBUGINFO_NAME::$(ls | grep .rpm | grep debug)                       
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -41,12 +51,22 @@ jobs:
           draft: false
           prerelease: false
       - name: Upload RPM
-        id: upload-release-asset 
+        id: upload-release-rpm-asset 
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          upload_url: ${{ steps.create_release.outputs.upload_url }}  
           asset_path: build/${{ steps.get_rpm_name.outputs.RPM_NAME }}
           asset_name: ${{ steps.get_rpm_name.outputs.RPM_NAME }}
+          asset_content_type: application/rpm
+      - name: Upload RPM debuginfo
+        id: upload-release-debuginfo-asset 
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/${{ steps.get_rpm_name.outputs.RPM_DEBUGINFO_NAME }}
+          asset_name: ${{ steps.get_rpm_name.outputs.RPM_DEBUGINFO_NAME }}
           asset_content_type: application/rpm
