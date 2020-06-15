@@ -23,7 +23,9 @@ jobs:
         sudo ninja install
         ./ydsh ../tools/scripts/copy_mod4extra.ds
     - name: test
-      run: ctest --output-on-failure
+      run: |
+        cd build
+        ctest --output-on-failure
 
   build_on_mac:
 
@@ -46,4 +48,6 @@ jobs:
           ninja install
           ./ydsh ../tools/scripts/copy_mod4extra.ds
       - name: test
-        run: ctest --output-on-failure
+        run: |
+          cd build
+          ctest --output-on-failure
