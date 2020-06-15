@@ -35,7 +35,7 @@ jobs:
         run: brew install ninja autoconf automake libtool
       - name: configure
         run: |
-          xcode-select --install
+          export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
           mkdir build
           cd build
           cmake .. -G Ninja -DUSE_EXTRA_TEST=on
