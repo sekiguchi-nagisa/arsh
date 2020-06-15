@@ -35,6 +35,7 @@ jobs:
         run: brew install ninja autoconf automake libtool
       - name: configure
         run: |
+          xcode-select --install
           mkdir build
           cd build
           cmake .. -G Ninja -DUSE_EXTRA_TEST=on
