@@ -13,14 +13,12 @@ jobs:
     - name: prepare
       run: sudo apt-get install ninja-build
     - name: configure
-      env:
-        CXX_BIN: ${{ matrix.cc }}
       run: |
         mkdir build
         cd build
         cmake .. -G Ninja \
               -DCMAKE_BUILD_TYPE=debug \
-              -DCMAKE_CXX_COMPILER=$CXX_BIN \
+              -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
               -DUSE_EXTRA_TEST=on
     - name: build
       run: |
