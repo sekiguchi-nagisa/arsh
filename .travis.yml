@@ -273,13 +273,6 @@ matrix:
       dist: bionic
       env: CXX_BIN=clang++ BUILD_TYPE=release
 
-    # MacOS
-    - os: osx
-      compiler: clang
-      env: CXX_BIN=clang++ BUILD_TYPE=release
-      before_script:
-        - brew install ninja
-
     # clang 10.0 with address sanitizer
     - addons:
         apt:

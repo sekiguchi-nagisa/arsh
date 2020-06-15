@@ -3,7 +3,7 @@ name: GitHub Actions
 on: [push]
 
 jobs:
-  build:
+  build_on_linux:
 
     runs-on: ubuntu-latest
     
@@ -24,3 +24,25 @@ jobs:
         ./ydsh ../tools/scripts/copy_mod4extra.ds
     - name: test
       run: ctest --output-on-failure
+
+  build_on_mac:
+
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: prepare
+        run: brew install ninja
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DUSE_EXTRA_TEST=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          ninja install
+          ./ydsh ../tools/scripts/copy_mod4extra.ds
+      - name: test
+        run: ctest --output-on-failure
