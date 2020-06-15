@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: prepare
-        run: brew install ninja
+        run: brew install ninja autoconf automake libtool
       - name: configure
         run: |
           mkdir build
