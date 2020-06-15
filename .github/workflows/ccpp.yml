@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        option: [SANITIZER=address, SANITIZER=undefined, FUZZING_BUILD_MODE=on]
+        option: [SANITIZER=address, SANITIZER=undefined]
     steps:
       - uses: actions/checkout@v1
       - name: prepare

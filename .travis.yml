@@ -107,6 +107,19 @@ matrix:
             - ninja-build
       env: CXX_BIN=clang++-10
 
+    # clang 10.0 with fuzzing
+    - addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - sourceline: 'deb https://apt.llvm.org/xenial/ llvm-toolchain-xenial-10 main'
+              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
+          packages:
+            - g++-7
+            - clang-10
+            - ninja-build
+      env: CXX_BIN=clang++-10 OPTION="-DFUZZING_BUILD_MODE=on"
+
     # clang 10.0 (Release build)
     - addons:
         apt:
