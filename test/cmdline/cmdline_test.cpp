@@ -699,6 +699,9 @@ TEST_F(CmdlineTest2, import1) {
     if(platform::platform() == platform::PlatformType::CYGWIN) {
         return;
     }
+    if(getuid() == 0) {
+        return;
+    }
 
     auto fileName = this->createTempFile("target.ds", "throw new Error('invalid!!')");
     chmod(fileName.c_str(), ~S_IRUSR);
