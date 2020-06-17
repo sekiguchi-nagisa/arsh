@@ -145,20 +145,14 @@ public:
         this->timeout = old;
     }
 
-    void expectRegex(const char *out = "", const char *err = "") {
-        ASSERT_TRUE(out != nullptr);
-        ASSERT_TRUE(err != nullptr);
-
+    void expectRegex(const std::string &out = "", const std::string &err = "") {
         auto pair = this->readAll();
         EXPECT_THAT(pair.first, ::testing::MatchesRegex(out));
         EXPECT_THAT(pair.second, ::testing::MatchesRegex(err));
         ASSERT_FALSE(this->HasFailure());
     }
 
-    void expect(const char *out = "", const char *err = "") {
-        ASSERT_TRUE(out != nullptr);
-        ASSERT_TRUE(err != nullptr);
-
+    void expect(const std::string &out = "", const std::string &err = "") {
         auto pair = this->readAll();
         EXPECT_EQ(out, pair.first);
         EXPECT_EQ(err, pair.second);
@@ -166,7 +160,7 @@ public:
     }
 
     void waitAndExpect(int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
-                       const char *out = "", const char *err = "") {
+                       const std::string &out = "", const std::string &err = "") {
         auto pair = this->readAll();
         auto s = this->handle.wait();
         auto ret = Output {
