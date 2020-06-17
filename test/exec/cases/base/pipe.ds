@@ -4,7 +4,7 @@ assert $PIPESTATUS.size() == 2
 assert $PIPESTATUS[0] == 0
 assert $PIPESTATUS[1] == 0
 
-assert (echo | 34) is Int
+assert (cat /dev/zero | 34) is Int
 assert $PIPESTATUS.size() == 2
 assert $PIPESTATUS[0] == 141 : "require: 141, actual: ${$PIPESTATUS[0]}" # EPIPE
 assert $PIPESTATUS[1] == 0 : "require: 0, actual: ${$PIPESTATUS[1]}"
