@@ -59,7 +59,9 @@ TEST_F(InteractiveTest, ctrld1) {
     this->invoke("--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&]{
-    this->expectRegex("ydsh, version .+, build by .+\nCopy.+\nydsh-.+\\$ ");
+        std::string re = "ydsh, version .+, build by .+\nCopy.+\nydsh-.+";
+        re += (getuid() == 0 ? "# " : "\\$ ");
+        this->expectRegex(re);
     }));
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
