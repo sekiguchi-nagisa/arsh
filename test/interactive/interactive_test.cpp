@@ -38,11 +38,9 @@ static std::string initPrompt() {
 }
 
 struct InteractiveTest : public InteractiveShellBase {
-    const std::string prompt;
-
-    InteractiveTest() : InteractiveShellBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR), prompt(initPrompt()) {
+    InteractiveTest() : InteractiveShellBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {
         this->timeout = 120;
-        this->setPrompt(this->prompt.c_str());
+        this->setPrompt(initPrompt());
     }
 };
 

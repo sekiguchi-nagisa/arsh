@@ -181,6 +181,10 @@ public:
 
     void interpret(std::string &line);
 
+    void setPrompt(const std::string &p) {
+        this->prompt = p;
+    }
+
     void setPrompt(const char *p) {
         this->prompt = p;
     }
