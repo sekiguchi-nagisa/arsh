@@ -1,4 +1,4 @@
-#$test($status = 1, $ignored = 'container')
+#$test($status = 1, $ignored = 'container|#')
 
 # kill
 

@@ -144,6 +144,10 @@ DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &
     this->setVarName("0", this->symbolTable.get(TYPE::String));
 }
 
+static bool isIgnoredUser(const std::string &text) {
+    return text.find('#') != std::string::npos && getuid() == 0;
+}
+
 void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     if(!checkDirectiveName(node)) {
         std::string str("unsupported directive: ");
@@ -219,7 +223,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
 
     this->addHandler("ignored", TYPE::String, [&](Node &node, Directive &d) {
         auto &str = TRY(this->checkedCast<StringNode>(node))->getValue();
-        d.setIgnoredPlatform(platform::contain(str));
+        d.setIgnoredPlatform(isIgnoredUser(str) || platform::contain(str));
     });
 
     std::unordered_set<std::string> foundAttrSet;
