@@ -86,8 +86,8 @@ public:
         return this->result;
     }
 
-    void setResult(unsigned int status) {
-        this->result = status;
+    void setResult(unsigned int v) {
+        this->result = v;
     }
 
     void appendParam(const std::string &param) {
@@ -98,16 +98,16 @@ public:
         return this->params;
     }
 
-    void setStatus(unsigned int status) {
-        this->status = status;
+    void setStatus(unsigned int s) {
+        this->status = s;
     }
 
     unsigned int getStatus() const {
         return this->status;
     }
 
-    void setLineNum(unsigned int lineNum) {
-        this->lineNum = lineNum;
+    void setLineNum(unsigned int v) {
+        this->lineNum = v;
     }
 
     unsigned int getLineNum() const {

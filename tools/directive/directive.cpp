@@ -109,7 +109,7 @@ private:
         if(!this->checkNode(T::KIND, node)) {
             return nullptr;
         }
-        return static_cast<T *>(&node);
+        return cast<T>(&node);
     }
 
     /**
@@ -135,7 +135,7 @@ private:
 
 static bool checkDirectiveName(ApplyNode &node) {
     assert(node.getExprNode().is(NodeKind::Var));
-    auto &exprNode = static_cast<VarNode&>(node.getExprNode());    //NOLINT
+    auto &exprNode = cast<VarNode>(node.getExprNode());    //NOLINT
     return exprNode.getVarName() == "test";
 }
 
@@ -147,7 +147,7 @@ DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &
 void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     if(!checkDirectiveName(node)) {
         std::string str("unsupported directive: ");
-        str += static_cast<VarNode&>(node.getExprNode()).getVarName();    //NOLINT
+        str += cast<VarNode>(node.getExprNode()).getVarName();    //NOLINT
         return this->createError(node, str);
     }
 

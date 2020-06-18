@@ -49,6 +49,12 @@ const char *toString(PlatformType c);
 
 PlatformType platform();
 
+/**
+ * if text contains PlatformType constants, return true
+ * @param text
+ * @param type
+ * @return
+ */
 bool containPlatform(const std::string &text, PlatformType type);
 
 // for processor architecture detection
@@ -56,7 +62,7 @@ bool containPlatform(const std::string &text, PlatformType type);
 #define EACH_ARCH_TYPE(OP) \
     OP(UNKNOWN, "unknown") \
     OP(X86_64, "x64|amd64|x86-64") \
-    OP(X86   , "x86|i386|i486|i586|i686") \
+    OP(X86   , "i386|i486|i586|i686") \
     OP(AARCH64, "arm64|a64")
 
 enum class ArchType : unsigned int {
@@ -69,6 +75,12 @@ const char *toString(ArchType c);
 
 ArchType arch();
 
+/**
+ * if text contains ArchType constants, return true
+ * @param text
+ * @param type
+ * @return
+ */
 bool containArch(const std::string &text, ArchType type);
 
 /**
