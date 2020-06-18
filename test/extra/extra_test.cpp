@@ -195,11 +195,11 @@ public:
 #define XSTR(v) #v
 #define STR(v) XSTR(v)
 
-#define PROMPT "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION) "$ "
-
 struct RCTest : public InteractiveShellBase {
     RCTest() : InteractiveShellBase(BIN_PATH, ".") {
-        this->setPrompt(PROMPT);
+        std::string v = "ydsh-" STR(X_INFO_MAJOR_VERSION) "." STR(X_INFO_MINOR_VERSION);
+        v += (getuid() == 0 ? "# " : "$ ");
+        this->setPrompt(v);
     }
 };
 
@@ -219,7 +219,7 @@ TEST_F(RCTest, rcfile1) {
     FileFactory fileFactory(rcpath.c_str(), "var RC_VAR = 'rcfile: ~/.ydshrc'");
 
     this->invoke("--quiet");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+    ASSERT_NO_FATAL_FAILURE(this->expect(this->prompt));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert $RC_VAR == 'rcfile: ~/.ydshrc'; exit 23", 23, WaitStatus::EXITED));
 }
 
