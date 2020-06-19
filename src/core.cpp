@@ -381,7 +381,7 @@ std::string expandDots(const char *basePath, const char *path) {
     return str;
 }
 
-void expandTilde(std::string &str) {
+void expandTilde(std::string &str, bool useHOME) {
     if(str.empty() || str.front() != '~') {
         return;
     }
@@ -394,9 +394,15 @@ void expandTilde(std::string &str) {
 
     // expand tilde
     if(expanded.size() == 1) {
-        struct passwd *pw = getpwuid(getuid());
-        if(pw != nullptr) {
-            expanded = pw->pw_dir;
+        const char *value = useHOME ? getenv(ENV_HOME) : nullptr;
+        if(!value) {    // use HOME, but HOME is not set, fallback to getpwuid(getuid())
+            struct passwd *pw = getpwuid(getuid());
+            if(pw != nullptr) {
+                value = pw->pw_dir;
+            }
+        }
+        if(value) {
+            expanded = value;
         }
     } else if(expanded == "~+") {
         /**

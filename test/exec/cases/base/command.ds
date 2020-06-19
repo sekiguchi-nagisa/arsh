@@ -245,6 +245,10 @@ assert($HOME + "/hoge" == "$(echo ~/hoge)")
 assert("~g" == "$(echo ~'g')")
 assert($HOME + "/h" == "$(echo ~/'h')")
 var home = $HOME
+$HOME = "hellohome!@!"
+var homev = "$(echo ~)"
+assert($HOME == $homev)
+assert "hellohome!@!" == $homev
 unsetenv HOME
 assert $home == "$(echo ~)"
 $HOME = $home

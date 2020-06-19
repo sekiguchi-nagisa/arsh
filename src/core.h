@@ -212,7 +212,13 @@ void setJobControlSignalSetting(DSState &st, bool set);
  */
 std::string expandDots(const char *basePath, const char *path);
 
-void expandTilde(std::string &str);
+/**
+ *
+ * @param str
+ * @param useHOME
+ * if true, use `HOME' environmental variable for `~' expansion
+ */
+void expandTilde(std::string &str, bool useHOME = false);
 
 /**
  * complete line.

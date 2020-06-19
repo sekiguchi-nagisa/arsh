@@ -1556,7 +1556,7 @@ struct SourceGlobMeta {
     }
 
     static void preExpand(std::string &path) {
-        expandTilde(path);
+        expandTilde(path, true);
     }
 };
 
@@ -1580,7 +1580,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
     if(pathNode.getGlobPathSize() == 0) {
         std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
         if(pathNode.isTilde()) {
-            expandTilde(path);
+            expandTilde(path, true);
         }
         ret.push_back(std::move(path));
     } else {

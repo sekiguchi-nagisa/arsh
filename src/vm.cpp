@@ -978,7 +978,7 @@ struct DSValueGlobMeta {
     }
 
     static void preExpand(std::string &path) {
-        expandTilde(path);
+        expandTilde(path, true);
     }
 };
 
@@ -1490,7 +1490,7 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(EXPAND_TILDE) {
             std::string str = state.stack.pop().asStrRef().toString();
-            expandTilde(str);
+            expandTilde(str, true);
             state.stack.push(DSValue::createStr(std::move(str)));
             vmnext;
         }

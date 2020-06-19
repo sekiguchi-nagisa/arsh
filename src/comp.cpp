@@ -419,7 +419,7 @@ void FileNameCompleter::operator()(ArrayObject &results) {
     } else if(s != std::string::npos) {
         targetDir = this->token.substr(0, s);
         if(this->tilde()) {
-            expandTilde(targetDir);
+            expandTilde(targetDir, true);
         }
         targetDir = expandDots(this->baseDir, targetDir.c_str());
     } else {
