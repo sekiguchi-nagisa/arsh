@@ -90,13 +90,13 @@ static void initEnv() {
     if(pw == nullptr) {
         fatal_perror("getpwuid failed\n");
     }
-    setenv(ENV_HOME, pw->pw_dir, 0);
+    setenv(ENV_HOME, pw->pw_dir, 1);
 
     // set LOGNAME
-    setenv(ENV_LOGNAME, pw->pw_name, 0);
+    setenv(ENV_LOGNAME, pw->pw_name, 1);
 
     // set USER
-    setenv(ENV_USER, pw->pw_name, 0);
+    setenv(ENV_USER, pw->pw_name, 1);
 
     // set PWD/OLDPWD
     setPWDs();
