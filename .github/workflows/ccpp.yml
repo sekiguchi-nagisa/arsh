@@ -66,7 +66,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: build and test
-        uses: ./tools/dockerfiles/ubuntu-bionic-x86/Dockerfile
+        uses: ./tools/dockerfiles/ubuntu-bionic-x86
 
   build_on_mac:
     runs-on: macos-latest
