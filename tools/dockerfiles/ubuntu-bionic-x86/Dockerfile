@@ -8,4 +8,7 @@ RUN chown -R tux:users /home/tux/dev && chmod -R 744 /home/tux/dev
 
 USER tux
 WORKDIR /home/tux/dev
-CMD sh tools/scripts/run_all_test.sh g++
+CMD sudo cp -rf ./ /home/tux/project && \
+    sudo chown -R tux:users /home/tux/project && sudo chmod -R 744 /home/tux/project && \
+    cd /home/tux/project && \
+    sh tools/scripts/run_all_test.sh g++
