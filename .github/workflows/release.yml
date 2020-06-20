@@ -13,8 +13,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Build project
-        uses: sekiguchi-nagisa/cpack-rpm-build-action@v0.11
+      - name: Build Packages
+        uses: ./tools/dockerfiles/cpack-rpm-build
       - name: Get the package name
         id: get_rpm_name
         run: |
