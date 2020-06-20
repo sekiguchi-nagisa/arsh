@@ -210,8 +210,8 @@ inline const char *toString(GlobMeta meta) {
 constexpr const char *LOCAL_CONFIG_DIR = "~/.ydsh";
 constexpr const char *LOCAL_MOD_DIR = "~/.ydsh/module";
 
-constexpr const char *SYSTEM_CONFIG_DIR = X_INSTALL_PREFIX "/etc/ydsh";
-constexpr const char *SYSTEM_MOD_DIR = X_INSTALL_PREFIX "/etc/ydsh/module";
+constexpr const char *SYSTEM_CONFIG_DIR = X_SYSCONFIGDIR "/ydsh";
+constexpr const char *SYSTEM_MOD_DIR = X_SYSCONFIGDIR "/ydsh/module";
 
 } // namespace ydsh
 
