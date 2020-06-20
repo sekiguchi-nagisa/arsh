@@ -152,7 +152,7 @@ TEST_F(ProcTest, pty4) {
 
     // start with raw mode
     auto handle = ProcBuilder::spawn(config, [&]{
-        FILE *fp = fopen("/dev/null", "r");
+        FILE *fp = fopen("/dev/null", "w");
         if(!fp) {
             fatal_perror("open failed");
         }
@@ -167,7 +167,7 @@ TEST_F(ProcTest, pty4) {
     (void) r;
     fsync(handle.in());
     auto ret2 = handle.waitAndGetResult(false);
-    if(ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
+    if(ydsh::platform::isWindows(ydsh::platform::platform())) {
         ASSERT_NO_FATAL_FAILURE(this->expect(ret2, SIGINT, WaitStatus::SIGNALED));
     } else {
         ASSERT_NO_FATAL_FAILURE(this->expect(ret2, SIGINT, WaitStatus::SIGNALED, "^C"));
