@@ -13,7 +13,7 @@ CMD DIR="$(pwd)" && \
     sudo chown -R tux:users $PROJECT && \
     sudo chmod -R 744 $PROJECT && \
     cd $PROJECT && \
-    sh tools/scripts/build_rpm.sh clang++ && \
+    sh tools/scripts/build_rpm.sh g++ && \
     sudo mkdir $DIR/build && \
     sudo cp build-rpm/*.rpm $DIR/build/ && \
     ls $DIR/build
