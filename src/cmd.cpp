@@ -709,8 +709,8 @@ static bool operator<(const timespec &left, const timespec &right) {
 }
 
 static bool compareFile(const char *x, BinaryOp op, const char *y) {
-    struct stat st1;
-    struct stat st2;
+    struct stat st1;    //NOLINT
+    struct stat st2;    //NOLINT
 
     if(stat(x, &st1) != 0) {
         return false;
@@ -811,7 +811,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         case 'h':
         case 'L': {
             mode_t mode = 0;
-            struct stat st{};
+            struct stat st; //NOLINT
             if(lstat(value, &st) == 0) {
                 mode = st.st_mode;
             }
@@ -831,7 +831,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             break;
         }
         case 's': {
-            struct stat st{};
+            struct stat st;   //NOLINT
             result = stat(value, &st) == 0 && st.st_size != 0;  // check if file is not empty
             break;
         }
@@ -857,12 +857,12 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             break;
         }
         case 'O': {
-            struct stat st{};
+            struct stat st; //NOLINT
             result = stat(value, &st) == 0 && st.st_uid == geteuid();   // check if file is effectively owned
             break;
         }
         case 'G': {
-            struct stat st{};
+            struct stat st; //NOLINT
             result = stat(value, &st) == 0 && st.st_gid == getegid();   // check if file is effectively owned by group
             break;
         }

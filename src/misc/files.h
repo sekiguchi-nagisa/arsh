@@ -64,12 +64,12 @@ inline CStrPtr getCWD() {
 }
 
 inline bool isSameFile(const char *f1, const char *f2) {
-    struct stat st1;
+    struct stat st1;    //NOLINT
     if(stat(f1, &st1) != 0) {
         return false;
     }
 
-    struct stat st2;
+    struct stat st2;    //NOLINT
     if(stat(f2, &st2) != 0) {
         return false;
     }

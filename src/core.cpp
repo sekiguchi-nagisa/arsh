@@ -84,8 +84,7 @@ const char *FilePathCache::searchPath(const char *cmdName, FilePathCache::Search
         resolvedPath += cmdName;
         expandTilde(resolvedPath);
 
-        struct stat st{};
-        if(stat(resolvedPath.c_str(), &st) == 0 && (st.st_mode & S_IXUSR) == S_IXUSR) {
+        if((getStMode(resolvedPath.c_str()) & S_IXUSR) == S_IXUSR) {
             if(hasFlag(op, DIRECT_SEARCH)) {
                 this->prevPath = std::move(resolvedPath);
                 return this->prevPath.c_str();
@@ -95,7 +94,7 @@ const char *FilePathCache::searchPath(const char *cmdName, FilePathCache::Search
                 free(const_cast<char *>(this->map.begin()->first));
                 this->map.erase(this->map.begin());
             }
-            auto pair = this->map.insert(std::make_pair(strdup(cmdName), std::move(resolvedPath)));
+            auto pair = this->map.emplace(strdup(cmdName), std::move(resolvedPath));
             assert(pair.second);
             return pair.first->second.c_str();
         }
