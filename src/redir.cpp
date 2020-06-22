@@ -104,26 +104,49 @@ static int doIOHere(const StringRef &value) {
     }
 }
 
+enum class RedirOpenFlag {
+    READ,
+    WRITE,
+    APPEND,
+};
+
 /**
- * if failed, return non-zero value(errno)
+ *
+ * @param fileName
+ * @param openFlag
+ * @param targetFD
+ * @return
+ * if failed, return non-zero value (errno)
  */
-static int redirectToFile(const DSValue &fileName, const char *mode, int targetFD) {
+static int redirectToFile(const DSValue &fileName, RedirOpenFlag openFlag, int targetFD) {
     if(fileName.hasType(TYPE::String)) {
-        FILE *fp = fopen(fileName.asCStr(), mode);
-        if(fp == nullptr) {
+        int flag = 0;
+        switch(openFlag) {
+        case RedirOpenFlag::READ:
+            flag = O_RDONLY;
+            break;
+        case RedirOpenFlag::WRITE:
+            flag = O_WRONLY | O_CREAT | O_TRUNC;
+            break;
+        case RedirOpenFlag::APPEND:
+            flag = O_WRONLY | O_APPEND | O_CREAT;
+            break;
+        }
+
+        int fd = open(fileName.asCStr(), flag, 0666);
+        if(fd < 0) {
             return errno;
         }
-        int fd = fileno(fp);
         if(dup2(fd, targetFD) < 0) {
             int e = errno;
-            fclose(fp);
+            close(fd);
             return e;
         }
-        fclose(fp);
+        close(fd);
     } else {
         assert(fileName.hasType(TYPE::UnixFD));
         int fd = typeAs<UnixFdObject>(fileName).getValue();
-        if(strchr(mode, 'a') != nullptr) {
+        if(openFlag == RedirOpenFlag::APPEND) {
             if(lseek(fd, 0, SEEK_END) == -1) {
                 return errno;
             }
@@ -138,17 +161,17 @@ static int redirectToFile(const DSValue &fileName, const char *mode, int targetF
 static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
     switch(pair.first) {
     case RedirOP::IN_2_FILE:
-        return redirectToFile(pair.second, "rb", STDIN_FILENO);
+        return redirectToFile(pair.second, RedirOpenFlag::READ, STDIN_FILENO);
     case RedirOP::OUT_2_FILE:
-        return redirectToFile(pair.second, "wb", STDOUT_FILENO);
+        return redirectToFile(pair.second, RedirOpenFlag::WRITE, STDOUT_FILENO);
     case RedirOP::OUT_2_FILE_APPEND:
-        return redirectToFile(pair.second, "ab", STDOUT_FILENO);
+        return redirectToFile(pair.second, RedirOpenFlag::APPEND, STDOUT_FILENO);
     case RedirOP::ERR_2_FILE:
-        return redirectToFile(pair.second, "wb", STDERR_FILENO);
+        return redirectToFile(pair.second, RedirOpenFlag::WRITE, STDERR_FILENO);
     case RedirOP::ERR_2_FILE_APPEND:
-        return redirectToFile(pair.second, "ab", STDERR_FILENO);
+        return redirectToFile(pair.second, RedirOpenFlag::APPEND, STDERR_FILENO);
     case RedirOP::MERGE_ERR_2_OUT_2_FILE: {
-        int r = redirectToFile(pair.second, "wb", STDOUT_FILENO);
+        int r = redirectToFile(pair.second, RedirOpenFlag::WRITE, STDOUT_FILENO);
         if(r != 0) {
             return r;
         }
@@ -156,7 +179,7 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
         return 0;
     }
     case RedirOP::MERGE_ERR_2_OUT_2_FILE_APPEND: {
-        int r = redirectToFile(pair.second, "ab", STDOUT_FILENO);
+        int r = redirectToFile(pair.second, RedirOpenFlag::APPEND, STDOUT_FILENO);
         if(r != 0) {
             return r;
         }
