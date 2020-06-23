@@ -14,17 +14,6 @@ env:
 
 matrix:
   include:
-    # gcc 10
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-10
-            - ninja-build
-      env: CXX_BIN=g++-10
-      dist: bionic
-
     # gcc 10 (Release build)
     - addons:
         apt:
@@ -47,7 +36,6 @@ matrix:
           - ninja-build
       env: CXX_BIN=g++-10 BUILD_TYPE=release -DUSE_LTO=ON OPTION="-DUSE_LTO=ON"
       dist: bionic
-
 
     # clang 3.6
     - addons:
@@ -81,32 +69,6 @@ matrix:
             - clang-3.8
             - ninja-build
       env: CXX_BIN=clang++-3.8
-
-    # clang 7.0
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-xenial-7
-          packages:
-            - g++-5
-            - clang-7
-            - ninja-build
-      env: CXX_BIN=clang++-7
-
-    # clang 10.0
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - sourceline: 'deb https://apt.llvm.org/xenial/ llvm-toolchain-xenial-10 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-          packages:
-            - g++-5
-            - clang-10
-            - ninja-build
-      env: CXX_BIN=clang++-10
-
     # clang 10.0 with fuzzing
     - addons:
         apt:
