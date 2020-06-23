@@ -60,6 +60,36 @@ jobs:
         cd build
         ctest --output-on-failure
 
+  build_on_linux_ubuntu20_04_release:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        cc: [g++-10, clang++-10]
+        option: [on, off]
+    steps:
+    - uses: actions/checkout@v1
+    - name: prepare
+      run: sudo apt-get install ninja-build g++-10 clang-10 lld-10 llvm-10 llvm-dev-10
+    - name: configure
+      run: |
+        mkdir build
+        cd build
+        cmake .. -G Ninja \
+              -DCMAKE_BUILD_TYPE=release \
+              -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
+              -DUSE_EXTRA_TEST=on \
+              -DUSE_LTO=${{ matrix.option }}
+    - name: build
+      run: |
+        cd build
+        ninja
+        sudo ninja install
+        ./ydsh ../tools/scripts/copy_mod4extra.ds
+    - name: test
+      run: |
+        cd build
+        ctest --output-on-failure
+
   build_on_linux_sanitizer:
     runs-on: ubuntu-18.04
     strategy:
