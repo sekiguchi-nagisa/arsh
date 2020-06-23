@@ -69,7 +69,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prepare
-      run: sudo apt-get install ninja-build g++-10 clang-10 lld-10 llvm-10 llvm-10-dev
+      run: sudo apt-get install ninja-build g++-10 clang-10 lld lld-10 llvm-10 llvm-10-dev
     - name: configure
       run: |
         mkdir build
