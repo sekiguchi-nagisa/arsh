@@ -91,22 +91,22 @@ jobs:
         ctest --output-on-failure
 
   build_on_linux_sanitizer:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
-        option: [SANITIZER=address, SANITIZER=undefined]
+        option: [address, undefined]
     steps:
       - uses: actions/checkout@v1
       - name: prepare
-        run: sudo apt-get install ninja-build
+        run: sudo apt-get install ninja-build clang-10
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
-                -DCMAKE_CXX_COMPILER=clang++-9 \
-                -D${{ matrix.option }} \
+                -DCMAKE_CXX_COMPILER=clang++-10 \
+                -DSANITIZER=${{ matrix.option }} \
                 -DUSE_EXTRA_TEST=on
       - name: build
         run: |
