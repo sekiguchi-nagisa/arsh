@@ -31,6 +31,25 @@ struct PCREDeleter {
 
 using PCRE = std::unique_ptr<pcre, PCREDeleter>;
 
+/**
+ * convert flag character to regex flag (option)
+ * @param ch
+ * @return
+ * if specified unsupported flag character, return 0
+ */
+inline int toRegexFlag(char ch) {
+    switch(ch) {
+    case 'i':
+        return PCRE_CASELESS;
+    case 'm':
+        return PCRE_MULTILINE;
+    case 's':
+        return PCRE_DOTALL;
+    default:
+        return 0;
+    }
+}
+
 inline PCRE compileRegex(const char *pattern, const char * &errorStr, int flag) {
     int errorOffset;
     pcre *re = pcre_compile(pattern,  PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8 | flag, &errorStr, &errorOffset, nullptr);

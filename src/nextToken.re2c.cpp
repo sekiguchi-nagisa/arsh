@@ -100,7 +100,7 @@ TokenKind Lexer::nextToken(Token &token) {
       CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$?*\000];
 
       REGEX_CHAR = "\\/" | [^\r\n\000/];
-      REGEX = "$/" REGEX_CHAR* "/" [im]{0,2};
+      REGEX = "$/" REGEX_CHAR* "/" [ims]{0,3};
 
       LINE_END = ";";
       NEW_LINE = [\r\n][ \t\r\n]*;

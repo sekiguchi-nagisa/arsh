@@ -20,8 +20,12 @@ assert $'abcd\n123' !~ $/^123/  # "^" matches single line
 
 assert $'abcd\n123' =~ $/^123/m # multi line
 
+assert $'123\n4' !~ $/.....*/   # dot char dose not match newline
+assert $'123\n4' =~ $/.....*/s
+
 assert $'AbCd\n123' =~ $/abcd$/mi # multi line + caseless
 assert $'AbCd\n123' =~ $/abcd$/im # multi line + caseless
+assert $'AbCd\n\n123' =~ $/abcd$..../sim # multi line + caseless + dotall
 
 assert new Regex(".*") =~ "a"
 
