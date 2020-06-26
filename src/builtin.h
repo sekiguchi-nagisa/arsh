@@ -884,12 +884,23 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
 // ##     Regex     ##
 // ###################
 
-//!bind: function $OP_INIT($this : Regex, $str : String) : Regex
+//!bind: function $OP_INIT($this : Regex, $str : String, $flag : String) : Regex
 YDSH_METHOD regex_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_init);
     const char *value = LOCAL(1).asCStr();
+    int flag = 0;
+    for(const char *str = LOCAL(2).asCStr(); *str; str++) {
+        int r = toRegexFlag(*str);
+        if(!r) {
+            std::string msg = "unsupported regex flag: ";
+            msg += *str;
+            raiseError(ctx, TYPE::RegexSyntaxError, std::move(msg));
+            RET_ERROR;
+        }
+        flag |= r;
+    }
     const char *errorStr;
-    auto re = compileRegex(value, errorStr, 0);
+    auto re = compileRegex(value, errorStr, flag);
     if(!re) {
         raiseError(ctx, TYPE::RegexSyntaxError, std::string(errorStr));
         RET_ERROR;

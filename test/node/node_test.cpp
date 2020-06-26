@@ -327,12 +327,12 @@ nodes:
     optNode: null
 )"},
 
-        {DumpOp::untyped, R"(function f() : typeof($/d/) {return new Regex("$true"); })", 0, 1, R"(
+        {DumpOp::untyped, R"(function f() : typeof($/d/) {return new Regex("$true", ""); })", 0, 1, R"(
 nodes:
   - nodeKind: Function
     token:
       pos: 0
-      size: 57
+      size: 61
     type:
     funcName: "f"
     paramNodes:
@@ -362,20 +362,20 @@ nodes:
       nodeKind: Block
       token:
         pos: 28
-        size: 29
+        size: 33
       type:
       nodes:
         - nodeKind: Jump
           token:
             pos: 29
-            size: 25
+            size: 29
           type:
           opKind: "RETURN_"
           exprNode:
             nodeKind: New
             token:
               pos: 36
-              size: 18
+              size: 22
             type:
             targetTypeNode:
               nodeKind: Type
@@ -408,6 +408,12 @@ nodes:
                       index: 0
                       attribute: ""
                     handle: null
+              - nodeKind: StringExpr
+                token:
+                  pos: 55
+                  size: 2
+                type:
+                nodes:
             handle: null
           leavingBlock: false
       baseIndex: 0

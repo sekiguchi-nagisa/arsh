@@ -202,7 +202,7 @@ function %OP_HAS_NEXT($this : StringIter) : Boolean
 
 ## Regex type
 ```
-function %OP_INIT($this : Regex, $str : String) : Regex
+function %OP_INIT($this : Regex, $str : String, $flag : String) : Regex
 
 function %OP_MATCH($this : Regex, $target : String) : Boolean
 

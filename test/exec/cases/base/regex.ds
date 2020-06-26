@@ -15,22 +15,33 @@ assert 'hfur' =~ $//
 assert '' =~ $//
 
 assert 'aBcDE' =~ $/abcde/i     # caseless
+assert 'aBcDe' =~ new Regex("abcde", "i")
 
 assert $'abcd\n123' !~ $/^123/  # "^" matches single line
 
 assert $'abcd\n123' =~ $/^123/m # multi line
+assert $'abcd\n123' =~ new Regex("^123", "m")
 
 assert $'123\n4' !~ $/.....*/   # dot char dose not match newline
 assert $'123\n4' =~ $/.....*/s
+assert $'123\n4' =~ new Regex(".....*", "s")
 
 assert $'AbCd\n123' =~ $/abcd$/mi # multi line + caseless
 assert $'AbCd\n123' =~ $/abcd$/im # multi line + caseless
 assert $'AbCd\n\n123' =~ $/abcd$..../sim # multi line + caseless + dotall
+assert $'AbCd\n\n123' =~ new Regex('abcd$....', "msi")
 
-assert new Regex(".*") =~ "a"
+assert new Regex(".*", "") =~ "a"
 
 try {
-    new Regex("**")
+    new Regex("**", "i")
+    assert false
+} catch $e {
+    assert $e is RegexSyntaxError
+}
+
+try {
+    new Regex("fe", "4")
     assert false
 } catch $e {
     assert $e is RegexSyntaxError
