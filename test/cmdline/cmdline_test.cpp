@@ -594,6 +594,7 @@ TEST_F(CmdlineTest, signal) {
     str = strsignal(SIGQUIT);
     str += " (core dumped)\n";
     const char *src = R"(
+        ulimit -c unlimited
         var j = while(true) {} &
         $j.raise(%'quit')
         var s = $j.wait()
