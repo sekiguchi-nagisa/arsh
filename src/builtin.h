@@ -1770,6 +1770,28 @@ YDSH_METHOD job_pid(RuntimeContext &ctx) {
     RET_ERROR;
 }
 
+//!bind: function status($this : Job, $index : Int) : Option<Int>
+YDSH_METHOD job_status(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(job_pid);
+    auto &entry = typeAs<JobImplObject>(LOCAL(0));
+    auto index = LOCAL(1).asInt();
+
+    if(index > -1 && static_cast<size_t>(index) < entry.getProcSize()) {
+        if(entry.available()) {
+            RET(DSValue::createInvalid());
+        } else {
+            int s = entry.getProcs()[index].exitStatus();
+            RET(DSValue::createInt(s));
+        }
+    }
+    std::string msg = "number of processes is: ";
+    msg += std::to_string(entry.getProcSize());
+    msg += ", but index is: ";
+    msg += std::to_string(index);
+    raiseOutOfRangeError(ctx, std::move(msg));
+    RET_ERROR;
+}
+
 } //namespace ydsh
 
 

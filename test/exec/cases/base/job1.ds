@@ -13,8 +13,14 @@ var ex = 34 as Any
 try { $j[2]; } catch $e { $ex = $e; }
 assert $ex is OutOfRangeError
 
+$ex = 3400
+try { $j.status(100); } catch $e { $ex = $e; }
+assert $ex is OutOfRangeError
+
 assert $j as String == "%1"
 assert $j.wait() == 0
+assert $j.status(0)! == 0
+assert $j.status(1)! == 0
 
 
 # disowned background job
@@ -36,6 +42,7 @@ assert $j.in()
 assert $j.out()
 assert $j.size() == 1
 assert $j.pid(0) > 0
+assert !$j.status(0)
 
 $ex = 34 as Any
 try { $j.pid(1); } catch $e { $ex = $e; }
@@ -48,7 +55,7 @@ assert $j.wait() == 0
 assert ! $j.in()
 assert !$j.out()
 assert $j.size() == 1
-
+assert $j.status(0)! == 0
 
 # jobs in child
 $j = {
@@ -56,7 +63,7 @@ $j = {
     exit ${$j.wait()}
 } &
 assert $j.wait() == 3
-
+assert $j.status(0)! == 3
 
 var j2 = true &
 $j = {
@@ -64,6 +71,7 @@ $j = {
  exit $s;
 } &
 assert $j.wait() == 1 : "${$j.wait()}"  # raise system error
+assert $j.status(0)! == 1
 assert $j2.wait() == 0
 
 
@@ -77,6 +85,7 @@ $j.raise(%'CONT')
 assert $j.poll()
 $j.raise(%'term')
 assert $j.wait() == %'term'.value() + 128
+assert $j.status(0)! == %'term'.value() + 128
 assert !$j.poll()
 
 ## coredump

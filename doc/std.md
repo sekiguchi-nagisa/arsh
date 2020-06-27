@@ -191,6 +191,8 @@ function detach($this : Job) : Void
 function size($this : Job) : Int
 
 function pid($this : Job, $index : Int) : Int
+
+function status($this : Job, $index : Int) : Option<Int>
 ```
 
 ## StringIter type
