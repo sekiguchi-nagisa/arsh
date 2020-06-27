@@ -35,6 +35,11 @@ assert $j[1]
 assert $j.in()
 assert $j.out()
 assert $j.size() == 1
+assert $j.pid(0) > 0
+
+$ex = 34 as Any
+try { $j.pid(1); } catch $e { $ex = $e; }
+assert $ex is OutOfRangeError
 
 echo hello > $j[0]
 assert { read -u $j[1]; $REPLY; } == "reply: hello"
@@ -74,6 +79,12 @@ $j.raise(%'term')
 assert $j.wait() == %'term'.value() + 128
 assert !$j.poll()
 
+## coredump
+$j = for(;;) { true; } &
+$j.raise(%'quit')
+assert $j.wait() == %'quit'.value() + 128
+assert !$j.poll()
+$j.raise(%'term')   # do nothing
 
 # handle SIGCONT
 function handle($s : Signal) {

@@ -1,0 +1,14 @@
+
+var ex = 23 as Any
+
+try {
+    %'INT'.kill(	9223372036854775807)
+} catch $e {
+    $ex = $e
+}
+
+assert $ex is SystemError
+
+assert ($ex as SystemError).message() =~ $/No such process/
+
+true

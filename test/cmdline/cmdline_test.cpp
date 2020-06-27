@@ -589,6 +589,17 @@ TEST_F(CmdlineTest, signal) {
     str += "\n";
     ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$'"), 128 + SIGKILL, "", str));
     ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo ${%'kill'.message()}"), 0, str));
+
+    // core dump
+    str = strsignal(SIGQUIT);
+    str += " (core dumped)\n";
+    const char *src = R"(
+        var j = while(true) {} &
+        $j.raise(%'quit')
+        var s = $j.wait()
+        exit $s
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 128 + SIGQUIT, "", str));
 }
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
