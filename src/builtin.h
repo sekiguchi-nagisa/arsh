@@ -1308,12 +1308,6 @@ YDSH_METHOD array_sort(RuntimeContext &ctx) {
     auto &obj = typeAs<ArrayObject>(LOCAL(0));
     std::sort(obj.refValues().begin(), obj.refValues().end(),
             [](const DSValue &x, const DSValue &y){
-        if(x.kind() == DSValueKind::INVALID) {  // (invalid x) < y  => false
-            return false;
-        }
-        if(y.kind() == DSValueKind::INVALID) {  // x < (invalid y) => true
-            return true;
-        }
         return x.compare(y);
     });
     RET(LOCAL(0));
