@@ -882,6 +882,7 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
             element->addConstraint(std::move(typeParam), std::move(reqType));
         } while(CUR_KIND() == COMMA);
     }
+    TRY(this->expect(EOS));
     return element;
 }
 
@@ -980,7 +981,7 @@ std::unique_ptr<Element> Parser::parse_funcDecl(const std::string &line, std::un
     TRY(this->expect(IDENTIFIER));
     TRY(this->expect(RP));
     TRY(this->expect(isDecl ? SEMI_COLON : LBC));
-
+    TRY(this->expect(EOS));
     return nullptr;
 }
 
