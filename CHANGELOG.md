@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Core
+- ``Regex`` literal supports ``s`` flag
+  - ``.`` character matches newline
+
+### Changed
+
+#### Builtin
+- **Breaking Change**: ``Regex`` type constructor need flag as second argument
+  - ``new Regex('abc', 'im')``
+
+
 ## [0.18.1] - 2020-06-20
 
 ### Fixed
