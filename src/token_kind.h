@@ -56,7 +56,7 @@
     TOKEN(MINUS                              , "-") \
     TOKEN(NOT                                , "!") \
     /* literal */\
-    TOKEN(INT_LITERAL                      , "<Int Literal>") \
+    TOKEN(INT_LITERAL                        , "<Int Literal>") \
     TOKEN(FLOAT_LITERAL                      , "<Float Literal>") \
     TOKEN(STRING_LITERAL                     , "<String Literal>") \
     TOKEN(REGEX_LITERAL                      , "<Regex Literal>") \
@@ -115,6 +115,7 @@
     TOKEN(DIV_ASSIGN                         , "/=") \
     TOKEN(MOD_ASSIGN                         , "%=") \
     TOKEN(STR_ASSIGN                         , ":=") \
+    TOKEN(NULL_ASSIGN                        , "?""?=") /* suppress -Wtrigraphs */\
     /* for case expression */\
     TOKEN(CASE_ARM                           , "=>") \
     /* context dependent key word */\
@@ -170,13 +171,14 @@
 
 
 #define EACH_ASSIGN_OPERATOR(OP) \
-    OP(ASSIGN    , 1, INFIX|RASSOC) \
-    OP(ADD_ASSIGN, 1, INFIX|RASSOC) \
-    OP(SUB_ASSIGN, 1, INFIX|RASSOC) \
-    OP(MUL_ASSIGN, 1, INFIX|RASSOC) \
-    OP(DIV_ASSIGN, 1, INFIX|RASSOC) \
-    OP(MOD_ASSIGN, 1, INFIX|RASSOC) \
-    OP(STR_ASSIGN, 1, INFIX|RASSOC)
+    OP(ASSIGN    ,  1, INFIX|RASSOC) \
+    OP(ADD_ASSIGN,  1, INFIX|RASSOC) \
+    OP(SUB_ASSIGN,  1, INFIX|RASSOC) \
+    OP(MUL_ASSIGN,  1, INFIX|RASSOC) \
+    OP(DIV_ASSIGN,  1, INFIX|RASSOC) \
+    OP(MOD_ASSIGN,  1, INFIX|RASSOC) \
+    OP(STR_ASSIGN,  1, INFIX|RASSOC) \
+    OP(NULL_ASSIGN, 1, INFIX|RASSOC)
 
 #define EACH_OPERATOR(OP) \
     OP(IS        , 17, INFIX) \

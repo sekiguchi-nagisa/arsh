@@ -209,6 +209,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "/="              { MODE(STMT); RET(DIV_ASSIGN); }
       <EXPR> "%="              { MODE(STMT); RET(MOD_ASSIGN); }
       <EXPR> ":="              { MODE(STMT); RET(STR_ASSIGN); }
+      <EXPR> "??="             { MODE(STMT); RET(NULL_ASSIGN); }
       <EXPR> "=>"              { MODE(STMT); RET(CASE_ARM); }
 
       <EXPR> "as"              { RET(AS); }

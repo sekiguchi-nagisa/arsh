@@ -10,13 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core
+- add ``??=`` operator
+  - ``left ??= right`` if ``left`` is invalid option value, assign ``right`` to ``left``
+
 - ``Regex`` literal supports ``s`` flag
   - ``.`` character matches newline
 
 ### Changed
 
 #### Builtin
-- **Breaking Change**: ``Regex`` type constructor need flag as second argument
+- **Breaking Change**: ``Regex`` type constructor needs flag as second argument
   - ``new Regex('abc', 'im')``
 
 

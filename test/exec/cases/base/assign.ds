@@ -34,6 +34,14 @@ $s := $getstr()
 assert $icount == 1
 assert $s == 'check empty and assign'
 
+var b = '23'.toInt()
+$b ??= 0
+assert $b! == 23
+$b = 'hoge'.toInt()
+$b ??= 100
+assert $b! == 100
+
+
 # local
 {
     var a = 0
@@ -57,6 +65,13 @@ assert $s == 'check empty and assign'
     $s := $getstr()
     assert $s == 'check empty and assign'
     assert $icount == 2
+
+    var b1 = '23.3'.toFloat()
+    $b1 ??= 3.14
+    assert $b1! == 23.3
+    $b1 = 'hoge'.toFloat()
+    $b1 ??= 3.14
+    assert $b1! == 3.14
 }
 
 # field
@@ -84,6 +99,14 @@ assert $t2._0.empty()
 $t2._0 := $getstr()
 assert $t2._0 == 'check empty and assign'
 assert $icount == 3
+
+var t3 = ('~hfore'.realpath(),)
+$t3._0 ??= "/"
+assert $t3._0! == "/"
+$t3._0 = '~'.realpath()
+$t3._0 ??= 'hoge'
+assert $t3._0! == "$(echo ~)"
+
 
 # indexer
 var i = [0]
@@ -116,6 +139,12 @@ $i2[0] = ''
 $i2[0] := $getstr()
 assert $i2[0] == "check empty and assign"
 assert $icount == 4
+
+var i3 = [new Int!()]
+$i3[0] ??= 12
+assert $i3[0]! == 12
+$i3[0] ??= 100
+assert $i3[0]! == 12
 
 # env
 export-env ABCD = ""

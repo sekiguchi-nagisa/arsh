@@ -970,6 +970,8 @@ TokenKind resolveAssignOp(TokenKind op) {
         return MOD;
     case STR_ASSIGN:
         return STR_CHECK;
+    case NULL_ASSIGN:
+        return NULL_COALE;
     default:
         fatal("unsupported assign op: %s\n", TO_NAME(op));
     }
