@@ -698,8 +698,8 @@ TEST_F(InteractiveTest, pipestatus) {
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("kill -s STOP $PID | kill -s STOP $PID | 1234", ": Int = 1234"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS.size() == 3"));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS[0] == 147"));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS[1] == 147"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(format("assert $PIPESTATUS[0] == %d", 128 + SIGSTOP).c_str()));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(format("assert $PIPESTATUS[1] == %d", 128 + SIGSTOP).c_str()));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS[2] == 0"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("kill -s CONT %1"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("fg %1"));
