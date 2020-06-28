@@ -590,6 +590,10 @@ TEST_F(CmdlineTest, signal) {
     ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$'"), 128 + SIGKILL, "", str));
     ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo ${%'kill'.message()}"), 0, str));
 
+    if(platform::platform() == platform::PlatformType::DARWIN) {
+        return;
+    }
+
     // core dump
     str = strsignal(SIGQUIT);
     str += " (core dumped)\n";
