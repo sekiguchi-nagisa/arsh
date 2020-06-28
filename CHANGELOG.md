@@ -15,13 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ``Regex`` literal supports ``s`` flag
   - ``.`` character matches newline
 
+#### Builtin
+- add ``status`` method to ``Job`` type
+  - get exit status of child processes in job
+
 ### Changed
 
 #### Builtin
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument
   - ``new Regex('abc', 'im')``
-- add ``status`` method to ``Job`` type
-  - get exit status of child processes in job
 
 
 ## [0.18.1] - 2020-06-20
