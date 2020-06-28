@@ -10,9 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core
-- add ``??=`` operator
+- add ``??=`` operator for Option type variable
   - ``left ??= right`` if ``left`` is invalid option value, assign ``right`` to ``left``
-
 - ``Regex`` literal supports ``s`` flag
   - ``.`` character matches newline
 
@@ -21,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Builtin
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument
   - ``new Regex('abc', 'im')``
+- add ``status`` method to ``Job`` type
+  - get exit status of child processes in job
 
 
 ## [0.18.1] - 2020-06-20
