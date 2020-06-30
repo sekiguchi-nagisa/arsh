@@ -118,7 +118,7 @@ struct PipeSet {
     pipe_t in;
     pipe_t out;
 
-    PipeSet(ForkKind kind) {    //FIXME: error reporting
+    explicit PipeSet(ForkKind kind) {    //FIXME: error reporting
         bool useInPipe = false;
         bool useOutPipe = false;
 

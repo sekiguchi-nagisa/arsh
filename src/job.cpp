@@ -196,6 +196,7 @@ bool JobImplObject::restoreStdin() {
     if(this->oldStdin > -1 && this->hasOwnership()) {
         dup2(this->oldStdin, STDIN_FILENO);
         close(this->oldStdin);
+        this->oldStdin = -1;
         return true;
     }
     return false;

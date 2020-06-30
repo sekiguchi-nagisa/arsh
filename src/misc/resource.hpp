@@ -326,7 +326,7 @@ public:
 
     explicit Finally(Func &&func) : func(std::move(func)) {}
 
-    Finally(Finally &&o) = default;
+    Finally(Finally &&o) noexcept = default;
 
     ~Finally() {
         this->func();
@@ -335,7 +335,7 @@ public:
 
 template <typename Func>
 inline auto finally(Func &&func) {
-    return Finally<Func>(std::move(func));
+    return Finally<Func>(std::forward<Func>(func));
 }
 
 } // namespace ydsh

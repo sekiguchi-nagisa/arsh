@@ -1772,7 +1772,7 @@ YDSH_METHOD job_pid(RuntimeContext &ctx) {
 
 //!bind: function status($this : Job, $index : Int) : Option<Int>
 YDSH_METHOD job_status(RuntimeContext &ctx) {
-    SUPPRESS_WARNING(job_pid);
+    SUPPRESS_WARNING(job_status);
     auto &entry = typeAs<JobImplObject>(LOCAL(0));
     auto index = LOCAL(1).asInt();
 
