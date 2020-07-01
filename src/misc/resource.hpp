@@ -237,7 +237,9 @@ ScopedResource<R, typename std::remove_reference<D>::type> makeScopedResource(R 
 struct FileCloser {
     void operator()(FILE *fp) const {
         if(fp) {
+            int old = errno;
             fclose(fp);
+            errno = old;    //ignore fclose error
         }
     }
 };

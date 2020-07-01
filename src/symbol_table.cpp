@@ -230,8 +230,13 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
         return ModLoadingError::NOT_FOUND;
     }
 
+    auto file = createFilePtr(fopen, str.get(), "rb");
+    if(!file) {
+        return ModLoadingError::NOT_OPEN;
+    }
+
     struct stat st;
-    if(stat(str.get(), &st) != 0) {
+    if(fstat(fileno(file.get()), &st) != 0) {
         return ModLoadingError::NOT_FOUND;
     }
     if(S_ISDIR(st.st_mode)) {
@@ -247,22 +252,11 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
         return ModLoadingError::NOT_OPEN;
     }
 
-    StringRef key(str.get());
-    auto pair = this->typeMap.emplace(key, ModEntry(std::move(str)));
-    if(!pair.second) {
-        if(pair.first->second) {
-            return pair.first->second.getModType();
-        }
-        return ModLoadingError::CIRCULAR;
+    auto ret = this->add(std::move(str));
+    if(!is<ModLoadingError>(ret)) {
+        filePtr = std::move(file);
     }
-    filePtr = createFilePtr(fopen, key.data(), "rb");
-    if(!filePtr) {
-        int old = errno;
-        this->typeMap.erase(pair.first);
-        errno = old;
-        return ModLoadingError::NOT_OPEN;
-    }
-    return key.data();
+    return ret;
 }
 
 

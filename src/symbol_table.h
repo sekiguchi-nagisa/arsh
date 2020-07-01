@@ -360,6 +360,18 @@ public:
         assert(!static_cast<bool>(iter->second));
         iter->second.setType(type);
     }
+
+    ModResult add(CStrPtr &&ptr) {
+        StringRef key(ptr.get());
+        auto pair = this->typeMap.emplace(key, ModEntry(std::move(ptr)));
+        if(!pair.second) {
+            if(pair.first->second) {
+                return pair.first->second.getModType();
+            }
+            return ModLoadingError::CIRCULAR;
+        }
+        return pair.first->second.getFullPath();
+    }
 };
 
 class SymbolTable {
