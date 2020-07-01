@@ -195,7 +195,7 @@ std::string ModType::toModName(unsigned short id) {
 
 void ModuleLoader::abort() {
     for(auto iter = this->typeMap.begin(); iter != this->typeMap.end();) {
-        if(!iter->second.second || iter->second.second->getModID() > this->oldIDCount) {
+        if(!iter->second || iter->second.getModType()->getModID() > this->oldIDCount) {
             iter = this->typeMap.erase(iter);
         } else {
             ++iter;
@@ -248,10 +248,10 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
     }
 
     StringRef key(str.get());
-    auto pair = this->typeMap.emplace(key, std::make_pair(std::move(str), nullptr));
+    auto pair = this->typeMap.emplace(key, ModEntry(std::move(str)));
     if(!pair.second) {
-        if(pair.first->second.second) {
-            return pair.first->second.second;
+        if(pair.first->second) {
+            return pair.first->second.getModType();
         }
         return ModLoadingError::CIRCULAR;
     }

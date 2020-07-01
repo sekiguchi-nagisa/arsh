@@ -294,11 +294,36 @@ enum class ModLoadOption {
 
 template <> struct allow_enum_bitop<ModLoadOption> : std::true_type {};
 
+class ModEntry {
+private:
+    CStrPtr ptr;
+    ModType *type;
+
+public:
+    explicit ModEntry(CStrPtr &&ptr) : ptr(std::move(ptr)), type(nullptr) {}
+
+    explicit operator bool() const {
+        return this->type != nullptr;
+    }
+
+    const char *getFullPath() const {
+        return this->ptr.get();
+    }
+
+    ModType *getModType() const {
+        return this->type;
+    }
+
+    void setType(ModType &t) {
+        this->type = &t;
+    }
+};
+
 class ModuleLoader {
 private:
     unsigned short oldIDCount{0};
     unsigned short modIDCount{0};
-    std::unordered_map<StringRef, std::pair<CStrPtr, ModType *>> typeMap;
+    std::unordered_map<StringRef, ModEntry> typeMap;
 
 public:
     NON_COPYABLE(ModuleLoader);
@@ -332,8 +357,8 @@ public:
     void setModType(const std::string &fullpath, ModType &type) {
         auto iter = this->typeMap.find(fullpath);
         assert(iter != this->typeMap.end());
-        assert(iter->second.second == nullptr);
-        iter->second.second = &type;
+        assert(!static_cast<bool>(iter->second));
+        iter->second.setType(type);
     }
 };
 
