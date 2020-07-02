@@ -317,7 +317,9 @@ private:
 
 template <typename T, typename ...R>
 inline bool is(const Union<R...> &value) {
-    return value.tag() == TypeTag<T, R...>::value;
+    using Tag = TypeTag<T, R...>;
+    static_assert(Tag::value > -1, "invalid type");
+    return value.tag() == Tag::value;
 }
 
 template <typename T, typename ...R>
