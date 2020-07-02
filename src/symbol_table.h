@@ -286,7 +286,7 @@ enum class ModLoadingError {
     NOT_FOUND,
 };
 
-using ModResult = Union<const char *, ModType *, ModLoadingError>;
+using ModResult = Union<const char *, unsigned int, ModLoadingError>;
 
 enum class ModLoadOption {
     IGNORE_NON_REG_FILE = 1 << 0,
@@ -296,44 +296,54 @@ template <> struct allow_enum_bitop<ModLoadOption> : std::true_type {};
 
 class ModEntry {
 private:
-    CStrPtr ptr;
-    ModType *type;
+    unsigned int index;
+    unsigned int typeId;
 
 public:
-    explicit ModEntry(CStrPtr &&ptr) : ptr(std::move(ptr)), type(nullptr) {}
+    explicit ModEntry(unsigned int index) : index(index), typeId(0) {}
+
+    void setModType(const ModType &type) {
+        this->typeId = type.getTypeID();
+    }
+
+    unsigned int getIndex() const {
+        return this->index;
+    }
+
+    /**
+     *
+     * @return
+     * if not set mod type, return 0.
+     */
+    unsigned int getTypeId() const {
+        return this->typeId;
+    }
 
     explicit operator bool() const {
-        return this->type != nullptr;
-    }
-
-    const char *getFullPath() const {
-        return this->ptr.get();
-    }
-
-    ModType *getModType() const {
-        return this->type;
-    }
-
-    void setType(ModType &t) {
-        this->type = &t;
+        return this->getTypeId() > 0;
     }
 };
 
+
 class ModuleLoader {
 private:
-    unsigned short oldIDCount{0};
-    unsigned short modIDCount{0};
-    std::unordered_map<StringRef, ModEntry> typeMap;
+    unsigned int oldModSize{0};
+
+    std::unordered_map<StringRef, ModEntry> indexMap;
 
 public:
     NON_COPYABLE(ModuleLoader);
 
     ModuleLoader() = default;
 
-    ~ModuleLoader() = default;
+    ~ModuleLoader() {
+        for(auto &e : this->indexMap) {
+            free(const_cast<char*>(e.first.data()));
+        }
+    }
 
     void commit() {
-        this->oldIDCount = this->modIDCount;
+        this->oldModSize = this->modSize();
     }
 
     void abort();
@@ -350,27 +360,29 @@ public:
      */
     ModResult load(const char *scriptDir, const char *modPath, FilePtr &filePtr, ModLoadOption option);
 
-    unsigned short newModId() {
-        return ++this->modIDCount;
+    unsigned int modSize() const {
+        return this->indexMap.size();
     }
 
-    void setModType(const std::string &fullpath, ModType &type) {
-        auto iter = this->typeMap.find(fullpath);
-        assert(iter != this->typeMap.end());
-        assert(!static_cast<bool>(iter->second));
-        iter->second.setType(type);
+    void addModType(const std::string &fullpath, const ModType &type) {
+        auto iter = this->indexMap.find(fullpath);
+        assert(iter != this->indexMap.end());
+        assert(!iter->second);
+        iter->second.setModType(type);
     }
 
-    ModResult add(CStrPtr &&ptr) {
+private:
+    ModResult addModPath(CStrPtr &&ptr) {
         StringRef key(ptr.get());
-        auto pair = this->typeMap.emplace(key, ModEntry(std::move(ptr)));
-        if(!pair.second) {
-            if(pair.first->second) {
-                return pair.first->second.getModType();
+        auto pair = this->indexMap.emplace(key, ModEntry(this->indexMap.size()));
+        if(!pair.second) {  // already registered
+            auto &e = pair.first->second;
+            if(e) {
+                return e.getTypeId();
             }
             return ModLoadingError::CIRCULAR;
         }
-        return pair.first->second.getFullPath();
+        return ptr.release();
     }
 };
 
@@ -448,8 +460,7 @@ public:
      * @return
      */
     ModuleScope createModuleScope() {
-        auto id = this->modLoader.newModId();
-        return ModuleScope(this->gvarCount, id);
+        return ModuleScope(this->gvarCount, this->modLoader.modSize());
     }
 
     /**

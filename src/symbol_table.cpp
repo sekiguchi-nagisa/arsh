@@ -194,14 +194,15 @@ std::string ModType::toModName(unsigned short id) {
 // ##########################
 
 void ModuleLoader::abort() {
-    for(auto iter = this->typeMap.begin(); iter != this->typeMap.end();) {
-        if(!iter->second || iter->second.getModType()->getModID() > this->oldIDCount) {
-            iter = this->typeMap.erase(iter);
+    for(auto iter = this->indexMap.begin(); iter != this->indexMap.end(); ) {
+        if(iter->second.getIndex() >= this->oldModSize) {
+            const char *ptr = iter->first.data();
+            iter = this->indexMap.erase(iter);
+            free(const_cast<char*>(ptr));
         } else {
             ++iter;
         }
     }
-    this->modIDCount = this->oldIDCount;
 }
 
 static CStrPtr expandToRealpath(const char *baseDir, const char *path) {
@@ -252,7 +253,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
         return ModLoadingError::NOT_OPEN;
     }
 
-    auto ret = this->add(std::move(str));
+    auto ret = this->addModPath(std::move(str));
     if(!is<ModLoadingError>(ret)) {
         filePtr = std::move(file);
     }
@@ -298,7 +299,7 @@ ModType& SymbolTable::createModType(const std::string &fullpath) {
     auto &modType = this->typePool.newType<ModType>(std::move(name),
             this->get(TYPE::Any), this->cur().getModID(), this->cur().global().getHandleMap());
     this->curModule = nullptr;
-    this->modLoader.setModType(fullpath, modType);
+    this->modLoader.addModType(fullpath, modType);
     return modType;
 }
 

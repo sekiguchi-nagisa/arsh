@@ -572,7 +572,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
             }
             reportFileError(sourceName, false, e);
             return 1;
-        } else if(is<ModType *>(ret)) {
+        } else if(is<unsigned int>(ret)) {
             return 0;   // do nothing.
         }
         char *real = strdup(get<const char *>(ret));

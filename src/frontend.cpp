@@ -313,8 +313,10 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
         }
         this->enterModule(get<const char*>(ret), std::move(buf));
         return {nullptr, ENTER_MODULE};
-    } else if(is<ModType *>(ret)) {
-        return {node.create(*get<ModType *>(ret), false), IN_MODULE};
+    } else if(is<unsigned int>(ret)) {
+        auto &type = this->getSymbolTable().get(get<unsigned int>(ret));
+        assert(type.isModType());
+        return {node.create(static_cast<ModType&>(type), false), IN_MODULE};
     }
     return {nullptr, FAILED};
 }
