@@ -371,6 +371,14 @@ public:
         iter->second.setModType(type);
     }
 
+    auto begin() const {
+        return this->indexMap.begin();
+    }
+
+    auto end() const {
+        return this->indexMap.end();
+    }
+
 private:
     ModResult addModPath(CStrPtr &&ptr) {
         StringRef key(ptr.get());
@@ -615,6 +623,10 @@ public:
 
     const BlockScope &curScope() const {
         return this->cur().curScope();
+    }
+
+    const ModuleLoader &getModLoader() const {
+        return this->modLoader;
     }
 
     // for type lookup

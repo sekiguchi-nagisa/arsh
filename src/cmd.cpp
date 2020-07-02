@@ -159,6 +159,7 @@ static constexpr struct {
                 "        is-sourced          return 0 if current script is sourced.\n"
                 "        backtrace           print stack trace.\n"
                 "        function            print current function/command name.\n"
+                "        module              print full path of loaded modules or scripts\n"
                 "        show  [OPTION ...]  print runtime option setting.\n"
                 "        set   OPTION ...    set/enable/on runtime option.\n"
                 "        unset OPTION ...    unset/disable/off runtime option"},
@@ -1976,6 +1977,20 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
     return 0;
 }
 
+static int showModule(const DSState &state) {
+    auto &loader = state.symbolTable.getModLoader();
+    unsigned int size = loader.modSize();
+    auto *buf = new std::pair<const char *, unsigned int>[size];
+    for(auto &e : loader) {
+        buf[e.second.getIndex()] = {e.first.data(), e.second.getTypeId()};
+    }
+    for(unsigned int i = 0; i < size; i++) {
+        fprintf(stdout, "(%s) %s\n", buf[i].second > 0 ? "module" : "script", buf[i].first);
+    }
+    delete[] buf;
+    return 0;
+}
+
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     if(argvObj.size() > 1) {
         auto ref = argvObj.getValues()[1].asStrRef();
@@ -1994,6 +2009,8 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
             return setOption(state, argvObj, true);
         } else if(ref == "unset") {
             return setOption(state, argvObj, false);
+        } else if(ref == "module") {
+            return showModule(state);
         } else {
             ERROR(argvObj, "undefined subcommand: %s", ref.data());
             return 2;

@@ -1,0 +1,11 @@
+
+source $SCRIPT_DIR/../../_module4test/module4.ds
+
+var old = $IFS
+$IFS = $'\n'
+
+var a = $(shctl module)
+assert $a.size() == 3
+assert $a[0] == "(script) ${$SCRIPT_NAME.realpath()!}"
+assert $a[1] == "(module) ${"$SCRIPT_DIR/../../_module4test/module4.ds".realpath()!}"
+assert $a[2] == "(module) ${"$SCRIPT_DIR/../../_module4test/module3.ds".realpath()!}"
