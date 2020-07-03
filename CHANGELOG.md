@@ -18,12 +18,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Builtin
 - add ``status`` method to ``Job`` type
   - get exit status of child processes in job
+- add ``module`` sub-command to builtin ``shctl`` command
+  - get full path of loaded script or module
+
 
 ### Changed
 
 #### Builtin
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument
   - ``new Regex('abc', 'im')``
+
+### Fixed
+
+#### API
+- when abort symbol table, also abort loaded script path
+
+
+## [0.18.2] - 2020-07-04
+
+### Fixed
+- cannot load multiple globbed modules when source statement on end of file
 
 
 ## [0.18.1] - 2020-06-20
