@@ -535,7 +535,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
     if(pipe(selfpipe) < 0) {
         fatal_perror("pipe creation error");
     }
-    if(fcntl(selfpipe[WRITE_PIPE], F_SETFD, fcntl(selfpipe[WRITE_PIPE], F_GETFD) | FD_CLOEXEC) != 0) {
+    if(!setCloseOnExec(selfpipe[WRITE_PIPE], true)) {
         fatal_perror("fcntl error");
     }
 

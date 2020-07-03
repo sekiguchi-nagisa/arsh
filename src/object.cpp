@@ -19,6 +19,7 @@
 #include "vm.h"
 #include "redir.h"
 #include "misc/num_util.hpp"
+#include "misc/files.h"
 
 namespace ydsh {
 
@@ -284,17 +285,7 @@ bool UnixFdObject::closeOnExec(bool close) const {
     if(this->fd <= STDERR_FILENO) {
         return false;
     }
-
-    int flag = fcntl(this->fd, F_GETFD);
-    if(flag == -1) {
-        return false;
-    }
-    if(close) {
-        setFlag(flag, FD_CLOEXEC);
-    } else {
-        unsetFlag(flag, FD_CLOEXEC);
-    }
-    return fcntl(this->fd, F_SETFD, flag) != -1;
+    return setCloseOnExec(this->fd, close);
 }
 
 // ##########################

@@ -31,6 +31,7 @@
 
 #include "fatal.h"
 #include "resource.hpp"
+#include "flag_util.hpp"
 
 namespace ydsh {
 
@@ -74,6 +75,28 @@ inline bool isSameFile(const char *f1, const char *f2) {
         return false;
     }
     return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
+}
+
+inline bool setCloseOnExec(int fd, bool set) {
+    int flag = fcntl(fd, F_GETFD);
+    if(flag == -1) {
+        return false;
+    }
+    if(set) {
+        setFlag(flag, FD_CLOEXEC);
+    } else {
+        unsetFlag(flag, FD_CLOEXEC);
+    }
+    return fcntl(fd, F_SETFD, flag) != -1;
+}
+
+inline bool setFDFlag(int fd, int addFlag) {
+    int flag = fcntl(fd, F_GETFL);
+    if(flag == -1) {
+        return false;
+    }
+    setFlag(flag, addFlag);
+    return fcntl(fd, F_SETFL, flag) != -1;
 }
 
 inline int getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
