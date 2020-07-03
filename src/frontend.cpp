@@ -279,11 +279,7 @@ static auto createModLoadingError(const Node &node, const char *path, ModLoading
 }
 
 FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
-    if(!this->getCurSrcListNode()) {
-        return {nullptr, IN_MODULE};
-    }
-
-    if(!this->getCurSrcListNode()->hasUnconsumedPath()) {
+    if(!this->hasUnconsumedPath()) {
         this->getCurSrcListNode().reset();
         return {nullptr, IN_MODULE};
     }
@@ -354,6 +350,7 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
 }
 
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
+    assert(!this->contexts.empty());
     auto &ctx = *this->contexts.back();
     TokenKind kind = ctx.kind;
     Token token = ctx.token;

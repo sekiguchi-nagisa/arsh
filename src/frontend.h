@@ -148,8 +148,17 @@ public:
         return this->lexer.getMaxLineNum();
     }
 
+    const std::unique_ptr<SourceListNode> &getCurSrcListNode() const {
+        return this->contexts.empty() ? this->srcListNode : this->contexts.back()->srcListNode;
+    }
+
+    bool hasUnconsumedPath() const {
+        auto &e = this->getCurSrcListNode();
+        return e && e->hasUnconsumedPath();
+    }
+
     explicit operator bool() const {
-        return static_cast<bool>(this->parser) || !this->contexts.empty();
+        return static_cast<bool>(this->parser) || !this->contexts.empty() || this->hasUnconsumedPath();
     }
 
     Ret operator()(DSError *dsError);

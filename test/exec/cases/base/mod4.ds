@@ -1,5 +1,5 @@
 
-#$test($result = 'exit', $status = 23, $lineNum = 2)
+#$test($result = 'exit', $status = 23, $lineNum = 2, $out=$'exit!!\n')
 
 var a = 45
 

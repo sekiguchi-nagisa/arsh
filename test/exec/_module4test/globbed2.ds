@@ -1,0 +1,4 @@
+
+source module1.ds as mod
+
+var gg2 = "globbed2"
