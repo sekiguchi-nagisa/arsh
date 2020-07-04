@@ -326,6 +326,9 @@ FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type s
 
 template <typename T, typename SIZE_T>
 void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) noexcept {
+    if(reservingSize > this->max_size()) {
+        fatal("reserving size must be less than max_size\n");
+    }
     if(reservingSize > this->cap_) {
         this->cap_ = reservingSize;
         this->data_ = static_cast<T *>(realloc(this->data(), sizeof(T) * this->capacity()));
