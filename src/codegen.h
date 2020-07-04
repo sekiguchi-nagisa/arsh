@@ -128,31 +128,31 @@ struct CodeEmitter {
 
     void append8(unsigned char b) {
         const unsigned int index = this->codeBuffer.size();
-        this->codeBuffer.insert(this->codeBuffer.end(), 1, 0);
+        this->codeBuffer.resize(index + 1, 0);
         this->emit8(index, b);
     }
 
     void append16(unsigned short b) {
         const unsigned int index = this->codeBuffer.size();
-        this->codeBuffer.insert(this->codeBuffer.end(), 2, 0);
+        this->codeBuffer.resize(index + 2, 0);
         this->emit16(index, b);
     }
 
     void append24(unsigned int b) {
         const unsigned int index = this->codeBuffer.size();
-        this->codeBuffer.insert(this->codeBuffer.end(), 3, 0);
+        this->codeBuffer.resize(index + 3, 0);
         this->emit24(index, b);
     }
 
     void append32(unsigned int b) {
         const unsigned int index = this->codeBuffer.size();
-        this->codeBuffer.insert(this->codeBuffer.end(), 4, 0);
+        this->codeBuffer.resize(index + 4, 0);
         this->emit32(index, b);
     }
 
     void append64(uint64_t b) {
         const unsigned int index = this->codeBuffer.size();
-        this->codeBuffer.insert(this->codeBuffer.end(), 8, 0);
+        this->codeBuffer.resize(index + 8, 0);
         this->emit64(index, b);
     }
 

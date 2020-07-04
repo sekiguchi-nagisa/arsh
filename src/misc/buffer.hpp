@@ -188,6 +188,8 @@ public:
      */
     void reserve(size_type reservingSize) noexcept;
 
+    void resize(size_type afterSize, T v) noexcept;
+
     iterator begin() noexcept {
         return this->data_;
     }
@@ -345,6 +347,18 @@ void FlexBuffer<T, SIZE_T>::needMoreCap(size_type addSize) noexcept {
             newCap += delta;
         }
         this->reserve(newCap);
+    }
+}
+
+template <typename T, typename SIZE_T>
+void FlexBuffer<T, SIZE_T>::resize(size_type afterSize, T v) noexcept {
+    if(afterSize <= this->size()) {
+        this->size_ = afterSize;
+    } else {
+        this->needMoreCap(afterSize - this->size());
+        while(this->size_ < afterSize) {
+            this->data_[this->size_++] = v;
+        }
     }
 }
 
