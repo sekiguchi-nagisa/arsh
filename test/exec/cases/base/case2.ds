@@ -45,7 +45,7 @@ assert $called == 1
 function case2($a : Int) {
     case $a as String {
         $/^[1-5]/ => echo $a!!
-        $/^[6-9]/ => echo -$a!!
+        new Regex("^[${'6'}-${"9"}]", "") => echo -$a!!
         $/.+/ => (echo dummy) as Void
     }
 }

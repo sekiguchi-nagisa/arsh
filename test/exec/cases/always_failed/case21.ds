@@ -1,0 +1,6 @@
+
+#$test($result = 'type', $lineNum = 5, $errorKind = 'RegexSyntax', $status = 1)
+
+case 'hello'  {
+new Regex("${OSTYPE}**", "i") => 34
+}

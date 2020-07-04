@@ -384,7 +384,7 @@ void ByteCodeGenerator::visitStringNode(StringNode &node) {
         this->emit3byteIns(OpCode::PUSH_STR3, node.getValue()[0], node.getValue()[1], node.getValue()[2]);
         break;
     default:
-        this->emitLdcIns(DSValue::createStr(StringNode::extract(std::move(node))));
+        this->emitLdcIns(DSValue::createStr(node.takeValue()));
         break;
     }
 }

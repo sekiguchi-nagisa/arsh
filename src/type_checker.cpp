@@ -1044,7 +1044,7 @@ static auto initConstVarMap() {
     return map;
 }
 
-bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) const {
+bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) {
     switch(node->getNodeKind()) {
     case NodeKind::String:
     case NodeKind::Number:
@@ -1125,6 +1125,24 @@ bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) const {
         node = std::make_unique<StringNode>(token, std::move(value));
         node->setType(this->symbolTable.get(TYPE::String));
         return true;
+    }
+    case NodeKind::New: {
+        auto &newNode = cast<NewNode>(*node);
+        if(newNode.getType().is(TYPE::Regex)) {
+            if(!this->applyConstFolding(newNode.refArgNodes()[0]) ||
+                !this->applyConstFolding(newNode.refArgNodes()[1])) {
+                break;
+            }
+            assert(isa<StringNode>(*newNode.getArgNodes()[0]));
+            assert(isa<StringNode>(*newNode.getArgNodes()[1]));
+            Token token = newNode.getToken();
+            std::string reStr = cast<StringNode>(*newNode.getArgNodes()[0]).takeValue();
+            std::string reFlag = cast<StringNode>(*newNode.getArgNodes()[1]).takeValue();
+            node = std::make_unique<RegexNode>(token, std::move(reStr), std::move(reFlag));
+            this->checkTypeAsExpr(*node);
+            return true;
+        }
+        break;
     }
     default:
         break;

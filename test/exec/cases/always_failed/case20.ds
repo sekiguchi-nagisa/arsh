@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 7, $errorKind = 'Constant', $status = 1)
+
+var a = 'ims'
+
+case 'hello'  {
+new Regex('34', "$a") => 34
+}

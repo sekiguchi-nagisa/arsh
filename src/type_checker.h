@@ -460,7 +460,7 @@ protected:
      * must be typed node
      * @return
      */
-    bool applyConstFolding(std::unique_ptr<Node> &node) const;
+    bool applyConstFolding(std::unique_ptr<Node> &node);
 
     /**
      * apply constant folding and generate source path list.

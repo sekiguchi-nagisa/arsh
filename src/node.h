@@ -431,8 +431,8 @@ public:
 
     void dump(NodeDumper &dumper) const override;
 
-    static std::string extract(StringNode &&node) {
-        return std::move(node.value);
+    std::string takeValue() {
+        return std::move(this->value);
     }
 };
 
