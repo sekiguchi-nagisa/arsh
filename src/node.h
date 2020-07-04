@@ -468,17 +468,31 @@ private:
      */
     std::string reStr;
 
+    std::string reFlag;
+
     PCRE re;
 
 public:
-    RegexNode(Token token, std::string &&str, PCRE &&re) :
-            WithRtti(token), reStr(std::move(str)), re(std::move(re)) { }
+    RegexNode(Token token, std::string &&str, std::string &&flag) :
+            WithRtti(token), reStr(std::move(str)), reFlag(flag) { }
 
     ~RegexNode() override = default;
 
     const std::string &getReStr() const {
         return this->reStr;
     }
+
+    const std::string &getReFlag() const {
+        return this->reFlag;
+    }
+
+    /**
+     * build regex
+     * @param errorStr
+     * @return
+     * if failed, return false and set error message to errorStr
+     */
+    bool buildRegex(std::string &errorStr);
 
     PCRE extractRE() {
         return std::move(this->re);

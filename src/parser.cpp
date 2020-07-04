@@ -1171,24 +1171,12 @@ std::unique_ptr<Node> Parser::parse_stringLiteral() {
 std::unique_ptr<Node> Parser::parse_regexLiteral() {
     Token token = this->expect(REGEX_LITERAL);  // always success
     std::string str = this->lexer->toTokenText(token.sliceFrom(2)); // skip prefix '$/'
-
-    /**
-     * parse regex flag
-     */
-    int regexFlag = 0;
-    while(str.back() != '/') {
-        regexFlag |= toRegexFlag(str.back());
-        str.pop_back();
-    }
+    const char *ptr = strrchr(str.c_str(), '/');
+    assert(ptr);
+    std::string flag = ptr + 1;
+    for(; str.back() != '/'; str.pop_back());
     str.pop_back(); // skip suffix '/'
-
-    const char *errorStr;
-    auto re = compileRegex(str.c_str(), errorStr, regexFlag);
-    if(!re) {
-        reportTokenFormatError(REGEX_LITERAL, token, errorStr);
-        return nullptr;
-    }
-    return std::make_unique<RegexNode>(token, std::move(str), std::move(re));
+    return std::make_unique<RegexNode>(token, std::move(str), std::move(flag));
 }
 
 ArgsWrapper Parser::parse_arguments() {

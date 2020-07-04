@@ -23,7 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add ``module`` sub-command to builtin ``shctl`` command
   - get full path of loaded script or module
 
+
 ### Changed
+
+#### Core
+- perform regex syntax checking in typechecker. now regex syntax error is semantic error 
+
 
 #### Builtin
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument

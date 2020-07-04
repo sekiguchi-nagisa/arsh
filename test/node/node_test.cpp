@@ -358,6 +358,7 @@ nodes:
               size: 4
             type:
             reStr: "d"
+            reFlag: ""
     blockNode:
       nodeKind: Block
       token:

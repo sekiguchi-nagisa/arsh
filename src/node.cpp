@@ -182,8 +182,30 @@ void StringExprNode::dump(NodeDumper &dumper) const {
 // ##     RegexNode     ##
 // #######################
 
+bool RegexNode::buildRegex(std::string &errorStr) {
+    int regexFlag = 0;
+    for(auto &e : this->reFlag) {
+        int r = toRegexFlag(e);
+        if(!r) {
+            errorStr = "unsupported regex flag: ";
+            errorStr += e;
+            return false;
+        }
+        setFlag(regexFlag, r);
+    }
+
+    const char *error;
+    this->re = compileRegex(this->reStr.c_str(), error, regexFlag);
+    if(!this->re) {
+        errorStr = error;
+        return false;
+    }
+    return true;
+}
+
 void RegexNode::dump(NodeDumper &dumper) const {
     DUMP(reStr);
+    DUMP(reFlag);
 }
 
 // #######################

@@ -421,6 +421,10 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
 }
 
 void TypeChecker::visitRegexNode(RegexNode &node) {
+    std::string e;
+    if(!node.buildRegex(e)) {
+        RAISE_TC_ERROR(RegexSyntax, node, e.c_str());
+    }
     node.setType(this->symbolTable.get(TYPE::Regex));
 }
 

@@ -1,3 +1,0 @@
-#$test($result = 'parse', $lineNum = 3, $errorKind = 'TokenFormat', $status = 1)
-
-$/de**/
