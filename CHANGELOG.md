@@ -18,9 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Builtin
 - add ``status`` method to ``Job`` type
   - get exit status of child processes in job
+- add ``replace`` method to ``Regex`` type
+  - replace all of matched strings
 - add ``module`` sub-command to builtin ``shctl`` command
   - get full path of loaded script or module
-
 
 ### Changed
 

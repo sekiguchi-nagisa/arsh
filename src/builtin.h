@@ -955,6 +955,18 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     RET(ret);
 }
 
+//!bind: function replace($this: Regex, $target : String, $repl : String) : String
+YDSH_METHOD regex_replace(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(regex_replace);
+    auto &re = typeAs<RegexObject>(LOCAL(0));
+    auto target = LOCAL(1);
+    if(!re.replace(target, LOCAL(2).asStrRef())) {
+        raiseOutOfRangeError(ctx, std::string("reach String size limit"));
+        RET_ERROR;
+    }
+    RET(target);
+}
+
 // ####################
 // ##     Signal     ##
 // ####################

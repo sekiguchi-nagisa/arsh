@@ -288,6 +288,41 @@ bool UnixFdObject::closeOnExec(bool close) const {
     return setCloseOnExec(this->fd, close);
 }
 
+// #########################
+// ##     RegexObject     ##
+// #########################
+
+bool RegexObject::replace(DSValue &value, StringRef repl) const {
+    auto ret = DSValue::createStr();
+    for(auto target = value.asStrRef(); !target.empty();) {
+        int ovec[3];
+        int matchSize = this->exec(target, ovec, arraySize(ovec));
+        if(matchSize < 0) {
+            if(ret.asStrRef().empty()) {
+                return true;
+            } else if(!ret.appendAsStr(target)) {
+                return false;
+            }
+            break;
+        }
+
+        assert(ovec[0] > -1 && ovec[1] > -1);
+        auto begin = static_cast<unsigned int>(ovec[0]);
+        auto end = static_cast<unsigned int>(ovec[1]);
+
+        if(!ret.appendAsStr(target.slice(0, begin))) {
+            return false;
+        }
+        if(!ret.appendAsStr(repl)) {
+            return false;
+        }
+        target = target.slice(end, target.size());
+    }
+    value = std::move(ret);
+    return true;
+}
+
+
 // ##########################
 // ##     Array_Object     ##
 // ##########################

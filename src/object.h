@@ -629,19 +629,37 @@ public:
 
     bool search(StringRef ref) const {
         int ovec[1];
-        int match = pcre_exec(this->re.get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, arraySize(ovec));
-        return match >= 0;
+        return this->exec(ref, ovec, arraySize(ovec)) >= 0;
     }
 
     int match(StringRef ref, FlexBuffer<int> &ovec) const {
         int captureSize;
         pcre_fullinfo(this->re.get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
-        ovec = FlexBuffer<int>((captureSize + 1) * 3, 0);
-        return pcre_exec(this->re.get(), nullptr, ref.data(), ref.size(), 0, 0, ovec.data(), (captureSize + 1) * 3);
+        assert(captureSize > -1);
+        int ovecSize = (captureSize + 1) * 3;
+        ovec.resize(static_cast<FlexBuffer<int>::size_type>(ovecSize), 0);
+        return this->exec(ref, ovec.data(), ovecSize);
     }
+
+    /**
+     *
+     * @param value
+     * if replace success, write result to it.
+     * must be String
+     * @param repl
+     * replacing string
+     * @return
+     * if string creation failed, return false
+     */
+    bool replace(DSValue &value, StringRef repl) const;
 
     const std::string &getStr() const {
         return this->str;
+    }
+
+private:
+    int exec(StringRef ref, int *ovec, int ovecSize) const {
+        return pcre_exec(this->re.get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, ovecSize);
     }
 };
 
