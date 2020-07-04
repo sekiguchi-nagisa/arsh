@@ -280,10 +280,24 @@ public:
     static std::string toModName(unsigned short modID);
 };
 
-enum class ModLoadingError {
-    CIRCULAR,
-    NOT_OPEN,
-    NOT_FOUND,
+class ModLoadingError {
+private:
+    int value;
+
+public:
+    explicit ModLoadingError(int value) : value(value) {}
+
+    int getErrNo() const {
+        return this->value;
+    }
+
+    bool isFileNotFound() const {
+        return this->getErrNo() == ENOENT;
+    }
+
+    bool isCircularLoad() const {
+        return this->getErrNo() == 0;
+    }
 };
 
 using ModResult = Union<const char *, unsigned int, ModLoadingError>;
@@ -388,7 +402,7 @@ private:
             if(e) {
                 return e.getTypeId();
             }
-            return ModLoadingError::CIRCULAR;
+            return ModLoadingError(0);
         }
         return ptr.release();
     }

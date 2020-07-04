@@ -64,6 +64,10 @@ inline CStrPtr getCWD() {
     return getRealpath(".");
 }
 
+inline bool isSameFile(const struct stat &st1, const struct stat &st2) {
+    return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
+}
+
 inline bool isSameFile(const char *f1, const char *f2) {
     struct stat st1;    //NOLINT
     if(stat(f1, &st1) != 0) {
@@ -74,7 +78,7 @@ inline bool isSameFile(const char *f1, const char *f2) {
     if(stat(f2, &st2) != 0) {
         return false;
     }
-    return st1.st_dev == st2.st_dev && st1.st_ino == st2.st_ino;
+    return isSameFile(st1, st2);
 }
 
 inline bool setCloseOnExec(int fd, bool set) {

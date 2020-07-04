@@ -217,6 +217,19 @@ static CStrPtr expandToRealpath(const char *baseDir, const char *path) {
     return getRealpath(value.c_str());
 }
 
+static int checkFileType(const struct stat &st, ModLoadOption option) {
+    if(S_ISDIR(st.st_mode)) {
+        return EISDIR;
+    } else if(S_ISREG(st.st_mode)) {
+        if(st.st_size > static_cast<off_t>(static_cast<uint32_t>(-1) >> 2)) {
+            return EFBIG;
+        }
+    } else if(hasFlag(option, ModLoadOption::IGNORE_NON_REG_FILE)) {
+        return EINVAL;
+    }
+    return 0;
+}
+
 ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
         FilePtr &filePtr, ModLoadOption option) {
     assert(modPath);
@@ -227,35 +240,40 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
                        modPath, str ? str.get() : "(null)");
     // check file type
     if(!str) {
-        errno = ENOENT;
-        return ModLoadingError::NOT_FOUND;
+        return ModLoadingError(ENOENT);
     }
 
-    auto file = createFilePtr(fopen, str.get(), "rb");
-    if(!file) {
-        return ModLoadingError::NOT_OPEN;
+    /**
+     * check file type before open due to prevent named pipe blocking
+     */
+    struct stat st1;
+    if(stat(str.get(), &st1) != 0) {
+        return ModLoadingError(errno);
+    }
+    int s = checkFileType(st1, option);
+    if(s) {
+        return ModLoadingError(s);
     }
 
-    struct stat st;
-    if(fstat(fileno(file.get()), &st) != 0) {
-        return ModLoadingError::NOT_FOUND;
+    int fd = open(str.get(), O_RDONLY);
+    if(fd < 0) {
+        return ModLoadingError(errno);
     }
-    if(S_ISDIR(st.st_mode)) {
-        errno = EISDIR;
-        return ModLoadingError::NOT_OPEN;
-    } else if(S_ISREG(st.st_mode)) {
-        if(st.st_size > static_cast<off_t>(static_cast<uint32_t>(-1) >> 2)) {
-            errno = EFBIG;
-            return ModLoadingError::NOT_OPEN;
-        }
-    } else if(hasFlag(option, ModLoadOption::IGNORE_NON_REG_FILE)) {
-        errno = EINVAL;
-        return ModLoadingError::NOT_OPEN;
+
+    struct stat st2;
+    errno = 0;
+    if(fstat(fd, &st2) != 0 || !isSameFile(st1, st2)) {
+        int old = errno == 0 ? ENOENT : errno;
+        close(fd);
+        return ModLoadingError(old);
     }
 
     auto ret = this->addModPath(std::move(str));
-    if(!is<ModLoadingError>(ret)) {
-        filePtr = std::move(file);
+    if(is<ModLoadingError>(ret)) {
+        close(fd);
+    } else {
+        filePtr = createFilePtr(fdopen, fd, "rb");
+        assert(filePtr);
     }
     return ret;
 }
@@ -266,7 +284,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
 // #########################
 
 static bool isFileNotFound(const ModResult &ret) {
-    return is<ModLoadingError>(ret) && get<ModLoadingError>(ret) == ModLoadingError::NOT_FOUND;
+    return is<ModLoadingError>(ret) && get<ModLoadingError>(ret).isFileNotFound();
 }
 
 ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path,

@@ -267,14 +267,12 @@ void FrontEnd::teardownASTDump() {
 }
 
 static auto createModLoadingError(const Node &node, const char *path, ModLoadingError e) {
-    switch(e) {
-    case ModLoadingError::CIRCULAR:
+    if(e.isCircularLoad()) {
         return createTCError<CircularMod>(node, path);
-    case ModLoadingError::NOT_OPEN:
-        return createTCError<NotOpenMod>(node, path, strerror(errno));
-    default:
-        assert(e == ModLoadingError::NOT_FOUND);
+    } else if(e.isFileNotFound()) {
         return createTCError<NotFoundMod>(node, path);
+    } else {
+        return createTCError<NotOpenMod>(node, path, strerror(e.getErrNo()));
     }
 }
 
@@ -294,7 +292,7 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
             modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
     if(is<ModLoadingError>(ret)) {
         auto e = get<ModLoadingError>(ret);
-        if(e == ModLoadingError::NOT_FOUND && node.isOptional()) {
+        if(e.isFileNotFound() && node.isOptional()) {
             return {std::make_unique<EmptyNode>(), IN_MODULE};
         }
         auto error = createModLoadingError(node.getPathNode(), modPath, e);

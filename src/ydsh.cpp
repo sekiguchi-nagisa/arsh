@@ -543,19 +543,18 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
     return evalScript(*st, std::move(lexer), e);
 }
 
-static void reportFileError(const char *sourceName, bool isIO, DSError *e) {
-    int old = errno;
+static void reportFileError(const char *sourceName, bool isIO, int errNum, DSError *e) {
     fprintf(stderr, "ydsh: %s: %s, by `%s'\n",
-            isIO ? "cannot read file" : "cannot open file", sourceName, strerror(old));
+            isIO ? "cannot read file" : "cannot open file", sourceName, strerror(errNum));
     if(e) {
         *e = {
                 .kind = DS_ERROR_KIND_FILE_ERROR,
                 .fileName = strdup(sourceName),
                 .lineNum = 0,
-                .name = strdup(strerror(old))
+                .name = strdup(strerror(errNum))
         };
     }
-    errno = old;
+    errno = errNum;
 }
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
@@ -567,10 +566,11 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     } else {
         auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr, ModLoadOption{});
         if(is<ModLoadingError>(ret)) {
-            if(get<ModLoadingError>(ret) == ModLoadingError::CIRCULAR) {
-                errno = ETXTBSY;
+            int errNum = get<ModLoadingError>(ret).getErrNo();
+            if(get<ModLoadingError>(ret).isCircularLoad()) {
+                errNum = ETXTBSY;
             }
-            reportFileError(sourceName, false, e);
+            reportFileError(sourceName, false, errNum, e);
             return 1;
         } else if(is<unsigned int>(ret)) {
             return 0;   // do nothing.
@@ -587,7 +587,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     ByteBuffer buf;
     sourceName = sourceName == nullptr ? "(stdin)" : sourceName;
     if(!readAll(filePtr, buf)) {
-        reportFileError(sourceName, true, e);
+        reportFileError(sourceName, true, errno, e);
         return 1;
     }
     filePtr.reset(nullptr);
