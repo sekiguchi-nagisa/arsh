@@ -483,7 +483,7 @@ void DSState_setArguments(DSState *st, char *const *args) {
     finalizeScriptArg(st);
 }
 
-int DSState_getExitStatus(const DSState *st) {
+int DSState_exitStatus(const DSState *st) {
     GUARD_NULL(st, 0);
     return st->getMaskedExitStatus();
 }
@@ -735,7 +735,7 @@ unsigned int DSState_featureBit() {
     return flag;
 }
 
-unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int index, const char **value) {
+unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index, const char **value) {
     GUARD_NULL(st, 0);
 
     auto &compreply = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::COMPREPLY));
@@ -790,25 +790,38 @@ static const char *defaultPrompt(int n) {
 #undef XSTR
 #undef STR
 
-unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const char **buf) {
-    const char *value = nullptr;
-    if(buf) {
-        value = *buf;
-        *buf = nullptr;
-    }
+unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const char **buf) {
+    GUARD_NULL(st, 0);
 
-    if(st == nullptr) {
-        return 0;
-    }
+#define EACH_DS_LINE_EDIT_OP(OP) \
+    OP(DS_EDIT_HIST_SIZE) \
+    OP(DS_EDIT_HIST_GET) \
+    OP(DS_EDIT_HIST_SET) \
+    OP(DS_EDIT_HIST_DEL) \
+    OP(DS_EDIT_HIST_CLEAR) \
+    OP(DS_EDIT_HIST_INIT) \
+    OP(DS_EDIT_HIST_ADD) \
+    OP(DS_EDIT_HIST_LOAD) \
+    OP(DS_EDIT_HIST_SAVE) \
+    OP(DS_EDIT_HIST_SEARCH) \
+    OP(DS_EDIT_PROMPT) \
+
+    GUARD_ENUM_RANGE(op, EACH_DS_LINE_EDIT_OP, 0);
+#undef EACH_DS_LINE_EDIT_OP
 
     auto func = getGlobal(*st, VAR_EIDT_HOOK);
     if(func.isInvalid()) {
-        if(op == DS_EDIT_PROMPT) {
+        if(op == DS_EDIT_PROMPT && buf) {
             *buf = defaultPrompt(index);
         }
         return 0;
     }
 
+    const char *value = nullptr;
+    if(buf) {
+        value = *buf;
+        *buf = nullptr;
+    }
     auto args = makeArgs(
             DSValue::createInt(op), DSValue::createInt(index),
             DSValue::createStr((value && *value) ? value : "")

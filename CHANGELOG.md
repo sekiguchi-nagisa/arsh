@@ -35,11 +35,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument
   - ``new Regex('abc', 'im')``
 
+#### API
+- **Breaking Change**: rename some public api
+  - ``DSState_getExitStatus`` to ``DSState_exitStatus``
+  - ``DSState_completionOp`` to ``DSState_complete``
+  - ``DSState_lineEditOp`` to ``DSState_lineEdit``
+- **Breaking Change**: return status of public api
+
+
 ### Fixed
 
 #### API
 - when abort symbol table, also abort loaded script path
-
+- not crash public api when ``DSState`` parameter is null
 
 ## [0.18.2] - 2020-07-04
 

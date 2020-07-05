@@ -104,7 +104,7 @@ void DSState_setArguments(DSState *st, char *const *args);
  * @return
  * if null, return always 0
  */
-int DSState_getExitStatus(const DSState *st);
+int DSState_exitStatus(const DSState *st);
 
 /**
  * update exit status
@@ -328,7 +328,7 @@ typedef enum {
 } DSCompletionOp;
 
 /**
- *
+ * do completion op
  * @param st
  * not null.
  * @param op
@@ -336,10 +336,11 @@ typedef enum {
  * indicates index of completion result or cursor of completing line
  * @param value
  * @return
- * if op is 'DS_COMP_SIZE', return size of completion result.
- * otherwise, return always 0.
+ * if failed or no completion result, return 0.
+ * if op is 'DS_COMP_SIZE' or 'DS_COMP_INVOKE', return size of completion result.
+ * otherwise, return always 1.
  */
-unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
+unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
 
 /* for line editing (history, prompt) */
 
@@ -358,17 +359,17 @@ typedef enum {
 } DSLineEditOp;
 
 /**
- * do line edit operation
+ * do line edit op
  * @param st
  * @param op
  * @param index
  * @param buf
  * @return
- * if failed, return 0.
+ * if failed or not set EDIT_HOOK, return 0.
  * if op is DS_EDIT_HIST_SIZE, return size of history.
  * otherwise, return non-zero value
  */
-unsigned int DSState_lineEditOp(DSState *st, DSLineEditOp op, int index, const char **buf);
+unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const char **buf);
 
 #ifdef __cplusplus
 }
