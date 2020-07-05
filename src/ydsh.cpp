@@ -370,7 +370,37 @@ static void loadEmbeddedScript(DSState *state) {
 // ##     public api of DSState     ##
 // ###################################
 
+#define GUARD_TRUE(C, ...) \
+    do { if(C) { return __VA_ARGS__; } } while(false)
+
+#define GEN_CASE(E) case E:
+
+#define CHECK_ENUM_RANGE(val, EACH_ENUM) \
+    ({ \
+        bool __ret = false; \
+        switch(val) { \
+        EACH_ENUM(GEN_CASE) \
+            __ret = true; break; \
+        } \
+        __ret; \
+    })
+
+#define GUARD_ENUM_RANGE(val, EACH_ENUM, ...) \
+    GUARD_TRUE(!CHECK_ENUM_RANGE(val, EACH_ENUM), ##__VA_ARGS__)
+
+#define GUARD_NULL(arg, ...) GUARD_TRUE(arg == nullptr, ##__VA_ARGS__)
+
+
 DSState *DSState_createWithMode(DSExecMode mode) {
+#define EACH_DS_EXEC_MODE(OP) \
+    OP(DS_EXEC_MODE_NORMAL) \
+    OP(DS_EXEC_MODE_PARSE_ONLY) \
+    OP(DS_EXEC_MODE_CHECK_ONLY) \
+    OP(DS_EXEC_MODE_COMPILE_ONLY)
+
+    GUARD_ENUM_RANGE(mode, EACH_DS_EXEC_MODE, nullptr);
+#undef EACH_DS_EXEC_MODE
+
     auto *ctx = new DSState();
     initBuiltinVar(*ctx);
     loadEmbeddedScript(ctx);
@@ -388,18 +418,22 @@ void DSState_delete(DSState **st) {
 }
 
 DSExecMode DSState_mode(const DSState *st) {
+    GUARD_NULL(st, DS_EXEC_MODE_NORMAL);
     return st->execMode;
 }
 
 void DSState_setLineNum(DSState *st, unsigned int lineNum) {
+    GUARD_NULL(st);
     st->lineNum = lineNum;
 }
 
 unsigned int DSState_lineNum(const DSState *st) {
+    GUARD_NULL(st, 0);
     return st->lineNum;
 }
 
 void DSState_setShellName(DSState *st, const char *shellName) {
+    GUARD_NULL(st);
     if(shellName != nullptr) {
         st->setGlobal(BuiltinVarOffset::POS_0, DSValue::createStr(shellName));
     }
@@ -407,6 +441,7 @@ void DSState_setShellName(DSState *st, const char *shellName) {
 
 // set positional parameters
 static void finalizeScriptArg(DSState *st) {
+    assert(st);
     auto &array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
 
     // update argument size
@@ -434,29 +469,41 @@ static void finalizeScriptArg(DSState *st) {
 }
 
 void DSState_setArguments(DSState *st, char *const *args) {
-    if(args == nullptr) {
-        return;
-    }
+    GUARD_NULL(st);
 
     // clear previous arguments
     typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS)).refValues().clear();
 
-    for(unsigned int i = 0; args[i] != nullptr; i++) {
-        auto &array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
-        array.append(DSValue::createStr(args[i]));
+    if(args) {
+        for(unsigned int i = 0; args[i] != nullptr; i++) {
+            auto &array = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::ARGS));
+            array.append(DSValue::createStr(args[i]));
+        }
     }
     finalizeScriptArg(st);
 }
 
 int DSState_getExitStatus(const DSState *st) {
+    GUARD_NULL(st, 0);
     return st->getMaskedExitStatus();
 }
 
 void DSState_setExitStatus(DSState *st, int status) {
+    GUARD_NULL(st);
     st->setExitStatus(status);
 }
 
 int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
+    GUARD_NULL(st, -1);
+
+#define EACH_DSDUMP_KIND(OP) \
+    OP(DS_DUMP_KIND_UAST) \
+    OP(DS_DUMP_KIND_AST) \
+    OP(DS_DUMP_KIND_CODE) \
+
+    GUARD_ENUM_RANGE(kind, EACH_DSDUMP_KIND, -1);
+#undef EACH_DSDUMP_KIND
+
     FilePtr file;
     if(target != nullptr) {
         file.reset(strlen(target) == 0 ? fdopen(fcntl(STDOUT_FILENO, F_DUPFD_CLOEXEC, 0), "w") : fopen(target, "we"));
@@ -469,6 +516,8 @@ int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
 }
 
 unsigned short DSState_option(const DSState *st) {
+    GUARD_NULL(st, 0);
+
     unsigned short option = 0;
 
     // get compile option
@@ -490,6 +539,8 @@ unsigned short DSState_option(const DSState *st) {
 }
 
 void DSState_setOption(DSState *st, unsigned short optionSet) {
+    GUARD_NULL(st);
+
     // set compile option
     if(hasFlag(optionSet, DS_OPTION_ASSERT)) {
         setFlag(st->compileOption, CompileOption::ASSERT);
@@ -509,6 +560,8 @@ void DSState_setOption(DSState *st, unsigned short optionSet) {
 }
 
 void DSState_unsetOption(DSState *st, unsigned short optionSet) {
+    GUARD_NULL(st);
+
     // unset compile option
     if(hasFlag(optionSet, DS_OPTION_ASSERT)) {
         unsetFlag(st->compileOption, CompileOption::ASSERT);
@@ -537,6 +590,9 @@ void DSError_release(DSError *e) {
 }
 
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
+    GUARD_NULL(st, 0);
+    GUARD_NULL(data, 0);
+
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName,
             ByteBuffer(data, data + size), getCWD());
     lexer.setLineNumOffset(st->lineNum);
@@ -558,6 +614,8 @@ static void reportFileError(const char *sourceName, bool isIO, int errNum, DSErr
 }
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
+    GUARD_NULL(st, 0);
+
     FilePtr filePtr;
     CStrPtr scriptDir;
     if(sourceName == nullptr) {
@@ -611,6 +669,9 @@ static void appendAsEscaped(std::string &line, const char *path) {
 }
 
 int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e) {
+    GUARD_NULL(st, 0);
+    GUARD_NULL(fileName, 0);
+
     CStrPtr scriptDir;
     if(!hasFlag(option, DS_MOD_FULLPATH)) {
         scriptDir = getCWD();
@@ -627,9 +688,9 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned short option,
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
-    if(st->execMode != DS_EXEC_MODE_NORMAL) {
-        return 0;   // do nothing.
-    }
+    GUARD_NULL(st, 0);
+    GUARD_TRUE(st->execMode != DS_EXEC_MODE_NORMAL, 0);
+    GUARD_NULL(argv, 0);
 
     std::vector<DSValue> values;
     for(; *argv != nullptr; argv++) {
@@ -675,9 +736,7 @@ unsigned int DSState_featureBit() {
 }
 
 unsigned int DSState_completionOp(DSState *st, DSCompletionOp op, unsigned int index, const char **value) {
-    if(st == nullptr) {
-        return 0;
-    }
+    GUARD_NULL(st, 0);
 
     auto &compreply = typeAs<ArrayObject>(st->getGlobal(BuiltinVarOffset::COMPREPLY));
 

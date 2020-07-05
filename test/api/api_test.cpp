@@ -6,6 +6,7 @@
 #include <ydsh/ydsh.h>
 #include <config.h>
 #include <misc/fatal.h>
+#include <misc/resource.hpp>
 #include <constant.h>
 
 #include <pwd.h>
@@ -24,33 +25,39 @@ std::array<char *, sizeof...(T) + 2> make_argv(const char *name, T ...args) {
 
 TEST(BuiltinExecTest, case1) {
     DSState *state = DSState_create();
+    auto cleanup = ydsh::finally([&]{
+        DSState_delete(&state);
+    });
 
     int ret = DSState_exec(state, make_argv("echo", "hello").data());
     ASSERT_EQ(0, ret);
-
-    DSState_delete(&state);
 }
 
 TEST(BuiltinExecTest, case2) {
     DSState *state = DSState_create();
+    auto cleanup = ydsh::finally([&]{
+        DSState_delete(&state);
+    });
 
     int ret = DSState_exec(state, make_argv("fheruifh", "hello").data());
     ASSERT_EQ(1, ret);
-
-    DSState_delete(&state);
 }
 
 TEST(BuiltinExecTest, case3) {
     DSState *state = DSState_create();
+    auto cleanup = ydsh::finally([&]{
+        DSState_delete(&state);
+    });
 
     int ret = DSState_exec(state, make_argv("exit", "12000").data());
     ASSERT_EQ(224, ret);
-
-    DSState_delete(&state);
 }
 
 TEST(BuiltinExecTest, shctl) {
     DSState *state = DSState_create();
+    auto cleanup = ydsh::finally([&]{
+        DSState_delete(&state);
+    });
 
     int ret = DSState_exec(state, make_argv("shctl", "is-interactive").data());
     ASSERT_EQ(1, ret);
@@ -58,9 +65,36 @@ TEST(BuiltinExecTest, shctl) {
     DSState_setOption(state, DS_OPTION_INTERACTIVE);
     ret = DSState_exec(state, make_argv("shctl", "is-interactive").data());
     ASSERT_EQ(0, ret);
+}
 
+TEST(BuiltinExecTest, donothing1) {
+    DSState *state = DSState_createWithMode(DS_EXEC_MODE_CHECK_ONLY);
+    auto cleanup = ydsh::finally([&]{
+        DSState_delete(&state);
+    });
 
-    DSState_delete(&state);
+    int ret = DSState_exec(state, make_argv("jfriejfieori").data());
+    ASSERT_EQ(0, ret);
+}
+
+TEST(BuiltinExecTest, donothing2) {
+    DSState *state = DSState_createWithMode(DS_EXEC_MODE_PARSE_ONLY);
+    auto cleanup = ydsh::finally([&]{
+        DSState_delete(&state);
+    });
+
+    int ret = DSState_exec(state, make_argv("jfriejfieori").data());
+    ASSERT_EQ(0, ret);
+}
+
+TEST(BuiltinExecTest, donothing3) {
+    DSState *state = DSState_createWithMode(DS_EXEC_MODE_COMPILE_ONLY);
+    auto cleanup = ydsh::finally([&]{
+        DSState_delete(&state);
+    });
+
+    int ret = DSState_exec(state, make_argv("jfriejfieori").data());
+    ASSERT_EQ(0, ret);
 }
 
 struct APITest : public ExpectOutput, public ydsh::TempFileFactory {
@@ -75,13 +109,45 @@ struct APITest : public ExpectOutput, public ydsh::TempFileFactory {
     }
 };
 
+TEST_F(APITest, create) {
+    DSState *st = DSState_createWithMode(static_cast<DSExecMode>(100));
+    ASSERT_FALSE(st);
+}
+
+TEST_F(APITest, del) {
+    DSState_delete(nullptr);    // do nothing
+}
+
+TEST_F(APITest, mode) {
+    DSExecMode modes[] = {
+            DS_EXEC_MODE_NORMAL,
+            DS_EXEC_MODE_PARSE_ONLY,
+            DS_EXEC_MODE_CHECK_ONLY,
+            DS_EXEC_MODE_COMPILE_ONLY,
+    };
+    for(auto &m : modes) {
+        auto st = DSState_createWithMode(m);
+        auto cleaup = ydsh::finally([&]{
+            DSState_delete(&st);
+        });
+        ASSERT_EQ(m, DSState_mode(st));
+    }
+    ASSERT_EQ(0, DSState_mode(nullptr));
+}
+
 TEST_F(APITest, version) {
     DSVersion version;
-    DSState_version(&version);
+    const char *v = DSState_version(&version);
 
     ASSERT_EQ((unsigned int)X_INFO_MAJOR_VERSION, version.major);
     ASSERT_EQ((unsigned int)X_INFO_MINOR_VERSION, version.minor);
     ASSERT_EQ((unsigned int)X_INFO_PATCH_VERSION, version.patch);
+    ASSERT_TRUE(v);
+    ASSERT_TRUE(ydsh::StringRef(v).startsWith("ydsh, version "));
+
+    v = DSState_version(nullptr);
+    ASSERT_TRUE(v);
+    ASSERT_TRUE(ydsh::StringRef(v).startsWith("ydsh, version "));
 }
 
 TEST_F(APITest, config) {
@@ -89,6 +155,7 @@ TEST_F(APITest, config) {
 }
 
 TEST_F(APITest, lineNum1) {
+    ASSERT_EQ(0u, DSState_lineNum(nullptr));
     ASSERT_EQ(1u, DSState_lineNum(this->state));
 
     const char *str = "12 + 32\n $true\n";
@@ -98,6 +165,9 @@ TEST_F(APITest, lineNum1) {
     DSState_setLineNum(this->state, 49);
     str = "23";
     DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
+    ASSERT_EQ(50u, DSState_lineNum(this->state));
+
+    DSState_setLineNum(nullptr, 1000);
     ASSERT_EQ(50u, DSState_lineNum(this->state));
 }
 
@@ -131,6 +201,113 @@ echoechodwe \
     ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, e.kind);
     ASSERT_EQ(5, e.lineNum);
     DSError_release(&e);
+}
+
+TEST_F(APITest, shellName) {
+    DSError e;
+    const char *src = "assert $0 == 'ydsh'";
+    int s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    DSError_release(&e);
+
+    DSState_setShellName(this->state, "12345");
+    src = "assert $0 == '12345'";
+    s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    DSError_release(&e);
+
+    DSState_setShellName(this->state, nullptr); // do nothing
+    src = "assert $0 == '12345'";
+    s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    DSError_release(&e);
+
+    DSState_setShellName(nullptr, "ddd"); // do nothing
+}
+
+TEST_F(APITest, arg) {
+    DSError e;
+    const char *init = R"(
+    assert $@.size() == 0
+    assert $1.empty()
+    assert $2.empty()
+    assert $3.empty()
+    assert $4.empty()
+    assert $5.empty()
+    assert $6.empty()
+    assert $7.empty()
+    assert $8.empty()
+    assert $9.empty()
+)";
+    int s = DSState_eval(this->state, "(string)", init, strlen(init), &e);
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    DSError_release(&e);
+
+    // set arguments
+    DSState_setArguments(nullptr, nullptr); // do nothing
+    DSState_setArguments(this->state, make_argv("a", "b", "c", "d", "e").data());
+
+    const char *src = R"(
+    assert $@.size() == 5
+    assert $1 == 'a' && $1 == $@[0]
+    assert $2 == 'b' && $2 == $@[1]
+    assert $3 == 'c' && $3 == $@[2]
+    assert $4 == 'd' && $4 == $@[3]
+    assert $5 == 'e' && $5 == $@[4]
+    assert $6.empty()
+    assert $7.empty()
+    assert $8.empty()
+    assert $9.empty()
+)";
+    s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    DSError_release(&e);
+
+    // clear
+    DSState_setArguments(this->state, nullptr);
+    s = DSState_eval(this->state, "(string)", init, strlen(init), &e);
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    DSError_release(&e);
+
+    // set arguments
+    DSState_setArguments(this->state,
+            make_argv("aa", "bb", "ccc", "ddd", "eee", "f",
+                    "ggg", "hhhh", "i", "100", "hey").data());
+    src = R"(
+    assert $@.size() == 11
+    assert $1 == 'aa' && $1 == $@[0]
+    assert $2 == 'bb' && $2 == $@[1]
+    assert $3 == 'ccc' && $3 == $@[2]
+    assert $4 == 'ddd' && $4 == $@[3]
+    assert $5 == 'eee' && $5 == $@[4]
+    assert $6 == 'f'   && $6 == $@[5]
+    assert $7 == 'ggg' && $7 == $@[6]
+    assert $8 == 'hhhh'&& $8 == $@[7]
+    assert $9 == 'i' && $9 == $@[8]
+    assert $@[9] == '100'
+    assert $@[10] == 'hey'
+)";
+    s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
+    ASSERT_EQ(0, s);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    DSError_release(&e);
+}
+
+TEST_F(APITest, dump) {
+    int s = DSState_setDumpTarget(this->state, DS_DUMP_KIND_AST, "./fjreijfreoai/jfraeijfriea/53452");
+    ASSERT_EQ(-1, s);
+
+    s = DSState_setDumpTarget(nullptr, DS_DUMP_KIND_AST, "hoge");
+    ASSERT_EQ(-1, s);
+
+    s = DSState_setDumpTarget(this->state, static_cast<DSDumpKind>(10000), "hoge");
+    ASSERT_EQ(-1, s);
 }
 
 static const char *getPrompt(DSState *st, unsigned int n) {
@@ -193,41 +370,77 @@ static std::vector<std::string> filter(const std::vector<std::string> &v, const 
 
 TEST_F(APITest, complete) {
     // null arguments
-    DSState_completionOp(nullptr, DS_COMP_INVOKE, 1, nullptr);  // do nothing
+    unsigned int s = DSState_completionOp(nullptr, DS_COMP_INVOKE, 1, nullptr);  // do nothing
+    ASSERT_EQ(0, s);
 
     const char *line = "echo ~";
-    DSState_completionOp(this->state, DS_COMP_INVOKE, 6, &line);
+    s = DSState_completionOp(this->state, DS_COMP_INVOKE, 6, &line);
+    ASSERT_EQ(0, s);
+
+    s = DSState_completionOp(this->state, DS_COMP_INVOKE, 0, &line);
+    ASSERT_EQ(0, s);
+
+    s = DSState_completionOp(this->state, DS_COMP_INVOKE, 6, nullptr);
+    ASSERT_EQ(0, s);
+
+    const char *ss = nullptr;
+    s = DSState_completionOp(this->state, DS_COMP_INVOKE, 6, &ss);
+    ASSERT_EQ(0, s);
+
+    // invalid op
+    s = DSState_completionOp(this->state, static_cast<DSCompletionOp>(10000), 6, &line);  // do nothing
+    ASSERT_EQ(0, s);
 
     unsigned int size = DSState_completionOp(this->state, DS_COMP_SIZE, 0, nullptr);
     ASSERT_TRUE(size > 0);
-    DSState_completionOp(this->state, DS_COMP_GET, size, &line);
+    s = DSState_completionOp(this->state, DS_COMP_GET, size, &line);
     ASSERT_STREQ(nullptr, line);
+    ASSERT_EQ(0, s);
+    s = DSState_completionOp(this->state, DS_COMP_GET, 0, nullptr);
+    ASSERT_EQ(0, s);
 
     auto expect = tilde();
     for(auto &e : expect) { std::cerr << e << std::endl; }
     ASSERT_EQ(expect.size(), size);
     for(unsigned int i = 0; i < size; i++) {
         const char *ret = nullptr;
-        DSState_completionOp(this->state, DS_COMP_GET, i, &ret);
+        s = DSState_completionOp(this->state, DS_COMP_GET, i, &ret);
         ASSERT_STREQ(expect[i].c_str(), ret);
+        ASSERT_EQ(0, s);
     }
-    DSState_completionOp(this->state, DS_COMP_CLEAR, 0, nullptr);
+    s = DSState_completionOp(this->state, DS_COMP_CLEAR, 0, nullptr);
+    ASSERT_EQ(0, s);
+    s = DSState_completionOp(this->state, DS_COMP_SIZE, 0, nullptr);
+    ASSERT_EQ(0, s);
 
     line = "echo ~r";
-    DSState_completionOp(this->state, DS_COMP_INVOKE, 7, &line);
+    s = DSState_completionOp(this->state, DS_COMP_INVOKE, 7, &line);
+    ASSERT_EQ(0, s);
     size = DSState_completionOp(this->state, DS_COMP_SIZE, 0, nullptr);
     expect = filter(expect, "~r");
     ASSERT_EQ(expect.size(), size);
     for(unsigned int i = 0; i < size; i++) {
         const char *ret = nullptr;
-        DSState_completionOp(this->state, DS_COMP_GET, i, &ret);
+        s = DSState_completionOp(this->state, DS_COMP_GET, i, &ret);
         ASSERT_STREQ(expect[i].c_str(), ret);
+        ASSERT_EQ(0, s);
     }
 }
 
 TEST_F(APITest, option) {
+    ASSERT_EQ(0, DSState_option(nullptr));
     ASSERT_EQ(DS_OPTION_ASSERT, DSState_option(this->state));
     DSState_unsetOption(this->state, DS_OPTION_ASSERT);
+    ASSERT_EQ(0, DSState_option(this->state));
+    DSState_setOption(nullptr, 0);  // do nothing
+    DSState_unsetOption(nullptr, 0);  // do nothing
+
+    const unsigned short option = DS_OPTION_ASSERT | DS_OPTION_INTERACTIVE | DS_OPTION_TRACE_EXIT | DS_OPTION_JOB_CONTROL;
+    DSState_setOption(this->state, option);
+    ASSERT_EQ(option, DSState_option(this->state));
+    DSState_unsetOption(this->state, DS_OPTION_TRACE_EXIT);
+    ASSERT_EQ(DS_OPTION_ASSERT | DS_OPTION_INTERACTIVE | DS_OPTION_JOB_CONTROL, DSState_option(this->state));
+    DSState_unsetOption(this->state, option);
     ASSERT_EQ(0, DSState_option(this->state));
 }
 
@@ -238,7 +451,9 @@ TEST_F(APITest, status) {
     DSState_setExitStatus(this->state, 34);
     s = DSState_getExitStatus(this->state);
     ASSERT_EQ(34, s);
+    ASSERT_EQ(0, DSState_getExitStatus(nullptr));
 
+    DSState_setExitStatus(nullptr, 3400);   // do nothing
     DSState_setExitStatus(this->state, 3400);
     s = DSState_getExitStatus(this->state);
     ASSERT_EQ(72, s);

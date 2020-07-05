@@ -42,6 +42,7 @@ typedef enum {
  * you can call DSState_delete() to release object.
  * @param mode
  * @return
+ * if specified invalid mode, return null
  */
 DSState *DSState_createWithMode(DSExecMode mode);
 
@@ -57,8 +58,9 @@ void DSState_delete(DSState **st);
 /**
  * get DSExecMode.
  * @param st
- * not null
+ * may be null
  * @return
+ * if st is null, return always DS_EXEC_MODE_NORMAL
  */
 DSExecMode DSState_mode(const DSState *st);
 
@@ -66,6 +68,7 @@ DSExecMode DSState_mode(const DSState *st);
  * affect DSState_eval() result. (not affect DSState_loadAndEval())
  * @param st
  * @param lineNum
+ * if st is null, do nothing
  */
 void DSState_setLineNum(DSState *st, unsigned int lineNum);
 
@@ -73,13 +76,14 @@ void DSState_setLineNum(DSState *st, unsigned int lineNum);
  * get line number after latest evaluation or setLineNum().
  * @param st
  * @return
+ * if st is null, return always 0
  */
 unsigned int DSState_lineNum(const DSState *st);
 
 /**
  * set shell name ($0).
  * @param st
- * not null
+ * if null, do nothing.
  * @param shellName
  * if null, do nothing.
  */
@@ -88,24 +92,24 @@ void DSState_setShellName(DSState *st, const char *shellName);
 /**
  * set arguments ($@).
  * @param st
- * not null.
+ * if null, do nothing
  * @param args
- * if null, do nothing.
+ * if null, clear '$@'
  */
 void DSState_setArguments(DSState *st, char *const *args);
 
 /**
  * get current exit status ($? & 0xFF)
  * @param st
- * not null
  * @return
+ * if null, return always 0
  */
 int DSState_getExitStatus(const DSState *st);
 
 /**
  * update exit status
  * @param st
- * not null
+ * if null, do nothing
  * @param status
  */
 void DSState_setExitStatus(DSState *st, int status);
@@ -126,7 +130,7 @@ typedef enum {
  * if empty string, treat as stdout.
  * @return
  * if success, return 0.
- * if cannot open target, do nothing and return -1.
+ * if cannot open target or invalid parameter, do nothing and return -1.
  */
 int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target);
 
