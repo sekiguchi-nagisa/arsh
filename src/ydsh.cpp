@@ -742,14 +742,16 @@ unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index
 
     switch(op) {
     case DS_COMP_INVOKE: {
-        if(value == nullptr || *value == nullptr || index == 0) {
-            return 0;
+        StringRef ref;
+        if(value != nullptr && *value != nullptr) {
+            const char *str = *value;
+            unsigned int size = strlen(str);
+            ref = StringRef(str, index < size ? index : size);
         }
-
         auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-        completeLine(*st, *value, index);
+        unsigned int size = completeLine(*st, ref);
         st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
-        break;
+        return size;
     }
     case DS_COMP_GET:
         if(value == nullptr) {

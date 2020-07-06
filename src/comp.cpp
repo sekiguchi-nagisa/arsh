@@ -620,7 +620,7 @@ private:
     };
 
 public:
-    CompleterFactory(DSState &st, const char *data, unsigned int size);
+    CompleterFactory(DSState &st, StringRef ref);
 
 private:
     std::unique_ptr<Completer> createModNameCompleter(CompType type) const {
@@ -826,10 +826,10 @@ public:
 // ##     CompleterFactory     ##
 // ##############################
 
-CompleterFactory::CompleterFactory(DSState &st, const char *data, unsigned int size) :
-        state(st), cursor(size),
-        lexer("<line>", ByteBuffer(data, data + size), getCWD()), parser(this->lexer) {
-    LOG(DUMP_CONSOLE, "line: %s, cursor: %u", std::string(data, size).c_str(), size);
+CompleterFactory::CompleterFactory(DSState &st, StringRef ref) :
+        state(st), cursor(ref.size()),
+        lexer("<line>", ByteBuffer(ref.begin(), ref.end()), getCWD()), parser(this->lexer) {
+    LOG(DUMP_CONSOLE, "line: %s, cursor: %zu", ref.toString().c_str(), ref.size());
     this->parser.setTracker(&this->tracker);
     this->node = this->applyAndGetLatest();
 }
@@ -1021,11 +1021,11 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
     return nullptr;
 }
 
-void completeLine(DSState &st, const char *data, unsigned int size) {
+unsigned int completeLine(DSState &st, StringRef ref) {
     auto result = DSValue::create<ArrayObject>(st.symbolTable.get(TYPE::StringArray));
     auto &compreply = typeAs<ArrayObject>(result);
 
-    CompleterFactory factory(st, data, size);
+    CompleterFactory factory(st, ref);
     auto comp = factory();
     if(comp) {
         (*comp)(compreply);
@@ -1039,6 +1039,7 @@ void completeLine(DSState &st, const char *data, unsigned int size) {
 
     // override COMPREPLY
     st.setGlobal(toIndex(BuiltinVarOffset::COMPREPLY), std::move(result));
+    return values.size();
 }
 
 } // namespace ydsh

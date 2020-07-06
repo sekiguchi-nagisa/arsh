@@ -1178,7 +1178,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     }
 
     auto strRef = argvObj.getValues()[1].asStrRef();
-    completeLine(state, strRef.data(), strRef.size());
+    completeLine(state, strRef);
     auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for(const auto &e : ret.getValues()) {
         fputs(e.asCStr(), stdout);

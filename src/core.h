@@ -228,7 +228,15 @@ void expandTilde(std::string &str, bool useHOME = false);
  * @param size
  * size of data
  */
-void completeLine(DSState &st, const char *data, unsigned int size);
+
+/**
+ * perform completion
+ * @param st
+ * @param ref
+ * @return
+ * return size of completion result. (equivalent to size of $COMPREPLY)
+ */
+unsigned int completeLine(DSState &st, StringRef ref);
 
 class SignalGuard {
 private:

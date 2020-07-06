@@ -411,9 +411,6 @@ TEST_F(APITest, complete) {
     ASSERT_EQ(0, s);
 
     const char *line = "echo ~";
-    s = DSState_complete(this->state, DS_COMP_INVOKE, 6, &line);
-    ASSERT_EQ(0, s);
-
     s = DSState_complete(this->state, DS_COMP_INVOKE, 0, &line);
     ASSERT_EQ(0, s);
 
@@ -429,17 +426,20 @@ TEST_F(APITest, complete) {
     ASSERT_EQ(0, s);
 
     unsigned int size = DSState_complete(this->state, DS_COMP_SIZE, 0, nullptr);
-    ASSERT_TRUE(size > 0);
+    ASSERT_EQ(0, size);
     s = DSState_complete(this->state, DS_COMP_GET, size, &line);
     ASSERT_STREQ(nullptr, line);
     ASSERT_EQ(0, s);
     s = DSState_complete(this->state, DS_COMP_GET, 0, nullptr);
     ASSERT_EQ(0, s);
 
+    line = "echo ~";
+    s = DSState_complete(this->state, DS_COMP_INVOKE, 6, &line);
+    ASSERT_TRUE(s > 0);
     auto expect = tilde();
     for(auto &e : expect) { std::cerr << e << std::endl; }
-    ASSERT_EQ(expect.size(), size);
-    for(unsigned int i = 0; i < size; i++) {
+    ASSERT_EQ(expect.size(), s);
+    for(unsigned int i = 0; i < s; i++) {
         const char *ret = nullptr;
         s = DSState_complete(this->state, DS_COMP_GET, i, &ret);
         ASSERT_STREQ(expect[i].c_str(), ret);
@@ -452,7 +452,7 @@ TEST_F(APITest, complete) {
 
     line = "echo ~r";
     s = DSState_complete(this->state, DS_COMP_INVOKE, 7, &line);
-    ASSERT_EQ(0, s);
+    ASSERT_TRUE(s > 0);
     size = DSState_complete(this->state, DS_COMP_SIZE, 0, nullptr);
     expect = filter(expect, "~r");
     ASSERT_EQ(expect.size(), size);
