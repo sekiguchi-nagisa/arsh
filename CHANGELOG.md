@@ -45,9 +45,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Completer
+- always set new ``COMPREPLY`` variable even if completion result is empty
+
 #### API
 - when abort symbol table, also abort loaded script path
 - not crash public api when ``DSState`` parameter is null
+
 
 ## [0.18.2] - 2020-07-04
 

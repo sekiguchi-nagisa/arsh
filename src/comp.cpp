@@ -1022,23 +1022,23 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
 }
 
 void completeLine(DSState &st, const char *data, unsigned int size) {
+    auto result = DSValue::create<ArrayObject>(st.symbolTable.get(TYPE::StringArray));
+    auto &compreply = typeAs<ArrayObject>(result);
+
     CompleterFactory factory(st, data, size);
     auto comp = factory();
     if(comp) {
-        auto result = DSValue::create<ArrayObject>(st.symbolTable.get(TYPE::StringArray));
-        auto &compreply = typeAs<ArrayObject>(result);
-
         (*comp)(compreply);
-        auto &values = compreply.refValues();
-        compreply.sortAsStrArray();
-        auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
-            return x.asStrRef() == y.asStrRef();
-        });
-        values.erase(iter, values.end());
-
-        // override COMPREPLY
-        st.setGlobal(toIndex(BuiltinVarOffset::COMPREPLY), std::move(result));
     }
+    auto &values = compreply.refValues();
+    compreply.sortAsStrArray();
+    auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
+        return x.asStrRef() == y.asStrRef();
+    });
+    values.erase(iter, values.end());
+
+    // override COMPREPLY
+    st.setGlobal(toIndex(BuiltinVarOffset::COMPREPLY), std::move(result));
 }
 
 } // namespace ydsh
