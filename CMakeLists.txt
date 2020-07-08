@@ -116,7 +116,6 @@ show_option(USE_EXTRA_TEST)
 check_program(git)
 check_program(autoreconf)
 check_program(aclocal)
-check_program(libtool)
 
 
 #++++++++++++++++++++++#
