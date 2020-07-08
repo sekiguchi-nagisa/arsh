@@ -24,4 +24,8 @@ macro(getRE2C)
 
     execute_process(COMMAND ${RE2C_SRC}/configure WORKING_DIRECTORY ${re2c_BINARY_DIR})
     execute_process(COMMAND make WORKING_DIRECTORY ${re2c_BINARY_DIR})
+
+    if(NOT EXISTS "${RE2C_BIN}")
+        message(FATAL_ERROR "rec2 is not found")
+    endif()
 endmacro()
