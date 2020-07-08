@@ -86,7 +86,7 @@ function _default_search($q : String) : String {
     if $q.empty() { $arg.clear(); }
     return "$(for $e in $HISTORY {
         echo $e
-    } | fzf --inline-info $arg)"
+    } | sort | uniq | fzf --inline-info $arg)"
 }
 
 function _search($q : String) : String {
