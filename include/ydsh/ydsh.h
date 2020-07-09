@@ -211,7 +211,6 @@ void DSError_release(DSError *e);
  * evaluate string. if e is not null, set error info.
  * SCRIPT_DIR is always current working directory
  * @param st
- * not null
  * @param sourceName
  * if null, source name is treated as standard input.
  * @param data
@@ -221,8 +220,9 @@ void DSError_release(DSError *e);
  * @param e
  * may be null
  * @return
- * exit status of most recently executed command(include exit).
+ * exit status of most recently executed command(include exit, 0~255).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
+ * if st or data is null, return -1 and not set error
  */
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e);
 
@@ -231,16 +231,16 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
  * set SCRIPT_DIR to dirname of fileName.
  * before evaluation reset line number.
  * @param st
- * not null.
  * @param fileName
  * if null, file name is treated as standard input
  * @param e
  * may be null.
  * @return
- * exit status of most recently executed command(include exit).
+ * exit status of most recently executed command(include exit, 0~255).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  * if fileName is already loaded file, return 1.
  * if fileName is already loaded module, return always 0 and do nothing.
+ * if st is null, return -1 and not set error
  */
 int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
 
@@ -268,9 +268,10 @@ int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
  * @param e
  * may be null
  * @return
- * exit status of most recently executed command(include exit).
+ * exit status of most recently executed command(include exit, 0~255).
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  * if fileName is already loaded module, return always 0 and do nothing.
+ * if st or fileName is null, return -1 and not set error
  */
 int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e);
 
@@ -282,8 +283,9 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned short option,
  * first element must be command name.
  * last element must be null.
  * @return
- * exit status of executed command.
+ * exit status of executed command (0~255).
  * if command not found, return 1.
+ * if st or argv is null, return -1
  */
 int DSState_exec(DSState *st, char *const *argv);
 

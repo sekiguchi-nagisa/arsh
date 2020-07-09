@@ -53,6 +53,19 @@ TEST(BuiltinExecTest, case3) {
     ASSERT_EQ(224, ret);
 }
 
+TEST(BuiltinExecTest, case4) {
+    DSState *state = DSState_create();
+    auto cleanup = ydsh::finally([&]{
+        DSState_delete(&state);
+    });
+
+    int ret = DSState_exec(state, nullptr);
+    ASSERT_EQ(-1, ret);
+
+    ret = DSState_exec(nullptr, make_argv("exit", "12000").data());
+    ASSERT_EQ(-1, ret);
+}
+
 TEST(BuiltinExecTest, shctl) {
     DSState *state = DSState_create();
     auto cleanup = ydsh::finally([&]{
@@ -308,6 +321,17 @@ TEST_F(APITest, dump) {
 
     s = DSState_setDumpTarget(this->state, static_cast<DSDumpKind>(10000), "hoge");
     ASSERT_EQ(-1, s);
+}
+
+TEST_F(APITest, eval) {
+    int ret = DSState_eval(nullptr, nullptr, "echo hello", strlen("echo hello"), nullptr);
+    ASSERT_EQ(-1, ret);
+
+    ret = DSState_eval(this->state, nullptr, nullptr, strlen("echo hello"), nullptr);
+    ASSERT_EQ(-1, ret);
+
+    ret = DSState_loadAndEval(nullptr, nullptr, nullptr);
+    ASSERT_EQ(-1, ret);
 }
 
 TEST_F(APITest, prompt) {
@@ -624,6 +648,14 @@ static Output invoke(Func func) {
     return ProcBuilder::spawn(config, [func]() {
         return func();
     }).waitAndGetResult(true);
+}
+
+TEST_F(APITest, module1) {
+    int ret = DSState_loadModule(nullptr, "helllo", 0, nullptr);
+    ASSERT_EQ(-1, ret);
+
+    ret = DSState_loadModule(this->state, nullptr, 0, nullptr);
+    ASSERT_EQ(-1, ret);
 }
 
 TEST_F(APITest, module2) {

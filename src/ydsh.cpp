@@ -590,8 +590,8 @@ void DSError_release(DSError *e) {
 }
 
 int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e) {
-    GUARD_NULL(st, 0);
-    GUARD_NULL(data, 0);
+    GUARD_NULL(st, -1);
+    GUARD_NULL(data, -1);
 
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName,
             ByteBuffer(data, data + size), getCWD());
@@ -614,7 +614,7 @@ static void reportFileError(const char *sourceName, bool isIO, int errNum, DSErr
 }
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
-    GUARD_NULL(st, 0);
+    GUARD_NULL(st, -1);
 
     FilePtr filePtr;
     CStrPtr scriptDir;
@@ -669,8 +669,8 @@ static void appendAsEscaped(std::string &line, const char *path) {
 }
 
 int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e) {
-    GUARD_NULL(st, 0);
-    GUARD_NULL(fileName, 0);
+    GUARD_NULL(st, -1);
+    GUARD_NULL(fileName, -1);
 
     CStrPtr scriptDir;
     if(!hasFlag(option, DS_MOD_FULLPATH)) {
@@ -688,9 +688,9 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned short option,
 }
 
 int DSState_exec(DSState *st, char *const *argv) {
-    GUARD_NULL(st, 0);
+    GUARD_NULL(st, -1);
     GUARD_TRUE(st->execMode != DS_EXEC_MODE_NORMAL, 0);
-    GUARD_NULL(argv, 0);
+    GUARD_NULL(argv, -1);
 
     std::vector<DSValue> values;
     for(; *argv != nullptr; argv++) {
