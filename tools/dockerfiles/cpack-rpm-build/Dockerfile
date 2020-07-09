@@ -1,4 +1,4 @@
-FROM opensuse/leap:15.1
+FROM opensuse/leap:15.2
 RUN zypper refresh && zypper in -y pcre-devel gcc-c++ clang cmake git ninja autoconf automake libtool sudo rpm-build elfutils
 RUN useradd -m tux
 RUN groupadd -g 2001 admin && usermod -G admin tux  && echo '%admin ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
@@ -13,7 +13,7 @@ CMD DIR="$(pwd)" && \
     sudo chown -R tux:users $PROJECT && \
     sudo chmod -R 744 $PROJECT && \
     cd $PROJECT && \
-    sh tools/scripts/build_rpm.sh g++ && \
+    sh tools/scripts/build_rpm.sh clang++ && \
     sudo mkdir $DIR/build && \
     sudo cp build-rpm/*.rpm $DIR/build/ && \
     ls $DIR/build
