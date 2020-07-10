@@ -14,6 +14,7 @@ Language specification is subject to change without notice.
 * Linux x86-64
 * cmake 3.0 or later
 * autotools, libtool (for building re2c)
+  * if cmake 3.12 or later, no longer need theme
 * make/ninja
 * gcc/clang (need gnu++14 support)
 * libpcre
@@ -30,6 +31,7 @@ Language specification is subject to change without notice.
   * x86
   * AArch64
 * macOS
+  * x86-64
 * Windows x64
   * Cygwin
   * WSL
@@ -39,6 +41,7 @@ Language specification is subject to change without notice.
 ```sh
 $ cmake .
 $ make && make install
+$ echo source edit > ~/.ydshrc
 $ ydsh
 ```
 
