@@ -726,6 +726,16 @@ TEST_F(APITest, module5) {
                     "ydsh: [semantic error] module not found: `freijjfeir'"));
 }
 
+TEST_F(APITest, module6) {
+    auto fileName = this->createTempFile(R"(ss$ho"\hgoe
+        \ \
+)", "echo moduel!!; exit 56");
+    auto ret = invoke([&]{
+        return DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, nullptr);
+    });
+    ASSERT_NO_FATAL_FAILURE(this->expect(ret, 56, WaitStatus::EXITED, "moduel!!"));
+}
+
 struct Executor {
     std::string str;
     bool jobctrl;
