@@ -138,7 +138,7 @@ endif()
 download_project(
         PROJ                linenoise
         GIT_REPOSITORY      https://github.com/sekiguchi-nagisa/linenoise.git
-        GIT_TAG             5d5f5a6645e6e41bfc1485540787fe40c4e2171d
+        GIT_TAG             9294d08c7cdb6c7041c86e26077dd26ae770bc81
         GIT_PROGRESS        1
 )
 include_directories(${linenoise_SOURCE_DIR})
