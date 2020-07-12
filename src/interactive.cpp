@@ -214,27 +214,6 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
     return UnicodeUtil::utf8ToCodePoint(buf, bufSize, *codePoint);
 }
 
-static std::size_t encoding_strLen(const char *str) {
-    auto charWidth = UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
-    if(linenoiseEastAsianWidth() == 2) {
-        charWidth = UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH;
-    }
-
-    unsigned int size = 0;
-    const char *end = str + strlen(str);
-    for(const char *ptr = str; ptr != end;) {
-        int codePoint = 0;
-        unsigned int b = UnicodeUtil::utf8ToCodePoint(ptr, end, codePoint);
-        if(codePoint < 0) {
-            return strlen(str);
-        }
-        int codeSize = UnicodeUtil::width(codePoint, charWidth);
-        size += codeSize < 0 ? 0 : codeSize;
-        ptr += b;
-    }
-    return size;
-}
-
 static void completeCallback(const char *buf, size_t cursor, linenoiseCompletions *lc) {
     std::string actualBuf(*lineBuf);
     size_t actualCursor = actualBuf.size() + cursor;
@@ -314,8 +293,7 @@ int exec_interactive(DSState *dsState, const std::string &rcfile) {
     linenoiseSetEncodingFunctions(
             encoding_prevCharLen,
             encoding_nextCharLen,
-            encoding_readCode,
-            encoding_strLen);
+            encoding_readCode);
 
     linenoiseSetMultiLine(1);
 
