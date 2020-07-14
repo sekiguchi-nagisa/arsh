@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include <codegen.h>
+#include <misc/emitter.hpp>
 
 using namespace ydsh;
 using ByteCodeWriter = ydsh::CodeEmitter<true>;
