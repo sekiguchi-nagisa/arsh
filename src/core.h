@@ -364,6 +364,13 @@ inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {
  */
 int xexecve(const char *filePath, char *const *argv, char *const *envp, DSValue &redir);
 
+/**
+ * wrap '_exit'
+ * when coverage build, call '__gcov_flush()' before _exit
+ * @param exitStatus
+ */
+[[noreturn]] void terminate(int exitStatus);
+
 } // namespace ydsh
 
 #endif //YDSH_CORE_H

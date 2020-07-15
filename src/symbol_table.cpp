@@ -55,6 +55,7 @@ GlobalScope::GlobalScope(unsigned int &gvarCount) : gvarCount(gvarCount) {
                 "exit",
                 "exec",
                 "command",
+                "_exit",
         };
         for(auto &e : blacklist) {
             std::string name = CMD_SYMBOL_PREFIX;

@@ -39,6 +39,7 @@ static int builtin_check_env(DSState &state, ArrayObject &argvObj);
 static int builtin_complete(DSState &state, ArrayObject &argvObj);
 static int builtin_echo(DSState &state, ArrayObject &argvObj);
 static int builtin_exit(DSState &state, ArrayObject &argvObj);
+static int builtin__exit(DSState &state, ArrayObject &argvObj);
 static int builtin_false(DSState &state, ArrayObject &argvObj);
 static int builtin_fg_bg(DSState &state, ArrayObject &argvObj);
 static int builtin_hash(DSState &state, ArrayObject &argvObj);
@@ -69,6 +70,10 @@ static constexpr struct {
                 "    Options:\n"
                 "        -1    print to standard output\n"
                 "        -2    print to standard error"},
+        {"_exit", builtin__exit, "[n]",
+                "    Exit the shell with a status of N.  If N is omitted, the exit\n"
+                "    status is $?. Unlike exit, it causes normal program termination\n"
+                "    without cleaning the resources."},
         {"bg", builtin_fg_bg, "[job_spec ...]",
                 "    Move jobs to the background.\n"
                 "    If JOB_SPEC is not present, latest job is used."},
@@ -554,6 +559,11 @@ static int builtin_exit(DSState &state, ArrayObject &argvObj) {
     str += std::to_string(ret);
     raiseError(state, TYPE::_ShellExit, std::move(str), ret);
     return ret;
+}
+
+static int builtin__exit(DSState &state, ArrayObject &argvObj) {
+    int ret = parseExitStatus(state, argvObj);
+    terminate(ret);
 }
 
 static int builtin_true(DSState &, ArrayObject &) {

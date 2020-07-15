@@ -682,7 +682,7 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
     for(auto &argNode : node.getArgNodes()) {
         this->checkTypeAsExpr(*argNode);
     }
-    if(node.getNameNode().getValue() == "exit") {
+    if(node.getNameNode().getValue() == "exit" || node.getNameNode().getValue() == "_exit") {
         node.setType(this->symbolTable.get(TYPE::Nothing));
     } else {
         node.setType(this->symbolTable.get(TYPE::Boolean));

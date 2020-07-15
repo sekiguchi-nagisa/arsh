@@ -23,7 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - replace all of matched strings
 - add ``module`` sub-command to builtin ``shctl`` command
   - get full path of loaded script or module
-
+- add builtin ``_exit`` command for force program termination without cleanup
+  - internal call ``_exit`` function
 
 ### Changed
 

@@ -586,3 +586,21 @@ int xexecve(const char *filePath, char *const *argv, char *const *envp, DSValue 
 
 } // namespace ydsh
 
+#ifdef CODE_COVERAGE
+extern "C" void __gcov_flush(); // for coverage reporting
+#endif
+
+namespace ydsh {
+
+void terminate(int exitStatus) {
+#ifdef CODE_COVERAGE
+    /*
+         * after call _exit(), not write coverage information due to skip atexit handler.
+         * in order to write coverage information, manually call __gcove_flush()
+         */
+        __gcov_flush();
+#endif
+    _exit(exitStatus);
+}
+
+} // namespace ydsh
