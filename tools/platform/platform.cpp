@@ -47,7 +47,7 @@ static bool detectContainer() {
         return false;
     }
     for(std::string line; std::getline(stream, line); ) {
-        if(reSearch("docker|lxc", line)) {
+        if(reSearch("docker|lxc|containerd", line)) {
             return true;
         }
     }
