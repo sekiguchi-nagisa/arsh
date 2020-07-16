@@ -7,7 +7,8 @@ COPY . /home/tux/dev
 
 USER tux
 WORKDIR /home/tux/dev
-CMD DIR="$(pwd)" && \
+CMD cat /proc/1/cgroup && \
+    DIR="$(pwd)" && \
     PROJECT=/home/tux/project_root_dir_for_cpack_rpm_build && \
     sudo cp -rf ./ $PROJECT && \
     sudo chown -R tux:users $PROJECT && \

@@ -8,4 +8,5 @@ RUN chown -R tux:users /home/tux/dev && chmod -R 744 /home/tux/dev
 
 USER tux
 WORKDIR /home/tux/dev
-CMD sh tools/scripts/run_all_test.sh clang++-4.0
+CMD cat /proc/1/cgroup && \
+    sh tools/scripts/run_all_test.sh clang++-4.0
