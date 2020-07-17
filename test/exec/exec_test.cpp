@@ -122,9 +122,9 @@ public:
         ASSERT_EQ(0, r);
 
         // check status
-        ASSERT_EQ(d.getResult(), kind);
+        ASSERT_EQ(d.getKind(), kind);
         ASSERT_EQ(d.getLineNum(), lineNum);
-        ASSERT_EQ(d.getStatus(), static_cast<unsigned int>(ret));
+        ASSERT_EQ(d.getStatus(), ret);
         ASSERT_EQ(d.getErrorKind(), name);
         if(!d.getFileName().empty()) {
             ASSERT_EQ(d.getFileName(), fileName);

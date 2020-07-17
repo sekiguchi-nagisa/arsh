@@ -31,16 +31,18 @@ namespace directive {
 class Directive {
 private:
     /**
-     * kind of status.(DS_STATUS_*)
+     * kind of status.(DS_ERROR_KIND_*)
+     *
+     * if -1, invalid DS_ERROR_KIND
      */
-    unsigned int result{DS_ERROR_KIND_SUCCESS};
+    int result{DS_ERROR_KIND_SUCCESS};
 
     std::vector<std::string> params;
 
     /**
      * for command exit status
      */
-    unsigned int status{0};
+    int status{0};
 
     unsigned int lineNum{0};
 
@@ -82,11 +84,11 @@ private:
 public:
     ~Directive();
 
-    unsigned int getResult() const {
+    int getKind() const {
         return this->result;
     }
 
-    void setResult(unsigned int v) {
+    void setKind(int v) {
         this->result = v;
     }
 
@@ -98,11 +100,11 @@ public:
         return this->params;
     }
 
-    void setStatus(unsigned int s) {
+    void setStatus(int s) {
         this->status = s;
     }
 
-    unsigned int getStatus() const {
+    int getStatus() const {
         return this->status;
     }
 

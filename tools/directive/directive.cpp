@@ -93,7 +93,7 @@ private:
     }
 
     void addAlias(const char *alias, const char *attr);
-    unsigned int resolveStatus(const StringNode &node);
+    int resolveKind(const StringNode &node);
 
     /**
      * if not found corresponding handler, return null.
@@ -156,12 +156,18 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     }
 
     this->addHandler("status", TYPE::Int, [&](Node &node, Directive &d) {
-        d.setStatus(TRY(this->checkedCast<NumberNode>(node))->getIntValue());
+        int64_t value = TRY(this->checkedCast<NumberNode>(node))->getIntValue();
+        if(value < INT32_MIN || value > INT32_MAX) {
+            std::string str = "must be int32 value: ";
+            str += std::to_string(value);
+            return this->createError(node, str);
+        }
+        d.setStatus(static_cast<int>(value));
     });
 
     this->addHandler("result", TYPE::String, [&](Node &node, Directive &d) {
         auto *strNode = TRY(this->checkedCast<StringNode>(node));
-        d.setResult(TRY(this->resolveStatus(*strNode)));
+        d.setKind(TRY(this->resolveKind(*strNode)));
     });
 
     this->addHandler("params", TYPE::StringArray, [&](Node &node, Directive &d) {
@@ -276,10 +282,10 @@ void DirectiveInitializer::addAlias(const char *alias, const char *attr) {
     }
 }
 
-unsigned int DirectiveInitializer::resolveStatus(const StringNode &node) {
+int DirectiveInitializer::resolveKind(const StringNode &node) {
     const struct {
         const char *name;
-        unsigned int status;
+        int kind;
     } statusTable[] = {
 #define _E(K) DS_ERROR_KIND_##K
             {"success",         _E(SUCCESS)},
@@ -297,27 +303,32 @@ unsigned int DirectiveInitializer::resolveStatus(const StringNode &node) {
 #undef _E
     };
 
+    const auto &value = node.getValue();
     for(auto &e : statusTable) {
-        if(strcasecmp(node.getValue().c_str(), e.name) == 0) {
-            return e.status;
+        if(strcasecmp(value.c_str(), e.name) == 0) {
+            return e.kind;
         }
     }
 
-    std::vector<std::string> alters;
-    for(auto &e : statusTable) {
-        alters.emplace_back(e.name);
-    }
-
-    std::string message("illegal status, expect for ");
-    unsigned int count = 0;
-    for(auto &e : alters) {
-        if(count++ > 0) {
-            message += ", ";
+    if(!value.empty()) {
+        std::vector<std::string> alters;
+        for(auto &e : statusTable) {
+            alters.emplace_back(e.name);
         }
-        message += e;
+
+        std::string message = "illegal status: ";
+        message += value;
+        message += ", expect for ";
+        unsigned int count = 0;
+        for(auto &e : alters) {
+            if(count++ > 0) {
+                message += ", ";
+            }
+            message += e;
+        }
+        createError(node, message);
     }
-    createError(node, message);
-    return 0;
+    return -1;
 }
 
 const std::pair<DSType *, DirectiveInitializer::AttributeHandler>
