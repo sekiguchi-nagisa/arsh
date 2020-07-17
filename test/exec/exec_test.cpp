@@ -111,15 +111,16 @@ public:
 
         std::string line;
         std::getline(input, line);
-        ASSERT_FALSE(line.empty());
 
-        unsigned int kind;
-        unsigned int lineNum;
+        int kind = -1;
+        unsigned int lineNum = 0;
         std::string name;
         std::string fileName;
 
-        int r = parse(line, "kind", "=", kind, "lineNum", "=", lineNum, "name", "=", name, "fileName", "=", fileName);
-        ASSERT_EQ(0, r);
+        if(!line.empty()) {
+            int r = parse(line, "kind", "=", kind, "lineNum", "=", lineNum, "name", "=", name, "fileName", "=", fileName);
+            ASSERT_EQ(0, r);
+        }
 
         // check status
         ASSERT_EQ(d.getKind(), kind);
