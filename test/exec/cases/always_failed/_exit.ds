@@ -1,0 +1,3 @@
+#$test($status = 12)
+
+_exit 12
