@@ -1636,21 +1636,19 @@ bool VM::mainLoop(DSState &state) {
 
         EXCEPT:
         assert(state.hasError());
-        auto &thrownType = state.symbolTable.get(state.stack.getThrownObject().getTypeID());
-        bool forceUnwind = state.symbolTable.get(TYPE::_InternalStatus).isSameOrBaseTypeOf(thrownType);
-        if(!handleException(state, forceUnwind)) {
+        if(!handleException(state)) {
             return false;
         }
     }
 }
 
-bool VM::handleException(DSState &state, bool forceUnwind) {
+bool VM::handleException(DSState &state) {
     if(state.hook != nullptr) {
         state.hook->vmThrowHook(state);
     }
 
     for(; !state.stack.checkVMReturn(); state.stack.unwind()) {
-        if(!forceUnwind && !CODE(state)->is(CodeKind::NATIVE)) {
+        if(!CODE(state)->is(CodeKind::NATIVE)) {
             auto *cc = static_cast<const CompiledCode *>(CODE(state));
 
             // search exception entry

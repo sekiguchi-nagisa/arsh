@@ -419,7 +419,7 @@ private:
      * if found exception handler, return true.
      * otherwise return false.
      */
-    static bool handleException(DSState &state, bool forceUnwind);
+    static bool handleException(DSState &state);
 
     /**
      * actual entry point of interpreter.
