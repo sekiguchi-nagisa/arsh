@@ -283,7 +283,6 @@ endif()
 #     ydsh     #
 #==============#
 
-include_directories(ext/linenoise)
 add_executable(${BIN_NAME}
         src/main.cpp
         src/interactive.cpp
