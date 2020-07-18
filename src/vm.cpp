@@ -1668,9 +1668,6 @@ bool VM::handleException(DSState &state) {
                          */
                         return false;
                     }
-                    if(state.symbolTable.get(TYPE::_InternalStatus).isSameOrBaseTypeOf(occurredType)) {
-                        continue;
-                    }
                     state.stack.pc() = entry.dest;
                     state.stack.clearOperands();
                     state.stack.reclaimLocals(entry.localOffset, entry.localSize);
@@ -1842,6 +1839,15 @@ DSValue VM::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned i
     return ret;
 }
 
+static int parseExitStatus(const ErrorObject &obj) {
+    auto ref = obj.getMessage().asStrRef();
+    auto r = ref.lastIndexOf(" ");
+    ref = ref.substr(r + 1);
+    auto pair = convertToNum<int32_t>(ref.begin(), ref.end());
+    assert(pair.second);
+    return pair.first;
+}
+
 DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, DSError *dsError) {
     if(!except) {
         return DS_ERROR_KIND_SUCCESS;
@@ -1849,8 +1855,10 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
 
     auto &errorType = state.symbolTable.get(except.getTypeID());
     DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
+    state.setExitStatus(1);
     if(errorType.is(TYPE::_ShellExit)) {
         kind = DS_ERROR_KIND_EXIT;
+        state.setExitStatus(parseExitStatus(typeAs<ErrorObject>(except)));
     } else if(errorType.is(TYPE::_AssertFail)) {
         kind = DS_ERROR_KIND_ASSERTION_ERROR;
     }

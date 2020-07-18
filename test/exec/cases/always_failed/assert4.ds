@@ -1,9 +1,9 @@
 # assert in try-finally
 
-#$test($result = 'assert', $lineNum = 6, $status = 1)
+#$test($result = 'assert', $lineNum = 6, $status = 1, $out = $'in finally\n')
 
 try {
     assert($false) : 'always failed'
 } finally {
-    1 / 0   # unreachable code
+    echo in finally # executed
 }

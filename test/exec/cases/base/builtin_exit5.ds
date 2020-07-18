@@ -1,9 +1,9 @@
 # exit in try-finally
 
-#$test($result = 'exit', $status = 9, $lineNum = 6)
+#$test($result = 'exit', $status = 9, $lineNum = 6, $out = $'in finally\n')
 
 try {
     exit 9
 } finally {
-    1 / 0   # unreachable code
+    echo in finally # executed
 }
