@@ -1437,13 +1437,14 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(EXIT_FINALLY) {
-            if(state.stack.peek().kind() == DSValueKind::NUMBER) {
+            if(state.stack.restoreThrownObject()) {
+                vmerror;
+            } else {
+                assert(state.stack.peek().kind() == DSValueKind::NUMBER);
                 unsigned int index = state.stack.pop().asNum();
                 state.stack.pc() = index;
                 vmnext;
             }
-            state.stack.storeThrownObject();
-            vmerror;
         }
         vmcase(LOOKUP_HASH) {
             auto key = state.stack.pop();
@@ -1659,7 +1660,7 @@ bool VM::handleException(DSState &state) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
                 if(occurredPC >= entry.begin && occurredPC < entry.end
                    && entry.type->isSameOrBaseTypeOf(occurredType)) {
-                    if(entry.type->is(TYPE::_Root)) {
+                    if(entry.type->is(TYPE::_ProcGuard)) {
                         /**
                          * when exception entry indicate exception guard of sub-shell,
                          * immediately break interpreter
@@ -1667,10 +1668,17 @@ bool VM::handleException(DSState &state) {
                          */
                         return false;
                     }
+                    if(state.symbolTable.get(TYPE::_InternalStatus).isSameOrBaseTypeOf(occurredType)) {
+                        continue;
+                    }
                     state.stack.pc() = entry.dest;
                     state.stack.clearOperands();
                     state.stack.reclaimLocals(entry.localOffset, entry.localSize);
-                    state.stack.loadThrownObject();
+                    if(entry.type->is(TYPE::_Root)) {   // finally block
+                        state.stack.saveThrownObject();
+                    } else {    // catch block
+                        state.stack.loadThrownObject();
+                    }
                     return true;
                 }
             }

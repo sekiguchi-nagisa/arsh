@@ -25,7 +25,8 @@ namespace ydsh {
 
 TypePool::TypePool() {
     // initialize type
-    this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, info_Dummy()); // pseudo base type
+    this->initBuiltinType(TYPE::_ProcGuard, "process guard%%", false, info_Dummy()); // pseudo base type
+    this->initBuiltinType(TYPE::_Root, "pseudo top%%", false, TYPE::_ProcGuard, info_Dummy()); // pseudo base type
 
     this->initBuiltinType(TYPE::Any, "Any", true, TYPE::_Root, info_AnyType());
     this->initBuiltinType(TYPE::Void, "Void", false, info_Dummy());

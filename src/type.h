@@ -41,6 +41,7 @@ class TypePool;
 class SymbolTable;
 
 enum class TYPE : unsigned int {
+    _ProcGuard, // for guard parent code execution from child process
     _Root, // pseudo top type of all throwable type(except for option types)
 
     Any,

@@ -101,7 +101,7 @@ function h() {
     try {
         1 / 0   # ArithmeticError
     } finally {
-        [12][34] # ignore previously raised error
+        [12][34] # not ignore previously raised error
         assert($false)
     }
 }
@@ -109,5 +109,5 @@ function h() {
 try {
     $h()
 } catch($e) {
-    assert($e is OutOfRangeError)
+    assert($e is ArithmeticError)
 }

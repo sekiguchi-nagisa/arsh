@@ -249,7 +249,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address: 10
 Exception Table:
-  begin: 5, end: 20, type: Any, dest: 20, offset: 0, size: 0
+  begin: 5, end: 20, type: pseudo top%%%%, dest: 20, offset: 0, size: 0
 
 DSCode: function f
   code size: 7

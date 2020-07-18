@@ -242,7 +242,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
         this->visit(*node.getNodes()[i]);
     }
     this->markLabel(end);
-    this->catchException(begin, end, this->symbolTable.get(TYPE::_Root));
+    this->catchException(begin, end, this->symbolTable.get(TYPE::_ProcGuard));
     this->emit0byteIns(OpCode::HALT);
 
     this->markLabel(labels.back());
@@ -775,7 +775,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
         this->visit(node.getExprNode());
         this->markLabel(endLabel);
 
-        this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_Root));
+        this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_ProcGuard));
         this->emit0byteIns(OpCode::HALT);
         this->markLabel(mergeLabel);
     }
@@ -1130,7 +1130,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->curBuilder().finallyLabels.pop_back();
 
         this->markLabel(finallyLabel);
-        this->catchException(beginLabel, finallyLabel, this->symbolTable.get(TYPE::Any),
+        this->catchException(beginLabel, finallyLabel, this->symbolTable.get(TYPE::_Root),
                              blockNode.getBaseIndex(), maxLocalSize);
         this->visit(*node.getFinallyNode());
         this->emit0byteIns(OpCode::EXIT_FINALLY);

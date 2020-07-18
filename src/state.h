@@ -92,6 +92,11 @@ private:
      */
     DSValue thrown;
 
+    /**
+     * for finally
+     */
+    DSValue savedThrown;
+
 public:
     VMState() : operandsSize(64), operands(new DSValue[this->operandsSize]) {}
 
@@ -160,7 +165,9 @@ public:
     }
 
     void setThrownObject(DSValue &&obj) {
-        this->thrown = std::move(obj);
+        if(!this->restoreThrownObject()) {
+            this->thrown = std::move(obj);
+        }
     }
 
     DSValue takeThrownObject() {
@@ -177,12 +184,20 @@ public:
         this->push(this->takeThrownObject());
     }
 
-    void storeThrownObject() {
-        this->setThrownObject(this->pop());
+    void saveThrownObject() {
+        this->savedThrown = this->takeThrownObject();
+    }
+
+    bool restoreThrownObject() {
+        assert(!this->hasError());
+        bool r = static_cast<bool>(this->savedThrown);
+        std::swap(this->savedThrown, this->thrown);
+        return r;
     }
 
     void clearThrownObject() {
         this->thrown.reset();
+        this->savedThrown.reset();
     }
 
     // for local variable access
