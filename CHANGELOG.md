@@ -24,12 +24,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add ``module`` sub-command to builtin ``shctl`` command
   - get full path of loaded script or module
 - add builtin ``_exit`` command for force program termination without cleanup
-  - internal call ``_exit`` function
+  - call ``_exit`` function internally
 
 ### Changed
 
 #### Core
-- perform regex syntax checking in typechecker. now regex syntax error is semantic error 
+- **Breaking Change**: perform regex syntax checking in typechecker. now regex syntax error is semantic error 
 - **Breaking Change**: not ignore previously raised exception in finally block
 - **Breaking Change**: also enter finally block in exit or assertion failure
 
