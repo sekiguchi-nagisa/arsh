@@ -89,6 +89,7 @@ DEFINE_TCError(GlobLimit      , "glob path fragment length reaches limit"       
 DEFINE_TCError(NullInPath     , "found null characters in source path"              );
 DEFINE_TCError(NoGlobMatch    , "no matches for glob pattern: `%s'"                 );
 DEFINE_TCError(GlobRetLimit   , "number of glob results reaches limit: `%s'"        );
+DEFINE_TCError(NoGlobDir      , "glob pattern always matches directory: `%s'"       );
 DEFINE_TCError(Constant       , "must be constant expression"                       );
 DEFINE_TCError(DupPattern     , "duplicated pattern"                                );
 DEFINE_TCError(NeedPattern    , "require at least one pattern"                      );

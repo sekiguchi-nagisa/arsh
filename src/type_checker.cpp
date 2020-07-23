@@ -1596,6 +1596,14 @@ static std::string concat(const CmdArgNode &node, const unsigned int endOffset) 
     return path;
 }
 
+static bool isDirPattern(const Node &node) {
+    if(isa<StringNode>(node)) {
+        auto &strNode = cast<StringNode>(node);
+        return strNode.getValue().back() == '/';
+    }
+    return false;
+}
+
 void TypeChecker::resolvePathList(SourceListNode &node) {
     auto &pathNode = node.getPathNode();
     std::vector<std::string> ret;
@@ -1606,6 +1614,10 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
         }
         ret.push_back(std::move(path));
     } else {
+        if(isDirPattern(*pathNode.getSegmentNodes().back())) {
+            std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
+            RAISE_TC_ERROR(NoGlobDir, pathNode, path.c_str());
+        }
         pathNode.addSegmentNode(std::make_unique<EmptyNode>()); // sentinel
         auto begin = SourceGlobIter(pathNode.getSegmentNodes().cbegin());
         auto end = SourceGlobIter(pathNode.getSegmentNodes().cend() - 1);
