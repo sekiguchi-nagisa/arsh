@@ -179,6 +179,23 @@ inline auto createWildCardMatcher(Iter begin, Iter end, WildMatchOption option) 
     return WildCardMatcher<Meta, Iter>(begin, end, option);
 }
 
+namespace __detail_glob {
+
+inline bool isDir(WildMatchResult ret, const std::string &fullpath, struct dirent *entry) {
+    if(ret == WildMatchResult::DOT || ret == WildMatchResult::DOTDOT) {
+        return true;
+    }
+    if(entry->d_type == DT_DIR) {
+        return true;
+    }
+    if(entry->d_type == DT_UNKNOWN || entry->d_type == DT_LNK) {
+        return S_ISDIR(getStMode(fullpath.c_str()));
+    }
+    return false;
+}
+
+}   // namespace __detail_glob
+
 /**
  *
  * @tparam Meta
@@ -239,7 +256,7 @@ int globBase(const char *baseDir, Iter iter, Iter end,
             break;
         }
 
-        if(S_ISDIR(getStMode(name.c_str()))) {
+        if(__detail_glob::isDir(ret, name, entry)) {
             if(matcher.consumeSep() > 0) {
                 name += '/';
             }
