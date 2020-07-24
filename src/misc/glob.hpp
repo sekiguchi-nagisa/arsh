@@ -66,12 +66,24 @@ public:
         return this->iter == this->end;
     }
 
-    unsigned int consumeSep() {
+    unsigned int consumeSeps() {
         unsigned int count = 0;
         for(; !this->isEnd() && *this->iter == '/'; ++this->iter) {
             count++;
         }
         return count;
+    }
+
+    bool consumeDot() {
+        auto old = this->iter;
+        if(!this->isEnd() && *this->iter == '.') {
+            ++this->iter;
+            if(this->isEndOrSep()) {
+                return true;
+            }
+        }
+        this->iter = old;
+        return false;
     }
 
     /**
@@ -234,8 +246,15 @@ int globBase(const char *baseDir, Iter iter, Iter end,
         name += entry->d_name;
 
         if(__detail_glob::isDir(name, entry)) {
-            if(matcher.consumeSep() > 0) {
-                name += '/';
+            while(true) {
+                if(matcher.consumeSeps() > 0) {
+                    name += '/';
+                }
+                if(matcher.consumeDot()) {
+                    name += '.';
+                } else {
+                    break;
+                }
             }
             if(!matcher.isEnd()) {
                 int globRet = globBase<Meta>(name.c_str(), matcher.getIter(), end, appender, option);
