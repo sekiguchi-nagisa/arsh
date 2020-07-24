@@ -108,32 +108,34 @@ TEST_F(GlobTest, pattern1) {
 }
 
 TEST_F(GlobTest, pattern2) {
-    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", "."));
-    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", ".", WildMatchOption::DOTGLOB));
+    ASSERT_TRUE(matchPattern(".", "."));
+    ASSERT_TRUE(matchPattern(".", ".", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".", "*"));
-    ASSERT_TRUE(matchPattern(".", "*", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern(".", "*", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".conf", "*"));
     ASSERT_TRUE(matchPattern(".conf", "*", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".", "?"));
-    ASSERT_TRUE(matchPattern(".", "?", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern(".", "?", WildMatchOption::DOTGLOB));
+    ASSERT_TRUE(matchPattern("..", ".."));
+    ASSERT_TRUE(matchPattern("..", "..", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", "*"));
-    ASSERT_TRUE(matchPattern("..", "*", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern("..", "*", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", "*?"));
-    ASSERT_TRUE(matchPattern("..", "*?", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern("..", "*?", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", "?*"));
-    ASSERT_TRUE(matchPattern("..", "?*", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern("..", "?*", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".hoge", "*?"));
     ASSERT_TRUE(matchPattern(".hoge", "*?", WildMatchOption::DOTGLOB));
-    ASSERT_TRUE(matchPattern("..", ".*?"));
-    ASSERT_TRUE(matchPattern("..", ".*?", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern("..", ".*?"));
+    ASSERT_FALSE(matchPattern("..", ".*?", WildMatchOption::DOTGLOB));
     ASSERT_TRUE(matchPattern(".hoge", ".?*"));
     ASSERT_TRUE(matchPattern(".hoge", ".?*", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("h.log", "h."));
     ASSERT_FALSE(matchPattern("h.log", "h.."));
     ASSERT_FALSE(matchPattern("", "."));
     ASSERT_FALSE(matchPattern("", ".."));
-    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw("hgoe", ".")); // always match
-    ASSERT_EQ(WildMatchResult::DOTDOT, matchPatternRaw("huga", ".."));    // always match
+    ASSERT_FALSE(matchPattern("hgoe", "."));
+    ASSERT_FALSE(matchPattern("huga", ".."));
 }
 
 // test `globBase' api
@@ -376,6 +378,18 @@ TEST_F(GlobTest, glob) {
     s = testGlob("bbb/A*/");
     ASSERT_EQ(0, s);
     ASSERT_EQ(0, ret.size());
+
+    // empty directory
+    TempFileFactory tempFileFactory;
+    std::string path = tempFileFactory.getTempDirName();
+    path += "/hogehoge";
+    mkdir(path.c_str(), 0666);
+    std::string p = tempFileFactory.getTempDirName();
+    p += "/*/..";
+    s = testGlob(p.c_str());
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ(path + "/..", ret[0]);
 }
 
 TEST_F(GlobTest, globAt) {

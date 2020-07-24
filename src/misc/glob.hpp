@@ -36,8 +36,6 @@ template <> struct allow_enum_bitop<WildMatchOption> : std::true_type {};
 
 enum class WildMatchResult {
     FAILED,     // match failed
-    DOT,        // match '.'
-    DOTDOT,     // match '..'
     MATCHED,    // match pattern
 };
 
@@ -89,21 +87,14 @@ public:
 
         // ignore starting with '.'
         if(*name == '.') {
+            if(!name[1] || (name[1] == '.' && !name[2])) {  // check '.' or '..'
+                return this->matchDots(name) > 0 ? WildMatchResult::MATCHED : WildMatchResult::FAILED;
+            }
+
             if(!this->isEndOrSep() && *this->iter != '.') {
                 if(!hasFlag(this->option, WildMatchOption::DOTGLOB)) {
                     return WildMatchResult::FAILED;
                 }
-            }
-        }
-
-        if(*name) {
-            switch(this->matchDots()) { // check '.' or '..'
-            case 1:
-                return WildMatchResult::DOT;
-            case 2:
-                return WildMatchResult::DOTDOT;
-            default:
-                break;
             }
         }
 
@@ -150,21 +141,24 @@ private:
 
     /**
      *
+     * @param name
      * @return
      * return 0, if not match '.' or '..'
      * return 1, if match '.'
      * return 2, if match '..'
      */
-    unsigned int matchDots() {
+    unsigned int matchDots(const char *name) {
         auto old = this->iter;
-        if(*this->iter == '.') {
+        if(*name == '.' && *this->iter == '.') {
+            ++name;
             ++this->iter;
-            if(this->isEndOrSep()) {
+            if(!*name && this->isEndOrSep()) {
                 return 1;
             }
-            if(*this->iter == '.') {
+            if(*name == '.' && *this->iter == '.') {
+                ++name;
                 ++this->iter;
-                if(this->isEndOrSep()) {
+                if(!*name && this->isEndOrSep()) {
                     return 2;
                 }
             }
@@ -181,10 +175,7 @@ inline auto createWildCardMatcher(Iter begin, Iter end, WildMatchOption option) 
 
 namespace __detail_glob {
 
-inline bool isDir(WildMatchResult ret, const std::string &fullpath, struct dirent *entry) {
-    if(ret == WildMatchResult::DOT || ret == WildMatchResult::DOTDOT) {
-        return true;
-    }
+inline bool isDir(const std::string &fullpath, struct dirent *entry) {
     if(entry->d_type == DT_DIR) {
         return true;
     }
@@ -230,10 +221,6 @@ int globBase(const char *baseDir, Iter iter, Iter end,
 
     int matchCount = 0;
     for(dirent *entry; (entry = readdir(dir)); ) {
-        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
-        }
-
         auto matcher = createWildCardMatcher<Meta>(iter, end, option);
         const WildMatchResult ret = matcher(entry->d_name);
         if(ret == WildMatchResult::FAILED) {
@@ -244,19 +231,9 @@ int globBase(const char *baseDir, Iter iter, Iter end,
         if(!name.empty() && name.back() != '/') {
             name += '/';
         }
-        switch(ret) {
-        case WildMatchResult::DOT:
-            name += ".";
-            break;
-        case WildMatchResult::DOTDOT:
-            name += "..";
-            break;
-        default:
-            name += entry->d_name;
-            break;
-        }
+        name += entry->d_name;
 
-        if(__detail_glob::isDir(ret, name, entry)) {
+        if(__detail_glob::isDir(name, entry)) {
             if(matcher.consumeSep() > 0) {
                 name += '/';
             }
@@ -277,7 +254,7 @@ int globBase(const char *baseDir, Iter iter, Iter end,
             matchCount++;
         }
 
-        if(ret == WildMatchResult::DOT || ret == WildMatchResult::DOTDOT) {
+        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
             break;
         }
     }
