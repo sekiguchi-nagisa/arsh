@@ -36,6 +36,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 }
 
 # env name
+unsetenv COMP_WORDBREAKS
 $assertArray($(env | while(read -r) {
                         var ss = $REPLY.split('=');
                         $REPLY.indexOf('=') > -1 && echo $ss[0];
