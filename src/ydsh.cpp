@@ -28,6 +28,7 @@
 #include "logger.h"
 #include "frontend.h"
 #include "codegen.h"
+#include "complete.h"
 #include "misc/files.h"
 
 using namespace ydsh;
@@ -749,7 +750,7 @@ unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index
             ref = StringRef(str, index < size ? index : size);
         }
         auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
-        unsigned int size = completeLine(*st, ref);
+        unsigned int size = doCodeCompletion(*st, ref);
         st->setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(old));
         return size;
     }

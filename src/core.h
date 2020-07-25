@@ -220,24 +220,6 @@ std::string expandDots(const char *basePath, const char *path);
  */
 void expandTilde(std::string &str, bool useHOME = false);
 
-/**
- * complete line.
- * after completion success, set results to COMPREPLY.
- * @param st
- * @param data
- * @param size
- * size of data
- */
-
-/**
- * perform completion
- * @param st
- * @param ref
- * @return
- * return size of completion result. (equivalent to size of $COMPREPLY)
- */
-unsigned int completeLine(DSState &st, StringRef ref);
-
 class SignalGuard {
 private:
     sigset_t maskset;

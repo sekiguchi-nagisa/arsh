@@ -21,9 +21,12 @@
 #include <sys/resource.h>
 
 #include <cstdlib>
+#include <unordered_map>
+
 #include <ydsh/ydsh.h>
 
 #include "vm.h"
+#include "complete.h"
 #include "misc/num_util.hpp"
 #include "misc/files.h"
 
@@ -88,10 +91,10 @@ static constexpr struct {
                 "    If all of variables are exist and not empty string, exit with 0."},
         {"command", nullptr, "[-pVv] command [arg ...]",
                 "    Execute COMMAND with ARGs excepting user defined command.\n"
-                        "    If -p option is specified, search command from default PATH.\n"
-                        "    If -V or -v option are specified, print description of COMMAND.\n"
-                        "    -V option shows more detailed information."},
-        {"complete", builtin_complete, "line",
+                "    If -p option is specified, search command from default PATH.\n"
+                "    If -V or -v option are specified, print description of COMMAND.\n"
+                "    -V option shows more detailed information."},
+        {"complete", builtin_complete, "[-A action] line",
                 "    Show completion candidates."},
         {"echo", builtin_echo, "[-neE] [arg ...]",
                 "    Print argument to standard output and print new line.\n"
@@ -1180,15 +1183,13 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     return 0;
 }
 
-// for completor debugging
 static int builtin_complete(DSState &state, ArrayObject &argvObj) {
-    const unsigned int argc = argvObj.getValues().size();
-    if(argc != 2) {
+    if(argvObj.size() != 2) {
         return showUsage(argvObj);
     }
 
-    auto strRef = argvObj.getValues()[1].asStrRef();
-    completeLine(state, strRef);
+    StringRef line = argvObj.getValues()[1].asStrRef();
+    doCodeCompletion(state, line);
     auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for(const auto &e : ret.getValues()) {
         fputs(e.asCStr(), stdout);

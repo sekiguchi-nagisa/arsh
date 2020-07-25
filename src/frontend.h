@@ -132,6 +132,11 @@ public:
         this->astDumper.reset(&dumper);
     }
 
+    void setCodeCompletionHandler(CodeCompletionHandler &handler) {
+        this->parser.setCodeCompletionHandler(handler);
+        this->lexer.setComplete(true);
+    }
+
     SymbolTable &getSymbolTable() {
         return this->checker.getSymbolTable();
     }

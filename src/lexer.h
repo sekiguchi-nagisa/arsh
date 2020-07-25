@@ -47,6 +47,11 @@ private:
 
     LexerMode prevMode{yycSTMT};
 
+    /**
+     * if true, enable code completion (may emit complete token)
+     */
+    bool complete{false};
+
 public:
     NON_COPYABLE(Lexer);
 
@@ -107,6 +112,14 @@ public:
 
     LexerMode getLexerMode() const {
         return this->curMode;
+    }
+
+    void setComplete(bool allow) {
+        this->complete = allow;
+    }
+
+    bool isComplete() const {
+        return this->complete;
     }
 
     /**

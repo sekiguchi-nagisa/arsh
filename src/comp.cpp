@@ -1021,25 +1021,12 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
     return nullptr;
 }
 
-unsigned int completeLine(DSState &st, StringRef ref) {
-    auto result = DSValue::create<ArrayObject>(st.symbolTable.get(TYPE::StringArray));
-    auto &compreply = typeAs<ArrayObject>(result);
-
+void oldCompleteLine(DSState &st, StringRef ref, ArrayObject &compreply) {
     CompleterFactory factory(st, ref);
     auto comp = factory();
     if(comp) {
         (*comp)(compreply);
     }
-    auto &values = compreply.refValues();
-    compreply.sortAsStrArray();
-    auto iter = std::unique(values.begin(), values.end(), [](const DSValue &x, const DSValue &y) {
-        return x.asStrRef() == y.asStrRef();
-    });
-    values.erase(iter, values.end());
-
-    // override COMPREPLY
-    st.setGlobal(toIndex(BuiltinVarOffset::COMPREPLY), std::move(result));
-    return values.size();
 }
 
 } // namespace ydsh

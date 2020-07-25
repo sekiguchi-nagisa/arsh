@@ -75,6 +75,8 @@ public:
     };
 };
 
+class CodeCompletionHandler;
+
 class Parser : public ydsh::ParserBase<TokenKind, Lexer, TokenTracker> {
 private:
 #ifdef __SANITIZE_ADDRESS__
@@ -82,6 +84,8 @@ private:
 #else
     static constexpr unsigned int MAX_NESTING_DEPTH = 5000;
 #endif
+
+    ObserverPtr<CodeCompletionHandler> ccHandler;
 
 public:
     explicit Parser(Lexer &lexer) {
@@ -108,6 +112,10 @@ public:
 
     std::tuple<TokenKind, Token, TokenKind> saveLexicalState() const {
         return std::make_tuple(this->curKind, this->curToken, this->consumedKind);
+    }
+
+    void setCodeCompletionHandler(CodeCompletionHandler &handler) {
+        this->ccHandler.reset(&handler);
     }
 
 protected:
