@@ -95,7 +95,23 @@ static constexpr struct {
                 "    If -V or -v option are specified, print description of COMMAND.\n"
                 "    -V option shows more detailed information."},
         {"complete", builtin_complete, "[-A action] line",
-                "    Show completion candidates."},
+                "    Show completion candidates.\n"
+                "    If -A option is specified, show completion candidates via ACTION.\n"
+                "    Actions:\n"
+                "        file       complete file names\n"
+                "        module     complete module names\n"
+                "        exec       complete executable file names\n"
+                "        tilde      expand tilde before completion. only available in \n"
+                "                   combination of file, module exec actions\n"
+                "        command    complete command names including external, user-defined, builtin ones\n"
+                "        builtin    complete builtin commands\n"
+                "        udc        complete user-defined commands\n"
+                "        variable   complete variable names\n"
+                "        var        equivalent to var\n"
+                "        env        complete environmental variables names\n"
+                "        signal     complete signal names\n"
+                "        user       complete user names\n"
+                "        group      complete group names"},
         {"echo", builtin_echo, "[-neE] [arg ...]",
                 "    Print argument to standard output and print new line.\n"
                 "    Options:\n"
@@ -1183,13 +1199,54 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     return 0;
 }
 
+static std::unordered_map<StringRef, CodeCompOp> initCompActions() {
+    return {
+            {"file", CodeCompOp::FILE},
+            {"module", CodeCompOp::MODULE},
+            {"exec", CodeCompOp::EXEC},
+            {"tilde", CodeCompOp::TILDE},
+            {"command", CodeCompOp::COMMAND},
+            {"builtin", CodeCompOp::BUILTIN},
+            {"udc", CodeCompOp::UDC},
+            {"variable", CodeCompOp::GVAR},
+            {"var", CodeCompOp::GVAR},
+            {"env", CodeCompOp::ENV},
+            {"signal", CodeCompOp::SIGNAL},
+            {"user", CodeCompOp::USER},
+            {"group", CodeCompOp::GROUP},
+    };
+}
+
 static int builtin_complete(DSState &state, ArrayObject &argvObj) {
-    if(argvObj.size() != 2) {
-        return showUsage(argvObj);
+    static auto actionMap = initCompActions();
+
+    CodeCompOp compOp{};
+    GetOptState optState;
+    for(int opt; (opt = optState(argvObj, ":A:")) != -1;) {
+        switch(opt) {
+        case 'A': {
+            auto iter = actionMap.find(optState.optArg);
+            if(iter == actionMap.end()) {
+                ERROR(argvObj, "%s: invalid action", optState.optArg);
+                return showUsage(argvObj);
+            }
+            setFlag(compOp, iter->second);
+            break;
+        }
+        case ':':
+            ERROR(argvObj, "-%c: option requires argument", optState.optOpt);
+            return 1;
+        default:
+            return invalidOptionError(argvObj, optState);
+        }
     }
 
-    StringRef line = argvObj.getValues()[1].asStrRef();
-    doCodeCompletion(state, line);
+    StringRef line;
+    if(optState.index < argvObj.size()) {
+        line = argvObj.getValues()[optState.index].asStrRef();
+    }
+
+    doCodeCompletion(state, line, compOp);
     auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for(const auto &e : ret.getValues()) {
         fputs(e.asCStr(), stdout);

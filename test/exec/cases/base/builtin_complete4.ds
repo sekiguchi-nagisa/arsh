@@ -1,0 +1,33 @@
+
+# test for -A action
+
+## variable
+assert diff <(complete -A var) <(complete '$')
+assert diff <(complete -A var 'C') <(complete '$C')
+assert diff <(complete -A variable 'T') <(complete '$T')
+assert diff <(complete -A variable '') <(complete '$')
+assert complete -A var '$C' > /dev/null && $COMPREPLY.empty()   # not starts with '$'
+
+## env
+assert diff <(complete -A env 'X') <(complete 'import-env X')
+assert diff <(complete -A env '') <(complete 'import-env ')
+
+## signal
+assert diff <(complete -A signal 'IN') <(echo INT)
+
+## user
+assert diff <(complete -A user) <(complete 'echo ~' | sed -e 's/~//' | sed -e 's/\///')
+
+## file
+assert diff <(complete -A file) <(complete 'ls ')
+assert diff <(complete -A file '') <(complete 'ls ')
+assert diff <(complete -A file '.') <(complete 'ls .')
+assert diff <(complete -A file -A tilde '~') <(complete 'ls ~')
+
+## exec
+assert diff <(complete -A exec /usr/bin/) <(complete '/usr/bin/')
+
+## module
+assert diff <(cd ~/ && complete -A module '') <(cd ~/ && complete 'source ')
+assert diff <(complete -A module '/') <(cd ~/ && complete 'source /')
+assert diff <(complete -A tilde -A module '~/') <(cd ~/ && complete 'source ~/')

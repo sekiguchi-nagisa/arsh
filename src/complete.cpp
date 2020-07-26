@@ -37,24 +37,27 @@ enum class EscapeOp {
     COMMAND_ARG,
 };
 
-static std::string escape(const char *str, EscapeOp op) {
+static std::string escape(StringRef ref, EscapeOp op) {
     std::string buf;
     if(op == EscapeOp::NOP) {
-        buf += str;
+        buf.append(ref.data(), ref.size());
         return buf;
     }
 
+    auto iter = ref.begin();
+    const auto end = ref.end();
+
     if(op == EscapeOp::COMMAND_NAME) {
-        int ch = *str;
+        int ch = *iter;
         if(isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
             buf += '\\';
             buf += static_cast<char>(ch);
-            str++;
+            iter++;
         }
     }
 
-    while(*str != '\0') {
-        int ch = *(str++);
+    while(iter != end) {
+        int ch = *(iter++);
         bool found = false;
         switch(ch) {
         case ' ': case '\\': case ';':
@@ -88,9 +91,9 @@ static std::string escape(const char *str, EscapeOp op) {
     return buf;
 }
 
-static void append(ArrayObject &can, const char *str, EscapeOp op) {
+static void append(ArrayObject &can, StringRef ref, EscapeOp op) {
     assert(can.getTypeID() == static_cast<unsigned int>(TYPE::StringArray));
-    std::string estr = escape(str, op);
+    std::string estr = escape(ref, op);
     can.append(DSValue::createStr(std::move(estr)));
 }
 
@@ -126,7 +129,7 @@ static void completeKeyword(const std::string &prefix, bool onlyExpr, ArrayObjec
         }
         StringRef value = toString(e);
         if(isKeyword(value) && value.startsWith(prefix)) {
-            append(results, value.data(), EscapeOp::NOP);
+            append(results, value, EscapeOp::NOP);
         }
     }
 }
@@ -138,7 +141,7 @@ static void completeEnvName(const std::string &namePrefix, ArrayObject &results)
         assert(r != StringRef::npos);
         auto name = env.substr(0, r);
         if(name.startsWith(namePrefix)) {
-            append(results, name.data(), EscapeOp::NOP);
+            append(results, name, EscapeOp::NOP);
         }
     }
 }
@@ -148,7 +151,7 @@ static void completeSigName(const std::string &prefix, ArrayObject &results) {
     for(unsigned int i = 0; list[i].name != nullptr; i++) {
         StringRef sigName = list[i].name;
         if(sigName.startsWith(prefix)) {
-            append(results, sigName.data(), EscapeOp::NOP);
+            append(results, sigName, EscapeOp::NOP);
         }
     }
 }
@@ -158,7 +161,7 @@ static void completeUserName(const std::string &prefix, ArrayObject &results) {
     for(struct passwd *pw; (pw = getpwent()) != nullptr;) {
         StringRef pname = pw->pw_name;
         if(pname.startsWith(prefix)) {
-            append(results, pname.data(), EscapeOp::NOP);
+            append(results, pname, EscapeOp::NOP);
         }
     }
     endpwent();
@@ -169,7 +172,7 @@ static void completeGroupName(const std::string &prefix, ArrayObject &results) {
     for(struct group *gp; (gp = getgrent()) != nullptr;) {
         StringRef gname = gp->gr_name;
         if(gname.startsWith(prefix)) {
-            append(results, gname.data(), EscapeOp::NOP);
+            append(results, gname, EscapeOp::NOP);
         }
     }
     endgrent();
@@ -205,7 +208,7 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
             if(udc.startsWith(CMD_SYMBOL_PREFIX)) {
                 udc = udc.substr(strlen(CMD_SYMBOL_PREFIX));
                 if(udc.startsWith(cmdPrefix)) {
-                    append(results, udc.data(), EscapeOp::COMMAND_NAME);
+                    append(results, udc, EscapeOp::COMMAND_NAME);
                 }
             }
         }
@@ -217,7 +220,7 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
         for(unsigned int i = 0; i < bsize; i++) {
             StringRef builtin = getBuiltinCommandName(i);
             if(builtin.startsWith(cmdPrefix)) {
-                append(results, builtin.data(), EscapeOp::COMMAND_NAME);
+                append(results, builtin, EscapeOp::COMMAND_NAME);
             }
         }
     }
@@ -241,7 +244,7 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
                     fullpath += '/';
                     fullpath += cmd.data();
                     if(S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) == 0) {
-                        append(results, cmd.data(), EscapeOp::COMMAND_NAME);
+                        append(results, cmd, EscapeOp::COMMAND_NAME);
                     }
                 }
             }
@@ -250,25 +253,19 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
     }
 }
 
-enum class FileNameCompOp : unsigned int {
-    ONLY_EXEC = 1 << 0,
-    TIDLE     = 1 << 1,
-};
-
-template <> struct allow_enum_bitop<FileNameCompOp> : std::true_type {};
-
 static void completeFileName(const char *baseDir, const std::string &prefix,
-                            const FileNameCompOp op, ArrayObject &results) {
+                            const CodeCompOp op, ArrayObject &results) {
     const auto s = prefix.find_last_of('/');
 
     // complete tilde
-    if(prefix[0] == '~' && s == std::string::npos && hasFlag(op, FileNameCompOp::TIDLE)) {
+    if(prefix[0] == '~' && s == std::string::npos && hasFlag(op, CodeCompOp::TILDE)) {
         setpwent();
-        for(struct passwd *entry = getpwent(); entry != nullptr; entry = getpwent()) {
+        for(struct passwd *entry; (entry = getpwent()) != nullptr;) {
             StringRef pwname = entry->pw_name;
             if(pwname.startsWith(prefix.c_str() + 1)) {
                 std::string name("~");
                 name += entry->pw_name;
+                name += '/';
                 append(results, name.c_str(), EscapeOp::NOP);
             }
         }
@@ -286,7 +283,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix,
         targetDir = "/";
     } else if(s != std::string::npos) {
         targetDir = prefix.substr(0, s);
-        if(hasFlag(op, FileNameCompOp::TIDLE)) {
+        if(hasFlag(op, CodeCompOp::TILDE)) {
             expandTilde(targetDir, true);
         }
         targetDir = expandDots(baseDir, targetDir.c_str());
@@ -321,7 +318,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix,
             fullpath += '/';
             fullpath += entry->d_name;
 
-            if(hasFlag(op, FileNameCompOp::ONLY_EXEC) &&
+            if(hasFlag(op, CodeCompOp::EXEC) &&
                 S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) != 0) {
                 continue;
             }
@@ -331,33 +328,45 @@ static void completeFileName(const char *baseDir, const std::string &prefix,
                 fileName += '/';
             }
             append(results, fileName.c_str(),
-                    hasFlag(op, FileNameCompOp::ONLY_EXEC) ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
+                    hasFlag(op, CodeCompOp::EXEC) ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
         }
     }
     closedir(dir);
 }
 
-static void completeModule(const char *scriptDir, const std::string &prefix, ArrayObject &results) {
+static void completeModule(const char *scriptDir, const std::string &prefix, bool tilde, ArrayObject &results) {
+    CodeCompOp op{};
+    if(tilde) {
+        op = CodeCompOp::TILDE;
+    }
+
     // complete from SCRIPT_DIR
-    completeFileName(scriptDir, prefix, FileNameCompOp{}, results); //FIXME: tilde expansion
+    completeFileName(scriptDir, prefix, op, results);
 
     // complete from local module dir
     std::string localModDir = LOCAL_MOD_DIR;
     expandTilde(localModDir);
-    completeFileName(localModDir.c_str(), prefix, FileNameCompOp{}, results);   //FIXME: tilde expansion
+    completeFileName(localModDir.c_str(), prefix, op, results);
 
     // complete from system module dir
-    completeFileName(SYSTEM_MOD_DIR, prefix, FileNameCompOp{}, results);    //FIXME: tilde expansion
+    completeFileName(SYSTEM_MOD_DIR, prefix, op, results);
 }
 
+/**
+ *
+ * @param symbolTable
+ * @param prefix
+ * not start with '$'
+ * @param results
+ */
 static void completeVarName(const SymbolTable &symbolTable,
                             const std::string &prefix, ArrayObject &results) {
     for(const auto &iter : symbolTable.globalScope()) {
         StringRef varName = iter.first.c_str();
-        if(!prefix.empty() && !varName.startsWith(CMD_SYMBOL_PREFIX)
+        if(!varName.startsWith(CMD_SYMBOL_PREFIX)
             && !varName.startsWith(MOD_SYMBOL_PREFIX)
             && varName.startsWith(prefix)) {
-            append(results, varName.data(), EscapeOp::NOP);
+            append(results, varName, EscapeOp::NOP);
         }
     }
 }
@@ -383,11 +392,12 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     if(hasFlag(this->compOp, CodeCompOp::GROUP)) {
         completeGroupName(this->symbolPrefix, results);
     }
-    if(hasFlag(this->compOp, CodeCompOp::FILE)) {   //FIXME: tilde expansion
-        completeFileName(this->state.logicalWorkingDir.c_str(), this->symbolPrefix, FileNameCompOp{}, results);
+    if(hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC)) {
+        completeFileName(this->state.logicalWorkingDir.c_str(), this->symbolPrefix, this->compOp, results);
     }
-    if(hasFlag(this->compOp, CodeCompOp::MODULE)) { //FIXME: SCRIPT_DIR
-        completeModule(this->state.logicalWorkingDir.c_str(), this->symbolPrefix, results);
+    if(hasFlag(this->compOp, CodeCompOp::MODULE)) {
+        completeModule(this->scriptDir.empty() ? getCWD().get() : this->scriptDir.c_str(),
+                this->symbolPrefix, hasFlag(this->compOp, CodeCompOp::TILDE), results);
     }
     if(hasFlag(this->compOp, CodeCompOp::KEYWORD)) {
         completeKeyword(this->symbolPrefix, false, results); //FIXME: expr keyword only
@@ -429,6 +439,7 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
             oldCompleteLine(st, ref, compreply);
         }
     } else {
+        handler.addCompRequest(option, ref);
         handler.invoke(compreply);
     }
     st.symbolTable.abort(); // always clear newly added symbol

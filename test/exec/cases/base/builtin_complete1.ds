@@ -98,11 +98,13 @@ $IFS = $'\n'
 
 
 # error
-complete
+complete '-Q' 2> /dev/null
 assert($? == 2)
+assert complete -Q 2>&1 | grep 'ydsh: complete: -Q: invalid option'
 
 
 # empty string
+assert($(complete).empty())
 assert($(complete '').empty())
 assert($(complete '     ').empty())
 
