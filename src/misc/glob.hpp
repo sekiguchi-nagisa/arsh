@@ -36,6 +36,8 @@ template <> struct allow_enum_bitop<WildMatchOption> : std::true_type {};
 
 enum class WildMatchResult {
     FAILED,     // match failed
+    DOT,        // match '.'
+    DOTDOT,     // match '..'
     MATCHED,    // match pattern
 };
 
@@ -100,7 +102,14 @@ public:
         // ignore starting with '.'
         if(*name == '.') {
             if(!name[1] || (name[1] == '.' && !name[2])) {  // check '.' or '..'
-                return this->matchDots(name) > 0 ? WildMatchResult::MATCHED : WildMatchResult::FAILED;
+                switch(this->matchDots(name)) {
+                case 1:
+                    return WildMatchResult::DOT;
+                case 2:
+                    return WildMatchResult::DOTDOT;
+                default:
+                    return WildMatchResult::FAILED;
+                }
             }
 
             if(!this->isEndOrSep() && *this->iter != '.') {
@@ -197,7 +206,7 @@ inline bool isDir(const std::string &fullpath, struct dirent *entry) {
     return false;
 }
 
-}   // namespace __detail_glob
+} // namespace __detail_glob
 
 /**
  *
@@ -273,7 +282,7 @@ int globBase(const char *baseDir, Iter iter, Iter end,
             matchCount++;
         }
 
-        if(strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+        if(ret == WildMatchResult::DOT || ret == WildMatchResult::DOTDOT) {
             break;
         }
     }

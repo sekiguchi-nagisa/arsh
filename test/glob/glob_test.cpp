@@ -108,16 +108,16 @@ TEST_F(GlobTest, pattern1) {
 }
 
 TEST_F(GlobTest, pattern2) {
-    ASSERT_TRUE(matchPattern(".", "."));
-    ASSERT_TRUE(matchPattern(".", ".", WildMatchOption::DOTGLOB));
+    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", "."));
+    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", ".", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".", "*"));
     ASSERT_FALSE(matchPattern(".", "*", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".conf", "*"));
     ASSERT_TRUE(matchPattern(".conf", "*", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".", "?"));
     ASSERT_FALSE(matchPattern(".", "?", WildMatchOption::DOTGLOB));
-    ASSERT_TRUE(matchPattern("..", ".."));
-    ASSERT_TRUE(matchPattern("..", "..", WildMatchOption::DOTGLOB));
+    ASSERT_EQ(WildMatchResult::DOTDOT, matchPatternRaw("..", ".."));
+    ASSERT_EQ(WildMatchResult::DOTDOT, matchPatternRaw("..", "..", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", "*"));
     ASSERT_FALSE(matchPattern("..", "*", WildMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", "*?"));
