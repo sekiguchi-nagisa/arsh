@@ -55,24 +55,6 @@ namespace ydsh {
 
 using RuntimeContext = DSState;
 
-
-static inline bool checkZeroDiv(RuntimeContext &ctx, int64_t right) {
-    if(right == 0) {
-        raiseError(ctx, TYPE::ArithmeticError, "zero division");
-        return false;
-    }
-    return true;
-}
-
-static inline bool checkZeroMod(RuntimeContext &ctx, int64_t right) {
-    if(right == 0) {
-        raiseError(ctx, TYPE::ArithmeticError, "zero modulo");
-        return false;
-    }
-    return true;
-}
-
-
 // #################
 // ##     Any     ##
 // #################
@@ -192,7 +174,8 @@ YDSH_METHOD int_2_int_div(RuntimeContext & ctx) {
     int64_t left = LOCAL(0).asInt();
     int64_t right = LOCAL(1).asInt();
 
-    if(!checkZeroDiv(ctx, right)) {
+    if(right == 0) {
+        raiseError(ctx, TYPE::ArithmeticError, "zero division");
         RET_ERROR;
     }
     RET(DSValue::createInt(left / right));
@@ -204,7 +187,8 @@ YDSH_METHOD int_2_int_mod(RuntimeContext & ctx) {
     int64_t left = LOCAL(0).asInt();
     int64_t right = LOCAL(1).asInt();
 
-    if(!checkZeroMod(ctx, right)) {
+    if(right == 0) {
+        raiseError(ctx, TYPE::ArithmeticError, "zero modulo");
         RET_ERROR;
     }
     RET(DSValue::createInt(left % right));
