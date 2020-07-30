@@ -260,7 +260,7 @@ unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin, const char *end,
     const unsigned int size = utf8ValidateChar(begin, end);
     switch(size) {
     case 1:
-        codePoint = begin[0];
+        codePoint = static_cast<unsigned char>(begin[0]);
         break;
     case 2:
         codePoint = (static_cast<unsigned int>(begin[0] & 0x1F) << 6) |

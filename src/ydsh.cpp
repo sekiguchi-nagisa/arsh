@@ -656,7 +656,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
 static void appendAsEscaped(std::string &line, const char *path) {
     line += '"';
     while(*path) {
-        int ch = *(path++);
+        char ch = *(path++);
         switch(ch) {
         case '"': case '$': case '\\':
             line +='\\';
@@ -664,7 +664,7 @@ static void appendAsEscaped(std::string &line, const char *path) {
         default:
             break;
         }
-        line += static_cast<char>(ch);
+        line += ch;
     }
     line += '"';
 }

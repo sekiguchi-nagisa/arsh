@@ -345,7 +345,7 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
                 if(*(ptr + 2) != ':') {
                     if(++begin == end) {
                         this->optArg = nullptr;
-                        this->optOpt = *ptr;
+                        this->optOpt = static_cast<unsigned char>(*ptr);
                         return *optStr == ':' ? ':' : '?';
                     }
                     this->optArg = *begin;
@@ -361,7 +361,7 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
         }
         return *ptr;
     }
-    this->optOpt = *this->nextChar;
+    this->optOpt = static_cast<unsigned char>(*this->nextChar);
     return '?';
 }
 
