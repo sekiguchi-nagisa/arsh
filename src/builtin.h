@@ -42,7 +42,7 @@
 
 #define SUPPRESS_WARNING(a) (void)a
 
-#define YDSH_METHOD static inline DSValue
+#define YDSH_METHOD static DSValue
 #define YDSH_METHOD_DECL DSValue
 
 /**

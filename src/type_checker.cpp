@@ -917,7 +917,7 @@ bool TypeChecker::PatternCollector::collect(const Node &constNode) {
             break;
         }
     }
-    return this->map ? this->map->collect(constNode) : false;
+    return this->map && this->map->collect(constNode);
 }
 
 
