@@ -65,13 +65,13 @@ const char *FilePathCache::searchPath(const char *cmdName, FilePathCache::Search
     // resolve path
     std::string resolvedPath;
     for(unsigned int i = 0; !resolvedPath.empty() || pathPrefix[i] != '\0'; i++) {
-        int ch = pathPrefix[i];
+        char ch = pathPrefix[i];
         bool stop = false;
 
         if(ch == '\0') {
             stop = true;
         } else if(ch != ':') {
-            resolvedPath += static_cast<char>(ch);
+            resolvedPath += ch;
             continue;
         }
         if(resolvedPath.empty()) {

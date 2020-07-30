@@ -1147,7 +1147,7 @@ void NodeDumper::append(const char *str) {
 void NodeDumper::appendEscaped(const char *value) {
     this->append('"');
     while(*value != 0) {
-        int ch = *(value++);
+        char ch = *(value++);
         bool escape = true;
         switch(ch) {
         case '\t':

@@ -362,15 +362,15 @@ inline double convertToDouble(const char *str, int &status, bool skipIllegalChar
     return value;
 }
 
-inline bool isDecimal(int ch) {
+inline bool isDecimal(char ch) {
     return ch >= '0' && ch <= '9';
 }
 
-inline bool isOctal(int ch) {
+inline bool isOctal(char ch) {
     return ch >= '0' && ch < '8';
 }
 
-inline bool isHex(int ch) {
+inline bool isHex(char ch) {
     return (ch >= '0' && ch <= '9') ||
            (ch >= 'A' && ch <= 'F') || (ch >= 'a' && ch <= 'f');
 }
@@ -380,7 +380,7 @@ inline bool isHex(int ch) {
  * @param ch
  * @return
  */
-inline int hexToNum(int ch) {
+inline unsigned int hexToNum(char ch) {
     if(ch >= '0' && ch <= '9') {
         return ch - '0';
     } else if(ch >= 'a' && ch <= 'f') {

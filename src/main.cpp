@@ -46,11 +46,11 @@ static std::string escape(const char *str) {
     std::string value;
     value += '"';
     for(; str != nullptr && *str != '\0'; str++) {
-        int ch = *str;
+        char ch = *str;
         if(ch == '\\' || ch == '"') {
             value += '\\';
         }
-        value += static_cast<char>(ch);
+        value += ch;
     }
     value += '"';
     return value;

@@ -102,7 +102,7 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
 
     const unsigned int stopPos = token.pos + token.size - 1; // ignore suffix "'"
     for(unsigned int i = token.pos + 2; i < stopPos; i++) {  // ignore prefix "$'"
-        int ch = this->buf[i];
+        char ch = this->buf[i];
         if(ch == '\\' && i + 1 < stopPos) {
             switch(this->buf[++i]) {
             case '\\':
@@ -138,7 +138,7 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
                 break;
             case 'x':
                 if(i + 1 < stopPos && isHex(this->buf[i + 1])) {
-                    int v = hexToNum(this->buf[++i]);
+                    unsigned int v = hexToNum(this->buf[++i]);
                     if(i + 1 < stopPos && isHex(this->buf[i + 1])) {
                         v *= 16;
                         v += hexToNum(this->buf[++i]);
@@ -230,7 +230,7 @@ std::string Lexer::toName(Token token) const {
     std::string name;
     name.reserve(token.size);
     for(unsigned int i = this->buf[token.pos] == '$' ? 1 : 0; i < token.size; i++) {
-        int ch = this->buf[token.pos + i];
+        char ch = this->buf[token.pos + i];
         switch(ch) {
         /**
          * ex. $true, ${true}, $@[
@@ -240,7 +240,7 @@ std::string Lexer::toName(Token token) const {
         case '[':
             continue;
         default:
-            name += static_cast<char>(ch);
+            name += ch;
             break;
         }
     }

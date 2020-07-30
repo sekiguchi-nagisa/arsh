@@ -89,19 +89,19 @@ std::string URI::encode(const char *begin, const char *end) {
 std::string URI::decode(const char *begin, const char *end) {
     std::string value;
     for(; begin != end; ++begin) {
-        int ch = *begin;
+        char ch = *begin;
         if(ch != '%') {
-            value += static_cast<char>(ch);
+            value += ch;
             continue;
         }
 
         if(ch == '%' && begin + 2 < end && isHex(*(begin + 1)) && isHex(*(begin + 2))) {
-            int ch1 = *++begin;
-            int ch2 = *++begin;
-            int v = 16 * hexToNum(ch1) + hexToNum(ch2);
-            value += (char) v;
+            char ch1 = *++begin;
+            char ch2 = *++begin;
+            unsigned int v = 16 * hexToNum(ch1) + hexToNum(ch2);
+            value += static_cast<char>(v);
         } else {
-            value += static_cast<char>(ch);
+            value += ch;
         }
     }
     return value;

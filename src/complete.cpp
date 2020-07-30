@@ -48,7 +48,7 @@ static std::string escape(StringRef ref, EscapeOp op) {
     const auto end = ref.end();
 
     if(op == EscapeOp::COMMAND_NAME) {
-        int ch = *iter;
+        char ch = *iter;
         if(isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
             buf += '\\';
             buf += static_cast<char>(ch);
@@ -57,7 +57,7 @@ static std::string escape(StringRef ref, EscapeOp op) {
     }
 
     while(iter != end) {
-        int ch = *(iter++);
+        char ch = *(iter++);
         bool found = false;
         switch(ch) {
         case ' ': case '\\': case ';':
@@ -184,11 +184,11 @@ static std::vector<std::string> computePathList(const char *pathVal) {
     assert(pathVal != nullptr);
 
     for(unsigned int i = 0; pathVal[i] != '\0'; i++) {
-        int ch = pathVal[i];
+        char ch = pathVal[i];
         if(ch == ':') {
             result.emplace_back();
         } else {
-            result.back() += static_cast<char>(ch);
+            result.back() += ch;
         }
     }
 

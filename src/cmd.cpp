@@ -529,7 +529,7 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
                 }
                 case 'x': {
                     if(isHex(arg[i + 1])) {
-                        int v = hexToNum(arg[++i]);
+                        unsigned int v = hexToNum(arg[++i]);
                         if(isHex(arg[i + 1])) {
                             v *= 16;
                             v += hexToNum(arg[++i]);
