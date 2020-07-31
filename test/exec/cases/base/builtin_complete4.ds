@@ -19,7 +19,9 @@ assert diff <(complete -A signal 'TT') <(echo TTIN && echo TTOU)
 assert diff <(complete -A user) <(complete 'echo ~' | sed -e 's/~//' | sed -e 's/\///')
 
 ## group
-assert diff <(complete -A group) <(cat /etc/group | cut -d : -f 1 | sort)
+if $OSTYPE.lower() == "linux" {
+    assert diff <(complete -A group) <(cat /etc/group | grep -v '^#' | cut -d : -f 1 | sort)
+}
 
 ## file
 assert diff <(complete -A file) <(complete 'ls ')
