@@ -19,6 +19,7 @@ assert diff <(complete -A signal 'TT') <(echo TTIN && echo TTOU)
 assert diff <(complete -A user) <(complete 'echo ~' | sed -e 's/~//' | sed -e 's/\///')
 
 ## group
+export-env LC_ALL = 'C'
 if $OSTYPE.lower() == "linux" {
     assert diff <(complete -A group) <(cat /etc/group | grep -v '^#' | cut -d : -f 1 | sort)
 }
