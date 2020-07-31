@@ -206,7 +206,7 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
         for(const auto &iter : symbolTable.globalScope()) {
             StringRef udc = iter.first.c_str();
             if(udc.startsWith(CMD_SYMBOL_PREFIX)) {
-                udc = udc.substr(strlen(CMD_SYMBOL_PREFIX));
+                udc.remove_prefix(strlen(CMD_SYMBOL_PREFIX));
                 if(udc.startsWith(cmdPrefix)) {
                     append(results, udc, EscapeOp::COMMAND_NAME);
                 }

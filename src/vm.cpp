@@ -1842,7 +1842,7 @@ DSValue VM::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned i
 static int parseExitStatus(const ErrorObject &obj) {
     auto ref = obj.getMessage().asStrRef();
     auto r = ref.lastIndexOf(" ");
-    ref = ref.substr(r + 1);
+    ref.remove_prefix(r + 1);
     auto pair = convertToNum<int32_t>(ref.begin(), ref.end());
     assert(pair.second);
     return pair.first;
