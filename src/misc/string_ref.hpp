@@ -113,6 +113,17 @@ public:
         return (*this)[this->size_ - 1];
     }
 
+    void remove_prefix(size_type n) {
+        assert(n <= this->size());
+        this->ptr_ += n;
+        this->size_ -= n;
+    }
+
+    void remove_suffix(size_type n) {
+        assert(n <= this->size());
+        this->size_ -= n;
+    }
+
     StringRefBase substr(size_type pos = 0, size_type size = npos) const {
         assert(pos <= this->size());
         size = std::min(this->size() - pos, size);

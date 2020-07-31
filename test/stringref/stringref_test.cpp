@@ -146,6 +146,14 @@ TEST_F(StringRefTest, find) {
     ASSERT_EQ(StringRef::npos, StringRef("").lastIndexOf("l"));
 }
 
+TEST_F(StringRefTest, remove) {
+    StringRef ref = "hello world!!";
+    ref.remove_suffix(2);
+    ASSERT_NO_FATAL_FAILURE(this->equals("hello world", ref));
+    ref.remove_prefix(6);
+    ASSERT_NO_FATAL_FAILURE(this->equals("world", ref));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
