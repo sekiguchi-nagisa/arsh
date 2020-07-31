@@ -159,6 +159,11 @@ constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
 constexpr const char *CMD_SYMBOL_PREFIX = "%c";
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 
+constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {
+        "eval", "exit", "exec",
+        "command", "_exit",
+};
+
 // =====  for user-defined command  =====
 constexpr flag8_t UDC_ATTR_SETVAR    = 1u << 0u;
 constexpr flag8_t UDC_ATTR_NEED_FORK = 1u << 1u;

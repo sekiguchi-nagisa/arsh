@@ -28,9 +28,9 @@ namespace ydsh {
 class ArrayObject;
 
 enum class CodeCompOp : unsigned int {
-    FILE     = 1u << 0u,    /* complete file names */
-    DIR      = 1u << 1u,    /* complete directory names */
-    EXEC     = 1u << 2u,    /* complete executable file names */
+    FILE     = 1u << 0u,    /* complete file names (including directory) */
+    DIR      = 1u << 1u,    /* complete directory names (directory only) */
+    EXEC     = 1u << 2u,    /* complete executable file names (including directory) */
     TILDE    = 1u << 3u,    /* perform tilde expansion before completions */
     COMMAND  = 1u << 4u,    /* complete command names including user-defined, builtin, external */
     BUILTIN  = 1u << 5u,    /* complete builtin command names */
@@ -41,7 +41,8 @@ enum class CodeCompOp : unsigned int {
     USER     = 1u << 10u,   /* complete user names */
     GROUP    = 1u << 11u,   /* complete group names */
     MODULE   = 1u << 12u,   /* complete module path */
-    KEYWORD  = 1u << 13u,   /* complete keyword */
+    STMT_KW  = 1u << 13u,   /* complete statement keyword */
+    EXPR_KW  = 1u << 14u,   /* complete expr keyword */
 };
 
 template <> struct allow_enum_bitop<CodeCompOp> : std::true_type {};

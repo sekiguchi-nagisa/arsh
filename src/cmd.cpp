@@ -99,6 +99,7 @@ static constexpr struct {
                 "    If -A option is specified, show completion candidates via ACTION.\n"
                 "    Actions:\n"
                 "        file       complete file names\n"
+                "        dir        complete directory names\n"
                 "        module     complete module names\n"
                 "        exec       complete executable file names\n"
                 "        tilde      expand tilde before completion. only available in \n"
@@ -111,7 +112,9 @@ static constexpr struct {
                 "        env        complete environmental variables names\n"
                 "        signal     complete signal names\n"
                 "        user       complete user names\n"
-                "        group      complete group names"},
+                "        group      complete group names\n"
+                "        stmt_kw    complete statement keywords\n"
+                "        expr_kw    complete expression keywords"},
         {"echo", builtin_echo, "[-neE] [arg ...]",
                 "    Print argument to standard output and print new line.\n"
                 "    Options:\n"
@@ -1202,6 +1205,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
 static std::unordered_map<StringRef, CodeCompOp> initCompActions() {
     return {
             {"file", CodeCompOp::FILE},
+            {"dir", CodeCompOp::DIR},
             {"module", CodeCompOp::MODULE},
             {"exec", CodeCompOp::EXEC},
             {"tilde", CodeCompOp::TILDE},
@@ -1214,6 +1218,8 @@ static std::unordered_map<StringRef, CodeCompOp> initCompActions() {
             {"signal", CodeCompOp::SIGNAL},
             {"user", CodeCompOp::USER},
             {"group", CodeCompOp::GROUP},
+            {"stmt_kw", CodeCompOp::STMT_KW},
+            {"expr_kw", CodeCompOp::EXPR_KW},
     };
 }
 

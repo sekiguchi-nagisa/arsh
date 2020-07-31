@@ -114,7 +114,7 @@ static bool isExprKeyword(TokenKind kind) {
 }
 
 static bool isKeyword(StringRef value) {
-    return value.startsWith("<") || value.endsWith(">");
+    return !value.startsWith("<") || !value.endsWith(">");
 }
 
 static void completeKeyword(const std::string &prefix, bool onlyExpr, ArrayObject &results) {
@@ -208,6 +208,11 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
             if(udc.startsWith(CMD_SYMBOL_PREFIX)) {
                 udc.remove_prefix(strlen(CMD_SYMBOL_PREFIX));
                 if(udc.startsWith(cmdPrefix)) {
+                    if(std::any_of(std::begin(DENIED_REDEFINED_CMD_LIST),
+                                   std::end(DENIED_REDEFINED_CMD_LIST),
+                                   [&](auto &e){ return udc == e; })) {
+                        continue;
+                    }
                     append(results, udc, EscapeOp::COMMAND_NAME);
                 }
             }
@@ -318,17 +323,26 @@ static void completeFileName(const char *baseDir, const std::string &prefix,
             fullpath += '/';
             fullpath += entry->d_name;
 
-            if(hasFlag(op, CodeCompOp::EXEC) &&
-                S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) != 0) {
-                continue;
+            if(S_ISDIR(getStMode(fullpath.c_str()))) {
+                fullpath += '/';
+            } else {
+                if(hasFlag(op, CodeCompOp::EXEC)) {
+                    if(S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) != 0) {
+                        continue;
+                    }
+                } else if(hasFlag(op, CodeCompOp::DIR) && !hasFlag(op, CodeCompOp::FILE)) {
+                    continue;
+                }
             }
 
-            std::string fileName = entry->d_name;
-            if(S_ISDIR(getStMode(fullpath.c_str()))) {
-                fileName += '/';
+            StringRef fileName = fullpath;
+            unsigned int len = strlen(entry->d_name);
+            if(fileName.back() == '/') {
+                len++;
             }
-            append(results, fileName.c_str(),
-                    hasFlag(op, CodeCompOp::EXEC) ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
+            fileName.remove_prefix(fileName.size() - len);
+            append(results, fileName,
+                   hasFlag(op, CodeCompOp::EXEC) ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
         }
     }
     closedir(dir);
@@ -392,15 +406,17 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     if(hasFlag(this->compOp, CodeCompOp::GROUP)) {
         completeGroupName(this->symbolPrefix, results);
     }
-    if(hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC)) {
+    if(hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC) ||
+        hasFlag(this->compOp, CodeCompOp::DIR)) {
         completeFileName(this->state.logicalWorkingDir.c_str(), this->symbolPrefix, this->compOp, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::MODULE)) {
         completeModule(this->scriptDir.empty() ? getCWD().get() : this->scriptDir.c_str(),
                 this->symbolPrefix, hasFlag(this->compOp, CodeCompOp::TILDE), results);
     }
-    if(hasFlag(this->compOp, CodeCompOp::KEYWORD)) {
-        completeKeyword(this->symbolPrefix, false, results); //FIXME: expr keyword only
+    if(hasFlag(this->compOp, CodeCompOp::STMT_KW) || hasFlag(this->compOp, CodeCompOp::EXPR_KW)) {
+        bool onlyExpr = !hasFlag(this->compOp, CodeCompOp::STMT_KW);
+        completeKeyword(this->symbolPrefix, onlyExpr, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::GVAR)) {
         completeVarName(this->state.symbolTable, this->symbolPrefix, results);
