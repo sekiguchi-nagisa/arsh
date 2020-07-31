@@ -462,7 +462,7 @@ JSON Parser::parseObject() {
 static unsigned short parseHex(const char *&iter) {
     unsigned short v = 0;
     for(unsigned int i = 0; i < 4; i++) {
-        int ch = *(iter++);
+        char ch = *(iter++);
         assert(isHex(ch));
         v *= 16;
         v += hexToNum(ch);
@@ -475,7 +475,7 @@ static int unescape(const char *&iter, const char *end) {
         return -1;
     }
 
-    int ch = *(iter++);
+    char ch = *(iter++);
     if(ch == '\\') {
         char next = *(iter++);
         switch(next) {

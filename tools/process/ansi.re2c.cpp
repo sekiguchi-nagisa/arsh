@@ -35,7 +35,7 @@ namespace process {
 static unsigned int toNum(const char *begin, const char *end) {
     unsigned int value = 0;
     for(; begin != end; ++begin) {
-        int ch = *begin;
+        char ch = *begin;
         assert(ydsh::isDecimal(ch));
         unsigned int n = ydsh::hexToNum(ch);
         value *= 10;

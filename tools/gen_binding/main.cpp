@@ -802,7 +802,7 @@ bool Parser::isDescriptor(const std::string &line) {
     unsigned int pos = 0;
     unsigned int size = line.size();
     for(; pos < size; pos++) {
-        int ch = line[pos];
+        char ch = line[pos];
         if(ch != ' ' && ch != '\t') {
             break;
         }
@@ -1031,12 +1031,9 @@ bool isDisallowType(HandleInfo info) {
             HandleInfo::Void,
             HandleInfo::_Value
     };
-    for(auto &e : list) {
-        if(e == info) {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(std::begin(list), std::end(list), [&](auto &e){
+        return e == info;
+    });
 }
 
 void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {

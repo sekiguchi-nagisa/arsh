@@ -73,14 +73,14 @@ static bool isEscaped(int ch) {
 std::string URI::encode(const char *begin, const char *end) {
     std::string value;
     for(; begin != end; ++begin) {
-        int ch = *begin;
+        char ch = *begin;
         if(isEscaped(ch)) {
             value += '%';
             char buf[16];
             snprintf(buf, 16, "%02X", ch);
             value += buf;
         } else {
-            value += static_cast<char>(ch);
+            value += ch;
         }
     }
     return value;
