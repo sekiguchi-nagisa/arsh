@@ -28,7 +28,7 @@ TEST(LexerTest_Lv0, case1) {
 
 class LexerTest_Lv1 : public ::testing::Test {
 public:
-    Lexer *lexer;
+    Lexer *lexer{nullptr};
     std::vector<std::pair<TokenKind, Token>> tokens;
 
 public:

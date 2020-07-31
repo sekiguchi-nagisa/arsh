@@ -131,9 +131,9 @@ TEST_F(InteractiveTest, ctrlc2) {
     err += "\n";
 
     if(platform::platform() == platform::PlatformType::CYGWIN) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
     } else {
-        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
     }
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
@@ -149,9 +149,9 @@ TEST_F(InteractiveTest, ctrlc3) {
     std::string err = strsignal(SIGINT);
     err += "\n";
     if(platform::platform() == platform::PlatformType::CYGWIN) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
     } else {
-        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
     }
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
@@ -173,9 +173,9 @@ SystemError: %s
 )", strerror(EINTR), strsignal(SIGINT));
 
     if(platform::platform() == platform::PlatformType::CYGWIN) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
     } else{
-        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
     }
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
@@ -191,9 +191,9 @@ TEST_F(InteractiveTest, ctrlc5) {
     std::string err = strsignal(SIGINT);
     err += "\n";
     if(platform::platform() == platform::PlatformType::CYGWIN) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
     } else {
-        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
     }
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
@@ -214,9 +214,9 @@ SystemError: wait failed: %s
 )", strerror(EINTR));
 
     if(platform::platform() == platform::PlatformType::CYGWIN) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
     } else{
-        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
     }
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
@@ -234,9 +234,9 @@ TEST_F(InteractiveTest, wait_ctrlc2) {
     std::string err = strsignal(SIGINT);
     err += "\n";
     if(platform::platform() == platform::PlatformType::CYGWIN) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err));
     } else{
-        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err.c_str()));
+        ASSERT_NO_FATAL_FAILURE(this->expect("^C%\n" + PROMPT, err));
     }
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }

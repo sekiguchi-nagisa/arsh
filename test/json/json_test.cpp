@@ -504,7 +504,7 @@ protected:
     }
 
     void assertResponse(rpc::Response &&res) {
-        ASSERT_EQ(toJSON(std::move(res)).serialize(), this->response());
+        ASSERT_EQ(toJSON(res).serialize(), this->response());
     }
 
     void parseResponse(JSON &value) {

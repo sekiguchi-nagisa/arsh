@@ -30,7 +30,7 @@ public:
 
     using ExpectOutput::expect;
 
-    void contentEq(const char *str) {
+    void contentEq(const char *str) const {
         // read file contents
         ByteBuffer buffer;
         char data[256];

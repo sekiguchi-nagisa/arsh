@@ -49,11 +49,11 @@ void Extractor::consumeSpace() {
 int Extractor::extract(unsigned int &value) {
     std::string buf;
     for(; *this->str != '\0'; this->str++) {
-        int ch = *this->str;
+        int ch = static_cast<unsigned char>(*this->str);
         if(!isdigit(ch)) {
             break;
         }
-        buf += ch;
+        buf += static_cast<char>(ch);
     }
     auto v = std::stoll(buf);
     if(v < 0 || v > UINT32_MAX) {
@@ -66,11 +66,11 @@ int Extractor::extract(unsigned int &value) {
 int Extractor::extract(int &value) {
     std::string buf;
     for(; *this->str != '\0'; this->str++) {
-        int ch = *this->str;
+        int ch = static_cast<unsigned char>(*this->str);
         if(!isdigit(ch)) {
             break;
         }
-        buf += ch;
+        buf += static_cast<char>(ch);
     }
     value = std::stoi(buf);
     return 0;

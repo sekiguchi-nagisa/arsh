@@ -17,7 +17,7 @@ public:
     virtual void parse(const char *line, bool status) {
         ASSERT_TRUE(line != nullptr);
 
-        bool s = Directive::init(this->getSourceName(), line, this->d);
+        bool s = Directive::init(getSourceName(), line, this->d);
         ASSERT_EQ(status, s);
     }
 
@@ -25,7 +25,7 @@ public:
         return this->d;
     }
 
-    const char *getSourceName() const {
+    static const char *getSourceName() {
         return "(dummy)";
     }
 };
@@ -223,7 +223,7 @@ TEST_F(DirectiveTest, fileName1) {
 TEST_F(DirectiveTest, fileName2) {
     ASSERT_NO_FATAL_FAILURE(this->parse("#$test($fileName = $0)", true));
     ASSERT_TRUE(!this->getDirective().getFileName().empty());
-    ASSERT_STREQ(this->getSourceName(), this->getDirective().getFileName().c_str());
+    ASSERT_STREQ(getSourceName(), this->getDirective().getFileName().c_str());
 }
 
 TEST_F(DirectiveTest, envs1) {

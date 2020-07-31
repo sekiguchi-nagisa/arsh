@@ -49,7 +49,7 @@ protected:
 
 public:
     ExecTest() {
-        this->targetName = this->GetParam();
+        this->targetName = GetParam();
     }
 
     virtual const std::string &getSourceName() {

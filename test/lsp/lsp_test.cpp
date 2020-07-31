@@ -183,7 +183,7 @@ struct TransportTest : public ::testing::Test {
         this->logger.setAppender(createFilePtr(tmpfile));
     }
 
-    void setInput(const std::string &str) {
+    void setInput(const std::string &str) const {
         writeAndSeekToHead(this->transport.getInput(), str);
     }
 
@@ -191,7 +191,7 @@ struct TransportTest : public ::testing::Test {
         return readAfterSeekHead(this->logger.getAppender());
     }
 
-    std::string readOutput() {
+    std::string readOutput() const {
         return readAfterSeekHead(this->transport.getOutput());
     }
 };
@@ -301,7 +301,7 @@ struct ServerTest : public InteractiveBase {
         this->client->call(++this->count, methodName, std::move(params));
     }
 
-    void notify(const char *methodName, JSON &&params) {
+    void notify(const char *methodName, JSON &&params) const {
         this->client->notify(methodName, std::move(params));
     }
 

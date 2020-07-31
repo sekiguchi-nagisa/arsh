@@ -56,7 +56,7 @@ protected:
 
 public:
     NodeDumpTest() {
-        this->param = this->GetParam();
+        this->param = GetParam();
     }
 
     ~NodeDumpTest() override = default;

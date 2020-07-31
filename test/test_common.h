@@ -210,7 +210,7 @@ public:
             eout += "\n";
         }
         eout += this->prompt;
-        ASSERT_NO_FATAL_FAILURE(this->expect(eout.c_str(), err));
+        ASSERT_NO_FATAL_FAILURE(this->expect(eout, err));
     }
 
     void sendLineAndWait(const char *line, int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
@@ -222,7 +222,7 @@ public:
         eout += line;
         eout += "\n";
         eout += out;
-        ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(status, type, eout.c_str(), err));
+        ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(status, type, eout, err));
     }
 };
 
