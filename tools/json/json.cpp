@@ -475,7 +475,7 @@ static int unescape(const char *&iter, const char *end) {
         return -1;
     }
 
-    char ch = *(iter++);
+    int ch = static_cast<unsigned char>(*(iter++));
     if(ch == '\\') {
         char next = *(iter++);
         switch(next) {
