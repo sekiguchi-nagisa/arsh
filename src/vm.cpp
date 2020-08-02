@@ -1045,15 +1045,17 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
     if(hasFlag(state.runtimeOption, RuntimeOption::DOTGLOB)) {
         setFlag(option, WildMatchOption::DOTGLOB);
     }
-    int ret = glob<DSValueGlobMeta>(begin, end, appender, option);
-    if(ret > 0 || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
+    auto matcher = createGlobMatcher<DSValueGlobMeta>(nullptr, begin, end, option);
+    auto ret = matcher(appender);
+    if(ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {
         typeAs<ArrayObject>(argv).sortAsStrArray(oldSize);
         for(unsigned int i = 0; i <= size; i++) {
             state.stack.popNoReturn();
         }
         return true;
     } else {
-        const char *msg = ret == 0 ? "No matches for glob pattern" : "number of glob results reaches limit";
+        const char *msg = ret == GlobMatchResult::NOMATCH ?
+                "No matches for glob pattern" : "number of glob results reaches limit";
         raiseGlobbingError(state, state.stack, size, msg);
         return false;
     }

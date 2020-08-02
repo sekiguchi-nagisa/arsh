@@ -194,38 +194,121 @@ inline auto createWildCardMatcher(Iter begin, Iter end, WildMatchOption option) 
     return WildCardMatcher<Meta, Iter>(begin, end, option);
 }
 
-namespace __detail_glob {
+enum class GlobMatchResult {
+    MATCH,
+    NOMATCH,
+    LIMIT,
+};
 
-inline bool isDir(const std::string &fullpath, struct dirent *entry) {
-    if(entry->d_type == DT_DIR) {
-        return true;
+template <typename Meta, typename Iter>
+class GlobMatcher {
+private:
+    /**
+     * may be null
+     */
+    const char *base;   // base dir of glob
+
+    const Iter begin;
+    const Iter end;
+
+    const WildMatchOption option;
+
+    unsigned int matchCount{0};
+
+public:
+    GlobMatcher(const char *base, Iter begin, Iter end, WildMatchOption option) :
+            base(base), begin(begin), end(end), option(option) {}
+
+    unsigned int getMatchCount() const {
+        return this->matchCount;
     }
-    if(entry->d_type == DT_UNKNOWN || entry->d_type == DT_LNK) {
-        return S_ISDIR(getStMode(fullpath.c_str()));
+
+    template <typename Appender>
+    GlobMatchResult operator()(Appender &appender) {
+        this->matchCount = 0;
+        Iter iter = this->begin;
+        std::string baseDir = this->resolveBaseDir(iter);
+        int s = this->match(baseDir.c_str(), iter, appender);
+        return this->toResult(s);
     }
-    return false;
-}
 
-} // namespace __detail_glob
+    /**
+     * for debuging. not perform tilde expansion
+     * @tparam Appender
+     * @param appender
+     * @return
+     */
+    template <typename Appender>
+    GlobMatchResult matchExactly(Appender &appender) {
+        int s = this->match(this->base, this->begin, appender);
+        return this->toResult(s);
+    }
 
-/**
- *
- * @tparam Meta
- * @tparam Iter
- * @tparam Appender
- * @param baseDir
- * @param iter
- * @param end
- * @param appender
- * @param option
- * @return
- * return number of matched files.
- * if reach number of matched files limits, return -1.
- */
-template <typename Meta, typename Iter, typename Appender>
-int globBase(const char *baseDir, Iter iter, Iter end,
-            Appender &appender, WildMatchOption option) {
-    if(hasFlag(option, WildMatchOption::IGNORE_SYS_DIR)) {
+private:
+    GlobMatchResult toResult(int s) const {
+        if(s < 0) {
+            return GlobMatchResult::LIMIT;
+        }
+        return this->getMatchCount() > 0 ? GlobMatchResult::MATCH : GlobMatchResult::NOMATCH;
+    }
+
+    std::string resolveBaseDir(Iter &iter) const {
+        auto old = iter;
+        auto latestSep = this->end;
+
+        // resolve base dir
+        std::string baseDir;
+        for(; iter != this->end; ++iter) {
+            if(Meta::isZeroOrMore(iter) || Meta::isAny(iter)) {
+                break;
+            } else if(*iter == '/') {
+                latestSep = iter;
+                if(!baseDir.empty() && baseDir.back() == '/') {
+                    continue;   // skip redundant '/'
+                }
+            }
+            baseDir += *iter;
+        }
+
+        if(latestSep == this->end) {  // not found '/'
+            iter = old;
+            baseDir = '.';
+        } else {
+            iter = latestSep;
+            ++iter;
+            for(; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back());
+            if(hasFlag(option, WildMatchOption::TILDE)) {
+                Meta::preExpand(baseDir);
+            }
+        }
+
+        if(this->base && *this->base == '/' && baseDir[0] != '/') {
+            std::string tmp = this->base;
+            tmp += "/";
+            tmp += baseDir;
+            baseDir = tmp;
+        }
+        return baseDir;
+    }
+
+    template <typename Appender>
+    int match(const char *baseDir, Iter iter, Appender &appender);
+
+    static bool isDir(const std::string &fullpath, struct dirent *entry) {
+        if(entry->d_type == DT_DIR) {
+            return true;
+        }
+        if(entry->d_type == DT_UNKNOWN || entry->d_type == DT_LNK) {
+            return S_ISDIR(getStMode(fullpath.c_str()));
+        }
+        return false;
+    }
+};
+
+template<typename Meta, typename Iter>
+template<typename Appender>
+int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter iter, Appender &appender) {
+    if(hasFlag(this->option, WildMatchOption::IGNORE_SYS_DIR)) {
         const char *ignore[] = {
                 "/dev", "/proc", "/sys"
         };
@@ -240,9 +323,9 @@ int globBase(const char *baseDir, Iter iter, Iter end,
         return 0;
     }
 
-    int matchCount = 0;
+    int s = 0;
     for(dirent *entry; (entry = readdir(dir)); ) {
-        auto matcher = createWildCardMatcher<Meta>(iter, end, option);
+        auto matcher = createWildCardMatcher<Meta>(iter, this->end, this->option);
         const WildMatchResult ret = matcher(entry->d_name);
         if(ret == WildMatchResult::FAILED) {
             continue;
@@ -254,7 +337,7 @@ int globBase(const char *baseDir, Iter iter, Iter end,
         }
         name += entry->d_name;
 
-        if(__detail_glob::isDir(name, entry)) {
+        if(isDir(name, entry)) {
             while(true) {
                 if(matcher.consumeSeps() > 0) {
                     name += '/';
@@ -266,20 +349,18 @@ int globBase(const char *baseDir, Iter iter, Iter end,
                 }
             }
             if(!matcher.isEnd()) {
-                int globRet = globBase<Meta>(name.c_str(), matcher.getIter(), end, appender, option);
-                if(globRet < 0) {
-                    matchCount = -1;
+                if(this->match(name.c_str(), matcher.getIter(), appender) < 0) {
+                    s = -1;
                     break;
                 }
-                matchCount += globRet;
             }
         }
         if(matcher.isEnd()) {
             if(!appender(std::move(name))) {
-                matchCount = -1;
+                s = -1;
                 break;
             }
-            matchCount++;
+            this->matchCount++;
         }
 
         if(ret == WildMatchResult::DOT || ret == WildMatchResult::DOTDOT) {
@@ -287,53 +368,12 @@ int globBase(const char *baseDir, Iter iter, Iter end,
         }
     }
     closedir(dir);
-    return matchCount;
+    return s;
 }
 
-template <typename Meta, typename Iter, typename Appender>
-int globAt(const char *dir, Iter iter, Iter end,
-        Appender &appender, WildMatchOption option) {
-    auto begin = iter;
-    auto latestSep = end;
-
-    // resolve base dir
-    std::string baseDir;
-    for(; iter != end; ++iter) {
-        if(Meta::isZeroOrMore(iter) || Meta::isAny(iter)) {
-            break;
-        } else if(*iter == '/') {
-            latestSep = iter;
-            if(!baseDir.empty() && baseDir.back() == '/') {
-                continue;   // skip redundant '/'
-            }
-        }
-        baseDir += *iter;
-    }
-
-    if(latestSep == end) {  // not found '/'
-        iter = begin;
-        baseDir = '.';
-    } else {
-        iter = latestSep;
-        ++iter;
-        for(; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back());
-        if(hasFlag(option, WildMatchOption::TILDE)) {
-            Meta::preExpand(baseDir);
-        }
-    }
-
-    if(dir && *dir == '/' && baseDir[0] != '/') {
-        std::string tmp = dir;
-        tmp += "/";
-        tmp += baseDir;
-        baseDir = tmp;
-    }
-    return globBase<Meta>(baseDir.c_str(), iter, end, appender, option);
-}
-
-template <typename Meta, typename Iter, typename Appender>
-int glob(Iter iter, Iter end, Appender &appender, WildMatchOption option) {
-    return globAt<Meta>(nullptr, iter, end, appender, option);
+template <typename Meta, typename Iter>
+inline auto createGlobMatcher(const char *dir, Iter begin, Iter end, WildMatchOption option = {}) {
+    return GlobMatcher<Meta, Iter>(dir, begin, end, option);
 }
 
 } // namespace ydsh

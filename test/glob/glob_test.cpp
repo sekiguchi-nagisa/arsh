@@ -59,19 +59,22 @@ public:
         }
     }
 
-    int testGlobBase(const char *dir, const char *pattern, WildMatchOption option = {}) {
+    unsigned int testGlobBase(const char *dir, const char *pattern, WildMatchOption option = {}) {
         Appender appender(this->ret);
-        return globBase<StrMetaChar>(dir, pattern, pattern + strlen(pattern), appender, option);
+        auto matcher = createGlobMatcher<StrMetaChar>(dir, pattern, pattern + strlen(pattern), option);
+        matcher.matchExactly(appender);
+        return matcher.getMatchCount();
     }
 
-    int testGlob(const char *pattern, WildMatchOption option = {}) {
-        Appender appender(this->ret);
-        return glob<StrMetaChar>(pattern, pattern + strlen(pattern), appender, option);
+    unsigned int testGlob(const char *pattern, WildMatchOption option = {}) {
+        return this->testGlobAt(nullptr, pattern, option);
     }
 
-    int testGlobAt(const char *baseDir, const char *pattern, WildMatchOption option = {}) {
+    unsigned int testGlobAt(const char *baseDir, const char *pattern, WildMatchOption option = {}) {
         Appender appender(this->ret);
-        return globAt<StrMetaChar>(baseDir, pattern, pattern + strlen(pattern), appender, option);
+        auto matcher = createGlobMatcher<StrMetaChar>(baseDir, pattern, pattern + strlen(pattern), option);
+        matcher(appender);
+        return matcher.getMatchCount();
     }
 };
 
@@ -452,6 +455,21 @@ TEST_F(GlobTest, globAt) {
     s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb/A*/");
     ASSERT_EQ(0, s);
     ASSERT_EQ(0, ret.size());
+}
+
+TEST_F(GlobTest, fail) {
+    const char *pattern = "bbb/*";
+    auto matcher = createGlobMatcher<StrMetaChar>(
+            GLOB_TEST_WORK_DIR, pattern, pattern + strlen(pattern), WildMatchOption::DOTGLOB);
+    auto appender = [&](std::string &&path) {
+        if(this->ret.size() == 2) {
+            return false;
+        }
+        this->ret.push_back(std::move(path));
+        return true;
+    };
+    auto s = matcher.matchExactly(appender);
+    ASSERT_EQ(GlobMatchResult::LIMIT, s);
 }
 
 int main(int argc, char **argv) {

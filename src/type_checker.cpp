@@ -1632,13 +1632,14 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
         if(pathNode.isTilde()) {
             setFlag(option, WildMatchOption::TILDE);
         }
-        int globRet = globAt<SourceGlobMeta>(
-                this->lexer->getScriptDir(), begin, end, appender, option);
-        if(globRet > 0 || node.isOptional()) {
+        auto matcher = createGlobMatcher<SourceGlobMeta>(
+                this->lexer->getScriptDir(), begin, end, option);
+        auto globRet = matcher(appender);
+        if(globRet == GlobMatchResult::MATCH || node.isOptional()) {
             std::sort(ret.begin(), ret.end());
         } else {
             std::string path = concat(pathNode, pathNode.getSegmentNodes().size() - 1); // skip sentinel
-            if(globRet == 0) {
+            if(globRet == GlobMatchResult::NOMATCH) {
                 RAISE_TC_ERROR(NoGlobMatch, pathNode, path.c_str());
             } else {
                 RAISE_TC_ERROR(GlobRetLimit, pathNode, path.c_str());
