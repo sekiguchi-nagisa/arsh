@@ -26,13 +26,13 @@
 
 namespace ydsh {
 
-enum class WildMatchOption {
+enum class GlobMatchOption {
     TILDE          = 1u << 0u,  // apply tilde expansion before globbing
     DOTGLOB        = 1u << 1u,  // match file names start with '.'
     IGNORE_SYS_DIR = 1u << 2u,  // ignore system directory (/dev, /proc, /sys)
 };
 
-template <> struct allow_enum_bitop<WildMatchOption> : std::true_type {};
+template <> struct allow_enum_bitop<GlobMatchOption> : std::true_type {};
 
 enum class WildMatchResult {
     FAILED,     // match failed
@@ -54,10 +54,10 @@ private:
     Iter iter;
     Iter end;
 
-    WildMatchOption option;
+    GlobMatchOption option;
 
 public:
-    WildCardMatcher(Iter begin, Iter end, WildMatchOption option) :
+    WildCardMatcher(Iter begin, Iter end, GlobMatchOption option) :
             iter(begin), end(end), option(option) {}
 
     Iter getIter() const {
@@ -113,7 +113,7 @@ public:
             }
 
             if(!this->isEndOrSep() && *this->iter != '.') {
-                if(!hasFlag(this->option, WildMatchOption::DOTGLOB)) {
+                if(!hasFlag(this->option, GlobMatchOption::DOTGLOB)) {
                     return WildMatchResult::FAILED;
                 }
             }
@@ -190,7 +190,7 @@ private:
 };
 
 template <typename Meta, typename Iter>
-inline auto createWildCardMatcher(Iter begin, Iter end, WildMatchOption option) {
+inline auto createWildCardMatcher(Iter begin, Iter end, GlobMatchOption option) {
     return WildCardMatcher<Meta, Iter>(begin, end, option);
 }
 
@@ -211,12 +211,12 @@ private:
     const Iter begin;
     const Iter end;
 
-    const WildMatchOption option;
+    const GlobMatchOption option;
 
     unsigned int matchCount{0};
 
 public:
-    GlobMatcher(const char *base, Iter begin, Iter end, WildMatchOption option) :
+    GlobMatcher(const char *base, Iter begin, Iter end, GlobMatchOption option) :
             base(base), begin(begin), end(end), option(option) {}
 
     unsigned int getMatchCount() const {
@@ -277,7 +277,7 @@ private:
             iter = latestSep;
             ++iter;
             for(; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back());
-            if(hasFlag(option, WildMatchOption::TILDE)) {
+            if(hasFlag(option, GlobMatchOption::TILDE)) {
                 Meta::preExpand(baseDir);
             }
         }
@@ -308,7 +308,7 @@ private:
 template<typename Meta, typename Iter>
 template<typename Appender>
 int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter iter, Appender &appender) {
-    if(hasFlag(this->option, WildMatchOption::IGNORE_SYS_DIR)) {
+    if(hasFlag(this->option, GlobMatchOption::IGNORE_SYS_DIR)) {
         const char *ignore[] = {
                 "/dev", "/proc", "/sys"
         };
@@ -372,7 +372,7 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter iter, Appender &app
 }
 
 template <typename Meta, typename Iter>
-inline auto createGlobMatcher(const char *dir, Iter begin, Iter end, WildMatchOption option = {}) {
+inline auto createGlobMatcher(const char *dir, Iter begin, Iter end, GlobMatchOption option = {}) {
     return GlobMatcher<Meta, Iter>(dir, begin, end, option);
 }
 

@@ -26,11 +26,11 @@ struct StrMetaChar {
     static void preExpand(std::string &) {}
 };
 
-static WildMatchResult matchPatternRaw(const char *name, const char *p, WildMatchOption option = {}) {
+static WildMatchResult matchPatternRaw(const char *name, const char *p, GlobMatchOption option = {}) {
     return createWildCardMatcher<StrMetaChar>(p, p + strlen(p), option)(name);
 }
 
-static bool matchPattern(const char *name, const char *p, WildMatchOption option = {}) {
+static bool matchPattern(const char *name, const char *p, GlobMatchOption option = {}) {
     return matchPatternRaw(name, p, option) != WildMatchResult::FAILED;
 }
 
@@ -59,18 +59,18 @@ public:
         }
     }
 
-    unsigned int testGlobBase(const char *dir, const char *pattern, WildMatchOption option = {}) {
+    unsigned int testGlobBase(const char *dir, const char *pattern, GlobMatchOption option = {}) {
         Appender appender(this->ret);
         auto matcher = createGlobMatcher<StrMetaChar>(dir, pattern, pattern + strlen(pattern), option);
         matcher.matchExactly(appender);
         return matcher.getMatchCount();
     }
 
-    unsigned int testGlob(const char *pattern, WildMatchOption option = {}) {
+    unsigned int testGlob(const char *pattern, GlobMatchOption option = {}) {
         return this->testGlobAt(nullptr, pattern, option);
     }
 
-    unsigned int testGlobAt(const char *baseDir, const char *pattern, WildMatchOption option = {}) {
+    unsigned int testGlobAt(const char *baseDir, const char *pattern, GlobMatchOption option = {}) {
         Appender appender(this->ret);
         auto matcher = createGlobMatcher<StrMetaChar>(baseDir, pattern, pattern + strlen(pattern), option);
         matcher(appender);
@@ -112,27 +112,27 @@ TEST_F(GlobTest, pattern1) {
 
 TEST_F(GlobTest, pattern2) {
     ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", "."));
-    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", ".", WildMatchOption::DOTGLOB));
+    ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", ".", GlobMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".", "*"));
-    ASSERT_FALSE(matchPattern(".", "*", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern(".", "*", GlobMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".conf", "*"));
-    ASSERT_TRUE(matchPattern(".conf", "*", WildMatchOption::DOTGLOB));
+    ASSERT_TRUE(matchPattern(".conf", "*", GlobMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".", "?"));
-    ASSERT_FALSE(matchPattern(".", "?", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern(".", "?", GlobMatchOption::DOTGLOB));
     ASSERT_EQ(WildMatchResult::DOTDOT, matchPatternRaw("..", ".."));
-    ASSERT_EQ(WildMatchResult::DOTDOT, matchPatternRaw("..", "..", WildMatchOption::DOTGLOB));
+    ASSERT_EQ(WildMatchResult::DOTDOT, matchPatternRaw("..", "..", GlobMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", "*"));
-    ASSERT_FALSE(matchPattern("..", "*", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern("..", "*", GlobMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", "*?"));
-    ASSERT_FALSE(matchPattern("..", "*?", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern("..", "*?", GlobMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", "?*"));
-    ASSERT_FALSE(matchPattern("..", "?*", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern("..", "?*", GlobMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern(".hoge", "*?"));
-    ASSERT_TRUE(matchPattern(".hoge", "*?", WildMatchOption::DOTGLOB));
+    ASSERT_TRUE(matchPattern(".hoge", "*?", GlobMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("..", ".*?"));
-    ASSERT_FALSE(matchPattern("..", ".*?", WildMatchOption::DOTGLOB));
+    ASSERT_FALSE(matchPattern("..", ".*?", GlobMatchOption::DOTGLOB));
     ASSERT_TRUE(matchPattern(".hoge", ".?*"));
-    ASSERT_TRUE(matchPattern(".hoge", ".?*", WildMatchOption::DOTGLOB));
+    ASSERT_TRUE(matchPattern(".hoge", ".?*", GlobMatchOption::DOTGLOB));
     ASSERT_FALSE(matchPattern("h.log", "h."));
     ASSERT_FALSE(matchPattern("h.log", "h.."));
     ASSERT_FALSE(matchPattern("", "."));
@@ -215,7 +215,7 @@ TEST_F(GlobTest, base_fileOrDir1) {    // match file or dir
     ASSERT_EQ(1, ret.size());
     ASSERT_EQ("bbb/./.hidden", ret[0]);
 
-    s = testGlobBase(".", "*/./*", WildMatchOption::DOTGLOB);
+    s = testGlobBase(".", "*/./*", GlobMatchOption::DOTGLOB);
     ASSERT_EQ(3, s);
     ASSERT_EQ(3, ret.size());
     ASSERT_EQ("bbb/./.hidden", ret[0]);
@@ -350,14 +350,14 @@ TEST_F(GlobTest, glob) {
     ASSERT_EQ("bbb/AA21", ret[0]);
     ASSERT_EQ("bbb/b21", ret[1]);
 
-    s = testGlob("bbb/*", WildMatchOption::DOTGLOB);
+    s = testGlob("bbb/*", GlobMatchOption::DOTGLOB);
     ASSERT_EQ(3, s);
     ASSERT_EQ(3, ret.size());
     ASSERT_EQ("bbb/.hidden", ret[0]);
     ASSERT_EQ("bbb/AA21", ret[1]);
     ASSERT_EQ("bbb/b21", ret[2]);
 
-    s = testGlob("bbb///*//", WildMatchOption::DOTGLOB);
+    s = testGlob("bbb///*//", GlobMatchOption::DOTGLOB);
     ASSERT_EQ(1, s);
     ASSERT_EQ(1, ret.size());
     ASSERT_EQ("bbb/b21/", ret[0]);
@@ -424,14 +424,14 @@ TEST_F(GlobTest, globAt) {
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/AA21", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/b21", ret[1]);
 
-    s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb/*", WildMatchOption::DOTGLOB);
+    s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb/*", GlobMatchOption::DOTGLOB);
     ASSERT_EQ(3, s);
     ASSERT_EQ(3, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/.hidden", ret[0]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/AA21", ret[1]);
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/b21", ret[2]);
 
-    s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb///*//", WildMatchOption::DOTGLOB);
+    s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb///*//", GlobMatchOption::DOTGLOB);
     ASSERT_EQ(1, s);
     ASSERT_EQ(1, ret.size());
     ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/b21/", ret[0]);
@@ -460,7 +460,7 @@ TEST_F(GlobTest, globAt) {
 TEST_F(GlobTest, fail) {
     const char *pattern = "bbb/*";
     auto matcher = createGlobMatcher<StrMetaChar>(
-            GLOB_TEST_WORK_DIR, pattern, pattern + strlen(pattern), WildMatchOption::DOTGLOB);
+            GLOB_TEST_WORK_DIR, pattern, pattern + strlen(pattern), GlobMatchOption::DOTGLOB);
     auto appender = [&](std::string &&path) {
         if(this->ret.size() == 2) {
             return false;

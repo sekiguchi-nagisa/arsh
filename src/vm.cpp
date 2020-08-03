@@ -1038,12 +1038,12 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
         typeAs<ArrayObject>(argv).append(DSValue::createStr(std::move(path)));
         return true;    //FIXME: check array size limit
     };
-    WildMatchOption option{};
+    GlobMatchOption option{};
     if(tilde) {
-        setFlag(option, WildMatchOption::TILDE);
+        setFlag(option, GlobMatchOption::TILDE);
     }
     if(hasFlag(state.runtimeOption, RuntimeOption::DOTGLOB)) {
-        setFlag(option, WildMatchOption::DOTGLOB);
+        setFlag(option, GlobMatchOption::DOTGLOB);
     }
     auto matcher = createGlobMatcher<DSValueGlobMeta>(nullptr, begin, end, option);
     auto ret = matcher(appender);
