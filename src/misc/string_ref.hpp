@@ -113,13 +113,13 @@ public:
         return (*this)[this->size_ - 1];
     }
 
-    void remove_prefix(size_type n) {
+    void removePrefix(size_type n) {
         assert(n <= this->size());
         this->ptr_ += n;
         this->size_ -= n;
     }
 
-    void remove_suffix(size_type n) {
+    void removeSuffix(size_type n) {
         assert(n <= this->size());
         this->size_ -= n;
     }

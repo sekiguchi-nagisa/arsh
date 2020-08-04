@@ -206,7 +206,7 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
         for(const auto &iter : symbolTable.globalScope()) {
             StringRef udc = iter.first.c_str();
             if(udc.startsWith(CMD_SYMBOL_PREFIX)) {
-                udc.remove_prefix(strlen(CMD_SYMBOL_PREFIX));
+                udc.removePrefix(strlen(CMD_SYMBOL_PREFIX));
                 if(udc.startsWith(cmdPrefix)) {
                     if(std::any_of(std::begin(DENIED_REDEFINED_CMD_LIST),
                                    std::end(DENIED_REDEFINED_CMD_LIST),
@@ -340,7 +340,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix,
             if(fileName.back() == '/') {
                 len++;
             }
-            fileName.remove_prefix(fileName.size() - len);
+            fileName.removePrefix(fileName.size() - len);
             append(results, fileName,
                    hasFlag(op, CodeCompOp::EXEC) ? EscapeOp::COMMAND_NAME_PART : EscapeOp::COMMAND_ARG);
         }

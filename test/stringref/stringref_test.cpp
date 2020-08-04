@@ -148,9 +148,9 @@ TEST_F(StringRefTest, find) {
 
 TEST_F(StringRefTest, remove) {
     StringRef ref = "hello world!!";
-    ref.remove_suffix(2);
+    ref.removeSuffix(2);
     ASSERT_NO_FATAL_FAILURE(this->equals("hello world", ref));
-    ref.remove_prefix(6);
+    ref.removePrefix(6);
     ASSERT_NO_FATAL_FAILURE(this->equals("world", ref));
 }
 
