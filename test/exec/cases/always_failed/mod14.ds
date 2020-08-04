@@ -1,3 +1,0 @@
-#$test($result = 'type', $lineNum = 3, $errorKind = 'NotOpenMod', $status = 1)
-
-source /dev/zero

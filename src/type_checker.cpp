@@ -1599,7 +1599,8 @@ static std::string concat(const CmdArgNode &node, const unsigned int endOffset) 
 static bool isDirPattern(const Node &node) {
     if(isa<StringNode>(node)) {
         auto &strNode = cast<StringNode>(node);
-        return strNode.getValue().back() == '/';
+        StringRef ref = strNode.getValue();
+        return ref.back() == '/' || ref.endsWith("/.") || ref.endsWith("/..");
     }
     return false;
 }
