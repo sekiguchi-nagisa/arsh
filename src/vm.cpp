@@ -1045,6 +1045,9 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
     if(hasFlag(state.runtimeOption, RuntimeOption::DOTGLOB)) {
         setFlag(option, GlobMatchOption::DOTGLOB);
     }
+    if(hasFlag(state.runtimeOption, RuntimeOption::FASTGLOB)) {
+        setFlag(option, GlobMatchOption::FASTGLOB);
+    }
     auto matcher = createGlobMatcher<DSValueGlobMeta>(nullptr, begin, end, option);
     auto ret = matcher(appender);
     if(ret == GlobMatchResult::MATCH || hasFlag(state.runtimeOption, RuntimeOption::NULLGLOB)) {

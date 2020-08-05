@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ``Regex`` literal supports ``s`` flag
   - ``.`` character matches newline
 - allow ``Regex`` constructor in constant expression
+- introduce ``fastglob`` option
+  - breaking traditional glob behavior, but takes more optimized directory search strategy
+
 
 #### Builtin
 - add ``status`` method to ``Job`` type

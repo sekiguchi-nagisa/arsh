@@ -457,6 +457,71 @@ TEST_F(GlobTest, globAt) {
     ASSERT_EQ(0, ret.size());
 }
 
+TEST_F(GlobTest, fast) {
+    if(chdir(GLOB_TEST_WORK_DIR) == -1) {
+        fatal_perror("broken directory: %s", GLOB_TEST_WORK_DIR);
+    }
+    ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(isSameFile(getCWD().get(), GLOB_TEST_WORK_DIR)));
+
+    auto s = testGlob("*", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(2, s);
+    ASSERT_EQ(2, ret.size());
+    ASSERT_EQ("AAA", ret[0]);
+    ASSERT_EQ("bbb", ret[1]);
+
+    s = testGlob("*/*1/../", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/b21/../", ret[0]);
+
+    s = testGlob("*/*1/..", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/b21/..", ret[0]);
+
+    s = testGlob("*/../A*", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("AAA", ret[0]);
+
+    s = testGlob("./*/../A*", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("./AAA", ret[0]);
+
+    s = testGlob("*/../*/", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("bbb/", ret[0]);
+
+    s = testGlob("*/../*/*", GlobMatchOption::FASTGLOB | GlobMatchOption::DOTGLOB);
+    ASSERT_EQ(3, s);
+    ASSERT_EQ(3, ret.size());
+    ASSERT_EQ("bbb/.hidden", ret[0]);
+    ASSERT_EQ("bbb/AA21", ret[1]);
+    ASSERT_EQ("bbb/b21", ret[2]);
+
+    s = testGlob("../*/", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("../dir/", ret[0]);
+
+    s = testGlob("*/../../d*", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("../dir", ret[0]);
+
+    s = testGlob("*/../../../g*/d*/", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("../../glob/dir/", ret[0]);
+
+    s = testGlob("*/../../../../t*/g*/d*", GlobMatchOption::FASTGLOB);
+    ASSERT_EQ(1, s);
+    ASSERT_EQ(1, ret.size());
+    ASSERT_EQ("../../../test/glob/dir", ret[0]);
+}
+
 TEST_F(GlobTest, fail) {
     const char *pattern = "bbb/*";
     auto matcher = createGlobMatcher<StrMetaChar>(

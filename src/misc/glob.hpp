@@ -23,6 +23,7 @@
 
 #include "files.h"
 #include "flag_util.hpp"
+#include "resource.hpp"
 
 namespace ydsh {
 
@@ -30,6 +31,7 @@ enum class GlobMatchOption {
     TILDE          = 1u << 0u,  // apply tilde expansion before globbing
     DOTGLOB        = 1u << 1u,  // match file names start with '.'
     IGNORE_SYS_DIR = 1u << 2u,  // ignore system directory (/dev, /proc, /sys)
+    FASTGLOB       = 1u << 3u,  // posix incompatible optimized search
 };
 
 template <> struct allow_enum_bitop<GlobMatchOption> : std::true_type {};
@@ -225,11 +227,9 @@ public:
 
     template <typename Appender>
     GlobMatchResult operator()(Appender &appender) {
-        this->matchCount = 0;
         Iter iter = this->begin;
         std::string baseDir = this->resolveBaseDir(iter);
-        int s = this->match(baseDir.c_str(), iter, appender);
-        return this->toResult(s);
+        return this->invoke(std::move(baseDir), iter, appender);
     }
 
     /**
@@ -240,13 +240,37 @@ public:
      */
     template <typename Appender>
     GlobMatchResult matchExactly(Appender &appender) {
-        int s = this->match(this->base, this->begin, appender);
-        return this->toResult(s);
+        return this->invoke(std::string(this->base), this->begin, appender);
     }
 
 private:
-    GlobMatchResult toResult(int s) const {
-        if(s < 0) {
+    static void popDir(std::string &path) {
+        if(path == ".") {
+            path = "..";
+            return;
+        } else if(path == "..") {
+            path += "/..";
+            return;
+        }
+
+        auto index = path.find_last_of('/');
+        if(index == std::string::npos) {
+            path = ".";
+        } else if(index == 0) {
+            path = "/";
+        } else if(std::equal(path.begin() + index + 1, path.end(), "..")) {
+            path += "/../";
+        } else {
+            path.resize(index);
+        }
+    }
+
+    template <typename Appender>
+    GlobMatchResult invoke(std::string &&baseDir, Iter iter, Appender &appender) {
+        this->matchCount = 0;
+        int s;
+        for(; (s = this->match(baseDir.c_str(), iter, appender)) == -2; popDir(baseDir));
+        if(s == -1) {
             return GlobMatchResult::LIMIT;
         }
         return this->getMatchCount() > 0 ? GlobMatchResult::MATCH : GlobMatchResult::NOMATCH;
@@ -292,7 +316,7 @@ private:
     }
 
     template <typename Appender>
-    int match(const char *baseDir, Iter iter, Appender &appender);
+    int match(const char *baseDir, Iter &iter, Appender &appender);
 
     static bool isDir(const std::string &fullpath, struct dirent *entry) {
         if(entry->d_type == DT_DIR) {
@@ -307,7 +331,7 @@ private:
 
 template<typename Meta, typename Iter>
 template<typename Appender>
-int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter iter, Appender &appender) {
+int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter &iter, Appender &appender) {
     if(hasFlag(this->option, GlobMatchOption::IGNORE_SYS_DIR)) {
         const char *ignore[] = {
                 "/dev", "/proc", "/sys"
@@ -322,8 +346,12 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter iter, Appender &app
     if(!dir) {
         return 0;
     }
+    auto cleanup = finally([&]{
+        int old = errno;
+        closedir(dir);
+        errno = old;
+    });
 
-    int s = 0;
     for(dirent *entry; (entry = readdir(dir)); ) {
         auto matcher = createWildCardMatcher<Meta>(iter, this->end, this->option);
         const WildMatchResult ret = matcher(entry->d_name);
@@ -349,16 +377,24 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter iter, Appender &app
                 }
             }
             if(!matcher.isEnd()) {
-                if(this->match(name.c_str(), matcher.getIter(), appender) < 0) {
-                    s = -1;
-                    break;
+                if(ret == WildMatchResult::DOTDOT && hasFlag(this->option, GlobMatchOption::FASTGLOB)) {
+                    iter = matcher.getIter();
+                    return -2;
+                }
+                Iter next = matcher.getIter();
+                int s = this->match(name.c_str(), next, appender);
+                if(s == -1) {
+                    return -1;
+                } else if(s == -2) {
+                    iter = next;
+                    rewinddir(dir);
+                    continue;
                 }
             }
         }
         if(matcher.isEnd()) {
             if(!appender(std::move(name))) {
-                s = -1;
-                break;
+                return -1;
             }
             this->matchCount++;
         }
@@ -367,8 +403,7 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter iter, Appender &app
             break;
         }
     }
-    closedir(dir);
-    return s;
+    return 0;
 }
 
 template <typename Meta, typename Iter>
