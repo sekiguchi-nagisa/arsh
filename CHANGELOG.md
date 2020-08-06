@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: perform regex syntax checking in typechecker. now regex syntax error is semantic error 
 - **Breaking Change**: not ignore previously raised exception in finally block
 - **Breaking Change**: also enter finally block in exit or assertion failure
+- glob in source statement always use ``fastglob`` mode
 
 #### Builtin
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument

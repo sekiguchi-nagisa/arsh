@@ -1629,7 +1629,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
             ret.push_back(std::move(path));
             return true;
         };
-        auto option = GlobMatchOption::IGNORE_SYS_DIR;
+        auto option = GlobMatchOption::IGNORE_SYS_DIR | GlobMatchOption::FASTGLOB;
         if(pathNode.isTilde()) {
             setFlag(option, GlobMatchOption::TILDE);
         }
