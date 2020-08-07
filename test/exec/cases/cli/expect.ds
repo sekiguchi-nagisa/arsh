@@ -1,0 +1,45 @@
+
+# for command line test cases
+
+import-env YDSH_BIN
+
+let OLD_IFS = $IFS
+
+$IFS = ''
+
+ds() {
+    eval $YDSH_BIN $@
+}
+
+repl() {
+    ds -i --quiet --norc $@
+}
+
+
+assert test -x $YDSH_BIN
+
+function expect($out : String, $es : Int, $eout : String) {
+    let s = $?
+    assert $s == $es : "expect: $es, actual: $s"
+    assert $out == $eout : "
+expect: $eout
+
+actual: $out
+"
+    $? = 0
+}
+
+function expectRegex($out : String, $es : Int, $eout : Regex) {
+    let s = $?
+    assert $s == $es : "expect: $es, actual: $s"
+    assert $eout =~ $out : "
+expect regex: $eout
+
+actual: $out
+"
+    $? = 0
+}
+
+
+$expect("$(echo hello && false)", 1, 'hello')
+$expectRegex("$(echo hello && false)", 1, $/h.+/)

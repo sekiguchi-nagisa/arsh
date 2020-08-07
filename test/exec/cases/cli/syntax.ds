@@ -1,0 +1,5 @@
+
+source $SCRIPT_DIR/expect.ds
+
+$expect("$(ds -c $'echo
+   $true' 2>&1)", 0, "")

@@ -62,48 +62,6 @@ public:
     }
 };
 
-TEST_F(CmdlineTest, assert) {
-    // no assert
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--disable-assertion", "-c", "assert(12 / 0 == 12)"), 0, ""));
-
-    // assert with message
-    const char *cmd = R"(assert
-    (false)    :
-        "hello assertion")";
-
-    const char *msg = R"(Assertion Error: hello assertion
-    from (string):2 '<toplevel>()'
-)";
-
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", cmd), 1, "", msg));
-
-    // assert without message
-    msg = R"(Assertion Error: `34 == 43'
-    from (string):1 '<toplevel>()'
-)";
-
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert 34 == 43"), 1, "", msg));
-}
-
-TEST_F(CmdlineTest, ast) {
-    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
-            ds("--dump-ast", "-c", "[12, 32] is Array<Int>"), 0, "^### dump typed AST ###.*$"));
-
-    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
-            ds("--dump-ast", "-c", "23 / /"), 1, "", "^.+\\[semantic error\\].*$"));
-
-    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
-            ds("--dump-ast", "-c", "23 / "), 1, "", "^.+\\[syntax error\\].*$"));
-}
-
-TEST_F(CmdlineTest, uast) {
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
-            ds("--dump-untyped-ast", "-c", "12"), 0, "^### dump untyped AST ###.*$"));
-
-    ASSERT_NO_FATAL_FAILURE( this->expectRegex(
-            ds("--dump-untyped-ast", "-c", "23 / "), 1, "", "^.+\\[syntax error\\].*$"));
-}
-
 TEST_F(CmdlineTest, cmd1) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert($0 == 'ydsh')"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
@@ -161,20 +119,6 @@ SystemError: execution error: hoge: command not found
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", ": | hoge"), 1, "", msg));
 }
 
-TEST_F(CmdlineTest, help) {
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--help"), 0, "^.*\nOptions:\n.*$"));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--norc", "--help","--version"), 0, "^.*\nOptions:\n.*$"));
-}
-
-TEST_F(CmdlineTest, illegal) {
-    const char *p = R"(^invalid option: --ho
-ydsh, version .*, build by .*
-Options:
-.*$)";
-
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--ho"), 1, "", p));
-}
-
 TEST_F(CmdlineTest, exit) {
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(
             ds("--trace-exit", "-c", "exit 23"), 23, "", "^Shell Exit: terminated by exit 23\n.*$"));
@@ -188,120 +132,6 @@ TEST_F(CmdlineTest, exit) {
             ds("--trace-exit", "-c", "$? = 123; exit hoge"), 123, "", "^Shell Exit: terminated by exit 123\n.*$"));
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("--trace-exit", "-e", "exit", "34"), 34, "", "Shell Exit: terminated by exit 34\n"));
-}
-
-static std::string getCwd() {
-    char *ptr = realpath(".", nullptr);
-    std::string ret = ptr;
-    free(ptr);
-    return ret;
-}
-
-TEST_F(CmdlineTest, bytecode) {
-    std::string msg = format(R"(### dump compiled code ###
-Source File: (string)
-DSCode: top level
-  code size: 12
-  max stack depth: 1
-  number of local variable: 0
-  number of global variable: 53
-Code:
-   0: PUSH_INT  34
-   2: STORE_GLOBAL  52
-   5: PUSH_INT  34
-   7: CALL_NATIVE2  1  %s
-  10: POP
-  11: RETURN
-Constant Pool:
-  0: String (string)
-  1: String %s
-Line Number Table:
-  lineNum: 1, address:  7
-Exception Table:
-
-)", "%str", getCwd().c_str());
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", "var a = 34; 34 as String"), 0, msg));
-
-    msg = format(R"(### dump compiled code ###
-Source File: (string)
-DSCode: top level
-  code size: 26
-  max stack depth: 3
-  number of local variable: 0
-  number of global variable: 53
-Code:
-   0: LOAD_CONST  2
-   2: STORE_GLOBAL  52
-   5: LOAD_GLOBAL  52
-   8: PUSH_INT  1
-  10: CALL_FUNC  1
-  12: ENTER_FINALLY  8
-  15: GOTO  24
-  20: PUSH_INT  3
-  22: POP
-  23: EXIT_FINALLY
-  24: POP
-  25: RETURN
-Constant Pool:
-  0: String (string)
-  1: String %s
-  2: (Any) -> Boolean function(f)
-Line Number Table:
-  lineNum: 1, address: 10
-Exception Table:
-  begin: 5, end: 20, type: pseudo top%%%%, dest: 20, offset: 0, size: 0
-
-DSCode: function f
-  code size: 7
-  max stack depth: 1
-  number of local variable: 1
-Code:
-  0: LOAD_LOCAL  0
-  2: INSTANCE_OF  [Int]
-  6: RETURN_V
-Constant Pool:
-  0: String (string)
-  1: String %s
-Line Number Table:
-Exception Table:
-
-)", getCwd().c_str(), getCwd().c_str());
-    const char *s = "function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}";
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--dump-code", "-c", s), 0, msg));
-}
-
-TEST_F(CmdlineTest, parse_only) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--parse-only", "-c", "var a = 34; $a = $a;"), 0));
-
-    // when specified '--parse-only' option, only work '--dump-untyped-ast'
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
-            ds("--parse-only", "--dump-untyped-ast", "-c", "var a = 34; $a = $a;"), 0, ".*"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--parse-only", "--dump-ast", "-c", "var a = 34; $a = $a;"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--parse-only", "--dump-code", "-c", "var a = 34; $a = $a;"), 0));
-}
-
-TEST_F(CmdlineTest, check_only) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--check-only", "-c", "exit 88"), 0));
-
-    // when specified '--check-only' option, only work '--dump-untyped-ast' and '--dump-ast'
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--check-only", "--dump-untyped-ast", "-c", "exit 88"), 0, ".*"));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--check-only", "--dump-ast", "-c", "exit 88"), 0, ".*"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--check-only", "--dump-code", "-c", "exit 88"), 0));
-}
-
-TEST_F(CmdlineTest, compile_only) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("--compile-only", "-c", "exit 88"), 0));
-
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--compile-only", "--dump-untyped-ast", "-c", "exit 88"), 0, ".*"));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--compile-only", "--dump-ast", "-c", "exit 88"), 0, ".*"));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("--compile-only", "--dump-code", "-c", "exit 88"), 0, ".*"));
-
-    // equivalent to '--compile-only' option
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-n", "-c", "exit 88"), 0));
-
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("-n", "--dump-untyped-ast", "-c", "exit 88"), 0, ".*"));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("-n", "--dump-ast", "-c", "exit 88"), 0, ".*"));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(ds("-n", "--dump-code", "-c", "exit 88"), 0, ".*"));
 }
 
 TEST_F(CmdlineTest, exec) {
@@ -473,19 +303,6 @@ TEST_F(CmdlineTest, pid) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("%s --pid $PID --ppid $PPID | grep .", PID_CHECK_PATH), 0, "OK\n"));
 }
 
-TEST_F(CmdlineTest, syntax) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo  \n$true"), 0, "\n"));
-}
-
-TEST_F(CmdlineTest, pipeline) {
-    ASSERT_NO_FATAL_FAILURE(this->expect("assert($0 == 'ydsh')" | ds(), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect("\\" | ds(), 0));
-
-    // with argument
-    ASSERT_NO_FATAL_FAILURE(
-            this->expect("assert($0 == 'ydsh' && $1 == 'hoge' && $2 == '123')" | ds("-s", "hoge", "123"), 0));
-}
-
 static auto interactive() {
     return ds("-i", "--quiet", "--norc");
 }
@@ -530,20 +347,6 @@ TEST_F(CmdlineTest, forceInteractive2) {
     std::string out(msg, arraySize(msg) - 1);
     ASSERT_EQ(out, r.out);
     ASSERT_STREQ("", r.err.c_str());
-}
-
-TEST_F(CmdlineTest, pipelineCode) {
-    auto ret1 = ds("--compile-only", "--dump-code", "-c", "1|2|3").execAndGetResult();
-    ASSERT_FALSE(ret1.out.empty());
-
-    auto ret2 = ds("--compile-only", "--dump-code", "-c", "(1|2)|3").execAndGetResult();
-    ASSERT_FALSE(ret2.out.empty());
-
-    auto ret3 = ds("--compile-only", "--dump-code", "-c", "1|(2|3)").execAndGetResult();
-    ASSERT_FALSE(ret3.out.empty());
-
-    ASSERT_EQ(ret1.out, ret2.out);
-    ASSERT_EQ(ret1.out, ret3.out);
 }
 
 #define DS(S) ds("-c", S)

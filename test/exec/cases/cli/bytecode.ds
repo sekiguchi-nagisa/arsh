@@ -1,0 +1,72 @@
+
+source $SCRIPT_DIR/expect.ds
+
+var out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 12
+  max stack depth: 1
+  number of local variable: 0
+  number of global variable: 53
+Code:
+   0: PUSH_INT  34
+   2: STORE_GLOBAL  52
+   5: PUSH_INT  34
+   7: CALL_NATIVE2  1  %str
+  10: POP
+  11: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+Line Number Table:
+  lineNum: 1, address:  7
+Exception Table:"
+
+$expect("$(ds --dump-code -c 'var a = 34; 34 as String')", 0, $out)
+
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 26
+  max stack depth: 3
+  number of local variable: 0
+  number of global variable: 53
+Code:
+   0: LOAD_CONST  2
+   2: STORE_GLOBAL  52
+   5: LOAD_GLOBAL  52
+   8: PUSH_INT  1
+  10: CALL_FUNC  1
+  12: ENTER_FINALLY  8
+  15: GOTO  24
+  20: PUSH_INT  3
+  22: POP
+  23: EXIT_FINALLY
+  24: POP
+  25: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+  2: (Any) -> Boolean function(f)
+Line Number Table:
+  lineNum: 1, address: 10
+Exception Table:
+  begin: 5, end: 20, type: pseudo top%%, dest: 20, offset: 0, size: 0
+
+DSCode: function f
+  code size: 7
+  max stack depth: 1
+  number of local variable: 1
+Code:
+  0: LOAD_LOCAL  0
+  2: INSTANCE_OF  [Int]
+  6: RETURN_V
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+Line Number Table:
+Exception Table:"
+
+var cmd = 'function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}'
+$expect("$(ds --dump-code -c $cmd)", 0, $out)

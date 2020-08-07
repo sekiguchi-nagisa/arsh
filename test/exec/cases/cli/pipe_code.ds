@@ -1,0 +1,14 @@
+
+source $SCRIPT_DIR/expect.ds
+
+# the following pipeline codes are equivalent bytecode
+
+var r1 = "$(ds -n --dump-code -c '1|2|3')"
+var r2 = "$(ds -n --dump-code -c '(1|2)|3')"
+var r3 = "$(ds -n --dump-code -c '1|(2|3)')"
+
+assert !$r1.empty()
+
+assert $r1 == $r2
+assert $r2 == $r3
+assert $r3 == $r1

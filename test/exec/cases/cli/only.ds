@@ -1,0 +1,42 @@
+
+source $SCRIPT_DIR/expect.ds
+
+# parse-only
+$expect("$(ds --parse-only -c 'var a = 34; $a = $a')", 0, "")
+
+## when specified '--parse-only' option, only work '--dump-untyped-ast'
+$expectRegex("$(ds --parse-only --dump-untyped-ast -c 'var a = 34; $a = $a' 2>&1)", 0, $/^### dump untyped AST ###\n.+/)
+
+$expect("$(ds --parse-only --dump-ast -c 'var a = 34; $a = $a' 2>&1)", 0, "")
+
+$expect("$(ds --parse-only --dump-code -c 'var a = 34; $a = $a' 2>&1)", 0, "")
+
+
+# check-only
+$expect("$(ds --check-only -c 'exit 88' 2>&1)", 0, "")
+
+## when specified '--check-only' option, only work '--dump-untyped-ast' and '--dump-ast'
+$expectRegex("$(ds --check-only --dump-untyped-ast -c 'exit 88' 2>&1)", 0, $/^### dump untyped AST ###\n.+/)
+
+$expectRegex("$(ds --check-only --dump-ast -c 'exit 88' 2>&1)", 0, $/^### dump typed AST ###\n.+/)
+
+$expect("$(ds --check-only --dump-code -c 'exit 88' 2>&1)", 0, "")
+
+
+# compile-only
+$expect("$(ds --compile-only -c 'exit 88' 2>&1)", 0, "")
+
+$expectRegex("$(ds --compile-only --dump-untyped-ast -c 'exit 88' 2>&1)", 0, $/^### dump untyped AST ###\n.+/)
+
+$expectRegex("$(ds --compile-only --dump-ast -c 'exit 88' 2>&1)", 0, $/^### dump typed AST ###\n.+/)
+
+$expectRegex("$(ds --compile-only --dump-code -c 'exit 88' 2>&1)", 0, $/^### dump compiled code ###\n.+/)
+
+## equivalent to '--compile-only' option
+$expect("$(ds -n -c 'exit 88' 2>&1)", 0, "")
+
+$expectRegex("$(ds -n --dump-untyped-ast -c 'exit 88' 2>&1)", 0, $/^### dump untyped AST ###\n.+/)
+
+$expectRegex("$(ds -n --dump-ast -c 'exit 88' 2>&1)", 0, $/^### dump typed AST ###\n.+/)
+
+$expectRegex("$(ds -n --dump-code -c 'exit 88' 2>&1)", 0, $/^### dump compiled code ###\n.+/)

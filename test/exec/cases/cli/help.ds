@@ -1,0 +1,6 @@
+
+source $SCRIPT_DIR/expect.ds
+
+$expectRegex("$(ds --help)", 0, $/^.+\nOptions:\n.+/)
+
+$expectRegex("$(ds --norc --help --version)", 0, $/^.+\nOptions:\n.+/)
