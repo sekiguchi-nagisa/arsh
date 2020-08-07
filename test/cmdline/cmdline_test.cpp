@@ -341,14 +341,17 @@ TEST_F(CmdlineTest, exec) {
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv _)\" == \"$(command -v printenv)\")"), 0));
     ASSERT_NO_FATAL_FAILURE(this->expect(
             ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PWD)\" == \"$(printenv OLDPWD)\")"), 0));
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+            ds("-e", "exec", "-c", BIN_PATH, "-c", format("assert(\"$(printenv YDSH_BIN)\" == '%s')", BIN_PATH).c_str()), 0));
+
 
     if(platform::platform() == platform::PlatformType::CYGWIN) {
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(checkenv WINDIR)"), 0));
         ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(checkenv SYSTEMROOT)"), 0));
 
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 10"), 0));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 11"), 0));
     } else {
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 8"), 0));
+        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 9"), 0));
     }
 
     // invalid option

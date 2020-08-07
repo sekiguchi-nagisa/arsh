@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Nagisa Sekiguchi
+ * Copyright (C) 2015-2020 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 #include <ydsh/ydsh.h>
 #include "misc/opt.hpp"
 #include "misc/util.hpp"
+#include "misc/files.h"
 
 using namespace ydsh;
 
@@ -145,7 +146,7 @@ int main(int argc, char **argv) {
             EACH_OPT(GEN_OPT)
 #undef GEN_OPT
     };
-    auto begin = argv + 1;
+    auto begin = argv + (argc > 0 ? 1 : 0);
     auto end = argv + argc;
     opt::Result<OptionKind> result;
 
@@ -253,6 +254,13 @@ int main(int argc, char **argv) {
         DSState_unsetOption(state.get(), DS_OPTION_ASSERT);
     }
 
+    // set program name
+    if(argc > 0) {
+        auto binPath = getRealpath(argv[0]);
+        if(binPath) {
+            setenv("YDSH_BIN", binPath.get(), 1);
+        }
+    }
 
     // set rest argument
     char **shellArgs = begin;

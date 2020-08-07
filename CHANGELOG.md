@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allow ``Regex`` constructor in constant expression
 - introduce ``fastglob`` option
   - breaking traditional glob behavior, but takes more optimized directory search strategy
-
+- after startup, set environmental variable ``YDSH_BIN`` to full path of current shell
 
 #### Builtin
 - add ``status`` method to ``Job`` type
