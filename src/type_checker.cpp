@@ -1600,9 +1600,7 @@ static bool isDirPattern(const Node &node) {
     if(isa<StringNode>(node)) {
         auto &strNode = cast<StringNode>(node);
         StringRef ref = strNode.getValue();
-        if(ref.empty()) {
-            return false;
-        }
+        assert(!ref.empty());
         return ref.back() == '/' || ref.endsWith("/.") || ref.endsWith("/..");
     }
     return false;
@@ -1661,16 +1659,6 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     auto &exprType = this->symbolTable.get(isGlob ? TYPE::StringArray : TYPE::String);
     this->checkType(exprType, node.getPathNode());
 
-    for(auto &e : node.getPathNode().refSegmentNodes()) {
-        this->applyConstFolding(e);
-        assert(isa<StringNode>(*e) || isa<WildCardNode>(*e));
-        if(isa<StringNode>(*e)) {
-            auto ref = StringRef(cast<StringNode>(*e).getValue());
-            if(ref.find(nullStrRef) != StringRef::npos) {
-                RAISE_TC_ERROR(NullInPath, node.getPathNode());
-            }
-        }
-    }
     auto &segments = node.getPathNode().refSegmentNodes();
     for(auto iter = segments.begin(); iter != segments.end(); ) {
         this->applyConstFolding(*iter);
