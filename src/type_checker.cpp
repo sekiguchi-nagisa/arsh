@@ -1671,6 +1671,23 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
             }
         }
     }
+    auto &segments = node.getPathNode().refSegmentNodes();
+    for(auto iter = segments.begin(); iter != segments.end(); ) {
+        this->applyConstFolding(*iter);
+        auto &e = *iter;
+        assert(isa<StringNode>(*e) || isa<WildCardNode>(*e));
+        if(isa<StringNode>(*e)) {
+            auto ref = StringRef(cast<StringNode>(*e).getValue());
+            if(ref.empty()) {
+                iter = segments.erase(iter);
+                continue;
+            }
+            if(ref.find(nullStrRef) != StringRef::npos) {
+                RAISE_TC_ERROR(NullInPath, node.getPathNode());
+            }
+        }
+        ++iter;
+    }
     this->resolvePathList(node);
     node.setType(this->symbolTable.get(TYPE::Void));
 }
