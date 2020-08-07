@@ -1600,6 +1600,9 @@ static bool isDirPattern(const Node &node) {
     if(isa<StringNode>(node)) {
         auto &strNode = cast<StringNode>(node);
         StringRef ref = strNode.getValue();
+        if(ref.empty()) {
+            return false;
+        }
         return ref.back() == '/' || ref.endsWith("/.") || ref.endsWith("/..");
     }
     return false;
