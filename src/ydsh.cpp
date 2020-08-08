@@ -516,10 +516,10 @@ int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target) {
     return 0;
 }
 
-unsigned short DSState_option(const DSState *st) {
+unsigned int DSState_option(const DSState *st) {
     GUARD_NULL(st, 0);
 
-    unsigned short option = 0;
+    unsigned int option = 0;
 
     // get compile option
     if(hasFlag(st->compileOption, CompileOption::ASSERT)) {
@@ -539,7 +539,7 @@ unsigned short DSState_option(const DSState *st) {
     return option;
 }
 
-void DSState_setOption(DSState *st, unsigned short optionSet) {
+void DSState_setOption(DSState *st, unsigned int optionSet) {
     GUARD_NULL(st);
 
     // set compile option
@@ -560,7 +560,7 @@ void DSState_setOption(DSState *st, unsigned short optionSet) {
     }
 }
 
-void DSState_unsetOption(DSState *st, unsigned short optionSet) {
+void DSState_unsetOption(DSState *st, unsigned int optionSet) {
     GUARD_NULL(st);
 
     // unset compile option
@@ -669,7 +669,7 @@ static void appendAsEscaped(std::string &line, const char *path) {
     line += '"';
 }
 
-int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e) {
+int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e) {
     GUARD_NULL(st, -1);
     GUARD_NULL(fileName, -1);
 

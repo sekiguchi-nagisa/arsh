@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``DSState_completionOp`` to ``DSState_complete``
   - ``DSState_lineEditOp`` to ``DSState_lineEdit``
 - **Breaking Change**: return status of public api
-
+- **Breaking Change**: change ``unsigned short`` to ``unsigned int``
 
 ### Fixed
 

@@ -136,26 +136,26 @@ int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target);
 
 
 /* for option */
-#define DS_OPTION_ASSERT       ((unsigned short) (1u << 0u))
-#define DS_OPTION_INTERACTIVE  ((unsigned short) (1u << 1u))
-#define DS_OPTION_TRACE_EXIT   ((unsigned short) (1u << 2u))
-#define DS_OPTION_JOB_CONTROL  ((unsigned short) (1u << 3u))
+#define DS_OPTION_ASSERT       ((unsigned int) (1u << 0u))
+#define DS_OPTION_INTERACTIVE  ((unsigned int) (1u << 1u))
+#define DS_OPTION_TRACE_EXIT   ((unsigned int) (1u << 2u))
+#define DS_OPTION_JOB_CONTROL  ((unsigned int) (1u << 3u))
 
-unsigned short DSState_option(const DSState *st);
+unsigned int DSState_option(const DSState *st);
 
 /**
  * if specify DS_OPTION_JOB_CONTROL, ignore some signals
  * @param st
  * @param optionSet
  */
-void DSState_setOption(DSState *st, unsigned short optionSet);
+void DSState_setOption(DSState *st, unsigned int optionSet);
 
 /**
  * if specify DS_OPTION_JOB_CONTROL, reset some signal setting
  * @param st
  * @param optionSet
  */
-void DSState_unsetOption(DSState *st, unsigned short optionSet);
+void DSState_unsetOption(DSState *st, unsigned int optionSet);
 
 
 /* for indicating error kind. */
@@ -250,12 +250,12 @@ int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
  * load module as fullpath. so not allow cascading module search
  * (not search from LOCAL_MOD_DIR and SYSTEM_MOD_DIR)
  */
-#define DS_MOD_FULLPATH      ((unsigned short) (1u << 0u))
+#define DS_MOD_FULLPATH      ((unsigned int) (1u << 0u))
 
 /**
  * ignore ENOENT error
  */
-#define DS_MOD_IGNORE_ENOENT ((unsigned short) (1u << 1u))
+#define DS_MOD_IGNORE_ENOENT ((unsigned int) (1u << 1u))
 
 /**
  * open file as module. if e is not null, set error info.
@@ -273,7 +273,7 @@ int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
  * if fileName is already loaded module, return always 0 and do nothing.
  * if st or fileName is null, return -1 and not set error
  */
-int DSState_loadModule(DSState *st, const char *fileName, unsigned short option, DSError *e);
+int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e);
 
 /**
  * execute command. if not DS_EXEC_MODE_NORMAL, do nothing (return always 0)

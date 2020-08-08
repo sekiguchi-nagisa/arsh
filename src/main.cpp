@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
     bool quiet = false;
     bool forceInteractive = false;
     DSExecMode mode = DS_EXEC_MODE_NORMAL;
-    unsigned short option = 0;
+    unsigned int option = 0;
     bool noAssert = false;
     struct {
         const DSDumpKind kind;
