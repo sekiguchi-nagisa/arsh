@@ -1596,12 +1596,18 @@ static std::string concat(const CmdArgNode &node, const unsigned int endOffset) 
     return path;
 }
 
-static bool isDirPattern(const Node &node) {
-    if(isa<StringNode>(node)) {
-        auto &strNode = cast<StringNode>(node);
-        StringRef ref = strNode.getValue();
-        assert(!ref.empty());
-        return ref.back() == '/' || ref.endsWith("/.") || ref.endsWith("/..");
+static bool isDirPattern(const CmdArgNode &node) {
+    auto &nodes = node.getSegmentNodes();
+    assert(!nodes.empty());
+    for(auto iter = nodes.rbegin(); iter != nodes.crend(); ++iter) {
+        if(isa<StringNode>(**iter)) {
+            StringRef ref = cast<StringNode>(**iter).getValue();
+            if(ref.empty()) {
+                continue;
+            }
+            return ref.back() == '/' || ref.endsWith("/.") || ref.endsWith("/..");
+        }
+        break;
     }
     return false;
 }
@@ -1616,7 +1622,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
         }
         ret.push_back(std::move(path));
     } else {
-        if(isDirPattern(*pathNode.getSegmentNodes().back())) {
+        if(isDirPattern(pathNode)) {
             std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
             RAISE_TC_ERROR(NoGlobDir, pathNode, path.c_str());
         }
@@ -1659,22 +1665,15 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     auto &exprType = this->symbolTable.get(isGlob ? TYPE::StringArray : TYPE::String);
     this->checkType(exprType, node.getPathNode());
 
-    auto &segments = node.getPathNode().refSegmentNodes();
-    for(auto iter = segments.begin(); iter != segments.end(); ) {
-        this->applyConstFolding(*iter);
-        auto &e = *iter;
+    for(auto &e : node.getPathNode().refSegmentNodes()) {
+        this->applyConstFolding(e);
         assert(isa<StringNode>(*e) || isa<WildCardNode>(*e));
         if(isa<StringNode>(*e)) {
             auto ref = StringRef(cast<StringNode>(*e).getValue());
-            if(ref.empty()) {
-                iter = segments.erase(iter);
-                continue;
-            }
             if(ref.find(nullStrRef) != StringRef::npos) {
                 RAISE_TC_ERROR(NullInPath, node.getPathNode());
             }
         }
-        ++iter;
     }
     this->resolvePathList(node);
     node.setType(this->symbolTable.get(TYPE::Void));

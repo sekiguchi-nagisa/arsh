@@ -200,10 +200,15 @@ void ModuleLoader::abort() {
 }
 
 static CStrPtr expandToRealpath(const char *baseDir, const char *path) {
+    if(!*path) {
+        errno = ENOENT;
+        return nullptr;
+    }
     std::string value;
     if(!baseDir || *path == '/') {
         value = path;
     } else {
+        assert(*baseDir);
         value = baseDir;
         value += '/';
         value += path;
