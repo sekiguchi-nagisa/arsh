@@ -12,6 +12,7 @@
 #include <pwd.h>
 
 #include "../test_common.h"
+#include "../../tools/platform/platform.h"
 
 #ifndef API_TEST_WORK_DIR
 #error "require API_TEST_WORK_DIR"
@@ -474,11 +475,18 @@ TEST_F(APITest, complete) {
     s = DSState_complete(this->state, DS_COMP_SIZE, 0, nullptr);
     ASSERT_EQ(0, s);
 
-    line = "echo ~r";
+    const char *prefix;
+    if(ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
+        prefix = "~N";
+        line = "echo ~N";
+    } else {
+        prefix = "~r";
+        line = "echo ~r";
+    }
     s = DSState_complete(this->state, DS_COMP_INVOKE, 7, &line);
     ASSERT_TRUE(s > 0);
     size = DSState_complete(this->state, DS_COMP_SIZE, 0, nullptr);
-    expect = filter(expect, "~r");
+    expect = filter(expect, prefix);
     ASSERT_EQ(expect.size(), size);
     for(unsigned int i = 0; i < size; i++) {
         const char *ret = nullptr;
