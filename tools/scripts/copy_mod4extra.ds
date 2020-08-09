@@ -10,8 +10,8 @@ test -d ~/.ydsh/module || {
     mkdir -p ~/.ydsh/module || $error("failed!!")
 }
 
-test -d $INSTALL_PREFIX/etc/ydsh/module || {
-    sudo mkdir -p $INSTALL_PREFIX/etc/ydsh/module || $error("failed!!")
+test -d $INSTALL_PREFIX/share/ydsh/module || {
+    sudo mkdir -p $INSTALL_PREFIX/share/ydsh/module || $error("failed!!")
 }
 
 
