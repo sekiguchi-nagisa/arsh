@@ -1,0 +1,27 @@
+
+# git completion for ydsh
+
+source $MODULE_DIR/completion
+
+var git_bash_comp_path = ""
+
+function _git($words : [String], $cursor : Int) : [String] {
+    let _helper = "$SCRIPT_DIR/../git-completion.ydsh.bash"
+    var cmd = $words[0]
+
+    test -f $git_bash_comp_path || return new [String]()
+    $cmd != "git" && $cmd != "gitk" && return new [String]()
+
+    var line = ""
+    for $w in $words {
+        if !$line.empty() { $line += " "; }
+        $line += $w
+    }
+    if $cursor == $words.size() {
+        $line += " "
+    }
+    return $(bash $_helper $git_bash_comp_path $cmd $line)
+}
+
+$compAdd("git", $_git)
+$compAdd("gitk", $_git)
