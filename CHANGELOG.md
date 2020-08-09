@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: change install directory structure
   - ``share/ydsh``: system wide architecture-independent data
   - ``share/ydsh/module``: system module
+- **Breaking Change**: remove ``CONFIG_DIR`` variable
 
 #### Builtin
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument
@@ -53,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``DSState_lineEditOp`` to ``DSState_lineEdit``
 - **Breaking Change**: return status of public api
 - **Breaking Change**: change ``unsigned short`` to ``unsigned int``
+- **Breaking Change**: remove ``DSState_configDir`` api
 
 ### Fixed
 

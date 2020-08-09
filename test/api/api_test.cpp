@@ -164,10 +164,6 @@ TEST_F(APITest, version) {
     ASSERT_TRUE(ydsh::StringRef(v).startsWith("ydsh, version "));
 }
 
-TEST_F(APITest, config) {
-    ASSERT_STREQ(ydsh::SYSTEM_CONFIG_DIR, DSState_configDir());
-}
-
 TEST_F(APITest, lineNum1) {
     ASSERT_EQ(0u, DSState_lineNum(nullptr));
     ASSERT_EQ(1u, DSState_lineNum(this->state));

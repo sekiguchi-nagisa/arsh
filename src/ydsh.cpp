@@ -316,11 +316,6 @@ static void initBuiltinVar(DSState &state) {
     /**
      * must be String_Object
      */
-    bindVariable(state, CVAR_CONFIG_DIR, DSValue::createStr(SYSTEM_CONFIG_DIR));
-
-    /**
-     * must be String_Object
-     */
     bindVariable(state, CVAR_DATA_DIR, DSValue::createStr(SYSTEM_DATA_DIR));
 
     /**
@@ -722,10 +717,6 @@ const char *DSState_version(DSVersion *version) {
 
 const char *DSState_copyright() {
     return "Copyright (C) 2015-2020 Nagisa Sekiguchi";
-}
-
-const char *DSState_configDir() {
-    return SYSTEM_CONFIG_DIR;
 }
 
 static constexpr unsigned int featureBit() {

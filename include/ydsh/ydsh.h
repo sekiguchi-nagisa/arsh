@@ -92,6 +92,7 @@ void DSState_setShellName(DSState *st, const char *shellName);
 /**
  * set arguments ($@).
  * @param st
+ * @param st
  * if null, do nothing
  * @param args
  * if null, clear '$@'
@@ -306,12 +307,6 @@ const char *DSState_version(DSVersion *version);
 
 const char *DSState_copyright();
 
-/**
- * get full path of system config directory (/etc/ydsh).
- * equivalent to $CONFIG_DIR
- * @return
- */
-const char *DSState_configDir();
 
 /* for feature detection */
 #define DS_FEATURE_LOGGING    ((unsigned int) (1u << 0u))

@@ -21,7 +21,7 @@ for $d in $(ls $exec_test_dir) {
 }
 
 # copy from module dir
-let mod = "$SCRIPT_DIR/../etc/ydsh/module".realpath()!
+let mod = "$SCRIPT_DIR/../share/ydsh/module".realpath()!
 echo copy scripts from $mod
 for $d in $(ls $mod) {
     cp $mod/$d $dir/mod_$d
