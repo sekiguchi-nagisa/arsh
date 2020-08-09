@@ -21,6 +21,8 @@
 
 #define X_SYSCONFIGDIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}"
 
+#define X_DATADIR "${CMAKE_INSTALL_FULL_DATADIR}"
+
 
 // extra option
 

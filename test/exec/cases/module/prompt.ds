@@ -1,6 +1,6 @@
 # for prompt string
 
-source ../../../../etc/ydsh/module/prompt
+source ../../../../share/ydsh/module/prompt
 
 function dirname($s : String) : String {
     import-env HOME

@@ -4,7 +4,7 @@
 
 set(TEST_NAME history_test)
 
-add_definitions(-DHISTORY_MOD_PATH="${PROJECT_SOURCE_DIR}/etc/ydsh/module/edit")
+add_definitions(-DHISTORY_MOD_PATH="${PROJECT_SOURCE_DIR}/share/ydsh/module/edit")
 add_executable(${TEST_NAME}
     history_test.cpp
 )

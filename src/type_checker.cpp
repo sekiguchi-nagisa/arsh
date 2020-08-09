@@ -1038,6 +1038,8 @@ static auto initConstVarMap() {
     CStringHashMap<std::string> map = {
             {CVAR_VERSION, X_INFO_VERSION_CORE},
             {CVAR_CONFIG_DIR, SYSTEM_CONFIG_DIR},
+            {CVAR_DATA_DIR, SYSTEM_DATA_DIR},
+            {CVAR_MODULE_DIR, SYSTEM_MOD_DIR},
             {CVAR_OSTYPE, name.sysname},
             {CVAR_MACHTYPE, BUILD_ARCH},
     };

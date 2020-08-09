@@ -1,5 +1,5 @@
 
-source ../../../../etc/ydsh/module/edit
+source ../../../../share/ydsh/module/edit
 
 # invalid option
 history -x

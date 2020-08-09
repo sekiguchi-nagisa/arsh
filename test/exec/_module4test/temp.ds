@@ -10,7 +10,7 @@ function _clear_temp($s : Int, $e : Any) {
 }
 
 
-source ../../../etc/ydsh/module/atexit
+source ../../../share/ydsh/module/atexit
 
 $atexit($ON_EXIT or $ON_ASSERT or $ON_ERR, $_clear_temp)
 

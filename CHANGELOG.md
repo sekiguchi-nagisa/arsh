@@ -38,6 +38,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: not ignore previously raised exception in finally block
 - **Breaking Change**: also enter finally block in exit or assertion failure
 - glob in source statement always use ``fastglob`` mode
+- **Breaking Change**: change install directory structure
+  - ``share/ydsh``: system wide architecture-independent data
+  - ``share/ydsh/module``: system module
 
 #### Builtin
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument

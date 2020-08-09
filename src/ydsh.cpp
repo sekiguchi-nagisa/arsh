@@ -319,6 +319,16 @@ static void initBuiltinVar(DSState &state) {
     bindVariable(state, CVAR_CONFIG_DIR, DSValue::createStr(SYSTEM_CONFIG_DIR));
 
     /**
+     * must be String_Object
+     */
+    bindVariable(state, CVAR_DATA_DIR, DSValue::createStr(SYSTEM_DATA_DIR));
+
+    /**
+     * must be String_Object
+     */
+    bindVariable(state, CVAR_MODULE_DIR, DSValue::createStr(SYSTEM_MOD_DIR));
+
+    /**
      * dummy object for random number
      * must be Int_Object
      */

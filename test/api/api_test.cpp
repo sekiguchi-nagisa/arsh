@@ -374,8 +374,8 @@ TEST_F(APITest, prompt) {
     ASSERT_STREQ("", buf);
 
     // use module
-    const char *str = "source " API_TEST_WORK_DIR "/../../etc/ydsh/module/edit;\n"
-                      "source " API_TEST_WORK_DIR "/../../etc/ydsh/module/prompt;\n"
+    const char *str = "source " API_TEST_WORK_DIR "/../../share/ydsh/module/edit;\n"
+                      "source " API_TEST_WORK_DIR "/../../share/ydsh/module/prompt;\n"
                       "$PS1 = 'hello>'; $PS2 = 'second>'";
     int r = DSState_eval(this->state, nullptr, str, strlen(str), nullptr);
     ASSERT_EQ(0, r);

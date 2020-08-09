@@ -57,6 +57,8 @@ constexpr const char *CVAR_SCRIPT_DIR = "SCRIPT_DIR";
 constexpr const char *CVAR_SCRIPT_NAME = "SCRIPT_NAME";
 constexpr const char *CVAR_VERSION = "YDSH_VERSION";
 constexpr const char *CVAR_CONFIG_DIR = "CONFIG_DIR";
+constexpr const char *CVAR_DATA_DIR = "DATA_DIR";
+constexpr const char *CVAR_MODULE_DIR = "MODULE_DIR";
 constexpr const char *CVAR_OSTYPE = "OSTYPE";
 constexpr const char *CVAR_MACHTYPE = "MACHTYPE";
 
@@ -215,8 +217,10 @@ inline const char *toString(GlobMeta meta) {
 constexpr const char *LOCAL_CONFIG_DIR = "~/.ydsh";
 constexpr const char *LOCAL_MOD_DIR = "~/.ydsh/module";
 
+constexpr const char *SYSTEM_DATA_DIR = X_DATADIR "/ydsh";
+
 constexpr const char *SYSTEM_CONFIG_DIR = X_SYSCONFIGDIR "/ydsh";
-constexpr const char *SYSTEM_MOD_DIR = X_SYSCONFIGDIR "/ydsh/module";
+constexpr const char *SYSTEM_MOD_DIR = X_DATADIR "/ydsh/module";
 
 } // namespace ydsh
 

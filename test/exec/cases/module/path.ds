@@ -1,5 +1,5 @@
 
-source ../../../../etc/ydsh/module/path
+source ../../../../share/ydsh/module/path
 
 function assertBaseDir($s : String) {
     # basename
