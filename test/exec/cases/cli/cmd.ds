@@ -1,0 +1,62 @@
+
+source $SCRIPT_DIR/expect.ds
+
+$expect("$(ds -c 'assert $0 == "ydsh"' 2>&1)", 0, '')
+
+$expect("$(ds -c 'assert $0 == "A"; assert $@.size() == 1; assert $@[0] == "G"' A G 2>&1)", 0, '')
+
+$expect("$(ds -c 'assert $SCRIPT_DIR == "$(pwd -L)"' 2>&1)", 0, '')
+
+$expect("$(ds -c '\' 2>&1)", 0, '') # do nothing
+
+$expect("$(ds -c '#echo hello' 2>&1)", 0, '') # do nothing
+
+
+# assertion
+var msg = "Assertion Error: `(12 == 4)'
+    from (string):1 '<toplevel>()'"
+
+$expect("$(ds -c 'assert(12 == 4)' 2>&1)", 1, $msg)
+
+
+# exception
+$msg = "[runtime error]
+ArithmeticError: zero division
+    from (string):1 '<toplevel>()'"
+
+$expect("$(ds -c '34 / 0' 2>&1)", 1, $msg)
+
+
+$msg = "[runtime error]
+SystemError: execution error: lajfeoifreo: command not found
+    from (string):1 '<toplevel>()'"
+
+$expect("$(ds -c 'lajfeoifreo' 2>&1)", 1, $msg)
+
+var cmd = "var a = \$'he\x00llo'; throw \$a"
+
+$expect("$(ds -c $cmd 2>&1)", 1, $'[runtime error]\nhe\x00llo')
+
+
+# normal
+$expect("$(ds -c '__puts -3' 2>&1)", 1, '')
+
+$expect("$(ds -c 'echo hello' 2>&1)", 0, 'hello')
+
+
+# exit
+$expect("$(ds -c 'exit 0' 2>&1)", 0, '')
+$expect("$(ds -c 'exit 88' 2>&1)", 88, '')
+
+
+# exec
+$expect("$(ds -c 'exec > /dev/null; echo hello' 2>&1)", 0, '')
+
+
+# command error
+$msg = "[runtime error]
+SystemError: execution error: hoge: command not found
+    from (string):1 '<toplevel>()'"
+
+$expect("$(ds -c 'hoge | :' 2>&1)", 0, $msg)
+$expect("$(ds -c ': | hoge' 2>&1)", 1, $msg)

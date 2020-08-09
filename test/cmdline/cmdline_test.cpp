@@ -62,76 +62,10 @@ public:
     }
 };
 
-TEST_F(CmdlineTest, cmd1) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert($0 == 'ydsh')"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-c", "assert($0 == \"A\"); assert($@.size() == 1); assert($@[0] == \"G\")", "A", "G"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert $SCRIPT_DIR == \"$(pwd -L)\""), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "\\"), 0));    // do nothing
-}
-
 template <unsigned int N>
 static std::string toString(const char (&value)[N]) {
     static_assert(N > 0, "");
     return std::string(value, N - 1);
-}
-
-TEST_F(CmdlineTest, cmd2) {
-    // assertion
-    const char *msg = R"(Assertion Error: `(12 == 4)'
-    from (string):1 '<toplevel>()'
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "assert(12 == 4)"), 1, "", msg));
-
-    // exception
-    msg = R"([runtime error]
-ArithmeticError: zero division
-    from (string):1 '<toplevel>()'
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "34 / 0"), 1, "", msg));
-
-    msg = R"([runtime error]
-SystemError: execution error: lajfeoifreo: command not found
-    from (string):1 '<toplevel>()'
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "lajfeoifreo"), 1, "", msg));
-
-    const char out[] = "[runtime error]\nhe\0llo\n";
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a = $'he\\000llo'; throw $a"), 1, "", toString(out)));
-
-    // normal
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "__puts -3"), 1));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "echo hello"), 0, "hello\n"));
-
-    // exit
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "exit 0"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "exit 66"), 66));
-
-    // exec
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "exec > /dev/null; echo hello"), 0));
-
-    // command error
-    msg = R"([runtime error]
-SystemError: execution error: hoge: command not found
-    from (string):1 '<toplevel>()'
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "hoge | :"), 0, "", msg));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", ": | hoge"), 1, "", msg));
-}
-
-TEST_F(CmdlineTest, exit) {
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
-            ds("--trace-exit", "-c", "exit 23"), 23, "", "^Shell Exit: terminated by exit 23\n.*$"));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
-            ds("-c", "shctl set traceonexit; exit 23"), 23, "", "^Shell Exit: terminated by exit 23\n.*$"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--trace-exit", "-c", "shctl unset traceonexit; exit 23"), 23));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
-            ds("--trace-exit", "-c", "exit 2300"), 252, "", "^Shell Exit: terminated by exit 252\n.*$"));
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(
-            ds("--trace-exit", "-c", "$? = 123; exit hoge"), 123, "", "^Shell Exit: terminated by exit 123\n.*$"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("--trace-exit", "-e", "exit", "34"), 34, "", "Shell Exit: terminated by exit 34\n"));
 }
 
 TEST_F(CmdlineTest, exec) {
@@ -301,52 +235,6 @@ TEST_F(CmdlineTest, logger) {
 
 TEST_F(CmdlineTest, pid) {
     ASSERT_NO_FATAL_FAILURE(this->expect(CL("%s --pid $PID --ppid $PPID | grep .", PID_CHECK_PATH), 0, "OK\n"));
-}
-
-static auto interactive() {
-    return ds("-i", "--quiet", "--norc");
-}
-
-TEST_F(CmdlineTest, forceInteractive1) {
-    ASSERT_NO_FATAL_FAILURE(this->expect("23 as String" | interactive(), 0, ": String = 23\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect("$true" | interactive(), 0, ": Boolean = true\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect("true" | interactive(), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect("true | false" | interactive(), 1));
-
-    // runtime error
-    const char *msg = R"([runtime error]
-UnwrappingError: invalid value
-    from (stdin):1 '<toplevel>()'
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect("var a = (9, new Int!()); $a" | interactive(), 1, "", msg));
-
-    msg = R"([runtime error]
-cannot obtain string representation
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect("var a = (9, new Int!()); throw $a" | interactive(), 1, "", msg));
-
-    // option type
-    ASSERT_NO_FATAL_FAILURE(
-            this->expect("var a = $true as Option<Boolean>; $a" | interactive(), 0, ": Boolean! = true\n"));
-    ASSERT_NO_FATAL_FAILURE(
-            this->expect("new Option<Boolean>()" | interactive(), 0, ": Boolean! = (invalid)\n"));
-    ASSERT_NO_FATAL_FAILURE(
-            this->expect("var a = $true as String as Option<String>; $a" | interactive(), 0, ": String! = true\n"));
-    ASSERT_NO_FATAL_FAILURE(
-            this->expect("new Option<String>()" | interactive(), 0, ": String! = (invalid)\n"));
-}
-
-TEST_F(CmdlineTest, forceInteractive2) {
-    // escape
-    auto wrapper = "$'hello\\x00world'" | interactive();
-    auto r = wrapper.execAndGetResult();
-
-    ASSERT_EQ(0, r.status.value);
-
-    const char msg[] = ": String = hello\0world\n";
-    std::string out(msg, arraySize(msg) - 1);
-    ASSERT_EQ(out, r.out);
-    ASSERT_STREQ("", r.err.c_str());
 }
 
 #define DS(S) ds("-c", S)
@@ -593,8 +481,6 @@ TEST_F(CmdlineTest2, nocwd) {
 }
 
 struct CmdlineTest3 : public CmdlineTest2 {
-    using Pair = std::pair<std::string, std::string>;
-
     using ExpectOutput::expect;
 
     struct Param {

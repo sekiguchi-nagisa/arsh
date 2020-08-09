@@ -11,11 +11,6 @@ ds() {
     eval $YDSH_BIN $@
 }
 
-repl() {
-    ds -i --quiet --norc $@
-}
-
-
 assert test -x $YDSH_BIN
 
 function expect($out : String, $es : Int, $eout : String) {
