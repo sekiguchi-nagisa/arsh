@@ -735,6 +735,10 @@ TEST_F(APITest, module5) {
 }
 
 TEST_F(APITest, module6) {
+    if(ydsh::platform::platform() == ydsh::platform::PlatformType::CYGWIN) {
+        return;
+    }
+
     auto fileName = this->createTempFile(R"(ss$ho"\hgoe
         \ \
 )", "echo moduel!!; exit 56");
