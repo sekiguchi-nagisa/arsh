@@ -24,6 +24,6 @@ for $a in $(ls $local) {
 
 let system = "$SCRIPT_DIR/../../test/extra/_mod4extra/system/".realpath()!
 for $a in $(ls $system) {
-    echo copy $system/$a to $INSTALL_PREFIX/etc/ydsh/module/
-    sudo cp $system/$a $INSTALL_PREFIX/etc/ydsh/module/
+    echo copy $system/$a to $INSTALL_PREFIX/share/ydsh/module/
+    sudo cp $system/$a $INSTALL_PREFIX/share/ydsh/module/
 }
