@@ -379,9 +379,9 @@ private:
     static bool callCommand(DSState &state, CmdResolver resolver,
                             DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
 
-    static bool callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr);
+    static bool builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr);
 
-    static void callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir);
+    static void builtinExec(DSState &state, DSValue &&array, DSValue &&redir);
 
     /**
      *

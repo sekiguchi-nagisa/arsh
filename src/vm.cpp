@@ -640,7 +640,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
 
 int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
 
-bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
+bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
     auto &arrayObj = typeAs<ArrayObject>(argvObj);
 
     bool useDefaultPath = false;
@@ -736,7 +736,7 @@ bool VM::callBuiltinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, 
     return true;
 }
 
-void VM::callBuiltinExec(DSState &state, DSValue &&array, DSValue &&redir) {
+void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     auto &argvObj = typeAs<ArrayObject>(array);
     bool clearEnv = false;
     const char *progName = nullptr;
@@ -1540,7 +1540,7 @@ bool VM::mainLoop(DSState &state) {
             auto attr = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
             DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
             DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
-            bool ret = callBuiltinCommand(state, std::move(argv), std::move(redir), attr);
+            bool ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
             flushStdFD();
             TRY(ret);
             vmnext;
@@ -1562,7 +1562,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(BUILTIN_EXEC) {
             DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
             DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
-            callBuiltinExec(state, std::move(argv), std::move(redir));
+            builtinExec(state, std::move(argv), std::move(redir));
             vmnext;
         }
         vmcase(NEW_REDIR) {
