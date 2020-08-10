@@ -248,7 +248,7 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
                     std::string fullpath(p);
                     fullpath += '/';
                     fullpath += cmd.data();
-                    if(S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) == 0) {
+                    if(isExecutable(fullpath.c_str())) {
                         append(results, cmd, EscapeOp::COMMAND_NAME);
                     }
                 }

@@ -57,6 +57,15 @@ inline mode_t getStMode(int fd) {
 
 #define S_IS_PERM_(mode, flag) (((mode) & (flag)) == (flag))
 
+/**
+ * check if fileName is regular and executable file
+ * @param fileName
+ * @return
+ */
+inline bool isExecutable(const char *fileName) {
+    return S_ISREG(getStMode(fileName)) && access(fileName, X_OK) == 0;
+}
+
 inline CStrPtr getRealpath(const char *path) {
     return CStrPtr(realpath(path, nullptr));
 }

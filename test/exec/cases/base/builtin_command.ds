@@ -66,8 +66,13 @@ env 2>&1 > /dev/null
 assert("$(command -V env)" == "env is hashed (/usr/bin/env)")          # hashed
 
 assert("$(command -V hfiureaf 2>&1)" ==
-       "ydsh: command: hfiureaf: No such file or directory")       # invalid
+       "ydsh: command: hfiureaf: not found")       # invalid
 command -V hfueirf
+assert($? != 0)
+
+assert("$(command -V . 2>&1)" ==
+       "ydsh: command: .: not found")       # invalid
+command -V .
 assert($? != 0)
 
 assert(command -V hferure cd hoge fjer)                             # multiple

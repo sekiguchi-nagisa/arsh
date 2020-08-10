@@ -710,7 +710,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag
             }
             case Command::EXTERNAL: {
                 const char *path = cmd.filePath;
-                if(path != nullptr) {
+                if(path != nullptr && isExecutable(path)) {
                     successCount++;
                     if(showDesc == 1) {
                         printf("%s\n", path);
@@ -726,7 +726,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag
             }
 
             if(showDesc == 2) {
-                PERROR(arrayObj, "%s", commandName);
+                ERROR(arrayObj, "%s: not found", commandName);
             }
         }
         pushExitStatus(state, successCount > 0 ? 0 : 1);
