@@ -184,6 +184,9 @@ chmod +x $pipe
 test -x $pipe
 assert($? == 0)
 
+test -x .
+assert($? == 0) # if path is directory always success
+
 test -O $pipe
 assert($? == 0)
 
