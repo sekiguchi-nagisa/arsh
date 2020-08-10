@@ -71,6 +71,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ``..`` pattern cannot match empty directory.
 - always set new ``COMPREPLY`` variable even if completion result is empty
 
+#### Builtin
+- fix executable file checking in ``command -v`` option
+  - always ignore directoy
+
 #### API
 - when abort symbol table, also abort loaded script path
 - not crash public api when ``DSState`` parameter is null
