@@ -31,6 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - builtin ``complete`` command supports ``-A`` option
   - reuse internal completion function
 
+#### Completion
+- add completions for
+  - git
+
+
 ### Changed
 
 #### Core
@@ -47,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument
   - ``new Regex('abc', 'im')``
 
+#### Module
+- ``completion``: when command is not found, dose not kick corresponding completer
+
 #### API
 - **Breaking Change**: rename some public api
   - ``DSState_getExitStatus`` to ``DSState_exitStatus``
@@ -56,12 +64,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: change ``unsigned short`` to ``unsigned int``
 - **Breaking Change**: remove ``DSState_configDir`` api
 
+
 ### Fixed
 
 #### Core
 - ``..`` pattern cannot match empty directory.
-
-#### Completer
 - always set new ``COMPREPLY`` variable even if completion result is empty
 
 #### API
