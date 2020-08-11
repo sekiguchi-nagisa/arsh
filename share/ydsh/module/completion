@@ -1,6 +1,8 @@
 
 # for tab completion
 
+source $MODULE_DIR/path
+
 function _empty($words : [String], $cursor : Int) : [String] {
     return new [String]()
 }
@@ -13,7 +15,8 @@ function _defaultHook($words : [String], $cursor : Int) : [String] {
     if !(command -v $words[0] 2>&1 > /dev/null) {
         return new [String]()
     }
-    var comp = $_compMap.get($words[0]) ?? $_compMap.get("") ?? $_empty
+    var cmd = $basename($words[0])
+    var comp = $_compMap.get($cmd) ?? $_compMap.get("") ?? $_empty
     return $comp($words, $cursor)
 }
 
