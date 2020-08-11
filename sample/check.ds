@@ -1,9 +1,11 @@
 #!/usr/bin/env ydsh
 
+import-env YDSH_BIN
+
 for $a in $(find $SCRIPT_DIR) {
     $a =~ $/\.xml$/ && continue
     !test -f $a && continue
 
-    var r = ydsh --compile-only $a
+    var r = eval $YDSH_BIN --compile-only $a
     echo ${$r ? "[OK]" : "[NG]"} $a
 }

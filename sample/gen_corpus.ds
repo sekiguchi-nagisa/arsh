@@ -27,6 +27,13 @@ for $d in $(ls $mod) {
     cp $mod/$d $dir/mod_$d
 }
 
+# copy from completion dir
+let comp = "$SCRIPT_DIR/../share/ydsh/completion".realpath()!
+echo copy scripts from $comp
+for $d in $(ls $comp) {
+    cp $comp/$d $dir/comp_$d
+}
+
 # copy from interest input
 let interest = "$SCRIPT_DIR/../fuzzing/interest_input".realpath()!
 echo copying scripts from $interest
