@@ -6,10 +6,15 @@ source $MODULE_DIR/completion
 var git_bash_comp_path = ""
 
 function _git($words : [String], $cursor : Int) : [String] {
+    if(! test -f $git_bash_comp_path) {
+        if($OSTYPE == "Darwin") {
+            $git_bash_comp_path = '/Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash'
+        }
+    }
+    test -f $git_bash_comp_path || return new [String]()
     let _helper = "$SCRIPT_DIR/../git-completion.ydsh.bash"
     var cmd = $words[0]
 
-    test -f $git_bash_comp_path || return new [String]()
     $cmd != "git" && $cmd != "gitk" && return new [String]()
 
     var line = ""
