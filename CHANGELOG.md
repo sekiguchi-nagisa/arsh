@@ -30,6 +30,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - call ``_exit`` function internally
 - builtin ``complete`` command supports ``-A`` option
   - reuse internal completion function
+- add the following builtin variable
+  - ``DATA_DIR``: indicate ``datadir/ydsh``, ex. /usr/share/ydsh
+  - ``MODULE_DIR``: indicate system module directory, equivalent to ``$DATA_DIR/module``
+
 
 #### Completion
 - add completions for
@@ -42,15 +46,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: perform regex syntax checking in typechecker. now regex syntax error is semantic error 
 - **Breaking Change**: not ignore previously raised exception in finally block
 - **Breaking Change**: also enter finally block in exit or assertion failure
-- glob in source statement always use ``fastglob`` mode
 - **Breaking Change**: change install directory structure
   - ``share/ydsh``: system wide architecture-independent data
-  - ``share/ydsh/module``: system module
-- **Breaking Change**: remove ``CONFIG_DIR`` variable
+  - ``share/ydsh/module``: system modules
+  - ``share/ydsh/completion``: completion modules
+- glob in source statement always use ``fastglob`` mode
+
 
 #### Builtin
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument
   - ``new Regex('abc', 'im')``
+- **Breaking Change**: remove ``CONFIG_DIR`` variable
 
 #### Module
 - ``completion``: when command is not found, dose not kick corresponding completer
