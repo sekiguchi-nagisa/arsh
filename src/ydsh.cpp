@@ -754,16 +754,16 @@ char *DSState_getExecutablePath() {
 
 #elif __linux__
 char *DSState_getExecutablePath() {
-    const char *selfexec = "/proc/self/exec";
+    const char *selfexe = "/proc/self/exe";
     struct stat st;
-    if(lstat(selfexec, &st) == -1) {
+    if(lstat(selfexe, &st) == -1) {
         return nullptr;
     }
     char *link = static_cast<char*>(malloc(sizeof(char) * (st.st_size + 1)));
     if(!link) {
         return nullptr;
     }
-    ssize_t len = readlink(selfexec, link, sizeof(char) * (st.st_size + 1));
+    ssize_t len = readlink(selfexe, link, sizeof(char) * (st.st_size + 1));
     if(len < 0 || len > st.st_size) {
         free(link);
         return nullptr;
