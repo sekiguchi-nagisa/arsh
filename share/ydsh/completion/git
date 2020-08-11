@@ -6,13 +6,27 @@ source $MODULE_DIR/path
 
 var git_bash_comp_path = ""
 
-function _git($words : [String], $cursor : Int) : [String] {
-    if(! test -f $git_bash_comp_path) {
-        if($OSTYPE == "Darwin") {
-            $git_bash_comp_path = '/Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash'
-        }
+function _lookup() : String {
+    if($OSTYPE == "Darwin") {
+        return '/Library/Developer/CommandLineTools/usr/share/git-core/git-completion.bash'
     }
-    test -f $git_bash_comp_path || return new [String]()
+    var list = [
+        '/etc/bash_completion.d/git.sh', # suse
+        '/etc/bash_completion.d/git', # fedora, old debian
+        '/usr/share/bash-completion/completions/git', # arch, ubuntu, new debian
+        '/usr/share/bash-completion/git', # gentoo
+    ]
+    for $i in $list {
+        test -f $i && return $i
+    }
+    return "."
+}
+
+function _git($words : [String], $cursor : Int) : [String] {
+    if !(test -f "$git_bash_comp_path") {
+        $git_bash_comp_path = $_lookup()
+    }
+    test -f "$git_bash_comp_path" || return new [String]()
     let _helper = "$SCRIPT_DIR/../git-completion.ydsh.bash"
     var cmd = $basename($words[0])
 
