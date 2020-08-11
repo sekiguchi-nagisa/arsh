@@ -34,10 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``DATA_DIR``: indicate ``datadir/ydsh``, ex. /usr/share/ydsh
   - ``MODULE_DIR``: indicate system module directory, equivalent to ``$DATA_DIR/module``
 
-
 #### Completion
 - add completions for
   - git
+
+#### API
+- add ``DSState_getExecutablePath`` for get full path of current executable (for ``YDSH_BIN``)
 
 
 ### Changed

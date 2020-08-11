@@ -255,11 +255,10 @@ int main(int argc, char **argv) {
     }
 
     // set program name
-    if(argc > 0) {
-        auto binPath = getRealpath(argv[0]);
-        if(binPath) {
-            setenv("YDSH_BIN", binPath.get(), 1);
-        }
+    char *binPath = DSState_getExecutablePath();
+    if(binPath) {
+        setenv("YDSH_BIN", binPath, 1);
+        free(binPath);
     }
 
     // set rest argument
