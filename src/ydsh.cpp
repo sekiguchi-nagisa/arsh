@@ -752,7 +752,7 @@ char *DSState_getExecutablePath() {
     return real;
 }
 
-#elif __linux__
+#else
 char *DSState_getExecutablePath() {
     size_t bufSize = 16;
     char *buf = nullptr;
@@ -773,10 +773,6 @@ char *DSState_getExecutablePath() {
     return buf;
 }
 
-#else
-char *DSState_getExecutablePath() {
-    return nullptr;
-}
 #endif
 
 unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index, const char **value) {
