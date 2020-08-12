@@ -301,6 +301,10 @@ TEST_F(CmdlineTest, signal) {
     ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 128 + SIGQUIT, "", str));
 }
 
+TEST_F(CmdlineTest, execPath) {
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS("import-env YDSH_BIN; echo -n $YDSH_BIN"), 0, BIN_PATH));
+}
+
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
     CmdlineTest2() = default;
 };
