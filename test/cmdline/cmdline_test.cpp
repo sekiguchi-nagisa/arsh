@@ -68,61 +68,6 @@ static std::string toString(const char (&value)[N]) {
     return std::string(value, N - 1);
 }
 
-TEST_F(CmdlineTest, exec) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "echo", "hello"), 0, "hello\n"));
-
-    // not found builtin command
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "fhurehfurei"), 1, "", "[runtime error]\nSystemError: execution error: fhurehfurei: command not found\n"));
-
-    // command
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "command", "hogehoge"), 1, "", "[runtime error]\nSystemError: execution error: hogehoge: command not found\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "command", "exit", "999"), 231));
-
-    // eval
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "eval", "hogehoge"), 1, "", "[runtime error]\nSystemError: execution error: hogehoge: command not found\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "eval", "exit", "45"), 45));
-
-    // exit
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exit", "34"), 34));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exit", "999"), 231));
-
-    // exec
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec"), 0));  // do nothing
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "echo", "hello"), 0, "hello\n"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-a", "hoge", "echo", "hello"), 0, "hello\n"));
-
-    // default env
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv SHLVL)\" == \"1\")"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PATH)\" == \"/bin:/usr/bin:/usr/local/bin\")"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv LOGNAME)\" == \"$(basename ~)\")"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv USER)\" == \"$(basename ~)\")"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv HOME)\" == \"$(echo ~)\")"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv _)\" == \"$(command -v printenv)\")"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(\"$(printenv PWD)\" == \"$(printenv OLDPWD)\")"), 0));
-    ASSERT_NO_FATAL_FAILURE(this->expect(
-            ds("-e", "exec", "-c", BIN_PATH, "-c", format("assert(\"$(printenv YDSH_BIN)\" == '%s')", BIN_PATH).c_str()), 0));
-
-
-    if(platform::platform() == platform::PlatformType::CYGWIN) {
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(checkenv WINDIR)"), 0));
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert(checkenv SYSTEMROOT)"), 0));
-
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 11"), 0));
-    } else {
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-c", BIN_PATH, "-c", "assert $(printenv).size() == 9"), 0));
-    }
-
-    // invalid option
-    ASSERT_NO_FATAL_FAILURE(this->expect(ds("-e", "exec", "-u"), 2, "", "ydsh: exec: -u: invalid option\n"
-                                                                        "exec: exec [-c] [-a name] file [args ...]\n"));
-}
-
 TEST_F(CmdlineTest, marker1) {
     // line marker of syntax error
     const char *msg = R"((string):1: [syntax error] mismatched token: <EOS>, expected: =
