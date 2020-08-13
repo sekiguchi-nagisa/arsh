@@ -31,6 +31,15 @@ struct TypeHolder {
 
 namespace __detail {
 
+constexpr size_t maxOf(size_t v) {
+    return v;
+}
+
+template <typename ...S>
+constexpr size_t maxOf(size_t v, S ...rest) {
+    return std::max(v, maxOf(rest...));
+}
+
 constexpr bool andAll(bool b) {
     return b;
 }
@@ -100,7 +109,7 @@ struct TypeByIndex {
 
 template <typename ...T>
 struct Storage {
-    alignas(T...) unsigned char data[std::max({sizeof(T)...})];
+    alignas(T...) unsigned char data[__detail::maxOf(sizeof(T)...)];
 
     template <typename U, typename F = __detail::resolvedType<U, T...>>
     void obtain(U &&value) {
