@@ -385,6 +385,14 @@ public:
         iter->second.setModType(type);
     }
 
+    const ModEntry *find(StringRef key) const {
+        auto iter = this->indexMap.find(key);
+        if(iter == this->indexMap.end()) {
+            return nullptr;
+        }
+        return &iter->second;
+    }
+
     auto begin() const {
         return this->indexMap.begin();
     }

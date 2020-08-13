@@ -83,7 +83,7 @@ std::vector<StackTraceElement> VMState::createStackTrace() const {
             const auto *cc = static_cast<const CompiledCode *>(callable);
 
             // create stack trace element
-            const char *sourceName = cc->getSourceName();
+            const char *sourceName = cc->getSourceName().data();
             unsigned int lineNum = cc->getLineNum(curFrame.pc);
 
             std::string callableName;

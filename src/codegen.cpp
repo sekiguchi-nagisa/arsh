@@ -44,7 +44,7 @@ bool isTypeOp(OpCode code) {
     }
 }
 
-CompiledCode CodeBuilder::build(const std::string &name, bool sourced) {
+CompiledCode CodeBuilder::build(const std::string &name) {
     if(!this->finalize()) {
         return CompiledCode();
     }
@@ -85,7 +85,7 @@ CompiledCode CodeBuilder::build(const std::string &name, bool sourced) {
             .localSize = 0,
     };  // sentinel
 
-    return CompiledCode(name.empty() ? nullptr : name.c_str(), code, constPool, entries, except, sourced);
+    return CompiledCode(name.empty() ? nullptr : name.c_str(), code, constPool, entries, except);
 }
 
 
@@ -1370,7 +1370,7 @@ void ByteCodeDumper::operator()(const CompiledCode &code) {
 }
 
 void ByteCodeDumper::dumpModule(const CompiledCode &code) {
-    fprintf(this->fp, "Source File: %s\n", code.getSourceName());
+    fprintf(this->fp, "Source File: %s\n", code.getSourceName().data());
 
     this->dumpCode(code);
     while(!this->funcs.empty()) {

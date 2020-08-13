@@ -2065,14 +2065,19 @@ static int showModule(const DSState &state) {
     return 0;
 }
 
+static int isSourced(const DSState &state) {
+    auto *code = static_cast<const CompiledCode*>(state.getCallStack().getFrame().code);
+    auto *entry = state.symbolTable.getModLoader().find(code->getSourceName());
+    return entry != nullptr && entry->getTypeId() > 0 ? 0 : 1;
+}
+
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     if(argvObj.size() > 1) {
         auto ref = argvObj.getValues()[1].asStrRef();
         if(ref == "backtrace") {
             return printBacktrace(state.getCallStack());
         } else if(ref == "is-sourced") {
-            auto curCode = state.getCallStack().getFrame().code;
-            return static_cast<const CompiledCode *>(curCode)->isSourced() ? 0 : 1;
+            return isSourced(state);
         } else if(ref == "is-interactive") {
             return hasFlag(state.compileOption, CompileOption::INTERACTIVE) ? 0 : 1;
         } else if(ref == "function") {

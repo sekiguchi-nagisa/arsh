@@ -1098,20 +1098,18 @@ private:
      */
     ExceptionEntry *exceptionEntries{nullptr};
 
-    bool sourced{false};
-
 public:
     NON_COPYABLE(CompiledCode);
 
     CompiledCode(const char *name, DSCode code, DSValue *constPool,
-                LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries, bool sourced) noexcept :
+                LineNumEntry *sourcePosEntries, ExceptionEntry *exceptionEntries) noexcept :
             DSCode(code), name(name == nullptr ? nullptr : strdup(name)),
             constPool(constPool), lineNumEntries(sourcePosEntries),
-            exceptionEntries(exceptionEntries), sourced(sourced) { }
+            exceptionEntries(exceptionEntries) { }
 
     CompiledCode(CompiledCode &&c) noexcept :
             DSCode(std::move(c)), name(c.name), constPool(c.constPool),
-            lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries), sourced(c.sourced) {
+            lineNumEntries(c.lineNumEntries), exceptionEntries(c.exceptionEntries) {
         c.name = nullptr;
         c.code = nullptr;
         c.constPool = nullptr;
@@ -1142,11 +1140,10 @@ public:
         std::swap(this->constPool, o.constPool);
         std::swap(this->lineNumEntries, o.lineNumEntries);
         std::swap(this->exceptionEntries, o.exceptionEntries);
-        std::swap(this->sourced, o.sourced);
     }
 
-    const char *getSourceName() const {
-        return this->constPool[0].asCStr();
+    StringRef getSourceName() const {
+        return this->constPool[0].asStrRef();
     }
 
     /**
@@ -1168,10 +1165,6 @@ public:
 
     const ExceptionEntry *getExceptionEntries() const {
         return this->exceptionEntries;
-    }
-
-    bool isSourced() const {
-        return this->sourced;
     }
 
     explicit operator bool() const noexcept {

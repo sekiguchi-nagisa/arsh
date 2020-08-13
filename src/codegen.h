@@ -115,7 +115,7 @@ struct CodeBuilder : public CodeEmitter<true> {
     /**
      * after build, remove allocated buffer.
      */
-    CompiledCode build(const std::string &name, bool sourced);
+    CompiledCode build(const std::string &name);
 };
 
 class ModuleCommon {
@@ -394,7 +394,7 @@ private:
     }
 
     CompiledCode finalizeCodeBuilder(const std::string &name) {
-        auto code = this->curBuilder().build(name, this->commons.size() > 1);
+        auto code = this->curBuilder().build(name);
         this->builders.pop_back();
         return code;
     }
