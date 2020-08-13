@@ -100,9 +100,7 @@ struct TypeByIndex {
 
 template <typename ...T>
 struct Storage {
-    static_assert(sizeof...(T) > 0, "at least 1 type");
-
-    std::aligned_union_t<1, T...> data;
+    alignas(T...) unsigned char data[std::max({sizeof(T)...})];
 
     template <typename U, typename F = __detail::resolvedType<U, T...>>
     void obtain(U &&value) {
