@@ -166,7 +166,7 @@ ModType::ModType(unsigned int id, ydsh::DSType &superType, unsigned short modID,
     }
 }
 
-const FieldHandle* ModType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const {
+const FieldHandle* ModType::lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const {
     auto iter = this->handleMap.find(fieldName);
     if(iter != this->handleMap.end()) {
         if(fieldName[0] == '_' && symbolTable.currentModID() != iter->second.getModID()) {
@@ -355,7 +355,7 @@ unsigned int SymbolTable::getTermHookIndex() {
     return this->termHookIndex;
 }
 
-const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string &fieldName) {
+const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string &fieldName) const {
     return recvType.lookupFieldHandle(*this, fieldName);    //FIXME:
 }
 

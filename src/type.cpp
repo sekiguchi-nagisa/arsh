@@ -33,7 +33,7 @@ unsigned int DSType::getFieldSize() const {
     return this->superType != nullptr ? this->superType->getFieldSize() : 0;
 }
 
-const FieldHandle *DSType::lookupFieldHandle(SymbolTable &, const std::string &) const {
+const FieldHandle *DSType::lookupFieldHandle(const SymbolTable &, const std::string &) const {
     return nullptr;
 }
 
@@ -69,7 +69,7 @@ unsigned int TupleType::getFieldSize() const {
     return this->elementTypes.size();
 }
 
-const FieldHandle *TupleType::lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const {
+const FieldHandle *TupleType::lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const {
     auto iter = this->fieldHandleMap.find(fieldName);
     if(iter == this->fieldHandleMap.end()) {
         return this->superType->lookupFieldHandle(symbolTable, fieldName);

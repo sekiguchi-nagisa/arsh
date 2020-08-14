@@ -275,7 +275,7 @@ public:
         return toModName(this->modID);
     }
 
-    const FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const override;
+    const FieldHandle *lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const override;
 
     static std::string toModName(unsigned short modID);
 };
@@ -561,7 +561,7 @@ public:
         return this->root().newHandle(type.toName(), type, FieldAttribute::READ_ONLY);
     }
 
-    const FieldHandle *lookupField(DSType &recvType, const std::string &fieldName);
+    const FieldHandle *lookupField(DSType &recvType, const std::string &fieldName) const;
 
     const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName) {
         return this->typePool.lookupMethod(recvType, methodName);
