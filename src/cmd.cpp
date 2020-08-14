@@ -2054,21 +2054,21 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
 static int showModule(const DSState &state) {
     auto &loader = state.symbolTable.getModLoader();
     unsigned int size = loader.modSize();
-    auto *buf = new std::pair<const char *, unsigned int>[size];
+    auto *buf = new std::pair<const char *, bool>[size];
     for(auto &e : loader) {
-        buf[e.second.getIndex()] = {e.first.data(), e.second.getTypeId()};
+        buf[e.second.getIndex()] = {e.first.data(), e.second.isModule()};
     }
     for(unsigned int i = 0; i < size; i++) {
-        fprintf(stdout, "(%s) %s\n", buf[i].second > 0 ? "module" : "script", buf[i].first);
+        fprintf(stdout, "(%s) %s\n", buf[i].second ? "module" : "script", buf[i].first);
     }
     delete[] buf;
     return 0;
 }
 
 static int isSourced(const DSState &state) {
-    auto *code = static_cast<const CompiledCode*>(state.getCallStack().getFrame().code);
+    auto *code = static_cast<const CompiledCode*>(state.getCallStack().code());
     auto *entry = state.symbolTable.getModLoader().find(code->getSourceName());
-    return entry != nullptr && entry->getTypeId() > 0 ? 0 : 1;
+    return entry != nullptr && entry->isModule() ? 0 : 1;
 }
 
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {

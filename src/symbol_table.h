@@ -336,6 +336,10 @@ public:
     explicit operator bool() const {
         return this->getTypeId() > 0;
     }
+
+    bool isModule() const {
+        return this->getTypeId() > 0;
+    }
 };
 
 
