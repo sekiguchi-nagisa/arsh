@@ -159,6 +159,7 @@ constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
 
 // =====  for symbol lookup =====
 constexpr const char *CMD_SYMBOL_PREFIX = "%c";
+constexpr const char *PRIV_CMD_SYMBOL_PREFIX = "%c_";
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 
 constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {

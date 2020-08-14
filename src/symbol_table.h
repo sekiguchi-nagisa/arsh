@@ -136,10 +136,79 @@ private:
     }
 };
 
-class ModType;
+class ModuleScope;
+
+/**
+ * indicating loaded mod type id.
+ *
+ * | 1bit |  31bit  |
+ * | flag | type id |
+ *
+ * if flag is 1, indicate globally imported module
+ */
+enum class ChildModEntry : unsigned int {};
+
+class ModType : public DSType {
+private:
+    unsigned short modID;
+
+    unsigned int childSize;
+
+    ChildModEntry *childs;
+
+    std::unordered_map<std::string, FieldHandle> handleMap;
+
+    friend class ModuleScope;
+
+public:
+    ModType(unsigned int id, DSType &superType, unsigned short modID,
+            const std::unordered_map<std::string, FieldHandle> &handleMap,
+            const FlexBuffer<ChildModEntry> &childs);
+
+    ~ModType() override;
+
+    unsigned short getModID() const {
+        return this->modID;
+    }
+
+    unsigned int getChildSize() const {
+        return this->childSize;
+    }
+
+    ChildModEntry getChildAt(unsigned int index) const {
+        assert(index < this->childSize);
+        return this->childs[index];
+    }
+
+    std::string toName() const {
+        return toModName(this->modID);
+    }
+
+    const FieldHandle *lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const override;
+
+    static std::string toModName(unsigned short modID);
+};
+
+inline ChildModEntry toChildModEntry(const ModType &type, bool global) {
+    unsigned int value = type.getTypeID();
+    if(global) {
+        value |= static_cast<unsigned int>(1 << 31);
+    }
+    return static_cast<ChildModEntry>(value);
+}
+
+inline bool isGlobal(ChildModEntry e) {
+    return static_cast<int>(e) < 0;
+}
+
+inline unsigned int toTypeId(ChildModEntry e) {
+    return static_cast<unsigned int>(e) & 0x7FFFFFFF;
+}
 
 class ModuleScope {
 private:
+    static_assert(sizeof(ChildModEntry) == 4, "");
+
     unsigned short modID;
 
     bool builtin;
@@ -155,6 +224,8 @@ private:
      * contains max number of local variable index.
      */
     std::vector<unsigned int> maxVarIndexStack;
+
+    FlexBuffer<ChildModEntry> childs;
 
 public:
     NON_COPYABLE(ModuleScope);
@@ -220,6 +291,9 @@ public:
      */
     const char *import(const ModType &type);
 
+    void addChild(const ModType &type, bool global) {
+        this->childs.push_back(toChildModEntry(type, global));
+    }
 
     /**
      * remove changed state(local scope, global FieldHandle)
@@ -227,6 +301,7 @@ public:
     void abort() {
         this->globalScope.abort();
         this->scopes.clear();
+        this->childs.clear();
     }
 
     void clear();
@@ -250,32 +325,10 @@ public:
     const BlockScope &curScope() const {
         return this->scopes.back();
     }
-};
 
-class SymbolTable;
-
-class ModType : public DSType {
-private:
-    unsigned short modID;
-    std::unordered_map<std::string, FieldHandle> handleMap;
-
-    friend class ModuleScope;
-
-public:
-    ModType(unsigned int id, DSType &superType, unsigned short modID,
-            const std::unordered_map<std::string, FieldHandle> &handleMap);
-
-    ~ModType() override = default;
-
-    unsigned short getModID() const {
-        return this->modID;
+    const FlexBuffer<ChildModEntry> &getChilds() const {
+        return this->childs;
     }
-
-    std::string toName() const {
-        return toModName(this->modID);
-    }
-
-    const FieldHandle *lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const override;
 
     static std::string toModName(unsigned short modID);
 };
@@ -508,6 +561,10 @@ public:
         return this->cur().import(type);
     }
 
+    void addChildModule(const ModType &type, bool global) {
+        this->cur().addChild(type, global);
+    }
+
     // for FieldHandle lookup
 
     /**
@@ -537,26 +594,6 @@ public:
      */
     unsigned int getTermHookIndex();
 
-    /**
-     * if already registered, return null.
-     * type must be any type
-     */
-    HandleOrError registerUdc(const std::string &cmdName, const DSType &type) {
-        assert(this->root().inGlobalScope());
-        std::string name = CMD_SYMBOL_PREFIX;
-        name += cmdName;
-        return this->root().newHandle(name, type, FieldAttribute::READ_ONLY);
-    }
-
-    /**
-     * if not found, return null.
-     */
-    const FieldHandle *lookupUdc(const char *cmdName) const {
-        std::string name = CMD_SYMBOL_PREFIX;
-        name += cmdName;
-        return this->root().lookupHandle(name);
-    }
-
     const FieldHandle *lookupModHandle(const ModType &type) const {
         return this->root().lookupHandle(type.toName());
     }
@@ -582,6 +619,18 @@ public:
     const MethodHandle *lookupConstructor(const DSType &recvType) {
         return this->typePool.lookupConstructor(recvType);
     }
+
+    /**
+     * lookup user-defined command.
+     * if type is not null, saerch from module.
+     * @param type
+     * may be null
+     * @param cmdName
+     * not null. may be empty string
+     * @return
+     * if not found, return null
+     */
+    const FieldHandle *lookupUdc(const ModType *type, const char *cmdName) const;
 
     /**
      * create new local scope.

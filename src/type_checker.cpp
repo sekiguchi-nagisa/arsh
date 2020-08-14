@@ -1445,11 +1445,8 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     }
 
     // register command name
-    auto pair = this->symbolTable.registerUdc(node.getCmdName(), this->symbolTable.get(TYPE::Any));
-    if(!pair && pair.asErr() == SymbolError::DEFINED) {
-        RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str());
-    }
-    node.setUdcIndex(pair.asOk()->getIndex());
+    auto handle = this->addUdcEntry(node);
+    node.setUdcIndex(handle->getIndex());
 
     {
         auto func = this->inFunc(this->symbolTable.get(TYPE::Int)); // pseudo return type
@@ -1506,6 +1503,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
 
     // register actual module handle
     node.setModIndex(handle->getIndex());
+    this->symbolTable.addChildModule(node.getModType(), node.getName().empty());
     if(node.getName().empty()) {    // global import
         const char *ret = this->symbolTable.import(node.getModType());
         if(ret) {

@@ -134,12 +134,19 @@ void ModuleScope::exitFunc() {
 const char* ModuleScope::import(const ModType &type) {
     for(auto &e : type.handleMap) {
         assert(!hasFlag(e.second.attr(), FieldAttribute::BUILTIN));
-        if(e.first[0] == '_' && this->getModID() != e.second.getModID()) {
-            continue;
+        if(this->getModID() != e.second.getModID()) {
+            StringRef ref = e.first;
+            if(ref.startsWith("_") || ref.startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
+                continue;
+            }
         }
         auto ret = this->globalScope.handleMap.insert(e);
         if(!ret.second && ret.first->second.getModID() != type.getModID()) {
-            return ret.first->first.c_str();
+            StringRef name = ret.first->first;
+            if(name.startsWith(CMD_SYMBOL_PREFIX)) {
+                name.removePrefix(strlen(CMD_SYMBOL_PREFIX));
+            }
+            return name.data();
         }
     }
     return nullptr;
@@ -149,14 +156,20 @@ void ModuleScope::clear() {
     this->maxVarIndexStack.clear();
     this->maxVarIndexStack.push_back(0);
     this->scopes.shrink_to_fit();
+    this->childs.clear();
 }
 
 // #####################
 // ##     ModType     ##
 // #####################
 
+ModType::~ModType() {
+    free(this->childs);
+}
+
 ModType::ModType(unsigned int id, ydsh::DSType &superType, unsigned short modID,
-                 const std::unordered_map<std::string, ydsh::FieldHandle> &handleMap) :
+                 const std::unordered_map<std::string, ydsh::FieldHandle> &handleMap,
+                 const FlexBuffer<ChildModEntry> &childs) :
         DSType(id, &superType, TypeAttr::MODULE_TYPE), modID(modID) {
     assert(modID > 0);
     for(auto &e : handleMap) {
@@ -164,13 +177,18 @@ ModType::ModType(unsigned int id, ydsh::DSType &superType, unsigned short modID,
             this->handleMap.emplace(e.first, e.second);
         }
     }
+    this->childSize = childs.size();
+    this->childs = FlexBuffer<ChildModEntry>(childs.begin(), childs.end()).take();
 }
 
 const FieldHandle* ModType::lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const {
     auto iter = this->handleMap.find(fieldName);
     if(iter != this->handleMap.end()) {
-        if(fieldName[0] == '_' && symbolTable.currentModID() != iter->second.getModID()) {
-            return nullptr;
+        if(symbolTable.currentModID() != iter->second.getModID()) {
+            StringRef ref = fieldName;
+            if(ref[0] == '_' || ref.startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
+                return nullptr;
+            }
         }
         return &iter->second;
     }
@@ -314,7 +332,8 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path,
 ModType& SymbolTable::createModType(const std::string &fullpath) {
     std::string name = ModType::toModName(this->cur().getModID());
     auto &modType = this->typePool.newType<ModType>(std::move(name),
-            this->get(TYPE::Any), this->cur().getModID(), this->cur().global().getHandleMap());
+            this->get(TYPE::Any), this->cur().getModID(),
+            this->cur().global().getHandleMap(), this->cur().getChilds());
     this->curModule = nullptr;
     this->modLoader.addModType(fullpath, modType);
     return modType;
@@ -357,6 +376,51 @@ unsigned int SymbolTable::getTermHookIndex() {
 
 const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string &fieldName) const {
     return recvType.lookupFieldHandle(*this, fieldName);    //FIXME:
+}
+
+/**
+ *
+ * @param symbolTable
+ * @param modType
+ * @param fullname
+ * must be start with CMD_SYMBOL_PREFIX
+ * @return
+ */
+static const FieldHandle *lookupUdcFromModule(const SymbolTable &symbolTable,
+                                              const ModType &modType, const std::string &fullname) {
+    // search own udc
+    auto *handle = modType.lookupFieldHandle(symbolTable, fullname);
+    if(handle) {
+        return handle;
+    }
+
+    // search public udc from globally loaded module
+    if(StringRef(fullname).startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
+        return nullptr;
+    }
+    unsigned int size = modType.getChildSize();
+    for(unsigned int i = 0; i < size; i++) {
+        auto e = modType.getChildAt(i);
+        if(isGlobal(e)) {
+            auto &type = symbolTable.get(toTypeId(e));
+            assert(type.isModType());
+            handle = static_cast<const ModType&>(type).lookupFieldHandle(symbolTable, fullname);
+            if(handle) {
+                return handle;
+            }
+        }
+    }
+    return nullptr;
+}
+
+const FieldHandle * SymbolTable::lookupUdc(const ModType *type, const char *cmdName) const {
+    std::string name = CMD_SYMBOL_PREFIX;
+    name += cmdName;
+    if(type == nullptr) {
+        return this->lookupHandle(name);
+    } else {
+        return lookupUdcFromModule(*this, *type, name);
+    }
 }
 
 } // namespace ydsh
