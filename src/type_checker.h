@@ -282,6 +282,17 @@ protected:
     const FieldHandle *addEntry(const Node &node, const std::string &symbolName,
                           const DSType &type, FieldAttribute attribute);
 
+    const FieldHandle *addUdcEntry(const UserDefinedCmdNode &node) {
+        std::string name = CMD_SYMBOL_PREFIX;
+        name += node.getCmdName();
+        auto pair = this->symbolTable.newHandle(name, this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+        if(!pair) {
+            assert(pair.asErr() == SymbolError::DEFINED);
+            RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str());
+        }
+        return pair.asOk();
+    }
+
     bool isTopLevel() const {
         return this->visitingDepth == 1;
     }

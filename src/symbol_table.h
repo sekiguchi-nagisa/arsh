@@ -534,17 +534,6 @@ public:
     unsigned int getTermHookIndex();
 
     /**
-     * if already registered, return null.
-     * type must be any type
-     */
-    HandleOrError registerUdc(const std::string &cmdName, const DSType &type) {
-        assert(this->root().inGlobalScope());
-        std::string name = CMD_SYMBOL_PREFIX;
-        name += cmdName;
-        return this->root().newHandle(name, type, FieldAttribute::READ_ONLY);
-    }
-
-    /**
      * if not found, return null.
      */
     const FieldHandle *lookupUdc(const char *cmdName) const {
