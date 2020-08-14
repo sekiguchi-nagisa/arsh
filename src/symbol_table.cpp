@@ -134,8 +134,11 @@ void ModuleScope::exitFunc() {
 const char* ModuleScope::import(const ModType &type) {
     for(auto &e : type.handleMap) {
         assert(!hasFlag(e.second.attr(), FieldAttribute::BUILTIN));
-        if(e.first[0] == '_' && this->getModID() != e.second.getModID()) {
-            continue;
+        if(this->getModID() != e.second.getModID()) {
+            StringRef ref = e.first;
+            if(ref.startsWith("_") || ref.startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
+                continue;
+            }
         }
         auto ret = this->globalScope.handleMap.insert(e);
         if(!ret.second && ret.first->second.getModID() != type.getModID()) {
