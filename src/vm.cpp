@@ -452,8 +452,17 @@ static NativeCode initCode(OpCode op) {
     return NativeCode(code);
 }
 
-static const DSCode *lookupUdc(const DSState &state, const char *name) {
-    auto handle = state.symbolTable.lookupUdc(name);
+static const DSCode *lookupUdc(const DSState &state, const char *name, bool forceGlobal = false) {
+    const ModType *modType = nullptr;
+    auto *code = state.getCallStack().code();
+    if(!code->is(CodeKind::NATIVE) && !forceGlobal) {
+        auto key = static_cast<const CompiledCode*>(code)->getSourceName();
+        auto *e = state.symbolTable.getModLoader().find(key);
+        if(e && e->isModule()) {
+            modType = static_cast<const ModType*>(&state.symbolTable.get(e->getTypeId()));
+        }
+    }
+    auto handle = state.symbolTable.lookupUdc(modType, name);
     auto *udcObj = handle != nullptr ?
             &typeAs<FuncObject>(state.getGlobal(handle->getIndex())).getCode() : nullptr;
     return udcObj;
@@ -510,7 +519,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
             unsigned int index = handle->getIndex();
             if(state.getGlobal(index).isObject()) {
                 cmd.kind = Command::USER_DEFINED;
-                cmd.udc = lookupUdc(state, CMD_FALLBACK_HANDLER);
+                cmd.udc = lookupUdc(state, CMD_FALLBACK_HANDLER, true); //FIXME:
                 assert(cmd.udc);
             }
         }

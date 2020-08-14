@@ -2066,9 +2066,9 @@ static int showModule(const DSState &state) {
 }
 
 static int isSourced(const DSState &state) {
-    auto *code = static_cast<const CompiledCode*>(state.getCallStack().getFrame().code);
+    auto *code = static_cast<const CompiledCode*>(state.getCallStack().code());
     auto *entry = state.symbolTable.getModLoader().find(code->getSourceName());
-    return entry != nullptr && entry->getTypeId() > 0 ? 0 : 1;
+    return entry != nullptr && entry->isModule() ? 0 : 1;
 }
 
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {

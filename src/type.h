@@ -186,7 +186,7 @@ public:
     /**
      * return null, if has no field
      */
-    virtual const FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const;
+    virtual const FieldHandle *lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const;
 
     bool operator==(const DSType &type) const {
         return reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&type);
@@ -418,7 +418,7 @@ public:
      */
     unsigned int getFieldSize() const override;
 
-    const FieldHandle *lookupFieldHandle(SymbolTable &symbolTable, const std::string &fieldName) const override;
+    const FieldHandle *lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const override;
 };
 
 class ErrorType : public DSType {
