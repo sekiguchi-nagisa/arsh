@@ -49,12 +49,10 @@ HandleOrError BlockScope::add(const std::string &symbolName, FieldHandle handle)
 // #########################
 
 GlobalScope::GlobalScope(unsigned int &gvarCount) : gvarCount(gvarCount) {
-    if(gvarCount == 0) {
-        for(auto &e : DENIED_REDEFINED_CMD_LIST) {
-            std::string name = CMD_SYMBOL_PREFIX;
-            name += e;
-            this->handleMap.emplace(std::move(name), FieldHandle());
-        }
+    for(auto &e : DENIED_REDEFINED_CMD_LIST) {
+        std::string name = CMD_SYMBOL_PREFIX;
+        name += e;
+        this->handleMap.emplace(std::move(name), FieldHandle());
     }
 }
 
