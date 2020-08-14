@@ -1509,7 +1509,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     if(node.getName().empty()) {    // global import
         const char *ret = this->symbolTable.import(node.getModType());
         if(ret) {
-            RAISE_TC_ERROR(ConflictSymbol, node, ret);
+            RAISE_TC_ERROR(ConflictSymbol, node, ret, node.getPathName().c_str());
         }
     } else {    // scoped import
         // register actual module handle
