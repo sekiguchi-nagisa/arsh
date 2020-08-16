@@ -1,0 +1,9 @@
+#$test($result = 'throw', $lineNum = 9, $errorKind = 'SystemError', $status = 1, $fileName = $0)
+
+source ../../_module4test/module1.ds
+
+say 1234 > /dev/null
+
+assert $(say 1234)[1] == '1234'
+
+_say 999

@@ -8,3 +8,11 @@ var hello = ""
 function hey() {
   echo hey!!
 }
+
+say() {
+    _say $@
+}
+
+_say() {
+    echo '_say!!' $@
+}

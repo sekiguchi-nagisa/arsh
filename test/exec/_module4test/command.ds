@@ -1,0 +1,7 @@
+cmd() {
+    echo call $@[0]
+
+    eval \
+       command \
+          eval $@
+}

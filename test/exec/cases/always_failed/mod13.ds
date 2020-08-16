@@ -1,3 +1,11 @@
-#$test($result = 'type', $lineNum = 3, $errorKind = 'NotFoundMod', $status = 1)
+#$test($result = 'type', $lineNum = 9, $errorKind = 'DefinedCmd', $status = 1, $fileName = $0)
 
-source ""
+source ../../_module4test/module1.ds
+
+_say() {
+    echo hello
+}
+
+say() {
+    echo world
+}

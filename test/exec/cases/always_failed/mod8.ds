@@ -1,3 +1,10 @@
-#$test($result = 'type', $lineNum = 3, $errorKind = 'NotOpenMod', $status = 1, $fileName = './always_failed/mod8.ds')
 
-source .
+#$test($result = 'exit', $lineNum = 4, $status = 67, $fileName = '../_module4test/command.ds', $out = $'call exit\n')
+
+source ../../_module4test/command.ds
+source ../../_module4test/module1.ds
+
+assert say 123 > /dev/null
+assert "$(say hello)" == '_say!! hello'
+
+cmd exit 67

@@ -1,0 +1,9 @@
+
+_say() {
+    echo hello
+}
+
+source ../../_module4test/module1.ds
+
+assert "$(_say)" == 'hello'
+assert "$(say echo echo)" == '_say!! echo echo'
