@@ -180,17 +180,18 @@ ModType::ModType(unsigned int id, ydsh::DSType &superType, unsigned short modID,
 }
 
 const FieldHandle* ModType::lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const {
-    auto iter = this->handleMap.find(fieldName);
-    if(iter != this->handleMap.end()) {
-        if(symbolTable.currentModID() != iter->second.getModID()) {
-            StringRef ref = fieldName;
-            if(ref[0] == '_' || ref.startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
-                return nullptr;
-            }
-        }
-        return &iter->second;
+    auto *handle = this->find(fieldName);
+    if(!handle) {
+        return nullptr;
     }
-    return nullptr;
+
+    if(symbolTable.currentModID() != handle->getModID()) {
+        StringRef ref = fieldName;
+        if(ref[0] == '_' || ref.startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
+            return nullptr;
+        }
+    }
+    return handle;
 }
 
 std::string ModType::toModName(unsigned short id) {
@@ -387,7 +388,7 @@ const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string 
 static const FieldHandle *lookupUdcFromModule(const SymbolTable &symbolTable,
                                               const ModType &modType, const std::string &fullname) {
     // search own udc
-    auto *handle = modType.lookupFieldHandle(symbolTable, fullname);
+    auto *handle = modType.find(fullname);
     if(handle) {
         return handle;
     }
@@ -402,7 +403,7 @@ static const FieldHandle *lookupUdcFromModule(const SymbolTable &symbolTable,
         if(isGlobal(e)) {
             auto &type = symbolTable.get(toTypeId(e));
             assert(type.isModType());
-            handle = static_cast<const ModType&>(type).lookupFieldHandle(symbolTable, fullname);
+            handle = static_cast<const ModType&>(type).find(fullname);
             if(handle) {
                 return handle;
             }
@@ -411,13 +412,13 @@ static const FieldHandle *lookupUdcFromModule(const SymbolTable &symbolTable,
     return nullptr;
 }
 
-const FieldHandle * SymbolTable::lookupUdc(const ModType *type, const char *cmdName) const {
+const FieldHandle * SymbolTable::lookupUdc(const ModType *belongModType, const char *cmdName) const {
     std::string name = CMD_SYMBOL_PREFIX;
     name += cmdName;
-    if(type == nullptr) {
+    if(belongModType == nullptr) {
         return this->lookupHandle(name);
     } else {
-        return lookupUdcFromModule(*this, *type, name);
+        return lookupUdcFromModule(*this, *belongModType, name);
     }
 }
 

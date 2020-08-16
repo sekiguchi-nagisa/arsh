@@ -184,6 +184,14 @@ public:
         return toModName(this->modID);
     }
 
+    const FieldHandle *find(const std::string &name) const {
+        auto iter = this->handleMap.find(name);
+        if(iter != this->handleMap.end()) {
+            return &iter->second;
+        }
+        return nullptr;
+    }
+
     const FieldHandle *lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const override;
 
     static std::string toModName(unsigned short modID);
@@ -621,16 +629,16 @@ public:
     }
 
     /**
-     * lookup user-defined command.
+     * lookup user-defined command at runtime
      * if type is not null, saerch from module.
-     * @param type
+     * @param belongModType
      * may be null
      * @param cmdName
      * not null. may be empty string
      * @return
      * if not found, return null
      */
-    const FieldHandle *lookupUdc(const ModType *type, const char *cmdName) const;
+    const FieldHandle *lookupUdc(const ModType *belongModType, const char *cmdName) const;
 
     /**
      * create new local scope.
