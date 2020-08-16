@@ -9,10 +9,10 @@ function hey() {
   echo hey!!
 }
 
-say() {
-    _say $@
+say0() {
+    _say0 $@
 }
 
-_say() {
+_say0() {
     echo '_say!!' $@
 }

@@ -2,4 +2,4 @@
 
 source ../../_module4test/module1.ds as mod
 
-say 1234 > /dev/null
+say0 1234 > /dev/null

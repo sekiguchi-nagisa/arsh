@@ -2,10 +2,10 @@
 
 source ../../_module4test/module1.ds
 
-_say() {
+_say0() {
     echo hello
 }
 
-say() {
+say0() {
     echo world
 }

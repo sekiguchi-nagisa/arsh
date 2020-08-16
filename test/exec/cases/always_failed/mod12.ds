@@ -1,10 +1,10 @@
 #$test($result = 'type', $lineNum = 11, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
 
-_say() {
+_say0() {
     throw 12/0
 }
 
-say() {
+say0() {
     [0][34]
 }
 
