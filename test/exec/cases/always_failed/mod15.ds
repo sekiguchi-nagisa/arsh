@@ -1,0 +1,5 @@
+#$test($result = 'throw', $lineNum = 5, $errorKind = 'SystemError', $status = 1, $fileName = $0)
+
+source ../../_module4test/module1.ds as mod
+
+say 1234 > /dev/null
