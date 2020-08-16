@@ -897,7 +897,6 @@ void SourceNode::dump(NodeDumper &dumper) const {
     DUMP(firstAppear);
     DUMP(nothing);
     DUMP(modIndex);
-    DUMP(index);
     DUMP(maxVarNum);
 }
 

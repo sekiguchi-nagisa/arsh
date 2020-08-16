@@ -120,7 +120,17 @@ public:
 
 private:
     HandleOrError addNew(const std::string &symbolName, const DSType &type,
-                         FieldAttribute attribute, unsigned short modID);
+                         FieldAttribute attribute, unsigned short modID) {
+        setFlag(attribute, FieldAttribute::GLOBAL);
+        FieldHandle handle(type, this->gvarCount.get(), attribute, modID);
+        auto ret = this->add(symbolName, handle);
+        if(ret) {
+            this->gvarCount.get()++;
+        }
+        return ret;
+    }
+
+    HandleOrError add(const std::string &symbolName, const FieldHandle &handle);
 
     /**
      * before call it, reset gvarCount
@@ -260,6 +270,11 @@ public:
      * return null, if found duplicated handle.
      */
     HandleOrError newHandle(const std::string &symbolName, const DSType &type, FieldAttribute attribute);
+
+    HandleOrError addGlobalAlias(const std::string &symbolName, const FieldHandle &handle) {
+        FieldHandle newHandle(handle.getType(), handle.getIndex(), handle.attr(), this->modID);
+        return this->globalScope.add(symbolName, newHandle);
+    }
 
     bool disallowShadowing(const std::string &symbolName) {
         assert(!this->inGlobalScope());
@@ -584,6 +599,8 @@ public:
      * return null, if found duplicated handle.
      */
     HandleOrError newHandle(const std::string &symbolName, const DSType &type, FieldAttribute attribute);
+
+    HandleOrError addGlobalAlias(const std::string &symbolName, const FieldHandle &handle);
 
     bool disallowShadowing(const std::string &symbolName) {
         return this->cur().disallowShadowing(symbolName);

@@ -1262,14 +1262,7 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
 }
 
-void ByteCodeGenerator::visitSourceNode(SourceNode &node) {
-    assert(!node.isFirstAppear());
-    unsigned int index = node.getIndex();
-    if(index > 0) {
-        this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getModIndex());
-        this->emit2byteIns(OpCode::STORE_GLOBAL, index);
-    }
-}
+void ByteCodeGenerator::visitSourceNode(SourceNode &) {}    // do nothing
 
 void ByteCodeGenerator::visitSourceListNode(SourceListNode &) { }   // do nothing
 
@@ -1313,14 +1306,7 @@ bool ByteCodeGenerator::exitModule(const SourceNode &node) {
     this->emitSourcePos(node.getPathToken().pos);
     this->emit0byteIns(OpCode::DUP);
     this->emit1byteIns(OpCode::CALL_FUNC, 0);
-    unsigned int index = node.getIndex();
-    if(index > 0) {
-        this->emit0byteIns(OpCode::DUP);
-    }
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getModIndex());
-    if(index > 0) {
-        this->emit2byteIns(OpCode::STORE_GLOBAL, index);
-    }
     return !this->hasError();
 }
 

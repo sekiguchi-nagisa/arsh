@@ -1511,9 +1511,9 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
         }
     } else {    // scoped import
         // register actual module handle
-        handle = this->addEntry(node, node.getName(), node.getModType(), FieldAttribute::READ_ONLY);
-        assert(handle != nullptr);
-        node.setIndex(handle->getIndex());
+        if(!this->symbolTable.addGlobalAlias(node.getName(), *handle)) {
+            RAISE_TC_ERROR(DefinedSymbol, node, node.getName().c_str());
+        }
     }
     node.setType(this->symbolTable.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
 }

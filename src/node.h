@@ -2283,11 +2283,6 @@ private:
     unsigned int modIndex{0};
 
     /**
-     * global variable index of module object
-     */
-    unsigned int index{0};
-
-    /**
      * maximum number of local variable in this module
      */
     unsigned int maxVarNum{0};
@@ -2334,14 +2329,6 @@ public:
 
     unsigned int getModIndex() const {
         return this->modIndex;
-    }
-
-    void setIndex(unsigned int value) {
-        this->index = value;
-    }
-
-    unsigned int getIndex() const {
-        return this->index;
     }
 
     void setMaxVarNum(unsigned int v) {

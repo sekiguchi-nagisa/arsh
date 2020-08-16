@@ -56,16 +56,10 @@ GlobalScope::GlobalScope(unsigned int &gvarCount) : gvarCount(gvarCount) {
     }
 }
 
-HandleOrError GlobalScope::addNew(const std::string &symbolName, const DSType &type,
-                                  FieldAttribute attribute, unsigned short modID) {
-    setFlag(attribute, FieldAttribute::GLOBAL);
-    FieldHandle handle(type, this->gvarCount.get(), attribute, modID);
+HandleOrError GlobalScope::add(const std::string &symbolName, const FieldHandle &handle) {
     auto pair = this->handleMap.emplace(symbolName, handle);
     if(!pair.second) {
         return Err(SymbolError::DEFINED);
-    }
-    if(pair.first->second) {
-        this->gvarCount.get()++;
     }
     return Ok(&pair.first->second);
 }
@@ -362,6 +356,17 @@ HandleOrError SymbolTable::newHandle(const std::string &symbolName, const DSType
         }
     }
     return this->cur().newHandle(symbolName, type, attribute);
+}
+
+HandleOrError SymbolTable::addGlobalAlias(const std::string &symbolName, const FieldHandle &handle) {
+    assert(this->cur().inGlobalScope());
+    if(&this->cur() != &this->root()) {
+        auto ret = this->root().lookupHandle(symbolName);
+        if(ret && hasFlag(ret->attr(), FieldAttribute::BUILTIN)) {
+            return Err(SymbolError::DEFINED);
+        }
+    }
+    return this->cur().addGlobalAlias(symbolName, handle);
 }
 
 unsigned int SymbolTable::getTermHookIndex() {
