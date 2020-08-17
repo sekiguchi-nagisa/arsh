@@ -1733,10 +1733,11 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError) {
     }
 
     if(hasFlag(op, EvalOP::COMMIT)) {
-        if(!ret) {
+        if(ret) {
+            state.symbolTable.commit();
+        } else {
             state.symbolTable.abort();
         }
-        state.symbolTable.commit();
     }
     return value;
 }
