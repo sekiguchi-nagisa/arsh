@@ -241,7 +241,12 @@ template <> struct allow_enum_bitop<FieldAttribute> : std::true_type {};
  */
 class FieldHandle {
 private:
-    const DSType *type;
+    /**
+     * for safe module scope abort
+     */
+    unsigned int commitID;
+
+    unsigned int typeID;
 
     unsigned int index;
 
@@ -253,15 +258,23 @@ private:
     unsigned short modID;
 
 public:
-    FieldHandle() : type(nullptr), index(0), attribute(), modID(0) {}
+    FieldHandle() : commitID(0), typeID(0), index(0), attribute(), modID(0) {}
 
-    FieldHandle(const DSType &fieldType, unsigned int fieldIndex, FieldAttribute attribute, unsigned short modID = 0) :
-            type(&fieldType), index(fieldIndex), attribute(attribute), modID(modID) {}
+    FieldHandle(unsigned int commitID, const DSType &fieldType, unsigned int fieldIndex,
+                FieldAttribute attribute, unsigned short modID = 0) :
+            commitID(commitID), typeID(fieldType.getTypeID()), index(fieldIndex), attribute(attribute), modID(modID) {}
+
+    FieldHandle(unsigned int commitID, const FieldHandle &handle, unsigned short modId) :
+            commitID(commitID), typeID(handle.typeID), index(handle.index), attribute(handle.attribute), modID(modId) {}
 
     ~FieldHandle() = default;
 
-    const DSType &getType() const {
-        return *this->type;
+    unsigned int getCommitID() const {
+        return this->commitID;
+    }
+
+    unsigned int getTypeID() const {
+        return this->typeID;
     }
 
     unsigned int getIndex() const {
@@ -273,7 +286,7 @@ public:
     }
 
     explicit operator bool() const {
-        return this->type != nullptr;
+        return this->typeID != 0;
     }
 
     unsigned short getModID() const {

@@ -85,10 +85,10 @@ HandleOrError ModuleScope::newHandle(const std::string &symbolName,
         if(this->builtin) {
             setFlag(attribute, FieldAttribute::BUILTIN);
         }
-        return this->globalScope.addNew(symbolName, type, attribute, this->modID);
+        return this->globalScope.addNew(this->commitID, symbolName, type, attribute, this->modID);
     }
 
-    FieldHandle handle(type, this->scopes.back().getCurVarIndex(), attribute, this->modID);
+    FieldHandle handle(this->commitID, type, this->scopes.back().getCurVarIndex(), attribute, this->modID);
     auto ret = this->scopes.back().add(symbolName, handle);
     if(ret) {
         unsigned int varIndex = this->scopes.back().getCurVarIndex();
@@ -148,15 +148,16 @@ const char* ModuleScope::import(const ModType &type, bool global) {
 
     for(auto &e : type.handleMap) {
         assert(!hasFlag(e.second.attr(), FieldAttribute::BUILTIN));
-        if(this->getModID() != e.second.getModID()) {
-            StringRef ref = e.first;
-            if(ref.startsWith("_") || ref.startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
-                continue;
-            }
+        assert(this->getModID() != e.second.getModID());
+        StringRef ref = e.first;
+        if(ref.startsWith("_") || ref.startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
+            continue;
         }
-        auto ret = this->globalScope.handleMap.insert(e);
-        if(!ret.second) {
-            StringRef name = ret.first->first;
+        const auto &symbolName = e.first;
+        const auto &handle = e.second;
+        auto ret = this->globalScope.add(symbolName, FieldHandle(this->commitID, handle, handle.getModID()));
+        if(!ret) {
+            StringRef name = symbolName;
             if(name.startsWith(CMD_SYMBOL_PREFIX)) {
                 name.removePrefix(strlen(CMD_SYMBOL_PREFIX));
             }

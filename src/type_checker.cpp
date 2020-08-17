@@ -289,7 +289,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     }
     recvNode.setAttribute(*handle);
 
-    auto &type = handle->getType();
+    auto &type = this->symbolTable.get(handle->getTypeID());
     if(!type.isFuncType()) {
         if(type.is(TYPE::Func)) {
             RAISE_TC_ERROR(NotCallable, recvNode);
@@ -322,7 +322,7 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
         return false;
     }
     node.setAttribute(*handle);
-    node.setType(handle->getType());
+    node.setType(this->symbolTable.get(handle->getTypeID()));
     return true;
 }
 
@@ -480,7 +480,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
     }
 
     node.setAttribute(*handle);
-    node.setType(handle->getType());
+    node.setType(this->symbolTable.get(handle->getTypeID()));
 }
 
 void TypeChecker::visitAccessNode(AccessNode &node) {

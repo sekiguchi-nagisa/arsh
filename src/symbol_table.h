@@ -119,10 +119,10 @@ public:
     ~GlobalScope() = default;
 
 private:
-    HandleOrError addNew(const std::string &symbolName, const DSType &type,
-                         FieldAttribute attribute, unsigned short modID) {
+    HandleOrError addNew(unsigned int commitID, const std::string &symbolName,
+                         const DSType &type, FieldAttribute attribute, unsigned short modID) {
         setFlag(attribute, FieldAttribute::GLOBAL);
-        FieldHandle handle(type, this->gvarCount.get(), attribute, modID);
+        FieldHandle handle(commitID, type, this->gvarCount.get(), attribute, modID);
         auto ret = this->add(symbolName, handle);
         if(ret) {
             this->gvarCount.get()++;
@@ -132,12 +132,9 @@ private:
 
     HandleOrError add(const std::string &symbolName, const FieldHandle &handle);
 
-    /**
-     * before call it, reset gvarCount
-     */
-    void abort() {
+    void abort(unsigned int commitID) {
         for(auto iter = this->handleMap.begin(); iter != this->handleMap.end();) {
-            if(iter->second && iter->second.getIndex() >= this->gvarCount) {
+            if(iter->second && iter->second.getCommitID() >= commitID) {
                 iter = this->handleMap.erase(iter);
             } else {
                 ++iter;
@@ -231,6 +228,8 @@ private:
 
     bool builtin;
 
+    unsigned int commitID{0};
+
     GlobalScope globalScope;
 
     /**
@@ -272,7 +271,7 @@ public:
     HandleOrError newHandle(const std::string &symbolName, const DSType &type, FieldAttribute attribute);
 
     HandleOrError addGlobalAlias(const std::string &symbolName, const FieldHandle &handle) {
-        FieldHandle newHandle(handle.getType(), handle.getIndex(), handle.attr(), this->modID);
+        FieldHandle newHandle(this->commitID, handle, this->modID);
         return this->globalScope.add(symbolName, newHandle);
     }
 
@@ -320,9 +319,13 @@ public:
      * remove changed state(local scope, global FieldHandle)
      */
     void abort() {
-        this->globalScope.abort();
+        this->globalScope.abort(this->commitID);
         this->scopes.clear();
         this->childs.clear();
+    }
+
+    void commit() {
+        this->commitID++;
     }
 
     void clear();
@@ -686,6 +689,7 @@ public:
         this->typePool.commit();
         this->modLoader.commit();
         this->oldGvarCount = this->gvarCount;
+        this->root().commit();
     }
 
     void abort() {
