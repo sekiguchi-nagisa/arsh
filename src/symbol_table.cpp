@@ -123,7 +123,29 @@ void ModuleScope::exitFunc() {
     this->maxVarIndexStack.pop_back();
 }
 
-const char* ModuleScope::import(const ModType &type) {
+bool ModuleScope::needGlobalImport(ChildModEntry entry) {
+    auto iter = std::lower_bound(this->childs.begin(), this->childs.end(), entry,
+                                 [](ChildModEntry x, ChildModEntry y) {
+                                    return toTypeId(x) < toTypeId(y);
+                                });
+    if(iter != this->childs.end() && toTypeId(*iter) == toTypeId(entry)) {
+        if(isGlobal(*iter)) {
+            return false;
+        }
+        if(isGlobal(entry)) {
+            *iter = entry;
+        }
+    } else {
+        this->childs.insert(iter, entry);
+    }
+    return isGlobal(entry);
+}
+
+const char* ModuleScope::import(const ModType &type, bool global) {
+    if(!this->needGlobalImport(toChildModEntry(type, global))) {
+        return nullptr;
+    }
+
     for(auto &e : type.handleMap) {
         assert(!hasFlag(e.second.attr(), FieldAttribute::BUILTIN));
         if(this->getModID() != e.second.getModID()) {

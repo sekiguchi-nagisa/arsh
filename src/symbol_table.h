@@ -306,17 +306,15 @@ public:
     void exitFunc();
 
     /**
-     *
+     * import symbol from module type
      * @param type
+     * @param global
+     * if true, perform global import
      * @return
      * if detect symbol name conflict, return conflicted symbol name.
      * if has no conflict, return null
      */
-    const char *import(const ModType &type);
-
-    void addChild(const ModType &type, bool global) {
-        this->childs.push_back(toChildModEntry(type, global));
-    }
+    const char *import(const ModType &type, bool global);
 
     /**
      * remove changed state(local scope, global FieldHandle)
@@ -354,6 +352,9 @@ public:
     }
 
     static std::string toModName(unsigned short modID);
+
+private:
+    bool needGlobalImport(ChildModEntry entry);
 };
 
 class ModLoadingError {
@@ -580,12 +581,8 @@ public:
      */
     ModType &createModType(const std::string &fullpath);
 
-    const char *import(const ModType &type) {
-        return this->cur().import(type);
-    }
-
-    void addChildModule(const ModType &type, bool global) {
-        this->cur().addChild(type, global);
+    const char *import(const ModType &type, bool global) {
+        return this->cur().import(type, global);
     }
 
     // for FieldHandle lookup
