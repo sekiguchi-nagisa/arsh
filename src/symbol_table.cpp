@@ -155,7 +155,7 @@ const char* ModuleScope::import(const ModType &type, bool global) {
             }
         }
         auto ret = this->globalScope.handleMap.insert(e);
-        if(!ret.second && ret.first->second.getModID() != type.getModID()) {
+        if(!ret.second) {
             StringRef name = ret.first->first;
             if(name.startsWith(CMD_SYMBOL_PREFIX)) {
                 name.removePrefix(strlen(CMD_SYMBOL_PREFIX));
