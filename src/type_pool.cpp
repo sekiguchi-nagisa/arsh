@@ -124,32 +124,32 @@ TypeOrError TypePool::getType(const std::string &typeName) const {
 }
 
 void TypePool::abort() {
-    for(unsigned int i = this->oldIDCount; i < this->typeTable.size(); i++) {
+    for(unsigned int i = this->oldTypeIdCount; i < this->typeTable.size(); i++) {
         delete this->typeTable[i];
     }
-    this->typeTable.erase(this->typeTable.begin() + this->oldIDCount, this->typeTable.end());
-    this->nameTable.erase(this->nameTable.begin() + this->oldIDCount, this->nameTable.end());
+    this->typeTable.erase(this->typeTable.begin() + this->oldTypeIdCount, this->typeTable.end());
+    this->nameTable.erase(this->nameTable.begin() + this->oldTypeIdCount, this->nameTable.end());
 
     for(auto iter = this->aliasMap.begin(); iter != this->aliasMap.end();) {
-        if(iter->second >= this->oldIDCount) {
+        if(iter->second >= this->oldTypeIdCount) {
             iter = this->aliasMap.erase(iter);
         } else {
             ++iter;
         }
     }
 
-    assert(this->oldIDCount == this->typeTable.size());
-    assert(this->oldIDCount == this->nameTable.size());
+    assert(this->oldTypeIdCount == this->typeTable.size());
+    assert(this->oldTypeIdCount == this->nameTable.size());
 
     // abort method handle
     for(auto iter = this->methodMap.begin(); iter != this->methodMap.end(); ) {
-        if(iter->first.id >= this->oldIDCount) {
+        if(iter->first.id >= this->oldTypeIdCount) {
             const_cast<Key &>(iter->first).dispose();
             iter = this->methodMap.erase(iter);
             continue;
         } else if(iter->second) {
             auto *ptr = iter->second.handle();
-            if(ptr != nullptr && ptr->getID() >= this->methodID) {
+            if(ptr != nullptr && ptr->getCommitId() >= this->methodCommitId) {
                 iter->second = Value(ptr->getMethodIndex());
                 assert(!iter->second);
             }
@@ -365,7 +365,7 @@ MethodHandle* MethodHandle::create(TypePool &pool, const DSType &recv, unsigned 
     assert(*recvType == recv);
 
     std::unique_ptr<MethodHandle> handle(
-            MethodHandle::alloc(pool.getMethodID(), recvType, index, returnType, paramSize - 1));
+            MethodHandle::alloc(pool.getMethodCommitId(), recvType, index, returnType, paramSize - 1));
     for(unsigned int i = 1; i < paramSize; i++) {   // init param types
         handle->paramTypes[i - 1] = TRY2(decoder.decode());
     }

@@ -469,7 +469,10 @@ public:
 
 class MethodHandle {
 private:
-    unsigned int id;
+    /**
+     * for safa TypePool abort
+     */
+    unsigned int commitId;
 
     unsigned short methodIndex;
 
@@ -488,7 +491,7 @@ private:
 
     MethodHandle(unsigned int id, const DSType *recv, unsigned short index,
                  const DSType *ret, unsigned short paramSize) :
-            id(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
+            commitId(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
         assert(paramSize <= UINT8_MAX);
     }
 
@@ -507,8 +510,8 @@ public:
         free(ptr);
     }
 
-    unsigned int getID() const {
-        return this->id;
+    unsigned int getCommitId() const {
+        return this->commitId;
     }
 
     unsigned short getMethodIndex() const {
