@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - introduce ``fastglob`` option
   - breaking traditional glob behavior, but takes more optimized directory search strategy
 - after startup, set environmental variable ``YDSH_BIN`` to full path of current shell
+- module aware user-defined command lookup
+  - command starting with ``_`` will be private command. private command is only called from its own module
+  - in named import, call command defined in module as sub-command
 
 #### Builtin
 - add ``status`` method to ``Job`` type
