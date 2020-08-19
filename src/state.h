@@ -254,6 +254,17 @@ public:
         return this->frames;
     }
 
+    template <typename Walker>
+    void walkFrames(Walker walker) const {
+        auto *cur = &this->frame;
+        for(unsigned int callDepth = this->frames.size(); callDepth > 0; cur = &this->frames[--callDepth]) {
+            if(!walker(*cur)) {
+                return;
+            }
+        }
+    }
+
+
     const DSCode *code() const {
         return this->frame.code;
     }

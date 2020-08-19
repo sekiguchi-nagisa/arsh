@@ -76,15 +76,14 @@ void VMState::resize(unsigned int afterSize) {
 
 std::vector<StackTraceElement> VMState::createStackTrace() const {
     std::vector<StackTraceElement> stackTrace;
-    auto curFrame = this->frame;
-    for(unsigned int callDepth = this->frames.size(); callDepth > 0; curFrame = frames[--callDepth]) {
-        auto &callable = curFrame.code;
+    this->walkFrames([&](const ControlFrame &cur){
+        auto &callable = cur.code;
         if(!callable->is(CodeKind::NATIVE)) {
             const auto *cc = static_cast<const CompiledCode *>(callable);
 
             // create stack trace element
             const char *sourceName = cc->getSourceName().data();
-            unsigned int lineNum = cc->getLineNum(curFrame.pc);
+            unsigned int lineNum = cc->getLineNum(cur.pc);
 
             std::string callableName;
             switch(callable->getKind()) {
@@ -104,7 +103,8 @@ std::vector<StackTraceElement> VMState::createStackTrace() const {
             }
             stackTrace.emplace_back(sourceName, lineNum, std::move(callableName));
         }
-    }
+        return true;
+    });
     return stackTrace;
 }
 
