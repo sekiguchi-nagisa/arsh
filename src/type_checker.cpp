@@ -1514,6 +1514,11 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
         if(!this->symbolTable.addGlobalAlias(node.getName(), *handle)) {
             RAISE_TC_ERROR(DefinedSymbol, node, node.getName().c_str());
         }
+        std::string cmdName = CMD_SYMBOL_PREFIX;
+        cmdName += node.getName();
+        if(!this->symbolTable.addGlobalAlias(cmdName, *handle)) {  // for module subcommand
+            RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
+        }
     }
     node.setType(this->symbolTable.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
 }

@@ -193,15 +193,15 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
 }
 
 bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
-                                            DSValue &&restoreFD, const flag8_set_t attr) {
-    if(hasFlag(attr, UDC_ATTR_SETVAR)) {
+                                            DSValue &&restoreFD, const CmdCallAttr attr) {
+    if(hasFlag(attr, CmdCallAttr::SET_VAR)) {
         // reset exit status
         state.setExitStatus(0);
     }
 
     // set parameter
     state.stack.reserve(3);
-    state.stack.push(DSValue::createNum(attr));
+    state.stack.push(DSValue::createNum(static_cast<unsigned int>(attr)));
     state.stack.push(std::move(restoreFD));
     state.stack.push(std::move(argvObj));
 
@@ -209,7 +209,7 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSVal
         return false;
     }
 
-    if(hasFlag(attr, UDC_ATTR_SETVAR)) {    // set variable
+    if(hasFlag(attr, CmdCallAttr::SET_VAR)) {    // set variable
         auto &argv = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
         auto cmdName = argv.takeFirst();
         const unsigned int argSize = argv.getValues().size();
@@ -452,11 +452,20 @@ static NativeCode initCode(OpCode op) {
     return NativeCode(code);
 }
 
-static const DSCode *lookupUdc(const DSState &state, const char *name, bool forceGlobal = false) {
+static bool lookupUdc(const DSState &state, const char *name, Command &cmd, bool forceGlobal = false) {
+    const CompiledCode *code = nullptr;
+    state.getCallStack().walkFrames([&](const ControlFrame &frame) {
+        auto *c = frame.code;
+        if(c->is(CodeKind::NATIVE)) {
+            return true;    // continue
+        }
+        code = static_cast<const CompiledCode*>(c);
+        return false;
+    });
+
     const ModType *modType = nullptr;
-    auto *code = state.getCallStack().code();
-    if(!code->is(CodeKind::NATIVE) && !forceGlobal) {
-        auto key = static_cast<const CompiledCode*>(code)->getSourceName();
+    if(code && !forceGlobal) {
+        auto key = code->getSourceName();
         auto *e = state.symbolTable.getModLoader().find(key);
         if(e && e->isModule()) {
             modType = static_cast<const ModType*>(&state.symbolTable.get(e->getTypeId()));
@@ -464,8 +473,21 @@ static const DSCode *lookupUdc(const DSState &state, const char *name, bool forc
     }
     auto handle = state.symbolTable.lookupUdc(modType, name);
     auto *udcObj = handle != nullptr ?
-            &typeAs<FuncObject>(state.getGlobal(handle->getIndex())).getCode() : nullptr;
-    return udcObj;
+            &typeAs<FuncObject>(state.getGlobal(handle->getIndex())) : nullptr;
+
+    if(udcObj) {
+        auto &type = state.symbolTable.get(udcObj->getTypeID());
+        if(type.isModType()) {
+            cmd.kind = Command::MODULE;
+            cmd.modType = static_cast<const ModType*>(&type);
+        } else {
+            assert(type.isVoidType());
+            cmd.kind = Command::USER_DEFINED;
+            cmd.udc = &udcObj->getCode();
+        }
+        return true;
+    }
+    return false;
 }
 
 Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
@@ -473,10 +495,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
 
     // first, check user-defined command
     if(!hasFlag(this->mask, MASK_UDC)) {
-        auto *udcObj = lookupUdc(state, cmdName);
-        if(udcObj != nullptr) {
-            cmd.kind = Command::USER_DEFINED;
-            cmd.udc = udcObj;
+        if(lookupUdc(state, cmdName, cmd)) {
             return cmd;
         }
     }
@@ -518,9 +537,9 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
             auto handle = state.symbolTable.lookupHandle(VAR_CMD_FALLBACK);
             unsigned int index = handle->getIndex();
             if(state.getGlobal(index).isObject()) {
-                cmd.kind = Command::USER_DEFINED;
-                cmd.udc = lookupUdc(state, CMD_FALLBACK_HANDLER, true); //FIXME:
-                assert(cmd.udc);
+                bool r = lookupUdc(state, CMD_FALLBACK_HANDLER, cmd, true); //FIXME:
+                (void) r;
+                assert(r);
             }
         }
     }
@@ -603,7 +622,37 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
     }
 }
 
-bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr) {
+bool VM::prepareSubCommand(DSState &state, const ModType &modType,
+                           DSValue &&argvObj, DSValue &&restoreFD) {
+    auto &array = typeAs<ArrayObject>(argvObj);
+    if(array.size() == 1) {
+        ERROR(array, "require subcommand");
+        pushExitStatus(state, 2);
+        return true;
+    }
+
+    const char *cmd = array.getValues()[1].asCStr();
+    if(*cmd == '_') {
+        ERROR(array, "cannot resolve private subcommand: %s", cmd);
+        pushExitStatus(state, 1);
+        return true;
+    }
+
+    std::string key = CMD_SYMBOL_PREFIX;
+    key += cmd;
+    auto *handle = modType.find(key);
+    if(!handle) {
+        ERROR(array, "undefined subcommand: %s", cmd);
+        pushExitStatus(state, 2);
+        return true;
+    }
+    auto *udc = &typeAs<FuncObject>(state.getGlobal(handle->getIndex())).getCode();
+    array.takeFirst();
+    return prepareUserDefinedCommandCall(
+            state, udc, std::move(argvObj), std::move(restoreFD), CmdCallAttr::SET_VAR);
+}
+
+bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DSValue &&redirConfig, CmdCallAttr attr) {
     auto &array = typeAs<ArrayObject>(argvObj);
     auto cmd = resolver(state, array.getValues()[0].asCStr());
 
@@ -611,7 +660,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
     case Command::USER_DEFINED:
     case Command::BUILTIN_S: {
         if(cmd.kind == Command::USER_DEFINED) {
-            setFlag(attr, UDC_ATTR_SETVAR);
+            setFlag(attr, CmdCallAttr::SET_VAR);
         }
         return prepareUserDefinedCommandCall(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
     }
@@ -624,6 +673,9 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
         pushExitStatus(state, status);
         return true;
     }
+    case Command::MODULE:
+        assert(cmd.modType);
+        return prepareSubCommand(state, *cmd.modType, std::move(argvObj), std::move(redirConfig));
     case Command::EXTERNAL: {
         // create argv
         const unsigned int size = array.getValues().size();
@@ -633,7 +685,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
         }
         argv[size] = nullptr;
 
-        if(hasFlag(attr, UDC_ATTR_NEED_FORK)) {
+        if(hasFlag(attr, CmdCallAttr::NEED_FORK)) {
             int status = forkAndExec(state, cmd.filePath, argv, std::move(redirConfig));
             pushExitStatus(state, status);
         } else {
@@ -649,7 +701,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
 
 int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
 
-bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr) {
+bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr) {
     auto &arrayObj = typeAs<ArrayObject>(argvObj);
 
     bool useDefaultPath = false;
@@ -698,7 +750,8 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag
             const char *commandName = arrayObj.getValues()[index].asCStr();
             auto cmd = CmdResolver(CmdResolver::MASK_FALLBACK, FilePathCache::DIRECT_SEARCH)(state, commandName);
             switch(cmd.kind) {
-            case Command::USER_DEFINED: {
+            case Command::USER_DEFINED:
+            case Command::MODULE: {
                 successCount++;
                 fputs(commandName, stdout);
                 if(showDesc == 2) {
@@ -1534,9 +1587,9 @@ bool VM::mainLoop(DSState &state) {
         vmcase(CALL_CMD)
         vmcase(CALL_CMD_NOFORK) {
             bool needFork = op != OpCode::CALL_CMD_NOFORK;
-            flag8_set_t attr = 0;
+            CmdCallAttr attr{};
             if(needFork) {
-                setFlag(attr, UDC_ATTR_NEED_FORK);
+                setFlag(attr, CmdCallAttr::NEED_FORK);
             }
 
             auto redir = state.stack.pop();
@@ -1546,7 +1599,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(BUILTIN_CMD) {
-            auto attr = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
+            auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
+            auto attr = static_cast<CmdCallAttr>(v);
             DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
             DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
             bool ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
@@ -1555,7 +1609,8 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(BUILTIN_EVAL) {
-            auto attr = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
+            auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
+            auto attr = static_cast<CmdCallAttr>(v);
             DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
             DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
 

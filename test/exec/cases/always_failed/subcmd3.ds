@@ -1,0 +1,6 @@
+#$test($result = 'type', $lineNum = 6, $errorKind = 'DefinedCmd', $status = 1, $fileName = $0)
+
+
+source ../../_module4test/command.ds
+
+source ../../_module4test/command.ds as cmd

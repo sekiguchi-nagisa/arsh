@@ -167,10 +167,6 @@ constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {
         "command", "_exit",
 };
 
-// =====  for user-defined command  =====
-constexpr flag8_t UDC_ATTR_SETVAR    = 1u << 0u;
-constexpr flag8_t UDC_ATTR_NEED_FORK = 1u << 1u;
-
 // =====  other constants  =====
 constexpr size_t CODE_MAX_LEN = UINT32_MAX;
 

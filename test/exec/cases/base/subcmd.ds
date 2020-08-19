@@ -1,0 +1,51 @@
+
+source ../../_module4test/command.ds as m
+
+assert "$(command -V m)" == 'm is an user-defined command'
+assert $? == 0
+
+assert "$(m 2>&1)" == "ydsh: m: require subcommand"
+assert $? == 2
+
+assert "$(m _huga 2>&1)" == "ydsh: m: cannot resolve private subcommand: _huga"
+assert $? == 1
+
+assert "$(m huga 2>&1)" == "ydsh: m: undefined subcommand: huga"
+assert $? == 2
+
+assert "$(m cmd false)" == $'call false'
+assert $? == 1
+
+assert "$(m cmd echo world)" == $'call echo\nworld'
+assert $? == 0
+
+source ../../_module4test/command.ds as cmd
+assert "$(eval cmd cmd echo world)" == $'call echo\nworld'
+assert $? == 0
+
+# not found due to sub-command is udc
+var ex = 23 as Any
+try {
+    command cmd cmd echo hello world!!
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
+assert ($ex as SystemError).message() == 'execution error: cmd: command not found'
+
+# not found due to sub-command is resolved from its own module
+$ex = 1221
+try {
+    m cmd m hello world!!
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
+assert ($ex as SystemError).message() == 'execution error: m: command not found'
+
+
+d() {
+    cmd cmd echo hey!!
+}
+assert "$(d)" == $'call echo\nhey!!'
+assert $? == 0

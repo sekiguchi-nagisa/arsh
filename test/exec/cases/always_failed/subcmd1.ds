@@ -1,0 +1,7 @@
+#$test($result = 'type', $lineNum = 5, $errorKind = 'DefinedSymbol', $status = 1, $fileName = $0)
+
+var mod = 34
+
+source ../../_module4test/command.ds as mod
+
+

@@ -263,14 +263,16 @@ namespace ydsh {
 
 struct Command {
     enum CmdKind {
-        USER_DEFINED,
-        BUILTIN_S,
-        BUILTIN,
-        EXTERNAL,
+        USER_DEFINED,   // user-defined command
+        MODULE,         // module subcommand
+        BUILTIN_S,      // builtin command written by vm api (ex. command, eval, exec)
+        BUILTIN,        // builtin command
+        EXTERNAL,       // external command
     } kind;
 
     union {
         const DSCode *udc;
+        const ModType *modType;
         builtin_command_t builtinCmd;
         const char *filePath;   // may be null if not found file
     };
@@ -299,6 +301,13 @@ public:
 };
 
 template <> struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};
+
+enum class CmdCallAttr : unsigned int {
+    SET_VAR   = 1u << 0u,
+    NEED_FORK = 1u << 1u,
+};
+
+template <> struct allow_enum_bitop<CmdCallAttr> : std::true_type {};
 
 class VM {
 private:
@@ -367,7 +376,7 @@ private:
      *             |     offset    |
      */
     static bool prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
-                                              DSValue &&restoreFD, flag8_set_t attr);
+                                              DSValue &&restoreFD, CmdCallAttr attr);
 
     static bool attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs,
                                   ForkKind forkKind, PipeSet &pipeSet, DSValue &ret);
@@ -376,10 +385,13 @@ private:
 
     static int forkAndExec(DSState &state, const char *filePath, char *const *argv, DSValue &&redirConfig);
 
-    static bool callCommand(DSState &state, CmdResolver resolver,
-                            DSValue &&argvObj, DSValue &&redirConfig, flag8_set_t attr = 0);
+    static bool prepareSubCommand(DSState &state, const ModType &modType,
+                                  DSValue &&argvObj, DSValue &&restoreFD);
 
-    static bool builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, flag8_set_t attr);
+    static bool callCommand(DSState &state, CmdResolver resolver,
+                            DSValue &&argvObj, DSValue &&redirConfig, CmdCallAttr attr = {});
+
+    static bool builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr);
 
     static void builtinExec(DSState &state, DSValue &&array, DSValue &&redir);
 

@@ -264,7 +264,6 @@ public:
         }
     }
 
-
     const DSCode *code() const {
         return this->frame.code;
     }
