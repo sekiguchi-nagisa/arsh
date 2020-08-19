@@ -2066,9 +2066,23 @@ static int showModule(const DSState &state) {
 }
 
 static int isSourced(const DSState &state) {
-    auto *code = static_cast<const CompiledCode*>(state.getCallStack().code());
-    auto *entry = state.symbolTable.getModLoader().find(code->getSourceName());
-    return entry != nullptr && entry->isModule() ? 0 : 1;
+    const CompiledCode *code = nullptr;
+    state.getCallStack().walkFrames([&](const ControlFrame &frame) {
+        auto *c = frame.code;
+        if(c->is(CodeKind::NATIVE)) {
+            return true;    // continue
+        }
+        code = static_cast<const CompiledCode *>(c);
+        return false;
+    });
+
+    if(code) {
+        auto *entry = state.symbolTable.getModLoader().find(code->getSourceName());
+        if(entry) {
+            return entry->isModule() ? 0 : 1;
+        }
+    }
+    return 1;
 }
 
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {

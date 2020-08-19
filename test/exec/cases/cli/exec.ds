@@ -6,6 +6,9 @@ $expect("$(ds -e echo hello 2>&1)", 0, "hello")
 # not found builtin command
 $expect("$(ds -e hoghrere hello 2>&1)", 1, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
 
+# sourced
+$expect("$(ds -e shctl is-sourced 2>&1)", 1, "")
+
 # command
 $expect("$(ds -e command hoghrere hello 2>&1)", 1, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
 $expect("$(ds -e command exit 999 2>&1)", 231, $'')

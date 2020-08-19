@@ -7,6 +7,11 @@ assert "$(shctl hoge 2>&1)" == "ydsh: shctl: undefined subcommand: hoge"
 # source
 shctl is-sourced
 assert $? == 1
+command shctl is-sourced
+assert $? == 1
+eval shctl is-sourced
+assert $? == 1
+
 source ../../_module4test/sourced.ds as S
 assert $S.SOURCED == 0
 assert $S.sourced() == 0

@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Builtin
 - fix executable file checking in ``command -v`` option
   - always ignore directoy
+- segv in ``is-sourced`` sub-command of ``shctl``
 
 #### API
 - when abort symbol table, also abort loaded script path
