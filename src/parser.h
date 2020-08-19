@@ -43,8 +43,8 @@ public:
         return this->token;
     }
 
-    void updateToken(Token token) {
-        this->token.size = token.pos + token.size - this->token.pos;
+    void updateToken(Token other) {
+        this->token.size = other.pos + other.size - this->token.pos;
     }
 
     void addArgNode(std::unique_ptr<Node> &&node) {

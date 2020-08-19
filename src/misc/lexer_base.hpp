@@ -343,8 +343,8 @@ Token LexerBase<T>::getLineToken(Token token) const {
 template <bool T>
 std::string LexerBase<T>::formatTokenText(Token token) const {
     std::string str;
-    unsigned int limit = token.pos + token.size;
-    for(unsigned int i = token.pos; i < limit;) {
+    unsigned int stop = token.pos + token.size;
+    for(unsigned int i = token.pos; i < stop;) {
         int code = 0;
         unsigned int size = this->toCodePoint(i, code);
         if(code < 0) {

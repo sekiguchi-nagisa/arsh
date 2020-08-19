@@ -105,8 +105,8 @@ private:
 public:
     ParserBase() = default;
 
-    void setTracker(Tracker *tracker) {
-        this->tracker = tracker;
+    void setTracker(Tracker *other) {
+        this->tracker = other;
     }
 
     const Tracker *getTracker() const {
