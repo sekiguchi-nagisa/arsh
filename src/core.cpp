@@ -63,46 +63,38 @@ const char *FilePathCache::searchPath(const char *cmdName, FilePathCache::Search
     }
 
     // resolve path
-    std::string resolvedPath;
-    for(unsigned int i = 0; !resolvedPath.empty() || pathPrefix[i] != '\0'; i++) {
-        char ch = pathPrefix[i];
-        bool stop = false;
-
-        if(ch == '\0') {
-            stop = true;
-        } else if(ch != ':') {
-            resolvedPath += ch;
-            continue;
-        }
-        if(resolvedPath.empty()) {
-            continue;
+    for(StringRef pathValue = pathPrefix; !pathValue.empty();) {
+        StringRef remain;
+        auto pos = pathValue.find(":");
+        if(pos != StringRef::npos) {
+            remain = pathValue.substr(pos + 1);
+            pathValue = pathValue.slice(0, pos);
         }
 
-        if(resolvedPath.back() != '/') {
-            resolvedPath += '/';
-        }
-        resolvedPath += cmdName;
-        expandTilde(resolvedPath);
-
-        if((getStMode(resolvedPath.c_str()) & S_IXUSR) == S_IXUSR) {
-            if(hasFlag(op, DIRECT_SEARCH)) {
-                this->prevPath = std::move(resolvedPath);
-                return this->prevPath.c_str();
+        if(!pathValue.empty()) {
+            auto resolvedPath = pathValue.toString();
+            if(resolvedPath.back() != '/') {
+                resolvedPath += '/';
             }
-            // set to cache
-            if(this->map.size() == MAX_CACHE_SIZE) {
-                free(const_cast<char *>(this->map.begin()->first));
-                this->map.erase(this->map.begin());
-            }
-            auto pair = this->map.emplace(strdup(cmdName), std::move(resolvedPath));
-            assert(pair.second);
-            return pair.first->second.c_str();
-        }
-        resolvedPath.clear();
+            resolvedPath += cmdName;
+            expandTilde(resolvedPath);
 
-        if(stop) {
-            break;
+            if((getStMode(resolvedPath.c_str()) & S_IXUSR) == S_IXUSR) {
+                if(hasFlag(op, DIRECT_SEARCH)) {
+                    this->prevPath = std::move(resolvedPath);
+                    return this->prevPath.c_str();
+                }
+                // set to cache
+                if(this->map.size() == MAX_CACHE_SIZE) {
+                    free(const_cast<char *>(this->map.begin()->first));
+                    this->map.erase(this->map.begin());
+                }
+                auto pair = this->map.emplace(strdup(cmdName), std::move(resolvedPath));
+                assert(pair.second);
+                return pair.first->second.c_str();
+            }
         }
+        pathValue = remain;
     }
 
     // not found
