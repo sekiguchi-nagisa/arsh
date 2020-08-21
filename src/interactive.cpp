@@ -35,9 +35,8 @@ static DSState *state;
  * line is not nullptr
  */
 static bool isSkipLine(const ydsh::CStrPtr &line) {
-    const char *ptr = line.get();
-    for(int i = 0; ptr[i] != '\0'; i++) {
-        switch(ptr[i]) {
+    for(const char *ptr = line.get(); *ptr != '\0'; ptr++) {
+        switch(*ptr) {
         case ' ':
         case '\t':
         case '\r':
