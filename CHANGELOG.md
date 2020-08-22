@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``.`` character matches newline
 - allow ``Regex`` constructor in constant expression
 - introduce ``fastglob`` option
-  - breaking traditional glob behavior, but takes more optimized directory search strategy
+  - breaking traditional glob behavior, but takes more efficient directory search strategy
 - after startup, set environmental variable ``YDSH_BIN`` to full path of current shell
 - module aware user-defined command lookup
   - command starting with ``_`` will be private command. private command is only called from its own module
