@@ -16,12 +16,10 @@
 
 #include <cstdarg>
 #include <array>
-#include <cerrno>
 
 #include "type.h"
 #include "object.h"
 #include "tcerror.h"
-#include "core.h"
 
 namespace ydsh {
 

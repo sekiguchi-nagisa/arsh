@@ -15,7 +15,6 @@
  */
 
 #include <pwd.h>
-#include <libgen.h>
 
 #include <cstdlib>
 #include <cerrno>
