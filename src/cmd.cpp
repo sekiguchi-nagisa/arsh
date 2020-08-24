@@ -105,6 +105,7 @@ static constexpr struct {
                 "        tilde      expand tilde before completion. only available in \n"
                 "                   combination of file, module exec actions\n"
                 "        command    complete command names including external, user-defined, builtin ones\n"
+                "        cmd        equivalent to 'command'\n"
                 "        builtin    complete builtin commands\n"
                 "        udc        complete user-defined commands\n"
                 "        variable   complete variable names\n"
