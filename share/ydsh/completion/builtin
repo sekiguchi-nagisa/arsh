@@ -12,11 +12,16 @@ function _help($t : [String], $c : Int) : [String] {
 }
 
 function _cmd($t : [String], $c : Int) : [String] {
-    if $t.size() > 1 && $c > 1 {
+    if $t.size() == 1 {
+        complete &> /dev/null -A command
+        return $COMPREPLY
+    } elif $c == 1 {
+        complete &> /dev/null -A command
+        return $compFilter($t.peek(), $COMPREPLY)
+    } else {
         $t.shift()
         return $COMP_HOOK!($t, $c - 1)
     }
-    return new [String]()
 }
 
 
