@@ -1,14 +1,11 @@
 source completion
 
-var _list = $(help | while(read) {
-    echo ${$REPLY.split(' ')[0]}
-})
-
 function _help($t : [String], $c : Int) : [String] {
-    if $t.size() > 1 && $c < $t.size() {
-        return $compFilter($t.peek(), $_list)
+    var p = ".*"
+    if $c < $t.size() {
+        $p = $t.peek()
     }
-    return $_list
+    return $(help | cut -d ' ' -f 1 | grep "^$p")
 }
 
 function _cmd($t : [String], $c : Int) : [String] {
@@ -16,18 +13,59 @@ function _cmd($t : [String], $c : Int) : [String] {
         complete &> /dev/null -A command
         return $COMPREPLY
     } elif $c == 1 {
-        complete &> /dev/null -A command
-        return $compFilter($t.peek(), $COMPREPLY)
+        complete &> /dev/null -A command ${$t.peek()}
+        return $COMPREPLY
     } else {
         $t.shift()
         return $COMP_HOOK!($t, $c - 1)
     }
 }
 
+function _unsetenv($t : [String], $c : Int) : [String] {
+    complete &> /dev/null -A env
+    if($t.size() == $c) {
+        return $COMPREPLY
+    } else {
+        return $compFilter($t.peek(), $COMPREPLY)
+    }
+}
+
+function _shctl($t : [String], $c : Int) : [String] {
+    if $c == 1 {
+        var p = ".*"
+        if $c < $t.size() {
+            $p = $t.peek()
+        }
+        return $(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | grep "^$p")
+    }
+    assert $t.size() > 1
+    var sub = $t[1]
+    case $t[1] {
+    'show'|'set'|'unset' => {
+        var p = ".*"
+        if $c < $t.size() {
+            $p = $t.peek()
+        }
+        return $(shctl show | cut -d ' ' -f 1 | grep "^$p")
+    }
+    else => return new [String]()
+    }
+}
+
+function _cd($t : [String], $c : Int) : [String] {
+    if $c == $t.size() {
+        complete &> /dev/null -A dir
+    } else {
+        complete &> /dev/null -A dir ${$t.peek()}
+    }
+    return $COMPREPLY
+}
 
 $compAdd("help", $_help)
 $compAdd("command", $_cmd)
 $compAdd("eval", $_cmd)
 $compAdd("exec", $_cmd)
 
-
+$compAdd('unsetenv', $_unsetenv)
+$compAdd('shctl', $_shctl)
+$compAdd('cd', $_cd)
