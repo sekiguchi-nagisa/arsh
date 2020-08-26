@@ -1,11 +1,17 @@
 source completion
 
+startwith() {
+    while(read -f $'\n') {
+        $REPLY.startsWith($1) && echo $REPLY
+    }
+}
+
 function _help($t : [String], $c : Int) : [String] {
-    var p = ".*"
+    var p = ""
     if $c < $t.size() {
         $p = $t.peek()
     }
-    return $(help | cut -d ' ' -f 1 | grep "^$p")
+    return $(help | cut -d ' ' -f 1 | startwith "$p")
 }
 
 function _cmd($t : [String], $c : Int) : [String] {
@@ -32,21 +38,21 @@ function _unsetenv($t : [String], $c : Int) : [String] {
 
 function _shctl($t : [String], $c : Int) : [String] {
     if $c == 1 {
-        var p = ".*"
+        var p = ""
         if $c < $t.size() {
             $p = $t.peek()
         }
-        return $(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | grep "^$p")
+        return $(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | startwith "$p")
     }
     assert $t.size() > 1
     var sub = $t[1]
     case $t[1] {
     'show'|'set'|'unset' => {
-        var p = ".*"
+        var p = ""
         if $c < $t.size() {
             $p = $t.peek()
         }
-        return $(shctl show | cut -d ' ' -f 1 | grep "^$p")
+        return $(shctl show | cut -d ' ' -f 1 | startwith "$p")
     }
     else => return new [String]()
     }
