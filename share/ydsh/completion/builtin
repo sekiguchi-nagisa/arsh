@@ -42,10 +42,9 @@ function _shctl($t : [String], $c : Int) : [String] {
         if $c < $t.size() {
             $p = $t.peek()
         }
-        return $(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | startwith "$p")
+        return $(help shctl | startwith '        ' | sed 's/        //g' | cut -d ' ' -f 1 | startwith "$p")
     }
     assert $t.size() > 1
-    var sub = $t[1]
     case $t[1] {
     'show'|'set'|'unset' => {
         var p = ""

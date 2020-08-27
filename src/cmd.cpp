@@ -1211,6 +1211,7 @@ static std::unordered_map<StringRef, CodeCompOp> initCompActions() {
             {"exec", CodeCompOp::EXEC},
             {"tilde", CodeCompOp::TILDE},
             {"command", CodeCompOp::COMMAND},
+            {"cmd", CodeCompOp::COMMAND},
             {"builtin", CodeCompOp::BUILTIN},
             {"udc", CodeCompOp::UDC},
             {"variable", CodeCompOp::GVAR},

@@ -1,0 +1,20 @@
+
+source ../../../../share/ydsh/completion/builtin
+
+# help
+assert diff <(complete 'help ') <(help | cut -d ' ' -f 1)
+assert diff <(complete 'help u') <(help | cut -d ' ' -f 1 | grep '^u')
+
+# command/eval/exec
+#assert diff <(complete 'command ') <(complete -A cmd "")
+
+# unsetenv
+assert diff <(complete 'unsetenv ') <(complete -A env)
+assert diff <(complete 'unsetenv H') <(complete -A env H)
+
+# shctl
+assert diff <(complete 'shctl ') <(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | sort)
+assert diff <(complete 'shctl s') <(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | grep '^s' | sort)
+
+# cd
+assert diff <(complete 'cd /') <(complete -A dir '/')
