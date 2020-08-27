@@ -58,7 +58,6 @@ static std::string escape(const char *str, EscapeOp op) {
         bool found = false;
         switch(ch) {
         case ' ':
-        case '\\':
         case ';':
         case '\'':
         case '"':

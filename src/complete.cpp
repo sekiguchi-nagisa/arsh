@@ -60,7 +60,7 @@ static std::string escape(StringRef ref, EscapeOp op) {
         char ch = *(iter++);
         bool found = false;
         switch(ch) {
-        case ' ': case '\\': case ';':
+        case ' ': case ';':
         case '\'': case '"': case '`':
         case '|': case '&': case '<':
         case '>': case '(': case ')':
