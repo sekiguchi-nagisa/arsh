@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Completion
 - add completions for
   - git
+  - builtin commands
 
 #### API
 - add ``DSState_getExecutablePath`` for get full path of current executable (for ``YDSH_BIN``)
@@ -81,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Core
 - ``..`` pattern cannot match empty directory.
 - always set new ``COMPREPLY`` variable even if completion result is empty
+- not escape backslash in completer
 
 #### Builtin
 - fix executable file checking in ``command -v`` option
