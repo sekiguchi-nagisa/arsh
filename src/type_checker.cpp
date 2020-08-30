@@ -1035,7 +1035,7 @@ static auto initConstVarMap() {
         fatal_perror("cannot get utsname");
     }
 
-    CStringHashMap<std::string> map = {
+    std::unordered_map<StringRef, std::string> map = {
             {CVAR_VERSION, X_INFO_VERSION_CORE},
             {CVAR_DATA_DIR, SYSTEM_DATA_DIR},
             {CVAR_MODULE_DIR, SYSTEM_MOD_DIR},
@@ -1116,7 +1116,7 @@ bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) {
                 break;
             }
         } else {
-            auto iter = constMap.find(varNode.getVarName().c_str());
+            auto iter = constMap.find(varNode.getVarName());
             if(iter == constMap.end()) {
                 break;
             }

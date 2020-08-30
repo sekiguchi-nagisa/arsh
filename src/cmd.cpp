@@ -283,10 +283,10 @@ const char *getBuiltinCommandName(unsigned int index) {
     return builtinCommands[index].commandName;
 }
 
-static CStringHashMap<unsigned int> initBuiltinMap() {
-    CStringHashMap<unsigned int> map;
+static auto initBuiltinMap() {
+    std::unordered_map<StringRef, unsigned int> map;
     for(unsigned int i = 0; i < arraySize(builtinCommands); i++) {
-        map.insert(std::make_pair(builtinCommands[i].commandName, i));
+        map.emplace(builtinCommands[i].commandName, i);
     }
     return map;
 }
