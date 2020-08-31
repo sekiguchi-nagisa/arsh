@@ -313,20 +313,14 @@ static void printAllUsage(FILE *fp) {
     }
 }
 
-static bool startsWith(const char *prefix, const char *target) {
-    const unsigned int prefixSize = strlen(prefix);
-    const unsigned int targetSize = strlen(target);
-    return prefixSize <= targetSize && strncmp(prefix, target, prefixSize) == 0;
-}
-
 /**
  * if not found command, return false.
  */
-static bool printUsage(FILE *fp, const char *prefix, bool isShortHelp = true) {
+static bool printUsage(FILE *fp, StringRef prefix, bool isShortHelp = true) {
     bool matched = false;
     for(const auto &e : builtinCommands) {
         const char *cmdName = e.commandName;
-        if(startsWith(prefix, cmdName)) {
+        if(StringRef(cmdName).startsWith(prefix)) {
             fprintf(fp, "%s: %s %s\n", cmdName, cmdName, e.usage);
             if(!isShortHelp) {
                 fprintf(fp, "%s\n", e.detail);
@@ -347,11 +341,11 @@ static int builtin_help(DSState &, ArrayObject &argvObj) {
     bool isShortHelp = false;
     bool foundValidCommand = false;
     for(unsigned int i = 1; i < size; i++) {
-        const char *arg = argvObj.getValues()[i].asCStr();
-        if(strcmp(arg, "-s") == 0 && size == 2) {
+        auto arg = argvObj.getValues()[i].asStrRef();
+        if(arg == "-s" && size == 2) {
             printAllUsage(stdout);
             foundValidCommand = true;
-        } else if(strcmp(arg, "-s") == 0 && i == 1) {
+        } else if(arg == "-s" && i == 1) {
             isShortHelp = true;
         } else {
             if(printUsage(stdout, arg, isShortHelp)) {
@@ -367,7 +361,7 @@ static int builtin_help(DSState &, ArrayObject &argvObj) {
 }
 
 static int showUsage(const ArrayObject &obj) {
-    printUsage(stderr, obj.getValues()[0].asCStr());
+    printUsage(stderr, obj.getValues()[0].asStrRef());
     return 2;
 }
 
