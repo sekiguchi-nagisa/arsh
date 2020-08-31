@@ -506,7 +506,7 @@ void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool extendib
 void TypePool::initTypeTemplate(TypeTemplate &temp, const char *typeName,
                                    std::vector<DSType *> &&elementTypes, native_type_info_t info) {
     temp = TypeTemplate(std::string(typeName), std::move(elementTypes), info);
-    this->templateMap.insert({typeName, &temp});
+    this->templateMap.emplace(typeName, &temp);
 }
 
 void TypePool::initErrorType(TYPE t, const char *typeName) {

@@ -269,7 +269,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
 }
 
 void DirectiveInitializer::addHandler(const char *attributeName, DSType &type, AttributeHandler &&handler) {
-    auto pair = this->handlerMap.insert(std::make_pair(attributeName, std::make_pair(&type, std::move(handler))));
+    auto pair = this->handlerMap.emplace(attributeName, std::make_pair(&type, std::move(handler)));
     if(!pair.second) {
         fatal("found duplicated handler: %s\n", attributeName);
     }

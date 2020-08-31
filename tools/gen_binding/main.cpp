@@ -156,7 +156,7 @@ HandleInfo HandleInfoMap::getInfo(const std::string &name) {
 void HandleInfoMap::registerName(HandleInfo info, const char *name) {
     std::string actualName(name);
     this->info2NameMap.emplace_back(info, actualName);
-    this->name2InfoMap.insert(std::make_pair(actualName, info));
+    this->name2InfoMap.emplace(actualName, info);
 }
 
 
