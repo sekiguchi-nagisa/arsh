@@ -315,7 +315,7 @@ static void completeFileName(const char *baseDir, const std::string &prefix,
     for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
         StringRef dname = entry->d_name;
         if(dname.startsWith(name.c_str())) {
-            if(name.empty() && (strcmp(entry->d_name, "..") == 0 || strcmp(entry->d_name, ".") == 0)) {
+            if(name.empty() && (dname == ".." || dname == ".")) {
                 continue;
             }
 

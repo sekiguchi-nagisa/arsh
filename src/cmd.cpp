@@ -1964,9 +1964,9 @@ static constexpr struct {
 #undef GEN_OPT
 };
 
-static RuntimeOption lookupRuntimeOption(const char *name) {
+static RuntimeOption lookupRuntimeOption(StringRef name) {
     for(auto &e : runtimeOptions) {
-        if(strcmp(name, e.name) == 0) {
+        if(name == e.name) {
             return e.option;
         }
     }
@@ -1999,10 +1999,10 @@ static int showOption(const DSState &state, const ArrayObject &argvObj) {
         foundSet = static_cast<RuntimeOption>(static_cast<unsigned int>(-1));
     } else {
         for(unsigned int i = 2; i < size; i++) {
-            const char *name = argvObj.getValues()[i].asCStr();
+            auto name = argvObj.getValues()[i].asStrRef();
             auto option = lookupRuntimeOption(name);
             if(empty(option)) {
-                ERROR(argvObj, "undefined runtime option: %s", name);
+                ERROR(argvObj, "undefined runtime option: %s", name.data());
                 return 1;
             }
             setFlag(foundSet, option);
@@ -2028,10 +2028,10 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
 
     bool foundMonitor = false;
     for(unsigned int i = 2; i < size; i++) {
-        const char *name = argvObj.getValues()[i].asCStr();
+        auto name = argvObj.getValues()[i].asStrRef();
         auto option = lookupRuntimeOption(name);
         if(empty(option)) {
-            ERROR(argvObj, "undefined runtime option: %s", name);
+            ERROR(argvObj, "undefined runtime option: %s", name.data());
             return 1;
         }
         if(option == RuntimeOption::MONITOR && !foundMonitor) {
