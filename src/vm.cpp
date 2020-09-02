@@ -1086,7 +1086,7 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
         auto &v = state.stack.peekByOffset(size - i);
         if(v.hasStrRef()) {
             auto ref = v.asStrRef();
-            if(ref.find(nullStrRef) != StringRef::npos) {
+            if(ref.hasNull()) {
                 raiseGlobbingError(state, state.stack, size, "glob pattern has null characters");
                 return false;
             }

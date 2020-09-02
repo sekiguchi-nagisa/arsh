@@ -556,8 +556,8 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
 static int parseExitStatus(const DSState &state, const ArrayObject &argvObj) {
     int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
     if(argvObj.getValues().size() > 1) {
-        const char *num = argvObj.getValues()[1].asCStr();
-        auto pair = convertToNum<int64_t>(num);
+        auto value = argvObj.getValues()[1].asStrRef();
+        auto pair = convertToNum<int64_t>(value.begin(), value.end());
         if(pair.second) {
             ret = pair.first;
         }
@@ -1589,9 +1589,14 @@ static unsigned int computeMaxNameLen() {
     return max;
 }
 
-static bool parseUlimitOpt(const char *str, unsigned int index, UlimitOptEntry &entry) {
+static bool parseUlimitOpt(StringRef ref, unsigned int index, UlimitOptEntry &entry) {
     using underlying_t = std::conditional<sizeof(rlim_t) == sizeof(uint64_t),
             uint64_t, std::conditional<sizeof(rlim_t) == sizeof(uint32_t), uint32_t, void>::type>::type;
+
+    if(ref.hasNull()) {
+        return false;
+    }
+    const char *str = ref.data();
 
     if(strcasecmp(str, "soft") == 0) {
         entry.kind = UlimitOptEntry::SOFT;
@@ -1621,26 +1626,26 @@ struct UlimitOptEntryTable {
     unsigned int count{0};
 
     int tryToUpdate(GetOptState &optState, ArrayObject &argvObj, int opt) {
-        const char *arg = nullptr;
+        DSValue arg;
         if(optState.index < argvObj.getValues().size() && *argvObj.getValues()[optState.index].asCStr() != '-') {
-            arg = argvObj.getValues()[optState.index++].asCStr();
+            arg = argvObj.getValues()[optState.index++];
         }
         if(!this->update(opt, arg)) {
-            ERROR(argvObj, "%s: invalid number", arg);
+            ERROR(argvObj, "%s: invalid number", arg.asCStr());
             return 1;
         }
         return 0;
     }
 
 private:
-    bool update(int ch, const char *str) {
+    bool update(int ch, const DSValue &value) {
         this->count++;
         // search entry
         for(unsigned int index = 0; index < arraySize(ulimitOps); index++) {
             if(ulimitOps[index].op == ch) {
                 auto &entry = this->entries[index];
-                if(str) {
-                    if(!parseUlimitOpt(str, index, entry)) {
+                if(value) {
+                    if(!parseUlimitOpt(value.asStrRef(), index, entry)) {
                         return false;
                     }
                 } else {

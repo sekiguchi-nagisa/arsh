@@ -155,6 +155,10 @@ public:
         return ret != nullptr ? static_cast<const char *>(ret) - this->ptr_ : npos;
     }
 
+    bool hasNull() const {
+        return this->find(StringRefBase("\0", 1)) != npos;
+    }
+
     size_type indexOf(StringRefBase ref) const {
         return this->find(ref, 0);
     }
@@ -214,8 +218,6 @@ inline bool operator<=(StringRef left, StringRef right) {
 inline bool operator>=(StringRef left, StringRef right) {
     return left.compare(right) >= 0;
 }
-
-constexpr StringRef nullStrRef = StringRef("\0", 1);
 
 } // namespace ydsh
 
