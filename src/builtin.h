@@ -1032,8 +1032,8 @@ YDSH_METHOD signals_set(RuntimeContext &ctx) {
 //!bind: function signal($this : Signals, $key : String) : Option<Signal>
 YDSH_METHOD signals_signal(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_signal);
-    const char *key = LOCAL(1).asCStr();
-    int sigNum = getSignalNum(key);
+    auto key = LOCAL(1).asStrRef();
+    int sigNum = key.hasNull() ? -1 : getSignalNum(key.data());
     if(sigNum < 0) {
         RET(DSValue::createInvalid());
     }
