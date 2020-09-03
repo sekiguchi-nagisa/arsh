@@ -1617,14 +1617,18 @@ YDSH_METHOD error_name(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : UnixFD, $path : String) : UnixFD
 YDSH_METHOD fd_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_init);
-    const char *path = LOCAL(1).asCStr();
-    int fd = open(path, O_CREAT | O_RDWR | O_CLOEXEC, 0666);
-    if(fd != -1) {
-        RET(DSValue::create<UnixFdObject>(fd));
+    auto ref = LOCAL(1).asStrRef();
+    errno = EINVAL;
+    if(!ref.hasNull()) {
+        errno = 0;
+        int fd = open(ref.data(), O_CREAT | O_RDWR | O_CLOEXEC, 0666);
+        if(fd != -1) {
+            RET(DSValue::create<UnixFdObject>(fd));
+        }
     }
     int e = errno;
     std::string msg = "open failed: ";
-    msg += path;
+    msg.append(ref.data(), ref.size());
     raiseSystemError(ctx, e, std::move(msg));
     RET_ERROR;
 }

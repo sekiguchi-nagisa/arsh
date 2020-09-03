@@ -62,3 +62,11 @@ try {
     $ex = $e
 }
 assert $ex is SystemError
+
+$ex = 23
+try {
+    new UnixFD($'./hogehoge\x0034')
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
