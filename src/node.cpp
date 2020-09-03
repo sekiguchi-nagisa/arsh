@@ -195,7 +195,7 @@ bool RegexNode::buildRegex(std::string &errorStr) {
     }
 
     const char *error;
-    this->re = compileRegex(this->reStr.c_str(), error, regexFlag);
+    this->re = compileRegex(StringRef(this->reStr), error, regexFlag);
     if(!this->re) {
         errorStr = error;
         return false;

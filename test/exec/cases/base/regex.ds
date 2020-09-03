@@ -47,6 +47,13 @@ try {
     assert $e is RegexSyntaxError
 }
 
+try {
+    new Regex($'hh\x00', "")
+    assert false
+} catch $e {
+    assert $e is RegexSyntaxError
+}
+
 var a = $/hello (world)\(!!/.match("hello world(!!")
 assert $a.size() == 2
 assert $a[0]! == "hello world(!!"

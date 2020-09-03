@@ -871,25 +871,27 @@ YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : Regex, $str : String, $flag : String) : Regex
 YDSH_METHOD regex_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_init);
-    const char *value = LOCAL(1).asCStr();
     int flag = 0;
-    for(const char *str = LOCAL(2).asCStr(); *str; str++) {
-        int r = toRegexFlag(*str);
+    auto flagValue = LOCAL(2).asStrRef();
+    for(auto begin = flagValue.begin(); begin != flagValue.end(); ++begin) {
+        int r = toRegexFlag(*begin);
         if(!r) {
             std::string msg = "unsupported regex flag: ";
-            msg += *str;
+            msg += *begin;
             raiseError(ctx, TYPE::RegexSyntaxError, std::move(msg));
             RET_ERROR;
         }
         flag |= r;
     }
+
+    auto value = LOCAL(1).asStrRef();
     const char *errorStr;
     auto re = compileRegex(value, errorStr, flag);
     if(!re) {
         raiseError(ctx, TYPE::RegexSyntaxError, std::string(errorStr));
         RET_ERROR;
     }
-    RET(DSValue::create<RegexObject>(value, std::move(re)));
+    RET(DSValue::create<RegexObject>(value.data(), std::move(re)));
 }
 
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Boolean

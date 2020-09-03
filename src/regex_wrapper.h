@@ -21,6 +21,8 @@
 
 #include <pcre.h>
 
+#include "misc/string_ref.hpp"
+
 namespace ydsh {
 
 struct PCREDeleter {
@@ -50,9 +52,14 @@ inline int toRegexFlag(char ch) {
     }
 }
 
-inline PCRE compileRegex(const char *pattern, const char * &errorStr, int flag) {
+inline PCRE compileRegex(StringRef pattern, const char * &errorStr, int flag) {
+    if(pattern.hasNull()) {
+        errorStr = "regex pattern contains null characters";
+        return nullptr;
+    }
     int errorOffset;
-    pcre *re = pcre_compile(pattern,  PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8 | flag, &errorStr, &errorOffset, nullptr);
+    flag |= PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8;
+    pcre *re = pcre_compile(pattern.data(), flag, &errorStr, &errorOffset, nullptr);
     return PCRE(re);
 }
 
