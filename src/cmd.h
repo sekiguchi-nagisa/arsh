@@ -42,7 +42,7 @@ const char *getBuiltinCommandName(unsigned int index);
 builtin_command_t lookupBuiltinCommand(const char *commandName);
 
 // common function for field splitting
-inline bool isSpace(int ch) {
+inline bool isSpace(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\n';
 }
 
@@ -55,7 +55,7 @@ inline bool hasSpace(unsigned int size, const char *ifs) {
     return false;
 }
 
-inline bool isFieldSep(unsigned int size, const char *ifs, int ch) {
+inline bool isFieldSep(unsigned int size, const char *ifs, char ch) {
     for(unsigned int i = 0; i < size; i++) {
         if(ifs[i] == ch) {
             return true;

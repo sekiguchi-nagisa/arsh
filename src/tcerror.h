@@ -29,7 +29,7 @@ namespace ydsh {
  */
 class TypeCheckError : public std::exception {  //FIXME: not use exception
 private:
-    Token token;
+    Token token{};
 
     const char *kind{nullptr};
 

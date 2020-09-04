@@ -179,9 +179,9 @@ std::string Lexer::doubleElementToString(Token token) const {
 
     const unsigned int stopPos = token.pos + token.size;
     for(unsigned int i = token.pos; i < stopPos; i++) {
-        int ch = this->buf[i];
+        char ch = this->buf[i];
         if(ch == '\\' && i + 1 < stopPos) {
-            int next = this->buf[++i];
+            char next = this->buf[++i];
             switch(next) {
             case '"':
             case '$':
@@ -195,7 +195,7 @@ std::string Lexer::doubleElementToString(Token token) const {
                 break;
             }
         }
-        str += static_cast<char>(ch);
+        str += ch;
     }
     return str;
 }
@@ -207,7 +207,7 @@ std::string Lexer::toCmdArg(Token token) const {
     str.reserve(token.size);
 
     for(unsigned int i = 0; i < token.size; i++) {
-        int ch = this->buf[token.pos + i];
+        char ch = this->buf[token.pos + i];
         if(ch == '\\') {
             char nextCh = this->buf[token.pos + ++i];
             switch(nextCh) {
@@ -219,7 +219,7 @@ std::string Lexer::toCmdArg(Token token) const {
                 break;
             }
         }
-        str += static_cast<char>(ch);
+        str += ch;
     }
     return str;
 }

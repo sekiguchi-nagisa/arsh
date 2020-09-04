@@ -169,7 +169,7 @@ inline std::pair<T, bool> parseDecimal(const char *&begin, const char *end) {
     T ret = 0;
     bool status = true;
     do {
-        int ch = *begin;
+        char ch = *begin;
         T v;
         if(ch >= '0' && ch <= '9') {
             v = ch - '0';
@@ -203,7 +203,7 @@ inline std::pair<T, bool> parseOctalOrHex(const char *&begin, const char *end, i
     T ret = 0;
     bool status = true;
     do {
-        int ch = *begin;
+        char ch = *begin;
         T v;
         if(ch >= '0' && ch <= '9') {
             v = ch - '0';
