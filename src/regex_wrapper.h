@@ -52,14 +52,31 @@ inline int toRegexFlag(char ch) {
     }
 }
 
-inline PCRE compileRegex(StringRef pattern, const char * &errorStr, int flag) {
+inline PCRE compileRegex(StringRef pattern, StringRef flag, std::string &errorStr) {
     if(pattern.hasNull()) {
         errorStr = "regex pattern contains null characters";
         return nullptr;
     }
+
+    int flagValue = 0;
+    for(auto &e : flag) {
+        int r = toRegexFlag(e);
+        if(!r) {
+            errorStr = "unsupported regex flag: `";
+            errorStr += e;
+            errorStr += "'";
+            return nullptr;
+        }
+        setFlag(flagValue, r);
+    }
+
+    const char *error;
     int errorOffset;
-    flag |= PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8;
-    pcre *re = pcre_compile(pattern.data(), flag, &errorStr, &errorOffset, nullptr);
+    flagValue |= PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8;
+    pcre *re = pcre_compile(pattern.data(), flagValue, &error, &errorOffset, nullptr);
+    if(!re) {
+        errorStr = error;
+    }
     return PCRE(re);
 }
 
