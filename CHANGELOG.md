@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add the following builtin variable
   - ``DATA_DIR``: indicate ``datadir/ydsh``, ex. /usr/share/ydsh
   - ``MODULE_DIR``: indicate system module directory, equivalent to ``$DATA_DIR/module``
+  - ``YDSH_BIN``: indicate self executable path (in linux /proc/self/exe)
+    - if empty string, may be used as shared library
 
 #### Completion
 - add completions for
@@ -43,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - builtin commands
 
 #### API
-- add ``DSState_getExecutablePath`` for get full path of current executable (for ``YDSH_BIN``)
+- add ``DSState_initExecutablePath`` for set full path of current executable to ``YDSH_BIN``
 
 
 ### Changed

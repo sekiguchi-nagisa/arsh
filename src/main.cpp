@@ -243,6 +243,7 @@ int main(int argc, char **argv) {
 
     // init state
     auto state = createState(mode);
+    DSState_initExecutablePath(state.get());
     DSState_setOption(state.get(), option);
     for(auto &e : dumpTarget) {
         if(e.path != nullptr) {
@@ -251,13 +252,6 @@ int main(int argc, char **argv) {
     }
     if(noAssert) {
         DSState_unsetOption(state.get(), DS_OPTION_ASSERT);
-    }
-
-    // set program name
-    char *binPath = DSState_getExecutablePath();
-    if(binPath) {
-        setenv("YDSH_BIN", binPath, 1);
-        free(binPath);
     }
 
     // set rest argument

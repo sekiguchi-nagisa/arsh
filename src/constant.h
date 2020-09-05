@@ -52,6 +52,8 @@ constexpr const char *VAR_SIG_IGN = "SIG_IGN";
 constexpr const char *VAR_TERM_HOOK = "TERM_HOOK";
 constexpr const char *VAR_COMP_HOOK = "COMP_HOOK";
 
+constexpr const char *VAR_YDSH_BIN = "YDSH_BIN";
+
 // used in constant expression
 constexpr const char *CVAR_SCRIPT_DIR = "SCRIPT_DIR";
 constexpr const char *CVAR_SCRIPT_NAME = "SCRIPT_NAME";

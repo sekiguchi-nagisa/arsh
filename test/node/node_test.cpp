@@ -50,7 +50,7 @@ struct NodeDumpParam {
 
 class NodeDumpTest : public ::testing::TestWithParam<NodeDumpParam>, public TempFileFactory {
 protected:
-    static constexpr unsigned int GVAR_NUM = 53;
+    static constexpr unsigned int GVAR_NUM = 54;
 
     NodeDumpParam param;
 

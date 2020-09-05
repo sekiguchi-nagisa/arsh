@@ -1,8 +1,6 @@
 
 # for command line test cases
 
-import-env YDSH_BIN
-
 let OLD_IFS = $IFS
 
 $IFS = ''

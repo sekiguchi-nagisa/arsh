@@ -38,9 +38,9 @@ $expect("$(ds -e exec -c $YDSH_BIN -c 'assert "$(printenv PWD)" == "$(printenv O
 if $OSTYPE =~ $/cygwin/i {
     $expect("$(ds -e exec -c $YDSH_BIN -c 'assert (checkenv WINDIR)' 2>&1)", 0, '')
     $expect("$(ds -e exec -c $YDSH_BIN -c 'assert (checkenv SYSTEMROOT)' 2>&1)", 0, '')
-    $expect("$(ds -e exec -c $YDSH_BIN -c 'assert $(printenv).size() == 11' 2>&1)", 0, '')
+    $expect("$(ds -e exec -c $YDSH_BIN -c 'assert $(printenv).size() == 10' 2>&1)", 0, '')
 } else {
-    $expect("$(ds -e exec -c $YDSH_BIN -c 'assert $(printenv).size() == 9' 2>&1)", 0, '')
+    $expect("$(ds -e exec -c $YDSH_BIN -c 'assert $(printenv).size() == 8' 2>&1)", 0, '')
 }
 
 # invalid option

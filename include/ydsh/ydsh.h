@@ -100,6 +100,15 @@ void DSState_setShellName(DSState *st, const char *shellName);
 void DSState_setArguments(DSState *st, char *const *args);
 
 /**
+ * set full path of current executable path (in linux, /proc/self/exe)
+ * @param st
+ * @return
+ * if cannot resolve path, return null.
+ * if st is null, return null
+ */
+const char *DSState_initExecutablePath(DSState *st);
+
+/**
  * get current exit status ($? & 0xFF)
  * @param st
  * @return
@@ -314,13 +323,6 @@ const char *DSState_copyright();
 
 unsigned int DSState_featureBit();
 
-/**
- * get full path of current executable path (may be real path of argv[0])
- * @return
- * if cannot resolve path, return null.
- * after call it, manually call free() to release buffer
- */
-char *DSState_getExecutablePath();
 
 /* for input completion */
 

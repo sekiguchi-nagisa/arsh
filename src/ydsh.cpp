@@ -357,6 +357,11 @@ static void initBuiltinVar(DSState &state) {
     bindVariable(state, "ON_EXIT", DSValue::createInt(TERM_ON_EXIT));
     bindVariable(state, "ON_ERR", DSValue::createInt(TERM_ON_ERR));
     bindVariable(state, "ON_ASSERT", DSValue::createInt(TERM_ON_ASSERT));
+
+    /**
+     * must be StringObject
+     */
+    bindVariable(state, VAR_YDSH_BIN, DSValue::createStr());
 }
 
 static void loadEmbeddedScript(DSState *state) {
@@ -740,7 +745,7 @@ unsigned int DSState_featureBit() {
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
 
-char *DSState_getExecutablePath() {
+static char *getExecutablePath() {
     uint32_t bufSize = 0;
     _NSGetExecutablePath(nullptr, &bufSize);    // get buffer size
     char *buf = static_cast<char*>(malloc(sizeof(char) * (bufSize + 1)));
@@ -753,7 +758,7 @@ char *DSState_getExecutablePath() {
 }
 
 #else
-char *DSState_getExecutablePath() {
+static char *getExecutablePath() {
     size_t bufSize = 16;
     char *buf = nullptr;
     ssize_t len;
@@ -774,6 +779,23 @@ char *DSState_getExecutablePath() {
 }
 
 #endif
+
+const char *DSState_initExecutablePath(DSState *st) {
+    GUARD_NULL(st, nullptr);
+
+    auto *handle = st->symbolTable.lookupHandle(VAR_YDSH_BIN);
+    assert(handle);
+    auto ref = st->getGlobal(handle->getIndex()).asStrRef();
+    if(!ref.empty()) {
+        return ref.data();
+    }
+    char *path = getExecutablePath();
+    if(path) {
+        st->setGlobal(handle->getIndex(), DSValue::createStr(path));
+        free(path);
+    }
+    return nullptr;
+}
 
 unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index, const char **value) {
     GUARD_NULL(st, 0);
