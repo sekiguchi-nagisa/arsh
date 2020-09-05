@@ -1014,7 +1014,7 @@ DSType& TypeChecker::resolveCommonSuperType(const std::vector<DSType *> &types) 
         unsigned int index = 0;
         for(; index < size; index++) {
             auto &curType = types[index];
-            if(type == curType) {
+            if(type->isSameOrBaseTypeOf(*curType)) {
                 continue;
             }
 

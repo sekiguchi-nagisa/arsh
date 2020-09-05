@@ -85,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ``..`` pattern cannot match empty directory.
 - always set new ``COMPREPLY`` variable even if completion result is empty
 - not escape backslash in completer
+- common super type resolution of case expression
 
 #### Builtin
 - fix executable file checking in ``command -v`` option

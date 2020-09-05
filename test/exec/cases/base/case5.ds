@@ -2,13 +2,13 @@
 function f($s : String) : String! {
     return case $s {
         $OSTYPE => { return "$OSTYPE-1"; }
-        "$MACHTYPE" => { return "$MACHTYPE-1"; }
+        "$MACHTYPE" => { "$MACHTYPE-1"; }
         $DATA_DIR => { return "${DATA_DIR}-3" }
-        $MODULE_DIR => { return "${MODULE_DIR}-5" }
+        $MODULE_DIR => { "${MODULE_DIR}-5" }
         "${$YDSH_VERSION}" => { return "$YDSH_VERSION-1"; }
-        $SCRIPT_DIR => { return "$SCRIPT_DIR-1" }
+        $SCRIPT_DIR => { "$SCRIPT_DIR-1" }
         $SCRIPT_NAME => { return "${SCRIPT_NAME}-1" }
-        else => { return new String!(); }
+        else => { new String!(); }
     }
 }
 
