@@ -1,7 +1,7 @@
 
 # for tab completion
 
-source $MODULE_DIR/path
+source $SCRIPT_DIR/path
 
 function _empty($words : [String], $cursor : Int) : [String] {
     return new [String]()

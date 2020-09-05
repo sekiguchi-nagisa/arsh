@@ -1,5 +1,5 @@
 
-source path
+source $SCRIPT_DIR/path
 
 let _cache = [
     'c' : '\\c',

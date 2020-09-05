@@ -1,8 +1,8 @@
 
 # git completion for ydsh
 
-source $MODULE_DIR/completion
-source $MODULE_DIR/path
+source $SCRIPT_DIR/../module/completion
+source $SCRIPT_DIR/../module/path
 
 var git_bash_comp_path = ""
 

@@ -1,4 +1,4 @@
-source completion
+source $SCRIPT_DIR/../module/completion
 
 startwith() {
     while(read -f $'\n') {
