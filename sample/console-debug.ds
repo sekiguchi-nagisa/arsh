@@ -5,20 +5,20 @@ if $# < 2 {
     exit 1
 }
 
-let YDSH_BIN = $@.shift()
+let BIN = $@.shift()
 let FILE = $@.shift()
 
-test -x $YDSH_BIN || {
-    echo $YDSH_BIN must be executable file
+test -x $BIN || {
+    echo $BIN must be executable file
     exit 1
 }
 
-if !(eval $YDSH_BIN --feature | grep USE_LOGGING) {
-    echo $YDSH_BIN needs USE_LOGGING feature
+if !(eval $BIN --feature | grep USE_LOGGING) {
+    echo $BIN needs USE_LOGGING feature
     exit 1
 }
 
 export-env YDSH_APPENDER = $FILE
 export-env YDSH_DUMP_CONSOLE = "on"
 
-exec -a "$(basename $0)" $YDSH_BIN $@
+exec -a "$(basename $0)" $BIN $@
