@@ -1,7 +1,5 @@
 #!/usr/bin/env ydsh
 
-import-env YDSH_BIN
-
 for $a in $(find $SCRIPT_DIR) {
     $a =~ $/\.xml$/ && continue
     !test -f $a && continue

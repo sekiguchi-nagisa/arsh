@@ -247,7 +247,7 @@ TEST_F(CmdlineTest, signal) {
 }
 
 TEST_F(CmdlineTest, execPath) {
-    ASSERT_NO_FATAL_FAILURE(this->expect(DS("import-env YDSH_BIN; echo -n $YDSH_BIN"), 0, BIN_PATH));
+    ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo -n $YDSH_BIN"), 0, BIN_PATH));
 }
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {

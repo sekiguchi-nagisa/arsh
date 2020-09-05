@@ -717,7 +717,7 @@ nodes:
         size: 8
       type: Boolean
       varName: "false"
-      index: 44
+      index: 45
       attribute: "READ_ONLY | GLOBAL | BUILTIN"
     iterNode:
       nodeKind: Empty
