@@ -36,3 +36,7 @@ var sec = $SECONDS
 sleep 1
 
 assert $SECONDS != $sec
+
+# YDSH_BIN
+assert !$YDSH_BIN.empty()
+assert test -e "$YDSH_BIN"
