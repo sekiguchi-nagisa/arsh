@@ -20,6 +20,8 @@
 #include <vector>
 #include <csignal>
 
+#include "misc/string_ref.hpp"
+
 namespace ydsh {
 
 struct SignalPair {
@@ -40,7 +42,7 @@ const SignalPair *getSignalList();
  * @return
  * if invalid signal name, return -1
  */
-int getSignalNum(const char *name);
+int getSignalNum(StringRef name);
 
 /**
  *

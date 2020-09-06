@@ -1023,7 +1023,7 @@ YDSH_METHOD signals_set(RuntimeContext &ctx) {
 YDSH_METHOD signals_signal(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_signal);
     auto key = LOCAL(1).asStrRef();
-    int sigNum = key.hasNull() ? -1 : getSignalNum(key.data());
+    int sigNum = getSignalNum(key);
     if(sigNum < 0) {
         RET(DSValue::createInvalid());
     }

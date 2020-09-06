@@ -16,6 +16,7 @@
 
 #include <cstring>
 #include <algorithm>
+#include <string>
 
 #include "signals.h"
 
@@ -153,13 +154,21 @@ const SignalPair *getSignalList() {
     return signalList;
 }
 
-int getSignalNum(const char *name) {
-    if(strncasecmp(name, "SIG", 3) == 0) {
-        name += 3;
+int getSignalNum(StringRef ref) {
+    if(ref.hasNull()) {
+        return -1;
+    }
+
+    std::string name = ref.toString();
+    std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+    StringRef nameRef = name;
+
+    if(nameRef.startsWith("SIG")) {
+        nameRef.removePrefix(3);
     }
 
     for(auto ptr = getSignalList(); ptr->name != nullptr; ptr++) {
-        if(strcasecmp(name, ptr->name) == 0) {
+        if(nameRef == ptr->name) {
             return ptr->sigNum;
         }
     }

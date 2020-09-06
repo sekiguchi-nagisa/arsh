@@ -1295,12 +1295,12 @@ static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
     return 0;
 }
 
-static std::pair<int, bool> toInt32(const char *str) {
-    return convertToNum<int32_t>(str);
+static std::pair<int, bool> toInt32(StringRef str) {
+    return convertToNum<int32_t>(str.begin(), str.end());
 }
 
-static int toSigNum(const char *str) {
-    if(isDecimal(*str)) {
+static int toSigNum(StringRef str) {
+    if(!str.empty() && isDecimal(*str.data())) {
         auto pair = toInt32(str);
         if(!pair.second) {
             return -1;
@@ -1311,8 +1311,8 @@ static int toSigNum(const char *str) {
     return getSignalNum(str);
 }
 
-static bool printNumOrName(const char *str) {
-    if(isDecimal(*str)) {
+static bool printNumOrName(StringRef str) {
+    if(!str.empty() && isDecimal(*str.data())) {
         auto pair = toInt32(str);
         if(!pair.second) {
             return false;
@@ -1333,11 +1333,11 @@ static bool printNumOrName(const char *str) {
     return true;
 }
 
-static bool killProcOrJob(DSState &state, ArrayObject &argvObj, const char *arg, int sigNum) {
-    bool isJob = *arg == '%';
-    auto pair = toInt32(isJob ? arg + 1 : arg);
+static bool killProcOrJob(DSState &state, ArrayObject &argvObj, StringRef arg, int sigNum) {
+    bool isJob = arg.startsWith("%");
+    auto pair = toInt32(isJob ? arg.substr(1) : arg);
     if(!pair.second) {
-        ERROR(argvObj, "%s: arguments must be process or job IDs", arg);
+        ERROR(argvObj, "%s: arguments must be process or job IDs", arg.data());
         return false;
     }
 
@@ -1349,12 +1349,12 @@ static bool killProcOrJob(DSState &state, ArrayObject &argvObj, const char *arg,
                 return true;
             }
         }
-        ERROR(argvObj, "%s: no such job", arg);
+        ERROR(argvObj, "%s: no such job", arg.data());
         return false;
     }
 
     if(kill(pair.first, sigNum) < 0) {
-        PERROR(argvObj, "%s", arg);
+        PERROR(argvObj, "%s", arg.data());
         return false;
     }
     return true;
@@ -1418,11 +1418,11 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
 
     unsigned int count = 0;
     for(; begin != end; ++begin) {
-        const char *arg = begin->asCStr();
+        auto arg = begin->asStrRef();
         if(listing) {
             if(!printNumOrName(arg)) {
                 count++;
-                ERROR(argvObj, "%s: invalid signal specification", arg);
+                ERROR(argvObj, "%s: invalid signal specification", arg.data());
             }
         } else {
             if(killProcOrJob(state, argvObj, arg, sigNum)) {

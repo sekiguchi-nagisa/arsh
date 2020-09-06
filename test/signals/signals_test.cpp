@@ -133,6 +133,9 @@ TEST(Signal, base) {
     ASSERT_EQ(SIGTSTP, getSignalNum("SigTStp"));
     ASSERT_EQ(-1, getSignalNum("HOGED"));
 
+    char b[] = "INT\0";
+    ASSERT_EQ(-1, getSignalNum(StringRef(b, arraySize(b) - 1)));
+
     ASSERT_STREQ("USR1", getSignalName(SIGUSR1));
     ASSERT_STREQ("SEGV", getSignalName(SIGSEGV));
     ASSERT_EQ(nullptr, getSignalName(-12));

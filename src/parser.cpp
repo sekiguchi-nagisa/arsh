@@ -1141,9 +1141,10 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 std::unique_ptr<Node> Parser::parse_signalLiteral() {
     assert(CUR_KIND() == SIGNAL_LITERAL);
     Token token = this->expect(SIGNAL_LITERAL); // always success
-    auto str = this->lexer->toTokenText(token);
-    str.pop_back(); // skip suffix [']
-    int num = getSignalNum(str.c_str() + 2); // skip prefix [%']
+    auto ref = this->lexer->toStrRef(token);
+    ref.removePrefix(2);    // skip prefix [%']
+    ref.removeSuffix(1);    // skip suffix [']
+    int num = getSignalNum(ref);
     if(num < 0) {
         reportTokenFormatError(SIGNAL_LITERAL, token, "unsupported signal");
         return nullptr;
