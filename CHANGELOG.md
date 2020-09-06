@@ -17,7 +17,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allow ``Regex`` constructor in constant expression
 - introduce ``fastglob`` option
   - breaking traditional glob behavior, but takes more efficient directory search strategy
-- after startup, set environmental variable ``YDSH_BIN`` to full path of current shell
 - module aware user-defined command lookup
   - command starting with ``_`` will be private command. private command is only called from its own module
   - in named import, call command defined in module as sub-command
@@ -32,11 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add builtin ``_exit`` command for force program termination without cleanup
   - call ``_exit`` function internally
 - builtin ``complete`` command supports ``-A`` option
-  - reuse internal completion function
+  - expose internal completion function
 - add the following builtin variable
   - ``DATA_DIR``: indicate ``datadir/ydsh``, ex. /usr/share/ydsh
   - ``MODULE_DIR``: indicate system module directory, equivalent to ``$DATA_DIR/module``
-  - ``YDSH_BIN``: indicate self executable path (in linux /proc/self/exe)
+  - ``YDSH_BIN``: indicate self executable path (in linux ``/proc/self/exe``)
     - if empty string, may be used as shared library
 
 #### Completion
