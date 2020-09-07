@@ -7,9 +7,7 @@ function _empty($words : [String], $cursor : Int) : [String] {
     return new [String]()
 }
 
-alias Completer = typeof($_empty)
-
-let _compMap : [String : Completer]
+let _compMap : [String : typeof($_empty)]
 
 function _defaultHook($words : [String], $cursor : Int) : [String] {
     if !(command -v $words[0] 2>&1 > /dev/null) {
@@ -21,18 +19,165 @@ function _defaultHook($words : [String], $cursor : Int) : [String] {
 }
 
 # if $cmd is empty string, treat as fallback handler
-function compAdd($cmd : String, $comp : Completer) : Completer! {
+function compAdd($cmd : String, $comp : typeof($_empty)) : typeof($_empty)! {
     $COMP_HOOK = $_defaultHook
     return $_compMap.put($cmd, $comp)
 }
 
-function compFilter($prefix : String, $list : [String]) : [String] {
+
+# for completion helper
+
+function _usage() : Int {
+    echo "usage: compdef [options]
+
+Options:
+    --cmd COMMAND          set target command
+    --short SHORT_OPTION   set short option
+    --long LONG_OPTION     set long option
+    --arg-list LIST        generate candidates from LIST split by ' '
+    --arg-cmd CMDLINE      generate candidates from CMDLINE evaluation
+    --arg-action ACTION    generate candicates from ACTION
+    -h, --help             show this help message"
+
+    return 2;
+}
+
+function _require($opt : String, $msg : String) : Int {
+    {
+        $msg := "argument"
+        echo $opt needs $msg
+        return $_usage()
+    } with 1>&2
+}
+
+let _compdefMap : [
+    String :        # command name
+    [
+        (
+            String, # option (length 0: empty, 1: short, 2<=: long)
+            Int,    # arg type (-1: empty, 0: list, 1: cmdline, 2: action)
+            String  # argument
+        )
+    ]
+]
+
+
+#
+# $prefix starts with '-'
+#
+function _comp_opt($deflist : [(String, Int, String)], $prefix : String) : [String] {
     var ret = new [String]()
-    for $e in $list {
-        if $e.startsWith($prefix) {
-            $ret.add($e)
+    for $def in $deflist {
+        var opt = case $def._0.size() {
+            0 => continue
+            1 => '-' + $def._0
+            else => '--' + $def._0
+        }
+        if $opt.startsWith($prefix) {
+            $ret.add($opt)
         }
     }
     return $ret
 }
 
+startwith() {
+    while(read -f $'\n') {
+        $REPLY.startsWith($1) && echo $REPLY
+    }
+}
+
+#
+# $opt is empty string or starts with '-'
+#
+function _comp_arg($deflist: [(String, Int, String)], $opt : String, $prefix : String) : [String] {
+    for $def in $deflist {
+        $opt == case $def._0.size() {
+            0 => ""
+            1 => '-' + $def._0
+            else => '--' + $def._0
+        } || contiune
+
+        var arg = $def._2
+        return case $def._1 {
+            0 => {
+                var r : [String]
+                for $a in $arg.split(" ") {
+                    if $a.startsWith($prefix) {
+                        $r.add($a)
+                    }
+                }
+                $r
+            }
+            1 => $(eval $YDSH_BIN -c "$arg" | startwith $prefix)
+            2 => { complete &> /dev/null -A $arg $prefix; $COMPREPLY; }
+            else => break
+        }
+    }
+    return new [String]()
+}
+
+function _from_compdef($words : [String], $cursor : Int) : [String] {
+    var cmd = $basename($words[0])
+    var deflist = $_compdefMap.get($cmd) ?? return new [String]()
+
+    var prefix = $words.size() == $cursor ? new String!() : $words.peek()
+
+    return new [String]()
+}
+
+compdef() {
+    $@.empty() && return ($_usage() with 1>&2)
+    $compAdd("", $_from_compdef)
+
+    var cmd : String!
+    var opt : String!
+    var arg : String!
+    var argType : Int!
+
+    for(var i = 0; $i < $#; $i++) {
+        var v = $@[$i]
+        case $v {
+        '--cmd' => {
+            $cmd = $@.get($i + 1) ?? return $_require($v, "")
+            $i++
+        }
+        '--short' => {
+            $opt = $@.get($i + 1) ?? return $_require($v, "")
+            $opt!.size() == 1 || return $_require($v, "single character argument")
+            $i++
+        }
+        '--long' => {
+            $opt = $@.get($i + 1) ?? return $_require($v, "")
+            $opt!.size() > 1 || return $_require($v, "two or more characters argument")
+            $i++
+        }
+        '--arg-list' | '--arg-cmd' | '--arg-action' => {
+            $arg = $@.get($i + 1) ?? return $_require($v, "")
+            $argType = case $v {
+                '--arg-list' => 0
+                '--arg-cmd' => 1
+                '--arg-action' => 2
+                else => -1
+            }
+            $i++
+        }
+        '-h' | '--help' => return $_usage()
+        else => return ({ echo invalid option: $v; $_usage(); } with 1>&2)
+        }
+    }
+
+    $cmd ?? { echo 1>&2 require --cmd option; return 1; }
+    !$opt && !$arg && return 0 # do nothing
+
+    var deflist = $_compdefMap.get($cmd!) ?? {
+        var tmp : typeof($_compdefMap[''])
+        $_compdefMap[$cmd!] = $tmp
+        $tmp
+    }
+
+    $deflist.add((
+        $opt ?? "",
+        $argType ?? -1,
+        $arg ?? ""
+    ))
+}

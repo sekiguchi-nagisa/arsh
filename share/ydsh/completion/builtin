@@ -1,11 +1,5 @@
 source $SCRIPT_DIR/../module/completion
 
-startwith() {
-    while(read -f $'\n') {
-        $REPLY.startsWith($1) && echo $REPLY
-    }
-}
-
 function _help($t : [String], $c : Int) : [String] {
     var p = ""
     if $c < $t.size() {
@@ -28,12 +22,12 @@ function _cmd($t : [String], $c : Int) : [String] {
 }
 
 function _unsetenv($t : [String], $c : Int) : [String] {
-    complete &> /dev/null -A env
     if($t.size() == $c) {
-        return $COMPREPLY
+        complete &> /dev/null -A env
     } else {
-        return $compFilter($t.peek(), $COMPREPLY)
+        complete &> /dev/null -A env ${$t.peek()}
     }
+    return $COMPREPLY
 }
 
 function _shctl($t : [String], $c : Int) : [String] {
