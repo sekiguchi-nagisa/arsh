@@ -22,11 +22,7 @@ function _cmd($t : [String], $c : Int) : [String] {
 }
 
 function _unsetenv($t : [String], $c : Int) : [String] {
-    if($t.size() == $c) {
-        complete &> /dev/null -A env
-    } else {
-        complete &> /dev/null -A env ${$t.peek()}
-    }
+    complete &> /dev/null -A env ${$t.size() == $c ? "" : $t.peek()}
     return $COMPREPLY
 }
 
@@ -52,11 +48,7 @@ function _shctl($t : [String], $c : Int) : [String] {
 }
 
 function _cd($t : [String], $c : Int) : [String] {
-    if $c == $t.size() {
-        complete &> /dev/null -A dir
-    } else {
-        complete &> /dev/null -A dir ${$t.peek()}
-    }
+    complete &> /dev/null -A dir ${$c == $t.size() ? "" : $t.peek()}
     return $COMPREPLY
 }
 
