@@ -688,7 +688,7 @@ TEST_F(InteractiveTest, cmdSubstitution) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->withTimeout(300, [&]{
+    ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&]{
         this->sendLineAndExpect("\"$(stty sane)\"", ": String = ");
     }));
 
