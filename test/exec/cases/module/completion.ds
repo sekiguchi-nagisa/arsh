@@ -64,3 +64,16 @@ assert diff <(complete 'ls -') <(echo --show &&
  echo --stop && echo -l \
 && echo -q && echo -s)
 
+assert diff <(complete 'ls --') <(echo --show && echo --stop)
+assert diff <(complete 'ls --sh') <(echo --show)
+assert diff <(complete 'ls --stop') <(echo --stop)
+assert diff <(complete 'ls --show ') <(ls)
+assert diff <(complete 'ls --show') <(echo --show)
+assert diff <(complete 'ls --stop ') <(complete -A signal)
+assert diff <(complete 'ls --stop T') <(complete -A signal T)
+
+compdef --cmd ps --long help --arg-list 'ccc aaa ddd bbb'
+assert diff <(complete 'ps --he') <(echo --help)
+assert $(complete 'ps --s').empty()
+assert diff <(complete 'ps --help ') <(echo aaa && echo bbb && echo ccc && echo ddd)
+assert $(complete 'ps --help 1').empty()
