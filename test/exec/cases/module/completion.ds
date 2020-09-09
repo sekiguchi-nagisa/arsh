@@ -1,0 +1,66 @@
+
+# test cases for completion module
+
+source ../../../../share/ydsh/module/completion
+
+# no option
+assert compdef 2>&1 | grep 'usage: compdef'
+compdef &> /dev/null
+assert $? == 2
+
+# -h
+assert compdef -h 2>&1 | grep 'usage: compdef'
+compdef &> /dev/null -h
+assert $? == 0
+
+# --help
+assert compdef --help 2>&1 | grep 'usage: compdef'
+compdef &> /dev/null --help
+assert $? == 0
+
+# invalid option
+assert compdef --he 2>&1 | grep 'usage: compdef'
+compdef &> /dev/null --he
+assert $? == 2
+
+
+# short option
+compdef --cmd ls --short l
+compdef --cmd ls --short q --arg-list 'AAA ABB ABC CCC'
+
+assert diff <(complete 'ls -') <(echo -l && echo -q)
+assert diff <(complete 'ls - ') <(complete -A file)
+assert diff <(complete 'ls -l') <(echo -l)
+assert $(complete 'ls -s').empty()
+assert diff <(complete 'ls -q') <(echo -q)
+assert diff <(complete 'ls -q ') <(echo AAA && echo ABB && echo ABC && echo CCC)
+assert diff <(complete 'ls -q AB') <(echo ABB && echo ABC)
+
+compdef --cmd ls --short s --arg-action env
+
+assert diff <(complete 'ls -s') <(echo -s)
+assert diff <(complete 'ls -s P') <(complete -A env P)
+assert diff <(complete 'ls -s ') <(complete -A env )
+
+
+assert $(complete 'ps -x').empty()
+
+compdef --cmd ps --short x --arg-cmd 'complete -A var S'
+compdef --cmd ps --arg-list '123 456'
+
+assert diff <(complete 'ps -x ') <(complete -A var S)
+assert diff <(complete 'ps -x ST') <(complete -A var ST)
+assert $(complete 'ps -x A').empty()
+assert diff <(complete 'ps ') <(echo 123 && echo 456)
+assert diff <(complete 'ps 4') <(echo 456)
+assert $(complete 'ps A').empty()
+
+
+# long option
+compdef --cmd ls --long show --arg-cmd 'ls'
+compdef --cmd ls --long stop --arg-action signal
+
+assert diff <(complete 'ls -') <(echo --show &&
+ echo --stop && echo -l \
+&& echo -q && echo -s)
+

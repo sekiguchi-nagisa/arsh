@@ -87,6 +87,7 @@ startwith() {
 }
 
 #
+# complete arguments of specified option
 # $opt is empty string or starts with '-'
 #
 function _comp_arg($deflist: [(String, Int, String)], $opt : String, $prefix : String) : [String] {
@@ -95,7 +96,7 @@ function _comp_arg($deflist: [(String, Int, String)], $opt : String, $prefix : S
             0 => ""
             1 => '-' + $def._0
             else => '--' + $def._0
-        } || contiune
+        } || continue
 
         var arg = $def._2
         return case $def._1 {
@@ -120,9 +121,26 @@ function _from_compdef($words : [String], $cursor : Int) : [String] {
     var cmd = $basename($words[0])
     var deflist = $_compdefMap.get($cmd) ?? return new [String]()
 
-    var prefix = $words.size() == $cursor ? new String!() : $words.peek()
-
-    return new [String]()
+    if $words.size() == $cursor {    # complete arguments or options
+        # 'CMD '
+        # 'CMD arg '
+        # 'CMD -s '
+        var prev = $words.size() == 1 ? "" : $words[-1]
+        return $_comp_arg($deflist, $prev.startsWith("-") ? $prev : "", "")
+    } else {
+        # 'CMD d'
+        # 'CMD -'
+        # 'CMD --d'
+        # 'CMD -s d'
+        # 'CMD arg1 d'
+        assert $words.size() > 1
+        var prev = $words[-1]
+        if $prev.startsWith('-') { # 'CMD -', 'CMD --d'
+            return $_comp_opt($deflist, $prev)
+        }
+        var opt = $words.size() == 2 ? "" : $words[-2]
+        return $_comp_arg($deflist, $opt.startsWith("-") ? $opt : "", $prev)
+    }
 }
 
 compdef() {
@@ -161,7 +179,7 @@ compdef() {
             }
             $i++
         }
-        '-h' | '--help' => return $_usage()
+        '-h' | '--help' => return { $_usage(); 0; }
         else => return ({ echo invalid option: $v; $_usage(); } with 1>&2)
         }
     }
