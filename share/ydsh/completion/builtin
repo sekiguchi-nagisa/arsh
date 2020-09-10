@@ -38,13 +38,20 @@ function _shctl($t : [String], $c : Int) : [String] {
 $compAdd("command", $_cmd)
 $compAdd("eval", $_cmd)
 $compAdd("exec", $_cmd)
-
 $compAdd('shctl', $_shctl)
+
 
 # defined by compdef
 
 compdef --cmd help --arg-cmd "help | cut -d ' ' -f 1"
+compdef --cmd help --short s --arg-cmd "help | cut -d ' ' -f 1"
 compdef --cmd unsetenv --arg-action env
 compdef --cmd cd --arg-action dir
 compdef --cmd cd --short L --arg-action dir
 compdef --cmd cd --short P --arg-action dir
+compdef --cmd pwd --short L
+compdef --cmd pwd --short P
+compdef --cmd complete --short A \
+        --arg-cmd "help complete | grep '^        \w' | sed 's/^        //g' | cut -d ' ' -f 1"
+compdef --cmd kill --short s --arg-action signal
+compdef --cmd kill --short l
