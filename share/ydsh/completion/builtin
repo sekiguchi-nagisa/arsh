@@ -1,13 +1,5 @@
 source $SCRIPT_DIR/../module/completion
 
-function _help($t : [String], $c : Int) : [String] {
-    var p = ""
-    if $c < $t.size() {
-        $p = $t.peek()
-    }
-    return $(help | cut -d ' ' -f 1 | startwith "$p")
-}
-
 function _cmd($t : [String], $c : Int) : [String] {
     if $t.size() == 1 {
         complete &> /dev/null -A command
@@ -19,11 +11,6 @@ function _cmd($t : [String], $c : Int) : [String] {
         $t.shift()
         return $COMP_HOOK!($t, $c - 1)
     }
-}
-
-function _unsetenv($t : [String], $c : Int) : [String] {
-    complete &> /dev/null -A env ${$t.size() == $c ? "" : $t.peek()}
-    return $COMPREPLY
 }
 
 function _shctl($t : [String], $c : Int) : [String] {
@@ -47,16 +34,17 @@ function _shctl($t : [String], $c : Int) : [String] {
     }
 }
 
-function _cd($t : [String], $c : Int) : [String] {
-    complete &> /dev/null -A dir ${$c == $t.size() ? "" : $t.peek()}
-    return $COMPREPLY
-}
 
-$compAdd("help", $_help)
 $compAdd("command", $_cmd)
 $compAdd("eval", $_cmd)
 $compAdd("exec", $_cmd)
 
-$compAdd('unsetenv', $_unsetenv)
 $compAdd('shctl', $_shctl)
-$compAdd('cd', $_cd)
+
+# defined by compdef
+
+compdef --cmd help --arg-cmd "help | cut -d ' ' -f 1"
+compdef --cmd unsetenv --arg-action env
+compdef --cmd cd --arg-action dir
+compdef --cmd cd --short L --arg-action dir
+compdef --cmd cd --short P --arg-action dir
