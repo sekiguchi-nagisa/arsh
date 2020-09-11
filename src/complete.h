@@ -32,7 +32,7 @@ enum class CodeCompOp : unsigned int {
     DIR      = 1u << 1u,    /* complete directory names (directory only) */
     EXEC     = 1u << 2u,    /* complete executable file names (including directory) */
     TILDE    = 1u << 3u,    /* perform tilde expansion before completions */
-    COMMAND  = 1u << 4u,    /* complete command names including user-defined, builtin, external */
+    EXTERNAL = 1u << 4u,    /* complete external command names */
     BUILTIN  = 1u << 5u,    /* complete builtin command names */
     UDC      = 1u << 6u,    /* complete user-defined command names */
     GVAR     = 1u << 7u,    /* complete global variable names (not start with $) */
@@ -43,6 +43,7 @@ enum class CodeCompOp : unsigned int {
     MODULE   = 1u << 12u,   /* complete module path */
     STMT_KW  = 1u << 13u,   /* complete statement keyword */
     EXPR_KW  = 1u << 14u,   /* complete expr keyword */
+    COMMAND  = EXTERNAL | BUILTIN | UDC,
 };
 
 template <> struct allow_enum_bitop<CodeCompOp> : std::true_type {};

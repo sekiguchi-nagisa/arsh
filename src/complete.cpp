@@ -202,7 +202,7 @@ static std::vector<std::string> computePathList(const char *pathVal) {
 static void completeCmdName(const SymbolTable &symbolTable, const std::string &cmdPrefix,
                             const CodeCompOp option, ArrayObject &results) {
     // complete user-defined command
-    if(hasFlag(option, CodeCompOp::COMMAND) || hasFlag(option, CodeCompOp::UDC)) {
+    if(hasFlag(option, CodeCompOp::UDC)) {
         for(const auto &iter : symbolTable.globalScope()) {
             StringRef udc = iter.first.c_str();
             if(udc.startsWith(CMD_SYMBOL_PREFIX)) {
@@ -220,7 +220,7 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
     }
 
     // complete builtin command
-    if(hasFlag(option, CodeCompOp::COMMAND) || hasFlag(option, CodeCompOp::BUILTIN)) {
+    if(hasFlag(option, CodeCompOp::BUILTIN)) {
         unsigned int bsize = getBuiltinCommandSize();
         for(unsigned int i = 0; i < bsize; i++) {
             StringRef builtin = getBuiltinCommandName(i);
@@ -231,7 +231,7 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
     }
 
     // complete external command
-    if(hasFlag(option, CodeCompOp::COMMAND)) {
+    if(hasFlag(option, CodeCompOp::EXTERNAL)) {
         const char *path = getenv(ENV_PATH);
         if(path == nullptr) {
             return;
@@ -396,7 +396,7 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     if(hasFlag(this->compOp, CodeCompOp::SIGNAL)) {
         completeSigName(this->symbolPrefix, results);
     }
-    if(hasFlag(this->compOp, CodeCompOp::COMMAND) ||
+    if(hasFlag(this->compOp, CodeCompOp::EXTERNAL) ||
        hasFlag(this->compOp, CodeCompOp::UDC) || hasFlag(this->compOp, CodeCompOp::BUILTIN)) {
         completeCmdName(this->state.symbolTable, this->symbolPrefix, this->compOp, results);    //FIXME: file name or tilde expansion
     }

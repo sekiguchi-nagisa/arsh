@@ -106,6 +106,7 @@ static constexpr struct {
                 "                   combination of file, module exec actions\n"
                 "        command    complete command names including external, user-defined, builtin ones\n"
                 "        cmd        equivalent to 'command'\n"
+                "        external   complete external commans\n"
                 "        builtin    complete builtin commands\n"
                 "        udc        complete user-defined commands\n"
                 "        variable   complete variable names\n"
@@ -1213,6 +1214,7 @@ static std::unordered_map<StringRef, CodeCompOp> initCompActions() {
             {"tilde", CodeCompOp::TILDE},
             {"command", CodeCompOp::COMMAND},
             {"cmd", CodeCompOp::COMMAND},
+            {"external", CodeCompOp::EXTERNAL},
             {"builtin", CodeCompOp::BUILTIN},
             {"udc", CodeCompOp::UDC},
             {"variable", CodeCompOp::GVAR},
