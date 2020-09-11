@@ -28,7 +28,7 @@ function _git($words : [String], $cursor : Int) : [String] {
     }
     test -f "$git_bash_comp_path" || return new [String]()
     let _helper = "$SCRIPT_DIR/../git-completion.ydsh.bash"
-    var cmd = $basename($words[0])
+    var cmd = $words[0]
 
     $cmd != "git" && $cmd != "gitk" && return new [String]()
 

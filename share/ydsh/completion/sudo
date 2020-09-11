@@ -1,0 +1,21 @@
+
+source $SCRIPT_DIR/../module/completion
+
+function _sudo($t : [String], $c : Int) : [String] {
+    if $t.size() == 1 || $c == 1{
+        import-env PATH : ""
+        var OLD = $PATH
+        try {
+            $PATH += ":/sbin:/usr/sbin:/usr/local/sbin"
+            complete &> /dev/null -A external ${$t.size() == 1 ? "" : $t.peek()}
+            return $COMPREPLY
+        } finally {
+            $PATH = $OLD
+        }
+    } else {
+        $t.shift()
+        return $COMP_HOOK!($t, $c - 1)
+    }
+}
+
+$compAdd("sudo", $_sudo)

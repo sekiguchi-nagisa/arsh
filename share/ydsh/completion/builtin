@@ -1,11 +1,13 @@
 source $SCRIPT_DIR/../module/completion
 
 function _cmd($t : [String], $c : Int) : [String] {
-    if $t.size() == 1 {
-        complete &> /dev/null -A command
-        return $COMPREPLY
-    } elif $c == 1 {
-        complete &> /dev/null -A command ${$t.peek()}
+    if $t.size() == 1 || $c == 1{
+        var actions = case $t[0] {
+            'command' => ['-A', 'builtin', '-A', 'external']
+            'exec' => ['-A', 'external']
+            else => ['-A', 'command']
+        }
+        complete &> /dev/null $actions ${$t.size() == 1 ? "" : $t.peek()}
         return $COMPREPLY
     } else {
         $t.shift()

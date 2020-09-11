@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ninja
   - fusermount
   - ydsh
+  - sudo
 
 #### API
 - add ``DSState_initExecutablePath`` for set full path of current executable to ``YDSH_BIN``

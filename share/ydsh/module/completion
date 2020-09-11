@@ -14,6 +14,7 @@ function _defaultHook($words : [String], $cursor : Int) : [String] {
         return new [String]()
     }
     var cmd = $basename($words[0])
+    $words[0] = $cmd
     var comp = $_compMap.get($cmd) ?? $_compMap.get("") ?? $_empty
     return $comp($words, $cursor)
 }
@@ -110,7 +111,15 @@ function _comp_arg($deflist: [(String, Int, String)], $opt : String, $prefix : S
                 $r
             }
             1 => $(eval $YDSH_BIN -c "$arg" | startwith $prefix)
-            2 => { complete &> /dev/null -A $arg $prefix; $COMPREPLY; }
+            2 => {
+                var args = new [String]()
+                for $a in $arg.split("|") {
+                    $args.add("-A")
+                    $args.add($a)
+                }
+                complete &> /dev/null $args $prefix;
+                $COMPREPLY
+            }
             else => break
         }
     }
@@ -118,7 +127,7 @@ function _comp_arg($deflist: [(String, Int, String)], $opt : String, $prefix : S
 }
 
 function _from_compdef($words : [String], $cursor : Int) : [String] {
-    var cmd = $basename($words[0])
+    var cmd = $words[0]
     var deflist = $_compdefMap.get($cmd) ?? return new [String]()
 
     if $words.size() == $cursor {    # complete arguments or options
