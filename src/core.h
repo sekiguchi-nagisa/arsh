@@ -174,7 +174,7 @@ CStrPtr getWorkingDir(const DSState &st, bool useLogical);
  * change current working directory and update OLDPWD, PWD.
  * if dest is null, do nothing and return true.
  */
-bool changeWorkingDir(DSState &st, const char *dest, bool useLogical);
+bool changeWorkingDir(DSState &st, StringRef dest, bool useLogical);
 
 /**
  *

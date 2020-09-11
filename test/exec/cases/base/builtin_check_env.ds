@@ -16,6 +16,9 @@ assert($? == 0)
 checkenv HOME PATH HDUWEGDFE
 assert($? == 1)
 
+checkenv HOME PATH $'HOME\000'
+assert $? == 1
+
 assert(help checkenv | grep '^checkenv: checkenv variable ...$')
 checkenv
 assert $? == 2

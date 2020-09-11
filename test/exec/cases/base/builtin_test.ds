@@ -63,6 +63,12 @@ assert($? == 0)
 test u -ne 34
 assert($? == 2)
 
+test $'12\x00' -ne 34
+assert($? == 2)
+
+test 12 -ne $'34\x00'
+assert($? == 2)
+
 test 23.o -lt 45    # not allow float
 assert($? == 2)
 
@@ -197,6 +203,9 @@ rm -f $pipe
 
 # binary file op
 ## compare file
+test $'.\x00' -ef $'.\x00'
+assert $? == 1
+
 test hfuerhfueria -ef fhaerfhure
 assert $? == 1
 

@@ -1,6 +1,12 @@
 var cur = "$(pwd)"
 
 cd $'\x002341'
-assert $? == 0
+assert $? == 1
+
+assert "$(pwd)" == $cur
+
+
+cd $'-\x002341'
+assert $? == 1
 
 assert "$(pwd)" == $cur

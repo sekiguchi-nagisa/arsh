@@ -29,6 +29,11 @@ $assertEQ("$(umask -S u=wxr,a-)", "$(umask -S u=wxr)")
 $assertEQ("$(sh -c 'umask u=wxr,g= && umask -S')", "$(umask -S u=wxr,g=)")
 
 # invalid mode
+$? =0
+umask $'777\x00' 2> /dev/null
+assert $? == 1
+$assertEQ("ydsh: umask: 777: octal number out of range (0000~0777)", "$(umask $'777\x00' 2>&1)")
+
 $? = 0
 umask 99999 2> /dev/null
 assert $? == 1
@@ -39,6 +44,10 @@ umask 9e9 2> /dev/null
 assert $? == 1
 $assertEQ("ydsh: umask: 9e9: octal number out of range (0000~0777)", "$(umask 9e9 2>&1)")
 
+$? = 0
+umask $'r\x00' 2> /dev/null
+assert $? == 1
+$assertEQ("ydsh: umask: 0x00: invalid symbolic operator", "$(umask $'r\x00' 2>&1)")
 
 $? = 0
 umask r 2> /dev/null

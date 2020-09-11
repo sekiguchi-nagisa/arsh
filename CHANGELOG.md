@@ -75,6 +75,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: ``Regex`` type constructor needs flag as second argument
   - ``new Regex('abc', 'im')``
 - **Breaking Change**: remove ``CONFIG_DIR`` variable
+- null character handling in builtin method/builtin command
+  - ``Regex`` constructor dose not accept strings having null characters
+  - ``UnixFD`` constructor dose not accept strings having null characters
+  - not ignore null characters in builtin commands
 
 #### Module
 - ``completion``: when command is not found, dose not kick corresponding completer

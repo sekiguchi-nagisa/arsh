@@ -392,32 +392,34 @@ static int builtin_cd(DSState &state, ArrayObject &argvObj) {
     }
 
     unsigned int index = optState.index;
-    const char *dest = nullptr;
+    StringRef dest;
     bool useOldpwd = false;
     if(index < argvObj.getValues().size()) {
-        dest = argvObj.getValues()[index].asCStr();
-        if(strcmp(dest, "-") == 0) {
-            dest = getenv(ENV_OLDPWD);
-            if(dest == nullptr) {
+        dest = argvObj.getValues()[index].asStrRef();
+        if(dest == "-") {
+            const char *v = getenv(ENV_OLDPWD);
+            if(v == nullptr) {
                 ERROR(argvObj, "OLDPWD not set");
                 return 1;
             }
+            dest = v;
             useOldpwd = true;
         }
     } else {
-        dest = getenv(ENV_HOME);
-        if(dest == nullptr) {
+        const char *v = getenv(ENV_HOME);
+        if(v == nullptr) {
             ERROR(argvObj, "HOME not set");
             return 1;
         }
+        dest = v;
     }
 
-    if(useOldpwd && dest != nullptr) {
-        printf("%s\n", dest);
+    if(useOldpwd) {
+        printf("%s\n", dest.data());
     }
 
     if(!changeWorkingDir(state, dest, useLogical)) {
-        PERROR(argvObj, "%s", dest);
+        PERROR(argvObj, "%s", dest.data());
         return 1;
     }
     return 0;
@@ -429,7 +431,11 @@ static int builtin_check_env(DSState &, ArrayObject &argvObj) {
         return showUsage(argvObj);
     }
     for(unsigned int i = 1; i < size; i++) {
-        const char *env = getenv(argvObj.getValues()[i].asCStr());
+        auto ref = argvObj.getValues()[i].asStrRef();
+        if(ref.hasNull()) {
+            return 1;
+        }
+        const char *env = getenv(ref.data());
         if(env == nullptr || strlen(env) == 0) {
             return 1;
         }
@@ -704,12 +710,9 @@ static BinaryOp resolveBinaryOp(StringRef opStr) {
     return BinaryOp::INVALID;
 }
 
-static bool compareStr(const DSValue &left, BinaryOp op, const DSValue &right) {
-    auto x = left.asStrRef();
-    auto y = right.asStrRef();
-
+static bool compareStr(StringRef left, BinaryOp op, StringRef right) {
     switch(op) {
-#define GEN_CASE(E, S, O) case BinaryOp::E: return x O y;
+#define GEN_CASE(E, S, O) case BinaryOp::E: return left O right;
     EACH_STR_COMP_OP(GEN_CASE)
 #undef GEN_CASE
     default:
@@ -736,14 +739,18 @@ static bool operator<(const timespec &left, const timespec &right) {
     return left.tv_sec < right.tv_sec;
 }
 
-static bool compareFile(const char *x, BinaryOp op, const char *y) {
+static bool compareFile(StringRef x, BinaryOp op, StringRef y) {
+    if(x.hasNull() || y.hasNull()) {
+        return false;
+    }
+
     struct stat st1;    //NOLINT
     struct stat st2;    //NOLINT
 
-    if(stat(x, &st1) != 0) {
+    if(stat(x.data(), &st1) != 0) {
         return false;
     }
-    if(stat(y, &st2) != 0) {
+    if(stat(y.data(), &st2) != 0) {
         return false;
     }
 
@@ -793,11 +800,11 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         break;
     }
     case 2: {   // unary op
-        const char *op = argvObj.getValues()[1].asCStr();
+        auto op = argvObj.getValues()[1].asStrRef();
         const auto &obj = argvObj.getValues()[2];
         const char *value = obj.asCStr();
-        if(strlen(op) != 2 || op[0] != '-') {
-            ERROR(argvObj, "%s: invalid unary operator", op);
+        if(op.size() != 2 || op[0] != '-') {
+            ERROR(argvObj, "%s: invalid unary operator", op.data());
             return 2;
         }
 
@@ -895,17 +902,17 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             break;
         }
         default: {
-            ERROR(argvObj, "%s: invalid unary operator", op);
+            ERROR(argvObj, "%s: invalid unary operator", op.data());
             return 2;
         }
         }
         break;
     }
     case 3: {   // binary op
-        const auto &left = argvObj.getValues()[1];
+        auto left = argvObj.getValues()[1].asStrRef();
         auto op = argvObj.getValues()[2].asStrRef();
         auto opKind = resolveBinaryOp(op);
-        const auto &right = argvObj.getValues()[3];
+        auto right = argvObj.getValues()[3].asStrRef();
 
         switch(opKind) {
 #define GEN_CASE(E, S, O) case BinaryOp::E:
@@ -914,17 +921,17 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             break;
         }
         EACH_INT_COMP_OP(GEN_CASE) {
-            auto pair = convertToNum<int64_t>(left.asCStr());
+            auto pair = convertToNum<int64_t>(left.begin(), left.end());
             int64_t n1 = pair.first;
             if(!pair.second) {
-                ERROR(argvObj, "%s: must be integer", left.asCStr());
+                ERROR(argvObj, "%s: must be integer", left.data());
                 return 2;
             }
 
-            pair = convertToNum<int64_t>(right.asCStr());
+            pair = convertToNum<int64_t>(right.begin(), right.end());
             int64_t n2 = pair.first;
             if(!pair.second) {
-                ERROR(argvObj, "%s: must be integer", right.asCStr());
+                ERROR(argvObj, "%s: must be integer", right.data());
                 return 2;
             }
 
@@ -932,7 +939,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             break;
         }
         EACH_FILE_COMP_OP(GEN_CASE) {
-            result = compareFile(left.asCStr(), opKind, right.asCStr());
+            result = compareFile(left, opKind, right);
             break;
         }
 #undef GEN_CASE
@@ -1156,14 +1163,14 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     const unsigned int argc = argvObj.getValues().size();
     unsigned int index = 1;
     for(; index < argc; index++) {
-        const char *arg = argvObj.getValues()[index].asCStr();
+        auto arg = argvObj.getValues()[index].asStrRef();
         if(arg[0] != '-') {
             break;
         }
-        if(strcmp(arg, "-r") == 0) {
+        if(arg == "-r") {
             remove = true;
         } else {
-            return invalidOptionError(argvObj, arg);
+            return invalidOptionError(argvObj, arg.data());
         }
     }
 
@@ -1268,16 +1275,17 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
 
     auto end = argvObj.getValues().end();
     for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
-        const char *kv = iter->asCStr();
-        auto *ptr = strchr(kv, '=');
+        auto kv = iter->asStrRef();
+        auto pos = kv.hasNull() ? StringRef::npos : kv.find("=");
         errno = EINVAL;
-        if(ptr != nullptr && ptr != kv) {
-            std::string name(kv, ptr - kv);
-            if(setenv(name.c_str(), ptr + 1, 1) == 0) {
+        if(pos != StringRef::npos && pos != 0) {
+            auto name = kv.substr(0, pos).toString();
+            auto value = kv.substr(pos + 1);
+            if(setenv(name.c_str(), value.data(), 1) == 0) {
                 continue;
             }
         }
-        PERROR(argvObj, "%s", kv);
+        PERROR(argvObj, "%s", kv.data());
         return 1;
     }
     return 0;
@@ -1286,9 +1294,9 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
 static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
     auto end = argvObj.getValues().end();
     for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
-        const char *envName = iter->asCStr();
-        if(unsetenv(envName) != 0) {
-            PERROR(argvObj, "%s", envName);
+        auto envName = iter->asStrRef();
+        if(unsetenv(envName.hasNull() ? "" : envName.data()) != 0) {
+            PERROR(argvObj, "%s", envName.data());
             return 1;
         }
     }
@@ -1378,13 +1386,13 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
         break;
     case 's':
     case '?': {
-        const char *sigStr = optState.optArg;
-        if(opt == '?') {
-            sigStr = argvObj.getValues()[optState.index++].asCStr() + 1;
+        StringRef sigStr = optState.optArg;
+        if(opt == '?') {    // skip prefix '-', ex. -9
+            sigStr = argvObj.getValues()[optState.index++].asStrRef().substr(1);
         }
         sigNum = toSigNum(sigStr);
         if(sigNum == -1) {
-            ERROR(argvObj, "%s: invalid signal specification", sigStr);
+            ERROR(argvObj, "%s: invalid signal specification", sigStr.data());
             return 1;
         }
         break;
@@ -1440,9 +1448,9 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
     return 0;
 }
 
-static Job tryToGetJob(const JobTable &table, const char *name) {
-    if(*name == '%') {
-        name++;
+static Job tryToGetJob(const JobTable &table, StringRef name) {
+    if(name.startsWith("%")) {
+        name.removePrefix(1);
     }
     Job job;
     auto pair = toInt32(name);
@@ -1462,11 +1470,11 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     unsigned int size = argvObj.getValues().size();
     assert(size > 0);
     Job job;
-    const char *arg = "current";
+    StringRef arg = "current";
     if(size == 1) {
         job = state.jobTable.getLatestEntry();
     } else {
-        arg = argvObj.getValues()[1].asCStr();
+        arg = argvObj.getValues()[1].asStrRef();
         job = tryToGetJob(state.jobTable, arg);
     }
 
@@ -1477,7 +1485,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
         }
         job->send(SIGCONT);
     } else {
-        ERROR(argvObj, "%s: no such job", arg);
+        ERROR(argvObj, "%s: no such job", arg.data());
         ret = 1;
         if(fg) {
             return ret;
@@ -1497,12 +1505,12 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
 
     // process remain arguments
     for(unsigned int i = 2; i < size; i++) {
-        arg = argvObj.getValues()[i].asCStr();
+        arg = argvObj.getValues()[i].asStrRef();
         job = tryToGetJob(state.jobTable, arg);
         if(job) {
             job->send(SIGCONT);
         } else {
-            ERROR(argvObj, "%s: no such job", arg);
+            ERROR(argvObj, "%s: no such job", arg.data());
             ret = 1;
         }
     }
@@ -1864,17 +1872,23 @@ struct SymbolicParseResult {
 /**
  * MODES = MODE (, MODE)*
  *
- * @param value
+ * @param ref
  * @param mode
  * @return
  */
-static SymbolicParseResult parseSymbolicMode(const char *value, mode_t mode) {
+static SymbolicParseResult parseSymbolicMode(StringRef ref, mode_t mode) {
     SymbolicParseResult ret {
         .success = true,
         .invalid = 0,
         .mode = mode,
     };
 
+    if(ref.hasNull()) {
+        ret.success = false;
+        ret.invalid = '\0';
+        return ret;
+    }
+    const char *value = ref.data();
     if(!parseMode(value, ret.mode)) {
         ret.success = false;
         ret.invalid = *(--value);
@@ -1913,12 +1927,12 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
 
     if(optState.index < argvObj.getValues().size()) {
         unsetFlag(op, PrintMaskOp::ONLY_PRINT | PrintMaskOp::REUSE);
-        const char *value = argvObj.getValues()[optState.index].asCStr();
-        if(isDecimal(*value)) {
-            auto pair = convertToNum<int32_t>(value, 8);
+        auto value = argvObj.getValues()[optState.index].asStrRef();
+        if(!value.empty() && isDecimal(*value.data())) {
+            auto pair = convertToNum<int32_t>(value.begin(), value.end(), 8);
             int num = pair.first;
             if(!pair.second || num < 0 || num > 0777) {
-                ERROR(argvObj, "%s: octal number out of range (0000~0777)", value);
+                ERROR(argvObj, "%s: octal number out of range (0000~0777)", value.data());
                 return 1;
             }
             mask = num;

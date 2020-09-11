@@ -1,13 +1,18 @@
 #$test($status = 1)
 
 # set env
-assert setenv
+assert setenv > /dev/null
+assert "$(setenv | grep -v '^_=')" == "$(env | grep -v '^_=')"
 setenv AAA=aaa BBB=bbb
 assert $? == 0
 assert checkenv AAA BBB
 
 setenv EEE= CCC DDD=ddd
 assert $? == 1
+$? = 0
+setenv $'EEE=VV\x00V'
+assert $? == 1
+
 assert !checkenv CCC
 assert ! checkenv EEE
 assert { import-env EEE; $EEE; }.empty()
@@ -21,6 +26,10 @@ assert unsetenv
 unsetenv H=
 assert $? == 1
 assert "$(unsetenv =CCC 2>&1)" == "ydsh: unsetenv: =CCC: Invalid argument"
+
+$? = 0
+unsetenv $'HOME\x00'
+assert $? == 1
 
 import-env AAA
 import-env BBB

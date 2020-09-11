@@ -133,7 +133,12 @@ static int redirectToFile(const DSValue &fileName, RedirOpenFlag openFlag, int t
             break;
         }
 
-        int fd = open(fileName.asCStr(), flag, 0666);
+        auto ref = fileName.asStrRef();
+        if(ref.hasNull()) {
+            return EINVAL;
+        }
+
+        int fd = open(ref.data(), flag, 0666);
         if(fd < 0) {
             return errno;
         }

@@ -49,6 +49,14 @@ try {
     assert(echo ${$e.message()} | grep "io redirection error: $a:")
 }
 
+var ex = 34 as Any
+try {
+    echo hello >> $'hello\x00world'
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
+
 
 # command fallback
 function fallback($a : String, $s : [String]) {

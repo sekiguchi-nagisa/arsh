@@ -159,7 +159,9 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
         dValue = state.stack.pop();
     }
     auto nameObj = state.stack.pop();
-    const char *name = nameObj.asCStr();
+    auto nameRef = nameObj.asStrRef();
+    assert(!nameRef.hasNull());
+    const char *name = nameRef.data();
     const char *env = getenv(name);
     if(env == nullptr && hasDefault) {
         setenv(name, dValue.asCStr(), 1);

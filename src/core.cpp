@@ -194,19 +194,21 @@ CStrPtr getWorkingDir(const DSState &st, bool useLogical) {
     return getCWD();
 }
 
-bool changeWorkingDir(DSState &st, const char *dest, const bool useLogical) {
-    if(dest == nullptr) {
-        return true;
+bool changeWorkingDir(DSState &st, StringRef dest, const bool useLogical) {
+    if(dest.hasNull()) {
+        errno = EINVAL;
+        return false;
     }
 
-    const bool tryChdir = strlen(dest) != 0;
+    const bool tryChdir = !dest.empty();
+    const char *ptr = dest.data();
     std::string actualDest;
     if(tryChdir) {
         if(useLogical) {
-            actualDest = expandDots(st.logicalWorkingDir.c_str(), dest);
-            dest = actualDest.c_str();
+            actualDest = expandDots(st.logicalWorkingDir.c_str(), ptr);
+            ptr = actualDest.c_str();
         }
-        if(chdir(dest) != 0) {
+        if(chdir(ptr) != 0) {
             return false;
         }
     }
