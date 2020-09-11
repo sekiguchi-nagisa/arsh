@@ -40,8 +40,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Completion
 - add completions for
-  - git
   - builtin commands
+    - shctl
+    - cd
+    - pwd
+    - complete
+    - kill
+    - command
+    - eval
+    - exec
+  - git
+  - ninja
+  - fusermount
+  - ydsh
 
 #### API
 - add ``DSState_initExecutablePath`` for set full path of current executable to ``YDSH_BIN``
