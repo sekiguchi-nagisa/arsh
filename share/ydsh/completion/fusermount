@@ -1,0 +1,4 @@
+
+source $SCRIPT_DIR/../module/completion
+
+compdef --cmd fusermount --short u --arg-cmd "cat /etc/mtab | grep 'fuse\\.' | cut -d ' ' -f 2"
