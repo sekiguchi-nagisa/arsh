@@ -138,6 +138,7 @@ constexpr const char *VAL_DEFAULT_PATH = "/bin:/usr/bin:/usr/local/bin";
 constexpr const char *EXEC_ERROR = "execution error: ";
 constexpr const char *REDIR_ERROR = "io redirection error";
 constexpr const char *UNDEF_ENV_ERROR = "undefined environmental variable: ";
+constexpr const char *SET_ENV_ERROR = "not set environmental variable: ";
 
 // =====  generic type name  =====
 

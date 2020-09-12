@@ -151,3 +151,13 @@ export-env ABCD = ""
 $ABCD := $getstr()
 assert $ABCD == 'check empty and assign'
 assert $icount == 5
+
+var ex = 34 as Any
+try {
+    $ABCD = $'hello\x00'
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
+
+true

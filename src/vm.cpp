@@ -164,7 +164,14 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
     const char *name = nameRef.data();
     const char *env = getenv(name);
     if(env == nullptr && hasDefault) {
-        setenv(name, dValue.asCStr(), 1);
+        auto ref = dValue.asStrRef();
+        if(ref.hasNull()) {
+            std::string str = SET_ENV_ERROR;
+            str += name;
+            raiseSystemError(state, EINVAL, std::move(str));
+            return nullptr;
+        }
+        setenv(name, ref.data(), 1);
         env = getenv(name);
     }
 
@@ -175,6 +182,22 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
         return nullptr;
     }
     return env;
+}
+
+bool VM::storeEnv(DSState &state) {
+    auto value = state.stack.pop();
+    auto name = state.stack.pop();
+    auto nameRef = name.asStrRef();
+    auto valueRef = value.asStrRef();
+    assert(!nameRef.hasNull());
+    if(setenv(valueRef.hasNull() ? "" : nameRef.data(), valueRef.data(), 1) == 0) {
+        return true;
+    }
+    int errNum = errno;
+    std::string str = SET_ENV_ERROR;
+    str += nameRef.data();
+    raiseSystemError(state, errNum, std::move(str));
+    return false;
 }
 
 void VM::pushNewObject(DSState &state, const DSType &type) {
@@ -1357,10 +1380,7 @@ bool VM::mainLoop(DSState &state) {
             vmnext;
         }
         vmcase(STORE_ENV) {
-            DSValue value = state.stack.pop();
-            DSValue name = state.stack.pop();
-
-            setenv(name.asCStr(), value.asCStr(), 1);//FIXME: check return value and throw
+            TRY(storeEnv(state));
             vmnext;
         }
         vmcase(POP) {

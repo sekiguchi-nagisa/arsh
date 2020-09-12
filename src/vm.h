@@ -336,6 +336,8 @@ private:
 
     static const char *loadEnv(DSState &state, bool hasDefault);
 
+    static bool storeEnv(DSState &state);
+
     static void pushNewObject(DSState &state, const DSType &type);
 
     /**
