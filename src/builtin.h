@@ -1609,7 +1609,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(fd_init);
     auto ref = LOCAL(1).asStrRef();
     errno = EINVAL;
-    if(!ref.hasNull()) {
+    if(!ref.hasNullChar()) {
         errno = 0;
         int fd = open(ref.data(), O_CREAT | O_RDWR | O_CLOEXEC, 0666);
         if(fd != -1) {

@@ -134,7 +134,7 @@ static int redirectToFile(const DSValue &fileName, RedirOpenFlag openFlag, int t
         }
 
         auto ref = fileName.asStrRef();
-        if(ref.hasNull()) {
+        if(ref.hasNullChar()) {
             return EINVAL;
         }
 

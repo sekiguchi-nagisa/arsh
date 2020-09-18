@@ -195,7 +195,7 @@ CStrPtr getWorkingDir(const DSState &st, bool useLogical) {
 }
 
 bool changeWorkingDir(DSState &st, StringRef dest, const bool useLogical) {
-    if(dest.hasNull()) {
+    if(dest.hasNullChar()) {
         errno = EINVAL;
         return false;
     }

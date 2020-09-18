@@ -53,7 +53,7 @@ inline int toRegexFlag(char ch) {
 }
 
 inline PCRE compileRegex(StringRef pattern, StringRef flag, std::string &errorStr) {
-    if(pattern.hasNull()) {
+    if(pattern.hasNullChar()) {
         errorStr = "regex pattern contains null characters";
         return nullptr;
     }

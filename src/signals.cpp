@@ -155,7 +155,7 @@ const SignalPair *getSignalList() {
 }
 
 int getSignalNum(StringRef ref) {
-    if(ref.hasNull()) {
+    if(ref.hasNullChar()) {
         return -1;
     }
 

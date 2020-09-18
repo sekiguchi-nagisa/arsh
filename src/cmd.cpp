@@ -433,7 +433,7 @@ static int builtin_check_env(DSState &, ArrayObject &argvObj) {
     }
     for(unsigned int i = 1; i < size; i++) {
         auto ref = argvObj.getValues()[i].asStrRef();
-        if(ref.hasNull()) {
+        if(ref.hasNullChar()) {
             return 1;
         }
         const char *env = getenv(ref.data());
@@ -741,7 +741,7 @@ static bool operator<(const timespec &left, const timespec &right) {
 }
 
 static bool compareFile(StringRef x, BinaryOp op, StringRef y) {
-    if(x.hasNull() || y.hasNull()) {
+    if(x.hasNullChar() || y.hasNullChar()) {
         return false;
     }
 
@@ -1278,7 +1278,7 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
     auto end = argvObj.getValues().end();
     for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
         auto kv = iter->asStrRef();
-        auto pos = kv.hasNull() ? StringRef::npos : kv.find("=");
+        auto pos = kv.hasNullChar() ? StringRef::npos : kv.find("=");
         errno = EINVAL;
         if(pos != StringRef::npos && pos != 0) {
             auto name = kv.substr(0, pos).toString();
@@ -1297,7 +1297,7 @@ static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
     auto end = argvObj.getValues().end();
     for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
         auto envName = iter->asStrRef();
-        if(unsetenv(envName.hasNull() ? "" : envName.data()) != 0) {
+        if(unsetenv(envName.hasNullChar() ? "" : envName.data()) != 0) {
             PERROR(argvObj, "%s", envName.data());
             return 1;
         }
@@ -1603,7 +1603,7 @@ static bool parseUlimitOpt(StringRef ref, unsigned int index, UlimitOptEntry &en
     using underlying_t = std::conditional<sizeof(rlim_t) == sizeof(uint64_t),
             uint64_t, std::conditional<sizeof(rlim_t) == sizeof(uint32_t), uint32_t, void>::type>::type;
 
-    if(ref.hasNull()) {
+    if(ref.hasNullChar()) {
         return false;
     }
     const char *str = ref.data();
@@ -1885,7 +1885,7 @@ static SymbolicParseResult parseSymbolicMode(StringRef ref, mode_t mode) {
         .mode = mode,
     };
 
-    if(ref.hasNull()) {
+    if(ref.hasNullChar()) {
         ret.success = false;
         ret.invalid = '\0';
         return ret;

@@ -1674,7 +1674,7 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
         assert(isa<StringNode>(*e) || isa<WildCardNode>(*e));
         if(isa<StringNode>(*e)) {
             auto ref = StringRef(cast<StringNode>(*e).getValue());
-            if(ref.hasNull()) {
+            if(ref.hasNullChar()) {
                 RAISE_TC_ERROR(NullInPath, node.getPathNode());
             }
         }

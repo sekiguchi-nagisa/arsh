@@ -155,7 +155,7 @@ public:
         return ret != nullptr ? static_cast<const char *>(ret) - this->ptr_ : npos;
     }
 
-    bool hasNull() const {
+    bool hasNullChar() const {
         return this->find(StringRefBase("\0", 1)) != npos;
     }
 

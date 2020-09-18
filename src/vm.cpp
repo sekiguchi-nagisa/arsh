@@ -160,12 +160,12 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
     }
     auto nameObj = state.stack.pop();
     auto nameRef = nameObj.asStrRef();
-    assert(!nameRef.hasNull());
+    assert(!nameRef.hasNullChar());
     const char *name = nameRef.data();
     const char *env = getenv(name);
     if(env == nullptr && hasDefault) {
         auto ref = dValue.asStrRef();
-        if(ref.hasNull()) {
+        if(ref.hasNullChar()) {
             std::string str = SET_ENV_ERROR;
             str += name;
             raiseSystemError(state, EINVAL, std::move(str));
@@ -189,8 +189,8 @@ bool VM::storeEnv(DSState &state) {
     auto name = state.stack.pop();
     auto nameRef = name.asStrRef();
     auto valueRef = value.asStrRef();
-    assert(!nameRef.hasNull());
-    if(setenv(valueRef.hasNull() ? "" : nameRef.data(), valueRef.data(), 1) == 0) {
+    assert(!nameRef.hasNullChar());
+    if(setenv(valueRef.hasNullChar() ? "" : nameRef.data(), valueRef.data(), 1) == 0) {
         return true;
     }
     int errNum = errno;
@@ -1111,7 +1111,7 @@ bool VM::addGlobbingPath(DSState &state, const unsigned int size, bool tilde) {
         auto &v = state.stack.peekByOffset(size - i);
         if(v.hasStrRef()) {
             auto ref = v.asStrRef();
-            if(ref.hasNull()) {
+            if(ref.hasNullChar()) {
                 raiseGlobbingError(state, state.stack, size, "glob pattern has null characters");
                 return false;
             }
