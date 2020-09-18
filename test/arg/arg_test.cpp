@@ -239,6 +239,24 @@ TEST(GetOptTest, invalid) {
     ASSERT_EQ(begin, end);
 }
 
+TEST(GetOptTest, empty) {
+    const char *argv[] = {
+            "-a", "",
+    };
+    const char *optstr = "a:";
+    opt::GetOptState optState;
+
+    auto begin = std::begin(argv);
+    auto end = std::end(argv);
+
+    int opt = optState(begin, end, optstr);
+    ASSERT_EQ('a', opt);
+    ASSERT_STREQ(nullptr, optState.nextChar);
+    ASSERT_STREQ("", optState.optArg);
+    ASSERT_EQ(0, optState.optOpt);
+    ASSERT_EQ(begin, end);
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
