@@ -620,12 +620,12 @@ static int builtin___puts(DSState &, ArrayObject &argvObj) {
     for(int opt; (opt = optState(argvObj, "1:2:")) != -1;) {
         switch(opt) {
         case '1':
-            fputs(optState.optArg, stdout);
+            fwrite(optState.optArg.data(), sizeof(char), optState.optArg.size(), stdout);
             fputc('\n', stdout);
             fflush(stdout);
             break;
         case '2':
-            fputs(optState.optArg, stderr);
+            fwrite(optState.optArg.data(), sizeof(char), optState.optArg.size(), stderr);
             fputc('\n', stderr);
             fflush(stderr);
             break;
@@ -776,11 +776,11 @@ static bool compareFile(StringRef x, BinaryOp op, StringRef y) {
     }
 }
 
-static int parseFD(const char *value) {
-    if(value == strstr(value, "/dev/fd/")) {
-        value += strlen("/dev/fd/");
+static int parseFD(StringRef value) {
+    if(value.startsWith("/dev/fd/")) {
+        value.removePrefix(strlen("/dev/fd/"));
     }
-    auto ret = convertToNum<int32_t>(value);
+    auto ret = convertToNum<int32_t>(value.begin(), value.end());
     if(!ret.second || ret.first < 0) {
         return -1;
     }
@@ -977,9 +977,8 @@ static int xfgetc(int fd, int timeout) {
 }
 
 static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeout, UTF-8
-    const char *prompt = "";
-    const char *ifs = nullptr;
-    unsigned int ifsSize = 0;
+    StringRef prompt;
+    StringRef ifs;
     bool backslash = true;
     bool noecho = false;
     int fd = STDIN_FILENO;
@@ -993,7 +992,6 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
             break;
         case 'f':
             ifs = optState.optArg;
-            ifsSize = argvObj.getValues()[optState.index - 1].asStrRef().size();
             break;
         case 'r':
             backslash = false;
@@ -1002,16 +1000,16 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
             noecho = true;
             break;
         case 'u': {
-            const char *value = optState.optArg;
+            StringRef value = optState.optArg;
             fd = parseFD(value);
             if(fd < 0) {
-                ERROR(argvObj, "%s: invalid file descriptor", value);
+                ERROR(argvObj, "%s: invalid file descriptor", value.data());
                 return 1;
             }
             break;
         }
         case 't': {
-            auto ret = convertToNum<int64_t>(optState.optArg);
+            auto ret = convertToNum<int64_t>(optState.optArg.begin(), optState.optArg.end());
             int64_t t = ret.first;
             if(ret.second) {
                 if(t > -1 && t <= INT32_MAX) {
@@ -1022,7 +1020,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
                     }
                 }
             }
-            ERROR(argvObj, "%s: invalid timeout specification", optState.optArg);
+            ERROR(argvObj, "%s: invalid timeout specification", optState.optArg.data());
             return 1;
         }
         case ':':
@@ -1038,10 +1036,8 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
     const bool isTTY = isatty(fd) != 0;
 
     // check ifs
-    if(ifs == nullptr) {
-        auto strRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
-        ifs = strRef.data();
-        ifsSize = strRef.size();
+    if(ifs.data() == nullptr) {
+        ifs = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
     }
 
     // clear old variable before read
@@ -1055,7 +1051,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
 
     // show prompt
     if(isTTY) {
-        fputs(prompt, stderr);
+        fwrite(prompt.data(), sizeof(char), prompt.size(), stderr);
         fflush(stderr);
     }
 
@@ -1087,7 +1083,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
             continue;
         }
 
-        bool fieldSep = isFieldSep(ifsSize, ifs, ch) && !prevIsBackslash;
+        bool fieldSep = matchFieldSep(ifs, ch) && !prevIsBackslash;
         if(fieldSep && skipCount > 0) {
             if(isSpace(ch)) {
                 continue;
@@ -1112,15 +1108,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
 
     // remove last spaces
     if(!strBuf.empty()) {
-        // check if field separator has spaces
-        bool hasSpace = false;
-        for(unsigned int i = 0; ifs[i] != '\0'; i++) {
-            if((hasSpace = isSpace(ifs[i]))) {
-                break;
-            }
-        }
-
-        if(hasSpace) {
+        if(hasSpace(ifs)) { // check if field separator has spaces
             while(!strBuf.empty() && isSpace(strBuf.back())) {
                 strBuf.pop_back();
             }
@@ -1237,7 +1225,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
         case 'A': {
             auto iter = actionMap.find(optState.optArg);
             if(iter == actionMap.end()) {
-                ERROR(argvObj, "%s: invalid action", optState.optArg);
+                ERROR(argvObj, "%s: invalid action", optState.optArg.data());
                 return showUsage(argvObj);
             }
             setFlag(compOp, iter->second);

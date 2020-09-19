@@ -284,8 +284,6 @@ static DSValue readAsStr(int fd) {
 
 static DSValue readAsStrArray(const DSState &state, int fd) {
     auto ifsRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
-    const char *ifs = ifsRef.data();
-    const unsigned ifsSize = ifsRef.size();
     unsigned int skipCount = 1;
 
     char buf[256];
@@ -304,7 +302,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
         for(int i = 0; i < readSize; i++) {
             char ch = buf[i];
-            bool fieldSep = isFieldSep(ifsSize, ifs, ch);
+            bool fieldSep = matchFieldSep(ifsRef, ch);
             if(fieldSep && skipCount > 0) {
                 if(isSpace(ch)) {
                     continue;
@@ -328,7 +326,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
     for(; !str.empty() && str.back() == '\n'; str.pop_back());
 
     // append remain
-    if(!str.empty() || !hasSpace(ifsSize, ifs)) {
+    if(!str.empty() || !hasSpace(ifsRef)) {
         array.append(DSValue::createStr(std::move(str)));
     }
 
@@ -825,7 +823,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
 void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     auto &argvObj = typeAs<ArrayObject>(array);
     bool clearEnv = false;
-    const char *progName = nullptr;
+    StringRef progName;
     GetOptState optState;
 
     if(redir) {
@@ -857,8 +855,8 @@ void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
         argv2[argc - index] = nullptr;
 
         const char *filePath = state.pathCache.searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
-        if(progName != nullptr) {
-            argv2[0] = const_cast<char *>(progName);
+        if(progName.data() != nullptr) {
+            argv2[0] = const_cast<char *>(progName.data());
         }
 
         char *envp[] = {nullptr};

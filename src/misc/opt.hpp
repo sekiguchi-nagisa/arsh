@@ -24,6 +24,7 @@
 #include <algorithm>
 
 #include "flag_util.hpp"
+#include "string_ref.hpp"
 
 namespace ydsh {
 namespace opt {
@@ -274,12 +275,12 @@ struct GetOptState {
     /**
      * currently processed argument.
      */
-    const char *nextChar{nullptr};
+    StringRef nextChar{nullptr};
 
     /**
      * may be null, if has no optional argument.
      */
-    const char *optArg{nullptr};
+    StringRef optArg{nullptr};
 
     /**
      * unrecognized option.
@@ -321,27 +322,30 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
         return -1;
     }
 
-    const char *arg = *begin;
-    if(*arg != '-' || strcmp(arg, "-") == 0) {
+    StringRef arg = *begin;
+    if(!arg.startsWith("-") || arg == "-") {
         this->nextChar = nullptr;
         return -1;
     }
 
-    if(strcmp(arg, "--") == 0) {
+    if(arg == "--") {
         this->nextChar = nullptr;
         ++begin;
         return -1;
     }
 
-    if(this->nextChar == nullptr || *this->nextChar == '\0') {
-        this->nextChar = arg + 1;
+    if(this->nextChar.empty()) {
+        this->nextChar = arg;
+        this->nextChar.removePrefix(1);
     }
 
-    const char *ptr = strchr(optStr, *this->nextChar);
+    auto pos = StringRef(optStr).find(this->nextChar[0]);
+    const char *ptr = pos == StringRef::npos ? nullptr : optStr + pos;
     if(ptr != nullptr && *ptr != ':') {
         if(*(ptr + 1) == ':') {
-            this->optArg = ++this->nextChar;
-            if(*this->optArg == '\0') {
+            this->nextChar.removePrefix(1);
+            this->optArg = this->nextChar;
+            if(this->optArg.empty()) {
                 if(*(ptr + 2) != ':') {
                     if(++begin == end) {
                         this->optArg = nullptr;
@@ -356,12 +360,17 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
             this->nextChar = nullptr;
         }
 
-        if(this->nextChar == nullptr || *(++this->nextChar) == '\0') {
+        if(this->nextChar.empty()) {
             ++begin;
+        } else {
+            this->nextChar.removePrefix(1);
+            if(this->nextChar.empty()) {
+                ++begin;
+            }
         }
         return *ptr;
     }
-    this->optOpt = static_cast<unsigned char>(*this->nextChar);
+    this->optOpt = static_cast<unsigned char>(this->nextChar[0]);
     return '?';
 }
 

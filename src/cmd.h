@@ -17,6 +17,8 @@
 #ifndef YDSH_CMD_H
 #define YDSH_CMD_H
 
+#include "misc/string_ref.hpp"
+
 struct DSState;
 
 namespace ydsh {
@@ -46,18 +48,18 @@ inline bool isSpace(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\n';
 }
 
-inline bool hasSpace(unsigned int size, const char *ifs) {
-    for(unsigned int i = 0; i < size; i++) {
-        if(isSpace(ifs[i])) {
+inline bool hasSpace(StringRef ifs) {
+    for(auto ch : ifs) {
+        if(isSpace(ch)) {
             return true;
         }
     }
     return false;
 }
 
-inline bool isFieldSep(unsigned int size, const char *ifs, char ch) {
-    for(unsigned int i = 0; i < size; i++) {
-        if(ifs[i] == ch) {
+inline bool matchFieldSep(StringRef ifs, char ch) {
+    for(auto e : ifs) {
+        if(e == ch) {
             return true;
         }
     }
