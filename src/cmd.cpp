@@ -787,6 +787,85 @@ static int parseFD(const char *value) {
     return ret.first;
 }
 
+static int testFile(char op, const char *value) {
+    bool result = false;
+    switch(op) {
+    case 'a':
+    case 'e':
+        result = access(value, F_OK) == 0;  // check if file exists
+        break;
+    case 'b':
+        result = S_ISBLK(getStMode(value)); // check if file is block device
+        break;
+    case 'c':
+        result = S_ISCHR(getStMode(value)); // check if file is character device
+        break;
+    case 'd':
+        result = S_ISDIR(getStMode(value)); // check if file is directory
+        break;
+    case 'f':
+        result = S_ISREG(getStMode(value)); // check if file is regular file.
+        break;
+    case 'g':
+        result = S_IS_PERM_(getStMode(value), S_ISUID); // check if file has set-uid-bit
+        break;
+    case 'h':
+    case 'L': {
+        mode_t mode = 0;
+        struct stat st; //NOLINT
+        if(lstat(value, &st) == 0) {
+            mode = st.st_mode;
+        }
+        result = S_ISLNK(mode); // check if file is symbolic-link
+        break;
+    }
+    case 'k':
+        result = S_IS_PERM_(getStMode(value), S_ISVTX); // check if file has sticky bit
+        break;
+    case 'p':
+        result = S_ISFIFO(getStMode(value));    // check if file is a named pipe
+        break;
+    case 'r':
+        result = access(value, R_OK) == 0;  // check if file is readable
+        break;
+    case 's': {
+        struct stat st;   //NOLINT
+        result = stat(value, &st) == 0 && st.st_size != 0;  // check if file is not empty
+        break;
+    }
+    case 'S':
+        result = S_ISSOCK(getStMode(value));    // check file is a socket
+        break;
+    case 't': {
+        int fd = parseFD(value);
+        result = fd > -1 && isatty(fd) != 0;    //  check if FD is a terminal
+        break;
+    }
+    case 'u':
+        result = S_IS_PERM_(getStMode(value), S_ISUID); // check file has set-user-id bit
+        break;
+    case 'w':
+        result = access(value, W_OK) == 0;   // check if file is writable
+        break;
+    case 'x':
+        result = access(value, X_OK) == 0;  // check if file is executable
+        break;
+    case 'O': {
+        struct stat st; //NOLINT
+        result = stat(value, &st) == 0 && st.st_uid == geteuid();   // check if file is effectively owned
+        break;
+    }
+    case 'G': {
+        struct stat st; //NOLINT
+        result = stat(value, &st) == 0 && st.st_gid == getegid();   // check if file is effectively owned by group
+        break;
+    }
+    default:
+        return 2;
+    }
+    return result ? 0 : 1;
+}
+
 static int builtin_test(DSState &, ArrayObject &argvObj) {
     bool result = false;
     unsigned int argc = argvObj.getValues().size();
@@ -803,110 +882,27 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
     }
     case 2: {   // unary op
         auto op = argvObj.getValues()[1].asStrRef();
-        const auto &obj = argvObj.getValues()[2];
-        const char *value = obj.asCStr();
+        auto ref = argvObj.getValues()[2].asStrRef();
         if(op.size() != 2 || op[0] != '-') {
             ERROR(argvObj, "%s: invalid unary operator", op.data());
             return 2;
         }
 
         const char opKind = op[1];  // ignore -
-        switch(opKind) {
-        case 'z': { // check if string is empty
-            result = obj.asStrRef().empty();
-            break;
-        }
-        case 'n': { // check if string not empty
-            result = !obj.asStrRef().empty();
-            break;
-        }
-        case 'a':
-        case 'e': {
-            result = access(value, F_OK) == 0;  // check if file exists
-            break;
-        }
-        case 'b': {
-            result = S_ISBLK(getStMode(value)); // check if file is block device
-            break;
-        }
-        case 'c': {
-            result = S_ISCHR(getStMode(value)); // check if file is character device
-            break;
-        }
-        case 'd': {
-            result = S_ISDIR(getStMode(value)); // check if file is directory
-            break;
-        }
-        case 'f': {
-            result = S_ISREG(getStMode(value)); // check if file is regular file.
-            break;
-        }
-        case 'g': {
-            result = S_IS_PERM_(getStMode(value), S_ISUID); // check if file has set-uid-bit
-            break;
-        }
-        case 'h':
-        case 'L': {
-            mode_t mode = 0;
-            struct stat st; //NOLINT
-            if(lstat(value, &st) == 0) {
-                mode = st.st_mode;
+        if(opKind == 'z') { // check if string is empty
+            result = ref.empty();
+        } else if(opKind == 'n') {  // check if string not empty
+            result = !ref.empty();
+        } else {
+            if(ref.hasNullChar()) {
+                ERROR(argvObj, "file path contains null characters");
+                return 2;
             }
-            result = S_ISLNK(mode); // check if file is symbolic-link
-            break;
-        }
-        case 'k': {
-            result = S_IS_PERM_(getStMode(value), S_ISVTX); // check if file has sticky bit
-            break;
-        }
-        case 'p': {
-            result = S_ISFIFO(getStMode(value));    // check if file is a named pipe
-            break;
-        }
-        case 'r': {
-            result = access(value, R_OK) == 0;  // check if file is readable
-            break;
-        }
-        case 's': {
-            struct stat st;   //NOLINT
-            result = stat(value, &st) == 0 && st.st_size != 0;  // check if file is not empty
-            break;
-        }
-        case 'S': {
-            result = S_ISSOCK(getStMode(value));    // check file is a socket
-            break;
-        }
-        case 't': {
-            int fd = parseFD(value);
-            result = fd > -1 && isatty(fd) != 0;    //  check if FD is a terminal
-            break;
-        }
-        case 'u': {
-            result = S_IS_PERM_(getStMode(value), S_ISUID); // check file has set-user-id bit
-            break;
-        }
-        case 'w': {
-            result = access(value, W_OK) == 0;   // check if file is writable
-            break;
-        }
-        case 'x': {
-            result = access(value, X_OK) == 0;  // check if file is executable
-            break;
-        }
-        case 'O': {
-            struct stat st; //NOLINT
-            result = stat(value, &st) == 0 && st.st_uid == geteuid();   // check if file is effectively owned
-            break;
-        }
-        case 'G': {
-            struct stat st; //NOLINT
-            result = stat(value, &st) == 0 && st.st_gid == getegid();   // check if file is effectively owned by group
-            break;
-        }
-        default: {
-            ERROR(argvObj, "%s: invalid unary operator", op.data());
-            return 2;
-        }
+            int r = testFile(opKind, ref.data());
+            if(r == 2) {
+                ERROR(argvObj, "%s: invalid unary operator", op.data());
+            }
+            return r;
         }
         break;
     }

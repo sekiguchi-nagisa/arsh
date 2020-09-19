@@ -122,6 +122,9 @@ assert($? == 1)
 test -a .
 assert($? == 0)
 
+test -a $'/\x00'
+assert $? == 2
+
 test -e ..
 assert($? == 0)
 
