@@ -523,7 +523,7 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
                 case '0': {
                     int v = 0;
                     for(unsigned int c = 0; c < 3; c++) {
-                        if(isOctal(arg[i + 1])) {
+                        if(i + 1 < arg.size() && isOctal(arg[i + 1])) {
                             v *= 8;
                             v += arg[++i] - '0';
                         } else {
@@ -534,9 +534,9 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
                     break;
                 }
                 case 'x': {
-                    if(isHex(arg[i + 1])) {
+                    if(i + 1 < arg.size() && isHex(arg[i + 1])) {
                         unsigned int v = hexToNum(arg[++i]);
-                        if(isHex(arg[i + 1])) {
+                        if(i + 1 < arg.size() && isHex(arg[i + 1])) {
                             v *= 16;
                             v += hexToNum(arg[++i]);
                         }
