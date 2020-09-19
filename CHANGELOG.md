@@ -82,7 +82,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - not ignore null characters in builtin commands
 
 #### Module
-- ``completion``: when command is not found, dose not kick corresponding completer
+- ``completion``
+  - when command is not found, dose not kick corresponding completer
+  - add ``compdef`` command for defining completer by decralative way
 
 #### API
 - **Breaking Change**: rename some public api
