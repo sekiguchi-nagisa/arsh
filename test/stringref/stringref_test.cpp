@@ -144,6 +144,14 @@ TEST_F(StringRefTest, find) {
     ASSERT_EQ(ref.size() - 1, ref.lastIndexOf(""));
     ASSERT_EQ(0, StringRef("").lastIndexOf(""));
     ASSERT_EQ(StringRef::npos, StringRef("").lastIndexOf("l"));
+
+    ASSERT_EQ(4, ref.find("o"));
+    ASSERT_EQ(4, ref.find("o", 4));
+    ASSERT_EQ(7, ref.find("o", 5));
+
+    ASSERT_EQ(2, ref.find('l'));
+    ASSERT_EQ(3, ref.find('l', 3));
+    ASSERT_EQ(9, ref.find('l', 4));
 }
 
 TEST_F(StringRefTest, remove) {

@@ -155,8 +155,14 @@ public:
         return ret != nullptr ? static_cast<const char *>(ret) - this->ptr_ : npos;
     }
 
+    size_type find(char ch, size_type pos = 0) const {
+        char str[1];
+        str[0] = ch;
+        return this->find(StringRefBase(str, 1), pos);
+    }
+
     bool hasNullChar() const {
-        return this->find(StringRefBase("\0", 1)) != npos;
+        return this->find('\0') != npos;
     }
 
     size_type indexOf(StringRefBase ref) const {
