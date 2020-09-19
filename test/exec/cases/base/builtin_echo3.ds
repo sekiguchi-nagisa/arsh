@@ -1,0 +1,8 @@
+
+# null character
+
+assert "$(echo -e 'hello\x00world')" == $'hello\x00world'
+
+assert "$(echo $'hello\x00world')" == $'hello\x00world'
+
+assert "$(echo -e $'hello\x00world')" == $'hello\x00world'

@@ -481,13 +481,14 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
             fputc(' ', stdout);
         }
         if(!interpEscape) {
-            fputs(argvObj.getValues()[index].asCStr(), stdout);
+            auto ref = argvObj.getValues()[index].asStrRef();
+            fwrite(ref.data(), sizeof(char), ref.size(), stdout);
             continue;
         }
-        const char *arg = argvObj.getValues()[index].asCStr();
-        for(unsigned int i = 0; arg[i] != '\0'; i++) {
+        auto arg = argvObj.getValues()[index].asStrRef();
+        for(unsigned int i = 0; i < arg.size(); i++) {
             int ch = arg[i];
-            if(ch == '\\' && arg[i + 1] != '\0') {
+            if(ch == '\\' && i + 1 < arg.size()) {
                 switch(arg[++i]) {
                 case '\\':
                     ch = '\\';
