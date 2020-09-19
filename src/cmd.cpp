@@ -1179,11 +1179,13 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     const bool hasNames = index < argc;
     if(hasNames) {
         for(; index < argc; index++) {
-            const char *name = argvObj.getValues()[index].asCStr();
+            auto ref = argvObj.getValues()[index].asStrRef();
+            const char *name = ref.data();
+            bool hasNul = ref.hasNullChar();
             if(remove) {
-                state.pathCache.removePath(name);
+                state.pathCache.removePath(hasNul ? nullptr : name);
             } else {
-                if(state.pathCache.searchPath(name) == nullptr) {
+                if(hasNul || state.pathCache.searchPath(name) == nullptr) {
                     ERROR(argvObj, "%s: not found", name);
                     return 1;
                 }

@@ -18,6 +18,10 @@ hash hfreiufre
 assert($? == 1)
 assert("$(hash hfreiufre 2>&1)" == "ydsh: hash: hfreiufre: not found")
 
+hash $'ls\x00ww'
+assert($? == 1)
+assert("$(hash $'ls\x00ww' 2>&1)" == "ydsh: hash: ls: not found")
+
 # remove cache
 hash -r cat ps
 assert(hash | grep "ls=")
@@ -28,6 +32,10 @@ assert($? != 0)
 
 # remove cache (not found)
 hash -r hfeirufjae
+assert($? == 0)
+
+hash ls
+hash -r $'ls\x00qq'
 assert($? == 0)
 
 # remove all cache
