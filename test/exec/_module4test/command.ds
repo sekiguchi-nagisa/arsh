@@ -1,4 +1,4 @@
-cmd() {
+call_cmd() {
     echo call $@[0]
 
     eval \

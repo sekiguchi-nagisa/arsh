@@ -7,4 +7,4 @@ source ../../_module4test/module1.ds
 assert say0 123 > /dev/null
 assert "$(say0 hello)" == '_say!! hello'
 
-cmd exit 67
+call_cmd exit 67
