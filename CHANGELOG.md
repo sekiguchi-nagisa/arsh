@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Core
+- allow function call in command arguments
+  - ex. ``echo $func(34. "hey")``
+
+
 
 ## [0.19.0] - 2020-09-20
 
