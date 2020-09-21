@@ -13,30 +13,30 @@ assert $? == 1
 assert "$(m huga 2>&1)" == "ydsh: m: undefined subcommand: huga"
 assert $? == 2
 
-assert "$(m cmd false)" == $'call false'
+assert "$(m call_cmd false)" == $'call false'
 assert $? == 1
 
-assert "$(m cmd echo world)" == $'call echo\nworld'
+assert "$(m call_cmd echo world)" == $'call echo\nworld'
 assert $? == 0
 
-source ../../_module4test/command.ds as cmd
-assert "$(eval cmd cmd echo world)" == $'call echo\nworld'
+source ../../_module4test/command.ds as call_cmd
+assert "$(eval call_cmd call_cmd echo world)" == $'call echo\nworld'
 assert $? == 0
 
 # not found due to sub-command is udc
 var ex = 23 as Any
 try {
-    command cmd cmd echo hello world!!
+    command call_cmd call_cmd echo hello world!!
 } catch $e {
     $ex = $e
 }
 assert $ex is SystemError
-assert ($ex as SystemError).message() == 'execution error: cmd: command not found'
+assert ($ex as SystemError).message() == 'execution error: call_cmd: command not found'
 
 # not found due to sub-command is resolved from its own module
 $ex = 1221
 try {
-    m cmd m hello world!!
+    m call_cmd m hello world!!
 } catch $e {
     $ex = $e
 }
@@ -45,7 +45,7 @@ assert ($ex as SystemError).message() == 'execution error: m: command not found'
 
 
 d() {
-    cmd cmd echo hey!!
+    call_cmd call_cmd echo hey!!
 }
 assert "$(d)" == $'call echo\nhey!!'
 assert $? == 0

@@ -3,4 +3,4 @@
 
 source ../../_module4test/command.ds
 
-source ../../_module4test/command.ds as cmd
+source ../../_module4test/command.ds as call_cmd
