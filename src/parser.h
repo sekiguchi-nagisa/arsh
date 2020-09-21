@@ -51,8 +51,8 @@ public:
         this->nodes.push_back(std::move(node));
     }
 
-    static std::vector<std::unique_ptr<Node>> extract(ArgsWrapper &&argsWrapper) {
-        return std::move(argsWrapper.nodes);
+    std::vector<std::unique_ptr<Node>> take() {
+        return std::move(this->nodes);
     }
 };
 
@@ -248,7 +248,13 @@ protected:
 
     std::unique_ptr<Node> parse_regexLiteral();
 
-    ArgsWrapper parse_arguments();
+    /**
+     * parse argument list (1, 2, 4,)
+     * @param first
+     * if first.size is 0, expect '('
+     * @return
+     */
+    ArgsWrapper parse_arguments(Token first = {0,0});
 
     std::unique_ptr<Node> parse_stringExpression();
 

@@ -904,7 +904,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             if(CUR_KIND() == LP && !HAS_NL()) {  // treat as method call
                 auto args = TRY(this->parse_arguments());
                 token = args.getToken();
-                node = std::make_unique<ApplyNode>(std::move(node), ArgsWrapper::extract(std::move(args)));
+                node = std::make_unique<ApplyNode>(std::move(node), args.take());
             }
             node->updateToken(token);
             break;
@@ -921,7 +921,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         case LP: {
             auto args = TRY(this->parse_arguments());
             Token token = args.getToken();
-            node = std::make_unique<ApplyNode>(std::move(node), ArgsWrapper::extract(std::move(args)), ApplyNode::FUNC_CALL);
+            node = std::make_unique<ApplyNode>(std::move(node), args.take(), ApplyNode::FUNC_CALL);
             node->updateToken(token);
             break;
         }
@@ -972,7 +972,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         auto type = TRY(this->parse_typeName());
         auto args = TRY(this->parse_arguments());
         Token token = args.getToken();
-        auto node = std::make_unique<NewNode>(startPos, std::move(type), ArgsWrapper::extract(std::move(args)));
+        auto node = std::make_unique<NewNode>(startPos, std::move(type), args.take());
         node->updateToken(token);
         return std::move(node);
     }
@@ -1180,10 +1180,10 @@ std::unique_ptr<Node> Parser::parse_regexLiteral() {
     return std::make_unique<RegexNode>(token, std::move(str), std::move(flag));
 }
 
-ArgsWrapper Parser::parse_arguments() {
+ArgsWrapper Parser::parse_arguments(Token first) {
     GUARD_DEEP_NESTING(guard);
 
-    Token token = TRY(this->expect(LP));
+    Token token = first.size == 0 ? TRY(this->expect(LP)) : first;
 
     ArgsWrapper args(token.pos);
     for(unsigned int count = 0; CUR_KIND() != RP; count++) {
@@ -1301,7 +1301,7 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
 
     switch(CUR_KIND()) {
     case APPLIED_NAME_WITH_BRACKET:
-    case SPECIAL_NAME_WITH_BRACKET: {
+    case SPECIAL_NAME_WITH_BRACKET: {   // $name[
         Token token = this->curToken;
         this->consume();    // always success
         auto varNode = this->newVarNode(token);
@@ -1310,6 +1310,17 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
 
         token = TRY(this->expect(RB));
         auto node = ApplyNode::newIndexCall(std::move(varNode), opToken, std::move(indexNode));
+        node->updateToken(token);
+        return std::make_unique<EmbedNode>(EmbedNode::CMD_ARG, std::move(node));
+    }
+    case APPLIED_NAME_WITH_PAREN: { // $func(
+        Token token = this->curToken;
+        this->consume();    // always success
+        auto varNode = this->newVarNode(token.slice(0, token.size - 1));
+
+        auto args = TRY(this->parse_arguments(token.sliceFrom(token.size - 1)));
+        token = args.getToken();
+        auto node = std::make_unique<ApplyNode>(std::move(varNode), args.take(), ApplyNode::FUNC_CALL);
         node->updateToken(token);
         return std::make_unique<EmbedNode>(EmbedNode::CMD_ARG, std::move(node));
     }

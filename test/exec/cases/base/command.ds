@@ -136,6 +136,11 @@ $@.push("world")
 echo hello' '$@[0] | grep 'hello world'   # subscript
 assert($? == 0)
 
+function hoge($i : Int) : Int {
+    return $i * 100
+}
+assert "$(echo $hoge(1234))" == '123400'
+assert "$(echo {}$hoge(1234)%%)" == '{}123400%%'
 
 # command substitution
 

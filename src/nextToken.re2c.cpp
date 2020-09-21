@@ -251,6 +251,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
       <CMD> APPLIED_NAME "["   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_BRACKET); }
       <CMD> SPECIAL_NAME "["   { PUSH_MODE(STMT); RET(SPECIAL_NAME_WITH_BRACKET); }
+      <CMD> APPLIED_NAME "("   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_PAREN); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> "("                { PUSH_MODE(CMD); RET(LP); }
       <CMD> [ \t]+             { FIND_SPACE(); }

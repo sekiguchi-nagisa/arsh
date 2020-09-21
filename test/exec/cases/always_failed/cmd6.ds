@@ -1,0 +1,7 @@
+# not allow String Array type in redirection target
+
+#$test($result = 'type', $lineNum = 7, $errorKind = 'Unacceptable', $status = 1)
+
+function ge()  {}
+
+echo $ge()   # illegal target

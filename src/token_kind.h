@@ -140,6 +140,7 @@
     TOKEN(CMD_ARG_PART                       , "<Argument Part>") \
     TOKEN(APPLIED_NAME_WITH_BRACKET          , "<$ Name[>") \
     TOKEN(SPECIAL_NAME_WITH_BRACKET          , "<$ Char[>") \
+    TOKEN(APPLIED_NAME_WITH_PAREN            , "<$ Name(>") \
     TOKEN(APPLIED_NAME_WITH_FIELD            , "<$ Name.field>") \
     TOKEN(GLOB_ANY                           , "<glob ?>") \
     TOKEN(GLOB_ZERO_OR_MORE                  , "<glob *>") \
@@ -223,6 +224,7 @@
 #define EACH_LA_paramExpansion(OP) \
     OP(APPLIED_NAME_WITH_BRACKET) \
     OP(SPECIAL_NAME_WITH_BRACKET) \
+    OP(APPLIED_NAME_WITH_PAREN) \
     EACH_LA_interpolation(OP)
 
 #define EACH_LA_primary(OP) \
