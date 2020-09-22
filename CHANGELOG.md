@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allow function call in command arguments
   - ex. ``echo $func(34. "hey")``
 
+#### Completion
+- add completions for
+  - printenv
 
 
 ## [0.19.0] - 2020-09-20
