@@ -37,14 +37,16 @@ function assertArray($x : Array<String>, $y : Array<String>) {
 
 # env name
 unsetenv COMP_WORDBREAKS
+setenv 'ZZZ(23)=hello'
+
 $assertArray($(env | while(read -r) {
                         var ss = $REPLY.split('=');
                         $REPLY.indexOf('=') > -1 && echo $ss[0];
-                     }).sort(), $(complete 'import-env '))
+                     } | sed 's/(/\\(/' | sed 's/)/\\)/' ).sort(), $(complete 'import-env '))
 $assertArray($(env | grep ^P | while(read -r) {
                                     var ss = $REPLY.split('=');
                                     $REPLY.indexOf('=') > -1 && echo $ss[0];
-                               }).sort(), $(complete 'import-env P'))
+                               } | sed 's/(/\\(/' | sed 's/)/\\)/' ).sort(), $(complete 'import-env P'))
 
 
 # no completion candidate
