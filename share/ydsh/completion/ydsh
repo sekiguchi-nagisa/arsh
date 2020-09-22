@@ -7,3 +7,4 @@ while(read -f $'\n') {
     var o = $REPLY.startsWith('--') ? $REPLY.from(2) : $REPLY.from(1)
     compdef --cmd ydsh $k $o
 }
+true
