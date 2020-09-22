@@ -37,70 +37,75 @@ enum class EscapeOp {
     COMMAND_ARG,
 };
 
-static std::string escape(const char *str, EscapeOp op) {
+// copied from complete.cpp
+static bool needEscape(char ch, EscapeOp op) {
+    switch(ch) {
+    case ' ': case ';':
+    case '\'': case '"': case '`':
+    case '|': case '&': case '<':
+    case '>': case '(': case ')':
+    case '$': case '#': case '~':
+        return true;
+    case '{': case '}':
+        if(op == EscapeOp::COMMAND_NAME || op == EscapeOp::COMMAND_NAME_PART) {
+            return true;
+        }
+        break;
+    default:
+        if((ch >= 0 && ch < 32) || ch == 127) {
+            return true;
+        }
+        break;
+    }
+    return false;
+}
+
+static std::string escape(StringRef ref, EscapeOp op) {
     std::string buf;
     if(op == EscapeOp::NOP) {
-        buf += str;
+        buf.append(ref.data(), ref.size());
         return buf;
     }
 
+    auto iter = ref.begin();
+    const auto end = ref.end();
+
     if(op == EscapeOp::COMMAND_NAME) {
-        char ch = *str;
+        char ch = *iter;
         if(isDecimal(ch) || ch == '+' || ch == '-' || ch == '[' || ch == ']') {
             buf += '\\';
             buf += static_cast<char>(ch);
-            str++;
+            iter++;
         }
     }
 
-    while(*str != '\0') {
-        char ch = *(str++);
-        bool found = false;
-        switch(ch) {
-        case ' ':
-        case ';':
-        case '\'':
-        case '"':
-        case '`':
-        case '|':
-        case '&':
-        case '<':
-        case '>':
-        case '(':
-        case ')':
-        case '$':
-        case '#':
-        case '~':
-            found = true;
-            break;
-        case '{':
-        case '}':
-            if(op == EscapeOp::COMMAND_NAME || op == EscapeOp::COMMAND_NAME_PART) {
-                found = true;
-            }
-            break;
-        default:
-            if((ch >= 0 && ch < 32) || ch == 127) { // escape unprintable character
+    while(iter != end) {
+        char ch = *(iter++);
+        if(ch == '\\' && iter != end && needEscape(*iter, op)) {
+            buf += '\\';
+            ch = *(iter++);
+        } else if(needEscape(ch, op)) {
+            if((ch >= 0 && ch < 32) || ch == 127) {
                 char d[32];
                 snprintf(d, arraySize(d), "$'\\x%02x'", ch);
                 buf += d;
                 continue;
+            } else {
+                buf += '\\';
             }
-            break;
         }
-
-        if(found) {
-            buf += '\\';
-        }
-        buf += static_cast<char>(ch);
+        buf += ch;
     }
     return buf;
 }
 
+static std::string escape2(const char *str, EscapeOp op) {
+    return escape(str, op);
+}
 
 static void append(ArrayObject &can, const char *str, EscapeOp op) {
     assert(can.getTypeID() == static_cast<unsigned int>(TYPE::StringArray));
-    std::string estr = escape(str, op);
+    std::string estr = escape2(str, op);
     can.append(DSValue::createStr(std::move(estr)));
 }
 

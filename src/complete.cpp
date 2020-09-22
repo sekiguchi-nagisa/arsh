@@ -37,6 +37,28 @@ enum class EscapeOp {
     COMMAND_ARG,
 };
 
+static bool needEscape(char ch, EscapeOp op) {
+    switch(ch) {
+    case ' ': case ';':
+    case '\'': case '"': case '`':
+    case '|': case '&': case '<':
+    case '>': case '(': case ')':
+    case '$': case '#': case '~':
+        return true;
+    case '{': case '}':
+        if(op == EscapeOp::COMMAND_NAME || op == EscapeOp::COMMAND_NAME_PART) {
+            return true;
+        }
+        break;
+    default:
+        if((ch >= 0 && ch < 32) || ch == 127) {
+            return true;
+        }
+        break;
+    }
+    return false;
+}
+
 static std::string escape(StringRef ref, EscapeOp op) {
     std::string buf;
     if(op == EscapeOp::NOP) {
@@ -58,35 +80,20 @@ static std::string escape(StringRef ref, EscapeOp op) {
 
     while(iter != end) {
         char ch = *(iter++);
-        bool found = false;
-        switch(ch) {
-        case ' ': case ';':
-        case '\'': case '"': case '`':
-        case '|': case '&': case '<':
-        case '>': case '(': case ')':
-        case '$': case '#': case '~':
-            found = true;
-            break;
-        case '{':
-        case '}':
-            if(op == EscapeOp::COMMAND_NAME || op == EscapeOp::COMMAND_NAME_PART) {
-                found = true;
-            }
-            break;
-        default:
-            if((ch >= 0 && ch < 32) || ch == 127) { // escape unprintable character
+        if(ch == '\\' && iter != end && needEscape(*iter, op)) {
+            buf += '\\';
+            ch = *(iter++);
+        } else if(needEscape(ch, op)) {
+            if((ch >= 0 && ch < 32) || ch == 127) {
                 char d[32];
                 snprintf(d, arraySize(d), "$'\\x%02x'", ch);
                 buf += d;
                 continue;
+            } else {
+                buf += '\\';
             }
-            break;
         }
-
-        if(found) {
-            buf += '\\';
-        }
-        buf += static_cast<char>(ch);
+        buf += ch;
     }
     return buf;
 }

@@ -9,6 +9,8 @@ assert diff <(complete 'help u') <(help | cut -d ' ' -f 1 | grep '^u')
 #assert diff <(complete 'command ') <(complete -A cmd "")
 
 # unsetenv
+setenv 'ZZZ(3.14)=12345'
+
 assert diff <(complete 'unsetenv ') <(complete -A env)
 assert diff <(complete 'unsetenv H') <(complete -A env H)
 
