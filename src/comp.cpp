@@ -237,7 +237,7 @@ public:
             if(startsWith(env, this->envName.c_str())) {
                 const char *ptr = strchr(env, '=');
                 assert(ptr != nullptr);
-                append(results, std::string(env, ptr - env), EscapeOp::NOP);
+                append(results, std::string(env, ptr - env), EscapeOp::COMMAND_ARG);
             }
         }
     }

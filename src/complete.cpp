@@ -141,7 +141,7 @@ static void completeEnvName(const std::string &namePrefix, ArrayObject &results)
         assert(r != StringRef::npos);
         auto name = env.substr(0, r);
         if(name.startsWith(namePrefix)) {
-            append(results, name, EscapeOp::NOP);
+            append(results, name, EscapeOp::COMMAND_ARG);
         }
     }
 }
