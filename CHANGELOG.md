@@ -18,6 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - printenv
 
 
+## [0.19.1] - 2020-09-22
+
+### Fixed
+- remove ``cmd`` from test case for cygwin
+- escape charcters in env name completer
+- escape handling in completer when charcter has already escaped
+
+
 ## [0.19.0] - 2020-09-20
 
 ### Added
