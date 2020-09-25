@@ -47,7 +47,5 @@ function _git($words : [String], $cursor : Int) : [String] {
     return $ret
 }
 
-var gg = $_git
-
 $compAdd("git", $_git)
 $compAdd("gitk", $_git)
