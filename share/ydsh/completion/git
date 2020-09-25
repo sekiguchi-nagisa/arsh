@@ -40,8 +40,14 @@ function _git($words : [String], $cursor : Int) : [String] {
     if $cursor == $words.size() {
         $line += " "
     }
-    return $(bash $_helper $git_bash_comp_path $cmd $line)
+    var ret = $(bash $_helper $git_bash_comp_path $cmd $line)
+    if $ret.size() == 1 && test -d "${$ret[0]}" && $ret[0][$ret[0].size() - 1] != '/' {
+        $ret[0] += "/"
+    }
+    return $ret
 }
+
+var gg = $_git
 
 $compAdd("git", $_git)
 $compAdd("gitk", $_git)
