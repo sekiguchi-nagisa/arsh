@@ -50,7 +50,10 @@ assert($a == "hello" + ' ' + "world")
 
 assert("12あ90灘"[0] == "1")
 assert("12あ90灘"[1] == "2")
+assert "12345"[-1] == '5'
+assert "12345"[-2] == '4'
 try { "12あ90灘"[123]; assert($false); } catch($e) { assert($e is OutOfRangeError); }
+try { "12あ90灘"[-123]; assert($false); } catch($e) { assert($e is OutOfRangeError); }
 assert("12あ90灘"[2] != 'あ')  # get ascii character encoding
 assert("12あ90灘".charAt(2) == "あ")   # get UTF8 character
 assert("12あ90灘"[5] != '灘')  # get get ascii character encoding

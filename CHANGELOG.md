@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Completion
 - add completions for
   - printenv
+  - which
+
+
+### Changed
+
+#### Builtin
+- allow negative number index in string ``[]``
 
 
 ## [0.19.1] - 2020-09-22

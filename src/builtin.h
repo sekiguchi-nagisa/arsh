@@ -530,6 +530,37 @@ static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
     raiseError(ctx, TYPE::OutOfRangeError, std::move(message));
 }
 
+#define TRY(E) ({ auto __value = E; if(!__value) { RET_ERROR; } std::forward<decltype(__value)>(__value); })
+
+struct ArrayIndex {
+    size_t index;
+    bool s;
+
+    explicit operator bool() const {
+        return this->s;
+    }
+};
+
+// check index range and get resolved index
+static ArrayIndex resolveIndex(int64_t index, size_t size) {
+    assert(size <= ArrayObject::MAX_SIZE);
+    index += (index < 0 ? size : 0);
+    bool s = index > -1 && static_cast<size_t>(index) < size;
+    return {static_cast<size_t>(index), s};
+}
+
+static ArrayIndex resolveIndex(RuntimeContext &ctx, int64_t index, size_t size) {
+    auto ret = resolveIndex(index, size);
+    if(!ret) {
+        std::string message("size is ");
+        message += std::to_string(size);
+        message += ", but index is ";
+        message += std::to_string(index);
+        raiseOutOfRangeError(ctx, std::move(message));
+    }
+    return ret;
+}
+
 //!bind: function $OP_GET($this : String, $index : Int) : String
 YDSH_METHOD string_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_get);
@@ -537,16 +568,8 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
     const size_t size = ref.size();
     const auto index = LOCAL(1).asInt();
 
-    if(index > -1 && static_cast<size_t>(index) < size) {
-        RET(DSValue::createStr(ref.substr(index, 1)));
-    }
-
-    std::string msg("size is ");
-    msg += std::to_string(size);
-    msg += ", but index is ";
-    msg += std::to_string(index);
-    raiseOutOfRangeError(ctx, std::move(msg));
-    RET_ERROR;
+    auto value = TRY(resolveIndex(ctx, index, size));
+    RET(DSValue::createStr(ref.substr(value.index, 1)));
 }
 
 //!bind: function charAt($this : String, $index : Int) : String
@@ -1049,37 +1072,6 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
 // ###################
 // ##     Array     ##
 // ###################
-
-#define TRY(E) ({ auto value = E; if(!value) { RET_ERROR; } std::forward<decltype(value)>(value); })
-
-struct ArrayIndex {
-    size_t index;
-    bool s;
-
-    explicit operator bool() const {
-        return this->s;
-    }
-};
-
-// check index range and get resolved index
-static ArrayIndex resolveIndex(int64_t index, size_t size) {
-    assert(size <= ArrayObject::MAX_SIZE);
-    index += (index < 0 ? size : 0);
-    bool s = index > -1 && static_cast<size_t>(index) < size;
-    return {static_cast<size_t>(index), s};
-}
-
-static ArrayIndex resolveIndex(RuntimeContext &ctx, int64_t index, size_t size) {
-    auto ret = resolveIndex(index, size);
-    if(!ret) {
-        std::string message("size is ");
-        message += std::to_string(size);
-        message += ", but index is ";
-        message += std::to_string(index);
-        raiseOutOfRangeError(ctx, std::move(message));
-    }
-    return ret;
-}
 
 //!bind: function $OP_GET($this : Array<T0>, $index : Int) : T0
 YDSH_METHOD array_get(RuntimeContext &ctx) {

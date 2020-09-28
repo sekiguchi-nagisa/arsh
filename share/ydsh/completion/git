@@ -41,7 +41,7 @@ function _git($words : [String], $cursor : Int) : [String] {
         $line += " "
     }
     var ret = $(bash $_helper $git_bash_comp_path $cmd $line)
-    if $ret.size() == 1 && test -d "${$ret[0]}" && $ret[0][$ret[0].size() - 1] != '/' {
+    if $ret.size() == 1 && test -d "${$ret[0]}" && $ret[0][-1] != '/' {
         $ret[0] += "/"
     }
     return $ret
