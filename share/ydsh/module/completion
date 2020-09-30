@@ -38,6 +38,8 @@ Options:
     --arg-list LIST        generate candidates from LIST split by ' '
     --arg-cmd CMDLINE      generate candidates from CMDLINE evaluation
     --arg-action ACTION    generate candicates from ACTION
+    --comp-path            set bash completion script
+    --comp-target          set completion function
     -h, --help             show this help message"
 
     return 2;
@@ -55,8 +57,8 @@ let _compdefMap : [
     String :        # command name
     [
         (
-            String, # option (length 0: empty, 1: short, 2<=: long)
-            Int,    # arg type (-1: empty, 0: list, 1: cmdline, 2: action)
+            String, # option (length 0: empty, 1: short, 2<=: long, other)
+            Int,    # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp)
             String  # argument
         )
     ]
@@ -126,9 +128,31 @@ function _comp_arg($deflist: [(String, Int, String)], $opt : String, $prefix : S
     return new [String]()
 }
 
+function _comp_wrap($file : String, $target : String, $words : [String], $cursor : Int): [String] {
+    test -f "$file" || return new [String]()
+    let _helper = "$SCRIPT_DIR/../completion-wrapper.bash"
+
+    var line = ""
+    for $w in $words {
+        if !$line.empty() { $line += " "; }
+        $line += $w
+    }
+    if $cursor == $words.size() {
+        $line += " "
+    }
+    var ret = $(bash $_helper $file $target $line)
+    if $ret.size() == 1 && test -d "${$ret[0]}" && $ret[0][-1] != '/' {
+        $ret[0] += "/"
+    }
+    return $ret
+}
+
 function _from_compdef($words : [String], $cursor : Int) : [String] {
     var cmd = $words[0]
     var deflist = $_compdefMap.get($cmd) ?? return new [String]()
+    if $deflist[0]._1 == 3 {
+        return $_comp_wrap($deflist[0]._0, $deflist[0]._2, $words, $cursor)
+    }
 
     if $words.size() == $cursor {    # complete arguments or options
         # 'CMD '
@@ -178,12 +202,17 @@ compdef() {
             $opt!.size() > 1 || return $_require($v, "two or more characters argument")
             $i++
         }
-        '--arg-list' | '--arg-cmd' | '--arg-action' => {
+        '--comp-path' => {
+            $opt = $@.get($i + 1) ?? return $_require($v, "")
+            $i++
+        }
+        '--arg-list' | '--arg-cmd' | '--arg-action' | "--comp-target" => {
             $arg = $@.get($i + 1) ?? return $_require($v, "")
             $argType = case $v {
                 '--arg-list' => 0
                 '--arg-cmd' => 1
                 '--arg-action' => 2
+                '--comp-target' => 3
                 else => -1
             }
             $i++

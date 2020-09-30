@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# ydsh completion support for git
+# bash completion wrapper
 #
 # based on (https://github.com/git/git/blob/master/contrib/completion/git-completion.tcsh)
 
-# usage: $0 [full path of git-completion.bash] [git/gitk] [comp line]
+# usage: $0 [full path of completion] [tatget function] [comp line]
 
 # shellcheck disable=SC1090
 source "$1"
-
-COMP_WORDBREAKS=${COMP_WORDBREAKS//:}
 
 COMP_WORDS=($3)
 
@@ -24,9 +22,7 @@ else
 	COMP_CWORD=$((${#COMP_WORDS[@]}-1))
 fi
 
-_"$2"
+eval "$2"
 
 IFS=$'\n'
 echo "${COMPREPLY[*]}"
-
-

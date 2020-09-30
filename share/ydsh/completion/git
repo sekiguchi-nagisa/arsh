@@ -2,9 +2,6 @@
 # git completion for ydsh
 
 source $SCRIPT_DIR/../module/completion
-source $SCRIPT_DIR/../module/path
-
-var git_bash_comp_path = ""
 
 function _lookup() : String {
     if($OSTYPE == "Darwin") {
@@ -22,30 +19,8 @@ function _lookup() : String {
     return "."
 }
 
-function _git($words : [String], $cursor : Int) : [String] {
-    if !(test -f "$git_bash_comp_path") {
-        $git_bash_comp_path = $_lookup()
-    }
-    test -f "$git_bash_comp_path" || return new [String]()
-    let _helper = "$SCRIPT_DIR/../git-completion.ydsh.bash"
-    var cmd = $words[0]
-
-    $cmd != "git" && $cmd != "gitk" && return new [String]()
-
-    var line = ""
-    for $w in $words {
-        if !$line.empty() { $line += " "; }
-        $line += $w
-    }
-    if $cursor == $words.size() {
-        $line += " "
-    }
-    var ret = $(bash $_helper $git_bash_comp_path $cmd $line)
-    if $ret.size() == 1 && test -d "${$ret[0]}" && $ret[0][-1] != '/' {
-        $ret[0] += "/"
-    }
-    return $ret
+{
+    var path = $_lookup()
+    compdef --cmd git --comp-path "$path" --comp-target _git
+    compdef --cmd gitk --comp-path "$path" --comp-target _gitk
 }
-
-$compAdd("git", $_git)
-$compAdd("gitk", $_git)
