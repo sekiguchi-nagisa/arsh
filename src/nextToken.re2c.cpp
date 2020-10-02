@@ -210,7 +210,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "%="              { MODE(STMT); RET(MOD_ASSIGN); }
       <EXPR> ":="              { MODE(STMT); RET(STR_ASSIGN); }
       <EXPR> "??="             { MODE(STMT); RET(NULL_ASSIGN); }
-      <EXPR> "=>"              { MODE(STMT); RET(CASE_ARM); }
+      <EXPR> ("=>" | "->")     { MODE(STMT); RET(CASE_ARM); }
 
       <EXPR> "as"              { RET(AS); }
       <EXPR> "is"              { RET(IS); }
@@ -290,7 +290,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <TYPE> ")"               { RET(PTYPE_CLOSE); }
       <TYPE> ":"               { RET(TYPE_MSEP); }
       <TYPE> "!" / [^=~]       { RET(TYPE_OPT); }
-      <TYPE> "->"              { RET(TYPE_ARROW); }
+      <TYPE> ("=>" | "->")     { RET(TYPE_ARROW); }
 
 
       <STMT,EXPR,NAME,DSTRING,CMD,TYPE> "\000" { REACH_EOS();}

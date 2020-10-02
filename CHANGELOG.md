@@ -23,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+#### Core
+- **Breaking Change**: string representation of Func type
+  - now use ``=>``
+- allow ``=>`` in abbreviate type notation of Func type
+- allow ``->`` in arm expression
+
 #### Builtin
 - allow negative number index in string ``[]``
 
