@@ -1,0 +1,75 @@
+
+# test for -A action
+
+## variable
+assert diff <(complete -A var) <(complete '$')
+assert diff <(complete -A var 'C') <(complete '$C')
+assert diff <(complete -A variable 'T') <(complete '$T')
+assert diff <(complete -A variable '') <(complete '$')
+assert complete -A var '$C' > /dev/null && $COMPREPLY.empty()   # not starts with '$'
+
+## env
+assert diff <(complete -A env 'X') <(complete 'import-env X')
+assert diff <(complete -A env '') <(complete 'import-env ')
+
+## signal
+assert diff <(complete -A signal 'TT') <(echo TTIN && echo TTOU)
+
+## user
+assert diff <(complete -A user) <(complete 'echo ~' | sed -e 's/~//' | sed -e 's/\///')
+
+## group
+export-env LC_ALL = 'C'
+if $OSTYPE.lower() == "linux" {
+    assert diff <(complete -A group) <(cat /etc/group | grep -v '^#' | cut -d : -f 1 | sort)
+}
+
+## file
+assert diff <(complete -A file) <(complete 'ls ')
+assert diff <(complete -A file '') <(complete 'ls ')
+assert diff <(complete -A file '.') <(complete 'ls .')
+assert diff <(complete -A file -A tilde '~') <(complete 'ls ~')
+
+## exec
+assert diff <(complete -A exec /usr/bin/) <(complete '/usr/bin/')
+
+## directory
+assert diff <(complete -A dir /usr/) <(complete '/usr/' | grep '.*/$')
+assert diff <(complete -A dir './') <(complete 'ls ./' | grep '.*/$')
+
+## module
+assert diff <(cd ~/ && complete -A module '') <(cd ~/ && complete 'source ')
+assert diff <(complete -A module '/') <(cd ~/ && complete 'source /')
+assert diff <(complete -A tilde -A module '~/') <(cd ~/ && complete 'source ~/')
+
+## keyword
+let stmt = ['new', '"', '$(', '>(', '<(', '(', '[', '{',
+            'do', 'for', 'if', 'case', 'try', 'while',
+            'break', 'continue', 'return',
+            '!', '+', '-', 'throw', 'coproc',
+
+            'function', 'interface', 'alias', 'assert',
+            'export-env', 'import-env',
+            'let', 'source', 'source!', 'var', ';']
+
+let expr = ['new', '"', '$(', '>(', '<(', '(', '[', '{',
+            'do', 'for', 'if', 'case', 'try', 'while',
+            'break', 'continue', 'return',
+            '!', '+', '-', 'throw', 'coproc']
+
+assert diff <(complete -A expr_kw '') <(for $e in $expr { echo $e; } | sort)
+assert diff <(complete -A expr_kw 'c') <(for $e in $expr { echo $e; } | grep '^c' | sort)
+assert diff <(complete -A stmt_kw ) <(for $e in $stmt { echo $e; } | sort)
+assert diff <(complete -A stmt_kw i) <(for $e in $stmt { echo $e; } | grep '^i' | sort)
+
+## command
+assert diff <(complete -A builtin) <(help | cut -d ' ' -f 1 | sort)
+assert diff <(complete -A builtin e) <(help | cut -d ' ' -f 1 | grep '^e' | sort)
+
+var udc = ["_cmd_fallback_handler"]
+assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
+assert diff <(complete -A udc '_') <(for $e in $udc { echo $e; } | grep '^_'| sort)
+
+assert diff <(complete -A command -A stmt_kw) <(complete ';')
+assert diff <(complete -A command -A stmt_kw l) <(complete 'l')
+assert diff <(complete -A command -A stmt_kw c) <(complete 'c')

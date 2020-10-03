@@ -229,25 +229,6 @@ public:
     }
 };
 
-class EnvNameCompleter : public Completer {
-private:
-    const std::string envName;
-
-public:
-    explicit EnvNameCompleter(std::string &&name) : Completer("Env"), envName(std::move(name)) {}
-
-    void operator()(ArrayObject &results) override {
-        for(unsigned int i = 0; environ[i] != nullptr; i++) {
-            const char *env = environ[i];
-            if(startsWith(env, this->envName.c_str())) {
-                const char *ptr = strchr(env, '=');
-                assert(ptr != nullptr);
-                append(results, std::string(env, ptr - env), EscapeOp::COMMAND_ARG);
-            }
-        }
-    }
-};
-
 class CmdNameCompleter : public Completer {
 private:
     const SymbolTable &symbolTable;
@@ -337,28 +318,6 @@ void CmdNameCompleter::operator()(ArrayObject &results) {
         closedir(dir);
     }
 }
-
-class GlobalVarNameCompleter : public Completer {
-private:
-    const SymbolTable &symbolTable;
-
-    const std::string token;
-
-public:
-    GlobalVarNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
-            Completer("GlobalVar"), symbolTable(symbolTable), token(std::move(token)) {}
-
-    void operator()(ArrayObject &results) override {
-        for(const auto &iter : this->symbolTable.globalScope()) {
-            const char *varName = iter.first.c_str();
-            if(!this->token.empty() && !startsWith(varName, CMD_SYMBOL_PREFIX)
-               && !startsWith(varName, MOD_SYMBOL_PREFIX)
-               && startsWith(varName, this->token.c_str() + 1)) {
-                append(results, iter.first, EscapeOp::NOP);
-            }
-        }
-    }
-};
 
 enum class FileNameCompOp : unsigned int {
     ONLY_EXEC = 1 << 0,
@@ -469,28 +428,6 @@ void FileNameCompleter::operator()(ArrayObject &results) {
     }
     closedir(dir);
 }
-
-struct ModNameCompleter : public FileNameCompleter {
-    ModNameCompleter(const char *scriptDir, std::string &&token, bool tilde) :
-            FileNameCompleter(scriptDir, std::move(token), tilde ? FileNameCompOp::TIDLE : FileNameCompOp{}) {
-        this->setName("Module");
-    }
-
-    void operator()(ArrayObject &results) override {
-        // complete in SCRIPT_DIR
-        FileNameCompleter::operator()(results);
-
-        // complete in local module dir
-        std::string localModDir = LOCAL_MOD_DIR;
-        expandTilde(localModDir);
-        this->baseDir = localModDir.c_str();
-        FileNameCompleter::operator()(results);
-
-        // complete in system module dir
-        this->baseDir = SYSTEM_MOD_DIR;
-        FileNameCompleter::operator()(results);
-    }
-};
 
 class AndCompleter : public Completer {
 private:
@@ -627,15 +564,6 @@ public:
     CompleterFactory(DSState &st, StringRef ref);
 
 private:
-    std::unique_ptr<Completer> createModNameCompleter(CompType type) const {
-        if(type == CompType::NONE) {
-            return std::make_unique<ModNameCompleter>(this->lexer.getScriptDir(), "", false);
-        }
-        auto token = this->curToken();
-        bool tilde = this->lexer.startsWith(token, '~');
-        return std::make_unique<ModNameCompleter>(this->lexer.getScriptDir(), this->lexer.toCmdArg(token), tilde);
-    }
-
     std::unique_ptr<Completer> createFileNameCompleter(CompType type) const {
         if(type == CompType::NONE) {
             return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), "");
@@ -666,14 +594,6 @@ private:
             return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), std::move(arg), op);
         }
         return std::make_unique<CmdNameCompleter>(this->state.symbolTable, std::move(arg));
-    }
-
-    std::unique_ptr<Completer> createGlobalVarNameCompleter(Token token) const {
-        return std::make_unique<GlobalVarNameCompleter>(this->state.symbolTable, this->lexer.toTokenText(token));
-    }
-
-    std::unique_ptr<Completer> createEnvNameCompleter(CompType type) const {
-        return std::make_unique<EnvNameCompleter>(type == CompType::CUR ? this->lexer.toTokenText(this->curToken()) : "");
     }
 
     std::unique_ptr<Completer> createExpectedTokenCompleter() const {
@@ -940,29 +860,13 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
                     this->createCmdNameCompleter(CompType::NONE),
                     this->createKeywordCompleter(CompType::NONE, false));
         case RP:
-            return std::make_unique<ExpectedTokenCompleter>(";");
-        case APPLIED_NAME:
-        case SPECIAL_NAME:
-            if(this->inTyping()) {
-                return this->createGlobalVarNameCompleter(this->curToken());
-            }
-            break;
-        case IDENTIFIER:
-            if(isa<VarDeclNode>(*this->node)
-               && cast<const VarDeclNode>(*this->node).getKind() == VarDeclNode::IMPORT_ENV) {
-                if(inTyping()) {
-                    return this->createEnvNameCompleter(CompType::CUR);
-                }
-            }
-            break;
+//            return std::make_unique<ExpectedTokenCompleter>(";");
+            return nullptr;
         default:
             break;
         }
         if(this->inCommand() || this->requireSingleCmdArg()) {
             return this->selectWithCmd();
-        }
-        if(this->requireMod()) {
-            return this->createModNameCompleter(CompType::CUR);
         }
     } else {
         LOG(DUMP_CONSOLE, "error kind: %s\nkind: %s, token: %s, text: %s",
@@ -971,13 +875,6 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
 
         switch(this->errorTokenKind()) {
         case EOS: {
-            auto kind = this->curKind();
-            if(kind == APPLIED_NAME || kind == SPECIAL_NAME) {
-                if(this->inTyping()) {
-                    return this->createGlobalVarNameCompleter(this->curToken());
-                }
-            }
-
             auto ret = this->selectWithCmd(true);
             if(ret) {
                 return ret;
@@ -988,10 +885,6 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
             }
 
             if(this->isErrorKind(NO_VIABLE_ALTER)) {
-                if((kind == SOURCE || kind == SOURCE_OPT) && this->foundExpected(CMD_ARG_PART) && this->afterTyping()) {
-                    return this->createModNameCompleter(CompType::NONE);
-                }
-
                 std::unique_ptr<Completer> comp;
                 if(this->foundExpected(COMMAND)) {
                     comp = this->createCmdNameCompleter(CompType::NONE);
@@ -1000,21 +893,6 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
                 }
                 return createAndCompleter(std::move(comp),
                         this->createExpectedTokenCompleter());
-            } else if(this->isErrorKind(TOKEN_MISMATCHED)) {
-                LOG(DUMP_CONSOLE, "expected: %s", toString(this->parser.getError().getExpectedTokens().back()));
-
-                if(kind == IMPORT_ENV && this->foundExpected(IDENTIFIER) && this->afterTyping()) {
-                    return this->createEnvNameCompleter(CompType::NONE);
-                }
-                return this->createExpectedTokenCompleter();
-            }
-            break;
-        }
-        case INVALID: {
-            const Token errorToken = this->errorToken();
-            if(this->lexer.toStrRef(errorToken) == "$" && this->inTyping(errorToken) &&
-               this->foundExpected(APPLIED_NAME) && this->foundExpected(SPECIAL_NAME)) {
-                return this->createGlobalVarNameCompleter(errorToken);
             }
             break;
         }

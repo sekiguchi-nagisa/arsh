@@ -22,6 +22,7 @@
 #include <tuple>
 
 #include "misc/parser_base.hpp"
+#include "misc/enum_util.hpp"
 #include "lexer.h"
 #include "node.h"
 
@@ -56,6 +57,14 @@ public:
     }
 };
 
+enum class CmdArgParseOpt : unsigned int {
+    FIRST  = 1u << 0u,
+    MODULE = 1u << 1u,
+};
+
+template <> struct allow_enum_bitop<CmdArgParseOpt> : std::true_type {};
+
+
 using ParseError = ParseErrorBase<TokenKind>;
 
 class TokenTracker {
@@ -79,6 +88,8 @@ class CodeCompletionHandler;
 
 class Parser : public ydsh::ParserBase<TokenKind, Lexer, TokenTracker> {
 private:
+    using parse_base_type = ydsh::ParserBase<TokenKind, Lexer, TokenTracker>;
+
 #ifdef __SANITIZE_ADDRESS__
     static constexpr unsigned int MAX_NESTING_DEPTH = 2500;
 #else
@@ -88,8 +99,12 @@ private:
     ObserverPtr<CodeCompletionHandler> ccHandler;
 
 public:
-    explicit Parser(Lexer &lexer) {
+    explicit Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler = nullptr) {
         this->lexer = &lexer;
+        this->ccHandler = handler;
+        if(this->ccHandler) {
+            this->lexer->setComplete(true);
+        }
         this->fetchNext();
     }
 
@@ -114,10 +129,6 @@ public:
         return std::make_tuple(this->curKind, this->curToken, this->consumedKind);
     }
 
-    void setCodeCompletionHandler(CodeCompletionHandler &handler) {
-        this->ccHandler.reset(&handler);
-    }
-
 protected:
     /**
      * change lexer mode and refetch.
@@ -136,10 +147,26 @@ protected:
      */
     void changeLexerModeToSTMT();
 
+    Token expect(TokenKind kind, bool fetchNext = true);
+
     /**
      * after matching token, change lexer mode and fetchNext.
      */
     Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
+
+    bool inCompletionPoint() const {
+        return this->curKind == COMPLETION;
+    }
+
+    bool inCompletionPointAt(TokenKind kind) const {
+        if(this->inCompletionPoint()) {
+            auto compTokenKind  = this->lexer->getCompTokenKind();
+            return compTokenKind == kind || compTokenKind == EOS;
+        }
+        return false;
+    }
+
+    bool inVarNameCompletionPoint() const;
 
     /**
      * helper function for VarNode creation.
@@ -211,11 +238,11 @@ protected:
 
     std::unique_ptr<RedirNode> parse_redirOption();
 
-    std::unique_ptr<CmdArgNode> parse_cmdArg();
+    std::unique_ptr<CmdArgNode> parse_cmdArg(CmdArgParseOpt opt = {});
 
-    std::unique_ptr<Node> parse_cmdArgSeg(bool first);
+    std::unique_ptr<Node> parse_cmdArgSeg(CmdArgParseOpt opt);
 
-    std::unique_ptr<StringNode> parse_cmdArgPart(bool first);
+    std::unique_ptr<StringNode> parse_cmdArgPart(CmdArgParseOpt opt);
 
     std::unique_ptr<Node> parse_expression(unsigned basePrecedence);
 

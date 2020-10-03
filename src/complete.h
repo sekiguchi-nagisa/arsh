@@ -17,9 +17,13 @@
 #ifndef YDSH_COMPLETE_H
 #define YDSH_COMPLETE_H
 
+#include <vector>
+
 #include "misc/string_ref.hpp"
 #include "misc/enum_util.hpp"
 #include "misc/resource.hpp"
+
+#include "token_kind.h"
 
 struct DSState;
 
@@ -43,16 +47,21 @@ enum class CodeCompOp : unsigned int {
     MODULE   = 1u << 12u,   /* complete module path */
     STMT_KW  = 1u << 13u,   /* complete statement keyword */
     EXPR_KW  = 1u << 14u,   /* complete expr keyword */
+    EXPECT   = 1u << 15u,   /* complete expetced token */
     COMMAND  = EXTERNAL | BUILTIN | UDC,
 };
 
 template <> struct allow_enum_bitop<CodeCompOp> : std::true_type {};
 
+inline bool isKeyword(StringRef value) {
+    return !value.startsWith("<") || !value.endsWith(">");
+}
+
 class CodeCompletionHandler {
 private:
     DSState &state;
 
-    std::string symbolPrefix;
+    std::vector<std::string> symbols;
 
     /**
      * if empty, use cwd
@@ -64,12 +73,35 @@ private:
 public:
     explicit CodeCompletionHandler(DSState &state) : state(state) {}
 
-    void addCompRequest(CodeCompOp op, StringRef prefix) {
+    void addCompRequest(CodeCompOp op, std::string &&symbol) {
         this->compOp = op;
-        this->symbolPrefix = prefix.toString();
+        this->symbols.push_back(std::move(symbol));
+    }
+
+    void addExpectedTokenRequest(TokenKind kind) {
+        const char *value = toString(kind);
+        if(isKeyword(value)) {
+            this->addCompRequest(CodeCompOp::EXPECT, std::string(value));
+        }
+    }
+
+    template <size_t N>
+    void addExpectedTokenRequests(const TokenKind (&kinds)[N]) {
+        for(auto &e : kinds) {
+            this->addExpectedTokenRequest(e);
+        }
+    }
+
+    bool hasCompRequest() const {
+        return !empty(this->compOp);
     }
 
     void invoke(ArrayObject &results);
+
+private:
+    const std::string &symbol() const {
+        return this->symbols.back();
+    }
 };
 
 /**

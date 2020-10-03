@@ -1,50 +1,30 @@
 
-# for user-defined completer
-
-function assertArray($e : [String], $a : [String]) {
-    assert diff <(for $i in $e {echo $i; }) <(for $i in $a {echo $i; })
+function assertArray($x : Array<String>, $y : Array<String>) {
+    assert diff <(for $a in $x { echo $a; }) <(for $a in $y { echo $a; })
 }
 
-function assertComp($s : String, $e : [String]) {
-    complete $s > /dev/null
-    $assertArray($e, $COMPREPLY)
+function assertEmptyComp($s : String) {
+    assert complete $s > /dev/null
+    assert $COMPREPLY.size() == 1
+    assert $COMPREPLY[0].empty()
 }
 
-function comp($words : [String], $cursor : Int) : [String] {
-    $COMPREPLY.add("hello worod!!")
-    return $cursor == $words.size() ?
-                $words.add($cursor as String) : $words
-}
 
-$COMP_HOOK = $comp
+# complete expected token
+$assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++ '))
+$assertArray(['='], $(complete '34; var a '))
+$assertArray([')'], $(complete '$(echo $TRUE '))
+# $assertArray([";"], $(complete '(ls) '))
 
-$assertComp('!echo hey', ['echo', 'hey'])
-$assertComp('throw echo hey ', ['2', 'echo', 'hey'])
-$assertComp('34 | ls hey', ['hey', 'ls'])
-$assertComp('ls && !echo hey 2>&1 > hoge sya', ['echo', 'hey', 'sya'])
-$assertComp('echo 2>&1 > hoge ', ['1', 'echo'])
-$assertComp('assert echo ${34 + 45}hoge "1234" aa', ['\"1234\"', '\${34\ +\ 45}hoge', 'aa', 'echo'])
+# complete keyword
+$assertArray(["{"], $(complete '{'))
+$assertArray(["source", "source!"], $(complete 'sour'))
+$assertArray(["source", "source!"], $(complete 'source'))
+$assertArray(["import-env"], $(complete 'import-e'))
+$assertArray(["assert"], $(complete 'asser'))
 
-# escape
-function comp2($words : [String], $cursor : Int) : [String] {
-    return ['\23', '&h']
-}
-
-$COMP_HOOK = $comp2
-
-$assertComp('echo ', ['\&h', '\23'])
-
-
-# error
-function comp3($words : [String], $cursor : Int) : [String] {
-    return $words.add(($cursor/0) as String)
-}
-
-$COMP_HOOK = $comp3
-
-var ex = 34 as Any
-try { complete 'echo ' > /dev/null; assert $false; } catch($e) { $ex = $e; }
-assert $ex is ArithmeticError
-assert $? == 1  # if error happened
-
-true
+# complete empty token
+$assertArray([")"], $(complete 'for(var i = 0; $i < 23; $i++'))
+$assertEmptyComp('34; var a')
+$assertEmptyComp('echo &&')
+$assertEmptyComp('echo >')

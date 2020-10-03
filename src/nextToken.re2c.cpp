@@ -21,6 +21,18 @@
 // helper macro definition.
 #define RET(k) do { kind = k; goto END; } while(false)
 
+#define RET_OR_COMP(k) \
+do {                   \
+    auto _kind = k;                   \
+    if(this->inCompletionPoint()) { \
+        this->setCompTokenKind(k); \
+        _kind = COMPLETION; \
+    }                  \
+    RET(_kind);\
+} while(false)
+
+
+
 #define REACH_EOS() do { if(this->isEnd()) { goto EOS; } else { ERROR(); } } while(false)
 
 #define SKIP() goto INIT
@@ -159,7 +171,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> ">("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_IN_SUB); }
       <STMT> "<("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_OUT_SUB); }
 
-      <STMT> APPLIED_NAME      { MODE(EXPR); RET(APPLIED_NAME); }
+      <STMT> "$"               { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); } else { ERROR();} }
+      <STMT> APPLIED_NAME      { MODE(EXPR); RET_OR_COMP(APPLIED_NAME); }
       <STMT> SPECIAL_NAME      { MODE(EXPR); RET(SPECIAL_NAME); }
 
       <STMT,EXPR> "("          { MODE(EXPR); PUSH_MODE(STMT); RET(LP); }
@@ -219,7 +232,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "&"               { MODE(STMT); RET(BACKGROUND); }
       <EXPR> ("&!" | "&|")     { MODE(STMT); RET(DISOWN_BG); }
 
-      <NAME> VAR_NAME          { MODE(EXPR); RET(IDENTIFIER); }
+      <NAME> VAR_NAME          { MODE(EXPR); RET_OR_COMP(IDENTIFIER); }
       <EXPR> "."               { MODE(NAME); RET(ACCESSOR); }
 
       <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
@@ -235,7 +248,8 @@ TokenKind Lexer::nextToken(Token &token) {
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE); }
       <DSTRING> DQUOTE_CHAR+   { UPDATE_LN(); RET(STR_ELEMENT); }
-      <DSTRING,CMD> INNER_NAME { RET(APPLIED_NAME); }
+      <DSTRING,CMD> "$"        { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); } else { ERROR();} }
+      <DSTRING,CMD> INNER_NAME { RET_OR_COMP(APPLIED_NAME); }
       <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }
       <DSTRING,CMD> INNER_FIELD { RET(APPLIED_NAME_WITH_FIELD); }
@@ -243,7 +257,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <DSTRING,CMD> "$("       { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
       <CMD> CMD_ARG_START_CHAR CMD_ARG_CHAR*
-                               { UPDATE_LN(); RET(CMD_ARG_PART); }
+                               { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
       <CMD> "?"                { RET(GLOB_ANY); }
       <CMD> "*"                { RET(GLOB_ZERO_OR_MORE); }
       <CMD> STRING_LITERAL     { UPDATE_LN(); RET(STRING_LITERAL); }
@@ -305,6 +319,10 @@ TokenKind Lexer::nextToken(Token &token) {
 
     EOS:
     kind = EOS;
+    if(this->isComplete()) {
+        this->setCompTokenKind(kind);
+        kind = COMPLETION;
+    }
     token.pos = this->getUsedSize();
     token.size = 0;
     this->cursor--;

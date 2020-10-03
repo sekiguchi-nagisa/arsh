@@ -1,75 +1,50 @@
 
-# test for -A action
+# for user-defined completer
 
-## variable
-assert diff <(complete -A var) <(complete '$')
-assert diff <(complete -A var 'C') <(complete '$C')
-assert diff <(complete -A variable 'T') <(complete '$T')
-assert diff <(complete -A variable '') <(complete '$')
-assert complete -A var '$C' > /dev/null && $COMPREPLY.empty()   # not starts with '$'
-
-## env
-assert diff <(complete -A env 'X') <(complete 'import-env X')
-assert diff <(complete -A env '') <(complete 'import-env ')
-
-## signal
-assert diff <(complete -A signal 'TT') <(echo TTIN && echo TTOU)
-
-## user
-assert diff <(complete -A user) <(complete 'echo ~' | sed -e 's/~//' | sed -e 's/\///')
-
-## group
-export-env LC_ALL = 'C'
-if $OSTYPE.lower() == "linux" {
-    assert diff <(complete -A group) <(cat /etc/group | grep -v '^#' | cut -d : -f 1 | sort)
+function assertArray($e : [String], $a : [String]) {
+    assert diff <(for $i in $e {echo $i; }) <(for $i in $a {echo $i; })
 }
 
-## file
-assert diff <(complete -A file) <(complete 'ls ')
-assert diff <(complete -A file '') <(complete 'ls ')
-assert diff <(complete -A file '.') <(complete 'ls .')
-assert diff <(complete -A file -A tilde '~') <(complete 'ls ~')
+function assertComp($s : String, $e : [String]) {
+    complete $s > /dev/null
+    $assertArray($e, $COMPREPLY)
+}
 
-## exec
-assert diff <(complete -A exec /usr/bin/) <(complete '/usr/bin/')
+function comp($words : [String], $cursor : Int) : [String] {
+    $COMPREPLY.add("hello worod!!")
+    return $cursor == $words.size() ?
+                $words.add($cursor as String) : $words
+}
 
-## directory
-assert diff <(complete -A dir /usr/) <(complete '/usr/' | grep '.*/$')
-assert diff <(complete -A dir './') <(complete 'ls ./' | grep '.*/$')
+$COMP_HOOK = $comp
 
-## module
-assert diff <(cd ~/ && complete -A module '') <(cd ~/ && complete 'source ')
-assert diff <(complete -A module '/') <(cd ~/ && complete 'source /')
-assert diff <(complete -A tilde -A module '~/') <(cd ~/ && complete 'source ~/')
+$assertComp('!echo hey', ['echo', 'hey'])
+$assertComp('throw echo hey ', ['2', 'echo', 'hey'])
+$assertComp('34 | ls hey', ['hey', 'ls'])
+$assertComp('ls && !echo hey 2>&1 > hoge sya', ['echo', 'hey', 'sya'])
+$assertComp('echo 2>&1 > hoge ', ['1', 'echo'])
+$assertComp('assert echo ${34 + 45}hoge "1234" aa', ['\"1234\"', '\${34\ +\ 45}hoge', 'aa', 'echo'])
 
-## keyword
-let stmt = ['new', '"', '$(', '>(', '<(', '(', '[', '{',
-            'do', 'for', 'if', 'case', 'try', 'while',
-            'break', 'continue', 'return',
-            '!', '+', '-', 'throw', 'coproc',
+# escape
+function comp2($words : [String], $cursor : Int) : [String] {
+    return ['\23', '&h']
+}
 
-            'function', 'interface', 'alias', 'assert',
-            'export-env', 'import-env',
-            'let', 'source', 'source!', 'var', ';']
+$COMP_HOOK = $comp2
 
-let expr = ['new', '"', '$(', '>(', '<(', '(', '[', '{',
-            'do', 'for', 'if', 'case', 'try', 'while',
-            'break', 'continue', 'return',
-            '!', '+', '-', 'throw', 'coproc']
+$assertComp('echo ', ['\&h', '\23'])
 
-assert diff <(complete -A expr_kw '') <(for $e in $expr { echo $e; } | sort)
-assert diff <(complete -A expr_kw 'c') <(for $e in $expr { echo $e; } | grep '^c' | sort)
-assert diff <(complete -A stmt_kw ) <(for $e in $stmt { echo $e; } | sort)
-assert diff <(complete -A stmt_kw i) <(for $e in $stmt { echo $e; } | grep '^i' | sort)
 
-## command
-assert diff <(complete -A builtin) <(help | cut -d ' ' -f 1 | sort)
-assert diff <(complete -A builtin e) <(help | cut -d ' ' -f 1 | grep '^e' | sort)
+# error
+function comp3($words : [String], $cursor : Int) : [String] {
+    return $words.add(($cursor/0) as String)
+}
 
-var udc = ["_cmd_fallback_handler"]
-assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
-assert diff <(complete -A udc '_') <(for $e in $udc { echo $e; } | grep '^_'| sort)
+$COMP_HOOK = $comp3
 
-assert diff <(complete -A command -A stmt_kw) <(complete ';')
-assert diff <(complete -A command -A stmt_kw l) <(complete 'l')
-assert diff <(complete -A command -A stmt_kw c) <(complete 'c')
+var ex = 34 as Any
+try { complete 'echo ' > /dev/null; assert $false; } catch($e) { $ex = $e; }
+assert $ex is ArithmeticError
+assert $? == 1  # if error happened
+
+true

@@ -178,8 +178,8 @@ if !$OSTYPE.startsWith("CYGWIN") {
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete 'echo ~' | grep '~root')"
 }
 $assertArray(new [String](), $(complete 'echo \~root'))
-$assertArray($(file '.'), $(complete '$(echo '))
-$assertArray($(file '.'), $(complete '{echo hello '))
+# $assertArray($(file '.'), $(complete '$(echo '))
+# $assertArray($(file '.'), $(complete '{echo hello '))
 $assertArray($(file '.' --redir), $(complete 'echo | echo < '))
 $assertArray($(file '.' --redir), $(complete 'echo > '))
 $assertArray($(file '.'), $(complete 'echo >./'))
@@ -213,24 +213,5 @@ if !$OSTYPE.startsWith("CYGWIN") {
 }
 $assertArray(new [String](), $(complete 'source \~root'))
 $assertArray(new [String](), $(complete 'source! \~root'))
-
-# complete expected token
-$assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++ '))
-$assertArray(['='], $(complete '34; var a '))
-$assertArray([')'], $(complete '$(echo $TRUE '))
-$assertArray([";"], $(complete '(ls) '))
-
-# complete keyword
-$assertArray(["{"], $(complete '{'))
-$assertArray(["source", "source!"], $(complete 'sour'))
-$assertArray(["source", "source!"], $(complete 'source'))
-$assertArray(["import-env"], $(complete 'import-e'))
-$assertArray(["assert"], $(complete 'asser'))
-
-# complete empty token
-$assertEmptyComp('for(var i = 0; $i < 23; $i++')
-$assertEmptyComp('34; var a')
-$assertEmptyComp('echo &&')
-$assertEmptyComp('echo >')
 
 true

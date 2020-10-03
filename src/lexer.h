@@ -34,9 +34,11 @@ class Lexer : public ydsh::LexerBase {
 private:
     CStrPtr scriptDir;
 
+    std::vector<LexerMode> modeStack;
+
     LexerMode curMode{yycSTMT};
 
-    std::vector<LexerMode> modeStack;
+    LexerMode prevMode{yycSTMT};
 
     bool prevNewLine{false};
 
@@ -45,12 +47,12 @@ private:
      */
     bool prevSpace{false};
 
-    LexerMode prevMode{yycSTMT};
-
     /**
      * if true, enable code completion (may emit complete token)
      */
     bool complete{false};
+
+    TokenKind compTokenKind{INVALID};
 
 public:
     NON_COPYABLE(Lexer);
@@ -120,6 +122,18 @@ public:
 
     bool isComplete() const {
         return this->complete;
+    }
+
+    bool inCompletionPoint() const {
+        return this->complete && this->cursor + 1 == this->limit;
+    }
+
+    void setCompTokenKind(TokenKind kind) {
+        this->compTokenKind = kind;
+    }
+
+    TokenKind getCompTokenKind() const {
+        return this->compTokenKind;
     }
 
     /**

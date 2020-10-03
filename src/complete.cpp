@@ -120,10 +120,6 @@ static bool isExprKeyword(TokenKind kind) {
     }
 }
 
-static bool isKeyword(StringRef value) {
-    return !value.startsWith("<") || !value.endsWith(">");
-}
-
 static void completeKeyword(const std::string &prefix, bool onlyExpr, ArrayObject &results) {
     TokenKind table[] = {
 #define GEN_ITEM(T) T,
@@ -392,41 +388,52 @@ static void completeVarName(const SymbolTable &symbolTable,
     }
 }
 
+static void completeExpected(const std::vector<std::string> &expected, ArrayObject &results) {
+    for(auto &e : expected) {
+        if(isKeyword(e)) {
+            append(results, e, EscapeOp::NOP);
+        }
+    }
+}
+
 void CodeCompletionHandler::invoke(ArrayObject &results) {
-    if(empty(this->compOp)) {
+    if(!this->hasCompRequest()) {
         return; // do nothing
     }
 
     if(hasFlag(this->compOp, CodeCompOp::ENV)) {
-        completeEnvName(this->symbolPrefix, results);
+        completeEnvName(this->symbol(), results);
     }
     if(hasFlag(this->compOp, CodeCompOp::SIGNAL)) {
-        completeSigName(this->symbolPrefix, results);
+        completeSigName(this->symbol(), results);
     }
     if(hasFlag(this->compOp, CodeCompOp::EXTERNAL) ||
        hasFlag(this->compOp, CodeCompOp::UDC) || hasFlag(this->compOp, CodeCompOp::BUILTIN)) {
-        completeCmdName(this->state.symbolTable, this->symbolPrefix, this->compOp, results);    //FIXME: file name or tilde expansion
+        completeCmdName(this->state.symbolTable, this->symbol(), this->compOp, results);    //FIXME: file name or tilde expansion
     }
     if(hasFlag(this->compOp, CodeCompOp::USER)) {
-        completeUserName(this->symbolPrefix, results);
+        completeUserName(this->symbol(), results);
     }
     if(hasFlag(this->compOp, CodeCompOp::GROUP)) {
-        completeGroupName(this->symbolPrefix, results);
+        completeGroupName(this->symbol(), results);
     }
     if(hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC) ||
         hasFlag(this->compOp, CodeCompOp::DIR)) {
-        completeFileName(this->state.logicalWorkingDir.c_str(), this->symbolPrefix, this->compOp, results);
+        completeFileName(this->state.logicalWorkingDir.c_str(), this->symbol(), this->compOp, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::MODULE)) {
         completeModule(this->scriptDir.empty() ? getCWD().get() : this->scriptDir.c_str(),
-                this->symbolPrefix, hasFlag(this->compOp, CodeCompOp::TILDE), results);
+                this->symbol(), hasFlag(this->compOp, CodeCompOp::TILDE), results);
     }
     if(hasFlag(this->compOp, CodeCompOp::STMT_KW) || hasFlag(this->compOp, CodeCompOp::EXPR_KW)) {
         bool onlyExpr = !hasFlag(this->compOp, CodeCompOp::STMT_KW);
-        completeKeyword(this->symbolPrefix, onlyExpr, results);
+        completeKeyword(this->symbol(), onlyExpr, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::GVAR)) {
-        completeVarName(this->state.symbolTable, this->symbolPrefix, results);
+        completeVarName(this->state.symbolTable, this->symbol(), results);
+    }
+    if(hasFlag(this->compOp, CodeCompOp::EXPECT)) {
+        completeExpected(this->symbols, results);
     }
 }
 
@@ -451,8 +458,8 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
     CodeCompletionHandler handler(st);
     if(empty(option)) { // invoke parser
         // prepare
-        FrontEnd frontEnd(lex(ref), st.symbolTable, st.execMode, false);
-        frontEnd.setCodeCompletionHandler(handler);
+        FrontEnd frontEnd(lex(ref), st.symbolTable, st.execMode, false,
+                          ObserverPtr<CodeCompletionHandler>(&handler));
 
         // perform completion
         consumeAllInput(frontEnd);
@@ -462,7 +469,7 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
             oldCompleteLine(st, ref, compreply);
         }
     } else {
-        handler.addCompRequest(option, ref);
+        handler.addCompRequest(option, ref.toString());
         handler.invoke(compreply);
     }
     st.symbolTable.abort(); // always clear newly added symbol

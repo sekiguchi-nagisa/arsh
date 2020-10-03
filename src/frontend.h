@@ -112,7 +112,8 @@ private:
     ObserverPtr<NodeDumper> astDumper;
 
 public:
-    FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel);
+    FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
+             ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
 
     ~FrontEnd() {
         this->getSymbolTable().clear();
@@ -130,11 +131,6 @@ public:
     void setASTDumper(NodeDumper &dumper) {
         assert(dumper);
         this->astDumper.reset(&dumper);
-    }
-
-    void setCodeCompletionHandler(CodeCompletionHandler &handler) {
-        this->parser.setCodeCompletionHandler(handler);
-        this->lexer.setComplete(true);
     }
 
     SymbolTable &getSymbolTable() {

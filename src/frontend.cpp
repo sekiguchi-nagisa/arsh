@@ -129,9 +129,10 @@ void ErrorReporter::printErrorLine(const Lexer &lexer, Token token) const {
 // ##     FrontEnd     ##
 // ######################
 
-FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel) :
+FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
+                   ObserverPtr<CodeCompletionHandler> ccHandler) :
         lexer(std::move(lexer)), mode(mode),
-        parser(this->lexer), checker(symbolTable, toplevel, &this->lexer){}
+        parser(this->lexer, ccHandler), checker(symbolTable, toplevel, &this->lexer){}
 
 static const char *toString(DSErrorKind kind) {
     switch(kind) {

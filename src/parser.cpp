@@ -16,6 +16,7 @@
 
 #include "parser.h"
 #include "signals.h"
+#include "complete.h"
 
 // helper macro
 #define HAS_NL() (this->lexer->isPrevNewLine())
@@ -73,6 +74,13 @@ void Parser::changeLexerModeToSTMT() {
     }
 }
 
+Token Parser::expect(TokenKind kind, bool fetchNext) {
+    if(this->curKind == COMPLETION && !this->ccHandler->hasCompRequest()) {
+        this->ccHandler->addExpectedTokenRequest(kind);
+    }
+    return parse_base_type::expect(kind, fetchNext);
+}
+
 Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext) {
     Token token = this->expect(kind, false);
     if(!this->hasError()) {
@@ -82,6 +90,17 @@ Token Parser::expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext
         }
     }
     return token;
+}
+
+bool Parser::inVarNameCompletionPoint() const {
+    if(this->inCompletionPoint()) {
+        auto compTokenKind  = this->lexer->getCompTokenKind();
+        if(compTokenKind == APPLIED_NAME) {
+            auto ref = this->lexer->toStrRef(this->curToken);
+            return ref.find('{') == StringRef::npos;
+        }
+    }
+    return false;
 }
 
 // parse rule definition
@@ -391,6 +410,9 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     case IMPORT_ENV: {
         unsigned int startPos = START_POS();
         this->consume();    // IMPORT_ENV
+        if(this->inCompletionPointAt(IDENTIFIER)) {  // complete env name
+            this->ccHandler->addCompRequest(CodeCompOp::ENV, this->lexer->toTokenText(this->curToken));
+        }
         Token token = TRY(this->expect(IDENTIFIER));
         std::unique_ptr<Node> exprNode;
         if(!HAS_NL() && CUR_KIND() == COLON) {
@@ -408,7 +430,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
         bool optional = CUR_KIND() == SOURCE_OPT;
         unsigned int startPos = START_POS();
         this->consume();   // always success
-        auto pathNode = TRY(this->parse_cmdArg());
+        auto pathNode = TRY(this->parse_cmdArg(CmdArgParseOpt::MODULE));
         auto node = std::make_unique<SourceListNode>(startPos, std::move(pathNode), optional);
         if(!optional && CUR_KIND() == CMD_ARG_PART && this->lexer->toStrRef(this->curToken) == "as") {
             this->lexer->popLexerMode();
@@ -715,15 +737,16 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
     }
 }
 
-std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
+std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
     GUARD_DEEP_NESTING(guard);
 
-    auto node = std::make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(true)));
+    assert(!hasFlag(opt, CmdArgParseOpt::FIRST));
+    auto node = std::make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(opt | CmdArgParseOpt::FIRST)));
 
     for(bool next = true; !HAS_SPACE() && !HAS_NL() && next;) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg(GEN_LA_CASE)
-            node->addSegmentNode(TRY(this->parse_cmdArgSeg(false)));
+            node->addSegmentNode(TRY(this->parse_cmdArgSeg(opt)));
             break;
         default:
             next = false;
@@ -733,12 +756,12 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg() {
     return node;
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool first) {
+std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
     GUARD_DEEP_NESTING(guard);
 
     switch(CUR_KIND()) {
     case CMD_ARG_PART:
-        return this->parse_cmdArgPart(first);
+        return this->parse_cmdArgPart(opt);
     case GLOB_ANY: {
         Token token = this->curToken;
         this->consume();
@@ -761,15 +784,30 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(bool first) {
     EACH_LA_paramExpansion(GEN_LA_CASE)
         return this->parse_paramExpansion();
     default:
+        if(this->inVarNameCompletionPoint()) {  //FIXME: scope-aware completion
+            auto name = this->lexer->toName(this->curToken);
+            this->ccHandler->addCompRequest(CodeCompOp::GVAR, std::move(name));
+        } else if(this->inCompletionPointAt(CMD_ARG_PART) && hasFlag(opt, CmdArgParseOpt::FIRST)) {
+            CodeCompOp op{};
+            if(this->lexer->startsWith(this->curToken, '~')) {
+                setFlag(op, CodeCompOp::TILDE);
+            }
+            if(hasFlag(opt, CmdArgParseOpt::MODULE)) {
+                if(HAS_SPACE()) {
+                    setFlag(op, CodeCompOp::MODULE);
+                }
+            }
+            this->ccHandler->addCompRequest(op, this->lexer->toTokenText(this->curToken));
+        }
         E_ALTER(EACH_LA_cmdArg(GEN_LA_ALTER));
     }
 }
 
-std::unique_ptr<StringNode> Parser::parse_cmdArgPart(bool first) {
+std::unique_ptr<StringNode> Parser::parse_cmdArgPart(CmdArgParseOpt opt) {
     GUARD_DEEP_NESTING(guard);
 
     Token token = TRY(this->expect(CMD_ARG_PART));
-    auto kind = first && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
+    auto kind = hasFlag(opt, CmdArgParseOpt::FIRST) && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
     return std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
 }
 
@@ -1134,6 +1172,10 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return JumpNode::newReturn(token, std::move(exprNode));
     }
     default:
+        if(this->inVarNameCompletionPoint()) {
+            auto name = this->lexer->toName(this->curToken);
+            this->ccHandler->addCompRequest(CodeCompOp::GVAR, std::move(name));
+        }
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
     }
 }
@@ -1235,7 +1277,22 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             next = false;
             break;
         default:
-            E_ALTER(STR_ELEMENT, EACH_LA_interpolation(GEN_LA_ALTER) START_SUB_CMD, CLOSE_DQUOTE);
+#define EACH_LA_stringExpression(OP) \
+    OP(STR_ELEMENT)                  \
+    EACH_LA_interpolation(OP) \
+    OP(START_SUB_CMD)                \
+    OP(CLOSE_DQUOTE)
+
+            if(this->inVarNameCompletionPoint()) {
+                auto name = this->lexer->toName(this->curToken);
+                this->ccHandler->addCompRequest(CodeCompOp::GVAR, std::move(name));
+            } else if(this->inCompletionPointAt(EOS)) {
+                TokenKind kinds[] = { EACH_LA_stringExpression(GEN_LA_ALTER) };
+                this->ccHandler->addExpectedTokenRequests(kinds);
+            }
+            E_ALTER(EACH_LA_stringExpression(GEN_LA_ALTER));
+
+#undef EACH_LA_stringExpression
         }
     }
 

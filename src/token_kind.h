@@ -21,7 +21,8 @@
 
 #define EACH_TOKEN(TOKEN) \
     TOKEN(INVALID                            , "<Invalid>") \
-    TOKEN(EOS                                , "<EOS>") \
+    TOKEN(EOS                                , "<EOS>")     \
+    TOKEN(COMPLETION                         , "<completion>") /* for code completion */\
     /* token kind definition. */\
     /* reserved key word. */\
     TOKEN(ALIAS                              , "alias") \
@@ -253,6 +254,8 @@
     OP(BREAK) \
     OP(CONTINUE) \
     OP(RETURN) \
+    OP(COMPLETION)
+
 
 #define EACH_LA_expression(OP) \
     OP(NOT) \
@@ -306,7 +309,8 @@
     OP(START_SUB_CMD) \
     OP(START_IN_SUB) \
     OP(START_OUT_SUB) \
-    EACH_LA_paramExpansion(OP)
+    EACH_LA_paramExpansion(OP) \
+    OP(COMPLETION)
 
 #define EACH_LA_typeName(OP) \
     OP(IDENTIFIER) \
@@ -331,11 +335,6 @@ inline bool isInvalidToken(TokenKind kind) {
 const char *toString(TokenKind kind);
 
 #define TO_NAME(kind) toString(kind)
-
-
-// binary op alias
-//#define LT LA
-//#define GT RA
 
 
 // for operator precedence parsing
