@@ -49,6 +49,7 @@ enum class CodeCompOp : unsigned int {
     EXPR_KW  = 1u << 14u,   /* complete expr keyword */
     ARG_KW   = 1u << 15u,   /* complete command argument keyword */
     EXPECT   = 1u << 16u,   /* complete expetced token */
+    HOOK     = 1u << 17u,   /* for user-defined completion hook */
     COMMAND  = EXTERNAL | BUILTIN | UDC,
 };
 
@@ -65,21 +66,31 @@ private:
     ObserverPtr<const Lexer> lex;
 
     /**
+     * if empty, use cwd
+     */
+    std::string scriptDir;  // for module completion
+
+    /**
      * current completion word
      */
     std::string compWord;
 
     /**
-     * for expected token or user-defined command completion
+     * for expected tokens
      */
     std::vector<std::string> extraWords;
 
     /**
-     * if empty, use cwd
+     * for COMP_HOOK
      */
-    std::string scriptDir;  // for module completion
+    std::unique_ptr<CmdNode> cmdNode;
 
     CodeCompOp compOp{};
+
+    /**
+     * whem result of COMP_HOOK is empty, fallback to file name completion
+     */
+    CodeCompOp fallbackOp{};
 
 public:
     explicit CodeCompletionHandler(DSState &state) : state(state) {}
@@ -118,8 +129,18 @@ public:
 
     void addCmdArgOrModRequest(Token token, CmdArgParseOpt opt);
 
+    void addCompHookRequest(std::unique_ptr<CmdNode> &&node) {
+        this->fallbackOp = this->compOp;
+        this->compOp = CodeCompOp::HOOK;
+        this->cmdNode = std::move(node);
+    }
+
     bool hasCompRequest() const {
         return !empty(this->compOp);
+    }
+
+    CodeCompOp getCompOp() const {
+        return this->compOp;
     }
 
     void invoke(ArrayObject &results);

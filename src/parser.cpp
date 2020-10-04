@@ -707,9 +707,18 @@ std::unique_ptr<Node> Parser::parse_command() {
 
     for(bool next = true; next && HAS_SPACE() && !HAS_NL();) {
         switch(CUR_KIND()) {
-        EACH_LA_cmdArg(GEN_LA_CASE)
-            node->addArgNode(TRY(this->parse_cmdArg()));
+        EACH_LA_cmdArg(GEN_LA_CASE) {
+            auto argNode = this->parse_cmdArg();
+            if(this->hasError()) {
+                if(this->inCompletionPoint()
+                    && hasFlag(this->ccHandler->getCompOp(), CodeCompOp::FILE)) {
+                    this->ccHandler->addCompHookRequest(std::move(node));
+                }
+                return nullptr;
+            }
+            node->addArgNode(std::move(argNode));
             break;
+        }
         EACH_LA_redir(GEN_LA_CASE)
             node->addRedirNode(TRY(this->parse_redirOption()));
             break;

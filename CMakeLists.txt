@@ -235,7 +235,6 @@ set(YDSH_SRC
         src/signals.cpp
         src/job.cpp
         src/redir.cpp
-        src/comp.cpp
         src/state.cpp
         src/complete.cpp
         ${lexer_src}

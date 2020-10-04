@@ -410,6 +410,56 @@ static void completeExpected(const std::vector<std::string> &expected, ArrayObje
     }
 }
 
+DSValue createArgv(const DSState &state, const Lexer &lex,
+                   const CmdNode &cmdNode, const std::string &word) {
+    std::vector<DSValue> values;
+
+    // add cmd
+    values.push_back(DSValue::createStr(lex.toStrRef(cmdNode.getNameNode().getToken())));
+
+    // add args
+    for(auto &e : cmdNode.getArgNodes()) {
+        if(isa<RedirNode>(*e)) {
+            continue;
+        }
+        values.push_back(DSValue::createStr(lex.toStrRef(e->getToken())));
+    }
+
+    // add last arg
+    if(!word.empty()) {
+        values.push_back(DSValue::createStr(word));
+    }
+
+    return DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray), std::move(values));
+}
+
+static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNode,
+                         const std::string &word, ArrayObject &results) {
+    auto hook = getGlobal(state, VAR_COMP_HOOK);
+    if(hook.isInvalid()) {
+        return false;
+    }
+
+    // preapre argument
+    auto argv = createArgv(state, lex, cmdNode, word);
+    unsigned int index = typeAs<ArrayObject>(argv).size();
+    if(!word.empty()) {
+        index--;
+    }
+
+    // kick hook
+    auto ret = callFunction(state, std::move(hook),
+                            makeArgs(std::move(argv), DSValue::createInt(index)));
+    if(state.hasError() || typeAs<ArrayObject>(ret).size() == 0) {
+        return false;
+    }
+
+    for(auto &e : typeAs<ArrayObject>(ret).getValues()) {
+        append(results, e.asCStr(), EscapeOp::COMMAND_ARG);
+    }
+    return true;
+}
+
 void CodeCompletionHandler::invoke(ArrayObject &results) {
     if(!this->hasCompRequest()) {
         return; // do nothing
@@ -452,6 +502,11 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     if(hasFlag(this->compOp, CodeCompOp::EXPECT)) {
         completeExpected(this->extraWords, results);
     }
+    if(hasFlag(this->compOp, CodeCompOp::HOOK)) {
+        if(!kickCompHook(this->state, *this->lex, *this->cmdNode, this->compWord, results)) {
+            completeFileName(state.logicalWorkingDir.c_str(), this->compWord, this->fallbackOp, results);
+        }
+    }
 }
 
 void CodeCompletionHandler::addVarNameRequest(Token token) {
@@ -484,6 +539,8 @@ void CodeCompletionHandler::addCmdArgOrModRequest(Token token, CmdArgParseOpt op
             setFlag(op, CodeCompOp::MODULE);
         } else if(hasFlag(opt, CmdArgParseOpt::REDIR)) {
             setFlag(op, CodeCompOp::FILE | CodeCompOp::ARG_KW);
+        } else {
+            setFlag(op, CodeCompOp::FILE);
         }
     } else if(hasFlag(opt, CmdArgParseOpt::REDIR)) {
         setFlag(op, CodeCompOp::ARG_KW);
@@ -503,8 +560,6 @@ static void consumeAllInput(FrontEnd &frontEnd) {
     }
 }
 
-void oldCompleteLine(DSState &st, StringRef ref, ArrayObject &compreply);   //FIXME: remove
-
 unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
     auto result = DSValue::create<ArrayObject>(st.symbolTable.get(TYPE::StringArray));
     auto &compreply = typeAs<ArrayObject>(result);
@@ -518,10 +573,6 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
         // perform completion
         consumeAllInput(frontEnd);
         handler.invoke(compreply);
-
-        if(compreply.size() == 0) { //FIXME: fallback to old completer
-            oldCompleteLine(st, ref, compreply);
-        }
     } else {
         handler.addCompRequest(option, ref.toString());
         handler.invoke(compreply);

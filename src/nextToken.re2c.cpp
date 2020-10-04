@@ -319,14 +319,15 @@ TokenKind Lexer::nextToken(Token &token) {
 
     EOS:
     kind = EOS;
-    if(this->isComplete()) {
-        this->setCompTokenKind(kind);
-        kind = COMPLETION;
-    }
     token.pos = this->getUsedSize();
     token.size = 0;
     this->cursor--;
     foundNewLine = true;   // previous char is always newline
+    if(this->isComplete()) {
+        this->setCompTokenKind(kind);
+        kind = COMPLETION;
+        foundNewLine = false;
+    }
     goto RET;
 
     RET:
