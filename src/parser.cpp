@@ -734,7 +734,7 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
         TokenKind kind = this->scan();
-        return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg()));
+        return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg(CmdArgParseOpt::REDIR)));
     }
     EACH_LA_redirNoFile(GEN_LA_CASE) {
         Token token = this->curToken;
@@ -793,19 +793,12 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
     EACH_LA_paramExpansion(GEN_LA_CASE)
         return this->parse_paramExpansion();
     default:
-        if(this->inVarNameCompletionPoint()) {  //FIXME: scope-aware completion
-            this->ccHandler->addVarNameRequest(this->curToken);
-        } else if(this->inCompletionPointAt(CMD_ARG_PART) && hasFlag(opt, CmdArgParseOpt::FIRST)) {
-            CodeCompOp op{};
-            if(this->lexer->startsWith(this->curToken, '~')) {
-                setFlag(op, CodeCompOp::TILDE);
+        if(this->inCompletionPoint()) {
+            if(this->inVarNameCompletionPoint()) {  //FIXME: scope-aware completion
+                this->ccHandler->addVarNameRequest(this->curToken);
+            } else if(HAS_SPACE() || !hasFlag(opt, CmdArgParseOpt::MODULE)) {
+                this->ccHandler->addCmdArgOrModRequest(this->curToken, opt);
             }
-            if(hasFlag(opt, CmdArgParseOpt::MODULE)) {
-                if(HAS_SPACE()) {
-                    setFlag(op, CodeCompOp::MODULE);
-                }
-            }
-            this->ccHandler->addCompRequest(op, this->lexer->toTokenText(this->curToken));
         }
         E_ALTER(EACH_LA_cmdArg(GEN_LA_ALTER));
     }

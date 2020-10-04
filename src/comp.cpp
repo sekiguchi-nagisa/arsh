@@ -142,39 +142,6 @@ public:
     virtual ~Completer() = default;
 };
 
-static bool isKeyword(const char *value) {
-    return *value != '<' || *(value + strlen(value) - 1) != '>';
-}
-
-class ExpectedTokenCompleter : public Completer {
-private:
-    const char *token;
-    const std::vector<TokenKind> *tokens;
-
-    ExpectedTokenCompleter(const char *token, const std::vector<TokenKind> *tokens) :
-            Completer("Expected"), token(token), tokens(tokens) {}
-
-public:
-    explicit ExpectedTokenCompleter(const char *token) : ExpectedTokenCompleter(token, nullptr) {}
-
-    explicit ExpectedTokenCompleter(const std::vector<TokenKind > &tokens) :
-            ExpectedTokenCompleter(nullptr, &tokens) {}
-
-    void operator()(ArrayObject &results) override {
-        if(this->token) {
-            append(results, this->token, EscapeOp::NOP);
-        }
-        if(this->tokens) {
-            for(auto &e : *this->tokens) {
-                const char *value = toString(e);
-                if(isKeyword(value)) {
-                    append(results, value, EscapeOp::NOP);
-                }
-            }
-        }
-    }
-};
-
 enum class FileNameCompOp : unsigned int {
     ONLY_EXEC = 1 << 0,
     TIDLE     = 1 << 1,
@@ -284,22 +251,6 @@ void FileNameCompleter::operator()(ArrayObject &results) {
     }
     closedir(dir);
 }
-
-class AndCompleter : public Completer {
-private:
-    std::unique_ptr<Completer> first;
-
-    std::unique_ptr<Completer> second;
-
-public:
-    AndCompleter(std::unique_ptr<Completer> &&first, std::unique_ptr<Completer> &&second) :
-            Completer("And"), first(std::move(first)), second(std::move(second)) {}
-
-    void operator()(ArrayObject &results) override {
-        (*this->first)(results);
-        (*this->second)(results);
-    }
-};
 
 class OrCompleter : public Completer {
 private:
@@ -433,22 +384,6 @@ private:
         return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), this->lexer.toCmdArg(token), op);
     }
 
-    std::unique_ptr<Completer> createExpectedTokenCompleter() const {
-        assert(this->parser.hasError());
-        return std::make_unique<ExpectedTokenCompleter>(this->parser.getError().getExpectedTokens());
-    }
-
-    static std::unique_ptr<Completer> createAndCompleter(std::unique_ptr<Completer> &&first,
-                                                    std::unique_ptr<Completer> &&second) {
-        if(!first) {
-            return std::move(second);
-        }
-        if(!second) {
-            return std::move(first);
-        }
-        return std::make_unique<AndCompleter>(std::move(first), std::move(second));
-    }
-
     std::unique_ptr<Completer> createCmdArgCompleter(CompType type) const {
         auto comp = this->createFileNameCompleter(type);
         auto udc = this->createUserDefinedCompleter();
@@ -529,16 +464,6 @@ private:
         if(this->inTyping()) {
             if(isa<SourceListNode>(*this->node)) {
                 return cast<const SourceListNode>(*this->node).getName().empty();
-            }
-        }
-        return false;
-    }
-
-    bool foundExpected(TokenKind kind) const {
-        assert(this->parser.hasError());
-        for(auto &value : this->parser.getError().getExpectedTokens()) {
-            if(value == kind) {
-                return true;
             }
         }
         return false;
@@ -646,7 +571,8 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
              * complete redirection target
              */
             if(isRedirOp(prevKind)) {
-                return this->createFileNameCompleter(CompType::CUR);
+//                return this->createFileNameCompleter(CompType::CUR);
+                return nullptr;
             }
 
             /**
@@ -680,53 +606,8 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
         if(this->tracker.getTokenPairs().empty()) {
             return nullptr;
         }
-
-        switch(this->curKind()) {
-//        case LINE_END:
-//        case BACKGROUND:
-//        case DISOWN_BG:
-//            return createAndCompleter(
-//                    this->createCmdNameCompleter(CompType::NONE),
-//                    this->createKeywordCompleter(CompType::NONE, false));
-        case RP:
-//            return std::make_unique<ExpectedTokenCompleter>(";");
-            return nullptr;
-        default:
-            break;
-        }
         if(this->inCommand() || this->requireSingleCmdArg()) {
             return this->selectWithCmd();
-        }
-    } else {
-        LOG(DUMP_CONSOLE, "error kind: %s\nkind: %s, token: %s, text: %s",
-            this->parser.getError().getErrorKind(), toString(this->errorTokenKind()),
-            toString(this->errorToken()).c_str(), this->lexer.toTokenText(this->errorToken()).c_str());
-
-        switch(this->errorTokenKind()) {
-        case EOS: {
-            auto ret = this->selectWithCmd(true);
-            if(ret) {
-                return ret;
-            }
-
-            if(this->inTyping()) {
-                return std::make_unique<ExpectedTokenCompleter>("");
-            }
-
-            if(this->isErrorKind(NO_VIABLE_ALTER)) {
-                std::unique_ptr<Completer> comp;
-                if(this->foundExpected(COMMAND)) {
-//                    comp = this->createCmdNameCompleter(CompType::NONE);
-                } else if(this->foundExpected(CMD_ARG_PART)) { // complete redirection target
-                    comp = this->createFileNameCompleter(CompType::NONE);
-                }
-                return createAndCompleter(std::move(comp),
-                        this->createExpectedTokenCompleter());
-            }
-            break;
-        }
-        default:
-            break;
         }
     }
     return nullptr;

@@ -23,7 +23,7 @@
 #include "misc/enum_util.hpp"
 #include "misc/resource.hpp"
 
-#include "lexer.h"
+#include "parser.h"
 
 struct DSState;
 
@@ -47,7 +47,8 @@ enum class CodeCompOp : unsigned int {
     MODULE   = 1u << 12u,   /* complete module path */
     STMT_KW  = 1u << 13u,   /* complete statement keyword */
     EXPR_KW  = 1u << 14u,   /* complete expr keyword */
-    EXPECT   = 1u << 15u,   /* complete expetced token */
+    ARG_KW   = 1u << 15u,   /* complete command argument keyword */
+    EXPECT   = 1u << 16u,   /* complete expetced token */
     COMMAND  = EXTERNAL | BUILTIN | UDC,
 };
 
@@ -114,6 +115,8 @@ public:
         CodeCompOp kwOp = isStmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW;
         setFlag(this->compOp, kwOp);
     }
+
+    void addCmdArgOrModRequest(Token token, CmdArgParseOpt opt);
 
     bool hasCompRequest() const {
         return !empty(this->compOp);

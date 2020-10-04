@@ -137,6 +137,20 @@ static void completeKeyword(const std::string &prefix, bool onlyExpr, ArrayObjec
     }
 }
 
+static void completeCmdArgKeyword(const std::string &prefix, ArrayObject &results) {
+    TokenKind table[] = {
+#define GEN_ITEM(T) T,
+            EACH_LA_cmdArg(GEN_ITEM)
+#undef GEN_ITEM
+    };
+    for(auto &e : table) {
+        StringRef ref = toString(e);
+        if(isKeyword(ref) && ref.startsWith(prefix)) {
+            append(results, ref, EscapeOp::NOP);
+        }
+    }
+}
+
 static void completeEnvName(const std::string &namePrefix, ArrayObject &results) {
     for(unsigned int i = 0; environ[i] != nullptr; i++) {
         StringRef env(environ[i]);
@@ -429,6 +443,9 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
         bool onlyExpr = !hasFlag(this->compOp, CodeCompOp::STMT_KW);
         completeKeyword(this->compWord, onlyExpr, results);
     }
+    if(hasFlag(this->compOp, CodeCompOp::ARG_KW)) {
+        completeCmdArgKeyword(this->compWord, results);
+    }
     if(hasFlag(this->compOp, CodeCompOp::GVAR)) {
         completeVarName(this->state.symbolTable, this->compWord, results);
     }
@@ -443,22 +460,35 @@ void CodeCompletionHandler::addVarNameRequest(Token token) {
 }
 
 void CodeCompletionHandler::addCmdRequest(const Token token) {
-    if(token.size == 0) {
-        this->addCompRequest(CodeCompOp::COMMAND, "");
-    } else {
-        auto value = this->lex->toCmdArg(token);
-        bool tilde = this->lex->startsWith(token, '~');
-        bool isDir = strchr(value.c_str(), '/') != nullptr;
-        if(tilde || isDir) {
-            CodeCompOp op = CodeCompOp::EXEC;
-            if(tilde) {
-                setFlag(op, CodeCompOp::TILDE);
-            }
-            this->addCompRequest(op, std::move(value));
-        } else {
-            this->addCompRequest(CodeCompOp::COMMAND, std::move(value));
+    auto value = this->lex->toCmdArg(token);
+    bool tilde = this->lex->startsWith(token, '~');
+    bool isDir = strchr(value.c_str(), '/') != nullptr;
+    if(tilde || isDir) {
+        CodeCompOp op = CodeCompOp::EXEC;
+        if(tilde) {
+            setFlag(op, CodeCompOp::TILDE);
         }
+        this->addCompRequest(op, std::move(value));
+    } else {
+        this->addCompRequest(CodeCompOp::COMMAND, std::move(value));
     }
+}
+
+void CodeCompletionHandler::addCmdArgOrModRequest(Token token, CmdArgParseOpt opt) {
+    CodeCompOp op{};
+    if(hasFlag(opt, CmdArgParseOpt::FIRST)) {
+        if(this->lex->startsWith(token, '~')) {
+            setFlag(op, CodeCompOp::TILDE);
+        }
+        if(hasFlag(opt, CmdArgParseOpt::MODULE)) {
+            setFlag(op, CodeCompOp::MODULE);
+        } else if(hasFlag(opt, CmdArgParseOpt::REDIR)) {
+            setFlag(op, CodeCompOp::FILE | CodeCompOp::ARG_KW);
+        }
+    } else if(hasFlag(opt, CmdArgParseOpt::REDIR)) {
+        setFlag(op, CodeCompOp::ARG_KW);
+    }
+    this->addCompRequest(op, this->lex->toCmdArg(token));
 }
 
 static Lexer lex(StringRef ref) {

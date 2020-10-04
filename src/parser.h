@@ -60,6 +60,7 @@ public:
 enum class CmdArgParseOpt : unsigned int {
     FIRST  = 1u << 0u,
     MODULE = 1u << 1u,
+    REDIR  = 1u << 2u,
 };
 
 template <> struct allow_enum_bitop<CmdArgParseOpt> : std::true_type {};
