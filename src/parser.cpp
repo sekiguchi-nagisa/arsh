@@ -593,7 +593,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     if(CUR_KIND() == LP) {  // for
         this->consume();    // LP
 
-        auto initNode = TRY(this->parse_forInit());
+        auto initNode = TRY(this->parse_statementImp());
         TRY(this->expect(LINE_END));
 
         auto condNode = TRY(this->parse_forCond());
@@ -614,19 +614,6 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     auto blockNode = TRY(this->parse_block());
 
     return createForInNode(startPos, this->lexer->toName(token), std::move(exprNode), std::move(blockNode));
-}
-
-std::unique_ptr<Node> Parser::parse_forInit() {
-    GUARD_DEEP_NESTING(guard);
-
-    switch(CUR_KIND()) {
-    EACH_LA_varDecl(GEN_LA_CASE)
-        return this->parse_variableDeclaration();
-    EACH_LA_expression(GEN_LA_CASE)
-        return this->parse_expression();
-    default:
-        return std::make_unique<EmptyNode>();
-    }
 }
 
 std::unique_ptr<Node> Parser::parse_forCond() {

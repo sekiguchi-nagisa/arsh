@@ -226,8 +226,6 @@ protected:
 
     std::unique_ptr<Node> parse_forExpression();
 
-    std::unique_ptr<Node> parse_forInit();
-
     std::unique_ptr<Node> parse_forCond();
 
     std::unique_ptr<Node> parse_forIter();

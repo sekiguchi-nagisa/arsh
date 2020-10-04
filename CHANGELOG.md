@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - now use ``=>``
 - allow ``=>`` in abbreviate type notation of Func type
 - allow ``->`` in arm expression
+- allow statement in for-init
 
 #### Builtin
 - allow negative number index in string ``[]``
