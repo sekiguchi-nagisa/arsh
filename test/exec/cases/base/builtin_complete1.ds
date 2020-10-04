@@ -179,8 +179,8 @@ if !$OSTYPE.startsWith("CYGWIN") {
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete 'echo ~' | grep '~root')"
 }
 $assertArray(new [String](), $(complete 'echo \~root'))
-# $assertArray($(file '.'), $(complete '$(echo '))
-# $assertArray($(file '.'), $(complete '{echo hello '))
+$assertArray($(file '.'), $(complete '$(echo '))
+$assertArray($(file '.'), $(complete '{echo hello '))
 $assertArray($(file '.' --redir), $(complete 'echo | echo < '))
 $assertArray($(file '.' --redir), $(complete 'echo > '))
 $assertArray($(file '.'), $(complete 'echo >./'))
