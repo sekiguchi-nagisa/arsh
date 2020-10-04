@@ -98,15 +98,10 @@ private:
 
     ObserverPtr<CodeCompletionHandler> ccHandler;
 
+    bool inStmtCompCtx{false};
+
 public:
-    explicit Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler = nullptr) {
-        this->lexer = &lexer;
-        this->ccHandler = handler;
-        if(this->ccHandler) {
-            this->lexer->setComplete(true);
-        }
-        this->fetchNext();
-    }
+    explicit Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler = nullptr);
 
     ~Parser() = default;
 

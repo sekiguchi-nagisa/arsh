@@ -23,7 +23,7 @@
 #include "misc/enum_util.hpp"
 #include "misc/resource.hpp"
 
-#include "token_kind.h"
+#include "lexer.h"
 
 struct DSState;
 
@@ -61,7 +61,17 @@ class CodeCompletionHandler {
 private:
     DSState &state;
 
-    std::vector<std::string> symbols;
+    ObserverPtr<const Lexer> lex;
+
+    /**
+     * current completion word
+     */
+    std::string compWord;
+
+    /**
+     * for expected token or user-defined command completion
+     */
+    std::vector<std::string> extraWords;
 
     /**
      * if empty, use cwd
@@ -73,15 +83,20 @@ private:
 public:
     explicit CodeCompletionHandler(DSState &state) : state(state) {}
 
-    void addCompRequest(CodeCompOp op, std::string &&symbol) {
+    void setLexer(const Lexer &lexer) {
+        this->lex.reset(&lexer);
+    }
+
+    void addCompRequest(CodeCompOp op, std::string &&word) {
         this->compOp = op;
-        this->symbols.push_back(std::move(symbol));
+        this->compWord = std::move(word);
     }
 
     void addExpectedTokenRequest(TokenKind kind) {
         const char *value = toString(kind);
         if(isKeyword(value)) {
-            this->addCompRequest(CodeCompOp::EXPECT, std::string(value));
+            this->compOp = CodeCompOp::EXPECT;
+            this->extraWords.emplace_back(value);
         }
     }
 
@@ -92,6 +107,14 @@ public:
         }
     }
 
+    void addVarNameRequest(Token token);
+
+    void addCmdOrKeywordRequest(Token token, bool isStmt) {
+        this->addCmdRequest(token);
+        CodeCompOp kwOp = isStmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW;
+        setFlag(this->compOp, kwOp);
+    }
+
     bool hasCompRequest() const {
         return !empty(this->compOp);
     }
@@ -99,9 +122,7 @@ public:
     void invoke(ArrayObject &results);
 
 private:
-    const std::string &symbol() const {
-        return this->symbols.back();
-    }
+    void addCmdRequest(Token token);
 };
 
 /**

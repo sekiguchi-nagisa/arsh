@@ -402,38 +402,62 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     }
 
     if(hasFlag(this->compOp, CodeCompOp::ENV)) {
-        completeEnvName(this->symbol(), results);
+        completeEnvName(this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::SIGNAL)) {
-        completeSigName(this->symbol(), results);
+        completeSigName(this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::EXTERNAL) ||
        hasFlag(this->compOp, CodeCompOp::UDC) || hasFlag(this->compOp, CodeCompOp::BUILTIN)) {
-        completeCmdName(this->state.symbolTable, this->symbol(), this->compOp, results);    //FIXME: file name or tilde expansion
+        completeCmdName(this->state.symbolTable, this->compWord, this->compOp, results);    //FIXME: file name or tilde expansion
     }
     if(hasFlag(this->compOp, CodeCompOp::USER)) {
-        completeUserName(this->symbol(), results);
+        completeUserName(this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::GROUP)) {
-        completeGroupName(this->symbol(), results);
+        completeGroupName(this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::FILE) || hasFlag(this->compOp, CodeCompOp::EXEC) ||
         hasFlag(this->compOp, CodeCompOp::DIR)) {
-        completeFileName(this->state.logicalWorkingDir.c_str(), this->symbol(), this->compOp, results);
+        completeFileName(this->state.logicalWorkingDir.c_str(), this->compWord, this->compOp, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::MODULE)) {
         completeModule(this->scriptDir.empty() ? getCWD().get() : this->scriptDir.c_str(),
-                this->symbol(), hasFlag(this->compOp, CodeCompOp::TILDE), results);
+                       this->compWord, hasFlag(this->compOp, CodeCompOp::TILDE), results);
     }
     if(hasFlag(this->compOp, CodeCompOp::STMT_KW) || hasFlag(this->compOp, CodeCompOp::EXPR_KW)) {
         bool onlyExpr = !hasFlag(this->compOp, CodeCompOp::STMT_KW);
-        completeKeyword(this->symbol(), onlyExpr, results);
+        completeKeyword(this->compWord, onlyExpr, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::GVAR)) {
-        completeVarName(this->state.symbolTable, this->symbol(), results);
+        completeVarName(this->state.symbolTable, this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::EXPECT)) {
-        completeExpected(this->symbols, results);
+        completeExpected(this->extraWords, results);
+    }
+}
+
+void CodeCompletionHandler::addVarNameRequest(Token token) {
+    auto value = this->lex->toName(token);
+    this->addCompRequest(CodeCompOp::GVAR, std::move(value));
+}
+
+void CodeCompletionHandler::addCmdRequest(const Token token) {
+    if(token.size == 0) {
+        this->addCompRequest(CodeCompOp::COMMAND, "");
+    } else {
+        auto value = this->lex->toCmdArg(token);
+        bool tilde = this->lex->startsWith(token, '~');
+        bool isDir = strchr(value.c_str(), '/') != nullptr;
+        if(tilde || isDir) {
+            CodeCompOp op = CodeCompOp::EXEC;
+            if(tilde) {
+                setFlag(op, CodeCompOp::TILDE);
+            }
+            this->addCompRequest(op, std::move(value));
+        } else {
+            this->addCompRequest(CodeCompOp::COMMAND, std::move(value));
+        }
     }
 }
 

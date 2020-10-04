@@ -76,7 +76,8 @@ __cmd() {
     case $type {
     '--expr' => $eachEcho(['new', '"', '$(', '>(', '<(', '(', '[', '{',
                            'do', 'for', 'if', 'case', 'try', 'while',
-                           'break', 'continue', 'return'])
+                           'break', 'continue', 'return',
+                           '!', '+', '-', 'throw', 'coproc'])
     '--stmt' => $eachEcho(['new', '"', '$(', '>(', '<(', '(', '[', '{',
                            'do', 'for', 'if', 'case', 'try', 'while',
                            'break', 'continue', 'return',
@@ -121,7 +122,7 @@ $assertArray($(cmd /bin /usr/bin --stmt), $comp('{ ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --stmt), $comp('echo & ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --stmt), $comp('echo &! ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --stmt), $comp('echo &| ', '/bin:/usr/bin'))
-$assertArray($(cmd /bin /usr/bin --expr | grep '^l'), $comp('{l', '/bin:/usr/bin')) # FIXME: require statement keyword
+$assertArray($(cmd /bin /usr/bin --stmt| grep '^l'), $comp('{l', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('echo && ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('export-env HOGE = ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr | grep '^l'), $comp('export-env HOGE = l', '/bin:/usr/bin'))

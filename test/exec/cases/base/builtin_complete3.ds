@@ -9,6 +9,23 @@ function assertEmptyComp($s : String) {
     assert $COMPREPLY[0].empty()
 }
 
+assert1() {}
+alias2() {}
+break3() {}
+case4() {}
+continue5(){}
+coproc6(){}
+export-env7(){}
+for8(){}
+function9(){}
+ifnames(){}
+import-env10(){}
+return11(){}
+source!12(){}
+tryaffix(){}
+throw13(){}
+var14(){}
+while15(){}
 
 # complete expected token
 $assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++ '))
@@ -17,14 +34,51 @@ $assertArray([')'], $(complete '$(echo $TRUE '))
 # $assertArray([";"], $(complete '(ls) '))
 
 # complete keyword
-$assertArray(["{"], $(complete '{'))
-$assertArray(["source", "source!"], $(complete 'sour'))
-$assertArray(["source", "source!"], $(complete 'source'))
-$assertArray(["import-env"], $(complete 'import-e'))
-$assertArray(["assert"], $(complete 'asser'))
+# $assertArray(["{"], $(complete '{'))
+$assertArray(["alias", "alias2"], $(complete 'alia'))
+$assertArray(["alias", "alias2"], $(complete 'alias'))
+$assertArray(["assert", "assert1"], $(complete 'asser'))
+$assertArray(["assert", "assert1"], $(complete 'assert'))
+$assertArray(["break", "break3"], $(complete 'brea'))
+$assertArray(["break", "break3"], $(complete 'break'))
+$assertArray(["case", "case4"], $(complete 'cas'))
+$assertArray(["case", "case4"], $(complete 'case'))
+$assertArray(["case", "case4"], $(complete 'cas'))
+$assertArray(["continue", "continue5"], $(complete 'continu'))
+$assertArray(["continue", "continue5"], $(complete 'continue'))
+$assertArray(["coproc", "coproc6"], $(complete 'copro'))
+$assertArray(["coproc", "coproc6"], $(complete 'coproc'))
+$assertArray($({complete -A cmd 'd'; echo 'do'; } | sort | uniq ), $(complete 'd'))
+$assertArray($({complete -A cmd 'do'; echo 'do'; } | sort | uniq ), $(complete 'do'))
+$assertArray(["export-env", "export-env7"], $(complete 'export-en'))
+$assertArray(["export-env", "export-env7"], $(complete 'export-env'))
+$assertArray($({complete -A cmd 'fo'; echo 'for'; } | sort | uniq ), $(complete 'fo'))
+$assertArray($({complete -A cmd 'for'; echo 'for'; } | sort | uniq ), $(complete 'for'))
+$assertArray(["function", "function9"], $(complete 'functio'))
+$assertArray(["function", "function9"], $(complete 'function'))
+$assertArray($({complete -A cmd 'if'; echo 'if'; } | sort | uniq ), $(complete 'if'))
+$assertArray(["import-env", "import-env10"], $(complete 'import-en'))
+$assertArray(["import-env", "import-env10"], $(complete 'import-env'))
+$assertArray($({complete -A cmd 'le'; echo 'let'; } | sort | uniq ), $(complete 'le'))
+$assertArray($({complete -A cmd 'let'; echo 'let'; } | sort | uniq ), $(complete 'let'))
+$assertArray($({complete -A cmd 'ne'; echo 'new'; } | sort | uniq ), $(complete 'ne'))
+$assertArray($({complete -A cmd 'new'; echo 'new'; } | sort | uniq ), $(complete 'new'))
+$assertArray(["return", "return11"], $(complete 'retur'))
+$assertArray(["return", "return11"], $(complete 'return'))
+$assertArray(["source", "source!", "source!12"], $(complete 'sourc'))
+$assertArray(["source", "source!", "source!12"], $(complete 'source'))
+$assertArray(["source!", "source!12"], $(complete 'source!'))
+$assertArray($({complete -A cmd 'tr'; echo 'try'; } | sort | uniq ), $(complete 'tr'))
+$assertArray($({complete -A cmd 'try'; echo 'try'; } | sort | uniq ), $(complete 'try'))
+$assertArray(["throw", "throw13"], $(complete 'thro'))
+$assertArray(["throw", "throw13"], $(complete 'throw'))
+$assertArray($({complete -A cmd 'va'; echo 'var'; } | sort | uniq ), $(complete 'va'))
+$assertArray($({complete -A cmd 'var'; echo 'var'; } | sort | uniq ), $(complete 'var'))
+$assertArray(["while", "while15"], $(complete 'whil'))
+$assertArray(["while", "while15"], $(complete 'while'))
 
 # complete empty token
 $assertArray([")"], $(complete 'for(var i = 0; $i < 23; $i++'))
 $assertEmptyComp('34; var a')
-$assertEmptyComp('echo &&')
-$assertEmptyComp('echo >')
+# $assertEmptyComp('echo &&')
+# $assertEmptyComp('echo >')

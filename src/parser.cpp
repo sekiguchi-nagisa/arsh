@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Nagisa Sekiguchi
+ * Copyright (C) 2015-2020 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,6 +49,17 @@ if(this->callCount == MAX_NESTING_DEPTH) { this->reportDeepNestingError(); retur
 // ####################
 // ##     Parser     ##
 // ####################
+
+Parser::Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler) {
+    this->consumedKind = EOS;
+    this->lexer = &lexer;
+    this->ccHandler = handler;
+    if(this->ccHandler) {
+        this->lexer->setComplete(true);
+        this->ccHandler->setLexer(*this->lexer);
+    }
+    this->fetchNext();
+}
 
 void Parser::refetch(LexerMode mode) {
     this->lexer->setPos(START_POS());
@@ -362,6 +373,13 @@ std::unique_ptr<TypeNode> Parser::parse_typeName(bool enterTYPEMode) {
 std::unique_ptr<Node> Parser::parse_statementImp() {
     this->changeLexerModeToSTMT();
 
+    if(this->inCompletionPoint()) {
+        this->inStmtCompCtx = true;
+    }
+    auto cleanup = finally([&]{
+        this->inStmtCompCtx = false;
+    });
+
     switch(CUR_KIND()) {
     case LINE_END: {
         Token token = this->curToken;   // not consume LINE_END token
@@ -472,6 +490,10 @@ std::unique_ptr<Node> Parser::parse_statementEnd(bool disallowEOS) {
     default:
         if(this->consumedKind == BACKGROUND || this->consumedKind == DISOWN_BG) {
             break;
+        }
+        if(this->inCompletionPoint()) {
+            this->lexer->setComplete(false);
+            this->consume();
         }
         if(!HAS_NL()) {
             this->reportTokenMismatchedError(NEW_LINE);
@@ -772,8 +794,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
         return this->parse_paramExpansion();
     default:
         if(this->inVarNameCompletionPoint()) {  //FIXME: scope-aware completion
-            auto name = this->lexer->toName(this->curToken);
-            this->ccHandler->addCompRequest(CodeCompOp::GVAR, std::move(name));
+            this->ccHandler->addVarNameRequest(this->curToken);
         } else if(this->inCompletionPointAt(CMD_ARG_PART) && hasFlag(opt, CmdArgParseOpt::FIRST)) {
             CodeCompOp op{};
             if(this->lexer->startsWith(this->curToken, '~')) {
@@ -1159,9 +1180,12 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return JumpNode::newReturn(token, std::move(exprNode));
     }
     default:
-        if(this->inVarNameCompletionPoint()) {
-            auto name = this->lexer->toName(this->curToken);
-            this->ccHandler->addCompRequest(CodeCompOp::GVAR, std::move(name));
+        if(this->inCompletionPoint()) {
+            if(this->inVarNameCompletionPoint()) {
+                this->ccHandler->addVarNameRequest(this->curToken);
+            } else if(!this->inCompletionPointAt(EOS) || this->consumedKind != EOS) {
+                this->ccHandler->addCmdOrKeywordRequest(this->curToken, this->inStmtCompCtx);
+            }
         }
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
     }
@@ -1271,8 +1295,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     OP(CLOSE_DQUOTE)
 
             if(this->inVarNameCompletionPoint()) {
-                auto name = this->lexer->toName(this->curToken);
-                this->ccHandler->addCompRequest(CodeCompOp::GVAR, std::move(name));
+                this->ccHandler->addVarNameRequest(this->curToken);
             } else if(this->inCompletionPointAt(EOS)) {
                 TokenKind kinds[] = { EACH_LA_stringExpression(GEN_LA_ALTER) };
                 this->ccHandler->addExpectedTokenRequests(kinds);

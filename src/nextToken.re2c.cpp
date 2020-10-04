@@ -127,33 +127,33 @@ TokenKind Lexer::nextToken(Token &token) {
     LexerMode mode = this->getLexerMode();
     TokenKind kind = INVALID;
     /*!re2c
-      <STMT> "alias"           { MODE(NAME); RET(ALIAS); }
-      <STMT> "assert"          { RET(ASSERT); }
-      <STMT> "break"           { RET(BREAK); }
-      <STMT> "case"            { RET(CASE); }
+      <STMT> "alias"           { MODE(NAME); RET_OR_COMP(ALIAS); }
+      <STMT> "assert"          { RET_OR_COMP(ASSERT); }
+      <STMT> "break"           { RET_OR_COMP(BREAK); }
+      <STMT> "case"            { RET_OR_COMP(CASE); }
       <EXPR> "catch"           { MODE(STMT); RET(CATCH); }
       <STMT> "class"           { MODE(NAME); RET(CLASS); }
-      <STMT> "continue"        { RET(CONTINUE); }
-      <STMT> "coproc"          { RET(COPROC); }
-      <STMT> "do"              { RET(DO); }
+      <STMT> "continue"        { RET_OR_COMP(CONTINUE); }
+      <STMT> "coproc"          { RET_OR_COMP(COPROC); }
+      <STMT> "do"              { RET_OR_COMP(DO); }
       <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
       <STMT,EXPR> "else"       { MODE(EXPR); RET(ELSE); }
-      <STMT> "export-env"      { MODE(NAME); RET(EXPORT_ENV); }
+      <STMT> "export-env"      { MODE(NAME); RET_OR_COMP(EXPORT_ENV); }
       <EXPR> "finally"         { RET(FINALLY); }
-      <STMT> "for"             { RET(FOR); }
-      <STMT> "function"        { MODE(NAME); RET(FUNCTION); }
-      <STMT> "if"              { RET(IF); }
-      <STMT> "import-env"      { MODE(NAME); RET(IMPORT_ENV); }
+      <STMT> "for"             { RET_OR_COMP(FOR); }
+      <STMT> "function"        { MODE(NAME); RET_OR_COMP(FUNCTION); }
+      <STMT> "if"              { RET_OR_COMP(IF); }
+      <STMT> "import-env"      { MODE(NAME); RET_OR_COMP(IMPORT_ENV); }
       <STMT> "interface"       { RET(INTERFACE); }
-      <STMT> "let"             { MODE(NAME); RET(LET); }
-      <STMT> "new"             { MODE(EXPR); RET(NEW); }
-      <STMT> "return"          { RET(RETURN); }
-      <STMT> "source"          { MODE(EXPR); PUSH_MODE(CMD); RET(SOURCE); }
-      <STMT> "source!"         { MODE(EXPR); PUSH_MODE(CMD); RET(SOURCE_OPT); }
-      <STMT> "try"             { RET(TRY); }
-      <STMT> "throw"           { RET(THROW); }
-      <STMT> "var"             { MODE(NAME); RET(VAR); }
-      <STMT,EXPR> "while"      { MODE(STMT); RET(WHILE); }
+      <STMT> "let"             { MODE(NAME); RET_OR_COMP(LET); }
+      <STMT> "new"             { MODE(EXPR); RET_OR_COMP(NEW); }
+      <STMT> "return"          { RET_OR_COMP(RETURN); }
+      <STMT> "source"          { MODE(EXPR); PUSH_MODE(CMD); RET_OR_COMP(SOURCE); }
+      <STMT> "source!"         { MODE(EXPR); PUSH_MODE(CMD); RET_OR_COMP(SOURCE_OPT); }
+      <STMT> "try"             { RET_OR_COMP(TRY); }
+      <STMT> "throw"           { RET_OR_COMP(THROW); }
+      <STMT> "var"             { MODE(NAME); RET_OR_COMP(VAR); }
+      <STMT,EXPR> "while"      { MODE(STMT); RET_OR_COMP(WHILE); }
 
       <STMT> "+"               { RET(PLUS); }
       <STMT> "-"               { RET(MINUS); }
@@ -183,7 +183,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT,EXPR> "}"          { POP_MODE(); RET(RBC); }
 
       <STMT> CMD_START_CHAR CMD_CHAR*
-                               { PUSH_MODE(CMD); UPDATE_LN(); RET(COMMAND); }
+                               { PUSH_MODE(CMD); UPDATE_LN(); RET_OR_COMP(COMMAND); }
 
       <EXPR> ":"               { RET(COLON); }
       <EXPR> ","               { MODE(STMT); RET(COMMA); }

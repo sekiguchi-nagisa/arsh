@@ -175,150 +175,6 @@ public:
     }
 };
 
-static bool isStmtKeyword(TokenKind kind) {
-    switch(kind) {
-#define GEN_CASE(T) case T:
-    EACH_LA_statement(GEN_CASE)
-        return true;
-#undef GEN_CASE
-    default:
-        return false;
-    }
-}
-
-static bool isExprKeyword(TokenKind kind) {
-    switch(kind) {
-#define GEN_CASE(T) case T:
-    EACH_LA_expression(GEN_CASE)
-        return true;
-#undef GEN_CASE
-    default:
-        return false;
-    }
-}
-
-class KeywordCompleter : public Completer {
-private:
-    const std::string token;
-
-    /**
-     * if true, only complete expression keyword,
-     * otherwise complete statement keyword
-     */
-    bool onlyExpr;
-
-public:
-    KeywordCompleter(std::string &&value, bool expr) :
-            Completer("Keyword"), token(std::move(value)), onlyExpr(expr) {}
-
-    void operator()(ArrayObject &results) override {
-        TokenKind table[] = {
-#define GEN_ITEM(T) T,
-            EACH_LA_statement(GEN_ITEM)
-#undef GEN_ITEM
-        };
-        for(auto &e : table) {
-            if(this->onlyExpr && !isExprKeyword(e)) {
-                continue;
-            }
-            const char *value = toString(e);
-            if(isKeyword(value) && startsWith(value, this->token.c_str())) {
-                append(results, value, EscapeOp::NOP);
-            }
-        }
-    }
-};
-
-class CmdNameCompleter : public Completer {
-private:
-    const SymbolTable &symbolTable;
-    const std::string token;
-
-public:
-    /**
-     *
-     * @param symbolTable
-     * @param token
-     * may be empty string
-     */
-    CmdNameCompleter(const SymbolTable &symbolTable, std::string &&token) :
-            Completer("Command"), symbolTable(symbolTable), token(std::move(token)) {}
-
-    void operator()(ArrayObject &results) override;
-};
-
-static std::vector<std::string> computePathList(const char *pathVal) {
-    std::vector<std::string> result;
-    result.emplace_back();
-    assert(pathVal != nullptr);
-
-    for(unsigned int i = 0; pathVal[i] != '\0'; i++) {
-        char ch = pathVal[i];
-        if(ch == ':') {
-            result.emplace_back();
-        } else {
-            result.back() += static_cast<char>(ch);
-        }
-    }
-
-    // expand tilde
-    for(auto &s : result) {
-        expandTilde(s);
-    }
-
-    return result;
-}
-
-void CmdNameCompleter::operator()(ArrayObject &results) {
-    // search user defined command
-    for(const auto &iter : this->symbolTable.globalScope()) {
-        const char *name = iter.first.c_str();
-        if(startsWith(name, CMD_SYMBOL_PREFIX)) {
-            name += strlen(CMD_SYMBOL_PREFIX);
-            if(startsWith(name, this->token.c_str())) {
-                append(results, name, EscapeOp::COMMAND_NAME);
-            }
-        }
-    }
-
-    // search builtin command
-    const unsigned int bsize = getBuiltinCommandSize();
-    for(unsigned int i = 0; i < bsize; i++) {
-        const char *name = getBuiltinCommandName(i);
-        if(startsWith(name, this->token.c_str())) {
-            append(results, name, EscapeOp::COMMAND_NAME);
-        }
-    }
-
-
-    // search external command
-    const char *path = getenv(ENV_PATH);
-    if(path == nullptr) {
-        return;
-    }
-
-    auto pathList(computePathList(path));
-    for(const auto &p : pathList) {
-        DIR *dir = opendir(p.c_str());
-        if(dir == nullptr) {
-            continue;
-        }
-
-        for(dirent *entry; (entry = readdir(dir)) != nullptr;) {
-            const char *name = entry->d_name;
-            if(startsWith(name, this->token.c_str())) {
-                std::string fullpath(p);
-                fullpath += '/';
-                fullpath += name;
-                if(S_ISREG(getStMode(fullpath.c_str())) && access(fullpath.c_str(), X_OK) == 0) {
-                    append(results, name, EscapeOp::COMMAND_NAME);
-                }
-            }
-        }
-        closedir(dir);
-    }
-}
-
 enum class FileNameCompOp : unsigned int {
     ONLY_EXEC = 1 << 0,
     TIDLE     = 1 << 1,
@@ -577,33 +433,9 @@ private:
         return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), this->lexer.toCmdArg(token), op);
     }
 
-    std::unique_ptr<Completer> createCmdNameCompleter(CompType type) const {
-        if(type == CompType::NONE) {
-            return std::make_unique<CmdNameCompleter>(this->state.symbolTable, "");
-        }
-
-        auto token = this->curToken();
-        auto arg = this->lexer.toCmdArg(token);
-        bool tilde = this->lexer.startsWith(token, '~');
-        bool isDir = strchr(arg.c_str(), '/') != nullptr;
-        if(tilde || isDir) {
-            auto op = FileNameCompOp::ONLY_EXEC;
-            if(tilde) {
-                setFlag(op, FileNameCompOp::TIDLE);
-            }
-            return std::make_unique<FileNameCompleter>(this->state.logicalWorkingDir.c_str(), std::move(arg), op);
-        }
-        return std::make_unique<CmdNameCompleter>(this->state.symbolTable, std::move(arg));
-    }
-
     std::unique_ptr<Completer> createExpectedTokenCompleter() const {
         assert(this->parser.hasError());
         return std::make_unique<ExpectedTokenCompleter>(this->parser.getError().getExpectedTokens());
-    }
-
-    std::unique_ptr<Completer> createKeywordCompleter(CompType type, bool onlyExpr) const {
-        return std::make_unique<KeywordCompleter>(
-                type == CompType::CUR ? this->lexer.toTokenText(this->curToken()) : "", onlyExpr);
     }
 
     static std::unique_ptr<Completer> createAndCompleter(std::unique_ptr<Completer> &&first,
@@ -794,10 +626,7 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
     switch(this->curKind()) {
     case COMMAND:
         if(this->inTyping()) {
-            bool stmt = this->inCmdStmt();
-            return createAndCompleter(
-                    this->createCmdNameCompleter(CompType::CUR),
-                    this->createKeywordCompleter(CompType::CUR, !stmt));
+            return nullptr;
         }
         return this->createCmdArgCompleter(CompType::NONE); // complete command argument
     case CMD_ARG_PART:
@@ -834,11 +663,11 @@ std::unique_ptr<Completer> CompleterFactory::selectWithCmd(bool exactly) const {
         return this->createCmdArgCompleter(CompType::NONE); // complete command argument
     default:
         if(this->inTyping()) {
-            if(isStmtKeyword(this->curKind())) {
-                return createAndCompleter(
-                        this->createCmdNameCompleter(CompType::CUR),
-                        this->createKeywordCompleter(CompType::CUR, false));
-            }
+//            if(isStmtKeyword(this->curKind())) {
+//                return createAndCompleter(
+//                        this->createCmdNameCompleter(CompType::CUR),
+//                        this->createKeywordCompleter(CompType::CUR, false));
+//            }
         } else if(!exactly && this->afterTyping()) {
             return this->createCmdArgCompleter(CompType::NONE); // complete command argument
         }
@@ -853,12 +682,12 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
         }
 
         switch(this->curKind()) {
-        case LINE_END:
-        case BACKGROUND:
-        case DISOWN_BG:
-            return createAndCompleter(
-                    this->createCmdNameCompleter(CompType::NONE),
-                    this->createKeywordCompleter(CompType::NONE, false));
+//        case LINE_END:
+//        case BACKGROUND:
+//        case DISOWN_BG:
+//            return createAndCompleter(
+//                    this->createCmdNameCompleter(CompType::NONE),
+//                    this->createKeywordCompleter(CompType::NONE, false));
         case RP:
 //            return std::make_unique<ExpectedTokenCompleter>(";");
             return nullptr;
@@ -887,7 +716,7 @@ std::unique_ptr<Completer> CompleterFactory::selectCompleter() const {
             if(this->isErrorKind(NO_VIABLE_ALTER)) {
                 std::unique_ptr<Completer> comp;
                 if(this->foundExpected(COMMAND)) {
-                    comp = this->createCmdNameCompleter(CompType::NONE);
+//                    comp = this->createCmdNameCompleter(CompType::NONE);
                 } else if(this->foundExpected(CMD_ARG_PART)) { // complete redirection target
                     comp = this->createFileNameCompleter(CompType::NONE);
                 }
