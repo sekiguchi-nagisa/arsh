@@ -34,6 +34,9 @@ $assertArray([')'], $(complete '$(echo $TRUE '))
 # $assertArray([";"], $(complete '(ls) '))
 
 # complete keyword
+## perform sort command with 'C' locale
+export-env LC_ALL = 'C'
+
 # $assertArray(["{"], $(complete '{'))
 $assertArray(["alias", "alias2"], $(complete 'alia'))
 $assertArray(["alias", "alias2"], $(complete 'alias'))
