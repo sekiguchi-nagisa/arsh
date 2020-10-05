@@ -567,8 +567,8 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
     CodeCompletionHandler handler(st);
     if(empty(option)) { // invoke parser
         // prepare
-        FrontEnd frontEnd(lex(ref), st.symbolTable, st.execMode, false,
-                          ObserverPtr<CodeCompletionHandler>(&handler));
+        FrontEnd frontEnd(lex(ref), st.symbolTable, DS_EXEC_MODE_PARSE_ONLY, false,
+                          ObserverPtr<CodeCompletionHandler>(&handler));    //FIXME: sematic aware completion
 
         // perform completion
         consumeAllInput(frontEnd);
