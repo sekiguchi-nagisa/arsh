@@ -577,7 +577,13 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
         handler.addCompRequest(option, ref.toString());
         handler.invoke(compreply);
     }
-    st.symbolTable.abort(); // always clear newly added symbol
+    /**
+     * FIXME: only abort currently added symbol
+     *
+     * in current implementation, also abort symbols previously defined (before completion)
+     * symbols.
+     */
+//    st.symbolTable.abort(); // always clear newly added symbol
 
     auto &values = compreply.refValues();
     compreply.sortAsStrArray();
