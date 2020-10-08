@@ -112,10 +112,13 @@ public:
         }
     }
 
-    template <size_t N>
+    template <unsigned int N>
     void addExpectedTokenRequests(const TokenKind (&kinds)[N]) {
-        for(auto &e : kinds) {
-            this->addExpectedTokenRequest(e);
+        this->addExpectedTokenRequests(N, kinds);
+    }
+    void addExpectedTokenRequests(unsigned int size, const TokenKind *kinds) {
+        for(unsigned int i = 0; i < size; i++) {
+            this->addExpectedTokenRequest(kinds[i]);
         }
     }
 
