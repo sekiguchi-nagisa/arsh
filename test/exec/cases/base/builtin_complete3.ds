@@ -31,6 +31,10 @@ while15(){}
 $assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++ '))
 $assertArray(['='], $(complete '34; var a '))
 # $assertArray([";"], $(complete '(ls) '))
+$assertArray([',', ':', ']'], $(complete '[3 '))
+$assertArray([',', ']'], $(complete '[3, 23 '))
+$assertArray([':'], $(complete '[3 : 34, 23 '))
+$assertArray([',', ']'], $(complete '[3 : 34 '))
 
 # complete keyword
 ## perform sort command with 'C' locale

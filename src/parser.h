@@ -173,6 +173,13 @@ protected:
         return std::make_unique<VarNode>(token, this->lexer->toName(token));
     }
 
+    template <unsigned int N>
+    void reportNoViableAlterError(const TokenKind (&alters)[N], bool allowComp) {
+        this->reportNoViableAlterError(N, alters, allowComp);
+    }
+
+    void reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp);
+
     std::unique_ptr<Node> toAccessNode(Token token) const;
 
     // parser rule definition.

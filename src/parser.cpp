@@ -32,7 +32,10 @@
 
 
 #define E_ALTER(...) \
-do { this->reportNoViableAlterError((TokenKind[]) { __VA_ARGS__ }); return nullptr; } while(false)
+do { this->reportNoViableAlterError((TokenKind[]) { __VA_ARGS__ }, false); return nullptr; } while(false)
+
+#define E_ALTER_OR_COMP(...) \
+do { this->reportNoViableAlterError((TokenKind[]) { __VA_ARGS__ }, true); return nullptr; } while(false)
 
 #define TRY(expr) \
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
@@ -112,6 +115,13 @@ bool Parser::inVarNameCompletionPoint() const {
         }
     }
     return false;
+}
+
+void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp) {
+    if(allowComp && this->inCompletionPoint()) {
+        this->ccHandler->addExpectedTokenRequests(size, alters);
+    }
+    parse_base_type::reportNoViableAlterError(size, alters);
 }
 
 // parse rule definition
@@ -1073,7 +1083,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         } else if(CUR_KIND() == COLON) {    // map
             node = TRY(this->parse_mapBody(token, std::move(keyNode)));
         } else {
-            E_ALTER(COMMA, RB, COLON);
+            E_ALTER_OR_COMP(COMMA, RB, COLON);
         }
         token = TRY(this->expect(RB));
         node->updateToken(token);
@@ -1180,7 +1190,7 @@ std::unique_ptr<Node> Parser::parse_arrayBody(Token token, std::unique_ptr<Node>
             next = false;
             break;
         default:
-            E_ALTER(COMMA, RB);
+            E_ALTER_OR_COMP(COMMA, RB);
         }
     }
     return arrayNode;
@@ -1208,7 +1218,7 @@ std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &
             next = false;
             break;
         default:
-            E_ALTER(COMMA, RB);
+            E_ALTER_OR_COMP(COMMA, RB);
         }
     }
     return mapNode;
