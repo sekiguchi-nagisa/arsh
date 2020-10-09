@@ -1066,44 +1066,15 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     }
     case LB: {  // array or map
         Token token = this->expect(LB); // always success
-
         auto keyNode = TRY(this->parse_expression());
-
         std::unique_ptr<Node> node;
-        if(CUR_KIND() == COLON) {   // map
-            this->expectAndChangeMode(COLON, yycSTMT);  // always success
-
-            auto valueNode = TRY(this->parse_expression());
-            auto mapNode = std::make_unique<MapNode>(token.pos, std::move(keyNode), std::move(valueNode));
-            while(CUR_KIND() != RB) {
-                if(CUR_KIND() == COMMA) {
-                    this->consume();    // COMMA
-                    if(CUR_KIND() != RB) {
-                        keyNode = TRY(this->parse_expression());
-                        TRY(this->expectAndChangeMode(COLON, yycSTMT));
-                        valueNode = TRY(this->parse_expression());
-                        mapNode->addEntry(std::move(keyNode), std::move(valueNode));
-                    }
-                } else {
-                    E_ALTER(COMMA, RB);
-                }
-            }
-            node = std::move(mapNode);
-        } else {    // array
-            auto arrayNode = std::make_unique<ArrayNode>(token.pos, std::move(keyNode));
-            while(CUR_KIND() != RB) {
-                if(CUR_KIND() == COMMA) {
-                    this->consume();    // COMMA
-                    if(CUR_KIND() != RB) {
-                        arrayNode->addExprNode(TRY(this->parse_expression()));
-                    }
-                } else {
-                    E_ALTER(COMMA, RB);
-                }
-            }
-            node = std::move(arrayNode);
+        if(CUR_KIND() == COMMA || CUR_KIND() == RB) {   // array
+            node = TRY(this->parse_arrayBody(token, std::move(keyNode)));
+        } else if(CUR_KIND() == COLON) {    // map
+            node = TRY(this->parse_mapBody(token, std::move(keyNode)));
+        } else {
+            E_ALTER(COMMA, RB, COLON);
         }
-
         token = TRY(this->expect(RB));
         node->updateToken(token);
         return node;
@@ -1191,6 +1162,56 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         }
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
     }
+}
+
+std::unique_ptr<Node> Parser::parse_arrayBody(Token token, std::unique_ptr<Node> &&firstNode) {
+    GUARD_DEEP_NESTING(guard);
+
+    auto arrayNode = std::make_unique<ArrayNode>(token.pos, std::move(firstNode));
+    for(bool next = true; next;) {
+        switch(CUR_KIND()) {
+        case COMMA:
+            this->consume();    // COMMA
+            if(CUR_KIND() != RB) {
+                arrayNode->addExprNode(TRY(this->parse_expression()));
+            }
+            break;
+        case RB:
+            next = false;
+            break;
+        default:
+            E_ALTER(COMMA, RB);
+        }
+    }
+    return arrayNode;
+}
+
+std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &&keyNode) {
+    GUARD_DEEP_NESTING(guard);
+
+    this->expectAndChangeMode(COLON, yycSTMT);  // always success
+
+    auto valueNode = TRY(this->parse_expression());
+    auto mapNode = std::make_unique<MapNode>(token.pos, std::move(keyNode), std::move(valueNode));
+    for(bool next = true; next; ) {
+        switch(CUR_KIND()) {
+        case COMMA:
+            this->consume();    //  COMMA
+            if(CUR_KIND() != RB) {
+                keyNode = TRY(this->parse_expression());
+                TRY(this->expectAndChangeMode(COLON, yycSTMT));
+                valueNode = TRY(this->parse_expression());
+                mapNode->addEntry(std::move(keyNode), std::move(valueNode));
+            }
+            break;
+        case RB:
+            next = false;
+            break;
+        default:
+            E_ALTER(COMMA, RB);
+        }
+    }
+    return mapNode;
 }
 
 std::unique_ptr<Node> Parser::parse_signalLiteral() {
