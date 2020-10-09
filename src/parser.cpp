@@ -1068,7 +1068,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
                 this->consume();    // COMMA
                 count++;
             } else if(CUR_KIND() != RP) {
-                E_ALTER(COMMA, RP);
+                E_ALTER_OR_COMP(COMMA, RP);
             }
         } while(CUR_KIND() != RP);
         Token closeToken = TRY(this->expect(RP));
@@ -1275,7 +1275,7 @@ ArgsWrapper Parser::parse_arguments(Token first) {
     for(unsigned int count = 0; CUR_KIND() != RP; count++) {
         if(count > 0) {
             if(CUR_KIND() != COMMA) {
-                E_ALTER(COMMA, RP);
+                E_ALTER_OR_COMP(COMMA, RP);
             }
             this->consume();    // COMMA
         }
