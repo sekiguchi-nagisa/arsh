@@ -1193,7 +1193,7 @@ std::unique_ptr<Node> Parser::parse_arrayBody(Token token, std::unique_ptr<Node>
             E_ALTER_OR_COMP(COMMA, RB);
         }
     }
-    return arrayNode;
+    return std::move(arrayNode);
 }
 
 std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &&keyNode) {
@@ -1221,7 +1221,7 @@ std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &
             E_ALTER_OR_COMP(COMMA, RB);
         }
     }
-    return mapNode;
+    return std::move(mapNode);
 }
 
 std::unique_ptr<Node> Parser::parse_signalLiteral() {
