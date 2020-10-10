@@ -138,7 +138,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     for(unsigned int count = 0; CUR_KIND() != RP; count++) {
         if(count > 0) {
             if(CUR_KIND() != COMMA) {
-                E_ALTER(COMMA, RP);
+                E_ALTER_OR_COMP(COMMA, RP);
             }
             this->consume();    // COMMA
         }
@@ -542,13 +542,19 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     Token token = TRY(this->expect(IDENTIFIER));
     std::string name = this->lexer->toName(token);
     std::unique_ptr<Node> exprNode;
-    if(CUR_KIND() == COLON) {
+    switch(CUR_KIND()) {
+    case ASSIGN:
+        this->consume();    // ASSIGN
+        exprNode = TRY(this->parse_expression());
+        break;
+    case COLON: {
         this->expect(COLON, false);
         auto typeNode = TRY(this->parse_typeName());
         exprNode = std::make_unique<NewNode>(std::move(typeNode));
-    } else {
-        TRY(this->expect(ASSIGN));
-        exprNode = TRY(this->parse_expression());
+        break;
+    }
+    default:
+        E_ALTER_OR_COMP(ASSIGN, COLON);
     }
     return std::make_unique<VarDeclNode>(startPos, std::move(name), std::move(exprNode), readOnly);
 }
@@ -761,7 +767,7 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
         return std::make_unique<RedirNode>(kind, token);
     }
     default:
-        E_ALTER(EACH_LA_redir(GEN_LA_ALTER));
+        E_ALTER_OR_COMP(EACH_LA_redir(GEN_LA_ALTER));
     }
 }
 
@@ -885,7 +891,8 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
                     break;
                 }
                 case INVALID:
-                    E_ALTER(EACH_LA_redir(GEN_LA_ALTER));
+                case COMPLETION:
+                    E_ALTER_OR_COMP(EACH_LA_redir(GEN_LA_ALTER));
                 default:
                     next = false;
                     break;

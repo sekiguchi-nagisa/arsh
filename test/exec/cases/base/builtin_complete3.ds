@@ -29,7 +29,7 @@ while15(){}
 
 # complete expected token
 $assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++ '))
-$assertArray(['='], $(complete '34; var a '))
+$assertArray([':', '='], $(complete '34; var a '))
 # $assertArray([";"], $(complete '(ls) '))
 $assertArray([',', ':', ']'], $(complete '[3 '))
 $assertArray([',', ']'], $(complete '[3, 23 '))
@@ -37,6 +37,10 @@ $assertArray([':'], $(complete '[3 : 34, 23 '))
 $assertArray([',', ']'], $(complete '[3 : 34 '))
 $assertArray([')', ','], $(complete '(3 '))
 $assertArray([')', ','], $(complete '$func(3 '))
+$assertArray(['&>', '&>>', '1>', '1>&2',  '1>>', '2>', '2>&1',  '2>>', '<', '<<<'], $(complete '34 with '))
+$assertArray(['&>', '&>>', '1>', '1>&2',  '1>>', '2>', '2>&1',  '2>>', '<', '<<<'], $(complete '34 with 1> hoge '))
+$assertArray([')', ','], $(complete 'function hoge($a : Int'))
+$assertArray([':'], $(complete 'function hoge($a '))
 
 # complete keyword
 ## perform sort command with 'C' locale

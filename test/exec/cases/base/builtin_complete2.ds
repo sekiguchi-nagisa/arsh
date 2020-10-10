@@ -72,16 +72,5 @@ assert($(complete '{ $T ').empty())
 complete '#jerijf' > /dev/null
 assert $COMPREPLY.empty()
 
-complete 'var a ' > /dev/null
-assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == '='
-
-complete '#jerijf' > /dev/null
-assert $COMPREPLY.empty()
-
-complete 'var a ' > /dev/null
-assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == '='
-
 complete '' > /dev/null
 assert $COMPREPLY.empty()
