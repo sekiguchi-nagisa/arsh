@@ -81,32 +81,20 @@ public:
 private:
     struct Context {
         Lexer lexer;
-        ModuleScope scope;
-
-        // for saving old state
-        TokenKind kind;
-        Token token;
-        TokenKind consumedKind;
+        Parser parser;
+        std::unique_ptr<ModuleScope> scope;
         std::unique_ptr<SourceListNode> srcListNode;
 
-        Context(Lexer &&lexer, ModuleScope &&scope, std::tuple<TokenKind, Token, TokenKind > &&state) :
-                lexer(std::move(lexer)), scope(std::move(scope)),
-                kind(std::get<0>(state)), token(std::get<1>(state)),
-                consumedKind(std::get<2>(state)){}
+        Context(Lexer &&lexer, std::unique_ptr<ModuleScope> &&scope,
+                ObserverPtr<CodeCompletionHandler> ccHandler = nullptr) :
+                lexer(std::move(lexer)), parser(this->lexer, ccHandler), scope(std::move(scope)){}
     };
-
-    // root lexer state
-    Lexer lexer;
 
     std::vector<std::unique_ptr<Context>> contexts;
 
     const DSExecMode mode;
-    Parser parser;
     TypeChecker checker;
     DSType *prevType{nullptr};
-
-    std::unique_ptr<SourceListNode> srcListNode;
-
     ObserverPtr<ErrorReporter> reporter;
     ObserverPtr<NodeDumper> uastDumper;
     ObserverPtr<NodeDumper> astDumper;
@@ -138,7 +126,7 @@ public:
     }
 
     const Lexer &getCurrentLexer() const {
-        return *this->parser.getLexer();
+        return this->contexts.back()->lexer;
     }
 
     bool frontEndOnly() const {
@@ -146,11 +134,11 @@ public:
     }
 
     unsigned int getRootLineNum() const {
-        return this->lexer.getMaxLineNum();
+        return this->contexts[0]->lexer.getMaxLineNum();
     }
 
     const std::unique_ptr<SourceListNode> &getCurSrcListNode() const {
-        return this->contexts.empty() ? this->srcListNode : this->contexts.back()->srcListNode;
+        return this->contexts.back()->srcListNode;
     }
 
     bool hasUnconsumedPath() const {
@@ -159,7 +147,7 @@ public:
     }
 
     explicit operator bool() const {
-        return static_cast<bool>(this->parser) || !this->contexts.empty() || this->hasUnconsumedPath();
+        return static_cast<bool>(this->parser()) || this->contexts.size() > 1 || this->hasUnconsumedPath();
     }
 
     Ret operator()(DSError *dsError);
@@ -172,16 +160,24 @@ public:
                      Token errorToken, const char *message, DSError *dsError) const;
 
 private:
+    Parser &parser() {
+        return this->contexts.back()->parser;
+    }
+
+    const Parser &parser() const {
+        return this->contexts.back()->parser;
+    }
+
     /**
      *
      * @return
      */
     const char *getCurScriptDir() const {
-        return (this->contexts.empty() ? this->lexer : this->contexts.back()->lexer).getScriptDir();
+        return this->contexts.back()->lexer.getScriptDir();
     }
 
     std::unique_ptr<SourceListNode> &getCurSrcListNode() {
-        return this->contexts.empty() ? this->srcListNode : this->contexts.back()->srcListNode;
+        return this->contexts.back()->srcListNode;
     }
 
     std::unique_ptr<Node> tryToParse(DSError *dsError);
@@ -196,8 +192,8 @@ private:
 
     // for error reporting
     void handleParseError(DSError *dsError) const {
-        auto &e = this->parser.getError();
-        Token errorToken = this->parser.getLexer()->shiftEOS(e.getErrorToken());
+        auto &e = this->parser().getError();
+        Token errorToken = this->parser().getLexer()->shiftEOS(e.getErrorToken());
         return this->handleError(DS_ERROR_KIND_PARSE_ERROR,
                 e.getErrorKind(), errorToken, e.getMessage().c_str(), dsError);
     }

@@ -573,8 +573,8 @@ public:
      * create new module scope and assign it to curModule
      * @return
      */
-    ModuleScope createModuleScope() {
-        return ModuleScope(this->gvarCount, this->modLoader.modSize());
+    std::unique_ptr<ModuleScope> createModuleScope() {
+        return std::make_unique<ModuleScope>(this->gvarCount, this->modLoader.modSize());
     }
 
     /**

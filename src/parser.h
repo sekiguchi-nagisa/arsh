@@ -114,17 +114,6 @@ public:
         return this->curKind != EOS;
     }
 
-    void restoreLexicalState(Lexer &lexer, TokenKind kind, Token token, TokenKind ckind = {}) {
-        this->lexer = &lexer;
-        this->curKind = kind;
-        this->curToken = token;
-        this->consumedKind = ckind;
-    }
-
-    std::tuple<TokenKind, Token, TokenKind> saveLexicalState() const {
-        return std::make_tuple(this->curKind, this->curToken, this->consumedKind);
-    }
-
 protected:
     /**
      * change lexer mode and refetch.

@@ -131,8 +131,10 @@ void ErrorReporter::printErrorLine(const Lexer &lexer, Token token) const {
 
 FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
                    ObserverPtr<CodeCompletionHandler> ccHandler) :
-        lexer(std::move(lexer)), mode(mode),
-        parser(this->lexer, ccHandler), checker(symbolTable, toplevel, &this->lexer){}
+        mode(mode), checker(symbolTable, toplevel, nullptr){
+    this->contexts.push_back(std::make_unique<Context>(std::move(lexer), nullptr, ccHandler));
+    this->checker.setLexer(this->getCurrentLexer());
+}
 
 static const char *toString(DSErrorKind kind) {
     switch(kind) {
@@ -156,12 +158,13 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
     /**
      * show error message
      */
-    this->reporter(*this->parser.getLexer(), toString(type), errorToken, TermColor::Magenta, message);
+    this->reporter(this->getCurrentLexer(), toString(type), errorToken, TermColor::Magenta, message);
 
-    for(int i = static_cast<int>(this->contexts.size()) - 1; i > -1; i--) {
-        auto &node = i > 0 ? this->contexts[i - 1]->srcListNode : this->srcListNode;
+    auto end = this->contexts.crend();
+    for(auto iter = this->contexts.crbegin() + 1; iter != end; ++iter) {
+        auto &node = (*iter)->srcListNode;
         Token token = node->getPathNode().getToken();
-        auto &lex = i > 0 ? this->contexts[i - 1]->lexer : this->lexer;
+        auto &lex = (*iter)->lexer;
         this->reporter(lex, "note", token, TermColor::Blue, "at module import");
     }
 
@@ -179,9 +182,9 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
 
 std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
     std::unique_ptr<Node> node;
-    if(this->parser) {
-        node = this->parser();
-        if(this->parser.hasError()) {
+    if(this->parser()) {
+        node = this->parser()();
+        if(this->parser().hasError()) {
             this->handleParseError(dsError);
         } else if(this->uastDumper) {
             this->uastDumper(*node);
@@ -220,7 +223,7 @@ FrontEnd::Ret FrontEnd::operator()(DSError *dsError) {
         // parse
         if(!ret.node) {
             ret.node = this->tryToParse(dsError);
-            if(this->parser.hasError()) {
+            if(this->parser().hasError()) {
                 return {nullptr, FAILED};
             }
         }
@@ -327,18 +330,12 @@ static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
 void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
     {
         auto lex = createLexer(fullPath, std::move(buf));
-        auto state = this->parser.saveLexicalState();
         auto scope = this->getSymbolTable().createModuleScope();
         this->contexts.push_back(
-                std::make_unique<Context>(std::move(lex), std::move(scope), std::move(state)));
-        this->getSymbolTable().setModuleScope(this->contexts.back()->scope);
+                std::make_unique<Context>(std::move(lex), std::move(scope), nullptr));
+        this->getSymbolTable().setModuleScope(*this->contexts.back()->scope);
     }
-
-    auto &lex = this->contexts.back()->lexer;
-    Token token{};
-    TokenKind kind = lex.nextToken(token);
-    this->parser.restoreLexicalState(lex, kind, token);
-    this->checker.setLexer(lex);
+    this->checker.setLexer(this->getCurrentLexer());
 
     if(this->uastDumper) {
         this->uastDumper->enterModule(fullPath);
@@ -351,20 +348,14 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     assert(!this->contexts.empty());
     auto &ctx = *this->contexts.back();
-    TokenKind kind = ctx.kind;
-    Token token = ctx.token;
-    TokenKind consumedKind = ctx.consumedKind;
     auto &modType = this->getSymbolTable().createModType(ctx.lexer.getSourceName());
-    const unsigned int varNum = ctx.scope.getMaxVarIndex();
+    const unsigned int varNum = ctx.scope->getMaxVarIndex();
     this->contexts.pop_back();
-
-    auto &lex = this->contexts.empty() ? this->lexer : this->contexts.back()->lexer;
-    this->parser.restoreLexicalState(lex, kind, token, consumedKind);
-    this->checker.setLexer(lex);
-    if(this->contexts.empty()) {
+    this->checker.setLexer(this->getCurrentLexer());
+    if(this->contexts.size() == 1) {
         this->getSymbolTable().resetCurModule();
     } else {
-        this->getSymbolTable().setModuleScope(this->contexts.back()->scope);
+        this->getSymbolTable().setModuleScope(*this->contexts.back()->scope);
     }
 
     auto node = this->getCurSrcListNode()->create(modType, true);
