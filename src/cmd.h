@@ -49,21 +49,11 @@ inline bool isSpace(char ch) {
 }
 
 inline bool hasSpace(StringRef ifs) {
-    for(auto ch : ifs) {
-        if(isSpace(ch)) {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(ifs.begin(), ifs.end(), isSpace);
 }
 
 inline bool matchFieldSep(StringRef ifs, char ch) {
-    for(auto e : ifs) {
-        if(e == ch) {
-            return true;
-        }
-    }
-    return false;
+    return std::any_of(ifs.begin(), ifs.end(), [&](auto e){ return e == ch; });
 }
 
 /**
