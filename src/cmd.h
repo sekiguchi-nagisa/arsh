@@ -17,6 +17,8 @@
 #ifndef YDSH_CMD_H
 #define YDSH_CMD_H
 
+#include <algorithm>
+
 #include "misc/string_ref.hpp"
 
 struct DSState;
