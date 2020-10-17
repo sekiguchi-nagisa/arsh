@@ -1411,7 +1411,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                     fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read16(c.getCode(), i + 2));
                 } else if(code == OpCode::RECLAIM_LOCAL || code == OpCode::ADD_GLOBBING) {
                     fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
-                } else if(code == OpCode::CALL_NATIVE2) {
+                } else if(code == OpCode::CALL_BUILTIN2) {
                     unsigned int paramSize = read8(c.getCode(), i + 1);
                     const char *name = nativeFuncInfoTable()[read8(c.getCode(), i + 2)].funcName;
                     fprintf(this->fp, "  %d  %s", paramSize, name);

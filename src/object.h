@@ -1018,7 +1018,7 @@ public:
     }
 
     NativeCode(unsigned int index, bool hasRet) noexcept : NativeCode() {
-        this->value[0] = static_cast<char>(OpCode::CALL_NATIVE);
+        this->value[0] = static_cast<char>(OpCode::CALL_BUILTIN);
         this->value[1] = index;
         this->value[2] = static_cast<char>(hasRet ? OpCode::RETURN_V : OpCode::RETURN);
         this->setCode();
