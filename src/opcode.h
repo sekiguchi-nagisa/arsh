@@ -81,9 +81,6 @@ namespace ydsh {
     OP(ADD_GLOBBING   , 2,  0) \
     OP(CALL_CMD       , 0, -1) \
     OP(CALL_CMD_NOFORK, 0, -1) \
-    OP(BUILTIN_CMD    , 0,  1) \
-    OP(BUILTIN_EVAL   , 0,  1) \
-    OP(BUILTIN_EXEC   , 0,  1) \
     OP(NEW_REDIR      , 0,  1) \
     OP(ADD_REDIR_OP   , 1, -1) \
     OP(DO_REDIR       , 0,  0) \
@@ -133,7 +130,10 @@ inline bool isValIns(OpCode code) {
     OP(STORE_ENV      , 2, 0) \
     OP(RAND           , 0, 1) \
     OP(GET_SECOND     , 0, 1) \
-    OP(SET_SECOND     , 1, 0)
+    OP(SET_SECOND     , 1, 0) \
+    OP(BUILTIN_CMD    , 0, 0) /* only used within NativeCode */\
+    OP(BUILTIN_EVAL   , 0, 0) /* only used within NativeCode */\
+    OP(BUILTIN_EXEC   , 0, 0) /* only used within NativeCode */
 
 
 enum class NativeOp : unsigned char {

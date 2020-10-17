@@ -60,9 +60,6 @@
 | ADD_GLOBBING    | 1: len 2: option               | argv redir value1 ~ valueN+1 -> argv redir   | apply glob expansion and add results to value0     |
 | CALL_CMD        |                                | argv redir -> value                          | call command.                                      |
 | CALL_CMD_NOFORK |                                | argv redir -> value                          | call command without fork                          |
-| BUILTIN_CMD     |                                | -> value                                     | call builtin command command                       |
-| BUILTIN_EVAL    |                                | -> value                                     | call builtin eval command                          |
-| BUILTIN_EXEC    |                                | -> value / [terminate]                       | call builtin exec command                          |
 | NEW_REDIR       |                                | -> value                                     | create new RedireConfig                            |
 | ADD_REDIR_OP    | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection target          |
 | DO_REDIR        |                                | value -> value                               | perform redirection                                |
@@ -86,4 +83,6 @@
 | RAND            | -> value                     | generate random number and push stack top                  |
 | GET_SECOND      | -> value                     | get differential time between current and base             |
 | SET_SECOND      | value ->                     | set base time                                              |
-
+| BUILTIN_CMD     | -> value                     | call builtin ``command``                                   |
+| BUILTIN_EVAL    | -> value                     | call builtin ``eval``                                      |
+| BUILTIN_EXEC    | -> value / [terminate]       | call builtin ``exec``                                      |

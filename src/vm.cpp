@@ -544,10 +544,11 @@ bool VM::forkAndEval(DSState &state) {
 }
 
 /* for pipeline evaluation */
-static NativeCode initCode(OpCode op) {
+static NativeCode initCode(NativeOp op) {
     NativeCode::ArrayType code;
-    code[0] = static_cast<char>(op);
-    code[1] = static_cast<char>(OpCode::RETURN_V);
+    code[0] = static_cast<char>(OpCode::CALL_NATIVE);
+    code[1] = static_cast<char>(op);
+    code[2] = static_cast<char>(OpCode::RETURN_V);
     return NativeCode(code);
 }
 
@@ -609,9 +610,9 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
         }
 
         static std::pair<const char *, NativeCode> sb[] = {
-                {"command", initCode(OpCode::BUILTIN_CMD)},
-                {"eval",    initCode(OpCode::BUILTIN_EVAL)},
-                {"exec",    initCode(OpCode::BUILTIN_EXEC)},
+                {"command", initCode(NativeOp::BUILTIN_CMD)},
+                {"eval",    initCode(NativeOp::BUILTIN_EVAL)},
+                {"exec",    initCode(NativeOp::BUILTIN_EXEC)},
         };
         for(auto &e : sb) {
             if(strcmp(cmdName, e.first) == 0) {
@@ -800,7 +801,54 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
 
 int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
 
-bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr) {
+static bool showCommandInfo(const FilePathCache &cache, const ArrayObject &argv, unsigned int showDesc,
+                            const char *commandName, Command cmd) {
+    switch(cmd.kind) {
+    case Command::USER_DEFINED:
+    case Command::MODULE: {
+        fputs(commandName, stdout);
+        if(showDesc == 2) {
+            fputs(" is an user-defined command", stdout);
+        }
+        fputc('\n', stdout);
+        return true;
+    }
+    case Command::BUILTIN_S:
+    case Command::BUILTIN: {
+        fputs(commandName, stdout);
+        if(showDesc == 2) {
+            fputs(" is a shell builtin command", stdout);
+        }
+        fputc('\n', stdout);
+        return true;
+    }
+    case Command::EXTERNAL: {
+        const char *path = cmd.filePath;
+        if(path != nullptr && isExecutable(path)) {
+            if(showDesc == 1) {
+                printf("%s\n", path);
+            } else if(cache.isCached(commandName)) {
+                printf("%s is hashed (%s)\n", commandName, path);
+            } else {
+                printf("%s is %s\n", commandName, path);
+            }
+            return true;
+        }
+        if(showDesc == 2) {
+            ERROR(argv, "%s: not found", commandName);
+        }
+        return false;
+    }
+    }
+}
+
+bool VM::OP_BUILTIN_CMD(DSState &state) {
+    auto cleanup = finally([]{
+        flushStdFD();
+    });
+
+    DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
+    DSValue argvObj = state.stack.getLocal(UDC_PARAM_ARGV);
     auto &arrayObj = typeAs<ArrayObject>(argvObj);
 
     bool useDefaultPath = false;
@@ -810,7 +858,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
      * if 1, show description
      * if 2, show detailed description
      */
-    unsigned char showDesc = 0;
+    unsigned int showDesc = 0;
 
     GetOptState optState;
     for(int opt; (opt = optState(arrayObj, "pvV")) != -1;) {
@@ -840,6 +888,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
 
             auto resolve = CmdResolver(CmdResolver::MASK_UDC,
                                        useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
+            auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
             return callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
         }
 
@@ -848,46 +897,8 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
         for(; index < argc; index++) {
             const char *commandName = arrayObj.getValues()[index].asCStr();
             auto cmd = CmdResolver(CmdResolver::MASK_FALLBACK, FilePathCache::DIRECT_SEARCH)(state, commandName);
-            switch(cmd.kind) {
-            case Command::USER_DEFINED:
-            case Command::MODULE: {
+            if(showCommandInfo(state.pathCache, arrayObj, showDesc, commandName, cmd)) {
                 successCount++;
-                fputs(commandName, stdout);
-                if(showDesc == 2) {
-                    fputs(" is an user-defined command", stdout);
-                }
-                fputc('\n', stdout);
-                continue;
-            }
-            case Command::BUILTIN_S:
-            case Command::BUILTIN: {
-                successCount++;
-                fputs(commandName, stdout);
-                if(showDesc == 2) {
-                    fputs(" is a shell builtin command", stdout);
-                }
-                fputc('\n', stdout);
-                continue;
-            }
-            case Command::EXTERNAL: {
-                const char *path = cmd.filePath;
-                if(path != nullptr && isExecutable(path)) {
-                    successCount++;
-                    if(showDesc == 1) {
-                        printf("%s\n", path);
-                    } else if(state.pathCache.isCached(commandName)) {
-                        printf("%s is hashed (%s)\n", commandName, path);
-                    } else {
-                        printf("%s is %s\n", commandName, path);
-                    }
-                    continue;
-                }
-                break;
-            }
-            }
-
-            if(showDesc == 2) {
-                ERROR(arrayObj, "%s: not found", commandName);
             }
         }
         pushExitStatus(state, successCount > 0 ? 0 : 1);
@@ -897,16 +908,16 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
     return true;
 }
 
-void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
-    auto &argvObj = typeAs<ArrayObject>(array);
-    bool clearEnv = false;
-    StringRef progName;
-    GetOptState optState;
-
+bool VM::OP_BUILTIN_EXEC(DSState &state) {
+    DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
     if(redir) {
         typeAs<RedirObject>(redir).ignoreBackup();
     }
 
+    auto &argvObj = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
+    bool clearEnv = false;
+    StringRef progName;
+    GetOptState optState;
     for(int opt; (opt = optState(argvObj, "ca:")) != -1;) {
         switch(opt) {
         case 'c':
@@ -918,7 +929,7 @@ void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
         default:
             int s = invalidOptionError(argvObj, optState);
             pushExitStatus(state, s);
-            return;
+            return true;
         }
     }
 
@@ -942,6 +953,20 @@ void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
         exit(1);
     }
     pushExitStatus(state, 0);
+    return true;
+}
+
+bool VM::OP_BUILTIN_EVAL(DSState &state) {
+    DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
+    auto &array = typeAs<ArrayObject>(argv);
+    array.takeFirst();  // remove 'eval'
+    if(array.size() == 0) { // do nothing
+        pushExitStatus(state, 0);
+        return true;
+    }
+    auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
+    DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
+    return callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr);
 }
 
 bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
@@ -1657,37 +1682,6 @@ bool VM::mainLoop(DSState &state) {
             auto argv = state.stack.pop();
 
             TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
-            vmnext;
-        }
-        vmcase(BUILTIN_CMD) {
-            auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
-            auto attr = static_cast<CmdCallAttr>(v);
-            DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
-            DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
-            bool ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
-            flushStdFD();
-            TRY(ret);
-            vmnext;
-        }
-        vmcase(BUILTIN_EVAL) {
-            auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
-            auto attr = static_cast<CmdCallAttr>(v);
-            DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
-            DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
-
-            typeAs<ArrayObject>(argv).takeFirst();
-            auto &array = typeAs<ArrayObject>(argv);
-            if(!array.getValues().empty()) {
-                TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
-            } else {
-                pushExitStatus(state, 0);
-            }
-            vmnext;
-        }
-        vmcase(BUILTIN_EXEC) {
-            DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
-            DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
-            builtinExec(state, std::move(argv), std::move(redir));
             vmnext;
         }
         vmcase(NEW_REDIR) {

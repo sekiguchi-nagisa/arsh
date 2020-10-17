@@ -405,9 +405,11 @@ private:
     static bool callCommand(DSState &state, CmdResolver resolver,
                             DSValue &&argvObj, DSValue &&redirConfig, CmdCallAttr attr = {});
 
-    static bool builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr);
+    static bool OP_BUILTIN_CMD(DSState &state);
 
-    static void builtinExec(DSState &state, DSValue &&array, DSValue &&redir);
+    static bool OP_BUILTIN_EXEC(DSState &state);
+
+    static bool OP_BUILTIN_EVAL(DSState &state);
 
     /**
      *
