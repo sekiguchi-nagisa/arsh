@@ -651,7 +651,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
 
 void ByteCodeGenerator::visitNewNode(NewNode &node) {
     if(node.getType().isOptionType()) {
-        this->emit0byteIns(OpCode::NEW_INVALID);
+        this->emit0byteIns(OpCode::PUSH_INVALID);
         return;
     }
 
@@ -852,7 +852,7 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
 
         this->markLabel(breakLabel);
         if(!node.getType().isVoidType()) {
-            this->emit0byteIns(OpCode::NEW_INVALID);
+            this->emit0byteIns(OpCode::PUSH_INVALID);
             this->markLabel(breakWithValueLabel);
         }
 

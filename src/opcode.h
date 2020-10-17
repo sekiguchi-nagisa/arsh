@@ -39,6 +39,7 @@ namespace ydsh {
     OP(PUSH_STR3      , 3,  1) \
     OP(PUSH_META      , 1,  1) \
     OP(PUSH_TYPE      , 3,  1) \
+    OP(PUSH_INVALID   , 0,  1) \
     OP(LOAD_CONST     , 1,  1) \
     OP(LOAD_CONST_W   , 2,  1) \
     OP(LOAD_CONST_T   , 3,  1) \
@@ -98,7 +99,6 @@ namespace ydsh {
     OP(UNWRAP         , 0,  0) \
     OP(CHECK_UNWRAP   , 0,  0) \
     OP(TRY_UNWRAP     , 2,  0) \
-    OP(NEW_INVALID    , 0,  1) \
     OP(RECLAIM_LOCAL  , 2,  0)
 
 enum class OpCode : unsigned char {

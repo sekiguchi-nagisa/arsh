@@ -18,6 +18,7 @@
 | PUSH_STR3       | 3: byte1 byte2 byte3           | -> value                                     | push the string value onto the stack               |
 | PUSH_META       | 1: byte1                       | -> value                                     | push glob meta character onto the stack            |
 | PUSH_TYPE       | 3: byte1 byte2 byte3           | -> type                                      | push the type onto the stack                       |
+| PUSH_INVALID    |                                | -> value                                     | push the invalid onto the stack                    |
 | LOAD_CONST      | 1: byte1                       | -> value                                     | load a constant from the constant pool             |
 | LOAD_CONST_W    | 2: byte1 byte2                 | -> value                                     | load a constant from the constant pool             |
 | LOAD_CONST_T    | 3: byte1 byte2 byte3           | -> value                                     | load a constant from the constant pool             |
@@ -77,5 +78,4 @@
 | UNWRAP          |                                | value -> value                               | unwrap option value                                |
 | CHECK_UNWRAP    |                                | value -> value                               | check if option value has a value                  |
 | TRY_UNWRAP      | 2: offset1 offset2             | value -> / [no change]                       | try to unwrap option value                         |
-| NEW_INVALID     |                                | -> value                                     | create then invalid value                          |
 | RECLAIM_LOCAL   | 2: offset1 size1               | [no change]                                  | reclaim local variables specified range            |

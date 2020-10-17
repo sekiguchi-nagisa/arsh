@@ -1317,6 +1317,10 @@ bool VM::mainLoop(DSState &state) {
             state.stack.push(DSValue::createType(type));
             vmnext;
         }
+        vmcase(PUSH_INVALID) {
+            state.stack.push(DSValue::createInvalid());
+            vmnext;
+        }
         vmcase(LOAD_CONST) {
             unsigned char index = read8(GET_CODE(state), state.stack.pc());
             state.stack.pc()++;
@@ -1713,10 +1717,6 @@ bool VM::mainLoop(DSState &state) {
             } else {
                 state.stack.pc() += offset - 1;
             }
-            vmnext;
-        }
-        vmcase(NEW_INVALID) {
-            state.stack.push(DSValue::createInvalid());
             vmnext;
         }
         vmcase(RECLAIM_LOCAL) {
