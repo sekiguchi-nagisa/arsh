@@ -326,17 +326,29 @@ private:
     }
 
     // runtime api
-    static bool instanceOf(const TypePool &pool, const DSValue &value, const DSType &targetType) {
-        return targetType.isSameOrBaseTypeOf(*pool.get(value.getTypeID()));
-    }
+    static auto lookupNativeOp(NativeOp op) -> bool (*)(DSState &);
 
-    static bool checkCast(DSState &state, const DSType &targetType);
+    static bool OP_ASSERT(DSState &state);
 
-    static bool checkAssertion(DSState &state);
+    static bool OP_PRINT(DSState &state);
 
-    static const char *loadEnv(DSState &state, bool hasDefault);
+    static bool OP_INSTANCE_OF(DSState &state);
 
-    static bool storeEnv(DSState &state);
+    static bool OP_CHECK_CAST(DSState &state);
+
+    static const char *loadEnvImpl(DSState &state, bool hasDefault);
+
+    static bool OP_IMPORT_ENV(DSState &state);
+
+    static bool OP_LOAD_ENV(DSState &state);
+
+    static bool OP_STORE_ENV(DSState &state);
+
+    static bool OP_RAND(DSState &state);
+
+    static bool OP_GET_SECOND(DSState &state);
+
+    static bool OP_SET_SECOND(DSState &state);
 
     static void pushNewObject(DSState &state, const DSType &type);
 

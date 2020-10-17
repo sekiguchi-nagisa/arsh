@@ -240,8 +240,7 @@ private:
      * rest operands size
      */
     void emitValIns(OpCode op, unsigned char paramSize, short restSize) {
-        assert(op == OpCode::CALL_FUNC || op == OpCode::CALL_METHOD ||
-                op == OpCode::CALL_BUILTIN2 || op == OpCode::ADD_GLOBBING);
+        assert(isValIns(op));
         this->curBuilder().append8(static_cast<unsigned char>(op));
         this->curBuilder().append8(paramSize);
 
@@ -253,7 +252,7 @@ private:
         this->emitValIns(OpCode::CALL_FUNC, paramSize, hasRet ? 0 : 1);
     }
 
-    void emitNativeCallIns(unsigned char paramSize, unsigned short index, bool hasRet) {
+    void emitBuiltinCallIns(unsigned char paramSize, unsigned short index, bool hasRet) {
         assert(index <= UINT8_MAX);
         this->emitValIns(OpCode::CALL_BUILTIN2, paramSize, hasRet ? -1 : 0);
         this->curBuilder().append8(index);
@@ -273,10 +272,13 @@ private:
         this->curBuilder().append8(tilde ? 1 : 0);
     }
 
+    void emitNativeCallIns(NativeOp op);
+
     /**
      * write instruction having type. (ex. PRINT).
      */
     void emitTypeIns(OpCode op, const DSType &type) {
+        assert(isTypeOp(op));
         this->emit3byteIns(op, type.getTypeID());
     }
 

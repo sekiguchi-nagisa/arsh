@@ -129,21 +129,17 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
 
 namespace ydsh {
 
-bool VM::checkCast(DSState &state, const DSType &targetType) {
-    if(!instanceOf(state.symbolTable.getTypePool(), state.stack.peek(), targetType)) {
-        auto &stackTopType = state.symbolTable.get(state.stack.pop().getTypeID());
-        std::string str("cannot cast `");
-        str += state.symbolTable.getTypeName(stackTopType);
-        str += "' to `";
-        str += state.symbolTable.getTypeName(targetType);
-        str += "'";
-        raiseError(state, TYPE::TypeCastError, std::move(str));
-        return false;
+auto VM::lookupNativeOp(NativeOp op) -> bool (*)(DSState &) {
+    switch(op) {
+#define GEN_CASE(E, P, R) case NativeOp::E: return OP_ ## E;
+    EACH_NATIVE_OP(GEN_CASE)
+#undef GEN_CASE
+    default:
+        return nullptr;
     }
-    return true;
 }
 
-bool VM::checkAssertion(DSState &state) {
+bool VM::OP_ASSERT(DSState &state) {
     auto msg = state.stack.pop();
     auto ref = msg.asStrRef();
     if(!state.stack.pop().asBool()) {
@@ -153,8 +149,49 @@ bool VM::checkAssertion(DSState &state) {
     return true;
 }
 
-const char *VM::loadEnv(DSState &state, bool hasDefault) {
-    DSValue dValue;
+bool VM::OP_PRINT(DSState &state) {
+    auto &stackTopType = state.stack.pop().asType();
+    assert(!stackTopType.isVoidType());
+    auto ref = state.stack.peek().asStrRef();
+    std::string value = ": ";
+    value += state.symbolTable.getTypeName(stackTopType);
+    value += " = ";
+    value.append(ref.data(), ref.size());
+    value += "\n";
+    fwrite(value.c_str(), sizeof(char), value.size(), stdout);
+    fflush(stdout);
+    state.stack.popNoReturn();
+    return true;
+}
+
+static bool instanceOf(const TypePool &pool, const DSValue &value, const DSType &targetType) {
+    return targetType.isSameOrBaseTypeOf(*pool.get(value.getTypeID()));
+}
+
+bool VM::OP_INSTANCE_OF(DSState &state) {
+    auto &type = state.stack.pop().asType();
+    auto value = state.stack.pop();
+    state.stack.push(DSValue::createBool(::instanceOf(state.symbolTable.getTypePool(), value, type)));
+    return true;
+}
+
+bool VM::OP_CHECK_CAST(DSState &state) {
+    auto &type = state.stack.pop().asType();
+    if(!::instanceOf(state.symbolTable.getTypePool(), state.stack.peek(), type)) {
+        auto &stackTopType = state.symbolTable.get(state.stack.pop().getTypeID());
+        std::string str("cannot cast `");
+        str += state.symbolTable.getTypeName(stackTopType);
+        str += "' to `";
+        str += state.symbolTable.getTypeName(type);
+        str += "'";
+        raiseError(state, TYPE::TypeCastError, std::move(str));
+        return false;
+    }
+    return true;
+}
+
+const char *VM::loadEnvImpl(DSState &state, bool hasDefault) {
+    auto dValue = DSValue::createInvalid();
     if(hasDefault) {
         dValue = state.stack.pop();
     }
@@ -163,7 +200,7 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
     assert(!nameRef.hasNullChar());
     const char *name = nameRef.data();
     const char *env = getenv(name);
-    if(env == nullptr && hasDefault) {
+    if(env == nullptr && !dValue.isInvalid()) {
         auto ref = dValue.asStrRef();
         if(ref.hasNullChar()) {
             std::string str = SET_ENV_ERROR;
@@ -184,7 +221,21 @@ const char *VM::loadEnv(DSState &state, bool hasDefault) {
     return env;
 }
 
-bool VM::storeEnv(DSState &state) {
+bool VM::OP_IMPORT_ENV(DSState &state) {
+    const char *env = loadEnvImpl(state, true);
+    return env != nullptr;
+}
+
+bool VM::OP_LOAD_ENV(DSState &state) {
+    const char *env = loadEnvImpl(state, false);
+    if(!env) {
+        return false;
+    }
+    state.stack.push(DSValue::createStr(env));
+    return true;
+}
+
+bool VM::OP_STORE_ENV(DSState &state) {
     auto value = state.stack.pop();
     auto name = state.stack.pop();
     auto nameRef = name.asStrRef();
@@ -198,6 +249,32 @@ bool VM::storeEnv(DSState &state) {
     str += nameRef.data();
     raiseSystemError(state, errNum, std::move(str));
     return false;
+}
+
+bool VM::OP_RAND(DSState &state) {
+    std::random_device rand;
+    std::default_random_engine engine(rand());
+    std::uniform_int_distribution<int64_t> dist;
+    int64_t v = dist(engine);
+    state.stack.push(DSValue::createInt(v));
+    return true;
+}
+
+bool VM::OP_GET_SECOND(DSState &state) {
+    auto now = std::chrono::system_clock::now();
+    auto diff = now - state.baseTime;
+    auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
+    int64_t v = state.getGlobal(BuiltinVarOffset::SECONDS).asInt();
+    v += sec.count();
+    state.stack.push(DSValue::createInt(v));
+    return true;
+}
+
+bool VM::OP_SET_SECOND(DSState &state) {
+    state.baseTime = std::chrono::system_clock::now();
+    auto v = state.stack.pop();
+    state.setGlobal(BuiltinVarOffset::SECONDS, std::move(v));
+    return true;
 }
 
 void VM::pushNewObject(DSState &state, const DSType &type) {
@@ -1227,43 +1304,6 @@ bool VM::mainLoop(DSState &state) {
         vmcase(HALT) {
             return true;
         }
-        vmcase(ASSERT) {
-            TRY(checkAssertion(state));
-            vmnext;
-        }
-        vmcase(PRINT) {
-            unsigned int v = read24(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 3;
-
-            auto &stackTopType = state.symbolTable.get(v);
-            assert(!stackTopType.isVoidType());
-            auto ref = state.stack.peek().asStrRef();
-            std::string value = ": ";
-            value += state.symbolTable.getTypeName(stackTopType);
-            value += " = ";
-            value.append(ref.data(), ref.size());
-            value += "\n";
-            fwrite(value.c_str(), sizeof(char), value.size(), stdout);
-            fflush(stdout);
-            state.stack.popNoReturn();
-            vmnext;
-        }
-        vmcase(INSTANCE_OF) {
-            unsigned int v = read24(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 3;
-
-            auto &targetType = state.symbolTable.get(v);
-            auto value = state.stack.pop();
-            bool ret = instanceOf(state.symbolTable.getTypePool(), value, targetType);
-            state.stack.push(DSValue::createBool(ret));
-            vmnext;
-        }
-        vmcase(CHECK_CAST) {
-            unsigned int v = read24(GET_CODE(state), state.stack.pc());
-            state.stack.pc() += 3;
-            TRY(checkCast(state, state.symbolTable.get(v)));
-            vmnext;
-        }
         vmcase(PUSH_NULL) {
             state.stack.push(nullptr);
             vmnext;
@@ -1376,22 +1416,6 @@ bool VM::mainLoop(DSState &state) {
             state.stack.storeField(index);
             vmnext;
         }
-        vmcase(IMPORT_ENV) {
-            unsigned char b = read8(GET_CODE(state), state.stack.pc());
-            state.stack.pc()++;
-            TRY(loadEnv(state, b > 0));
-            vmnext;
-        }
-        vmcase(LOAD_ENV) {
-            const char *value = loadEnv(state, false);
-            TRY(value);
-            state.stack.push(DSValue::createStr(value));
-            vmnext;
-        }
-        vmcase(STORE_ENV) {
-            TRY(storeEnv(state));
-            vmnext;
-        }
         vmcase(POP) {
             state.stack.popNoReturn();
             vmnext;
@@ -1474,6 +1498,13 @@ bool VM::mainLoop(DSState &state) {
             if(ret) {
                 state.stack.push(std::move(ret));
             }
+            vmnext;
+        }
+        vmcase(CALL_NATIVE) {
+            unsigned int v = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
+            auto nativeOp = lookupNativeOp(static_cast<NativeOp>(v));
+            TRY(nativeOp(state));
             vmnext;
         }
         vmcase(RETURN) {
@@ -1672,29 +1703,6 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(DO_REDIR) {
             TRY(typeAs<RedirObject>(state.stack.peek()).redirect(state));
-            vmnext;
-        }
-        vmcase(RAND) {
-            std::random_device rand;
-            std::default_random_engine engine(rand());
-            std::uniform_int_distribution<int64_t> dist;
-            int64_t v = dist(engine);
-            state.stack.push(DSValue::createInt(v));
-            vmnext;
-        }
-        vmcase(GET_SECOND) {
-            auto now = std::chrono::system_clock::now();
-            auto diff = now - state.baseTime;
-            auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
-            int64_t v = state.getGlobal(BuiltinVarOffset::SECONDS).asInt();
-            v += sec.count();
-            state.stack.push(DSValue::createInt(v));
-            vmnext;
-        }
-        vmcase(SET_SECOND) {
-            state.baseTime = std::chrono::system_clock::now();
-            auto v = state.stack.pop();
-            state.setGlobal(BuiltinVarOffset::SECONDS, std::move(v));
             vmnext;
         }
         vmcase(UNWRAP) {

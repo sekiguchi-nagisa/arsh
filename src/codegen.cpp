@@ -33,9 +33,6 @@ int getByteSize(OpCode code) {
 
 bool isTypeOp(OpCode code) {
     switch(code) {
-    case OpCode::PRINT:
-    case OpCode::INSTANCE_OF:
-    case OpCode::CHECK_CAST:
     case OpCode::PUSH_TYPE:
     case OpCode::NEW:
         ASSERT_BYTE_SIZE(code, 3);
@@ -44,6 +41,8 @@ bool isTypeOp(OpCode code) {
         return false;
     }
 }
+
+
 
 CompiledCode CodeBuilder::build(const std::string &name) {
     if(!this->finalize()) {
@@ -122,11 +121,26 @@ unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
 
 void ByteCodeGenerator::emitMethodCallIns(unsigned int paramSize, const MethodHandle &handle) {
     if(handle.isNative()) {
-        this->emitNativeCallIns(paramSize + 1, handle.getMethodIndex(), !handle.getReturnType().isVoidType());
+        this->emitBuiltinCallIns(paramSize + 1, handle.getMethodIndex(), !handle.getReturnType().isVoidType());
     } else {
         this->emitValIns(OpCode::CALL_METHOD, paramSize, handle.getReturnType().isVoidType() ? 1 : 0);
         this->curBuilder().append16(handle.getMethodIndex());
     }
+}
+
+void ByteCodeGenerator::emitNativeCallIns(NativeOp op) {
+    struct {
+        int paramSize;
+        int resetSize;
+    } table[] = {
+#define GEN_TABLE(E, P, R) {P, R},
+            EACH_NATIVE_OP(GEN_TABLE)
+#undef GEN_TABLE
+    };
+
+    this->emit1byteIns(OpCode::CALL_NATIVE, static_cast<unsigned char>(op));
+    auto e = table[static_cast<unsigned int>(op)];
+    this->curBuilder().stackDepthCount += static_cast<short>(e.resetSize - e.paramSize);
 }
 
 void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
@@ -433,12 +447,11 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
         } else {
             this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
         }
-
-        this->emit0byteIns(OpCode::LOAD_ENV);
+        this->emitNativeCallIns(NativeOp::LOAD_ENV);
     } else if(hasFlag(node.attr(), FieldAttribute::RANDOM)) {
-        this->emit0byteIns(OpCode::RAND);
+        this->emitNativeCallIns(NativeOp::RAND);
     } else if(hasFlag(node.attr(), FieldAttribute::SECONDS)) {
-        this->emit0byteIns(OpCode::GET_SECOND);
+        this->emitNativeCallIns(NativeOp::GET_SECOND);
     } else if(hasFlag(node.attr(), FieldAttribute::MOD_CONST)) {
         this->emit1byteIns(OpCode::LOAD_CONST, node.getIndex());
     } else {
@@ -502,7 +515,8 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     }
     case TypeOpNode::CHECK_CAST:
         this->emitSourcePos(node.getPos());
-        this->emitTypeIns(OpCode::CHECK_CAST, node.getType());
+        this->emitTypeIns(OpCode::PUSH_TYPE, node.getType());
+        this->emitNativeCallIns(NativeOp::CHECK_CAST);
         break;
     case TypeOpNode::CHECK_UNWRAP:
         this->emitSourcePos(node.getPos());
@@ -529,7 +543,8 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         } else if(!exprType.is(TYPE::String)) {
             this->emitToString();
         }
-        this->emitTypeIns(OpCode::PRINT, exprType);
+        this->emitTypeIns(OpCode::PUSH_TYPE, exprType);
+        this->emitNativeCallIns(NativeOp::PRINT);
         break;
     }
     case TypeOpNode::ALWAYS_FALSE:
@@ -541,7 +556,8 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         this->emit0byteIns(OpCode::PUSH_TRUE);
         break;
     case TypeOpNode::INSTANCEOF:
-        this->emitTypeIns(OpCode::INSTANCE_OF, node.getTargetTypeNode()->getType());
+        this->emitTypeIns(OpCode::PUSH_TYPE, node.getTargetTypeNode()->getType());
+        this->emitNativeCallIns(NativeOp::INSTANCE_OF);
         break;
     }
 }
@@ -787,7 +803,7 @@ void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
         this->visit(node.getCondNode());
         this->emitSourcePos(node.getCondNode().getPos());
         this->visit(node.getMessageNode());
-        this->emit0byteIns(OpCode::ASSERT);
+        this->emitNativeCallIns(NativeOp::ASSERT);
     }
 }
 
@@ -1149,20 +1165,20 @@ void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
     case VarDeclNode::IMPORT_ENV: {
         this->emitLdcIns(DSValue::createStr(node.getVarName()));
         this->emit0byteIns(OpCode::DUP);
-        const bool hashDefault = node.getExprNode() != nullptr;
-        if(hashDefault) {
+        if(node.getExprNode() != nullptr) {
             this->visit(*node.getExprNode());
+        } else {
+            this->emit0byteIns(OpCode::PUSH_INVALID);
         }
-
         this->emitSourcePos(node.getPos());
-        this->emit1byteIns(OpCode::IMPORT_ENV, hashDefault ? 1 : 0);
+        this->emitNativeCallIns(NativeOp::IMPORT_ENV);
         break;
     }
     case VarDeclNode::EXPORT_ENV: {
         this->emitLdcIns(DSValue::createStr(node.getVarName()));
         this->emit0byteIns(OpCode::DUP);
         this->visit(*node.getExprNode());
-        this->emit0byteIns(OpCode::STORE_ENV);
+        this->emitNativeCallIns(NativeOp::STORE_ENV);
         break;
     }
     }
@@ -1209,9 +1225,9 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
             }
 
             this->emit0byteIns(OpCode::SWAP);
-            this->emit0byteIns(OpCode::STORE_ENV);
+            this->emitNativeCallIns(NativeOp::STORE_ENV);
         } else if(hasFlag(varNode.attr(), FieldAttribute::SECONDS)) {
-            this->emit0byteIns(OpCode::SET_SECOND);
+            this->emitNativeCallIns(NativeOp::SET_SECOND);
         } else {
             if(hasFlag(varNode.attr(), FieldAttribute::GLOBAL)) {
                 this->emit2byteIns(OpCode::STORE_GLOBAL, index);
@@ -1347,6 +1363,15 @@ static unsigned int getMaxLineNum(const LineNumEntry *table) {
     return max;
 }
 
+static const char *getNativeOpName(NativeOp op) {
+    const char *table[] = {
+#define GEN_STR(E, P, R) #E,
+            EACH_NATIVE_OP(GEN_STR)
+#undef GEN_STR
+    };
+    return table[static_cast<unsigned int >(op)];
+}
+
 void ByteCodeDumper::operator()(const CompiledCode &code) {
     this->dumpModule(code);
     while(!this->mods.empty()) {
@@ -1424,6 +1449,9 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                     }
                     data[size] = '\0';
                     fprintf(this->fp, "  `%s'", data);
+                } else if(code == OpCode::CALL_NATIVE) {
+                    unsigned int v = read8(c.getCode(), i + 1);
+                    fprintf(this->fp, "  %s", getNativeOpName(static_cast<NativeOp>(v)));
                 } else {
                     switch(byteSize) {
                     case 1:
