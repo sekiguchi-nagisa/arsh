@@ -840,6 +840,7 @@ static bool showCommandInfo(const FilePathCache &cache, const ArrayObject &argv,
         return false;
     }
     }
+    return false;   // normally unreachable, but need to suppress gcc warning.
 }
 
 bool VM::OP_BUILTIN_CMD(DSState &state) {
