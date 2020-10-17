@@ -183,6 +183,7 @@ enum class DSValueKind : unsigned char {
     SIG,  // int64_t
     INT,  // int64_t
     FLOAT,  // double
+    TYPE,   // DSType
 
     // for small string (up to 14 characters)
     SSTR0, SSTR1, SSTR2, SSTR3,
@@ -244,6 +245,11 @@ protected:
 
         struct {
             DSValueKind kind;
+            const DSType *value;    // not null
+        } type;
+
+        struct {
+            DSValueKind kind;
             char value[15]; // null terminated
         } str;
     };
@@ -298,6 +304,11 @@ private:
     explicit DSValue(double value) noexcept {
         this->d.kind = DSValueKind::FLOAT;
         this->d.value = value;
+    }
+
+    explicit DSValue(const DSType &type) noexcept {
+        this->type.kind = DSValueKind::TYPE;
+        this->type.value = &type;
     }
 
     /**
@@ -450,6 +461,11 @@ public:
         return this->d.value;
     }
 
+    const DSType &asType() const {
+        assert(this->kind() == DSValueKind::TYPE);
+        return *this->type.value;
+    }
+
     StringRef asStrRef() const;
 
     const char *asCStr() const {
@@ -546,6 +562,10 @@ public:
 
     static DSValue createFloat(double v) {
         return DSValue(v);
+    }
+
+    static DSValue createType(const DSType &type) {
+        return DSValue(type);
     }
 
     // for string construction

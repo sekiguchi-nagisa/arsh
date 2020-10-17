@@ -1310,6 +1310,13 @@ bool VM::mainLoop(DSState &state) {
             state.stack.push(DSValue::createGlobMeta(static_cast<GlobMeta>(value)));
             vmnext;
         }
+        vmcase(PUSH_TYPE) {
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
+            auto &type = state.symbolTable.get(v);
+            state.stack.push(DSValue::createType(type));
+            vmnext;
+        }
         vmcase(LOAD_CONST) {
             unsigned char index = read8(GET_CODE(state), state.stack.pc());
             state.stack.pc()++;
