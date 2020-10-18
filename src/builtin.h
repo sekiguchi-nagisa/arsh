@@ -707,7 +707,7 @@ YDSH_METHOD string_lastIndexOf(RuntimeContext &ctx) {
 //!bind: function split($this : String, $delim : String) : Array<String>
 YDSH_METHOD string_split(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_split);
-    auto results = DSValue::create<ArrayObject>(ctx.symbolTable.get(TYPE::StringArray));
+    auto results = DSValue::create<ArrayObject>(ctx.symbolTable.types().get(TYPE::StringArray));
     auto &ptr = typeAs<ArrayObject>(results);
 
     auto thisStr = LOCAL(0).asStrRef();
@@ -795,7 +795,7 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
      * }
      *
      */
-     auto value = DSValue::create<BaseObject>(ctx.symbolTable.get(TYPE::StringIter), 2);
+     auto value = DSValue::create<BaseObject>(ctx.symbolTable.types().get(TYPE::StringIter), 2);
      auto &obj = typeAs<BaseObject>(value);
      obj[0] = LOCAL(0);
      obj[1] = DSValue::createInt(0);
@@ -933,9 +933,9 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     int matchSize = re.match(ref, ovec);
 
     auto ret = DSValue::create<ArrayObject>(
-            *ctx.symbolTable.createArrayType(
-                    *ctx.symbolTable.createOptionType(
-                            ctx.symbolTable.get(TYPE::String)).take()).take());
+            *ctx.symbolTable.types().createArrayType(
+                    *ctx.symbolTable.types().createOptionType(
+                            ctx.symbolTable.types().get(TYPE::String)).take()).take());
     auto &array = typeAs<ArrayObject>(ret);
 
     if(matchSize > 0) {
@@ -1057,7 +1057,7 @@ YDSH_METHOD signals_signal(RuntimeContext &ctx) {
 YDSH_METHOD signals_list(RuntimeContext &ctx) {
     SUPPRESS_WARNING(signals_list);
 
-    auto ret = ctx.symbolTable.createArrayType(ctx.symbolTable.get(TYPE::Signal));
+    auto ret = ctx.symbolTable.types().createArrayType(ctx.symbolTable.types().get(TYPE::Signal));
     assert(ret);
     auto type = ret.take();
     auto v = DSValue::create<ArrayObject>(*type);
@@ -1375,7 +1375,7 @@ YDSH_METHOD array_iter(RuntimeContext &ctx) {
      * }
      *
      */
-    auto &type = ctx.symbolTable.get(LOCAL(0).getTypeID()); //FIXME: object layout and type is mismatched
+    auto &type = ctx.symbolTable.types().get(LOCAL(0).getTypeID()); //FIXME: object layout and type is mismatched
     auto value = DSValue::create<BaseObject>(type, 2);
     auto &obj = typeAs<BaseObject>(value);
     obj[0] = LOCAL(0);
@@ -1569,7 +1569,7 @@ YDSH_METHOD tuple_cmdArg(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : Error, $message : String) : Error
 YDSH_METHOD error_init(RuntimeContext &ctx) {
     SUPPRESS_WARNING(error_init);
-    auto &type = ctx.symbolTable.get(LOCAL(0).getTypeID());
+    auto &type = ctx.symbolTable.types().get(LOCAL(0).getTypeID());
     RET(DSValue(ErrorObject::newError(ctx, type, LOCAL(1))));
 }
 

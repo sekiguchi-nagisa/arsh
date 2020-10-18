@@ -160,6 +160,8 @@ class TypeChecker : protected NodeVisitor {
 protected:
     SymbolTable &symbolTable;
 
+    TypePool &typePool;
+
     /**
      * contains current return type of current function
      */
@@ -177,7 +179,8 @@ protected:
 
 public:
     TypeChecker(SymbolTable &symbolTable, bool toplevelPrinting, const Lexer *lex) :
-            symbolTable(symbolTable), toplevelPrinting(toplevelPrinting), lexer(lex) { }
+            symbolTable(symbolTable), typePool(symbolTable.types()),
+            toplevelPrinting(toplevelPrinting), lexer(lex) { }
 
     ~TypeChecker() override = default;
 
@@ -201,7 +204,7 @@ protected:
      * return resolved type.
      */
     DSType &checkTypeAsExpr(Node &targetNode) {
-        return this->checkType(nullptr, targetNode, &this->symbolTable.get(TYPE::Void));
+        return this->checkType(nullptr, targetNode, &this->typePool.get(TYPE::Void));
     }
 
     /**
@@ -252,7 +255,7 @@ protected:
                       const DSType *unacceptableType, CoercionKind &kind);
 
     void checkTypeWithCurrentScope(BlockNode &blockNode) {
-        this->checkTypeWithCurrentScope(&this->symbolTable.get(TYPE::Void), blockNode);
+        this->checkTypeWithCurrentScope(&this->typePool.get(TYPE::Void), blockNode);
     }
 
     void checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode);
@@ -285,7 +288,7 @@ protected:
     const FieldHandle *addUdcEntry(const UserDefinedCmdNode &node) {
         std::string name = CMD_SYMBOL_PREFIX;
         name += node.getCmdName();
-        auto pair = this->symbolTable.newHandle(name, this->symbolTable.get(TYPE::Any), FieldAttribute::READ_ONLY);
+        auto pair = this->symbolTable.newHandle(name, this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
         if(!pair) {
             assert(pair.asErr() == SymbolError::DEFINED);
             RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str());

@@ -142,12 +142,12 @@ public:
         return *static_cast<T *>(this->addType(std::move(name), new T(id, std::forward<A>(arg)...)));
     }
 
-    DSType *get(TYPE t) const {
+    DSType &get(TYPE t) const {
         return this->get(static_cast<unsigned int>(t));
     }
 
-    DSType *get(unsigned int index) const {
-        return this->typeTable[index];
+    DSType &get(unsigned int index) const {
+        return *this->typeTable[index];
     }
 
     /**
@@ -160,6 +160,10 @@ public:
      */
     const std::string &getTypeName(const DSType &type) const {
         return this->nameTable[type.getTypeID()];
+    }
+
+    const char *getTypeNameCStr(const DSType &type) const {
+        return this->getTypeName(type).c_str();
     }
 
     const TypeTemplate &getArrayTemplate() const {
@@ -197,6 +201,18 @@ public:
 
     TypeOrError createReifiedType(const TypeTemplate &typeTemplate, std::vector<DSType *> &&elementTypes);
 
+    TypeOrError createArrayType(DSType &elementType) {
+        return this->createReifiedType(this->getArrayTemplate(), {&elementType});
+    }
+
+    TypeOrError createMapType(DSType &keyType, DSType &valueType) {
+        return this->createReifiedType(this->getMapTemplate(), {&keyType, &valueType});
+    }
+
+    TypeOrError createOptionType(DSType &elementType) {
+        return this->createReifiedType(this->getOptionTemplate(), {&elementType});
+    }
+
     TypeOrError createTupleType(std::vector<DSType *> &&elementTypes);
 
     /**
@@ -217,6 +233,14 @@ public:
     }
 
     const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
+
+    const MethodHandle *lookupMethod(unsigned int typeId, const std::string &methodName) {
+        return this->lookupMethod(this->get(typeId), methodName);
+    }
+
+    const MethodHandle *lookupMethod(TYPE type, const std::string &methodName) {
+        return this->lookupMethod(static_cast<unsigned int>(type), methodName);
+    }
 
     const MethodHandle *lookupConstructor(const DSType &revType) {
         return this->lookupMethod(revType, "");
@@ -239,7 +263,7 @@ private:
         if(iter == this->aliasMap.end()) {
             return nullptr;
         }
-        return this->get(iter->second);
+        return &this->get(iter->second);
     }
 
     /**
@@ -283,10 +307,10 @@ private:
     }
 
     void initBuiltinType(TYPE t, const char *typeName, bool extendible, TYPE super, native_type_info_t info) {
-        this->initBuiltinType(t, typeName, extendible, this->get(super), info);
+        this->initBuiltinType(t, typeName, extendible, &this->get(super), info);
     }
 
-    void initBuiltinType(TYPE t, const char *typeName, bool extendible, DSType *super, native_type_info_t info);
+    void initBuiltinType(TYPE t, const char *typeName, bool extendible, const DSType *super, native_type_info_t info);
 
     void initTypeTemplate(TypeTemplate &temp, const char *typeName,
                           std::vector<DSType*> &&elementTypes, native_type_info_t info);

@@ -1063,7 +1063,7 @@ void NodeDumper::dump(const char *fieldName, const Node &node) {
 }
 
 void NodeDumper::dump(const char *fieldName, const DSType &type) {
-    this->dump(fieldName, this->symbolTable.getTypeName(type));
+    this->dump(fieldName, this->symbolTable.types().getTypeNameCStr(type));
 }
 
 void NodeDumper::dump(const char *fieldName, TokenKind kind) {
@@ -1111,7 +1111,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     if(node.isUntyped()) {
         this->append("type:\n");
     } else {
-        this->appendAs("type: %s\n", this->symbolTable.getTypeName(node.getType()));
+        this->appendAs("type: %s\n", this->symbolTable.types().getTypeNameCStr(node.getType()));
     }
 
     if(inArray) {

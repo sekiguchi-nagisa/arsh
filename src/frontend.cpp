@@ -312,7 +312,7 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
         this->enterModule(get<const char*>(ret), std::move(buf));
         return {nullptr, ENTER_MODULE};
     } else if(is<unsigned int>(ret)) {
-        auto &type = this->getSymbolTable().get(get<unsigned int>(ret));
+        auto &type = this->getSymbolTable().types().get(get<unsigned int>(ret));
         assert(type.isModType());
         return {node.create(static_cast<ModType&>(type), false), IN_MODULE};
     }
@@ -362,7 +362,7 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY) {
         node->setMaxVarNum(varNum);
         if(prevType != nullptr && this->prevType->isNothingType()) {
-            this->prevType = &this->getSymbolTable().get(TYPE::Void);
+            this->prevType = &this->getSymbolTable().types().get(TYPE::Void);
             node->setNothing(true);
         }
     }

@@ -156,7 +156,7 @@ void ByteCodeGenerator::emitLdcIns(DSValue &&value) {
 
 void ByteCodeGenerator::emitToString() {
     if(this->handle_STR == nullptr) {
-        this->handle_STR = this->symbolTable.lookupMethod(TYPE::Any, OP_STR);
+        this->handle_STR = this->symbolTable.types().lookupMethod(TYPE::Any, OP_STR);
     }
     this->emitMethodCallIns(0, *this->handle_STR);
 }
@@ -257,7 +257,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
         this->visit(*node.getNodes()[i]);
     }
     this->markLabel(end);
-    this->catchException(begin, end, this->symbolTable.get(TYPE::_ProcGuard));
+    this->catchException(begin, end, this->symbolTable.types().get(TYPE::_ProcGuard));
     this->emit0byteIns(OpCode::HALT);
 
     this->markLabel(labels.back());
@@ -497,7 +497,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     case TypeOpNode::NUM_CAST: {
         auto &type = node.getExprNode().getType();
         assert(type.is(TYPE::Int) || type.is(TYPE::Float));
-        auto *handle = this->symbolTable.lookupMethod(type, type.is(TYPE::Int) ? OP_TO_FLOAT : OP_TO_INT);
+        auto *handle = this->symbolTable.types().lookupMethod(type, type.is(TYPE::Int) ? OP_TO_FLOAT : OP_TO_INT);
         assert(handle != nullptr);
         this->emitMethodCallIns(0, *handle);
         break;
@@ -508,7 +508,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
         break;
     case TypeOpNode::TO_BOOL: {
         this->emitSourcePos(node.getPos());
-        auto *handle = this->symbolTable.lookupMethod(node.getExprNode().getType(), OP_BOOL);
+        auto *handle = this->symbolTable.types().lookupMethod(node.getExprNode().getType(), OP_BOOL);
         assert(handle != nullptr);
         this->emitMethodCallIns(0, *handle);
         break;
@@ -600,7 +600,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
 
         this->visit(*node.getLeftNode());
         this->emit0byteIns(OpCode::DUP);
-        auto *handle = this->symbolTable.lookupMethod(this->symbolTable.get(TYPE::String), "empty");
+        auto *handle = this->symbolTable.types().lookupMethod(this->symbolTable.types().get(TYPE::String), "empty");
         assert(handle != nullptr);
         this->emitMethodCallIns(0, *handle);
 
@@ -674,8 +674,8 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     unsigned int paramSize = node.getArgNodes().size();
 
     this->emitTypeIns(OpCode::NEW, node.getType());
-    if(this->symbolTable.getTypePool().isArrayType(node.getType()) ||
-        this->symbolTable.getTypePool().isMapType(node.getType())) {
+    if(this->symbolTable.types().isArrayType(node.getType()) ||
+       this->symbolTable.types().isMapType(node.getType())) {
         return; // Array, Map type has no constructor
     }
 
@@ -792,7 +792,7 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
         this->visit(node.getExprNode());
         this->markLabel(endLabel);
 
-        this->catchException(beginLabel, endLabel, this->symbolTable.get(TYPE::_ProcGuard));
+        this->catchException(beginLabel, endLabel, this->symbolTable.types().get(TYPE::_ProcGuard));
         this->emit0byteIns(OpCode::HALT);
         this->markLabel(mergeLabel);
     }
@@ -910,7 +910,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
     bool hasDefault = node.hasDefault();
     auto mergeLabel = makeLabel();
     auto elseLabel = makeLabel();
-    auto value = DSValue::create<MapObject>(this->symbolTable.get(TYPE::Void));
+    auto value = DSValue::create<MapObject>(this->symbolTable.types().get(TYPE::Void));
     auto &map = typeAs<MapObject>(value);
 
     this->emitLdcIns(value);
@@ -956,8 +956,8 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
     this->visit(node.getExprNode());
 
     // generate if-else chain
-    auto &eqHandle = *this->symbolTable.lookupMethod(exprType, OP_EQ);
-    auto &matchHandle = *this->symbolTable.lookupMethod(exprType, OP_MATCH);
+    auto &eqHandle = *this->symbolTable.types().lookupMethod(exprType, OP_EQ);
+    auto &matchHandle = *this->symbolTable.types().lookupMethod(exprType, OP_MATCH);
 
     int defaultIndex = -1;
     auto mergeLabel = makeLabel();
@@ -1147,7 +1147,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->curBuilder().finallyLabels.pop_back();
 
         this->markLabel(finallyLabel);
-        this->catchException(beginLabel, finallyLabel, this->symbolTable.get(TYPE::_Root),
+        this->catchException(beginLabel, finallyLabel, this->symbolTable.types().get(TYPE::_Root),
                              blockNode.getBaseIndex(), maxLocalSize);
         this->visit(*node.getFinallyNode());
         this->emit0byteIns(OpCode::EXIT_FINALLY);
@@ -1273,7 +1273,7 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     if(!code) {
         this->reportError<TooLargeUdc>(node, node.getCmdName().c_str());
     }
-    auto func = DSValue::create<FuncObject>(this->symbolTable.get(TYPE::Void), std::move(code));
+    auto func = DSValue::create<FuncObject>(this->symbolTable.types().get(TYPE::Void), std::move(code));
 
     this->emitLdcIns(func);
     this->emit2byteIns(OpCode::STORE_GLOBAL, node.getUdcIndex());
@@ -1430,7 +1430,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             if(isTypeOp(code)) {
                 unsigned int v = read24(c.getCode(), i + 1);
                 i += 3;
-                fprintf(this->fp, "  %s", this->symbolTable.getTypeName(this->symbolTable.get(v)));
+                fprintf(this->fp, "  %s", this->symbolTable.types().getTypeNameCStr(this->symbolTable.types().get(v)));
             } else {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD || code == OpCode::FORK) {
@@ -1508,14 +1508,14 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             case DSValueKind::INVALID:
                 break;
             default: {
-                const auto &type = this->symbolTable.get(v.getTypeID());
+                const auto &type = this->symbolTable.types().get(v.getTypeID());
                 if(v.isObject()) {
                     if(isa<FuncObject>(v.get())) {
                         (type.isModType() ? this->mods : this->funcs).push_back(
                                 std::ref(cast<FuncObject>(v.get())->getCode()));
                     }
                 }
-                fprintf(this->fp, "%s %s", this->symbolTable.getTypeName(type), value.c_str());
+                fprintf(this->fp, "%s %s", this->symbolTable.types().getTypeNameCStr(type), value.c_str());
                 break;
             }
             }
@@ -1539,7 +1539,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
     for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
         const auto &e = c.getExceptionEntries()[i];
         fprintf(this->fp, "  begin: %d, end: %d, type: %s, dest: %d, offset: %d, size: %d\n",
-                e.begin, e.end, symbolTable.getTypeName(*e.type), e.dest, e.localOffset, e.localSize);
+                e.begin, e.end, symbolTable.types().getTypeNameCStr(*e.type), e.dest, e.localOffset, e.localSize);
     }
 
     fputc('\n', this->fp);

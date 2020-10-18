@@ -89,7 +89,7 @@ private:
     void addHandler(const char *attributeName, DSType &type, AttributeHandler &&handler);
 
     void addHandler(const char *attributeName, TYPE type, AttributeHandler &&handler) {
-        this->addHandler(attributeName, this->symbolTable.get(type), std::move(handler));
+        this->addHandler(attributeName, this->symbolTable.types().get(type), std::move(handler));
     }
 
     void addAlias(const char *alias, const char *attr);
@@ -117,8 +117,8 @@ private:
      * @return
      */
     DSType &getMapType() {
-        return *this->symbolTable.createMapType(
-                this->symbolTable.get(TYPE::String), this->symbolTable.get(TYPE::String)).take();
+        return *this->symbolTable.types().createMapType(
+                this->symbolTable.types().get(TYPE::String), this->symbolTable.types().get(TYPE::String)).take();
     }
 
     void createError(const Node &node, const std::string &str) {
@@ -141,7 +141,7 @@ static bool checkDirectiveName(ApplyNode &node) {
 
 DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &symbolTable) :
         TypeChecker(symbolTable, false, nullptr), sourceName(sourceName) {
-    this->setVarName("0", this->symbolTable.get(TYPE::String));
+    this->setVarName("0", this->symbolTable.types().get(TYPE::String));
 }
 
 static bool isIgnoredUser(const std::string &text) {

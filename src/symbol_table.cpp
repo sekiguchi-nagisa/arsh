@@ -348,7 +348,7 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path,
 ModType& SymbolTable::createModType(const std::string &fullpath) {
     std::string name = ModType::toModName(this->cur().getModID());
     auto &modType = this->typePool.newType<ModType>(std::move(name),
-            this->get(TYPE::Any), this->cur().getModID(),
+            this->typePool.get(TYPE::Any), this->cur().getModID(),
             this->cur().global().getHandleMap(), this->cur().getChilds());
     this->curModule = nullptr;
     this->modLoader.addModType(fullpath, modType);
@@ -429,7 +429,7 @@ static const FieldHandle *lookupUdcFromModule(const SymbolTable &symbolTable,
     for(unsigned int i = 0; i < size; i++) {
         auto e = modType.getChildAt(i);
         if(isGlobal(e)) {
-            auto &type = symbolTable.get(toTypeId(e));
+            auto &type = symbolTable.types().get(toTypeId(e));
             assert(type.isModType());
             handle = static_cast<const ModType&>(type).find(fullname);
             if(handle) {

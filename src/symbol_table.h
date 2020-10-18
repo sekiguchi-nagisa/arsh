@@ -629,22 +629,6 @@ public:
 
     const FieldHandle *lookupField(DSType &recvType, const std::string &fieldName) const;
 
-    const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName) {
-        return this->typePool.lookupMethod(recvType, methodName);
-    }
-
-    const MethodHandle *lookupMethod(unsigned int typeId, const std::string &methodName) {
-        return this->lookupMethod(this->get(typeId), methodName);
-    }
-
-    const MethodHandle *lookupMethod(TYPE type, const std::string &methodName) {
-        return this->lookupMethod(static_cast<unsigned int>(type), methodName);
-    }
-
-    const MethodHandle *lookupConstructor(const DSType &recvType) {
-        return this->typePool.lookupConstructor(recvType);
-    }
-
     /**
      * lookup user-defined command at runtime
      * if type is not null, saerch from module.
@@ -731,108 +715,12 @@ public:
     }
 
     // for type lookup
-    const TypePool &getTypePool() const {
+    const TypePool &types() const {
         return this->typePool;
     }
 
-    TypePool &getTypePool() {
+    TypePool &types() {
         return this->typePool;
-    }
-
-    /**
-     * unsafe api. normally unused
-     * @param index
-     * @return
-     */
-    DSType &get(unsigned int index) const {
-        return *this->typePool.get(index);
-    }
-
-    DSType &get(TYPE type) const {
-        return this->get(static_cast<unsigned int>(type));
-    }
-
-    // for reified type.
-    const TypeTemplate &getArrayTemplate() const {
-        return this->typePool.getArrayTemplate();
-    }
-
-    const TypeTemplate &getMapTemplate() const {
-        return this->typePool.getMapTemplate();
-    }
-
-    const TypeTemplate &getTupleTemplate() const {
-        return this->typePool.getTupleTemplate();
-    }
-
-    const TypeTemplate &getOptionTemplate() const {
-        return this->typePool.getOptionTemplate();
-    }
-
-    /**
-     *
-     * @param typeName
-     * @return
-     */
-    TypeOrError getType(const std::string &typeName) const {
-        return this->typePool.getType(typeName);
-    }
-
-    /**
-     * get template type.
-     * @param typeName
-     * @return
-     */
-    TypeTempOrError getTypeTemplate(const std::string &typeName) const {
-        return this->typePool.getTypeTemplate(typeName);
-    }
-
-    /**
-     * if type template is Tuple, call createTupleType()
-     */
-    TypeOrError createReifiedType(const TypeTemplate &typeTemplate, std::vector<DSType *> &&elementTypes) {
-        return this->typePool.createReifiedType(typeTemplate, std::move(elementTypes));
-    }
-
-    TypeOrError createArrayType(DSType &elementType) {
-        return this->createReifiedType(this->getArrayTemplate(), {&elementType});
-    }
-
-    TypeOrError createMapType(DSType &keyType, DSType &valueType) {
-        return this->createReifiedType(this->getMapTemplate(), {&keyType, &valueType});
-    }
-
-    TypeOrError createOptionType(DSType &elementType) {
-        return this->createReifiedType(this->getOptionTemplate(), {&elementType});
-    }
-
-    TypeOrError createTupleType(std::vector<DSType *> &&elementTypes) {
-        return this->typePool.createTupleType(std::move(elementTypes));
-    }
-
-    /**
-     *
-     * @param returnType
-     * @param paramTypes
-     * @return
-     * must be FunctionType
-     */
-    TypeOrError createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
-        return this->typePool.createFuncType(returnType, std::move(paramTypes));
-    }
-
-    /**
-     * set type name alias. if alias name has alreadt defined, return false
-     * @param alias
-     * @param targetType
-     * @return
-     */
-    bool setAlias(const std::string &alias, const DSType &targetType) {
-        return this->typePool.setAlias(std::string(alias), targetType);
-    }
-
-    const char *getTypeName(const DSType &type) const {
-        return this->typePool.getTypeName(type).c_str();
     }
 };
 

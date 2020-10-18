@@ -154,7 +154,7 @@ bool VM::OP_PRINT(DSState &state) {
     assert(!stackTopType.isVoidType());
     auto ref = state.stack.peek().asStrRef();
     std::string value = ": ";
-    value += state.symbolTable.getTypeName(stackTopType);
+    value += state.symbolTable.types().getTypeNameCStr(stackTopType);
     value += " = ";
     value.append(ref.data(), ref.size());
     value += "\n";
@@ -165,24 +165,24 @@ bool VM::OP_PRINT(DSState &state) {
 }
 
 static bool instanceOf(const TypePool &pool, const DSValue &value, const DSType &targetType) {
-    return targetType.isSameOrBaseTypeOf(*pool.get(value.getTypeID()));
+    return targetType.isSameOrBaseTypeOf(pool.get(value.getTypeID()));
 }
 
 bool VM::OP_INSTANCE_OF(DSState &state) {
     auto &type = state.stack.pop().asType();
     auto value = state.stack.pop();
-    state.stack.push(DSValue::createBool(::instanceOf(state.symbolTable.getTypePool(), value, type)));
+    state.stack.push(DSValue::createBool(::instanceOf(state.symbolTable.types(), value, type)));
     return true;
 }
 
 bool VM::OP_CHECK_CAST(DSState &state) {
     auto &type = state.stack.pop().asType();
-    if(!::instanceOf(state.symbolTable.getTypePool(), state.stack.peek(), type)) {
-        auto &stackTopType = state.symbolTable.get(state.stack.pop().getTypeID());
+    if(!::instanceOf(state.symbolTable.types(), state.stack.peek(), type)) {
+        auto &stackTopType = state.symbolTable.types().get(state.stack.pop().getTypeID());
         std::string str("cannot cast `");
-        str += state.symbolTable.getTypeName(stackTopType);
+        str += state.symbolTable.types().getTypeNameCStr(stackTopType);
         str += "' to `";
-        str += state.symbolTable.getTypeName(type);
+        str += state.symbolTable.types().getTypeNameCStr(type);
         str += "'";
         raiseError(state, TYPE::TypeCastError, std::move(str));
         return false;
@@ -279,11 +279,11 @@ bool VM::OP_SET_SECOND(DSState &state) {
 
 void VM::pushNewObject(DSState &state, const DSType &type) {
     DSValue value;
-    if(state.symbolTable.getTypePool().isArrayType(type)) {
+    if(state.symbolTable.types().isArrayType(type)) {
         value = DSValue::create<ArrayObject>(type);
-    } else if(state.symbolTable.getTypePool().isMapType(type)) {
+    } else if(state.symbolTable.types().isMapType(type)) {
         value = DSValue::create<MapObject>(type);
-    } else if(state.symbolTable.getTypePool().isTupleType(type)) {
+    } else if(state.symbolTable.types().isTupleType(type)) {
         value = DSValue::create<BaseObject>(type);
     } else if(!type.isRecordType()) {
         value = DSValue::createDummy(type);
@@ -365,7 +365,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
 
     char buf[256];
     std::string str;
-    auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
+    auto obj = DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray));
     auto &array = typeAs<ArrayObject>(obj);
 
     while(true) {
@@ -568,7 +568,7 @@ static bool lookupUdc(const DSState &state, const char *name, Command &cmd, bool
         auto key = code->getSourceName();
         auto *e = state.symbolTable.getModLoader().find(key);
         if(e && e->isModule()) {
-            modType = static_cast<const ModType*>(&state.symbolTable.get(e->getTypeId()));
+            modType = static_cast<const ModType*>(&state.symbolTable.types().get(e->getTypeId()));
         }
     }
     auto handle = state.symbolTable.lookupUdc(modType, name);
@@ -576,7 +576,7 @@ static bool lookupUdc(const DSState &state, const char *name, Command &cmd, bool
             &typeAs<FuncObject>(state.getGlobal(handle->getIndex())) : nullptr;
 
     if(udcObj) {
-        auto &type = state.symbolTable.get(udcObj->getTypeID());
+        auto &type = state.symbolTable.types().get(udcObj->getTypeID());
         if(type.isModType()) {
             cmd.kind = Command::MODULE;
             cmd.modType = static_cast<const ModType*>(&type);
@@ -1076,7 +1076,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
      * +------+-------+-------+
      */
     DSValue value = state.stack.pop();
-    auto &valueType = state.symbolTable.get(value.getTypeID());
+    auto &valueType = state.symbolTable.types().get(value.getTypeID());
 
     auto &argv = typeAs<ArrayObject>(state.stack.peekByOffset(1));
     if(valueType.is(TYPE::String)) {  // String
@@ -1379,7 +1379,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(PUSH_TYPE) {
             unsigned int v = read24(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 3;
-            auto &type = state.symbolTable.get(v);
+            auto &type = state.symbolTable.types().get(v);
             state.stack.push(DSValue::createType(type));
             vmnext;
         }
@@ -1484,7 +1484,7 @@ bool VM::mainLoop(DSState &state) {
         vmcase(NEW) {
             unsigned int v = read24(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 3;
-            auto &type = state.symbolTable.get(v);
+            auto &type = state.symbolTable.types().get(v);
             pushNewObject(state, type);
             vmnext;
         }
@@ -1651,7 +1651,7 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(NEW_CMD) {
             auto v = state.stack.pop();
-            auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray));
+            auto obj = DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray));
             auto &argv = typeAs<ArrayObject>(obj);
             argv.append(std::move(v));
             state.stack.push(std::move(obj));
@@ -1752,7 +1752,7 @@ bool VM::handleException(DSState &state) {
 
             // search exception entry
             const unsigned int occurredPC = state.stack.pc() - 1;
-            const DSType &occurredType = state.symbolTable.get(state.stack.getThrownObject().getTypeID());
+            const DSType &occurredType = state.symbolTable.types().get(state.stack.getThrownObject().getTypeID());
 
             for(unsigned int i = 0; cc->getExceptionEntries()[i].type != nullptr; i++) {
                 const ExceptionEntry &entry = cc->getExceptionEntries()[i];
@@ -1881,7 +1881,7 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
     static auto cmdTrampoline = initCmdTrampoline();
 
     DSValue ret;
-    auto obj = DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray), std::move(argv));
+    auto obj = DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray), std::move(argv));
     prepareArguments(state.stack, std::move(obj), {0, {}});
     if(windStackFrame(state, 1, 1, &cmdTrampoline)) {
         ret = startEval(state, EvalOP::SKIP_TERM | EvalOP::PROPAGATE | EvalOP::HAS_RETURN, nullptr);
@@ -1923,7 +1923,7 @@ DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&rec
 DSValue VM::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     GUARD_RECURSION(state);
 
-    auto &type = state.symbolTable.get(funcObj.getTypeID());
+    auto &type = state.symbolTable.types().get(funcObj.getTypeID());
     unsigned int size = prepareArguments(state.stack, std::move(funcObj), std::move(args));
 
     DSValue ret;
@@ -1952,7 +1952,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
         return DS_ERROR_KIND_SUCCESS;
     }
 
-    auto &errorType = state.symbolTable.get(except.getTypeID());
+    auto &errorType = state.symbolTable.types().get(except.getTypeID());
     DSErrorKind kind = DS_ERROR_KIND_RUNTIME_ERROR;
     state.setExitStatus(1);
     if(errorType.is(TYPE::_ShellExit)) {
@@ -1965,7 +1965,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
     // get error line number
     unsigned int errorLineNum = 0;
     std::string sourceName;
-    if(state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
+    if(state.symbolTable.types().get(TYPE::Error).isSameOrBaseTypeOf(errorType) || kind != DS_ERROR_KIND_RUNTIME_ERROR) {
         auto &obj = typeAs<ErrorObject>(except);
         errorLineNum = getOccurredLineNum(obj.getStackTrace());
         const char *ptr = getOccurredSourceName(obj.getStackTrace());
@@ -1976,8 +1976,8 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
     auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
     if(kind == DS_ERROR_KIND_RUNTIME_ERROR) {
         fputs("[runtime error]\n", stderr);
-        const bool bt = state.symbolTable.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
-        auto *handle = state.symbolTable.lookupMethod(errorType, bt ? "backtrace" : OP_STR);
+        const bool bt = state.symbolTable.types().get(TYPE::Error).isSameOrBaseTypeOf(errorType);
+        auto *handle = state.symbolTable.types().lookupMethod(errorType, bt ? "backtrace" : OP_STR);
 
         DSValue ret = VM::callMethod(state, handle, DSValue(except), makeArgs());
         if(state.hasError()) {
@@ -2000,7 +2000,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
                 .kind = kind,
                 .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
                 .lineNum = errorLineNum,
-                .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? state.symbolTable.getTypeName(errorType) : "")
+                .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? state.symbolTable.types().getTypeNameCStr(errorType) : "")
         };
     }
     return kind;

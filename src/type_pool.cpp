@@ -52,10 +52,10 @@ TypePool::TypePool() {
     this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, TYPE::Any, info_UnixFDType());
 
     // initialize type template
-    std::vector<DSType *> elements = {this->get(TYPE::Any)};
+    std::vector<DSType *> elements = {&this->get(TYPE::Any)};
     this->initTypeTemplate(this->arrayTemplate, TYPE_ARRAY, std::move(elements), info_ArrayType());
 
-    elements = {this->get(TYPE::_Value), this->get(TYPE::Any)};
+    elements = {&this->get(TYPE::_Value), &this->get(TYPE::Any)};
     this->initTypeTemplate(this->mapTemplate, TYPE_MAP, std::move(elements), info_MapType());
 
     elements = std::vector<DSType *>();
@@ -66,7 +66,7 @@ TypePool::TypePool() {
 
     // init string array type(for command argument)
     {
-        std::vector<DSType *> types = {this->get(TYPE::String)};
+        std::vector<DSType *> types = {&this->get(TYPE::String)};
         auto checked = this->createReifiedType(this->getArrayTemplate(), std::move(types));    // TYPE::StringArray
         (void) checked;
         assert(checked);
@@ -181,7 +181,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     if(hasFlag(attr, TypeAttr::OPTION_TYPE)) {
         auto *type = elementTypes[0];
         if(type->isVoidType() || type->isNothingType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type).c_str());
+            RAISE_TL_ERROR(InvalidElement, this->getTypeNameCStr(*type));
         } else if(type->isOptionType()) {
             return Ok(type);
         }
@@ -195,7 +195,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
     DSType *type = this->get(typeName);
     if(type == nullptr) {
-        DSType *superType = hasFlag(attr, TypeAttr::OPTION_TYPE) ? nullptr : this->get(TYPE::Any);
+        DSType *superType = hasFlag(attr, TypeAttr::OPTION_TYPE) ? nullptr : &this->get(TYPE::Any);
         auto &reified = this->newType<ReifiedType>(
                 std::move(typeName),
                 typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
@@ -216,7 +216,7 @@ TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
     std::string typeName(this->toTupleTypeName(elementTypes));
     DSType *type = this->get(typeName);
     if(type == nullptr) {
-        DSType *superType = this->get(TYPE::Any);
+        auto &superType = this->get(TYPE::Any);
         auto &tuple = this->newType<TupleType>(
                 std::move(typeName),
                 this->tupleTemplate.getInfo(), superType, std::move(elementTypes));
@@ -266,7 +266,7 @@ public:
 
 TypeOrError TypeDecoder::decode() {
     switch(*(this->cursor++)) {
-#define GEN_CASE(ENUM) case HandleInfo::ENUM: return Ok(this->pool.get(TYPE::ENUM));
+#define GEN_CASE(ENUM) case HandleInfo::ENUM: return Ok(&this->pool.get(TYPE::ENUM));
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
     case HandleInfo::Array: {
@@ -465,7 +465,7 @@ std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<D
 TypeOrError TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
     for(DSType *type : elementTypes) {
         if(type->isVoidType() || type->isNothingType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeName(*type).c_str());
+            RAISE_TL_ERROR(InvalidElement, this->getTypeNameCStr(*type));
         }
     }
     return Ok(static_cast<DSType *>(nullptr));
@@ -488,12 +488,12 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t, const std::vector
         if(acceptType->is(TYPE::Any) && elementType->isOptionType()) {
             continue;
         }
-        RAISE_TL_ERROR(InvalidElement, this->getTypeName(*elementType).c_str());
+        RAISE_TL_ERROR(InvalidElement, this->getTypeNameCStr(*elementType));
     }
     return Ok(static_cast<DSType *>(nullptr));
 }
 
-void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool extendible, ydsh::DSType *super,
+void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool extendible, const ydsh::DSType *super,
                                ydsh::native_type_info_t info) {
     // create and register type
     auto &type = this->newType<BuiltinType>(

@@ -305,8 +305,8 @@ private:
     std::vector<DSType *> paramTypes;
 
 public:
-    FunctionType(unsigned int id, DSType *superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
-            DSType(id, superType, TypeAttr::FUNC_TYPE),
+    FunctionType(unsigned int id, const DSType &superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
+            DSType(id, &superType, TypeAttr::FUNC_TYPE),
             returnType(returnType), paramTypes(std::move(paramTypes)) {}
 
     ~FunctionType() override = default;
@@ -379,7 +379,7 @@ protected:
     const native_type_info_t info;
 
 public:
-    BuiltinType(unsigned int id, DSType *superType, native_type_info_t info, TypeAttr attribute) :
+    BuiltinType(unsigned int id, const DSType *superType, native_type_info_t info, TypeAttr attribute) :
             DSType(id, superType, attribute), info(info) {}
 
     ~BuiltinType() override = default;
@@ -401,9 +401,9 @@ protected:
 
 public:
     /**
-     * super type is AnyType or VariantType.
+     * super type is AnyType or null (if represents Option type)
      */
-    ReifiedType(unsigned int id, native_type_info_t info, DSType *superType,
+    ReifiedType(unsigned int id, native_type_info_t info, const DSType *superType,
                 std::vector<DSType *> &&elementTypes, TypeAttr attribute = TypeAttr()) :
             BuiltinType(id, superType, info, attribute | TypeAttr::REIFIED_TYPE),
             elementTypes(std::move(elementTypes)) { }
@@ -424,7 +424,7 @@ public:
     /**
      * superType is AnyType ot VariantType
      */
-    TupleType(unsigned int id, native_type_info_t info, DSType *superType, std::vector<DSType *> &&types);
+    TupleType(unsigned int id, native_type_info_t info, const DSType &superType, std::vector<DSType *> &&types);
 
     /**
      * return types.size()
@@ -436,8 +436,8 @@ public:
 
 class ErrorType : public DSType {
 public:
-    ErrorType(unsigned int id, DSType *superType) :
-            DSType(id, superType, TypeAttr::EXTENDIBLE) {}
+    ErrorType(unsigned int id, const DSType &superType) :
+            DSType(id, &superType, TypeAttr::EXTENDIBLE) {}
 };
 
 /**

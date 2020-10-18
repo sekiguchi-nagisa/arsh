@@ -167,7 +167,7 @@ static void bindVariable(DSState &state, const char *varName,
 
 static void bindVariable(DSState &state, const char *varName, DSValue &&value, FieldAttribute attribute) {
     auto id = value.getTypeID();
-    return bindVariable(state, varName, &state.symbolTable.get(id), std::move(value), attribute);
+    return bindVariable(state, varName, &state.symbolTable.types().get(id), std::move(value), attribute);
 }
 
 static void bindVariable(DSState &state, const char *varName, DSValue &&value) {
@@ -202,8 +202,8 @@ static void initBuiltinVar(DSState &state) {
      * must be Map_Object
      */
     bindVariable(state, "reply", DSValue::create<MapObject>(
-            *state.symbolTable.createMapType(state.symbolTable.get(TYPE::String),
-                    state.symbolTable.get(TYPE::String)).take()));
+            *state.symbolTable.types().createMapType(state.symbolTable.types().get(TYPE::String),
+                    state.symbolTable.types().get(TYPE::String)).take()));
 
     /**
      * process id of current process.
@@ -232,14 +232,14 @@ static void initBuiltinVar(DSState &state) {
      * maintain completion result.
      * must be Array_Object
      */
-    bindVariable(state, "COMPREPLY", DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray)));
+    bindVariable(state, "COMPREPLY", DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray)));
 
     /**
      * contains latest executed pipeline status.
      * must be Array_Object
      */
     bindVariable(state, "PIPESTATUS", DSValue::create<ArrayObject>(
-            *state.symbolTable.createArrayType(state.symbolTable.get(TYPE::Int)).take()));
+            *state.symbolTable.types().createArrayType(state.symbolTable.types().get(TYPE::Int)).take()));
 
     /**
      * contains exit status of most recent executed process. ($?)
@@ -257,7 +257,7 @@ static void initBuiltinVar(DSState &state) {
      * contains script argument(exclude script name). ($@)
      * must be Array_Object
      */
-    bindVariable(state, "@", DSValue::create<ArrayObject>(state.symbolTable.get(TYPE::StringArray)));
+    bindVariable(state, "@", DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray)));
 
     /**
      * contains size of argument. ($#)
@@ -334,7 +334,7 @@ static void initBuiltinVar(DSState &state) {
      * dummy object for signal handler setting
      * must be DSObject
      */
-    bindVariable(state, "SIG", DSValue::createDummy(state.symbolTable.get(TYPE::Signals)));
+    bindVariable(state, "SIG", DSValue::createDummy(state.symbolTable.types().get(TYPE::Signals)));
 
     /**
      * must be UnixFD_Object
@@ -897,7 +897,7 @@ unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const cha
         return 0;
     }
 
-    auto &type = st->symbolTable.get(st->editOpReply.getTypeID());
+    auto &type = st->symbolTable.types().get(st->editOpReply.getTypeID());
     switch(op) {
     case DS_EDIT_HIST_SIZE:
         if(type.is(TYPE::Int)) {

@@ -104,16 +104,17 @@ struct TypeFactory<Func_t<R, P...>> {
 
 class TypeTest : public ::testing::Test {
 public:
-    SymbolTable pool;
+    SymbolTable symbolTable;
+    TypePool &pool;
     TypeChecker checker;
 
 public:
-    TypeTest() : checker(this->pool, false, nullptr) {}
+    TypeTest() : pool(this->symbolTable.types()), checker(this->symbolTable, false, nullptr) {}
 
     virtual void assertTypeName(const char *typeName, DSType &type) {
         std::string name(typeName);
         // assert type name
-        ASSERT_EQ(name, this->pool.getTypeName(type));
+        ASSERT_EQ(name, this->pool.getTypeNameCStr(type));
 
         // assert type
         auto ret = this->pool.getType(name);
@@ -124,7 +125,7 @@ public:
     virtual void assertSuperType(DSType &type, DSType &superType) {
         auto *actualSuperType = type.getSuperType();
         ASSERT_TRUE(actualSuperType != nullptr);
-        ASSERT_STREQ(this->pool.getTypeName(*actualSuperType), this->pool.getTypeName(superType));
+        ASSERT_STREQ(this->pool.getTypeNameCStr(*actualSuperType), this->pool.getTypeNameCStr(superType));
         ASSERT_TRUE(*actualSuperType == superType);
     }
 
@@ -136,9 +137,9 @@ public:
 
     virtual void assertAlias(const char *aliasName, DSType &type) {
         std::string name(aliasName);
-        ASSERT_NE(name, this->pool.getTypeName(type));
+        ASSERT_NE(name, this->pool.getTypeNameCStr(type));
 
-        this->pool.setAlias(name, type);
+        this->pool.setAlias(std::string(name), type);
         auto ret = this->pool.getType(name);
         ASSERT_TRUE(ret);
         ASSERT_TRUE(*ret.take() == type);
@@ -271,7 +272,7 @@ TEST_F(TypeTest, typeToken) {
 
 TEST_F(TypeTest, pool) {
     auto &t = this->toType<Array_t<Int_t>>();
-    std::string typeName = this->pool.getTypeName(t);
+    std::string typeName = this->pool.getTypeNameCStr(t);
     std::string alias = "IArray";
     ASSERT_NO_FATAL_FAILURE(this->assertAlias(alias.c_str(), t));
 //    this->pool.abort();
