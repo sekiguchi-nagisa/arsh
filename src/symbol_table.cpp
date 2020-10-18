@@ -24,21 +24,29 @@
 
 namespace ydsh {
 
+HandleOrError Scope::add(const std::string &symbolName, const FieldHandle &handle) {
+    auto pair = this->handleMap.emplace(symbolName, handle);
+    if(!pair.second) {
+        return Err(SymbolError::DEFINED);
+    }
+    return Ok(&pair.first->second);
+}
+
 // ########################
 // ##     BlockScope     ##
 // ########################
 
 HandleOrError BlockScope::add(const std::string &symbolName, FieldHandle handle) {
-    auto pair = this->handleMap.insert({symbolName, handle});
-    if(!pair.second) {
-        return Err(SymbolError::DEFINED);
+    auto ret = Scope::add(symbolName, handle);
+    if(!ret) {
+        return ret;
     }
-    assert(pair.first->second);
+    assert(handle);
     this->curVarIndex++;
     if(this->getCurVarIndex() > UINT8_MAX) {
         return Err(SymbolError::LIMIT);
     }
-    return Ok(&pair.first->second);
+    return ret;
 }
 
 // #########################
@@ -52,15 +60,6 @@ GlobalScope::GlobalScope(unsigned int &gvarCount) : gvarCount(gvarCount) {
         this->handleMap.emplace(std::move(name), FieldHandle());
     }
 }
-
-HandleOrError GlobalScope::add(const std::string &symbolName, const FieldHandle &handle) {
-    auto pair = this->handleMap.emplace(symbolName, handle);
-    if(!pair.second) {
-        return Err(SymbolError::DEFINED);
-    }
-    return Ok(&pair.first->second);
-}
-
 
 // #########################
 // ##     ModuleScope     ##

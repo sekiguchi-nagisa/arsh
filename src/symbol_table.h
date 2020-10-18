@@ -25,8 +25,19 @@
 
 namespace ydsh {
 
+enum class SymbolError {
+    DEFINED,
+    LIMIT,
+};
+
+using HandleOrError = Result<const FieldHandle *, SymbolError>;
+
+class ModuleScope;
+
 class Scope {
 protected:
+    friend class ModuleScope;
+
     std::unordered_map<std::string, FieldHandle> handleMap;
 
     ~Scope() = default;
@@ -57,16 +68,9 @@ protected:
         }
         return nullptr;
     }
+
+    HandleOrError add(const std::string &symbolName, const FieldHandle &handle);
 };
-
-enum class SymbolError {
-    DEFINED,
-    LIMIT,
-};
-
-using HandleOrError = Result<const FieldHandle *, SymbolError>;
-
-class ModuleScope;
 
 class BlockScope : public Scope {
 private:
@@ -128,8 +132,6 @@ private:
         }
         return ret;
     }
-
-    HandleOrError add(const std::string &symbolName, const FieldHandle &handle);
 
     void abort(unsigned int commitID) {
         for(auto iter = this->handleMap.begin(); iter != this->handleMap.end();) {
