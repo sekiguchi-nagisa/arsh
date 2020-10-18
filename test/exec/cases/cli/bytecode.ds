@@ -71,3 +71,39 @@ Exception Table:"
 
 var cmd = 'function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}'
 $expect("$(ds --dump-code -c $cmd)", 0, $out)
+
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 44
+  max stack depth: 2
+  number of local variable: 2
+  number of global variable: 54
+Code:
+   0: PUSH_INT  0
+   2: STORE_LOCAL  0
+   4: GOTO  18
+   9: LOAD_LOCAL  0
+  11: PUSH_INT  1
+  13: CALL_BUILTIN2  2  %add
+  16: STORE_LOCAL  0
+  18: LOAD_LOCAL  0
+  20: PUSH_INT  2
+  22: CALL_BUILTIN2  2  %lt
+  25: BRANCH  15
+  28: PUSH_INT  34
+  30: STORE_LOCAL  1
+  32: RECLAIM_LOCAL  1  1
+  35: GOTO  9
+  40: RECLAIM_LOCAL  0  1
+  43: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+Line Number Table:
+  lineNum: 1, address: 13
+Exception Table:"
+
+$cmd = 'for(var i = 0; $i < 2; $i++) { var b = 34; }'
+$expect("$(ds --dump-code -c $cmd)", 0, $out)

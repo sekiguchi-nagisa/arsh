@@ -71,7 +71,6 @@ class ModuleScope;
 class BlockScope : public Scope {
 private:
     unsigned int curVarIndex;
-    unsigned int shadowCount;
 
     friend class ModuleScope;
 
@@ -81,7 +80,7 @@ public:
     BlockScope(BlockScope&&) = default;
 
     explicit BlockScope(unsigned int curVarIndex = 0) :
-            curVarIndex(curVarIndex), shadowCount(0) { }
+            curVarIndex(curVarIndex) { }
 
     ~BlockScope() = default;
 
@@ -90,7 +89,7 @@ public:
     }
 
     unsigned int getVarSize() const {
-        return this->handleMap.size() - this->shadowCount;
+        return this->handleMap.size();
     }
 
     unsigned int getBaseIndex() const {
@@ -273,11 +272,6 @@ public:
     HandleOrError addGlobalAlias(const std::string &symbolName, const FieldHandle &handle) {
         FieldHandle newHandle(this->commitID, handle, this->modID);
         return this->globalScope.add(symbolName, newHandle);
-    }
-
-    bool disallowShadowing(const std::string &symbolName) {
-        assert(!this->inGlobalScope());
-        return static_cast<bool>(this->scopes.back().add(symbolName, FieldHandle()));
     }
 
     void closeBuiltin() {
@@ -601,10 +595,6 @@ public:
     HandleOrError newHandle(const std::string &symbolName, const DSType &type, FieldAttribute attribute);
 
     HandleOrError addGlobalAlias(const std::string &symbolName, const FieldHandle &handle);
-
-    bool disallowShadowing(const std::string &symbolName) {
-        return this->cur().disallowShadowing(symbolName);
-    }
 
     void closeBuiltin() {
         this->root().closeBuiltin();

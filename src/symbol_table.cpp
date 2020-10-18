@@ -33,11 +33,8 @@ HandleOrError BlockScope::add(const std::string &symbolName, FieldHandle handle)
     if(!pair.second) {
         return Err(SymbolError::DEFINED);
     }
-    if(pair.first->second) {
-        this->curVarIndex++;
-    } else {
-        this->shadowCount++;
-    }
+    assert(pair.first->second);
+    this->curVarIndex++;
     if(this->getCurVarIndex() > UINT8_MAX) {
         return Err(SymbolError::LIMIT);
     }

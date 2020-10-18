@@ -828,29 +828,29 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
 
 void TypeChecker::visitLoopNode(LoopNode &node) {
     {
-        auto scope1 = this->inScope();
+        auto scope = this->inScope();
         this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refInitNode());
 
-        {
-            auto scope2 = this->inScope();
-            if(node.getInitNode().is(NodeKind::VarDecl)) {
-                bool b = this->symbolTable.disallowShadowing(cast<VarDeclNode>(node.getInitNode()).getVarName());
-                (void) b;
-                assert(b);
-            }
-
-            if(node.getCondNode() != nullptr) {
-                this->checkTypeWithCoercion(this->typePool.get(TYPE::Boolean), node.refCondNode());
-            }
-            this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refIterNode());
-
-            {
-                auto loop = this->inLoop();
-                this->checkTypeWithCurrentScope(node.getBlockNode());
-                auto &type = this->resolveCoercionOfJumpValue();
-                node.setType(type);
-            }
+        if(node.getCondNode() != nullptr) {
+            this->checkTypeWithCoercion(this->typePool.get(TYPE::Boolean), node.refCondNode());
         }
+        this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refIterNode());
+
+        {
+            auto loop = this->inLoop();
+            this->checkTypeWithCurrentScope(node.getBlockNode());
+            auto &type = this->resolveCoercionOfJumpValue();
+            node.setType(type);
+        }
+    }
+
+    // adjust local offset
+    if(node.getInitNode().is(NodeKind::VarDecl)) {
+        auto &blockNode = node.getBlockNode();
+        unsigned int baseIndex = blockNode.getBaseIndex();
+        unsigned int varSize = blockNode.getVarSize();
+        blockNode.setBaseIndex(baseIndex + 1);
+        blockNode.setVarSize(varSize - 1);
     }
 
     if(!node.getBlockNode().getType().isNothingType()) {    // insert continue to block end
