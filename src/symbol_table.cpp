@@ -24,6 +24,20 @@
 
 namespace ydsh {
 
+// ###################
+// ##     Scope     ##
+// ###################
+
+const FieldHandle * Scope::lookup(const std::string &symbolName) const {
+    for(auto *scope = this; scope != nullptr; scope = scope->prev.get()) {
+        auto *handle = scope->find(symbolName);
+        if(handle) {
+            return handle;
+        }
+    }
+    return nullptr;
+}
+
 HandleOrError Scope::add(const std::string &symbolName, const FieldHandle &handle) {
     auto pair = this->handleMap.emplace(symbolName, handle);
     if(!pair.second) {
@@ -36,8 +50,10 @@ HandleOrError Scope::add(const std::string &symbolName, const FieldHandle &handl
 // ##     BlockScope     ##
 // ########################
 
-HandleOrError BlockScope::add(const std::string &symbolName, FieldHandle handle) {
-    auto ret = Scope::add(symbolName, handle);
+HandleOrError BlockScope::addNew(unsigned int commitID, const std::string &symbolName, const DSType &type,
+                                 FieldAttribute attribute, unsigned short modID) {
+    FieldHandle handle(commitID, type, this->getCurVarIndex(), attribute, modID);
+    auto ret = this->add(symbolName, handle);
     if(!ret) {
         return ret;
     }
@@ -53,27 +69,29 @@ HandleOrError BlockScope::add(const std::string &symbolName, FieldHandle handle)
 // ##     GlobalScope     ##
 // #########################
 
-GlobalScope::GlobalScope(unsigned int &gvarCount) : gvarCount(gvarCount) {
+GlobalScope::GlobalScope(unsigned int &gvarCount) : Scope(GLOBAL, nullptr), gvarCount(gvarCount) {
     for(auto &e : DENIED_REDEFINED_CMD_LIST) {
         std::string name = CMD_SYMBOL_PREFIX;
         name += e;
         this->handleMap.emplace(std::move(name), FieldHandle());
     }
+    RefCountOp<Scope>::increase(this);
+}
+
+HandleOrError GlobalScope::addNew(unsigned int commitID, const std::string &symbolName, const DSType &type,
+                                  FieldAttribute attribute, unsigned short modID) {
+    setFlag(attribute, FieldAttribute::GLOBAL);
+    FieldHandle handle(commitID, type, this->gvarCount.get(), attribute, modID);
+    auto ret = this->add(symbolName, handle);
+    if(ret) {
+        this->gvarCount.get()++;
+    }
+    return ret;
 }
 
 // #########################
 // ##     ModuleScope     ##
 // #########################
-
-const FieldHandle *ModuleScope::lookupHandle(const std::string &symbolName) const {
-    for(auto iter = this->scopes.crbegin(); iter != this->scopes.crend(); ++iter) {
-        auto *handle = (*iter).lookup(symbolName);
-        if(handle != nullptr) {
-            return handle;
-        }
-    }
-    return this->globalScope.lookup(symbolName);
-}
 
 HandleOrError ModuleScope::newHandle(const std::string &symbolName,
                                      const DSType &type, FieldAttribute attribute) {
@@ -84,10 +102,9 @@ HandleOrError ModuleScope::newHandle(const std::string &symbolName,
         return this->globalScope.addNew(this->commitID, symbolName, type, attribute, this->modID);
     }
 
-    FieldHandle handle(this->commitID, type, this->scopes.back().getCurVarIndex(), attribute, this->modID);
-    auto ret = this->scopes.back().add(symbolName, handle);
+    auto ret = this->curScope().addNew(this->commitID, symbolName, type, attribute, this->modID);
     if(ret) {
-        unsigned int varIndex = this->scopes.back().getCurVarIndex();
+        unsigned int varIndex = this->curScope().getCurVarIndex();
         if(varIndex > this->maxVarIndexStack.back()) {
             this->maxVarIndexStack.back() = varIndex;
         }
@@ -98,24 +115,24 @@ HandleOrError ModuleScope::newHandle(const std::string &symbolName,
 void ModuleScope::enterScope() {
     unsigned int index = 0;
     if(!this->inGlobalScope()) {
-        index = this->scopes.back().getCurVarIndex();
+        index = this->curScope().getCurVarIndex();
     }
-    this->scopes.emplace_back(index);
+    this->scope = IntrusivePtr<Scope>(new BlockScope(this->scope, index));
 }
 
 void ModuleScope::exitScope() {
     assert(!this->inGlobalScope());
-    this->scopes.pop_back();
+    this->scope = this->scope->getPrev();
 }
 
 void ModuleScope::enterFunc() {
-    this->scopes.emplace_back();
+    this->scope = IntrusivePtr<Scope>(new BlockScope(this->scope));
     this->maxVarIndexStack.push_back(0);
 }
 
 void ModuleScope::exitFunc() {
     assert(!this->inGlobalScope());
-    this->scopes.pop_back();
+    this->scope = this->scope->getPrev();
     this->maxVarIndexStack.pop_back();
 }
 
@@ -166,8 +183,7 @@ const char* ModuleScope::import(const ModType &type, bool global) {
 void ModuleScope::clear() {
     this->maxVarIndexStack.clear();
     this->maxVarIndexStack.push_back(0);
-    this->scopes.shrink_to_fit();
-    this->childs.clear();
+    this->resetScope();
 }
 
 // #####################

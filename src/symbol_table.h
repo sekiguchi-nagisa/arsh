@@ -34,19 +34,31 @@ using HandleOrError = Result<const FieldHandle *, SymbolError>;
 
 class ModuleScope;
 
-class Scope {
+class Scope : public RefCount<Scope> {
 protected:
     friend class ModuleScope;
 
+    enum Kind {
+        BLOCK,
+        GLOBAL,
+    };
+
+    IntrusivePtr<Scope> prev;
+
     std::unordered_map<std::string, FieldHandle> handleMap;
 
-    ~Scope() = default;
+    const Kind kind;
+
+    Scope(Kind kind, IntrusivePtr<Scope> prev) : prev(prev), kind(kind) {}
 
 public:
+    virtual ~Scope() = default;
+
     NON_COPYABLE(Scope);
 
-    Scope() = default;
-    Scope(Scope&&) = default;
+    const IntrusivePtr<Scope> &getPrev() const {
+        return this->prev;
+    }
 
     const std::unordered_map<std::string, FieldHandle> &getHandleMap() const {
         return this->handleMap;
@@ -60,8 +72,15 @@ public:
         return this->handleMap.end();
     }
 
-protected:
-    const FieldHandle *lookup(const std::string &symbolName) const {
+    bool isGlobal() const {
+        return this->kind == GLOBAL;
+    }
+
+    bool isBlock() const {
+        return this->kind == BLOCK;
+    }
+
+    const FieldHandle *find(const std::string &symbolName) const {
         auto iter = this->handleMap.find(symbolName);
         if(iter != this->handleMap.end() && iter->second) {
             return &iter->second;
@@ -69,24 +88,38 @@ protected:
         return nullptr;
     }
 
+    const FieldHandle *lookup(const std::string &symbolName) const;
+
+protected:
+    void abort(unsigned int commitID) {
+        for(auto iter = this->handleMap.begin(); iter != this->handleMap.end();) {
+            if(iter->second && iter->second.getCommitID() >= commitID) {
+                iter = this->handleMap.erase(iter);
+            } else {
+                ++iter;
+            }
+        }
+    }
+
+    virtual HandleOrError addNew(unsigned int commitID, const std::string &symbolName,
+                                 const DSType &type, FieldAttribute attribute, unsigned short modID) = 0;
+
     HandleOrError add(const std::string &symbolName, const FieldHandle &handle);
 };
 
 class BlockScope : public Scope {
 private:
-    unsigned int curVarIndex;
-
     friend class ModuleScope;
+
+    unsigned int curVarIndex;
 
 public:
     NON_COPYABLE(BlockScope);
 
-    BlockScope(BlockScope&&) = default;
+    BlockScope(IntrusivePtr<Scope> prev, unsigned int curVarIndex = 0) :
+            Scope(Scope::BLOCK, prev), curVarIndex(curVarIndex) { }
 
-    explicit BlockScope(unsigned int curVarIndex = 0) :
-            curVarIndex(curVarIndex) { }
-
-    ~BlockScope() = default;
+    ~BlockScope() override = default;
 
     unsigned int getCurVarIndex() const {
         return this->curVarIndex;
@@ -101,50 +134,26 @@ public:
     }
 
 private:
-    /**
-     * add FieldHandle. if adding success, increment curVarIndex.
-     * return null if found duplicated handle.
-     */
-    HandleOrError add(const std::string &symbolName, FieldHandle handle);
+    HandleOrError addNew(unsigned int commitID, const std::string &symbolName,
+                         const DSType &type, FieldAttribute attribute, unsigned short modID) override;
 };
 
 class GlobalScope : public Scope {
 private:
-    std::reference_wrapper<unsigned int> gvarCount;
-
     friend class ModuleScope;
+
+    std::reference_wrapper<unsigned int> gvarCount;
 
 public:
     NON_COPYABLE(GlobalScope);
 
     explicit GlobalScope(unsigned int &gvarCount);
-    GlobalScope(GlobalScope &&) = default;
-    ~GlobalScope() = default;
+    ~GlobalScope() override = default;
 
 private:
     HandleOrError addNew(unsigned int commitID, const std::string &symbolName,
-                         const DSType &type, FieldAttribute attribute, unsigned short modID) {
-        setFlag(attribute, FieldAttribute::GLOBAL);
-        FieldHandle handle(commitID, type, this->gvarCount.get(), attribute, modID);
-        auto ret = this->add(symbolName, handle);
-        if(ret) {
-            this->gvarCount.get()++;
-        }
-        return ret;
-    }
-
-    void abort(unsigned int commitID) {
-        for(auto iter = this->handleMap.begin(); iter != this->handleMap.end();) {
-            if(iter->second && iter->second.getCommitID() >= commitID) {
-                iter = this->handleMap.erase(iter);
-            } else {
-                ++iter;
-            }
-        }
-    }
+                         const DSType &type, FieldAttribute attribute, unsigned short modID) override;
 };
-
-class ModuleScope;
 
 /**
  * indicating loaded mod type id.
@@ -233,10 +242,7 @@ private:
 
     GlobalScope globalScope;
 
-    /**
-     * first scope is always global scope.
-     */
-    std::vector<BlockScope> scopes;
+    IntrusivePtr<Scope> scope;
 
     /**
      * contains max number of local variable index.
@@ -251,9 +257,8 @@ public:
     explicit ModuleScope(unsigned int &gvarCount, unsigned short modID = 0) :
             modID(modID), builtin(modID == 0), globalScope(gvarCount) {
         this->maxVarIndexStack.push_back(0);
+        this->resetScope();
     }
-
-    ModuleScope(ModuleScope&&) = default;
 
     ~ModuleScope() = default;
 
@@ -264,7 +269,9 @@ public:
     /**
      * return null, if not found.
      */
-    const FieldHandle *lookupHandle(const std::string &symbolName) const;
+    const FieldHandle *lookupHandle(const std::string &symbolName) const {
+        return this->scope->lookup(symbolName);
+    }
 
     /**
      * return null, if found duplicated handle.
@@ -316,7 +323,7 @@ public:
      */
     void abort() {
         this->globalScope.abort(this->commitID);
-        this->scopes.clear();
+        this->resetScope();
         this->childs.clear();
     }
 
@@ -335,7 +342,7 @@ public:
     }
 
     bool inGlobalScope() const {
-        return this->scopes.empty();
+        return this->scope->isGlobal();
     }
 
     const GlobalScope &global() const {
@@ -343,7 +350,8 @@ public:
     }
 
     const BlockScope &curScope() const {
-        return this->scopes.back();
+        assert(this->scope->isBlock());
+        return static_cast<const BlockScope&>(*this->scope);
     }
 
     const FlexBuffer<ChildModEntry> &getChilds() const {
@@ -353,6 +361,15 @@ public:
     static std::string toModName(unsigned short modID);
 
 private:
+    BlockScope &curScope() {
+        assert(this->scope->isBlock());
+        return static_cast<BlockScope&>(*this->scope);
+    }
+
+    void resetScope() {
+        this->scope = IntrusivePtr<Scope>(&this->globalScope);
+    }
+
     bool needGlobalImport(ChildModEntry entry);
 };
 
