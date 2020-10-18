@@ -118,6 +118,8 @@ function _save($p : String!) {
     let size = $HISTORY.size()
     var offset = $size < $HISTFILESIZE ? 0 : $size - $HISTFILESIZE
 
+    $offset < $size || return
+
     for(var i = $offset; $i < $size; $i++) {
         echo $HISTORY[$i]
     } with > $path
