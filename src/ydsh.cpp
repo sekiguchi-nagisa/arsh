@@ -64,13 +64,13 @@ private:
     ByteCodeGenerator codegen;
 
 public:
-    Compiler(const DSState &state, TypePool &pool, SymbolTable &symbolTable, Lexer &&lexer) :
-            frontEnd(std::move(lexer), pool, symbolTable, state.execMode,
+    Compiler(DSState &state, Lexer &&lexer) :
+            frontEnd(std::move(lexer), state.typePool, state.symbolTable, state.execMode,
                      hasFlag(state.compileOption, CompileOption::INTERACTIVE)),
             reporter(newReporter()),
-            uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get(), pool, symbolTable),
-            astDumper(state.dumpTarget.files[DS_DUMP_KIND_AST].get(), pool, symbolTable),
-            codegen(pool, hasFlag(state.compileOption, CompileOption::ASSERT)) {
+            uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get(), state.typePool, state.symbolTable),
+            astDumper(state.dumpTarget.files[DS_DUMP_KIND_AST].get(), state.typePool, state.symbolTable),
+            codegen(state.typePool, hasFlag(state.compileOption, CompileOption::ASSERT)) {
         this->frontEnd.setErrorReporter(this->reporter);
         if(this->uastDumper) {
             this->frontEnd.setUASTDumper(this->uastDumper);
@@ -99,7 +99,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     while(this->frontEnd) {
         auto ret = this->frontEnd(dsError);
         if(!ret) {
-            this->frontEnd.getSymbolTable().abort();
+            this->frontEnd.discard();
             return 1;
         }
 
@@ -135,14 +135,14 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
         auto &e = this->codegen.getError();
         this->frontEnd.handleError(DS_ERROR_KIND_CODEGEN_ERROR,
                 e.getKind(), e.getToken(), e.getMessage(), dsError);
-        this->frontEnd.getSymbolTable().abort();
+        this->frontEnd.discard();
         return 1;
     }
     return 0;
 }
 
 static int compile(DSState &state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
-    Compiler compiler(state, state.typePool, state.symbolTable, std::move(lexer));
+    Compiler compiler(state, std::move(lexer));
     int ret = compiler(dsError, code);
     state.lineNum = compiler.lineNum();
     return ret;

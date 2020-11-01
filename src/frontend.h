@@ -129,6 +129,11 @@ public:
         return this->checker.getTypePool();
     }
 
+    void discard() {
+        this->checker.getSymbolTable().abort();
+        this->checker.getTypePool().abort();
+    }
+
     const Lexer &getCurrentLexer() const {
         return this->contexts.back()->lexer;
     }
