@@ -482,16 +482,18 @@ public:
 
 class MethodHandle {
 private:
+    friend class TypePool;
+
     /**
-     * for safa TypePool abort
+     * for safe TypePool abort
      */
-    unsigned int commitId;
+    const unsigned int methodId;
 
-    unsigned short methodIndex;
+    const unsigned short methodIndex;
 
-    unsigned char paramSize;
+    const unsigned char paramSize;
 
-    bool native{true};  // currently only support native method
+    const bool native{true};  // currently only support native method
 
     const DSType *returnType;
 
@@ -504,7 +506,7 @@ private:
 
     MethodHandle(unsigned int id, const DSType *recv, unsigned short index,
                  const DSType *ret, unsigned short paramSize) :
-            commitId(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
+            methodId(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
         assert(paramSize <= UINT8_MAX);
     }
 
@@ -517,14 +519,12 @@ private:
 public:
     NON_COPYABLE(MethodHandle);
 
-    static MethodHandle *create(TypePool &pool, const DSType &recv, unsigned int index);
-
     static void operator delete(void *ptr) noexcept {   //NOLINT
         free(ptr);
     }
 
-    unsigned int getCommitId() const {
-        return this->commitId;
+    unsigned int getMethodId() const {
+        return this->methodId;
     }
 
     unsigned short getMethodIndex() const {

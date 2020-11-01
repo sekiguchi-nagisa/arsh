@@ -1784,7 +1784,7 @@ bool VM::handleException(DSState &state) {
     return false;
 }
 
-DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError) {
+DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const TypePool::DiscardPoint *discardPoint) {
     DSValue value;
     const unsigned int oldLevel = state.subshellLevel;
 
@@ -1816,29 +1816,28 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError) {
         terminate(state.getMaskedExitStatus());
     }
 
-    if(hasFlag(op, EvalOP::COMMIT)) {
+    if(discardPoint) {
         if(ret) {
             state.symbolTable.commit();
-            state.typePool.commit();
         } else {
             state.symbolTable.abort();
-            state.typePool.abort();
+            state.typePool.discard(*discardPoint);
         }
     }
     return value;
 }
 
-int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError) {
+int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, TypePool::DiscardPoint discardPoint) {
     state.globals.resize(state.symbolTable.getMaxGVarIndex());
     state.stack.reset();
 
     state.stack.wind(0, 0, &code);
 
-    EvalOP op = EvalOP::COMMIT;
+    EvalOP op{};
     if(hasFlag(state.compileOption, CompileOption::INTERACTIVE)) {
         setFlag(op, EvalOP::SKIP_TERM);
     }
-    startEval(state, op, dsError);
+    startEval(state, op, dsError, &discardPoint);
     return state.getMaskedExitStatus();
 }
 

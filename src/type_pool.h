@@ -31,8 +31,7 @@ using TypeTempOrError = Result<const TypeTemplate*, std::unique_ptr<TypeLookupEr
 
 class TypePool {
 private:
-    unsigned int oldTypeIdCount{0};
-    unsigned int methodCommitId{0};
+    unsigned int methodIdCount{0};
     FlexBuffer<DSType *> typeTable;
     std::vector<std::string> nameTable; //   maintain type name
     std::unordered_map<std::string, unsigned int> aliasMap;
@@ -126,11 +125,24 @@ private:
         }
     };
 
-    std::unordered_map<Key, Value, Hash> methodMap;
+    using MethodMap = std::unordered_map<Key, Value, Hash>;
+
+    MethodMap methodMap;
 
     static constexpr unsigned int MAX_TYPE_NUM = 0xFFFFFF;
 
 public:
+    class DiscardPoint {
+    private:
+        friend class TypePool;
+
+        unsigned int typeIdOffset;
+        unsigned int methodIdOffset;
+
+        DiscardPoint(unsigned int typeIdOffset, unsigned int methodIdOffset) :
+            typeIdOffset(typeIdOffset), methodIdOffset(methodIdOffset) {}
+    };
+
     NON_COPYABLE(TypePool);
 
     TypePool();
@@ -246,16 +258,11 @@ public:
         return this->lookupMethod(revType, "");
     }
 
-    unsigned int getMethodCommitId() const {
-        return this->methodCommitId;
+    DiscardPoint getDiscardPoint() const {
+        return DiscardPoint(this->typeTable.size(), this->methodIdCount);
     }
 
-    void commit() {
-        this->oldTypeIdCount = this->typeTable.size();
-        this->methodCommitId++;
-    }
-
-    void abort();
+    void discard(DiscardPoint point);
 
 private:
     DSType *get(const std::string &typeName) const {
@@ -320,6 +327,16 @@ private:
     void registerHandle(const BuiltinType &recv, const char *name, unsigned int index);
 
     void registerHandles(const BuiltinType &type);
+
+    /**
+     * allocate actual MethodHandle
+     * @param recv
+     * @param iter
+     * after allocation, set allocated method handle pointer.
+     * @return
+     * if allocation failed, return false
+     */
+    bool allocMethodHandle(const DSType &recv, MethodMap::iterator iter);
 };
 
 

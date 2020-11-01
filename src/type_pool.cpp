@@ -87,9 +87,6 @@ TypePool::TypePool() {
     this->initBuiltinType(TYPE::_InternalStatus, "internal status%%", false, TYPE::_Root, info_Dummy());
     this->initBuiltinType(TYPE::_ShellExit, "Shell Exit", false, TYPE::_InternalStatus, info_Dummy());
     this->initBuiltinType(TYPE::_AssertFail, "Assertion Error", false, TYPE::_InternalStatus, info_Dummy());
-
-    // commit generated type
-    this->commit();
 }
 
 TypePool::~TypePool() {
@@ -123,33 +120,34 @@ TypeOrError TypePool::getType(const std::string &typeName) const {
     return Ok(type);
 }
 
-void TypePool::abort() {
-    for(unsigned int i = this->oldTypeIdCount; i < this->typeTable.size(); i++) {
+void TypePool::discard(const DiscardPoint point) {
+    for(unsigned int i = point.typeIdOffset; i < this->typeTable.size(); i++) {
         delete this->typeTable[i];
     }
-    this->typeTable.erase(this->typeTable.begin() + this->oldTypeIdCount, this->typeTable.end());
-    this->nameTable.erase(this->nameTable.begin() + this->oldTypeIdCount, this->nameTable.end());
+    this->typeTable.erase(this->typeTable.begin() + point.typeIdOffset, this->typeTable.end());
+    this->nameTable.erase(this->nameTable.begin() + point.typeIdOffset, this->nameTable.end());
 
     for(auto iter = this->aliasMap.begin(); iter != this->aliasMap.end();) {
-        if(iter->second >= this->oldTypeIdCount) {
+        if(iter->second >= point.typeIdOffset) {
             iter = this->aliasMap.erase(iter);
         } else {
             ++iter;
         }
     }
 
-    assert(this->oldTypeIdCount == this->typeTable.size());
-    assert(this->oldTypeIdCount == this->nameTable.size());
+    assert(point.typeIdOffset == this->typeTable.size());
+    assert(point.typeIdOffset == this->nameTable.size());
 
     // abort method handle
+    this->methodIdCount = point.methodIdOffset;
     for(auto iter = this->methodMap.begin(); iter != this->methodMap.end(); ) {
-        if(iter->first.id >= this->oldTypeIdCount) {
+        if(iter->first.id >= point.typeIdOffset) {
             const_cast<Key &>(iter->first).dispose();
             iter = this->methodMap.erase(iter);
             continue;
         } else if(iter->second) {
             auto *ptr = iter->second.handle();
-            if(ptr != nullptr && ptr->getCommitId() >= this->methodCommitId) {
+            if(ptr != nullptr && ptr->getMethodId() >= point.methodIdOffset) {
                 iter->second = Value(ptr->getMethodIndex());
                 assert(!iter->second);
             }
@@ -340,13 +338,15 @@ TypeOrError TypeDecoder::decode() {
     }
 }
 
-#define TRY2(E) ({ auto value = E; if(!value) { return nullptr; } value.take(); })
+#define TRY2(E) ({ auto value = E; if(!value) { return false; } value.take(); })
 
 // FIXME: error reporting
-MethodHandle* MethodHandle::create(TypePool &pool, const DSType &recv, unsigned int index) {
+bool TypePool::allocMethodHandle(const DSType &recv, MethodMap::iterator iter) {
+    assert(!iter->second);
+    unsigned int index = iter->second.index();
     auto *types = recv.isReifiedType() ? &static_cast<const ReifiedType &>(recv).getElementTypes() : nullptr;
     auto info = nativeFuncInfoTable()[index];
-    TypeDecoder decoder(pool, info.handleInfo, types);
+    TypeDecoder decoder(*this, info.handleInfo, types);
 
     // check type parameter constraint
     const unsigned int constraintSize = decoder.decodeNum();
@@ -354,7 +354,7 @@ MethodHandle* MethodHandle::create(TypePool &pool, const DSType &recv, unsigned 
         auto *typeParam = TRY2(decoder.decode());
         auto *reqType = TRY2(decoder.decode());
         if(!reqType->isSameOrBaseTypeOf(*typeParam)) {
-            return nullptr;
+            return false;
         }
     }
 
@@ -365,11 +365,13 @@ MethodHandle* MethodHandle::create(TypePool &pool, const DSType &recv, unsigned 
     assert(*recvType == recv);
 
     std::unique_ptr<MethodHandle> handle(
-            MethodHandle::alloc(pool.getMethodCommitId(), recvType, index, returnType, paramSize - 1));
+            MethodHandle::alloc(this->methodIdCount++, recvType, index, returnType, paramSize - 1));    //FIXME:
     for(unsigned int i = 1; i < paramSize; i++) {   // init param types
         handle->paramTypes[i - 1] = TRY2(decoder.decode());
     }
-    return handle.release();
+
+    iter->second = Value(handle.release());
+    return true;
 }
 
 const MethodHandle* TypePool::lookupMethod(const DSType &recvType, const std::string &methodName) {
@@ -379,13 +381,9 @@ const MethodHandle* TypePool::lookupMethod(const DSType &recvType, const std::st
         if(iter != this->methodMap.end()) {
             if(!iter->second) {
                 assert(methodName == nativeFuncInfoTable()[iter->second.index()].funcName);
-                auto *handle = MethodHandle::create(*this, *type, iter->second.index());
-                if(!handle) {
+                if(!this->allocMethodHandle(*type, iter)) {
                     return nullptr;
                 }
-                assert(handle->getRecvType() == *type);
-                iter->second = Value(handle);
-                assert(iter->second);
             }
             return iter->second.handle();
         }

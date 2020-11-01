@@ -129,9 +129,9 @@ public:
         return this->checker.getTypePool();
     }
 
-    void discard() {
+    void discard(TypePool::DiscardPoint discardPoint) {
         this->checker.getSymbolTable().abort();
-        this->checker.getTypePool().abort();
+        this->checker.getTypePool().discard(discardPoint);
     }
 
     const Lexer &getCurrentLexer() const {

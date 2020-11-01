@@ -33,7 +33,7 @@
 
 using namespace ydsh;
 
-static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) {
+static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError, TypePool::DiscardPoint discardPoint) {
     if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
         auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");
@@ -43,7 +43,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
     if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
         return 0;
     }
-    return callToplevel(state, code, dsError);
+    return callToplevel(state, code, dsError, discardPoint);
 }
 
 static ErrorReporter newReporter() {
@@ -84,10 +84,10 @@ public:
         return this->frontEnd.getRootLineNum();
     }
 
-    int operator()(DSError *dsError, CompiledCode &code);
+    int operator()(TypePool::DiscardPoint discardPoint, DSError *dsError, CompiledCode &code);
 };
 
-int Compiler::operator()(DSError *dsError, CompiledCode &code) {
+int Compiler::operator()(TypePool::DiscardPoint discardPoint, DSError *dsError, CompiledCode &code) {
     if(dsError != nullptr) {
         *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .fileName = nullptr, .lineNum = 0, .name = nullptr};
     }
@@ -99,7 +99,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     while(this->frontEnd) {
         auto ret = this->frontEnd(dsError);
         if(!ret) {
-            this->frontEnd.discard();
+            this->frontEnd.discard(discardPoint);
             return 1;
         }
 
@@ -135,26 +135,27 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
         auto &e = this->codegen.getError();
         this->frontEnd.handleError(DS_ERROR_KIND_CODEGEN_ERROR,
                 e.getKind(), e.getToken(), e.getMessage(), dsError);
-        this->frontEnd.discard();
+        this->frontEnd.discard(discardPoint);
         return 1;
     }
     return 0;
 }
 
-static int compile(DSState &state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
+static int compile(DSState &state, Lexer &&lexer, TypePool::DiscardPoint discardPoint, DSError *dsError, CompiledCode &code) {
     Compiler compiler(state, std::move(lexer));
-    int ret = compiler(dsError, code);
+    int ret = compiler(discardPoint, dsError, code);
     state.lineNum = compiler.lineNum();
     return ret;
 }
 
 static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError) {
     CompiledCode code;
-    int ret = compile(state, std::move(lexer), dsError, code);
+    auto discardPoint = state.typePool.getDiscardPoint();
+    int ret = compile(state, std::move(lexer), discardPoint, dsError, code);
     if(!code) {
         return ret;
     }
-    return evalCode(state, code, dsError);
+    return evalCode(state, code, dsError, discardPoint);
 }
 
 static void bindVariable(DSState &state, const char *varName,
