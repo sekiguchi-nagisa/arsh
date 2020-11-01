@@ -37,7 +37,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError) 
     if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
         auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");
-        ByteCodeDumper(fp, state.symbolTable)(code);
+        ByteCodeDumper(fp, state.typePool, state.symbolTable.getMaxGVarIndex())(code);
     }
 
     if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
@@ -64,13 +64,13 @@ private:
     ByteCodeGenerator codegen;
 
 public:
-    Compiler(const DSState &state, SymbolTable &symbolTable, Lexer &&lexer) :
-            frontEnd(std::move(lexer), symbolTable, state.execMode,
+    Compiler(const DSState &state, TypePool &pool, SymbolTable &symbolTable, Lexer &&lexer) :
+            frontEnd(std::move(lexer), pool, symbolTable, state.execMode,
                      hasFlag(state.compileOption, CompileOption::INTERACTIVE)),
             reporter(newReporter()),
-            uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get(), symbolTable),
-            astDumper(state.dumpTarget.files[DS_DUMP_KIND_AST].get(), symbolTable),
-            codegen(symbolTable, hasFlag(state.compileOption, CompileOption::ASSERT)) {
+            uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get(), pool, symbolTable),
+            astDumper(state.dumpTarget.files[DS_DUMP_KIND_AST].get(), pool, symbolTable),
+            codegen(pool, hasFlag(state.compileOption, CompileOption::ASSERT)) {
         this->frontEnd.setErrorReporter(this->reporter);
         if(this->uastDumper) {
             this->frontEnd.setUASTDumper(this->uastDumper);
@@ -127,7 +127,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     }
     this->frontEnd.teardownASTDump();
     if(!this->frontEnd.frontEndOnly()) {
-        code = this->codegen.finalize();
+        code = this->codegen.finalize(this->frontEnd.getSymbolTable().getMaxVarIndex());
     }
 
     END:
@@ -142,7 +142,7 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
 }
 
 static int compile(DSState &state, Lexer &&lexer, DSError *dsError, CompiledCode &code) {
-    Compiler compiler(state, state.symbolTable, std::move(lexer));
+    Compiler compiler(state, state.typePool, state.symbolTable, std::move(lexer));
     int ret = compiler(dsError, code);
     state.lineNum = compiler.lineNum();
     return ret;
@@ -167,7 +167,7 @@ static void bindVariable(DSState &state, const char *varName,
 
 static void bindVariable(DSState &state, const char *varName, DSValue &&value, FieldAttribute attribute) {
     auto id = value.getTypeID();
-    return bindVariable(state, varName, &state.symbolTable.types().get(id), std::move(value), attribute);
+    return bindVariable(state, varName, &state.typePool.get(id), std::move(value), attribute);
 }
 
 static void bindVariable(DSState &state, const char *varName, DSValue &&value) {
@@ -202,8 +202,8 @@ static void initBuiltinVar(DSState &state) {
      * must be Map_Object
      */
     bindVariable(state, "reply", DSValue::create<MapObject>(
-            *state.symbolTable.types().createMapType(state.symbolTable.types().get(TYPE::String),
-                    state.symbolTable.types().get(TYPE::String)).take()));
+            *state.typePool.createMapType(state.typePool.get(TYPE::String),
+                    state.typePool.get(TYPE::String)).take()));
 
     /**
      * process id of current process.
@@ -232,14 +232,14 @@ static void initBuiltinVar(DSState &state) {
      * maintain completion result.
      * must be Array_Object
      */
-    bindVariable(state, "COMPREPLY", DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray)));
+    bindVariable(state, "COMPREPLY", DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray)));
 
     /**
      * contains latest executed pipeline status.
      * must be Array_Object
      */
     bindVariable(state, "PIPESTATUS", DSValue::create<ArrayObject>(
-            *state.symbolTable.types().createArrayType(state.symbolTable.types().get(TYPE::Int)).take()));
+            *state.typePool.createArrayType(state.typePool.get(TYPE::Int)).take()));
 
     /**
      * contains exit status of most recent executed process. ($?)
@@ -257,7 +257,7 @@ static void initBuiltinVar(DSState &state) {
      * contains script argument(exclude script name). ($@)
      * must be Array_Object
      */
-    bindVariable(state, "@", DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray)));
+    bindVariable(state, "@", DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray)));
 
     /**
      * contains size of argument. ($#)
@@ -334,7 +334,7 @@ static void initBuiltinVar(DSState &state) {
      * dummy object for signal handler setting
      * must be DSObject
      */
-    bindVariable(state, "SIG", DSValue::createDummy(state.symbolTable.types().get(TYPE::Signals)));
+    bindVariable(state, "SIG", DSValue::createDummy(state.typePool.get(TYPE::Signals)));
 
     /**
      * must be UnixFD_Object
@@ -897,7 +897,7 @@ unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const cha
         return 0;
     }
 
-    auto &type = st->symbolTable.types().get(st->editOpReply.getTypeID());
+    auto &type = st->typePool.get(st->editOpReply.getTypeID());
     switch(op) {
     case DS_EDIT_HIST_SIZE:
         if(type.is(TYPE::Int)) {

@@ -2559,6 +2559,7 @@ class SymbolTable;
 class NodeDumper {
 private:
     FILE *fp;
+    const TypePool &pool;
     const SymbolTable &symbolTable;
 
     struct DumpBuffer {
@@ -2569,7 +2570,8 @@ private:
     std::list<DumpBuffer> bufs;
 
 public:
-    NodeDumper(FILE *fp, const SymbolTable &symbolTable) : fp(fp), symbolTable(symbolTable) { }
+    NodeDumper(FILE *fp, const TypePool &typePool, const SymbolTable &symbolTable) :
+        fp(fp), pool(typePool), symbolTable(symbolTable) { }
 
     ~NodeDumper() = default;
 

@@ -158,9 +158,9 @@ public:
 
 class TypeChecker : protected NodeVisitor {
 protected:
-    SymbolTable &symbolTable;
-
     TypePool &typePool;
+
+    SymbolTable &symbolTable;
 
     /**
      * contains current return type of current function
@@ -178,8 +178,8 @@ protected:
     ObserverPtr<const Lexer> lexer;
 
 public:
-    TypeChecker(SymbolTable &symbolTable, bool toplevelPrinting, const Lexer *lex) :
-            symbolTable(symbolTable), typePool(symbolTable.types()),
+    TypeChecker(TypePool &pool, SymbolTable &symbolTable, bool toplevelPrinting, const Lexer *lex) :
+            typePool(pool), symbolTable(symbolTable),
             toplevelPrinting(toplevelPrinting), lexer(lex) { }
 
     ~TypeChecker() override = default;
@@ -188,6 +188,10 @@ public:
 
     SymbolTable &getSymbolTable() {
         return this->symbolTable;
+    }
+
+    TypePool &getTypePool() {
+        return this->typePool;
     }
 
     void setLexer(const Lexer &lex) {

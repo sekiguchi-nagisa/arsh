@@ -82,6 +82,8 @@ using namespace ydsh;
 
 struct DSState {
 public:
+    TypePool typePool;
+
     SymbolTable symbolTable;
 
     const DSValue emptyFDObj;

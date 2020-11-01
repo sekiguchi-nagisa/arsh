@@ -72,7 +72,7 @@ private:
     std::unique_ptr<TypeCheckError> error;
 
 public:
-    DirectiveInitializer(const char *sourceName, SymbolTable &symbolTable);
+    DirectiveInitializer(const char *sourceName, TypePool &pool, SymbolTable &symbolTable);
     ~DirectiveInitializer() override = default;
 
     void operator()(ApplyNode &node, Directive &d);
@@ -89,7 +89,7 @@ private:
     void addHandler(const char *attributeName, DSType &type, AttributeHandler &&handler);
 
     void addHandler(const char *attributeName, TYPE type, AttributeHandler &&handler) {
-        this->addHandler(attributeName, this->symbolTable.types().get(type), std::move(handler));
+        this->addHandler(attributeName, this->typePool.get(type), std::move(handler));
     }
 
     void addAlias(const char *alias, const char *attr);
@@ -117,8 +117,8 @@ private:
      * @return
      */
     DSType &getMapType() {
-        return *this->symbolTable.types().createMapType(
-                this->symbolTable.types().get(TYPE::String), this->symbolTable.types().get(TYPE::String)).take();
+        return *this->typePool.createMapType(
+                this->typePool.get(TYPE::String), this->typePool.get(TYPE::String)).take();
     }
 
     void createError(const Node &node, const std::string &str) {
@@ -139,9 +139,9 @@ static bool checkDirectiveName(ApplyNode &node) {
     return exprNode.getVarName() == "test";
 }
 
-DirectiveInitializer::DirectiveInitializer(const char *sourceName, SymbolTable &symbolTable) :
-        TypeChecker(symbolTable, false, nullptr), sourceName(sourceName) {
-    this->setVarName("0", this->symbolTable.types().get(TYPE::String));
+DirectiveInitializer::DirectiveInitializer(const char *sourceName, TypePool &typePool, SymbolTable &symbolTable) :
+        TypeChecker(typePool, symbolTable, false, nullptr), sourceName(sourceName) {
+    this->setVarName("0", this->typePool.get(TYPE::String));
 }
 
 static bool isIgnoredUser(const std::string &text) {
@@ -401,8 +401,9 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
         return false;
     }
 
+    TypePool pool;
     SymbolTable symbolTable;
-    DirectiveInitializer initializer(fileName, symbolTable);
+    DirectiveInitializer initializer(fileName, pool, symbolTable);
     initializer(*node, directive);
     if(initializer.hasError()) {
         auto &e = initializer.getError();

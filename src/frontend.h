@@ -100,7 +100,7 @@ private:
     ObserverPtr<NodeDumper> astDumper;
 
 public:
-    FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
+    FrontEnd(Lexer &&lexer, TypePool &typePool, SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
              ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
 
     ~FrontEnd() {
@@ -123,6 +123,10 @@ public:
 
     SymbolTable &getSymbolTable() {
         return this->checker.getSymbolTable();
+    }
+
+    TypePool &getTypePool() {
+        return this->checker.getTypePool();
     }
 
     const Lexer &getCurrentLexer() const {

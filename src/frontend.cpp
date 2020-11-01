@@ -129,9 +129,9 @@ void ErrorReporter::printErrorLine(const Lexer &lexer, Token token) const {
 // ##     FrontEnd     ##
 // ######################
 
-FrontEnd::FrontEnd(Lexer &&lexer, SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
+FrontEnd::FrontEnd(Lexer &&lexer, TypePool &pool, SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
                    ObserverPtr<CodeCompletionHandler> ccHandler) :
-        mode(mode), checker(symbolTable, toplevel, nullptr){
+        mode(mode), checker(pool, symbolTable, toplevel, nullptr){
     this->contexts.push_back(std::make_unique<Context>(std::move(lexer), nullptr, ccHandler));
     this->checker.setLexer(this->getCurrentLexer());
 }
@@ -312,7 +312,7 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
         this->enterModule(get<const char*>(ret), std::move(buf));
         return {nullptr, ENTER_MODULE};
     } else if(is<unsigned int>(ret)) {
-        auto &type = this->getSymbolTable().types().get(get<unsigned int>(ret));
+        auto &type = this->getTypePool().get(get<unsigned int>(ret));
         assert(type.isModType());
         return {node.create(static_cast<ModType&>(type), false), IN_MODULE};
     }
@@ -348,7 +348,7 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     assert(!this->contexts.empty());
     auto &ctx = *this->contexts.back();
-    auto &modType = this->getSymbolTable().createModType(ctx.lexer.getSourceName());
+    auto &modType = this->getSymbolTable().createModType(this->getTypePool(), ctx.lexer.getSourceName());
     const unsigned int varNum = ctx.scope->getMaxVarIndex();
     this->contexts.pop_back();
     this->checker.setLexer(this->getCurrentLexer());
@@ -362,7 +362,7 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY) {
         node->setMaxVarNum(varNum);
         if(prevType != nullptr && this->prevType->isNothingType()) {
-            this->prevType = &this->getSymbolTable().types().get(TYPE::Void);
+            this->prevType = &this->getTypePool().get(TYPE::Void);
             node->setNothing(true);
         }
     }

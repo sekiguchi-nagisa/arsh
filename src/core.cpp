@@ -161,7 +161,7 @@ const DSValue &getGlobal(const DSState &st, const char *varName) {
 }
 
 void raiseError(DSState &st, TYPE type, std::string &&message, int status) {
-    auto except = ErrorObject::newError(st, st.symbolTable.types().get(type), DSValue::createStr(std::move(message)));
+    auto except = ErrorObject::newError(st, st.typePool.get(type), DSValue::createStr(std::move(message)));
     st.throwObject(std::move(except), status);
 }
 

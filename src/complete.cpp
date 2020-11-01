@@ -430,7 +430,7 @@ DSValue createArgv(const DSState &state, const Lexer &lex,
         values.push_back(DSValue::createStr(word));
     }
 
-    return DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray), std::move(values));
+    return DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(values));
 }
 
 static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNode,
@@ -561,13 +561,13 @@ static void consumeAllInput(FrontEnd &frontEnd) {
 }
 
 unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
-    auto result = DSValue::create<ArrayObject>(st.symbolTable.types().get(TYPE::StringArray));
+    auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
     auto &compreply = typeAs<ArrayObject>(result);
 
     CodeCompletionHandler handler(st);
     if(empty(option)) { // invoke parser
         // prepare
-        FrontEnd frontEnd(lex(ref), st.symbolTable, DS_EXEC_MODE_PARSE_ONLY, false,
+        FrontEnd frontEnd(lex(ref), st.typePool, st.symbolTable, DS_EXEC_MODE_PARSE_ONLY, false,
                           ObserverPtr<CodeCompletionHandler>(&handler));    //FIXME: sematic aware completion
 
         // perform completion

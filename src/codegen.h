@@ -146,7 +146,7 @@ public:
 
 class ByteCodeGenerator : protected NodeVisitor {
 private:
-    SymbolTable &symbolTable;
+    TypePool &typePool;
 
     bool assertion;
 
@@ -159,8 +159,7 @@ private:
     CodeGenError error;
 
 public:
-    ByteCodeGenerator(SymbolTable &symbolTable, bool assertion) :
-            symbolTable(symbolTable), assertion(assertion) { }
+    ByteCodeGenerator(TypePool &pool, bool assertion) : typePool(pool), assertion(assertion) { }
 
     ~ByteCodeGenerator() override = default;
 
@@ -477,7 +476,7 @@ public:
         return !this->hasError();
     }
 
-    CompiledCode finalize();
+    CompiledCode finalize(unsigned int maxVarIndex);
 
     void enterModule(const Lexer &lexer) {
         this->initToplevelCodeBuilder(lexer, 0);
@@ -490,14 +489,15 @@ class ByteCodeDumper {
 private:
     FILE *fp;
 
-    const SymbolTable &symbolTable;
+    const TypePool &typePool;
+    unsigned int maxGVarIndex;
 
     std::vector<std::reference_wrapper<const CompiledCode>> mods;
     std::vector<std::reference_wrapper<const CompiledCode>> funcs;
 
 public:
-    ByteCodeDumper(FILE *fp, const SymbolTable &symbolTable) :
-            fp(fp), symbolTable(symbolTable) {}
+    ByteCodeDumper(FILE *fp, const TypePool &pool, unsigned int maxGVarIndex) :
+            fp(fp), typePool(pool), maxGVarIndex(maxGVarIndex) {}
 
     void operator()(const CompiledCode &code);
 

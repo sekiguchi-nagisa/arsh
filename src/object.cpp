@@ -137,8 +137,8 @@ bool DSValue::opStr(DSState &state) const {
         case DSObject::Map:
             return typeAs<MapObject>(*this).opStr(state);
         case DSObject::Base: {
-            auto &type = state.symbolTable.types().get(this->getTypeID());
-            if(state.symbolTable.types().isTupleType(type)) {
+            auto &type = state.typePool.get(this->getTypeID());
+            if(state.typePool.isTupleType(type)) {
                 return typeAs<BaseObject>(*this).opStrAsTuple(state);
             }
             break;
@@ -159,8 +159,8 @@ bool DSValue::opInterp(DSState &state) const {
         case DSObject::Array:
             return typeAs<ArrayObject>(*this).opInterp(state);
         case DSObject::Base: {
-            auto &type = state.symbolTable.types().get(this->getTypeID());
-            if(state.symbolTable.types().isTupleType(type)) {
+            auto &type = state.typePool.get(this->getTypeID());
+            if(state.typePool.isTupleType(type)) {
                 return typeAs<BaseObject>(*this).opInterpAsTuple(state);
             }
             break;
@@ -357,9 +357,9 @@ static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
     if(!checkInvalid(state, ret)) {
         return DSValue();
     }
-    auto &type = state.symbolTable.types().get(ret.getTypeID());
+    auto &type = state.typePool.get(ret.getTypeID());
     if(!type.is(TYPE::String)) {
-        auto *handle = state.symbolTable.types().lookupMethod(type, op);
+        auto *handle = state.typePool.lookupMethod(type, op);
         assert(handle != nullptr);
         ret = callMethod(state, handle, std::move(ret), makeArgs());
     }
@@ -400,10 +400,10 @@ bool ArrayObject::opInterp(DSState &state) const {
     return true;
 }
 
-static const MethodHandle *lookupCmdArg(const DSType &recvType, SymbolTable &symbolTable) {
-    auto *handle = symbolTable.types().lookupMethod(recvType, OP_CMD_ARG);
+static const MethodHandle *lookupCmdArg(const DSType &recvType, TypePool &pool) {
+    auto *handle = pool.lookupMethod(recvType, OP_CMD_ARG);
     if(handle == nullptr) {
-        handle = symbolTable.types().lookupMethod(recvType, OP_STR);
+        handle = pool.lookupMethod(recvType, OP_STR);
     }
     return handle;
 }
@@ -414,8 +414,8 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
         return false;
     }
     if(!ret.hasType(TYPE::String) && !ret.hasType(TYPE::StringArray)) {
-        auto &recv = state.symbolTable.types().get(ret.getTypeID());
-        auto *handle = lookupCmdArg(recv, state.symbolTable);
+        auto &recv = state.typePool.get(ret.getTypeID());
+        auto *handle = lookupCmdArg(recv, state.typePool);
         assert(handle != nullptr);
         ret = TRY(callMethod(state, handle, std::move(ret), makeArgs()));
     }
@@ -433,7 +433,7 @@ static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const D
 }
 
 DSValue ArrayObject::opCmdArg(DSState &state) const {
-    auto result = DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray));
+    auto result = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
     for(auto &e : this->values) {
         if(!appendAsCmdArg(typeAs<ArrayObject>(result).values, state, e)) {
             return DSValue();
@@ -449,10 +449,10 @@ DSValue ArrayObject::opCmdArg(DSState &state) const {
 
 DSValue MapObject::nextElement(DSState &ctx) {
     std::vector<DSType *> types(2);
-    types[0] = &ctx.symbolTable.types().get(this->iter->first.getTypeID());
-    types[1] = &ctx.symbolTable.types().get(this->iter->second.getTypeID());
+    types[0] = &ctx.typePool.get(this->iter->first.getTypeID());
+    types[1] = &ctx.typePool.get(this->iter->second.getTypeID());
 
-    auto entry = DSValue::create<BaseObject>(*ctx.symbolTable.types().createTupleType(std::move(types)).take());
+    auto entry = DSValue::create<BaseObject>(*ctx.typePool.createTupleType(std::move(types)).take());
     typeAs<BaseObject>(entry)[0] = this->iter->first;
     typeAs<BaseObject>(entry)[1] = this->iter->second;
     ++this->iter;
@@ -514,7 +514,7 @@ BaseObject::~BaseObject() {
 }
 
 bool BaseObject::opStrAsTuple(DSState &state) const {
-    assert(state.symbolTable.types().isTupleType(state.symbolTable.types().get(this->getTypeID())));
+    assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
 
     state.toStrBuf += "(";
     unsigned int size = this->getFieldSize();
@@ -537,7 +537,7 @@ bool BaseObject::opStrAsTuple(DSState &state) const {
 }
 
 bool BaseObject::opInterpAsTuple(DSState &state) const {
-    assert(state.symbolTable.types().isTupleType(state.symbolTable.types().get(this->getTypeID())));
+    assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
 
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
@@ -555,9 +555,9 @@ bool BaseObject::opInterpAsTuple(DSState &state) const {
 }
 
 DSValue BaseObject::opCmdArgAsTuple(DSState &state) const {
-    assert(state.symbolTable.types().isTupleType(state.symbolTable.types().get(this->getTypeID())));
+    assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
 
-    auto result = DSValue::create<ArrayObject>(state.symbolTable.types().get(TYPE::StringArray));
+    auto result = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
     unsigned int size = this->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {
         if(!appendAsCmdArg(typeAs<ArrayObject>(result).refValues(), state, (*this)[i])) {
@@ -589,13 +589,13 @@ void ErrorObject::printStackTrace(DSState &ctx) {
 
 DSValue ErrorObject::newError(const DSState &state, const DSType &type, DSValue &&message) {
     auto traces = state.getCallStack().createStackTrace();
-    auto name = DSValue::createStr(state.symbolTable.types().getTypeNameCStr(type));
+    auto name = DSValue::createStr(state.typePool.getTypeNameCStr(type));
     return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), std::move(traces));
 }
 
 std::string ErrorObject::createHeader(const DSState &state) const {
     auto ref = this->message.asStrRef();
-    std::string str = state.symbolTable.types().getTypeNameCStr(state.symbolTable.types().get(this->getTypeID()));
+    std::string str = state.typePool.getTypeNameCStr(state.typePool.get(this->getTypeID()));
     str += ": ";
     str.append(ref.data(), ref.size());
     return str;

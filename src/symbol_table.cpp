@@ -357,10 +357,10 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path,
     return ret;
 }
 
-ModType& SymbolTable::createModType(const std::string &fullpath) {
+ModType& SymbolTable::createModType(TypePool &typePool, const std::string &fullpath) {
     std::string name = ModType::toModName(this->cur().getModID());
-    auto &modType = this->typePool.newType<ModType>(std::move(name),
-            this->typePool.get(TYPE::Any), this->cur().getModID(),
+    auto &modType = typePool.newType<ModType>(std::move(name),
+            typePool.get(TYPE::Any), this->cur().getModID(),
             this->cur().global().getHandleMap(), this->cur().getChilds());
     this->curModule = nullptr;
     this->modLoader.addModType(fullpath, modType);
@@ -425,7 +425,7 @@ const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string 
  * must be start with CMD_SYMBOL_PREFIX
  * @return
  */
-static const FieldHandle *lookupUdcFromModule(const SymbolTable &symbolTable,
+static const FieldHandle *lookupUdcFromModule(const TypePool &typePool,
                                               const ModType &modType, const std::string &fullname) {
     // search own udc
     auto *handle = modType.find(fullname);
@@ -441,7 +441,7 @@ static const FieldHandle *lookupUdcFromModule(const SymbolTable &symbolTable,
     for(unsigned int i = 0; i < size; i++) {
         auto e = modType.getChildAt(i);
         if(isGlobal(e)) {
-            auto &type = symbolTable.types().get(toTypeId(e));
+            auto &type = typePool.get(toTypeId(e));
             assert(type.isModType());
             handle = static_cast<const ModType&>(type).find(fullname);
             if(handle) {
@@ -452,13 +452,13 @@ static const FieldHandle *lookupUdcFromModule(const SymbolTable &symbolTable,
     return nullptr;
 }
 
-const FieldHandle * SymbolTable::lookupUdc(const ModType *belongModType, const char *cmdName) const {
+const FieldHandle * SymbolTable::lookupUdc(const TypePool &pool, const ModType *belongModType, const char *cmdName) const {
     std::string name = CMD_SYMBOL_PREFIX;
     name += cmdName;
     if(belongModType == nullptr) {
         return this->lookupHandle(name);
     } else {
-        return lookupUdcFromModule(*this, *belongModType, name);
+        return lookupUdcFromModule(pool, *belongModType, name);
     }
 }
 

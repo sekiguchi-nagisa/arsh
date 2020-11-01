@@ -523,8 +523,6 @@ private:
 
     unsigned int termHookIndex{0};
 
-    TypePool typePool;
-
 public:
     NON_COPYABLE(SymbolTable);
 
@@ -595,7 +593,7 @@ public:
      * @param fullpath
      * @return
      */
-    ModType &createModType(const std::string &fullpath);
+    ModType &createModType(TypePool &pool, const std::string &fullpath);
 
     const char *import(const ModType &type, bool global) {
         return this->cur().import(type, global);
@@ -641,6 +639,7 @@ public:
     /**
      * lookup user-defined command at runtime
      * if type is not null, saerch from module.
+     * @param pool
      * @param belongModType
      * may be null
      * @param cmdName
@@ -648,7 +647,7 @@ public:
      * @return
      * if not found, return null
      */
-    const FieldHandle *lookupUdc(const ModType *belongModType, const char *cmdName) const;
+    const FieldHandle *lookupUdc(const TypePool &pool, const ModType *belongModType, const char *cmdName) const;
 
     /**
      * create new local scope.
@@ -679,7 +678,6 @@ public:
     }
 
     void commit() {
-        this->typePool.commit();
         this->modLoader.commit();
         this->oldGvarCount = this->gvarCount;
         this->root().commit();
@@ -688,7 +686,6 @@ public:
     void abort() {
         this->modLoader.abort();
         this->gvarCount = this->oldGvarCount;
-        this->typePool.abort();
         this->resetCurModule();
         this->cur().abort();
     }
@@ -721,15 +718,6 @@ public:
 
     const ModuleLoader &getModLoader() const {
         return this->modLoader;
-    }
-
-    // for type lookup
-    const TypePool &types() const {
-        return this->typePool;
-    }
-
-    TypePool &types() {
-        return this->typePool;
     }
 };
 

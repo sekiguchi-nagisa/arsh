@@ -105,11 +105,11 @@ struct TypeFactory<Func_t<R, P...>> {
 class TypeTest : public ::testing::Test {
 public:
     SymbolTable symbolTable;
-    TypePool &pool;
+    TypePool pool;
     TypeChecker checker;
 
 public:
-    TypeTest() : pool(this->symbolTable.types()), checker(this->symbolTable, false, nullptr) {}
+    TypeTest() : checker(this->pool, this->symbolTable, false, nullptr) {}
 
     virtual void assertTypeName(const char *typeName, DSType &type) {
         std::string name(typeName);
