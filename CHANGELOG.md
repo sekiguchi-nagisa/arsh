@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Core
 - allow function call in command arguments
-  - ex. ``echo $func(34. "hey")``
+  - ex. ``echo $func(34, "hey")``
 
 #### Completion
 - add completions for
@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - remove ``cmd`` from test case for cygwin
-- escape charcters in env name completer
+- escape characters in env name completer
 - escape handling in completer when charcter has already escaped
 
 
