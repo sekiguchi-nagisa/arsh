@@ -1784,7 +1784,7 @@ bool VM::handleException(DSState &state) {
     return false;
 }
 
-DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const TypePool::DiscardPoint *discardPoint) {
+DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const DiscardPoint *discardPoint) {
     DSValue value;
     const unsigned int oldLevel = state.subshellLevel;
 
@@ -1816,18 +1816,14 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const TypePoo
         terminate(state.getMaskedExitStatus());
     }
 
-    if(discardPoint) {
-        if(ret) {
-            state.symbolTable.commit();
-        } else {
-            state.symbolTable.abort();
-            state.typePool.discard(*discardPoint);
-        }
+    if(discardPoint && !ret) {
+        state.symbolTable.discard(discardPoint->symbol);
+        state.typePool.discard(discardPoint->type);
     }
     return value;
 }
 
-int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, TypePool::DiscardPoint discardPoint) {
+int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, const DiscardPoint &discardPoint) {
     state.globals.resize(state.symbolTable.getMaxGVarIndex());
     state.stack.reset();
 

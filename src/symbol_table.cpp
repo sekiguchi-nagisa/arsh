@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Nagisa Sekiguchi
+ * Copyright (C) 2015-2020 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ const FieldHandle * Scope::lookup(const std::string &symbolName) const {
     return nullptr;
 }
 
-HandleOrError Scope::add(const std::string &symbolName, const FieldHandle &handle) {
+HandleOrError Scope::add(const std::string &symbolName, FieldHandle &&handle) {
     auto pair = this->handleMap.emplace(symbolName, handle);
     if(!pair.second) {
         return Err(SymbolError::DEFINED);
@@ -50,14 +50,12 @@ HandleOrError Scope::add(const std::string &symbolName, const FieldHandle &handl
 // ##     BlockScope     ##
 // ########################
 
-HandleOrError BlockScope::addNew(unsigned int commitID, const std::string &symbolName, const DSType &type,
+HandleOrError BlockScope::addNew(const std::string &symbolName, const DSType &type,
                                  FieldAttribute attribute, unsigned short modID) {
-    FieldHandle handle(commitID, type, this->getCurVarIndex(), attribute, modID);
-    auto ret = this->add(symbolName, handle);
+    auto ret = this->add(symbolName, type, this->getCurVarIndex(), attribute, modID);
     if(!ret) {
         return ret;
     }
-    assert(handle);
     this->curVarIndex++;
     if(this->getCurVarIndex() > UINT8_MAX) {
         return Err(SymbolError::LIMIT);
@@ -73,16 +71,15 @@ GlobalScope::GlobalScope(unsigned int &gvarCount) : Scope(GLOBAL, nullptr), gvar
     for(auto &e : DENIED_REDEFINED_CMD_LIST) {
         std::string name = CMD_SYMBOL_PREFIX;
         name += e;
-        this->handleMap.emplace(std::move(name), FieldHandle());
+        this->add(name);
     }
     RefCountOp<Scope>::increase(this);
 }
 
-HandleOrError GlobalScope::addNew(unsigned int commitID, const std::string &symbolName, const DSType &type,
+HandleOrError GlobalScope::addNew(const std::string &symbolName, const DSType &type,
                                   FieldAttribute attribute, unsigned short modID) {
     setFlag(attribute, FieldAttribute::GLOBAL);
-    FieldHandle handle(commitID, type, this->gvarCount.get(), attribute, modID);
-    auto ret = this->add(symbolName, handle);
+    auto ret = this->add(symbolName, type, this->gvarCount.get(), attribute, modID);
     if(ret) {
         this->gvarCount.get()++;
     }
@@ -99,10 +96,10 @@ HandleOrError ModuleScope::newHandle(const std::string &symbolName,
         if(this->builtin) {
             setFlag(attribute, FieldAttribute::BUILTIN);
         }
-        return this->globalScope.addNew(this->commitID, symbolName, type, attribute, this->modID);
+        return this->globalScope.addNew(symbolName, type, attribute, this->modID);
     }
 
-    auto ret = this->curScope().addNew(this->commitID, symbolName, type, attribute, this->modID);
+    auto ret = this->curScope().addNew(symbolName, type, attribute, this->modID);
     if(ret) {
         unsigned int varIndex = this->curScope().getCurVarIndex();
         if(varIndex > this->maxVarIndexStack.back()) {
@@ -168,7 +165,7 @@ const char* ModuleScope::import(const ModType &type, bool global) {
         }
         const auto &symbolName = e.first;
         const auto &handle = e.second;
-        auto ret = this->globalScope.add(symbolName, FieldHandle(this->commitID, handle, handle.getModID()));
+        auto ret = this->globalScope.add(symbolName, handle, handle.getModID());
         if(!ret) {
             StringRef name = symbolName;
             if(name.startsWith(CMD_SYMBOL_PREFIX)) {
@@ -233,9 +230,9 @@ std::string ModType::toModName(unsigned short id) {
 // ##     ModuleLoader     ##
 // ##########################
 
-void ModuleLoader::abort() {
+void ModuleLoader::discard(unsigned int discardPoint) {
     for(auto iter = this->indexMap.begin(); iter != this->indexMap.end(); ) {
-        if(iter->second.getIndex() >= this->oldModSize) {
+        if(iter->second.getIndex() >= discardPoint) {
             const char *ptr = iter->first.data();
             iter = this->indexMap.erase(iter);
             free(const_cast<char*>(ptr));

@@ -33,7 +33,7 @@
 
 using namespace ydsh;
 
-static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError, TypePool::DiscardPoint discardPoint) {
+static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError, const DiscardPoint &discardPoint) {
     if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
         auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");
@@ -84,10 +84,10 @@ public:
         return this->frontEnd.getRootLineNum();
     }
 
-    int operator()(TypePool::DiscardPoint discardPoint, DSError *dsError, CompiledCode &code);
+    int operator()(const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code);
 };
 
-int Compiler::operator()(TypePool::DiscardPoint discardPoint, DSError *dsError, CompiledCode &code) {
+int Compiler::operator()(const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code) {
     if(dsError != nullptr) {
         *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .fileName = nullptr, .lineNum = 0, .name = nullptr};
     }
@@ -141,7 +141,7 @@ int Compiler::operator()(TypePool::DiscardPoint discardPoint, DSError *dsError, 
     return 0;
 }
 
-static int compile(DSState &state, Lexer &&lexer, TypePool::DiscardPoint discardPoint, DSError *dsError, CompiledCode &code) {
+static int compile(DSState &state, Lexer &&lexer, const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code) {
     Compiler compiler(state, std::move(lexer));
     int ret = compiler(discardPoint, dsError, code);
     state.lineNum = compiler.lineNum();
@@ -150,7 +150,10 @@ static int compile(DSState &state, Lexer &&lexer, TypePool::DiscardPoint discard
 
 static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError) {
     CompiledCode code;
-    auto discardPoint = state.typePool.getDiscardPoint();
+    DiscardPoint discardPoint {
+        .type = state.typePool.getDiscardPoint(),
+        .symbol = state.symbolTable.getDiscardPoint(),
+    };
     int ret = compile(state, std::move(lexer), discardPoint, dsError, code);
     if(!code) {
         return ret;

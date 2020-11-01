@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Nagisa Sekiguchi
+ * Copyright (C) 2015-2020 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,6 +64,10 @@ public:
         return this->handleMap;
     }
 
+    unsigned int size() const {
+        return this->handleMap.size();
+    }
+
     auto begin() const {
         return this->handleMap.begin();
     }
@@ -91,7 +95,7 @@ public:
     const FieldHandle *lookup(const std::string &symbolName) const;
 
 protected:
-    void abort(unsigned int commitID) {
+    void discard(unsigned int commitID) {
         for(auto iter = this->handleMap.begin(); iter != this->handleMap.end();) {
             if(iter->second && iter->second.getCommitID() >= commitID) {
                 iter = this->handleMap.erase(iter);
@@ -101,10 +105,16 @@ protected:
         }
     }
 
-    virtual HandleOrError addNew(unsigned int commitID, const std::string &symbolName,
+    template <typename ...Arg>
+    HandleOrError add(const std::string &symbolName, Arg&& ...arg) {
+        return this->add(symbolName, FieldHandle(this->handleMap.size(), std::forward<Arg>(arg)...));
+    }
+
+    virtual HandleOrError addNew(const std::string &symbolName,
                                  const DSType &type, FieldAttribute attribute, unsigned short modID) = 0;
 
-    HandleOrError add(const std::string &symbolName, const FieldHandle &handle);
+private:
+    HandleOrError add(const std::string &symbolName, FieldHandle &&handle);
 };
 
 class BlockScope : public Scope {
@@ -134,8 +144,8 @@ public:
     }
 
 private:
-    HandleOrError addNew(unsigned int commitID, const std::string &symbolName,
-                         const DSType &type, FieldAttribute attribute, unsigned short modID) override;
+    HandleOrError addNew(const std::string &symbolName, const DSType &type,
+                         FieldAttribute attribute, unsigned short modID) override;
 };
 
 class GlobalScope : public Scope {
@@ -151,8 +161,8 @@ public:
     ~GlobalScope() override = default;
 
 private:
-    HandleOrError addNew(unsigned int commitID, const std::string &symbolName,
-                         const DSType &type, FieldAttribute attribute, unsigned short modID) override;
+    HandleOrError addNew(const std::string &symbolName, const DSType &type,
+                         FieldAttribute attribute, unsigned short modID) override;
 };
 
 /**
@@ -238,8 +248,6 @@ private:
 
     bool builtin;
 
-    unsigned int commitID{0};
-
     GlobalScope globalScope;
 
     IntrusivePtr<Scope> scope;
@@ -279,8 +287,7 @@ public:
     HandleOrError newHandle(const std::string &symbolName, const DSType &type, FieldAttribute attribute);
 
     HandleOrError addGlobalAlias(const std::string &symbolName, const FieldHandle &handle) {
-        FieldHandle newHandle(this->commitID, handle, this->modID);
-        return this->globalScope.add(symbolName, newHandle);
+        return this->globalScope.add(symbolName, handle, this->modID);
     }
 
     void closeBuiltin() {
@@ -321,14 +328,10 @@ public:
     /**
      * remove changed state(local scope, global FieldHandle)
      */
-    void abort() {
-        this->globalScope.abort(this->commitID);
+    void discard(unsigned int commitIdOffset) {
+        this->globalScope.discard(commitIdOffset);
         this->resetScope();
         this->childs.clear();
-    }
-
-    void commit() {
-        this->commitID++;
     }
 
     void clear();
@@ -438,8 +441,6 @@ public:
 
 class ModuleLoader {
 private:
-    unsigned int oldModSize{0};
-
     std::unordered_map<StringRef, ModEntry> indexMap;
 
 public:
@@ -453,11 +454,11 @@ public:
         }
     }
 
-    void commit() {
-        this->oldModSize = this->modSize();
+    unsigned int getDiscardPoint() const {
+        return this->modSize();
     }
 
-    void abort();
+    void discard(unsigned int discardPoint);
 
     /**
      * resolve module path or module type
@@ -513,10 +514,15 @@ private:
     }
 };
 
+struct SymbolDiscardPoint {
+    unsigned int modIdOffset;
+    unsigned int gvarOffset;
+    unsigned int commitIdOffset;
+};
+
 class SymbolTable {
 private:
     ModuleLoader modLoader;
-    unsigned int oldGvarCount{0};
     unsigned int gvarCount{0};
     ModuleScope rootModule;
     ModuleScope *curModule;
@@ -677,17 +683,19 @@ public:
         this->cur().exitFunc();
     }
 
-    void commit() {
-        this->modLoader.commit();
-        this->oldGvarCount = this->gvarCount;
-        this->root().commit();
+    SymbolDiscardPoint getDiscardPoint() const {
+        return SymbolDiscardPoint {
+            .modIdOffset = this->modLoader.modSize(),
+            .gvarOffset = this->gvarCount,
+            .commitIdOffset = this->root().global().size(),
+        };
     }
 
-    void abort() {
-        this->modLoader.abort();
-        this->gvarCount = this->oldGvarCount;
+    void discard(const SymbolDiscardPoint discardPoint) {
+        this->modLoader.discard(discardPoint.modIdOffset);
+        this->gvarCount = discardPoint.gvarOffset;
         this->resetCurModule();
-        this->cur().abort();
+        this->cur().discard(discardPoint.commitIdOffset);
     }
 
     void clear() {
@@ -720,6 +728,12 @@ public:
         return this->modLoader;
     }
 };
+
+struct DiscardPoint {
+    TypePool::DiscardPoint type;
+    SymbolDiscardPoint symbol;
+};
+
 
 } // namespace ydsh
 

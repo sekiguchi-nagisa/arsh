@@ -462,7 +462,7 @@ private:
      * if has error or not value, return null
      * otherwise, return value
      */
-    static DSValue startEval(DSState &state, EvalOP op, DSError *dsError, const TypePool::DiscardPoint *discardPoint = nullptr);
+    static DSValue startEval(DSState &state, EvalOP op, DSError *dsError, const DiscardPoint *discardPoint = nullptr);
 
     static unsigned int prepareArguments(VMState &state, DSValue &&recv,
                                          std::pair<unsigned int, std::array<DSValue, 3>> &&args);
@@ -497,7 +497,7 @@ public:
      * @return
      * exit status of latest executed command.
      */
-    static int callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, TypePool::DiscardPoint discardPoint);
+    static int callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, const DiscardPoint &discardPoint);
 
     /**
      * execute command.
@@ -543,7 +543,7 @@ public:
  * @return
  * exit status of latest executed command.
  */
-inline int callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, TypePool::DiscardPoint discardPoint) {
+inline int callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, const DiscardPoint &discardPoint) {
     return VM::callToplevel(state, code, dsError, discardPoint);
 }
 

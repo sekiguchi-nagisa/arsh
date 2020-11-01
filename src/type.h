@@ -258,7 +258,7 @@ private:
     unsigned short modID;
 
 public:
-    FieldHandle() : commitID(0), typeID(0), index(0), attribute(), modID(0) {}
+    FieldHandle(unsigned int commitID) : commitID(commitID), typeID(0), index(0), attribute(), modID(0) {}
 
     FieldHandle(unsigned int commitID, const DSType &fieldType, unsigned int fieldIndex,
                 FieldAttribute attribute, unsigned short modID = 0) :
