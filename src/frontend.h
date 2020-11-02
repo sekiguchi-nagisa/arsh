@@ -130,8 +130,7 @@ public:
     }
 
     void discard(const DiscardPoint &discardPoint) {
-        this->checker.getSymbolTable().discard(discardPoint.symbol);
-        this->checker.getTypePool().discard(discardPoint.type);
+        discardAll(this->getSymbolTable(), this->getTypePool(), discardPoint);
     }
 
     const Lexer &getCurrentLexer() const {

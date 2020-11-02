@@ -734,6 +734,12 @@ struct DiscardPoint {
     TypeDiscardPoint type;
 };
 
+inline void discardAll(SymbolTable &symbolTable, TypePool &typePool,
+                       const DiscardPoint &discardPoint) {
+    symbolTable.discard(discardPoint.symbol);
+    typePool.discard(discardPoint.type);
+}
+
 
 } // namespace ydsh
 

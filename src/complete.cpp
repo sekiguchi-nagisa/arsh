@@ -564,6 +564,10 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
     auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
     auto &compreply = typeAs<ArrayObject>(result);
 
+    DiscardPoint discardPoint {
+        .symbol = st.symbolTable.getDiscardPoint(),
+        .type = st.typePool.getDiscardPoint(),
+    };
     CodeCompletionHandler handler(st);
     if(empty(option)) { // invoke parser
         // prepare
@@ -577,13 +581,7 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
         handler.addCompRequest(option, ref.toString());
         handler.invoke(compreply);
     }
-    /**
-     * FIXME: only abort currently added symbol
-     *
-     * in current implementation, also abort symbols previously defined (before completion)
-     * symbols.
-     */
-//    st.symbolTable.abort(); // always clear newly added symbol
+    discardAll(st.symbolTable, st.typePool, discardPoint);
 
     auto &values = compreply.refValues();
     compreply.sortAsStrArray();

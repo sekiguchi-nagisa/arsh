@@ -1817,8 +1817,7 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const Discard
     }
 
     if(discardPoint && !ret) {
-        state.symbolTable.discard(discardPoint->symbol);
-        state.typePool.discard(discardPoint->type);
+        discardAll(state.symbolTable, state.typePool, *discardPoint);
     }
     return value;
 }
