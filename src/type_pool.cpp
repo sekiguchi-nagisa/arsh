@@ -120,7 +120,7 @@ TypeOrError TypePool::getType(const std::string &typeName) const {
     return Ok(type);
 }
 
-void TypePool::discard(const DiscardPoint point) {
+void TypePool::discard(const TypeDiscardPoint point) {
     for(unsigned int i = point.typeIdOffset; i < this->typeTable.size(); i++) {
         delete this->typeTable[i];
     }

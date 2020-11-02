@@ -151,8 +151,8 @@ static int compile(DSState &state, Lexer &&lexer, const DiscardPoint &discardPoi
 static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError) {
     CompiledCode code;
     DiscardPoint discardPoint {
-        .type = state.typePool.getDiscardPoint(),
         .symbol = state.symbolTable.getDiscardPoint(),
+        .type = state.typePool.getDiscardPoint(),
     };
     int ret = compile(state, std::move(lexer), discardPoint, dsError, code);
     if(!code) {

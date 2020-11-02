@@ -730,8 +730,8 @@ public:
 };
 
 struct DiscardPoint {
-    TypePool::DiscardPoint type;
     SymbolDiscardPoint symbol;
+    TypeDiscardPoint type;
 };
 
 

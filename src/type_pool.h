@@ -29,6 +29,11 @@ namespace ydsh {
 using TypeOrError = Result<DSType *, std::unique_ptr<TypeLookupError>>;
 using TypeTempOrError = Result<const TypeTemplate*, std::unique_ptr<TypeLookupError>>;
 
+struct TypeDiscardPoint {
+    unsigned int typeIdOffset;
+    unsigned int methodIdOffset;
+};
+
 class TypePool {
 private:
     unsigned int methodIdCount{0};
@@ -132,17 +137,6 @@ private:
     static constexpr unsigned int MAX_TYPE_NUM = 0xFFFFFF;
 
 public:
-    class DiscardPoint {
-    private:
-        friend class TypePool;
-
-        unsigned int typeIdOffset;
-        unsigned int methodIdOffset;
-
-        DiscardPoint(unsigned int typeIdOffset, unsigned int methodIdOffset) :
-            typeIdOffset(typeIdOffset), methodIdOffset(methodIdOffset) {}
-    };
-
     NON_COPYABLE(TypePool);
 
     TypePool();
@@ -258,11 +252,14 @@ public:
         return this->lookupMethod(revType, "");
     }
 
-    DiscardPoint getDiscardPoint() const {
-        return DiscardPoint(this->typeTable.size(), this->methodIdCount);
+    TypeDiscardPoint getDiscardPoint() const {
+        return TypeDiscardPoint {
+            .typeIdOffset = this->typeTable.size(),
+            .methodIdOffset = this->methodIdCount,
+        };
     }
 
-    void discard(DiscardPoint point);
+    void discard(TypeDiscardPoint point);
 
 private:
     DSType *get(const std::string &typeName) const {
