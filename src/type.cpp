@@ -53,8 +53,8 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
 // ##     TupleType     ##
 // #######################
 
-TupleType::TupleType(unsigned int id, native_type_info_t info, const DSType &superType, std::vector<DSType *> &&types) :
-        ReifiedType(id, info, &superType, std::move(types)) {
+TupleType::TupleType(StringRef ref, unsigned int id, native_type_info_t info, const DSType &superType, std::vector<DSType *> &&types) :
+        ReifiedType(ref, id, info, &superType, std::move(types)) {
     const unsigned int size = this->elementTypes.size();
     const unsigned int baseIndex = this->superType->getFieldSize();
     for(unsigned int i = 0; i < size; i++) {

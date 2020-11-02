@@ -99,11 +99,10 @@ TypePool::~TypePool() {
     }
 }
 
-DSType *TypePool::addType(std::string &&typeName, DSType *type) {
+DSType *TypePool::addType(DSType *type) {
     assert(type != nullptr);
-    this->nameTable.push_back(typeName);
     this->typeTable.push_back(type);
-    bool s = this->setAlias(std::move(typeName), *type);
+    bool s = this->setAlias(type->getNameRef().toString(), *type);
     (void) s;
     assert(s);
     if(this->typeTable.size() == MAX_TYPE_NUM) {
@@ -125,7 +124,6 @@ void TypePool::discard(const TypeDiscardPoint point) {
         delete this->typeTable[i];
     }
     this->typeTable.erase(this->typeTable.begin() + point.typeIdOffset, this->typeTable.end());
-    this->nameTable.erase(this->nameTable.begin() + point.typeIdOffset, this->nameTable.end());
 
     for(auto iter = this->aliasMap.begin(); iter != this->aliasMap.end();) {
         if(iter->second >= point.typeIdOffset) {
@@ -136,7 +134,6 @@ void TypePool::discard(const TypeDiscardPoint point) {
     }
 
     assert(point.typeIdOffset == this->typeTable.size());
-    assert(point.typeIdOffset == this->nameTable.size());
 
     // abort method handle
     if(point.methodIdOffset >= this->methodIdCount) {
@@ -182,7 +179,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     if(hasFlag(attr, TypeAttr::OPTION_TYPE)) {
         auto *type = elementTypes[0];
         if(type->isVoidType() || type->isNothingType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeNameCStr(*type));
+            RAISE_TL_ERROR(InvalidElement, type->getName());
         } else if(type->isOptionType()) {
             return Ok(type);
         }
@@ -198,8 +195,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
     if(type == nullptr) {
         DSType *superType = hasFlag(attr, TypeAttr::OPTION_TYPE) ? nullptr : &this->get(TYPE::Any);
         auto &reified = this->newType<ReifiedType>(
-                std::move(typeName),
-                typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
+                typeName, typeTemplate.getInfo(), superType, std::move(elementTypes), attr);
         this->registerHandles(reified);
         type = &reified;
     }
@@ -219,8 +215,7 @@ TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
     if(type == nullptr) {
         auto &superType = this->get(TYPE::Any);
         auto &tuple = this->newType<TupleType>(
-                std::move(typeName),
-                this->tupleTemplate.getInfo(), superType, std::move(elementTypes));
+                typeName, this->tupleTemplate.getInfo(), superType, std::move(elementTypes));
         this->registerHandles(tuple);
         type = &tuple;
     }
@@ -237,8 +232,7 @@ TypeOrError TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &
     DSType *type = this->get(typeName);
     if(type == nullptr) {
         type = &this->newType<FunctionType>(
-                std::move(typeName),
-                this->get(TYPE::Func), returnType, std::move(paramTypes));
+                typeName, this->get(TYPE::Func), returnType, std::move(paramTypes));
     }
     assert(type->isFuncType());
     return Ok(type);
@@ -398,14 +392,14 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
                                     const std::vector<DSType *> &elementTypes) const {
     if(typeTemplate == this->getArrayTemplate()) {
         std::string str = "[";
-        str += this->getTypeName(*elementTypes[0]);
+        str += elementTypes[0]->getNameRef();
         str += "]";
         return str;
     } else if(typeTemplate == this->getMapTemplate()) {
         std::string str = "[";
-        str += this->getTypeName(*elementTypes[0]);
+        str += elementTypes[0]->getNameRef();
         str += " : ";
-        str += this->getTypeName(*elementTypes[1]);
+        str += elementTypes[1]->getNameRef();
         str += "]";
         return str;
     } else if(typeTemplate == this->getOptionTemplate()) {
@@ -414,7 +408,7 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
         if(type->isFuncType()) {
             str += "(";
         }
-        str += this->getTypeName(*type);
+        str += type->getNameRef();
         if(type->isFuncType()) {
             str += ")";
         }
@@ -428,7 +422,7 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
             if(i > 0) {
                 str += ",";
             }
-            str += this->getTypeName(*elementTypes[i]);
+            str += elementTypes[i]->getNameRef();
         }
         str += ">";
         return str;
@@ -441,7 +435,7 @@ std::string TypePool::toTupleTypeName(const std::vector<DSType *> &elementTypes)
         if(i > 0) {
             str += ", ";
         }
-        str += this->getTypeName(*elementTypes[i]);
+        str += elementTypes[i]->getNameRef();
     }
     if(elementTypes.size() == 1) {
         str += ",";
@@ -456,17 +450,17 @@ std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<D
         if(i > 0) {
             funcTypeName += ", ";
         }
-        funcTypeName += this->getTypeName(*paramTypes[i]);
+        funcTypeName += paramTypes[i]->getNameRef();
     }
     funcTypeName += ") -> ";
-    funcTypeName += this->getTypeName(*returnType);
+    funcTypeName += returnType->getNameRef();
     return funcTypeName;
 }
 
 TypeOrError TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
     for(DSType *type : elementTypes) {
         if(type->isVoidType() || type->isNothingType()) {
-            RAISE_TL_ERROR(InvalidElement, this->getTypeNameCStr(*type));
+            RAISE_TL_ERROR(InvalidElement, type->getName());
         }
     }
     return Ok(static_cast<DSType *>(nullptr));
@@ -489,7 +483,7 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t, const std::vector
         if(acceptType->is(TYPE::Any) && elementType->isOptionType()) {
             continue;
         }
-        RAISE_TL_ERROR(InvalidElement, this->getTypeNameCStr(*elementType));
+        RAISE_TL_ERROR(InvalidElement, elementType->getName());
     }
     return Ok(static_cast<DSType *>(nullptr));
 }
@@ -498,7 +492,7 @@ void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool extendib
                                ydsh::native_type_info_t info) {
     // create and register type
     auto &type = this->newType<BuiltinType>(
-            std::string(typeName), super, info, extendible ? TypeAttr::EXTENDIBLE : TypeAttr());
+            typeName, super, info, extendible ? TypeAttr::EXTENDIBLE : TypeAttr());
     this->registerHandles(type);
     (void) t;
     assert(type.is(t));
@@ -511,7 +505,7 @@ void TypePool::initTypeTemplate(TypeTemplate &temp, const char *typeName,
 }
 
 void TypePool::initErrorType(TYPE t, const char *typeName) {
-    auto &type = this->newType<ErrorType>(std::string(typeName), this->get(TYPE::Error));
+    auto &type = this->newType<ErrorType>(typeName, this->get(TYPE::Error));
     (void) type;
     (void) t;
     assert(type.is(t));

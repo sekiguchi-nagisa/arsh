@@ -188,7 +188,7 @@ private:
     friend class ModuleScope;
 
 public:
-    ModType(unsigned int id, DSType &superType, unsigned short modID,
+    ModType(StringRef ref, unsigned int id, DSType &superType, unsigned short modID,
             const std::unordered_map<std::string, FieldHandle> &handleMap,
             const FlexBuffer<ChildModEntry> &childs);
 
@@ -225,7 +225,7 @@ public:
 };
 
 inline ChildModEntry toChildModEntry(const ModType &type, bool global) {
-    unsigned int value = type.getTypeID();
+    unsigned int value = type.typeId();
     if(global) {
         value |= static_cast<unsigned int>(1 << 31);
     }
@@ -413,7 +413,7 @@ public:
     explicit ModEntry(unsigned int index) : index(index), typeId(0) {}
 
     void setModType(const ModType &type) {
-        this->typeId = type.getTypeID();
+        this->typeId = type.typeId();
     }
 
     unsigned int getIndex() const {

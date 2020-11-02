@@ -154,7 +154,7 @@ bool VM::OP_PRINT(DSState &state) {
     assert(!stackTopType.isVoidType());
     auto ref = state.stack.peek().asStrRef();
     std::string value = ": ";
-    value += state.typePool.getTypeNameCStr(stackTopType);
+    value += stackTopType.getNameRef();
     value += " = ";
     value += ref;
     value += "\n";
@@ -180,9 +180,9 @@ bool VM::OP_CHECK_CAST(DSState &state) {
     if(!::instanceOf(state.typePool, state.stack.peek(), type)) {
         auto &stackTopType = state.typePool.get(state.stack.pop().getTypeID());
         std::string str("cannot cast `");
-        str += state.typePool.getTypeNameCStr(stackTopType);
+        str += stackTopType.getNameRef();
         str += "' to `";
-        str += state.typePool.getTypeNameCStr(type);
+        str += type.getNameRef();
         str += "'";
         raiseError(state, TYPE::TypeCastError, std::move(str));
         return false;
@@ -1996,7 +1996,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
                 .kind = kind,
                 .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
                 .lineNum = errorLineNum,
-                .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? state.typePool.getTypeNameCStr(errorType) : "")
+                .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : "")
         };
     }
     return kind;

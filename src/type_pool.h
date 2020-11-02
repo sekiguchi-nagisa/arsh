@@ -38,7 +38,6 @@ class TypePool {
 private:
     unsigned int methodIdCount{0};
     FlexBuffer<DSType *> typeTable;
-    std::vector<std::string> nameTable; //   maintain type name
     std::unordered_map<std::string, unsigned int> aliasMap;
 
     // for reified type
@@ -56,7 +55,7 @@ private:
         unsigned int id;
         StringRef ref;
 
-        Key(const DSType &recv, StringRef ref) : id(recv.getTypeID()), ref(ref) {}
+        Key(const DSType &recv, StringRef ref) : id(recv.typeId()), ref(ref) {}
 
         void dispose() {
             free(const_cast<char *>(this->ref.take()));
@@ -143,9 +142,9 @@ public:
     ~TypePool();
 
     template <typename T, typename ...A>
-    T &newType(std::string &&name, A &&...arg) {
+    T &newType(StringRef name, A &&...arg) {
         unsigned int id = this->typeTable.size();
-        return *static_cast<T *>(this->addType(std::move(name), new T(id, std::forward<A>(arg)...)));
+        return *static_cast<T *>(this->addType(new T(name, id, std::forward<A>(arg)...)));
     }
 
     DSType &get(TYPE t) const {
@@ -160,17 +159,6 @@ public:
      * return null, if has no type.
      */
     TypeOrError getType(const std::string &typeName) const;
-
-    /**
-     * type must not be null.
-     */
-    const std::string &getTypeName(const DSType &type) const {
-        return this->nameTable[type.getTypeID()];
-    }
-
-    const char *getTypeNameCStr(const DSType &type) const {
-        return this->getTypeName(type).c_str();
-    }
 
     const TypeTemplate &getArrayTemplate() const {
         return this->arrayTemplate;
@@ -234,7 +222,7 @@ public:
      * return false, if duplicated
      */
     bool setAlias(std::string &&alias, const DSType &type) {
-        auto pair = this->aliasMap.emplace(std::move(alias), type.getTypeID());
+        auto pair = this->aliasMap.emplace(std::move(alias), type.typeId());
         return pair.second;
     }
 
@@ -273,7 +261,7 @@ private:
     /**
      * return added type. type must not be null.
      */
-    DSType *addType(std::string &&typeName, DSType *type);
+    DSType *addType(DSType *type);
 
     /**
      * create reified type name

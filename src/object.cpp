@@ -589,13 +589,13 @@ void ErrorObject::printStackTrace(DSState &ctx) {
 
 DSValue ErrorObject::newError(const DSState &state, const DSType &type, DSValue &&message) {
     auto traces = state.getCallStack().createStackTrace();
-    auto name = DSValue::createStr(state.typePool.getTypeNameCStr(type));
+    auto name = DSValue::createStr(type.getName());
     return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), std::move(traces));
 }
 
 std::string ErrorObject::createHeader(const DSState &state) const {
     auto ref = this->message.asStrRef();
-    std::string str = state.typePool.getTypeNameCStr(state.typePool.get(this->getTypeID()));
+    std::string str = state.typePool.get(this->getTypeID()).getNameRef().toString();
     str += ": ";
     str += ref;
     return str;

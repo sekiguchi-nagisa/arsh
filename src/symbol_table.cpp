@@ -191,10 +191,10 @@ ModType::~ModType() {
     free(this->childs);
 }
 
-ModType::ModType(unsigned int id, ydsh::DSType &superType, unsigned short modID,
+ModType::ModType(StringRef ref, unsigned int id, ydsh::DSType &superType, unsigned short modID,
                  const std::unordered_map<std::string, ydsh::FieldHandle> &handleMap,
                  const FlexBuffer<ChildModEntry> &childs) :
-        DSType(id, &superType, TypeAttr::MODULE_TYPE), modID(modID) {
+        DSType(ref, id, &superType, TypeAttr::MODULE_TYPE), modID(modID) {
     assert(modID > 0);
     for(auto &e : handleMap) {
         if(e.second.getModID() == modID) {
@@ -360,8 +360,8 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path,
 
 ModType& SymbolTable::createModType(TypePool &typePool, const std::string &fullpath) {
     std::string name = ModType::toModName(this->cur().getModID());
-    auto &modType = typePool.newType<ModType>(std::move(name),
-            typePool.get(TYPE::Any), this->cur().getModID(),
+    auto &modType = typePool.newType<ModType>(
+            name, typePool.get(TYPE::Any), this->cur().getModID(),
             this->cur().global().getHandleMap(), this->cur().getChilds());
     this->curModule = nullptr;
     this->modLoader.addModType(fullpath, modType);

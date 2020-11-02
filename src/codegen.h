@@ -278,7 +278,7 @@ private:
      */
     void emitTypeIns(OpCode op, const DSType &type) {
         assert(isTypeOp(op));
-        this->emit3byteIns(op, type.getTypeID());
+        this->emit3byteIns(op, type.typeId());
     }
 
     unsigned int currentCodeOffset() const {

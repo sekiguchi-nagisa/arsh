@@ -114,7 +114,7 @@ public:
     virtual void assertTypeName(const char *typeName, DSType &type) {
         std::string name(typeName);
         // assert type name
-        ASSERT_EQ(name, this->pool.getTypeNameCStr(type));
+        ASSERT_EQ(name, type.getName());
 
         // assert type
         auto ret = this->pool.getType(name);
@@ -125,7 +125,7 @@ public:
     virtual void assertSuperType(DSType &type, DSType &superType) {
         auto *actualSuperType = type.getSuperType();
         ASSERT_TRUE(actualSuperType != nullptr);
-        ASSERT_STREQ(this->pool.getTypeNameCStr(*actualSuperType), this->pool.getTypeNameCStr(superType));
+        ASSERT_STREQ(actualSuperType->getName(), superType.getName());
         ASSERT_TRUE(*actualSuperType == superType);
     }
 
@@ -137,7 +137,7 @@ public:
 
     virtual void assertAlias(const char *aliasName, DSType &type) {
         std::string name(aliasName);
-        ASSERT_NE(name, this->pool.getTypeNameCStr(type));
+        ASSERT_NE(name, type.getName());
 
         this->pool.setAlias(std::string(name), type);
         auto ret = this->pool.getType(name);
@@ -272,7 +272,7 @@ TEST_F(TypeTest, typeToken) {
 
 TEST_F(TypeTest, pool) {
     auto &t = this->toType<Array_t<Int_t>>();
-    std::string typeName = this->pool.getTypeNameCStr(t);
+    std::string typeName = t.getNameRef().toString();
     std::string alias = "IArray";
     ASSERT_NO_FATAL_FAILURE(this->assertAlias(alias.c_str(), t));
 //    this->pool.abort();

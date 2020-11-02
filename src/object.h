@@ -104,7 +104,7 @@ struct ObjectWithRtti : public DSObject {
 protected:
     static_assert(sizeof(DSObject) == 8, "");
 
-    explicit ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.getTypeID()) {}
+    explicit ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.typeId()) {}
     explicit ObjectWithRtti(TYPE type) : ObjectWithRtti(static_cast<unsigned int>(type)) {}
     explicit ObjectWithRtti(unsigned int id) : DSObject(K, id) {}
 
@@ -528,7 +528,7 @@ public:
     }
 
     static DSValue createDummy(const DSType &type) {
-        DSValue ret(static_cast<uint64_t>(type.getTypeID()));
+        DSValue ret(static_cast<uint64_t>(type.typeId()));
         ret.u64.kind = DSValueKind::DUMMY;
         return ret;
     }
@@ -695,7 +695,7 @@ public:
     explicit ArrayObject(const DSType &type) : ObjectWithRtti(type) { }
 
     ArrayObject(const DSType &type, std::vector<DSValue> &&values) :
-            ArrayObject(type.getTypeID(), std::move(values)) {}
+            ArrayObject(type.typeId(), std::move(values)) {}
 
     ArrayObject(unsigned int typeID, std::vector<DSValue> &&values) :
             ObjectWithRtti(typeID), values(std::move(values)) { }
@@ -761,7 +761,7 @@ private:
 public:
     explicit MapObject(const DSType &type) : ObjectWithRtti(type) { }
 
-    MapObject(const DSType &type, HashMap &&map) : MapObject(type.getTypeID(), std::move(map)) {}
+    MapObject(const DSType &type, HashMap &&map) : MapObject(type.typeId(), std::move(map)) {}
 
     MapObject(unsigned int typeID, HashMap &&map) : ObjectWithRtti(typeID), valueMap(std::move(map)) {}
 

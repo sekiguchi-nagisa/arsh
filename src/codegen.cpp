@@ -1430,7 +1430,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
             if(isTypeOp(code)) {
                 unsigned int v = read24(c.getCode(), i + 1);
                 i += 3;
-                fprintf(this->fp, "  %s", this->typePool.getTypeNameCStr(this->typePool.get(v)));
+                fprintf(this->fp, "  %s", this->typePool.get(v).getName());
             } else {
                 const int byteSize = getByteSize(code);
                 if(code == OpCode::CALL_METHOD || code == OpCode::FORK) {
@@ -1515,7 +1515,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
                                 std::ref(cast<FuncObject>(v.get())->getCode()));
                     }
                 }
-                fprintf(this->fp, "%s %s", this->typePool.getTypeNameCStr(type), value.c_str());
+                fprintf(this->fp, "%s %s", type.getName(), value.c_str());
                 break;
             }
             }
@@ -1539,7 +1539,7 @@ void ByteCodeDumper::dumpCode(const ydsh::CompiledCode &c) {
     for(unsigned int i = 0; c.getExceptionEntries()[i].type != nullptr; i++) {
         const auto &e = c.getExceptionEntries()[i];
         fprintf(this->fp, "  begin: %d, end: %d, type: %s, dest: %d, offset: %d, size: %d\n",
-                e.begin, e.end, typePool.getTypeNameCStr(*e.type), e.dest, e.localOffset, e.localSize);
+                e.begin, e.end, e.type->getName(), e.dest, e.localOffset, e.localSize);
     }
 
     fputc('\n', this->fp);

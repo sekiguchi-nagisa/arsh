@@ -27,6 +27,8 @@
 
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
+#include "misc/string_ref.hpp"
+#include "misc/resource.hpp"
 #include "handle_info.h"
 
 struct DSState;
@@ -97,14 +99,20 @@ template <> struct allow_enum_bitop<TypeAttr> : std::true_type {};
 
 class DSType {
 protected:
-    const unsigned int id;
+    const CStrPtr name;
+
+    unsigned int nameSize;
+
+    /**
+     * |   8bit   | 24bit  |
+     * | TypeAttr | TypeID |
+     */
+    const unsigned int tag;
 
     /**
      * if this type is Void or Any type, superType is null
      */
     const DSType *superType;
-
-    const TypeAttr attributeSet;
 
 public:
     NON_COPYABLE(DSType);
@@ -112,21 +120,30 @@ public:
     /**
      * not directly call it.
      */
-    DSType(unsigned int id, const DSType *superType, TypeAttr attribute) :
-            id(id), superType(superType), attributeSet(attribute) { }
+    DSType(StringRef ref, unsigned int id, const DSType *superType, TypeAttr attribute) :
+            name(strdup(ref.data())), nameSize(ref.size()),
+            tag(static_cast<unsigned int>(attribute) << 24 | id), superType(superType){ }
 
     virtual ~DSType() = default;
 
-    unsigned int getTypeID() const {
-        return this->id;
+    StringRef getNameRef() const {
+        return StringRef(this->name.get(), this->nameSize);
+    }
+
+    const char *getName() const {
+        return this->name.get();
+    }
+
+    unsigned int typeId() const {
+        return this->tag & 0xFFFFFF;
     }
 
     bool is(TYPE type) const {
-        return this->id == static_cast<unsigned int>(type);
+        return this->typeId() == static_cast<unsigned int>(type);
     }
 
     TypeAttr attr() const {
-        return this->attributeSet;
+        return static_cast<TypeAttr>(this->tag >> 24);
     }
 
     /**
@@ -208,8 +225,8 @@ public:
      */
     int getNumTypeIndex() const {
         static_assert(static_cast<unsigned int>(TYPE::Int) + 1 == static_cast<unsigned int>(TYPE::Float), "");
-        if(this->id >= static_cast<unsigned int>(TYPE::Int) && this->id <= static_cast<unsigned int>(TYPE::Float)) {
-            return this->id - static_cast<unsigned int>(TYPE::Int);
+        if(this->typeId() >= static_cast<unsigned int>(TYPE::Int) && this->typeId() <= static_cast<unsigned int>(TYPE::Float)) {
+            return this->typeId() - static_cast<unsigned int>(TYPE::Int);
         }
         return -1;
     }
@@ -262,7 +279,7 @@ public:
 
     FieldHandle(unsigned int commitID, const DSType &fieldType, unsigned int fieldIndex,
                 FieldAttribute attribute, unsigned short modID = 0) :
-            commitID(commitID), typeID(fieldType.getTypeID()), index(fieldIndex), attribute(attribute), modID(modID) {}
+            commitID(commitID), typeID(fieldType.typeId()), index(fieldIndex), attribute(attribute), modID(modID) {}
 
     FieldHandle(unsigned int commitID, const FieldHandle &handle, unsigned short modId) :
             commitID(commitID), typeID(handle.typeID), index(handle.index), attribute(handle.attribute), modID(modId) {}
@@ -305,8 +322,8 @@ private:
     std::vector<DSType *> paramTypes;
 
 public:
-    FunctionType(unsigned int id, const DSType &superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
-            DSType(id, &superType, TypeAttr::FUNC_TYPE),
+    FunctionType(StringRef ref, unsigned int id, const DSType &superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
+            DSType(ref, id, &superType, TypeAttr::FUNC_TYPE),
             returnType(returnType), paramTypes(std::move(paramTypes)) {}
 
     ~FunctionType() override = default;
@@ -379,8 +396,8 @@ protected:
     const native_type_info_t info;
 
 public:
-    BuiltinType(unsigned int id, const DSType *superType, native_type_info_t info, TypeAttr attribute) :
-            DSType(id, superType, attribute), info(info) {}
+    BuiltinType(StringRef ref, unsigned int id, const DSType *superType, native_type_info_t info, TypeAttr attribute) :
+            DSType(ref, id, superType, attribute), info(info) {}
 
     ~BuiltinType() override = default;
 
@@ -403,9 +420,9 @@ public:
     /**
      * super type is AnyType or null (if represents Option type)
      */
-    ReifiedType(unsigned int id, native_type_info_t info, const DSType *superType,
+    ReifiedType(StringRef ref, unsigned int id, native_type_info_t info, const DSType *superType,
                 std::vector<DSType *> &&elementTypes, TypeAttr attribute = TypeAttr()) :
-            BuiltinType(id, superType, info, attribute | TypeAttr::REIFIED_TYPE),
+            BuiltinType(ref, id, superType, info, attribute | TypeAttr::REIFIED_TYPE),
             elementTypes(std::move(elementTypes)) { }
 
     ~ReifiedType() override = default;
@@ -424,7 +441,7 @@ public:
     /**
      * superType is AnyType ot VariantType
      */
-    TupleType(unsigned int id, native_type_info_t info, const DSType &superType, std::vector<DSType *> &&types);
+    TupleType(StringRef ref, unsigned int id, native_type_info_t info, const DSType &superType, std::vector<DSType *> &&types);
 
     /**
      * return types.size()
@@ -436,8 +453,8 @@ public:
 
 class ErrorType : public DSType {
 public:
-    ErrorType(unsigned int id, const DSType &superType) :
-            DSType(id, &superType, TypeAttr::EXTENDIBLE) {}
+    ErrorType(StringRef ref, unsigned int id, const DSType &superType) :
+            DSType(ref, id, &superType, TypeAttr::EXTENDIBLE) {}
 };
 
 /**
