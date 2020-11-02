@@ -139,6 +139,9 @@ void TypePool::discard(const TypeDiscardPoint point) {
     assert(point.typeIdOffset == this->nameTable.size());
 
     // abort method handle
+    if(point.methodIdOffset >= this->methodIdCount) {
+        return;
+    }
     this->methodIdCount = point.methodIdOffset;
     for(auto iter = this->methodMap.begin(); iter != this->methodMap.end(); ) {
         if(iter->first.id >= point.typeIdOffset) {

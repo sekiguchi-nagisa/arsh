@@ -231,6 +231,10 @@ std::string ModType::toModName(unsigned short id) {
 // ##########################
 
 void ModuleLoader::discard(unsigned int discardPoint) {
+    if(discardPoint >= this->modSize()) {
+        return; // do nothing
+    }
+
     for(auto iter = this->indexMap.begin(); iter != this->indexMap.end(); ) {
         if(iter->second.getIndex() >= discardPoint) {
             const char *ptr = iter->first.data();
