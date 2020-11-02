@@ -156,7 +156,7 @@ bool VM::OP_PRINT(DSState &state) {
     std::string value = ": ";
     value += state.typePool.getTypeNameCStr(stackTopType);
     value += " = ";
-    value.append(ref.data(), ref.size());
+    value += ref;
     value += "\n";
     fwrite(value.c_str(), sizeof(char), value.size(), stdout);
     fflush(stdout);

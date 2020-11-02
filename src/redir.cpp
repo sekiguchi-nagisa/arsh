@@ -224,7 +224,7 @@ bool RedirObject::redirect(DSState &st) {
                     auto ref = pair.second.asStrRef();
                     if(!ref.empty()) {
                         msg += ": ";
-                        msg.append(ref.data(), ref.size());
+                        msg += ref;
                     }
                 } else if(pair.second.hasType(TYPE::UnixFD)) {
                     msg += ": ";

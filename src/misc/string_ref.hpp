@@ -236,6 +236,10 @@ struct hash<ydsh::StringRef> {
     }
 };
 
+inline std::string &operator+=(std::string &str, ydsh::StringRef ref) {
+    return str.append(ref.data(), ref.size());
+}
+
 } // namespace std
 
 #endif //YDSH_MISC_STRING_REF_HPP

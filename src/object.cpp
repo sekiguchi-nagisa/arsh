@@ -377,7 +377,7 @@ bool ArrayObject::opStr(DSState &state) const {
         auto ret = TRY(callOP(state, this->values[i], OP_STR));
         if(!ret.isInvalid()) {
             auto ref = ret.asStrRef();
-            state.toStrBuf.append(ref.data(), ref.size());
+            state.toStrBuf += ref;
         }
     }
     state.toStrBuf += "]";
@@ -394,7 +394,7 @@ bool ArrayObject::opInterp(DSState &state) const {
         auto ret = TRY(callOP(state, this->values[i], OP_INTERP));
         if(!ret.isInvalid()) {
             auto ref = ret.asStrRef();
-            state.toStrBuf.append(ref.data(), ref.size());
+            state.toStrBuf += ref;
         }
     }
     return true;
@@ -487,7 +487,7 @@ bool MapObject::opStr(DSState &state) const {
         auto ret = TRY(callOP(state, e.first, OP_STR));
         if(!ret.isInvalid()) {
             auto ref = ret.asStrRef();
-            state.toStrBuf.append(ref.data(), ref.size());
+            state.toStrBuf += ref;
         }
 
         state.toStrBuf += " : ";
@@ -496,7 +496,7 @@ bool MapObject::opStr(DSState &state) const {
         ret = TRY(callOP(state, e.second, OP_STR));
         if(!ret.isInvalid()) {
             auto ref = ret.asStrRef();
-            state.toStrBuf.append(ref.data(), ref.size());
+            state.toStrBuf += ref;
         }
     }
     state.toStrBuf += "]";
@@ -526,7 +526,7 @@ bool BaseObject::opStrAsTuple(DSState &state) const {
         auto ret = TRY(callOP(state, (*this)[i], OP_STR));
         if(!ret.isInvalid()) {
             auto ref = ret.asStrRef();
-            state.toStrBuf.append(ref.data(), ref.size());
+            state.toStrBuf += ref;
         }
     }
     if(size == 1) {
@@ -548,7 +548,7 @@ bool BaseObject::opInterpAsTuple(DSState &state) const {
         auto ret = TRY(callOP(state, (*this)[i], OP_INTERP));
         if(!ret.isInvalid()) {
             auto ref = ret.asStrRef();
-            state.toStrBuf.append(ref.data(), ref.size());
+            state.toStrBuf += ref;
         }
     }
     return true;
@@ -597,7 +597,7 @@ std::string ErrorObject::createHeader(const DSState &state) const {
     auto ref = this->message.asStrRef();
     std::string str = state.typePool.getTypeNameCStr(state.typePool.get(this->getTypeID()));
     str += ": ";
-    str.append(ref.data(), ref.size());
+    str += ref;
     return str;
 }
 

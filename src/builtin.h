@@ -1320,7 +1320,7 @@ YDSH_METHOD array_join(RuntimeContext &ctx) {
     size_t count = 0;
     for(auto &e : obj.getValues()) {
         if(count++ > 0) {
-            ctx.toStrBuf.append(delim.data(), delim.size());
+            ctx.toStrBuf += delim;
         }
         if(e.isInvalid()) {
             raiseError(ctx, TYPE::UnwrappingError, "invalid value");
@@ -1610,7 +1610,7 @@ YDSH_METHOD fd_init(RuntimeContext &ctx) {
     }
     int e = errno;
     std::string msg = "open failed: ";
-    msg.append(ref.data(), ref.size());
+    msg += ref;
     raiseSystemError(ctx, e, std::move(msg));
     RET_ERROR;
 }

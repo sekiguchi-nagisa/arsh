@@ -62,7 +62,7 @@ static bool needEscape(char ch, EscapeOp op) {
 static std::string escape(StringRef ref, EscapeOp op) {
     std::string buf;
     if(op == EscapeOp::NOP) {
-        buf.append(ref.data(), ref.size());
+        buf += ref;
         return buf;
     }
 

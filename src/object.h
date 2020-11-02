@@ -168,7 +168,7 @@ public:
     }
 
     void append(StringRef v) {
-        this->value.append(v.data(), v.size());
+        this->value += v;
     }
 };
 
