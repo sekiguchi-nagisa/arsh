@@ -179,7 +179,9 @@ class ModType : public DSType {
 private:
     unsigned short modID;
 
-    unsigned int childSize;
+    unsigned short childSize;
+
+    unsigned int index; // module object index
 
     ChildModEntry *childs;
 
@@ -188,9 +190,9 @@ private:
     friend class ModuleScope;
 
 public:
-    ModType(StringRef ref, unsigned int id, DSType &superType, unsigned short modID,
+    ModType(unsigned int id, DSType &superType, unsigned short modID,
             const std::unordered_map<std::string, FieldHandle> &handleMap,
-            const FlexBuffer<ChildModEntry> &childs);
+            const FlexBuffer<ChildModEntry> &childs, unsigned int index);
 
     ~ModType() override;
 
@@ -202,13 +204,23 @@ public:
         return this->childSize;
     }
 
-    ChildModEntry getChildAt(unsigned int index) const {
-        assert(index < this->childSize);
-        return this->childs[index];
+    ChildModEntry getChildAt(unsigned int i) const {
+        assert(i < this->childSize);
+        return this->childs[i];
+    }
+
+    unsigned int getIndex() const {
+        return this->index;
+    }
+
+    FieldHandle toHandle() const {
+        return FieldHandle(
+                0, *this, this->index,
+                FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL, this->modID);
     }
 
     std::string toName() const {
-        return toModName(this->modID);
+        return this->getNameRef().toString();
     }
 
     const FieldHandle *find(const std::string &name) const {
@@ -443,6 +455,8 @@ class ModuleLoader {
 private:
     std::unordered_map<StringRef, ModEntry> indexMap;
 
+    static constexpr unsigned int MAX_MOD_NUM = UINT16_MAX;
+
 public:
     NON_COPYABLE(ModuleLoader);
 
@@ -500,7 +514,7 @@ public:
     }
 
 private:
-    ModResult addModPath(CStrPtr &&ptr) {
+    ModResult addNewModEntry(CStrPtr &&ptr) {
         StringRef key(ptr.get());
         auto pair = this->indexMap.emplace(key, ModEntry(this->indexMap.size()));
         if(!pair.second) {  // already registered
@@ -509,6 +523,9 @@ private:
                 return e.getTypeId();
             }
             return ModLoadingError(0);
+        }
+        if(this->indexMap.size() == MAX_MOD_NUM) {
+            fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
         }
         return ptr.release();
     }
@@ -631,14 +648,6 @@ public:
      * offset + 2 ASSERT_HOOK
      */
     unsigned int getTermHookIndex();
-
-    const FieldHandle *lookupModHandle(const ModType &type) const {
-        return this->root().lookupHandle(type.toName());
-    }
-
-    HandleOrError newModHandle(const ModType &type) {
-        return this->root().newHandle(type.toName(), type, FieldAttribute::READ_ONLY);
-    }
 
     const FieldHandle *lookupField(DSType &recvType, const std::string &fieldName) const;
 

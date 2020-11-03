@@ -2269,7 +2269,7 @@ private:
     /**
      * resolved module type.
      */
-    ModType &modType;
+    const ModType &modType;
 
     /**
      * resolved module path
@@ -2280,8 +2280,6 @@ private:
 
     bool nothing{false};
 
-    unsigned int modIndex{0};
-
     /**
      * maximum number of local variable in this module
      */
@@ -2289,7 +2287,7 @@ private:
 
 public:
     SourceNode(Token token, Token pathToken, const std::string &name,
-            ModType &modType, const std::string &pathName, bool firstAppear) :
+            const ModType &modType, const std::string &pathName, bool firstAppear) :
             WithRtti(token), pathToken(pathToken), name(name),
             modType(modType), pathName(pathName), firstAppear(firstAppear) {}
 
@@ -2303,7 +2301,7 @@ public:
         return this->name;
     }
 
-    ModType &getModType() const {
+    const ModType &getModType() const {
         return this->modType;
     }
 
@@ -2321,14 +2319,6 @@ public:
 
     bool isNothing() const {
         return this->nothing;
-    }
-
-    void setModIndex(unsigned int value) {
-        this->modIndex = value;
-    }
-
-    unsigned int getModIndex() const {
-        return this->modIndex;
     }
 
     void setMaxVarNum(unsigned int v) {

@@ -120,7 +120,7 @@ public:
     /**
      * not directly call it.
      */
-    DSType(StringRef ref, unsigned int id, const DSType *superType, TypeAttr attribute) :
+    DSType(unsigned int id, StringRef ref, const DSType *superType, TypeAttr attribute) :
             name(strdup(ref.data())), nameSize(ref.size()),
             tag(static_cast<unsigned int>(attribute) << 24 | id), superType(superType){ }
 
@@ -322,8 +322,8 @@ private:
     std::vector<DSType *> paramTypes;
 
 public:
-    FunctionType(StringRef ref, unsigned int id, const DSType &superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
-            DSType(ref, id, &superType, TypeAttr::FUNC_TYPE),
+    FunctionType(unsigned int id, StringRef ref, const DSType &superType, DSType *returnType, std::vector<DSType *> &&paramTypes) :
+            DSType(id, ref, &superType, TypeAttr::FUNC_TYPE),
             returnType(returnType), paramTypes(std::move(paramTypes)) {}
 
     ~FunctionType() override = default;
@@ -396,8 +396,8 @@ protected:
     const native_type_info_t info;
 
 public:
-    BuiltinType(StringRef ref, unsigned int id, const DSType *superType, native_type_info_t info, TypeAttr attribute) :
-            DSType(ref, id, superType, attribute), info(info) {}
+    BuiltinType(unsigned int id, StringRef ref, const DSType *superType, native_type_info_t info, TypeAttr attribute) :
+            DSType(id, ref, superType, attribute), info(info) {}
 
     ~BuiltinType() override = default;
 
@@ -420,9 +420,9 @@ public:
     /**
      * super type is AnyType or null (if represents Option type)
      */
-    ReifiedType(StringRef ref, unsigned int id, native_type_info_t info, const DSType *superType,
+    ReifiedType(unsigned int id, StringRef ref, native_type_info_t info, const DSType *superType,
                 std::vector<DSType *> &&elementTypes, TypeAttr attribute = TypeAttr()) :
-            BuiltinType(ref, id, superType, info, attribute | TypeAttr::REIFIED_TYPE),
+            BuiltinType(id, ref, superType, info, attribute | TypeAttr::REIFIED_TYPE),
             elementTypes(std::move(elementTypes)) { }
 
     ~ReifiedType() override = default;
@@ -441,7 +441,7 @@ public:
     /**
      * superType is AnyType ot VariantType
      */
-    TupleType(StringRef ref, unsigned int id, native_type_info_t info, const DSType &superType, std::vector<DSType *> &&types);
+    TupleType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType, std::vector<DSType *> &&types);
 
     /**
      * return types.size()
@@ -453,8 +453,8 @@ public:
 
 class ErrorType : public DSType {
 public:
-    ErrorType(StringRef ref, unsigned int id, const DSType &superType) :
-            DSType(ref, id, &superType, TypeAttr::EXTENDIBLE) {}
+    ErrorType(unsigned int id, StringRef ref, const DSType &superType) :
+            DSType(id, ref, &superType, TypeAttr::EXTENDIBLE) {}
 };
 
 /**

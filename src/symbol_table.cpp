@@ -52,6 +52,7 @@ HandleOrError Scope::add(const std::string &symbolName, FieldHandle &&handle) {
 
 HandleOrError BlockScope::addNew(const std::string &symbolName, const DSType &type,
                                  FieldAttribute attribute, unsigned short modID) {
+    unsetFlag(attribute, FieldAttribute::GLOBAL);
     auto ret = this->add(symbolName, type, this->getCurVarIndex(), attribute, modID);
     if(!ret) {
         return ret;
@@ -191,10 +192,10 @@ ModType::~ModType() {
     free(this->childs);
 }
 
-ModType::ModType(StringRef ref, unsigned int id, ydsh::DSType &superType, unsigned short modID,
-                 const std::unordered_map<std::string, ydsh::FieldHandle> &handleMap,
-                 const FlexBuffer<ChildModEntry> &childs) :
-        DSType(ref, id, &superType, TypeAttr::MODULE_TYPE), modID(modID) {
+ModType::ModType(unsigned int id, DSType &superType, unsigned short modID,
+                 const std::unordered_map<std::string, FieldHandle> &handleMap,
+                 const FlexBuffer<ChildModEntry> &childs, unsigned int index) :
+        DSType(id, toModName(modID), &superType, TypeAttr::MODULE_TYPE), modID(modID), index(index) {
     assert(modID > 0);
     for(auto &e : handleMap) {
         if(e.second.getModID() == modID) {
@@ -314,7 +315,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
         return ModLoadingError(old);
     }
 
-    auto ret = this->addModPath(std::move(str));
+    auto ret = this->addNewModEntry(std::move(str));
     if(is<ModLoadingError>(ret)) {
         close(fd);
     } else {
@@ -359,10 +360,10 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path,
 }
 
 ModType& SymbolTable::createModType(TypePool &typePool, const std::string &fullpath) {
-    std::string name = ModType::toModName(this->cur().getModID());
     auto &modType = typePool.newType<ModType>(
-            name, typePool.get(TYPE::Any), this->cur().getModID(),
-            this->cur().global().getHandleMap(), this->cur().getChilds());
+            typePool.get(TYPE::Any), this->cur().getModID(),
+            this->cur().global().getHandleMap(), this->cur().getChilds(), this->gvarCount);
+    this->gvarCount++;
     this->curModule = nullptr;
     this->modLoader.addModType(fullpath, modType);
     return modType;

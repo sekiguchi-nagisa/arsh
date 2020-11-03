@@ -395,7 +395,6 @@ static void completeVarName(const SymbolTable &symbolTable,
     for(const auto &iter : symbolTable.globalScope()) {
         StringRef varName = iter.first.c_str();
         if(!varName.startsWith(CMD_SYMBOL_PREFIX)
-            && !varName.startsWith(MOD_SYMBOL_PREFIX)
             && varName.startsWith(prefix)) {
             append(results, varName, EscapeOp::NOP);
         }

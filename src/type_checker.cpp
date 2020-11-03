@@ -1486,34 +1486,21 @@ void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
 void TypeChecker::visitSourceNode(SourceNode &node) {
     assert(this->isTopLevel());
 
-    // register module placeholder
-    const FieldHandle *handle = nullptr;
-    if(node.isFirstAppear()) {
-        auto pair = this->symbolTable.newModHandle(node.getModType());
-        assert(static_cast<bool>(pair));
-        handle = pair.asOk();
-    }
-    if(handle == nullptr) {
-        handle = this->symbolTable.lookupModHandle(node.getModType());
-        assert(handle != nullptr);
-    }
-
-    // register actual module handle
-    node.setModIndex(handle->getIndex());
-
     // import module
     const char *ret = this->symbolTable.import(node.getModType(), node.getName().empty());
     if(ret) {
         RAISE_TC_ERROR(ConflictSymbol, node, ret, node.getPathName().c_str());
     }
     if(!node.getName().empty()) {    // scoped import
+        auto handle = node.getModType().toHandle();
+
         // register actual module handle
-        if(!this->symbolTable.addGlobalAlias(node.getName(), *handle)) {
+        if(!this->symbolTable.addGlobalAlias(node.getName(), handle)) {
             RAISE_TC_ERROR(DefinedSymbol, node, node.getName().c_str());
         }
         std::string cmdName = CMD_SYMBOL_PREFIX;
         cmdName += node.getName();
-        if(!this->symbolTable.addGlobalAlias(cmdName, *handle)) {  // for module subcommand
+        if(!this->symbolTable.addGlobalAlias(cmdName, handle)) {  // for module subcommand
             RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
         }
     }

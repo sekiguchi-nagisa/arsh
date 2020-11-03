@@ -880,7 +880,6 @@ void SourceNode::dump(NodeDumper &dumper) const {
     DUMP(pathName);
     DUMP(firstAppear);
     DUMP(nothing);
-    DUMP(modIndex);
     DUMP(maxVarNum);
 }
 

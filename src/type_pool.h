@@ -142,9 +142,9 @@ public:
     ~TypePool();
 
     template <typename T, typename ...A>
-    T &newType(StringRef name, A &&...arg) {
+    T &newType(A &&...arg) {
         unsigned int id = this->typeTable.size();
-        return *static_cast<T *>(this->addType(new T(name, id, std::forward<A>(arg)...)));
+        return *static_cast<T *>(this->addType(new T(id, std::forward<A>(arg)...)));
     }
 
     DSType &get(TYPE t) const {

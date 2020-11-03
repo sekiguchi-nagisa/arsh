@@ -106,7 +106,7 @@ DSType *TypePool::addType(DSType *type) {
     (void) s;
     assert(s);
     if(this->typeTable.size() == MAX_TYPE_NUM) {
-        fatal("type id reaches limit(%u)", MAX_TYPE_NUM);
+        fatal("type id reaches limit(%u)\n", MAX_TYPE_NUM);
     }
     return type;
 }
