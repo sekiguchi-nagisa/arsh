@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Core
 - **Breaking Change**: string representation of Func type
   - now use ``=>``
+- **Breaking Change**: use ``typedef`` keyword for type alias definition
+  - ``alias`` keyword is still reserved keyword for future usage
 - allow ``=>`` in abbreviate type notation of Func type
 - allow ``->`` in arm expression
 - allow statement in for-init

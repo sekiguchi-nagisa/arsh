@@ -1,5 +1,5 @@
 #$test($result = 'type', $errorKind = 'OutsideToplevel', $lineNum = 4, $status = 1)
 
 {
-    alias Hoge = Boolean
+    typedef Hoge = Boolean
 }

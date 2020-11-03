@@ -152,6 +152,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "source!"         { MODE(EXPR); PUSH_MODE(CMD); RET_OR_COMP(SOURCE_OPT); }
       <STMT> "try"             { RET_OR_COMP(TRY); }
       <STMT> "throw"           { RET_OR_COMP(THROW); }
+      <STMT> "typedef"         { MODE(NAME); RET_OR_COMP(TYPEDEF); }
       <STMT> "var"             { MODE(NAME); RET_OR_COMP(VAR); }
       <STMT,EXPR> "while"      { MODE(STMT); RET_OR_COMP(WHILE); }
 

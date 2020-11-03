@@ -1,7 +1,7 @@
-alias catch = Int
+typedef catch = Int
 
 assert(12 is catch) # allow any identifier
 
-alias typeof = String
+typedef typeof = String
 
 assert("" is typeof)

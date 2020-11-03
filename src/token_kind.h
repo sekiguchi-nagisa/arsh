@@ -50,6 +50,7 @@
     TOKEN(SOURCE_OPT                         , "source!") \
     TOKEN(TRY                                , "try") \
     TOKEN(THROW                              , "throw") \
+    TOKEN(TYPEDEF                            , "typedef") \
     TOKEN(VAR                                , "var") \
     TOKEN(WHILE                              , "while") \
     /* unary op */\
@@ -272,12 +273,12 @@
 #define EACH_LA_statement(OP) \
     OP(FUNCTION) \
     OP(INTERFACE) \
-    OP(ALIAS) \
     OP(ASSERT) \
     OP(EXPORT_ENV) \
     OP(IMPORT_ENV) \
     OP(SOURCE) \
     OP(SOURCE_OPT) \
+    OP(TYPEDEF) \
     OP(LINE_END) \
     EACH_LA_varDecl(OP) \
     EACH_LA_expression(OP)

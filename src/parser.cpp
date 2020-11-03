@@ -402,14 +402,6 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     }
     case INTERFACE:
         return this->parse_interface();
-    case ALIAS: {
-        unsigned int startPos = START_POS();
-        this->consume();    // ALIAS
-        Token token = TRY(this->expect(IDENTIFIER));
-        TRY(this->expect(ASSIGN, false));
-        auto typeToken = TRY(this->parse_typeName());
-        return std::make_unique<TypeAliasNode>(startPos, this->lexer->toTokenText(token), std::move(typeToken));
-    }
     case ASSERT: {
         unsigned int pos = START_POS();
         this->consume();    // ASSERT
@@ -467,6 +459,14 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
             node->setName(token, this->lexer->toName(token));
         }
         return std::move(node);
+    }
+    case TYPEDEF: {
+        unsigned int startPos = START_POS();
+        this->consume();    // ALIAS
+        Token token = TRY(this->expect(IDENTIFIER));
+        TRY(this->expect(ASSIGN, false));
+        auto typeToken = TRY(this->parse_typeName());
+        return std::make_unique<TypeAliasNode>(startPos, this->lexer->toTokenText(token), std::move(typeToken));
     }
     EACH_LA_varDecl(GEN_LA_CASE)
         return this->parse_variableDeclaration();

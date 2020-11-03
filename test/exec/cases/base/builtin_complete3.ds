@@ -26,6 +26,7 @@ tryaffix(){}
 throw13(){}
 var14(){}
 while15(){}
+typed16(){}
 
 # complete expected token
 $assertArray([')'], $(complete 'for(var i = 0; $i < 23; $i++ '))
@@ -47,8 +48,8 @@ $assertArray([':'], $(complete 'function hoge($a '))
 export-env LC_ALL = 'C'
 
 # $assertArray(["{"], $(complete '{'))
-$assertArray(["alias", "alias2"], $(complete 'alia'))
-$assertArray(["alias", "alias2"], $(complete 'alias'))
+# $assertArray(["alias", "alias2"], $(complete 'alia'))
+# $assertArray(["alias", "alias2"], $(complete 'alias'))
 $assertArray(["assert", "assert1"], $(complete 'asser'))
 $assertArray(["assert", "assert1"], $(complete 'assert'))
 $assertArray(["break", "break3"], $(complete 'brea'))
@@ -87,6 +88,7 @@ $assertArray($({complete -A cmd 'va'; echo 'var'; } | sort | uniq ), $(complete 
 $assertArray($({complete -A cmd 'var'; echo 'var'; } | sort | uniq ), $(complete 'var'))
 $assertArray(["while", "while15"], $(complete 'whil'))
 $assertArray(["while", "while15"], $(complete 'while'))
+$assertArray(["typed16", "typedef"], $(complete 'typed'))
 
 # complete empty token
 $assertArray([")"], $(complete 'for(var i = 0; $i < 23; $i++'))

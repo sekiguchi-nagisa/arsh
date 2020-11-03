@@ -1,9 +1,9 @@
 #$test($result = 'type', $status = 1, $errorKind = 'DefinedSymbol', $lineNum = 8)
 
-alias catch = Int
+typedef catch = Int
 
 assert(12 is catch) # allow any identifier
 
 
-alias Func = Int
+typedef Func = Int
 assert(12 is Func)

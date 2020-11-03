@@ -82,9 +82,9 @@ __cmd() {
                            'do', 'for', 'if', 'case', 'try', 'while',
                            'break', 'continue', 'return',
 
-                           'function', 'interface', 'alias', 'assert',
+                           'function', 'interface', 'assert',
                            'export-env', 'import-env',
-                           'let', 'source', 'source!',
+                           'let', 'source', 'source!', 'typedef',
                            'var', ';', '!', '+', '-', 'throw', 'coproc'])
     }
 }

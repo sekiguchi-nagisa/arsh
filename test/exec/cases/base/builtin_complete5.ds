@@ -48,7 +48,7 @@ let stmt = ['new', '"', '$(', '>(', '<(', '(', '[', '{',
             'break', 'continue', 'return',
             '!', '+', '-', 'throw', 'coproc',
 
-            'function', 'interface', 'alias', 'assert',
+            'function', 'interface', 'typedef', 'assert',
             'export-env', 'import-env',
             'let', 'source', 'source!', 'var', ';']
 

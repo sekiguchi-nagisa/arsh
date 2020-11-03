@@ -664,25 +664,25 @@ nodes:
     caseKind: "MAP"
 )"},
 
-        {DumpOp::untyped, R"(alias i = (Int) -> Int)", 0, 0, R"(
+        {DumpOp::untyped, R"(typedef i = (Int) -> Int)", 0, 0, R"(
 nodes:
   - nodeKind: TypeAlias
     token:
       pos: 0
-      size: 22
+      size: 24
     type:
     alias: "i"
     targetTypeNode:
       nodeKind: Type
       token:
-        pos: 10
+        pos: 12
         size: 12
       type:
       typeKind: "Func"
       returnTypeNode:
         nodeKind: Type
         token:
-          pos: 19
+          pos: 21
           size: 3
         type:
         typeKind: "Base"
@@ -690,7 +690,7 @@ nodes:
       paramTypeNodes:
         - nodeKind: Type
           token:
-            pos: 11
+            pos: 13
             size: 3
           type:
           typeKind: "Base"

@@ -272,6 +272,13 @@ TEST_F(LexerTest_Lv1, alias_tok) {
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycNAME));
 }
 
+TEST_F(LexerTest_Lv1, typedef_tok) {
+    const char *text = "typedef";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TYPEDEF, text, EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycNAME));
+}
+
 TEST_F(LexerTest_Lv1, var_tok) {
     const char *text = "var";
     this->initLexer(text);
