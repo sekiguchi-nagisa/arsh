@@ -70,8 +70,7 @@ HandleOrError BlockScope::addNew(const std::string &symbolName, const DSType &ty
 
 GlobalScope::GlobalScope(unsigned int &gvarCount) : Scope(GLOBAL, nullptr), gvarCount(gvarCount) {
     for(auto &e : DENIED_REDEFINED_CMD_LIST) {
-        std::string name = CMD_SYMBOL_PREFIX;
-        name += e;
+        std::string name = toCmdFullName(e);
         this->add(name);
     }
     RefCountOp<Scope>::increase(this);
@@ -161,7 +160,7 @@ const char* ModuleScope::import(const ModType &type, bool global) {
         assert(!hasFlag(e.second.attr(), FieldAttribute::BUILTIN));
         assert(this->getModID() != e.second.getModID());
         StringRef ref = e.first;
-        if(ref.startsWith("_") || ref.startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
+        if(ref.startsWith("_")) {
             continue;
         }
         const auto &symbolName = e.first;
@@ -169,8 +168,8 @@ const char* ModuleScope::import(const ModType &type, bool global) {
         auto ret = this->globalScope.add(symbolName, handle, handle.getModID());
         if(!ret) {
             StringRef name = symbolName;
-            if(name.startsWith(CMD_SYMBOL_PREFIX)) {
-                name.removePrefix(strlen(CMD_SYMBOL_PREFIX));
+            if(isCmdFullName(name)) {
+                name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
             }
             return name.data();
         }
@@ -214,7 +213,7 @@ const FieldHandle* ModType::lookupFieldHandle(const SymbolTable &symbolTable, co
 
     if(symbolTable.currentModID() != handle->getModID()) {
         StringRef ref = fieldName;
-        if(ref[0] == '_' || ref.startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
+        if(ref[0] == '_') {
             return nullptr;
         }
     }
@@ -424,7 +423,7 @@ const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string 
  * @param symbolTable
  * @param modType
  * @param fullname
- * must be start with CMD_SYMBOL_PREFIX
+ * must be end with CMD_SYMBOL_SUFFIX
  * @return
  */
 static const FieldHandle *lookupUdcFromModule(const TypePool &typePool,
@@ -436,7 +435,7 @@ static const FieldHandle *lookupUdcFromModule(const TypePool &typePool,
     }
 
     // search public udc from globally loaded module
-    if(StringRef(fullname).startsWith(PRIV_CMD_SYMBOL_PREFIX)) {
+    if(fullname[0] == '_') {
         return nullptr;
     }
     unsigned int size = modType.getChildSize();
@@ -455,8 +454,7 @@ static const FieldHandle *lookupUdcFromModule(const TypePool &typePool,
 }
 
 const FieldHandle * SymbolTable::lookupUdc(const TypePool &pool, const ModType *belongModType, const char *cmdName) const {
-    std::string name = CMD_SYMBOL_PREFIX;
-    name += cmdName;
+    std::string name = toCmdFullName(cmdName);
     if(belongModType == nullptr) {
         return this->lookupHandle(name);
     } else {

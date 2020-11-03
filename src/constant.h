@@ -22,6 +22,7 @@
 
 #include <config.h>
 #include "misc/flag_util.hpp"
+#include "misc/string_ref.hpp"
 
 namespace ydsh {
 
@@ -161,14 +162,24 @@ constexpr unsigned int TERM_ON_ERR    = 1u << 1u;
 constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
 
 // =====  for symbol lookup =====
-constexpr const char *CMD_SYMBOL_PREFIX = "%c";
-constexpr const char *PRIV_CMD_SYMBOL_PREFIX = "%c_";
+constexpr const char *CMD_SYMBOL_SUFFIX = "%c";
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 
 constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {
         "eval", "exit", "exec",
         "command", "_exit",
 };
+
+inline std::string toCmdFullName(const std::string &cmdName) {
+    std::string name = cmdName;
+    name += CMD_SYMBOL_SUFFIX;
+    return name;
+}
+
+inline bool isCmdFullName(StringRef ref) {
+    return ref.endsWith(CMD_SYMBOL_SUFFIX);
+}
+
 
 // =====  other constants  =====
 constexpr size_t CODE_MAX_LEN = UINT32_MAX;

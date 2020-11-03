@@ -738,8 +738,7 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType,
         return true;
     }
 
-    std::string key = CMD_SYMBOL_PREFIX;
-    key += cmd;
+    std::string key = toCmdFullName(cmd);
     auto *handle = modType.find(key);
     if(!handle) {
         ERROR(array, "undefined subcommand: %s", cmd);

@@ -290,8 +290,7 @@ protected:
                           const DSType &type, FieldAttribute attribute);
 
     const FieldHandle *addUdcEntry(const UserDefinedCmdNode &node) {
-        std::string name = CMD_SYMBOL_PREFIX;
-        name += node.getCmdName();
+        std::string name = toCmdFullName(node.getCmdName());
         auto pair = this->symbolTable.newHandle(name, this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
         if(!pair) {
             assert(pair.asErr() == SymbolError::DEFINED);

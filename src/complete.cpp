@@ -222,8 +222,8 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
     if(hasFlag(option, CodeCompOp::UDC)) {
         for(const auto &iter : symbolTable.globalScope()) {
             StringRef udc = iter.first.c_str();
-            if(udc.startsWith(CMD_SYMBOL_PREFIX)) {
-                udc.removePrefix(strlen(CMD_SYMBOL_PREFIX));
+            if(isCmdFullName(udc)) {
+                udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
                 if(udc.startsWith(cmdPrefix)) {
                     if(std::any_of(std::begin(DENIED_REDEFINED_CMD_LIST),
                                    std::end(DENIED_REDEFINED_CMD_LIST),
@@ -394,8 +394,7 @@ static void completeVarName(const SymbolTable &symbolTable,
                             const std::string &prefix, ArrayObject &results) {
     for(const auto &iter : symbolTable.globalScope()) {
         StringRef varName = iter.first.c_str();
-        if(!varName.startsWith(CMD_SYMBOL_PREFIX)
-            && varName.startsWith(prefix)) {
+        if(varName.startsWith(prefix) && !isCmdFullName(varName)) {
             append(results, varName, EscapeOp::NOP);
         }
     }
