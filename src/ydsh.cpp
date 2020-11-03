@@ -68,8 +68,8 @@ public:
             frontEnd(std::move(lexer), state.typePool, state.symbolTable, state.execMode,
                      hasFlag(state.compileOption, CompileOption::INTERACTIVE)),
             reporter(newReporter()),
-            uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get(), state.symbolTable),
-            astDumper(state.dumpTarget.files[DS_DUMP_KIND_AST].get(), state.symbolTable),
+            uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get()),
+            astDumper(state.dumpTarget.files[DS_DUMP_KIND_AST].get()),
             codegen(state.typePool, hasFlag(state.compileOption, CompileOption::ASSERT)) {
         this->frontEnd.setErrorReporter(this->reporter);
         if(this->uastDumper) {

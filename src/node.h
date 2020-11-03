@@ -2559,7 +2559,6 @@ class SymbolTable;
 class NodeDumper {
 private:
     FILE *fp;
-    const SymbolTable &symbolTable;
 
     struct DumpBuffer {
         unsigned int indentLevel{0};
@@ -2569,8 +2568,7 @@ private:
     std::list<DumpBuffer> bufs;
 
 public:
-    NodeDumper(FILE *fp, const SymbolTable &symbolTable) :
-        fp(fp), symbolTable(symbolTable) { }
+    NodeDumper(FILE *fp) : fp(fp) { }
 
     ~NodeDumper() = default;
 
@@ -2656,7 +2654,7 @@ public:
 
     void operator()(const Node &node);
 
-    void finalize();
+    void finalize(const SymbolTable &symbolTable);
 
     explicit operator bool() const {
         return this->fp != nullptr;

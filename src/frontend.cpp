@@ -263,10 +263,10 @@ void FrontEnd::setupASTDump() {
 
 void FrontEnd::teardownASTDump() {
     if(this->uastDumper) {
-        this->uastDumper->finalize();
+        this->uastDumper->finalize(this->getSymbolTable());
     }
     if(this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
-        this->astDumper->finalize();
+        this->astDumper->finalize(this->getSymbolTable());
     }
 }
 
