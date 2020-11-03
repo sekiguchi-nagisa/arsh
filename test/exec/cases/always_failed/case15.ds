@@ -1,5 +1,0 @@
-#$test($result = 'type', $lineNum = 4, $errorKind = 'UndefinedMethod', $status = 1)
-
-case 45 {
-    --"hello" => echo
-}

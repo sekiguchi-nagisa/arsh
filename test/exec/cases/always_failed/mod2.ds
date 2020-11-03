@@ -1,5 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $errorKind = 'UndefinedSymbol', $status = 1, $fileName = './always_failed/mod9.ds')
 
-#$test($result = 'type', $lineNum = 4, $errorKind = 'CircularMod', $status = 1, $fileName = '../_module4test/cycle.ds')
+source ../../_module4test/private.ds
 
-
-source mod1.ds as cy
+assert $_AAA    # _AAA is defined in module 'private.ds' but hidden from current module scope

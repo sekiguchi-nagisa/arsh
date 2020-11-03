@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 3, $errorKind = 'Required', $status = 1)
+
+case $true {
+    45 => 45
+}

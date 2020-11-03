@@ -1,6 +1,6 @@
-#$test($result = 'type', $lineNum = 3, $errorKind = 'NeedDefault', $status = 1)
 
-case 34 {
-    1 => 34;
-    2 => 25;
+#$test($result = 'type', $lineNum = 5, $errorKind = 'RegexSyntax', $status = 1)
+
+case 'hello'  {
+new Regex($'h\x00', "i") => 34
 }

@@ -1,8 +1,5 @@
-#$test($result = 'type', $lineNum = 7, $errorKind = 'DupPattern', $status = 1)
+#$test($result = 'type', $lineNum = 4, $errorKind = 'UndefinedMethod', $status = 1)
 
-case 34 {
-    34 => 45
-    -12 => 54
-    0 => 0
-    -12 => 7
+case 45 {
+    --"hello" => echo
 }
