@@ -16,3 +16,5 @@ say0() {
 _say0() {
     echo '_say!!' $@
 }
+
+typedef StrArray = [String]

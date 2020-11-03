@@ -284,6 +284,9 @@ public:
     FieldHandle(unsigned int commitID, const FieldHandle &handle, unsigned short modId) :
             commitID(commitID), typeID(handle.typeID), index(handle.index), attribute(handle.attribute), modID(modId) {}
 
+    FieldHandle(unsigned int commitID, const FieldHandle &handle, FieldAttribute newAttr, unsigned short modID) :
+            commitID(commitID), typeID(handle.getTypeID()), index(handle.getIndex()), attribute(newAttr), modID(modID) {}
+
     ~FieldHandle() = default;
 
     unsigned int getCommitID() const {

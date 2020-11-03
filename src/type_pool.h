@@ -38,7 +38,7 @@ class TypePool {
 private:
     unsigned int methodIdCount{0};
     FlexBuffer<DSType *> typeTable;
-    std::unordered_map<std::string, unsigned int> aliasMap;
+    std::unordered_map<StringRef, unsigned int> nameMap;
 
     // for reified type
     TypeTemplate arrayTemplate;
@@ -218,14 +218,6 @@ public:
      */
     TypeOrError createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
-    /**
-     * return false, if duplicated
-     */
-    bool setAlias(std::string &&alias, const DSType &type) {
-        auto pair = this->aliasMap.emplace(std::move(alias), type.typeId());
-        return pair.second;
-    }
-
     const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
 
     const MethodHandle *lookupMethod(unsigned int typeId, const std::string &methodName) {
@@ -251,8 +243,8 @@ public:
 
 private:
     DSType *get(const std::string &typeName) const {
-        auto iter = this->aliasMap.find(typeName);
-        if(iter == this->aliasMap.end()) {
+        auto iter = this->nameMap.find(typeName);
+        if(iter == this->nameMap.end()) {
             return nullptr;
         }
         return &this->get(iter->second);

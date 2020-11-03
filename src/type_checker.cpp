@@ -59,7 +59,14 @@ void BreakGather::addJumpNode(JumpNode *node) {
 TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
     switch(node.typeKind) {
     case TypeNode::Base: {
-        return this->typePool.getType(cast<BaseTypeNode>(node).getTokenText());
+        auto &typeNode = cast<BaseTypeNode>(node);
+
+        // fist lookup type alias
+        auto handle = this->symbolTable.lookupHandle(toTypeAliasFullName(typeNode.getTokenText()));
+        if(handle) {
+            return Ok(&this->typePool.get(handle->getTypeID()));
+        }
+        return this->typePool.getType(typeNode.getTokenText());
     }
     case TypeNode::Reified: {
         auto &typeNode = cast<ReifiedTypeNode>(node);
@@ -814,12 +821,10 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
 }
 
 void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
-    if(!this->isTopLevel()) {   // only available toplevel scope
-        RAISE_TC_ERROR(OutsideToplevel, node);
-    }
-
     TypeNode &typeToken = node.getTargetTypeNode();
-    if(!this->typePool.setAlias(std::string(node.getAlias()), this->checkTypeExactly(typeToken))) {
+    auto &type = this->checkTypeExactly(typeToken);
+    auto ret = this->symbolTable.addTypeAlias(this->typePool, node.getAlias(), type);
+    if(!ret) {
         RAISE_TC_ERROR(DefinedSymbol, node, node.getAlias().c_str());
     }
     node.setType(this->typePool.get(TYPE::Void));
@@ -1487,19 +1492,19 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     assert(this->isTopLevel());
 
     // import module
-    const char *ret = this->symbolTable.import(node.getModType(), node.getName().empty());
-    if(ret) {
-        RAISE_TC_ERROR(ConflictSymbol, node, ret, node.getPathName().c_str());
+    auto ret = this->symbolTable.import(node.getModType(), node.getName().empty());
+    if(!ret.empty()) {
+        RAISE_TC_ERROR(ConflictSymbol, node, ret.c_str(), node.getPathName().c_str());
     }
     if(!node.getName().empty()) {    // scoped import
         auto handle = node.getModType().toHandle();
 
         // register actual module handle
-        if(!this->symbolTable.addGlobalAlias(node.getName(), handle)) {
+        if(!this->symbolTable.addAlias(node.getName(), handle)) {
             RAISE_TC_ERROR(DefinedSymbol, node, node.getName().c_str());
         }
         std::string cmdName = toCmdFullName(node.getName());
-        if(!this->symbolTable.addGlobalAlias(cmdName, handle)) {  // for module subcommand
+        if(!this->symbolTable.addAlias(cmdName, handle)) {  // for module subcommand
             RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
         }
     }

@@ -122,6 +122,7 @@ private:
     friend class ModuleScope;
 
     unsigned int curVarIndex;
+    unsigned int varSize{0};
 
 public:
     NON_COPYABLE(BlockScope);
@@ -136,7 +137,7 @@ public:
     }
 
     unsigned int getVarSize() const {
-        return this->handleMap.size();
+        return this->varSize;
     }
 
     unsigned int getBaseIndex() const {
@@ -298,9 +299,7 @@ public:
      */
     HandleOrError newHandle(const std::string &symbolName, const DSType &type, FieldAttribute attribute);
 
-    HandleOrError addGlobalAlias(const std::string &symbolName, const FieldHandle &handle) {
-        return this->globalScope.add(symbolName, handle, this->modID);
-    }
+    HandleOrError addAlias(const std::string &symbolName, const FieldHandle &handle);
 
     void closeBuiltin() {
         this->builtin = false;
@@ -333,9 +332,9 @@ public:
      * if true, perform global import
      * @return
      * if detect symbol name conflict, return conflicted symbol name.
-     * if has no conflict, return null
+     * if has no conflict, return empty string
      */
-    const char *import(const ModType &type, bool global);
+    std::string import(const ModType &type, bool global);
 
     /**
      * remove changed state(local scope, global FieldHandle)
@@ -618,7 +617,7 @@ public:
      */
     ModType &createModType(TypePool &pool, const std::string &fullpath);
 
-    const char *import(const ModType &type, bool global) {
+    std::string import(const ModType &type, bool global) {
         return this->cur().import(type, global);
     }
 
@@ -634,7 +633,9 @@ public:
      */
     HandleOrError newHandle(const std::string &symbolName, const DSType &type, FieldAttribute attribute);
 
-    HandleOrError addGlobalAlias(const std::string &symbolName, const FieldHandle &handle);
+    HandleOrError addAlias(const std::string &symbolName, const FieldHandle &handle);
+
+    HandleOrError addTypeAlias(const TypePool &pool, const std::string &alias, const DSType &type);
 
     void closeBuiltin() {
         this->root().closeBuiltin();

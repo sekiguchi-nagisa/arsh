@@ -28,6 +28,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - now use ``=>``
 - **Breaking Change**: use ``typedef`` keyword for type alias definition
   - ``alias`` keyword is still reserved keyword for future usage
+- module/scope aware type alias
+  - defined type alias in local scope
 - allow ``=>`` in abbreviate type notation of Func type
 - allow ``->`` in arm expression
 - allow statement in for-init

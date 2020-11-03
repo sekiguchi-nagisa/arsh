@@ -58,6 +58,7 @@ HandleOrError BlockScope::addNew(const std::string &symbolName, const DSType &ty
         return ret;
     }
     this->curVarIndex++;
+    this->varSize++;
     if(this->getCurVarIndex() > UINT8_MAX) {
         return Err(SymbolError::LIMIT);
     }
@@ -109,6 +110,16 @@ HandleOrError ModuleScope::newHandle(const std::string &symbolName,
     return ret;
 }
 
+HandleOrError ModuleScope::addAlias(const std::string &symbolName, const FieldHandle &handle) {
+    auto attr = handle.attr();
+    if(this->inGlobalScope()) {
+        if(this->builtin) {
+            setFlag(attr, FieldAttribute::BUILTIN);
+        }
+    }
+    return this->scope->add(symbolName, handle, attr, this->modID);
+}
+
 void ModuleScope::enterScope() {
     unsigned int index = 0;
     if(!this->inGlobalScope()) {
@@ -151,9 +162,9 @@ bool ModuleScope::needGlobalImport(ChildModEntry entry) {
     return isGlobal(entry);
 }
 
-const char* ModuleScope::import(const ModType &type, bool global) {
+std::string ModuleScope::import(const ModType &type, bool global) {
     if(!this->needGlobalImport(toChildModEntry(type, global))) {
-        return nullptr;
+        return "";
     }
 
     for(auto &e : type.handleMap) {
@@ -170,11 +181,13 @@ const char* ModuleScope::import(const ModType &type, bool global) {
             StringRef name = symbolName;
             if(isCmdFullName(name)) {
                 name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
+            } else if(isTypeAliasFullName(name)) {
+                name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
             }
-            return name.data();
+            return name.toString();
         }
     }
-    return nullptr;
+    return "";
 }
 
 void ModuleScope::clear() {
@@ -394,15 +407,24 @@ HandleOrError SymbolTable::newHandle(const std::string &symbolName, const DSType
     return this->cur().newHandle(symbolName, type, attribute);
 }
 
-HandleOrError SymbolTable::addGlobalAlias(const std::string &symbolName, const FieldHandle &handle) {
-    assert(this->cur().inGlobalScope());
-    if(&this->cur() != &this->root()) {
+HandleOrError SymbolTable::addAlias(const std::string &symbolName, const FieldHandle &handle) {
+    if(this->cur().inGlobalScope() && &this->cur() != &this->root()) {
         auto ret = this->root().lookupHandle(symbolName);
         if(ret && hasFlag(ret->attr(), FieldAttribute::BUILTIN)) {
             return Err(SymbolError::DEFINED);
         }
     }
-    return this->cur().addGlobalAlias(symbolName, handle);
+    return this->cur().addAlias(symbolName, handle);
+}
+
+HandleOrError SymbolTable::addTypeAlias(const TypePool &pool, const std::string &alias, const DSType &type) {
+    if(this->cur().inGlobalScope()) {
+        auto ret = pool.getType(alias);
+        if(ret) {
+            return Err(SymbolError::DEFINED);
+        }
+    }
+    return this->addAlias(toTypeAliasFullName(alias), FieldHandle(0, type, 0, FieldAttribute{},0));
 }
 
 unsigned int SymbolTable::getTermHookIndex() {

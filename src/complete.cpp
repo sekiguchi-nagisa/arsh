@@ -394,7 +394,7 @@ static void completeVarName(const SymbolTable &symbolTable,
                             const std::string &prefix, ArrayObject &results) {
     for(const auto &iter : symbolTable.globalScope()) {
         StringRef varName = iter.first.c_str();
-        if(varName.startsWith(prefix) && !isCmdFullName(varName)) {
+        if(varName.startsWith(prefix) && !isCmdFullName(varName) && !isTypeAliasFullName(varName)) {
             append(results, varName, EscapeOp::NOP);
         }
     }

@@ -163,6 +163,7 @@ constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
 
 // =====  for symbol lookup =====
 constexpr const char *CMD_SYMBOL_SUFFIX = "%c";
+constexpr const char *TYPE_ALIAS_SYMBOL_SUFFIX = "%t";
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 
 constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {
@@ -176,8 +177,18 @@ inline std::string toCmdFullName(const std::string &cmdName) {
     return name;
 }
 
+inline std::string toTypeAliasFullName(const std::string &alias) {
+    std::string name = alias;
+    name += TYPE_ALIAS_SYMBOL_SUFFIX;
+    return name;
+}
+
 inline bool isCmdFullName(StringRef ref) {
     return ref.endsWith(CMD_SYMBOL_SUFFIX);
+}
+
+inline bool isTypeAliasFullName(StringRef ref) {
+    return ref.endsWith(TYPE_ALIAS_SYMBOL_SUFFIX);
 }
 
 

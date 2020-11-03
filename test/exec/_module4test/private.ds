@@ -8,3 +8,5 @@ function __test() : String {
 function test() : String {
     return $__test()
 }
+
+typedef _Comp = typeof($COMP_HOOK!)

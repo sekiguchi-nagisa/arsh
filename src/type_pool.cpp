@@ -102,9 +102,9 @@ TypePool::~TypePool() {
 DSType *TypePool::addType(DSType *type) {
     assert(type != nullptr);
     this->typeTable.push_back(type);
-    bool s = this->setAlias(type->getNameRef().toString(), *type);
-    (void) s;
-    assert(s);
+    auto pair = this->nameMap.emplace(type->getNameRef(), type->typeId());
+    (void) pair;
+    assert(pair.second);
     if(this->typeTable.size() == MAX_TYPE_NUM) {
         fatal("type id reaches limit(%u)\n", MAX_TYPE_NUM);
     }
@@ -125,9 +125,9 @@ void TypePool::discard(const TypeDiscardPoint point) {
     }
     this->typeTable.erase(this->typeTable.begin() + point.typeIdOffset, this->typeTable.end());
 
-    for(auto iter = this->aliasMap.begin(); iter != this->aliasMap.end();) {
+    for(auto iter = this->nameMap.begin(); iter != this->nameMap.end();) {
         if(iter->second >= point.typeIdOffset) {
-            iter = this->aliasMap.erase(iter);
+            iter = this->nameMap.erase(iter);
         } else {
             ++iter;
         }

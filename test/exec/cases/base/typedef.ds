@@ -1,0 +1,27 @@
+
+assert $true is Bool
+assert $true is Boolean
+
+typedef AAA = Float
+assert 34.12 is AAA
+assert 1 as AAA is Float
+
+{
+    typedef AAA = String
+    assert !(23.1 is AAA)
+    assert 'fre' is AAA
+    assert 34 as AAA == '34'
+}
+
+assert 34.12 is AAA
+assert 1 as AAA is Float
+
+function hoge($a : Any) : Bool {
+    typedef AAA = [String]
+    assert [''] is AAA
+    return $a is AAA
+}
+assert !$hoge([23])
+assert !$hoge(3.14)
+assert !$hoge('fer')
+assert $hoge($@)

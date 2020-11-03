@@ -135,16 +135,6 @@ public:
         ASSERT_EQ(hasFlag(set, TypeAttr::RECORD_TYPE), type.isRecordType());
     }
 
-    virtual void assertAlias(const char *aliasName, DSType &type) {
-        std::string name(aliasName);
-        ASSERT_NE(name, type.getName());
-
-        this->pool.setAlias(std::string(name), type);
-        auto ret = this->pool.getType(name);
-        ASSERT_TRUE(ret);
-        ASSERT_TRUE(*ret.take() == type);
-    }
-
     virtual void assertTemplateName(const char *templateName, const TypeTemplate &t, unsigned int size) {
         std::string name(templateName);
         ASSERT_EQ(name, t.getName());
@@ -245,10 +235,6 @@ TEST_F(TypeTest, attribute) {
             this->assertAttribute(TypeAttr::FUNC_TYPE, this->toType<Func_t<Int_t>>()));
 }
 
-TEST_F(TypeTest, alias) {
-    ASSERT_NO_FATAL_FAILURE(this->assertAlias("Int_2", this->pool.get(TYPE::Int)));
-}
-
 TEST_F(TypeTest, templateName) {
     ASSERT_NO_FATAL_FAILURE(this->assertTemplateName("Array", this->pool.getArrayTemplate(), 1));
     ASSERT_NO_FATAL_FAILURE(this->assertTemplateName("Map", this->pool.getMapTemplate(), 2));
@@ -268,17 +254,6 @@ TEST_F(TypeTest, typeToken) {
 
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Func_t<Void_t>>(), this->pool.get(TYPE::Func)));
     ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Func_t<String_t, Int_t, Float_t>>(), this->pool.get(TYPE::Func)));
-}
-
-TEST_F(TypeTest, pool) {
-    auto &t = this->toType<Array_t<Int_t>>();
-    std::string typeName = t.getNameRef().toString();
-    std::string alias = "IArray";
-    ASSERT_NO_FATAL_FAILURE(this->assertAlias(alias.c_str(), t));
-//    this->pool.abort();
-//
-//    ASSERT_TRUE(this->pool.getType(typeName) == nullptr);
-//    ASSERT_TRUE(this->pool.getType(alias) == nullptr);
 }
 
 TEST_F(TypeTest, api) {

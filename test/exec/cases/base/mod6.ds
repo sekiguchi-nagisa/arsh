@@ -2,8 +2,8 @@
 source ../../_module4test/private.ds
 #
 # in module 'private.ds'
-# defined _AAA, __test, test.
-# but, private symbol _AAA and __test is not imported
+# defined _AAA, __test, test, _Comp
+# but, private symbol _AAA, __test and _Comp is not imported
 
 
 var _AAA = $true    # redefine
@@ -15,3 +15,6 @@ function __test($a : Int) : Int {
 
 assert $__test(2) == 2
 assert $test() == "this is a private symbol" # call public symbol
+
+typedef _Comp = String  # redefine
+assert 'fre' is _Comp
