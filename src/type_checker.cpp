@@ -825,7 +825,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
     auto &type = this->checkTypeExactly(typeToken);
     auto ret = this->symbolTable.addTypeAlias(this->typePool, node.getAlias(), type);
     if(!ret) {
-        RAISE_TC_ERROR(DefinedSymbol, node, node.getAlias().c_str());
+        RAISE_TC_ERROR(DefinedTypeAlias, node, node.getAlias().c_str());
     }
     node.setType(this->typePool.get(TYPE::Void));
 }
