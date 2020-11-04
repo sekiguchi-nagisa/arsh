@@ -7,7 +7,9 @@ function _empty($words : [String], $cursor : Int) : [String] {
     return new [String]()
 }
 
-let _compMap : [String : typeof($_empty)]
+typedef Completer = typeof($_empty)
+
+let _compMap : [String : Completer]
 
 function _defaultHook($words : [String], $cursor : Int) : [String] {
     if !(command -v $words[0] 2>&1 > /dev/null) {
@@ -20,7 +22,7 @@ function _defaultHook($words : [String], $cursor : Int) : [String] {
 }
 
 # if $cmd is empty string, treat as fallback handler
-function compAdd($cmd : String, $comp : typeof($_empty)) : typeof($_empty)! {
+function compAdd($cmd : String, $comp : Completer) : Completer! {
     $COMP_HOOK = $_defaultHook
     return $_compMap.put($cmd, $comp)
 }
