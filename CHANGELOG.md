@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Core
 - allow function call in command arguments
   - ex. ``echo $func(34, "hey")``
+- module/scope aware type alias
+  - at named module import, implicity define module type alias
+    ```
+    source path as Path
+    assert $Path is Path
+    ```
+  - define type alias in local scope
+  - access type name defined in module
+    ```
+    source path as Path
+    assert $COMP_HOOK! is Path.Completer
+    ```
 
 #### Completion
 - add completions for
@@ -26,8 +38,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Core
 - **Breaking Change**: use ``typedef`` keyword for type alias definition
   - ``alias`` keyword is still reserved keyword for future usage
-- module/scope aware type alias
-  - defined type alias in local scope
 - allow ``=>`` in abbreviate type notation of Func type
 - allow ``->`` in arm expression
 - allow statement in for-init

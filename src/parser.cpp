@@ -242,17 +242,29 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
     GUARD_DEEP_NESTING(guard);
 
     auto typeToken = std::make_unique<BaseTypeNode>(token, this->lexer->toName(token));
-    if(!HAS_NL() && CUR_KIND() == TYPE_OPEN) {
-        this->consume();
-        std::vector<std::unique_ptr<TypeNode>> types;
-        types.push_back(TRY(this->parse_typeName(false)));
-
-        while(CUR_KIND() == TYPE_SEP) {
+    if(!HAS_NL()) {
+        if(CUR_KIND() == TYPE_OPEN) {
             this->consume();
+            std::vector<std::unique_ptr<TypeNode>> types;
             types.push_back(TRY(this->parse_typeName(false)));
+
+            while(CUR_KIND() == TYPE_SEP) {
+                this->consume();
+                types.push_back(TRY(this->parse_typeName(false)));
+            }
+            token = TRY(this->expect(TYPE_CLOSE));
+            return std::make_unique<ReifiedTypeNode>(std::move(typeToken), std::move(types), token);
+        } else if(CUR_KIND() == TYPE_DOT) {
+            std::unique_ptr<TypeNode> typeNode = std::move(typeToken);
+            while (!HAS_NL() && CUR_KIND() == TYPE_DOT) {
+                this->consume();    // TYPE_DOT
+                Token nameToken = TRY(this->expect(IDENTIFIER));
+                typeNode = std::make_unique<QualifiedTypeNode>(
+                        std::move(typeNode),
+                        std::make_unique<BaseTypeNode>(nameToken, this->lexer->toName(nameToken)));
+            }
+            return typeNode;
         }
-        token = TRY(this->expect(TYPE_CLOSE));
-        return std::make_unique<ReifiedTypeNode>(std::move(typeToken), std::move(types), token);
     }
     return std::move(typeToken);
 }

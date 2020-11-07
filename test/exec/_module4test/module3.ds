@@ -27,3 +27,5 @@ function script() : String {
 }
 
 assert $SCRIPT_NAME == $script()
+
+typedef Path = String

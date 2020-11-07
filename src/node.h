@@ -173,6 +173,7 @@ public:
 // type definition
 #define EACH_TYPE_NODE_KIND(OP) \
     OP(Base) \
+    OP(Qualified) \
     OP(Reified) \
     OP(Func) \
     OP(Return) \
@@ -210,6 +211,29 @@ public:
 
     const std::string &getTokenText() const {
         return this->typeName;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
+class QualifiedTypeNode : public TypeNode {
+private:
+    std::unique_ptr<TypeNode> recvTypeNode;
+    std::unique_ptr<BaseTypeNode> nameTypeNode;
+
+public:
+    QualifiedTypeNode(std::unique_ptr<TypeNode> &&recvTypeNode, std::unique_ptr<BaseTypeNode> &&nameNode) :
+        TypeNode(TypeNode::Qualified, recvTypeNode->getToken()),
+        recvTypeNode(std::move(recvTypeNode)), nameTypeNode(std::move(nameNode)) {
+        this->updateToken(this->nameTypeNode->getToken());
+    }
+
+    TypeNode &getRecvTypeNode() const {
+        return *this->recvTypeNode;
+    }
+
+    BaseTypeNode &getNameTypeNode() const {
+        return *this->nameTypeNode;
     }
 
     void dump(NodeDumper &dumper) const override;

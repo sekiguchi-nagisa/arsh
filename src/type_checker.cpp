@@ -68,6 +68,21 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         }
         return this->typePool.getType(typeNode.getTokenText());
     }
+    case TypeNode::Qualified: {
+        auto &qualifiedNode = cast<QualifiedTypeNode>(node);
+        auto &recvType = this->checkTypeExactly(qualifiedNode.getRecvTypeNode());
+        if(!recvType.isModType()) {
+            RAISE_TC_ERROR(Required, qualifiedNode.getRecvTypeNode(), "Module type", recvType.getName());
+        }
+        auto &modType = static_cast<const ModType&>(recvType);
+        std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
+        auto *handle = modType.lookupFieldHandle(this->symbolTable, typeName);
+        if(!handle) {
+            auto &nameNode = qualifiedNode.getNameTypeNode();
+            RAISE_TC_ERROR(UndefinedField, nameNode, nameNode.getTokenText().c_str());
+        }
+        return Ok(&this->typePool.get(handle->getTypeID()));
+    }
     case TypeNode::Reified: {
         auto &typeNode = cast<ReifiedTypeNode>(node);
         unsigned int size = typeNode.getElementTypeNodes().size();
@@ -1506,6 +1521,9 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
         std::string cmdName = toCmdFullName(node.getName());
         if(!this->symbolTable.addAlias(cmdName, handle)) {  // for module subcommand
             RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
+        }
+        if(!this->symbolTable.addTypeAlias(this->typePool, node.getName(), node.getModType())) {
+            RAISE_TC_ERROR(DefinedTypeAlias, node, node.getName().c_str());
         }
     }
     node.setType(this->typePool.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));

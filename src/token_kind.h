@@ -163,7 +163,8 @@
     /* type  */\
     TOKEN(TYPE_OPEN                          , "<") /* < */\
     TOKEN(TYPE_CLOSE                         , ">") /* > */\
-    TOKEN(TYPE_SEP                           , ",") /* , */\
+    TOKEN(TYPE_SEP                           , ",") /* , */ \
+    TOKEN(TYPE_DOT                           , ".") /* . */\
     TOKEN(ATYPE_OPEN                         , "[") /* [ */\
     TOKEN(ATYPE_CLOSE                        , "]") /* ] */\
     TOKEN(PTYPE_OPEN                         , "(") /* ( */\

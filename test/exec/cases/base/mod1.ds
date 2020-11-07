@@ -25,4 +25,6 @@ function get() : typeof($mod) {
 
 assert $get().hello == "!!"
 
-
+assert $mod is mod
+assert $get() is mod
+assert ['fre'] is mod.StrArray

@@ -299,6 +299,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <TYPE> "<"               { RET(TYPE_OPEN); }
       <TYPE> ">"               { RET(TYPE_CLOSE); }
       <TYPE> ","               { RET(TYPE_SEP); }
+      <TYPE> "."               { RET(TYPE_DOT); }
       <TYPE> "["               { RET(ATYPE_OPEN); }
       <TYPE> "]"               { RET(ATYPE_CLOSE); }
       <TYPE> "("               { RET(PTYPE_OPEN); }

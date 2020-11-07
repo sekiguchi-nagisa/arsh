@@ -95,6 +95,17 @@ void BaseTypeNode::dump(NodeDumper &dumper) const {
     DUMP(typeName);
 }
 
+// ###############################
+// ##     QualifiedTypeNode     ##
+// ###############################
+
+void QualifiedTypeNode::dump(NodeDumper &dumper) const {
+    TypeNode::dump(dumper);
+    DUMP_PTR(recvTypeNode);
+    DUMP_PTR(nameTypeNode);
+}
+
+
 // #############################
 // ##     ReifiedTypeNode     ##
 // #############################

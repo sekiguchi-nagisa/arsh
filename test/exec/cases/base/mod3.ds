@@ -33,3 +33,5 @@ assert $mod1.path == $mod1.dir()
 assert $mod1.path == $mod1.mod3.path
 assert $mod.path == $mod1.mod3.path
 assert $mod.name == $mod1.mod3.name
+
+assert '45' is mod1.mod3.Path
