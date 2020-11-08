@@ -428,6 +428,7 @@ private:
     void visitTypeOpNode(TypeOpNode &node) override;
     void visitUnaryOpNode(UnaryOpNode &node) override;
     void visitBinaryOpNode(BinaryOpNode &node) override;
+    void visitArgsNode(ArgsNode &node) override;
     void visitApplyNode(ApplyNode &node) override;
     void visitNewNode(NewNode &node) override;
     void visitEmbedNode(EmbedNode &node) override;

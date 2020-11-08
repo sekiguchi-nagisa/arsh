@@ -642,24 +642,22 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     }
 }
 
+void ByteCodeGenerator::visitArgsNode(ArgsNode &node) {
+    for(auto &e : node.getNodes()) {
+        this->visit(*e);
+    }
+}
+
 void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
-    const unsigned int paramSize = node.getArgNodes().size();
+    const unsigned int paramSize = node.getArgsNode().getNodes().size();
     if(node.isMethodCall()) {
         this->visit(node.getRecvNode());
-
-        for(auto &e : node.getArgNodes()) {
-            this->visit(*e);
-        }
-
+        this->visit(node.getArgsNode());
         this->emitSourcePos(node.getPos());
-        this->emitMethodCallIns(node.getArgNodes().size(), *node.getHandle());
+        this->emitMethodCallIns(paramSize, *node.getHandle());
     } else {
         this->visit(node.getExprNode());
-
-        for(auto &e : node.getArgNodes()) {
-            this->visit(*e);
-        }
-
+        this->visit(node.getArgsNode());
         this->emitSourcePos(node.getPos());
         this->emitFuncCallIns(paramSize, !node.getType().isVoidType());
     }
@@ -671,7 +669,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
         return;
     }
 
-    unsigned int paramSize = node.getArgNodes().size();
+    unsigned int paramSize = node.getArgsNode().getNodes().size();
 
     this->emitTypeIns(OpCode::NEW, node.getType());
     if(this->typePool.isArrayType(node.getType()) ||
@@ -680,9 +678,7 @@ void ByteCodeGenerator::visitNewNode(NewNode &node) {
     }
 
     // push arguments
-    for(auto &argNode : node.getArgNodes()) {
-        this->visit(*argNode);
-    }
+    this->visit(node.getArgsNode());
 
     // call constructor
     this->emitSourcePos(node.getPos());

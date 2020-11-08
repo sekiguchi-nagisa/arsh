@@ -26,9 +26,6 @@
 
 namespace ydsh {
 
-// for apply node type checking
-using HandleOrFuncType = Union<FunctionType *, const MethodHandle *>;
-
 enum class CoercionKind : unsigned char {
     PERFORM_COERCION,
     INVALID_COERCION,   // illegal coercion.
@@ -369,11 +366,6 @@ protected:
      */
     HandleOrFuncType resolveCallee(VarNode &recvNode);
 
-    // helper for argument type checking
-    void checkTypeArgsNode(Node &node, const MethodHandle *handle, std::vector<std::unique_ptr<Node>> &argNodes);
-
-    void checkTypeAsMethodCall(ApplyNode &node, const MethodHandle *handle);
-
     bool checkAccessNode(AccessNode &node);
 
     // helper api for type cast
@@ -500,6 +492,7 @@ protected:
     void visitTypeOpNode(TypeOpNode &node) override;
     void visitUnaryOpNode(UnaryOpNode &node) override;
     void visitBinaryOpNode(BinaryOpNode &node) override;
+    void visitArgsNode(ArgsNode &node) override;
     void visitApplyNode(ApplyNode &node) override;
     void visitNewNode(NewNode &node) override;
     void visitEmbedNode(EmbedNode &node) override;

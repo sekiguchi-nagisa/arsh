@@ -38,9 +38,9 @@ struct DirectiveParser : public Parser {
 
     std::unique_ptr<ApplyNode> operator()() {
         auto exprNode = TRY(this->parse_appliedName(false));
-        auto args = TRY(this->parse_arguments());
+        auto argsNode = TRY(this->parse_arguments());
         TRY(this->expect(EOS));
-        return std::make_unique<ApplyNode>(std::move(exprNode), args.take());
+        return std::make_unique<ApplyNode>(std::move(exprNode), std::move(argsNode));
     }
 };
 
@@ -233,7 +233,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     });
 
     std::unordered_set<std::string> foundAttrSet;
-    for(auto &attrNode : node.getArgNodes()) {
+    for(auto &attrNode : node.getArgsNode().getNodes()) {
         auto *assignNode = TRY(this->checkedCast<AssignNode>(*attrNode));
         auto &attrName = TRY(this->checkedCast<VarNode>(assignNode->getLeftNode()))->getVarName();
         auto *pair = this->lookupHandler(attrName);

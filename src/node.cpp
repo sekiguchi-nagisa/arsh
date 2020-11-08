@@ -301,27 +301,28 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 }
 
+// ######################
+// ##     ArgsNode     ##
+// ######################
+
+void ArgsNode::dump(NodeDumper &dumper) const {
+    DUMP(nodes);    //FIXME:
+}
+
+
 // #######################
 // ##     ApplyNode     ##
 // #######################
 
-ApplyNode::ApplyNode(std::unique_ptr<Node> &&exprNode, std::vector<std::unique_ptr<Node>> &&argNodes, Kind kind) :
-        WithRtti(exprNode->getToken()),
-        exprNode(std::move(exprNode)), argNodes(std::move(argNodes)), kind(kind) {
-    if(!this->argNodes.empty()) {
-        this->updateToken(this->argNodes.back()->getToken());
-    }
-}
-
 std::unique_ptr<ApplyNode> ApplyNode::newMethodCall(std::unique_ptr<Node> &&recvNode, Token token, std::string &&methodName) {
     auto exprNode = std::make_unique<AccessNode>(
             std::move(recvNode), std::make_unique<VarNode>(token, std::move(methodName)));
-    return std::make_unique<ApplyNode>(std::move(exprNode), std::vector<std::unique_ptr<Node>>(), METHOD_CALL);
+    return std::make_unique<ApplyNode>(std::move(exprNode), std::make_unique<ArgsNode>(), METHOD_CALL);
 }
 
 void ApplyNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(exprNode);
-    DUMP(argNodes);
+    DUMP_PTR(argsNode);
     DUMP_PTR(handle);
 
 #define EACH_ENUM(OP) \
@@ -338,17 +339,9 @@ void ApplyNode::dump(NodeDumper &dumper) const {
 // ##     NewNode     ##
 // #####################
 
-NewNode::NewNode(unsigned int startPos, std::unique_ptr<TypeNode> &&targetTypeNode,
-        std::vector<std::unique_ptr<Node>> &&argNodes) :
-        WithRtti({startPos, 0}), targetTypeNode(std::move(targetTypeNode)), argNodes(std::move(argNodes)) {
-    if(!this->argNodes.empty()) {
-        this->updateToken(this->argNodes.back()->getToken());
-    }
-}
-
 void NewNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(targetTypeNode);
-    DUMP(argNodes);
+    DUMP_PTR(argsNode);
     DUMP_PTR(handle);
 }
 
@@ -392,7 +385,7 @@ void UnaryOpNode::dump(NodeDumper &dumper) const {
 
 void BinaryOpNode::createApplyNode() {
     auto applyNode = ApplyNode::newMethodCall(std::move(this->leftNode), this->opToken, resolveBinaryOpName(this->op));
-    applyNode->refArgNodes().push_back(std::move(this->rightNode));
+    applyNode->getArgsNode().addNode(std::move(this->rightNode));
     this->setOptNode(std::move(applyNode));
 }
 
@@ -792,12 +785,12 @@ ElementSelfAssignNode::ElementSelfAssignNode(std::unique_ptr<ApplyNode> &&leftNo
 
     // init getter node
     this->getterNode = ApplyNode::newMethodCall(std::make_unique<EmptyNode>(), opToken, std::string(OP_GET));
-    this->getterNode->refArgNodes().push_back(std::make_unique<EmptyNode>());
+    this->getterNode->getArgsNode().addNode(std::make_unique<EmptyNode>());
 
     // init setter node
     this->setterNode = ApplyNode::newMethodCall(std::make_unique<EmptyNode>(), opToken, std::string(OP_SET));
-    this->setterNode->refArgNodes().push_back(std::make_unique<EmptyNode>());
-    this->setterNode->refArgNodes().push_back(std::make_unique<EmptyNode>());
+    this->setterNode->getArgsNode().addNode(std::make_unique<EmptyNode>());
+    this->setterNode->getArgsNode().addNode(std::make_unique<EmptyNode>());
 }
 
 void ElementSelfAssignNode::setRecvType(DSType &type) {
@@ -806,8 +799,8 @@ void ElementSelfAssignNode::setRecvType(DSType &type) {
 }
 
 void ElementSelfAssignNode::setIndexType(DSType &type) {
-    this->getterNode->refArgNodes()[0]->setType(type);
-    this->setterNode->refArgNodes()[0]->setType(type);
+    this->getterNode->getArgsNode().refNodes()[0]->setType(type);
+    this->setterNode->getArgsNode().refNodes()[0]->setType(type);
 }
 
 void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
@@ -1028,7 +1021,7 @@ std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKi
         if(isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexCall()) {
             auto &indexNode = cast<ApplyNode>(*leftNode);
             indexNode.setMethodName(std::string(OP_SET));
-            indexNode.refArgNodes().push_back(std::move(rightNode));
+            indexNode.getArgsNode().addNode(std::move(rightNode));
             return std::move(leftNode);
         }
         // assign to variable or field

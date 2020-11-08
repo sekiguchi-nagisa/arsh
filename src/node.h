@@ -51,6 +51,7 @@ class NodeDumper;
     OP(TypeOp) \
     OP(UnaryOp) \
     OP(BinaryOp) \
+    OP(Args) \
     OP(Apply) \
     OP(New) \
     OP(Embed) \
@@ -803,6 +804,43 @@ public:
  */
 std::unique_ptr<TypeOpNode> newTypedCastNode(std::unique_ptr<Node> &&targetNode, const DSType &type);
 
+using HandleOrFuncType = Union<FunctionType *, const MethodHandle *>;
+
+class ArgsNode : public WithRtti<Node, NodeKind::Args> {
+private:
+    std::vector<std::unique_ptr<Node>> nodes;
+
+    HandleOrFuncType ctx;
+
+public:
+    explicit ArgsNode(Token token) : WithRtti(token) {}
+
+    ArgsNode() : WithRtti({0, 0}) {}
+
+    void addNode(std::unique_ptr<Node> &&node) {
+        this->updateToken(node->getToken());
+        this->nodes.push_back(std::move(node));
+    }
+
+    const std::vector<std::unique_ptr<Node>> &getNodes() const {
+        return this->nodes;
+    }
+
+    std::vector<std::unique_ptr<Node>> &refNodes() {
+        return this->nodes;
+    }
+
+    void setTypeContext(HandleOrFuncType hf) {
+        this->ctx = hf;
+    }
+
+    HandleOrFuncType getTypeContext() const {
+        return this->ctx;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
 /**
  * for function object apply or method call
  */
@@ -817,7 +855,7 @@ public:
 
 private:
     std::unique_ptr<Node> exprNode;
-    std::vector<std::unique_ptr<Node>> argNodes;
+    std::unique_ptr<ArgsNode> argsNode;
 
     /**
      * for method call
@@ -827,7 +865,11 @@ private:
     Kind kind;
 
 public:
-    ApplyNode(std::unique_ptr<Node> &&exprNode, std::vector<std::unique_ptr<Node>> &&argNodes, Kind kind = UNRESOLVED);
+    ApplyNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<ArgsNode> &&argsNode, Kind kind = UNRESOLVED) :
+            WithRtti(exprNode->getToken()),
+            exprNode(std::move(exprNode)), argsNode(std::move(argsNode)), kind(kind) {
+        this->updateToken(this->argsNode->getToken());
+    }
 
     static std::unique_ptr<ApplyNode> newMethodCall(std::unique_ptr<Node> &&recvNode,
             Token token, std::string &&methodName);
@@ -842,7 +884,7 @@ public:
             Token token, std::unique_ptr<Node> &&indexNode) {
         auto node = newMethodCall(std::move(recvNode), token, std::string(OP_GET));
         node->setKind(INDEX_CALL);
-        node->argNodes.push_back(std::move(indexNode));
+        node->argsNode->addNode(std::move(indexNode));
         return node;
     }
 
@@ -850,12 +892,8 @@ public:
         return *this->exprNode;
     }
 
-    const std::vector<std::unique_ptr<Node>> &getArgNodes() const {
-        return this->argNodes;
-    }
-
-    std::vector<std::unique_ptr<Node>> &refArgNodes() {
-        return this->argNodes;
+    ArgsNode &getArgsNode() const {
+        return *this->argsNode;
     }
 
     const std::string &getMethodName() const {
@@ -903,7 +941,7 @@ public:
 
     static std::pair<std::unique_ptr<Node>, std::unique_ptr<Node>> split(std::unique_ptr<ApplyNode> &&node) {
         auto first = std::move(cast<AccessNode>(*node->exprNode).refRecvNode());
-        auto second = std::move(node->refArgNodes()[0]);
+        auto second = std::move(node->argsNode->refNodes()[0]);
         return {std::move(first), std::move(second)};
     }
 
@@ -916,27 +954,28 @@ public:
 class NewNode : public WithRtti<Node, NodeKind::New> {
 private:
     std::unique_ptr<TypeNode> targetTypeNode;
-    std::vector<std::unique_ptr<Node>> argNodes;
+
+    std::unique_ptr<ArgsNode> argsNode;
 
     const MethodHandle *handle{nullptr};
 
 public:
     NewNode(unsigned int startPos, std::unique_ptr<TypeNode> &&targetTypeNode,
-            std::vector<std::unique_ptr<Node>> &&argNodes);
+            std::unique_ptr<ArgsNode> &&argsNode) :
+            WithRtti({startPos, 0}), targetTypeNode(std::move(targetTypeNode)), argsNode(std::move(argsNode)) {
+        this->updateToken(this->argsNode->getToken());
+    }
 
     explicit NewNode(std::unique_ptr<TypeNode> &&targetTypeNode) :
-            WithRtti(targetTypeNode->getToken()), targetTypeNode(std::move(targetTypeNode)) {}
+            WithRtti(targetTypeNode->getToken()),
+            targetTypeNode(std::move(targetTypeNode)), argsNode(std::make_unique<ArgsNode>()) {}
 
     TypeNode &getTargetTypeNode() const {
         return *this->targetTypeNode;
     }
 
-    const std::vector<std::unique_ptr<Node>> &getArgNodes() const {
-        return this->argNodes;
-    }
-
-    std::vector<std::unique_ptr<Node>> &refArgNodes() {
-        return this->argNodes;
+    ArgsNode &getArgsNode() const {
+        return *this->argsNode;
     }
 
     void setHandle(const MethodHandle *h) {
@@ -2488,6 +2527,7 @@ struct NodeVisitor {
     virtual void visitTypeOpNode(TypeOpNode &node) = 0;
     virtual void visitUnaryOpNode(UnaryOpNode &node) = 0;
     virtual void visitBinaryOpNode(BinaryOpNode &node) = 0;
+    virtual void visitArgsNode(ArgsNode &node) = 0;
     virtual void visitApplyNode(ApplyNode &node) = 0;
     virtual void visitEmbedNode(EmbedNode &node) = 0;
     virtual void visitNewNode(NewNode &node) = 0;
@@ -2537,6 +2577,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitTypeOpNode(TypeOpNode &node) override { this->visitDefault(node); }
     void visitUnaryOpNode(UnaryOpNode &node) override { this->visitDefault(node); }
     void visitBinaryOpNode(BinaryOpNode &node) override { this->visitDefault(node); }
+    void visitArgsNode(ArgsNode &node) override { this->visitDefault(node); }
     void visitApplyNode(ApplyNode &node) override { this->visitDefault(node); }
     void visitNewNode(NewNode &node) override { this->visitDefault(node); }
     void visitEmbedNode(EmbedNode &node) override { this->visitDefault(node); }

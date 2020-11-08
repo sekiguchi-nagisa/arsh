@@ -28,35 +28,6 @@
 
 namespace ydsh {
 
-class ArgsWrapper {
-private:
-    Token token;
-    std::vector<std::unique_ptr<Node>> nodes;
-
-public:
-    NON_COPYABLE(ArgsWrapper);
-
-    explicit ArgsWrapper(unsigned int pos) : token({pos, 1}) {}
-    ArgsWrapper(ArgsWrapper &&) = default;
-    ArgsWrapper(std::nullptr_t) : ArgsWrapper(-1) {}    //NOLINT
-
-    Token getToken() const {
-        return this->token;
-    }
-
-    void updateToken(Token other) {
-        this->token.size = other.pos + other.size - this->token.pos;
-    }
-
-    void addArgNode(std::unique_ptr<Node> &&node) {
-        this->nodes.push_back(std::move(node));
-    }
-
-    std::vector<std::unique_ptr<Node>> take() {
-        return std::move(this->nodes);
-    }
-};
-
 enum class CmdArgParseOpt : unsigned int {
     FIRST  = 1u << 0u,
     MODULE = 1u << 1u,
@@ -275,7 +246,7 @@ protected:
      * if first.size is 0, expect '('
      * @return
      */
-    ArgsWrapper parse_arguments(Token first = {0,0});
+    std::unique_ptr<ArgsNode> parse_arguments(Token first = {0,0});
 
     std::unique_ptr<Node> parse_stringExpression();
 

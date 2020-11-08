@@ -322,20 +322,6 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
     return static_cast<FunctionType *>(const_cast<DSType *>(&type));
 }
 
-void TypeChecker::checkTypeArgsNode(Node &node, const MethodHandle *handle, std::vector<std::unique_ptr<Node>> &argNodes) {
-    unsigned int argSize = argNodes.size();
-    // check param size
-    unsigned int paramSize = handle->getParamSize();
-    if(paramSize != argSize) {
-        RAISE_TC_ERROR(UnmatchParam, node, paramSize, argSize);
-    }
-
-    // check type each node
-    for(unsigned int i = 0; i < paramSize; i++) {
-        this->checkTypeWithCoercion(handle->getParamTypeAt(i), argNodes[i]);
-    }
-}
-
 bool TypeChecker::checkAccessNode(AccessNode &node) {
     auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
     auto *handle = this->symbolTable.lookupField(recvType, node.getFieldName());
@@ -603,11 +589,36 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     node.setType(this->checkTypeAsExpr(*node.getOptNode()));
 }
 
-void TypeChecker::checkTypeAsMethodCall(ApplyNode &node, const MethodHandle *handle) {
-    // check type argument
-    this->checkTypeArgsNode(node, handle, node.refArgNodes());
-    node.setHandle(handle);
-    node.setType(handle->getReturnType());
+void TypeChecker::visitArgsNode(ArgsNode &node) {
+    auto hf = node.getTypeContext();
+    if(is<const MethodHandle *>(hf)) {
+        auto *handle = get<const MethodHandle *>(hf);
+        unsigned int argSize = node.getNodes().size();
+        // check param size
+        unsigned int paramSize = handle->getParamSize();
+        if(paramSize != argSize) {
+            RAISE_TC_ERROR(UnmatchParam, node, paramSize, argSize);
+        }
+
+        // check type each node
+        for(unsigned int i = 0; i < paramSize; i++) {
+            this->checkTypeWithCoercion(handle->getParamTypeAt(i), node.refNodes()[i]);
+        }
+    } else {
+        auto &paramTypes = get<FunctionType *>(hf)->getParamTypes();
+        unsigned int size = paramTypes.size();
+        unsigned int argSize = node.getNodes().size();
+        // check param size
+        if(size != argSize) {
+            RAISE_TC_ERROR(UnmatchParam, node, size, argSize);
+        }
+
+        // check type each node
+        for(unsigned int i = 0; i < size; i++) {
+            this->checkTypeWithCoercion(*paramTypes[i], node.refNodes()[i]);
+        }
+    }
+    node.setType(this->typePool.get(TYPE::Void));
 }
 
 void TypeChecker::visitApplyNode(ApplyNode &node) {
@@ -615,27 +626,14 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
      * resolve handle
      */
     HandleOrFuncType hf = this->resolveCallee(node);
+    node.getArgsNode().setTypeContext(hf);
+    this->checkTypeExactly(node.getArgsNode());
     if(is<const MethodHandle *>(hf)) {
-        this->checkTypeAsMethodCall(node, get<const MethodHandle *>(hf));
-        return;
+        node.setHandle(get<const MethodHandle *>(hf));
+        node.setType(node.getHandle()->getReturnType());
+    } else {
+        node.setType(*get<FunctionType *>(hf)->getReturnType());
     }
-
-    // resolve param types
-    auto &paramTypes = get<FunctionType *>(hf)->getParamTypes();
-    unsigned int size = paramTypes.size();
-    unsigned int argSize = node.getArgNodes().size();
-    // check param size
-    if(size != argSize) {
-        RAISE_TC_ERROR(UnmatchParam, node, size, argSize);
-    }
-
-    // check type each node
-    for(unsigned int i = 0; i < size; i++) {
-        this->checkTypeWithCoercion(*paramTypes[i], node.refArgNodes()[i]);
-    }
-
-    // set return type
-    node.setType(*get<FunctionType *>(hf)->getReturnType());
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
@@ -643,7 +641,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
     if(type.isOptionType() ||
             this->typePool.isArrayType(type) ||
        this->typePool.isMapType(type)) {
-        unsigned int size = node.getArgNodes().size();
+        unsigned int size = node.getArgsNode().getNodes().size();
         if(size > 0) {
             RAISE_TC_ERROR(UnmatchParam, node, 0, size);
         }
@@ -652,7 +650,8 @@ void TypeChecker::visitNewNode(NewNode &node) {
         if(handle == nullptr) {
             RAISE_TC_ERROR(UndefinedInit, node, type.getName());
         }
-        this->checkTypeArgsNode(node, handle, node.refArgNodes());
+        node.getArgsNode().setTypeContext(handle);
+        this->checkTypeExactly(node.getArgsNode());
         node.setHandle(handle);
     }
 
@@ -1147,15 +1146,15 @@ bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) {
     case NodeKind::New: {
         auto &newNode = cast<NewNode>(*node);
         if(newNode.getType().is(TYPE::Regex)) {
-            if(!this->applyConstFolding(newNode.refArgNodes()[0]) ||
-                !this->applyConstFolding(newNode.refArgNodes()[1])) {
+            if(!this->applyConstFolding(newNode.getArgsNode().refNodes()[0]) ||
+                !this->applyConstFolding(newNode.getArgsNode().refNodes()[1])) {
                 break;
             }
-            assert(isa<StringNode>(*newNode.getArgNodes()[0]));
-            assert(isa<StringNode>(*newNode.getArgNodes()[1]));
+            assert(isa<StringNode>(*newNode.getArgsNode().refNodes()[0]));
+            assert(isa<StringNode>(*newNode.getArgsNode().refNodes()[1]));
             Token token = newNode.getToken();
-            std::string reStr = cast<StringNode>(*newNode.getArgNodes()[0]).takeValue();
-            std::string reFlag = cast<StringNode>(*newNode.getArgNodes()[1]).takeValue();
+            std::string reStr = cast<StringNode>(*newNode.getArgsNode().refNodes()[0]).takeValue();
+            std::string reFlag = cast<StringNode>(*newNode.getArgsNode().refNodes()[1]).takeValue();
             node = std::make_unique<RegexNode>(token, std::move(reStr), std::move(reFlag));
             this->checkTypeAsExpr(*node);
             return true;
@@ -1389,7 +1388,7 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
         this->resolveCoercion(elementType, node.refRightNode());
     }
 
-    node.getSetterNode().getArgNodes()[1]->setType(elementType);
+    node.getSetterNode().getArgsNode().getNodes()[1]->setType(elementType);
     this->checkType(this->typePool.get(TYPE::Void), node.getSetterNode());
 
     node.setType(this->typePool.get(TYPE::Void));

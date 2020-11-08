@@ -295,7 +295,13 @@ nodes:
       index: 0
       attribute: ""
       additionalOp: "NOP"
-    argNodes:
+    argsNode:
+      nodeKind: Args
+      token:
+        pos: 10
+        size: 2
+      type:
+      nodes:
     handle: null
     kind: "UNRESOLVED"
 )"},
@@ -386,35 +392,41 @@ nodes:
               type:
               typeKind: "Base"
               typeName: "Regex"
-            argNodes:
-              - nodeKind: StringExpr
-                token:
-                  pos: 46
-                  size: 7
-                type:
-                nodes:
-                  - nodeKind: Embed
-                    token:
-                      pos: 47
-                      size: 5
-                    type:
-                    kind: "STR_EXPR"
-                    exprNode:
-                      nodeKind: Var
+            argsNode:
+              nodeKind: Args
+              token:
+                pos: 45
+                size: 13
+              type:
+              nodes:
+                - nodeKind: StringExpr
+                  token:
+                    pos: 46
+                    size: 7
+                  type:
+                  nodes:
+                    - nodeKind: Embed
                       token:
                         pos: 47
                         size: 5
                       type:
-                      varName: "true"
-                      index: 0
-                      attribute: ""
-                    handle: null
-              - nodeKind: StringExpr
-                token:
-                  pos: 55
-                  size: 2
-                type:
-                nodes:
+                      kind: "STR_EXPR"
+                      exprNode:
+                        nodeKind: Var
+                        token:
+                          pos: 47
+                          size: 5
+                        type:
+                        varName: "true"
+                        index: 0
+                        attribute: ""
+                      handle: null
+                - nodeKind: StringExpr
+                  token:
+                    pos: 55
+                    size: 2
+                  type:
+                  nodes:
             handle: null
           leavingBlock: false
       baseIndex: 0
@@ -561,7 +573,13 @@ nodes:
         index: 0
         attribute: ""
         additionalOp: "NOP"
-      argNodes:
+      argsNode:
+        nodeKind: Args
+        token:
+          pos: 44
+          size: 2
+        type:
+        nodes:
       handle: null
       kind: "UNRESOLVED"
     messageNode:

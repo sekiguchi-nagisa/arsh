@@ -979,11 +979,9 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             Token token = TRY(this->expect(IDENTIFIER));
             node = std::make_unique<AccessNode>(std::move(node), this->newVarNode(token));
             if(CUR_KIND() == LP && !HAS_NL()) {  // treat as method call
-                auto args = TRY(this->parse_arguments());
-                token = args.getToken();
-                node = std::make_unique<ApplyNode>(std::move(node), args.take());
+                auto argsNode = TRY(this->parse_arguments());
+                node = std::make_unique<ApplyNode>(std::move(node), std::move(argsNode));
             }
-            node->updateToken(token);
             break;
         }
         case LB: {
@@ -996,10 +994,8 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             break;
         }
         case LP: {
-            auto args = TRY(this->parse_arguments());
-            Token token = args.getToken();
-            node = std::make_unique<ApplyNode>(std::move(node), args.take(), ApplyNode::FUNC_CALL);
-            node->updateToken(token);
+            auto argsNode = TRY(this->parse_arguments());
+            node = std::make_unique<ApplyNode>(std::move(node), std::move(argsNode), ApplyNode::FUNC_CALL);
             break;
         }
         case INC:
@@ -1047,11 +1043,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         unsigned int startPos = START_POS();
         this->expect(NEW, false);   // always success
         auto type = TRY(this->parse_typeName());
-        auto args = TRY(this->parse_arguments());
-        Token token = args.getToken();
-        auto node = std::make_unique<NewNode>(startPos, std::move(type), args.take());
-        node->updateToken(token);
-        return std::move(node);
+        auto argsNode = TRY(this->parse_arguments());
+        return std::make_unique<NewNode>(startPos, std::move(type), std::move(argsNode));
     }
     case INT_LITERAL: {
         auto pair = TRY(this->expectNum(INT_LITERAL, &Lexer::toInt64));
@@ -1285,12 +1278,12 @@ std::unique_ptr<Node> Parser::parse_regexLiteral() {
     return std::make_unique<RegexNode>(token, std::move(str), std::move(flag));
 }
 
-ArgsWrapper Parser::parse_arguments(Token first) {
+std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
     GUARD_DEEP_NESTING(guard);
 
     Token token = first.size == 0 ? TRY(this->expect(LP)) : first;
 
-    ArgsWrapper args(token.pos);
+    auto argsNode = std::make_unique<ArgsNode>(token);
     for(unsigned int count = 0; CUR_KIND() != RP; count++) {
         if(count > 0) {
             if(CUR_KIND() != COMMA) {
@@ -1300,15 +1293,15 @@ ArgsWrapper Parser::parse_arguments(Token first) {
         }
         switch(CUR_KIND()) {
         EACH_LA_expression(GEN_LA_CASE)
-            args.addArgNode(TRY(this->parse_expression()));
+            argsNode->addNode(TRY(this->parse_expression()));
             break;
         default:
             E_ALTER(EACH_LA_expression(GEN_LA_ALTER) RP);
         }
     }
     token = this->expect(RP);   // always success
-    args.updateToken(token);
-    return args;
+    argsNode->updateToken(token);
+    return argsNode;
 }
 
 std::unique_ptr<Node> Parser::parse_stringExpression() {
@@ -1437,10 +1430,8 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
         this->consume();    // always success
         auto varNode = this->newVarNode(token.slice(0, token.size - 1));
 
-        auto args = TRY(this->parse_arguments(token.sliceFrom(token.size - 1)));
-        token = args.getToken();
-        auto node = std::make_unique<ApplyNode>(std::move(varNode), args.take(), ApplyNode::FUNC_CALL);
-        node->updateToken(token);
+        auto argsNode = TRY(this->parse_arguments(token.sliceFrom(token.size - 1)));
+        auto node = std::make_unique<ApplyNode>(std::move(varNode), std::move(argsNode), ApplyNode::FUNC_CALL);
         return std::make_unique<EmbedNode>(EmbedNode::CMD_ARG, std::move(node));
     }
     default:
