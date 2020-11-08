@@ -27,7 +27,7 @@ const char *toString(TokenKind kind) {
             EACH_TOKEN(GEN_NAME)
 #undef GEN_NAME
     };
-    return table[kind];
+    return table[static_cast<unsigned int>(kind)];
 }
 
 OperatorInfo getOpInfo(TokenKind kind) {
@@ -36,7 +36,7 @@ OperatorInfo getOpInfo(TokenKind kind) {
 #define RASSOC OperatorAttr::RASSOC
 
     switch(kind) {
-#define GEN_CASE(T, P, A) case T: return {P, A};
+#define GEN_CASE(T, P, A) case TokenKind::T: return {P, A};
     EACH_OPERATOR(GEN_CASE)
 #undef GEN_CASE
     default:
@@ -50,7 +50,7 @@ OperatorInfo getOpInfo(TokenKind kind) {
 
 bool isAssignOp(TokenKind kind) {
     switch(kind) {
-#define GEN_OP(K, P, A) case K: return true;
+#define GEN_OP(K, P, A) case TokenKind::K: return true;
     EACH_ASSIGN_OPERATOR(GEN_OP)
 #undef GEN_OP
     default:

@@ -532,7 +532,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
 }
 
 void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
-    if(node.getOp() == COND_AND || node.getOp() == COND_OR) {
+    if(node.getOp() == TokenKind::COND_AND || node.getOp() == TokenKind::COND_OR) {
         auto &booleanType = this->typePool.get(TYPE::Boolean);
         this->checkTypeWithCoercion(booleanType, node.refLeftNode());
         if(node.getLeftNode()->getType().isNothingType()) {
@@ -544,14 +544,14 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
         return;
     }
 
-    if(node.getOp() == STR_CHECK) {
+    if(node.getOp() == TokenKind::STR_CHECK) {
         this->checkType(this->typePool.get(TYPE::String), *node.getLeftNode());
         this->checkType(this->typePool.get(TYPE::String), *node.getRightNode());
         node.setType(this->typePool.get(TYPE::String));
         return;
     }
 
-    if(node.getOp() == NULL_COALE) {
+    if(node.getOp() == TokenKind::NULL_COALE) {
         auto &leftType = this->checkTypeAsExpr(*node.getLeftNode());
         if(!leftType.isOptionType()) {
             RAISE_TC_ERROR(Required, *node.getLeftNode(), "Option type", leftType.getName());
@@ -1072,7 +1072,7 @@ bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) {
         auto &unaryNode = cast<UnaryOpNode>(*node);
         Token token = node->getToken();
         const auto op = unaryNode.getOp();
-        if(node->getType().is(TYPE::Int) && (op == MINUS || op == PLUS || op == NOT)) {
+        if(node->getType().is(TYPE::Int) && (op == TokenKind::MINUS || op == TokenKind::PLUS || op == TokenKind::NOT)) {
             auto &applyNode = unaryNode.refApplyNode();
             assert(applyNode->getExprNode().is(NodeKind::Access));
             auto &accessNode = cast<AccessNode>(applyNode->getExprNode());
@@ -1082,9 +1082,9 @@ bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) {
             }
             assert(isa<NumberNode>(*recvNode));
             int64_t value = cast<NumberNode>(*recvNode).getIntValue();
-            if(op == MINUS) {
+            if(op == TokenKind::MINUS) {
                 value = -value;
-            } else if(op == NOT) {
+            } else if(op == TokenKind::NOT) {
                 uint64_t v = ~static_cast<uint64_t>(value);
                 value = static_cast<int64_t>(v);
             }

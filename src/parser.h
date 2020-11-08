@@ -82,7 +82,7 @@ public:
     }
 
     explicit operator bool() const {
-        return this->curKind != EOS;
+        return this->curKind != TokenKind::EOS;
     }
 
 protected:
@@ -111,13 +111,13 @@ protected:
     Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
 
     bool inCompletionPoint() const {
-        return this->curKind == COMPLETION;
+        return this->curKind == TokenKind::COMPLETION;
     }
 
     bool inCompletionPointAt(TokenKind kind) const {
         if(this->inCompletionPoint()) {
             auto compTokenKind  = this->lexer->getCompTokenKind();
-            return compTokenKind == kind || compTokenKind == EOS;
+            return compTokenKind == kind || compTokenKind == TokenKind::EOS;
         }
         return false;
     }
@@ -208,7 +208,7 @@ protected:
     std::unique_ptr<Node> parse_expression(unsigned basePrecedence);
 
     std::unique_ptr<Node> parse_expression() {
-        return this->parse_expression(getPrecedence(ASSIGN));
+        return this->parse_expression(getPrecedence(TokenKind::ASSIGN));
     }
 
     std::unique_ptr<Node> parse_unaryExpression();

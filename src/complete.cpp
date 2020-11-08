@@ -111,7 +111,7 @@ static void append(ArrayObject &can, StringRef ref, EscapeOp op) {
 
 static bool isExprKeyword(TokenKind kind) {
     switch(kind) {
-#define GEN_CASE(T) case T:
+#define GEN_CASE(T) case TokenKind::T:
     EACH_LA_expression(GEN_CASE)
         return true;
 #undef GEN_CASE
@@ -122,7 +122,7 @@ static bool isExprKeyword(TokenKind kind) {
 
 static void completeKeyword(const std::string &prefix, bool onlyExpr, ArrayObject &results) {
     TokenKind table[] = {
-#define GEN_ITEM(T) T,
+#define GEN_ITEM(T) TokenKind::T,
             EACH_LA_statement(GEN_ITEM)
 #undef GEN_ITEM
     };
@@ -139,7 +139,7 @@ static void completeKeyword(const std::string &prefix, bool onlyExpr, ArrayObjec
 
 static void completeCmdArgKeyword(const std::string &prefix, ArrayObject &results) {
     TokenKind table[] = {
-#define GEN_ITEM(T) T,
+#define GEN_ITEM(T) TokenKind::T,
             EACH_LA_cmdArg(GEN_ITEM)
 #undef GEN_ITEM
     };

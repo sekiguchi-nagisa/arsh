@@ -19,16 +19,17 @@
 
 
 // helper macro definition.
-#define RET(k) do { kind = k; goto END; } while(false)
+#define RET_(k) do { kind = k; goto END; } while(false)
+#define RET(k) RET_(TokenKind::k)
 
 #define RET_OR_COMP(k) \
 do {                   \
-    auto _kind = k;                   \
+    auto _kind = TokenKind::k;                   \
     if(this->inCompletionPoint()) { \
-        this->setCompTokenKind(k); \
-        _kind = COMPLETION; \
+        this->setCompTokenKind(TokenKind::k); \
+        _kind = TokenKind::COMPLETION; \
     }                  \
-    RET(_kind);\
+    RET_(_kind);\
 } while(false)
 
 
@@ -125,7 +126,7 @@ TokenKind Lexer::nextToken(Token &token) {
     INIT:
     unsigned int startPos = this->getPos();
     LexerMode mode = this->getLexerMode();
-    TokenKind kind = INVALID;
+    TokenKind kind = TokenKind::INVALID;
     /*!re2c
       <STMT> "alias"           { MODE(NAME); RET_OR_COMP(ALIAS); }
       <STMT> "assert"          { RET_OR_COMP(ASSERT); }
@@ -320,14 +321,14 @@ TokenKind Lexer::nextToken(Token &token) {
     goto RET;
 
     EOS:
-    kind = EOS;
+    kind = TokenKind::EOS;
     token.pos = this->getUsedSize();
     token.size = 0;
     this->cursor--;
     foundNewLine = true;   // previous char is always newline
     if(this->isComplete()) {
         this->setCompTokenKind(kind);
-        kind = COMPLETION;
+        kind = TokenKind::COMPLETION;
         foundNewLine = false;
     }
     goto RET;

@@ -910,11 +910,11 @@ void EmptyNode::dump(NodeDumper &) const {
 
 const char *resolveUnaryOpName(TokenKind op) {
     switch(op) {
-    case PLUS:  // +
+    case TokenKind::PLUS:  // +
         return OP_PLUS;
-    case MINUS: // -
+    case TokenKind::MINUS: // -
         return OP_MINUS;
-    case NOT:   // not
+    case TokenKind::NOT:   // not
         return OP_NOT;
     default:
         fatal("unsupported unary op: %s\n", TO_NAME(op));
@@ -923,37 +923,37 @@ const char *resolveUnaryOpName(TokenKind op) {
 
 const char *resolveBinaryOpName(TokenKind op) {
     switch(op) {
-    case ADD:
+    case TokenKind::ADD:
         return OP_ADD;
-    case SUB:
+    case TokenKind::SUB:
         return OP_SUB;
-    case MUL:
+    case TokenKind::MUL:
         return OP_MUL;
-    case DIV:
+    case TokenKind::DIV:
         return OP_DIV;
-    case MOD:
+    case TokenKind::MOD:
         return OP_MOD;
-    case EQ:
+    case TokenKind::EQ:
         return OP_EQ;
-    case NE:
+    case TokenKind::NE:
         return OP_NE;
-    case LT:
+    case TokenKind::LT:
         return OP_LT;
-    case GT:
+    case TokenKind::GT:
         return OP_GT;
-    case LE:
+    case TokenKind::LE:
         return OP_LE;
-    case GE:
+    case TokenKind::GE:
         return OP_GE;
-    case AND:
+    case TokenKind::AND:
         return OP_AND;
-    case OR:
+    case TokenKind::OR:
         return OP_OR;
-    case XOR:
+    case TokenKind::XOR:
         return OP_XOR;
-    case MATCH:
+    case TokenKind::MATCH:
         return OP_MATCH;
-    case UNMATCH:
+    case TokenKind::UNMATCH:
         return OP_UNMATCH;
     default:
         fatal("unsupported binary op: %s\n", TO_NAME(op));
@@ -962,24 +962,24 @@ const char *resolveBinaryOpName(TokenKind op) {
 
 TokenKind resolveAssignOp(TokenKind op) {
     switch(op) {
-    case INC:
-        return ADD;
-    case DEC:
-        return SUB;
-    case ADD_ASSIGN:
-        return ADD;
-    case SUB_ASSIGN:
-        return SUB;
-    case MUL_ASSIGN:
-        return MUL;
-    case DIV_ASSIGN:
-        return DIV;
-    case MOD_ASSIGN:
-        return MOD;
-    case STR_ASSIGN:
-        return STR_CHECK;
-    case NULL_ASSIGN:
-        return NULL_COALE;
+    case TokenKind::INC:
+        return TokenKind::ADD;
+    case TokenKind::DEC:
+        return TokenKind::SUB;
+    case TokenKind::ADD_ASSIGN:
+        return TokenKind::ADD;
+    case TokenKind::SUB_ASSIGN:
+        return TokenKind::SUB;
+    case TokenKind::MUL_ASSIGN:
+        return TokenKind::MUL;
+    case TokenKind::DIV_ASSIGN:
+        return TokenKind::DIV;
+    case TokenKind::MOD_ASSIGN:
+        return TokenKind::MOD;
+    case TokenKind::STR_ASSIGN:
+        return TokenKind::STR_CHECK;
+    case TokenKind::NULL_ASSIGN:
+        return TokenKind::NULL_COALE;
     default:
         fatal("unsupported assign op: %s\n", TO_NAME(op));
     }
@@ -1016,7 +1016,7 @@ std::unique_ptr<Node> createAssignNode(std::unique_ptr<Node> &&leftNode, TokenKi
     /*
      * basic assignment
      */
-    if(op == ASSIGN) {
+    if(op == TokenKind::ASSIGN) {
         // assign to element(actually call SET)
         if(isa<ApplyNode>(*leftNode) && cast<ApplyNode>(*leftNode).isIndexCall()) {
             auto &indexNode = cast<ApplyNode>(*leftNode);

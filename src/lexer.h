@@ -52,7 +52,7 @@ private:
      */
     bool complete{false};
 
-    TokenKind compTokenKind{INVALID};
+    TokenKind compTokenKind{TokenKind::INVALID};
 
 public:
     NON_COPYABLE(Lexer);

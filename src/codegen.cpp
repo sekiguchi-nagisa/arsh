@@ -573,14 +573,14 @@ void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {
 
 void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     auto kind = node.getOp();
-    if(kind == COND_AND || kind == COND_OR) {
+    if(kind == TokenKind::COND_AND || kind == TokenKind::COND_OR) {
         auto elseLabel = makeLabel();
         auto mergeLabel = makeLabel();
 
         this->visit(*node.getLeftNode());
         this->emitBranchIns(elseLabel);
 
-        if(kind == COND_AND) {
+        if(kind == TokenKind::COND_AND) {
             this->visit(*node.getRightNode());
             this->emitJumpIns(mergeLabel);
 
@@ -595,7 +595,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
         }
 
         this->markLabel(mergeLabel);
-    } else if(kind == STR_CHECK) {
+    } else if(kind == TokenKind::STR_CHECK) {
         auto mergeLabel = makeLabel();
 
         this->visit(*node.getLeftNode());
@@ -611,7 +611,7 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
         this->visit(*node.getRightNode());
 
         this->markLabel(mergeLabel);
-    } else if(kind == NULL_COALE) {
+    } else if(kind == TokenKind::NULL_COALE) {
         auto mergeLabel = makeLabel();
 
         this->visit(*node.getLeftNode());
@@ -623,10 +623,10 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
               && node.getRightNode() && node.getRightNode()->getType().isFuncType()) {
         this->visit(*node.getLeftNode());
         this->visit(*node.getRightNode());
-        if(kind == EQ) {
+        if(kind == TokenKind::EQ) {
             this->emit0byteIns(OpCode::REF_EQ);
         } else {
-            assert(kind == NE);
+            assert(kind == TokenKind::NE);
             this->emit0byteIns(OpCode::REF_NE);
         }
     } else if(kind == TokenKind::ADD && node.getLeftNode() &&
@@ -740,7 +740,7 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
 
 static RedirOP resolveRedirOp(TokenKind kind) {
     switch(kind) {
-#define GEN_CASE(ENUM, BITS) case REDIR_##ENUM : return RedirOP::ENUM;
+#define GEN_CASE(ENUM, BITS) case TokenKind::REDIR_##ENUM : return RedirOP::ENUM;
     EACH_RedirOP(GEN_CASE)
 #undef GEN_CASE
     default:

@@ -1087,7 +1087,7 @@ public:
     }
 
     bool isUnwrapOp() const {
-        return this->op == UNWRAP;
+        return this->op == TokenKind::UNWRAP;
     }
 
     /**
@@ -1257,7 +1257,7 @@ public:
     }
 
     bool isHereStr() const {
-        return this->op == REDIR_HERE_STR;
+        return this->op == TokenKind::REDIR_HERE_STR;
     }
 
     void dump(NodeDumper &dumper) const override;

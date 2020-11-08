@@ -324,14 +324,14 @@
 
 namespace ydsh {
 
-enum TokenKind : unsigned int {
+enum class TokenKind : unsigned int {
 #define GEN_ENUM(ENUM, STR) ENUM,
     EACH_TOKEN(GEN_ENUM)
 #undef GEN_ENUM
 };
 
 inline bool isInvalidToken(TokenKind kind) {
-    return kind == INVALID;
+    return kind == TokenKind::INVALID;
 }
 
 const char *toString(TokenKind kind);
