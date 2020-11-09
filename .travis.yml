@@ -14,39 +14,6 @@ env:
 
 matrix:
   include:
-    # clang 3.6
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-            - clang-3.6
-            - ninja-build
-      env: CXX_BIN=clang++-3.6
-
-    # clang 3.7
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-            - clang-3.7
-            - ninja-build
-      env: CXX_BIN=clang++-3.7
-
-    # clang 3.8
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-            - clang-3.8
-            - ninja-build
-      env: CXX_BIN=clang++-3.8
-
     # clang 11.0 with fuzzing
     - addons:
         apt:
