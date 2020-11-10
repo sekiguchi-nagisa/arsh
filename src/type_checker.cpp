@@ -77,7 +77,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         }
         auto &modType = static_cast<const ModType&>(recvType);
         std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
-        auto *handle = modType.lookupFieldHandle(this->symbolTable, typeName);
+        auto *handle = this->symbolTable.lookupField(modType, typeName);
         if(!handle) {
             auto &nameNode = qualifiedNode.getNameTypeNode();
             RAISE_TC_ERROR(UndefinedField, nameNode, nameNode.getTokenText().c_str());

@@ -218,19 +218,20 @@ ModType::ModType(unsigned int id, DSType &superType, unsigned short modID,
     this->childs = FlexBuffer<ChildModEntry>(childs.begin(), childs.end()).take();
 }
 
-const FieldHandle* ModType::lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const {
-    auto *handle = this->find(fieldName);
-    if(!handle) {
-        return nullptr;
+const FieldHandle * ModType::lookupField(const std::string &fieldName) const {
+    auto iter = this->handleMap.find(fieldName);
+    if(iter != this->handleMap.end()) {
+        return &iter->second;
     }
+    return nullptr;
+}
 
-    if(symbolTable.currentModID() != handle->getModID()) {
-        StringRef ref = fieldName;
-        if(ref[0] == '_') {
-            return nullptr;
+void ModType::walkField(std::function<bool(const FieldHandle &)> &walker) const {
+    for(auto &e : this->handleMap) {
+        if(!walker(e.second)) {
+            return;
         }
     }
-    return handle;
 }
 
 std::string ModType::toModName(unsigned short id) {
@@ -436,8 +437,20 @@ unsigned int SymbolTable::getTermHookIndex() {
     return this->termHookIndex;
 }
 
-const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string &fieldName) const {
-    return recvType.lookupFieldHandle(*this, fieldName);    //FIXME:
+const FieldHandle *SymbolTable::lookupField(const DSType &recvType, const std::string &fieldName) const {
+    auto *handle = recvType.lookupField(fieldName);
+    if(handle) {
+        if(handle->getModID() == 0) {
+            return handle;
+        }
+        if(this->currentModID() != handle->getModID()) {
+            StringRef ref = fieldName;
+            if(ref[0] == '_') {
+                return nullptr;
+            }
+        }
+    }
+    return handle;
 }
 
 /**
@@ -451,7 +464,7 @@ const FieldHandle *SymbolTable::lookupField(DSType &recvType, const std::string 
 static const FieldHandle *lookupUdcFromModule(const TypePool &typePool,
                                               const ModType &modType, const std::string &fullname) {
     // search own udc
-    auto *handle = modType.find(fullname);
+    auto *handle = modType.lookupField(fullname);
     if(handle) {
         return handle;
     }
@@ -466,7 +479,7 @@ static const FieldHandle *lookupUdcFromModule(const TypePool &typePool,
         if(isGlobal(e)) {
             auto &type = typePool.get(toTypeId(e));
             assert(type.isModType());
-            handle = static_cast<const ModType&>(type).find(fullname);
+            handle = static_cast<const ModType&>(type).lookupField(fullname);
             if(handle) {
                 return handle;
             }

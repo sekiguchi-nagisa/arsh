@@ -224,15 +224,9 @@ public:
         return this->getNameRef().toString();
     }
 
-    const FieldHandle *find(const std::string &name) const {
-        auto iter = this->handleMap.find(name);
-        if(iter != this->handleMap.end()) {
-            return &iter->second;
-        }
-        return nullptr;
-    }
+    const FieldHandle *lookupField(const std::string &fieldName) const override;
 
-    const FieldHandle *lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const override;
+    void walkField(std::function<bool(const FieldHandle&)> &walker) const override;
 
     static std::string toModName(unsigned short modID);
 };
@@ -650,7 +644,7 @@ public:
      */
     unsigned int getTermHookIndex();
 
-    const FieldHandle *lookupField(DSType &recvType, const std::string &fieldName) const;
+    const FieldHandle *lookupField(const DSType &recvType, const std::string &fieldName) const;
 
     /**
      * lookup user-defined command at runtime

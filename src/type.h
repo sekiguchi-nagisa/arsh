@@ -24,6 +24,7 @@
 #include <utility>
 #include <memory>
 #include <cassert>
+#include <functional>
 
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
@@ -40,7 +41,6 @@ class DSValue;
 using native_func_t = DSValue (*)(DSState &);
 
 class TypePool;
-class SymbolTable;
 
 enum class TYPE : unsigned int {
     _ProcGuard, // for guard parent code execution from child process
@@ -200,10 +200,9 @@ public:
      */
     virtual unsigned int getFieldSize() const;
 
-    /**
-     * return null, if has no field
-     */
-    virtual const FieldHandle *lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const;
+    virtual const FieldHandle *lookupField(const std::string &fieldName) const;
+
+    virtual void walkField(std::function<bool(const FieldHandle&)> &walker) const;
 
     bool operator==(const DSType &type) const {
         return reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&type);
@@ -451,7 +450,9 @@ public:
      */
     unsigned int getFieldSize() const override;
 
-    const FieldHandle *lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const override;
+    const FieldHandle *lookupField(const std::string &fieldName) const override;
+
+    void walkField(std::function<bool(const FieldHandle&)> &walker) const override;
 };
 
 class ErrorType : public DSType {

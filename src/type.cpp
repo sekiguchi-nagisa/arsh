@@ -18,7 +18,6 @@
 #include <array>
 
 #include "type.h"
-#include "object.h"
 #include "tcerror.h"
 
 namespace ydsh {
@@ -31,8 +30,12 @@ unsigned int DSType::getFieldSize() const {
     return this->superType != nullptr ? this->superType->getFieldSize() : 0;
 }
 
-const FieldHandle *DSType::lookupFieldHandle(const SymbolTable &, const std::string &) const {
+const FieldHandle *DSType::lookupField(const std::string &) const {
     return nullptr;
+}
+
+void DSType::walkField(std::function<bool(const FieldHandle &)>&) const {
+    return; // do nothing
 }
 
 bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
@@ -67,12 +70,21 @@ unsigned int TupleType::getFieldSize() const {
     return this->elementTypes.size();
 }
 
-const FieldHandle *TupleType::lookupFieldHandle(const SymbolTable &symbolTable, const std::string &fieldName) const {
+const FieldHandle * TupleType::lookupField(const std::string &fieldName) const {
     auto iter = this->fieldHandleMap.find(fieldName);
     if(iter == this->fieldHandleMap.end()) {
-        return this->superType->lookupFieldHandle(symbolTable, fieldName);
+        return this->superType->lookupField(fieldName);
     }
     return &iter->second;
+}
+
+void TupleType::walkField(std::function<bool(const FieldHandle &)> &walker) const {
+    for(auto &e : this->fieldHandleMap) {
+        if(!walker(e.second)) {
+            return;
+        }
+    }
+    this->superType->walkField(walker);
 }
 
 std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {
