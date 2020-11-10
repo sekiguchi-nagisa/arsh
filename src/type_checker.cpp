@@ -21,6 +21,7 @@
 #include "constant.h"
 #include "core.h"
 #include "type_checker.h"
+#include "complete.h"
 #include "misc/glob.hpp"
 
 namespace ydsh {
@@ -1686,6 +1687,19 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     }
     this->resolvePathList(node);
     node.setType(this->typePool.get(TYPE::Void));
+}
+
+void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
+    assert(this->ccHandler);
+    switch(node.getKind()) {
+    case CodeCompNode::VAR:
+        this->ccHandler->addVarNameRequest(node.getTypingToken());
+        break;
+    case CodeCompNode::MEMBER:
+    case CodeCompNode::TYPE:
+        fatal("unsupported\n");
+    }
+    RAISE_TC_ERROR(Unreachable, node);
 }
 
 void TypeChecker::visitEmptyNode(EmptyNode &node) {

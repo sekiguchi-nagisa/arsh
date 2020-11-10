@@ -24,6 +24,7 @@
 #include "misc/resource.hpp"
 
 #include "parser.h"
+#include "symbol_table.h"
 
 struct DSState;
 

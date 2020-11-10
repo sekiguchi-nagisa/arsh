@@ -153,6 +153,8 @@ public:
     }
 };
 
+class CodeCompletionHandler;
+
 class TypeChecker : protected NodeVisitor {
 protected:
     TypePool &typePool;
@@ -174,6 +176,8 @@ protected:
 
     ObserverPtr<const Lexer> lexer;
 
+    ObserverPtr<CodeCompletionHandler> ccHandler;
+
 public:
     TypeChecker(TypePool &pool, SymbolTable &symbolTable, bool toplevelPrinting, const Lexer *lex) :
             typePool(pool), symbolTable(symbolTable),
@@ -193,6 +197,10 @@ public:
 
     void setLexer(const Lexer &lex) {
         this->lexer.reset(&lex);
+    }
+
+    void setCodeCompletionHandler(ObserverPtr<CodeCompletionHandler> handler) {
+        this->ccHandler = std::move(handler);
     }
 
 protected:
@@ -521,6 +529,7 @@ protected:
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
     void visitSourceNode(SourceNode &node) override;
     void visitSourceListNode(SourceListNode &node) override;
+    void visitCodeCompNode(CodeCompNode &node) override;
     void visitEmptyNode(EmptyNode &node) override;
 };
 

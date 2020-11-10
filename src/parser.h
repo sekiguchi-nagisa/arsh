@@ -70,6 +70,8 @@ private:
 
     ObserverPtr<CodeCompletionHandler> ccHandler;
 
+    std::unique_ptr<Node> incompleteNode;   // for code completion
+
     bool inStmtCompCtx{false};
 
 public:
@@ -78,7 +80,12 @@ public:
     ~Parser() = default;
 
     std::unique_ptr<Node> operator()() {
-        return this->parse_statement(false);
+        auto node = this->parse_statement(false);
+        if(this->incompleteNode) {
+            this->clear();  // force ignore parse error
+            node = std::move(this->incompleteNode);
+        }
+        return node;
     }
 
     explicit operator bool() const {
@@ -123,6 +130,11 @@ protected:
     }
 
     bool inVarNameCompletionPoint() const;
+
+    template<typename ...Args>
+    void makeCodeComp(Args && ...args) {
+        this->incompleteNode = std::make_unique<CodeCompNode>(std::forward<Args>(args)...);
+    }
 
     /**
      * helper function for VarNode creation.

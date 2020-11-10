@@ -832,7 +832,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
     default:
         if(this->inCompletionPoint()) {
             if(this->inVarNameCompletionPoint()) {  //FIXME: scope-aware completion
-                this->ccHandler->addVarNameRequest(this->curToken);
+                this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
             } else if(HAS_SPACE() || !hasFlag(opt, CmdArgParseOpt::MODULE)) {
                 this->ccHandler->addCmdArgOrModRequest(this->curToken, opt);
             }
@@ -1177,7 +1177,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     default:
         if(this->inCompletionPoint()) {
             if(this->inVarNameCompletionPoint()) {
-                this->ccHandler->addVarNameRequest(this->curToken);
+                this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
             } else if(!this->inCompletionPointAt(TokenKind::EOS) || this->consumedKind != TokenKind::EOS) {
                 this->ccHandler->addCmdOrKeywordRequest(this->curToken, this->inStmtCompCtx);
             }
@@ -1340,7 +1340,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     OP(CLOSE_DQUOTE)
 
             if(this->inVarNameCompletionPoint()) {
-                this->ccHandler->addVarNameRequest(this->curToken);
+                this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
             } else if(this->inCompletionPointAt(TokenKind::EOS)) {
                 TokenKind kinds[] = { EACH_LA_stringExpression(GEN_LA_ALTER) };
                 this->ccHandler->addExpectedTokenRequests(kinds);

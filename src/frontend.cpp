@@ -134,6 +134,7 @@ FrontEnd::FrontEnd(Lexer &&lexer, TypePool &pool, SymbolTable &symbolTable, DSEx
         mode(mode), checker(pool, symbolTable, toplevel, nullptr){
     this->contexts.push_back(std::make_unique<Context>(std::move(lexer), nullptr, ccHandler));
     this->checker.setLexer(this->getCurrentLexer());
+    this->checker.setCodeCompletionHandler(ccHandler);
 }
 
 static const char *toString(DSErrorKind kind) {

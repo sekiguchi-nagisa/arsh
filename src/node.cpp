@@ -899,6 +899,23 @@ void SourceListNode::dump(NodeDumper &dumper) const {
     DUMP(pathList);
 }
 
+// ##########################
+// ##     CodeCompNode     ##
+// ##########################
+
+void CodeCompNode::dump(NodeDumper &dumper) const {
+    DUMP_PTR(exprNode);
+
+#define EACH_ENUM(OP) \
+    OP(VAR) \
+    OP(MEMBER) \
+    OP(TYPE)
+
+    DUMP_ENUM(kind, EACH_ENUM);
+#undef EACH_ENUM
+}
+
+
 // #######################
 // ##     EmptyNode     ##
 // #######################

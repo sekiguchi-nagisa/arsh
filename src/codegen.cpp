@@ -1279,6 +1279,8 @@ void ByteCodeGenerator::visitSourceNode(SourceNode &) {}    // do nothing
 
 void ByteCodeGenerator::visitSourceListNode(SourceListNode &) { }   // do nothing
 
+void ByteCodeGenerator::visitCodeCompNode(CodeCompNode &) { }   // do nothing
+
 void ByteCodeGenerator::visitEmptyNode(EmptyNode &) { } // do nothing
 
 void ByteCodeGenerator::reportErrorImpl(Token token, const char *kind, const char *fmt, ...) {

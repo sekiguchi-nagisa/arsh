@@ -80,6 +80,7 @@ class NodeDumper;
     OP(UserDefinedCmd) \
     OP(Source) \
     OP(SourceList) \
+    OP(CodeComp) \
     OP(Empty)
 
 enum class NodeKind : unsigned char {
@@ -2468,6 +2469,37 @@ public:
     void dump(NodeDumper &dumper) const override;
 };
 
+class CodeCompNode : public WithRtti<Node, NodeKind::CodeComp> {
+public:
+    enum Kind : unsigned int {
+        VAR,    // complete variable names
+        MEMBER, // complete members (field or method)
+        TYPE,   // complete type name (may be type alias)
+    };
+
+private:
+    std::unique_ptr<Node> exprNode;
+    const Kind kind;
+
+public:
+    CodeCompNode(Kind kind, std::unique_ptr<Node> &&exprNode, Token tok) :
+            WithRtti(tok), exprNode(std::move(exprNode)), kind(kind) {}
+
+    const std::unique_ptr<Node> &getExprNode() const {
+        return this->exprNode;
+    }
+
+    Token getTypingToken() const {
+        return this->getToken();
+    }
+
+    Kind getKind() const {
+        return this->kind;
+    }
+
+    void dump(NodeDumper &dumper) const override;
+};
+
 class EmptyNode : public WithRtti<Node, NodeKind::Empty> {
 public:
     EmptyNode() : EmptyNode({0, 0}) { }
@@ -2556,6 +2588,7 @@ struct NodeVisitor {
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
     virtual void visitSourceNode(SourceNode &node) = 0;
     virtual void visitSourceListNode(SourceListNode &node) = 0;
+    virtual void visitCodeCompNode(CodeCompNode &node) = 0;
     virtual void visitEmptyNode(EmptyNode &node) = 0;
 };
 
@@ -2606,6 +2639,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
     void visitSourceNode(SourceNode &node) override { this->visitDefault(node); }
     void visitSourceListNode(SourceListNode &node) override { this->visitDefault(node); }
+    void visitCodeCompNode(CodeCompNode &node) override { this->visitDefault(node); }
     void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
 };
 
