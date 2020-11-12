@@ -202,7 +202,7 @@ public:
 
     virtual const FieldHandle *lookupField(const std::string &fieldName) const;
 
-    virtual void walkField(std::function<bool(const FieldHandle&)> &walker) const;
+    virtual void walkField(std::function<bool(const std::string&, const FieldHandle&)> &walker) const;
 
     bool operator==(const DSType &type) const {
         return reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&type);
@@ -452,7 +452,7 @@ public:
 
     const FieldHandle *lookupField(const std::string &fieldName) const override;
 
-    void walkField(std::function<bool(const FieldHandle&)> &walker) const override;
+    void walkField(std::function<bool(const std::string&, const FieldHandle&)> &walker) const override;
 };
 
 class ErrorType : public DSType {

@@ -226,9 +226,9 @@ const FieldHandle * ModType::lookupField(const std::string &fieldName) const {
     return nullptr;
 }
 
-void ModType::walkField(std::function<bool(const FieldHandle &)> &walker) const {
+void ModType::walkField(std::function<bool(const std::string&, const FieldHandle &)> &walker) const {
     for(auto &e : this->handleMap) {
-        if(!walker(e.second)) {
+        if(!walker(e.first, e.second)) {
             return;
         }
     }

@@ -34,7 +34,7 @@ const FieldHandle *DSType::lookupField(const std::string &) const {
     return nullptr;
 }
 
-void DSType::walkField(std::function<bool(const FieldHandle &)>&) const {
+void DSType::walkField(std::function<bool(const std::string&, const FieldHandle &)>&) const {
     return; // do nothing
 }
 
@@ -78,9 +78,9 @@ const FieldHandle * TupleType::lookupField(const std::string &fieldName) const {
     return &iter->second;
 }
 
-void TupleType::walkField(std::function<bool(const FieldHandle &)> &walker) const {
+void TupleType::walkField(std::function<bool(const std::string&, const FieldHandle &)> &walker) const {
     for(auto &e : this->fieldHandleMap) {
-        if(!walker(e.second)) {
+        if(!walker(e.first, e.second)) {
             return;
         }
     }

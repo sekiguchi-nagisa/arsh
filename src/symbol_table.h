@@ -226,7 +226,7 @@ public:
 
     const FieldHandle *lookupField(const std::string &fieldName) const override;
 
-    void walkField(std::function<bool(const FieldHandle&)> &walker) const override;
+    void walkField(std::function<bool(const std::string&, const FieldHandle&)> &walker) const override;
 
     static std::string toModName(unsigned short modID);
 };
