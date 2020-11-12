@@ -232,6 +232,8 @@ public:
         return this->lookupMethod(revType, "");
     }
 
+    void walkMethod(std::function<bool(const DSType &, StringRef, const Value &)> &walker);
+
     TypeDiscardPoint getDiscardPoint() const {
         return TypeDiscardPoint {
             .typeIdOffset = this->typeTable.size(),
