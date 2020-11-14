@@ -244,13 +244,13 @@ std::string ModType::toModName(unsigned short id) {
 // ##     ModuleLoader     ##
 // ##########################
 
-void ModuleLoader::discard(unsigned int discardPoint) {
-    if(discardPoint >= this->modSize()) {
+void ModuleLoader::discard(const ModDiscardPoint discardPoint) {
+    if(discardPoint.idCount >= this->modSize()) {
         return; // do nothing
     }
 
     for(auto iter = this->indexMap.begin(); iter != this->indexMap.end(); ) {
-        if(iter->second.getIndex() >= discardPoint) {
+        if(iter->second.getIndex() >= discardPoint.idCount) {
             const char *ptr = iter->first.data();
             iter = this->indexMap.erase(iter);
             free(const_cast<char*>(ptr));
@@ -258,6 +258,7 @@ void ModuleLoader::discard(unsigned int discardPoint) {
             ++iter;
         }
     }
+    this->gvarCount = discardPoint.gvarCount;
 }
 
 static CStrPtr expandToRealpath(const char *baseDir, const char *path) {
@@ -366,20 +367,22 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *path, FilePtr &f
     return ret;
 }
 
+ModType & ModuleLoader::createModType(TypePool &pool, const ModuleScope &scope, const std::string &fullpath) {
+    auto &modType = pool.newType<ModType>(
+            pool.get(TYPE::Any), scope.getModID(),
+            scope.global().getHandleMap(), scope.getChilds(), this->gvarCount);
+    this->gvarCount++;  // reserve module object entry
+    auto iter = this->indexMap.find(fullpath);
+    assert(iter != this->indexMap.end());
+    assert(!iter->second);
+    iter->second.setModType(modType);
+    return modType;
+}
+
 
 // #########################
 // ##     SymbolTable     ##
 // #########################
-
-ModType& SymbolTable::createModType(ModuleLoader &loader, TypePool &typePool, const std::string &fullpath) {
-    auto &modType = typePool.newType<ModType>(
-            typePool.get(TYPE::Any), this->cur().getModID(),
-            this->cur().global().getHandleMap(), this->cur().getChilds(), this->gvarCount);
-    this->gvarCount++;
-    this->curModule = nullptr;
-    loader.addModType(fullpath, modType);
-    return modType;
-}
 
 const FieldHandle* SymbolTable::lookupHandle(const std::string &symbolName) const {
     auto handle = this->cur().lookupHandle(symbolName);

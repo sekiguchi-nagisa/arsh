@@ -102,6 +102,7 @@ static void initEnv() {
 }
 
 DSState::DSState() :
+        symbolTable(this->modLoader),
         emptyFDObj(DSValue::create<UnixFdObject>(-1)),
         baseTime(std::chrono::system_clock::now()) {
     // init envs

@@ -332,7 +332,7 @@ static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
 void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
     {
         auto lex = createLexer(fullPath, std::move(buf));
-        auto scope = this->getSymbolTable().createModuleScope(this->modLoader);
+        auto scope = this->modLoader.createModuleScope();
         this->contexts.push_back(
                 std::make_unique<Context>(std::move(lex), std::move(scope), nullptr));
         this->getSymbolTable().setModuleScope(*this->contexts.back()->scope);
@@ -350,7 +350,7 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     assert(!this->contexts.empty());
     auto &ctx = *this->contexts.back();
-    auto &modType = this->getSymbolTable().createModType(this->modLoader, this->getTypePool(), ctx.lexer.getSourceName());
+    auto &modType = this->modLoader.createModType(this->getTypePool(), this->getSymbolTable().cur(), ctx.lexer.getSourceName());
     const unsigned int varNum = ctx.scope->getMaxVarIndex();
     this->contexts.pop_back();
     this->checker.setLexer(this->getCurrentLexer());

@@ -401,8 +401,9 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
         return false;
     }
 
+    ModuleLoader loader;
     TypePool pool;
-    SymbolTable symbolTable;
+    SymbolTable symbolTable(loader);
     DirectiveInitializer initializer(fileName, pool, symbolTable);
     initializer(*node, directive);
     if(initializer.hasError()) {

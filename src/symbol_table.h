@@ -349,6 +349,10 @@ public:
         return this->maxVarIndexStack.back();
     }
 
+    unsigned int getMaxGVarIndex() const {
+        return this->globalScope.gvarCount.get();
+    }
+
     bool inGlobalScope() const {
         return this->scope->isGlobal();
     }
@@ -443,10 +447,16 @@ public:
     }
 };
 
+struct ModDiscardPoint {
+    unsigned int idCount;
+    unsigned int gvarCount;
+};
 
 class ModuleLoader {
 private:
     std::unordered_map<StringRef, ModEntry> indexMap;
+
+    unsigned int gvarCount{0};
 
     static constexpr unsigned int MAX_MOD_NUM = UINT16_MAX;
 
@@ -461,11 +471,14 @@ public:
         }
     }
 
-    unsigned int getDiscardPoint() const {
-        return this->modSize();
+    ModDiscardPoint getDiscardPoint() const {
+        return {
+            .idCount = this->modSize(),
+            .gvarCount = this->gvarCount,
+        };
     }
 
-    void discard(unsigned int discardPoint);
+    void discard(ModDiscardPoint discardPoint);
 
     /**
      * resolve module path or module type
@@ -492,15 +505,18 @@ public:
      */
     ModResult load(const char *scriptDir, const char *path, FilePtr &filePtr, ModLoadOption option);
 
-    unsigned int modSize() const {
-        return this->indexMap.size();
+    /**
+     * create new module scope
+     * @return
+     */
+    std::unique_ptr<ModuleScope> createModuleScope() {
+        return std::make_unique<ModuleScope>(this->gvarCount, this->modSize());
     }
 
-    void addModType(const std::string &fullpath, const ModType &type) {
-        auto iter = this->indexMap.find(fullpath);
-        assert(iter != this->indexMap.end());
-        assert(!iter->second);
-        iter->second.setModType(type);
+    ModType &createModType(TypePool &pool, const ModuleScope &scope, const std::string &fullpath);
+
+    unsigned int modSize() const {
+        return this->indexMap.size();
     }
 
     const ModEntry *find(StringRef key) const {
@@ -538,14 +554,12 @@ private:
 };
 
 struct SymbolDiscardPoint {
-    unsigned int gvarOffset;
     unsigned int commitIdOffset;
 };
 
 class SymbolTable {
 private:
-    unsigned int gvarCount{0};
-    ModuleScope rootModule;
+    std::unique_ptr<ModuleScope> rootModule;
     ModuleScope *curModule;
 
     unsigned int termHookIndex{0};
@@ -553,11 +567,20 @@ private:
 public:
     NON_COPYABLE(SymbolTable);
 
-    SymbolTable() : rootModule(this->gvarCount), curModule(&this->rootModule) {}
+    SymbolTable(ModuleLoader &loader) : rootModule(loader.createModuleScope()), curModule(this->rootModule.get()) {}
 
     ~SymbolTable() = default;
 
 private:
+    ModuleScope &root() {
+        return *this->rootModule;
+    }
+
+    const ModuleScope &root() const {
+        return *this->rootModule;
+    }
+
+public:
     ModuleScope &cur() {
         return *this->curModule;
     }
@@ -566,15 +589,6 @@ private:
         return *this->curModule;
     }
 
-    ModuleScope &root() {
-        return this->rootModule;
-    }
-
-    const ModuleScope &root() const {
-        return this->rootModule;
-    }
-
-public:
     // for module scope
 
     void setModuleScope(ModuleScope &module) {
@@ -582,7 +596,7 @@ public:
     }
 
     void resetCurModule() {
-        this->curModule = &this->rootModule;
+        this->curModule = this->rootModule.get();
     }
 
     unsigned int currentModID() const {
@@ -592,21 +606,6 @@ public:
     bool isRootModule() const {
         return &this->root() == &this->cur();
     }
-
-    /**
-     * create new module scope and assign it to curModule
-     * @return
-     */
-    std::unique_ptr<ModuleScope> createModuleScope(const ModuleLoader &loader) {
-        return std::make_unique<ModuleScope>(this->gvarCount, loader.modSize());
-    }
-
-    /**
-     * after call it, assign null to curModule
-     * @param fullpath
-     * @return
-     */
-    ModType &createModType(ModuleLoader &loader, TypePool &pool, const std::string &fullpath);
 
     std::string import(const ModType &type, bool global) {
         return this->cur().import(type, global);
@@ -645,7 +644,7 @@ public:
 
     /**
      * lookup user-defined command at runtime
-     * if type is not null, saerch from module.
+     * if type is not null, search from module.
      * @param pool
      * @param belongModType
      * may be null
@@ -686,13 +685,11 @@ public:
 
     SymbolDiscardPoint getDiscardPoint() const {
         return SymbolDiscardPoint {
-            .gvarOffset = this->gvarCount,
             .commitIdOffset = this->root().global().size(),
         };
     }
 
     void discard(const SymbolDiscardPoint discardPoint) {
-        this->gvarCount = discardPoint.gvarOffset;
         this->resetCurModule();
         this->cur().discard(discardPoint.commitIdOffset);
     }
@@ -712,7 +709,7 @@ public:
      * max number of global variable index.
      */
     unsigned int getMaxGVarIndex() const {
-        return this->gvarCount;
+        return this->cur().getMaxGVarIndex();
     }
 
     const GlobalScope &globalScope() const {
@@ -725,7 +722,7 @@ public:
 };
 
 struct DiscardPoint {
-    const unsigned int mod;
+    const ModDiscardPoint mod;
     const SymbolDiscardPoint symbol;
     const TypeDiscardPoint type;
 };
