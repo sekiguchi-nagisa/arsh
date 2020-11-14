@@ -566,7 +566,7 @@ static bool lookupUdc(const DSState &state, const char *name, Command &cmd, bool
     const ModType *modType = nullptr;
     if(code && !forceGlobal) {
         auto key = code->getSourceName();
-        auto *e = state.symbolTable.getModLoader().find(key);
+        auto *e = state.modLoader.find(key);
         if(e && e->isModule()) {
             modType = static_cast<const ModType*>(&state.typePool.get(e->getTypeId()));
         }
@@ -1816,7 +1816,7 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const Discard
     }
 
     if(discardPoint && !ret) {
-        discardAll(state.symbolTable, state.typePool, *discardPoint);
+        discardAll(state.modLoader, state.symbolTable, state.typePool, *discardPoint);
     }
     return value;
 }

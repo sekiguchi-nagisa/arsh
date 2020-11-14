@@ -2056,7 +2056,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
 }
 
 static int showModule(const DSState &state) {
-    auto &loader = state.symbolTable.getModLoader();
+    auto &loader = state.modLoader;
     unsigned int size = loader.modSize();
     auto *buf = new std::pair<const char *, bool>[size];
     for(auto &e : loader) {
@@ -2081,7 +2081,7 @@ static int isSourced(const DSState &state) {
     });
 
     if(code) {
-        auto *entry = state.symbolTable.getModLoader().find(code->getSourceName());
+        auto *entry = state.modLoader.find(code->getSourceName());
         if(entry) {
             return entry->isModule() ? 0 : 1;
         }

@@ -91,7 +91,7 @@ private:
     };
 
     std::vector<std::unique_ptr<Context>> contexts;
-
+    ModuleLoader &modLoader;
     const DSExecMode mode;
     TypeChecker checker;
     DSType *prevType{nullptr};
@@ -100,7 +100,8 @@ private:
     ObserverPtr<NodeDumper> astDumper;
 
 public:
-    FrontEnd(Lexer &&lexer, TypePool &typePool, SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
+    FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &typePool,
+             SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
              ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
 
     ~FrontEnd() {
@@ -130,7 +131,7 @@ public:
     }
 
     void discard(const DiscardPoint &discardPoint) {
-        discardAll(this->getSymbolTable(), this->getTypePool(), discardPoint);
+        discardAll(this->modLoader, this->getSymbolTable(), this->getTypePool(), discardPoint);
     }
 
     const Lexer &getCurrentLexer() const {

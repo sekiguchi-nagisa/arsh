@@ -81,6 +81,8 @@ using namespace ydsh;
 
 struct DSState {
 public:
+    ModuleLoader modLoader;
+
     TypePool typePool;
 
     SymbolTable symbolTable;

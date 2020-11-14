@@ -129,9 +129,10 @@ void ErrorReporter::printErrorLine(const Lexer &lexer, Token token) const {
 // ##     FrontEnd     ##
 // ######################
 
-FrontEnd::FrontEnd(Lexer &&lexer, TypePool &pool, SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
+FrontEnd::FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &pool,
+                   SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
                    ObserverPtr<CodeCompletionHandler> ccHandler) :
-        mode(mode), checker(pool, symbolTable, toplevel, nullptr){
+        modLoader(loader), mode(mode), checker(pool, symbolTable, toplevel, nullptr){
     this->contexts.push_back(std::make_unique<Context>(std::move(lexer), nullptr, ccHandler));
     this->checker.setLexer(this->getCurrentLexer());
     this->checker.setCodeCompletionHandler(ccHandler);
@@ -292,7 +293,7 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
     const char *modPath = node.getPathList()[pathIndex].c_str();
     node.setCurIndex(pathIndex + 1);
     FilePtr filePtr;
-    auto ret = this->getSymbolTable().tryToLoadModule(
+    auto ret = this->modLoader.load(
             node.getPathNode().getType().is(TYPE::String) ? this->getCurScriptDir() : nullptr,
             modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
     if(is<ModLoadingError>(ret)) {
@@ -331,7 +332,7 @@ static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
 void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
     {
         auto lex = createLexer(fullPath, std::move(buf));
-        auto scope = this->getSymbolTable().createModuleScope();
+        auto scope = this->getSymbolTable().createModuleScope(this->modLoader);
         this->contexts.push_back(
                 std::make_unique<Context>(std::move(lex), std::move(scope), nullptr));
         this->getSymbolTable().setModuleScope(*this->contexts.back()->scope);
@@ -349,7 +350,7 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     assert(!this->contexts.empty());
     auto &ctx = *this->contexts.back();
-    auto &modType = this->getSymbolTable().createModType(this->getTypePool(), ctx.lexer.getSourceName());
+    auto &modType = this->getSymbolTable().createModType(this->modLoader, this->getTypePool(), ctx.lexer.getSourceName());
     const unsigned int varNum = ctx.scope->getMaxVarIndex();
     this->contexts.pop_back();
     this->checker.setLexer(this->getCurrentLexer());

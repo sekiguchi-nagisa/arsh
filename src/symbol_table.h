@@ -477,7 +477,20 @@ public:
      * write resolved file pointer
      * @return
      */
-    ModResult load(const char *scriptDir, const char *modPath, FilePtr &filePtr, ModLoadOption option);
+    ModResult loadImpl(const char *scriptDir, const char *modPath, FilePtr &filePtr, ModLoadOption option);
+
+    /**
+     * search module from scriptDir => LOCAL_MOD_DIR => SYSTEM_MOD_DIR
+     * @param scriptDir
+     * may be null. if not full path, not search next module path
+     * @param path
+     * if full path, not search next module path
+     * @param filePtr
+     * if module loading failed, will be null
+     * @param option
+     * @return
+     */
+    ModResult load(const char *scriptDir, const char *path, FilePtr &filePtr, ModLoadOption option);
 
     unsigned int modSize() const {
         return this->indexMap.size();
@@ -525,14 +538,12 @@ private:
 };
 
 struct SymbolDiscardPoint {
-    unsigned int modIdOffset;
     unsigned int gvarOffset;
     unsigned int commitIdOffset;
 };
 
 class SymbolTable {
 private:
-    ModuleLoader modLoader;
     unsigned int gvarCount{0};
     ModuleScope rootModule;
     ModuleScope *curModule;
@@ -583,25 +594,11 @@ public:
     }
 
     /**
-     * search module from scriptDir => LOCAL_MOD_DIR => SYSTEM_MOD_DIR
-     * @param scriptDir
-     * may be null. if not full path, not search next module path
-     * @param modPath
-     * if full path, not search next module path
-     * @param filePtr
-     * if module loading failed, will be null
-     * @param option
-     * @return
-     */
-    ModResult tryToLoadModule(const char *scriptDir, const char *modPath,
-            FilePtr &filePtr, ModLoadOption option);
-
-    /**
      * create new module scope and assign it to curModule
      * @return
      */
-    std::unique_ptr<ModuleScope> createModuleScope() {
-        return std::make_unique<ModuleScope>(this->gvarCount, this->modLoader.modSize());
+    std::unique_ptr<ModuleScope> createModuleScope(const ModuleLoader &loader) {
+        return std::make_unique<ModuleScope>(this->gvarCount, loader.modSize());
     }
 
     /**
@@ -609,7 +606,7 @@ public:
      * @param fullpath
      * @return
      */
-    ModType &createModType(TypePool &pool, const std::string &fullpath);
+    ModType &createModType(ModuleLoader &loader, TypePool &pool, const std::string &fullpath);
 
     std::string import(const ModType &type, bool global) {
         return this->cur().import(type, global);
@@ -689,14 +686,12 @@ public:
 
     SymbolDiscardPoint getDiscardPoint() const {
         return SymbolDiscardPoint {
-            .modIdOffset = this->modLoader.modSize(),
             .gvarOffset = this->gvarCount,
             .commitIdOffset = this->root().global().size(),
         };
     }
 
     void discard(const SymbolDiscardPoint discardPoint) {
-        this->modLoader.discard(discardPoint.modIdOffset);
         this->gvarCount = discardPoint.gvarOffset;
         this->resetCurModule();
         this->cur().discard(discardPoint.commitIdOffset);
@@ -727,19 +722,17 @@ public:
     const BlockScope &curScope() const {
         return this->cur().curScope();
     }
-
-    const ModuleLoader &getModLoader() const {
-        return this->modLoader;
-    }
 };
 
 struct DiscardPoint {
-    SymbolDiscardPoint symbol;
-    TypeDiscardPoint type;
+    const unsigned int mod;
+    const SymbolDiscardPoint symbol;
+    const TypeDiscardPoint type;
 };
 
-inline void discardAll(SymbolTable &symbolTable, TypePool &typePool,
-                       const DiscardPoint &discardPoint) {
+inline void discardAll(ModuleLoader &loader, SymbolTable &symbolTable,
+                       TypePool &typePool, const DiscardPoint &discardPoint) {
+    loader.discard(discardPoint.mod);
     symbolTable.discard(discardPoint.symbol);
     typePool.discard(discardPoint.type);
 }

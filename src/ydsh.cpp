@@ -65,7 +65,7 @@ private:
 
 public:
     Compiler(DSState &state, Lexer &&lexer) :
-            frontEnd(std::move(lexer), state.typePool, state.symbolTable, state.execMode,
+            frontEnd(state.modLoader, std::move(lexer), state.typePool, state.symbolTable, state.execMode,
                      hasFlag(state.compileOption, CompileOption::INTERACTIVE)),
             reporter(newReporter()),
             uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get()),
@@ -151,6 +151,7 @@ static int compile(DSState &state, Lexer &&lexer, const DiscardPoint &discardPoi
 static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError) {
     CompiledCode code;
     DiscardPoint discardPoint {
+        .mod = state.modLoader.getDiscardPoint(),
         .symbol = state.symbolTable.getDiscardPoint(),
         .type = state.typePool.getDiscardPoint(),
     };
@@ -637,7 +638,7 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         scriptDir = getCWD();
         filePtr = createFilePtr(fdopen, dup(STDIN_FILENO), "rb");
     } else {
-        auto ret = st->symbolTable.tryToLoadModule(nullptr, sourceName, filePtr, ModLoadOption{});
+        auto ret = st->modLoader.load(nullptr, sourceName, filePtr, ModLoadOption{});
         if(is<ModLoadingError>(ret)) {
             int errNum = get<ModLoadingError>(ret).getErrNo();
             if(get<ModLoadingError>(ret).isCircularLoad()) {

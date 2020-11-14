@@ -596,13 +596,15 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
     auto &compreply = typeAs<ArrayObject>(result);
 
     DiscardPoint discardPoint {
+        .mod = st.modLoader.getDiscardPoint(),
         .symbol = st.symbolTable.getDiscardPoint(),
         .type = st.typePool.getDiscardPoint(),
     };
     CodeCompletionHandler handler(st);
     if(empty(option)) { // invoke parser
         // prepare
-        FrontEnd frontEnd(lex(ref), st.typePool, st.symbolTable, DS_EXEC_MODE_CHECK_ONLY, false,
+        FrontEnd frontEnd(st.modLoader, lex(ref), st.typePool,
+                          st.symbolTable, DS_EXEC_MODE_CHECK_ONLY, false,
                           ObserverPtr<CodeCompletionHandler>(&handler));
 
         // perform completion
@@ -612,7 +614,7 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
         handler.addCompRequest(option, ref.toString());
         handler.invoke(compreply);
     }
-    discardAll(st.symbolTable, st.typePool, discardPoint);
+    discardAll(st.modLoader, st.symbolTable, st.typePool, discardPoint);
 
     auto &values = compreply.refValues();
     compreply.sortAsStrArray();

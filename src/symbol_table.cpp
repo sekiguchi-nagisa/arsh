@@ -290,8 +290,8 @@ static int checkFileType(const struct stat &st, ModLoadOption option) {
     return 0;
 }
 
-ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
-        FilePtr &filePtr, ModLoadOption option) {
+ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath,
+                                 FilePtr &filePtr, ModLoadOption option) {
     assert(modPath);
 
     auto str = expandToRealpath(scriptDir, modPath);
@@ -338,18 +338,12 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *modPath,
     return ret;
 }
 
-
-// #########################
-// ##     SymbolTable     ##
-// #########################
-
 static bool isFileNotFound(const ModResult &ret) {
     return is<ModLoadingError>(ret) && get<ModLoadingError>(ret).isFileNotFound();
 }
 
-ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path,
-        FilePtr &filePtr, ModLoadOption option) {
-    auto ret = this->modLoader.load(scriptDir, path, filePtr, option);
+ModResult ModuleLoader::load(const char *scriptDir, const char *path, FilePtr &filePtr, ModLoadOption option) {
+    auto ret = this->loadImpl(scriptDir, path, filePtr, option);
     if(path[0] == '/' || scriptDir == nullptr || scriptDir[0] != '/') {   // if full path, not search next path
         return ret;
     }
@@ -363,22 +357,27 @@ ModResult SymbolTable::tryToLoadModule(const char *scriptDir, const char *path,
         expandTilde(dir);
         errno = old;
         if(strcmp(scriptDir, dir.c_str()) != 0) {
-            ret = this->modLoader.load(dir.c_str(), path, filePtr, option);
+            ret = this->loadImpl(dir.c_str(), path, filePtr, option);
         }
         if(isFileNotFound(ret)) {
-            ret = this->modLoader.load(SYSTEM_MOD_DIR, path, filePtr, option);
+            ret = this->loadImpl(SYSTEM_MOD_DIR, path, filePtr, option);
         }
     }
     return ret;
 }
 
-ModType& SymbolTable::createModType(TypePool &typePool, const std::string &fullpath) {
+
+// #########################
+// ##     SymbolTable     ##
+// #########################
+
+ModType& SymbolTable::createModType(ModuleLoader &loader, TypePool &typePool, const std::string &fullpath) {
     auto &modType = typePool.newType<ModType>(
             typePool.get(TYPE::Any), this->cur().getModID(),
             this->cur().global().getHandleMap(), this->cur().getChilds(), this->gvarCount);
     this->gvarCount++;
     this->curModule = nullptr;
-    this->modLoader.addModType(fullpath, modType);
+    loader.addModType(fullpath, modType);
     return modType;
 }
 
