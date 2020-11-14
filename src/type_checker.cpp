@@ -1695,7 +1695,12 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     case CodeCompNode::VAR:
         this->ccHandler->addVarNameRequest(node.getTypingToken());
         break;
-    case CodeCompNode::MEMBER:
+    case CodeCompNode::MEMBER: {
+        assert(node.getExprNode());
+        auto &recvType = this->checkTypeAsExpr(*node.getExprNode());
+        this->ccHandler->addMemberRequest(recvType, node.getTypingToken());
+        break;
+    }
     case CodeCompNode::TYPE:
         fatal("unsupported\n");
     }

@@ -191,6 +191,10 @@ inline bool isTypeAliasFullName(StringRef ref) {
     return ref.endsWith(TYPE_ALIAS_SYMBOL_SUFFIX);
 }
 
+inline bool isMagicMethodName(StringRef ref) {
+    return ref.startsWith("%");
+}
+
 
 // =====  other constants  =====
 constexpr size_t CODE_MAX_LEN = UINT32_MAX;

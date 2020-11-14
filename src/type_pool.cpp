@@ -388,7 +388,7 @@ const MethodHandle* TypePool::lookupMethod(const DSType &recvType, const std::st
     return nullptr;
 }
 
-void TypePool::walkMethod(std::function<bool(const DSType &, StringRef, const Value&)> &walker) {
+void TypePool::walkMethod(std::function<bool(const DSType &, StringRef, const Value&)> &walker) const {
     for(auto &e : this->methodMap) {
         auto &recvType = this->get(e.first.id);
         if(!walker(recvType, e.first.ref, e.second)) {

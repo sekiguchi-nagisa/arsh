@@ -35,22 +35,7 @@ struct TypeDiscardPoint {
 };
 
 class TypePool {
-private:
-    unsigned int methodIdCount{0};
-    FlexBuffer<DSType *> typeTable;
-    std::unordered_map<StringRef, unsigned int> nameMap;
-
-    // for reified type
-    TypeTemplate arrayTemplate;
-    TypeTemplate mapTemplate;
-    TypeTemplate tupleTemplate;
-    TypeTemplate optionTemplate;
-
-    /**
-     * for type template
-     */
-    std::unordered_map<std::string, const TypeTemplate *> templateMap;
-
+public:
     struct Key {
         unsigned int id;
         StringRef ref;
@@ -128,6 +113,22 @@ private:
             return this->handle_;
         }
     };
+
+private:
+    unsigned int methodIdCount{0};
+    FlexBuffer<DSType *> typeTable;
+    std::unordered_map<StringRef, unsigned int> nameMap;
+
+    // for reified type
+    TypeTemplate arrayTemplate;
+    TypeTemplate mapTemplate;
+    TypeTemplate tupleTemplate;
+    TypeTemplate optionTemplate;
+
+    /**
+     * for type template
+     */
+    std::unordered_map<std::string, const TypeTemplate *> templateMap;
 
     using MethodMap = std::unordered_map<Key, Value, Hash>;
 
@@ -232,7 +233,7 @@ public:
         return this->lookupMethod(revType, "");
     }
 
-    void walkMethod(std::function<bool(const DSType &, StringRef, const Value &)> &walker);
+    void walkMethod(std::function<bool(const DSType &, StringRef, const Value &)> &walker) const;
 
     TypeDiscardPoint getDiscardPoint() const {
         return TypeDiscardPoint {

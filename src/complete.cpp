@@ -408,6 +408,36 @@ static void completeExpected(const std::vector<std::string> &expected, ArrayObje
     }
 }
 
+static void completeMember(const TypePool &pool, const DSType &recvType,
+                           const std::string &word, ArrayObject &results) {
+    // complete field
+    std::function<bool(StringRef , const FieldHandle&)> fieldWalker =
+            [&](StringRef name, const FieldHandle &handle) {
+        if(name.startsWith(word) && !isCmdFullName(name) && !isTypeAliasFullName(name)) {
+            if(handle.getModID() == 0 || !name.startsWith("_")) {
+                append(results, name, EscapeOp::NOP);   //FIXME: module scope
+            }
+        }
+        return true;
+    };
+    recvType.walkField(fieldWalker);
+
+    // complete method
+    std::function<bool(const DSType &, StringRef, const TypePool::Value&)> methodWalker =
+            [&](const DSType &type, StringRef name, const TypePool::Value &) {
+        if(name.startsWith(word) && !isMagicMethodName(name)) {
+            for(const auto *t = &type; t != nullptr; t = t->getSuperType()) {
+                if(recvType == *t) {
+                    append(results, name, EscapeOp::NOP);
+                    break;  //FIXME: support type constraint
+                }
+            }
+        }
+        return true;
+    };
+    pool.walkMethod(methodWalker);
+}
+
 DSValue createArgv(const DSState &state, const Lexer &lex,
                    const CmdNode &cmdNode, const std::string &word) {
     std::vector<DSValue> values;
@@ -499,6 +529,9 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     }
     if(hasFlag(this->compOp, CodeCompOp::EXPECT)) {
         completeExpected(this->extraWords, results);
+    }
+    if(hasFlag(this->compOp, CodeCompOp::MEMBER)) {
+        completeMember(this->state.typePool, *this->recvType, this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::HOOK)) {
         if(!kickCompHook(this->state, *this->lex, *this->cmdNode, this->compWord, results)) {

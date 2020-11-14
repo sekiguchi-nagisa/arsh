@@ -56,6 +56,11 @@ $assertArray($(env | grep ^P | while(read -r) {
                                } | sed 's/(/\\(/' | sed 's/)/\\)/' ).sort(), $(complete 'import-env P'))
 
 
+# field/method
+$assertArray(["_0", "_1"], $(complete "(1,2)."))
+$assertArray(["sort", "sortWith"], $(complete '$@.so'))
+# $assertArray(["compAdd"], $(complete 'source ../../../../share/ydsh/module/completion as CP; $CP.'))
+
 # no completion candidate
 assert($(complete '34').empty())
 assert($(complete '34 ').empty())

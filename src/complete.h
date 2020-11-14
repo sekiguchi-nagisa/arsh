@@ -50,7 +50,8 @@ enum class CodeCompOp : unsigned int {
     EXPR_KW  = 1u << 14u,   /* complete expr keyword */
     ARG_KW   = 1u << 15u,   /* complete command argument keyword */
     EXPECT   = 1u << 16u,   /* complete expetced token */
-    HOOK     = 1u << 17u,   /* for user-defined completion hook */
+    MEMBER   = 1u << 17u,   /* complete member (field/meethod) */
+    HOOK     = 1u << 18u,   /* for user-defined completion hook */
     COMMAND  = EXTERNAL | BUILTIN | UDC,
 };
 
@@ -85,6 +86,11 @@ private:
      * for COMP_HOOK
      */
     std::unique_ptr<CmdNode> cmdNode;
+
+    /**
+     * for member completion
+     */
+    const DSType *recvType{nullptr};
 
     CodeCompOp compOp{};
 
@@ -124,6 +130,12 @@ public:
     }
 
     void addVarNameRequest(Token token);
+
+    void addMemberRequest(const DSType &type, Token token) {
+        this->compOp = CodeCompOp::MEMBER;
+        this->recvType = &type;
+        this->compWord = this->lex->toTokenText(token);
+    }
 
     void addCmdOrKeywordRequest(Token token, bool isStmt) {
         this->addCmdRequest(token);

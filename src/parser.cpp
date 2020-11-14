@@ -976,6 +976,9 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
         switch(CUR_KIND()) {
         case TokenKind::ACCESSOR: {
             this->consume();    // ACCESSOR
+            if(this->inCompletionPointAt(TokenKind::IDENTIFIER)) {
+                this->makeCodeComp(CodeCompNode::MEMBER, std::move(node), this->curToken);
+            }
             Token token = TRY(this->expect(TokenKind::IDENTIFIER));
             node = std::make_unique<AccessNode>(std::move(node), this->newVarNode(token));
             if(CUR_KIND() == TokenKind::LP && !HAS_NL()) {  // treat as method call
