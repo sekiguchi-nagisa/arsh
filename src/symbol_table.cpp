@@ -222,6 +222,32 @@ const FieldHandle * ModType::lookupField(const std::string &fieldName) const {
     return nullptr;
 }
 
+const FieldHandle * ModType::lookupVisibleSymbolAtModule(const TypePool &pool, const std::string &name) const {
+    // search own symbols
+    auto *handle = this->lookupField(name);
+    if(handle) {
+        return handle;
+    }
+
+    // search public symbol from globally loaded module
+    if(name.empty() || name[0] == '_') {
+        return nullptr;
+    }
+    unsigned int size = this->getChildSize();
+    for(unsigned int i = 0; i < size; i++) {
+        auto e = this->getChildAt(i);
+        if(isGlobal(e)) {
+            auto &type = pool.get(toTypeId(e));
+            assert(type.isModType());
+            handle = static_cast<const ModType&>(type).lookupField(name);
+            if(handle) {
+                return handle;
+            }
+        }
+    }
+    return nullptr;
+}
+
 void ModType::walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const {
     for(auto &e : this->handleMap) {
         if(!walker(e.first, e.second)) {
@@ -440,50 +466,6 @@ const FieldHandle *SymbolTable::lookupField(const DSType &recvType, const std::s
         }
     }
     return handle;
-}
-
-/**
- *
- * @param symbolTable
- * @param modType
- * @param fullname
- * must be end with CMD_SYMBOL_SUFFIX
- * @return
- */
-static const FieldHandle *lookupUdcFromModule(const TypePool &typePool,
-                                              const ModType &modType, const std::string &fullname) {
-    // search own udc
-    auto *handle = modType.lookupField(fullname);
-    if(handle) {
-        return handle;
-    }
-
-    // search public udc from globally loaded module
-    if(fullname[0] == '_') {
-        return nullptr;
-    }
-    unsigned int size = modType.getChildSize();
-    for(unsigned int i = 0; i < size; i++) {
-        auto e = modType.getChildAt(i);
-        if(isGlobal(e)) {
-            auto &type = typePool.get(toTypeId(e));
-            assert(type.isModType());
-            handle = static_cast<const ModType&>(type).lookupField(fullname);
-            if(handle) {
-                return handle;
-            }
-        }
-    }
-    return nullptr;
-}
-
-const FieldHandle * SymbolTable::lookupUdc(const TypePool &pool, const ModType *belongModType, const char *cmdName) const {
-    std::string name = toCmdFullName(cmdName);
-    if(belongModType == nullptr) {
-        return this->lookupHandle(name);
-    } else {
-        return lookupUdcFromModule(pool, *belongModType, name);
-    }
 }
 
 } // namespace ydsh

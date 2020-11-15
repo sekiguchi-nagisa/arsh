@@ -553,6 +553,16 @@ static NativeCode initCode(NativeOp op) {
     return NativeCode(code);
 }
 
+static const FieldHandle *lookupUdcImpl(const SymbolTable &symbolTable, const TypePool &pool,
+                                        const ModType *belongType, const char *cmdName) {
+    std::string name = toCmdFullName(cmdName);
+    if(belongType == nullptr) {
+        return symbolTable.lookupHandle(name);
+    } else {
+        return belongType->lookupVisibleSymbolAtModule(pool, name);
+    }
+}
+
 static bool lookupUdc(const DSState &state, const char *name, Command &cmd, bool forceGlobal = false) {
     const CompiledCode *code = nullptr;
     state.getCallStack().walkFrames([&](const ControlFrame &frame) {
@@ -572,7 +582,7 @@ static bool lookupUdc(const DSState &state, const char *name, Command &cmd, bool
             modType = static_cast<const ModType*>(&state.typePool.get(e->getTypeId()));
         }
     }
-    auto handle = state.symbolTable.lookupUdc(state.typePool, modType, name);
+    auto handle = lookupUdcImpl(state.symbolTable, state.typePool, modType, name);
     auto *udcObj = handle != nullptr ?
             &typeAs<FuncObject>(state.getGlobal(handle->getIndex())) : nullptr;
 

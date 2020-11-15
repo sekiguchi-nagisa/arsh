@@ -228,6 +228,15 @@ public:
 
     void walkField(std::function<bool(StringRef , const FieldHandle&)> &walker) const override;
 
+    /**
+     * for runtime symbol lookup
+     * lookup all visible symbols at module (including globally imported symbols)
+     * @param pool
+     * @param name
+     * @return
+     */
+    const FieldHandle *lookupVisibleSymbolAtModule(const TypePool &pool, const std::string &name) const;
+
     static std::string toModName(unsigned short modID);
 };
 
@@ -630,19 +639,6 @@ public:
     }
 
     const FieldHandle *lookupField(const DSType &recvType, const std::string &fieldName) const;
-
-    /**
-     * lookup user-defined command at runtime
-     * if type is not null, search from module.
-     * @param pool
-     * @param belongModType
-     * may be null
-     * @param cmdName
-     * not null. may be empty string
-     * @return
-     * if not found, return null
-     */
-    const FieldHandle *lookupUdc(const TypePool &pool, const ModType *belongModType, const char *cmdName) const;
 
     /**
      * create new local scope.
