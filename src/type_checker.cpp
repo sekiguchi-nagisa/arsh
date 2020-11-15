@@ -275,6 +275,29 @@ const FieldHandle *TypeChecker::addEntry(const Node &node, const std::string &sy
     return pair.asOk();
 }
 
+static auto initDeniedNameList() {
+    std::unordered_set<std::string> set;
+    for(auto &e : DENIED_REDEFINED_CMD_LIST) {
+        set.insert(e);
+    }
+    return set;
+}
+
+const FieldHandle * TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
+    static auto deniedList = initDeniedNameList();
+    if(deniedList.find(node.getCmdName()) != deniedList.end()) {
+        RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str());    //FIXME: better error message
+    }
+
+    std::string name = toCmdFullName(node.getCmdName());
+    auto pair = this->symbolTable.newHandle(name, this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
+    if(!pair) {
+        assert(pair.asErr() == SymbolError::DEFINED);
+        RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str());
+    }
+    return pair.asOk();
+}
+
 // for ApplyNode type checking
 HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
     auto &exprNode = node.getExprNode();

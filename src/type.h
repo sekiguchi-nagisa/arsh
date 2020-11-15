@@ -274,8 +274,6 @@ private:
     unsigned short modID;
 
 public:
-    FieldHandle(unsigned int commitID) : commitID(commitID), typeID(0), index(0), attribute(), modID(0) {}
-
     FieldHandle(unsigned int commitID, const DSType &fieldType, unsigned int fieldIndex,
                 FieldAttribute attribute, unsigned short modID = 0) :
             commitID(commitID), typeID(fieldType.typeId()), index(fieldIndex), attribute(attribute), modID(modID) {}
@@ -302,10 +300,6 @@ public:
 
     FieldAttribute attr() const {
         return this->attribute;
-    }
-
-    explicit operator bool() const {
-        return this->typeID != 0;
     }
 
     unsigned short getModID() const {

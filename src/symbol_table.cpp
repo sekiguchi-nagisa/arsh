@@ -70,10 +70,6 @@ HandleOrError BlockScope::addNew(const std::string &symbolName, const DSType &ty
 // #########################
 
 GlobalScope::GlobalScope(unsigned int &gvarCount) : Scope(GLOBAL, nullptr), gvarCount(gvarCount) {
-    for(auto &e : DENIED_REDEFINED_CMD_LIST) {
-        std::string name = toCmdFullName(e);
-        this->add(name);
-    }
     RefCountOp<Scope>::increase(this);
 }
 

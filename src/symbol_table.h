@@ -86,7 +86,7 @@ public:
 
     const FieldHandle *find(const std::string &symbolName) const {
         auto iter = this->handleMap.find(symbolName);
-        if(iter != this->handleMap.end() && iter->second) {
+        if(iter != this->handleMap.end()) {
             return &iter->second;
         }
         return nullptr;
@@ -97,7 +97,7 @@ public:
 protected:
     void discard(unsigned int commitID) {
         for(auto iter = this->handleMap.begin(); iter != this->handleMap.end();) {
-            if(iter->second && iter->second.getCommitID() >= commitID) {
+            if(iter->second.getCommitID() >= commitID) {
                 iter = this->handleMap.erase(iter);
             } else {
                 ++iter;
