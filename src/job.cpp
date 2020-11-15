@@ -48,7 +48,7 @@ Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
         st.sigVector.clear();
 
         // clear termination hook
-        st.setGlobal(st.symbolTable.getTermHookIndex(), DSValue::createInvalid());
+        st.setGlobal(st.symbolTable.lookupHandle(VAR_TERM_HOOK)->getIndex(), DSValue::createInvalid());
 
         // update PID, PPID
         st.setGlobal(BuiltinVarOffset::PID, DSValue::createInt(getpid()));

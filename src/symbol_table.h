@@ -562,8 +562,6 @@ private:
     std::unique_ptr<ModuleScope> rootModule;
     ModuleScope *curModule;
 
-    unsigned int termHookIndex{0};
-
 public:
     NON_COPYABLE(SymbolTable);
 
@@ -630,15 +628,6 @@ public:
     void closeBuiltin() {
         this->root().closeBuiltin();
     }
-
-    /**
-     *
-     * @return
-     * offset + 0 EXIT_HOOK
-     * offset + 1 ERR_HOOK
-     * offset + 2 ASSERT_HOOK
-     */
-    unsigned int getTermHookIndex();
 
     const FieldHandle *lookupField(const DSType &recvType, const std::string &fieldName) const;
 

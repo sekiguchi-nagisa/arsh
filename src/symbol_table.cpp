@@ -430,15 +430,6 @@ HandleOrError SymbolTable::addTypeAlias(const TypePool &pool, const std::string 
     return this->addAlias(toTypeAliasFullName(alias), FieldHandle(0, type, 0, FieldAttribute{},0));
 }
 
-unsigned int SymbolTable::getTermHookIndex() {
-    if(this->termHookIndex == 0) {
-        auto *handle = this->lookupHandle(VAR_TERM_HOOK);
-        assert(handle != nullptr);
-        this->termHookIndex = handle->getIndex();
-    }
-    return this->termHookIndex;
-}
-
 const FieldHandle *SymbolTable::lookupField(const DSType &recvType, const std::string &fieldName) const {
     auto *handle = recvType.lookupField(fieldName);
     if(handle) {

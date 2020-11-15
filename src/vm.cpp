@@ -2003,7 +2003,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
 }
 
 void VM::callTermHook(DSState &state, DSErrorKind kind, DSValue &&except) {
-    auto funcObj = state.getGlobal(state.symbolTable.getTermHookIndex());
+    auto funcObj = state.getGlobal(state.symbolTable.lookupHandle(VAR_TERM_HOOK)->getIndex());
     if(funcObj.kind() == DSValueKind::INVALID) {
         return;
     }

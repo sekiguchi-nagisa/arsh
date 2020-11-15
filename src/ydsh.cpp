@@ -377,9 +377,6 @@ static void loadEmbeddedScript(DSState *state) {
     // rest some state
     state->lineNum = 1;
     state->setExitStatus(0);
-
-    // force initialize 'termHookIndex'
-    state->symbolTable.getTermHookIndex();
 }
 
 // ###################################
