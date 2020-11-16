@@ -184,11 +184,9 @@ private:
 
     unsigned int index; // module object index
 
-    ChildModEntry *childs;
+    ChildModEntry *children;
 
     std::unordered_map<std::string, FieldHandle> handleMap;
-
-    friend class ModuleScope;
 
 public:
     ModType(unsigned int id, DSType &superType, unsigned short modID,
@@ -207,13 +205,17 @@ public:
 
     ChildModEntry getChildAt(unsigned int i) const {
         assert(i < this->childSize);
-        return this->childs[i];
+        return this->children[i];
     }
 
     unsigned int getIndex() const {
         return this->index;
     }
 
+    /**
+     * for indicating module object index
+     * @return
+     */
     FieldHandle toHandle() const {
         return FieldHandle(
                 0, *this, this->index,
@@ -222,6 +224,10 @@ public:
 
     std::string toName() const {
         return this->getNameRef().toString();
+    }
+
+    const std::unordered_map<std::string, FieldHandle> &getHandleMap() const {
+        return this->handleMap;
     }
 
     const FieldHandle *lookupField(const std::string &fieldName) const override;

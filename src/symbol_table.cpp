@@ -163,7 +163,7 @@ std::string ModuleScope::import(const ModType &type, bool global) {
         return "";
     }
 
-    for(auto &e : type.handleMap) {
+    for(auto &e : type.getHandleMap()) {
         assert(!hasFlag(e.second.attr(), FieldAttribute::BUILTIN));
         assert(this->getModID() != e.second.getModID());
         StringRef ref = e.first;
@@ -197,7 +197,7 @@ void ModuleScope::clear() {
 // #####################
 
 ModType::~ModType() {
-    free(this->childs);
+    free(this->children);
 }
 
 ModType::ModType(unsigned int id, DSType &superType, unsigned short modID,
@@ -211,7 +211,7 @@ ModType::ModType(unsigned int id, DSType &superType, unsigned short modID,
         }
     }
     this->childSize = childs.size();
-    this->childs = FlexBuffer<ChildModEntry>(childs.begin(), childs.end()).take();
+    this->children = FlexBuffer<ChildModEntry>(childs.begin(), childs.end()).take();
 }
 
 const FieldHandle * ModType::lookupField(const std::string &fieldName) const {
