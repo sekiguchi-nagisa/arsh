@@ -120,7 +120,7 @@ public:
         // assert type
         auto ret = this->pool.getType(name);
         ASSERT_TRUE(ret);
-        ASSERT_TRUE(type == *ret.take());
+        ASSERT_TRUE(type == *std::move(ret).take());
     }
 
     virtual void assertSuperType(DSType &type, DSType &superType) {
@@ -142,7 +142,7 @@ public:
 
         auto ret = this->pool.getTypeTemplate(name);
         ASSERT_TRUE(ret);
-        auto gotten = ret.take();
+        auto gotten = std::move(ret).take();
         ASSERT_EQ(size, t.getElementTypeSize());
         ASSERT_EQ(size, gotten->getElementTypeSize());
         ASSERT_TRUE(reinterpret_cast<uintptr_t>(this->pool.getTypeTemplate(name).take()) ==

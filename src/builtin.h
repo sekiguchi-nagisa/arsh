@@ -1059,7 +1059,7 @@ YDSH_METHOD signals_list(RuntimeContext &ctx) {
 
     auto ret = ctx.typePool.createArrayType(ctx.typePool.get(TYPE::Signal));
     assert(ret);
-    auto type = ret.take();
+    auto type = std::move(ret).take();
     auto v = DSValue::create<ArrayObject>(*type);
     auto &array = typeAs<ArrayObject>(v);
     for(auto &e : getUniqueSignalList()) {

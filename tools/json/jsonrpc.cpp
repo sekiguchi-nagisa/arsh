@@ -272,9 +272,9 @@ bool Transport::dispatch(Handler &handler) {
             auto id = std::move(req.id);
             auto ret = handler.onCall(req.method, std::move(req.params));
             if(ret) {
-                this->reply(std::move(id), ret.take());
+                this->reply(std::move(id), std::move(ret).take());
             } else {
-                this->reply(std::move(id), ret.takeError());
+                this->reply(std::move(id), std::move(ret).takeError());
             }
         } else {
             handler.onNotify(req.method, std::move(req.params));
@@ -344,7 +344,7 @@ void Handler::onResponse(Response &&res) {
         if(!iface(validator, get<JSON>(res.value))) {
             std::string e = validator.formatError();
             this->logger(LogLevel::ERROR, "response message validation failed: \n%s", e.c_str());
-            res.value = newError(InvalidParams, std::move(e), res.value.take());
+            res.value = newError(InvalidParams, std::move(e), std::move(res.value).take());
         }
     }
     entry.second(std::move(res));

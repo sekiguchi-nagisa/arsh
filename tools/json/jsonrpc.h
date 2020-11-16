@@ -348,10 +348,10 @@ public:
         ResponseCallback func = [callback, ecallback](Response &&res) {
             if(res) {
                 Ret ret;
-                fromJSON(res.value.take(), ret);
+                fromJSON(std::move(res.value).take(), ret);
                 callback(ret);
             } else {
-                ecallback(res.value.takeError());
+                ecallback(std::move(res.value).takeError());
             }
         };
         return this->callImpl(transport, name, toJSON(param), std::move(func));

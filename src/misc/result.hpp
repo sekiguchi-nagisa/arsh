@@ -434,6 +434,7 @@ public:
     explicit operator bool() const {
         return is<T>(*this);
     }
+
     T &asOk() {
         return get<T>(*this);
     }
@@ -442,11 +443,19 @@ public:
         return get<E>(*this);
     }
 
-    T &&take() {
+    const T &asOk() const {
+        return get<T>(*this);
+    }
+
+    const E &asErr() const {
+        return get<E>(*this);
+    }
+
+    T &&take() && {
         return std::move(this->asOk());
     }
 
-    E &&takeError() {
+    E &&takeError() && {
         return std::move(this->asErr());
     }
 };

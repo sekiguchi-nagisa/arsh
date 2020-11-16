@@ -257,7 +257,7 @@ public:
 };
 
 #undef TRY
-#define TRY(E) ({ auto value = E; if(!value) { return value; } value.take(); })
+#define TRY(E) ({ auto value = E; if(!value) { return value; } std::move(value).take(); })
 
 TypeOrError TypeDecoder::decode() {
     switch(*(this->cursor++)) {
@@ -335,7 +335,7 @@ TypeOrError TypeDecoder::decode() {
     }
 }
 
-#define TRY2(E) ({ auto value = E; if(!value) { return false; } value.take(); })
+#define TRY2(E) ({ auto value = E; if(!value) { return false; } std::move(value).take(); })
 
 // FIXME: error reporting
 bool TypePool::allocMethodHandle(const DSType &recv, MethodMap::iterator iter) {

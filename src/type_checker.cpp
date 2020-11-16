@@ -89,9 +89,9 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         unsigned int size = typeNode.getElementTypeNodes().size();
         auto tempOrError = this->typePool.getTypeTemplate(typeNode.getTemplate()->getTokenText());
         if(!tempOrError) {
-            return Err(tempOrError.takeError());
+            return Err(std::move(tempOrError).takeError());
         }
-        auto typeTemplate = tempOrError.take();
+        auto typeTemplate = std::move(tempOrError).take();
         std::vector<DSType *> elementTypes(size);
         for(unsigned int i = 0; i < size; i++) {
             elementTypes[i] = &this->checkTypeExactly(*typeNode.getElementTypeNodes()[i]);
@@ -258,7 +258,7 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
     }
     auto ret = this->typePool.createOptionType(firstType);
     assert(ret);
-    return *ret.take();
+    return *std::move(ret).take();
 }
 
 const FieldHandle *TypeChecker::addEntry(const Node &node, const std::string &symbolName,
@@ -420,7 +420,7 @@ std::unique_ptr<Node> TypeChecker::newPrintOpNode(std::unique_ptr<Node> &&node) 
 void TypeChecker::visitTypeNode(TypeNode &node) {
     auto ret = this->toTypeImpl(node);
     if(ret) {
-        node.setType(*ret.take());
+        node.setType(*std::move(ret).take());
     } else {
         throw TypeCheckError(node.getToken(), *ret.asErr());
     }
@@ -471,7 +471,7 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
 
     auto typeOrError = this->typePool.createArrayType(elementType);
     assert(typeOrError);
-    node.setType(*typeOrError.take());
+    node.setType(*std::move(typeOrError).take());
 }
 
 void TypeChecker::visitMapNode(MapNode &node) {
@@ -490,7 +490,7 @@ void TypeChecker::visitMapNode(MapNode &node) {
 
     auto typeOrError = this->typePool.createMapType(keyType, valueType);
     assert(typeOrError);
-    node.setType(*typeOrError.take());
+    node.setType(*std::move(typeOrError).take());
 }
 
 void TypeChecker::visitTupleNode(TupleNode &node) {
@@ -501,7 +501,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
     }
     auto typeOrError = this->typePool.createTupleType(std::move(types));
     assert(typeOrError);
-    node.setType(*typeOrError.take());
+    node.setType(*std::move(typeOrError).take());
 }
 
 void TypeChecker::visitVarNode(VarNode &node) {
@@ -1445,7 +1445,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     // register function handle
     auto typeOrError = this->typePool.createFuncType(&returnType, std::move(paramTypes));
     assert(typeOrError);
-    auto &funcType = static_cast<FunctionType&>(*typeOrError.take());
+    auto &funcType = static_cast<FunctionType&>(*std::move(typeOrError).take());
     node.setFuncType(&funcType);
     auto handle = this->addEntry(node, node.getFuncName(), funcType,
                                  FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
