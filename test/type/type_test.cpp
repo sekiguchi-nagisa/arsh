@@ -269,6 +269,41 @@ TEST_F(TypeTest, api) {
     ASSERT_TRUE(this->toType<Option_t<Error_t>>().isSameOrBaseTypeOf(this->pool.get(TYPE::ArithmeticError)));
 }
 
+TEST_F(TypeTest, discard) {
+    ASSERT_FALSE(this->pool.getType("[String : Error]"));
+    ASSERT_FALSE(this->pool.getType("[Error]"));
+
+    this->toType<Map_t<String_t,Error_t>>();
+    ASSERT_TRUE(this->pool.getType("[String : Error]"));
+
+    auto point = this->pool.getDiscardPoint();
+    this->toType<Array_t<Error_t>>();
+    ASSERT_TRUE(this->pool.getType("[Error]"));
+
+    this->pool.discard(point);
+    ASSERT_TRUE(this->pool.getType("[String : Error]"));
+    ASSERT_FALSE(this->pool.getType("[Error]"));
+
+    this->toType<Array_t<Error_t>>();
+    ASSERT_TRUE(this->pool.getType("[Error]"));
+
+    this->toType<Array_t<Func_t<Void_t>>>();
+    ASSERT_TRUE(this->pool.getType("[() -> Void]"));
+
+    auto point2 = this->pool.getDiscardPoint();
+    this->toType<Array_t<Array_t<Float_t>>>();
+    ASSERT_TRUE(this->pool.getType("[[Float]]"));
+    ASSERT_TRUE(this->pool.getType("[Float]"));
+
+    this->pool.discard(point2);
+    ASSERT_FALSE(this->pool.getType("[[Float]]"));
+    ASSERT_FALSE(this->pool.getType("[Float]"));
+
+    ASSERT_TRUE(this->pool.getType("[() -> Void]"));
+    ASSERT_TRUE(this->pool.getType("[Error]"));
+    ASSERT_TRUE(this->pool.getType("[String : Error]"));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

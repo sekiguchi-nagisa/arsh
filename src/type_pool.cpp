@@ -136,16 +136,13 @@ void TypePool::discard(const TypeDiscardPoint point) {
     assert(point.typeIdOffset == this->typeTable.size());
 
     // abort method handle
-    if(point.methodIdOffset >= this->methodIdCount) {
-        return;
-    }
     this->methodIdCount = point.methodIdOffset;
     for(auto iter = this->methodMap.begin(); iter != this->methodMap.end(); ) {
-        if(iter->first.id >= point.typeIdOffset) {
+        if(iter->first.id >= point.typeIdOffset) {  // discard all method of discarded type
             const_cast<Key &>(iter->first).dispose();
             iter = this->methodMap.erase(iter);
             continue;
-        } else if(iter->second) {
+        } else if(iter->second) {   // only discard instantiated method
             auto *ptr = iter->second.handle();
             if(ptr != nullptr && ptr->getMethodId() >= point.methodIdOffset) {
                 iter->second = Value(ptr->getMethodIndex());
