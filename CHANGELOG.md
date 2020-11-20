@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - printenv
   - which
   - zypper
+  - perf
 - bash completion wrapper
 
 
