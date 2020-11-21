@@ -30,6 +30,7 @@
 #include "misc/noncopyable.h"
 #include "misc/string_ref.hpp"
 #include "misc/resource.hpp"
+#include "misc/buffer.hpp"
 #include "handle_info.h"
 
 struct DSState;
@@ -455,6 +456,112 @@ public:
     ErrorType(unsigned int id, StringRef ref, const DSType &superType) :
             DSType(id, ref, &superType, TypeAttr::EXTENDIBLE) {}
 };
+
+/**
+ * indicating loaded mod type id.
+ *
+ * | 1bit |  31bit  |
+ * | flag | type id |
+ *
+ * if flag is 1, indicate globally imported module
+ */
+enum class ChildModEntry : unsigned int {};
+
+class ModType : public DSType {
+private:
+    unsigned short modID;
+
+    unsigned short childSize;
+
+    unsigned int index; // module object index
+
+    ChildModEntry *children;
+
+    std::unordered_map<std::string, FieldHandle> handleMap;
+
+public:
+    ModType(unsigned int id, DSType &superType, unsigned short modID,
+            const std::unordered_map<std::string, FieldHandle> &handleMap,
+            const FlexBuffer<ChildModEntry> &childs, unsigned int index);
+
+    ModType(unsigned int id, const DSType &superType, unsigned short modID,
+            std::unordered_map<std::string, FieldHandle> &&handles,
+            FlexBuffer<ChildModEntry> &&children, unsigned int index) :
+            DSType(id, toModName(modID), &superType, TypeAttr::MODULE_TYPE),
+            modID(modID), index(index), handleMap(std::move(handles)) {
+        this->childSize = children.size();
+        this->children = children.take();
+    }
+
+    ~ModType() override;
+
+    unsigned short getModID() const {
+        return this->modID;
+    }
+
+    unsigned int getChildSize() const {
+        return this->childSize;
+    }
+
+    ChildModEntry getChildAt(unsigned int i) const {
+        assert(i < this->childSize);
+        return this->children[i];
+    }
+
+    unsigned int getIndex() const {
+        return this->index;
+    }
+
+    /**
+     * for indicating module object index
+     * @return
+     */
+    FieldHandle toHandle() const {
+        return FieldHandle(
+                0, *this, this->index,
+                FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL, this->modID);
+    }
+
+    std::string toName() const {
+        return this->getNameRef().toString();
+    }
+
+    const std::unordered_map<std::string, FieldHandle> &getHandleMap() const {
+        return this->handleMap;
+    }
+
+    const FieldHandle *lookupField(const std::string &fieldName) const override;
+
+    void walkField(std::function<bool(StringRef , const FieldHandle&)> &walker) const override;
+
+    /**
+     * for runtime symbol lookup
+     * lookup all visible symbols at module (including globally imported symbols)
+     * @param pool
+     * @param name
+     * @return
+     */
+    const FieldHandle *lookupVisibleSymbolAtModule(const TypePool &pool, const std::string &name) const;
+
+    static std::string toModName(unsigned short modID);
+};
+
+inline ChildModEntry toChildModEntry(const ModType &type, bool global) {
+    unsigned int value = type.typeId();
+    if(global) {
+        value |= static_cast<unsigned int>(1 << 31);
+    }
+    return static_cast<ChildModEntry>(value);
+}
+
+inline bool isGlobal(ChildModEntry e) {
+    return static_cast<int>(e) < 0;
+}
+
+inline unsigned int toTypeId(ChildModEntry e) {
+    return static_cast<unsigned int>(e) & 0x7FFFFFFF;
+}
+
 
 /**
  * ReifiedType template.

@@ -17,6 +17,7 @@
 #include <cstdarg>
 #include <array>
 
+#include "type_pool.h"
 #include "type.h"
 #include "tcerror.h"
 
@@ -86,6 +87,78 @@ void TupleType::walkField(std::function<bool(StringRef, const FieldHandle &)> &w
     }
     this->superType->walkField(walker);
 }
+
+
+// #####################
+// ##     ModType     ##
+// #####################
+
+ModType::~ModType() {
+    free(this->children);
+}
+
+ModType::ModType(unsigned int id, DSType &superType, unsigned short modID,
+                 const std::unordered_map<std::string, FieldHandle> &handleMap,
+                 const FlexBuffer<ChildModEntry> &childs, unsigned int index) :
+        DSType(id, toModName(modID), &superType, TypeAttr::MODULE_TYPE), modID(modID), index(index) {
+    assert(modID > 0);
+    for(auto &e : handleMap) {
+        if(e.second.getModID() == modID) {
+            this->handleMap.emplace(e.first, e.second);
+        }
+    }
+    this->childSize = childs.size();
+    this->children = FlexBuffer<ChildModEntry>(childs.begin(), childs.end()).take();
+}
+
+const FieldHandle * ModType::lookupField(const std::string &fieldName) const {
+    auto iter = this->handleMap.find(fieldName);
+    if(iter != this->handleMap.end()) {
+        return &iter->second;
+    }
+    return nullptr;
+}
+
+const FieldHandle * ModType::lookupVisibleSymbolAtModule(const TypePool &pool, const std::string &name) const {
+    // search own symbols
+    auto *handle = this->lookupField(name);
+    if(handle) {
+        return handle;
+    }
+
+    // search public symbol from globally loaded module
+    if(name.empty() || name[0] == '_') {
+        return nullptr;
+    }
+    unsigned int size = this->getChildSize();
+    for(unsigned int i = 0; i < size; i++) {
+        auto e = this->getChildAt(i);
+        if(isGlobal(e)) {
+            auto &type = pool.get(toTypeId(e));
+            assert(type.isModType());
+            handle = static_cast<const ModType&>(type).lookupField(name);
+            if(handle) {
+                return handle;
+            }
+        }
+    }
+    return nullptr;
+}
+
+void ModType::walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const {
+    for(auto &e : this->handleMap) {
+        if(!walker(e.first, e.second)) {
+            return;
+        }
+    }
+}
+
+std::string ModType::toModName(unsigned short id) {
+    std::string str = MOD_SYMBOL_PREFIX;
+    str += std::to_string(id);
+    return str;
+}
+
 
 std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {
     va_list arg;
