@@ -385,8 +385,6 @@ public:
         return this->childs;
     }
 
-    static std::string toModName(unsigned short modID);
-
 private:
     BlockScope &curScope() {
         assert(this->scope->isBlock());
