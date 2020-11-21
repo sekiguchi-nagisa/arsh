@@ -394,7 +394,7 @@ static void completeVarName(const SymbolTable &symbolTable,
                             const std::string &prefix, ArrayObject &results) {
     for(const auto &iter : symbolTable.globalScope()) {
         StringRef varName = iter.first.c_str();
-        if(varName.startsWith(prefix) && !isCmdFullName(varName) && !isTypeAliasFullName(varName)) {
+        if(varName.startsWith(prefix) && isVarName(varName)) {
             append(results, varName, EscapeOp::NOP);
         }
     }
@@ -413,7 +413,7 @@ static void completeMember(const TypePool &pool, const DSType &recvType,
     // complete field
     std::function<bool(StringRef , const FieldHandle&)> fieldWalker =
             [&](StringRef name, const FieldHandle &handle) {
-        if(name.startsWith(word) && !isCmdFullName(name) && !isTypeAliasFullName(name)) {
+        if(name.startsWith(word) && isVarName(name)) {
             if(handle.getModID() == 0 || !name.startsWith("_")) {
                 append(results, name, EscapeOp::NOP);   //FIXME: module scope
             }

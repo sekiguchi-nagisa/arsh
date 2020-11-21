@@ -191,6 +191,10 @@ inline bool isTypeAliasFullName(StringRef ref) {
     return ref.endsWith(TYPE_ALIAS_SYMBOL_SUFFIX);
 }
 
+inline bool isVarName(StringRef ref) {
+    return !isCmdFullName(ref) && !isTypeAliasFullName(ref);
+}
+
 inline bool isMagicMethodName(StringRef ref) {
     return ref.startsWith("%");
 }
