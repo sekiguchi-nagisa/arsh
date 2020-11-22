@@ -786,14 +786,14 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
     }
 
     {
-        auto child = this->inChild();
+        auto child = this->intoChild();
         for(unsigned int i = 0; i < size - 1; i++) {
             this->checkTypeExactly(*node.getNodes()[i]);
         }
     }
 
     {
-        auto scope = this->inScope();
+        auto scope = this->intoBlock();
         if(node.isLastPipe()) { // register pipeline state
             this->addEntry(node, "%%pipe", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
             node.setBaseIndex(this->curScope->getBaseIndex());
@@ -804,7 +804,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
 }
 
 void TypeChecker::visitWithNode(WithNode &node) {
-    auto scope = this->inScope();
+    auto scope = this->intoBlock();
 
     // register redir config
     this->addEntry(node, "%%redir", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
@@ -819,7 +819,7 @@ void TypeChecker::visitWithNode(WithNode &node) {
 }
 
 void TypeChecker::visitForkNode(ForkNode &node) {
-    auto child = this->inChild();
+    auto child = this->intoChild();
     this->checkType(nullptr, node.getExprNode(), node.isJob() ? &this->typePool.get(TYPE::Job) : nullptr);
 
     DSType *type = nullptr;
@@ -854,7 +854,7 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
     if(this->isTopLevel() && node.getNodes().empty()) {
         RAISE_TC_ERROR(UselessBlock, node);
     }
-    auto scope = this->inScope();
+    auto scope = this->intoBlock();
     this->checkTypeWithCurrentScope(nullptr, node);
 }
 
@@ -870,7 +870,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
 
 void TypeChecker::visitLoopNode(LoopNode &node) {
     {
-        auto scope = this->inScope();
+        auto scope = this->intoBlock();
         this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refInitNode());
 
         if(node.getCondNode() != nullptr) {
@@ -879,7 +879,7 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
         this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refIterNode());
 
         {
-            auto loop = this->inLoop();
+            auto loop = this->intoLoop();
             this->checkTypeWithCurrentScope(node.getBlockNode());
             auto &type = this->resolveCoercionOfJumpValue();
             node.setType(type);
@@ -1269,7 +1269,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
     }
 
     {
-        auto scope = this->inScope();
+        auto scope = this->intoBlock();
         /**
          * check type catch block
          */
@@ -1292,13 +1292,13 @@ void TypeChecker::visitTryNode(TryNode &node) {
     // check type try block
     const DSType *exprType = nullptr;
     {
-        auto try1 = this->inTry();
+        auto try1 = this->intoTry();
         exprType = &this->checkTypeExactly(node.getExprNode());
     }
 
     // check type catch block
     for(auto &c : node.getCatchNodes()) {
-        auto try1 = this->inTry();
+        auto try1 = this->intoTry();
         auto &catchType = this->checkTypeExactly(*c);
         if(!exprType->isSameOrBaseTypeOf(catchType) && !this->checkCoercion(*exprType, catchType)) {
             exprType = &this->typePool.get(TYPE::Void);
@@ -1313,7 +1313,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
 
     // check type finally block, may be empty node
     if(node.getFinallyNode() != nullptr) {
-        auto finally1 = this->inFinally();
+        auto finally1 = this->intoFinally();
         this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refFinallyNode());
 
         if(findInnerNode<BlockNode>(node.getFinallyNode())->getNodes().empty()) {
@@ -1452,7 +1452,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     node.setVarIndex(handle->getIndex());
 
     {
-        auto func = this->inFunc(returnType);
+        auto func = this->intoFunc(returnType);
         // register parameter
         for(unsigned int i = 0; i < paramSize; i++) {
             VarNode &paramNode = *node.getParamNodes()[i];
@@ -1489,7 +1489,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     node.setUdcIndex(handle->getIndex());
 
     {
-        auto func = this->inFunc(this->typePool.get(TYPE::Int)); // pseudo return type
+        auto func = this->intoFunc(this->typePool.get(TYPE::Int)); // pseudo return type
         // register dummy parameter (for propagating command attr)
         this->addEntry(node, "%%attr", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
 

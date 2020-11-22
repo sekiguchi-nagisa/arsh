@@ -296,14 +296,14 @@ protected:
         return this->visitingDepth == 1;
     }
 
-    auto inScope() {
+    auto intoBlock() {
         this->curScope = this->curScope->enterScope(NameScope::BLOCK);
         return finally([&]{
             this->curScope = this->curScope->exitScope();
         });
     }
 
-    auto inLoop() {
+    auto intoLoop() {
         this->fctx.enterLoop();
         this->breakGather.enter();
         return finally([&]{
@@ -312,7 +312,7 @@ protected:
         });
     }
 
-    auto inFunc(const DSType &returnType) {
+    auto intoFunc(const DSType &returnType) {
         this->curReturnType = &returnType;
         this->curScope = this->curScope->enterScope(NameScope::FUNC);
         this->curScope = this->curScope->enterScope(NameScope::BLOCK);
@@ -323,21 +323,21 @@ protected:
         });
     }
 
-    auto inChild() {
+    auto intoChild() {
         this->fctx.enterChild();
         return finally([&]{
             this->fctx.leave();
         });
     }
 
-    auto inTry() {
+    auto intoTry() {
         this->fctx.enterTry();
         return finally([&]{
             this->fctx.leave();
         });
     }
 
-    auto inFinally() {
+    auto intoFinally() {
         this->fctx.enterFinally();
         return finally([&]{
             this->fctx.leave();
