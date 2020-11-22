@@ -182,6 +182,9 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
             ++iter;
         }
     }
+    if(this->isGlobal()) {
+        this->clearLocalSize();
+    }
 }
 
 NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {

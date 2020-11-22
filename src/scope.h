@@ -68,8 +68,6 @@ private:
 
     std::unordered_map<std::string, FieldHandle> handles;
 
-    FlexBuffer<ChildModEntry> children;
-
 public:
     /**
      * for builtin module scope construction
@@ -349,8 +347,6 @@ public:
         return this->getTypeId() > 0;
     }
 };
-
-class NameScope;
 
 struct ModDiscardPoint {
     unsigned int idCount;
