@@ -97,20 +97,6 @@ ModType::~ModType() {
     free(this->children);
 }
 
-ModType::ModType(unsigned int id, DSType &superType, unsigned short modID,
-                 const std::unordered_map<std::string, FieldHandle> &handleMap,
-                 const FlexBuffer<ChildModEntry> &childs, unsigned int index) :
-        DSType(id, toModName(modID), &superType, TypeAttr::MODULE_TYPE), modID(modID), index(index) {
-    assert(modID > 0);
-    for(auto &e : handleMap) {
-        if(e.second.getModID() == modID) {
-            this->handleMap.emplace(e.first, e.second);
-        }
-    }
-    this->childSize = childs.size();
-    this->children = FlexBuffer<ChildModEntry>(childs.begin(), childs.end()).take();
-}
-
 const FieldHandle * ModType::lookupField(const std::string &fieldName) const {
     auto iter = this->handleMap.find(fieldName);
     if(iter != this->handleMap.end()) {

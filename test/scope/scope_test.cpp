@@ -16,12 +16,17 @@ class ScopeTest : public ::testing::Test {
 protected:
     TypePool pool;
     unsigned int gvarCount{0};
+    unsigned int modCount{0};
     IntrusivePtr<NameScope> builtin;
     IntrusivePtr<NameScope> top;
 
     ScopeTest() {
         this->builtin = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount));
-        this->top = IntrusivePtr<NameScope>::create(this->builtin, 1);
+        this->top = createGlobalScope();
+    }
+
+    IntrusivePtr<NameScope> createGlobalScope() {
+        return IntrusivePtr<NameScope>::create(this->builtin, ++this->modCount);
     }
 
     void expect(const Handle &e, const FieldHandle *handle) {
@@ -520,6 +525,115 @@ TEST_F(ScopeTest, func) {
     ASSERT_EQ(2, func->getMaxLocalVarIndex());
     ASSERT_EQ(2, block0->getCurLocalIndex());
     ASSERT_EQ(2, block0->getLocalSize());
+}
+
+TEST_F(ScopeTest, import) {
+    // define mod type
+    auto mod = this->createGlobalScope();
+    mod->defineHandle("AAA", this->pool.get(TYPE::Int), FieldAttribute::READ_ONLY);
+    mod->defineHandle("_AAA", this->pool.get(TYPE::String), FieldAttribute::ENV);
+    mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
+    mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
+    auto &modType = mod->toModType(this->pool);
+
+    // named import
+    auto s = this->top->importForeignHandles(modType, false);
+    ASSERT_EQ("", s);
+    ASSERT_EQ(2, this->top->getMaxGlobalVarIndex());
+    ASSERT_EQ(1, this->top->getHandles().size());
+
+    s = this->top->importForeignHandles(modType, false);
+    ASSERT_EQ("", s);
+    ASSERT_EQ(2, this->top->getMaxGlobalVarIndex());
+    ASSERT_EQ(1, this->top->getHandles().size());
+
+    auto *handle = this->top->lookup("AAA");
+    ASSERT_EQ(nullptr, handle);
+    handle = this->top->lookup("_AAA");
+    ASSERT_EQ(nullptr, handle);
+    handle = this->top->lookup(toTypeAliasFullName("_string"));
+    ASSERT_EQ(nullptr, handle);
+    handle = this->top->lookup(toTypeAliasFullName("integer"));
+    ASSERT_EQ(nullptr, handle);
+
+    // global import
+    s = this->top->importForeignHandles(modType, true);
+    ASSERT_EQ("", s);
+    ASSERT_EQ(2, this->top->getMaxGlobalVarIndex());
+    ASSERT_EQ(4, this->top->getHandles().size());
+
+    s = this->top->importForeignHandles(modType, true);
+    ASSERT_EQ("", s);
+    ASSERT_EQ(2, this->top->getMaxGlobalVarIndex());
+    ASSERT_EQ(4, this->top->getHandles().size());
+
+    handle = this->top->lookup("AAA");
+    ASSERT_NO_FATAL_FAILURE(this->expect(Handle{
+        .commitID = 2,
+        .type = TYPE::Int,
+        .index = 0,
+        .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY | FieldAttribute::ALIAS,
+        .modID = 2,
+    }, handle));
+
+    handle = this->top->lookup("_AAA"); // not import private symbol
+    ASSERT_EQ(nullptr, handle);
+
+    handle = this->top->lookup(toTypeAliasFullName("_string")); // not import private symbol
+    ASSERT_EQ(nullptr, handle);
+
+    handle = this->top->lookup(toTypeAliasFullName("integer"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(Handle{
+            .commitID = 3,
+            .type = TYPE::Int,
+            .index = 0,
+            .attr = FieldAttribute::ALIAS,
+            .modID = 2,
+    }, handle));
+
+    // ModType
+    auto mod2 = this->createGlobalScope();
+    mod2->defineHandle("GGG", this->pool.get(TYPE::Job), FieldAttribute{});
+    auto &modType2 = mod2->toModType(this->pool);
+
+    this->top->importForeignHandles(modType2, false);
+
+    auto &modType3 = this->top->toModType(this->pool);
+    ASSERT_EQ(2, modType3.getChildSize());
+    ASSERT_TRUE(isGlobal(modType3.getChildAt(0)));
+    ASSERT_FALSE(isGlobal(modType3.getChildAt(1)));
+
+    // lookup from ModType
+    handle = modType3.lookupVisibleSymbolAtModule(this->pool, "GGG");
+    ASSERT_EQ(nullptr, handle);
+
+    handle = modType3.lookupVisibleSymbolAtModule(this->pool, "AAA");
+    ASSERT_NO_FATAL_FAILURE(this->expect(Handle{
+            .commitID = 0,
+            .type = TYPE::Int,
+            .index = 0,
+            .attr = FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY,
+            .modID = 2,
+    }, handle));
+
+    handle = modType3.lookupVisibleSymbolAtModule(this->pool, "_AAA"); // not import private symbol
+    ASSERT_EQ(nullptr, handle);
+
+    handle = modType3.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("_string")); // not import private symbol
+    ASSERT_EQ(nullptr, handle);
+
+    handle = modType3.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("integer"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(Handle{
+            .commitID = 3,
+            .type = TYPE::Int,
+            .index = 0,
+            .attr = FieldAttribute::ALIAS,
+            .modID = 2,
+    }, handle));
+
+    ASSERT_EQ(0, modType3.getHandleMap().size());
+    ASSERT_EQ(modType, this->pool.get(toTypeId(modType3.getChildAt(0))));
+    ASSERT_EQ(modType2, this->pool.get(toTypeId(modType3.getChildAt(1))));
 }
 
 int main(int argc, char **argv) {

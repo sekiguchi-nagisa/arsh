@@ -235,6 +235,18 @@ TypeOrError TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &
     return Ok(type);
 }
 
+ModType & TypePool::createModType(unsigned short modID, std::unordered_map<std::string, FieldHandle> &&handles,
+                                  FlexBuffer<ChildModEntry> &&children, unsigned int index) {
+    auto name = ModType::toModName(modID);
+    DSType *type = this->get(name);
+    if(type == nullptr) {
+        type = &this->newType<ModType>(this->get(TYPE::Any), modID,
+                                       std::move(handles), std::move(children), index);
+    }
+    assert(type->isModType());
+    return static_cast<ModType&>(*type);
+}
+
 class TypeDecoder {
 private:
     TypePool &pool;

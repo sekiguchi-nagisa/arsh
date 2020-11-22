@@ -17,6 +17,7 @@
 #include <cassert>
 #include <array>
 
+#include "scope.h"
 #include "symbol_table.h"
 #include "core.h"
 #include "logger.h"
@@ -320,9 +321,26 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *path, FilePtr &f
 }
 
 ModType & ModuleLoader::createModType(TypePool &pool, const ModuleScope &scope, const std::string &fullpath) {
-    auto &modType = pool.newType<ModType>(
-            pool.get(TYPE::Any), scope.getModID(),
-            scope.global().getHandleMap(), scope.getChilds(), this->gvarCount);
+    std::unordered_map<std::string, FieldHandle> handles;
+    assert(scope.getModID() > 0);
+    for(auto &e : scope.global().getHandleMap()) {
+        if(e.second.getModID() == scope.getModID()) {
+            handles.emplace(e.first, e.second);
+        }
+    }
+    auto children = FlexBuffer<ChildModEntry>(scope.getChilds().begin(), scope.getChilds().end());
+
+    auto &modType = pool.createModType(scope.getModID(), std::move(handles), std::move(children), this->gvarCount);
+    this->gvarCount++;  // reserve module object entry
+    auto iter = this->indexMap.find(fullpath);
+    assert(iter != this->indexMap.end());
+    assert(!iter->second);
+    iter->second.setModType(modType);
+    return modType;
+}
+
+const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scope, const std::string &fullpath) {
+    auto &modType = scope.toModType(pool);
     this->gvarCount++;  // reserve module object entry
     auto iter = this->indexMap.find(fullpath);
     assert(iter != this->indexMap.end());

@@ -164,6 +164,8 @@ constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
 // =====  for symbol lookup =====
 constexpr const char *CMD_SYMBOL_SUFFIX = "%c";
 constexpr const char *TYPE_ALIAS_SYMBOL_SUFFIX = "%t";
+constexpr const char *MOD_HOLDER_SYMBOL_SUFFIX = "%m";
+
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 
 constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {
@@ -183,6 +185,13 @@ inline std::string toTypeAliasFullName(const std::string &alias) {
     return name;
 }
 
+inline std::string toModHolderName(unsigned short id, bool global) {
+    std::string name = global ? "_g" : "_n";
+    name += std::to_string(id);
+    name += MOD_HOLDER_SYMBOL_SUFFIX;
+    return name;
+}
+
 inline bool isCmdFullName(StringRef ref) {
     return ref.endsWith(CMD_SYMBOL_SUFFIX);
 }
@@ -191,8 +200,20 @@ inline bool isTypeAliasFullName(StringRef ref) {
     return ref.endsWith(TYPE_ALIAS_SYMBOL_SUFFIX);
 }
 
+inline bool isModHolderName(StringRef ref) {
+    return ref.endsWith(MOD_HOLDER_SYMBOL_SUFFIX);
+}
+
+inline bool isNamedModHolderName(StringRef ref) {
+    return ref.startsWith("_n") && isModHolderName(ref);
+}
+
+inline bool isGlobalModHolderName(StringRef ref) {
+    return ref.startsWith("_g") && isModHolderName(ref);
+}
+
 inline bool isVarName(StringRef ref) {
-    return !isCmdFullName(ref) && !isTypeAliasFullName(ref);
+    return !isCmdFullName(ref) && !isTypeAliasFullName(ref) && !isModHolderName(ref);
 }
 
 inline bool isMagicMethodName(StringRef ref) {

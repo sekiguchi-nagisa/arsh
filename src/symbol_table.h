@@ -364,6 +364,8 @@ public:
     }
 };
 
+class NameScope;
+
 struct ModDiscardPoint {
     unsigned int idCount;
     unsigned int gvarCount;
@@ -431,6 +433,8 @@ public:
     }
 
     ModType &createModType(TypePool &pool, const ModuleScope &scope, const std::string &fullpath);
+
+    const ModType &createModType(TypePool &pool, const NameScope &scope, const std::string &fullpath);
 
     unsigned int modSize() const {
         return this->indexMap.size();

@@ -242,7 +242,9 @@ public:
     OP(SECONDS    , (1u << 5u)) \
     OP(BUILTIN    , (1u << 6u)) \
     OP(MOD_CONST  , (1u << 7u)) \
-    OP(ALIAS      , (1u << 8u))
+    OP(ALIAS      , (1u << 8u)) \
+    OP(NAMED_MOD  , (1u << 9u)) \
+    OP(GLOBAL_MOD , (1u << 10u))
 
 enum class FieldAttribute : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
@@ -480,10 +482,6 @@ private:
     std::unordered_map<std::string, FieldHandle> handleMap;
 
 public:
-    ModType(unsigned int id, DSType &superType, unsigned short modID,
-            const std::unordered_map<std::string, FieldHandle> &handleMap,
-            const FlexBuffer<ChildModEntry> &childs, unsigned int index);
-
     ModType(unsigned int id, const DSType &superType, unsigned short modID,
             std::unordered_map<std::string, FieldHandle> &&handles,
             FlexBuffer<ChildModEntry> &&children, unsigned int index) :
@@ -520,6 +518,13 @@ public:
         return FieldHandle(
                 0, *this, this->index,
                 FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL, this->modID);
+    }
+
+    FieldHandle toModHolder(bool global) const {
+        return FieldHandle(
+                0, *this, this->index,
+                FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL | (global ? FieldAttribute::GLOBAL_MOD : FieldAttribute::NAMED_MOD),
+                this->modID);
     }
 
     std::string toName() const {

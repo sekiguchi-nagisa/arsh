@@ -142,12 +142,6 @@ public:
     TypePool();
     ~TypePool();
 
-    template <typename T, typename ...A>
-    T &newType(A &&...arg) {
-        unsigned int id = this->typeTable.size();
-        return *static_cast<T *>(this->addType(new T(id, std::forward<A>(arg)...)));
-    }
-
     DSType &get(TYPE t) const {
         return this->get(static_cast<unsigned int>(t));
     }
@@ -219,6 +213,9 @@ public:
      */
     TypeOrError createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
+    ModType &createModType(unsigned short modID, std::unordered_map<std::string, FieldHandle> &&handles,
+                           FlexBuffer<ChildModEntry> &&children, unsigned int index);
+
     const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
 
     const MethodHandle *lookupMethod(unsigned int typeId, const std::string &methodName) {
@@ -251,6 +248,12 @@ private:
             return nullptr;
         }
         return &this->get(iter->second);
+    }
+
+    template <typename T, typename ...A>
+    T &newType(A &&...arg) {
+        unsigned int id = this->typeTable.size();
+        return *static_cast<T *>(this->addType(new T(id, std::forward<A>(arg)...)));
     }
 
     /**

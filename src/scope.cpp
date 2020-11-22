@@ -93,31 +93,24 @@ NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&
     return this->defineAlias(toTypeAliasFullName(name), FieldHandle(0, type, 0, FieldAttribute{}, 0));
 }
 
-static bool needGlobalImport(FlexBuffer<ChildModEntry> &entries, ChildModEntry entry) {
-    auto iter = std::lower_bound(entries.begin(), entries.end(), entry,
-                                 [](ChildModEntry x, ChildModEntry y) {
-                                     return toTypeId(x) < toTypeId(y);
-                                 });
-    if(iter != entries.end() && toTypeId(*iter) == toTypeId(entry)) {
-        if(isGlobal(*iter)) {
-            return false;
+std::string NameScope::importForeignHandles(const ModType &type, const bool global) {
+    auto holderName = toModHolderName(type.getModID(), global);
+    // check if already imported
+    {
+        auto *handle = this->find(holderName);
+        if(handle) {
+            assert(!empty(handle->attr() & (FieldAttribute::GLOBAL_MOD | FieldAttribute::NAMED_MOD)));
+            return "";
         }
-        if(isGlobal(entry)) {
-            *iter = entry;
-        }
-    } else {
-        entries.insert(iter, entry);
     }
-    return isGlobal(entry);
-}
 
-std::string NameScope::importForeignHandles(const ModType &type, bool global) {
-    if(!needGlobalImport(this->children, toChildModEntry(type, global))) {
+    // define module holder
+    this->addNewAlias(std::move(holderName), type.toModHolder(global));
+    if(!global) {
         return "";
     }
 
     for(auto &e : type.getHandleMap()) {
-        assert(!hasFlag(e.second.attr(), FieldAttribute::BUILTIN));
         assert(this->modId != e.second.getModID());
         StringRef ref = e.first;
         if(ref.startsWith("_")) {
@@ -139,6 +132,37 @@ std::string NameScope::importForeignHandles(const ModType &type, bool global) {
     return "";
 }
 
+static void tryInsertByAscendingOrder(FlexBuffer<ChildModEntry> &children, ChildModEntry entry) {
+    auto iter = std::lower_bound(children.begin(), children.end(), entry,
+                                 [](ChildModEntry x, ChildModEntry y) {
+                                     return toTypeId(x) < toTypeId(y);
+                                 });
+    if(iter != children.end() && toTypeId(*iter) == toTypeId(entry)) {
+        if(isGlobal(entry)) {
+            *iter = entry;
+        }
+    } else {
+        children.insert(iter, entry);
+    }
+}
+
+const ModType & NameScope::toModType(TypePool &pool) const {
+    std::unordered_map<std::string, FieldHandle> newHandles;
+    FlexBuffer<ChildModEntry> newChildren;
+
+    for(auto &e : this->getHandles()) {
+        if(!empty(e.second.attr() & (FieldAttribute::GLOBAL_MOD | FieldAttribute::NAMED_MOD))) {
+            auto &modType = pool.get(e.second.getTypeID());
+            bool global = hasFlag(e.second.attr(), FieldAttribute::GLOBAL_MOD);
+            tryInsertByAscendingOrder(newChildren, toChildModEntry(static_cast<const ModType&>(modType), global));
+        } else if(e.second.getModID() == this->modId) {
+            newHandles.emplace(e.first, e.second);
+        }
+    }
+    return pool.createModType(this->modId, std::move(newHandles),
+                              std::move(newChildren), this->getMaxGlobalVarIndex());
+}
+
 const FieldHandle * NameScope::lookup(const std::string &name) const {
     for(auto *scope = this; scope != nullptr; scope = scope->parent.get()) {
         auto *handle = scope->find(name);
@@ -157,11 +181,9 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
             ++iter;
         }
     }
-    this->children.clear();
 }
 
 NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
-    assert(handle.getModID() == this->modId);
     assert(this->kind != FUNC);
 
     const auto attr = handle.attr();

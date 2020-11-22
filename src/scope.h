@@ -135,10 +135,6 @@ public:
         return this->handles;
     }
 
-    const FlexBuffer<ChildModEntry> &getChildren() const {
-        return this->children;
-    }
-
     auto begin() const {
         return this->handles.begin();
     }
@@ -192,13 +188,15 @@ public:
     NameLookupResult defineTypeAlias(const TypePool &pool, std::string &&name, const DSType &type);
 
     /**
-     * import handle from foreign module (mod type)
+     * import handle from foreign module (ModType)
      * @param type
      * @param global
      * @return
      * if found name conflict, return conflicted name
      */
     std::string importForeignHandles(const ModType &type, bool global);
+
+    const ModType &toModType(TypePool &pool) const;
 
     // for name lookup
     /**
@@ -281,7 +279,9 @@ private:
     }
 
     NameLookupResult addNewForeignHandle(std::string &&name, const FieldHandle &handle) {
-        return this->add(std::move(name), FieldHandle(this->commitId(), handle, handle.getModID()));
+        auto newAttr = handle.attr();
+        setFlag(newAttr, FieldAttribute::ALIAS);
+        return this->add(std::move(name), FieldHandle(this->commitId(), handle, newAttr, handle.getModID()));
     }
 };
 
