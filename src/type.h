@@ -240,11 +240,10 @@ public:
     OP(FUNC_HANDLE, (1u << 3u)) \
     OP(RANDOM     , (1u << 4u)) \
     OP(SECONDS    , (1u << 5u)) \
-    OP(BUILTIN    , (1u << 6u)) \
-    OP(MOD_CONST  , (1u << 7u)) \
-    OP(ALIAS      , (1u << 8u)) \
-    OP(NAMED_MOD  , (1u << 9u)) \
-    OP(GLOBAL_MOD , (1u << 10u))
+    OP(MOD_CONST  , (1u << 6u)) \
+    OP(ALIAS      , (1u << 7u)) \
+    OP(NAMED_MOD  , (1u << 8u)) \
+    OP(GLOBAL_MOD , (1u << 9u))
 
 enum class FieldAttribute : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
