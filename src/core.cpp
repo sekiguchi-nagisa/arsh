@@ -155,7 +155,7 @@ int GetOptState::operator()(const ArrayObject &obj, const char *optStr) {
 
 // core api definition
 const DSValue &getGlobal(const DSState &st, const char *varName) {
-    auto *handle = st.symbolTable.lookupHandle(varName);
+    auto *handle = st.rootModScope->lookup(varName);
     assert(handle != nullptr);
     return st.getGlobal(handle->getIndex());
 }

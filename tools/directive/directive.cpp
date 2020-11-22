@@ -65,6 +65,7 @@ static std::pair<std::string, unsigned int> extractDirective(std::istream &input
 class DirectiveInitializer : public TypeChecker {
 private:
     std::string sourceName;
+    unsigned int varCount{0};   // for scope
     using AttributeHandler = std::function<void(Node &, Directive &)>;
     using Handler = std::pair<DSType *, AttributeHandler>;
     std::unordered_map<std::string, Handler> handlerMap;
@@ -72,7 +73,7 @@ private:
     std::unique_ptr<TypeCheckError> error;
 
 public:
-    DirectiveInitializer(const char *sourceName, TypePool &pool, SymbolTable &symbolTable);
+    DirectiveInitializer(const char *sourceName, TypePool &pool);
     ~DirectiveInitializer() override = default;
 
     void operator()(ApplyNode &node, Directive &d);
@@ -139,8 +140,9 @@ static bool checkDirectiveName(ApplyNode &node) {
     return exprNode.getVarName() == "test";
 }
 
-DirectiveInitializer::DirectiveInitializer(const char *sourceName, TypePool &typePool, SymbolTable &symbolTable) :
-        TypeChecker(typePool, symbolTable, false, nullptr), sourceName(sourceName) {
+DirectiveInitializer::DirectiveInitializer(const char *sourceName, TypePool &typePool) :
+        TypeChecker(typePool, false, nullptr), sourceName(sourceName) {
+    this->curScope = IntrusivePtr<NameScope>::create(std::ref(this->varCount));
     this->setVarName("0", this->typePool.get(TYPE::String));
 }
 
@@ -360,7 +362,7 @@ bool DirectiveInitializer::checkNode(NodeKind kind, const Node &node) {
 }
 
 void DirectiveInitializer::setVarName(const char *name, DSType &type) {
-    this->symbolTable.newHandle(name, type, FieldAttribute());
+    this->curScope->defineHandle(name, type, FieldAttribute());
 }
 
 
@@ -403,8 +405,7 @@ static bool initDirective(const char *fileName, std::istream &input, Directive &
 
     ModuleLoader loader;
     TypePool pool;
-    SymbolTable symbolTable(loader);
-    DirectiveInitializer initializer(fileName, pool, symbolTable);
+    DirectiveInitializer initializer(fileName, pool);
     initializer(*node, directive);
     if(initializer.hasError()) {
         auto &e = initializer.getError();

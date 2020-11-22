@@ -102,7 +102,7 @@ static void initEnv() {
 }
 
 DSState::DSState() :
-        symbolTable(this->modLoader),
+        builtinModScope(this->modLoader.createGlobalScope("(builtin)", nullptr)),
         emptyFDObj(DSValue::create<UnixFdObject>(-1)),
         baseTime(std::chrono::system_clock::now()) {
     // init envs
@@ -553,11 +553,11 @@ static NativeCode initCode(NativeOp op) {
     return NativeCode(code);
 }
 
-static const FieldHandle *lookupUdcImpl(const SymbolTable &symbolTable, const TypePool &pool,
+static const FieldHandle *lookupUdcImpl(const NameScope &scope, const TypePool &pool,
                                         const ModType *belongType, const char *cmdName) {
     std::string name = toCmdFullName(cmdName);
     if(belongType == nullptr) {
-        return symbolTable.lookupHandle(name);
+        return scope.lookup(name);
     } else {
         return belongType->lookupVisibleSymbolAtModule(pool, name);
     }
@@ -582,7 +582,7 @@ static bool lookupUdc(const DSState &state, const char *name, Command &cmd, bool
             modType = static_cast<const ModType*>(&state.typePool.get(e->getTypeId()));
         }
     }
-    auto handle = lookupUdcImpl(state.symbolTable, state.typePool, modType, name);
+    auto handle = lookupUdcImpl(*state.rootModScope, state.typePool, modType, name);
     auto *udcObj = handle != nullptr ?
             &typeAs<FuncObject>(state.getGlobal(handle->getIndex())) : nullptr;
 
@@ -645,7 +645,7 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
             return cmd;
         }
         if(cmd.filePath == nullptr || S_ISDIR(getStMode(cmd.filePath))) {
-            auto handle = state.symbolTable.lookupHandle(VAR_CMD_FALLBACK);
+            auto handle = state.builtinModScope->lookup(VAR_CMD_FALLBACK);
             unsigned int index = handle->getIndex();
             if(state.getGlobal(index).isObject()) {
                 bool r = lookupUdc(state, CMD_FALLBACK_HANDLER, cmd, true); //FIXME:
@@ -1827,13 +1827,13 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const Discard
     }
 
     if(discardPoint && !ret) {
-        discardAll(state.modLoader, state.symbolTable, state.typePool, *discardPoint);
+        discardAll(state.modLoader, *state.rootModScope, state.typePool, *discardPoint);
     }
     return value;
 }
 
 int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, const DiscardPoint &discardPoint) {
-    state.globals.resize(state.symbolTable.getMaxGVarIndex());
+    state.globals.resize(state.rootModScope->getMaxGlobalVarIndex());
     state.stack.reset();
 
     state.stack.wind(0, 0, &code);
@@ -2013,7 +2013,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
 }
 
 void VM::callTermHook(DSState &state, DSErrorKind kind, DSValue &&except) {
-    auto funcObj = state.getGlobal(state.symbolTable.lookupHandle(VAR_TERM_HOOK)->getIndex());
+    auto funcObj = state.getGlobal(state.builtinModScope->lookup(VAR_TERM_HOOK)->getIndex());
     if(funcObj.kind() == DSValueKind::INVALID) {
         return;
     }

@@ -19,7 +19,7 @@
 
 #include "node.h"
 #include "lexer.h"
-#include "symbol_table.h"
+#include "scope.h"
 #include "tcerror.h"
 #include "misc/buffer.hpp"
 #include "misc/hash.hpp"
@@ -159,7 +159,7 @@ class TypeChecker : protected NodeVisitor {
 protected:
     TypePool &typePool;
 
-    SymbolTable &symbolTable;
+    IntrusivePtr<NameScope> curScope;
 
     /**
      * contains current return type of current function
@@ -179,17 +179,13 @@ protected:
     ObserverPtr<CodeCompletionHandler> ccHandler;
 
 public:
-    TypeChecker(TypePool &pool, SymbolTable &symbolTable, bool toplevelPrinting, const Lexer *lex) :
-            typePool(pool), symbolTable(symbolTable),
-            toplevelPrinting(toplevelPrinting), lexer(lex) { }
+    TypeChecker(TypePool &pool, bool toplevelPrinting, const Lexer *lex) :
+            typePool(pool), toplevelPrinting(toplevelPrinting), lexer(lex) { }
 
     ~TypeChecker() override = default;
 
-    std::unique_ptr<Node> operator()(const DSType *prevType, std::unique_ptr<Node> &&node);
-
-    SymbolTable &getSymbolTable() {
-        return this->symbolTable;
-    }
+    std::unique_ptr<Node> operator()(const DSType *prevType,
+            std::unique_ptr<Node> &&node, IntrusivePtr<NameScope> global);
 
     TypePool &getTypePool() {
         return this->typePool;
@@ -301,9 +297,9 @@ protected:
     }
 
     auto inScope() {
-        this->symbolTable.enterScope();
+        this->curScope = this->curScope->enterScope(NameScope::BLOCK);
         return finally([&]{
-            this->symbolTable.exitScope();
+            this->curScope = this->curScope->exitScope();
         });
     }
 
@@ -318,11 +314,11 @@ protected:
 
     auto inFunc(const DSType &returnType) {
         this->curReturnType = &returnType;
-        this->symbolTable.enterFunc();
-        this->symbolTable.enterScope();
+        this->curScope = this->curScope->enterScope(NameScope::FUNC);
+        this->curScope = this->curScope->enterScope(NameScope::BLOCK);
         return finally([&]{
-            this->symbolTable.exitScope();
-            this->symbolTable.exitFunc();
+            this->curScope = this->curScope->exitScope();
+            this->curScope = this->curScope->exitScope();
             this->curReturnType = nullptr;
         });
     }

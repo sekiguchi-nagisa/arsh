@@ -20,11 +20,12 @@
 #include <cassert>
 #include <functional>
 
-#include "symbol_table.h"
 #include "type_pool.h"
 #include "misc/resource.hpp"
 
 namespace ydsh {
+
+// for name lookup
 
 enum class NameLookupError {
     DEFINED,
@@ -102,11 +103,11 @@ public:
         return this->kind == GLOBAL;
     }
 
-    bool isBuiltinModule() const {
+    bool inBuiltinModule() const {
         return this->modId == 0;
     }
 
-    bool isRootModule() const {
+    bool inRootModule() const {
         return this->modId == 1;
     }
 
@@ -284,6 +285,188 @@ private:
         return this->add(std::move(name), FieldHandle(this->commitId(), handle, newAttr, handle.getModID()));
     }
 };
+
+// for module loading
+
+class ModLoadingError {
+private:
+    int value;
+
+public:
+    explicit ModLoadingError(int value) : value(value) {}
+
+    int getErrNo() const {
+        return this->value;
+    }
+
+    bool isFileNotFound() const {
+        return this->getErrNo() == ENOENT;
+    }
+
+    bool isCircularLoad() const {
+        return this->getErrNo() == 0;
+    }
+};
+
+using ModResult = Union<const char *, unsigned int, ModLoadingError>;
+
+enum class ModLoadOption {
+    IGNORE_NON_REG_FILE = 1 << 0,
+};
+
+template <> struct allow_enum_bitop<ModLoadOption> : std::true_type {};
+
+class ModEntry {
+private:
+    unsigned int index; // equivalent to modID
+    unsigned int typeId;
+
+public:
+    explicit ModEntry(unsigned int index) : index(index), typeId(0) {}
+
+    void setModType(const ModType &type) {
+        this->typeId = type.typeId();
+    }
+
+    unsigned int getIndex() const {
+        return this->index;
+    }
+
+    /**
+     *
+     * @return
+     * if not set mod type, return 0.
+     */
+    unsigned int getTypeId() const {
+        return this->typeId;
+    }
+
+    explicit operator bool() const {
+        return this->getTypeId() > 0;
+    }
+
+    bool isModule() const {
+        return this->getTypeId() > 0;
+    }
+};
+
+class NameScope;
+
+struct ModDiscardPoint {
+    unsigned int idCount;
+    unsigned int gvarCount;
+};
+
+class ModuleLoader {
+private:
+    std::unordered_map<StringRef, ModEntry> indexMap;
+
+    unsigned int gvarCount{0};
+
+    static constexpr unsigned int MAX_MOD_NUM = UINT16_MAX;
+
+public:
+    NON_COPYABLE(ModuleLoader);
+
+    ModuleLoader() = default;
+
+    ~ModuleLoader() {
+        for(auto &e : this->indexMap) {
+            free(const_cast<char*>(e.first.data()));
+        }
+    }
+
+    ModDiscardPoint getDiscardPoint() const {
+        return {
+                .idCount = this->modSize(),
+                .gvarCount = this->gvarCount,
+        };
+    }
+
+    void discard(ModDiscardPoint discardPoint);
+
+    /**
+     * resolve module path or module type
+     * @param scriptDir
+     * may be null
+     * @param modPath
+     * not null
+     * @param filePtr
+     * write resolved file pointer
+     * @return
+     */
+    ModResult loadImpl(const char *scriptDir, const char *modPath, FilePtr &filePtr, ModLoadOption option);
+
+    /**
+     * search module from scriptDir => LOCAL_MOD_DIR => SYSTEM_MOD_DIR
+     * @param scriptDir
+     * may be null. if not full path, not search next module path
+     * @param path
+     * if full path, not search next module path
+     * @param filePtr
+     * if module loading failed, will be null
+     * @param option
+     * @return
+     */
+    ModResult load(const char *scriptDir, const char *path, FilePtr &filePtr, ModLoadOption option);
+
+    IntrusivePtr<NameScope> createGlobalScope(const char *name, IntrusivePtr<NameScope> parent);
+
+    IntrusivePtr<NameScope> createGlobalScopeFromFullpath(StringRef fullpath, IntrusivePtr<NameScope> parent);
+
+    const ModType &createModType(TypePool &pool, const NameScope &scope, const std::string &fullpath);
+
+    unsigned int modSize() const {
+        return this->indexMap.size();
+    }
+
+    const ModEntry *find(StringRef key) const {
+        auto iter = this->indexMap.find(key);
+        if(iter == this->indexMap.end()) {
+            return nullptr;
+        }
+        return &iter->second;
+    }
+
+    auto begin() const {
+        return this->indexMap.begin();
+    }
+
+    auto end() const {
+        return this->indexMap.end();
+    }
+
+private:
+    ModResult addNewModEntry(CStrPtr &&ptr) {
+        StringRef key(ptr.get());
+        auto pair = this->indexMap.emplace(key, ModEntry(this->indexMap.size()));
+        if(!pair.second) {  // already registered
+            auto &e = pair.first->second;
+            if(e) {
+                return e.getTypeId();
+            }
+            return ModLoadingError(0);
+        }
+        if(this->indexMap.size() == MAX_MOD_NUM) {
+            fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
+        }
+        return ptr.release();
+    }
+};
+
+struct DiscardPoint {
+    const ModDiscardPoint mod;
+    const ScopeDiscardPoint scope;
+    const TypeDiscardPoint type;
+};
+
+inline void discardAll(ModuleLoader &loader, NameScope &scope,
+                       TypePool &typePool, const DiscardPoint &discardPoint) {
+    loader.discard(discardPoint.mod);
+    scope.discard(discardPoint.scope);
+    typePool.discard(discardPoint.type);
+}
+
 
 } // namespace ydsh
 

@@ -2,7 +2,7 @@
 
 #include <type.h>
 #include <type_checker.h>
-#include <symbol_table.h>
+#include <scope.h>
 
 using namespace ydsh;
 
@@ -105,12 +105,14 @@ struct TypeFactory<Func_t<R, P...>> {
 class TypeTest : public ::testing::Test {
 public:
     ModuleLoader loader;
-    SymbolTable symbolTable;
+    IntrusivePtr<NameScope> scope;
     TypePool pool;
     TypeChecker checker;
 
 public:
-    TypeTest() : symbolTable(this->loader), checker(this->pool, this->symbolTable, false, nullptr) {}
+    TypeTest() : checker(this->pool, false, nullptr) {
+        this->scope = this->loader.createGlobalScope("(root)", nullptr);
+    }
 
     virtual void assertTypeName(const char *typeName, DSType &type) {
         std::string name(typeName);
@@ -152,7 +154,7 @@ public:
     template <typename T>
     DSType &toType() {
         auto t = TypeFactory<T>{}();
-        auto node = this->checker(nullptr, std::move(t));
+        auto node = this->checker(nullptr, std::move(t), this->scope);
         assert(node->is(NodeKind::TypeOp));
         return static_cast<TypeOpNode &>(*node).getExprNode().getType();
     }

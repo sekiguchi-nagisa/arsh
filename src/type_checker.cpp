@@ -63,7 +63,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         auto &typeNode = cast<BaseTypeNode>(node);
 
         // fist lookup type alias
-        auto handle = this->symbolTable.lookupHandle(toTypeAliasFullName(typeNode.getTokenText()));
+        auto handle = this->curScope->lookup(toTypeAliasFullName(typeNode.getTokenText()));
         if(handle) {
             return Ok(&this->typePool.get(handle->getTypeID()));
         }
@@ -77,7 +77,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
         }
         auto &modType = static_cast<const ModType&>(recvType);
         std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
-        auto *handle = this->symbolTable.lookupField(modType, typeName);
+        auto *handle = this->curScope->lookupField(modType, typeName);
         if(!handle) {
             auto &nameNode = qualifiedNode.getNameTypeNode();
             RAISE_TC_ERROR(UndefinedField, nameNode, nameNode.getTokenText().c_str());
@@ -209,9 +209,9 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
     }
 
     // set base index of current scope
-    blockNode.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
-    blockNode.setVarSize(this->symbolTable.curScope().getVarSize());
-    blockNode.setMaxVarSize(this->symbolTable.getMaxVarIndex() - blockNode.getBaseIndex());
+    blockNode.setBaseIndex(this->curScope->getBaseIndex());
+    blockNode.setVarSize(this->curScope->getLocalSize());
+    blockNode.setMaxVarSize(this->curScope->getMaxLocalVarIndex() - blockNode.getBaseIndex());
 
     assert(blockType != nullptr);
     blockNode.setType(*blockType);
@@ -263,16 +263,16 @@ DSType& TypeChecker::resolveCoercionOfJumpValue() {
 
 const FieldHandle *TypeChecker::addEntry(const Node &node, const std::string &symbolName,
                                    const DSType &type, FieldAttribute attribute) {
-    auto pair = this->symbolTable.newHandle(symbolName, type, attribute);
-    if(!pair) {
-        switch(pair.asErr()) {
-        case SymbolError::DEFINED:
+    auto ret = this->curScope->defineHandle(std::string(symbolName), type, attribute);
+    if(!ret) {
+        switch(ret.asErr()) {
+        case NameLookupError::DEFINED:
             RAISE_TC_ERROR(DefinedSymbol, node, symbolName.c_str());
-        case SymbolError::LIMIT:
+        case NameLookupError::LIMIT:
             RAISE_TC_ERROR(LocalLimit, node);
         }
     }
-    return pair.asOk();
+    return ret.asOk();
 }
 
 static auto initDeniedNameList() {
@@ -290,12 +290,12 @@ const FieldHandle * TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
     }
 
     std::string name = toCmdFullName(node.getCmdName());
-    auto pair = this->symbolTable.newHandle(name, this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
-    if(!pair) {
-        assert(pair.asErr() == SymbolError::DEFINED);
+    auto ret = this->curScope->defineHandle(std::move(name), this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
+    if(!ret) {
+        assert(ret.asErr() == NameLookupError::DEFINED);
         RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str());
     }
-    return pair.asOk();
+    return ret.asOk();
 }
 
 // for ApplyNode type checking
@@ -328,7 +328,7 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
 }
 
 HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
-    auto handle = this->symbolTable.lookupHandle(recvNode.getVarName());
+    auto handle = this->curScope->lookup(recvNode.getVarName());
     if(handle == nullptr) {
         RAISE_TC_ERROR(UndefinedSymbol, recvNode, recvNode.getVarName().c_str());
     }
@@ -348,7 +348,7 @@ HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
 
 bool TypeChecker::checkAccessNode(AccessNode &node) {
     auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
-    auto *handle = this->symbolTable.lookupField(recvType, node.getFieldName());
+    auto *handle = this->curScope->lookupField(recvType, node.getFieldName());
     if(handle == nullptr) {
         return false;
     }
@@ -505,7 +505,7 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 }
 
 void TypeChecker::visitVarNode(VarNode &node) {
-    auto handle = this->symbolTable.lookupHandle(node.getVarName());
+    auto handle = this->curScope->lookup(node.getVarName());
     if(handle == nullptr) {
         RAISE_TC_ERROR(UndefinedSymbol, node, node.getVarName().c_str());
     }
@@ -796,7 +796,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
         auto scope = this->inScope();
         if(node.isLastPipe()) { // register pipeline state
             this->addEntry(node, "%%pipe", this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
-            node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
+            node.setBaseIndex(this->curScope->getBaseIndex());
         }
         auto &type = this->checkTypeExactly(*node.getNodes()[size - 1]);
         node.setType(node.isLastPipe() ? type : this->typePool.get(TYPE::Boolean));
@@ -814,7 +814,7 @@ void TypeChecker::visitWithNode(WithNode &node) {
         this->checkTypeAsExpr(*e);
     }
 
-    node.setBaseIndex(this->symbolTable.curScope().getBaseIndex());
+    node.setBaseIndex(this->curScope->getBaseIndex());
     node.setType(type);
 }
 
@@ -861,7 +861,7 @@ void TypeChecker::visitBlockNode(BlockNode &node) {
 void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
     TypeNode &typeToken = node.getTargetTypeNode();
     auto &type = this->checkTypeExactly(typeToken);
-    auto ret = this->symbolTable.addTypeAlias(this->typePool, node.getAlias(), type);
+    auto ret = this->curScope->defineTypeAlias(this->typePool, std::string(node.getAlias()), type);
     if(!ret) {
         RAISE_TC_ERROR(DefinedTypeAlias, node, node.getAlias().c_str());
     }
@@ -1462,7 +1462,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
         }
         // check type func body
         this->checkTypeWithCurrentScope(node.getBlockNode());
-        node.setMaxVarNum(this->symbolTable.getMaxVarIndex());
+        node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
     }
 
     // insert terminal node if not found
@@ -1505,7 +1505,7 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
 
         // check type command body
         this->checkTypeWithCurrentScope(node.getBlockNode());
-        node.setMaxVarNum(this->symbolTable.getMaxVarIndex());
+        node.setMaxVarNum(this->curScope->getMaxLocalVarIndex());
     }
 
     // insert return node if not found
@@ -1530,7 +1530,7 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
     assert(this->isTopLevel());
 
     // import module
-    auto ret = this->symbolTable.import(node.getModType(), node.getName().empty());
+    auto ret = this->curScope->importForeignHandles(node.getModType(), node.getName().empty());
     if(!ret.empty()) {
         RAISE_TC_ERROR(ConflictSymbol, node, ret.c_str(), node.getPathName().c_str());
     }
@@ -1538,14 +1538,14 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
         auto handle = node.getModType().toHandle();
 
         // register actual module handle
-        if(!this->symbolTable.addAlias(node.getName(), handle)) {
+        if(!this->curScope->defineAlias(std::string(node.getName()), handle)) {
             RAISE_TC_ERROR(DefinedSymbol, node, node.getName().c_str());
         }
         std::string cmdName = toCmdFullName(node.getName());
-        if(!this->symbolTable.addAlias(cmdName, handle)) {  // for module subcommand
+        if(!this->curScope->defineAlias(std::move(cmdName), handle)) {  // for module subcommand
             RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
         }
-        if(!this->symbolTable.addTypeAlias(this->typePool, node.getName(), node.getModType())) {
+        if(!this->curScope->defineTypeAlias(this->typePool, std::string(node.getName()), node.getModType())) {
             RAISE_TC_ERROR(DefinedTypeAlias, node, node.getName().c_str());
         }
     }
@@ -1746,12 +1746,16 @@ static bool mayBeCmd(const Node &node) {
     return false;
 }
 
-std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&node) {
+std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType,
+        std::unique_ptr<Node> &&node, IntrusivePtr<NameScope> global) {
+    // set scope
+    this->curScope = std::move(global);
+
     if(prevType != nullptr && prevType->isNothingType()) {
         RAISE_TC_ERROR(Unreachable, *node);
     }
 
-    if(this->toplevelPrinting && this->symbolTable.isRootModule() && !mayBeCmd(*node)) {
+    if(this->toplevelPrinting && this->curScope->inRootModule() && !mayBeCmd(*node)) {
         this->checkTypeExactly(*node);
         node = this->newPrintOpNode(std::move(node));
     } else {

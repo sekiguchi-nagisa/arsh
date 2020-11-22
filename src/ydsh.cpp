@@ -37,7 +37,7 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError, 
     if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
         auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");
-        ByteCodeDumper(fp, state.typePool, state.symbolTable.getMaxGVarIndex())(code);
+        ByteCodeDumper(fp, state.typePool, state.rootModScope->getMaxGlobalVarIndex())(code);
     }
 
     if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
@@ -65,7 +65,8 @@ private:
 
 public:
     Compiler(DSState &state, Lexer &&lexer) :
-            frontEnd(state.modLoader, std::move(lexer), state.typePool, state.symbolTable, state.execMode,
+            frontEnd(state.modLoader, std::move(lexer), state.typePool,
+                     state.builtinModScope, state.rootModScope, state.execMode,
                      hasFlag(state.compileOption, CompileOption::INTERACTIVE)),
             reporter(newReporter()),
             uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get()),
@@ -127,7 +128,7 @@ int Compiler::operator()(const DiscardPoint &discardPoint, DSError *dsError, Com
     }
     this->frontEnd.teardownASTDump();
     if(!this->frontEnd.frontEndOnly()) {
-        code = this->codegen.finalize(this->frontEnd.getSymbolTable().getMaxVarIndex());
+        code = this->codegen.finalize(this->frontEnd.getMaxLocalVarIndex());
     }
 
     END:
@@ -152,7 +153,7 @@ static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError) {
     CompiledCode code;
     DiscardPoint discardPoint {
         .mod = state.modLoader.getDiscardPoint(),
-        .symbol = state.symbolTable.getDiscardPoint(),
+        .scope = state.rootModScope->getDiscardPoint(),
         .type = state.typePool.getDiscardPoint(),
     };
     int ret = compile(state, std::move(lexer), discardPoint, dsError, code);
@@ -165,7 +166,7 @@ static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError) {
 static void bindVariable(DSState &state, const char *varName,
         DSType *type, DSValue &&value, FieldAttribute attribute) {
     assert(type != nullptr);
-    auto handle = state.symbolTable.newHandle(varName, *type, attribute);
+    auto handle = state.builtinModScope->defineHandle(varName, *type, attribute);
     assert(static_cast<bool>(handle));
     state.setGlobal(handle.asOk()->getIndex(), std::move(value));
 }
@@ -370,11 +371,14 @@ static void initBuiltinVar(DSState &state) {
 }
 
 static void loadEmbeddedScript(DSState *state) {
+    state->rootModScope = state->builtinModScope;   // eval script in builtin module
+
     int ret = DSState_eval(state, "(embed)", embed_script, strlen(embed_script), nullptr);
     (void) ret;
     assert(ret == 0);
 
     // rest some state
+    state->rootModScope = state->modLoader.createGlobalScope("(root)", state->builtinModScope);
     state->lineNum = 1;
     state->setExitStatus(0);
 }
@@ -419,7 +423,6 @@ DSState *DSState_createWithMode(DSExecMode mode) {
     loadEmbeddedScript(ctx);
 
     ctx->execMode = mode;
-    ctx->symbolTable.closeBuiltin();
     return ctx;
 }
 
@@ -785,7 +788,7 @@ static char *getExecutablePath() {
 const char *DSState_initExecutablePath(DSState *st) {
     GUARD_NULL(st, nullptr);
 
-    auto *handle = st->symbolTable.lookupHandle(VAR_YDSH_BIN);
+    auto *handle = st->rootModScope->lookup(VAR_YDSH_BIN);
     assert(handle);
     auto ref = st->getGlobal(handle->getIndex()).asStrRef();
     if(!ref.empty()) {

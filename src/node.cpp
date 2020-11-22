@@ -20,7 +20,7 @@
 #include "constant.h"
 #include "object.h"
 #include "node.h"
-#include "symbol_table.h"
+#include "scope.h"
 
 // helper macro for node dumper
 #define NAME(f) #f
@@ -1226,11 +1226,11 @@ void NodeDumper::operator()(const Node &node) {
     this->leaveIndent();
 }
 
-void NodeDumper::finalize(const SymbolTable &symbolTable) {
+void NodeDumper::finalize(const NameScope &scope) {
     this->leaveIndent();
 
-    this->dumpRaw("maxVarNum", std::to_string(symbolTable.getMaxVarIndex()).c_str());
-    this->dumpRaw("maxGVarNum", std::to_string(symbolTable.getMaxGVarIndex()).c_str());
+    this->dumpRaw("maxVarNum", std::to_string(scope.getMaxLocalVarIndex()).c_str());
+    this->dumpRaw("maxGVarNum", std::to_string(scope.getMaxGlobalVarIndex()).c_str());
 
     this->leaveModule();
 

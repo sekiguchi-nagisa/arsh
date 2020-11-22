@@ -17,6 +17,9 @@
 #include <algorithm>
 
 #include "scope.h"
+#include "core.h"
+#include "logger.h"
+#include "misc/files.h"
 
 namespace ydsh {
 
@@ -61,7 +64,7 @@ IntrusivePtr<NameScope> NameScope::enterScope(Kind newKind) {
 
 static bool definedInBuiltin(const NameScope &scope, const std::string &name) {
     if(scope.isGlobal() && scope.parent) {
-        if(scope.parent->isBuiltinModule() && scope.parent->contains(name)) {
+        if(scope.parent->inBuiltinModule() && scope.parent->contains(name)) {
             assert(scope.parent->isGlobal());
             return true;
         }
@@ -112,15 +115,13 @@ std::string NameScope::importForeignHandles(const ModType &type, const bool glob
 
     for(auto &e : type.getHandleMap()) {
         assert(this->modId != e.second.getModID());
-        StringRef ref = e.first;
-        if(ref.startsWith("_")) {
+        StringRef name = e.first;
+        if(name.startsWith("_")) {
             continue;
         }
-        std::string symbolName = e.first;
         const auto &handle = e.second;
-        auto ret = this->addNewForeignHandle(std::move(symbolName), handle);
+        auto ret = this->addNewForeignHandle(name.toString(), handle);
         if(!ret) {
-            StringRef name = symbolName;
             if(isCmdFullName(name)) {
                 name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
             } else if(isTypeAliasFullName(name)) {
@@ -219,6 +220,164 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
         }
     }
     return Ok(&pair.first->second);
+}
+
+// ##########################
+// ##     ModuleLoader     ##
+// ##########################
+
+void ModuleLoader::discard(const ModDiscardPoint discardPoint) {
+    if(discardPoint.idCount >= this->modSize()) {
+        return; // do nothing
+    }
+
+    for(auto iter = this->indexMap.begin(); iter != this->indexMap.end(); ) {
+        if(iter->second.getIndex() >= discardPoint.idCount) {
+            const char *ptr = iter->first.data();
+            iter = this->indexMap.erase(iter);
+            free(const_cast<char*>(ptr));
+        } else {
+            ++iter;
+        }
+    }
+    this->gvarCount = discardPoint.gvarCount;
+}
+
+static CStrPtr expandToRealpath(const char *baseDir, const char *path) {
+    if(!*path) {
+        errno = ENOENT;
+        return nullptr;
+    }
+    std::string value;
+    if(!baseDir || *path == '/') {
+        value = path;
+    } else {
+        assert(*baseDir);
+        value = baseDir;
+        value += '/';
+        value += path;
+    }
+    return getRealpath(value.c_str());
+}
+
+static int checkFileType(const struct stat &st, ModLoadOption option) {
+    if(S_ISDIR(st.st_mode)) {
+        return EISDIR;
+    } else if(S_ISREG(st.st_mode)) {
+        if(st.st_size > static_cast<off_t>(static_cast<uint32_t>(-1) >> 2)) {
+            return EFBIG;
+        }
+    } else if(hasFlag(option, ModLoadOption::IGNORE_NON_REG_FILE)) {
+        return EINVAL;
+    }
+    return 0;
+}
+
+ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath,
+                                 FilePtr &filePtr, ModLoadOption option) {
+    assert(modPath);
+
+    auto str = expandToRealpath(scriptDir, modPath);
+    LOG(TRACE_MODULE, "\n    scriptDir: `%s'\n    modPath: `%s'\n    fullPath: `%s'",
+        (scriptDir == nullptr ? "(null)" : scriptDir),
+        modPath, str ? str.get() : "(null)");
+    // check file type
+    if(!str) {
+        return ModLoadingError(ENOENT);
+    }
+
+    /**
+     * check file type before open due to prevent named pipe blocking
+     */
+    struct stat st1;
+    if(stat(str.get(), &st1) != 0) {
+        return ModLoadingError(errno);
+    }
+    int s = checkFileType(st1, option);
+    if(s) {
+        return ModLoadingError(s);
+    }
+
+    int fd = open(str.get(), O_RDONLY);
+    if(fd < 0) {
+        return ModLoadingError(errno);
+    }
+
+    struct stat st2;
+    errno = 0;
+    if(fstat(fd, &st2) != 0 || !isSameFile(st1, st2)) {
+        int old = errno == 0 ? ENOENT : errno;
+        close(fd);
+        return ModLoadingError(old);
+    }
+
+    auto ret = this->addNewModEntry(std::move(str));
+    if(is<ModLoadingError>(ret)) {
+        close(fd);
+    } else {
+        filePtr = createFilePtr(fdopen, fd, "rb");
+        assert(filePtr);
+    }
+    return ret;
+}
+
+static bool isFileNotFound(const ModResult &ret) {
+    return is<ModLoadingError>(ret) && get<ModLoadingError>(ret).isFileNotFound();
+}
+
+ModResult ModuleLoader::load(const char *scriptDir, const char *path, FilePtr &filePtr, ModLoadOption option) {
+    auto ret = this->loadImpl(scriptDir, path, filePtr, option);
+    if(path[0] == '/' || scriptDir == nullptr || scriptDir[0] != '/') {   // if full path, not search next path
+        return ret;
+    }
+    if(strcmp(scriptDir, SYSTEM_MOD_DIR) == 0) {
+        return ret;
+    }
+
+    if(isFileNotFound(ret)) {
+        int old = errno;
+        std::string dir = LOCAL_MOD_DIR;
+        expandTilde(dir);
+        errno = old;
+        if(strcmp(scriptDir, dir.c_str()) != 0) {
+            ret = this->loadImpl(dir.c_str(), path, filePtr, option);
+        }
+        if(isFileNotFound(ret)) {
+            ret = this->loadImpl(SYSTEM_MOD_DIR, path, filePtr, option);
+        }
+    }
+    return ret;
+}
+
+IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const char *name, IntrusivePtr<NameScope> parent) {
+    auto str = CStrPtr(strdup(name));
+    auto ret = this->addNewModEntry(std::move(str));
+    assert(is<const char*>(ret));
+
+    if(parent) {
+        return this->createGlobalScopeFromFullpath(get<const char*>(ret), parent);
+    } else {
+        return IntrusivePtr<NameScope>::create(std::ref(this->gvarCount));
+    }
+}
+
+IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(StringRef fullpath,
+                                                                    IntrusivePtr<NameScope> parent) {
+    auto e = this->find(fullpath);
+    if(e) {
+        return IntrusivePtr<NameScope>::create(parent, e->getIndex());
+    }
+    return nullptr;
+}
+
+const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scope, const std::string &fullpath) {
+    auto &modType = scope.toModType(pool);
+    this->gvarCount++;  // reserve module object entry
+    auto iter = this->indexMap.find(fullpath);
+    assert(iter != this->indexMap.end());
+    assert(!iter->second);
+    iter->second.setModType(modType);
+    return modType;
 }
 
 } // namespace ydsh

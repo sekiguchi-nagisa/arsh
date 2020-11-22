@@ -82,16 +82,17 @@ private:
     struct Context {
         Lexer lexer;
         Parser parser;
-        std::unique_ptr<ModuleScope> scope;
+        IntrusivePtr<NameScope> scope;
         std::unique_ptr<SourceListNode> srcListNode;
 
-        Context(Lexer &&lexer, std::unique_ptr<ModuleScope> &&scope,
+        Context(Lexer &&lexer, IntrusivePtr<NameScope> scope,
                 ObserverPtr<CodeCompletionHandler> ccHandler = nullptr) :
                 lexer(std::move(lexer)), parser(this->lexer, ccHandler), scope(std::move(scope)){}
     };
 
     std::vector<std::unique_ptr<Context>> contexts;
     ModuleLoader &modLoader;
+    IntrusivePtr<NameScope> builtin;
     const DSExecMode mode;
     TypeChecker checker;
     DSType *prevType{nullptr};
@@ -101,12 +102,9 @@ private:
 
 public:
     FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &typePool,
-             SymbolTable &symbolTable, DSExecMode mode, bool toplevel,
+             IntrusivePtr<NameScope> builtin, IntrusivePtr<NameScope> scope,
+             DSExecMode mode, bool toplevel,
              ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
-
-    ~FrontEnd() {
-        this->getSymbolTable().clear();
-    }
 
     void setErrorReporter(ErrorReporter &r) {
         this->reporter.reset(&r);
@@ -122,8 +120,8 @@ public:
         this->astDumper.reset(&dumper);
     }
 
-    SymbolTable &getSymbolTable() {
-        return this->checker.getSymbolTable();
+    unsigned int getMaxLocalVarIndex() const {
+        return this->curScope()->getMaxLocalVarIndex();
     }
 
     TypePool &getTypePool() {
@@ -131,7 +129,7 @@ public:
     }
 
     void discard(const DiscardPoint &discardPoint) {
-        discardAll(this->modLoader, this->getSymbolTable(), this->getTypePool(), discardPoint);
+        discardAll(this->modLoader, *this->contexts[0]->scope, this->getTypePool(), discardPoint);
     }
 
     const Lexer &getCurrentLexer() const {
@@ -187,6 +185,10 @@ private:
 
     std::unique_ptr<SourceListNode> &getCurSrcListNode() {
         return this->contexts.back()->srcListNode;
+    }
+
+    const IntrusivePtr<NameScope> &curScope() const {
+        return this->contexts.back()->scope;
     }
 
     std::unique_ptr<Node> tryToParse(DSError *dsError);

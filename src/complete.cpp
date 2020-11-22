@@ -216,12 +216,10 @@ static std::vector<std::string> computePathList(const char *pathVal) {
     return result;
 }
 
-static void completeCmdName(const SymbolTable &symbolTable, const std::string &cmdPrefix,
-                            const CodeCompOp option, ArrayObject &results) {
-    // complete user-defined command
-    if(hasFlag(option, CodeCompOp::UDC)) {
-        for(const auto &iter : symbolTable.globalScope()) {
-            StringRef udc = iter.first.c_str();
+static void completeUDC(const NameScope &scope, const std::string &cmdPrefix, ArrayObject &results) {
+    for(const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
+        for(const auto &e : *curScope) {
+            StringRef udc = e.first.c_str();
             if(isCmdFullName(udc)) {
                 udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
                 if(udc.startsWith(cmdPrefix)) {
@@ -234,6 +232,14 @@ static void completeCmdName(const SymbolTable &symbolTable, const std::string &c
                 }
             }
         }
+    }
+}
+
+static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
+                            const CodeCompOp option, ArrayObject &results) {
+    // complete user-defined command
+    if(hasFlag(option, CodeCompOp::UDC)) {
+        completeUDC(scope, cmdPrefix, results);
     }
 
     // complete builtin command
@@ -385,17 +391,19 @@ static void completeModule(const char *scriptDir, const std::string &prefix, boo
 
 /**
  *
- * @param symbolTable
+ * @param scope
  * @param prefix
  * not start with '$'
  * @param results
  */
-static void completeVarName(const SymbolTable &symbolTable,
+static void completeVarName(const NameScope &scope,
                             const std::string &prefix, ArrayObject &results) {
-    for(const auto &iter : symbolTable.globalScope()) {
-        StringRef varName = iter.first.c_str();
-        if(varName.startsWith(prefix) && isVarName(varName)) {
-            append(results, varName, EscapeOp::NOP);
+    for(const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
+        for(const auto &iter : *curScope) {
+            StringRef varName = iter.first.c_str();
+            if(varName.startsWith(prefix) && isVarName(varName)) {
+                append(results, varName, EscapeOp::NOP);
+            }
         }
     }
 }
@@ -501,7 +509,7 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     }
     if(hasFlag(this->compOp, CodeCompOp::EXTERNAL) ||
        hasFlag(this->compOp, CodeCompOp::UDC) || hasFlag(this->compOp, CodeCompOp::BUILTIN)) {
-        completeCmdName(this->state.symbolTable, this->compWord, this->compOp, results);    //FIXME: file name or tilde expansion
+        completeCmdName(*this->state.rootModScope, this->compWord, this->compOp, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::USER)) {
         completeUserName(this->compWord, results);
@@ -525,7 +533,7 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
         completeCmdArgKeyword(this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::GVAR)) {
-        completeVarName(this->state.symbolTable, this->compWord, results);
+        completeVarName(*this->state.rootModScope, this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::EXPECT)) {
         completeExpected(this->extraWords, results);
@@ -597,14 +605,15 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
 
     DiscardPoint discardPoint {
         .mod = st.modLoader.getDiscardPoint(),
-        .symbol = st.symbolTable.getDiscardPoint(),
+        .scope = st.rootModScope->getDiscardPoint(),
         .type = st.typePool.getDiscardPoint(),
     };
     CodeCompletionHandler handler(st);
     if(empty(option)) { // invoke parser
         // prepare
         FrontEnd frontEnd(st.modLoader, lex(ref), st.typePool,
-                          st.symbolTable, DS_EXEC_MODE_CHECK_ONLY, false,
+                          st.builtinModScope, st.rootModScope,
+                          DS_EXEC_MODE_CHECK_ONLY, false,
                           ObserverPtr<CodeCompletionHandler>(&handler));
 
         // perform completion
@@ -614,7 +623,7 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
         handler.addCompRequest(option, ref.toString());
         handler.invoke(compreply);
     }
-    discardAll(st.modLoader, st.symbolTable, st.typePool, discardPoint);
+    discardAll(st.modLoader, *st.rootModScope, st.typePool, discardPoint);
 
     auto &values = compreply.refValues();
     compreply.sortAsStrArray();

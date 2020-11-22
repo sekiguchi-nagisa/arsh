@@ -81,7 +81,7 @@ protected:
     }
 
     DSValue getValue(const char *name) const {
-        auto handle = this->state->symbolTable.lookupHandle(name);
+        auto handle = this->state->rootModScope->lookup(name);
         if(handle == nullptr) {
             return nullptr;
         }
@@ -91,7 +91,7 @@ protected:
     void RefCount(const char *gvarName, unsigned int refCount) {
         ASSERT_TRUE(gvarName != nullptr);
 
-        auto *handle = this->state->symbolTable.lookupHandle(gvarName);
+        auto *handle = this->state->rootModScope->lookup(gvarName);
         ASSERT_TRUE(handle != nullptr);
 
         auto &v = this->state->getGlobal(handle->getIndex());

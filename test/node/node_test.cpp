@@ -736,7 +736,7 @@ nodes:
       type: Boolean
       varName: "false"
       index: 45
-      attribute: "READ_ONLY | GLOBAL | BUILTIN"
+      attribute: "READ_ONLY | GLOBAL"
     iterNode:
       nodeKind: Empty
       token:

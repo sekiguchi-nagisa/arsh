@@ -23,7 +23,7 @@
 #include <ydsh/ydsh.h>
 
 #include "cmd.h"
-#include "symbol_table.h"
+#include "scope.h"
 #include "signals.h"
 #include "core.h"
 #include "job.h"
@@ -85,7 +85,9 @@ public:
 
     TypePool typePool;
 
-    SymbolTable symbolTable;
+    IntrusivePtr<NameScope> builtinModScope;
+
+    IntrusivePtr<NameScope> rootModScope;
 
     const DSValue emptyFDObj;
 

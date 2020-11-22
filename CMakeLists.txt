@@ -224,7 +224,6 @@ set(YDSH_SRC
         src/type.cpp
         src/cmd.cpp
         src/core.cpp
-        src/symbol_table.cpp
         src/scope.cpp
         src/type_pool.cpp
         src/codegen.cpp

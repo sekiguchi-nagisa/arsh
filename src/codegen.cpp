@@ -17,7 +17,7 @@
 #include <cstdarg>
 
 #include "codegen.h"
-#include "symbol_table.h"
+#include "type_pool.h"
 #include "redir.h"
 
 namespace ydsh {

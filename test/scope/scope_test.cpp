@@ -51,7 +51,7 @@ protected:
 
 TEST_F(ScopeTest, builtin) {
     // base
-    ASSERT_TRUE(this->builtin->isBuiltinModule());
+    ASSERT_TRUE(this->builtin->inBuiltinModule());
     ASSERT_TRUE(this->builtin->isGlobal());
     ASSERT_EQ(0, this->builtin->getMaxGlobalVarIndex());
     ASSERT_FALSE(this->builtin->parent);
@@ -177,8 +177,8 @@ TEST_F(ScopeTest, global) {
     ASSERT_TRUE(this->top->parent);
     ASSERT_EQ(0, this->top->parent->modId);
     ASSERT_EQ(1, this->top->modId);
-    ASSERT_FALSE(this->top->isBuiltinModule());
-    ASSERT_TRUE(this->top->isRootModule());
+    ASSERT_FALSE(this->top->inBuiltinModule());
+    ASSERT_TRUE(this->top->inRootModule());
     ASSERT_TRUE(this->top->isGlobal());
     ASSERT_EQ(0, this->top->getMaxGlobalVarIndex());
 

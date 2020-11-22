@@ -2459,7 +2459,7 @@ public:
         return this->curIndex < this->pathList.size();
     }
 
-    std::unique_ptr<SourceNode> create(ModType &modType, bool first) const {
+    std::unique_ptr<SourceNode> create(const ModType &modType, bool first) const {
         return std::make_unique<SourceNode>(
                 this->token, this->getPathNode().getToken(),
                 this->name, modType,
@@ -2643,7 +2643,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
 };
 
-class SymbolTable;
+class NameScope;
 
 class NodeDumper {
 private:
@@ -2743,7 +2743,7 @@ public:
 
     void operator()(const Node &node);
 
-    void finalize(const SymbolTable &symbolTable);
+    void finalize(const NameScope &scope);
 
     explicit operator bool() const {
         return this->fp != nullptr;
