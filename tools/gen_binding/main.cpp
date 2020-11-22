@@ -264,15 +264,12 @@ int HandleInfoSerializer::getNum(const std::vector<HandleInfo> &infos, unsigned 
         auto ch = infos[index++];
         switch(ch) {
         EACH_HANDLE_INFO_TYPE(GEN_CASE)
-            return -1;
         EACH_HANDLE_INFO_TYPE_TEMP(GEN_CASE)
-            return -1;
         EACH_HANDLE_INFO_FUNC_TYPE(GEN_CASE)
+        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
             return -1;
         EACH_HANDLE_INFO_NUM(GEN_CASE)
             return static_cast<int>(ch) - static_cast<int>(HandleInfo::P_N0);
-        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
-            return -1;
         }
     }
     return -1;
