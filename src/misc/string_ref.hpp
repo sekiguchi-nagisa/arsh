@@ -225,6 +225,10 @@ inline bool operator>=(StringRef left, StringRef right) {
     return left.compare(right) >= 0;
 }
 
+inline std::string &operator+=(std::string &str, ydsh::StringRef ref) {
+    return str.append(ref.data(), ref.size());
+}
+
 } // namespace ydsh
 
 namespace std {
@@ -235,10 +239,6 @@ struct hash<ydsh::StringRef> {
         return ydsh::FNVHash::compute(ref.begin(), ref.end());
     }
 };
-
-inline std::string &operator+=(std::string &str, ydsh::StringRef ref) {
-    return str.append(ref.data(), ref.size());
-}
 
 } // namespace std
 

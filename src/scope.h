@@ -82,7 +82,7 @@ public:
      * @param parent
      * @param modId
      */
-    NameScope(IntrusivePtr<NameScope> parent, unsigned short modId) :
+    NameScope(const IntrusivePtr<NameScope> &parent, unsigned short modId) :
             kind(GLOBAL), modId(modId), parent(parent), maxVarCount(parent->maxVarCount) {
         assert(this->parent->isGlobal());
     }
@@ -94,7 +94,7 @@ public:
      * @param parent
      * @param varCount
      */
-    NameScope(Kind kind, IntrusivePtr<NameScope> parent, std::reference_wrapper<unsigned int> varCount) :
+    NameScope(Kind kind, const IntrusivePtr<NameScope> &parent, std::reference_wrapper<unsigned int> varCount) :
             kind(kind), modId(parent->modId), parent(parent), maxVarCount(varCount) {}
 
     bool isGlobal() const {
@@ -309,7 +309,7 @@ public:
 using ModResult = Union<const char *, unsigned int, ModLoadingError>;
 
 enum class ModLoadOption {
-    IGNORE_NON_REG_FILE = 1 << 0,
+    IGNORE_NON_REG_FILE = 1u << 0u,
 };
 
 template <> struct allow_enum_bitop<ModLoadOption> : std::true_type {};
@@ -406,9 +406,10 @@ public:
      */
     ModResult load(const char *scriptDir, const char *path, FilePtr &filePtr, ModLoadOption option);
 
-    IntrusivePtr<NameScope> createGlobalScope(const char *name, IntrusivePtr<NameScope> parent);
+    IntrusivePtr<NameScope> createGlobalScope(const char *name, const IntrusivePtr<NameScope> &parent);
 
-    IntrusivePtr<NameScope> createGlobalScopeFromFullpath(StringRef fullpath, IntrusivePtr<NameScope> parent);
+    IntrusivePtr<NameScope> createGlobalScopeFromFullpath(StringRef fullpath,
+                                                          const IntrusivePtr<NameScope> &parent) const;
 
     const ModType &createModType(TypePool &pool, const NameScope &scope, const std::string &fullpath);
 

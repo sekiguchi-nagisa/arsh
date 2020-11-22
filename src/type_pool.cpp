@@ -407,7 +407,7 @@ void TypePool::walkMethod(std::function<bool(const DSType &, StringRef, const Va
 }
 
 std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
-                                    const std::vector<DSType *> &elementTypes) const {
+                                        const std::vector<DSType *> &elementTypes) const {
     if(typeTemplate == this->getArrayTemplate()) {
         std::string str = "[";
         str += elementTypes[0]->getNameRef();
@@ -447,7 +447,7 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
     }
 }
 
-std::string TypePool::toTupleTypeName(const std::vector<DSType *> &elementTypes) const {
+std::string TypePool::toTupleTypeName(const std::vector<DSType *> &elementTypes) {
     std::string str = "(";
     for(unsigned int i = 0; i < elementTypes.size(); i++) {
         if(i > 0) {
@@ -462,7 +462,7 @@ std::string TypePool::toTupleTypeName(const std::vector<DSType *> &elementTypes)
     return str;
 }
 
-std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const {
+std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) {
     std::string funcTypeName = "(";
     for(unsigned int i = 0; i < paramTypes.size(); i++) {
         if(i > 0) {
@@ -475,7 +475,7 @@ std::string TypePool::toFunctionTypeName(DSType *returnType, const std::vector<D
     return funcTypeName;
 }
 
-TypeOrError TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) const {
+TypeOrError TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {
     for(DSType *type : elementTypes) {
         if(type->isVoidType() || type->isNothingType()) {
             RAISE_TL_ERROR(InvalidElement, type->getName());
@@ -484,7 +484,7 @@ TypeOrError TypePool::checkElementTypes(const std::vector<DSType *> &elementType
     return Ok(static_cast<DSType *>(nullptr));
 }
 
-TypeOrError TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const {
+TypeOrError TypePool::checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) {
     const unsigned int size = elementTypes.size();
 
     // check element type size

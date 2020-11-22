@@ -202,7 +202,7 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
         }
     }
 
-    auto pair = this->handles.emplace(std::move(name), std::move(handle));
+    auto pair = this->handles.emplace(std::move(name), handle);
     if(!pair.second) {
         return Err(NameLookupError::DEFINED);
     }
@@ -292,7 +292,7 @@ ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath,
     /**
      * check file type before open due to prevent named pipe blocking
      */
-    struct stat st1;
+    struct stat st1;    //NOLINT
     if(stat(str.get(), &st1) != 0) {
         return ModLoadingError(errno);
     }
@@ -306,7 +306,7 @@ ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath,
         return ModLoadingError(errno);
     }
 
-    struct stat st2;
+    struct stat st2;    //NOLINT
     errno = 0;
     if(fstat(fd, &st2) != 0 || !isSameFile(st1, st2)) {
         int old = errno == 0 ? ENOENT : errno;
@@ -352,7 +352,7 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *path, FilePtr &f
     return ret;
 }
 
-IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const char *name, IntrusivePtr<NameScope> parent) {
+IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const char *name, const IntrusivePtr<NameScope> &parent) {
     auto str = CStrPtr(strdup(name));
     auto ret = this->addNewModEntry(std::move(str));
     assert(is<const char*>(ret));
@@ -365,7 +365,7 @@ IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const char *name, Intrus
 }
 
 IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(StringRef fullpath,
-                                                                    IntrusivePtr<NameScope> parent) {
+                                                                    const IntrusivePtr<NameScope> &parent) const {
     auto e = this->find(fullpath);
     if(e) {
         return IntrusivePtr<NameScope>::create(parent, e->getIndex());

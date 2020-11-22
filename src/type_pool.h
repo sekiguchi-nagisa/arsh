@@ -267,12 +267,12 @@ private:
      */
     std::string toReifiedTypeName(const TypeTemplate &typeTemplate, const std::vector<DSType *> &elementTypes) const;
 
-    std::string toTupleTypeName(const std::vector<DSType *> &elementTypes) const;
+    static std::string toTupleTypeName(const std::vector<DSType *> &elementTypes);
 
     /**
      * create function type name
      */
-    std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes) const;
+    static std::string toFunctionTypeName(DSType *returnType, const std::vector<DSType *> &paramTypes);
 
 
     /**
@@ -281,7 +281,7 @@ private:
      * @return
      * if success, return null
      */
-    TypeOrError checkElementTypes(const std::vector<DSType *> &elementTypes) const;
+    static TypeOrError checkElementTypes(const std::vector<DSType *> &elementTypes);
 
     /**
      *
@@ -290,7 +290,7 @@ private:
      * @return
      * if success, return null
      */
-    TypeOrError checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes) const;
+    static TypeOrError checkElementTypes(const TypeTemplate &t, const std::vector<DSType *> &elementTypes);
 
     void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info) {
         this->initBuiltinType(t, typeName, extendible, nullptr, info);

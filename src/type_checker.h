@@ -196,7 +196,7 @@ public:
     }
 
     void setCodeCompletionHandler(ObserverPtr<CodeCompletionHandler> handler) {
-        this->ccHandler = std::move(handler);
+        this->ccHandler = handler;
     }
 
 protected:

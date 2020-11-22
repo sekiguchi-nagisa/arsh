@@ -18,7 +18,6 @@
 #include <array>
 
 #include "type_pool.h"
-#include "type.h"
 #include "tcerror.h"
 
 namespace ydsh {
@@ -35,9 +34,7 @@ const FieldHandle *DSType::lookupField(const std::string &) const {
     return nullptr;
 }
 
-void DSType::walkField(std::function<bool(StringRef, const FieldHandle &)>&) const {
-    return; // do nothing
-}
+void DSType::walkField(std::function<bool(StringRef, const FieldHandle &)>&) const {}
 
 bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     if(*this == targetType) {
