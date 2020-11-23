@@ -39,7 +39,7 @@ enum class CodeCompOp : unsigned int {
     EXTERNAL = 1u << 4u,    /* complete external command names */
     BUILTIN  = 1u << 5u,    /* complete builtin command names */
     UDC      = 1u << 6u,    /* complete user-defined command names */
-    GVAR     = 1u << 7u,    /* complete global variable names (not start with $) */
+    VAR      = 1u << 7u,    /* complete global variable names (not start with $) */
     ENV      = 1u << 8u,    /* complete environmental variable names */
     SIGNAL   = 1u << 9u,    /* complete signal names (not start with SIG) */
     USER     = 1u << 10u,   /* complete user names */
@@ -87,6 +87,11 @@ private:
     std::unique_ptr<CmdNode> cmdNode;
 
     /**
+     * for var name compeltion
+     */
+    IntrusivePtr<NameScope> scope;
+
+    /**
      * for member completion
      */
     const DSType *recvType{nullptr};
@@ -99,7 +104,7 @@ private:
     CodeCompOp fallbackOp{};
 
 public:
-    explicit CodeCompletionHandler(DSState &state) : state(state) {}
+    explicit CodeCompletionHandler(DSState &state);
 
     void setLexer(const Lexer &lexer) {
         this->lex.reset(&lexer);
@@ -128,7 +133,7 @@ public:
         }
     }
 
-    void addVarNameRequest(Token token);
+    void addVarNameRequest(Token token, IntrusivePtr<NameScope> curScope);
 
     void addMemberRequest(const DSType &type, Token token) {
         this->compOp = CodeCompOp::MEMBER;

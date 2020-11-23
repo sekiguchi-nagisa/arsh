@@ -409,7 +409,17 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
     }
     case TokenKind::FUNCTION: {
         auto node = TRY(this->parse_funcDecl());
-        node->setBlockNode(TRY(this->parse_block()));
+        auto blockNode = this->parse_block();
+        if(this->incompleteNode) {
+            assert(isa<BlockNode>(*this->incompleteNode));
+            blockNode.reset(cast<BlockNode>(this->incompleteNode.release()));
+            node->setBlockNode(std::move(blockNode));
+            this->incompleteNode = std::move(node);
+            return nullptr;
+        } else if(this->hasError()) {
+            return nullptr;
+        }
+        node->setBlockNode(std::move(blockNode));
         return std::move(node);
     }
     case TokenKind::INTERFACE:
@@ -531,7 +541,15 @@ std::unique_ptr<BlockNode> Parser::parse_block() {
     Token token = TRY(this->expect(TokenKind::LBC));
     auto blockNode = std::make_unique<BlockNode>(token.pos);
     while(CUR_KIND() != TokenKind::RBC) {
-        blockNode->addNode(TRY(this->parse_statement()));
+        auto node = this->parse_statement();
+        if(this->incompleteNode) {
+            blockNode->addNode(std::move(this->incompleteNode));
+            this->incompleteNode = std::move(blockNode);
+            return nullptr;
+        } else if(this->hasError()) {
+            return nullptr;
+        }
+        blockNode->addNode(std::move(node));
     }
     token = TRY(this->expect(TokenKind::RBC));
     blockNode->updateToken(token);
@@ -652,18 +670,42 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
         auto iterNode = TRY(this->parse_forIter());
 
         TRY(this->expect(TokenKind::RP));
-        auto blockNode = TRY(this->parse_block());
+        auto blockNode = this->parse_block();
+        bool comp = false;
+        if(this->incompleteNode) {
+             assert(isa<BlockNode>(*this->incompleteNode));
+             comp = true;
+             blockNode.reset(cast<BlockNode>(this->incompleteNode.release()));
+        } else if(this->hasError()) {
+            return nullptr;
+        }
 
-        return std::make_unique<LoopNode>(startPos, std::move(initNode), std::move(condNode),
-                                          std::move(iterNode), std::move(blockNode));
+        auto node = std::make_unique<LoopNode>(startPos, std::move(initNode), std::move(condNode),
+                                               std::move(iterNode), std::move(blockNode));
+        if(comp) {
+            this->incompleteNode = std::move(node);
+        }
+        return node;
+    } else {    // for-in
+        Token token = TRY(this->expect(TokenKind::APPLIED_NAME));
+        TRY(this->expect(TokenKind::IN));
+        auto exprNode = TRY(this->parse_expression());
+        auto blockNode = this->parse_block();
+        bool comp = false;
+        if(this->incompleteNode) {
+            assert(isa<BlockNode>(*this->incompleteNode));
+            comp = true;
+            blockNode.reset(cast<BlockNode>(this->incompleteNode.release()));
+        } else if(this->hasError()) {
+            return nullptr;
+        }
+
+        auto node = createForInNode(startPos, this->lexer->toName(token), std::move(exprNode), std::move(blockNode));
+        if(comp) {
+            this->incompleteNode = std::move(node);
+        }
+        return node;
     }
-    // for-in
-    Token token = TRY(this->expect(TokenKind::APPLIED_NAME));
-    TRY(this->expect(TokenKind::IN));
-    auto exprNode = TRY(this->parse_expression());
-    auto blockNode = TRY(this->parse_block());
-
-    return createForInNode(startPos, this->lexer->toName(token), std::move(exprNode), std::move(blockNode));
 }
 
 std::unique_ptr<Node> Parser::parse_forCond() {
@@ -688,7 +730,7 @@ std::unique_ptr<Node> Parser::parse_forIter() {
     }
 }
 
-std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
+std::unique_ptr<CatchNode> Parser::parse_catchBlock() {
     GUARD_DEEP_NESTING(guard);
 
     assert(CUR_KIND() == TokenKind::CATCH);
@@ -711,9 +753,22 @@ std::unique_ptr<CatchNode> Parser::parse_catchStatement() {
         TRY(this->expect(TokenKind::RP));
     }
 
-    auto blockNode = TRY(this->parse_block());
-    return std::make_unique<CatchNode>(startPos, this->lexer->toName(token),
-            std::move(typeToken), std::move(blockNode));
+    auto blockNode = this->parse_block();
+    bool comp = false;
+    if(this->incompleteNode) {
+        assert(isa<BlockNode>(*this->incompleteNode));
+        comp = true;
+        blockNode.reset(cast<BlockNode>(this->incompleteNode.release()));
+    } else if(this->hasError()) {
+        return nullptr;
+    }
+
+    auto node = std::make_unique<CatchNode>(startPos, this->lexer->toName(token),
+                                            std::move(typeToken), std::move(blockNode));
+    if(comp) {
+        this->incompleteNode = std::move(node);
+    }
+    return node;
 }
 
 // command
@@ -1134,7 +1189,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 
         // parse catch
         while(CUR_KIND() == TokenKind::CATCH) {
-            tryNode->addCatchNode(TRY(this->parse_catchStatement()));
+            tryNode->addCatchNode(TRY(this->parse_catchBlock()));
         }
 
         // parse finally

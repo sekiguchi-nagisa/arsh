@@ -205,7 +205,7 @@ protected:
 
     std::unique_ptr<Node> parse_forIter();
 
-    std::unique_ptr<CatchNode> parse_catchStatement();
+    std::unique_ptr<CatchNode> parse_catchBlock();
 
     std::unique_ptr<Node> parse_command();
 

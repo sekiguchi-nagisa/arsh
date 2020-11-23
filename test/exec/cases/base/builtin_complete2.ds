@@ -40,6 +40,53 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     $assertArray($gvars2, $(complete '($P'))
     $assertArray($gvars2, $(complete '{$P'))
     $assertArray($gvars2, $(complete '$f($P'))
+
+    # scope
+    var gvar3 = [
+        'PID', 'PIPESTATUS', 'PPID', 'PZ0', 'PZ1', 'PZ2'
+    ]
+    $assertArray($gvar3, $(complete '
+        var PZ2 = ls -la && $true
+        {
+            var PZ0 = 34 + 34 / 34
+            {
+                var PZ1 = "hello"
+                echo hello$P'))
+
+    $assertArray($gvar3, $(complete '
+        function f($PZ0 : String, $PZ1 : Int) {
+            var PID = "he;;p"
+            { var PZ34 = 34; $PZ34; }
+            { export-env PZ2 = "xterm"; $P'))
+
+    $assertArray($gvar3, $(complete '
+        hoge() {
+            var PID = "he;;p"
+            var PZ0 = 34.1
+            var PZ1 = $false
+            { export-env PZ2 = "xterm"; 
+                {  var PZ3 = 34 + $P'))
+
+    $assertArray(['e', 'ee'], $(complete '
+        try {
+            throw 34 / 0;
+        } catch $ex : String {
+            throw new Error($ex)
+        } catch($e : ArithmeticError) {
+            var ee = 34 as Any
+            var eee = $e'))
+
+    $assertArray($gvar3, $(complete '
+        for(var PZ2 = 0; $PZ2 < 100; $PZ2++) {
+            let PZ0 = $false
+            {
+                import-env PZ1 : "dummy"
+                var PZ4 = 45 * $P'))
+    
+    $assertArray(['a', 'aa', 'assertArray'], $(complete '
+        for $a in $(seq 1 100) {
+            var aa = 34
+            $aa + $a'))
 }
 
 # env name

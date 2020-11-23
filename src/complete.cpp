@@ -109,6 +109,9 @@ static void append(ArrayObject &can, StringRef ref, EscapeOp op) {
 // ##     CodeCompletionHandler     ##
 // ###################################
 
+CodeCompletionHandler::CodeCompletionHandler(DSState &state) :
+        state(state), scope(this->state.rootModScope) {}
+
 static bool isExprKeyword(TokenKind kind) {
     switch(kind) {
 #define GEN_CASE(T) case TokenKind::T:
@@ -509,7 +512,7 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     }
     if(hasFlag(this->compOp, CodeCompOp::EXTERNAL) ||
        hasFlag(this->compOp, CodeCompOp::UDC) || hasFlag(this->compOp, CodeCompOp::BUILTIN)) {
-        completeCmdName(*this->state.rootModScope, this->compWord, this->compOp, results);
+        completeCmdName(*this->scope, this->compWord, this->compOp, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::USER)) {
         completeUserName(this->compWord, results);
@@ -532,8 +535,8 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     if(hasFlag(this->compOp, CodeCompOp::ARG_KW)) {
         completeCmdArgKeyword(this->compWord, results);
     }
-    if(hasFlag(this->compOp, CodeCompOp::GVAR)) {
-        completeVarName(*this->state.rootModScope, this->compWord, results);
+    if(hasFlag(this->compOp, CodeCompOp::VAR)) {
+        completeVarName(*this->scope, this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::EXPECT)) {
         completeExpected(this->extraWords, results);
@@ -548,9 +551,10 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     }
 }
 
-void CodeCompletionHandler::addVarNameRequest(Token token) {
+void CodeCompletionHandler::addVarNameRequest(Token token, IntrusivePtr<NameScope> curScope) {
     auto value = this->lex->toName(token);
-    this->addCompRequest(CodeCompOp::GVAR, std::move(value));
+    this->scope = std::move(curScope);
+    this->addCompRequest(CodeCompOp::VAR, std::move(value));
 }
 
 void CodeCompletionHandler::addCmdRequest(const Token token) {

@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     source path as Path
     assert $COMP_HOOK! is Path.Completer
     ```
+- sematic aware completion
+  - complete field/method name
+  - complete local variable name
+
 
 #### Completion
 - add completions for

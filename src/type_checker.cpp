@@ -1716,7 +1716,7 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     assert(this->ccHandler);
     switch(node.getKind()) {
     case CodeCompNode::VAR:
-        this->ccHandler->addVarNameRequest(node.getTypingToken());
+        this->ccHandler->addVarNameRequest(node.getTypingToken(), this->curScope);
         break;
     case CodeCompNode::MEMBER: {
         assert(node.getExprNode());
