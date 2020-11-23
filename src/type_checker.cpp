@@ -1210,7 +1210,7 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
 
     if(node.getExprNode().is(NodeKind::Empty)) {
         this->checkType(this->typePool.get(TYPE::Void), node.getExprNode());
-    } else if(node.getOpKind() == JumpNode::BREAK_) {
+    } else if(node.getOpKind() == JumpNode::BREAK) {
         this->checkTypeAsSomeExpr(node.getExprNode());
         this->breakGather.addJumpNode(&node);
     }
@@ -1240,18 +1240,18 @@ void TypeChecker::checkTypeAsReturn(JumpNode &node) {
 
 void TypeChecker::visitJumpNode(JumpNode &node) {
     switch(node.getOpKind()) {
-    case JumpNode::BREAK_:
-    case JumpNode::CONTINUE_:
+    case JumpNode::BREAK:
+    case JumpNode::CONTINUE:
         this->checkTypeAsBreakContinue(node);
         break;
-    case JumpNode::THROW_: {
+    case JumpNode::THROW: {
         if(this->fctx.finallyLevel() > 0) {
             RAISE_TC_ERROR(InsideFinally, node);
         }
         this->checkType(this->typePool.get(TYPE::Any), node.getExprNode());
         break;
     }
-    case JumpNode::RETURN_: {
+    case JumpNode::RETURN: {
         this->checkTypeAsReturn(node);
         break;
     }
@@ -1343,9 +1343,9 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
     DSType *exprType = nullptr;
     FieldAttribute attr{};
     switch(node.getKind()) {
-    case VarDeclNode::CONST:
+    case VarDeclNode::LET:
     case VarDeclNode::VAR:
-        if(node.getKind() == VarDeclNode::CONST) {
+        if(node.getKind() == VarDeclNode::LET) {
             setFlag(attr, FieldAttribute::READ_ONLY);
         }
         exprType = &this->checkTypeAsSomeExpr(*node.getExprNode());

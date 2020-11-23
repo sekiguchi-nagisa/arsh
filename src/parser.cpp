@@ -206,7 +206,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
         case TokenKind::VAR:
         case TokenKind::LET: {
             startPos = START_POS();
-            auto readOnly = this->scan() == TokenKind::LET ? VarDeclNode::CONST : VarDeclNode::VAR;
+            auto readOnly = this->scan() == TokenKind::LET ? VarDeclNode::LET : VarDeclNode::VAR;
             token = TRY(this->expect(TokenKind::IDENTIFIER));
             TRY(this->expect(TokenKind::COLON, false));
             auto type = TRY(this->parse_typeName());
@@ -566,7 +566,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
         this->consume();
     } else if(CUR_KIND() == TokenKind::LET) {
         this->consume();
-        readOnly = VarDeclNode::CONST;
+        readOnly = VarDeclNode::LET;
     }
 
     Token token = TRY(this->expect(TokenKind::IDENTIFIER));

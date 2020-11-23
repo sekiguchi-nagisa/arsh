@@ -34,9 +34,6 @@
 
 namespace ydsh {
 
-struct NodeVisitor;
-class NodeDumper;
-
 #define EACH_NODE_KIND(OP) \
     OP(Type) \
     OP(Number) \
@@ -89,6 +86,8 @@ enum class NodeKind : unsigned char {
 #undef GEN_ENUM
 };
 
+struct NodeVisitor;
+class NodeDumper;
 
 class Node {
 protected:
@@ -1779,10 +1778,10 @@ public:
 class JumpNode : public WithRtti<Node, NodeKind::Jump> {
 public:
     enum OpKind : unsigned int {
-        BREAK_,
-        CONTINUE_,
-        THROW_,
-        RETURN_,
+        BREAK,
+        CONTINUE,
+        THROW,
+        RETURN,
     };
 
 private:
@@ -1794,11 +1793,11 @@ private:
 
 public:
     static std::unique_ptr<JumpNode> newBreak(Token token, std::unique_ptr<Node>exprNode) {
-        return std::unique_ptr<JumpNode>(new JumpNode(token, BREAK_, std::move(exprNode)));
+        return std::unique_ptr<JumpNode>(new JumpNode(token, BREAK, std::move(exprNode)));
     }
 
     static std::unique_ptr<JumpNode> newContinue(Token token) {
-        return std::unique_ptr<JumpNode>(new JumpNode(token, CONTINUE_, nullptr));
+        return std::unique_ptr<JumpNode>(new JumpNode(token, CONTINUE, nullptr));
     }
 
     /**
@@ -1809,7 +1808,7 @@ public:
      * @return
      */
     static std::unique_ptr<JumpNode> newThrow(Token token, std::unique_ptr<Node> &&exprNode) {
-        return std::unique_ptr<JumpNode>(new JumpNode(token, THROW_, std::move(exprNode)));
+        return std::unique_ptr<JumpNode>(new JumpNode(token, THROW, std::move(exprNode)));
     }
 
     /**
@@ -1820,7 +1819,7 @@ public:
      * @return
      */
     static std::unique_ptr<JumpNode> newReturn(Token token, std::unique_ptr<Node> &&exprNode) {
-        return std::unique_ptr<JumpNode>(new JumpNode(token, RETURN_, std::move(exprNode)));
+        return std::unique_ptr<JumpNode>(new JumpNode(token, RETURN, std::move(exprNode)));
     }
 
     OpKind getOpKind() const {
@@ -1954,7 +1953,7 @@ class VarDeclNode : public WithRtti<Node, NodeKind::VarDecl> {
 public:
     enum Kind : unsigned char {
         VAR,
-        CONST,
+        LET,
         IMPORT_ENV,
         EXPORT_ENV,
     };
@@ -1982,7 +1981,7 @@ public:
     }
 
     bool isReadOnly() const {
-        return this->getKind() == CONST;
+        return this->getKind() == LET;
     }
 
     void setAttribute(const FieldHandle &handle);

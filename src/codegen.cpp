@@ -1043,7 +1043,7 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
         this->enterFinally();
     }
 
-    if(node.getOpKind() == JumpNode::BREAK_) {
+    if(node.getOpKind() == JumpNode::BREAK) {
         if(node.getExprNode().getType().isVoidType()) {
             this->emitJumpIns(this->peekLoopLabels().breakLabel);
         } else {
@@ -1057,16 +1057,16 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
 
 void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
     switch(node.getOpKind()) {
-    case JumpNode::BREAK_:
-    case JumpNode::CONTINUE_:
+    case JumpNode::BREAK:
+    case JumpNode::CONTINUE:
         this->generateBreakContinue(node);
         break;
-    case JumpNode::THROW_: {
+    case JumpNode::THROW: {
         this->visit(node.getExprNode());
         this->emit0byteIns(OpCode::THROW);
         break;
     }
-    case JumpNode::RETURN_: {
+    case JumpNode::RETURN: {
         this->visit(node.getExprNode());
 
         // add finally before return
@@ -1155,7 +1155,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 void ByteCodeGenerator::visitVarDeclNode(VarDeclNode &node) {
     switch(node.getKind()) {
     case VarDeclNode::VAR:
-    case VarDeclNode::CONST:
+    case VarDeclNode::LET:
         this->visit(*node.getExprNode());
         break;
     case VarDeclNode::IMPORT_ENV: {

@@ -607,7 +607,7 @@ static void resolveIfIsStatement(Node &condNode, BlockNode &blockNode) {
     auto exprNode = std::make_unique<VarNode>(Token{isNode.getPos(), 1}, std::string(varNode.getVarName()));
     auto castNode = std::make_unique<TypeOpNode>(std::move(exprNode), *isNode.getTargetTypeNode(), TypeOpNode::NO_CAST);
     auto declNode = std::make_unique<VarDeclNode>(
-            isNode.getPos(), std::string(varNode.getVarName()), std::move(castNode), VarDeclNode::CONST);
+            isNode.getPos(), std::string(varNode.getVarName()), std::move(castNode), VarDeclNode::LET);
     blockNode.insertNodeToFirst(std::move(declNode));
 }
 
@@ -684,10 +684,10 @@ JumpNode::JumpNode(Token token, OpKind kind, std::unique_ptr<Node> &&exprNode) :
 
 void JumpNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP) \
-    OP(BREAK_) \
-    OP(CONTINUE_) \
-    OP(THROW_) \
-    OP(RETURN_)
+    OP(BREAK) \
+    OP(CONTINUE) \
+    OP(THROW) \
+    OP(RETURN)
 
     DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
@@ -743,7 +743,7 @@ void VarDeclNode::dump(NodeDumper &dumper) const {
 
 #define EACH_ENUM(OP) \
     OP(VAR) \
-    OP(CONST) \
+    OP(LET) \
     OP(IMPORT_ENV) \
     OP(EXPORT_ENV)
 
@@ -1011,7 +1011,7 @@ std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&v
     std::string reset_var_name = "%reset_";
     reset_var_name += std::to_string(startPos);
     auto reset_varDecl = std::make_unique<VarDeclNode>(startPos, std::string(reset_var_name),
-            std::move(call_iter), VarDeclNode::CONST);
+            std::move(call_iter), VarDeclNode::LET);
 
     // create for-cond
     auto reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));

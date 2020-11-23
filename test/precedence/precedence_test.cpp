@@ -117,7 +117,7 @@ public:
 
     void visitJumpNode(JumpNode &node) override {
         this->open();
-        assert(node.getOpKind() == JumpNode::THROW_);
+        assert(node.getOpKind() == JumpNode::THROW);
         this->append("throw");
         this->visit(node.getExprNode());
         this->close();
