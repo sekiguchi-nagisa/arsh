@@ -437,8 +437,8 @@ static void completeMember(const TypePool &pool, const DSType &recvType,
     std::function<bool(const DSType &, StringRef, const TypePool::Value&)> methodWalker =
             [&](const DSType &type, StringRef name, const TypePool::Value &) {
         if(name.startsWith(word) && !isMagicMethodName(name)) {
-            for(const auto *t = &type; t != nullptr; t = t->getSuperType()) {
-                if(recvType == *t) {
+            for(const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
+                if(type == *t) {
                     append(results, name, EscapeOp::NOP);
                     break;  //FIXME: support type constraint
                 }

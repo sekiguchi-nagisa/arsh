@@ -595,7 +595,15 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
     unsigned int startPos = START_POS();
     TRY(this->expect(asElif ? TokenKind::ELIF : TokenKind::IF));
     auto condNode = TRY(this->parse_expression());
-    auto thenNode = TRY(this->parse_block());
+    auto thenNode = this->parse_block();
+    if(this->incompleteNode) {
+        assert(isa<BlockNode>(*this->incompleteNode));
+        thenNode.reset(cast<BlockNode>(this->incompleteNode.release()));
+        this->incompleteNode = std::make_unique<IfNode>(startPos, std::move(condNode), std::move(thenNode), nullptr);
+        return nullptr;
+    } else if(this->hasError()) {
+        return nullptr;
+    }
 
     // parse else
     std::unique_ptr<Node> elseNode;
