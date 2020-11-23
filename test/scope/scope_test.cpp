@@ -636,6 +636,38 @@ TEST_F(ScopeTest, import) {
     ASSERT_EQ(modType2, this->pool.get(toTypeId(modType3.getChildAt(1))));
 }
 
+TEST_F(ScopeTest, conflict) {
+    // define mod type
+    auto mod = this->createGlobalScope();
+    mod->defineHandle("AAA", this->pool.get(TYPE::Int), FieldAttribute::READ_ONLY);
+    mod->defineHandle("_AAA", this->pool.get(TYPE::String), FieldAttribute::ENV);
+    mod->defineTypeAlias(this->pool, "_string", this->pool.get(TYPE::String));
+    mod->defineTypeAlias(this->pool, "integer", this->pool.get(TYPE::Int));
+    auto &modType = mod->toModType(this->pool);
+
+    //
+    auto point = this->top->getDiscardPoint();
+
+    this->top->defineHandle("AAA", this->pool.get(TYPE::Regex), FieldAttribute{});
+    auto ret = this->top->importForeignHandles(modType, true);
+    ASSERT_EQ("AAA", ret);
+
+    auto *handle = this->top->lookup("AAA");
+    ASSERT_NO_FATAL_FAILURE(this->expect(Handle{
+            .commitID = 0,
+            .type = TYPE::Regex,
+            .index = 2,
+            .attr = FieldAttribute::GLOBAL,
+            .modID = 1,
+    }, handle));
+    handle = this->top->lookup(toTypeAliasFullName("integer"));
+    ASSERT_FALSE(handle);
+
+    this->top->discard(point);
+    handle = this->top->lookup("AAA");
+    ASSERT_FALSE(handle);
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
