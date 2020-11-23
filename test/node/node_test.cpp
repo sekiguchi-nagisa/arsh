@@ -377,7 +377,7 @@ nodes:
             pos: 29
             size: 29
           type:
-          opKind: "RETURN_"
+          opKind: "RETURN"
           exprNode:
             nodeKind: New
             token:
@@ -755,7 +755,7 @@ nodes:
             pos: 0
             size: 0
           type: Nothing
-          opKind: "CONTINUE_"
+          opKind: "CONTINUE"
           exprNode:
             nodeKind: Empty
             token:
