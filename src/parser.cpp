@@ -693,7 +693,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
         if(comp) {
             this->incompleteNode = std::move(node);
         }
-        return node;
+        return std::move(node);
     } else {    // for-in
         Token token = TRY(this->expect(TokenKind::APPLIED_NAME));
         TRY(this->expect(TokenKind::IN));
@@ -712,7 +712,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
         if(comp) {
             this->incompleteNode = std::move(node);
         }
-        return node;
+        return std::move(node);
     }
 }
 
