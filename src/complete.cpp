@@ -434,8 +434,9 @@ static void completeMember(const TypePool &pool, const DSType &recvType,
     recvType.walkField(fieldWalker);
 
     // complete method
-    std::function<bool(const DSType &, StringRef, const TypePool::Value&)> methodWalker =
-            [&](const DSType &type, StringRef name, const TypePool::Value &) {
+    for(auto &e : pool.getMethodMap()) {
+        StringRef name = e.first.ref;
+        auto &type = pool.get(e.first.id);
         if(name.startsWith(word) && !isMagicMethodName(name)) {
             for(const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
                 if(type == *t) {
@@ -444,9 +445,7 @@ static void completeMember(const TypePool &pool, const DSType &recvType,
                 }
             }
         }
-        return true;
-    };
-    pool.walkMethod(methodWalker);
+    }
 }
 
 DSValue createArgv(const DSState &state, const Lexer &lex,

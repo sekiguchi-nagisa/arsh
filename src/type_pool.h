@@ -230,7 +230,9 @@ public:
         return this->lookupMethod(revType, "");
     }
 
-    void walkMethod(std::function<bool(const DSType &, StringRef, const Value &)> &walker) const;
+    const MethodMap &getMethodMap() const {
+        return this->methodMap;
+    }
 
     TypeDiscardPoint getDiscardPoint() const {
         return TypeDiscardPoint {
