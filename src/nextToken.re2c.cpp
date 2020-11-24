@@ -292,9 +292,9 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
       <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); UPDATE_LN(); FIND_NEW_LINE(); }
 
-      <TYPE> "Func"            { RET(FUNC); }
-      <TYPE> "typeof"          { RET(TYPEOF); }
-      <TYPE> VAR_NAME          { RET(IDENTIFIER); }
+      <TYPE> "Func"            { RET_OR_COMP(FUNC); }
+      <TYPE> "typeof"          { RET_OR_COMP(TYPEOF); }
+      <TYPE> VAR_NAME          { RET_OR_COMP(IDENTIFIER); }
       <TYPE> "<"               { RET(TYPE_OPEN); }
       <TYPE> ">"               { RET(TYPE_CLOSE); }
       <TYPE> ","               { RET(TYPE_SEP); }

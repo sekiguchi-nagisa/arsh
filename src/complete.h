@@ -50,7 +50,8 @@ enum class CodeCompOp : unsigned int {
     ARG_KW   = 1u << 15u,   /* complete command argument keyword */
     EXPECT   = 1u << 16u,   /* complete expetced token */
     MEMBER   = 1u << 17u,   /* complete member (field/meethod) */
-    HOOK     = 1u << 18u,   /* for user-defined completion hook */
+    TYPE     = 1u << 18u,   /* complete type name */
+    HOOK     = 1u << 19u,   /* for user-defined completion hook */
     COMMAND  = EXTERNAL | BUILTIN | UDC,
 };
 
@@ -134,6 +135,8 @@ public:
     }
 
     void addVarNameRequest(Token token, IntrusivePtr<NameScope> curScope);
+
+    void addTypeNameRequest(Token token, IntrusivePtr<NameScope> curScope);
 
     void addMemberRequest(const DSType &type, Token token) {
         this->compOp = CodeCompOp::MEMBER;

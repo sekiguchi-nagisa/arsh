@@ -111,6 +111,7 @@ static constexpr struct {
                 "        udc        complete user-defined commands\n"
                 "        variable   complete variable names\n"
                 "        var        equivalent to var\n"
+                "        type       complete type names\n"
                 "        env        complete environmental variables names\n"
                 "        signal     complete signal names\n"
                 "        user       complete user names\n"
@@ -1212,6 +1213,7 @@ static std::unordered_map<StringRef, CodeCompOp> initCompActions() {
             {"group", CodeCompOp::GROUP},
             {"stmt_kw", CodeCompOp::STMT_KW},
             {"expr_kw", CodeCompOp::EXPR_KW},
+            {"type", CodeCompOp::TYPE},
     };
 }
 

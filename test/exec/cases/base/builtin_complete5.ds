@@ -73,3 +73,5 @@ assert diff <(complete -A udc '_') <(for $e in $udc { echo $e; } | grep '^_'| so
 assert diff <(complete -A command -A stmt_kw) <(complete ';')
 assert diff <(complete -A command -A stmt_kw l) <(complete 'l')
 assert diff <(complete -A command -A stmt_kw c) <(complete 'c')
+assert diff <(complete -A type) <(complete '34 as ')
+assert diff <(complete -A type S) <(complete '34 as S')

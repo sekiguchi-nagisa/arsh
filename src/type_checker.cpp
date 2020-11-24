@@ -1725,7 +1725,8 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
         break;
     }
     case CodeCompNode::TYPE:
-        fatal("unsupported\n");
+        this->ccHandler->addTypeNameRequest(node.getTypingToken(), this->curScope);
+        break;
     }
     RAISE_TC_ERROR(Unreachable, node);
 }

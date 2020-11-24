@@ -117,6 +117,29 @@ bool Parser::inVarNameCompletionPoint() const {
     return false;
 }
 
+bool Parser::inTypeNameCompletionPoint() const {
+    if(!this->inCompletionPoint()) {
+        return false;
+    }
+    switch(this->lexer->getCompTokenKind()) {
+    case TokenKind::IDENTIFIER:
+    case TokenKind::FUNC:
+    case TokenKind::TYPEOF:
+    case TokenKind::EOS:
+        if(this->consumedKind == TokenKind::IS || this->consumedKind == TokenKind::AS) {
+            if(HAS_SPACE()) {
+                return true;
+            }
+        } else {
+            return true;
+        }
+        break;
+    default:
+        break;
+    }
+    return false;
+}
+
 void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp) {
     if(allowComp && this->inCompletionPoint()) {
         this->ccHandler->addExpectedTokenRequests(size, alters);
@@ -368,6 +391,9 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
         return std::make_unique<BaseTypeNode>(token, this->lexer->toName(token));
     }
     default:
+        if(this->inTypeNameCompletionPoint()) {
+            this->makeCodeComp(CodeCompNode::TYPE, nullptr, this->curToken);
+        }
         E_ALTER(EACH_LA_typeName(GEN_LA_ALTER));
     }
 }
@@ -894,7 +920,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
         return this->parse_paramExpansion();
     default:
         if(this->inCompletionPoint()) {
-            if(this->inVarNameCompletionPoint()) {  //FIXME: scope-aware completion
+            if(this->inVarNameCompletionPoint()) {
                 this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
             } else if(HAS_SPACE() || !hasFlag(opt, CmdArgParseOpt::MODULE)) {
                 this->ccHandler->addCmdArgOrModRequest(this->curToken, opt);

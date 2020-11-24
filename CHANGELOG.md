@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - sematic aware completion
   - complete field/method name
   - complete local variable name
+  - complete type name
 
 
 #### Completion

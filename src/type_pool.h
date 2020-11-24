@@ -234,6 +234,10 @@ public:
         return this->methodMap;
     }
 
+    const FlexBuffer<DSType *> &getTypeTable() const {
+        return this->typeTable;
+    }
+
     TypeDiscardPoint getDiscardPoint() const {
         return TypeDiscardPoint {
             .typeIdOffset = this->typeTable.size(),

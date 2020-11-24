@@ -131,6 +131,8 @@ protected:
 
     bool inVarNameCompletionPoint() const;
 
+    bool inTypeNameCompletionPoint() const;
+
     template<typename ...Args>
     void makeCodeComp(Args && ...args) {
         this->incompleteNode = std::make_unique<CodeCompNode>(std::forward<Args>(args)...);

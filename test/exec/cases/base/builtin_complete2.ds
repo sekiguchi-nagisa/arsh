@@ -115,7 +115,32 @@ $assertArray(["toFloat"], $(complete '
         var b = 45.0
         $b * $a.'))
 
-
+# type
+$assertArray(['Bool', 'Boolean'], $(complete '34 is [B'))
+assert $(complete '34 is').empty()
+assert $(complete '34 as').empty()
+$assertArray(['StackOverflowError', 'String'], $(complete 'var a :St'))
+$assertArray([
+    'Any', 'ArithmeticError', 'Bool', 'Boolean', 'Error', 'Float',
+    'Func', 'GlobbingError', 'Int', 'Job', 'KeyNotFoundError', 'Nothing',
+    'OutOfRangeError', 'Regex', 'RegexSyntaxError', 'Signal', 'Signals', 
+    'StackOverflowError', 'String', 'SystemError', 'TypeCastError',
+    'UnixFD', 'UnwrappingError', 'Void'
+], $(complete 'var a :'))
+$assertArray([
+    'Any', 'ArithmeticError', 'Bool', 'Boolean', 'Error', 'Float',
+    'Func', 'GlobbingError', 'Int', 'Job', 'KeyNotFoundError', 'Nothing',
+    'OutOfRangeError', 'Regex', 'RegexSyntaxError', 'Signal', 'Signals', 
+    'StackOverflowError', 'String', 'SystemError', 'TypeCastError',
+    'UnixFD', 'UnwrappingError', 'Void'
+], $(complete '234 as '))
+$assertArray(['Dot'], $(complete 'typedef Dot = [[String]]; function f($a : D'))
+$assertArray(['typeof', 'typeof0'], $(complete 'typedef typeof = [[String]]; typedef typeof0 = Int; function f($a : typeof'))
+$assertArray(['Func','Func0'], $(complete '
+    typedef Dot0 = [[String]]
+    if(test -f 34) {
+        typedef Func0 = [String:[Any]]
+        assert 45 is Func'))
 
 # no completion candidate
 assert($(complete '34').empty())

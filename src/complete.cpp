@@ -403,7 +403,7 @@ static void completeVarName(const NameScope &scope,
                             const std::string &prefix, ArrayObject &results) {
     for(const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
         for(const auto &iter : *curScope) {
-            StringRef varName = iter.first.c_str();
+            StringRef varName = iter.first;
             if(varName.startsWith(prefix) && isVarName(varName)) {
                 append(results, varName, EscapeOp::NOP);
             }
@@ -448,8 +448,33 @@ static void completeMember(const TypePool &pool, const DSType &recvType,
     }
 }
 
-DSValue createArgv(const DSState &state, const Lexer &lex,
-                   const CmdNode &cmdNode, const std::string &word) {
+static void completeType(const TypePool &pool, const NameScope &scope,
+                         const std::string &word, ArrayObject &results) {
+    // search scope
+    for(const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
+        for(auto &e : *curScope) {
+            StringRef name = e.first;
+            if(name.startsWith(word) && isTypeAliasFullName(name)) {
+                name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
+                append(results, name, EscapeOp::NOP);
+            }
+        }
+    }
+
+    // search TypePool
+    for(auto  &t : pool.getTypeTable()) {
+        if(t->isModType() || t->isReifiedType() || t->isOptionType() || t->isFuncType()) {
+            continue;
+        }
+        StringRef name = t->getNameRef();
+        if(name.startsWith(word) && std::all_of(name.begin(), name.end(), isalnum)) {
+            append(results, name, EscapeOp::NOP);
+        }
+    }
+}
+
+static DSValue createArgv(const TypePool &pool, const Lexer &lex,
+                          const CmdNode &cmdNode, const std::string &word) {
     std::vector<DSValue> values;
 
     // add cmd
@@ -468,7 +493,7 @@ DSValue createArgv(const DSState &state, const Lexer &lex,
         values.push_back(DSValue::createStr(word));
     }
 
-    return DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(values));
+    return DSValue::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
 }
 
 static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNode,
@@ -479,7 +504,7 @@ static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNod
     }
 
     // preapre argument
-    auto argv = createArgv(state, lex, cmdNode, word);
+    auto argv = createArgv(state.typePool, lex, cmdNode, word);
     unsigned int index = typeAs<ArrayObject>(argv).size();
     if(!word.empty()) {
         index--;
@@ -543,6 +568,9 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     if(hasFlag(this->compOp, CodeCompOp::MEMBER)) {
         completeMember(this->state.typePool, *this->recvType, this->compWord, results);
     }
+    if(hasFlag(this->compOp, CodeCompOp::TYPE)) {
+        completeType(this->state.typePool, *this->scope, this->compWord, results);
+    }
     if(hasFlag(this->compOp, CodeCompOp::HOOK)) {
         if(!kickCompHook(this->state, *this->lex, *this->cmdNode, this->compWord, results)) {
             completeFileName(state.logicalWorkingDir.c_str(), this->compWord, this->fallbackOp, results);
@@ -554,6 +582,12 @@ void CodeCompletionHandler::addVarNameRequest(Token token, IntrusivePtr<NameScop
     auto value = this->lex->toName(token);
     this->scope = std::move(curScope);
     this->addCompRequest(CodeCompOp::VAR, std::move(value));
+}
+
+void CodeCompletionHandler::addTypeNameRequest(Token token, IntrusivePtr<NameScope> curScope) {
+    auto value = this->lex->toName(token);
+    this->scope = std::move(curScope);
+    this->addCompRequest(CodeCompOp::TYPE, std::move(value));
 }
 
 void CodeCompletionHandler::addCmdRequest(const Token token) {
