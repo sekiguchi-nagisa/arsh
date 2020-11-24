@@ -243,10 +243,10 @@ TokenKind Lexer::nextToken(Token &token) {
 
       <STMT,EXPR,NAME,CMD,TYPE> COMMENT
                                { SKIP(); }
-      <STMT,EXPR,NAME,TYPE> [ \t]+
-                               { SKIP(); }
-      <STMT,EXPR,NAME,TYPE> "\\" [\r\n]
-                               { UPDATE_LN(); SKIP(); }
+      <STMT,EXPR,NAME,CMD,TYPE> [ \t]+
+                               { FIND_SPACE(); }
+      <STMT,EXPR,NAME,CMD,TYPE> "\\" [\r\n]
+                               { UPDATE_LN(); FIND_SPACE(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE); }
       <DSTRING> DQUOTE_CHAR+   { UPDATE_LN(); RET(STR_ELEMENT); }
@@ -270,8 +270,6 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> APPLIED_NAME "("   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_PAREN); }
       <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
       <CMD> "("                { PUSH_MODE(CMD); RET(LP); }
-      <CMD> [ \t]+             { FIND_SPACE(); }
-      <CMD> "\\" [\r\n]        { UPDATE_LN(); FIND_SPACE(); }
 
       <CMD> "<"                { RET(REDIR_IN_2_FILE); }
       <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
