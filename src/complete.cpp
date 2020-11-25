@@ -448,8 +448,23 @@ static void completeMember(const TypePool &pool, const DSType &recvType,
     }
 }
 
-static void completeType(const TypePool &pool, const NameScope &scope,
+static void completeType(const TypePool &pool, const DSType *recvType, const NameScope &scope,
                          const std::string &word, ArrayObject &results) {
+    if(recvType) {
+        std::function<bool(StringRef , const FieldHandle&)> fieldWalker =
+                [&](StringRef name, const FieldHandle &handle) {
+                    if(name.startsWith(word) && isTypeAliasFullName(name)) {
+                        if(handle.getModID() == 0 || handle.getModID() == scope.modId || name[0] != '_') {
+                            name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
+                            append(results, name, EscapeOp::NOP);
+                        }
+                    }
+                    return true;
+                };
+        recvType->walkField(fieldWalker);
+        return;
+    }
+
     // search scope
     for(const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
         for(auto &e : *curScope) {
@@ -569,7 +584,7 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
         completeMember(this->state.typePool, *this->recvType, this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::TYPE)) {
-        completeType(this->state.typePool, *this->scope, this->compWord, results);
+        completeType(this->state.typePool, this->recvType, *this->scope, this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::HOOK)) {
         if(!kickCompHook(this->state, *this->lex, *this->cmdNode, this->compWord, results)) {
@@ -584,9 +599,11 @@ void CodeCompletionHandler::addVarNameRequest(Token token, IntrusivePtr<NameScop
     this->addCompRequest(CodeCompOp::VAR, std::move(value));
 }
 
-void CodeCompletionHandler::addTypeNameRequest(Token token, IntrusivePtr<NameScope> curScope) {
+void CodeCompletionHandler::addTypeNameRequest(Token token, const DSType *type,
+                                               IntrusivePtr<NameScope> curScope) {
     auto value = this->lex->toName(token);
     this->scope = std::move(curScope);
+    this->recvType = type;
     this->addCompRequest(CodeCompOp::TYPE, std::move(value));
 }
 

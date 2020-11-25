@@ -136,7 +136,7 @@ public:
 
     void addVarNameRequest(Token token, IntrusivePtr<NameScope> curScope);
 
-    void addTypeNameRequest(Token token, IntrusivePtr<NameScope> curScope);
+    void addTypeNameRequest(Token token, const DSType *type, IntrusivePtr<NameScope> curScope);
 
     void addMemberRequest(const DSType &type, Token token) {
         this->compOp = CodeCompOp::MEMBER;

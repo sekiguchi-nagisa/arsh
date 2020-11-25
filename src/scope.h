@@ -208,17 +208,11 @@ public:
     const FieldHandle *lookupField(const DSType &recv, const std::string &fieldName) const {
         auto *handle = recv.lookupField(fieldName);
         if(handle) {
-            if(handle->getModID() == 0) {
+            if(handle->getModID() == 0 || this->modId == handle->getModID() || fieldName[0] != '_') {
                 return handle;
             }
-            if(this->modId != handle->getModID()) {
-                StringRef ref = fieldName;
-                if(ref[0] == '_') {
-                    return nullptr;
-                }
-            }
         }
-        return handle;
+        return nullptr;
     }
 
     // for symbol discard

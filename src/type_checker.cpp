@@ -1724,9 +1724,17 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
         this->ccHandler->addMemberRequest(recvType, node.getTypingToken());
         break;
     }
-    case CodeCompNode::TYPE:
-        this->ccHandler->addTypeNameRequest(node.getTypingToken(), this->curScope);
+    case CodeCompNode::TYPE: {
+        const DSType *recvType = nullptr;
+        if(node.getExprNode()) {
+            recvType = &this->checkTypeExactly(*node.getExprNode());
+            if(!recvType->isModType()) {
+                RAISE_TC_ERROR(Required, *node.getExprNode(), "Module type", recvType->getName());
+            }
+        }
+        this->ccHandler->addTypeNameRequest(node.getTypingToken(), recvType, this->curScope);
         break;
+    }
     }
     RAISE_TC_ERROR(Unreachable, node);
 }

@@ -281,6 +281,9 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
             std::unique_ptr<TypeNode> typeNode = std::move(typeToken);
             while (!HAS_NL() && CUR_KIND() == TokenKind::TYPE_DOT) {
                 this->consume();    // TYPE_DOT
+                if(this->inTypeNameCompletionPoint()) {
+                    this->makeCodeComp(CodeCompNode::TYPE, std::move(typeNode), this->curToken);
+                }
                 Token nameToken = TRY(this->expect(TokenKind::IDENTIFIER));
                 typeNode = std::make_unique<QualifiedTypeNode>(
                         std::move(typeNode),

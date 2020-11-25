@@ -141,6 +141,9 @@ $assertArray(['Func','Func0'], $(complete '
     if(test -f 34) {
         typedef Func0 = [String:[Any]]
         assert 45 is Func'))
+$assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; 23 is CP."))
+$assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; 23 is CP . C"))
+
 
 # no completion candidate
 assert($(complete '34').empty())
