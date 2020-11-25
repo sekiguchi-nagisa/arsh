@@ -421,7 +421,9 @@ std::unique_ptr<TypeNode> Parser::parse_typeName(bool enterTYPEMode) {
     return typeNode;
 }
 
-std::unique_ptr<Node> Parser::parse_statementImp() {
+std::unique_ptr<Node> Parser::parse_statementImpl() {
+    GUARD_DEEP_NESTING(guard);
+
     this->changeLexerModeToSTMT();
 
     if(this->inCompletionPoint()) {
@@ -531,7 +533,7 @@ std::unique_ptr<Node> Parser::parse_statementImp() {
 std::unique_ptr<Node> Parser::parse_statement(bool disallowEOS) {
     GUARD_DEEP_NESTING(guard);
 
-    auto node = TRY(this->parse_statementImp());
+    auto node = TRY(this->parse_statementImpl());
     TRY(this->parse_statementEnd(disallowEOS));
     return node;
 }
@@ -698,7 +700,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     if(CUR_KIND() == TokenKind::LP) {  // for
         this->consume();    // LP
 
-        auto initNode = TRY(this->parse_statementImp());
+        auto initNode = TRY(this->parse_statementImpl());
         TRY(this->expect(TokenKind::LINE_END));
 
         auto condNode = TRY(this->parse_forCond());
