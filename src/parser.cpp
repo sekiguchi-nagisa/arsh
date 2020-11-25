@@ -531,8 +531,6 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
 }
 
 std::unique_ptr<Node> Parser::parse_statement(bool disallowEOS) {
-    GUARD_DEEP_NESTING(guard);
-
     auto node = TRY(this->parse_statementImpl());
     TRY(this->parse_statementEnd(disallowEOS));
     return node;
