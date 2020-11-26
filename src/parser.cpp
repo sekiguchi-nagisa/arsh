@@ -1274,7 +1274,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             if(this->inVarNameCompletionPoint()) {
                 this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
             } else if(!this->inCompletionPointAt(TokenKind::EOS) || this->consumedKind != TokenKind::EOS) {
-                this->ccHandler->addCmdOrKeywordRequest(this->curToken, this->inStmtCompCtx);
+                this->makeCodeComp(this->inStmtCompCtx ? CodeCompNode::CMD_OR_STMT : CodeCompNode::CMD_OR_EXPR,
+                                   nullptr, this->curToken);
             }
         }
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));

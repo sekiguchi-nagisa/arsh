@@ -1735,6 +1735,12 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
         this->ccHandler->addTypeNameRequest(node.getTypingToken(), recvType, this->curScope);
         break;
     }
+    case CodeCompNode::CMD_OR_STMT:
+    case CodeCompNode::CMD_OR_EXPR:
+        this->ccHandler->addCmdOrKeywordRequest(
+                node.getTypingToken(),
+                node.getKind() == CodeCompNode::CMD_OR_STMT, this->curScope);
+        break;
     }
     RAISE_TC_ERROR(Unreachable, node);
 }

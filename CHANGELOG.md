@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - complete field/method name
   - complete local variable name
   - complete type name
-
+  - complete user-defined command name from current scope
 
 #### Completion
 - add completions for

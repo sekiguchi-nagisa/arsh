@@ -144,11 +144,7 @@ public:
         this->compWord = this->lex->toTokenText(token);
     }
 
-    void addCmdOrKeywordRequest(Token token, bool isStmt) {
-        this->addCmdRequest(token);
-        CodeCompOp kwOp = isStmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW;
-        setFlag(this->compOp, kwOp);
-    }
+    void addCmdOrKeywordRequest(Token token, bool isStmt, IntrusivePtr<NameScope> curScope);
 
     void addCmdArgOrModRequest(Token token, CmdArgParseOpt opt);
 
@@ -167,9 +163,6 @@ public:
     }
 
     void invoke(ArrayObject &results);
-
-private:
-    void addCmdRequest(Token token);
 };
 
 /**

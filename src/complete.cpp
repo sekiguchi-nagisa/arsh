@@ -607,7 +607,8 @@ void CodeCompletionHandler::addTypeNameRequest(Token token, const DSType *type,
     this->addCompRequest(CodeCompOp::TYPE, std::move(value));
 }
 
-void CodeCompletionHandler::addCmdRequest(const Token token) {
+void CodeCompletionHandler::addCmdOrKeywordRequest(Token token, bool isStmt, IntrusivePtr<NameScope> curScope) {
+    // add command request
     auto value = this->lex->toCmdArg(token);
     bool tilde = this->lex->startsWith(token, '~');
     bool isDir = strchr(value.c_str(), '/') != nullptr;
@@ -620,6 +621,10 @@ void CodeCompletionHandler::addCmdRequest(const Token token) {
     } else {
         this->addCompRequest(CodeCompOp::COMMAND, std::move(value));
     }
+
+    // add keyword request
+    setFlag(this->compOp, isStmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
+    this->scope = std::move(curScope);
 }
 
 void CodeCompletionHandler::addCmdArgOrModRequest(Token token, CmdArgParseOpt opt) {

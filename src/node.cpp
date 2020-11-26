@@ -909,7 +909,9 @@ void CodeCompNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP) \
     OP(VAR) \
     OP(MEMBER) \
-    OP(TYPE)
+    OP(TYPE) \
+    OP(CMD_OR_STMT) \
+    OP(CMD_OR_EXPR) \
 
     DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
