@@ -114,6 +114,7 @@ $assertArray(["toFloat"], $(complete '
     } elif $a is Int {
         var b = 45.0
         $b * $a.'))
+$assertArray(['close', 'dup'], { complete '$STDIN.' > /dev/null; $COMPREPLY; })
 
 # type
 $assertArray(['Bool', 'Boolean'], $(complete '34 is [B'))

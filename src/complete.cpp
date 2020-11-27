@@ -437,6 +437,9 @@ static void completeMember(const TypePool &pool, const DSType &recvType,
     for(auto &e : pool.getMethodMap()) {
         StringRef name = e.first.ref;
         auto &type = pool.get(e.first.id);
+        if(name.empty()) {
+            continue;
+        }
         if(name.startsWith(word) && !isMagicMethodName(name)) {
             for(const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
                 if(type == *t) {
