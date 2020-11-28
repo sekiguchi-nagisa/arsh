@@ -541,6 +541,42 @@ static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNod
     return true;
 }
 
+static bool hasCmdArg(const CmdNode &node) {
+    for(auto &e : node.getArgNodes()) {
+        if(e->is(NodeKind::CmdArg)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool completeSubcommand(const TypePool &pool, const NameScope &scope,
+                               const CmdNode &cmdNode, const std::string &word, ArrayObject &results) {
+    if(hasCmdArg(cmdNode)) {
+        return false;
+    }
+
+    std::string cmdName = toCmdFullName(cmdNode.getNameNode().getValue());
+    auto *handle = scope.lookup(cmdName);
+    if(!handle) {
+        return false;
+    }
+
+    const auto &modType = static_cast<const ModType&>(pool.get(handle->getTypeID()));
+    std::function<bool(StringRef , const FieldHandle&)> fieldWalker =
+            [&](StringRef name, const FieldHandle &) {
+                if(name.startsWith(word) && isCmdFullName(name)) {
+                    if(!name.startsWith("_")) {
+                        name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
+                        append(results, name, EscapeOp::COMMAND_ARG);
+                    }
+                }
+                return true;
+            };
+    modType.walkField(fieldWalker);
+    return true;
+}
+
 void CodeCompletionHandler::invoke(ArrayObject &results) {
     if(!this->hasCompRequest()) {
         return; // do nothing
@@ -590,7 +626,9 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
         completeType(this->state.typePool, this->recvType, *this->scope, this->compWord, results);
     }
     if(hasFlag(this->compOp, CodeCompOp::HOOK)) {
-        if(!kickCompHook(this->state, *this->lex, *this->cmdNode, this->compWord, results)) {
+        if(!kickCompHook(this->state, *this->lex, *this->cmdNode, this->compWord, results) &&
+                !completeSubcommand(this->state.typePool, *this->scope,
+                                    *this->cmdNode, this->compWord, results)) {
             completeFileName(state.logicalWorkingDir.c_str(), this->compWord, this->fallbackOp, results);
         }
     }
