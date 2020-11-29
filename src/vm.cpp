@@ -578,7 +578,7 @@ static bool lookupUdc(const DSState &state, const char *name, Command &cmd, bool
     if(code && !forceGlobal) {
         auto key = code->getSourceName();
         auto *e = state.modLoader.find(key);
-        if(e && e->isModule()) {
+        if(e && e->isSealed()) {
             modType = static_cast<const ModType*>(&state.typePool.get(e->getTypeId()));
         }
     }

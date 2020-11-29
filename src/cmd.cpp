@@ -2060,12 +2060,12 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
 static int showModule(const DSState &state) {
     auto &loader = state.modLoader;
     unsigned int size = loader.modSize();
-    auto *buf = new std::pair<const char *, bool>[size];
+    auto *buf = new const char *[size];
     for(auto &e : loader) {
-        buf[e.second.getIndex()] = {e.first.data(), e.second.isModule()};
+        buf[e.second.getIndex()] = e.first.data();
     }
     for(unsigned int i = 0; i < size; i++) {
-        fprintf(stdout, "(%s) %s\n", buf[i].second ? "module" : "script", buf[i].first);
+        fprintf(stdout, "%s\n", buf[i]);
     }
     delete[] buf;
     return 0;
@@ -2085,7 +2085,7 @@ static int isSourced(const DSState &state) {
     if(code) {
         auto *entry = state.modLoader.find(code->getSourceName());
         if(entry) {
-            return entry->isModule() ? 0 : 1;
+            return entry->isSealed() ? 0 : 1;
         }
     }
     return 1;

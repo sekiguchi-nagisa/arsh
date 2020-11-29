@@ -325,19 +325,20 @@ public:
     }
 
     /**
-     *
+     * get type id of module type
      * @return
-     * if not set mod type, return 0.
+     * if not set mod type (not sealed), return 0.
      */
     unsigned int getTypeId() const {
         return this->typeId;
     }
 
-    explicit operator bool() const {
-        return this->getTypeId() > 0;
-    }
-
-    bool isModule() const {
+    /**
+     *
+     * @return
+     * return true if already sealed (set module type id)
+     */
+    bool isSealed() const {
         return this->getTypeId() > 0;
     }
 };
@@ -433,7 +434,7 @@ private:
         auto pair = this->indexMap.emplace(key, ModEntry(this->indexMap.size()));
         if(!pair.second) {  // already registered
             auto &e = pair.first->second;
-            if(e) {
+            if(e.isSealed()) {
                 return e.getTypeId();
             }
             return ModLoadingError(0);

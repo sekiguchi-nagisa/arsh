@@ -51,6 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - reimplement all completions on CodeCompletionHandler
 
 #### Builtin
+- **Breaking Change**: output format of ``shctl module`` subcommand
 - allow negative number index in string ``[]``
 
 

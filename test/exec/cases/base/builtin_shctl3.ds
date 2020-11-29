@@ -6,8 +6,8 @@ $IFS = $'\n'
 
 var a = $(shctl module)
 assert $a.size() == 5
-assert $a[0] == "(script) (builtin)"
-assert $a[1] == "(script) (root)"
-assert $a[2] == "(script) ${$SCRIPT_NAME.realpath()!}"
-assert $a[3] == "(module) ${"$SCRIPT_DIR/../../_module4test/module4.ds".realpath()!}"
-assert $a[4] == "(module) ${"$SCRIPT_DIR/../../_module4test/module3.ds".realpath()!}"
+assert $a[0] == "(builtin)"
+assert $a[1] == "(root)"
+assert $a[2] == "${$SCRIPT_NAME.realpath()!}"
+assert $a[3] == "${"$SCRIPT_DIR/../../_module4test/module4.ds".realpath()!}"
+assert $a[4] == "${"$SCRIPT_DIR/../../_module4test/module3.ds".realpath()!}"
