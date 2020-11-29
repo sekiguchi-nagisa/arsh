@@ -378,7 +378,7 @@ const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scop
     this->gvarCount++;  // reserve module object entry
     auto iter = this->indexMap.find(fullpath);
     assert(iter != this->indexMap.end());
-    assert(!iter->second);
+    assert(!iter->second.isSealed());
     iter->second.setModType(modType);
     return modType;
 }
