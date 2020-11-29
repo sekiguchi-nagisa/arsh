@@ -1715,13 +1715,13 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
 void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     assert(this->ccHandler);
     switch(node.getKind()) {
-    case CodeCompNode::VAR:
-        this->ccHandler->addVarNameRequest(node.getTypingToken(), this->curScope);
+    case CodeCompNode::VAR: {}
+        this->ccHandler->addVarNameRequest(this->lexer->toName(node.getTypingToken()), this->curScope);
         break;
     case CodeCompNode::MEMBER: {
         assert(node.getExprNode());
         auto &recvType = this->checkTypeAsExpr(*node.getExprNode());
-        this->ccHandler->addMemberRequest(recvType, node.getTypingToken());
+        this->ccHandler->addMemberRequest(recvType, this->lexer->toTokenText(node.getTypingToken()));
         break;
     }
     case CodeCompNode::TYPE: {
@@ -1732,15 +1732,25 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
                 RAISE_TC_ERROR(Required, *node.getExprNode(), "Module type", recvType->getName());
             }
         }
-        this->ccHandler->addTypeNameRequest(node.getTypingToken(), recvType, this->curScope);
+        this->ccHandler->addTypeNameRequest(
+                this->lexer->toName(node.getTypingToken()),
+                recvType, this->curScope);
         break;
     }
     case CodeCompNode::CMD_OR_STMT:
-    case CodeCompNode::CMD_OR_EXPR:
+    case CodeCompNode::CMD_OR_EXPR: {
+        CodeCompletionHandler::CMD_OR_KW_OP op{};
+        if(this->lexer->startsWith(node.getTypingToken(), '~')) {
+            setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::TILDE);
+        }
+        if(node.getKind() == CodeCompNode::CMD_OR_STMT) {
+            setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::STMT);
+        }
         this->ccHandler->addCmdOrKeywordRequest(
-                node.getTypingToken(),
-                node.getKind() == CodeCompNode::CMD_OR_STMT, this->curScope);
+                this->lexer->toCmdArg(node.getTypingToken()),
+                op, this->curScope);
         break;
+    }
     }
     RAISE_TC_ERROR(Unreachable, node);
 }

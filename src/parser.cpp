@@ -59,7 +59,6 @@ Parser::Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler) {
     this->ccHandler = handler;
     if(this->ccHandler) {
         this->lexer->setComplete(true);
-        this->ccHandler->setLexer(*this->lexer);
     }
     this->fetchNext();
 }
@@ -832,7 +831,7 @@ std::unique_ptr<Node> Parser::parse_command() {
             if(this->hasError()) {
                 if(this->inCompletionPoint()
                     && hasFlag(this->ccHandler->getCompOp(), CodeCompOp::FILE)) {
-                    this->ccHandler->addCompHookRequest(std::move(node));
+                    this->ccHandler->addCompHookRequest(*this->lexer, std::move(node));
                 }
                 return nullptr;
             }
@@ -926,7 +925,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
             if(this->inVarNameCompletionPoint()) {
                 this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
             } else if(HAS_SPACE() || !hasFlag(opt, CmdArgParseOpt::MODULE)) {
-                this->ccHandler->addCmdArgOrModRequest(this->curToken, opt);
+                bool tilde = this->lexer->startsWith(this->curToken, '~');
+                this->ccHandler->addCmdArgOrModRequest(this->lexer->toCmdArg(this->curToken), opt, tilde);
             }
         }
         E_ALTER(EACH_LA_cmdArg(GEN_LA_ALTER));

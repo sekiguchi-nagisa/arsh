@@ -496,7 +496,7 @@ static DSValue createArgv(const TypePool &pool, const Lexer &lex,
     std::vector<DSValue> values;
 
     // add cmd
-    values.push_back(DSValue::createStr(lex.toStrRef(cmdNode.getNameNode().getToken())));
+    values.push_back(DSValue::createStr(cmdNode.getNameNode().getValue()));
 
     // add args
     for(auto &e : cmdNode.getArgNodes()) {
@@ -521,7 +521,7 @@ static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNod
         return false;
     }
 
-    // preapre argument
+    // prepare argument
     auto argv = createArgv(state.typePool, lex, cmdNode, word);
     unsigned int index = typeAs<ArrayObject>(argv).size();
     if(!word.empty()) {
@@ -634,24 +634,21 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
     }
 }
 
-void CodeCompletionHandler::addVarNameRequest(Token token, IntrusivePtr<NameScope> curScope) {
-    auto value = this->lex->toName(token);
+void CodeCompletionHandler::addVarNameRequest(std::string &&value, IntrusivePtr<NameScope> curScope) {
     this->scope = std::move(curScope);
     this->addCompRequest(CodeCompOp::VAR, std::move(value));
 }
 
-void CodeCompletionHandler::addTypeNameRequest(Token token, const DSType *type,
+void CodeCompletionHandler::addTypeNameRequest(std::string &&value, const DSType *type,
                                                IntrusivePtr<NameScope> curScope) {
-    auto value = this->lex->toName(token);
     this->scope = std::move(curScope);
     this->recvType = type;
     this->addCompRequest(CodeCompOp::TYPE, std::move(value));
 }
 
-void CodeCompletionHandler::addCmdOrKeywordRequest(Token token, bool isStmt, IntrusivePtr<NameScope> curScope) {
+void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP cmdOrKwOp, IntrusivePtr<NameScope> curScope) {
     // add command request
-    auto value = this->lex->toCmdArg(token);
-    bool tilde = this->lex->startsWith(token, '~');
+    bool tilde = hasFlag(cmdOrKwOp, CMD_OR_KW_OP::TILDE);
     bool isDir = strchr(value.c_str(), '/') != nullptr;
     if(tilde || isDir) {
         CodeCompOp op = CodeCompOp::EXEC;
@@ -664,14 +661,14 @@ void CodeCompletionHandler::addCmdOrKeywordRequest(Token token, bool isStmt, Int
     }
 
     // add keyword request
-    setFlag(this->compOp, isStmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
+    setFlag(this->compOp, hasFlag(cmdOrKwOp, CMD_OR_KW_OP::STMT) ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
     this->scope = std::move(curScope);
 }
 
-void CodeCompletionHandler::addCmdArgOrModRequest(Token token, CmdArgParseOpt opt) {
+void CodeCompletionHandler::addCmdArgOrModRequest(std::string &&value, CmdArgParseOpt opt, bool tilde) {
     CodeCompOp op{};
     if(hasFlag(opt, CmdArgParseOpt::FIRST)) {
-        if(this->lex->startsWith(token, '~')) {
+        if(tilde) {
             setFlag(op, CodeCompOp::TILDE);
         }
         if(hasFlag(opt, CmdArgParseOpt::MODULE)) {
@@ -684,7 +681,7 @@ void CodeCompletionHandler::addCmdArgOrModRequest(Token token, CmdArgParseOpt op
     } else if(hasFlag(opt, CmdArgParseOpt::REDIR)) {
         setFlag(op, CodeCompOp::ARG_KW);
     }
-    this->addCompRequest(op, this->lex->toCmdArg(token));
+    this->addCompRequest(op, std::move(value));
 }
 
 static Lexer lex(StringRef ref) {

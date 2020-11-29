@@ -107,10 +107,6 @@ private:
 public:
     explicit CodeCompletionHandler(DSState &state);
 
-    void setLexer(const Lexer &lexer) {
-        this->lex.reset(&lexer);
-    }
-
     void addCompRequest(CodeCompOp op, std::string &&word) {
         this->compOp = op;
         this->compWord = std::move(word);
@@ -134,21 +130,27 @@ public:
         }
     }
 
-    void addVarNameRequest(Token token, IntrusivePtr<NameScope> curScope);
+    void addVarNameRequest(std::string &&value, IntrusivePtr<NameScope> curScope);
 
-    void addTypeNameRequest(Token token, const DSType *type, IntrusivePtr<NameScope> curScope);
+    void addTypeNameRequest(std::string &&value, const DSType *type, IntrusivePtr<NameScope> curScope);
 
-    void addMemberRequest(const DSType &type, Token token) {
+    void addMemberRequest(const DSType &type, std::string &&value) {
         this->compOp = CodeCompOp::MEMBER;
         this->recvType = &type;
-        this->compWord = this->lex->toTokenText(token);
+        this->compWord = std::move(value);
     }
 
-    void addCmdOrKeywordRequest(Token token, bool isStmt, IntrusivePtr<NameScope> curScope);
+    enum class CMD_OR_KW_OP {
+        STMT  = 1u << 0u,
+        TILDE = 1u << 1u,
+    };
 
-    void addCmdArgOrModRequest(Token token, CmdArgParseOpt opt);
+    void addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP op, IntrusivePtr<NameScope> curScope);
 
-    void addCompHookRequest(std::unique_ptr<CmdNode> &&node) {
+    void addCmdArgOrModRequest(std::string &&value, CmdArgParseOpt opt, bool tilde);
+
+    void addCompHookRequest(const Lexer &lexer, std::unique_ptr<CmdNode> &&node) {
+        this->lex.reset(&lexer);
         this->fallbackOp = this->compOp;
         this->compOp = CodeCompOp::HOOK;
         this->cmdNode = std::move(node);
@@ -164,6 +166,8 @@ public:
 
     void invoke(ArrayObject &results);
 };
+
+template <> struct allow_enum_bitop<CodeCompletionHandler::CMD_OR_KW_OP> : std::true_type {};
 
 /**
  * perform completion
