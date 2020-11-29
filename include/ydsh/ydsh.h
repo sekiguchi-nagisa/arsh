@@ -257,15 +257,9 @@ int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
 
 /* for module loading option */
 /**
- * load module as fullpath. so not allow cascading module search
- * (not search from LOCAL_MOD_DIR and SYSTEM_MOD_DIR)
- */
-#define DS_MOD_FULLPATH      ((unsigned int) (1u << 0u))
-
-/**
  * ignore ENOENT error
  */
-#define DS_MOD_IGNORE_ENOENT ((unsigned int) (1u << 1u))
+#define DS_MOD_IGNORE_ENOENT ((unsigned int) (1u << 0u))
 
 /**
  * open file as module. if e is not null, set error info.
@@ -273,7 +267,7 @@ int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
  * @param st
  * not null.
  * @param fileName
- * not null
+ * not null. if realtive path, search from module loading path
  * @param option
  * @param e
  * may be null

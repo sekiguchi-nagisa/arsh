@@ -691,19 +691,12 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
     GUARD_NULL(st, -1);
     GUARD_NULL(fileName, -1);
 
-    CStrPtr scriptDir;
-    if(!hasFlag(option, DS_MOD_FULLPATH)) {
-        scriptDir = getCWD();
-    }
-
     std::string line = "source";
     line += hasFlag(option, DS_MOD_IGNORE_ENOENT) ? "! " : " ";
     appendAsEscaped(line, fileName);
 
     st->lineNum = 0;
-    Lexer lexer("ydsh", ByteBuffer(line.c_str(), line.c_str() + line.size()), std::move(scriptDir));
-    lexer.setLineNumOffset(st->lineNum);
-    return evalScript(*st, std::move(lexer), e);
+    return DSState_eval(st, "ydsh", line.c_str(), line.size(), e);
 }
 
 int DSState_exec(DSState *st, char *const *argv) {

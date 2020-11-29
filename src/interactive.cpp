@@ -267,12 +267,16 @@ static const char *historyCallback(const char *buf, int *historyIndex, historyOp
 }
 
 static std::pair<DSErrorKind, int> loadRC(const std::string &rcfile) {
-    if(rcfile.empty()) {
+    CStrPtr fullpath;
+    if(!rcfile.empty()) {
+        fullpath.reset(realpath(rcfile.c_str(), nullptr));
+    }
+    if(!fullpath) {
         return {DS_ERROR_KIND_SUCCESS, 0};
     }
 
     DSError e{};
-    int ret = DSState_loadModule(state, rcfile.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
+    int ret = DSState_loadModule(state, fullpath.get(), DS_MOD_IGNORE_ENOENT, &e);
     auto kind = e.kind;
     DSError_release(&e);
 

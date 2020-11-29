@@ -54,6 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: output format of ``shctl module`` subcommand
 - allow negative number index in string ``[]``
 
+#### API
+- **Breaking Change**: remove ``DS_MOD_FULLPATH`` option from ``DSState_loadModule``
+
 
 ## [0.19.1] - 2020-09-22
 

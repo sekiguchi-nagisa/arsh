@@ -19,7 +19,7 @@ protected:
 public:
     HistoryTest() {
         this->state = DSState_create();
-        DSState_loadModule(this->state, HISTORY_MOD_PATH, DS_MOD_FULLPATH, nullptr);
+        DSState_loadModule(this->state, HISTORY_MOD_PATH, 0, nullptr);
 
         std::string value;
         value += '"';
