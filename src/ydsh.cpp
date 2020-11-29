@@ -43,7 +43,10 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError, 
     if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
         return 0;
     }
-    return callToplevel(state, code, dsError, discardPoint);
+    if(!callToplevel(state, code, dsError)) {
+        discardAll(state.modLoader, *state.rootModScope, state.typePool, discardPoint);
+    }
+    return state.getMaskedExitStatus();
 }
 
 static ErrorReporter newReporter() {

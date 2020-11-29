@@ -65,6 +65,12 @@ enum class EvalOP : unsigned int {
     HAS_RETURN = 1u << 2u,    // may have return value.
 };
 
+enum class EvalRet : unsigned int {
+    SUCCESS,      // normal termination
+    HAS_ERROR,    // still has uncaught error
+    HANDLED_ERROR, // already handled uncaught error
+};
+
 template <> struct allow_enum_bitop<CompileOption> : std::true_type {};
 
 template <> struct allow_enum_bitop<RuntimeOption> : std::true_type {};
@@ -460,13 +466,13 @@ private:
      * @param op
      * @param dsError
      * if not null, set error info
-     * @param discardPoint
-     * if not null, after evaluation, commit/discard symbolTable/TypePool state
+     * @param value
+     * if has return value, set to this
      * @return
      * if has error or not value, return null
      * otherwise, return value
      */
-    static DSValue startEval(DSState &state, EvalOP op, DSError *dsError, const DiscardPoint *discardPoint = nullptr);
+    static EvalRet startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &value);
 
     static unsigned int prepareArguments(VMState &state, DSValue &&recv,
                                          std::pair<unsigned int, std::array<DSValue, 3>> &&args);
@@ -497,11 +503,10 @@ public:
      * must be toplevel compiled code.
      * @param dsError
      * if not null, set error information
-     * @param discardPoint
      * @return
-     * exit status of latest executed command.
+     * if had uncaught exception, return false.
      */
-    static int callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, const DiscardPoint &discardPoint);
+    static bool callToplevel(DSState &state, const CompiledCode &code, DSError *dsError);
 
     /**
      * execute command.
@@ -545,10 +550,10 @@ public:
  * @param dsError
  * if not null, set error information
  * @return
- * exit status of latest executed command.
+ * if had uncaught exception, return false
  */
-inline int callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, const DiscardPoint &discardPoint) {
-    return VM::callToplevel(state, code, dsError, discardPoint);
+inline bool callToplevel(DSState &state, const CompiledCode &code, DSError *dsError) {
+    return VM::callToplevel(state, code, dsError);
 }
 
 /**

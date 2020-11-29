@@ -1794,8 +1794,7 @@ bool VM::handleException(DSState &state) {
     return false;
 }
 
-DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const DiscardPoint *discardPoint) {
-    DSValue value;
+EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &value) {
     const unsigned int oldLevel = state.subshellLevel;
 
     // run main loop
@@ -1811,7 +1810,7 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const Discard
         }
     } else {
         if(!subshell && hasFlag(op, EvalOP::PROPAGATE)) {
-            return value;
+            return EvalRet::HAS_ERROR;
         }
         thrown = state.stack.takeThrownObject();
     }
@@ -1825,14 +1824,10 @@ DSValue VM::startEval(DSState &state, EvalOP op, DSError *dsError, const Discard
     if(subshell) {
         terminate(state.getMaskedExitStatus());
     }
-
-    if(discardPoint && !ret) {
-        discardAll(state.modLoader, *state.rootModScope, state.typePool, *discardPoint);
-    }
-    return value;
+    return ret ? EvalRet::SUCCESS : EvalRet::HANDLED_ERROR;
 }
 
-int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError, const DiscardPoint &discardPoint) {
+bool VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError) {
     state.globals.resize(state.rootModScope->getMaxGlobalVarIndex());
     state.stack.reset();
 
@@ -1842,8 +1837,11 @@ int VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError,
     if(hasFlag(state.compileOption, CompileOption::INTERACTIVE)) {
         setFlag(op, EvalOP::SKIP_TERM);
     }
-    startEval(state, op, dsError, &discardPoint);
-    return state.getMaskedExitStatus();
+
+    DSValue ret;
+    auto s = startEval(state, op, dsError, ret);
+    assert(s != EvalRet::HAS_ERROR);
+    return s == EvalRet::SUCCESS;
 }
 
 unsigned int VM::prepareArguments(VMState &state, DSValue &&recv,
@@ -1890,7 +1888,7 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
     auto obj = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(argv));
     prepareArguments(state.stack, std::move(obj), {0, {}});
     if(windStackFrame(state, 1, 1, &cmdTrampoline)) {
-        ret = startEval(state, EvalOP::SKIP_TERM | EvalOP::PROPAGATE | EvalOP::HAS_RETURN, nullptr);
+        startEval(state, EvalOP::SKIP_TERM | EvalOP::PROPAGATE | EvalOP::HAS_RETURN, nullptr, ret);
     }
 
     if(!propagate) {
@@ -1921,7 +1919,7 @@ DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&rec
         if(!handle->getReturnType().isVoidType()) {
             setFlag(op, EvalOP::HAS_RETURN);
         }
-        ret = startEval(state, op, nullptr);
+        startEval(state, op, nullptr, ret);
     }
     return ret;
 }
@@ -1939,7 +1937,7 @@ DSValue VM::callFunction(DSState &state, DSValue &&funcObj, std::pair<unsigned i
         if(!static_cast<FunctionType&>(type).getReturnType()->isVoidType()) {
             setFlag(op, EvalOP::HAS_RETURN);
         }
-        ret = startEval(state, op, nullptr);
+        startEval(state, op, nullptr, ret);
     }
     return ret;
 }
