@@ -76,9 +76,9 @@ public:
 #define LOG(P, fmt, ...) \
 do { using namespace ydsh; \
     if(useLogging && Logger::instance().checkPolicy(Logger::P)) { \
-        int old = errno; \
+        int __old = errno; \
         Logger::Info("%s(%s):%d: " fmt, __BASE_FILENAME__, __func__, __LINE__, ## __VA_ARGS__); \
-        errno = old; \
+        errno = __old; \
     } \
 } while(false)
 

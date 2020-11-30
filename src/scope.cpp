@@ -246,10 +246,9 @@ void ModuleLoader::discard(const ModDiscardPoint discardPoint) {
     this->gvarCount = discardPoint.gvarCount;
 }
 
-static CStrPtr expandToRealpath(const char *baseDir, const char *path) {
+static std::string concatPath(const char *baseDir, const char *path) {
     if(!*path) {
-        errno = ENOENT;
-        return nullptr;
+        return "";
     }
     std::string value;
     if(!baseDir || *path == '/') {
@@ -260,7 +259,15 @@ static CStrPtr expandToRealpath(const char *baseDir, const char *path) {
         value += '/';
         value += path;
     }
-    return getRealpath(value.c_str());
+    return value;
+}
+
+static CStrPtr tryToRealpath(const std::string &path) {
+    auto ret = getRealpath(path.c_str());
+    if(!ret) {
+        ret.reset(strdup(path.c_str()));
+    }
+    return ret;
 }
 
 static int checkFileType(const struct stat &st, ModLoadOption option) {
@@ -280,12 +287,12 @@ ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath,
                                  FilePtr &filePtr, ModLoadOption option) {
     assert(modPath);
 
-    auto str = expandToRealpath(scriptDir, modPath);
+    auto str = concatPath(scriptDir, modPath);
     LOG(TRACE_MODULE, "\n    scriptDir: `%s'\n    modPath: `%s'\n    fullPath: `%s'",
         (scriptDir == nullptr ? "(null)" : scriptDir),
-        modPath, str ? str.get() : "(null)");
+        modPath, !str.empty() ? str.c_str() : "(null)");
     // check file type
-    if(!str) {
+    if(str.empty()) {
         return ModLoadingError(ENOENT);
     }
 
@@ -293,16 +300,19 @@ ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath,
      * check file type before open due to prevent named pipe blocking
      */
     struct stat st1;    //NOLINT
-    if(stat(str.get(), &st1) != 0) {
+    if(stat(str.c_str(), &st1) != 0) {
+        LOG(TRACE_MODULE, "stat failed: `%s'", strerror(errno));
         return ModLoadingError(errno);
     }
     int s = checkFileType(st1, option);
     if(s) {
+        LOG(TRACE_MODULE, "checkFileType failed: `%s'", strerror(errno));
         return ModLoadingError(s);
     }
 
-    int fd = open(str.get(), O_RDONLY);
+    int fd = open(str.c_str(), O_RDONLY);
     if(fd < 0) {
+        LOG(TRACE_MODULE, "open failed: `%s'", strerror(errno));
         return ModLoadingError(errno);
     }
 
@@ -311,10 +321,13 @@ ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath,
     if(fstat(fd, &st2) != 0 || !isSameFile(st1, st2)) {
         int old = errno == 0 ? ENOENT : errno;
         close(fd);
+        LOG(TRACE_MODULE, "fstat failed: `%s'", strerror(old));
         return ModLoadingError(old);
     }
 
-    auto ret = this->addNewModEntry(std::move(str));
+    // resolve fullpath
+    auto path = tryToRealpath(str);
+    auto ret = this->addNewModEntry(std::move(path));
     if(is<ModLoadingError>(ret)) {
         close(fd);
     } else {
