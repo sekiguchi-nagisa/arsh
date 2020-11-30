@@ -634,35 +634,29 @@ static void reportFileError(const char *sourceName, bool isIO, int errNum, DSErr
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     GUARD_NULL(st, -1);
+    GUARD_NULL(sourceName, -1);
 
     FilePtr filePtr;
-    CStrPtr scriptDir;
-    if(sourceName == nullptr) {
-        scriptDir = getCWD();
-        filePtr = createFilePtr(fdopen, dup(STDIN_FILENO), "rb");
-    } else {
-        auto ret = st->modLoader.load(nullptr, sourceName, filePtr, ModLoadOption{});
-        if(is<ModLoadingError>(ret)) {
-            int errNum = get<ModLoadingError>(ret).getErrNo();
-            if(get<ModLoadingError>(ret).isCircularLoad()) {
-                errNum = ETXTBSY;
-            }
-            reportFileError(sourceName, false, errNum, e);
-            return 1;
-        } else if(is<unsigned int>(ret)) {
-            return 0;   // do nothing.
+    auto ret = st->modLoader.load(nullptr, sourceName, filePtr, ModLoadOption{});
+    if(is<ModLoadingError>(ret)) {
+        int errNum = get<ModLoadingError>(ret).getErrNo();
+        if(get<ModLoadingError>(ret).isCircularLoad()) {
+            errNum = ETXTBSY;
         }
-        char *real = strdup(get<const char *>(ret));
-        assert(*real == '/');
-        const char *ptr = strrchr(real, '/');
-        real[ptr == real ? 1 : (ptr - real)] = '\0';
-        scriptDir.reset(real);
+        reportFileError(sourceName, false, errNum, e);
+        return 1;
+    } else if(is<unsigned int>(ret)) {
+        return 0;   // do nothing.
     }
+    char *real = strdup(get<const char *>(ret));
+    assert(*real == '/');
+    const char *ptr = strrchr(real, '/');
+    real[ptr == real ? 1 : (ptr - real)] = '\0';
+    CStrPtr scriptDir(real);
 
     // read data
     assert(filePtr);
     ByteBuffer buf;
-    sourceName = sourceName == nullptr ? "(stdin)" : sourceName;
     if(!readAll(filePtr, buf)) {
         reportFileError(sourceName, true, errno, e);
         return 1;

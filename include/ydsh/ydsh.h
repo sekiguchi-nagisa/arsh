@@ -242,7 +242,7 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
  * before evaluation reset line number.
  * @param st
  * @param fileName
- * if null, file name is treated as standard input
+ * not null
  * @param e
  * may be null.
  * @return

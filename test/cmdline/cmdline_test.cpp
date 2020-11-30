@@ -60,6 +60,11 @@ public:
         auto result = wrapper.execAndGetResult();
         ExpectOutput::expect(result, status, WaitStatus::EXITED, out, err);
     }
+
+    void expectRegex(InputWrapper &&wrapper, int status, const std::string &out = "", const std::string &err = "") {
+        auto result = wrapper.execAndGetResult();
+        ExpectOutput::expectRegex(result, status, WaitStatus::EXITED, out, err);
+    }
 };
 
 template <unsigned int N>
@@ -104,8 +109,8 @@ $a = 34 +
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
     // line marker (reach null character)
-    msg = "(stdin):1: [syntax error] invalid token, expected: <NewLine>\nhello\n     \n";
-    ASSERT_NO_FATAL_FAILURE(this->expect("hello\0world" | ds(), 1, "", msg));
+    msg = ".+:1: \\[syntax error\\] invalid token, expected: <NewLine>\nhello\n     \n";
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex("hello\0world" | ds(), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker2) {

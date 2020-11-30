@@ -272,7 +272,7 @@ int main(int argc, char **argv) {
         DSState_setArguments(state.get(), shellArgs);
 
         if(isatty(STDIN_FILENO) == 0 && !forceInteractive) {  // pipe line mode
-            return apply(DSState_loadAndEval, state, nullptr);
+            return apply(DSState_loadAndEval, state, "/dev/stdin");
         } else {    // interactive mode
             if(!quiet) {
                 fprintf(stdout, "%s\n%s\n", version(), DSState_copyright());

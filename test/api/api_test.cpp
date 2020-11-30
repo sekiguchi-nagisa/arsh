@@ -327,6 +327,9 @@ TEST_F(APITest, eval) {
     ret = DSState_eval(this->state, nullptr, nullptr, strlen("echo hello"), nullptr);
     ASSERT_EQ(-1, ret);
 
+    ret = DSState_loadAndEval(this->state, nullptr, nullptr);
+    ASSERT_EQ(-1, ret);
+
     ret = DSState_loadAndEval(nullptr, nullptr, nullptr);
     ASSERT_EQ(-1, ret);
 }

@@ -56,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### API
 - **Breaking Change**: remove ``DS_MOD_FULLPATH`` option from ``DSState_loadModule``
+- **Breaking Change**: ``DSState_loadAndEval`` api dose not accept null file name
 
 ### Fixed
 - cannot load module when module path indicates anonymous pipe
