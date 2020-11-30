@@ -344,7 +344,7 @@ inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {
  * @return
  * if success, not return.
  */
-int xexecve(const char *filePath, char *const *argv, char *const *envp, DSValue &redir);
+int xexecve(const char *filePath, char *const *argv, char *const *envp);
 
 /**
  * wrap '_exit'

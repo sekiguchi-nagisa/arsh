@@ -226,11 +226,6 @@ public:
         this->backupFDset = 0;
     }
 
-    /**
-     * reset close-on-exec flag to FD object passing to command arguments
-     */
-    void passFDToExtProc();
-
     bool redirect(DSState &st);
 
 private:

@@ -686,7 +686,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
         return 1;
     } else if(proc.pid() == 0) {   // child
         close(selfpipe[READ_PIPE]);
-        xexecve(filePath, argv, nullptr, redirConfig);
+        xexecve(filePath, argv, nullptr);
 
         int errnum = errno;
         int r = write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
@@ -799,7 +799,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
             int status = forkAndExec(state, cmd.filePath, argv, std::move(redirConfig));
             pushExitStatus(state, status);
         } else {
-            xexecve(cmd.filePath, argv, nullptr, redirConfig);
+            xexecve(cmd.filePath, argv, nullptr);
             raiseCmdError(state, argv[0], errno);
         }
         return !state.hasError();
@@ -959,7 +959,7 @@ bool VM::OP_BUILTIN_EXEC(DSState &state) {
         }
 
         char *envp[] = {nullptr};
-        xexecve(filePath, argv2, clearEnv ? envp : nullptr, redir);
+        xexecve(filePath, argv2, clearEnv ? envp : nullptr);
         PERROR(argvObj, "%s", argvObj.getValues()[index].asCStr());
         exit(1);
     }
@@ -1103,6 +1103,7 @@ void VM::addCmdArg(DSState &state, bool skipEmptyStr) {
             state.stack.push(DSValue::create<RedirObject>());
         }
         auto strObj = DSValue::createStr(value.toString());
+        typeAs<UnixFdObject>(value).closeOnExec(false);
         typeAs<RedirObject>(state.stack.peek()).addRedirOp(RedirOP::NOP, std::move(value));
         argv.append(std::move(strObj));
         return;

@@ -23,7 +23,6 @@
 #include <cassert>
 
 #include "vm.h"
-#include "redir.h"
 #include "logger.h"
 #include "misc/num_util.hpp"
 #include "misc/files.h"
@@ -535,7 +534,7 @@ void SignalVector::clear() {
     this->data.clear();
 }
 
-int xexecve(const char *filePath, char *const *argv, char *const *envp, DSValue &redir) {
+int xexecve(const char *filePath, char *const *argv, char *const *envp) {
     if(filePath == nullptr) {
         errno = ENOENT;
         return -1;
@@ -559,10 +558,6 @@ int xexecve(const char *filePath, char *const *argv, char *const *envp, DSValue 
         str += "]";
         return str;
     });
-
-    if(redir) {
-        typeAs<RedirObject>(redir).passFDToExtProc();
-    }
 
     // execute external command
     int ret = execve(filePath, argv, envp);

@@ -205,14 +205,6 @@ static int redirectImpl(const std::pair<RedirOP, DSValue> &pair) {
     return 0;   // do nothing
 }
 
-void RedirObject::passFDToExtProc() {
-    for(auto &e : this->ops) {
-        if(isPassingFD(e)) {
-            typeAs<UnixFdObject>(e.second).closeOnExec(false);
-        }
-    }
-}
-
 bool RedirObject::redirect(DSState &st) {
     this->backupFDs();
     for(auto &pair : this->ops) {
