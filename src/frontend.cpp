@@ -324,7 +324,6 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
 }
 
 static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
-    assert(*fullPath == '/');
     char *path = strdup(fullPath);
     const char *ptr = strrchr(path, '/');
     path[ptr == path ? 1 : ptr - path] = '\0';

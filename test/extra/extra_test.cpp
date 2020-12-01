@@ -68,52 +68,6 @@ TEST_F(ModLoadTest, scriptdir) {
     ASSERT_NO_FATAL_FAILURE(this->expect(ds(src), 0, "include from script_dir!!\n"));
 }
 
-TEST_F(ModLoadTest, nocwd1) {
-    std::string workdir = this->getTempDirName();
-    workdir += "/work";
-
-    {
-        std::string text = format("mkdir -p %s; echo echo hello >> %s/module.ds",
-                workdir.c_str(), this->getTempDirName());
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds(text.c_str()), 0));
-    }
-
-    /**
-     * if cwd is removed and mod path is relative,
-     * module loading is always failed
-     */
-    auto builder = ds("source ../module.ds")
-            .setWorkingDir(workdir.c_str())
-            .setBeforeExec([&]{
-                removeDirWithRecursively(workdir.c_str());
-            });
-
-    const char *err = R"((string):1: [semantic error] module not found: `../module.ds'
-source ../module.ds
-       ^~~~~~~~~~~~
-)";
-    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", err));
-}
-
-TEST_F(ModLoadTest, nocwd2) {
-    std::string workdir = this->getTempDirName();
-    workdir += "/work";
-
-    {
-        std::string text = format("mkdir -p %s; echo echo hello >> %s/module.ds",
-                                  workdir.c_str(), this->getTempDirName());
-        ASSERT_NO_FATAL_FAILURE(this->expect(ds(text.c_str()), 0));
-    }
-
-    std::string src = format("source %s/module.ds", this->getTempDirName());
-    auto builder = ds(src.c_str())
-            .setWorkingDir(workdir.c_str())
-            .setBeforeExec([&]{
-                removeDirWithRecursively(workdir.c_str());
-            });
-    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, "hello\n"));
-}
-
 TEST_F(ModLoadTest, local) {
     const char *src = R"(
         source mod4extra2.ds

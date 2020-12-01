@@ -434,6 +434,47 @@ TEST_F(CmdlineTest2, nocwd) {
     ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0));
 }
 
+TEST_F(CmdlineTest2, import_nocwd1) {
+    std::string workdir = this->getTempDirName();
+    workdir += "/work";
+
+    {
+        std::string text = format("mkdir -p %s; echo echo hello >> %s/module.ds",
+                                  workdir.c_str(), this->getTempDirName());
+        ASSERT_NO_FATAL_FAILURE(this->expect(DS(text.c_str()), 0));
+    }
+
+    /**
+     * even if cwd is removed and mod path is relative,
+     * module loading is still success
+     */
+    auto builder = DS("source ../module.ds")
+            .setWorkingDir(workdir.c_str())
+            .setBeforeExec([&]{
+                removeDirWithRecursively(workdir.c_str());
+            });
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, "hello\n"));
+}
+
+TEST_F(CmdlineTest2, import_nocwd2) {
+    std::string workdir = this->getTempDirName();
+    workdir += "/work";
+
+    {
+        std::string text = format("mkdir -p %s; echo echo hello >> %s/module.ds",
+                                  workdir.c_str(), this->getTempDirName());
+        ASSERT_NO_FATAL_FAILURE(this->expect(DS(text.c_str()), 0));
+    }
+
+    std::string src = format("source %s/module.ds", this->getTempDirName());
+    auto builder = DS(src.c_str())
+            .setWorkingDir(workdir.c_str())
+            .setBeforeExec([&]{
+                removeDirWithRecursively(workdir.c_str());
+            });
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 0, "hello\n"));
+}
+
 struct CmdlineTest3 : public CmdlineTest2 {
     using ExpectOutput::expect;
 
