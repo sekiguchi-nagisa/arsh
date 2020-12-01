@@ -297,33 +297,28 @@ ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath,
     }
 
     /**
-     * check file type before open due to prevent named pipe blocking
+     * set O_NONBLOCK due to prevent named pipe blocking
      */
-    struct stat st1;    //NOLINT
-    if(stat(str.c_str(), &st1) != 0) {
-        LOG(TRACE_MODULE, "stat failed: `%s'", strerror(errno));
-        return ModLoadingError(errno);
-    }
-    int s = checkFileType(st1, option);
-    if(s) {
-        LOG(TRACE_MODULE, "checkFileType failed: `%s'", strerror(errno));
-        return ModLoadingError(s);
-    }
-
-    int fd = open(str.c_str(), O_RDONLY);
+    int fd = open(str.c_str(), O_RDONLY | O_NONBLOCK);
     if(fd < 0) {
         LOG(TRACE_MODULE, "open failed: `%s'", strerror(errno));
         return ModLoadingError(errno);
     }
 
-    struct stat st2;    //NOLINT
-    errno = 0;
-    if(fstat(fd, &st2) != 0 || !isSameFile(st1, st2)) {
-        int old = errno == 0 ? ENOENT : errno;
+    struct stat st; //NOLINT
+    if(fstat(fd, &st) != 0) {
+        int old = errno;
         close(fd);
         LOG(TRACE_MODULE, "fstat failed: `%s'", strerror(old));
         return ModLoadingError(old);
     }
+    int s = checkFileType(st, option);
+    if(s) {
+        close(fd);
+        LOG(TRACE_MODULE, "checkFileType failed: `%s'", strerror(s));
+        return ModLoadingError(s);
+    }
+    setFDFlag(fd, O_NONBLOCK, false);
 
     // resolve fullpath
     auto path = tryToRealpath(str);

@@ -104,12 +104,16 @@ inline bool setCloseOnExec(int fd, bool set) {
     return fcntl(fd, F_SETFD, flag) != -1;
 }
 
-inline bool setFDFlag(int fd, int addFlag) {
+inline bool setFDFlag(int fd, int addFlag, bool set) {
     int flag = fcntl(fd, F_GETFL);
     if(flag == -1) {
         return false;
     }
-    setFlag(flag, addFlag);
+    if(set) {
+        setFlag(flag, addFlag);
+    } else {
+        unsetFlag(flag, addFlag);
+    }
     return fcntl(fd, F_SETFL, flag) != -1;
 }
 
