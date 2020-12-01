@@ -299,7 +299,7 @@ ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath,
     /**
      * set O_NONBLOCK due to prevent named pipe blocking
      */
-    int fd = open(str.c_str(), O_RDONLY | O_NONBLOCK);
+    int fd = open(str.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if(fd < 0) {
         LOG(TRACE_MODULE, "open failed: `%s'", strerror(errno));
         return ModLoadingError(errno);
