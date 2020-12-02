@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Builtin
 - **Breaking Change**: output format of ``shctl module`` subcommand
+- **Breaking Change**: ``Float#toInt`` method use the same way as Java
 - allow negative number index in string ``[]``
 
 #### API

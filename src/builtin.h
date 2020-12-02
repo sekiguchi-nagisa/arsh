@@ -415,7 +415,24 @@ YDSH_METHOD float_isFinite(RuntimeContext &ctx) {
 YDSH_METHOD float_toInt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(float_toInt);
     double d = LOCAL(0).asFloat();
-    auto v = static_cast<int64_t>(d);
+
+    /**
+     * convert double to int64 in the same way as java
+     * see. (https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-6.html#jvms-6.5.d2l)
+     */
+    int64_t v = 0;
+    if(std::isnan(d)) { // if the value is NaN, convert to 0
+        v = 0;
+    } else if(!std::isinf(d) &&
+        d <= static_cast<double>(INT64_MAX) && d >= static_cast<double>(INT64_MIN)) {
+        v = static_cast<int64_t>(d);
+    } else if(d < static_cast<double>(INT64_MIN)) {
+        v = INT64_MIN;
+    } else if(d > static_cast<double>(INT64_MAX)) {
+        v = INT64_MAX;
+    } else {
+        fatal("unreachable\n");
+    }
     RET(DSValue::createInt(v));
 }
 

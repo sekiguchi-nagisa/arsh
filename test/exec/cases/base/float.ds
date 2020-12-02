@@ -54,3 +54,30 @@ assert(! $inf.isFinite())
 # inheritance
 assert(3.14 is Float)
 assert(3.14 is Any)
+
+# to Int
+var f = -1.0
+assert($f is Float)
+
+assert($f as Int is Int)
+assert($f as Int as String == '-1')
+assert($f.toInt() as String == '-1')
+$f = 65535.9234
+assert($f as Int as String == '65535')
+assert($f.toInt() as String == '65535')
+
+assert $nan.toInt() == 0
+assert $nan as Int == 0
+assert $inf.toInt() == 9223372036854775807
+assert $inf as Int == 9223372036854775807
+assert (-$inf).toInt() == -1 -9223372036854775807
+assert -$inf as Int == -1 -9223372036854775807
+assert 92233720368547758080.0.toInt() == 9223372036854775807
+assert 92233720368547758080.0 as Int == 9223372036854775807
+assert (-92233720368547758090.0).toInt() == -1 -9223372036854775807
+assert -92233720368547758090.0 as Int == -1 -9223372036854775807
+
+
+# to Float
+assert($f as Float is Float)
+assert($f as Float as String == '65535.923400')
