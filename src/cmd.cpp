@@ -2071,24 +2071,21 @@ static int showModule(const DSState &state) {
     return 0;
 }
 
-static int isSourced(const DSState &state) {
-    const CompiledCode *code = nullptr;
-    state.getCallStack().walkFrames([&](const ControlFrame &frame) {
-        auto *c = frame.code;
-        if(c->is(CodeKind::NATIVE)) {
-            return true;    // continue
-        }
-        code = static_cast<const CompiledCode *>(c);
-        return false;
-    });
-
-    if(code) {
-        auto *entry = state.modLoader.find(code->getSourceName());
-        if(entry) {
-            return entry->isSealed() ? 0 : 1;
-        }
+static int isSourced(const VMState &st) {
+    if(st.getFrame().code->is(CodeKind::NATIVE)) {
+        return 1;
     }
-    return 1;
+
+    auto *top = static_cast<const CompiledCode*>(st.getFrame().code);
+    auto *bottom = top;
+    st.walkFrames([&](const ControlFrame &frame) {
+        auto *c = frame.code;
+        if(!c->is(CodeKind::NATIVE)) {
+            bottom = static_cast<const CompiledCode *>(c);
+        }
+        return true;
+    });
+    return top->getSourceName() == bottom->getSourceName() ? 1 : 0;
 }
 
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
@@ -2097,7 +2094,7 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
         if(ref == "backtrace") {
             return printBacktrace(state.getCallStack());
         } else if(ref == "is-sourced") {
-            return isSourced(state);
+            return isSourced(state.getCallStack());
         } else if(ref == "is-interactive") {
             return hasFlag(state.compileOption, CompileOption::INTERACTIVE) ? 0 : 1;
         } else if(ref == "function") {
