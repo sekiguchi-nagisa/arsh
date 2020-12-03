@@ -82,6 +82,7 @@ TypePool::TypePool() {
     this->initErrorType(TYPE::RegexSyntaxError, "RegexSyntaxError");
     this->initErrorType(TYPE::GlobbingError, "GlobbingError");
     this->initErrorType(TYPE::UnwrappingError, "UnwrappingError");
+    this->initErrorType(TYPE::IllegalAccessError, "IllegalAccessError");
 
     // init internal status type
     this->initBuiltinType(TYPE::_InternalStatus, "internal status%%", false, TYPE::_Root, info_Dummy());

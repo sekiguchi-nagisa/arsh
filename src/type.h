@@ -77,6 +77,7 @@ enum class TYPE : unsigned int {
     RegexSyntaxError,
     GlobbingError,
     UnwrappingError,
+    IllegalAccessError,
 
     /**
      * for internal status reporting.

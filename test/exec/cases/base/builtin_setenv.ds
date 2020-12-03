@@ -40,8 +40,8 @@ assert unsetenv AAA BBB
 
 var f = $false as Any
 try { $AAA; } catch $e { $f = $e; }
-assert $f is SystemError
+assert $f is IllegalAccessError
 
 $f = 34
 try { $BBB; } catch $e { $f = $e; }
-assert $f is SystemError
+assert $f is IllegalAccessError

@@ -204,9 +204,9 @@ const char *VM::loadEnvImpl(DSState &state, bool hasDefault) {
     if(env == nullptr && !dValue.isInvalid()) {
         auto ref = dValue.asStrRef();
         if(ref.hasNullChar()) {
-            std::string str = SET_ENV_ERROR;
-            str += name;
-            raiseSystemError(state, EINVAL, std::move(str));
+            std::string message = SET_ENV_ERROR;
+            message += name;
+            raiseError(state, TYPE::IllegalAccessError, std::move(message));
             return nullptr;
         }
         setenv(name, ref.data(), 1);
@@ -214,10 +214,9 @@ const char *VM::loadEnvImpl(DSState &state, bool hasDefault) {
     }
 
     if(env == nullptr) {
-        std::string str = UNDEF_ENV_ERROR;
-        str += name;
-        raiseSystemError(state, EINVAL, std::move(str));
-        return nullptr;
+        std::string message = UNDEF_ENV_ERROR;
+        message += name;
+        raiseError(state, TYPE::IllegalAccessError, std::move(message));
     }
     return env;
 }
@@ -245,10 +244,9 @@ bool VM::OP_STORE_ENV(DSState &state) {
     if(setenv(valueRef.hasNullChar() ? "" : nameRef.data(), valueRef.data(), 1) == 0) {
         return true;
     }
-    int errNum = errno;
     std::string str = SET_ENV_ERROR;
-    str += nameRef.data();
-    raiseSystemError(state, errNum, std::move(str));
+    str += nameRef;
+    raiseError(state, TYPE::IllegalAccessError, std::move(str));
     return false;
 }
 

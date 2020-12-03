@@ -158,6 +158,6 @@ try {
 } catch $e {
     $ex = $e
 }
-assert $ex is SystemError
+assert $ex is IllegalAccessError
 
 true
