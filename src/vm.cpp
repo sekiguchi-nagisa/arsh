@@ -1418,6 +1418,10 @@ bool VM::mainLoop(DSState &state) {
             unsigned short index = read16(GET_CODE(state), state.stack.pc());
             state.stack.pc() += 2;
             auto v = state.getGlobal(index);
+            if(!v) {    // normally unreachable
+                raiseError(state, TYPE::IllegalAccessError, "attemp to access uninitialized global variable");
+                vmerror;
+            }
             state.stack.push(std::move(v));
             vmnext;
         }

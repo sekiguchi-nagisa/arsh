@@ -50,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allow ``->`` in arm expression
 - allow statement in for-init
 - reimplement all completions on CodeCompletionHandler
+- when access uninitialized global variable, throw ``IllegalAccessError``
+  - after uncaught error happned in interactive mode, may exist uninitialized variables
 
 #### Builtin
 - **Breaking Change**: output format of ``shctl module`` subcommand
