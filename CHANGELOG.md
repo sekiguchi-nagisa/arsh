@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: use ``typedef`` keyword for type alias definition
   - ``alias`` keyword is still reserved keyword for future usage
 - **Breaking Change**: when access undefined environmental variable, throw ``IllegalAccessError`` instead of ``SystemError``
+- **Breaking Change**: evaluate script within separate module context
 - allow ``=>`` in abbreviate type notation of Func type
 - allow ``->`` in arm expression
 - allow statement in for-init
@@ -62,6 +63,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### API
 - **Breaking Change**: remove ``DS_MOD_FULLPATH`` option from ``DSState_loadModule``
 - **Breaking Change**: ``DSState_loadAndEval`` api dose not accept null file name
+- **Breaking Change**: when pass already loaded script to ``DSState_loadAndEval``, always success
 
 ### Fixed
 - cannot load module when module path indicates anonymous pipe

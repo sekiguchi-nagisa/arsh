@@ -1257,8 +1257,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
         line = argvObj.getValues()[optState.index].asStrRef();
     }
 
-    (void) resolveUnderlyingModType;
-    doCodeCompletion(state, /*resolveUnderlyingModType(state)*/nullptr, line, compOp);  //FIXME
+    doCodeCompletion(state, resolveUnderlyingModType(state), line, compOp);
     auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for(const auto &e : ret.getValues()) {
         fputs(e.asCStr(), stdout);

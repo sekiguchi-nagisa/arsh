@@ -621,10 +621,8 @@ TEST_F(APITest, load3) {
     DSError_release(&e);
 
     r = DSState_loadAndEval(this->state, modName.c_str(), &e);    // file is already loaded
-    int errorNum = errno;
-    ASSERT_EQ(1, r);
-    ASSERT_EQ(ETXTBSY, errorNum);
-    ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
+    ASSERT_EQ(0, r);
+    ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
     DSError_release(&e);
 }
 

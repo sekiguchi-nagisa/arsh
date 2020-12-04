@@ -33,7 +33,7 @@
 
 using namespace ydsh;
 
-static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError, const DiscardPoint &discardPoint) {
+static bool evalCode(DSState &state, const CompiledCode &code, DSError *dsError) {
     if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
         auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
         fprintf(fp, "### dump compiled code ###\n");
@@ -41,12 +41,9 @@ static int evalCode(DSState &state, const CompiledCode &code, DSError *dsError, 
     }
 
     if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
-        return 0;
+        return true;
     }
-    if(!callToplevel(state, code, dsError)) {
-        discardAll(state.modLoader, *state.rootModScope, state.typePool, discardPoint);
-    }
-    return state.getMaskedExitStatus();
+    return callToplevel(state, code, dsError);
 }
 
 static ErrorReporter newReporter() {
@@ -67,14 +64,17 @@ private:
     ByteCodeGenerator codegen;
 
 public:
-    Compiler(DSState &state, Lexer &&lexer) :
-            frontEnd(state.modLoader, std::move(lexer), state.typePool,
-                     state.builtinModScope, state.rootModScope, state.execMode,
-                     hasFlag(state.compileOption, CompileOption::INTERACTIVE)),
+    Compiler(ModuleLoader &modLoader, TypePool &pool,
+             const IntrusivePtr<NameScope> &builtin, const IntrusivePtr<NameScope> &root,
+             Lexer &&lexer, const DumpTarget &dumpTarget,
+             DSExecMode execMode, CompileOption compileOption) :
+            frontEnd(modLoader, std::move(lexer), pool,
+                     builtin, root, execMode,
+                     hasFlag(compileOption, CompileOption::INTERACTIVE)),
             reporter(newReporter()),
-            uastDumper(state.dumpTarget.files[DS_DUMP_KIND_UAST].get()),
-            astDumper(state.dumpTarget.files[DS_DUMP_KIND_AST].get()),
-            codegen(state.typePool, hasFlag(state.compileOption, CompileOption::ASSERT)) {
+            uastDumper(dumpTarget.files[DS_DUMP_KIND_UAST].get()),
+            astDumper(dumpTarget.files[DS_DUMP_KIND_AST].get()),
+            codegen(pool, hasFlag(compileOption, CompileOption::ASSERT)) {
         this->frontEnd.setErrorReporter(this->reporter);
         if(this->uastDumper) {
             this->frontEnd.setUASTDumper(this->uastDumper);
@@ -88,10 +88,18 @@ public:
         return this->frontEnd.getRootLineNum();
     }
 
-    int operator()(const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code);
+    void discard(const DiscardPoint &point) {
+        this->frontEnd.discard(point);
+    }
+
+    const std::string &getSourcePath() const {
+        return this->frontEnd.getCurrentLexer().getSourceName();
+    }
+
+    int operator()(DSError *dsError, CompiledCode &code);
 };
 
-int Compiler::operator()(const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code) {
+int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     if(dsError != nullptr) {
         *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .fileName = nullptr, .lineNum = 0, .name = nullptr};
     }
@@ -103,7 +111,6 @@ int Compiler::operator()(const DiscardPoint &discardPoint, DSError *dsError, Com
     while(this->frontEnd) {
         auto ret = this->frontEnd(dsError);
         if(!ret) {
-            this->frontEnd.discard(discardPoint);
             return 1;
         }
 
@@ -139,31 +146,39 @@ int Compiler::operator()(const DiscardPoint &discardPoint, DSError *dsError, Com
         auto &e = this->codegen.getError();
         this->frontEnd.handleError(DS_ERROR_KIND_CODEGEN_ERROR,
                 e.getKind(), e.getToken(), e.getMessage(), dsError);
-        this->frontEnd.discard(discardPoint);
         return 1;
     }
     return 0;
 }
 
-static int compile(DSState &state, Lexer &&lexer, const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code) {
-    Compiler compiler(state, std::move(lexer));
-    int ret = compiler(discardPoint, dsError, code);
+static int compile(DSState &state, const IntrusivePtr<NameScope> &modScope,
+                   Lexer &&lexer, const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code) {
+    Compiler compiler(state.modLoader, state.typePool, state.builtinModScope, modScope,
+                      std::move(lexer), state.dumpTarget, state.execMode, state.compileOption);
+    int ret = compiler(dsError, code);
+    if(ret == 0) {
+        if(!modScope->inBuiltinModule() && !modScope->inRootModule()) {
+            state.modLoader.createModType(state.typePool, *modScope, compiler.getSourcePath());
+        }
+    } else {
+        compiler.discard(discardPoint);
+    }
     state.lineNum = compiler.lineNum();
     return ret;
 }
 
-static int evalScript(DSState &state, Lexer &&lexer, DSError *dsError) {
+static int evalScript(DSState &state, const IntrusivePtr<NameScope> &scope,
+                      Lexer &&lexer, const DiscardPoint &point, DSError *dsError) {
+    std::string fullpath = lexer.getSourceName();
     CompiledCode code;
-    DiscardPoint discardPoint {
-        .mod = state.modLoader.getDiscardPoint(),
-        .scope = state.rootModScope->getDiscardPoint(),
-        .type = state.typePool.getDiscardPoint(),
-    };
-    int ret = compile(state, std::move(lexer), discardPoint, dsError, code);
+    int ret = compile(state, scope ? scope : state.rootModScope, std::move(lexer), point, dsError, code);
     if(!code) {
         return ret;
     }
-    return evalCode(state, code, dsError, discardPoint);
+    if(!evalCode(state, code, dsError)) {
+        discardAll(state.modLoader, *state.rootModScope, state.typePool, point);
+    }
+    return state.execMode == DS_EXEC_MODE_COMPILE_ONLY ? 0 : state.getMaskedExitStatus();
 }
 
 static void bindVariable(DSState &state, const char *varName,
@@ -615,7 +630,13 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
     Lexer lexer(sourceName == nullptr ? "(stdin)" : sourceName,
             ByteBuffer(data, data + size), getCWD());
     lexer.setLineNumOffset(st->lineNum);
-    return evalScript(*st, std::move(lexer), e);
+
+    DiscardPoint discardPoint {
+            .mod = st->modLoader.getDiscardPoint(),
+            .scope = st->rootModScope->getDiscardPoint(),
+            .type = st->typePool.getDiscardPoint(),
+    };
+    return evalScript(*st, nullptr, std::move(lexer), discardPoint, e);
 }
 
 static void reportFileError(const char *sourceName, bool isIO, int errNum, DSError *e) {
@@ -636,6 +657,12 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     GUARD_NULL(st, -1);
     GUARD_NULL(sourceName, -1);
 
+    DiscardPoint discardPoint {
+            .mod = st->modLoader.getDiscardPoint(),
+            .scope = st->rootModScope->getDiscardPoint(),
+            .type = st->typePool.getDiscardPoint(),
+    };
+
     FilePtr filePtr;
     auto ret = st->modLoader.load(nullptr, sourceName, filePtr, ModLoadOption{});
     if(is<ModLoadingError>(ret)) {
@@ -648,7 +675,8 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     } else if(is<unsigned int>(ret)) {
         return 0;   // do nothing.
     }
-    char *real = strdup(get<const char *>(ret));
+    sourceName = get<const char*>(ret);
+    char *real = strdup(sourceName);
     assert(*real == '/');
     const char *ptr = strrchr(real, '/');
     real[ptr == real ? 1 : (ptr - real)] = '\0';
@@ -662,7 +690,9 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
         return 1;
     }
     filePtr.reset(nullptr);
-    return evalScript(*st, Lexer(sourceName, std::move(buf), std::move(scriptDir)), e);
+
+    return evalScript(*st, st->modLoader.createGlobalScopeFromFullpath(sourceName, st->builtinModScope),
+                      Lexer(sourceName, std::move(buf), std::move(scriptDir)), discardPoint, e);
 }
 
 static void appendAsEscaped(std::string &line, const char *path) {
@@ -690,6 +720,7 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
     appendAsEscaped(line, fileName);
 
     st->lineNum = 0;
+
     return DSState_eval(st, "ydsh", line.c_str(), line.size(), e);
 }
 
