@@ -1737,20 +1737,6 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
                 recvType, this->curScope);
         break;
     }
-    case CodeCompNode::CMD_OR_STMT:
-    case CodeCompNode::CMD_OR_EXPR: {
-        CodeCompletionHandler::CMD_OR_KW_OP op{};
-        if(this->lexer->startsWith(node.getTypingToken(), '~')) {
-            setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::TILDE);
-        }
-        if(node.getKind() == CodeCompNode::CMD_OR_STMT) {
-            setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::STMT);
-        }
-        this->ccHandler->addCmdOrKeywordRequest(
-                this->lexer->toCmdArg(node.getTypingToken()),
-                op, this->curScope);
-        break;
-    }
     }
     RAISE_TC_ERROR(Unreachable, node);
 }

@@ -105,7 +105,7 @@ private:
     CodeCompOp fallbackOp{};
 
 public:
-    explicit CodeCompletionHandler(DSState &state);
+    CodeCompletionHandler(DSState &state, IntrusivePtr<NameScope> scope);
 
     void addCompRequest(CodeCompOp op, std::string &&word) {
         this->compOp = op;
@@ -145,7 +145,7 @@ public:
         TILDE = 1u << 1u,
     };
 
-    void addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP op, IntrusivePtr<NameScope> curScope);
+    void addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP op);
 
     void addCmdArgOrModRequest(std::string &&value, CmdArgParseOpt opt, bool tilde);
 

@@ -2474,8 +2474,6 @@ public:
         VAR,            // complete variable names
         MEMBER,         // complete members (field or method)
         TYPE,           // complete type name (may be type alias)
-        CMD_OR_STMT,    // complete command or statement
-        CMD_OR_EXPR,    // complete command or expression
     };
 
 private:

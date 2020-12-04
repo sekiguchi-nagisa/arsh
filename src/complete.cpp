@@ -109,8 +109,8 @@ static void append(ArrayObject &can, StringRef ref, EscapeOp op) {
 // ##     CodeCompletionHandler     ##
 // ###################################
 
-CodeCompletionHandler::CodeCompletionHandler(DSState &state) :
-        state(state), scope(this->state.rootModScope) {}
+CodeCompletionHandler::CodeCompletionHandler(DSState &state, IntrusivePtr<NameScope> scope) :
+        state(state), scope(std::move(scope)) {}
 
 static bool isExprKeyword(TokenKind kind) {
     switch(kind) {
@@ -646,7 +646,7 @@ void CodeCompletionHandler::addTypeNameRequest(std::string &&value, const DSType
     this->addCompRequest(CodeCompOp::TYPE, std::move(value));
 }
 
-void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP cmdOrKwOp, IntrusivePtr<NameScope> curScope) {
+void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP cmdOrKwOp) {
     // add command request
     bool tilde = hasFlag(cmdOrKwOp, CMD_OR_KW_OP::TILDE);
     bool isDir = strchr(value.c_str(), '/') != nullptr;
@@ -662,7 +662,6 @@ void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_K
 
     // add keyword request
     setFlag(this->compOp, hasFlag(cmdOrKwOp, CMD_OR_KW_OP::STMT) ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
-    this->scope = std::move(curScope);
 }
 
 void CodeCompletionHandler::addCmdArgOrModRequest(std::string &&value, CmdArgParseOpt opt, bool tilde) {
@@ -706,11 +705,10 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType,
         .scope = st.rootModScope->getDiscardPoint(),
         .type = st.typePool.getDiscardPoint(),
     };
-    CodeCompletionHandler handler(st);
+    auto scope = underlyingModType == nullptr ? st.rootModScope :
+                 IntrusivePtr<NameScope>::create(st.typePool, st.builtinModScope, *underlyingModType);
+    CodeCompletionHandler handler(st, scope);
     if(empty(option)) {
-        auto scope = underlyingModType == nullptr ? st.rootModScope :
-                IntrusivePtr<NameScope>::create(st.typePool, st.builtinModScope, *underlyingModType);
-
         // prepare
         FrontEnd frontEnd(st.modLoader, lex(ref), st.typePool,
                           st.builtinModScope, scope,

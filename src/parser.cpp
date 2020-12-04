@@ -1274,8 +1274,15 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
             if(this->inVarNameCompletionPoint()) {
                 this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
             } else if(!this->inCompletionPointAt(TokenKind::EOS) || this->consumedKind != TokenKind::EOS) {
-                this->makeCodeComp(this->inStmtCompCtx ? CodeCompNode::CMD_OR_STMT : CodeCompNode::CMD_OR_EXPR,
-                                   nullptr, this->curToken);
+                CodeCompletionHandler::CMD_OR_KW_OP op{};
+                if(this->lexer->startsWith(this->curToken, '~')) {
+                    setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::TILDE);
+                }
+                if(this->inStmtCompCtx) {
+                    setFlag(op, CodeCompletionHandler::CMD_OR_KW_OP::STMT);
+                }
+                this->ccHandler->addCmdOrKeywordRequest(
+                        this->lexer->toCmdArg(this->curToken), op);
             }
         }
         E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
