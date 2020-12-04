@@ -600,8 +600,8 @@ TEST_F(ScopeTest, import) {
 
     auto &modType3 = this->top->toModType(this->pool);
     ASSERT_EQ(2, modType3.getChildSize());
-    ASSERT_TRUE(isGlobal(modType3.getChildAt(0)));
-    ASSERT_FALSE(isGlobal(modType3.getChildAt(1)));
+    ASSERT_TRUE(modType3.getChildAt(0).isGlobal());
+    ASSERT_FALSE(modType3.getChildAt(1).isGlobal());
 
     // lookup from ModType
     handle = modType3.lookupVisibleSymbolAtModule(this->pool, "GGG");
@@ -632,8 +632,8 @@ TEST_F(ScopeTest, import) {
     }, handle));
 
     ASSERT_EQ(0, modType3.getHandleMap().size());
-    ASSERT_EQ(modType, this->pool.get(toTypeId(modType3.getChildAt(0))));
-    ASSERT_EQ(modType2, this->pool.get(toTypeId(modType3.getChildAt(1))));
+    ASSERT_EQ(modType, this->pool.get(modType3.getChildAt(0).typeId()));
+    ASSERT_EQ(modType2, this->pool.get(modType3.getChildAt(1).typeId()));
 }
 
 TEST_F(ScopeTest, conflict) {

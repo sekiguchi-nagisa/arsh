@@ -1217,6 +1217,17 @@ static std::unordered_map<StringRef, CodeCompOp> initCompActions() {
     };
 }
 
+static const ModType *resolveUnderlyingModType(const DSState &state) {
+    auto *code = state.getCallStack().code();
+    if(!code->is(CodeKind::NATIVE)) {
+        auto *e = state.modLoader.find(static_cast<const CompiledCode*>(code)->getSourceName());
+        if(e) {
+            return static_cast<const ModType *>(&state.typePool.get(e->getTypeId()));
+        }
+    }
+    return nullptr;
+}
+
 static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     static auto actionMap = initCompActions();
 
@@ -1246,7 +1257,8 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
         line = argvObj.getValues()[optState.index].asStrRef();
     }
 
-    doCodeCompletion(state, line, compOp);
+    (void) resolveUnderlyingModType;
+    doCodeCompletion(state, /*resolveUnderlyingModType(state)*/nullptr, line, compOp);  //FIXME
     auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for(const auto &e : ret.getValues()) {
         fputs(e.asCStr(), stdout);

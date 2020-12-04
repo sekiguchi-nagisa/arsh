@@ -88,6 +88,13 @@ public:
     }
 
     /**
+     * re-create module scope from already created Mod Type
+     * @param parent
+     * @param modType
+     */
+    NameScope(const TypePool &pool, const IntrusivePtr<NameScope> &parent, const ModType &modType);
+
+    /**
      * for func/block scope construction
      * only called from enterScope()
      * @param kind

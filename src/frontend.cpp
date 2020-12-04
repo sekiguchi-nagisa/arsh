@@ -274,16 +274,6 @@ void FrontEnd::teardownASTDump() {
     }
 }
 
-static auto createModLoadingError(const Node &node, const char *path, ModLoadingError e) {
-    if(e.isCircularLoad()) {
-        return createTCError<CircularMod>(node, path);
-    } else if(e.isFileNotFound()) {
-        return createTCError<NotFoundMod>(node, path);
-    } else {
-        return createTCError<NotOpenMod>(node, path, strerror(e.getErrNo()));
-    }
-}
-
 FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
     if(!this->hasUnconsumedPath()) {
         this->getCurSrcListNode().reset();
@@ -303,14 +293,12 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
         if(e.isFileNotFound() && node.isOptional()) {
             return {std::make_unique<EmptyNode>(), IN_MODULE};
         }
-        auto error = createModLoadingError(node.getPathNode(), modPath, e);
-        this->handleTypeError(error, dsError);
+        this->handleModLoadingError(node.getPathNode(), modPath, e, dsError);
         return {nullptr, FAILED};
     } else if(is<const char *>(ret)) {
         ByteBuffer buf;
         if(!readAll(filePtr, buf)) {
-            auto e = createTCError<NotOpenMod>(node.getPathNode(), modPath, strerror(errno));
-            this->handleTypeError(e, dsError);
+            this->handleModLoadingError(node.getPathNode(), modPath, ModLoadingError(errno), dsError);
             return {nullptr, FAILED};
         }
         this->enterModule(get<const char*>(ret), std::move(buf));
@@ -318,7 +306,12 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
     } else if(is<unsigned int>(ret)) {
         auto &type = this->getTypePool().get(get<unsigned int>(ret));
         assert(type.isModType());
-        return {node.create(static_cast<ModType&>(type), false), IN_MODULE};
+        auto &modType = static_cast<const ModType&>(type);
+        if(this->curScope()->modId == modType.getModID()) { // normally unreachable
+            this->handleModLoadingError(node.getPathNode(), modPath, ModLoadingError(0), dsError);
+            return {nullptr, FAILED};
+        }
+        return {node.create(modType, false), IN_MODULE};
     }
     return {nullptr, FAILED};
 }
@@ -371,6 +364,22 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
         this->astDumper->leaveModule();
     }
     return node;
+}
+
+static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingError e) {
+    if(e.isCircularLoad()) {
+        return createTCError<CircularMod>(node, path);
+    } else if(e.isFileNotFound()) {
+        return createTCError<NotFoundMod>(node, path);
+    } else {
+        return createTCError<NotOpenMod>(node, path, strerror(e.getErrNo()));
+    }
+}
+
+void FrontEnd::handleModLoadingError(const Node &pathNode, const char *modPath,
+                                     ModLoadingError e, DSError *dsError) const {
+    auto error = wrapModLoadingError(pathNode, modPath, e);
+    this->handleTypeError(error, dsError);
 }
 
 } // namespace ydsh

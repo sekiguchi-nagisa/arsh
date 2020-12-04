@@ -696,7 +696,8 @@ static void consumeAllInput(FrontEnd &frontEnd) {
     }
 }
 
-unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
+unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType,
+                              StringRef ref, CodeCompOp option) {
     auto result = DSValue::create<ArrayObject>(st.typePool.get(TYPE::StringArray));
     auto &compreply = typeAs<ArrayObject>(result);
 
@@ -706,10 +707,13 @@ unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option) {
         .type = st.typePool.getDiscardPoint(),
     };
     CodeCompletionHandler handler(st);
-    if(empty(option)) { // invoke parser
+    if(empty(option)) {
+        auto scope = underlyingModType == nullptr ? st.rootModScope :
+                IntrusivePtr<NameScope>::create(st.typePool, st.builtinModScope, *underlyingModType);
+
         // prepare
         FrontEnd frontEnd(st.modLoader, lex(ref), st.typePool,
-                          st.builtinModScope, st.rootModScope,
+                          st.builtinModScope, scope,
                           DS_EXEC_MODE_CHECK_ONLY, false,
                           ObserverPtr<CodeCompletionHandler>(&handler));
 

@@ -27,6 +27,26 @@ namespace ydsh {
 // ##     NameScope     ##
 // #######################
 
+NameScope::NameScope(const TypePool &pool, const IntrusivePtr<NameScope> &parent, const ModType &modType) :
+        kind(GLOBAL), modId(modType.getModID()), parent(parent), maxVarCount(parent->maxVarCount) {
+    assert(this->parent->isGlobal());
+    assert(this->parent->inBuiltinModule());
+
+    // copy own handle
+    for(auto &e : modType.getHandleMap()) {
+        this->addNewAlias(std::string(e.first), e.second);
+    }
+
+    // import foreign module
+    unsigned int size = modType.getChildSize();
+    for(unsigned int i = 0; i < size; i++) {
+        auto e = modType.getChildAt(i);
+        bool global = e.isGlobal();
+        auto &type = static_cast<const ModType&>(pool.get(e.typeId()));
+        this->importForeignHandles(type, global);
+    }
+}
+
 static bool isAllowedScopePair(NameScope::Kind parent, NameScope::Kind child) {
     const struct {
         NameScope::Kind parent;
@@ -133,13 +153,13 @@ std::string NameScope::importForeignHandles(const ModType &type, const bool glob
     return "";
 }
 
-static void tryInsertByAscendingOrder(FlexBuffer<ChildModEntry> &children, ChildModEntry entry) {
+static void tryInsertByAscendingOrder(FlexBuffer<ImportedModEntry> &children, ImportedModEntry entry) {
     auto iter = std::lower_bound(children.begin(), children.end(), entry,
-                                 [](ChildModEntry x, ChildModEntry y) {
-                                     return toTypeId(x) < toTypeId(y);
+                                 [](ImportedModEntry x, ImportedModEntry y) {
+                                     return x.typeId() < y.typeId();
                                  });
-    if(iter != children.end() && toTypeId(*iter) == toTypeId(entry)) {
-        if(isGlobal(entry)) {
+    if(iter != children.end() && iter->typeId() == entry.typeId()) {
+        if(entry.isGlobal()) {
             *iter = entry;
         }
     } else {
@@ -149,13 +169,13 @@ static void tryInsertByAscendingOrder(FlexBuffer<ChildModEntry> &children, Child
 
 const ModType & NameScope::toModType(TypePool &pool) const {
     std::unordered_map<std::string, FieldHandle> newHandles;
-    FlexBuffer<ChildModEntry> newChildren;
+    FlexBuffer<ImportedModEntry> newChildren;
 
     for(auto &e : this->getHandles()) {
         if(!empty(e.second.attr() & (FieldAttribute::GLOBAL_MOD | FieldAttribute::NAMED_MOD))) {
             auto &modType = pool.get(e.second.getTypeID());
             bool global = hasFlag(e.second.attr(), FieldAttribute::GLOBAL_MOD);
-            tryInsertByAscendingOrder(newChildren, toChildModEntry(static_cast<const ModType&>(modType), global));
+            tryInsertByAscendingOrder(newChildren, static_cast<const ModType&>(modType).toModEntry(global));
         } else if(e.second.getModID() == this->modId) {
             newHandles.emplace(e.first, e.second);
         }

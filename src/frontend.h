@@ -212,6 +212,9 @@ private:
     void handleTypeError(const TypeCheckError &e, DSError *dsError) const {
         this->handleError(DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage(), dsError);
     }
+
+    void handleModLoadingError(const Node &pathNode, const char *modPath,
+                               ModLoadingError e, DSError *dsError) const;
 };
 
 } // namespace ydsh

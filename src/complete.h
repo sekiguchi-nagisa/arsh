@@ -170,14 +170,17 @@ public:
 template <> struct allow_enum_bitop<CodeCompletionHandler::CMD_OR_KW_OP> : std::true_type {};
 
 /**
- * perform completion
+ * perform completion in specified unserlying module
  * @param st
+ * @param underlyingModType
+ * may be null
  * @param ref
  * @param option
  * @return
  * return size of completion result. (equivalent to size of $COMPREPLY)
  */
-unsigned int doCodeCompletion(DSState &st, StringRef ref, CodeCompOp option = {});
+unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType,
+                              StringRef ref, CodeCompOp option = {});
 
 } // namespace ydsh
 

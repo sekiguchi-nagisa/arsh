@@ -459,32 +459,44 @@ public:
             DSType(id, ref, &superType, TypeAttr::EXTENDIBLE) {}
 };
 
-/**
- * indicating loaded mod type id.
- *
- * | 1bit |  31bit  |
- * | flag | type id |
- *
- * if flag is 1, indicate globally imported module
- */
-enum class ChildModEntry : unsigned int {};
+struct ImportedModEntry {
+    /**
+     * indicating loaded mod type id.
+     *
+     * | 1bit |  31bit  |
+     * | flag | type id |
+     *
+     * if flag is 1, indicate globally imported module
+     */
+    unsigned int value;
+
+    bool isGlobal() const {
+        return static_cast<int>(this->value) < 0;
+    }
+
+    unsigned int typeId() const {
+        return this->value & 0x7FFFFFFF;
+    }
+};
 
 class ModType : public DSType {
 private:
+    static_assert(sizeof(ImportedModEntry) == 4, "failed!!");
+
     unsigned short modID;
 
     unsigned short childSize;
 
     unsigned int index; // module object index
 
-    ChildModEntry *children;
+    ImportedModEntry *children;
 
     std::unordered_map<std::string, FieldHandle> handleMap;
 
 public:
     ModType(unsigned int id, const DSType &superType, unsigned short modID,
             std::unordered_map<std::string, FieldHandle> &&handles,
-            FlexBuffer<ChildModEntry> &&children, unsigned int index) :
+            FlexBuffer<ImportedModEntry> &&children, unsigned int index) :
             DSType(id, toModName(modID), &superType, TypeAttr::MODULE_TYPE),
             modID(modID), index(index), handleMap(std::move(handles)) {
         this->childSize = children.size();
@@ -501,7 +513,7 @@ public:
         return this->childSize;
     }
 
-    ChildModEntry getChildAt(unsigned int i) const {
+    ImportedModEntry getChildAt(unsigned int i) const {
         assert(i < this->childSize);
         return this->children[i];
     }
@@ -527,6 +539,14 @@ public:
                 this->modID);
     }
 
+    ImportedModEntry toModEntry(bool global) const {
+        unsigned int value = this->typeId();
+        if(global) {
+            value |= static_cast<unsigned int>(1 << 31);
+        }
+        return ImportedModEntry{value};
+    }
+
     std::string toName() const {
         return this->getNameRef().toString();
     }
@@ -550,23 +570,6 @@ public:
 
     static std::string toModName(unsigned short modID);
 };
-
-inline ChildModEntry toChildModEntry(const ModType &type, bool global) {
-    unsigned int value = type.typeId();
-    if(global) {
-        value |= static_cast<unsigned int>(1 << 31);
-    }
-    return static_cast<ChildModEntry>(value);
-}
-
-inline bool isGlobal(ChildModEntry e) {
-    return static_cast<int>(e) < 0;
-}
-
-inline unsigned int toTypeId(ChildModEntry e) {
-    return static_cast<unsigned int>(e) & 0x7FFFFFFF;
-}
-
 
 /**
  * ReifiedType template.

@@ -116,8 +116,8 @@ const FieldHandle * ModType::lookupVisibleSymbolAtModule(const TypePool &pool, c
     unsigned int size = this->getChildSize();
     for(unsigned int i = 0; i < size; i++) {
         auto e = this->getChildAt(i);
-        if(isGlobal(e)) {
-            auto &type = pool.get(toTypeId(e));
+        if(e.isGlobal()) {
+            auto &type = pool.get(e.typeId());
             assert(type.isModType());
             handle = static_cast<const ModType&>(type).lookupField(name);
             if(handle) {

@@ -214,7 +214,7 @@ public:
     TypeOrError createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes);
 
     ModType &createModType(unsigned short modID, std::unordered_map<std::string, FieldHandle> &&handles,
-                           FlexBuffer<ChildModEntry> &&children, unsigned int index);
+                           FlexBuffer<ImportedModEntry> &&children, unsigned int index);
 
     const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
 
