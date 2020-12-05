@@ -441,6 +441,7 @@ void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
 }
 
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
+    this->emitSourcePos(node.getPos());
     if(hasFlag(node.attr(), FieldAttribute::ENV)) {
         if(hasFlag(node.attr(), FieldAttribute::GLOBAL)) {
             this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
@@ -797,8 +798,8 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
     if(this->assertion) {
         this->visit(node.getCondNode());
-        this->emitSourcePos(node.getCondNode().getPos());
         this->visit(node.getMessageNode());
+        this->emitSourcePos(node.getCondNode().getPos());
         this->emitNativeCallIns(NativeOp::ASSERT);
     }
 }

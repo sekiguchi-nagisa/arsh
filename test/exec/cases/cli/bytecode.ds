@@ -50,7 +50,7 @@ Constant Pool:
   1: String $(pwd)
   2: (Any) -> Boolean function(f)
 Line Number Table:
-  lineNum: 1, address: 10
+  lineNum: 1, address:  5
 Exception Table:
   begin: 5, end: 20, type: pseudo top%%, dest: 20, offset: 0, size: 0
 
@@ -67,6 +67,7 @@ Constant Pool:
   0: String (string)
   1: String $(pwd)
 Line Number Table:
+  lineNum: 1, address: 0
 Exception Table:"
 
 var cmd = 'function f($a : Any) : Boolean { return $a is Array<Int>; }; try { $f(1) } finally {3}'
@@ -102,7 +103,7 @@ Constant Pool:
   0: String (string)
   1: String $(pwd)
 Line Number Table:
-  lineNum: 1, address: 13
+  lineNum: 1, address:  9
 Exception Table:"
 
 $cmd = 'for(var i = 0; $i < 2; $i++) { var b = 34; }'

@@ -14,11 +14,9 @@ assert test -x $YDSH_BIN
 function expect($out : String, $es : Int, $eout : String) {
     let s = $?
     assert $s == $es : "expect: $es, actual: $s"
-    assert $out == $eout : "
-expect: $eout
-
-actual: $out
-"
+    assert $out == $eout : "${(
+        diff <(echo -n $eout) <(echo -n $out)
+    )}"
     $? = 0
 }
 
