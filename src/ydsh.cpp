@@ -33,19 +33,6 @@
 
 using namespace ydsh;
 
-static bool evalCode(DSState &state, const CompiledCode &code, DSError *dsError) {
-    if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
-        auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
-        fprintf(fp, "### dump compiled code ###\n");
-        ByteCodeDumper(fp, state.typePool, state.rootModScope->getMaxGlobalVarIndex())(code);
-    }
-
-    if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
-        return true;
-    }
-    return callToplevel(state, code, dsError);
-}
-
 static ErrorReporter newReporter() {
 #ifdef FUZZING_BUILD_MODE
     bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
@@ -175,10 +162,18 @@ static int evalScript(DSState &state, const IntrusivePtr<NameScope> &scope,
     if(!code) {
         return ret;
     }
-    if(!evalCode(state, code, dsError)) {
-        discardAll(state.modLoader, *state.rootModScope, state.typePool, point);
+
+    if(state.dumpTarget.files[DS_DUMP_KIND_CODE]) {
+        auto *fp = state.dumpTarget.files[DS_DUMP_KIND_CODE].get();
+        fprintf(fp, "### dump compiled code ###\n");
+        ByteCodeDumper(fp, state.typePool, state.rootModScope->getMaxGlobalVarIndex())(code);
     }
-    return state.execMode == DS_EXEC_MODE_COMPILE_ONLY ? 0 : state.getMaskedExitStatus();
+
+    if(state.execMode == DS_EXEC_MODE_COMPILE_ONLY) {
+        return 0;
+    }
+    callToplevel(state, code, dsError);
+    return state.getMaskedExitStatus();
 }
 
 static void bindVariable(DSState &state, const char *varName,

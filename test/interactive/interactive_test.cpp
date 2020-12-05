@@ -776,12 +776,10 @@ TEST_F(InteractiveTest, moduleError3) {
                        "    from " INTERACTIVE_TEST_WORK_DIR "/mod2.ds:6 '<toplevel>()'\n"
                        "    from (stdin):1 '<toplevel>()'\n";
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod2.ds", "", eout));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("hey", "", "[runtime error]\n"
-                                                               "SystemError: execution error: hey: command not found\n"
-                                                               "    from (stdin):2 '<toplevel>()'\n"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("hey", "hey!!"));
 
     this->send(CTRL_D);
-    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, moduleError4) {
@@ -795,9 +793,11 @@ TEST_F(InteractiveTest, moduleError4) {
                        "    from " INTERACTIVE_TEST_WORK_DIR "/mod2.ds:6 '<toplevel>()'\n"
                        "    from (stdin):2 '<toplevel>()'\n";
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod2.ds as mod", "", eout));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$mod", "", "(stdin):3: [semantic error] undefined symbol: `mod'\n"
-                                                               "$mod\n"
-                                                               "^~~~\n"));
+
+    eout = "[runtime error]\n"
+           "IllegalAccessError: attemp to access uninitialized global variable\n"
+           "    from (stdin):3 '<toplevel>()'\n";
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$mod", "", eout));
 
     this->send(CTRL_D);
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));

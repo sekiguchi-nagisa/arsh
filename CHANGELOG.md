@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``alias`` keyword is still reserved keyword for future usage
 - **Breaking Change**: when access undefined environmental variable, throw ``IllegalAccessError`` instead of ``SystemError``
 - **Breaking Change**: evaluate script within separate module context
+- **Breaking Change**: after runtime error, not discard symbol state
 - allow ``=>`` in abbreviate type notation of Func type
 - allow ``->`` in arm expression
 - allow statement in for-init
