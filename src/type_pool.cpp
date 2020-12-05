@@ -182,7 +182,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
             return Ok(type);
         }
     } else {
-        auto checked = this->checkElementTypes(typeTemplate, elementTypes);
+        auto checked = checkElementTypes(typeTemplate, elementTypes);
         if(!checked) {
             return checked;
         }
@@ -201,14 +201,14 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
 }
 
 TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
-    auto checked = this->checkElementTypes(elementTypes);
+    auto checked = checkElementTypes(elementTypes);
     if(!checked) {
         return checked;
     }
 
     assert(!elementTypes.empty());
 
-    std::string typeName(this->toTupleTypeName(elementTypes));
+    std::string typeName(toTupleTypeName(elementTypes));
     DSType *type = this->get(typeName);
     if(type == nullptr) {
         auto &superType = this->get(TYPE::Any);
@@ -221,7 +221,7 @@ TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
 }
 
 TypeOrError TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
-    auto checked = this->checkElementTypes(paramTypes);
+    auto checked = checkElementTypes(paramTypes);
     if(!checked) {
         return checked;
     }

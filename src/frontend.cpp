@@ -133,7 +133,7 @@ FrontEnd::FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &pool,
                    IntrusivePtr<NameScope> builtin, IntrusivePtr<NameScope> scope,
                    DSExecMode mode, bool toplevel,
                    ObserverPtr<CodeCompletionHandler> ccHandler) :
-        modLoader(loader), builtin(builtin), mode(mode), checker(pool, toplevel, nullptr){
+        modLoader(loader), builtin(std::move(builtin)), mode(mode), checker(pool, toplevel, nullptr){
     this->contexts.push_back(std::make_unique<Context>(std::move(lexer), std::move(scope), ccHandler));
     this->curScope()->clearLocalSize();
     this->checker.setLexer(this->getCurrentLexer());
