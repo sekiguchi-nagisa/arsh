@@ -107,7 +107,7 @@ $assertArray($(env | grep ^P | while(read -r) {
 $assertArray(["_0", "_1"], $(complete "(1,2)."))
 $assertArray(["sort", "sortWith"], $(complete '$@.so'))
 $assertArray(["compAdd"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; \$CP."))
-$assertArray(["toFloat"], $(complete '
+$assertArray(['abs', "toFloat"], $(complete '
     var a = 334.4 as Any
     if $a is Float {
         echo $a is Float
