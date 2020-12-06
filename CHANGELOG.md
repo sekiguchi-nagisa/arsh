@@ -31,6 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - complete user-defined command name from current scope
   - complete subcommand name
 
+#### Builtin
+- add some ``Float`` methods
+  - ``abs``
+  - ``round``
+  - ``floor``
+  - ``ceil``
+  - ``trunc``
+  - ``isNormal``
+
 #### Completion
 - add completions for
   - printenv

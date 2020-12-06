@@ -77,6 +77,18 @@ function isInf($this : Float) : Boolean
 
 function isFinite($this : Float) : Boolean
 
+function isNormal($this : Float) : Boolean
+
+function round($this : Float) : Float
+
+function trunc($this : Float) : Float
+
+function floor($this : Float) : Float
+
+function ceil($this : Float) : Float
+
+function abs($this : Float) : Float
+
 function %OP_TO_INT($this : Float) : Int
 ```
 

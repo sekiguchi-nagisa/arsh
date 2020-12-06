@@ -411,6 +411,48 @@ YDSH_METHOD float_isFinite(RuntimeContext &ctx) {
     RET_BOOL(std::isfinite(value));
 }
 
+//!bind: function isNormal($this : Float) : Boolean
+YDSH_METHOD float_isNormal(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_isNormal);
+    double value = LOCAL(0).asFloat();
+    RET_BOOL(std::isnormal(value));
+}
+
+//!bind: function round($this : Float) : Float
+YDSH_METHOD float_round(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_round);
+    double value = LOCAL(0).asFloat();
+    RET(DSValue::createFloat(std::round(value)));
+}
+
+//!bind: function trunc($this : Float) : Float
+YDSH_METHOD float_trunc(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_trunc);
+    double value = LOCAL(0).asFloat();
+    RET(DSValue::createFloat(std::trunc(value)));
+}
+
+//!bind: function floor($this : Float) : Float
+YDSH_METHOD float_floor(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_floor);
+    double value = LOCAL(0).asFloat();
+    RET(DSValue::createFloat(std::floor(value)));
+}
+
+//!bind: function ceil($this : Float) : Float
+YDSH_METHOD float_ceil(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_ceil);
+    double value = LOCAL(0).asFloat();
+    RET(DSValue::createFloat(std::ceil(value)));
+}
+
+//!bind: function abs($this : Float) : Float
+YDSH_METHOD float_abs(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(float_abs);
+    double value = LOCAL(0).asFloat();
+    RET(DSValue::createFloat(std::fabs(value)));
+}
+
 //!bind: function $OP_TO_INT($this : Float): Int
 YDSH_METHOD float_toInt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(float_toInt);
