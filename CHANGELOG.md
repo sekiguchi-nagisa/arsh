@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - complete subcommand name
 
 #### Builtin
+- add ``Int`` method
+  - ``abs``
 - add some ``Float`` methods
   - ``abs``
   - ``round``

@@ -272,6 +272,13 @@ YDSH_METHOD int_2_int_xor(RuntimeContext & ctx) {
     RET(DSValue::createInt(left ^ right));
 }
 
+//!bind: function abs($this : Int) : Int
+YDSH_METHOD int_abs(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(int_abs);
+    int64_t value = LOCAL(0).asInt();
+    RET(DSValue::createInt(std::abs(value)));
+}
+
 //!bind: function $OP_TO_FLOAT($this : Int) : Float
 YDSH_METHOD int_toFloat(RuntimeContext & ctx) {
     SUPPRESS_WARNING(int_toFloat);

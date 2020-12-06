@@ -42,6 +42,8 @@ function %OP_OR($this : Int, $target : Int) : Int
 
 function %OP_XOR($this : Int, $target : Int) : Int
 
+function abs($this : Int) : Int
+
 function %OP_TO_FLOAT($this : Int) : Float
 ```
 
