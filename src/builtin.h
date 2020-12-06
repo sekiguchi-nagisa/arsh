@@ -557,7 +557,7 @@ YDSH_METHOD string_ge(RuntimeContext &ctx) {
 YDSH_METHOD string_size(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_size);
     size_t size = LOCAL(0).asStrRef().size();
-    assert(size <= ArrayObject::MAX_SIZE);
+    assert(size <= StringObject::MAX_SIZE);
     RET(DSValue::createInt(size));
 }
 
