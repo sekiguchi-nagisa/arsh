@@ -831,7 +831,7 @@ public:
     }
 
     void setTypeContext(HandleOrFuncType hf) {
-        this->ctx = hf;
+        this->ctx = std::move(hf);
     }
 
     HandleOrFuncType getTypeContext() const {
@@ -2656,7 +2656,7 @@ private:
     std::list<DumpBuffer> bufs;
 
 public:
-    NodeDumper(FILE *fp) : fp(fp) { }
+    explicit NodeDumper(FILE *fp) : fp(fp) { }
 
     ~NodeDumper() = default;
 
