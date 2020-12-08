@@ -698,7 +698,7 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
 
     auto scope = hasFlag(option, DS_MOD_SEPARATE_CTX) ?
             st->modLoader.createGlobalScopeFromFullpath(fileName, st->builtinModScope) : nullptr;
-    return evalScript(*st, std::move(scope),
+    return evalScript(*st, scope,
                       Lexer(fileName, std::move(buf), std::move(scriptDir)), discardPoint, e);
 }
 
