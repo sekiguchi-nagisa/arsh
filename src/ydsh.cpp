@@ -649,8 +649,12 @@ static void reportFileError(const char *sourceName, bool isIO, int errNum, DSErr
 }
 
 int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
+    return DSState_loadModule(st, sourceName, DS_MOD_FULLPATH | DS_MOD_SEPARATE_CTX, e);
+}
+
+int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e) {
     GUARD_NULL(st, -1);
-    GUARD_NULL(sourceName, -1);
+    GUARD_NULL(fileName, -1);
 
     DiscardPoint discardPoint {
             .mod = st->modLoader.getDiscardPoint(),
@@ -659,64 +663,43 @@ int DSState_loadAndEval(DSState *st, const char *sourceName, DSError *e) {
     };
 
     FilePtr filePtr;
-    auto ret = st->modLoader.load(nullptr, sourceName, filePtr, ModLoadOption{});
+    CStrPtr scriptDir = hasFlag(option, DS_MOD_FULLPATH) ? nullptr : getCWD();
+    auto ret = st->modLoader.load(scriptDir.get(), fileName, filePtr, ModLoadOption{});
     if(is<ModLoadingError>(ret)) {
         int errNum = get<ModLoadingError>(ret).getErrNo();
         if(get<ModLoadingError>(ret).isCircularLoad()) {
             errNum = ETXTBSY;
         }
-        reportFileError(sourceName, false, errNum, e);
+        if(errNum == ENOENT && hasFlag(option, DS_MOD_IGNORE_ENOENT)) {
+            return 0;
+        }
+        reportFileError(fileName, false, errNum, e);
         return 1;
     } else if(is<unsigned int>(ret)) {
         return 0;   // do nothing.
     }
-    sourceName = get<const char*>(ret);
-    char *real = strdup(sourceName);
-    assert(*real == '/');
-    const char *ptr = strrchr(real, '/');
-    real[ptr == real ? 1 : (ptr - real)] = '\0';
-    CStrPtr scriptDir(real);
+    fileName = get<const char*>(ret);
+    if(!scriptDir) {
+        char *real = strdup(fileName);
+        assert(*real == '/');
+        const char *ptr = strrchr(real, '/');
+        real[ptr == real ? 1 : (ptr - real)] = '\0';
+        scriptDir.reset(real);
+    }
 
     // read data
     assert(filePtr);
     ByteBuffer buf;
     if(!readAll(filePtr, buf)) {
-        reportFileError(sourceName, true, errno, e);
+        reportFileError(fileName, true, errno, e);
         return 1;
     }
     filePtr.reset(nullptr);
 
-    return evalScript(*st, st->modLoader.createGlobalScopeFromFullpath(sourceName, st->builtinModScope),
-                      Lexer(sourceName, std::move(buf), std::move(scriptDir)), discardPoint, e);
-}
-
-static void appendAsEscaped(std::string &line, const char *path) {
-    line += '"';
-    while(*path) {
-        char ch = *(path++);
-        switch(ch) {
-        case '"': case '$': case '\\':
-            line +='\\';
-            break;
-        default:
-            break;
-        }
-        line += ch;
-    }
-    line += '"';
-}
-
-int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e) {
-    GUARD_NULL(st, -1);
-    GUARD_NULL(fileName, -1);
-
-    std::string line = "source";
-    line += hasFlag(option, DS_MOD_IGNORE_ENOENT) ? "! " : " ";
-    appendAsEscaped(line, fileName);
-
-    st->lineNum = 0;
-
-    return DSState_eval(st, "ydsh", line.c_str(), line.size(), e);
+    auto scope = hasFlag(option, DS_MOD_SEPARATE_CTX) ?
+            st->modLoader.createGlobalScopeFromFullpath(fileName, st->builtinModScope) : nullptr;
+    return evalScript(*st, std::move(scope),
+                      Lexer(fileName, std::move(buf), std::move(scriptDir)), discardPoint, e);
 }
 
 int DSState_exec(DSState *st, char *const *argv) {

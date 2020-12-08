@@ -668,13 +668,13 @@ TEST_F(APITest, module2) {
         return DSState_loadModule(this->state, "fhjreuhfurie", 0, nullptr);
     });
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 1, WaitStatus::EXITED, "",
-                                         "ydsh: [semantic error] module not found: `fhjreuhfurie'"));
+                                         "ydsh: cannot open file: fhjreuhfurie, by `No such file or directory'"));
 
     DSError e;
     int r = DSState_loadModule(this->state, "fhuahfuiefer", 0, &e);
     ASSERT_EQ(1, r);
-    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
-    ASSERT_STREQ("NotFoundMod", e.name);
+    ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
+    ASSERT_STREQ(strerror(ENOENT), e.name);
     ASSERT_EQ(0, e.lineNum);
     DSError_release(&e);
 
@@ -697,7 +697,7 @@ TEST_F(APITest, module3) {
 TEST_F(APITest, module4) {
     auto fileName = this->createTempFile("target.ds", "source hoghreua");
     DSError e;
-    int r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_IGNORE_ENOENT, &e);
+    int r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
     ASSERT_EQ(1, r);
     ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
     ASSERT_STREQ("NotFoundMod", e.name);
@@ -707,7 +707,7 @@ TEST_F(APITest, module4) {
     // check error message
     auto ret = invoke([&]{
         return DSState_loadModule(this->state, fileName.c_str(),
-                DS_MOD_IGNORE_ENOENT, nullptr);
+                DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, nullptr);
     });
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(ret, 1, WaitStatus::EXITED, "",
                                          "^.+/target.ds:1: \\[semantic error\\] module not found: `hoghreua'.+$"));
@@ -715,19 +715,20 @@ TEST_F(APITest, module4) {
 
 TEST_F(APITest, module5) {
     DSError e;
-    int r = DSState_loadModule(this->state, "hfeurhfiurhefuie", 0, &e);
+    int r = DSState_loadModule(this->state, "hfeurhfiurhefuie", DS_MOD_FULLPATH , &e);
     ASSERT_EQ(1, r);
-    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
-    ASSERT_STREQ("NotFoundMod", e.name);
+    ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
+    ASSERT_STREQ(strerror(ENOENT), e.name);
     ASSERT_EQ(0, e.lineNum);
     DSError_release(&e);
 
     // check error message
     auto ret = invoke([&]{
-        return DSState_loadModule(this->state, "freijjfeir", 0, nullptr);
+        return DSState_loadModule(this->state, "freijjfeir",
+                                  DS_MOD_FULLPATH, nullptr);
     });
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 1, WaitStatus::EXITED, "",
-                    "ydsh: [semantic error] module not found: `freijjfeir'"));
+                    "ydsh: cannot open file: freijjfeir, by `No such file or directory'"));
 }
 
 TEST_F(APITest, module6) {
@@ -739,7 +740,7 @@ TEST_F(APITest, module6) {
         \ \
 )", "echo moduel!!; exit 56");
     auto ret = invoke([&]{
-        return DSState_loadModule(this->state, fileName.c_str(), 0, nullptr);
+        return DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH, nullptr);
     });
     ASSERT_NO_FATAL_FAILURE(this->expect(ret, 56, WaitStatus::EXITED, "moduel!!"));
 }

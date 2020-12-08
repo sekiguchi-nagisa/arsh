@@ -533,8 +533,7 @@ TEST_F(InteractiveTest, rc3) {
 TEST_F(InteractiveTest, rc4) {
     this->invoke("--quiet", "--rcfile", ".");
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "",
-            format("ydsh: [semantic error] cannot read module: `%s', by `Is a directory'\n",
-                   INTERACTIVE_TEST_WORK_DIR)));
+            "ydsh: cannot open file: ., by `Is a directory'\n"));
 }
 
 TEST_F(InteractiveTest, rc5) {

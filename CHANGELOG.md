@@ -73,9 +73,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allow negative number index in string ``[]``
 
 #### API
-- **Breaking Change**: remove ``DS_MOD_FULLPATH`` option from ``DSState_loadModule``
 - **Breaking Change**: ``DSState_loadAndEval`` api dose not accept null file name
-- **Breaking Change**: when pass already loaded script to ``DSState_loadAndEval``, always success
+- **Breaking Change**: ``DSState_loadModule`` api evaluate script in root module context
+  - when specified by ``DS_MOD_SEPARATE_CTX``, evaluate script in separate module context
+  - may repor ``DS_ERROR_KIND_FILE_ERROR``
 
 ### Fixed
 - cannot load module when module path indicates anonymous pipe
