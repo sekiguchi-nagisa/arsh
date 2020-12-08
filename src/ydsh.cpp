@@ -679,13 +679,11 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
         return 0;   // do nothing.
     }
     fileName = get<const char*>(ret);
-    if(!scriptDir) {
-        char *real = strdup(fileName);
-        assert(*real == '/');
-        const char *ptr = strrchr(real, '/');
-        real[ptr == real ? 1 : (ptr - real)] = '\0';
-        scriptDir.reset(real);
-    }
+    char *real = strdup(fileName);
+    assert(*real == '/');
+    const char *ptr = strrchr(real, '/');
+    real[ptr == real ? 1 : (ptr - real)] = '\0';
+    scriptDir.reset(real);
 
     // read data
     assert(filePtr);
