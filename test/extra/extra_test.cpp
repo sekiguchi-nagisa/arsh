@@ -193,8 +193,8 @@ TEST_F(APITest, modFullpath) {
     DSError e;
     int r = DSState_loadModule(this->state, "edit", DS_MOD_FULLPATH, &e);   // not load 'edit'
     ASSERT_EQ(1, r);
-    ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
-    ASSERT_STREQ("NotFoundMod", e.name);
+    ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
+    ASSERT_STREQ(strerror(ENOENT), e.name);
     ASSERT_EQ(0, e.lineNum);
     DSError_release(&e);
 }
