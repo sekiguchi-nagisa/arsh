@@ -156,7 +156,6 @@ static int compile(DSState &state, const IntrusivePtr<NameScope> &modScope,
 
 static int evalScript(DSState &state, const IntrusivePtr<NameScope> &scope,
                       Lexer &&lexer, const DiscardPoint &point, DSError *dsError) {
-    std::string fullpath = lexer.getSourceName();
     CompiledCode code;
     int ret = compile(state, scope ? scope : state.rootModScope, std::move(lexer), point, dsError, code);
     if(!code) {
