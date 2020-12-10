@@ -239,3 +239,16 @@ compdef() {
         $arg ?? ""
     ))
 }
+
+function compDelegate($words : [String], $cursor : Int) : [String] {
+    var line = ""
+    for $w in $words {
+        if !$line.empty() { $line += " "; }
+        $line += $w
+    }
+    if $cursor == $words.size() {
+        $line += " "
+    }
+    complete -- "$line" &> /dev/null
+    return $COMPREPLY
+}

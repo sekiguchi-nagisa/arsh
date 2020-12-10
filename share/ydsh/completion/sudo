@@ -14,7 +14,7 @@ function _sudo($t : [String], $c : Int) : [String] {
         }
     } else {
         $t.shift()
-        return $COMP_HOOK!($t, $c - 1)
+        return $compDelegate($t, $c - 1)
     }
 }
 
