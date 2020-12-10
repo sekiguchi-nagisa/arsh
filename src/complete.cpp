@@ -562,7 +562,10 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope,
         return false;
     }
 
-    const auto &modType = static_cast<const ModType&>(pool.get(handle->getTypeID()));
+    auto &type = pool.get(handle->getTypeID());
+    if(!type.isModType()) {
+        return false;
+    }
     std::function<bool(StringRef , const FieldHandle&)> fieldWalker =
             [&](StringRef name, const FieldHandle &) {
                 if(name.startsWith(word) && isCmdFullName(name)) {
@@ -573,7 +576,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope,
                 }
                 return true;
             };
-    modType.walkField(fieldWalker);
+    type.walkField(fieldWalker);
     return true;
 }
 
