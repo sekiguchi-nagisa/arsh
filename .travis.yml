@@ -14,19 +14,6 @@ env:
 
 matrix:
   include:
-    # clang 11.0 with fuzzing
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - sourceline: 'deb https://apt.llvm.org/xenial/ llvm-toolchain-xenial-11 main'
-              key_url: 'https://apt.llvm.org/llvm-snapshot.gpg.key'
-          packages:
-            - g++-7
-            - clang-11
-            - ninja-build
-      env: CXX_BIN=clang++-11 OPTION="-DFUZZING_BUILD_MODE=on"
-
     # clang (Release build), ARM64
     - addons:
         apt:
@@ -41,32 +28,6 @@ matrix:
       arch: arm64
       dist: bionic
       env: CXX_BIN=clang++ BUILD_TYPE=release
-
-    # gcc7 with coverage
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-7
-            - g++-7
-            - ninja-build
-      env: CXX_BIN=g++-7 BUILD_TYPE=coverage OPTION="-DCMAKE_C_COMPILER=gcc-7"
-      before_script:
-        - pip install --user cpp-coveralls
-      after_success:
-        - |
-          coveralls -r ../ -b . --gcov-options '\-lp' \
-                    --exclude test --exclude fuzzing --exclude include \
-                    --exclude-pattern .*-src \
-                    --exclude-pattern .*-build \
-                    --exclude-pattern '.*/CMakeFiles*' \
-                    --exclude-pattern '.*/nextToken\.cpp' \
-                    --exclude-pattern '.*/tools/json/lexer\.cpp' \
-                    --exclude-pattern '.*/tools/uri/uri_parser\.cpp' \
-                    --exclude-pattern '.*/tools/process/ansi\.cpp' \
-                    --exclude-pattern '.*/tools/gen_binding/DescLexer\.cpp' \
-                    --exclude-pattern '.*\.re2c\.cpp'
 
 script:
   - uname -a

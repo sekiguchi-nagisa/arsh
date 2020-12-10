@@ -147,6 +147,73 @@ jobs:
           cd build
           ctest --output-on-failure
 
+  build_on_linux_fuzzing:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: prepare
+        run: sudo apt-get install ninja-build clang-10
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DFUZZING_BUILD_MODE=on \
+                -DCMAKE_CXX_COMPILER=clang++-10 \
+                -DUSE_EXTRA_TEST=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          sudo ninja install
+          ./ydsh ../tools/scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          ctest --output-on-failure
+
+  build_on_linux_coverage:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: prepare
+        run: |
+          sudo apt-get install ninja-build g++-10
+          pip install --user cpp-coveralls
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=coverage \
+                -DCMAKE_C_COMPILER=gcc-10
+                -DCMAKE_CXX_COMPILER=g++-10 \
+                -DUSE_EXTRA_TEST=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          sudo ninja install
+          ./ydsh ../tools/scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          ctest --output-on-failure
+      - name: report
+        run: |
+          cd build
+          coveralls -r ../ -b . --gcov-options '\-lp' \
+            --exclude test --exclude fuzzing --exclude include \
+            --exclude-pattern '.*-src' \
+            --exclude-pattern '.*-build' \
+            --exclude-pattern '.*/CMakeFiles*' \
+            --exclude-pattern '.*/nextToken\.cpp' \
+            --exclude-pattern '.*/tools/json/lexer\.cpp' \
+            --exclude-pattern '.*/tools/uri/uri_parser\.cpp' \
+            --exclude-pattern '.*/tools/process/ansi\.cpp' \
+            --exclude-pattern '.*/tools/gen_binding/DescLexer\.cpp' \
+            --exclude-pattern '.*\.re2c\.cpp'
+
   build_on_linux_x86:
     runs-on: ubuntu-18.04
     steps:
