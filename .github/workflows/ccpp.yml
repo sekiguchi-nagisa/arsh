@@ -202,7 +202,7 @@ jobs:
       - name: report
         run: |
           cd build
-          coveralls -r ../ -b . --gcov-options '\-lp' \
+          /home/runner/.local/bin/coveralls -r ../ -b . --gcov-options '\-lp' \
             --exclude test --exclude fuzzing --exclude include \
             --exclude-pattern '.*-src' \
             --exclude-pattern '.*-build' \
