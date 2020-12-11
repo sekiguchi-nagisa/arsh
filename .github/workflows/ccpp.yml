@@ -184,6 +184,7 @@ jobs:
         run: |
           mkdir build
           cd build
+          git checkout master
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=coverage \
                 -DCMAKE_C_COMPILER=gcc-10 \
