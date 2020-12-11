@@ -203,6 +203,7 @@ jobs:
         run: |
           cd build
           /home/runner/.local/bin/coveralls -r ../ -b . --gcov-options '\-lp' \
+            -t '${{ secrets.GITHUB_TOKEN }}' \
             --exclude test --exclude fuzzing --exclude include \
             --exclude-pattern '.*-src' \
             --exclude-pattern '.*-build' \
