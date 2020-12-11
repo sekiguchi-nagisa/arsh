@@ -1,7 +1,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](#license)
 [![Build Status](https://travis-ci.org/sekiguchi-nagisa/ydsh.svg?branch=master)](https://travis-ci.org/sekiguchi-nagisa/ydsh)
-[![Coverage Status](https://coveralls.io/repos/github/sekiguchi-nagisa/ydsh/badge.svg?branch=master)](https://coveralls.io/github/sekiguchi-nagisa/ydsh?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/sekiguchi-nagisa/ydsh/badge.svg)](https://coveralls.io/github/sekiguchi-nagisa/ydsh)
 [![Actions Status](https://github.com/sekiguchi-nagisa/ydsh/workflows/GitHub%20Actions/badge.svg)](https://github.com/sekiguchi-nagisa/ydsh/actions)
 
 # ydsh
