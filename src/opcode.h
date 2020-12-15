@@ -24,6 +24,10 @@ namespace ydsh {
  */
 #define OPCODE_LIST(OP) \
     OP(HALT           , 0,  0) \
+    OP(ASSERT         , 0, -2) \
+    OP(PRINT          , 3, -1) \
+    OP(INSTANCE_OF    , 3,  0) \
+    OP(CHECK_CAST     , 3,  0) \
     OP(PUSH_NULL      , 0,  1) \
     OP(PUSH_TRUE      , 0,  1) \
     OP(PUSH_FALSE     , 0,  1) \
@@ -45,6 +49,9 @@ namespace ydsh {
     OP(STORE_LOCAL    , 1, -1) \
     OP(LOAD_FIELD     , 2,  0) \
     OP(STORE_FIELD    , 2, -2) \
+    OP(IMPORT_ENV     , 1, -1) \
+    OP(LOAD_ENV       , 0,  0) \
+    OP(STORE_ENV      , 0, -2) \
     OP(POP            , 0, -1) \
     OP(DUP            , 0,  1) \
     OP(DUP2           , 0,  2) \
@@ -58,7 +65,6 @@ namespace ydsh {
     OP(CALL_FUNC      , 1,  0) \
     OP(CALL_BUILTIN   , 1,  1) \
     OP(CALL_BUILTIN2  , 2,  0) \
-    OP(CALL_NATIVE    , 1,  0) \
     OP(RETURN         , 0,  0) \
     OP(RETURN_V       , 0,  0) \
     OP(RETURN_UDC     , 0,  0) \
@@ -81,9 +87,15 @@ namespace ydsh {
     OP(ADD_GLOBBING   , 2,  0) \
     OP(CALL_CMD       , 0, -1) \
     OP(CALL_CMD_NOFORK, 0, -1) \
+    OP(BUILTIN_CMD    , 0,  1) \
+    OP(BUILTIN_EVAL   , 0,  1) \
+    OP(BUILTIN_EXEC   , 0,  1) \
     OP(NEW_REDIR      , 0,  1) \
     OP(ADD_REDIR_OP   , 1, -1) \
     OP(DO_REDIR       , 0,  0) \
+    OP(RAND           , 0,  1) \
+    OP(GET_SECOND     , 0,  1) \
+    OP(SET_SECOND     , 0, -1) \
     OP(UNWRAP         , 0,  0) \
     OP(CHECK_UNWRAP   , 0,  0) \
     OP(TRY_UNWRAP     , 2,  0) \
@@ -99,49 +111,6 @@ int getByteSize(OpCode code);
 
 bool isTypeOp(OpCode code);
 
-inline bool isValIns(OpCode code) {
-    switch(code) {
-    case OpCode::CALL_FUNC:
-    case OpCode::CALL_METHOD:
-    case OpCode::CALL_BUILTIN2:
-    case OpCode::ADD_GLOBBING:
-        return true;
-    default:
-        return false;
-    }
-}
-
-/**
- * for ``CALL_NATIVE`` ins
- *
- * OP(E, P, R)
- *
- * E: op
- * P: operand size
- * R: result size
- */
-#define EACH_NATIVE_OP(OP) \
-    OP(ASSERT         , 2, 0) \
-    OP(PRINT          , 2, 0) \
-    OP(INSTANCE_OF    , 2, 1) \
-    OP(CHECK_CAST     , 2, 1) \
-    OP(IMPORT_ENV     , 2, 0) \
-    OP(LOAD_ENV       , 1, 1) \
-    OP(STORE_ENV      , 2, 0) \
-    OP(RAND           , 0, 1) \
-    OP(GET_SECOND     , 0, 1) \
-    OP(SET_SECOND     , 1, 0) \
-    OP(BUILTIN_CMD    , 0, 0) /* only used within NativeCode */\
-    OP(BUILTIN_EVAL   , 0, 0) /* only used within NativeCode */\
-    OP(BUILTIN_EXEC   , 0, 0) /* only used within NativeCode */
-
-
-enum class NativeOp : unsigned char {
-#define GEN_OPCODE(E, P, R) E,
-    EACH_NATIVE_OP(GEN_OPCODE)
-#undef GEN_OPCODE
-};
-
-}; // namespace ydsh
+} // namespace ydsh
 
 #endif //YDSH_OPCODE_H

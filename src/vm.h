@@ -337,29 +337,17 @@ private:
     }
 
     // runtime api
-    static auto lookupNativeOp(NativeOp op) -> bool (*)(DSState &);
+    static bool instanceOf(const TypePool &pool, const DSValue &value, const DSType &targetType) {
+        return targetType.isSameOrBaseTypeOf(pool.get(value.getTypeID()));
+    }
 
-    static bool OP_ASSERT(DSState &state);
+    static bool checkCast(DSState &state, const DSType &targetType);
 
-    static bool OP_PRINT(DSState &state);
+    static bool checkAssertion(DSState &state);
 
-    static bool OP_INSTANCE_OF(DSState &state);
+    static const char *loadEnv(DSState &state, bool hasDefault);
 
-    static bool OP_CHECK_CAST(DSState &state);
-
-    static const char *loadEnvImpl(DSState &state, bool hasDefault);
-
-    static bool OP_IMPORT_ENV(DSState &state);
-
-    static bool OP_LOAD_ENV(DSState &state);
-
-    static bool OP_STORE_ENV(DSState &state);
-
-    static bool OP_RAND(DSState &state);
-
-    static bool OP_GET_SECOND(DSState &state);
-
-    static bool OP_SET_SECOND(DSState &state);
+    static bool storeEnv(DSState &state);
 
     static void pushNewObject(DSState &state, const DSType &type);
 
@@ -416,11 +404,9 @@ private:
     static bool callCommand(DSState &state, CmdResolver resolver,
                             DSValue &&argvObj, DSValue &&redirConfig, CmdCallAttr attr = {});
 
-    static bool OP_BUILTIN_CMD(DSState &state);
+    static bool builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr);
 
-    static bool OP_BUILTIN_EXEC(DSState &state);
-
-    static bool OP_BUILTIN_EVAL(DSState &state);
+    static void builtinExec(DSState &state, DSValue &&array, DSValue &&redir);
 
     /**
      *

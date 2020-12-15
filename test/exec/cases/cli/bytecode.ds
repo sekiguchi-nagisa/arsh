@@ -55,14 +55,13 @@ Exception Table:
   begin: 5, end: 20, type: pseudo top%%, dest: 20, offset: 0, size: 0
 
 DSCode: function f
-  code size: 9
-  max stack depth: 2
+  code size: 7
+  max stack depth: 1
   number of local variable: 1
 Code:
   0: LOAD_LOCAL  0
-  2: PUSH_TYPE  [Int]
-  6: CALL_NATIVE  INSTANCE_OF
-  8: RETURN_V
+  2: INSTANCE_OF  [Int]
+  6: RETURN_V
 Constant Pool:
   0: String (string)
   1: String $(pwd)

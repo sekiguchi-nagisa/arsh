@@ -130,17 +130,21 @@ void DSState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
 
 namespace ydsh {
 
-auto VM::lookupNativeOp(NativeOp op) -> bool (*)(DSState &) {
-    switch(op) {
-#define GEN_CASE(E, P, R) case NativeOp::E: return OP_ ## E;
-    EACH_NATIVE_OP(GEN_CASE)
-#undef GEN_CASE
-    default:
-        return nullptr;
+bool VM::checkCast(DSState &state, const DSType &targetType) {
+    if(!instanceOf(state.typePool, state.stack.peek(), targetType)) {
+        auto &stackTopType = state.typePool.get(state.stack.pop().getTypeID());
+        std::string str("cannot cast `");
+        str += stackTopType.getNameRef();
+        str += "' to `";
+        str += targetType.getNameRef();
+        str += "'";
+        raiseError(state, TYPE::TypeCastError, std::move(str));
+        return false;
     }
+    return true;
 }
 
-bool VM::OP_ASSERT(DSState &state) {
+bool VM::checkAssertion(DSState &state) {
     auto msg = state.stack.pop();
     auto ref = msg.asStrRef();
     if(!state.stack.pop().asBool()) {
@@ -150,49 +154,8 @@ bool VM::OP_ASSERT(DSState &state) {
     return true;
 }
 
-bool VM::OP_PRINT(DSState &state) {
-    auto &stackTopType = state.stack.pop().asType();
-    assert(!stackTopType.isVoidType());
-    auto ref = state.stack.peek().asStrRef();
-    std::string value = ": ";
-    value += stackTopType.getNameRef();
-    value += " = ";
-    value += ref;
-    value += "\n";
-    fwrite(value.c_str(), sizeof(char), value.size(), stdout);
-    fflush(stdout);
-    state.stack.popNoReturn();
-    return true;
-}
-
-static bool instanceOf(const TypePool &pool, const DSValue &value, const DSType &targetType) {
-    return targetType.isSameOrBaseTypeOf(pool.get(value.getTypeID()));
-}
-
-bool VM::OP_INSTANCE_OF(DSState &state) {
-    auto &type = state.stack.pop().asType();
-    auto value = state.stack.pop();
-    state.stack.push(DSValue::createBool(::instanceOf(state.typePool, value, type)));
-    return true;
-}
-
-bool VM::OP_CHECK_CAST(DSState &state) {
-    auto &type = state.stack.pop().asType();
-    if(!::instanceOf(state.typePool, state.stack.peek(), type)) {
-        auto &stackTopType = state.typePool.get(state.stack.pop().getTypeID());
-        std::string str("cannot cast `");
-        str += stackTopType.getNameRef();
-        str += "' to `";
-        str += type.getNameRef();
-        str += "'";
-        raiseError(state, TYPE::TypeCastError, std::move(str));
-        return false;
-    }
-    return true;
-}
-
-const char *VM::loadEnvImpl(DSState &state, bool hasDefault) {
-    auto dValue = DSValue::createInvalid();
+const char *VM::loadEnv(DSState &state, bool hasDefault) {
+    DSValue dValue;
     if(hasDefault) {
         dValue = state.stack.pop();
     }
@@ -201,7 +164,7 @@ const char *VM::loadEnvImpl(DSState &state, bool hasDefault) {
     assert(!nameRef.hasNullChar());
     const char *name = nameRef.data();
     const char *env = getenv(name);
-    if(env == nullptr && !dValue.isInvalid()) {
+    if(env == nullptr && hasDefault) {
         auto ref = dValue.asStrRef();
         if(ref.hasNullChar()) {
             std::string message = SET_ENV_ERROR;
@@ -221,21 +184,7 @@ const char *VM::loadEnvImpl(DSState &state, bool hasDefault) {
     return env;
 }
 
-bool VM::OP_IMPORT_ENV(DSState &state) {
-    const char *env = loadEnvImpl(state, true);
-    return env != nullptr;
-}
-
-bool VM::OP_LOAD_ENV(DSState &state) {
-    const char *env = loadEnvImpl(state, false);
-    if(!env) {
-        return false;
-    }
-    state.stack.push(DSValue::createStr(env));
-    return true;
-}
-
-bool VM::OP_STORE_ENV(DSState &state) {
+bool VM::storeEnv(DSState &state) {
     auto value = state.stack.pop();
     auto name = state.stack.pop();
     auto nameRef = name.asStrRef();
@@ -248,32 +197,6 @@ bool VM::OP_STORE_ENV(DSState &state) {
     str += nameRef;
     raiseError(state, TYPE::IllegalAccessError, std::move(str));
     return false;
-}
-
-bool VM::OP_RAND(DSState &state) {
-    std::random_device rand;
-    std::default_random_engine engine(rand());
-    std::uniform_int_distribution<int64_t> dist;
-    int64_t v = dist(engine);
-    state.stack.push(DSValue::createInt(v));
-    return true;
-}
-
-bool VM::OP_GET_SECOND(DSState &state) {
-    auto now = std::chrono::system_clock::now();
-    auto diff = now - state.baseTime;
-    auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
-    int64_t v = state.getGlobal(BuiltinVarOffset::SECONDS).asInt();
-    v += sec.count();
-    state.stack.push(DSValue::createInt(v));
-    return true;
-}
-
-bool VM::OP_SET_SECOND(DSState &state) {
-    state.baseTime = std::chrono::system_clock::now();
-    auto v = state.stack.pop();
-    state.setGlobal(BuiltinVarOffset::SECONDS, std::move(v));
-    return true;
 }
 
 void VM::pushNewObject(DSState &state, const DSType &type) {
@@ -543,11 +466,10 @@ bool VM::forkAndEval(DSState &state) {
 }
 
 /* for pipeline evaluation */
-static NativeCode initCode(NativeOp op) {
+static NativeCode initCode(OpCode op) {
     NativeCode::ArrayType code;
-    code[0] = static_cast<char>(OpCode::CALL_NATIVE);
-    code[1] = static_cast<char>(op);
-    code[2] = static_cast<char>(OpCode::RETURN_V);
+    code[0] = static_cast<char>(op);
+    code[1] = static_cast<char>(OpCode::RETURN_V);
     return NativeCode(code);
 }
 
@@ -619,9 +541,9 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
         }
 
         static std::pair<const char *, NativeCode> sb[] = {
-                {"command", initCode(NativeOp::BUILTIN_CMD)},
-                {"eval",    initCode(NativeOp::BUILTIN_EVAL)},
-                {"exec",    initCode(NativeOp::BUILTIN_EXEC)},
+                {"command", initCode(OpCode::BUILTIN_CMD)},
+                {"eval",    initCode(OpCode::BUILTIN_EVAL)},
+                {"exec",    initCode(OpCode::BUILTIN_EXEC)},
         };
         for(auto &e : sb) {
             if(strcmp(cmdName, e.first) == 0) {
@@ -809,55 +731,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
 
 int invalidOptionError(const ArrayObject &obj, const GetOptState &s);
 
-static bool showCommandInfo(const FilePathCache &cache, const ArrayObject &argv, unsigned int showDesc,
-                            const char *commandName, Command cmd) {
-    switch(cmd.kind) {
-    case Command::USER_DEFINED:
-    case Command::MODULE: {
-        fputs(commandName, stdout);
-        if(showDesc == 2) {
-            fputs(" is an user-defined command", stdout);
-        }
-        fputc('\n', stdout);
-        return true;
-    }
-    case Command::BUILTIN_S:
-    case Command::BUILTIN: {
-        fputs(commandName, stdout);
-        if(showDesc == 2) {
-            fputs(" is a shell builtin command", stdout);
-        }
-        fputc('\n', stdout);
-        return true;
-    }
-    case Command::EXTERNAL: {
-        const char *path = cmd.filePath;
-        if(path != nullptr && isExecutable(path)) {
-            if(showDesc == 1) {
-                printf("%s\n", path);
-            } else if(cache.isCached(commandName)) {
-                printf("%s is hashed (%s)\n", commandName, path);
-            } else {
-                printf("%s is %s\n", commandName, path);
-            }
-            return true;
-        }
-        if(showDesc == 2) {
-            ERROR(argv, "%s: not found", commandName);
-        }
-        return false;
-    }
-    }
-    return false;   // normally unreachable, but need to suppress gcc warning.
-}
-
-bool VM::OP_BUILTIN_CMD(DSState &state) {
-    auto cleanup = finally([]{
-        flushStdFD();
-    });
-
-    DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
-    DSValue argvObj = state.stack.getLocal(UDC_PARAM_ARGV);
+bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr) {
     auto &arrayObj = typeAs<ArrayObject>(argvObj);
 
     bool useDefaultPath = false;
@@ -867,7 +741,7 @@ bool VM::OP_BUILTIN_CMD(DSState &state) {
      * if 1, show description
      * if 2, show detailed description
      */
-    unsigned int showDesc = 0;
+    unsigned char showDesc = 0;
 
     GetOptState optState;
     for(int opt; (opt = optState(arrayObj, "pvV")) != -1;) {
@@ -897,7 +771,6 @@ bool VM::OP_BUILTIN_CMD(DSState &state) {
 
             auto resolve = CmdResolver(CmdResolver::MASK_UDC,
                                        useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
-            auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
             return callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
         }
 
@@ -906,8 +779,46 @@ bool VM::OP_BUILTIN_CMD(DSState &state) {
         for(; index < argc; index++) {
             const char *commandName = arrayObj.getValues()[index].asCStr();
             auto cmd = CmdResolver(CmdResolver::MASK_FALLBACK, FilePathCache::DIRECT_SEARCH)(state, commandName);
-            if(showCommandInfo(state.pathCache, arrayObj, showDesc, commandName, cmd)) {
+            switch(cmd.kind) {
+            case Command::USER_DEFINED:
+            case Command::MODULE: {
                 successCount++;
+                fputs(commandName, stdout);
+                if(showDesc == 2) {
+                    fputs(" is an user-defined command", stdout);
+                }
+                fputc('\n', stdout);
+                continue;
+            }
+            case Command::BUILTIN_S:
+            case Command::BUILTIN: {
+                successCount++;
+                fputs(commandName, stdout);
+                if(showDesc == 2) {
+                    fputs(" is a shell builtin command", stdout);
+                }
+                fputc('\n', stdout);
+                continue;
+            }
+            case Command::EXTERNAL: {
+                const char *path = cmd.filePath;
+                if(path != nullptr && isExecutable(path)) {
+                    successCount++;
+                    if(showDesc == 1) {
+                        printf("%s\n", path);
+                    } else if(state.pathCache.isCached(commandName)) {
+                        printf("%s is hashed (%s)\n", commandName, path);
+                    } else {
+                        printf("%s is %s\n", commandName, path);
+                    }
+                    continue;
+                }
+                break;
+            }
+            }
+
+            if(showDesc == 2) {
+                ERROR(arrayObj, "%s: not found", commandName);
             }
         }
         pushExitStatus(state, successCount > 0 ? 0 : 1);
@@ -917,16 +828,16 @@ bool VM::OP_BUILTIN_CMD(DSState &state) {
     return true;
 }
 
-bool VM::OP_BUILTIN_EXEC(DSState &state) {
-    DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
+void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
+    auto &argvObj = typeAs<ArrayObject>(array);
+    bool clearEnv = false;
+    StringRef progName;
+    GetOptState optState;
+
     if(redir) {
         typeAs<RedirObject>(redir).ignoreBackup();
     }
 
-    auto &argvObj = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
-    bool clearEnv = false;
-    StringRef progName;
-    GetOptState optState;
     for(int opt; (opt = optState(argvObj, "ca:")) != -1;) {
         switch(opt) {
         case 'c':
@@ -938,7 +849,7 @@ bool VM::OP_BUILTIN_EXEC(DSState &state) {
         default:
             int s = invalidOptionError(argvObj, optState);
             pushExitStatus(state, s);
-            return true;
+            return;
         }
     }
 
@@ -962,20 +873,6 @@ bool VM::OP_BUILTIN_EXEC(DSState &state) {
         exit(1);
     }
     pushExitStatus(state, 0);
-    return true;
-}
-
-bool VM::OP_BUILTIN_EVAL(DSState &state) {
-    DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
-    auto &array = typeAs<ArrayObject>(argv);
-    array.takeFirst();  // remove 'eval'
-    if(array.size() == 0) { // do nothing
-        pushExitStatus(state, 0);
-        return true;
-    }
-    auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
-    DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
-    return callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr);
 }
 
 bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
@@ -1339,6 +1236,43 @@ bool VM::mainLoop(DSState &state) {
         vmcase(HALT) {
             return true;
         }
+        vmcase(ASSERT) {
+            TRY(checkAssertion(state));
+            vmnext;
+        }
+        vmcase(PRINT) {
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
+
+            auto &stackTopType = state.typePool.get(v);
+            assert(!stackTopType.isVoidType());
+            auto ref = state.stack.peek().asStrRef();
+            std::string value = ": ";
+            value += stackTopType.getNameRef();
+            value += " = ";
+            value.append(ref.data(), ref.size());
+            value += "\n";
+            fwrite(value.c_str(), sizeof(char), value.size(), stdout);
+            fflush(stdout);
+            state.stack.popNoReturn();
+            vmnext;
+        }
+        vmcase(INSTANCE_OF) {
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
+
+            auto &targetType = state.typePool.get(v);
+            auto value = state.stack.pop();
+            bool ret = instanceOf(state.typePool, value, targetType);
+            state.stack.push(DSValue::createBool(ret));
+            vmnext;
+        }
+        vmcase(CHECK_CAST) {
+            unsigned int v = read24(GET_CODE(state), state.stack.pc());
+            state.stack.pc() += 3;
+            TRY(checkCast(state, state.typePool.get(v)));
+            vmnext;
+        }
         vmcase(PUSH_NULL) {
             state.stack.push(nullptr);
             vmnext;
@@ -1455,6 +1389,22 @@ bool VM::mainLoop(DSState &state) {
             state.stack.storeField(index);
             vmnext;
         }
+        vmcase(IMPORT_ENV) {
+            unsigned char b = read8(GET_CODE(state), state.stack.pc());
+            state.stack.pc()++;
+            TRY(loadEnv(state, b > 0));
+            vmnext;
+        }
+        vmcase(LOAD_ENV) {
+            const char *value = loadEnv(state, false);
+            TRY(value);
+            state.stack.push(DSValue::createStr(value));
+            vmnext;
+        }
+        vmcase(STORE_ENV) {
+            TRY(storeEnv(state));
+            vmnext;
+        }
         vmcase(POP) {
             state.stack.popNoReturn();
             vmnext;
@@ -1537,13 +1487,6 @@ bool VM::mainLoop(DSState &state) {
             if(ret) {
                 state.stack.push(std::move(ret));
             }
-            vmnext;
-        }
-        vmcase(CALL_NATIVE) {
-            unsigned int v = read8(GET_CODE(state), state.stack.pc());
-            state.stack.pc()++;
-            auto nativeOp = lookupNativeOp(static_cast<NativeOp>(v));
-            TRY(nativeOp(state));
             vmnext;
         }
         vmcase(RETURN) {
@@ -1698,6 +1641,37 @@ bool VM::mainLoop(DSState &state) {
             TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
             vmnext;
         }
+        vmcase(BUILTIN_CMD) {
+            auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
+            auto attr = static_cast<CmdCallAttr>(v);
+            DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
+            DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
+            bool ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
+            flushStdFD();
+            TRY(ret);
+            vmnext;
+        }
+        vmcase(BUILTIN_EVAL) {
+            auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
+            auto attr = static_cast<CmdCallAttr>(v);
+            DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
+            DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
+
+            typeAs<ArrayObject>(argv).takeFirst();
+            auto &array = typeAs<ArrayObject>(argv);
+            if(!array.getValues().empty()) {
+                TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
+            } else {
+                pushExitStatus(state, 0);
+            }
+            vmnext;
+        }
+        vmcase(BUILTIN_EXEC) {
+            DSValue redir = state.stack.getLocal(UDC_PARAM_REDIR);
+            DSValue argv = state.stack.getLocal(UDC_PARAM_ARGV);
+            builtinExec(state, std::move(argv), std::move(redir));
+            vmnext;
+        }
         vmcase(NEW_REDIR) {
             state.stack.push(DSValue::create<RedirObject>());
             vmnext;
@@ -1711,6 +1685,29 @@ bool VM::mainLoop(DSState &state) {
         }
         vmcase(DO_REDIR) {
             TRY(typeAs<RedirObject>(state.stack.peek()).redirect(state));
+            vmnext;
+        }
+        vmcase(RAND) {
+            std::random_device rand;
+            std::default_random_engine engine(rand());
+            std::uniform_int_distribution<int64_t> dist;
+            int64_t v = dist(engine);
+            state.stack.push(DSValue::createInt(v));
+            vmnext;
+        }
+        vmcase(GET_SECOND) {
+            auto now = std::chrono::system_clock::now();
+            auto diff = now - state.baseTime;
+            auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
+            int64_t v = state.getGlobal(BuiltinVarOffset::SECONDS).asInt();
+            v += sec.count();
+            state.stack.push(DSValue::createInt(v));
+            vmnext;
+        }
+        vmcase(SET_SECOND) {
+            state.baseTime = std::chrono::system_clock::now();
+            auto v = state.stack.pop();
+            state.setGlobal(BuiltinVarOffset::SECONDS, std::move(v));
             vmnext;
         }
         vmcase(UNWRAP) {

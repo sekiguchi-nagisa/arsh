@@ -3,6 +3,10 @@
 | **Mnemonic**    | **Other bytes**                | **Stack (before -> after)**                  | **Description**                                    |
 |-----------------|--------------------------------|----------------------------------------------|----------------------------------------------------|
 | HALT            |                                | [no change]                                  | stop evaluation of interpreter immediately         |
+| ASSERT          |                                | value1 value2 ->                             | assertion that value1 is true.                     |
+| PRINT           | 3: byte1 ~ byte3               | value ->                                     | print specified type and value on top of the stack |
+| INSTANCE_OF     | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type   |
+| CHECK_CAST      | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type   |
 | PUSH_NULL       |                                | -> value                                     | push the null value onto the stack                 |
 | PUSH_TRUE       |                                | -> value                                     | push the true value onto the stack                 |
 | PUSH_FALSE      |                                | -> value                                     | push the false value onto the stack                |
@@ -24,6 +28,9 @@
 | STORE_LOCAL     | 1: byte1                       | value ->                                     | store a value to a local variable                  |
 | LOAD_FIELD      | 2: byte1 byte2                 | value -> value                               | load a value from a instance field                 |
 | STORE_FIELD     | 2: byte1 byte2                 | value1 value2 ->                             | store a value into a instance field                |
+| IMPORT_ENV      | 1: byte1                       | value1 [value2] ->                           | import environmental variable                      |
+| LOAD_ENV        |                                | value -> value                               | get environmental variable                         |
+| STORE_ENV       |                                | value1 value2 ->                             | set environmental variable                         |
 | POP             |                                | value ->                                     | pop stack top value                                |
 | DUP             |                                | value -> value value                         | duplicate top value                                |
 | DUP2            |                                | value1 value2 -> value1 value2 value1 value2 | duplicate top two value                            |
@@ -37,7 +44,6 @@
 | CALL_FUNC       | 1: param                       | func param1 ~ paramN -> result               | apply function object                              |
 | CALL_BUILTIN    | 1: index                       | -> value                                     | call builtin function                              |
 | CALL_BUILTIN2   | 2: param index                 | param1 ~ paramN -> result                    | call builtin function                              |
-| CALL_NATIVE     | 1: op                          | [depend native op]                           | call internal vm function                          |
 | RETURN          |                                | -> [empty]                                   | return from callable                               |
 | RETURN_V        |                                | value -> [empty]                             | return value from callable                         |
 | RETURN_UDC      |                                | value -> [empty]                             | return from user-defined command                   |
@@ -60,29 +66,16 @@
 | ADD_GLOBBING    | 1: len 2: option               | argv redir value1 ~ valueN+1 -> argv redir   | apply glob expansion and add results to value0     |
 | CALL_CMD        |                                | argv redir -> value                          | call command.                                      |
 | CALL_CMD_NOFORK |                                | argv redir -> value                          | call command without fork                          |
+| BUILTIN_CMD     |                                | -> value                                     | call builtin command command                       |
+| BUILTIN_EVAL    |                                | -> value                                     | call builtin eval command                          |
+| BUILTIN_EXEC    |                                | -> value / [terminate]                       | call builtin exec command                          |
 | NEW_REDIR       |                                | -> value                                     | create new RedireConfig                            |
 | ADD_REDIR_OP    | 1: byte1                       | value1 value2 -> value1                      | add stack top value as redirection target          |
 | DO_REDIR        |                                | value -> value                               | perform redirection                                |
+| RAND            |                                | -> value                                     | generate random number and push stack top          |
+| GET_SECOND      |                                | -> value                                     | get differential time between current and base     |
+| SET_SECOND      |                                | value ->                                     | set base time                                      |
 | UNWRAP          |                                | value -> value                               | unwrap option value                                |
 | CHECK_UNWRAP    |                                | value -> value                               | check if option value has a value                  |
 | TRY_UNWRAP      | 2: offset1 offset2             | value -> / [no change]                       | try to unwrap option value                         |
 | RECLAIM_LOCAL   | 2: offset1 size1               | [no change]                                  | reclaim local variables specified range            |
-
-
-## Specification of internal vm op
-
-| **Mnemonic**    | **Stack (before -> after)**  | **Description**                                            |
-|-----------------|------------------------------|------------------------------------------------------------|
-| ASSERT          | cond msg ->                  | assertion that ``cond`` is true.                           |
-| PRINT           | value type ->                | print specified ``type`` and ``value`` on top of the stack |
-| INSTANCE_OF     | value type -> value          | check if a ``value`` is instance of a ``type``             |
-| CHECK_CAST      | value type -> value          | check if a ``value`` is instance of a ``type``             |
-| IMPORT_ENV      | name default ->              | import environmental variable                              |
-| LOAD_ENV        | name -> value                | get environmental variable                                 |
-| STORE_ENV       | name value ->                | set environmental variable                                 |
-| RAND            | -> value                     | generate random number and push stack top                  |
-| GET_SECOND      | -> value                     | get differential time between current and base             |
-| SET_SECOND      | value ->                     | set base time                                              |
-| BUILTIN_CMD     | -> value                     | call builtin ``command``                                   |
-| BUILTIN_EVAL    | -> value                     | call builtin ``eval``                                      |
-| BUILTIN_EXEC    | -> value / [terminate]       | call builtin ``exec``                                      |

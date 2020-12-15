@@ -18,9 +18,9 @@ private:
 public:
     VMInspector() : breakOp(OpCode::HALT), handler(), called(true) {}
 
-    void setHandler(OpCode op, BreakPointHandler &&hd) {
+    void setHandler(OpCode op, BreakPointHandler &&handler) {
         this->breakOp = op;
-        this->handler = std::move(hd);
+        this->handler = std::move(handler);
         if(this->handler) {
             this->called = false;
         }
@@ -114,7 +114,7 @@ TEST_F(VMTest, deinit1) {
     ASSERT_NO_FATAL_FAILURE(this->eval("{ var b = $a}"));
     ASSERT_NO_FATAL_FAILURE(RefCount("a", 1));
 
-    ASSERT_NO_FATAL_FAILURE(this->eval("{ var b = $a; if $true { var c = $a }; $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::CALL_NATIVE, [&]{
+    ASSERT_NO_FATAL_FAILURE(this->eval("{ var b = $a; if $true { var c = $a }; $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
         ASSERT_NO_FATAL_FAILURE(RefCount("a", 2));
     }));
 }
@@ -143,21 +143,21 @@ TEST_F(VMTest, deinit3) {
 
 TEST_F(VMTest, deinit4) {
     ASSERT_NO_FATAL_FAILURE(this->eval("function f($a : [String]) { $RANDOM; var b = $a; }; $f($@)",
-                       DS_ERROR_KIND_SUCCESS, OpCode::CALL_NATIVE, [&] {
+                       DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&] {
                 ASSERT_NO_FATAL_FAILURE(RefCount("@", 2));
             }));
 }
 
 TEST_F(VMTest, deinit5) {
     ASSERT_NO_FATAL_FAILURE(this->eval("function f($a : [String]) { var b = $a; { var c = $b; $RANDOM; }; var c = $b; }; $f($@)",
-                       DS_ERROR_KIND_SUCCESS, OpCode::CALL_NATIVE, [&]{
+                       DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
                 ASSERT_NO_FATAL_FAILURE(RefCount("@", 4));
             }));
 }
 
 TEST_F(VMTest, deinit6) {
     ASSERT_NO_FATAL_FAILURE(this->eval("function f($a : [String]) { var b = $a; { var c = $b }; $RANDOM; var c = $b; }; $f($@)",
-                       DS_ERROR_KIND_SUCCESS, OpCode::CALL_NATIVE, [&] {
+                       DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&] {
                 ASSERT_NO_FATAL_FAILURE(RefCount("@", 3));
             }));
 }
@@ -167,27 +167,27 @@ TEST_F(VMTest, deinit7) {
     ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
 
     ASSERT_NO_FATAL_FAILURE(this->eval("try { while $true { var a = $@; break; } } finally {  $RANDOM; }",
-                       DS_ERROR_KIND_SUCCESS, OpCode::CALL_NATIVE, [&]{
+                       DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
                 ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
             }));
 }
 
 TEST_F(VMTest, deinit8) {
-    ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::CALL_NATIVE, [&]{
+    ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { $RANDOM; }", DS_ERROR_KIND_SUCCESS, OpCode::RAND, [&]{
         ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
     }));
 }
 
 TEST_F(VMTest, deinit9) {
     ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw 34; } finally {  $RANDOM; }",
-                    DS_ERROR_KIND_RUNTIME_ERROR, OpCode::CALL_NATIVE, [&]{
+                    DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND, [&]{
                 ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
             }));
 }
 
 TEST_F(VMTest, deinit10) {
     ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : Int { var b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }",
-                       DS_ERROR_KIND_RUNTIME_ERROR, OpCode::CALL_NATIVE, [&]{
+                       DS_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND, [&]{
                 ASSERT_NO_FATAL_FAILURE(RefCount("@", 1));
             }));
 }
