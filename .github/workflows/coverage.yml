@@ -40,7 +40,8 @@ jobs:
           cd build
           export TRAVIS_JOB_ID=$GITHUB_RUN_ID
           echo $TRAVIS_JOB_ID
-          /home/runner/.local/bin/coveralls -r ../ -b . --gcov-options '\-lp' \
+          /home/runner/.local/bin/coveralls -r ../ -b . -y ../.coverall.yml \
+            --gcov-options '\-lp' \
             --exclude test --exclude fuzzing --exclude include \
             --exclude-pattern '.*-src' \
             --exclude-pattern '.*-build' \
