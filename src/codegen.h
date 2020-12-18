@@ -361,7 +361,8 @@ private:
      */
     void catchException(const Label &begin, const Label &end, const DSType &type,
                         unsigned short localOffset = 0, unsigned short localSize = 0);
-    void enterFinally();
+    void enterFinally(const Label &label);
+    void enterMultiFinally();
     void generateCmdArg(CmdArgNode &node);
     void generatePipeline(PipelineNode &node, ForkKind forkKind);
     void emitPipelineIns(const std::vector<Label> &labels, bool lastPipe, ForkKind forkKind);

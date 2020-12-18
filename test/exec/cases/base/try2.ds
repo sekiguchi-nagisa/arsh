@@ -77,6 +77,24 @@ function g() : Int {
 }
 assert($g() == 0)
 
+function g2() : Int {
+    var i = 0
+    try {
+        $i = 2
+        try {
+            $i = $i * 1000
+        } finally {
+            $i = $i + 10
+        }
+        $i = $i + 1
+    } finally {
+        $i = $i + 100
+    }
+    $i = $i + 5
+    return $i
+}
+assert $g2() == 2116 : "${$g2()}"
+
 $j = 0
 try {
     try {

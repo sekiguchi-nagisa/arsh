@@ -196,12 +196,16 @@ void ByteCodeGenerator::catchException(const Label &begin, const Label &end,
     this->curBuilder().catchBuilders.emplace_back(begin, end, type, index, localOffset, localSize);
 }
 
-void ByteCodeGenerator::enterFinally() {
+void ByteCodeGenerator::enterFinally(const Label &label) {
+    const unsigned int index = this->currentCodeOffset();
+    this->emit2byteIns(OpCode::ENTER_FINALLY, 0);
+    this->curBuilder().writeLabel(index + 1, label, index, CodeEmitter<true>::LabelTarget::_16);
+}
+
+void ByteCodeGenerator::enterMultiFinally() {
     for(auto iter = this->curBuilder().finallyLabels.rbegin();
         iter != this->curBuilder().finallyLabels.rend(); ++iter) {
-        const unsigned int index = this->currentCodeOffset();
-        this->emit2byteIns(OpCode::ENTER_FINALLY, 0);
-        this->curBuilder().writeLabel(index + 1, *iter, index, CodeEmitter<true>::LabelTarget::_16);
+        this->enterFinally(*iter);
     }
 }
 
@@ -1025,7 +1029,7 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
 
     // add finally before jump
     if(node.isLeavingBlock()) {
-        this->enterFinally();
+        this->enterMultiFinally();
     }
 
     if(node.getOpKind() == JumpNode::BREAK) {
@@ -1055,7 +1059,7 @@ void ByteCodeGenerator::visitJumpNode(JumpNode &node) {
         this->visit(node.getExprNode());
 
         // add finally before return
-        this->enterFinally();
+        this->enterMultiFinally();
 
         if(this->inUDC()) {
             assert(node.getExprNode().getType().is(TYPE::Int));
@@ -1097,7 +1101,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
     this->markLabel(endLabel);
     if(!node.getExprNode().getType().isNothingType()) {
         if(hasFinally) {
-            this->enterFinally();
+            this->enterFinally(finallyLabel);
         }
         this->emitJumpIns(mergeLabel);
     }
@@ -1117,7 +1121,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
         this->visit(*catchNode);
         if(!catchNode->getType().isNothingType()) {
             if(hasFinally) {
-                this->enterFinally();
+                this->enterFinally(finallyLabel);
             }
             this->emitJumpIns(mergeLabel);
         }
