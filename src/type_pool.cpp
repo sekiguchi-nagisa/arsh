@@ -83,6 +83,7 @@ TypePool::TypePool() {
     this->initErrorType(TYPE::GlobbingError, "GlobbingError");
     this->initErrorType(TYPE::UnwrappingError, "UnwrappingError");
     this->initErrorType(TYPE::IllegalAccessError, "IllegalAccessError");
+    this->initErrorType(TYPE::InvalidOperationError, "InvalidOperationError");
 
     // init internal status type
     this->initBuiltinType(TYPE::_InternalStatus, "internal status%%", false, TYPE::_Root, info_Dummy());

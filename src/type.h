@@ -78,6 +78,7 @@ enum class TYPE : unsigned int {
     GlobbingError,
     UnwrappingError,
     IllegalAccessError,
+    InvalidOperationError,
 
     /**
      * for internal status reporting.

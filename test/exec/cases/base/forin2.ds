@@ -1,21 +1,131 @@
+#$test($status = 1)
+
 # modification in for-in
 
 # map
 var m = [0 : 1, 3 : 4]
 
-for $a in $m {
-    $m.clear()
-}
+var ex = 34 as Any
 
-for $a in $m {
-    if $m.size() > 1 { break; }
-    $m.put(0, 4)
-    $m.put(1, 2)
-    $m.put(2, 3)
+## set
+$ex = 34
+try {
+    for $a in $m {
+        $m[3] = 100
+    }
+} catch $e {
+    $ex = $e
 }
+assert $ex is InvalidOperationError
 
-for $a in $m {
-    $m.remove(2)
-    $m.remove(1)
-    $m.remove(0)
+assert $m[0] == 1
+assert $m[3] == 4
+
+## put
+$ex = 34
+try {
+    for $a in $m {
+        $m.put(0, -9)
+    }
+} catch $e {
+    $ex = $e
 }
+assert $ex is InvalidOperationError
+
+assert $m[0] == 1
+assert $m[3] == 4
+
+## default
+$ex = 34
+try {
+    for $a in $m {
+        $m.default(900, -900)
+    }
+} catch $e {
+    $ex = $e
+}
+assert $ex is InvalidOperationError
+
+assert $m[0] == 1
+assert $m[3] == 4
+assert $m.size() == 2
+
+## remove
+$ex = 34
+try {
+    for $a in $m {
+        $m.remove(0)
+    }
+} catch $e {
+    $ex = $e
+}
+assert $ex is InvalidOperationError
+
+assert $m[0] == 1
+assert $m[3] == 4
+assert $m.size() == 2
+
+## swap
+$ex = 34
+try {
+    for $a in $m {
+        $m.swap(0, -1000)
+    }
+} catch $e {
+    $ex = $e
+}
+assert $ex is InvalidOperationError
+
+assert $m[0] == 1
+assert $m[3] == 4
+assert $m.size() == 2
+
+## clear
+$ex = 34
+try {
+    for $a in $m {
+        $m.clear()
+    }
+} catch $e {
+    $ex = $e
+}
+assert $ex is InvalidOperationError
+assert $m[0] == 1
+assert $m[3] == 4
+assert $m.size() == 2
+
+## nexted iter
+var ret : [String]
+var m2 = ['a': 100, 'b': 200]
+
+for $a in $m2 {
+    for $b in $m2 {
+        $ret.add($b._0)
+    }
+}
+$ret.sort()
+assert $ret.size() == 4
+assert $ret[0] == 'a'
+assert $ret[1] == 'a'
+assert $ret[2] == 'b'
+assert $ret[3] == 'b'
+
+$m2.remove('a')
+assert $m2.size() == 1
+assert $m2['b'] == 200
+
+
+$ex = 34
+try {
+    $m2.put('c', 999)
+    assert $m2.size() == 2
+    for $a in $m2 {
+        for $b in $m2 {
+            $ret.add($b._0)
+        }
+        $m2.clear()
+    }
+} catch $e {
+    $ex = $e
+}
+assert $ex is InvalidOperationError

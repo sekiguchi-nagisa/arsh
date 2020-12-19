@@ -44,6 +44,7 @@ class DSValue;
     OP(Regex) \
     OP(Array) \
     OP(Map) \
+    OP(MapIter) \
     OP(Base) \
     OP(Error) \
     OP(Func) \
@@ -753,10 +754,14 @@ struct GenHash {
 
 using HashMap = std::unordered_map<DSValue, DSValue, GenHash, KeyCompare>;
 
+class MapIterObject;
+
 class MapObject : public ObjectWithRtti<DSObject::Map> {
 private:
+    friend class MapIterObject;
+
     HashMap valueMap;
-    HashMap::const_iterator iter;
+    int lockCount{0};
 
 public:
     explicit MapObject(const DSType &type) : ObjectWithRtti(type) { }
@@ -769,9 +774,12 @@ public:
         return this->valueMap;
     }
 
+    bool locked() const {
+        return this->lockCount > 0;
+    }
+
     void clear() {
         this->valueMap.clear();
-        this->initIterator();
     }
 
     /**
@@ -784,7 +792,6 @@ public:
     DSValue set(DSValue &&key, DSValue &&value) {
         auto pair = this->valueMap.emplace(std::move(key), value);
         if(pair.second) {
-            this->iter = ++pair.first;
             return DSValue::createInvalid();
         }
         std::swap(pair.first->second, value);
@@ -793,10 +800,6 @@ public:
 
     DSValue setDefault(DSValue &&key, DSValue &&value) {
         auto pair = this->valueMap.emplace(std::move(key), std::move(value));
-        if(pair.second) {
-            this->iter = pair.first;
-            this->iter++;
-        }
         return pair.first->second;
     }
 
@@ -814,22 +817,34 @@ public:
         if(ret == this->valueMap.end()) {
             return false;
         }
-        this->iter = this->valueMap.erase(ret);
+        this->valueMap.erase(ret);
         return true;
-    }
-
-    void initIterator() {
-        this->iter = this->valueMap.cbegin();
-    }
-
-    DSValue nextElement(DSState &ctx);
-
-    bool hasNext() {
-        return this->iter != this->valueMap.cend();
     }
 
     std::string toString() const;
     bool opStr(DSState &state) const;
+};
+
+class MapIterObject : public ObjectWithRtti<DSObject::MapIter> {
+private:
+    MapObject &obj;
+    HashMap::const_iterator iter;
+
+public:
+    explicit MapIterObject(MapObject &obj) : ObjectWithRtti(obj.getTypeID()),
+            obj(obj), iter(obj.getValueMap().begin()) {
+        this->obj.lockCount++;
+    }
+
+    ~MapIterObject() {
+        this->obj.lockCount--;
+    }
+
+    bool hasNext() const {
+        return this->iter != this->obj.getValueMap().cend();
+    }
+
+    DSValue next(TypePool &pool);
 };
 
 class BaseObject : public ObjectWithRtti<DSObject::Base> {

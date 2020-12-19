@@ -447,19 +447,6 @@ DSValue ArrayObject::opCmdArg(DSState &state) const {
 // ##     Map_Object     ##
 // ########################
 
-DSValue MapObject::nextElement(DSState &ctx) {
-    std::vector<DSType *> types(2);
-    types[0] = &ctx.typePool.get(this->iter->first.getTypeID());
-    types[1] = &ctx.typePool.get(this->iter->second.getTypeID());
-
-    auto entry = DSValue::create<BaseObject>(*ctx.typePool.createTupleType(std::move(types)).take());
-    typeAs<BaseObject>(entry)[0] = this->iter->first;
-    typeAs<BaseObject>(entry)[1] = this->iter->second;
-    ++this->iter;
-
-    return entry;
-}
-
 std::string MapObject::toString() const {
     std::string str = "[";
     unsigned int count = 0;
@@ -501,6 +488,23 @@ bool MapObject::opStr(DSState &state) const {
     }
     state.toStrBuf += "]";
     return true;
+}
+
+// ###########################
+// ##     MapIterObject     ##
+// ###########################
+
+DSValue MapIterObject::next(TypePool &pool) {
+    std::vector<DSType *> types(2);
+    types[0] = &pool.get(this->iter->first.getTypeID());
+    types[1] = &pool.get(this->iter->second.getTypeID());
+
+    auto entry = DSValue::create<BaseObject>(*pool.createTupleType(std::move(types)).take());
+    typeAs<BaseObject>(entry)[0] = this->iter->first;
+    typeAs<BaseObject>(entry)[1] = this->iter->second;
+    ++this->iter;
+
+    return entry;
 }
 
 // ########################

@@ -1486,6 +1486,14 @@ YDSH_METHOD array_cmdArg(RuntimeContext &ctx) {
 // ##     Map     ##
 // #################
 
+static void raiseIterInvalid(DSState &st) {
+    std::string msg = "cannot modify map object during iteration";
+    raiseError(st, TYPE::InvalidOperationError, std::move(msg));
+}
+
+#define CHECK_ITER_INVALIDATION(obj) \
+do { if(obj.locked()) { raiseIterInvalid(ctx); RET_ERROR; } } while(false)
+
 //!bind: function $OP_GET($this : Map<T0, T1>, $key : T0) : T1
 YDSH_METHOD map_get(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_get);
@@ -1504,6 +1512,7 @@ YDSH_METHOD map_get(RuntimeContext &ctx) {
 YDSH_METHOD map_set(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_set);
     auto &obj = typeAs<MapObject>(LOCAL(0));
+    CHECK_ITER_INVALIDATION(obj);
     obj.set(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
     RET_VOID;
 }
@@ -1512,6 +1521,7 @@ YDSH_METHOD map_set(RuntimeContext &ctx) {
 YDSH_METHOD map_put(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_put);
     auto &obj = typeAs<MapObject>(LOCAL(0));
+    CHECK_ITER_INVALIDATION(obj);
     auto v = obj.set(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
     RET(v);
 }
@@ -1520,6 +1530,7 @@ YDSH_METHOD map_put(RuntimeContext &ctx) {
 YDSH_METHOD map_default(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_default);
     auto &obj = typeAs<MapObject>(LOCAL(0));
+    CHECK_ITER_INVALIDATION(obj);
     auto v = obj.setDefault(EXTRACT_LOCAL(1), EXTRACT_LOCAL(2));
     RET(v);
 }
@@ -1560,6 +1571,7 @@ YDSH_METHOD map_find2(RuntimeContext &ctx) {
 YDSH_METHOD map_remove(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_remove);
     auto &obj = typeAs<MapObject>(LOCAL(0));
+    CHECK_ITER_INVALIDATION(obj);
     bool r = obj.remove(LOCAL(1));
     RET_BOOL(r);
 }
@@ -1568,6 +1580,7 @@ YDSH_METHOD map_remove(RuntimeContext &ctx) {
 YDSH_METHOD map_swap(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_swap);
     auto &obj = typeAs<MapObject>(LOCAL(0));
+    CHECK_ITER_INVALIDATION(obj);
     DSValue value = LOCAL(2);
     if(!obj.trySwap(LOCAL(1), value)) {
         std::string msg("not found key: ");
@@ -1589,32 +1602,34 @@ YDSH_METHOD map_copy(RuntimeContext &ctx) {
 //!bind: function clear($this : Map<T0, T1>) : Void
 YDSH_METHOD map_clear(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_clear);
-    typeAs<MapObject>(LOCAL(0)).clear();
+    auto &obj = typeAs<MapObject>(LOCAL(0));
+    CHECK_ITER_INVALIDATION(obj);
+    obj.clear();
     RET_VOID;
 }
 
 //!bind: function $OP_ITER($this : Map<T0, T1>) : Map<T0, T1>
 YDSH_METHOD map_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_iter);
-    typeAs<MapObject>(LOCAL(0)).initIterator();
-    RET(LOCAL(0));
+    auto &obj = typeAs<MapObject>(LOCAL(0));
+    RET(DSValue::create<MapIterObject>(obj));
 }
 
 //!bind: function $OP_NEXT($this : Map<T0, T1>) : Tuple<T0, T1>
 YDSH_METHOD map_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_next);
-    auto &obj = typeAs<MapObject>(LOCAL(0));
+    auto &obj = typeAs<MapIterObject>(LOCAL(0));
     if(!obj.hasNext()) {
         raiseOutOfRangeError(ctx, std::string("map iterator has already reached end"));
         RET_ERROR;
     }
-    RET(obj.nextElement(ctx));
+    RET(obj.next(ctx.typePool));
 }
 
 //!bind: function $OP_HAS_NEXT($this : Map<T0, T1>) : Boolean
 YDSH_METHOD map_hasNext(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_hasNext);
-    RET_BOOL(typeAs<MapObject>(LOCAL(0)).hasNext());
+    RET_BOOL(typeAs<MapIterObject>(LOCAL(0)).hasNext());
 }
 
 // ###################
