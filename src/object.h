@@ -823,25 +823,29 @@ public:
 
     std::string toString() const;
     bool opStr(DSState &state) const;
+
+    DSValue iter() {
+        return DSValue::create<MapIterObject>(*this);
+    }
 };
 
 class MapIterObject : public ObjectWithRtti<DSObject::MapIter> {
 private:
-    MapObject &obj;
+    DSValue obj;
     HashMap::const_iterator iter;
 
 public:
     explicit MapIterObject(MapObject &obj) : ObjectWithRtti(obj.getTypeID()),
-            obj(obj), iter(obj.getValueMap().begin()) {
-        this->obj.lockCount++;
+            obj(&obj), iter(obj.getValueMap().begin()) {
+        obj.lockCount++;
     }
 
     ~MapIterObject() {
-        this->obj.lockCount--;
+        typeAs<MapObject>(this->obj).lockCount--;
     }
 
     bool hasNext() const {
-        return this->iter != this->obj.getValueMap().cend();
+        return this->iter != typeAs<MapObject>(this->obj).getValueMap().cend();
     }
 
     DSValue next(TypePool &pool);

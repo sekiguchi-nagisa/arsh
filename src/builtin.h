@@ -1611,8 +1611,7 @@ YDSH_METHOD map_clear(RuntimeContext &ctx) {
 //!bind: function $OP_ITER($this : Map<T0, T1>) : Map<T0, T1>
 YDSH_METHOD map_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(map_iter);
-    auto &obj = typeAs<MapObject>(LOCAL(0));
-    RET(DSValue::create<MapIterObject>(obj));
+    RET(typeAs<MapObject>(LOCAL(0)).iter());
 }
 
 //!bind: function $OP_NEXT($this : Map<T0, T1>) : Tuple<T0, T1>

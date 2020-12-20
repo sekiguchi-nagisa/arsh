@@ -11,18 +11,18 @@ assert($i == 5)
 
 
 # Map for-in
-var b = ["a" : 1,
+$i = 0;
+var tt : [(String, Int)]
+for $e in ["a" : 1,
             "b" : 2,
             "c" : 3,
-            "d" : 4]
-
-$i = 0;
-for $e in $b {
+            "d" : 4] {
     assert($e is Tuple<String, Int>)
-    assert($b[$e._0] == $e._1)
+    $tt.add($e)
     $i = $i + 1
 }
 assert($i == 4)
+assert $tt.size() == 4
 
 # String for-in
 var r = ['あ', '0', '漢', '　']
