@@ -1,0 +1,18 @@
+
+z12() { # normally meaningless code
+
+}
+
+function g1(){} # normally meaningless code
+
+
+source $SCRIPT_DIR/../../_module4test/comp.ds
+
+assert diff <(echo global) <($global('g'))
+
+assert diff <(echo _cmd_fallback_handler &&
+             echo hogehoge && 
+             echo zzzaaa123) \
+            <($udc(''))
+
+assert diff <(echo zzzaaa123) <($udc('z'))
