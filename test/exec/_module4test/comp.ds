@@ -1,0 +1,16 @@
+
+hogehoge() {
+}
+
+zzzaaa123() {
+
+}
+
+
+function udc($a : String) {
+    complete -A udc $a
+}
+
+function global($a : String)  {
+    complete -A var $a
+}
