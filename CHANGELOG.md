@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allow statement in for-init
 - reimplement all completions on CodeCompletionHandler
 - when access uninitialized global variable, throw ``IllegalAccessError``
-  - after uncaught error happned in interactive mode, may exist uninitialized variables
+  - after uncaught error happened in interactive mode, uninitialized variables may exist
 
 #### Builtin
 - **Breaking Change**: output format of ``shctl module`` subcommand
@@ -77,7 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: ``DSState_loadAndEval`` api dose not accept null file name
 - **Breaking Change**: ``DSState_loadModule`` api evaluate script in root module context
   - when specified by ``DS_MOD_SEPARATE_CTX``, evaluate script in separate module context
-  - may repor ``DS_ERROR_KIND_FILE_ERROR``
+  - may report ``DS_ERROR_KIND_FILE_ERROR``
 
 ### Fixed
 - cannot load module when module path indicates anonymous pipe
