@@ -180,7 +180,30 @@ jobs:
         uses: ./tools/dockerfiles/ubuntu-bionic-x86
 
   build_on_mac:
-    runs-on: macos-latest
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/checkout@v1
+      - name: prepare
+        run: brew install ninja autoconf automake libtool
+      - name: configure
+        run: |
+          export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DUSE_EXTRA_TEST=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          ninja install
+          ./ydsh ../tools/scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          ctest --output-on-failure
+
+  build_on_mac_11:
+    runs-on: macos-11.0
     steps:
       - uses: actions/checkout@v1
       - name: prepare
