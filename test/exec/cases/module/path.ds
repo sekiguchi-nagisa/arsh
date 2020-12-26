@@ -20,3 +20,9 @@ $assertBaseDir("hoge/6543/")
 $assertBaseDir("hoge///6543//")
 $assertBaseDir("///hoge/6543/")
 $assertBaseDir("/../  ge/f")
+
+assert !$tilde('~hogehoge')
+assert $tilde('~+')! == "$(echo ~+)"
+assert $tilde('~-')! == "$(echo ~-)"
+assert $tilde('~/hoge')! == "$(echo ~/hoge)"
+assert $tilde('+')! == "+"

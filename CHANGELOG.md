@@ -42,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``trunc``
   - ``isNormal``
 
+#### Module
+- add ``tilde`` function to ``path`` module
+  - perform tilde expansion for arbitrary string
+
 #### Completion
 - add completions for
   - printenv

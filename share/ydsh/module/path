@@ -38,5 +38,13 @@ function dirname($s : String) : String {
     return $i == 0 ? "." : $s.slice(0, $i)
 }
 
+function tilde($s : String) : String! {
+    $s.startsWith('~') || return $s
+
+    var b = $s.from(1)
+    var r = "$(echo ~$b)"
+    return $r == $s ? new String!() : $r
+}
+
 let home = "$(echo ~)"
 let user = "$(whoami)"
