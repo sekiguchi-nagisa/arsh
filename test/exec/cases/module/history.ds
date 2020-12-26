@@ -1,6 +1,9 @@
 
 source ../../../../share/ydsh/module/edit
 
+# default value
+assert $HISTFILE == "$(echo ~/.ydsh_history)"
+
 # invalid option
 history -x
 assert $? == 2

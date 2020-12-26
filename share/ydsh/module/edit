@@ -1,7 +1,8 @@
-
 # for history manipulation
 
-var HISTFILE = '~/.ydsh_history'
+source $SCRIPT_DIR/path
+
+var HISTFILE = "$home/.ydsh_history"
 var HISTSIZE = 1000
 var HISTFILESIZE = 1000
 var HISTIGNORE = $/^history/ as Regex!
@@ -114,7 +115,7 @@ function _save($p : String!) {
     }
 
     if !$p || $p!.empty() { $p = $HISTFILE; }
-    let path = $p!.realpath() ?? return
+    let path = $tilde($p!) ?? $p!
     let size = $HISTORY.size()
     var offset = $size < $HISTFILESIZE ? 0 : $size - $HISTFILESIZE
 
