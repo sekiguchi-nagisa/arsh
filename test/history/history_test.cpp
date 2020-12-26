@@ -291,6 +291,27 @@ TEST_F(HistoryTest, file2) {
     }
 }
 
+TEST_F(HistoryTest, file3) {
+    this->setHistSize(10);
+    for(unsigned int i = 0; i < 10; i++) {
+        this->addHistory(std::to_string(i).c_str());
+    }
+    this->setHistFileSize(15);
+
+    std::string fileName = this->getTempDirName();
+    fileName += "/hogehogehgoe";
+
+    this->saveHistory(fileName.c_str());
+    this->clearHistory();
+    this->loadHistory(fileName.c_str());
+
+    ASSERT_EQ(10, this->historySize());
+    for(unsigned int i = 0; i < 10; i++) {
+        ASSERT_EQ(std::to_string(i), this->getHistory(i));
+    }
+}
+
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
