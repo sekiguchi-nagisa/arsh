@@ -59,7 +59,7 @@ namespace ydsh {
     OP(CONCAT         , 0, -1) \
     OP(APPEND         , 0, -1) \
     OP(APPEND_ARRAY   , 0, -1) \
-    OP(APPEND_MAP     , 0, -1) \
+    OP(APPEND_MAP     , 0, -2) \
     OP(NEW            , 3,  1) \
     OP(CALL_METHOD    , 3,  0) \
     OP(CALL_FUNC      , 1,  0) \
