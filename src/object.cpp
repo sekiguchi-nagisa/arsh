@@ -18,6 +18,7 @@
 
 #include "vm.h"
 #include "redir.h"
+#include "core.h"
 #include "misc/num_util.hpp"
 #include "misc/files.h"
 
@@ -642,5 +643,53 @@ std::string FuncObject::toString() const {
     str += ")";
     return str;
 }
+
+// ##########################
+// ##     EnvCtxObject     ##
+// ##########################
+
+EnvCtxObject::~EnvCtxObject() {
+    for(auto &e : this->envs) {
+        auto &name = e.first;
+        auto &value = e.second;
+        if(name.hasType(TYPE::Int)) {
+            auto k = name.asInt();
+            assert(k > -1);
+            auto index = static_cast<unsigned int>(k);
+            this->state.setGlobal(index, value);
+        } else {
+            assert(name.hasStrRef());
+            const char *envName = name.asCStr();
+            if(value.isInvalid()) {  // unset
+                unsetenv(envName);
+            } else {
+                setenv(envName, value.asCStr(), 1);
+            }
+        }
+    }
+}
+
+void EnvCtxObject::setAndSaveEnv(DSValue &&name, DSValue &&value) {
+    assert(!name.asStrRef().hasNullChar());
+
+    const char *envName = name.asCStr();
+    const char *oldEnv = getenv(envName);
+
+    // save old env
+    this->envs.emplace_back(name, oldEnv ? DSValue::createStr(oldEnv) : DSValue::createInvalid());
+
+    // overwrite env
+    setenv(envName, value.asCStr(), 1);
+
+    if(name.asStrRef() == VAR_IFS) {    // if env name is IFS, also save and set IFS global variable
+        // save old IFS
+        auto ifsIndex = DSValue::createInt(toIndex(BuiltinVarOffset::IFS));
+        this->envs.emplace_back(ifsIndex, this->state.getGlobal(BuiltinVarOffset::IFS));
+
+        // overwrite IFS
+        this->state.setGlobal(BuiltinVarOffset::IFS, std::move(value));
+    }
+}
+
 
 } // namespace ydsh

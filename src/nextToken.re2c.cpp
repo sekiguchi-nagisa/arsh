@@ -107,10 +107,15 @@ TokenKind Lexer::nextToken(Token &token) {
       INNER_SPECIAL_NAME = SPECIAL_NAME | "${" SPECIAL_NAMES "}";
       INNER_FIELD = "${" VAR_NAME ("." VAR_NAME)+ "}";
 
-      CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>(){}$#[\]!+\-0-9\000];
-      CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>(){}$\000];
+      CMD_START_CHAR     = "\\" [^\r\n\000] | [^ \t\r\n\\;='"`|&<>(){}$#[\]!+\-0-9\000];
+      CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;='"`|&<>(){}$\000];
+      CMD = CMD_START_CHAR CMD_CHAR*;
+
       CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>()$?*#\000];
       CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$?*\000];
+      CMD_ARG = CMD_ARG_START_CHAR CMD_ARG_CHAR*;
+
+      ENV_ASSIGN = CMD "=";
 
       REGEX_CHAR = "\\/" | [^\r\n\000/];
       REGEX = "$/" REGEX_CHAR* "/" [ims]{0,3};
@@ -184,8 +189,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT,EXPR> "{"          { MODE(EXPR); PUSH_MODE(STMT); RET(LBC); }
       <STMT,EXPR> "}"          { POP_MODE(); RET(RBC); }
 
-      <STMT> CMD_START_CHAR CMD_CHAR*
-                               { PUSH_MODE(CMD); UPDATE_LN(); RET_OR_COMP(COMMAND); }
+      <STMT> CMD               { PUSH_MODE(CMD); UPDATE_LN(); RET_OR_COMP(COMMAND); }
+      <STMT> ENV_ASSIGN        { PUSH_MODE(CMD); RET(ENV_ASSIGN); }
 
       <EXPR> ":"               { RET(COLON); }
       <EXPR> ","               { MODE(STMT); RET(COMMA); }
@@ -258,8 +263,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <DSTRING,CMD> "${"       { PUSH_MODE(STMT); RET(START_INTERP); }
       <DSTRING,CMD> "$("       { PUSH_MODE(STMT); RET(START_SUB_CMD); }
 
-      <CMD> CMD_ARG_START_CHAR CMD_ARG_CHAR*
-                               { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
+      <CMD> CMD_ARG            { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
       <CMD> "?"                { RET(GLOB_ANY); }
       <CMD> "*"                { RET(GLOB_ZERO_OR_MORE); }
       <CMD> STRING_LITERAL     { UPDATE_LN(); RET(STRING_LITERAL); }

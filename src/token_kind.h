@@ -79,6 +79,7 @@
     TOKEN(RBC                                , "}") /* } */\
     /* command */\
     TOKEN(COMMAND                            , "<Command>") \
+    TOKEN(ENV_ASSIGN                         , "<EnvName=>") \
     /* separator */\
     TOKEN(COLON                              , ":") \
     TOKEN(COMMA                              , ",") \
@@ -232,6 +233,7 @@
 
 #define EACH_LA_primary(OP) \
     OP(COMMAND) \
+    OP(ENV_ASSIGN) \
     OP(NEW) \
     OP(INT_LITERAL) \
     OP(FLOAT_LITERAL) \

@@ -1133,7 +1133,9 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
 
     switch(CUR_KIND()) {
     case TokenKind::COMMAND:
-        return parse_command();
+        return this->parse_command();
+    case TokenKind::ENV_ASSIGN:
+        return this->parse_envAssign();
     case TokenKind::NEW: {
         unsigned int startPos = START_POS();
         this->expect(TokenKind::NEW, false);   // always success
@@ -1562,6 +1564,38 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
     auto exprNode = TRY(this->parse_expression());
     Token token = TRY(this->expect(TokenKind::RP));
     return ForkNode::newProcSubstitution(pos, std::move(exprNode), token, inPipe);
+}
+
+std::unique_ptr<EnvCtxNode> Parser::parse_envAssign() {
+    GUARD_DEEP_NESTING(guard);
+
+    std::vector<std::unique_ptr<VarDeclNode>> envDeclNodes;
+    do {
+        Token token = TRY(this->expect(TokenKind::ENV_ASSIGN));
+        auto prevToken = token;
+        std::unique_ptr<CmdArgNode> valueNode;
+        if(HAS_SPACE()) {   // assign empty string
+            valueNode = std::make_unique<CmdArgNode>(std::make_unique<StringNode>(""));
+        } else {
+            valueNode = TRY(this->parse_cmdArg());
+            prevToken = valueNode->getToken();
+        }
+        this->restoreLexerState(prevToken);
+
+        std::string envName;
+        auto nameToken = token.slice(0, token.size - 1);
+        if(!this->lexer->toEnvName(nameToken, envName)) {
+            reportTokenFormatError(TokenKind::ENV_ASSIGN, nameToken, "must be identifier");
+            return nullptr;
+        }
+
+        auto declNode = std::make_unique<VarDeclNode>(
+                token.pos, std::move(envName),
+                std::move(valueNode), VarDeclNode::EXPORT_ENV);
+        envDeclNodes.push_back(std::move(declNode));
+    } while(CUR_KIND() == TokenKind::ENV_ASSIGN);
+    auto exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::BACKGROUND) + 1));
+    return std::make_unique<EnvCtxNode>(std::move(envDeclNodes), std::move(exprNode));
 }
 
 } // namespace ydsh

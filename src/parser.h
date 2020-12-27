@@ -271,6 +271,8 @@ protected:
     std::unique_ptr<Node> parse_cmdSubstitution(bool strExpr = false);
 
     std::unique_ptr<Node> parse_procSubstitution();
+
+    std::unique_ptr<EnvCtxNode> parse_envAssign();
 };
 
 } // namespace ydsh

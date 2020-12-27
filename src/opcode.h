@@ -21,6 +21,13 @@ namespace ydsh {
 
 /**
  * see (doc/opcode.md)
+ *
+ * OP(C, L, S)
+ * C: opcode name
+ * L: operand length
+ * S: stack consumption
+ *    if positive number, increase stack top index
+ *    if negative number, decrease stack top index
  */
 #define OPCODE_LIST(OP) \
     OP(HALT           , 0,  0) \
@@ -52,6 +59,8 @@ namespace ydsh {
     OP(IMPORT_ENV     , 1, -1) \
     OP(LOAD_ENV       , 0,  0) \
     OP(STORE_ENV      , 0, -2) \
+    OP(NEW_ENV_CTX    , 0,  1) \
+    OP(ADD2ENV_CTX    , 0, -2) \
     OP(POP            , 0, -1) \
     OP(DUP            , 0,  1) \
     OP(DUP2           , 0,  2) \

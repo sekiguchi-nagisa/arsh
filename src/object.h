@@ -48,6 +48,7 @@ class DSValue;
     OP(Base) \
     OP(Error) \
     OP(Func) \
+    OP(EnvCtx) \
     OP(JobImpl) \
     OP(Pipeline) \
     OP(Redir)
@@ -1224,6 +1225,32 @@ public:
     }
 
     std::string toString() const;
+};
+
+class EnvCtxObject : public ObjectWithRtti<DSObject::EnvCtx> {
+private:
+    DSState &state;
+
+    /**
+     * maintains old env
+     * first is env name
+     * second is old value
+     * if old value is invalid, unset env
+     */
+    std::vector<std::pair<DSValue, DSValue>> envs;
+
+public:
+    explicit EnvCtxObject(DSState &state) : ObjectWithRtti(TYPE::Any), state(state) {}
+
+    ~EnvCtxObject();
+
+    /**
+     * save and set env
+     * if name is IFS, also set and save global variable
+     * @param name
+     * @param value
+     */
+    void setAndSaveEnv(DSValue &&name, DSValue &&value);
 };
 
 } // namespace ydsh

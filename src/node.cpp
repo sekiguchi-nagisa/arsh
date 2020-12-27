@@ -811,6 +811,16 @@ void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
     DUMP_PTR(rightNode);
 }
 
+// ########################
+// ##     EnvCtxNode     ##
+// ########################
+
+void EnvCtxNode::dump(NodeDumper &dumper) const {
+    DUMP(envDeclNodes);
+    DUMP_PTR(exprNode);
+    DUMP(baseIndex);
+}
+
 
 // ##########################
 // ##     FunctionNode     ##

@@ -1418,6 +1418,21 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
     node.setType(this->typePool.get(TYPE::Void));
 }
 
+void TypeChecker::visitEnvCtxNode(EnvCtxNode &node) {
+    auto scope = this->intoBlock();
+
+    // register envctx
+    this->addEntry(node, node.toEnvCtxName(), this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
+
+    for(auto &e : node.getEnvDeclNodes()) {
+        this->checkTypeExactly(*e);
+    }
+
+    auto &exprType = this->checkTypeExactly(node.getExprNode());
+    node.setBaseIndex(this->curScope->getBaseIndex());
+    node.setType(exprType);
+}
+
 static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool, std::unique_ptr<Node> exprNode) {
     assert(!blockNode.isUntyped() && !blockNode.getType().isNothingType());
     assert(!exprNode->isUntyped());

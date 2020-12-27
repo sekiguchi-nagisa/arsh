@@ -1234,6 +1234,22 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
     this->visit(node.getSetterNode());
 }
 
+void ByteCodeGenerator::visitEnvCtxNode(EnvCtxNode &node) {
+    this->generateBlock(node.getBaseIndex(), node.getVarSize(), true, [&]{
+        this->emit0byteIns(OpCode::NEW_ENV_CTX);
+        for(auto &e : node.getEnvDeclNodes()) {
+            this->emitLdcIns(DSValue::createStr(e->getVarName()));
+            this->emit0byteIns(OpCode::DUP);
+            this->emit1byteIns(OpCode::STORE_LOCAL, e->getVarIndex());
+            assert(isa<CmdArgNode>(e->getExprNode()));
+            this->generateCmdArg(cast<CmdArgNode>(*e->getExprNode()));
+            this->emit0byteIns(OpCode::ADD2ENV_CTX);
+        }
+        this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
+        this->visit(node.getExprNode());
+    });
+}
+
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {
     this->initCodeBuilder(CodeKind::FUNCTION, node.getMaxVarNum());
     this->visit(node.getBlockNode());

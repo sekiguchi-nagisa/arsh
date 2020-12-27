@@ -182,6 +182,8 @@ public:
      * if converted number is out of range, status is 1.
      */
     double toDouble(Token token, int &status) const;
+
+    bool toEnvName(Token token, std::string &out) const;
 };
 
 } // namespace ydsh

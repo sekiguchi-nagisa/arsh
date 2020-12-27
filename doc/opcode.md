@@ -31,6 +31,8 @@
 | IMPORT_ENV      | 1: byte1                       | value1 [value2] ->                           | import environmental variable                      |
 | LOAD_ENV        |                                | value -> value                               | get environmental variable                         |
 | STORE_ENV       |                                | value1 value2 ->                             | set environmental variable                         |
+| NEW_ENV_CTX     |                                | -> value                                     | push new EnvCtxObject onto the stack               |
+| ADD2ENV_CTX     |                                | ctx name value -> ctx                        | set and save env                                   |
 | POP             |                                | value ->                                     | pop stack top value                                |
 | DUP             |                                | value -> value value                         | duplicate top value                                |
 | DUP2            |                                | value1 value2 -> value1 value2 value1 value2 | duplicate top two value                            |

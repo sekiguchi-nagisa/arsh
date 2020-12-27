@@ -260,4 +260,27 @@ double Lexer::toDouble(Token token, int &status) const {
     return value;
 }
 
+static bool isIdStart(char ch) {
+    return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+}
+
+bool Lexer::toEnvName(Token token, std::string &out) const {
+    auto ref = this->toStrRef(token);
+    if(isIdStart(ref[0])) {
+        out += ref[0];
+    } else {
+        return false;
+    }
+    unsigned int size = ref.size();
+    for(unsigned int i = 1; i < size; i++) {
+        char ch = ref[i];
+        if(isDecimal(ch) || isIdStart(ch)) {
+            out += ch;
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace ydsh

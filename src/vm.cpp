@@ -1405,6 +1405,16 @@ bool VM::mainLoop(DSState &state) {
             TRY(storeEnv(state));
             vmnext;
         }
+        vmcase(NEW_ENV_CTX) {
+            state.stack.push(DSValue::create<EnvCtxObject>(state));
+            vmnext;
+        }
+        vmcase(ADD2ENV_CTX) {
+            auto value = state.stack.pop();
+            auto name = state.stack.pop();
+            typeAs<EnvCtxObject>(state.stack.peek()).setAndSaveEnv(std::move(name), std::move(value));
+            vmnext;
+        }
         vmcase(POP) {
             state.stack.popNoReturn();
             vmnext;
