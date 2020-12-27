@@ -88,6 +88,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - in user-defined command, cannot pass ``UnixFD`` object to external command
 - code generation of ``finally`` block
 - cannot save history when ~/.ydsh_history dose not exist
+- stack consumption of ``APPEND_MAP`` ins
+- not treat escaped newline as space
 
 
 ## [0.19.1] - 2020-09-22

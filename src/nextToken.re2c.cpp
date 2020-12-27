@@ -246,7 +246,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT,EXPR,NAME,CMD,TYPE> [ \t]+
                                { FIND_SPACE(); }
       <STMT,EXPR,NAME,CMD,TYPE> "\\" [\r\n]
-                               { UPDATE_LN(); FIND_SPACE(); }
+                               { UPDATE_LN(); SKIP(); }
 
       <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE); }
       <DSTRING> DQUOTE_CHAR+   { UPDATE_LN(); RET(STR_ELEMENT); }
