@@ -173,7 +173,7 @@ class PrecedenceTest : public ::testing::Test {
 public:
     PrecedenceTest() = default;
 
-    virtual void equalsTokens(const std::vector<std::string> &expected, const std::vector<std::string> &actual) {
+    virtual void equalsTokens(const std::vector<std::string> &expected, const std::vector<std::string> &actual) const {
         std::string eStr;
         for(auto &e : expected) {
             eStr += e;
@@ -186,7 +186,7 @@ public:
         ASSERT_EQ(eStr, aStr);
     }
 
-    virtual void equals(const char *expected, const char *input) {
+    virtual void equals(const char *expected, const char *input) const {
         ASSERT_TRUE(expected != nullptr);
         ASSERT_TRUE(input != nullptr);
 
@@ -203,87 +203,63 @@ public:
     }
 };
 
-TEST_F(PrecedenceTest, base1) {
+TEST_F(PrecedenceTest, base) {
     ASSERT_NO_FATAL_FAILURE(this->equals("1", "1"));
-}
-
-TEST_F(PrecedenceTest, base2) {
     ASSERT_NO_FATAL_FAILURE(this->equals("  1  ", "(1)"));
-}
-
-TEST_F(PrecedenceTest, base3) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(1 + 2)", "1+2"));
 }
 
-TEST_F(PrecedenceTest, case1) {
+TEST_F(PrecedenceTest, asis) {
     ASSERT_NO_FATAL_FAILURE(this->equals("((1 as Int) is Int)", "1 as Int is Int"));
-}
-
-TEST_F(PrecedenceTest, case2) {
     ASSERT_NO_FATAL_FAILURE(this->equals("((1 is Int) as Int)", "1 is Int as Int"));
-}
-
-TEST_F(PrecedenceTest, case3) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(12 / (23 as Int))", "12 / 23 as Int"));
 }
 
-TEST_F(PrecedenceTest, case4) {
+TEST_F(PrecedenceTest, arith) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(((1 / 2) * 3) % 4)", "1 / 2 * 3 % 4"));
-}
-
-TEST_F(PrecedenceTest, case5) {
     ASSERT_NO_FATAL_FAILURE(this->equals("((1 + (2 * 3)) - 4)", "1 + 2 * 3 - 4"));
 }
 
-TEST_F(PrecedenceTest, case6) {
+TEST_F(PrecedenceTest, logical) {
     ASSERT_NO_FATAL_FAILURE(this->equals("((1 and 2) or (3 xor (4 + 3)))", "1 and 2 or 3 xor 4 + 3"));
 }
 
-TEST_F(PrecedenceTest, case7) {
+TEST_F(PrecedenceTest, match) {
     ASSERT_NO_FATAL_FAILURE(
         this->equals("((((((((1 < 2) > 3) == 4) >= 5) !~ 6) <= 7) != 8) =~ 9)",
                      "1 < 2 > 3 == 4 >= 5 !~ 6 <= 7 != 8 =~ 9"));
 }
 
-TEST_F(PrecedenceTest, case8) {
+TEST_F(PrecedenceTest, cond) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(1 = (((2 == 3) && (4 + 5)) || 6))", "1 = 2 == 3 && 4 + 5 || 6"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("(34 || ((45 | (56 and 67)) && 78))", "34 || 45 | 56 and 67 && 78"));
 }
 
-TEST_F(PrecedenceTest, case9) {
+TEST_F(PrecedenceTest, ternary) {
     ASSERT_NO_FATAL_FAILURE(
             this->equals("((1 == 2) ? ((3 > 4) ? (5 + 6) : (7 xor 8)) : (9 && 10))",
                          "1 == 2 ? 3 > 4 ? 5 + 6 : 7 xor 8 : 9 && 10"));
 }
 
-TEST_F(PrecedenceTest, case10) {
+TEST_F(PrecedenceTest, nulcoa) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(55 < ((65 or 75) ?? 78))", "55 < 65 or 75 ?? 78"));
-}
-
-TEST_F(PrecedenceTest, case11) {
-    ASSERT_NO_FATAL_FAILURE(this->equals("(throw ((45 + 45) && 54))", "throw 45 + 45 && 54"));
-}
-
-TEST_F(PrecedenceTest, case12) {
-    ASSERT_NO_FATAL_FAILURE(this->equals("(34 || ((45 | (56 and 67)) && 78))", "34 || 45 | 56 and 67 && 78"));
-}
-
-TEST_F(PrecedenceTest, case13) {
-    ASSERT_NO_FATAL_FAILURE(this->equals("(45 | ((56 as Int) with 2> 67))", "45 | 56 as Int with 2> 67"));
-}
-
-TEST_F(PrecedenceTest, case14) {
-    ASSERT_NO_FATAL_FAILURE(this->equals("(23 = (((45 | 56) && 78) &))", "23 = 45 | 56 && 78 &"));
-}
-
-TEST_F(PrecedenceTest, case15) {
-    ASSERT_NO_FATAL_FAILURE(this->equals("((12 ? 23 : 34) &)", "12 ? 23 : 34 &"));
-}
-
-TEST_F(PrecedenceTest, case16) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(12 ?? (23 ?? 34))", "12 ?? 23 ?? 34"));
 }
 
-TEST_F(PrecedenceTest, case17) {
+TEST_F(PrecedenceTest, throw_) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(throw ((45 + 45) && 54))", "throw 45 + 45 && 54"));
+}
+
+TEST_F(PrecedenceTest, with) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(45 | ((56 as Int) with 2> 67))", "45 | 56 as Int with 2> 67"));
+}
+
+TEST_F(PrecedenceTest, bg) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("(23 = (((45 | 56) && 78) &))", "23 = 45 | 56 && 78 &"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("((12 ? 23 : 34) &)", "12 ? 23 : 34 &"));
+}
+
+TEST_F(PrecedenceTest, coproc) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(12 = ((coproc ((34 | 45) && 56))&))", "12 = coproc 34 | 45 && 56 &"));
 }
 
