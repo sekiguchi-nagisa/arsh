@@ -166,6 +166,18 @@ public:
         }
         this->close();
     }
+
+    void visitEnvCtxNode(EnvCtxNode &node) override {
+        this->open();
+        for(auto &e : node.getEnvDeclNodes()) {
+            std::string name = e->getVarName();
+            name += "=";
+            this->append(name);
+            this->visit(*e->getExprNode());
+        }
+        this->visit(node.getExprNode());
+        this->close();
+    }
 };
 
 
@@ -207,6 +219,8 @@ TEST_F(PrecedenceTest, base) {
     ASSERT_NO_FATAL_FAILURE(this->equals("1", "1"));
     ASSERT_NO_FATAL_FAILURE(this->equals("  1  ", "(1)"));
     ASSERT_NO_FATAL_FAILURE(this->equals("(1 + 2)", "1+2"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("(AAA=12 BBB=34 34)",
+                                         "AAA=12  BBB=34   \t  34"));
 }
 
 TEST_F(PrecedenceTest, asis) {
@@ -261,6 +275,18 @@ TEST_F(PrecedenceTest, bg) {
 
 TEST_F(PrecedenceTest, coproc) {
     ASSERT_NO_FATAL_FAILURE(this->equals("(12 = ((coproc ((34 | 45) && 56))&))", "12 = coproc 34 | 45 && 56 &"));
+}
+
+TEST_F(PrecedenceTest, envAssign) {
+    ASSERT_NO_FATAL_FAILURE(this->equals("((AAA=12 BBB=34 34) = 56)",
+                                         "AAA=12  BBB=34   \t  34 = 56"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("((AAA=12 BBB=34 (throw (34 + 45))) &)",
+                                         "AAA=12  BBB=34 throw 34 + 45 &"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("((AAA=BBB 12) && 34)", "AAA=BBB 12 && 34"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("((AAA=BBB 12) | 34)", "AAA=BBB 12 | 34"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("(AAA=BBB (12 with 1> 34))", "AAA=BBB 12 with > 34"));
+    ASSERT_NO_FATAL_FAILURE(this->equals("((AAA=BBB 12) | (CCC=DDD (34 and 56)))",
+                                         "AAA=BBB 12 | CCC=DDD 34 and 56"));
 }
 
 int main(int argc, char **argv) {

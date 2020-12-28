@@ -207,6 +207,7 @@
     OP(UNMATCH   , 10, INFIX) \
     OP(STR_CHECK , 10, INFIX) \
     OP(WITH      , 9, INFIX) \
+    OP(ENV_ASSIGN, 8, PREFIX) \
     OP(PIPE      , 7, INFIX) \
     OP(COND_AND  , 6, INFIX) \
     OP(COND_OR   , 5, INFIX) \

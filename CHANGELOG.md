@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - complete type name
   - complete user-defined command name from current scope
   - complete subcommand name
+- support bash style prefix assignment
+  ```
+  IFS="" $(ls)
+  ```
+
 
 #### Builtin
 - add ``Int`` method

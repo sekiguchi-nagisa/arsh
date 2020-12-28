@@ -1166,6 +1166,36 @@ TEST_F(LexerTest_Lv1, CMD_ARG15) {
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "\\?\\*\\?", TokenKind::GLOB_ANY, "?", TokenKind::EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, ENV_ASSIGN1) {
+    const char *text = "_1Ab9=23";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ENV_ASSIGN, "_1Ab9=", TokenKind::CMD_ARG_PART, "23", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, ENV_ASSIGN2) {
+    const char *text = "@%abc=";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ENV_ASSIGN, text, TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, ENV_ASSIGN3) {
+    const char *text = "\\0==";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ENV_ASSIGN, "\\0=", TokenKind::CMD_ARG_PART, "=", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, ENV_ASSIGN4) {
+    const char *text = "ho\\\n=";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ENV_ASSIGN, text, TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, ENV_ASSIGN5) {
+    const char *text = "ho\\ 3=";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ENV_ASSIGN, text, TokenKind::EOS, ""));
+}
+
 /**
  * test expr token in stmt mode.
  */

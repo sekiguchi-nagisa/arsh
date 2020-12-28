@@ -1574,7 +1574,7 @@ std::unique_ptr<EnvCtxNode> Parser::parse_envAssign() {
         Token token = TRY(this->expect(TokenKind::ENV_ASSIGN));
         auto prevToken = token;
         std::unique_ptr<CmdArgNode> valueNode;
-        if(HAS_SPACE()) {   // assign empty string
+        if(HAS_SPACE() || HAS_NL()) {   // assign empty string
             valueNode = std::make_unique<CmdArgNode>(std::make_unique<StringNode>(""));
         } else {
             valueNode = TRY(this->parse_cmdArg());
@@ -1594,7 +1594,13 @@ std::unique_ptr<EnvCtxNode> Parser::parse_envAssign() {
                 std::move(valueNode), VarDeclNode::EXPORT_ENV);
         envDeclNodes.push_back(std::move(declNode));
     } while(CUR_KIND() == TokenKind::ENV_ASSIGN);
-    auto exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::BACKGROUND) + 1));
+
+    std::unique_ptr<Node> exprNode;
+    if(HAS_NL()) {
+        exprNode = std::make_unique<EmptyNode>();
+    } else {
+        exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::WITH)));
+    }
     return std::make_unique<EnvCtxNode>(std::move(envDeclNodes), std::move(exprNode));
 }
 

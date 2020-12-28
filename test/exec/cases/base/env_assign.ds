@@ -1,0 +1,78 @@
+
+# undefiend env 
+ZZZ123='hello world' AAA123=123 \
+{
+    assert $ZZZ123 == 'hello world'
+    assert "$(env | grep ^ZZZ123=)".split('=')[1] == 'hello world'
+
+    $ZZZ123 = 'hey!!'
+    assert $ZZZ123 == 'hey!!'
+    assert "$(env | grep ^ZZZ123=)".split('=')[1] == 'hey!!'
+
+    assert $AAA123 == '123'
+    assert "$(env | grep ^AAA123=)".split('=')[1] == '123'
+
+    $AAA123 = '9876'
+    assert $AAA123 == '9876'
+    assert "$(env | grep ^AAA123=)".split('=')[1] == '9876'
+}
+assert !(env | grep ^ZZZ123=)
+assert !(env | grep ^AAA123=)
+
+# already defined env
+export-env HOGE777 = 'abcdefg'
+export-env VVVV_90 = 'XYZW++'
+
+assert (HOGE777=\
+"$(echo 4444)" VVVV_90=9999= \
+   abcd000= {
+    assert "$(env | grep ^HOGE777=)".split('=')[1] == '4444'
+    assert "$(env | grep ^VVVV_90=)".split('=')[1] == '9999'
+    assert "$(env | grep ^abcd000=)".split('=')[1] == ''
+    $VVVV_90 + $HOGE777 + $abcd000
+}) == '9999=4444'
+
+assert $HOGE777 == 'abcdefg'
+assert $VVVV_90 == 'XYZW++'
+assert !(env | grep ^abcd000=)
+
+# IFS
+## undeifned env
+unsetenv IFS
+let OLD = $IFS
+assert $IFS != '1234'
+assert !(env | grep IFS)
+var aa = IFS=1234 {
+    assert $IFS == '1234'
+    assert "$(env | grep ^IFS=)".split('=')[1] == '1234'
+    $(echo a1b44c2def33)
+}
+assert $aa.size() == 7 : "(${$aa as String})"
+assert $aa[0] == 'a'
+assert $aa[1] == 'b'
+assert $aa[2] == ''
+assert $aa[3] == 'c'
+assert $aa[4] == 'def'
+assert $aa[5] == ''
+assert $aa[6] == ''
+
+assert !(env | grep IFS)
+assert $IFS == $OLD
+
+## defined env
+assert $IFS != '00'
+{
+    export-env IFS = '00'
+}
+assert $IFS == $OLD
+assert "$(env | grep ^IFS=)".split('=')[1] == '00'
+
+$aa = IFS='1' $(echo "23${$IFS.toInt()! * 100}45" )
+assert $aa.size() == 2
+assert $aa[0] == '23'
+assert $aa[1] == '0045'
+
+assert "$(env | grep ^IFS=)".split('=')[1] == '00'
+assert $IFS == $OLD
+
+true
