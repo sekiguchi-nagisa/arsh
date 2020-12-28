@@ -18,7 +18,4 @@ if !(eval $BIN --feature | grep USE_LOGGING) {
     exit 1
 }
 
-export-env YDSH_APPENDER = $FILE
-export-env YDSH_DUMP_CONSOLE = "on"
-
-exec -a "$(basename $0)" $BIN $@
+YDSH_APPENDER=$FILE YDSH_DUMP_CONSOLE=on exec -a "$(basename $0)" $BIN $@
