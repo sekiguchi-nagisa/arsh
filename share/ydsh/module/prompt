@@ -53,7 +53,7 @@ function renderPrompt($p : String) : String {
         }
         $ret += $ch
     }
-    return IFS="" "$(echo -en $ret)"
+    return "$(echo -en $ret)"
 }
 
 function _usage($fd : UnixFD, $short : Boolean) : Int  {
