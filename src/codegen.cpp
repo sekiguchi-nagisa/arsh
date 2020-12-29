@@ -1256,7 +1256,7 @@ void ByteCodeGenerator::visitPrefixAssignNode(PrefixAssignNode &node) {
         });
     } else {
         for(auto &e : node.getAssignNodes()) {
-            assert(e->getType().is(TYPE::String));
+            assert(e->getRightNode().getType().is(TYPE::String));
             this->visit(*e);
         }
     }
