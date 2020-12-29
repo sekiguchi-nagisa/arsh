@@ -116,7 +116,8 @@ $assertArray($(cmd | grep '^p'), $comp('p', ''))
 $assertArray($(cmd /bin /usr/bin --stmt), $comp('echo; ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('35 | ', '/bin:/usr/bin'))
 if(test -d ~/bin) {
-    $assertArray($(cmd /bin /usr/bin ~/bin --stmt), $comp('echo; ', '/bin:/usr/bin:~/bin'))
+    var home = "$(echo ~)"
+    $assertArray($(cmd /bin /usr/bin ~/bin --stmt), $comp('echo; ', "/bin:/usr/bin:$home/bin"))
 }
 $assertArray($(cmd /bin /usr/bin --stmt), $comp('{ ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --stmt), $comp('echo & ', '/bin:/usr/bin'))

@@ -211,11 +211,6 @@ static std::vector<std::string> computePathList(const char *pathVal) {
             result.back() += ch;
         }
     }
-
-    // expand tilde
-    for(auto &s : result) {
-        expandTilde(s);
-    }
     return result;
 }
 
