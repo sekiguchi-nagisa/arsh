@@ -1418,19 +1418,31 @@ void TypeChecker::visitElementSelfAssignNode(ElementSelfAssignNode &node) {
     node.setType(this->typePool.get(TYPE::Void));
 }
 
-void TypeChecker::visitEnvCtxNode(EnvCtxNode &node) {
-    auto scope = this->intoBlock();
+void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
+    if(node.getExprNode()) { // AAA=1243 BBB='fre' expr
+        auto scope = this->intoBlock();
 
-    // register envctx
-    this->addEntry(node, node.toEnvCtxName(), this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
+        // register envctx
+        this->addEntry(node, node.toEnvCtxName(), this->typePool.get(TYPE::Any), FieldAttribute::READ_ONLY);
 
-    for(auto &e : node.getEnvDeclNodes()) {
-        this->checkTypeExactly(*e);
+        for(auto &e : node.getAssignNodes()) {
+            auto &rightType = this->checkType(this->typePool.get(TYPE::String), e->getRightNode());
+            assert(isa<VarNode>(e->getLeftNode()));
+            auto &leftNode = cast<VarNode>(e->getLeftNode());
+            auto *handle = this->addEntry(leftNode, leftNode.getVarName(), rightType, FieldAttribute::ENV);
+            leftNode.setAttribute(*handle);
+        }
+
+        auto &exprType = this->checkTypeExactly(*node.getExprNode());
+        node.setBaseIndex(this->curScope->getBaseIndex());
+        node.setType(exprType);
+    } else {    // AAA=1234 BBB='fer'
+        for(auto &e : node.getAssignNodes()) {
+            this->checkType(this->typePool.get(TYPE::String), e->getLeftNode());
+            this->checkTypeExactly(*e);
+        }
+        node.setType(this->typePool.get(TYPE::Void));
     }
-
-    auto &exprType = this->checkTypeExactly(node.getExprNode());
-    node.setBaseIndex(this->curScope->getBaseIndex());
-    node.setType(exprType);
 }
 
 static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool, std::unique_ptr<Node> exprNode) {

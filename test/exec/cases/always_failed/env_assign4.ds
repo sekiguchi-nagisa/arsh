@@ -1,7 +1,0 @@
-
-#$test($result = 'type', $lineNum = 7, $errorKind = 'UndefinedSymbol', $status = 1)
-
-AAA090BBB=123
-
-assert 
-   $AAA090BBB == 'fheirjfoei'

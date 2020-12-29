@@ -272,7 +272,7 @@ protected:
 
     std::unique_ptr<Node> parse_procSubstitution();
 
-    std::unique_ptr<EnvCtxNode> parse_envAssign();
+    std::unique_ptr<PrefixAssignNode> parse_prefixAssign();
 };
 
 } // namespace ydsh

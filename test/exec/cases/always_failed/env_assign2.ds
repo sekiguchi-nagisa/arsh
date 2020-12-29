@@ -1,6 +1,0 @@
-#$test($status = 1)
-
-# if has newline after prefix assignment, do nothing 
-ZZZ123=q3w4234
-
-env | grep ZZZ123

@@ -815,8 +815,8 @@ void ElementSelfAssignNode::dump(NodeDumper &dumper) const {
 // ##     EnvCtxNode     ##
 // ########################
 
-void EnvCtxNode::dump(NodeDumper &dumper) const {
-    DUMP(envDeclNodes);
+void PrefixAssignNode::dump(NodeDumper &dumper) const {
+    DUMP(declNodes);
     DUMP_PTR(exprNode);
     DUMP(baseIndex);
 }

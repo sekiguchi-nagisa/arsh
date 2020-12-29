@@ -452,7 +452,7 @@ private:
     void visitVarDeclNode(VarDeclNode &node) override;
     void visitAssignNode(AssignNode &node) override;
     void visitElementSelfAssignNode(ElementSelfAssignNode &node) override;
-    void visitEnvCtxNode(EnvCtxNode &node) override;
+    void visitPrefixAssignNode(PrefixAssignNode &node) override;
     void visitFunctionNode(FunctionNode &node) override;
     void visitInterfaceNode(InterfaceNode &node) override;
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;

@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 5, $errorKind = 'UndefinedSymbol', $status = 1)
+
+# if has newline after prefix assignment, treat as assingment 
+AAA090BBB=123
+
+assert 
+   $AAA090BBB == 'fheirjfoei'

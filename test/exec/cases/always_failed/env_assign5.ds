@@ -1,8 +1,0 @@
-
-#$test($result = 'parse', $lineNum = 6, $errorKind = 'TokenMismatched', $status = 1)
-
-AAA090BBB=
-
-'fre' {
-   assert $AAA090BBB == 123
-}

@@ -826,8 +826,7 @@ std::unique_ptr<Node> Parser::parse_command() {
 
     for(bool next = true; next && HAS_SPACE() && !HAS_NL();) {
         switch(CUR_KIND()) {
-        case TokenKind::LP:
-        EACH_LA_cmdArg(GEN_LA_CASE) {
+        EACH_LA_cmdArg_LP(GEN_LA_CASE) {
             auto argNode = this->parse_cmdArg();
             if(this->hasError()) {
                 if(this->inCompletionPoint()
@@ -883,8 +882,7 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
 
     for(bool next = true; !HAS_SPACE() && !HAS_NL() && next;) {
         switch(CUR_KIND()) {
-        case TokenKind::LP:
-        EACH_LA_cmdArg(GEN_LA_CASE)
+        EACH_LA_cmdArg_LP(GEN_LA_CASE)
             node->addSegmentNode(TRY(this->parse_cmdArgSeg(opt)));
             break;
         default:
@@ -1137,7 +1135,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case TokenKind::COMMAND:
         return this->parse_command();
     case TokenKind::ENV_ASSIGN:
-        return this->parse_envAssign();
+        return this->parse_prefixAssign();
     case TokenKind::NEW: {
         unsigned int startPos = START_POS();
         this->expect(TokenKind::NEW, false);   // always success
@@ -1568,19 +1566,30 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
     return ForkNode::newProcSubstitution(pos, std::move(exprNode), token, inPipe);
 }
 
-std::unique_ptr<EnvCtxNode> Parser::parse_envAssign() {
+std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
     GUARD_DEEP_NESTING(guard);
 
-    std::vector<std::unique_ptr<VarDeclNode>> envDeclNodes;
+    std::vector<std::unique_ptr<AssignNode>> envDeclNodes;
     do {
         Token token = TRY(this->expect(TokenKind::ENV_ASSIGN));
         auto prevToken = token;
         std::unique_ptr<CmdArgNode> valueNode;
-        if(HAS_SPACE() || HAS_NL()) {   // assign empty string
+        if(!HAS_SPACE() && !HAS_NL()) {
+            switch(CUR_KIND()) {
+            EACH_LA_cmdArg_LP(GEN_LA_CASE)
+                valueNode = TRY(this->parse_cmdArg());
+                prevToken = valueNode->getToken();
+                break;
+            default:
+                break;
+            }
+        }
+        if(!valueNode) {
             valueNode = std::make_unique<CmdArgNode>(std::make_unique<StringNode>(""));
-        } else {
-            valueNode = TRY(this->parse_cmdArg());
-            prevToken = valueNode->getToken();
+        }
+
+        if(CUR_KIND() == TokenKind::LP && this->lexer->getLexerMode() == yycCMD) {
+            this->lexer->popLexerMode();
         }
         this->restoreLexerState(prevToken);
 
@@ -1591,19 +1600,22 @@ std::unique_ptr<EnvCtxNode> Parser::parse_envAssign() {
             return nullptr;
         }
 
-        auto declNode = std::make_unique<VarDeclNode>(
-                token.pos, std::move(envName),
-                std::move(valueNode), VarDeclNode::EXPORT_ENV);
+        auto declNode = std::make_unique<AssignNode>(
+                std::make_unique<VarNode>(nameToken, std::move(envName)),
+                std::move(valueNode));
         envDeclNodes.push_back(std::move(declNode));
     } while(CUR_KIND() == TokenKind::ENV_ASSIGN);
 
     std::unique_ptr<Node> exprNode;
-    if(HAS_NL()) {
-        exprNode = std::make_unique<EmptyNode>();
-    } else {
-        exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::WITH)));
+    if(!HAS_NL()) {
+        switch(CUR_KIND()) {
+        EACH_LA_expression(GEN_LA_CASE)
+            exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::WITH)));
+        default:
+            break;
+        }
     }
-    return std::make_unique<EnvCtxNode>(std::move(envDeclNodes), std::move(exprNode));
+    return std::make_unique<PrefixAssignNode>(std::move(envDeclNodes), std::move(exprNode));
 }
 
 } // namespace ydsh

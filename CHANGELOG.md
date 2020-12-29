@@ -31,9 +31,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - complete user-defined command name from current scope
   - complete subcommand name
 - support bash style prefix assignment
-  ```
-  IFS="" $(ls)
-  ```
+  - defined environmental variables in the following expression scope
+    ```
+    IFS="" $(ls)
+    ```
+  - if no following expression, treat as just assignment
+    ```
+    IFS='AAA'
+    ```
+
 
 
 #### Builtin

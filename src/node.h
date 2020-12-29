@@ -72,7 +72,7 @@ namespace ydsh {
     OP(VarDecl) \
     OP(Assign) \
     OP(ElementSelfAssign)  \
-    OP(EnvCtx) \
+    OP(PrefixAssign) \
     OP(Function) \
     OP(Interface) \
     OP(UserDefinedCmd) \
@@ -2130,25 +2130,33 @@ public:
 /**
  * AAA=VVV BBB=WWW do-something
  */
-class EnvCtxNode : public WithRtti<Node, NodeKind::EnvCtx> {
+class PrefixAssignNode : public WithRtti<Node, NodeKind::PrefixAssign> {
 private:
-    std::vector<std::unique_ptr<VarDeclNode>> envDeclNodes;
+    std::vector<std::unique_ptr<AssignNode>> declNodes;
+
+    /**
+     * may be null
+     */
     std::unique_ptr<Node> exprNode;
+
     unsigned int baseIndex{0};
 
 public:
-    EnvCtxNode(std::vector<std::unique_ptr<VarDeclNode>> &&declNodes, std::unique_ptr<Node> &&exprNode) :
-                WithRtti(declNodes[0]->getToken()),
-                envDeclNodes(std::move(declNodes)), exprNode(std::move(exprNode)) {
-        this->updateToken(this->exprNode->getToken());
+    PrefixAssignNode(std::vector<std::unique_ptr<AssignNode>> &&declNodes, std::unique_ptr<Node> &&exprNode) :
+            WithRtti(declNodes[0]->getToken()),
+            declNodes(std::move(declNodes)), exprNode(std::move(exprNode)) {
+        this->updateToken(this->declNodes.back()->getToken());
+        if(this->exprNode) {
+            this->updateToken(this->exprNode->getToken());
+        }
     }
 
-    const std::vector<std::unique_ptr<VarDeclNode>> &getEnvDeclNodes() const {
-        return this->envDeclNodes;
+    const std::vector<std::unique_ptr<AssignNode>> &getAssignNodes() const {
+        return this->declNodes;
     }
 
-    Node &getExprNode() const {
-        return *this->exprNode;
+    const std::unique_ptr<Node> &getExprNode() const {
+        return this->exprNode;
     }
 
     std::string toEnvCtxName() const {
@@ -2166,7 +2174,7 @@ public:
     }
 
     unsigned int getVarSize() const {
-        return this->envDeclNodes.size() + 1;
+        return this->declNodes.size() + 1;
     }
 
     void dump(NodeDumper &dumper) const override;
@@ -2629,7 +2637,7 @@ struct NodeVisitor {
     virtual void visitVarDeclNode(VarDeclNode &node) = 0;
     virtual void visitAssignNode(AssignNode &node) = 0;
     virtual void visitElementSelfAssignNode(ElementSelfAssignNode &node) = 0;
-    virtual void visitEnvCtxNode(EnvCtxNode &node) = 0;
+    virtual void visitPrefixAssignNode(PrefixAssignNode &node) = 0;
     virtual void visitFunctionNode(FunctionNode &node) = 0;
     virtual void visitInterfaceNode(InterfaceNode &node) = 0;
     virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
@@ -2681,7 +2689,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitVarDeclNode(VarDeclNode &node) override { this->visitDefault(node); }
     void visitAssignNode(AssignNode &node) override { this->visitDefault(node); }
     void visitElementSelfAssignNode(ElementSelfAssignNode &node) override { this->visitDefault(node); }
-    void visitEnvCtxNode(EnvCtxNode &node) override { this->visitDefault(node); }
+    void visitPrefixAssignNode(PrefixAssignNode &node) override { this->visitDefault(node); }
     void visitFunctionNode(FunctionNode &node) override { this->visitDefault(node); }
     void visitInterfaceNode(InterfaceNode &node) override { this->visitDefault(node); }
     void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }

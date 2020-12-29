@@ -1,5 +1,7 @@
 
 # undefiend env 
+assert (AAA=1234 ($AAA + '!')) == '1234!'
+
 ZZZ123='hello world' AAA123=123 \
 {
     assert $ZZZ123 == 'hello world'
@@ -41,7 +43,7 @@ assert !(env | grep ^abcd000=)
 unsetenv IFS
 let OLD = $IFS
 assert $IFS != '1234'
-assert !(env | grep IFS)
+assert !(env | grep ^IFS=)
 var aa = IFS=1234 {
     assert $IFS == '1234'
     assert "$(env | grep ^IFS=)".split('=')[1] == '1234'
@@ -56,7 +58,7 @@ assert $aa[4] == 'def'
 assert $aa[5] == ''
 assert $aa[6] == ''
 
-assert !(env | grep IFS)
+assert !(env | grep ^IFS=)
 assert $IFS == $OLD
 
 ## defined env
@@ -74,5 +76,33 @@ assert $aa[1] == '0045'
 
 assert "$(env | grep ^IFS=)".split('=')[1] == '00'
 assert $IFS == $OLD
+
+
+## prefix assign without following expression
+IFS=hello\ world 
+
+assert $IFS == 'hello world'
+assert "$(env | grep ^IFS=)".split('=')[1] == '00'
+
+var ABCD = 'hey'
+(ABCD=${ABCD}' ' ABCD=${ABCD}'say')
+assert $ABCD == 'hey say'
+assert !(env | grep ^ABCD=)
+
+{
+    assert !(env | grep ^hfeu8993=)
+    var hfeu8993 = ''
+    hfeu8993="$(echo echo!!)" \
+      ABCD='nothing'
+    (34 + 34) # do nothing
+    assert $hfeu8993 == 'echo!!'
+    assert $ABCD == 'nothing'
+    assert !(env | grep ^hfeu8993=)
+    assert !(env | grep ^ABCD=)
+}
+assert $ABCD == 'nothing'
+
+(ABCD=)
+assert $ABCD == ''
 
 true

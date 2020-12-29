@@ -1199,7 +1199,11 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
         if(node.isSelfAssignment()) {
             this->visit(node.getLeftNode());
         }
-        this->visit(node.getRightNode());
+        if(isa<CmdArgNode>(node.getRightNode())) {  // for prefix assign
+            this->generateCmdArg(cast<CmdArgNode>(node.getRightNode()));
+        } else {
+            this->visit(node.getRightNode());
+        }
         auto &varNode = cast<VarNode>(node.getLeftNode());
 
         if(hasFlag(varNode.attr(), FieldAttribute::ENV)) {
@@ -1234,20 +1238,28 @@ void ByteCodeGenerator::visitElementSelfAssignNode(ElementSelfAssignNode &node) 
     this->visit(node.getSetterNode());
 }
 
-void ByteCodeGenerator::visitEnvCtxNode(EnvCtxNode &node) {
-    this->generateBlock(node.getBaseIndex(), node.getVarSize(), true, [&]{
-        this->emit0byteIns(OpCode::NEW_ENV_CTX);
-        for(auto &e : node.getEnvDeclNodes()) {
-            this->emitLdcIns(DSValue::createStr(e->getVarName()));
-            this->emit0byteIns(OpCode::DUP);
-            this->emit1byteIns(OpCode::STORE_LOCAL, e->getVarIndex());
-            assert(isa<CmdArgNode>(e->getExprNode()));
-            this->generateCmdArg(cast<CmdArgNode>(*e->getExprNode()));
-            this->emit0byteIns(OpCode::ADD2ENV_CTX);
+void ByteCodeGenerator::visitPrefixAssignNode(PrefixAssignNode &node) {
+    if(node.getExprNode()) {
+        this->generateBlock(node.getBaseIndex(), node.getVarSize(), true, [&]{
+            this->emit0byteIns(OpCode::NEW_ENV_CTX);
+            for(auto &e : node.getAssignNodes()) {
+                auto &leftNode = cast<VarNode>(e->getLeftNode());
+                this->emitLdcIns(DSValue::createStr(leftNode.getVarName()));
+                this->emit0byteIns(OpCode::DUP);
+                this->emit1byteIns(OpCode::STORE_LOCAL, leftNode.getIndex());
+                assert(isa<CmdArgNode>(e->getRightNode()));
+                this->generateCmdArg(cast<CmdArgNode>(e->getRightNode()));
+                this->emit0byteIns(OpCode::ADD2ENV_CTX);
+            }
+            this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
+            this->visit(*node.getExprNode());
+        });
+    } else {
+        for(auto &e : node.getAssignNodes()) {
+            assert(e->getType().is(TYPE::String));
+            this->visit(*e);
         }
-        this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
-        this->visit(node.getExprNode());
-    });
+    }
 }
 
 void ByteCodeGenerator::visitFunctionNode(FunctionNode &node) {

@@ -317,6 +317,10 @@
     EACH_LA_paramExpansion(OP) \
     OP(COMPLETION)
 
+#define EACH_LA_cmdArg_LP(OP) \
+    EACH_LA_cmdArg(OP) \
+    OP(LP)
+
 #define EACH_LA_typeName(OP) \
     OP(IDENTIFIER) \
     OP(PTYPE_OPEN) \

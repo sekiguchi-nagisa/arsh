@@ -1,0 +1,9 @@
+#$test($result = 'type', $lineNum = 6, $errorKind = 'Required', $status = 1)
+
+var ZZZ123 = 213
+
+# if has newline after prefix assignment, treat as assingment 
+ZZZ123=\
+q3w4234
+
+env | grep ZZZ123

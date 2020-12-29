@@ -1,0 +1,6 @@
+
+#$test($result = 'type', $lineNum = 4, $errorKind = 'UndefinedSymbol', $status = 1)
+
+assert (AAA=$AAA \
+AAA='ferjf' \
+$AAA) =='ferjf'

@@ -167,15 +167,15 @@ public:
         this->close();
     }
 
-    void visitEnvCtxNode(EnvCtxNode &node) override {
+    void visitPrefixAssignNode(PrefixAssignNode &node) override {
         this->open();
-        for(auto &e : node.getEnvDeclNodes()) {
-            std::string name = e->getVarName();
+        for(auto &e : node.getAssignNodes()) {
+            std::string name = cast<VarNode>(e->getLeftNode()).getVarName();
             name += "=";
             this->append(name);
-            this->visit(*e->getExprNode());
+            this->visit(e->getRightNode());
         }
-        this->visit(node.getExprNode());
+        this->visit(*node.getExprNode());
         this->close();
     }
 };
