@@ -434,6 +434,17 @@ void expandTilde(std::string &str, bool useHOME) {
     str = std::move(expanded);
 }
 
+static std::string toFullLocalModDirPath() {
+    std::string dir = LOCAL_MOD_DIR;
+    expandTilde(dir);
+    return dir;
+}
+
+const char *getFullLocalModDir() {
+    static auto path = toFullLocalModDirPath();
+    return path.c_str();
+}
+
 // ####################
 // ##     SigSet     ##
 // ####################

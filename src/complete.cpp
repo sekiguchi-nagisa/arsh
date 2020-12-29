@@ -379,9 +379,7 @@ static void completeModule(const char *scriptDir, const std::string &prefix, boo
     completeFileName(scriptDir, prefix, op, results);
 
     // complete from local module dir
-    std::string localModDir = LOCAL_MOD_DIR;
-    expandTilde(localModDir);
-    completeFileName(localModDir.c_str(), prefix, op, results);
+    completeFileName(getFullLocalModDir(), prefix, op, results);
 
     // complete from system module dir
     completeFileName(SYSTEM_MOD_DIR, prefix, op, results);

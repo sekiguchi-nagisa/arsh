@@ -220,6 +220,12 @@ std::string expandDots(const char *basePath, const char *path);
  */
 void expandTilde(std::string &str, bool useHOME = false);
 
+/**
+ * get full path of LOCAL_MOD_DIR
+ * @return
+ */
+const char *getFullLocalModDir();
+
 class SignalGuard {
 private:
     sigset_t maskset;

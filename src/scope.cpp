@@ -366,12 +366,9 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *path, FilePtr &f
     }
 
     if(isFileNotFound(ret)) {
-        int old = errno;
-        std::string dir = LOCAL_MOD_DIR;
-        expandTilde(dir);
-        errno = old;
-        if(strcmp(scriptDir, dir.c_str()) != 0) {
-            ret = this->loadImpl(dir.c_str(), path, filePtr, option);
+        const char *localModDir = getFullLocalModDir();
+        if(strcmp(scriptDir, localModDir) != 0) {
+            ret = this->loadImpl(localModDir, path, filePtr, option);
         }
         if(isFileNotFound(ret)) {
             ret = this->loadImpl(SYSTEM_MOD_DIR, path, filePtr, option);
