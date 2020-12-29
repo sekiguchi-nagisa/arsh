@@ -744,13 +744,21 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     }
 }
 
+static bool lookahead_expression(TokenKind kind) {
+    switch(kind) {
+    EACH_LA_expression(GEN_LA_CASE)
+        return true;
+    default:
+        return false;
+    }
+}
+
 std::unique_ptr<Node> Parser::parse_forCond() {
     GUARD_DEEP_NESTING(guard);
 
-    switch(CUR_KIND()) {
-    EACH_LA_expression(GEN_LA_CASE)
+    if(lookahead_expression(CUR_KIND())) {
         return this->parse_expression();
-    default:
+    } else {
         return nullptr;
     }
 }
@@ -758,10 +766,9 @@ std::unique_ptr<Node> Parser::parse_forCond() {
 std::unique_ptr<Node> Parser::parse_forIter() {
     GUARD_DEEP_NESTING(guard);
 
-    switch(CUR_KIND()) {
-    EACH_LA_expression(GEN_LA_CASE)
+    if(lookahead_expression(CUR_KIND())) {
         return this->parse_expression();
-    default:
+    } else {
         return std::make_unique<EmptyNode>();
     }
 }
@@ -874,21 +881,23 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
     }
 }
 
+static bool lookahead_cmdArg_LP(TokenKind kind) {
+    switch(kind) {
+    EACH_LA_cmdArg_LP(GEN_LA_CASE)
+        return true;
+    default:
+        return false;
+    }
+}
+
 std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
     GUARD_DEEP_NESTING(guard);
 
     assert(!hasFlag(opt, CmdArgParseOpt::FIRST));
     auto node = std::make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(opt | CmdArgParseOpt::FIRST)));
 
-    for(bool next = true; !HAS_SPACE() && !HAS_NL() && next;) {
-        switch(CUR_KIND()) {
-        EACH_LA_cmdArg_LP(GEN_LA_CASE)
-            node->addSegmentNode(TRY(this->parse_cmdArgSeg(opt)));
-            break;
-        default:
-            next = false;
-            break;
-        }
+    while(!HAS_SPACE() && !HAS_NL() && lookahead_cmdArg_LP(CUR_KIND())) {
+        node->addSegmentNode(TRY(this->parse_cmdArgSeg(opt)));
     }
     return node;
 }
@@ -1241,15 +1250,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case TokenKind::BREAK: {
         Token token = this->expect(TokenKind::BREAK); // always success
         std::unique_ptr<Node> exprNode;
-        if(!HAS_NL()) {
-            switch(CUR_KIND()) {
-            EACH_LA_expression(GEN_LA_CASE) {
-                exprNode = TRY(this->parse_expression());
-                break;
-            }
-            default:
-                break;
-            }
+        if(!HAS_NL() && lookahead_expression(CUR_KIND())) {
+            exprNode = TRY(this->parse_expression());
         }
         return JumpNode::newBreak(token, std::move(exprNode));
     }
@@ -1260,14 +1262,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case TokenKind::RETURN: {
         Token token = this->expect(TokenKind::RETURN); // always success
         std::unique_ptr<Node> exprNode;
-        if(!HAS_NL()) {
-            switch(CUR_KIND()) {
-            EACH_LA_expression(GEN_LA_CASE)
-                exprNode = TRY(this->parse_expression());
-                break;
-            default:
-                break;
-            }
+        if(!HAS_NL() && lookahead_expression(CUR_KIND())) {
+            exprNode = TRY(this->parse_expression());
         }
         return JumpNode::newReturn(token, std::move(exprNode));
     }
@@ -1396,11 +1392,9 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
             }
             this->consume();    // COMMA
         }
-        switch(CUR_KIND()) {
-        EACH_LA_expression(GEN_LA_CASE)
+        if(lookahead_expression(CUR_KIND())) {
             argsNode->addNode(TRY(this->parse_expression()));
-            break;
-        default:
+        } else {
             E_ALTER(EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
         }
     }
@@ -1574,17 +1568,10 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
         Token token = TRY(this->expect(TokenKind::ENV_ASSIGN));
         auto prevToken = token;
         std::unique_ptr<CmdArgNode> valueNode;
-        if(!HAS_SPACE() && !HAS_NL()) {
-            switch(CUR_KIND()) {
-            EACH_LA_cmdArg_LP(GEN_LA_CASE)
-                valueNode = TRY(this->parse_cmdArg());
-                prevToken = valueNode->getToken();
-                break;
-            default:
-                break;
-            }
-        }
-        if(!valueNode) {
+        if(!HAS_SPACE() && !HAS_NL() && lookahead_cmdArg_LP(CUR_KIND())) {
+            valueNode = TRY(this->parse_cmdArg());
+            prevToken = valueNode->getToken();
+        } else {
             valueNode = std::make_unique<CmdArgNode>(std::make_unique<StringNode>(""));
         }
 
@@ -1607,13 +1594,8 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
     } while(CUR_KIND() == TokenKind::ENV_ASSIGN);
 
     std::unique_ptr<Node> exprNode;
-    if(!HAS_NL()) {
-        switch(CUR_KIND()) {
-        EACH_LA_expression(GEN_LA_CASE)
-            exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::WITH)));
-        default:
-            break;
-        }
+    if(!HAS_NL() && lookahead_expression(CUR_KIND())) {
+        exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::WITH)));
     }
     return std::make_unique<PrefixAssignNode>(std::move(envDeclNodes), std::move(exprNode));
 }
