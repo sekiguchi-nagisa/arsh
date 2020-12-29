@@ -77,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: when modifying map object during iteration, always throw ``InvalidOperationError``
 - **Breaking Change**: eliminate implicit tilde expansion like the follow
   - external command name completion
+  - external command file path search
 - allow ``=>`` in abbreviate type notation of Func type
 - allow ``->`` in arm expression
 - allow statement in for-init

@@ -76,7 +76,6 @@ const char *FilePathCache::searchPath(const char *cmdName, FilePathCache::Search
                 resolvedPath += '/';
             }
             resolvedPath += cmdName;
-            expandTilde(resolvedPath);
 
             if((getStMode(resolvedPath.c_str()) & S_IXUSR) == S_IXUSR) {
                 if(hasFlag(op, DIRECT_SEARCH)) {
