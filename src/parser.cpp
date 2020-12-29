@@ -826,6 +826,7 @@ std::unique_ptr<Node> Parser::parse_command() {
 
     for(bool next = true; next && HAS_SPACE() && !HAS_NL();) {
         switch(CUR_KIND()) {
+        case TokenKind::LP:
         EACH_LA_cmdArg(GEN_LA_CASE) {
             auto argNode = this->parse_cmdArg();
             if(this->hasError()) {
@@ -882,6 +883,7 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
 
     for(bool next = true; !HAS_SPACE() && !HAS_NL() && next;) {
         switch(CUR_KIND()) {
+        case TokenKind::LP:
         EACH_LA_cmdArg(GEN_LA_CASE)
             node->addSegmentNode(TRY(this->parse_cmdArgSeg(opt)));
             break;

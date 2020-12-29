@@ -1730,7 +1730,7 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
 void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     assert(this->ccHandler);
     switch(node.getKind()) {
-    case CodeCompNode::VAR: {}
+    case CodeCompNode::VAR:
         this->ccHandler->addVarNameRequest(this->lexer->toName(node.getTypingToken()), this->curScope);
         break;
     case CodeCompNode::MEMBER: {
