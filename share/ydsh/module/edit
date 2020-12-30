@@ -115,7 +115,7 @@ function _save($p : String!) {
     }
 
     if !$p || $p!.empty() { $p = $HISTFILE; }
-    let path = $tilde($p!) ?? $p!
+    let path = $p!
     let size = $HISTORY.size()
     var offset = $size < $HISTFILESIZE ? 0 : $size - $HISTFILESIZE
 
