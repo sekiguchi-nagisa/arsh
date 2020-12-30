@@ -1576,6 +1576,16 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
     std::vector<std::unique_ptr<AssignNode>> envDeclNodes;
     do {
         Token token = TRY(this->expect(TokenKind::ENV_ASSIGN));
+        auto nameNode = ({
+            std::string envName;
+            auto nameToken = token.slice(0, token.size - 1);
+            if(!this->lexer->toEnvName(nameToken, envName)) {
+                reportTokenFormatError(TokenKind::ENV_ASSIGN, nameToken, "must be identifier");
+                return nullptr;
+            }
+            std::make_unique<VarNode>(nameToken, std::move(envName));
+        });
+
         auto prevToken = token;
         std::unique_ptr<CmdArgNode> valueNode;
         if(!HAS_SPACE() && !HAS_NL() && lookahead_cmdArg_LP(CUR_KIND())) {
@@ -1585,22 +1595,13 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
             valueNode = std::make_unique<CmdArgNode>(std::make_unique<StringNode>(""));
         }
 
+        auto declNode = std::make_unique<AssignNode>(std::move(nameNode), std::move(valueNode));
+        envDeclNodes.push_back(std::move(declNode));
+
         if(CUR_KIND() == TokenKind::LP && this->lexer->getLexerMode() == yycCMD) {
             this->lexer->popLexerMode();
         }
         this->restoreLexerState(prevToken);
-
-        std::string envName;
-        auto nameToken = token.slice(0, token.size - 1);
-        if(!this->lexer->toEnvName(nameToken, envName)) {
-            reportTokenFormatError(TokenKind::ENV_ASSIGN, nameToken, "must be identifier");
-            return nullptr;
-        }
-
-        auto declNode = std::make_unique<AssignNode>(
-                std::make_unique<VarNode>(nameToken, std::move(envName)),
-                std::move(valueNode));
-        envDeclNodes.push_back(std::move(declNode));
     } while(CUR_KIND() == TokenKind::ENV_ASSIGN);
 
     std::unique_ptr<Node> exprNode;
