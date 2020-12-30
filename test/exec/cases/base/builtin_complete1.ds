@@ -149,10 +149,6 @@ __file() {
             echo ${$escape2($a)}
         }
     }
-
-    case $type {
-    '--redir' => $eachEcho(['$(', '${', '<(', '>(', '"'])
-    }
 }
 
 file() {
@@ -182,11 +178,11 @@ if !$OSTYPE.startsWith("CYGWIN") {
 $assertArray(new [String](), $(complete 'echo \~root'))
 $assertArray($(file '.'), $(complete '$(echo '))
 $assertArray($(file '.'), $(complete '{echo hello '))
-$assertArray($(file '.' --redir), $(complete 'echo | echo < '))
-$assertArray($(file '.' --redir), $(complete 'echo > '))
+$assertArray($(file '.'), $(complete 'echo | echo < '))
+$assertArray($(file '.'), $(complete 'echo > '))
 $assertArray($(file '.'), $(complete 'echo >./'))
 $assertArray($(file '.'), $(complete 'echo <<<./'))
-$assertArray($(file '.' --redir), $(complete 'echo <<< '))
+$assertArray($(file '.'), $(complete 'echo <<< '))
 $assertArray(new [String](), $(complete 'echo 2>&1./'))
 $assertArray(new [String](), $(complete 'echo 1>&2./'))
 $assertArray($(file '.'), $(complete 'echo | echo $TRUE '))
@@ -194,7 +190,7 @@ $assertArray($(file '.'), $(complete 'echo ${34} '))
 $assertArray($(file '.'), $(complete '$(echo $TRUE '))
 $assertArray(new [String](), $(complete 'echo ${34}'))
 $assertArray(new [String](), $(complete 'echo ${34}./'))
-$assertArray($(file '.' --redir), $(complete '34 with < '))
+$assertArray($(file '.'), $(complete '34 with < '))
 $assertArray($(file '/bin'), $(complete '$true with >> /bin/'))
 $assertArray(new [String](), $(complete 'import-env home '))
 $assertArray(new [String](), $(complete 'assert (ls) : "de" '))

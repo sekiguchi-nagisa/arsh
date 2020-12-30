@@ -47,11 +47,10 @@ enum class CodeCompOp : unsigned int {
     MODULE   = 1u << 12u,   /* complete module path */
     STMT_KW  = 1u << 13u,   /* complete statement keyword */
     EXPR_KW  = 1u << 14u,   /* complete expr keyword */
-    ARG_KW   = 1u << 15u,   /* complete command argument keyword */
-    EXPECT   = 1u << 16u,   /* complete expetced token */
-    MEMBER   = 1u << 17u,   /* complete member (field/meethod) */
-    TYPE     = 1u << 18u,   /* complete type name */
-    HOOK     = 1u << 19u,   /* for user-defined completion hook */
+    EXPECT   = 1u << 15u,   /* complete expetced token */
+    MEMBER   = 1u << 16u,   /* complete member (field/meethod) */
+    TYPE     = 1u << 17u,   /* complete type name */
+    HOOK     = 1u << 18u,   /* for user-defined completion hook */
     COMMAND  = EXTERNAL | BUILTIN | UDC,
 };
 

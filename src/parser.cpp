@@ -869,7 +869,7 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
     switch(CUR_KIND()) {
     EACH_LA_redirFile(GEN_LA_CASE) {
         TokenKind kind = this->scan();
-        return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg(CmdArgParseOpt::REDIR)));
+        return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg()));
     }
     EACH_LA_redirNoFile(GEN_LA_CASE) {
         Token token = this->curToken;

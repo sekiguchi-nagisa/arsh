@@ -140,20 +140,6 @@ static void completeKeyword(const std::string &prefix, bool onlyExpr, ArrayObjec
     }
 }
 
-static void completeCmdArgKeyword(const std::string &prefix, ArrayObject &results) {
-    TokenKind table[] = {
-#define GEN_ITEM(T) TokenKind::T,
-            EACH_LA_cmdArg(GEN_ITEM)
-#undef GEN_ITEM
-    };
-    for(auto &e : table) {
-        StringRef ref = toString(e);
-        if(isKeyword(ref) && ref.startsWith(prefix)) {
-            append(results, ref, EscapeOp::NOP);
-        }
-    }
-}
-
 static void completeEnvName(const std::string &namePrefix, ArrayObject &results) {
     for(unsigned int i = 0; environ[i] != nullptr; i++) {
         StringRef env(environ[i]);
@@ -606,9 +592,6 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
         bool onlyExpr = !hasFlag(this->compOp, CodeCompOp::STMT_KW);
         completeKeyword(this->compWord, onlyExpr, results);
     }
-    if(hasFlag(this->compOp, CodeCompOp::ARG_KW)) {
-        completeCmdArgKeyword(this->compWord, results);
-    }
     if(hasFlag(this->compOp, CodeCompOp::VAR)) {
         completeVarName(*this->scope, this->compWord, results);
     }
@@ -668,13 +651,9 @@ void CodeCompletionHandler::addCmdArgOrModRequest(std::string &&value, CmdArgPar
         }
         if(hasFlag(opt, CmdArgParseOpt::MODULE)) {
             setFlag(op, CodeCompOp::MODULE);
-        } else if(hasFlag(opt, CmdArgParseOpt::REDIR)) {
-            setFlag(op, CodeCompOp::FILE | CodeCompOp::ARG_KW);
         } else {
             setFlag(op, CodeCompOp::FILE);
         }
-    } else if(hasFlag(opt, CmdArgParseOpt::REDIR)) {
-        setFlag(op, CodeCompOp::ARG_KW);
     }
     this->addCompRequest(op, std::move(value));
 }
