@@ -315,3 +315,7 @@ cd $pwd
 if ! $OSTYPE.startsWith("CYGWIN") {
     assert("$(cat /etc/passwd | grep ^root | cut -d : -f 6)" == "$(echo ~root)")
 }
+
+## no expand
+assert "$(echo :~)" == ':~'
+assert "$(echo \\:~)" == '\:~'
