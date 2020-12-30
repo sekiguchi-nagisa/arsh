@@ -209,14 +209,23 @@ void ByteCodeGenerator::enterMultiFinally() {
     }
 }
 
-void ByteCodeGenerator::generateCmdArg(CmdArgNode &node) {
+unsigned int ByteCodeGenerator::concatCmdArgSegment(CmdArgNode &node, unsigned int index) {
     const unsigned int size = node.getSegmentNodes().size();
-    for(unsigned int i = 0; i < size; i++) {
-        this->generateConcat(*node.getSegmentNodes()[i], i > 0);
+    const unsigned int baseIndex = index;
+    bool tilde = node.isTildeAt(index);
+    for(; index < size; index++) {
+        if((index - baseIndex) > 0 && node.isTildeAt(index)) {
+            break;
+        }
+        this->generateConcat(*node.getSegmentNodes()[index], (index - baseIndex) > 0);
     }
-    if(node.isTilde()) {
+    if(tilde) {
         this->emit0byteIns(OpCode::EXPAND_TILDE);
     }
+    if(baseIndex > 0) {
+        this->emit0byteIns(OpCode::CONCAT);
+    }
+    return index;
 }
 
 void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) {

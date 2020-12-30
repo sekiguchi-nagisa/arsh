@@ -1226,13 +1226,20 @@ public:
     bool isIgnorableEmptyString() const;
 
     bool isTilde() const {
-        return isa<StringNode>(*this->segmentNodes.front())
-                && cast<StringNode>(*this->segmentNodes.front()).isTilde();
+        return this->isTildeAt(0);
+    }
+
+    bool isTildeAt(unsigned int i) const {
+        return isa<StringNode>(*this->segmentNodes[i])
+                && cast<StringNode>(*this->segmentNodes[i]).isTilde();
     }
 
     unsigned int getGlobPathSize() const {
         return this->globPathSize;
     }
+
+private:
+    void addSegmentNodeImpl(std::unique_ptr<Node> &&node);
 };
 
 class RedirNode : public WithRtti<Node, NodeKind::Redir> {

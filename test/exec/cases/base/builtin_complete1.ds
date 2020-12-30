@@ -192,8 +192,14 @@ $assertArray(new [String](), $(complete 'echo ${34}'))
 $assertArray(new [String](), $(complete 'echo ${34}./'))
 $assertArray($(file '.'), $(complete '34 with < '))
 $assertArray($(file '/bin'), $(complete '$true with >> /bin/'))
+$assertArray($(file '.'), $(complete 'AAA='))
+$assertArray($(file '/bin'), $(complete 'AAA=hoge:/bin/'))
+$assertArray($(file ~/), $(complete 'AAA=hoge\\:~/'))
 $assertArray(new [String](), $(complete 'import-env home '))
 $assertArray(new [String](), $(complete 'assert (ls) : "de" '))
+$assertArray(new [String](), $(complete 'echo :'))
+$assertArray(new [String](), $(complete 'echo 345:./'))
+$assertArray(new [String](), $(complete 'AAA=345\:'))
 
 var CWD = "$(pwd -P)"
 
@@ -212,5 +218,7 @@ if !$OSTYPE.startsWith("CYGWIN") {
 }
 $assertArray(new [String](), $(complete 'source \~root'))
 $assertArray(new [String](), $(complete 'source! \~root'))
+$assertArray(new [String](), $(complete 'source! :'))
+$assertArray(new [String](), $(complete 'source! /:'))
 
 true

@@ -111,8 +111,8 @@ TokenKind Lexer::nextToken(Token &token) {
       CMD_CHAR           = "\\" [^\000]     | [^ \t\r\n\\;='"`|&<>(){}$\000];
       CMD = CMD_START_CHAR CMD_CHAR*;
 
-      CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;'"`|&<>()$?*#\000];
-      CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;'"`|&<>()$?*\000];
+      CMD_ARG_START_CHAR = "\\" [^\r\n\000] | [^ \t\r\n\\;:'"`|&<>()$?*#\000];
+      CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\r\n\\;:'"`|&<>()$?*\000];
       CMD_ARG = CMD_ARG_START_CHAR CMD_ARG_CHAR*;
 
       ENV_ASSIGN = CMD "=";
@@ -266,6 +266,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> CMD_ARG            { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
       <CMD> "?"                { RET(GLOB_ANY); }
       <CMD> "*"                { RET(GLOB_ZERO_OR_MORE); }
+      <CMD> ":"                { RET(PATH_SEP); }
       <CMD> STRING_LITERAL     { UPDATE_LN(); RET(STRING_LITERAL); }
       <CMD> ESTRING_LITERAL    { UPDATE_LN(); RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }

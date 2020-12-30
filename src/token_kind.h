@@ -147,6 +147,7 @@
     TOKEN(APPLIED_NAME_WITH_FIELD            , "<$ Name.field>") \
     TOKEN(GLOB_ANY                           , "<glob ?>") \
     TOKEN(GLOB_ZERO_OR_MORE                  , "<glob *>") \
+    TOKEN(PATH_SEP                           , ":") \
     /* redir op */\
     TOKEN(REDIR_IN_2_FILE                    , "<") \
     TOKEN(REDIR_OUT_2_FILE                   , "1>") \
@@ -307,6 +308,7 @@
 
 #define EACH_LA_cmdArg(OP) \
     OP(CMD_ARG_PART) \
+    OP(PATH_SEP) \
     OP(GLOB_ANY) \
     OP(GLOB_ZERO_OR_MORE) \
     OP(STRING_LITERAL) \

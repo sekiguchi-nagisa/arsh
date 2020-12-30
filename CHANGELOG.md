@@ -39,7 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     ```
     IFS='AAA'
     ```
-
+  - if right hand side expression contains ':~', expand tilde
+    ```
+    PATH=${PATH}:~/bin   # equivalent to ${PATH}:/home/${USER}/bin
+    ```
 
 
 #### Builtin

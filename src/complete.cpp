@@ -654,6 +654,11 @@ void CodeCompletionHandler::addCmdArgOrModRequest(std::string &&value, CmdArgPar
         } else {
             setFlag(op, CodeCompOp::FILE);
         }
+    } else if(hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
+        if(tilde) {
+            setFlag(op, CodeCompOp::TILDE);
+        }
+        setFlag(op, CodeCompOp::FILE);
     }
     this->addCompRequest(op, std::move(value));
 }

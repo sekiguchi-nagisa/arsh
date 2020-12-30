@@ -907,6 +907,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
 
     switch(CUR_KIND()) {
     case TokenKind::CMD_ARG_PART:
+    case TokenKind::PATH_SEP:
         return this->parse_cmdArgPart(opt);
     case TokenKind::GLOB_ANY: {
         Token token = this->curToken;
@@ -933,7 +934,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
         if(this->inCompletionPoint()) {
             if(this->inVarNameCompletionPoint()) {
                 this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
-            } else if(HAS_SPACE() || !hasFlag(opt, CmdArgParseOpt::MODULE)) {
+            } else if(HAS_SPACE() || this->consumedKind == TokenKind::PATH_SEP
+                    || !hasFlag(opt, CmdArgParseOpt::MODULE)) {
                 bool tilde = this->lexer->startsWith(this->curToken, '~');
                 this->ccHandler->addCmdArgOrModRequest(this->lexer->toCmdArg(this->curToken), opt, tilde);
             }
@@ -945,8 +947,16 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
 std::unique_ptr<StringNode> Parser::parse_cmdArgPart(CmdArgParseOpt opt) {
     GUARD_DEEP_NESTING(guard);
 
-    Token token = TRY(this->expect(TokenKind::CMD_ARG_PART));
-    auto kind = hasFlag(opt, CmdArgParseOpt::FIRST) && this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
+    auto prevKind = this->consumedKind;
+    auto reqKind = CUR_KIND() == TokenKind::CMD_ARG_PART ? CUR_KIND() : TokenKind::PATH_SEP;
+    Token token = TRY(this->expect(reqKind));
+    auto kind = StringNode::STRING;
+    if(hasFlag(opt, CmdArgParseOpt::FIRST)
+            || (hasFlag(opt, CmdArgParseOpt::ASSIGN) && prevKind == TokenKind::PATH_SEP)) {
+        if(this->lexer->startsWith(token, '~')) {
+            kind = StringNode::TILDE;
+        }
+    }
     return std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind);
 }
 
@@ -1569,7 +1579,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
         auto prevToken = token;
         std::unique_ptr<CmdArgNode> valueNode;
         if(!HAS_SPACE() && !HAS_NL() && lookahead_cmdArg_LP(CUR_KIND())) {
-            valueNode = TRY(this->parse_cmdArg());
+            valueNode = TRY(this->parse_cmdArg(CmdArgParseOpt::ASSIGN));
             prevToken = valueNode->getToken();
         } else {
             valueNode = std::make_unique<CmdArgNode>(std::make_unique<StringNode>(""));

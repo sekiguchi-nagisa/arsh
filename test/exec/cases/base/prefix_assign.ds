@@ -26,13 +26,13 @@ export-env HOGE777 = 'abcdefg'
 export-env VVVV_90 = 'XYZW++'
 
 assert (HOGE777=\
-"$(echo 4444)" VVVV_90=9999= \
+~/"$(echo 4444)" VVVV_90=9999\\:~/\:~/= \
    abcd000= {
-    assert "$(env | grep ^HOGE777=)".split('=')[1] == '4444'
-    assert "$(env | grep ^VVVV_90=)".split('=')[1] == '9999'
+    assert "$(env | grep ^HOGE777=)".split('=')[1] == "$(echo ~/)4444"
+    assert "$(env | grep ^VVVV_90=)".split('=')[1] == "9999\:$(echo ~/):~/"
     assert "$(env | grep ^abcd000=)".split('=')[1] == ''
     $VVVV_90 + $HOGE777 + $abcd000
-}) == '9999=4444'
+}) == "9999\:$(echo ~/):~/=$(echo ~/)4444"
 
 assert $HOGE777 == 'abcdefg'
 assert $VVVV_90 == 'XYZW++'
@@ -92,10 +92,10 @@ assert !(env | grep ^ABCD=)
 {
     assert !(env | grep ^hfeu8993=)
     var hfeu8993 = ''
-    hfeu8993="$(echo echo!!)" \
+    hfeu8993=:~/"$(echo echo!!)" \
       ABCD='nothing'
     (34 + 34) # do nothing
-    assert $hfeu8993 == 'echo!!'
+    assert $hfeu8993 == ":$(echo ~)/echo!!"
     assert $ABCD == 'nothing'
     assert !(env | grep ^hfeu8993=)
     assert !(env | grep ^ABCD=)

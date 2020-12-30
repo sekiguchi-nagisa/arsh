@@ -363,7 +363,13 @@ private:
                         unsigned short localOffset = 0, unsigned short localSize = 0);
     void enterFinally(const Label &label);
     void enterMultiFinally();
-    void generateCmdArg(CmdArgNode &node);
+    unsigned int concatCmdArgSegment(CmdArgNode &node, unsigned int index);
+
+    void generateCmdArg(CmdArgNode &node) {
+        unsigned int size = node.getSegmentNodes().size();
+        for(unsigned int index = 0; index < size; index = this->concatCmdArgSegment(node, index));
+    }
+
     void generatePipeline(PipelineNode &node, ForkKind forkKind);
     void emitPipelineIns(const std::vector<Label> &labels, bool lastPipe, ForkKind forkKind);
 
