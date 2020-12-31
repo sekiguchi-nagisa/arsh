@@ -1237,9 +1237,6 @@ public:
     unsigned int getGlobPathSize() const {
         return this->globPathSize;
     }
-
-private:
-    void addSegmentNodeImpl(std::unique_ptr<Node> &&node);
 };
 
 class RedirNode : public WithRtti<Node, NodeKind::Redir> {

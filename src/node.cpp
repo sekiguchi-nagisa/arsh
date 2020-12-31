@@ -402,27 +402,6 @@ void BinaryOpNode::dump(NodeDumper &dumper) const {
 // ########################
 
 void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
-    if(isa<CmdArgNode>(*node)) {
-        for(auto &e : cast<CmdArgNode>(*node).refSegmentNodes()) {
-            this->addSegmentNodeImpl(std::move(e));
-        }
-    } else {
-        this->addSegmentNodeImpl(std::move(node));
-    }
-}
-
-void CmdArgNode::dump(NodeDumper &dumper) const {
-    DUMP(globPathSize);
-    DUMP(segmentNodes);
-}
-
-bool CmdArgNode::isIgnorableEmptyString() const {
-    return this->segmentNodes.size() > 1 ||
-            (!isa<StringNode>(*this->segmentNodes.back()) &&
-                    !isa<StringExprNode>(*this->segmentNodes.back()));
-}
-
-void CmdArgNode::addSegmentNodeImpl(std::unique_ptr<Node> &&node) {
     if(isa<WildCardNode>(*node)) {
         if(this->globPathSize == 0 && !this->segmentNodes.empty()) {
             this->globPathSize++;
@@ -434,6 +413,17 @@ void CmdArgNode::addSegmentNodeImpl(std::unique_ptr<Node> &&node) {
     }
     this->updateToken(node->getToken());
     this->segmentNodes.push_back(std::move(node));
+}
+
+void CmdArgNode::dump(NodeDumper &dumper) const {
+    DUMP(globPathSize);
+    DUMP(segmentNodes);
+}
+
+bool CmdArgNode::isIgnorableEmptyString() const {
+    return this->segmentNodes.size() > 1 ||
+            (!isa<StringNode>(*this->segmentNodes.back()) &&
+                    !isa<StringExprNode>(*this->segmentNodes.back()));
 }
 
 // #######################
