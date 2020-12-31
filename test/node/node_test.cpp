@@ -768,6 +768,127 @@ nodes:
       maxVarSize: 0
     asDoWhile: false
 )"},
+
+        {DumpOp::typed, R"(f() {})", 0, 1, R"(
+nodes:
+  - nodeKind: UserDefinedCmd
+    token:
+      pos: 0
+      size: 6
+    type: Void
+    cmdName: "f"
+    udcIndex: 54
+    blockNode:
+      nodeKind: Block
+      token:
+        pos: 4
+        size: 2
+      type: Nothing
+      nodes:
+        - nodeKind: Jump
+          token:
+            pos: 0
+            size: 1
+          type: Nothing
+          opKind: "RETURN"
+          exprNode:
+            nodeKind: Var
+            token:
+              pos: 0
+              size: 1
+            type: Int
+            varName: "?"
+            index: 10
+            attribute: "GLOBAL"
+          leavingBlock: false
+      baseIndex: 0
+      varSize: 14
+      maxVarSize: 14
+    maxVarNum: 14
+)"},
+
+        {DumpOp::untyped, R"(IFS=1234)", 0, 0, R"(
+nodes:
+  - nodeKind: PrefixAssign
+    token:
+      pos: 0
+      size: 8
+    type:
+    declNodes:
+      - nodeKind: Assign
+        token:
+          pos: 0
+          size: 8
+        type:
+        leftNode:
+          nodeKind: Var
+          token:
+            pos: 0
+            size: 3
+          type:
+          varName: "IFS"
+          index: 0
+          attribute: ""
+        rightNode:
+          nodeKind: CmdArg
+          token:
+            pos: 4
+            size: 4
+          type:
+          globPathSize: 0
+          segmentNodes:
+            - nodeKind: String
+              token:
+                pos: 4
+                size: 4
+              type:
+              kind: "STRING"
+              value: "1234"
+        attributeSet: ""
+    exprNode: null
+    baseIndex: 0
+)"},
+
+        {DumpOp::typed, R"(echo *)", 0, 0, R"(
+nodes:
+  - nodeKind: TypeOp
+    token:
+      pos: 0
+      size: 6
+    type: Void
+    exprNode:
+      nodeKind: Cmd
+      token:
+        pos: 0
+        size: 6
+      type: Boolean
+      nameNode:
+        nodeKind: String
+        token:
+          pos: 0
+          size: 4
+        type: String
+        kind: "STRING"
+        value: "echo"
+      argNodes:
+        - nodeKind: CmdArg
+          token:
+            pos: 5
+            size: 1
+          type: [String]
+          globPathSize: 1
+          segmentNodes:
+            - nodeKind: WildCard
+              token:
+                pos: 5
+                size: 1
+              type: String
+              meta: "*"
+      redirCount: 0
+      needFork: true
+    targetTypeToken: null
+    opKind: "TO_VOID"
+)"},
 };
 
 
