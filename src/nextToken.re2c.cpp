@@ -154,8 +154,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "let"             { MODE(NAME); RET_OR_COMP(LET); }
       <STMT> "new"             { MODE(EXPR); RET_OR_COMP(NEW); }
       <STMT> "return"          { RET_OR_COMP(RETURN); }
-      <STMT> "source"          { MODE(EXPR); PUSH_MODE(CMD); RET_OR_COMP(SOURCE); }
-      <STMT> "source!"         { MODE(EXPR); PUSH_MODE(CMD); RET_OR_COMP(SOURCE_OPT); }
+      <STMT> "source"          { MODE(CMD); RET_OR_COMP(SOURCE); }
+      <STMT> "source!"         { MODE(CMD); RET_OR_COMP(SOURCE_OPT); }
       <STMT> "try"             { RET_OR_COMP(TRY); }
       <STMT> "throw"           { RET_OR_COMP(THROW); }
       <STMT> "typedef"         { MODE(NAME); RET_OR_COMP(TYPEDEF); }
@@ -189,8 +189,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT,EXPR> "{"          { MODE(EXPR); PUSH_MODE(STMT); RET(LBC); }
       <STMT,EXPR> "}"          { POP_MODE(); RET(RBC); }
 
-      <STMT> CMD               { PUSH_MODE(CMD); UPDATE_LN(); RET_OR_COMP(COMMAND); }
-      <STMT> ENV_ASSIGN        { PUSH_MODE(CMD); RET(ENV_ASSIGN); }
+      <STMT> CMD               { MODE(CMD); UPDATE_LN(); RET_OR_COMP(COMMAND); }
+      <STMT> ENV_ASSIGN        { MODE(CMD); RET(ENV_ASSIGN); }
 
       <EXPR> ":"               { RET(COLON); }
       <EXPR> ","               { MODE(STMT); RET(COMMA); }
@@ -235,7 +235,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "as"              { RET(AS); }
       <EXPR> "is"              { RET(IS); }
       <EXPR> "in"              { MODE(STMT); RET(IN); }
-      <EXPR> "with"            { PUSH_MODE(CMD); RET(WITH); }
+      <EXPR> "with"            { MODE(CMD); RET(WITH); }
       <EXPR> "&"               { MODE(STMT); RET(BACKGROUND); }
       <EXPR> ("&!" | "&|")     { MODE(STMT); RET(DISOWN_BG); }
 
@@ -273,8 +273,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> APPLIED_NAME "["   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_BRACKET); }
       <CMD> SPECIAL_NAME "["   { PUSH_MODE(STMT); RET(SPECIAL_NAME_WITH_BRACKET); }
       <CMD> APPLIED_NAME "("   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_PAREN); }
-      <CMD> ")"                { POP_MODE(); POP_MODE(); RET(RP); }
-      <CMD> "("                { PUSH_MODE(CMD); RET(LP); }
+      <CMD> ")"                { POP_MODE(); RET(RP); }
+      <CMD> "("                { MODE(EXPR); PUSH_MODE(STMT); RET(LP); }
 
       <CMD> "<"                { RET(REDIR_IN_2_FILE); }
       <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
@@ -289,13 +289,13 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> ">("               { PUSH_MODE(STMT); RET(START_IN_SUB); }
       <CMD> "<("               { PUSH_MODE(STMT); RET(START_OUT_SUB); }
 
-      <CMD> "|"                { POP_MODE(); MODE(STMT); RET(PIPE); }
-      <CMD> "&"                { POP_MODE(); MODE(STMT); RET(BACKGROUND); }
-      <CMD> ("&!" | "&|")      { POP_MODE(); MODE(STMT); RET(DISOWN_BG); }
-      <CMD> "||"               { POP_MODE(); MODE(STMT); RET(COND_OR); }
-      <CMD> "&&"               { POP_MODE(); MODE(STMT); RET(COND_AND); }
-      <CMD> LINE_END           { POP_MODE(); MODE(STMT); RET(LINE_END); }
-      <CMD> NEW_LINE           { POP_MODE(); MODE(STMT); UPDATE_LN(); FIND_NEW_LINE(); }
+      <CMD> "|"                { MODE(STMT); RET(PIPE); }
+      <CMD> "&"                { MODE(STMT); RET(BACKGROUND); }
+      <CMD> ("&!" | "&|")      { MODE(STMT); RET(DISOWN_BG); }
+      <CMD> "||"               { MODE(STMT); RET(COND_OR); }
+      <CMD> "&&"               { MODE(STMT); RET(COND_AND); }
+      <CMD> LINE_END           { MODE(STMT); RET(LINE_END); }
+      <CMD> NEW_LINE           { MODE(STMT); UPDATE_LN(); FIND_NEW_LINE(); }
 
       <TYPE> "Func"            { RET_OR_COMP(FUNC); }
       <TYPE> "typeof"          { RET_OR_COMP(TYPEOF); }

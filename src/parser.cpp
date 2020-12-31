@@ -79,9 +79,6 @@ void Parser::restoreLexerState(Token prevToken) {
 void Parser::changeLexerModeToSTMT() {
     if(this->lexer->getPrevMode() != yycSTMT) {
         if(CUR_KIND() != TokenKind::LP && CUR_KIND() != TokenKind::LB && CUR_KIND() != TokenKind::LBC) {
-            if(CUR_KIND() == TokenKind::WITH) {
-                this->lexer->popLexerMode();
-            }
             this->refetch(yycSTMT);
         }
     }
@@ -505,7 +502,6 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
         auto pathNode = TRY(this->parse_cmdArg(CmdArgParseOpt::MODULE));
         auto node = std::make_unique<SourceListNode>(startPos, std::move(pathNode), optional);
         if(!optional && CUR_KIND() == TokenKind::CMD_ARG_PART && this->lexer->toStrRef(this->curToken) == "as") {
-            this->lexer->popLexerMode();
             this->expectAndChangeMode(TokenKind::CMD_ARG_PART, yycNAME); // always success
             Token token = TRY(this->expectAndChangeMode(TokenKind::IDENTIFIER, yycSTMT));
             node->setName(token, this->lexer->toName(token));
@@ -1598,10 +1594,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
         auto declNode = std::make_unique<AssignNode>(std::move(nameNode), std::move(valueNode));
         envDeclNodes.push_back(std::move(declNode));
 
-        if(CUR_KIND() == TokenKind::LP && this->lexer->getLexerMode() == yycCMD) {
-            this->lexer->popLexerMode();
-        }
-        this->restoreLexerState(prevToken);
+        this->changeLexerModeToSTMT();
     } while(CUR_KIND() == TokenKind::ENV_ASSIGN);
 
     std::unique_ptr<Node> exprNode;
