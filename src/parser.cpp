@@ -1566,18 +1566,6 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
     return ForkNode::newProcSubstitution(pos, std::move(exprNode), token, inPipe);
 }
 
-/**
-        auto node = this->parse_statement();
-        if(this->incompleteNode) {
-            blockNode->addNode(std::move(this->incompleteNode));
-            this->incompleteNode = std::move(blockNode);
-            return nullptr;
-        } else if(this->hasError()) {
-            return nullptr;
-        }
-        blockNode->addNode(std::move(node));
- */
-
 std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
     GUARD_DEEP_NESTING(guard);
 
