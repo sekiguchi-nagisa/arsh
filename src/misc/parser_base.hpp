@@ -21,7 +21,7 @@
 
 #include "lexer_base.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 constexpr const char *TOKEN_MISMATCHED = "TokenMismatched";
 constexpr const char *NO_VIABLE_ALTER  = "NoViableAlter";
