@@ -225,7 +225,7 @@ inline bool operator>=(StringRef left, StringRef right) {
     return left.compare(right) >= 0;
 }
 
-inline std::string &operator+=(std::string &str, ydsh::StringRef ref) {
+inline std::string &operator+=(std::string &str, StringRef ref) {
     return str.append(ref.data(), ref.size());
 }
 
