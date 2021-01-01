@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_RTTI_HPP
-#define YDSH_MISC_RTTI_HPP
+#ifndef MISC_LIB_RTTI_HPP
+#define MISC_LIB_RTTI_HPP
 
 #include <cassert>
 
 #include "detect.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 /**
  * for LLVM-style RTTI
@@ -77,6 +77,6 @@ inline const To *checked_cast(const From *obj) {
     return isa<To>(obj) ? cast<To>(obj) : nullptr;
 }
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_MISC_RTTI_HPP
+#endif //MISC_LIB_RTTI_HPP

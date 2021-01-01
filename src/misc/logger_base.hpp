@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_LOGGER_BASE_HPP
-#define YDSH_LOGGER_BASE_HPP
+#ifndef MISC_LIB_LOGGER_BASE_HPP
+#define MISC_LIB_LOGGER_BASE_HPP
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -30,7 +30,7 @@
 #include "util.hpp"
 #include "fatal.h"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 enum class LogLevel : unsigned int {
     INFO, WARNING, ERROR, FATAL, NONE
@@ -228,7 +228,7 @@ public:
     }
 };
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
 
-#endif //YDSH_LOGGER_BASE_HPP
+#endif //MISC_LIB_LOGGER_BASE_HPP

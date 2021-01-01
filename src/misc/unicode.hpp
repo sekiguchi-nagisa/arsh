@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_UNICODE_HPP
-#define YDSH_MISC_UNICODE_HPP
+#ifndef MISC_LIB_UNICODE_HPP
+#define MISC_LIB_UNICODE_HPP
 
 #include <algorithm>
 #include <clocale>
@@ -23,7 +23,7 @@
 
 #include "util.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 namespace __detail_unicode {
 
@@ -405,6 +405,6 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
 
 using UnicodeUtil = __detail_unicode::UnicodeUtil<true>;
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_MISC_UNICODE_HPP
+#endif //MISC_LIB_UNICODE_HPP

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_FILES_H
-#define YDSH_MISC_FILES_H
+#ifndef MISC_LIB_FILES_H
+#define MISC_LIB_FILES_H
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -34,7 +34,7 @@
 #include "resource.hpp"
 #include "flag_util.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 /**
  * if cannot open file, return always 0.
@@ -275,6 +275,6 @@ public:
 };
 
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_MISC_FILES_H
+#endif //MISC_LIB_FILES_H

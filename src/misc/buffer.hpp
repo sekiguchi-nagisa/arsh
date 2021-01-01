@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_BUFFER_HPP
-#define YDSH_MISC_BUFFER_HPP
+#ifndef MISC_LIB_BUFFER_HPP
+#define MISC_LIB_BUFFER_HPP
 
 #include <cstring>
 #include <type_traits>
@@ -25,7 +25,7 @@
 #include "noncopyable.h"
 #include "fatal.h"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 /**
  * only available POD type.
@@ -484,7 +484,7 @@ inline void write64(unsigned char *ptr, uint64_t b) noexcept {
     writeN<8>(ptr, b);
 }
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
 
-#endif //YDSH_MISC_BUFFER_HPP
+#endif //MISC_LIB_BUFFER_HPP

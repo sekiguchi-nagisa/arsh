@@ -15,19 +15,18 @@
  */
 
 
-#ifndef YDSH_MISC_SIZE_HPP
-#define YDSH_MISC_SIZE_HPP
+#ifndef MISC_LIB_UTIL_HPP
+#define MISC_LIB_UTIL_HPP
 
 #include <cstddef>
-#include <memory>
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 template <typename T, unsigned int N>
 constexpr unsigned int arraySize(const T (&)[N]) noexcept {
     return N;
 }
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_MISC_SIZE_HPP
+#endif //MISC_LIB_UTIL_HPP

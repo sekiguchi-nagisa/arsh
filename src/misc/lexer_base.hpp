@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_LEXER_BASE_HPP
-#define YDSH_MISC_LEXER_BASE_HPP
+#ifndef MISC_LIB_LEXER_BASE_HPP
+#define MISC_LIB_LEXER_BASE_HPP
 
 #include <cstring>
 #include <cassert>
@@ -30,7 +30,7 @@
 #include "resource.hpp"
 #include "string_ref.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 class LineNumTable {
 private:
@@ -445,6 +445,6 @@ void LexerBase<T>::updateNewline(unsigned int pos) {
 
 using LexerBase = __detail::LexerBase<true>;
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_LEXER_BASE_HPP
+#endif //MISC_LIB_LEXER_BASE_HPP

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_FLAG_UTIL_H
-#define YDSH_MISC_FLAG_UTIL_H
+#ifndef MISC_LIB_FLAG_UTIL_H
+#define MISC_LIB_FLAG_UTIL_H
 
-#include "misc/enum_util.hpp"
+#include "enum_util.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 using flag8_set_t = unsigned char;
 using flag8_t = unsigned char;
@@ -45,7 +45,7 @@ inline constexpr bool hasFlag(T set, T flag) {
     return (set & flag) == flag;
 }
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
 
-#endif //YDSH_MISC_FLAG_UTIL_H
+#endif //MISC_LIB_FLAG_UTIL_H

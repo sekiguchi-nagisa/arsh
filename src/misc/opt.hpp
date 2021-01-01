@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_OPT_HPP
-#define YDSH_OPT_HPP
+#ifndef MISC_LIB_OPT_HPP
+#define MISC_LIB_OPT_HPP
 
 #include <string>
 #include <vector>
@@ -26,7 +26,8 @@
 #include "flag_util.hpp"
 #include "string_ref.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
+
 namespace opt {
 
 enum OptionFlag : unsigned char {
@@ -375,6 +376,7 @@ int GetOptState::operator()(Iter &begin, Iter end, const char *optStr) {
 }
 
 } // namespace opt
-} // namespace ydsh
 
-#endif //YDSH_OPT_HPP
+END_MISC_LIB_NAMESPACE_DECL
+
+#endif //MISC_LIB_OPT_HPP

@@ -55,6 +55,8 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+add_definitions(-DBEGIN_MISC_LIB_NAMESPACE_DECL=namespace\ ydsh\ {)
+add_definitions(-DEND_MISC_LIB_NAMESPACE_DECL=})
 add_definitions(-D_GNU_SOURCE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Werror -Wall -Wextra")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector-strong")

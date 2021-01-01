@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_STRING_REF_HPP
-#define YDSH_MISC_STRING_REF_HPP
+#ifndef MISC_LIB_STRING_REF_HPP
+#define MISC_LIB_STRING_REF_HPP
 
 #include <string>
 #include <cstring>
@@ -23,7 +23,7 @@
 
 #include "hash.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 /**
  * similar to std::string_view/llvm::StringRef
@@ -229,7 +229,7 @@ inline std::string &operator+=(std::string &str, ydsh::StringRef ref) {
     return str.append(ref.data(), ref.size());
 }
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
 namespace std {
 
@@ -242,4 +242,4 @@ struct hash<ydsh::StringRef> {
 
 } // namespace std
 
-#endif //YDSH_MISC_STRING_REF_HPP
+#endif //MISC_LIB_STRING_REF_HPP

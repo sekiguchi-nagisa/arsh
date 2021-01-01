@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_GLOB_HPP
-#define YDSH_MISC_GLOB_HPP
+#ifndef MISC_LIB_GLOB_HPP
+#define MISC_LIB_GLOB_HPP
 
 #include <dirent.h>
 
@@ -25,7 +25,7 @@
 #include "flag_util.hpp"
 #include "resource.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 enum class GlobMatchOption {
     TILDE          = 1u << 0u,  // apply tilde expansion before globbing
@@ -411,6 +411,6 @@ inline auto createGlobMatcher(const char *dir, Iter begin, Iter end, GlobMatchOp
     return GlobMatcher<Meta, Iter>(dir, begin, end, option);
 }
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_MISC_GLOB_HPP
+#endif //MISC_LIB_GLOB_HPP

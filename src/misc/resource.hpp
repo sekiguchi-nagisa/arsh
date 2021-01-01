@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_RESOURCE_HPP
-#define YDSH_MISC_RESOURCE_HPP
+#ifndef MISC_LIB_RESOURCE_HPP
+#define MISC_LIB_RESOURCE_HPP
 
 #include <cstdio>
 #include <cerrno>
@@ -25,7 +25,7 @@
 #include "noncopyable.h"
 #include "util.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 template <typename T> struct RefCountOp;
 
@@ -276,6 +276,6 @@ inline auto finally(Func &&func) {
     return Finally<Func>(std::forward<Func>(func));
 }
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_MISC_RESOURCE_HPP
+#endif //MISC_LIB_RESOURCE_HPP

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_FATAL_H
-#define YDSH_MISC_FATAL_H
+#ifndef MISC_LIB_FATAL_H
+#define MISC_LIB_FATAL_H
 
 #include <cstdio>
 #include <cstdlib>
@@ -36,4 +36,4 @@
 #define fatal_perror(fmt, ...) fatal(fmt ": %s\n", ## __VA_ARGS__, strerror(errno))
 
 
-#endif //YDSH_MISC_FATAL_H
+#endif //MISC_LIB_FATAL_H

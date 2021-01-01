@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_NUM_UTIL_HPP
-#define YDSH_MISC_NUM_UTIL_HPP
+#ifndef MISC_LIB_NUM_UTIL_HPP
+#define MISC_LIB_NUM_UTIL_HPP
 
 #include "detect.hpp"
 #include <limits>
@@ -27,7 +27,7 @@
 #include <cstdlib>
 #include <cstring>
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 // in clang 3.6/3.7, generic __builtin_mul_overflow and __builtin_add_overflow is not defined
 
@@ -391,6 +391,6 @@ inline unsigned int hexToNum(char ch) {
     return 0;
 }
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_MISC_NUM_UTIL_HPP
+#endif //MISC_LIB_NUM_UTIL_HPP

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_ENUM_UTIL_HPP
-#define YDSH_MISC_ENUM_UTIL_HPP
+#ifndef MISC_LIB_ENUM_UTIL_HPP
+#define MISC_LIB_ENUM_UTIL_HPP
 
 #include "detect.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 template <typename T>
 struct allow_enum_bitop : std::false_type {};
@@ -82,6 +82,6 @@ constexpr T &operator^=(T &x, T y) {
     return x;
 }
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_MISC_ENUM_UTIL_HPP
+#endif //MISC_LIB_ENUM_UTIL_HPP

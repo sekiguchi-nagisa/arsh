@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOKEN_HPP
-#define YDSH_TOKEN_HPP
+#ifndef MISC_LIB_TOKEN_HPP
+#define MISC_LIB_TOKEN_HPP
 
 #include <cassert>
 #include <string>
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 struct Token {
     unsigned int pos;
@@ -71,6 +71,6 @@ inline std::string toString(Token token) {
     return token.str();
 }
 
-} // namespace
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_TOKEN_HPP
+#endif //MISC_LIB_TOKEN_HPP

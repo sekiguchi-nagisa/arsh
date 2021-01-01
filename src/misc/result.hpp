@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_RESULT_HPP
-#define YDSH_RESULT_HPP
+#ifndef MISC_LIB_RESULT_HPP
+#define MISC_LIB_RESULT_HPP
 
 #include <type_traits>
 #include <cassert>
 
 #include "noncopyable.h"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 template <typename T>
 struct TypeHolder {
@@ -460,6 +460,6 @@ public:
     }
 };
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_RESULT_HPP
+#endif //MISC_LIB_RESULT_HPP

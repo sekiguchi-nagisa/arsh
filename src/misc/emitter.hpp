@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_EMITTER_HPP
-#define YDSH_MISC_EMITTER_HPP
+#ifndef MISC_LIB_EMITTER_HPP
+#define MISC_LIB_EMITTER_HPP
 
 #include <unordered_map>
 #include <vector>
@@ -23,7 +23,7 @@
 #include "resource.hpp"
 #include "buffer.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 class LabelImpl : public RefCount<LabelImpl> {
 private:
@@ -208,7 +208,7 @@ struct CodeEmitter {
     }
 };
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
 
-#endif //YDSH_MISC_EMITTER_HPP
+#endif //MISC_LIB_EMITTER_HPP

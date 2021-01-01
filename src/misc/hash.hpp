@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_MISC_HASH_HPP
-#define YDSH_MISC_HASH_HPP
+#ifndef MISC_LIB_HASH_HPP
+#define MISC_LIB_HASH_HPP
 
 #include <cstring>
 #include <unordered_map>
 #include <unordered_set>
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 struct FNVHash32 {
     using type = uint32_t;
@@ -87,7 +87,7 @@ using CStringHashMap = std::unordered_map<const char *, T, CStringHash, CStringC
 
 using CStringHashSet = std::unordered_set<const char *, CStringHash, CStringComparator>;
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
 
-#endif //YDSH_MISC_HASH_HPP
+#endif //MISC_LIB_HASH_HPP

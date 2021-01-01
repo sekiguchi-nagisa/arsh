@@ -15,14 +15,14 @@
  */
 
 
-#ifndef YDSH_MISC_DETECT_HPP
-#define YDSH_MISC_DETECT_HPP
+#ifndef MISC_LIB_DETECT_HPP
+#define MISC_LIB_DETECT_HPP
 
 #include <type_traits>
 
-#include "misc/noncopyable.h"
+#include "noncopyable.h"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 template <bool B>
 using enable_when = std::enable_if_t<B, std::nullptr_t>;
@@ -65,6 +65,6 @@ constexpr auto is_detected_v = __detail::detector<void, OP, Arg...>::value;
 template <template<typename ...> class OP, typename ...Arg>
 using detected_t = typename __detail::detector<void, OP, Arg...>::type;
 
-} // namespace ydsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif //YDSH_MISC_DETECT_HPP
+#endif //MISC_LIB_DETECT_HPP
