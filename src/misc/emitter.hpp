@@ -89,23 +89,23 @@ struct CodeEmitter {
     CodeBuffer codeBuffer;
 
     void emit8(unsigned int index, unsigned char b) noexcept {
-        ydsh::write8(this->codeBuffer.begin() + index, b);
+        write8(this->codeBuffer.begin() + index, b);
     }
 
     void emit16(unsigned int index, unsigned short b) noexcept {
-        ydsh::write16(this->codeBuffer.begin() + index, b);
+        write16(this->codeBuffer.begin() + index, b);
     }
 
     void emit24(unsigned int index, unsigned int b) noexcept {
-        ydsh::write24(this->codeBuffer.begin() + index, b);
+        write24(this->codeBuffer.begin() + index, b);
     }
 
     void emit32(unsigned int index, unsigned int b) noexcept {
-        ydsh::write32(this->codeBuffer.begin() + index, b);
+        write32(this->codeBuffer.begin() + index, b);
     }
 
     void emit64(unsigned int index, uint64_t b) noexcept {
-        ydsh::write64(this->codeBuffer.begin() + index, b);
+        write64(this->codeBuffer.begin() + index, b);
     }
 
     void emit(unsigned int index, uint64_t b) noexcept {

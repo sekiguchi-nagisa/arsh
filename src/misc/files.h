@@ -171,7 +171,7 @@ inline void removeDirWithRecursively(const char *currentDir) {
         fullpath += '/';
         fullpath += entry->d_name;
         const char *name = fullpath.c_str();
-        if(S_ISDIR(ydsh::getStMode(name))) {
+        if(S_ISDIR(getStMode(name))) {
             removeDirWithRecursively(name);
         } else if(remove(name) < 0) {
             fatal_perror("cannot remove: %s", name);
