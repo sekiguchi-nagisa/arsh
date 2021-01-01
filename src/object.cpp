@@ -26,19 +26,19 @@ namespace ydsh {
 
 void DSObject::destroy() {
     switch(this->getKind()) {
-#define GEN_CASE(K) case K: delete static_cast<K ## Object*>(this); break;
+#define GEN_CASE(K) case ObjectKind::K: delete static_cast<K ## Object*>(this); break;
     EACH_OBJECT_KIND(GEN_CASE)
 #undef GEN_CASE
     }
 }
 
-const char *toString(DSObject::ObjectKind kind) {
+const char *toString(ObjectKind kind) {
     const char *table[] = {
 #define GEN_STR(E) #E,
             EACH_OBJECT_KIND(GEN_STR)
 #undef GEN_STR
     };
-    return table[kind];
+    return table[static_cast<unsigned int>(kind)];
 }
 
 // #####################
@@ -104,22 +104,22 @@ std::string DSValue::toString() const {
     }
 
     switch(this->get()->getKind()) {
-    case DSObject::UnixFd: {
+    case ObjectKind::UnixFd: {
         std::string str = "/dev/fd/";
         str += std::to_string(typeAs<UnixFdObject>(*this).getValue());
         return str;
     }
-    case DSObject::Regex:
+    case ObjectKind::Regex:
         return typeAs<RegexObject>(*this).getStr();
-    case DSObject::Array:
+    case ObjectKind::Array:
         return typeAs<ArrayObject>(*this).toString();
-    case DSObject::Map:
+    case ObjectKind::Map:
         return typeAs<MapObject>(*this).toString();
-    case DSObject::Func:
+    case ObjectKind::Func:
         return typeAs<FuncObject>(*this).toString();
-    case DSObject::JobImpl: {
+    case ObjectKind::Job: {
         std::string str = "%";
-        str += std::to_string(typeAs<JobImplObject>(*this).getJobID());
+        str += std::to_string(typeAs<JobObject>(*this).getJobID());
         return str;
     }
     default:
@@ -133,18 +133,18 @@ std::string DSValue::toString() const {
 bool DSValue::opStr(DSState &state) const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
-        case DSObject::Array:
+        case ObjectKind::Array:
             return typeAs<ArrayObject>(*this).opStr(state);
-        case DSObject::Map:
+        case ObjectKind::Map:
             return typeAs<MapObject>(*this).opStr(state);
-        case DSObject::Base: {
+        case ObjectKind::Base: {
             auto &type = state.typePool.get(this->getTypeID());
             if(state.typePool.isTupleType(type)) {
                 return typeAs<BaseObject>(*this).opStrAsTuple(state);
             }
             break;
         }
-        case DSObject::Error:
+        case ObjectKind::Error:
             return typeAs<ErrorObject>(*this).opStr(state);
         default:
             break;
@@ -157,9 +157,9 @@ bool DSValue::opStr(DSState &state) const {
 bool DSValue::opInterp(DSState &state) const {
     if(this->isObject()) {
         switch(this->get()->getKind()) {
-        case DSObject::Array:
+        case ObjectKind::Array:
             return typeAs<ArrayObject>(*this).opInterp(state);
-        case DSObject::Base: {
+        case ObjectKind::Base: {
             auto &type = state.typePool.get(this->getTypeID());
             if(state.typePool.isTupleType(type)) {
                 return typeAs<BaseObject>(*this).opInterpAsTuple(state);

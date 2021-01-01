@@ -49,22 +49,21 @@ class DSValue;
     OP(Error) \
     OP(Func) \
     OP(EnvCtx) \
-    OP(JobImpl) \
+    OP(Job) \
     OP(Pipeline) \
     OP(Redir)
 
-class DSObject {
-public:
-    /**
-     * for LLVM-style RTTI
-     * see. https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
-     */
-    enum ObjectKind : unsigned char {
+/**
+ * for LLVM-style RTTI
+ * see. https://llvm.org/docs/HowToSetUpLLVMStyleRTTI.html
+ */
+enum class ObjectKind : unsigned char {
 #define GEN_ENUM(K) K,
-        EACH_OBJECT_KIND(GEN_ENUM)
+    EACH_OBJECT_KIND(GEN_ENUM)
 #undef GEN_ENUM
-    };
+};
 
+class DSObject {
 protected:
     unsigned int refCount{0};
 
@@ -78,7 +77,8 @@ protected:
 
     NON_COPYABLE(DSObject);
 
-    DSObject(ObjectKind kind, unsigned int typeID) : tag(typeID << 8 | kind) {}
+    DSObject(ObjectKind kind, unsigned int typeID) :
+            tag(typeID << 8 | static_cast<unsigned char>(kind)) {}
 
     ~DSObject() = default;
 
@@ -99,9 +99,9 @@ private:
     void destroy();
 };
 
-const char *toString(DSObject::ObjectKind kind);
+const char *toString(ObjectKind kind);
 
-template <DSObject::ObjectKind K>
+template <ObjectKind K>
 struct ObjectWithRtti : public DSObject {
 protected:
     static_assert(sizeof(DSObject) == 8, "");
@@ -118,7 +118,7 @@ public:
     }
 };
 
-class UnixFdObject : public ObjectWithRtti<DSObject::UnixFd> {
+class UnixFdObject : public ObjectWithRtti<ObjectKind::UnixFd> {
 private:
     int fd;
 
@@ -149,7 +149,7 @@ public:
     }
 };
 
-class StringObject : public ObjectWithRtti<DSObject::String> {
+class StringObject : public ObjectWithRtti<ObjectKind::String> {
 private:
     std::string value;
 
@@ -425,7 +425,7 @@ public:
 
     bool hasStrRef() const {
         return isSmallStr(this->kind()) ||
-            (this->isObject() && this->get()->getKind() == DSObject::String);
+            (this->isObject() && this->get()->getKind() == ObjectKind::String);
     }
 
     unsigned int asNum() const {
@@ -640,7 +640,7 @@ inline DSValue exitStatusToBool(int64_t s) {
     return DSValue::createBool(s == 0);
 }
 
-class RegexObject : public ObjectWithRtti<DSObject::Regex> {
+class RegexObject : public ObjectWithRtti<ObjectKind::Regex> {
 private:
     std::string str; // for string representation
     PCRE re;
@@ -685,7 +685,7 @@ private:
     }
 };
 
-class ArrayObject : public ObjectWithRtti<DSObject::Array> {
+class ArrayObject : public ObjectWithRtti<ObjectKind::Array> {
 private:
     std::vector<DSValue> values;
 
@@ -757,7 +757,7 @@ using HashMap = std::unordered_map<DSValue, DSValue, GenHash, KeyCompare>;
 
 class MapIterObject;
 
-class MapObject : public ObjectWithRtti<DSObject::Map> {
+class MapObject : public ObjectWithRtti<ObjectKind::Map> {
 private:
     friend class MapIterObject;
 
@@ -830,7 +830,7 @@ public:
     }
 };
 
-class MapIterObject : public ObjectWithRtti<DSObject::MapIter> {
+class MapIterObject : public ObjectWithRtti<ObjectKind::MapIter> {
 private:
     DSValue obj;
     HashMap::const_iterator iter;
@@ -852,7 +852,7 @@ public:
     DSValue next(TypePool &pool);
 };
 
-class BaseObject : public ObjectWithRtti<DSObject::Base> {
+class BaseObject : public ObjectWithRtti<ObjectKind::Base> {
 private:
     unsigned int fieldSize;
     DSValueBase fields[];
@@ -955,7 +955,7 @@ inline const char *getOccurredSourceName(const std::vector<StackTraceElement> &e
     return elements.empty() ? "" : elements.front().getSourceName().c_str();
 }
 
-class ErrorObject : public ObjectWithRtti<DSObject::Error> {
+class ErrorObject : public ObjectWithRtti<ObjectKind::Error> {
 private:
     DSValue message;
     DSValue name;
@@ -1212,7 +1212,7 @@ public:
     }
 };
 
-class FuncObject : public ObjectWithRtti<DSObject::Func> {
+class FuncObject : public ObjectWithRtti<ObjectKind::Func> {
 private:
     CompiledCode code;
 
@@ -1227,7 +1227,7 @@ public:
     std::string toString() const;
 };
 
-class EnvCtxObject : public ObjectWithRtti<DSObject::EnvCtx> {
+class EnvCtxObject : public ObjectWithRtti<ObjectKind::EnvCtx> {
 private:
     DSState &state;
 

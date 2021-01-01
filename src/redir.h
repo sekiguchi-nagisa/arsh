@@ -185,7 +185,7 @@ inline void flushStdFD() {
 /**
  * for pipeline
  */
-class PipelineObject : public ObjectWithRtti<DSObject::Pipeline> {
+class PipelineObject : public ObjectWithRtti<ObjectKind::Pipeline> {
 private:
     DSState &state;
     Job entry;
@@ -202,7 +202,7 @@ public:
 /**
  * for io redirection
  */
-class RedirObject : public ObjectWithRtti<DSObject::Redir> {
+class RedirObject : public ObjectWithRtti<ObjectKind::Redir> {
 private:
     unsigned int backupFDset{0};   // if corresponding bit is set, backup old fd
 

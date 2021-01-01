@@ -192,7 +192,7 @@ int Proc::send(int sigNum) const {
 // ##     JobImpl     ##
 // #####################
 
-bool JobImplObject::restoreStdin() {
+bool JobObject::restoreStdin() {
     if(this->oldStdin > -1 && this->hasOwnership()) {
         dup2(this->oldStdin, STDIN_FILENO);
         close(this->oldStdin);
@@ -202,7 +202,7 @@ bool JobImplObject::restoreStdin() {
     return false;
 }
 
-void JobImplObject::send(int sigNum) const {
+void JobObject::send(int sigNum) const {
     if(!this->available()) {
         return;
     }
@@ -217,7 +217,7 @@ void JobImplObject::send(int sigNum) const {
     }
 }
 
-int JobImplObject::wait(Proc::WaitOp op) {
+int JobObject::wait(Proc::WaitOp op) {
     errno = 0;
     if(!hasOwnership()) {
         errno = ECHILD;

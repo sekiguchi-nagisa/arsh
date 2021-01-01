@@ -119,7 +119,7 @@ class JobTable;
 
 struct JobRefCount;
 
-class JobImplObject : public ObjectWithRtti<DSObject::JobImpl> {
+class JobObject : public ObjectWithRtti<ObjectKind::Job> {
 private:
     static_assert(std::is_pod<Proc>::value, "failed");
 
@@ -161,10 +161,10 @@ private:
     friend struct JobRefCount;
 
 public:
-    NON_COPYABLE(JobImplObject);
+    NON_COPYABLE(JobObject);
 
-    JobImplObject(unsigned int size, const Proc *procs, bool saveStdin,
-                  DSValue &&inObj, DSValue &&outObj) :
+    JobObject(unsigned int size, const Proc *procs, bool saveStdin,
+              DSValue &&inObj, DSValue &&outObj) :
             ObjectWithRtti(TYPE::Job), ownerPid(getpid()),
             inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
@@ -259,24 +259,24 @@ public:
 };
 
 struct JobRefCount {
-    static long useCount(const JobImplObject *ptr) noexcept {
+    static long useCount(const JobObject *ptr) noexcept {
         return ptr->refCount;
     }
 
-    static void increase(JobImplObject *ptr) noexcept {
+    static void increase(JobObject *ptr) noexcept {
         if(ptr != nullptr) {
             ptr->refCount++;
         }
     }
 
-    static void decrease(JobImplObject *ptr) noexcept {
+    static void decrease(JobObject *ptr) noexcept {
         if(ptr != nullptr && --ptr->refCount == 0) {
             delete ptr;
         }
     }
 };
 
-using Job = IntrusivePtr<JobImplObject, JobRefCount>;
+using Job = IntrusivePtr<JobObject, JobRefCount>;
 
 class JobTable {    //FIXME: send signal to managed jobs
 private:
@@ -303,8 +303,8 @@ public:
 
     static Job create(unsigned int size, const Proc *procs, bool saveStdin,
                       DSValue &&inObj, DSValue &&outObj) {
-        void *ptr = malloc(sizeof(JobImplObject) + sizeof(Proc) * size);
-        auto *entry = new(ptr) JobImplObject(size, procs, saveStdin, std::move(inObj), std::move(outObj));
+        void *ptr = malloc(sizeof(JobObject) + sizeof(Proc) * size);
+        auto *entry = new(ptr) JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj));
         return Job(entry);
     }
 
