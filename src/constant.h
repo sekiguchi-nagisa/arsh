@@ -213,12 +213,12 @@ inline bool isGlobalModHolderName(StringRef ref) {
     return ref.startsWith("_g") && isModHolderName(ref);
 }
 
-inline bool isVarName(StringRef ref) {
-    return !isCmdFullName(ref) && !isTypeAliasFullName(ref) && !isModHolderName(ref);
-}
-
 inline bool isMagicMethodName(StringRef ref) {
     return ref.startsWith("%");
+}
+
+inline bool isVarName(StringRef ref) {
+    return !isCmdFullName(ref) && !isTypeAliasFullName(ref) && !isModHolderName(ref) && !isMagicMethodName(ref);
 }
 
 

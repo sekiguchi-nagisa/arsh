@@ -87,6 +87,15 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         for $a in $(seq 1 100) {
             var aa = 34
             $aa + $a'))
+
+    $assertArray(['AA', 'AAA'], $(complete '
+        AAA=1234 AA=$false BBB=$A'))
+
+    $assertArray($gvar3, $(complete '
+        PZ0=1234 PZ1=$false \
+        PZ2=${PZ0}hger \
+        {
+            $P'))
 }
 
 # env name

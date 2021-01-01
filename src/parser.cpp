@@ -1569,6 +1569,7 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
 std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
     GUARD_DEEP_NESTING(guard);
 
+    bool comp = false;
     std::vector<std::unique_ptr<AssignNode>> envDeclNodes;
     do {
         Token token = TRY(this->expect(TokenKind::ENV_ASSIGN));
@@ -1582,11 +1583,15 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
             std::make_unique<VarNode>(nameToken, std::move(envName));
         });
 
-        auto prevToken = token;
-        std::unique_ptr<CmdArgNode> valueNode;
+        std::unique_ptr<Node> valueNode;
         if(!HAS_SPACE() && !HAS_NL() && lookahead_cmdArg_LP(CUR_KIND())) {
-            valueNode = TRY(this->parse_cmdArg(CmdArgParseOpt::ASSIGN));
-            prevToken = valueNode->getToken();
+            valueNode = this->parse_cmdArg(CmdArgParseOpt::ASSIGN);
+            if(this->incompleteNode) {
+                comp = true;
+                valueNode = std::move(this->incompleteNode);
+            } else if(this->hasError()) {
+                return nullptr;
+            }
         } else {
             valueNode = std::make_unique<CmdArgNode>(std::make_unique<StringNode>(""));
         }
@@ -1595,13 +1600,25 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
         envDeclNodes.push_back(std::move(declNode));
 
         this->changeLexerModeToSTMT();
-    } while(CUR_KIND() == TokenKind::ENV_ASSIGN);
+    } while(CUR_KIND() == TokenKind::ENV_ASSIGN && !comp);
 
     std::unique_ptr<Node> exprNode;
-    if(!HAS_NL() && lookahead_expression(CUR_KIND())) {
-        exprNode = TRY(this->parse_expression(getPrecedence(TokenKind::WITH)));
+    if(comp) {
+        exprNode = std::make_unique<EmptyNode>();   //dummy
+    } else if(!HAS_NL() && lookahead_expression(CUR_KIND())) {
+        exprNode = this->parse_expression(getPrecedence(TokenKind::WITH));
+        if(this->incompleteNode) {
+            comp = true;
+            exprNode = std::move(this->incompleteNode);
+        } else if(this->hasError()) {
+            return nullptr;
+        }
     }
-    return std::make_unique<PrefixAssignNode>(std::move(envDeclNodes), std::move(exprNode));
+    auto node = std::make_unique<PrefixAssignNode>(std::move(envDeclNodes), std::move(exprNode));
+    if(comp) {
+        this->incompleteNode = std::move(node);
+    }
+    return node;
 }
 
 } // namespace ydsh
