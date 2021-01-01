@@ -216,7 +216,7 @@ size_t DSValue::hash() const {
         return std::hash<double>()(this->asFloat());
     default:
         if(this->hasStrRef()) {
-            return std::hash<StringRef>()(this->asStrRef());
+            return StrRefHash()(this->asStrRef());
         }
         assert(this->isObject());
         return std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(this->get()));

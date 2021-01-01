@@ -286,7 +286,7 @@ const char *getBuiltinCommandName(unsigned int index) {
 }
 
 static auto initBuiltinMap() {
-    std::unordered_map<StringRef, unsigned int> map;
+    StrRefMap<unsigned int> map;
     for(unsigned int i = 0; i < arraySize(builtinCommands); i++) {
         map.emplace(builtinCommands[i].commandName, i);
     }
@@ -1193,7 +1193,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
     return 0;
 }
 
-static std::unordered_map<StringRef, CodeCompOp> initCompActions() {
+static StrRefMap<CodeCompOp> initCompActions() {
     return {
             {"file", CodeCompOp::FILE},
             {"dir", CodeCompOp::DIR},

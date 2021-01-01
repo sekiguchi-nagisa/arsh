@@ -229,17 +229,15 @@ inline std::string &operator+=(std::string &str, ydsh::StringRef ref) {
     return str.append(ref.data(), ref.size());
 }
 
-END_MISC_LIB_NAMESPACE_DECL
-
-namespace std {
-
-template <>
-struct hash<ydsh::StringRef> {
-    std::size_t operator()(const ydsh::StringRef &ref) const {
-        return ydsh::FNVHash::compute(ref.begin(), ref.end());
+struct StrRefHash {
+    std::size_t operator()(const StringRef &ref) const {
+        return FNVHash::compute(ref.begin(), ref.end());
     }
 };
 
-} // namespace std
+template <typename T>
+using StrRefMap = std::unordered_map<StringRef, T, StrRefHash>;
+
+END_MISC_LIB_NAMESPACE_DECL
 
 #endif //MISC_LIB_STRING_REF_HPP

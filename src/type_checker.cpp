@@ -1075,7 +1075,7 @@ static auto initConstVarMap() {
         fatal_perror("cannot get utsname");
     }
 
-    std::unordered_map<StringRef, std::string> map = {
+    StrRefMap<std::string> map = {
             {CVAR_VERSION, X_INFO_VERSION_CORE},
             {CVAR_DATA_DIR, SYSTEM_DATA_DIR},
             {CVAR_MODULE_DIR, SYSTEM_MOD_DIR},

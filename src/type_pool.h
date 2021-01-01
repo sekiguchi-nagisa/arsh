@@ -117,7 +117,7 @@ public:
 private:
     unsigned int methodIdCount{0};
     FlexBuffer<DSType *> typeTable;
-    std::unordered_map<StringRef, unsigned int> nameMap;
+    StrRefMap<unsigned int> nameMap;
 
     // for reified type
     TypeTemplate arrayTemplate;

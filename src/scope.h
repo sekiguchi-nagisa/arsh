@@ -357,7 +357,7 @@ struct ModDiscardPoint {
 
 class ModuleLoader {
 private:
-    std::unordered_map<StringRef, ModEntry> indexMap;
+    StrRefMap<ModEntry> indexMap;
 
     unsigned int gvarCount{0};
 
