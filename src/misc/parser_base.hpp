@@ -105,6 +105,24 @@ private:
 public:
     ParserBase() = default;
 
+    ParserBase(ParserBase &&) noexcept = default;
+
+    ParserBase &operator=(ParserBase &&o) noexcept {
+        auto tmp(std::move(o));
+        this->swap(tmp);
+        return *this;
+    }
+
+    void swap(ParserBase &o) noexcept {
+        std::swap(this->lexer, o.lexer);
+        std::swap(this->curKind, o.curKind);
+        std::swap(this->curToken, o.curToken);
+        std::swap(this->consumedKind, o.consumedKind);
+        std::swap(this->tracker, o.tracker);
+        std::swap(this->callCount, o.callCount);
+        std::swap(this->error, o.error);
+    }
+
     void setTracker(Tracker *other) {
         this->tracker = other;
     }
