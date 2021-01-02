@@ -21,6 +21,7 @@
 #include <cerrno>
 #include <type_traits>
 #include <memory>
+#include <string>
 
 #include "noncopyable.h"
 #include "util.hpp"
