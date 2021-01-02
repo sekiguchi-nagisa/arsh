@@ -16,6 +16,7 @@
 
 #include <misc/num_util.hpp>
 #include <misc/unicode.hpp>
+#include <misc/resource.hpp>
 
 #include "json.h"
 
@@ -320,15 +321,6 @@ do { this->reportNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return J
 #define TRY(expr) \
 ({ auto v = expr; if(this->hasError()) { return JSON(); } std::forward<decltype(v)>(v); })
 
-struct CallCounter {
-    unsigned int &count;
-
-    explicit CallCounter(unsigned int &count) : count(count) {}
-
-    ~CallCounter() {
-        --this->count;
-    }
-};
 
 #define MAX_NESTING_DEPTH 8000
 #define GUARD_DEEP_NESTING(name) \
