@@ -133,8 +133,8 @@ public:
     }
 
     void updateToken(Token t) {
-        if(t.pos > this->token.pos) {
-            this->token.size = t.pos + t.size - this->token.pos;
+        if(t.endPos() > this->token.endPos()) {
+            this->token.size = t.endPos() - this->token.pos;
         }
     }
 

@@ -26,6 +26,10 @@ struct Token {
     unsigned int pos;
     unsigned int size;
 
+    unsigned int endPos() {
+        return this->pos + this->size;
+    }
+
     bool operator==(const Token &token) const {
         return this->pos == token.pos && this->size == token.size;
     }
