@@ -292,19 +292,23 @@ struct Command {
 class CmdResolver {
 public:
     enum ResolveOp {
-        MASK_UDC      = 1u << 0u,
-        MASK_EXTERNAL = 1u << 1u,
-        MASK_FALLBACK = 1u << 2u,
+        FROM_UDC      = 1u << 0u,
+        FROM_BUILTIN  = 1u << 1u,
+        FROM_EXTERNAL = 1u << 2u,
+        FROM_FALLBACK = 1u << 3u,
+
+        NO_FALLBACK = FROM_UDC | FROM_BUILTIN | FROM_EXTERNAL,
+        FROM_DEFAULT = FROM_UDC | FROM_BUILTIN | FROM_EXTERNAL | FROM_FALLBACK,
     };
 
 private:
-    ResolveOp mask;
+    ResolveOp resolveOp;
     FilePathCache::SearchOp searchOp;
 
 public:
-    CmdResolver(ResolveOp mask, FilePathCache::SearchOp op) : mask(mask), searchOp(op) {}
+    CmdResolver(ResolveOp mask, FilePathCache::SearchOp op) : resolveOp(mask), searchOp(op) {}
 
-    CmdResolver() : CmdResolver({}, FilePathCache::NON) {}
+    CmdResolver() : CmdResolver(ResolveOp::FROM_DEFAULT, FilePathCache::NON) {}
 
     ~CmdResolver() = default;
 

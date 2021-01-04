@@ -525,14 +525,14 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     Command cmd{};
 
     // first, check user-defined command
-    if(!hasFlag(this->mask, MASK_UDC)) {
+    if(hasFlag(this->resolveOp, FROM_UDC)) {
         if(lookupUdc(state, cmdName, cmd)) {
             return cmd;
         }
     }
 
     // second, check builtin command
-    {
+    if(hasFlag(this->resolveOp, FROM_BUILTIN)) {
         builtin_command_t bcmd = lookupBuiltinCommand(cmdName);
         if(bcmd != nullptr) {
             cmd.kind = Command::BUILTIN;
@@ -557,14 +557,12 @@ Command CmdResolver::operator()(DSState &state, const char *cmdName) const {
     // resolve external command path
     cmd.kind = Command::EXTERNAL;
     cmd.filePath = nullptr;
-    if(!hasFlag(this->mask, MASK_EXTERNAL)) {
+    if(hasFlag(this->resolveOp, FROM_EXTERNAL)) {
         cmd.filePath = state.pathCache.searchPath(cmdName, this->searchOp);
 
         // if command not found or directory, lookup _cmd_fallback_handler
-        if(hasFlag(this->mask, MASK_FALLBACK)) {
-            return cmd;
-        }
-        if(cmd.filePath == nullptr || S_ISDIR(getStMode(cmd.filePath))) {
+        if(hasFlag(this->resolveOp, FROM_FALLBACK)
+                && (cmd.filePath == nullptr || S_ISDIR(getStMode(cmd.filePath)))) {
             auto handle = state.builtinModScope->lookup(VAR_CMD_FALLBACK);
             unsigned int index = handle->getIndex();
             if(state.getGlobal(index).isObject()) {
@@ -769,8 +767,9 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
             auto &values = arrayObj.refValues();
             values.erase(values.begin(), values.begin() + index);
 
-            auto resolve = CmdResolver(CmdResolver::MASK_UDC,
-                                       useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
+            auto resolve = CmdResolver(
+                    CmdResolver::FROM_BUILTIN | CmdResolver::FROM_EXTERNAL | CmdResolver::FROM_FALLBACK,
+                    useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
             return callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
         }
 
@@ -778,7 +777,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
         unsigned int successCount = 0;
         for(; index < argc; index++) {
             const char *commandName = arrayObj.getValues()[index].asCStr();
-            auto cmd = CmdResolver(CmdResolver::MASK_FALLBACK, FilePathCache::DIRECT_SEARCH)(state, commandName);
+            auto cmd = CmdResolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH)(state, commandName);
             switch(cmd.kind) {
             case Command::USER_DEFINED:
             case Command::MODULE: {
