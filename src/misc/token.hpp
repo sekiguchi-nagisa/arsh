@@ -26,7 +26,7 @@ struct Token {
     unsigned int pos;
     unsigned int size;
 
-    unsigned int endPos() {
+    unsigned int endPos() const {
         return this->pos + this->size;
     }
 
