@@ -324,8 +324,8 @@ do { this->reportNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return J
 
 #define MAX_NESTING_DEPTH 8000
 #define GUARD_DEEP_NESTING(name) \
-if(++this->callCount == MAX_NESTING_DEPTH) { this->reportDeepNestingError(); return JSON(); } \
-CallCounter name(this->callCount)
+CallCounter name(this->callCount); \
+if(this->callCount == MAX_NESTING_DEPTH) { this->reportDeepNestingError(); return JSON(); }
 
 
 JSON Parser::operator()() {
