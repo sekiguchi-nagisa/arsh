@@ -363,9 +363,10 @@ public:
     }
 
     DSValue &operator=(const DSValue &value) noexcept {
-        auto tmp(value);
-        this->~DSValue();
-        new (this) DSValue(std::move(tmp));
+        if(this != std::addressof(value)) {
+            this->~DSValue();
+            new (this) DSValue(value);
+        }
         return *this;
     }
 
