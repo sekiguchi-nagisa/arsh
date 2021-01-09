@@ -38,13 +38,17 @@ static bool isSupportedTerminal(int fd) {
 
 static std::vector<std::string> split(const std::string &str) {
     std::vector<std::string> bufs;
-    bufs.emplace_back();
+    std::string buf;
     for(auto ch : str) {
         if(ch == '\n') {
-            bufs.emplace_back();
+            bufs.push_back(std::move(buf));
+            buf = "";
         } else {
-            bufs.back() += ch;
+            buf += ch;
         }
+    }
+    if(!buf.empty()) {
+        bufs.push_back(std::move(buf));
     }
     return bufs;
 }

@@ -4,7 +4,6 @@
 
 set(TEST_NAME lexer_test)
 
-add_definitions(-DLEXER_TEST_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 add_executable(${TEST_NAME}
     lexer_test.cpp
 )

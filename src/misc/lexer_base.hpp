@@ -236,6 +236,9 @@ public:
 
     /**
      * get line token which token belongs to.
+     * @param token
+     * @return
+     * last character of return token is always newline
      */
     Token getLineToken(Token token) const;
 
@@ -306,38 +309,36 @@ Token LexerBase<T>::shiftEOS(Token token) const {
 
 template <bool T>
 Token LexerBase<T>::getLineToken(Token token) const {
-    assert(this->withinRange(token));
+    if(token.endPos() >= this->getUsedSize()) {
+        token.pos = this->getUsedSize() - 1;
+        token.size = 0;
+    }
 
-    // find start index of line.
-    int64_t startIndex = token.pos;
-    for(; startIndex > -1; startIndex--) {
-        if(this->buf[startIndex] == '\n') {
-            startIndex += (startIndex == token.pos) ? 0 : 1;
+    unsigned int startIndex = 0;
+    for(int64_t i = token.pos; i > -1; i--) {
+        if(this->buf[i] == '\n' && i != token.pos) {
+            startIndex = i + 1;
             break;
         }
     }
-    if(startIndex == -1) {
-        startIndex = 0;
-    }
 
     // find stop index of line
-    unsigned int stopIndex = token.pos + token.size;
+    unsigned int stopIndex = token.endPos();
     if(token.size > 0) {
+        stopIndex--;
         for(unsigned int usedSize = this->getUsedSize(); stopIndex < usedSize; stopIndex++) {
             if(this->buf[stopIndex] == '\n') {
+                stopIndex++;
                 break;
             }
         }
     } else {
         stopIndex++;
     }
-
-    assert(startIndex > -1);
-    Token lineToken = {
-            .pos = static_cast<unsigned int>(startIndex),
-            .size = stopIndex - static_cast<unsigned int>(startIndex)
+    return Token {
+        .pos = startIndex,
+        .size = stopIndex - startIndex,
     };
-    return lineToken;
 }
 
 template <bool T>

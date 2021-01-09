@@ -3,21 +3,74 @@
 #include <lexer.h>
 #include <type.h>
 
-#ifndef LEXER_TEST_DIR
-#define LEXER_TEST_DIR "./"
-#endif
-
 using namespace ydsh;
 
 /**
- * ############################
- * #  Lv0: test file loading  #
- * ############################
+ * ####################
+ * #  Lv0: basic api  #
+ * ####################
  */
-TEST(LexerTest_Lv0, case1) {
-    FILE *fp = fopen(LEXER_TEST_DIR  "/" "lexer_test.cpp", "r");
-    ASSERT_FALSE(fp == nullptr);
-    fclose(fp);
+static Lexer createLexer(const char *text) {
+    ByteBuffer  buf;
+    buf.append(text, strlen(text));
+    return Lexer("(string)", std::move(buf), nullptr);
+}
+
+TEST(LexerTest_Lv0, line) {
+    auto lex = createLexer("0123\n567\n9");
+    Token token{.pos = 0, .size = 1};
+    Token lineToken = lex.getLineToken(token);
+    ASSERT_EQ(0, lineToken.pos);
+    ASSERT_EQ(5, lineToken.size);
+    ASSERT_EQ("0123\n", lex.toTokenText(lineToken));
+
+    token = Token{.pos = 3, .size = 1};
+    lineToken = lex.getLineToken(token);
+    ASSERT_EQ(0, lineToken.pos);
+    ASSERT_EQ(5, lineToken.size);
+    ASSERT_EQ("0123\n", lex.toTokenText(lineToken));
+
+    token = Token{.pos = 4, .size = 1};
+    lineToken = lex.getLineToken(token);
+    ASSERT_EQ(0, lineToken.pos);
+    ASSERT_EQ(5, lineToken.size);
+    ASSERT_EQ("0123\n", lex.toTokenText(lineToken));
+
+    token = Token{.pos = 5, .size = 1};
+    lineToken = lex.getLineToken(token);
+    ASSERT_EQ(5, lineToken.pos);
+    ASSERT_EQ(4, lineToken.size);
+    ASSERT_EQ("567\n", lex.toTokenText(lineToken));
+
+    token = Token{.pos = 9, .size = 1};
+    lineToken = lex.getLineToken(token);
+    ASSERT_EQ(9, lineToken.pos);
+    ASSERT_EQ(2, lineToken.size);
+    ASSERT_EQ("9\n", lex.toTokenText(lineToken));
+
+    token = Token{.pos = 10, .size = 10};
+    lineToken = lex.getLineToken(token);
+    ASSERT_EQ(9, lineToken.pos);
+    ASSERT_EQ(2, lineToken.size);
+    ASSERT_EQ("9\n", lex.toTokenText(lineToken));
+
+    token = Token{.pos = 11, .size = 0};
+    lineToken = lex.getLineToken(token);
+    ASSERT_EQ(9, lineToken.pos);
+    ASSERT_EQ(2, lineToken.size);
+    ASSERT_EQ("9\n", lex.toTokenText(lineToken));
+
+    token = Token{.pos = 11, .size = 1};
+    lineToken = lex.getLineToken(token);
+    ASSERT_EQ(9, lineToken.pos);
+    ASSERT_EQ(2, lineToken.size);
+    ASSERT_EQ("9\n", lex.toTokenText(lineToken));
+
+    token = Token{.pos = 1000, .size = 10};
+    lineToken = lex.getLineToken(token);
+    ASSERT_EQ(9, lineToken.pos);
+    ASSERT_EQ(2, lineToken.size);
+    ASSERT_EQ("9\n", lex.toTokenText(lineToken));
 }
 
 /**
