@@ -280,7 +280,9 @@ public:
     }
 
     Union &operator=(Union && value) noexcept {
-        this->moveAssign(value);
+        if(this != std::addressof(value)) {
+            this->moveAssign(value);
+        }
         return *this;
     }
 
