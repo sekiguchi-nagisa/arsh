@@ -18,10 +18,10 @@
 
 namespace ydsh {
 
-bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode * code) {
-    const unsigned int maxVarSize = code->getLocalVarNum();
+bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode &code) {
+    const unsigned int maxVarSize = code.getLocalVarNum();
     const unsigned int localVarOffset = this->frame.stackTopIndex - paramSize + 1;
-    const unsigned int operandSize = code->getStackDepth();
+    const unsigned int operandSize = code.getStackDepth();
 
     if(this->frames.size() == MAX_FRAME_SIZE) {
         return false;
@@ -36,7 +36,7 @@ bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DS
     this->reserve(maxVarSize - paramSize + operandSize);
 
     // prepare control frame
-    this->frame.code = code;
+    this->frame.code = &code;
     this->frame.stackTopIndex += maxVarSize - paramSize;
     this->frame.stackBottomIndex = this->frame.stackTopIndex;
     this->frame.localVarOffset = localVarOffset;

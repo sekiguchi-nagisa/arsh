@@ -332,7 +332,7 @@ private:
     }
 
     static bool windStackFrame(DSState &state, unsigned int stackTopOffset,
-                               unsigned int paramSize, const DSCode *code) {
+                               unsigned int paramSize, const DSCode &code) {
         auto ret = state.stack.wind(stackTopOffset, paramSize, code);
         if(!ret) {
             raiseError(state, TYPE::StackOverflowError, "local stack size reaches limit");
@@ -365,7 +365,7 @@ private:
      */
     static bool prepareFuncCall(DSState &state, unsigned int paramSize) {
         auto &func = typeAs<FuncObject>(state.stack.peekByOffset(paramSize));
-        return windStackFrame(state, paramSize + 1, paramSize, &func.getCode());
+        return windStackFrame(state, paramSize + 1, paramSize, func.getCode());
     }
 
     /**
@@ -379,8 +379,10 @@ private:
     static bool prepareMethodCall(DSState &state, unsigned short index, unsigned short paramSize) {
         const unsigned int actualParamSize = paramSize + 1; // include receiver
         (void) index;
-        /*return */windStackFrame(state, actualParamSize, actualParamSize,
-                              /*state.stack.peekByOffset(paramSize)->getType()->getMethodRef(index)*/nullptr);
+        (void) state;
+        (void) actualParamSize;
+//        /*return */windStackFrame(state, actualParamSize, actualParamSize,
+//                              /*state.stack.peekByOffset(paramSize)->getType()->getMethodRef(index)*/nullptr);
         fatal("FIXME: normal method call is not implemented!!\n");
     } 
 
@@ -392,7 +394,7 @@ private:
      * +-----------+---------------+--------------+
      *             |     offset    |
      */
-    static bool prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
+    static bool prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSValue &&argvObj,
                                               DSValue &&restoreFD, CmdCallAttr attr);
 
     static bool attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs,
@@ -513,13 +515,12 @@ public:
     /**
      * call method.
      * @param handle
-     * must not be null
      * @param recv
      * @param args
      * @return
      * return value of method (if no return value, return null).
      */
-    static DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
+    static DSValue callMethod(DSState &state, const MethodHandle &handle, DSValue &&recv,
                               std::pair<unsigned int, std::array<DSValue, 3>> &&args);
 
     /**
@@ -563,13 +564,12 @@ inline DSValue execCommand(DSState &state, std::vector<DSValue> &&argv, bool pro
 /**
  * call method.
  * @param handle
- * must not be null
  * @param recv
  * @param args
  * @return
  * return value of method (if no return value, return null).
  */
-inline DSValue callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
+inline DSValue callMethod(DSState &state, const MethodHandle &handle, DSValue &&recv,
                           std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
     return VM::callMethod(state, handle, std::move(recv), std::move(args));
 }

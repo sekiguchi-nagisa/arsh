@@ -215,7 +215,7 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
     state.stack.push(std::move(value));
 }
 
-bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode *code, DSValue &&argvObj,
+bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSValue &&argvObj,
                                             DSValue &&restoreFD, const CmdCallAttr attr) {
     if(hasFlag(attr, CmdCallAttr::SET_VAR)) {
         // reset exit status
@@ -674,7 +674,7 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType,
         pushExitStatus(state, 2);
         return true;
     }
-    auto *udc = &typeAs<FuncObject>(state.getGlobal(handle->getIndex())).getCode();
+    auto &udc = typeAs<FuncObject>(state.getGlobal(handle->getIndex())).getCode();
     array.takeFirst();
     return prepareUserDefinedCommandCall(
             state, udc, std::move(argvObj), std::move(restoreFD), CmdCallAttr::SET_VAR);
@@ -690,7 +690,7 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
         if(cmd.kind == Command::USER_DEFINED) {
             setFlag(attr, CmdCallAttr::SET_VAR);
         }
-        return prepareUserDefinedCommandCall(state, cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
+        return prepareUserDefinedCommandCall(state, *cmd.udc, std::move(argvObj), std::move(redirConfig), attr);
     }
     case Command::BUILTIN: {
         int status = cmd.builtinCmd(state, array);
@@ -1177,7 +1177,7 @@ bool VM::kickSignalHandler(DSState &state, int sigNum, DSValue &&func) {
     state.stack.push(std::move(func));
     state.stack.push(DSValue::createSig(sigNum));
 
-    return windStackFrame(state, 3, 3, &signalTrampoline);
+    return windStackFrame(state, 3, 3, signalTrampoline);
 }
 
 bool VM::checkVMEvent(DSState &state) {
@@ -1840,7 +1840,7 @@ bool VM::callToplevel(DSState &state, const CompiledCode &code, DSError *dsError
     state.globals.resize(state.rootModScope->getMaxGlobalVarIndex());
     state.stack.reset();
 
-    state.stack.wind(0, 0, &code);
+    state.stack.wind(0, 0, code);
 
     EvalOP op{};
     if(hasFlag(state.compileOption, CompileOption::INTERACTIVE)) {
@@ -1896,7 +1896,7 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
     DSValue ret;
     auto obj = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(argv));
     prepareArguments(state.stack, std::move(obj), {0, {}});
-    if(windStackFrame(state, 1, 1, &cmdTrampoline)) {
+    if(windStackFrame(state, 1, 1, cmdTrampoline)) {
         startEval(state, EvalOP::SKIP_TERM | EvalOP::PROPAGATE | EvalOP::HAS_RETURN, nullptr, ret);
     }
 
@@ -1907,10 +1907,9 @@ DSValue VM::execCommand(DSState &state, std::vector<DSValue> &&argv, bool propag
     return ret;
 }
 
-DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&recv,
+DSValue VM::callMethod(DSState &state, const MethodHandle &handle, DSValue &&recv,
                             std::pair<unsigned int, std::array<DSValue, 3>> &&args) {
-    assert(handle != nullptr);
-    assert(handle->getParamSize() == args.first);
+    assert(handle.getParamSize() == args.first);
 
     GUARD_RECURSION(state);
 
@@ -1918,14 +1917,14 @@ DSValue VM::callMethod(DSState &state, const MethodHandle *handle, DSValue &&rec
 
     DSValue ret;
     NativeCode code;
-    if(handle->isNative()) {
-        code = NativeCode(handle->getMethodIndex(), !handle->getReturnType().isVoidType());
+    if(handle.isNative()) {
+        code = NativeCode(handle.getMethodIndex(), !handle.getReturnType().isVoidType());
     }
 
-    if(handle->isNative() ? windStackFrame(state, size + 1, size + 1, &code)
-                        : prepareMethodCall(state, handle->getMethodIndex(), size)) {
+    if(handle.isNative() ? windStackFrame(state, size + 1, size + 1, code)
+                        : prepareMethodCall(state, handle.getMethodIndex(), size)) {
         EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
-        if(!handle->getReturnType().isVoidType()) {
+        if(!handle.getReturnType().isVoidType()) {
             setFlag(op, EvalOP::HAS_RETURN);
         }
         startEval(state, op, nullptr, ret);
@@ -1991,8 +1990,9 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
         fputs("[runtime error]\n", stderr);
         const bool bt = state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType);
         auto *handle = state.typePool.lookupMethod(errorType, bt ? "backtrace" : OP_STR);
+        assert(handle);
 
-        DSValue ret = VM::callMethod(state, handle, DSValue(except), makeArgs());
+        DSValue ret = VM::callMethod(state, *handle, DSValue(except), makeArgs());
         if(state.hasError()) {
             state.stack.clearThrownObject();
             fputs("cannot obtain string representation\n", stderr);

@@ -294,7 +294,7 @@ public:
      * @return
      * if current frames size is limit, return false.
      */
-    bool wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode *code);
+    bool wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode &code);
 
     void unwind();
 
