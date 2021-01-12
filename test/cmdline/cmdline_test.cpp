@@ -75,7 +75,7 @@ static std::string toString(const char (&value)[N]) {
 
 TEST_F(CmdlineTest, marker1) {
     // line marker of syntax error
-    const char *msg = R"((string):1: [syntax error] no viable alternative: <EOS>, expected: =, :
+    const char *msg = R"((string):1: [syntax error] no viable alternative `<EOS>', expected `=', `:'
 var a
       ^
 )";
@@ -109,7 +109,7 @@ $a = 34 +
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
     // line marker (reach null character)
-    msg = ".+:1: \\[syntax error\\] invalid token, expected: <NewLine>\nhello\n     \n";
+    msg = ".+:1: \\[syntax error\\] invalid token, expected `<NewLine>'\nhello\n     \n";
     ASSERT_NO_FATAL_FAILURE(this->expectRegex("hello\0world" | ds(), 1, "", msg));
 }
 

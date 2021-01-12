@@ -225,10 +225,11 @@ void ParserBase<T, LexerImpl, Tracker>::reportTokenMismatchedError(T expected) {
         T alter[1] = { expected };
         this->reportInvalidTokenError(1, alter);
     } else {
-        std::string message("mismatched token: ");
+        std::string message("mismatched token `");
         message += toString(this->curKind);
-        message += ", expected: ";
+        message += "', expected `";
         message += toString(expected);
+        message += "'";
 
         std::vector<T> expectedTokens(1);
         expectedTokens[0] = expected;
@@ -242,15 +243,17 @@ void ParserBase<T, LexerImpl, Tracker>::reportNoViableAlterError(unsigned int si
     if(isInvalidToken(this->curKind)) {
         this->reportInvalidTokenError(size, alters);
     } else {
-        std::string message = "no viable alternative: ";
+        std::string message = "no viable alternative `";
         message += toString(this->curKind);
         if(size > 0 && alters != nullptr) {
-            message += ", expected: ";
+            message += "', expected ";
             for(unsigned int i = 0; i < size; i++) {
                 if(i > 0) {
                     message += ", ";
                 }
+                message += "`";
                 message += toString(alters[i]);
+                message += "'";
             }
         }
 
@@ -262,13 +265,15 @@ void ParserBase<T, LexerImpl, Tracker>::reportNoViableAlterError(unsigned int si
 
 template<typename T, typename LexerImpl, typename Tracker>
 void ParserBase<T, LexerImpl, Tracker>::reportInvalidTokenError(unsigned int size, const T *alters) {
-    std::string message = "invalid token, expected: ";
+    std::string message = "invalid token, expected ";
     if(size > 0 && alters != nullptr) {
         for(unsigned int i = 0; i < size; i++) {
             if(i > 0) {
                 message += ", ";
             }
+            message += "`";
             message += toString(alters[i]);
+            message += "'";
         }
     }
 
