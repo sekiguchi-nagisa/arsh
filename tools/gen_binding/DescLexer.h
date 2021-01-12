@@ -66,6 +66,10 @@ inline bool isInvalidToken(DescTokenKind kind) {
     return kind == INVALID;
 }
 
+inline bool isEOSToken(DescTokenKind kind) {
+    return kind == EOS;
+}
+
 const char *toString(DescTokenKind kind);
 
 #endif //YDSH_TOOLS_DESCLEXER_H

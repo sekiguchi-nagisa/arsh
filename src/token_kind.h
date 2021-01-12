@@ -343,6 +343,10 @@ inline bool isInvalidToken(TokenKind kind) {
     return kind == TokenKind::INVALID;
 }
 
+inline bool isEOSToken(TokenKind kind) {
+    return kind == TokenKind::EOS;
+}
+
 const char *toString(TokenKind kind);
 
 #define TO_NAME(kind) toString(kind)

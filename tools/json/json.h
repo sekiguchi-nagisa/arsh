@@ -233,6 +233,10 @@ inline bool isInvalidToken(JSONTokenKind kind) {
     return kind == INVALID;
 }
 
+inline bool isEOSToken(JSONTokenKind kind) {
+    return kind == EOS;
+}
+
 const char *toString(JSONTokenKind kind);
 
 

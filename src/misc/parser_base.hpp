@@ -225,9 +225,13 @@ void ParserBase<T, LexerImpl, Tracker>::reportTokenMismatchedError(T expected) {
         T alter[1] = { expected };
         this->reportInvalidTokenError(1, alter);
     } else {
-        std::string message("mismatched token `");
-        message += toString(this->curKind);
-        message += "', expected `";
+        std::string message;
+        if(!isEOSToken(this->curKind)) {
+            message += "mismatched token `";
+            message += toString(this->curKind);
+            message += "`, ";
+        }
+        message += "expected `";
         message += toString(expected);
         message += "'";
 
@@ -243,10 +247,14 @@ void ParserBase<T, LexerImpl, Tracker>::reportNoViableAlterError(unsigned int si
     if(isInvalidToken(this->curKind)) {
         this->reportInvalidTokenError(size, alters);
     } else {
-        std::string message = "no viable alternative `";
-        message += toString(this->curKind);
+        std::string message;
+        if(!isEOSToken(this->curKind)) {
+            message += "mismatched token `";
+            message += toString(this->curKind);
+            message += "`, ";
+        }
         if(size > 0 && alters != nullptr) {
-            message += "', expected ";
+            message += "expected ";
             for(unsigned int i = 0; i < size; i++) {
                 if(i > 0) {
                     message += ", ";
