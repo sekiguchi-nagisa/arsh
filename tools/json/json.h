@@ -222,7 +222,7 @@ inline Object object(Member &&m, Arg &&...arg) {
     OP(COMMA       , ",")
 
 
-enum JSONTokenKind : unsigned int {
+enum class JSONTokenKind : unsigned int {
 #define GEN_TOKEN(T, S) T,
     EACH_JSON_TOKEN(GEN_TOKEN)
 #undef GEN_TOKEN
@@ -230,11 +230,11 @@ enum JSONTokenKind : unsigned int {
 
 
 inline bool isInvalidToken(JSONTokenKind kind) {
-    return kind == INVALID;
+    return kind == JSONTokenKind::INVALID;
 }
 
 inline bool isEOSToken(JSONTokenKind kind) {
-    return kind == EOS;
+    return kind == JSONTokenKind::EOS;
 }
 
 const char *toString(JSONTokenKind kind);
@@ -263,7 +263,7 @@ public:
     JSON operator()();
 
     explicit operator bool() const {
-        return this->curKind != EOS;
+        return this->curKind != JSONTokenKind::EOS;
     }
 
     std::string formatError() const;

@@ -46,7 +46,7 @@
     OP(OPT)            /* ? */
 
 
-enum DescTokenKind {
+enum class DescTokenKind : unsigned int {
 #define GEN_ENUM(TOK) TOK,
 EACH_DESC_TOKEN(GEN_ENUM)
 #undef GEN_ENUM
@@ -63,11 +63,11 @@ public:
 };
 
 inline bool isInvalidToken(DescTokenKind kind) {
-    return kind == INVALID;
+    return kind == DescTokenKind::INVALID;
 }
 
 inline bool isEOSToken(DescTokenKind kind) {
-    return kind == EOS;
+    return kind == DescTokenKind::EOS;
 }
 
 const char *toString(DescTokenKind kind);

@@ -17,7 +17,7 @@
 #include "json.h"
 
 // helper macro definition.
-#define RET(k) do { kind = k; goto END; } while(false)
+#define RET(k) do { kind = JSONTokenKind::k; goto END; } while(false)
 
 #define REACH_EOS() do { if(this->isEnd()) { goto EOS; } else { ERROR(); } } while(false)
 
@@ -54,7 +54,7 @@ JSONTokenKind Lexer::nextToken(Token &token) {
 
     INIT:
     unsigned int startPos = this->getPos();
-    JSONTokenKind kind = INVALID;
+    JSONTokenKind kind = JSONTokenKind::INVALID;
     /*!re2c
       "true"                 { RET(TRUE); }
       "false"                { RET(FALSE); }
@@ -83,7 +83,7 @@ JSONTokenKind Lexer::nextToken(Token &token) {
     token.pos = this->getUsedSize();
     token.size = 0;
     this->cursor--;
-    return EOS;
+    return JSONTokenKind::EOS;
 }
 
 } // namespace json

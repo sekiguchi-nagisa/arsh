@@ -75,7 +75,7 @@ static std::string toString(const char (&value)[N]) {
 
 TEST_F(CmdlineTest, marker1) {
     // line marker of syntax error
-    const char *msg = R"((string):1: [syntax error] no viable alternative `<EOS>', expected `=', `:'
+    const char *msg = R"((string):1: [syntax error] expected `=', `:'
 var a
       ^
 )";

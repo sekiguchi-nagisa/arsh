@@ -312,8 +312,8 @@ const char *toString(JSONTokenKind kind) {
     OP(OBJECT_OPEN)
 
 
-#define GEN_LA_CASE(CASE) case CASE:
-#define GEN_LA_ALTER(CASE) CASE,
+#define GEN_LA_CASE(CASE) case JSONTokenKind::CASE:
+#define GEN_LA_ALTER(CASE) JSONTokenKind::CASE,
 
 #define E_ALTER(...) \
 do { this->reportNoViableAlterError((JSONTokenKind[]) { __VA_ARGS__ }); return JSON(); } while(false)
@@ -331,7 +331,7 @@ if(this->callCount == MAX_NESTING_DEPTH) { this->reportDeepNestingError(); retur
 JSON Parser::operator()() {
     this->fetchNext();
     auto value = TRY(this->parseValue());
-    TRY(this->expect(EOS));
+    TRY(this->expect(JSONTokenKind::EOS));
     return value;
 }
 
@@ -339,26 +339,26 @@ JSON Parser::parseValue() {
     GUARD_DEEP_NESTING(guard);
 
     switch(this->curKind) {
-    case NIL:
+    case JSONTokenKind::NIL:
         this->consume();    // NIL
         return nullptr;
-    case TRUE:
+    case JSONTokenKind::TRUE:
         this->consume();    // TRUE
         return true;
-    case FALSE:
+    case JSONTokenKind::FALSE:
         this->consume();    // FALSE
         return false;
-    case NUMBER:
+    case JSONTokenKind::NUMBER:
         return this->parseNumber();
-    case STRING: {
-        Token token = this->expect(STRING); // always success
+    case JSONTokenKind::STRING: {
+        Token token = this->expect(JSONTokenKind::STRING); // always success
         std::string str;
         TRY(this->unescapeStr(token, str));
         return JSON(std::move(str));    // for prevent build error in older gcc/clang
     }
-    case ARRAY_OPEN:
+    case JSONTokenKind::ARRAY_OPEN:
         return this->parseArray();
-    case OBJECT_OPEN:
+    case JSONTokenKind::OBJECT_OPEN:
         return this->parseObject();
     default:
         E_ALTER(EACH_LA_VALUE(GEN_LA_ALTER));
@@ -370,7 +370,7 @@ static bool isFloat(const char *str) {
 }
 
 JSON Parser::parseNumber() {
-    auto token = this->expect(NUMBER);  // always success
+    auto token = this->expect(JSONTokenKind::NUMBER);  // always success
     char data[token.size + 1];
     auto ref = this->lexer->toStrRef(token);
     memcpy(data, ref.data(), ref.size());
@@ -388,7 +388,7 @@ JSON Parser::parseNumber() {
             return static_cast<int64_t>(ret.first);
         }
     }
-    this->reportTokenFormatError(NUMBER, token, "out of range");
+    this->reportTokenFormatError(JSONTokenKind::NUMBER, token, "out of range");
     return JSON();
 }
 
@@ -396,8 +396,8 @@ JSON Parser::parseNumber() {
 ({ auto v = expr; if(this->hasError()) { return {"", JSON()}; } std::forward<decltype(v)>(v); })
 
 std::pair<std::string, JSON> Parser::parseMember() {
-    Token token = this->expect(STRING); // always success
-    TRY2(this->expect(COLON));
+    Token token = this->expect(JSONTokenKind::STRING); // always success
+    TRY2(this->expect(JSONTokenKind::COLON));
     JSON value = TRY2(this->parseValue());
 
     std::string key;
@@ -407,13 +407,13 @@ std::pair<std::string, JSON> Parser::parseMember() {
 }
 
 JSON Parser::parseArray() {
-    this->expect(ARRAY_OPEN);   // always success
+    this->expect(JSONTokenKind::ARRAY_OPEN);   // always success
 
     auto value = array();
-    for(unsigned int count = 0; this->curKind != ARRAY_CLOSE; count++) {
+    for(unsigned int count = 0; this->curKind != JSONTokenKind::ARRAY_CLOSE; count++) {
         if(count > 0) {
-            if(this->curKind != COMMA) {
-                E_ALTER(COMMA, ARRAY_CLOSE);
+            if(this->curKind != JSONTokenKind::COMMA) {
+                E_ALTER(JSONTokenKind::COMMA, JSONTokenKind::ARRAY_CLOSE);
             }
             this->consume();    // COMMA
         }
@@ -423,31 +423,31 @@ JSON Parser::parseArray() {
             break;
         default:
             E_ALTER(EACH_LA_VALUE(GEN_LA_ALTER)
-                            ARRAY_CLOSE);
+                            JSONTokenKind::ARRAY_CLOSE);
         }
     }
-    this->expect(ARRAY_CLOSE);
+    this->expect(JSONTokenKind::ARRAY_CLOSE);
     return JSON(std::move(value));
 }
 
 JSON Parser::parseObject() {
-    this->expect(OBJECT_OPEN);
+    this->expect(JSONTokenKind::OBJECT_OPEN);
 
     auto value = object();
-    for(unsigned int count = 0; this->curKind != OBJECT_CLOSE; count++) {
+    for(unsigned int count = 0; this->curKind != JSONTokenKind::OBJECT_CLOSE; count++) {
         if(count > 0) {
-            if(this->curKind != COMMA) {
-                E_ALTER(COMMA, OBJECT_CLOSE);
+            if(this->curKind != JSONTokenKind::COMMA) {
+                E_ALTER(JSONTokenKind::COMMA, JSONTokenKind::OBJECT_CLOSE);
             }
             this->consume();    // COMMA
         }
-        if(this->curKind == STRING) {
+        if(this->curKind == JSONTokenKind::STRING) {
             value.insert(TRY(this->parseMember()));
         } else {
-            E_ALTER(STRING, OBJECT_CLOSE);
+            E_ALTER(JSONTokenKind::STRING, JSONTokenKind::OBJECT_CLOSE);
         }
     }
-    this->expect(OBJECT_CLOSE);
+    this->expect(JSONTokenKind::OBJECT_CLOSE);
     return JSON(std::move(value));
 }
 
@@ -524,7 +524,7 @@ bool Parser::unescapeStr(Token token, std::string &str) {
     for(auto iter = range.begin(); iter != range.end();) {
         int codePoint = unescape(iter, range.end());
         if(codePoint < 0) {
-            this->reportTokenFormatError(STRING, token, "illegal string format");
+            this->reportTokenFormatError(JSONTokenKind::STRING, token, "illegal string format");
             return false;
         }
         char buf[4];

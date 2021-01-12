@@ -77,11 +77,11 @@ public:
         return e;
     }
 
-    void appendLine(const char *fileName, unsigned int lineNum, const std::string &line) {
+    void appendLine(const char *name, unsigned int ln, const std::string &line) {
         if(this->fileName.empty()) {
-            this->fileName = fileName;
+            this->fileName = name;
         }
-        this->lineNum = lineNum;
+        this->lineNum = ln;
         this->curLine = line;
     }
 
@@ -355,8 +355,8 @@ public:
         s.add(this->info);
     }
 
-    bool isType(HandleInfo info) override {
-        return this->info == info;
+    bool isType(HandleInfo i) override {
+        return this->info == i;
     }
 
     static std::unique_ptr<CommonTypeToken> newTypeToken(const std::string &name);
@@ -821,14 +821,14 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
     DescLexer lexer(line.c_str());
     this->init(lexer);
 
-    TRY(this->expect(DESC_PREFIX));
+    TRY(this->expect(DescTokenKind::DESC_PREFIX));
 
     switch(CUR_KIND()) {
-    case FUNC:
+    case DescTokenKind::FUNC:
         return this->parse_funcDesc();
     default:
         const DescTokenKind alters[] = {
-                FUNC,
+                DescTokenKind::FUNC,
         };
         this->reportNoViableAlterError(alters);
         return nullptr;
@@ -836,25 +836,25 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
 }
 
 std::unique_ptr<Element> Parser::parse_funcDesc() {
-    TRY(this->expect(FUNC));
+    TRY(this->expect(DescTokenKind::FUNC));
 
     std::unique_ptr<Element> element;
 
     // parse function name
     switch(CUR_KIND()) {
-    case IDENTIFIER: {
-        Token token = TRY(this->expect(IDENTIFIER));
+    case DescTokenKind::IDENTIFIER: {
+        Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
         element = std::make_unique<Element>(this->lexer->toTokenText(token), false);
         break;
     }
-    case VAR_NAME: {
-        Token token = TRY(this->expect(VAR_NAME));
+    case DescTokenKind::VAR_NAME: {
+        Token token = TRY(this->expect(DescTokenKind::VAR_NAME));
         element = std::make_unique<Element>(this->toName(token), true);
         break;
     }
     default: {
         const DescTokenKind alters[] = {
-                IDENTIFIER, VAR_NAME,
+                DescTokenKind::IDENTIFIER, DescTokenKind::VAR_NAME,
         };
         this->reportNoViableAlterError(alters);
         return nullptr;
@@ -862,24 +862,24 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
     }
 
     // parse parameter decl
-    TRY(this->expect(LP));
+    TRY(this->expect(DescTokenKind::LP));
     TRY(this->parse_params(element));
-    TRY(this->expect(RP));
+    TRY(this->expect(DescTokenKind::RP));
 
-    TRY(this->expect(COLON));
+    TRY(this->expect(DescTokenKind::COLON));
     element->setReturnType(TRY(this->parse_type()));
 
     // parse constraints
-    if(CUR_KIND() == WHERE) {
+    if(CUR_KIND() == DescTokenKind::WHERE) {
         do {
             this->consume();
             auto typeParam = TRY(this->parse_type());
-            TRY(this->expect(COLON));
+            TRY(this->expect(DescTokenKind::COLON));
             auto reqType = TRY(this->parse_type());
             element->addConstraint(std::move(typeParam), std::move(reqType));
-        } while(CUR_KIND() == COMMA);
+        } while(CUR_KIND() == DescTokenKind::COMMA);
     }
-    TRY(this->expect(EOS));
+    TRY(this->expect(DescTokenKind::EOS));
     return element;
 }
 
@@ -887,20 +887,20 @@ std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &element)
     int count = 0;
     do {
         if(count++ > 0) {
-            TRY(this->expect(COMMA));
+            TRY(this->expect(DescTokenKind::COMMA));
         }
 
-        Token token = TRY(this->expect(VAR_NAME));
+        Token token = TRY(this->expect(DescTokenKind::VAR_NAME));
         bool hasDefault = false;
-        if(CUR_KIND() == OPT) {
-            TRY(this->expect(OPT));
+        if(CUR_KIND() == DescTokenKind::OPT) {
+            TRY(this->expect(DescTokenKind::OPT));
             hasDefault = true;
         }
-        TRY(this->expect(COLON));
+        TRY(this->expect(DescTokenKind::COLON));
         auto type = TRY(this->parse_type());
 
         element->addParam(this->toName(token), hasDefault, std::move(type));
-    } while(CUR_KIND() == COMMA);
+    } while(CUR_KIND() == DescTokenKind::COMMA);
 
     return nullptr;
 }
@@ -910,48 +910,48 @@ bool isFunc(const std::string &str) {
 }
 
 std::unique_ptr<TypeToken> Parser::parse_type() {
-    Token token = TRY(this->expect(IDENTIFIER));
-    if(CUR_KIND() != TYPE_OPEN) {
+    Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
+    if(CUR_KIND() != DescTokenKind::TYPE_OPEN) {
         return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
     }
 
     auto str = this->lexer->toTokenText(token);
     if(isFunc(str)) {
-        TRY(this->expect(TYPE_OPEN));
+        TRY(this->expect(DescTokenKind::TYPE_OPEN));
         auto retType = TRY(this->parse_type());
         std::unique_ptr<FuncTypeToken> funcType(new FuncTypeToken(std::move(retType)));
 
-        if(CUR_KIND() != TYPE_CLOSE) {
-            TRY(this->expect(COMMA));
-            TRY(this->expect(PTYPE_OPEN));
+        if(CUR_KIND() != DescTokenKind::TYPE_CLOSE) {
+            TRY(this->expect(DescTokenKind::COMMA));
+            TRY(this->expect(DescTokenKind::PTYPE_OPEN));
             unsigned int count = 0;
             do {
                 if(count++ > 0) {
-                    TRY(this->expect(COMMA));
+                    TRY(this->expect(DescTokenKind::COMMA));
                 }
                 funcType->addParamType(TRY(this->parse_type()));
-            } while(CUR_KIND() == COMMA);
-            TRY(this->expect(PTYPE_CLOSE));
+            } while(CUR_KIND() == DescTokenKind::COMMA);
+            TRY(this->expect(DescTokenKind::PTYPE_CLOSE));
         }
 
-        TRY(this->expect(TYPE_CLOSE));
+        TRY(this->expect(DescTokenKind::TYPE_CLOSE));
 
         return std::move(funcType);
     } else {
         auto type(ReifiedTypeToken::newReifiedTypeToken(str));
-        TRY(this->expect(TYPE_OPEN));
+        TRY(this->expect(DescTokenKind::TYPE_OPEN));
 
-        if(CUR_KIND() != TYPE_CLOSE) {
+        if(CUR_KIND() != DescTokenKind::TYPE_CLOSE) {
             unsigned int count = 0;
             do {
                 if(count++ > 0) {
-                    TRY(this->expect(COMMA));
+                    TRY(this->expect(DescTokenKind::COMMA));
                 }
                 type->addElement(TRY(this->parse_type()));
-            } while(CUR_KIND() == COMMA);
+            } while(CUR_KIND() == DescTokenKind::COMMA);
         }
 
-        TRY(this->expect(TYPE_CLOSE));
+        TRY(this->expect(DescTokenKind::TYPE_CLOSE));
 
         return std::unique_ptr<TypeToken>(type.release());
     }
@@ -961,24 +961,24 @@ std::unique_ptr<Element> Parser::parse_funcDecl(const std::string &line, std::un
     DescLexer lexer(line.c_str());
     this->init(lexer);
 
-    const bool isDecl = CUR_KIND() == YDSH_METHOD_DECL;
+    const bool isDecl = CUR_KIND() == DescTokenKind::YDSH_METHOD_DECL;
     if(isDecl) {
-        TRY(this->expect(YDSH_METHOD_DECL));
+        TRY(this->expect(DescTokenKind::YDSH_METHOD_DECL));
     } else {
-        TRY(this->expect(YDSH_METHOD));
+        TRY(this->expect(DescTokenKind::YDSH_METHOD));
     }
 
-    Token token = TRY(this->expect(IDENTIFIER));
+    Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
     std::string str(this->lexer->toTokenText(token));
     element->setActualFuncName(std::move(str));
 
-    TRY(this->expect(LP));
-    TRY(this->expect(RCTX));
-    TRY(this->expect(AND));
-    TRY(this->expect(IDENTIFIER));
-    TRY(this->expect(RP));
-    TRY(this->expect(isDecl ? SEMI_COLON : LBC));
-    TRY(this->expect(EOS));
+    TRY(this->expect(DescTokenKind::LP));
+    TRY(this->expect(DescTokenKind::RCTX));
+    TRY(this->expect(DescTokenKind::AND));
+    TRY(this->expect(DescTokenKind::IDENTIFIER));
+    TRY(this->expect(DescTokenKind::RP));
+    TRY(this->expect(isDecl ? DescTokenKind::SEMI_COLON : DescTokenKind::LBC));
+    TRY(this->expect(DescTokenKind::EOS));
     return nullptr;
 }
 

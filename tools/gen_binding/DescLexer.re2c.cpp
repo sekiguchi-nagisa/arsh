@@ -17,7 +17,7 @@
 #include <DescLexer.h>
 
 // helper macro definition.
-#define RET(k) do { kind = k; goto END; } while(false)
+#define RET(k) do { kind = DescTokenKind::k; goto END; } while(false)
 
 #define REACH_EOS() do { if(this->isEnd()) { goto EOS; } else { ERROR(); } } while(false)
 
@@ -45,7 +45,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
 
     INIT:
     unsigned int startPos = this->getPos();
-    DescTokenKind kind = INVALID;
+    DescTokenKind kind = DescTokenKind::INVALID;
     /*!re2c
       "//!bind:"             { RET(DESC_PREFIX); }
       "function"             { RET(FUNC); }
@@ -83,7 +83,7 @@ DescTokenKind DescLexer::nextToken(Token &token) {
     token.pos = this->getUsedSize();
     token.size = 0;
     this->cursor--;
-    return EOS;
+    return DescTokenKind::EOS;
 }
 
 const char *toString(DescTokenKind kind) {
@@ -93,5 +93,5 @@ const char *toString(DescTokenKind kind) {
 #undef GEN_NAME
     };
 
-    return names[kind];
+    return names[static_cast<unsigned int>(kind)];
 }
