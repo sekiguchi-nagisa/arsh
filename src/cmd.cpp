@@ -2097,6 +2097,7 @@ static int isSourced(const VMState &st) {
 static int resolveFullCommandName(DSState &state, const ArrayObject &argvObj) {
     enum Opt { LEVEL, MOD };
     Opt op = LEVEL;
+    (void) op;
     StringRef optArg;
 
     GetOptState optState;
