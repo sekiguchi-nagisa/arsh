@@ -113,10 +113,10 @@ DSType *TypePool::addType(DSType *type) {
     return type;
 }
 
-TypeOrError TypePool::getType(const std::string &typeName) const {
+TypeOrError TypePool::getType(StringRef typeName) const {
     DSType *type = this->get(typeName);
     if(type == nullptr) {
-        RAISE_TL_ERROR(UndefinedType, typeName.c_str());
+        RAISE_TL_ERROR(UndefinedType, typeName.data());
     }
     return Ok(type);
 }

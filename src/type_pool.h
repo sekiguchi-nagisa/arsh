@@ -153,7 +153,7 @@ public:
     /**
      * return null, if has no type.
      */
-    TypeOrError getType(const std::string &typeName) const;
+    TypeOrError getType(StringRef typeName) const;
 
     const TypeTemplate &getArrayTemplate() const {
         return this->arrayTemplate;
@@ -248,7 +248,7 @@ public:
     void discard(TypeDiscardPoint point);
 
 private:
-    DSType *get(const std::string &typeName) const {
+    DSType *get(StringRef typeName) const {
         auto iter = this->nameMap.find(typeName);
         if(iter == this->nameMap.end()) {
             return nullptr;

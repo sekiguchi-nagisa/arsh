@@ -519,8 +519,8 @@ ResolvedCmd CmdResolver::operator()(DSState &state, StringRef ref) const {
         const ModType *modType = nullptr;
         const char *cmdName = ref.data();
         if(fqn != StringRef::npos) {
-            if(cmdName[0] != '\0') {
-                auto ret = state.typePool.getType(cmdName);
+            if(ref[0] != '\0') {
+                auto ret = state.typePool.getType(ref);
                 if(!ret || !ret.asOk()->isModType() || ref.find('\0', fqn + 1) != StringRef::npos) {
                     return ResolvedCmd::invalid();
                 }
