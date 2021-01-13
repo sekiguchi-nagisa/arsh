@@ -32,6 +32,7 @@
 #include "misc/resource.hpp"
 #include "misc/buffer.hpp"
 #include "handle_info.h"
+#include "constant.h"
 
 struct DSState;
 
@@ -498,7 +499,7 @@ public:
     ModType(unsigned int id, const DSType &superType, unsigned short modID,
             std::unordered_map<std::string, FieldHandle> &&handles,
             FlexBuffer<ImportedModEntry> &&children, unsigned int index) :
-            DSType(id, toModName(modID), &superType, TypeAttr::MODULE_TYPE),
+            DSType(id, toModTypeName(modID), &superType, TypeAttr::MODULE_TYPE),
             modID(modID), index(index), handleMap(std::move(handles)) {
         this->childSize = children.size();
         this->children = children.take();
@@ -568,8 +569,6 @@ public:
      * @return
      */
     const FieldHandle *lookupVisibleSymbolAtModule(const TypePool &pool, const std::string &name) const;
-
-    static std::string toModName(unsigned short modID);
 };
 
 /**

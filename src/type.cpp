@@ -136,13 +136,6 @@ void ModType::walkField(std::function<bool(StringRef, const FieldHandle &)> &wal
     }
 }
 
-std::string ModType::toModName(unsigned short id) {
-    std::string str = MOD_SYMBOL_PREFIX;
-    str += std::to_string(id);
-    return str;
-}
-
-
 std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {
     va_list arg;
 

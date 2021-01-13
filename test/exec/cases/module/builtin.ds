@@ -15,7 +15,7 @@ assert diff <(complete 'unsetenv ') <(complete -A env)
 assert diff <(complete 'unsetenv H') <(complete -A env H)
 
 # shctl
-assert diff <(complete 'shctl ') <(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | sort)
+assert diff <(complete 'shctl ') <(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | sed -r '/^\s*$/d' | sed -r '/^-/d' | sort)
 assert diff <(complete 'shctl s') <(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | grep '^s' | sort)
 
 # cd

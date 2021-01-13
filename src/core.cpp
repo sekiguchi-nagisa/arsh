@@ -444,6 +444,32 @@ const char *getFullLocalModDir() {
     return path.c_str();
 }
 
+const ModType *getUnderlyingModType(const TypePool &pool,
+                                    const ModuleLoader &loader, const CompiledCode *code) {
+    if(code) {
+        auto key = code->getSourceName();
+        auto *e = loader.find(key);
+        if(e && e->isSealed()) {
+            return static_cast<const ModType*>(&pool.get(e->getTypeId()));
+        }
+    }
+    return nullptr;
+}
+
+const ModType *getCurRuntimeModule(const DSState &state) {
+    const CompiledCode *code = nullptr;
+    state.getCallStack().walkFrames([&](const ControlFrame &frame) {
+        auto *c = frame.code;
+        if(c->is(CodeKind::NATIVE)) {
+            return true;    // continue
+        }
+        code = static_cast<const CompiledCode*>(c);
+        return false;
+    });
+    return getUnderlyingModType(state.typePool, state.modLoader, code);
+}
+
+
 // ####################
 // ##     SigSet     ##
 // ####################

@@ -226,6 +226,23 @@ void expandTilde(std::string &str, bool useHOME = false);
  */
 const char *getFullLocalModDir();
 
+class ModuleLoader;
+
+/**
+ *
+ * @param pool
+ * @param loader
+ * @param code
+ * may be null
+ * @return
+ * if cannot resolve underlying module type (if underlying module is not sealed (root module)),
+ * return null
+ */
+const ModType *getUnderlyingModType(const TypePool &pool,
+                                    const ModuleLoader &loader, const CompiledCode *code);
+
+const ModType *getCurRuntimeModule(const DSState &state);
+
 class SignalGuard {
 private:
     sigset_t maskset;

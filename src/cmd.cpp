@@ -189,10 +189,16 @@ static constexpr struct {
                 "        is-sourced          return 0 if current script is sourced.\n"
                 "        backtrace           print stack trace.\n"
                 "        function            print current function/command name.\n"
-                "        module              print full path of loaded modules or scripts\n"
+                "        module              print full path of loaded modules or scripts.\n"
                 "        show  [OPTION ...]  print runtime option setting.\n"
                 "        set   OPTION ...    set/enable/on runtime option.\n"
-                "        unset OPTION ...    unset/disable/off runtime option"},
+                "        unset OPTION ...    unset/disable/off runtime option.\n"
+                "        fullname [-l level] name or fullname [-m mod] name\n"
+                "                            resolve fully qualified command name and set to REPLY.\n"
+                "                            if no option specified, equivalent to `-l 0'"
+                "                            Options:\n"
+                "                                -l    resolve from call stack level specified by LEVEL (0~).\n"
+                "                                -m    resolve from module specified by MOD.\n"},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
@@ -1217,17 +1223,6 @@ static StrRefMap<CodeCompOp> initCompActions() {
     };
 }
 
-static const ModType *resolveUnderlyingModType(const DSState &state) {
-    auto *code = state.getCallStack().code();
-    if(!code->is(CodeKind::NATIVE)) {
-        auto *e = state.modLoader.find(static_cast<const CompiledCode*>(code)->getSourceName());
-        if(e) {
-            return static_cast<const ModType *>(&state.typePool.get(e->getTypeId()));
-        }
-    }
-    return nullptr;
-}
-
 static int builtin_complete(DSState &state, ArrayObject &argvObj) {
     static auto actionMap = initCompActions();
 
@@ -1257,7 +1252,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
         line = argvObj.getValues()[optState.index].asStrRef();
     }
 
-    doCodeCompletion(state, resolveUnderlyingModType(state), line, compOp);
+    doCodeCompletion(state, getCurRuntimeModule(state), line, compOp);
     auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for(const auto &e : ret.getValues()) {
         fputs(e.asCStr(), stdout);
@@ -2099,6 +2094,73 @@ static int isSourced(const VMState &st) {
     return top->getSourceName() == bottom->getSourceName() ? 1 : 0;
 }
 
+static int resolveFullCommandName(DSState &state, const ArrayObject &argvObj) {
+    enum Opt { LEVEL, MOD };
+    Opt op = LEVEL;
+    StringRef optArg;
+
+    GetOptState optState;
+    const int opt = optState(argvObj, "l:m:");
+    switch(opt) {
+    case 'l':
+        op = LEVEL;
+        optArg = optState.optArg;
+        break;
+    case 'm':
+        op = MOD;
+        optArg = optState.optArg;
+        break;
+    case ':':
+        ERROR(argvObj, "-%c: option require argument", optState.optOpt);
+        return 2;
+    default:
+        return invalidOptionError(argvObj, optState);
+    }
+
+    if(optState.index == argvObj.size()) {
+        ERROR(argvObj, "require command name");
+        return 1;
+    }
+
+    auto name = argvObj.getValues()[optState.index].asStrRef();
+    CmdResolver resolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH);
+    DSValue reply;
+    auto cmd = resolver(state, name);
+    switch(cmd.kind()) {
+    case ResolvedCmd::USER_DEFINED:
+    case ResolvedCmd::MODULE: {
+        std::string fullname;
+        unsigned int typeId = cmd.belongModTypeId();
+        if(typeId > 0) {
+            auto &type = state.typePool.get(typeId);
+            assert(type.isModType());
+            fullname += type.getNameRef();
+        }
+        fullname += '\0';
+        fullname += name.data();
+        reply = DSValue::createStr(std::move(fullname));
+        break;
+    }
+    case ResolvedCmd::BUILTIN_S:
+    case ResolvedCmd::BUILTIN:
+        reply = DSValue::createStr(name);
+        break;
+    case ResolvedCmd::EXTERNAL:
+        if(cmd.filePath() != nullptr && isExecutable(cmd.filePath())) {
+            reply = DSValue::createStr(cmd.filePath());
+        }
+        break;
+    case ResolvedCmd::INVALID:
+        break;
+    }
+    bool ret = static_cast<bool>(reply);
+    if(!ret) {
+        reply = DSValue::createStr();
+    }
+    state.setGlobal(BuiltinVarOffset::REPLY, std::move(reply));
+    return ret ? 0 : 1;
+}
+
 static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
     if(argvObj.size() > 1) {
         auto ref = argvObj.getValues()[1].asStrRef();
@@ -2118,6 +2180,8 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
             return setOption(state, argvObj, false);
         } else if(ref == "module") {
             return showModule(state);
+        } else if(ref == "fullname") {
+            return resolveFullCommandName(state, argvObj);
         } else {
             ERROR(argvObj, "undefined subcommand: %s", ref.data());
             return 2;

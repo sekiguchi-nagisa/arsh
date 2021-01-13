@@ -21,3 +21,15 @@ assert(eval hoge a b)
 # do nothing
 eval
 assert $? == 0
+
+
+# eval command having null characters
+var ex = 34 as Any
+try { eval $'1234\x00ls';  } catch $e { $ex = $e; }
+assert $ex is SystemError
+
+$ex = 34
+try { eval $'Int\x00ls';  } catch $e { $ex = $e; }
+assert $ex is SystemError
+
+true

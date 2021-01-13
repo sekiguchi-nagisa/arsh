@@ -272,21 +272,99 @@ public:
 
 namespace ydsh {
 
-struct Command {
-    enum CmdKind {
+class ResolvedCmd {
+public:
+    enum CmdKind : unsigned char {
         USER_DEFINED,   // user-defined command
         MODULE,         // module subcommand
         BUILTIN_S,      // builtin command written by vm api (ex. command, eval, exec)
         BUILTIN,        // builtin command
         EXTERNAL,       // external command
-    } kind;
-
-    union {
-        const DSCode *udc;
-        const ModType *modType;
-        builtin_command_t builtinCmd;
-        const char *filePath;   // may be null if not found file
+        INVALID,        // invalid command name (contains null character)
     };
+
+private:
+    CmdKind kind_;
+    unsigned int belongModTypeId_;    // if not belong to module (external, builtin, ect), indicate 0
+    union {
+        const DSCode *udc_;
+        const ModType *modType_;
+        builtin_command_t builtinCmd_;
+        const char *filePath_;
+    };
+
+public:
+    static ResolvedCmd fromUdc(const FuncObject &func, const ModType *belongModType) {
+        ResolvedCmd cmd;
+        cmd.kind_ = CmdKind::USER_DEFINED;
+        cmd.belongModTypeId_ = belongModType ? belongModType->typeId() : 0;
+        cmd.udc_ = &func.getCode();
+        return cmd;
+    }
+
+    static ResolvedCmd fromMod(const ModType &modType, const ModType *belongModType) {
+        ResolvedCmd cmd;
+        cmd.kind_ = CmdKind::MODULE;
+        cmd.belongModTypeId_ = belongModType ? belongModType->typeId() : 0;
+        cmd.modType_ = &modType;
+        return cmd;
+    }
+
+    static ResolvedCmd fromBuiltin(builtin_command_t bcmd) {
+        ResolvedCmd cmd;
+        cmd.kind_ = CmdKind::BUILTIN;
+        cmd.belongModTypeId_ = 0;
+        cmd.builtinCmd_ = bcmd;
+        return cmd;
+    }
+
+    static ResolvedCmd fromBuiltin(const NativeCode &code) {
+        ResolvedCmd cmd;
+        cmd.kind_ = CmdKind::BUILTIN_S;
+        cmd.belongModTypeId_ = 0;
+        cmd.udc_ = &code;
+        return cmd;
+    }
+
+    static ResolvedCmd fromExternal(const char *path) {
+        ResolvedCmd cmd;
+        cmd.kind_ = CmdKind::EXTERNAL;
+        cmd.belongModTypeId_ = 0;
+        cmd.filePath_ = path;
+        return cmd;
+    }
+
+    static ResolvedCmd invalid() {
+        ResolvedCmd cmd;
+        cmd.kind_ = CmdKind::INVALID;
+        cmd.belongModTypeId_ = 0;
+        cmd.filePath_ = nullptr;
+        return cmd;
+    }
+
+    CmdKind kind() const {
+        return this->kind_;
+    }
+
+    unsigned int belongModTypeId() const {
+        return this->belongModTypeId_;
+    }
+
+    const DSCode &udc() const {
+        return *this->udc_;
+    }
+
+    const ModType &modType() const {
+        return *this->modType_;
+    }
+
+    builtin_command_t builtinCmd() const {
+        return this->builtinCmd_;
+    }
+
+    const char *filePath() const {
+        return this->filePath_;
+    }
 };
 
 class CmdResolver {
@@ -295,10 +373,12 @@ public:
         FROM_UDC      = 1u << 0u,
         FROM_BUILTIN  = 1u << 1u,
         FROM_EXTERNAL = 1u << 2u,
-        FROM_FALLBACK = 1u << 3u,
+        FROM_FALLBACK = (1u << 3u) | FROM_EXTERNAL,
+        USE_FQN       = (1u << 4u) | FROM_UDC,
 
         NO_FALLBACK = FROM_UDC | FROM_BUILTIN | FROM_EXTERNAL,
         FROM_DEFAULT = FROM_UDC | FROM_BUILTIN | FROM_EXTERNAL | FROM_FALLBACK,
+        FROM_DEFAULT_WITH_FQN = FROM_DEFAULT | USE_FQN,
     };
 
 private:
@@ -312,7 +392,7 @@ public:
 
     ~CmdResolver() = default;
 
-    Command operator()(DSState &state, const char *cmdName) const;
+    ResolvedCmd operator()(DSState &state, StringRef cmdName) const;
 };
 
 template <> struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};

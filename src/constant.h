@@ -193,6 +193,12 @@ inline std::string toModHolderName(unsigned short id, bool global) {
     return name;
 }
 
+inline std::string toModTypeName(unsigned short modId) {
+    std::string str = MOD_SYMBOL_PREFIX;
+    str += std::to_string(modId);
+    return str;
+}
+
 inline bool isCmdFullName(StringRef ref) {
     return ref.endsWith(CMD_SYMBOL_SUFFIX);
 }
