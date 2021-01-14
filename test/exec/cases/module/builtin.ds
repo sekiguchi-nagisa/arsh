@@ -15,8 +15,17 @@ assert diff <(complete 'unsetenv ') <(complete -A env)
 assert diff <(complete 'unsetenv H') <(complete -A env H)
 
 # shctl
-assert diff <(complete 'shctl ') <(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | sed -r '/^\s*$/d' | sed -r '/^-/d' | sort)
-assert diff <(complete 'shctl s') <(help shctl | grep '^        ' | sed 's/        //g' | cut -d ' ' -f 1 | grep '^s' | sort)
+_extract_sub() {
+    while(read -f $'\n') {
+        if $/^        \w/ =~ $REPLY {
+            var a = $/        /.replace($REPLY, "").split(' ')[0]
+            echo $a
+        }
+    }
+}
+
+assert diff <(complete 'shctl ') <(help shctl | _extract_sub | sort)
+assert diff <(complete 'shctl s') <(help shctl | _extract_sub | grep '^s' | sort)
 
 # cd
 assert diff <(complete 'cd /') <(complete -A dir '/')

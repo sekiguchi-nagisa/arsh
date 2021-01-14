@@ -15,13 +15,22 @@ function _cmd($t : [String], $c : Int) : [String] {
     }
 }
 
+_extract_sub() {
+    while(read -f $'\n') {
+        if $/^        \w/ =~ $REPLY {
+            var a = $/        /.replace($REPLY, "").split(' ')[0]
+            echo $a
+        }
+    }
+}
+
 function _shctl($t : [String], $c : Int) : [String] {
     if $c == 1 {
         var p = ""
         if $c < $t.size() {
             $p = $t.peek()
         }
-        return $(help shctl | startwith '        ' | sed 's/        //g' | cut -d ' ' -f 1 | sed -r '/^\s*$/d' | sed -r '/^-/d' | startwith "$p")
+        return $(help shctl | _extract_sub | startwith "$p")
     }
     assert $t.size() > 1
     case $t[1] {
