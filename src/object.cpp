@@ -295,11 +295,12 @@ bool UnixFdObject::closeOnExec(bool close) const {
 
 bool RegexObject::replace(DSValue &value, StringRef repl) const {
     auto ret = DSValue::createStr();
-    for(auto target = value.asStrRef(); !target.empty();) {
+    unsigned int count = 0;
+    for(auto target = value.asStrRef(); !target.empty(); count++) {
         int ovec[3];
         int matchSize = this->exec(target, ovec, arraySize(ovec));
         if(matchSize < 0) {
-            if(ret.asStrRef().empty()) {
+            if(count == 0) {    // do nothing
                 return true;
             } else if(!ret.appendAsStr(target)) {
                 return false;

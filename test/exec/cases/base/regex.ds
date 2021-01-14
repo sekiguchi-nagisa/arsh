@@ -81,6 +81,7 @@ assert $/\/de/ as String == '\/de'
 
 # replace
 assert $/ /.replace(" hello world !! ", "") == "helloworld!!"
+assert $/   /.replace("   hello world !! ", "") == "hello world !! "
 assert $/ /.replace("hey", "!!") == "hey"
 assert $/!/.replace("hello world!!", "?!") == 'hello world?!?!'
 assert $/a/.replace('abc', "@") == '@bc'
