@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``_DEF_SIGINT``
 - not complete hidden variables
 - support completion in prefix assignment
+- improve parser error message
+  - remove meaningless error message when reach end of string
+  - quote expected tokens
 
 
 ### Fixed
