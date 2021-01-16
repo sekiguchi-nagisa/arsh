@@ -254,8 +254,9 @@ void ModuleLoader::discard(const ModDiscardPoint discardPoint) {
         return; // do nothing
     }
 
+    this->entries.erase(this->entries.begin() + discardPoint.idCount, this->entries.end());
     for(auto iter = this->indexMap.begin(); iter != this->indexMap.end(); ) {
-        if(iter->second.getIndex() >= discardPoint.idCount) {
+        if(iter->second >= discardPoint.idCount) {
             const char *ptr = iter->first.data();
             iter = this->indexMap.erase(iter);
             free(const_cast<char*>(ptr));
@@ -391,9 +392,9 @@ IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const char *name, const 
 
 IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(StringRef fullpath,
                                                                     const IntrusivePtr<NameScope> &parent) const {
-    auto e = this->find(fullpath);
-    if(e) {
-        return IntrusivePtr<NameScope>::create(parent, e->getIndex());
+    auto iter = this->indexMap.find(fullpath);
+    if(iter != this->indexMap.end()) {
+        return IntrusivePtr<NameScope>::create(parent, iter->second);
     }
     return nullptr;
 }
@@ -403,9 +404,28 @@ const ModType &ModuleLoader::createModType(TypePool &pool, const NameScope &scop
     this->gvarCount++;  // reserve module object entry
     auto iter = this->indexMap.find(fullpath);
     assert(iter != this->indexMap.end());
-    assert(!iter->second.isSealed());
-    iter->second.setModType(modType);
+    auto &e = this->entries[iter->second];
+    assert(!e.isSealed());
+    e.setModType(modType);
     return modType;
+}
+
+ModResult ModuleLoader::addNewModEntry(CStrPtr &&ptr) {
+    StringRef key(ptr.get());
+    auto pair = this->indexMap.emplace(key, this->indexMap.size());
+    if(pair.second) {
+        this->entries.push_back(ModEntry::create());
+    } else {    // already registered
+        auto &e = this->entries[pair.first->second];
+        if(e.isSealed()) {
+            return e.getTypeId();
+        }
+        return ModLoadingError(0);
+    }
+    if(this->indexMap.size() == MAX_MOD_NUM) {
+        fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
+    }
+    return ptr.release();
 }
 
 } // namespace ydsh

@@ -2068,7 +2068,7 @@ static int showModule(const DSState &state) {
     unsigned int size = loader.modSize();
     auto *buf = new const char *[size];
     for(auto &e : loader) {
-        buf[e.second.getIndex()] = e.first.data();
+        buf[e.second] = e.first.data();
     }
     for(unsigned int i = 0; i < size; i++) {
         fprintf(stdout, "%s\n", buf[i]);

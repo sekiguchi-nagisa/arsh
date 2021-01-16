@@ -317,18 +317,17 @@ template <> struct allow_enum_bitop<ModLoadOption> : std::true_type {};
 
 class ModEntry {
 private:
-    unsigned int index; // equivalent to modID
     unsigned int typeId;
 
 public:
-    explicit ModEntry(unsigned int index) : index(index), typeId(0) {}
+    static ModEntry create() {
+        ModEntry e;
+        e.typeId = 0;
+        return e;
+    }
 
     void setModType(const ModType &type) {
         this->typeId = type.typeId();
-    }
-
-    unsigned int getIndex() const {
-        return this->index;
     }
 
     /**
@@ -357,7 +356,10 @@ struct ModDiscardPoint {
 
 class ModuleLoader {
 private:
-    StrRefMap<ModEntry> indexMap;
+    static_assert(sizeof(ModEntry) == sizeof(uint32_t), "");
+
+    StrRefMap<unsigned int > indexMap;
+    FlexBuffer<ModEntry> entries;
 
     unsigned int gvarCount{0};
 
@@ -424,7 +426,7 @@ public:
         if(iter == this->indexMap.end()) {
             return nullptr;
         }
-        return &iter->second;
+        return &this->entries[iter->second];
     }
 
     auto begin() const {
@@ -436,21 +438,7 @@ public:
     }
 
 private:
-    ModResult addNewModEntry(CStrPtr &&ptr) {
-        StringRef key(ptr.get());
-        auto pair = this->indexMap.emplace(key, ModEntry(this->indexMap.size()));
-        if(!pair.second) {  // already registered
-            auto &e = pair.first->second;
-            if(e.isSealed()) {
-                return e.getTypeId();
-            }
-            return ModLoadingError(0);
-        }
-        if(this->indexMap.size() == MAX_MOD_NUM) {
-            fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
-        }
-        return ptr.release();
-    }
+    ModResult addNewModEntry(CStrPtr &&ptr);
 };
 
 struct DiscardPoint {
