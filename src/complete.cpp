@@ -495,7 +495,7 @@ static DSValue createArgv(const TypePool &pool, const Lexer &lex,
 
 static bool kickCompHook(DSState &state, const Lexer &lex, const CmdNode &cmdNode,
                          const std::string &word, ArrayObject &results) {
-    auto hook = getGlobal(state, VAR_COMP_HOOK);
+    auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
     if(hook.isInvalid()) {
         return false;
     }

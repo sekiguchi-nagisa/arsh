@@ -50,7 +50,7 @@ struct NodeDumpParam {
 
 class NodeDumpTest : public ::testing::TestWithParam<NodeDumpParam>, public TempFileFactory {
 protected:
-    static constexpr unsigned int GVAR_NUM = 54;
+    static constexpr unsigned int GVAR_NUM = 55;
 
     NodeDumpParam param;
 
@@ -777,7 +777,7 @@ nodes:
       size: 6
     type: Void
     cmdName: "f"
-    udcIndex: 54
+    udcIndex: 55
     blockNode:
       nodeKind: Block
       token:

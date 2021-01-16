@@ -152,8 +152,8 @@ int GetOptState::operator()(const ArrayObject &obj, const char *optStr) {
 }
 
 // core api definition
-const DSValue &getGlobal(const DSState &st, const char *varName) {
-    auto *handle = st.rootModScope->lookup(varName);
+const DSValue &getBuiltinGlobal(const DSState &st, const char *varName) {
+    auto *handle = st.builtinModScope->lookup(varName);
     assert(handle != nullptr);
     return st.getGlobal(handle->getIndex());
 }
@@ -237,8 +237,8 @@ bool changeWorkingDir(DSState &st, StringRef dest, const bool useLogical) {
 void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
     SignalGuard guard;
 
-    auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
-    auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
+    auto &DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL);
+    auto &IGN_handler = getBuiltinGlobal(st, VAR_SIG_IGN);
 
     DSValue actualHandler;
     auto op = SignalVector::UnsafeSigOp::SET;
@@ -265,8 +265,8 @@ void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
 }
 
 DSValue getSignalHandler(const DSState &st, int sigNum) {
-    auto &DFL_handler = getGlobal(st, VAR_SIG_DFL);
-    auto &IGN_handler = getGlobal(st, VAR_SIG_IGN);
+    auto &DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL);
+    auto &IGN_handler = getBuiltinGlobal(st, VAR_SIG_IGN);
 
     auto handler = st.sigVector.lookup(sigNum);
 
@@ -289,7 +289,7 @@ void setJobControlSignalSetting(DSState &st, bool set) {
     DSValue handler;
 
     if(set) {
-        st.sigVector.install(SIGINT, SignalVector::UnsafeSigOp::SET, getGlobal(st, VAR_DEF_SIGINT));
+        st.sigVector.install(SIGINT, SignalVector::UnsafeSigOp::SET, getBuiltinGlobal(st, VAR_DEF_SIGINT));
     } else {
         st.sigVector.install(SIGINT, op, handler);
     }

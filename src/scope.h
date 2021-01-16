@@ -88,7 +88,7 @@ public:
     }
 
     /**
-     * re-create module scope from already created Mod Type
+     * re-create global module scope from already created Mod Type
      * @param parent
      * @param modType
      */

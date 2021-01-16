@@ -566,9 +566,7 @@ ResolvedCmd CmdResolver::operator()(DSState &state, StringRef ref) const {
         // if command not found or directory, lookup _cmd_fallback_handler
         if(hasFlag(this->resolveOp, FROM_FALLBACK)
                 && (cmd.filePath() == nullptr || S_ISDIR(getStMode(cmd.filePath())))) {
-            auto handle = state.builtinModScope->lookup(VAR_CMD_FALLBACK);
-            unsigned int index = handle->getIndex();
-            if(state.getGlobal(index).isObject()) {
+            if(getBuiltinGlobal(state, VAR_CMD_FALLBACK).isObject()) {
                 bool r = lookupUdc(state, CMD_FALLBACK_HANDLER, cmd, nullptr);
                 (void) r;
                 assert(r);
@@ -2041,7 +2039,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
 }
 
 void VM::callTermHook(DSState &state, DSErrorKind kind, DSValue &&except) {
-    auto funcObj = state.getGlobal(state.builtinModScope->lookup(VAR_TERM_HOOK)->getIndex());
+    auto funcObj = getBuiltinGlobal(state, VAR_TERM_HOOK);
     if(funcObj.kind() == DSValueKind::INVALID) {
         return;
     }

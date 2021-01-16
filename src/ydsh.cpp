@@ -391,6 +391,7 @@ static void loadEmbeddedScript(DSState *state) {
 
     // rest some state
     state->rootModScope = state->modLoader.createGlobalScope("(root)", state->builtinModScope);
+    state->modLoader.createModType(state->typePool, *state->builtinModScope, "(builtin)");
     state->lineNum = 1;
     state->setExitStatus(0);
 }
@@ -874,7 +875,7 @@ unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const cha
     GUARD_ENUM_RANGE(op, EACH_DS_LINE_EDIT_OP, 0);
 #undef EACH_DS_LINE_EDIT_OP
 
-    auto func = getGlobal(*st, VAR_EIDT_HOOK);
+    auto func = getBuiltinGlobal(*st, VAR_EIDT_HOOK);
     if(func.isInvalid()) {
         if(op == DS_EDIT_PROMPT && buf) {
             *buf = defaultPrompt(index);

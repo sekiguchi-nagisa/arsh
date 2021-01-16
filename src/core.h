@@ -148,7 +148,7 @@ struct DumpTarget {
     FilePtr files[3];
 };
 
-const DSValue &getGlobal(const DSState &st, const char *varName);
+const DSValue &getBuiltinGlobal(const DSState &st, const char *varName);
 
 /**
  * raise Error Object and update exit status
