@@ -456,15 +456,20 @@ const ModType *getUnderlyingModType(const TypePool &pool,
     return nullptr;
 }
 
-const ModType *getCurRuntimeModule(const DSState &state) {
+const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int callLevel) {
     const CompiledCode *code = nullptr;
+    unsigned int depth = 0;
     state.getCallStack().walkFrames([&](const ControlFrame &frame) {
         auto *c = frame.code;
         if(c->is(CodeKind::NATIVE)) {
             return true;    // continue
         }
-        code = static_cast<const CompiledCode*>(c);
-        return false;
+        if(depth == callLevel) {
+            code = static_cast<const CompiledCode*>(c);
+            return false;
+        }
+        depth++;
+        return true;
     });
     return getUnderlyingModType(state.typePool, state.modLoader, code);
 }

@@ -392,7 +392,15 @@ public:
 
     ~CmdResolver() = default;
 
-    ResolvedCmd operator()(DSState &state, StringRef cmdName) const;
+    /**
+     *
+     * @param state
+     * @param cmdName
+     * @param modType
+     * if specified USE_FQN, always ignore
+     * @return
+     */
+    ResolvedCmd operator()(DSState &state, StringRef cmdName, const ModType *modType = nullptr) const;
 };
 
 template <> struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};

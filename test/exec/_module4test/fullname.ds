@@ -1,0 +1,31 @@
+
+source $SCRIPT_DIR/module1.ds as m
+
+function hey_() : String {
+    shctl fullname -m $m say0
+    return $REPLY
+}
+
+function hey__() : String {
+    shctl fullname -m $m _say0
+    return $REPLY
+}
+
+
+say!!() {
+    echo say!! $@
+}
+
+_say!!() {
+    echo _say!! $@
+}
+
+function say_($l : Int) : String {
+    shctl fullname -l $l say!!
+    return $REPLY
+}
+
+function say__($l : Int) : String {
+    shctl fullname -l $l _say!!
+    return $REPLY
+}

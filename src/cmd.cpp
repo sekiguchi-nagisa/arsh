@@ -2094,28 +2094,70 @@ static int isSourced(const VMState &st) {
     return top->getSourceName() == bottom->getSourceName() ? 1 : 0;
 }
 
-static int resolveFullCommandName(DSState &state, const ArrayObject &argvObj) {
-    enum Opt { LEVEL, MOD };
-    Opt op = LEVEL;
-    (void) op;
-    StringRef optArg;
+enum class FullnameOp {
+    LEVEL,
+    MOD,
+};
 
-    GetOptState optState;
+static std::pair<const ModType*, bool> parseModDest(const DSState &st, const ArrayObject &argvObj,
+                                   FullnameOp op, StringRef opt) {
+    switch(op) {
+    case FullnameOp::LEVEL: {   // parse num
+        auto pair =convertToNum<int64_t>(opt.begin(), opt.end());
+        if(!pair.second || pair.first < 0 || pair.first > UINT16_MAX) {
+            ERROR(argvObj, "require positive number (up to UINT16_MAX): %s", opt.data());
+            return {nullptr, false};
+        }
+        unsigned int level = static_cast<unsigned int>(pair.first);
+        auto *ret = getRuntimeModuleByLevel(st, level);
+        if(!ret && level > 0) {
+            ERROR(argvObj, "too large call level: %s", opt.data());
+            return {nullptr, false};
+        }
+        return {ret, true};
+    }
+    case FullnameOp::MOD: { // parse module object string representation (ex. module(%mod4) )
+        if(opt.startsWith("module(") && opt.endsWith(")")) {
+            StringRef n = opt;
+            n.removePrefix(strlen("module("));
+            n.removeSuffix(1);
+            auto ret = st.typePool.getType(n);
+            if(ret && ret.asOk()->isModType()) {
+                return {static_cast<const ModType*>(ret.asOk()), true};
+            }
+        }
+        ERROR(argvObj, "invalid module object: %s", opt.data());
+        return {nullptr, false};
+    }
+    }
+    return {nullptr, true};
+}
+
+static int resolveFullCommandName(DSState &state, const ArrayObject &argvObj) {
+    // always clear
+    state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());
+
+    auto op = FullnameOp::LEVEL;
+    StringRef optArg = "0";
+
+    GetOptState optState(2);
     const int opt = optState(argvObj, "l:m:");
     switch(opt) {
     case 'l':
-        op = LEVEL;
+        op = FullnameOp::LEVEL;
         optArg = optState.optArg;
         break;
     case 'm':
-        op = MOD;
+        op = FullnameOp::MOD;
         optArg = optState.optArg;
         break;
     case ':':
         ERROR(argvObj, "-%c: option require argument", optState.optOpt);
         return 2;
-    default:
+    case '?':
         return invalidOptionError(argvObj, optState);
+    default:
+        break;
     }
 
     if(optState.index == argvObj.size()) {
@@ -2123,10 +2165,14 @@ static int resolveFullCommandName(DSState &state, const ArrayObject &argvObj) {
         return 1;
     }
 
+    auto pair = parseModDest(state, argvObj, op, optArg);
+    if(!pair.second) {
+        return 1;
+    }
     auto name = argvObj.getValues()[optState.index].asStrRef();
     CmdResolver resolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH);
     DSValue reply;
-    auto cmd = resolver(state, name);
+    auto cmd = resolver(state, name, pair.first);
     switch(cmd.kind()) {
     case ResolvedCmd::USER_DEFINED:
     case ResolvedCmd::MODULE: {
@@ -2155,10 +2201,9 @@ static int resolveFullCommandName(DSState &state, const ArrayObject &argvObj) {
         break;
     }
     bool ret = static_cast<bool>(reply);
-    if(!ret) {
-        reply = DSValue::createStr();
+    if(ret) {
+        state.setGlobal(BuiltinVarOffset::REPLY, std::move(reply));
     }
-    state.setGlobal(BuiltinVarOffset::REPLY, std::move(reply));
     return ret ? 0 : 1;
 }
 

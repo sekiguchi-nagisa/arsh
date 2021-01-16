@@ -383,7 +383,7 @@ static void initBuiltinVar(DSState &state) {
 static void loadEmbeddedScript(DSState *state) {
     state->rootModScope = state->builtinModScope;   // eval script in builtin module
 
-    int ret = DSState_eval(state, "(embed)", embed_script, strlen(embed_script), nullptr);
+    int ret = DSState_eval(state, "(builtin)", embed_script, strlen(embed_script), nullptr);
     (void) ret;
     assert(ret == 0);
 

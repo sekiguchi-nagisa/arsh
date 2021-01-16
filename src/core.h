@@ -123,7 +123,9 @@ struct GetOptState : public opt::GetOptState {
     /**
      * index of next processing argument
      */
-    unsigned int index{1};
+    unsigned int index;
+
+    GetOptState(unsigned int index= 1) : index(index) {}
 
     int operator()(const ArrayObject &obj, const char *optStr);
 };
@@ -241,7 +243,11 @@ class ModuleLoader;
 const ModType *getUnderlyingModType(const TypePool &pool,
                                     const ModuleLoader &loader, const CompiledCode *code);
 
-const ModType *getCurRuntimeModule(const DSState &state);
+const ModType *getRuntimeModuleByLevel(const DSState &state, unsigned int callLevel);
+
+inline const ModType *getCurRuntimeModule(const DSState &state) {
+    return getRuntimeModuleByLevel(state, 0);
+}
 
 class SignalGuard {
 private:

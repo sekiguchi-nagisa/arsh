@@ -512,22 +512,22 @@ static bool lookupUdc(const DSState &state, const char *name, ResolvedCmd &cmd, 
     return false;
 }
 
-ResolvedCmd CmdResolver::operator()(DSState &state, StringRef ref) const {
+ResolvedCmd CmdResolver::operator()(DSState &state, StringRef ref, const ModType *modType) const {
     // first, check user-defined command
     if(hasFlag(this->resolveOp, FROM_UDC)) {
         auto fqn = hasFlag(this->resolveOp, USE_FQN) ? ref.find('\0') : StringRef::npos;
-        const ModType *modType = nullptr;
         const char *cmdName = ref.data();
         if(fqn != StringRef::npos) {
-            if(ref[0] != '\0') {
-                auto ret = state.typePool.getType(ref);
+            modType = nullptr;
+            if(cmdName[0] != '\0') {
+                auto ret = state.typePool.getType(cmdName);
                 if(!ret || !ret.asOk()->isModType() || ref.find('\0', fqn + 1) != StringRef::npos) {
                     return ResolvedCmd::invalid();
                 }
                 modType = static_cast<const ModType*>(ret.asOk());
             }
             cmdName = ref.begin() + fqn + 1;
-        } else {
+        } else if(!modType) {
             modType = getCurRuntimeModule(state);
         }
         ResolvedCmd cmd{};
