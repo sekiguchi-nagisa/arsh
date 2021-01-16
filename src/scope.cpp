@@ -28,9 +28,9 @@ namespace ydsh {
 // #######################
 
 NameScope::NameScope(const TypePool &pool, const IntrusivePtr<NameScope> &parent, const ModType &modType) :
-        kind(GLOBAL), modId(modType.getModID()), parent(parent), maxVarCount(parent->maxVarCount) {
-    assert(this->parent->isGlobal());
-    assert(this->parent->inBuiltinModule());
+        kind(GLOBAL), modId(modType.getModID()), maxVarCount(parent->maxVarCount) {
+    assert(parent->isGlobal());
+    assert(parent->inBuiltinModule());
 
     // copy own handle
     for(auto &e : modType.getHandleMap()) {
@@ -378,23 +378,24 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *path, FilePtr &f
     return ret;
 }
 
-IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const char *name, const IntrusivePtr<NameScope> &parent) {
+IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const char *name, const ModType *modType) {
     auto str = CStrPtr(strdup(name));
     auto ret = this->addNewModEntry(std::move(str));
     assert(is<const char*>(ret));
 
-    if(parent) {
-        return this->createGlobalScopeFromFullpath(get<const char*>(ret), parent);
+    if(modType) {
+        return this->createGlobalScopeFromFullpath(get<const char*>(ret), *modType);
     } else {
         return IntrusivePtr<NameScope>::create(std::ref(this->gvarCount));
     }
 }
 
-IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(StringRef fullpath,
-                                                                    const IntrusivePtr<NameScope> &parent) const {
+IntrusivePtr<NameScope> ModuleLoader::createGlobalScopeFromFullpath(StringRef fullpath, const ModType &modType) {
     auto iter = this->indexMap.find(fullpath);
     if(iter != this->indexMap.end()) {
-        return IntrusivePtr<NameScope>::create(parent, iter->second);
+        auto scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), iter->second);
+        scope->importForeignHandles(modType, true);
+        return scope;
     }
     return nullptr;
 }

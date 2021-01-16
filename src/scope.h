@@ -70,11 +70,13 @@ private:
 
 public:
     /**
-     * for builtin module scope construction
+     * for module scope construction
+     * normally called from ModuleLoader
      * @param gvarCount
+     * @param modId
      */
-    explicit NameScope(std::reference_wrapper<unsigned int> gvarCount) :
-            kind(GLOBAL), modId(0), maxVarCount(gvarCount) {}
+    NameScope(std::reference_wrapper<unsigned int> gvarCount, unsigned short modId = 0) :
+            kind(GLOBAL), modId(modId), maxVarCount(gvarCount) {}
 
     /**
      * for module scope construction.
@@ -410,10 +412,9 @@ public:
      */
     ModResult load(const char *scriptDir, const char *path, FilePtr &filePtr, ModLoadOption option);
 
-    IntrusivePtr<NameScope> createGlobalScope(const char *name, const IntrusivePtr<NameScope> &parent);
+    IntrusivePtr<NameScope> createGlobalScope(const char *name, const ModType *modType = nullptr);
 
-    IntrusivePtr<NameScope> createGlobalScopeFromFullpath(StringRef fullpath,
-                                                          const IntrusivePtr<NameScope> &parent) const;
+    IntrusivePtr<NameScope> createGlobalScopeFromFullpath(StringRef fullpath, const ModType &modType);
 
     const ModType &createModType(TypePool &pool, const NameScope &scope, const std::string &fullpath);
 
@@ -429,12 +430,28 @@ public:
         return &this->entries[iter->second];
     }
 
+    const ModEntry *find(unsigned int modId) const {
+        if(modId < this->entries.size()) {
+            return &this->entries[modId];
+        }
+        return nullptr;
+    }
+
     auto begin() const {
         return this->indexMap.begin();
     }
 
     auto end() const {
         return this->indexMap.end();
+    }
+
+    const ModType &getBuiltinModType(const TypePool &pool) const {
+        assert(!this->entries.empty());
+        auto &e = this->entries[0];
+        assert(e.isSealed());
+        auto &type = pool.get(e.getTypeId());
+        assert(type.isModType());
+        return static_cast<const ModType&>(type);
     }
 
 private:

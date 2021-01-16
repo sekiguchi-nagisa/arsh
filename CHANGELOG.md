@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 #### Core
+- **Breaking Changes**: not access private builtin variable
+  - ``_cmd_fallback_handler``
+  - ``_DEF_SIGINT``
 - not complete hidden variables
 - support completion in prefix assignment
 

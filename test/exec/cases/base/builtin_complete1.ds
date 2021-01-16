@@ -59,7 +59,6 @@ __cmd() {
     echo __file
     echo file
     echo files
-    echo _cmd_fallback_handler
 
     help | cut -d ' ' -f 1
     for $dir in $@ {

@@ -92,7 +92,6 @@ private:
 
     std::vector<std::unique_ptr<Context>> contexts;
     ModuleLoader &modLoader;
-    IntrusivePtr<NameScope> builtin;
     const DSExecMode mode;
     TypeChecker checker;
     DSType *prevType{nullptr};
@@ -102,8 +101,7 @@ private:
 
 public:
     FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &typePool,
-             IntrusivePtr<NameScope> builtin, IntrusivePtr<NameScope> scope,
-             DSExecMode mode, bool toplevel,
+             IntrusivePtr<NameScope> scope, DSExecMode mode, bool toplevel,
              ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
 
     void setErrorReporter(ErrorReporter &r) {

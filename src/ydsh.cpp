@@ -51,12 +51,10 @@ private:
     ByteCodeGenerator codegen;
 
 public:
-    Compiler(ModuleLoader &modLoader, TypePool &pool,
-             const IntrusivePtr<NameScope> &builtin, const IntrusivePtr<NameScope> &root,
+    Compiler(ModuleLoader &modLoader, TypePool &pool, const IntrusivePtr<NameScope> &root,
              Lexer &&lexer, const DumpTarget &dumpTarget,
              DSExecMode execMode, CompileOption compileOption) :
-            frontEnd(modLoader, std::move(lexer), pool,
-                     builtin, root, execMode,
+            frontEnd(modLoader, std::move(lexer), pool, root, execMode,
                      hasFlag(compileOption, CompileOption::INTERACTIVE)),
             reporter(newReporter()),
             uastDumper(dumpTarget.files[DS_DUMP_KIND_UAST].get()),
@@ -140,8 +138,8 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
 
 static int compile(DSState &state, const IntrusivePtr<NameScope> &modScope,
                    Lexer &&lexer, const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code) {
-    Compiler compiler(state.modLoader, state.typePool, state.builtinModScope, modScope,
-                      std::move(lexer), state.dumpTarget, state.execMode, state.compileOption);
+    Compiler compiler(state.modLoader, state.typePool, modScope, std::move(lexer),
+                      state.dumpTarget, state.execMode, state.compileOption);
     int ret = compiler(dsError, code);
     if(ret == 0) {
         if(!modScope->inBuiltinModule() && !modScope->inRootModule()) {
@@ -390,8 +388,8 @@ static void loadEmbeddedScript(DSState *state) {
     assert(ret == 0);
 
     // rest some state
-    state->rootModScope = state->modLoader.createGlobalScope("(root)", state->builtinModScope);
-    state->modLoader.createModType(state->typePool, *state->builtinModScope, "(builtin)");
+    auto &modType = state->modLoader.createModType(state->typePool, *state->builtinModScope, "(builtin)");
+    state->rootModScope = state->modLoader.createGlobalScope("(root)", &modType);
     state->lineNum = 1;
     state->setExitStatus(0);
 }
@@ -694,8 +692,9 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
     }
     filePtr.reset(nullptr);
 
+    auto &modType = st->modLoader.getBuiltinModType(st->typePool);
     auto scope = hasFlag(option, DS_MOD_SEPARATE_CTX) ?
-            st->modLoader.createGlobalScopeFromFullpath(fileName, st->builtinModScope) : nullptr;
+            st->modLoader.createGlobalScopeFromFullpath(fileName, modType) : nullptr;
     return evalScript(*st, scope,
                       Lexer(fileName, std::move(buf), std::move(scriptDir)), discardPoint, e);
 }

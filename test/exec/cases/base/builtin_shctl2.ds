@@ -50,7 +50,8 @@ assert bg 2>&1 | grep 'ydsh: bg: no job control in this shell'
 
 ### in monitor on
 shctl set monitor
-assert $SIG[%'INT'] == $_DEF_SIGINT
+assert $SIG[%'INT'] != $SIG_IGN # set monitor, set internal sigint handler
+assert $SIG[%'INT'] != $SIG_DFL
 assert $SIG[%'QUIT'] == $SIG_IGN
 assert $SIG[%'TSTP'] == $SIG_IGN
 assert $SIG[%'TTIN'] == $SIG_IGN

@@ -479,7 +479,8 @@ TEST_F(InteractiveTest, signal) {
     this->invoke("--quiet", "--norc");
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'int'] as String) == $_DEF_SIGINT as String"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'int'] as String) != $SIG_IGN as String"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'int'] as String) != $SIG_DFL as String"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'quit'] as String) == $SIG_IGN as String"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'tstp'] as String) == $SIG_IGN as String"));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ($SIG[%'ttin'] as String) == $SIG_IGN as String"));

@@ -102,7 +102,7 @@ static void initEnv() {
 }
 
 DSState::DSState() :
-        builtinModScope(this->modLoader.createGlobalScope("(builtin)", nullptr)),
+        builtinModScope(this->modLoader.createGlobalScope("(builtin)")),
         emptyFDObj(DSValue::create<UnixFdObject>(-1)),
         baseTime(std::chrono::system_clock::now()) {
     // init envs
@@ -567,7 +567,8 @@ ResolvedCmd CmdResolver::operator()(DSState &state, StringRef ref) const {
         if(hasFlag(this->resolveOp, FROM_FALLBACK)
                 && (cmd.filePath() == nullptr || S_ISDIR(getStMode(cmd.filePath())))) {
             if(getBuiltinGlobal(state, VAR_CMD_FALLBACK).isObject()) {
-                bool r = lookupUdc(state, CMD_FALLBACK_HANDLER, cmd, nullptr);
+                bool r = lookupUdc(state, CMD_FALLBACK_HANDLER, cmd,
+                                   &state.modLoader.getBuiltinModType(state.typePool));
                 (void) r;
                 assert(r);
             }

@@ -10,8 +10,7 @@ source $SCRIPT_DIR/../../_module4test/comp.ds
 
 assert diff <(echo global) <($global('g'))
 
-assert diff <(echo _cmd_fallback_handler &&
-             echo hogehoge && 
+assert diff <(echo hogehoge && 
              echo zzzaaa123) \
             <($udc(''))
 

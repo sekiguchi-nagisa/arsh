@@ -691,8 +691,7 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType,
     if(empty(option)) {
         // prepare
         FrontEnd frontEnd(st.modLoader, lex(ref), st.typePool,
-                          st.builtinModScope, scope,
-                          DS_EXEC_MODE_CHECK_ONLY, false,
+                          scope, DS_EXEC_MODE_CHECK_ONLY, false,
                           ObserverPtr<CodeCompletionHandler>(&handler));
 
         // perform completion

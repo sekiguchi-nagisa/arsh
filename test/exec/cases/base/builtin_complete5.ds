@@ -66,9 +66,11 @@ assert diff <(complete -A stmt_kw i) <(for $e in $stmt { echo $e; } | grep '^i' 
 assert diff <(complete -A builtin) <(help | cut -d ' ' -f 1 | sort)
 assert diff <(complete -A builtin e) <(help | cut -d ' ' -f 1 | grep '^e' | sort)
 
-var udc = ["_cmd_fallback_handler"]
+hogehoge(){}
+
+var udc = ["hogehoge"]
 assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
-assert diff <(complete -A udc '_') <(for $e in $udc { echo $e; } | grep '^_'| sort)
+assert diff <(complete -A udc 'h') <(for $e in $udc { echo $e; } | grep '^h'| sort)
 
 assert diff <(complete -A command -A stmt_kw) <(complete ';')
 assert diff <(complete -A command -A stmt_kw l) <(complete 'l')

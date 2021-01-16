@@ -736,7 +736,7 @@ nodes:
       type: Boolean
       varName: "false"
       index: 45
-      attribute: "READ_ONLY | GLOBAL"
+      attribute: "READ_ONLY | GLOBAL | ALIAS"
     iterNode:
       nodeKind: Empty
       token:
@@ -799,7 +799,7 @@ nodes:
             type: Int
             varName: "?"
             index: 10
-            attribute: "GLOBAL"
+            attribute: "GLOBAL | ALIAS"
           leavingBlock: false
       baseIndex: 0
       varSize: 14

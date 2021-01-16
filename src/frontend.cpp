@@ -133,10 +133,9 @@ void ErrorReporter::printErrorLine(const Lexer &lexer, Token token) const {
 // ######################
 
 FrontEnd::FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &pool,
-                   IntrusivePtr<NameScope> builtin, IntrusivePtr<NameScope> scope,
-                   DSExecMode mode, bool toplevel,
+                   IntrusivePtr<NameScope> scope, DSExecMode mode, bool toplevel,
                    ObserverPtr<CodeCompletionHandler> ccHandler) :
-        modLoader(loader), builtin(std::move(builtin)), mode(mode), checker(pool, toplevel, nullptr){
+        modLoader(loader), mode(mode), checker(pool, toplevel, nullptr){
     this->contexts.push_back(std::make_unique<Context>(std::move(lexer), std::move(scope), ccHandler));
     this->curScope()->clearLocalSize();
     this->checker.setLexer(this->getCurrentLexer());
@@ -329,7 +328,9 @@ static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
 void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
     {
         auto lex = createLexer(fullPath, std::move(buf));
-        auto scope = this->modLoader.createGlobalScopeFromFullpath(fullPath, this->builtin);
+        auto scope = this->modLoader.createGlobalScopeFromFullpath(
+                fullPath,
+                this->modLoader.getBuiltinModType(this->getTypePool()));
         this->contexts.push_back(
                 std::make_unique<Context>(std::move(lex), std::move(scope), nullptr));
     }
