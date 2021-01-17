@@ -90,10 +90,6 @@ const char* ErrorReporter::color(TermColor c) const {
 }
 
 void ErrorReporter::printErrorLine(const Lexer &lexer, Token token) const {
-    if(token.pos + token.size == 0) {
-        return;
-    }
-
     Token errorToken = lexer.shiftEOS(token);
     Token lineToken = lexer.getLineToken(errorToken);
     auto line = lexer.formatTokenText(lineToken);

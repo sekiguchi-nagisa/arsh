@@ -81,7 +81,12 @@ var a
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a   \n    \\\n   \t  \t  \n   "), 1, "", msg));
 
-    auto result = ds("-c", "\n);").execAndGetResult(false);
+    auto result = ds("-c", "{").execAndGetResult(false);
+    ASSERT_EQ(1, result.status.value);
+    ASSERT_EQ("", result.out);
+    ASSERT_STREQ("{\n  ^\n", strchr(result.err.c_str(), '\n') + 1);
+
+    result = ds("-c", "\n);").execAndGetResult(false);
     ASSERT_EQ(1, result.status.value);
     ASSERT_STREQ(");\n^\n", strchr(result.err.c_str(), '\n') + 1);
     ASSERT_EQ("", result.out);
