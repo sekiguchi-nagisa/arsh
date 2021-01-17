@@ -295,7 +295,7 @@ private:
 
 public:
     static ResolvedCmd fromUdc(const FuncObject &func, const ModType *belongModType) {
-        ResolvedCmd cmd;
+        ResolvedCmd cmd;    //NOLINT
         cmd.kind_ = CmdKind::USER_DEFINED;
         cmd.belongModTypeId_ = belongModType ? belongModType->typeId() : 0;
         cmd.udc_ = &func.getCode();
@@ -303,7 +303,7 @@ public:
     }
 
     static ResolvedCmd fromMod(const ModType &modType, const ModType *belongModType) {
-        ResolvedCmd cmd;
+        ResolvedCmd cmd;    //NOLINT
         cmd.kind_ = CmdKind::MODULE;
         cmd.belongModTypeId_ = belongModType ? belongModType->typeId() : 0;
         cmd.modType_ = &modType;
@@ -311,7 +311,7 @@ public:
     }
 
     static ResolvedCmd fromBuiltin(builtin_command_t bcmd) {
-        ResolvedCmd cmd;
+        ResolvedCmd cmd;    //NOLINT
         cmd.kind_ = CmdKind::BUILTIN;
         cmd.belongModTypeId_ = 0;
         cmd.builtinCmd_ = bcmd;
@@ -319,7 +319,7 @@ public:
     }
 
     static ResolvedCmd fromBuiltin(const NativeCode &code) {
-        ResolvedCmd cmd;
+        ResolvedCmd cmd;    //NOLINT
         cmd.kind_ = CmdKind::BUILTIN_S;
         cmd.belongModTypeId_ = 0;
         cmd.udc_ = &code;
@@ -327,7 +327,7 @@ public:
     }
 
     static ResolvedCmd fromExternal(const char *path) {
-        ResolvedCmd cmd;
+        ResolvedCmd cmd;    //NOLINT
         cmd.kind_ = CmdKind::EXTERNAL;
         cmd.belongModTypeId_ = 0;
         cmd.filePath_ = path;
@@ -335,7 +335,7 @@ public:
     }
 
     static ResolvedCmd invalid() {
-        ResolvedCmd cmd;
+        ResolvedCmd cmd;    //NOLINT
         cmd.kind_ = CmdKind::INVALID;
         cmd.belongModTypeId_ = 0;
         cmd.filePath_ = nullptr;

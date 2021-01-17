@@ -2108,7 +2108,7 @@ static std::pair<const ModType*, bool> parseModDest(const DSState &st, const Arr
             ERROR(argvObj, "require positive number (up to UINT16_MAX): %s", opt.data());
             return {nullptr, false};
         }
-        unsigned int level = static_cast<unsigned int>(pair.first);
+        auto level = static_cast<unsigned int>(pair.first);
         auto *ret = getRuntimeModuleByLevel(st, level);
         if(!ret && level > 0) {
             ERROR(argvObj, "too large call level: %s", opt.data());

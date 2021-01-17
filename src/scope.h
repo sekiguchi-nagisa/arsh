@@ -323,7 +323,7 @@ private:
 
 public:
     static ModEntry create() {
-        ModEntry e;
+        ModEntry e; //NOLINT
         e.typeId = 0;
         return e;
     }

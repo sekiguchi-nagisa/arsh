@@ -125,7 +125,7 @@ struct GetOptState : public opt::GetOptState {
      */
     unsigned int index;
 
-    GetOptState(unsigned int index= 1) : index(index) {}
+    explicit GetOptState(unsigned int index= 1) : index(index) {}
 
     int operator()(const ArrayObject &obj, const char *optStr);
 };
