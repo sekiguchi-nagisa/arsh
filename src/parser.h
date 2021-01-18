@@ -58,6 +58,15 @@ public:
 
 class CodeCompletionHandler;
 
+#define EACH_PARSE_ERROR_KIND(OP) \
+    OP(EXPR, "expression") \
+    OP(EXPR_RP, "expression or `)'") \
+    OP(TYPE, "typename") \
+    OP(STMT, "statement") \
+    OP(CMD_ARG, "command argument") \
+    OP(MOD_PATH, "module path")
+
+
 class Parser : public ydsh::ParserBase<TokenKind, Lexer, TokenTracker> {
 private:
     using parse_base_type = ydsh::ParserBase<TokenKind, Lexer, TokenTracker>;
@@ -67,6 +76,12 @@ private:
 #else
     static constexpr unsigned int MAX_NESTING_DEPTH = 5000;
 #endif
+
+    enum class ParseErrorKind {
+#define GEN_ENUM(E, S) E,
+        EACH_PARSE_ERROR_KIND(GEN_ENUM)
+#undef GEN_ENUM
+    };
 
     ObserverPtr<CodeCompletionHandler> ccHandler;
 
@@ -153,6 +168,13 @@ protected:
     }
 
     void reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp);
+
+    template <unsigned int N>
+    void reportDetailedError(ParseErrorKind kind, const TokenKind (&alters)[N]) {
+        this->reportDetailedError(kind, N, alters);
+    }
+
+    void reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters);
 
     std::unique_ptr<Node> toAccessNode(Token token) const;
 

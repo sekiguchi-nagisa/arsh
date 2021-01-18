@@ -37,6 +37,9 @@ do { this->reportNoViableAlterError((TokenKind[]) { __VA_ARGS__ }, false); retur
 #define E_ALTER_OR_COMP(...) \
 do { this->reportNoViableAlterError((TokenKind[]) { __VA_ARGS__ }, true); return nullptr; } while(false)
 
+#define E_DETAILED(k, ...) \
+do { this->reportDetailedError(k, (TokenKind[]) { __VA_ARGS__ }); return nullptr; } while(false)
+
 #define TRY(expr) \
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
 
@@ -141,6 +144,31 @@ void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters
         this->ccHandler->addExpectedTokenRequests(size, alters);
     }
     parse_base_type::reportNoViableAlterError(size, alters);
+}
+
+void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters) {
+    struct ERROR {
+        const char *kind;
+        const char *message;
+    } table[] = {
+#define GEN_TABLE(E, S) {#E, S},
+            EACH_PARSE_ERROR_KIND(GEN_TABLE)
+#undef GEN_TABLE
+    };
+    auto &e = table[static_cast<unsigned int>(kind)];
+    std::string message;
+    if(isInvalidToken(this->curKind)) {
+        message += "invalid token, ";
+    } else if(!isEOSToken(this->curKind)) {
+        message += "mismatched token `";
+        message += toString(this->curKind);
+        message += "`, ";
+    }
+    message += "expected ";
+    message += e.message;
+
+    std::vector<TokenKind> expectedTokens(alters, alters + size);
+    this->createError(this->curKind, this->curToken, e.kind, std::move(expectedTokens), std::move(message));
 }
 
 // parse rule definition
@@ -393,7 +421,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
         if(this->inTypeNameCompletionPoint()) {
             this->makeCodeComp(CodeCompNode::TYPE, nullptr, this->curToken);
         }
-        E_ALTER(EACH_LA_typeName(GEN_LA_ALTER));
+        E_DETAILED(ParseErrorKind::TYPE, EACH_LA_typeName(GEN_LA_ALTER));
     }
 }
 
@@ -521,7 +549,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     EACH_LA_expression(GEN_LA_CASE)
         return this->parse_expression();
     default:
-        E_ALTER(EACH_LA_statement(GEN_LA_ALTER));
+        E_DETAILED(ParseErrorKind::STMT, EACH_LA_statement(GEN_LA_ALTER));
     }
 }
 
@@ -849,7 +877,7 @@ std::unique_ptr<Node> Parser::parse_command() {
             EACH_LA_cmdArg(E) \
             EACH_LA_redir(E)
 
-            E_ALTER(EACH_LA_cmdArgs(GEN_LA_ALTER));
+            E_DETAILED(ParseErrorKind::CMD_ARG, EACH_LA_cmdArgs(GEN_LA_ALTER));
 #undef EACH_LA_cmdArgs
         default:
             next = false;
@@ -936,7 +964,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
                 this->ccHandler->addCmdArgOrModRequest(this->lexer->toCmdArg(this->curToken), opt, tilde);
             }
         }
-        E_ALTER(EACH_LA_cmdArg(GEN_LA_ALTER));
+        E_DETAILED(hasFlag(opt, CmdArgParseOpt::MODULE) ?
+            ParseErrorKind::MOD_PATH :ParseErrorKind::CMD_ARG, EACH_LA_cmdArg(GEN_LA_ALTER));
     }
 }
 
@@ -1289,7 +1318,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
                         this->lexer->toCmdArg(this->curToken), op);
             }
         }
-        E_ALTER(EACH_LA_primary(GEN_LA_ALTER));
+        E_DETAILED(ParseErrorKind::EXPR, EACH_LA_primary(GEN_LA_ALTER));
     }
 }
 
@@ -1401,7 +1430,7 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
         if(lookahead_expression(CUR_KIND())) {
             argsNode->addNode(TRY(this->parse_expression()));
         } else {
-            E_ALTER(EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
+            E_DETAILED(ParseErrorKind::EXPR_RP, EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
         }
     }
     token = this->expect(TokenKind::RP);   // always success

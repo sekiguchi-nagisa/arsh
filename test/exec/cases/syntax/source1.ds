@@ -1,0 +1,4 @@
+
+#$test($result = 'parse', $lineNum = 4, $errorKind = 'MOD_PATH', $status = 1)
+
+source!

@@ -1,5 +1,5 @@
 
-#$test($result = 'parse', $lineNum = 7, $errorKind = 'NoViableAlter', $status = 1)
+#$test($result = 'parse', $lineNum = 7, $errorKind = 'CMD_ARG', $status = 1)
 
 echo a \
      b \
