@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add ``fullname`` subcommand to builtin ``shctl``
   - resolve fully qualified command name from specified module
 
+#### Completion
+- add the following completions
+  - brew
+
 
 ### Changed
 

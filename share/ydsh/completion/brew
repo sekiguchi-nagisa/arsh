@@ -1,0 +1,5 @@
+
+source $SCRIPT_DIR/../module/completion
+
+compdef --cmd brew --comp-path /usr/local/etc/bash_completion.d/brew --comp-target _brew
+
