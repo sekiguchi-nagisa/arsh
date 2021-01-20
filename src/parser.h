@@ -132,6 +132,14 @@ protected:
      */
     Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
 
+    bool hasSpace() const {
+        return this->lexer->isPrevSpace();
+    }
+
+    bool hasNewline() const {
+        return this->lexer->isPrevNewLine();
+    }
+
     bool inCompletionPoint() const {
         return this->curKind == TokenKind::COMPLETION;
     }

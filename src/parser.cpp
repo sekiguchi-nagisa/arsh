@@ -19,10 +19,6 @@
 #include "complete.h"
 
 // helper macro
-#define HAS_NL() (this->lexer->isPrevNewLine())
-
-#define HAS_SPACE() (this->lexer->isPrevSpace())
-
 #define CUR_KIND() (this->curKind)
 
 #define START_POS() (this->curToken.pos)
@@ -126,7 +122,7 @@ bool Parser::inTypeNameCompletionPoint() const {
     case TokenKind::TYPEOF:
     case TokenKind::EOS:
         if(this->consumedKind == TokenKind::IS || this->consumedKind == TokenKind::AS) {
-            if(HAS_SPACE()) {
+            if(this->hasSpace()) {
                 return true;
             }
         } else {
@@ -289,7 +285,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
     GUARD_DEEP_NESTING(guard);
 
     auto typeToken = std::make_unique<BaseTypeNode>(token, this->lexer->toName(token));
-    if(!HAS_NL()) {
+    if(!this->hasNewline()) {
         if(CUR_KIND() == TokenKind::TYPE_OPEN) {
             this->consume();
             std::vector<std::unique_ptr<TypeNode>> types;
@@ -303,7 +299,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
             return std::make_unique<ReifiedTypeNode>(std::move(typeToken), std::move(types), token);
         } else if(CUR_KIND() == TokenKind::TYPE_DOT) {
             std::unique_ptr<TypeNode> typeNode = std::move(typeToken);
-            while (!HAS_NL() && CUR_KIND() == TokenKind::TYPE_DOT) {
+            while (!this->hasNewline() && CUR_KIND() == TokenKind::TYPE_DOT) {
                 this->consume();    // TYPE_DOT
                 if(this->inTypeNameCompletionPoint()) {
                     this->makeCodeComp(CodeCompNode::TYPE, std::move(typeNode), this->curToken);
@@ -389,7 +385,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
     }
     case TokenKind::FUNC: {
         Token token = this->expect(TokenKind::FUNC);   // always success
-        if(!HAS_NL() && CUR_KIND() == TokenKind::TYPE_OPEN) {
+        if(!this->hasNewline() && CUR_KIND() == TokenKind::TYPE_OPEN) {
             this->expect(TokenKind::TYPE_OPEN); // always success
 
             // parse return type
@@ -433,7 +429,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName(bool enterTYPEMode) {
     }
 
     auto typeNode = TRY(this->parse_typeNameImpl());
-    while(!HAS_NL() && CUR_KIND() == TokenKind::TYPE_OPT) {
+    while(!this->hasNewline() && CUR_KIND() == TokenKind::TYPE_OPT) {
         Token token = this->expect(TokenKind::TYPE_OPT); // always success
         typeNode = std::make_unique<ReifiedTypeNode>(std::move(typeNode),
                 std::make_unique<BaseTypeNode>(token, TYPE_OPTION));
@@ -484,7 +480,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
         this->consume();    // ASSERT
         auto condNode = TRY(this->parse_expression());
         std::unique_ptr<Node> messageNode;
-        if(!HAS_NL() && CUR_KIND() == TokenKind::COLON) {
+        if(!this->hasNewline() && CUR_KIND() == TokenKind::COLON) {
             TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
             messageNode = TRY(this->parse_expression());
         } else {
@@ -512,7 +508,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
         }
         Token token = TRY(this->expect(TokenKind::IDENTIFIER));
         std::unique_ptr<Node> exprNode;
-        if(!HAS_NL() && CUR_KIND() == TokenKind::COLON) {
+        if(!this->hasNewline() && CUR_KIND() == TokenKind::COLON) {
             TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
             exprNode = TRY(this->parse_expression());
         }
@@ -579,7 +575,7 @@ std::unique_ptr<Node> Parser::parse_statementEnd(bool disallowEOS) {
             this->lexer->setComplete(false);
             this->consume();
         }
-        if(!HAS_NL()) {
+        if(!this->hasNewline()) {
             this->reportTokenMismatchedError(TokenKind::NEW_LINE);
         }
         break;
@@ -855,7 +851,7 @@ std::unique_ptr<Node> Parser::parse_command() {
     auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
     auto node = std::make_unique<CmdNode>(std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind));
 
-    for(bool next = true; next && HAS_SPACE() && !HAS_NL();) {
+    for(bool next = true; next && this->hasSpace() && !this->hasNewline();) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg_LP(GEN_LA_CASE) {
             auto argNode = this->parse_cmdArg();
@@ -873,12 +869,7 @@ std::unique_ptr<Node> Parser::parse_command() {
             node->addRedirNode(TRY(this->parse_redirOption()));
             break;
         case TokenKind::INVALID:
-#define EACH_LA_cmdArgs(E) \
-            EACH_LA_cmdArg(E) \
-            EACH_LA_redir(E)
-
             E_DETAILED(ParseErrorKind::CMD_ARG, EACH_LA_cmdArgs(GEN_LA_ALTER));
-#undef EACH_LA_cmdArgs
         default:
             next = false;
             break;
@@ -920,7 +911,7 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
     assert(!hasFlag(opt, CmdArgParseOpt::FIRST));
     auto node = std::make_unique<CmdArgNode>(TRY(this->parse_cmdArgSeg(opt | CmdArgParseOpt::FIRST)));
 
-    while(!HAS_SPACE() && !HAS_NL() && lookahead_cmdArg_LP(CUR_KIND())) {
+    while(!this->hasSpace() && !this->hasNewline() && lookahead_cmdArg_LP(CUR_KIND())) {
         node->addSegmentNode(TRY(this->parse_cmdArgSeg(opt)));
     }
     return node;
@@ -958,7 +949,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
         if(this->inCompletionPoint()) {
             if(this->inVarNameCompletionPoint()) {
                 this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
-            } else if(HAS_SPACE() || this->consumedKind == TokenKind::PATH_SEP
+            } else if(this->hasSpace() || this->consumedKind == TokenKind::PATH_SEP
                     || !hasFlag(opt, CmdArgParseOpt::MODULE)) {
                 bool tilde = this->lexer->startsWith(this->curToken, '~');
                 this->ccHandler->addCmdArgOrModRequest(this->lexer->toCmdArg(this->curToken), opt, tilde);
@@ -1009,7 +1000,7 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
     GUARD_DEEP_NESTING(guard);
 
     auto node = TRY(this->parse_unaryExpression());
-    while(!HAS_NL()) {
+    while(!this->hasNewline()) {
         const auto info = getOpInfo(this->curKind);
         if(!hasFlag(info.attr, OperatorAttr::INFIX) || info.prece < basePrecedence) {
             break;
@@ -1032,7 +1023,7 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
             this->consume();    // WITH
             auto redirNode = TRY(this->parse_redirOption());
             auto withNode = std::make_unique<WithNode>(std::move(node), std::move(redirNode));
-            for(bool next = true; next && HAS_SPACE();) {
+            for(bool next = true; next && this->hasSpace();) {
                 switch(CUR_KIND()) {
                 EACH_LA_redir(GEN_LA_CASE) {
                     withNode->addRedirNode(TRY(this->parse_redirOption()));
@@ -1108,7 +1099,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
 
     auto node = TRY(this->parse_primaryExpression());
 
-    for(bool next = true; !HAS_NL() && next;) {
+    for(bool next = true; !this->hasNewline() && next;) {
         switch(CUR_KIND()) {
         case TokenKind::ACCESSOR: {
             this->consume();    // ACCESSOR
@@ -1117,7 +1108,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             }
             Token token = TRY(this->expect(TokenKind::IDENTIFIER));
             node = std::make_unique<AccessNode>(std::move(node), this->newVarNode(token));
-            if(CUR_KIND() == TokenKind::LP && !HAS_NL()) {  // treat as method call
+            if(CUR_KIND() == TokenKind::LP && !this->hasNewline()) {  // treat as method call
                 auto argsNode = TRY(this->parse_arguments());
                 node = std::make_unique<ApplyNode>(std::move(node), std::move(argsNode));
             }
@@ -1285,7 +1276,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case TokenKind::BREAK: {
         Token token = this->expect(TokenKind::BREAK); // always success
         std::unique_ptr<Node> exprNode;
-        if(!HAS_NL() && lookahead_expression(CUR_KIND())) {
+        if(!this->hasNewline() && lookahead_expression(CUR_KIND())) {
             exprNode = TRY(this->parse_expression());
         }
         return JumpNode::newBreak(token, std::move(exprNode));
@@ -1297,7 +1288,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case TokenKind::RETURN: {
         Token token = this->expect(TokenKind::RETURN); // always success
         std::unique_ptr<Node> exprNode;
-        if(!HAS_NL() && lookahead_expression(CUR_KIND())) {
+        if(!this->hasNewline() && lookahead_expression(CUR_KIND())) {
             exprNode = TRY(this->parse_expression());
         }
         return JumpNode::newReturn(token, std::move(exprNode));
@@ -1467,12 +1458,6 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
             next = false;
             break;
         default:
-#define EACH_LA_stringExpression(OP) \
-    OP(STR_ELEMENT)                  \
-    EACH_LA_interpolation(OP) \
-    OP(START_SUB_CMD)                \
-    OP(CLOSE_DQUOTE)
-
             if(this->inVarNameCompletionPoint()) {
                 this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
             } else if(this->inCompletionPointAt(TokenKind::EOS)) {
@@ -1480,8 +1465,6 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
                 this->ccHandler->addExpectedTokenRequests(kinds);
             }
             E_ALTER(EACH_LA_stringExpression(GEN_LA_ALTER));
-
-#undef EACH_LA_stringExpression
         }
     }
 
@@ -1613,7 +1596,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
         });
 
         std::unique_ptr<Node> valueNode;
-        if(!HAS_SPACE() && !HAS_NL() && lookahead_cmdArg_LP(CUR_KIND())) {
+        if(!this->hasSpace() && !this->hasNewline() && lookahead_cmdArg_LP(CUR_KIND())) {
             valueNode = this->parse_cmdArg(CmdArgParseOpt::ASSIGN);
             if(this->incompleteNode) {
                 comp = true;
@@ -1634,7 +1617,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
     std::unique_ptr<Node> exprNode;
     if(comp) {
         exprNode = std::make_unique<EmptyNode>();   //dummy
-    } else if(!HAS_NL() && lookahead_expression(CUR_KIND())) {
+    } else if(!this->hasNewline() && lookahead_expression(CUR_KIND())) {
         exprNode = this->parse_expression(getPrecedence(TokenKind::WITH));
         if(this->incompleteNode) {
             comp = true;

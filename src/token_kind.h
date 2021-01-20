@@ -288,6 +288,12 @@
     EACH_LA_varDecl(OP) \
     EACH_LA_expression(OP)
 
+#define EACH_LA_stringExpression(OP) \
+    OP(STR_ELEMENT)                  \
+    EACH_LA_interpolation(OP) \
+    OP(START_SUB_CMD)                \
+    OP(CLOSE_DQUOTE)
+
 #define EACH_LA_redirFile(OP) \
     OP(REDIR_IN_2_FILE) \
     OP(REDIR_OUT_2_FILE) \
@@ -322,6 +328,10 @@
 #define EACH_LA_cmdArg_LP(OP) \
     EACH_LA_cmdArg(OP) \
     OP(LP)
+
+#define EACH_LA_cmdArgs(E) \
+    EACH_LA_cmdArg(E) \
+    EACH_LA_redir(E)
 
 #define EACH_LA_typeName(OP) \
     OP(IDENTIFIER) \
