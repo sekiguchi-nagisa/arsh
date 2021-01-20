@@ -315,6 +315,22 @@ builtin_command_t lookupBuiltinCommand(const char *commandName) {
     return builtinCommands[iter->second].cmd_ptr;
 }
 
+std::string toPrintable(StringRef ref) {
+    auto old = errno;
+    std::string ret;
+    for(auto ch : ref) {
+        if(ch < 32 || ch == 127) {
+            char d[16];
+            snprintf(d, arraySize(d), "\\x%02x", ch);
+            ret += d;
+        } else {
+            ret += ch;
+        }
+    }
+    errno = old;
+    return ret;
+}
+
 static void printAllUsage(FILE *fp) {
     for(const auto &e : builtinCommands) {
         fprintf(fp, "%s %s\n", e.commandName, e.usage);
@@ -423,11 +439,11 @@ static int builtin_cd(DSState &state, ArrayObject &argvObj) {
     }
 
     if(useOldpwd) {
-        printf("%s\n", dest.data());
+        printf("%s\n", toPrintable(dest).c_str());
     }
 
     if(!changeWorkingDir(state, dest, useLogical)) {
-        PERROR(argvObj, "%s", dest.data());
+        PERROR(argvObj, "%s", toPrintable(dest).c_str());
         return 1;
     }
     return 0;
@@ -891,7 +907,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         auto op = argvObj.getValues()[1].asStrRef();
         auto ref = argvObj.getValues()[2].asStrRef();
         if(op.size() != 2 || op[0] != '-') {
-            ERROR(argvObj, "%s: invalid unary operator", op.data());
+            ERROR(argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
             return 2;
         }
 
@@ -907,7 +923,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             }
             int r = testFile(opKind, ref.data());
             if(r == 2) {
-                ERROR(argvObj, "%s: invalid unary operator", op.data());
+                ERROR(argvObj, "%s: invalid unary operator", toPrintable(op).c_str());
             }
             return r;
         }
@@ -929,14 +945,14 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
             auto pair = convertToNum<int64_t>(left.begin(), left.end());
             int64_t n1 = pair.first;
             if(!pair.second) {
-                ERROR(argvObj, "%s: must be integer", left.data());
+                ERROR(argvObj, "%s: must be integer", toPrintable(left).c_str());
                 return 2;
             }
 
             pair = convertToNum<int64_t>(right.begin(), right.end());
             int64_t n2 = pair.first;
             if(!pair.second) {
-                ERROR(argvObj, "%s: must be integer", right.data());
+                ERROR(argvObj, "%s: must be integer", toPrintable(right).c_str());
                 return 2;
             }
 
@@ -949,7 +965,7 @@ static int builtin_test(DSState &, ArrayObject &argvObj) {
         }
 #undef GEN_CASE
         case BinaryOp::INVALID:
-            ERROR(argvObj, "%s: invalid binary operator", op.data());   //FIXME:
+            ERROR(argvObj, "%s: invalid binary operator", toPrintable(op).c_str());   //FIXME:
             return 2;
         }
         break;
@@ -1010,7 +1026,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
             StringRef value = optState.optArg;
             fd = parseFD(value);
             if(fd < 0) {
-                ERROR(argvObj, "%s: invalid file descriptor", value.data());
+                ERROR(argvObj, "%s: invalid file descriptor", toPrintable(value).c_str());
                 return 1;
             }
             break;
@@ -1027,7 +1043,7 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
                     }
                 }
             }
-            ERROR(argvObj, "%s: invalid timeout specification", optState.optArg.data());
+            ERROR(argvObj, "%s: invalid timeout specification", toPrintable(optState.optArg).c_str());
             return 1;
         }
         case ':':
@@ -1163,7 +1179,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
         if(arg == "-r") {
             remove = true;
         } else {
-            return invalidOptionError(argvObj, arg.data());
+            return invalidOptionError(argvObj, toPrintable(arg).c_str());
         }
     }
 
@@ -1177,7 +1193,7 @@ static int builtin_hash(DSState &state, ArrayObject &argvObj) {
                 state.pathCache.removePath(hasNul ? nullptr : name);
             } else {
                 if(hasNul || state.pathCache.searchPath(name) == nullptr) {
-                    ERROR(argvObj, "%s: not found", name);
+                    ERROR(argvObj, "%s: not found", toPrintable(ref).c_str());
                     return 1;
                 }
             }
@@ -1233,7 +1249,7 @@ static int builtin_complete(DSState &state, ArrayObject &argvObj) {
         case 'A': {
             auto iter = actionMap.find(optState.optArg);
             if(iter == actionMap.end()) {
-                ERROR(argvObj, "%s: invalid action", optState.optArg.data());
+                ERROR(argvObj, "%s: invalid action", toPrintable(optState.optArg).c_str());
                 return showUsage(argvObj);
             }
             setFlag(compOp, iter->second);
@@ -1282,7 +1298,7 @@ static int builtin_setenv(DSState &, ArrayObject &argvObj) {
                 continue;
             }
         }
-        PERROR(argvObj, "%s", kv.data());
+        PERROR(argvObj, "%s", toPrintable(kv).c_str());
         return 1;
     }
     return 0;
@@ -1293,7 +1309,7 @@ static int builtin_unsetenv(DSState &, ArrayObject &argvObj) {
     for(auto iter = argvObj.getValues().begin() + 1; iter != end; ++iter) {
         auto envName = iter->asStrRef();
         if(unsetenv(envName.hasNullChar() ? "" : envName.data()) != 0) {
-            PERROR(argvObj, "%s", envName.data());
+            PERROR(argvObj, "%s", toPrintable(envName).c_str());
             return 1;
         }
     }
@@ -1342,7 +1358,7 @@ static bool killProcOrJob(DSState &state, ArrayObject &argvObj, StringRef arg, i
     bool isJob = arg.startsWith("%");
     auto pair = toInt32(isJob ? arg.substr(1) : arg);
     if(!pair.second) {
-        ERROR(argvObj, "%s: arguments must be process or job IDs", arg.data());
+        ERROR(argvObj, "%s: arguments must be process or job IDs", toPrintable(arg).c_str());
         return false;
     }
 
@@ -1354,12 +1370,12 @@ static bool killProcOrJob(DSState &state, ArrayObject &argvObj, StringRef arg, i
                 return true;
             }
         }
-        ERROR(argvObj, "%s: no such job", arg.data());
+        ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
         return false;
     }
 
     if(kill(pair.first, sigNum) < 0) {
-        PERROR(argvObj, "%s", arg.data());
+        PERROR(argvObj, "%s", toPrintable(arg).c_str());
         return false;
     }
     return true;
@@ -1389,7 +1405,7 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
         }
         sigNum = toSigNum(sigStr);
         if(sigNum == -1) {
-            ERROR(argvObj, "%s: invalid signal specification", sigStr.data());
+            ERROR(argvObj, "%s: invalid signal specification", toPrintable(sigStr).c_str());
             return 1;
         }
         break;
@@ -1427,7 +1443,7 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
         if(listing) {
             if(!printNumOrName(arg)) {
                 count++;
-                ERROR(argvObj, "%s: invalid signal specification", arg.data());
+                ERROR(argvObj, "%s: invalid signal specification", toPrintable(arg).c_str());
             }
         } else {
             if(killProcOrJob(state, argvObj, arg, sigNum)) {
@@ -1482,7 +1498,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
         }
         job->send(SIGCONT);
     } else {
-        ERROR(argvObj, "%s: no such job", arg.data());
+        ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
         ret = 1;
         if(fg) {
             return ret;
@@ -1507,7 +1523,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
         if(job) {
             job->send(SIGCONT);
         } else {
-            ERROR(argvObj, "%s: no such job", arg.data());
+            ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
             ret = 1;
         }
     }
@@ -1929,7 +1945,7 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
             auto pair = convertToNum<int32_t>(value.begin(), value.end(), 8);
             int num = pair.first;
             if(!pair.second || num < 0 || num > 0777) {
-                ERROR(argvObj, "%s: octal number out of range (0000~0777)", value.data());
+                ERROR(argvObj, "%s: octal number out of range (0000~0777)", toPrintable(value).c_str());
                 return 1;
             }
             mask = num;
@@ -2018,7 +2034,7 @@ static int showOption(const DSState &state, const ArrayObject &argvObj) {
             auto name = argvObj.getValues()[i].asStrRef();
             auto option = lookupRuntimeOption(name);
             if(empty(option)) {
-                ERROR(argvObj, "undefined runtime option: %s", name.data());
+                ERROR(argvObj, "undefined runtime option: %s", toPrintable(name).c_str());
                 return 1;
             }
             setFlag(foundSet, option);
@@ -2047,7 +2063,7 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
         auto name = argvObj.getValues()[i].asStrRef();
         auto option = lookupRuntimeOption(name);
         if(empty(option)) {
-            ERROR(argvObj, "undefined runtime option: %s", name.data());
+            ERROR(argvObj, "undefined runtime option: %s", toPrintable(name).c_str());
             return 1;
         }
         if(option == RuntimeOption::MONITOR && !foundMonitor) {
@@ -2103,15 +2119,15 @@ static std::pair<const ModType*, bool> parseModDest(const DSState &st, const Arr
                                    FullnameOp op, StringRef opt) {
     switch(op) {
     case FullnameOp::LEVEL: {   // parse num
-        auto pair =convertToNum<int64_t>(opt.begin(), opt.end());
+        auto pair = convertToNum<int64_t>(opt.begin(), opt.end());
         if(!pair.second || pair.first < 0 || pair.first > UINT16_MAX) {
-            ERROR(argvObj, "require positive number (up to UINT16_MAX): %s", opt.data());
+            ERROR(argvObj, "require positive number (up to UINT16_MAX): %s", toPrintable(opt).c_str());
             return {nullptr, false};
         }
         auto level = static_cast<unsigned int>(pair.first);
         auto *ret = getRuntimeModuleByLevel(st, level);
         if(!ret && level > 0) {
-            ERROR(argvObj, "too large call level: %s", opt.data());
+            ERROR(argvObj, "too large call level: %s", toPrintable(opt).c_str());
             return {nullptr, false};
         }
         return {ret, true};
@@ -2126,7 +2142,7 @@ static std::pair<const ModType*, bool> parseModDest(const DSState &st, const Arr
                 return {static_cast<const ModType*>(ret.asOk()), true};
             }
         }
-        ERROR(argvObj, "invalid module object: %s", opt.data());
+        ERROR(argvObj, "invalid module object: %s", toPrintable(opt).c_str());
         return {nullptr, false};
     }
     }
@@ -2229,7 +2245,7 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
         } else if(ref == "fullname") {
             return resolveFullCommandName(state, argvObj);
         } else {
-            ERROR(argvObj, "undefined subcommand: %s", ref.data());
+            ERROR(argvObj, "undefined subcommand: %s", toPrintable(ref).c_str());
             return 2;
         }
     }

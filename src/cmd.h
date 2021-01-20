@@ -45,6 +45,13 @@ const char *getBuiltinCommandName(unsigned int index);
 
 builtin_command_t lookupBuiltinCommand(const char *commandName);
 
+/**
+ * convert to printable string
+ * @param ref
+ * @return
+ */
+std::string toPrintable(StringRef ref);
+
 // common function for field splitting
 inline bool isSpace(char ch) {
     return ch == ' ' || ch == '\t' || ch == '\n';
