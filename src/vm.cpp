@@ -883,6 +883,13 @@ void VM::builtinExec(DSState &state, DSValue &&array, DSValue &&redir) {
     unsigned int index = optState.index;
     const unsigned int argc = argvObj.getValues().size();
     if(index < argc) { // exec
+        if(argvObj.getValues()[index].asStrRef().hasNullChar()) {
+            auto name = toPrintable(argvObj.getValues()[index].asStrRef());
+            ERROR(argvObj, "contains null characters: %s", name.c_str());
+            pushExitStatus(state, 1);
+            return;
+        }
+
         char *argv2[argc - index + 1];
         for(unsigned int i = index; i < argc; i++) {
             argv2[i - index] = const_cast<char *>(argvObj.getValues()[i].asCStr());

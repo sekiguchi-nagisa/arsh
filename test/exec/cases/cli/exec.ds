@@ -3,6 +3,12 @@ source expect.ds
 
 $expect("$(ds -e echo hello 2>&1)", 0, "hello")
 
+# invalid name
+assert !exec $'ps\x00'
+assert $? == 1
+assert "$(exec $'ps\x00' 2>&1)" == "ydsh: exec: contains null characters: ps\x00"
+
+
 # not found builtin command
 $expect("$(ds -e hoghrere hello 2>&1)", 1, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')
 
