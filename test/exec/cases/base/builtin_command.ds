@@ -36,6 +36,9 @@ try {
 assert $ex is SystemError
 assert ($ex as Error).message() == 'execution error: hoge: command not found'
 
+command $'ls\x00A'
+assert $? == 1
+assert "$(command $'ls\x00A' 2>&1)" == 'ydsh: command: contains null characters: ls\x00A'
 
 # show command information
 hash -r

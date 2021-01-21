@@ -781,6 +781,13 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
     const unsigned int argc = arrayObj.getValues().size();
     if(index < argc) {
         if(showDesc == 0) { // execute command
+            if(arrayObj.getValues()[1].asStrRef().hasNullChar()) {
+                auto name = toPrintable(arrayObj.getValues()[1].asStrRef());
+                ERROR(arrayObj, "contains null characters: %s", name.c_str());
+                pushExitStatus(state, 1);
+                return true;
+            }
+
             auto &values = arrayObj.refValues();
             values.erase(values.begin(), values.begin() + index);
 
