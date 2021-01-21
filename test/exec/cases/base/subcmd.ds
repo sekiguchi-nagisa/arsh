@@ -13,6 +13,9 @@ assert $? == 1
 assert "$(m huga 2>&1)" == "ydsh: m: undefined subcommand: huga"
 assert $? == 2
 
+assert "$(m $'call_cmd\x00' 2>&1)" == "ydsh: m: undefined subcommand: call_cmd\x00"
+assert $? == 2
+
 assert "$(m call_cmd false)" == $'call false'
 assert $? == 1
 

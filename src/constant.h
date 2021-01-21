@@ -174,8 +174,8 @@ constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {
         "command", "_exit",
 };
 
-inline std::string toCmdFullName(const std::string &cmdName) {
-    std::string name = cmdName;
+inline std::string toCmdFullName(StringRef cmdName) {
+    std::string name = cmdName.toString();
     name += CMD_SYMBOL_SUFFIX;
     return name;
 }

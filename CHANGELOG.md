@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - bugfix ``Regex#replace`` method when replce with empty string
 - not show error line marker when reach EOS and previous token size is 1
+- disallow subcommand call when subcommand name contains null characters
 
 
 ## [0.20.0] - 2020-12-31

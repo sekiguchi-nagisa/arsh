@@ -675,17 +675,17 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType,
         return true;
     }
 
-    const char *cmd = array.getValues()[1].asCStr();
-    if(*cmd == '_') {
-        ERROR(array, "cannot resolve private subcommand: %s", cmd);
+    auto subcmd = array.getValues()[1].asStrRef();
+    if(subcmd[0] == '_') {
+        ERROR(array, "cannot resolve private subcommand: %s", toPrintable(subcmd).c_str());
         pushExitStatus(state, 1);
         return true;
     }
 
-    std::string key = toCmdFullName(cmd);
+    std::string key = toCmdFullName(subcmd);
     auto *handle = modType.lookupField(key);
     if(!handle) {
-        ERROR(array, "undefined subcommand: %s", cmd);
+        ERROR(array, "undefined subcommand: %s", toPrintable(subcmd).c_str());
         pushExitStatus(state, 2);
         return true;
     }
