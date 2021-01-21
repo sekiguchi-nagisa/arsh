@@ -2,7 +2,7 @@ var cur = "$(pwd)"
 
 cd $'\x002341'
 assert $? == 1
-assert "$(cd $'\x002341' 2>&1)" == "ydsh: cd: : Invalid argument"
+assert "$(cd $'\x002341' 2>&1)" == "ydsh: cd: \x002341: Invalid argument"
 
 assert "$(pwd)" == $cur
 

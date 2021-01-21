@@ -20,7 +20,7 @@ assert("$(hash hfreiufre 2>&1)" == "ydsh: hash: hfreiufre: not found")
 
 hash $'ls\x00ww'
 assert($? == 1)
-assert("$(hash $'ls\x00ww' 2>&1)" == "ydsh: hash: ls: not found")
+assert("$(hash $'ls\x00ww' 2>&1)" == "ydsh: hash: ls\x00ww: not found")
 
 # remove cache
 hash -r cat ps

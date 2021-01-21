@@ -32,7 +32,7 @@ $assertEQ("$(sh -c 'umask u=wxr,g= && umask -S')", "$(umask -S u=wxr,g=)")
 $? =0
 umask $'777\x00' 2> /dev/null
 assert $? == 1
-$assertEQ("ydsh: umask: 777: octal number out of range (0000~0777)", "$(umask $'777\x00' 2>&1)")
+$assertEQ("ydsh: umask: 777\x00: octal number out of range (0000~0777)", "$(umask $'777\x00' 2>&1)")
 
 $? = 0
 umask 99999 2> /dev/null
