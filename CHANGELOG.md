@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Core
 - introduce fully qualified command name
   - builtin ``eval`` command can accept fully qualified command name
+  - builtin ``command`` command support fully qualified command name
 
 #### Builtin
 - add ``fullname`` subcommand to builtin ``shctl``

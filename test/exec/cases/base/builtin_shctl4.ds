@@ -10,51 +10,64 @@ say!!() {
 shctl fullname say!!
 assert $? == 0
 assert $REPLY == $'%mod2\x00say!!' : $REPLY
+assert "$(command -V "$REPLY")" =~ $/user-defined/
 assert "$(eval "$REPLY" 123)" == 'not say!! 123'
 
 shctl fullname -l 0 say!!
 assert $? == 0
 assert $REPLY == $'%mod2\x00say!!' : $REPLY
+assert "$(command -V "$REPLY")" =~ $/user-defined/
 assert "$(eval "$REPLY" 123)" == 'not say!! 123'
 
 assert $f.say_(0) == $'%mod3\x00say!!'
+assert "$(command -V "${$f.say_(0)}")" =~ $/user-defined/
 assert "$(eval "${$f.say_(0)}" 000)" == 'say!! 000'
 
 assert $f.say_(1) == $'%mod2\x00say!!'
+assert "$(command -V "${$f.say_(1)}")" =~ $/user-defined/
 assert "$(eval "${$f.say_(1)}" 000)" == 'not say!! 000'
 
 assert $f.say_(2) == ''
+assert "$(command -V "${$f.say_(2)}" 2>&1)" =~ $/not found/
 
 assert $f.say__(0) == $'%mod3\x00_say!!'
+assert "$(command -V ${$f.say__(0)})" =~ $/user-defined/
 assert "$(eval "${$f.say__(0)}" 000)" == '_say!! 000'
 
 assert $f.say__(1) == ''
+assert "$(command -V "${$f.say__(1)}" 2>&1)" =~ $/not found/
 
 ## resolve by module name
 shctl fullname -m $f say!!
 assert $? == 0
 assert $REPLY == $'%mod3\x00say!!'
+assert "$(command -V "$REPLY")" =~ $/user-defined/
 assert "$(eval "$REPLY" 456)" == 'say!! 456'
 
 shctl fullname -m $f _say!!
 assert $? == 0
 assert $REPLY == $'%mod3\x00_say!!'
+assert "$(command -V "$REPLY")" =~ $/user-defined/
 assert "$(eval "$REPLY" 456)" == '_say!! 456'
 
 assert $f.hey_() == $'%mod4\x00say0' : $f.hey_()
+assert "$(command -V "${$f.hey_()}")" =~ $/user-defined/
 assert "$(eval "$REPLY" 9)" == '_say!! 9'
 
 assert $f.hey__() == $'%mod4\x00_say0' : $f.hey__()
+assert "$(command -V "${$f.hey__()}")" =~ $/user-defined/
 assert "$(eval "$REPLY" 909)" == '_say!! 909'
 
 shctl fullname -m $f m
 assert $? == 0
 assert $REPLY == $'%mod3\x00m'
+assert "$(command -V "$REPLY")" =~ $/user-defined/
 assert "$(eval "$REPLY" say0 456)" == '_say!! 456'
 
 shctl fullname -m $f m
 assert $? == 0
 assert $REPLY == $'%mod3\x00m'
+assert "$(command -V "$REPLY")" =~ $/user-defined/
 assert "$(eval "$REPLY" _say0 456 2>&1)" == 'ydsh: %mod3: cannot resolve private subcommand: _say0'
 assert $? == 1
 
@@ -65,6 +78,7 @@ $CMD_FALLBACK = $cnf
 
 assert shctl fullname -m 'module(%mod0)' _cmd_fallback_handler
 assert $REPLY == $'%mod0\x00_cmd_fallback_handler'
+assert "$(command -V "$REPLY")" =~ $/user-defined/
 assert "$(eval "$REPLY" 1 2 3)" == 'fallback: 1 2 3'
 
 
@@ -72,22 +86,27 @@ assert "$(eval "$REPLY" 1 2 3)" == 'fallback: 1 2 3'
 shctl fullname exit
 assert $? == 0
 assert $REPLY == 'exit'
+assert "$(command -V "$REPLY")" =~ $/builtin/
 
 shctl fullname -l 0 exit
 assert $? == 0
 assert $REPLY == 'exit'
+assert "$(command -V "$REPLY")" =~ $/builtin/
 
 shctl fullname cd
 assert $? == 0
 assert $REPLY == 'cd'
+assert "$(command -V "$REPLY")" =~ $/builtin/
 
 shctl fullname -l 0 cd
 assert $? == 0
 assert $REPLY == 'cd'
+assert "$(command -V "$REPLY")" =~ $/builtin/
 
 shctl fullname env
 assert $? == 0
 assert $REPLY == "/usr/bin/env"
+assert "$(command -V "$REPLY")" =~ $/is \/usr\/bin\/env/
 
 
 # invalud

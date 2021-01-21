@@ -800,13 +800,14 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
         // show command description
         unsigned int successCount = 0;
         for(; index < argc; index++) {
-            const char *commandName = arrayObj.getValues()[index].asCStr();
-            auto cmd = CmdResolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH)(state, commandName);
+            auto ref = arrayObj.getValues()[index].asStrRef();
+            auto cmd = CmdResolver(CmdResolver::NO_FALLBACK | CmdResolver::USE_FQN,
+                                   FilePathCache::DIRECT_SEARCH)(state, ref);
             switch(cmd.kind()) {
             case ResolvedCmd::USER_DEFINED:
             case ResolvedCmd::MODULE: {
                 successCount++;
-                fputs(commandName, stdout);
+                fputs(toPrintable(ref).c_str(), stdout);
                 if(showDesc == 2) {
                     fputs(" is an user-defined command", stdout);
                 }
@@ -816,7 +817,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
             case ResolvedCmd::BUILTIN_S:
             case ResolvedCmd::BUILTIN: {
                 successCount++;
-                fputs(commandName, stdout);
+                fputs(ref.data(), stdout);
                 if(showDesc == 2) {
                     fputs(" is a shell builtin command", stdout);
                 }
@@ -827,6 +828,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
                 const char *path = cmd.filePath();
                 if(path != nullptr && isExecutable(path)) {
                     successCount++;
+                    const char *commandName = ref.data();
                     if(showDesc == 1) {
                         printf("%s\n", path);
                     } else if(state.pathCache.isCached(commandName)) {
@@ -843,7 +845,7 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
             }
 
             if(showDesc == 2) {
-                ERROR(arrayObj, "%s: not found", commandName);
+                ERROR(arrayObj, "%s: not found", toPrintable(ref).c_str());
             }
         }
         pushExitStatus(state, successCount > 0 ? 0 : 1);
