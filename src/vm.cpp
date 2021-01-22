@@ -1284,7 +1284,7 @@ bool VM::mainLoop(DSState &state) {
             std::string value = ": ";
             value += stackTopType.getNameRef();
             value += " = ";
-            value.append(ref.data(), ref.size());
+            value += ref;
             value += "\n";
             fwrite(value.c_str(), sizeof(char), value.size(), stdout);
             fflush(stdout);

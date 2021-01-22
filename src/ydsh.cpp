@@ -786,9 +786,9 @@ const char *DSState_initExecutablePath(DSState *st) {
 
     auto *handle = st->rootModScope->lookup(VAR_YDSH_BIN);
     assert(handle);
-    auto ref = st->getGlobal(handle->getIndex()).asStrRef();
-    if(!ref.empty()) {
-        return ref.data();
+    const char *ret = st->getGlobal(handle->getIndex()).asCStr();
+    if(*ret) {
+        return ret;
     }
     char *path = getExecutablePath();
     if(path) {
