@@ -711,7 +711,7 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType,
     values.erase(iter, values.end());
 
     // override COMPREPLY
-    st.setGlobal(toIndex(BuiltinVarOffset::COMPREPLY), std::move(result));
+    st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(result));
     return values.size();
 }
 

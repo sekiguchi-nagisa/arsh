@@ -1064,12 +1064,12 @@ static int builtin_read(DSState &state, ArrayObject &argvObj) {  //FIXME: timeou
     }
 
     // clear old variable before read
-    state.setGlobal(toIndex(BuiltinVarOffset::REPLY), DSValue::createStr());    // clear REPLY
+    state.setGlobal(BuiltinVarOffset::REPLY, DSValue::createStr());    // clear REPLY
     typeAs<MapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR)).clear();      // clear reply
 
 
     const unsigned int varSize = argc - index;  // if zero, store line to REPLY
-    const unsigned int varIndex = toIndex(varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR);
+    const auto varIndex = varSize == 0 ? BuiltinVarOffset::REPLY : BuiltinVarOffset::REPLY_VAR;
     std::string strBuf;
 
     // show prompt
