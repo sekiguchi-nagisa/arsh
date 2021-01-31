@@ -1,0 +1,4 @@
+#$test($out = $'a  # hello b\n')
+
+echo a \ # hello \
+     b # comment
