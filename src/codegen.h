@@ -440,6 +440,7 @@ private:
     void visitEmbedNode(EmbedNode &node) override;
     void visitCmdNode(CmdNode &node) override;
     void visitCmdArgNode(CmdArgNode &node) override;
+    void visitArgArrayNode(ArgArrayNode &node) override;
     void visitRedirNode(RedirNode &node) override;
     void visitWildCardNode(WildCardNode &node) override;
     void visitPipelineNode(PipelineNode &node) override;

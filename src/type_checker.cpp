@@ -759,6 +759,13 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
             : node.getSegmentNodes()[0]->getType());
 }
 
+void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
+    for(auto &argNode : node.getCmdArgNodes()) {
+        this->checkTypeAsExpr(*argNode);
+    }
+    node.setType(this->typePool.get((TYPE::StringArray)));
+}
+
 void TypeChecker::visitRedirNode(RedirNode &node) {
     auto &argNode = node.getTargetNode();
     this->checkTypeAsExpr(argNode);

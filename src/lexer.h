@@ -27,11 +27,35 @@ namespace ydsh {
 
 #include <yycond.h>
 
-const char *toModeName(LexerMode mode);
+class LexerMode {
+private:
+    LexerCond cond_;
+    bool skipNL_;
+
+public:
+    LexerMode(LexerCond cond, bool skipNL) : cond_(cond), skipNL_(skipNL) {}
+
+    LexerMode(LexerCond cond) : LexerMode(cond, false) {}   //NOLINT
+
+    LexerMode() : LexerMode(yycSTMT) {}
+
+    LexerCond cond() const {
+        return this->cond_;
+    }
+
+    bool skipNL() const {
+        return this->skipNL_;
+    }
+
+    std::string toString() const;
+};
 
 
 class Lexer : public ydsh::LexerBase {
 private:
+    static_assert(sizeof(LexerMode) == sizeof(uint16_t), "");
+    static_assert(std::is_trivially_copyable<LexerMode>::value, "");
+
     CStrPtr scriptDir;
 
     std::vector<LexerMode> modeStack;

@@ -736,6 +736,15 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
     }
 }
 
+void ByteCodeGenerator::visitArgArrayNode(ArgArrayNode &node) {
+    this->emitTypeIns(OpCode::NEW, node.getType());
+    this->emit0byteIns(OpCode::PUSH_NULL);
+    for(auto &argNode : node.getCmdArgNodes()) {
+        this->visit(*argNode);
+    }
+    this->emit0byteIns(OpCode::POP);
+}
+
 static RedirOP resolveRedirOp(TokenKind kind) {
     switch(kind) {
 #define GEN_CASE(ENUM, BITS) case TokenKind::REDIR_##ENUM : return RedirOP::ENUM;

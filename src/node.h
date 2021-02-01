@@ -54,6 +54,7 @@ namespace ydsh {
     OP(Embed) \
     OP(Cmd) \
     OP(CmdArg) \
+    OP(ArgArray) \
     OP(Redir) \
     OP(WildCard) \
     OP(Pipeline) \
@@ -1237,6 +1238,24 @@ public:
     unsigned int getGlobPathSize() const {
         return this->globPathSize;
     }
+};
+
+class ArgArrayNode : public WithRtti<Node, NodeKind::ArgArray> {
+private:
+    std::vector<std::unique_ptr<CmdArgNode>> argNodes;
+
+public:
+    explicit ArgArrayNode(Token token) : WithRtti(token) {}
+
+    void addCmdArgNode(std::unique_ptr<CmdArgNode> &&argNode) {
+        this->argNodes.push_back(std::move(argNode));
+    }
+
+    const std::vector<std::unique_ptr<CmdArgNode>> &getCmdArgNodes() const {
+        return this->argNodes;
+    }
+
+    void dump(NodeDumper &dumper) const override;
 };
 
 class RedirNode : public WithRtti<Node, NodeKind::Redir> {
@@ -2624,6 +2643,7 @@ struct NodeVisitor {
     virtual void visitForkNode(ForkNode &node) = 0;
     virtual void visitCmdNode(CmdNode &node) = 0;
     virtual void visitCmdArgNode(CmdArgNode &node) = 0;
+    virtual void visitArgArrayNode(ArgArrayNode &node) = 0;
     virtual void visitRedirNode(RedirNode &node) = 0;
     virtual void visitWildCardNode(WildCardNode &node) = 0;
     virtual void visitPipelineNode(PipelineNode &node) = 0;
@@ -2675,6 +2695,7 @@ struct BaseVisitor : public NodeVisitor {
     void visitEmbedNode(EmbedNode &node) override { this->visitDefault(node); }
     void visitCmdNode(CmdNode &node) override { this->visitDefault(node); }
     void visitCmdArgNode(CmdArgNode &node) override { this->visitDefault(node); }
+    void visitArgArrayNode(ArgArrayNode &node) override { this->visitDefault(node); }
     void visitRedirNode(RedirNode &node) override { this->visitDefault(node); }
     void visitWildCardNode(WildCardNode &node) override { this->visitDefault(node); }
     void visitPipelineNode(PipelineNode &node) override { this->visitDefault(node); }

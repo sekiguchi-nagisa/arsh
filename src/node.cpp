@@ -426,6 +426,14 @@ bool CmdArgNode::isIgnorableEmptyString() const {
                     !isa<StringExprNode>(*this->segmentNodes.back()));
 }
 
+// ##########################
+// ##     ArgArrayNode     ##
+// ##########################
+
+void ArgArrayNode::dump(NodeDumper &dumper) const {
+    DUMP(argNodes);
+}
+
 // #######################
 // ##     RedirNode     ##
 // #######################

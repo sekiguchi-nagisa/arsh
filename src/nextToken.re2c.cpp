@@ -44,6 +44,8 @@ do {                   \
 
 #define PUSH_MODE(m) this->pushLexerMode(yyc ## m)
 
+#define PUSH_MODE_SKIP_NL(m) this->pushLexerMode(LexerMode(yyc ## m, true))
+
 #define MODE(m) this->setLexerMode(yyc ## m)
 
 /*
@@ -63,15 +65,15 @@ do {                   \
         SKIP();\
     } while(false)
 
+#define SKIPPABLE_NL() this->getLexerMode().skipNL()
 
-
-#define YYGETCONDITION() this->getLexerMode()
+#define YYGETCONDITION() this->getLexerMode().cond()
 
 namespace ydsh {
 
 TokenKind Lexer::nextToken(Token &token) {
     /*!re2c
-      re2c:define:YYCONDTYPE = "LexerMode";
+      re2c:define:YYCONDTYPE = "LexerCond : unsigned char";
       re2c:define:YYGETCONDITION = YYGETCONDITION;
       re2c:define:YYCTYPE = "unsigned char";
       re2c:define:YYCURSOR = this->cursor;
@@ -177,6 +179,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "$("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_SUB_CMD); }
       <STMT> ">("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_IN_SUB); }
       <STMT> "<("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_OUT_SUB); }
+      <STMT> "@("              { MODE(EXPR); PUSH_MODE_SKIP_NL(CMD); RET(AT_PAREN); }
 
       <STMT> "$"               { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); } else { ERROR();} }
       <STMT> APPLIED_NAME      { MODE(EXPR); RET_OR_COMP(APPLIED_NAME); }
@@ -295,7 +298,7 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> "||"               { MODE(STMT); RET(COND_OR); }
       <CMD> "&&"               { MODE(STMT); RET(COND_AND); }
       <CMD> LINE_END           { MODE(STMT); RET(LINE_END); }
-      <CMD> NEW_LINE           { MODE(STMT); UPDATE_LN(); FIND_NEW_LINE(); }
+      <CMD> NEW_LINE           { if(!SKIPPABLE_NL()) { MODE(STMT); } UPDATE_LN(); FIND_NEW_LINE(); }
 
       <TYPE> "Func"            { RET_OR_COMP(FUNC); }
       <TYPE> "typeof"          { RET_OR_COMP(TYPEOF); }
@@ -342,7 +345,7 @@ TokenKind Lexer::nextToken(Token &token) {
 
     LOG(TRACE_TOKEN, "%s, %s, text = %s\n    lexer mode: %s",
             toString(kind), toString(token).c_str(),
-            this->toTokenText(token).c_str(), toModeName(this->getLexerMode()));
+            this->toTokenText(token).c_str(), this->getLexerMode().toString().c_str());
     return kind;
 }
 

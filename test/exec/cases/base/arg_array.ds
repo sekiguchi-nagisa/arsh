@@ -1,0 +1,22 @@
+
+var a = @(
+    34
+     @34 \
+     ${true}!!!
+
+)
+
+assert $a is [String]
+assert $a.size() == 3
+assert $a[0] == '34'
+assert $a[1] == '@34'
+assert $a[2] == 'true!!!'
+
+
+$a = @(*)
+var b = $(echo *)
+assert !$a.empty()
+assert $a.size() == $b.size()
+assert diff <(for $e in $a { echo $e; }) <(for $e in $b { echo $e; })
+
+assert @().empty()

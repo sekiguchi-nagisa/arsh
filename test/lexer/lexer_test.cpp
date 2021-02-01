@@ -148,7 +148,7 @@ public:
     }
 
     virtual void assertLexerMode(LexerMode mode) {
-        ASSERT_STREQ(toModeName(mode), toModeName(this->lexer->getLexerMode()));
+        ASSERT_EQ(mode.toString(), this->lexer->getLexerMode().toString());
     }
 };
 

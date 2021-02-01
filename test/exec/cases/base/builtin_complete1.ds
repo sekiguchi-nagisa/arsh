@@ -73,11 +73,11 @@ __cmd() {
 
     # keywords
     case $type {
-    '--expr' => $eachEcho(['new', '"', '$(', '>(', '<(', '(', '[', '{',
+    '--expr' => $eachEcho(['new', '"', '$(', '>(', '@(', '<(', '(', '[', '{',
                            'do', 'for', 'if', 'case', 'try', 'while',
-                           'break', 'continue', 'return',
+                           'break', 'continue', 'return', 
                            '!', '+', '-', 'throw', 'coproc'])
-    '--stmt' => $eachEcho(['new', '"', '$(', '>(', '<(', '(', '[', '{',
+    '--stmt' => $eachEcho(['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
                            'do', 'for', 'if', 'case', 'try', 'while',
                            'break', 'continue', 'return',
 
@@ -194,6 +194,9 @@ $assertArray($(file '/bin'), $(complete '$true with >> /bin/'))
 $assertArray($(file '.'), $(complete 'AAA='))
 $assertArray($(file '/bin'), $(complete 'AAA=hoge:/bin/'))
 $assertArray($(file ~/), $(complete 'AAA=hoge\\:~/'))
+$assertArray($(file '.'), $(complete '@('))
+$assertArray($(file '/usr/bin'), $(complete '@(34 /usr/bin/'))
+$assertArray($(file ~/), $(complete '@(${45 + 45} ~/'))
 $assertArray(new [String](), $(complete 'import-env home '))
 $assertArray(new [String](), $(complete 'assert (ls) : "de" '))
 $assertArray(new [String](), $(complete 'echo :'))

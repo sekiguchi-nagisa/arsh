@@ -76,7 +76,7 @@ void Parser::restoreLexerState(Token prevToken) {
 }
 
 void Parser::changeLexerModeToSTMT() {
-    if(this->lexer->getPrevMode() != yycSTMT) {
+    if(this->lexer->getPrevMode().cond() != yycSTMT) {
         if(CUR_KIND() != TokenKind::LP && CUR_KIND() != TokenKind::LB && CUR_KIND() != TokenKind::LBC) {
             this->refetch(yycSTMT);
         }
@@ -241,7 +241,7 @@ std::unique_ptr<Node> Parser::parse_interface() {
     unsigned int count = 0;
     for(bool next = true; next && CUR_KIND() != TokenKind::RBC;) {
         // set lexer mode
-        if(this->lexer->getPrevMode() != yycSTMT) {
+        if(this->lexer->getPrevMode().cond() != yycSTMT) {
             this->refetch(yycSTMT);
         }
 
@@ -657,7 +657,7 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
     std::unique_ptr<Node> elseNode;
     if(CUR_KIND() == TokenKind::ELIF) {
         elseNode = TRY(this->parse_ifExpression(true));
-    } else if(CUR_KIND() == TokenKind::ELSE && this->lexer->getPrevMode() == yycEXPR) {
+    } else if(CUR_KIND() == TokenKind::ELSE && this->lexer->getPrevMode().cond() == yycEXPR) {
         this->consume();    // ELSE
         elseNode = TRY(this->parse_block());
     }
@@ -1202,6 +1202,8 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case TokenKind::START_IN_SUB:
     case TokenKind::START_OUT_SUB:
         return this->parse_procSubstitution();
+    case TokenKind::AT_PAREN:
+        return this->parse_cmdArgArray();
     case TokenKind::LP: {  // group or tuple
         Token openToken = this->expect(TokenKind::LP); // always success
         unsigned int count = 0;
@@ -1631,6 +1633,25 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
         this->incompleteNode = std::move(node);
     }
     return node;
+}
+
+std::unique_ptr<Node> Parser::parse_cmdArgArray() {
+    GUARD_DEEP_NESTING(guard);
+
+    Token token = TRY(this->expect(TokenKind::AT_PAREN));
+    auto node = std::make_unique<ArgArrayNode>(token);
+    while(true) {
+        if(lookahead_cmdArg_LP(CUR_KIND())) {
+            node->addCmdArgNode(TRY(this->parse_cmdArg()));
+        } else if(CUR_KIND() != TokenKind::RP) {
+            E_DETAILED(ParseErrorKind::CMD_ARG, EACH_LA_cmdArgs(GEN_LA_ALTER));
+        } else {
+            break;
+        }
+    }
+    token = TRY(this->expect(TokenKind::RP));
+    node->updateToken(token);
+    return std::move(node);
 }
 
 } // namespace ydsh

@@ -67,6 +67,7 @@
     TOKEN(START_SUB_CMD                      , "$(") \
     TOKEN(START_IN_SUB                       , ">(") \
     TOKEN(START_OUT_SUB                      , "<(") \
+    TOKEN(AT_PAREN                           , "@(") \
     /* applied name */\
     TOKEN(APPLIED_NAME                       , "<$ Name>") \
     TOKEN(SPECIAL_NAME                       , "<$ Char>") \
@@ -248,6 +249,7 @@
     OP(SPECIAL_NAME) \
     OP(START_IN_SUB) \
     OP(START_OUT_SUB) \
+    OP(AT_PAREN) \
     OP(LP) \
     OP(LB) \
     OP(LBC) \

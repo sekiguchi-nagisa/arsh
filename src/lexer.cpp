@@ -58,24 +58,35 @@ bool isAssignOp(TokenKind kind) {
     }
 }
 
-const char *toModeName(LexerMode mode) {
-    switch(mode) {
+std::string LexerMode::toString() const {
+    const char *mode = "(";
+    switch(this->cond()) {
     case yycSTMT:
-        return "STMT";
+        mode = "STMT(";
+        break;
     case yycEXPR:
-        return "EXPR";
+        mode = "EXPR(";
+        break;
     case yycNAME:
-        return "NAME";
+        mode = "NAME(";
+        break;
     case yycTYPE:
-        return "TYPE";
+        mode = "TYPE(";
+        break;
     case yycCMD:
-        return "CMD";
+        mode = "CMD(";
+        break;
     case yycDSTRING:
-        return "DSTRING";
+        mode = "DSTRING(";
+        break;
     }
-    return nullptr; // normally unreachable, but gcc requires this return statement.
+    std::string value = mode;
+    if(this->skipNL()) {
+        value += "skipNL";
+    }
+    value += ")";
+    return value;
 }
-
 
 // ###################
 // ##     Lexer     ##
