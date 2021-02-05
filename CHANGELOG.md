@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - subcommand
   - builtin ``command``
   - builtin ``exec``
-
+- error line marker of constructor param type checking
 
 ## [0.20.0] - 2020-12-31
 

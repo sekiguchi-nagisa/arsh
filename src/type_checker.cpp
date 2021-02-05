@@ -667,7 +667,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
        this->typePool.isMapType(type)) {
         unsigned int size = node.getArgsNode().getNodes().size();
         if(size > 0) {
-            RAISE_TC_ERROR(UnmatchParam, node, 0, size);
+            RAISE_TC_ERROR(UnmatchParam, node.getArgsNode(), 0, size);
         }
     } else {
         auto *handle = this->typePool.lookupConstructor(type);
