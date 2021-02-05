@@ -89,8 +89,7 @@ const char* ErrorReporter::color(TermColor c) const {
     return "";
 }
 
-void ErrorReporter::printErrorLine(const Lexer &lexer, Token token) const {
-    Token errorToken = lexer.shiftEOS(token);
+void ErrorReporter::printErrorLine(const Lexer &lexer, Token errorToken) const {
     Token lineToken = lexer.getLineToken(errorToken);
     auto line = lexer.formatTokenText(lineToken);
     auto marker = lexer.formatLineMarker(lineToken, errorToken);
@@ -156,6 +155,8 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
     if(!this->reporter) {
         return;
     }
+
+    errorToken = this->getCurrentLexer().shiftEOS(errorToken);
 
     /**
      * show error message

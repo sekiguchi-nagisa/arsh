@@ -229,10 +229,14 @@ public:
      * shift EOS token to left.
      * @param token
      * @return
-     * if token is EOS, skip redundant white spaces and shift to left.
-     * otherwise, return token.
      */
-    Token shiftEOS(Token token) const;
+    Token shiftEOS(Token token) const {
+        if(token.endPos() >= this->getUsedSize()) {
+            token.pos = this->getUsedSize() - 1;
+            token.size = 0;
+        }
+        return token;
+    }
 
     /**
      * get line token which token belongs to.
@@ -284,28 +288,6 @@ protected:
 // #######################
 // ##     LexerBase     ##
 // #######################
-
-template <bool T>
-Token LexerBase<T>::shiftEOS(Token token) const {
-    if(token.size == 0) {
-        unsigned int startIndex = token.pos;
-        for(; startIndex > 0; startIndex--) {
-            int ch = this->buf[startIndex];
-            if(ch == ' ' || ch == '\t' || ch == '\n' || ch == '\000') {
-                continue;
-            }
-            if(ch == '\\' && startIndex + 1 < token.pos) {
-                char next = this->buf[startIndex + 1];
-                if(next == ' ' || next == '\t' || next == '\n') {
-                    continue;
-                }
-            }
-            break;
-        }
-        token.pos = startIndex;
-    }
-    return token;
-}
 
 template <bool T>
 Token LexerBase<T>::getLineToken(Token token) const {
@@ -386,7 +368,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token, int eaw
     }
     const unsigned int stopPos = token.size + token.pos;
     if(token.size == 0) {
-        lineMarker += "  ^";
+        lineMarker += "^";
     }
     for(unsigned int i = token.pos; i < stopPos;) {
         unsigned int prev = i;

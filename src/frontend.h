@@ -202,9 +202,8 @@ private:
     // for error reporting
     void handleParseError(DSError *dsError) const {
         auto &e = this->parser().getError();
-        Token errorToken = this->parser().getLexer()->shiftEOS(e.getErrorToken());
         return this->handleError(DS_ERROR_KIND_PARSE_ERROR,
-                e.getErrorKind(), errorToken, e.getMessage().c_str(), dsError);
+                e.getErrorKind(), e.getErrorToken(), e.getMessage().c_str(), dsError);
     }
 
     void handleTypeError(const TypeCheckError &e, DSError *dsError) const {

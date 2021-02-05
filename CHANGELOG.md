@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``_DEF_SIGINT``
 - **Breaking Change**: source name of builtin variable
   - ``(embed)`` to ``(builtin)``
+- **Breaking Change**: not skip last spaces when mismatched token is EOS
 - not complete hidden variables
 - support completion in prefix assignment
 - improve parser error message
