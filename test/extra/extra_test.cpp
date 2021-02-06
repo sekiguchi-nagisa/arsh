@@ -28,7 +28,7 @@
 
 using namespace ydsh;
 
-class ModLoadTest : public ExpectOutput, public TempFileFactory {
+struct ModLoadTest : public ExpectOutput, public TempFileFactory {
     ModLoadTest() : INIT_TEMP_FILE_FACTORY(extra_test) {}
 };
 
