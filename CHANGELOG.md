@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking Change**: source name of builtin variable
   - ``(embed)`` to ``(builtin)``
 - **Breaking Change**: not skip last spaces when mismatched token is EOS
+- **Breaking Change**: when access uninitialized user-defined command, throw ``IllegalAccessError``
 - not complete hidden variables
 - support completion in prefix assignment
 - improve parser error message
@@ -39,14 +40,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - quote expected tokens
   - replace some no viable alternative error messages with more ituitive ones
 - escape unprintable character when show command error message
-- when access uninitialized user-defined command, throw ``IllegalAccessError``
 
 #### Builtin
 - builtin ``command`` and ``shctl fullname`` check uninitialized user-defined command
 
 
 ### Fixed
-- bugfix ``Regex#replace`` method when replce with empty string
 - not show error line marker when reach EOS and previous token size is 1
 - not ignore null character in the following
   - subcommand
@@ -55,6 +54,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - error line marker
   - constructor param type checking
   - variable decralation with type
+
+
+## [0.20.1] - 2021-02-7
+
+### Fixed
+- bugfix ``Regex#replace`` method when replce with empty string
+- segv when call uninitialized user-defined command in interactive mode
+
 
 ## [0.20.0] - 2020-12-31
 
