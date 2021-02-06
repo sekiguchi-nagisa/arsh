@@ -28,7 +28,9 @@
 
 using namespace ydsh;
 
-class ModLoadTest : public ExpectOutput, public TempFileFactory {};
+class ModLoadTest : public ExpectOutput, public TempFileFactory {
+    ModLoadTest() : INIT_TEMP_FILE_FACTORY(extra_test) {}
+};
 
 static ProcBuilder ds(const char *src) {
     return ProcBuilder{BIN_PATH, "-c", src}
