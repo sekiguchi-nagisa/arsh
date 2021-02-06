@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - bugfix ``Regex#replace`` method when replce with empty string
+- segv when call uninitialized user-defined command in interactive mode
 
 
 ## [0.20.0] - 2020-12-31

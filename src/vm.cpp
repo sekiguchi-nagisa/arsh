@@ -503,8 +503,13 @@ static bool lookupUdc(const DSState &state, const char *name, Command &cmd, bool
         }
     }
     auto handle = lookupUdcImpl(*state.rootModScope, state.typePool, modType, name);
-    auto *udcObj = handle != nullptr ?
-            &typeAs<FuncObject>(state.getGlobal(handle->getIndex())) : nullptr;
+    const FuncObject *udcObj = nullptr;
+    if(handle) {
+        auto v = state.getGlobal(handle->getIndex());
+        if(v) {
+            udcObj = &typeAs<FuncObject>(v);
+        }
+    }
 
     if(udcObj) {
         auto &type = state.typePool.get(udcObj->getTypeID());
