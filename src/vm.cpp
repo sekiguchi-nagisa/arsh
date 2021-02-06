@@ -495,8 +495,16 @@ static const FieldHandle *lookupUdcImpl(const NameScope &scope, const TypePool &
  */
 static bool lookupUdc(const DSState &state, const char *name, ResolvedCmd &cmd, const ModType *modType) {
     auto handle = lookupUdcImpl(*state.rootModScope, state.typePool, modType, name);
-    auto *udcObj = handle != nullptr ?
-            &typeAs<FuncObject>(state.getGlobal(handle->getIndex())) : nullptr;
+    const FuncObject *udcObj = nullptr;
+    if(handle) {
+        auto v = state.getGlobal(handle->getIndex());
+        if(v) {
+            udcObj = &typeAs<FuncObject>(v);
+        } else {
+            cmd = ResolvedCmd::illegalUdc();
+            return true;
+        }
+    }
 
     if(udcObj) {
         auto &type = state.typePool.get(udcObj->getTypeID());
@@ -739,6 +747,13 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
     case ResolvedCmd::INVALID:
         raiseInvalidCmdError(state, array.getValues()[0].asStrRef());
         return false;
+    case ResolvedCmd::ILLEGAL_UDC: {
+        std::string value = "attemp to access uninitialized user-defined command: `";
+        value += array.getValues()[0].asStrRef();
+        value += "'";
+        raiseError(state, TYPE::IllegalAccessError, std::move(value));
+        return false;
+    }
     }
     return true;    // normally unreachable, but need to suppress gcc warning.
 }
@@ -841,11 +856,16 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
                 break;
             }
             case ResolvedCmd::INVALID:
+            case ResolvedCmd::ILLEGAL_UDC:
                 break;
             }
 
             if(showDesc == 2) {
-                ERROR(arrayObj, "%s: not found", toPrintable(ref).c_str());
+                if(cmd.kind() == ResolvedCmd::ILLEGAL_UDC) {
+                    ERROR(arrayObj, "%s: uninitialized", toPrintable(ref).c_str());
+                } else {
+                    ERROR(arrayObj, "%s: not found", toPrintable(ref).c_str());
+                }
             }
         }
         pushExitStatus(state, successCount > 0 ? 0 : 1);

@@ -281,6 +281,7 @@ public:
         BUILTIN,        // builtin command
         EXTERNAL,       // external command
         INVALID,        // invalid command name (contains null character)
+        ILLEGAL_UDC,    // uninitialized user-defined command
     };
 
 private:
@@ -339,6 +340,14 @@ public:
         cmd.kind_ = CmdKind::INVALID;
         cmd.belongModTypeId_ = 0;
         cmd.filePath_ = nullptr;
+        return cmd;
+    }
+
+    static ResolvedCmd illegalUdc() {
+        ResolvedCmd cmd;    //NOLINT
+        cmd.kind_ = CmdKind::ILLEGAL_UDC;
+        cmd.belongModTypeId_ = 0;
+        cmd.udc_ = nullptr;
         return cmd;
     }
 

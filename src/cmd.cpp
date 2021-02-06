@@ -2214,6 +2214,7 @@ static int resolveFullCommandName(DSState &state, const ArrayObject &argvObj) {
         }
         break;
     case ResolvedCmd::INVALID:
+    case ResolvedCmd::ILLEGAL_UDC:
         break;
     }
     bool ret = static_cast<bool>(reply);

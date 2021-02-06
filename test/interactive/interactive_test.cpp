@@ -803,6 +803,31 @@ TEST_F(InteractiveTest, moduleError4) {
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, illegalcmd) {
+    this->invoke("--quiet", "--norc");
+
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+    const char *eout = "[runtime error]\n"
+                       "ArithmeticError: zero division\n"
+                       "    from (stdin):2 '<toplevel>()'\n";
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("23/0; f() { echo $0 $@; }", "", eout));
+
+    eout = "[runtime error]\n"
+           "IllegalAccessError: attemp to access uninitialized user-defined command: `f'\n"
+           "    from (stdin):3 '<toplevel>()'\n";
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("f 1 2 3", "", eout));
+
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("command -v f; assert $? == 1"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("command -V f", "",
+                                                    "ydsh: command: f: uninitialized\n"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert !shctl fullname f; assert $REPLY == ''"));
+
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

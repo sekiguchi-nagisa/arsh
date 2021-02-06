@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - quote expected tokens
   - replace some no viable alternative error messages with more ituitive ones
 - escape unprintable character when show command error message
+- when access uninitialized user-defined command, throw ``IllegalAccessError``
+
+#### Builtin
+- builtin ``command`` and ``shctl fullname`` check uninitialized user-defined command
 
 
 ### Fixed
