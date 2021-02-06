@@ -970,7 +970,7 @@ public:
 
     explicit NewNode(std::unique_ptr<TypeNode> &&targetTypeNode) :
             WithRtti(targetTypeNode->getToken()),
-            targetTypeNode(std::move(targetTypeNode)), argsNode(std::make_unique<ArgsNode>()) {}
+            targetTypeNode(std::move(targetTypeNode)), argsNode(std::make_unique<ArgsNode>(this->getToken())) {}
 
     TypeNode &getTargetTypeNode() const {
         return *this->targetTypeNode;
