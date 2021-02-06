@@ -55,7 +55,7 @@ protected:
     NodeDumpParam param;
 
 public:
-    NodeDumpTest() {
+    NodeDumpTest() : INIT_TEMP_FILE_FACTORY(node_test) {
         this->param = GetParam();
     }
 

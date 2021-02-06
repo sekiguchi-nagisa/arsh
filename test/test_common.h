@@ -226,4 +226,6 @@ public:
     }
 };
 
+#define INIT_TEMP_FILE_FACTORY(NAME) ydsh::TempFileFactory("ydsh_" #NAME)
+
 #endif //YDSH_TEST_COMMON_H

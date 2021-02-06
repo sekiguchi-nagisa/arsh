@@ -261,7 +261,7 @@ TEST_F(CmdlineTest, execPath) {
 }
 
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
-    CmdlineTest2() = default;
+    CmdlineTest2() : INIT_TEMP_FILE_FACTORY(cmdline_test) {}
 };
 
 TEST_F(CmdlineTest2, exec) {

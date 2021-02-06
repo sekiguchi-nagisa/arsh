@@ -383,7 +383,7 @@ TEST_F(GlobTest, glob) {
     ASSERT_EQ(0, ret.size());
 
     // empty directory
-    TempFileFactory tempFileFactory;
+    TempFileFactory tempFileFactory("ydsh_glob");
     std::string path = tempFileFactory.getTempDirName();
     path += "/hogehoge";
     mkdir(path.c_str(), 0666);

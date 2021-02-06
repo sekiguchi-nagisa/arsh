@@ -114,7 +114,7 @@ TEST(BuiltinExecTest, donothing3) {
 struct APITest : public ExpectOutput, public ydsh::TempFileFactory {
     DSState *state{nullptr};
 
-    APITest() {
+    APITest() : INIT_TEMP_FILE_FACTORY(api_test) {
         this->state = DSState_create();
     }
 

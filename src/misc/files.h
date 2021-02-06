@@ -190,7 +190,8 @@ protected:
     const std::string tmpFileName;
 
 public:
-    TempFileFactory() : tmpDirName(makeTempDir()), tmpFileName(this->createTempFile("", "")) {}
+    explicit TempFileFactory(const char *prefix) :
+            tmpDirName(makeTempDir(prefix)), tmpFileName(this->createTempFile("", "")) {}
 
     virtual ~TempFileFactory() {
         removeDirWithRecursively(this->tmpDirName.c_str());
@@ -258,7 +259,7 @@ public:
         return name;
     }
 
-    static std::string makeTempDir() {
+    static std::string makeTempDir(const char *prefix) {
         const char *env = getenv("TMPDIR");
         if(env == nullptr || !S_ISDIR(getStMode(env))) {
             env = "/tmp";
@@ -266,7 +267,14 @@ public:
         auto ptr = getRealpath(env);
         assert(ptr);
         std::string name = ptr.get();
-        name += "/test_tmp_dirXXXXXX";
+        name += "/";
+        if(prefix && *prefix) {
+            name += prefix;
+        } else {
+            name += "pid_";
+            name += std::to_string(getpid());
+        }
+        name += ".XXXXXX";
         if(!mkdtemp(&name[0])) {
             fatal_perror("temp directory creation failed");
         }

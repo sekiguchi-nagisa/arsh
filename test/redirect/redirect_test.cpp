@@ -17,7 +17,7 @@ private:
     std::string targetName;
 
 public:
-    RedirectTest() {
+    RedirectTest() : INIT_TEMP_FILE_FACTORY(redirect_test) {
         this->targetName += this->getTempDirName();
         this->targetName += "/target";
     }

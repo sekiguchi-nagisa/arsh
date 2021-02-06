@@ -48,7 +48,7 @@ protected:
     std::string targetName;
 
 public:
-    ExecTest() {
+    ExecTest() : INIT_TEMP_FILE_FACTORY(exec_test) {
         this->targetName = GetParam();
     }
 
