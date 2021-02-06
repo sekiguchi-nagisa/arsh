@@ -27,7 +27,7 @@ static FilePtr newRequest(TempFileFactory &factory, const char *data, unsigned i
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-    TempFileFactory factory;
+    TempFileFactory factory("ydsh_lsp_fuzzer");
     auto req = newRequest(factory, (const char *)data, size);
 
     LSPLogger logger;
