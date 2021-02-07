@@ -147,6 +147,36 @@ echo ${true.t}
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF(echo ${true.t})EOF"), 1, "", msg));
 }
 
+TEST_F(CmdlineTest, marker4) {
+    const char *msg = R"((string):1:10: [semantic error] undefined field: `d'
+'まま○2'.d
+         ^
+)";
+    auto builder = ds("-c", "'まま○2'.d").addEnv("LC_CTYPE", "C");
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", msg));
+
+    msg = R"((string):1:11: [semantic error] undefined field: `d'
+'まま○2'.d
+          ^
+)";
+    builder = ds("-c", "'まま○2'.d").addEnv("LC_CTYPE", "ja_JP.UTF-8");
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", msg));
+
+    msg = R"((string):1:11: [semantic error] undefined field: `d'
+'まま○2'.d
+          ^
+)";
+    builder = ds("-c", "'まま○2'.d").addEnv("LC_CTYPE", "zh_CN.UTF-8");
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", msg));
+
+    msg = R"((string):1:11: [semantic error] undefined field: `d'
+'まま○2'.d
+          ^
+)";
+    builder = ds("-c", "'まま○2'.d").addEnv("LC_CTYPE", "ko_KR.UTF-8");
+    ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", msg));
+}
+
 TEST_F(CmdlineTest, version) {
     std::string msg = "^ydsh, version ";
     msg += X_INFO_VERSION;
