@@ -672,7 +672,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
     } else {
         auto *handle = this->typePool.lookupConstructor(type);
         if(handle == nullptr) {
-            RAISE_TC_ERROR(UndefinedInit, node, type.getName());
+            RAISE_TC_ERROR(UndefinedInit, node.getTargetTypeNode(), type.getName());
         }
         node.getArgsNode().setTypeContext(handle);
         this->checkTypeExactly(node.getArgsNode());

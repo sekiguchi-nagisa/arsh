@@ -39,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - remove meaningless error message when reach end of string
   - quote expected tokens
   - replace some no viable alternative error messages with more ituitive ones
+  - constructor lookup error message
 - escape unprintable character when show command error message
 
 #### Builtin

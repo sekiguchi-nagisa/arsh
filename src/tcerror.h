@@ -99,7 +99,7 @@ DEFINE_TCError(DefinedTypeAlias, "already defined type: `%s'"                   
 DEFINE_TCError(UndefinedSymbol , "undefined symbol: `%s'"                                );
 DEFINE_TCError(UndefinedField  , "undefined field: `%s'"                                 );
 DEFINE_TCError(UndefinedMethod , "undefined method: `%s'"                                );
-DEFINE_TCError(UndefinedInit   , "undefined constructor: `%s'"                           );
+DEFINE_TCError(UndefinedInit   , "constructor is not defined in `%s' type"               );
 DEFINE_TCError(Unacceptable    , "unacceptable type: `%s'"                               );
 DEFINE_TCError(DefinedCmd      , "already defined command: `%s'"                         );
 DEFINE_TCError(ConflictSymbol  , "at global import, detect symbol conflict: `%s' in `%s'");
