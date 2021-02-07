@@ -193,6 +193,7 @@ TEST_F(APITest, lineNum2) {
     DSState_loadAndEval(this->state, fileName1.c_str(), &e);
     ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
     ASSERT_EQ(1, e.lineNum);
+    ASSERT_EQ(4, e.chars);
     ASSERT_EQ(2, DSState_lineNum(this->state));
     DSError_release(&e);
 }
@@ -210,6 +211,7 @@ echoechodwe \
     ASSERT_EQ(1, s);
     ASSERT_EQ(DS_ERROR_KIND_RUNTIME_ERROR, e.kind);
     ASSERT_EQ(5, e.lineNum);
+    ASSERT_EQ(0, e.chars);
     DSError_release(&e);
 }
 
@@ -255,6 +257,8 @@ TEST_F(APITest, arg) {
     int s = DSState_eval(this->state, "(string)", init, strlen(init), &e);
     ASSERT_EQ(0, s);
     ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    ASSERT_EQ(0, e.chars);
+    ASSERT_EQ(0, e.lineNum);
     DSError_release(&e);
 
     // set arguments
@@ -276,6 +280,8 @@ TEST_F(APITest, arg) {
     s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
     ASSERT_EQ(0, s);
     ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    ASSERT_EQ(0, e.chars);
+    ASSERT_EQ(0, e.lineNum);
     DSError_release(&e);
 
     // clear
@@ -306,6 +312,8 @@ TEST_F(APITest, arg) {
     s = DSState_eval(this->state, "(string)", src, strlen(src), &e);
     ASSERT_EQ(0, s);
     ASSERT_EQ(DS_ERROR_KIND_SUCCESS, e.kind);
+    ASSERT_EQ(0, e.chars);
+    ASSERT_EQ(0, e.lineNum);
     DSError_release(&e);
 }
 
@@ -676,6 +684,7 @@ TEST_F(APITest, module2) {
     ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
     ASSERT_STREQ(strerror(ENOENT), e.name);
     ASSERT_EQ(0, e.lineNum);
+    ASSERT_EQ(0, e.chars);
     DSError_release(&e);
 
     ret = invoke([&]{
@@ -695,13 +704,14 @@ TEST_F(APITest, module3) {
 }
 
 TEST_F(APITest, module4) {
-    auto fileName = this->createTempFile("target.ds", "source hoghreua");
+    auto fileName = this->createTempFile("target.ds", "source  hoghreua");
     DSError e;
     int r = DSState_loadModule(this->state, fileName.c_str(), DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, &e);
     ASSERT_EQ(1, r);
     ASSERT_EQ(DS_ERROR_KIND_TYPE_ERROR, e.kind);
     ASSERT_STREQ("NotFoundMod", e.name);
     ASSERT_EQ(1, e.lineNum);
+    ASSERT_EQ(9, e.chars);
     DSError_release(&e);
 
     // check error message
@@ -710,7 +720,7 @@ TEST_F(APITest, module4) {
                 DS_MOD_FULLPATH | DS_MOD_IGNORE_ENOENT, nullptr);
     });
     ASSERT_NO_FATAL_FAILURE(this->expectRegex(ret, 1, WaitStatus::EXITED, "",
-                                         "^.+/target.ds:1: \\[semantic error\\] module not found: `hoghreua'.+$"));
+                                         "^.+/target.ds:1:9: \\[semantic error\\] module not found: `hoghreua'.+$"));
 }
 
 TEST_F(APITest, module5) {
@@ -720,6 +730,7 @@ TEST_F(APITest, module5) {
     ASSERT_EQ(DS_ERROR_KIND_FILE_ERROR, e.kind);
     ASSERT_STREQ(strerror(ENOENT), e.name);
     ASSERT_EQ(0, e.lineNum);
+    ASSERT_EQ(0, e.chars);
     DSError_release(&e);
 
     // check error message

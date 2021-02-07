@@ -1,6 +1,6 @@
 # finally
 
-#$test($result = 'type', $lineNum = 10, $errorKind = 'NotNeedExpr', $status = 1)
+#$test($result = 'type', $lineNum = 10, $chars = 12, $errorKind = 'NotNeedExpr', $status = 1)
 
 function g() {
     echo hello

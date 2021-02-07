@@ -1,4 +1,4 @@
-#$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $lineNum = 4)
+#$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $chars = 1, $lineNum = 4)
 
 exit 45     # treat as bottom type
 var a = 44

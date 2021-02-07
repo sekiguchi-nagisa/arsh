@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 4, $errorKind = 'UndefinedMethod', $status = 1)
+#$test($result = 'type', $lineNum = 4, $chars = 5, $errorKind = 'UndefinedMethod', $status = 1)
 
 var s4 = [new Int!(), 34 as Int!, new Int!()]
 $s4.sort()

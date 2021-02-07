@@ -86,7 +86,10 @@ public:
 
 int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     if(dsError != nullptr) {
-        *dsError = {.kind = DS_ERROR_KIND_SUCCESS, .fileName = nullptr, .lineNum = 0, .name = nullptr};
+        *dsError = {
+                .kind = DS_ERROR_KIND_SUCCESS, .fileName = nullptr,
+                .lineNum = 0, .chars = 0, .name = nullptr
+        };
     }
 
     this->frontEnd.setupASTDump();
@@ -640,6 +643,7 @@ static void reportFileError(const char *sourceName, bool isIO, int errNum, DSErr
                 .kind = DS_ERROR_KIND_FILE_ERROR,
                 .fileName = strdup(sourceName),
                 .lineNum = 0,
+                .chars = 0,
                 .name = strdup(strerror(errNum))
         };
     }

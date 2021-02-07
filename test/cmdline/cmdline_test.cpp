@@ -75,10 +75,10 @@ static std::string toString(const char (&value)[N]) {
 
 TEST_F(CmdlineTest, marker1) {
     // line marker of syntax error
-    const char *msg = "(string):4: [syntax error] expected `=', `:'\n   \n   ^\n";
+    const char *msg = "(string):4:4: [syntax error] expected `=', `:'\n   \n   ^\n";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a   \n    \\\n   \t  \t  \n   "), 1, "", msg));
 
-    msg = "(string):1: [syntax error] expected `=', `:'\nvar a    \n         ^\n";
+    msg = "(string):1:10: [syntax error] expected `=', `:'\nvar a    \n         ^\n";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "var a    "), 1, "", msg));
 
     auto result = ds("-c", "{").execAndGetResult(false);
@@ -93,7 +93,7 @@ TEST_F(CmdlineTest, marker1) {
 
 
     // line marker of semantic error
-    msg = R"((string):1: [semantic error] require `Int' type, but is `String' type
+    msg = R"((string):1:6: [semantic error] require `Int' type, but is `String' type
 [34, "hey"]
      ^~~~~
 )";
@@ -105,7 +105,7 @@ var a = 34
 $a = 34 +
      'de'
 )";
-    msg = R"((string):3: [semantic error] require `Int' type, but is `String' type
+    msg = R"((string):3:6: [semantic error] require `Int' type, but is `String' type
 $a = 34 +
      ^~~~
      'de'
@@ -114,33 +114,33 @@ $a = 34 +
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
     // line marker (reach null character)
-    msg = ".+:1: \\[syntax error\\] invalid token, expected `<NewLine>'\nhello\n     \n";
+    msg = ".+:1:6: \\[syntax error\\] invalid token, expected `<NewLine>'\nhello\n     \n";
     ASSERT_NO_FATAL_FAILURE(this->expectRegex("hello\0world" | ds(), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker2) {
     const char *s = "$e";
-    const char *msg = R"((string):1: [semantic error] undefined symbol: `e'
+    const char *msg = R"((string):1:1: [semantic error] undefined symbol: `e'
 $e
 ^~
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 
     s = "for $a in 34 {}";
-    msg = "(string):1: [semantic error] undefined method: `%iter'\n"
+    msg = "(string):1:11: [semantic error] undefined method: `%iter'\n"
           "for $a in 34 {}\n"
           "          ^~\n";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", s), 1, "", msg));
 }
 
 TEST_F(CmdlineTest, marker3) {
-    const char *msg = R"((string):1: [semantic error] undefined symbol: `a'
+    const char *msg = R"((string):1:4: [semantic error] undefined symbol: `a'
 "${a.b}"
    ^
 )";
     ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", R"EOF("${a.b}")EOF"), 1, "", msg));
 
-    msg = R"((string):1: [semantic error] undefined field: `t'
+    msg = R"((string):1:13: [semantic error] undefined field: `t'
 echo ${true.t}
             ^
 )";
@@ -375,7 +375,7 @@ TEST_F(CmdlineTest2, import1) {
     auto fileName = this->createTempFile("target.ds", "throw new Error('invalid!!')");
     chmod(fileName.c_str(), ~S_IRUSR);
 
-    std::string str = format("(string):1: [semantic error] cannot read module: `%s', by `Permission denied'\n"
+    std::string str = format("(string):1:8: [semantic error] cannot read module: `%s', by `Permission denied'\n"
                              "source %s as mod\n"
                              "       %s\n", fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
 
@@ -386,11 +386,11 @@ TEST_F(CmdlineTest2, import2) {
     auto modName = this->createTempFile("mod.ds", format("source %s/target.ds as mod2", this->getTempDirName()));
     auto fileName = this->createTempFile("target.ds", format("source %s/mod.ds as mod1", this->getTempDirName()));
 
-    std::string str = format("%s:1: [semantic error] circular module import: `%s'\n"
+    std::string str = format("%s:1:8: [semantic error] circular module import: `%s'\n"
                              "source %s as mod2\n"
                              "       %s\n",
                              modName.c_str(), fileName.c_str(), fileName.c_str(), makeLineMarker(fileName).c_str());
-    str += format("%s:1: [note] at module import\n"
+    str += format("%s:1:8: [note] at module import\n"
                   "source %s as mod1\n"
                   "       %s\n",
                   fileName.c_str(),modName.c_str(), makeLineMarker(modName).c_str());
@@ -399,17 +399,17 @@ TEST_F(CmdlineTest2, import2) {
 }
 
 TEST_F(CmdlineTest2, import3) {
-    std::string str = format("(string):1: [semantic error] cannot read module: `.', by `Is a directory'\n"
-                             "source .\n"
-                             "       %s\n", makeLineMarker(".").c_str());
-    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source ."), 1, "", str));
+    std::string str = format("(string):1:9: [semantic error] cannot read module: `.', by `Is a directory'\n"
+                             "source  .\n"
+                             "        %s\n", makeLineMarker(".").c_str());
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source  ."), 1, "", str));
 }
 
 TEST_F(CmdlineTest2, import4) {
-    std::string str = format("(string):1: [semantic error] module not found: `hogehuga'\n"
-                             "source hogehuga\n"
-                             "       %s\n", makeLineMarker("hogehuga").c_str());
-    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source hogehuga"), 1, "", str));
+    std::string str = format("(string):1:10: [semantic error] module not found: `hogehuga'\n"
+                             "source   hogehuga\n"
+                             "         %s\n", makeLineMarker("hogehuga").c_str());
+    ASSERT_NO_FATAL_FAILURE(this->expect(CL("source   hogehuga"), 1, "", str));
 }
 
 TEST_F(CmdlineTest2, import5) {

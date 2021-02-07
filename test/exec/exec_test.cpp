@@ -114,17 +114,20 @@ public:
 
         int kind = -1;
         unsigned int lineNum = 0;
+        unsigned int chars = 0;
         std::string name;
         std::string fileName;
 
         if(!line.empty()) {
-            int r = parse(line, "kind", "=", kind, "lineNum", "=", lineNum, "name", "=", name, "fileName", "=", fileName);
+            int r = parse(line, "kind", "=", kind, "lineNum", "=", lineNum, "chars", "=", chars,
+                          "name", "=", name, "fileName", "=", fileName);
             ASSERT_EQ(0, r);
         }
 
         // check status
         ASSERT_EQ(d.getKind(), kind);
         ASSERT_EQ(d.getLineNum(), lineNum);
+        ASSERT_EQ(d.getChars(), chars);
         ASSERT_EQ(d.getStatus(), ret);
         ASSERT_EQ(d.getErrorKind(), name);
         if(!d.getFileName().empty()) {
@@ -148,13 +151,15 @@ INSTANTIATE_TEST_SUITE_P(ExecTest, ExecTest, ::testing::ValuesIn(getSortedFileLi
 
 
 TEST(Base, case1) {
-    std::string line(R"(type=3 lineNum=1 kind="SystemError" fileName="../hoge.ds")");
+    std::string line(R"(type=3 lineNum=1 chars=0 kind="SystemError" fileName="../hoge.ds")");
     unsigned int type;
     unsigned int lineNum;
+    unsigned int chars;
     std::string kind;
     std::string fileName;
 
-    int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "kind", "=", kind, "fileName", "=", fileName);
+    int ret = parse(line, "type", "=", type, "lineNum", "=", lineNum, "chars", "=", chars,
+                    "kind", "=", kind, "fileName", "=", fileName);
     ASSERT_EQ(0, ret);
     ASSERT_EQ(3u, type);
     ASSERT_EQ(1u, lineNum);

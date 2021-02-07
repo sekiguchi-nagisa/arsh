@@ -1240,7 +1240,7 @@ void TypeChecker::checkTypeAsReturn(JumpNode &node) {
     auto &exprType = this->checkType(*returnType, node.getExprNode());
     if(exprType.isVoidType()) {
         if(!node.getExprNode().is(NodeKind::Empty)) {
-            RAISE_TC_ERROR(NotNeedExpr, node);
+            RAISE_TC_ERROR(NotNeedExpr, node.getExprNode());
         }
     }
 }

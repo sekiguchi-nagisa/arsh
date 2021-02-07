@@ -183,6 +183,10 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
         d.setLineNum(TRY(this->checkedCast<NumberNode>(node))->getIntValue());
     });
 
+    this->addHandler("chars", TYPE::Int, [&](Node &node, Directive &d) {
+        d.setChars(TRY(this->checkedCast<NumberNode>(node)->getIntValue()));
+    });
+
     this->addHandler("errorKind", TYPE::String, [&](Node &node, Directive &d) {
         d.setErrorKind(TRY(this->checkedCast<StringNode>(node))->getValue());
     });

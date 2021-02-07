@@ -92,6 +92,22 @@ std::string LexerMode::toString() const {
 // ##     Lexer     ##
 // ###################
 
+SrcPos Lexer::getSrcPos(Token token) const {
+    token = this->shiftEOS(token);
+    unsigned int lineNum = this->getLineNumByPos(token.pos);
+    Token line = this->getLineToken(token);
+    Token marker {
+        .pos = line.pos,
+        .size = token.pos - line.pos,
+    };
+    unsigned int chars = marker.size == 0 ? 1 : this->formatLineMarker(line, marker).size() + 1;
+
+    return SrcPos {
+        .lineNum = lineNum,
+        .chars = chars,
+    };
+}
+
 bool Lexer::singleToString(Token token, std::string &out) const {
     if(this->startsWith(token, '$')) {
         return this->escapedSingleToString(token, out);

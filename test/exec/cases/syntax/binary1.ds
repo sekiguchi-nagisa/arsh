@@ -1,6 +1,6 @@
 # not allow newline before binary operator
 
-#$test($result = 'parse', $lineNum = 6, $errorKind = 'NoViableAlter', $status = 1)
+#$test($result = 'parse', $lineNum = 6, $chars = 1, $errorKind = 'NoViableAlter', $status = 1)
 
 assert(12 / 2
 is Int)     # recognized as '12/ 2; as;'

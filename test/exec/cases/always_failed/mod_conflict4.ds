@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 11, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
+#$test($result = 'type', $lineNum = 11, $chars = 1, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
 
 _say0() {
     throw 12/0

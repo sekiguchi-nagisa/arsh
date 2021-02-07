@@ -2069,6 +2069,7 @@ DSErrorKind VM::handleUncaughtException(DSState &state, const DSValue &except, D
                 .kind = kind,
                 .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
                 .lineNum = errorLineNum,
+                .chars = 0,
                 .name = strdup(kind == DS_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : "")
         };
     }

@@ -1,4 +1,4 @@
-#$test($result = 'parse', $lineNum = 6, $errorKind = 'CMD_ARG', $status = 1)
+#$test($result = 'parse', $lineNum = 6, $chars = 10, $errorKind = 'CMD_ARG', $status = 1)
 
 @(
    325 \

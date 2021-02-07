@@ -195,9 +195,16 @@ typedef struct {
 
     /**
      * indicate the line number of the error location.
-     * if kind is, DS_ERROR_KIND_SUCCESS, it is 0.
+     * if kind is DS_ERROR_KIND_SUCCESS, it is 0.
      */
     unsigned int lineNum;
+
+    /**
+     * indicates the number of characters in error line
+     * if kind is not S_ERROR_KIND_PARSE_ERROR, DS_ERROR_KIND_TYPE_ERROR or DS_ERROR_KIND_CODEGEN_ERROR,
+     * always is 0
+     */
+    unsigned int chars;
 
     /**
      * indicate error name.

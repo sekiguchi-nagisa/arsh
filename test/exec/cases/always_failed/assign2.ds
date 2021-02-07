@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 4, $errorKind = 'ReadOnly', $status = 1)
+#$test($result = 'type', $lineNum = 4, $chars = 1, $errorKind = 'ReadOnly', $status = 1)
 
 let a = 23
 $a = 1234

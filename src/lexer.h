@@ -50,6 +50,10 @@ public:
     std::string toString() const;
 };
 
+struct SrcPos {
+    unsigned int lineNum;
+    unsigned int chars;
+};
 
 class Lexer : public ydsh::LexerBase {
 private:
@@ -93,6 +97,8 @@ public:
     }
 
     ~Lexer() = default;
+
+    SrcPos getSrcPos(Token token) const;
 
     /**
      *

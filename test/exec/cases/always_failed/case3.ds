@@ -1,5 +1,5 @@
 
-#$test($result = 'type', $lineNum = 4, $errorKind = 'NeedPattern', $status = 1)
+#$test($result = 'type', $lineNum = 4, $chars = 1, $errorKind = 'NeedPattern', $status = 1)
 
 case 34 as Any {
 else => echo else;

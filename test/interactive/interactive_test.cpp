@@ -729,10 +729,10 @@ TEST_F(InteractiveTest, moduleError1) {
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-    auto eout = format("" INTERACTIVE_TEST_WORK_DIR "/mod1.ds:6: [semantic error] require `Int' type, but is `Boolean' type\n"
+    auto eout = format("" INTERACTIVE_TEST_WORK_DIR "/mod1.ds:6:6: [semantic error] require `Int' type, but is `Boolean' type\n"
                        "34 / /\n"
                        "     ^\n"
-                       "(stdin):1: [note] at module import\n"
+                       "(stdin):1:8: [note] at module import\n"
                        "source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds\n"
                        "       %s\n",
                        makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
@@ -750,10 +750,10 @@ TEST_F(InteractiveTest, moduleError2) {
 
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-    auto eout = format("" INTERACTIVE_TEST_WORK_DIR "/mod1.ds:6: [semantic error] require `Int' type, but is `Boolean' type\n"
+    auto eout = format("" INTERACTIVE_TEST_WORK_DIR "/mod1.ds:6:6: [semantic error] require `Int' type, but is `Boolean' type\n"
                        "34 / /\n"
                        "     ^\n"
-                       "(stdin):1: [note] at module import\n"
+                       "(stdin):1:8: [note] at module import\n"
                        "source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds\n"
                        "       %s\n",
                        makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());

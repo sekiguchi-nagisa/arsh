@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 4, $errorKind = 'Unacceptable', $status = 1)
+#$test($result = 'type', $lineNum = 4, $chars = 9, $errorKind = 'Unacceptable', $status = 1)
 
 function f() {}
 var a = $f()

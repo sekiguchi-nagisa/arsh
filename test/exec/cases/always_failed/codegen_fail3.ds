@@ -1,5 +1,5 @@
 
-#$test($result = 'codegen', $lineNum = 8, $errorKind = 'TooLargeFunc', $status = 1)
+#$test($result = 'codegen', $lineNum = 8, $chars = 1, $errorKind = 'TooLargeFunc', $status = 1)
 
 var a = 34
 

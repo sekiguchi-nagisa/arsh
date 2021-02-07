@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 3, $errorKind = 'Unacceptable', $status = 1)
+#$test($result = 'type', $lineNum = 3, $chars = 9, $errorKind = 'Unacceptable', $status = 1)
 
 var a = case 34 {
     1 => 34;

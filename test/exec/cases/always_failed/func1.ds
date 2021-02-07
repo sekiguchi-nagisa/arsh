@@ -1,4 +1,4 @@
-#$test($result = 'type', $errorKind = 'OutsideToplevel', $lineNum = 4, $status = 1)
+#$test($result = 'type', $errorKind = 'OutsideToplevel', $lineNum = 4, $chars = 5, $status = 1)
 
 if($false) {
     function hoge() {

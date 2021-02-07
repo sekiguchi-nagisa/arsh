@@ -46,6 +46,8 @@ private:
 
     unsigned int lineNum{0};
 
+    unsigned int chars{0};
+
     /**
      * represent parse or type error name or raised exception type name.
      * default is empty string
@@ -114,6 +116,14 @@ public:
 
     unsigned int getLineNum() const {
         return this->lineNum;
+    }
+
+    void setChars(unsigned int v) {
+        this->chars = v;
+    }
+
+    unsigned int getChars() const {
+        return this->chars;
     }
 
     void setErrorKind(const std::string &kind) {

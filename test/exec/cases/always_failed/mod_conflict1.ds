@@ -1,5 +1,5 @@
-#$test($result = 'type', $lineNum = 5, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
+#$test($result = 'type', $lineNum = 5, $chars = 4, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
 
 var hello = 12345
 
-source ../../_module4test/module1.ds
+   source ../../_module4test/module1.ds

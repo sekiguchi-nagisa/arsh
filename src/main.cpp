@@ -63,8 +63,9 @@ static void writeStatusLog(DSError &error) {
 
     FILE *fp = fopen(statusLogPath, "w");
     if(fp != nullptr) {
-        fprintf(fp, "kind=%d lineNum=%d name=%s fileName=%s\n",
-                error.kind, error.lineNum, escape(error.name).c_str(), escape(error.fileName).c_str());
+        fprintf(fp, "kind=%d lineNum=%d chars=%d name=%s fileName=%s\n",
+                error.kind, error.lineNum, error.chars,
+                escape(error.name).c_str(), escape(error.fileName).c_str());
         fclose(fp);
     }
 }

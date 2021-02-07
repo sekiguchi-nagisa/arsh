@@ -39,11 +39,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - remove meaningless error message when reach end of string
   - quote expected tokens
   - replace some no viable alternative error messages with more ituitive ones
+  - show number of characters in error line
   - constructor lookup error message
 - escape unprintable character when show command error message
 
 #### Builtin
 - builtin ``command`` and ``shctl fullname`` check uninitialized user-defined command
+
+#### API
+- **Breaking Change**: ``DSError`` maintains ``chars``
 
 
 ### Fixed

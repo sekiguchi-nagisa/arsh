@@ -1,4 +1,4 @@
-#$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $lineNum = 7)
+#$test($result = 'type', $status = 1, $errorKind = 'Unreachable', $chars = 3, $lineNum = 7)
 
 try {
     throw new OutOfRangeError("")

@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 5, $errorKind = 'UndefinedSymbol', $status = 1, $fileName = './always_failed/mod2.ds')
+#$test($result = 'type', $lineNum = 5, $chars =8 , $errorKind = 'UndefinedSymbol', $status = 1, $fileName = './always_failed/mod2.ds')
 
 source ../../_module4test/private.ds
 

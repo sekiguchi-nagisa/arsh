@@ -1,5 +1,5 @@
 # int to int cast
 
-#$test($result = 'type', $lineNum = 5, $errorKind = 'Required', $status = 1)
+#$test($result = 'type', $lineNum = 5, $chars = 8, $errorKind = 'Required', $status = 1)
 
 23.0 / 56    # not allow same precision cast

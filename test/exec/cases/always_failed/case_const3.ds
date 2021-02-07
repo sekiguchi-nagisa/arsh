@@ -1,5 +1,5 @@
 
-#$test($result = 'type', $lineNum = 6, $errorKind = 'Constant', $status = 1)
+#$test($result = 'type', $lineNum = 6, $errorKind = 'Constant', $chars = 2, $status = 1)
 
 var a = "23".toInt()
 case $PID as String {

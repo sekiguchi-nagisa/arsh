@@ -65,8 +65,8 @@ void ErrorReporter::operator()(const Lexer &lex, const char *kind, Token token, 
     unsigned lineNumOffset = lex.getLineNumOffset();
     fprintf(this->fp, "%s:", lex.getSourceName().c_str());
     if(lineNumOffset > 0) {
-        unsigned int lineNum = lex.getLineNumByPos(token.pos);
-        fprintf(this->fp, "%d:", lineNum);
+        auto srcPos = lex.getSrcPos(token);
+        fprintf(this->fp, "%d:%d:", srcPos.lineNum, srcPos.chars);
     }
     fprintf(this->fp, " %s%s[%s]%s %s\n",
             this->color(c), this->color(TermColor::Bold), kind, this->color(TermColor::Reset), message);
@@ -171,13 +171,14 @@ void FrontEnd::handleError(DSErrorKind type, const char *errorKind,
         this->reporter(lex, "note", token, TermColor::Blue, "at module import");
     }
 
-    unsigned int errorLineNum = this->getCurrentLexer().getLineNumByPos(errorToken.pos);
+    auto srcPos = this->getCurrentLexer().getSrcPos(errorToken);
     const char *sourceName = this->getCurrentLexer().getSourceName().c_str();
     if(dsError) {
         *dsError = {
                 .kind = type,
                 .fileName = strdup(sourceName),
-                .lineNum = errorLineNum,
+                .lineNum = srcPos.lineNum,
+                .chars = srcPos.chars,
                 .name = strdup(errorKind)
         };
     }

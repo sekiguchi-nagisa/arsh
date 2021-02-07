@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 5, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
+#$test($result = 'type', $lineNum = 5, $chars = 1, $errorKind = 'ConflictSymbol', $status = 1, $fileName = $0)
 
 typedef StrArray = Int
 

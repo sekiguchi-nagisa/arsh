@@ -1,6 +1,6 @@
 # not allow String Array type in redirection target
 
-#$test($result = 'type', $lineNum = 7, $errorKind = 'Unacceptable', $status = 1)
+#$test($result = 'type', $lineNum = 7, $chars = 6, $errorKind = 'Unacceptable', $status = 1)
 
 function ge()  {}
 
