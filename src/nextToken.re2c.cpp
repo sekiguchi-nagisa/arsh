@@ -185,8 +185,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> APPLIED_NAME      { MODE(EXPR); RET_OR_COMP(APPLIED_NAME); }
       <STMT> SPECIAL_NAME      { MODE(EXPR); RET(SPECIAL_NAME); }
 
-      <STMT,EXPR> "("          { MODE(EXPR); PUSH_MODE(STMT); RET(LP); }
-      <STMT,EXPR> ")"          { POP_MODE(); RET(RP); }
+      <STMT,EXPR,CMD> "("      { MODE(EXPR); PUSH_MODE(STMT); RET(LP); }
+      <STMT,EXPR,CMD> ")"      { POP_MODE(); RET(RP); }
       <STMT,EXPR> "["          { MODE(EXPR); PUSH_MODE(STMT); RET(LB); }
       <STMT,EXPR> "]"          { POP_MODE(); RET(RB); }
       <STMT,EXPR> "{"          { MODE(EXPR); PUSH_MODE(STMT); RET(LBC); }
@@ -212,14 +212,14 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "and"             { MODE(STMT); RET(AND); }
       <EXPR> "or"              { MODE(STMT); RET(OR); }
       <EXPR> "xor"             { MODE(STMT); RET(XOR); }
-      <EXPR> "&&"              { MODE(STMT); RET(COND_AND); }
-      <EXPR> "||"              { MODE(STMT); RET(COND_OR); }
+      <EXPR,CMD> "&&"          { MODE(STMT); RET(COND_AND); }
+      <EXPR,CMD> "||"          { MODE(STMT); RET(COND_OR); }
       <EXPR> "=~"              { MODE(STMT); RET(MATCH); }
       <EXPR> "!~"              { MODE(STMT); RET(UNMATCH); }
       <EXPR> ":-"              { MODE(STMT); RET(STR_CHECK); }
       <EXPR> "?"               { MODE(STMT); RET(TERNARY); }
       <EXPR> "??"              { MODE(STMT); RET(NULL_COALE); }
-      <EXPR> "|"               { MODE(STMT); RET(PIPE); }
+      <EXPR,CMD> "|"           { MODE(STMT); RET(PIPE); }
 
       <EXPR> "++"              { RET(INC); }
       <EXPR> "--"              { RET(DEC); }
@@ -239,13 +239,13 @@ TokenKind Lexer::nextToken(Token &token) {
       <EXPR> "is"              { RET(IS); }
       <EXPR> "in"              { MODE(STMT); RET(IN); }
       <EXPR> "with"            { MODE(CMD); RET(WITH); }
-      <EXPR> "&"               { MODE(STMT); RET(BACKGROUND); }
-      <EXPR> ("&!" | "&|")     { MODE(STMT); RET(DISOWN_BG); }
+      <EXPR,CMD> "&"           { MODE(STMT); RET(BACKGROUND); }
+      <EXPR,CMD> ("&!" | "&|") { MODE(STMT); RET(DISOWN_BG); }
 
       <NAME> VAR_NAME          { MODE(EXPR); RET_OR_COMP(IDENTIFIER); }
       <EXPR> "."               { MODE(NAME); RET(ACCESSOR); }
 
-      <STMT,EXPR> LINE_END     { MODE(STMT); RET(LINE_END); }
+      <STMT,EXPR,CMD> LINE_END  { MODE(STMT); RET(LINE_END); }
       <STMT,EXPR,NAME,TYPE> NEW_LINE
                                { UPDATE_LN(); FIND_NEW_LINE(); }
 
@@ -276,8 +276,6 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> APPLIED_NAME "["   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_BRACKET); }
       <CMD> SPECIAL_NAME "["   { PUSH_MODE(STMT); RET(SPECIAL_NAME_WITH_BRACKET); }
       <CMD> APPLIED_NAME "("   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_PAREN); }
-      <CMD> ")"                { POP_MODE(); RET(RP); }
-      <CMD> "("                { MODE(EXPR); PUSH_MODE(STMT); RET(LP); }
 
       <CMD> "<"                { RET(REDIR_IN_2_FILE); }
       <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
@@ -292,12 +290,6 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> ">("               { PUSH_MODE(STMT); RET(START_IN_SUB); }
       <CMD> "<("               { PUSH_MODE(STMT); RET(START_OUT_SUB); }
 
-      <CMD> "|"                { MODE(STMT); RET(PIPE); }
-      <CMD> "&"                { MODE(STMT); RET(BACKGROUND); }
-      <CMD> ("&!" | "&|")      { MODE(STMT); RET(DISOWN_BG); }
-      <CMD> "||"               { MODE(STMT); RET(COND_OR); }
-      <CMD> "&&"               { MODE(STMT); RET(COND_AND); }
-      <CMD> LINE_END           { MODE(STMT); RET(LINE_END); }
       <CMD> NEW_LINE           { if(!SKIPPABLE_NL()) { MODE(STMT); } UPDATE_LN(); FIND_NEW_LINE(); }
 
       <TYPE> "Func"            { RET_OR_COMP(FUNC); }
