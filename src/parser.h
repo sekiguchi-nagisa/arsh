@@ -89,12 +89,16 @@ private:
 
     bool inStmtCompCtx{false};
 
+    std::vector<bool> skippableNewlines;    // if true, newline is skippable
+
 public:
     explicit Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler = nullptr);
 
     ~Parser() = default;
 
     std::unique_ptr<Node> operator()() {
+        this->skippableNewlines.clear();
+        this->skippableNewlines.push_back(false);
         auto node = this->parse_statement(false);
         if(this->incompleteNode) {
             this->clear();  // force ignore parse error
@@ -132,12 +136,23 @@ protected:
      */
     Token expectAndChangeMode(TokenKind kind, LexerMode mode, bool fetchNext = true);
 
+    auto inSkippableNLCtx(bool skip = true) {
+        this->skippableNewlines.push_back(skip);
+        return finally([&]{
+            this->skippableNewlines.pop_back();
+        });
+    }
+
     bool hasSpace() const {
         return this->lexer->isPrevSpace();
     }
 
     bool hasNewline() const {
         return this->lexer->isPrevNewLine();
+    }
+
+    bool hasLineTerminator() const {
+        return this->hasNewline() && !this->skippableNewlines.back();
     }
 
     bool inCompletionPoint() const {

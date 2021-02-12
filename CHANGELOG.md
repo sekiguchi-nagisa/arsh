@@ -42,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - show number of characters in error line
   - constructor lookup error message
 - escape unprintable character when show command error message
+- ignore newline within the following parenthesis
+  - ``()``, ``[]``, ``${}``, ``$()``, ``@()``, ``<()``, ``>()``
 
 #### Builtin
 - builtin ``command`` and ``shctl fullname`` check uninitialized user-defined command

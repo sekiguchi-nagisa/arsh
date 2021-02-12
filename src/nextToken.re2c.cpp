@@ -46,7 +46,7 @@ do {                   \
 
 #define PUSH_MODE_SKIP_NL(m) this->pushLexerMode(LexerMode(yyc ## m, true))
 
-#define MODE(m) this->setLexerMode(yyc ## m)
+#define MODE(m) this->setLexerCond(yyc ## m)
 
 /*
  * update line number table
@@ -176,18 +176,18 @@ TokenKind Lexer::nextToken(Token &token) {
       <STMT> "%" ['] VAR_NAME [']
                                { MODE(EXPR); RET(SIGNAL_LITERAL); }
       <STMT> ["]               { MODE(EXPR); PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
-      <STMT> "$("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_SUB_CMD); }
-      <STMT> ">("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_IN_SUB); }
-      <STMT> "<("              { MODE(EXPR); PUSH_MODE(STMT); RET(START_OUT_SUB); }
+      <STMT> "$("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
+      <STMT> ">("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }
+      <STMT> "<("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
       <STMT> "@("              { MODE(EXPR); PUSH_MODE_SKIP_NL(CMD); RET(AT_PAREN); }
 
       <STMT> "$"               { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); } else { ERROR();} }
       <STMT> APPLIED_NAME      { MODE(EXPR); RET_OR_COMP(APPLIED_NAME); }
       <STMT> SPECIAL_NAME      { MODE(EXPR); RET(SPECIAL_NAME); }
 
-      <STMT,EXPR,CMD> "("      { MODE(EXPR); PUSH_MODE(STMT); RET(LP); }
+      <STMT,EXPR,CMD> "("      { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(LP); }
       <STMT,EXPR,CMD> ")"      { POP_MODE(); RET(RP); }
-      <STMT,EXPR> "["          { MODE(EXPR); PUSH_MODE(STMT); RET(LB); }
+      <STMT,EXPR> "["          { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(LB); }
       <STMT,EXPR> "]"          { POP_MODE(); RET(RB); }
       <STMT,EXPR> "{"          { MODE(EXPR); PUSH_MODE(STMT); RET(LBC); }
       <STMT,EXPR> "}"          { POP_MODE(); RET(RBC); }
@@ -263,8 +263,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <DSTRING,CMD> INNER_SPECIAL_NAME
                                { RET(SPECIAL_NAME); }
       <DSTRING,CMD> INNER_FIELD { RET(APPLIED_NAME_WITH_FIELD); }
-      <DSTRING,CMD> "${"       { PUSH_MODE(STMT); RET(START_INTERP); }
-      <DSTRING,CMD> "$("       { PUSH_MODE(STMT); RET(START_SUB_CMD); }
+      <DSTRING,CMD> "${"       { PUSH_MODE_SKIP_NL(STMT); RET(START_INTERP); }
+      <DSTRING,CMD> "$("       { PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
 
       <CMD> CMD_ARG            { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
       <CMD> "?"                { RET(GLOB_ANY); }
@@ -273,9 +273,9 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> STRING_LITERAL     { UPDATE_LN(); RET(STRING_LITERAL); }
       <CMD> ESTRING_LITERAL    { UPDATE_LN(); RET(STRING_LITERAL); }
       <CMD> ["]                { PUSH_MODE(DSTRING); RET(OPEN_DQUOTE); }
-      <CMD> APPLIED_NAME "["   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_BRACKET); }
-      <CMD> SPECIAL_NAME "["   { PUSH_MODE(STMT); RET(SPECIAL_NAME_WITH_BRACKET); }
-      <CMD> APPLIED_NAME "("   { PUSH_MODE(STMT); RET(APPLIED_NAME_WITH_PAREN); }
+      <CMD> APPLIED_NAME "["   { PUSH_MODE_SKIP_NL(STMT); RET(APPLIED_NAME_WITH_BRACKET); }
+      <CMD> SPECIAL_NAME "["   { PUSH_MODE_SKIP_NL(STMT); RET(SPECIAL_NAME_WITH_BRACKET); }
+      <CMD> APPLIED_NAME "("   { PUSH_MODE_SKIP_NL(STMT); RET(APPLIED_NAME_WITH_PAREN); }
 
       <CMD> "<"                { RET(REDIR_IN_2_FILE); }
       <CMD> (">" | "1>")       { RET(REDIR_OUT_2_FILE); }
@@ -287,8 +287,8 @@ TokenKind Lexer::nextToken(Token &token) {
       <CMD> "2>&1"             { RET(REDIR_MERGE_ERR_2_OUT); }
       <CMD> "1>&2"             { RET(REDIR_MERGE_OUT_2_ERR); }
       <CMD> "<<<"              { RET(REDIR_HERE_STR); }
-      <CMD> ">("               { PUSH_MODE(STMT); RET(START_IN_SUB); }
-      <CMD> "<("               { PUSH_MODE(STMT); RET(START_OUT_SUB); }
+      <CMD> ">("               { PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }
+      <CMD> "<("               { PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
 
       <CMD> NEW_LINE           { if(!SKIPPABLE_NL()) { MODE(STMT); } UPDATE_LN(); FIND_NEW_LINE(); }
 

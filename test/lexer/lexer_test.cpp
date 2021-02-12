@@ -688,7 +688,7 @@ TEST_F(LexerTest_Lv1, subCmd1) {
     const char *text = "$(";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_SUB_CMD, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
     this->lexer->popLexerMode();
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
@@ -698,7 +698,7 @@ TEST_F(LexerTest_Lv1, subCmd2) {
     this->initLexer(text);
     this->lexer->pushLexerMode(yycDSTRING);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_SUB_CMD, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
     this->lexer->popLexerMode();
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycDSTRING));
 }
@@ -708,16 +708,36 @@ TEST_F(LexerTest_Lv1, subCmd3) {
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_SUB_CMD, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
     this->lexer->popLexerMode();
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
+}
+
+TEST_F(LexerTest_Lv1, interp1) {
+    const char *text = "${";
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_INTERP, text, TokenKind::EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
+}
+
+TEST_F(LexerTest_Lv1, interp2) {
+    const char *text = "${";
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycDSTRING);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_INTERP, text, TokenKind::EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycDSTRING));
 }
 
 TEST_F(LexerTest_Lv1, inSub1) {
     const char *text = ">(";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_IN_SUB, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
     this->lexer->popLexerMode();
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
@@ -727,7 +747,7 @@ TEST_F(LexerTest_Lv1, inSub2) {
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_IN_SUB, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
     this->lexer->popLexerMode();
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
 }
@@ -736,7 +756,7 @@ TEST_F(LexerTest_Lv1, outSub1) {
     const char *text = "<(";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_OUT_SUB, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
     this->lexer->popLexerMode();
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
@@ -746,9 +766,19 @@ TEST_F(LexerTest_Lv1, outSub2) {
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_OUT_SUB, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
     this->lexer->popLexerMode();
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
+}
+
+TEST_F(LexerTest_Lv1, atparen) {
+    const char *text = "@(12\n";
+    this->initLexer(text);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::AT_PAREN, "@(",
+                                   TokenKind::CMD_ARG_PART, "12", TokenKind::EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycCMD, true}));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 
@@ -811,7 +841,15 @@ TEST_F(LexerTest_Lv1, appliedName8) {
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::APPLIED_NAME_WITH_BRACKET, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+}
+
+TEST_F(LexerTest_Lv1, appliedName9) {
+    const char *text = "$hello(";
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::APPLIED_NAME_WITH_PAREN, text, TokenKind::EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
 }
 
 // special name
@@ -897,7 +935,7 @@ TEST_F(LexerTest_Lv1, specialName11) {
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::SPECIAL_NAME_WITH_BRACKET, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
 }
 
 TEST_F(LexerTest_Lv1, specialName12) {
@@ -905,7 +943,7 @@ TEST_F(LexerTest_Lv1, specialName12) {
     this->initLexer(text);
     this->lexer->pushLexerMode(yycCMD);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::SPECIAL_NAME_WITH_BRACKET, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
 }
 
 
@@ -916,7 +954,7 @@ TEST_F(LexerTest_Lv1, LP1) {
     const char *text = "(";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::LP, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
     this->lexer->popLexerMode();
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
@@ -925,7 +963,16 @@ TEST_F(LexerTest_Lv1, LP2) {
     const char *text = "(";
     this->initLexer(text, yycEXPR);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::LP, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+    this->lexer->popLexerMode();
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
+TEST_F(LexerTest_Lv1, LP3) {
+    const char *text = "(";
+    this->initLexer(text, yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::LP, text, TokenKind::EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
     this->lexer->popLexerMode();
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
@@ -953,18 +1000,26 @@ TEST_F(LexerTest_Lv1, RP3) {
     ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
+TEST_F(LexerTest_Lv1, RP4) {
+    const char *text = ")";
+    this->initLexer(text);
+    this->lexer->pushLexerMode(yycCMD);
+    ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::RP, text, TokenKind::EOS, ""));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+}
+
 TEST_F(LexerTest_Lv1, LB1) {
     const char *text = "[";
     this->initLexer(text);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::LB, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
 }
 
 TEST_F(LexerTest_Lv1, LB2) {
     const char *text = "[";
     this->initLexer(text, yycEXPR);
     ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::LB, text, TokenKind::EOS, ""));
-    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+    ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
 }
 
 

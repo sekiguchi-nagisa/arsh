@@ -126,6 +126,11 @@ public:
         return this->prevMode;
     }
 
+    void setLexerCond(LexerCond cond) {
+        auto c = this->curMode;
+        this->setLexerMode(LexerMode(cond, c.skipNL()));
+    }
+
     void setLexerMode(LexerMode mode) {
         this->curMode = mode;
     }

@@ -285,7 +285,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
     GUARD_DEEP_NESTING(guard);
 
     auto typeToken = std::make_unique<BaseTypeNode>(token, this->lexer->toName(token));
-    if(!this->hasNewline()) {
+    if(!this->hasLineTerminator()) {
         if(CUR_KIND() == TokenKind::TYPE_OPEN) {
             this->consume();
             std::vector<std::unique_ptr<TypeNode>> types;
@@ -299,7 +299,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
             return std::make_unique<ReifiedTypeNode>(std::move(typeToken), std::move(types), token);
         } else if(CUR_KIND() == TokenKind::TYPE_DOT) {
             std::unique_ptr<TypeNode> typeNode = std::move(typeToken);
-            while (!this->hasNewline() && CUR_KIND() == TokenKind::TYPE_DOT) {
+            while (!this->hasLineTerminator() && CUR_KIND() == TokenKind::TYPE_DOT) {
                 this->consume();    // TYPE_DOT
                 if(this->inTypeNameCompletionPoint()) {
                     this->makeCodeComp(CodeCompNode::TYPE, std::move(typeNode), this->curToken);
@@ -385,7 +385,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
     }
     case TokenKind::FUNC: {
         Token token = this->expect(TokenKind::FUNC);   // always success
-        if(!this->hasNewline() && CUR_KIND() == TokenKind::TYPE_OPEN) {
+        if(!this->hasLineTerminator() && CUR_KIND() == TokenKind::TYPE_OPEN) {
             this->expect(TokenKind::TYPE_OPEN); // always success
 
             // parse return type
@@ -429,7 +429,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeName(bool enterTYPEMode) {
     }
 
     auto typeNode = TRY(this->parse_typeNameImpl());
-    while(!this->hasNewline() && CUR_KIND() == TokenKind::TYPE_OPT) {
+    while(!this->hasLineTerminator() && CUR_KIND() == TokenKind::TYPE_OPT) {
         Token token = this->expect(TokenKind::TYPE_OPT); // always success
         typeNode = std::make_unique<ReifiedTypeNode>(std::move(typeNode),
                 std::make_unique<BaseTypeNode>(token, TYPE_OPTION));
@@ -480,7 +480,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
         this->consume();    // ASSERT
         auto condNode = TRY(this->parse_expression());
         std::unique_ptr<Node> messageNode;
-        if(!this->hasNewline() && CUR_KIND() == TokenKind::COLON) {
+        if(!this->hasLineTerminator() && CUR_KIND() == TokenKind::COLON) {
             TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
             messageNode = TRY(this->parse_expression());
         } else {
@@ -508,7 +508,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
         }
         Token token = TRY(this->expect(TokenKind::IDENTIFIER));
         std::unique_ptr<Node> exprNode;
-        if(!this->hasNewline() && CUR_KIND() == TokenKind::COLON) {
+        if(!this->hasLineTerminator() && CUR_KIND() == TokenKind::COLON) {
             TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
             exprNode = TRY(this->parse_expression());
         }
@@ -575,7 +575,7 @@ std::unique_ptr<Node> Parser::parse_statementEnd(bool disallowEOS) {
             this->lexer->setComplete(false);
             this->consume();
         }
-        if(!this->hasNewline()) {
+        if(!this->hasLineTerminator()) {
             this->reportTokenMismatchedError(TokenKind::NEW_LINE);
         }
         break;
@@ -586,6 +586,7 @@ std::unique_ptr<Node> Parser::parse_statementEnd(bool disallowEOS) {
 std::unique_ptr<BlockNode> Parser::parse_block() {
     GUARD_DEEP_NESTING(guard);
 
+    auto ctx = this->inSkippableNLCtx(false);
     Token token = TRY(this->expect(TokenKind::LBC));
     auto blockNode = std::make_unique<BlockNode>(token.pos);
     while(CUR_KIND() != TokenKind::RBC) {
@@ -715,6 +716,8 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     this->consume();    // FOR
 
     if(CUR_KIND() == TokenKind::LP) {  // for
+        auto ctx = this->inSkippableNLCtx();
+
         this->consume();    // LP
 
         auto initNode = TRY(this->parse_statementImpl());
@@ -851,7 +854,7 @@ std::unique_ptr<Node> Parser::parse_command() {
     auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
     auto node = std::make_unique<CmdNode>(std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind));
 
-    for(bool next = true; next && this->hasSpace() && !this->hasNewline();) {
+    for(bool next = true; next && !this->hasLineTerminator() && (this->hasSpace() || this->hasNewline());) {
         switch(CUR_KIND()) {
         EACH_LA_cmdArg_LP(GEN_LA_CASE) {
             auto argNode = this->parse_cmdArg();
@@ -1000,7 +1003,7 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
     GUARD_DEEP_NESTING(guard);
 
     auto node = TRY(this->parse_unaryExpression());
-    while(!this->hasNewline()) {
+    while(!this->hasLineTerminator()) {
         const auto info = getOpInfo(this->curKind);
         if(!hasFlag(info.attr, OperatorAttr::INFIX) || info.prece < basePrecedence) {
             break;
@@ -1099,7 +1102,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
 
     auto node = TRY(this->parse_primaryExpression());
 
-    for(bool next = true; !this->hasNewline() && next;) {
+    for(bool next = true; !this->hasLineTerminator() && next;) {
         switch(CUR_KIND()) {
         case TokenKind::ACCESSOR: {
             this->consume();    // ACCESSOR
@@ -1108,7 +1111,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
             }
             Token token = TRY(this->expect(TokenKind::IDENTIFIER));
             node = std::make_unique<AccessNode>(std::move(node), this->newVarNode(token));
-            if(CUR_KIND() == TokenKind::LP && !this->hasNewline()) {  // treat as method call
+            if(CUR_KIND() == TokenKind::LP && !this->hasLineTerminator()) {  // treat as method call
                 auto argsNode = TRY(this->parse_arguments());
                 node = std::make_unique<ApplyNode>(std::move(node), std::move(argsNode));
             }
@@ -1205,6 +1208,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case TokenKind::AT_PAREN:
         return this->parse_cmdArgArray();
     case TokenKind::LP: {  // group or tuple
+        auto ctx = this->inSkippableNLCtx();
         Token openToken = this->expect(TokenKind::LP); // always success
         unsigned int count = 0;
         std::vector<std::unique_ptr<Node>> nodes;
@@ -1221,6 +1225,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         return createTupleOrGroup(openToken, std::move(nodes), closeToken, count);
     }
     case TokenKind::LB: {  // array or map
+        auto ctx = this->inSkippableNLCtx();
         Token token = this->expect(TokenKind::LB); // always success
         auto keyNode = TRY(this->parse_expression());
         std::unique_ptr<Node> node;
@@ -1278,7 +1283,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case TokenKind::BREAK: {
         Token token = this->expect(TokenKind::BREAK); // always success
         std::unique_ptr<Node> exprNode;
-        if(!this->hasNewline() && lookahead_expression(CUR_KIND())) {
+        if(!this->hasLineTerminator() && lookahead_expression(CUR_KIND())) {
             exprNode = TRY(this->parse_expression());
         }
         return JumpNode::newBreak(token, std::move(exprNode));
@@ -1290,7 +1295,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
     case TokenKind::RETURN: {
         Token token = this->expect(TokenKind::RETURN); // always success
         std::unique_ptr<Node> exprNode;
-        if(!this->hasNewline() && lookahead_expression(CUR_KIND())) {
+        if(!this->hasLineTerminator() && lookahead_expression(CUR_KIND())) {
             exprNode = TRY(this->parse_expression());
         }
         return JumpNode::newReturn(token, std::move(exprNode));
@@ -1410,6 +1415,7 @@ std::unique_ptr<Node> Parser::parse_regexLiteral() {
 std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
     GUARD_DEEP_NESTING(guard);
 
+    auto ctx = this->inSkippableNLCtx();
     Token token = first.size == 0 ? TRY(this->expect(TokenKind::LP)) : first;
 
     auto argsNode = std::make_unique<ArgsNode>(token);
@@ -1519,6 +1525,7 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
         return std::make_unique<EmbedNode>(beginToken.pos, kind, this->toAccessNode(innerToken), endToken);
     }
     default:
+        auto ctx = this->inSkippableNLCtx();
         unsigned int pos = START_POS();
         TRY(this->expect(TokenKind::START_INTERP));
         auto node = TRY(this->parse_expression());
@@ -1562,6 +1569,7 @@ std::unique_ptr<Node> Parser::parse_cmdSubstitution(bool strExpr) {
     GUARD_DEEP_NESTING(guard);
 
     assert(CUR_KIND() == TokenKind::START_SUB_CMD);
+    auto ctx = this->inSkippableNLCtx();
     unsigned int pos = START_POS();
     this->consume();    // START_SUB_CMD
     auto exprNode = TRY(this->parse_expression());
@@ -1573,6 +1581,7 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
     GUARD_DEEP_NESTING(guard);
 
     assert(CUR_KIND() == TokenKind::START_IN_SUB || CUR_KIND() == TokenKind::START_OUT_SUB);
+    auto ctx = this->inSkippableNLCtx();
     unsigned int pos = START_POS();
     bool inPipe = this->scan() == TokenKind::START_IN_SUB;
     auto exprNode = TRY(this->parse_expression());
@@ -1598,7 +1607,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
         });
 
         std::unique_ptr<Node> valueNode;
-        if(!this->hasSpace() && !this->hasNewline() && lookahead_cmdArg_LP(CUR_KIND())) {
+        if(!this->hasSpace() && !this->hasLineTerminator() && lookahead_cmdArg_LP(CUR_KIND())) {
             valueNode = this->parse_cmdArg(CmdArgParseOpt::ASSIGN);
             if(this->incompleteNode) {
                 comp = true;
@@ -1619,7 +1628,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
     std::unique_ptr<Node> exprNode;
     if(comp) {
         exprNode = std::make_unique<EmptyNode>();   //dummy
-    } else if(!this->hasNewline() && lookahead_expression(CUR_KIND())) {
+    } else if(!this->hasLineTerminator() && lookahead_expression(CUR_KIND())) {
         exprNode = this->parse_expression(getPrecedence(TokenKind::WITH));
         if(this->incompleteNode) {
             comp = true;
@@ -1638,6 +1647,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
 std::unique_ptr<Node> Parser::parse_cmdArgArray() {
     GUARD_DEEP_NESTING(guard);
 
+    auto ctx = this->inSkippableNLCtx();
     Token token = TRY(this->expect(TokenKind::AT_PAREN));
     auto node = std::make_unique<ArgArrayNode>(token);
     while(true) {

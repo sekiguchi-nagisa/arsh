@@ -1,0 +1,103 @@
+
+# allow newline within the following
+# ( )
+# [ ]
+# @( )
+# ${ }
+# $( )
+# <( )
+# >( )
+# $name[ ]
+# $@[ ]
+# $name( )
+
+## ( )
+assert (20
+   /
+   2
+   ==
+   10)
+
+assert (true
+  1
+  2
+  &&
+  true)
+
+## [ ]
+assert
+  [
+    "3"
+    .
+    slice
+
+    (
+      1
+       - 1
+       ,
+       1
+    )
+  ][0] != "4"
+
+## @(  ) ${ }
+assert @(
+    echo
+    ${
+        true
+        &&
+        $true # comment
+}
+
+)[1] == 'true'
+
+## $( ) $name[ ] $@[ ]
+var aa = [34,45]
+$@.add("!!")
+assert "$(
+    echo
+    a
+    $@[
+      34
+      -
+      17
+      *
+      2
+      ]
+
+    $aa[
+        4
+        /
+        4
+    ]
+)" == 'a !! 45'
+
+## $name( ) <( ) for( )
+function hoge($a : String, $b : Int) : UnixFD {
+    return <(
+        {for(var i =
+             1
+             -
+             1
+             ;
+             $i
+             <
+             $b;
+             $i
+             ++) {
+            echo $a
+        }}
+    )
+}
+
+assert diff \
+         <({
+             echo '!!'
+             echo '!!'
+             echo '!!'
+         }) $hoge(
+            '!'
+            +
+            '!'
+            ,
+            3
+         )
