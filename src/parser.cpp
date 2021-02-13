@@ -62,6 +62,17 @@ Parser::Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler) {
     this->fetchNext();
 }
 
+std::unique_ptr<Node> Parser::operator()() {
+    this->skippableNewlines.clear();
+    this->skippableNewlines.push_back(false);
+    auto node = this->parse_statement(false);
+    if(this->incompleteNode) {
+        this->clear();  // force ignore parse error
+        node = std::move(this->incompleteNode);
+    }
+    return node;
+}
+
 void Parser::refetch(LexerMode mode) {
     this->lexer->setPos(START_POS());
     this->lexer->setLexerMode(mode);

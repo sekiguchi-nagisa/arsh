@@ -96,16 +96,7 @@ public:
 
     ~Parser() = default;
 
-    std::unique_ptr<Node> operator()() {
-        this->skippableNewlines.clear();
-        this->skippableNewlines.push_back(false);
-        auto node = this->parse_statement(false);
-        if(this->incompleteNode) {
-            this->clear();  // force ignore parse error
-            node = std::move(this->incompleteNode);
-        }
-        return node;
-    }
+    std::unique_ptr<Node> operator()();
 
     explicit operator bool() const {
         return this->curKind != TokenKind::EOS;
