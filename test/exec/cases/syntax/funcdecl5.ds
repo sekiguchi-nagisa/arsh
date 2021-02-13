@@ -1,0 +1,10 @@
+#$test($result = 'parse', $lineNum = 9, $chars = 35, $errorKind = 'CMD_ARG', $status = 1)
+
+function f($a : Int) {
+    if ($true) {
+      45 /
+      for(var i = 0; $i < 34; $i++) {
+      34/
+      for $a in $@ {
+        try { $a; } catch $e { ls $
+}
