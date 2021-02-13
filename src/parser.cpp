@@ -65,7 +65,7 @@ Parser::Parser(Lexer &lexer, ObserverPtr<CodeCompletionHandler> handler) {
 std::unique_ptr<Node> Parser::operator()() {
     this->skippableNewlines.clear();
     this->skippableNewlines.push_back(false);
-    auto node = this->parse_statement(false);
+    auto node = this->parse_statement();
     if(this->incompleteNode) {
         this->clear();  // force ignore parse error
         node = std::move(this->incompleteNode);
@@ -560,19 +560,15 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     }
 }
 
-std::unique_ptr<Node> Parser::parse_statement(bool disallowEOS) {
+std::unique_ptr<Node> Parser::parse_statement() {
     auto node = TRY(this->parse_statementImpl());
-    TRY(this->parse_statementEnd(disallowEOS));
+    TRY(this->parse_statementEnd());
     return node;
 }
 
-std::unique_ptr<Node> Parser::parse_statementEnd(bool disallowEOS) {
+std::unique_ptr<Node> Parser::parse_statementEnd() {
     switch(CUR_KIND()) {
     case TokenKind::EOS:
-        if(disallowEOS) {
-            this->reportTokenMismatchedError(TokenKind::NEW_LINE);
-        }
-        break;
     case TokenKind::RBC:
         break;
     case TokenKind::LINE_END:

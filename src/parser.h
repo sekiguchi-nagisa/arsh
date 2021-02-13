@@ -217,7 +217,7 @@ protected:
      */
     std::unique_ptr<Node> parse_statementImpl();
 
-    std::unique_ptr<Node> parse_statement(bool disallowEOS = true);
+    std::unique_ptr<Node> parse_statement();
 
     /**
      *
@@ -225,7 +225,7 @@ protected:
      * @return
      * always nullptr
      */
-    std::unique_ptr<Node> parse_statementEnd(bool disallowEOS = true);
+    std::unique_ptr<Node> parse_statementEnd();
 
     std::unique_ptr<BlockNode> parse_block();
 
