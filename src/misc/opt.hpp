@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <algorithm>
+#include <ostream>
 
 #include "flag_util.hpp"
 #include "string_ref.hpp"
@@ -161,7 +162,17 @@ public:
     Parser(std::initializer_list<Option<T>> list);
     ~Parser() = default;
 
-    void printOption(FILE *fp) const;
+    std::string formatOption() const;
+
+    void printOption(FILE *fp) const {
+        std::string value = this->formatOption();
+        fprintf(fp, "%s\n", value.c_str());
+        fflush(fp);
+    }
+
+    std::ostream &printOption(std::ostream &stream) const {
+        return stream << this->formatOption() << std::endl;
+    }
 
     template <typename Iter>
     Result<T> operator()(Iter &begin, Iter end) const;
@@ -185,7 +196,8 @@ Parser<T>::Parser(std::initializer_list<Option<T>> list) :
 }
 
 template <typename T>
-void Parser<T>::printOption(FILE *fp) const {
+std::string Parser<T>::formatOption() const {
+    std::string value;
     unsigned int maxSizeOfUsage = 0;
 
     // compute usage size
@@ -202,25 +214,29 @@ void Parser<T>::printOption(FILE *fp) const {
     }
 
     // print help message
-    fputs("Options:", fp);
+    value += "Options:";
     for(auto &option : this->options) {
-        fputc('\n', fp);
+        value += "\n";
         unsigned int size = option.getUsageSize();
-        fprintf(fp, "    %s%s", option.optionName, getOptSuffix(option.flag));
+        value += "    ";
+        value += option.optionName;
+        value += getOptSuffix(option.flag);
         for(unsigned int i = 0; i < maxSizeOfUsage - size; i++) {
-            fputc(' ', fp);
+            value += " ";
         }
 
         unsigned int count = 0;
         for(auto &detail : option.getDetails()) {
             if(count++ > 0) {
-                fprintf(fp, "\n%s    ", spaces.c_str());
+                value += "\n";
+                value += spaces;
+                value += "    ";
             }
-            fprintf(fp, "    %s", detail.c_str());
+            value += "    ";
+            value += detail;
         }
     }
-    fputc('\n', fp);
-    fflush(fp);
+    return value;
 }
 
 template <typename T>
