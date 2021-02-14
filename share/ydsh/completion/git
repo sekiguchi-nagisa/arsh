@@ -21,6 +21,6 @@ function _lookup() : String {
 
 {
     var path = $_lookup()
-    compdef --cmd git --comp-path "$path" --comp-target _git
-    compdef --cmd gitk --comp-path "$path" --comp-target _gitk
+    compdef --cmd git --comp-path "$path" --comp-target __git_wrap__git_main
+    compdef --cmd gitk --comp-path "$path" --comp-target __git_wrap__gitk_main
 }
