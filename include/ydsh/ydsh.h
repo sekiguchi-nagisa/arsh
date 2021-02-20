@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2020 Nagisa Sekiguchi
+ * Copyright (C) 2015-2021 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ DS_PUBLIC_API(void) DSState_setArguments(DSState *st, char *const *args);
  * if cannot resolve path, return null.
  * if st is null, return null
  */
-DS_PUBLIC_API(const) char *DSState_initExecutablePath(DSState *st);
+DS_PUBLIC_API(const char *) DSState_initExecutablePath(DSState *st);
 
 /**
  * get current exit status ($? & 0xFF)
