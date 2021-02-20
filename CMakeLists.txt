@@ -60,6 +60,7 @@ add_definitions(-DEND_MISC_LIB_NAMESPACE_DECL=})
 add_definitions(-D_GNU_SOURCE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++14 -Werror -Wall -Wextra")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fstack-protector-strong")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-maybe-uninitialized")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-redundant-move")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
@@ -260,14 +261,17 @@ set(CMAKE_MACOSX_RPATH ON)
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_FULL_LIBDIR}")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
+add_library(ydsh_obj OBJECT ${YDSH_SRC})
+add_dependencies(ydsh_obj gen_lexer)
+set_target_properties(ydsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+set(YDSH_STATIC ydsh_static)
+add_library(${YDSH_STATIC} STATIC $<TARGET_OBJECTS:ydsh_obj>)
+target_link_libraries(${YDSH_STATIC} ${HAVE_LIBPCRE})
+
 set(YDSH_LIB ydsh_lib)
-add_library(${YDSH_LIB} SHARED ${YDSH_SRC})
-add_dependencies(${YDSH_LIB} gen_lexer)
-set_target_properties(${YDSH_LIB} PROPERTIES
-        OUTPUT_NAME ydsh
-#        CXX_VISIBILITY_PRESET hidden
-#        VISIBILITY_INLINES_HIDDEN ON
-)
+add_library(${YDSH_LIB} SHARED $<TARGET_OBJECTS:ydsh_obj>)
+set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
 target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE})
 
 if(USE_LTO)

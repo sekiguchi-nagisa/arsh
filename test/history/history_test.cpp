@@ -4,13 +4,14 @@
 
 #include <ydsh/ydsh.h>
 #include <constant.h>
-#include <vm.h>
 
 #include "../test_common.h"
 
 #ifndef HISTORY_MOD_PATH
 #error "require HISTORY_MOD_PATH"
 #endif
+
+using namespace ydsh;
 
 class HistoryTest : public ExpectOutput, public TempFileFactory {
 protected:
