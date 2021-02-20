@@ -22,7 +22,7 @@ target_link_libraries(rpc_fuzzer jsonrpc)
 
 include_directories(${CMAKE_SOURCE_DIR}/tools/server)
 add_executable(lsp_fuzzer lsp_fuzzer.cpp)
-target_link_libraries(lsp_fuzzer ydshd_static ${YDSH_LIB})
+target_link_libraries(lsp_fuzzer ydshd_static ${YDSH_STATIC})
 
 
 #=====================#
