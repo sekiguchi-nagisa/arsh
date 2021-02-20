@@ -263,7 +263,11 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 set(YDSH_LIB ydsh_lib)
 add_library(${YDSH_LIB} SHARED ${YDSH_SRC})
 add_dependencies(${YDSH_LIB} gen_lexer)
-set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
+set_target_properties(${YDSH_LIB} PROPERTIES
+        OUTPUT_NAME ydsh
+#        CXX_VISIBILITY_PRESET hidden
+#        VISIBILITY_INLINES_HIDDEN ON
+)
 target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE})
 
 if(USE_LTO)

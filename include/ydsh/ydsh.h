@@ -23,6 +23,18 @@
 extern "C" {
 #endif
 
+
+#if defined(__GNUC__)
+#if defined _WIN32 || defined __CYGWIN__
+#define DS_PUBLIC_API(type) __attribute__ ((dllexport)) type
+#else
+#define DS_PUBLIC_API(type) __attribute__ ((visibility ("default"))) type
+#endif
+#else
+#define DS_PUBLIC_API(type) type
+#endif
+
+
 struct DSState;
 typedef struct DSState DSState;
 
@@ -44,7 +56,7 @@ typedef enum {
  * @return
  * if specified invalid mode, return null
  */
-DSState *DSState_createWithMode(DSExecMode mode);
+DS_PUBLIC_API(DSState *) DSState_createWithMode(DSExecMode mode);
 
 static inline DSState *DSState_create() {
     return DSState_createWithMode(DS_EXEC_MODE_NORMAL);
@@ -55,7 +67,7 @@ static inline DSState *DSState_create() {
  * @param st
  * may be null
  */
-void DSState_delete(DSState **st);
+DS_PUBLIC_API(void) DSState_delete(DSState **st);
 
 /**
  * get DSExecMode.
@@ -64,7 +76,7 @@ void DSState_delete(DSState **st);
  * @return
  * if st is null, return always DS_EXEC_MODE_NORMAL
  */
-DSExecMode DSState_mode(const DSState *st);
+DS_PUBLIC_API(DSExecMode) DSState_mode(const DSState *st);
 
 /**
  * affect DSState_eval() result. (not affect DSState_loadAndEval())
@@ -72,7 +84,7 @@ DSExecMode DSState_mode(const DSState *st);
  * @param lineNum
  * if st is null, do nothing
  */
-void DSState_setLineNum(DSState *st, unsigned int lineNum);
+DS_PUBLIC_API(void) DSState_setLineNum(DSState *st, unsigned int lineNum);
 
 /**
  * get line number after latest evaluation or setLineNum().
@@ -80,7 +92,7 @@ void DSState_setLineNum(DSState *st, unsigned int lineNum);
  * @return
  * if st is null, return always 0
  */
-unsigned int DSState_lineNum(const DSState *st);
+DS_PUBLIC_API(unsigned int) DSState_lineNum(const DSState *st);
 
 /**
  * set shell name ($0).
@@ -89,7 +101,7 @@ unsigned int DSState_lineNum(const DSState *st);
  * @param shellName
  * if null, do nothing.
  */
-void DSState_setShellName(DSState *st, const char *shellName);
+DS_PUBLIC_API(void) DSState_setShellName(DSState *st, const char *shellName);
 
 /**
  * set arguments ($@).
@@ -99,7 +111,7 @@ void DSState_setShellName(DSState *st, const char *shellName);
  * @param args
  * if null, clear '$@'
  */
-void DSState_setArguments(DSState *st, char *const *args);
+DS_PUBLIC_API(void) DSState_setArguments(DSState *st, char *const *args);
 
 /**
  * set full path of current executable path (in linux, /proc/self/exe)
@@ -108,7 +120,7 @@ void DSState_setArguments(DSState *st, char *const *args);
  * if cannot resolve path, return null.
  * if st is null, return null
  */
-const char *DSState_initExecutablePath(DSState *st);
+DS_PUBLIC_API(const) char *DSState_initExecutablePath(DSState *st);
 
 /**
  * get current exit status ($? & 0xFF)
@@ -116,7 +128,7 @@ const char *DSState_initExecutablePath(DSState *st);
  * @return
  * if null, return always 0
  */
-int DSState_exitStatus(const DSState *st);
+DS_PUBLIC_API(int) DSState_exitStatus(const DSState *st);
 
 /**
  * update exit status
@@ -124,7 +136,7 @@ int DSState_exitStatus(const DSState *st);
  * if null, do nothing
  * @param status
  */
-void DSState_setExitStatus(DSState *st, int status);
+DS_PUBLIC_API(void) DSState_setExitStatus(DSState *st, int status);
 
 /* for internal data structure dump */
 typedef enum {
@@ -144,7 +156,7 @@ typedef enum {
  * if success, return 0.
  * if cannot open target or invalid parameter, do nothing and return -1.
  */
-int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target);
+DS_PUBLIC_API(int) DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target);
 
 
 /* for option */
@@ -153,21 +165,21 @@ int DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target);
 #define DS_OPTION_TRACE_EXIT   ((unsigned int) (1u << 2u))
 #define DS_OPTION_JOB_CONTROL  ((unsigned int) (1u << 3u))
 
-unsigned int DSState_option(const DSState *st);
+DS_PUBLIC_API(unsigned int) DSState_option(const DSState *st);
 
 /**
  * if specify DS_OPTION_JOB_CONTROL, ignore some signals
  * @param st
  * @param optionSet
  */
-void DSState_setOption(DSState *st, unsigned int optionSet);
+DS_PUBLIC_API(void) DSState_setOption(DSState *st, unsigned int optionSet);
 
 /**
  * if specify DS_OPTION_JOB_CONTROL, reset some signal setting
  * @param st
  * @param optionSet
  */
-void DSState_unsetOption(DSState *st, unsigned int optionSet);
+DS_PUBLIC_API(void) DSState_unsetOption(DSState *st, unsigned int optionSet);
 
 
 /* for indicating error kind. */
@@ -224,7 +236,7 @@ typedef struct {
  * @param e
  * may be null
  */
-void DSError_release(DSError *e);
+DS_PUBLIC_API(void) DSError_release(DSError *e);
 
 /**
  * evaluate string. if e is not null, set error info.
@@ -243,7 +255,7 @@ void DSError_release(DSError *e);
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  * if st or data is null, return -1 and not set error
  */
-int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e);
+DS_PUBLIC_API(int) DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e);
 
 /**
  * open file and evaluate. if e is not null, set error info.
@@ -262,7 +274,7 @@ int DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned
  * if fileName is already loaded module, return always 0 and do nothing.
  * if st is null, return -1 and not set error
  */
-int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
+DS_PUBLIC_API(int) DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
 
 
 /* for module loading option */
@@ -298,7 +310,7 @@ int DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
  * if fileName is already loaded module, return always 0 and do nothing.
  * if st or fileName is null, return -1 and not set error
  */
-int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e);
+DS_PUBLIC_API(int) DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e);
 
 /**
  * execute command. if not DS_EXEC_MODE_NORMAL, do nothing (return always 0)
@@ -312,7 +324,7 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
  * if command not found, return 1.
  * if st or argv is null, return -1
  */
-int DSState_exec(DSState *st, char *const *argv);
+DS_PUBLIC_API(int) DSState_exec(DSState *st, char *const *argv);
 
 typedef struct {
     unsigned int major;
@@ -327,16 +339,16 @@ typedef struct {
  * @return
  * version string
  */
-const char *DSState_version(DSVersion *version);
+DS_PUBLIC_API(const char *) DSState_version(DSVersion *version);
 
-const char *DSState_copyright();
+DS_PUBLIC_API(const char *) DSState_copyright();
 
 
 /* for feature detection */
 #define DS_FEATURE_LOGGING    ((unsigned int) (1u << 0u))
 #define DS_FEATURE_SAFE_CAST  ((unsigned int) (1u << 1u))
 
-unsigned int DSState_featureBit();
+DS_PUBLIC_API(unsigned int) DSState_featureBit();
 
 
 /* for input completion */
@@ -362,7 +374,7 @@ typedef enum {
  * if op is 'DS_COMP_SIZE' or 'DS_COMP_INVOKE', return size of completion result.
  * otherwise, return always 1.
  */
-unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
+DS_PUBLIC_API(unsigned int) DSState_complete(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
 
 /* for line editing (history, prompt) */
 
@@ -391,7 +403,7 @@ typedef enum {
  * if op is DS_EDIT_HIST_SIZE, return size of history.
  * otherwise, return non-zero value
  */
-unsigned int DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const char **buf);
+DS_PUBLIC_API(unsigned int) DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const char **buf);
 
 #ifdef __cplusplus
 }
