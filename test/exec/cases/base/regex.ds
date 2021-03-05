@@ -12,6 +12,14 @@ assert $/\s/ =~ "　"
 assert $/\w/ =~ 'a'
 assert $/\w/ =~ '感'
 
+assert $/\p{Hiragana}/ =~ 'う'
+assert $/\p{Hiragana}/ !~ '1'
+assert $/\p{Hiragana}/ !~ 'ナ'
+
+assert $/\p{Katakana}/ !~ 'う'
+assert $/\p{Katakana}/ !~ '1'
+assert $/\p{Katakana}/ =~ 'ナ'
+
 assert '/hoge' =~ $/\//
 
 assert 'hoge' !~ $/hoge./
