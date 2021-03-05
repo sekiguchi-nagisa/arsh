@@ -6,6 +6,12 @@ assert $/abc/ !~ 'cdf'
 
 assert $/^.$/ =~ "あ"
 
+assert $/\s/ =~ ' '
+assert $/\s/ =~ "　"
+
+assert $/\w/ =~ 'a'
+assert $/\w/ =~ '感'
+
 assert '/hoge' =~ $/\//
 
 assert 'hoge' !~ $/hoge./

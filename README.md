@@ -18,6 +18,7 @@ Language specification is subject to change without notice.
 * make/ninja
 * gcc/clang (need gnu++14 support)
 * libpcre
+  * need UTF-8 and unicode property support
 
 ### Optional Requirement
 * fzf (for history search)

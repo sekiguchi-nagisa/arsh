@@ -72,7 +72,7 @@ inline PCRE compileRegex(StringRef pattern, StringRef flag, std::string &errorSt
 
     const char *error;
     int errorOffset;
-    flagValue |= PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8;
+    flagValue |= PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8 | PCRE_UCP;
     pcre *re = pcre_compile(pattern.data(), flagValue, &error, &errorOffset, nullptr);
     if(!re) {
         errorStr = error;
