@@ -115,7 +115,7 @@ static void showFeature(FILE *fp) {
     OP(INTERACTIVE,    "-i",                  opt::NO_ARG, "run interactive mode") \
     OP(NOEXEC,         "-n",                  opt::NO_ARG, "equivalent to `--compile-only' option")
 
-enum OptionKind {
+enum class OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
     EACH_OPT(GEN_ENUM)
 #undef GEN_ENUM
@@ -142,7 +142,7 @@ static std::string getDefaultRCFilePath() {
 
 int main(int argc, char **argv) {
     opt::Parser<OptionKind> parser = {
-#define GEN_OPT(E, S, F, D) {E, S, F, D},
+#define GEN_OPT(E, S, F, D) {OptionKind::E, S, F, D},
             EACH_OPT(GEN_OPT)
 #undef GEN_OPT
     };
@@ -170,66 +170,66 @@ int main(int argc, char **argv) {
 
     while((result = parser(begin, end))) {
         switch(result.value()) {
-        case DUMP_UAST:
+        case OptionKind::DUMP_UAST:
             dumpTarget[0].path = result.arg() != nullptr ? result.arg() : "";
             break;
-        case DUMP_AST:
+        case OptionKind::DUMP_AST:
             dumpTarget[1].path = result.arg() != nullptr ? result.arg() : "";
             break;
-        case DUMP_CODE:
+        case OptionKind::DUMP_CODE:
             dumpTarget[2].path = result.arg() != nullptr ? result.arg() : "";
             break;
-        case PARSE_ONLY:
+        case OptionKind::PARSE_ONLY:
             mode = DS_EXEC_MODE_PARSE_ONLY;
             break;
-        case CHECK_ONLY:
+        case OptionKind::CHECK_ONLY:
             mode = DS_EXEC_MODE_CHECK_ONLY;
             break;
-        case COMPILE_ONLY:
-        case NOEXEC:
+        case OptionKind::COMPILE_ONLY:
+        case OptionKind::NOEXEC:
             mode = DS_EXEC_MODE_COMPILE_ONLY;
             break;
-        case DISABLE_ASSERT:
+        case OptionKind::DISABLE_ASSERT:
             noAssert = true;
             break;
-        case TRACE_EXIT:
+        case OptionKind::TRACE_EXIT:
             setFlag(option, DS_OPTION_TRACE_EXIT);
             break;
-        case VERSION:
+        case OptionKind::VERSION:
             fprintf(stdout, "%s\n", version());
             return 0;
-        case HELP:
+        case OptionKind::HELP:
             fprintf(stdout, "%s\n", version());
             parser.printOption(stdout);
             return 0;
-        case COMMAND:
+        case OptionKind::COMMAND:
             invocationKind = InvocationKind::FROM_STRING;
             evalText = result.arg();
             goto INIT;
-        case NORC:
+        case OptionKind::NORC:
             rcfile = "";
             break;
-        case EXEC:
+        case OptionKind::EXEC:
             invocationKind = InvocationKind::BUILTIN;
             statusLogPath = nullptr;
             --begin;
             goto INIT;
-        case STATUS_LOG:
+        case OptionKind::STATUS_LOG:
             statusLogPath = result.arg();
             break;
-        case FEATURE:
+        case OptionKind::FEATURE:
             showFeature(stdout);
             return 0;
-        case RC_FILE:
+        case OptionKind::RC_FILE:
             rcfile = result.arg();
             break;
-        case QUIET:
+        case OptionKind::QUIET:
             quiet = true;
             break;
-        case SET_ARGS:
+        case OptionKind::SET_ARGS:
             invocationKind = InvocationKind::FROM_STDIN;
             goto INIT;
-        case INTERACTIVE:
+        case OptionKind::INTERACTIVE:
             forceInteractive = true;
             break;
         }
