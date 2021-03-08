@@ -195,10 +195,10 @@ static constexpr struct {
                 "        unset OPTION ...    unset/disable/off runtime option.\n"
                 "        fullname [-l level] name or fullname [-m mod] name\n"
                 "                            resolve fully qualified command name and set to REPLY.\n"
-                "                            if no option specified, equivalent to `-l 0'"
+                "                            if no option specified, equivalent to `-l 0'\n"
                 "                            Options:\n"
                 "                                -l    resolve from call stack level specified by LEVEL (0~).\n"
-                "                                -m    resolve from module specified by MOD.\n"},
+                "                                -m    resolve from module specified by MOD."},
         {"test", builtin_test, "[expr]",
                 "    Unary or Binary expressions.\n"
                 "    If expression is true, return 0\n"
