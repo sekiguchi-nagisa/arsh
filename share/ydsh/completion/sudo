@@ -2,14 +2,21 @@
 source $SCRIPT_DIR/../module/completion
 
 function _sudo($t : [String], $c : Int) : [String] {
-    if $t.size() == 1 || $c == 1{
-        import-env PATH : ""
-        PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete &> /dev/null -A external ${$t.size() == 1 ? "" : $t.peek()}
-        return $COMPREPLY
-    } else {
-        $t.shift()
-        return $compDelegate($t, $c - 1)
+    for(var i = 1; $i < $t.size(); $i++) {
+        var v = $t[$i]
+        case $v {
+        $/^-.*$/ => continue
+        else => if $i < $t.size() - 1 || $c == $t.size() {
+                    return $compDelegate($t.from($i), $c - $i)
+                }
+        }
     }
+    if $c < $t.size() && $t.peek() == '-' {
+        return ['-A', '-b', '-E', '-H', '-n', '-P', '-S']
+    }
+    import-env PATH : ""
+    PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete &> /dev/null -A external ${$c < $t.size() ? $t.peek() : ""}
+    return $COMPREPLY
 }
 
 $compAdd("sudo", $_sudo)
