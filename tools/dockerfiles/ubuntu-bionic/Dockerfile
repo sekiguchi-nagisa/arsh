@@ -1,5 +1,5 @@
 FROM ubuntu:bionic
-RUN apt update && apt install -y clang-4.0 llvm-4.0 sudo cmake git ninja-build automake libtool libpcre3 libpcre3-dev
+RUN apt update && apt install -y clang-4.0 llvm-4.0 sudo cmake git ninja-build automake libtool libpcre3 libpcre3-dev systemd-sysv
 RUN useradd -m tux
 RUN groupadd -g 2001 admin && usermod -G admin tux  && echo '%admin ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
