@@ -184,7 +184,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: prepare
-        run: brew install ninja
+        run: brew install ninja autoconf automake libtool
       - name: configure
         run: |
           export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
@@ -207,7 +207,7 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: prepare
-        run: brew install ninja
+        run: brew install ninja autoconf automake libtool
       - name: configure
         run: |
           export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
