@@ -641,6 +641,8 @@ inline DSValue exitStatusToBool(int64_t s) {
     return DSValue::createBool(s == 0);
 }
 
+class ArrayObject;
+
 class RegexObject : public ObjectWithRtti<ObjectKind::Regex> {
 private:
     std::string str; // for string representation
@@ -650,19 +652,19 @@ public:
     RegexObject(std::string str, PCRE &&re) :
             ObjectWithRtti(TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
 
-    bool search(StringRef ref) const {
-        int ovec[1];
-        return this->exec(ref, ovec, arraySize(ovec)) >= 0;
+    bool search(StringRef ref) {
+        return this->match(ref, nullptr) >= 0;
     }
 
-    int match(StringRef ref, FlexBuffer<int> &ovec) const {
-        int captureSize;
-        pcre_fullinfo(this->re.get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
-        assert(captureSize > -1);
-        int ovecSize = (captureSize + 1) * 3;
-        ovec.resize(static_cast<FlexBuffer<int>::size_type>(ovecSize), 0);
-        return this->exec(ref, ovec.data(), ovecSize);
-    }
+    /**
+     *
+     * @param ref
+     * @param out
+     * may be null
+     * @return
+     * if not matched, return negative number
+     */
+    int match(StringRef ref, ArrayObject *out);
 
     /**
      *

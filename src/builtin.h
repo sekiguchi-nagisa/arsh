@@ -995,26 +995,11 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
     auto &re = typeAs<RegexObject>(LOCAL(0));
     auto ref = LOCAL(1).asStrRef();
 
-    FlexBuffer<int> ovec;
-    int matchSize = re.match(ref, ovec);
-
     auto ret = DSValue::create<ArrayObject>(
             *ctx.typePool.createArrayType(
                     *ctx.typePool.createOptionType(
                             ctx.typePool.get(TYPE::String)).take()).take());
-    auto &array = typeAs<ArrayObject>(ret);
-
-    if(matchSize > 0) {
-        array.refValues().reserve(matchSize);
-    }
-    for(int i = 0; i < matchSize; i++) {
-        int begin = ovec[i * 2];
-        int end = ovec[i * 2 + 1];
-        bool hasGroup = begin > -1 && end > -1;
-        auto v = hasGroup ? DSValue::createStr(ref.slice(begin, end)) : DSValue::createInvalid();
-        array.refValues().push_back(std::move(v));
-    }
-
+    re.match(ref, &typeAs<ArrayObject>(ret));
     RET(ret);
 }
 

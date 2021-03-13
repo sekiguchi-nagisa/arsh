@@ -293,6 +293,29 @@ bool UnixFdObject::closeOnExec(bool close) const {
 // ##     RegexObject     ##
 // #########################
 
+int RegexObject::match(StringRef ref, ArrayObject *out) {
+    FlexBuffer<int> ovec;
+    int captureSize;
+    pcre_fullinfo(this->re.get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
+    assert(captureSize > -1);
+    int ovecSize = (captureSize + 1) * 3;
+    ovec.resize(static_cast<FlexBuffer<int>::size_type>(ovecSize), 0);
+    int matchSize =  this->exec(ref, ovec.data(), ovecSize);
+    if(out) {
+        if(matchSize > 0) {
+            out->refValues().reserve(matchSize);
+        }
+        for(int i = 0; i < matchSize; i++) {
+            int begin = ovec[i * 2];
+            int end = ovec[i * 2 + 1];
+            bool hasGroup = begin > -1 && end > -1;
+            auto v = hasGroup ? DSValue::createStr(ref.slice(begin, end)) : DSValue::createInvalid();
+            out->refValues().push_back(std::move(v));
+        }
+    }
+    return matchSize;
+}
+
 bool RegexObject::replace(DSValue &value, StringRef repl) const {
     auto ret = DSValue::createStr();
     unsigned int count = 0;
