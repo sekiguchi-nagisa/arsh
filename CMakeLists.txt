@@ -143,6 +143,7 @@ download_project(
         GIT_REPOSITORY      https://github.com/sekiguchi-nagisa/linenoise.git
         GIT_TAG             9294d08c7cdb6c7041c86e26077dd26ae770bc81
         GIT_PROGRESS        1
+        ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )
 include_directories(${linenoise_SOURCE_DIR})
 
