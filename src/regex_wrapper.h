@@ -17,21 +17,51 @@
 #ifndef YDSH_REGEX_WRAPPER_H
 #define YDSH_REGEX_WRAPPER_H
 
-#include <memory>
+#define PCRE2_CODE_UNIT_WIDTH 8
 
-#include <pcre.h>
+#include <pcre2.h>
 
 #include "misc/string_ref.hpp"
 
 namespace ydsh {
 
-struct PCREDeleter {
-    void operator()(pcre *ptr) const {
-        pcre_free(ptr);
+struct PCRE {
+    pcre2_code *code;
+    pcre2_match_data *data;
+
+    NON_COPYABLE(PCRE);
+
+    PCRE() : code(nullptr), data(nullptr) {}
+
+    explicit PCRE(pcre2_code *code) : code(code), data(nullptr) {
+        if(this->code) {
+            this->data = pcre2_match_data_create_from_pattern(this->code, nullptr);
+        }
+    }
+
+    PCRE(PCRE &&re) noexcept : code(re.code), data(re.data) {
+        re.code = nullptr;
+        re.data = nullptr;
+    }
+
+    ~PCRE() {
+        pcre2_code_free(this->code);
+        pcre2_match_data_free(this->data);
+    }
+
+    PCRE &operator=(PCRE &&re) noexcept {
+        if(this != std::addressof(re)) {
+            this->~PCRE();
+            new (this) PCRE(std::move(re));
+        }
+        return *this;
+    }
+
+    explicit operator bool() const {
+        return this->code != nullptr;
     }
 };
 
-using PCRE = std::unique_ptr<pcre, PCREDeleter>;
 
 /**
  * convert flag character to regex flag (option)
@@ -39,14 +69,14 @@ using PCRE = std::unique_ptr<pcre, PCREDeleter>;
  * @return
  * if specified unsupported flag character, return 0
  */
-inline int toRegexFlag(char ch) {
+inline uint32_t toRegexFlag(char ch) {
     switch(ch) {
     case 'i':
-        return PCRE_CASELESS;
+        return PCRE2_CASELESS;
     case 'm':
-        return PCRE_MULTILINE;
+        return PCRE2_MULTILINE;
     case 's':
-        return PCRE_DOTALL;
+        return PCRE2_DOTALL;
     default:
         return 0;
     }
@@ -55,29 +85,36 @@ inline int toRegexFlag(char ch) {
 inline PCRE compileRegex(StringRef pattern, StringRef flag, std::string &errorStr) {
     if(pattern.hasNullChar()) {
         errorStr = "regex pattern contains null characters";
-        return nullptr;
+        return PCRE();
     }
 
-    int flagValue = 0;
+    uint32_t option = 0;
     for(auto &e : flag) {
-        int r = toRegexFlag(e);
+        unsigned int r = toRegexFlag(e);
         if(!r) {
             errorStr = "unsupported regex flag: `";
             errorStr += e;
             errorStr += "'";
-            return nullptr;
+            return PCRE();
         }
-        setFlag(flagValue, r);
+        setFlag(option, r);
     }
 
-    const char *error;
-    int errorOffset;
-    flagValue |= PCRE_JAVASCRIPT_COMPAT | PCRE_UTF8 | PCRE_UCP;
-    pcre *re = pcre_compile(pattern.data(), flagValue, &error, &errorOffset, nullptr);
-    if(!re) {
-        errorStr = error;
+    option |= PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP;
+    int errcode;
+    PCRE2_SIZE erroffset;
+    pcre2_code *code = pcre2_compile(
+            (PCRE2_SPTR)pattern.data(),
+            PCRE2_ZERO_TERMINATED,
+            option,
+            &errcode,
+            &erroffset, nullptr);
+    if(code == nullptr) {
+        PCRE2_UCHAR buffer[256];
+        pcre2_get_error_message(errcode, buffer, sizeof(buffer));
+        errorStr = reinterpret_cast<const char *>(buffer);
     }
-    return PCRE(re);
+    return PCRE(code);
 }
 
 } // namespace ydsh

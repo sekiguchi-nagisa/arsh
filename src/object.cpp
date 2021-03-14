@@ -294,35 +294,35 @@ bool UnixFdObject::closeOnExec(bool close) const {
 // #########################
 
 int RegexObject::match(StringRef ref, ArrayObject *out) {
-    FlexBuffer<int> ovec;
-    int captureSize;
-    pcre_fullinfo(this->re.get(), nullptr, PCRE_INFO_CAPTURECOUNT, &captureSize);
-    assert(captureSize > -1);
-    int ovecSize = (captureSize + 1) * 3;
-    ovec.resize(static_cast<FlexBuffer<int>::size_type>(ovecSize), 0);
-    int matchSize =  this->exec(ref, ovec.data(), ovecSize);
+    int matchCount = pcre2_match(this->re.code,
+                                 (PCRE2_SPTR)ref.data(), ref.size(),
+                                 0, 0,
+                                 this->re.data, nullptr);
     if(out) {
-        if(matchSize > 0) {
-            out->refValues().reserve(matchSize);
+        if(matchCount > 0) {
+            out->refValues().reserve(matchCount);
         }
-        for(int i = 0; i < matchSize; i++) {
-            int begin = ovec[i * 2];
-            int end = ovec[i * 2 + 1];
-            bool hasGroup = begin > -1 && end > -1;
+        PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(re.data);
+        for(int i = 0; i < matchCount; i++) {
+            size_t begin = ovec[i * 2];
+            size_t end = ovec[i * 2 + 1];
+            bool hasGroup = begin != PCRE2_UNSET && end != PCRE2_UNSET;
             auto v = hasGroup ? DSValue::createStr(ref.slice(begin, end)) : DSValue::createInvalid();
             out->refValues().push_back(std::move(v));
         }
     }
-    return matchSize;
+    return matchCount;
 }
 
-bool RegexObject::replace(DSValue &value, StringRef repl) const {
+bool RegexObject::replace(DSValue &value, StringRef repl) {
     auto ret = DSValue::createStr();
     unsigned int count = 0;
     for(auto target = value.asStrRef(); !target.empty(); count++) {
-        int ovec[3];
-        int matchSize = this->exec(target, ovec, arraySize(ovec));
-        if(matchSize < 0) {
+        int matchCount = pcre2_match(this->re.code,
+                                     (PCRE2_SPTR)target.data(), target.size(),
+                                     0, 0,
+                                     this->re.data, nullptr);
+        if(matchCount < 0) {
             if(count == 0) {    // do nothing
                 return true;
             } else if(!ret.appendAsStr(target)) {
@@ -331,9 +331,10 @@ bool RegexObject::replace(DSValue &value, StringRef repl) const {
             break;
         }
 
-        assert(ovec[0] > -1 && ovec[1] > -1);
-        auto begin = static_cast<unsigned int>(ovec[0]);
-        auto end = static_cast<unsigned int>(ovec[1]);
+        PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(re.data);
+        assert(ovec[0] != PCRE2_UNSET && ovec[1] != PCRE2_UNSET);
+        auto begin = ovec[0];
+        auto end = ovec[1];
 
         if(!ret.appendAsStr(target.slice(0, begin))) {
             return false;

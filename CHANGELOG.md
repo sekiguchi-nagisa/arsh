@@ -46,7 +46,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``()``, ``[]``, ``${}``, ``$()``, ``@()``, ``<()``, ``>()``
 
 #### Builtin
-- **Breaking Change**: now pcre use ``PCRE_UCP`` flag
+- **Breaking Change**: now use pcre2-8
+  - use ``PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP`` option
   - some char-classes such as ``\s``, ``\w`` matches unicode characters
 - builtin ``command`` and ``shctl fullname`` check uninitialized user-defined command
 

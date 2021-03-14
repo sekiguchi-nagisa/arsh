@@ -123,9 +123,9 @@ check_program(git)
 #     find libpcre     #
 #++++++++++++++++++++++#
 
-check_header(HAVE_PCRE_H "pcre.h")
+check_header(HAVE_PCRE2_H "pcre2.h")
 set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
-check_library(HAVE_LIBPCRE "pcre")
+check_library(HAVE_LIBPCRE2 "pcre2-8")
 
 
 #+++++++++++++++++++++++#
@@ -267,12 +267,12 @@ set_target_properties(ydsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 set(YDSH_STATIC ydsh_static)
 add_library(${YDSH_STATIC} STATIC $<TARGET_OBJECTS:ydsh_obj>)
-target_link_libraries(${YDSH_STATIC} ${HAVE_LIBPCRE})
+target_link_libraries(${YDSH_STATIC} ${HAVE_LIBPCRE2})
 
 set(YDSH_LIB ydsh_lib)
 add_library(${YDSH_LIB} SHARED $<TARGET_OBJECTS:ydsh_obj>)
 set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
-target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE})
+target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE2})
 
 if(USE_LTO)
     check_ipo_supported(RESULT ipo_supported OUTPUT output)

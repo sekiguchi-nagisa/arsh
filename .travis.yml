@@ -23,8 +23,8 @@ matrix:
             - g++
             - clang
             - ninja-build
-            - libpcre3-dev
-            - libtool
+            - libpcre2-8-0
+            - libpcre2-dev
       arch: arm64
       dist: bionic
       env: CXX_BIN=clang++ BUILD_TYPE=release
@@ -37,6 +37,8 @@ matrix:
           packages:
             - gcc-7
             - g++-7
+            - libpcre2-8-0
+            - libpcre2-dev
             - ninja-build
       env: CXX_BIN=g++-7 BUILD_TYPE=coverage OPTION="-DCMAKE_C_COMPILER=gcc-7"
       before_script:

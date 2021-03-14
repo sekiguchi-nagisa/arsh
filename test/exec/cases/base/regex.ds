@@ -20,6 +20,9 @@ assert $/\p{Katakana}/ !~ 'う'
 assert $/\p{Katakana}/ !~ '1'
 assert $/\p{Katakana}/ =~ 'ナ'
 
+assert $/^\X\X\X$/ =~ "🇯🇵🇯🇵🇯🇵"  # unicode 9 or later
+assert $/^\X$/ !~ "🇯🇵🇯🇵🇯🇵"     # before unicode 9,  assert $/^\X$/ =~ "🇯🇵🇯🇵🇯🇵"
+
 assert '/hoge' =~ $/\//
 
 assert 'hoge' !~ $/hoge./

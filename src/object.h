@@ -676,15 +676,10 @@ public:
      * @return
      * if string creation failed, return false
      */
-    bool replace(DSValue &value, StringRef repl) const;
+    bool replace(DSValue &value, StringRef repl);
 
     const std::string &getStr() const {
         return this->str;
-    }
-
-private:
-    int exec(StringRef ref, int *ovec, int ovecSize) const {
-        return pcre_exec(this->re.get(), nullptr, ref.data(), ref.size(), 0, 0, ovec, ovecSize);
     }
 };
 

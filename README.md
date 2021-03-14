@@ -17,7 +17,7 @@ Language specification is subject to change without notice.
   * if cmake 3.12 or later, no longer need theme
 * make/ninja
 * gcc/clang (need gnu++14 support)
-* libpcre
+* libpcre2-8 10.30 or later
   * need UTF-8 and unicode property support
 
 ### Optional Requirement
