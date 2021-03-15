@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - introduce fully qualified command name
   - builtin ``eval`` command can accept fully qualified command name
   - builtin ``command`` command support fully qualified command name
+- add PowerShell like array literal
+  - ``@( )``
 
 #### Builtin
 - add ``fullname`` subcommand to builtin ``shctl``
@@ -26,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 #### Core
-- **Breaking Change**: not access private builtin variable
+- **Breaking Change**: not access private builtin variables
   - ``_cmd_fallback_handler``
   - ``_DEF_SIGINT``
 - **Breaking Change**: source name of builtin variable
@@ -46,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - ``()``, ``[]``, ``${}``, ``$()``, ``@()``, ``<()``, ``>()``
 
 #### Builtin
-- **Breaking Change**: now use pcre2-8
+- **Breaking Change**: now use PCRE2
   - use ``PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP`` option
   - some char-classes such as ``\s``, ``\w`` matches unicode characters
 - builtin ``command`` and ``shctl fullname`` check uninitialized user-defined command
