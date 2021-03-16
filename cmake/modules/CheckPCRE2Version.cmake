@@ -1,6 +1,6 @@
 
 
-function(check_pcre2_version LEAST_VERSION HAVE_LIBPCRE2)
+function(check_pcre2_version LEAST_VERSION HAVE_PCRE2_H HAVE_LIBPCRE2)
     set(SRC_CONTENT "
         #include <stdio.h>
 
@@ -26,6 +26,7 @@ function(check_pcre2_version LEAST_VERSION HAVE_LIBPCRE2)
             ${CHECK_CXX_SOURCE_COMPILES_ADD_LINK_OPTIONS}
             ${CHECK_CXX_SOURCE_COMPILES_ADD_LIBRARIES}
             LINK_LIBRARIES ${HAVE_LIBPCRE2}
+            CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${HAVE_PCRE2_H}"
             COPY_FILE ${GET_PCRE2_VERSION})
 
     if(NOT RESULT)
