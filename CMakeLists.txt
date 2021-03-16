@@ -19,6 +19,7 @@ include(Helper)
 include(DownloadProject)
 include(GetRE2C)
 include(GenLexer)
+include(CheckPCRE2Version)
 
 
 #++++++++++++++++++++++++++#
@@ -126,6 +127,8 @@ check_program(git)
 check_header(HAVE_PCRE2_H "pcre2.h")
 set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
 check_library(HAVE_LIBPCRE2 "pcre2-8")
+
+check_pcre2_version("10.30" ${HAVE_LIBPCRE2})
 
 
 #+++++++++++++++++++++++#
