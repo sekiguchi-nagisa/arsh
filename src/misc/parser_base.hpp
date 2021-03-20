@@ -229,7 +229,7 @@ void ParserBase<T, LexerImpl, Tracker>::reportTokenMismatchedError(T expected) {
         if(!isEOSToken(this->curKind)) {
             message += "mismatched token `";
             message += toString(this->curKind);
-            message += "`, ";
+            message += "', ";
         }
         message += "expected `";
         message += toString(expected);
@@ -251,7 +251,7 @@ void ParserBase<T, LexerImpl, Tracker>::reportNoViableAlterError(unsigned int si
         if(!isEOSToken(this->curKind)) {
             message += "mismatched token `";
             message += toString(this->curKind);
-            message += "`, ";
+            message += "', ";
         }
         if(size > 0 && alters != nullptr) {
             message += "expected ";
