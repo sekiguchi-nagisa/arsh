@@ -4,6 +4,14 @@ assert $/a/ =~ 'bac'
 
 assert $/abc/ !~ 'cdf'
 
+assert $/\/s/ =~ 's/s'
+assert $/\\/s/ !~ 's/s'
+assert $/\\\/s/ !~ 's/s'
+assert new Regex('\/s', '') =~ 's/s'
+assert new Regex('\\/s', '') !~ 's/s'
+assert new Regex("\/s", '') =~ 's/s'
+assert new Regex("\\/s", '') =~ 's/s'
+
 assert $/^.$/ =~ "あ"
 
 assert $/\s/ =~ ' '
