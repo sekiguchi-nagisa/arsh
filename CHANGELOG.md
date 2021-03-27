@@ -21,8 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - resolve fully qualified command name from specified module
 
 #### Completion
-- add the following completions
+- add and change the following completions
   - brew
+  - sudo
 
 
 ### Changed
@@ -65,7 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - builtin ``exec``
 - error line marker
   - constructor param type checking
-  - variable decralation with type
+  - variable declaration with type
 
 
 ## [0.20.1] - 2021-02-7
