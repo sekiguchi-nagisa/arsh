@@ -4,7 +4,7 @@
 
 ### Changed
 
-### Misc
+#### Misc
 - change minimum reuqired compiler version for gnu++17 support
   - gcc 7
   - clang 6
