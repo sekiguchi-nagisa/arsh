@@ -26,8 +26,7 @@
 #include <type_checker.h>
 #include <core.h>
 
-namespace ydsh {
-namespace directive {
+namespace ydsh::directive {
 
 #define TRY(expr) \
 ({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
@@ -432,5 +431,4 @@ bool Directive::init(const char *sourceName, const char *src, Directive &d) {
     return initDirective(sourceName, input, d);
 }
 
-} // namespace directive
-} // namespace ydsh
+} // namespace ydsh::directive

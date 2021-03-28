@@ -57,8 +57,8 @@ struct SrcPos {
 
 class Lexer : public ydsh::LexerBase {
 private:
-    static_assert(sizeof(LexerMode) == sizeof(uint16_t), "");
-    static_assert(std::is_trivially_copyable<LexerMode>::value, "");
+    static_assert(sizeof(LexerMode) == sizeof(uint16_t));
+    static_assert(std::is_trivially_copyable<LexerMode>::value);
 
     CStrPtr scriptDir;
 

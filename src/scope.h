@@ -75,7 +75,7 @@ public:
      * @param gvarCount
      * @param modId
      */
-    NameScope(std::reference_wrapper<unsigned int> gvarCount, unsigned short modId = 0) :
+    explicit NameScope(std::reference_wrapper<unsigned int> gvarCount, unsigned short modId = 0) :
             kind(GLOBAL), modId(modId), maxVarCount(gvarCount) {}
 
     /**
@@ -358,7 +358,7 @@ struct ModDiscardPoint {
 
 class ModuleLoader {
 private:
-    static_assert(sizeof(ModEntry) == sizeof(uint32_t), "");
+    static_assert(sizeof(ModEntry) == sizeof(uint32_t));
 
     StrRefMap<unsigned int > indexMap;
     FlexBuffer<ModEntry> entries;

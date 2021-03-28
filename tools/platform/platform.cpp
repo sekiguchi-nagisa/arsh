@@ -23,8 +23,7 @@
 #include <constant.h>
 #include "platform.h"
 
-namespace ydsh {
-namespace platform {
+namespace ydsh::platform {
 
 static bool reSearch(const char *reStr, const std::string &value) {
     std::regex re(reStr, std::regex_constants::ECMAScript | std::regex_constants::icase);
@@ -125,5 +124,4 @@ bool containArch(const std::string &text, ArchType type) {
     return reSearch(table[static_cast<unsigned int>(type)], text);
 }
 
-} // namespace platform
-} // namespace ydsh
+} // namespace ydsh::platform

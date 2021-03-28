@@ -17,8 +17,7 @@
 #include "lsp.h"
 #include "../json/conv.hpp"
 
-namespace ydsh {
-namespace rpc {
+namespace ydsh::rpc {
 
 #define FROM_JSON(json, value, field) fromJSON(std::move((json)[#field]), value.field)
 #define MOVE_JSON(json, value, field) value.field = std::move((json)[#field])
@@ -422,5 +421,4 @@ JSON toJSON(const InitializeResult &ret) {
     };
 }
 
-} // namespace rpc
-} // namespace ydsh
+} // namespace ydsh::rpc

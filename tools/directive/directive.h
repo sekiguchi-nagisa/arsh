@@ -25,8 +25,7 @@
 
 #include <ydsh/ydsh.h>
 
-namespace ydsh {
-namespace directive {
+namespace ydsh::directive {
 
 class Directive {
 private:
@@ -187,8 +186,7 @@ public:
     static bool init(const char *sourceName, const char *src, Directive &d);
 };
 
-} // namespace directive
-} // namespace ydsh
+} // namespace ydsh::directive
 
 
 #endif //YDSH_TOOLS_DIRECTIVE_H

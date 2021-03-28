@@ -196,9 +196,6 @@ public:
     }
 };
 
-template <bool T>
-constexpr const typename StringRefBase<T>::size_type StringRefBase<T>::npos;
-
 using StringRef = StringRefBase<true>;
 
 inline bool operator==(StringRef left, StringRef right) {

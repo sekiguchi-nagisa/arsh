@@ -104,7 +104,7 @@ const char *toString(ObjectKind kind);
 template <ObjectKind K>
 struct ObjectWithRtti : public DSObject {
 protected:
-    static_assert(sizeof(DSObject) == 8, "");
+    static_assert(sizeof(DSObject) == 8);
 
     explicit ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.typeId()) {}
     explicit ObjectWithRtti(TYPE type) : ObjectWithRtti(static_cast<unsigned int>(type)) {}
@@ -286,7 +286,7 @@ struct ObjectConstructor {
 
 class DSValue : public DSValueBase {
 private:
-    static_assert(sizeof(DSValueBase) == 16, "");
+    static_assert(sizeof(DSValueBase) == 16);
 
     explicit DSValue(uint64_t value) noexcept {
         this->u64.kind = DSValueKind::NUMBER;

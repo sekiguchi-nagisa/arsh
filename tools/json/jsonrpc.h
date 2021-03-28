@@ -23,8 +23,7 @@
 #include "validate.hpp"
 #include "conv.hpp"
 
-namespace ydsh {
-namespace rpc {
+namespace ydsh::rpc {
 
 using namespace json;
 
@@ -370,7 +369,6 @@ protected:
     long callImpl(Transport &transport, const std::string &methodName, JSON &&json, ResponseCallback &&func);
 };
 
-} // namespace rpc
-} // namespace ydsh
+} // namespace ydsh::rpc
 
 #endif //YDSH_TOOLS_JSONRPC_H

@@ -19,8 +19,7 @@
 
 #include <string>
 
-namespace ydsh {
-namespace uri {
+namespace ydsh::uri {
 
 class Authority {
 private:
@@ -137,7 +136,6 @@ public:
 
 
 
-} // namespace uri
-} // namespace uri
+} // namespace ydsh::uri
 
 #endif //YDSH_TOOLS_URI_H

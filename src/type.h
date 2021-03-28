@@ -227,7 +227,7 @@ public:
      * if type is not number type, return -1.
      */
     int getNumTypeIndex() const {
-        static_assert(static_cast<unsigned int>(TYPE::Int) + 1 == static_cast<unsigned int>(TYPE::Float), "");
+        static_assert(static_cast<unsigned int>(TYPE::Int) + 1 == static_cast<unsigned int>(TYPE::Float));
         if(this->typeId() >= static_cast<unsigned int>(TYPE::Int) && this->typeId() <= static_cast<unsigned int>(TYPE::Float)) {
             return this->typeId() - static_cast<unsigned int>(TYPE::Int);
         }

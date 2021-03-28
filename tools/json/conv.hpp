@@ -19,8 +19,7 @@
 #include <type_traits>
 #include "json.h"
 
-namespace ydsh {
-namespace rpc {
+namespace ydsh::rpc {
 
 using namespace json;
 
@@ -179,8 +178,7 @@ JSON toJSON(const Union<R...> &value) {
     return __detail::ToJSON<sizeof...(R) - 1, R...>()(value);
 }
 
-} // namespace rpc
-} // namespace ydsh
+} // namespace ydsh::rpc
 
 
 #endif //YDSH_TOOLS_CONV_HPP

@@ -18,8 +18,7 @@
 
 #include <misc/num_util.hpp>
 
-namespace ydsh {
-namespace uri {
+namespace ydsh::uri {
 
 std::string Authority::toString() const {
     std::string value;
@@ -107,5 +106,4 @@ std::string URI::decode(const char *begin, const char *end) {
     return value;
 }
 
-} // namespace uri
-} // namespace ydsh
+} // namespace ydsh::uri

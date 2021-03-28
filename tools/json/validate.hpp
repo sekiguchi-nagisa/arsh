@@ -23,8 +23,7 @@
 #include <misc/detect.hpp>
 #include "json.h"
 
-namespace ydsh {
-namespace json {
+namespace ydsh::json {
 
 class Validator {
 private:
@@ -487,8 +486,7 @@ public:
     }
 };
 
-} // namespace json
-} // namespace ydsh
+} // namespace ydsh::json
 
 #define DEFINE_JSON_VALIDATE_FIELD(T, f) ,field(#f, toTypeMatcher<decltype(T::f)>)
 

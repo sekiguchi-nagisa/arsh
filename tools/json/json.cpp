@@ -20,8 +20,7 @@
 
 #include "json.h"
 
-namespace ydsh {
-namespace json {
+namespace ydsh::json {
 
 // ##################
 // ##     JSON     ##
@@ -567,5 +566,4 @@ void Parser::showError(FILE *fp) const {
     fflush(fp);
 }
 
-} // namespace json
-} // namespace ydsh
+} // namespace ydsh::json

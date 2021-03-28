@@ -21,8 +21,7 @@
 #include "transport.h"
 #include "../json/jsonrpc.h"
 
-namespace ydsh {
-namespace lsp {
+namespace ydsh::lsp {
 
 using namespace json;
 using namespace rpc;
@@ -103,7 +102,6 @@ public:
 };
 
 
-} // namespace lsp
-} // namespace ydsh
+} // namespace ydsh::lsp
 
 #endif //YDSH_TOOLS_SERVER_H

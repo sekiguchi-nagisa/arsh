@@ -19,8 +19,7 @@
 
 #include <uri.h>
 
-namespace ydsh {
-namespace uri {
+namespace ydsh::uri {
 
 #define ERROR() do { return URI(); } while(false)
 
@@ -156,5 +155,4 @@ URI URI::fromString(const std::string &str) {
 }
 
 
-} // namespace uri
-} // namespace ydsh
+} // namespace ydsh::uri
