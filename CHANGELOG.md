@@ -7,7 +7,7 @@
 ### Misc
 - change minimum reuqired compiler version for gnu++17 support
   - gcc 7
-  - clang 5
+  - clang 6
 
 
 ## [0.21.0] - 2021-03-28
