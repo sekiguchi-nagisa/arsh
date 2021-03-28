@@ -497,7 +497,6 @@ template <> struct InterfaceConstructor<iface> { \
     static constexpr auto value = createInterface(#iface \
         EACH_ ## iface ## _FIELD(iface, DEFINE_JSON_VALIDATE_FIELD)); \
     using type = decltype(value); \
-}; \
-constexpr InterfaceConstructor<iface>::type InterfaceConstructor<iface>::value
+}
 
 #endif //YDSH_TOOLS_VALIDATE_HPP
