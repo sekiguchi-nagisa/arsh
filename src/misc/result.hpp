@@ -82,11 +82,8 @@ struct OverloadResolver<> {
     void operator()() const;
 };
 
-template <typename T>
-using result_of_t = typename std::result_of<T>::type;
-
 template <typename F, typename ...T>
-using resolvedType = typename result_of_t<OverloadResolver<T...>(F)>::type;
+using resolvedType = typename std::invoke_result_t<OverloadResolver<T...>, F>::type;
 
 } // namespace __detail
 
