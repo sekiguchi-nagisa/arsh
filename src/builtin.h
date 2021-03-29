@@ -596,7 +596,7 @@ static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
     raiseError(ctx, TYPE::OutOfRangeError, std::move(message));
 }
 
-#define TRY(E) ({ auto __value = E; if(!__value) { RET_ERROR; } std::forward<decltype(__value)>(__value); })
+#define TRY(E) ({ auto __value = E; if(ctx.hasError()) { RET_ERROR; } std::forward<decltype(__value)>(__value); })
 
 struct ArrayIndex {
     size_t index;
@@ -873,7 +873,7 @@ YDSH_METHOD string_match(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_match);
     auto str = LOCAL(0).asStrRef();
     auto &re = typeAs<RegexObject>(LOCAL(1));
-    bool r = re.search(str);
+    bool r = TRY(re.search(ctx, str));
     RET_BOOL(r);
 }
 
@@ -882,7 +882,7 @@ YDSH_METHOD string_unmatch(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_unmatch);
     auto str = LOCAL(0).asStrRef();
     auto &re = typeAs<RegexObject>(LOCAL(1));
-    bool r = !re.search(str);
+    bool r = !TRY(re.search(ctx, str));
     RET_BOOL(r);
 }
 
@@ -976,7 +976,7 @@ YDSH_METHOD regex_search(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_search);
     auto &re = typeAs<RegexObject>(LOCAL(0));
     auto ref = LOCAL(1).asStrRef();
-    bool r = re.search(ref);
+    bool r = TRY(re.search(ctx, ref));
     RET_BOOL(r);
 }
 
@@ -985,7 +985,7 @@ YDSH_METHOD regex_unmatch(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_unmatch);
     auto &re = typeAs<RegexObject>(LOCAL(0));
     auto ref = LOCAL(1).asStrRef();
-    bool r = !re.search(ref);
+    bool r = !TRY(re.search(ctx, ref));
     RET_BOOL(r);
 }
 
@@ -999,7 +999,7 @@ YDSH_METHOD regex_match(RuntimeContext &ctx) {
             *ctx.typePool.createArrayType(
                     *ctx.typePool.createOptionType(
                             ctx.typePool.get(TYPE::String)).take()).take());
-    re.match(ref, &typeAs<ArrayObject>(ret));
+    TRY(re.match(ctx, ref, &typeAs<ArrayObject>(ret)));
     RET(ret);
 }
 
@@ -1008,10 +1008,7 @@ YDSH_METHOD regex_replace(RuntimeContext &ctx) {
     SUPPRESS_WARNING(regex_replace);
     auto &re = typeAs<RegexObject>(LOCAL(0));
     auto target = LOCAL(1);
-    if(!re.replace(target, LOCAL(2).asStrRef())) {
-        raiseOutOfRangeError(ctx, std::string("reach String size limit"));
-        RET_ERROR;
-    }
+    TRY(re.replace(ctx, target, LOCAL(2).asStrRef()));
     RET(target);
 }
 

@@ -293,15 +293,20 @@ bool UnixFdObject::closeOnExec(bool close) const {
 // ##     RegexObject     ##
 // #########################
 
-int RegexObject::match(StringRef ref, ArrayObject *out) {
+int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
     int matchCount = pcre2_match(this->re.code,
                                  (PCRE2_SPTR)ref.data(), ref.size(),
                                  0, 0,
                                  this->re.data, nullptr);
-    if(out) {
-        if(matchCount > 0) {
-            out->refValues().reserve(matchCount);
-        }
+    assert(matchCount != 0);
+    if(matchCount < 0 && matchCount != PCRE2_ERROR_NOMATCH) {
+        PCRE2_UCHAR buffer[256];
+        pcre2_get_error_message(matchCount, buffer, sizeof(buffer));
+        std::string msg = reinterpret_cast<const char *>(buffer);
+        raiseError(state, TYPE::InvalidOperationError, std::move(msg));
+    }
+    if(out && matchCount > 0) {
+        out->refValues().reserve(matchCount);
         PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(re.data);
         for(int i = 0; i < matchCount; i++) {
             size_t begin = ovec[i * 2];
@@ -314,7 +319,7 @@ int RegexObject::match(StringRef ref, ArrayObject *out) {
     return matchCount;
 }
 
-bool RegexObject::replace(DSValue &value, StringRef repl) {
+bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
     auto ret = DSValue::createStr();
     unsigned int count = 0;
     for(auto target = value.asStrRef(); !target.empty(); count++) {
@@ -323,9 +328,18 @@ bool RegexObject::replace(DSValue &value, StringRef repl) {
                                      0, 0,
                                      this->re.data, nullptr);
         if(matchCount < 0) {
+            if(matchCount != PCRE2_ERROR_NOMATCH) {
+                PCRE2_UCHAR buffer[256];
+                pcre2_get_error_message(matchCount, buffer, sizeof(buffer));
+                std::string msg = reinterpret_cast<const char *>(buffer);
+                raiseError(state, TYPE::InvalidOperationError, std::move(msg));
+                return false;
+            }
+
             if(count == 0) {    // do nothing
                 return true;
             } else if(!ret.appendAsStr(target)) {
+                raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
                 return false;
             }
             break;
@@ -337,9 +351,11 @@ bool RegexObject::replace(DSValue &value, StringRef repl) {
         auto end = ovec[1];
 
         if(!ret.appendAsStr(target.slice(0, begin))) {
+            raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
             return false;
         }
         if(!ret.appendAsStr(repl)) {
+            raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
             return false;
         }
         target = target.slice(end, target.size());

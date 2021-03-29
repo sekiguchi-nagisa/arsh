@@ -652,22 +652,24 @@ public:
     RegexObject(std::string str, PCRE &&re) :
             ObjectWithRtti(TYPE::Regex), str(std::move(str)), re(std::move(re)) {}
 
-    bool search(StringRef ref) {
-        return this->match(ref, nullptr) >= 0;
+    bool search(DSState &state, StringRef ref) {
+        return this->match(state, ref, nullptr) >= 0;
     }
 
     /**
-     *
+     * @param state
+     * if has error, set error to state
      * @param ref
      * @param out
      * may be null
      * @return
      * if not matched, return negative number
      */
-    int match(StringRef ref, ArrayObject *out);
+    int match(DSState &state, StringRef ref, ArrayObject *out);
 
     /**
-     *
+     * @param state
+     * if has error, set error to state
      * @param value
      * if replace success, write result to it.
      * must be String
@@ -676,7 +678,7 @@ public:
      * @return
      * if string creation failed, return false
      */
-    bool replace(DSValue &value, StringRef repl);
+    bool replace(DSState &state, DSValue &value, StringRef repl);
 
     const std::string &getStr() const {
         return this->str;
