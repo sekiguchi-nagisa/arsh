@@ -513,11 +513,13 @@ public:
 
     /**
      * force mutate string.
+     * @param state
+     * if has error, set error to state
      * @param value
      * @return
      * if new size is greater than limit, return false
      */
-    bool appendAsStr(StringRef value);
+    bool appendAsStr(DSState &state, StringRef value);
 
     template <typename T, typename ...A>
     static DSValue create(A &&...args) {
@@ -621,7 +623,7 @@ inline T &typeAs(const DSValue &value) noexcept {
     return cast<T>(*value.get());
 }
 
-inline bool concatAsStr(DSValue &left, const DSValue &right, bool selfConcat) {
+inline bool concatAsStr(DSState &state, DSValue &left, const DSValue &right, bool selfConcat) {
     assert(right.hasStrRef());
     if(right.kind() == DSValueKind::SSTR0) {
         return true;
@@ -634,7 +636,7 @@ inline bool concatAsStr(DSValue &left, const DSValue &right, bool selfConcat) {
     if(left.isObject() && left.get()->getRefcount() > copyCount) {
         left = DSValue::createStr(left.asStrRef());
     }
-    return left.appendAsStr(right.asStrRef());
+    return left.appendAsStr(state, right.asStrRef());
 }
 
 inline DSValue exitStatusToBool(int64_t s) {

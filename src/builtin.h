@@ -804,30 +804,22 @@ YDSH_METHOD string_replace(RuntimeContext &ctx) {
     auto repStr = LOCAL(2).asStrRef();
     auto buf = DSValue::createStr();
 
-    bool s = true;
     for(StringRef::size_type pos = 0; pos != StringRef::npos; ) {
         auto ret = thisStr.find(delimStr, pos);
         auto value = thisStr.slice(pos, ret);
-        s = buf.appendAsStr(value);
-        if(!s) {
-            break;
+        if(!buf.appendAsStr(ctx, value)) {
+            RET_ERROR;
         }
         if(ret != StringRef::npos) {
-            s = buf.appendAsStr(repStr);
-            if(!s) {
-                break;
+            if(!buf.appendAsStr(ctx, repStr)) {
+                RET_ERROR;
             }
             pos = ret + delimStr.size();
         } else {
             pos = ret;
         }
     }
-    if(s) {
-        RET(buf);
-    } else {
-        raiseOutOfRangeError(ctx, std::string("reach String size limit"));
-        RET_ERROR;
-    }
+    RET(buf);
 }
 
 

@@ -249,12 +249,13 @@ bool DSValue::compare(const DSValue &o) const {
     }
 }
 
-bool DSValue::appendAsStr(StringRef value) {
+bool DSValue::appendAsStr(DSState &state, StringRef value) {
     assert(this->hasStrRef());
 
     const bool small = isSmallStr(this->kind());
     const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this).size();
     if(size > StringObject::MAX_SIZE - value.size()) {
+        raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
         return false;
     }
 
@@ -338,8 +339,7 @@ bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
 
             if(count == 0) {    // do nothing
                 return true;
-            } else if(!ret.appendAsStr(target)) {
-                raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
+            } else if(!ret.appendAsStr(state, target)) {
                 return false;
             }
             break;
@@ -350,12 +350,10 @@ bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
         auto begin = ovec[0];
         auto end = ovec[1];
 
-        if(!ret.appendAsStr(target.slice(0, begin))) {
-            raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
+        if(!ret.appendAsStr(state, target.slice(0, begin))) {
             return false;
         }
-        if(!ret.appendAsStr(repl)) {
-            raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
+        if(!ret.appendAsStr(state, repl)) {
             return false;
         }
         target = target.slice(end, target.size());

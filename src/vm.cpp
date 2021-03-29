@@ -1490,10 +1490,7 @@ bool VM::mainLoop(DSState &state) {
             const bool selfConcat = op == OpCode::APPEND;
             auto right = state.stack.pop();
             auto left = state.stack.pop();
-            if(!concatAsStr(left, right, selfConcat)) {
-                raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
-                vmerror;
-            }
+            TRY(concatAsStr(state, left, right, selfConcat));
             state.stack.push(std::move(left));
             vmnext;
         }
