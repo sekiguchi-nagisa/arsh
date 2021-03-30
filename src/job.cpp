@@ -203,7 +203,7 @@ bool JobObject::restoreStdin() {
 }
 
 void JobObject::send(int sigNum) const {
-    if(!this->available()) {
+    if(!this->available() || !hasOwnership()) {
         return;
     }
 

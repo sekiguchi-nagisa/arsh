@@ -4,6 +4,10 @@
 
 ### Changed
 
+#### Core
+- **Breaking Change**: disallow signal sending to sibling jobs
+
+
 #### Misc
 - change minimum reuqired compiler version for gnu++17 support
   - gcc 7
