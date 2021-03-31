@@ -266,12 +266,11 @@ void JobTable::attach(Job job, bool disowned) {
     this->entries.insert(this->beginJob() + ret, job);
     job->jobID = ret + 1;
     this->latestEntry = std::move(job);
-    this->jobSize++;
 }
 
 Job JobTable::detach(unsigned int jobId) {
     auto iter = this->findEntryIter(jobId);
-    if(iter == this->endJob()) {
+    if(iter == this->entries.end()) {
         return nullptr;
     }
     auto job = *iter;
@@ -283,9 +282,6 @@ JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
     if(iter != this->entries.end()) {
         Job job = *iter;
         job->disown();
-        if(job->getJobID() > 0) {
-            this->jobSize--;
-        }
         job->jobID = 0;
         auto next = this->entries.erase(iter);
 
@@ -293,7 +289,7 @@ JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
         if(this->latestEntry == job) {
             this->latestEntry = nullptr;
             if(!this->entries.empty()) {
-                this->latestEntry = this->entries[this->jobSize - 1];
+                this->latestEntry = this->entries.back();
             }
         }
         return next;
@@ -314,7 +310,7 @@ void JobTable::updateStatus() {
 
 unsigned int JobTable::findEmptyEntry() const {
     unsigned int firstIndex = 0;
-    unsigned int dist = this->jobSize;
+    unsigned int dist = this->entries.size();
 
     while(dist > 0) {
         unsigned int hafDist = dist / 2;
@@ -341,12 +337,12 @@ struct Comparator {
 
 JobTable::ConstEntryIter JobTable::findEntryIter(unsigned int jobId) const {
     if(jobId > 0) {
-        auto iter = std::lower_bound(this->beginJob(), this->endJob(), jobId, Comparator());
-        if(iter != this->endJob() && (*iter)->jobID == jobId) {
+        auto iter = std::lower_bound(this->entries.begin(), this->entries.end(), jobId, Comparator());
+        if(iter != this->entries.end() && (*iter)->jobID == jobId) {
             return iter;
         }
     }
-    return this->endJob();
+    return this->entries.end();
 }
 
 } // namespace ydsh

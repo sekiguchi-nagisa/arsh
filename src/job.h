@@ -293,11 +293,6 @@ private:
     std::vector<Job> entries;
 
     /**
-     * if maintain disowned job, `jobSize' is not equivalent to `entries' size.
-     */
-    unsigned int jobSize{0};
-
-    /**
      * latest attached entry.
      */
     Job latestEntry;
@@ -379,7 +374,7 @@ public:
      */
     Job findEntry(unsigned int jobId) const {
         auto iter = this->findEntryIter(jobId);
-        if(iter != this->endJob()) {
+        if(iter != this->entries.end()) {
             return *iter;
         }
         return nullptr;
@@ -390,8 +385,7 @@ public:
      * @param sigNum
      */
     void send(int sigNum) const {
-        for(auto begin = this->beginJob(); begin != this->endJob(); ++begin) {
-            auto &job = *begin;
+        for(auto &job : this->entries) {
             if(!job->isDisowned()) {
                 job->send(sigNum);
             }
@@ -404,18 +398,10 @@ public:
     }
 
     ConstEntryIter endJob() const {
-        return this->entries.begin() + this->jobSize;
+        return this->entries.end();
     }
 
 private:
-    EntryIter beginJob() {
-        return this->entries.begin();
-    }
-
-    EntryIter endJob() {
-        return this->entries.begin() + this->jobSize;
-    }
-
     /**
      *
      * @return
