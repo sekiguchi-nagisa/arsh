@@ -300,13 +300,13 @@ TEST_F(JobTableTest, attach) {
     ASSERT_EQ(5u, job5->getJobID());
     ASSERT_EQ(job5, jobTable.getLatestEntry());
 
-    ASSERT_EQ(job2, jobTable.detach(2, true));
+    ASSERT_EQ(job2, jobTable.detach(2));
     ASSERT_EQ(job5, jobTable.getLatestEntry());
 
-    ASSERT_EQ(job3, jobTable.detach(3, false));
+    ASSERT_EQ(job3, jobTable.detach(3));
     ASSERT_EQ(job5, jobTable.getLatestEntry());
 
-    ASSERT_EQ(job5, jobTable.detach(5, true));
+    ASSERT_EQ(job5, jobTable.detach(5));
     ASSERT_EQ(job4, jobTable.getLatestEntry());
 
     // job entry layout

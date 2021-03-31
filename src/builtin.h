@@ -1777,7 +1777,7 @@ YDSH_METHOD job_raise(RuntimeContext &ctx) {
 YDSH_METHOD job_detach(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_detach);
     auto &obj = typeAs<JobObject>(LOCAL(0));
-    ctx.jobTable.detach(obj.getJobID());
+    obj.disown();
     RET_VOID;
 }
 

@@ -6,7 +6,7 @@
 
 #### Core
 - **Breaking Change**: disallow signal sending to sibling jobs
-
+- **Breaking Change**: after job detaching, job object still maintains job jd
 
 #### Misc
 - change minimum reuqired compiler version for gnu++17 support
