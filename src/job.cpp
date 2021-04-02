@@ -259,7 +259,8 @@ void JobTable::attach(Job job, bool disowned) {
     }
 
     if(disowned) {
-        job->disown();
+        this->entries.push_back(std::move(job));
+        return;
     }
 
     auto ret = this->findEmptyEntry();
@@ -269,20 +270,22 @@ void JobTable::attach(Job job, bool disowned) {
     this->jobSize++;
 }
 
-Job JobTable::detach(unsigned int jobId) {
+Job JobTable::detach(unsigned int jobId, bool remove) {
     auto iter = this->findEntryIter(jobId);
     if(iter == this->endJob()) {
         return nullptr;
     }
     auto job = *iter;
     this->detachByIter(iter);
+    if(!remove) {
+        this->entries.push_back(job);
+    }
     return job;
 }
 
 JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
     if(iter != this->entries.end()) {
         Job job = *iter;
-        job->disown();
         if(job->getJobID() > 0) {
             this->jobSize--;
         }

@@ -145,14 +145,12 @@ private:
 
     bool running{true};
 
-    bool disowned{false};
-
-    unsigned short procSize;
-
     /**
      * if already closed, will be -1.
      */
     int oldStdin{-1};
+
+    unsigned short procSize;
 
     /**
      * initial size is procSize
@@ -189,14 +187,6 @@ public:
         return this->running;
     }
 
-    bool isDisowned() const {
-        return this->disowned;
-    }
-
-    void disown() {
-        this->disowned = true;
-    }
-
     const Proc *getProcs() const {
         return this->procs;
     }
@@ -214,7 +204,7 @@ public:
     /**
      *
      * @return
-     * after exit, return 0.
+     * after detached, return 0.
      */
     unsigned int getJobID() const {
         return this->jobID;
@@ -329,11 +319,12 @@ public:
      * remove job from JobTable
      * @param jobId
      * if 0, do nothing.
+     * @param remove
      * @return
-     * removed job.
+     * detached job.
      * if specified job is not found, return null
      */
-    Job detach(unsigned int jobId);
+    Job detach(unsigned int jobId, bool remove = false);
 
     /**
      * if has ownership, wait termination.
@@ -346,7 +337,7 @@ public:
     int waitAndDetach(Job &entry, bool jobctrl) {
         int ret = entry->wait(jobctrl ? Proc::BLOCK_UNTRACED : Proc::BLOCKING);
         if(!entry->available()) {
-            this->detach(entry->getJobID());
+            this->detach(entry->getJobID(), true);
         }
         return ret;
     }
@@ -354,7 +345,6 @@ public:
     void detachAll() {
         for(auto &e : this->entries) {
             e->jobID = 0;
-            e->disown();
         }
         this->entries.clear();
         this->latestEntry.reset();
@@ -385,16 +375,9 @@ public:
         return nullptr;
     }
 
-    /**
-     * send signal to all owned jobs
-     * @param sigNum
-     */
     void send(int sigNum) const {
         for(auto begin = this->beginJob(); begin != this->endJob(); ++begin) {
-            auto &job = *begin;
-            if(!job->isDisowned()) {
-                job->send(sigNum);
-            }
+            (*begin)->send(sigNum);
         }
     }
 

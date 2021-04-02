@@ -30,7 +30,7 @@ assert ! $j[1]
 assert !$j.in()
 assert !$j.out()
 assert $j.size() == 1
-assert $j as String == "%1"  # disowned background job still have jobspec
+assert $j as String == "%0"
 assert $j.wait() == 0
 
 
@@ -111,5 +111,5 @@ assert $j.wait() == %'cont'.value()
 $j = coproc false
 assert $j as String == '%1'
 $j.detach()
-assert $j as String == '%1'
+assert $j as String == '%0'
 assert $j.wait() == 1
