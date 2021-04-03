@@ -265,8 +265,8 @@ struct JobTableTest : public VMTest {
     Job newJob() {
         return JobObject::create(
                 Proc(),
-                DSValue(this->state->emptyFDObj),
-                DSValue(this->state->emptyFDObj));
+                this->state->emptyFDObj,
+                this->state->emptyFDObj);
     }
 };
 

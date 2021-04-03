@@ -131,12 +131,12 @@ private:
     /**
      * writable file descriptor (connected to STDIN of Job). must be UnixFD_Object
      */
-    DSValue inObj;
+    ObjPtr<UnixFdObject> inObj;
 
     /**
      * readable file descriptor (connected to STDOUT of Job). must be UnixFD_Object
      */
-    DSValue outObj;
+    ObjPtr<UnixFdObject> outObj;
 
     /**
      * after detach, will be 0
@@ -162,7 +162,7 @@ private:
     NON_COPYABLE(JobObject);
 
     JobObject(unsigned int size, const Proc *procs, bool saveStdin,
-              DSValue &&inObj, DSValue &&outObj) :
+              ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj) :
             ObjectWithRtti(TYPE::Job),
             inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
@@ -175,13 +175,13 @@ private:
 
 public:
     static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
-                      DSValue &&inObj, DSValue &&outObj) {
+                                    ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj) {
         void *ptr = malloc(sizeof(JobObject) + sizeof(Proc) * size);
         auto *entry = new(ptr) JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj));
         return ObjPtr<JobObject>(entry);
     }
 
-    static ObjPtr<JobObject> create(Proc proc, DSValue &&inObj, DSValue &&outObj) {
+    static ObjPtr<JobObject> create(Proc proc, ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj) {
         Proc procs[1] = {proc};
         return create(1, procs, false, std::move(inObj), std::move(outObj));
     }

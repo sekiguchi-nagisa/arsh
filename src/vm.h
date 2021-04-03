@@ -95,7 +95,7 @@ public:
 
     IntrusivePtr<NameScope> rootModScope;
 
-    const DSValue emptyFDObj;
+    const ObjPtr<UnixFdObject> emptyFDObj;
 
     /**
      * maintains latest result of EDIT_HOOK

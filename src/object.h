@@ -380,6 +380,9 @@ public:
         value.obj.kind = DSValueKind::EMPTY;
     }
 
+    template <typename T, enable_when<std::is_base_of_v<DSObject, T>> = nullptr>
+    DSValue(const ObjPtr<T> &o) noexcept : DSValue(DSValue(o.get())) {} //NOLINT
+
     ~DSValue() {
         if(this->isObject()) {
             if(--this->obj.value->refCount == 0) {
@@ -647,6 +650,12 @@ inline T &typeAs(const DSValue &value) noexcept {
         return *r;
     }
     return cast<T>(*value.get());
+}
+
+template <typename T>
+inline ObjPtr<T> toObjPtr(const DSValue &value) noexcept {
+    auto &ref = typeAs<T>(value);
+    return ObjPtr<T>(&ref);
 }
 
 inline bool concatAsStr(DSState &state, DSValue &left, const DSValue &right, bool selfConcat) {
