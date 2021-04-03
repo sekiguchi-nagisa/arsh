@@ -120,19 +120,16 @@ class JobTable;
 struct JobRefCount;
 
 class JobObject : public ObjectWithRtti<ObjectKind::Job> {
-private:
+public:
     static_assert(std::is_pod<Proc>::value, "failed");
 
-    /**
-     * after detach, will be 0
-     */
-    unsigned int jobID{0};
+    enum class State : unsigned char {
+        RUNNING,
+        TERMINATED,     // already terminated
+        UNCONTROLLED,   // job is not created its own parent process
+    };
 
-    /**
-     * pid of owner process (JobEntry creator)
-     */
-    const pid_t ownerPid;
-
+private:
     /**
      * writable file descriptor (connected to STDIN of Job). must be UnixFD_Object
      */
@@ -143,12 +140,17 @@ private:
      */
     DSValue outObj;
 
-    bool running{true};
+    /**
+     * after detach, will be 0
+     */
+    unsigned int jobID{0};
 
     /**
      * if already closed, will be -1.
      */
     int oldStdin{-1};
+
+    State state{State::RUNNING};
 
     unsigned short procSize;
 
@@ -165,7 +167,7 @@ public:
 
     JobObject(unsigned int size, const Proc *procs, bool saveStdin,
               DSValue &&inObj, DSValue &&outObj) :
-            ObjectWithRtti(TYPE::Job), ownerPid(getpid()),
+            ObjectWithRtti(TYPE::Job),
             inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
         for(unsigned int i = 0; i < this->procSize; i++) {
             this->procs[i] = procs[i];
@@ -184,7 +186,7 @@ public:
     }
 
     bool available() const {
-        return this->running;
+        return this->state == State::RUNNING;
     }
 
     const Proc *getProcs() const {
@@ -210,12 +212,8 @@ public:
         return this->jobID;
     }
 
-    pid_t getOwnerPid() const {
-        return this->ownerPid;
-    }
-
-    bool hasOwnership() const {
-        return this->getOwnerPid() == getpid();
+    bool isControlled() const {
+        return this->state != State::UNCONTROLLED;
     }
 
     DSValue getInObj() const {
@@ -345,6 +343,7 @@ public:
     void detachAll() {
         for(auto &e : this->entries) {
             e->jobID = 0;
+            e->state = JobObject::State::UNCONTROLLED;
         }
         this->entries.clear();
         this->latestEntry.reset();

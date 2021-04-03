@@ -193,7 +193,7 @@ int Proc::send(int sigNum) const {
 // #####################
 
 bool JobObject::restoreStdin() {
-    if(this->oldStdin > -1 && this->hasOwnership()) {
+    if(this->oldStdin > -1 && this->isControlled()) {
         dup2(this->oldStdin, STDIN_FILENO);
         close(this->oldStdin);
         this->oldStdin = -1;
@@ -203,7 +203,7 @@ bool JobObject::restoreStdin() {
 }
 
 void JobObject::send(int sigNum) const {
-    if(!this->available() || !hasOwnership()) {
+    if(!this->available()) {
         return;
     }
 
@@ -219,7 +219,7 @@ void JobObject::send(int sigNum) const {
 
 int JobObject::wait(Proc::WaitOp op) {
     errno = 0;
-    if(!hasOwnership()) {
+    if(!isControlled()) {
         errno = ECHILD;
         return -1;
     }
@@ -240,7 +240,7 @@ int JobObject::wait(Proc::WaitOp op) {
         }
     }
     if(terminateCount == this->procSize) {
-        this->running = false;
+        this->state = State::TERMINATED;
     }
     if(!this->available()) {
         typeAs<UnixFdObject>(this->inObj).tryToClose(false);
