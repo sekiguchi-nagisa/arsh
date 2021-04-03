@@ -56,19 +56,20 @@ assert "$(kill hoge 2>&1)" == "ydsh: kill: hoge: arguments must be process or jo
 assert { kill hoge; $?; } == 1
 
 var j = for(;;) { true; } &
-kill ${$j.pid(0)}
+kill ${$j.pid(0)!}
 assert $? == 0
 assert $j.wait() == 128 + %'term'.value()
+assert !$j.pid(0)
 
 $j = for(;;) { true; } &
-kill -9 ${$j.pid(0)}
+kill -9 ${$j.pid(0)!}
 assert $? == 0
 assert $j.wait() == 128 + %'kill'.value()
 assert "$(kill -9 999999999 2>&1)" == "ydsh: kill: 999999999: No such process"
 assert { kill -9 999999999; $?; } == 1
 
 $j = for(;;) { true; } &
-assert { kill -9 999999999 ${$j.pid(0)}; $?; } == 0
+assert { kill -9 999999999 ${$j.pid(0)!}; $?; } == 0
 assert $j.wait() == 128 + %'kill'.value()
 
 # kill specified job

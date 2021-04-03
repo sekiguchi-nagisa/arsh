@@ -41,7 +41,7 @@ assert $j[1]
 assert $j.in()
 assert $j.out()
 assert $j.size() == 1
-assert $j.pid(0) > 0
+assert $j.pid(0)! > 0
 assert !$j.status(0)
 
 $ex = 34 as Any
@@ -67,11 +67,13 @@ assert $j.status(0)! == 3
 
 var j2 = true &
 $j = {
- var s = $j2.wait()
+ assert !$j2.pid(0)
+ assert !$j2.poll()
+ var s = try { $j2.wait(); } catch $ex { assert $ex is SystemError; 100; }
  exit $s;
 } &
-assert $j.wait() == 1 : "${$j.wait()}"  # raise system error
-assert $j.status(0)! == 1
+assert $j.wait() == 100 : "${$j.wait()}"  # raise system error
+assert $j.status(0)! == 100
 assert $j2.wait() == 0
 
 
