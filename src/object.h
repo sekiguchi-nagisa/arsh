@@ -135,7 +135,7 @@ struct ObjectRefCount {
 
     static void decrease(DSObject *ptr) noexcept {
         if(ptr != nullptr && --ptr->refCount == 0) {
-            delete ptr;
+            ptr->destroy();
         }
     }
 };
