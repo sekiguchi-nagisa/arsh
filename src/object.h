@@ -63,6 +63,8 @@ enum class ObjectKind : unsigned char {
 #undef GEN_ENUM
 };
 
+struct ObjectRefCount;
+
 class DSObject {
 protected:
     unsigned int refCount{0};
@@ -74,6 +76,8 @@ protected:
     const unsigned int tag{0};
 
     friend class DSValue;
+
+    friend struct ObjectRefCount;
 
     NON_COPYABLE(DSObject);
 
@@ -117,6 +121,28 @@ public:
         return obj->getKind() == K;
     }
 };
+
+struct ObjectRefCount {
+    static long useCount(const DSObject *ptr) noexcept {
+        return ptr->refCount;
+    }
+
+    static void increase(DSObject *ptr) noexcept {
+        if(ptr != nullptr) {
+            ptr->refCount++;
+        }
+    }
+
+    static void decrease(DSObject *ptr) noexcept {
+        if(ptr != nullptr && --ptr->refCount == 0) {
+            delete ptr;
+        }
+    }
+};
+
+template <typename T>
+using ObjPtr = IntrusivePtr<T, ObjectRefCount>;
+
 
 class UnixFdObject : public ObjectWithRtti<ObjectKind::UnixFd> {
 private:

@@ -117,8 +117,6 @@ public:
 
 class JobTable;
 
-struct JobRefCount;
-
 class JobObject : public ObjectWithRtti<ObjectKind::Job> {
 public:
     static_assert(std::is_pod<Proc>::value, "failed");
@@ -160,7 +158,6 @@ private:
     Proc procs[];
 
     friend class JobTable;
-    friend struct JobRefCount;
 
 public:
     NON_COPYABLE(JobObject);
@@ -256,25 +253,7 @@ public:
     }
 };
 
-struct JobRefCount {
-    static long useCount(const JobObject *ptr) noexcept {
-        return ptr->refCount;
-    }
-
-    static void increase(JobObject *ptr) noexcept {
-        if(ptr != nullptr) {
-            ptr->refCount++;
-        }
-    }
-
-    static void decrease(JobObject *ptr) noexcept {
-        if(ptr != nullptr && --ptr->refCount == 0) {
-            delete ptr;
-        }
-    }
-};
-
-using Job = IntrusivePtr<JobObject, JobRefCount>;
+using Job = ObjPtr<JobObject>;
 
 class JobTable {    //FIXME: send signal to managed jobs
 private:
