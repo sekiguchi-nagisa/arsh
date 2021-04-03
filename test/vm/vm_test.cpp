@@ -263,7 +263,7 @@ static JobTable::ConstEntryIter getEndIter(const JobTable &table) {
 
 struct JobTableTest : public VMTest {
     Job newJob() {
-        return JobTable::create(
+        return JobObject::create(
                 Proc(),
                 DSValue(this->state->emptyFDObj),
                 DSValue(this->state->emptyFDObj));

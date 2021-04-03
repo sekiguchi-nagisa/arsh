@@ -159,7 +159,6 @@ private:
 
     friend class JobTable;
 
-public:
     NON_COPYABLE(JobObject);
 
     JobObject(unsigned int size, const Proc *procs, bool saveStdin,
@@ -172,6 +171,19 @@ public:
         if(saveStdin) {
             this->oldStdin = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
         }
+    }
+
+public:
+    static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
+                      DSValue &&inObj, DSValue &&outObj) {
+        void *ptr = malloc(sizeof(JobObject) + sizeof(Proc) * size);
+        auto *entry = new(ptr) JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj));
+        return ObjPtr<JobObject>(entry);
+    }
+
+    static ObjPtr<JobObject> create(Proc proc, DSValue &&inObj, DSValue &&outObj) {
+        Proc procs[1] = {proc};
+        return create(1, procs, false, std::move(inObj), std::move(outObj));
     }
 
     static void operator delete(void *ptr) noexcept {   //NOLINT
@@ -277,18 +289,6 @@ public:
 
     JobTable() = default;
     ~JobTable() = default;
-
-    static Job create(unsigned int size, const Proc *procs, bool saveStdin,
-                      DSValue &&inObj, DSValue &&outObj) {
-        void *ptr = malloc(sizeof(JobObject) + sizeof(Proc) * size);
-        auto *entry = new(ptr) JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj));
-        return Job(entry);
-    }
-
-    static Job create(Proc proc, DSValue &&inObj, DSValue &&outObj) {
-        Proc procs[1] = {proc};
-        return create(1, procs, false, std::move(inObj), std::move(outObj));
-    }
 
     void attach(Job job, bool disowned = false);
 

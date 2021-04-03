@@ -347,7 +347,7 @@ bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs
                            ForkKind forkKind, PipeSet &pipeSet, DSValue &ret) {
     switch(forkKind) {
     case ForkKind::NONE: {
-        auto entry = JobTable::create(
+        auto entry = JobObject::create(
                 procSize, procs, false,
                 DSValue(state.emptyFDObj), DSValue(state.emptyFDObj));
         // job termination
@@ -372,7 +372,7 @@ bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs
     case ForkKind::OUT_PIPE: {
         int &fd = forkKind == ForkKind::IN_PIPE ? pipeSet.in[WRITE_PIPE] : pipeSet.out[READ_PIPE];
         ret = newFD(state, fd);
-        auto entry = JobTable::create(
+        auto entry = JobObject::create(
                 procSize, procs, false,
                 DSValue(forkKind == ForkKind::IN_PIPE ? ret : state.emptyFDObj),
                 DSValue(forkKind == ForkKind::OUT_PIPE ? ret : state.emptyFDObj));
@@ -383,7 +383,7 @@ bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs
     case ForkKind::JOB:
     case ForkKind::DISOWN: {
         bool disown = forkKind == ForkKind::DISOWN;
-        auto entry = JobTable::create(
+        auto entry = JobObject::create(
                 procSize, procs, false,
                 newFD(state, pipeSet.in[WRITE_PIPE]),
                 newFD(state, pipeSet.out[READ_PIPE]));
@@ -426,7 +426,7 @@ bool VM::forkAndEval(DSState &state) {
             int errNum = errno;
             tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
             if(proc.state() != Proc::TERMINATED) {
-                state.jobTable.attach(JobTable::create(
+                state.jobTable.attach(JobObject::create(
                         proc,
                         DSValue(state.emptyFDObj),
                         DSValue(state.emptyFDObj)));
@@ -655,7 +655,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
         status = proc.wait(waitOp);
         int errNum2 = errno;
         if(proc.state() != Proc::TERMINATED) {
-            state.jobTable.attach(JobTable::create(
+            state.jobTable.attach(JobObject::create(
                     proc,
                     DSValue(state.emptyFDObj),
                     DSValue(state.emptyFDObj)));
@@ -992,7 +992,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
             /**
              * in last pipe, save current stdin before call dup2
              */
-            auto jobEntry = JobTable::create(
+            auto jobEntry = JobObject::create(
                     procSize, childs, true,
                     DSValue(state.emptyFDObj), DSValue(state.emptyFDObj));
             ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
