@@ -27,6 +27,11 @@ namespace ydsh {
 Proc Proc::fork(DSState &st, pid_t pgid, bool foreground) {
     SignalGuard guard;
 
+    if(st.jobTable.size() >= UINT16_MAX) {
+        errno = EAGAIN;
+        return Proc(-1);
+    }
+
     pid_t pid = ::fork();
     if(pid == 0) {  // child process
         if(st.isJobControl()) {

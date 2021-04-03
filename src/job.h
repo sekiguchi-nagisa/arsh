@@ -359,6 +359,10 @@ public:
         }
     }
 
+    unsigned int size() const {
+        return this->entries.size();
+    }
+
     // helper method for entry lookup
     ConstEntryIter beginJob() const {
         return this->entries.begin();

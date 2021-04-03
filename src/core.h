@@ -260,7 +260,9 @@ public:
     }
 
     ~SignalGuard() {
+        int e = errno;
         sigprocmask(SIG_UNBLOCK, &this->maskset, nullptr);
+        errno = e;
     }
 };
 
