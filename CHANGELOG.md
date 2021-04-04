@@ -12,11 +12,15 @@
 
 #### Builtin
 - **Breaking Change**: return value of ``Job#pid`` method
+- propagate intrenal error as exception from regex method
+  - ``left =~ right``, ``left !~ right``
+  - ``Regex#match``, ``Regex#replace``
 
 #### Misc
 - change minimum reuqired compiler version for gnu++17 support
   - gcc 7
   - clang 6
+- update re2c to 2.1.1
 
 
 ## [0.21.0] - 2021-03-28
