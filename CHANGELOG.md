@@ -23,6 +23,10 @@
 - update re2c to 2.1.1
 
 
+### Fixed
+- ``Job#status`` method return correct exit status when internal process already waited
+
+
 ## [0.21.0] - 2021-03-28
 
 ### Added

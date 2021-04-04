@@ -1812,19 +1812,19 @@ YDSH_METHOD job_pid(RuntimeContext &ctx) {
 //!bind: function status($this : Job, $index : Int) : Option<Int>
 YDSH_METHOD job_status(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_status);
-    auto &entry = typeAs<JobObject>(LOCAL(0));
+    auto &job = typeAs<JobObject>(LOCAL(0));
     auto index = LOCAL(1).asInt();
 
-    if(index > -1 && static_cast<size_t>(index) < entry.getProcSize()) {
-        if(entry.available()) {
-            RET(DSValue::createInvalid());
+    if(index > -1 && static_cast<size_t>(index) < job.getProcSize()) {
+        auto &proc = job.getProcs()[index];
+        if(proc.state() != Proc::RUNNING) {
+            RET(DSValue::createInt(proc.exitStatus()));
         } else {
-            int s = entry.getProcs()[index].exitStatus();
-            RET(DSValue::createInt(s));
+            RET(DSValue::createInvalid());
         }
     }
     std::string msg = "number of processes is: ";
-    msg += std::to_string(entry.getProcSize());
+    msg += std::to_string(job.getProcSize());
     msg += ", but index is: ";
     msg += std::to_string(index);
     raiseOutOfRangeError(ctx, std::move(msg));
