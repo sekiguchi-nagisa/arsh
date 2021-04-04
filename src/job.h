@@ -139,16 +139,18 @@ private:
     ObjPtr<UnixFdObject> outObj;
 
     /**
-     * after detach, will be 0
-     */
-    unsigned int jobID{0};
-
-    /**
      * if already closed, will be -1.
      */
     int oldStdin{-1};
 
+    /**
+     * after termination will be 0
+     */
+    unsigned int jobID{0};  // up to UINT16_MAX
+
     State state{State::RUNNING};
+
+    bool disown{false};
 
     unsigned short procSize;
 
@@ -198,6 +200,10 @@ public:
         return this->state == State::RUNNING;
     }
 
+    bool isDisowned() const {
+        return this->disown;
+    }
+
     const Proc *getProcs() const {
         return this->procs;
     }
@@ -215,7 +221,7 @@ public:
     /**
      *
      * @return
-     * after detached, return 0.
+     * after terminated, return 0.
      */
     unsigned int getJobID() const {
         return this->jobID;
@@ -267,19 +273,14 @@ public:
 
 using Job = ObjPtr<JobObject>;
 
-class JobTable {    //FIXME: send signal to managed jobs
+class JobTable {
 private:
-    std::vector<Job> entries;
-
-    /**
-     * if maintain disowned job, `jobSize' is not equivalent to `entries' size.
-     */
-    unsigned int jobSize{0};
+    std::vector<Job> jobs;
 
     /**
      * latest attached entry.
      */
-    Job latestEntry;
+    Job latest;
 
 public:
     NON_COPYABLE(JobTable);
@@ -293,39 +294,39 @@ public:
     void attach(Job job, bool disowned = false);
 
     /**
-     * remove job from JobTable
-     * @param jobId
-     * if 0, do nothing.
+     * detach job from JopTable
+     * @param job
+     * if terminated or uncontrolled, do nothing
      * @param remove
-     * @return
-     * detached job.
-     * if specified job is not found, return null
+     * if true, completely remove from job table.
+     * if false, job is disowned, but still exists in job table
      */
-    Job detach(unsigned int jobId, bool remove = false);
+    void detach(Job &job, bool remove = false);
 
     /**
      * if has ownership, wait termination.
-     * @param entry
+     * @param job
      * @param jobctrl
      * @return
      * exit status of last process.
      * after waiting termination, remove entry.
      */
-    int waitAndDetach(Job &entry, bool jobctrl) {
-        int ret = entry->wait(jobctrl ? Proc::BLOCK_UNTRACED : Proc::BLOCKING);
-        if(!entry->available()) {
-            this->detach(entry->getJobID(), true);
+    int waitAndDetach(Job &job, bool jobctrl) {
+        int ret = job->wait(jobctrl ? Proc::BLOCK_UNTRACED : Proc::BLOCKING);
+        if(!job->available()) {
+            this->detach(job, true);
         }
         return ret;
     }
 
     void detachAll() {
-        for(auto &e : this->entries) {
+        for(auto &e : this->jobs) {
             e->jobID = 0;
+            e->disown = true;
             e->state = JobObject::State::UNCONTROLLED;
         }
-        this->entries.clear();
-        this->latestEntry.reset();
+        this->jobs.clear();
+        this->latest.reset();
     }
 
     /**
@@ -335,52 +336,51 @@ public:
      */
     void updateStatus();
 
-    const Job &getLatestEntry() {
-        return this->latestEntry;
+    const Job &getLatestJob() const {
+        return this->latest;
     }
 
     /**
-     *
+     * get Job by job id
      * @param jobId
      * @return
      * if not found, return nullptr
+     * if job is disowned, return nullptr
      */
-    Job findEntry(unsigned int jobId) const {
-        auto iter = this->findEntryIter(jobId);
-        if(iter != this->endJob()) {
-            return *iter;
+    Job find(unsigned int jobId) const {
+        auto iter = this->findIter(jobId);
+        if(iter == this->endJob() || (*iter)->isDisowned()) {
+            return nullptr;
         }
-        return nullptr;
+        return *iter;
     }
 
+    /**
+     * send signal to all job except for disowned job
+     * @param sigNum
+     */
     void send(int sigNum) const {
-        for(auto begin = this->beginJob(); begin != this->endJob(); ++begin) {
-            (*begin)->send(sigNum);
+        for(auto &job : this->jobs) {
+            if(!job->isDisowned()) {
+                job->send(sigNum);
+            }
         }
     }
 
     unsigned int size() const {
-        return this->entries.size();
+        return this->jobs.size();
     }
 
     // helper method for entry lookup
     ConstEntryIter beginJob() const {
-        return this->entries.begin();
+        return this->jobs.begin();
     }
 
     ConstEntryIter endJob() const {
-        return this->entries.begin() + this->jobSize;
+        return this->jobs.end();
     }
 
 private:
-    EntryIter beginJob() {
-        return this->entries.begin();
-    }
-
-    EntryIter endJob() {
-        return this->entries.begin() + this->jobSize;
-    }
-
     /**
      *
      * @return
@@ -396,15 +396,15 @@ private:
      * @return
      * if not found, return end
      */
-    ConstEntryIter findEntryIter(unsigned int jobId) const;
+    ConstEntryIter findIter(unsigned int jobId) const;
 
     /**
-     *
+     * remove entry specified by ietrator
      * @param iter
      * @return
      * iterator of next entry.
      */
-    EntryIter detachByIter(ConstEntryIter iter);
+    EntryIter removeByIter(ConstEntryIter iter);
 };
 
 } // namespace ydsh

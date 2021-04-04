@@ -1776,8 +1776,8 @@ YDSH_METHOD job_raise(RuntimeContext &ctx) {
 //!bind: function detach($this : Job) : Void
 YDSH_METHOD job_detach(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_detach);
-    auto &obj = typeAs<JobObject>(LOCAL(0));
-    ctx.jobTable.detach(obj.getJobID());
+    auto job = toObjPtr<JobObject>(LOCAL(0));
+    ctx.jobTable.detach(job);
     RET_VOID;
 }
 

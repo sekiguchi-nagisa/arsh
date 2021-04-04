@@ -259,75 +259,71 @@ int JobObject::wait(Proc::WaitOp op) {
 // ######################
 
 void JobTable::attach(Job job, bool disowned) {
-    if(job->getJobID() != 0) {
+    if(job->getJobID() != 0) {  // already attached
         return;
     }
-
-    if(disowned) {
-        this->entries.push_back(std::move(job));
-        return;
-    }
-
     auto ret = this->findEmptyEntry();
-    this->entries.insert(this->beginJob() + ret, job);
+    this->jobs.insert(this->jobs.begin() + ret, job);
     job->jobID = ret + 1;
-    this->latestEntry = std::move(job);
-    this->jobSize++;
+    if(disowned) {
+        job->disown = true;
+    } else {
+        this->latest = std::move(job);
+    }
 }
 
-Job JobTable::detach(unsigned int jobId, bool remove) {
-    auto iter = this->findEntryIter(jobId);
-    if(iter == this->endJob()) {
-        return nullptr;
+void JobTable::detach(Job &job, bool remove) {
+    if(remove) {
+        auto iter = this->findIter(job->getJobID());
+        this->removeByIter(iter);
+    } else {
+        job->disown = true;
     }
-    auto job = *iter;
-    this->detachByIter(iter);
-    if(!remove) {
-        this->entries.push_back(job);
-    }
-    return job;
 }
 
-JobTable::EntryIter JobTable::detachByIter(ConstEntryIter iter) {
-    if(iter != this->entries.end()) {
+JobTable::EntryIter JobTable::removeByIter(ConstEntryIter iter) {
+    if(iter != this->jobs.end()) {
         Job job = *iter;
-        if(job->getJobID() > 0) {
-            this->jobSize--;
-        }
+        assert(job->getJobID() > 0);
         job->jobID = 0;
-        auto next = this->entries.erase(iter);
+        job->disown = true;
+        auto next = this->jobs.erase(iter);
 
         // change latest entry
-        if(this->latestEntry == job) {
-            this->latestEntry = nullptr;
-            if(!this->entries.empty()) {
-                this->latestEntry = this->entries[this->jobSize - 1];
+        if(this->latest == job) {
+            this->latest = nullptr;
+            for(auto i = this->jobs.rbegin(); i != this->jobs.rend(); ++i) {
+                auto &j = *i;
+                if(!j->isDisowned()) {
+                    this->latest = j;
+                    break;
+                }
             }
         }
         return next;
     }
-    return this->entries.end();
+    return this->jobs.end();
 }
 
 void JobTable::updateStatus() {
-    for(auto begin = this->entries.begin(); begin != this->entries.end();) {
+    for(auto begin = this->jobs.begin(); begin != this->jobs.end();) {
         (*begin)->wait(Proc::NONBLOCKING);
         if((*begin)->available()) {
             ++begin;
         } else {
-            begin = this->detachByIter(begin);
+            begin = this->removeByIter(begin);
         }
     }
 }
 
 unsigned int JobTable::findEmptyEntry() const {
     unsigned int firstIndex = 0;
-    unsigned int dist = this->jobSize;
+    unsigned int dist = this->jobs.size();
 
     while(dist > 0) {
         unsigned int hafDist = dist / 2;
         unsigned int midIndex = hafDist + firstIndex;
-        if(entries[midIndex]->getJobID() == midIndex + 1) {
+        if(jobs[midIndex]->getJobID() == midIndex + 1) {
             firstIndex = midIndex + 1;
             dist = dist - hafDist - 1;
         } else {
@@ -347,14 +343,14 @@ struct Comparator {
     }
 };
 
-JobTable::ConstEntryIter JobTable::findEntryIter(unsigned int jobId) const {
+JobTable::ConstEntryIter JobTable::findIter(unsigned int jobId) const {
     if(jobId > 0) {
-        auto iter = std::lower_bound(this->beginJob(), this->endJob(), jobId, Comparator());
-        if(iter != this->endJob() && (*iter)->jobID == jobId) {
+        auto iter = std::lower_bound(this->jobs.begin(), this->jobs.end(), jobId, Comparator());
+        if(iter != this->jobs.end() && (*iter)->jobID == jobId) {
             return iter;
         }
     }
-    return this->endJob();
+    return this->jobs.end();
 }
 
 } // namespace ydsh

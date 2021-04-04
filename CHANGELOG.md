@@ -6,7 +6,12 @@
 
 #### Core
 - **Breaking Change**: disallow signal sending to sibling jobs
+- **Breaking Change**: disowned job object still maintains valid job id
+  - job table still maintains job id of disowned job
+  - job id of disowned job is no longer reassigned to newly attached job
 
+#### Builtin
+- **Breaking Change**: return value of ``Job#pid`` method
 
 #### Misc
 - change minimum reuqired compiler version for gnu++17 support

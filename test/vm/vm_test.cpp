@@ -282,36 +282,38 @@ TEST_F(JobTableTest, attach) {
 
     jobTable.attach(job1);
     ASSERT_EQ(1u, job1->getJobID());
-    ASSERT_EQ(job1, jobTable.getLatestEntry());
+    ASSERT_EQ(job1, jobTable.getLatestJob());
 
     jobTable.attach(job2);
     ASSERT_EQ(2u, job2->getJobID());
-    ASSERT_EQ(job2, jobTable.getLatestEntry());
+    ASSERT_EQ(job2, jobTable.getLatestJob());
 
     jobTable.attach(job3);
     ASSERT_EQ(3u, job3->getJobID());
-    ASSERT_EQ(job3, jobTable.getLatestEntry());
+    ASSERT_EQ(job3, jobTable.getLatestJob());
 
     jobTable.attach(job4);
     ASSERT_EQ(4u, job4->getJobID());
-    ASSERT_EQ(job4, jobTable.getLatestEntry());
+    ASSERT_EQ(job4, jobTable.getLatestJob());
 
     jobTable.attach(job5);
     ASSERT_EQ(5u, job5->getJobID());
-    ASSERT_EQ(job5, jobTable.getLatestEntry());
+    ASSERT_EQ(job5, jobTable.getLatestJob());
 
-    ASSERT_EQ(job2, jobTable.detach(2, true));
-    ASSERT_EQ(job5, jobTable.getLatestEntry());
+    jobTable.detach(job2, true);
+    ASSERT_EQ(job5, jobTable.getLatestJob());
 
-    ASSERT_EQ(job3, jobTable.detach(3, false));
-    ASSERT_EQ(job5, jobTable.getLatestEntry());
+    jobTable.detach(job3, false);
+    ASSERT_EQ(job5, jobTable.getLatestJob());
 
-    ASSERT_EQ(job5, jobTable.detach(5, true));
-    ASSERT_EQ(job4, jobTable.getLatestEntry());
+    jobTable.detach(job5, true);
+    ASSERT_EQ(job4, jobTable.getLatestJob());
 
     // job entry layout
     auto begin = getBeginIter(jobTable);
     ASSERT_EQ(1u, (*begin)->getJobID());
+    ++begin;
+    ASSERT_EQ(3u, (*begin)->getJobID());    // disowned but job table still maintains
     ++begin;
     ASSERT_EQ(4u, (*begin)->getJobID());
     ++begin;
@@ -321,21 +323,7 @@ TEST_F(JobTableTest, attach) {
     // re-attach
     jobTable.attach(job5);
     ASSERT_EQ(2u, job5->getJobID());
-    ASSERT_EQ(job5, jobTable.getLatestEntry());
-
-    begin = getBeginIter(jobTable);
-    ASSERT_EQ(1u, (*begin)->getJobID());
-    ++begin;
-    ASSERT_EQ(2u, (*begin)->getJobID());
-    ++begin;
-    ASSERT_EQ(4u, (*begin)->getJobID());
-    ++begin;
-    ASSERT_EQ(getEndIter(jobTable), begin);
-
-    // re-attach
-    jobTable.attach(job2);
-    ASSERT_EQ(3u, job2->getJobID());
-    ASSERT_EQ(job2, jobTable.getLatestEntry());
+    ASSERT_EQ(job5, jobTable.getLatestJob());
 
     begin = getBeginIter(jobTable);
     ASSERT_EQ(1u, (*begin)->getJobID());
@@ -349,9 +337,9 @@ TEST_F(JobTableTest, attach) {
     ASSERT_EQ(getEndIter(jobTable), begin);
 
     // re-attach
-    jobTable.attach(job6);
-    ASSERT_EQ(5u, job6->getJobID());
-    ASSERT_EQ(job6, jobTable.getLatestEntry());
+    jobTable.attach(job2);
+    ASSERT_EQ(5u, job2->getJobID());
+    ASSERT_EQ(job2, jobTable.getLatestJob());
 
     begin = getBeginIter(jobTable);
     ASSERT_EQ(1u, (*begin)->getJobID());
@@ -363,6 +351,26 @@ TEST_F(JobTableTest, attach) {
     ASSERT_EQ(4u, (*begin)->getJobID());
     ++begin;
     ASSERT_EQ(5u, (*begin)->getJobID());
+    ++begin;
+    ASSERT_EQ(getEndIter(jobTable), begin);
+
+    // re-attach
+    jobTable.attach(job6);
+    ASSERT_EQ(6u, job6->getJobID());
+    ASSERT_EQ(job6, jobTable.getLatestJob());
+
+    begin = getBeginIter(jobTable);
+    ASSERT_EQ(1u, (*begin)->getJobID());
+    ++begin;
+    ASSERT_EQ(2u, (*begin)->getJobID());
+    ++begin;
+    ASSERT_EQ(3u, (*begin)->getJobID());
+    ++begin;
+    ASSERT_EQ(4u, (*begin)->getJobID());
+    ++begin;
+    ASSERT_EQ(5u, (*begin)->getJobID());
+    ++begin;
+    ASSERT_EQ(6u, (*begin)->getJobID());
     ++begin;
     ASSERT_EQ(getEndIter(jobTable), begin);
 }

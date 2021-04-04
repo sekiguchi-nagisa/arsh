@@ -1364,7 +1364,7 @@ static bool killProcOrJob(DSState &state, ArrayObject &argvObj, StringRef arg, i
 
     if(isJob) {
         if(pair.first > 0) {
-            auto job = state.jobTable.findEntry(static_cast<unsigned int>(pair.first));
+            auto job = state.jobTable.find(static_cast<unsigned int>(pair.first));
             if(job) {
                 job->send(sigNum);
                 return true;
@@ -1468,7 +1468,7 @@ static Job tryToGetJob(const JobTable &table, StringRef name) {
     Job job;
     auto pair = toInt32(name);
     if(pair.second && pair.first > -1) {
-        job = table.findEntry(pair.first);
+        job = table.find(pair.first);
     }
     return job;
 }
@@ -1485,7 +1485,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     Job job;
     StringRef arg = "current";
     if(size == 1) {
-        job = state.jobTable.getLatestEntry();
+        job = state.jobTable.getLatestJob();
     } else {
         arg = argvObj.getValues()[1].asStrRef();
         job = tryToGetJob(state.jobTable, arg);
