@@ -264,11 +264,6 @@ public:
      * if cannot terminate (has no-ownership or has error), return -1 and set errno
      */
     int wait(Proc::WaitOp op);
-
-    bool poll() {
-        this->wait(Proc::NONBLOCKING);
-        return this->available();
-    }
 };
 
 using Job = ObjPtr<JobObject>;
@@ -306,13 +301,13 @@ public:
     /**
      * if has ownership, wait termination.
      * @param job
-     * @param jobctrl
+     * @param op
      * @return
      * exit status of last process.
      * after waiting termination, remove entry.
      */
-    int waitAndDetach(Job &job, bool jobctrl) {
-        int ret = job->wait(jobctrl ? Proc::BLOCK_UNTRACED : Proc::BLOCKING);
+    int waitAndDetach(Job &job, Proc::WaitOp op) {
+        int ret = job->wait(op);
         if(!job->available()) {
             this->detach(job, true);
         }

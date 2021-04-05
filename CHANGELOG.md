@@ -25,6 +25,7 @@
 
 ### Fixed
 - ``Job#status`` method return correct exit status when internal process already waited
+- after call ``Job#poll`` method, if job is terminated, removed from job table
 
 
 ## [0.21.0] - 2021-03-28

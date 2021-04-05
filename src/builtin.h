@@ -1746,16 +1746,16 @@ YDSH_METHOD job_get(RuntimeContext &ctx) {
 //!bind: function poll($this : Job) : Boolean
 YDSH_METHOD job_poll(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_poll);
-    auto &obj = typeAs<JobObject>(LOCAL(0));
-    RET_BOOL(obj.poll());
+    auto job = toObjPtr<JobObject>(LOCAL(0));
+    ctx.jobTable.waitAndDetach(job, Proc::NONBLOCKING);
+    RET_BOOL(job->available());
 }
 
 //!bind: function wait($this : Job) : Int
 YDSH_METHOD job_wait(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_wait);
-    auto &obj = typeAs<JobObject>(LOCAL(0));
-    auto entry = Job(&obj);
-    int s = ctx.jobTable.waitAndDetach(entry, ctx.isJobControl());
+    auto job = toObjPtr<JobObject>(LOCAL(0));
+    int s = ctx.jobTable.waitAndDetach(job, ctx.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING);
     int errNum = errno;
     ctx.jobTable.updateStatus();
     if(errNum != 0) {
