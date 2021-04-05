@@ -91,10 +91,7 @@ std::string URI::decode(const char *begin, const char *end) {
         char ch = *begin;
         if(ch != '%') {
             value += ch;
-            continue;
-        }
-
-        if(ch == '%' && begin + 2 < end && isHex(*(begin + 1)) && isHex(*(begin + 2))) {
+        } else if(begin + 2 < end && isHex(*(begin + 1)) && isHex(*(begin + 2))) {
             char ch1 = *++begin;
             char ch2 = *++begin;
             unsigned int v = 16 * hexToNum(ch1) + hexToNum(ch2);
