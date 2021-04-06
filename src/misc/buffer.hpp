@@ -24,6 +24,7 @@
 
 #include "noncopyable.h"
 #include "fatal.h"
+#include "detect.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -45,7 +46,7 @@ public:
 private:
     static_assert(std::is_unsigned<SIZE_T>::value, "need unsigned type");
 
-    static_assert(std::is_pod<T>::value, "forbidden type");
+    static_assert(is_pod_v<T>, "forbidden type");
 
     size_type cap_;
     size_type size_;

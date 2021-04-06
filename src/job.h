@@ -24,6 +24,7 @@
 #include <type_traits>
 
 #include "misc/resource.hpp"
+#include "misc/detect.hpp"
 #include "object.h"
 
 struct DSState;
@@ -119,7 +120,7 @@ class JobTable;
 
 class JobObject : public ObjectWithRtti<ObjectKind::Job> {
 public:
-    static_assert(std::is_pod<Proc>::value, "failed");
+    static_assert(is_pod_v<Proc>, "failed");
 
     enum class State : unsigned char {
         RUNNING,
