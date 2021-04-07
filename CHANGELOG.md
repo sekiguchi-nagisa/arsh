@@ -17,7 +17,7 @@
   - ``Regex#match``, ``Regex#replace``
 
 #### Misc
-- change minimum reuqired compiler version for gnu++17 support
+- change minimum required compiler version for gnu++17 support
   - gcc 7
   - clang 6
 - update re2c to 2.1.1
