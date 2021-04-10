@@ -375,6 +375,41 @@ TEST_F(JobTableTest, attach) {
     ASSERT_EQ(getEndIter(jobTable), begin);
 }
 
+TEST(ProcTableTest, base) {
+    ProcTable table;
+    auto *e = table.addProc(12, 1, 1);
+    ASSERT_EQ(12, e->pid);
+    ASSERT_EQ(1, e->jobId);
+    ASSERT_EQ(1, e->procOffset);
+
+    e = table.addProc(34, 1, 2);
+    ASSERT_EQ(34, e->pid);
+    ASSERT_EQ(1, e->jobId);
+    ASSERT_EQ(2, e->procOffset);
+
+    e = table.addProc(2, 1, 3);
+    ASSERT_EQ(2, e->pid);
+    ASSERT_EQ(1, e->jobId);
+    ASSERT_EQ(3, e->procOffset);
+
+    e = table.addProc(-1, 1, 3);
+    ASSERT_EQ(nullptr, e);
+
+    e = table.addProc(100, 0, 3);
+    ASSERT_EQ(nullptr, e);
+
+    ASSERT_EQ(3, table.getEntries().size());
+    ASSERT_TRUE(table.deleteProc(12));
+    ASSERT_TRUE(table.deleteProc(2));
+    ASSERT_FALSE(table.deleteProc(-1));
+    ASSERT_FALSE(table.deleteProc(1000));
+    table.batchedRemove();
+    ASSERT_EQ(1, table.getEntries().size());
+
+    table.clear();
+    ASSERT_EQ(0, table.getEntries().size());
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

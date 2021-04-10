@@ -191,6 +191,10 @@ public:
 
     void resize(size_type afterSize, T v) noexcept;
 
+    void resize(size_type afterSize) noexcept {
+        this->resize(afterSize, T{});
+    }
+
     iterator begin() noexcept {
         return this->data_;
     }

@@ -116,6 +116,8 @@ public:
     static Proc fork(DSState &st, pid_t pgid, bool foreground);
 };
 
+class ProcTable;
+
 class JobTable;
 
 class JobObject : public ObjectWithRtti<ObjectKind::Job> {
@@ -147,7 +149,7 @@ private:
     /**
      * after termination will be 0
      */
-    unsigned int jobID{0};  // up to UINT16_MAX
+    unsigned short jobID{0};
 
     State state{State::RUNNING};
 
@@ -224,7 +226,7 @@ public:
      * @return
      * after terminated, return 0.
      */
-    unsigned int getJobID() const {
+    unsigned short getJobID() const {
         return this->jobID;
     }
 
@@ -260,18 +262,75 @@ public:
      * wait for termination.
      * after termination, `state' will be TERMINATED.
      * @param op
+     * @param procTable
+     * may be null
      * @return
      * exit status of last process.
      * if cannot terminate (has no-ownership or has error), return -1 and set errno
+     * if procTable is not null, after wait, remove terminated procs from procTable
      */
-    int wait(Proc::WaitOp op);
+    int wait(Proc::WaitOp op, ProcTable *procTable = nullptr);
 };
 
 using Job = ObjPtr<JobObject>;
 
+// for pid to job mapping
+class ProcTable {
+public:
+    struct Entry {
+        pid_t pid;
+        unsigned short jobId;
+        unsigned short procOffset;
+
+        void markDelete() {
+            this->jobId = 0;
+        }
+
+        bool isDeleted() const {
+            return this->jobId == 0;
+        }
+    };
+
+private:
+    FlexBuffer<Entry> entries;
+
+public:
+    const FlexBuffer<Entry> &getEntries() const {
+        return this->entries;
+    }
+
+    void add(const Job &job) {
+        for(unsigned int i = 0; i < job->getProcSize(); i++) {
+            this->addProc(job->getPid(i), job->getJobID(), i);
+        }
+    }
+
+    const Entry *addProc(pid_t pid, unsigned short jobId, unsigned short offset);
+
+    /**
+     * call markDelete() in specified entry by pid.
+     * actual delete operation is not performed untill call batchedRemove()
+     * @param pid
+     * @return
+     * if found corresponding entry, return true
+     */
+    bool deleteProc(pid_t pid);
+
+    void clear() {
+        this->entries.clear();
+    }
+
+    /**
+     * remove all deleted PidEntry
+     */
+    void batchedRemove();
+};
+
 class JobTable {
 private:
     std::vector<Job> jobs;
+
+    ProcTable procTable;
 
     /**
      * latest attached entry.
@@ -308,7 +367,7 @@ public:
      * after waiting termination, remove entry.
      */
     int waitAndDetach(Job &job, Proc::WaitOp op) {
-        int ret = job->wait(op);
+        int ret = job->wait(op, &this->procTable);
         if(!job->available()) {
             this->detach(job, true);
         }
@@ -322,6 +381,7 @@ public:
             e->state = JobObject::State::UNCONTROLLED;
         }
         this->jobs.clear();
+        this->procTable.clear();
         this->latest.reset();
     }
 
@@ -374,6 +434,10 @@ public:
 
     ConstEntryIter endJob() const {
         return this->jobs.end();
+    }
+
+    const ProcTable &getProcTable() const {
+        return this->procTable;
     }
 
 private:

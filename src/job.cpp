@@ -192,10 +192,9 @@ int Proc::send(int sigNum) const {
     return 0;
 }
 
-
-// #####################
-// ##     JobImpl     ##
-// #####################
+// #######################
+// ##     JobObject     ##
+// #######################
 
 bool JobObject::restoreStdin() {
     if(this->oldStdin > -1 && this->isControlled()) {
@@ -222,7 +221,7 @@ void JobObject::send(int sigNum) const {
     }
 }
 
-int JobObject::wait(Proc::WaitOp op) {
+int JobObject::wait(Proc::WaitOp op, ProcTable *procTable) {
     errno = 0;
     if(!isControlled()) {
         errno = ECHILD;
@@ -232,26 +231,95 @@ int JobObject::wait(Proc::WaitOp op) {
         return this->procs[this->procSize - 1].exitStatus();
     }
 
+    unsigned int deleteCount = 0;
     unsigned int terminateCount = 0;
     int lastStatus = 0;
     for(unsigned short i = 0; i < this->procSize; i++) {
         auto &proc = this->procs[i];
+        pid_t pid = proc.pid();
         lastStatus = proc.wait(op, i == this->procSize - 1);
         if(lastStatus < 0) {
             return lastStatus;
         }
         if(proc.state() == Proc::TERMINATED) {
             terminateCount++;
+            if(procTable && procTable->deleteProc(pid)) {
+                deleteCount++;
+            }
         }
     }
     if(terminateCount == this->procSize) {
         this->state = State::TERMINATED;
+    }
+    if(procTable && deleteCount) {
+        procTable->batchedRemove();
     }
     if(!this->available()) {
         typeAs<UnixFdObject>(this->inObj).tryToClose(false);
         typeAs<UnixFdObject>(this->outObj).tryToClose(false);
     }
     return lastStatus;
+}
+
+// #######################
+// ##     ProcTable     ##
+// #######################
+
+struct PidEntryComp {
+    bool operator()(const ProcTable::Entry &x, pid_t y) const {
+        return x.pid < y;
+    }
+
+    bool operator()(pid_t x, const ProcTable::Entry &y) const {
+        return x < y.pid;
+    }
+};
+
+const ProcTable::Entry *ProcTable::addProc(pid_t pid, unsigned short jobId, unsigned short offset) {
+    if(pid < 0 || jobId == 0) {
+        return nullptr;
+    }
+    auto iter = std::lower_bound(this->entries.begin(), this->entries.end(), pid, PidEntryComp());
+    assert(iter == this->entries.end() || iter->pid != pid);
+    auto ret = this->entries.insert(iter, ProcTable::Entry {
+        .pid = pid,
+        .jobId = jobId,
+        .procOffset = offset,
+    });
+    return ret;
+}
+
+bool ProcTable::deleteProc(pid_t pid) {
+    if(pid < 0) {
+        return false;
+    }
+    auto iter = std::lower_bound(this->entries.begin(), this->entries.end(), pid, PidEntryComp());
+    if(iter != this->entries.end()) {
+        iter->markDelete();
+        return true;
+    }
+    return false;
+}
+
+void ProcTable::batchedRemove() {
+    unsigned int removedIndex;
+    for(removedIndex = 0; removedIndex < this->entries.size(); removedIndex++) {
+        if(this->entries[removedIndex].isDeleted()) {
+            break;
+        }
+    }
+    if(removedIndex == this->entries.size()) {
+        return; // not found deleted entry
+    }
+
+    for(unsigned int i = removedIndex + 1; i < this->entries.size(); i++) {
+        if(!this->entries[i].isDeleted()) {
+            assert(this->entries[removedIndex].isDeleted());
+            std::swap(this->entries[i], this->entries[removedIndex]);
+            removedIndex++;
+        }
+    }
+    this->entries.resize(removedIndex);
 }
 
 // ######################
@@ -307,7 +375,7 @@ JobTable::EntryIter JobTable::removeByIter(ConstEntryIter iter) {
 
 void JobTable::updateStatus() {
     for(auto begin = this->jobs.begin(); begin != this->jobs.end();) {
-        (*begin)->wait(Proc::NONBLOCKING);
+        (*begin)->wait(Proc::NONBLOCKING, &this->procTable);
         if((*begin)->available()) {
             ++begin;
         } else {
