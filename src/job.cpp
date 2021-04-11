@@ -230,30 +230,30 @@ int JobObject::wait(WaitOp op, ProcTable *procTable) {
         errno = ECHILD;
         return -1;
     }
-    if(!this->available()) {
-        return this->procs[this->procSize - 1].exitStatus();
-    }
 
-    unsigned int deleteCount = 0;
     int lastStatus = 0;
-    for(unsigned short i = 0; i < this->procSize; i++) {
-        auto &proc = this->procs[i];
-        pid_t pid = proc.pid();
-        lastStatus = proc.wait(op, i == this->procSize - 1);
-        if(lastStatus < 0) {
-            return lastStatus;
+    if(this->available()) {
+        unsigned int deleteCount = 0;
+        for(unsigned short i = 0; i < this->procSize; i++) {
+            auto &proc = this->procs[i];
+            pid_t pid = proc.pid();
+            lastStatus = proc.wait(op, i == this->procSize - 1);
+            if(lastStatus < 0) {
+                return lastStatus;
+            }
+            if(proc.state() == Proc::TERMINATED && procTable && procTable->deleteProc(pid)) {
+                deleteCount++;
+            }
         }
-        if(proc.state() == Proc::TERMINATED && procTable && procTable->deleteProc(pid)) {
-            deleteCount++;
+        if(procTable && deleteCount) {
+            procTable->batchedRemove();
         }
+        this->updateState();
     }
-    if(procTable && deleteCount) {
-        procTable->batchedRemove();
-    }
-    this->updateState();
     if(!this->available()) {
         typeAs<UnixFdObject>(this->inObj).tryToClose(false);
         typeAs<UnixFdObject>(this->outObj).tryToClose(false);
+        return this->procs[this->procSize - 1].exitStatus();
     }
     return lastStatus;
 }
@@ -368,6 +368,9 @@ JobTable::EntryIter JobTable::removeByIter(ConstEntryIter iter) {
 }
 
 void JobTable::waitForAny() {
+    SignalGuard guard;
+    DSState::clearPendingSignal(SIGCHLD);
+
     unsigned int deletedProc = 0;
     for(WaitResult ret; (ret = waitForProc(-1, WaitOp::NONBLOCKING)).pid != 0;) {
         if(ret.pid == -1) {

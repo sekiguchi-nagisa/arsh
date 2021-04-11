@@ -171,10 +171,7 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
          * due to eliminate redundant SystemError, force clear SIGINT
          */
         SignalGuard guard;
-        DSState::pendingSigSet.del(SIGINT);
-        if(DSState::pendingSigSet.empty()) {
-            DSState::clearPendingSignal();
-        }
+        DSState::clearPendingSignal(SIGINT);
     }
     std::string str(std::move(message));
     str += ": ";
@@ -297,9 +294,6 @@ void setJobControlSignalSetting(DSState &st, bool set) {
     st.sigVector.install(SIGTSTP, op, handler);
     st.sigVector.install(SIGTTIN, op, handler);
     st.sigVector.install(SIGTTOU, op, handler);
-
-    // due to prevent waitpid error (always wait child process termination)
-    st.sigVector.install(SIGCHLD, SignalVector::UnsafeSigOp::DFL, handler, true);
 }
 
 /**
@@ -535,9 +529,9 @@ static void signalHandler(int sigNum) { // when called this handler, all signals
     setFlag(DSState::eventDesc, VMEvent::SIGNAL);
 }
 
-void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler, bool setSIGCHLD) {
-    if(sigNum == SIGCHLD && !setSIGCHLD) {
-        return;
+void SignalVector::install(int sigNum, UnsafeSigOp op, const DSValue &handler) {
+    if(sigNum == SIGCHLD) {
+        op = UnsafeSigOp::SET;
     }
 
     // set posix signal handler

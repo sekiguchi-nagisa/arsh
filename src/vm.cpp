@@ -1240,14 +1240,10 @@ bool VM::checkVMEvent(DSState &state) {
     if(hasFlag(DSState::eventDesc, VMEvent::SIGNAL) &&
        !hasFlag(DSState::eventDesc, VMEvent::MASK)) {
         SignalGuard guard;
-
-        int sigNum = DSState::pendingSigSet.popPendingSig();
-        if(DSState::pendingSigSet.empty()) {
-            DSState::clearPendingSignal();
-        }
-
-        auto handler = state.sigVector.lookup(sigNum);
-        if(handler != nullptr) {
+        int sigNum = DSState::popPendingSignal();
+        if(sigNum == SIGCHLD) {
+            state.jobTable.waitForAny();
+        } else if(DSValue handler; (handler = state.sigVector.lookup(sigNum)) != nullptr) {
             setFlag(DSState::eventDesc, VMEvent::MASK);
             if(!kickSignalHandler(state, sigNum, std::move(handler))) {
                 return false;
@@ -1858,6 +1854,8 @@ bool VM::handleException(DSState &state) {
 }
 
 EvalRet VM::startEval(DSState &state, EvalOP op, DSError *dsError, DSValue &value) {
+    installSignalHandler(state, SIGCHLD, nullptr);
+
     const unsigned int oldLevel = state.subshellLevel;
 
     // run main loop

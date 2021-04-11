@@ -155,9 +155,28 @@ public:
 
     static SigSet pendingSigSet;
 
-    static void clearPendingSignal() {
-        DSState::pendingSigSet.clear();
-        unsetFlag(DSState::eventDesc, VMEvent::SIGNAL);
+    static int popPendingSignal() {
+        int sigNum = DSState::pendingSigSet.popPendingSig();
+        if(DSState::pendingSigSet.empty()) {
+            unsetFlag(DSState::eventDesc, VMEvent::SIGNAL);
+        }
+        return sigNum;
+    }
+
+    /**
+     *
+     * @param sigNum
+     * if 0, clear all pending signals
+     */
+    static void clearPendingSignal(int sigNum = 0) {
+        if(sigNum > 0) {
+            DSState::pendingSigSet.del(sigNum);
+        } else {
+            DSState::pendingSigSet.clear();
+        }
+        if(DSState::pendingSigSet.empty()) {
+            unsetFlag(DSState::eventDesc, VMEvent::SIGNAL);
+        }
     }
 
     NON_COPYABLE(DSState);
