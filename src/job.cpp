@@ -98,40 +98,45 @@ WaitResult waitForProc(pid_t pid, WaitOp op) {
 
     int status = 0;
     errno = 0;
-    int ret = waitpid(pid, &status, option);
-    int errNum = errno;
 
-    // dump waitpid status
     LOG_EXPR(DUMP_WAIT, [&]{
         std::string str;
         str = "waitpid(";
         str += std::to_string(pid);
         str += ", ";
         str += toString(op);
-        str += ") = ";
-        str += std::to_string(ret);
+        str += ")";
+        return str;
+    });
 
+    int ret = waitpid(pid, &status, option);
+    int errNum = errno;
+
+    // dump waitpid status
+    LOG_EXPR(DUMP_WAIT, [&]{
+        std::string str = "ret = ";
+        str += std::to_string(ret);
         if(ret > 0) {
-            str += "\nstatus: ";
+            str += "\nstate: ";
             if(WIFEXITED(status)) {
-                str += "TERMINATED\nkind: EXITED, status: ";
+                str += "TERMINATED, kind: EXITED, status: ";
                 str += std::to_string(WEXITSTATUS(status));
             } else if(WIFSIGNALED(status)) {
                 int sigNum = WTERMSIG(status);
-                str += "TERMINATED\nkind: SIGNALED, status: ";
+                str += "TERMINATED, kind: SIGNALED, status: ";
                 str += getSignalName(sigNum);
                 str += "(";
                 str += std::to_string(sigNum);
                 str += ")";
             } else if(WIFSTOPPED(status)) {
                 int sigNum = WSTOPSIG(status);
-                str += "STOPPED\nkind: STOPPED, status: ";
+                str += "STOPPED, kind: STOPPED, status: ";
                 str += getSignalName(sigNum);
                 str += "(";
                 str += std::to_string(sigNum);
                 str += ")";
             } else if(WIFCONTINUED(status)) {
-                str += "RUNNING\nkind: CONTINUED";
+                str += "RUNNING, kind: CONTINUED";
             }
         } else if(ret < 0) {
             str += "\nFAILED\n";

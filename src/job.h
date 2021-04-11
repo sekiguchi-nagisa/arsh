@@ -104,6 +104,9 @@ public:
      */
     int wait(WaitOp op, bool showSignal = true) {
         if(this->state() != TERMINATED) {
+            if(this->state() == STOPPED) {
+                op = WaitOp::NONBLOCKING;
+            }
             WaitResult ret = waitForProc(this->pid(), op);
             if(ret.pid > 0) {
                 this->updateState(ret, showSignal);

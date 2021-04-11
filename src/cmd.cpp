@@ -1497,6 +1497,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
             beForeground(job->getPid(0));
         }
         job->send(SIGCONT);
+        state.jobTable.waitForAny();
     } else {
         ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
         ret = 1;
@@ -1513,7 +1514,6 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
             errno = errNum;
             PERROR(argvObj, "wait failed");
         }
-        state.jobTable.waitForAny();
         return s;
     }
 
