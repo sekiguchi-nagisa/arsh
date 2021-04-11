@@ -428,9 +428,11 @@ public:
      */
     int waitAndDetach(Job &job, WaitOp op) {
         int ret = job->wait(op, &this->procTable);
+        int old = errno;
         if(!job->available()) {
             this->detach(job, true);
         }
+        errno = old;
         return ret;
     }
 

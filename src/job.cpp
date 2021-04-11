@@ -225,12 +225,13 @@ void JobObject::send(int sigNum) const {
 }
 
 int JobObject::wait(WaitOp op, ProcTable *procTable) {
-    errno = 0;
     if(!isControlled()) {
         errno = ECHILD;
         return -1;
     }
 
+    errno = 0;
+    int errNum = errno;
     int lastStatus = 0;
     if(this->available()) {
         unsigned int deleteCount = 0;
@@ -245,6 +246,7 @@ int JobObject::wait(WaitOp op, ProcTable *procTable) {
                 deleteCount++;
             }
         }
+        errNum = errno;
         if(procTable && deleteCount) {
             procTable->batchedRemove();
         }
@@ -253,8 +255,10 @@ int JobObject::wait(WaitOp op, ProcTable *procTable) {
     if(!this->available()) {
         typeAs<UnixFdObject>(this->inObj).tryToClose(false);
         typeAs<UnixFdObject>(this->outObj).tryToClose(false);
+        errno = errNum;
         return this->procs[this->procSize - 1].exitStatus();
     }
+    errno = errNum;
     return lastStatus;
 }
 
