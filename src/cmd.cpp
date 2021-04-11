@@ -1510,6 +1510,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
         int errNum = errno;
         state.tryToBeForeground();
         if(errNum != 0) {
+            errno = errNum;
             PERROR(argvObj, "wait failed");
         }
         state.jobTable.waitForAny();
