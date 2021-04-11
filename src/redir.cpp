@@ -30,16 +30,12 @@ PipelineObject::~PipelineObject() {
      */
     bool restored = this->entry->restoreStdin();
     auto waitOp = state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp ::BLOCKING;
-    this->entry->wait(waitOp);
+    this->state.jobTable.waitAndDetach(this->entry, waitOp);
     this->state.updatePipeStatus(this->entry->getProcSize(), this->entry->getProcs(), true);
 
     if(restored) {
         int ret = this->state.tryToBeForeground();
         LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
-    }
-    if(this->entry->available()) {
-        // job is still running, attach to JobTable
-        this->state.jobTable.attach(this->entry);
     }
     this->state.jobTable.waitForAny();
 }

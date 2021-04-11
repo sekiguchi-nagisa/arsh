@@ -996,6 +996,7 @@ bool VM::callPipeline(DSState &state, bool lastPipe, ForkKind forkKind) {
             auto jobEntry = JobObject::create(
                     procSize, childs, true,
                     state.emptyFDObj, state.emptyFDObj);
+            state.jobTable.attach(jobEntry);
             ::dup2(pipefds[procIndex - 1][READ_PIPE], STDIN_FILENO);
             closeAllPipe(pipeSize, pipefds);
             state.stack.push(DSValue::create<PipelineObject>(state, std::move(jobEntry)));
