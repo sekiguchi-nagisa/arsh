@@ -99,10 +99,10 @@ WaitResult waitForProc(pid_t pid, WaitOp op) {
     int status = 0;
     errno = 0;
     int ret = waitpid(pid, &status, option);
+    int errNum = errno;
 
     // dump waitpid status
     LOG_EXPR(DUMP_WAIT, [&]{
-        int errNum = errno;
         std::string str;
         str = "waitpid(";
         str += std::to_string(pid);
@@ -140,6 +140,7 @@ WaitResult waitForProc(pid_t pid, WaitOp op) {
         return str;
     });
 
+    errno = errNum; //NOLINT
     return WaitResult {
         .pid = ret,
         .status = status,
