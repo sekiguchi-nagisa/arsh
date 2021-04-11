@@ -385,17 +385,21 @@ void JobTable::waitForAny() {
         }
 
         if(ProcTable::Entry *entry; (entry = this->procTable.findProc(ret.pid))) {
+            assert(!entry->isDeleted());
             auto iter = this->findIter(entry->jobId());
             assert(iter != this->jobs.end());
             auto &job = *iter;
             bool showSignal = entry->procOffset() == job->getProcSize() - 1;
-            job->procs[entry->procOffset()].updateState(ret, showSignal);
+            auto &proc = job->procs[entry->procOffset()];
+            proc.updateState(ret, showSignal);
+            if(proc.state() == Proc::State::TERMINATED) {
+                entry->markDelete();
+                deletedProc++;
+            }
             job->updateState();
             if(!job->available()) {
                 this->removeByIter(iter);
             }
-            entry->markDelete();
-            deletedProc++;
         }
     }
 
