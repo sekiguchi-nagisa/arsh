@@ -359,7 +359,7 @@ bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs
             state.jobTable.attach(entry);
         }
         state.tryToBeForeground();
-        state.jobTable.updateStatus();
+        state.jobTable.waitForAny();
         state.setExitStatus(status);
         if(errNum != 0) {
             raiseSystemError(state, errNum, "wait failed");
@@ -663,7 +663,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
         }
         int ret = state.tryToBeForeground();
         LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
-        state.jobTable.updateStatus();
+        state.jobTable.waitForAny();
         if(errnum != 0) {
             errNum2 = errnum;
         }

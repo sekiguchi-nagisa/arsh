@@ -1757,7 +1757,7 @@ YDSH_METHOD job_wait(RuntimeContext &ctx) {
     auto job = toObjPtr<JobObject>(LOCAL(0));
     int s = ctx.jobTable.waitAndDetach(job, ctx.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING);
     int errNum = errno;
-    ctx.jobTable.updateStatus();
+    ctx.jobTable.waitForAny();
     if(errNum != 0) {
         raiseSystemError(ctx, errNum, "wait failed");
         RET_ERROR;

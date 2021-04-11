@@ -1512,7 +1512,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
         if(errNum != 0) {
             PERROR(argvObj, "wait failed");
         }
-        state.jobTable.updateStatus();
+        state.jobTable.waitForAny();
         return s;
     }
 

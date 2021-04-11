@@ -106,7 +106,7 @@ public:
         if(this->state() != TERMINATED) {
             WaitResult ret = waitForProc(this->pid(), op);
             if(ret.pid > 0) {
-                this->updateStatus(ret, showSignal);
+                this->updateState(ret, showSignal);
             } else if(ret.pid < 0) {
                 return -1;
             }
@@ -114,7 +114,7 @@ public:
         return this->exitStatus_;
     }
 
-    bool updateStatus(WaitResult ret, bool showSignal);
+    bool updateState(WaitResult ret, bool showSignal);
 
     /**
      * send signal to proc
@@ -277,6 +277,20 @@ public:
      */
     void send(int sigNum) const;
 
+    void updateState() {
+        if(this->available()) {
+            unsigned int c = 0;
+            for(unsigned int i = 0; i < this->getProcSize(); i++) {
+                if(this->getProcs()[i].state() == Proc::State::TERMINATED) {
+                    c++;
+                }
+            }
+            if(c == this->getProcSize()) {
+                this->state = State::TERMINATED;
+            }
+        }
+    }
+
     /**
      * wait for termination.
      * after termination, `state' will be TERMINATED.
@@ -296,17 +310,36 @@ using Job = ObjPtr<JobObject>;
 // for pid to job mapping
 class ProcTable {
 public:
-    struct Entry {
-        pid_t pid;
-        unsigned short jobId;
-        unsigned short procOffset;
+    class Entry {
+    private:
+        pid_t pid_;
+        unsigned short jobId_;
+        unsigned short procOffset_;
+
+    public:
+        Entry() = default;
+
+        Entry(pid_t pid, unsigned short jobId, unsigned short offset) :
+                pid_(pid), jobId_(jobId), procOffset_(offset) {}
+
+        pid_t pid() const {
+            return this->pid_;
+        }
+
+        unsigned short jobId() const {
+            return this->jobId_;
+        }
+
+        unsigned short procOffset() const {
+            return this->procOffset_;
+        }
 
         void markDelete() {
-            this->jobId = 0;
+            this->jobId_ = 0;
         }
 
         bool isDeleted() const {
-            return this->jobId == 0;
+            return this->jobId() == 0;
         }
     };
 
@@ -326,6 +359,8 @@ public:
 
     const Entry *addProc(pid_t pid, unsigned short jobId, unsigned short offset);
 
+    Entry *findProc(pid_t pid);
+
     /**
      * call markDelete() in specified entry by pid.
      * actual delete operation is not performed untill call batchedRemove()
@@ -333,7 +368,13 @@ public:
      * @return
      * if found corresponding entry, return true
      */
-    bool deleteProc(pid_t pid);
+    bool deleteProc(pid_t pid) {
+        auto *e = this->findProc(pid);
+        if(e) {
+            e->markDelete();
+        }
+        return e != nullptr;
+    }
 
     void clear() {
         this->entries.clear();
@@ -409,7 +450,7 @@ public:
      * when a job is terminated, detach job.
      * should call after wait termination of foreground job.
      */
-    void updateStatus();
+    void waitForAny();
 
     const Job &getLatestJob() const {
         return this->latest;

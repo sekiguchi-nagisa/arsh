@@ -41,7 +41,7 @@ PipelineObject::~PipelineObject() {
         // job is still running, attach to JobTable
         this->state.jobTable.attach(this->entry);
     }
-    this->state.jobTable.updateStatus();
+    this->state.jobTable.waitForAny();
 }
 
 static bool isPassingFD(const std::pair<RedirOP, DSValue> &pair) {

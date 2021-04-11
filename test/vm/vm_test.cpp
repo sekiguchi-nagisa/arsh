@@ -378,19 +378,19 @@ TEST_F(JobTableTest, attach) {
 TEST(ProcTableTest, base) {
     ProcTable table;
     auto *e = table.addProc(12, 1, 1);
-    ASSERT_EQ(12, e->pid);
-    ASSERT_EQ(1, e->jobId);
-    ASSERT_EQ(1, e->procOffset);
+    ASSERT_EQ(12, e->pid());
+    ASSERT_EQ(1, e->jobId());
+    ASSERT_EQ(1, e->procOffset());
 
     e = table.addProc(34, 1, 2);
-    ASSERT_EQ(34, e->pid);
-    ASSERT_EQ(1, e->jobId);
-    ASSERT_EQ(2, e->procOffset);
+    ASSERT_EQ(34, e->pid());
+    ASSERT_EQ(1, e->jobId());
+    ASSERT_EQ(2, e->procOffset());
 
     e = table.addProc(2, 1, 3);
-    ASSERT_EQ(2, e->pid);
-    ASSERT_EQ(1, e->jobId);
-    ASSERT_EQ(3, e->procOffset);
+    ASSERT_EQ(2, e->pid());
+    ASSERT_EQ(1, e->jobId());
+    ASSERT_EQ(3, e->procOffset());
 
     e = table.addProc(-1, 1, 3);
     ASSERT_EQ(nullptr, e);
