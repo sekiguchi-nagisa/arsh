@@ -41,23 +41,30 @@ inline int beForeground(pid_t pid) {
     return r;
 }
 
+#define EACH_WAIT_OP(OP) \
+    OP(BLOCKING) \
+    OP(BLOCK_UNTRACED) \
+    OP(NONBLOCKING)
+
+enum class WaitOp : unsigned char {
+#define GEN_ENUM(OP) OP,
+    EACH_WAIT_OP(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+struct WaitResult {
+    pid_t pid;
+    int status;
+};
+
+WaitResult waitForProc(pid_t pid, WaitOp op);
+
 class Proc {
 public:
     enum State : unsigned char {
         RUNNING,
         STOPPED,    // stopped by SIGSTOP or SIGTSTP
         TERMINATED, // already called waitpid
-    };
-
-#define EACH_WAIT_OP(OP) \
-    OP(BLOCKING) \
-    OP(BLOCK_UNTRACED) \
-    OP(NONBLOCKING)
-
-    enum WaitOp : unsigned char {
-#define GEN_ENUM(OP) OP,
-        EACH_WAIT_OP(GEN_ENUM)
-#undef GEN_ENUM
     };
 
 private:
@@ -95,7 +102,19 @@ public:
      * if waitpid return 0, set 'exitStatus_' and return it.
      * if waitpid return -1, return -1.
      */
-    int wait(WaitOp op, bool showSignal = true);
+    int wait(WaitOp op, bool showSignal = true) {
+        if(this->state() != TERMINATED) {
+            WaitResult ret = waitForProc(this->pid(), op);
+            if(ret.pid > 0) {
+                this->updateStatus(ret, showSignal);
+            } else if(ret.pid < 0) {
+                return -1;
+            }
+        }
+        return this->exitStatus_;
+    }
+
+    bool updateStatus(WaitResult ret, bool showSignal);
 
     /**
      * send signal to proc
@@ -269,7 +288,7 @@ public:
      * if cannot terminate (has no-ownership or has error), return -1 and set errno
      * if procTable is not null, after wait, remove terminated procs from procTable
      */
-    int wait(Proc::WaitOp op, ProcTable *procTable = nullptr);
+    int wait(WaitOp op, ProcTable *procTable = nullptr);
 };
 
 using Job = ObjPtr<JobObject>;
@@ -366,7 +385,7 @@ public:
      * exit status of last process.
      * after waiting termination, remove entry.
      */
-    int waitAndDetach(Job &job, Proc::WaitOp op) {
+    int waitAndDetach(Job &job, WaitOp op) {
         int ret = job->wait(op, &this->procTable);
         if(!job->available()) {
             this->detach(job, true);

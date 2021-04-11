@@ -29,7 +29,7 @@ PipelineObject::~PipelineObject() {
      * in some situation, raise SIGPIPE in child processes.
      */
     bool restored = this->entry->restoreStdin();
-    auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+    auto waitOp = state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp ::BLOCKING;
     this->entry->wait(waitOp);
     this->state.updatePipeStatus(this->entry->getProcSize(), this->entry->getProcs(), true);
 

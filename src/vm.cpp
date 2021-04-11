@@ -351,7 +351,7 @@ bool VM::attachAsyncJob(DSState &state, unsigned int procSize, const Proc *procs
                 procSize, procs, false,
                 state.emptyFDObj, state.emptyFDObj);
         // job termination
-        auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+        auto waitOp = state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
         int status = entry->wait(waitOp);
         int errNum = errno;
         state.updatePipeStatus(entry->getProcSize(), entry->getProcs(), false);
@@ -422,7 +422,7 @@ bool VM::forkAndEval(DSState &state) {
             tryToClose(pipeset.in[WRITE_PIPE]);
             const bool isStr = forkKind == ForkKind::STR;
             obj = isStr ? readAsStr(pipeset.out[READ_PIPE]) : readAsStrArray(state, pipeset.out[READ_PIPE]);
-            auto waitOp = state.isRootShell() && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+            auto waitOp = state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
             int ret = proc.wait(waitOp);   // wait exit
             int errNum = errno;
             tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
@@ -652,7 +652,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
 
         // wait process or job termination
         int status;
-        auto waitOp = rootShell && state.isJobControl() ? Proc::BLOCK_UNTRACED : Proc::BLOCKING;
+        auto waitOp = rootShell && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
         status = proc.wait(waitOp);
         int errNum2 = errno;
         if(proc.state() != Proc::TERMINATED) {
