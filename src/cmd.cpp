@@ -1452,6 +1452,7 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
         }
     }
 
+    state.jobTable.waitForAny();    // update killed process state
     if(listing && count > 0) {
         return 1;
     }
@@ -1528,6 +1529,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
             ret = 1;
         }
     }
+    state.jobTable.waitForAny();
     return ret;
 }
 

@@ -1043,6 +1043,7 @@ YDSH_METHOD signal_kill(RuntimeContext &ctx) {
     int sigNum = LOCAL(0).asSig();
     int64_t pid = LOCAL(1).asInt();
     if(checkPidLimit(pid) && kill(static_cast<pid_t>(pid), sigNum) == 0) {
+        ctx.jobTable.waitForAny();
         RET_VOID;
     }
     int num = errno;
@@ -1770,6 +1771,7 @@ YDSH_METHOD job_raise(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_raise);
     auto &obj = typeAs<JobObject>(LOCAL(0));
     obj.send(LOCAL(1).asSig());
+    ctx.jobTable.waitForAny();  // update state of killed processes
     RET_VOID;
 }
 
