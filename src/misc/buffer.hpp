@@ -46,7 +46,7 @@ public:
 private:
     static_assert(std::is_unsigned<SIZE_T>::value, "need unsigned type");
 
-    static_assert(is_pod_v<T>, "forbidden type");
+    static_assert(std::is_standard_layout_v<T>, "forbidden type");
 
     size_type cap_;
     size_type size_;

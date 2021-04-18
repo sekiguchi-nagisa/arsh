@@ -65,9 +65,6 @@ constexpr auto is_detected_v = __detail::detector<void, OP, Arg...>::value;
 template <template<typename ...> class OP, typename ...Arg>
 using detected_t = typename __detail::detector<void, OP, Arg...>::type;
 
-template <typename T>
-constexpr auto is_pod_v = std::is_standard_layout_v<T> && std::is_trivial_v<T>;
-
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif //MISC_LIB_DETECT_HPP

@@ -144,7 +144,7 @@ class JobTable;
 
 class JobObject : public ObjectWithRtti<ObjectKind::Job> {
 public:
-    static_assert(is_pod_v<Proc>, "failed");
+    static_assert(std::is_standard_layout_v<Proc>, "failed");
 
     enum class State : unsigned char {
         RUNNING,
