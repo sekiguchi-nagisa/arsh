@@ -398,6 +398,10 @@ public:
         this->deletedCount = 0;
     }
 
+    unsigned int getDeletedCount() const {
+        return this->deletedCount;
+    }
+
     /**
      * remove all deleted PidEntry
      */

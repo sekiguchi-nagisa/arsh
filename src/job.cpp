@@ -362,13 +362,18 @@ void JobTable::waitForAny() {
 }
 
 int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op, bool ignoreError) {
+    auto cleanup = finally([&]{
+        int e = errno;
+        this->procTable.batchedRemove();
+        this->removeTerminatedJobs();
+        errno = e;
+    });
+
     errno = 0;
     if(!targets) {
         for(auto &job : this->jobs) {
             job->wait(op, &this->procTable);
         }
-        this->procTable.batchedRemove();
-        this->removeTerminatedJobs();
         return 0;
     }
 
@@ -390,14 +395,13 @@ int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op,
             Job &job = get<Job>(targets[i]);
             lastStatus = job->wait(op, &this->procTable);
             if(lastStatus < 0) {
+                if(ignoreError) {
+                    continue;
+                }
                 return -1;
             }
         }
     }
-    int errNum = errno;
-    this->procTable.batchedRemove();
-    this->removeTerminatedJobs();
-    errno = errNum;
     return lastStatus;
 }
 
