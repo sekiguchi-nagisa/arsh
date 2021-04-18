@@ -157,18 +157,18 @@ WaitResult waitForProc(pid_t pid, WaitOp op) {
 // ##################
 
 bool Proc::updateState(WaitResult ret, bool showSignal) {
-    if(this->state() == State::TERMINATED || ret.pid != this->pid()) {
+    if(this->is(State::TERMINATED) || ret.pid != this->pid()) {
         return false;
     }
 
     int status = ret.status;
     if(WIFEXITED(status)) {
-        this->state_ = TERMINATED;
+        this->state_ = State::TERMINATED;
         this->exitStatus_ = WEXITSTATUS(status);
     } else if(WIFSIGNALED(status)) {
         int sigNum = WTERMSIG(status);
         bool hasCoreDump = false;
-        this->state_ = TERMINATED;
+        this->state_ = State::TERMINATED;
         this->exitStatus_ = sigNum + 128;
 
 #ifdef WCOREDUMP
@@ -181,13 +181,13 @@ bool Proc::updateState(WaitResult ret, bool showSignal) {
             fflush(stderr);
         }
     } else if(WIFSTOPPED(status)) {
-        this->state_ = STOPPED;
+        this->state_ = State::STOPPED;
         this->exitStatus_ = WSTOPSIG(status) + 128;
     } else if(WIFCONTINUED(status)) {
-        this->state_ = RUNNING;
+        this->state_ = State::RUNNING;
     }
 
-    if(this->state_ == TERMINATED) {
+    if(this->state_ == State::TERMINATED) {
         this->pid_ = -1;
     }
     return true;
@@ -246,7 +246,7 @@ int JobObject::wait(WaitOp op, ProcTable *procTable) {
             if(lastStatus < 0) {
                 return lastStatus;
             }
-            if(proc.state() == Proc::TERMINATED && procTable) {
+            if(proc.is(Proc::State::TERMINATED) && procTable) {
                 procTable->deleteProc(pid);
             }
         }
@@ -480,7 +480,7 @@ const Proc *JobTable::updateProcState(WaitResult ret) {
         bool showSignal = entry->procOffset() == job->getProcSize() - 1;
         auto &proc = job->procs[entry->procOffset()];
         proc.updateState(ret, showSignal);
-        if(proc.state() == Proc::State::TERMINATED) {
+        if(proc.is(Proc::State::TERMINATED)) {
             this->procTable.deleteProc(*entry);
         }
         job->updateState();

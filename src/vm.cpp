@@ -426,7 +426,7 @@ bool VM::forkAndEval(DSState &state) {
             int ret = proc.wait(waitOp);   // wait exit
             int errNum = errno;
             tryToClose(pipeset.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
-            if(proc.state() != Proc::TERMINATED) {
+            if(!proc.is(Proc::State::TERMINATED)) {
                 state.jobTable.attach(JobObject::create(
                         proc,
                         state.emptyFDObj,
@@ -655,7 +655,7 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv, DSV
         auto waitOp = rootShell && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
         status = proc.wait(waitOp);
         int errNum2 = errno;
-        if(proc.state() != Proc::TERMINATED) {
+        if(!proc.is(Proc::State::TERMINATED)) {
             state.jobTable.attach(JobObject::create(
                     proc,
                     state.emptyFDObj,

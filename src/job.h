@@ -61,7 +61,7 @@ WaitResult waitForProc(pid_t pid, WaitOp op);
 
 class Proc {
 public:
-    enum State : unsigned char {
+    enum class State : unsigned char {
         RUNNING,
         STOPPED,    // stopped by SIGSTOP or SIGTSTP
         TERMINATED, // already called waitpid
@@ -76,10 +76,10 @@ private:
      */
     unsigned char exitStatus_;
 
-    explicit Proc(pid_t pid) : pid_(pid), state_(RUNNING), exitStatus_(0) {}
+    explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
 
 public:
-    Proc() = default;
+    Proc() : pid_(-1), state_(State::TERMINATED), exitStatus_(0) {}
 
     pid_t pid() const {
         return this->pid_;
@@ -87,6 +87,10 @@ public:
 
     State state() const {
         return this->state_;
+    }
+
+    bool is(State s) const {
+        return this->state() == s;
     }
 
     int exitStatus() const {
@@ -103,8 +107,8 @@ public:
      * if waitpid return -1, return -1.
      */
     int wait(WaitOp op, bool showSignal = true) {
-        if(this->state() != TERMINATED) {
-            if(this->state() == STOPPED) {
+        if(!this->is(State::TERMINATED)) {
+            if(this->is(State::STOPPED)) {
                 op = WaitOp::NONBLOCKING;
             }
             WaitResult ret = waitForProc(this->pid(), op);
@@ -284,7 +288,7 @@ public:
         if(this->available()) {
             unsigned int c = 0;
             for(unsigned int i = 0; i < this->getProcSize(); i++) {
-                if(this->getProcs()[i].state() == Proc::State::TERMINATED) {
+                if(this->getProcs()[i].is(Proc::State::TERMINATED)) {
                     c++;
                 }
             }

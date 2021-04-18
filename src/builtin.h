@@ -1819,7 +1819,7 @@ YDSH_METHOD job_status(RuntimeContext &ctx) {
 
     if(index > -1 && static_cast<size_t>(index) < job.getProcSize()) {
         auto &proc = job.getProcs()[index];
-        if(proc.state() != Proc::RUNNING) {
+        if(!proc.is(Proc::State::RUNNING)) {
             RET(DSValue::createInt(proc.exitStatus()));
         } else {
             RET(DSValue::createInvalid());
