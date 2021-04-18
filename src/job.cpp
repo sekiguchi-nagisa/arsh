@@ -344,39 +344,6 @@ void JobTable::attach(Job job, bool disowned) {
     }
 }
 
-void JobTable::detach(Job &job, bool remove) {
-    if(remove) {
-        auto iter = this->findIter(job->getJobID());
-        this->removeByIter(iter);
-    } else {
-        job->disown = true;
-    }
-}
-
-JobTable::EntryIter JobTable::removeByIter(ConstEntryIter iter) {
-    if(iter != this->jobs.end()) {
-        Job job = *iter;
-        assert(job->getJobID() > 0);
-        job->jobID = 0;
-        job->disown = true;
-        auto next = this->jobs.erase(iter);
-
-        // change latest entry
-        if(this->latest == job) {
-            this->latest = nullptr;
-            for(auto i = this->jobs.rbegin(); i != this->jobs.rend(); ++i) {
-                auto &j = *i;
-                if(!j->isDisowned()) {
-                    this->latest = j;
-                    break;
-                }
-            }
-        }
-        return next;
-    }
-    return this->jobs.end();
-}
-
 void JobTable::waitForAny() {
     SignalGuard guard;
     DSState::clearPendingSignal(SIGCHLD);
@@ -511,7 +478,7 @@ void JobTable::removeTerminatedJobs() {
     for(; this->jobs.size() != removedIndex; this->jobs.pop_back()) {
         auto &job = this->jobs.back();
         job->jobID = 0;
-        job->disown = true;
+        job->disowned();
     }
 
     // change latest entry

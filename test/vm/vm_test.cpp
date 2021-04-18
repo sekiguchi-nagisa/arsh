@@ -300,13 +300,13 @@ TEST_F(JobTableTest, attach) {
     ASSERT_EQ(5u, job5->getJobID());
     ASSERT_EQ(job5, jobTable.getLatestJob());
 
-    jobTable.detach(job2, true);
+    jobTable.waitForJob(job2, WaitOp::NONBLOCKING);
     ASSERT_EQ(job5, jobTable.getLatestJob());
 
-    jobTable.detach(job3, false);
+    job3->disowned();
     ASSERT_EQ(job5, jobTable.getLatestJob());
 
-    jobTable.detach(job5, true);
+    jobTable.waitForJob(job5, WaitOp::NONBLOCKING);
     ASSERT_EQ(job4, jobTable.getLatestJob());
 
     // job entry layout

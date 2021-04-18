@@ -233,6 +233,10 @@ public:
         return this->disown;
     }
 
+    void disowned() {
+        this->disown = true;
+    }
+
     const Proc *getProcs() const {
         return this->procs;
     }
@@ -425,16 +429,6 @@ public:
     void attach(Job job, bool disowned = false);
 
     /**
-     * detach job from JopTable
-     * @param job
-     * if terminated or uncontrolled, do nothing
-     * @param remove
-     * if true, completely remove from job table.
-     * if false, job is disowned, but still exists in job table
-     */
-    void detach(Job &job, bool remove = false);
-
-    /**
      * if has ownership, wait termination.
      * @param job
      * @param op
@@ -450,7 +444,7 @@ public:
     void detachAll() {
         for(auto &e : this->jobs) {
             e->jobID = 0;
-            e->disown = true;
+            e->disowned();
             e->state = JobObject::State::UNCONTROLLED;
         }
         this->jobs.clear();
@@ -542,14 +536,6 @@ private:
      * if not found, return end
      */
     ConstEntryIter findIter(unsigned int jobId) const;
-
-    /**
-     * remove entry specified by ietrator
-     * @param iter
-     * @return
-     * iterator of next entry.
-     */
-    EntryIter removeByIter(ConstEntryIter iter);
 
     /**
      *
