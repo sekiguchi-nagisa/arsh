@@ -290,8 +290,6 @@ public:
             }
             if(c == this->getProcSize()) {
                 this->state = State::TERMINATED;
-                this->disown = true;
-                this->jobID = 0;
             }
         }
     }

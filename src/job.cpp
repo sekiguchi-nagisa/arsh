@@ -507,7 +507,12 @@ void JobTable::removeTerminatedJobs() {
             removedIndex++;
         }
     }
-    this->jobs.resize(removedIndex);
+    assert(removedIndex < this->jobs.size());
+    for(; this->jobs.size() != removedIndex; this->jobs.pop_back()) {
+        auto &job = this->jobs.back();
+        job->jobID = 0;
+        job->disown = true;
+    }
 
     // change latest entry
     if(this->latest && !this->latest->available()) {
