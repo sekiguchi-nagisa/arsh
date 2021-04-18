@@ -1508,7 +1508,7 @@ static int builtin_fg_bg(DSState &state, ArrayObject &argvObj) {
     }
 
     if(fg) {
-        int s = state.jobTable.waitAndDetach(job, WaitOp::BLOCK_UNTRACED);    //FIXME: check root shell
+        int s = state.jobTable.waitForJob(job, WaitOp::BLOCK_UNTRACED);    //FIXME: check root shell
         int errNum = errno;
         state.tryToBeForeground();
         if(errNum != 0) {

@@ -1748,7 +1748,7 @@ YDSH_METHOD job_get(RuntimeContext &ctx) {
 YDSH_METHOD job_poll(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_poll);
     auto job = toObjPtr<JobObject>(LOCAL(0));
-    ctx.jobTable.waitAndDetach(job, WaitOp::NONBLOCKING);
+    ctx.jobTable.waitForJob(job, WaitOp::NONBLOCKING);
     RET_BOOL(job->available());
 }
 
@@ -1756,7 +1756,7 @@ YDSH_METHOD job_poll(RuntimeContext &ctx) {
 YDSH_METHOD job_wait(RuntimeContext &ctx) {
     SUPPRESS_WARNING(job_wait);
     auto job = toObjPtr<JobObject>(LOCAL(0));
-    int s = ctx.jobTable.waitAndDetach(job, ctx.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING);
+    int s = ctx.jobTable.waitForJob(job, ctx.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING);
     int errNum = errno;
     ctx.jobTable.waitForAny();
     if(errNum != 0) {

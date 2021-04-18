@@ -30,7 +30,7 @@ PipelineObject::~PipelineObject() {
      */
     bool restored = this->entry->restoreStdin();
     auto waitOp = state.isRootShell() && state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp ::BLOCKING;
-    this->state.jobTable.waitAndDetach(this->entry, waitOp);
+    this->state.jobTable.waitForJob(this->entry, waitOp);
     this->state.updatePipeStatus(this->entry->getProcSize(), this->entry->getProcs(), true);
 
     if(restored) {

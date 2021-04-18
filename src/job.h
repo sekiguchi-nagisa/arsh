@@ -24,7 +24,7 @@
 #include <type_traits>
 
 #include "misc/resource.hpp"
-#include "misc/detect.hpp"
+#include "misc/result.hpp"
 #include "object.h"
 
 struct DSState;
@@ -290,6 +290,8 @@ public:
             }
             if(c == this->getProcSize()) {
                 this->state = State::TERMINATED;
+                this->disown = true;
+                this->jobID = 0;
             }
         }
     }
@@ -315,6 +317,8 @@ class ProcTable {
 public:
     class Entry {
     private:
+        friend class ProcTable;
+
         pid_t pid_;
         unsigned short jobId_;
         unsigned short procOffset_;
@@ -337,10 +341,6 @@ public:
             return this->procOffset_;
         }
 
-        void markDelete() {
-            this->jobId_ = 0;
-        }
-
         bool isDeleted() const {
             return this->jobId() == 0;
         }
@@ -348,6 +348,7 @@ public:
 
 private:
     FlexBuffer<Entry> entries;
+    unsigned int deletedCount{0};
 
 public:
     const FlexBuffer<Entry> &getEntries() const {
@@ -374,13 +375,21 @@ public:
     bool deleteProc(pid_t pid) {
         auto *e = this->findProc(pid);
         if(e) {
-            e->markDelete();
+            this->deleteProc(*e);
         }
         return e != nullptr;
     }
 
+    void deleteProc(ProcTable::Entry &e) {
+        if(!e.isDeleted()) {
+            e.jobId_ = 0;
+            this->deletedCount++;
+        }
+    }
+
     void clear() {
         this->entries.clear();
+        this->deletedCount = 0;
     }
 
     /**
@@ -388,6 +397,8 @@ public:
      */
     void batchedRemove();
 };
+
+using ProcOrJob = Union<pid_t, Job>;
 
 class JobTable {
 private:
@@ -429,14 +440,9 @@ public:
      * exit status of last process.
      * after waiting termination, remove entry.
      */
-    int waitAndDetach(Job &job, WaitOp op) {
-        int ret = job->wait(op, &this->procTable);
-        int old = errno;
-        if(!job->available()) {
-            this->detach(job, true);
-        }
-        errno = old;
-        return ret;
+    int waitForJob(Job &job, WaitOp op) {
+        ProcOrJob target[1] = {job};
+        return this->waitForProcOrJob(1, target, op, false);
     }
 
     void detachAll() {
@@ -456,6 +462,18 @@ public:
      * should call after wait termination of foreground job.
      */
     void waitForAny();
+
+    /**
+     *
+     * @param size
+     * @param targets
+     * @param op
+     * @param ignoreError
+     * @return
+     * return exit status of last targers.
+     * if not ignoreError false and has error, return -1
+     */
+    int waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op, bool ignoreError);
 
     const Job &getLatestJob() const {
         return this->latest;
@@ -530,6 +548,16 @@ private:
      * iterator of next entry.
      */
     EntryIter removeByIter(ConstEntryIter iter);
+
+    /**
+     *
+     * @param ret
+     * @return
+     * return corresponding proc
+     */
+    const Proc *updateProcState(WaitResult ret);
+
+    void removeTerminatedJobs();
 };
 
 } // namespace ydsh
