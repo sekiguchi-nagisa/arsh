@@ -1354,28 +1354,47 @@ static bool printNumOrName(StringRef str) {
     return true;
 }
 
-static bool killProcOrJob(DSState &state, ArrayObject &argvObj, StringRef arg, int sigNum) {
+static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj,
+                                StringRef arg, bool allowNegative) {
     bool isJob = arg.startsWith("%");
     auto pair = toInt32(isJob ? arg.substr(1) : arg);
     if(!pair.second) {
         ERROR(argvObj, "%s: arguments must be process or job IDs", toPrintable(arg).c_str());
-        return false;
+        return ProcOrJob();
     }
+    int id = pair.first;
 
     if(isJob) {
-        if(pair.first > 0) {
-            auto job = state.jobTable.find(static_cast<unsigned int>(pair.first));
+        if(id > 0) {
+            auto job = jobTable.find(static_cast<unsigned int>(id));
             if(job) {
-                job->send(sigNum);
-                return true;
+                return ProcOrJob(std::move(job));
             }
         }
         ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
+        return ProcOrJob();
+    } else {
+        if(!allowNegative && id < 0) {
+            ERROR(argvObj, "%s: no such process", toPrintable(arg).c_str());
+            return ProcOrJob();
+        }
+        return ProcOrJob(pair.first);
+    }
+}
+
+static bool killProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, StringRef arg, int sigNum) {
+    auto target = parseProcOrJob(jobTable, argvObj, arg, true);
+    if(!target.hasValue()) {
         return false;
     }
-
-    if(kill(pair.first, sigNum) < 0) {
-        PERROR(argvObj, "%s", toPrintable(arg).c_str());
+    if(is<pid_t>(target)) {
+        if(kill(get<pid_t>(target), sigNum) < 0) {
+            PERROR(argvObj, "%s", toPrintable(arg).c_str());
+            return false;
+        }
+    } else if(is<Job>(target)) {
+        get<Job>(target)->send(sigNum);
+    } else {
         return false;
     }
     return true;
@@ -1446,7 +1465,7 @@ static int builtin_kill(DSState &state, ArrayObject &argvObj) {
                 ERROR(argvObj, "%s: invalid signal specification", toPrintable(arg).c_str());
             }
         } else {
-            if(killProcOrJob(state, argvObj, arg, sigNum)) {
+            if(killProcOrJob(state.jobTable, argvObj, arg, sigNum)) {
                 count++;
             }
         }
