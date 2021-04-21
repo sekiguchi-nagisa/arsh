@@ -57,6 +57,7 @@ static int builtin_true(DSState &state, ArrayObject &argvObj);
 static int builtin_ulimit(DSState &state, ArrayObject &argvObj);
 static int builtin_umask(DSState &state, ArrayObject &argvObj);
 static int builtin_unsetenv(DSState &state, ArrayObject &argvObj);
+static int builtin_wait(DSState &state, ArrayObject &argvObj);
 
 static constexpr struct {
     const char *commandName;
@@ -280,6 +281,11 @@ static constexpr struct {
                 "        -S    print current mask in a symbolic form"},
         {"unsetenv", builtin_unsetenv, "[name ...]",
                 "    Unset environmental variables."},
+        {"wait", builtin_wait, "[id ...]",
+                "    Wait for termination of processes or jobs.\n"
+                "    If ID is not specified, wait for termination of all managed jobs.\n"
+                "    Return the exit status of last ID. If ID is not found or not managed,\n"
+                "    the exit status is 127."},
 };
 
 unsigned int getBuiltinCommandSize() {
@@ -2273,6 +2279,27 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
         }
     }
     return 0;
+}
+
+static int builtin_wait(DSState &state, ArrayObject &argvObj) {
+    const WaitOp op = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+    unsigned int size = argvObj.size() - 1;
+    auto *targets = size == 0 ? nullptr : new ProcOrJob[size];
+    auto cleanup = finally([&]{
+        delete[] targets;
+    });
+
+    for(unsigned int i = 0; i < size; i++) {
+        auto ref = argvObj.getValues()[i + 1].asStrRef();
+        auto target = parseProcOrJob(state.jobTable, argvObj, ref, false);
+        if(!target.hasValue()) {
+            return 127; //FIMXE:
+        }
+        targets[i] = std::move(target);
+    }
+    int s = state.jobTable.waitForProcOrJob(size, targets, op, false);
+    state.jobTable.waitForAny();
+    return s;
 }
 
 } // namespace ydsh
