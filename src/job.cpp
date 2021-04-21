@@ -361,7 +361,7 @@ void JobTable::waitForAny() {
     this->removeTerminatedJobs();
 }
 
-int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op, bool ignoreError) {
+int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op) {
     auto cleanup = finally([&]{
         int e = errno;
         this->procTable.batchedRemove();
@@ -383,9 +383,6 @@ int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op,
             pid_t pid = get<pid_t>(targets[i]);
             WaitResult ret = waitForProc(pid, op);
             if(ret.pid == -1) {
-                if(ignoreError) {
-                    continue;
-                }
                 return -1;
             }
             if(const Proc *p; (p = this->updateProcState(ret))) {
@@ -395,9 +392,6 @@ int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op,
             Job &job = get<Job>(targets[i]);
             lastStatus = job->wait(op, &this->procTable);
             if(lastStatus < 0) {
-                if(ignoreError) {
-                    continue;
-                }
                 return -1;
             }
         }

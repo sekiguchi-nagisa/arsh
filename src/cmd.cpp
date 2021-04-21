@@ -2297,7 +2297,7 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
         }
         targets[i] = std::move(target);
     }
-    int s = state.jobTable.waitForProcOrJob(size, targets, op, false);
+    int s = state.jobTable.waitForProcOrJob(size, targets, op);
     state.jobTable.waitForAny();
     return s;
 }

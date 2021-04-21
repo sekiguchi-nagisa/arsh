@@ -442,7 +442,7 @@ public:
      */
     int waitForJob(Job &job, WaitOp op) {
         ProcOrJob target[1] = {job};
-        return this->waitForProcOrJob(1, target, op, false);
+        return this->waitForProcOrJob(1, target, op);
     }
 
     void detachAll() {
@@ -468,12 +468,11 @@ public:
      * @param size
      * @param targets
      * @param op
-     * @param ignoreError
      * @return
      * return exit status of last targers.
      * if not ignoreError false and has error, return -1
      */
-    int waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op, bool ignoreError);
+    int waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op);
 
     const Job &getLatestJob() const {
         return this->latest;
