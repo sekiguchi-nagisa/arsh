@@ -268,16 +268,33 @@ struct JobTableTest : public VMTest {
                 this->state->emptyFDObj,
                 this->state->emptyFDObj);
     }
+
+    template <typename Func>
+    Job newJob(Func func) {
+        auto proc = Proc::fork(*this->state, 0, false);
+        if(proc.pid() == 0) {
+            int s = func();
+            exit(s);
+        }
+        return JobObject::create(
+                proc,
+                this->state->emptyFDObj,
+                this->state->emptyFDObj);
+    }
 };
 
 TEST_F(JobTableTest, attach) {
     JobTable jobTable;
 
     auto job1 = newJob();
-    auto job2 = newJob();
+    auto job2 = newJob([]{
+        return 12;
+    });
     auto job3 = newJob();
     auto job4 = newJob();
-    auto job5 = newJob();
+    auto job5 = newJob([]{
+        return 15;
+    });
     auto job6 = newJob();
 
     jobTable.attach(job1);
@@ -300,13 +317,15 @@ TEST_F(JobTableTest, attach) {
     ASSERT_EQ(5u, job5->getJobID());
     ASSERT_EQ(job5, jobTable.getLatestJob());
 
-    jobTable.waitForJob(job2, WaitOp::NONBLOCKING);
+    int s = jobTable.waitForJob(job2, WaitOp::BLOCK_UNTRACED);
+    ASSERT_EQ(12, s);
     ASSERT_EQ(job5, jobTable.getLatestJob());
 
     job3->disowned();
     ASSERT_EQ(job5, jobTable.getLatestJob());
 
-    jobTable.waitForJob(job5, WaitOp::NONBLOCKING);
+    s = jobTable.waitForJob(job5, WaitOp::BLOCK_UNTRACED);
+    ASSERT_EQ(15, s);
     ASSERT_EQ(job4, jobTable.getLatestJob());
 
     // job entry layout

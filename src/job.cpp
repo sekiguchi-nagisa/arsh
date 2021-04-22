@@ -300,11 +300,7 @@ ProcTable::Entry * ProcTable::findProc(pid_t pid) {
 }
 
 void ProcTable::batchedRemove() {
-    if(this->deletedCount == 0) {
-        return;
-    }
     this->deletedCount = 0;
-
     unsigned int removedIndex;
     for(removedIndex = 0; removedIndex < this->entries.size(); removedIndex++) {
         if(this->entries[removedIndex].isDeleted()) {
@@ -357,14 +353,12 @@ void JobTable::waitForAny() {
         }
         this->updateProcState(ret);
     }
-    this->procTable.batchedRemove();
     this->removeTerminatedJobs();
 }
 
 int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op) {
     auto cleanup = finally([&]{
         int e = errno;
-        this->procTable.batchedRemove();
         this->removeTerminatedJobs();
         errno = e;
     });
@@ -455,6 +449,11 @@ const Proc *JobTable::updateProcState(WaitResult ret) {
 }
 
 void JobTable::removeTerminatedJobs() {
+    if(this->procTable.getDeletedCount() == 0) {
+        return;
+    }
+    this->procTable.batchedRemove();
+
     unsigned int removedIndex;
     for(removedIndex = 0; removedIndex < this->jobs.size(); removedIndex++) {
         if(!this->jobs[removedIndex]->available()) {
