@@ -64,8 +64,12 @@ struct Output {
     std::string err;
 };
 
+class ProcBuilder;
+
 class ProcHandle {
 private:
+    friend class ProcBuilder;
+
     /**
      * after call wait, will be -1
      */
@@ -93,13 +97,13 @@ private:
      */
     int err_;
 
+    ProcHandle(pid_t pid, int pty, int in, int out, int err) noexcept :
+            pid_(pid), pty_(pty), in_(in), out_(out), err_(err) {}
+
 public:
     NON_COPYABLE(ProcHandle);
 
     ProcHandle() : ProcHandle(-1, -1, -1, -1, -1) {}
-
-    ProcHandle(pid_t pid, int pty, int in, int out, int err) noexcept :
-            pid_(pid), pty_(pty), in_(in), out_(out), err_(err) {}
 
     ProcHandle(ProcHandle &&proc) noexcept :
             pid_(proc.pid_), status_(proc.status_), pty_(proc.pty_),
