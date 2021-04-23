@@ -34,4 +34,30 @@ $ex = 0
 try { $c.sortWith($rev3); assert $false; } catch $e { $ex = $e; }
 assert $ex is StackOverflowError
 
+# stable sort
+function comp1($x : (Int, String), $y : (Int, String)) : Boolean {
+    return $x._0 < $y._0
+}
+
+function comp2($x : (Int, String), $y : (Int, String)) : Boolean {
+    return $x._1 < $y._1
+}
+
+var d = [
+    (9, 'b'),
+    (4, 'a'),
+    (9, 'c'),
+    (-1, 'a'),
+]
+$d.reverse()
+$d.sortWith($comp2)
+$d.sortWith($comp1)
+
+assert $d[0]._0 == -1
+assert $d[0]._1 == 'a'
+assert $d[1]._0 == 4
+assert $d[1]._1 == 'a'
+assert $d[2]._0 == 9
+assert $d[2]._1 == 'b'
+
 true

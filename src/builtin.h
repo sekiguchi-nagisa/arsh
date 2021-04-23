@@ -1337,7 +1337,7 @@ YDSH_METHOD array_sortWith(RuntimeContext &ctx) {
     SUPPRESS_WARNING(array_sortWith);
     auto &obj = typeAs<ArrayObject>(LOCAL(0));
     try {
-        std::sort(obj.refValues().begin(), obj.refValues().end(),
+        std::stable_sort(obj.refValues().begin(), obj.refValues().end(),
                 [&](const DSValue &x, const DSValue &y){
             auto ret = callFunction(ctx, DSValue(LOCAL(1)), makeArgs(x, y));
             if(ctx.hasError()) {

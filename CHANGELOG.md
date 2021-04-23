@@ -15,6 +15,7 @@
 - propagate intrenal error as exception from regex method
   - ``left =~ right``, ``left !~ right``
   - ``Regex#match``, ``Regex#replace``
+- use stable sort in ``Array#sortWith`` method
 
 #### Misc
 - change minimum required compiler version for gnu++17 support
