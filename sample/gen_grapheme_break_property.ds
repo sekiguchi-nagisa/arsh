@@ -1,0 +1,102 @@
+#!/usr/bin/env ydsh
+
+if $# != 1 {
+    echo "[usage] $0 [output]" 1>&2
+    exit 1
+}
+
+command -v curl &> /dev/null || { echo require curl 1>&2; exit 1; }
+
+let out = "../${$@[0]}"
+let work_dir = "grapheme-temp"
+
+test -d $work_dir || mkdir $work_dir
+
+cd $work_dir
+
+test -f GraphemeBreakProperty.txt ||
+    curl http://www.unicode.org/Public/UCD/latest/ucd/auxiliary/GraphemeBreakProperty.txt -o ./GraphemeBreakProperty.txt
+
+
+typedef Range = (
+    Int,    # begin codepoint
+    Int,    # end codepoint
+    String, # begin codepoint strting
+    String, # end codepoint string
+    String  # property string
+)
+
+function rangeComp($x : Range, $y : Range) : Boolean {
+    return $x._1 < $y._0
+}
+
+function parse($line : String) : Range {
+    var m = $/^([0-9A-F]+)(\.\.([0-9A-F]+))?[ ]+; ([a-zA-Z0-9_]+) #.+$/.match($line)
+    var begin = "0x${$m[1]!}"
+    var end = "0x${$m[3] ?? $m[1]!}"
+    var p = $m[4]!
+
+    return (
+        $begin.toInt()!,
+        $end.toInt()!,
+        $begin,
+        $end,
+        $p
+    )
+}
+
+function minimize($ranges : [Range]) : [Range] {
+    var ret : [Range]
+    for $r in $ranges {
+        if $ret.empty() {
+            $ret.add($r)
+            continue
+        }
+        var p = $ret.peek()
+        if $p._1 + 1 == $r._0 && $p._4 == $r._4 {
+            # merge range
+            $p._1 = $r._1
+            $p._3 = $r._3
+            continue
+        }
+        $ret.add($r)
+    }
+    return $ret
+}
+
+
+ {
+    echo '/* this is a auto-generated file by using sample/gen_grapheme_break_property.ds  */'
+    echo "/*"
+ } with > $out
+
+var ranges : [Range]
+
+cat ./GraphemeBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
+    if $count < 2 {
+        echo $REPLY >> $out
+        continue
+    }
+
+    if $REPLY.startsWith('#') || $REPLY.empty() {
+        continue
+    }
+    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.backtrace(); echo 1>&2 $count $REPLY; }
+    echo $REPLY
+} with > ./trimed.txt
+
+$ranges.sortWith($rangeComp)
+$ranges = $minimize($ranges)
+
+# final output
+{
+    echo "*/"
+    echo
+    echo "static const UNICODE_PROPERTY_RANGE grapheme_break_property_table[] = {"
+} with >> $out
+
+for $r in $ranges {
+    echo "    { ${$r._2}, ${$r._3}, PROPERTY(${$r._4}) },"
+} with >> $out
+
+echo -e "};" >> $out
