@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include <misc/unicode.hpp>
+#include <grapheme.h>
 
 using namespace ydsh;
 
@@ -230,6 +231,71 @@ TEST_F(UnicodeTest, utf16) {
     ASSERT_TRUE(UnicodeUtil::isSupplementaryCodePoint(code));
     ASSERT_FALSE(UnicodeUtil::isBmpCodePoint(code));
     ASSERT_EQ(0x29E3D, code);
+}
+
+TEST_F(UnicodeTest, grapheme) {
+    int code = 0;
+    this->toCodePoint("1", code);
+    auto p = GraphemeCluster::getBreakProperty(code);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::Any, p);
+
+    this->toCodePoint("灘", code);
+    p = GraphemeCluster::getBreakProperty(code);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::Any, p);
+
+    this->toCodePoint("\r", code);
+    p = GraphemeCluster::getBreakProperty(code);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::CR, p);
+
+    this->toCodePoint("\n", code);
+    p = GraphemeCluster::getBreakProperty(code);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::LF, p);
+
+    this->toCodePoint("\a", code);
+    p = GraphemeCluster::getBreakProperty(code);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::Control, p);
+
+    p = GraphemeCluster::getBreakProperty(0x200C); // ZERO WIDTH NON-JOINER
+    ASSERT_EQ(GraphemeCluster::BreakProperty::Extend, p);
+
+    p = GraphemeCluster::getBreakProperty(0x200D); // ZERO WIDTH JOINER
+    ASSERT_EQ(GraphemeCluster::BreakProperty::ZWJ, p);
+
+    p = GraphemeCluster::getBreakProperty(0x1F1E6); // REGIONAL INDICATOR SYMBOL LETTER A
+    ASSERT_EQ(GraphemeCluster::BreakProperty::Regional_Indicator, p);
+
+    p = GraphemeCluster::getBreakProperty(0x1F1FF); // REGIONAL INDICATOR SYMBOL LETTER Z
+    ASSERT_EQ(GraphemeCluster::BreakProperty::Regional_Indicator, p);
+
+    p = GraphemeCluster::getBreakProperty(0x0602);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::Prepend, p);
+
+    p = GraphemeCluster::getBreakProperty(0x102B);  // exclude
+    ASSERT_NE(GraphemeCluster::BreakProperty::SpacingMark, p);
+
+    p = GraphemeCluster::getBreakProperty(0x0E33);  // exclude
+    ASSERT_EQ(GraphemeCluster::BreakProperty::SpacingMark, p);
+
+    p = GraphemeCluster::getBreakProperty(0xA960);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::L, p);
+
+    p = GraphemeCluster::getBreakProperty(0x11A2);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::V, p);
+
+    p = GraphemeCluster::getBreakProperty(0xD7FB);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::T, p);
+
+    p = GraphemeCluster::getBreakProperty(0xAC1C);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::LV, p);
+
+    p = GraphemeCluster::getBreakProperty(0xAC03);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::LVT, p);
+
+    p = GraphemeCluster::getBreakProperty(0x1F0CC);
+    ASSERT_EQ(GraphemeCluster::BreakProperty::Extended_Pictographic, p);
+
+    p = GraphemeCluster::getBreakProperty(0x1F6B9); //Emoji/Extended_Pictographic
+    ASSERT_EQ(GraphemeCluster::BreakProperty::Extended_Pictographic, p);
 }
 
 int main(int argc, char **argv) {

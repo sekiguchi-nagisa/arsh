@@ -244,6 +244,7 @@ set(YDSH_SRC
         src/redir.cpp
         src/state.cpp
         src/complete.cpp
+        src/grapheme.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

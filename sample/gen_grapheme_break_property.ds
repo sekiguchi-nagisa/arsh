@@ -17,6 +17,9 @@ cd $work_dir
 test -f GraphemeBreakProperty.txt ||
     curl http://www.unicode.org/Public/UCD/latest/ucd/auxiliary/GraphemeBreakProperty.txt -o ./GraphemeBreakProperty.txt
 
+test -f emoji-data.txt ||
+    curl https://www.unicode.org/Public/UCD/latest/ucd/emoji/emoji-data.txt -o emoji-data.txt
+
 
 typedef Range = (
     Int,    # begin codepoint
@@ -31,7 +34,7 @@ function rangeComp($x : Range, $y : Range) : Boolean {
 }
 
 function parse($line : String) : Range {
-    var m = $/^([0-9A-F]+)(\.\.([0-9A-F]+))?[ ]+; ([a-zA-Z0-9_]+) #.+$/.match($line)
+    var m = $/^([0-9A-F]+)(\.\.([0-9A-F]+))?[ ]+;[ ]+([a-zA-Z0-9_]+)[ ]*#.+$/.match($line)
     var begin = "0x${$m[1]!}"
     var end = "0x${$m[3] ?? $m[1]!}"
     var p = $m[4]!
@@ -72,6 +75,7 @@ function minimize($ranges : [Range]) : [Range] {
 
 var ranges : [Range]
 
+# GraphemeBreakProperty.txt
 cat ./GraphemeBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
     if $count < 2 {
         echo $REPLY >> $out
@@ -83,7 +87,21 @@ cat ./GraphemeBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
     }
     try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.backtrace(); echo 1>&2 $count $REPLY; }
     echo $REPLY
-} with > ./trimed.txt
+} with > ./trimed_GraphemeBreakProperty.txt 
+
+# emoji-data.txt
+cat ./emoji-data.txt | for(var count = 0; read -f $'\n'; $count++) {
+    if $count < 2 {
+        echo $REPLY >> $out
+        continue
+    }
+
+    if $REPLY.startsWith('#') || $REPLY.empty() || $REPLY.indexOf("Extended_Pictographic") == -1 {
+        continue
+    }
+    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.backtrace(); echo 1>&2 $count $REPLY; }
+    echo $REPLY
+} with > ./trimed_emoji-data.txt
 
 $ranges.sortWith($rangeComp)
 $ranges = $minimize($ranges)
