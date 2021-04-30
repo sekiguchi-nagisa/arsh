@@ -7,7 +7,7 @@ if $# != 1 {
 
 command -v curl &> /dev/null || { echo require curl 1>&2; exit 1; }
 
-let out = "../${$@[0]}"
+let out = $1.startsWith("/") ? $1 : "../$1"
 let work_dir = "grapheme-temp"
 
 test -d $work_dir || mkdir $work_dir
