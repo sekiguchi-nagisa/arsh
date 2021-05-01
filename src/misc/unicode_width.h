@@ -1,4 +1,4 @@
-/* this is a auto-generated file by using sample/gen_unicode_width_table.ds  */
+/* this is a auto-generated file by using tools/scripts/gen_unicode_width_table.ds  */
 /*
 # EastAsianWidth-13.0.0.txt
 # Date: 2029-01-21, 18:14:00 GMT [KW, LI]

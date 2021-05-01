@@ -1,4 +1,4 @@
-/* this is a auto-generated file by using sample/gen_grapheme_break_property.ds  */
+/* this is a auto-generated file by using tools/scripts/gen_grapheme_break_property.ds  */
 /*
 # GraphemeBreakProperty-13.0.0.txt
 # Date: 2019-10-21, 14:30:35 GMT
