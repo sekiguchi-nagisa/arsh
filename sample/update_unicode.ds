@@ -1,7 +1,0 @@
-#!/usr/bin/env ydsh
-
-echo try update $SCRIPT_DIR/../src/misc/unicode_width.h
-eval $YDSH_BIN $SCRIPT_DIR/gen_unicode_width_table.ds $SCRIPT_DIR/../src/misc/unicode_width.h
-
-echo try update $SCRIPT_DIR/../src/grapheme_break_property.h
-eval $YDSH_BIN $SCRIPT_DIR/gen_grapheme_break_property.ds $SCRIPT_DIR/../src/grapheme_break_property.h

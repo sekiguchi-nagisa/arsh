@@ -1,0 +1,9 @@
+#!/usr/bin/env ydsh
+
+var src = "$SCRIPT_DIR/../../src".realpath()!
+
+echo try update $src/misc/unicode_width.h
+eval $YDSH_BIN $SCRIPT_DIR/gen_unicode_width_table.ds $src/misc/unicode_width.h
+
+echo try update $src/grapheme_break_property.h
+eval $YDSH_BIN $SCRIPT_DIR/gen_grapheme_break_property.ds $src/grapheme_break_property.h
