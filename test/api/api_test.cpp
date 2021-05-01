@@ -799,18 +799,8 @@ struct PIDs {
     pid_t pgid;
 };
 
-static std::vector<std::string> split(const std::string &str, int delim = ' ') {
-    std::vector<std::string> bufs;
-    bufs.emplace_back();
-
-    for(auto &ch : str) {
-        if(ch == delim) {
-            bufs.emplace_back();
-        } else {
-            bufs.back() += ch;
-        }
-    }
-    return bufs;
+static std::vector<std::string> split(const std::string &str) {
+    return split(str, ' ');
 }
 
 static std::vector<PIDs> decompose(const std::string &str) {

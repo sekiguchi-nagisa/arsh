@@ -50,16 +50,7 @@ struct LoggerTest : public ExpectOutput {
 #define HEADER "^[1-9][0-9]{3}-[0-1][0-9]-[0-3][0-9] [0-2][0-9]:[0-5][0-9]:[0-5][0-9] <%s> \\[[0-9]+\\] %s$"
 
 static std::vector<std::string> split(const std::string &line) {
-    std::vector<std::string> values;
-    values.emplace_back();
-    for(auto &ch : line) {
-        if(ch == '\n') {
-            values.emplace_back();
-        } else {
-            values.back() += ch;
-        }
-    }
-    return values;
+    return split(line, '\n');
 }
 
 TEST_F(LoggerTest, base) {

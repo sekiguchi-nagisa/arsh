@@ -21,10 +21,12 @@ namespace ydsh {
 
 // for unicode grapheme cluster support
 
-class GraphemeCluster {
+class GraphemeBoundary {
 public:
-    // for grapheme cluster boundry
+    // for grapheme cluster boundry. only support extended grapheme cluster
     enum class BreakProperty {
+        SOT,    // for GB1
+
         Any,
         CR,
         LF,
@@ -41,9 +43,30 @@ public:
         LVT,
 
         Extended_Pictographic,
+
+        Extended_Pictographic_with_ZWJ, // indicates \p{Extended_Pictographic} Extend* ZWJ
     };
 
     static BreakProperty getBreakProperty(int codePoint);
+
+private:
+    /**
+     * may be indicate previous code point property
+     */
+    BreakProperty state{BreakProperty::SOT};
+
+public:
+    GraphemeBoundary() = default;
+
+    explicit GraphemeBoundary(BreakProperty init) : state(init) {}
+
+    /**
+     * scan grapheme cluster boundary
+     * @param codePoint
+     * @return
+     * if grapheme cluster boundary is between prev codePoint and codePoint, return true
+     */
+    bool scanBoundary(int codePoint);
 };
 
 } // namespace ydsh

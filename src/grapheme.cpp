@@ -21,7 +21,7 @@
 
 namespace ydsh {
 
-GraphemeCluster::BreakProperty GraphemeCluster::getBreakProperty(int codePoint) {
+GraphemeBoundary::BreakProperty GraphemeBoundary::getBreakProperty(int codePoint) {
     using PropertyInterval = std::tuple<int, int, BreakProperty>;
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
@@ -50,6 +50,108 @@ GraphemeCluster::BreakProperty GraphemeCluster::getBreakProperty(int codePoint) 
         }
     }
     return BreakProperty::Any;
+}
+
+
+// see. https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules
+bool GraphemeBoundary::scanBoundary(int codePoint) {
+    auto after = getBreakProperty(codePoint);
+    auto before = this->state;
+    this->state = after;
+
+    if(before == BreakProperty::SOT) {
+        return false;
+    }
+
+    switch(before) {
+    case BreakProperty::CR:
+        if(after == BreakProperty::LF) {
+            return false;   // GB3
+        }
+        return true;   // GB4
+    case BreakProperty::LF:
+    case BreakProperty::Control:
+        return true;    // GB4
+    default:
+        switch(after) {
+        case BreakProperty::Control:
+        case BreakProperty::CR:
+        case BreakProperty::LF:
+            return true;    // GB5
+        default:
+            break;
+        }
+        break;
+    }
+
+    switch(before) {
+    case BreakProperty::L:
+        switch(after) {
+        case BreakProperty::L:
+        case BreakProperty::V:
+        case BreakProperty::LV:
+        case BreakProperty::LVT:
+            return false;   // GB6
+        default:
+            break;
+        }
+        break;
+    case BreakProperty::LV:
+    case BreakProperty::V:
+        if(after == BreakProperty::V || after == BreakProperty::T) {
+            return false;   // GB7
+        }
+        break;
+    case BreakProperty::LVT:
+    case BreakProperty::T:
+        if(after == BreakProperty::T) {
+            return false;   // GB8
+        }
+        break;
+    default:
+        break;
+    }
+
+    switch(after) {
+    case BreakProperty::Extend:
+    case BreakProperty::ZWJ:
+        if(before != BreakProperty::Extended_Pictographic) {
+            return false;   // GB9
+        }
+        break;
+    case BreakProperty::SpacingMark:
+        return false;   // GB9a
+    default:
+        break;
+    }
+
+    switch(before) {
+    case BreakProperty::Prepend:
+        return false;   //GB9b
+    case BreakProperty::Regional_Indicator:
+        if(after == BreakProperty::Regional_Indicator) {
+            this->state = BreakProperty::Any;
+            return false;   // GB12, GB13
+        }
+        break;
+    case BreakProperty::Extended_Pictographic:
+        if(after == BreakProperty::Extend) {
+            this->state = BreakProperty::Extended_Pictographic; // consume Extend
+            return false;   // GB11
+        } else if(after == BreakProperty::ZWJ) {
+            this->state = BreakProperty::Extended_Pictographic_with_ZWJ;
+            return false;   // GB11
+        }
+        break;
+    case BreakProperty::Extended_Pictographic_with_ZWJ:
+        if(after == BreakProperty::Extended_Pictographic){
+            return false;   // GB11
+        }
+        break;
+    default:
+        break;
+    }
+    return true;    // GB999
 }
 
 } // namespace ydsh

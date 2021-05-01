@@ -2,8 +2,11 @@
 
 #include <cstring>
 
+#include <misc/num_util.hpp>
 #include <misc/unicode.hpp>
 #include <grapheme.h>
+
+#include "../test_common.h"
 
 using namespace ydsh;
 
@@ -233,70 +236,175 @@ TEST_F(UnicodeTest, utf16) {
     ASSERT_EQ(0x29E3D, code);
 }
 
-TEST_F(UnicodeTest, grapheme) {
+TEST_F(UnicodeTest, graphemeBreakProperty) {
     int code = 0;
     this->toCodePoint("1", code);
-    auto p = GraphemeCluster::getBreakProperty(code);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::Any, p);
+    auto p = GraphemeBoundary::getBreakProperty(code);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
 
     this->toCodePoint("灘", code);
-    p = GraphemeCluster::getBreakProperty(code);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::Any, p);
+    p = GraphemeBoundary::getBreakProperty(code);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
 
     this->toCodePoint("\r", code);
-    p = GraphemeCluster::getBreakProperty(code);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::CR, p);
+    p = GraphemeBoundary::getBreakProperty(code);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::CR, p);
 
     this->toCodePoint("\n", code);
-    p = GraphemeCluster::getBreakProperty(code);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::LF, p);
+    p = GraphemeBoundary::getBreakProperty(code);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::LF, p);
 
     this->toCodePoint("\a", code);
-    p = GraphemeCluster::getBreakProperty(code);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::Control, p);
+    p = GraphemeBoundary::getBreakProperty(code);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::Control, p);
 
-    p = GraphemeCluster::getBreakProperty(0x200C); // ZERO WIDTH NON-JOINER
-    ASSERT_EQ(GraphemeCluster::BreakProperty::Extend, p);
+    p = GraphemeBoundary::getBreakProperty(0x200C); // ZERO WIDTH NON-JOINER
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::Extend, p);
 
-    p = GraphemeCluster::getBreakProperty(0x200D); // ZERO WIDTH JOINER
-    ASSERT_EQ(GraphemeCluster::BreakProperty::ZWJ, p);
+    p = GraphemeBoundary::getBreakProperty(0x200D); // ZERO WIDTH JOINER
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::ZWJ, p);
 
-    p = GraphemeCluster::getBreakProperty(0x1F1E6); // REGIONAL INDICATOR SYMBOL LETTER A
-    ASSERT_EQ(GraphemeCluster::BreakProperty::Regional_Indicator, p);
+    p = GraphemeBoundary::getBreakProperty(0x1F1E6); // REGIONAL INDICATOR SYMBOL LETTER A
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::Regional_Indicator, p);
 
-    p = GraphemeCluster::getBreakProperty(0x1F1FF); // REGIONAL INDICATOR SYMBOL LETTER Z
-    ASSERT_EQ(GraphemeCluster::BreakProperty::Regional_Indicator, p);
+    p = GraphemeBoundary::getBreakProperty(0x1F1FF); // REGIONAL INDICATOR SYMBOL LETTER Z
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::Regional_Indicator, p);
 
-    p = GraphemeCluster::getBreakProperty(0x0602);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::Prepend, p);
+    p = GraphemeBoundary::getBreakProperty(0x0602);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::Prepend, p);
 
-    p = GraphemeCluster::getBreakProperty(0x102B);  // exclude
-    ASSERT_NE(GraphemeCluster::BreakProperty::SpacingMark, p);
+    p = GraphemeBoundary::getBreakProperty(0x102B);  // exclude
+    ASSERT_NE(GraphemeBoundary::BreakProperty::SpacingMark, p);
 
-    p = GraphemeCluster::getBreakProperty(0x0E33);  // exclude
-    ASSERT_EQ(GraphemeCluster::BreakProperty::SpacingMark, p);
+    p = GraphemeBoundary::getBreakProperty(0x0E33);  // exclude
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::SpacingMark, p);
 
-    p = GraphemeCluster::getBreakProperty(0xA960);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::L, p);
+    p = GraphemeBoundary::getBreakProperty(0xA960);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::L, p);
 
-    p = GraphemeCluster::getBreakProperty(0x11A2);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::V, p);
+    p = GraphemeBoundary::getBreakProperty(0x11A2);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::V, p);
 
-    p = GraphemeCluster::getBreakProperty(0xD7FB);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::T, p);
+    p = GraphemeBoundary::getBreakProperty(0xD7FB);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::T, p);
 
-    p = GraphemeCluster::getBreakProperty(0xAC1C);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::LV, p);
+    p = GraphemeBoundary::getBreakProperty(0xAC1C);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::LV, p);
 
-    p = GraphemeCluster::getBreakProperty(0xAC03);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::LVT, p);
+    p = GraphemeBoundary::getBreakProperty(0xAC03);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::LVT, p);
 
-    p = GraphemeCluster::getBreakProperty(0x1F0CC);
-    ASSERT_EQ(GraphemeCluster::BreakProperty::Extended_Pictographic, p);
+    p = GraphemeBoundary::getBreakProperty(0x1F0CC);
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::Extended_Pictographic, p);
 
-    p = GraphemeCluster::getBreakProperty(0x1F6B9); //Emoji/Extended_Pictographic
-    ASSERT_EQ(GraphemeCluster::BreakProperty::Extended_Pictographic, p);
+    p = GraphemeBoundary::getBreakProperty(0x1F6B9); //Emoji/Extended_Pictographic
+    ASSERT_EQ(GraphemeBoundary::BreakProperty::Extended_Pictographic, p);
 }
+
+static std::vector<int> getInput(const std::string &param) {
+    auto values = split(param, ' ');
+    auto iter = std::remove_if(values.begin(), values.end(), [](const std::string &v) {
+        return v == "÷" || v == "×";
+    });
+    values.erase(iter, values.end());
+
+    std::vector<int> ret;
+    for(auto &v : values) {
+        auto pair = convertToNum<int>(v.c_str(), 16);
+        if(!pair.second) {
+            fatal("broken format: %s\n", v.c_str());
+        }
+        ret.push_back(pair.first);
+    }
+    return ret;
+}
+
+static std::vector<std::vector<int>> getExpected(const std::string &param) {
+    auto values = split(param, ' ');
+    std::vector<std::vector<int>> ret;
+    ret.emplace_back();
+    for(auto &v : values) {
+        if(v == "÷") {
+            ret.emplace_back();
+        } else if(v == "×") {
+            continue;
+        } else {
+            auto pair = convertToNum<int>(v.c_str(), 16);
+            if(!pair.second) {
+                fatal("broken format: %s\n", v.c_str());
+            }
+            ret.back().push_back(pair.first);
+        }
+    }
+
+    // remove empty grapheme
+    auto iter = std::remove_if(ret.begin(), ret.end(), [](const std::vector<int> &v) {
+        return v.empty();
+    });
+    ret.erase(iter, ret.end());
+    return ret;
+}
+
+struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
+    void doTest() {
+        auto input = getInput(this->GetParam());
+        auto expected = getExpected(this->GetParam());
+
+        ASSERT_FALSE(input.empty());
+        ASSERT_FALSE(expected.empty());
+        for(auto &e : expected) {
+            ASSERT_FALSE(e.empty());
+        }
+
+        std::vector<std::vector<int>> output;
+        output.emplace_back();
+        GraphemeBoundary boundary;
+        for(auto &codePoint : input) {
+            if(boundary.scanBoundary(codePoint)) {
+                output.emplace_back();
+            }
+            output.back().push_back(codePoint);
+        }
+
+        ASSERT_EQ(expected.size(), output.size());
+        ASSERT_EQ(expected, output);
+    }
+};
+
+TEST(GraphemeBreakTestBase, input) {
+    auto input = getInput("÷ 034F × 0308 × 034F ÷");
+    std::vector<int> expect = {0x034F, 0x0308, 0x034F};
+    ASSERT_EQ(expect, input);
+
+    input = getInput("÷ 034F ÷ 000A ÷");
+    expect = {0x034F, 0x000A};
+    ASSERT_EQ(expect, input);
+}
+
+TEST(GraphemeBreakTestBase, expect) {
+    auto input = getExpected("÷ 034F × 0308 × 034F ÷");
+    std::vector<std::vector<int>> expect = {{0x034F, 0x0308, 0x034F}};
+    ASSERT_EQ(expect, input);
+
+    input = getExpected("÷ 034F ÷ 000A ÷");
+    expect = {{0x034F}, {0x000A}};
+    ASSERT_EQ(expect, input);
+}
+
+TEST_P(GraphemeBreakTest, base) {
+    ASSERT_NO_FATAL_FAILURE(this->doTest());
+}
+
+static std::vector<std::string> getTargets() {
+#include GRAPHEME_BREAK_TEST_H
+    std::vector<std::string> ret;
+    for(auto &e : grapheme_break_tests) {
+        ret.emplace_back(e);
+    }
+    return ret;
+}
+
+INSTANTIATE_TEST_SUITE_P(GraphemeBreakTest, GraphemeBreakTest, ::testing::ValuesIn(getTargets()));
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);

@@ -38,6 +38,20 @@ inline std::string makeLineMarker(const std::string &line) {
     return str;
 }
 
+inline std::vector<std::string> split(const std::string &str, int delim) {
+    std::vector<std::string> bufs;
+    bufs.emplace_back();
+
+    for(auto &ch : str) {
+        if(ch == delim) {
+            bufs.emplace_back();
+        } else {
+            bufs.back() += ch;
+        }
+    }
+    return bufs;
+}
+
 class Extractor {
 private:
     const char *str;

@@ -1,0 +1,58 @@
+#!/usr/bin/env ydsh
+
+if $# != 1 {
+    echo "[usage] $0 [output]" 1>&2
+    exit 1
+}
+
+command -v curl &> /dev/null || { echo require curl 1>&2; exit 1; }
+
+let out = $1.startsWith("/") ? $1 : "../$1"
+let work_dir = "grapheme-break-temp"
+
+test -d $work_dir || mkdir $work_dir
+
+cd $work_dir
+
+test -f GraphemeBreakTest.txt ||
+    curl https://www.unicode.org/Public/UCD/latest/ucd/auxiliary/GraphemeBreakTest.txt -o ./GraphemeBreakTest.txt
+
+
+{
+    echo "/* this is a auto-generated file by using tools/scripts/$(basename $0)  */"
+    echo "/*"
+} with > $out
+
+var ret : [String]
+
+cat ./GraphemeBreakTest.txt | for(var count = 0; read -f $'\n'; $count++) {
+    if $count < 2 {
+        echo $REPLY >> $out
+        continue
+    }
+
+    if $REPLY.startsWith('#') || $REPLY.empty() {
+        continue
+    }
+    try {
+        var m = $/^([^#]+)\s+#.*$/.match($REPLY)
+        $ret.add($m[1]!)
+    } catch $e : Error {
+        $e.backtrace();
+        echo 1>&2 $count $REPLY;
+    }
+    echo $REPLY
+} with > ./trimed_GraphemeBreakTest.txt
+
+# final output
+{
+    echo "*/"
+    echo
+    echo "static const char *grapheme_break_tests[] = {"
+} with >> $out
+
+for $r in $ret {
+    echo "    \"$r\","
+} with >> $out
+
+echo -e "};" >> $out
