@@ -52,3 +52,11 @@ for $d in $(ls $sample) {
 echo copy ydshrc
 cp ~/.ydshrc $dir/rcfile_ydshrc
 
+# copy tools/scrips
+source path
+
+let scripts = "$SCRIPT_DIR/../tools/scripts"
+echo copy scripts from $scripts
+for $d in @($scripts/*.ds) {
+    cp $d $dir/scripts_$basename($d)
+}
