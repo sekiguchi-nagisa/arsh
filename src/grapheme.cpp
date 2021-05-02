@@ -154,4 +154,39 @@ bool GraphemeBoundary::scanBoundary(int codePoint) {
     return true;    // GB999
 }
 
+static int toCodePoint(StringRef ref, size_t pos) {
+    int codePoint = UnicodeUtil::utf8ToCodePoint(ref.begin() + pos, ref.end());
+    if(codePoint < 0) {
+        codePoint = ref[pos];   // broken encoding
+    }
+    return codePoint;
+}
+
+bool GraphemeScanner::next(Result &result) {
+    result.codePointCount = this->prevPos == this->curPos ? 0 : 1;
+    result.startPos = this->prevPos;
+    result.byteSize = 0;
+    result.firstCodePoint = result.codePointCount > 0 ? toCodePoint(this->ref, this->prevPos) : -1;
+
+    while(this->curPos < this->ref.size()) {
+        size_t pos = this->curPos;
+        size_t nextPos = UnicodeUtil::utf8NextPos(this->curPos, this->ref[this->curPos]);
+        int codePoint = toCodePoint(this->ref, this->curPos);
+        if(result.codePointCount++ == 0) {
+            result.firstCodePoint = codePoint;
+        }
+        this->curPos = nextPos;
+        if(this->boundary.scanBoundary(codePoint)) {
+            result.byteSize = pos - this->prevPos;
+            this->prevPos = pos;
+            return true;
+        }
+    }
+    if(this->curPos == this->ref.size()) {
+        result.byteSize = this->curPos - this->prevPos;
+        this->prevPos = this->curPos;
+    }
+    return result.codePointCount > 0;
+}
+
 } // namespace ydsh

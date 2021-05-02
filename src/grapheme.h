@@ -17,6 +17,8 @@
 #ifndef YDSH_GRAPHEME_H
 #define YDSH_GRAPHEME_H
 
+#include "misc/string_ref.hpp"
+
 namespace ydsh {
 
 // for unicode grapheme cluster support
@@ -67,6 +69,51 @@ public:
      * if grapheme cluster boundary is between prev codePoint and codePoint, return true
      */
     bool scanBoundary(int codePoint);
+};
+
+class GraphemeScanner {
+private:
+    StringRef ref;
+    size_t prevPos;
+    size_t curPos;
+    GraphemeBoundary boundary;
+
+public:
+    GraphemeScanner(StringRef ref, size_t prevPos = 0,
+                    size_t curPos = 0, GraphemeBoundary boundary = {}) :
+                    ref(ref), prevPos(prevPos), curPos(curPos), boundary(boundary) {}
+
+    StringRef getRef() const {
+        return this->ref;
+    }
+
+    size_t getPrevPos() const {
+        return this->prevPos;
+    }
+
+    size_t getCurPos() const {
+        return this->curPos;
+    }
+
+    GraphemeBoundary getBoundary() const {
+        return this->boundary;
+    }
+
+    struct Result {
+        size_t startPos;        // begin pos of grapheme cluster
+        size_t byteSize;        // byte length of graphme cluster
+        size_t codePointCount;  // count of containing code points
+        int firstCodePoint;     // for char width
+    };
+
+    /**
+     * get grapheme cluster
+     * @param result
+     * set scanned grapheme cluster info to result
+     * @return
+     * if reach eof, return false
+     */
+    bool next(Result &result);
 };
 
 } // namespace ydsh

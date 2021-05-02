@@ -345,6 +345,16 @@ static std::vector<std::vector<int>> getExpected(const std::string &param) {
     return ret;
 }
 
+static std::string toUTF8(const std::vector<int> &codes) {
+    std::string ret;
+    for(auto &c : codes) {
+        char buf[8];
+        unsigned int size = UnicodeUtil::codePointToUtf8(c, buf);
+        ret.append(buf, size);
+    }
+    return ret;
+}
+
 struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
     void doTest() {
         auto input = getInput(this->GetParam());
@@ -369,6 +379,27 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
         ASSERT_EQ(expected.size(), output.size());
         ASSERT_EQ(expected, output);
     }
+
+    void doTest2() {
+        auto input = getInput(this->GetParam());
+        auto expected = getExpected(this->GetParam());
+
+        std::string inputStr = toUTF8(input);
+        std::vector<std::string> expectedList;
+        for(auto &e : expected) {
+            expectedList.push_back(toUTF8(e));
+        }
+
+        GraphemeScanner scanner(inputStr);
+        std::vector<std::string> outputList;
+        GraphemeScanner::Result ret;
+        for(unsigned int i = 0; scanner.next(ret); i++) {
+            ASSERT_EQ(expected[i][0], ret.firstCodePoint);
+            outputList.push_back(scanner.getRef().substr(ret.startPos, ret.byteSize).toString());
+        }
+        ASSERT_EQ(expectedList.size(), outputList.size());
+        ASSERT_EQ(expectedList, outputList);
+    }
 };
 
 TEST(GraphemeBreakTestBase, input) {
@@ -391,8 +422,46 @@ TEST(GraphemeBreakTestBase, expect) {
     ASSERT_EQ(expect, input);
 }
 
+TEST(GraphemeBreakTestBase, scan) {
+    GraphemeScanner scanner("abc");
+    GraphemeScanner::Result ret;
+    bool s = scanner.next(ret);
+    ASSERT_TRUE(s);
+    ASSERT_EQ("a", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
+    ASSERT_EQ('a', ret.firstCodePoint);
+
+    s = scanner.next(ret);
+    ASSERT_TRUE(s);
+    ASSERT_EQ("b", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
+    ASSERT_EQ('b', ret.firstCodePoint);
+
+    s = scanner.next(ret);
+    ASSERT_TRUE(s);
+    ASSERT_EQ("c", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
+    ASSERT_EQ('c', ret.firstCodePoint);
+
+    s = scanner.next(ret);
+    ASSERT_FALSE(s);
+    ASSERT_EQ(3, scanner.getPrevPos());
+    ASSERT_EQ(3, scanner.getCurPos());
+    ASSERT_EQ(3, ret.startPos);
+    ASSERT_EQ(0, ret.byteSize);
+    ASSERT_EQ(-1, ret.firstCodePoint);
+    ASSERT_EQ(0, ret.codePointCount);
+
+    scanner = GraphemeScanner("🇯🇵");
+    s = scanner.next(ret);
+    ASSERT_TRUE(s);
+    ASSERT_EQ("🇯🇵", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
+    ASSERT_EQ(0x1F1E6 + ('j' - 'a'), ret.firstCodePoint);
+
+    s = scanner.next(ret);
+    ASSERT_FALSE(s);
+}
+
 TEST_P(GraphemeBreakTest, base) {
     ASSERT_NO_FATAL_FAILURE(this->doTest());
+    ASSERT_NO_FATAL_FAILURE(this->doTest2());
 }
 
 static std::vector<std::string> getTargets() {
