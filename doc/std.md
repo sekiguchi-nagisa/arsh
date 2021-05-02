@@ -123,6 +123,8 @@ function empty($this : String) : Boolean
 
 function count($this : String) : Int
 
+function chars($this : String) : Array<String>
+
 function %OP_GET($this : String, $index : Int) : String
 
 function charAt($this : String, $index : Int) : String

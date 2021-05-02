@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Builtin
+- add ``String#chars`` method
+  - split string as grapheme cluster  array
+
 ### Changed
 
 #### Core
@@ -14,7 +20,7 @@
 - **Breaking Change**: return value of ``Job#pid`` method
 - **Breaking Change**: some string method handle grapheme cluster
   - ``String#count`` count grapheme clusters in string
-    ``String#charAt`` get grapheme cluster at specified position
+  - ``String#charAt`` get grapheme cluster at specified position
   - iterate grapheme cluster in string
 - propagate intrenal error as exception from regex method
   - ``left =~ right``, ``left !~ right``

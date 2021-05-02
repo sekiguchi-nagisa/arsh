@@ -589,6 +589,19 @@ YDSH_METHOD string_count(RuntimeContext &ctx) {
     RET(DSValue::createInt(count));
 }
 
+//!bind: function chars($this : String) : Array<String>
+YDSH_METHOD string_chars(RuntimeContext &ctx) {
+    SUPPRESS_WARNING(string_chars);
+    auto ref = LOCAL(0).asStrRef();
+    GraphemeScanner scanner(ref);
+    GraphemeScanner::Result ret;
+    auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+    while(scanner.next(ret)) {
+        typeAs<ArrayObject>(value).append(DSValue::createStr(ref.substr(ret.startPos, ret.byteSize)));
+    }
+    RET(value);
+}
+
 /**
  * return always false.
  */

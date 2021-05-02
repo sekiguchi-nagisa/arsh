@@ -180,6 +180,17 @@ assert "".replace("a", "34") == ""
 assert "".replace("", "") == ""
 assert "".replace("", "hoge") == ""
 
+var gca = "あ👨‍👨‍👦い🌏う90🇯🇵".chars()
+assert $gca.size() == 8
+assert $gca[0] == 'あ'
+assert $gca[1] == '👨‍👨‍👦'
+assert $gca[2] == 'い'
+assert $gca[3] == '🌏'
+assert $gca[4] == 'う'
+assert $gca[5] == '9'
+assert $gca[6] == '0'
+assert $gca[7] == '🇯🇵'
+
 assert("-2147483648".toInt()! == -1 - 2147483647)
 assert("-2147483649".toInt())
 assert("2147483647".toInt()! == 2147483647)
