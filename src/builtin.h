@@ -28,6 +28,7 @@
 #include <ydsh/ydsh.h>
 #include "vm.h"
 #include "signals.h"
+#include "grapheme.h"
 #include "misc/unicode.hpp"
 #include "misc/num_util.hpp"
 #include "misc/files.h"
@@ -578,11 +579,10 @@ YDSH_METHOD string_empty(RuntimeContext &ctx) {
 //!bind: function count($this : String) : Int
 YDSH_METHOD string_count(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_count);
-    auto ref = LOCAL(0).asStrRef();
-    const char *ptr = ref.data();
-    size_t size = ref.size();
+    GraphemeScanner scanner(LOCAL(0).asStrRef());
+    GraphemeScanner::Result ret;
     size_t count = 0;
-    for(size_t i = 0; i < size; i = UnicodeUtil::utf8NextPos(i, ptr[i])) {
+    while(scanner.next(ret)) {
         count++;
     }
     assert(count <= StringObject::MAX_SIZE);
@@ -641,29 +641,20 @@ YDSH_METHOD string_get(RuntimeContext &ctx) {
 //!bind: function charAt($this : String, $index : Int) : String
 YDSH_METHOD string_charAt(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_charAt);
-    auto ref = LOCAL(0).asStrRef();
-    const auto pos = LOCAL(1).asInt();
-    const size_t size = ref.size();
 
-    if(pos >= 0 && static_cast<size_t>(pos) < size) {
-        const unsigned int limit = pos;
-        unsigned int index = 0;
-        unsigned int count = 0;
-        for(; index < size; index = UnicodeUtil::utf8NextPos(index, ref[index])) {
-            if(count == limit) {
-                break;
-            }
-            count++;
-        }
-        if(count == limit && index < size) {
-            unsigned int nextIndex = UnicodeUtil::utf8NextPos(index, ref[index]);
-            RET(DSValue::createStr(ref.slice(index, nextIndex)));
+    GraphemeScanner scanner(LOCAL(0).asStrRef());
+    GraphemeScanner::Result ret;
+    const auto pos = LOCAL(1).asInt();
+
+    ssize_t count = 0;
+    for(; scanner.next(ret); count++) {
+        if(count == pos) {
+            RET(DSValue::createStr(LOCAL(0).asStrRef().substr(ret.startPos, ret.byteSize)));
         }
     }
-
-    std::string msg("size is ");
-    msg += std::to_string(size);
-    msg += ", but code position is ";
+    std::string msg = "character count is ";
+    msg += std::to_string(count);
+    msg += ", but character position is ";
     msg += std::to_string(pos);
     raiseOutOfRangeError(ctx, std::move(msg));
     RET_ERROR;
@@ -842,6 +833,17 @@ YDSH_METHOD string_toFloat(RuntimeContext &ctx) {
     RET(status == 0 ? DSValue::createFloat(value) : DSValue::createInvalid());
 }
 
+static GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&values)[3]) {
+    return GraphemeScanner(ref, values[0], values[1],
+                           GraphemeBoundary(static_cast<GraphemeBoundary::BreakProperty>(values[2])));
+}
+
+static DSValue asDSValue(const GraphemeScanner &scanner) {
+    return DSValue::createNumList(
+            scanner.getPrevPos(), scanner.getCurPos(),
+            static_cast<uint32_t>(scanner.getBoundary().getState()));
+}
+
 //!bind: function $OP_ITER($this : String) : StringIter
 YDSH_METHOD string_iter(RuntimeContext &ctx) {
     SUPPRESS_WARNING(string_iter);
@@ -849,14 +851,19 @@ YDSH_METHOD string_iter(RuntimeContext &ctx) {
     /**
      * record StringIter {
      *      var ref : String
-     *      var index : Int
+     *      var scanner : {
+     *         prevPos : int32_t
+     *         curPos : int32_t
+     *         bondary : int32_t
+     *      }
      * }
      *
      */
      auto value = DSValue::create<BaseObject>(ctx.typePool.get(TYPE::StringIter), 2);
      auto &obj = typeAs<BaseObject>(value);
+     GraphemeScanner scanner(LOCAL(0).asStrRef());
      obj[0] = LOCAL(0);
-     obj[1] = DSValue::createInt(0);
+     obj[1] = asDSValue(scanner);
      RET(value);
 }
 
@@ -917,32 +924,21 @@ YDSH_METHOD string_upper(RuntimeContext &ctx) {
 YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
     SUPPRESS_WARNING(stringIter_next);
     auto &iter = typeAs<BaseObject>(LOCAL(0));
-    auto ref = iter[0].asStrRef();
-    assert(iter[1].asInt() > -1);
-    size_t curIndex = iter[1].asInt();
-    if(curIndex >= ref.size()) {
-        raiseOutOfRangeError(ctx, std::string("string iterator reach end of string"));
-        RET_ERROR;
-    }
-    size_t newIndex = UnicodeUtil::utf8NextPos(curIndex, ref[curIndex]);
-    if(newIndex > ref.size()) {
-        fatal("broken string iterator\n");
-    }
-
-    assert(curIndex <= newIndex);
-    size_t size = newIndex - curIndex;
-    iter[1] = DSValue::createInt(newIndex);
-    RET(DSValue::createStr(ref.substr(curIndex, size)));
+    auto scanner = asGraphemeScanner(iter[0].asStrRef(), iter[1].asNumList());
+    GraphemeScanner::Result ret;
+    bool r = scanner.next(ret);
+    (void )r;
+    assert(r);
+    iter[1] = asDSValue(scanner);
+    RET(DSValue::createStr(iter[0].asStrRef().substr(ret.startPos, ret.byteSize)));
 }
 
 //!bind: function $OP_HAS_NEXT($this : StringIter) : Boolean
 YDSH_METHOD stringIter_hasNext(RuntimeContext &ctx) {
     SUPPRESS_WARNING(stringIter_hasNext);
     auto &obj = typeAs<BaseObject>(LOCAL(0));
-    auto ref = obj[0].asStrRef();
-    assert(obj[1].asInt() > -1);
-    size_t index = obj[1].asInt();
-    RET_BOOL(index < ref.size());
+    auto scanner = asGraphemeScanner(obj[0].asStrRef(), obj[1].asNumList());
+    RET_BOOL(scanner.hasNext());
 }
 
 // ###################

@@ -37,10 +37,16 @@ for $e in $bb {
 assert($i == 4)
 
 # String for-in
-var r = ['あ', '0', '漢', '　']
+var r = ['あ', '0', '🇯🇵', '漢', '　']
 $i = 0
-for $a in "あ0漢　" {
+for $a in "あ0🇯🇵漢　" {
     assert($a == $r[$i])
     $i = $i + 1
 }
 assert($i == $r.size())
+
+var count = 0
+for $s in "" {
+    $count++
+}
+assert $count == 0

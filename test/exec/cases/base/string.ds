@@ -38,11 +38,12 @@ assert("".size() == 0)
 assert("".size() is Int)
 assert("hello".count() is Int)
 assert("hello".count() == "hello".size())
-assert("あいうえお90".count() == 7)
+assert "👨‍👨‍👦".count() == 1
+assert("あい🌏うえお90🇯🇵".count() == 9)
 
 $str = "はるのサクラ"
-#$str = $str.replace("はるの", "うずまき")
-#assert($str == "うずまきサクラ")
+$str = $str.replace("はるの", "うずまき")
+assert($str == "うずまきサクラ")
 
 var a = "hello world"
 assert($a.size() == 11)

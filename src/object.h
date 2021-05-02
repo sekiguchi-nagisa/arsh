@@ -204,6 +204,7 @@ enum class DSValueKind : unsigned char {
     EMPTY,
     OBJECT, // not null
     NUMBER,   // uint64_t
+    NUM_LIST,   // [uint32_t uint32_t, uint32_t]
     DUMMY,      // uint64_t
     GLOB_META,  // uint64_t, for glob meta character, '?', '*'
     INVALID,
@@ -260,6 +261,11 @@ protected:
             DSValueKind kind;
             int64_t value;
         } i64;
+
+        struct {
+            DSValueKind kind;
+            uint32_t values[3];
+        } u32s;
 
         struct {
             DSValueKind kind;
@@ -463,6 +469,11 @@ public:
         return this->u64.value;
     }
 
+    using uint32_3 = const uint32_t (&)[3];
+    uint32_3 asNumList() const {
+        return this->u32s.values;
+    }
+
     unsigned int asTypeId() const {
         assert(this->kind() == DSValueKind::DUMMY);
         return this->u64.value;
@@ -571,6 +582,15 @@ public:
         DSValue ret;
         ret.u64.kind = DSValueKind::GLOB_META;
         ret.u64.value = static_cast<unsigned int>(meta);
+        return ret;
+    }
+
+    static DSValue createNumList(uint32_t v1, uint32_t v2, uint32_t v3) {
+        DSValue ret;
+        ret.u32s.kind = DSValueKind::NUM_LIST;
+        ret.u32s.values[0] = v1;
+        ret.u32s.values[1] = v2;
+        ret.u32s.values[2] = v3;
         return ret;
     }
 

@@ -397,6 +397,7 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
             ASSERT_EQ(expected[i][0], ret.firstCodePoint);
             outputList.push_back(scanner.getRef().substr(ret.startPos, ret.byteSize).toString());
         }
+        ASSERT_FALSE(scanner.hasNext());
         ASSERT_EQ(expectedList.size(), outputList.size());
         ASSERT_EQ(expectedList, outputList);
     }
@@ -424,21 +425,26 @@ TEST(GraphemeBreakTestBase, expect) {
 
 TEST(GraphemeBreakTestBase, scan) {
     GraphemeScanner scanner("abc");
+    ASSERT_TRUE(scanner.hasNext());
     GraphemeScanner::Result ret;
+
     bool s = scanner.next(ret);
     ASSERT_TRUE(s);
     ASSERT_EQ("a", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
     ASSERT_EQ('a', ret.firstCodePoint);
+    ASSERT_TRUE(scanner.hasNext());
 
     s = scanner.next(ret);
     ASSERT_TRUE(s);
     ASSERT_EQ("b", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
     ASSERT_EQ('b', ret.firstCodePoint);
+    ASSERT_TRUE(scanner.hasNext());
 
     s = scanner.next(ret);
     ASSERT_TRUE(s);
     ASSERT_EQ("c", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
     ASSERT_EQ('c', ret.firstCodePoint);
+    ASSERT_FALSE(scanner.hasNext());
 
     s = scanner.next(ret);
     ASSERT_FALSE(s);
@@ -448,15 +454,28 @@ TEST(GraphemeBreakTestBase, scan) {
     ASSERT_EQ(0, ret.byteSize);
     ASSERT_EQ(-1, ret.firstCodePoint);
     ASSERT_EQ(0, ret.codePointCount);
+    ASSERT_FALSE(scanner.hasNext());
 
     scanner = GraphemeScanner("🇯🇵");
     s = scanner.next(ret);
     ASSERT_TRUE(s);
     ASSERT_EQ("🇯🇵", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
     ASSERT_EQ(0x1F1E6 + ('j' - 'a'), ret.firstCodePoint);
+    ASSERT_FALSE(scanner.hasNext());
 
     s = scanner.next(ret);
     ASSERT_FALSE(s);
+
+    scanner = GraphemeScanner("");
+    ASSERT_FALSE(scanner.hasNext());
+    s = scanner.next(ret);
+    ASSERT_FALSE(s);
+
+    scanner = GraphemeScanner(StringRef("\0", 1));
+    ASSERT_TRUE(scanner.hasNext());
+    s = scanner.next(ret);
+    ASSERT_TRUE(s);
+    ASSERT_FALSE(scanner.hasNext());
 }
 
 TEST_P(GraphemeBreakTest, base) {

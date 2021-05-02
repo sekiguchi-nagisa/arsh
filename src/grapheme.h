@@ -62,6 +62,10 @@ public:
 
     explicit GraphemeBoundary(BreakProperty init) : state(init) {}
 
+    BreakProperty getState() const {
+        return this->state;
+    }
+
     /**
      * scan grapheme cluster boundary
      * @param codePoint
@@ -97,6 +101,10 @@ public:
 
     GraphemeBoundary getBoundary() const {
         return this->boundary;
+    }
+
+    bool hasNext() const {
+        return this->prevPos <= this->curPos && this->prevPos < this->ref.size();
     }
 
     struct Result {
