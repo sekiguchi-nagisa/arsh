@@ -221,6 +221,20 @@ public:
     bool toEnvName(Token token, std::string &out) const;
 };
 
+/**
+ * common escape sequence handling
+ * @param begin
+ * must be start with '\'
+ * if success, begin + consumed size
+ * @param end
+ * @param needOctalPrefix
+ * if true, octal escapse sequence start with '0'
+ * @return
+ * if success, return recognized code point
+ * if failed, return -1
+ */
+int parseEscapeSeq(const char *&begin, const char *end, bool needOctalPrefix);
+
 } // namespace ydsh
 
 #endif //YDSH_LEXER_H

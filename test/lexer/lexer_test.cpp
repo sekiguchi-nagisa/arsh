@@ -2030,6 +2030,57 @@ TEST(LineNumTest, case4) {
     ASSERT_EQ(5u, table.lookup(13));
 }
 
+#define ARRAY(...) (int[]) { __VA_ARGS__ }
+
+struct EscapeSeqTest : public ::testing::Test {
+    void assertEscape(StringRef ref, std::vector<int> &&codes, bool needPrefix = false) {
+        std::vector<int> out;
+        const char *begin = ref.begin();
+        const char *end = ref.end();
+        while(begin != end) {
+            int c = parseEscapeSeq(begin, end, needPrefix);
+            if(c == -1) {
+                c = *(begin++);
+            }
+            out.push_back(c);
+        }
+        ASSERT_EQ(codes, out);
+    }
+
+    template <unsigned int N>
+    void assertEscape(StringRef ref, const int (&codes)[N], bool needPrefix = false) {
+        std::vector<int> expect(std::begin(codes), std::end(codes));
+        this->assertEscape(ref, std::move(expect), needPrefix);
+    }
+
+    void assertEscape(StringRef ref, int code, bool needPrefix = false) {
+        this->assertEscape(ref, ARRAY(code), needPrefix);
+    }
+};
+
+TEST_F(EscapeSeqTest, base) {
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("1\\a1", ARRAY('1', '\a', '1')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("1\\b1", ARRAY('1', '\b', '1')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("1\\e1", ARRAY('1', 0x1b, '1')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("1\\E1", ARRAY('1', 0x1b, '1')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\f", '\f'));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\n", '\n'));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\r", '\r'));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\t\\v", ARRAY('\t', '\v')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("1\\d1", ARRAY('1', '\\', 'd', '1')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\'", ARRAY('\\', '\'')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\\"", ARRAY('\\', '"')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\\\", ARRAY('\\')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\xFq", ARRAY(0x0F, 'q')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\xa11", ARRAY(0xa1, '1')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\xW", ARRAY('\\', 'x', 'W')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\x", ARRAY('\\', 'x')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\", ARRAY('\\')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("s\\0", ARRAY('s', '\0')));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\0123", ARRAY('\123'), true));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\0123", ARRAY('\012', '3'), false));
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

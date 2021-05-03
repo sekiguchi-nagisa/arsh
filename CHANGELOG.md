@@ -15,6 +15,9 @@
 - **Breaking Change**: disowned job object still maintains valid job id
   - job table still maintains job id of disowned job
   - job id of disowned job is no longer reassigned to newly attached job
+- **Breaking Change**: escape sequence handling in dollar string literal 
+  - hex escape sequence (\xHH) require 1~2 hex digits (not exactly 2 hex digits)
+  - octal escape sequence (\xnnn) require 1~3 octal digits (not exactly 3 octal digits)
 
 #### Builtin
 - **Breaking Change**: return value of ``Job#pid`` method

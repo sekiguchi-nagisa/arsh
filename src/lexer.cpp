@@ -127,73 +127,34 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
     out.clear();
     out.reserve(token.size - 3);
 
-    const unsigned int stopPos = token.pos + token.size - 1; // ignore suffix "'"
-    for(unsigned int i = token.pos + 2; i < stopPos; i++) {  // ignore prefix "$'"
-        char ch = this->buf[i];
-        if(ch == '\\' && i + 1 < stopPos) {
-            switch(this->buf[++i]) {
-            case '\\':
-                ch = '\\';
-                break;
-            case 'a':
-                ch = '\a';
-                break;
-            case 'b':
-                ch = '\b';
-                break;
-            case 'e':
-            case 'E':
-                ch = '\033';
-                break;
-            case 'f':
-                ch = '\f';
-                break;
-            case 'n':
-                ch = '\n';
-                break;
-            case 'r':
-                ch = '\r';
-                break;
-            case 't':
-                ch = '\t';
-                break;
-            case 'v':
-                ch = '\v';
-                break;
-            case '\'':
-                ch = '\'';
-                break;
-            case 'x':
-                if(i + 1 < stopPos && isHex(this->buf[i + 1])) {
-                    unsigned int v = hexToNum(this->buf[++i]);
-                    if(i + 1 < stopPos && isHex(this->buf[i + 1])) {
-                        v *= 16;
-                        v += hexToNum(this->buf[++i]);
-                        ch = static_cast<char>(v);
-                        break;
-                    }
+    StringRef ref = this->toStrRef(token);
+    ref.removePrefix(2);    // prefix "$'"
+    ref.removeSuffix(1);    // suffix "'"
+
+    const char *end = ref.end();
+    for(const char *iter = ref.begin(); iter != end;) {
+        if(*iter == '\\') {
+            int code = parseEscapeSeq(iter, end, false);
+            if(code != -1) {
+                char buf[4];
+                unsigned int size = UnicodeUtil::codePointToUtf8(code, buf);
+                if(!size) {
+                    return false;   // unicode out of range
                 }
-                return false;
-            default:
-                if(isOctal(this->buf[i])) {
-                    int v = this->buf[i] - '0';
-                    if(i + 1 < stopPos && isOctal(this->buf[i + 1])) {
-                        v *= 8;
-                        v += this->buf[++i] - '0';
-                        if(i + 1 < stopPos && isOctal(this->buf[i + 1])) {
-                            v *= 8;
-                            v += this->buf[++i] - '0';
-                            ch = static_cast<char>(v);
-                            break;
-                        }
-                    }
-                    return false;
+                out.append(buf, size);
+                continue;
+            } else if(iter + 1 != end) {
+                char next = *(iter + 1);
+                if(next == '\'') {
+                    iter += 2;
+                    out += '\'';
+                    continue;
+                } else if(next == 'x') {
+                    return false;   // need hex char after \x
                 }
-                --i;
-                break;
             }
         }
-        out += static_cast<char>(ch);
+        out += *(iter++);
     }
     return true;
 }
@@ -308,6 +269,67 @@ bool Lexer::toEnvName(Token token, std::string &out) const {
         }
     }
     return true;
+}
+
+int parseEscapeSeq(const char *&begin, const char *end, bool needOctalPrefix) {
+    if(begin == end || *begin != '\\' || (begin + 1) == end) {
+        return -1;
+    }
+    begin++;    // consume '\'
+    char next = *(begin++);
+    switch(next) {
+    case '\\':
+        return '\\';
+    case 'a':
+        return '\a';
+    case 'b':
+        return '\b';
+    case 'e':
+    case 'E':
+        return '\033';
+    case 'f':
+        return '\f';
+    case 'n':
+        return '\n';
+    case 'r':
+        return '\r';
+    case 't':
+        return '\t';
+    case 'v':
+        return '\v';
+    case 'x': {
+        if(begin == end || !isHex(*begin)) {
+            begin -= 2;
+            break;
+        }
+        unsigned int code = hexToNum(*(begin++));
+        for(unsigned int i = 1; i < 2; i++) {
+            if(begin != end && isHex(*begin)) {
+                code *= 16;
+                code += hexToNum(*(begin++));
+            } else {
+                break;
+            }
+        }
+        return code;
+    }
+    default:
+        if(!isOctal(next) || (needOctalPrefix && next != '0')) {
+            begin -= 2;
+            break;
+        }
+        unsigned int code = next - '0';
+        for(unsigned int i = needOctalPrefix ? 0 : 1; i < 3; i++) {
+            if(begin != end && isOctal(*begin)) {
+                code *= 8;
+                code += *(begin++) - '0';
+            } else {
+                break;
+            }
+        }
+        return code;
+    }
+    return -1;
 }
 
 } // namespace ydsh

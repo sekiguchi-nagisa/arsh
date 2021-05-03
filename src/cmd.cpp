@@ -515,71 +515,20 @@ static int builtin_echo(DSState &, ArrayObject &argvObj) {
             continue;
         }
         auto arg = argvObj.getValues()[index].asStrRef();
-        for(unsigned int i = 0; i < arg.size(); i++) {
-            int ch = arg[i];
-            if(ch == '\\' && i + 1 < arg.size()) {
-                switch(arg[++i]) {
-                case '\\':
-                    ch = '\\';
-                    break;
-                case 'a':
-                    ch = '\a';
-                    break;
-                case 'b':
-                    ch = '\b';
-                    break;
-                case 'c':   // stop printing
-                    return 0;
-                case 'e':
-                case 'E':
-                    ch = '\033';
-                    break;
-                case 'f':
-                    ch = '\f';
-                    break;
-                case 'n':
-                    ch = '\n';
-                    break;
-                case 'r':
-                    ch = '\r';
-                    break;
-                case 't':
-                    ch = '\t';
-                    break;
-                case 'v':
-                    ch = '\v';
-                    break;
-                case '0': {
-                    int v = 0;
-                    for(unsigned int c = 0; c < 3; c++) {
-                        if(i + 1 < arg.size() && isOctal(arg[i + 1])) {
-                            v *= 8;
-                            v += arg[++i] - '0';
-                        } else {
-                            break;
-                        }
-                    }
-                    ch = static_cast<char>(v);
-                    break;
-                }
-                case 'x': {
-                    if(i + 1 < arg.size() && isHex(arg[i + 1])) {
-                        unsigned int v = hexToNum(arg[++i]);
-                        if(i + 1 < arg.size() && isHex(arg[i + 1])) {
-                            v *= 16;
-                            v += hexToNum(arg[++i]);
-                        }
-                        ch = static_cast<char>(v);
-                        break;
-                    }
-                    i--;
-                    break;
-                }
-                default:
-                    i--;
-                    break;
+        const char *end = arg.end();
+        for(const char *iter = arg.begin(); iter != end;) {
+            if(*iter == '\\') {
+                int code = parseEscapeSeq(iter, end, true);
+                if(code != -1) {
+                    char buf[5];
+                    unsigned int size = UnicodeUtil::codePointToUtf8(code, buf);
+                    fwrite(buf, sizeof(char), size, stdout);
+                    continue;
+                } else if(iter + 1 != end && *(iter + 1) == 'c') {
+                    return 0;   // stop printing
                 }
             }
+            char ch = *(iter++);
             fputc(ch, stdout);
         }
     }
