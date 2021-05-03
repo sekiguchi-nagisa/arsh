@@ -144,13 +144,17 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
                 out.append(buf, size);
                 continue;
             } else if(iter + 1 != end) {
-                char next = *(iter + 1);
-                if(next == '\'') {
+                switch(*(iter + 1)) {
+                case '\'':
                     iter += 2;
                     out += '\'';
                     continue;
-                } else if(next == 'x') {
-                    return false;   // need hex char after \x
+                case 'x':
+                case 'u':
+                case 'U':
+                    return false;   // need hex char after \x \u \U
+                default:
+                    break;
                 }
             }
         }
@@ -297,13 +301,16 @@ int parseEscapeSeq(const char *&begin, const char *end, bool needOctalPrefix) {
         return '\t';
     case 'v':
         return '\v';
-    case 'x': {
+    case 'x':
+    case 'u':
+    case 'U': {
         if(begin == end || !isHex(*begin)) {
             begin -= 2;
             break;
         }
+        unsigned int limit = next == 'x' ? 2 : next == 'u' ? 4 : 8;
         unsigned int code = hexToNum(*(begin++));
-        for(unsigned int i = 1; i < 2; i++) {
+        for(unsigned int i = 1; i < limit; i++) {
             if(begin != end && isHex(*begin)) {
                 code *= 16;
                 code += hexToNum(*(begin++));

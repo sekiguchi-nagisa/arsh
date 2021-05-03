@@ -19,6 +19,10 @@ assert("$(echo -e '\e')" == $'\x1B')
 assert("$(echo -e '\f')" == $'\x0c')
 assert("$(echo -e '\v')" == $'\013')
 assert("$(echo -e '\G')" == $'\G' && $'\G' == '\G') # invalid escape sequence
+assert "$(echo -e '\u7058')" == '灘'
+assert "$(echo -e '\U7058')" == '灘'
+assert "$(echo -e '\U07058')" == '灘'
+assert "$(echo -e '\U20118')" == '𠄘'
 
 assert("$(echo -e -- hello)" == '-- hello')
 assert "$(echo ---)" == '---'

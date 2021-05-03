@@ -2079,6 +2079,9 @@ TEST_F(EscapeSeqTest, base) {
     ASSERT_NO_FATAL_FAILURE(this->assertEscape("s\\0", ARRAY('s', '\0')));
     ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\0123", ARRAY('\123'), true));
     ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\0123", ARRAY('\012', '3'), false));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\uA9", 0xa9));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\u2328", 0x2328));
+    ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\U2328", 0x2328));
 }
 
 int main(int argc, char **argv) {

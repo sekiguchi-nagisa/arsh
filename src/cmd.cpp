@@ -137,6 +137,10 @@ static constexpr struct {
                 "                  \\v    vertical tab\n"
                 "                  \\0nnn N is octal number.  NNN can be 0 to 3 number\n"
                 "                  \\xnn  N is hex number.  NN can be 1 to 2 number\n"
+                "                  \\unnnn\n"
+                "                        N is hex number. NNNN can be 1 to 4 number\n"
+                "                  \\Unnnnnnnn\n"
+                "                        N is hex number. NNNNNNNN can be 1 to 8 number\n"
                 "        -E    disable escape sequence interpretation"},
         {"eval", nullptr, "[arg ...]",
                 "    Evaluate ARGs as command."},
