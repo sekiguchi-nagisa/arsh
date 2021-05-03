@@ -4,7 +4,7 @@
 
 #include <misc/num_util.hpp>
 #include <misc/unicode.hpp>
-#include <grapheme.h>
+#include <misc/grapheme.hpp>
 
 #include "../test_common.h"
 

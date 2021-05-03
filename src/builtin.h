@@ -28,8 +28,7 @@
 #include <ydsh/ydsh.h>
 #include "vm.h"
 #include "signals.h"
-#include "grapheme.h"
-#include "misc/unicode.hpp"
+#include "misc/grapheme.hpp"
 #include "misc/num_util.hpp"
 #include "misc/files.h"
 

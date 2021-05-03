@@ -14,14 +14,75 @@
  * limitations under the License.
  */
 
+#ifndef MISC_LIB_GRAPHEME_HPP
+#define MISC_LIB_GRAPHEME_HPP
+
 #include <tuple>
 
-#include "grapheme.h"
-#include "misc/unicode.hpp"
+#include "unicode.hpp"
+#include "string_ref.hpp"
 
-namespace ydsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
-GraphemeBoundary::BreakProperty GraphemeBoundary::getBreakProperty(int codePoint) {
+namespace __detail {
+
+template <bool Bool>
+class GraphemeBoundary {
+public:
+    static_assert(Bool, "not allowed instantiation");
+
+    // for grapheme cluster boundry. only support extended grapheme cluster
+    enum class BreakProperty {
+        SOT,    // for GB1
+
+        Any,
+        CR,
+        LF,
+        Control,
+        Extend,
+        ZWJ,
+        Regional_Indicator,
+        Prepend,
+        SpacingMark,
+        L,
+        V,
+        T,
+        LV,
+        LVT,
+
+        Extended_Pictographic,
+
+        Extended_Pictographic_with_ZWJ, // indicates \p{Extended_Pictographic} Extend* ZWJ
+    };
+
+    static BreakProperty getBreakProperty(int codePoint);
+
+private:
+    /**
+     * may be indicate previous code point property
+     */
+    BreakProperty state{BreakProperty::SOT};
+
+public:
+    GraphemeBoundary() = default;
+
+    explicit GraphemeBoundary(BreakProperty init) : state(init) {}
+
+    BreakProperty getState() const {
+        return this->state;
+    }
+
+    /**
+     * scan grapheme cluster boundary
+     * @param codePoint
+     * @return
+     * if grapheme cluster boundary is between prev codePoint and codePoint, return true
+     */
+    bool scanBoundary(int codePoint);
+};
+
+template <bool Bool>
+typename GraphemeBoundary<Bool>::BreakProperty GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
     using PropertyInterval = std::tuple<int, int, BreakProperty>;
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
@@ -54,7 +115,8 @@ GraphemeBoundary::BreakProperty GraphemeBoundary::getBreakProperty(int codePoint
 
 
 // see. https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules
-bool GraphemeBoundary::scanBoundary(int codePoint) {
+template <bool Bool>
+bool GraphemeBoundary<Bool>::scanBoundary(int codePoint) {
     auto after = getBreakProperty(codePoint);
     auto before = this->state;
     this->state = after;
@@ -154,7 +216,59 @@ bool GraphemeBoundary::scanBoundary(int codePoint) {
     return true;    // GB999
 }
 
-static int toCodePoint(StringRef ref, size_t pos) {
+template <bool Bool>
+class GraphemeScanner {
+private:
+    static_assert(Bool, "not allowed instantiation");
+
+    StringRef ref;
+    size_t prevPos;
+    size_t curPos;
+    GraphemeBoundary<Bool> boundary;
+
+public:
+    GraphemeScanner(StringRef ref, size_t prevPos = 0,
+                    size_t curPos = 0, GraphemeBoundary<Bool> boundary = {}) :
+            ref(ref), prevPos(prevPos), curPos(curPos), boundary(boundary) {}
+
+    StringRef getRef() const {
+        return this->ref;
+    }
+
+    size_t getPrevPos() const {
+        return this->prevPos;
+    }
+
+    size_t getCurPos() const {
+        return this->curPos;
+    }
+
+    GraphemeBoundary<Bool> getBoundary() const {
+        return this->boundary;
+    }
+
+    bool hasNext() const {
+        return this->prevPos <= this->curPos && this->prevPos < this->ref.size();
+    }
+
+    struct Result {
+        size_t startPos;        // begin pos of grapheme cluster
+        size_t byteSize;        // byte length of graphme cluster
+        size_t codePointCount;  // count of containing code points
+        int firstCodePoint;     // for char width
+    };
+
+    /**
+     * get grapheme cluster
+     * @param result
+     * set scanned grapheme cluster info to result
+     * @return
+     * if reach eof, return false
+     */
+    bool next(Result &result);
+};
+
+inline int toCodePoint(StringRef ref, size_t pos) {
     int codePoint = UnicodeUtil::utf8ToCodePoint(ref.begin() + pos, ref.end());
     if(codePoint < 0) {
         codePoint = ref[pos];   // broken encoding
@@ -162,7 +276,8 @@ static int toCodePoint(StringRef ref, size_t pos) {
     return codePoint;
 }
 
-bool GraphemeScanner::next(Result &result) {
+template <bool Bool>
+bool GraphemeScanner<Bool>::next(Result &result) {
     result.codePointCount = this->prevPos == this->curPos ? 0 : 1;
     result.startPos = this->prevPos;
     result.byteSize = 0;
@@ -189,4 +304,12 @@ bool GraphemeScanner::next(Result &result) {
     return result.codePointCount > 0;
 }
 
-} // namespace ydsh
+} // namespace __detail
+
+using GraphemeBoundary = __detail::GraphemeBoundary<true>;
+
+using GraphemeScanner = __detail::GraphemeScanner<true>;
+
+END_MISC_LIB_NAMESPACE_DECL
+
+#endif //MISC_LIB_RAPHEME_HPP
