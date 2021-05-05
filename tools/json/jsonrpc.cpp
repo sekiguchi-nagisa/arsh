@@ -220,6 +220,8 @@ CallbackMap::Entry CallbackMap::take(long id) {
 // ##     Transport     ##
 // #######################
 
+#define LOG(L, ...) (this->logger.get())(L, __VA_ARGS__)
+
 void Transport::call(JSON &&id, const std::string &methodName, JSON &&param) {
     auto str = Request(std::move(id), methodName, std::move(param)).toJSON().serialize();
     this->send(str.size(), str.c_str());
@@ -243,7 +245,7 @@ void Transport::reply(JSON &&id, Error &&error) {
 bool Transport::dispatch(Handler &handler) {
     int dataSize = this->recvSize();
     if(dataSize < 0) {
-        this->logger(LogLevel::ERROR, "may be broken or empty message");
+        LOG(LogLevel::ERROR, "may be broken or empty message");
         return false;
     }
 
@@ -254,7 +256,7 @@ bool Transport::dispatch(Handler &handler) {
         int needSize = remainSize < bufSize ? remainSize : bufSize;
         int recvSize = this->recv(needSize, data);
         if(recvSize < 0) {
-            this->logger(LogLevel::ERROR, "message receiving failed");
+            LOG(LogLevel::ERROR, "message receiving failed");
             return false;
         }
         buf.append(data, static_cast<unsigned int>(recvSize));
@@ -264,7 +266,7 @@ bool Transport::dispatch(Handler &handler) {
     auto msg = MessageParser(std::move(buf))();
     if(is<Error>(msg)) {
         auto &error = get<Error>(msg);
-        this->logger(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
+        LOG(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
         this->reply(nullptr, std::move(error));
     } else if(is<Request>(msg)) {
         auto &req = get<Request>(msg);
@@ -295,7 +297,7 @@ ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
     if(iter == this->callMap.end()) {
         std::string str = "undefined method: ";
         str += name;
-        this->logger(LogLevel::ERROR, "undefined call: %s", name.c_str());
+        LOG(LogLevel::ERROR, "undefined call: %s", name.c_str());
         return newError(MethodNotFound, std::move(str));
     }
 
@@ -303,28 +305,30 @@ ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
     Validator validator;
     if(!iface(validator, param)) {
         std::string e = validator.formatError();
-        this->logger(LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
+        LOG(LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
         return newError(InvalidParams, std::move(e));
     }
 
+    LOG(LogLevel::INFO, "onCall: %s", name.c_str());
     return iter->second(std::move(param));
 }
 
 void Handler::onNotify(const std::string &name, JSON &&param) {
     auto iter = this->notificationMap.find(name);
     if(iter == this->notificationMap.end()) {
-        this->logger(LogLevel::ERROR, "undefined notification: %s", name.c_str());
+        LOG(LogLevel::ERROR, "undefined notification: %s", name.c_str());
         return;
     }
 
     auto &iface = this->notificationParamMap.lookup(name);
     Validator validator;
     if(!iface(validator, param)) {
-        this->logger(LogLevel::ERROR,
+        LOG(LogLevel::ERROR,
                 "notification message validation failed: \n%s", validator.formatError().c_str());
         return;
     }
 
+    LOG(LogLevel::INFO, "onNotify: %s", name.c_str());
     iter->second(std::move(param));
 }
 
@@ -334,7 +338,7 @@ void Handler::onResponse(Response &&res) {
     auto entry = this->callbackMap.take(id);
 
     if(!entry.second) {
-        this->logger(LogLevel::ERROR, "broken response: %ld", id);
+        LOG(LogLevel::ERROR, "broken response: %ld", id);
         return;
     }
 
@@ -343,7 +347,7 @@ void Handler::onResponse(Response &&res) {
         Validator validator;
         if(!iface(validator, get<JSON>(res.value))) {
             std::string e = validator.formatError();
-            this->logger(LogLevel::ERROR, "response message validation failed: \n%s", e.c_str());
+            LOG(LogLevel::ERROR, "response message validation failed: \n%s", e.c_str());
             res.value = newError(InvalidParams, std::move(e), std::move(res.value).take());
         }
     }

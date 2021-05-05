@@ -54,9 +54,11 @@ namespace lsp {
 // ##     LSPServer     ##
 // #######################
 
+#define LOG(L, ...) (this->logger.get())(L, __VA_ARGS__)
+
 ReplyImpl LSPServer::onCall(const std::string &name, JSON &&param) {
     if(!this->init && name != "initialize") {
-        this->logger(LogLevel::ERROR, "must be initialized");
+        LOG(LogLevel::ERROR, "must be initialized");
         return newError(LSPErrorCode::ServerNotInitialized, "server not initialized!!");
     }
     return Handler::onCall(name, std::move(param));
@@ -76,7 +78,7 @@ void LSPServer::run() {
 }
 
 Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
-    this->logger(LogLevel::INFO, "initialize server ....");
+    LOG(LogLevel::INFO, "initialize server ....");
     if(this->init) {
         return newError(ErrorCode::InvalidRequest, "server has already initialized");
     }
@@ -89,18 +91,18 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
 }
 
 void LSPServer::initialized(const ydsh::lsp::InitializedParams &) {
-    this->logger(LogLevel::INFO, "server initialized!!");
+    LOG(LogLevel::INFO, "server initialized!!");
 }
 
 Reply<void> LSPServer::shutdown() {
-    this->logger(LogLevel::INFO, "try to shutdown ....");
+    LOG(LogLevel::INFO, "try to shutdown ....");
     this->willExit = true;
     return nullptr;
 }
 
 void LSPServer::exit() {
     int s = this->willExit ? 0 : 1;
-    this->logger(LogLevel::INFO, "exit server: %d", s);
+    LOG(LogLevel::INFO, "exit server: %d", s);
     std::exit(s);   // always success
 }
 
