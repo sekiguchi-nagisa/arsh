@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "serialize.h"
 #include "jsonrpc.h"
 
 using namespace ydsh;
@@ -311,6 +312,192 @@ TEST_F(ParserTest, serialize2) {
     ASSERT_EQ(expect, actual);
 }
 
+template <typename T>
+static JSON serialize(T &&v) {
+    JSONSerializer serializer;
+    serializer(std::forward<T>(v));
+    return std::move(serializer).take();
+}
+
+TEST(SerializeTest, base) {
+    auto ret = serialize(true);
+    ASSERT_TRUE(ret.isBool());
+    ASSERT_TRUE(ret.asBool());
+
+    ret = serialize(3.14);
+    ASSERT_TRUE(ret.isDouble());
+    ASSERT_EQ(3.14, ret.asDouble());
+
+    ret = serialize("hello");
+    ASSERT_TRUE(ret.isString());
+    ASSERT_EQ("hello", ret.asString());
+
+    std::vector<int> v = {1,2,3};
+    ret = serialize(v);
+    ASSERT_TRUE(ret.isArray());
+    ASSERT_EQ(3, ret.asArray().size());
+    ASSERT_EQ(1, ret.asArray()[0].asLong());
+
+    ret = serialize(nullptr);
+    ASSERT_TRUE(ret.isNull());
+}
+
+struct BBB {
+    int b1;
+    std::string b2;
+
+    template <typename T>
+    void jsonify(T &t) {
+        t("b1", b1);
+        t("b2", b2);
+    }
+};
+
+struct AAA {
+    int a1;
+    BBB a2;
+};
+
+namespace ydsh {
+namespace json {
+
+template <typename T>
+void jsonify(T &t, AAA &v) {
+    t("a1", v.a1);
+    t("a2", v.a2);
+}
+
+}
+}
+
+TEST(SerializeTest, object) {
+    AAA v = {
+            .a1 = 190,
+            .a2 = BBB {
+                .b1 = -234,
+                .b2 = "world!!",
+            }
+    };
+    auto ret = serialize(v);
+    ASSERT_TRUE(ret.isObject());
+    ASSERT_EQ(2, ret.asObject().size());
+    ASSERT_EQ(190, ret["a1"].asLong());
+    ASSERT_EQ(-234, ret["a2"]["b1"].asLong());
+    ASSERT_EQ("world!!", ret["a2"]["b2"].asString());
+}
+
+TEST(SerializeTest, variant) {
+    Union<bool, BBB, int> v;
+    auto ret = serialize(v);
+    ASSERT_TRUE(ret.isInvalid());
+
+    v = 234;
+    ret = serialize(v);
+    ASSERT_TRUE(ret.isLong());
+    ASSERT_EQ(234, ret.asLong());
+
+    v = false;
+    ret = serialize(v);
+    ASSERT_TRUE(ret.isBool());
+    ASSERT_FALSE(ret.asBool());
+
+    v = BBB {
+        .b1 = 999,
+        .b2 = "@@@@",
+    };
+    ret = serialize(v);
+    ASSERT_TRUE(ret.isObject());
+    ASSERT_EQ(2, ret.asObject().size());
+    ASSERT_EQ(999, ret["b1"].asLong());
+    ASSERT_EQ("@@@@", ret["b2"].asString());
+}
+
+TEST(DeserializeTest, base) {
+    JSONDeserializer deserializer(false);
+    bool b = true;
+    deserializer(b);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_FALSE(b);
+
+    deserializer = JSONDeserializer(true);
+    deserializer(b);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_TRUE(b);
+
+    deserializer = JSONDeserializer(34);
+    deserializer(b);
+    ASSERT_TRUE(deserializer.hasError());
+
+    int64_t i = 0;
+    deserializer = JSONDeserializer(12);
+    deserializer(i);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_EQ(12, i);
+
+    deserializer = JSONDeserializer(3.14);
+    deserializer(i);
+    ASSERT_TRUE(deserializer.hasError());
+
+    double d = 0;
+    deserializer = JSONDeserializer(34.5);
+    deserializer(d);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_EQ(34.5, d);
+
+    deserializer = JSONDeserializer("12345");
+    deserializer(d);
+    ASSERT_TRUE(deserializer.hasError());
+
+    std::string s;
+    deserializer = JSONDeserializer("9999");
+    deserializer(s);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_EQ("9999", s);
+}
+
+TEST(DeserializeTest, array) {
+    std::vector<std::vector<std::string>> v1 = {
+            {"helllo", "1"},
+            {"world", "2"}
+    };
+    auto j = serialize(v1);
+
+    std::vector<std::vector<std::string>> v2;
+    JSONDeserializer deserializer(std::move(j));
+    deserializer(v2);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_EQ(2, v2.size());
+    ASSERT_EQ(2, v2[0].size());
+    ASSERT_EQ("helllo", v2[0][0]);
+    ASSERT_EQ("1", v2[0][1]);
+    ASSERT_EQ(2, v2[1].size());
+    ASSERT_EQ("world", v2[1][0]);
+    ASSERT_EQ("2", v2[1][1]);
+}
+
+TEST(DeserializeTest, object) {
+    AAA v1 = {
+            .a1 = 190,
+            .a2 = BBB {
+                    .b1 = -234,
+                    .b2 = "world!!",
+            }
+    };
+    auto ret = serialize(v1);
+    JSONDeserializer deserializer(std::move(ret));
+    AAA v2;
+    deserializer(v2);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_EQ(190, v2.a1);
+    ASSERT_EQ(-234, v2.a2.b1);
+    ASSERT_EQ("world!!", v2.a2.b2);
+}
+
+//TEST(DeserializeTest, variant) {
+//    Union<int, std::string, std::vector<BBB>> v;
+//    JSONDeserializer deserializer(456);
+//    deserializer(v);
+//}
 
 class ValidatorTest : public ::testing::Test {
 protected:

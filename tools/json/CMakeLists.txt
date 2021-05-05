@@ -16,7 +16,7 @@ add_gen_lexer_target(
 #==============#
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-add_library(json STATIC json.cpp ${lexer_src})
+add_library(json STATIC json.cpp ${lexer_src} serialize.cpp)
 
 
 #=================#
