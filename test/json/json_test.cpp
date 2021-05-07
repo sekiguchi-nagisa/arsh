@@ -493,11 +493,77 @@ TEST(DeserializeTest, object) {
     ASSERT_EQ("world!!", v2.a2.b2);
 }
 
-//TEST(DeserializeTest, variant) {
-//    Union<int, std::string, std::vector<BBB>> v;
-//    JSONDeserializer deserializer(456);
-//    deserializer(v);
-//}
+static JSONDeserializer operator ""_deserialize(const char *text, size_t) {
+    return JSONDeserializer(JSON::fromString(text));
+}
+
+TEST(DeserializeTest, variant) {
+    Union<int, std::string, std::vector<BBB>> v;
+    JSONDeserializer deserializer(456);
+    deserializer(v);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_TRUE(is<int>(v));
+    ASSERT_EQ(456, get<int>(v));
+
+    v = decltype(v)();
+    deserializer = JSONDeserializer("abcd");
+    deserializer(v);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_TRUE(is<std::string>(v));
+    ASSERT_EQ("abcd", get<std::string>(v));
+
+    v = decltype(v)();
+    deserializer = R"(
+        [
+            { "b1": -999, "b2": "@@@"  },
+            { "b1": 56, "b2": "error"}
+        ]
+    )"_deserialize;
+    deserializer(v);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_TRUE(is<std::vector<BBB>>(v));
+    ASSERT_EQ(2, get<std::vector<BBB>>(v).size());
+    ASSERT_EQ(-999, get<std::vector<BBB>>(v)[0].b1);
+    ASSERT_EQ("@@@", get<std::vector<BBB>>(v)[0].b2);
+    ASSERT_EQ(56, get<std::vector<BBB>>(v)[1].b1);
+    ASSERT_EQ("error", get<std::vector<BBB>>(v)[1].b2);
+
+    v = decltype(v)();
+    deserializer = JSONDeserializer(34.2);
+    deserializer(v);
+    ASSERT_TRUE(deserializer.hasError());
+    ASSERT_FALSE(v.hasValue());
+    ASSERT_EQ("require `array', but is `double'", deserializer.getValidationError().formatError());
+}
+
+TEST(DeserializeTest, error) {
+    auto des = "23"_deserialize;
+    bool b;
+    des(b);
+    ASSERT_TRUE(des.hasError());
+    ASSERT_EQ("require `bool', but is `long'",
+              des.getValidationError().formatError());
+
+    des = "[12,34,56]"_deserialize;
+    des(b);
+    ASSERT_TRUE(des.hasError());
+    ASSERT_EQ("require `bool', but is `array'",
+              des.getValidationError().formatError());
+
+    des = R"E(
+        {
+            "a1" : 100,
+            "a2" : {
+                "b1" : -12,
+                "b2": "hello"
+            }
+        }
+    )E"_deserialize;
+    BBB bbb;
+    des(bbb);
+    ASSERT_TRUE(des.hasError());
+    ASSERT_EQ("undefined field `b1'", des.getValidationError().formatError());
+}
 
 class ValidatorTest : public ::testing::Test {
 protected:

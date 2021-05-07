@@ -20,6 +20,8 @@
 #include <type_traits>
 #include <cassert>
 
+#include <misc/flag_util.hpp>
+
 #include "noncopyable.h"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
@@ -348,6 +350,8 @@ inline const T &get(const Union<R...> &value) {
 template <typename T>
 class OptionalBase : public Union<T> {
 public:
+    using base_type = Union<T>;
+
     OptionalBase() noexcept : Union<T>() {}
 
     OptionalBase(T &&value) noexcept : Union<T>(std::forward<T>(value)) {}  //NOLINT
@@ -364,6 +368,8 @@ public:
 template <typename ...T>
 class OptionalBase<Union<T...>> : public Union<T...> {
 public:
+    using base_type = Union<T...>;
+
     OptionalBase() noexcept : Union<T...>() {}
 
     template <typename U>

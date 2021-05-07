@@ -291,6 +291,8 @@ private:
 template <>
 class OptionalBase<json::JSON> : public json::JSON {
 public:
+    using base_type = json::JSON;
+
     OptionalBase() noexcept : JSON() {}
 
     OptionalBase(JSON &&json) : JSON(std::move(json)) {}    //NOLINT

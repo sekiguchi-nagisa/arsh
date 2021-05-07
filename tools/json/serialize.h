@@ -27,21 +27,22 @@ template <typename T> struct is_array { static constexpr bool value = false; };
 template <typename T> struct is_array<std::vector<T>> { static constexpr bool value = true; };
 
 template <typename T>
-static constexpr bool is_array_v = is_array<T>::value;
+constexpr bool is_array_v = is_array<T>::value;
 
 template <typename T>
-static constexpr bool is_string_v = std::is_same_v<T, String>;
+constexpr bool is_string_v = std::is_same_v<T, String>;
 
 template <typename T> struct is_union { static constexpr bool value = false; };
 
 template <typename ...R> struct is_union<Union<R...>> { static constexpr bool value = true; };
 
 template <typename T>
-static constexpr bool is_union_v = is_union<T>::value;
+constexpr bool is_union_v = is_union<T>::value;
 
 template <typename T>
 static constexpr bool is_object_v =
         !is_string_v<T> && !is_array_v<T> && !is_union_v<T> && std::is_class_v<T>;
+
 
 template <typename T> struct array_element {};
 
@@ -140,68 +141,46 @@ private:
     void append(const char *fieldName, JSON &&json);
 };
 
-class JSONValidator : public RefCount<JSONValidator> {
+class ValidationError {
 private:
-    std::vector<std::string> errors;
+    std::vector<std::string> messages;
 
 public:
-    const std::vector<std::string> &getErrors() const {
-        return this->errors;
-    }
-
     bool hasError() const {
-        return !this->errors.empty();
+        return !this->messages.empty();
     }
 
     std::string formatError() const;
 
-    template <typename T, enable_when<JSON::TAG<T> != -1> = nullptr>
-    bool validate(const JSON &value) {
-        return this->validate(value, JSON::TAG<T>);
-    }
-
-    template <typename T, enable_when<JSON::TAG<T> != -1> = nullptr>
-    bool validate(const JSON &value, const char *fieldName) {
-        return this->validate(value, fieldName, JSON::TAG<T>);
-    }
-
-private:
     void appendError(const char *fmt, ...) __attribute__ ((format(printf, 2, 3)));
-
-    bool validate(const JSON &value, int required, const char *messagePrefix = "");
-
-    bool validate(const JSON &value, const char *fieldName, int required);
 };
 
-class JSONDeserializer {
+class JSONDeserializerImpl {
 private:
-    JSON root;
-    IntrusivePtr<JSONValidator> validator;
+    JSON &value;
+    ValidationError &validationError;
+    const bool validOnly;
 
 public:
-    explicit JSONDeserializer(JSON &&json) :
-            root(std::move(json)),
-            validator(IntrusivePtr<JSONValidator>::create()) {}
-
-    JSONDeserializer(JSON &&json, IntrusivePtr<JSONValidator> validator) :
-            root(std::move(json)), validator(std::move(validator)) {}
-
-    const IntrusivePtr<JSONValidator> &getValidator() const {
-        return this->validator;
-    }
+    JSONDeserializerImpl(JSON &value, ValidationError &error, bool validOnly = false) :
+            value(value), validationError(error), validOnly(validOnly) {}
 
     bool hasError() const {
-        return this->validator->hasError();
+        return this->validationError.hasError();
     }
 
-    void operator()(const char *fieldName, std::nullptr_t &v);
+    void operator()(const char *fieldName, std::nullptr_t &) {
+        this->validateField<std::nullptr_t>(fieldName);
+    }
 
     void operator()(const char *fieldName, bool &v);
 
     void operator()(const char *fieldName, int &v) {
         int64_t v1;
         (*this)(fieldName, v1);
-        v = v1;
+        if(!this->hasError()) {
+            v = v1;
+        }
     }
 
     void operator()(const char *fieldName, int64_t &v);
@@ -214,36 +193,55 @@ public:
 
     template <typename T, enable_when<is_array_v<T>> = nullptr>
     void operator()(const char *fieldName, T &v) {
-        JSON json = this->validateAndTakeArray(fieldName);
-        if(json.isInvalid()) {
+        JSON *json = this->validateField<Array>(fieldName);
+        if(!json || this->validOnly) {
             return;
         }
-        unsigned int size = json.asArray().size();
-        for(unsigned int i = 0; i < size; i++) {
-            JSONDeserializer deserializer(std::move(json.asArray()[i]), this->validator);
+        for(auto &e : json->asArray()) {
+            JSONDeserializerImpl deserializer(e, this->validationError, this->validOnly);
             array_element_t<T> element;
             deserializer(element);
             if(deserializer.hasError()) {
                 break;
             }
-            v.push_back(std::move(element));
+            if(!deserializer.validOnly) {
+                v.push_back(std::move(element));
+            }
         }
     }
 
     template <typename T, enable_when<is_object_v<T>> = nullptr>
     void operator()(const char *fieldName, T &v) {
-        JSON json = this->validateAndTakeObject(fieldName);
-        if(json.isInvalid()) {
+        JSON *json = this->validateField<Object>(fieldName);
+        if(!json || (this->validOnly && fieldName)) {
             return;
         }
-        JSONDeserializer deserializer(std::move(json));
+        JSONDeserializerImpl deserializer(*json, this->validationError, this->validOnly);
         jsonify(deserializer, v);
     }
 
-//    template <typename ...R>
-//    void operator()(const char *fieldName, Union<R...> &v) {
-//        FromJSON<sizeof...(R) - 1, R...>()(*this, fieldName, v);
-//    }
+    template <typename ...R>
+    void operator()(const char *fieldName, Union<R...> &v) {
+        JSON *json = this->validateField(fieldName, -1, ValidateOp::FIND_ONLY);
+        if(!json) {
+            return;
+        }
+        ValidationError e;
+        FromJSON<0, R...> fromJSON(e);
+        fromJSON(*this, v);
+    }
+
+    template <typename T>
+    void operator()(const char *fieldName, Optional<T> &v) {
+        auto op = static_cast<ValidateOp>(ValidateOp::FIND_ONLY | ValidateOp::OPTIONAL);
+        JSON *json = this->validateField(fieldName, -1, op);
+        if(!json) {
+            return;
+        }
+        using base_type = typename Optional<T>::base_type;
+        JSONDeserializerImpl deserializer(*json, this->validationError, this->validOnly);
+        deserializer(static_cast<base_type&>(v));
+    }
 
     template <typename T>
     void operator()(T &&v) {
@@ -251,38 +249,89 @@ public:
     }
 
 private:
-//    static bool isType(const JSON &json, TypeHolder<int>) {
-//        return json.isLong();
-//    }
-//
-//    template <typename T>
-//    static bool isType(const JSON &json, TypeHolder<T>) {
-//        return json.tag() == JSON::TAG<T>;
-//    }
-//
-//    template <int N, typename ...R>
-//    struct FromJSON {
-//        void operator()(JSONDeserializer &deserializer, const char *fieldName, Union<R...> &value) const {
-//            if constexpr(N > -1) {
-//                using T = typename TypeByIndex<N, R...>::type;
-//                if(isType(deserializer.root, TypeHolder<T>())) {
-//                    T v;
-//                    deserializer(fieldName, v);
-//                    value = std::move(v);
-//                } else {
-//                    FromJSON<N - 1, R...>()(deserializer, fieldName, value);
-//                }
-//            }
-//        }
-//    };
+    template <int N, typename ...R>
+    struct FromJSON {
+        ValidationError &error;
 
-    JSON validateAndTakeArray(const char *fieldName);
+        explicit FromJSON(ValidationError &error) : error(error) {}
 
-    JSON validateAndTakeObject(const char *fieldName);
+        bool validate(JSON &json) {
+            if constexpr(N > 0) {
+                this->error = ValidationError();
+            }
+            JSONDeserializerImpl deserializer(json, this->error, true);
+            using T = typename TypeByIndex<N, R...>::type;
+            T t;
+            deserializer(t);
+            return !deserializer.hasError();
+        }
+
+        void operator()(JSONDeserializerImpl &deserializer, Union<R...> &ret) {
+            if constexpr(N == sizeof...(R)) {
+                (void) ret;
+                deserializer.validationError = std::move(this->error);
+            } else {
+                if(this->validate(deserializer.value)) {
+                    if(!deserializer.validOnly) {
+                        using T = typename TypeByIndex<N, R...>::type;
+                        T v;
+                        deserializer(v);
+                        ret = std::move(v);
+                    }
+                } else {
+                    FromJSON<N + 1, R...>(this->error)(deserializer, ret);
+                }
+            }
+        }
+    };
+
+    template <typename T, enable_when<JSON::TAG<T> != -1> = nullptr>
+    JSON *validateField(const char *fieldName) {
+        return this->validateField(fieldName, JSON::TAG<T>);
+    }
+
+    enum ValidateOp {
+        FIND_ONLY = 1 << 0,
+        OPTIONAL  = 1 << 1,
+    };
+
+    /**
+     * find and check field type
+     * @param fieldName
+     * if fieldName null, return this->value
+     * @param tag
+     * @param op
+     * @return
+     * resolved field
+     */
+    JSON *validateField(const char *fieldName, int tag, ValidateOp op = {});
 };
 
+class JSONDeserializer {
+private:
+    JSON root;
+    ValidationError validationError;
+
+public:
+    explicit JSONDeserializer(JSON &&json) : root(std::move(json)) {}
+
+    const ValidationError &getValidationError() const {
+        return this->validationError;
+    }
+
+    bool hasError() const {
+        return this->validationError.hasError();
+    }
+
+    template <typename T>
+    void operator()(T &&v) {
+        JSONDeserializerImpl deserializer(this->root, this->validationError);
+        deserializer(std::forward<T>(v));
+    }
+};
 
 } // namespace json
+
 } // namespace ydsh
 
 #endif //YDSH_TOOLS_SERIALIZE_H

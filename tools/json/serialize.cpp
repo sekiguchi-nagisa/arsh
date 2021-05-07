@@ -81,11 +81,11 @@ void JSONSerializer::append(const char *fieldName, JSON &&json) {
 // ##     JSONValidator     ##
 // ###########################
 
-std::string JSONValidator::formatError() const {
+std::string ValidationError::formatError() const {
     std::string str;
-    if(!this->errors.empty()) {
-        str = this->errors.back();
-        for(auto iter = this->errors.rbegin() + 1; iter != this->errors.rend(); ++iter) {
+    if(!this->messages.empty()) {
+        str = this->messages.back();
+        for(auto iter = this->messages.rbegin() + 1; iter != this->messages.rend(); ++iter) {
             str += "\n    from: ";
             str += *iter;
         }
@@ -93,7 +93,7 @@ std::string JSONValidator::formatError() const {
     return str;
 }
 
-void JSONValidator::appendError(const char *fmt, ...) {
+void ValidationError::appendError(const char *fmt, ...) {
     va_list arg;
     va_start(arg, fmt);
     char *str = nullptr;
@@ -102,8 +102,46 @@ void JSONValidator::appendError(const char *fmt, ...) {
     }
     va_end(arg);
 
-    this->errors.emplace_back(str);
+    this->messages.emplace_back(str);
     free(str);
+}
+
+// ##################################
+// ##     JSONDeserializerImpl     ##
+// ##################################
+
+void JSONDeserializerImpl::operator()(const char *fieldName, bool &v) {
+    if(JSON *json; (json = this->validateField<bool>(fieldName))) {
+        v = json->asBool();
+    }
+}
+
+void JSONDeserializerImpl::operator()(const char *fieldName, int64_t &v) {
+    if(JSON *json; (json = this->validateField<int64_t>(fieldName))) {
+        v = json->asLong();
+    }
+}
+
+void JSONDeserializerImpl::operator()(const char *fieldName, double &v) {
+    if(JSON *json; (json = this->validateField<double>(fieldName))) {
+        v = json->asDouble();
+    }
+}
+
+void JSONDeserializerImpl::operator()(const char *fieldName, std::string &v) {
+    if(JSON *json; (json = this->validateField<String>(fieldName))) {
+        if(!this->validOnly) {
+            v = std::move(json->asString());
+        }
+    }
+}
+
+void JSONDeserializerImpl::operator()(const char *fieldName, JSON &v) {
+    if(JSON *json; (json = this->validateField<Object>(fieldName))) {
+        if(!this->validOnly) {
+            v = std::move(*json);
+        }
+    }
 }
 
 static const char *getJSONTypeStr(int tag) {
@@ -132,115 +170,47 @@ static const char *getJSONTypeStr(const JSON &v) {
     return getJSONTypeStr(v.tag());
 }
 
-bool JSONValidator::validate(const JSON &value, int required, const char *messagePrefix) {
-    if(value.tag() != required) {
-        this->appendError("%srequire %s, but is: `%s'",
-                          messagePrefix,
-                          getJSONTypeStr(required),
-                          getJSONTypeStr(value));
-        return false;
+JSON * JSONDeserializerImpl::validateField(const char *fieldName, int tag, ValidateOp op) {
+    if(this->hasError()) {
+        return nullptr;
     }
-    return true;
-}
-
-bool JSONValidator::validate(const JSON &value, const char *fieldName, int required) {
-    if(!this->validate<Object>(value)) {
-        return false;
-    }
-    auto &obj = value.asObject();
-    auto iter = obj.find(fieldName);
-    if(iter == obj.end()) {
-        this->appendError("undefined field: `%s'", fieldName);
-        return false;
-    }
-    std::string prefix = "field: `";
-    prefix += fieldName;
-    prefix += "' ";
-    return this->validate(iter->second, required, prefix.c_str());
-}
-
-// ##############################
-// ##     JSONDeserializer     ##
-// ##############################
-
-void JSONDeserializer::operator()(const char *fieldName, std::nullptr_t &) {
+    JSON *json;
     if(fieldName) {
-        this->validator->validate<std::nullptr_t>(this->root, fieldName);
+        if(!is<Object>(this->value)) {
+            this->validationError.appendError("require `%s', but is `%s'",
+                                              getJSONTypeStr(JSON::TAG<Object>),
+                                              getJSONTypeStr(this->value));
+            return nullptr;
+        }
+        auto &obj = this->value.asObject();
+        auto iter = obj.find(fieldName);
+        if(iter == obj.end()) {
+            if(!hasFlag(op, ValidateOp::OPTIONAL)) {
+                this->validationError.appendError("undefined field `%s'", fieldName);
+            }
+            return nullptr;
+        }
+        json = &iter->second;
     } else {
-        this->validator->validate<std::nullptr_t>(this->root);
+        json = &this->value;
     }
-}
 
-void JSONDeserializer::operator()(const char *fieldName, bool &v) {
-    if(fieldName) {
-        if(this->validator->validate<bool>(this->root, fieldName)) {
-            v = this->root[fieldName].asBool();
-        }
-    } else if(this->validator->validate<bool>(this->root)) {
-        v = this->root.asBool();
+    if(hasFlag(op, ValidateOp::FIND_ONLY)) {
+        return json;
     }
-}
-
-void JSONDeserializer::operator()(const char *fieldName, int64_t &v) {
-    if(fieldName) {
-        if(this->validator->validate<int64_t>(this->root, fieldName)) {
-            v = this->root[fieldName].asLong();
+    if(json->tag() != tag) {
+        std::string prefix;
+        if(fieldName) {
+            prefix = "field ";
+            prefix += "`";
+            prefix += fieldName;
+            prefix += "' ";
         }
-    } else if(this->validator->validate<int64_t>(this->root)) {
-        v = this->root.asLong();
-    }
-}
-
-void JSONDeserializer::operator()(const char *fieldName, double &v) {
-    if(fieldName) {
-        if(this->validator->validate<double>(this->root, fieldName)) {
-            v = this->root[fieldName].asDouble();
-        }
-    } else if(this->validator->validate<double>(this->root)) {
-        v = this->root.asDouble();
-    }
-}
-
-void JSONDeserializer::operator()(const char *fieldName, std::string &v) {
-    if(fieldName) {
-        if(this->validator->validate<String>(this->root, fieldName)) {
-            v = std::move(this->root[fieldName].asString());
-        }
-    } else if(this->validator->validate<String>(this->root)) {
-        v = std::move(this->root.asString());
-    }
-}
-
-void JSONDeserializer::operator()(const char *fieldName, JSON &v) {
-    if(fieldName) {
-        if(this->validator->validate<Object>(this->root, fieldName)) {
-            v = std::move(this->root[fieldName]);
-        }
-    } else if(this->validator->validate<Object>(this->root)) {
-        v = std::move(this->root);
-    }
-}
-
-JSON JSONDeserializer::validateAndTakeArray(const char *fieldName) {
-    JSON json;
-    if(fieldName) {
-        if(this->validator->validate<Array>(this->root, fieldName)) {
-            json = std::move(this->root[fieldName]);
-        }
-    } else if(this->validator->validate<Array>(this->root)) {
-        json = std::move(this->root);
-    }
-    return json;
-}
-
-JSON JSONDeserializer::validateAndTakeObject(const char *fieldName) {
-    JSON json;
-    if(fieldName) {
-        if(this->validator->validate<Object>(this->root, fieldName)) {
-            json = std::move(this->root[fieldName]);
-        }
-    } else if(this->validator->validate<Object>(this->root)) {
-        json = std::move(this->root);
+        this->validationError.appendError("%srequire `%s', but is `%s'",
+                                          prefix.c_str(),
+                                          getJSONTypeStr(tag),
+                                          getJSONTypeStr(*json));
+        return nullptr;
     }
     return json;
 }
