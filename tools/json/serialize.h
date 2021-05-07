@@ -39,9 +39,17 @@ template <typename ...R> struct is_union<Union<R...>> { static constexpr bool va
 template <typename T>
 constexpr bool is_union_v = is_union<T>::value;
 
+template <typename T> struct is_optional { static constexpr bool value = false; };
+
+template <typename T> struct is_optional<OptionalBase<T>> { static constexpr bool value = true; };
+
+template <typename T>
+constexpr bool is_optional_v = is_optional<T>::value;
+
 template <typename T>
 static constexpr bool is_object_v =
-        !is_string_v<T> && !is_array_v<T> && !is_union_v<T> && std::is_class_v<T>;
+        !is_string_v<T> && !is_array_v<T> && !is_union_v<T>
+        && !is_optional_v<T> &&  !std::is_same_v<T, JSON> && std::is_class_v<T>;
 
 
 template <typename T> struct array_element {};
@@ -116,6 +124,13 @@ public:
     template <typename ...R>
     void operator()(const char *fieldName, Union<R...> &v) {
         ToJSON<sizeof...(R) - 1, R...>()(*this, fieldName, v);
+    }
+
+    template <typename T, enable_when<is_optional_v<T>> = nullptr>
+    void operator()(const char *fieldName, T &v) {
+        if(v.hasValue()) {
+            (*this)(fieldName, v.unwrap());
+        }
     }
 
     template <typename T>
@@ -222,7 +237,7 @@ public:
 
     template <typename ...R>
     void operator()(const char *fieldName, Union<R...> &v) {
-        JSON *json = this->validateField(fieldName, -1, ValidateOp::FIND_ONLY);
+        JSON *json = this->validateField(fieldName, -1);
         if(!json) {
             return;
         }
@@ -231,14 +246,13 @@ public:
         fromJSON(*this, v);
     }
 
-    template <typename T>
-    void operator()(const char *fieldName, Optional<T> &v) {
-        auto op = static_cast<ValidateOp>(ValidateOp::FIND_ONLY | ValidateOp::OPTIONAL);
-        JSON *json = this->validateField(fieldName, -1, op);
+    template <typename T, enable_when<is_optional_v<T>> = nullptr>
+    void operator()(const char *fieldName, T &v) {
+        JSON *json = this->validateField(fieldName, -1, true);
         if(!json) {
             return;
         }
-        using base_type = typename Optional<T>::base_type;
+        using base_type = typename T::base_type;
         JSONDeserializerImpl deserializer(*json, this->validationError, this->validOnly);
         deserializer(static_cast<base_type&>(v));
     }
@@ -290,11 +304,6 @@ private:
         return this->validateField(fieldName, JSON::TAG<T>);
     }
 
-    enum ValidateOp {
-        FIND_ONLY = 1 << 0,
-        OPTIONAL  = 1 << 1,
-    };
-
     /**
      * find and check field type
      * @param fieldName
@@ -304,7 +313,7 @@ private:
      * @return
      * resolved field
      */
-    JSON *validateField(const char *fieldName, int tag, ValidateOp op = {});
+    JSON *validateField(const char *fieldName, int tag, bool optional = false);
 };
 
 class JSONDeserializer {
@@ -331,7 +340,6 @@ public:
 };
 
 } // namespace json
-
 } // namespace ydsh
 
 #endif //YDSH_TOOLS_SERIALIZE_H

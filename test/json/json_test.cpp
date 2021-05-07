@@ -536,6 +536,89 @@ TEST(DeserializeTest, variant) {
     ASSERT_EQ("require `array', but is `double'", deserializer.getValidationError().formatError());
 }
 
+struct CCC {
+    int id{1};
+    Optional<BBB> value;
+
+    template <typename T>
+    void jsonify(T &t) {
+        t("id", id);
+        t("value", value);
+    }
+};
+
+TEST(DeserializeTest, option1) {
+    Optional<CCC> v1;
+    JSON json = serialize(v1);
+    ASSERT_TRUE(json.isInvalid());
+
+    v1 = CCC();
+    json = serialize(v1);
+    ASSERT_TRUE(json.isObject());
+    ASSERT_EQ(1, json.asObject().size());
+    ASSERT_EQ(1, json["id"].asLong());
+
+    Optional<CCC> v2;
+    JSONDeserializer deserializer(std::move(json));
+    deserializer(v2);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_TRUE(v2.hasValue());
+    ASSERT_EQ(1, v2.unwrap().id);
+    ASSERT_FALSE(v2.unwrap().value.hasValue());
+
+    v2.unwrap().id = 999;
+    v2.unwrap().value = BBB {
+        .b1 = -100,
+        .b2 = "hoge",
+    };
+
+    json = serialize(v2);
+    ASSERT_TRUE(json.isObject());
+
+    v2 = Optional<CCC>();
+    deserializer = JSONDeserializer(std::move(json));
+    deserializer(v2);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_TRUE(v2.hasValue());
+    ASSERT_EQ(999, v2.unwrap().id);
+    ASSERT_TRUE(v2.unwrap().value.hasValue());
+    ASSERT_EQ(-100, v2.unwrap().value.unwrap().b1);
+    ASSERT_EQ("hoge", v2.unwrap().value.unwrap().b2);
+}
+
+struct DDD {
+    Optional<JSON> json;
+
+    template <typename T>
+    void jsonify(T &t) {
+        t("json", json);
+    }
+};
+
+TEST(DeserializeTest, option2) {
+    DDD v1 = {
+            .json = JSON(100),
+    };
+    auto json = serialize(v1);
+    ASSERT_TRUE(json.isObject());
+    ASSERT_EQ(1, json.asObject().size());
+
+    JSONDeserializer deserializer(std::move(json));
+    DDD v2;
+    deserializer(v2);
+    std::cerr << deserializer.getValidationError().formatError() << std::endl;
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_TRUE(v2.json.hasValue());
+    ASSERT_EQ(100, v2.json.unwrap().asLong());
+
+    v2.json = Optional<JSON>();
+    v1 = decltype(v1)();
+    deserializer = JSONDeserializer(serialize(v2));
+    deserializer(v1);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_FALSE(v1.json.hasValue());
+}
+
 TEST(DeserializeTest, error) {
     auto des = "23"_deserialize;
     bool b;

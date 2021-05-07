@@ -137,7 +137,7 @@ void JSONDeserializerImpl::operator()(const char *fieldName, std::string &v) {
 }
 
 void JSONDeserializerImpl::operator()(const char *fieldName, JSON &v) {
-    if(JSON *json; (json = this->validateField<Object>(fieldName))) {
+    if(JSON *json; (json = this->validateField(fieldName, -1))) {
         if(!this->validOnly) {
             v = std::move(*json);
         }
@@ -170,7 +170,7 @@ static const char *getJSONTypeStr(const JSON &v) {
     return getJSONTypeStr(v.tag());
 }
 
-JSON * JSONDeserializerImpl::validateField(const char *fieldName, int tag, ValidateOp op) {
+JSON * JSONDeserializerImpl::validateField(const char *fieldName, int tag, bool optional) {
     if(this->hasError()) {
         return nullptr;
     }
@@ -185,7 +185,7 @@ JSON * JSONDeserializerImpl::validateField(const char *fieldName, int tag, Valid
         auto &obj = this->value.asObject();
         auto iter = obj.find(fieldName);
         if(iter == obj.end()) {
-            if(!hasFlag(op, ValidateOp::OPTIONAL)) {
+            if(!optional) {
                 this->validationError.appendError("undefined field `%s'", fieldName);
             }
             return nullptr;
@@ -195,7 +195,7 @@ JSON * JSONDeserializerImpl::validateField(const char *fieldName, int tag, Valid
         json = &this->value;
     }
 
-    if(hasFlag(op, ValidateOp::FIND_ONLY)) {
+    if(tag == -1) {
         return json;
     }
     if(json->tag() != tag) {

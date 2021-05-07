@@ -296,6 +296,14 @@ public:
     OptionalBase() noexcept : JSON() {}
 
     OptionalBase(JSON &&json) : JSON(std::move(json)) {}    //NOLINT
+
+    json::JSON &unwrap() noexcept {
+        return static_cast<base_type&>(*this);
+    }
+
+    const json::JSON &unwrap() const noexcept {
+        return static_cast<const base_type&>(*this);
+    }
 };
 
 } // namespace ydsh

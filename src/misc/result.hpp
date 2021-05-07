@@ -20,8 +20,6 @@
 #include <type_traits>
 #include <cassert>
 
-#include <misc/flag_util.hpp>
-
 #include "noncopyable.h"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
@@ -374,6 +372,14 @@ public:
 
     template <typename U>
     OptionalBase(U &&value) noexcept : Union<T...>(std::forward<U>(value)) {}   //NOLINT
+
+    Union<T...> &unwrap() noexcept {
+        return static_cast<base_type&>(*this);
+    }
+
+    const Union<T...> &unwrap() const noexcept {
+        return static_cast<const base_type&>(*this);
+    }
 };
 
 template <typename T>
