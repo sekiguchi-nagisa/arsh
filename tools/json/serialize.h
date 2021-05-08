@@ -19,8 +19,7 @@
 
 #include "json.h"
 
-namespace ydsh {
-namespace json {
+namespace ydsh::json {
 
 template <typename T> struct is_array { static constexpr bool value = false; };
 
@@ -352,7 +351,6 @@ public:
     }
 };
 
-} // namespace json
-} // namespace ydsh
+} // namespace ydsh::json
 
 #endif //YDSH_TOOLS_SERIALIZE_H

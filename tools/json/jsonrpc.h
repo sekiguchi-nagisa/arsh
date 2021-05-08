@@ -83,7 +83,7 @@ struct Error {
 };
 
 struct Request {
-    static_assert(std::is_same_v<JSON, Optional<JSON>::base_type>, "");
+    static_assert(std::is_same_v<JSON, Optional<JSON>::base_type>);
 
     std::string jsonrpc{"2.0"};
     Optional<JSON> id;    // optional. must be `number | string | null'

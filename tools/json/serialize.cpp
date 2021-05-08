@@ -19,8 +19,7 @@
 
 #include "serialize.h"
 
-namespace ydsh {
-namespace json {
+namespace ydsh::json {
 
 // ############################
 // ##     JSONSerializer     ##
@@ -215,5 +214,4 @@ JSON * JSONDeserializerImpl::validateField(const char *fieldName, int tag, bool 
     return json;
 }
 
-} // namespace json
-} // namespace ydsh
+} // namespace ydsh::json

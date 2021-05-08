@@ -16,8 +16,7 @@
 
 #include "jsonrpc.h"
 
-namespace ydsh {
-namespace rpc {
+namespace ydsh::rpc {
 
 std::string ResponseError::toString() const {
     std::string ret = "[";
@@ -267,5 +266,4 @@ long Handler::callImpl(Transport &transport, const std::string &methodName, JSON
     return id;
 }
 
-} // namespace rpc
-} // namespace ydsh
+} // namespace ydsh::rpc

@@ -16,8 +16,7 @@
 
 #include "server.h"
 
-namespace ydsh {
-namespace lsp {
+namespace ydsh::lsp {
 
 // #######################
 // ##     LSPServer     ##
@@ -75,5 +74,4 @@ void LSPServer::exit() {
     std::exit(s);   // always success
 }
 
-} // namespace lsp
-} // namespace ydsh
+} // namespace ydsh::lsp

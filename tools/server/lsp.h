@@ -20,8 +20,7 @@
 #include "../json/json.h"
 #include "../uri/uri.h"
 
-namespace ydsh {
-namespace lsp {
+namespace ydsh::lsp {
 
 using namespace json;
 
@@ -409,7 +408,6 @@ struct InitializedParams {
     }
 };
 
-} // namespace lsp
-} // namespace ydsh
+} // namespace ydsh::lsp
 
 #endif //YDSH_TOOLS_LSP_H
