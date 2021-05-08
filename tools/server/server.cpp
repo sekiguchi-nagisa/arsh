@@ -17,37 +17,6 @@
 #include "server.h"
 
 namespace ydsh {
-namespace json {
-
-using namespace rpc;
-using namespace lsp;
-
-#define EACH_ClientCapabilities_FIELD(T, OP) \
-    OP(T, workspace) \
-    OP(T, textDocument)
-
-#define EACH_InitializeParams_FIELD(T, OP) \
-    OP(T, processId) \
-    OP(T, rootPath) \
-    OP(T, rootUri) \
-    OP(T, initializationOptions) \
-    OP(T, capabilities)
-
-template <>
-struct TypeMatcherConstructor<DocumentURI> {
-    static constexpr auto value = string;
-};
-
-template <>
-struct TypeMatcherConstructor<InitializedParams> {
-    static constexpr auto value = any;
-};
-
-DEFINE_JSON_VALIDATE_INTERFACE(ClientCapabilities); //NOLINT
-DEFINE_JSON_VALIDATE_INTERFACE(InitializeParams);   //NOLINT
-
-} // namespace json
-
 namespace lsp {
 
 // #######################

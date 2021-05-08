@@ -90,7 +90,11 @@ public:
     void operator()(const char *fieldName, bool v);
 
     void operator()(const char *fieldName, int v) {
-        (*this)(fieldName, static_cast<int64_t>(v));
+        (*this)(fieldName, static_cast<int64_t>(v));    //FIXME:
+    }
+
+    void operator()(const char *fieldName, unsigned int v) {
+        (*this)(fieldName, static_cast<int64_t>(v));    //FIXME:
     }
 
     void operator()(const char *fieldName, int64_t v);
@@ -190,7 +194,15 @@ public:
 
     void operator()(const char *fieldName, bool &v);
 
-    void operator()(const char *fieldName, int &v) {
+    void operator()(const char *fieldName, int &v) {    //FIXME:
+        int64_t v1;
+        (*this)(fieldName, v1);
+        if(!this->hasError()) {
+            v = v1;
+        }
+    }
+
+    void operator()(const char *fieldName, unsigned int &v) {   //FIXME:
         int64_t v1;
         (*this)(fieldName, v1);
         if(!this->hasError()) {
@@ -243,7 +255,8 @@ public:
         }
         ValidationError e;
         FromJSON<0, R...> fromJSON(e);
-        fromJSON(*this, v);
+        JSONDeserializerImpl deserializer(*json, this->validationError, this->validOnly);
+        fromJSON(deserializer, v);
     }
 
     template <typename T, enable_when<is_optional_v<T>> = nullptr>

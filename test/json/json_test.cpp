@@ -284,28 +284,28 @@ TEST_F(ParserTest, serialize1) {
 
 TEST_F(ParserTest, serialize2) {
     // error
-    auto actual = toJSON(rpc::Error(-1, "hello")).serialize(3);
+    auto actual = rpc::Error(-1, "hello").toJSON().serialize(3);
     const char *text = R"( { "code" : -1, "message": "hello" })";
     auto expect = Parser(text)().serialize(3);
     ASSERT_EQ(expect, actual);
 
-    actual = toJSON(rpc::Error(-100, "world", array(1, 3, 5))).serialize(3);
+    actual = rpc::Error(-100, "world", array(1, 3, 5)).toJSON().serialize(3);
     text = R"( { "code" : -100, "message": "world", "data": [1,3,5] })";
     expect = Parser(text)().serialize(3);
     ASSERT_EQ(expect, actual);
 
     // response
-    actual = toJSON(rpc::Response(34, nullptr)).serialize(2);
+    actual = rpc::Response(34, nullptr).toJSON().serialize(2);
     text = R"( { "jsonrpc" : "2.0", "id" : 34, "result" : null } )";
     expect = Parser(text)().serialize(2);
     ASSERT_EQ(expect, actual);
 
-    actual = toJSON(rpc::Response(-0.4, 34)).serialize(2);
+    actual = rpc::Response(-0.4, 34).toJSON().serialize(2);
     text = R"( { "jsonrpc" : "2.0", "id" : -0.4, "result" : 34 } )";
     expect = Parser(text)().serialize(2);
     ASSERT_EQ(expect, actual);
 
-    actual = toJSON(rpc::Response(nullptr, rpc::Error(-100, "world", array(1, 3, 5)))).serialize(2);
+    actual = rpc::Response(nullptr, rpc::Error(-100, "world", array(1, 3, 5))).toJSON().serialize(2);
     text = R"( { "jsonrpc" : "2.0", "id" : null,
                 "error" : { "code": -100, "message" : "world", "data" : [1,3,5]}})";
     expect = Parser(text)().serialize(2);
@@ -497,7 +497,7 @@ static JSONDeserializer operator ""_deserialize(const char *text, size_t) {
     return JSONDeserializer(JSON::fromString(text));
 }
 
-TEST(DeserializeTest, variant) {
+TEST(DeserializeTest, variant1) {
     Union<int, std::string, std::vector<BBB>> v;
     JSONDeserializer deserializer(456);
     deserializer(v);
@@ -534,6 +534,19 @@ TEST(DeserializeTest, variant) {
     ASSERT_TRUE(deserializer.hasError());
     ASSERT_FALSE(v.hasValue());
     ASSERT_EQ("require `array', but is `double'", deserializer.getValidationError().formatError());
+}
+
+TEST(DeserializeTest, variant2) {
+    Union<int, std::nullptr_t> v1{nullptr};
+    auto json = serialize(v1);
+    ASSERT_TRUE(json.isNull());
+    JSONDeserializer deserializer(std::move(json));
+    Union<int, std::nullptr_t> v2;
+    ASSERT_FALSE(v2.hasValue());
+    deserializer(v2);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_TRUE(v2.hasValue());
+    ASSERT_TRUE(is<std::nullptr_t>(v2));
 }
 
 struct CCC {
@@ -648,75 +661,6 @@ TEST(DeserializeTest, error) {
     ASSERT_EQ("undefined field `b1'", des.getValidationError().formatError());
 }
 
-class ValidatorTest : public ::testing::Test {
-protected:
-    Validator validator;
-    bool ret{false};
-
-    void tryValidate(const InterfaceWrapper &wrapper, const char *src) {
-        Parser parser(src);
-        auto json = parser();
-        if(parser.hasError()) {
-            parser.showError();
-        }
-        ASSERT_FALSE(parser.hasError());
-        this->ret = wrapper(this->validator, json);
-    }
-
-    void validate(const InterfaceWrapper &wrapper, const char *src) {
-        this->tryValidate(wrapper, src);
-        if(!this->ret) {
-            auto message = this->validator.formatError();
-            fprintf(stderr, "%s\n", message.c_str());
-        }
-        ASSERT_TRUE(this->ret);
-        ASSERT_EQ("", this->validator.formatError());
-    }
-};
-
-TEST_F(ValidatorTest, base) {
-    constexpr auto iface = createInterface(
-            "hoge1",
-            field("params", null | array(string)),
-            field("id", opt(number))
-            );
-
-    const char *text = R"(
-    { "params" : [ "hoge", "de" ] }
-)";
-    ASSERT_NO_FATAL_FAILURE(this->validate(iface, text));
-
-    text = R"(
-    {
-        "params" : null, "id" : 45
-    }
-)";
-    ASSERT_NO_FATAL_FAILURE(this->validate(iface, text));
-}
-
-TEST_F(ValidatorTest, iface) {
-    static constexpr auto AAA = createInterface(
-            "AAA",
-            field("a", number),
-            field("b", string),
-            field("c", array(any))
-            );
-
-    static constexpr auto BBB = createInterface(
-            "BBB",
-            field("a", object(AAA) | string | any),
-            field("b", boolean)
-            );
-
-    const char *text = R"(
-        {
-            "a" : { "a" : 34, "b" : "dewrfw", "c" : null },
-            "b" : false
-        }
-)";
-    ASSERT_NO_FATAL_FAILURE(this->validate(BBB, text));
-    ASSERT_NO_FATAL_FAILURE(this->validate(voidIface, "null"));
-}
 
 TEST(ReqTest, parse) {
     using namespace rpc;
@@ -840,7 +784,7 @@ protected:
     }
 
     void assertResponse(rpc::Response &&res) {
-        ASSERT_EQ(toJSON(res).serialize(), this->response());
+        ASSERT_EQ(res.toJSON().serialize(), this->response());
     }
 
     void parseResponse(JSON &value) {
@@ -877,19 +821,21 @@ TEST_F(RPCTest, api2) {
 
 struct Param1 {
     unsigned int value;
-};
 
-static void fromJSON(JSON &&j, Param1 &p) {
-    p.value = j["value"].asLong();
-}
+    template <typename T>
+    void jsonify(T &t) {
+        t("value", value);
+    }
+};
 
 struct Param2 {
     std::string value;
-};
 
-static void fromJSON(JSON &&j, Param2 &p) {
-    p.value = std::move(j["value"].asString());
-}
+    template <typename T>
+    void jsonify(T &t) {
+        t("value", value);
+    }
+};
 
 struct Context {
     unsigned int nRet{0};
@@ -950,21 +896,6 @@ TEST_F(RPCTest, parse2) {
     ASSERT_EQ("Invalid Request", json["error"]["message"].asString());
     ASSERT_TRUE(json["error"]["data"].isString());
 }
-
-#define EACH_Param1_FIELD(T, OP) \
-    OP(T, value)
-
-#define EACH_Param2_FIELD(T, OP) \
-    OP(T, value)
-
-namespace ydsh {
-namespace json {
-
-DEFINE_JSON_VALIDATE_INTERFACE(Param1);
-DEFINE_JSON_VALIDATE_INTERFACE(Param2);
-
-} // namespace json
-} // namespace ydsh
 
 TEST_F(RPCTest, call1) {
     Context ctx;
@@ -1072,7 +1003,7 @@ TEST_F(RPCTest, call5) {
     ASSERT_EQ(1, json["id"].asLong());
     ASSERT_TRUE(json.asObject().find("error") != json.asObject().end());
     ASSERT_EQ(rpc::InvalidParams, json["error"]["code"].asLong());
-    ASSERT_EQ("requires `void' type", json["error"]["message"].asString());
+    ASSERT_EQ("require `null', but is `object'", json["error"]["message"].asString());
     ASSERT_TRUE(json["error"]["data"].isInvalid());
 }
 

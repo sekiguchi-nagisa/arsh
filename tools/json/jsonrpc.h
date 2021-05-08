@@ -20,8 +20,8 @@
 #include <functional>
 
 #include <misc/logger_base.hpp>
-#include "validate.hpp"
-#include "conv.hpp"
+#include "json.h"
+#include "serialize.h"
 
 namespace ydsh::rpc {
 
@@ -39,13 +39,14 @@ struct ResponseError {
 
     ResponseError() : code(0) {}
 
-    /**
-     * after call it, will be empty object.
-     * @return
-     */
-    JSON toJSON();
-
     std::string toString() const;
+
+    template <typename T>
+    void jsonify(T &t) {
+        t("code", this->code);
+        t("message", this->message);
+        t("data", this->data);
+    }
 };
 
 // Error Code definition
@@ -60,7 +61,7 @@ enum ErrorCode : int {
 struct Error {
     int code{0};
     std::string message;
-    JSON data;
+    Optional<JSON> data;
 
     Error() = default;
 
@@ -70,15 +71,24 @@ struct Error {
     Error(int code, std::string &&message) : Error(code, std::move(message), JSON()) {}
 
     std::string toString() const;
+
+    template <typename T>
+    void jsonify(T &t) {
+        t("code", this->code);
+        t("message", this->message);
+        t("data", this->data);
+    }
+
+    JSON toJSON();
 };
 
-JSON toJSON(const Error &error);
-void fromJSON(JSON &&json, Error &error);
-
 struct Request {
-    JSON id;    // optional. must be `number | string'
+    static_assert(std::is_same_v<JSON, Optional<JSON>::base_type>, "");
+
+    std::string jsonrpc{"2.0"};
+    Optional<JSON> id;    // optional. must be `number | string'
     std::string method; // if error, indicate error message
-    JSON params;    // optional. must be `array<any> | object'
+    Optional<JSON> params;    // optional. must be `array<any> | object'
 
     /**
      * each param must be validated
@@ -94,11 +104,11 @@ struct Request {
     Request() = default;
 
     bool isNotification() const {
-        return this->id.isInvalid();
+        return !this->isCall();
     }
 
     bool isCall() const {
-        return !this->id.isInvalid();
+        return !this->id.isInvalid() && !this->id.unwrap().isNull();
     }
 
     /**
@@ -108,11 +118,19 @@ struct Request {
      * @return
      */
     JSON toJSON();   // for testing
+
+    template <typename T>
+    void jsonify(T &t) {
+        t("jsonrpc", this->jsonrpc);
+        t("id", this->id);
+        t("method", this->method);
+        t("params", this->params);
+    }
 };
 
-void fromJSON(JSON &&json, Request &req);
-
 struct Response {
+    std::string jsonrpc{"2.0"};
+
     JSON id;
     /**
      * in LSP specification, Response is defined as follow. but reduce memory consumption,
@@ -124,21 +142,29 @@ struct Response {
      *   error? : Error
      * }
      */
-    Result<JSON, Error> value; // result or error
+    Optional<JSON> result;
+    Optional<Error> error;
 
-    Response() : value(Ok(JSON())) {}
+    Response() = default;
 
-    Response(JSON &&id, JSON &&result) : id(std::move(id)), value(Ok(std::move(result))) {}
+    Response(JSON &&id, JSON &&result) : id(std::move(id)), result(std::move(result)) {}
 
-    Response(JSON &&id, Error &&error) : id(std::move(id)), value(Err(std::move(error))) {}
+    Response(JSON &&id, Error &&error) : id(std::move(id)), error(std::move(error)) {}
 
     explicit operator bool() const {
-        return static_cast<bool>(this->value);
+        return !this->error.hasValue();
     }
-};
 
-JSON toJSON(const Response &response);
-void fromJSON(JSON &&value, Response &response);
+    template <typename T>
+    void jsonify(T &t) {
+        t("jsonrpc", this->jsonrpc);
+        t("id", this->id);
+        t("result", this->result);
+        t("error", this->error);
+    }
+
+    JSON toJSON();
+};
 
 using Message = Union<Request, Response, Error>;
 
@@ -146,18 +172,6 @@ struct MessageParser : public Parser {  //TODO: currently only support single re
     explicit MessageParser(ByteBuffer &&buffer) : Parser(std::move(buffer)) {}
 
     Message operator()();
-};
-
-class ParamIfaceMap {
-private:
-    std::unordered_map<std::string, InterfaceWrapper> map;
-
-public:
-    void add(const std::string &key, InterfaceWrapper &&wrapper);
-
-    bool has(const std::string &key) const;
-
-    const InterfaceWrapper &lookup(const std::string &name) const;
 };
 
 using ResponseCallback = std::function<void(Response &&)>;
@@ -253,7 +267,13 @@ using ReplyImpl = Result<JSON, Error>;
 
 template <typename T>
 struct Reply : public ReplyImpl {
-    Reply(T &&value) : ReplyImpl(Ok(toJSON(value))) {}  //NOLINT
+    static JSON serialize(T &&value) {
+        JSONSerializer serializer;
+        serializer(value);
+        return std::move(serializer).take();
+    }
+
+    Reply(T &&value) : ReplyImpl(Ok(serialize(std::move(value)))) {}  //NOLINT
 
     Reply(ErrHolder<Error> &&err) : ReplyImpl(std::move(err)) {}    //NOLINT
 
@@ -264,7 +284,7 @@ struct Reply : public ReplyImpl {
 
 template <>
 struct Reply<void> : public ReplyImpl {
-    Reply(std::nullptr_t) : ReplyImpl(Ok(toJSON(nullptr))) {}   //NOLINT
+    Reply(std::nullptr_t) : ReplyImpl(Ok(JSON(nullptr))) {}   //NOLINT
 
     Reply(ErrHolder<Error> &&err) : ReplyImpl(std::move(err)) {}    //NOLINT
 
@@ -290,10 +310,6 @@ private:
     std::unordered_map<std::string, Notification> notificationMap;
     CallbackMap callbackMap;
 
-    ParamIfaceMap callParamMap;
-    ParamIfaceMap notificationParamMap;
-    ParamIfaceMap responseTypeMap;    // for response result validation.
-
 public:
     explicit Handler(LoggerBase &logger) : logger(logger) {}
 
@@ -307,64 +323,94 @@ public:
 
     template<typename State, typename Ret, typename Param>
     void bind(const std::string &name, State *obj, Reply<Ret>(State::*method)(const Param &)) {
-        Call func = [obj, method](JSON &&json) -> ReplyImpl {
+        Call func = [this, obj, method](JSON &&json) -> ReplyImpl {
+            JSONDeserializer deserializer(std::move(json));
             Param p;
-            fromJSON(std::move(json), p);
+            deserializer(p);
+            if(deserializer.hasError()) {
+                return this->requestValidationError(deserializer.getValidationError());
+            }
             return (obj->*method)(p);
         };
-        this->bindImpl(name, toTypeMatcher<Param>, std::move(func));
+        this->bindImpl(name, std::move(func));
     }
 
     template<typename State, typename Ret>
     void bind(const std::string &name, State *obj, Reply<Ret>(State::*method)()) {
-        Call func = [obj, method](JSON &&) -> ReplyImpl {
+        Call func = [this, obj, method](JSON &&json) -> ReplyImpl {
+            JSONDeserializer deserializer(std::move(json));
+            Optional<std::nullptr_t> p;
+            deserializer(p);
+            if(deserializer.hasError()) {
+                return this->requestValidationError(deserializer.getValidationError());
+            }
             return (obj->*method)();
         };
-        this->bindImpl(name, InterfaceWrapper(voidIface), std::move(func));
+        this->bindImpl(name, std::move(func));
     }
 
     template<typename State, typename Param>
     void bind(const std::string &name, State *obj, void(State::*method)(const Param &)) {
-        Notification func = [obj, method](JSON &&json) {
+        Notification func = [this, obj, method](JSON &&json) {
+            JSONDeserializer deserializer(std::move(json));
             Param p;
-            fromJSON(std::move(json), p);
+            deserializer(p);
+            if(deserializer.hasError()) {
+                this->notificationValidationError(deserializer.getValidationError());
+                return;
+            }
             (obj->*method)(p);
         };
-        this->bindImpl(name, toTypeMatcher<Param>, std::move(func));
+        this->bindImpl(name, std::move(func));
     }
 
     template<typename State>
     void bind(const std::string &name, State *obj, void(State::*method)()) {
-        Notification func = [obj, method](JSON &&) {
+        Notification func = [this, obj, method](JSON &&json) {
+            JSONDeserializer deserializer(std::move(json));
+            Optional<std::nullptr_t> p;
+            deserializer(p);
+            if(deserializer.hasError()) {
+                this->notificationValidationError(deserializer.getValidationError());
+                return;
+            }
             (obj->*method)();
         };
-        this->bindImpl(name, InterfaceWrapper(voidIface), std::move(func));
+        this->bindImpl(name, std::move(func));
     }
 
     template <typename Ret, typename Param, typename Func, typename Error>
     auto call(Transport &transport, const std::string &name, const Param &param,
               Func callback, Error ecallback) {
-        ResponseCallback func = [callback, ecallback](Response &&res) {
+        ResponseCallback func = [this, callback, ecallback](Response &&res) {
             if(res) {
+                JSONDeserializer deserializer(std::move(res.result));
                 Ret ret;
-                fromJSON(std::move(res.value).take(), ret);
-                callback(ret);
-            } else {
-                ecallback(std::move(res.value).takeError());
+                deserializer(ret);
+                if(deserializer.hasError()) {
+                    this->responseValidationError(deserializer.getValidationError(), res);
+                } else {
+                    callback(ret);
+                    return;
+                }
             }
+            ecallback(std::move(res.error.unwrap()));
         };
-        return this->callImpl(transport, name, toJSON(param), std::move(func));
-    }
-
-    template <typename Ret>
-    void bindResponseType(const std::string &methodName) {
-        this->responseTypeMap.add(methodName, toTypeMatcher<Ret>);
+        JSONSerializer serializer;
+        serializer(param);
+        return this->callImpl(transport, name, std::move(serializer).take(), std::move(func));
     }
 
 protected:
-    void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func);
+    ReplyImpl requestValidationError(const ValidationError &e);
 
-    void bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func);
+    void notificationValidationError(const ValidationError &e);
+
+    void responseValidationError(const ValidationError &e, Response &res);
+
+    void bindImpl(const std::string &methodName, Call &&func);
+
+    void bindImpl(const std::string &methodName, Notification &&func);
 
     long callImpl(Transport &transport, const std::string &methodName, JSON &&json, ResponseCallback &&func);
 };

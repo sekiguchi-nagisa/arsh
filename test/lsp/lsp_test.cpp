@@ -9,6 +9,20 @@ using namespace lsp;
 using namespace json;
 using namespace rpc;
 
+template <typename T>
+static JSON toJSON(T &v) {
+    JSONSerializer serializer;
+    serializer(v);
+    return std::move(serializer).take();
+}
+
+template <typename T>
+bool fromJSON(JSON &&json, T &v) {
+    JSONDeserializer deserializer(std::move(json));
+    deserializer(v);
+    return !deserializer.hasError();
+}
+
 TEST(LSPTest, Position) {
     const char *text = R"(
     {
@@ -70,7 +84,7 @@ TEST(LSPTest, Location) {
 
     Location location;
     fromJSON(std::move(json), location);
-    ASSERT_EQ("/hoge/hoge", location.uri.uri);
+    ASSERT_EQ("/hoge/hoge", location.uri);
     ASSERT_EQ(90, location.range.start.line);
     ASSERT_EQ(15, location.range.start.character);
     ASSERT_EQ(100, location.range.end.line);
@@ -314,7 +328,9 @@ struct ServerTest : public InteractiveBase {
     void callInit() {
         InitializeParams params;
 
-        this->call("initialize", toJSON(params));
+        JSONSerializer serializer;
+        serializer(params);
+        this->call("initialize", std::move(serializer).take());
         this->expectRegex(".+capabilities.+");
         ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+initialize server.+"));
     }
@@ -330,9 +346,9 @@ TEST_F(ServerTest, invalid) {
     ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+invalid message.+"));
 
     this->call("initialize", {{"de", 34}});
-    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+require field .+"));
+    ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+undefined field .+"));
     ASSERT_NO_FATAL_FAILURE(ASSERT_THAT(this->readLog(),
-            ::testing::MatchesRegex(".+notification message validation failed.+")));
+            ::testing::MatchesRegex(".+request message validation failed.+")));
 }
 
 TEST_F(ServerTest, init1) {

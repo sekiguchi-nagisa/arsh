@@ -36,23 +36,41 @@ enum LSPErrorCode : int {
     ContentModified      = -32801,
 };
 
-struct DocumentURI {
-    std::string uri;    // must be valid URI
-};
+#define JSONIFIY(m) t(#m, m)
+
+using DocumentURI = std::string;
 
 struct Position {
     int line{0};
     int character{0};
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(line);
+        JSONIFIY(character);
+    }
 };
 
 struct Range {
     Position start;
     Position end;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(start);
+        JSONIFIY(end);
+    }
 };
 
 struct Location {
     DocumentURI uri;
     Range range;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(uri);
+        JSONIFIY(range);
+    }
 };
 
 struct LocationLink {
@@ -60,6 +78,14 @@ struct LocationLink {
     std::string targetUri;
     Range targetRange;
     Optional<Range> targetSelectionRange;  // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(originSelectionRange);
+        JSONIFIY(targetUri);
+        JSONIFIY(targetRange);
+        JSONIFIY(targetSelectionRange);
+    }
 };
 
 
@@ -70,9 +96,20 @@ enum class DiagnosticSeverity : int {
     Hint = 4,
 };
 
+template <typename T>
+void jsonify(T &t, DiagnosticSeverity &s) {
+    t(static_cast<int>(s));
+}
+
 struct DiagnosticRelatedInformation {
     Location location;
     std::string message;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(location);
+        JSONIFIY(message);
+    }
 };
 
 struct Diagnostic {
@@ -82,17 +119,37 @@ struct Diagnostic {
 //    std::string source;                   //FIXME: currently not supported.
     std::string message;
     Optional<std::vector<DiagnosticRelatedInformation>> relatedInformation;   // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(range);
+        JSONIFIY(severity);
+        JSONIFIY(message);
+        JSONIFIY(relatedInformation);
+    }
 };
 
 struct Command {
     std::string title;
     std::string command;
 //    std::vector<JSON> arguments // any[], optional  //FIXME: currently not supported.
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(title);
+        JSONIFIY(command);
+    }
 };
 
 struct TextEdit {
     Range range;
     std::string newText;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(range);
+        JSONIFIY(newText);
+    }
 };
 
 // for Initialize request
@@ -100,6 +157,12 @@ struct TextEdit {
 struct ClientCapabilities {
     Optional<JSON> workspace;   // optional
     Optional<JSON> textDocument; // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(workspace);
+        JSONIFIY(textDocument);
+    }
 };
 
 #define EACH_TRACE_SETTING(OP) \
@@ -113,6 +176,11 @@ enum class TraceSetting : unsigned int {
 #undef GEN_ENUM
 };
 
+template <typename T>
+void jsonify(T &, TraceSetting &) { //FIXME:
+
+}
+
 struct InitializeParams {
     Union<int, std::nullptr_t> processId{nullptr};
     Optional<Union<std::string, std::nullptr_t>> rootPath;    // optional
@@ -121,6 +189,16 @@ struct InitializeParams {
     ClientCapabilities capabilities;
     Optional<TraceSetting> trace;  // optional
 //    Union<WorkspaceFolder, std::nullptr_t> workspaceFolders;    // optional   //FIXME: currently not supported
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(processId);
+        JSONIFIY(rootPath);
+        JSONIFIY(rootUri);
+        JSONIFIY(initializationOptions);
+        JSONIFIY(capabilities);
+//        JSONIFIY(trace);  //FIXME:
+    }
 };
 
 // for server capability
@@ -130,13 +208,29 @@ enum class TextDocumentSyncKind : int {
     Incremental = 2,
 };
 
+template <typename T>
+void jsonify(T &, TextDocumentSyncKind &) {
+    //FIXME:
+}
+
 struct CompletionOptions {
     Optional<bool> resolveProvider;    // optional
     Optional<std::vector<std::string>> triggerCharacters;  // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(resolveProvider);
+        JSONIFIY(triggerCharacters);
+    }
 };
 
 struct SignatureHelpOptions {
     Optional<std::vector<std::string>> triggerCharacters;  // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(triggerCharacters);
+    }
 };
 
 #define EACH_CODE_ACTION_KIND(OP) \
@@ -154,33 +248,75 @@ enum class CodeActionKind : unsigned int {
 #undef GEN_ENUM
 };
 
+template <typename T>
+void jsonify(T &, CodeActionKind &) {
+    //FIXME:
+}
+
 struct CodeActionOptions {
     Optional<std::vector<CodeActionKind>> codeActionKinds; // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+//        JSONIFIY(codeActionKinds);
+        (void)t;
+    }
 };
 
 struct CodeLensOptions {
     Optional<bool> resolveProvider;    // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(resolveProvider);
+    }
 };
 
 struct DocumentOnTypeFormattingOptions {
     std::string firstTriggerCharacter;
     Optional<std::vector<std::string>> moreTriggerCharacter;   // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(firstTriggerCharacter);
+        JSONIFIY(moreTriggerCharacter);
+    }
 };
 
 struct RenameOptions {
     Optional<bool> prepareProvider;    // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(prepareProvider);
+    }
 };
 
 struct DocumentLinkOptions {
     Optional<bool> resolveProvider;    // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(resolveProvider);
+    }
 };
 
 struct ExecuteCommandOptions {
     std::vector<std::string> commands;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(commands);
+    }
 };
 
 struct SaveOptions {
     Optional<bool> includeText;    // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(includeText);
+    }
 };
 
 struct ColorProviderOptions {};
@@ -192,10 +328,24 @@ struct TextDocumentSyncOptions {
     Optional<bool> willSave;   // optional
     Optional<bool> willSaveWaitUntil;  // optional
     Optional<SaveOptions> save;    // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(openClose);
+//        JSONIFIY(change); //FIXME:
+        JSONIFIY(willSave);
+        JSONIFIY(willSaveWaitUntil);
+        JSONIFIY(save);
+    }
 };
 
 struct StaticRegistrationOptions {
     Optional<std::string> id;  // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(id);
+    }
 };
 
 /**
@@ -220,122 +370,46 @@ struct ServerCapabilities {
     Optional<Union<bool, RenameOptions>> renameProvider;  // optional
     Optional<DocumentLinkOptions> documentLinkProvider;    // optional
     Optional<ExecuteCommandOptions> executeCommandProvider;    // optional
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(textDocumentSync);
+        JSONIFIY(hoverProvider);
+        JSONIFIY(completionProvider);
+        JSONIFIY(signatureHelpProvider);
+        JSONIFIY(definitionProvider);
+        JSONIFIY(referencesProvider);
+        JSONIFIY(documentHighlightProvider);
+        JSONIFIY(documentSymbolProvider);
+        JSONIFIY(workspaceSymbolProvider);
+        JSONIFIY(codeActionProvider);
+        JSONIFIY(codeLensProvider);
+        JSONIFIY(documentFormattingProvider);
+        JSONIFIY(documentRangeFormattingProvider);
+        JSONIFIY(documentOnTypeFormattingProvider);
+        JSONIFIY(renameProvider);
+        JSONIFIY(documentLinkProvider);
+        JSONIFIY(executeCommandProvider);
+    }
 };
 
 struct InitializeResult {
     ServerCapabilities capabilities;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(capabilities);
+    }
 };
 
-struct InitializedParams {};
+struct InitializedParams {
+    template <typename T>
+    void jsonify(T &) {
+
+    }
+};
 
 } // namespace lsp
-
-namespace rpc {
-
-using namespace lsp;
-
-inline bool isType(const JSON &value, TypeHolder<DocumentURI>) {
-    return value.isString();
-}
-void fromJSON(JSON &&json, DocumentURI &uri);
-JSON toJSON(const DocumentURI &uri);
-
-void fromJSON(JSON &&json, Position &p);
-JSON toJSON(const Position &p);
-
-void fromJSON(JSON &&json, Range &range);
-JSON toJSON(const Range &range);
-
-void fromJSON(JSON &&json, Location &location);
-JSON toJSON(const Location &location);
-
-void fromJSON(JSON &&json, LocationLink &link);
-JSON toJSON(const LocationLink &link);
-
-void fromJSON(JSON &&json, DiagnosticSeverity &severity);
-JSON toJSON(DiagnosticSeverity severity);
-
-void fromJSON(JSON &&json, DiagnosticRelatedInformation &info);
-JSON toJSON(const DiagnosticRelatedInformation &info);
-
-void fromJSON(JSON &&json, Diagnostic &diagnostic);
-JSON toJSON(const Diagnostic &diagnostic);
-
-void fromJSON(JSON &&json, Command &command);
-JSON toJSON(const Command &command);
-
-void fromJSON(JSON &&json, TextEdit &edit);
-JSON toJSON(const TextEdit &edit);
-
-void fromJSON(JSON &&json, TraceSetting &setting);
-JSON toJSON(TraceSetting setting);
-
-void fromJSON(JSON &&json, ClientCapabilities &cap);
-JSON toJSON(const ClientCapabilities &cap);
-
-void fromJSON(JSON &&json, InitializeParams &params);
-JSON toJSON(const InitializeParams &params);
-
-void fromJSON(JSON &&json, TextDocumentSyncKind &kind);
-JSON toJSON(TextDocumentSyncKind kind);
-
-void fromJSON(JSON &&json, CompletionOptions &options);
-JSON toJSON(const CompletionOptions &options);
-
-void fromJSON(JSON &&json, SignatureHelpOptions &options);
-JSON toJSON(const SignatureHelpOptions &options);
-
-void fromJSON(JSON &&json, CodeActionKind &kind);
-JSON toJSON(const CodeActionKind &kind);
-
-inline bool isType(const JSON &value, TypeHolder<CodeActionOptions>) {
-    return value.isObject();    //FIXME:
-}
-void fromJSON(JSON &&json, CodeActionOptions &options);
-JSON toJSON(const CodeActionOptions &options);
-
-void fromJSON(JSON &&json, CodeLensOptions &options);
-JSON toJSON(const CodeLensOptions &options);
-
-void fromJSON(JSON &&json, DocumentOnTypeFormattingOptions &options);
-JSON toJSON(const DocumentOnTypeFormattingOptions &options);
-
-inline bool isType(const JSON &value, TypeHolder<RenameOptions>) {
-    return value.isObject();    //FIXME:
-}
-void fromJSON(JSON &&json, RenameOptions &options);
-JSON toJSON(const RenameOptions &options);
-
-void fromJSON(JSON &&json, DocumentLinkOptions &options);
-JSON toJSON(const DocumentLinkOptions &options);
-
-void fromJSON(JSON &&json, ExecuteCommandOptions &options);
-JSON toJSON(const ExecuteCommandOptions &options);
-
-void fromJSON(JSON &&json, SaveOptions &options);
-JSON toJSON(const SaveOptions &options);
-
-inline bool isType(const JSON &value, TypeHolder<TextDocumentSyncOptions>) {
-    return value.isObject();    //FIXME:
-}
-void fromJSON(JSON &&json, TextDocumentSyncOptions &options);
-JSON toJSON(const TextDocumentSyncOptions &options);
-
-void fromJSON(JSON &&json, StaticRegistrationOptions &options);
-JSON toJSON(const StaticRegistrationOptions &options);
-
-void fromJSON(JSON &&json, ServerCapabilities &cap);
-JSON toJSON(const ServerCapabilities &cap);
-
-void fromJSON(JSON &&json, InitializeResult &ret);
-JSON toJSON(const InitializeResult &ret);
-
-inline void fromJSON(JSON &&, InitializedParams &) {}
-
-inline JSON toJSON(const InitializedParams) { return JSON(); }
-
-
-} // namespace rpc
 } // namespace ydsh
 
 #endif //YDSH_TOOLS_LSP_H

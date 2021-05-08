@@ -17,28 +17,7 @@
 #include "jsonrpc.h"
 
 namespace ydsh {
-namespace json {
-
-using namespace rpc;
-
-#define EACH_Error_FIELD(T, OP) \
-    OP(T, code) \
-    OP(T, message) \
-    OP(T, data)
-
-DEFINE_JSON_VALIDATE_INTERFACE(Error);
-
-} // namespace json
-
 namespace rpc {
-
-JSON ResponseError::toJSON() {
-    return {
-            {"code", this->code},
-            {"message", std::move(this->message)},
-            {"data", std::move(this->data)}
-    };
-}
 
 std::string ResponseError::toString() const {
     std::string ret = "[";
@@ -58,18 +37,10 @@ std::string Error::toString() const {
     return ret;
 }
 
-JSON toJSON(const Error &error) {
-    return {
-        {"code", toJSON(error.code)},
-        {"message", toJSON(error.message)},
-        {"data", toJSON(error.data)}
-    };
-}
-
-void fromJSON(JSON &&json, Error &error) {
-    error.code = static_cast<int>(json["code"].asLong());
-    error.message = std::move(json["message"].asString());
-    error.data = std::move(json["data"]);
+JSON Error::toJSON() {
+    JSONSerializer serializer;
+    serializer(*this);
+    return std::move(serializer).take();
 }
 
 JSON Request::toJSON() {
@@ -81,66 +52,10 @@ JSON Request::toJSON() {
     };
 }
 
-void fromJSON(JSON &&json, Request &req) {
-    req.id = std::move(json["id"]);
-    req.method = std::move(json["method"].asString());
-    req.params = std::move(json["params"]);
-}
-
-JSON toJSON(const Response &response) {
-    bool success = static_cast<bool>(response.value);
-    return {
-        {"jsonrpc", "2.0"},
-        {"id", toJSON(response.id)},
-        {"result", success ? toJSON(response.value) : JSON()},
-        {"error", success ? JSON() : toJSON(response.value)}
-    };
-}
-
-void fromJSON(JSON &&value, Response &response) {
-    response.id = std::move(value["id"]);
-    bool success = value.asObject().find("result") != value.asObject().end();
-    if(success) {
-        response.value = Ok(std::move(value["result"]));
-    } else {
-        Error e;
-        fromJSON(std::move(value["error"]), e);
-        response.value = Err(std::move(e));
-    }
-}
-
-static InterfaceWrapper initRequestIface() {
-    static constexpr auto iface = createInterface(
-            "Request",
-            field("jsonrpc", string),
-            field("id", opt(number | string)),
-            field("method", string),
-            /**
-             * in LSP specification, 'params! : Array<any> | object'.
-             */
-            field("params", opt(array(any) | anyObj | null))
-    );
-    return InterfaceWrapper(iface);
-}
-
-static InterfaceWrapper initResponseIface() {
-    static constexpr auto iface = createInterface(
-            "Response",
-            field("jsonrpc", string),
-            field("id", number | string | null),
-            field("result", any)
-    );
-    return InterfaceWrapper(iface);
-}
-
-static InterfaceWrapper initResponseErrorIface() {
-    static constexpr auto iface = createInterface(
-            "ResponseError",
-            field("jsonrpc", string),
-            field("id", number | string | null),
-            field("error", object(toTypeMatcher<Error>))
-    );
-    return InterfaceWrapper(iface);
+JSON Response::toJSON() {
+    JSONSerializer serializer;
+    serializer(*this);
+    return std::move(serializer).take();
 }
 
 Message MessageParser::operator()() {
@@ -150,48 +65,40 @@ Message MessageParser::operator()() {
         return Error(ErrorCode::ParseError, "Parse error", this->formatError());
     }
 
-    // validate
-    static auto requestIface = initRequestIface();
-    static auto responseIface = initResponseIface();
-    static auto responseErrorIface = initResponseErrorIface();
-    Validator validator;
-    if(requestIface(validator, ret)) {
-        Request req;
-        fromJSON(std::move(ret), req);
-        return std::move(req);
+    Union<Request, Response> value;
+    JSONDeserializer deserializer(std::move(ret));
+    deserializer(value);
+    if(deserializer.hasError()) {
+        return Error(ErrorCode::InvalidRequest, "Invalid Request",
+                     deserializer.getValidationError().formatError());
     }
 
-    validator.clearError();
-    if(!responseIface(validator, ret)) {
-        validator.clearError();
-        if(!responseErrorIface(validator, ret)) {
-            return Error(ErrorCode::InvalidRequest, "Invalid Request", validator.formatError());
+    if(is<Request>(value)) {
+        auto &req = get<Request>(value);
+        if(req.id.hasValue() && !req.id.unwrap().isString()
+                && !req.id.unwrap().isNumber() && !req.id.unwrap().isNull()) {
+            return Error(ErrorCode::InvalidRequest, "Invalid Request",
+                         "id must be null|string|number");
         }
+        if(req.params.hasValue() && !req.params.unwrap().isNull() &&
+            !req.params.unwrap().isObject() && !req.params.unwrap().isArray()) {
+            return Error(ErrorCode::InvalidRequest, "Invalid Request",
+                         "param must be array|object");
+        }
+        return std::move(req);
+    } else if(is<Response>(value)) {
+        auto &res = get<Response>(value);
+        if(!static_cast<bool>(res)) {
+            return std::move(res.error.unwrap());
+        }
+        if(!res.id.isString() && !res.id.isNumber()) {
+            return Error(ErrorCode::InvalidRequest, "Invalid Request",
+                         "id must be string|number");
+        }
+        return std::move(res);
+    } else {
+        fatal("broken\n");
     }
-
-    Response res;
-    fromJSON(std::move(ret), res);
-    return std::move(res);
-}
-
-void ParamIfaceMap::add(const std::string &key, InterfaceWrapper &&wrapper) {
-    auto pair = this->map.emplace(key, std::move(wrapper));
-    if(!pair.second) {
-        fatal("already bound method param: %s\n", key.c_str());
-    }
-}
-
-bool ParamIfaceMap::has(const std::string &key) const {
-    auto iter = this->map.find(key);
-    return iter != this->map.end();
-}
-
-const InterfaceWrapper &ParamIfaceMap::lookup(const std::string &name) const {
-    auto iter = this->map.find(name);
-    if(iter != this->map.end()) {
-        return iter->second;
-    }
-    fatal("not found corresponding parameter interface to '%s'\n", name.c_str());
 }
 
 long CallbackMap::add(const std::string &methodName, ResponseCallback &&callback) {
@@ -233,12 +140,14 @@ void Transport::notify(const std::string &methodName, JSON &&param) {
 }
 
 void Transport::reply(JSON &&id, JSON &&result) {
-    auto str = toJSON(Response(std::move(id), std::move(result))).serialize();
+    Response res(std::move(id), std::move(result));
+    auto str = res.toJSON().serialize();
     this->send(str.size(), str.c_str());
 }
 
 void Transport::reply(JSON &&id, Error &&error) {
-    auto str = toJSON(Response(std::move(id), std::move(error))).serialize();
+    Response res(std::move(id), std::move(error));
+    auto str = res.toJSON().serialize();
     this->send(str.size(), str.c_str());
 }
 
@@ -300,15 +209,6 @@ ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
         LOG(LogLevel::ERROR, "undefined call: %s", name.c_str());
         return newError(MethodNotFound, std::move(str));
     }
-
-    auto &iface = this->callParamMap.lookup(name);
-    Validator validator;
-    if(!iface(validator, param)) {
-        std::string e = validator.formatError();
-        LOG(LogLevel::ERROR, "notification message validation failed: \n%s", e.c_str());
-        return newError(InvalidParams, std::move(e));
-    }
-
     LOG(LogLevel::INFO, "onCall: %s", name.c_str());
     return iter->second(std::move(param));
 }
@@ -319,15 +219,6 @@ void Handler::onNotify(const std::string &name, JSON &&param) {
         LOG(LogLevel::ERROR, "undefined notification: %s", name.c_str());
         return;
     }
-
-    auto &iface = this->notificationParamMap.lookup(name);
-    Validator validator;
-    if(!iface(validator, param)) {
-        LOG(LogLevel::ERROR,
-                "notification message validation failed: \n%s", validator.formatError().c_str());
-        return;
-    }
-
     LOG(LogLevel::INFO, "onNotify: %s", name.c_str());
     iter->second(std::move(param));
 }
@@ -341,37 +232,39 @@ void Handler::onResponse(Response &&res) {
         LOG(LogLevel::ERROR, "broken response: %ld", id);
         return;
     }
-
-    if(res) {
-        auto &iface = this->responseTypeMap.lookup(entry.first);
-        Validator validator;
-        if(!iface(validator, get<JSON>(res.value))) {
-            std::string e = validator.formatError();
-            LOG(LogLevel::ERROR, "response message validation failed: \n%s", e.c_str());
-            res.value = newError(InvalidParams, std::move(e), std::move(res.value).take());
-        }
-    }
     entry.second(std::move(res));
 }
 
-void Handler::bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Call &&func) {
+ReplyImpl Handler::requestValidationError(const ValidationError &e) {
+    std::string str = e.formatError();
+    LOG(LogLevel::ERROR, "request message validation failed: \n%s", str.c_str());
+    return newError(InvalidParams, std::move(str));
+}
+
+void Handler::notificationValidationError(const ValidationError &e) {
+    std::string str = e.formatError();
+    LOG(LogLevel::ERROR, "notification message validation failed: \n%s", str.c_str());
+}
+
+void Handler::responseValidationError(const ValidationError &e, Response &res) {
+    std::string str = e.formatError();
+    LOG(LogLevel::ERROR, "response message validation failed: \n%s", str.c_str());
+    res.error = Error(InvalidParams, std::move(str));
+}
+
+void Handler::bindImpl(const std::string &methodName, Call &&func) {
     if(!this->callMap.emplace(methodName, std::move(func)).second) {
         fatal("already defined method: %s\n", methodName.c_str());
     }
-    this->callParamMap.add(methodName, std::move(wrapper));
 }
 
-void Handler::bindImpl(const std::string &methodName, InterfaceWrapper &&wrapper, Notification &&func) {
+void Handler::bindImpl(const std::string &methodName, Notification &&func) {
     if(!this->notificationMap.emplace(methodName, std::move(func)).second) {
         fatal("already defined method: %s\n", methodName.c_str());
     }
-    this->notificationParamMap.add(methodName, std::move(wrapper));
 }
 
 long Handler::callImpl(Transport &transport, const std::string &methodName, JSON &&json, ResponseCallback &&func) {
-    if(!this->responseTypeMap.has(methodName)) {
-        fatal("not found response type corresponding to '%s'\n", methodName.c_str());
-    }
     long id = this->callbackMap.add(methodName, std::move(func));
     transport.call(static_cast<int64_t>(id), methodName, std::move(json));
     return id;
