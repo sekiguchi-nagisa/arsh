@@ -82,10 +82,6 @@ Message MessageParser::operator()() {
             return Error(ErrorCode::InvalidRequest, "Invalid Request",
                          "param must be array|object");
         }
-//        if(req.params.hasValue() && req.params.unwrap().isArray()) {
-//            return Error(ErrorCode::InternalError, "Invalid Request",
-//                         "currently only support single request");
-//        }
         return std::move(req);
     } else if(is<Response>(value)) {
         auto &res = get<Response>(value);
