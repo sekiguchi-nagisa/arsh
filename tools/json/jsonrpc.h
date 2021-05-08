@@ -86,9 +86,9 @@ struct Request {
     static_assert(std::is_same_v<JSON, Optional<JSON>::base_type>, "");
 
     std::string jsonrpc{"2.0"};
-    Optional<JSON> id;    // optional. must be `number | string'
+    Optional<JSON> id;    // optional. must be `number | string | null'
     std::string method; // if error, indicate error message
-    Optional<JSON> params;    // optional. must be `array<any> | object'
+    Optional<JSON> params;    // optional. must be `array<any> | object | null'
 
     /**
      * each param must be validated
@@ -131,17 +131,7 @@ struct Request {
 struct Response {
     std::string jsonrpc{"2.0"};
 
-    JSON id;
-    /**
-     * in LSP specification, Response is defined as follow. but reduce memory consumption,
-     * merge 'result' and 'error' field.
-     *
-     * interface Response {
-     *   id : number | string;
-     *   result? : JSON
-     *   error? : Error
-     * }
-     */
+    JSON id;    // number|string
     Optional<JSON> result;
     Optional<Error> error;
 

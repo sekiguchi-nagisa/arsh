@@ -44,12 +44,9 @@ JSON Error::toJSON() {
 }
 
 JSON Request::toJSON() {
-    return {
-            {"jsonrpc", "2.0"},
-            {"id", std::move(this->id)},
-            {"method", std::move(this->method)},
-            {"params", std::move(this->params)}
-    };
+    JSONSerializer serializer;
+    serializer(*this);
+    return std::move(serializer).take();
 }
 
 JSON Response::toJSON() {
@@ -85,6 +82,10 @@ Message MessageParser::operator()() {
             return Error(ErrorCode::InvalidRequest, "Invalid Request",
                          "param must be array|object");
         }
+//        if(req.params.hasValue() && req.params.unwrap().isArray()) {
+//            return Error(ErrorCode::InternalError, "Invalid Request",
+//                         "currently only support single request");
+//        }
         return std::move(req);
     } else if(is<Response>(value)) {
         auto &res = get<Response>(value);
