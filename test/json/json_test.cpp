@@ -632,6 +632,23 @@ TEST(DeserializeTest, option2) {
     ASSERT_FALSE(v1.json.hasValue());
 }
 
+enum class Flag1 {
+    BLUE = 34,
+    RED = 35,
+    BLACK = 40,
+};
+
+TEST(DeserializeTest, enum1) {
+    Flag1 f1 = Flag1::BLUE;
+    auto json = serialize(f1);
+
+    Flag1 f2 = Flag1::BLACK;
+    JSONDeserializer deserializer(std::move(json));
+    deserializer(f2);
+    ASSERT_FALSE(deserializer.hasError());
+    ASSERT_EQ(Flag1::BLUE, f2);
+}
+
 TEST(DeserializeTest, error) {
     auto des = "23"_deserialize;
     bool b;

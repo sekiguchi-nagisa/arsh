@@ -21,9 +21,9 @@
 
 namespace ydsh::json {
 
-template <typename T> struct is_array { static constexpr bool value = false; };
+template <typename T> struct is_array : std::false_type {};
 
-template <typename T> struct is_array<std::vector<T>> { static constexpr bool value = true; };
+template <typename T> struct is_array<std::vector<T>> : std::true_type { };
 
 template <typename T>
 constexpr bool is_array_v = is_array<T>::value;
@@ -31,22 +31,22 @@ constexpr bool is_array_v = is_array<T>::value;
 template <typename T>
 constexpr bool is_string_v = std::is_same_v<T, String>;
 
-template <typename T> struct is_union { static constexpr bool value = false; };
+template <typename T> struct is_union : std::false_type {};
 
-template <typename ...R> struct is_union<Union<R...>> { static constexpr bool value = true; };
+template <typename ...R> struct is_union<Union<R...>> : std::true_type {};
 
 template <typename T>
 constexpr bool is_union_v = is_union<T>::value;
 
-template <typename T> struct is_optional { static constexpr bool value = false; };
+template <typename T> struct is_optional : std::false_type {};
 
-template <typename T> struct is_optional<OptionalBase<T>> { static constexpr bool value = true; };
+template <typename T> struct is_optional<OptionalBase<T>> : std::true_type {};
 
 template <typename T>
 constexpr bool is_optional_v = is_optional<T>::value;
 
 template <typename T>
-static constexpr bool is_object_v =
+constexpr bool is_object_v =
         !is_string_v<T> && !is_array_v<T> && !is_union_v<T>
         && !is_optional_v<T> &&  !std::is_same_v<T, JSON> && std::is_class_v<T>;
 
@@ -88,12 +88,10 @@ public:
 
     void operator()(const char *fieldName, bool v);
 
-    void operator()(const char *fieldName, int v) {
-        (*this)(fieldName, static_cast<int64_t>(v));    //FIXME:
-    }
-
-    void operator()(const char *fieldName, unsigned int v) {
-        (*this)(fieldName, static_cast<int64_t>(v));    //FIXME:
+    template <typename T, enable_when<(std::is_signed_v<T> || std::is_unsigned_v<T>)
+            && sizeof(T) <= sizeof(int64_t)> = nullptr>
+    void operator()(const char *fieldName, T v) {
+        (*this)(fieldName, static_cast<int64_t>(v));
     }
 
     void operator()(const char *fieldName, int64_t v);
@@ -120,6 +118,13 @@ public:
     template <typename T, enable_when<is_object_v<T>> = nullptr>
     void operator()(const char *fieldName, T &v) {
         auto s = JSONSerializer::asObject();
+        jsonify(s, v);
+        this->append(fieldName, std::move(s).take());
+    }
+
+    template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
+    void operator()(const char *fieldName, T &v) {
+        JSONSerializer s;
         jsonify(s, v);
         this->append(fieldName, std::move(s).take());
     }
@@ -159,6 +164,11 @@ private:
     void append(const char *fieldName, JSON &&json);
 };
 
+template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
+void jsonify(JSONSerializer &s, T &v) {
+    s(static_cast<std::underlying_type_t<T>>(v));
+}
+
 class ValidationError {
 private:
     std::vector<std::string> messages;
@@ -193,19 +203,13 @@ public:
 
     void operator()(const char *fieldName, bool &v);
 
-    void operator()(const char *fieldName, int &v) {    //FIXME:
+    template <typename T, enable_when<(std::is_signed_v<T> || std::is_unsigned_v<T>)
+            && sizeof(T) <= sizeof(int64_t)> = nullptr>
+    void operator()(const char *fieldName, T &v) {
         int64_t v1;
         (*this)(fieldName, v1);
         if(!this->hasError()) {
-            v = v1;
-        }
-    }
-
-    void operator()(const char *fieldName, unsigned int &v) {   //FIXME:
-        int64_t v1;
-        (*this)(fieldName, v1);
-        if(!this->hasError()) {
-            v = v1;
+            v = static_cast<T>(v1);
         }
     }
 
@@ -239,6 +243,16 @@ public:
     template <typename T, enable_when<is_object_v<T>> = nullptr>
     void operator()(const char *fieldName, T &v) {
         JSON *json = this->validateField<Object>(fieldName);
+        if(!json || (this->validOnly && fieldName)) {
+            return;
+        }
+        JSONDeserializerImpl deserializer(*json, this->validationError, this->validOnly);
+        jsonify(deserializer, v);
+    }
+
+    template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
+    void operator()(const char *fieldName, T &v) {
+        JSON *json = this->validateField(fieldName, -1);
         if(!json || (this->validOnly && fieldName)) {
             return;
         }
@@ -296,17 +310,15 @@ private:
             if constexpr(N == sizeof...(R)) {
                 (void) ret;
                 deserializer.validationError = std::move(this->error);
-            } else {
-                if(this->validate(deserializer.value)) {
-                    if(!deserializer.validOnly) {
-                        using T = typename TypeByIndex<N, R...>::type;
-                        T v;
-                        deserializer(v);
-                        ret = std::move(v);
-                    }
-                } else {
-                    FromJSON<N + 1, R...>(this->error)(deserializer, ret);
+            } else if(this->validate(deserializer.value)) {
+                if(!deserializer.validOnly) {
+                    using T = typename TypeByIndex<N, R...>::type;
+                    T v;
+                    deserializer(v);
+                    ret = std::move(v);
                 }
+            } else {
+                FromJSON<N + 1, R...>(this->error)(deserializer, ret);
             }
         }
     };
@@ -327,6 +339,15 @@ private:
      */
     JSON *validateField(const char *fieldName, int tag, bool optional = false);
 };
+
+template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
+void jsonify(JSONDeserializerImpl &s, T &v) {
+    std::underlying_type_t<T> v1;
+    s(v1);
+    if(!s.hasError()) {
+        v = static_cast<T>(v1);
+    }
+}
 
 class JSONDeserializer {
 private:
@@ -350,6 +371,20 @@ public:
         deserializer(std::forward<T>(v));
     }
 };
+
+template <typename T> struct is_serialize : std::false_type {};
+
+template <> struct is_serialize<JSONSerializer> : std::true_type {};
+
+template <typename T>
+constexpr bool is_serialize_v = is_serialize<T>::value;
+
+template <typename T> struct is_deserialize : std::false_type {};
+
+template <> struct is_deserialize<JSONDeserializerImpl> : std::true_type {};
+
+template <typename T>
+constexpr bool is_deserialize_v = is_deserialize<T>::value;
 
 } // namespace ydsh::json
 

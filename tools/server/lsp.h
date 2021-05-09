@@ -95,11 +95,6 @@ enum class DiagnosticSeverity : int {
     Hint = 4,
 };
 
-template <typename T>
-void jsonify(T &t, DiagnosticSeverity &s) {
-    t(static_cast<int>(s));
-}
-
 struct DiagnosticRelatedInformation {
     Location location;
     std::string message;
@@ -206,11 +201,6 @@ enum class TextDocumentSyncKind : int {
     Full = 1,
     Incremental = 2,
 };
-
-template <typename T>
-void jsonify(T &, TextDocumentSyncKind &) {
-    //FIXME:
-}
 
 struct CompletionOptions {
     Optional<bool> resolveProvider;    // optional
@@ -331,7 +321,7 @@ struct TextDocumentSyncOptions {
     template <typename T>
     void jsonify(T &t) {
         JSONIFIY(openClose);
-//        JSONIFIY(change); //FIXME:
+        JSONIFIY(change); //FIXME:
         JSONIFIY(willSave);
         JSONIFIY(willSaveWaitUntil);
         JSONIFIY(save);
