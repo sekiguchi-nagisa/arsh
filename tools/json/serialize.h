@@ -58,12 +58,6 @@ template <typename T> struct array_element<std::vector<T>> { using type = T; };
 template <typename T>
 using array_element_t = typename array_element<T>::type;
 
-
-template <typename S, typename T>
-void jsonify(S &s, T &v) {
-    v.jsonify(s);
-}
-
 class JSONSerializer {
 private:
     /**
@@ -163,11 +157,6 @@ private:
 
     void append(const char *fieldName, JSON &&json);
 };
-
-template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
-void jsonify(JSONSerializer &s, T &v) {
-    s(static_cast<std::underlying_type_t<T>>(v));
-}
 
 class ValidationError {
 private:
@@ -340,15 +329,6 @@ private:
     JSON *validateField(const char *fieldName, int tag, bool optional = false);
 };
 
-template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
-void jsonify(JSONDeserializerImpl &s, T &v) {
-    std::underlying_type_t<T> v1;
-    s(v1);
-    if(!s.hasError()) {
-        v = static_cast<T>(v1);
-    }
-}
-
 class JSONDeserializer {
 private:
     JSON root;
@@ -385,6 +365,26 @@ template <> struct is_deserialize<JSONDeserializerImpl> : std::true_type {};
 
 template <typename T>
 constexpr bool is_deserialize_v = is_deserialize<T>::value;
+
+
+template <typename S, typename T>
+void jsonify(S &s, T &v) {
+    if constexpr(std::is_enum_v<T>) {
+        if constexpr(is_serialize_v<S>) {
+            s(static_cast<std::underlying_type_t<T>>(v));
+        } else if constexpr(is_deserialize_v<S>) {
+            std::underlying_type_t<T> v1;
+            s(v1);
+            if(!s.hasError()) {
+                v = static_cast<T>(v1);
+            }
+        } else {
+            static_assert(!is_deserialize_v<S>);
+        }
+    } else {
+        v.jsonify(s);
+    }
+}
 
 } // namespace ydsh::json
 

@@ -18,6 +18,7 @@
 #define YDSH_TOOLS_LSP_H
 
 #include "../json/json.h"
+#include "../json/serialize.h"
 #include "../uri/uri.h"
 
 namespace ydsh::lsp {
@@ -170,9 +171,20 @@ enum class TraceSetting : unsigned int {
 #undef GEN_ENUM
 };
 
-template <typename T>
-void jsonify(T &, TraceSetting &) { //FIXME:
+const char *toString(TraceSetting setting);
 
+bool toEnum(const char *str, TraceSetting &setting);
+
+template <typename T>
+void jsonify(T &t, TraceSetting &setting) {
+    if constexpr(is_serialize_v<T>) {
+        std::string value = toString(setting);
+        t(value);
+    } else if constexpr(is_deserialize_v<T>) {
+        std::string value;
+        t(value);
+        t.hasError() || toEnum(value.c_str(), setting);
+    }
 }
 
 struct InitializeParams {
@@ -191,7 +203,7 @@ struct InitializeParams {
         JSONIFIY(rootUri);
         JSONIFIY(initializationOptions);
         JSONIFIY(capabilities);
-//        JSONIFIY(trace);  //FIXME:
+        JSONIFIY(trace);
     }
 };
 
@@ -223,6 +235,7 @@ struct SignatureHelpOptions {
 };
 
 #define EACH_CODE_ACTION_KIND(OP) \
+    OP(Empty, "") \
     OP(QuickFix, "quickfix") \
     OP(Refactor, "refactor") \
     OP(RefactorExtract, "refactor.extract") \
@@ -237,9 +250,20 @@ enum class CodeActionKind : unsigned int {
 #undef GEN_ENUM
 };
 
+const char *toString(CodeActionKind kind);
+
+bool toEnum(const char *str, CodeActionKind &kind);
+
 template <typename T>
-void jsonify(T &, CodeActionKind &) {
-    //FIXME:
+void jsonify(T &t, CodeActionKind &kind) {
+    if constexpr(is_serialize_v<T>) {
+        std::string value = toString(kind);
+        t(value);
+    } else if constexpr(is_deserialize_v<T>) {
+        std::string value;
+        t(value);
+        t.hasError() || toEnum(value.c_str(), kind);
+    }
 }
 
 struct CodeActionOptions {
@@ -247,8 +271,7 @@ struct CodeActionOptions {
 
     template <typename T>
     void jsonify(T &t) {
-//        JSONIFIY(codeActionKinds);
-        (void)t;
+        JSONIFIY(codeActionKinds);
     }
 };
 
@@ -393,8 +416,50 @@ struct InitializeResult {
 
 struct InitializedParams {
     template <typename T>
-    void jsonify(T &) {
+    void jsonify(T &) {}
+};
 
+// for TextDocument
+
+struct TextDocumentIdentifier {
+    DocumentURI uri;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(uri);
+    }
+};
+
+struct TextDocumentItem {
+    DocumentURI uri;
+    std::string languageId;
+    int version;
+    std::string text;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(uri);
+        JSONIFIY(languageId);
+        JSONIFIY(version);
+        JSONIFIY(text);
+    }
+};
+
+struct DidOpenTextDocumentParams {
+    TextDocumentItem textDocument;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(textDocument);
+    }
+};
+
+struct DidCloseTextDocumentParams {
+    TextDocumentIdentifier textDocument;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(textDocument);
     }
 };
 

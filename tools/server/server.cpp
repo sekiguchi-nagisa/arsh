@@ -37,6 +37,8 @@ void LSPServer::bindAll() {
     this->bind("exit", &LSPServer::exit);
     this->bind("initialize", &LSPServer::initialize);
     this->bind("initialized", &LSPServer::initialized);
+    this->bind("textDocument/didOpen", &LSPServer::didOpenTextDocument);
+    this->bind("textDocument/didClose", &LSPServer::didCloseTextDocument);
 }
 
 void LSPServer::run() {
@@ -55,6 +57,9 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     (void) params; //FIXME: currently not used
 
     InitializeResult ret;   //FIXME: set supported capabilities
+    ret.capabilities.textDocumentSync = TextDocumentSyncOptions {
+        .openClose = true,
+    };
     return std::move(ret);
 }
 
@@ -72,6 +77,14 @@ void LSPServer::exit() {
     int s = this->willExit ? 0 : 1;
     LOG(LogLevel::INFO, "exit server: %d", s);
     std::exit(s);   // always success
+}
+
+void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
+    LOG(LogLevel::INFO, "open textDocument: %s", params.textDocument.uri.c_str());
+}
+
+void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
+    LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
 }
 
 } // namespace ydsh::lsp

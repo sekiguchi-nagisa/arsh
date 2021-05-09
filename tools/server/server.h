@@ -92,6 +92,7 @@ private:
 
 public:
     // RPC method definition
+
     Reply<InitializeResult> initialize(const InitializeParams &params);
 
     void initialized(const InitializedParams &params);
@@ -99,6 +100,10 @@ public:
     Reply<void> shutdown();
 
     void exit();
+
+    void didOpenTextDocument(const DidOpenTextDocumentParams &params);
+
+    void didCloseTextDocument(const DidCloseTextDocumentParams &params);
 };
 
 
