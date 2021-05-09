@@ -59,6 +59,10 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     InitializeResult ret;   //FIXME: set supported capabilities
     ret.capabilities.textDocumentSync = TextDocumentSyncOptions {
         .openClose = true,
+        .change = {},
+        .willSave = {},
+        .willSaveWaitUntil = {},
+        .save = {},
     };
     return std::move(ret);
 }
