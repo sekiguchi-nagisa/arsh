@@ -29,7 +29,7 @@ macro(getRE2C)
     set(RE2C_BIN "${re2c_BINARY_DIR}/re2c")
 
     if(BUILD_RE2C_WITH_CMAKE)
-        execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" ${RE2C_SRC} WORKING_DIRECTORY ${re2c_BINARY_DIR})
+        execute_process(COMMAND ${CMAKE_COMMAND} -DCMAKE_CXX_FLAGS=-D_GNU_SOURCE -G "${CMAKE_GENERATOR}" ${RE2C_SRC} WORKING_DIRECTORY ${re2c_BINARY_DIR})
         execute_process(COMMAND ${CMAKE_COMMAND} --build . WORKING_DIRECTORY ${re2c_BINARY_DIR})
     else()
         if(NOT EXISTS "${RE2C_SRC}/configure")
