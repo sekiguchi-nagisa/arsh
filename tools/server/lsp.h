@@ -339,7 +339,7 @@ struct TextDocumentSyncOptions {
     Optional<TextDocumentSyncKind> change; // optional
     Optional<bool> willSave;   // optional
     Optional<bool> willSaveWaitUntil;  // optional
-    Optional<SaveOptions> save;    // optional
+    Optional<Union<bool, SaveOptions>> save;    // optional
 
     template <typename T>
     void jsonify(T &t) {
@@ -430,6 +430,16 @@ struct TextDocumentIdentifier {
     }
 };
 
+struct VersionedTextDocumentIdentifier : public TextDocumentIdentifier {
+    int version;
+
+    template <typename T>
+    void jsonify(T &t) {
+        t(static_cast<TextDocumentIdentifier&>(*this));
+        JSONIFIY(version);
+    }
+};
+
 struct TextDocumentItem {
     DocumentURI uri;
     std::string languageId;
@@ -462,6 +472,31 @@ struct DidCloseTextDocumentParams {
         JSONIFIY(textDocument);
     }
 };
+
+struct TextDocumentContentChangeEvent {
+    Optional<Range> range;  // if invalid, text is considered full content of document
+    Optional<unsigned int> rangeLength; // deprecated
+    std::string text;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(range);
+        JSONIFIY(rangeLength);
+        JSONIFIY(text);
+    }
+};
+
+struct DidChangeTextDocumentParams {
+    VersionedTextDocumentIdentifier textDocument;
+    std::vector<TextDocumentContentChangeEvent> contentChanges;
+
+    template <typename T>
+    void jsonify(T &t) {
+        JSONIFIY(textDocument);
+        JSONIFIY(contentChanges);
+    }
+};
+
 
 } // namespace ydsh::lsp
 

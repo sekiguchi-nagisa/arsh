@@ -87,7 +87,7 @@ private:
     template <typename Ret, typename Param, typename Func, typename Error>
     auto call(const std::string &name, const Param &param,
               Func callback, Error ecallback) {
-        return Handler::call(this->transport, name, param, std::forward<Func>(callback), std::forward<Error>(ecallback));
+        return Handler::call<Ret>(this->transport, name, param, std::forward<Func>(callback), std::forward<Error>(ecallback));
     }
 
 public:
@@ -104,6 +104,8 @@ public:
     void didOpenTextDocument(const DidOpenTextDocumentParams &params);
 
     void didCloseTextDocument(const DidCloseTextDocumentParams &params);
+
+    void didChangeTextDocument(const DidChangeTextDocumentParams &params);
 };
 
 

@@ -39,6 +39,7 @@ void LSPServer::bindAll() {
     this->bind("initialized", &LSPServer::initialized);
     this->bind("textDocument/didOpen", &LSPServer::didOpenTextDocument);
     this->bind("textDocument/didClose", &LSPServer::didCloseTextDocument);
+    this->bind("textDocument/didChange", &LSPServer::didChangeTextDocument);
 }
 
 void LSPServer::run() {
@@ -59,7 +60,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     InitializeResult ret;   //FIXME: set supported capabilities
     ret.capabilities.textDocumentSync = TextDocumentSyncOptions {
         .openClose = true,
-        .change = {},
+        .change = TextDocumentSyncKind::Full,
         .willSave = {},
         .willSaveWaitUntil = {},
         .save = {},
@@ -89,6 +90,12 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
     LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
+}
+
+void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params) {
+    LOG(LogLevel::INFO, "change textDocument: %s, %d",
+        params.textDocument.uri.c_str(),
+        params.textDocument.version);
 }
 
 } // namespace ydsh::lsp
