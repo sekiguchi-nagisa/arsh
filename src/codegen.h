@@ -81,30 +81,12 @@ struct LoopState {
 
 class ConstBuffer {
 private:
-    DSValue *values;
+    std::unique_ptr<DSValue[]> values;
     unsigned int size;
     unsigned int cap;
 
 public:
-    NON_COPYABLE(ConstBuffer);
-
     ConstBuffer() : values(new DSValue[8]), size(0), cap(8) {}
-
-    ConstBuffer(ConstBuffer &&o) noexcept : values(o.values), size(o.size), cap(o.cap) {
-        o.values = nullptr;
-    }
-
-    ~ConstBuffer() {
-        delete[] this->values;
-    }
-
-    ConstBuffer &operator=(ConstBuffer &&o) noexcept {
-        if(this != std::addressof(o)) {
-            this->~ConstBuffer();
-            new (this) ConstBuffer(std::move(o));
-        }
-        return *this;
-    }
 
     unsigned int getSize() const {
         return this->size;
@@ -113,11 +95,9 @@ public:
     void append(DSValue &&value);
 
     DSValue *take() && {
-        auto *tmp = this->values;
-        this->values = nullptr;
         this->size = 0;
         this->cap = 0;
-        return tmp;
+        return this->values.release();
     }
 };
 

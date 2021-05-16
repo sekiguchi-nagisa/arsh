@@ -49,13 +49,12 @@ void ConstBuffer::append(DSValue &&value) {
     if(this->size == this->cap) {
         unsigned int newSize = this->size;
         newSize += (newSize >> 1u);
-        auto *newValues = new DSValue[newSize];
+        auto newValues = std::make_unique<DSValue[]>(newSize);
         for(unsigned int i = 0; i < this->size; i++) {
             newValues[i] = std::move(this->values[i]);
         }
-        delete[] this->values;
         this->cap = newSize;
-        this->values = newValues;
+        this->values = std::move(newValues);
     }
     this->values[this->size++] = std::move(value);
 }
