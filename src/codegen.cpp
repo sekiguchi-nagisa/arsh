@@ -45,6 +45,21 @@ bool isTypeOp(OpCode code) {
     }
 }
 
+void ConstBuffer::append(DSValue &&value) {
+    if(this->size == this->cap) {
+        unsigned int newSize = this->size;
+        newSize += (newSize >> 1u);
+        auto *newValues = new DSValue[newSize];
+        for(unsigned int i = 0; i < this->size; i++) {
+            newValues[i] = std::move(this->values[i]);
+        }
+        delete[] this->values;
+        this->cap = newSize;
+        this->values = newValues;
+    }
+    this->values[this->size++] = std::move(value);
+}
+
 CompiledCode CodeBuilder::build(const std::string &name) {
     if(!this->finalize()) {
         return CompiledCode();
@@ -60,12 +75,8 @@ CompiledCode CodeBuilder::build(const std::string &name) {
     };
 
     // create constant pool
-    const unsigned int constSize = this->constBuffer.size();
-    auto *constPool = new DSValue[constSize + 1];
-    for(unsigned int i = 0; i < constSize; i++) {
-        constPool[i] = std::move(this->constBuffer[i]);
-    }
-    constPool[constSize] = nullptr; // sentinel
+    this->constBuffer.append(nullptr); // sentinel
+    auto *constPool = std::move(this->constBuffer).take();
 
     // extract source pos entry
     this->lineNumEntries.push_back({CODE_MAX_LEN, 0});
@@ -112,8 +123,8 @@ void ByteCodeGenerator::emitIns(OpCode op) {
 }
 
 unsigned int ByteCodeGenerator::emitConstant(DSValue &&value) {
-    this->curBuilder().constBuffer.push_back(std::move(value));
-    unsigned int index = this->curBuilder().constBuffer.size() - 1;
+    this->curBuilder().constBuffer.append(std::move(value));
+    unsigned int index = this->curBuilder().constBuffer.getSize() - 1;
     if(index > 0xFFFFFF) {
         fatal("const pool index is up to 24bit\n");
     }

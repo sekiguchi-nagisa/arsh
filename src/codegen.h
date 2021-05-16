@@ -79,14 +79,56 @@ struct LoopState {
     unsigned int blockIndex;
 };
 
+class ConstBuffer {
+private:
+    DSValue *values;
+    unsigned int size;
+    unsigned int cap;
+
+public:
+    NON_COPYABLE(ConstBuffer);
+
+    ConstBuffer() : values(new DSValue[8]), size(0), cap(8) {}
+
+    ConstBuffer(ConstBuffer &&o) noexcept : values(o.values), size(o.size), cap(o.cap) {
+        o.values = nullptr;
+    }
+
+    ~ConstBuffer() {
+        delete[] this->values;
+    }
+
+    ConstBuffer &operator=(ConstBuffer &&o) noexcept {
+        if(this != std::addressof(o)) {
+            this->~ConstBuffer();
+            new (this) ConstBuffer(std::move(o));
+        }
+        return *this;
+    }
+
+    unsigned int getSize() const {
+        return this->size;
+    }
+
+    void append(DSValue &&value);
+
+    DSValue *take() && {
+        auto *tmp = this->values;
+        this->values = nullptr;
+        this->size = 0;
+        this->cap = 0;
+        return tmp;
+    }
+};
+
 struct CodeBuilder : public CodeEmitter<true> {
     const Lexer &lexer;
 
-    CodeKind kind;
+    const CodeKind kind;
 
     unsigned char localVarNum;
 
-    std::vector<DSValue> constBuffer;
+    ConstBuffer constBuffer;
     FlexBuffer<LineNumEntry> lineNumEntries;
     std::vector<CatchBuilder> catchBuilders;
 
@@ -396,8 +438,8 @@ private:
 
     void initCodeBuilder(CodeKind kind, const Lexer &lex, unsigned short localVarNum) {
         this->builders.emplace_back(lex, kind, localVarNum);
-        this->curBuilder().constBuffer.push_back(this->commons.back().getScriptName());
-        this->curBuilder().constBuffer.push_back(this->commons.back().getScriptDir());
+        this->curBuilder().constBuffer.append(this->commons.back().getScriptName());
+        this->curBuilder().constBuffer.append(this->commons.back().getScriptDir());
     }
 
     CompiledCode finalizeCodeBuilder(const std::string &name) {
