@@ -12,7 +12,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prepare
-      run: sudo apt-get install ninja-build g++-5 g++-6 g++-8 clang-6.0 clang-8
+      run: |
+        sudo apt-get install ninja-build g++-5 g++-6 g++-8 clang-6.0 clang-8
+        sudo apt remove libgcc-11-dev gcc-11
     - name: configure
       run: |
         mkdir build
