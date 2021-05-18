@@ -569,8 +569,10 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     return std::make_unique<TypeAliasNode>(startPos, this->lexer->toTokenText(token),
                                            std::move(typeToken));
   }
-    EACH_LA_varDecl(GEN_LA_CASE) return this->parse_variableDeclaration();
-    EACH_LA_expression(GEN_LA_CASE) return this->parse_expression();
+    // clang-format off
+  EACH_LA_varDecl(GEN_LA_CASE) return this->parse_variableDeclaration();
+  EACH_LA_expression(GEN_LA_CASE) return this->parse_expression();
+    // clang-format on
   default:
     E_DETAILED(ParseErrorKind::STMT, EACH_LA_statement(GEN_LA_ALTER));
   }
@@ -795,7 +797,9 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
 
 static bool lookahead_expression(TokenKind kind) {
   switch (kind) {
-    EACH_LA_expression(GEN_LA_CASE) return true;
+    // clang-format off
+  EACH_LA_expression(GEN_LA_CASE) return true;
+    // clang-format on
   default:
     return false;
   }
@@ -884,7 +888,10 @@ std::unique_ptr<Node> Parser::parse_command() {
   for (bool next = true;
        next && !this->hasLineTerminator() && (this->hasSpace() || this->hasNewline());) {
     switch (CUR_KIND()) {
-      EACH_LA_cmdArg_LP(GEN_LA_CASE) {
+      // clang-format off
+    EACH_LA_cmdArg_LP(GEN_LA_CASE)
+      // clang-format on
+      {
         auto argNode = this->parse_cmdArg();
         if (this->hasError()) {
           if (this->inCompletionPoint() &&
@@ -896,8 +903,13 @@ std::unique_ptr<Node> Parser::parse_command() {
         node->addArgNode(std::move(argNode));
         break;
       }
-      EACH_LA_redir(GEN_LA_CASE) node->addRedirNode(TRY(this->parse_redirOption()));
-      break;
+      // clang-format off
+    EACH_LA_redir(GEN_LA_CASE)
+      // clang-format on
+      {
+        node->addRedirNode(TRY(this->parse_redirOption()));
+        break;
+      }
     case TokenKind::INVALID:
       E_DETAILED(ParseErrorKind::CMD_ARG, EACH_LA_cmdArgs(GEN_LA_ALTER));
     default:
@@ -912,11 +924,17 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
-    EACH_LA_redirFile(GEN_LA_CASE) {
+    // clang-format off
+  EACH_LA_redirFile(GEN_LA_CASE)
+    // clang-format on
+    {
       TokenKind kind = this->scan();
       return std::make_unique<RedirNode>(kind, TRY(this->parse_cmdArg()));
     }
-    EACH_LA_redirNoFile(GEN_LA_CASE) {
+    // clang-format off
+  EACH_LA_redirNoFile(GEN_LA_CASE)
+    // clang-format on
+    {
       Token token = this->curToken;
       TokenKind kind = this->scan();
       return std::make_unique<RedirNode>(kind, token);
@@ -928,7 +946,9 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
 
 static bool lookahead_cmdArg_LP(TokenKind kind) {
   switch (kind) {
-    EACH_LA_cmdArg_LP(GEN_LA_CASE) return true;
+    // clang-format off
+  EACH_LA_cmdArg_LP(GEN_LA_CASE) return true;
+    // clang-format on
   default:
     return false;
   }
@@ -972,7 +992,9 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgParseOpt opt) {
   case TokenKind::START_IN_SUB:
   case TokenKind::START_OUT_SUB:
     return this->parse_procSubstitution();
-    EACH_LA_paramExpansion(GEN_LA_CASE) return this->parse_paramExpansion();
+    // clang-format off
+  EACH_LA_paramExpansion(GEN_LA_CASE) return this->parse_paramExpansion();
+    // clang-format on
   default:
     if (this->inCompletionPoint()) {
       if (this->inVarNameCompletionPoint()) {
@@ -1055,7 +1077,10 @@ std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
       auto withNode = std::make_unique<WithNode>(std::move(node), std::move(redirNode));
       for (bool next = true; next && this->hasSpace();) {
         switch (CUR_KIND()) {
-          EACH_LA_redir(GEN_LA_CASE) {
+          // clang-format off
+        EACH_LA_redir(GEN_LA_CASE)
+          // clang-format on
+          {
             withNode->addRedirNode(TRY(this->parse_redirOption()));
             break;
           }
@@ -1482,7 +1507,10 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
           std::make_unique<StringNode>(token, this->lexer->doubleElementToString(token)));
       break;
     }
-      EACH_LA_interpolation(GEN_LA_CASE) {
+      // clang-format off
+    EACH_LA_interpolation(GEN_LA_CASE)
+      // clang-format on
+      {
         auto interp = TRY(this->parse_interpolation(EmbedNode::STR_EXPR));
         node->addExprNode(std::move(interp));
         break;

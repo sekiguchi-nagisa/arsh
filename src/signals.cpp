@@ -26,144 +26,131 @@ const SignalPair *getSignalList() {
 
   static const SignalPair signalList[] = {
 
+// clang-format off
 // POSIX.1-1990 standard
 #ifdef SIGHUP
       SIG_(HUP)
 #endif
 #ifdef SIGINT
-          SIG_(INT)
+      SIG_(INT)
 #endif
 #ifdef SIGQUIT
-              SIG_(QUIT)
+      SIG_(QUIT)
 #endif
 #ifdef SIGILL
-                  SIG_(ILL)
+      SIG_(ILL)
 #endif
 #ifdef SIGABRT
-                      SIG_(ABRT)
+      SIG_(ABRT)
 #endif
 #ifdef SIGFPE
-                          SIG_(FPE)
+      SIG_(FPE)
 #endif
 #ifdef SIGKILL
-                              SIG_(KILL)
+      SIG_(KILL)
 #endif
 #ifdef SIGSEGV
-                                  SIG_(SEGV)
+      SIG_(SEGV)
 #endif
 #ifdef SIGPIPE
-                                      SIG_(PIPE)
+      SIG_(PIPE)
 #endif
 #ifdef SIGALRM
-                                          SIG_(ALRM)
+      SIG_(ALRM)
 #endif
 #ifdef SIGTERM
-                                              SIG_(TERM)
+      SIG_(TERM)
 #endif
 #ifdef SIGUSR1
-                                                  SIG_(USR1)
+      SIG_(USR1)
 #endif
 #ifdef SIGUSR2
-                                                      SIG_(USR2)
+      SIG_(USR2)
 #endif
 #ifdef SIGCHLD
-                                                          SIG_(CHLD)
+      SIG_(CHLD)
 #endif
 #ifdef SIGCONT
-                                                              SIG_(CONT)
+      SIG_(CONT)
 #endif
 #ifdef SIGSTOP
-                                                                  SIG_(STOP)
+      SIG_(STOP)
 #endif
 #ifdef SIGTSTP
-                                                                      SIG_(TSTP)
+      SIG_(TSTP)
 #endif
 #ifdef SIGTTIN
-                                                                          SIG_(TTIN)
+      SIG_(TTIN)
 #endif
 #ifdef SIGTTOU
-                                                                              SIG_(TTOU)
+      SIG_(TTOU)
 #endif
 
 // SUSv2 and POSIX.1-2001 standard
 #ifdef SIGBUS
-                                                                                  SIG_(BUS)
+      SIG_(BUS)
 #endif
 #ifdef SIGPOLL
-                                                                                      SIG_(POLL)
+      SIG_(POLL)
 #endif
 #ifdef SIGPROF
-                                                                                          SIG_(PROF)
+      SIG_(PROF)
 #endif
 #ifdef SIGSYS
-                                                                                              SIG_(
-                                                                                                  SYS)
+      SIG_(SYS)
 #endif
 #ifdef SIGTRAP
-                                                                                                  SIG_(
-                                                                                                      TRAP)
+      SIG_(TRAP)
 #endif
 #ifdef SIGURG
-                                                                                                      SIG_(
-                                                                                                          URG)
+      SIG_(URG)
 #endif
 #ifdef SIGVTALRM
-                                                                                                          SIG_(
-                                                                                                              VTALRM)
+      SIG_(VTALRM)
 #endif
 #ifdef SIGXCPU
-                                                                                                              SIG_(
-                                                                                                                  XCPU)
+      SIG_(XCPU)
 #endif
 #ifdef SIGXFSZ
-                                                                                                                  SIG_(
-                                                                                                                      XFSZ)
+      SIG_(XFSZ)
 #endif
 
 // other
 #ifdef SIGIOT
-                                                                                                                      SIG_(
-                                                                                                                          IOT)
+      SIG_(IOT)
 #endif
 #ifdef SIGEMT
-                                                                                                                          SIG_(
-                                                                                                                              EMT)
+      SIG_(EMT)
 #endif
 #ifdef SIGSTKFLT
-                                                                                                                              SIG_(
-                                                                                                                                  STKFLT)
+      SIG_(STKFLT)
 #endif
 #ifdef SIGIO
-                                                                                                                                  SIG_(
-                                                                                                                                      IO)
+      SIG_(IO)
 #endif
 #ifdef SIGCLD
-                                                                                                                                      SIG_(
-                                                                                                                                          CLD)
+      SIG_(CLD)
 #endif
 #ifdef SIGPWR
-                                                                                                                                          SIG_(
-                                                                                                                                              PWR)
+      SIG_(PWR)
 #endif
 #ifdef SIGINFO
-                                                                                                                                              SIG_(
-                                                                                                                                                  INFO)
+      SIG_(INFO)
 #endif
 #ifdef SIGLOST
-                                                                                                                                                  SIG_(
-                                                                                                                                                      LOST)
+      SIG_(LOST)
 #endif
 #ifdef SIGWINCH
-                                                                                                                                                      SIG_(
-                                                                                                                                                          WINCH)
+      SIG_(WINCH)
 #endif
 #ifdef SIGUNUSED
-                                                                                                                                                          SIG_(
-                                                                                                                                                              UNUSED)
+      SIG_(UNUSED)
 #endif
+      // clang-format on
 
       // sentinel
-      {nullptr, -1}};
+      {nullptr, -1},
+  };
 
   return signalList;
 }

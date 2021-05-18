@@ -426,9 +426,13 @@ JSON Parser::parseArray() {
       this->consume(); // COMMA
     }
     switch (this->curKind) {
-      EACH_LA_VALUE(GEN_LA_CASE)
-      value.push_back(TRY(this->parseValue()));
-      break;
+      // clang-format off
+    EACH_LA_VALUE(GEN_LA_CASE)
+      // clang-format on
+      {
+        value.push_back(TRY(this->parseValue()));
+        break;
+      }
     default:
       E_ALTER(EACH_LA_VALUE(GEN_LA_ALTER) JSONTokenKind::ARRAY_CLOSE);
     }
