@@ -36,7 +36,7 @@ enum LSPErrorCode : int {
     ContentModified      = -32801,
 };
 
-#define JSONIFIY(m) t(#m, m)
+#define JSONIFY(m) t(#m, m)
 
 using DocumentURI = std::string;
 
@@ -46,8 +46,8 @@ struct Position {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(line);
-        JSONIFIY(character);
+        JSONIFY(line);
+        JSONIFY(character);
     }
 };
 
@@ -57,8 +57,8 @@ struct Range {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(start);
-        JSONIFIY(end);
+        JSONIFY(start);
+        JSONIFY(end);
     }
 };
 
@@ -68,8 +68,8 @@ struct Location {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(uri);
-        JSONIFIY(range);
+        JSONIFY(uri);
+        JSONIFY(range);
     }
 };
 
@@ -81,10 +81,10 @@ struct LocationLink {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(originSelectionRange);
-        JSONIFIY(targetUri);
-        JSONIFIY(targetRange);
-        JSONIFIY(targetSelectionRange);
+        JSONIFY(originSelectionRange);
+        JSONIFY(targetUri);
+        JSONIFY(targetRange);
+        JSONIFY(targetSelectionRange);
     }
 };
 
@@ -102,8 +102,8 @@ struct DiagnosticRelatedInformation {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(location);
-        JSONIFIY(message);
+        JSONIFY(location);
+        JSONIFY(message);
     }
 };
 
@@ -117,10 +117,10 @@ struct Diagnostic {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(range);
-        JSONIFIY(severity);
-        JSONIFIY(message);
-        JSONIFIY(relatedInformation);
+        JSONIFY(range);
+        JSONIFY(severity);
+        JSONIFY(message);
+        JSONIFY(relatedInformation);
     }
 };
 
@@ -131,8 +131,8 @@ struct Command {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(title);
-        JSONIFIY(command);
+        JSONIFY(title);
+        JSONIFY(command);
     }
 };
 
@@ -142,8 +142,8 @@ struct TextEdit {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(range);
-        JSONIFIY(newText);
+        JSONIFY(range);
+        JSONIFY(newText);
     }
 };
 
@@ -155,8 +155,8 @@ struct ClientCapabilities {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(workspace);
-        JSONIFIY(textDocument);
+        JSONIFY(workspace);
+        JSONIFY(textDocument);
     }
 };
 
@@ -198,12 +198,12 @@ struct InitializeParams {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(processId);
-        JSONIFIY(rootPath);
-        JSONIFIY(rootUri);
-        JSONIFIY(initializationOptions);
-        JSONIFIY(capabilities);
-        JSONIFIY(trace);
+        JSONIFY(processId);
+        JSONIFY(rootPath);
+        JSONIFY(rootUri);
+        JSONIFY(initializationOptions);
+        JSONIFY(capabilities);
+        JSONIFY(trace);
     }
 };
 
@@ -220,8 +220,8 @@ struct CompletionOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(resolveProvider);
-        JSONIFIY(triggerCharacters);
+        JSONIFY(resolveProvider);
+        JSONIFY(triggerCharacters);
     }
 };
 
@@ -230,7 +230,7 @@ struct SignatureHelpOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(triggerCharacters);
+        JSONIFY(triggerCharacters);
     }
 };
 
@@ -271,7 +271,7 @@ struct CodeActionOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(codeActionKinds);
+        JSONIFY(codeActionKinds);
     }
 };
 
@@ -280,7 +280,7 @@ struct CodeLensOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(resolveProvider);
+        JSONIFY(resolveProvider);
     }
 };
 
@@ -290,8 +290,8 @@ struct DocumentOnTypeFormattingOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(firstTriggerCharacter);
-        JSONIFIY(moreTriggerCharacter);
+        JSONIFY(firstTriggerCharacter);
+        JSONIFY(moreTriggerCharacter);
     }
 };
 
@@ -300,7 +300,7 @@ struct RenameOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(prepareProvider);
+        JSONIFY(prepareProvider);
     }
 };
 
@@ -309,7 +309,7 @@ struct DocumentLinkOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(resolveProvider);
+        JSONIFY(resolveProvider);
     }
 };
 
@@ -318,7 +318,7 @@ struct ExecuteCommandOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(commands);
+        JSONIFY(commands);
     }
 };
 
@@ -327,7 +327,7 @@ struct SaveOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(includeText);
+        JSONIFY(includeText);
     }
 };
 
@@ -343,11 +343,11 @@ struct TextDocumentSyncOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(openClose);
-        JSONIFIY(change); //FIXME:
-        JSONIFIY(willSave);
-        JSONIFIY(willSaveWaitUntil);
-        JSONIFIY(save);
+        JSONIFY(openClose);
+        JSONIFY(change); //FIXME:
+        JSONIFY(willSave);
+        JSONIFY(willSaveWaitUntil);
+        JSONIFY(save);
     }
 };
 
@@ -356,7 +356,7 @@ struct StaticRegistrationOptions {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(id);
+        JSONIFY(id);
     }
 };
 
@@ -385,23 +385,23 @@ struct ServerCapabilities {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(textDocumentSync);
-        JSONIFIY(hoverProvider);
-        JSONIFIY(completionProvider);
-        JSONIFIY(signatureHelpProvider);
-        JSONIFIY(definitionProvider);
-        JSONIFIY(referencesProvider);
-        JSONIFIY(documentHighlightProvider);
-        JSONIFIY(documentSymbolProvider);
-        JSONIFIY(workspaceSymbolProvider);
-        JSONIFIY(codeActionProvider);
-        JSONIFIY(codeLensProvider);
-        JSONIFIY(documentFormattingProvider);
-        JSONIFIY(documentRangeFormattingProvider);
-        JSONIFIY(documentOnTypeFormattingProvider);
-        JSONIFIY(renameProvider);
-        JSONIFIY(documentLinkProvider);
-        JSONIFIY(executeCommandProvider);
+        JSONIFY(textDocumentSync);
+        JSONIFY(hoverProvider);
+        JSONIFY(completionProvider);
+        JSONIFY(signatureHelpProvider);
+        JSONIFY(definitionProvider);
+        JSONIFY(referencesProvider);
+        JSONIFY(documentHighlightProvider);
+        JSONIFY(documentSymbolProvider);
+        JSONIFY(workspaceSymbolProvider);
+        JSONIFY(codeActionProvider);
+        JSONIFY(codeLensProvider);
+        JSONIFY(documentFormattingProvider);
+        JSONIFY(documentRangeFormattingProvider);
+        JSONIFY(documentOnTypeFormattingProvider);
+        JSONIFY(renameProvider);
+        JSONIFY(documentLinkProvider);
+        JSONIFY(executeCommandProvider);
     }
 };
 
@@ -410,7 +410,7 @@ struct InitializeResult {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(capabilities);
+        JSONIFY(capabilities);
     }
 };
 
@@ -426,7 +426,7 @@ struct TextDocumentIdentifier {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(uri);
+        JSONIFY(uri);
     }
 };
 
@@ -436,7 +436,7 @@ struct VersionedTextDocumentIdentifier : public TextDocumentIdentifier {
     template <typename T>
     void jsonify(T &t) {
         t(static_cast<TextDocumentIdentifier&>(*this));
-        JSONIFIY(version);
+        JSONIFY(version);
     }
 };
 
@@ -448,10 +448,10 @@ struct TextDocumentItem {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(uri);
-        JSONIFIY(languageId);
-        JSONIFIY(version);
-        JSONIFIY(text);
+        JSONIFY(uri);
+        JSONIFY(languageId);
+        JSONIFY(version);
+        JSONIFY(text);
     }
 };
 
@@ -460,7 +460,7 @@ struct DidOpenTextDocumentParams {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(textDocument);
+        JSONIFY(textDocument);
     }
 };
 
@@ -469,7 +469,7 @@ struct DidCloseTextDocumentParams {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(textDocument);
+        JSONIFY(textDocument);
     }
 };
 
@@ -480,9 +480,9 @@ struct TextDocumentContentChangeEvent {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(range);
-        JSONIFIY(rangeLength);
-        JSONIFIY(text);
+        JSONIFY(range);
+        JSONIFY(rangeLength);
+        JSONIFY(text);
     }
 };
 
@@ -492,11 +492,12 @@ struct DidChangeTextDocumentParams {
 
     template <typename T>
     void jsonify(T &t) {
-        JSONIFIY(textDocument);
-        JSONIFIY(contentChanges);
+        JSONIFY(textDocument);
+        JSONIFY(contentChanges);
     }
 };
 
+#undef JSONIFY
 
 } // namespace ydsh::lsp
 
