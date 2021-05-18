@@ -17,8 +17,8 @@
 #ifndef YDSH_CGERROR_H
 #define YDSH_CGERROR_H
 
-#include "node.h"
 #include "misc/resource.hpp"
+#include "node.h"
 
 namespace ydsh {
 /**
@@ -26,71 +26,63 @@ namespace ydsh {
  */
 class CodeGenError {
 private:
-    Token token;
+  Token token;
 
-    const char *kind{nullptr};
+  const char *kind{nullptr};
 
-    CStrPtr message;
+  CStrPtr message;
 
 public:
-    CodeGenError() = default;
+  CodeGenError() = default;
 
-    CodeGenError(Token token, const char *kind, CStrPtr &&message) noexcept :
-            token(token), kind(kind), message(std::move(message)) {}
+  CodeGenError(Token token, const char *kind, CStrPtr &&message) noexcept
+      : token(token), kind(kind), message(std::move(message)) {}
 
-    CodeGenError(CodeGenError &&o) noexcept :
-            token(o.token), kind(o.kind), message(std::move(o.message)) {
-        o.kind = nullptr;
-    }
+  CodeGenError(CodeGenError &&o) noexcept
+      : token(o.token), kind(o.kind), message(std::move(o.message)) {
+    o.kind = nullptr;
+  }
 
-    ~CodeGenError() = default;
+  ~CodeGenError() = default;
 
-    CodeGenError &operator=(CodeGenError &&o) noexcept {
-        this->swap(o);
-        return *this;
-    }
+  CodeGenError &operator=(CodeGenError &&o) noexcept {
+    this->swap(o);
+    return *this;
+  }
 
-    void swap(CodeGenError &o) {
-        std::swap(this->token, o.token);
-        std::swap(this->kind, o.kind);
-        std::swap(this->message, o.message);
-    }
+  void swap(CodeGenError &o) {
+    std::swap(this->token, o.token);
+    std::swap(this->kind, o.kind);
+    std::swap(this->message, o.message);
+  }
 
-    Token getToken() const {
-        return this->token;
-    }
+  Token getToken() const { return this->token; }
 
-    const char *getKind() const {
-        return this->kind;
-    }
+  const char *getKind() const { return this->kind; }
 
-    const char *getMessage() const {
-        return this->message.get();
-    }
+  const char *getMessage() const { return this->message.get(); }
 
-    explicit operator bool() const {
-        return this->kind != nullptr;
-    }
+  explicit operator bool() const { return this->kind != nullptr; }
 };
 
-struct CGError{};
+struct CGError {};
 
 template <typename T, typename B>
 using base_of_t = std::enable_if_t<std::is_base_of<B, T>::value, T>;
 
+#define DEFINE_CGError(E, fmt)                                                                     \
+  struct E : CGError {                                                                             \
+    static constexpr const char *kind = #E;                                                        \
+    static constexpr const char *value = fmt;                                                      \
+  }
 
-#define DEFINE_CGError(E, fmt) \
-struct E : CGError { \
-    static constexpr const char *kind = #E; \
-    static constexpr const char *value = fmt; }
-
-DEFINE_CGError(TooLargeFunc,     "too large function: `%s'");
-DEFINE_CGError(TooLargeUdc,      "too large user-defined command: `%s'");
+DEFINE_CGError(TooLargeFunc, "too large function: `%s'");
+DEFINE_CGError(TooLargeUdc, "too large user-defined command: `%s'");
 DEFINE_CGError(TooLargeToplevel, "too large toplevel: `%s'");
-DEFINE_CGError(TooLargeModule,   "too large module: `%s'");
+DEFINE_CGError(TooLargeModule, "too large module: `%s'");
 
 #undef DEFINE_CGError
 
 } // namespace ydsh
 
-#endif //YDSH_CGERROR_H
+#endif // YDSH_CGERROR_H

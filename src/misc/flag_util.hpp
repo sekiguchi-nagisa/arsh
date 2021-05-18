@@ -32,20 +32,19 @@ using flag32_t = unsigned int;
 
 template <typename T>
 inline constexpr void setFlag(T &set, T flag) {
-    set |= flag;
+  set |= flag;
 }
 
 template <typename T>
 inline constexpr void unsetFlag(T &set, T flag) {
-    set &= ~flag;
+  set &= ~flag;
 }
 
 template <typename T>
 inline constexpr bool hasFlag(T set, T flag) {
-    return (set & flag) == flag;
+  return (set & flag) == flag;
 }
 
 END_MISC_LIB_NAMESPACE_DECL
 
-
-#endif //MISC_LIB_FLAG_UTIL_H
+#endif // MISC_LIB_FLAG_UTIL_H

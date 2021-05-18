@@ -20,57 +20,55 @@
 namespace ydsh {
 
 // builtin type
-#define EACH_HANDLE_INFO_TYPE(OP) \
-    OP(Void) \
-    OP(Any) \
-    OP(_Value) \
-    OP(Int) \
-    OP(Float) \
-    OP(Boolean)  \
-    OP(String) \
-    OP(UnixFD) \
-    OP(Error) \
-    OP(Job) \
-    OP(StringIter) \
-    OP(Regex) \
-    OP(Signal) \
-    OP(Signals)
+#define EACH_HANDLE_INFO_TYPE(OP)                                                                  \
+  OP(Void)                                                                                         \
+  OP(Any)                                                                                          \
+  OP(_Value)                                                                                       \
+  OP(Int)                                                                                          \
+  OP(Float)                                                                                        \
+  OP(Boolean)                                                                                      \
+  OP(String)                                                                                       \
+  OP(UnixFD)                                                                                       \
+  OP(Error)                                                                                        \
+  OP(Job)                                                                                          \
+  OP(StringIter)                                                                                   \
+  OP(Regex)                                                                                        \
+  OP(Signal)                                                                                       \
+  OP(Signals)
 
 // type template
-#define EACH_HANDLE_INFO_TYPE_TEMP(OP) \
-    OP(Array) \
-    OP(Map) \
-    OP(Tuple) \
-    OP(Option)
+#define EACH_HANDLE_INFO_TYPE_TEMP(OP)                                                             \
+  OP(Array)                                                                                        \
+  OP(Map)                                                                                          \
+  OP(Tuple)                                                                                        \
+  OP(Option)
 
 // func type
-#define EACH_HANDLE_INFO_FUNC_TYPE(OP) \
-    OP(Func)
+#define EACH_HANDLE_INFO_FUNC_TYPE(OP) OP(Func)
 
 // param types num
-#define EACH_HANDLE_INFO_NUM(OP) \
-    OP(P_N0) \
-    OP(P_N1) \
-    OP(P_N2) \
-    OP(P_N3) \
-    OP(P_N4) \
-    OP(P_N5) \
-    OP(P_N6) \
-    OP(P_N7) \
-    OP(P_N8)
+#define EACH_HANDLE_INFO_NUM(OP)                                                                   \
+  OP(P_N0)                                                                                         \
+  OP(P_N1)                                                                                         \
+  OP(P_N2)                                                                                         \
+  OP(P_N3)                                                                                         \
+  OP(P_N4)                                                                                         \
+  OP(P_N5)                                                                                         \
+  OP(P_N6)                                                                                         \
+  OP(P_N7)                                                                                         \
+  OP(P_N8)
 
 // parametric type
-#define EACH_HANDLE_INFO_PTYPE(OP) \
-    OP(T0) \
-    OP(T1)
+#define EACH_HANDLE_INFO_PTYPE(OP)                                                                 \
+  OP(T0)                                                                                           \
+  OP(T1)
 
-#define EACH_HANDLE_INFO(OP) \
-    EACH_HANDLE_INFO_TYPE(OP) \
-    EACH_HANDLE_INFO_TYPE_TEMP(OP) \
-    EACH_HANDLE_INFO_FUNC_TYPE(OP) \
-    EACH_HANDLE_INFO_NUM(OP) \
-    EACH_HANDLE_INFO_PTYPE(OP)
-
+#define EACH_HANDLE_INFO(OP)                                                                       \
+  EACH_HANDLE_INFO_TYPE(OP)                                                                        \
+  EACH_HANDLE_INFO_TYPE_TEMP(OP)                                                                   \
+  EACH_HANDLE_INFO_FUNC_TYPE(OP)                                                                   \
+  EACH_HANDLE_INFO_NUM(OP)                                                                         \
+  EACH_HANDLE_INFO_PTYPE(OP)
 
 /*
  * encoded type definition
@@ -83,10 +81,10 @@ namespace ydsh {
  */
 enum class HandleInfo : char {
 #define GEN_ENUM(ENUM) ENUM,
-    EACH_HANDLE_INFO(GEN_ENUM)
+  EACH_HANDLE_INFO(GEN_ENUM)
 #undef GEN_ENUM
 };
 
 } // namespace ydsh
 
-#endif //YDSH_HANDLE_INFO_H
+#endif // YDSH_HANDLE_INFO_H

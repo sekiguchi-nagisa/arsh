@@ -17,168 +17,145 @@
 #ifndef MISC_LIB_RESOURCE_HPP
 #define MISC_LIB_RESOURCE_HPP
 
-#include <cstdio>
 #include <cerrno>
-#include <type_traits>
+#include <cstdio>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "noncopyable.h"
 #include "util.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-template <typename T> struct RefCountOp;
+template <typename T>
+struct RefCountOp;
 
 template <typename T>
 class RefCount {
 private:
-    long count{0};
-    friend struct RefCountOp<T>;
+  long count{0};
+  friend struct RefCountOp<T>;
 
 protected:
-    RefCount() = default;
+  RefCount() = default;
 };
 
 template <typename T>
 struct RefCountOp final {
-    static long useCount(const RefCount<T> *ptr) noexcept {
-        return ptr->count;
-    }
+  static long useCount(const RefCount<T> *ptr) noexcept { return ptr->count; }
 
-    static void increase(RefCount<T> *ptr) noexcept {
-        if(ptr != nullptr) {
-            ptr->count++;
-        }
+  static void increase(RefCount<T> *ptr) noexcept {
+    if (ptr != nullptr) {
+      ptr->count++;
     }
+  }
 
-    static void decrease(RefCount<T> *ptr) noexcept {
-        if(ptr != nullptr && --ptr->count == 0) {
-            delete static_cast<T *>(ptr);
-        }
+  static void decrease(RefCount<T> *ptr) noexcept {
+    if (ptr != nullptr && --ptr->count == 0) {
+      delete static_cast<T *>(ptr);
     }
+  }
 };
 
 template <typename T, typename P = RefCountOp<T>>
 class IntrusivePtr final {
 private:
-    T *ptr;
+  T *ptr;
 
 public:
-    constexpr IntrusivePtr() noexcept : ptr(nullptr) { }
+  constexpr IntrusivePtr() noexcept : ptr(nullptr) {}
 
-    constexpr IntrusivePtr(std::nullptr_t) noexcept : ptr(nullptr) { }  //NOLINT
+  constexpr IntrusivePtr(std::nullptr_t) noexcept : ptr(nullptr) {} // NOLINT
 
-    explicit IntrusivePtr(T *ptr) noexcept : ptr(ptr) { P::increase(this->ptr); }
+  explicit IntrusivePtr(T *ptr) noexcept : ptr(ptr) { P::increase(this->ptr); }
 
-    IntrusivePtr(const IntrusivePtr &v) noexcept : IntrusivePtr(v.ptr) { }
+  IntrusivePtr(const IntrusivePtr &v) noexcept : IntrusivePtr(v.ptr) {}
 
-    IntrusivePtr(IntrusivePtr &&v) noexcept : ptr(v.ptr) { v.ptr = nullptr; }
+  IntrusivePtr(IntrusivePtr &&v) noexcept : ptr(v.ptr) { v.ptr = nullptr; }
 
-    template <typename U>
-    IntrusivePtr(const IntrusivePtr<U, P> &v) noexcept : IntrusivePtr(v.get()) { }  //NOLINT
+  template <typename U>
+  IntrusivePtr(const IntrusivePtr<U, P> &v) noexcept : IntrusivePtr(v.get()) {} // NOLINT
 
-    template <typename U>
-    IntrusivePtr(IntrusivePtr<U, P> &&v) noexcept : ptr(v.get()) { v.reset(); } //NOLINT
+  template <typename U>
+  IntrusivePtr(IntrusivePtr<U, P> &&v) noexcept : ptr(v.get()) {
+    v.reset();
+  } // NOLINT
 
-    ~IntrusivePtr() { P::decrease(this->ptr); }
+  ~IntrusivePtr() { P::decrease(this->ptr); }
 
-    IntrusivePtr &operator=(const IntrusivePtr &v) noexcept {
-        IntrusivePtr tmp(v);
-        this->swap(tmp);
-        return *this;
-    }
+  IntrusivePtr &operator=(const IntrusivePtr &v) noexcept {
+    IntrusivePtr tmp(v);
+    this->swap(tmp);
+    return *this;
+  }
 
-    IntrusivePtr &operator=(IntrusivePtr &&v) noexcept {
-        this->swap(v);
-        return *this;
-    }
+  IntrusivePtr &operator=(IntrusivePtr &&v) noexcept {
+    this->swap(v);
+    return *this;
+  }
 
-    void reset() noexcept {
-        IntrusivePtr tmp;
-        this->swap(tmp);
-    }
+  void reset() noexcept {
+    IntrusivePtr tmp;
+    this->swap(tmp);
+  }
 
-    void swap(IntrusivePtr &o) noexcept {
-        std::swap(this->ptr, o.ptr);
-    }
+  void swap(IntrusivePtr &o) noexcept { std::swap(this->ptr, o.ptr); }
 
-    long useCount() const noexcept {
-        return P::useCount(this->ptr);
-    }
+  long useCount() const noexcept { return P::useCount(this->ptr); }
 
-    T *get() const noexcept {
-        return this->ptr;
-    }
+  T *get() const noexcept { return this->ptr; }
 
-    T &operator*() const noexcept {
-        return *this->ptr;
-    }
+  T &operator*() const noexcept { return *this->ptr; }
 
-    T *operator->() const noexcept {
-        return this->ptr;
-    }
+  T *operator->() const noexcept { return this->ptr; }
 
-    explicit operator bool() const noexcept {
-        return this->ptr != nullptr;
-    }
+  explicit operator bool() const noexcept { return this->ptr != nullptr; }
 
-    bool operator==(const IntrusivePtr &obj) const noexcept {
-        return this->get() == obj.get();
-    }
+  bool operator==(const IntrusivePtr &obj) const noexcept { return this->get() == obj.get(); }
 
-    bool operator!=(const IntrusivePtr &obj) const noexcept {
-        return this->get() != obj.get();
-    }
+  bool operator!=(const IntrusivePtr &obj) const noexcept { return this->get() != obj.get(); }
 
-    template <typename ... A>
-    static IntrusivePtr create(A && ...arg) {
-        return IntrusivePtr(new T(std::forward<A>(arg)...));
-    }
+  template <typename... A>
+  static IntrusivePtr create(A &&...arg) {
+    return IntrusivePtr(new T(std::forward<A>(arg)...));
+  }
 };
 
 template <typename T>
 class ObserverPtr {
 private:
-    T *ptr;
+  T *ptr;
 
 public:
-    explicit ObserverPtr(T *ptr) noexcept : ptr(ptr) {}
+  explicit ObserverPtr(T *ptr) noexcept : ptr(ptr) {}
 
-    ObserverPtr(std::nullptr_t) noexcept : ptr(nullptr) {}  //NOLINT
+  ObserverPtr(std::nullptr_t) noexcept : ptr(nullptr) {} // NOLINT
 
-    ObserverPtr() noexcept : ptr(nullptr) {}
+  ObserverPtr() noexcept : ptr(nullptr) {}
 
-    explicit operator bool() const {
-        return this->ptr != nullptr;
-    }
+  explicit operator bool() const { return this->ptr != nullptr; }
 
-    T *operator->() const {
-        return this->ptr;
-    }
+  T *operator->() const { return this->ptr; }
 
-    T &operator*() const {
-        return *this->ptr;
-    }
+  T &operator*() const { return *this->ptr; }
 
-    template <typename ...Arg>
-    auto operator()(Arg && ...arg) const {
-        return (*this->ptr)(std::forward<Arg>(arg)...);
-    }
+  template <typename... Arg>
+  auto operator()(Arg &&...arg) const {
+    return (*this->ptr)(std::forward<Arg>(arg)...);
+  }
 
-    void reset(T *p) {
-        this->ptr = p;
-    }
+  void reset(T *p) { this->ptr = p; }
 };
 
 struct FileCloser {
-    void operator()(FILE *fp) const {
-        if(fp) {
-            int old = errno;
-            fclose(fp);
-            errno = old;    //ignore fclose error
-        }
+  void operator()(FILE *fp) const {
+    if (fp) {
+      int old = errno;
+      fclose(fp);
+      errno = old; // ignore fclose error
     }
+  }
 };
 
 using FilePtr = std::unique_ptr<FILE, FileCloser>;
@@ -186,45 +163,43 @@ using FilePtr = std::unique_ptr<FILE, FileCloser>;
 /**
  * use 'static' modifier due to suppress 'noexcept-type' warning in gcc7
  */
-template <typename Func, typename ...Arg>
+template <typename Func, typename... Arg>
 static FilePtr createFilePtr(Func func, Arg &&...arg) {
-    return FilePtr(func(std::forward<Arg>(arg)...));
+  return FilePtr(func(std::forward<Arg>(arg)...));
 }
 
 template <typename Buf>
 bool readAll(FILE *fp, Buf &buf) {
-    while(true) {
-        char data[128];
-        clearerr(fp);
-        errno = 0;
-        unsigned int size = fread(data, sizeof(char), arraySize(data), fp);
-        if(size > 0) {
-            buf.append(data, size);
-        } else if(errno) {
-            if(errno == EINTR) {
-                continue;
-            }
-            return false;
-        } else {
-            break;
-        }
+  while (true) {
+    char data[128];
+    clearerr(fp);
+    errno = 0;
+    unsigned int size = fread(data, sizeof(char), arraySize(data), fp);
+    if (size > 0) {
+      buf.append(data, size);
+    } else if (errno) {
+      if (errno == EINTR) {
+        continue;
+      }
+      return false;
+    } else {
+      break;
     }
-    return true;
+  }
+  return true;
 }
 
 template <typename Buf>
 inline bool readAll(const FilePtr &filePtr, Buf &buf) {
-    return readAll(filePtr.get(), buf);
+  return readAll(filePtr.get(), buf);
 }
 
 inline bool writeAll(const FilePtr &filePtr, const std::string &str) {
-    return fwrite(str.c_str(), sizeof(char), str.size(), filePtr.get()) == str.size();
+  return fwrite(str.c_str(), sizeof(char), str.size(), filePtr.get()) == str.size();
 }
 
 struct CStrDeleter {
-    void operator()(char *ptr) const {
-        free(ptr);
-    }
+  void operator()(char *ptr) const { free(ptr); }
 };
 
 using CStrPtr = std::unique_ptr<char, CStrDeleter>;
@@ -232,51 +207,45 @@ using CStrPtr = std::unique_ptr<char, CStrDeleter>;
 template <typename T>
 class Singleton {
 protected:
-    Singleton() = default;
+  Singleton() = default;
 
 public:
-    NON_COPYABLE(Singleton);
+  NON_COPYABLE(Singleton);
 
-    static T &instance() {
-        static T value;
-        return value;
-    }
+  static T &instance() {
+    static T value;
+    return value;
+  }
 };
 
 struct CallCounter {
-    unsigned int &count;
+  unsigned int &count;
 
-    explicit CallCounter(unsigned int &count) : count(count) {
-        ++this->count;
-    }
+  explicit CallCounter(unsigned int &count) : count(count) { ++this->count; }
 
-    ~CallCounter() {
-        --this->count;
-    }
+  ~CallCounter() { --this->count; }
 };
 
 template <typename Func>
 class Finally {
 private:
-    Func func;
+  Func func;
 
 public:
-    NON_COPYABLE(Finally);
+  NON_COPYABLE(Finally);
 
-    explicit Finally(Func &&func) : func(std::move(func)) {}
+  explicit Finally(Func &&func) : func(std::move(func)) {}
 
-    Finally(Finally &&o) noexcept = default;
+  Finally(Finally &&o) noexcept = default;
 
-    ~Finally() {
-        this->func();
-    }
+  ~Finally() { this->func(); }
 };
 
 template <typename Func>
 inline auto finally(Func &&func) {
-    return Finally<Func>(std::forward<Func>(func));
+  return Finally<Func>(std::forward<Func>(func));
 }
 
 END_MISC_LIB_NAMESPACE_DECL
 
-#endif //MISC_LIB_RESOURCE_HPP
+#endif // MISC_LIB_RESOURCE_HPP

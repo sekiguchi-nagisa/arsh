@@ -6,6 +6,7 @@
 # Date: 2020-01-28, 20:52:38 GMT
 */
 
+// clang-format off
 static const UNICODE_PROPERTY_RANGE grapheme_break_property_table[] = {
     { 0x0000, 0x0009, PROPERTY(Control) },
     { 0x000A, 0x000A, PROPERTY(LF) },

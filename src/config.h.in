@@ -1,6 +1,8 @@
 #ifndef YDSH_CONFIG_H
 #define YDSH_CONFIG_H
 
+// clang-format off
+
 // some system information
 
 #define X_INFO_SYSTEM  "${CMAKE_SYSTEM}"

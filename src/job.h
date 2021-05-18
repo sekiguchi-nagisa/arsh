@@ -17,11 +17,11 @@
 #ifndef YDSH_JOB_H
 #define YDSH_JOB_H
 
-#include <unistd.h>
 #include <fcntl.h>
+#include <unistd.h>
 
-#include <vector>
 #include <type_traits>
+#include <vector>
 
 #include "misc/resource.hpp"
 #include "misc/result.hpp"
@@ -32,114 +32,106 @@ struct DSState;
 namespace ydsh {
 
 inline int beForeground(pid_t pid) {
-    errno = 0;
-    int ttyFd = open("/dev/tty", O_RDONLY);
-    int r =  tcsetpgrp(ttyFd, getpgid(pid));
-    int old = errno;
-    close(ttyFd);
-    errno = old;
-    return r;
+  errno = 0;
+  int ttyFd = open("/dev/tty", O_RDONLY);
+  int r = tcsetpgrp(ttyFd, getpgid(pid));
+  int old = errno;
+  close(ttyFd);
+  errno = old;
+  return r;
 }
 
-#define EACH_WAIT_OP(OP) \
-    OP(BLOCKING) \
-    OP(BLOCK_UNTRACED) \
-    OP(NONBLOCKING)
+#define EACH_WAIT_OP(OP)                                                                           \
+  OP(BLOCKING)                                                                                     \
+  OP(BLOCK_UNTRACED)                                                                               \
+  OP(NONBLOCKING)
 
 enum class WaitOp : unsigned char {
 #define GEN_ENUM(OP) OP,
-    EACH_WAIT_OP(GEN_ENUM)
+  EACH_WAIT_OP(GEN_ENUM)
 #undef GEN_ENUM
 };
 
 struct WaitResult {
-    pid_t pid;
-    int status;
+  pid_t pid;
+  int status;
 };
 
 WaitResult waitForProc(pid_t pid, WaitOp op);
 
 class Proc {
 public:
-    enum class State : unsigned char {
-        RUNNING,
-        STOPPED,    // stopped by SIGSTOP or SIGTSTP
-        TERMINATED, // already called waitpid
-    };
+  enum class State : unsigned char {
+    RUNNING,
+    STOPPED,    // stopped by SIGSTOP or SIGTSTP
+    TERMINATED, // already called waitpid
+  };
 
 private:
-    pid_t pid_;
-    State state_;
+  pid_t pid_;
+  State state_;
 
-    /**
-     * enabled when `state' is TERMINATED.
-     */
-    unsigned char exitStatus_;
+  /**
+   * enabled when `state' is TERMINATED.
+   */
+  unsigned char exitStatus_;
 
-    explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
+  explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
 
 public:
-    Proc() : pid_(-1), state_(State::TERMINATED), exitStatus_(0) {}
+  Proc() : pid_(-1), state_(State::TERMINATED), exitStatus_(0) {}
 
-    pid_t pid() const {
-        return this->pid_;
+  pid_t pid() const { return this->pid_; }
+
+  State state() const { return this->state_; }
+
+  bool is(State s) const { return this->state() == s; }
+
+  int exitStatus() const { return this->exitStatus_; }
+
+  /**
+   * wait for termination
+   * @param op
+   * @param showSignal
+   * if true, print signal message when terminated by signal.
+   * @return
+   * if waitpid return 0, set 'exitStatus_' and return it.
+   * if waitpid return -1, return -1.
+   */
+  int wait(WaitOp op, bool showSignal = true) {
+    if (!this->is(State::TERMINATED)) {
+      if (this->is(State::STOPPED)) {
+        op = WaitOp::NONBLOCKING;
+      }
+      WaitResult ret = waitForProc(this->pid(), op);
+      if (ret.pid > 0) {
+        this->updateState(ret, showSignal);
+      } else if (ret.pid < 0) {
+        return -1;
+      }
     }
+    return this->exitStatus_;
+  }
 
-    State state() const {
-        return this->state_;
-    }
+  bool updateState(WaitResult ret, bool showSignal);
 
-    bool is(State s) const {
-        return this->state() == s;
-    }
+  /**
+   * send signal to proc
+   * @param sigNum
+   * @return
+   * if success, return 0.
+   */
+  int send(int sigNum) const;
 
-    int exitStatus() const {
-        return this->exitStatus_;
-    }
-
-    /**
-     * wait for termination
-     * @param op
-     * @param showSignal
-     * if true, print signal message when terminated by signal.
-     * @return
-     * if waitpid return 0, set 'exitStatus_' and return it.
-     * if waitpid return -1, return -1.
-     */
-    int wait(WaitOp op, bool showSignal = true) {
-        if(!this->is(State::TERMINATED)) {
-            if(this->is(State::STOPPED)) {
-                op = WaitOp::NONBLOCKING;
-            }
-            WaitResult ret = waitForProc(this->pid(), op);
-            if(ret.pid > 0) {
-                this->updateState(ret, showSignal);
-            } else if(ret.pid < 0) {
-                return -1;
-            }
-        }
-        return this->exitStatus_;
-    }
-
-    bool updateState(WaitResult ret, bool showSignal);
-
-    /**
-     * send signal to proc
-     * @param sigNum
-     * @return
-     * if success, return 0.
-     */
-    int send(int sigNum) const;
-
-    /**
-     * after fork, reset signal setting in child process.
-     * if Proc#pid() is -1, fork failed due to EAGAIN.
-     * @param st
-     * @param pgid
-     * @param foreground
-     * @return
-     */
-    static Proc fork(DSState &st, pid_t pgid, bool foreground);
+  /**
+   * after fork, reset signal setting in child process.
+   * if Proc#pid() is -1, fork failed due to EAGAIN.
+   * @param st
+   * @param pgid
+   * @param foreground
+   * @return
+   */
+  static Proc fork(DSState &st, pid_t pgid, bool foreground);
 };
 
 class ProcTable;
@@ -148,172 +140,153 @@ class JobTable;
 
 class JobObject : public ObjectWithRtti<ObjectKind::Job> {
 public:
-    static_assert(std::is_standard_layout_v<Proc>, "failed");
+  static_assert(std::is_standard_layout_v<Proc>, "failed");
 
-    enum class State : unsigned char {
-        RUNNING,
-        TERMINATED,     // already terminated
-        UNCONTROLLED,   // job is not created its own parent process
-    };
+  enum class State : unsigned char {
+    RUNNING,
+    TERMINATED,   // already terminated
+    UNCONTROLLED, // job is not created its own parent process
+  };
 
 private:
-    /**
-     * writable file descriptor (connected to STDIN of Job). must be UnixFD_Object
-     */
-    ObjPtr<UnixFdObject> inObj;
+  /**
+   * writable file descriptor (connected to STDIN of Job). must be UnixFD_Object
+   */
+  ObjPtr<UnixFdObject> inObj;
 
-    /**
-     * readable file descriptor (connected to STDOUT of Job). must be UnixFD_Object
-     */
-    ObjPtr<UnixFdObject> outObj;
+  /**
+   * readable file descriptor (connected to STDOUT of Job). must be UnixFD_Object
+   */
+  ObjPtr<UnixFdObject> outObj;
 
-    /**
-     * if already closed, will be -1.
-     */
-    int oldStdin{-1};
+  /**
+   * if already closed, will be -1.
+   */
+  int oldStdin{-1};
 
-    /**
-     * after termination will be 0
-     */
-    unsigned short jobID{0};
+  /**
+   * after termination will be 0
+   */
+  unsigned short jobID{0};
 
-    State state{State::RUNNING};
+  State state{State::RUNNING};
 
-    bool disown{false};
+  bool disown{false};
 
-    unsigned short procSize;
+  unsigned short procSize;
 
-    /**
-     * initial size is procSize
-     */
-    Proc procs[];
+  /**
+   * initial size is procSize
+   */
+  Proc procs[];
 
-    friend class JobTable;
+  friend class JobTable;
 
-    NON_COPYABLE(JobObject);
+  NON_COPYABLE(JobObject);
 
-    JobObject(unsigned int size, const Proc *procs, bool saveStdin,
-              ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj) :
-            ObjectWithRtti(TYPE::Job),
-            inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size) {
-        for(unsigned int i = 0; i < this->procSize; i++) {
-            this->procs[i] = procs[i];
-        }
-        if(saveStdin) {
-            this->oldStdin = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
-        }
+  JobObject(unsigned int size, const Proc *procs, bool saveStdin, ObjPtr<UnixFdObject> inObj,
+            ObjPtr<UnixFdObject> outObj)
+      : ObjectWithRtti(TYPE::Job), inObj(std::move(inObj)), outObj(std::move(outObj)),
+        procSize(size) {
+    for (unsigned int i = 0; i < this->procSize; i++) {
+      this->procs[i] = procs[i];
     }
+    if (saveStdin) {
+      this->oldStdin = fcntl(STDIN_FILENO, F_DUPFD_CLOEXEC, 0);
+    }
+  }
 
 public:
-    static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
-                                    ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj) {
-        void *ptr = malloc(sizeof(JobObject) + sizeof(Proc) * size);
-        auto *entry = new(ptr) JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj));
-        return ObjPtr<JobObject>(entry);
-    }
+  static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
+                                  ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj) {
+    void *ptr = malloc(sizeof(JobObject) + sizeof(Proc) * size);
+    auto *entry = new (ptr) JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj));
+    return ObjPtr<JobObject>(entry);
+  }
 
-    static ObjPtr<JobObject> create(Proc proc, ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj) {
-        Proc procs[1] = {proc};
-        return create(1, procs, false, std::move(inObj), std::move(outObj));
-    }
+  static ObjPtr<JobObject> create(Proc proc, ObjPtr<UnixFdObject> inObj,
+                                  ObjPtr<UnixFdObject> outObj) {
+    Proc procs[1] = {proc};
+    return create(1, procs, false, std::move(inObj), std::move(outObj));
+  }
 
-    static void operator delete(void *ptr) noexcept {   //NOLINT
-        free(ptr);
-    }
+  static void operator delete(void *ptr) noexcept { // NOLINT
+    free(ptr);
+  }
 
-    unsigned short getProcSize() const {
-        return this->procSize;
-    }
+  unsigned short getProcSize() const { return this->procSize; }
 
-    bool available() const {
-        return this->state == State::RUNNING;
-    }
+  bool available() const { return this->state == State::RUNNING; }
 
-    bool isDisowned() const {
-        return this->disown;
-    }
+  bool isDisowned() const { return this->disown; }
 
-    void disowned() {
-        this->disown = true;
-    }
+  void disowned() { this->disown = true; }
 
-    const Proc *getProcs() const {
-        return this->procs;
-    }
+  const Proc *getProcs() const { return this->procs; }
 
-    /**
-     *
-     * @param index
-     * @return
-     * after termination, return -1.
-     */
-    pid_t getPid(unsigned int index) const {
-        return this->procs[index].pid();
-    }
+  /**
+   *
+   * @param index
+   * @return
+   * after termination, return -1.
+   */
+  pid_t getPid(unsigned int index) const { return this->procs[index].pid(); }
 
-    /**
-     *
-     * @return
-     * after terminated, return 0.
-     */
-    unsigned short getJobID() const {
-        return this->jobID;
-    }
+  /**
+   *
+   * @return
+   * after terminated, return 0.
+   */
+  unsigned short getJobID() const { return this->jobID; }
 
-    bool isControlled() const {
-        return this->state != State::UNCONTROLLED;
-    }
+  bool isControlled() const { return this->state != State::UNCONTROLLED; }
 
-    DSValue getInObj() const {
-        return this->inObj;
-    }
+  DSValue getInObj() const { return this->inObj; }
 
-    DSValue getOutObj() const {
-        return this->outObj;
-    }
+  DSValue getOutObj() const { return this->outObj; }
 
-    /**
-     * restore STDIN_FD
-     * if has no ownership, do nothing.
-     * @return
-     * if restore fd, return true.
-     * if already called, return false
-     */
-    bool restoreStdin();
+  /**
+   * restore STDIN_FD
+   * if has no ownership, do nothing.
+   * @return
+   * if restore fd, return true.
+   * if already called, return false
+   */
+  bool restoreStdin();
 
-    /**
-     * send signal to all processes.
-     * if jos is process group leader, send signal to process group
-     * @param sigNum
-     */
-    void send(int sigNum) const;
+  /**
+   * send signal to all processes.
+   * if jos is process group leader, send signal to process group
+   * @param sigNum
+   */
+  void send(int sigNum) const;
 
-    void updateState() {
-        if(this->available()) {
-            unsigned int c = 0;
-            for(unsigned int i = 0; i < this->getProcSize(); i++) {
-                if(this->getProcs()[i].is(Proc::State::TERMINATED)) {
-                    c++;
-                }
-            }
-            if(c == this->getProcSize()) {
-                this->state = State::TERMINATED;
-            }
+  void updateState() {
+    if (this->available()) {
+      unsigned int c = 0;
+      for (unsigned int i = 0; i < this->getProcSize(); i++) {
+        if (this->getProcs()[i].is(Proc::State::TERMINATED)) {
+          c++;
         }
+      }
+      if (c == this->getProcSize()) {
+        this->state = State::TERMINATED;
+      }
     }
+  }
 
-    /**
-     * wait for termination.
-     * after termination, `state' will be TERMINATED.
-     * @param op
-     * @param procTable
-     * may be null
-     * @return
-     * exit status of last process.
-     * if cannot terminate (has no-ownership or has error), return -1 and set errno
-     * if procTable is not null, after wait, remove terminated procs from procTable
-     */
-    int wait(WaitOp op, ProcTable *procTable = nullptr);
+  /**
+   * wait for termination.
+   * after termination, `state' will be TERMINATED.
+   * @param op
+   * @param procTable
+   * may be null
+   * @return
+   * exit status of last process.
+   * if cannot terminate (has no-ownership or has error), return -1 and set errno
+   * if procTable is not null, after wait, remove terminated procs from procTable
+   */
+  int wait(WaitOp op, ProcTable *procTable = nullptr);
 };
 
 using Job = ObjPtr<JobObject>;
@@ -321,236 +294,214 @@ using Job = ObjPtr<JobObject>;
 // for pid to job mapping
 class ProcTable {
 public:
-    class Entry {
-    private:
-        friend class ProcTable;
+  class Entry {
+  private:
+    friend class ProcTable;
 
-        pid_t pid_;
-        unsigned short jobId_;
-        unsigned short procOffset_;
+    pid_t pid_;
+    unsigned short jobId_;
+    unsigned short procOffset_;
 
-    public:
-        Entry() = default;
+  public:
+    Entry() = default;
 
-        Entry(pid_t pid, unsigned short jobId, unsigned short offset) :
-                pid_(pid), jobId_(jobId), procOffset_(offset) {}
+    Entry(pid_t pid, unsigned short jobId, unsigned short offset)
+        : pid_(pid), jobId_(jobId), procOffset_(offset) {}
 
-        pid_t pid() const {
-            return this->pid_;
-        }
+    pid_t pid() const { return this->pid_; }
 
-        unsigned short jobId() const {
-            return this->jobId_;
-        }
+    unsigned short jobId() const { return this->jobId_; }
 
-        unsigned short procOffset() const {
-            return this->procOffset_;
-        }
+    unsigned short procOffset() const { return this->procOffset_; }
 
-        bool isDeleted() const {
-            return this->jobId() == 0;
-        }
-    };
+    bool isDeleted() const { return this->jobId() == 0; }
+  };
 
 private:
-    FlexBuffer<Entry> entries;
-    unsigned int deletedCount{0};
+  FlexBuffer<Entry> entries;
+  unsigned int deletedCount{0};
 
 public:
-    const FlexBuffer<Entry> &getEntries() const {
-        return this->entries;
+  const FlexBuffer<Entry> &getEntries() const { return this->entries; }
+
+  void add(const Job &job) {
+    for (unsigned int i = 0; i < job->getProcSize(); i++) {
+      this->addProc(job->getPid(i), job->getJobID(), i);
     }
+  }
 
-    void add(const Job &job) {
-        for(unsigned int i = 0; i < job->getProcSize(); i++) {
-            this->addProc(job->getPid(i), job->getJobID(), i);
-        }
+  const Entry *addProc(pid_t pid, unsigned short jobId, unsigned short offset);
+
+  Entry *findProc(pid_t pid);
+
+  /**
+   * call markDelete() in specified entry by pid.
+   * actual delete operation is not performed untill call batchedRemove()
+   * @param pid
+   * @return
+   * if found corresponding entry, return true
+   */
+  bool deleteProc(pid_t pid) {
+    auto *e = this->findProc(pid);
+    if (e) {
+      this->deleteProc(*e);
     }
+    return e != nullptr;
+  }
 
-    const Entry *addProc(pid_t pid, unsigned short jobId, unsigned short offset);
-
-    Entry *findProc(pid_t pid);
-
-    /**
-     * call markDelete() in specified entry by pid.
-     * actual delete operation is not performed untill call batchedRemove()
-     * @param pid
-     * @return
-     * if found corresponding entry, return true
-     */
-    bool deleteProc(pid_t pid) {
-        auto *e = this->findProc(pid);
-        if(e) {
-            this->deleteProc(*e);
-        }
-        return e != nullptr;
+  void deleteProc(ProcTable::Entry &e) {
+    if (!e.isDeleted()) {
+      e.jobId_ = 0;
+      this->deletedCount++;
     }
+  }
 
-    void deleteProc(ProcTable::Entry &e) {
-        if(!e.isDeleted()) {
-            e.jobId_ = 0;
-            this->deletedCount++;
-        }
-    }
+  void clear() {
+    this->entries.clear();
+    this->deletedCount = 0;
+  }
 
-    void clear() {
-        this->entries.clear();
-        this->deletedCount = 0;
-    }
+  unsigned int getDeletedCount() const { return this->deletedCount; }
 
-    unsigned int getDeletedCount() const {
-        return this->deletedCount;
-    }
-
-    /**
-     * remove all deleted PidEntry
-     */
-    void batchedRemove();
+  /**
+   * remove all deleted PidEntry
+   */
+  void batchedRemove();
 };
 
 using ProcOrJob = Union<pid_t, Job>;
 
 class JobTable {
 private:
-    std::vector<Job> jobs;
+  std::vector<Job> jobs;
 
-    ProcTable procTable;
+  ProcTable procTable;
 
-    /**
-     * latest attached entry.
-     */
-    Job latest;
+  /**
+   * latest attached entry.
+   */
+  Job latest;
 
 public:
-    NON_COPYABLE(JobTable);
+  NON_COPYABLE(JobTable);
 
-    using EntryIter = std::vector<Job>::iterator;
-    using ConstEntryIter = std::vector<Job>::const_iterator;
+  using EntryIter = std::vector<Job>::iterator;
+  using ConstEntryIter = std::vector<Job>::const_iterator;
 
-    JobTable() = default;
-    ~JobTable() = default;
+  JobTable() = default;
+  ~JobTable() = default;
 
-    void attach(Job job, bool disowned = false);
+  void attach(Job job, bool disowned = false);
 
-    /**
-     * if has ownership, wait termination.
-     * @param job
-     * @param op
-     * @return
-     * exit status of last process.
-     * after waiting termination, remove entry.
-     */
-    int waitForJob(Job &job, WaitOp op) {
-        ProcOrJob target[1] = {job};
-        return this->waitForProcOrJob(1, target, op);
+  /**
+   * if has ownership, wait termination.
+   * @param job
+   * @param op
+   * @return
+   * exit status of last process.
+   * after waiting termination, remove entry.
+   */
+  int waitForJob(Job &job, WaitOp op) {
+    ProcOrJob target[1] = {job};
+    return this->waitForProcOrJob(1, target, op);
+  }
+
+  void detachAll() {
+    for (auto &e : this->jobs) {
+      e->jobID = 0;
+      e->disowned();
+      e->state = JobObject::State::UNCONTROLLED;
     }
+    this->jobs.clear();
+    this->procTable.clear();
+    this->latest.reset();
+  }
 
-    void detachAll() {
-        for(auto &e : this->jobs) {
-            e->jobID = 0;
-            e->disowned();
-            e->state = JobObject::State::UNCONTROLLED;
-        }
-        this->jobs.clear();
-        this->procTable.clear();
-        this->latest.reset();
+  /**
+   * update status of managed jobs.
+   * when a job is terminated, detach job.
+   * should call after wait termination of foreground job.
+   */
+  void waitForAny();
+
+  /**
+   *
+   * @param size
+   * @param targets
+   * @param op
+   * @return
+   * return exit status of last targers.
+   * if not ignoreError false and has error, return -1
+   */
+  int waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op);
+
+  const Job &getLatestJob() const { return this->latest; }
+
+  /**
+   * get Job by job id
+   * @param jobId
+   * @return
+   * if not found, return nullptr
+   * if job is disowned, return nullptr
+   */
+  Job find(unsigned int jobId) const {
+    auto iter = this->findIter(jobId);
+    if (iter == this->endJob() || (*iter)->isDisowned()) {
+      return nullptr;
     }
+    return *iter;
+  }
 
-    /**
-     * update status of managed jobs.
-     * when a job is terminated, detach job.
-     * should call after wait termination of foreground job.
-     */
-    void waitForAny();
-
-    /**
-     *
-     * @param size
-     * @param targets
-     * @param op
-     * @return
-     * return exit status of last targers.
-     * if not ignoreError false and has error, return -1
-     */
-    int waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op);
-
-    const Job &getLatestJob() const {
-        return this->latest;
+  /**
+   * send signal to all job except for disowned job
+   * @param sigNum
+   */
+  void send(int sigNum) const {
+    for (auto &job : this->jobs) {
+      if (!job->isDisowned()) {
+        job->send(sigNum);
+      }
     }
+  }
 
-    /**
-     * get Job by job id
-     * @param jobId
-     * @return
-     * if not found, return nullptr
-     * if job is disowned, return nullptr
-     */
-    Job find(unsigned int jobId) const {
-        auto iter = this->findIter(jobId);
-        if(iter == this->endJob() || (*iter)->isDisowned()) {
-            return nullptr;
-        }
-        return *iter;
-    }
+  unsigned int size() const { return this->jobs.size(); }
 
-    /**
-     * send signal to all job except for disowned job
-     * @param sigNum
-     */
-    void send(int sigNum) const {
-        for(auto &job : this->jobs) {
-            if(!job->isDisowned()) {
-                job->send(sigNum);
-            }
-        }
-    }
+  // helper method for entry lookup
+  ConstEntryIter beginJob() const { return this->jobs.begin(); }
 
-    unsigned int size() const {
-        return this->jobs.size();
-    }
+  ConstEntryIter endJob() const { return this->jobs.end(); }
 
-    // helper method for entry lookup
-    ConstEntryIter beginJob() const {
-        return this->jobs.begin();
-    }
-
-    ConstEntryIter endJob() const {
-        return this->jobs.end();
-    }
-
-    const ProcTable &getProcTable() const {
-        return this->procTable;
-    }
+  const ProcTable &getProcTable() const { return this->procTable; }
 
 private:
-    /**
-     *
-     * @return
-     * entry index.
-     * new job id is index + 1
-     */
-    unsigned int findEmptyEntry() const;
+  /**
+   *
+   * @return
+   * entry index.
+   * new job id is index + 1
+   */
+  unsigned int findEmptyEntry() const;
 
-    /**
-     *
-     * @param jobId
-     * greater than 0.
-     * @return
-     * if not found, return end
-     */
-    ConstEntryIter findIter(unsigned int jobId) const;
+  /**
+   *
+   * @param jobId
+   * greater than 0.
+   * @return
+   * if not found, return end
+   */
+  ConstEntryIter findIter(unsigned int jobId) const;
 
-    /**
-     *
-     * @param ret
-     * @return
-     * return corresponding proc
-     */
-    const Proc *updateProcState(WaitResult ret);
+  /**
+   *
+   * @param ret
+   * @return
+   * return corresponding proc
+   */
+  const Proc *updateProcState(WaitResult ret);
 
-    void removeTerminatedJobs();
+  void removeTerminatedJobs();
 };
 
 } // namespace ydsh
 
-#endif //YDSH_JOB_H
+#endif // YDSH_JOB_H

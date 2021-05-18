@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MISC_LIB_UTIL_HPP
 #define MISC_LIB_UTIL_HPP
 
@@ -24,9 +23,9 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
 
 template <typename T, unsigned int N>
 constexpr unsigned int arraySize(const T (&)[N]) noexcept {
-    return N;
+  return N;
 }
 
 END_MISC_LIB_NAMESPACE_DECL
 
-#endif //MISC_LIB_UTIL_HPP
+#endif // MISC_LIB_UTIL_HPP

@@ -19,18 +19,18 @@
 
 #include <unistd.h>
 
+#include <array>
 #include <csignal>
 #include <string>
 #include <vector>
-#include <array>
 
-#include "opcode.h"
-#include "object.h"
-#include "misc/hash.hpp"
 #include "misc/buffer.hpp"
 #include "misc/flag_util.hpp"
+#include "misc/hash.hpp"
 #include "misc/opt.hpp"
 #include "misc/resource.hpp"
+#include "object.h"
+#include "opcode.h"
 
 struct DSState;
 
@@ -40,114 +40,109 @@ namespace ydsh {
  * enum order is corresponding to builtin variable declaration order.
  */
 enum class BuiltinVarOffset : unsigned int {
-    SCRIPT_NAME,    // SCRIPT_NAME
-    SCRIPT_DIR,     // SCRIPT_DIR
-    REPLY,          // REPLY (for read command)
-    REPLY_VAR,      // reply (fo read command)
-    PID,            // PID (current process)
-    PPID,           // PPID
-    SECONDS,        // SECONDS
-    IFS,            // IFS
-    COMPREPLY,      // COMPREPLY
-    PIPESTATUS,     // PIPESTATUS
-    EXIT_STATUS,    // ?
-    SHELL_PID,      // $
-    ARGS,           // @
-    ARGS_SIZE,      // #
-    POS_0,          // 0 (for script name)
-    POS_1,          // 1 (for argument)
-    /*POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_8, POS_9, */
+  SCRIPT_NAME, // SCRIPT_NAME
+  SCRIPT_DIR,  // SCRIPT_DIR
+  REPLY,       // REPLY (for read command)
+  REPLY_VAR,   // reply (fo read command)
+  PID,         // PID (current process)
+  PPID,        // PPID
+  SECONDS,     // SECONDS
+  IFS,         // IFS
+  COMPREPLY,   // COMPREPLY
+  PIPESTATUS,  // PIPESTATUS
+  EXIT_STATUS, // ?
+  SHELL_PID,   // $
+  ARGS,        // @
+  ARGS_SIZE,   // #
+  POS_0,       // 0 (for script name)
+  POS_1,       // 1 (for argument)
+               /*POS_2, POS_3, POS_4, POS_5, POS_6, POS_7, POS_8, POS_9, */
 };
 
-inline unsigned int toIndex(BuiltinVarOffset offset) {
-    return static_cast<unsigned int>(offset);
-}
+inline unsigned int toIndex(BuiltinVarOffset offset) { return static_cast<unsigned int>(offset); }
 
 class FilePathCache {
 private:
-    /**
-     * contains previously resolved path (for direct search)
-     */
-    std::string prevPath;
+  /**
+   * contains previously resolved path (for direct search)
+   */
+  std::string prevPath;
 
-    CStringHashMap<std::string> map;
+  CStringHashMap<std::string> map;
 
-    static constexpr unsigned int MAX_CACHE_SIZE = 100;
+  static constexpr unsigned int MAX_CACHE_SIZE = 100;
 
 public:
-    NON_COPYABLE(FilePathCache);
+  NON_COPYABLE(FilePathCache);
 
-    FilePathCache() = default;
+  FilePathCache() = default;
 
-    ~FilePathCache();
+  ~FilePathCache();
 
-    enum SearchOp {
-        NON              = 0u,
-        USE_DEFAULT_PATH = 1u << 0u,
-        DIRECT_SEARCH    = 1u << 1u,
-    };
+  enum SearchOp {
+    NON = 0u,
+    USE_DEFAULT_PATH = 1u << 0u,
+    DIRECT_SEARCH = 1u << 1u,
+  };
 
-    /**
-     * search file path by using PATH
-     * if cannot resolve path (file not found), return null.
-     */
-    const char *searchPath(const char *cmdName, SearchOp op = NON);
+  /**
+   * search file path by using PATH
+   * if cannot resolve path (file not found), return null.
+   */
+  const char *searchPath(const char *cmdName, SearchOp op = NON);
 
-    void removePath(const char *cmdName);
+  void removePath(const char *cmdName);
 
-    bool isCached(const char *cmdName) const;
+  bool isCached(const char *cmdName) const;
 
-    /**
-     * clear all cache
-     */
-    void clear();
+  /**
+   * clear all cache
+   */
+  void clear();
 
-    /**
-     * get begin iterator of map
-     */
-    auto begin() const {
-        return this->map.cbegin();
-    }
+  /**
+   * get begin iterator of map
+   */
+  auto begin() const { return this->map.cbegin(); }
 
-    /**
-     * get end iterator of map
-     */
-    auto end() const {
-        return this->map.cend();
-    }
+  /**
+   * get end iterator of map
+   */
+  auto end() const { return this->map.cend(); }
 };
 
-template <> struct allow_enum_bitop<FilePathCache::SearchOp> : std::true_type {};
+template <>
+struct allow_enum_bitop<FilePathCache::SearchOp> : std::true_type {};
 
 struct GetOptState : public opt::GetOptState {
-    /**
-     * index of next processing argument
-     */
-    unsigned int index;
+  /**
+   * index of next processing argument
+   */
+  unsigned int index;
 
-    explicit GetOptState(unsigned int index= 1) : index(index) {}
+  explicit GetOptState(unsigned int index = 1) : index(index) {}
 
-    int operator()(const ArrayObject &obj, const char *optStr);
+  int operator()(const ArrayObject &obj, const char *optStr);
 };
 
 struct VMHook {
-    /**
-     * hook for vm fetch event
-     * @param st
-     * @param op
-     * fetched opcode
-     */
-    virtual void vmFetchHook(DSState &st, OpCode op) = 0;
+  /**
+   * hook for vm fetch event
+   * @param st
+   * @param op
+   * fetched opcode
+   */
+  virtual void vmFetchHook(DSState &st, OpCode op) = 0;
 
-    /**
-     * hook for exception handle event
-     * @param st
-     */
-    virtual void vmThrowHook(DSState &st) = 0;
+  /**
+   * hook for exception handle event
+   * @param st
+   */
+  virtual void vmThrowHook(DSState &st) = 0;
 };
 
 struct DumpTarget {
-    FilePtr files[3];
+  FilePtr files[3];
 };
 
 const DSValue &getBuiltinGlobal(const DSState &st, const char *varName);
@@ -240,126 +235,121 @@ class ModuleLoader;
  * if cannot resolve underlying module type (if underlying module is not sealed (root module)),
  * return null
  */
-const ModType *getUnderlyingModType(const TypePool &pool,
-                                    const ModuleLoader &loader, const CompiledCode *code);
+const ModType *getUnderlyingModType(const TypePool &pool, const ModuleLoader &loader,
+                                    const CompiledCode *code);
 
 const ModType *getRuntimeModuleByLevel(const DSState &state, unsigned int callLevel);
 
 inline const ModType *getCurRuntimeModule(const DSState &state) {
-    return getRuntimeModuleByLevel(state, 0);
+  return getRuntimeModuleByLevel(state, 0);
 }
 
 class SignalGuard {
 private:
-    sigset_t maskset;
+  sigset_t maskset;
 
 public:
-    SignalGuard() {
-        sigfillset(&this->maskset);
-        sigprocmask(SIG_BLOCK, &this->maskset, nullptr);
-    }
+  SignalGuard() {
+    sigfillset(&this->maskset);
+    sigprocmask(SIG_BLOCK, &this->maskset, nullptr);
+  }
 
-    ~SignalGuard() {
-        int e = errno;
-        sigprocmask(SIG_UNBLOCK, &this->maskset, nullptr);
-        errno = e;
-    }
+  ~SignalGuard() {
+    int e = errno;
+    sigprocmask(SIG_UNBLOCK, &this->maskset, nullptr);
+    errno = e;
+  }
 };
 
 class SigSet {
 private:
-    static_assert(NSIG - 1 <= sizeof(uint64_t) * 8, "huge signal number");
+  static_assert(NSIG - 1 <= sizeof(uint64_t) * 8, "huge signal number");
 
-    uint64_t value{0};
+  uint64_t value{0};
 
-    int pendingIndex{1};
+  int pendingIndex{1};
 
 public:
-    void add(int sigNum) {
-        uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
-        setFlag(this->value, f);
-    }
+  void add(int sigNum) {
+    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
+    setFlag(this->value, f);
+  }
 
-    void del(int sigNum) {
-        uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
-        unsetFlag(this->value, f);
-    }
+  void del(int sigNum) {
+    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
+    unsetFlag(this->value, f);
+  }
 
-    bool has(int sigNum) const {
-        uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
-        return hasFlag(this->value, f);
-    }
+  bool has(int sigNum) const {
+    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
+    return hasFlag(this->value, f);
+  }
 
-    bool empty() const {
-        return this->value == 0;
-    }
+  bool empty() const { return this->value == 0; }
 
-    void clear() {
-        this->value = 0;
-        this->pendingIndex = 1;
-    }
+  void clear() {
+    this->value = 0;
+    this->pendingIndex = 1;
+  }
 
-    int popPendingSig();
+  int popPendingSig();
 };
 
 class SignalVector {
 private:
-    /**
-     * pair.second must be FuncObject
-     */
-    std::vector<std::pair<int, DSValue>> data;
+  /**
+   * pair.second must be FuncObject
+   */
+  std::vector<std::pair<int, DSValue>> data;
 
 public:
-    SignalVector() = default;
-    ~SignalVector() = default;
+  SignalVector() = default;
+  ~SignalVector() = default;
 
-    /**
-     * if func is null, delete handler.
-     * @param sigNum
-     * @param value
-     * must be FuncObject
-     * may be null
-     */
-    void insertOrUpdate(int sigNum, const DSValue &value);
+  /**
+   * if func is null, delete handler.
+   * @param sigNum
+   * @param value
+   * must be FuncObject
+   * may be null
+   */
+  void insertOrUpdate(int sigNum, const DSValue &value);
 
-    /**
-     *
-     * @param sigNum
-     * @return
-     * if not found, return null obj.
-     */
-    DSValue lookup(int sigNum) const;
+  /**
+   *
+   * @param sigNum
+   * @return
+   * if not found, return null obj.
+   */
+  DSValue lookup(int sigNum) const;
 
-    const std::vector<std::pair<int, DSValue>> &getData() const {
-        return this->data;
-    };
+  const std::vector<std::pair<int, DSValue>> &getData() const { return this->data; };
 
+  enum class UnsafeSigOp {
+    DFL,
+    IGN,
+    SET,
+  };
 
-    enum class UnsafeSigOp {
-        DFL,
-        IGN,
-        SET,
-    };
+  /**
+   * unsafe op.
+   * @param sigNum
+   * @param op
+   * @param handler
+   * may be nullptr
+   */
+  void install(int sigNum, UnsafeSigOp op, const DSValue &handler);
 
-    /**
-     * unsafe op.
-     * @param sigNum
-     * @param op
-     * @param handler
-     * may be nullptr
-     */
-    void install(int sigNum, UnsafeSigOp op, const DSValue &handler);
-
-    /**
-     * clear all handler and set to SIG_DFL.
-     */
-    void clear();
+  /**
+   * clear all handler and set to SIG_DFL.
+   */
+  void clear();
 };
 
-template <typename ...T>
-inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T&& ... arg) {
-    static_assert(sizeof...(arg) <= 3, "too long");
-    return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{ std::forward<T>(arg)...}});
+template <typename... T>
+inline std::pair<unsigned int, std::array<DSValue, 3>> makeArgs(T &&...arg) {
+  static_assert(sizeof...(arg) <= 3, "too long");
+  return std::make_pair(sizeof...(arg), std::array<DSValue, 3>{{std::forward<T>(arg)...}});
 }
 
 /**
@@ -384,4 +374,4 @@ int xexecve(const char *filePath, char *const *argv, char *const *envp);
 
 } // namespace ydsh
 
-#endif //YDSH_CORE_H
+#endif // YDSH_CORE_H

@@ -17,9 +17,9 @@
 #ifndef YDSH_TOOLS_ANSI_H
 #define YDSH_TOOLS_ANSI_H
 
-#include <vector>
-#include <string>
 #include <functional>
+#include <string>
+#include <vector>
 
 #include "misc/lexer_base.hpp"
 
@@ -33,150 +33,141 @@ namespace process {
  */
 class Screen : public ydsh::LexerBase {
 private:
-    unsigned int maxRow; // y
-    unsigned int maxCol; // x
+  unsigned int maxRow; // y
+  unsigned int maxCol; // x
 
-    unsigned int row{0};
-    unsigned int col{0};
+  unsigned int row{0};
+  unsigned int col{0};
 
-    std::vector<ydsh::FlexBuffer<int>> bufs;
+  std::vector<ydsh::FlexBuffer<int>> bufs;
 
-    std::function<void(std::string &&)> reporter;
+  std::function<void(std::string &&)> reporter;
 
-    unsigned int eaw{1};
+  unsigned int eaw{1};
 
-    unsigned char yych{0};
-    unsigned int yyaccept{0};
-    const char *start{nullptr};
-    int state{-1};
+  unsigned char yych{0};
+  unsigned int yyaccept{0};
+  const char *start{nullptr};
+  int state{-1};
 
 public:
-    enum Result {
-        NEED_MORE,
-        REACH_EOS,
-        INVALID,
-    };
+  enum Result {
+    NEED_MORE,
+    REACH_EOS,
+    INVALID,
+  };
 
-    Screen(unsigned int row, unsigned int col) : LexerBase("<screen>"), maxRow(row), maxCol(col) {
-        this->bufs.reserve(this->maxRow);
-        for(unsigned int i = 0; i < this->maxRow; i++) {
-            this->bufs.emplace_back();
-            this->bufs.back().insert(this->bufs.back().end(), this->maxCol, '\0');
-        }
+  Screen(unsigned int row, unsigned int col) : LexerBase("<screen>"), maxRow(row), maxCol(col) {
+    this->bufs.reserve(this->maxRow);
+    for (unsigned int i = 0; i < this->maxRow; i++) {
+      this->bufs.emplace_back();
+      this->bufs.back().insert(this->bufs.back().end(), this->maxCol, '\0');
     }
+  }
 
-    explicit Screen(std::pair<unsigned short, unsigned short> winsize) :
-                Screen(winsize.first, winsize.second) {}
+  explicit Screen(std::pair<unsigned short, unsigned short> winsize)
+      : Screen(winsize.first, winsize.second) {}
 
-    Screen() : Screen(24, 80) {}
+  Screen() : Screen(24, 80) {}
 
-    void setReporter(std::function<void(std::string &&)> func) {
-        this->reporter = std::move(func);
-    }
+  void setReporter(std::function<void(std::string &&)> func) { this->reporter = std::move(func); }
 
-    void setEAW(unsigned int v) {
-        this->eaw = v;
-    }
+  void setEAW(unsigned int v) { this->eaw = v; }
 
-    /**
-     * entry point
-     * @param data
-     * @param size
-     * size of data
-     * @return
-     * if data has invalid UTF8 sequence, return INVALID.
-     */
-    Result interpret(const char *data, unsigned int size);
+  /**
+   * entry point
+   * @param data
+   * @param size
+   * size of data
+   * @return
+   * if data has invalid UTF8 sequence, return INVALID.
+   */
+  Result interpret(const char *data, unsigned int size);
 
-    /**
-     *
-     * @param ch
-     * must be ascii
-     */
-    void addChar(int ch);
+  /**
+   *
+   * @param ch
+   * must be ascii
+   */
+  void addChar(int ch);
 
-    /**
-     * currently not support combining character
-     * @param begin
-     * @param end
-     */
-    void addCodePoint(const char *begin, const char *end);
+  /**
+   * currently not support combining character
+   * @param begin
+   * @param end
+   */
+  void addCodePoint(const char *begin, const char *end);
 
-    /**
-     * FIXME:
-     * @param row
-     * @param col
-     */
-    void setCursor(unsigned int row, unsigned int col) {    //FIXME: position ()
-        this->row = row < this->maxRow ? row : this->maxRow - 1;
-        this->col = col < this->maxCol ? col : this->maxCol - 1;
-    }
+  /**
+   * FIXME:
+   * @param row
+   * @param col
+   */
+  void setCursor(unsigned int row, unsigned int col) { // FIXME: position ()
+    this->row = row < this->maxRow ? row : this->maxRow - 1;
+    this->col = col < this->maxCol ? col : this->maxCol - 1;
+  }
 
-    /**
-     * set curosr to home position
-     */
-    void setCursor() {
-        this->setCursor(0, 0);  //FIXME: home position is equivalent to (1,1) ?
-    }
+  /**
+   * set curosr to home position
+   */
+  void setCursor() {
+    this->setCursor(0, 0); // FIXME: home position is equivalent to (1,1) ?
+  }
 
-    std::pair<unsigned int, unsigned int> getPos() const {
-        return {this->row + 1, this->col + 1};
-    }
+  std::pair<unsigned int, unsigned int> getPos() const { return {this->row + 1, this->col + 1}; }
 
-    void reportPos();
+  void reportPos();
 
-    // clear screen ops
-    void clear();
+  // clear screen ops
+  void clear();
 
-    /**
-     * clear line from current cursor.
-     */
-    void clearLineFrom();
+  /**
+   * clear line from current cursor.
+   */
+  void clearLineFrom();
 
-    void clearLine();
+  void clearLine();
 
-    // move cursor ops
-    void left(unsigned int offset) {
-        offset = offset == 0 ? 1 : offset;
-        unsigned int pos = offset < this->col ? this->col - offset : 0;
-        this->col = pos;
-    }
+  // move cursor ops
+  void left(unsigned int offset) {
+    offset = offset == 0 ? 1 : offset;
+    unsigned int pos = offset < this->col ? this->col - offset : 0;
+    this->col = pos;
+  }
 
-    void right(unsigned int offset) {
-        unsigned int pos = this->col + (offset == 0 ? 1 : offset);
-        this->col = pos > this->maxCol ? this->maxCol : pos;
-    }
+  void right(unsigned int offset) {
+    unsigned int pos = this->col + (offset == 0 ? 1 : offset);
+    this->col = pos > this->maxCol ? this->maxCol : pos;
+  }
 
-    //FIXME:
-//    void up(unsigned int offset) {
-//        offset = offset == 0 ? 1 : offset;
-//        for(unsigned int i = 0; i < offset && this->row >= 0; i++) {
-//            this->row--;
-//        }
-//    }
+  // FIXME:
+  //    void up(unsigned int offset) {
+  //        offset = offset == 0 ? 1 : offset;
+  //        for(unsigned int i = 0; i < offset && this->row >= 0; i++) {
+  //            this->row--;
+  //        }
+  //    }
 
-//    void down(unsigned int offset) {
-//        offset = offset == 0 ? 1 : offset;
-//        for(unsigned int i = 0; i < offset && this->row < this->maxRow; i++) {
-//            this->row++;
-//        }
-//    }
+  //    void down(unsigned int offset) {
+  //        offset = offset == 0 ? 1 : offset;
+  //        for(unsigned int i = 0; i < offset && this->row < this->maxRow; i++) {
+  //            this->row++;
+  //        }
+  //    }
 
-    std::string toString() const;
+  std::string toString() const;
 
 private:
-    void setChar(int ch) {
-        this->bufs.at(this->row).at(this->col) = ch;
-    }
+  void setChar(int ch) { this->bufs.at(this->row).at(this->col) = ch; }
 
-    void appendToBuf(const char *data, unsigned int size) {
-        unsigned int old = this->start - this->buf.data();
-        LexerBase::appendToBuf(data, size, false);
-        this->start = this->buf.data() + old;
-    }
+  void appendToBuf(const char *data, unsigned int size) {
+    unsigned int old = this->start - this->buf.data();
+    LexerBase::appendToBuf(data, size, false);
+    this->start = this->buf.data() + old;
+  }
 };
-
 
 } // namespace process
 
-#endif //YDSH_TOOLS_ANSI_H
+#endif // YDSH_TOOLS_ANSI_H

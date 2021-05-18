@@ -17,10 +17,8 @@
 #ifndef MISC_LIB_NONCOPYABLE_HPP
 #define MISC_LIB_NONCOPYABLE_HPP
 
+#define NON_COPYABLE(TypeName)                                                                     \
+  TypeName(const TypeName &) = delete;                                                             \
+  TypeName &operator=(const TypeName &e) = delete
 
-#define NON_COPYABLE(TypeName) \
-    TypeName(const TypeName &) = delete; \
-    TypeName &operator=(const TypeName &e) = delete
-
-
-#endif //MISC_LIB_NONCOPYABLE_HPP
+#endif // MISC_LIB_NONCOPYABLE_HPP

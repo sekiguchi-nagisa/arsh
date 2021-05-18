@@ -25,38 +25,33 @@ using namespace json;
 
 class LSPTransport : public rpc::Transport {
 private:
-    FilePtr input;
-    FilePtr output;
+  FilePtr input;
+  FilePtr output;
 
 public:
-    LSPTransport(LoggerBase &logger, FilePtr &&in, FilePtr &&out) :
-        rpc::Transport(logger),input(std::move(in)), output(std::move(out)) {}
+  LSPTransport(LoggerBase &logger, FilePtr &&in, FilePtr &&out)
+      : rpc::Transport(logger), input(std::move(in)), output(std::move(out)) {}
 
-    ~LSPTransport() override = default;
+  ~LSPTransport() override = default;
 
-    const FilePtr &getInput() const {
-        return this->input;
-    }
+  const FilePtr &getInput() const { return this->input; }
 
-    const FilePtr &getOutput() const {
-        return this->output;
-    }
+  const FilePtr &getOutput() const { return this->output; }
 
-    int send(unsigned int size, const char *data) override;
+  int send(unsigned int size, const char *data) override;
 
-    int recvSize() override;
+  int recvSize() override;
 
-    int recv(unsigned int size, char *data) override;
+  int recv(unsigned int size, char *data) override;
 
 private:
-    /**
-     * if reach end of header, set empty string
-     * @return
-     */
-    bool readHeader(std::string &header);
+  /**
+   * if reach end of header, set empty string
+   * @return
+   */
+  bool readHeader(std::string &header);
 };
-
 
 } // namespace ydsh::lsp
 
-#endif //YDSH_TOOLS_TRANSPORT_H
+#endif // YDSH_TOOLS_TRANSPORT_H

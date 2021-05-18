@@ -21,485 +21,471 @@
 #include <memory>
 #include <unordered_map>
 
-#include <handle_info.h>
-#include <constant.h>
-#include <misc/parser_base.hpp>
-#include <misc/opt.hpp>
 #include <DescLexer.h>
+#include <constant.h>
+#include <handle_info.h>
+#include <misc/opt.hpp>
+#include <misc/parser_base.hpp>
 
 namespace {
 
 using namespace ydsh;
 
 HandleInfo fromNum(unsigned int num) {
-    // check range
-    if(num < 9) {
-        auto info = (HandleInfo) (num + static_cast<int>(HandleInfo::P_N0));
-        switch(info) {
+  // check range
+  if (num < 9) {
+    auto info = (HandleInfo)(num + static_cast<int>(HandleInfo::P_N0));
+    switch (info) {
 #define GEN_CASE(ENUM) case HandleInfo::ENUM:
-        EACH_HANDLE_INFO_NUM(GEN_CASE)
+      EACH_HANDLE_INFO_NUM(GEN_CASE)
 #undef GEN_CASE
-            return info;
-        default:
-            break;
-        }
+      return info;
+    default:
+      break;
     }
-    fatal("out of range, must be 0~8\n");
+  }
+  fatal("out of range, must be 0~8\n");
 }
 
 const char *toTypeInfoName(HandleInfo info) {
-    switch(info) {
-#define GEN_NAME(INFO) case HandleInfo::INFO: return #INFO;
+  switch (info) {
+#define GEN_NAME(INFO)                                                                             \
+  case HandleInfo::INFO:                                                                           \
+    return #INFO;
     EACH_HANDLE_INFO(GEN_NAME)
 #undef GEN_NAME
-    }
-    return nullptr; //   normally unreachable
+  }
+  return nullptr; //   normally unreachable
 }
 
 class ErrorReporter {
 private:
-    std::string fileName;
+  std::string fileName;
 
-    unsigned lineNum{};
+  unsigned lineNum{};
 
-    /**
-     * currently processing line
-     */
-    std::string curLine;
+  /**
+   * currently processing line
+   */
+  std::string curLine;
 
-    ErrorReporter() = default;
+  ErrorReporter() = default;
 
 public:
-    ~ErrorReporter() = default;
+  ~ErrorReporter() = default;
 
-    static ErrorReporter &instance() {
-        static ErrorReporter e;
-        return e;
+  static ErrorReporter &instance() {
+    static ErrorReporter e;
+    return e;
+  }
+
+  void appendLine(const char *name, unsigned int ln, const std::string &line) {
+    if (this->fileName.empty()) {
+      this->fileName = name;
     }
+    this->lineNum = ln;
+    this->curLine = line;
+  }
 
-    void appendLine(const char *name, unsigned int ln, const std::string &line) {
-        if(this->fileName.empty()) {
-            this->fileName = name;
-        }
-        this->lineNum = ln;
-        this->curLine = line;
-    }
+  [[noreturn]] void operator()(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
+    const unsigned int size = 512;
+    char buf[size]; // error message must be under size.
 
-    [[noreturn]]
-    void operator()(const char *fmt, ...) const __attribute__ ((format(printf, 2, 3))) {
-        const unsigned int size = 512;
-        char buf[size];  // error message must be under size.
+    // format message
+    va_list args;
+    va_start(args, fmt);
+    vsnprintf(buf, size, fmt, args);
+    va_end(args);
 
-        // format message
-        va_list args;
-        va_start(args, fmt);
-        vsnprintf(buf, size, fmt, args);
-        va_end(args);
-
-        std::cerr << this->fileName << ":" << this->lineNum << ": [error] " << buf << std::endl;
-        std::cerr << this->curLine << std::endl;
-        abort();
-    }
+    std::cerr << this->fileName << ":" << this->lineNum << ": [error] " << buf << std::endl;
+    std::cerr << this->curLine << std::endl;
+    abort();
+  }
 };
 
 class HandleInfoMap {
 private:
-    std::unordered_map<std::string, HandleInfo> name2InfoMap;
-    std::vector<std::pair<HandleInfo, std::string>> info2NameMap;
+  std::unordered_map<std::string, HandleInfo> name2InfoMap;
+  std::vector<std::pair<HandleInfo, std::string>> info2NameMap;
 
-    HandleInfoMap();
+  HandleInfoMap();
 
 public:
-    ~HandleInfoMap() = default;
+  ~HandleInfoMap() = default;
 
-    static HandleInfoMap &getInstance();
+  static HandleInfoMap &getInstance();
 
-    const char *getName(HandleInfo info) const;
+  const char *getName(HandleInfo info) const;
 
-    HandleInfo getInfo(const std::string &name);
+  HandleInfo getInfo(const std::string &name);
 
 private:
-    void registerName(HandleInfo info, const char *name);
+  void registerName(HandleInfo info, const char *name);
 };
 
 HandleInfoMap::HandleInfoMap() {
 #define REGISTER(ENUM) this->registerName(HandleInfo::ENUM, #ENUM);
-    EACH_HANDLE_INFO_TYPE(REGISTER)
-    EACH_HANDLE_INFO_PTYPE(REGISTER)
-    EACH_HANDLE_INFO_TYPE_TEMP(REGISTER)
-    EACH_HANDLE_INFO_FUNC_TYPE(REGISTER)
+  EACH_HANDLE_INFO_TYPE(REGISTER)
+  EACH_HANDLE_INFO_PTYPE(REGISTER)
+  EACH_HANDLE_INFO_TYPE_TEMP(REGISTER)
+  EACH_HANDLE_INFO_FUNC_TYPE(REGISTER)
 #undef REGISTER
 }
 
 HandleInfoMap &HandleInfoMap::getInstance() {
-    static HandleInfoMap map;
-    return map;
+  static HandleInfoMap map;
+  return map;
 }
 
 const char *HandleInfoMap::getName(HandleInfo info) const {
-    for(auto &pair : this->info2NameMap) {
-        if(pair.first == info) {
-            return pair.second.c_str();
-        }
+  for (auto &pair : this->info2NameMap) {
+    if (pair.first == info) {
+      return pair.second.c_str();
     }
-    fatal("not found handle info: %s\n", toTypeInfoName(info));
+  }
+  fatal("not found handle info: %s\n", toTypeInfoName(info));
 }
 
 HandleInfo HandleInfoMap::getInfo(const std::string &name) {
-    auto iter = this->name2InfoMap.find(name);
-    if(iter == this->name2InfoMap.end()) {
-        ErrorReporter::instance()("not found type name: %s", name.c_str());
-    }
-    return iter->second;
+  auto iter = this->name2InfoMap.find(name);
+  if (iter == this->name2InfoMap.end()) {
+    ErrorReporter::instance()("not found type name: %s", name.c_str());
+  }
+  return iter->second;
 }
 
 void HandleInfoMap::registerName(HandleInfo info, const char *name) {
-    std::string actualName(name);
-    this->info2NameMap.emplace_back(info, actualName);
-    this->name2InfoMap.emplace(actualName, info);
+  std::string actualName(name);
+  this->info2NameMap.emplace_back(info, actualName);
+  this->name2InfoMap.emplace(actualName, info);
 }
-
 
 class HandleInfoSerializer {
 private:
-    std::vector<HandleInfo> infos;
+  std::vector<HandleInfo> infos;
 
 public:
-    HandleInfoSerializer() = default;
+  HandleInfoSerializer() = default;
 
-    ~HandleInfoSerializer() = default;
+  ~HandleInfoSerializer() = default;
 
-    void add(HandleInfo info) {
-        this->infos.push_back(info);
+  void add(HandleInfo info) { this->infos.push_back(info); }
+
+  std::string toString() {
+    std::string str("{");
+    unsigned int size = this->infos.size();
+    for (unsigned int i = 0; i < size; i++) {
+      if (i > 0) {
+        str += ", ";
+      }
+      str += "HandleInfo::";
+      str += toTypeInfoName(this->infos[i]);
     }
+    str += "}";
 
-    std::string toString() {
-        std::string str("{");
-        unsigned int size = this->infos.size();
-        for(unsigned int i = 0; i < size; i++) {
-            if(i > 0) {
-                str += ", ";
-            }
-            str += "HandleInfo::";
-            str += toTypeInfoName(this->infos[i]);
-        }
-        str += "}";
-
-        if(!verifyHandleInfo(this->infos)) {
-            fatal("broken handle info: %s\n", str.c_str());
-        }
-        return str;
+    if (!verifyHandleInfo(this->infos)) {
+      fatal("broken handle info: %s\n", str.c_str());
     }
+    return str;
+  }
 
 private:
-    static int getNum(const std::vector<HandleInfo> &infos, unsigned int &index);
-    static bool isType(const std::vector<HandleInfo> &infos, unsigned int &index);
-    static bool isParamType(const std::vector<HandleInfo> &infos, unsigned int &index);
-    static bool verifyHandleInfo(const std::vector<HandleInfo> &infos);
+  static int getNum(const std::vector<HandleInfo> &infos, unsigned int &index);
+  static bool isType(const std::vector<HandleInfo> &infos, unsigned int &index);
+  static bool isParamType(const std::vector<HandleInfo> &infos, unsigned int &index);
+  static bool verifyHandleInfo(const std::vector<HandleInfo> &infos);
 };
 
 bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned int &index) {
 #define GEN_CASE(ENUM) case HandleInfo::ENUM:
-    if(index < infos.size()) {
-        switch(infos[index++]) {
-        EACH_HANDLE_INFO_TYPE(GEN_CASE)
-            return true;
-        case HandleInfo::Array:
-            return getNum(infos, index) == 1 && isType(infos, index);
-        case HandleInfo::Map:
-            return getNum(infos, index) == 2 && isType(infos, index) && isType(infos, index);
-        case HandleInfo::Tuple: {
-            int num = getNum(infos, index);
-            if(num < 0 || num > 8) {
-                return false;
-            }
-            for(int i = 0; i < num; i++) {
-                if(!isType(infos, index)) {
-                    return false;
-                }
-            }
-            return true;
+  if (index < infos.size()) {
+    switch (infos[index++]) {
+      EACH_HANDLE_INFO_TYPE(GEN_CASE)
+      return true;
+    case HandleInfo::Array:
+      return getNum(infos, index) == 1 && isType(infos, index);
+    case HandleInfo::Map:
+      return getNum(infos, index) == 2 && isType(infos, index) && isType(infos, index);
+    case HandleInfo::Tuple: {
+      int num = getNum(infos, index);
+      if (num < 0 || num > 8) {
+        return false;
+      }
+      for (int i = 0; i < num; i++) {
+        if (!isType(infos, index)) {
+          return false;
         }
-        case HandleInfo::Option:
-            return getNum(infos, index) == 1 && isType(infos, index);
-        case HandleInfo::Func: {
-            if(!isType(infos, index)) {
-                return false;
-            }
-            int num = getNum(infos, index);
-            for(int i = 0; i < num; i++) {
-                if(!isType(infos, index)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        EACH_HANDLE_INFO_NUM(GEN_CASE)
-            return false;
-        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
-            return true;
-        }
+      }
+      return true;
     }
-    return false;
+    case HandleInfo::Option:
+      return getNum(infos, index) == 1 && isType(infos, index);
+    case HandleInfo::Func: {
+      if (!isType(infos, index)) {
+        return false;
+      }
+      int num = getNum(infos, index);
+      for (int i = 0; i < num; i++) {
+        if (!isType(infos, index)) {
+          return false;
+        }
+      }
+      return true;
+    }
+      EACH_HANDLE_INFO_NUM(GEN_CASE)
+      return false;
+      EACH_HANDLE_INFO_PTYPE(GEN_CASE)
+      return true;
+    }
+  }
+  return false;
 #undef GEN_CASE
 }
 
 bool HandleInfoSerializer::isParamType(const std::vector<HandleInfo> &infos, unsigned int &index) {
-    if(index < infos.size()) {
-        switch(infos[index++]) {
+  if (index < infos.size()) {
+    switch (infos[index++]) {
 #define GEN_CASE(ENUM) case HandleInfo::ENUM:
-        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
+      EACH_HANDLE_INFO_PTYPE(GEN_CASE)
 #undef GEN_CASE
-            return true;
-        default:
-            return false;
-        }
+      return true;
+    default:
+      return false;
     }
-    return false;
+  }
+  return false;
 }
 
 int HandleInfoSerializer::getNum(const std::vector<HandleInfo> &infos, unsigned int &index) {
 #define GEN_CASE(ENUM) case HandleInfo::ENUM:
-    if(index < infos.size()) {
-        auto ch = infos[index++];
-        switch(ch) {
-        EACH_HANDLE_INFO_TYPE(GEN_CASE)
-        EACH_HANDLE_INFO_TYPE_TEMP(GEN_CASE)
-        EACH_HANDLE_INFO_FUNC_TYPE(GEN_CASE)
-        EACH_HANDLE_INFO_PTYPE(GEN_CASE)
-            return -1;
-        EACH_HANDLE_INFO_NUM(GEN_CASE)
-            return static_cast<int>(ch) - static_cast<int>(HandleInfo::P_N0);
-        }
+  if (index < infos.size()) {
+    auto ch = infos[index++];
+    switch (ch) {
+      EACH_HANDLE_INFO_TYPE(GEN_CASE)
+      EACH_HANDLE_INFO_TYPE_TEMP(GEN_CASE)
+      EACH_HANDLE_INFO_FUNC_TYPE(GEN_CASE)
+      EACH_HANDLE_INFO_PTYPE(GEN_CASE)
+      return -1;
+      EACH_HANDLE_INFO_NUM(GEN_CASE)
+      return static_cast<int>(ch) - static_cast<int>(HandleInfo::P_N0);
     }
-    return -1;
+  }
+  return -1;
 #undef GEN_ENUM
 }
 
 bool HandleInfoSerializer::verifyHandleInfo(const std::vector<HandleInfo> &infos) {
-    unsigned int index = 0;
+  unsigned int index = 0;
 
-    /**
-     * check type constraints
-     */
-    int constraintSize = getNum(infos, index);
-    if(constraintSize < 0 || constraintSize > 8) {
-        return false;
+  /**
+   * check type constraints
+   */
+  int constraintSize = getNum(infos, index);
+  if (constraintSize < 0 || constraintSize > 8) {
+    return false;
+  }
+  for (int i = 0; i < constraintSize; i++) {
+    if (!isParamType(infos, index)) {
+      return false;
     }
-    for(int i = 0; i < constraintSize; i++) {
-        if(!isParamType(infos, index)) {
-            return false;
-        }
-        if(!isType(infos, index)) {
-            return false;
-        }
+    if (!isType(infos, index)) {
+      return false;
     }
+  }
 
-    /**
-     * check return type
-     */
-    if(!isType(infos, index)) {
-        return false;
-    }
+  /**
+   * check return type
+   */
+  if (!isType(infos, index)) {
+    return false;
+  }
 
-    /**
-     * check param size
-     */
-    int paramSize = getNum(infos, index);
-    if(paramSize < 0 || paramSize > 8) {
-        return false;
-    }
+  /**
+   * check param size
+   */
+  int paramSize = getNum(infos, index);
+  if (paramSize < 0 || paramSize > 8) {
+    return false;
+  }
 
-    /**
-     * check each param type
-     */
-    for(int i = 0; i < paramSize; i++) {
-        if(!isType(infos, index)) {
-            return false;
-        }
+  /**
+   * check each param type
+   */
+  for (int i = 0; i < paramSize; i++) {
+    if (!isType(infos, index)) {
+      return false;
     }
-    return index == infos.size();
+  }
+  return index == infos.size();
 }
 
-
 struct TypeToken {
-    virtual ~TypeToken() = default;
+  virtual ~TypeToken() = default;
 
-    virtual void serialize(HandleInfoSerializer &s) = 0;
+  virtual void serialize(HandleInfoSerializer &s) = 0;
 
-    virtual bool isType(HandleInfo info) = 0;
+  virtual bool isType(HandleInfo info) = 0;
 
-    std::string toString() {
-        std::string str;
-        this->toString(str);
-        return str;
-    }
+  std::string toString() {
+    std::string str;
+    this->toString(str);
+    return str;
+  }
 
-    virtual void toString(std::string &str) = 0;
+  virtual void toString(std::string &str) = 0;
 };
-
 
 class CommonTypeToken : public TypeToken {
 private:
-    HandleInfo info;
+  HandleInfo info;
 
 public:
-    /**
-     * not call it directory.
-     */
-    explicit CommonTypeToken(HandleInfo info) : info(info) { }
+  /**
+   * not call it directory.
+   */
+  explicit CommonTypeToken(HandleInfo info) : info(info) {}
 
-    ~CommonTypeToken() override = default;
+  ~CommonTypeToken() override = default;
 
-    void serialize(HandleInfoSerializer &s) override {
-        s.add(this->info);
-    }
+  void serialize(HandleInfoSerializer &s) override { s.add(this->info); }
 
-    bool isType(HandleInfo i) override {
-        return this->info == i;
-    }
+  bool isType(HandleInfo i) override { return this->info == i; }
 
-    static std::unique_ptr<CommonTypeToken> newTypeToken(const std::string &name);
+  static std::unique_ptr<CommonTypeToken> newTypeToken(const std::string &name);
 
-    void toString(std::string &str) override {
-        str += HandleInfoMap::getInstance().getName(this->info);
-    }
+  void toString(std::string &str) override {
+    str += HandleInfoMap::getInstance().getName(this->info);
+  }
 };
 
 std::unique_ptr<CommonTypeToken> CommonTypeToken::newTypeToken(const std::string &name) {
-    return std::make_unique<CommonTypeToken>(HandleInfoMap::getInstance().getInfo(name));
+  return std::make_unique<CommonTypeToken>(HandleInfoMap::getInstance().getInfo(name));
 }
-
 
 class ReifiedTypeToken : public TypeToken {
 private:
-    std::unique_ptr<CommonTypeToken> typeTemp;
+  std::unique_ptr<CommonTypeToken> typeTemp;
 
-    /**
-     * element size. must be equivalent to this->elements.size().
-     * if requiredSize is 0, allow any elements
-     */
-    unsigned int requiredSize;
+  /**
+   * element size. must be equivalent to this->elements.size().
+   * if requiredSize is 0, allow any elements
+   */
+  unsigned int requiredSize;
 
-    std::vector<std::unique_ptr<TypeToken>> elements;
+  std::vector<std::unique_ptr<TypeToken>> elements;
 
-    ReifiedTypeToken(std::unique_ptr<CommonTypeToken> &&type, unsigned int elementSize) :
-            typeTemp(type.release()), requiredSize(elementSize) { }
+  ReifiedTypeToken(std::unique_ptr<CommonTypeToken> &&type, unsigned int elementSize)
+      : typeTemp(type.release()), requiredSize(elementSize) {}
 
 public:
-    ~ReifiedTypeToken() override = default;
+  ~ReifiedTypeToken() override = default;
 
-    void addElement(std::unique_ptr<TypeToken> &&type) {
-        this->elements.push_back(std::move(type));
+  void addElement(std::unique_ptr<TypeToken> &&type) { this->elements.push_back(std::move(type)); }
+
+  void serialize(HandleInfoSerializer &s) override;
+
+  bool isType(HandleInfo info) override { return this->typeTemp->isType(info); }
+
+  static std::unique_ptr<ReifiedTypeToken> newReifiedTypeToken(const std::string &name);
+
+  void toString(std::string &str) override {
+    this->typeTemp->toString(str);
+    str += '<';
+    for (unsigned int i = 0; i < this->elements.size(); i++) {
+      if (i > 0) {
+        str += ',';
+      }
+      this->elements[i]->toString(str);
     }
-
-    void serialize(HandleInfoSerializer &s) override;
-
-    bool isType(HandleInfo info) override {
-        return this->typeTemp->isType(info);
-    }
-
-    static std::unique_ptr<ReifiedTypeToken> newReifiedTypeToken(const std::string &name);
-
-    void toString(std::string &str) override {
-        this->typeTemp->toString(str);
-        str += '<';
-        for(unsigned int i = 0; i < this->elements.size(); i++) {
-            if(i > 0) {
-                str += ',';
-            }
-            this->elements[i]->toString(str);
-        }
-        str += '>';
-    }
+    str += '>';
+  }
 };
 
 void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
-    // check element size
-    unsigned int elementSize = this->elements.size();
-    if(this->requiredSize > 0) {
-        if(this->requiredSize != elementSize) {
-            ErrorReporter::instance()("require %d, but is %zu", this->requiredSize, this->elements.size());
-        }
+  // check element size
+  unsigned int elementSize = this->elements.size();
+  if (this->requiredSize > 0) {
+    if (this->requiredSize != elementSize) {
+      ErrorReporter::instance()("require %d, but is %zu", this->requiredSize,
+                                this->elements.size());
     }
+  }
 
-    typeTemp->serialize(s);
-    s.add(fromNum(elementSize));
-    for(auto &tok : this->elements) {
-        tok->serialize(s);
-    }
+  typeTemp->serialize(s);
+  s.add(fromNum(elementSize));
+  for (auto &tok : this->elements) {
+    tok->serialize(s);
+  }
 }
 
-std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> initTypeMap() {
-    std::unordered_map<std::string, std::pair<unsigned int, HandleInfo >> map = {
-            {TYPE_ARRAY,  {1, HandleInfo::Array}},
-            {TYPE_MAP,    {2, HandleInfo::Map}},
-            {TYPE_TUPLE,  {0, HandleInfo::Tuple}},
-            {TYPE_OPTION,  {1, HandleInfo::Option}},
-    };
-    return map;
+std::unordered_map<std::string, std::pair<unsigned int, HandleInfo>> initTypeMap() {
+  std::unordered_map<std::string, std::pair<unsigned int, HandleInfo>> map = {
+      {TYPE_ARRAY, {1, HandleInfo::Array}},
+      {TYPE_MAP, {2, HandleInfo::Map}},
+      {TYPE_TUPLE, {0, HandleInfo::Tuple}},
+      {TYPE_OPTION, {1, HandleInfo::Option}},
+  };
+  return map;
 }
 
 std::unique_ptr<ReifiedTypeToken> ReifiedTypeToken::newReifiedTypeToken(const std::string &name) {
-    static auto typeMap = initTypeMap();
-    auto iter = typeMap.find(name);
-    if(iter == typeMap.end()) {
-        ErrorReporter::instance()("unsupported type template: %s", name.c_str());
-    }
-    auto tok = std::make_unique<CommonTypeToken>(iter->second.second);
-    unsigned int size = iter->second.first;
-    return std::unique_ptr<ReifiedTypeToken>(new ReifiedTypeToken(std::move(tok), size));
+  static auto typeMap = initTypeMap();
+  auto iter = typeMap.find(name);
+  if (iter == typeMap.end()) {
+    ErrorReporter::instance()("unsupported type template: %s", name.c_str());
+  }
+  auto tok = std::make_unique<CommonTypeToken>(iter->second.second);
+  unsigned int size = iter->second.first;
+  return std::unique_ptr<ReifiedTypeToken>(new ReifiedTypeToken(std::move(tok), size));
 }
 
 class FuncTypeToken : public TypeToken {
 private:
-    std::unique_ptr<CommonTypeToken> typeTemp;
+  std::unique_ptr<CommonTypeToken> typeTemp;
 
-    std::unique_ptr<TypeToken> returnType;
+  std::unique_ptr<TypeToken> returnType;
 
-    std::vector<std::unique_ptr<TypeToken>> paramTypes;
+  std::vector<std::unique_ptr<TypeToken>> paramTypes;
 
 public:
-    explicit FuncTypeToken(std::unique_ptr<TypeToken> &&returnType) :
-            typeTemp(CommonTypeToken::newTypeToken(TYPE_FUNC)), returnType(std::move(returnType)) {}
+  explicit FuncTypeToken(std::unique_ptr<TypeToken> &&returnType)
+      : typeTemp(CommonTypeToken::newTypeToken(TYPE_FUNC)), returnType(std::move(returnType)) {}
 
-    ~FuncTypeToken() override = default;
+  ~FuncTypeToken() override = default;
 
-    void addParamType(std::unique_ptr<TypeToken> &&type) {
-        this->paramTypes.push_back(std::move(type));
-    }
+  void addParamType(std::unique_ptr<TypeToken> &&type) {
+    this->paramTypes.push_back(std::move(type));
+  }
 
-    void serialize(HandleInfoSerializer &s) override;
+  void serialize(HandleInfoSerializer &s) override;
 
-    bool isType(HandleInfo info) override {
-        return this->typeTemp->isType(info);
-    }
+  bool isType(HandleInfo info) override { return this->typeTemp->isType(info); }
 
-    void toString(std::string &str) override {
-        this->typeTemp->toString(str);
-        str += '<';
-        this->returnType->toString(str);
-        if(!this->paramTypes.empty()) {
-            str += ",[";
-            for(unsigned int i = 0; i < this->paramTypes.size(); i++) {
-                if(i > 0) {
-                    str += ',';
-                }
-                this->paramTypes[i]->toString(str);
-            }
-            str += "]";
+  void toString(std::string &str) override {
+    this->typeTemp->toString(str);
+    str += '<';
+    this->returnType->toString(str);
+    if (!this->paramTypes.empty()) {
+      str += ",[";
+      for (unsigned int i = 0; i < this->paramTypes.size(); i++) {
+        if (i > 0) {
+          str += ',';
         }
-        str += '>';
+        this->paramTypes[i]->toString(str);
+      }
+      str += "]";
     }
+    str += '>';
+  }
 };
 
 void FuncTypeToken::serialize(HandleInfoSerializer &s) {
-    this->typeTemp->serialize(s);
-    this->returnType->serialize(s);
-    s.add(fromNum(this->paramTypes.size()));
-    for(auto &tok : this->paramTypes) {
-        tok->serialize(s);
-    }
+  this->typeTemp->serialize(s);
+  this->returnType->serialize(s);
+  s.add(fromNum(this->paramTypes.size()));
+  for (auto &tok : this->paramTypes) {
+    tok->serialize(s);
+  }
 }
 
 /**
@@ -510,681 +496,668 @@ using TypeConstraint = std::pair<std::unique_ptr<TypeToken>, std::unique_ptr<Typ
 
 class Element {
 protected:
-    /**
-     * if this element is constructor, it is empty string
-     */
-    std::string funcName;
+  /**
+   * if this element is constructor, it is empty string
+   */
+  std::string funcName;
 
-    /**
-     * if true, this function is operator
-     */
-    bool op;
+  /**
+   * if true, this function is operator
+   */
+  bool op;
 
-    std::vector<TypeConstraint> constraints;
+  std::vector<TypeConstraint> constraints;
 
-    /**
-     * owner type which this element belongs to
-     */
-    std::unique_ptr<TypeToken> ownerType;
+  /**
+   * owner type which this element belongs to
+   */
+  std::unique_ptr<TypeToken> ownerType;
 
-    /**
-     * if this element represents for constructor, returnType is always void.
-     */
-    std::unique_ptr<TypeToken> returnType;
+  /**
+   * if this element represents for constructor, returnType is always void.
+   */
+  std::unique_ptr<TypeToken> returnType;
 
-    /**
-     * not contains receiver type if this element represents for function
-     */
-    std::vector<std::unique_ptr<TypeToken>> paramTypes;
+  /**
+   * not contains receiver type if this element represents for function
+   */
+  std::vector<std::unique_ptr<TypeToken>> paramTypes;
 
-    /**
-     * contains parameter name and default value flag.
-     */
-    std::vector<std::pair<std::string, bool>> paramNames;
+  /**
+   * contains parameter name and default value flag.
+   */
+  std::vector<std::pair<std::string, bool>> paramNames;
 
-    /**
-     * name of binding function
-     */
-    std::string actualFuncName;
+  /**
+   * name of binding function
+   */
+  std::string actualFuncName;
 
 public:
-    Element(std::string &&funcName, bool op) : funcName(std::move(funcName)), op(op) {}
+  Element(std::string &&funcName, bool op) : funcName(std::move(funcName)), op(op) {}
 
-    virtual ~Element() = default;
+  virtual ~Element() = default;
 
-    void addConstraint(std::unique_ptr<TypeToken> &&typeParam, std::unique_ptr<TypeToken> &&req) {
-        this->constraints.emplace_back(std::move(typeParam), std::move(req));
+  void addConstraint(std::unique_ptr<TypeToken> &&typeParam, std::unique_ptr<TypeToken> &&req) {
+    this->constraints.emplace_back(std::move(typeParam), std::move(req));
+  }
+
+  const std::vector<TypeConstraint> &getConstraints() const { return this->constraints; }
+
+  void addParam(std::string &&name, bool hasDefault, std::unique_ptr<TypeToken> &&type) {
+    if (!this->ownerType) { // treat first param type as receiver
+      this->ownerType = std::move(type);
+      return;
+    }
+    this->paramNames.emplace_back(std::move(name), hasDefault);
+    this->paramTypes.push_back(std::move(type));
+  }
+
+  void setReturnType(std::unique_ptr<TypeToken> &&type) { this->returnType = std::move(type); }
+
+  void setActualFuncName(std::string &&name) { this->actualFuncName = std::move(name); }
+
+  bool isOwnerType(HandleInfo info) const { return this->ownerType->isType(info); }
+
+  std::string toSerializedHandle() const {
+    HandleInfoSerializer s;
+    s.add(fromNum(this->constraints.size()));
+    for (auto &c : this->constraints) {
+      c.first->serialize(s);
+      c.second->serialize(s);
+    }
+    this->returnType->serialize(s);
+    s.add(fromNum(this->paramTypes.size() + 1));
+    this->ownerType->serialize(s);
+    for (const std::unique_ptr<TypeToken> &t : this->paramTypes) {
+      t->serialize(s);
+    }
+    return s.toString();
+  }
+
+  std::string toParamNames() const {
+    std::string str("{");
+    str += "\"\"";
+    for (auto &pair : this->paramNames) {
+      str += ", ";
+      str += "\"";
+      str += pair.first;
+      str += "\"";
+    }
+    str += "}";
+    return str;
+  }
+
+  std::string toFuncName() const {
+    if (this->op) {
+      return this->funcName;
     }
 
-    const std::vector<TypeConstraint> &getConstraints() const {
-        return this->constraints;
-    }
+    std::string str("\"");
+    str += this->funcName;
+    str += "\"";
+    return str;
+  }
 
-    void addParam(std::string &&name, bool hasDefault, std::unique_ptr<TypeToken> &&type) {
-        if(!this->ownerType) {  // treat first param type as receiver
-            this->ownerType = std::move(type);
-            return;
+  const char *getActualFuncName() const { return this->actualFuncName.c_str(); }
+
+  bool hasReturnValue() const { return !this->returnType->isType(HandleInfo::Void); }
+
+  unsigned char toDefaultFlag() const {
+    unsigned char flag = 0;
+    unsigned int size = this->paramNames.size();
+    for (unsigned int i = 0; i < size; i++) {
+      if (this->paramNames[i].second) {
+        flag += (1u << (i + 1));
+      }
+    }
+    return flag;
+  }
+
+  std::string emit() const {
+    std::string str("{");
+    str += this->toFuncName();
+    str += ", ";
+    str += this->toSerializedHandle();
+    //        str += ", ";
+    //        str += this->toParamNames();
+    str += ", ";
+    str += this->getActualFuncName();
+    //        str += ", ";
+    //        str += std::to_string((int) this->toDefaultFlag());
+    str += ", ";
+    str += this->hasReturnValue() ? "true" : "false";
+    str += "}";
+    return str;
+  }
+
+  std::string toString() const {
+    std::string str;
+    str += "function ";
+    if (this->op) {
+      str += "%";
+    }
+    str += this->funcName;
+
+    str += "(";
+    str += "$this : ";
+    this->ownerType->toString(str);
+    for (unsigned int i = 0; i < this->paramNames.size(); i++) {
+      str += ", $";
+      str += this->paramNames[i].first;
+      str += " : ";
+      str += this->paramTypes[i]->toString();
+    }
+    str += ") : ";
+    str += this->returnType->toString();
+
+    if (!this->constraints.empty()) {
+      str += " where ";
+      for (unsigned int i = 0; i < this->constraints.size(); i++) {
+        if (i > 0) {
+          str += ", ";
         }
-        this->paramNames.emplace_back(std::move(name), hasDefault);
-        this->paramTypes.push_back(std::move(type));
+        str += this->constraints[i].first->toString();
+        str += " : ";
+        str += this->constraints[i].second->toString();
+      }
     }
-
-    void setReturnType(std::unique_ptr<TypeToken> &&type) {
-        this->returnType = std::move(type);
-    }
-
-    void setActualFuncName(std::string &&name) {
-        this->actualFuncName = std::move(name);
-    }
-
-    bool isOwnerType(HandleInfo info) const {
-        return this->ownerType->isType(info);
-    }
-
-    std::string toSerializedHandle() const {
-        HandleInfoSerializer s;
-        s.add(fromNum(this->constraints.size()));
-        for(auto &c : this->constraints) {
-            c.first->serialize(s);
-            c.second->serialize(s);
-        }
-        this->returnType->serialize(s);
-        s.add(fromNum(this->paramTypes.size() + 1));
-        this->ownerType->serialize(s);
-        for(const std::unique_ptr<TypeToken> &t : this->paramTypes) {
-            t->serialize(s);
-        }
-        return s.toString();
-    }
-
-    std::string toParamNames() const {
-        std::string str("{");
-        str += "\"\"";
-        for(auto &pair : this->paramNames) {
-            str += ", ";
-            str += "\"";
-            str += pair.first;
-            str += "\"";
-        }
-        str += "}";
-        return str;
-    }
-
-    std::string toFuncName() const {
-        if(this->op) {
-            return this->funcName;
-        }
-
-        std::string str("\"");
-        str += this->funcName;
-        str += "\"";
-        return str;
-    }
-
-    const char *getActualFuncName() const {
-        return this->actualFuncName.c_str();
-    }
-
-    bool hasReturnValue() const {
-        return !this->returnType->isType(HandleInfo::Void);
-    }
-
-    unsigned char toDefaultFlag() const {
-        unsigned char flag = 0;
-        unsigned int size = this->paramNames.size();
-        for(unsigned int i = 0; i < size; i++) {
-            if(this->paramNames[i].second) {
-                flag += (1u << (i + 1));
-            }
-        }
-        return flag;
-    }
-
-    std::string emit() const {
-        std::string str("{");
-        str += this->toFuncName();
-        str += ", ";
-        str += this->toSerializedHandle();
-//        str += ", ";
-//        str += this->toParamNames();
-        str += ", ";
-        str += this->getActualFuncName();
-//        str += ", ";
-//        str += std::to_string((int) this->toDefaultFlag());
-        str += ", ";
-        str += this->hasReturnValue() ? "true" : "false";
-        str += "}";
-        return str;
-    }
-
-    std::string toString() const {
-        std::string str;
-        str += "function ";
-        if(this->op) {
-            str += "%";
-        }
-        str += this->funcName;
-
-        str += "(";
-        str += "$this : ";
-        this->ownerType->toString(str);
-        for(unsigned int i = 0; i < this->paramNames.size(); i++) {
-            str += ", $";
-            str += this->paramNames[i].first;
-            str += " : ";
-            str += this->paramTypes[i]->toString();
-        }
-        str += ") : ";
-        str += this->returnType->toString();
-
-        if(!this->constraints.empty()) {
-            str += " where ";
-            for(unsigned int i = 0; i < this->constraints.size(); i++) {
-                if(i > 0) {
-                    str += ", ";
-                }
-                str += this->constraints[i].first->toString();
-                str += " : ";
-                str += this->constraints[i].second->toString();
-            }
-        }
-        return str;
-    }
+    return str;
+  }
 };
 
 using ParseError = ydsh::ParseErrorBase<DescTokenKind>;
 
 #define CUR_KIND() (this->curKind)
 
-#define TRY(expr) \
-({ auto v = expr; if(this->hasError()) { return nullptr; } std::forward<decltype(v)>(v); })
-
+#define TRY(expr)                                                                                  \
+  ({                                                                                               \
+    auto v = expr;                                                                                 \
+    if (this->hasError()) {                                                                        \
+      return nullptr;                                                                              \
+    }                                                                                              \
+    std::forward<decltype(v)>(v);                                                                  \
+  })
 
 class Parser : public ydsh::ParserBase<DescTokenKind, DescLexer> {
 public:
-    Parser() = default;
+  Parser() = default;
 
-    ~Parser() = default;
+  ~Parser() = default;
 
-    std::vector<std::unique_ptr<Element>> operator()(const char *fileName);
+  std::vector<std::unique_ptr<Element>> operator()(const char *fileName);
 
 private:
-    static bool isDescriptor(const std::string &line);
+  static bool isDescriptor(const std::string &line);
 
-    std::string toName(const Token &token) const {
-        Token t = token;
-        t.pos++;
-        t.size--;
-        return this->lexer->toTokenText(t);
-    }
+  std::string toName(const Token &token) const {
+    Token t = token;
+    t.pos++;
+    t.size--;
+    return this->lexer->toTokenText(t);
+  }
 
-    void init(DescLexer &lexer) {
-        this->lexer = &lexer;
-        this->fetchNext();
-    }
+  void init(DescLexer &lexer) {
+    this->lexer = &lexer;
+    this->fetchNext();
+  }
 
-    std::unique_ptr<Element> parse_descriptor(const std::string &line);
+  std::unique_ptr<Element> parse_descriptor(const std::string &line);
 
-    std::unique_ptr<Element> parse_funcDesc();
+  std::unique_ptr<Element> parse_funcDesc();
 
-    /**
-     *
-     * @param element
-     * @return
-     * always null
-     */
-    std::unique_ptr<Element> parse_params(std::unique_ptr<Element> &element);
+  /**
+   *
+   * @param element
+   * @return
+   * always null
+   */
+  std::unique_ptr<Element> parse_params(std::unique_ptr<Element> &element);
 
-    std::unique_ptr<TypeToken> parse_type();
+  std::unique_ptr<TypeToken> parse_type();
 
-    /**
-     *
-     * @param line
-     * @param element
-     * @return
-     * always null
-     */
-    std::unique_ptr<Element> parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element);
+  /**
+   *
+   * @param line
+   * @param element
+   * @return
+   * always null
+   */
+  std::unique_ptr<Element> parse_funcDecl(const std::string &line,
+                                          std::unique_ptr<Element> &element);
 };
 
 std::vector<std::unique_ptr<Element>> Parser::operator()(const char *fileName) {
-    std::ifstream input(fileName);
-    if(!input) {
-        fatal("cannot open file: %s\n", fileName);
+  std::ifstream input(fileName);
+  if (!input) {
+    fatal("cannot open file: %s\n", fileName);
+  }
+
+  unsigned int lineNum = 0;
+  std::string line;
+  bool foundDesc = false;
+
+  std::vector<std::unique_ptr<Element>> elements;
+  std::unique_ptr<Element> element;
+  while (std::getline(input, line)) {
+    lineNum++;
+    ErrorReporter::instance().appendLine(fileName, lineNum, line);
+
+    if (foundDesc) {
+      this->parse_funcDecl(line, element);
+      if (this->hasError()) {
+        goto ERR;
+      }
+      elements.push_back(std::move(element));
+      foundDesc = false;
+      continue;
+    }
+    if (isDescriptor(line)) {
+      foundDesc = true;
+      element = this->parse_descriptor(line);
+      if (this->hasError()) {
+        goto ERR;
+      }
     }
 
-    unsigned int lineNum = 0;
-    std::string line;
-    bool foundDesc = false;
-
-    std::vector<std::unique_ptr<Element>> elements;
-    std::unique_ptr<Element> element;
-    while(std::getline(input, line)) {
-        lineNum++;
-        ErrorReporter::instance().appendLine(fileName, lineNum, line);
-
-        if(foundDesc) {
-            this->parse_funcDecl(line, element);
-            if(this->hasError()) {
-                goto ERR;
-            }
-            elements.push_back(std::move(element));
-            foundDesc = false;
-            continue;
-        }
-        if(isDescriptor(line)) {
-            foundDesc = true;
-            element = this->parse_descriptor(line);
-            if(this->hasError()) {
-                goto ERR;
-            }
-        }
-
-        ERR:
-        if(this->hasError()) {
-            auto &e = this->getError();
-            std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
-            std::cerr << line << std::endl;
-            Token lineToken{.pos = 0, .size = static_cast<unsigned int>(line.size())};
-            std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
-            exit(EXIT_FAILURE);
-        }
+  ERR:
+    if (this->hasError()) {
+      auto &e = this->getError();
+      std::cerr << fileName << ":" << lineNum << ": [error] " << e.getMessage() << std::endl;
+      std::cerr << line << std::endl;
+      Token lineToken{.pos = 0, .size = static_cast<unsigned int>(line.size())};
+      std::cerr << this->lexer->formatLineMarker(lineToken, e.getErrorToken()) << std::endl;
+      exit(EXIT_FAILURE);
     }
+  }
 
-    return elements;
+  return elements;
 }
 
 bool Parser::isDescriptor(const std::string &line) {
-    // skip space
-    unsigned int pos = 0;
-    unsigned int size = line.size();
-    for(; pos < size; pos++) {
-        char ch = line[pos];
-        if(ch != ' ' && ch != '\t') {
-            break;
-        }
+  // skip space
+  unsigned int pos = 0;
+  unsigned int size = line.size();
+  for (; pos < size; pos++) {
+    char ch = line[pos];
+    if (ch != ' ' && ch != '\t') {
+      break;
     }
+  }
 
-    const char *prefix = "//!bind:";
-    for(unsigned int i = 0; prefix[i] != '\0'; i++) {
-        if(pos >= size) {
-            return false;
-        }
-        if(line[pos++] != prefix[i]) {
-            return false;
-        }
+  const char *prefix = "//!bind:";
+  for (unsigned int i = 0; prefix[i] != '\0'; i++) {
+    if (pos >= size) {
+      return false;
     }
-    return true;
+    if (line[pos++] != prefix[i]) {
+      return false;
+    }
+  }
+  return true;
 }
 
 std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
-    DescLexer lexer(line.c_str());
-    this->init(lexer);
+  DescLexer lexer(line.c_str());
+  this->init(lexer);
 
-    TRY(this->expect(DescTokenKind::DESC_PREFIX));
+  TRY(this->expect(DescTokenKind::DESC_PREFIX));
 
-    switch(CUR_KIND()) {
-    case DescTokenKind::FUNC:
-        return this->parse_funcDesc();
-    default:
-        const DescTokenKind alters[] = {
-                DescTokenKind::FUNC,
-        };
-        this->reportNoViableAlterError(alters);
-        return nullptr;
-    }
+  switch (CUR_KIND()) {
+  case DescTokenKind::FUNC:
+    return this->parse_funcDesc();
+  default:
+    const DescTokenKind alters[] = {
+        DescTokenKind::FUNC,
+    };
+    this->reportNoViableAlterError(alters);
+    return nullptr;
+  }
 }
 
 std::unique_ptr<Element> Parser::parse_funcDesc() {
-    TRY(this->expect(DescTokenKind::FUNC));
+  TRY(this->expect(DescTokenKind::FUNC));
 
-    std::unique_ptr<Element> element;
+  std::unique_ptr<Element> element;
 
-    // parse function name
-    switch(CUR_KIND()) {
-    case DescTokenKind::IDENTIFIER: {
-        Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
-        element = std::make_unique<Element>(this->lexer->toTokenText(token), false);
-        break;
-    }
-    case DescTokenKind::VAR_NAME: {
-        Token token = TRY(this->expect(DescTokenKind::VAR_NAME));
-        element = std::make_unique<Element>(this->toName(token), true);
-        break;
-    }
-    default: {
-        const DescTokenKind alters[] = {
-                DescTokenKind::IDENTIFIER, DescTokenKind::VAR_NAME,
-        };
-        this->reportNoViableAlterError(alters);
-        return nullptr;
-    }
-    }
+  // parse function name
+  switch (CUR_KIND()) {
+  case DescTokenKind::IDENTIFIER: {
+    Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
+    element = std::make_unique<Element>(this->lexer->toTokenText(token), false);
+    break;
+  }
+  case DescTokenKind::VAR_NAME: {
+    Token token = TRY(this->expect(DescTokenKind::VAR_NAME));
+    element = std::make_unique<Element>(this->toName(token), true);
+    break;
+  }
+  default: {
+    const DescTokenKind alters[] = {
+        DescTokenKind::IDENTIFIER,
+        DescTokenKind::VAR_NAME,
+    };
+    this->reportNoViableAlterError(alters);
+    return nullptr;
+  }
+  }
 
-    // parse parameter decl
-    TRY(this->expect(DescTokenKind::LP));
-    TRY(this->parse_params(element));
-    TRY(this->expect(DescTokenKind::RP));
+  // parse parameter decl
+  TRY(this->expect(DescTokenKind::LP));
+  TRY(this->parse_params(element));
+  TRY(this->expect(DescTokenKind::RP));
 
-    TRY(this->expect(DescTokenKind::COLON));
-    element->setReturnType(TRY(this->parse_type()));
+  TRY(this->expect(DescTokenKind::COLON));
+  element->setReturnType(TRY(this->parse_type()));
 
-    // parse constraints
-    if(CUR_KIND() == DescTokenKind::WHERE) {
-        do {
-            this->consume();
-            auto typeParam = TRY(this->parse_type());
-            TRY(this->expect(DescTokenKind::COLON));
-            auto reqType = TRY(this->parse_type());
-            element->addConstraint(std::move(typeParam), std::move(reqType));
-        } while(CUR_KIND() == DescTokenKind::COMMA);
-    }
-    TRY(this->expect(DescTokenKind::EOS));
-    return element;
+  // parse constraints
+  if (CUR_KIND() == DescTokenKind::WHERE) {
+    do {
+      this->consume();
+      auto typeParam = TRY(this->parse_type());
+      TRY(this->expect(DescTokenKind::COLON));
+      auto reqType = TRY(this->parse_type());
+      element->addConstraint(std::move(typeParam), std::move(reqType));
+    } while (CUR_KIND() == DescTokenKind::COMMA);
+  }
+  TRY(this->expect(DescTokenKind::EOS));
+  return element;
 }
 
 std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &element) {
-    int count = 0;
-    do {
-        if(count++ > 0) {
-            TRY(this->expect(DescTokenKind::COMMA));
-        }
+  int count = 0;
+  do {
+    if (count++ > 0) {
+      TRY(this->expect(DescTokenKind::COMMA));
+    }
 
-        Token token = TRY(this->expect(DescTokenKind::VAR_NAME));
-        bool hasDefault = false;
-        if(CUR_KIND() == DescTokenKind::OPT) {
-            TRY(this->expect(DescTokenKind::OPT));
-            hasDefault = true;
-        }
-        TRY(this->expect(DescTokenKind::COLON));
-        auto type = TRY(this->parse_type());
+    Token token = TRY(this->expect(DescTokenKind::VAR_NAME));
+    bool hasDefault = false;
+    if (CUR_KIND() == DescTokenKind::OPT) {
+      TRY(this->expect(DescTokenKind::OPT));
+      hasDefault = true;
+    }
+    TRY(this->expect(DescTokenKind::COLON));
+    auto type = TRY(this->parse_type());
 
-        element->addParam(this->toName(token), hasDefault, std::move(type));
-    } while(CUR_KIND() == DescTokenKind::COMMA);
+    element->addParam(this->toName(token), hasDefault, std::move(type));
+  } while (CUR_KIND() == DescTokenKind::COMMA);
 
-    return nullptr;
+  return nullptr;
 }
 
-bool isFunc(const std::string &str) {
-    return str == TYPE_FUNC;
-}
+bool isFunc(const std::string &str) { return str == TYPE_FUNC; }
 
 std::unique_ptr<TypeToken> Parser::parse_type() {
-    Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
-    if(CUR_KIND() != DescTokenKind::TYPE_OPEN) {
-        return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
+  Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
+  if (CUR_KIND() != DescTokenKind::TYPE_OPEN) {
+    return CommonTypeToken::newTypeToken(this->lexer->toTokenText(token));
+  }
+
+  auto str = this->lexer->toTokenText(token);
+  if (isFunc(str)) {
+    TRY(this->expect(DescTokenKind::TYPE_OPEN));
+    auto retType = TRY(this->parse_type());
+    std::unique_ptr<FuncTypeToken> funcType(new FuncTypeToken(std::move(retType)));
+
+    if (CUR_KIND() != DescTokenKind::TYPE_CLOSE) {
+      TRY(this->expect(DescTokenKind::COMMA));
+      TRY(this->expect(DescTokenKind::PTYPE_OPEN));
+      unsigned int count = 0;
+      do {
+        if (count++ > 0) {
+          TRY(this->expect(DescTokenKind::COMMA));
+        }
+        funcType->addParamType(TRY(this->parse_type()));
+      } while (CUR_KIND() == DescTokenKind::COMMA);
+      TRY(this->expect(DescTokenKind::PTYPE_CLOSE));
     }
 
-    auto str = this->lexer->toTokenText(token);
-    if(isFunc(str)) {
-        TRY(this->expect(DescTokenKind::TYPE_OPEN));
-        auto retType = TRY(this->parse_type());
-        std::unique_ptr<FuncTypeToken> funcType(new FuncTypeToken(std::move(retType)));
+    TRY(this->expect(DescTokenKind::TYPE_CLOSE));
 
-        if(CUR_KIND() != DescTokenKind::TYPE_CLOSE) {
-            TRY(this->expect(DescTokenKind::COMMA));
-            TRY(this->expect(DescTokenKind::PTYPE_OPEN));
-            unsigned int count = 0;
-            do {
-                if(count++ > 0) {
-                    TRY(this->expect(DescTokenKind::COMMA));
-                }
-                funcType->addParamType(TRY(this->parse_type()));
-            } while(CUR_KIND() == DescTokenKind::COMMA);
-            TRY(this->expect(DescTokenKind::PTYPE_CLOSE));
+    return std::move(funcType);
+  } else {
+    auto type(ReifiedTypeToken::newReifiedTypeToken(str));
+    TRY(this->expect(DescTokenKind::TYPE_OPEN));
+
+    if (CUR_KIND() != DescTokenKind::TYPE_CLOSE) {
+      unsigned int count = 0;
+      do {
+        if (count++ > 0) {
+          TRY(this->expect(DescTokenKind::COMMA));
         }
-
-        TRY(this->expect(DescTokenKind::TYPE_CLOSE));
-
-        return std::move(funcType);
-    } else {
-        auto type(ReifiedTypeToken::newReifiedTypeToken(str));
-        TRY(this->expect(DescTokenKind::TYPE_OPEN));
-
-        if(CUR_KIND() != DescTokenKind::TYPE_CLOSE) {
-            unsigned int count = 0;
-            do {
-                if(count++ > 0) {
-                    TRY(this->expect(DescTokenKind::COMMA));
-                }
-                type->addElement(TRY(this->parse_type()));
-            } while(CUR_KIND() == DescTokenKind::COMMA);
-        }
-
-        TRY(this->expect(DescTokenKind::TYPE_CLOSE));
-
-        return std::unique_ptr<TypeToken>(type.release());
+        type->addElement(TRY(this->parse_type()));
+      } while (CUR_KIND() == DescTokenKind::COMMA);
     }
+
+    TRY(this->expect(DescTokenKind::TYPE_CLOSE));
+
+    return std::unique_ptr<TypeToken>(type.release());
+  }
 }
 
-std::unique_ptr<Element> Parser::parse_funcDecl(const std::string &line, std::unique_ptr<Element> &element) {
-    DescLexer lexer(line.c_str());
-    this->init(lexer);
+std::unique_ptr<Element> Parser::parse_funcDecl(const std::string &line,
+                                                std::unique_ptr<Element> &element) {
+  DescLexer lexer(line.c_str());
+  this->init(lexer);
 
-    const bool isDecl = CUR_KIND() == DescTokenKind::YDSH_METHOD_DECL;
-    if(isDecl) {
-        TRY(this->expect(DescTokenKind::YDSH_METHOD_DECL));
-    } else {
-        TRY(this->expect(DescTokenKind::YDSH_METHOD));
-    }
+  const bool isDecl = CUR_KIND() == DescTokenKind::YDSH_METHOD_DECL;
+  if (isDecl) {
+    TRY(this->expect(DescTokenKind::YDSH_METHOD_DECL));
+  } else {
+    TRY(this->expect(DescTokenKind::YDSH_METHOD));
+  }
 
-    Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
-    std::string str(this->lexer->toTokenText(token));
-    element->setActualFuncName(std::move(str));
+  Token token = TRY(this->expect(DescTokenKind::IDENTIFIER));
+  std::string str(this->lexer->toTokenText(token));
+  element->setActualFuncName(std::move(str));
 
-    TRY(this->expect(DescTokenKind::LP));
-    TRY(this->expect(DescTokenKind::RCTX));
-    TRY(this->expect(DescTokenKind::AND));
-    TRY(this->expect(DescTokenKind::IDENTIFIER));
-    TRY(this->expect(DescTokenKind::RP));
-    TRY(this->expect(isDecl ? DescTokenKind::SEMI_COLON : DescTokenKind::LBC));
-    TRY(this->expect(DescTokenKind::EOS));
-    return nullptr;
+  TRY(this->expect(DescTokenKind::LP));
+  TRY(this->expect(DescTokenKind::RCTX));
+  TRY(this->expect(DescTokenKind::AND));
+  TRY(this->expect(DescTokenKind::IDENTIFIER));
+  TRY(this->expect(DescTokenKind::RP));
+  TRY(this->expect(isDecl ? DescTokenKind::SEMI_COLON : DescTokenKind::LBC));
+  TRY(this->expect(DescTokenKind::EOS));
+  return nullptr;
 }
 
-#define OUT(fmt, ...) \
-    do {\
-        fprintf(fp, fmt, ## __VA_ARGS__);\
-    } while(false)
-
+#define OUT(fmt, ...)                                                                              \
+  do {                                                                                             \
+    fprintf(fp, fmt, ##__VA_ARGS__);                                                               \
+  } while (false)
 
 struct TypeBind {
-    HandleInfo info;
-    std::string name;
+  HandleInfo info;
+  std::string name;
 
-    std::vector<Element *> funcElements;
+  std::vector<Element *> funcElements;
 
-    explicit TypeBind(HandleInfo info) :
-            info(info), name(HandleInfoMap::getInstance().getName(info)) { }
+  explicit TypeBind(HandleInfo info)
+      : info(info), name(HandleInfoMap::getInstance().getName(info)) {}
 
-    ~TypeBind() = default;
+  ~TypeBind() = default;
 };
 
 std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elements) {
-    std::vector<TypeBind *> binds;
+  std::vector<TypeBind *> binds;
 #define GEN_BIND(ENUM) binds.push_back(new TypeBind(HandleInfo::ENUM));
-    EACH_HANDLE_INFO_TYPE(GEN_BIND)
-    EACH_HANDLE_INFO_TYPE_TEMP(GEN_BIND)
+  EACH_HANDLE_INFO_TYPE(GEN_BIND)
+  EACH_HANDLE_INFO_TYPE_TEMP(GEN_BIND)
 #undef GEN_BIND
 
-    for(const std::unique_ptr<Element> &element : elements) {
-        bool matched = false;
-        for(TypeBind *bind : binds) {
-            if(element->isOwnerType(bind->info)) {
-                matched = true;
-                bind->funcElements.push_back(element.get());
-                break;
-            }
-        }
-        if(!matched) {
-            fatal("invalid owner type\n");
-        }
+  for (const std::unique_ptr<Element> &element : elements) {
+    bool matched = false;
+    for (TypeBind *bind : binds) {
+      if (element->isOwnerType(bind->info)) {
+        matched = true;
+        bind->funcElements.push_back(element.get());
+        break;
+      }
     }
-    return binds;
+    if (!matched) {
+      fatal("invalid owner type\n");
+    }
+  }
+  return binds;
 }
 
 bool isDisallowType(HandleInfo info) {
-    const HandleInfo list[] = {
-            HandleInfo::Void,
-            HandleInfo::_Value
-    };
-    return std::any_of(std::begin(list), std::end(list), [&](auto &e){
-        return e == info;
-    });
+  const HandleInfo list[] = {HandleInfo::Void, HandleInfo::_Value};
+  return std::any_of(std::begin(list), std::end(list), [&](auto &e) { return e == info; });
 }
 
 void gencode(const char *outFileName, const std::vector<TypeBind *> &binds) {
-    FILE *fp = fopen(outFileName, "w");
-    if(fp == nullptr) {
-        fatal("cannot open output file: %s\n", outFileName);
+  FILE *fp = fopen(outFileName, "w");
+  if (fp == nullptr) {
+    fatal("cannot open output file: %s\n", outFileName);
+  }
+
+  // write header
+  OUT("#ifndef YDSH_BIND_H\n");
+  OUT("#define YDSH_BIND_H\n");
+  OUT("\n");
+  OUT("#include <builtin.h>\n");
+  OUT("#include <constant.h>\n");
+  OUT("\n");
+  OUT("namespace ydsh {\n");
+  OUT("\n");
+
+  // generate NativeFuncInfo table
+  OUT("static NativeFuncInfo infoTable[] = {\n");
+  OUT("    {nullptr, {}, nullptr, false},\n");
+  for (TypeBind *bind : binds) {
+    for (Element *e : bind->funcElements) {
+      OUT("    %s,\n", e->emit().c_str());
+    }
+  }
+  OUT("};\n");
+  OUT("const NativeFuncInfo *nativeFuncInfoTable() {\n"
+      "    return infoTable;\n"
+      "}\n");
+  OUT("\n");
+
+  // generate dummy
+  OUT("static native_type_info_t info_Dummy() {\n");
+  OUT("    return { .offset = 0, .methodSize = 0 };\n");
+  OUT("}\n");
+  OUT("\n");
+
+  unsigned int offsetCount = 1;
+
+  // generate each native_type_info_t
+  for (TypeBind *bind : binds) {
+    if (isDisallowType(bind->info)) {
+      continue; // skip Void due to having no elements.
     }
 
-    // write header
-    OUT("#ifndef YDSH_BIND_H\n");
-    OUT("#define YDSH_BIND_H\n");
-    OUT("\n");
-    OUT("#include <builtin.h>\n");
-    OUT("#include <constant.h>\n");
-    OUT("\n");
-    OUT("namespace ydsh {\n");
-    OUT("\n");
+    unsigned int methodSize = bind->funcElements.size();
 
-    // generate NativeFuncInfo table
-    OUT("static NativeFuncInfo infoTable[] = {\n");
-    OUT("    {nullptr, {}, nullptr, false},\n");
-    for(TypeBind *bind : binds) {
-        for(Element *e : bind->funcElements) {
-            OUT("    %s,\n", e->emit().c_str());
-        }
-    }
-    OUT("};\n");
-    OUT("const NativeFuncInfo *nativeFuncInfoTable() {\n"
-                "    return infoTable;\n"
-                "}\n");
-    OUT("\n");
-
-    // generate dummy
-    OUT("static native_type_info_t info_Dummy() {\n");
-    OUT("    return { .offset = 0, .methodSize = 0 };\n");
+    OUT("static native_type_info_t info_%sType() {\n", bind->name.c_str());
+    OUT("    return { .offset = %u, .methodSize = %u };\n",
+        bind->funcElements.empty() ? 0 : offsetCount, methodSize);
     OUT("}\n");
     OUT("\n");
 
-    unsigned int offsetCount = 1;
+    offsetCount += methodSize;
+  }
 
-    // generate each native_type_info_t
-    for(TypeBind *bind : binds) {
-        if(isDisallowType(bind->info)) {
-            continue;   // skip Void due to having no elements.
-        }
-
-        unsigned int methodSize = bind->funcElements.size();
-
-        OUT("static native_type_info_t info_%sType() {\n", bind->name.c_str());
-        OUT("    return { .offset = %u, .methodSize = %u };\n",
-            bind->funcElements.empty() ? 0 : offsetCount, methodSize);
-        OUT("}\n");
-        OUT("\n");
-
-        offsetCount += methodSize;
-    }
-
-    OUT("} // namespace ydsh\n");
-    OUT("\n");
-    OUT("#endif //YDSH_BIND_H\n");
-    fclose(fp);
+  OUT("} // namespace ydsh\n");
+  OUT("\n");
+  OUT("#endif //YDSH_BIND_H\n");
+  fclose(fp);
 }
 
 void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
-    FILE *fp = fopen(outFileName, "w");
-    if(fp == nullptr) {
-        fatal("cannot open output file: %s\n", outFileName);
+  FILE *fp = fopen(outFileName, "w");
+  if (fp == nullptr) {
+    fatal("cannot open output file: %s\n", outFileName);
+  }
+
+  OUT("# Standard Library Interface Definition\n");
+  for (auto &bind : binds) {
+    if (bind->funcElements.empty()) {
+      continue;
     }
 
-    OUT("# Standard Library Interface Definition\n");
-    for(auto &bind : binds) {
-        if(bind->funcElements.empty()) {
-            continue;
-        }
+    OUT("## %s type\n", bind->name.c_str());
+    OUT("```");
 
-        OUT("## %s type\n", bind->name.c_str());
-        OUT("```");
-
-        for(auto &e : bind->funcElements) {
-            OUT("\n");
-            OUT("%s\n", e->toString().c_str());
-        }
-        OUT("```\n\n");
+    for (auto &e : bind->funcElements) {
+      OUT("\n");
+      OUT("%s\n", e->toString().c_str());
     }
+    OUT("```\n\n");
+  }
 
-    fclose(fp);
+  fclose(fp);
 }
 
-#define EACH_OPT(OP) \
-    OP(DOC,  "--doc",  opt::NO_ARG, "generate interface documentation") \
-    OP(BIND, "--bind", opt::NO_ARG, "generate function binding") \
-    OP(HELP, "--help", opt::NO_ARG, "show help message")
+#define EACH_OPT(OP)                                                                               \
+  OP(DOC, "--doc", opt::NO_ARG, "generate interface documentation")                                \
+  OP(BIND, "--bind", opt::NO_ARG, "generate function binding")                                     \
+  OP(HELP, "--help", opt::NO_ARG, "show help message")
 
 enum class OptionSet : unsigned int {
 #define GEN_ENUM(E, S, F, D) E,
-    EACH_OPT(GEN_ENUM)
+  EACH_OPT(GEN_ENUM)
 #undef GEN_ENUM
 };
 
 void usage(FILE *fp, char **argv) {
-    fprintf(fp, "usage: %s ([option..]) [target source] [generated code]\n", argv[0]);
+  fprintf(fp, "usage: %s ([option..]) [target source] [generated code]\n", argv[0]);
 }
 
 } // namespace
 
 int main(int argc, char **argv) {
-    opt::Parser<OptionSet> parser = {
+  opt::Parser<OptionSet> parser = {
 #define GEN_OPT(E, S, F, D) {OptionSet::E, S, (F), D},
-            EACH_OPT(GEN_OPT)
+      EACH_OPT(GEN_OPT)
 #undef GEN_OPT
-    };
+  };
 
-    auto begin = argv + 1;
-    auto end = argv + argc;
-    opt::Result<OptionSet> result;
+  auto begin = argv + 1;
+  auto end = argv + argc;
+  opt::Result<OptionSet> result;
 
-    bool doc = false;
-    while((result = parser(begin, end))) {
-        switch(result.value()) {
-        case OptionSet::DOC:
-            doc = true;
-            break;
-        case OptionSet::BIND:
-            doc = false;
-            break;
-        case OptionSet::HELP:
-            usage(stdout, argv);
-            parser.printOption(stdout);
-            exit(0);
-        }
+  bool doc = false;
+  while ((result = parser(begin, end))) {
+    switch (result.value()) {
+    case OptionSet::DOC:
+      doc = true;
+      break;
+    case OptionSet::BIND:
+      doc = false;
+      break;
+    case OptionSet::HELP:
+      usage(stdout, argv);
+      parser.printOption(stdout);
+      exit(0);
     }
-    if(result.error() != opt::END) {
-        fprintf(stderr, "%s\n", result.formatError().c_str());
-        parser.printOption(stderr);
-        exit(1);
-    }
+  }
+  if (result.error() != opt::END) {
+    fprintf(stderr, "%s\n", result.formatError().c_str());
+    parser.printOption(stderr);
+    exit(1);
+  }
 
-    if(begin == end || begin + 1 == end) {
-        usage(stderr, argv);
-        exit(1);
-    }
+  if (begin == end || begin + 1 == end) {
+    usage(stderr, argv);
+    exit(1);
+  }
 
-    const char *inputFileName = *begin;
-    const char *outputFileName = *(++begin);
+  const char *inputFileName = *begin;
+  const char *outputFileName = *(++begin);
 
-    auto elements = Parser()(inputFileName);
-    std::vector<TypeBind *> binds(genTypeBinds(elements));
+  auto elements = Parser()(inputFileName);
+  std::vector<TypeBind *> binds(genTypeBinds(elements));
 
-    if(doc) {
-        gendoc(outputFileName, binds);
-    } else {
-        gencode(outputFileName, binds);
-    }
+  if (doc) {
+    gendoc(outputFileName, binds);
+  } else {
+    gencode(outputFileName, binds);
+  }
 
-    exit(0);
+  exit(0);
 }
-

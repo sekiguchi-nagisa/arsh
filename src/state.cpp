@@ -19,93 +19,93 @@
 namespace ydsh {
 
 bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode &code) {
-    const unsigned int maxVarSize = code.getLocalVarNum();
-    const unsigned int localVarOffset = this->frame.stackTopIndex - paramSize + 1;
-    const unsigned int operandSize = code.getStackDepth();
+  const unsigned int maxVarSize = code.getLocalVarNum();
+  const unsigned int localVarOffset = this->frame.stackTopIndex - paramSize + 1;
+  const unsigned int operandSize = code.getStackDepth();
 
-    if(this->frames.size() == MAX_FRAME_SIZE) {
-        return false;
-    }
+  if (this->frames.size() == MAX_FRAME_SIZE) {
+    return false;
+  }
 
-    // save current control frame
-    this->frame.stackTopIndex -= stackTopOffset;
-    this->frames.push_back(this->getFrame());
-    this->frame.stackTopIndex += stackTopOffset;
+  // save current control frame
+  this->frame.stackTopIndex -= stackTopOffset;
+  this->frames.push_back(this->getFrame());
+  this->frame.stackTopIndex += stackTopOffset;
 
-    // reallocate stack
-    this->reserve(maxVarSize - paramSize + operandSize);
+  // reallocate stack
+  this->reserve(maxVarSize - paramSize + operandSize);
 
-    // prepare control frame
-    this->frame.code = &code;
-    this->frame.stackTopIndex += maxVarSize - paramSize;
-    this->frame.stackBottomIndex = this->frame.stackTopIndex;
-    this->frame.localVarOffset = localVarOffset;
-    this->frame.pc = 0;
-    return true;
+  // prepare control frame
+  this->frame.code = &code;
+  this->frame.stackTopIndex += maxVarSize - paramSize;
+  this->frame.stackBottomIndex = this->frame.stackTopIndex;
+  this->frame.localVarOffset = localVarOffset;
+  this->frame.pc = 0;
+  return true;
 }
 
 void VMState::unwind() {
-    auto savedFrame = this->frames.back();
+  auto savedFrame = this->frames.back();
 
-    this->frame.code = savedFrame.code;
-    this->frame.stackBottomIndex = savedFrame.stackBottomIndex;
-    this->frame.localVarOffset = savedFrame.localVarOffset;
-    this->frame.pc = savedFrame.pc;
+  this->frame.code = savedFrame.code;
+  this->frame.stackBottomIndex = savedFrame.stackBottomIndex;
+  this->frame.localVarOffset = savedFrame.localVarOffset;
+  this->frame.pc = savedFrame.pc;
 
-    unsigned int oldStackTopIndex = savedFrame.stackTopIndex;
-    while(this->frame.stackTopIndex > oldStackTopIndex) {
-        this->popNoReturn();
-    }
-    this->frames.pop_back();
+  unsigned int oldStackTopIndex = savedFrame.stackTopIndex;
+  while (this->frame.stackTopIndex > oldStackTopIndex) {
+    this->popNoReturn();
+  }
+  this->frames.pop_back();
 }
 
 void VMState::resize(unsigned int afterSize) {
-    unsigned int newSize = this->operandsSize;
-    do {
-        newSize += (newSize >> 1u);
-    } while(newSize < afterSize);
+  unsigned int newSize = this->operandsSize;
+  do {
+    newSize += (newSize >> 1u);
+  } while (newSize < afterSize);
 
-    auto newStack = new DSValue[newSize];
-    for(unsigned int i = 0; i < this->frame.stackTopIndex + 1; i++) {
-        newStack[i] = std::move(this->operands[i]);
-    }
-    delete[] this->operands;
-    this->operands = newStack;
-    this->operandsSize = newSize;
+  auto newStack = new DSValue[newSize];
+  for (unsigned int i = 0; i < this->frame.stackTopIndex + 1; i++) {
+    newStack[i] = std::move(this->operands[i]);
+  }
+  delete[] this->operands;
+  this->operands = newStack;
+  this->operandsSize = newSize;
 }
 
 std::vector<StackTraceElement> VMState::createStackTrace() const {
-    std::vector<StackTraceElement> stackTrace;
-    this->walkFrames([&](const ControlFrame &cur){
-        auto &callable = cur.code;
-        if(!callable->is(CodeKind::NATIVE)) {
-            const auto *cc = static_cast<const CompiledCode *>(callable);
+  std::vector<StackTraceElement> stackTrace;
+  this->walkFrames([&](const ControlFrame &cur) {
+    auto &callable = cur.code;
+    if (!callable->is(CodeKind::NATIVE)) {
+      const auto *cc = static_cast<const CompiledCode *>(callable);
 
-            // create stack trace element
-            const char *sourceName = cc->getSourceName().data();
-            unsigned int lineNum = cc->getLineNum(cur.pc);
+      // create stack trace element
+      const char *sourceName = cc->getSourceName().data();
+      unsigned int lineNum = cc->getLineNum(cur.pc);
 
-            std::string callableName;
-            switch(callable->getKind()) {
-            case CodeKind::TOPLEVEL:
-                callableName += "<toplevel>";
-                break;
-            case CodeKind::FUNCTION:
-                callableName += "function ";
-                callableName += cc->getName();
-                break;
-            case CodeKind::USER_DEFINED_CMD:
-                callableName += "command ";
-                callableName += cc->getName();
-                break;
-            default:
-                break;
-            }
-            stackTrace.emplace_back(sourceName, lineNum, std::move(callableName));
-        }
-        return true;
-    });
-    return stackTrace;
+      std::string callableName;
+      switch (callable->getKind()) {
+      case CodeKind::TOPLEVEL:
+        callableName += "<toplevel>";
+        break;
+      case CodeKind::FUNCTION:
+        callableName += "function ";
+        callableName += cc->getName();
+        break;
+      case CodeKind::USER_DEFINED_CMD:
+        callableName += "command ";
+        callableName += cc->getName();
+        break;
+      default:
+        break;
+      }
+      stackTrace.emplace_back(sourceName, lineNum, std::move(callableName));
+    }
+    return true;
+  });
+  return stackTrace;
 }
 
 } // namespace ydsh

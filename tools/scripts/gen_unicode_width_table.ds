@@ -59,6 +59,8 @@ write "/*"
 cat EastAsianWidth.txt | head -n 2 >> $out
 write "*/"
 write ""
+write // clang-format off
+write ""
 
 $IFS = $'\n'
 $table("zero_width_table", $(./uniset/uniset --32 cat:Me,Mn,Cf + U+1160..U+11FF - U+00AD))

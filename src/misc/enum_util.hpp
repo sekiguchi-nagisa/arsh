@@ -27,61 +27,61 @@ struct allow_enum_bitop : std::false_type {};
 namespace __detail {
 
 template <typename T>
-constexpr auto allowBitop = std::is_enum<T>::value && allow_enum_bitop<T>::value;
+constexpr auto allowBitop = std::is_enum<T>::value &&allow_enum_bitop<T>::value;
 
 } // namespace __detail
 
 template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
 constexpr T operator|(T x, T y) {
-    auto x1 = static_cast<std::underlying_type_t<T>>(x);
-    auto y1 = static_cast<std::underlying_type_t<T>>(y);
-    return static_cast<T>(x1 | y1);
+  auto x1 = static_cast<std::underlying_type_t<T>>(x);
+  auto y1 = static_cast<std::underlying_type_t<T>>(y);
+  return static_cast<T>(x1 | y1);
 }
 
 template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
 constexpr T operator&(T x, T y) {
-    auto x1 = static_cast<std::underlying_type_t<T>>(x);
-    auto y1 = static_cast<std::underlying_type_t<T>>(y);
-    return static_cast<T>(x1 & y1);
+  auto x1 = static_cast<std::underlying_type_t<T>>(x);
+  auto y1 = static_cast<std::underlying_type_t<T>>(y);
+  return static_cast<T>(x1 & y1);
 }
 
 template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
 constexpr T operator^(T x, T y) {
-    auto x1 = static_cast<std::underlying_type_t<T>>(x);
-    auto y1 = static_cast<std::underlying_type_t<T>>(y);
-    return static_cast<T>(x1 ^ y1);
+  auto x1 = static_cast<std::underlying_type_t<T>>(x);
+  auto y1 = static_cast<std::underlying_type_t<T>>(y);
+  return static_cast<T>(x1 ^ y1);
 }
 
 template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
 constexpr T operator~(T x) {
-    auto x1 = static_cast<std::underlying_type_t<T>>(x);
-    return static_cast<T>(~x1);
+  auto x1 = static_cast<std::underlying_type_t<T>>(x);
+  return static_cast<T>(~x1);
 }
 
 template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
 constexpr bool empty(T x) {
-    auto x1 = static_cast<std::underlying_type_t<T>>(x);
-    return x1 == 0;
+  auto x1 = static_cast<std::underlying_type_t<T>>(x);
+  return x1 == 0;
 }
 
 template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
 constexpr T &operator|=(T &x, T y) {
-    x = x | y;
-    return x;
+  x = x | y;
+  return x;
 }
 
 template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
 constexpr T &operator&=(T &x, T y) {
-    x = x & y;
-    return x;
+  x = x & y;
+  return x;
 }
 
 template <typename T, enable_when<__detail::allowBitop<T>> = nullptr>
 constexpr T &operator^=(T &x, T y) {
-    x = x ^ y;
-    return x;
+  x = x ^ y;
+  return x;
 }
 
 END_MISC_LIB_NAMESPACE_DECL
 
-#endif //MISC_LIB_ENUM_UTIL_HPP
+#endif // MISC_LIB_ENUM_UTIL_HPP

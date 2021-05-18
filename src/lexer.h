@@ -17,11 +17,11 @@
 #ifndef YDSH_LEXER_H
 #define YDSH_LEXER_H
 
-#include <cstdlib>
 #include <cstdint>
+#include <cstdlib>
 
-#include "token_kind.h"
 #include "misc/lexer_base.hpp"
+#include "token_kind.h"
 
 namespace ydsh {
 
@@ -29,196 +29,170 @@ namespace ydsh {
 
 class LexerMode {
 private:
-    LexerCond cond_;
-    bool skipNL_;
+  LexerCond cond_;
+  bool skipNL_;
 
 public:
-    LexerMode(LexerCond cond, bool skipNL) : cond_(cond), skipNL_(skipNL) {}
+  LexerMode(LexerCond cond, bool skipNL) : cond_(cond), skipNL_(skipNL) {}
 
-    LexerMode(LexerCond cond) : LexerMode(cond, false) {}   //NOLINT
+  LexerMode(LexerCond cond) : LexerMode(cond, false) {} // NOLINT
 
-    LexerMode() : LexerMode(yycSTMT) {}
+  LexerMode() : LexerMode(yycSTMT) {}
 
-    LexerCond cond() const {
-        return this->cond_;
-    }
+  LexerCond cond() const { return this->cond_; }
 
-    bool skipNL() const {
-        return this->skipNL_;
-    }
+  bool skipNL() const { return this->skipNL_; }
 
-    std::string toString() const;
+  std::string toString() const;
 };
 
 struct SrcPos {
-    unsigned int lineNum;
-    unsigned int chars;
+  unsigned int lineNum;
+  unsigned int chars;
 };
 
 class Lexer : public ydsh::LexerBase {
 private:
-    static_assert(sizeof(LexerMode) == sizeof(uint16_t));
-    static_assert(std::is_trivially_copyable<LexerMode>::value);
+  static_assert(sizeof(LexerMode) == sizeof(uint16_t));
+  static_assert(std::is_trivially_copyable<LexerMode>::value);
 
-    CStrPtr scriptDir;
+  CStrPtr scriptDir;
 
-    std::vector<LexerMode> modeStack;
+  std::vector<LexerMode> modeStack;
 
-    LexerMode curMode{yycSTMT};
+  LexerMode curMode{yycSTMT};
 
-    LexerMode prevMode{yycSTMT};
+  LexerMode prevMode{yycSTMT};
 
-    bool prevNewLine{false};
+  bool prevNewLine{false};
 
-    /**
-     * only available in command mode.
-     */
-    bool prevSpace{false};
+  /**
+   * only available in command mode.
+   */
+  bool prevSpace{false};
 
-    /**
-     * if true, enable code completion (may emit complete token)
-     */
-    bool complete{false};
+  /**
+   * if true, enable code completion (may emit complete token)
+   */
+  bool complete{false};
 
-    TokenKind compTokenKind{TokenKind::INVALID};
+  TokenKind compTokenKind{TokenKind::INVALID};
 
 public:
-    NON_COPYABLE(Lexer);
+  NON_COPYABLE(Lexer);
 
-    Lexer(Lexer&&) = default;
+  Lexer(Lexer &&) = default;
 
-    Lexer() = default;
+  Lexer() = default;
 
-    Lexer(const char *sourceName, ByteBuffer &&buf, CStrPtr &&scriptDir) :
-            LexerBase(sourceName, std::move(buf)), scriptDir(std::move(scriptDir)) {
-        if(!this->scriptDir || *this->scriptDir == '\0') {
-            this->scriptDir.reset(strdup("."));
-        }
+  Lexer(const char *sourceName, ByteBuffer &&buf, CStrPtr &&scriptDir)
+      : LexerBase(sourceName, std::move(buf)), scriptDir(std::move(scriptDir)) {
+    if (!this->scriptDir || *this->scriptDir == '\0') {
+      this->scriptDir.reset(strdup("."));
     }
+  }
 
-    ~Lexer() = default;
+  ~Lexer() = default;
 
-    SrcPos getSrcPos(Token token) const;
+  SrcPos getSrcPos(Token token) const;
 
-    /**
-     *
-     * @return
-     * not null
-     */
-    const char *getScriptDir() const {
-        return this->scriptDir.get();
+  /**
+   *
+   * @return
+   * not null
+   */
+  const char *getScriptDir() const { return this->scriptDir.get(); }
+
+  void setPos(unsigned int pos) {
+    assert(this->buf.data() + pos <= this->limit);
+    this->cursor = this->buf.data() + pos;
+  }
+
+  bool isPrevNewLine() const { return this->prevNewLine; }
+
+  bool isPrevSpace() const { return this->prevSpace; }
+
+  LexerMode getPrevMode() const { return this->prevMode; }
+
+  void setLexerCond(LexerCond cond) {
+    auto c = this->curMode;
+    this->setLexerMode(LexerMode(cond, c.skipNL()));
+  }
+
+  void setLexerMode(LexerMode mode) { this->curMode = mode; }
+
+  void pushLexerMode(LexerMode mode) {
+    this->modeStack.push_back(this->curMode);
+    this->setLexerMode(mode);
+  }
+
+  void popLexerMode() {
+    if (!this->modeStack.empty()) {
+      this->curMode = this->modeStack.back();
+      this->modeStack.pop_back();
     }
+  }
 
-    void setPos(unsigned int pos) {
-        assert(this->buf.data() + pos <= this->limit);
-        this->cursor = this->buf.data() + pos;
-    }
+  LexerMode getLexerMode() const { return this->curMode; }
 
-    bool isPrevNewLine() const {
-        return this->prevNewLine;
-    }
+  void setComplete(bool allow) { this->complete = allow; }
 
-    bool isPrevSpace() const {
-        return this->prevSpace;
-    }
+  bool isComplete() const { return this->complete; }
 
-    LexerMode getPrevMode() const {
-        return this->prevMode;
-    }
+  bool inCompletionPoint() const { return this->complete && this->cursor + 1 == this->limit; }
 
-    void setLexerCond(LexerCond cond) {
-        auto c = this->curMode;
-        this->setLexerMode(LexerMode(cond, c.skipNL()));
-    }
+  void setCompTokenKind(TokenKind kind) { this->compTokenKind = kind; }
 
-    void setLexerMode(LexerMode mode) {
-        this->curMode = mode;
-    }
+  TokenKind getCompTokenKind() const { return this->compTokenKind; }
 
-    void pushLexerMode(LexerMode mode) {
-        this->modeStack.push_back(this->curMode);
-        this->setLexerMode(mode);
-    }
+  /**
+   * lexer entry point.
+   * write next token to token.
+   * return the kind of next token.
+   */
+  TokenKind nextToken(Token &token);
 
-    void popLexerMode() {
-        if(!this->modeStack.empty()) {
-            this->curMode = this->modeStack.back();
-            this->modeStack.pop_back();
-        }
-    }
+  // token to value converting api.
 
-    LexerMode getLexerMode() const {
-        return this->curMode;
-    }
+  /**
+   * convert single quote string literal token to string.
+   * if token is illegal format(ex. illegal escape sequence), return false.
+   */
+  bool singleToString(Token token, std::string &out) const;
 
-    void setComplete(bool allow) {
-        this->complete = allow;
-    }
+  /**
+   * convert escaped single quote string literal token to string.
+   * if token is illegal format(ex. illegal escape sequence), return false.
+   */
+  bool escapedSingleToString(Token token, std::string &out) const;
 
-    bool isComplete() const {
-        return this->complete;
-    }
+  /**
+   * convert double quote string element token to string.
+   */
+  std::string doubleElementToString(Token token) const;
 
-    bool inCompletionPoint() const {
-        return this->complete && this->cursor + 1 == this->limit;
-    }
+  /**
+   * convert token to command argument
+   */
+  std::string toCmdArg(Token token) const;
 
-    void setCompTokenKind(TokenKind kind) {
-        this->compTokenKind = kind;
-    }
+  /**
+   * convert token to name(remove '$' char)
+   * ex. $hoge, ${hoge}, hoge
+   */
+  std::string toName(Token token) const;
 
-    TokenKind getCompTokenKind() const {
-        return this->compTokenKind;
-    }
+  /**
+   * if converted number is out of range, status is 1.
+   */
+  int64_t toInt64(Token token, int &status) const;
 
-    /**
-     * lexer entry point.
-     * write next token to token.
-     * return the kind of next token.
-     */
-    TokenKind nextToken(Token &token);
+  /**
+   * if converted number is out of range, status is 1.
+   */
+  double toDouble(Token token, int &status) const;
 
-    // token to value converting api.
-
-    /**
-     * convert single quote string literal token to string.
-     * if token is illegal format(ex. illegal escape sequence), return false.
-     */
-    bool singleToString(Token token, std::string &out) const;
-
-    /**
-     * convert escaped single quote string literal token to string.
-     * if token is illegal format(ex. illegal escape sequence), return false.
-     */
-    bool escapedSingleToString(Token token, std::string &out) const;
-
-    /**
-     * convert double quote string element token to string.
-     */
-    std::string doubleElementToString(Token token) const;
-
-    /**
-     * convert token to command argument
-     */
-    std::string toCmdArg(Token token) const;
-
-    /**
-     * convert token to name(remove '$' char)
-     * ex. $hoge, ${hoge}, hoge
-     */
-    std::string toName(Token token) const;
-
-    /**
-     * if converted number is out of range, status is 1.
-     */
-    int64_t toInt64(Token token, int &status) const;
-
-    /**
-     * if converted number is out of range, status is 1.
-     */
-    double toDouble(Token token, int &status) const;
-
-    bool toEnvName(Token token, std::string &out) const;
+  bool toEnvName(Token token, std::string &out) const;
 };
 
 /**
@@ -237,4 +211,4 @@ int parseEscapeSeq(const char *&begin, const char *end, bool needOctalPrefix);
 
 } // namespace ydsh
 
-#endif //YDSH_LEXER_H
+#endif // YDSH_LEXER_H

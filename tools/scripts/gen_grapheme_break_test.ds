@@ -48,6 +48,7 @@ cat ./GraphemeBreakTest.txt | for(var count = 0; read -f $'\n'; $count++) {
 {
     echo "*/"
     echo
+    echo // clang-format off
     echo "static const char *grapheme_break_tests[] = {"
 } with >> $out
 

@@ -25,77 +25,76 @@ namespace ydsh::lsp {
 #define LOG(L, ...) (this->logger.get())(L, __VA_ARGS__)
 
 ReplyImpl LSPServer::onCall(const std::string &name, JSON &&param) {
-    if(!this->init && name != "initialize") {
-        LOG(LogLevel::ERROR, "must be initialized");
-        return newError(LSPErrorCode::ServerNotInitialized, "server not initialized!!");
-    }
-    return Handler::onCall(name, std::move(param));
+  if (!this->init && name != "initialize") {
+    LOG(LogLevel::ERROR, "must be initialized");
+    return newError(LSPErrorCode::ServerNotInitialized, "server not initialized!!");
+  }
+  return Handler::onCall(name, std::move(param));
 }
 
 void LSPServer::bindAll() {
-    this->bind("shutdown", &LSPServer::shutdown);
-    this->bind("exit", &LSPServer::exit);
-    this->bind("initialize", &LSPServer::initialize);
-    this->bind("initialized", &LSPServer::initialized);
-    this->bind("textDocument/didOpen", &LSPServer::didOpenTextDocument);
-    this->bind("textDocument/didClose", &LSPServer::didCloseTextDocument);
-    this->bind("textDocument/didChange", &LSPServer::didChangeTextDocument);
+  this->bind("shutdown", &LSPServer::shutdown);
+  this->bind("exit", &LSPServer::exit);
+  this->bind("initialize", &LSPServer::initialize);
+  this->bind("initialized", &LSPServer::initialized);
+  this->bind("textDocument/didOpen", &LSPServer::didOpenTextDocument);
+  this->bind("textDocument/didClose", &LSPServer::didCloseTextDocument);
+  this->bind("textDocument/didChange", &LSPServer::didChangeTextDocument);
 }
 
 void LSPServer::run() {
-    while(true) {
-        this->runOnlyOnce();
-    }
+  while (true) {
+    this->runOnlyOnce();
+  }
 }
 
 Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
-    LOG(LogLevel::INFO, "initialize server ....");
-    if(this->init) {
-        return newError(ErrorCode::InvalidRequest, "server has already initialized");
-    }
-    this->init = true;
+  LOG(LogLevel::INFO, "initialize server ....");
+  if (this->init) {
+    return newError(ErrorCode::InvalidRequest, "server has already initialized");
+  }
+  this->init = true;
 
-    (void) params; //FIXME: currently not used
+  (void)params; // FIXME: currently not used
 
-    InitializeResult ret;   //FIXME: set supported capabilities
-    ret.capabilities.textDocumentSync = TextDocumentSyncOptions {
-        .openClose = true,
-        .change = TextDocumentSyncKind::Full,
-        .willSave = {},
-        .willSaveWaitUntil = {},
-        .save = {},
-    };
-    return std::move(ret);
+  InitializeResult ret; // FIXME: set supported capabilities
+  ret.capabilities.textDocumentSync = TextDocumentSyncOptions{
+      .openClose = true,
+      .change = TextDocumentSyncKind::Full,
+      .willSave = {},
+      .willSaveWaitUntil = {},
+      .save = {},
+  };
+  return std::move(ret);
 }
 
 void LSPServer::initialized(const ydsh::lsp::InitializedParams &) {
-    LOG(LogLevel::INFO, "server initialized!!");
+  LOG(LogLevel::INFO, "server initialized!!");
 }
 
 Reply<void> LSPServer::shutdown() {
-    LOG(LogLevel::INFO, "try to shutdown ....");
-    this->willExit = true;
-    return nullptr;
+  LOG(LogLevel::INFO, "try to shutdown ....");
+  this->willExit = true;
+  return nullptr;
 }
 
 void LSPServer::exit() {
-    int s = this->willExit ? 0 : 1;
-    LOG(LogLevel::INFO, "exit server: %d", s);
-    std::exit(s);   // always success
+  int s = this->willExit ? 0 : 1;
+  LOG(LogLevel::INFO, "exit server: %d", s);
+  std::exit(s); // always success
 }
 
 void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
-    LOG(LogLevel::INFO, "open textDocument: %s", params.textDocument.uri.c_str());
+  LOG(LogLevel::INFO, "open textDocument: %s", params.textDocument.uri.c_str());
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
-    LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
+  LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
 }
 
 void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params) {
-    LOG(LogLevel::INFO, "change textDocument: %s, %d",
-        params.textDocument.uri.c_str(),
-        params.textDocument.version);
+  LOG(LogLevel::INFO, "change textDocument: %s, %d", params.textDocument.uri.c_str(),
+      params.textDocument.version);
 }
 
 } // namespace ydsh::lsp

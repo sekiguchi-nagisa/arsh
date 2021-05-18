@@ -19,105 +19,101 @@
 namespace ydsh::rpc {
 
 std::string ResponseError::toString() const {
-    std::string ret = "[";
-    ret += std::to_string(this->code);
-    ret += ": ";
-    ret += this->message;
-    ret += "]";
-    return ret;
+  std::string ret = "[";
+  ret += std::to_string(this->code);
+  ret += ": ";
+  ret += this->message;
+  ret += "]";
+  return ret;
 }
 
 std::string Error::toString() const {
-    std::string ret = "[";
-    ret += std::to_string(this->code);
-    ret += ": ";
-    ret += this->message;
-    ret += "]";
-    return ret;
+  std::string ret = "[";
+  ret += std::to_string(this->code);
+  ret += ": ";
+  ret += this->message;
+  ret += "]";
+  return ret;
 }
 
 JSON Error::toJSON() {
-    JSONSerializer serializer;
-    serializer(*this);
-    return std::move(serializer).take();
+  JSONSerializer serializer;
+  serializer(*this);
+  return std::move(serializer).take();
 }
 
 JSON Request::toJSON() {
-    JSONSerializer serializer;
-    serializer(*this);
-    return std::move(serializer).take();
+  JSONSerializer serializer;
+  serializer(*this);
+  return std::move(serializer).take();
 }
 
 JSON Response::toJSON() {
-    JSONSerializer serializer;
-    serializer(*this);
-    return std::move(serializer).take();
+  JSONSerializer serializer;
+  serializer(*this);
+  return std::move(serializer).take();
 }
 
 Message MessageParser::operator()() {
-    // parse
-    auto ret = Parser::operator()();
-    if(this->hasError()) {
-        return Error(ErrorCode::ParseError, "Parse error", this->formatError());
-    }
+  // parse
+  auto ret = Parser::operator()();
+  if (this->hasError()) {
+    return Error(ErrorCode::ParseError, "Parse error", this->formatError());
+  }
 
-    Union<Request, Response> value;
-    JSONDeserializer deserializer(std::move(ret));
-    deserializer(value);
-    if(deserializer.hasError()) {
-        return Error(ErrorCode::InvalidRequest, "Invalid Request",
-                     deserializer.getValidationError().formatError());
-    }
+  Union<Request, Response> value;
+  JSONDeserializer deserializer(std::move(ret));
+  deserializer(value);
+  if (deserializer.hasError()) {
+    return Error(ErrorCode::InvalidRequest, "Invalid Request",
+                 deserializer.getValidationError().formatError());
+  }
 
-    if(is<Request>(value)) {
-        auto &req = get<Request>(value);
-        if(req.id.hasValue() && !req.id.unwrap().isString()
-                && !req.id.unwrap().isNumber() && !req.id.unwrap().isNull()) {
-            return Error(ErrorCode::InvalidRequest, "Invalid Request",
-                         "id must be null|string|number");
-        }
-        if(req.params.hasValue() && !req.params.unwrap().isNull() &&
-            !req.params.unwrap().isObject() && !req.params.unwrap().isArray()) {
-            return Error(ErrorCode::InvalidRequest, "Invalid Request",
-                         "param must be array|object");
-        }
-        return std::move(req);
-    } else if(is<Response>(value)) {
-        auto &res = get<Response>(value);
-        if(!static_cast<bool>(res)) {
-            return std::move(res.error.unwrap());
-        }
-        if(!res.id.isString() && !res.id.isNumber()) {
-            return Error(ErrorCode::InvalidRequest, "Invalid Request",
-                         "id must be string|number");
-        }
-        return std::move(res);
-    } else {
-        fatal("broken\n");
+  if (is<Request>(value)) {
+    auto &req = get<Request>(value);
+    if (req.id.hasValue() && !req.id.unwrap().isString() && !req.id.unwrap().isNumber() &&
+        !req.id.unwrap().isNull()) {
+      return Error(ErrorCode::InvalidRequest, "Invalid Request", "id must be null|string|number");
     }
+    if (req.params.hasValue() && !req.params.unwrap().isNull() && !req.params.unwrap().isObject() &&
+        !req.params.unwrap().isArray()) {
+      return Error(ErrorCode::InvalidRequest, "Invalid Request", "param must be array|object");
+    }
+    return std::move(req);
+  } else if (is<Response>(value)) {
+    auto &res = get<Response>(value);
+    if (!static_cast<bool>(res)) {
+      return std::move(res.error.unwrap());
+    }
+    if (!res.id.isString() && !res.id.isNumber()) {
+      return Error(ErrorCode::InvalidRequest, "Invalid Request", "id must be string|number");
+    }
+    return std::move(res);
+  } else {
+    fatal("broken\n");
+  }
 }
 
 long CallbackMap::add(const std::string &methodName, ResponseCallback &&callback) {
-    std::lock_guard<std::mutex> guard(this->mutex);
-    long id = ++this->index;
-    auto pair = this->map.emplace(id, std::make_pair(methodName, std::move(callback)));
-    if(!pair.second) {
-        return 0;
-    }
-    return id;
+  std::lock_guard<std::mutex> guard(this->mutex);
+  long id = ++this->index;
+  auto pair = this->map.emplace(id, std::make_pair(methodName, std::move(callback)));
+  if (!pair.second) {
+    return 0;
+  }
+  return id;
 }
 
 CallbackMap::Entry CallbackMap::take(long id) {
-    std::lock_guard<std::mutex> guard(this->mutex);
-    auto iter = this->map.find(id);
-    if(iter != this->map.end()) {
-        auto entry = std::move(iter->second);
-        this->map.erase(iter);
-        return entry;
-    }
-    return {"", ResponseCallback()};
+  std::lock_guard<std::mutex> guard(this->mutex);
+  auto iter = this->map.find(id);
+  if (iter != this->map.end()) {
+    auto entry = std::move(iter->second);
+    this->map.erase(iter);
+    return entry;
+  }
+  return {"", ResponseCallback()};
 }
-
 
 // #######################
 // ##     Transport     ##
@@ -126,71 +122,71 @@ CallbackMap::Entry CallbackMap::take(long id) {
 #define LOG(L, ...) (this->logger.get())(L, __VA_ARGS__)
 
 void Transport::call(JSON &&id, const std::string &methodName, JSON &&param) {
-    auto str = Request(std::move(id), methodName, std::move(param)).toJSON().serialize();
-    this->send(str.size(), str.c_str());
+  auto str = Request(std::move(id), methodName, std::move(param)).toJSON().serialize();
+  this->send(str.size(), str.c_str());
 }
 
 void Transport::notify(const std::string &methodName, JSON &&param) {
-    auto str = Request(JSON(), methodName, std::move(param)).toJSON().serialize();
-    this->send(str.size(), str.c_str());
+  auto str = Request(JSON(), methodName, std::move(param)).toJSON().serialize();
+  this->send(str.size(), str.c_str());
 }
 
 void Transport::reply(JSON &&id, JSON &&result) {
-    Response res(std::move(id), std::move(result));
-    auto str = res.toJSON().serialize();
-    this->send(str.size(), str.c_str());
+  Response res(std::move(id), std::move(result));
+  auto str = res.toJSON().serialize();
+  this->send(str.size(), str.c_str());
 }
 
 void Transport::reply(JSON &&id, Error &&error) {
-    Response res(std::move(id), std::move(error));
-    auto str = res.toJSON().serialize();
-    this->send(str.size(), str.c_str());
+  Response res(std::move(id), std::move(error));
+  auto str = res.toJSON().serialize();
+  this->send(str.size(), str.c_str());
 }
 
 bool Transport::dispatch(Handler &handler) {
-    int dataSize = this->recvSize();
-    if(dataSize < 0) {
-        LOG(LogLevel::ERROR, "may be broken or empty message");
-        return false;
-    }
+  int dataSize = this->recvSize();
+  if (dataSize < 0) {
+    LOG(LogLevel::ERROR, "may be broken or empty message");
+    return false;
+  }
 
-    ByteBuffer buf;
-    for(int remainSize = dataSize; remainSize > 0;) {
-        char data[256];
-        constexpr int bufSize = arraySize(data);
-        int needSize = remainSize < bufSize ? remainSize : bufSize;
-        int recvSize = this->recv(needSize, data);
-        if(recvSize < 0) {
-            LOG(LogLevel::ERROR, "message receiving failed");
-            return false;
-        }
-        buf.append(data, static_cast<unsigned int>(recvSize));
-        remainSize -= recvSize;
+  ByteBuffer buf;
+  for (int remainSize = dataSize; remainSize > 0;) {
+    char data[256];
+    constexpr int bufSize = arraySize(data);
+    int needSize = remainSize < bufSize ? remainSize : bufSize;
+    int recvSize = this->recv(needSize, data);
+    if (recvSize < 0) {
+      LOG(LogLevel::ERROR, "message receiving failed");
+      return false;
     }
+    buf.append(data, static_cast<unsigned int>(recvSize));
+    remainSize -= recvSize;
+  }
 
-    auto msg = MessageParser(std::move(buf))();
-    if(is<Error>(msg)) {
-        auto &error = get<Error>(msg);
-        LOG(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
-        this->reply(nullptr, std::move(error));
-    } else if(is<Request>(msg)) {
-        auto &req = get<Request>(msg);
-        if(req.isCall()) {
-            auto id = std::move(req.id);
-            auto ret = handler.onCall(req.method, std::move(req.params));
-            if(ret) {
-                this->reply(std::move(id), std::move(ret).take());
-            } else {
-                this->reply(std::move(id), std::move(ret).takeError());
-            }
-        } else {
-            handler.onNotify(req.method, std::move(req.params));
-        }
+  auto msg = MessageParser(std::move(buf))();
+  if (is<Error>(msg)) {
+    auto &error = get<Error>(msg);
+    LOG(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
+    this->reply(nullptr, std::move(error));
+  } else if (is<Request>(msg)) {
+    auto &req = get<Request>(msg);
+    if (req.isCall()) {
+      auto id = std::move(req.id);
+      auto ret = handler.onCall(req.method, std::move(req.params));
+      if (ret) {
+        this->reply(std::move(id), std::move(ret).take());
+      } else {
+        this->reply(std::move(id), std::move(ret).takeError());
+      }
     } else {
-        assert(is<Response>(msg));
-        handler.onResponse(std::move(get<Response>(msg)));
+      handler.onNotify(req.method, std::move(req.params));
     }
-    return true;
+  } else {
+    assert(is<Response>(msg));
+    handler.onResponse(std::move(get<Response>(msg)));
+  }
+  return true;
 }
 
 // #####################
@@ -198,72 +194,73 @@ bool Transport::dispatch(Handler &handler) {
 // #####################
 
 ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
-    auto iter = this->callMap.find(name);
-    if(iter == this->callMap.end()) {
-        std::string str = "undefined method: ";
-        str += name;
-        LOG(LogLevel::ERROR, "undefined call: %s", name.c_str());
-        return newError(MethodNotFound, std::move(str));
-    }
-    LOG(LogLevel::INFO, "onCall: %s", name.c_str());
-    return iter->second(std::move(param));
+  auto iter = this->callMap.find(name);
+  if (iter == this->callMap.end()) {
+    std::string str = "undefined method: ";
+    str += name;
+    LOG(LogLevel::ERROR, "undefined call: %s", name.c_str());
+    return newError(MethodNotFound, std::move(str));
+  }
+  LOG(LogLevel::INFO, "onCall: %s", name.c_str());
+  return iter->second(std::move(param));
 }
 
 void Handler::onNotify(const std::string &name, JSON &&param) {
-    auto iter = this->notificationMap.find(name);
-    if(iter == this->notificationMap.end()) {
-        LOG(LogLevel::ERROR, "undefined notification: %s", name.c_str());
-        return;
-    }
-    LOG(LogLevel::INFO, "onNotify: %s", name.c_str());
-    iter->second(std::move(param));
+  auto iter = this->notificationMap.find(name);
+  if (iter == this->notificationMap.end()) {
+    LOG(LogLevel::ERROR, "undefined notification: %s", name.c_str());
+    return;
+  }
+  LOG(LogLevel::INFO, "onNotify: %s", name.c_str());
+  iter->second(std::move(param));
 }
 
 void Handler::onResponse(Response &&res) {
-    assert(res.id.isLong());
-    long id = res.id.asLong();
-    auto entry = this->callbackMap.take(id);
+  assert(res.id.isLong());
+  long id = res.id.asLong();
+  auto entry = this->callbackMap.take(id);
 
-    if(!entry.second) {
-        LOG(LogLevel::ERROR, "broken response: %ld", id);
-        return;
-    }
-    entry.second(std::move(res));
+  if (!entry.second) {
+    LOG(LogLevel::ERROR, "broken response: %ld", id);
+    return;
+  }
+  entry.second(std::move(res));
 }
 
 ReplyImpl Handler::requestValidationError(const ValidationError &e) {
-    std::string str = e.formatError();
-    LOG(LogLevel::ERROR, "request message validation failed: \n%s", str.c_str());
-    return newError(InvalidParams, std::move(str));
+  std::string str = e.formatError();
+  LOG(LogLevel::ERROR, "request message validation failed: \n%s", str.c_str());
+  return newError(InvalidParams, std::move(str));
 }
 
 void Handler::notificationValidationError(const ValidationError &e) {
-    std::string str = e.formatError();
-    LOG(LogLevel::ERROR, "notification message validation failed: \n%s", str.c_str());
+  std::string str = e.formatError();
+  LOG(LogLevel::ERROR, "notification message validation failed: \n%s", str.c_str());
 }
 
 void Handler::responseValidationError(const ValidationError &e, Response &res) {
-    std::string str = e.formatError();
-    LOG(LogLevel::ERROR, "response message validation failed: \n%s", str.c_str());
-    res.error = Error(InvalidParams, std::move(str));
+  std::string str = e.formatError();
+  LOG(LogLevel::ERROR, "response message validation failed: \n%s", str.c_str());
+  res.error = Error(InvalidParams, std::move(str));
 }
 
 void Handler::bindImpl(const std::string &methodName, Call &&func) {
-    if(!this->callMap.emplace(methodName, std::move(func)).second) {
-        fatal("already defined method: %s\n", methodName.c_str());
-    }
+  if (!this->callMap.emplace(methodName, std::move(func)).second) {
+    fatal("already defined method: %s\n", methodName.c_str());
+  }
 }
 
 void Handler::bindImpl(const std::string &methodName, Notification &&func) {
-    if(!this->notificationMap.emplace(methodName, std::move(func)).second) {
-        fatal("already defined method: %s\n", methodName.c_str());
-    }
+  if (!this->notificationMap.emplace(methodName, std::move(func)).second) {
+    fatal("already defined method: %s\n", methodName.c_str());
+  }
 }
 
-long Handler::callImpl(Transport &transport, const std::string &methodName, JSON &&json, ResponseCallback &&func) {
-    long id = this->callbackMap.add(methodName, std::move(func));
-    transport.call(static_cast<int64_t>(id), methodName, std::move(json));
-    return id;
+long Handler::callImpl(Transport &transport, const std::string &methodName, JSON &&json,
+                       ResponseCallback &&func) {
+  long id = this->callbackMap.add(methodName, std::move(func));
+  transport.call(static_cast<int64_t>(id), methodName, std::move(json));
+  return id;
 }
 
 } // namespace ydsh::rpc

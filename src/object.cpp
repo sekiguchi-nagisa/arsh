@@ -16,29 +16,32 @@
 
 #include <memory>
 
-#include "vm.h"
-#include "redir.h"
 #include "core.h"
-#include "misc/num_util.hpp"
 #include "misc/files.h"
+#include "misc/num_util.hpp"
+#include "redir.h"
+#include "vm.h"
 
 namespace ydsh {
 
 void DSObject::destroy() {
-    switch(this->getKind()) {
-#define GEN_CASE(K) case ObjectKind::K: delete static_cast<K ## Object*>(this); break;
+  switch (this->getKind()) {
+#define GEN_CASE(K)                                                                                \
+  case ObjectKind::K:                                                                              \
+    delete static_cast<K##Object *>(this);                                                         \
+    break;
     EACH_OBJECT_KIND(GEN_CASE)
 #undef GEN_CASE
-    }
+  }
 }
 
 const char *toString(ObjectKind kind) {
-    const char *table[] = {
+  const char *table[] = {
 #define GEN_STR(E) #E,
-            EACH_OBJECT_KIND(GEN_STR)
+      EACH_OBJECT_KIND(GEN_STR)
 #undef GEN_STR
-    };
-    return table[static_cast<unsigned int>(kind)];
+  };
+  return table[static_cast<unsigned int>(kind)];
 }
 
 // #####################
@@ -46,231 +49,231 @@ const char *toString(ObjectKind kind) {
 // #####################
 
 unsigned int DSValue::getTypeID() const {
-    switch(this->kind()) {
-    case DSValueKind::DUMMY:
-        return this->asTypeId();
-    case DSValueKind::BOOL:
-        return static_cast<unsigned int>(TYPE::Boolean);
-    case DSValueKind::SIG:
-        return static_cast<unsigned int>(TYPE::Signal);
-    case DSValueKind::INT:
-        return static_cast<unsigned int>(TYPE::Int);
-    case DSValueKind::FLOAT:
-        return static_cast<unsigned int>(TYPE::Float);
-    default:
-        if(isSmallStr(this->kind())) {
-            return static_cast<unsigned int>(TYPE::String);
-        }
-        assert(this->kind() == DSValueKind::OBJECT);
-        return this->get()->getTypeID();
+  switch (this->kind()) {
+  case DSValueKind::DUMMY:
+    return this->asTypeId();
+  case DSValueKind::BOOL:
+    return static_cast<unsigned int>(TYPE::Boolean);
+  case DSValueKind::SIG:
+    return static_cast<unsigned int>(TYPE::Signal);
+  case DSValueKind::INT:
+    return static_cast<unsigned int>(TYPE::Int);
+  case DSValueKind::FLOAT:
+    return static_cast<unsigned int>(TYPE::Float);
+  default:
+    if (isSmallStr(this->kind())) {
+      return static_cast<unsigned int>(TYPE::String);
     }
+    assert(this->kind() == DSValueKind::OBJECT);
+    return this->get()->getTypeID();
+  }
 }
 
 StringRef DSValue::asStrRef() const {
-    assert(this->hasStrRef());
-    if(isSmallStr(this->kind())) {
-        return StringRef(this->str.value, smallStrSize(this->kind()));
-    }
-    auto &obj = typeAs<StringObject>(*this);
-    return StringRef(obj.getValue(), obj.size());
+  assert(this->hasStrRef());
+  if (isSmallStr(this->kind())) {
+    return StringRef(this->str.value, smallStrSize(this->kind()));
+  }
+  auto &obj = typeAs<StringObject>(*this);
+  return StringRef(obj.getValue(), obj.size());
 }
 
 std::string DSValue::toString() const {
-    switch(this->kind()) {
-    case DSValueKind::NUMBER:
-        return std::to_string(this->asNum());
-    case DSValueKind::DUMMY: {
-        std::string str("DSObject(");
-        str += std::to_string(this->asTypeId());
-        str += ")";
-        return str;
+  switch (this->kind()) {
+  case DSValueKind::NUMBER:
+    return std::to_string(this->asNum());
+  case DSValueKind::DUMMY: {
+    std::string str("DSObject(");
+    str += std::to_string(this->asTypeId());
+    str += ")";
+    return str;
+  }
+  case DSValueKind::GLOB_META:
+    return ::toString(this->asGlobMeta());
+  case DSValueKind::BOOL:
+    return this->asBool() ? "true" : "false";
+  case DSValueKind::SIG:
+    return std::to_string(this->asSig());
+  case DSValueKind::INT:
+    return std::to_string(this->asInt());
+  case DSValueKind::FLOAT:
+    return std::to_string(this->asFloat());
+  default:
+    if (this->hasStrRef()) {
+      return this->asStrRef().toString();
     }
-    case DSValueKind::GLOB_META:
-        return ::toString(this->asGlobMeta());
-    case DSValueKind::BOOL:
-        return this->asBool() ? "true" : "false";
-    case DSValueKind::SIG:
-        return std::to_string(this->asSig());
-    case DSValueKind::INT:
-        return std::to_string(this->asInt());
-    case DSValueKind::FLOAT:
-        return std::to_string(this->asFloat());
-    default:
-        if(this->hasStrRef()) {
-            return this->asStrRef().toString();
-        }
-        assert(this->kind() == DSValueKind::OBJECT);
-        break;
-    }
+    assert(this->kind() == DSValueKind::OBJECT);
+    break;
+  }
 
-    switch(this->get()->getKind()) {
-    case ObjectKind::UnixFd: {
-        std::string str = "/dev/fd/";
-        str += std::to_string(typeAs<UnixFdObject>(*this).getValue());
-        return str;
-    }
-    case ObjectKind::Regex:
-        return typeAs<RegexObject>(*this).getStr();
-    case ObjectKind::Array:
-        return typeAs<ArrayObject>(*this).toString();
-    case ObjectKind::Map:
-        return typeAs<MapObject>(*this).toString();
-    case ObjectKind::Func:
-        return typeAs<FuncObject>(*this).toString();
-    case ObjectKind::Job: {
-        std::string str = "%";
-        str += std::to_string(typeAs<JobObject>(*this).getJobID());
-        return str;
-    }
-    default:
-        std::string str("DSObject(");
-        str += std::to_string(reinterpret_cast<uintptr_t>(this->get()));
-        str += ")";
-        return str;
-    }
+  switch (this->get()->getKind()) {
+  case ObjectKind::UnixFd: {
+    std::string str = "/dev/fd/";
+    str += std::to_string(typeAs<UnixFdObject>(*this).getValue());
+    return str;
+  }
+  case ObjectKind::Regex:
+    return typeAs<RegexObject>(*this).getStr();
+  case ObjectKind::Array:
+    return typeAs<ArrayObject>(*this).toString();
+  case ObjectKind::Map:
+    return typeAs<MapObject>(*this).toString();
+  case ObjectKind::Func:
+    return typeAs<FuncObject>(*this).toString();
+  case ObjectKind::Job: {
+    std::string str = "%";
+    str += std::to_string(typeAs<JobObject>(*this).getJobID());
+    return str;
+  }
+  default:
+    std::string str("DSObject(");
+    str += std::to_string(reinterpret_cast<uintptr_t>(this->get()));
+    str += ")";
+    return str;
+  }
 }
 
 bool DSValue::opStr(DSState &state) const {
-    if(this->isObject()) {
-        switch(this->get()->getKind()) {
-        case ObjectKind::Array:
-            return typeAs<ArrayObject>(*this).opStr(state);
-        case ObjectKind::Map:
-            return typeAs<MapObject>(*this).opStr(state);
-        case ObjectKind::Base: {
-            auto &type = state.typePool.get(this->getTypeID());
-            if(state.typePool.isTupleType(type)) {
-                return typeAs<BaseObject>(*this).opStrAsTuple(state);
-            }
-            break;
-        }
-        case ObjectKind::Error:
-            return typeAs<ErrorObject>(*this).opStr(state);
-        default:
-            break;
-        }
+  if (this->isObject()) {
+    switch (this->get()->getKind()) {
+    case ObjectKind::Array:
+      return typeAs<ArrayObject>(*this).opStr(state);
+    case ObjectKind::Map:
+      return typeAs<MapObject>(*this).opStr(state);
+    case ObjectKind::Base: {
+      auto &type = state.typePool.get(this->getTypeID());
+      if (state.typePool.isTupleType(type)) {
+        return typeAs<BaseObject>(*this).opStrAsTuple(state);
+      }
+      break;
     }
-    state.toStrBuf += this->toString();
-    return true;
+    case ObjectKind::Error:
+      return typeAs<ErrorObject>(*this).opStr(state);
+    default:
+      break;
+    }
+  }
+  state.toStrBuf += this->toString();
+  return true;
 }
 
 bool DSValue::opInterp(DSState &state) const {
-    if(this->isObject()) {
-        switch(this->get()->getKind()) {
-        case ObjectKind::Array:
-            return typeAs<ArrayObject>(*this).opInterp(state);
-        case ObjectKind::Base: {
-            auto &type = state.typePool.get(this->getTypeID());
-            if(state.typePool.isTupleType(type)) {
-                return typeAs<BaseObject>(*this).opInterpAsTuple(state);
-            }
-            break;
-        }
-        default:
-            break;
-        }
+  if (this->isObject()) {
+    switch (this->get()->getKind()) {
+    case ObjectKind::Array:
+      return typeAs<ArrayObject>(*this).opInterp(state);
+    case ObjectKind::Base: {
+      auto &type = state.typePool.get(this->getTypeID());
+      if (state.typePool.isTupleType(type)) {
+        return typeAs<BaseObject>(*this).opInterpAsTuple(state);
+      }
+      break;
     }
-    return this->opStr(state);
+    default:
+      break;
+    }
+  }
+  return this->opStr(state);
 }
 
 bool DSValue::equals(const DSValue &o) const {
-    // for String
-    if(this->hasStrRef() && o.hasStrRef()) {
-        auto left = this->asStrRef();
-        auto right = o.asStrRef();
-        return left == right;
-    }
+  // for String
+  if (this->hasStrRef() && o.hasStrRef()) {
+    auto left = this->asStrRef();
+    auto right = o.asStrRef();
+    return left == right;
+  }
 
-    if(this->kind() != o.kind()) {
-        return false;
+  if (this->kind() != o.kind()) {
+    return false;
+  }
+  switch (this->kind()) {
+  case DSValueKind::EMPTY:
+    return true;
+  case DSValueKind::BOOL:
+    return this->asBool() == o.asBool();
+  case DSValueKind::SIG:
+    return this->asSig() == o.asSig();
+  case DSValueKind::INT:
+    return this->asInt() == o.asInt();
+  case DSValueKind::FLOAT:
+    return this->asFloat() == o.asFloat();
+  default:
+    assert(this->kind() == DSValueKind::OBJECT);
+    if (this->get()->getKind() != o.get()->getKind()) {
+      return false;
     }
-    switch(this->kind()) {
-    case DSValueKind::EMPTY:
-        return true;
-    case DSValueKind::BOOL:
-        return this->asBool() == o.asBool();
-    case DSValueKind::SIG:
-        return this->asSig() == o.asSig();
-    case DSValueKind::INT:
-        return this->asInt() == o.asInt();
-    case DSValueKind::FLOAT:
-        return this->asFloat() == o.asFloat();
-    default:
-        assert(this->kind() == DSValueKind::OBJECT);
-        if(this->get()->getKind() != o.get()->getKind()) {
-            return false;
-        }
-        return reinterpret_cast<uintptr_t>(this->get()) == reinterpret_cast<uintptr_t>(o.get());
-    }
+    return reinterpret_cast<uintptr_t>(this->get()) == reinterpret_cast<uintptr_t>(o.get());
+  }
 }
 
 size_t DSValue::hash() const {
-    switch(this->kind()) {
-    case DSValueKind::BOOL:
-        return std::hash<bool>()(this->asBool());
-    case DSValueKind::SIG:
-        return std::hash<int64_t>()(this->asSig());
-    case DSValueKind::INT:
-        return std::hash<int64_t>()(this->asInt());
-    case DSValueKind::FLOAT:
-        return std::hash<double>()(this->asFloat());
-    default:
-        if(this->hasStrRef()) {
-            return StrRefHash()(this->asStrRef());
-        }
-        assert(this->isObject());
-        return std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(this->get()));
+  switch (this->kind()) {
+  case DSValueKind::BOOL:
+    return std::hash<bool>()(this->asBool());
+  case DSValueKind::SIG:
+    return std::hash<int64_t>()(this->asSig());
+  case DSValueKind::INT:
+    return std::hash<int64_t>()(this->asInt());
+  case DSValueKind::FLOAT:
+    return std::hash<double>()(this->asFloat());
+  default:
+    if (this->hasStrRef()) {
+      return StrRefHash()(this->asStrRef());
     }
+    assert(this->isObject());
+    return std::hash<uintptr_t>()(reinterpret_cast<uintptr_t>(this->get()));
+  }
 }
 
 bool DSValue::compare(const DSValue &o) const {
-    // for String
-    if(this->hasStrRef() && o.hasStrRef()) {
-        auto left = this->asStrRef();
-        auto right = o.asStrRef();
-        return left < right;
-    }
+  // for String
+  if (this->hasStrRef() && o.hasStrRef()) {
+    auto left = this->asStrRef();
+    auto right = o.asStrRef();
+    return left < right;
+  }
 
-    assert(this->kind() == o.kind());
-    switch(this->kind()) {
-    case DSValueKind::BOOL: {
-        int left = this->asBool() ? 1 : 0;
-        int right = o.asBool() ? 1 : 0;
-        return left < right;
-    }
-    case DSValueKind::SIG:
-        return this->asSig() < o.asSig();
-    case DSValueKind::INT:
-        return this->asInt() < o.asInt();
-    case DSValueKind::FLOAT:
-        return this->asFloat() < o.asFloat();
-    default:
-        return false;
-    }
+  assert(this->kind() == o.kind());
+  switch (this->kind()) {
+  case DSValueKind::BOOL: {
+    int left = this->asBool() ? 1 : 0;
+    int right = o.asBool() ? 1 : 0;
+    return left < right;
+  }
+  case DSValueKind::SIG:
+    return this->asSig() < o.asSig();
+  case DSValueKind::INT:
+    return this->asInt() < o.asInt();
+  case DSValueKind::FLOAT:
+    return this->asFloat() < o.asFloat();
+  default:
+    return false;
+  }
 }
 
 bool DSValue::appendAsStr(DSState &state, StringRef value) {
-    assert(this->hasStrRef());
+  assert(this->hasStrRef());
 
-    const bool small = isSmallStr(this->kind());
-    const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this).size();
-    if(size > StringObject::MAX_SIZE - value.size()) {
-        raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
-        return false;
-    }
+  const bool small = isSmallStr(this->kind());
+  const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this).size();
+  if (size > StringObject::MAX_SIZE - value.size()) {
+    raiseError(state, TYPE::OutOfRangeError, std::string("reach String size limit"));
+    return false;
+  }
 
-    if(small) {
-        size_t newSize = size + value.size();
-        if(newSize <= smallStrSize(DSValueKind::SSTR14)) {
-            memcpy(this->str.value + size, value.data(), value.size());
-            this->str.kind = toSmallStrKind(newSize);
-            this->str.value[newSize] = '\0';
-            return true;
-        }
-        (*this) = DSValue::create<StringObject>(StringRef(this->str.value, size));
+  if (small) {
+    size_t newSize = size + value.size();
+    if (newSize <= smallStrSize(DSValueKind::SSTR14)) {
+      memcpy(this->str.value + size, value.data(), value.size());
+      this->str.kind = toSmallStrKind(newSize);
+      this->str.value[newSize] = '\0';
+      return true;
     }
-    typeAs<StringObject>(*this).append(value);
-    return true;
+    (*this) = DSValue::create<StringObject>(StringRef(this->str.value, size));
+  }
+  typeAs<StringObject>(*this).append(value);
+  return true;
 }
 
 // ###########################
@@ -278,16 +281,16 @@ bool DSValue::appendAsStr(DSState &state, StringRef value) {
 // ###########################
 
 UnixFdObject::~UnixFdObject() {
-    if(this->fd > STDERR_FILENO) {
-        close(this->fd);    // do not close standard io file descriptor
-    }
+  if (this->fd > STDERR_FILENO) {
+    close(this->fd); // do not close standard io file descriptor
+  }
 }
 
 bool UnixFdObject::closeOnExec(bool close) const {
-    if(this->fd <= STDERR_FILENO) {
-        return false;
-    }
-    return setCloseOnExec(this->fd, close);
+  if (this->fd <= STDERR_FILENO) {
+    return false;
+  }
+  return setCloseOnExec(this->fd, close);
 }
 
 // #########################
@@ -295,239 +298,238 @@ bool UnixFdObject::closeOnExec(bool close) const {
 // #########################
 
 int RegexObject::match(DSState &state, StringRef ref, ArrayObject *out) {
-    int matchCount = pcre2_match(this->re.code,
-                                 (PCRE2_SPTR)ref.data(), ref.size(),
-                                 0, 0,
+  int matchCount =
+      pcre2_match(this->re.code, (PCRE2_SPTR)ref.data(), ref.size(), 0, 0, this->re.data, nullptr);
+  assert(matchCount != 0);
+  if (matchCount < 0 && matchCount != PCRE2_ERROR_NOMATCH) {
+    PCRE2_UCHAR buffer[256];
+    pcre2_get_error_message(matchCount, buffer, sizeof(buffer));
+    std::string msg = reinterpret_cast<const char *>(buffer);
+    raiseError(state, TYPE::InvalidOperationError, std::move(msg));
+  }
+  if (out && matchCount > 0) {
+    out->refValues().reserve(matchCount);
+    PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(re.data);
+    for (int i = 0; i < matchCount; i++) {
+      size_t begin = ovec[i * 2];
+      size_t end = ovec[i * 2 + 1];
+      bool hasGroup = begin != PCRE2_UNSET && end != PCRE2_UNSET;
+      auto v = hasGroup ? DSValue::createStr(ref.slice(begin, end)) : DSValue::createInvalid();
+      out->refValues().push_back(std::move(v));
+    }
+  }
+  return matchCount;
+}
+
+bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
+  auto ret = DSValue::createStr();
+  unsigned int count = 0;
+  for (auto target = value.asStrRef(); !target.empty(); count++) {
+    int matchCount = pcre2_match(this->re.code, (PCRE2_SPTR)target.data(), target.size(), 0, 0,
                                  this->re.data, nullptr);
-    assert(matchCount != 0);
-    if(matchCount < 0 && matchCount != PCRE2_ERROR_NOMATCH) {
+    if (matchCount < 0) {
+      if (matchCount != PCRE2_ERROR_NOMATCH) {
         PCRE2_UCHAR buffer[256];
         pcre2_get_error_message(matchCount, buffer, sizeof(buffer));
         std::string msg = reinterpret_cast<const char *>(buffer);
         raiseError(state, TYPE::InvalidOperationError, std::move(msg));
+        return false;
+      }
+
+      if (count == 0) { // do nothing
+        return true;
+      } else if (!ret.appendAsStr(state, target)) {
+        return false;
+      }
+      break;
     }
-    if(out && matchCount > 0) {
-        out->refValues().reserve(matchCount);
-        PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(re.data);
-        for(int i = 0; i < matchCount; i++) {
-            size_t begin = ovec[i * 2];
-            size_t end = ovec[i * 2 + 1];
-            bool hasGroup = begin != PCRE2_UNSET && end != PCRE2_UNSET;
-            auto v = hasGroup ? DSValue::createStr(ref.slice(begin, end)) : DSValue::createInvalid();
-            out->refValues().push_back(std::move(v));
-        }
+
+    PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(re.data);
+    assert(ovec[0] != PCRE2_UNSET && ovec[1] != PCRE2_UNSET);
+    auto begin = ovec[0];
+    auto end = ovec[1];
+
+    if (!ret.appendAsStr(state, target.slice(0, begin))) {
+      return false;
     }
-    return matchCount;
+    if (!ret.appendAsStr(state, repl)) {
+      return false;
+    }
+    target = target.slice(end, target.size());
+  }
+  value = std::move(ret);
+  return true;
 }
-
-bool RegexObject::replace(DSState &state, DSValue &value, StringRef repl) {
-    auto ret = DSValue::createStr();
-    unsigned int count = 0;
-    for(auto target = value.asStrRef(); !target.empty(); count++) {
-        int matchCount = pcre2_match(this->re.code,
-                                     (PCRE2_SPTR)target.data(), target.size(),
-                                     0, 0,
-                                     this->re.data, nullptr);
-        if(matchCount < 0) {
-            if(matchCount != PCRE2_ERROR_NOMATCH) {
-                PCRE2_UCHAR buffer[256];
-                pcre2_get_error_message(matchCount, buffer, sizeof(buffer));
-                std::string msg = reinterpret_cast<const char *>(buffer);
-                raiseError(state, TYPE::InvalidOperationError, std::move(msg));
-                return false;
-            }
-
-            if(count == 0) {    // do nothing
-                return true;
-            } else if(!ret.appendAsStr(state, target)) {
-                return false;
-            }
-            break;
-        }
-
-        PCRE2_SIZE *ovec = pcre2_get_ovector_pointer(re.data);
-        assert(ovec[0] != PCRE2_UNSET && ovec[1] != PCRE2_UNSET);
-        auto begin = ovec[0];
-        auto end = ovec[1];
-
-        if(!ret.appendAsStr(state, target.slice(0, begin))) {
-            return false;
-        }
-        if(!ret.appendAsStr(state, repl)) {
-            return false;
-        }
-        target = target.slice(end, target.size());
-    }
-    value = std::move(ret);
-    return true;
-}
-
 
 // ##########################
 // ##     Array_Object     ##
 // ##########################
 
 static bool checkInvalid(DSState &st, DSValue &v) {
-    if(v.isInvalid()) {
-        raiseError(st, TYPE::UnwrappingError, "invalid value");
-        return false;
-    }
-    return true;
+  if (v.isInvalid()) {
+    raiseError(st, TYPE::UnwrappingError, "invalid value");
+    return false;
+  }
+  return true;
 }
 
-#define TRY(E) \
-({ auto v = E; if(state.hasError()) { return false; } std::forward<decltype(v)>(v); })
-
+#define TRY(E)                                                                                     \
+  ({                                                                                               \
+    auto v = E;                                                                                    \
+    if (state.hasError()) {                                                                        \
+      return false;                                                                                \
+    }                                                                                              \
+    std::forward<decltype(v)>(v);                                                                  \
+  })
 
 std::string ArrayObject::toString() const {
-    std::string str = "[";
-    unsigned int size = this->values.size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            str += ", ";
-        }
-        str += this->values[i].toString();
+  std::string str = "[";
+  unsigned int size = this->values.size();
+  for (unsigned int i = 0; i < size; i++) {
+    if (i > 0) {
+      str += ", ";
     }
-    str += "]";
-    return str;
+    str += this->values[i].toString();
+  }
+  str += "]";
+  return str;
 }
 
 static DSValue callOP(DSState &state, const DSValue &value, const char *op) {
-    DSValue ret = value;
-    if(!checkInvalid(state, ret)) {
-        return DSValue();
-    }
-    auto &type = state.typePool.get(ret.getTypeID());
-    if(!type.is(TYPE::String)) {
-        auto *handle = state.typePool.lookupMethod(type, op);
-        assert(handle != nullptr);
-        ret = callMethod(state, *handle, std::move(ret), makeArgs());
-    }
-    return ret;
+  DSValue ret = value;
+  if (!checkInvalid(state, ret)) {
+    return DSValue();
+  }
+  auto &type = state.typePool.get(ret.getTypeID());
+  if (!type.is(TYPE::String)) {
+    auto *handle = state.typePool.lookupMethod(type, op);
+    assert(handle != nullptr);
+    ret = callMethod(state, *handle, std::move(ret), makeArgs());
+  }
+  return ret;
 }
 
 bool ArrayObject::opStr(DSState &state) const {
-    state.toStrBuf += "[";
-    unsigned int size = this->values.size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            state.toStrBuf += ", ";
-        }
-
-        auto ret = TRY(callOP(state, this->values[i], OP_STR));
-        if(!ret.isInvalid()) {
-            auto ref = ret.asStrRef();
-            state.toStrBuf += ref;
-        }
+  state.toStrBuf += "[";
+  unsigned int size = this->values.size();
+  for (unsigned int i = 0; i < size; i++) {
+    if (i > 0) {
+      state.toStrBuf += ", ";
     }
-    state.toStrBuf += "]";
-    return true;
+
+    auto ret = TRY(callOP(state, this->values[i], OP_STR));
+    if (!ret.isInvalid()) {
+      auto ref = ret.asStrRef();
+      state.toStrBuf += ref;
+    }
+  }
+  state.toStrBuf += "]";
+  return true;
 }
 
 bool ArrayObject::opInterp(DSState &state) const {
-    unsigned int size = this->values.size();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            state.toStrBuf += " ";
-        }
-
-        auto ret = TRY(callOP(state, this->values[i], OP_INTERP));
-        if(!ret.isInvalid()) {
-            auto ref = ret.asStrRef();
-            state.toStrBuf += ref;
-        }
+  unsigned int size = this->values.size();
+  for (unsigned int i = 0; i < size; i++) {
+    if (i > 0) {
+      state.toStrBuf += " ";
     }
-    return true;
+
+    auto ret = TRY(callOP(state, this->values[i], OP_INTERP));
+    if (!ret.isInvalid()) {
+      auto ref = ret.asStrRef();
+      state.toStrBuf += ref;
+    }
+  }
+  return true;
 }
 
 static const MethodHandle *lookupCmdArg(const DSType &recvType, TypePool &pool) {
-    auto *handle = pool.lookupMethod(recvType, OP_CMD_ARG);
-    if(handle == nullptr) {
-        handle = pool.lookupMethod(recvType, OP_STR);
-    }
-    return handle;
+  auto *handle = pool.lookupMethod(recvType, OP_CMD_ARG);
+  if (handle == nullptr) {
+    handle = pool.lookupMethod(recvType, OP_STR);
+  }
+  return handle;
 }
 
 static bool appendAsCmdArg(std::vector<DSValue> &result, DSState &state, const DSValue &value) {
-    DSValue ret = value;
-    if(!checkInvalid(state, ret)) {
-        return false;
-    }
-    if(!ret.hasType(TYPE::String) && !ret.hasType(TYPE::StringArray)) {
-        auto &recv = state.typePool.get(ret.getTypeID());
-        auto *handle = lookupCmdArg(recv, state.typePool);
-        assert(handle != nullptr);
-        ret = TRY(callMethod(state, *handle, std::move(ret), makeArgs()));
-    }
+  DSValue ret = value;
+  if (!checkInvalid(state, ret)) {
+    return false;
+  }
+  if (!ret.hasType(TYPE::String) && !ret.hasType(TYPE::StringArray)) {
+    auto &recv = state.typePool.get(ret.getTypeID());
+    auto *handle = lookupCmdArg(recv, state.typePool);
+    assert(handle != nullptr);
+    ret = TRY(callMethod(state, *handle, std::move(ret), makeArgs()));
+  }
 
-    if(ret.hasType(TYPE::String)) {
-        result.push_back(std::move(ret));
-    } else {
-        assert(ret.hasType(TYPE::StringArray));
-        auto &tempArray = typeAs<ArrayObject>(ret);
-        for(auto &tempValue : tempArray.getValues()) {
-            result.push_back(tempValue);
-        }
+  if (ret.hasType(TYPE::String)) {
+    result.push_back(std::move(ret));
+  } else {
+    assert(ret.hasType(TYPE::StringArray));
+    auto &tempArray = typeAs<ArrayObject>(ret);
+    for (auto &tempValue : tempArray.getValues()) {
+      result.push_back(tempValue);
     }
-    return true;
+  }
+  return true;
 }
 
 DSValue ArrayObject::opCmdArg(DSState &state) const {
-    auto result = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
-    for(auto &e : this->values) {
-        if(!appendAsCmdArg(typeAs<ArrayObject>(result).values, state, e)) {
-            return DSValue();
-        }
+  auto result = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
+  for (auto &e : this->values) {
+    if (!appendAsCmdArg(typeAs<ArrayObject>(result).values, state, e)) {
+      return DSValue();
     }
-    return result;
+  }
+  return result;
 }
-
 
 // ########################
 // ##     Map_Object     ##
 // ########################
 
 std::string MapObject::toString() const {
-    std::string str = "[";
-    unsigned int count = 0;
-    for(auto &e : this->valueMap) {
-        if(count++ > 0) {
-            str += ", ";
-        }
-        str += e.first.toString();
-        str += " : ";
-        str += e.second.toString();
+  std::string str = "[";
+  unsigned int count = 0;
+  for (auto &e : this->valueMap) {
+    if (count++ > 0) {
+      str += ", ";
     }
-    str += "]";
-    return str;
+    str += e.first.toString();
+    str += " : ";
+    str += e.second.toString();
+  }
+  str += "]";
+  return str;
 }
 
 bool MapObject::opStr(DSState &state) const {
-    state.toStrBuf += "[";
-    unsigned int count = 0;
-    for(auto &e : this->valueMap) {
-        if(count++ > 0) {
-            state.toStrBuf += ", ";
-        }
-
-        // key
-        auto ret = TRY(callOP(state, e.first, OP_STR));
-        if(!ret.isInvalid()) {
-            auto ref = ret.asStrRef();
-            state.toStrBuf += ref;
-        }
-
-        state.toStrBuf += " : ";
-
-        // value
-        ret = TRY(callOP(state, e.second, OP_STR));
-        if(!ret.isInvalid()) {
-            auto ref = ret.asStrRef();
-            state.toStrBuf += ref;
-        }
+  state.toStrBuf += "[";
+  unsigned int count = 0;
+  for (auto &e : this->valueMap) {
+    if (count++ > 0) {
+      state.toStrBuf += ", ";
     }
-    state.toStrBuf += "]";
-    return true;
+
+    // key
+    auto ret = TRY(callOP(state, e.first, OP_STR));
+    if (!ret.isInvalid()) {
+      auto ref = ret.asStrRef();
+      state.toStrBuf += ref;
+    }
+
+    state.toStrBuf += " : ";
+
+    // value
+    ret = TRY(callOP(state, e.second, OP_STR));
+    if (!ret.isInvalid()) {
+      auto ref = ret.asStrRef();
+      state.toStrBuf += ref;
+    }
+  }
+  state.toStrBuf += "]";
+  return true;
 }
 
 // ###########################
@@ -535,16 +537,16 @@ bool MapObject::opStr(DSState &state) const {
 // ###########################
 
 DSValue MapIterObject::next(TypePool &pool) {
-    std::vector<DSType *> types(2);
-    types[0] = &pool.get(this->iter->first.getTypeID());
-    types[1] = &pool.get(this->iter->second.getTypeID());
+  std::vector<DSType *> types(2);
+  types[0] = &pool.get(this->iter->first.getTypeID());
+  types[1] = &pool.get(this->iter->second.getTypeID());
 
-    auto entry = DSValue::create<BaseObject>(*pool.createTupleType(std::move(types)).take());
-    typeAs<BaseObject>(entry)[0] = this->iter->first;
-    typeAs<BaseObject>(entry)[1] = this->iter->second;
-    ++this->iter;
+  auto entry = DSValue::create<BaseObject>(*pool.createTupleType(std::move(types)).take());
+  typeAs<BaseObject>(entry)[0] = this->iter->first;
+  typeAs<BaseObject>(entry)[1] = this->iter->second;
+  ++this->iter;
 
-    return entry;
+  return entry;
 }
 
 // ########################
@@ -552,63 +554,63 @@ DSValue MapIterObject::next(TypePool &pool) {
 // ########################
 
 BaseObject::~BaseObject() {
-    for(unsigned int i = 0; i < this->fieldSize; i++) {
-        (*this)[i].~DSValue();
-    }
+  for (unsigned int i = 0; i < this->fieldSize; i++) {
+    (*this)[i].~DSValue();
+  }
 }
 
 bool BaseObject::opStrAsTuple(DSState &state) const {
-    assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
+  assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
 
-    state.toStrBuf += "(";
-    unsigned int size = this->getFieldSize();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            state.toStrBuf += ", ";
-        }
+  state.toStrBuf += "(";
+  unsigned int size = this->getFieldSize();
+  for (unsigned int i = 0; i < size; i++) {
+    if (i > 0) {
+      state.toStrBuf += ", ";
+    }
 
-        auto ret = TRY(callOP(state, (*this)[i], OP_STR));
-        if(!ret.isInvalid()) {
-            auto ref = ret.asStrRef();
-            state.toStrBuf += ref;
-        }
+    auto ret = TRY(callOP(state, (*this)[i], OP_STR));
+    if (!ret.isInvalid()) {
+      auto ref = ret.asStrRef();
+      state.toStrBuf += ref;
     }
-    if(size == 1) {
-        state.toStrBuf += ",";
-    }
-    state.toStrBuf += ")";
-    return true;
+  }
+  if (size == 1) {
+    state.toStrBuf += ",";
+  }
+  state.toStrBuf += ")";
+  return true;
 }
 
 bool BaseObject::opInterpAsTuple(DSState &state) const {
-    assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
+  assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
 
-    unsigned int size = this->getFieldSize();
-    for(unsigned int i = 0; i < size; i++) {
-        if(i > 0) {
-            state.toStrBuf += " ";
-        }
-
-        auto ret = TRY(callOP(state, (*this)[i], OP_INTERP));
-        if(!ret.isInvalid()) {
-            auto ref = ret.asStrRef();
-            state.toStrBuf += ref;
-        }
+  unsigned int size = this->getFieldSize();
+  for (unsigned int i = 0; i < size; i++) {
+    if (i > 0) {
+      state.toStrBuf += " ";
     }
-    return true;
+
+    auto ret = TRY(callOP(state, (*this)[i], OP_INTERP));
+    if (!ret.isInvalid()) {
+      auto ref = ret.asStrRef();
+      state.toStrBuf += ref;
+    }
+  }
+  return true;
 }
 
 DSValue BaseObject::opCmdArgAsTuple(DSState &state) const {
-    assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
+  assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
 
-    auto result = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
-    unsigned int size = this->getFieldSize();
-    for(unsigned int i = 0; i < size; i++) {
-        if(!appendAsCmdArg(typeAs<ArrayObject>(result).refValues(), state, (*this)[i])) {
-            return DSValue();
-        }
+  auto result = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
+  unsigned int size = this->getFieldSize();
+  for (unsigned int i = 0; i < size; i++) {
+    if (!appendAsCmdArg(typeAs<ArrayObject>(result).refValues(), state, (*this)[i])) {
+      return DSValue();
     }
-    return result;
+  }
+  return result;
 }
 
 // ##########################
@@ -616,47 +618,47 @@ DSValue BaseObject::opCmdArgAsTuple(DSState &state) const {
 // ##########################
 
 bool ErrorObject::opStr(DSState &state) const {
-    state.toStrBuf += this->createHeader(state);
-    return true;
+  state.toStrBuf += this->createHeader(state);
+  return true;
 }
 
 void ErrorObject::printStackTrace(DSState &ctx) {
-    // print header
-    fprintf(stderr, "%s\n", this->createHeader(ctx).c_str());
+  // print header
+  fprintf(stderr, "%s\n", this->createHeader(ctx).c_str());
 
-    // print stack trace
-    for(auto &s : this->stackTrace) {
-        fprintf(stderr, "    from %s:%d '%s()'\n",
-                s.getSourceName().c_str(), s.getLineNum(), s.getCallerName().c_str());
-    }
+  // print stack trace
+  for (auto &s : this->stackTrace) {
+    fprintf(stderr, "    from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
+            s.getCallerName().c_str());
+  }
 }
 
 DSValue ErrorObject::newError(const DSState &state, const DSType &type, DSValue &&message) {
-    auto traces = state.getCallStack().createStackTrace();
-    auto name = DSValue::createStr(type.getName());
-    return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), std::move(traces));
+  auto traces = state.getCallStack().createStackTrace();
+  auto name = DSValue::createStr(type.getName());
+  return DSValue::create<ErrorObject>(type, std::move(message), std::move(name), std::move(traces));
 }
 
 std::string ErrorObject::createHeader(const DSState &state) const {
-    auto ref = this->message.asStrRef();
-    std::string str = state.typePool.get(this->getTypeID()).getNameRef().toString();
-    str += ": ";
-    str += ref;
-    return str;
+  auto ref = this->message.asStrRef();
+  std::string str = state.typePool.get(this->getTypeID()).getNameRef().toString();
+  str += ": ";
+  str += ref;
+  return str;
 }
 
 // ##########################
 // ##     CompiledCode     ##
 // ##########################
 
-unsigned int CompiledCode::getLineNum(unsigned int index) const {   //FIXME: binary search
-    unsigned int i = 0;
-    for(; this->lineNumEntries[i]; i++) {
-        if(index <= this->lineNumEntries[i].address) {
-            break;
-        }
+unsigned int CompiledCode::getLineNum(unsigned int index) const { // FIXME: binary search
+  unsigned int i = 0;
+  for (; this->lineNumEntries[i]; i++) {
+    if (index <= this->lineNumEntries[i].address) {
+      break;
     }
-    return this->lineNumEntries[i > 0 ? i - 1 : 0].lineNum;
+  }
+  return this->lineNumEntries[i > 0 ? i - 1 : 0].lineNum;
 }
 
 // ########################
@@ -664,23 +666,23 @@ unsigned int CompiledCode::getLineNum(unsigned int index) const {   //FIXME: bin
 // ########################
 
 std::string FuncObject::toString() const {
-    std::string str;
-    switch(this->code.getKind()) {
-    case CodeKind::TOPLEVEL:
-        str += "module(";
-        break;
-    case CodeKind::FUNCTION:
-        str += "function(";
-        break;
-    case CodeKind::USER_DEFINED_CMD:
-        str += "command(";
-        break;
-    default:
-        break;
-    }
-    str += this->code.getName();
-    str += ")";
-    return str;
+  std::string str;
+  switch (this->code.getKind()) {
+  case CodeKind::TOPLEVEL:
+    str += "module(";
+    break;
+  case CodeKind::FUNCTION:
+    str += "function(";
+    break;
+  case CodeKind::USER_DEFINED_CMD:
+    str += "command(";
+    break;
+  default:
+    break;
+  }
+  str += this->code.getName();
+  str += ")";
+  return str;
 }
 
 // ##########################
@@ -688,47 +690,46 @@ std::string FuncObject::toString() const {
 // ##########################
 
 EnvCtxObject::~EnvCtxObject() {
-    for(auto &e : this->envs) {
-        auto &name = e.first;
-        auto &value = e.second;
-        if(name.hasType(TYPE::Int)) {
-            auto k = name.asInt();
-            assert(k > -1);
-            auto index = static_cast<unsigned int>(k);
-            this->state.setGlobal(index, value);
-        } else {
-            assert(name.hasStrRef());
-            const char *envName = name.asCStr();
-            if(value.isInvalid()) {  // unset
-                unsetenv(envName);
-            } else {
-                setenv(envName, value.asCStr(), 1);
-            }
-        }
+  for (auto &e : this->envs) {
+    auto &name = e.first;
+    auto &value = e.second;
+    if (name.hasType(TYPE::Int)) {
+      auto k = name.asInt();
+      assert(k > -1);
+      auto index = static_cast<unsigned int>(k);
+      this->state.setGlobal(index, value);
+    } else {
+      assert(name.hasStrRef());
+      const char *envName = name.asCStr();
+      if (value.isInvalid()) { // unset
+        unsetenv(envName);
+      } else {
+        setenv(envName, value.asCStr(), 1);
+      }
     }
+  }
 }
 
 void EnvCtxObject::setAndSaveEnv(DSValue &&name, DSValue &&value) {
-    assert(!name.asStrRef().hasNullChar());
+  assert(!name.asStrRef().hasNullChar());
 
-    const char *envName = name.asCStr();
-    const char *oldEnv = getenv(envName);
+  const char *envName = name.asCStr();
+  const char *oldEnv = getenv(envName);
 
-    // save old env
-    this->envs.emplace_back(name, oldEnv ? DSValue::createStr(oldEnv) : DSValue::createInvalid());
+  // save old env
+  this->envs.emplace_back(name, oldEnv ? DSValue::createStr(oldEnv) : DSValue::createInvalid());
 
-    // overwrite env
-    setenv(envName, value.asCStr(), 1);
+  // overwrite env
+  setenv(envName, value.asCStr(), 1);
 
-    if(name.asStrRef() == VAR_IFS) {    // if env name is IFS, also save and set IFS global variable
-        // save old IFS
-        auto ifsIndex = DSValue::createInt(toIndex(BuiltinVarOffset::IFS));
-        this->envs.emplace_back(ifsIndex, this->state.getGlobal(BuiltinVarOffset::IFS));
+  if (name.asStrRef() == VAR_IFS) { // if env name is IFS, also save and set IFS global variable
+    // save old IFS
+    auto ifsIndex = DSValue::createInt(toIndex(BuiltinVarOffset::IFS));
+    this->envs.emplace_back(ifsIndex, this->state.getGlobal(BuiltinVarOffset::IFS));
 
-        // overwrite IFS
-        this->state.setGlobal(BuiltinVarOffset::IFS, std::move(value));
-    }
+    // overwrite IFS
+    this->state.setGlobal(BuiltinVarOffset::IFS, std::move(value));
+  }
 }
-
 
 } // namespace ydsh

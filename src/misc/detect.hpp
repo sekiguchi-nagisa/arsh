@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 #ifndef MISC_LIB_DETECT_HPP
 #define MISC_LIB_DETECT_HPP
 
@@ -29,42 +28,42 @@ using enable_when = std::enable_if_t<B, std::nullptr_t>;
 
 namespace __detail {
 
-template <typename ...T>
+template <typename... T>
 struct VoidHolder {
-    using type = void;
+  using type = void;
 };
 
 } // namespace __detail
 
-template <typename ...T>
+template <typename... T>
 using void_t = typename __detail::VoidHolder<T...>::type;
 
 namespace __detail {
 
 struct NotDetected {
-    NotDetected() = delete;
-    ~NotDetected() = delete;
-    NON_COPYABLE(NotDetected);
+  NotDetected() = delete;
+  ~NotDetected() = delete;
+  NON_COPYABLE(NotDetected);
 };
 
-template <typename, template<typename ...> class, typename ...>
+template <typename, template <typename...> class, typename...>
 struct detector : std::false_type {
-    using type = NotDetected;
+  using type = NotDetected;
 };
 
-template <template<typename ...> class OP, typename ...Arg>
+template <template <typename...> class OP, typename... Arg>
 struct detector<void_t<OP<Arg...>>, OP, Arg...> : std::true_type {
-    using type = OP<Arg...>;
+  using type = OP<Arg...>;
 };
 
 } // namespace __detail
 
-template <template<typename ...> class OP, typename ...Arg>
+template <template <typename...> class OP, typename... Arg>
 constexpr auto is_detected_v = __detail::detector<void, OP, Arg...>::value;
 
-template <template<typename ...> class OP, typename ...Arg>
+template <template <typename...> class OP, typename... Arg>
 using detected_t = typename __detail::detector<void, OP, Arg...>::type;
 
 END_MISC_LIB_NAMESPACE_DECL
 
-#endif //MISC_LIB_DETECT_HPP
+#endif // MISC_LIB_DETECT_HPP

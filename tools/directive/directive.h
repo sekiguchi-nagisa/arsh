@@ -17,11 +17,11 @@
 #ifndef YDSH_TOOLS_DIRECTIVE_H
 #define YDSH_TOOLS_DIRECTIVE_H
 
-#include <vector>
+#include <cstring>
 #include <iostream>
 #include <memory>
-#include <cstring>
 #include <unordered_map>
+#include <vector>
 
 #include <ydsh/ydsh.h>
 
@@ -29,164 +29,115 @@ namespace ydsh::directive {
 
 class Directive {
 private:
-    /**
-     * kind of status.(DS_ERROR_KIND_*)
-     *
-     * if -1, invalid DS_ERROR_KIND
-     */
-    int result{DS_ERROR_KIND_SUCCESS};
+  /**
+   * kind of status.(DS_ERROR_KIND_*)
+   *
+   * if -1, invalid DS_ERROR_KIND
+   */
+  int result{DS_ERROR_KIND_SUCCESS};
 
-    std::vector<std::string> params;
+  std::vector<std::string> params;
 
-    /**
-     * for command exit status
-     */
-    int status{0};
+  /**
+   * for command exit status
+   */
+  int status{0};
 
-    unsigned int lineNum{0};
+  unsigned int lineNum{0};
 
-    unsigned int chars{0};
+  unsigned int chars{0};
 
-    /**
-     * represent parse or type error name or raised exception type name.
-     * default is empty string
-     */
-    std::string errorKind;
+  /**
+   * represent parse or type error name or raised exception type name.
+   * default is empty string
+   */
+  std::string errorKind;
 
-    /**
-     * indicate stdin value. the size must be under PIPE_BUF.
-     * if not specified stdin value, is empty string
-     */
-    std::string in;
+  /**
+   * indicate stdin value. the size must be under PIPE_BUF.
+   * if not specified stdin value, is empty string
+   */
+  std::string in;
 
-    /**
-     * indicate stdout value
-     */
-    char *out{nullptr};
+  /**
+   * indicate stdout value
+   */
+  char *out{nullptr};
 
-    /**
-     * indicate stderr value
-     */
-    char *err{nullptr};
+  /**
+   * indicate stderr value
+   */
+  char *err{nullptr};
 
-    /**
-     * indicate error file name.
-     * if empty, file name is not specified.
-     */
-    std::string fileName;
+  /**
+   * indicate error file name.
+   * if empty, file name is not specified.
+   */
+  std::string fileName;
 
-    std::unordered_map<std::string, std::string> envs;
+  std::unordered_map<std::string, std::string> envs;
 
-    /**
-     * if true, suppress execution.
-     */
-    bool ignoredPlatform{false};
+  /**
+   * if true, suppress execution.
+   */
+  bool ignoredPlatform{false};
 
 public:
-    ~Directive();
+  ~Directive();
 
-    int getKind() const {
-        return this->result;
-    }
+  int getKind() const { return this->result; }
 
-    void setKind(int v) {
-        this->result = v;
-    }
+  void setKind(int v) { this->result = v; }
 
-    void appendParam(const std::string &param) {
-        this->params.push_back(param);
-    }
+  void appendParam(const std::string &param) { this->params.push_back(param); }
 
-    const std::vector<std::string> &getParams() const {
-        return this->params;
-    }
+  const std::vector<std::string> &getParams() const { return this->params; }
 
-    void setStatus(int s) {
-        this->status = s;
-    }
+  void setStatus(int s) { this->status = s; }
 
-    int getStatus() const {
-        return this->status;
-    }
+  int getStatus() const { return this->status; }
 
-    void setLineNum(unsigned int v) {
-        this->lineNum = v;
-    }
+  void setLineNum(unsigned int v) { this->lineNum = v; }
 
-    unsigned int getLineNum() const {
-        return this->lineNum;
-    }
+  unsigned int getLineNum() const { return this->lineNum; }
 
-    void setChars(unsigned int v) {
-        this->chars = v;
-    }
+  void setChars(unsigned int v) { this->chars = v; }
 
-    unsigned int getChars() const {
-        return this->chars;
-    }
+  unsigned int getChars() const { return this->chars; }
 
-    void setErrorKind(const std::string &kind) {
-        this->errorKind = kind;
-    }
+  void setErrorKind(const std::string &kind) { this->errorKind = kind; }
 
-    const std::string &getErrorKind() const {
-        return this->errorKind;
-    }
+  const std::string &getErrorKind() const { return this->errorKind; }
 
-    void setIn(const std::string &str) {
-        this->in = str;
-    }
+  void setIn(const std::string &str) { this->in = str; }
 
-    const std::string &getIn() const {
-        return this->in;
-    }
+  const std::string &getIn() const { return this->in; }
 
-    void setOut(const std::string &str) {
-        this->out = strdup(str.c_str());
-    }
+  void setOut(const std::string &str) { this->out = strdup(str.c_str()); }
 
-    const char *getOut() const {
-        return this->out;
-    }
+  const char *getOut() const { return this->out; }
 
-    void setErr(const std::string &str) {
-        this->err = strdup(str.c_str());
-    }
+  void setErr(const std::string &str) { this->err = strdup(str.c_str()); }
 
-    const char *getErr() const {
-        return this->err;
-    }
+  const char *getErr() const { return this->err; }
 
-    void setFileName(const char *name) {
-        this->fileName = name;
-    }
+  void setFileName(const char *name) { this->fileName = name; }
 
-    const std::string &getFileName() const {
-        return this->fileName;
-    }
+  const std::string &getFileName() const { return this->fileName; }
 
-    void addEnv(const std::string &name, const std::string &value) {
-        this->envs[name] = value;
-    }
+  void addEnv(const std::string &name, const std::string &value) { this->envs[name] = value; }
 
-    const std::unordered_map<std::string, std::string> &getEnvs() const {
-        return this->envs;
-    }
+  const std::unordered_map<std::string, std::string> &getEnvs() const { return this->envs; }
 
-    void setIgnoredPlatform(bool ignore) {
-        this->ignoredPlatform = ignore;
-    }
+  void setIgnoredPlatform(bool ignore) { this->ignoredPlatform = ignore; }
 
-    bool isIgnoredPlatform() const {
-        return this->ignoredPlatform;
-    }
+  bool isIgnoredPlatform() const { return this->ignoredPlatform; }
 
-    static bool init(const char *fileName, Directive &d);
+  static bool init(const char *fileName, Directive &d);
 
-    static bool init(const char *sourceName, const char *src, Directive &d);
+  static bool init(const char *sourceName, const char *src, Directive &d);
 };
 
 } // namespace ydsh::directive
 
-
-#endif //YDSH_TOOLS_DIRECTIVE_H
+#endif // YDSH_TOOLS_DIRECTIVE_H

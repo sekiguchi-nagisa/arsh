@@ -5,7 +5,7 @@
 set(TEST_NAME precedence_test)
 
 add_executable(${TEST_NAME}
-    precedence_test.cpp
-)
+        precedence_test.cpp
+        )
 target_link_libraries(${TEST_NAME} gtest gtest_main ${YDSH_STATIC})
 add_test(${TEST_NAME} ${TEST_NAME})

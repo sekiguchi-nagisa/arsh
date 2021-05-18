@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-#include "misc/fatal.h"
-#include "misc/num_util.hpp"
-#include "misc/hash.hpp"
 #include "lexer.h"
+#include "misc/fatal.h"
+#include "misc/hash.hpp"
+#include "misc/num_util.hpp"
 
 namespace ydsh {
 
 const char *toString(TokenKind kind) {
-    const char *table[] = {
+  const char *table[] = {
 #define GEN_NAME(ENUM, STR) STR,
-            EACH_TOKEN(GEN_NAME)
+      EACH_TOKEN(GEN_NAME)
 #undef GEN_NAME
-    };
-    return table[static_cast<unsigned int>(kind)];
+  };
+  return table[static_cast<unsigned int>(kind)];
 }
 
 OperatorInfo getOpInfo(TokenKind kind) {
@@ -35,13 +35,15 @@ OperatorInfo getOpInfo(TokenKind kind) {
 #define PREFIX OperatorAttr::PREFIX
 #define RASSOC OperatorAttr::RASSOC
 
-    switch(kind) {
-#define GEN_CASE(T, P, A) case TokenKind::T: return {P, A};
+  switch (kind) {
+#define GEN_CASE(T, P, A)                                                                          \
+  case TokenKind::T:                                                                               \
+    return {P, A};
     EACH_OPERATOR(GEN_CASE)
 #undef GEN_CASE
-    default:
-        return {};
-    }
+  default:
+    return {};
+  }
 
 #undef INFIX
 #undef PREFIX
@@ -49,43 +51,45 @@ OperatorInfo getOpInfo(TokenKind kind) {
 }
 
 bool isAssignOp(TokenKind kind) {
-    switch(kind) {
-#define GEN_OP(K, P, A) case TokenKind::K: return true;
+  switch (kind) {
+#define GEN_OP(K, P, A)                                                                            \
+  case TokenKind::K:                                                                               \
+    return true;
     EACH_ASSIGN_OPERATOR(GEN_OP)
 #undef GEN_OP
-    default:
-        return false;
-    }
+  default:
+    return false;
+  }
 }
 
 std::string LexerMode::toString() const {
-    const char *mode = "(";
-    switch(this->cond()) {
-    case yycSTMT:
-        mode = "STMT(";
-        break;
-    case yycEXPR:
-        mode = "EXPR(";
-        break;
-    case yycNAME:
-        mode = "NAME(";
-        break;
-    case yycTYPE:
-        mode = "TYPE(";
-        break;
-    case yycCMD:
-        mode = "CMD(";
-        break;
-    case yycDSTRING:
-        mode = "DSTRING(";
-        break;
-    }
-    std::string value = mode;
-    if(this->skipNL()) {
-        value += "skipNL";
-    }
-    value += ")";
-    return value;
+  const char *mode = "(";
+  switch (this->cond()) {
+  case yycSTMT:
+    mode = "STMT(";
+    break;
+  case yycEXPR:
+    mode = "EXPR(";
+    break;
+  case yycNAME:
+    mode = "NAME(";
+    break;
+  case yycTYPE:
+    mode = "TYPE(";
+    break;
+  case yycCMD:
+    mode = "CMD(";
+    break;
+  case yycDSTRING:
+    mode = "DSTRING(";
+    break;
+  }
+  std::string value = mode;
+  if (this->skipNL()) {
+    value += "skipNL";
+  }
+  value += ")";
+  return value;
 }
 
 // ###################
@@ -93,250 +97,250 @@ std::string LexerMode::toString() const {
 // ###################
 
 SrcPos Lexer::getSrcPos(Token token) const {
-    token = this->shiftEOS(token);
-    unsigned int lineNum = this->getLineNumByPos(token.pos);
-    Token line = this->getLineToken(token);
-    Token marker {
-        .pos = line.pos,
-        .size = token.pos - line.pos,
-    };
-    unsigned int chars = marker.size == 0 ? 1 : this->formatLineMarker(line, marker).size() + 1;
+  token = this->shiftEOS(token);
+  unsigned int lineNum = this->getLineNumByPos(token.pos);
+  Token line = this->getLineToken(token);
+  Token marker{
+      .pos = line.pos,
+      .size = token.pos - line.pos,
+  };
+  unsigned int chars = marker.size == 0 ? 1 : this->formatLineMarker(line, marker).size() + 1;
 
-    return SrcPos {
-        .lineNum = lineNum,
-        .chars = chars,
-    };
+  return SrcPos{
+      .lineNum = lineNum,
+      .chars = chars,
+  };
 }
 
 bool Lexer::singleToString(Token token, std::string &out) const {
-    if(this->startsWith(token, '$')) {
-        return this->escapedSingleToString(token, out);
-    }
+  if (this->startsWith(token, '$')) {
+    return this->escapedSingleToString(token, out);
+  }
 
-    Token trimed = token;
-    trimed.pos++;
-    trimed.size -= 2;
+  Token trimed = token;
+  trimed.pos++;
+  trimed.size -= 2;
 
-    out = this->toTokenText(trimed);
-    return true;
+  out = this->toTokenText(trimed);
+  return true;
 }
 
 bool Lexer::escapedSingleToString(Token token, std::string &out) const {
-    assert(this->withinRange(token));
+  assert(this->withinRange(token));
 
-    out.clear();
-    out.reserve(token.size - 3);
+  out.clear();
+  out.reserve(token.size - 3);
 
-    StringRef ref = this->toStrRef(token);
-    ref.removePrefix(2);    // prefix "$'"
-    ref.removeSuffix(1);    // suffix "'"
+  StringRef ref = this->toStrRef(token);
+  ref.removePrefix(2); // prefix "$'"
+  ref.removeSuffix(1); // suffix "'"
 
-    const char *end = ref.end();
-    for(const char *iter = ref.begin(); iter != end;) {
-        if(*iter == '\\') {
-            int code = parseEscapeSeq(iter, end, false);
-            if(code != -1) {
-                char buf[4];
-                unsigned int size = UnicodeUtil::codePointToUtf8(code, buf);
-                if(!size) {
-                    return false;   // unicode out of range
-                }
-                out.append(buf, size);
-                continue;
-            } else if(iter + 1 != end) {
-                switch(*(iter + 1)) {
-                case '\'':
-                    iter += 2;
-                    out += '\'';
-                    continue;
-                case 'x':
-                case 'u':
-                case 'U':
-                    return false;   // need hex char after \x \u \U
-                default:
-                    break;
-                }
-            }
+  const char *end = ref.end();
+  for (const char *iter = ref.begin(); iter != end;) {
+    if (*iter == '\\') {
+      int code = parseEscapeSeq(iter, end, false);
+      if (code != -1) {
+        char buf[4];
+        unsigned int size = UnicodeUtil::codePointToUtf8(code, buf);
+        if (!size) {
+          return false; // unicode out of range
         }
-        out += *(iter++);
+        out.append(buf, size);
+        continue;
+      } else if (iter + 1 != end) {
+        switch (*(iter + 1)) {
+        case '\'':
+          iter += 2;
+          out += '\'';
+          continue;
+        case 'x':
+        case 'u':
+        case 'U':
+          return false; // need hex char after \x \u \U
+        default:
+          break;
+        }
+      }
     }
-    return true;
+    out += *(iter++);
+  }
+  return true;
 }
 
 std::string Lexer::doubleElementToString(Token token) const {
-    assert(this->withinRange(token));
+  assert(this->withinRange(token));
 
-    std::string str;
-    str.reserve(token.size);
+  std::string str;
+  str.reserve(token.size);
 
-    const unsigned int stopPos = token.pos + token.size;
-    for(unsigned int i = token.pos; i < stopPos; i++) {
-        char ch = this->buf[i];
-        if(ch == '\\' && i + 1 < stopPos) {
-            char next = this->buf[++i];
-            switch(next) {
-            case '"':
-            case '$':
-            case '\\':
-                ch = next;
-                break;
-            case '\n':
-                continue;
-            default:
-                --i;
-                break;
-            }
-        }
-        str += ch;
+  const unsigned int stopPos = token.pos + token.size;
+  for (unsigned int i = token.pos; i < stopPos; i++) {
+    char ch = this->buf[i];
+    if (ch == '\\' && i + 1 < stopPos) {
+      char next = this->buf[++i];
+      switch (next) {
+      case '"':
+      case '$':
+      case '\\':
+        ch = next;
+        break;
+      case '\n':
+        continue;
+      default:
+        --i;
+        break;
+      }
     }
-    return str;
+    str += ch;
+  }
+  return str;
 }
 
 std::string Lexer::toCmdArg(Token token) const {
-    assert(this->withinRange(token));
+  assert(this->withinRange(token));
 
-    std::string str;
-    str.reserve(token.size);
+  std::string str;
+  str.reserve(token.size);
 
-    for(unsigned int i = 0; i < token.size; i++) {
-        char ch = this->buf[token.pos + i];
-        if(ch == '\\') {
-            char nextCh = this->buf[token.pos + ++i];
-            switch(nextCh) {
-            case '\n':
-            case '\r':
-                continue;
-            default:
-                ch = nextCh;
-                break;
-            }
-        }
-        str += ch;
+  for (unsigned int i = 0; i < token.size; i++) {
+    char ch = this->buf[token.pos + i];
+    if (ch == '\\') {
+      char nextCh = this->buf[token.pos + ++i];
+      switch (nextCh) {
+      case '\n':
+      case '\r':
+        continue;
+      default:
+        ch = nextCh;
+        break;
+      }
     }
-    return str;
+    str += ch;
+  }
+  return str;
 }
 
 std::string Lexer::toName(Token token) const {
-    assert(this->withinRange(token));
+  assert(this->withinRange(token));
 
-    std::string name;
-    for(unsigned int i = this->buf[token.pos] == '$' ? 1 : 0; i < token.size; i++) {
-        char ch = this->buf[token.pos + i];
-        switch(ch) {
-        /**
-         * ex. $true, ${true}, $@[
-         */
-        case '{':
-        case '}':
-        case '[':
-            continue;
-        default:
-            name += ch;
-            break;
-        }
+  std::string name;
+  for (unsigned int i = this->buf[token.pos] == '$' ? 1 : 0; i < token.size; i++) {
+    char ch = this->buf[token.pos + i];
+    switch (ch) {
+    /**
+     * ex. $true, ${true}, $@[
+     */
+    case '{':
+    case '}':
+    case '[':
+      continue;
+    default:
+      name += ch;
+      break;
     }
-    return name;
+  }
+  return name;
 }
 
 int64_t Lexer::toInt64(Token token, int &status) const {
-    auto ref = this->toStrRef(token);
-    auto ret = fromIntLiteral<int64_t>(ref.begin(), ref.end());
-    status = ret.second ? 0 : 1;
-    return ret.first;
+  auto ref = this->toStrRef(token);
+  auto ret = fromIntLiteral<int64_t>(ref.begin(), ref.end());
+  status = ret.second ? 0 : 1;
+  return ret.first;
 }
 
 double Lexer::toDouble(Token token, int &status) const {
-    assert(this->withinRange(token));
-    double value = convertToDouble(this->toTokenText(token).c_str(), status);
-    assert(status > -1);
-    return value;
+  assert(this->withinRange(token));
+  double value = convertToDouble(this->toTokenText(token).c_str(), status);
+  assert(status > -1);
+  return value;
 }
 
 static bool isIdStart(char ch) {
-    return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
+  return ch == '_' || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
 }
 
 bool Lexer::toEnvName(Token token, std::string &out) const {
-    auto ref = this->toStrRef(token);
-    if(isIdStart(ref[0])) {
-        out += ref[0];
+  auto ref = this->toStrRef(token);
+  if (isIdStart(ref[0])) {
+    out += ref[0];
+  } else {
+    return false;
+  }
+  unsigned int size = ref.size();
+  for (unsigned int i = 1; i < size; i++) {
+    char ch = ref[i];
+    if (isDecimal(ch) || isIdStart(ch)) {
+      out += ch;
     } else {
-        return false;
+      return false;
     }
-    unsigned int size = ref.size();
-    for(unsigned int i = 1; i < size; i++) {
-        char ch = ref[i];
-        if(isDecimal(ch) || isIdStart(ch)) {
-            out += ch;
-        } else {
-            return false;
-        }
-    }
-    return true;
+  }
+  return true;
 }
 
 int parseEscapeSeq(const char *&begin, const char *end, bool needOctalPrefix) {
-    if(begin == end || *begin != '\\' || (begin + 1) == end) {
-        return -1;
-    }
-    begin++;    // consume '\'
-    char next = *(begin++);
-    switch(next) {
-    case '\\':
-        return '\\';
-    case 'a':
-        return '\a';
-    case 'b':
-        return '\b';
-    case 'e':
-    case 'E':
-        return '\033';
-    case 'f':
-        return '\f';
-    case 'n':
-        return '\n';
-    case 'r':
-        return '\r';
-    case 't':
-        return '\t';
-    case 'v':
-        return '\v';
-    case 'x':
-    case 'u':
-    case 'U': {
-        if(begin == end || !isHex(*begin)) {
-            begin -= 2;
-            break;
-        }
-        unsigned int limit = next == 'x' ? 2 : next == 'u' ? 4 : 8;
-        unsigned int code = hexToNum(*(begin++));
-        for(unsigned int i = 1; i < limit; i++) {
-            if(begin != end && isHex(*begin)) {
-                code *= 16;
-                code += hexToNum(*(begin++));
-            } else {
-                break;
-            }
-        }
-        return code;
-    }
-    default:
-        if(!isOctal(next) || (needOctalPrefix && next != '0')) {
-            begin -= 2;
-            break;
-        }
-        unsigned int code = next - '0';
-        for(unsigned int i = needOctalPrefix ? 0 : 1; i < 3; i++) {
-            if(begin != end && isOctal(*begin)) {
-                code *= 8;
-                code += *(begin++) - '0';
-            } else {
-                break;
-            }
-        }
-        return code;
-    }
+  if (begin == end || *begin != '\\' || (begin + 1) == end) {
     return -1;
+  }
+  begin++; // consume '\'
+  char next = *(begin++);
+  switch (next) {
+  case '\\':
+    return '\\';
+  case 'a':
+    return '\a';
+  case 'b':
+    return '\b';
+  case 'e':
+  case 'E':
+    return '\033';
+  case 'f':
+    return '\f';
+  case 'n':
+    return '\n';
+  case 'r':
+    return '\r';
+  case 't':
+    return '\t';
+  case 'v':
+    return '\v';
+  case 'x':
+  case 'u':
+  case 'U': {
+    if (begin == end || !isHex(*begin)) {
+      begin -= 2;
+      break;
+    }
+    unsigned int limit = next == 'x' ? 2 : next == 'u' ? 4 : 8;
+    unsigned int code = hexToNum(*(begin++));
+    for (unsigned int i = 1; i < limit; i++) {
+      if (begin != end && isHex(*begin)) {
+        code *= 16;
+        code += hexToNum(*(begin++));
+      } else {
+        break;
+      }
+    }
+    return code;
+  }
+  default:
+    if (!isOctal(next) || (needOctalPrefix && next != '0')) {
+      begin -= 2;
+      break;
+    }
+    unsigned int code = next - '0';
+    for (unsigned int i = needOctalPrefix ? 0 : 1; i < 3; i++) {
+      if (begin != end && isOctal(*begin)) {
+        code *= 8;
+        code += *(begin++) - '0';
+      } else {
+        break;
+      }
+    }
+    return code;
+  }
+  return -1;
 }
 
 } // namespace ydsh

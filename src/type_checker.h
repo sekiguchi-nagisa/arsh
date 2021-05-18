@@ -17,102 +17,92 @@
 #ifndef YDSH_TYPE_CHECKER_H
 #define YDSH_TYPE_CHECKER_H
 
-#include "node.h"
 #include "lexer.h"
-#include "scope.h"
-#include "tcerror.h"
 #include "misc/buffer.hpp"
 #include "misc/hash.hpp"
+#include "node.h"
+#include "scope.h"
+#include "tcerror.h"
 
 namespace ydsh {
 
 enum class CoercionKind : unsigned char {
-    PERFORM_COERCION,
-    INVALID_COERCION,   // illegal coercion.
-    NOP,                // not allow coercion
+  PERFORM_COERCION,
+  INVALID_COERCION, // illegal coercion.
+  NOP,              // not allow coercion
 };
 
 class FlowContext {
 private:
-    struct Context {
-        unsigned int tryLevel;
+  struct Context {
+    unsigned int tryLevel;
 
-        unsigned int finallyLevel;
+    unsigned int finallyLevel;
 
-        unsigned int loopLevel;
+    unsigned int loopLevel;
 
-        unsigned int childLevel;
-    };
+    unsigned int childLevel;
+  };
 
-    FlexBuffer<Context> stacks;
+  FlexBuffer<Context> stacks;
 
 public:
-    FlowContext() : stacks({{0, 0, 0, 0}}) { }
-    ~FlowContext() = default;
+  FlowContext() : stacks({{0, 0, 0, 0}}) {}
+  ~FlowContext() = default;
 
-    unsigned int tryCatchLevel() const {
-        return this->stacks.back().tryLevel;
-    }
+  unsigned int tryCatchLevel() const { return this->stacks.back().tryLevel; }
 
-    /**
-     *
-     * @return
-     * finally block depth. (if 0, outside finally block)
-     */
-    unsigned int finallyLevel() const {
-        return this->stacks.back().finallyLevel;
-    }
+  /**
+   *
+   * @return
+   * finally block depth. (if 0, outside finally block)
+   */
+  unsigned int finallyLevel() const { return this->stacks.back().finallyLevel; }
 
-    /**
-     *
-     * @return
-     * loop block depth. (if 0, outside loop block)
-     */
-    unsigned int loopLevel() const {
-        return this->stacks.back().loopLevel;
-    }
+  /**
+   *
+   * @return
+   * loop block depth. (if 0, outside loop block)
+   */
+  unsigned int loopLevel() const { return this->stacks.back().loopLevel; }
 
-    /**
-     *
-     * @return
-     * child process depth. (if 0, parent)
-     */
-    unsigned int childLevel() const {
-        return this->stacks.back().childLevel;
-    }
+  /**
+   *
+   * @return
+   * child process depth. (if 0, parent)
+   */
+  unsigned int childLevel() const { return this->stacks.back().childLevel; }
 
-    void clear() {
-        this->stacks.clear();
-        this->stacks += {0, 0, 0, 0};
-    }
+  void clear() {
+    this->stacks.clear();
+    this->stacks += {0, 0, 0, 0};
+  }
 
-    void leave() {
-        this->stacks.pop_back();
-    }
+  void leave() { this->stacks.pop_back(); }
 
-    void enterTry() {
-        auto v = this->stacks.back();
-        v.tryLevel = this->stacks.size();
-        this->stacks += v;
-    }
+  void enterTry() {
+    auto v = this->stacks.back();
+    v.tryLevel = this->stacks.size();
+    this->stacks += v;
+  }
 
-    void enterFinally() {
-        auto v = this->stacks.back();
-        v.finallyLevel = this->stacks.size();
-        this->stacks += v;
-    }
+  void enterFinally() {
+    auto v = this->stacks.back();
+    v.finallyLevel = this->stacks.size();
+    this->stacks += v;
+  }
 
-    void enterLoop() {
-        auto v = this->stacks.back();
-        v.loopLevel = this->stacks.size();
-        this->stacks += v;
-    }
+  void enterLoop() {
+    auto v = this->stacks.back();
+    v.loopLevel = this->stacks.size();
+    this->stacks += v;
+  }
 
-    void enterChild() {
-        auto v = this->stacks.back();
-        v.childLevel = this->stacks.size();
-        this->stacks += v;
-    }
+  void enterChild() {
+    auto v = this->stacks.back();
+    v.childLevel = this->stacks.size();
+    this->stacks += v;
+  }
 };
 
 /**
@@ -120,409 +110,375 @@ public:
  */
 class BreakGather {
 private:
-    struct Entry {
-        FlexBuffer<JumpNode *> jumpNodes;
-        Entry *next;
+  struct Entry {
+    FlexBuffer<JumpNode *> jumpNodes;
+    Entry *next;
 
-        explicit Entry(Entry *prev) : next(prev) {}
-        ~Entry() {
-            delete this->next;
-        }
-    } *entry;
+    explicit Entry(Entry *prev) : next(prev) {}
+    ~Entry() { delete this->next; }
+  } * entry;
 
 public:
-    BreakGather() : entry(nullptr) {}
-    ~BreakGather() {
-        this->clear();
-    }
+  BreakGather() : entry(nullptr) {}
+  ~BreakGather() { this->clear(); }
 
-    void clear();
+  void clear();
 
-    void enter();
+  void enter();
 
-    void leave();
+  void leave();
 
-    void addJumpNode(JumpNode *node);
+  void addJumpNode(JumpNode *node);
 
-    /**
-     * call after enter()
-     * @return
-     */
-    FlexBuffer<JumpNode *> &getJumpNodes() {
-        return this->entry->jumpNodes;
-    }
+  /**
+   * call after enter()
+   * @return
+   */
+  FlexBuffer<JumpNode *> &getJumpNodes() { return this->entry->jumpNodes; }
 };
 
 class CodeCompletionHandler;
 
 class TypeChecker : protected NodeVisitor {
 protected:
-    TypePool &typePool;
+  TypePool &typePool;
 
-    IntrusivePtr<NameScope> curScope;
+  IntrusivePtr<NameScope> curScope;
 
-    /**
-     * contains current return type of current function
-     */
-    const DSType *curReturnType{nullptr};
+  /**
+   * contains current return type of current function
+   */
+  const DSType *curReturnType{nullptr};
 
-    int visitingDepth{0};
+  int visitingDepth{0};
 
-    bool toplevelPrinting;
+  bool toplevelPrinting;
 
-    FlowContext fctx;
+  FlowContext fctx;
 
-    BreakGather breakGather;
+  BreakGather breakGather;
 
-    ObserverPtr<const Lexer> lexer;
+  ObserverPtr<const Lexer> lexer;
 
-    ObserverPtr<CodeCompletionHandler> ccHandler;
+  ObserverPtr<CodeCompletionHandler> ccHandler;
 
 public:
-    TypeChecker(TypePool &pool, bool toplevelPrinting, const Lexer *lex) :
-            typePool(pool), toplevelPrinting(toplevelPrinting), lexer(lex) { }
+  TypeChecker(TypePool &pool, bool toplevelPrinting, const Lexer *lex)
+      : typePool(pool), toplevelPrinting(toplevelPrinting), lexer(lex) {}
 
-    ~TypeChecker() override = default;
+  ~TypeChecker() override = default;
 
-    std::unique_ptr<Node> operator()(const DSType *prevType,
-            std::unique_ptr<Node> &&node, IntrusivePtr<NameScope> global);
+  std::unique_ptr<Node> operator()(const DSType *prevType, std::unique_ptr<Node> &&node,
+                                   IntrusivePtr<NameScope> global);
 
-    TypePool &getTypePool() {
-        return this->typePool;
-    }
+  TypePool &getTypePool() { return this->typePool; }
 
-    void setLexer(const Lexer &lex) {
-        this->lexer.reset(&lex);
-    }
+  void setLexer(const Lexer &lex) { this->lexer.reset(&lex); }
 
-    void setCodeCompletionHandler(ObserverPtr<CodeCompletionHandler> handler) {
-        this->ccHandler = handler;
-    }
+  void setCodeCompletionHandler(ObserverPtr<CodeCompletionHandler> handler) {
+    this->ccHandler = handler;
+  }
 
 protected:
-    // base type check entry point
-    TypeOrError toTypeImpl(TypeNode &node);
+  // base type check entry point
+  TypeOrError toTypeImpl(TypeNode &node);
+
+  /**
+   * check node type.
+   * if node type is void type, throw exception.
+   * return resolved type.
+   */
+  DSType &checkTypeAsExpr(Node &targetNode) {
+    return this->checkType(nullptr, targetNode, &this->typePool.get(TYPE::Void));
+  }
+
+  /**
+   * check node type. not allow Void and Nothing type
+   * @param targetNode
+   * @return
+   */
+  DSType &checkTypeAsSomeExpr(Node &targetNode);
+
+  /**
+   * check node type
+   *
+   * if requiredType is not equivalent to node type, throw exception.
+   * return resolved type.
+   */
+  DSType &checkType(const DSType &requiredType, Node &targetNode) {
+    return this->checkType(&requiredType, targetNode, nullptr);
+  }
+
+  /**
+   * only call visitor api (not perform additional type checking)
+   * @param targetNode
+   * @return
+   */
+  DSType &checkTypeExactly(Node &targetNode) {
+    return this->checkType(nullptr, targetNode, nullptr);
+  }
+
+  /**
+   * check node type
+   * requiredType may be null
+   * unacceptableType may be null
+   *
+   * if requiredType is not equivalent to node type, throw exception.
+   * if requiredType is null, do not try matching node type
+   * and if unacceptableType is equivalent to node type, throw exception.
+   * return resolved type.
+   */
+  DSType &checkType(const DSType *requiredType, Node &targetNode, const DSType *unacceptableType) {
+    CoercionKind kind = CoercionKind::NOP;
+    return this->checkType(requiredType, targetNode, unacceptableType, kind);
+  }
+
+  /**
+   * root method of checkType
+   */
+  DSType &checkType(const DSType *requiredType, Node &targetNode, const DSType *unacceptableType,
+                    CoercionKind &kind);
+
+  void checkTypeWithCurrentScope(BlockNode &blockNode) {
+    this->checkTypeWithCurrentScope(&this->typePool.get(TYPE::Void), blockNode);
+  }
+
+  void checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode);
+
+  /**
+   * after type checking.
+   * requiredType is not null.
+   * if requiredType is FloatType and targetNode->getType() is IntType,
+   * wrap targetNode with CastNode.
+   * if requiredType is VoidType, wrap targetNode with CastNode
+   */
+  void checkTypeWithCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode);
+
+  /**
+   * for int type conversion.
+   * return true if allow target type to required type implicit cast.
+   */
+  bool checkCoercion(const DSType &requiredType, const DSType &targetType);
+
+  void resolveCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode) {
+    targetNode = newTypedCastNode(std::move(targetNode), requiredType);
+    this->resolveCastOp(cast<TypeOpNode>(*targetNode));
+  }
+
+  DSType &resolveCoercionOfJumpValue();
+
+  const FieldHandle *addEntry(const Node &node, const std::string &symbolName, const DSType &type,
+                              FieldAttribute attribute);
+
+  const FieldHandle *addUdcEntry(const UserDefinedCmdNode &node);
+
+  bool isTopLevel() const { return this->visitingDepth == 1; }
+
+  auto intoBlock() {
+    this->curScope = this->curScope->enterScope(NameScope::BLOCK);
+    return finally([&] { this->curScope = this->curScope->exitScope(); });
+  }
+
+  auto intoLoop() {
+    this->fctx.enterLoop();
+    this->breakGather.enter();
+    return finally([&] {
+      this->fctx.leave();
+      this->breakGather.leave();
+    });
+  }
+
+  auto intoFunc(const DSType &returnType) {
+    this->curReturnType = &returnType;
+    this->curScope = this->curScope->enterScope(NameScope::FUNC);
+    this->curScope = this->curScope->enterScope(NameScope::BLOCK);
+    return finally([&] {
+      this->curScope = this->curScope->exitScope();
+      this->curScope = this->curScope->exitScope();
+      this->curReturnType = nullptr;
+    });
+  }
+
+  auto intoChild() {
+    this->fctx.enterChild();
+    return finally([&] { this->fctx.leave(); });
+  }
+
+  auto intoTry() {
+    this->fctx.enterTry();
+    return finally([&] { this->fctx.leave(); });
+  }
+
+  auto intoFinally() {
+    this->fctx.enterFinally();
+    return finally([&] { this->fctx.leave(); });
+  }
+
+  /**
+   * return null, if outside of function
+   */
+  const DSType *getCurrentReturnType() const { return this->curReturnType; }
+
+  // for apply node type checking
+  /**
+   * check type ApplyNode and resolve callee(handle or function type).
+   */
+  HandleOrFuncType resolveCallee(ApplyNode &node);
+
+  /**
+   * check type ApplyNode and resolve callee(handle or function type).
+   */
+  HandleOrFuncType resolveCallee(VarNode &recvNode);
+
+  bool checkAccessNode(AccessNode &node);
+
+  // helper api for type cast
+
+  /**
+   *
+   * @param node
+   * must be typed
+   */
+  void resolveCastOp(TypeOpNode &node);
+
+  /**
+   *
+   * @param node
+   * must be typed
+   * @return
+   *
+   */
+  std::unique_ptr<Node> newPrintOpNode(std::unique_ptr<Node> &&node);
+
+  void checkTypeAsBreakContinue(JumpNode &node);
+  void checkTypeAsReturn(JumpNode &node);
+
+  // for case-expression
+  struct PatternMap {
+    virtual ~PatternMap() = default;
+
+    virtual bool collect(const Node &constNode) = 0;
+  };
+
+  class IntPatternMap : public PatternMap {
+  private:
+    std::unordered_set<int64_t> set;
+
+  public:
+    bool collect(const Node &constNode) override;
+  };
+
+  class StrPatternMap : public PatternMap {
+  private:
+    CStringHashSet set;
+
+  public:
+    bool collect(const Node &constNode) override;
+  };
+
+  class PatternCollector {
+  private:
+    CaseNode::Kind kind{CaseNode::MAP};
+    std::unique_ptr<PatternMap> map;
+    bool elsePattern{false};
+    DSType *type{nullptr};
+
+  public:
+    bool hasElsePattern() const { return this->elsePattern; }
+
+    void setElsePattern(bool set) { this->elsePattern = set; }
+
+    void setKind(CaseNode::Kind k) { this->kind = k; }
+
+    auto getKind() const { return this->kind; }
+
+    void setType(DSType *t) { this->type = t; }
+
+    DSType *getType() const { return this->type; }
 
     /**
-     * check node type.
-     * if node type is void type, throw exception.
-     * return resolved type.
-     */
-    DSType &checkTypeAsExpr(Node &targetNode) {
-        return this->checkType(nullptr, targetNode, &this->typePool.get(TYPE::Void));
-    }
-
-    /**
-     * check node type. not allow Void and Nothing type
-     * @param targetNode
+     * try to collect constant node.
+     * if found duplicated constant, return false
+     * @param constNode
      * @return
      */
-    DSType &checkTypeAsSomeExpr(Node &targetNode);
+    bool collect(const Node &constNode);
+  };
 
-    /**
-     * check node type
-     *
-     * if requiredType is not equivalent to node type, throw exception.
-     * return resolved type.
-     */
-    DSType &checkType(const DSType &requiredType, Node &targetNode) {
-        return this->checkType(&requiredType, targetNode, nullptr);
-    }
+  void checkPatternType(ArmNode &node, PatternCollector &collector);
 
-    /**
-     * only call visitor api (not perform additional type checking)
-     * @param targetNode
-     * @return
-     */
-    DSType &checkTypeExactly(Node &targetNode) {
-        return this->checkType(nullptr, targetNode, nullptr);
-    }
+  /**
+   *
+   * @param types
+   * @return
+   * if not found, return void type.
+   */
+  DSType &resolveCommonSuperType(const std::vector<DSType *> &types);
 
-    /**
-     * check node type
-     * requiredType may be null
-     * unacceptableType may be null
-     *
-     * if requiredType is not equivalent to node type, throw exception.
-     * if requiredType is null, do not try matching node type
-     * and if unacceptableType is equivalent to node type, throw exception.
-     * return resolved type.
-     */
-    DSType &checkType(const DSType *requiredType, Node &targetNode, const DSType *unacceptableType) {
-        CoercionKind kind = CoercionKind::NOP;
-        return this->checkType(requiredType, targetNode, unacceptableType, kind);
-    }
+  /**
+   *
+   * @param node
+   * must be typed node
+   * @return
+   */
+  bool applyConstFolding(std::unique_ptr<Node> &node);
 
-    /**
-     * root method of checkType
-     */
-    DSType &checkType(const DSType *requiredType, Node &targetNode,
-                      const DSType *unacceptableType, CoercionKind &kind);
+  /**
+   * apply constant folding and generate source path list.
+   * if cannot resolve path, throw error.
+   * @param node
+   */
+  void resolvePathList(SourceListNode &node);
 
-    void checkTypeWithCurrentScope(BlockNode &blockNode) {
-        this->checkTypeWithCurrentScope(&this->typePool.get(TYPE::Void), blockNode);
-    }
-
-    void checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode);
-
-    /**
-     * after type checking.
-     * requiredType is not null.
-     * if requiredType is FloatType and targetNode->getType() is IntType,
-     * wrap targetNode with CastNode.
-     * if requiredType is VoidType, wrap targetNode with CastNode
-     */
-    void checkTypeWithCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode);
-
-    /**
-     * for int type conversion.
-     * return true if allow target type to required type implicit cast.
-     */
-    bool checkCoercion(const DSType &requiredType, const DSType &targetType);
-
-    void resolveCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode) {
-        targetNode = newTypedCastNode(std::move(targetNode), requiredType);
-        this->resolveCastOp(cast<TypeOpNode>(*targetNode));
-    }
-
-    DSType &resolveCoercionOfJumpValue();
-
-    const FieldHandle *addEntry(const Node &node, const std::string &symbolName,
-                          const DSType &type, FieldAttribute attribute);
-
-    const FieldHandle *addUdcEntry(const UserDefinedCmdNode &node);
-
-    bool isTopLevel() const {
-        return this->visitingDepth == 1;
-    }
-
-    auto intoBlock() {
-        this->curScope = this->curScope->enterScope(NameScope::BLOCK);
-        return finally([&]{
-            this->curScope = this->curScope->exitScope();
-        });
-    }
-
-    auto intoLoop() {
-        this->fctx.enterLoop();
-        this->breakGather.enter();
-        return finally([&]{
-            this->fctx.leave();
-            this->breakGather.leave();
-        });
-    }
-
-    auto intoFunc(const DSType &returnType) {
-        this->curReturnType = &returnType;
-        this->curScope = this->curScope->enterScope(NameScope::FUNC);
-        this->curScope = this->curScope->enterScope(NameScope::BLOCK);
-        return finally([&]{
-            this->curScope = this->curScope->exitScope();
-            this->curScope = this->curScope->exitScope();
-            this->curReturnType = nullptr;
-        });
-    }
-
-    auto intoChild() {
-        this->fctx.enterChild();
-        return finally([&]{
-            this->fctx.leave();
-        });
-    }
-
-    auto intoTry() {
-        this->fctx.enterTry();
-        return finally([&]{
-            this->fctx.leave();
-        });
-    }
-
-    auto intoFinally() {
-        this->fctx.enterFinally();
-        return finally([&]{
-            this->fctx.leave();
-        });
-    }
-
-    /**
-     * return null, if outside of function
-     */
-    const DSType *getCurrentReturnType() const {
-        return this->curReturnType;
-    }
-
-    // for apply node type checking
-    /**
-     * check type ApplyNode and resolve callee(handle or function type).
-     */
-    HandleOrFuncType resolveCallee(ApplyNode &node);
-
-    /**
-     * check type ApplyNode and resolve callee(handle or function type).
-     */
-    HandleOrFuncType resolveCallee(VarNode &recvNode);
-
-    bool checkAccessNode(AccessNode &node);
-
-    // helper api for type cast
-
-    /**
-     *
-     * @param node
-     * must be typed
-     */
-    void resolveCastOp(TypeOpNode &node);
-
-    /**
-     *
-     * @param node
-     * must be typed
-     * @return
-     *
-     */
-    std::unique_ptr<Node> newPrintOpNode(std::unique_ptr<Node> &&node);
-
-    void checkTypeAsBreakContinue(JumpNode &node);
-    void checkTypeAsReturn(JumpNode &node);
-
-    // for case-expression
-    struct PatternMap {
-        virtual ~PatternMap() = default;
-
-        virtual bool collect(const Node &constNode) = 0;
-    };
-
-    class IntPatternMap : public PatternMap {
-    private:
-        std::unordered_set<int64_t> set;
-
-    public:
-        bool collect(const Node &constNode) override;
-    };
-
-    class StrPatternMap : public PatternMap {
-    private:
-        CStringHashSet set;
-
-    public:
-        bool collect(const Node &constNode) override;
-    };
-
-    class PatternCollector {
-    private:
-        CaseNode::Kind kind{CaseNode::MAP};
-        std::unique_ptr<PatternMap> map;
-        bool elsePattern{false};
-        DSType *type{nullptr};
-
-    public:
-        bool hasElsePattern() const {
-            return this->elsePattern;
-        }
-
-        void setElsePattern(bool set) {
-            this->elsePattern = set;
-        }
-
-        void setKind(CaseNode::Kind k) {
-            this->kind = k;
-        }
-
-        auto getKind() const {
-            return this->kind;
-        }
-
-        void setType(DSType *t) {
-            this->type = t;
-        }
-
-        DSType *getType() const {
-            return this->type;
-        }
-
-        /**
-         * try to collect constant node.
-         * if found duplicated constant, return false
-         * @param constNode
-         * @return
-         */
-        bool collect(const Node &constNode);
-    };
-
-    void checkPatternType(ArmNode &node, PatternCollector &collector);
-
-    /**
-     *
-     * @param types
-     * @return
-     * if not found, return void type.
-     */
-    DSType &resolveCommonSuperType(const std::vector<DSType *> &types);
-
-    /**
-     *
-     * @param node
-     * must be typed node
-     * @return
-     */
-    bool applyConstFolding(std::unique_ptr<Node> &node);
-
-    /**
-     * apply constant folding and generate source path list.
-     * if cannot resolve path, throw error.
-     * @param node
-     */
-    void resolvePathList(SourceListNode &node);
-
-    // visitor api
-    void visitTypeNode(TypeNode &node) override;
-    void visitNumberNode(NumberNode &node) override;
-    void visitStringNode(StringNode &node) override;
-    void visitStringExprNode(StringExprNode &node) override;
-    void visitRegexNode(RegexNode &node) override;
-    void visitArrayNode(ArrayNode &node) override;
-    void visitMapNode(MapNode &node) override;
-    void visitTupleNode(TupleNode &node) override;
-    void visitVarNode(VarNode &node) override;
-    void visitAccessNode(AccessNode &node) override;
-    void visitTypeOpNode(TypeOpNode &node) override;
-    void visitUnaryOpNode(UnaryOpNode &node) override;
-    void visitBinaryOpNode(BinaryOpNode &node) override;
-    void visitArgsNode(ArgsNode &node) override;
-    void visitApplyNode(ApplyNode &node) override;
-    void visitNewNode(NewNode &node) override;
-    void visitEmbedNode(EmbedNode &node) override;
-    void visitCmdNode(CmdNode &node) override;
-    void visitCmdArgNode(CmdArgNode &node) override;
-    void visitArgArrayNode(ArgArrayNode &node) override;
-    void visitRedirNode(RedirNode &node) override;
-    void visitWildCardNode(WildCardNode &node) override;
-    void visitPipelineNode(PipelineNode &node) override;
-    void visitWithNode(WithNode &node) override;
-    void visitForkNode(ForkNode &node) override;
-    void visitAssertNode(AssertNode &node) override;
-    void visitBlockNode(BlockNode &node) override;
-    void visitTypeAliasNode(TypeAliasNode &node) override;
-    void visitLoopNode(LoopNode &node) override;
-    void visitIfNode(IfNode &node) override;
-    void visitCaseNode(CaseNode &node) override;
-    void visitArmNode(ArmNode &node) override;
-    void visitJumpNode(JumpNode &node) override;
-    void visitCatchNode(CatchNode &node) override;
-    void visitTryNode(TryNode &node) override;
-    void visitVarDeclNode(VarDeclNode &node) override;
-    void visitAssignNode(AssignNode &node) override;
-    void visitElementSelfAssignNode(ElementSelfAssignNode &node) override;
-    void visitPrefixAssignNode(PrefixAssignNode &node) override;
-    void visitFunctionNode(FunctionNode &node) override;
-    void visitInterfaceNode(InterfaceNode &node) override;
-    void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
-    void visitSourceNode(SourceNode &node) override;
-    void visitSourceListNode(SourceListNode &node) override;
-    void visitCodeCompNode(CodeCompNode &node) override;
-    void visitEmptyNode(EmptyNode &node) override;
+  // visitor api
+  void visitTypeNode(TypeNode &node) override;
+  void visitNumberNode(NumberNode &node) override;
+  void visitStringNode(StringNode &node) override;
+  void visitStringExprNode(StringExprNode &node) override;
+  void visitRegexNode(RegexNode &node) override;
+  void visitArrayNode(ArrayNode &node) override;
+  void visitMapNode(MapNode &node) override;
+  void visitTupleNode(TupleNode &node) override;
+  void visitVarNode(VarNode &node) override;
+  void visitAccessNode(AccessNode &node) override;
+  void visitTypeOpNode(TypeOpNode &node) override;
+  void visitUnaryOpNode(UnaryOpNode &node) override;
+  void visitBinaryOpNode(BinaryOpNode &node) override;
+  void visitArgsNode(ArgsNode &node) override;
+  void visitApplyNode(ApplyNode &node) override;
+  void visitNewNode(NewNode &node) override;
+  void visitEmbedNode(EmbedNode &node) override;
+  void visitCmdNode(CmdNode &node) override;
+  void visitCmdArgNode(CmdArgNode &node) override;
+  void visitArgArrayNode(ArgArrayNode &node) override;
+  void visitRedirNode(RedirNode &node) override;
+  void visitWildCardNode(WildCardNode &node) override;
+  void visitPipelineNode(PipelineNode &node) override;
+  void visitWithNode(WithNode &node) override;
+  void visitForkNode(ForkNode &node) override;
+  void visitAssertNode(AssertNode &node) override;
+  void visitBlockNode(BlockNode &node) override;
+  void visitTypeAliasNode(TypeAliasNode &node) override;
+  void visitLoopNode(LoopNode &node) override;
+  void visitIfNode(IfNode &node) override;
+  void visitCaseNode(CaseNode &node) override;
+  void visitArmNode(ArmNode &node) override;
+  void visitJumpNode(JumpNode &node) override;
+  void visitCatchNode(CatchNode &node) override;
+  void visitTryNode(TryNode &node) override;
+  void visitVarDeclNode(VarDeclNode &node) override;
+  void visitAssignNode(AssignNode &node) override;
+  void visitElementSelfAssignNode(ElementSelfAssignNode &node) override;
+  void visitPrefixAssignNode(PrefixAssignNode &node) override;
+  void visitFunctionNode(FunctionNode &node) override;
+  void visitInterfaceNode(InterfaceNode &node) override;
+  void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
+  void visitSourceNode(SourceNode &node) override;
+  void visitSourceListNode(SourceListNode &node) override;
+  void visitCodeCompNode(CodeCompNode &node) override;
+  void visitEmptyNode(EmptyNode &node) override;
 };
 
 } // namespace ydsh
 
-#endif //YDSH_TYPE_CHECKER_H
+#endif // YDSH_TYPE_CHECKER_H

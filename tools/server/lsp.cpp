@@ -19,58 +19,61 @@
 namespace ydsh::lsp {
 
 const char *toString(TraceSetting setting) {
-    switch(setting) {
-#define GEN_CASE(E) case TraceSetting::E: return #E;
-        EACH_TRACE_SETTING(GEN_CASE)
+  switch (setting) {
+#define GEN_CASE(E)                                                                                \
+  case TraceSetting::E:                                                                            \
+    return #E;
+    EACH_TRACE_SETTING(GEN_CASE)
 #undef GEN_CASE
-    default:
-        return "off";
-    }
+  default:
+    return "off";
+  }
 }
 
 bool toEnum(const char *str, TraceSetting &setting) {
-    StringRef ref = str;
-    TraceSetting settings[] = {
+  StringRef ref = str;
+  TraceSetting settings[] = {
 #define GEN_ENUM(E) TraceSetting::E,
-            EACH_TRACE_SETTING(GEN_ENUM)
+      EACH_TRACE_SETTING(GEN_ENUM)
 #undef GEN_ENUM
-    };
-    for(auto &e : settings) {
-        if(ref == toString(e)) {
-            setting = e;
-            return true;
-        }
+  };
+  for (auto &e : settings) {
+    if (ref == toString(e)) {
+      setting = e;
+      return true;
     }
-    setting = TraceSetting::off;
-    return false;
+  }
+  setting = TraceSetting::off;
+  return false;
 }
 
 const char *toString(CodeActionKind kind) {
-    switch(kind) {
-#define GEN_CASE(E, V) case CodeActionKind::E: return V;
-        EACH_CODE_ACTION_KIND(GEN_CASE)
+  switch (kind) {
+#define GEN_CASE(E, V)                                                                             \
+  case CodeActionKind::E:                                                                          \
+    return V;
+    EACH_CODE_ACTION_KIND(GEN_CASE)
 #undef GEN_CASE
-    default:
-        return "";
-    }
+  default:
+    return "";
+  }
 }
 
 bool toEnum(const char *str, CodeActionKind &kind) {
-    StringRef ref = str;
-    CodeActionKind kinds[] = {
+  StringRef ref = str;
+  CodeActionKind kinds[] = {
 #define GEN_ENUM(E, V) CodeActionKind::E,
-            EACH_CODE_ACTION_KIND(GEN_ENUM)
+      EACH_CODE_ACTION_KIND(GEN_ENUM)
 #undef GEN_ENUM
-    };
-    for(auto &e : kinds) {
-        if(ref == toString(e)) {
-            kind = e;
-            return true;
-        }
+  };
+  for (auto &e : kinds) {
+    if (ref == toString(e)) {
+      kind = e;
+      return true;
     }
-    kind = CodeActionKind::Empty;
-    return false;
+  }
+  kind = CodeActionKind::Empty;
+  return false;
 }
-
 
 } // namespace ydsh::lsp

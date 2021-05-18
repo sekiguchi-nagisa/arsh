@@ -24,62 +24,61 @@
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
 struct FNVHash32 {
-    using type = uint32_t;
+  using type = uint32_t;
 
-    static constexpr uint32_t FNV_offset_basis = 0x811c9dc5;
-    static constexpr uint32_t FNV_prime = 0x01000193;
+  static constexpr uint32_t FNV_offset_basis = 0x811c9dc5;
+  static constexpr uint32_t FNV_prime = 0x01000193;
 
-    static void update(uint32_t &hash, uint8_t value) {
-        hash *= FNV_prime;
-        hash ^= value;
+  static void update(uint32_t &hash, uint8_t value) {
+    hash *= FNV_prime;
+    hash ^= value;
+  }
+
+  static uint32_t compute(const char *begin, const char *end) {
+    uint32_t hash = FNV_offset_basis;
+    for (; begin != end; ++begin) {
+      update(hash, *begin);
     }
-
-    static uint32_t compute(const char *begin, const char *end) {
-        uint32_t hash = FNV_offset_basis;
-        for(; begin != end; ++begin) {
-            update(hash, *begin);
-        }
-        return hash;
-    }
+    return hash;
+  }
 };
 
 struct FNVHash64 {
-    using type = uint64_t;
+  using type = uint64_t;
 
-    static constexpr uint64_t FNV_offset_basis = 0xcbf29ce484222325;
-    static constexpr uint64_t FNV_prime = 0x100000001b3;
+  static constexpr uint64_t FNV_offset_basis = 0xcbf29ce484222325;
+  static constexpr uint64_t FNV_prime = 0x100000001b3;
 
-    static void update(uint64_t &hash, uint8_t value) {
-        hash *= FNV_prime;
-        hash ^= value;
+  static void update(uint64_t &hash, uint8_t value) {
+    hash *= FNV_prime;
+    hash ^= value;
+  }
+
+  static uint64_t compute(const char *begin, const char *end) {
+    uint64_t hash = FNV_offset_basis;
+    for (; begin != end; ++begin) {
+      update(hash, *begin);
     }
-
-    static uint64_t compute(const char *begin, const char *end) {
-        uint64_t hash = FNV_offset_basis;
-        for(; begin != end; ++begin) {
-            update(hash, *begin);
-        }
-        return hash;
-    }
+    return hash;
+  }
 };
 
-using FNVHash = std::conditional<sizeof(std::size_t) == sizeof(uint64_t),
-        FNVHash64, std::conditional<sizeof(std::size_t) == sizeof(uint32_t), FNVHash32, void>::type>::type;
+using FNVHash = std::conditional<
+    sizeof(std::size_t) == sizeof(uint64_t), FNVHash64,
+    std::conditional<sizeof(std::size_t) == sizeof(uint32_t), FNVHash32, void>::type>::type;
 
 struct CStringComparator {
-    bool operator()(const char *x, const char *y) const {
-        return strcmp(x, y) == 0;
-    }
+  bool operator()(const char *x, const char *y) const { return strcmp(x, y) == 0; }
 };
 
 struct CStringHash {
-    std::size_t operator()(const char *key) const {
-        FNVHash::type hash = FNVHash::FNV_offset_basis;
-        while(*key != '\0') {
-            FNVHash::update(hash, static_cast<uint8_t>(*key++));
-        }
-        return hash;
+  std::size_t operator()(const char *key) const {
+    FNVHash::type hash = FNVHash::FNV_offset_basis;
+    while (*key != '\0') {
+      FNVHash::update(hash, static_cast<uint8_t>(*key++));
     }
+    return hash;
+  }
 };
 
 template <typename T>
@@ -89,5 +88,4 @@ using CStringHashSet = std::unordered_set<const char *, CStringHash, CStringComp
 
 END_MISC_LIB_NAMESPACE_DECL
 
-
-#endif //MISC_LIB_HASH_HPP
+#endif // MISC_LIB_HASH_HPP

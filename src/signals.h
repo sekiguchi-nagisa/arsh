@@ -17,16 +17,16 @@
 #ifndef YDSH_SIGNAL_LIST_H
 #define YDSH_SIGNAL_LIST_H
 
-#include <vector>
 #include <csignal>
+#include <vector>
 
 #include "misc/string_ref.hpp"
 
 namespace ydsh {
 
 struct SignalPair {
-    const char *name;
-    int sigNum;
+  const char *name;
+  int sigNum;
 };
 
 /**
@@ -60,4 +60,4 @@ std::vector<int> getUniqueSignalList();
 
 } // namespace ydsh
 
-#endif //YDSH_SIGNAL_LIST_H
+#endif // YDSH_SIGNAL_LIST_H

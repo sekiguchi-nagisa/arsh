@@ -27,85 +27,85 @@ static constexpr const char HEADER_LENGTH[] = "Content-Length: ";
 // ##########################
 
 int LSPTransport::send(unsigned int size, const char *data) {
-    std::string header = HEADER_LENGTH;
-    header += std::to_string(size);
-    header += "\r\n";
-    header += "\r\n";
+  std::string header = HEADER_LENGTH;
+  header += std::to_string(size);
+  header += "\r\n";
+  header += "\r\n";
 
-    fwrite(header.c_str(), sizeof(char), header.size(), this->output.get());
-    int writeSize = fwrite(data, sizeof(char), size, this->output.get());
-    fflush(this->output.get());
-    return writeSize;    //FIXME: error checking.
+  fwrite(header.c_str(), sizeof(char), header.size(), this->output.get());
+  int writeSize = fwrite(data, sizeof(char), size, this->output.get());
+  fflush(this->output.get());
+  return writeSize; // FIXME: error checking.
 }
 
 static bool isContentLength(const std::string &line) {
-    return strncmp(line.c_str(), HEADER_LENGTH, arraySize(HEADER_LENGTH) - 1) == 0 &&
-        line.size() == strlen(line.c_str());
+  return strncmp(line.c_str(), HEADER_LENGTH, arraySize(HEADER_LENGTH) - 1) == 0 &&
+         line.size() == strlen(line.c_str());
 }
 
 static int parseContentLength(const std::string &line) {
-    const char *ptr = line.c_str();
-    ptr += arraySize(HEADER_LENGTH) - 1;
-    auto ret = convertToNum<int32_t>(ptr);
-    if(ret.second && ret.first >= 0) {
-        return ret.first;
-    }
-    return 0;
+  const char *ptr = line.c_str();
+  ptr += arraySize(HEADER_LENGTH) - 1;
+  auto ret = convertToNum<int32_t>(ptr);
+  if (ret.second && ret.first >= 0) {
+    return ret.first;
+  }
+  return 0;
 }
 
 int LSPTransport::recvSize() {
-    int size = 0;
-    while(true) {
-        std::string header;
-        if(!this->readHeader(header)) {
-            this->logger(LogLevel::ERROR, "invalid header: %s", header.c_str());
-            return -1;
-        }
-
-        if(header.empty()) {
-            break;
-        }
-        if(isContentLength(header)) {
-            this->logger(LogLevel::INFO, "%s", header.c_str());
-            if(size > 0) {
-                this->logger(LogLevel::WARNING, "previous read message length: %d", size);
-            }
-            int ret = parseContentLength(header);
-            if(!ret) {
-                this->logger(LogLevel::ERROR, "may be broken content length");
-            }
-            size = ret;
-        } else {    // may be other header
-            this->logger(LogLevel::INFO, "other header: %s", header.c_str());
-        }
+  int size = 0;
+  while (true) {
+    std::string header;
+    if (!this->readHeader(header)) {
+      this->logger(LogLevel::ERROR, "invalid header: %s", header.c_str());
+      return -1;
     }
-    return size;
+
+    if (header.empty()) {
+      break;
+    }
+    if (isContentLength(header)) {
+      this->logger(LogLevel::INFO, "%s", header.c_str());
+      if (size > 0) {
+        this->logger(LogLevel::WARNING, "previous read message length: %d", size);
+      }
+      int ret = parseContentLength(header);
+      if (!ret) {
+        this->logger(LogLevel::ERROR, "may be broken content length");
+      }
+      size = ret;
+    } else { // may be other header
+      this->logger(LogLevel::INFO, "other header: %s", header.c_str());
+    }
+  }
+  return size;
 }
 
 int LSPTransport::recv(unsigned int size, char *data) {
-    return fread(data, sizeof(char), size, this->input.get());
+  return fread(data, sizeof(char), size, this->input.get());
 }
 
 bool LSPTransport::readHeader(std::string &header) {
-    clearerr(this->input.get());
-    char prev = '\0';
-    while(true) {
-        signed char ch;
-        if(fread(&ch, 1, 1, this->input.get()) != 1) {
-            if(ferror(this->input.get()) && (errno == EINTR || errno == EAGAIN)) {
-                continue;
-            }
-            return false;
-        }
-
-        if(ch == '\n' && prev == '\r') {
-            header.pop_back();  // pop \r
-            break;
-        }
-        prev = ch;
-        header += ch;
+  clearerr(this->input.get());
+  char prev = '\0';
+  while (true) {
+    signed char ch;
+    if (fread(&ch, 1, 1, this->input.get()) != 1) {
+      if (ferror(this->input.get()) && (errno == EINTR || errno == EAGAIN)) {
+        continue;
+      }
+      return false;
     }
-    return true;
+
+    if (ch == '\n' && prev == '\r') {
+      header.pop_back(); // pop \r
+      break;
+    }
+    prev = ch;
+    header += ch;
+  }
+  return true;
 }
 
 } // namespace ydsh::lsp

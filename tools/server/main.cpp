@@ -20,9 +20,9 @@ using namespace ydsh;
 using namespace lsp;
 
 int main() {
-    LSPLogger logger;
-    logger.setSeverity(LogLevel::INFO);
-    logger.setAppender(FilePtr(stderr));
-    LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
-    server.run();
+  LSPLogger logger;
+  logger.setSeverity(LogLevel::INFO);
+  logger.setAppender(FilePtr(stderr));
+  LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
+  server.run();
 }

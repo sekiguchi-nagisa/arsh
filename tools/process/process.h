@@ -19,349 +19,324 @@
 
 #include <termios.h>
 
-#include <vector>
+#include <functional>
+#include <initializer_list>
 #include <string>
 #include <unordered_map>
-#include <initializer_list>
-#include <functional>
+#include <vector>
 
 #include <misc/noncopyable.h>
 
 namespace process {
 
 struct WaitStatus {
-    enum Kind : unsigned char {
-        ERROR,  // if error happened
-        EXITED,
-        SIGNALED,
-        STOPPED,
-    };
+  enum Kind : unsigned char {
+    ERROR, // if error happened
+    EXITED,
+    SIGNALED,
+    STOPPED,
+  };
 
-    Kind kind;
+  Kind kind;
 
-    int value;
+  int value;
 
-    int toShellStatus() const {
-        int status = this->value;
-        if(this->kind == SIGNALED || this->kind == STOPPED) {
-            status += 128;
-        }
-        return status;
+  int toShellStatus() const {
+    int status = this->value;
+    if (this->kind == SIGNALED || this->kind == STOPPED) {
+      status += 128;
     }
+    return status;
+  }
 
-    explicit operator bool() const {
-        return this->kind != ERROR;
-    }
+  explicit operator bool() const { return this->kind != ERROR; }
 
-    bool isTerminated() const {
-        return this->kind == EXITED || this->kind == SIGNALED;
-    }
+  bool isTerminated() const { return this->kind == EXITED || this->kind == SIGNALED; }
 };
 
 struct Output {
-    WaitStatus status;
-    std::string out;
-    std::string err;
+  WaitStatus status;
+  std::string out;
+  std::string err;
 };
 
 class ProcBuilder;
 
 class ProcHandle {
 private:
-    friend class ProcBuilder;
+  friend class ProcBuilder;
 
-    /**
-     * after call wait, will be -1
-     */
-    pid_t pid_;
+  /**
+   * after call wait, will be -1
+   */
+  pid_t pid_;
 
-    WaitStatus status_{WaitStatus::EXITED, 0};
+  WaitStatus status_{WaitStatus::EXITED, 0};
 
-    /**
-     * only available when specified PTY option.
-     */
-    int pty_;
+  /**
+   * only available when specified PTY option.
+   */
+  int pty_;
 
-    /**
-     * after call wait, will be -1
-     */
-    int in_;
+  /**
+   * after call wait, will be -1
+   */
+  int in_;
 
-    /**
-     * after call wait, will be -1
-     */
-    int out_;
+  /**
+   * after call wait, will be -1
+   */
+  int out_;
 
-    /**
-     * after call wait, will be -1
-     */
-    int err_;
+  /**
+   * after call wait, will be -1
+   */
+  int err_;
 
-    ProcHandle(pid_t pid, int pty, int in, int out, int err) noexcept :
-            pid_(pid), pty_(pty), in_(in), out_(out), err_(err) {}
+  ProcHandle(pid_t pid, int pty, int in, int out, int err) noexcept
+      : pid_(pid), pty_(pty), in_(in), out_(out), err_(err) {}
 
 public:
-    NON_COPYABLE(ProcHandle);
+  NON_COPYABLE(ProcHandle);
 
-    ProcHandle() : ProcHandle(-1, -1, -1, -1, -1) {}
+  ProcHandle() : ProcHandle(-1, -1, -1, -1, -1) {}
 
-    ProcHandle(ProcHandle &&proc) noexcept :
-            pid_(proc.pid_), status_(proc.status_), pty_(proc.pty_),
-            in_(proc.in_), out_(proc.out_), err_(proc.err_) {
-        proc.detach();
-    }
+  ProcHandle(ProcHandle &&proc) noexcept
+      : pid_(proc.pid_), status_(proc.status_), pty_(proc.pty_), in_(proc.in_), out_(proc.out_),
+        err_(proc.err_) {
+    proc.detach();
+  }
 
-    ~ProcHandle();
+  ~ProcHandle();
 
-    ProcHandle &operator=(ProcHandle &&proc) noexcept {
-        auto tmp(std::move(proc));
-        this->swap(tmp);
-        return *this;
-    }
+  ProcHandle &operator=(ProcHandle &&proc) noexcept {
+    auto tmp(std::move(proc));
+    this->swap(tmp);
+    return *this;
+  }
 
-    void swap(ProcHandle &proc) noexcept {
-        std::swap(this->pid_, proc.pid_);
-        std::swap(this->status_, proc.status_);
-        std::swap(this->pty_, proc.pty_);
-        std::swap(this->in_, proc.in_);
-        std::swap(this->out_, proc.out_);
-        std::swap(this->err_, proc.err_);
-    }
+  void swap(ProcHandle &proc) noexcept {
+    std::swap(this->pid_, proc.pid_);
+    std::swap(this->status_, proc.status_);
+    std::swap(this->pty_, proc.pty_);
+    std::swap(this->in_, proc.in_);
+    std::swap(this->out_, proc.out_);
+    std::swap(this->err_, proc.err_);
+  }
 
-    pid_t pid() const {
-        return this->pid_;
-    }
+  pid_t pid() const { return this->pid_; }
 
-    int in() const {
-        return this->in_;
-    }
+  int in() const { return this->in_; }
 
-    int out() const {
-        return this->out_;
-    }
+  int out() const { return this->out_; }
 
-    int err() const {
-        return this->err_;
-    }
+  int err() const { return this->err_; }
 
-    explicit operator bool() const {
-        return this->pid() > -1;
-    }
+  explicit operator bool() const { return this->pid() > -1; }
 
-    /**
-     * get pty file descriptor.
-     * not close it directly
-     * @return
-     * if not found, return -1.
-     */
-    int pty() const {
-        return this->pty_;
-    }
+  /**
+   * get pty file descriptor.
+   * not close it directly
+   * @return
+   * if not found, return -1.
+   */
+  int pty() const { return this->pty_; }
 
-    bool hasPty() const {
-        return this->pty() > -1;
-    }
+  bool hasPty() const { return this->pty() > -1; }
 
-    /**
-     * get windows size of pty()
-     * represents {row, col}
-     * @return
-     * if not pty, return {0,0}
-     */
-    std::pair<unsigned short, unsigned short> getWinSize() const;
+  /**
+   * get windows size of pty()
+   * represents {row, col}
+   * @return
+   * if not pty, return {0,0}
+   */
+  std::pair<unsigned short, unsigned short> getWinSize() const;
 
-    /**
-     * wait process termination
-     * @return
-     */
-    WaitStatus wait();
+  /**
+   * wait process termination
+   * @return
+   */
+  WaitStatus wait();
 
-    pid_t detach() {
-        pid_t pid = this->pid_;
-        this->pid_ = -1;
-        this->pty_ = -1;
-        this->in_ = -1;
-        this->out_ = -1;
-        this->err_ = -1;
-        return pid;
-    }
+  pid_t detach() {
+    pid_t pid = this->pid_;
+    this->pid_ = -1;
+    this->pty_ = -1;
+    this->in_ = -1;
+    this->out_ = -1;
+    this->err_ = -1;
+    return pid;
+  }
 
-    using ReadCallback = std::function<void (unsigned int, const char *, unsigned int)>;
+  using ReadCallback = std::function<void(unsigned int, const char *, unsigned int)>;
 
-    void readAll(int timeout, const ReadCallback &readCallback) const;
+  void readAll(int timeout, const ReadCallback &readCallback) const;
 
-    std::pair<std::string, std::string> readAll(int timeout = -1) const;
+  std::pair<std::string, std::string> readAll(int timeout = -1) const;
 
-    Output waitAndGetResult(bool removeLastSpace = true);
+  Output waitAndGetResult(bool removeLastSpace = true);
 };
 
 struct IOConfig {
-    enum FDType : int {
-        INHERIT = -1,   // inherit parent file descriptor
-        PIPE    = -2,   // create pipe
-        PTY     = -3,   // create pty
-    };
+  enum FDType : int {
+    INHERIT = -1, // inherit parent file descriptor
+    PIPE = -2,    // create pipe
+    PTY = -3,     // create pty
+  };
 
-    struct FDWrapper {
-        int fd;
+  struct FDWrapper {
+    int fd;
 
-        FDWrapper(int fd) : fd(fd) {}   //NOLINT
-        FDWrapper(FDType type) : fd(static_cast<int>(type)) {}  //NOLINT
+    FDWrapper(int fd) : fd(fd) {}                          // NOLINT
+    FDWrapper(FDType type) : fd(static_cast<int>(type)) {} // NOLINT
 
-        explicit operator bool() const {
-            return this->fd > -1;
-        }
+    explicit operator bool() const { return this->fd > -1; }
 
-        bool is(FDType type) const {
-            return this->fd == static_cast<int>(type);
-        }
-    };
+    bool is(FDType type) const { return this->fd == static_cast<int>(type); }
+  };
 
-    FDWrapper in;
-    FDWrapper out;
-    FDWrapper err;
+  FDWrapper in;
+  FDWrapper out;
+  FDWrapper err;
 
-    termios term{};
+  termios term{};
 
-    unsigned short row{24};
-    unsigned short col{80};
+  unsigned short row{24};
+  unsigned short col{80};
 
-    IOConfig(FDWrapper in, FDWrapper out, FDWrapper err) : in(in), out(out), err(err) {
-        cfmakeraw(&this->term);
-    }
+  IOConfig(FDWrapper in, FDWrapper out, FDWrapper err) : in(in), out(out), err(err) {
+    cfmakeraw(&this->term);
+  }
 
-    IOConfig() : IOConfig(INHERIT, INHERIT, INHERIT) {}
+  IOConfig() : IOConfig(INHERIT, INHERIT, INHERIT) {}
 };
 
 void xcfmakesane(termios &term);
 
-
 class ProcBuilder {
 private:
-    IOConfig config;
-    std::vector<std::string> args;
-    std::unordered_map<std::string, std::string> env;
-    std::string cwd;
+  IOConfig config;
+  std::vector<std::string> args;
+  std::unordered_map<std::string, std::string> env;
+  std::string cwd;
 
-    /**
-     * called before exec process
-     */
-    std::function<void()> beforeExec;
+  /**
+   * called before exec process
+   */
+  std::function<void()> beforeExec;
 
 public:
-    explicit ProcBuilder(const char *cmdName) : args{cmdName} {}
+  explicit ProcBuilder(const char *cmdName) : args{cmdName} {}
 
-    ProcBuilder(std::initializer_list<const char *> list) {
-        for(auto &v : list) {
-            this->args.emplace_back(v);
-        }
+  ProcBuilder(std::initializer_list<const char *> list) {
+    for (auto &v : list) {
+      this->args.emplace_back(v);
     }
+  }
 
-    ~ProcBuilder() = default;
+  ~ProcBuilder() = default;
 
-    template <typename T>
-    ProcBuilder &addArg(T && arg) {
-        this->args.emplace_back(std::forward<T>(arg));
-        return *this;
+  template <typename T>
+  ProcBuilder &addArg(T &&arg) {
+    this->args.emplace_back(std::forward<T>(arg));
+    return *this;
+  }
+
+  ProcBuilder &addArgs(const std::vector<std::string> &values);
+
+  ProcBuilder &addEnv(const char *name, const char *value) {
+    this->env.emplace(name, value);
+    return *this;
+  }
+
+  /**
+   * close old fd and set
+   * @param fd
+   * @return
+   */
+  ProcBuilder &setIn(IOConfig::FDWrapper fd) {
+    this->config.in = fd;
+    return *this;
+  }
+
+  ProcBuilder &setOut(IOConfig::FDWrapper fd) {
+    this->config.out = fd;
+    return *this;
+  }
+
+  ProcBuilder &setErr(IOConfig::FDWrapper fd) {
+    this->config.err = fd;
+    return *this;
+  }
+
+  ProcBuilder &setWorkingDir(const char *dir) {
+    this->cwd = dir;
+    return *this;
+  }
+
+  ProcBuilder &setTerm(const termios &term) {
+    this->config.term = term;
+    return *this;
+  }
+
+  ProcBuilder &setWinSize(unsigned short row, unsigned short col) {
+    this->config.row = row;
+    this->config.col = col;
+    return *this;
+  }
+
+  ProcBuilder &setBeforeExec(const std::function<void()> &func) {
+    this->beforeExec = func;
+    return *this;
+  }
+
+  ProcHandle operator()() const;
+
+  /**
+   * if IOConfig out/err is INHERIT, set to PIPE.
+   * @param removeLastSpace
+   * @return
+   */
+  Output execAndGetResult(bool removeLastSpace = true) {
+    if (this->config.out.fd == IOConfig::INHERIT) {
+      this->config.out = IOConfig::PIPE;
     }
-
-    ProcBuilder &addArgs(const std::vector<std::string> &values);
-
-    ProcBuilder &addEnv(const char *name, const char *value) {
-        this->env.emplace(name, value);
-        return *this;
+    if (this->config.err.fd == IOConfig::INHERIT) {
+      this->config.err = IOConfig::PIPE;
     }
+    return (*this)().waitAndGetResult(removeLastSpace);
+  }
 
-    /**
-     * close old fd and set
-     * @param fd
-     * @return
-     */
-    ProcBuilder &setIn(IOConfig::FDWrapper fd) {
-        this->config.in = fd;
-        return *this;
-    }
+  WaitStatus exec() const { return (*this)().wait(); }
 
-    ProcBuilder &setOut(IOConfig::FDWrapper fd) {
-        this->config.out = fd;
-        return *this;
-    }
-
-    ProcBuilder &setErr(IOConfig::FDWrapper fd) {
-        this->config.err = fd;
-        return *this;
-    }
-
-    ProcBuilder &setWorkingDir(const char *dir) {
-        this->cwd = dir;
-        return *this;
-    }
-
-    ProcBuilder &setTerm(const termios &term) {
-        this->config.term = term;
-        return *this;
-    }
-
-    ProcBuilder &setWinSize(unsigned short row, unsigned short col) {
-        this->config.row = row;
-        this->config.col = col;
-        return *this;
-    }
-
-    ProcBuilder &setBeforeExec(const std::function<void()> &func) {
-        this->beforeExec = func;
-        return *this;
-    }
-
-    ProcHandle operator()() const;
-
-    /**
-     * if IOConfig out/err is INHERIT, set to PIPE.
-     * @param removeLastSpace
-     * @return
-     */
-    Output execAndGetResult(bool removeLastSpace = true) {
-        if(this->config.out.fd == IOConfig::INHERIT) {
-            this->config.out = IOConfig::PIPE;
-        }
-        if(this->config.err.fd == IOConfig::INHERIT) {
-            this->config.err = IOConfig::PIPE;
-        }
-        return (*this)().waitAndGetResult(removeLastSpace);
-    }
-
-    WaitStatus exec() const {
-        return (*this)().wait();
-    }
-
-    template <typename Func>
-    static ProcHandle spawn(const IOConfig &config, Func func) {
-        ProcHandle handle = spawnImpl(config);
-        if(handle) {
-            return handle;
-        } else {
+  template <typename Func>
+  static ProcHandle spawn(const IOConfig &config, Func func) {
+    ProcHandle handle = spawnImpl(config);
+    if (handle) {
+      return handle;
+    } else {
 #ifdef __EXCEPTIONS
-            try {
+      try {
 #endif
-                int ret = func();
-                exit(ret);
+        int ret = func();
+        exit(ret);
 
 #ifdef __EXCEPTIONS
-            } catch(...) {
-                abort();
-            }
+      } catch (...) {
+        abort();
+      }
 #endif
-        }
     }
+  }
 
 private:
-    static ProcHandle spawnImpl(const IOConfig &config);
+  static ProcHandle spawnImpl(const IOConfig &config);
 
-    void syncPWD() const;
+  void syncPWD() const;
 
-    void syncEnv() const;
+  void syncEnv() const;
 };
 
 } // namespace process
 
-#endif //YDSH_TOOLS_PROCESS_H
+#endif // YDSH_TOOLS_PROCESS_H

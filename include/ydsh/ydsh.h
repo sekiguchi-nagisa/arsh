@@ -23,17 +23,15 @@
 extern "C" {
 #endif
 
-
 #if defined(__GNUC__)
 #if defined _WIN32 || defined __CYGWIN__
-#define DS_PUBLIC_API(type) __attribute__ ((dllexport)) type
+#define DS_PUBLIC_API(type) __attribute__((dllexport)) type
 #else
-#define DS_PUBLIC_API(type) __attribute__ ((visibility ("default"))) type
+#define DS_PUBLIC_API(type) __attribute__((visibility("default"))) type
 #endif
 #else
 #define DS_PUBLIC_API(type) type
 #endif
-
 
 struct DSState;
 typedef struct DSState DSState;
@@ -43,10 +41,10 @@ typedef struct DSState DSState;
 /*********************/
 
 typedef enum {
-    DS_EXEC_MODE_NORMAL,
-    DS_EXEC_MODE_PARSE_ONLY,
-    DS_EXEC_MODE_CHECK_ONLY,
-    DS_EXEC_MODE_COMPILE_ONLY,
+  DS_EXEC_MODE_NORMAL,
+  DS_EXEC_MODE_PARSE_ONLY,
+  DS_EXEC_MODE_CHECK_ONLY,
+  DS_EXEC_MODE_COMPILE_ONLY,
 } DSExecMode;
 
 /**
@@ -138,9 +136,9 @@ DS_PUBLIC_API(void) DSState_setExitStatus(DSState *st, int status);
 
 /* for internal data structure dump */
 typedef enum {
-    DS_DUMP_KIND_UAST,  /* dump untyped abstract syntax tree */
-    DS_DUMP_KIND_AST,   /* dump typed abstract syntax tree */
-    DS_DUMP_KIND_CODE,  /* dump byte code */
+  DS_DUMP_KIND_UAST, /* dump untyped abstract syntax tree */
+  DS_DUMP_KIND_AST,  /* dump typed abstract syntax tree */
+  DS_DUMP_KIND_CODE, /* dump byte code */
 } DSDumpKind;
 
 /**
@@ -156,12 +154,11 @@ typedef enum {
  */
 DS_PUBLIC_API(int) DSState_setDumpTarget(DSState *st, DSDumpKind kind, const char *target);
 
-
 /* for option */
-#define DS_OPTION_ASSERT       ((unsigned int) (1u << 0u))
-#define DS_OPTION_INTERACTIVE  ((unsigned int) (1u << 1u))
-#define DS_OPTION_TRACE_EXIT   ((unsigned int) (1u << 2u))
-#define DS_OPTION_JOB_CONTROL  ((unsigned int) (1u << 3u))
+#define DS_OPTION_ASSERT ((unsigned int)(1u << 0u))
+#define DS_OPTION_INTERACTIVE ((unsigned int)(1u << 1u))
+#define DS_OPTION_TRACE_EXIT ((unsigned int)(1u << 2u))
+#define DS_OPTION_JOB_CONTROL ((unsigned int)(1u << 3u))
 
 DS_PUBLIC_API(unsigned int) DSState_option(const DSState *st);
 
@@ -179,53 +176,52 @@ DS_PUBLIC_API(void) DSState_setOption(DSState *st, unsigned int optionSet);
  */
 DS_PUBLIC_API(void) DSState_unsetOption(DSState *st, unsigned int optionSet);
 
-
 /* for indicating error kind. */
 typedef enum {
-    DS_ERROR_KIND_SUCCESS        ,
-    DS_ERROR_KIND_FILE_ERROR     ,
-    DS_ERROR_KIND_PARSE_ERROR    ,
-    DS_ERROR_KIND_TYPE_ERROR     ,
-    DS_ERROR_KIND_CODEGEN_ERROR  ,
-    DS_ERROR_KIND_RUNTIME_ERROR  ,
-    DS_ERROR_KIND_ASSERTION_ERROR,
-    DS_ERROR_KIND_EXIT           ,
+  DS_ERROR_KIND_SUCCESS,
+  DS_ERROR_KIND_FILE_ERROR,
+  DS_ERROR_KIND_PARSE_ERROR,
+  DS_ERROR_KIND_TYPE_ERROR,
+  DS_ERROR_KIND_CODEGEN_ERROR,
+  DS_ERROR_KIND_RUNTIME_ERROR,
+  DS_ERROR_KIND_ASSERTION_ERROR,
+  DS_ERROR_KIND_EXIT,
 } DSErrorKind;
 
 typedef struct {
-    /**
-     * kind of error.
-     * see DS_ERROR_KIND_ * macro
-     */
-    DSErrorKind kind;
+  /**
+   * kind of error.
+   * see DS_ERROR_KIND_ * macro
+   */
+  DSErrorKind kind;
 
-    /**
-     * file name of the error location.
-     * if has no errors, will be null.
-     */
-    char *fileName;
+  /**
+   * file name of the error location.
+   * if has no errors, will be null.
+   */
+  char *fileName;
 
-    /**
-     * indicate the line number of the error location.
-     * if kind is DS_ERROR_KIND_SUCCESS, it is 0.
-     */
-    unsigned int lineNum;
+  /**
+   * indicate the line number of the error location.
+   * if kind is DS_ERROR_KIND_SUCCESS, it is 0.
+   */
+  unsigned int lineNum;
 
-    /**
-     * indicates the number of characters in error line
-     * if kind is not S_ERROR_KIND_PARSE_ERROR, DS_ERROR_KIND_TYPE_ERROR or DS_ERROR_KIND_CODEGEN_ERROR,
-     * always is 0
-     */
-    unsigned int chars;
+  /**
+   * indicates the number of characters in error line
+   * if kind is not S_ERROR_KIND_PARSE_ERROR, DS_ERROR_KIND_TYPE_ERROR or
+   * DS_ERROR_KIND_CODEGEN_ERROR, always is 0
+   */
+  unsigned int chars;
 
-    /**
-     * indicate error name.
-     * if DS_ERROR_KIND_FILE, strerror()
-     * if DS_ERROR_KIND_PARSE_ERROR or DS_ERROR_KIND_TYPE_ERROR, error kind.
-     * if DS_ERROR_KIND_RUNTIME_ERROR, raised type name.
-     * otherwise, null
-     */
-    char *name;
+  /**
+   * indicate error name.
+   * if DS_ERROR_KIND_FILE, strerror()
+   * if DS_ERROR_KIND_PARSE_ERROR or DS_ERROR_KIND_TYPE_ERROR, error kind.
+   * if DS_ERROR_KIND_RUNTIME_ERROR, raised type name.
+   * otherwise, null
+   */
+  char *name;
 } DSError;
 
 /**
@@ -253,7 +249,8 @@ DS_PUBLIC_API(void) DSError_release(DSError *e);
  * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
  * if st or data is null, return -1 and not set error
  */
-DS_PUBLIC_API(int) DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e);
+DS_PUBLIC_API(int)
+DSState_eval(DSState *st, const char *sourceName, const char *data, unsigned int size, DSError *e);
 
 /**
  * open file and evaluate. if e is not null, set error info.
@@ -274,23 +271,22 @@ DS_PUBLIC_API(int) DSState_eval(DSState *st, const char *sourceName, const char 
  */
 DS_PUBLIC_API(int) DSState_loadAndEval(DSState *st, const char *fileName, DSError *e);
 
-
 /* for module loading option */
 /**
  * load module as fullpath. so not allow cascading module search
  * (not search from LOCAL_MOD_DIR and SYSTEM_MOD_DIR)
  */
-#define DS_MOD_FULLPATH      ((unsigned int) (1u << 0u))
+#define DS_MOD_FULLPATH ((unsigned int)(1u << 0u))
 
 /**
  * ignore ENOENT error
  */
-#define DS_MOD_IGNORE_ENOENT ((unsigned int) (1u << 1u))
+#define DS_MOD_IGNORE_ENOENT ((unsigned int)(1u << 1u))
 
 /**
  * evaluate module in separate module context
  */
-#define DS_MOD_SEPARATE_CTX  ((unsigned int) (1u << 2u))
+#define DS_MOD_SEPARATE_CTX ((unsigned int)(1u << 2u))
 
 /**
  * open file as module. if e is not null, set error info.
@@ -308,7 +304,8 @@ DS_PUBLIC_API(int) DSState_loadAndEval(DSState *st, const char *fileName, DSErro
  * if fileName is already loaded module, return always 0 and do nothing.
  * if st or fileName is null, return -1 and not set error
  */
-DS_PUBLIC_API(int) DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e);
+DS_PUBLIC_API(int)
+DSState_loadModule(DSState *st, const char *fileName, unsigned int option, DSError *e);
 
 /**
  * execute command. if not DS_EXEC_MODE_NORMAL, do nothing (return always 0)
@@ -325,9 +322,9 @@ DS_PUBLIC_API(int) DSState_loadModule(DSState *st, const char *fileName, unsigne
 DS_PUBLIC_API(int) DSState_exec(DSState *st, char *const *argv);
 
 typedef struct {
-    unsigned int major;
-    unsigned int minor;
-    unsigned int patch;
+  unsigned int major;
+  unsigned int minor;
+  unsigned int patch;
 } DSVersion;
 
 /**
@@ -341,21 +338,19 @@ DS_PUBLIC_API(const char *) DSState_version(DSVersion *version);
 
 DS_PUBLIC_API(const char *) DSState_copyright();
 
-
 /* for feature detection */
-#define DS_FEATURE_LOGGING    ((unsigned int) (1u << 0u))
-#define DS_FEATURE_SAFE_CAST  ((unsigned int) (1u << 1u))
+#define DS_FEATURE_LOGGING ((unsigned int)(1u << 0u))
+#define DS_FEATURE_SAFE_CAST ((unsigned int)(1u << 1u))
 
 DS_PUBLIC_API(unsigned int) DSState_featureBit();
-
 
 /* for input completion */
 
 typedef enum {
-    DS_COMP_INVOKE, // invoke completion
-    DS_COMP_GET,    // get completion result at index
-    DS_COMP_SIZE,   // get size of completion result
-    DS_COMP_CLEAR,  // clear completion result
+  DS_COMP_INVOKE, // invoke completion
+  DS_COMP_GET,    // get completion result at index
+  DS_COMP_SIZE,   // get size of completion result
+  DS_COMP_CLEAR,  // clear completion result
 } DSCompletionOp;
 
 /**
@@ -372,22 +367,23 @@ typedef enum {
  * if op is 'DS_COMP_SIZE' or 'DS_COMP_INVOKE', return size of completion result.
  * otherwise, return always 1.
  */
-DS_PUBLIC_API(unsigned int) DSState_complete(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
+DS_PUBLIC_API(unsigned int)
+DSState_complete(DSState *st, DSCompletionOp op, unsigned int index, const char **value);
 
 /* for line editing (history, prompt) */
 
 typedef enum {
-    DS_EDIT_HIST_SIZE,    // current history buffer size
-    DS_EDIT_HIST_GET,     // get history at index
-    DS_EDIT_HIST_SET,     // set history at index
-    DS_EDIT_HIST_DEL,     // delete history at index
-    DS_EDIT_HIST_CLEAR,   // clear all of history
-    DS_EDIT_HIST_INIT,    // add empty string to buffer
-    DS_EDIT_HIST_ADD,     // add history to buffer
-    DS_EDIT_HIST_LOAD,    // load history from file
-    DS_EDIT_HIST_SAVE,    // save history to file
-    DS_EDIT_HIST_SEARCH,  // search history
-    DS_EDIT_PROMPT,       // get prompt
+  DS_EDIT_HIST_SIZE,   // current history buffer size
+  DS_EDIT_HIST_GET,    // get history at index
+  DS_EDIT_HIST_SET,    // set history at index
+  DS_EDIT_HIST_DEL,    // delete history at index
+  DS_EDIT_HIST_CLEAR,  // clear all of history
+  DS_EDIT_HIST_INIT,   // add empty string to buffer
+  DS_EDIT_HIST_ADD,    // add history to buffer
+  DS_EDIT_HIST_LOAD,   // load history from file
+  DS_EDIT_HIST_SAVE,   // save history to file
+  DS_EDIT_HIST_SEARCH, // search history
+  DS_EDIT_PROMPT,      // get prompt
 } DSLineEditOp;
 
 /**
@@ -401,7 +397,8 @@ typedef enum {
  * if op is DS_EDIT_HIST_SIZE, return size of history.
  * otherwise, return non-zero value
  */
-DS_PUBLIC_API(unsigned int) DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const char **buf);
+DS_PUBLIC_API(unsigned int)
+DSState_lineEdit(DSState *st, DSLineEditOp op, int index, const char **buf);
 
 #ifdef __cplusplus
 }

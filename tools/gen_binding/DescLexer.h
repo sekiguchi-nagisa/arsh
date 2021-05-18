@@ -21,34 +21,33 @@
 
 #include <misc/lexer_base.hpp>
 
-#define EACH_DESC_TOKEN(OP) \
-    OP(INVALID) \
-    OP(EOS) \
-    OP(DESC_PREFIX)    /* //!bind: */\
-    OP(FUNC)           /* function */\
-    OP(YDSH_METHOD)    /* YDSH_METHOD */\
-    OP(YDSH_METHOD_DECL) /* YDSH_METHOD_DECL */\
-    OP(RCTX)           /* RuntimeContext */\
-    OP(WHERE)          /* where */\
-    OP(AND)            /* & */\
-    OP(IDENTIFIER) \
-    OP(TYPE_OPEN)      /* < */\
-    OP(TYPE_CLOSE)     /* > */\
-    OP(PTYPE_OPEN)     /* [ */\
-    OP(PTYPE_CLOSE     /* ] */)\
-    OP(VAR_NAME)       /* $ [_a-zA-Z][_a-zA-Z0-9]* */\
-    OP(LP)             /* ( */\
-    OP(RP)             /* ) */\
-    OP(COMMA)          /* , */\
-    OP(COLON)          /* : */\
-    OP(SEMI_COLON)     /* ; */\
-    OP(LBC)            /* { */\
-    OP(OPT)            /* ? */
-
+#define EACH_DESC_TOKEN(OP)                                                                        \
+  OP(INVALID)                                                                                      \
+  OP(EOS)                                                                                          \
+  OP(DESC_PREFIX)      /* //!bind: */                                                              \
+  OP(FUNC)             /* function */                                                              \
+  OP(YDSH_METHOD)      /* YDSH_METHOD */                                                           \
+  OP(YDSH_METHOD_DECL) /* YDSH_METHOD_DECL */                                                      \
+  OP(RCTX)             /* RuntimeContext */                                                        \
+  OP(WHERE)            /* where */                                                                 \
+  OP(AND)              /* & */                                                                     \
+  OP(IDENTIFIER)                                                                                   \
+  OP(TYPE_OPEN)  /* < */                                                                           \
+  OP(TYPE_CLOSE) /* > */                                                                           \
+  OP(PTYPE_OPEN) /* [ */                                                                           \
+  OP(PTYPE_CLOSE /* ] */)                                                                          \
+  OP(VAR_NAME)   /* $ [_a-zA-Z][_a-zA-Z0-9]* */                                                    \
+  OP(LP)         /* ( */                                                                           \
+  OP(RP)         /* ) */                                                                           \
+  OP(COMMA)      /* , */                                                                           \
+  OP(COLON)      /* : */                                                                           \
+  OP(SEMI_COLON) /* ; */                                                                           \
+  OP(LBC)        /* { */                                                                           \
+  OP(OPT)        /* ? */
 
 enum class DescTokenKind : unsigned int {
 #define GEN_ENUM(TOK) TOK,
-EACH_DESC_TOKEN(GEN_ENUM)
+  EACH_DESC_TOKEN(GEN_ENUM)
 #undef GEN_ENUM
 };
 
@@ -56,20 +55,16 @@ using Token = ydsh::Token;
 
 class DescLexer : public ydsh::LexerBase {
 public:
-    explicit DescLexer(const char *line) : LexerBase("", line) {}
-    ~DescLexer() = default;
+  explicit DescLexer(const char *line) : LexerBase("", line) {}
+  ~DescLexer() = default;
 
-    DescTokenKind nextToken(Token &token);
+  DescTokenKind nextToken(Token &token);
 };
 
-inline bool isInvalidToken(DescTokenKind kind) {
-    return kind == DescTokenKind::INVALID;
-}
+inline bool isInvalidToken(DescTokenKind kind) { return kind == DescTokenKind::INVALID; }
 
-inline bool isEOSToken(DescTokenKind kind) {
-    return kind == DescTokenKind::EOS;
-}
+inline bool isEOSToken(DescTokenKind kind) { return kind == DescTokenKind::EOS; }
 
 const char *toString(DescTokenKind kind);
 
-#endif //YDSH_TOOLS_DESCLEXER_H
+#endif // YDSH_TOOLS_DESCLEXER_H

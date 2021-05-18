@@ -4,7 +4,7 @@
 
 set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/DescLexer.cpp)
 add_gen_lexer_target(
-        TARGET      gen_desc_lexer
+        TARGET gen_desc_lexer
         SOURCE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/DescLexer.re2c.cpp
         OUTPUT_FILE ${lexer_src}
         RE2C_OPTION "-W -Werror -8 -s"

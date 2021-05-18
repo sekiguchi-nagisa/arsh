@@ -4,6 +4,7 @@
 # Date: 2019-11-15, 19:49:10 GMT
 */
 
+// clang-format off
 static const char *grapheme_break_tests[] = {
     "÷ 0020 ÷ 0020 ÷",
     "÷ 0020 × 0308 ÷ 0020 ÷",

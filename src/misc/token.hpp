@@ -23,58 +23,50 @@
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
 struct Token {
-    unsigned int pos;
-    unsigned int size;
+  unsigned int pos;
+  unsigned int size;
 
-    unsigned int endPos() const {
-        return this->pos + this->size;
-    }
+  unsigned int endPos() const { return this->pos + this->size; }
 
-    bool operator==(const Token &token) const {
-        return this->pos == token.pos && this->size == token.size;
-    }
+  bool operator==(const Token &token) const {
+    return this->pos == token.pos && this->size == token.size;
+  }
 
-    bool operator!=(const Token &token) const {
-        return !(*this == token);
-    }
+  bool operator!=(const Token &token) const { return !(*this == token); }
 
-    /**
-     *
-     * @param startIndex
-     * inclusive
-     * @param stopIndex
-     * exclusive
-     * @return
-     */
-    Token slice(unsigned int startIndex, unsigned int stopIndex) const {
-        assert(startIndex <= stopIndex);
-        assert(startIndex < this->size);
-        assert(stopIndex <= this->size);
+  /**
+   *
+   * @param startIndex
+   * inclusive
+   * @param stopIndex
+   * exclusive
+   * @return
+   */
+  Token slice(unsigned int startIndex, unsigned int stopIndex) const {
+    assert(startIndex <= stopIndex);
+    assert(startIndex < this->size);
+    assert(stopIndex <= this->size);
 
-        Token newToken{this->pos, this->size};
-        newToken.pos += startIndex;
-        newToken.size = stopIndex - startIndex;
-        return newToken;
-    }
+    Token newToken{this->pos, this->size};
+    newToken.pos += startIndex;
+    newToken.size = stopIndex - startIndex;
+    return newToken;
+  }
 
-    Token sliceFrom(unsigned int startIndex) const {
-        return this->slice(startIndex, this->size);
-    }
+  Token sliceFrom(unsigned int startIndex) const { return this->slice(startIndex, this->size); }
 
-    std::string str() const {
-        std::string str = "(pos = ";
-        str += std::to_string(this->pos);
-        str += ", size = ";
-        str += std::to_string(this->size);
-        str += ")";
-        return str;
-    }
+  std::string str() const {
+    std::string str = "(pos = ";
+    str += std::to_string(this->pos);
+    str += ", size = ";
+    str += std::to_string(this->size);
+    str += ")";
+    return str;
+  }
 };
 
-inline std::string toString(Token token) {
-    return token.str();
-}
+inline std::string toString(Token token) { return token.str(); }
 
 END_MISC_LIB_NAMESPACE_DECL
 
-#endif //MISC_LIB_TOKEN_HPP
+#endif // MISC_LIB_TOKEN_HPP

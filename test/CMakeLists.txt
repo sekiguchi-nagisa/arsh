@@ -4,15 +4,15 @@
 
 if (CMAKE_VERSION VERSION_LESS 3.2)
     set(UPDATE_DISCONNECTED_IF_AVAILABLE "")
-else()
+else ()
     set(UPDATE_DISCONNECTED_IF_AVAILABLE "UPDATE_DISCONNECTED 1")
-endif()
+endif ()
 
 download_project(
-        PROJ                googletest
-        GIT_REPOSITORY      https://github.com/google/googletest.git
-        GIT_TAG             release-1.10.0
-        GIT_PROGRESS        1
+        PROJ googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG release-1.10.0
+        GIT_PROGRESS 1
         ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )
 
@@ -57,13 +57,13 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/uri)
 include_directories(${CMAKE_SOURCE_DIR}/tools/server)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lsp)
 
-if(FUZZING_BUILD_MODE)
+if (FUZZING_BUILD_MODE)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fuzz)
-endif()
+endif ()
 
-if(USE_EXTRA_TEST)
+if (USE_EXTRA_TEST)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/extra)
-endif()
+endif ()
 
 
 #=====================#

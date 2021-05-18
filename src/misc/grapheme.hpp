@@ -19,8 +19,8 @@
 
 #include <tuple>
 
-#include "unicode.hpp"
 #include "string_ref.hpp"
+#include "unicode.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -29,61 +29,60 @@ namespace __detail {
 template <bool Bool>
 class GraphemeBoundary {
 public:
-    static_assert(Bool, "not allowed instantiation");
+  static_assert(Bool, "not allowed instantiation");
 
-    // for grapheme cluster boundry. only support extended grapheme cluster
-    enum class BreakProperty {
-        SOT,    // for GB1
+  // for grapheme cluster boundry. only support extended grapheme cluster
+  enum class BreakProperty {
+    SOT, // for GB1
 
-        Any,
-        CR,
-        LF,
-        Control,
-        Extend,
-        ZWJ,
-        Regional_Indicator,
-        Prepend,
-        SpacingMark,
-        L,
-        V,
-        T,
-        LV,
-        LVT,
+    Any,
+    CR,
+    LF,
+    Control,
+    Extend,
+    ZWJ,
+    Regional_Indicator,
+    Prepend,
+    SpacingMark,
+    L,
+    V,
+    T,
+    LV,
+    LVT,
 
-        Extended_Pictographic,
+    Extended_Pictographic,
 
-        Extended_Pictographic_with_ZWJ, // indicates \p{Extended_Pictographic} Extend* ZWJ
-    };
+    Extended_Pictographic_with_ZWJ, // indicates \p{Extended_Pictographic} Extend* ZWJ
+  };
 
-    static BreakProperty getBreakProperty(int codePoint);
+  static BreakProperty getBreakProperty(int codePoint);
 
 private:
-    /**
-     * may be indicate previous code point property
-     */
-    BreakProperty state{BreakProperty::SOT};
+  /**
+   * may be indicate previous code point property
+   */
+  BreakProperty state{BreakProperty::SOT};
 
 public:
-    GraphemeBoundary() = default;
+  GraphemeBoundary() = default;
 
-    explicit GraphemeBoundary(BreakProperty init) : state(init) {}
+  explicit GraphemeBoundary(BreakProperty init) : state(init) {}
 
-    BreakProperty getState() const {
-        return this->state;
-    }
+  BreakProperty getState() const { return this->state; }
 
-    /**
-     * scan grapheme cluster boundary
-     * @param codePoint
-     * @return
-     * if grapheme cluster boundary is between prev codePoint and codePoint, return true
-     */
-    bool scanBoundary(int codePoint);
+  /**
+   * scan grapheme cluster boundary
+   * @param codePoint
+   * @return
+   * if grapheme cluster boundary is between prev codePoint and codePoint, return true
+   */
+  bool scanBoundary(int codePoint);
 };
 
 template <bool Bool>
-typename GraphemeBoundary<Bool>::BreakProperty GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
-    using PropertyInterval = std::tuple<int, int, BreakProperty>;
+typename GraphemeBoundary<Bool>::BreakProperty
+GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
+  using PropertyInterval = std::tuple<int, int, BreakProperty>;
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
 #define PROPERTY(E) BreakProperty::E
@@ -91,217 +90,201 @@ typename GraphemeBoundary<Bool>::BreakProperty GraphemeBoundary<Bool>::getBreakP
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
-    struct Comp {
-        bool operator()(const PropertyInterval &l, int r) const {
-            return std::get<1>(l) < r;
-        }
+  struct Comp {
+    bool operator()(const PropertyInterval &l, int r) const { return std::get<1>(l) < r; }
 
-        bool operator()(int l, const PropertyInterval &r) const {
-            return l < std::get<0>(r);
-        }
-    };
+    bool operator()(int l, const PropertyInterval &r) const { return l < std::get<0>(r); }
+  };
 
-    auto iter = std::lower_bound(std::begin(grapheme_break_property_table),
-                                 std::end(grapheme_break_property_table),
-                                 codePoint, Comp());
-    if(iter != std::end(grapheme_break_property_table)) {
-        auto &interval = *iter;
-        if(codePoint >= std::get<0>(interval) && codePoint <= std::get<1>(interval)) {
-            return std::get<2>(interval);
-        }
+  auto iter = std::lower_bound(std::begin(grapheme_break_property_table),
+                               std::end(grapheme_break_property_table), codePoint, Comp());
+  if (iter != std::end(grapheme_break_property_table)) {
+    auto &interval = *iter;
+    if (codePoint >= std::get<0>(interval) && codePoint <= std::get<1>(interval)) {
+      return std::get<2>(interval);
     }
-    return BreakProperty::Any;
+  }
+  return BreakProperty::Any;
 }
-
 
 // see. https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules
 template <bool Bool>
 bool GraphemeBoundary<Bool>::scanBoundary(int codePoint) {
-    auto after = getBreakProperty(codePoint);
-    auto before = this->state;
-    this->state = after;
+  auto after = getBreakProperty(codePoint);
+  auto before = this->state;
+  this->state = after;
 
-    if(before == BreakProperty::SOT) {
-        return false;
+  if (before == BreakProperty::SOT) {
+    return false;
+  }
+
+  switch (before) {
+  case BreakProperty::CR:
+    if (after == BreakProperty::LF) {
+      return false; // GB3
     }
-
-    switch(before) {
-    case BreakProperty::CR:
-        if(after == BreakProperty::LF) {
-            return false;   // GB3
-        }
-        return true;   // GB4
-    case BreakProperty::LF:
+    return true; // GB4
+  case BreakProperty::LF:
+  case BreakProperty::Control:
+    return true; // GB4
+  default:
+    switch (after) {
     case BreakProperty::Control:
-        return true;    // GB4
+    case BreakProperty::CR:
+    case BreakProperty::LF:
+      return true; // GB5
     default:
-        switch(after) {
-        case BreakProperty::Control:
-        case BreakProperty::CR:
-        case BreakProperty::LF:
-            return true;    // GB5
-        default:
-            break;
-        }
-        break;
+      break;
     }
+    break;
+  }
 
-    switch(before) {
+  switch (before) {
+  case BreakProperty::L:
+    switch (after) {
     case BreakProperty::L:
-        switch(after) {
-        case BreakProperty::L:
-        case BreakProperty::V:
-        case BreakProperty::LV:
-        case BreakProperty::LVT:
-            return false;   // GB6
-        default:
-            break;
-        }
-        break;
-    case BreakProperty::LV:
     case BreakProperty::V:
-        if(after == BreakProperty::V || after == BreakProperty::T) {
-            return false;   // GB7
-        }
-        break;
+    case BreakProperty::LV:
     case BreakProperty::LVT:
-    case BreakProperty::T:
-        if(after == BreakProperty::T) {
-            return false;   // GB8
-        }
-        break;
+      return false; // GB6
     default:
-        break;
+      break;
     }
+    break;
+  case BreakProperty::LV:
+  case BreakProperty::V:
+    if (after == BreakProperty::V || after == BreakProperty::T) {
+      return false; // GB7
+    }
+    break;
+  case BreakProperty::LVT:
+  case BreakProperty::T:
+    if (after == BreakProperty::T) {
+      return false; // GB8
+    }
+    break;
+  default:
+    break;
+  }
 
-    switch(after) {
-    case BreakProperty::Extend:
-    case BreakProperty::ZWJ:
-        if(before != BreakProperty::Extended_Pictographic) {
-            return false;   // GB9
-        }
-        break;
-    case BreakProperty::SpacingMark:
-        return false;   // GB9a
-    default:
-        break;
+  switch (after) {
+  case BreakProperty::Extend:
+  case BreakProperty::ZWJ:
+    if (before != BreakProperty::Extended_Pictographic) {
+      return false; // GB9
     }
+    break;
+  case BreakProperty::SpacingMark:
+    return false; // GB9a
+  default:
+    break;
+  }
 
-    switch(before) {
-    case BreakProperty::Prepend:
-        return false;   //GB9b
-    case BreakProperty::Regional_Indicator:
-        if(after == BreakProperty::Regional_Indicator) {
-            this->state = BreakProperty::Any;
-            return false;   // GB12, GB13
-        }
-        break;
-    case BreakProperty::Extended_Pictographic:
-        if(after == BreakProperty::Extend) {
-            this->state = BreakProperty::Extended_Pictographic; // consume Extend
-            return false;   // GB11
-        } else if(after == BreakProperty::ZWJ) {
-            this->state = BreakProperty::Extended_Pictographic_with_ZWJ;
-            return false;   // GB11
-        }
-        break;
-    case BreakProperty::Extended_Pictographic_with_ZWJ:
-        if(after == BreakProperty::Extended_Pictographic){
-            return false;   // GB11
-        }
-        break;
-    default:
-        break;
+  switch (before) {
+  case BreakProperty::Prepend:
+    return false; // GB9b
+  case BreakProperty::Regional_Indicator:
+    if (after == BreakProperty::Regional_Indicator) {
+      this->state = BreakProperty::Any;
+      return false; // GB12, GB13
     }
-    return true;    // GB999
+    break;
+  case BreakProperty::Extended_Pictographic:
+    if (after == BreakProperty::Extend) {
+      this->state = BreakProperty::Extended_Pictographic; // consume Extend
+      return false;                                       // GB11
+    } else if (after == BreakProperty::ZWJ) {
+      this->state = BreakProperty::Extended_Pictographic_with_ZWJ;
+      return false; // GB11
+    }
+    break;
+  case BreakProperty::Extended_Pictographic_with_ZWJ:
+    if (after == BreakProperty::Extended_Pictographic) {
+      return false; // GB11
+    }
+    break;
+  default:
+    break;
+  }
+  return true; // GB999
 }
 
 template <bool Bool>
 class GraphemeScanner {
 private:
-    static_assert(Bool, "not allowed instantiation");
+  static_assert(Bool, "not allowed instantiation");
 
-    StringRef ref;
-    size_t prevPos;
-    size_t curPos;
-    GraphemeBoundary<Bool> boundary;
+  StringRef ref;
+  size_t prevPos;
+  size_t curPos;
+  GraphemeBoundary<Bool> boundary;
 
 public:
-    GraphemeScanner(StringRef ref, size_t prevPos = 0,
-                    size_t curPos = 0, GraphemeBoundary<Bool> boundary = {}) :
-            ref(ref), prevPos(prevPos), curPos(curPos), boundary(boundary) {}
+  GraphemeScanner(StringRef ref, size_t prevPos = 0, size_t curPos = 0,
+                  GraphemeBoundary<Bool> boundary = {})
+      : ref(ref), prevPos(prevPos), curPos(curPos), boundary(boundary) {}
 
-    StringRef getRef() const {
-        return this->ref;
-    }
+  StringRef getRef() const { return this->ref; }
 
-    size_t getPrevPos() const {
-        return this->prevPos;
-    }
+  size_t getPrevPos() const { return this->prevPos; }
 
-    size_t getCurPos() const {
-        return this->curPos;
-    }
+  size_t getCurPos() const { return this->curPos; }
 
-    GraphemeBoundary<Bool> getBoundary() const {
-        return this->boundary;
-    }
+  GraphemeBoundary<Bool> getBoundary() const { return this->boundary; }
 
-    bool hasNext() const {
-        return this->prevPos <= this->curPos && this->prevPos < this->ref.size();
-    }
+  bool hasNext() const { return this->prevPos <= this->curPos && this->prevPos < this->ref.size(); }
 
-    struct Result {
-        size_t startPos;        // begin pos of grapheme cluster
-        size_t byteSize;        // byte length of graphme cluster
-        size_t codePointCount;  // count of containing code points
-        int firstCodePoint;     // for char width
-    };
+  struct Result {
+    size_t startPos;       // begin pos of grapheme cluster
+    size_t byteSize;       // byte length of graphme cluster
+    size_t codePointCount; // count of containing code points
+    int firstCodePoint;    // for char width
+  };
 
-    /**
-     * get grapheme cluster
-     * @param result
-     * set scanned grapheme cluster info to result
-     * @return
-     * if reach eof, return false
-     */
-    bool next(Result &result);
+  /**
+   * get grapheme cluster
+   * @param result
+   * set scanned grapheme cluster info to result
+   * @return
+   * if reach eof, return false
+   */
+  bool next(Result &result);
 };
 
 inline int toCodePoint(StringRef ref, size_t pos) {
-    int codePoint = UnicodeUtil::utf8ToCodePoint(ref.begin() + pos, ref.end());
-    if(codePoint < 0) {
-        codePoint = ref[pos];   // broken encoding
-    }
-    return codePoint;
+  int codePoint = UnicodeUtil::utf8ToCodePoint(ref.begin() + pos, ref.end());
+  if (codePoint < 0) {
+    codePoint = ref[pos]; // broken encoding
+  }
+  return codePoint;
 }
 
 template <bool Bool>
 bool GraphemeScanner<Bool>::next(Result &result) {
-    result.codePointCount = this->prevPos == this->curPos ? 0 : 1;
-    result.startPos = this->prevPos;
-    result.byteSize = 0;
-    result.firstCodePoint = result.codePointCount > 0 ? toCodePoint(this->ref, this->prevPos) : -1;
+  result.codePointCount = this->prevPos == this->curPos ? 0 : 1;
+  result.startPos = this->prevPos;
+  result.byteSize = 0;
+  result.firstCodePoint = result.codePointCount > 0 ? toCodePoint(this->ref, this->prevPos) : -1;
 
-    while(this->curPos < this->ref.size()) {
-        size_t pos = this->curPos;
-        size_t nextPos = UnicodeUtil::utf8NextPos(this->curPos, this->ref[this->curPos]);
-        int codePoint = toCodePoint(this->ref, this->curPos);
-        if(result.codePointCount++ == 0) {
-            result.firstCodePoint = codePoint;
-        }
-        this->curPos = nextPos;
-        if(this->boundary.scanBoundary(codePoint)) {
-            result.byteSize = pos - this->prevPos;
-            this->prevPos = pos;
-            return true;
-        }
+  while (this->curPos < this->ref.size()) {
+    size_t pos = this->curPos;
+    size_t nextPos = UnicodeUtil::utf8NextPos(this->curPos, this->ref[this->curPos]);
+    int codePoint = toCodePoint(this->ref, this->curPos);
+    if (result.codePointCount++ == 0) {
+      result.firstCodePoint = codePoint;
     }
-    if(this->curPos == this->ref.size()) {
-        result.byteSize = this->curPos - this->prevPos;
-        this->prevPos = this->curPos;
+    this->curPos = nextPos;
+    if (this->boundary.scanBoundary(codePoint)) {
+      result.byteSize = pos - this->prevPos;
+      this->prevPos = pos;
+      return true;
     }
-    return result.codePointCount > 0;
+  }
+  if (this->curPos == this->ref.size()) {
+    result.byteSize = this->curPos - this->prevPos;
+    this->prevPos = this->curPos;
+  }
+  return result.codePointCount > 0;
 }
 
 } // namespace __detail
@@ -312,4 +295,4 @@ using GraphemeScanner = __detail::GraphemeScanner<true>;
 
 END_MISC_LIB_NAMESPACE_DECL
 
-#endif //MISC_LIB_RAPHEME_HPP
+#endif // MISC_LIB_RAPHEME_HPP

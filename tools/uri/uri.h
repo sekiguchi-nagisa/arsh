@@ -23,119 +23,98 @@ namespace ydsh::uri {
 
 class Authority {
 private:
-    std::string userinfo;
+  std::string userinfo;
 
-    std::string host;
+  std::string host;
 
-    std::string port;
+  std::string port;
 
 public:
-    Authority() = default;
+  Authority() = default;
 
-    Authority(std::string &&userinfo, std::string &&host, std::string &&port) :
-        userinfo(std::move(userinfo)), host(std::move(host)), port(std::move(port)) {}
+  Authority(std::string &&userinfo, std::string &&host, std::string &&port)
+      : userinfo(std::move(userinfo)), host(std::move(host)), port(std::move(port)) {}
 
-    const std::string &getUserInfo() const {
-        return this->userinfo;
-    }
+  const std::string &getUserInfo() const { return this->userinfo; }
 
-    const std::string &getHost() const {
-        return this->host;
-    }
+  const std::string &getHost() const { return this->host; }
 
-    const std::string &getPort() const {
-        return this->port;
-    }
+  const std::string &getPort() const { return this->port; }
 
-    explicit operator bool() const {
-        return !this->host.empty();
-    }
+  explicit operator bool() const { return !this->host.empty(); }
 
-    std::string toString() const;
+  std::string toString() const;
 };
 
 class URI {
 private:
-    std::string scheme;
+  std::string scheme;
 
-    Authority authority;
+  Authority authority;
 
-    std::string path;
+  std::string path;
 
-    std::string query;
+  std::string query;
 
-    std::string fragment;
+  std::string fragment;
 
-    URI(std::string &&scheme, Authority &&authority, std::string &&path, std::string &&query, std::string &&fragment) :
-            scheme(std::move(scheme)), authority(std::move(authority)),
-            path(std::move(path)), query(std::move(query)), fragment(std::move(fragment)) {}
+  URI(std::string &&scheme, Authority &&authority, std::string &&path, std::string &&query,
+      std::string &&fragment)
+      : scheme(std::move(scheme)), authority(std::move(authority)), path(std::move(path)),
+        query(std::move(query)), fragment(std::move(fragment)) {}
 
 public:
-    URI() = default;
+  URI() = default;
 
-    const std::string &getScheme() const {
-        return this->scheme;
-    }
+  const std::string &getScheme() const { return this->scheme; }
 
-    const Authority &getAuthority() const {
-        return this->authority;
-    }
+  const Authority &getAuthority() const { return this->authority; }
 
-    const std::string &getPath() const {
-        return this->path;
-    }
+  const std::string &getPath() const { return this->path; }
 
-    const std::string &getQuery() const {
-        return this->query;
-    }
+  const std::string &getQuery() const { return this->query; }
 
-    const std::string &getFragment() const {
-        return this->fragment;
-    }
+  const std::string &getFragment() const { return this->fragment; }
 
-    explicit operator bool() const {
-        return !this->scheme.empty();
-    }
+  explicit operator bool() const { return !this->scheme.empty(); }
 
-    /**
-     * get valid URI string
-     * @return
-     */
-    std::string toString() const;
+  /**
+   * get valid URI string
+   * @return
+   */
+  std::string toString() const;
 
-    /**
-     * parse uri string and create URI instance
-     * @param str
-     * may be invalid URI string
-     * @return
-     */
-    static URI fromString(const std::string &str);
+  /**
+   * parse uri string and create URI instance
+   * @param str
+   * may be invalid URI string
+   * @return
+   */
+  static URI fromString(const std::string &str);
 
-    /**
-     * apply percent-encoding to string
-     * @param str
-     * @return
-     */
-    static std::string encode(const std::string &str) {
-        return encode(str.c_str(), str.c_str() + str.size());
-    }
+  /**
+   * apply percent-encoding to string
+   * @param str
+   * @return
+   */
+  static std::string encode(const std::string &str) {
+    return encode(str.c_str(), str.c_str() + str.size());
+  }
 
-    static std::string encode(const char *begin, const char *end);
+  static std::string encode(const char *begin, const char *end);
 
-    /**
-     * decode percent-encoded string.
-     * @param str
-     * @return
-     */
-    static std::string decode(const std::string &str) {
-        return decode(str.c_str(), str.c_str() + str.size());
-    }
+  /**
+   * decode percent-encoded string.
+   * @param str
+   * @return
+   */
+  static std::string decode(const std::string &str) {
+    return decode(str.c_str(), str.c_str() + str.size());
+  }
 
-    static std::string decode(const char *begin, const char *end);
+  static std::string decode(const char *begin, const char *end);
 };
-
-
 
 } // namespace ydsh::uri
 
-#endif //YDSH_TOOLS_URI_H
+#endif // YDSH_TOOLS_URI_H

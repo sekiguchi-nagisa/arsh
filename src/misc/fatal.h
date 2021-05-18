@@ -17,23 +17,23 @@
 #ifndef MISC_LIB_FATAL_H
 #define MISC_LIB_FATAL_H
 
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <cerrno>
 
-#define __BASE_FILENAME__ (strrchr(__FILE__, '/') != nullptr ? ((const char *)strrchr(__FILE__, '/') + 1) : __FILE__)
+#define __BASE_FILENAME__                                                                          \
+  (strrchr(__FILE__, '/') != nullptr ? ((const char *)strrchr(__FILE__, '/') + 1) : __FILE__)
 
 /**
  * report error and abort.
  */
-#define fatal(fmt, ...) \
-    do {\
-        fprintf(stderr, "%s:%d: [fatal error] " fmt, __BASE_FILENAME__, __LINE__, ## __VA_ARGS__);\
-        abort();\
-    } while(false)
+#define fatal(fmt, ...)                                                                            \
+  do {                                                                                             \
+    fprintf(stderr, "%s:%d: [fatal error] " fmt, __BASE_FILENAME__, __LINE__, ##__VA_ARGS__);      \
+    abort();                                                                                       \
+  } while (false)
 
-#define fatal_perror(fmt, ...) fatal(fmt ": %s\n", ## __VA_ARGS__, strerror(errno))
+#define fatal_perror(fmt, ...) fatal(fmt ": %s\n", ##__VA_ARGS__, strerror(errno))
 
-
-#endif //MISC_LIB_FATAL_H
+#endif // MISC_LIB_FATAL_H

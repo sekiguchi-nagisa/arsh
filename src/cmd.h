@@ -53,16 +53,12 @@ builtin_command_t lookupBuiltinCommand(const char *commandName);
 std::string toPrintable(StringRef ref);
 
 // common function for field splitting
-inline bool isSpace(char ch) {
-    return ch == ' ' || ch == '\t' || ch == '\n';
-}
+inline bool isSpace(char ch) { return ch == ' ' || ch == '\t' || ch == '\n'; }
 
-inline bool hasSpace(StringRef ifs) {
-    return std::any_of(ifs.begin(), ifs.end(), isSpace);
-}
+inline bool hasSpace(StringRef ifs) { return std::any_of(ifs.begin(), ifs.end(), isSpace); }
 
 inline bool matchFieldSep(StringRef ifs, char ch) {
-    return std::any_of(ifs.begin(), ifs.end(), [&](auto e){ return e == ch; });
+  return std::any_of(ifs.begin(), ifs.end(), [&](auto e) { return e == ch; });
 }
 
 /**
@@ -71,14 +67,14 @@ inline bool matchFieldSep(StringRef ifs, char ch) {
  * @return
  * 0-255
  */
-inline int maskExitStatus(int64_t status) {
-    return status & 0xFF;
-}
+inline int maskExitStatus(int64_t status) { return status & 0xFF; }
 
 } // namespace ydsh
 
-#define PERROR(obj, fmt, ...) fprintf(stderr, "ydsh: %s: " fmt ": %s\n", obj.getValues()[0].asCStr(), ## __VA_ARGS__, strerror(errno))
-#define ERROR(obj, fmt, ...)  fprintf(stderr, "ydsh: %s: " fmt "\n", obj.getValues()[0].asCStr(), ## __VA_ARGS__)
+#define PERROR(obj, fmt, ...)                                                                      \
+  fprintf(stderr, "ydsh: %s: " fmt ": %s\n", obj.getValues()[0].asCStr(), ##__VA_ARGS__,           \
+          strerror(errno))
+#define ERROR(obj, fmt, ...)                                                                       \
+  fprintf(stderr, "ydsh: %s: " fmt "\n", obj.getValues()[0].asCStr(), ##__VA_ARGS__)
 
-
-#endif //YDSH_CMD_H
+#endif // YDSH_CMD_H

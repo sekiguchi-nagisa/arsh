@@ -17,12 +17,12 @@
 #ifndef YDSH_SYMBOL_H
 #define YDSH_SYMBOL_H
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
-#include <config.h>
 #include "misc/flag_util.hpp"
 #include "misc/string_ref.hpp"
+#include <config.h>
 
 namespace ydsh {
 
@@ -72,49 +72,49 @@ constexpr const char *CVAR_MACHTYPE = "MACHTYPE";
 constexpr const char *OP_INIT = "";
 
 // unary op definition
-constexpr const char *OP_PLUS = "%plus";     // +
-constexpr const char *OP_MINUS = "%minus";    // -
-constexpr const char *OP_NOT = "%not";      // not
+constexpr const char *OP_PLUS = "%plus";   // +
+constexpr const char *OP_MINUS = "%minus"; // -
+constexpr const char *OP_NOT = "%not";     // not
 
 // binary op definition
-constexpr const char *OP_ADD = "%add";      // +
-constexpr const char *OP_SUB = "%sub";      // -
-constexpr const char *OP_MUL = "%mul";      // *
-constexpr const char *OP_DIV = "%div";      // /
-constexpr const char *OP_MOD = "%mod";      // %
+constexpr const char *OP_ADD = "%add"; // +
+constexpr const char *OP_SUB = "%sub"; // -
+constexpr const char *OP_MUL = "%mul"; // *
+constexpr const char *OP_DIV = "%div"; // /
+constexpr const char *OP_MOD = "%mod"; // %
 
-constexpr const char *OP_EQ = "%eq";       // ==
-constexpr const char *OP_NE = "%ne";       // !=
+constexpr const char *OP_EQ = "%eq"; // ==
+constexpr const char *OP_NE = "%ne"; // !=
 
-constexpr const char *OP_LT = "%lt";       // <
-constexpr const char *OP_GT = "%gt";       // >
-constexpr const char *OP_LE = "%le";       // <=
-constexpr const char *OP_GE = "%ge";       // >=
+constexpr const char *OP_LT = "%lt"; // <
+constexpr const char *OP_GT = "%gt"; // >
+constexpr const char *OP_LE = "%le"; // <=
+constexpr const char *OP_GE = "%ge"; // >=
 
-constexpr const char *OP_AND = "%and";      // &
-constexpr const char *OP_OR = "%or";       // |
-constexpr const char *OP_XOR = "%xor";      // ^
+constexpr const char *OP_AND = "%and"; // &
+constexpr const char *OP_OR = "%or";   // |
+constexpr const char *OP_XOR = "%xor"; // ^
 
-constexpr const char *OP_MATCH   = "%match";    // =~
-constexpr const char *OP_UNMATCH = "%unmatch";    // !~
+constexpr const char *OP_MATCH = "%match";     // =~
+constexpr const char *OP_UNMATCH = "%unmatch"; // !~
 
 // indexer op
-constexpr const char *OP_GET = "%get";      // []
-constexpr const char *OP_SET = "%set";      // [] =
+constexpr const char *OP_GET = "%get"; // []
+constexpr const char *OP_SET = "%set"; // [] =
 
 // iterator (for-in)
 constexpr const char *OP_ITER = "%iter";
 constexpr const char *OP_NEXT = "%next";
 constexpr const char *OP_HAS_NEXT = "%has_nex";
 
-constexpr const char *OP_BOOL = "%bool";    // for boolean cast
+constexpr const char *OP_BOOL = "%bool"; // for boolean cast
 
 // to string
-constexpr const char *OP_STR = "%str";    // for string cast or command argument
-constexpr const char *OP_INTERP = "%interp";    // for interpolation
+constexpr const char *OP_STR = "%str";       // for string cast or command argument
+constexpr const char *OP_INTERP = "%interp"; // for interpolation
 
 // to command argument
-constexpr const char *OP_CMD_ARG = "%cmd_arg";  // for command argument
+constexpr const char *OP_CMD_ARG = "%cmd_arg"; // for command argument
 
 // num cast
 constexpr const char *OP_TO_INT = "toInt";
@@ -152,14 +152,14 @@ constexpr const char *TYPE_FUNC = "Func";
 
 // =====  UDC parameter offset =====
 
-constexpr unsigned int UDC_PARAM_ATTR  = 0;
+constexpr unsigned int UDC_PARAM_ATTR = 0;
 constexpr unsigned int UDC_PARAM_REDIR = 1;
-constexpr unsigned int UDC_PARAM_ARGV  = 2;
+constexpr unsigned int UDC_PARAM_ARGV = 2;
 
 // =====  termination kind  =====
 
-constexpr unsigned int TERM_ON_EXIT   = 1u << 0u;
-constexpr unsigned int TERM_ON_ERR    = 1u << 1u;
+constexpr unsigned int TERM_ON_EXIT = 1u << 0u;
+constexpr unsigned int TERM_ON_ERR = 1u << 1u;
 constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
 
 // =====  for symbol lookup =====
@@ -170,106 +170,95 @@ constexpr const char *MOD_HOLDER_SYMBOL_SUFFIX = "%m";
 constexpr const char *MOD_SYMBOL_PREFIX = "%mod";
 
 constexpr const char *DENIED_REDEFINED_CMD_LIST[] = {
-        "eval", "exit", "exec",
-        "command", "_exit",
+    "eval", "exit", "exec", "command", "_exit",
 };
 
 inline std::string toCmdFullName(StringRef cmdName) {
-    std::string name = cmdName.toString();
-    name += CMD_SYMBOL_SUFFIX;
-    return name;
+  std::string name = cmdName.toString();
+  name += CMD_SYMBOL_SUFFIX;
+  return name;
 }
 
 inline std::string toTypeAliasFullName(const std::string &alias) {
-    std::string name = alias;
-    name += TYPE_ALIAS_SYMBOL_SUFFIX;
-    return name;
+  std::string name = alias;
+  name += TYPE_ALIAS_SYMBOL_SUFFIX;
+  return name;
 }
 
 inline std::string toModHolderName(unsigned short id, bool global) {
-    std::string name = global ? "_g" : "_n";
-    name += std::to_string(id);
-    name += MOD_HOLDER_SYMBOL_SUFFIX;
-    return name;
+  std::string name = global ? "_g" : "_n";
+  name += std::to_string(id);
+  name += MOD_HOLDER_SYMBOL_SUFFIX;
+  return name;
 }
 
 inline std::string toModTypeName(unsigned short modId) {
-    std::string str = MOD_SYMBOL_PREFIX;
-    str += std::to_string(modId);
-    return str;
+  std::string str = MOD_SYMBOL_PREFIX;
+  str += std::to_string(modId);
+  return str;
 }
 
-inline bool isCmdFullName(StringRef ref) {
-    return ref.endsWith(CMD_SYMBOL_SUFFIX);
-}
+inline bool isCmdFullName(StringRef ref) { return ref.endsWith(CMD_SYMBOL_SUFFIX); }
 
-inline bool isTypeAliasFullName(StringRef ref) {
-    return ref.endsWith(TYPE_ALIAS_SYMBOL_SUFFIX);
-}
+inline bool isTypeAliasFullName(StringRef ref) { return ref.endsWith(TYPE_ALIAS_SYMBOL_SUFFIX); }
 
-inline bool isModHolderName(StringRef ref) {
-    return ref.endsWith(MOD_HOLDER_SYMBOL_SUFFIX);
-}
+inline bool isModHolderName(StringRef ref) { return ref.endsWith(MOD_HOLDER_SYMBOL_SUFFIX); }
 
 inline bool isNamedModHolderName(StringRef ref) {
-    return ref.startsWith("_n") && isModHolderName(ref);
+  return ref.startsWith("_n") && isModHolderName(ref);
 }
 
 inline bool isGlobalModHolderName(StringRef ref) {
-    return ref.startsWith("_g") && isModHolderName(ref);
+  return ref.startsWith("_g") && isModHolderName(ref);
 }
 
-inline bool isMagicMethodName(StringRef ref) {
-    return ref.startsWith("%");
-}
+inline bool isMagicMethodName(StringRef ref) { return ref.startsWith("%"); }
 
 inline bool isVarName(StringRef ref) {
-    return !isCmdFullName(ref) && !isTypeAliasFullName(ref) && !isModHolderName(ref) && !isMagicMethodName(ref);
+  return !isCmdFullName(ref) && !isTypeAliasFullName(ref) && !isModHolderName(ref) &&
+         !isMagicMethodName(ref);
 }
-
 
 // =====  other constants  =====
 constexpr size_t CODE_MAX_LEN = UINT32_MAX;
 
 constexpr const char *BUILD_ARCH =
 #ifdef __x86_64__
-"x86_64"
+    "x86_64"
 #elif defined __i386__
-"i386"
+    "i386"
 #elif defined __aarch64__
-"aarch64"
+    "aarch64"
 #else
 #error "unsupported architecture"
 #endif
-;
-
+    ;
 
 enum class ForkKind : unsigned char {
-    NONE,       // do nothing
-    STR,        // capture stdout as string. ex. "$(echo)"
-    ARRAY,      // capture stdout as string array. ex. $(echo)
-    IN_PIPE,    // capture stdin as pipe. ex. >(echo)
-    OUT_PIPE,   // capture stdout as pipe. ex. <(echo)
-    COPROC,     // launch as co-process. ex. coproc echo
-    JOB,        // launch as background job. ex. echo &
-    DISOWN,     // launch as disowned background job. ex. echo &!
+  NONE,     // do nothing
+  STR,      // capture stdout as string. ex. "$(echo)"
+  ARRAY,    // capture stdout as string array. ex. $(echo)
+  IN_PIPE,  // capture stdin as pipe. ex. >(echo)
+  OUT_PIPE, // capture stdout as pipe. ex. <(echo)
+  COPROC,   // launch as co-process. ex. coproc echo
+  JOB,      // launch as background job. ex. echo &
+  DISOWN,   // launch as disowned background job. ex. echo &!
 };
 
 enum class GlobMeta : unsigned char {
-    ANY,
-    ZERO_OR_MORE,
+  ANY,
+  ZERO_OR_MORE,
 };
 
 inline const char *toString(GlobMeta meta) {
-    switch(meta) {
-    case GlobMeta::ANY:
-        return "?";
-    case GlobMeta::ZERO_OR_MORE:
-        return "*";
-    }
-    return "";  // normally unreachable
+  switch (meta) {
+  case GlobMeta::ANY:
+    return "?";
+  case GlobMeta::ZERO_OR_MORE:
+    return "*";
+  }
+  return ""; // normally unreachable
 }
-
 
 // ===== for configuration =====
 constexpr const char *LOCAL_CONFIG_DIR = "~/.ydsh";
@@ -280,4 +269,4 @@ constexpr const char *SYSTEM_MOD_DIR = X_DATADIR "/ydsh/module";
 
 } // namespace ydsh
 
-#endif //YDSH_SYMBOL_H
+#endif // YDSH_SYMBOL_H

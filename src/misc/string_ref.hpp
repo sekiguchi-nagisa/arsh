@@ -17,9 +17,9 @@
 #ifndef MISC_LIB_STRING_REF_HPP
 #define MISC_LIB_STRING_REF_HPP
 
-#include <string>
-#include <cstring>
 #include <cassert>
+#include <cstring>
+#include <string>
 
 #include "hash.hpp"
 
@@ -31,205 +31,176 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
 template <bool T>
 class StringRefBase {
 public:
-    static_assert(T, "not allow instantiation");
+  static_assert(T, "not allow instantiation");
 
-    using size_type = std::size_t;
+  using size_type = std::size_t;
 
-    static constexpr const size_type npos = -1;
+  static constexpr const size_type npos = -1;
 
 private:
-    const char *ptr_{nullptr};
-    size_type size_{0};
+  const char *ptr_{nullptr};
+  size_type size_{0};
 
 public:
-    constexpr StringRefBase() noexcept : ptr_(nullptr), size_(0) {}
+  constexpr StringRefBase() noexcept : ptr_(nullptr), size_(0) {}
 
-    StringRefBase(const StringRefBase &ref) noexcept = default;
+  StringRefBase(const StringRefBase &ref) noexcept = default;
 
-    /**
-     *
-     * @param value
-     * may be null. if not null, must be null-terminated string.
-     */
-    constexpr StringRefBase(const char *value) noexcept : ptr_(value), size_(0) { //NOLINT
-        if(this->ptr_) {
-            this->size_ = strlen(this->ptr_);
-        }
+  /**
+   *
+   * @param value
+   * may be null. if not null, must be null-terminated string.
+   */
+  constexpr StringRefBase(const char *value) noexcept : ptr_(value), size_(0) { // NOLINT
+    if (this->ptr_) {
+      this->size_ = strlen(this->ptr_);
     }
+  }
 
-    constexpr StringRefBase(const char *value, size_type size) noexcept : ptr_(value), size_(size) {}
+  constexpr StringRefBase(const char *value, size_type size) noexcept : ptr_(value), size_(size) {}
 
-    StringRefBase(const std::string &value) noexcept : ptr_(value.c_str()), size_(value.size()) {} //NOLINT
+  StringRefBase(const std::string &value) noexcept
+      : ptr_(value.c_str()), size_(value.size()) {} // NOLINT
 
-    size_type size() const {
-        return this->size_;
+  size_type size() const { return this->size_; }
+
+  bool empty() const { return this->size() == 0; }
+
+  const char *data() const { return this->ptr_; }
+
+  const char *take() {
+    const char *tmp = nullptr;
+    std::swap(this->ptr_, tmp);
+    this->size_ = 0;
+    return tmp;
+  }
+
+  int compare(StringRefBase ref) const noexcept {
+    size_t size = std::min(this->size_, ref.size_);
+    int ret = memcmp(this->ptr_, ref.ptr_, size);
+    if (ret) {
+      return ret;
     }
-
-    bool empty() const {
-        return this->size() == 0;
+    if (this->size_ < ref.size_) {
+      return -1;
     }
+    return this->size_ == ref.size_ ? 0 : 1;
+  }
 
-    const char *data() const {
-        return this->ptr_;
-    }
+  const char *begin() const { return this->ptr_; }
 
-    const char *take() {
-        const char *tmp = nullptr;
-        std::swap(this->ptr_, tmp);
-        this->size_ = 0;
-        return tmp;
-    }
+  const char *end() const { return this->ptr_ + this->size_; }
 
-    int compare(StringRefBase ref) const noexcept {
-        size_t size = std::min(this->size_, ref.size_);
-        int ret = memcmp(this->ptr_, ref.ptr_, size);
-        if(ret) {
-            return ret;
-        }
-        if(this->size_ < ref.size_) {
-            return -1;
-        }
-        return this->size_ == ref.size_ ? 0 : 1;
-    }
+  char operator[](size_type index) const {
+    assert(index < this->size_);
+    return this->ptr_[index];
+  }
 
-    const char *begin() const {
-        return this->ptr_;
-    }
+  char front() const { return (*this)[0]; }
 
-    const char *end() const {
-        return this->ptr_ + this->size_;
-    }
+  char back() const { return (*this)[this->size_ - 1]; }
 
-    char operator[](size_type index) const {
-        assert(index < this->size_);
-        return this->ptr_[index];
-    }
+  void removePrefix(size_type n) {
+    assert(n <= this->size());
+    this->ptr_ += n;
+    this->size_ -= n;
+  }
 
-    char front() const {
-        return (*this)[0];
-    }
+  void removeSuffix(size_type n) {
+    assert(n <= this->size());
+    this->size_ -= n;
+  }
 
-    char back() const {
-        return (*this)[this->size_ - 1];
-    }
+  StringRefBase substr(size_type pos = 0, size_type size = npos) const {
+    assert(pos <= this->size());
+    size = std::min(this->size() - pos, size);
+    return StringRefBase(this->data() + pos, size);
+  }
 
-    void removePrefix(size_type n) {
-        assert(n <= this->size());
-        this->ptr_ += n;
-        this->size_ -= n;
-    }
+  /**
+   *
+   * @param startIndex
+   * inclusive
+   * @param stopIndex
+   * exclusive
+   * @return
+   */
+  StringRefBase slice(size_type startIndex, size_type stopIndex) const {
+    assert(startIndex <= stopIndex);
+    assert(startIndex <= this->size_);
+    return this->substr(startIndex, stopIndex - startIndex);
+  }
 
-    void removeSuffix(size_type n) {
-        assert(n <= this->size());
-        this->size_ -= n;
+  size_type find(StringRefBase ref, size_type pos = 0) const {
+    if (pos > this->size_) {
+      return npos;
     }
+    if (ref.size_ == 0) {
+      return pos;
+    }
+    auto *ret = memmem(this->ptr_ + pos, this->size_ - pos, ref.ptr_, ref.size_);
+    return ret != nullptr ? static_cast<const char *>(ret) - this->ptr_ : npos;
+  }
 
-    StringRefBase substr(size_type pos = 0, size_type size = npos) const {
-        assert(pos <= this->size());
-        size = std::min(this->size() - pos, size);
-        return StringRefBase(this->data() + pos, size);
-    }
+  size_type find(char ch, size_type pos = 0) const {
+    char str[1];
+    str[0] = ch;
+    return this->find(StringRefBase(str, 1), pos);
+  }
 
-    /**
-     *
-     * @param startIndex
-     * inclusive
-     * @param stopIndex
-     * exclusive
-     * @return
-     */
-    StringRefBase slice(size_type startIndex, size_type stopIndex) const {
-        assert(startIndex <= stopIndex);
-        assert(startIndex <= this->size_);
-        return this->substr(startIndex, stopIndex - startIndex);
-    }
+  bool hasNullChar() const { return this->find('\0') != npos; }
 
-    size_type find(StringRefBase ref, size_type pos = 0) const {
-        if(pos > this->size_) {
-            return npos;
-        }
-        if(ref.size_ == 0) {
-            return pos;
-        }
-        auto *ret = memmem(this->ptr_ + pos, this->size_ - pos, ref.ptr_, ref.size_);
-        return ret != nullptr ? static_cast<const char *>(ret) - this->ptr_ : npos;
-    }
+  size_type indexOf(StringRefBase ref) const { return this->find(ref, 0); }
 
-    size_type find(char ch, size_type pos = 0) const {
-        char str[1];
-        str[0] = ch;
-        return this->find(StringRefBase(str, 1), pos);
-    }
+  size_type lastIndexOf(StringRefBase ref) const {
+    size_type ret = npos;
+    size_type pos = 0;
+    do {
+      auto tmp = this->find(ref, pos);
+      if (tmp == npos) {
+        break;
+      }
+      ret = tmp;
+    } while (++pos != this->size_);
+    return ret;
+  }
 
-    bool hasNullChar() const {
-        return this->find('\0') != npos;
-    }
+  bool startsWith(StringRefBase ref) const {
+    return this->size_ >= ref.size_ && memcmp(this->ptr_, ref.ptr_, ref.size_) == 0;
+  }
 
-    size_type indexOf(StringRefBase ref) const {
-        return this->find(ref, 0);
-    }
+  bool endsWith(StringRefBase ref) const {
+    return this->size_ >= ref.size_ &&
+           memcmp(this->ptr_ + (this->size_ - ref.size_), ref.ptr_, ref.size_) == 0;
+  }
 
-    size_type lastIndexOf(StringRefBase ref) const {
-        size_type ret = npos;
-        size_type pos = 0;
-        do {
-            auto tmp = this->find(ref, pos);
-            if(tmp == npos) {
-                break;
-            }
-            ret = tmp;
-        } while(++pos != this->size_);
-        return ret;
-    }
-
-    bool startsWith(StringRefBase ref) const {
-        return this->size_ >= ref.size_ && memcmp(this->ptr_, ref.ptr_, ref.size_) == 0;
-    }
-
-    bool endsWith(StringRefBase ref) const {
-        return this->size_ >= ref.size_ &&
-            memcmp(this->ptr_ + (this->size_ - ref.size_), ref.ptr_, ref.size_) == 0;
-    }
-
-    std::string toString() const {
-        return std::string(this->data(), this->size());
-    }
+  std::string toString() const { return std::string(this->data(), this->size()); }
 };
 
 using StringRef = StringRefBase<true>;
 
 inline bool operator==(StringRef left, StringRef right) {
-    return left.size() == right.size() && memcmp(left.data(), right.data(), left.size()) == 0;
+  return left.size() == right.size() && memcmp(left.data(), right.data(), left.size()) == 0;
 }
 
-inline bool operator!=(StringRef left, StringRef right) {
-    return !(left == right);
-}
+inline bool operator!=(StringRef left, StringRef right) { return !(left == right); }
 
-inline bool operator<(StringRef left, StringRef right) {
-    return left.compare(right) < 0;
-}
+inline bool operator<(StringRef left, StringRef right) { return left.compare(right) < 0; }
 
-inline bool operator>(StringRef left, StringRef right) {
-    return left.compare(right) > 0;
-}
+inline bool operator>(StringRef left, StringRef right) { return left.compare(right) > 0; }
 
-inline bool operator<=(StringRef left, StringRef right) {
-    return left.compare(right) <= 0;
-}
+inline bool operator<=(StringRef left, StringRef right) { return left.compare(right) <= 0; }
 
-inline bool operator>=(StringRef left, StringRef right) {
-    return left.compare(right) >= 0;
-}
+inline bool operator>=(StringRef left, StringRef right) { return left.compare(right) >= 0; }
 
 inline std::string &operator+=(std::string &str, StringRef ref) {
-    return str.append(ref.data(), ref.size());
+  return str.append(ref.data(), ref.size());
 }
 
 struct StrRefHash {
-    std::size_t operator()(const StringRef &ref) const {
-        return FNVHash::compute(ref.begin(), ref.end());
-    }
+  std::size_t operator()(const StringRef &ref) const {
+    return FNVHash::compute(ref.begin(), ref.end());
+  }
 };
 
 template <typename T>
@@ -237,4 +208,4 @@ using StrRefMap = std::unordered_map<StringRef, T, StrRefHash>;
 
 END_MISC_LIB_NAMESPACE_DECL
 
-#endif //MISC_LIB_STRING_REF_HPP
+#endif // MISC_LIB_STRING_REF_HPP

@@ -4,6 +4,8 @@
 # Date: 2029-01-21, 18:14:00 GMT [KW, LI]
 */
 
+// clang-format off
+
 #ifdef USE_ZERO_WIDTH_TABLE
 
 static const UNICODE_INTERVAL zero_width_table[] = {

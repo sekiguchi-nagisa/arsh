@@ -10,126 +10,118 @@
 
 using namespace ydsh;
 
-#define EACH_DUMP_OP(OP) \
-    OP(untyped, "--dump-untyped-ast") \
-    OP(typed,  "--dump-ast")
-
+#define EACH_DUMP_OP(OP)                                                                           \
+  OP(untyped, "--dump-untyped-ast")                                                                \
+  OP(typed, "--dump-ast")
 
 enum class DumpOp {
 #define GEN_ENUM(E, S) E,
-    EACH_DUMP_OP(GEN_ENUM)
+  EACH_DUMP_OP(GEN_ENUM)
 #undef GEN_ENUM
 };
 
 static const char *toString(DumpOp op) {
-    const char *table[] = {
+  const char *table[] = {
 #define GEN_STR(E, S) #E,
-            EACH_DUMP_OP(GEN_STR)
+      EACH_DUMP_OP(GEN_STR)
 #undef GEN_STR
-    };
-    return table[static_cast<unsigned int>(op)];
+  };
+  return table[static_cast<unsigned int>(op)];
 }
 
 static const char *toOption(DumpOp op) {
-    const char *table[] = {
+  const char *table[] = {
 #define GEN_STR(E, S) S,
-        EACH_DUMP_OP(GEN_STR)
+      EACH_DUMP_OP(GEN_STR)
 #undef GEN_STR
-    };
-    return table[static_cast<unsigned int>(op)];
+  };
+  return table[static_cast<unsigned int>(op)];
 }
 
 struct NodeDumpParam {
-    DumpOp op;
-    const char *cmd;
-    unsigned int local;
-    unsigned int global;
-    const char *dump;
+  DumpOp op;
+  const char *cmd;
+  unsigned int local;
+  unsigned int global;
+  const char *dump;
 };
-
 
 class NodeDumpTest : public ::testing::TestWithParam<NodeDumpParam>, public TempFileFactory {
 protected:
-    static constexpr unsigned int GVAR_NUM = 55;
+  static constexpr unsigned int GVAR_NUM = 55;
 
-    NodeDumpParam param;
+  NodeDumpParam param;
 
 public:
-    NodeDumpTest() : INIT_TEMP_FILE_FACTORY(node_test) {
-        this->param = GetParam();
-    }
+  NodeDumpTest() : INIT_TEMP_FILE_FACTORY(node_test) { this->param = GetParam(); }
 
-    ~NodeDumpTest() override = default;
+  ~NodeDumpTest() override = default;
 
 protected:
-    void readContent(std::string &value) {
-        std::ifstream input(this->getTempFileName());
-        ASSERT_FALSE(!input);
+  void readContent(std::string &value) {
+    std::ifstream input(this->getTempFileName());
+    ASSERT_FALSE(!input);
 
-        for(std::string line; std::getline(input, line); ) {
-            value += line;
-            value += '\n';
-        }
+    for (std::string line; std::getline(input, line);) {
+      value += line;
+      value += '\n';
     }
+  }
 
-    void test() {
-        std::string dump = toOption(this->param.op);
-        dump += "=";
-        dump += this->getTempFileName();
+  void test() {
+    std::string dump = toOption(this->param.op);
+    dump += "=";
+    dump += this->getTempFileName();
 
-        auto ret = ProcBuilder {
-                BIN_PATH,
-                dump.c_str(),
-                "--compile-only",
-                "-c",
-                this->param.cmd
-        }.exec();
+    auto ret = ProcBuilder{BIN_PATH, dump.c_str(), "--compile-only", "-c", this->param.cmd}.exec();
 
-        ASSERT_EQ(WaitStatus::EXITED, ret.kind);
-        ASSERT_EQ(0, ret.value);
+    ASSERT_EQ(WaitStatus::EXITED, ret.kind);
+    ASSERT_EQ(0, ret.value);
 
-        auto expect = this->formatOutput();
-        std::string actual;
-        ASSERT_NO_FATAL_FAILURE(this->readContent(actual));
+    auto expect = this->formatOutput();
+    std::string actual;
+    ASSERT_NO_FATAL_FAILURE(this->readContent(actual));
 
-        ASSERT_EQ(expect, actual);
-    }
+    ASSERT_EQ(expect, actual);
+  }
 
 private:
-    static const char *skipFirstSpace(const char *str) {
-        for(; *str != '\0' && (*str == ' ' || *str == '\t' || *str == '\n'); str++);
-        return str;
+  static const char *skipFirstSpace(const char *str) {
+    for (; *str != '\0' && (*str == ' ' || *str == '\t' || *str == '\n'); str++)
+      ;
+    return str;
+  }
+
+  std::string formatOutput() const {
+    auto value = format(R"EOF(### dump %s AST ###
+sourceName: "(string)"
+)EOF",
+                        toString(this->param.op));
+
+    value += skipFirstSpace(this->param.dump);
+
+    // skip last spaces
+    for (; !value.empty(); value.pop_back()) {
+      char ch = value.back();
+      if (ch != ' ' && ch != '\t' && ch != '\n') {
+        break;
+      }
     }
 
-    std::string formatOutput() const {
-        auto value = format(R"EOF(### dump %s AST ###
-sourceName: "(string)"
-)EOF", toString(this->param.op));
-
-        value += skipFirstSpace(this->param.dump);
-
-        // skip last spaces
-        for(; !value.empty(); value.pop_back()) {
-            char ch = value.back();
-            if(ch != ' ' && ch != '\t' && ch != '\n') {
-                break;
-            }
-        }
-
-        value += format(R"EOF(
+    value += format(R"EOF(
 maxVarNum: %d
 maxGVarNum: %d
 
-)EOF", this->param.local, GVAR_NUM + this->param.global);
+)EOF",
+                    this->param.local, GVAR_NUM + this->param.global);
 
-        return value;
-    }
+    return value;
+  }
 };
-
 
 // test parameter definition
 static constexpr NodeDumpParam paramTable[] = {
-        {DumpOp::untyped, "1", 0, 0, R"(
+    {DumpOp::untyped, "1", 0, 0, R"(
 nodes:
   - nodeKind: Number
     token:
@@ -140,7 +132,7 @@ nodes:
     intValue: 1
 )"},
 
-        {DumpOp::typed, R"("hello")", 0, 0, R"(
+    {DumpOp::typed, R"("hello")", 0, 0, R"(
 nodes:
   - nodeKind: TypeOp
     token:
@@ -165,7 +157,7 @@ nodes:
     opKind: "TO_VOID"
 )"},
 
-        {DumpOp::untyped, R"(try { var a = 'false'; } catch $e {} finally {1; })", 1, 0, R"(
+    {DumpOp::untyped, R"(try { var a = 'false'; } catch $e {} finally {1; })", 1, 0, R"(
 nodes:
   - nodeKind: Try
     token:
@@ -244,7 +236,7 @@ nodes:
       maxVarSize: 0
 )"},
 
-        {DumpOp::typed, R"({;})", 0, 0, R"(
+    {DumpOp::typed, R"({;})", 0, 0, R"(
 nodes:
   - nodeKind: Block
     token:
@@ -262,7 +254,7 @@ nodes:
     maxVarSize: 0
 )"},
 
-        {DumpOp::untyped, R"('hey'.size())", 0, 0, R"(
+    {DumpOp::untyped, R"('hey'.size())", 0, 0, R"(
 nodes:
   - nodeKind: Apply
     token:
@@ -306,7 +298,7 @@ nodes:
     kind: "UNRESOLVED"
 )"},
 
-        {DumpOp::untyped, R"(34+1)", 0, 0, R"(
+    {DumpOp::untyped, R"(34+1)", 0, 0, R"(
 nodes:
   - nodeKind: BinaryOp
     token:
@@ -333,7 +325,7 @@ nodes:
     optNode: null
 )"},
 
-        {DumpOp::untyped, R"(function f() : typeof($/d/) {return new Regex("$true", ""); })", 0, 1, R"(
+    {DumpOp::untyped, R"(function f() : typeof($/d/) {return new Regex("$true", ""); })", 0, 1, R"(
 nodes:
   - nodeKind: Function
     token:
@@ -437,7 +429,7 @@ nodes:
     funcType: null
 )"},
 
-        {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 1, 0, R"(
+    {DumpOp::untyped, R"(assert (!ls > 34 | 34 with < ${34.1} &).poll())", 1, 0, R"(
 nodes:
   - nodeKind: Assert
     token:
@@ -592,7 +584,7 @@ nodes:
       value: "`(!ls > 34 | 34 with < ${34.1} &).poll()'"
 )"},
 
-        {DumpOp::typed, R"(case %'int' { %'int' => [34:34]; else => (34,)})", 0, 0, R"(
+    {DumpOp::typed, R"(case %'int' { %'int' => [34:34]; else => (34,)})", 0, 0, R"(
 nodes:
   - nodeKind: Case
     token:
@@ -682,7 +674,7 @@ nodes:
     caseKind: "MAP"
 )"},
 
-        {DumpOp::untyped, R"(typedef i = (Int) -> Int)", 0, 0, R"(
+    {DumpOp::untyped, R"(typedef i = (Int) -> Int)", 0, 0, R"(
 nodes:
   - nodeKind: TypeAlias
     token:
@@ -715,7 +707,7 @@ nodes:
           typeName: "Int"
 )"},
 
-        {DumpOp::typed, R"(while($false){})", 0, 0, R"(
+    {DumpOp::typed, R"(while($false){})", 0, 0, R"(
 nodes:
   - nodeKind: Loop
     token:
@@ -769,7 +761,7 @@ nodes:
     asDoWhile: false
 )"},
 
-        {DumpOp::typed, R"(f() {})", 0, 1, R"(
+    {DumpOp::typed, R"(f() {})", 0, 1, R"(
 nodes:
   - nodeKind: UserDefinedCmd
     token:
@@ -807,7 +799,7 @@ nodes:
     maxVarNum: 14
 )"},
 
-        {DumpOp::untyped, R"(IFS=1234)", 0, 0, R"(
+    {DumpOp::untyped, R"(IFS=1234)", 0, 0, R"(
 nodes:
   - nodeKind: PrefixAssign
     token:
@@ -849,7 +841,7 @@ nodes:
     baseIndex: 0
 )"},
 
-        {DumpOp::typed, R"(echo *)", 0, 0, R"(
+    {DumpOp::typed, R"(echo *)", 0, 0, R"(
 nodes:
   - nodeKind: TypeOp
     token:
@@ -891,14 +883,11 @@ nodes:
 )"},
 };
 
-
-TEST_P(NodeDumpTest, base) {
-    ASSERT_NO_FATAL_FAILURE(this->test());
-}
+TEST_P(NodeDumpTest, base) { ASSERT_NO_FATAL_FAILURE(this->test()); }
 
 INSTANTIATE_TEST_SUITE_P(NodeDumpTest, NodeDumpTest, ::testing::ValuesIn(paramTable));
 
 int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
