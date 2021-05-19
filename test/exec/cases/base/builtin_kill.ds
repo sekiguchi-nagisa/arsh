@@ -52,7 +52,7 @@ assert { kill -l 1 hup; $?; } == 0
 
 
 # kill specified proc
-assert "$(kill hoge 2>&1)" == "ydsh: kill: hoge: arguments must be process or job IDs"
+assert "$(kill hoge 2>&1)" == "ydsh: kill: hoge: arguments must be pid or job id"
 assert { kill hoge; $?; } == 1
 
 var j = for(;;) { true; } &
