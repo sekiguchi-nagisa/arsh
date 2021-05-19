@@ -298,6 +298,16 @@ ProcTable::Entry *ProcTable::findProc(pid_t pid) {
   return nullptr;
 }
 
+const ProcTable::Entry * ProcTable::findProc(pid_t pid) const {
+  if (pid > 0) {
+    auto iter = std::lower_bound(this->entries.begin(), this->entries.end(), pid, PidEntryComp());
+    if (iter != this->entries.end()) {
+      return iter;
+    }
+  }
+  return nullptr;
+}
+
 void ProcTable::batchedRemove() {
   this->deletedCount = 0;
   unsigned int removedIndex;

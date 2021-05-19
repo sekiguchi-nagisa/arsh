@@ -334,6 +334,8 @@ public:
 
   Entry *findProc(pid_t pid);
 
+  const Entry *findProc(pid_t pid) const;
+
   /**
    * call markDelete() in specified entry by pid.
    * actual delete operation is not performed untill call batchedRemove()

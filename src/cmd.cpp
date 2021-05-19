@@ -1293,7 +1293,7 @@ static bool printNumOrName(StringRef str) {
 }
 
 static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, StringRef arg,
-                                bool allowNegative) {
+                                bool alloNoChild) {
   bool isJob = arg.startsWith("%");
   auto pair = toInt32(isJob ? arg.substr(1) : arg);
   if (!pair.second) {
@@ -1312,8 +1312,8 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
     ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
     return ProcOrJob();
   } else {
-    if (!allowNegative && id < 0) {
-      ERROR(argvObj, "%s: no such process", toPrintable(arg).c_str());
+    if (!alloNoChild && (id < 0 || !jobTable.getProcTable().findProc(id))) {
+      ERROR(argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
       return ProcOrJob();
     }
     return ProcOrJob(pair.first);
@@ -2217,8 +2217,7 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
 static int builtin_wait(DSState &state, ArrayObject &argvObj) {
   const WaitOp op = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
   unsigned int size = argvObj.size() - 1;
-  auto *targets = size == 0 ? nullptr : new ProcOrJob[size];
-  auto cleanup = finally([&] { delete[] targets; });
+  auto targets = size == 0 ? nullptr : std::make_unique<ProcOrJob[]>(size);
 
   for (unsigned int i = 0; i < size; i++) {
     auto ref = argvObj.getValues()[i + 1].asStrRef();
@@ -2228,7 +2227,7 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
     }
     targets[i] = std::move(target);
   }
-  int s = state.jobTable.waitForProcOrJob(size, targets, op);
+  int s = state.jobTable.waitForProcOrJob(size, targets.get(), op);
   state.jobTable.waitForAny();
   return s;
 }

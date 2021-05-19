@@ -14,4 +14,9 @@ assert $? == 127
 wait
 assert $? == 0
 
+var ppid = $PPID
+wait $ppid 423
+assert $? == 127
+assert "$(wait $ppid 423 2>&1)" == "ydsh: wait: $ppid: not a child of this shell"
+
 true
