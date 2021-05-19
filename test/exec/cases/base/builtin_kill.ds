@@ -76,7 +76,7 @@ assert $j.wait() == 128 + %'kill'.value()
 assert "$(kill %-456 2>&1)" == 'ydsh: kill: %-456: no such job'
 assert { kill %-234; $?; } == 1
 
-assert "$(kill %hoge 2>&1)" == 'ydsh: kill: %hoge: arguments must be process or job IDs'
+assert "$(kill %hoge 2>&1)" == 'ydsh: kill: %hoge: arguments must be pid or job id'
 assert { kill %hoge; $?; } == 1
 
 $j = for(;;) { true; } &

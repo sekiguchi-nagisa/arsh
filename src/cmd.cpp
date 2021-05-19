@@ -1297,7 +1297,7 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
   bool isJob = arg.startsWith("%");
   auto pair = toInt32(isJob ? arg.substr(1) : arg);
   if (!pair.second) {
-    ERROR(argvObj, "%s: arguments must be process or job IDs", toPrintable(arg).c_str());
+    ERROR(argvObj, "%s: arguments must be pid or job id", toPrintable(arg).c_str());
     return ProcOrJob();
   }
   int id = pair.first;
