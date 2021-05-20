@@ -42,7 +42,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prepare
-      run: sudo apt-get install ninja-build g++-10 g++-11 clang-10 clang-7 clang-11
+      run: |
+        sudo apt-get install ninja-build g++-10 g++-11 clang-10 clang-7 clang-11
+        sudo apt remove libgcc-11-dev gcc-11
     - name: configure
       run: |
         mkdir build
@@ -71,7 +73,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prepare
-      run: sudo apt-get install ninja-build g++-11 clang-11 lld lld-11 llvm-11 llvm-11-dev
+      run: |
+        sudo apt-get install ninja-build g++-11 clang-11 lld lld-11 llvm-11 llvm-11-dev
+        sudo apt remove libgcc-11-dev gcc-11
     - name: configure
       run: |
         mkdir build
@@ -100,7 +104,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: prepare
-        run: sudo apt-get install ninja-build clang-11
+        run: |
+          sudo apt-get install ninja-build clang-11
+          sudo apt remove libgcc-11-dev gcc-11
       - name: configure
         run: |
           mkdir build
@@ -126,7 +132,9 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: prepare
-        run: sudo apt-get install ninja-build clang-11
+        run: |
+          sudo apt-get install ninja-build clang-11
+          sudo apt remove libgcc-11-dev gcc-11
       - name: configure
         run: |
           mkdir build
