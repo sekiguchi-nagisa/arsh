@@ -153,7 +153,7 @@ bool Transport::dispatch(Handler &handler) {
   ByteBuffer buf;
   for (int remainSize = dataSize; remainSize > 0;) {
     char data[256];
-    constexpr int bufSize = arraySize(data);
+    constexpr int bufSize = std::size(data);
     int needSize = remainSize < bufSize ? remainSize : bufSize;
     int recvSize = this->recv(needSize, data);
     if (recvSize < 0) {

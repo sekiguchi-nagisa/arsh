@@ -1979,7 +1979,7 @@ TEST(LexerTest_Lv3, IllegalChar) {
   unsigned char str[] = {0x82, 0}; // broken UTF-8 code
 
   ByteBuffer buf;
-  buf.append((char *)str, arraySize(str));
+  buf.append((char *)str, std::size(str));
   Lexer lexer("(string)", std::move(buf), nullptr);
   Token t;
   TokenKind k = lexer.nextToken(t);

@@ -24,7 +24,6 @@
 #include <type_traits>
 
 #include "noncopyable.h"
-#include "util.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -174,7 +173,7 @@ bool readAll(FILE *fp, Buf &buf) {
     char data[128];
     clearerr(fp);
     errno = 0;
-    unsigned int size = fread(data, sizeof(char), arraySize(data), fp);
+    unsigned int size = fread(data, sizeof(char), std::size(data), fp);
     if (size > 0) {
       buf.append(data, size);
     } else if (errno) {

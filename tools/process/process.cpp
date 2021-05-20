@@ -28,7 +28,6 @@
 #include <misc/fatal.h>
 #include <misc/logger_base.hpp>
 #include <misc/unicode.hpp>
-#include <misc/util.hpp>
 
 #include "ansi.h"
 #include "process.h"
@@ -101,7 +100,7 @@ WaitStatus ProcHandle::wait() {
 
 static bool readData(int index, int fd, const ProcHandle::ReadCallback &readCallback) {
   char buf[1024];
-  unsigned int bufSize = ydsh::arraySize(buf);
+  unsigned int bufSize = std::size(buf);
   int readSize = read(fd, buf, bufSize);
   if (readSize <= 0) {
     return readSize == -1 && (errno == EAGAIN || errno == EINTR);
@@ -118,7 +117,7 @@ void ProcHandle::readAll(int timeout, const ReadCallback &readCallback) const {
   pollfds[1].events = POLLIN;
 
   while (true) {
-    constexpr unsigned int pollfdSize = ydsh::arraySize(pollfds);
+    constexpr unsigned int pollfdSize = std::size(pollfds);
     int ret = poll(pollfds, pollfdSize, timeout);
     if (ret <= 0) {
       if (ret == -1 && (errno == EINTR || errno == EAGAIN)) {
@@ -305,7 +304,7 @@ void xcfmakesane(termios &term) {
   defchars[VWERASE] = CWERASE;
 #endif
 
-  memcpy(term.c_cc, defchars, ydsh::arraySize(defchars) * sizeof(cc_t));
+  memcpy(term.c_cc, defchars, std::size(defchars) * sizeof(cc_t));
 }
 
 static void setPTYSetting(int fd, const IOConfig &config) {

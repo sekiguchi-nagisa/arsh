@@ -5,7 +5,6 @@
 #include <cstring>
 
 #include <core.h>
-#include <misc/util.hpp>
 #include <signals.h>
 
 #include "../test_common.h"
@@ -44,7 +43,7 @@ static std::string normalize(const std::string &str) {
 
 static std::string format(const char *name, int num) {
   char value[64];
-  snprintf(value, ydsh::arraySize(value), "%s(%d)", name, num);
+  snprintf(value, std::size(value), "%s(%d)", name, num);
   return std::string(value);
 }
 
@@ -126,7 +125,7 @@ TEST(Signal, base) {
   ASSERT_EQ(-1, getSignalNum("HOGED"));
 
   char b[] = "INT\0";
-  ASSERT_EQ(-1, getSignalNum(StringRef(b, arraySize(b) - 1)));
+  ASSERT_EQ(-1, getSignalNum(StringRef(b, std::size(b) - 1)));
 
   ASSERT_STREQ("USR1", getSignalName(SIGUSR1));
   ASSERT_STREQ("SEGV", getSignalName(SIGSEGV));

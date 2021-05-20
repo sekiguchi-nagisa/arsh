@@ -251,7 +251,7 @@ TEST_F(TransportTest, case7) {
   ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+"));
 
   char data[5];
-  ASSERT_EQ(5, this->transport.recv(arraySize(data), data));
+  ASSERT_EQ(5, this->transport.recv(std::size(data), data));
   std::string str(data, 5);
   ASSERT_EQ("12345", str);
 }
@@ -264,12 +264,12 @@ TEST_F(TransportTest, case8) {
   ASSERT_THAT(logStr, ::testing::MatchesRegex(".+Content-Length: 5.+"));
 
   char data[3];
-  int recvSize = this->transport.recv(arraySize(data), data);
+  int recvSize = this->transport.recv(std::size(data), data);
   ASSERT_EQ(3, recvSize);
   std::string str(data, recvSize);
   ASSERT_EQ("123", str);
 
-  recvSize = this->transport.recv(arraySize(data), data);
+  recvSize = this->transport.recv(std::size(data), data);
   ASSERT_EQ(2, recvSize);
   str = std::string(data, recvSize);
   ASSERT_EQ("45", str);

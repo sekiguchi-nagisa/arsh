@@ -96,7 +96,7 @@ static std::string escape(StringRef ref, EscapeOp op) {
     } else if (needEscape(ch, op)) {
       if ((ch >= 0 && ch < 32) || ch == 127) {
         char d[32];
-        snprintf(d, arraySize(d), "$'\\x%02x'", ch);
+        snprintf(d, std::size(d), "$'\\x%02x'", ch);
         buf += d;
         continue;
       } else {

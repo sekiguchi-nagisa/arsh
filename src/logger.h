@@ -54,7 +54,7 @@ public:
           EACH_LOGGING_POLICY(GEN_STR)
 #undef GEN_STR
       };
-      for (unsigned int i = 0; i < arraySize(policies); i++) {
+      for (unsigned int i = 0; i < std::size(policies); i++) {
         if (getenv(policies[i])) {
           setFlag(this->whiteList, 1u << i);
         }

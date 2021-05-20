@@ -3,7 +3,6 @@
 #include "../test_common.h"
 #include <misc/buffer.hpp>
 #include <misc/files.h>
-#include <misc/util.hpp>
 
 #ifndef BIN_PATH
 #define BIN_PATH "./ydsh"
@@ -35,7 +34,7 @@ public:
     ASSERT_TRUE(fp != nullptr);
     int fd = fileno(fp);
     while (true) {
-      int readSize = read(fd, data, arraySize(data));
+      int readSize = read(fd, data, std::size(data));
       if (readSize > 0) {
         buffer.append(data, readSize);
       }

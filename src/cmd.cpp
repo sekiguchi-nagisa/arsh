@@ -287,7 +287,7 @@ static constexpr struct {
      "    the exit status is 127."},
 };
 
-unsigned int getBuiltinCommandSize() { return arraySize(builtinCommands); }
+unsigned int getBuiltinCommandSize() { return std::size(builtinCommands); }
 
 const char *getBuiltinCommandName(unsigned int index) {
   assert(index < getBuiltinCommandSize());
@@ -296,7 +296,7 @@ const char *getBuiltinCommandName(unsigned int index) {
 
 static auto initBuiltinMap() {
   StrRefMap<unsigned int> map;
-  for (unsigned int i = 0; i < arraySize(builtinCommands); i++) {
+  for (unsigned int i = 0; i < std::size(builtinCommands); i++) {
     map.emplace(builtinCommands[i].commandName, i);
   }
   return map;
@@ -324,7 +324,7 @@ std::string toPrintable(StringRef ref) {
   for (auto ch : ref) {
     if (ch < 32 || ch == 127) {
       char d[16];
-      snprintf(d, arraySize(d), "\\x%02x", ch);
+      snprintf(d, std::size(d), "\\x%02x", ch);
       ret += d;
     } else {
       ret += ch;
@@ -577,7 +577,7 @@ static int builtin_false(DSState &, ArrayObject &) { return 1; }
 static int builtin___gets(DSState &, ArrayObject &) {
   char buf[256];
   int readSize = 0;
-  while ((readSize = read(STDIN_FILENO, buf, arraySize(buf))) > 0) {
+  while ((readSize = read(STDIN_FILENO, buf, std::size(buf))) > 0) {
     int r = write(STDOUT_FILENO, buf, readSize);
     (void)r;
   }
@@ -1603,7 +1603,7 @@ static bool parseUlimitOpt(StringRef ref, unsigned int index, UlimitOptEntry &en
 
 struct UlimitOptEntryTable {
   uint64_t printSet{0};
-  std::array<UlimitOptEntry, arraySize(ulimitOps)> entries;
+  std::array<UlimitOptEntry, std::size(ulimitOps)> entries;
   unsigned int count{0};
 
   int tryToUpdate(GetOptState &optState, ArrayObject &argvObj, int opt) {
@@ -1623,7 +1623,7 @@ private:
   bool update(int ch, const DSValue &value) {
     this->count++;
     // search entry
-    for (unsigned int index = 0; index < arraySize(ulimitOps); index++) {
+    for (unsigned int index = 0; index < std::size(ulimitOps); index++) {
       if (ulimitOps[index].op == ch) {
         auto &entry = this->entries[index];
         if (value) {
@@ -1735,7 +1735,7 @@ struct allow_enum_bitop<PrintMaskOp> : std::true_type {};
 
 static void printMask(mode_t mask, PrintMaskOp op) {
   if (hasFlag(op, PrintMaskOp::SYMBOLIC)) {
-    char buf[arraySize("u=rwx,g=rwx,o=rwx")];
+    char buf[std::size("u=rwx,g=rwx,o=rwx")];
     char *ptr = buf;
 
     /**

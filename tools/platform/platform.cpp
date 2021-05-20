@@ -21,7 +21,6 @@
 
 #include "platform.h"
 #include <constant.h>
-#include <misc/util.hpp>
 
 namespace ydsh::platform {
 

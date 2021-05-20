@@ -264,7 +264,7 @@ static DSValue readAsStr(int fd) {
   char buf[256];
   std::string str;
   while (true) {
-    int readSize = read(fd, buf, arraySize(buf));
+    int readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
       continue;
     }
@@ -291,7 +291,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
   auto &array = typeAs<ArrayObject>(obj);
 
   while (true) {
-    int readSize = read(fd, buf, arraySize(buf));
+    int readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
       continue;
     }

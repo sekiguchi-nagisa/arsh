@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 
 #include <misc/buffer.hpp>
-#include <misc/util.hpp>
 
 using namespace ydsh;
 
@@ -128,7 +127,7 @@ TEST(BufferTest, case4) {
   ASSERT_EXIT(
       {
         for (unsigned int i = 0; i < 30; i++) {
-          buffer.append(v, arraySize(v));
+          buffer.append(v, std::size(v));
         }
       },
       ::testing::KilledBySignal(SIGABRT), "reach max size\n");

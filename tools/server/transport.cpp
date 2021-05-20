@@ -39,13 +39,13 @@ int LSPTransport::send(unsigned int size, const char *data) {
 }
 
 static bool isContentLength(const std::string &line) {
-  return strncmp(line.c_str(), HEADER_LENGTH, arraySize(HEADER_LENGTH) - 1) == 0 &&
+  return strncmp(line.c_str(), HEADER_LENGTH, std::size(HEADER_LENGTH) - 1) == 0 &&
          line.size() == strlen(line.c_str());
 }
 
 static int parseContentLength(const std::string &line) {
   const char *ptr = line.c_str();
-  ptr += arraySize(HEADER_LENGTH) - 1;
+  ptr += std::size(HEADER_LENGTH) - 1;
   auto ret = convertToNum<int32_t>(ptr);
   if (ret.second && ret.first >= 0) {
     return ret.first;

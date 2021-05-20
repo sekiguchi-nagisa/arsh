@@ -6,7 +6,6 @@
 #include <constant.h>
 #include <misc/fatal.h>
 #include <misc/files.h>
-#include <misc/util.hpp>
 
 #ifndef BIN_PATH
 #define "require BIN_PATH"

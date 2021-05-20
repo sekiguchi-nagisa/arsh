@@ -21,8 +21,6 @@
 #include <clocale>
 #include <cstring>
 
-#include "util.hpp"
-
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
 namespace __detail_unicode {
