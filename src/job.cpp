@@ -239,7 +239,6 @@ int JobObject::wait(WaitOp op, ProcTable *procTable) {
   }
 
   errno = 0;
-  int errNum = errno;
   int lastStatus = 0;
   if (this->available()) {
     for (unsigned short i = 0; i < this->procSize; i++) {
@@ -253,16 +252,11 @@ int JobObject::wait(WaitOp op, ProcTable *procTable) {
         procTable->deleteProc(pid);
       }
     }
-    errNum = errno;
     this->updateState();
   }
   if (!this->available()) {
-    typeAs<UnixFdObject>(this->inObj).tryToClose(false);
-    typeAs<UnixFdObject>(this->outObj).tryToClose(false);
-    errno = errNum;
     return this->procs[this->procSize - 1].exitStatus();
   }
-  errno = errNum;
   return lastStatus;
 }
 

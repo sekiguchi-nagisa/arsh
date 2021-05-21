@@ -17,8 +17,8 @@ assert $r[0] == 'hello'
 assert $r[1] == 'world'
 
 assert $j.wait() == 0
-assert ! $j.in()
-assert !$j.out()
+assert !$j.in()
+assert $j.out() # out fd is still available
 assert $j.size() == 2
 
 true

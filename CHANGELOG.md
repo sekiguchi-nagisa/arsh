@@ -29,6 +29,7 @@
   - ``String#count`` count grapheme clusters in string
   - ``String#charAt`` get grapheme cluster at specified position
   - iterate grapheme cluster in string
+- **Breaking Change**: after call ``Job#wait``, not close internal fds
 - propagate intrenal error as exception from regex method
   - ``left =~ right``, ``left !~ right``
   - ``Regex#match``, ``Regex#replace``
