@@ -10,7 +10,7 @@ cd build-all
 echo using compiler: $CC
 cmake .. -G Ninja -DCMAKE_CXX_COMPILER=$CC -DUSE_EXTRA_TEST=on
 
-ninja
+ninja || exit 1
 sudo ninja install
 
 ../tools/scripts/copy_mod4extra.ds
