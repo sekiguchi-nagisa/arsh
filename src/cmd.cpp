@@ -1316,7 +1316,7 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
       ERROR(argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
       return ProcOrJob();
     }
-    return ProcOrJob(Proc(id));
+    return ProcOrJob(pair.first);
   }
 }
 
@@ -1326,8 +1326,8 @@ static bool killProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, 
   if (!target.hasValue()) {
     return false;
   }
-  if (is<Proc>(target)) {
-    if (kill(get<Proc>(target).pid(), sigNum) < 0) {
+  if (is<pid_t>(target)) {
+    if (kill(get<pid_t>(target), sigNum) < 0) {
       PERROR(argvObj, "%s", toPrintable(arg).c_str());
       return false;
     }

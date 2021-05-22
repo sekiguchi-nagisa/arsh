@@ -120,18 +120,15 @@ int Extractor::extract(const char *value) {
 void InteractiveBase::invokeImpl(const std::vector<std::string> &args) {
   termios term;
   xcfmakesane(term);
-  auto builder = ProcBuilder{this->binPath.c_str()}
+  this->handle = ProcBuilder{this->binPath.c_str()}
                      .addArgs(args)
+                     .addEnv("TERM", "xterm")
                      .setWorkingDir(this->workingDir.c_str())
                      .setIn(IOConfig::PTY)
                      .setOut(IOConfig::PTY)
                      .setErr(IOConfig::PIPE)
                      .setWinSize(24, 200)
-                     .setTerm(term);
-  for (auto &e : this->envMap) {
-    builder.addEnv(e.first.c_str(), e.second.c_str());
-  }
-  this->handle = builder();
+                     .setTerm(term)();
 }
 
 void InteractiveShellBase::interpret(std::string &line) {
