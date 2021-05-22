@@ -969,20 +969,21 @@ TEST_F(JobTest, jobctrl2) {
         true
 )";
   result = EXEC(str);
+
   ASSERT_NO_FATAL_FAILURE(this->expect(result));
 
   str = R"(
-        var j = {
-             %'stop'.kill($PID)
-             exit 99
-        } &
-        assert $j.wait() == 128 + %'stop'.value()
-        assert $j.poll()
-        assert { bg %1 %2; $?; } == 1
-        var r = $j.wait()
-        assert $r == 99 : $r as String
-        true
-)";
+          var j = {
+               %'stop'.kill($PID)
+               exit 99
+          } &
+          assert $j.wait() == 128 + %'stop'.value()
+          assert $j.poll()
+          assert { bg %1 %2; $?; } == 1
+          var r = $j.wait()
+          assert $r == 99 : $r as String
+          true
+  )";
   result = EXEC(str);
   ASSERT_NO_FATAL_FAILURE(
       this->expect(result, 0, WaitStatus::EXITED, "", "ydsh: bg: %2: no such job"));

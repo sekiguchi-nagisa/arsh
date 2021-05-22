@@ -76,10 +76,10 @@ private:
    */
   unsigned char exitStatus_;
 
-  explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
-
 public:
   Proc() : pid_(-1), state_(State::TERMINATED), exitStatus_(0) {}
+
+  explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
 
   pid_t pid() const { return this->pid_; }
 
@@ -276,6 +276,12 @@ public:
   }
 
   /**
+   * get exit status of last process
+   * @return
+   */
+  int exitStatus() const { return this->procs[this->procSize - 1].exitStatus(); }
+
+  /**
    * wait for termination.
    * after termination, `state' will be TERMINATED.
    * @param op
@@ -363,6 +369,8 @@ public:
     this->deletedCount = 0;
   }
 
+  unsigned int viableProcSize() const { return this->entries.size() - this->deletedCount; }
+
   unsigned int getDeletedCount() const { return this->deletedCount; }
 
   /**
@@ -371,7 +379,7 @@ public:
   void batchedRemove();
 };
 
-using ProcOrJob = Union<pid_t, Job>;
+using ProcOrJob = Union<Proc, Job>;
 
 class JobTable {
 private:
@@ -404,6 +412,9 @@ public:
    * after waiting termination, remove entry.
    */
   int waitForJob(Job &job, WaitOp op) {
+    if (!job->available()) {
+      return job->wait(op);
+    }
     ProcOrJob target[1] = {job};
     return this->waitForProcOrJob(1, target, op);
   }
@@ -436,6 +447,19 @@ public:
    * if not ignoreError false and has error, return -1
    */
   int waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op);
+
+  /**
+   *
+   * @param size
+   * @param targets
+   * if null, wait all managed jobs
+   * @param op
+   * @param breakNext
+   * @return
+   * return exit status of last targets.
+   * if breakNext is true and find a terminated proc, break remain wait operation
+   */
+  int waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op, bool breakNext);
 
   const Job &getLatestJob() const { return this->latest; }
 

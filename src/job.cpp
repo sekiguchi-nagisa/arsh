@@ -255,7 +255,7 @@ int JobObject::wait(WaitOp op, ProcTable *procTable) {
     this->updateState();
   }
   if (!this->available()) {
-    return this->procs[this->procSize - 1].exitStatus();
+    return this->exitStatus();
   }
   return lastStatus;
 }
@@ -292,7 +292,7 @@ ProcTable::Entry *ProcTable::findProc(pid_t pid) {
   return nullptr;
 }
 
-const ProcTable::Entry * ProcTable::findProc(pid_t pid) const {
+const ProcTable::Entry *ProcTable::findProc(pid_t pid) const {
   if (pid > 0) {
     auto iter = std::lower_bound(this->entries.begin(), this->entries.end(), pid, PidEntryComp());
     if (iter != this->entries.end()) {
@@ -343,21 +343,21 @@ void JobTable::attach(Job job, bool disowned) {
   }
 }
 
-void JobTable::waitForAny() {
-  SignalGuard guard;
-  DSState::clearPendingSignal(SIGCHLD);
+ void JobTable::waitForAny() {
+   SignalGuard guard;
+   DSState::clearPendingSignal(SIGCHLD);
 
-  for (WaitResult ret; (ret = waitForProc(-1, WaitOp::NONBLOCKING)).pid != 0;) {
-    if (ret.pid == -1) {
-      if (errno != ECHILD) {
-        fatal_perror("wait failed"); // FIXME: propagate error as exception
-      }
-      break;
-    }
-    this->updateProcState(ret);
-  }
-  this->removeTerminatedJobs();
-}
+   for (WaitResult ret; (ret = waitForProc(-1, WaitOp::NONBLOCKING)).pid != 0;) {
+     if (ret.pid == -1) {
+       if (errno != ECHILD) {
+         fatal_perror("wait failed"); // FIXME: propagate error as exception
+       }
+       break;
+     }
+     this->updateProcState(ret);
+   }
+   this->removeTerminatedJobs();
+ }
 
 int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op) {
   auto cleanup = finally([&] {
@@ -376,14 +376,14 @@ int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op)
 
   int lastStatus = 0;
   for (unsigned int i = 0; i < size; i++) {
-    if (is<pid_t>(targets[i])) {
-      pid_t pid = get<pid_t>(targets[i]);
+    if (is<Proc>(targets[i])) {
+      pid_t pid = get<Proc>(targets[i]).pid();
       WaitResult ret = waitForProc(pid, op);
       if (ret.pid == -1) {
         return -1;
       }
-      if (const Proc * p; (p = this->updateProcState(ret))) {
-        lastStatus = p->exitStatus();
+      if (const Proc * proc; (proc = this->updateProcState(ret))) {
+        lastStatus = proc->exitStatus();
       }
     } else if (is<Job>(targets[i])) {
       Job &job = get<Job>(targets[i]);
@@ -394,6 +394,71 @@ int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op)
     }
   }
   return lastStatus;
+}
+
+static int checkTerminated(const Proc &proc, ProcOrJob &target) {
+  if (is<Proc>(target)) {
+    auto &targetProc = get<Proc>(target);
+    if (targetProc.pid() == proc.pid()) {
+      targetProc = proc;
+    }
+    if (!targetProc.is(Proc::State::RUNNING)) {
+      return targetProc.exitStatus();
+    }
+  } else if (is<Job>(target)) {
+    auto &targetJob = get<Job>(target);
+    if (!targetJob->available()) {
+      return targetJob->exitStatus();
+    }
+  }
+  return -1;
+}
+
+int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op, bool breakNext) {
+  LOG(DUMP_WAIT, "@@enter size: %d, op: %s, breakNext: %s", size, toString(op),
+      breakNext ? "true" : "false");
+
+  auto cleanup = finally([&] {
+    LOG(DUMP_WAIT, "@@exit");
+    int e = errno;
+    this->removeTerminatedJobs();
+    errno = e;
+  });
+
+  errno = 0;
+  for (WaitResult ret; (ret = waitForProc(-1, op)).pid != 0;) {
+    if (ret.pid == -1) {
+      if (errno != ECHILD) {
+        fatal_perror("wait failed"); // FIXME: propagate error as exception
+      }
+      return -1;
+    }
+
+    if (const Proc * proc; (proc = this->updateProcState(ret))) {
+      if(proc->is(Proc::State::STOPPED)) {
+        return proc->exitStatus();
+      }
+      unsigned int terminatedCount = 0;
+      int lastStatus = proc->exitStatus();
+      for (unsigned int i = 0; i < size; i++) {
+        int s = checkTerminated(*proc, targets[i]);
+        if (s != -1) {
+          lastStatus = s;
+          terminatedCount++;
+        }
+        if (breakNext && terminatedCount > 0) {
+          return lastStatus;
+        }
+      }
+      if (breakNext || (size > 0 && terminatedCount == size)) {
+        return lastStatus;
+      }
+    }
+    if (this->procTable.viableProcSize() == 0) {
+      break;
+    }
+  }
+  return 0;
 }
 
 unsigned int JobTable::findEmptyEntry() const {

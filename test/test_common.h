@@ -129,8 +129,12 @@ protected:
 
   const std::string workingDir;
 
+  std::unordered_map<std::string, std::string> envMap;
+
 public:
-  InteractiveBase(const char *binPath, const char *dir) : binPath(binPath), workingDir(dir) {}
+  InteractiveBase(const char *binPath, const char *dir) : binPath(binPath), workingDir(dir) {
+    this->envMap.emplace("TERM", "xterm");
+  }
 
   template <typename... T>
   void invoke(T &&...args) {
@@ -139,6 +143,8 @@ public:
   }
 
   void invokeImpl(const std::vector<std::string> &args);
+
+  void addEnv(const char *name, const char *value) { this->envMap.emplace(name, value); }
 
   void send(const char *str) {
     int r = write(this->handle.in(), str, strlen(str));

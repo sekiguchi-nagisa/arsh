@@ -54,7 +54,11 @@ public:
     this->state->setVMHook(&this->inspector);
   }
 
-  void TearDown() override { DSState_delete(&this->state); }
+  void TearDown() override {
+    this->state->jobTable.send(SIGCONT);
+    this->state->jobTable.send(SIGKILL);
+    DSState_delete(&this->state);
+  }
 
 private:
   void setBreakPointHandler(OpCode breakOp, BreakPointHandler &&handler) {
@@ -246,6 +250,41 @@ TEST_F(VMTest, exit) {
   ASSERT_NO_FATAL_FAILURE(this->eval("$c;", DS_ERROR_KIND_RUNTIME_ERROR));
 }
 
+TEST(ProcTableTest, base) {
+  ProcTable table;
+  auto *e = table.addProc(12, 1, 1);
+  ASSERT_EQ(12, e->pid());
+  ASSERT_EQ(1, e->jobId());
+  ASSERT_EQ(1, e->procOffset());
+
+  e = table.addProc(34, 1, 2);
+  ASSERT_EQ(34, e->pid());
+  ASSERT_EQ(1, e->jobId());
+  ASSERT_EQ(2, e->procOffset());
+
+  e = table.addProc(2, 1, 3);
+  ASSERT_EQ(2, e->pid());
+  ASSERT_EQ(1, e->jobId());
+  ASSERT_EQ(3, e->procOffset());
+
+  e = table.addProc(-1, 1, 3);
+  ASSERT_EQ(nullptr, e);
+
+  e = table.addProc(100, 0, 3);
+  ASSERT_EQ(nullptr, e);
+
+  ASSERT_EQ(3, table.getEntries().size());
+  ASSERT_TRUE(table.deleteProc(12));
+  ASSERT_TRUE(table.deleteProc(2));
+  ASSERT_FALSE(table.deleteProc(-1));
+  ASSERT_FALSE(table.deleteProc(1000));
+  table.batchedRemove();
+  ASSERT_EQ(1, table.getEntries().size());
+
+  table.clear();
+  ASSERT_EQ(0, table.getEntries().size());
+}
+
 static JobTable::ConstEntryIter getBeginIter(const JobTable &table) { return table.beginJob(); }
 
 static JobTable::ConstEntryIter getEndIter(const JobTable &table) { return table.endJob(); }
@@ -263,6 +302,22 @@ struct JobTableTest : public VMTest {
       exit(s);
     }
     return JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj);
+  }
+
+  template <typename Func>
+  Job newAttactedJob(Func func) {
+    auto proc = Proc::fork(*this->state, 0, false);
+    if (proc.pid() == 0) {
+      int s = func();
+      exit(s);
+    }
+    auto job = JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj);
+    this->state->jobTable.attach(job);
+    return job;
+  }
+
+  JobTable &jobTable() {
+    return this->state->jobTable;
   }
 };
 
@@ -372,40 +427,21 @@ TEST_F(JobTableTest, attach) {
   ASSERT_EQ(getEndIter(jobTable), begin);
 }
 
-TEST(ProcTableTest, base) {
-  ProcTable table;
-  auto *e = table.addProc(12, 1, 1);
-  ASSERT_EQ(12, e->pid());
-  ASSERT_EQ(1, e->jobId());
-  ASSERT_EQ(1, e->procOffset());
+TEST_F(JobTableTest, waitJob) {
+  ASSERT_EQ(0, this->jobTable().size());
+  ASSERT_EQ(0, this->jobTable().getProcTable().viableProcSize());
 
-  e = table.addProc(34, 1, 2);
-  ASSERT_EQ(34, e->pid());
-  ASSERT_EQ(1, e->jobId());
-  ASSERT_EQ(2, e->procOffset());
-
-  e = table.addProc(2, 1, 3);
-  ASSERT_EQ(2, e->pid());
-  ASSERT_EQ(1, e->jobId());
-  ASSERT_EQ(3, e->procOffset());
-
-  e = table.addProc(-1, 1, 3);
-  ASSERT_EQ(nullptr, e);
-
-  e = table.addProc(100, 0, 3);
-  ASSERT_EQ(nullptr, e);
-
-  ASSERT_EQ(3, table.getEntries().size());
-  ASSERT_TRUE(table.deleteProc(12));
-  ASSERT_TRUE(table.deleteProc(2));
-  ASSERT_FALSE(table.deleteProc(-1));
-  ASSERT_FALSE(table.deleteProc(1000));
-  table.batchedRemove();
-  ASSERT_EQ(1, table.getEntries().size());
-
-  table.clear();
-  ASSERT_EQ(0, table.getEntries().size());
+  auto job1 = this->newAttactedJob([]{
+    return 23;
+  });
+  ASSERT_TRUE(job1->available());
+  int s = this->jobTable().waitForJob(job1, WaitOp::BLOCKING);
+  ASSERT_EQ(23, s);
+  ASSERT_FALSE(job1->available());
+  ASSERT_EQ(0, this->jobTable().size());
+  ASSERT_EQ(0, this->jobTable().getProcTable().viableProcSize());
 }
+
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
