@@ -2043,14 +2043,13 @@ static int setOption(DSState &state, const ArrayObject &argvObj, const bool set)
 static int showModule(const DSState &state) {
   auto &loader = state.modLoader;
   unsigned int size = loader.modSize();
-  auto *buf = new const char *[size];
+  auto buf = std::make_unique<const char *[]>(size);
   for (auto &e : loader) {
     buf[e.second] = e.first.data();
   }
   for (unsigned int i = 0; i < size; i++) {
     fprintf(stdout, "%s\n", buf[i]);
   }
-  delete[] buf;
   return 0;
 }
 
