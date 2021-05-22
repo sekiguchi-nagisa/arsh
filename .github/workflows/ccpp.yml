@@ -38,11 +38,11 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        cc: [g++-10, g++-11, clang++-7, clang++-10, clang++-11]
+        cc: [g++-10, clang++-7, clang++-10, clang++-11]
     steps:
     - uses: actions/checkout@v1
     - name: prepare
-      run: sudo apt-get install ninja-build g++-10 g++-11 clang-10 clang-7 clang-11
+      run: sudo apt-get install ninja-build g++-10 clang-10 clang-7 clang-11
     - name: configure
       run: |
         mkdir build
@@ -66,12 +66,12 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        cc: [g++-11, clang++-11]
+        cc: [g++-10, clang++-11]
         option: [on, off]
     steps:
     - uses: actions/checkout@v1
     - name: prepare
-      run: sudo apt-get install ninja-build g++-11 clang-11 lld lld-11 llvm-11 llvm-11-dev
+      run: sudo apt-get install ninja-build g++-10 clang-11 lld lld-11 llvm-11 llvm-11-dev
     - name: configure
       run: |
         mkdir build
@@ -100,14 +100,14 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: prepare
-        run: sudo apt-get install ninja-build clang-11
+        run: sudo apt-get install ninja-build clang-10
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
-                -DCMAKE_CXX_COMPILER=clang++-11 \
+                -DCMAKE_CXX_COMPILER=clang++-10 \
                 -DSANITIZER=${{ matrix.option }} \
                 -DUSE_EXTRA_TEST=on
       - name: build
@@ -126,14 +126,14 @@ jobs:
     steps:
       - uses: actions/checkout@v1
       - name: prepare
-        run: sudo apt-get install ninja-build clang-11
+        run: sudo apt-get install ninja-build clang-10
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DFUZZING_BUILD_MODE=on \
-                -DCMAKE_CXX_COMPILER=clang++-11 \
+                -DCMAKE_CXX_COMPILER=clang++-10 \
                 -DUSE_EXTRA_TEST=on
       - name: build
         run: |
