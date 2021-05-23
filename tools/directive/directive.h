@@ -138,6 +138,13 @@ public:
   static bool init(const char *sourceName, const char *src, Directive &d);
 };
 
+/**
+ * if cannot resolve, return empty string
+ * @param kind
+ * @return
+ */
+const char *toString(DSErrorKind kind);
+
 } // namespace ydsh::directive
 
 #endif // YDSH_TOOLS_DIRECTIVE_H

@@ -113,14 +113,16 @@ public:
     std::string name;
     std::string fileName;
 
-    if (!line.empty()) {
+    if (line.empty()) {
+      printf("@ not found status-log at %s\n", this->targetName.c_str());
+    } else {
       int r = parse(line, "kind", "=", kind, "lineNum", "=", lineNum, "chars", "=", chars, "name",
                     "=", name, "fileName", "=", fileName);
       ASSERT_EQ(0, r);
     }
 
     // check status
-    ASSERT_EQ(d.getKind(), kind);
+    ASSERT_EQ(formatKind(d.getKind()), formatKind(kind));
     ASSERT_EQ(d.getLineNum(), lineNum);
     ASSERT_EQ(d.getChars(), chars);
     ASSERT_EQ(d.getStatus(), ret);
@@ -134,6 +136,18 @@ public:
     if (d.getErr()) {
       ASSERT_STREQ(d.getErr(), output.err.c_str());
     }
+  }
+
+  static std::string formatKind(int kind) {
+    const char *s = toString(static_cast<DSErrorKind>(kind));
+    std::string ret;
+    if(*s) {
+      ret = split(s, '_')[3];
+    }
+    ret += "(";
+    ret += std::to_string(kind);
+    ret += ")";
+    return ret;
   }
 };
 

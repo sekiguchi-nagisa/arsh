@@ -441,4 +441,24 @@ bool Directive::init(const char *sourceName, const char *src, Directive &d) {
   return initDirective(sourceName, input, d);
 }
 
+#define EACH_DS_ERROR_KIND(E) \
+  E(DS_ERROR_KIND_SUCCESS) \
+  E(DS_ERROR_KIND_FILE_ERROR) \
+  E(DS_ERROR_KIND_PARSE_ERROR) \
+  E(DS_ERROR_KIND_TYPE_ERROR) \
+  E(DS_ERROR_KIND_CODEGEN_ERROR) \
+  E(DS_ERROR_KIND_RUNTIME_ERROR) \
+  E(DS_ERROR_KIND_ASSERTION_ERROR) \
+  E(DS_ERROR_KIND_EXIT)
+
+
+const char *toString(DSErrorKind kind) {
+  switch (kind) {
+#define GEN_CASE(K) case DSErrorKind::K: return #K;
+    EACH_DS_ERROR_KIND(GEN_CASE)
+#undef GEN_CASE
+  }
+  return "";
+}
+
 } // namespace ydsh::directive
