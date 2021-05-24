@@ -1316,7 +1316,7 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
       ERROR(argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
       return ProcOrJob();
     }
-    return ProcOrJob(pair.first);
+    return ProcOrJob(Proc(id));
   }
 }
 
@@ -1326,8 +1326,8 @@ static bool killProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, 
   if (!target.hasValue()) {
     return false;
   }
-  if (is<pid_t>(target)) {
-    if (kill(get<pid_t>(target), sigNum) < 0) {
+  if (is<Proc>(target)) {
+    if (kill(get<Proc>(target).pid(), sigNum) < 0) {
       PERROR(argvObj, "%s", toPrintable(arg).c_str());
       return false;
     }
@@ -2216,8 +2216,12 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
 static int builtin_wait(DSState &state, ArrayObject &argvObj) {
   const WaitOp op = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
   unsigned int size = argvObj.size() - 1;
-  auto targets = size == 0 ? nullptr : std::make_unique<ProcOrJob[]>(size);
 
+  if(size == 0) {
+    return state.jobTable.waitForAll(op);
+  }
+
+  auto targets = std::make_unique<ProcOrJob[]>(size);
   for (unsigned int i = 0; i < size; i++) {
     auto ref = argvObj.getValues()[i + 1].asStrRef();
     auto target = parseProcOrJob(state.jobTable, argvObj, ref, false);
@@ -2226,7 +2230,7 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
     }
     targets[i] = std::move(target);
   }
-  int s = state.jobTable.waitForProcOrJob(size, targets.get(), op);
+  int s = state.jobTable.waitForProcOrJobOld(size, targets.get(), op);
   state.jobTable.waitForAny();
   return s;
 }

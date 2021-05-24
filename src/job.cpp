@@ -255,7 +255,7 @@ int JobObject::wait(WaitOp op, ProcTable *procTable) {
     this->updateState();
   }
   if (!this->available()) {
-    return this->procs[this->procSize - 1].exitStatus();
+    return this->exitStatus();
   }
   return lastStatus;
 }
@@ -292,7 +292,7 @@ ProcTable::Entry *ProcTable::findProc(pid_t pid) {
   return nullptr;
 }
 
-const ProcTable::Entry * ProcTable::findProc(pid_t pid) const {
+const ProcTable::Entry *ProcTable::findProc(pid_t pid) const {
   if (pid > 0) {
     auto iter = std::lower_bound(this->entries.begin(), this->entries.end(), pid, PidEntryComp());
     if (iter != this->entries.end()) {
@@ -343,6 +343,14 @@ void JobTable::attach(Job job, bool disowned) {
   }
 }
 
+int JobTable::waitForJob(Job &job, WaitOp op) {
+  LOG(DUMP_WAIT, "@@enter op: %s", toString(op));
+  int status = waitForJobImpl(job, op);
+  this->removeTerminatedJobs();
+  LOG(DUMP_WAIT, "@@exit");
+  return status;
+}
+
 void JobTable::waitForAny() {
   SignalGuard guard;
   DSState::clearPendingSignal(SIGCHLD);
@@ -359,7 +367,26 @@ void JobTable::waitForAny() {
   this->removeTerminatedJobs();
 }
 
-int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op) {
+int JobTable::waitForAll(WaitOp op, bool breakNext) {
+  SignalGuard guard;
+  DSState::clearPendingSignal(SIGCHLD);
+
+  int lastStatus = 0;
+  for (auto &job : this->jobs) {
+    if (!job->isDisowned()) {
+      lastStatus = waitForJobImpl(job, op);
+      if (lastStatus < 0 || breakNext) {
+        break;
+      }
+    }
+  }
+  int e = errno;
+  this->removeTerminatedJobs();
+  errno = e;
+  return lastStatus;
+}
+
+int JobTable::waitForProcOrJobOld(unsigned int size, ProcOrJob *targets, WaitOp op) {
   auto cleanup = finally([&] {
     int e = errno;
     this->removeTerminatedJobs();
@@ -376,14 +403,15 @@ int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op)
 
   int lastStatus = 0;
   for (unsigned int i = 0; i < size; i++) {
-    if (is<pid_t>(targets[i])) {
-      pid_t pid = get<pid_t>(targets[i]);
+    if (is<Proc>(targets[i])) {
+      pid_t pid = get<Proc>(targets[i]).pid();
       WaitResult ret = waitForProc(pid, op);
       if (ret.pid == -1) {
         return -1;
       }
-      if (const Proc * p; (p = this->updateProcState(ret))) {
-        lastStatus = p->exitStatus();
+      auto pair = this->updateProcState(ret);
+      if (pair.first) {
+        lastStatus = pair.first->getProcs()[pair.second].exitStatus();
       }
     } else if (is<Job>(targets[i])) {
       Job &job = get<Job>(targets[i]);
@@ -391,6 +419,48 @@ int JobTable::waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op)
       if (lastStatus < 0) {
         return -1;
       }
+    }
+  }
+  return lastStatus;
+}
+
+static const Proc *findLastStopped(const Job &job) {
+  const Proc *last = nullptr;
+  for (unsigned int i = 0; i < job->getProcSize(); i++) {
+    auto &p = job->getProcs()[i];
+    if (p.is(Proc::State::RUNNING)) {
+      return nullptr;
+    } else if (p.is(Proc::State::STOPPED)) {
+      last = &p;
+    }
+  }
+  return last;
+}
+
+int JobTable::waitForJobImpl(Job &job, WaitOp op) {
+  if (!job->available()) {
+    return job->wait(op);
+  }
+  if (const Proc * last; op == WaitOp::BLOCK_UNTRACED && (last = findLastStopped(job))) {
+    return last->exitStatus();
+  }
+
+  int lastStatus = 0;
+  for (WaitResult ret; (ret = waitForProc(-1, op)).pid != 0;) {
+    if (ret.pid == -1) {
+      return -1;
+    }
+    auto pair = this->updateProcState(ret);
+    if (pair.first && pair.first == job) {
+      auto &proc = job->getProcs()[pair.second];
+      lastStatus = proc.exitStatus();
+      if (const Proc * last; proc.is(Proc::State::STOPPED) && op == WaitOp::BLOCK_UNTRACED &&
+                             (last = findLastStopped(job))) {
+        return last->exitStatus();
+      }
+    }
+    if (!job->available()) {
+      return job->exitStatus();
     }
   }
   return lastStatus;
@@ -429,7 +499,7 @@ JobTable::ConstEntryIter JobTable::findIter(unsigned int jobId) const {
   return this->jobs.end();
 }
 
-const Proc *JobTable::updateProcState(WaitResult ret) {
+std::pair<Job, unsigned int> JobTable::updateProcState(WaitResult ret) {
   if (ProcTable::Entry * entry; (entry = this->procTable.findProc(ret.pid))) {
     assert(!entry->isDeleted());
     auto iter = this->findIter(entry->jobId());
@@ -442,9 +512,9 @@ const Proc *JobTable::updateProcState(WaitResult ret) {
       this->procTable.deleteProc(*entry);
     }
     job->updateState();
-    return &proc;
+    return {job, entry->procOffset()};
   }
-  return nullptr;
+  return {nullptr, 0};
 }
 
 void JobTable::removeTerminatedJobs() {

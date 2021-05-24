@@ -64,7 +64,7 @@ public:
   enum class State : unsigned char {
     RUNNING,
     STOPPED,    // stopped by SIGSTOP or SIGTSTP
-    TERMINATED, // already called waitpid
+    TERMINATED, // terminated
   };
 
 private:
@@ -76,10 +76,10 @@ private:
    */
   unsigned char exitStatus_;
 
-  explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
-
 public:
   Proc() : pid_(-1), state_(State::TERMINATED), exitStatus_(0) {}
+
+  explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING), exitStatus_(0) {}
 
   pid_t pid() const { return this->pid_; }
 
@@ -276,6 +276,12 @@ public:
   }
 
   /**
+   * get exit status of last process
+   * @return
+   */
+  int exitStatus() const { return this->procs[this->procSize - 1].exitStatus(); }
+
+  /**
    * wait for termination.
    * after termination, `state' will be TERMINATED.
    * @param op
@@ -363,6 +369,8 @@ public:
     this->deletedCount = 0;
   }
 
+  unsigned int viableProcSize() const { return this->entries.size() - this->deletedCount; }
+
   unsigned int getDeletedCount() const { return this->deletedCount; }
 
   /**
@@ -371,7 +379,7 @@ public:
   void batchedRemove();
 };
 
-using ProcOrJob = Union<pid_t, Job>;
+using ProcOrJob = Union<Proc, Job>;
 
 class JobTable {
 private:
@@ -395,19 +403,6 @@ public:
 
   void attach(Job job, bool disowned = false);
 
-  /**
-   * if has ownership, wait termination.
-   * @param job
-   * @param op
-   * @return
-   * exit status of last process.
-   * after waiting termination, remove entry.
-   */
-  int waitForJob(Job &job, WaitOp op) {
-    ProcOrJob target[1] = {job};
-    return this->waitForProcOrJob(1, target, op);
-  }
-
   void detachAll() {
     for (auto &e : this->jobs) {
       e->jobID = 0;
@@ -420,11 +415,23 @@ public:
   }
 
   /**
+   * if has ownership, wait termination.
+   * @param job
+   * @param op
+   * @return
+   * exit status of last process.
+   * after waiting termination, remove entry.
+   */
+  int waitForJob(Job &job, WaitOp op);
+
+  /**
    * update status of managed jobs.
    * when a job is terminated, detach job.
    * should call after wait termination of foreground job.
    */
   void waitForAny();
+
+  int waitForAll(WaitOp op, bool breakNext = false);
 
   /**
    *
@@ -435,7 +442,7 @@ public:
    * return exit status of last targers.
    * if not ignoreError false and has error, return -1
    */
-  int waitForProcOrJob(unsigned int size, ProcOrJob *targets, WaitOp op);
+  int waitForProcOrJobOld(unsigned int size, ProcOrJob *targets, WaitOp op);
 
   const Job &getLatestJob() const { return this->latest; }
 
@@ -499,7 +506,15 @@ private:
    * @return
    * return corresponding proc
    */
-  const Proc *updateProcState(WaitResult ret);
+  std::pair<Job, unsigned int> updateProcState(WaitResult ret);
+
+  /**
+   * not directly use it
+   * @param job
+   * @param op
+   * @return
+   */
+  int waitForJobImpl(Job &job, WaitOp op);
 
   void removeTerminatedJobs();
 };

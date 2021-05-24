@@ -982,7 +982,7 @@ TEST_F(JobTest, jobctrl2) {
         var r = $j.wait()
         assert $r == 99 : $r as String
         true
-)";
+  )";
   result = EXEC(str);
   ASSERT_NO_FATAL_FAILURE(
       this->expect(result, 0, WaitStatus::EXITED, "", "ydsh: bg: %2: no such job"));
