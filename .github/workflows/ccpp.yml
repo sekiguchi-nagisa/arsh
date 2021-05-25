@@ -38,13 +38,12 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        cc: [g++-10, clang++-7, clang++-10, clang++-11, clang++-12]
+        cc: [g++-10, g++-11, clang++-7, clang++-10, clang++-11, clang++-12]
     steps:
     - uses: actions/checkout@v1
     - name: prepare
       run: |
-        sudo apt-get install ninja-build g++-10 clang-10 clang-7 clang-11 clang-12
-        sudo apt remove libgcc-11-dev gcc-11
+        sudo apt-get install ninja-build g++-10 g++-11 clang-10 clang-7 clang-11 clang-12
     - name: configure
       run: |
         mkdir build
@@ -68,14 +67,13 @@ jobs:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        cc: [g++-10, clang++-12]
+        cc: [g++-11, clang++-12]
         option: [on, off]
     steps:
     - uses: actions/checkout@v1
     - name: prepare
       run: |
-        sudo apt-get install ninja-build g++-10 clang-12 lld lld-12 llvm-12 llvm-12-dev
-        sudo apt remove libgcc-11-dev gcc-11
+        sudo apt-get install ninja-build g++-11 clang-12 lld lld-12 llvm-12 llvm-12-dev
     - name: configure
       run: |
         mkdir build
@@ -106,7 +104,6 @@ jobs:
       - name: prepare
         run: |
           sudo apt-get install ninja-build clang-12
-          sudo apt remove libgcc-11-dev gcc-11
       - name: configure
         run: |
           mkdir build
@@ -134,7 +131,6 @@ jobs:
       - name: prepare
         run: |
           sudo apt-get install ninja-build clang-12
-          sudo apt remove libgcc-11-dev gcc-11
       - name: configure
         run: |
           mkdir build
