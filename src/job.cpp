@@ -399,8 +399,8 @@ int JobTable::waitForJobImpl(Job &job, WaitOp op) {
   if (!job->available()) {
     return job->wait(op);
   }
-  if (op == WaitOp::BLOCK_UNTRACED && findLastStopped(job)) {
-    return 0;
+  if (const Proc *p; op == WaitOp::BLOCK_UNTRACED && (p = findLastStopped(job))) {
+    return p->exitStatus();
   }
 
   int lastStatus = 0;
