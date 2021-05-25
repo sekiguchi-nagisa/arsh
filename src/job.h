@@ -285,14 +285,11 @@ public:
    * wait for termination.
    * after termination, `state' will be TERMINATED.
    * @param op
-   * @param procTable
-   * may be null
    * @return
    * exit status of last process.
    * if cannot terminate (has no-ownership or has error), return -1 and set errno
-   * if procTable is not null, after wait, remove terminated procs from procTable
    */
-  int wait(WaitOp op, ProcTable *procTable = nullptr);
+  int wait(WaitOp op);
 };
 
 using Job = ObjPtr<JobObject>;

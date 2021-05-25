@@ -232,7 +232,7 @@ void JobObject::send(int sigNum) const {
   }
 }
 
-int JobObject::wait(WaitOp op, ProcTable *procTable) {
+int JobObject::wait(WaitOp op) {
   if (!isControlled()) {
     errno = ECHILD;
     return -1;
@@ -243,13 +243,9 @@ int JobObject::wait(WaitOp op, ProcTable *procTable) {
   if (this->available()) {
     for (unsigned short i = 0; i < this->procSize; i++) {
       auto &proc = this->procs[i];
-      pid_t pid = proc.pid();
       lastStatus = proc.wait(op, i == this->procSize - 1);
       if (lastStatus < 0) {
         return lastStatus;
-      }
-      if (proc.is(Proc::State::TERMINATED) && procTable) {
-        procTable->deleteProc(pid);
       }
     }
     this->updateState();
@@ -403,8 +399,8 @@ int JobTable::waitForJobImpl(Job &job, WaitOp op) {
   if (!job->available()) {
     return job->wait(op);
   }
-  if (const Proc * last; op == WaitOp::BLOCK_UNTRACED && (last = findLastStopped(job))) {
-    return last->exitStatus();
+  if (op == WaitOp::BLOCK_UNTRACED && findLastStopped(job)) {
+    return 0;
   }
 
   int lastStatus = 0;
@@ -435,7 +431,7 @@ unsigned int JobTable::findEmptyEntry() const {
   while (dist > 0) {
     unsigned int hafDist = dist / 2;
     unsigned int midIndex = hafDist + firstIndex;
-    if (jobs[midIndex]->getJobID() == midIndex + 1) {
+    if (this->jobs[midIndex]->getJobID() == midIndex + 1) {
       firstIndex = midIndex + 1;
       dist = dist - hafDist - 1;
     } else {
