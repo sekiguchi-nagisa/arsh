@@ -379,8 +379,6 @@ public:
   void batchedRemove();
 };
 
-using ProcOrJob = Union<Proc, Job>;
-
 class JobTable {
 private:
   std::vector<Job> jobs;
@@ -432,17 +430,6 @@ public:
   void waitForAny();
 
   int waitForAll(WaitOp op, bool breakNext = false);
-
-  /**
-   *
-   * @param size
-   * @param targets
-   * @param op
-   * @return
-   * return exit status of last targers.
-   * if not ignoreError false and has error, return -1
-   */
-  int waitForProcOrJobOld(unsigned int size, ProcOrJob *targets, WaitOp op);
 
   const Job &getLatestJob() const { return this->latest; }
 

@@ -386,44 +386,6 @@ int JobTable::waitForAll(WaitOp op, bool breakNext) {
   return lastStatus;
 }
 
-int JobTable::waitForProcOrJobOld(unsigned int size, ProcOrJob *targets, WaitOp op) {
-  auto cleanup = finally([&] {
-    int e = errno;
-    this->removeTerminatedJobs();
-    errno = e;
-  });
-
-  errno = 0;
-  if (!targets) {
-    for (auto &job : this->jobs) {
-      job->wait(op, &this->procTable);
-    }
-    return 0;
-  }
-
-  int lastStatus = 0;
-  for (unsigned int i = 0; i < size; i++) {
-    if (is<Proc>(targets[i])) {
-      pid_t pid = get<Proc>(targets[i]).pid();
-      WaitResult ret = waitForProc(pid, op);
-      if (ret.pid == -1) {
-        return -1;
-      }
-      auto pair = this->updateProcState(ret);
-      if (pair.first) {
-        lastStatus = pair.first->getProcs()[pair.second].exitStatus();
-      }
-    } else if (is<Job>(targets[i])) {
-      Job &job = get<Job>(targets[i]);
-      lastStatus = job->wait(op, &this->procTable);
-      if (lastStatus < 0) {
-        return -1;
-      }
-    }
-  }
-  return lastStatus;
-}
-
 static const Proc *findLastStopped(const Job &job) {
   const Proc *last = nullptr;
   for (unsigned int i = 0; i < job->getProcSize(); i++) {

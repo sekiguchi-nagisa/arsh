@@ -1292,6 +1292,8 @@ static bool printNumOrName(StringRef str) {
   return true;
 }
 
+using ProcOrJob = Union<pid_t, Job, const ProcTable::Entry *>;
+
 static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, StringRef arg,
                                 bool alloNoChild) {
   bool isJob = arg.startsWith("%");
@@ -1312,11 +1314,14 @@ static ProcOrJob parseProcOrJob(const JobTable &jobTable, const ArrayObject &arg
     ERROR(argvObj, "%s: no such job", toPrintable(arg).c_str());
     return ProcOrJob();
   } else {
-    if (!alloNoChild && (id < 0 || !jobTable.getProcTable().findProc(id))) {
+    if (const ProcTable::Entry * e; id > -1 && (e = jobTable.getProcTable().findProc(id))) {
+      return ProcOrJob(e);
+    } else if (alloNoChild) {
+      return ProcOrJob(id);
+    } else {
       ERROR(argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
       return ProcOrJob();
     }
-    return ProcOrJob(Proc(id));
   }
 }
 
@@ -1326,8 +1331,10 @@ static bool killProcOrJob(const JobTable &jobTable, const ArrayObject &argvObj, 
   if (!target.hasValue()) {
     return false;
   }
-  if (is<Proc>(target)) {
-    if (kill(get<Proc>(target).pid(), sigNum) < 0) {
+  if (is<pid_t>(target) || is<const ProcTable::Entry *>(target)) {
+    pid_t pid =
+        is<pid_t>(target) ? get<pid_t>(target) : get<const ProcTable::Entry *>(target)->pid();
+    if (kill(pid, sigNum) < 0) {
       PERROR(argvObj, "%s", toPrintable(arg).c_str());
       return false;
     }
@@ -2217,22 +2224,46 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
   const WaitOp op = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
   unsigned int size = argvObj.size() - 1;
 
-  if(size == 0) {
+  auto cleanup = finally([&]{
+    state.jobTable.waitForAny();
+  });
+
+  if (size == 0) {
     return state.jobTable.waitForAll(op);
   }
 
-  auto targets = std::make_unique<ProcOrJob[]>(size);
+  auto targets = std::make_unique<std::pair<Job, int>[]>(size);
   for (unsigned int i = 0; i < size; i++) {
     auto ref = argvObj.getValues()[i + 1].asStrRef();
     auto target = parseProcOrJob(state.jobTable, argvObj, ref, false);
-    if (!target.hasValue()) {
-      return 127; // FIMXE:
+    Job job;
+    int offset = -1;
+    if(is<Job>(target)) {
+      job = std::move(get<Job>(target));
+    } else if(is<const ProcTable::Entry*>(target)) {
+      auto *e = get<const ProcTable::Entry*>(target);
+      job = state.jobTable.find(e->jobId());
+      assert(job);
+      offset = e->procOffset();
+    } else {
+      return 127;
     }
-    targets[i] = std::move(target);
+    targets[i] = {std::move(job), offset};
   }
-  int s = state.jobTable.waitForProcOrJobOld(size, targets.get(), op);
-  state.jobTable.waitForAny();
-  return s;
+
+  // wait jobs
+  int lastStatus = 0;
+  for(unsigned int i = 0; i < size; i++) {
+    auto &target = targets[i];
+    lastStatus = state.jobTable.waitForJob(target.first, op);
+    if(lastStatus < 0) {
+      break;
+    }
+    if(target.second != -1 && !target.first->getProcs()[target.second].is(Proc::State::RUNNING)) {
+      lastStatus = target.first->getProcs()[target.second].exitStatus();
+    }
+  }
+  return lastStatus;
 }
 
 } // namespace ydsh
