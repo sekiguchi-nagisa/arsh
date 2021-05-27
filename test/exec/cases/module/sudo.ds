@@ -2,6 +2,8 @@
 source ../../../../share/ydsh/completion/sudo
 source ../../../../share/ydsh/completion/printenv
 
+sudo() {}   # workaround for sudo not installed env
+
 assert complete 'sudo ' | grep '^mount$'
 assert complete 'sudo ' | grep '^shutdown$'
 assert complete 'sudo ' | grep '^umount$'
