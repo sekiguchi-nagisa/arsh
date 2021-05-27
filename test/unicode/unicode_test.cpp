@@ -147,16 +147,18 @@ TEST_F(UnicodeTest, multi) {
   ASSERT_NO_FATAL_FAILURE(this->assertWidth(1, "ｱ", true));
 
   // emoji (regional indicator)
-  char buf[5] = {0};
-  ASSERT_EQ(4, UnicodeUtil::codePointToUtf8(0x1F1E6, buf));
-  ASSERT_NO_FATAL_FAILURE(this->assertWidth(1, buf));
-  ASSERT_NO_FATAL_FAILURE(this->assertWidth(1, buf, true));
+  char buf1[5] = {0};
+  ASSERT_EQ(4, UnicodeUtil::codePointToUtf8(0x1F1E6, buf1));
+  buf1[4] = '\0';
+  ASSERT_NO_FATAL_FAILURE(this->assertWidth(1, buf1));
+  ASSERT_NO_FATAL_FAILURE(this->assertWidth(1, buf1, true));
 
   // emoji
-  memset(buf, 1, 5);
-  ASSERT_EQ(4, UnicodeUtil::codePointToUtf8(0x1F970, buf));
-  ASSERT_NO_FATAL_FAILURE(this->assertWidth(2, buf));
-  ASSERT_NO_FATAL_FAILURE(this->assertWidth(2, buf, true));
+  char buf2[5] = {0};
+  ASSERT_EQ(4, UnicodeUtil::codePointToUtf8(0x1F970, buf2));
+  buf2[4] = '\0';
+  ASSERT_NO_FATAL_FAILURE(this->assertWidth(2, buf2));
+  ASSERT_NO_FATAL_FAILURE(this->assertWidth(2, buf2, true));
 }
 
 TEST_F(UnicodeTest, multi2) {
