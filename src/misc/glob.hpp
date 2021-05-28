@@ -313,16 +313,6 @@ private:
 
   template <typename Appender>
   int match(const char *baseDir, Iter &iter, Appender &appender);
-
-  static bool isDir(const std::string &fullpath, struct dirent *entry) {
-    if (entry->d_type == DT_DIR) {
-      return true;
-    }
-    if (entry->d_type == DT_UNKNOWN || entry->d_type == DT_LNK) {
-      return S_ISDIR(getStMode(fullpath.c_str()));
-    }
-    return false;
-  }
 };
 
 template <typename Meta, typename Iter>
@@ -359,7 +349,7 @@ int GlobMatcher<Meta, Iter>::match(const char *baseDir, Iter &iter, Appender &ap
     }
     name += entry->d_name;
 
-    if (isDir(name, entry)) {
+    if (isDirectory(name, entry)) {
       while (true) {
         if (matcher.consumeSeps() > 0) {
           name += '/';

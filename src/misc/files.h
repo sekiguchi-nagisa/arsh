@@ -66,6 +66,16 @@ inline bool isExecutable(const char *fileName) {
   return S_ISREG(getStMode(fileName)) && access(fileName, X_OK) == 0;
 }
 
+inline bool isDirectory(const std::string &fullpath, const struct dirent *entry) {
+  if(entry->d_type == DT_DIR) {
+    return true;
+  }
+  if(entry->d_type == DT_UNKNOWN || entry->d_type == DT_LNK) {
+    return S_ISDIR(getStMode(fullpath.c_str()));
+  }
+  return false;
+}
+
 inline CStrPtr getRealpath(const char *path) { return CStrPtr(realpath(path, nullptr)); }
 
 inline CStrPtr getCWD() { return getRealpath("."); }
