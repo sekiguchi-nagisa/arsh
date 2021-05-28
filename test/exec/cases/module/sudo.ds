@@ -1,3 +1,4 @@
+#$test($ignored = 'cygwin')
 
 source ../../../../share/ydsh/completion/sudo
 source ../../../../share/ydsh/completion/printenv
