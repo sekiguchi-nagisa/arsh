@@ -139,7 +139,7 @@ inline int getFileList(const char *dirPath, bool recursive, std::vector<std::str
       std::string name = path;
       name += "/";
       name += entry->d_name;
-      if (S_ISDIR(getStMode(name.c_str())) && recursive) {
+      if (isDirectory(name, entry) && recursive) {
         dirList.push_back(std::move(name));
       } else {
         results.push_back(std::move(name));
@@ -177,7 +177,7 @@ inline void removeDirWithRecursively(const char *currentDir) {
     fullpath += '/';
     fullpath += entry->d_name;
     const char *name = fullpath.c_str();
-    if (S_ISDIR(getStMode(name))) {
+    if (isDirectory(name, entry)) {
       removeDirWithRecursively(name);
     } else if (remove(name) < 0) {
       fatal_perror("cannot remove: %s", name);
