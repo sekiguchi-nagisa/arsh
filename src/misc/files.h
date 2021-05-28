@@ -67,10 +67,10 @@ inline bool isExecutable(const char *fileName) {
 }
 
 inline bool isDirectory(const std::string &fullpath, const struct dirent *entry) {
-  if(entry->d_type == DT_DIR) {
+  if (entry->d_type == DT_DIR) {
     return true;
   }
-  if(entry->d_type == DT_UNKNOWN || entry->d_type == DT_LNK) {
+  if (entry->d_type == DT_UNKNOWN || entry->d_type == DT_LNK) {
     return S_ISDIR(getStMode(fullpath.c_str()));
   }
   return false;
