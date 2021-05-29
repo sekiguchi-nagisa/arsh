@@ -702,7 +702,7 @@ int DSState_loadModule(DSState *st, const char *fileName, unsigned int option, D
   }
   filePtr.reset(nullptr);
 
-  auto &modType = st->modLoader.getBuiltinModType(st->typePool);
+  auto &modType = st->typePool.getBuiltinModType();
   auto scope = hasFlag(option, DS_MOD_SEPARATE_CTX)
                    ? st->modLoader.createGlobalScopeFromFullpath(fileName, modType)
                    : nullptr;

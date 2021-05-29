@@ -398,9 +398,9 @@ bool TypePool::allocMethodHandle(const DSType &recv, MethodMap::iterator iter) {
   auto *recvType = TRY2(decoder.decode());
   assert(*recvType == recv);
 
-  std::unique_ptr<MethodHandle> handle(MethodHandle::alloc(this->methodIdCount++, recvType, index,
-                                                           returnType, paramSize - 1)); // FIXME:
-  for (unsigned int i = 1; i < paramSize; i++) { // init param types
+  auto handle = MethodHandle::create(this->methodIdCount++, recvType, index, returnType,
+                                     paramSize - 1); // FIXME:
+  for (unsigned int i = 1; i < paramSize; i++) {     // init param types
     handle->paramTypes[i - 1] = TRY2(decoder.decode());
   }
 

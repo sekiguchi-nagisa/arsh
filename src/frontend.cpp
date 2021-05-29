@@ -325,7 +325,7 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
   {
     auto lex = createLexer(fullPath, std::move(buf));
     auto scope = this->modLoader.createGlobalScopeFromFullpath(
-        fullPath, this->modLoader.getBuiltinModType(this->getTypePool()));
+        fullPath, this->getTypePool().getBuiltinModType());
     this->contexts.push_back(std::make_unique<Context>(std::move(lex), std::move(scope), nullptr));
   }
   this->checker.setLexer(this->getCurrentLexer());

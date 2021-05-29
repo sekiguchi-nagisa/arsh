@@ -395,25 +395,9 @@ public:
     return &this->entries[iter->second];
   }
 
-  const ModEntry *find(unsigned int modId) const {
-    if (modId < this->entries.size()) {
-      return &this->entries[modId];
-    }
-    return nullptr;
-  }
-
   auto begin() const { return this->indexMap.begin(); }
 
   auto end() const { return this->indexMap.end(); }
-
-  const ModType &getBuiltinModType(const TypePool &pool) const {
-    assert(!this->entries.empty());
-    auto &e = this->entries[0];
-    assert(e.isSealed());
-    auto &type = pool.get(e.getTypeId());
-    assert(type.isModType());
-    return static_cast<const ModType &>(type);
-  }
 
 private:
   ModResult addNewModEntry(CStrPtr &&ptr);

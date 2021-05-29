@@ -573,8 +573,7 @@ ResolvedCmd CmdResolver::operator()(DSState &state, StringRef ref, const ModType
     if (hasFlag(this->resolveOp, FROM_FALLBACK) &&
         (cmd.filePath() == nullptr || S_ISDIR(getStMode(cmd.filePath())))) {
       if (getBuiltinGlobal(state, VAR_CMD_FALLBACK).isObject()) {
-        bool r = lookupUdc(state, CMD_FALLBACK_HANDLER, cmd,
-                           &state.modLoader.getBuiltinModType(state.typePool));
+        bool r = lookupUdc(state, CMD_FALLBACK_HANDLER, cmd, &state.typePool.getBuiltinModType());
         (void)r;
         assert(r);
       }
