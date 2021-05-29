@@ -2234,9 +2234,7 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
   }
 
   const WaitOp op = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
-  auto cleanup = finally([&]{
-    state.jobTable.waitForAny();
-  });
+  auto cleanup = finally([&] { state.jobTable.waitForAny(); });
 
   if (optState.index == argvObj.size()) {
     return state.jobTable.waitForAll(op, breakNext);
@@ -2248,10 +2246,10 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
     auto target = parseProcOrJob(state.jobTable, argvObj, ref, false);
     Job job;
     int offset = -1;
-    if(is<Job>(target)) {
+    if (is<Job>(target)) {
       job = std::move(get<Job>(target));
-    } else if(is<const ProcTable::Entry*>(target)) {
-      auto *e = get<const ProcTable::Entry*>(target);
+    } else if (is<const ProcTable::Entry *>(target)) {
+      auto *e = get<const ProcTable::Entry *>(target);
       job = state.jobTable.find(e->jobId());
       assert(job);
       offset = e->procOffset();
@@ -2263,22 +2261,23 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
 
   // wait jobs
   int lastStatus = 0;
-  if(breakNext) {
+  if (breakNext) {
     Job job;
     do {
-      for(auto &target : targets) {
-        if(!target.first->available()) {
+      for (auto &target : targets) {
+        if (!target.first->available()) {
           return target.first->exitStatus();
         }
       }
-    } while((lastStatus = state.jobTable.waitForJob(job, op)) > -1);
+    } while ((lastStatus = state.jobTable.waitForJob(job, op)) > -1);
   } else {
-    for(auto &target : targets) {
+    for (auto &target : targets) {
       lastStatus = state.jobTable.waitForJob(target.first, op);
-      if(lastStatus < 0) {
+      if (lastStatus < 0) {
         break;
       }
-      if(target.second != -1 && !target.first->getProcs()[target.second].is(Proc::State::RUNNING)) {
+      if (target.second != -1 &&
+          !target.first->getProcs()[target.second].is(Proc::State::RUNNING)) {
         lastStatus = target.first->getProcs()[target.second].exitStatus();
       }
     }

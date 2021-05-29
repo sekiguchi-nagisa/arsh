@@ -235,7 +235,7 @@ public:
   bool hasNext() const { return this->prevPos <= this->curPos && this->prevPos < this->ref.size(); }
 
   struct Result {
-    StringRef ref;         // grapheme cluster
+    StringRef ref;               // grapheme cluster
     unsigned int codePointCount; // count of containing code points
     int codePoints[32];
   };
@@ -263,7 +263,7 @@ bool GraphemeScanner<Bool>::next(Result &result) {
   size_t startPos = this->prevPos;
   size_t byteSize = 0;
   result.codePointCount = 0;
-  if(this->prevPos != this->curPos) {
+  if (this->prevPos != this->curPos) {
     result.codePointCount = 1;
     result.codePoints[0] = toCodePoint(this->ref, this->prevPos);
   }
