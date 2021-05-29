@@ -593,7 +593,7 @@ YDSH_METHOD string_chars(RuntimeContext &ctx) {
   GraphemeScanner::Result ret;
   auto value = DSValue::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   while (scanner.next(ret)) {
-    typeAs<ArrayObject>(value).append(DSValue::createStr(ref.substr(ret.startPos, ret.byteSize)));
+    typeAs<ArrayObject>(value).append(DSValue::createStr(ret.ref));
   }
   RET(value);
 }
@@ -663,7 +663,7 @@ YDSH_METHOD string_charAt(RuntimeContext &ctx) {
   ssize_t count = 0;
   for (; scanner.next(ret); count++) {
     if (count == pos) {
-      RET(DSValue::createStr(LOCAL(0).asStrRef().substr(ret.startPos, ret.byteSize)));
+      RET(DSValue::createStr(ret.ref));
     }
   }
   std::string msg = "character count is ";
@@ -942,7 +942,7 @@ YDSH_METHOD stringIter_next(RuntimeContext &ctx) {
   (void)r;
   assert(r);
   iter[1] = asDSValue(scanner);
-  RET(DSValue::createStr(iter[0].asStrRef().substr(ret.startPos, ret.byteSize)));
+  RET(DSValue::createStr(ret.ref));
 }
 
 //!bind: function $OP_HAS_NEXT($this : StringIter) : Boolean

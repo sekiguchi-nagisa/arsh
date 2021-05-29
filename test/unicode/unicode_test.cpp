@@ -405,8 +405,8 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
     std::vector<std::string> outputList;
     GraphemeScanner::Result ret;
     for (unsigned int i = 0; scanner.next(ret); i++) {
-      ASSERT_EQ(expected[i][0], ret.firstCodePoint);
-      outputList.push_back(scanner.getRef().substr(ret.startPos, ret.byteSize).toString());
+      ASSERT_EQ(expected[i][0], ret.codePoints[0]);
+      outputList.push_back(ret.ref.toString());
     }
     ASSERT_FALSE(scanner.hasNext());
     ASSERT_EQ(expectedList.size(), outputList.size());
@@ -441,37 +441,36 @@ TEST(GraphemeBreakTestBase, scan) {
 
   bool s = scanner.next(ret);
   ASSERT_TRUE(s);
-  ASSERT_EQ("a", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
-  ASSERT_EQ('a', ret.firstCodePoint);
+  ASSERT_EQ("a", ret.ref);
+  ASSERT_EQ('a', ret.codePoints[0]);
   ASSERT_TRUE(scanner.hasNext());
 
   s = scanner.next(ret);
   ASSERT_TRUE(s);
-  ASSERT_EQ("b", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
-  ASSERT_EQ('b', ret.firstCodePoint);
+  ASSERT_EQ("b", ret.ref);
+  ASSERT_EQ('b', ret.codePoints[0]);
   ASSERT_TRUE(scanner.hasNext());
 
   s = scanner.next(ret);
   ASSERT_TRUE(s);
-  ASSERT_EQ("c", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
-  ASSERT_EQ('c', ret.firstCodePoint);
+  ASSERT_EQ("c", ret.ref);
+  ASSERT_EQ('c', ret.codePoints[0]);
   ASSERT_FALSE(scanner.hasNext());
 
   s = scanner.next(ret);
   ASSERT_FALSE(s);
   ASSERT_EQ(3, scanner.getPrevPos());
   ASSERT_EQ(3, scanner.getCurPos());
-  ASSERT_EQ(3, ret.startPos);
-  ASSERT_EQ(0, ret.byteSize);
-  ASSERT_EQ(-1, ret.firstCodePoint);
+  ASSERT_EQ(3, ret.ref.begin() - scanner.getRef().begin());
+  ASSERT_EQ(0, ret.ref.size());
   ASSERT_EQ(0, ret.codePointCount);
   ASSERT_FALSE(scanner.hasNext());
 
   scanner = GraphemeScanner("🇯🇵");
   s = scanner.next(ret);
   ASSERT_TRUE(s);
-  ASSERT_EQ("🇯🇵", StringRef(scanner.getRef().begin() + ret.startPos, ret.byteSize));
-  ASSERT_EQ(0x1F1E6 + ('j' - 'a'), ret.firstCodePoint);
+  ASSERT_EQ("🇯🇵", ret.ref);
+  ASSERT_EQ(0x1F1E6 + ('j' - 'a'), ret.codePoints[0]);
   ASSERT_FALSE(scanner.hasNext());
 
   s = scanner.next(ret);
