@@ -426,7 +426,7 @@ public:
    */
   void waitForAny();
 
-  int waitForAll(WaitOp op, bool breakNext = false);
+  int waitForAll(WaitOp op, bool waitOne = false);
 
   const Job &getLatestJob() const { return this->latest; }
 

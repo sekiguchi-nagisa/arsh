@@ -1,0 +1,19 @@
+
+wait -g
+assert $? == 2
+assert "$(wait -q 2>&1)" == $'ydsh: wait: -q: invalid option\nwait: wait [-n] [id ...]'
+
+var j1 = { sleep 1; exit 12; } &
+var j2 = { sleep 2; exit 34; } &
+var j3 = { sleep 3; exit 56; } &
+
+wait -n $j3 $j2 $j1
+assert $? == 12
+
+wait -n
+assert $? == 34
+
+wait -n
+assert $? == 56
+
+true

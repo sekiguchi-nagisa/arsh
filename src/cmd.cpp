@@ -280,7 +280,7 @@ static constexpr struct {
      "        -p    if mode is omitted, print current mask in a form that may be reused as input\n"
      "        -S    print current mask in a symbolic form"},
     {"unsetenv", builtin_unsetenv, "[name ...]", "    Unset environmental variables."},
-    {"wait", builtin_wait, "[id ...]",
+    {"wait", builtin_wait, "[-n] [id ...]",
      "    Wait for termination of processes or jobs.\n"
      "    If ID is not specified, wait for termination of all managed jobs.\n"
      "    Return the exit status of last ID. If ID is not found or not managed,\n"
@@ -2221,20 +2221,30 @@ static int builtin_shctl(DSState &state, ArrayObject &argvObj) {
 }
 
 static int builtin_wait(DSState &state, ArrayObject &argvObj) {
-  const WaitOp op = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
-  unsigned int size = argvObj.size() - 1;
+  bool breakNext = false;
+  GetOptState optState;
+  for (int opt; (opt = optState(argvObj, "n")) != -1;) {
+    switch (opt) {
+    case 'n':
+      breakNext = true;
+      break;
+    default:
+      return invalidOptionError(argvObj, optState);
+    }
+  }
 
+  const WaitOp op = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
   auto cleanup = finally([&]{
     state.jobTable.waitForAny();
   });
 
-  if (size == 0) {
-    return state.jobTable.waitForAll(op);
+  if (optState.index == argvObj.size()) {
+    return state.jobTable.waitForAll(op, breakNext);
   }
 
-  auto targets = std::make_unique<std::pair<Job, int>[]>(size);
-  for (unsigned int i = 0; i < size; i++) {
-    auto ref = argvObj.getValues()[i + 1].asStrRef();
+  std::vector<std::pair<Job, int>> targets;
+  for (unsigned int i = optState.index; i < argvObj.size(); i++) {
+    auto ref = argvObj.getValues()[i].asStrRef();
     auto target = parseProcOrJob(state.jobTable, argvObj, ref, false);
     Job job;
     int offset = -1;
@@ -2248,19 +2258,29 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
     } else {
       return 127;
     }
-    targets[i] = {std::move(job), offset};
+    targets.emplace_back(std::move(job), offset);
   }
 
   // wait jobs
   int lastStatus = 0;
-  for(unsigned int i = 0; i < size; i++) {
-    auto &target = targets[i];
-    lastStatus = state.jobTable.waitForJob(target.first, op);
-    if(lastStatus < 0) {
-      break;
-    }
-    if(target.second != -1 && !target.first->getProcs()[target.second].is(Proc::State::RUNNING)) {
-      lastStatus = target.first->getProcs()[target.second].exitStatus();
+  if(breakNext) {
+    Job job;
+    do {
+      for(auto &target : targets) {
+        if(!target.first->available()) {
+          return target.first->exitStatus();
+        }
+      }
+    } while((lastStatus = state.jobTable.waitForJob(job, op)) > -1);
+  } else {
+    for(auto &target : targets) {
+      lastStatus = state.jobTable.waitForJob(target.first, op);
+      if(lastStatus < 0) {
+        break;
+      }
+      if(target.second != -1 && !target.first->getProcs()[target.second].is(Proc::State::RUNNING)) {
+        lastStatus = target.first->getProcs()[target.second].exitStatus();
+      }
     }
   }
   return lastStatus;

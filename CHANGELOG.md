@@ -11,6 +11,8 @@
 - add ``String#chars`` method
   - split string as grapheme cluster  array
 - ``echo`` command support unicode escape sequence (\u \U)
+- add builtinm ``wait`` command
+  - also support ``-n`` option
 
 ### Changed
 

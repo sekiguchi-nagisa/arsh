@@ -342,7 +342,9 @@ void JobTable::attach(Job job, bool disowned) {
 int JobTable::waitForJob(Job &job, WaitOp op) {
   LOG(DUMP_WAIT, "@@enter op: %s", toString(op));
   int status = waitForJobImpl(job, op);
+  int e = errno;
   this->removeTerminatedJobs();
+  errno = e;
   LOG(DUMP_WAIT, "@@exit");
   return status;
 }
@@ -353,9 +355,6 @@ void JobTable::waitForAny() {
 
   for (WaitResult ret; (ret = waitForProc(-1, WaitOp::NONBLOCKING)).pid != 0;) {
     if (ret.pid == -1) {
-      if (errno != ECHILD) {
-        fatal_perror("wait failed"); // FIXME: propagate error as exception
-      }
       break;
     }
     this->updateProcState(ret);
@@ -363,7 +362,7 @@ void JobTable::waitForAny() {
   this->removeTerminatedJobs();
 }
 
-int JobTable::waitForAll(WaitOp op, bool breakNext) {
+int JobTable::waitForAll(WaitOp op, bool waitOne) {
   SignalGuard guard;
   DSState::clearPendingSignal(SIGCHLD);
 
@@ -371,7 +370,7 @@ int JobTable::waitForAll(WaitOp op, bool breakNext) {
   for (auto &job : this->jobs) {
     if (!job->isDisowned()) {
       lastStatus = waitForJobImpl(job, op);
-      if (lastStatus < 0 || breakNext) {
+      if (lastStatus < 0 || waitOne) {
         break;
       }
     }
@@ -383,6 +382,9 @@ int JobTable::waitForAll(WaitOp op, bool breakNext) {
 }
 
 static const Proc *findLastStopped(const Job &job) {
+  if (!job) {
+    return nullptr;
+  }
   const Proc *last = nullptr;
   for (unsigned int i = 0; i < job->getProcSize(); i++) {
     auto &p = job->getProcs()[i];
@@ -396,10 +398,10 @@ static const Proc *findLastStopped(const Job &job) {
 }
 
 int JobTable::waitForJobImpl(Job &job, WaitOp op) {
-  if (!job->available()) {
+  if (job && !job->available()) {
     return job->wait(op);
   }
-  if (const Proc *p; op == WaitOp::BLOCK_UNTRACED && (p = findLastStopped(job))) {
+  if (const Proc * p; op == WaitOp::BLOCK_UNTRACED && (p = findLastStopped(job))) {
     return p->exitStatus();
   }
 
@@ -409,7 +411,9 @@ int JobTable::waitForJobImpl(Job &job, WaitOp op) {
       return -1;
     }
     auto pair = this->updateProcState(ret);
-    if (pair.first && pair.first == job) {
+    if (!job) {
+      return 0;
+    } else if (pair.first && pair.first == job) {
       auto &proc = job->getProcs()[pair.second];
       lastStatus = proc.exitStatus();
       if (const Proc * last; proc.is(Proc::State::STOPPED) && op == WaitOp::BLOCK_UNTRACED &&
