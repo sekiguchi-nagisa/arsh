@@ -17,11 +17,13 @@
 #include <fcntl.h>
 #include <pwd.h>
 #include <sys/stat.h>
+#include <sys/utsname.h>
 #include <sys/wait.h>
 
 #include <algorithm>
 #include <cassert>
 
+#include <embed.h>
 #include "logger.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
@@ -465,6 +467,223 @@ const ModType *getRuntimeModuleByLevel(const DSState &state, const unsigned int 
   return getUnderlyingModType(state.typePool, state.modLoader, code);
 }
 
+class VariableBinder {
+private:
+  DSState *state; // may be null
+  TypePool &pool;
+  NameScope &scope;
+
+public:
+  VariableBinder(DSState *state, TypePool &pool, NameScope &scope)
+      : state(state), pool(pool), scope(scope) {}
+
+  void bind(const char *varName, DSValue &&value, FieldAttribute attr = FieldAttribute::READ_ONLY) {
+    auto id = value.getTypeID();
+    this->bind(varName, this->pool.get(id), std::move(value), attr);
+  }
+
+private:
+  void bind(const char *varName, const DSType &type, DSValue &&value, FieldAttribute attr) {
+    auto handle = this->scope.defineHandle(varName, type, attr);
+    assert(static_cast<bool>(handle));
+    if (this->state) {
+      this->state->setGlobal(handle.asOk()->getIndex(), std::move(value));
+    }
+  }
+};
+
+void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope) {
+  VariableBinder binder(state, pool, scope);
+
+  /**
+   * dummy object.
+   * must be String_Object
+   */
+  binder.bind(CVAR_SCRIPT_NAME, DSValue::createStr(),
+              FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
+
+  /**
+   * dummy object
+   * must be String_Object
+   */
+  binder.bind(CVAR_SCRIPT_DIR, DSValue::createStr(),
+              FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
+
+  /**
+   * default variable for read command.
+   * must be String_Object
+   */
+  binder.bind("REPLY", DSValue::createStr(), FieldAttribute());
+
+  /**
+   * holding read variable.
+   * must be Map_Object
+   */
+  binder.bind("reply",
+              DSValue::create<MapObject>(
+                  *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::String)).take()));
+
+  /**
+   * process id of current process.
+   * must be Int_Object
+   */
+  binder.bind("PID", DSValue::createInt(getpid()));
+
+  /**
+   * parent process id of current process.
+   * must be Int_Object
+   */
+  binder.bind("PPID", DSValue::createInt(getppid()));
+
+  /**
+   * must be Long_Object.
+   */
+  binder.bind("SECONDS", DSValue::createInt(0), FieldAttribute::SECONDS);
+
+  /**
+   * for internal field splitting.
+   * must be String_Object.
+   */
+  binder.bind("IFS", DSValue::createStr(" \t\n"), FieldAttribute());
+
+  /**
+   * maintain completion result.
+   * must be Array_Object
+   */
+  binder.bind("COMPREPLY", DSValue::create<ArrayObject>(pool.get(TYPE::StringArray)));
+
+  /**
+   * contains latest executed pipeline status.
+   * must be Array_Object
+   */
+  binder.bind("PIPESTATUS",
+              DSValue::create<ArrayObject>(*pool.createArrayType(pool.get(TYPE::Int)).take()));
+
+  /**
+   * contains exit status of most recent executed process. ($?)
+   * must be Int_Object
+   */
+  binder.bind("?", DSValue::createInt(0), FieldAttribute());
+
+  /**
+   * process id of root shell. ($$)
+   * must be Int_Object
+   */
+  binder.bind("$", DSValue::createInt(getpid()));
+
+  /**
+   * contains script argument(exclude script name). ($@)
+   * must be Array_Object
+   */
+  binder.bind("@", DSValue::create<ArrayObject>(pool.get(TYPE::StringArray)));
+
+  /**
+   * contains size of argument. ($#)
+   * must be Int_Object
+   */
+  binder.bind("#", DSValue::createInt(0));
+
+  /**
+   * represent shell or shell script name.
+   * must be String_Object
+   */
+  binder.bind("0", DSValue::createStr("ydsh"));
+
+  /**
+   * initialize positional parameter
+   */
+  for (unsigned int i = 0; i < 9; i++) {
+    binder.bind(std::to_string(i + 1).c_str(), DSValue::createStr());
+  }
+
+  // set builtin variables
+  /**
+   * for version detection
+   * must be String_Object
+   */
+  binder.bind(CVAR_VERSION, DSValue::createStr(X_INFO_VERSION_CORE));
+
+  /**
+   * uid of shell
+   * must be Int_Object
+   */
+  binder.bind("UID", DSValue::createInt(getuid()));
+
+  /**
+   * euid of shell
+   * must be Int_Object
+   */
+  binder.bind("EUID", DSValue::createInt(geteuid()));
+
+  struct utsname name {};
+  if (uname(&name) == -1) {
+    fatal_perror("cannot get utsname");
+  }
+
+  /**
+   * must be String_Object
+   */
+  binder.bind(CVAR_OSTYPE, DSValue::createStr(name.sysname));
+
+  /**
+   * must be String_Object
+   */
+  binder.bind(CVAR_MACHTYPE, DSValue::createStr(BUILD_ARCH));
+
+  /**
+   * must be String_Object
+   */
+  binder.bind(CVAR_DATA_DIR, DSValue::createStr(SYSTEM_DATA_DIR));
+
+  /**
+   * must be String_Object
+   */
+  binder.bind(CVAR_MODULE_DIR, DSValue::createStr(SYSTEM_MOD_DIR));
+
+  /**
+   * dummy object for random number
+   * must be Int_Object
+   */
+  binder.bind("RANDOM", DSValue::createInt(0), FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
+
+  /**
+   * dummy object for signal handler setting
+   * must be DSObject
+   */
+  binder.bind("SIG", DSValue::createDummy(pool.get(TYPE::Signals)));
+
+  /**
+   * must be UnixFD_Object
+   */
+  binder.bind(VAR_STDIN, DSValue::create<UnixFdObject>(STDIN_FILENO));
+
+  /**
+   * must be UnixFD_Object
+   */
+  binder.bind(VAR_STDOUT, DSValue::create<UnixFdObject>(STDOUT_FILENO));
+
+  /**
+   * must be UnixFD_Object
+   */
+  binder.bind(VAR_STDERR, DSValue::create<UnixFdObject>(STDERR_FILENO));
+
+  /**
+   * must be Int_Object
+   */
+  binder.bind("ON_EXIT", DSValue::createInt(TERM_ON_EXIT));
+  binder.bind("ON_ERR", DSValue::createInt(TERM_ON_ERR));
+  binder.bind("ON_ASSERT", DSValue::createInt(TERM_ON_ASSERT));
+
+  /**
+   * must be StringObject
+   */
+  binder.bind(VAR_YDSH_BIN, DSValue::createStr());
+}
+
+const char *getEmbeddedScript() {
+    return embed_script;
+};
+
 // ####################
 // ##     SigSet     ##
 // ####################
@@ -515,8 +734,8 @@ DSValue SignalVector::lookup(int sigNum) const {
   return nullptr;
 }
 
-static void
-signalHandler(int sigNum) { // when called this handler, all signals are blocked due to signal mask
+// when called this handler, all signals are blocked due to signal mask
+static void signalHandler(int sigNum) {
   DSState::pendingSigSet.add(sigNum);
   setFlag(DSState::eventDesc, VMEvent::SIGNAL);
 }

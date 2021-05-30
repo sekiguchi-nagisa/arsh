@@ -18,10 +18,8 @@
 #include <cassert>
 #include <cstring>
 
-#include <sys/utsname.h>
 #include <unistd.h>
 
-#include <embed.h>
 #include <ydsh/ydsh.h>
 
 #include "codegen.h"
@@ -173,220 +171,10 @@ static int evalScript(DSState &state, const IntrusivePtr<NameScope> &scope, Lexe
   return state.getMaskedExitStatus();
 }
 
-static void bindVariable(DSState &state, const char *varName, DSType *type, DSValue &&value,
-                         FieldAttribute attribute) {
-  assert(type != nullptr);
-  auto handle = state.builtinModScope->defineHandle(varName, *type, attribute);
-  assert(static_cast<bool>(handle));
-  state.setGlobal(handle.asOk()->getIndex(), std::move(value));
-}
-
-static void bindVariable(DSState &state, const char *varName, DSValue &&value,
-                         FieldAttribute attribute) {
-  auto id = value.getTypeID();
-  return bindVariable(state, varName, &state.typePool.get(id), std::move(value), attribute);
-}
-
-static void bindVariable(DSState &state, const char *varName, DSValue &&value) {
-  bindVariable(state, varName, std::move(value), FieldAttribute::READ_ONLY);
-}
-
-static void initBuiltinVar(DSState &state) {
-  // set builtin variables internally used
-
-  /**
-   * dummy object.
-   * must be String_Object
-   */
-  bindVariable(state, CVAR_SCRIPT_NAME, DSValue::createStr(),
-               FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
-
-  /**
-   * dummy object
-   * must be String_Object
-   */
-  bindVariable(state, CVAR_SCRIPT_DIR, DSValue::createStr(),
-               FieldAttribute::MOD_CONST | FieldAttribute::READ_ONLY);
-
-  /**
-   * default variable for read command.
-   * must be String_Object
-   */
-  bindVariable(state, "REPLY", DSValue::createStr(), FieldAttribute());
-
-  /**
-   * holding read variable.
-   * must be Map_Object
-   */
-  bindVariable(state, "reply",
-               DSValue::create<MapObject>(*state.typePool
-                                               .createMapType(state.typePool.get(TYPE::String),
-                                                              state.typePool.get(TYPE::String))
-                                               .take()));
-
-  /**
-   * process id of current process.
-   * must be Int_Object
-   */
-  bindVariable(state, "PID", DSValue::createInt(getpid()));
-
-  /**
-   * parent process id of current process.
-   * must be Int_Object
-   */
-  bindVariable(state, "PPID", DSValue::createInt(getppid()));
-
-  /**
-   * must be Long_Object.
-   */
-  bindVariable(state, "SECONDS", DSValue::createInt(0), FieldAttribute::SECONDS);
-
-  /**
-   * for internal field splitting.
-   * must be String_Object.
-   */
-  bindVariable(state, "IFS", DSValue::createStr(" \t\n"), FieldAttribute());
-
-  /**
-   * maintain completion result.
-   * must be Array_Object
-   */
-  bindVariable(state, "COMPREPLY",
-               DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray)));
-
-  /**
-   * contains latest executed pipeline status.
-   * must be Array_Object
-   */
-  bindVariable(state, "PIPESTATUS",
-               DSValue::create<ArrayObject>(
-                   *state.typePool.createArrayType(state.typePool.get(TYPE::Int)).take()));
-
-  /**
-   * contains exit status of most recent executed process. ($?)
-   * must be Int_Object
-   */
-  bindVariable(state, "?", DSValue::createInt(0), FieldAttribute());
-
-  /**
-   * process id of root shell. ($$)
-   * must be Int_Object
-   */
-  bindVariable(state, "$", DSValue::createInt(getpid()));
-
-  /**
-   * contains script argument(exclude script name). ($@)
-   * must be Array_Object
-   */
-  bindVariable(state, "@", DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray)));
-
-  /**
-   * contains size of argument. ($#)
-   * must be Int_Object
-   */
-  bindVariable(state, "#", DSValue::createInt(0));
-
-  /**
-   * represent shell or shell script name.
-   * must be String_Object
-   */
-  bindVariable(state, "0", DSValue::createStr("ydsh"));
-
-  /**
-   * initialize positional parameter
-   */
-  for (unsigned int i = 0; i < 9; i++) {
-    bindVariable(state, std::to_string(i + 1).c_str(), DSValue::createStr());
-  }
-
-  // set builtin variables
-  /**
-   * for version detection
-   * must be String_Object
-   */
-  bindVariable(state, CVAR_VERSION, DSValue::createStr(X_INFO_VERSION_CORE));
-
-  /**
-   * uid of shell
-   * must be Int_Object
-   */
-  bindVariable(state, "UID", DSValue::createInt(getuid()));
-
-  /**
-   * euid of shell
-   * must be Int_Object
-   */
-  bindVariable(state, "EUID", DSValue::createInt(geteuid()));
-
-  struct utsname name {};
-  if (uname(&name) == -1) {
-    fatal_perror("cannot get utsname");
-  }
-
-  /**
-   * must be String_Object
-   */
-  bindVariable(state, CVAR_OSTYPE, DSValue::createStr(name.sysname));
-
-  /**
-   * must be String_Object
-   */
-  bindVariable(state, CVAR_MACHTYPE, DSValue::createStr(BUILD_ARCH));
-
-  /**
-   * must be String_Object
-   */
-  bindVariable(state, CVAR_DATA_DIR, DSValue::createStr(SYSTEM_DATA_DIR));
-
-  /**
-   * must be String_Object
-   */
-  bindVariable(state, CVAR_MODULE_DIR, DSValue::createStr(SYSTEM_MOD_DIR));
-
-  /**
-   * dummy object for random number
-   * must be Int_Object
-   */
-  bindVariable(state, "RANDOM", DSValue::createInt(0),
-               FieldAttribute::READ_ONLY | FieldAttribute ::RANDOM);
-
-  /**
-   * dummy object for signal handler setting
-   * must be DSObject
-   */
-  bindVariable(state, "SIG", DSValue::createDummy(state.typePool.get(TYPE::Signals)));
-
-  /**
-   * must be UnixFD_Object
-   */
-  bindVariable(state, VAR_STDIN, DSValue::create<UnixFdObject>(STDIN_FILENO));
-
-  /**
-   * must be UnixFD_Object
-   */
-  bindVariable(state, VAR_STDOUT, DSValue::create<UnixFdObject>(STDOUT_FILENO));
-
-  /**
-   * must be UnixFD_Object
-   */
-  bindVariable(state, VAR_STDERR, DSValue::create<UnixFdObject>(STDERR_FILENO));
-
-  /**
-   * must be Int_Object
-   */
-  bindVariable(state, "ON_EXIT", DSValue::createInt(TERM_ON_EXIT));
-  bindVariable(state, "ON_ERR", DSValue::createInt(TERM_ON_ERR));
-  bindVariable(state, "ON_ASSERT", DSValue::createInt(TERM_ON_ASSERT));
-
-  /**
-   * must be StringObject
-   */
-  bindVariable(state, VAR_YDSH_BIN, DSValue::createStr());
-}
-
 static void loadEmbeddedScript(DSState *state) {
   state->rootModScope = state->builtinModScope; // eval script in builtin module
 
+  const char *embed_script = getEmbeddedScript();
   int ret = DSState_eval(state, "(builtin)", embed_script, strlen(embed_script), nullptr);
   (void)ret;
   assert(ret == 0);
@@ -439,7 +227,7 @@ DSState *DSState_createWithMode(DSExecMode mode) {
 #undef EACH_DS_EXEC_MODE
 
   auto *ctx = new DSState();
-  initBuiltinVar(*ctx);
+  bindBuiltinVariables(ctx, ctx->typePool, *ctx->builtinModScope);
   loadEmbeddedScript(ctx);
 
   ctx->execMode = mode;
