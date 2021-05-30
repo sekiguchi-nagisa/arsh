@@ -257,6 +257,13 @@ ModType &TypePool::createModType(unsigned short modID,
   return static_cast<ModType &>(*type);
 }
 
+const ModType & TypePool::getBuiltinModType() const {
+  auto name = toModTypeName(0);
+  auto *type = this->get(name);
+  assert(type && type->isModType());
+  return static_cast<const ModType &>(*type);
+}
+
 class TypeDecoder {
 private:
   TypePool &pool;

@@ -192,12 +192,7 @@ public:
                          std::unordered_map<std::string, FieldHandle> &&handles,
                          FlexBuffer<ImportedModEntry> &&children, unsigned int index);
 
-  const ModType &getBuiltinModType() const {
-    auto name = toModTypeName(0);
-    auto *type = this->get(name);
-    assert(type && type->isModType());
-    return static_cast<const ModType &>(*type);
-  }
+  const ModType &getBuiltinModType() const;
 
   const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
 
