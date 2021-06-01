@@ -264,7 +264,7 @@ static DSValue readAsStr(int fd) {
   char buf[256];
   std::string str;
   while (true) {
-    int readSize = read(fd, buf, std::size(buf));
+    ssize_t readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
       continue;
     }
@@ -291,7 +291,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
   auto &array = typeAs<ArrayObject>(obj);
 
   while (true) {
-    int readSize = read(fd, buf, std::size(buf));
+    ssize_t readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
       continue;
     }
@@ -628,14 +628,14 @@ int VM::forkAndExec(DSState &state, const char *filePath, char *const *argv,
     xexecve(filePath, argv, nullptr);
 
     int errnum = errno;
-    int r = write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
+    ssize_t r = write(selfpipe[WRITE_PIPE], &errnum, sizeof(int));
     (void)r; // FIXME:
     exit(-1);
   } else { // parent process
     close(selfpipe[WRITE_PIPE]);
     redirConfig = nullptr; // restore redirconfig
 
-    int readSize;
+    ssize_t readSize;
     int errnum = 0;
     while ((readSize = read(selfpipe[READ_PIPE], &errnum, sizeof(int))) == -1) {
       if (errno != EAGAIN && errno != EINTR) {

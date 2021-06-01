@@ -220,7 +220,7 @@ private:
   GraphemeBoundary<Bool> boundary;
 
 public:
-  GraphemeScanner(StringRef ref, size_t prevPos = 0, size_t curPos = 0,
+  explicit GraphemeScanner(StringRef ref, size_t prevPos = 0, size_t curPos = 0,
                   GraphemeBoundary<Bool> boundary = {})
       : ref(ref), prevPos(prevPos), curPos(curPos), boundary(boundary) {}
 
