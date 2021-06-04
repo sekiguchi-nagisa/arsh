@@ -28,18 +28,6 @@ using enable_when = std::enable_if_t<B, std::nullptr_t>;
 
 namespace __detail {
 
-template <typename... T>
-struct VoidHolder {
-  using type = void;
-};
-
-} // namespace __detail
-
-template <typename... T>
-using void_t = typename __detail::VoidHolder<T...>::type;
-
-namespace __detail {
-
 struct NotDetected {
   NotDetected() = delete;
   ~NotDetected() = delete;
@@ -52,7 +40,7 @@ struct detector : std::false_type {
 };
 
 template <template <typename...> class OP, typename... Arg>
-struct detector<void_t<OP<Arg...>>, OP, Arg...> : std::true_type {
+struct detector<std::void_t<OP<Arg...>>, OP, Arg...> : std::true_type {
   using type = OP<Arg...>;
 };
 
