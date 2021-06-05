@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANSI_H
-#define YDSH_TOOLS_ANSI_H
+#ifndef YDSH_TOOLS_PROCESS_ANSI_H
+#define YDSH_TOOLS_PROCESS_ANSI_H
 
 #include <functional>
 #include <string>
@@ -170,4 +170,4 @@ private:
 
 } // namespace process
 
-#endif // YDSH_TOOLS_ANSI_H
+#endif // YDSH_TOOLS_PROCESS_ANSI_H

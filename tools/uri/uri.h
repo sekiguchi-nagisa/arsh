@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_URI_H
-#define YDSH_TOOLS_URI_H
+#ifndef YDSH_TOOLS_URI_URI_H
+#define YDSH_TOOLS_URI_URI_H
 
 #include <string>
 
@@ -117,4 +117,4 @@ public:
 
 } // namespace ydsh::uri
 
-#endif // YDSH_TOOLS_URI_H
+#endif // YDSH_TOOLS_URI_URI_H

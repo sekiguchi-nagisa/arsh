@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_DESCLEXER_H
-#define YDSH_TOOLS_DESCLEXER_H
+#ifndef YDSH_TOOLS_GEN_BINDING_DESCLEXER_H
+#define YDSH_TOOLS_GEN_BINDING_DESCLEXER_H
 
 #include <ostream>
 

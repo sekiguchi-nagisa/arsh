@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_SERIALIZE_H
-#define YDSH_TOOLS_SERIALIZE_H
+#ifndef YDSH_TOOLS_JSON_SERIALIZE_H
+#define YDSH_TOOLS_JSON_SERIALIZE_H
 
 #include "json.h"
 
@@ -385,4 +385,4 @@ void jsonify(S &s, T &v) {
 
 } // namespace ydsh::json
 
-#endif // YDSH_TOOLS_SERIALIZE_H
+#endif // YDSH_TOOLS_JSON_SERIALIZE_H

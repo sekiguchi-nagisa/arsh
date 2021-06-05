@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_PLATFORM_H
-#define YDSH_TOOLS_PLATFORM_H
+#ifndef YDSH_TOOLS_PLATFORM_PLATFORM_H
+#define YDSH_TOOLS_PLATFORM_PLATFORM_H
 
 namespace ydsh::platform {
 
@@ -92,4 +92,4 @@ inline bool contain(const std::string &text) {
 
 } // namespace ydsh::platform
 
-#endif // YDSH_TOOLS_PLATFORM_H
+#endif // YDSH_TOOLS_PLATFORM_PLATFORM_H

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_JSON_H
-#define YDSH_TOOLS_JSON_H
+#ifndef YDSH_TOOLS_JSON_JSON_H
+#define YDSH_TOOLS_JSON_JSON_H
 
 #include <cstdlib>
 #include <cstring>
@@ -248,4 +248,4 @@ public:
 
 } // namespace ydsh
 
-#endif // TOOLS_JSON_H
+#endif // YDSH_TOOLS_JSON_JSON_H
