@@ -61,6 +61,20 @@ TEST(URITest, base4) {
   ASSERT_EQ(str, uri.toString());
 }
 
+TEST(URITest, base5) {
+  std::string str = "file:///home/usr/resource";
+  auto uri = URI::fromString(str);
+  ASSERT_TRUE(uri);
+  ASSERT_EQ("file", uri.getScheme());
+  ASSERT_EQ("", uri.getAuthority().getHost());
+  ASSERT_EQ("", uri.getAuthority().getUserInfo());
+  ASSERT_EQ("", uri.getAuthority().getPort());
+  ASSERT_EQ("/home/usr/resource", uri.getPath());
+  ASSERT_EQ("", uri.getQuery());
+  ASSERT_EQ("", uri.getFragment());
+  ASSERT_EQ(str, uri.toString());
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
