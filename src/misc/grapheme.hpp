@@ -234,10 +234,12 @@ public:
 
   bool hasNext() const { return this->prevPos <= this->curPos && this->prevPos < this->ref.size(); }
 
+  static constexpr size_t MAX_GRAPHEME_CODE_POINTS = 32;
+
   struct Result {
     StringRef ref;               // grapheme cluster
     unsigned int codePointCount; // count of containing code points
-    int codePoints[32];
+    int codePoints[MAX_GRAPHEME_CODE_POINTS];
   };
 
   /**
