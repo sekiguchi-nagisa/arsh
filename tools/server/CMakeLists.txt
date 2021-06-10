@@ -7,7 +7,10 @@ set(LSP_SRV ydshd)
 add_library(ydshd_static STATIC
         transport.cpp
         server.cpp
-        lsp.cpp)
+        lsp.cpp
+        ast.cpp
+        analyzer.cpp)
+
 target_link_libraries(ydshd_static ${YDSH_STATIC} jsonrpc uri)
 
 add_executable(${LSP_SRV} main.cpp)
