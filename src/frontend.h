@@ -19,47 +19,16 @@
 
 #include "parser.h"
 #include "type_checker.h"
-#include <ydsh/ydsh.h>
 
 namespace ydsh {
 
-#define EACH_TERM_COLOR(C)                                                                         \
-  C(Reset, 0)                                                                                      \
-  C(Bold, 1)                                                                                       \
-  /*C(Black,   30)*/                                                                               \
-  /*C(Red,     31)*/                                                                               \
-  C(Green, 32)                                                                                     \
-  C(Yellow, 33)                                                                                    \
-  C(Blue, 34)                                                                                      \
-  C(Magenta, 35)                                                                                   \
-  C(Cyan, 36) /*                                                                                   \
-C(white,   37)*/
-
-enum class TermColor : unsigned int { // ansi color code
-#define GEN_ENUM(E, N) E,
-  EACH_TERM_COLOR(GEN_ENUM)
-#undef GEN_ENUM
+enum class FrontEndOption {
+  PARSE_ONLY = 1 << 0,
+  TOPLEVEL = 1 << 1,
 };
 
-class ErrorReporter {
-private:
-  FILE *fp;
-  bool close;
-  bool tty;
-
-public:
-  ErrorReporter(FILE *fp, bool close);
-
-  ~ErrorReporter();
-
-  void operator()(const Lexer &lex, const char *kind, Token token, TermColor c,
-                  const char *message) const;
-
-private:
-  const char *color(TermColor c) const;
-
-  void printErrorLine(const Lexer &lexer, Token token) const;
-};
+template <>
+struct allow_enum_bitop<FrontEndOption> : std::true_type {};
 
 class FrontEnd {
 public:
@@ -77,7 +46,6 @@ public:
     explicit operator bool() const { return this->status != FAILED; }
   };
 
-private:
   struct Context {
     Lexer lexer;
     Parser parser;
@@ -89,20 +57,34 @@ private:
         : lexer(std::move(lexer)), parser(this->lexer, ccHandler), scope(std::move(scope)) {}
   };
 
+  struct ErrorLitener {
+    virtual ~ErrorLitener() = default;
+
+    virtual bool handleParseError(const std::vector<std::unique_ptr<Context>> &ctx,
+                                  const ParseError &parseError) = 0;
+
+    virtual bool handleTypeError(const std::vector<std::unique_ptr<Context>> &ctx,
+                                 const TypeCheckError &checkError) = 0;
+
+    bool handleModLoadingError(const std::vector<std::unique_ptr<Context>> &ctx,
+                               const Node &pathNode, const char *modPath, ModLoadingError e);
+  };
+
+private:
   std::vector<std::unique_ptr<Context>> contexts;
   ModuleLoader &modLoader;
-  const DSExecMode mode;
+  const FrontEndOption option;
   TypeChecker checker;
   DSType *prevType{nullptr};
-  ObserverPtr<ErrorReporter> reporter;
+  ObserverPtr<ErrorLitener> listener;
   ObserverPtr<NodeDumper> uastDumper;
   ObserverPtr<NodeDumper> astDumper;
 
 public:
   FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &typePool, IntrusivePtr<NameScope> scope,
-           DSExecMode mode, bool toplevel, ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
+           FrontEndOption option = {}, ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
 
-  void setErrorReporter(ErrorReporter &r) { this->reporter.reset(&r); }
+  void setErrorListener(ErrorLitener &r) { this->listener.reset(&r); }
 
   void setUASTDumper(NodeDumper &dumper) {
     assert(dumper);
@@ -124,9 +106,7 @@ public:
 
   const Lexer &getCurrentLexer() const { return this->contexts.back()->lexer; }
 
-  bool frontEndOnly() const {
-    return this->mode == DS_EXEC_MODE_PARSE_ONLY || this->mode == DS_EXEC_MODE_CHECK_ONLY;
-  }
+  const std::vector<std::unique_ptr<Context>> &getContext() const { return this->contexts; }
 
   unsigned int getRootLineNum() const { return this->contexts[0]->lexer.getMaxLineNum(); }
 
@@ -144,14 +124,11 @@ public:
            this->hasUnconsumedPath();
   }
 
-  Ret operator()(DSError *dsError);
+  Ret operator()();
 
   void setupASTDump();
 
   void teardownASTDump();
-
-  void handleError(DSErrorKind type, const char *errorKind, Token errorToken, const char *message,
-                   DSError *dsError) const;
 
 private:
   Parser &parser() { return this->contexts.back()->parser; }
@@ -170,29 +147,15 @@ private:
 
   const IntrusivePtr<NameScope> &curScope() const { return this->contexts.back()->scope; }
 
-  std::unique_ptr<Node> tryToParse(DSError *dsError);
+  std::unique_ptr<Node> tryToParse();
 
-  bool tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError);
+  bool tryToCheckType(std::unique_ptr<Node> &node);
 
-  Ret loadModule(DSError *dsError);
+  Ret loadModule();
 
   void enterModule(const char *fullPath, ByteBuffer &&buf);
 
   std::unique_ptr<SourceNode> exitModule();
-
-  // for error reporting
-  void handleParseError(DSError *dsError) const {
-    auto &e = this->parser().getError();
-    return this->handleError(DS_ERROR_KIND_PARSE_ERROR, e.getErrorKind(), e.getErrorToken(),
-                             e.getMessage().c_str(), dsError);
-  }
-
-  void handleTypeError(const TypeCheckError &e, DSError *dsError) const {
-    this->handleError(DS_ERROR_KIND_TYPE_ERROR, e.getKind(), e.getToken(), e.getMessage(), dsError);
-  }
-
-  void handleModLoadingError(const Node &pathNode, const char *modPath, ModLoadingError e,
-                             DSError *dsError) const;
 };
 
 } // namespace ydsh

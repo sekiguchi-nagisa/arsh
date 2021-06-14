@@ -14,121 +14,38 @@
  * limitations under the License.
  */
 
-#include <cerrno>
-#include <cstdlib>
-
-#include <unistd.h>
-
-#include "core.h"
 #include "frontend.h"
+#include "core.h"
+#include <cerrno>
 
 namespace ydsh {
-
-// ###########################
-// ##     ErrorReporter     ##
-// ###########################
-
-/**
- * not allow dumb terminal
- */
-static bool isSupportedTerminal(int fd) {
-  const char *term = getenv(ENV_TERM);
-  return term != nullptr && strcasecmp(term, "dumb") != 0 && isatty(fd) != 0;
-}
-
-static std::vector<std::string> split(const std::string &str) {
-  std::vector<std::string> bufs;
-  bufs.emplace_back();
-  for (auto ch : str) {
-    if (ch == '\n') {
-      bufs.emplace_back();
-    } else {
-      bufs.back() += ch;
-    }
-  }
-  if (!str.empty() && str.back() == '\n') {
-    bufs.pop_back();
-  }
-  return bufs;
-}
-
-ErrorReporter::ErrorReporter(FILE *fp, bool close)
-    : fp(fp), close(close), tty(isSupportedTerminal(fileno(fp))) {}
-
-ErrorReporter::~ErrorReporter() {
-  if (this->close) {
-    fclose(this->fp);
-  }
-}
-
-void ErrorReporter::operator()(const Lexer &lex, const char *kind, Token token, TermColor c,
-                               const char *message) const {
-  unsigned lineNumOffset = lex.getLineNumOffset();
-  fprintf(this->fp, "%s:", lex.getSourceName().c_str());
-  if (lineNumOffset > 0) {
-    auto srcPos = lex.getSrcPos(token);
-    fprintf(this->fp, "%d:%d:", srcPos.lineNum, srcPos.chars);
-  }
-  fprintf(this->fp, " %s%s[%s]%s %s\n", this->color(c), this->color(TermColor::Bold), kind,
-          this->color(TermColor::Reset), message);
-
-  if (lineNumOffset > 0) {
-    this->printErrorLine(lex, token);
-  }
-  fflush(this->fp);
-}
-
-const char *ErrorReporter::color(TermColor c) const {
-  if (this->tty) {
-#define GEN_STR(E, C) "\033[" #C "m",
-    const char *ansi[] = {EACH_TERM_COLOR(GEN_STR)};
-#undef GEN_STR
-    return ansi[static_cast<unsigned int>(c)];
-  }
-  return "";
-}
-
-void ErrorReporter::printErrorLine(const Lexer &lexer, Token errorToken) const {
-  Token lineToken = lexer.getLineToken(errorToken);
-  auto line = lexer.formatTokenText(lineToken);
-  auto marker = lexer.formatLineMarker(lineToken, errorToken);
-
-  auto lines = split(line);
-  auto markers = split(marker);
-  size_t size = lines.size();
-  assert(size == markers.size());
-  bool omitLine = size > 30;
-  std::pair<size_t, size_t> pairs[2] = {{0, omitLine ? 15 : size},
-                                        {omitLine ? size - 10 : size, size}};
-  for (unsigned int i = 0; i < 2; i++) {
-    if (i == 1 && omitLine) {
-      fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Yellow),
-              "\n| ~~~ omit error lines ~~~ |\n", this->color(TermColor::Reset));
-    }
-
-    size_t start = pairs[i].first;
-    size_t stop = pairs[i].second;
-    for (size_t index = start; index < stop; index++) {
-      // print error line
-      fprintf(this->fp, "%s%s%s\n", this->color(TermColor::Cyan), lines[index].c_str(),
-              this->color(TermColor::Reset));
-
-      // print line marker
-      fprintf(this->fp, "%s%s%s%s\n", this->color(TermColor::Green), this->color(TermColor::Bold),
-              markers[index].c_str(), this->color(TermColor::Reset));
-    }
-  }
-  fflush(this->fp);
-}
 
 // ######################
 // ##     FrontEnd     ##
 // ######################
 
+static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingError e) {
+  if (e.isCircularLoad()) {
+    return createTCError<CircularMod>(node, path);
+  } else if (e.isFileNotFound()) {
+    return createTCError<NotFoundMod>(node, path);
+  } else {
+    return createTCError<NotOpenMod>(node, path, strerror(e.getErrNo()));
+  }
+}
+
+bool FrontEnd::ErrorLitener::handleModLoadingError(const std::vector<std::unique_ptr<Context>> &ctx,
+                                                   const Node &pathNode, const char *modPath,
+                                                   ModLoadingError e) {
+  auto error = wrapModLoadingError(pathNode, modPath, e);
+  return this->handleTypeError(ctx, error);
+}
+
 FrontEnd::FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &pool,
-                   IntrusivePtr<NameScope> scope, DSExecMode mode, bool toplevel,
+                   IntrusivePtr<NameScope> scope, FrontEndOption option,
                    ObserverPtr<CodeCompletionHandler> ccHandler)
-    : modLoader(loader), mode(mode), checker(pool, toplevel, nullptr) {
+    : modLoader(loader), option(option),
+      checker(pool, hasFlag(option, FrontEndOption::TOPLEVEL), nullptr) {
   this->contexts.push_back(
       std::make_unique<Context>(std::move(lexer), std::move(scope), ccHandler));
   this->curScope()->clearLocalSize();
@@ -136,57 +53,12 @@ FrontEnd::FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &pool,
   this->checker.setCodeCompletionHandler(ccHandler);
 }
 
-static const char *toString(DSErrorKind kind) {
-  switch (kind) {
-  case DS_ERROR_KIND_PARSE_ERROR:
-    return "syntax error";
-  case DS_ERROR_KIND_TYPE_ERROR:
-    return "semantic error";
-  case DS_ERROR_KIND_CODEGEN_ERROR:
-    return "codegen error";
-  default:
-    return "";
-  }
-}
-
-void FrontEnd::handleError(DSErrorKind type, const char *errorKind, Token errorToken,
-                           const char *message, DSError *dsError) const {
-  if (!this->reporter) {
-    return;
-  }
-
-  errorToken = this->getCurrentLexer().shiftEOS(errorToken);
-
-  /**
-   * show error message
-   */
-  this->reporter(this->getCurrentLexer(), toString(type), errorToken, TermColor::Magenta, message);
-
-  auto end = this->contexts.crend();
-  for (auto iter = this->contexts.crbegin() + 1; iter != end; ++iter) {
-    auto &node = (*iter)->srcListNode;
-    Token token = node->getPathNode().getToken();
-    auto &lex = (*iter)->lexer;
-    this->reporter(lex, "note", token, TermColor::Blue, "at module import");
-  }
-
-  auto srcPos = this->getCurrentLexer().getSrcPos(errorToken);
-  const char *sourceName = this->getCurrentLexer().getSourceName().c_str();
-  if (dsError) {
-    *dsError = {.kind = type,
-                .fileName = strdup(sourceName),
-                .lineNum = srcPos.lineNum,
-                .chars = srcPos.chars,
-                .name = strdup(errorKind)};
-  }
-}
-
-std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
+std::unique_ptr<Node> FrontEnd::tryToParse() {
   std::unique_ptr<Node> node;
   if (this->parser()) {
     node = this->parser()();
     if (this->parser().hasError()) {
-      this->handleParseError(dsError);
+      this->listener &&this->listener->handleParseError(this->contexts, this->parser().getError());
     } else if (this->uastDumper) {
       this->uastDumper(*node);
     }
@@ -194,8 +66,8 @@ std::unique_ptr<Node> FrontEnd::tryToParse(DSError *dsError) {
   return node;
 }
 
-bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError) {
-  if (this->mode == DS_EXEC_MODE_PARSE_ONLY) {
+bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
+  if (hasFlag(this->option, FrontEndOption::PARSE_ONLY)) {
     return true;
   }
 
@@ -208,22 +80,22 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node, DSError *dsError) {
     }
     return true;
   } catch (const TypeCheckError &e) {
-    this->handleTypeError(e, dsError);
+    this->listener &&this->listener->handleTypeError(this->contexts, e);
     return false;
   }
 }
 
-FrontEnd::Ret FrontEnd::operator()(DSError *dsError) {
+FrontEnd::Ret FrontEnd::operator()() {
   do {
     // load module
-    Ret ret = this->loadModule(dsError);
+    Ret ret = this->loadModule();
     if (!ret || ret.status == ENTER_MODULE) {
       return ret;
     }
 
     // parse
     if (!ret.node) {
-      ret.node = this->tryToParse(dsError);
+      ret.node = this->tryToParse();
       if (this->parser().hasError()) {
         return {nullptr, FAILED};
       }
@@ -234,7 +106,7 @@ FrontEnd::Ret FrontEnd::operator()(DSError *dsError) {
     }
 
     // check type
-    if (!this->tryToCheckType(ret.node, dsError)) {
+    if (!this->tryToCheckType(ret.node)) {
       return {nullptr, FAILED};
     }
 
@@ -258,7 +130,7 @@ void FrontEnd::setupASTDump() {
     this->uastDumper->initialize(this->getCurrentLexer().getSourceName(),
                                  "### dump untyped AST ###");
   }
-  if (this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
+  if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY)&& this->astDumper) {
     this->astDumper->initialize(this->getCurrentLexer().getSourceName(), "### dump typed AST ###");
   }
 }
@@ -267,12 +139,12 @@ void FrontEnd::teardownASTDump() {
   if (this->uastDumper) {
     this->uastDumper->finalize(*this->curScope());
   }
-  if (this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
+  if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY) && this->astDumper) {
     this->astDumper->finalize(*this->curScope());
   }
 }
 
-FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
+FrontEnd::Ret FrontEnd::loadModule() {
   if (!this->hasUnconsumedPath()) {
     this->getCurSrcListNode().reset();
     return {nullptr, IN_MODULE};
@@ -291,12 +163,17 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
     if (e.isFileNotFound() && node.isOptional()) {
       return {std::make_unique<EmptyNode>(), IN_MODULE};
     }
-    this->handleModLoadingError(node.getPathNode(), modPath, e, dsError);
+    if (this->listener) {
+      this->listener->handleModLoadingError(this->contexts, node.getPathNode(), modPath, e);
+    }
     return {nullptr, FAILED};
   } else if (is<const char *>(ret)) {
     ByteBuffer buf;
     if (!readAll(filePtr, buf)) {
-      this->handleModLoadingError(node.getPathNode(), modPath, ModLoadingError(errno), dsError);
+      if (this->listener) {
+        this->listener->handleModLoadingError(this->contexts, node.getPathNode(), modPath,
+                                              ModLoadingError(errno));
+      }
       return {nullptr, FAILED};
     }
     this->enterModule(get<const char *>(ret), std::move(buf));
@@ -306,7 +183,10 @@ FrontEnd::Ret FrontEnd::loadModule(DSError *dsError) {
     assert(type.isModType());
     auto &modType = static_cast<const ModType &>(type);
     if (this->curScope()->modId == modType.getModID()) { // normally unreachable
-      this->handleModLoadingError(node.getPathNode(), modPath, ModLoadingError(0), dsError);
+      if (this->listener) {
+        this->listener->handleModLoadingError(this->contexts, node.getPathNode(), modPath,
+                                              ModLoadingError(0));
+      }
       return {nullptr, FAILED};
     }
     return {node.create(modType, false), IN_MODULE};
@@ -333,7 +213,7 @@ void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
   if (this->uastDumper) {
     this->uastDumper->enterModule(fullPath);
   }
-  if (this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
+  if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY) && this->astDumper) {
     this->astDumper->enterModule(fullPath);
   }
 }
@@ -348,7 +228,7 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
   this->checker.setLexer(this->getCurrentLexer());
 
   auto node = this->getCurSrcListNode()->create(modType, true);
-  if (this->mode != DS_EXEC_MODE_PARSE_ONLY) {
+  if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY)) {
     node->setMaxVarNum(varNum);
     if (prevType != nullptr && this->prevType->isNothingType()) {
       this->prevType = &this->getTypePool().get(TYPE::Void);
@@ -359,26 +239,10 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
   if (this->uastDumper) {
     this->uastDumper->leaveModule();
   }
-  if (this->mode != DS_EXEC_MODE_PARSE_ONLY && this->astDumper) {
+  if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY) && this->astDumper) {
     this->astDumper->leaveModule();
   }
   return node;
-}
-
-static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingError e) {
-  if (e.isCircularLoad()) {
-    return createTCError<CircularMod>(node, path);
-  } else if (e.isFileNotFound()) {
-    return createTCError<NotFoundMod>(node, path);
-  } else {
-    return createTCError<NotOpenMod>(node, path, strerror(e.getErrNo()));
-  }
-}
-
-void FrontEnd::handleModLoadingError(const Node &pathNode, const char *modPath, ModLoadingError e,
-                                     DSError *dsError) const {
-  auto error = wrapModLoadingError(pathNode, modPath, e);
-  this->handleTypeError(error, dsError);
 }
 
 } // namespace ydsh

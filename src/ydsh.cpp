@@ -24,6 +24,7 @@
 
 #include "codegen.h"
 #include "complete.h"
+#include "error_report.h"
 #include "frontend.h"
 #include "logger.h"
 #include "misc/files.h"
@@ -31,13 +32,24 @@
 
 using namespace ydsh;
 
-static ErrorReporter newReporter() {
+static ErrorReporter newReporter(DSError *e) {
 #ifdef FUZZING_BUILD_MODE
   bool ignore = getenv("YDSH_SUPPRESS_COMPILE_ERROR") != nullptr;
-  return ErrorReporter(ignore ? fopen("/dev/null", "w") : stderr, ignore);
+  return ErrorReporter(e, ignore ? fopen("/dev/null", "w") : stderr, ignore);
 #else
-  return ErrorReporter(stderr, false);
+  return ErrorReporter(e, stderr, false);
 #endif
+}
+
+static FrontEndOption toOption(DSExecMode mode, CompileOption option) {
+  FrontEndOption op{};
+  if (mode == DS_EXEC_MODE_PARSE_ONLY) {
+    setFlag(op, FrontEndOption::PARSE_ONLY);
+  }
+  if (hasFlag(option, CompileOption::INTERACTIVE)) {
+    setFlag(op, FrontEndOption::TOPLEVEL);
+  }
+  return op;
 }
 
 class Compiler {
@@ -47,23 +59,34 @@ private:
   NodeDumper uastDumper;
   NodeDumper astDumper;
   ByteCodeGenerator codegen;
+  DSExecMode mode;
 
 public:
   Compiler(ModuleLoader &modLoader, TypePool &pool, const IntrusivePtr<NameScope> &root,
            Lexer &&lexer, const DumpTarget &dumpTarget, DSExecMode execMode,
-           CompileOption compileOption)
-      : frontEnd(modLoader, std::move(lexer), pool, root, execMode,
-                 hasFlag(compileOption, CompileOption::INTERACTIVE)),
-        reporter(newReporter()), uastDumper(dumpTarget.files[DS_DUMP_KIND_UAST].get()),
+           CompileOption compileOption, DSError *dsError)
+      : frontEnd(modLoader, std::move(lexer), pool, root, toOption(execMode, compileOption)),
+        reporter(newReporter(dsError)), uastDumper(dumpTarget.files[DS_DUMP_KIND_UAST].get()),
         astDumper(dumpTarget.files[DS_DUMP_KIND_AST].get()),
-        codegen(pool, hasFlag(compileOption, CompileOption::ASSERT)) {
-    this->frontEnd.setErrorReporter(this->reporter);
+        codegen(pool, hasFlag(compileOption, CompileOption::ASSERT)), mode(execMode) {
+    if (dsError != nullptr) {
+      *dsError = {.kind = DS_ERROR_KIND_SUCCESS,
+                  .fileName = nullptr,
+                  .lineNum = 0,
+                  .chars = 0,
+                  .name = nullptr};
+    }
+    this->frontEnd.setErrorListener(this->reporter);
     if (this->uastDumper) {
       this->frontEnd.setUASTDumper(this->uastDumper);
     }
     if (this->astDumper) {
       this->frontEnd.setASTDumper(this->astDumper);
     }
+  }
+
+  bool frontEndOnly() const {
+    return this->mode == DS_EXEC_MODE_PARSE_ONLY || this->mode == DS_EXEC_MODE_CHECK_ONLY;
   }
 
   unsigned int lineNum() const { return this->frontEnd.getRootLineNum(); }
@@ -74,29 +97,21 @@ public:
     return this->frontEnd.getCurrentLexer().getSourceName();
   }
 
-  int operator()(DSError *dsError, CompiledCode &code);
+  int operator()(CompiledCode &code);
 };
 
-int Compiler::operator()(DSError *dsError, CompiledCode &code) {
-  if (dsError != nullptr) {
-    *dsError = {.kind = DS_ERROR_KIND_SUCCESS,
-                .fileName = nullptr,
-                .lineNum = 0,
-                .chars = 0,
-                .name = nullptr};
-  }
-
+int Compiler::operator()(CompiledCode &code) {
   this->frontEnd.setupASTDump();
-  if (!this->frontEnd.frontEndOnly()) {
+  if (!this->frontEndOnly()) {
     this->codegen.initialize(this->frontEnd.getCurrentLexer());
   }
   while (this->frontEnd) {
-    auto ret = this->frontEnd(dsError);
+    auto ret = this->frontEnd();
     if (!ret) {
       return 1;
     }
 
-    if (this->frontEnd.frontEndOnly()) {
+    if (this->frontEndOnly()) {
       continue;
     }
 
@@ -119,15 +134,14 @@ int Compiler::operator()(DSError *dsError, CompiledCode &code) {
     }
   }
   this->frontEnd.teardownASTDump();
-  if (!this->frontEnd.frontEndOnly()) {
+  if (!this->frontEndOnly()) {
     code = this->codegen.finalize(this->frontEnd.getMaxLocalVarIndex());
   }
 
 END:
   if (this->codegen.hasError()) {
     auto &e = this->codegen.getError();
-    this->frontEnd.handleError(DS_ERROR_KIND_CODEGEN_ERROR, e.getKind(), e.getToken(),
-                               e.getMessage(), dsError);
+    this->reporter.handleCodeGenError(this->frontEnd.getContext(), e);
     return 1;
   }
   return 0;
@@ -136,8 +150,8 @@ END:
 static int compile(DSState &state, const IntrusivePtr<NameScope> &modScope, Lexer &&lexer,
                    const DiscardPoint &discardPoint, DSError *dsError, CompiledCode &code) {
   Compiler compiler(state.modLoader, state.typePool, modScope, std::move(lexer), state.dumpTarget,
-                    state.execMode, state.compileOption);
-  int ret = compiler(dsError, code);
+                    state.execMode, state.compileOption, dsError);
+  int ret = compiler(code);
   if (ret == 0) {
     if (!modScope->inBuiltinModule() && !modScope->inRootModule()) {
       state.modLoader.createModType(state.typePool, *modScope, compiler.getSourcePath());

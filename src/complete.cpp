@@ -681,7 +681,7 @@ static Lexer lex(StringRef ref) {
 
 static void consumeAllInput(FrontEnd &frontEnd) {
   while (frontEnd) {
-    if (!frontEnd(nullptr)) {
+    if (!frontEnd()) {
       break;
     }
   }
@@ -704,7 +704,7 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
   CodeCompletionHandler handler(st, scope);
   if (empty(option)) {
     // prepare
-    FrontEnd frontEnd(st.modLoader, lex(ref), st.typePool, scope, DS_EXEC_MODE_CHECK_ONLY, false,
+    FrontEnd frontEnd(st.modLoader, lex(ref), st.typePool, scope, FrontEndOption{},
                       ObserverPtr<CodeCompletionHandler>(&handler));
 
     // perform completion
