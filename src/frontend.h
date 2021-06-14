@@ -57,8 +57,8 @@ public:
         : lexer(std::move(lexer)), parser(this->lexer, ccHandler), scope(std::move(scope)) {}
   };
 
-  struct ErrorLitener {
-    virtual ~ErrorLitener() = default;
+  struct ErrorListener {
+    virtual ~ErrorListener() = default;
 
     virtual bool handleParseError(const std::vector<std::unique_ptr<Context>> &ctx,
                                   const ParseError &parseError) = 0;
@@ -76,7 +76,7 @@ private:
   const FrontEndOption option;
   TypeChecker checker;
   DSType *prevType{nullptr};
-  ObserverPtr<ErrorLitener> listener;
+  ObserverPtr<ErrorListener> listener;
   ObserverPtr<NodeDumper> uastDumper;
   ObserverPtr<NodeDumper> astDumper;
 
@@ -84,7 +84,7 @@ public:
   FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &typePool, IntrusivePtr<NameScope> scope,
            FrontEndOption option = {}, ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
 
-  void setErrorListener(ErrorLitener &r) { this->listener.reset(&r); }
+  void setErrorListener(ErrorListener &r) { this->listener.reset(&r); }
 
   void setUASTDumper(NodeDumper &dumper) {
     assert(dumper);

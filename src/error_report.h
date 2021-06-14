@@ -41,7 +41,7 @@ enum class TermColor : unsigned int { // ansi color code
 #undef GEN_ENUM
 };
 
-class ErrorReporter : public FrontEnd::ErrorLitener {
+class ErrorReporter : public FrontEnd::ErrorListener {
 private:
   DSError *dsError;
   FILE *fp;

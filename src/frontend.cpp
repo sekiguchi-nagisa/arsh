@@ -34,7 +34,7 @@ static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingEr
   }
 }
 
-bool FrontEnd::ErrorLitener::handleModLoadingError(const std::vector<std::unique_ptr<Context>> &ctx,
+bool FrontEnd::ErrorListener::handleModLoadingError(const std::vector<std::unique_ptr<Context>> &ctx,
                                                    const Node &pathNode, const char *modPath,
                                                    ModLoadingError e) {
   auto error = wrapModLoadingError(pathNode, modPath, e);
