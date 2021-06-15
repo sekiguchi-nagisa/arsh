@@ -298,11 +298,9 @@ static void finalizeScriptArg(DSState *st) {
     st->setGlobal(i, array.getValues()[index]);
   }
 
-  if (index < 9) {
-    for (; index < 9; index++) {
-      unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
-      st->setGlobal(i, DSValue::createStr());
-    }
+  for (; index < 9; index++) {
+    unsigned int i = toIndex(BuiltinVarOffset::POS_1) + index;
+    st->setGlobal(i, DSValue::createStr());
   }
 }
 
