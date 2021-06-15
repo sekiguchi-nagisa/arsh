@@ -173,8 +173,6 @@ public:
 
   TypePool &getTypePool() { return this->typePool; }
 
-  void setLexer(const Lexer &lex) { this->lexer.reset(&lex); }
-
   void setCodeCompletionHandler(ObserverPtr<CodeCompletionHandler> handler) {
     this->ccHandler = handler;
   }

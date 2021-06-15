@@ -34,23 +34,13 @@ static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingEr
   }
 }
 
-bool FrontEnd::ErrorListener::handleModLoadingError(const std::vector<std::unique_ptr<Context>> &ctx,
-                                                   const Node &pathNode, const char *modPath,
-                                                   ModLoadingError e) {
-  auto error = wrapModLoadingError(pathNode, modPath, e);
-  return this->handleTypeError(ctx, error);
-}
-
 FrontEnd::FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &pool,
                    IntrusivePtr<NameScope> scope, FrontEndOption option,
                    ObserverPtr<CodeCompletionHandler> ccHandler)
-    : modLoader(loader), option(option),
-      checker(pool, hasFlag(option, FrontEndOption::TOPLEVEL), nullptr) {
+    : modLoader(loader), option(option) {
   this->contexts.push_back(
-      std::make_unique<Context>(std::move(lexer), std::move(scope), ccHandler));
+      std::make_unique<Context>(pool, std::move(lexer), std::move(scope), this->option, ccHandler));
   this->curScope()->clearLocalSize();
-  this->checker.setLexer(this->getCurrentLexer());
-  this->checker.setCodeCompletionHandler(ccHandler);
 }
 
 std::unique_ptr<Node> FrontEnd::tryToParse() {
@@ -72,7 +62,7 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   }
 
   try {
-    node = this->checker(this->prevType, std::move(node), this->curScope());
+    node = this->checker()(this->prevType, std::move(node), this->curScope());
     this->prevType = &node->getType();
 
     if (this->astDumper) {
@@ -130,7 +120,7 @@ void FrontEnd::setupASTDump() {
     this->uastDumper->initialize(this->getCurrentLexer().getSourceName(),
                                  "### dump untyped AST ###");
   }
-  if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY)&& this->astDumper) {
+  if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY) && this->astDumper) {
     this->astDumper->initialize(this->getCurrentLexer().getSourceName(), "### dump typed AST ###");
   }
 }
@@ -164,15 +154,16 @@ FrontEnd::Ret FrontEnd::loadModule() {
       return {std::make_unique<EmptyNode>(), IN_MODULE};
     }
     if (this->listener) {
-      this->listener->handleModLoadingError(this->contexts, node.getPathNode(), modPath, e);
+      auto error = wrapModLoadingError(node.getPathNode(), modPath, e);
+      this->listener->handleTypeError(this->contexts, error);
     }
     return {nullptr, FAILED};
   } else if (is<const char *>(ret)) {
     ByteBuffer buf;
     if (!readAll(filePtr, buf)) {
       if (this->listener) {
-        this->listener->handleModLoadingError(this->contexts, node.getPathNode(), modPath,
-                                              ModLoadingError(errno));
+        auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(errno));
+        this->listener->handleTypeError(this->contexts, error);
       }
       return {nullptr, FAILED};
     }
@@ -184,8 +175,8 @@ FrontEnd::Ret FrontEnd::loadModule() {
     auto &modType = static_cast<const ModType &>(type);
     if (this->curScope()->modId == modType.getModID()) { // normally unreachable
       if (this->listener) {
-        this->listener->handleModLoadingError(this->contexts, node.getPathNode(), modPath,
-                                              ModLoadingError(0));
+        auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(0));
+        this->listener->handleTypeError(this->contexts, error);
       }
       return {nullptr, FAILED};
     }
@@ -202,13 +193,11 @@ static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
 }
 
 void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
-  {
-    auto lex = createLexer(fullPath, std::move(buf));
-    auto scope = this->modLoader.createGlobalScopeFromFullpath(
-        fullPath, this->getTypePool().getBuiltinModType());
-    this->contexts.push_back(std::make_unique<Context>(std::move(lex), std::move(scope), nullptr));
-  }
-  this->checker.setLexer(this->getCurrentLexer());
+  auto lex = createLexer(fullPath, std::move(buf));
+  auto scope = this->modLoader.createGlobalScopeFromFullpath(
+      fullPath, this->getTypePool().getBuiltinModType());
+  this->contexts.push_back(std::make_unique<Context>(this->getTypePool(), std::move(lex),
+                                                     std::move(scope), this->option, nullptr));
 
   if (this->uastDumper) {
     this->uastDumper->enterModule(fullPath);
@@ -225,12 +214,11 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
       this->modLoader.createModType(this->getTypePool(), *ctx.scope, ctx.lexer.getSourceName());
   const unsigned int varNum = ctx.scope->getMaxLocalVarIndex();
   this->contexts.pop_back();
-  this->checker.setLexer(this->getCurrentLexer());
 
   auto node = this->getCurSrcListNode()->create(modType, true);
   if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY)) {
     node->setMaxVarNum(varNum);
-    if (prevType != nullptr && this->prevType->isNothingType()) {
+    if (this->prevType != nullptr && this->prevType->isNothingType()) {
       this->prevType = &this->getTypePool().get(TYPE::Void);
       node->setNothing(true);
     }

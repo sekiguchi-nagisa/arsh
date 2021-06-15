@@ -49,12 +49,17 @@ public:
   struct Context {
     Lexer lexer;
     Parser parser;
+    TypeChecker checker;
     IntrusivePtr<NameScope> scope;
     std::unique_ptr<SourceListNode> srcListNode;
 
-    Context(Lexer &&lexer, IntrusivePtr<NameScope> scope,
+    Context(TypePool &pool, Lexer &&lexer, IntrusivePtr<NameScope> scope, FrontEndOption option,
             ObserverPtr<CodeCompletionHandler> ccHandler = nullptr)
-        : lexer(std::move(lexer)), parser(this->lexer, ccHandler), scope(std::move(scope)) {}
+        : lexer(std::move(lexer)), parser(this->lexer, ccHandler),
+          checker(pool, hasFlag(option, FrontEndOption::TOPLEVEL), &this->lexer),
+          scope(std::move(scope)) {
+      this->checker.setCodeCompletionHandler(ccHandler);
+    }
   };
 
   struct ErrorListener {
@@ -65,16 +70,12 @@ public:
 
     virtual bool handleTypeError(const std::vector<std::unique_ptr<Context>> &ctx,
                                  const TypeCheckError &checkError) = 0;
-
-    bool handleModLoadingError(const std::vector<std::unique_ptr<Context>> &ctx,
-                               const Node &pathNode, const char *modPath, ModLoadingError e);
   };
 
 private:
   std::vector<std::unique_ptr<Context>> contexts;
   ModuleLoader &modLoader;
   const FrontEndOption option;
-  TypeChecker checker;
   DSType *prevType{nullptr};
   ObserverPtr<ErrorListener> listener;
   ObserverPtr<NodeDumper> uastDumper;
@@ -98,10 +99,11 @@ public:
 
   unsigned int getMaxLocalVarIndex() const { return this->curScope()->getMaxLocalVarIndex(); }
 
-  TypePool &getTypePool() { return this->checker.getTypePool(); }
+  TypePool &getTypePool() { return this->checker().getTypePool(); }
 
   void discard(const DiscardPoint &discardPoint) {
-    discardAll(this->modLoader, *this->contexts[0]->scope, this->getTypePool(), discardPoint);
+    auto &ctx = this->contexts[0];
+    discardAll(this->modLoader, *ctx->scope, ctx->checker.getTypePool(), discardPoint);
   }
 
   const Lexer &getCurrentLexer() const { return this->contexts.back()->lexer; }
@@ -134,6 +136,8 @@ private:
   Parser &parser() { return this->contexts.back()->parser; }
 
   const Parser &parser() const { return this->contexts.back()->parser; }
+
+  TypeChecker &checker() { return this->contexts.back()->checker; }
 
   /**
    *
