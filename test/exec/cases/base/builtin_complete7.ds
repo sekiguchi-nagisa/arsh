@@ -1,0 +1,5 @@
+
+var a = 34;
+
+complete "source $SCRIPT_NAME; ech"
+assert $COMPREPLY.size() == 0

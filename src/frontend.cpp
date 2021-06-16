@@ -173,7 +173,7 @@ FrontEndResult FrontEnd::loadModule() {
     auto &type = this->getTypePool().get(get<unsigned int>(ret));
     assert(type.isModType());
     auto &modType = static_cast<const ModType &>(type);
-    if (this->curScope()->modId == modType.getModID()) { // normally unreachable
+    if (this->curScope()->modId == modType.getModID()) { // when load module from completion context
       if (this->listener) {
         auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(0));
         this->listener->handleTypeError(this->contexts, error);
