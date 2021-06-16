@@ -476,8 +476,8 @@ public:
 
   void initialize(const Lexer &lexer) { this->initToplevelCodeBuilder(lexer, 0); }
 
-  bool generate(Node *node) {
-    this->visit(*node);
+  bool generate(Node &node) {
+    this->visit(node);
     return !this->hasError();
   }
 

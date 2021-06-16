@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2021 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,22 +30,43 @@ enum class FrontEndOption {
 template <>
 struct allow_enum_bitop<FrontEndOption> : std::true_type {};
 
-class FrontEnd {
-public:
-  enum Status : unsigned char {
+struct FrontEndResult {
+  enum Kind {
     IN_MODULE,
     ENTER_MODULE,
     EXIT_MODULE,
     FAILED,
   };
 
-  struct Ret {
-    std::unique_ptr<Node> node;
-    Status status;
+  std::unique_ptr<Node> node;
+  Kind kind;
 
-    explicit operator bool() const { return this->status != FAILED; }
-  };
+  static FrontEndResult inModule(std::unique_ptr<Node> &&node) {
+    return {
+        .node = std::move(node),
+        .kind = IN_MODULE,
+    };
+  }
 
+  static FrontEndResult enterModule() {
+    return {
+        .node = nullptr,
+        .kind = ENTER_MODULE,
+    };
+  }
+
+  static FrontEndResult failed() {
+    return {
+        .node = nullptr,
+        .kind = FAILED,
+    };
+  }
+
+  explicit operator bool() const { return this->kind != FAILED; }
+};
+
+class FrontEnd {
+public:
   struct Context {
     Lexer lexer;
     Parser parser;
@@ -126,7 +147,7 @@ public:
            this->hasUnconsumedPath();
   }
 
-  Ret operator()();
+  FrontEndResult operator()();
 
   void setupASTDump();
 
@@ -155,7 +176,7 @@ private:
 
   bool tryToCheckType(std::unique_ptr<Node> &node);
 
-  Ret loadModule();
+  FrontEndResult loadModule();
 
   void enterModule(const char *fullPath, ByteBuffer &&buf);
 

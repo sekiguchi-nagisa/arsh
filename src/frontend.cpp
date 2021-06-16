@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Nagisa Sekiguchi
+ * Copyright (C) 2018-2021 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -75,11 +75,11 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   }
 }
 
-FrontEnd::Ret FrontEnd::operator()() {
+FrontEndResult FrontEnd::operator()() {
   do {
     // load module
-    Ret ret = this->loadModule();
-    if (!ret || ret.status == ENTER_MODULE) {
+    auto ret = this->loadModule();
+    if (!ret || ret.kind == FrontEndResult::Kind::ENTER_MODULE) {
       return ret;
     }
 
@@ -87,7 +87,7 @@ FrontEnd::Ret FrontEnd::operator()() {
     if (!ret.node) {
       ret.node = this->tryToParse();
       if (this->parser().hasError()) {
-        return {nullptr, FAILED};
+        return FrontEndResult::failed();
       }
     }
 
@@ -97,7 +97,7 @@ FrontEnd::Ret FrontEnd::operator()() {
 
     // check type
     if (!this->tryToCheckType(ret.node)) {
-      return {nullptr, FAILED};
+      return FrontEndResult::failed();
     }
 
     if (isa<SourceListNode>(*ret.node)) {
@@ -109,7 +109,7 @@ FrontEnd::Ret FrontEnd::operator()() {
     }
 
     if (isa<SourceNode>(*ret.node) && cast<SourceNode>(*ret.node).isFirstAppear()) {
-      ret.status = EXIT_MODULE;
+      ret.kind = FrontEndResult::Kind::EXIT_MODULE;
     }
     return ret;
   } while (true);
@@ -134,10 +134,10 @@ void FrontEnd::teardownASTDump() {
   }
 }
 
-FrontEnd::Ret FrontEnd::loadModule() {
+FrontEndResult FrontEnd::loadModule() {
   if (!this->hasUnconsumedPath()) {
     this->getCurSrcListNode().reset();
-    return {nullptr, IN_MODULE};
+    return FrontEndResult::inModule(nullptr);
   }
 
   auto &node = *this->getCurSrcListNode();
@@ -151,13 +151,13 @@ FrontEnd::Ret FrontEnd::loadModule() {
   if (is<ModLoadingError>(ret)) {
     auto e = get<ModLoadingError>(ret);
     if (e.isFileNotFound() && node.isOptional()) {
-      return {std::make_unique<EmptyNode>(), IN_MODULE};
+      return FrontEndResult::inModule(std::make_unique<EmptyNode>());
     }
     if (this->listener) {
       auto error = wrapModLoadingError(node.getPathNode(), modPath, e);
       this->listener->handleTypeError(this->contexts, error);
     }
-    return {nullptr, FAILED};
+    return FrontEndResult::failed();
   } else if (is<const char *>(ret)) {
     ByteBuffer buf;
     if (!readAll(filePtr, buf)) {
@@ -165,10 +165,10 @@ FrontEnd::Ret FrontEnd::loadModule() {
         auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(errno));
         this->listener->handleTypeError(this->contexts, error);
       }
-      return {nullptr, FAILED};
+      return FrontEndResult::failed();
     }
     this->enterModule(get<const char *>(ret), std::move(buf));
-    return {nullptr, ENTER_MODULE};
+    return FrontEndResult::enterModule();
   } else if (is<unsigned int>(ret)) {
     auto &type = this->getTypePool().get(get<unsigned int>(ret));
     assert(type.isModType());
@@ -178,11 +178,11 @@ FrontEnd::Ret FrontEnd::loadModule() {
         auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(0));
         this->listener->handleTypeError(this->contexts, error);
       }
-      return {nullptr, FAILED};
+      return FrontEndResult::failed();
     }
-    return {node.create(modType, false), IN_MODULE};
+    return FrontEndResult::inModule(node.create(modType, false));
   }
-  return {nullptr, FAILED};
+  return FrontEndResult::failed();
 }
 
 static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {

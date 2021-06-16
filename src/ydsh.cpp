@@ -115,17 +115,17 @@ int Compiler::operator()(CompiledCode &code) {
       continue;
     }
 
-    switch (ret.status) {
-    case FrontEnd::ENTER_MODULE:
+    switch (ret.kind) {
+    case FrontEndResult::ENTER_MODULE:
       this->codegen.enterModule(this->frontEnd.getCurrentLexer());
       break;
-    case FrontEnd::EXIT_MODULE:
+    case FrontEndResult::EXIT_MODULE:
       if (!this->codegen.exitModule(cast<SourceNode>(*ret.node))) {
         goto END;
       }
       break;
-    case FrontEnd::IN_MODULE:
-      if (!this->codegen.generate(ret.node.get())) {
+    case FrontEndResult::IN_MODULE:
+      if (!this->codegen.generate(*ret.node)) {
         goto END;
       }
       break;
