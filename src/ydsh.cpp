@@ -54,6 +54,7 @@ static FrontEndOption toOption(DSExecMode mode, CompileOption option) {
 
 class Compiler {
 private:
+  DefaultModuleProvider provider;
   FrontEnd frontEnd;
   ErrorReporter reporter;
   NodeDumper uastDumper;
@@ -65,7 +66,8 @@ public:
   Compiler(ModuleLoader &modLoader, TypePool &pool, const IntrusivePtr<NameScope> &root,
            Lexer &&lexer, const DumpTarget &dumpTarget, DSExecMode execMode,
            CompileOption compileOption, DSError *dsError)
-      : frontEnd(modLoader, std::move(lexer), pool, root, toOption(execMode, compileOption)),
+      : provider(modLoader, pool, root),
+        frontEnd(this->provider, std::move(lexer), toOption(execMode, compileOption)),
         reporter(newReporter(dsError)), uastDumper(dumpTarget.files[DS_DUMP_KIND_UAST].get()),
         astDumper(dumpTarget.files[DS_DUMP_KIND_AST].get()),
         codegen(pool, hasFlag(compileOption, CompileOption::ASSERT)), mode(execMode) {
@@ -91,7 +93,7 @@ public:
 
   unsigned int lineNum() const { return this->frontEnd.getRootLineNum(); }
 
-  void discard(const DiscardPoint &point) { this->frontEnd.discard(point); }
+  void discard(const DiscardPoint &point) { this->provider.discard(point); }
 
   const std::string &getSourcePath() const {
     return this->frontEnd.getCurrentLexer().getSourceName();

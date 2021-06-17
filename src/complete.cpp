@@ -704,7 +704,8 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
   CodeCompletionHandler handler(st, scope);
   if (empty(option)) {
     // prepare
-    FrontEnd frontEnd(st.modLoader, lex(ref), st.typePool, scope, FrontEndOption{},
+    DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
+    FrontEnd frontEnd(provider, lex(ref), FrontEndOption{},
                       ObserverPtr<CodeCompletionHandler>(&handler));
 
     // perform completion

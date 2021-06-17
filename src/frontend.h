@@ -83,6 +83,20 @@ public:
     }
   };
 
+  struct ModuleProvider {
+    virtual ~ModuleProvider() = default;
+
+    virtual std::unique_ptr<Context> newContext(Lexer &&lexer, FrontEndOption option,
+                                                ObserverPtr<CodeCompletionHandler> ccHandler) = 0;
+
+    virtual const ModType &
+    newModTypeFromCurContext(const std::vector<std::unique_ptr<Context>> &ctx) = 0;
+
+    using Ret = Union<const ModType *, std::unique_ptr<Context>, ModLoadingError>;
+
+    virtual Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) = 0;
+  };
+
   struct ErrorListener {
     virtual ~ErrorListener() = default;
 
@@ -95,7 +109,7 @@ public:
 
 private:
   std::vector<std::unique_ptr<Context>> contexts;
-  ModuleLoader &modLoader;
+  ModuleProvider &provider;
   const FrontEndOption option;
   DSType *prevType{nullptr};
   ObserverPtr<ErrorListener> listener;
@@ -103,8 +117,8 @@ private:
   ObserverPtr<NodeDumper> astDumper;
 
 public:
-  FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &typePool, IntrusivePtr<NameScope> scope,
-           FrontEndOption option = {}, ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
+  FrontEnd(ModuleProvider &provider, Lexer &&lexer, FrontEndOption option = {},
+           ObserverPtr<CodeCompletionHandler> ccHandler = nullptr);
 
   void setErrorListener(ErrorListener &r) { this->listener.reset(&r); }
 
@@ -121,11 +135,6 @@ public:
   unsigned int getMaxLocalVarIndex() const { return this->curScope()->getMaxLocalVarIndex(); }
 
   TypePool &getTypePool() { return this->checker().getTypePool(); }
-
-  void discard(const DiscardPoint &discardPoint) {
-    auto &ctx = this->contexts[0];
-    discardAll(this->modLoader, *ctx->scope, ctx->checker.getTypePool(), discardPoint);
-  }
 
   const Lexer &getCurrentLexer() const { return this->contexts.back()->lexer; }
 
@@ -176,11 +185,35 @@ private:
 
   bool tryToCheckType(std::unique_ptr<Node> &node);
 
-  FrontEndResult loadModule();
-
-  void enterModule(const char *fullPath, ByteBuffer &&buf);
+  FrontEndResult enterModule();
 
   std::unique_ptr<SourceNode> exitModule();
+};
+
+class DefaultModuleProvider : public FrontEnd::ModuleProvider {
+private:
+  ModuleLoader &loader;
+  TypePool &pool;
+  IntrusivePtr<NameScope> scope;
+
+public:
+  DefaultModuleProvider(ModuleLoader &loader, TypePool &pool, IntrusivePtr<NameScope> scope)
+      : loader(loader), pool(pool), scope(std::move(scope)) {}
+
+  ~DefaultModuleProvider() override = default;
+
+  std::unique_ptr<FrontEnd::Context>
+  newContext(Lexer &&lexer, FrontEndOption option,
+             ObserverPtr<CodeCompletionHandler> ccHandler) override;
+
+  const ModType &
+  newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) override;
+
+  Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
+
+  void discard(const DiscardPoint &discardPoint) {
+    discardAll(this->loader, *this->scope, this->pool, discardPoint);
+  }
 };
 
 } // namespace ydsh

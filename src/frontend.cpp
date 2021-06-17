@@ -34,12 +34,10 @@ static auto wrapModLoadingError(const Node &node, const char *path, ModLoadingEr
   }
 }
 
-FrontEnd::FrontEnd(ModuleLoader &loader, Lexer &&lexer, TypePool &pool,
-                   IntrusivePtr<NameScope> scope, FrontEndOption option,
+FrontEnd::FrontEnd(FrontEnd::ModuleProvider &provider, Lexer &&lexer, FrontEndOption option,
                    ObserverPtr<CodeCompletionHandler> ccHandler)
-    : modLoader(loader), option(option) {
-  this->contexts.push_back(
-      std::make_unique<Context>(pool, std::move(lexer), std::move(scope), this->option, ccHandler));
+    : provider(provider), option(option) {
+  this->contexts.push_back(this->provider.newContext(std::move(lexer), this->option, ccHandler));
   this->curScope()->clearLocalSize();
 }
 
@@ -78,7 +76,7 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
 FrontEndResult FrontEnd::operator()() {
   do {
     // load module
-    auto ret = this->loadModule();
+    auto ret = this->enterModule();
     if (!ret || ret.kind == FrontEndResult::Kind::ENTER_MODULE) {
       return ret;
     }
@@ -134,7 +132,7 @@ void FrontEnd::teardownASTDump() {
   }
 }
 
-FrontEndResult FrontEnd::loadModule() {
+FrontEndResult FrontEnd::enterModule() {
   if (!this->hasUnconsumedPath()) {
     this->getCurSrcListNode().reset();
     return FrontEndResult::inModule(nullptr);
@@ -144,10 +142,10 @@ FrontEndResult FrontEnd::loadModule() {
   unsigned int pathIndex = node.getCurIndex();
   const char *modPath = node.getPathList()[pathIndex].c_str();
   node.setCurIndex(pathIndex + 1);
-  FilePtr filePtr;
-  auto ret = this->modLoader.load(
-      node.getPathNode().getType().is(TYPE::String) ? this->getCurScriptDir() : nullptr, modPath,
-      filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
+
+  const char *scriptDir =
+      node.getPathNode().getType().is(TYPE::String) ? this->getCurScriptDir() : nullptr;
+  auto ret = this->provider.load(scriptDir, modPath, this->option);
   if (is<ModLoadingError>(ret)) {
     auto e = get<ModLoadingError>(ret);
     if (e.isFileNotFound() && node.isOptional()) {
@@ -158,21 +156,20 @@ FrontEndResult FrontEnd::loadModule() {
       this->listener->handleTypeError(this->contexts, error);
     }
     return FrontEndResult::failed();
-  } else if (is<const char *>(ret)) {
-    ByteBuffer buf;
-    if (!readAll(filePtr, buf)) {
-      if (this->listener) {
-        auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(errno));
-        this->listener->handleTypeError(this->contexts, error);
-      }
-      return FrontEndResult::failed();
+  } else if (is<std::unique_ptr<Context>>(ret)) {
+    auto &v = get<std::unique_ptr<Context>>(ret);
+    const char *fullPath = v->lexer.getSourceName().c_str();
+    this->contexts.push_back(std::move(v));
+    if (this->uastDumper) {
+      this->uastDumper->enterModule(fullPath);
     }
-    this->enterModule(get<const char *>(ret), std::move(buf));
+    if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY) && this->astDumper) {
+      this->astDumper->enterModule(fullPath);
+    }
     return FrontEndResult::enterModule();
-  } else if (is<unsigned int>(ret)) {
-    auto &type = this->getTypePool().get(get<unsigned int>(ret));
-    assert(type.isModType());
-    auto &modType = static_cast<const ModType &>(type);
+  } else {
+    assert(is<const ModType *>(ret));
+    auto &modType = *get<const ModType *>(ret);
     if (this->curScope()->modId == modType.getModID()) { // when load module from completion context
       if (this->listener) {
         auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(0));
@@ -182,37 +179,12 @@ FrontEndResult FrontEnd::loadModule() {
     }
     return FrontEndResult::inModule(node.create(modType, false));
   }
-  return FrontEndResult::failed();
-}
-
-static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
-  char *path = strdup(fullPath);
-  const char *ptr = strrchr(path, '/');
-  path[ptr == path ? 1 : ptr - path] = '\0';
-  return Lexer(fullPath, std::move(buf), CStrPtr(path));
-}
-
-void FrontEnd::enterModule(const char *fullPath, ByteBuffer &&buf) {
-  auto lex = createLexer(fullPath, std::move(buf));
-  auto scope = this->modLoader.createGlobalScopeFromFullpath(
-      fullPath, this->getTypePool().getBuiltinModType());
-  this->contexts.push_back(std::make_unique<Context>(this->getTypePool(), std::move(lex),
-                                                     std::move(scope), this->option, nullptr));
-
-  if (this->uastDumper) {
-    this->uastDumper->enterModule(fullPath);
-  }
-  if (!hasFlag(this->option, FrontEndOption::PARSE_ONLY) && this->astDumper) {
-    this->astDumper->enterModule(fullPath);
-  }
 }
 
 std::unique_ptr<SourceNode> FrontEnd::exitModule() {
   assert(!this->contexts.empty());
-  auto &ctx = *this->contexts.back();
-  auto &modType =
-      this->modLoader.createModType(this->getTypePool(), *ctx.scope, ctx.lexer.getSourceName());
-  const unsigned int varNum = ctx.scope->getMaxLocalVarIndex();
+  const unsigned int varNum = this->contexts.back()->scope->getMaxLocalVarIndex();
+  auto &modType = this->provider.newModTypeFromCurContext(this->contexts);
   this->contexts.pop_back();
 
   auto node = this->getCurSrcListNode()->create(modType, true);
@@ -231,6 +203,55 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
     this->astDumper->leaveModule();
   }
   return node;
+}
+
+// ###################################
+// ##     DefaultModuleProvider     ##
+// ###################################
+
+static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
+  char *path = strdup(fullPath);
+  const char *ptr = strrchr(path, '/');
+  path[ptr == path ? 1 : ptr - path] = '\0';
+  return Lexer(fullPath, std::move(buf), CStrPtr(path));
+}
+
+std::unique_ptr<FrontEnd::Context>
+DefaultModuleProvider::newContext(Lexer &&lexer, FrontEndOption option,
+                                  ObserverPtr<CodeCompletionHandler> ccHandler) {
+  return std::make_unique<FrontEnd::Context>(this->pool, std::move(lexer), this->scope, option,
+                                             ccHandler);
+}
+
+const ModType &DefaultModuleProvider::newModTypeFromCurContext(
+    const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) {
+  return this->loader.createModType(this->pool, *ctx.back()->scope,
+                                    ctx.back()->lexer.getSourceName());
+}
+
+FrontEnd::ModuleProvider::Ret
+DefaultModuleProvider::load(const char *scriptDir, const char *modPath, FrontEndOption option) {
+  FilePtr filePtr;
+  auto ret = this->loader.load(scriptDir, modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
+  if (is<ModLoadingError>(ret)) {
+    return get<ModLoadingError>(ret);
+  } else if (is<const char *>(ret)) {
+    ByteBuffer buf;
+    if (!readAll(filePtr, buf)) {
+      return ModLoadingError(errno);
+    }
+    const char *fullpath = get<const char *>(ret);
+    auto lex = createLexer(fullpath, std::move(buf));
+    auto newScope =
+        this->loader.createGlobalScopeFromFullpath(fullpath, this->pool.getBuiltinModType());
+    return std::make_unique<FrontEnd::Context>(this->pool, std::move(lex), std::move(newScope),
+                                               option, nullptr);
+  } else {
+    assert(is<unsigned int>(ret));
+    auto &type = this->pool.get(get<unsigned int>(ret));
+    assert(type.isModType());
+    return static_cast<const ModType *>(&type);
+  }
 }
 
 } // namespace ydsh
