@@ -261,7 +261,9 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
         StringRef cmd = entry->d_name;
         if (cmd.startsWith(cmdPrefix)) {
           std::string fullpath(p);
-          fullpath += '/';
+          if (fullpath.back() != '/') {
+            fullpath += '/';
+          }
           fullpath += cmd.data();
           if (isExecutable(fullpath.c_str())) {
             append(results, cmd, EscapeOp::COMMAND_NAME);
@@ -335,7 +337,9 @@ static void completeFileName(const char *baseDir, const std::string &prefix, con
       }
 
       std::string fullpath(targetDir);
-      fullpath += '/';
+      if (fullpath.back() != '/') {
+        fullpath += '/';
+      }
       fullpath += entry->d_name;
 
       if (isDirectory(fullpath, entry)) {

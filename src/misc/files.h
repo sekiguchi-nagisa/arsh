@@ -137,7 +137,9 @@ inline int getFileList(const char *dirPath, bool recursive, std::vector<std::str
         continue;
       }
       std::string name = path;
-      name += "/";
+      if (name.back() != '/') {
+        name += "/";
+      }
       name += entry->d_name;
       if (isDirectory(name, entry) && recursive) {
         dirList.push_back(std::move(name));
@@ -174,7 +176,9 @@ inline void removeDirWithRecursively(const char *currentDir) {
       continue;
     }
     std::string fullpath = currentDir;
-    fullpath += '/';
+    if (fullpath.back() != '/') {
+      fullpath += '/';
+    }
     fullpath += entry->d_name;
     const char *name = fullpath.c_str();
     if (isDirectory(name, entry)) {
