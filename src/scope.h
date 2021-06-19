@@ -289,6 +289,40 @@ enum class ModLoadOption {
 template <>
 struct allow_enum_bitop<ModLoadOption> : std::true_type {};
 
+class ModuleLoaderBase {
+public:
+  virtual ~ModuleLoaderBase() = default;
+
+  /**
+   * resolve module path or module type
+   * @param scriptDir
+   * may be null
+   * @param modPath
+   * not null
+   * @param filePtr
+   * write resolved file pointer
+   * @return
+   */
+  ModResult loadImpl(const char *scriptDir, const char *modPath, FilePtr &filePtr,
+                     ModLoadOption option);
+
+  /**
+   * search module from scriptDir => LOCAL_MOD_DIR => SYSTEM_MOD_DIR
+   * @param scriptDir
+   * may be null. if not full path, not search next module path
+   * @param path
+   * if full path, not search next module path
+   * @param filePtr
+   * if module loading failed, will be null
+   * @param option
+   * @return
+   */
+  ModResult load(const char *scriptDir, const char *path, FilePtr &filePtr, ModLoadOption option);
+
+private:
+  virtual ModResult addNewModEntry(CStrPtr &&ptr) = 0;
+};
+
 class ModEntry {
 private:
   unsigned int typeId;
@@ -322,7 +356,7 @@ struct ModDiscardPoint {
   unsigned int gvarCount;
 };
 
-class ModuleLoader {
+class ModuleLoader : public ModuleLoaderBase {
 private:
   static_assert(sizeof(ModEntry) == sizeof(uint32_t));
 
@@ -338,7 +372,7 @@ public:
 
   ModuleLoader() = default;
 
-  ~ModuleLoader() {
+  ~ModuleLoader() override {
     for (auto &e : this->indexMap) {
       free(const_cast<char *>(e.first.data()));
     }
@@ -352,32 +386,6 @@ public:
   }
 
   void discard(ModDiscardPoint discardPoint);
-
-  /**
-   * resolve module path or module type
-   * @param scriptDir
-   * may be null
-   * @param modPath
-   * not null
-   * @param filePtr
-   * write resolved file pointer
-   * @return
-   */
-  ModResult loadImpl(const char *scriptDir, const char *modPath, FilePtr &filePtr,
-                     ModLoadOption option);
-
-  /**
-   * search module from scriptDir => LOCAL_MOD_DIR => SYSTEM_MOD_DIR
-   * @param scriptDir
-   * may be null. if not full path, not search next module path
-   * @param path
-   * if full path, not search next module path
-   * @param filePtr
-   * if module loading failed, will be null
-   * @param option
-   * @return
-   */
-  ModResult load(const char *scriptDir, const char *path, FilePtr &filePtr, ModLoadOption option);
 
   IntrusivePtr<NameScope> createGlobalScope(const char *name, const ModType *modType = nullptr);
 
@@ -400,7 +408,7 @@ public:
   auto end() const { return this->indexMap.end(); }
 
 private:
-  ModResult addNewModEntry(CStrPtr &&ptr);
+  ModResult addNewModEntry(CStrPtr &&ptr) override;
 };
 
 struct DiscardPoint {

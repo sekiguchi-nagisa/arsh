@@ -251,27 +251,9 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
   return Ok(&pair.first->second);
 }
 
-// ##########################
-// ##     ModuleLoader     ##
-// ##########################
-
-void ModuleLoader::discard(const ModDiscardPoint discardPoint) {
-  if (discardPoint.idCount >= this->modSize()) {
-    return; // do nothing
-  }
-
-  this->entries.erase(this->entries.begin() + discardPoint.idCount, this->entries.end());
-  for (auto iter = this->indexMap.begin(); iter != this->indexMap.end();) {
-    if (iter->second >= discardPoint.idCount) {
-      const char *ptr = iter->first.data();
-      iter = this->indexMap.erase(iter);
-      free(const_cast<char *>(ptr));
-    } else {
-      ++iter;
-    }
-  }
-  this->gvarCount = discardPoint.gvarCount;
-}
+// ##############################
+// ##     ModuleLoaderBase     ##
+// ##############################
 
 static std::string concatPath(const char *baseDir, const char *path) {
   if (!*path) {
@@ -310,8 +292,8 @@ static int checkFileType(const struct stat &st, ModLoadOption option) {
   return 0;
 }
 
-ModResult ModuleLoader::loadImpl(const char *scriptDir, const char *modPath, FilePtr &filePtr,
-                                 ModLoadOption option) {
+ModResult ModuleLoaderBase::loadImpl(const char *scriptDir, const char *modPath, FilePtr &filePtr,
+                                     ModLoadOption option) {
   assert(modPath);
 
   auto str = concatPath(scriptDir, modPath);
@@ -363,8 +345,8 @@ static bool isFileNotFound(const ModResult &ret) {
   return is<ModLoadingError>(ret) && get<ModLoadingError>(ret).isFileNotFound();
 }
 
-ModResult ModuleLoader::load(const char *scriptDir, const char *path, FilePtr &filePtr,
-                             ModLoadOption option) {
+ModResult ModuleLoaderBase::load(const char *scriptDir, const char *path, FilePtr &filePtr,
+                                 ModLoadOption option) {
   auto ret = this->loadImpl(scriptDir, path, filePtr, option);
   if (path[0] == '/' || scriptDir == nullptr ||
       scriptDir[0] != '/') { // if full path, not search next path
@@ -384,6 +366,28 @@ ModResult ModuleLoader::load(const char *scriptDir, const char *path, FilePtr &f
     }
   }
   return ret;
+}
+
+// ##########################
+// ##     ModuleLoader     ##
+// ##########################
+
+void ModuleLoader::discard(const ModDiscardPoint discardPoint) {
+  if (discardPoint.idCount >= this->modSize()) {
+    return; // do nothing
+  }
+
+  this->entries.erase(this->entries.begin() + discardPoint.idCount, this->entries.end());
+  for (auto iter = this->indexMap.begin(); iter != this->indexMap.end();) {
+    if (iter->second >= discardPoint.idCount) {
+      const char *ptr = iter->first.data();
+      iter = this->indexMap.erase(iter);
+      free(const_cast<char *>(ptr));
+    } else {
+      ++iter;
+    }
+  }
+  this->gvarCount = discardPoint.gvarCount;
 }
 
 IntrusivePtr<NameScope> ModuleLoader::createGlobalScope(const char *name, const ModType *modType) {
