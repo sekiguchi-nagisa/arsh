@@ -160,8 +160,8 @@ public:
   void withTimeout(int time, Func func) {
     auto old = this->timeout;
     this->timeout = time;
+    auto cleanup = ydsh::finally([&] { this->timeout = old; });
     func();
-    this->timeout = old;
   }
 
   void expectRegex(const std::string &out = "", const std::string &err = "") {
