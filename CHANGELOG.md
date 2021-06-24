@@ -42,11 +42,13 @@
   - gcc 7
   - clang 6
 - update re2c to 2.1.1
+- reactivate ydshd installation
 
 
 ### Fixed
 - ``Job#status`` method return correct exit status when internal process already waited
 - after call ``Job#poll`` method, if job is terminated, removed from job table
+- remove redundant '/' in file name completion
 
 
 ## [0.21.0] - 2021-03-28
