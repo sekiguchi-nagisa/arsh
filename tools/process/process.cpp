@@ -101,12 +101,16 @@ WaitStatus ProcHandle::wait() {
 static bool readData(int index, int fd, const ProcHandle::ReadCallback &readCallback) {
   char buf[1024];
   unsigned int bufSize = std::size(buf);
-  int readSize = read(fd, buf, bufSize);
-  if (readSize <= 0) {
-    return readSize == -1 && (errno == EAGAIN || errno == EINTR);
-  }
-  readCallback(index, buf, readSize);
-  return true;
+  ssize_t readSize;
+  do {
+    readSize = read(fd, buf, bufSize);
+    int old = errno;
+    if (readSize > 0) {
+      readCallback(index, buf, readSize);
+    }
+    errno = old;
+  } while (readSize == -1 && (errno == EINTR || errno == EAGAIN));
+  return readSize > 0;
 }
 
 void ProcHandle::readAll(int timeout, const ReadCallback &readCallback) const {
