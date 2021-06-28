@@ -261,9 +261,9 @@ bool VM::prepareUserDefinedCommandCall(DSState &state, const DSCode &code, DSVal
 /* for substitution */
 
 static DSValue readAsStr(int fd) {
-  char buf[256];
   std::string str;
   while (true) {
+    char buf[256];
     ssize_t readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && (errno == EAGAIN || errno == EINTR)) {
       continue;
@@ -284,13 +284,12 @@ static DSValue readAsStr(int fd) {
 static DSValue readAsStrArray(const DSState &state, int fd) {
   auto ifsRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
   unsigned int skipCount = 1;
-
-  char buf[256];
   std::string str;
   auto obj = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(obj);
 
   while (true) {
+    char buf[256];
     ssize_t readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
       continue;
@@ -299,7 +298,7 @@ static DSValue readAsStrArray(const DSState &state, int fd) {
       break;
     }
 
-    for (int i = 0; i < readSize; i++) {
+    for (ssize_t i = 0; i < readSize; i++) {
       char ch = buf[i];
       bool fieldSep = matchFieldSep(ifsRef, ch);
       if (fieldSep && skipCount > 0) {
