@@ -25,8 +25,8 @@
 
 #include <linenoise.h>
 
+#include "misc/grapheme.hpp"
 #include "misc/resource.hpp"
-#include "misc/unicode.hpp"
 #include <ydsh/ydsh.h>
 
 static DSState *state;
@@ -116,12 +116,17 @@ static bool readLine(std::string &line) {
 // for linenoise encoding function
 using namespace ydsh;
 
-static std::size_t prevUtf8CharLen(const char *buf, int pos) {
-  int end = pos--;
-  while (pos >= 0 && (static_cast<unsigned char>(buf[pos]) & 0xC0) == 0x80) {
-    pos--;
+static std::size_t graphemeWidth(const GraphemeScanner::Result &ret,
+                                 UnicodeUtil::AmbiguousCharWidth charWidth) {
+  size_t width = 0;
+  for (unsigned int i = 0; i < ret.codePointCount; i++) {
+    int w = UnicodeUtil::width(ret.codePoints[i], charWidth);
+    if (w > 0) {
+      width += w;
+    }
   }
-  return end - pos;
+  return width < 2 ? 1 : 2; // FIXME: emoji sequence
+//  return width > 0 ? width : 1;
 }
 
 static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize, std::size_t pos,
@@ -131,29 +136,14 @@ static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize, st
     charWidth = UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH;
   }
 
-  std::size_t startPos = pos;
-  const char *limit = buf + bufSize;
-  int codePoint = 0;
-  unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, limit, codePoint);
-  int width = UnicodeUtil::width(codePoint, charWidth);
-  if (width == -2) {
-    return 1; // may be broken string
+  StringRef ref(buf + pos, bufSize - pos);
+  GraphemeScanner scanner(ref);
+  GraphemeScanner::Result ret;
+  scanner.next(ret);
+  if (columSize != nullptr && ret.codePointCount > 0) {
+    *columSize = graphemeWidth(ret, charWidth);
   }
-
-  if (columSize != nullptr) {
-    *columSize = width < 2 ? 1 : 2;
-  }
-  pos += byteSize;
-
-  // skip next combining character
-  while (pos < bufSize) {
-    byteSize = UnicodeUtil::utf8ToCodePoint(buf + pos, limit, codePoint);
-    if (!UnicodeUtil::isCombiningChar(codePoint)) {
-      break;
-    }
-    pos += byteSize;
-  }
-  return pos - startPos;
+  return ret.ref.size();
 }
 
 static std::size_t encoding_prevCharLen(const char *buf, std::size_t, std::size_t pos,
@@ -163,20 +153,16 @@ static std::size_t encoding_prevCharLen(const char *buf, std::size_t, std::size_
     charWidth = UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH;
   }
 
-  std::size_t end = pos;
-  while (pos > 0) {
-    std::size_t len = prevUtf8CharLen(buf, pos);
-    pos -= len;
-    int codePoint = UnicodeUtil::utf8ToCodePoint(buf + pos, len);
-    int width = UnicodeUtil::width(codePoint, charWidth);
-    if (width != -2) {
-      if (columSize != nullptr) {
-        *columSize = width < 2 ? 1 : 2;
-      }
-      return end - pos;
-    }
+  StringRef ref(buf, pos);
+  GraphemeScanner scanner(ref);
+  GraphemeScanner::Result ret;
+  while (scanner.hasNext()) {
+    scanner.next(ret);
   }
-  return 1; // may be broken string
+  if (columSize != nullptr && ret.codePointCount > 0) {
+    *columSize = graphemeWidth(ret, charWidth);
+  }
+  return ret.ref.size();
 }
 
 static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int *codePoint) {
