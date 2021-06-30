@@ -275,7 +275,6 @@ bool GraphemeScanner<Bool>::next(Result &result) {
     size_t nextPos = UnicodeUtil::utf8NextPos(this->curPos, this->ref[this->curPos]);
     int codePoint = toCodePoint(this->ref, this->curPos);
     assert(result.codePointCount < std::size(result.codePoints));
-    result.codePoints[result.codePointCount++] = codePoint;
     this->curPos = nextPos;
     if (this->boundary.scanBoundary(codePoint)) {
       byteSize = pos - this->prevPos;
@@ -283,6 +282,7 @@ bool GraphemeScanner<Bool>::next(Result &result) {
       this->prevPos = pos;
       return true;
     }
+    result.codePoints[result.codePointCount++] = codePoint;
   }
   if (this->curPos == this->ref.size()) {
     byteSize = this->curPos - this->prevPos;

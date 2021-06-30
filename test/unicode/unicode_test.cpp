@@ -443,18 +443,21 @@ TEST(GraphemeBreakTestBase, scan) {
   ASSERT_TRUE(s);
   ASSERT_EQ("a", ret.ref);
   ASSERT_EQ('a', ret.codePoints[0]);
+  ASSERT_EQ(1, ret.codePointCount);
   ASSERT_TRUE(scanner.hasNext());
 
   s = scanner.next(ret);
   ASSERT_TRUE(s);
   ASSERT_EQ("b", ret.ref);
   ASSERT_EQ('b', ret.codePoints[0]);
+  ASSERT_EQ(1, ret.codePointCount);
   ASSERT_TRUE(scanner.hasNext());
 
   s = scanner.next(ret);
   ASSERT_TRUE(s);
   ASSERT_EQ("c", ret.ref);
   ASSERT_EQ('c', ret.codePoints[0]);
+  ASSERT_EQ(1, ret.codePointCount);
   ASSERT_FALSE(scanner.hasNext());
 
   s = scanner.next(ret);
@@ -471,6 +474,8 @@ TEST(GraphemeBreakTestBase, scan) {
   ASSERT_TRUE(s);
   ASSERT_EQ("🇯🇵", ret.ref);
   ASSERT_EQ(0x1F1E6 + ('j' - 'a'), ret.codePoints[0]);
+  ASSERT_EQ(0x1F1E6 + ('p' - 'a'), ret.codePoints[1]);
+  ASSERT_EQ(2, ret.codePointCount);
   ASSERT_FALSE(scanner.hasNext());
 
   s = scanner.next(ret);
