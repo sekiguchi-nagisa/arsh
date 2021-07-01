@@ -1,14 +1,10 @@
 cmake_minimum_required(VERSION 3.0)
 
-if(POLICY CMP0048)
-    cmake_policy(SET CMP0048 NEW)
-endif()
-
 if(POLICY CMP0069)
     cmake_policy(SET CMP0069 NEW)
 endif()
 
-project(ydsh)
+project(ydsh VERSION 0.23.0)
 enable_language(CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
@@ -26,17 +22,8 @@ include(CheckPCRE2Version)
 #     project version      #
 #++++++++++++++++++++++++++#
 
-set(YDSH_MAJOR_VERSION 0)
-set(YDSH_MINOR_VERSION 23)
-set(YDSH_PATCH_VERSION 0)
 set(YDSH_STABLE_RELEASE off)
-
-set(YDSH_VERSION_CORE
-    "${YDSH_MAJOR_VERSION}.${YDSH_MINOR_VERSION}.${YDSH_PATCH_VERSION}"
-)
-
-set(YDSH_VERSION ${YDSH_VERSION_CORE})
-
+set(YDSH_VERSION ${PROJECT_VERSION})
 if(NOT ${YDSH_STABLE_RELEASE})
     set(YDSH_VERSION ${YDSH_VERSION}-unstable)
 endif()
