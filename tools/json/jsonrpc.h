@@ -154,8 +154,8 @@ struct Response {
 using Message = Union<Request, Response, Error>;
 
 struct MessageParser
-    : public Parser { // TODO: currently only support single request (not support batch-request)
-  explicit MessageParser(ByteBuffer &&buffer) : Parser(std::move(buffer)) {}
+    : public JSONParser { // TODO: currently only support single request (not support batch-request)
+  explicit MessageParser(ByteBuffer &&buffer) : JSONParser(std::move(buffer)) {}
 
   Message operator()();
 };

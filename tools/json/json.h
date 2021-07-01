@@ -37,7 +37,7 @@ using String = std::string;
 using Array = std::vector<JSON>;
 using Object = std::map<std::string, JSON>;
 
-struct Member;
+struct JSONMember;
 
 class JSON : public Union<std::nullptr_t, bool, int64_t, double, String, Array, Object> {
 public:
@@ -54,7 +54,7 @@ public:
   JSON(String &&v) : Base(std::move(v)) {}                 // NOLINT
   JSON(Array &&v) : Base(std::move(v)) {}                  // NOLINT
   JSON(Object &&v) : Base(std::move(v)) {}                 // NOLINT
-  JSON(std::initializer_list<Member> list);                // NOLINT
+  JSON(std::initializer_list<JSONMember> list);                // NOLINT
   JSON(std::nullptr_t) : Base(nullptr) {}                  // NOLINT
 
   /**
@@ -115,13 +115,13 @@ public:
   std::string serialize(unsigned int tab = 0) const;
 };
 
-struct Member {
+struct JSONMember {
   std::string key;
   JSON value;
 
-  NON_COPYABLE(Member);
+  NON_COPYABLE(JSONMember);
 
-  Member(std::string &&key, JSON &&value) : key(std::move(key)), value(std::move(value)) {}
+  JSONMember(std::string &&key, JSON &&value) : key(std::move(key)), value(std::move(value)) {}
 };
 
 namespace __detail {
@@ -137,7 +137,7 @@ void append(Array &array, JSON &&v, T &&...arg) {
 }
 
 template <typename... T>
-void append(Object &object, Member &&v, T &&...arg) {
+void append(Object &object, JSONMember &&v, T &&...arg) {
   object.emplace(std::move(v.key), std::move(v.value));
   append(object, std::forward<T>(arg)...);
 }
@@ -156,9 +156,9 @@ inline Array array(JSON &&v, Arg &&...arg) {
 inline Object object() { return std::map<std::string, JSON>(); }
 
 template <typename... Arg>
-inline Object object(Member &&m, Arg &&...arg) {
+inline Object object(JSONMember &&m, Arg &&...arg) {
   auto value = object();
-  __detail::append(value, std::forward<Member>(m), std::forward<Arg>(arg)...);
+  __detail::append(value, std::forward<JSONMember>(m), std::forward<Arg>(arg)...);
   return value;
 }
 
@@ -189,23 +189,23 @@ inline bool isEOSToken(JSONTokenKind kind) { return kind == JSONTokenKind::EOS; 
 
 const char *toString(JSONTokenKind kind);
 
-class Lexer : public LexerBase {
+class JSONLexer : public LexerBase {
 public:
   template <typename... Arg>
-  explicit Lexer(Arg &&...arg) : LexerBase("(string)", std::forward<Arg>(arg)...) {}
+  explicit JSONLexer(Arg &&...arg) : LexerBase("(string)", std::forward<Arg>(arg)...) {}
 
   JSONTokenKind nextToken(Token &token);
 };
 
-class Parser : public ParserBase<JSONTokenKind, Lexer> {
+class JSONParser : public ParserBase<JSONTokenKind, JSONLexer> {
 private:
-  Lexer lex;
+  JSONLexer lex;
 
 public:
-  explicit Parser(Lexer &&lex) : lex(std::move(lex)) { this->lexer = &this->lex; }
+  explicit JSONParser(JSONLexer &&lex) : lex(std::move(lex)) { this->lexer = &this->lex; }
 
   template <typename... Arg>
-  explicit Parser(Arg &&...arg) : Parser(Lexer(std::forward<Arg>(arg)...)) {}
+  explicit JSONParser(Arg &&...arg) : JSONParser(JSONLexer(std::forward<Arg>(arg)...)) {}
 
   JSON operator()();
 

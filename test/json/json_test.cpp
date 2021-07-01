@@ -105,7 +105,7 @@ protected:
   JSON ret;
 
   void parse(const char *src) {
-    Parser parser(src);
+    JSONParser parser(src);
     this->ret = parser();
     if (parser.hasError()) {
       parser.showError();
@@ -118,7 +118,7 @@ public:
 };
 
 TEST(InvalidTest, base) {
-  Parser parser("hoge");
+  JSONParser parser("hoge");
   auto ret = parser();
   ASSERT_TRUE(parser.hasError());
   ASSERT_TRUE(ret.isInvalid());
@@ -259,12 +259,12 @@ TEST_F(ParserTest, serialize1) {
                      {"ZZ", {{";;;", 234}, {"", object()}}}}
                     .serialize(3);
 
-  auto actual = Parser(expect.c_str(), expect.size())().serialize(3);
+  auto actual = JSONParser(expect.c_str(), expect.size())().serialize(3);
 
   ASSERT_EQ(expect, actual);
 
   expect = JSON(34).serialize(3);
-  actual = Parser(expect.c_str(), expect.size())().serialize(3);
+  actual = JSONParser(expect.c_str(), expect.size())().serialize(3);
 
   ASSERT_EQ(expect, actual);
 }
@@ -273,29 +273,29 @@ TEST_F(ParserTest, serialize2) {
   // error
   auto actual = rpc::Error(-1, "hello").toJSON().serialize(3);
   const char *text = R"( { "code" : -1, "message": "hello" })";
-  auto expect = Parser(text)().serialize(3);
+  auto expect = JSONParser(text)().serialize(3);
   ASSERT_EQ(expect, actual);
 
   actual = rpc::Error(-100, "world", array(1, 3, 5)).toJSON().serialize(3);
   text = R"( { "code" : -100, "message": "world", "data": [1,3,5] })";
-  expect = Parser(text)().serialize(3);
+  expect = JSONParser(text)().serialize(3);
   ASSERT_EQ(expect, actual);
 
   // response
   actual = rpc::Response(34, nullptr).toJSON().serialize(2);
   text = R"( { "jsonrpc" : "2.0", "id" : 34, "result" : null } )";
-  expect = Parser(text)().serialize(2);
+  expect = JSONParser(text)().serialize(2);
   ASSERT_EQ(expect, actual);
 
   actual = rpc::Response(-0.4, 34).toJSON().serialize(2);
   text = R"( { "jsonrpc" : "2.0", "id" : -0.4, "result" : 34 } )";
-  expect = Parser(text)().serialize(2);
+  expect = JSONParser(text)().serialize(2);
   ASSERT_EQ(expect, actual);
 
   actual = rpc::Response(nullptr, rpc::Error(-100, "world", array(1, 3, 5))).toJSON().serialize(2);
   text = R"( { "jsonrpc" : "2.0", "id" : null,
                 "error" : { "code": -100, "message" : "world", "data" : [1,3,5]}})";
-  expect = Parser(text)().serialize(2);
+  expect = JSONParser(text)().serialize(2);
   ASSERT_EQ(expect, actual);
 }
 
@@ -775,7 +775,7 @@ protected:
   }
 
   void parseResponse(JSON &value) {
-    Parser parser(this->response().c_str());
+    JSONParser parser(this->response().c_str());
     auto ret = parser();
     ASSERT_FALSE(parser.hasError());
     ASSERT_FALSE(ret.isInvalid());

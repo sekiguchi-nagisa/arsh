@@ -56,7 +56,7 @@ JSON Response::toJSON() {
 
 Message MessageParser::operator()() {
   // parse
-  auto ret = Parser::operator()();
+  auto ret = JSONParser::operator()();
   if (this->hasError()) {
     return Error(ErrorCode::ParseError, "Parse error", this->formatError());
   }

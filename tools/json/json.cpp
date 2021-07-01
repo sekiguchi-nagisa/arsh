@@ -26,16 +26,16 @@ namespace ydsh::json {
 // ##     JSON     ##
 // ##################
 
-JSON::JSON(std::initializer_list<json::Member> list) : JSON(object()) {
+JSON::JSON(std::initializer_list<json::JSONMember> list) : JSON(object()) {
   for (auto &v : list) {
-    this->asObject().emplace(std::move(const_cast<Member &>(v).key),
-                             std::move(const_cast<Member &>(v).value));
+    this->asObject().emplace(std::move(const_cast<JSONMember &>(v).key),
+                             std::move(const_cast<JSONMember &>(v).value));
   }
 }
 
 JSON JSON::fromString(const char *text) {
-  Lexer lexer(text);
-  Parser parser(std::move(lexer));
+  JSONLexer lexer(text);
+  JSONParser parser(std::move(lexer));
   return parser();
 }
 
@@ -290,9 +290,9 @@ const char *toString(JSONTokenKind kind) {
   return table[static_cast<unsigned int>(kind)];
 }
 
-// ####################
-// ##     Parser     ##
-// ####################
+// ########################
+// ##     JSONParser     ##
+// ########################
 
 #define EACH_LA_VALUE(OP)                                                                          \
   OP(NIL)                                                                                          \
@@ -330,14 +330,14 @@ const char *toString(JSONTokenKind kind) {
   }                                                                                                \
   (void)name
 
-JSON Parser::operator()() {
+JSON JSONParser::operator()() {
   this->fetchNext();
   auto value = TRY(this->parseValue());
   TRY(this->expect(JSONTokenKind::EOS));
   return value;
 }
 
-JSON Parser::parseValue() {
+JSON JSONParser::parseValue() {
   GUARD_DEEP_NESTING(guard);
 
   switch (this->curKind) {
@@ -371,7 +371,7 @@ static bool isFloat(const char *str) {
   return strchr(str, '.') != nullptr || strchr(str, 'e') != nullptr || strchr(str, 'E') != nullptr;
 }
 
-JSON Parser::parseNumber() {
+JSON JSONParser::parseNumber() {
   auto token = this->expect(JSONTokenKind::NUMBER); // always success
   char data[token.size + 1];
   auto ref = this->lexer->toStrRef(token);
@@ -403,7 +403,7 @@ JSON Parser::parseNumber() {
     std::forward<decltype(v)>(v);                                                                  \
   })
 
-std::pair<std::string, JSON> Parser::parseMember() {
+std::pair<std::string, JSON> JSONParser::parseMember() {
   Token token = this->expect(JSONTokenKind::STRING); // always success
   TRY2(this->expect(JSONTokenKind::COLON));
   JSON value = TRY2(this->parseValue());
@@ -414,7 +414,7 @@ std::pair<std::string, JSON> Parser::parseMember() {
   return {std::move(key), std::move(value)};
 }
 
-JSON Parser::parseArray() {
+JSON JSONParser::parseArray() {
   this->expect(JSONTokenKind::ARRAY_OPEN); // always success
 
   auto value = array();
@@ -441,7 +441,7 @@ JSON Parser::parseArray() {
   return JSON(std::move(value));
 }
 
-JSON Parser::parseObject() {
+JSON JSONParser::parseObject() {
   this->expect(JSONTokenKind::OBJECT_OPEN);
 
   auto value = object();
@@ -526,7 +526,7 @@ static int unescape(const char *&iter, const char *end) {
   return ch;
 }
 
-bool Parser::unescapeStr(Token token, std::string &str) {
+bool JSONParser::unescapeStr(Token token, std::string &str) {
   auto actual = token;
   actual.pos++;
   actual.size -= 2;
@@ -545,7 +545,7 @@ bool Parser::unescapeStr(Token token, std::string &str) {
   return true;
 }
 
-std::string Parser::formatError() const {
+std::string JSONParser::formatError() const {
   assert(this->hasError());
 
   std::string str;
@@ -571,7 +571,7 @@ std::string Parser::formatError() const {
   return str;
 }
 
-void Parser::showError(FILE *fp) const {
+void JSONParser::showError(FILE *fp) const {
   assert(fp != nullptr);
   auto str = this->formatError();
   fputs(str.c_str(), fp);
