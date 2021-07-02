@@ -25,6 +25,7 @@
 
 #include <linenoise.h>
 
+#include "misc/flag_util.hpp"
 #include "misc/grapheme.hpp"
 #include "misc/resource.hpp"
 #include <ydsh/ydsh.h>
@@ -116,43 +117,54 @@ static bool readLine(std::string &line) {
 // for linenoise encoding function
 using namespace ydsh;
 
-static std::size_t graphemeWidth(const GraphemeScanner::Result &ret,
-                                 UnicodeUtil::AmbiguousCharWidth charWidth) {
+static auto EAW = UnicodeUtil::HALF_WIDTH;
+
+static constexpr const char PROPERTY_EAW[] = "○";
+static constexpr const char PROPERTY_FLAG_SEQ[] = "🇯🇵";
+
+static const char *propertyStr[] = {
+    PROPERTY_EAW,
+    PROPERTY_FLAG_SEQ,
+};
+
+static int checkProperty(const char *str, size_t pos) {
+  if (strcmp(str, PROPERTY_EAW) == 0) {
+    EAW = UnicodeUtil::HALF_WIDTH;
+    if (pos - 1 == 2) {
+      EAW = UnicodeUtil::FULL_WIDTH;
+    }
+  } else if (strcmp(str, PROPERTY_FLAG_SEQ) == 0) {
+   // FIXME:
+  }
+  return 0;
+}
+
+static std::size_t graphemeWidth(const GraphemeScanner::Result &ret) {
   size_t width = 0;
   for (unsigned int i = 0; i < ret.codePointCount; i++) {
-    int w = UnicodeUtil::width(ret.codePoints[i], charWidth);
+    int w = UnicodeUtil::width(ret.codePoints[i], EAW);
     if (w > 0) {
       width += w;
     }
   }
   return width < 2 ? 1 : 2; // FIXME: emoji sequence
-//  return width > 0 ? width : 1;
+  //  return width > 0 ? width : 1;
 }
 
 static std::size_t encoding_nextCharLen(const char *buf, std::size_t bufSize, std::size_t pos,
                                         std::size_t *columSize) {
-  auto charWidth = UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
-  if (linenoiseEastAsianWidth() == 2) {
-    charWidth = UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH;
-  }
-
   StringRef ref(buf + pos, bufSize - pos);
   GraphemeScanner scanner(ref);
   GraphemeScanner::Result ret;
   scanner.next(ret);
   if (columSize != nullptr && ret.codePointCount > 0) {
-    *columSize = graphemeWidth(ret, charWidth);
+    *columSize = graphemeWidth(ret);
   }
   return ret.ref.size();
 }
 
 static std::size_t encoding_prevCharLen(const char *buf, std::size_t, std::size_t pos,
                                         std::size_t *columSize) {
-  auto charWidth = UnicodeUtil::AmbiguousCharWidth::HALF_WIDTH;
-  if (linenoiseEastAsianWidth() == 2) {
-    charWidth = UnicodeUtil::AmbiguousCharWidth::FULL_WIDTH;
-  }
-
   StringRef ref(buf, pos);
   GraphemeScanner scanner(ref);
   GraphemeScanner::Result ret;
@@ -160,7 +172,7 @@ static std::size_t encoding_prevCharLen(const char *buf, std::size_t, std::size_
     scanner.next(ret);
   }
   if (columSize != nullptr && ret.codePointCount > 0) {
-    *columSize = graphemeWidth(ret, charWidth);
+    *columSize = graphemeWidth(ret);
   }
   return ret.ref.size();
 }
@@ -275,6 +287,8 @@ int exec_interactive(DSState *dsState, const std::string &rcfile) {
   linenoiseSetCompletionCallback(completeCallback);
 
   linenoiseSetHistoryCallback(historyCallback);
+
+  linenoiseSetPropertyCheckCallback(checkProperty, propertyStr, std::size(propertyStr));
 
   unsigned int option = DS_OPTION_JOB_CONTROL | DS_OPTION_INTERACTIVE;
   DSState_setOption(dsState, option);
