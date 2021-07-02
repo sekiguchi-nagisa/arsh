@@ -48,7 +48,7 @@ public:
   };
 
   Logger() : ydsh::SingletonLogger<Logger>("YDSH") {
-    this->syncSetting([&] {
+    this->sync([&] {
       const char *policies[] = {
 #define GEN_STR(E) "YDSH_" #E,
           EACH_LOGGING_POLICY(GEN_STR)

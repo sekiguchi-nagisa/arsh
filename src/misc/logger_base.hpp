@@ -55,7 +55,7 @@ protected:
    * @param prefix
    */
   explicit LoggerBase(const char *prefix) : prefix(prefix) {
-    this->syncSetting([&] {
+    this->sync([&] {
       this->syncSeverityWithEnv();
       this->syncAppenderWithEnv();
     });
@@ -68,7 +68,7 @@ protected:
 public:
   // helper method for logger setting.
   template <typename Func>
-  void syncSetting(Func func) {
+  void sync(Func func) {
     std::lock_guard<std::mutex> guard(this->outMutex);
     func();
   }
@@ -124,8 +124,10 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
   }
 
   // print body
-  fprintf(this->filePtr.get(), "%s%s\n", header, str);
-  fflush(this->filePtr.get());
+  this->sync([&]{
+    fprintf(this->filePtr.get(), "%s%s\n", header, str);
+    fflush(this->filePtr.get());
+  });
   free(str);
 
   if (level == LogLevel::FATAL) {
