@@ -386,8 +386,7 @@ TEST_F(ServerTest, term3) {
 }
 
 TEST(ASTCtxTest, base) {
-  Source src(uri::URI::fromString("file:///file"), "#hello");
-  auto ctx = std::make_unique<ASTContext>(1, std::move(src));
+  auto ctx = std::make_unique<ASTContext>(1, uri::URI::fromString("file:///file"), "#hello", 1);
 }
 
 int main(int argc, char **argv) {

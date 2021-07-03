@@ -41,11 +41,9 @@ public:
 
   ASTContextPtr find(StringRef ref) const;
 
-  ASTContextPtr find(const uri::URI &uri) const {
-    return this->find(uri.getPath());
-  }
+  ASTContextPtr find(const uri::URI &uri) const { return this->find(uri.getPath()); }
 
-  ASTContextPtr addNew(const uri::URI &uri, std::string &&content);
+  ASTContextPtr addNew(const uri::URI &uri, std::string &&content, int version);
 
 private:
   ModResult addNewModEntry(CStrPtr &&ptr) override;
@@ -61,25 +59,7 @@ public:
                        const TypeCheckError &checkError) override;
 };
 
-class Analyzer {
-private:
-  ASTContextProvider &provider;
-  FrontEnd frontEnd;
-  std::vector<ASTContextPtr> ctxs;
-
-public:
-  Analyzer(ASTContextProvider &provider, DiagnosticEmitter &emitter, ASTContextPtr ctx);
-
-  /**
-   * run code analysis
-   * @return
-   * root ast context
-   */
-  ASTContextPtr run();
-
-private:
-  ASTContextPtr currentASTCtx() const;
-};
+ASTContextPtr buildAST(ASTContextProvider &provider, DiagnosticEmitter &emitter, ASTContextPtr ctx);
 
 } // namespace ydsh::lsp
 

@@ -105,20 +105,38 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
   if (ctx) {
     LOG(LogLevel::INFO, "already opened textDocument: %s", uriStr);
   } else {
-    ctx = this->provider.addNew(uri, std::string(params.textDocument.text));
-    Analyzer analyzer(this->provider, this->diagnosticEmitter, ctx);
-    analyzer.run(); // FIXME:
+    ctx = this->provider.addNew(uri, std::string(params.textDocument.text),
+                                params.textDocument.version);
+    buildAST(this->provider, this->diagnosticEmitter, ctx);
   }
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
   LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
-  //FIXME: check dependency
+  // FIXME: check dependency
 }
 
 void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params) {
-  LOG(LogLevel::INFO, "change textDocument: %s, %d", params.textDocument.uri.c_str(),
-      params.textDocument.version);
+  const char *uriStr = params.textDocument.uri.c_str();
+  LOG(LogLevel::INFO, "change textDocument: %s, %d", uriStr, params.textDocument.version);
+  auto uri = uri::URI::fromString(params.textDocument.uri);
+  if (!uri) {
+    LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
+    return;
+  }
+  auto ctx = this->provider.find(uri);
+  if (!ctx) {
+    LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr);
+    return;
+  }
+  std::string content = ctx->getContent();
+  for (auto &change : params.contentChanges) {
+    if (!applyChange(content, change)) {
+      return;
+    }
+  }
+  ctx->updateContent(std::move(content), params.textDocument.version);
+  buildAST(this->provider, this->diagnosticEmitter, ctx);
 }
 
 } // namespace ydsh::lsp

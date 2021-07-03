@@ -38,6 +38,7 @@ const ModType &ASTContextProvider::newModTypeFromCurContext(
 
 FrontEnd::ModuleProvider::Ret ASTContextProvider::load(const char *scriptDir, const char *modPath,
                                                        FrontEndOption option) {
+  modPath = "/"; // FIXME: dummy
   FilePtr filePtr;
   auto ret =
       ModuleLoaderBase::load(scriptDir, modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
@@ -69,11 +70,10 @@ ASTContextPtr ASTContextProvider::find(StringRef ref) const {
   return nullptr;
 }
 
-ASTContextPtr ASTContextProvider::addNew(const uri::URI &uri, std::string &&content) {
-  Source source(uri, std::move(content));
+ASTContextPtr ASTContextProvider::addNew(const uri::URI &uri, std::string &&content, int version) {
   unsigned int newModId = this->ctxMap.size() + 1; // id 0 is already reserved
-  auto ptr = ASTContextPtr::create(newModId, std::move(source));
-  this->ctxMap.emplace(ptr->getSource().getFileName(), ptr);
+  auto ptr = ASTContextPtr::create(newModId, uri, std::move(content), version);
+  this->ctxMap.emplace(ptr->getFullPath(), ptr);
   return ptr;
 }
 
@@ -85,14 +85,13 @@ ModResult ASTContextProvider::addNewModEntry(CStrPtr &&ptr) {
   } else {
     auto path = uri::URI::fromString(ptr.get());
     assert(path);
-    Source source(path, "");
     unsigned int newModId = this->ctxMap.size() + 1; // id 0 is already reserved
-    auto newctx = ASTContextPtr::create(newModId, std::move(source));
-    this->ctxMap.emplace(newctx->getSource().getFileName(), newctx);
+    auto newctx = ASTContextPtr::create(newModId, path, "", 0);
+    this->ctxMap.emplace(newctx->getFullPath(), newctx);
     if (this->ctxMap.size() == MAX_MOD_NUM) {
       fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
     }
-    return newctx->getSource().getFileName().c_str();
+    return newctx->getFullPath().c_str();
   }
 }
 
@@ -113,56 +112,51 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   return false;
 }
 
-// ######################
-// ##     Analyzer     ##
-// ######################
-
-static FrontEnd createFrontend(ASTContextProvider &provider, ASTContextPtr ctx) {
-  const char *fullpath = ctx->getSource().getFileName().c_str();
-  Lexer lexer = Lexer::fromFullPath(fullpath, ctx->getSource().toContentBuf());
-//  return FrontEnd(provider, std::move(lexer), FrontEndOption{}, nullptr);
-  return FrontEnd(provider, std::move(lexer), FrontEndOption::PARSE_ONLY, nullptr); //FIXME:
+static FrontEnd createFrontend(ASTContextProvider &provider, const ASTContext &ctx) {
+  const char *fullpath = ctx.getFullPath().c_str();
+  const char *ptr = ctx.getContent().c_str();
+  Lexer lexer = Lexer::fromFullPath(fullpath, ByteBuffer(ptr, ptr + strlen(ptr)));
+  return FrontEnd(provider, std::move(lexer), FrontEndOption{}, nullptr);
 }
 
-Analyzer::Analyzer(ASTContextProvider &provider, DiagnosticEmitter &emitter, ASTContextPtr ctx)
-    : provider(provider), frontEnd(createFrontend(this->provider, ctx)) {
-  this->frontEnd.setErrorListener(emitter);
-  this->ctxs.push_back(std::move(ctx));
+static ASTContextPtr getCurrentCtx(const FrontEnd &frontEnd, const ASTContextProvider &provider) {
+  auto &cur = frontEnd.getContext().back();
+  StringRef key = cur->lexer.getSourceName();
+  auto ctx = provider.find(key);
+  assert(ctx);
+  return ctx;
 }
 
-ASTContextPtr Analyzer::run() {
-  assert(this->ctxs.size() == 1);
-  this->frontEnd.setupASTDump();
-  while (this->frontEnd) {
-    auto ret = this->frontEnd();
+ASTContextPtr buildAST(ASTContextProvider &provider, DiagnosticEmitter &emitter,
+                       ASTContextPtr ctx) {
+  // prepare
+  assert(ctx);
+  FrontEnd frontEnd = createFrontend(provider, *ctx);
+  frontEnd.setErrorListener(emitter);
+  std::vector<ASTContextPtr> ctxs;
+  ctxs.push_back(std::move(ctx));
+
+  // run front end
+  while (frontEnd) {
+    auto ret = frontEnd();
     if (!ret) {
       return nullptr; // FIXME: error recovery
     }
-
     switch (ret.kind) {
     case FrontEndResult::ENTER_MODULE:
-      this->ctxs.push_back(this->currentASTCtx());
+      ctxs.push_back(getCurrentCtx(frontEnd, provider));
       break;
     case FrontEndResult::EXIT_MODULE:
-      this->ctxs.pop_back();
+      ctxs.pop_back();
       break;
     case FrontEndResult::IN_MODULE:
-      this->ctxs.back()->addNode(std::move(ret.node));
+      ctxs.back()->addNode(std::move(ret.node));
       break;
     default:
       break;
     }
   }
-  this->frontEnd.teardownASTDump();
-  return this->currentASTCtx();
-}
-
-ASTContextPtr Analyzer::currentASTCtx() const {
-  auto &cur = this->frontEnd.getContext().back();
-  StringRef key = cur->lexer.getSourceName();
-  auto ctx = this->provider.find(key);
-  assert(ctx);
-  return ctx;
+  return getCurrentCtx(frontEnd, provider);
 }
 
 } // namespace ydsh::lsp

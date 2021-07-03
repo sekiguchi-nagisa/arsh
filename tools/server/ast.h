@@ -22,50 +22,31 @@
 #include <type_pool.h>
 
 #include "../tools/uri/uri.h"
+#include "lsp.h"
 
 namespace ydsh::lsp {
 
-class Source {
-private:
-  std::string fileName;
-  std::string content;
-
-public:
-  Source(const uri::URI &uri, std::string &&content)
-      : fileName(uri.getPath()), content(std::move(content)) {}
-
-  const std::string &getFileName() const {
-    return this->fileName;
-  }
-
-  const std::string &getContent() const {
-    return this->content;
-  }
-
-  void setContent(std::string &&c) {
-    this->content = std::move(c);
-  }
-
-  ByteBuffer toContentBuf() const {
-    const char *ptr = this->content.c_str();
-    return ByteBuffer(ptr, ptr + strlen(ptr));
-  }
-};
-
 class ASTContext : public RefCount<ASTContext> {
 private:
-  Source source;
+  std::string fullPath;
+  std::string content;
+  int version;
   IntrusivePtr<NameScope> scope;
   TypePool pool;
   std::vector<std::unique_ptr<Node>> nodes;
   unsigned int gvarCount{0};
+  unsigned int oldGvarCount;
   TypeDiscardPoint typeDiscardPoint;
   ScopeDiscardPoint scopeDiscardPoint;
 
 public:
-  ASTContext(unsigned int modID, Source &&source);
+  NON_COPYABLE(ASTContext);
 
-  const Source &getSource() const { return this->source; }
+  ASTContext(unsigned int modID, const uri::URI &uri, std::string &&content, int version = 0);
+
+  const std::string &getFullPath() const { return this->fullPath; }
+
+  const std::string &getContent() const { return this->content; }
 
   const IntrusivePtr<NameScope> &getScope() const { return this->scope; }
 
@@ -73,24 +54,18 @@ public:
 
   TypePool &getPool() { return this->pool; }
 
-  void updateContent(std::string &&c) {
-    this->source.setContent(std::move(c));
-  }
+  void updateContent(std::string &&c, int v = 0);
 
-  unsigned int getModId() const {
-    return this->scope->modId;
-  }
+  unsigned int getModId() const { return this->scope->modId; }
 
-  void addNode(std::unique_ptr<Node> &&node) {
-    this->nodes.push_back(std::move(node));
-  }
+  void addNode(std::unique_ptr<Node> &&node) { this->nodes.push_back(std::move(node)); }
 
-  const std::vector<std::unique_ptr<Node>> &getNodes() const {
-    return this->nodes;
-  }
+  const std::vector<std::unique_ptr<Node>> &getNodes() const { return this->nodes; }
 };
 
 using ASTContextPtr = IntrusivePtr<ASTContext>;
+
+bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change);
 
 } // namespace ydsh::lsp
 
