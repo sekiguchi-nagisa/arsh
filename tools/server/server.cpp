@@ -37,6 +37,7 @@ void LSPServer::bindAll() {
   this->bind("exit", &LSPServer::exit);
   this->bind("initialize", &LSPServer::initialize);
   this->bind("initialized", &LSPServer::initialized);
+  this->bind("$/setTrace", &LSPServer::setTrace);
   this->bind("textDocument/didOpen", &LSPServer::didOpenTextDocument);
   this->bind("textDocument/didClose", &LSPServer::didCloseTextDocument);
   this->bind("textDocument/didChange", &LSPServer::didChangeTextDocument);
@@ -55,7 +56,9 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   }
   this->init = true;
 
-  (void)params; // FIXME: currently not used
+  if (auto t = params.trace; t.hasValue()) {
+    this->traceSetting = t.unwrap();
+  } // FIXME: check client capability
 
   InitializeResult ret; // FIXME: set supported capabilities
   ret.capabilities.textDocumentSync = TextDocumentSyncOptions{
@@ -84,12 +87,33 @@ void LSPServer::exit() {
   std::exit(s); // always success
 }
 
+void LSPServer::setTrace(const SetTraceParams &param) {
+  LOG(LogLevel::INFO, "change trace setting '%s' to '%s'", toString(this->traceSetting),
+      toString(param.value));
+  this->traceSetting = param.value;
+}
+
 void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
-  LOG(LogLevel::INFO, "open textDocument: %s", params.textDocument.uri.c_str());
+  const char *uriStr = params.textDocument.uri.c_str();
+  LOG(LogLevel::INFO, "open textDocument: %s", uriStr);
+  auto uri = uri::URI::fromString(params.textDocument.uri);
+  if (!uri) {
+    LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
+    return;
+  }
+  auto ctx = this->provider.find(uri);
+  if (ctx) {
+    LOG(LogLevel::INFO, "already opened textDocument: %s", uriStr);
+  } else {
+    ctx = this->provider.addNew(uri, std::string(params.textDocument.text));
+    Analyzer analyzer(this->provider, this->diagnosticEmitter, ctx);
+    analyzer.run(); // FIXME:
+  }
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
   LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
+  //FIXME: check dependency
 }
 
 void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params) {

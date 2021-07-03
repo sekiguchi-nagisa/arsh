@@ -18,23 +18,23 @@
 
 namespace ydsh::lsp {
 
-const char *toString(TraceSetting setting) {
+const char *toString(TraceValue setting) {
   switch (setting) {
 #define GEN_CASE(E)                                                                                \
-  case TraceSetting::E:                                                                            \
+  case TraceValue::E:                                                                            \
     return #E;
-    EACH_TRACE_SETTING(GEN_CASE)
+    EACH_TRACE_VALUE(GEN_CASE)
 #undef GEN_CASE
   default:
     return "off";
   }
 }
 
-bool toEnum(const char *str, TraceSetting &setting) {
+bool toEnum(const char *str, TraceValue &setting) {
   StringRef ref = str;
-  TraceSetting settings[] = {
-#define GEN_ENUM(E) TraceSetting::E,
-      EACH_TRACE_SETTING(GEN_ENUM)
+  TraceValue settings[] = {
+#define GEN_ENUM(E) TraceValue::E,
+      EACH_TRACE_VALUE(GEN_ENUM)
 #undef GEN_ENUM
   };
   for (auto &e : settings) {
@@ -43,7 +43,7 @@ bool toEnum(const char *str, TraceSetting &setting) {
       return true;
     }
   }
-  setting = TraceSetting::off;
+  setting = TraceValue::off;
   return false;
 }
 

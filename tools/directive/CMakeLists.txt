@@ -8,4 +8,4 @@ add_library(directive STATIC
         directive.cpp
         )
 add_dependencies(directive gen_lexer)
-target_link_libraries(directive ${YDSH_STATIC} platform)
+target_link_libraries(directive ydsh_static platform)

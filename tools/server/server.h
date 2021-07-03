@@ -20,10 +20,10 @@
 #include "../json/jsonrpc.h"
 #include "lsp.h"
 #include "transport.h"
+#include "analyzer.h"
 
 namespace ydsh::lsp {
 
-using namespace json;
 using namespace rpc;
 
 struct LSPLogger : public LoggerBase {
@@ -33,8 +33,11 @@ struct LSPLogger : public LoggerBase {
 class LSPServer : public Handler {
 private:
   LSPTransport transport;
+  ASTContextProvider provider;
+  DiagnosticEmitter diagnosticEmitter;
   bool init{false};
   bool willExit{false};
+  TraceValue traceSetting{TraceValue::off};
 
 public:
   LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out)
@@ -96,6 +99,8 @@ public:
   Reply<void> shutdown();
 
   void exit();
+
+  void setTrace(const SetTraceParams &param);
 
   void didOpenTextDocument(const DidOpenTextDocumentParams &params);
 

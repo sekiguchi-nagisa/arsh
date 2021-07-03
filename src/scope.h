@@ -291,6 +291,8 @@ struct allow_enum_bitop<ModLoadOption> : std::true_type {};
 
 class ModuleLoaderBase {
 public:
+  static constexpr unsigned int MAX_MOD_NUM = UINT16_MAX;
+
   virtual ~ModuleLoaderBase() = default;
 
   /**
@@ -364,8 +366,6 @@ private:
   FlexBuffer<ModEntry> entries;
 
   unsigned int gvarCount{0};
-
-  static constexpr unsigned int MAX_MOD_NUM = UINT16_MAX;
 
 public:
   NON_COPYABLE(ModuleLoader);

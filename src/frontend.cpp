@@ -209,13 +209,6 @@ std::unique_ptr<SourceNode> FrontEnd::exitModule() {
 // ##     DefaultModuleProvider     ##
 // ###################################
 
-static Lexer createLexer(const char *fullPath, ByteBuffer &&buf) {
-  char *path = strdup(fullPath);
-  const char *ptr = strrchr(path, '/');
-  path[ptr == path ? 1 : ptr - path] = '\0';
-  return Lexer(fullPath, std::move(buf), CStrPtr(path));
-}
-
 std::unique_ptr<FrontEnd::Context>
 DefaultModuleProvider::newContext(Lexer &&lexer, FrontEndOption option,
                                   ObserverPtr<CodeCompletionHandler> ccHandler) {
@@ -241,7 +234,7 @@ DefaultModuleProvider::load(const char *scriptDir, const char *modPath, FrontEnd
       return ModLoadingError(errno);
     }
     const char *fullpath = get<const char *>(ret);
-    auto lex = createLexer(fullpath, std::move(buf));
+    auto lex = Lexer::fromFullPath(fullpath, std::move(buf));
     auto newScope =
         this->loader.createGlobalScopeFromFullpath(fullpath, this->pool.getBuiltinModType());
     return std::make_unique<FrontEnd::Context>(this->pool, std::move(lex), std::move(newScope),

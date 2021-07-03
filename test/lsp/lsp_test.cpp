@@ -291,7 +291,7 @@ struct ServerTest : public InteractiveBase {
     IOConfig config;
     config.in = IOConfig::PIPE;
     config.out = IOConfig::PIPE;
-    config.err = IOConfig::PIPE;
+    config.err = IOConfig::INHERIT;
 
     this->handle = ProcBuilder::spawn(config, [&]() -> int {
       LSPLogger logger;
@@ -383,6 +383,11 @@ TEST_F(ServerTest, term3) {
   this->call("shutdown", nullptr);
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+server not initialized.+"));
   ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+must be initialized.+"));
+}
+
+TEST(ASTCtxTest, base) {
+  Source src(uri::URI::fromString("file:///file"), "#hello");
+  auto ctx = std::make_unique<ASTContext>(1, std::move(src));
 }
 
 int main(int argc, char **argv) {

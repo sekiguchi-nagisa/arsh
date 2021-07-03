@@ -21,6 +21,9 @@
 #include "../json/serialize.h"
 #include "../uri/uri.h"
 
+/**
+ * LSP definition 3.16
+ */
 namespace ydsh::lsp {
 
 using namespace json;
@@ -159,23 +162,23 @@ struct ClientCapabilities {
   }
 };
 
-#define EACH_TRACE_SETTING(OP)                                                                     \
+#define EACH_TRACE_VALUE(OP)                                                                     \
   OP(off)                                                                                          \
   OP(message)                                                                                      \
   OP(verbose)
 
-enum class TraceSetting : unsigned int {
+enum class TraceValue : unsigned char {
 #define GEN_ENUM(e) e,
-  EACH_TRACE_SETTING(GEN_ENUM)
+  EACH_TRACE_VALUE(GEN_ENUM)
 #undef GEN_ENUM
 };
 
-const char *toString(TraceSetting setting);
+const char *toString(TraceValue setting);
 
-bool toEnum(const char *str, TraceSetting &setting);
+bool toEnum(const char *str, TraceValue &setting);
 
 template <typename T>
-void jsonify(T &t, TraceSetting &setting) {
+void jsonify(T &t, TraceValue &setting) {
   if constexpr (is_serialize_v<T>) {
     std::string value = toString(setting);
     t(value);
@@ -186,13 +189,22 @@ void jsonify(T &t, TraceSetting &setting) {
   }
 }
 
+struct SetTraceParams {
+  TraceValue value;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(value);
+  }
+};
+
 struct InitializeParams {
   Union<int, std::nullptr_t> processId{nullptr};
   Optional<Union<std::string, std::nullptr_t>> rootPath; // optional
   Union<DocumentURI, std::nullptr_t> rootUri{nullptr};
   Optional<JSON> initializationOptions; // optional
   ClientCapabilities capabilities;
-  Optional<TraceSetting> trace; // optional
+  Optional<TraceValue> trace; // optional
   //    Union<WorkspaceFolder, std::nullptr_t> workspaceFolders;    // optional   //FIXME: currently
   //    not supported
 

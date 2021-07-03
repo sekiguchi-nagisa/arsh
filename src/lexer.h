@@ -94,6 +94,8 @@ public:
 
   ~Lexer() = default;
 
+  static Lexer fromFullPath(const char *fullpath, ByteBuffer &&buf);
+
   SrcPos getSrcPos(Token token) const;
 
   /**
