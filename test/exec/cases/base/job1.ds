@@ -111,8 +111,8 @@ assert $j.wait() == %'cont'.value()
 assert $j.status(0)! == %'cont'.value()
 
 # detach
-$j = coproc false
-assert $j as String == '%1'
+$j = coproc { sleep 1; false; }
 $j.detach()
 assert $j as String == '%1'   # after detaching, still maintains valid job id
 assert $j.wait() == 1
+assert $j as String == '%0'
