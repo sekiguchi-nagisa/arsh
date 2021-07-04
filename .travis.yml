@@ -25,7 +25,7 @@ matrix:
             - ninja-build
             - libpcre2-8-0
             - libpcre2-dev
-      arch: arm64
+      arch: arm64-graviton2
       dist: bionic
       env: CXX_BIN=clang++-10 BUILD_TYPE=release
 
