@@ -686,8 +686,8 @@ TEST_F(InteractiveTest, cmdSubstitution) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(
-      this->withTimeout(400, [&] { this->sendLineAndExpect("\"$(stty sane)\"", ": String = "); }));
-
+      this->withTimeout(400, [&] { this->sendLineAndExpect("var a = \"$(stty sane)\""); }));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a", ": String = "));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
