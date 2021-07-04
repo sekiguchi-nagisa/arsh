@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_SERVER_ANALYZER_H
-#define YDSH_TOOLS_SERVER_ANALYZER_H
+#ifndef YDSH_TOOLS_ANALYZER_ANALYZER_H
+#define YDSH_TOOLS_ANALYZER_ANALYZER_H
 
 #include <frontend.h>
 
@@ -63,4 +63,4 @@ ASTContextPtr buildAST(ASTContextProvider &provider, DiagnosticEmitter &emitter,
 
 } // namespace ydsh::lsp
 
-#endif // YDSH_TOOLS_SERVER_ANALYZER_H
+#endif // YDSH_TOOLS_ANALYZER_ANALYZER_H

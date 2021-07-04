@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_SERVER_SERVER_H
-#define YDSH_TOOLS_SERVER_SERVER_H
+#ifndef YDSH_TOOLS_ANALYZER_SERVER_H
+#define YDSH_TOOLS_ANALYZER_SERVER_H
 
 #include "../json/jsonrpc.h"
 #include "lsp.h"
@@ -111,4 +111,4 @@ public:
 
 } // namespace ydsh::lsp
 
-#endif // YDSH_TOOLS_SERVER_SERVER_H
+#endif // YDSH_TOOLS_ANALYZER_SERVER_H

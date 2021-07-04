@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_SERVER_TRANSPORT_H
-#define YDSH_TOOLS_SERVER_TRANSPORT_H
+#ifndef YDSH_TOOLS_ANALYZER_TRANSPORT_H
+#define YDSH_TOOLS_ANALYZER_TRANSPORT_H
 
 #include "../json/jsonrpc.h"
 
@@ -54,4 +54,4 @@ private:
 
 } // namespace ydsh::lsp
 
-#endif // YDSH_TOOLS_SERVER_TRANSPORT_H
+#endif // YDSH_TOOLS_ANALYZER_TRANSPORT_H

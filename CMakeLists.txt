@@ -245,7 +245,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/pid_check)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/process)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/uri)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/json)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/server)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/analyzer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/inspect)
 
 

@@ -54,7 +54,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/json)
 include_directories(${CMAKE_SOURCE_DIR}/tools/uri)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/uri)
 
-include_directories(${CMAKE_SOURCE_DIR}/tools/server)
+include_directories(${CMAKE_SOURCE_DIR}/tools/analyzer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lsp)
 
 if (FUZZING_BUILD_MODE)

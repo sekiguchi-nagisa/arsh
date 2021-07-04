@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_SERVER_AST_H
-#define YDSH_TOOLS_SERVER_AST_H
+#ifndef YDSH_TOOLS_ANALYZER_AST_H
+#define YDSH_TOOLS_ANALYZER_AST_H
 
 #include <node.h>
 #include <scope.h>
@@ -69,4 +69,4 @@ bool applyChange(std::string &content, const TextDocumentContentChangeEvent &cha
 
 } // namespace ydsh::lsp
 
-#endif // YDSH_TOOLS_SERVER_AST_H
+#endif // YDSH_TOOLS_ANALYZER_AST_H
