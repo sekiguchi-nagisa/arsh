@@ -21,13 +21,13 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++
-            - clang
+            - clang-10
             - ninja-build
             - libpcre2-8-0
             - libpcre2-dev
       arch: arm64
       dist: bionic
-      env: CXX_BIN=clang++ BUILD_TYPE=release
+      env: CXX_BIN=clang++-10 BUILD_TYPE=release
 
     # gcc7 with coverage
     - addons:
