@@ -24,15 +24,15 @@ assert $j.status(1)! == 0
 
 
 # disowned background job
-$j = /bin/sh -c 'echo AAA' &!
+$j = /bin/sh -c 'echo AAA && sleep 1' &!
+assert $j as String == "%1"
 assert ! $j[0]
 assert ! $j[1]
 assert !$j.in()
 assert !$j.out()
 assert $j.size() == 1
-assert $j as String == "%1"
 assert $j.wait() == 0
-
+assert $j as String == "%0"
 
 # co-process
 $j = coproc { read; echo reply: $REPLY; }
