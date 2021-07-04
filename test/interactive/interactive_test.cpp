@@ -736,7 +736,7 @@ TEST_F(InteractiveTest, moduleError1) {
                      makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", "", eout.c_str()));
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(200, [&] {
+  ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] {
     this->sendLineAndExpect("f", "",
                             "[runtime error]\n"
                             "SystemError: execution error: f: command not found\n"
@@ -762,7 +762,7 @@ TEST_F(InteractiveTest, moduleError2) {
                      makeLineMarker(INTERACTIVE_TEST_WORK_DIR "/mod1.ds").c_str());
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("source " INTERACTIVE_TEST_WORK_DIR "/mod1.ds", "", eout.c_str()));
-  ASSERT_NO_FATAL_FAILURE(this->withTimeout(200, [&] {
+  ASSERT_NO_FATAL_FAILURE(this->withTimeout(400, [&] {
     this->sendLineAndExpect("hey", "",
                             "[runtime error]\n"
                             "SystemError: execution error: hey: command not found\n"
