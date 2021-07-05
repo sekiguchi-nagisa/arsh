@@ -387,6 +387,15 @@ TEST_F(ServerTest, term3) {
 
 TEST(ASTCtxTest, base) {
   auto ctx = std::make_unique<ASTContext>(1, uri::URI::fromString("file:///file"), "#hello", 1);
+  auto *handle = ctx->getScope()->find("COMP_HOOK");
+  ASSERT_TRUE(handle);
+  ASSERT_TRUE(hasFlag(handle->attr(), FieldAttribute::GLOBAL));
+  ASSERT_EQ(0, handle->getModID());
+  handle = ctx->getScope()->find("TRUE");
+  ASSERT_TRUE(handle);
+  ASSERT_TRUE(hasFlag(handle->attr(), FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY));
+  ASSERT_EQ(0, handle->getModID());
+  ASSERT_TRUE(ctx->getPool().getDiscardPoint().typeIdOffset <= UINT8_MAX);
 }
 
 int main(int argc, char **argv) {
