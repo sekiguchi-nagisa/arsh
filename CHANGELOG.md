@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+
+#### LSP
+- basic support the following methods/notifications
+  - ``$/setTrace``
+  - ``textDocument/didOpen``
+  - ``textDocument/didChange``
+
+
 ## [0.22.0] - 2021-06-27
 
 ### Added

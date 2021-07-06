@@ -132,6 +132,7 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
   std::string content = ctx->getContent();
   for (auto &change : params.contentChanges) {
     if (!applyChange(content, change)) {
+      LOG(LogLevel::ERROR, "textDocument may lack consistency");
       return;
     }
   }
