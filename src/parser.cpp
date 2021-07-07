@@ -133,7 +133,7 @@ bool Parser::inVarNameCompletionPoint() const {
     auto compTokenKind = this->lexer->getCompTokenKind();
     if (compTokenKind == TokenKind::APPLIED_NAME) {
       auto ref = this->lexer->toStrRef(this->curToken);
-      return ref.find('{') == StringRef::npos;
+      return !ref.contains('{');
     }
   }
   return false;

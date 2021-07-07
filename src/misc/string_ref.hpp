@@ -148,7 +148,15 @@ public:
     return this->find(StringRefBase(str, 1), pos);
   }
 
-  bool hasNullChar() const { return this->find('\0') != npos; }
+  bool contains(char ch) const {
+    return this->find(ch, 0) != npos;
+  }
+
+  bool contains(StringRefBase ref) const {
+    return this->find(ref, 0) != npos;
+  }
+
+  bool hasNullChar() const { return this->contains('\0'); }
 
   size_type indexOf(StringRefBase ref) const { return this->find(ref, 0); }
 
