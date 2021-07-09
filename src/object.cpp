@@ -537,7 +537,7 @@ bool MapObject::opStr(DSState &state) const {
 // ###########################
 
 DSValue MapIterObject::next(TypePool &pool) {
-  std::vector<DSType *> types(2);
+  std::vector<const DSType *> types(2);
   types[0] = &pool.get(this->iter->first.getTypeID());
   types[1] = &pool.get(this->iter->second.getTypeID());
 

@@ -702,7 +702,7 @@ public:
 std::unique_ptr<TypeOpNode> newTypedCastNode(std::unique_ptr<Node> &&targetNode,
                                              const DSType &type);
 
-using HandleOrFuncType = Union<FunctionType *, const MethodHandle *>;
+using HandleOrFuncType = Union<const FunctionType *, const MethodHandle *>;
 
 class ArgsNode : public WithRtti<Node, NodeKind::Args> {
 private:
@@ -1780,12 +1780,12 @@ public:
   /**
    * add recv type of getterNode and setterNode
    */
-  void setRecvType(DSType &type);
+  void setRecvType(const DSType &type);
 
   /**
    * add index type of getterNode and setterNode.
    */
-  void setIndexType(DSType &type);
+  void setIndexType(const DSType &type);
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -1862,7 +1862,7 @@ private:
    */
   unsigned int varIndex{0};
 
-  FunctionType *funcType{nullptr};
+  const FunctionType *funcType{nullptr};
 
 public:
   FunctionNode(unsigned int startPos, std::string &&funcName)
@@ -1908,14 +1908,14 @@ public:
 
   unsigned int getVarIndex() const { return this->varIndex; }
 
-  void setFuncType(FunctionType *type) { this->funcType = type; }
+  void setFuncType(const FunctionType &type) { this->funcType = &type; }
 
   /**
    *
    * @return
    * may be null
    */
-  FunctionType *getFuncType() const { return this->funcType; }
+  const FunctionType *getFuncType() const { return this->funcType; }
 
   void dump(NodeDumper &dumper) const override;
 };

@@ -111,7 +111,7 @@ private:
   std::vector<std::unique_ptr<Context>> contexts;
   ModuleProvider &provider;
   const FrontEndOption option;
-  DSType *prevType{nullptr};
+  const DSType *prevType{nullptr};
   ObserverPtr<ErrorListener> listener;
   ObserverPtr<NodeDumper> uastDumper;
   ObserverPtr<NodeDumper> astDumper;

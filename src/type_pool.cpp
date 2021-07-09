@@ -54,23 +54,23 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::UnixFD, "UnixFD", false, TYPE::Any, info_UnixFDType());
 
   // initialize type template
-  std::vector<DSType *> elements = {&this->get(TYPE::Any)};
+  std::vector<const DSType *> elements = {&this->get(TYPE::Any)};
   this->initTypeTemplate(this->arrayTemplate, TYPE_ARRAY, std::move(elements), info_ArrayType());
 
   elements = {&this->get(TYPE::_Value), &this->get(TYPE::Any)};
   this->initTypeTemplate(this->mapTemplate, TYPE_MAP, std::move(elements), info_MapType());
 
-  elements = std::vector<DSType *>();
+  elements = std::vector<const DSType *>();
   this->initTypeTemplate(this->tupleTemplate, TYPE_TUPLE, std::move(elements),
                          info_TupleType()); // pseudo template.
 
-  elements = std::vector<DSType *>();
+  elements = std::vector<const DSType *>();
   this->initTypeTemplate(this->optionTemplate, TYPE_OPTION, std::move(elements),
                          info_OptionType()); // pseudo template
 
   // init string array type(for command argument)
   {
-    std::vector<DSType *> types = {&this->get(TYPE::String)};
+    std::vector<const DSType *> types = {&this->get(TYPE::String)};
     auto checked =
         this->createReifiedType(this->getArrayTemplate(), std::move(types)); // TYPE::StringArray
     (void)checked;
@@ -121,7 +121,7 @@ DSType *TypePool::addType(DSType *type) {
 }
 
 TypeOrError TypePool::getType(StringRef typeName) const {
-  DSType *type = this->get(typeName);
+  auto *type = this->get(typeName);
   if (type == nullptr) {
     RAISE_TL_ERROR(UndefinedType, typeName.data());
   }
@@ -171,7 +171,7 @@ TypeTempOrError TypePool::getTypeTemplate(const std::string &typeName) const {
 }
 
 TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
-                                        std::vector<DSType *> &&elementTypes) {
+                                        std::vector<const DSType *> &&elementTypes) {
   if (this->tupleTemplate.getName() == typeTemplate.getName()) {
     return this->createTupleType(std::move(elementTypes));
   }
@@ -197,9 +197,9 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   }
 
   std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
-  DSType *type = this->get(typeName);
+  auto *type = this->get(typeName);
   if (type == nullptr) {
-    DSType *superType = hasFlag(attr, TypeAttr::OPTION_TYPE) ? nullptr : &this->get(TYPE::Any);
+    auto *superType = hasFlag(attr, TypeAttr::OPTION_TYPE) ? nullptr : &this->get(TYPE::Any);
     auto &reified = this->newType<ReifiedType>(typeName, typeTemplate.getInfo(), superType,
                                                std::move(elementTypes), attr);
     this->registerHandles(reified);
@@ -208,7 +208,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   return Ok(type);
 }
 
-TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
+TypeOrError TypePool::createTupleType(std::vector<const DSType *> &&elementTypes) {
   auto checked = checkElementTypes(elementTypes, SYS_LIMIT_TUPLE_NUM);
   if (!checked) {
     return checked;
@@ -217,7 +217,7 @@ TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
   assert(!elementTypes.empty());
 
   std::string typeName(toTupleTypeName(elementTypes));
-  DSType *type = this->get(typeName);
+  auto *type = this->get(typeName);
   if (type == nullptr) {
     auto &superType = this->get(TYPE::Any);
     auto &tuple = this->newType<TupleType>(typeName, this->tupleTemplate.getInfo(), superType,
@@ -228,14 +228,15 @@ TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
   return Ok(type);
 }
 
-TypeOrError TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
+TypeOrError TypePool::createFuncType(const DSType &returnType,
+                                     std::vector<const DSType *> &&paramTypes) {
   auto checked = checkElementTypes(paramTypes, SYS_LIMIT_FUNC_PARAM_NUM);
   if (!checked) {
     return checked;
   }
 
   std::string typeName(toFunctionTypeName(returnType, paramTypes));
-  DSType *type = this->get(typeName);
+  auto *type = this->get(typeName);
   if (type == nullptr) {
     type = &this->newType<FunctionType>(typeName, this->get(TYPE::Func), returnType,
                                         std::move(paramTypes));
@@ -244,20 +245,21 @@ TypeOrError TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &
   return Ok(type);
 }
 
-ModType &TypePool::createModType(unsigned short modID,
-                                 std::unordered_map<std::string, FieldHandle> &&handles,
-                                 FlexBuffer<ImportedModEntry> &&children, unsigned int index) {
+const ModType &TypePool::createModType(unsigned short modID,
+                                       std::unordered_map<std::string, FieldHandle> &&handles,
+                                       FlexBuffer<ImportedModEntry> &&children,
+                                       unsigned int index) {
   auto name = toModTypeName(modID);
-  DSType *type = this->get(name);
+  auto *type = this->get(name);
   if (type == nullptr) {
     type = &this->newType<ModType>(this->get(TYPE::Any), modID, std::move(handles),
                                    std::move(children), index);
   }
   assert(type->isModType());
-  return static_cast<ModType &>(*type);
+  return static_cast<const ModType &>(*type);
 }
 
-const ModType & TypePool::getBuiltinModType() const {
+const ModType &TypePool::getBuiltinModType() const {
   auto name = toModTypeName(0);
   auto *type = this->get(name);
   assert(type && type->isModType());
@@ -268,10 +270,10 @@ class TypeDecoder {
 private:
   TypePool &pool;
   const HandleInfo *cursor;
-  const std::vector<DSType *> *types;
+  const std::vector<const DSType *> *types;
 
 public:
-  TypeDecoder(TypePool &pool, const HandleInfo *pos, const std::vector<DSType *> *types)
+  TypeDecoder(TypePool &pool, const HandleInfo *pos, const std::vector<const DSType *> *types)
       : pool(pool), cursor(pos), types(types) {}
   ~TypeDecoder() = default;
 
@@ -304,7 +306,7 @@ TypeOrError TypeDecoder::decode() {
     auto &t = this->pool.getArrayTemplate();
     unsigned int size = this->decodeNum();
     assert(size == 1);
-    std::vector<DSType *> elementTypes(size);
+    std::vector<const DSType *> elementTypes(size);
     elementTypes[0] = TRY(decode());
     return this->pool.createReifiedType(t, std::move(elementTypes));
   }
@@ -312,7 +314,7 @@ TypeOrError TypeDecoder::decode() {
     auto &t = this->pool.getMapTemplate();
     unsigned int size = this->decodeNum();
     assert(size == 2);
-    std::vector<DSType *> elementTypes(size);
+    std::vector<const DSType *> elementTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       elementTypes[i] = TRY(this->decode());
     }
@@ -322,14 +324,14 @@ TypeOrError TypeDecoder::decode() {
     unsigned int size = this->decodeNum();
     if (size == 0) { // variable length type
       size = this->types->size();
-      std::vector<DSType *> elementTypes(size);
+      std::vector<const DSType *> elementTypes(size);
       for (unsigned int i = 0; i < size; i++) {
         elementTypes[i] = (*this->types)[i];
       }
       return this->pool.createTupleType(std::move(elementTypes));
     }
 
-    std::vector<DSType *> elementTypes(size);
+    std::vector<const DSType *> elementTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       elementTypes[i] = TRY(this->decode());
     }
@@ -339,18 +341,18 @@ TypeOrError TypeDecoder::decode() {
     auto &t = this->pool.getOptionTemplate();
     unsigned int size = this->decodeNum();
     assert(size == 1);
-    std::vector<DSType *> elementTypes(size);
+    std::vector<const DSType *> elementTypes(size);
     elementTypes[0] = TRY(this->decode());
     return this->pool.createReifiedType(t, std::move(elementTypes));
   }
   case HandleInfo::Func: {
     auto *retType = TRY(this->decode());
     unsigned int size = this->decodeNum();
-    std::vector<DSType *> paramTypes(size);
+    std::vector<const DSType *> paramTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       paramTypes[i] = TRY(this->decode());
     }
-    return this->pool.createFuncType(retType, std::move(paramTypes));
+    return this->pool.createFuncType(*retType, std::move(paramTypes));
   }
   case HandleInfo::P_N0:
   case HandleInfo::P_N1:
@@ -405,7 +407,7 @@ bool TypePool::allocMethodHandle(const DSType &recv, MethodMap::iterator iter) {
   auto *recvType = TRY2(decoder.decode());
   assert(*recvType == recv);
 
-  auto handle = MethodHandle::create(this->methodIdCount++, recvType, index, returnType,
+  auto handle = MethodHandle::create(this->methodIdCount++, *recvType, index, *returnType,
                                      paramSize - 1); // FIXME:
   for (unsigned int i = 1; i < paramSize; i++) {     // init param types
     handle->paramTypes[i - 1] = TRY2(decoder.decode());
@@ -433,7 +435,7 @@ const MethodHandle *TypePool::lookupMethod(const DSType &recvType, const std::st
 }
 
 std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
-                                        const std::vector<DSType *> &elementTypes) const {
+                                        const std::vector<const DSType *> &elementTypes) const {
   if (typeTemplate == this->getArrayTemplate()) {
     std::string str = "[";
     str += elementTypes[0]->getNameRef();
@@ -473,7 +475,7 @@ std::string TypePool::toReifiedTypeName(const ydsh::TypeTemplate &typeTemplate,
   }
 }
 
-std::string TypePool::toTupleTypeName(const std::vector<DSType *> &elementTypes) {
+std::string TypePool::toTupleTypeName(const std::vector<const DSType *> &elementTypes) {
   std::string str = "(";
   for (unsigned int i = 0; i < elementTypes.size(); i++) {
     if (i > 0) {
@@ -488,8 +490,8 @@ std::string TypePool::toTupleTypeName(const std::vector<DSType *> &elementTypes)
   return str;
 }
 
-std::string TypePool::toFunctionTypeName(DSType *returnType,
-                                         const std::vector<DSType *> &paramTypes) {
+std::string TypePool::toFunctionTypeName(const DSType &returnType,
+                                         const std::vector<const DSType *> &paramTypes) {
   std::string funcTypeName = "(";
   for (unsigned int i = 0; i < paramTypes.size(); i++) {
     if (i > 0) {
@@ -498,15 +500,16 @@ std::string TypePool::toFunctionTypeName(DSType *returnType,
     funcTypeName += paramTypes[i]->getNameRef();
   }
   funcTypeName += ") -> ";
-  funcTypeName += returnType->getNameRef();
+  funcTypeName += returnType.getNameRef();
   return funcTypeName;
 }
 
-TypeOrError TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes, size_t limit) {
-  if(elementTypes.size() > limit) {
+TypeOrError TypePool::checkElementTypes(const std::vector<const DSType *> &elementTypes,
+                                        size_t limit) {
+  if (elementTypes.size() > limit) {
     RAISE_TL_ERROR(ElementLimit);
   }
-  for (DSType *type : elementTypes) {
+  for (auto &type : elementTypes) {
     if (type->isVoidType() || type->isNothingType()) {
       RAISE_TL_ERROR(InvalidElement, type->getName());
     }
@@ -515,7 +518,7 @@ TypeOrError TypePool::checkElementTypes(const std::vector<DSType *> &elementType
 }
 
 TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
-                                        const std::vector<DSType *> &elementTypes) {
+                                        const std::vector<const DSType *> &elementTypes) {
   const unsigned int size = elementTypes.size();
 
   // check element type size
@@ -548,7 +551,8 @@ void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool extendib
 }
 
 void TypePool::initTypeTemplate(TypeTemplate &temp, const char *typeName,
-                                std::vector<DSType *> &&elementTypes, native_type_info_t info) {
+                                std::vector<const DSType *> &&elementTypes,
+                                native_type_info_t info) {
   temp = TypeTemplate(std::string(typeName), std::move(elementTypes), info);
   this->templateMap.emplace(typeName, &temp);
 }

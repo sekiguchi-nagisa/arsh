@@ -534,7 +534,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     this->emitSourcePos(node.getPos());
     auto &exprType = node.getExprNode().getType();
     if (exprType.isOptionType()) {
-      auto elementType = static_cast<ReifiedType &>(exprType).getElementTypes()[0];
+      auto &elementType = static_cast<ReifiedType &>(exprType).getElementTypeAt(0);
 
       auto thenLabel = makeLabel();
       auto mergeLabel = makeLabel();
@@ -543,7 +543,7 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
       this->emitJumpIns(mergeLabel);
 
       this->markLabel(thenLabel);
-      if (!elementType->is(TYPE::String)) {
+      if (!elementType.is(TYPE::String)) {
         this->emitToString();
       }
 

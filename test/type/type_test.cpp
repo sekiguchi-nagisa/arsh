@@ -107,7 +107,7 @@ public:
     this->scope = this->loader.createGlobalScope("(root)", nullptr);
   }
 
-  virtual void assertTypeName(const char *typeName, DSType &type) {
+  virtual void assertTypeName(const char *typeName, const DSType &type) {
     std::string name(typeName);
     // assert type name
     ASSERT_EQ(name, type.getName());
@@ -118,14 +118,14 @@ public:
     ASSERT_TRUE(type == *std::move(ret).take());
   }
 
-  virtual void assertSuperType(DSType &type, DSType &superType) {
+  virtual void assertSuperType(const DSType &type, const DSType &superType) {
     auto *actualSuperType = type.getSuperType();
     ASSERT_TRUE(actualSuperType != nullptr);
     ASSERT_STREQ(actualSuperType->getName(), superType.getName());
     ASSERT_TRUE(*actualSuperType == superType);
   }
 
-  virtual void assertAttribute(TypeAttr set, DSType &type) {
+  virtual void assertAttribute(TypeAttr set, const DSType &type) {
     ASSERT_EQ(hasFlag(set, TypeAttr::EXTENDIBLE), type.isExtendible());
     ASSERT_EQ(hasFlag(set, TypeAttr::FUNC_TYPE), type.isFuncType());
     ASSERT_EQ(hasFlag(set, TypeAttr::RECORD_TYPE), type.isRecordType());
@@ -146,7 +146,7 @@ public:
   }
 
   template <typename T>
-  DSType &toType() {
+  const DSType &toType() {
     auto t = TypeFactory<T>{}();
     auto node = this->checker(nullptr, std::move(t), this->scope);
     assert(node->is(NodeKind::TypeOp));

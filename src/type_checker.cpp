@@ -97,7 +97,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
       return Err(std::move(tempOrError).takeError());
     }
     auto typeTemplate = std::move(tempOrError).take();
-    std::vector<DSType *> elementTypes(size);
+    std::vector<const DSType *> elementTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       elementTypes[i] = &this->checkTypeExactly(*typeNode.getElementTypeNodes()[i]);
     }
@@ -107,11 +107,11 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
     auto &typeNode = cast<FuncTypeNode>(node);
     auto &returnType = this->checkTypeExactly(*typeNode.getReturnTypeNode());
     unsigned int size = typeNode.getParamTypeNodes().size();
-    std::vector<DSType *> paramTypes(size);
+    std::vector<const DSType *> paramTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       paramTypes[i] = &this->checkTypeExactly(*typeNode.getParamTypeNodes()[i]);
     }
-    return this->typePool.createFuncType(&returnType, std::move(paramTypes));
+    return this->typePool.createFuncType(returnType, std::move(paramTypes));
   }
   case TypeNode::Return: {
     auto &typeNode = cast<ReturnTypeNode>(node);
@@ -120,7 +120,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
       return Ok(&this->checkTypeExactly(*typeNode.getTypeNodes()[0]));
     }
 
-    std::vector<DSType *> types(size);
+    std::vector<const DSType *> types(size);
     for (unsigned int i = 0; i < size; i++) {
       types[i] = &this->checkTypeExactly(*typeNode.getTypeNodes()[i]);
     }
@@ -134,8 +134,8 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
   return Ok(static_cast<DSType *>(nullptr)); // for suppressing gcc warning (normally unreachable).
 }
 
-DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNode,
-                               const DSType *unacceptableType, CoercionKind &kind) {
+const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNode,
+                                     const DSType *unacceptableType, CoercionKind &kind) {
   /**
    * if target node is expr node and type is null,
    * try type check.
@@ -181,7 +181,7 @@ DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNode,
   RAISE_TC_ERROR(Required, targetNode, requiredType->getName(), type.getName());
 }
 
-DSType &TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
+const DSType &TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
   auto &type = this->checkTypeAsExpr(targetNode);
   if (type.isNothingType()) {
     RAISE_TC_ERROR(Unacceptable, targetNode, type.getName());
@@ -190,7 +190,7 @@ DSType &TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
 }
 
 void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode) {
-  DSType *blockType = &this->typePool.get(TYPE::Void);
+  auto *blockType = &this->typePool.get(TYPE::Void);
   for (auto iter = blockNode.refNodes().begin(); iter != blockNode.refNodes().end(); ++iter) {
     auto &targetNode = *iter;
     if (blockType->isNothingType()) {
@@ -248,7 +248,7 @@ bool TypeChecker::checkCoercion(const DSType &requiredType, const DSType &target
   return false;
 }
 
-DSType &TypeChecker::resolveCoercionOfJumpValue() {
+const DSType &TypeChecker::resolveCoercionOfJumpValue() {
   auto &jumpNodes = this->breakGather.getJumpNodes();
   if (jumpNodes.empty()) {
     return this->typePool.get(TYPE::Void);
@@ -331,7 +331,7 @@ HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
   if (!type.isFuncType()) {
     RAISE_TC_ERROR(NotCallable, exprNode);
   }
-  return static_cast<FunctionType *>(&type);
+  return static_cast<const FunctionType *>(&type);
 }
 
 HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
@@ -501,7 +501,7 @@ void TypeChecker::visitMapNode(MapNode &node) {
 
 void TypeChecker::visitTupleNode(TupleNode &node) {
   unsigned int size = node.getNodes().size();
-  std::vector<DSType *> types(size);
+  std::vector<const DSType *> types(size);
   for (unsigned int i = 0; i < size; i++) {
     types[i] = &this->checkTypeAsSomeExpr(*node.getNodes()[i]);
   }
@@ -551,7 +551,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
     if (!exprType.isOptionType()) {
       RAISE_TC_ERROR(Required, *node.getExprNode(), "Option type", exprType.getName());
     }
-    node.setType(*static_cast<ReifiedType *>(&exprType)->getElementTypes()[0]);
+    node.setType(static_cast<const ReifiedType *>(&exprType)->getElementTypeAt(0));
   } else {
     if (exprType.isOptionType()) {
       this->resolveCoercion(this->typePool.get(TYPE::Boolean), node.refExprNode());
@@ -586,9 +586,9 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     if (!leftType.isOptionType()) {
       RAISE_TC_ERROR(Required, *node.getLeftNode(), "Option type", leftType.getName());
     }
-    auto &elementType = static_cast<ReifiedType &>(leftType).getElementTypes()[0];
-    this->checkTypeWithCoercion(*elementType, node.refRightNode());
-    node.setType(*elementType);
+    auto &elementType = static_cast<const ReifiedType &>(leftType).getElementTypeAt(0);
+    this->checkTypeWithCoercion(elementType, node.refRightNode());
+    node.setType(elementType);
     return;
   }
 
@@ -634,8 +634,8 @@ void TypeChecker::visitArgsNode(ArgsNode &node) {
       this->checkTypeWithCoercion(handle->getParamTypeAt(i), node.refNodes()[i]);
     }
   } else {
-    auto &paramTypes = get<FunctionType *>(hf)->getParamTypes();
-    unsigned int size = paramTypes.size();
+    auto *funcType = get<const FunctionType *>(hf);
+    unsigned int size = funcType->getParamSize();
     unsigned int argSize = node.getNodes().size();
     // check param size
     if (size != argSize) {
@@ -644,7 +644,7 @@ void TypeChecker::visitArgsNode(ArgsNode &node) {
 
     // check type each node
     for (unsigned int i = 0; i < size; i++) {
-      this->checkTypeWithCoercion(*paramTypes[i], node.refNodes()[i]);
+      this->checkTypeWithCoercion(funcType->getParamTypeAt(i), node.refNodes()[i]);
     }
   }
   node.setType(this->typePool.get(TYPE::Void));
@@ -661,7 +661,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
     node.setHandle(get<const MethodHandle *>(hf));
     node.setType(node.getHandle()->getReturnType());
   } else {
-    node.setType(*get<FunctionType *>(hf)->getReturnType());
+    node.setType(get<const FunctionType *>(hf)->getReturnType());
   }
 }
 
@@ -832,7 +832,7 @@ void TypeChecker::visitForkNode(ForkNode &node) {
   this->checkType(nullptr, node.getExprNode(),
                   node.isJob() ? &this->typePool.get(TYPE::Job) : nullptr);
 
-  DSType *type = nullptr;
+  const DSType *type = nullptr;
   switch (node.getOpKind()) {
   case ForkKind::STR:
     type = &this->typePool.get(TYPE::String);
@@ -988,7 +988,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
     RAISE_TC_ERROR(NeedPattern, node);
   }
   if (exprType->isOptionType()) {
-    exprType = static_cast<ReifiedType *>(exprType)->getElementTypes()[0];
+    exprType = &static_cast<const ReifiedType *>(exprType)->getElementTypeAt(0);
   }
   if (!patternType->isSameOrBaseTypeOf(*exprType)) {
     RAISE_TC_ERROR(Required, node.getExprNode(), patternType->getName(), exprType->getName());
@@ -996,7 +996,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
 
   // resolve arm expr type
   unsigned int size = node.getArmNodes().size();
-  std::vector<DSType *> types(size);
+  std::vector<const DSType *> types(size);
   for (unsigned int i = 0; i < size; i++) {
     types[i] = &this->checkTypeExactly(*node.getArmNodes()[i]);
   }
@@ -1057,7 +1057,7 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   }
 }
 
-DSType &TypeChecker::resolveCommonSuperType(const std::vector<DSType *> &types) {
+const DSType &TypeChecker::resolveCommonSuperType(const std::vector<const DSType *> &types) {
   for (auto &type : types) {
     unsigned int size = types.size();
     unsigned int index = 0;
@@ -1351,7 +1351,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
 }
 
 void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
-  DSType *exprType = nullptr;
+  const DSType *exprType = nullptr;
   FieldAttribute attr{};
   switch (node.getKind()) {
   case VarDeclNode::LET:
@@ -1477,17 +1477,17 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   // resolve return type, param type
   auto &returnType = this->checkTypeExactly(node.getReturnTypeToken());
   unsigned int paramSize = node.getParamTypeNodes().size();
-  std::vector<DSType *> paramTypes(paramSize);
+  std::vector<const DSType *> paramTypes(paramSize);
   for (unsigned int i = 0; i < paramSize; i++) {
     auto &type = this->checkTypeAsSomeExpr(*node.getParamTypeNodes()[i]);
     paramTypes[i] = &type;
   }
 
   // register function handle
-  auto typeOrError = this->typePool.createFuncType(&returnType, std::move(paramTypes));
+  auto typeOrError = this->typePool.createFuncType(returnType, std::move(paramTypes));
   assert(typeOrError);
-  auto &funcType = static_cast<FunctionType &>(*std::move(typeOrError).take());
-  node.setFuncType(&funcType);
+  auto &funcType = static_cast<const FunctionType &>(*std::move(typeOrError).take());
+  node.setFuncType(funcType);
   auto handle = this->addEntry(node, node.getFuncName(), funcType,
                                FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
   node.setVarIndex(handle->getIndex());
@@ -1498,7 +1498,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     for (unsigned int i = 0; i < paramSize; i++) {
       VarNode &paramNode = *node.getParamNodes()[i];
       auto fieldHandle = this->addEntry(paramNode, paramNode.getVarName(),
-                                        *funcType.getParamTypes()[i], FieldAttribute());
+                                        funcType.getParamTypeAt(i), FieldAttribute());
       paramNode.setAttribute(*fieldHandle);
     }
     // check type func body

@@ -1987,7 +1987,7 @@ DSValue VM::callFunction(DSState &state, DSValue &&funcObj,
   if (prepareFuncCall(state, size)) {
     assert(type.isFuncType());
     EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
-    if (!static_cast<FunctionType &>(type).getReturnType()->isVoidType()) {
+    if (!static_cast<const FunctionType &>(type).getReturnType().isVoidType()) {
       setFlag(op, EvalOP::HAS_RETURN);
     }
     startEval(state, op, nullptr, ret);

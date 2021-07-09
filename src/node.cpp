@@ -793,12 +793,12 @@ ElementSelfAssignNode::ElementSelfAssignNode(std::unique_ptr<ApplyNode> &&leftNo
   this->setterNode->getArgsNode().addNode(std::make_unique<EmptyNode>());
 }
 
-void ElementSelfAssignNode::setRecvType(DSType &type) {
+void ElementSelfAssignNode::setRecvType(const DSType &type) {
   this->getterNode->getRecvNode().setType(type);
   this->setterNode->getRecvNode().setType(type);
 }
 
-void ElementSelfAssignNode::setIndexType(DSType &type) {
+void ElementSelfAssignNode::setIndexType(const DSType &type) {
   this->getterNode->getArgsNode().refNodes()[0]->setType(type);
   this->setterNode->getArgsNode().refNodes()[0]->setType(type);
 }

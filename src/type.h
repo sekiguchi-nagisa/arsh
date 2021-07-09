@@ -282,27 +282,33 @@ public:
 
 class FunctionType : public DSType {
 private:
-  DSType *returnType;
+  const DSType &returnType;
 
   /**
    * may be empty vector, if has no parameter
    */
-  std::vector<DSType *> paramTypes;
+  std::vector<const DSType *> paramTypes;
 
 public:
-  FunctionType(unsigned int id, StringRef ref, const DSType &superType, DSType *returnType,
-               std::vector<DSType *> &&paramTypes)
+  FunctionType(unsigned int id, StringRef ref, const DSType &superType, const DSType &returnType,
+               std::vector<const DSType *> &&paramTypes)
       : DSType(id, ref, &superType, TypeAttr::FUNC_TYPE), returnType(returnType),
         paramTypes(std::move(paramTypes)) {}
 
   ~FunctionType() override = default;
 
-  DSType *getReturnType() const { return this->returnType; }
+  const DSType &getReturnType() const { return this->returnType; }
 
   /**
-   * may be empty vector, if has no parameter (getParamSize() == 0)
+   * may be 0 if has no parameters
    */
-  const std::vector<DSType *> &getParamTypes() const { return this->paramTypes; }
+  unsigned int getParamSize() const {
+    return this->paramTypes.size();
+  }
+
+  const DSType &getParamTypeAt(unsigned int index) const {
+    return *this->paramTypes[index];
+  }
 };
 
 /**
@@ -374,20 +380,28 @@ protected:
   /**
    * size is 1 or 2.
    */
-  std::vector<DSType *> elementTypes;
+  std::vector<const DSType *> elementTypes;
 
 public:
   /**
    * super type is AnyType or null (if represents Option type)
    */
   ReifiedType(unsigned int id, StringRef ref, native_type_info_t info, const DSType *superType,
-              std::vector<DSType *> &&elementTypes, TypeAttr attribute = TypeAttr())
+              std::vector<const DSType *> &&elementTypes, TypeAttr attribute = TypeAttr())
       : BuiltinType(id, ref, superType, info, attribute | TypeAttr::REIFIED_TYPE),
         elementTypes(std::move(elementTypes)) {}
 
   ~ReifiedType() override = default;
 
-  const std::vector<DSType *> &getElementTypes() const { return this->elementTypes; }
+  const std::vector<const DSType *> &getElementTypes() const { return this->elementTypes; }
+
+  unsigned int getElementSize() const {
+    return this->elementTypes.size();
+  }
+
+  const DSType &getElementTypeAt(unsigned int index) const {
+    return *this->elementTypes[index];
+  }
 };
 
 class TupleType : public ReifiedType {
@@ -399,7 +413,7 @@ public:
    * superType is AnyType ot VariantType
    */
   TupleType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
-            std::vector<DSType *> &&types);
+            std::vector<const DSType *> &&types);
 
   /**
    * return types.size()
@@ -522,14 +536,15 @@ class TypeTemplate {
 private:
   std::string name;
 
-  std::vector<DSType *> acceptableTypes;
+  std::vector<const DSType *> acceptableTypes;
 
   native_type_info_t info;
 
 public:
   TypeTemplate() = default;
 
-  TypeTemplate(std::string &&name, std::vector<DSType *> &&elementTypes, native_type_info_t info)
+  TypeTemplate(std::string &&name, std::vector<const DSType *> &&elementTypes,
+               native_type_info_t info)
       : name(std::move(name)), acceptableTypes(std::move(elementTypes)), info(info) {}
 
   ~TypeTemplate() = default;
@@ -542,7 +557,7 @@ public:
 
   native_type_info_t getInfo() const { return this->info; }
 
-  const std::vector<DSType *> &getAcceptableTypes() const { return this->acceptableTypes; }
+  const std::vector<const DSType *> &getAcceptableTypes() const { return this->acceptableTypes; }
 };
 
 class MethodHandle {
@@ -560,23 +575,23 @@ private:
 
   const bool native{true}; // currently only support native method
 
-  const DSType *returnType;
+  const DSType &returnType;
 
-  const DSType *recvType;
+  const DSType &recvType;
 
   /**
    * not contains receiver type
    */
   const DSType *paramTypes[];
 
-  MethodHandle(unsigned int id, const DSType *recv, unsigned short index, const DSType *ret,
+  MethodHandle(unsigned int id, const DSType &recv, unsigned short index, const DSType &ret,
                unsigned short paramSize)
       : methodId(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
     assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }
 
-  static std::unique_ptr<MethodHandle> create(unsigned int count, const DSType *recv,
-                                              unsigned int index, const DSType *ret,
+  static std::unique_ptr<MethodHandle> create(unsigned int count, const DSType &recv,
+                                              unsigned int index, const DSType &ret,
                                               unsigned int paramSize) {
     void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
     auto *handle = new (ptr) MethodHandle(count, recv, index, ret, paramSize);
@@ -594,9 +609,9 @@ public:
 
   unsigned short getMethodIndex() const { return this->methodIndex; }
 
-  const DSType &getReturnType() const { return *this->returnType; }
+  const DSType &getReturnType() const { return this->returnType; }
 
-  const DSType &getRecvType() const { return *this->recvType; }
+  const DSType &getRecvType() const { return this->recvType; }
 
   unsigned short getParamSize() const { return this->paramSize; }
 

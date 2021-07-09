@@ -42,7 +42,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     return true;
   }
   if (this->isOptionType()) {
-    return static_cast<const ReifiedType *>(this)->getElementTypes()[0]->isSameOrBaseTypeOf(
+    return static_cast<const ReifiedType *>(this)->getElementTypeAt(0).isSameOrBaseTypeOf(
         targetType);
   }
   auto *type = targetType.getSuperType();
@@ -54,7 +54,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
 // #######################
 
 TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
-                     const DSType &superType, std::vector<DSType *> &&types)
+                     const DSType &superType, std::vector<const DSType *> &&types)
     : ReifiedType(id, ref, info, &superType, std::move(types)) {
   const unsigned int size = this->elementTypes.size();
   const unsigned int baseIndex = this->superType->getFieldSize();

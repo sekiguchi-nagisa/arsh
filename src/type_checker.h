@@ -186,7 +186,7 @@ protected:
    * if node type is void type, throw exception.
    * return resolved type.
    */
-  DSType &checkTypeAsExpr(Node &targetNode) {
+  const DSType &checkTypeAsExpr(Node &targetNode) {
     return this->checkType(nullptr, targetNode, &this->typePool.get(TYPE::Void));
   }
 
@@ -195,7 +195,7 @@ protected:
    * @param targetNode
    * @return
    */
-  DSType &checkTypeAsSomeExpr(Node &targetNode);
+  const DSType &checkTypeAsSomeExpr(Node &targetNode);
 
   /**
    * check node type
@@ -203,7 +203,7 @@ protected:
    * if requiredType is not equivalent to node type, throw exception.
    * return resolved type.
    */
-  DSType &checkType(const DSType &requiredType, Node &targetNode) {
+  const DSType &checkType(const DSType &requiredType, Node &targetNode) {
     return this->checkType(&requiredType, targetNode, nullptr);
   }
 
@@ -212,7 +212,7 @@ protected:
    * @param targetNode
    * @return
    */
-  DSType &checkTypeExactly(Node &targetNode) {
+  const DSType &checkTypeExactly(Node &targetNode) {
     return this->checkType(nullptr, targetNode, nullptr);
   }
 
@@ -226,7 +226,8 @@ protected:
    * and if unacceptableType is equivalent to node type, throw exception.
    * return resolved type.
    */
-  DSType &checkType(const DSType *requiredType, Node &targetNode, const DSType *unacceptableType) {
+  const DSType &checkType(const DSType *requiredType, Node &targetNode,
+                          const DSType *unacceptableType) {
     CoercionKind kind = CoercionKind::NOP;
     return this->checkType(requiredType, targetNode, unacceptableType, kind);
   }
@@ -234,8 +235,8 @@ protected:
   /**
    * root method of checkType
    */
-  DSType &checkType(const DSType *requiredType, Node &targetNode, const DSType *unacceptableType,
-                    CoercionKind &kind);
+  const DSType &checkType(const DSType *requiredType, Node &targetNode,
+                          const DSType *unacceptableType, CoercionKind &kind);
 
   void checkTypeWithCurrentScope(BlockNode &blockNode) {
     this->checkTypeWithCurrentScope(&this->typePool.get(TYPE::Void), blockNode);
@@ -263,7 +264,7 @@ protected:
     this->resolveCastOp(cast<TypeOpNode>(*targetNode));
   }
 
-  DSType &resolveCoercionOfJumpValue();
+  const DSType &resolveCoercionOfJumpValue();
 
   const FieldHandle *addEntry(const Node &node, const std::string &symbolName, const DSType &type,
                               FieldAttribute attribute);
@@ -379,7 +380,7 @@ protected:
     CaseNode::Kind kind{CaseNode::MAP};
     std::unique_ptr<PatternMap> map;
     bool elsePattern{false};
-    DSType *type{nullptr};
+    const DSType *type{nullptr};
 
   public:
     bool hasElsePattern() const { return this->elsePattern; }
@@ -390,9 +391,9 @@ protected:
 
     auto getKind() const { return this->kind; }
 
-    void setType(DSType *t) { this->type = t; }
+    void setType(const DSType *t) { this->type = t; }
 
-    DSType *getType() const { return this->type; }
+    const DSType *getType() const { return this->type; }
 
     /**
      * try to collect constant node.
@@ -411,7 +412,7 @@ protected:
    * @return
    * if not found, return void type.
    */
-  DSType &resolveCommonSuperType(const std::vector<DSType *> &types);
+  const DSType &resolveCommonSuperType(const std::vector<const DSType *> &types);
 
   /**
    *
