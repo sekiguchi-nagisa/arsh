@@ -209,7 +209,7 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
 }
 
 TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
-  auto checked = checkElementTypes(elementTypes);
+  auto checked = checkElementTypes(elementTypes, SYS_LIMIT_TUPLE_NUM);
   if (!checked) {
     return checked;
   }
@@ -229,7 +229,7 @@ TypeOrError TypePool::createTupleType(std::vector<DSType *> &&elementTypes) {
 }
 
 TypeOrError TypePool::createFuncType(DSType *returnType, std::vector<DSType *> &&paramTypes) {
-  auto checked = checkElementTypes(paramTypes);
+  auto checked = checkElementTypes(paramTypes, SYS_LIMIT_FUNC_PARAM_NUM);
   if (!checked) {
     return checked;
   }
@@ -502,7 +502,10 @@ std::string TypePool::toFunctionTypeName(DSType *returnType,
   return funcTypeName;
 }
 
-TypeOrError TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes) {
+TypeOrError TypePool::checkElementTypes(const std::vector<DSType *> &elementTypes, size_t limit) {
+  if(elementTypes.size() > limit) {
+    RAISE_TL_ERROR(ElementLimit);
+  }
   for (DSType *type : elementTypes) {
     if (type->isVoidType() || type->isNothingType()) {
       RAISE_TL_ERROR(InvalidElement, type->getName());

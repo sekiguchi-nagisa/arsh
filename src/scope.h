@@ -291,7 +291,7 @@ struct allow_enum_bitop<ModLoadOption> : std::true_type {};
 
 class ModuleLoaderBase {
 public:
-  static constexpr unsigned int MAX_MOD_NUM = UINT16_MAX;
+  static constexpr unsigned int MAX_MOD_NUM = SYS_LIMIT_MOD_ID;
 
   virtual ~ModuleLoaderBase() = default;
 

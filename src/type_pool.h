@@ -120,7 +120,7 @@ private:
 
   MethodMap methodMap;
 
-  static constexpr unsigned int MAX_TYPE_NUM = 0xFFFFFF;
+  static constexpr unsigned int MAX_TYPE_NUM = SYS_LIMIT_TYPE_ID;
 
 public:
   NON_COPYABLE(TypePool);
@@ -262,7 +262,7 @@ private:
    * @return
    * if success, return null
    */
-  static TypeOrError checkElementTypes(const std::vector<DSType *> &elementTypes);
+  static TypeOrError checkElementTypes(const std::vector<DSType *> &elementTypes, size_t limit);
 
   /**
    *

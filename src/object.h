@@ -1039,7 +1039,7 @@ struct LineNumEntry {
   unsigned int address;
   unsigned int lineNum;
 
-  explicit operator bool() const { return this->address != CODE_MAX_LEN; }
+  explicit operator bool() const { return this->address != SYS_LIMIT_FUNC_LEN; }
 };
 
 struct ExceptionEntry {

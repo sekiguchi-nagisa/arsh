@@ -222,7 +222,7 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
   if (!hasFlag(attr, FieldAttribute::ALIAS)) {
     if (!hasFlag(attr, FieldAttribute::GLOBAL)) {
       assert(!this->isGlobal());
-      if (this->curLocalIndex == UINT8_MAX) {
+      if (this->curLocalIndex == SYS_LIMIT_LOCAL_NUM) {
         return Err(NameLookupError::LIMIT);
       }
     }

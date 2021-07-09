@@ -220,7 +220,6 @@ inline bool isVarName(StringRef ref) {
 }
 
 // =====  other constants  =====
-constexpr size_t CODE_MAX_LEN = UINT32_MAX;
 
 constexpr const char *BUILD_ARCH =
 #ifdef __x86_64__
@@ -266,6 +265,19 @@ constexpr const char *LOCAL_MOD_DIR = "~/.ydsh/module";
 
 constexpr const char *SYSTEM_DATA_DIR = X_DATADIR "/ydsh";
 constexpr const char *SYSTEM_MOD_DIR = X_DATADIR "/ydsh/module";
+
+// ===== limit ======
+
+constexpr size_t SYS_LIMIT_TYPE_ID = 0xFFFFFF; // UINT24_MAX
+constexpr size_t SYS_LIMIT_TUPLE_NUM = UINT8_MAX;
+constexpr size_t SYS_LIMIT_FUNC_PARAM_NUM = UINT8_MAX;
+constexpr size_t SYS_LIMIT_METHOD_PARAM_NUM = UINT8_MAX - 1;
+constexpr size_t SYS_LIMIT_MOD_ID = UINT16_MAX;
+constexpr size_t SYS_LIMIT_GLOBAL_NUM = UINT16_MAX; //FIXME: check global var limit
+constexpr size_t SYS_LIMIT_LOCAL_NUM = UINT8_MAX;
+constexpr size_t SYS_LIMIT_PIPE_LEN = 250;
+constexpr size_t SYS_LIMIT_GLOB_FRAG_NUM = UINT8_MAX;
+constexpr size_t SYS_LIMIT_FUNC_LEN = UINT32_MAX;
 
 } // namespace ydsh
 

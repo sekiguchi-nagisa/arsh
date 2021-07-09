@@ -78,7 +78,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
   auto *constPool = std::move(this->constBuffer).take();
 
   // extract source pos entry
-  this->lineNumEntries.push_back({CODE_MAX_LEN, 0});
+  this->lineNumEntries.push_back({SYS_LIMIT_FUNC_LEN, 0});
   auto *entries = this->lineNumEntries.take();
 
   // create exception entry
@@ -284,7 +284,7 @@ void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) 
 void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool lastPipe,
                                         ForkKind forkKind) {
   const unsigned int size = labels.size();
-  if (size > UINT8_MAX) {
+  if (size > SYS_LIMIT_PIPE_LEN) {
     fatal("reach limit\n");
   }
 
@@ -735,7 +735,7 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
       }
     }
     this->emit0byteIns(OpCode::PUSH_NULL); // sentinel
-    assert(node.getGlobPathSize() <= UINT8_MAX);
+    assert(node.getGlobPathSize() <= SYS_LIMIT_GLOB_FRAG_NUM);
     this->emitGlobIns(node.getGlobPathSize(), node.isTilde());
   } else {
     this->generateCmdArg(node);

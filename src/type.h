@@ -572,7 +572,7 @@ private:
   MethodHandle(unsigned int id, const DSType *recv, unsigned short index, const DSType *ret,
                unsigned short paramSize)
       : methodId(id), methodIndex(index), paramSize(paramSize), returnType(ret), recvType(recv) {
-    assert(paramSize <= UINT8_MAX);
+    assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
   }
 
   static std::unique_ptr<MethodHandle> create(unsigned int count, const DSType *recv,

@@ -745,7 +745,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
            exprNode->getType().is(TYPE::UnixFD) || exprNode->getType().isNothingType());
   }
 
-  if (node.getGlobPathSize() > UINT8_MAX) {
+  if (node.getGlobPathSize() > SYS_LIMIT_GLOB_FRAG_NUM) {
     RAISE_TC_ERROR(GlobLimit, node);
   }
 
@@ -790,7 +790,7 @@ void TypeChecker::visitWildCardNode(WildCardNode &node) {
 
 void TypeChecker::visitPipelineNode(PipelineNode &node) {
   unsigned int size = node.getNodes().size();
-  if (size > 250) {
+  if (size > SYS_LIMIT_PIPE_LEN) {
     RAISE_TC_ERROR(PipeLimit, node);
   }
 
