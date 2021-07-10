@@ -9,7 +9,8 @@ add_library(ydshd_static STATIC
         server.cpp
         lsp.cpp
         ast.cpp
-        analyzer.cpp)
+        analyzer.cpp
+        archive.cpp)
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri)
 
 add_executable(${LSP_SRV} main.cpp)

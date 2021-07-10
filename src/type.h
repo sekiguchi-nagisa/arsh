@@ -475,7 +475,7 @@ public:
 
   unsigned short getModID() const { return this->modID; }
 
-  unsigned int getChildSize() const { return this->childSize; }
+  unsigned short getChildSize() const { return this->childSize; }
 
   ImportedModEntry getChildAt(unsigned int i) const {
     assert(i < this->childSize);

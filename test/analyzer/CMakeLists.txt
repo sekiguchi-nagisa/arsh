@@ -25,3 +25,16 @@ add_executable(${TEST_NAME}
 add_dependencies(${TEST_NAME} ${BIN_NAME})
 target_link_libraries(${TEST_NAME} gtest gtest_main ydshd_static test_common)
 add_test(${TEST_NAME} ${TEST_NAME})
+
+
+#=====================#
+#     ArchiveTest     #
+#=====================#
+
+set(TEST_NAME archive_test)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(${TEST_NAME}
+        archive_test.cpp
+        )
+target_link_libraries(${TEST_NAME} gtest gtest_main ydshd_static )
+add_test(${TEST_NAME} ${TEST_NAME})
