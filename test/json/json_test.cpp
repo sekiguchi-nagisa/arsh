@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 
 #include "jsonrpc.h"
-#include "serialize.h"
 
 using namespace ydsh;
 using namespace json;
@@ -345,8 +344,7 @@ struct AAA {
   BBB a2;
 };
 
-namespace ydsh {
-namespace json {
+namespace ydsh::json {
 
 template <typename T>
 void jsonify(T &t, AAA &v) {
@@ -354,8 +352,7 @@ void jsonify(T &t, AAA &v) {
   t("a2", v.a2);
 }
 
-} // namespace json
-} // namespace ydsh
+} // namespace json::ydsh
 
 TEST(SerializeTest, object) {
   AAA v = {.a1 = 190,

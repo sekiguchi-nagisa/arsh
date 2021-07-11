@@ -17,6 +17,7 @@ static std::vector<std::string> tokenize(const char *str) {
     case ')': {
       if (!tokenBuf.empty()) {
         tokens.push_back(std::move(tokenBuf));
+        tokenBuf = "";
       }
 
       tokenBuf += ch;
@@ -27,6 +28,7 @@ static std::vector<std::string> tokenize(const char *str) {
     case '\t': {
       if (!tokenBuf.empty()) {
         tokens.push_back(std::move(tokenBuf));
+        tokenBuf = "";
       }
       break;
     }

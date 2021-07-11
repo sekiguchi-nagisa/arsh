@@ -4,8 +4,6 @@
 #include "../test_common.h"
 #include <config.h>
 #include <constant.h>
-#include <misc/fatal.h>
-#include <misc/files.h>
 
 #ifndef BIN_PATH
 #define "require BIN_PATH"
@@ -67,7 +65,7 @@ public:
 
 template <unsigned int N>
 static std::string toString(const char (&value)[N]) {
-  static_assert(N > 0, "");
+  static_assert(N > 0);
   return std::string(value, N - 1);
 }
 

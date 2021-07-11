@@ -1,7 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <memory>
-
 #include "misc/detect.hpp"
 #include "misc/result.hpp"
 
@@ -12,14 +10,12 @@ TEST(result, tag) {
   static_assert(TypeTag<unsigned int, std::string, int>::value == -1, "must be -1");
   static_assert(TypeTag<unsigned int>::value == -1, "must be -1");
 
-  static_assert(std::is_same<int, typename TypeByIndex<0, int>::type>::value, "");
-  static_assert(std::is_same<int, typename TypeByIndex<0, int, void *, std::string>::type>::value,
-                "");
+  static_assert(std::is_same<int, typename TypeByIndex<0, int>::type>::value);
+  static_assert(std::is_same<int, typename TypeByIndex<0, int, void *, std::string>::type>::value);
   static_assert(
-      std::is_same<void *, typename TypeByIndex<1, int, void *, std::string>::type>::value, "");
+      std::is_same<void *, typename TypeByIndex<1, int, void *, std::string>::type>::value);
   static_assert(
-      std::is_same<std::string, typename TypeByIndex<2, int, void *, std::string>::type>::value,
-      "");
+      std::is_same<std::string, typename TypeByIndex<2, int, void *, std::string>::type>::value);
 }
 
 TEST(result, storage1) {
@@ -194,10 +190,10 @@ template <typename T>
 using hasValue_member = decltype(&T::hasValue);
 
 TEST(result, optional3) {
-  static_assert(is_detected_v<hasValue_member, Optional<int>>, "");
-  static_assert(!is_detected_v<hasValue_member, std::string>, "");
+  static_assert(is_detected_v<hasValue_member, Optional<int>>);
+  static_assert(!is_detected_v<hasValue_member, std::string>);
 
-  static_assert(std::is_same<Optional<float>, Optional<Optional<float>>>::value, "");
+  static_assert(std::is_same<Optional<float>, Optional<Optional<float>>>::value);
   ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<int>>));
   ASSERT_EQ(sizeof(Optional<int>), sizeof(Optional<Optional<Optional<int>>>));
   Optional<Optional<int>> ret;

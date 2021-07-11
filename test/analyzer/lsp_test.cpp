@@ -1,5 +1,4 @@
 #include "../test_common.h"
-#include "gtest/gtest.h"
 
 #include "lsp.h"
 #include "server.h"

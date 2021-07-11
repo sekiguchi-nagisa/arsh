@@ -1,5 +1,4 @@
 #include "../test_common.h"
-#include "gtest/gtest.h"
 
 #include <fstream>
 
@@ -37,7 +36,7 @@ public:
   ASTDumpTest() : INIT_TEMP_FILE_FACTORY(analyzer_test) {}
 
 protected:
-  void readContent(const std::string &fileName, std::string &value) {
+  static void readContent(const std::string &fileName, std::string &value) {
     std::ifstream input(fileName);
     ASSERT_FALSE(!input);
 
@@ -47,14 +46,14 @@ protected:
     }
   }
 
-  void readContent(std::string &value) { this->readContent(this->getTempFileName(), value); }
+  void readContent(std::string &value) { readContent(this->getTempFileName(), value); }
 
   void doTest() {
     // dump ast
     std::string dump = "--dump-ast=";
     dump += this->getTempFileName();
 
-    auto ret = ProcBuilder{BIN_PATH, dump.c_str(), "--check-only", this->GetParam().c_str()}.exec();
+    auto ret = ProcBuilder{BIN_PATH, dump.c_str(), "--check-only", GetParam().c_str()}.exec();
     ASSERT_EQ(WaitStatus::EXITED, ret.kind);
     ASSERT_EQ(0, ret.value);
     std::string expected;
@@ -62,25 +61,25 @@ protected:
 
     // dump analyzer output
     std::string content;
-    this->readContent(this->GetParam(), content);
+    readContent(GetParam(), content);
     ASTContextProvider provider;
     DiagnosticEmitter emitter;
     std::string path = "file://";
-    path += this->GetParam();
+    path += GetParam();
     auto ctx = provider.addNew(uri::URI::fromString(path), std::move(content), 0);
     buildAST(provider, emitter, ctx);
 
     std::string tempFileName;
     auto tmpFile = this->createTempFilePtr(tempFileName, "");
     NodeDumper dumper(tmpFile.get());
-    dumper.initialize(this->GetParam(), "### dump typed AST ###");
+    dumper.initialize(GetParam(), "### dump typed AST ###");
     for (auto &node : ctx->getNodes()) {
       dumper(*node);
     }
     dumper.finalize(*ctx->getScope());
     tmpFile.reset();
     content = std::string();
-    this->readContent(tempFileName, content);
+    readContent(tempFileName, content);
     ASSERT_EQ(expected, content);
   }
 };
@@ -107,7 +106,7 @@ static std::vector<std::string> getTargetCases(const char *dir) {
 }
 
 TEST_P(ASTDumpTest, base) {
-  printf("@@ test script %s\n", this->GetParam().c_str());
+  printf("@@ test script %s\n", GetParam().c_str());
   ASSERT_NO_FATAL_FAILURE(this->doTest());
 }
 

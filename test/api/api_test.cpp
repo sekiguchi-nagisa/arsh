@@ -1,8 +1,5 @@
 #include "gtest/gtest.h"
 
-#include <algorithm>
-#include <array>
-
 #include <config.h>
 #include <constant.h>
 #include <misc/fatal.h>

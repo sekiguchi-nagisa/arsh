@@ -1,7 +1,5 @@
 #include "gtest/gtest.h"
 
-#include <sstream>
-
 #include <misc/resource.hpp>
 
 using namespace ydsh;
@@ -46,8 +44,8 @@ using AAA = IntrusivePtr<AAAImpl, AAAOp>;
 using BBB = IntrusivePtr<BBBImpl, AAAOp>;
 
 TEST(intrusive, base) {
-  static_assert(sizeof(AAA) == sizeof(long), "");
-  static_assert(sizeof(BBB) == sizeof(long), "");
+  static_assert(sizeof(AAA) == sizeof(long));
+  static_assert(sizeof(BBB) == sizeof(long));
 
   auto a = AAA::create();
   ASSERT_STREQ("AAA", a->name());

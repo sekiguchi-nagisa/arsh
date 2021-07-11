@@ -1,8 +1,6 @@
 #include "gtest/gtest.h"
 
 #include "../test_common.h"
-#include <misc/buffer.hpp>
-#include <misc/files.h>
 
 #ifndef BIN_PATH
 #define BIN_PATH "./ydsh"
@@ -34,7 +32,7 @@ public:
     ASSERT_TRUE(fp != nullptr);
     int fd = fileno(fp);
     while (true) {
-      int readSize = read(fd, data, std::size(data));
+      ssize_t readSize = read(fd, data, std::size(data));
       if (readSize > 0) {
         buffer.append(data, readSize);
       }

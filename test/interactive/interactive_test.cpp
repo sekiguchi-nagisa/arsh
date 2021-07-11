@@ -3,7 +3,6 @@
 #include "../../tools/platform/platform.h"
 #include "../test_common.h"
 #include <config.h>
-#include <misc/files.h>
 
 #ifndef INTERACTIVE_TEST_WORK_DIR
 #error "require INTERACTIVE_TEST_WORK_DIR"

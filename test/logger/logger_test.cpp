@@ -1,5 +1,4 @@
 #include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 #include <thread>
 
@@ -32,8 +31,9 @@ struct LoggerTest : public ExpectOutput {
         .waitAndGetResult(false);
   }
 
-  void expectRegex(const Output &output, int status = 0, WaitStatus::Kind type = WaitStatus::EXITED,
-                   const char *out = "", const char *err = "") {
+  static void expectRegex(const Output &output, int status = 0,
+                          WaitStatus::Kind type = WaitStatus::EXITED, const char *out = "",
+                          const char *err = "") {
     ASSERT_TRUE(out != nullptr);
     ASSERT_TRUE(err != nullptr);
 

@@ -17,7 +17,6 @@
 #include <cstdarg>
 
 #include "test_common.h"
-#include <misc/fatal.h>
 
 std::string format(const char *fmt, ...) {
   va_list arg;

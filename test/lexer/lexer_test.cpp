@@ -2033,7 +2033,7 @@ TEST(LineNumTest, case4) {
   (int[]) { __VA_ARGS__ }
 
 struct EscapeSeqTest : public ::testing::Test {
-  void assertEscape(StringRef ref, std::vector<int> &&codes, bool needPrefix = false) {
+  static void assertEscape(StringRef ref, std::vector<int> &&codes, bool needPrefix = false) {
     std::vector<int> out;
     const char *begin = ref.begin();
     const char *end = ref.end();

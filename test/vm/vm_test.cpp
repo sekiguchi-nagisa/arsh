@@ -1,9 +1,6 @@
 #include "gtest/gtest.h"
 
-#include <functional>
-
 #include <vm.h>
-#include <ydsh/ydsh.h>
 
 #include "../test_common.h"
 

@@ -5,7 +5,6 @@
 #include <directive.h>
 #include <misc/files.h>
 #include <misc/string_ref.hpp>
-#include <ydsh/ydsh.h>
 
 #include "../test_common.h"
 

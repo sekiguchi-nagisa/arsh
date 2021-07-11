@@ -4,7 +4,6 @@
 
 #include <misc/grapheme.hpp>
 #include <misc/num_util.hpp>
-#include <misc/unicode.hpp>
 
 #include "../test_common.h"
 
@@ -14,7 +13,7 @@ class UnicodeTest : public ::testing::Test {
 public:
   UnicodeTest() = default;
 
-  void toCodePoint(const char *str, int &codePoint) {
+  static void toCodePoint(const char *str, int &codePoint) {
     ASSERT_TRUE(str != nullptr);
 
     int code = 0;
@@ -28,25 +27,25 @@ public:
   }
 
   template <unsigned int N>
-  void assertByteSize(const unsigned int size, const char (&str)[N]) {
+  static void assertByteSize(const unsigned int size, const char (&str)[N]) {
     ASSERT_EQ(size, UnicodeUtil::utf8ValidateChar(str, str + N));
   }
 
-  void assertCodePoint(const int expect, const char *str) {
+  static void assertCodePoint(const int expect, const char *str) {
     int code = 0;
-    this->toCodePoint(str, code);
+    toCodePoint(str, code);
     ASSERT_EQ(expect, code);
   }
 
-  void assertWidth(const int width, const char *str, bool ambiguousWidth2 = false) {
+  static void assertWidth(const int width, const char *str, bool ambiguousWidth2 = false) {
     int codePoint = 0;
-    this->toCodePoint(str, codePoint);
+    toCodePoint(str, codePoint);
 
     auto e = ambiguousWidth2 ? UnicodeUtil::FULL_WIDTH : UnicodeUtil::HALF_WIDTH;
     ASSERT_EQ(width, UnicodeUtil::width(codePoint, e));
   }
 
-  void assertIllegal(const char *const buf, unsigned int bufSize) {
+  static void assertIllegal(const char *const buf, unsigned int bufSize) {
     int codePoint = 0;
     ASSERT_EQ(0u, UnicodeUtil::utf8ToCodePoint(buf, bufSize, codePoint));
     ASSERT_EQ(-1, codePoint);
@@ -55,11 +54,11 @@ public:
   }
 
   template <unsigned int N>
-  void assertCodePoint2Utf8(const char (&ch)[N]) {
-    this->assertCodePoint2Utf8(ch, N - 1);
+  static void assertCodePoint2Utf8(const char (&ch)[N]) {
+    assertCodePoint2Utf8(ch, N - 1);
   }
 
-  void assertCodePoint2Utf8(const char *ch, unsigned int byteSize) {
+  static void assertCodePoint2Utf8(const char *ch, unsigned int byteSize) {
     char buf[4];
     int codePoint = UnicodeUtil::utf8ToCodePoint(ch, byteSize);
     unsigned int size = UnicodeUtil::codePointToUtf8(codePoint, buf);
@@ -71,35 +70,35 @@ public:
 };
 
 TEST_F(UnicodeTest, size) {
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(1, ""));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(1, "1"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(1, "a"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(1, "\n"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(1, "\t"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(2, "å"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(2, "¶"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(2, "Ω"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(3, "あ"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(3, "解"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(3, "墨"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(3, "ｱ"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(4, "𪗱"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(4, "𣏤"));
-  ASSERT_NO_FATAL_FAILURE(this->assertByteSize(4, "𣴀"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(1, ""));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(1, "1"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(1, "a"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(1, "\n"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(1, "\t"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(2, "å"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(2, "¶"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(2, "Ω"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(3, "あ"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(3, "解"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(3, "墨"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(3, "ｱ"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(4, "𪗱"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(4, "𣏤"));
+  ASSERT_NO_FATAL_FAILURE(assertByteSize(4, "𣴀"));
 }
 
 TEST_F(UnicodeTest, codepoint2utf8) {
   char buf[4];
   ASSERT_EQ(0, UnicodeUtil::codePointToUtf8(-3, buf));
 
-  ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("\0"));
-  ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("a"));
-  ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("å"));
-  ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("¶"));
-  ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("あ"));
-  ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("ｱ"));
-  ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("𣏤"));
-  ASSERT_NO_FATAL_FAILURE(this->assertCodePoint2Utf8("𣴀"));
+  ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("\0"));
+  ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("a"));
+  ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("å"));
+  ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("¶"));
+  ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("あ"));
+  ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("ｱ"));
+  ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("𣏤"));
+  ASSERT_NO_FATAL_FAILURE(assertCodePoint2Utf8("𣴀"));
 }
 
 TEST_F(UnicodeTest, base) {
@@ -163,7 +162,7 @@ TEST_F(UnicodeTest, multi) {
 
 TEST_F(UnicodeTest, multi2) {
   int code = 0;
-  this->toCodePoint("◯", code);
+  toCodePoint("◯", code);
 
   // C
   const char *r = nullptr;
@@ -251,23 +250,23 @@ TEST_F(UnicodeTest, utf16) {
 
 TEST_F(UnicodeTest, graphemeBreakProperty) {
   int code = 0;
-  this->toCodePoint("1", code);
+  toCodePoint("1", code);
   auto p = GraphemeBoundary::getBreakProperty(code);
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
 
-  this->toCodePoint("灘", code);
+  toCodePoint("灘", code);
   p = GraphemeBoundary::getBreakProperty(code);
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
 
-  this->toCodePoint("\r", code);
+  toCodePoint("\r", code);
   p = GraphemeBoundary::getBreakProperty(code);
   ASSERT_EQ(GraphemeBoundary::BreakProperty::CR, p);
 
-  this->toCodePoint("\n", code);
+  toCodePoint("\n", code);
   p = GraphemeBoundary::getBreakProperty(code);
   ASSERT_EQ(GraphemeBoundary::BreakProperty::LF, p);
 
-  this->toCodePoint("\a", code);
+  toCodePoint("\a", code);
   p = GraphemeBoundary::getBreakProperty(code);
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Control, p);
 
@@ -367,9 +366,9 @@ static std::string toUTF8(const std::vector<int> &codes) {
 }
 
 struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
-  void doTest() {
-    auto input = getInput(this->GetParam());
-    auto expected = getExpected(this->GetParam());
+  static void doTest() {
+    auto input = getInput(GetParam());
+    auto expected = getExpected(GetParam());
 
     ASSERT_FALSE(input.empty());
     ASSERT_FALSE(expected.empty());
@@ -391,9 +390,9 @@ struct GraphemeBreakTest : public ::testing::TestWithParam<std::string> {
     ASSERT_EQ(expected, output);
   }
 
-  void doTest2() {
-    auto input = getInput(this->GetParam());
-    auto expected = getExpected(this->GetParam());
+  static void doTest2() {
+    auto input = getInput(GetParam());
+    auto expected = getExpected(GetParam());
 
     std::string inputStr = toUTF8(input);
     std::vector<std::string> expectedList;
@@ -494,8 +493,8 @@ TEST(GraphemeBreakTestBase, scan) {
 }
 
 TEST_P(GraphemeBreakTest, base) {
-  ASSERT_NO_FATAL_FAILURE(this->doTest());
-  ASSERT_NO_FATAL_FAILURE(this->doTest2());
+  ASSERT_NO_FATAL_FAILURE(doTest());
+  ASSERT_NO_FATAL_FAILURE(doTest2());
 }
 
 static std::vector<std::string> getTargets() {

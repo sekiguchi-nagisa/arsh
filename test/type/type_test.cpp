@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 
 #include <scope.h>
-#include <type.h>
 #include <type_checker.h>
 
 using namespace ydsh;

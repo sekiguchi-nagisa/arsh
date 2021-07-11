@@ -2,7 +2,6 @@
 
 #include "../../tools/platform/platform.h"
 #include "../test_common.h"
-#include "ansi.h"
 
 #ifndef INSPECT_PATH
 #error "require INSPECT_PATH"

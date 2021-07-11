@@ -29,7 +29,7 @@ protected:
     return IntrusivePtr<NameScope>::create(this->builtin, ++this->modCount);
   }
 
-  void expect(const Handle &e, const FieldHandle *handle) {
+  static void expect(const Handle &e, const FieldHandle *handle) {
     ASSERT_TRUE(handle);
     ASSERT_EQ(e.commitID, handle->getCommitID());
     ASSERT_EQ(static_cast<unsigned int>(e.type), handle->getTypeID());
@@ -38,12 +38,12 @@ protected:
     ASSERT_EQ(e.modID, handle->getModID());
   }
 
-  void expect(const Handle &e, const NameLookupResult &ret) {
+  static void expect(const Handle &e, const NameLookupResult &ret) {
     ASSERT_TRUE(ret);
-    this->expect(e, ret.asOk());
+    expect(e, ret.asOk());
   }
 
-  void expect(NameLookupError e, const NameLookupResult &ret) {
+  static void expect(NameLookupError e, const NameLookupResult &ret) {
     ASSERT_FALSE(ret);
     ASSERT_EQ(e, ret.asErr());
   }
