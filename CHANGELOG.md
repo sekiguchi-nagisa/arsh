@@ -10,6 +10,11 @@
   - ``textDocument/didOpen``
   - ``textDocument/didChange``
 
+### Changed
+
+#### Misc
+- require CMake 3.8 or later
+
 
 ## [0.22.0] - 2021-06-27
 
