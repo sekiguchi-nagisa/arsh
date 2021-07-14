@@ -171,6 +171,23 @@ public:
   }
 };
 
+struct ModuleArchive {
+  const std::vector<std::pair<std::string, Archive>> handles;
+
+  explicit ModuleArchive(std::vector<std::pair<std::string, Archive>> &&handles)
+      : handles(std::move(handles)) {}
+};
+
+class ModuleIndex;
+
+/**
+ * deserialize archives and load into foregin TypePool
+ * @param pool
+ * @param index
+ * @return
+ */
+const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index);
+
 } // namespace ydsh::lsp
 
 #endif // YDSH_TOOLS_ANALYZER_ARCHIVE_H

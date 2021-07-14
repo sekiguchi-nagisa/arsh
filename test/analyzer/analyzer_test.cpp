@@ -62,12 +62,15 @@ protected:
     // dump analyzer output
     std::string content;
     readContent(GetParam(), content);
-    ASTContextProvider provider;
+    SourceManager man;
+    IndexMap indexMap;
+    ASTContextProvider provider(man, indexMap);
     DiagnosticEmitter emitter;
     std::string path = "file://";
     path += GetParam();
-    auto ctx = provider.addNew(uri::URI::fromString(path), std::move(content), 0);
-    buildAST(provider, emitter, ctx);
+    Source src(1, std::move(content), 0);
+    auto ctx = provider.addNew(uri::URI::fromString(path), src);
+    buildIndex(provider, emitter, ctx);
 
     std::string tempFileName;
     auto tmpFile = this->createTempFilePtr(tempFileName, "");

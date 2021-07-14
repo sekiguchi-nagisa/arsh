@@ -15,6 +15,7 @@
  */
 
 #include "server.h"
+#include "source.h"
 
 namespace ydsh::lsp {
 
@@ -105,9 +106,14 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
   if (ctx) {
     LOG(LogLevel::INFO, "already opened textDocument: %s", uriStr);
   } else {
-    ctx = this->provider.addNew(uri, std::string(params.textDocument.text),
-                                params.textDocument.version);
-    buildAST(this->provider, this->diagnosticEmitter, ctx);
+    auto *src = this->srcMan.update(uri.getPath(), params.textDocument.version,
+                                    std::string(params.textDocument.text));
+    if (!src) {
+      LOG(LogLevel::ERROR, "reach opened file limit"); // FIXME: report to client?
+      return;
+    }
+    ctx = this->provider.addNew(uri, *src);
+    buildIndex(this->provider, this->diagnosticEmitter, ctx);
   }
 }
 
@@ -129,15 +135,17 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
     LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr);
     return;
   }
-  std::string content = ctx->getContent();
+  std::string content = ctx->getContent(); //FIXME:
   for (auto &change : params.contentChanges) {
     if (!applyChange(content, change)) {
       LOG(LogLevel::ERROR, "textDocument may lack consistency");
       return;
     }
   }
-  ctx->updateContent(std::move(content), params.textDocument.version);
-  buildAST(this->provider, this->diagnosticEmitter, ctx);
+  auto *src = this->srcMan.update(uri.getPath(), params.textDocument.version, std::move(content));
+  revertIndexMap(this->indexMap, {src->getSrcId()});
+  ctx->updateContent(std::string(src->getContent()), params.textDocument.version);
+  buildIndex(this->provider, this->diagnosticEmitter, ctx);
 }
 
 } // namespace ydsh::lsp

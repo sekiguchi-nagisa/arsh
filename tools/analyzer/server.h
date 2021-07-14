@@ -18,9 +18,9 @@
 #define YDSH_TOOLS_ANALYZER_SERVER_H
 
 #include "../json/jsonrpc.h"
+#include "analyzer.h"
 #include "lsp.h"
 #include "transport.h"
-#include "analyzer.h"
 
 namespace ydsh::lsp {
 
@@ -33,6 +33,8 @@ struct LSPLogger : public LoggerBase {
 class LSPServer : public Handler {
 private:
   LSPTransport transport;
+  SourceManager srcMan;
+  IndexMap indexMap;
   ASTContextProvider provider;
   DiagnosticEmitter diagnosticEmitter;
   bool init{false};
@@ -41,7 +43,8 @@ private:
 
 public:
   LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out)
-      : Handler(logger), transport(logger, std::move(in), std::move(out)) {
+      : Handler(logger), transport(logger, std::move(in), std::move(out)),
+        provider(this->srcMan, this->indexMap) {
     this->bindAll();
   }
 

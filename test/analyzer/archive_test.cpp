@@ -1,8 +1,8 @@
 
 #include "gtest/gtest.h"
 
+#include "analyzer.h"
 #include "archive.h"
-#include "ast.h"
 
 using namespace ydsh::lsp;
 using namespace ydsh;
@@ -175,7 +175,7 @@ TEST_F(ArchiveTest, func) {
   types = std::vector<const DSType *>();
   types.push_back(this->pool().getType("(Signal) -> Void").asOk());
   types.push_back(&type1);
-  ret1 = this->pool().createTupleType(std::vector<const DSType*>(types));
+  ret1 = this->pool().createTupleType(std::vector<const DSType *>(types));
   ASSERT_TRUE(ret1);
   types.push_back(ret1.asOk());
   ret1 = this->pool().createFuncType(this->pool().get(TYPE::Nothing), std::move(types));

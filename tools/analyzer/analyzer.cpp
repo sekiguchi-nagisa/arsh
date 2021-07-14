@@ -14,9 +14,59 @@
  * limitations under the License.
  */
 
+#include <core.h>
+#include <misc/files.h>
+
 #include "analyzer.h"
 
 namespace ydsh::lsp {
+
+// ########################
+// ##     ASTContext     ##
+// ########################
+
+static void consumeAllInput(FrontEnd &frontEnd) {
+  while (frontEnd) {
+    if (!frontEnd()) {
+      break;
+    }
+  }
+}
+
+static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
+  auto builtin = IntrusivePtr<NameScope>::create(gvarCount);
+  bindBuiltinVariables(nullptr, pool, *builtin);
+
+  ModuleLoader loader; // dummy
+  const char *embed = getEmbeddedScript();
+  Lexer lexer("(builtin)", ByteBuffer(embed, embed + strlen(embed)), getCWD());
+  DefaultModuleProvider provider(loader, pool, builtin);
+  FrontEnd frontEnd(provider, std::move(lexer));
+  consumeAllInput(frontEnd);
+  gvarCount++; // reserve module object entry
+  return builtin->toModType(pool);
+}
+
+ASTContext::ASTContext(unsigned int modID, const uri::URI &uri, std::string &&content, int version)
+    : fullPath(uri.getPath()), content(std::move(content)), version(version) {
+  auto &builtin = createBuiltin(this->pool, this->gvarCount);
+  this->scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), modID);
+  this->scope->importForeignHandles(builtin, true);
+
+  // save discard point
+  this->oldGvarCount = this->gvarCount;
+  this->typeDiscardPoint = this->pool.getDiscardPoint();
+  this->scopeDiscardPoint = this->scope->getDiscardPoint();
+}
+
+void ASTContext::updateContent(std::string &&c, int v) {
+  this->content = std::move(c);
+  this->version = v;
+  this->gvarCount = this->oldGvarCount;
+  this->pool.discard(this->typeDiscardPoint);
+  this->scope->discard(this->scopeDiscardPoint);
+  this->nodes.clear();
+}
 
 // ################################
 // ##     ASTContextProvider     ##
@@ -70,9 +120,9 @@ ASTContextPtr ASTContextProvider::find(StringRef ref) const {
   return nullptr;
 }
 
-ASTContextPtr ASTContextProvider::addNew(const uri::URI &uri, std::string &&content, int version) {
-  unsigned int newModId = this->ctxMap.size() + 1; // id 0 is already reserved
-  auto ptr = ASTContextPtr::create(newModId, uri, std::move(content), version);
+ASTContextPtr ASTContextProvider::addNew(const uri::URI &uri, const Source &src) {
+  auto ptr =
+      ASTContextPtr::create(src.getSrcId(), uri, std::string(src.getContent()), src.getVersion());
   this->ctxMap.emplace(ptr->getFullPath(), ptr);
   return ptr;
 }
@@ -127,8 +177,7 @@ static ASTContextPtr getCurrentCtx(const FrontEnd &frontEnd, const ASTContextPro
   return ctx;
 }
 
-ASTContextPtr buildAST(ASTContextProvider &provider, DiagnosticEmitter &emitter,
-                       ASTContextPtr ctx) {
+void buildIndex(ASTContextProvider &provider, DiagnosticEmitter &emitter, ASTContextPtr ctx) {
   // prepare
   assert(ctx);
   FrontEnd frontEnd = createFrontend(provider, *ctx);
@@ -140,7 +189,7 @@ ASTContextPtr buildAST(ASTContextProvider &provider, DiagnosticEmitter &emitter,
   while (frontEnd) {
     auto ret = frontEnd();
     if (!ret) {
-      return nullptr; // FIXME: error recovery
+      return; // FIXME: error recovery
     }
     switch (ret.kind) {
     case FrontEndResult::ENTER_MODULE:
@@ -156,7 +205,34 @@ ASTContextPtr buildAST(ASTContextProvider &provider, DiagnosticEmitter &emitter,
       break;
     }
   }
-  return getCurrentCtx(frontEnd, provider);
+}
+
+static bool contains(const std::unordered_set<unsigned short> &set, unsigned short v) {
+  auto iter = set.find(v);
+  return iter != set.end();
+}
+
+static bool isRevertedIndex(std::unordered_set<unsigned short> &revertingModIdSet,
+                            const ModuleIndex &index) {
+  if (contains(revertingModIdSet, index.getModId())) {
+    return true;
+  }
+  for (auto &e : index.getDependencies()) {
+    if (isRevertedIndex(revertingModIdSet, *e.second)) {
+      revertingModIdSet.emplace(index.getModId());
+      return true;
+    }
+  }
+  return false;
+}
+
+void revertIndexMap(IndexMap &indexMap, std::unordered_set<unsigned short> &&revertingModIdSet) {
+  for (auto &e : indexMap) {
+    auto &index = *e.second;
+    if (isRevertedIndex(revertingModIdSet, index)) {
+      e.second = nullptr;
+    }
+  }
 }
 
 } // namespace ydsh::lsp

@@ -16,7 +16,7 @@
 
 #include <type_pool.h>
 
-#include "archive.h"
+#include "index.h"
 
 namespace ydsh::lsp {
 
@@ -61,21 +61,6 @@ void Archiver::add(const DSType &type) {
     this->writeT(ArchiveType::MOD);
     auto &modType = static_cast<const ModType &>(type);
     this->write16(modType.getModID());
-    this->write32(modType.getIndex());
-    this->write16(modType.getChildSize());
-    for (unsigned int i = 0; i < modType.getChildSize(); i++) {
-      auto e = modType.getChildAt(i);
-      this->write8(e.isGlobal() ? 1 : 0);
-      auto &child = this->pool.get(e.typeId());
-      assert(child.isModType());
-      auto &cmod = static_cast<const ModType &>(child);
-      this->write16(cmod.getModID());
-    }
-    this->write32(modType.getHandleMap().size());
-    for (auto &e : modType.getHandleMap()) {
-      this->write(e.first);
-      this->add(e.second);
-    }
   }
 }
 
@@ -132,10 +117,7 @@ const DSType *Unarchiver::unpackType() {
   case ArchiveType::MAP: {
     auto &key = *const_cast<DSType *>(TRY(this->unpackType()));
     auto &value = *const_cast<DSType *>(TRY(this->unpackType()));
-    auto ret = this->pool.createMapType(key, value);
-    if (!ret) {
-      return nullptr;
-    }
+    auto ret = TRY(this->pool.createMapType(key, value));
     return std::move(ret).take();
   }
   case ArchiveType::TUPLE: {
@@ -145,18 +127,12 @@ const DSType *Unarchiver::unpackType() {
       auto *type = TRY(this->unpackType());
       types.push_back(const_cast<DSType *>(type));
     }
-    auto ret = this->pool.createTupleType(std::move(types));
-    if (!ret) {
-      return nullptr;
-    }
+    auto ret = TRY(this->pool.createTupleType(std::move(types)));
     return std::move(ret).take();
   }
   case ArchiveType::OPTION: {
     auto *type = TRY(this->unpackType());
-    auto ret = this->pool.createOptionType(const_cast<DSType &>(*type));
-    if (!ret) {
-      return nullptr;
-    }
+    auto ret = TRY(this->pool.createOptionType(const_cast<DSType &>(*type)));
     return std::move(ret).take();
   }
   case ArchiveType::FUNC: {
@@ -167,45 +143,56 @@ const DSType *Unarchiver::unpackType() {
       auto *type = TRY(this->unpackType());
       types.push_back(const_cast<DSType *>(type));
     }
-    auto ret = this->pool.createFuncType(*retType, std::move(types));
-    if (!ret) {
-      return nullptr;
-    }
+    auto ret = TRY(this->pool.createFuncType(*retType, std::move(types)));
     return std::move(ret).take();
   }
   case ArchiveType::MOD: {
     uint16_t modID = this->read16();
-    uint32_t index = this->read32();
-
-    uint16_t childSize = this->read16();
-    FlexBuffer<ImportedModEntry> children;
-    for (unsigned int i = 0; i < childSize; i++) {
-      bool global = this->read8() > 0;
-      uint16_t cmodId = this->read16();
-      auto *t = TRY(this->pool.getModTypeById(cmodId)).take();
-      assert(t->isModType());
-      auto &cmodType = static_cast<const ModType &>(*t);
-      auto e = cmodType.toModEntry(global);
-      children.push_back(e);
-    }
-
-    uint32_t len = this->read32();
-    std::unordered_map<std::string, FieldHandle> handleMap;
-    for (unsigned int i = 0; i < len; i++) {
-      auto name = this->readStr();
-      auto handle = this->unpackHandle();
-      if (!handle.hasValue()) {
-        return nullptr;
-      }
-      auto pair = handleMap.emplace(std::move(name), std::move(handle.unwrap()));
-      if (!pair.second) {
-        return nullptr;
-      }
-    }
-    return &this->pool.createModType(modID, std::move(handleMap), std::move(children), index);
+    auto ret = TRY(this->pool.getModTypeById(modID));
+    return std::move(ret).take();
   }
   }
   return nullptr;
 }
+
+static const ModType *getModType(const TypePool &pool, unsigned short modId) {
+  auto ret = pool.getModTypeById(modId);
+  if (ret) {
+    auto *type = ret.asOk();
+    assert(type && type->isModType());
+    return static_cast<const ModType *>(type);
+  }
+  return nullptr;
+}
+
+const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index) {
+  if (const ModType * type; (type = getModType(pool, index.getModId()))) {
+    return type;
+  }
+
+  FlexBuffer<ImportedModEntry> children; // FIXME: topological sort
+  for (auto &child : index.getDependencies()) {
+    bool global = child.first;
+    auto *type = loadFromModuleIndex(pool, *child.second);
+    if(!type) {
+      return nullptr;
+    }
+    auto e = type->toModEntry(global);
+    children.push_back(e);
+  }
+
+  std::unordered_map<std::string, FieldHandle> handleMap;
+  for (auto &e : index.getArchive().handles) {
+    auto handle = e.second.unpack(pool);
+    if (!handle.hasValue()) {
+      return nullptr;
+    }
+    if (!handleMap.emplace(e.first, handle.unwrap()).second) {
+      return nullptr;
+    }
+  }
+  return &pool.createModType(index.getModId(), std::move(handleMap), std::move(children), 0);
+}
+
 
 } // namespace ydsh::lsp
