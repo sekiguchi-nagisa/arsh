@@ -21,27 +21,33 @@
 
 namespace ydsh::lsp {
 
-const Source *SourceManager::find(const std::string &path) const {
-  auto iter = this->srcMap.find(path);
-  if (iter != this->srcMap.end()) {
-    return &iter->second;
+const Source *SourceManager::find(StringRef path) const {
+  auto iter = this->indexMap.find(path);
+  if (iter != this->indexMap.end()) {
+    return &this->sources[iter->second];
   }
   return nullptr;
 }
 
-const Source *SourceManager::update(const std::string &path, int version, std::string &&content) {
-  auto iter = this->srcMap.find(path);
-  if (iter != this->srcMap.end()) {
-    auto id = iter->second.getSrcId();
-    iter->second = Source(id, std::move(content), version);
-    return &iter->second;
+const Source *SourceManager::update(StringRef path, int version, std::string &&content) {
+  auto iter = this->indexMap.find(path);
+  if (iter != this->indexMap.end()) {
+    unsigned int i = iter->second;
+    this->sources[i].update(std::move(content), version);
+    return &this->sources[i];
+  } else {
+    unsigned int id = this->sources.size() + 1;
+    if (id == SYS_LIMIT_MOD_ID) {
+      return nullptr;
+    }
+    unsigned int i = this->sources.size();
+    auto ptr = CStrPtr(strdup(path.data()));
+    this->sources.emplace_back(std::move(ptr), static_cast<unsigned short>(id), std::move(content),
+                               version);
+    path = this->sources[i].getPath();
+    this->indexMap.emplace(path, i);
+    return &this->sources[i];
   }
-  unsigned int id = this->srcMap.size() + 1;
-  if (id == SYS_LIMIT_MOD_ID) {
-    return nullptr;
-  }
-  return &(this->srcMap[path] =
-               Source(static_cast<unsigned short>(id), std::move(content), version));
 }
 
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change) {

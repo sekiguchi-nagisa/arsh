@@ -68,7 +68,8 @@ protected:
     DiagnosticEmitter emitter;
     std::string path = "file://";
     path += GetParam();
-    Source src(1, std::move(content), 0);
+    CStrPtr ptr(strdup(GetParam().c_str()));
+    Source src(std::move(ptr), 1, std::move(content), 0);
     auto ctx = provider.addNew(uri::URI::fromString(path), src);
     buildIndex(provider, emitter, ctx);
 
