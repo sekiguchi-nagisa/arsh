@@ -102,18 +102,17 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
     LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
     return;
   }
-  auto ctx = this->provider.find(uri);
-  if (ctx) {
+  auto *src = this->srcMan.find(uri.getPath());
+  if (src) {
     LOG(LogLevel::INFO, "already opened textDocument: %s", uriStr);
   } else {
-    auto *src = this->srcMan.update(uri.getPath(), params.textDocument.version,
-                                    std::string(params.textDocument.text));
+    src = this->srcMan.update(uri.getPath(), params.textDocument.version,
+                              std::string(params.textDocument.text));
     if (!src) {
       LOG(LogLevel::ERROR, "reach opened file limit"); // FIXME: report to client?
       return;
     }
-    ctx = this->provider.addNew(uri, *src);
-    buildIndex(this->provider, this->diagnosticEmitter, ctx);
+    buildIndex(this->srcMan, this->indexMap, this->diagnosticEmitter, *src);
   }
 }
 
@@ -130,22 +129,21 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
     LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
     return;
   }
-  auto ctx = this->provider.find(uri);
-  if (!ctx) {
+  auto *src = this->srcMan.find(uri.getPath());
+  if (!src) {
     LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr);
     return;
   }
-  std::string content = ctx->getContent(); //FIXME:
+  std::string content = src->getContent();
   for (auto &change : params.contentChanges) {
     if (!applyChange(content, change)) {
       LOG(LogLevel::ERROR, "textDocument may lack consistency");
       return;
     }
   }
-  auto *src = this->srcMan.update(uri.getPath(), params.textDocument.version, std::move(content));
-  revertIndexMap(this->indexMap, {src->getSrcId()});
-  ctx->updateContent(std::string(src->getContent()), params.textDocument.version);
-  buildIndex(this->provider, this->diagnosticEmitter, ctx);
+  src = this->srcMan.update(uri.getPath(), params.textDocument.version, std::move(content));
+  this->indexMap.revert({src->getSrcId()});
+  buildIndex(this->srcMan, this->indexMap, this->diagnosticEmitter, *src);
 }
 
 } // namespace ydsh::lsp

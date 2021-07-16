@@ -16,7 +16,8 @@ using namespace ydsh::lsp;
 using namespace ydsh;
 
 TEST(ASTCtxTest, base) {
-  auto ctx = std::make_unique<ASTContext>(1, uri::URI::fromString("file:///file"), "#hello", 1);
+  Source src(CStrPtr(strdup("/dummy")), 1, "", 0);
+  auto ctx = std::make_unique<ASTContext>(src);
   auto *handle = ctx->getScope()->find("COMP_HOOK");
   ASSERT_TRUE(handle);
   ASSERT_TRUE(hasFlag(handle->attr(), FieldAttribute::GLOBAL));
@@ -64,23 +65,18 @@ protected:
     readContent(GetParam(), content);
     SourceManager man;
     IndexMap indexMap;
-    ASTContextProvider provider(man, indexMap);
     DiagnosticEmitter emitter;
-    std::string path = "file://";
-    path += GetParam();
-    CStrPtr ptr(strdup(GetParam().c_str()));
-    Source src(std::move(ptr), 1, std::move(content), 0);
-    auto ctx = provider.addNew(uri::URI::fromString(path), src);
-    buildIndex(provider, emitter, ctx);
+    auto *src = man.update(GetParam(), 0, std::move(content));
+    auto index = buildIndex(man, indexMap, emitter, *src);
 
     std::string tempFileName;
     auto tmpFile = this->createTempFilePtr(tempFileName, "");
     NodeDumper dumper(tmpFile.get());
     dumper.initialize(GetParam(), "### dump typed AST ###");
-    for (auto &node : ctx->getNodes()) {
+    for (auto &node : index->getNodes()) {
       dumper(*node);
     }
-    dumper.finalize(*ctx->getScope());
+    dumper.finalize(index->getScope());
     tmpFile.reset();
     content = std::string();
     readContent(tempFileName, content);

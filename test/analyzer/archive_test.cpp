@@ -8,9 +8,12 @@ using namespace ydsh::lsp;
 using namespace ydsh;
 
 static ASTContextPtr newctx(unsigned int modId) {
-  std::string path = "file:///dummy_";
+  std::string path = "/dummy_";
   path += std::to_string(modId);
-  return ASTContextPtr::create(modId, uri::URI::fromString(path), "#hello", 1);
+  CStrPtr ptr(strdup(path.c_str()));
+
+  Source src(std::move(ptr), modId, "", 0);
+  return std::make_unique<ASTContext>(src);
 }
 
 class ArchiveTest : public ::testing::Test {

@@ -171,10 +171,10 @@ const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index) {
   }
 
   FlexBuffer<ImportedModEntry> children; // FIXME: topological sort
-  for (auto &child : index.getDependencies()) {
+  for (auto &child : index.getImportedIndexes()) {
     bool global = child.first;
     auto *type = loadFromModuleIndex(pool, *child.second);
-    if(!type) {
+    if (!type) {
       return nullptr;
     }
     auto e = type->toModEntry(global);
@@ -182,7 +182,7 @@ const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index) {
   }
 
   std::unordered_map<std::string, FieldHandle> handleMap;
-  for (auto &e : index.getArchive().handles) {
+  for (auto &e : index.getArchive().getHandles()) {
     auto handle = e.second.unpack(pool);
     if (!handle.hasValue()) {
       return nullptr;
@@ -193,6 +193,5 @@ const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index) {
   }
   return &pool.createModType(index.getModId(), std::move(handleMap), std::move(children), 0);
 }
-
 
 } // namespace ydsh::lsp

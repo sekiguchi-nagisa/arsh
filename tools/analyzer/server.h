@@ -35,7 +35,6 @@ private:
   LSPTransport transport;
   SourceManager srcMan;
   IndexMap indexMap;
-  ASTContextProvider provider;
   DiagnosticEmitter diagnosticEmitter;
   bool init{false};
   bool willExit{false};
@@ -43,8 +42,7 @@ private:
 
 public:
   LSPServer(LoggerBase &logger, FilePtr &&in, FilePtr &&out)
-      : Handler(logger), transport(logger, std::move(in), std::move(out)),
-        provider(this->srcMan, this->indexMap) {
+      : Handler(logger), transport(logger, std::move(in), std::move(out)) {
     this->bindAll();
   }
 

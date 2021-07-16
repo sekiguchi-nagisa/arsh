@@ -29,53 +29,58 @@
 
 namespace ydsh::lsp {
 
-class ASTContext : public RefCount<ASTContext> {
+class IndexMap {
 private:
-  std::string fullPath;
-  std::string content;
-  int version;
+  StrRefMap<ModuleIndexPtr> map;
+
+public:
+  ModuleIndexPtr find(const Source &src) const {
+    auto iter = this->map.find(src.getPath());
+    return iter != this->map.end() ? iter->second : nullptr;
+  }
+
+  void add(const Source &src, ModuleIndexPtr index) { this->map[src.getPath()] = std::move(index); }
+
+  void revert(std::unordered_set<unsigned short> &&revertingModIdSet);
+};
+
+class ASTContext {
+private:
+  std::unique_ptr<TypePool> pool;
+  std::unique_ptr<unsigned int> gvarCount;
   IntrusivePtr<NameScope> scope;
-  TypePool pool;
   std::vector<std::unique_ptr<Node>> nodes;
-  unsigned int gvarCount{0};
-  unsigned int oldGvarCount;
+  int version;
   TypeDiscardPoint typeDiscardPoint;
-  ScopeDiscardPoint scopeDiscardPoint;
 
 public:
   NON_COPYABLE(ASTContext);
 
-  ASTContext(unsigned int modID, const uri::URI &uri, std::string &&content, int version = 0);
-
-  const std::string &getFullPath() const { return this->fullPath; }
-
-  const std::string &getContent() const { return this->content; }
+  explicit ASTContext(const Source &src);
 
   const IntrusivePtr<NameScope> &getScope() const { return this->scope; }
 
-  const TypePool &getPool() const { return this->pool; }
+  const TypePool &getPool() const { return *this->pool; }
 
-  TypePool &getPool() { return this->pool; }
-
-  void updateContent(std::string &&c, int v = 0);
+  TypePool &getPool() { return *this->pool; }
 
   unsigned int getModId() const { return this->scope->modId; }
+
+  int getVersion() const { return this->version; }
 
   void addNode(std::unique_ptr<Node> &&node) { this->nodes.push_back(std::move(node)); }
 
   const std::vector<std::unique_ptr<Node>> &getNodes() const { return this->nodes; }
+
+  ModuleIndexPtr buildIndex(const SourceManager &srcMan, const IndexMap &indexMap) &&;
 };
 
-using ASTContextPtr = IntrusivePtr<ASTContext>;
-
-using IndexMap = std::unordered_map<std::string, ModuleIndexPtr>;
+using ASTContextPtr = std::unique_ptr<ASTContext>;
 
 class ASTContextProvider : public FrontEnd::ModuleProvider, public ModuleLoaderBase {
 private:
   SourceManager &srcMan;
   IndexMap &indexMap;
-  //  std::vector<ModuleIndexPtr> fetchedIndexes;
-  StrRefMap<ASTContextPtr> ctxMap; // fullpath to ASTContext mapping
   std::vector<ASTContextPtr> ctxs;
 
 public:
@@ -92,15 +97,7 @@ public:
 
   Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
 
-  ASTContextPtr find(StringRef ref) const;
-
-  ASTContextPtr find(const uri::URI &uri) const { return this->find(uri.getPath()); }
-
-  ASTContextPtr addNew(const uri::URI &uri, const Source &src);
-
-  const SourceManager &getSourceManager() const { return this->srcMan; }
-
-  const auto &getIndexMap() const { return this->indexMap; }
+  const ASTContextPtr &addNew(const Source &src);
 
   const ASTContextPtr &current() const { return this->ctxs.back(); }
 
@@ -118,9 +115,8 @@ public:
                        const TypeCheckError &checkError) override;
 };
 
-void buildIndex(ASTContextProvider &provider, DiagnosticEmitter &emitter, ASTContextPtr ctx);
-
-void revertIndexMap(IndexMap &indexMap, std::unordered_set<unsigned short> &&revertingModIdSet);
+ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, DiagnosticEmitter &emitter,
+                          const Source &src);
 
 } // namespace ydsh::lsp
 

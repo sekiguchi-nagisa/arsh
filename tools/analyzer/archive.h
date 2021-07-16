@@ -73,13 +73,6 @@ private:
     static_assert(sizeof(std::underlying_type_t<decltype(t)>) == sizeof(unsigned char));
     this->write8(static_cast<unsigned char>(t));
   }
-
-  void write(const std::string &str) {
-    this->write32(str.size());
-    for (auto &ch : str) {
-      this->write8(ch);
-    }
-  }
 };
 
 class Unarchiver {
@@ -121,13 +114,6 @@ private:
   ArchiveType readT() {
     auto v = this->read8();
     return static_cast<ArchiveType>(v);
-  }
-
-  std::string readStr() {
-    auto len = this->read32();
-    std::string str(this->data.c_str() + this->pos, len);
-    this->pos += len;
-    return str;
   }
 };
 
@@ -171,11 +157,17 @@ public:
   }
 };
 
-struct ModuleArchive {
-  const std::vector<std::pair<std::string, Archive>> handles;
+class ModuleArchive {
+private:
+  std::vector<std::pair<std::string, Archive>> handles;
 
+public:
   explicit ModuleArchive(std::vector<std::pair<std::string, Archive>> &&handles)
       : handles(std::move(handles)) {}
+
+  const auto &getHandles() const {
+    return this->handles;
+  }
 };
 
 class ModuleIndex;

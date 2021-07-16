@@ -21,6 +21,33 @@
 
 namespace ydsh::lsp {
 
+static bool isRevertedIndex(std::unordered_set<unsigned short> &revertingModIdSet,
+                            const ModuleIndex &index) {
+  const auto modId = index.getModId();
+  auto iter = revertingModIdSet.find(modId);
+  if (iter != revertingModIdSet.end()) {
+    return true;
+  }
+  for (auto &e : index.getImportedIndexes()) {
+    if (isRevertedIndex(revertingModIdSet, *e.second)) {
+      revertingModIdSet.emplace(modId);
+      return true;
+    }
+  }
+  return false;
+}
+
+void IndexMap::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
+  for (auto iter = this->map.begin(); iter != this->map.end();) {
+    auto &index = *iter->second;
+    if (isRevertedIndex(revertingModIdSet, index)) {
+      iter = this->map.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+}
+
 // ########################
 // ##     ASTContext     ##
 // ########################
@@ -47,25 +74,24 @@ static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
   return builtin->toModType(pool);
 }
 
-ASTContext::ASTContext(unsigned int modID, const uri::URI &uri, std::string &&content, int version)
-    : fullPath(uri.getPath()), content(std::move(content)), version(version) {
-  auto &builtin = createBuiltin(this->pool, this->gvarCount);
-  this->scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), modID);
+ASTContext::ASTContext(const Source &src)
+    : pool(std::make_unique<TypePool>()), gvarCount(std::make_unique<unsigned int>(0)),
+      version(src.getVersion()) {
+  auto &builtin = createBuiltin(this->getPool(), *this->gvarCount);
+  this->scope = IntrusivePtr<NameScope>::create(std::ref(*this->gvarCount), src.getSrcId());
   this->scope->importForeignHandles(builtin, true);
-
-  // save discard point
-  this->oldGvarCount = this->gvarCount;
-  this->typeDiscardPoint = this->pool.getDiscardPoint();
-  this->scopeDiscardPoint = this->scope->getDiscardPoint();
+  this->typeDiscardPoint = this->getPool().getDiscardPoint();
 }
 
-void ASTContext::updateContent(std::string &&c, int v) {
-  this->content = std::move(c);
-  this->version = v;
-  this->gvarCount = this->oldGvarCount;
-  this->pool.discard(this->typeDiscardPoint);
-  this->scope->discard(this->scopeDiscardPoint);
-  this->nodes.clear();
+ModuleIndexPtr ASTContext::buildIndex(const SourceManager &srcMan, const IndexMap &indexMap) && {
+  (void)srcMan;
+  (void)indexMap;
+  std::vector<std::pair<std::string, Archive>> handles;
+  ModuleArchive archive(std::move(handles));
+  std::vector<std::pair<bool, ModuleIndexPtr>> imported;
+  return ModuleIndex::create(this->getVersion(), std::move(this->gvarCount), std::move(this->scope),
+                             std::move(this->pool), std::move(this->nodes), std::move(archive),
+                             std::move(imported));
 }
 
 // ################################
@@ -75,73 +101,81 @@ void ASTContext::updateContent(std::string &&c, int v) {
 std::unique_ptr<FrontEnd::Context>
 ASTContextProvider::newContext(Lexer &&lexer, FrontEndOption option,
                                ObserverPtr<CodeCompletionHandler> ccHandler) {
-  auto ctx = this->find(lexer.getSourceName());
+  auto &ctx = this->current();
   return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lexer), ctx->getScope(),
                                              option, ccHandler);
 }
 
 const ModType &ASTContextProvider::newModTypeFromCurContext(
-    const std::vector<std::unique_ptr<FrontEnd::Context>> &ctx) {
-  (void)ctx;
-  fatal("unimplemented\n"); // FIXME: copy all FieldHandles in current TypePool to prev TypePool
+    const std::vector<std::unique_ptr<FrontEnd::Context>> &) {
+  auto index = std::move(*this->current()).buildIndex(this->srcMan, this->indexMap);
+  this->ctxs.pop_back();
+  auto *modType = loadFromModuleIndex(this->current()->getPool(), *index);
+  assert(modType);
+  return *modType;
+}
+
+static Lexer createLexer(const Source &src) {
+  const char *fullpath = src.getPath();
+  const char *ptr = src.getContent().c_str();
+  return Lexer::fromFullPath(fullpath, ByteBuffer(ptr, ptr + strlen(ptr)));
 }
 
 FrontEnd::ModuleProvider::Ret ASTContextProvider::load(const char *scriptDir, const char *modPath,
                                                        FrontEndOption option) {
-  modPath = "/"; // FIXME: dummy
   FilePtr filePtr;
   auto ret =
       ModuleLoaderBase::load(scriptDir, modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
   if (is<ModLoadingError>(ret)) {
     return get<ModLoadingError>(ret);
   } else if (is<const char *>(ret)) {
-    ByteBuffer buf;
-    if (!readAll(filePtr, buf)) {
+    std::string content;
+    if (!readAll(filePtr, content)) {
       return ModLoadingError(errno);
     }
     const char *fullpath = get<const char *>(ret);
-    auto ctx = this->find(fullpath);
-    assert(ctx);
-    ctx->updateContent(std::string(buf.begin(), buf.end()));
-    auto lex = Lexer::fromFullPath(fullpath, std::move(buf));
+    auto *src = this->srcMan.find(fullpath);
+    src = this->srcMan.update(fullpath, src->getVersion(), std::move(content));
+    auto &ctx = this->addNew(*src);
+    auto lex = createLexer(*src);
     return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope(),
                                                option, nullptr);
   } else {
-    assert(is<unsigned int>(ret)); // FIXME: load mod type
-    fatal("unimplemented\n");
+    assert(is<unsigned int>(ret));
+    auto *src = this->srcMan.findById(get<unsigned int>(ret));
+    assert(src);
+    if (auto index = this->indexMap.find(*src); index) {
+      return loadFromModuleIndex(this->current()->getPool(), *index);
+    } else { // re-parse
+      auto &ctx = this->addNew(*src);
+      auto lex = createLexer(*src);
+      return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope(),
+                                                 option, nullptr);
+    }
   }
 }
 
-ASTContextPtr ASTContextProvider::find(StringRef ref) const {
-  auto iter = this->ctxMap.find(ref);
-  if (iter != this->ctxMap.end()) {
-    return iter->second;
-  }
-  return nullptr;
-}
-
-ASTContextPtr ASTContextProvider::addNew(const uri::URI &uri, const Source &src) {
-  auto ptr =
-      ASTContextPtr::create(src.getSrcId(), uri, std::string(src.getContent()), src.getVersion());
-  this->ctxMap.emplace(ptr->getFullPath(), ptr);
-  return ptr;
+const ASTContextPtr &ASTContextProvider::addNew(const Source &src) {
+  auto ptr = std::make_unique<ASTContext>(src);
+  this->ctxs.push_back(std::move(ptr));
+  this->indexMap.add(src, nullptr);
+  return this->current();
 }
 
 ModResult ASTContextProvider::addNewModEntry(CStrPtr &&ptr) {
-  StringRef key = ptr.get();
-  auto ctx = this->find(key);
-  if (ctx) {                // already loaded
-    return ctx->getModId(); // FIXME:
+  StringRef path = ptr.get();
+  auto *src = this->srcMan.find(path);
+  if (src) { // already loaded
+    if (auto index = this->indexMap.find(*src); !index) {
+      return ModLoadingError(0); // nest import
+    }
+    return src->getSrcId();
   } else {
-    auto path = uri::URI::fromString(ptr.get());
-    assert(path);
-    unsigned int newModId = this->ctxMap.size() + 1; // id 0 is already reserved
-    auto newctx = ASTContextPtr::create(newModId, path, "", 0);
-    this->ctxMap.emplace(newctx->getFullPath(), newctx);
-    if (this->ctxMap.size() == MAX_MOD_NUM) {
+    src = this->srcMan.update(path, 0, ""); // dummy
+    if (!src) {
       fatal("module id reaches limit(%u)\n", MAX_MOD_NUM);
     }
-    return newctx->getFullPath().c_str();
+    return src->getPath();
   }
 }
 
@@ -162,77 +196,25 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   return false;
 }
 
-static FrontEnd createFrontend(ASTContextProvider &provider, const ASTContext &ctx) {
-  const char *fullpath = ctx.getFullPath().c_str();
-  const char *ptr = ctx.getContent().c_str();
-  Lexer lexer = Lexer::fromFullPath(fullpath, ByteBuffer(ptr, ptr + strlen(ptr)));
-  return FrontEnd(provider, std::move(lexer), FrontEndOption{}, nullptr);
-}
-
-static ASTContextPtr getCurrentCtx(const FrontEnd &frontEnd, const ASTContextProvider &provider) {
-  auto &cur = frontEnd.getContext().back();
-  StringRef key = cur->lexer.getSourceName();
-  auto ctx = provider.find(key);
-  assert(ctx);
-  return ctx;
-}
-
-void buildIndex(ASTContextProvider &provider, DiagnosticEmitter &emitter, ASTContextPtr ctx) {
+ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, DiagnosticEmitter &emitter,
+                          const Source &src) {
   // prepare
-  assert(ctx);
-  FrontEnd frontEnd = createFrontend(provider, *ctx);
+  ASTContextProvider provider(srcMan, indexMap);
+  provider.addNew(src);
+  FrontEnd frontEnd(provider, createLexer(src), FrontEndOption{}, nullptr);
   frontEnd.setErrorListener(emitter);
-  std::vector<ASTContextPtr> ctxs;
-  ctxs.push_back(std::move(ctx));
 
   // run front end
   while (frontEnd) {
     auto ret = frontEnd();
     if (!ret) {
-      return; // FIXME: error recovery
+      return nullptr; // FIXME: error recovery
     }
-    switch (ret.kind) {
-    case FrontEndResult::ENTER_MODULE:
-      ctxs.push_back(getCurrentCtx(frontEnd, provider));
-      break;
-    case FrontEndResult::EXIT_MODULE:
-      ctxs.pop_back();
-      break;
-    case FrontEndResult::IN_MODULE:
-      ctxs.back()->addNode(std::move(ret.node));
-      break;
-    default:
-      break;
+    if (ret.kind == FrontEndResult::IN_MODULE) {
+      provider.current()->addNode(std::move(ret.node));
     }
   }
-}
-
-static bool contains(const std::unordered_set<unsigned short> &set, unsigned short v) {
-  auto iter = set.find(v);
-  return iter != set.end();
-}
-
-static bool isRevertedIndex(std::unordered_set<unsigned short> &revertingModIdSet,
-                            const ModuleIndex &index) {
-  if (contains(revertingModIdSet, index.getModId())) {
-    return true;
-  }
-  for (auto &e : index.getDependencies()) {
-    if (isRevertedIndex(revertingModIdSet, *e.second)) {
-      revertingModIdSet.emplace(index.getModId());
-      return true;
-    }
-  }
-  return false;
-}
-
-void revertIndexMap(IndexMap &indexMap, std::unordered_set<unsigned short> &&revertingModIdSet) {
-  for (auto &e : indexMap) {
-    auto &index = *e.second;
-    if (isRevertedIndex(revertingModIdSet, index)) {
-      e.second = nullptr;
-    }
-  }
+  return std::move(*provider.current()).buildIndex(srcMan, indexMap);
 }
 
 } // namespace ydsh::lsp

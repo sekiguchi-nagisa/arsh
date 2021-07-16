@@ -32,21 +32,24 @@ using ModuleIndexPtr = std::shared_ptr<ModuleIndex>;
 class ModuleIndex { // FIXME: indexed symbols
 private:
   const int version;
+  std::unique_ptr<unsigned int> gvarCount;
   IntrusivePtr<NameScope> scope;
   std::unique_ptr<TypePool> pool;
   std::vector<std::unique_ptr<Node>> nodes;
   ModuleArchive archive;
-  std::vector<std::pair<bool, ModuleIndexPtr>> dependencies;
+  std::vector<std::pair<bool, ModuleIndexPtr>> imported;
 
 public:
-  ModuleIndex(int version, IntrusivePtr<NameScope> &&scope, std::unique_ptr<TypePool> &&pool,
+  ModuleIndex(int version, std::unique_ptr<unsigned int> &&gvarCount,
+              IntrusivePtr<NameScope> &&scope, std::unique_ptr<TypePool> &&pool,
               std::vector<std::unique_ptr<Node>> &&nodes, ModuleArchive &&archive,
               std::vector<std::pair<bool, ModuleIndexPtr>> &&dependencies)
-      : version(version), scope(std::move(scope)), pool(std::move(pool)), nodes(std::move(nodes)),
-        archive(std::move(archive)), dependencies(std::move(dependencies)) {}
+      : version(version), gvarCount(std::move(gvarCount)), scope(std::move(scope)),
+        pool(std::move(pool)), nodes(std::move(nodes)), archive(std::move(archive)),
+        imported(std::move(dependencies)) {}
 
-  template <typename ...Args>
-  static ModuleIndexPtr create(Args && ...args) {
+  template <typename... Args>
+  static ModuleIndexPtr create(Args &&...args) {
     return std::make_shared<ModuleIndex>(std::forward<Args>(args)...);
   }
 
@@ -60,11 +63,9 @@ public:
 
   const ModuleArchive &getArchive() const { return this->archive; }
 
-  const auto &getDependencies() const { return this->dependencies; }
+  const auto &getImportedIndexes() const { return this->imported; }
 
-  unsigned short getModId() const {
-    return this->scope->modId;
-  }
+  unsigned short getModId() const { return this->scope->modId; }
 };
 
 } // namespace ydsh::lsp
