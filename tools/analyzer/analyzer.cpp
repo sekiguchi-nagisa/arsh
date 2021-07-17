@@ -22,14 +22,17 @@
 namespace ydsh::lsp {
 
 static bool isRevertedIndex(std::unordered_set<unsigned short> &revertingModIdSet,
-                            const ModuleIndex &index) {
-  const auto modId = index.getModId();
+                            const ModuleIndexPtr &index) {
+  if (!index) {
+    return false;
+  }
+  const auto modId = index->getModId();
   auto iter = revertingModIdSet.find(modId);
   if (iter != revertingModIdSet.end()) {
     return true;
   }
-  for (auto &e : index.getImportedIndexes()) {
-    if (isRevertedIndex(revertingModIdSet, *e.second)) {
+  for (auto &e : index->getImportedIndexes()) {
+    if (isRevertedIndex(revertingModIdSet, e.second)) {
       revertingModIdSet.emplace(modId);
       return true;
     }
@@ -39,11 +42,7 @@ static bool isRevertedIndex(std::unordered_set<unsigned short> &revertingModIdSe
 
 void IndexMap::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
   for (auto iter = this->map.begin(); iter != this->map.end();) {
-    if (!iter->second) {
-      continue;
-    }
-    auto &index = *iter->second;
-    if (isRevertedIndex(revertingModIdSet, index)) {
+    if (isRevertedIndex(revertingModIdSet, iter->second)) {
       iter = this->map.erase(iter);
     } else {
       ++iter;
@@ -51,17 +50,18 @@ void IndexMap::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
   }
 }
 
-static bool isImported(const ModuleIndex &index, unsigned short id) {
-  for (auto &e : index.getImportedIndexes()) {
-    if (!e.second) {
-      continue;
-    }
-    auto &child = *e.second;
-    if (child.getModId() == id) {
-      return true;
-    }
-    if (isImported(child, id)) {
-      return true;
+static bool isImported(const ModuleIndexPtr &index, unsigned short id) {
+  if (!index) {
+    return false;
+  }
+  for (auto &e : index->getImportedIndexes()) {
+    if (e.second) {
+      if (e.second->getModId() == id) {
+        return true;
+      }
+      if (isImported(e.second, id)) {
+        return true;
+      }
     }
   }
   return false;
@@ -69,7 +69,7 @@ static bool isImported(const ModuleIndex &index, unsigned short id) {
 
 bool IndexMap::revertIfUnused(unsigned short id) {
   for (auto &e : this->map) {
-    if (isImported(*e.second, id)) {
+    if (isImported(e.second, id)) {
       return false;
     }
   }
@@ -119,11 +119,23 @@ ASTContext::ASTContext(const Source &src)
 }
 
 ModuleIndexPtr ASTContext::buildIndex(const SourceManager &srcMan, const IndexMap &indexMap) && {
-  (void)srcMan;
-  (void)indexMap;
-  std::vector<std::pair<std::string, Archive>> handles;
-  ModuleArchive archive(std::move(handles));
+  auto &modType = this->getScope()->toModType(this->getPool());
+  auto archive =
+      ModuleArchive::create(this->getPool(), modType, this->typeDiscardPoint.typeIdOffset);
   std::vector<std::pair<bool, ModuleIndexPtr>> imported;
+  unsigned int size = modType.getChildSize();
+  for (unsigned int i = 0; i < size; i++) {
+    auto e = modType.getChildAt(i);
+    auto &type = static_cast<const ModType &>(this->getPool().get(e.typeId()));
+    if (type.getModID() == 0) { // skip builtin module
+      continue;
+    }
+    auto *src = srcMan.findById(type.getModID());
+    assert(src);
+    auto index = indexMap.find(*src);
+    assert(index);
+    imported.emplace_back(e.isGlobal(), std::move(index));
+  }
   return ModuleIndex::create(this->scope->modId, this->getVersion(), std::move(this->pool),
                              std::move(this->nodes), std::move(archive), std::move(imported));
 }
@@ -248,7 +260,7 @@ ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAct
   while (frontEnd) {
     auto ret = frontEnd();
     if (!ret) {
-      return nullptr; // FIXME: error recovery
+      break;
     }
     if (ret.kind == FrontEndResult::IN_MODULE) {
       provider.current()->addNode(std::move(ret.node));

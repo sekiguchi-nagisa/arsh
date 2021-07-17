@@ -159,15 +159,16 @@ public:
 
 class ModuleArchive {
 private:
-  std::vector<std::pair<std::string, Archive>> handles;
+  std::vector<Archive> handles;
 
 public:
-  explicit ModuleArchive(std::vector<std::pair<std::string, Archive>> &&handles)
-      : handles(std::move(handles)) {}
+  explicit ModuleArchive(std::vector<Archive> &&handles) : handles(std::move(handles)) {}
 
-  const auto &getHandles() const {
-    return this->handles;
-  }
+  static ModuleArchive create(const TypePool &pool, const ModType &modType, unsigned int idCount);
+
+  const auto &getHandles() const { return this->handles; }
+
+  Optional<std::unordered_map<std::string, FieldHandle>> unpack(TypePool &pool) const;
 };
 
 class ModuleIndex;

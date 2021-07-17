@@ -22,7 +22,6 @@
 #include <scope.h>
 #include <type_pool.h>
 
-#include "../tools/uri/uri.h"
 #include "index.h"
 #include "lsp.h"
 #include "source.h"

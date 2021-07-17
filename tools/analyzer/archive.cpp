@@ -155,6 +155,29 @@ const DSType *Unarchiver::unpackType() {
   return nullptr;
 }
 
+ModuleArchive ModuleArchive::create(const TypePool &pool, const ModType &modType,
+                                    unsigned int idCount) {
+  std::vector<Archive> handles;
+  for (auto &e : modType.getHandleMap()) {
+    handles.push_back(Archive::pack(pool, idCount, e.first, e.second));
+  }
+  return ModuleArchive(std::move(handles));
+}
+
+Optional<std::unordered_map<std::string, FieldHandle>> ModuleArchive::unpack(TypePool &pool) const {
+  std::unordered_map<std::string, FieldHandle> handleMap;
+  for (auto &e : this->getHandles()) {
+    auto h = e.unpack(pool);
+    if (!h.hasValue()) {
+      return Optional<std::unordered_map<std::string, FieldHandle>>();
+    }
+    if (!handleMap.emplace(e.getName(), h.unwrap()).second) {
+      return Optional<std::unordered_map<std::string, FieldHandle>>();
+    }
+  }
+  return handleMap;
+}
+
 static const ModType *getModType(const TypePool &pool, unsigned short modId) {
   auto ret = pool.getModTypeById(modId);
   if (ret) {
@@ -173,24 +196,17 @@ const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index) {
   FlexBuffer<ImportedModEntry> children; // FIXME: topological sort
   for (auto &child : index.getImportedIndexes()) {
     bool global = child.first;
-    auto *type = loadFromModuleIndex(pool, *child.second);
-    if (!type) {
-      return nullptr;
-    }
-    auto e = type->toModEntry(global);
+    auto type = pool.getModTypeById(child.second->getModId());
+    assert(type);
+    auto e = static_cast<const ModType*>(type.asOk())->toModEntry(global);
     children.push_back(e);
   }
 
-  std::unordered_map<std::string, FieldHandle> handleMap;
-  for (auto &e : index.getArchive().getHandles()) {
-    auto handle = e.second.unpack(pool);
-    if (!handle.hasValue()) {
-      return nullptr;
-    }
-    if (!handleMap.emplace(e.first, handle.unwrap()).second) {
-      return nullptr;
-    }
+  auto ret = index.getArchive().unpack(pool);
+  if (!ret.hasValue()) {
+    return nullptr;
   }
+  auto handleMap = ret.unwrap();
   return &pool.createModType(index.getModId(), std::move(handleMap), std::move(children), 0);
 }
 
