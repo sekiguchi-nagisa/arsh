@@ -18,5 +18,59 @@
 
 namespace ydsh::lsp {
 
+// #########################
+// ##     ModuleIndex     ##
+// #########################
+
+static void tryInsertByAscendingOrder(std::vector<ModuleIndexPtr> &targets,
+                                      const ModuleIndexPtr &index) {
+  assert(index);
+  auto iter = std::lower_bound(targets.begin(), targets.end(), index,
+                               [](const ModuleIndexPtr &x, const ModuleIndexPtr &y) {
+                                 return x->getModId() < y->getModId();
+                               });
+  if (iter == targets.end() || (*iter)->getModId() != index->getModId()) {
+    targets.insert(iter, index);
+  }
+}
+
+static void resolveTargets(std::vector<ModuleIndexPtr> &targets, const ModuleIndexPtr &index) {
+  tryInsertByAscendingOrder(targets, index);
+  for (auto &e : index->getImportedIndexes()) {
+    resolveTargets(targets, e.second);
+  }
+}
+
+static void visit(std::vector<ModuleIndexPtr> &ret, std::vector<bool> &used,
+                  const ModuleIndexPtr &index) {
+  if (used[index->getModId()]) {
+    return;
+  }
+  used[index->getModId()] = true;
+  for (auto &e : index->getImportedIndexes()) {
+    visit(ret, used, e.second);
+  }
+  ret.push_back(index);
+}
+
+static std::vector<ModuleIndexPtr> topologcalSort(const std::vector<ModuleIndexPtr> &targets) {
+  std::vector<ModuleIndexPtr> ret;
+  if (targets.empty()) {
+    return ret;
+  }
+  std::vector<bool> used(targets.back()->getModId() + 1, false);
+  for (auto &e : targets) {
+    visit(ret, used, e);
+  }
+  return ret;
+}
+
+std::vector<ModuleIndexPtr> ModuleIndex::getDepsByTopologicalOrder() const {
+  std::vector<ModuleIndexPtr> targets;
+  for (auto &e : this->imported) {
+    resolveTargets(targets, e.second);
+  }
+  return topologcalSort(targets);
+}
 
 } // namespace ydsh::lsp

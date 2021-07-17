@@ -31,7 +31,7 @@ using ModuleIndexPtr = std::shared_ptr<ModuleIndex>;
 
 class ModuleIndex { // FIXME: indexed symbols
 private:
-  unsigned short modId;
+  const unsigned short modId;
   const int version;
   std::unique_ptr<TypePool> pool;
   std::vector<std::unique_ptr<Node>> nodes;
@@ -61,6 +61,8 @@ public:
   const auto &getImportedIndexes() const { return this->imported; }
 
   unsigned short getModId() const { return this->modId; }
+
+  std::vector<ModuleIndexPtr> getDepsByTopologicalOrder() const;
 };
 
 } // namespace ydsh::lsp

@@ -38,7 +38,14 @@ public:
     return iter != this->map.end() ? iter->second : nullptr;
   }
 
-  void add(const Source &src, ModuleIndexPtr index) { this->map[src.getPath()] = std::move(index); }
+  void add(const Source &src, ModuleIndexPtr index) {
+    assert(!index || src.getSrcId() == index->getModId());
+    this->map[src.getPath()] = std::move(index);
+  }
+
+  size_t size() const {
+    return this->map.size();
+  }
 
   void revert(std::unordered_set<unsigned short> &&revertingModIdSet);
 

@@ -188,17 +188,17 @@ static const ModType *getModType(const TypePool &pool, unsigned short modId) {
   return nullptr;
 }
 
-const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index) {
+static const ModType *load(TypePool &pool, const ModuleIndex &index) {
   if (const ModType * type; (type = getModType(pool, index.getModId()))) {
     return type;
   }
 
-  FlexBuffer<ImportedModEntry> children; // FIXME: topological sort
+  FlexBuffer<ImportedModEntry> children;
   for (auto &child : index.getImportedIndexes()) {
     bool global = child.first;
     auto type = pool.getModTypeById(child.second->getModId());
     assert(type);
-    auto e = static_cast<const ModType*>(type.asOk())->toModEntry(global);
+    auto e = static_cast<const ModType *>(type.asOk())->toModEntry(global);
     children.push_back(e);
   }
 
@@ -208,6 +208,19 @@ const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index) {
   }
   auto handleMap = ret.unwrap();
   return &pool.createModType(index.getModId(), std::move(handleMap), std::move(children), 0);
+}
+
+const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index) {
+  if (const ModType * type; (type = getModType(pool, index.getModId()))) {
+    return type;
+  }
+
+  for (auto &dep : index.getDepsByTopologicalOrder()) {
+    if (!load(pool, *dep)) {
+      return nullptr;
+    }
+  }
+  return load(pool, index);
 }
 
 } // namespace ydsh::lsp
