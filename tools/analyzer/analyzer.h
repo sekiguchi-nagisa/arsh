@@ -47,10 +47,10 @@ public:
 class ASTContext {
 private:
   std::unique_ptr<TypePool> pool;
-  std::unique_ptr<unsigned int> gvarCount;
   IntrusivePtr<NameScope> scope;
   std::vector<std::unique_ptr<Node>> nodes;
   int version;
+  unsigned int gvarCount{0};
   TypeDiscardPoint typeDiscardPoint;
 
 public:
@@ -60,8 +60,6 @@ public:
 
   const IntrusivePtr<NameScope> &getScope() const { return this->scope; }
 
-  const TypePool &getPool() const { return *this->pool; }
-
   TypePool &getPool() { return *this->pool; }
 
   unsigned int getModId() const { return this->scope->modId; }
@@ -69,8 +67,6 @@ public:
   int getVersion() const { return this->version; }
 
   void addNode(std::unique_ptr<Node> &&node) { this->nodes.push_back(std::move(node)); }
-
-  const std::vector<std::unique_ptr<Node>> &getNodes() const { return this->nodes; }
 
   ModuleIndexPtr buildIndex(const SourceManager &srcMan, const IndexMap &indexMap) &&;
 };
@@ -115,7 +111,12 @@ public:
                        const TypeCheckError &checkError) override;
 };
 
-ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, DiagnosticEmitter &emitter,
+struct AnalyzerAction {
+  ObserverPtr<DiagnosticEmitter> emitter;
+  ObserverPtr<NodeDumper> dumper;
+};
+
+ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAction &action,
                           const Source &src);
 
 } // namespace ydsh::lsp

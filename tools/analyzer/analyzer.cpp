@@ -75,10 +75,9 @@ static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
 }
 
 ASTContext::ASTContext(const Source &src)
-    : pool(std::make_unique<TypePool>()), gvarCount(std::make_unique<unsigned int>(0)),
-      version(src.getVersion()) {
-  auto &builtin = createBuiltin(this->getPool(), *this->gvarCount);
-  this->scope = IntrusivePtr<NameScope>::create(std::ref(*this->gvarCount), src.getSrcId());
+    : pool(std::make_unique<TypePool>()), version(src.getVersion()) {
+  auto &builtin = createBuiltin(this->getPool(), this->gvarCount);
+  this->scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), src.getSrcId());
   this->scope->importForeignHandles(builtin, true);
   this->typeDiscardPoint = this->getPool().getDiscardPoint();
 }
@@ -89,9 +88,8 @@ ModuleIndexPtr ASTContext::buildIndex(const SourceManager &srcMan, const IndexMa
   std::vector<std::pair<std::string, Archive>> handles;
   ModuleArchive archive(std::move(handles));
   std::vector<std::pair<bool, ModuleIndexPtr>> imported;
-  return ModuleIndex::create(this->getVersion(), std::move(this->gvarCount), std::move(this->scope),
-                             std::move(this->pool), std::move(this->nodes), std::move(archive),
-                             std::move(imported));
+  return ModuleIndex::create(this->scope->modId, this->getVersion(), std::move(this->pool),
+                             std::move(this->nodes), std::move(archive), std::move(imported));
 }
 
 // ################################
@@ -196,15 +194,21 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   return false;
 }
 
-ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, DiagnosticEmitter &emitter,
+ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAction &action,
                           const Source &src) {
   // prepare
   ASTContextProvider provider(srcMan, indexMap);
   provider.addNew(src);
   FrontEnd frontEnd(provider, createLexer(src), FrontEndOption{}, nullptr);
-  frontEnd.setErrorListener(emitter);
+  if (action.emitter) {
+    frontEnd.setErrorListener(*action.emitter);
+  }
+  if (action.dumper) {
+    frontEnd.setASTDumper(*action.dumper);
+  }
 
   // run front end
+  frontEnd.setupASTDump();
   while (frontEnd) {
     auto ret = frontEnd();
     if (!ret) {
@@ -214,6 +218,7 @@ ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, DiagnosticE
       provider.current()->addNode(std::move(ret.node));
     }
   }
+  frontEnd.teardownASTDump();
   return std::move(*provider.current()).buildIndex(srcMan, indexMap);
 }
 

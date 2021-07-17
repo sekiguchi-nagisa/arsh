@@ -65,18 +65,13 @@ protected:
     readContent(GetParam(), content);
     SourceManager man;
     IndexMap indexMap;
-    DiagnosticEmitter emitter;
-    auto *src = man.update(GetParam(), 0, std::move(content));
-    auto index = buildIndex(man, indexMap, emitter, *src);
-
     std::string tempFileName;
     auto tmpFile = this->createTempFilePtr(tempFileName, "");
     NodeDumper dumper(tmpFile.get());
-    dumper.initialize(GetParam(), "### dump typed AST ###");
-    for (auto &node : index->getNodes()) {
-      dumper(*node);
-    }
-    dumper.finalize(index->getScope());
+    auto *src = man.update(GetParam(), 0, std::move(content));
+    AnalyzerAction action;
+    action.dumper.reset(&dumper);
+    auto index = buildIndex(man, indexMap, action, *src);
     tmpFile.reset();
     content = std::string();
     readContent(tempFileName, content);

@@ -112,7 +112,9 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
       LOG(LogLevel::ERROR, "reach opened file limit"); // FIXME: report to client?
       return;
     }
-    buildIndex(this->srcMan, this->indexMap, this->diagnosticEmitter, *src);
+    AnalyzerAction action;
+    action.emitter.reset(&this->diagnosticEmitter);
+    buildIndex(this->srcMan, this->indexMap, action, *src);
   }
 }
 
@@ -143,7 +145,9 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
   }
   src = this->srcMan.update(uri.getPath(), params.textDocument.version, std::move(content));
   this->indexMap.revert({src->getSrcId()});
-  buildIndex(this->srcMan, this->indexMap, this->diagnosticEmitter, *src);
+  AnalyzerAction action;
+  action.emitter.reset(&this->diagnosticEmitter);
+  buildIndex(this->srcMan, this->indexMap, action, *src);
 }
 
 } // namespace ydsh::lsp
