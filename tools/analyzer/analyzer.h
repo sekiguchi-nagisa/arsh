@@ -42,6 +42,14 @@ public:
   void add(const Source &src, ModuleIndexPtr index) { this->map[src.getPath()] = std::move(index); }
 
   void revert(std::unordered_set<unsigned short> &&revertingModIdSet);
+
+  /**
+   * revert sepcified index if unused (not imported from other indexes)
+   * @param id
+   * @return
+   * if unused, return true
+   */
+  bool revertIfUnused(unsigned short id);
 };
 
 class ASTContext {

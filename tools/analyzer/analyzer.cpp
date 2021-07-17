@@ -39,6 +39,9 @@ static bool isRevertedIndex(std::unordered_set<unsigned short> &revertingModIdSe
 
 void IndexMap::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
   for (auto iter = this->map.begin(); iter != this->map.end();) {
+    if (!iter->second) {
+      continue;
+    }
     auto &index = *iter->second;
     if (isRevertedIndex(revertingModIdSet, index)) {
       iter = this->map.erase(iter);
@@ -46,6 +49,39 @@ void IndexMap::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
       ++iter;
     }
   }
+}
+
+static bool isImported(const ModuleIndex &index, unsigned short id) {
+  for (auto &e : index.getImportedIndexes()) {
+    if (!e.second) {
+      continue;
+    }
+    auto &child = *e.second;
+    if (child.getModId() == id) {
+      return true;
+    }
+    if (isImported(child, id)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool IndexMap::revertIfUnused(unsigned short id) {
+  for (auto &e : this->map) {
+    if (isImported(*e.second, id)) {
+      return false;
+    }
+  }
+  for (auto iter = this->map.begin(); iter != this->map.end();) {
+    if (iter->second && iter->second->getModId() == id) {
+      this->map.erase(iter);
+      return true;
+    } else {
+      ++iter;
+    }
+  }
+  return false;
 }
 
 // ########################

@@ -119,8 +119,19 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
-  LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
-  // FIXME: check dependency
+  const char *uriStr = params.textDocument.uri.c_str();
+  LOG(LogLevel::INFO, "close textDocument: %s", uriStr);
+  auto uri = uri::URI::fromString(uriStr);
+  if (!uri) {
+    LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
+    return;
+  }
+  auto *src = this->srcMan.find(uri.getPath());
+  if (!src) {
+    LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr);
+    return;
+  }
+  this->indexMap.revertIfUnused(src->getSrcId());
 }
 
 void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params) {
