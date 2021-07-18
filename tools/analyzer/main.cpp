@@ -82,8 +82,16 @@ static Options parseOptions(int argc, char **argv) {
   return options;
 }
 
-static void showInfo(LSPLogger &logger) {
-  fprintf(stderr, "start ydsh code analyzer\n");
+static void showInfo(char **const argv, LSPLogger &logger) {
+  std::string cmdline;
+  for(unsigned int i = 0; argv[i]; i++) {
+    if(!cmdline.empty()) {
+      cmdline += ' ';
+    }
+    cmdline += argv[i];
+  }
+  fprintf(stderr, "start ydsh code analyzer with the following options\n");
+  fprintf(stderr, "    %s\n", cmdline.c_str());
   fflush(stderr);
   logger(LogLevel::INFO, "working directory: %s", getCWD().get());
 }
@@ -93,7 +101,7 @@ int main(int argc, char **argv) {
   LSPLogger logger;
   logger.setSeverity(options.level);
   logger.setAppender(FilePtr(stderr));
-  showInfo(logger);
+  showInfo(argv, logger);
   LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
   server.run();
 }
