@@ -14,15 +14,86 @@
  * limitations under the License.
  */
 
+#include <misc/files.h>
+#include <misc/opt.hpp>
+
 #include "server.h"
 
 using namespace ydsh;
 using namespace lsp;
 
-int main() {
+#define EACH_OPT(OP)                                                                               \
+  OP(LOG, "--log", opt::HAS_ARG,                                                                   \
+     "specify log level (info, warning, error, fatal, none). default is `info'")                   \
+  OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
+  OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")
+
+enum class OptionKind {
+#define GEN_ENUM(E, S, F, D) E,
+  EACH_OPT(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+struct Options {
+  LogLevel level{LogLevel::INFO};
+  bool lsp{true};
+};
+
+static LogLevel parseLogLevel(const char *value, LogLevel v) {
+  LogLevel levels[] = {LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR, LogLevel::FATAL,
+                       LogLevel::NONE};
+  for (auto &l : levels) {
+    const char *ls = toString(l);
+    if (strcasecmp(ls, value) == 0) {
+      return l;
+    }
+  }
+  return v;
+}
+
+static Options parseOptions(int argc, char **argv) {
+  opt::Parser<OptionKind> optParser = {
+#define GEN_OPT(E, S, F, D) {OptionKind::E, S, F, D},
+      EACH_OPT(GEN_OPT)
+#undef GEN_OPT
+  };
+  auto begin = argv + (argc > 0 ? 1 : 0);
+  auto end = argv + argc;
+  opt::Result<OptionKind> result;
+  Options options;
+  while ((result = optParser(begin, end))) {
+    switch (result.value()) {
+    case OptionKind::LOG:
+      options.level = parseLogLevel(result.arg(), LogLevel::INFO);
+      break;
+    case OptionKind::HELP:
+      optParser.printOption(stdout);
+      exit(0);
+    case OptionKind::LSP:
+      options.lsp = true;
+      break;
+    }
+  }
+  if (result.error() != opt::END) {
+    fprintf(stderr, "%s\n", result.formatError().c_str());
+    optParser.printOption(stderr);
+    exit(1);
+  }
+  return options;
+}
+
+static void showInfo(LSPLogger &logger) {
+  fprintf(stderr, "start ydsh code analyzer\n");
+  fflush(stderr);
+  logger(LogLevel::INFO, "working directory: %s", getCWD().get());
+}
+
+int main(int argc, char **argv) {
+  auto options = parseOptions(argc, argv);
   LSPLogger logger;
-  logger.setSeverity(LogLevel::INFO);
+  logger.setSeverity(options.level);
   logger.setAppender(FilePtr(stderr));
+  showInfo(logger);
   LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
   server.run();
 }
