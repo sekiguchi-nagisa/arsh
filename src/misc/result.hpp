@@ -113,13 +113,13 @@ struct Storage {
   template <typename F>
   F *data() {
     static_assert(TypeTag<F, T...>::value > -1, "invalid type");
-    return std::launder(reinterpret_cast<F*>(&this->_data));
+    return std::launder(reinterpret_cast<F *>(&this->_data));
   }
 
   template <typename F>
   const F *data() const {
     static_assert(TypeTag<F, T...>::value > -1, "invalid type");
-    return std::launder(reinterpret_cast<const F*>(&this->_data));
+    return std::launder(reinterpret_cast<const F *>(&this->_data));
   }
 };
 
