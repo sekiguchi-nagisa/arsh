@@ -56,10 +56,10 @@ constexpr int toTypeIndex(int index) {
 }
 
 template <std::size_t I, std::size_t N, typename F, typename... R>
-struct TypeByIndex : TypeByIndex<I + 1, N, R...> {};
+struct TypeByIndex_ : TypeByIndex_<I + 1, N, R...> {};
 
 template <std::size_t N, typename F, typename... R>
-struct TypeByIndex<N, N, F, R...> {
+struct TypeByIndex_<N, N, F, R...> {
   using type = F;
 };
 
@@ -81,6 +81,9 @@ struct OverloadResolver<> {
 template <typename F, typename... T>
 using resolvedType = typename std::invoke_result_t<OverloadResolver<T...>, F>::type;
 
+template <ssize_t N>
+struct index_holder {};
+
 } // namespace __detail
 
 template <typename U, typename... T>
@@ -91,7 +94,7 @@ struct TypeTag {
 template <std::size_t N, typename T0, typename... T>
 struct TypeByIndex {
   static_assert(N < sizeof...(T) + 1, "out of range");
-  using type = typename __detail::TypeByIndex<0, N, T0, T...>::type;
+  using type = typename __detail::TypeByIndex_<0, N, T0, T...>::type;
 };
 
 // #####################
@@ -141,7 +144,6 @@ inline void destroy(Storage<R...> &storage) {
 template <typename T, typename... R>
 inline void move(Storage<R...> &src, Storage<R...> &dest) {
   dest.obtain(std::move(get<T>(src)));
-  destroy<T>(src);
 }
 
 template <typename T, typename... R>
@@ -149,84 +151,60 @@ inline void copy(const Storage<R...> &src, Storage<R...> &dest) {
   dest.obtain(get<T>(src));
 }
 
-namespace __detail_union {
+namespace __detail {
 
-template <int N, typename... R>
-struct Destroyer {
-  void operator()(Storage<R...> &storage, int tag) const {
-    if (tag == N) {
-      using T = typename TypeByIndex<N, R...>::type;
-      destroy<T>(storage);
-    } else {
-      Destroyer<N - 1, R...>()(storage, tag);
-    }
+template <ssize_t N, typename... R>
+inline void destroy(Storage<R...> &storage, int tag, index_holder<N>) {
+  if constexpr (N == -1) {
+  } // do nothing
+  else if (tag == N) {
+    using T = typename TypeByIndex<N, R...>::type;
+    get<T>(storage).~T();
+  } else {
+    destroy(storage, tag, index_holder<N - 1>{});
   }
-};
-
-template <typename... R>
-struct Destroyer<-1, R...> {
-  void operator()(Storage<R...> &, int) const {}
-};
-
-template <int N, typename... R>
-struct Mover {
-  void operator()(Storage<R...> &src, int srcTag, Storage<R...> &dest) const {
-    if (srcTag == N) {
-      using T = typename TypeByIndex<N, R...>::type;
-      move<T>(src, dest);
-    } else {
-      Mover<N - 1, R...>()(src, srcTag, dest);
-    }
-  }
-};
-
-template <typename... R>
-struct Mover<-1, R...> {
-  void operator()(Storage<R...> &, int, Storage<R...> &) const {}
-};
-
-template <int N, typename... R>
-struct Copier {
-  void operator()(const Storage<R...> &src, int srcTag, Storage<R...> &dest) const {
-    if (srcTag == N) {
-      using T = typename TypeByIndex<N, R...>::type;
-      copy<T>(src, dest);
-    } else {
-      Copier<N - 1, R...>()(src, srcTag, dest);
-    }
-  }
-};
-
-template <typename... R>
-struct Copier<-1, R...> {
-  void operator()(const Storage<R...> &, int, Storage<R...> &) const {}
-};
-
-} // namespace __detail_union
-
-template <typename... R>
-inline void polyDestroy(Storage<R...> &storage, int tag) {
-  __detail_union::Destroyer<sizeof...(R) - 1, R...>()(storage, tag);
-}
-
-/**
- *
- * @tparam N
- * @tparam R
- * @param src
- * @param srcTag
- * @param dest
- * must be uninitialized
- */
-template <typename... R>
-inline void polyMove(Storage<R...> &src, int srcTag, Storage<R...> &dest) {
-  __detail_union::Mover<sizeof...(R) - 1, R...>()(src, srcTag, dest);
 }
 
 template <typename... R>
-inline void polyCopy(const Storage<R...> &src, int srcTag, Storage<R...> &dest) {
-  __detail_union::Copier<sizeof...(R) - 1, R...>()(src, srcTag, dest);
+inline void destroy(Storage<R...> &storage, int tag) {
+  destroy(storage, tag, index_holder<sizeof...(R) - 1>{});
 }
+
+template <ssize_t N, typename... R>
+inline void move(Storage<R...> &src, int srcTag, index_holder<N>, Storage<R...> &dest) {
+  if constexpr (N == -1) {
+  } // do nothing
+  else if (srcTag == N) {
+    using T = typename TypeByIndex<N, R...>::type;
+    dest.obtain(std::move(get<T>(src)));
+  } else {
+    move(src, srcTag, index_holder<N - 1>{}, dest);
+  }
+}
+
+template <typename... R>
+inline void move(Storage<R...> &src, int srcTag, Storage<R...> &dest) {
+  move(src, srcTag, index_holder<sizeof...(R) - 1>{}, dest);
+}
+
+template <ssize_t N, typename... R>
+inline void copy(const Storage<R...> &src, int srcTag, index_holder<N>, Storage<R...> &dest) {
+  if constexpr (N == -1) {
+  } // do nothing
+  else if (srcTag == N) {
+    using T = typename TypeByIndex<N, R...>::type;
+    dest.obtain(get<T>(src));
+  } else {
+    copy(src, srcTag, index_holder<N - 1>{}, dest);
+  }
+}
+
+template <typename... R>
+inline void copy(const Storage<R...> &src, int srcTag, Storage<R...> &dest) {
+  return copy(src, srcTag, index_holder<sizeof...(R) - 1>{}, dest);
+}
+
+} // namespace __detail
 
 // ###################
 // ##     Union     ##
@@ -254,15 +232,15 @@ public:
   }
 
   Union(Union &&value) noexcept : tag_(value.tag()) {
-    polyMove(value.value(), this->tag(), this->value());
+    __detail::move(value.value(), this->tag(), this->value());
     value.tag_ = -1;
   }
 
   Union(const Union &value) : tag_(value.tag()) {
-    polyCopy(value.value(), this->tag(), this->value());
+    __detail::copy(value.value(), this->tag(), this->value());
   }
 
-  ~Union() { polyDestroy(this->value(), this->tag()); }
+  ~Union() { __detail::destroy(this->value(), this->tag()); }
 
   Union &operator=(Union &&value) noexcept {
     if (this != std::addressof(value)) {
@@ -288,15 +266,15 @@ public:
 
 private:
   void moveAssign(Union &value) noexcept {
-    polyDestroy(this->value(), this->tag());
-    polyMove(value.value(), value.tag(), this->value());
+    __detail::destroy(this->value(), this->tag());
+    __detail::move(value.value(), value.tag(), this->value());
     this->tag_ = value.tag();
     value.tag_ = -1;
   }
 
   void copyAssign(const Union &value) {
-    polyDestroy(this->value(), this->tag());
-    polyCopy(value.value(), value.tag(), this->value());
+    __detail::destroy(this->value(), this->tag());
+    __detail::copy(value.value(), value.tag(), this->value());
     this->tag_ = value.tag();
   }
 };
