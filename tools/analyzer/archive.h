@@ -100,7 +100,8 @@ private:
     uint64_t v = 0;
     for (unsigned int i = N; i > 0; --i) {
       const uint64_t shift = (i - 1) * 8;
-      v |= static_cast<uint64_t>(this->data[this->pos++]) << shift;
+      uint8_t ch = this->data[this->pos++];
+      v |= static_cast<uint64_t>(ch) << shift;
     }
     return v;
   }

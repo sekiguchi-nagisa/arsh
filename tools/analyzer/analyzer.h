@@ -43,9 +43,7 @@ public:
     this->map[src.getPath()] = std::move(index);
   }
 
-  size_t size() const {
-    return this->map.size();
-  }
+  size_t size() const { return this->map.size(); }
 
   void revert(std::unordered_set<unsigned short> &&revertingModIdSet);
 
@@ -79,6 +77,8 @@ public:
   unsigned int getModId() const { return this->scope->modId; }
 
   int getVersion() const { return this->version; }
+
+  unsigned int getTypeIdOffset() const { return this->typeDiscardPoint.typeIdOffset; }
 
   void addNode(std::unique_ptr<Node> &&node) { this->nodes.push_back(std::move(node)); }
 

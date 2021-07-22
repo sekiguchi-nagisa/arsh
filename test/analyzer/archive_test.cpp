@@ -7,26 +7,38 @@
 using namespace ydsh::lsp;
 using namespace ydsh;
 
-static ASTContextPtr newctx(unsigned int modId) {
-  std::string path = "/dummy_";
-  path += std::to_string(modId);
-  CStrPtr ptr(strdup(path.c_str()));
-
-  Source src(std::move(ptr), modId, "", 0);
-  return std::make_unique<ASTContext>(src);
-}
-
 class ArchiveTest : public ::testing::Test {
 private:
+  SourceManager srcMan;
+  IndexMap indexMap;
   ASTContextPtr orgCtx;
   ASTContextPtr newCtx;
 
 protected:
   const unsigned int builtinIdOffset;
 
+  static ASTContextPtr newctx(SourceManager &srcMan, IndexMap &indexMap) {
+    std::string path = "/dummy_";
+    path += std::to_string(srcMan.size() + 1);
+    auto *src = srcMan.update(path, 0, "");
+    indexMap.add(*src, nullptr);
+    return std::make_unique<ASTContext>(*src);
+  }
+
+  static auto toSorted(const std::unordered_map<std::string, FieldHandle> &handleMap) {
+    using Entry = std::pair<std::string, FieldHandle>;
+    std::vector<Entry> ret;
+    for (auto &e : handleMap) {
+      ret.emplace_back(e.first, e.second);
+    }
+    std::sort(ret.begin(), ret.end(),
+              [](const Entry &x, const Entry &y) { return x.first < y.first; });
+    return ret;
+  }
+
 public:
   ArchiveTest()
-      : orgCtx(newctx(1)), newCtx(newctx(2)),
+      : orgCtx(newctx(this->srcMan, this->indexMap)), newCtx(newctx(this->srcMan, this->indexMap)),
         builtinIdOffset(this->orgCtx->getPool().getDiscardPoint().typeIdOffset) {}
 
   TypePool &pool() { return this->orgCtx->getPool(); }
@@ -63,9 +75,77 @@ public:
     ASSERT_EQ(orgHandle.getModID(), newHandle.getModID());
     ASSERT_EQ(orgHandle.getIndex(), newHandle.getIndex());
     ASSERT_EQ(orgHandle.getCommitID(), newHandle.getCommitID());
+    ASSERT_EQ(toString(orgHandle.attr()), toString(newHandle.attr()));
     ASSERT_TRUE(newHandle.getTypeID() <= this->newCtx->getPool().getDiscardPoint().typeIdOffset);
     auto &newType = this->newCtx->getPool().get(newHandle.getTypeID());
     ASSERT_EQ(orgType.getNameRef(), newType.getNameRef());
+  }
+
+  void define(const char *fieldName, const DSType &orgType, FieldAttribute attr = {}) {
+    ASSERT_TRUE(fieldName);
+    ASSERT_TRUE(orgType.typeId() < this->pool().getDiscardPoint().typeIdOffset);
+    ASSERT_EQ(orgType, this->orgCtx->getPool().get(orgType.typeId()));
+
+    auto ret = this->orgCtx->getScope()->defineHandle(fieldName, orgType, attr);
+    ASSERT_TRUE(ret);
+    auto *handle = ret.asOk();
+    ASSERT_EQ(orgType.typeId(), handle->getTypeID());
+    auto orgAttr = attr;
+    unsetFlag(orgAttr, FieldAttribute::GLOBAL);
+    auto newAttr = handle->attr();
+    unsetFlag(newAttr, FieldAttribute::GLOBAL);
+    ASSERT_EQ(toString(orgAttr), toString(newAttr));
+  }
+
+  void archiveMod(std::vector<std::string> &&expected = {}) {
+    // serialize
+    auto index = std::move(*this->orgCtx).buildIndex(this->srcMan, this->indexMap);
+    ASSERT_TRUE(index);
+    unsigned id = index->getModId();
+    auto ret = index->getPool().getModTypeById(id);
+    ASSERT_TRUE(ret);
+    auto *orgModType = static_cast<const ModType *>(ret.asOk());
+
+    // deserialize
+    auto *newModType = loadFromModuleIndex(this->newCtx->getPool(), *index);
+    ASSERT_TRUE(newModType);
+
+    // compare
+    ASSERT_EQ(orgModType->getModID(), newModType->getModID());
+    ASSERT_EQ(orgModType->getChildSize(), newModType->getChildSize());
+    for (unsigned int i = 0; i < orgModType->getChildSize(); i++) {
+      auto oe = orgModType->getChildAt(i);
+      auto ne = newModType->getChildAt(i);
+      ASSERT_EQ(oe.isGlobal(), ne.isGlobal());
+      auto &om = index->getPool().get(oe.typeId());
+      ASSERT_TRUE(om.isModType());
+      auto &nm = this->newCtx->getPool().get(ne.typeId());
+      ASSERT_TRUE(nm.isModType());
+      ASSERT_EQ(static_cast<const ModType &>(om).getModID(),
+                static_cast<const ModType &>(nm).getModID());
+      ASSERT_EQ(om.getNameRef(), nm.getNameRef());
+    }
+
+    ASSERT_EQ(orgModType->getHandleMap().size(), newModType->getHandleMap().size());
+    ASSERT_EQ(index->getPool().getDiscardPoint().typeIdOffset,
+              this->newCtx->getPool().getDiscardPoint().typeIdOffset);
+
+    auto orgHandles = toSorted(orgModType->getHandleMap());
+    auto newHandles = toSorted(newModType->getHandleMap());
+    ASSERT_EQ(orgHandles.size(), newHandles.size());
+    for (unsigned int i = 0; i < orgHandles.size(); i++) {
+      auto &orgEntry = orgHandles[i];
+      auto &newEntry = newHandles[i];
+      ASSERT_EQ(orgEntry.first, newEntry.first);
+      ASSERT_EQ(orgEntry.second.getModID(), newEntry.second.getModID());
+      ASSERT_EQ(toString(orgEntry.second.attr()), toString(newEntry.second.attr()));
+    }
+
+    // check specified names
+    for (auto &e : expected) {
+      auto *handle = newModType->lookupField(e);
+      ASSERT_TRUE(handle);
+    }
   }
 };
 
@@ -186,6 +266,27 @@ TEST_F(ArchiveTest, func) {
   auto &type2 = *ret1.asOk();
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("ccc", type2, FieldAttribute::ALIAS));
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("DDD", type2, FieldAttribute::FUNC_HANDLE));
+}
+
+TEST_F(ArchiveTest, mod1) { ASSERT_NO_FATAL_FAILURE(this->archiveMod()); }
+
+TEST_F(ArchiveTest, mod2) {
+  //
+  std::vector<const DSType *> types;
+  auto ret1 = this->pool().createFuncType(this->pool().get(TYPE::Void), std::move(types));
+  ASSERT_TRUE(ret1);
+  auto &type1 = *ret1.asOk();
+  ASSERT_NO_FATAL_FAILURE(
+      this->define("AAA", type1, FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY));
+
+  //
+  auto ret2 = this->pool().createOptionType(this->pool().get(TYPE::UnwrappingError));
+  ASSERT_TRUE(ret2);
+  auto &type2 = *ret2.asOk();
+  ASSERT_NO_FATAL_FAILURE(
+      this->define("a12345", type2, FieldAttribute::ALIAS | FieldAttribute::READ_ONLY));
+
+  ASSERT_NO_FATAL_FAILURE(this->archiveMod());
 }
 
 int main(int argc, char **argv) {

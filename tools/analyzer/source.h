@@ -55,6 +55,10 @@ private:
   StrRefMap<unsigned int> indexMap; // fullpath to index mapping
 
 public:
+  unsigned int size() const {
+    return this->sources.size();
+  }
+
   /**
    *
    * @param id

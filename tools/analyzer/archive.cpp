@@ -67,7 +67,7 @@ void Archiver::add(const DSType &type) {
 void Archiver::add(const FieldHandle &handle) {
   this->write32(handle.getCommitID());
   this->write32(handle.getIndex());
-  static_assert(std::is_same_v<std::underlying_type_t<decltype(handle.attr())>, unsigned short>);
+  static_assert(std::is_same_v<std::underlying_type_t<FieldAttribute>, unsigned short>);
   this->write16(static_cast<unsigned short>(handle.attr()));
   this->write16(handle.getModID());
   auto &type = this->pool.get(handle.getTypeID());
@@ -194,6 +194,11 @@ static const ModType *load(TypePool &pool, const ModuleIndex &index) {
   }
 
   FlexBuffer<ImportedModEntry> children;
+
+  // add builtin
+  auto &builtin = pool.getBuiltinModType();
+  children.push_back(builtin.toModEntry(true));
+
   for (auto &child : index.getImportedIndexes()) {
     bool global = child.first;
     auto type = pool.getModTypeById(child.second->getModId());
