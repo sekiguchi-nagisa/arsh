@@ -102,7 +102,7 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
     LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
     return;
   }
-  auto *src = this->srcMan.find(uri.getPath());
+  auto src = this->srcMan.find(uri.getPath());
   if (src) {
     LOG(LogLevel::INFO, "already opened textDocument: %s", uriStr);
   } else {
@@ -126,7 +126,7 @@ void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
     LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
     return;
   }
-  auto *src = this->srcMan.find(uri.getPath());
+  auto src = this->srcMan.find(uri.getPath());
   if (!src) {
     LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr);
     return;
@@ -142,7 +142,7 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
     LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
     return;
   }
-  auto *src = this->srcMan.find(uri.getPath());
+  auto src = this->srcMan.find(uri.getPath());
   if (!src) {
     LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr);
     return;

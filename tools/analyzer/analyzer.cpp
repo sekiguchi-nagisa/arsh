@@ -130,7 +130,7 @@ ModuleIndexPtr ASTContext::buildIndex(const SourceManager &srcMan, const IndexMa
     if (type.getModID() == 0) { // skip builtin module
       continue;
     }
-    auto *src = srcMan.findById(type.getModID());
+    auto src = srcMan.findById(type.getModID());
     assert(src);
     auto index = indexMap.find(*src);
     assert(index);
@@ -180,7 +180,7 @@ FrontEnd::ModuleProvider::Ret ASTContextProvider::load(const char *scriptDir, co
       return ModLoadingError(errno);
     }
     const char *fullpath = get<const char *>(ret);
-    auto *src = this->srcMan.find(fullpath);
+    auto src = this->srcMan.find(fullpath);
     src = this->srcMan.update(fullpath, src->getVersion(), std::move(content));
     auto &ctx = this->addNew(*src);
     auto lex = createLexer(*src);
@@ -188,7 +188,7 @@ FrontEnd::ModuleProvider::Ret ASTContextProvider::load(const char *scriptDir, co
                                                option, nullptr);
   } else {
     assert(is<unsigned int>(ret));
-    auto *src = this->srcMan.findById(get<unsigned int>(ret));
+    auto src = this->srcMan.findById(get<unsigned int>(ret));
     assert(src);
     if (auto index = this->indexMap.find(*src); index) {
       return loadFromModuleIndex(this->current()->getPool(), *index);
@@ -210,7 +210,7 @@ const ASTContextPtr &ASTContextProvider::addNew(const Source &src) {
 
 ModResult ASTContextProvider::addNewModEntry(CStrPtr &&ptr) {
   StringRef path = ptr.get();
-  auto *src = this->srcMan.find(path);
+  auto src = this->srcMan.find(path);
   if (src) { // already loaded
     if (auto index = this->indexMap.find(*src); !index) {
       return ModLoadingError(0); // nest import

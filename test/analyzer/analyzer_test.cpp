@@ -16,7 +16,7 @@ using namespace ydsh::lsp;
 using namespace ydsh;
 
 TEST(ASTCtxTest, base) {
-  Source src(CStrPtr(strdup("/dummy")), 1, "", 0);
+  Source src("/dummy", 1, "", 0);
   auto ctx = std::make_unique<ASTContext>(src);
   auto *handle = ctx->getScope()->find("COMP_HOOK");
   ASSERT_TRUE(handle);
@@ -68,7 +68,7 @@ protected:
     std::string tempFileName;
     auto tmpFile = this->createTempFilePtr(tempFileName, "");
     NodeDumper dumper(tmpFile.get());
-    auto *src = man.update(GetParam(), 0, std::move(content));
+    auto src = man.update(GetParam(), 0, std::move(content));
     AnalyzerAction action;
     action.dumper.reset(&dumper);
     auto index = buildIndex(man, indexMap, action, *src);

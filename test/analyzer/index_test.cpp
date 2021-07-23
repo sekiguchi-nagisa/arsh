@@ -83,7 +83,7 @@ struct Builder {
     ModuleArchive archive({});
     std::vector<std::pair<bool, ModuleIndexPtr>> deps;
     build(deps, std::forward<Args>(args)...);
-    auto *src = this->srcMan.update(path, 0, "");
+    auto src = this->srcMan.update(path, 0, "");
     auto index = ModuleIndex::create(src->getSrcId(), src->getVersion(), std::move(pool),
                                      std::move(nodes), std::move(archive), std::move(deps));
     this->indexMap.add(*src, index);

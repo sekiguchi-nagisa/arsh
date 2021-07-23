@@ -19,6 +19,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <mutex>
 
 namespace ydsh::lsp {
 
@@ -26,16 +27,16 @@ struct TextDocumentContentChangeEvent;
 
 class Source {
 private:
-  CStrPtr path;
+  const char *path;
   std::string content;
   unsigned short srcId{0};
   int version{0};
 
 public:
-  Source(CStrPtr &&path, unsigned short srcId, std::string &&content, int version)
-      : path(std::move(path)), content(std::move(content)), srcId(srcId), version(version) {}
+  Source(const char *path, unsigned short srcId, std::string &&content, int version)
+      : path(path), content(std::move(content)), srcId(srcId), version(version) {}
 
-  const char *getPath() const { return this->path.get(); }
+  const char *getPath() const { return this->path; }
 
   const std::string &getContent() const { return this->content; }
 
@@ -49,35 +50,29 @@ public:
   }
 };
 
+using SourcePtr = std::shared_ptr<Source>;
+
 class SourceManager {
 private:
-  std::vector<Source> sources;
+  std::vector<std::pair<CStrPtr, SourcePtr>> entries;
   StrRefMap<unsigned int> indexMap; // fullpath to index mapping
+  mutable std::mutex mutex;
 
 public:
-  unsigned int size() const {
-    return this->sources.size();
-  }
-
   /**
    *
    * @param id
    * id > 0
    * @return
    */
-  const Source *findById(unsigned int id) const {
-    if (id > 0 && --id < this->sources.size()) {
-      return &this->sources[id];
-    }
-    return nullptr;
-  }
+  SourcePtr findById(unsigned int id) const;
 
   /**
    * @param path
    * must be fullpath
    * @return
    */
-  const Source *find(StringRef path) const;
+  SourcePtr find(StringRef path) const;
 
   /**
    *
@@ -88,7 +83,7 @@ public:
    * @return
    * if module id reaches limit, return null
    */
-  const Source *update(StringRef path, int version, std::string &&content);
+  SourcePtr update(StringRef path, int version, std::string &&content); // FIXME:
 };
 
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change);

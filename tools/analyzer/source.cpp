@@ -21,32 +21,46 @@
 
 namespace ydsh::lsp {
 
-const Source *SourceManager::find(StringRef path) const {
-  auto iter = this->indexMap.find(path);
-  if (iter != this->indexMap.end()) {
-    return &this->sources[iter->second];
+SourcePtr SourceManager::findById(unsigned int id) const {
+  std::lock_guard<std::mutex> lockGuard(this->mutex);
+
+  if (id > 0 && --id < this->entries.size()) {
+    return this->entries[id].second;
   }
   return nullptr;
 }
 
-const Source *SourceManager::update(StringRef path, int version, std::string &&content) {
+SourcePtr SourceManager::find(StringRef path) const {
+  std::lock_guard<std::mutex> lockGuard(this->mutex);
+
+  auto iter = this->indexMap.find(path);
+  if (iter != this->indexMap.end()) {
+    return this->entries[iter->second].second;
+  }
+  return nullptr;
+}
+
+SourcePtr SourceManager::update(StringRef path, int version, std::string &&content) {
+  std::lock_guard<std::mutex> lockGuard(this->mutex);
+
   auto iter = this->indexMap.find(path);
   if (iter != this->indexMap.end()) {
     unsigned int i = iter->second;
-    this->sources[i].update(std::move(content), version);
-    return &this->sources[i];
+    this->entries[i].second->update(std::move(content), version);
+    return this->entries[i].second;
   } else {
-    unsigned int id = this->sources.size() + 1;
+    unsigned int id = this->entries.size() + 1;
     if (id == SYS_LIMIT_MOD_ID) {
       return nullptr;
     }
-    unsigned int i = this->sources.size();
+    unsigned int i = this->entries.size();
     auto ptr = CStrPtr(strdup(path.data()));
-    this->sources.emplace_back(std::move(ptr), static_cast<unsigned short>(id), std::move(content),
-                               version);
-    path = this->sources[i].getPath();
+    path = ptr.get();
+    this->entries.emplace_back(
+        std::move(ptr), std::make_shared<Source>(path.data(), static_cast<unsigned short>(id),
+                                                 std::move(content), version));
     this->indexMap.emplace(path, i);
-    return &this->sources[i];
+    return this->entries[i].second;
   }
 }
 

@@ -19,8 +19,8 @@ protected:
 
   static ASTContextPtr newctx(SourceManager &srcMan, IndexMap &indexMap) {
     std::string path = "/dummy_";
-    path += std::to_string(srcMan.size() + 1);
-    auto *src = srcMan.update(path, 0, "");
+    path += std::to_string(indexMap.size() + 1);
+    auto src = srcMan.update(path, 0, "");
     indexMap.add(*src, nullptr);
     return std::make_unique<ASTContext>(*src);
   }
