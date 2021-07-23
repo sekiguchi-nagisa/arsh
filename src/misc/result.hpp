@@ -102,30 +102,50 @@ struct TypeByIndex {
 // #####################
 
 template <typename... T>
-struct Storage {
-  alignas(T...) unsigned char data[__detail::maxOf(sizeof(T)...)];
+class Storage {
+private:
+  alignas(T...) unsigned char data_[__detail::maxOf(sizeof(T)...)];
 
+public:
   template <typename U, typename F = __detail::resolvedType<U, T...>>
   void obtain(U &&value) {
     static_assert(TypeTag<F, T...>::value > -1, "invalid type");
 
     using Decayed = typename std::decay<F>::type;
-    new (&this->data) Decayed(std::forward<U>(value));
+    new (&this->data_) Decayed(std::forward<U>(value));
+  }
+
+  template <typename F>
+  F *data() {
+    static_assert(TypeTag<F, T...>::value > -1, "invalid type");
+#ifdef __cpp_lib_launder
+    return std::launder(reinterpret_cast<F *>(&this->data_));
+#else
+    return reinterpret_cast<F *>(&this->data_);
+#endif
+  }
+
+  template <typename F>
+  const F *data() const {
+    static_assert(TypeTag<F, T...>::value > -1, "invalid type");
+#ifdef __cpp_lib_launder
+    return std::launder(reinterpret_cast<const F *>(&this->data_));
+#else
+    return reinterpret_cast<const F *>(&this->data_);
+#endif
   }
 };
 
 template <typename T, typename... R>
 inline T &get(Storage<R...> &storage) {
   static_assert(TypeTag<T, R...>::value > -1, "invalid type");
-
-  return *reinterpret_cast<T *>(&storage.data);
+  return *storage.template data<T>();
 }
 
 template <typename T, typename... R>
 inline const T &get(const Storage<R...> &storage) {
   static_assert(TypeTag<T, R...>::value > -1, "invalid type");
-
-  return *reinterpret_cast<const T *>(&storage.data);
+  return *storage.template data<T>();
 }
 
 template <typename T, typename... R>
