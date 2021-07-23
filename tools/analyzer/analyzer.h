@@ -82,7 +82,7 @@ public:
 
   void addNode(std::unique_ptr<Node> &&node) { this->nodes.push_back(std::move(node)); }
 
-  ModuleIndexPtr buildIndex(const SourceManager &srcMan, const IndexMap &indexMap) &&;
+  ModuleIndexPtr buildAndAddIndex(const SourceManager &srcMan, IndexMap &indexMap) &&;
 };
 
 using ASTContextPtr = std::unique_ptr<ASTContext>;

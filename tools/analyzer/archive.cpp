@@ -108,10 +108,7 @@ const DSType *Unarchiver::unpackType() {
   }
   case ArchiveType::ARRAY: {
     auto *type = TRY(this->unpackType());
-    auto ret = this->pool.createArrayType(const_cast<DSType &>(*type));
-    if (!ret) {
-      return nullptr;
-    }
+    auto ret = TRY(this->pool.createArrayType(const_cast<DSType &>(*type)));
     return std::move(ret).take();
   }
   case ArchiveType::MAP: {
@@ -221,9 +218,7 @@ const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index) {
   }
 
   for (auto &dep : index.getDepsByTopologicalOrder()) {
-    if (!load(pool, *dep)) {
-      return nullptr;
-    }
+    TRY(load(pool, *dep));
   }
   return load(pool, index);
 }

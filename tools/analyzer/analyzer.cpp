@@ -118,10 +118,9 @@ ASTContext::ASTContext(const Source &src)
   this->typeDiscardPoint = this->getPool().getDiscardPoint();
 }
 
-ModuleIndexPtr ASTContext::buildIndex(const SourceManager &srcMan, const IndexMap &indexMap) && {
+ModuleIndexPtr ASTContext::buildAndAddIndex(const SourceManager &srcMan, IndexMap &indexMap) && {
   auto &modType = this->getScope()->toModType(this->getPool());
-  auto archive =
-      ModuleArchive::create(this->getPool(), modType, this->typeDiscardPoint.typeIdOffset);
+  auto archive = ModuleArchive::create(this->getPool(), modType, this->getTypeIdOffset());
   std::vector<std::pair<bool, ModuleIndexPtr>> imported;
   unsigned int size = modType.getChildSize();
   for (unsigned int i = 0; i < size; i++) {
@@ -136,8 +135,13 @@ ModuleIndexPtr ASTContext::buildIndex(const SourceManager &srcMan, const IndexMa
     assert(index);
     imported.emplace_back(e.isGlobal(), std::move(index));
   }
-  return ModuleIndex::create(this->scope->modId, this->getVersion(), std::move(this->pool),
-                             std::move(this->nodes), std::move(archive), std::move(imported));
+  unsigned short id = this->getModId();
+  auto index = ModuleIndex::create(id, this->getVersion(), std::move(this->pool),
+                                   std::move(this->nodes), std::move(archive), std::move(imported));
+  auto src = srcMan.findById(id);
+  assert(src);
+  indexMap.add(*src, index);
+  return index;
 }
 
 // ################################
@@ -154,7 +158,7 @@ ASTContextProvider::newContext(Lexer &&lexer, FrontEndOption option,
 
 const ModType &ASTContextProvider::newModTypeFromCurContext(
     const std::vector<std::unique_ptr<FrontEnd::Context>> &) {
-  auto index = std::move(*this->current()).buildIndex(this->srcMan, this->indexMap);
+  auto index = std::move(*this->current()).buildAndAddIndex(this->srcMan, this->indexMap);
   this->ctxs.pop_back();
   auto *modType = loadFromModuleIndex(this->current()->getPool(), *index);
   assert(modType);
@@ -267,7 +271,7 @@ ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAct
     }
   }
   frontEnd.teardownASTDump();
-  return std::move(*provider.current()).buildIndex(srcMan, indexMap);
+  return std::move(*provider.current()).buildAndAddIndex(srcMan, indexMap);
 }
 
 } // namespace ydsh::lsp

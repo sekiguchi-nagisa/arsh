@@ -43,6 +43,8 @@ public:
 
   TypePool &pool() { return this->orgCtx->getPool(); }
 
+  const TypePool &newPool() const { return this->newCtx->getPool(); }
+
   void defineAndArchive(const char *fieldName, const char *typeName, FieldAttribute attr = {}) {
     ASSERT_TRUE(typeName);
     auto ret = this->orgCtx->getPool().getType(typeName);
@@ -82,14 +84,19 @@ public:
   }
 
   void define(const char *fieldName, const DSType &orgType, FieldAttribute attr = {}) {
-    ASSERT_TRUE(fieldName);
-    ASSERT_TRUE(orgType.typeId() < this->pool().getDiscardPoint().typeIdOffset);
-    ASSERT_EQ(orgType, this->orgCtx->getPool().get(orgType.typeId()));
+    define(*this->orgCtx, fieldName, orgType, attr);
+  }
 
-    auto ret = this->orgCtx->getScope()->defineHandle(fieldName, orgType, attr);
+  static void define(ASTContext &ctx, const char *fieldName, const DSType &type,
+                     FieldAttribute attr = {}) {
+    ASSERT_TRUE(fieldName);
+    ASSERT_TRUE(type.typeId() < ctx.getPool().getDiscardPoint().typeIdOffset);
+    ASSERT_EQ(type, ctx.getPool().get(type.typeId()));
+
+    auto ret = ctx.getScope()->defineHandle(fieldName, type, attr);
     ASSERT_TRUE(ret);
     auto *handle = ret.asOk();
-    ASSERT_EQ(orgType.typeId(), handle->getTypeID());
+    ASSERT_EQ(type.typeId(), handle->getTypeID());
     auto orgAttr = attr;
     unsetFlag(orgAttr, FieldAttribute::GLOBAL);
     auto newAttr = handle->attr();
@@ -97,9 +104,25 @@ public:
     ASSERT_EQ(toString(orgAttr), toString(newAttr));
   }
 
+  template <typename Func>
+  const ModType &loadMod(bool global, Func func) {
+    return this->loadModAt(*this->orgCtx, global, std::move(func));
+  }
+
+  template <typename Func>
+  const ModType &loadModAt(ASTContext &parent, bool global, Func func) {
+    auto ctx = newctx(this->srcMan, this->indexMap);
+    func(*ctx);
+    auto index = std::move(*ctx).buildAndAddIndex(this->srcMan, this->indexMap);
+    auto *type = loadFromModuleIndex(parent.getPool(), *index);
+    assert(type);
+    parent.getScope()->importForeignHandles(*type, global);
+    return *type;
+  }
+
   void archiveMod(std::vector<std::string> &&expected = {}) {
     // serialize
-    auto index = std::move(*this->orgCtx).buildIndex(this->srcMan, this->indexMap);
+    auto index = std::move(*this->orgCtx).buildAndAddIndex(this->srcMan, this->indexMap);
     ASSERT_TRUE(index);
     unsigned id = index->getModId();
     auto ret = index->getPool().getModTypeById(id);
@@ -286,7 +309,116 @@ TEST_F(ArchiveTest, mod2) {
   ASSERT_NO_FATAL_FAILURE(
       this->define("a12345", type2, FieldAttribute::ALIAS | FieldAttribute::READ_ONLY));
 
+  ASSERT_NO_FATAL_FAILURE(this->archiveMod({"AAA", "a12345"}));
+}
+
+TEST_F(ArchiveTest, mod3) {
+  {
+    auto &modType3 = this->loadMod(false, [](ASTContext &ctx) {
+      auto ret1 = ctx.getPool().createMapType(ctx.getPool().get(TYPE::Signal),
+                                              ctx.getPool().get(TYPE::GlobbingError));
+      ASSERT_TRUE(ret1);
+      auto &type1 = *ret1.asOk();
+      ASSERT_NO_FATAL_FAILURE(define(ctx, "AAA", type1, FieldAttribute::ENV));
+      ASSERT_NO_FATAL_FAILURE(
+          define(ctx, "BBB", ctx.getPool().get(TYPE::TypeCastError), FieldAttribute::RANDOM));
+    });
+    ASSERT_EQ(3, modType3.getModID());
+    ASSERT_EQ(1, modType3.getChildSize());
+    ASSERT_TRUE(this->newPool().get(modType3.getChildAt(0).typeId()).isModType());
+
+    auto ret1 = this->pool().createArrayType(this->pool().get(TYPE::GlobbingError));
+    ASSERT_TRUE(ret1);
+    auto &type1 = *ret1.asOk();
+    ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
+    ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("aaa", type1));
+  }
   ASSERT_NO_FATAL_FAILURE(this->archiveMod());
+
+  //
+  auto ret1 = this->newPool().getModTypeById(3);
+  ASSERT_TRUE(ret1);
+  auto &modType3 = static_cast<const ModType &>(*ret1.asOk());
+  auto *handle = modType3.lookupField("AAA");
+  ASSERT_TRUE(handle);
+  ASSERT_EQ(this->newPool().getType("[Signal : GlobbingError]").asOk()->typeId(),
+            handle->getTypeID());
+  ASSERT_EQ(toString(FieldAttribute::ENV | FieldAttribute::GLOBAL), toString(handle->attr()));
+  ASSERT_EQ(modType3.getModID(), handle->getModID());
+
+  handle = modType3.lookupField("BBB");
+  ASSERT_TRUE(handle);
+  ASSERT_EQ(this->newPool().getType("TypeCastError").asOk()->typeId(), handle->getTypeID());
+  ASSERT_EQ(toString(FieldAttribute::GLOBAL | FieldAttribute::RANDOM), toString(handle->attr()));
+  ASSERT_EQ(modType3.getModID(), handle->getModID());
+
+  //
+  ret1 = this->newPool().getModTypeById(1);
+  ASSERT_TRUE(ret1);
+  auto &modType1 = static_cast<const ModType &>(*ret1.asOk());
+  ASSERT_EQ(1, modType1.getModID());
+  ASSERT_EQ(2, modType1.getChildSize());
+  ASSERT_TRUE(modType1.getChildAt(0).isGlobal());
+  ASSERT_FALSE(modType1.getChildAt(1).isGlobal());
+  ASSERT_EQ(modType3.typeId(), modType1.getChildAt(1).typeId());
+
+  handle = modType1.lookupField("AAA");
+  ASSERT_FALSE(handle);
+
+  handle = modType1.lookupField("aaa");
+  ASSERT_TRUE(handle);
+  ASSERT_EQ(this->newPool().getType("[GlobbingError]").asOk()->typeId(), handle->getTypeID());
+  ASSERT_EQ(toString(FieldAttribute::GLOBAL), toString(handle->attr()));
+  ASSERT_EQ(1, handle->getModID());
+}
+
+TEST_F(ArchiveTest, mod4) {
+  {
+    auto &modType3 = this->loadMod(false, [&](ASTContext &ctx1) {
+      auto &modType4 = this->loadModAt(ctx1, true, [](ASTContext &ctx2) {
+        auto ret = ctx2.getPool().createArrayType(ctx2.getPool().get(TYPE::Boolean));
+        ASSERT_TRUE(ret);
+        ctx2.getScope()->defineTypeAlias(ctx2.getPool(), "BoolArray", *ret.asOk());
+        ASSERT_NO_FATAL_FAILURE(define(ctx2, "AAA", *ret.asOk(), FieldAttribute::READ_ONLY));
+      });
+      ASSERT_EQ(4, modType4.getModID());
+
+      auto ret = ctx1.getPool().createTupleType(
+          {&ctx1.getPool().get(TYPE::IllegalAccessError), &modType4});
+      ASSERT_TRUE(ret);
+      ASSERT_NO_FATAL_FAILURE(define(ctx1, "BBB", *ret.asOk(), FieldAttribute::READ_ONLY));
+    });
+    ASSERT_NO_FATAL_FAILURE(define("CCC", modType3, FieldAttribute::READ_ONLY));
+
+    ASSERT_EQ(3, modType3.getModID());
+    ASSERT_EQ(2, modType3.getChildSize());
+  }
+  ASSERT_NO_FATAL_FAILURE(this->archiveMod({"CCC"}));
+
+  auto ret = this->newPool().getModTypeById(3);
+  ASSERT_TRUE(ret);
+  auto &modType3 = static_cast<const ModType&>(*ret.asOk());
+  ASSERT_EQ(3, modType3.getModID());
+  ASSERT_EQ(2, modType3.getChildSize());
+  auto *handle = modType3.lookupField("BBB");
+  ASSERT_TRUE(handle);
+  ASSERT_EQ(3, handle->getModID());
+  auto &type1 = this->newPool().get(handle->getTypeID());
+  ASSERT_TRUE(this->newPool().isTupleType(type1));
+  auto &tuple = static_cast<const TupleType&>(type1);
+  ASSERT_EQ(2, tuple.getFieldSize());
+  ASSERT_EQ(this->newPool().get(TYPE::IllegalAccessError), tuple.getElementTypeAt(0));
+  ASSERT_TRUE(tuple.getElementTypeAt(1).isModType());
+  ASSERT_EQ(4, static_cast<const ModType&>(tuple.getElementTypeAt(1)).getModID());
+
+  handle = modType3.lookupField("AAA");
+  ASSERT_FALSE(handle);
+  handle = modType3.lookupVisibleSymbolAtModule(this->newPool(), "AAA");
+  ASSERT_TRUE(handle);
+  ASSERT_EQ(4, handle->getModID());
+  ret = this->newPool().getType("[Boolean]");
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(ret.asOk()->typeId(), handle->getTypeID());
 }
 
 int main(int argc, char **argv) {
