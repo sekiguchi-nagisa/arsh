@@ -1994,7 +1994,7 @@ private:
   /**
    * may be empty string
    */
-  const std::string &name;
+  std::shared_ptr<const std::string> name;
 
   /**
    * resolved module type.
@@ -2004,7 +2004,7 @@ private:
   /**
    * resolved module path
    */
-  const std::string &pathName;
+  std::shared_ptr<const std::string> pathName;
 
   bool firstAppear;
 
@@ -2016,20 +2016,20 @@ private:
   unsigned int maxVarNum{0};
 
 public:
-  SourceNode(Token token, Token pathToken, const std::string &name, const ModType &modType,
-             const std::string &pathName, bool firstAppear)
-      : WithRtti(token), pathToken(pathToken), name(name), modType(modType), pathName(pathName),
-        firstAppear(firstAppear) {}
+  SourceNode(Token token, Token pathToken, std::shared_ptr<const std::string> name,
+             const ModType &modType, std::shared_ptr<const std::string> pathName, bool firstAppear)
+      : WithRtti(token), pathToken(pathToken), name(std::move(name)), modType(modType),
+        pathName(std::move(pathName)), firstAppear(firstAppear) {}
 
   ~SourceNode() override = default;
 
   Token getPathToken() const { return this->pathToken; }
 
-  const std::string &getName() const { return this->name; }
+  const std::string &getName() const { return *this->name; }
 
   const ModType &getModType() const { return this->modType; }
 
-  const std::string &getPathName() const { return this->pathName; }
+  const std::string &getPathName() const { return *this->pathName; }
 
   bool isFirstAppear() const { return this->firstAppear; }
 
@@ -2051,7 +2051,7 @@ private:
   /**
    * may be empty string
    */
-  std::string name;
+  std::shared_ptr<const std::string> name;
 
   /**
    * if true, ignore module not found error
@@ -2060,7 +2060,7 @@ private:
 
   unsigned int curIndex{0}; // index of currently evaluating source path
 
-  std::vector<std::string> pathList; // evaluated path list
+  std::vector<std::shared_ptr<const std::string>> pathList; // evaluated path list
 
 public:
   using path_iterator = decltype(pathNode->getSegmentNodes().cbegin());
@@ -2074,10 +2074,10 @@ public:
 
   void setName(Token token, std::string &&value) {
     this->updateToken(token);
-    this->name = std::move(value);
+    this->name = std::make_shared<const std::string>(std::move(value));
   }
 
-  const std::string &getName() const { return this->name; }
+  const std::string &getName() const { return *this->name; }
 
   bool isOptional() const { return this->optional; }
 
@@ -2085,9 +2085,13 @@ public:
 
   void setCurIndex(unsigned int index) { this->curIndex = index; }
 
-  void setPathList(std::vector<std::string> &&list) { this->pathList = std::move(list); }
+  void setPathList(std::vector<std::shared_ptr<const std::string>> &&list) {
+    this->pathList = std::move(list);
+  }
 
-  const std::vector<std::string> &getPathList() const { return this->pathList; }
+  const std::vector<std::shared_ptr<const std::string>> &getPathList() const {
+    return this->pathList;
+  }
 
   bool hasUnconsumedPath() const { return this->curIndex < this->pathList.size(); }
 

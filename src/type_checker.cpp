@@ -1682,13 +1682,13 @@ static bool isDirPattern(const CmdArgNode &node) {
 
 void TypeChecker::resolvePathList(SourceListNode &node) {
   auto &pathNode = node.getPathNode();
-  std::vector<std::string> ret;
+  std::vector<std::shared_ptr<const std::string>> ret;
   if (pathNode.getGlobPathSize() == 0) {
     std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
     if (pathNode.isTilde()) {
       expandTilde(path, true);
     }
-    ret.push_back(std::move(path));
+    ret.push_back(std::make_shared<const std::string>(std::move(path)));
   } else {
     if (isDirPattern(pathNode)) {
       std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
@@ -1701,7 +1701,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
       if (ret.size() == 4096) {
         return false;
       }
-      ret.push_back(std::move(path));
+      ret.push_back(std::make_shared<const std::string>(std::move(path)));
       return true;
     };
     auto option = GlobMatchOption::IGNORE_SYS_DIR | GlobMatchOption::FASTGLOB;

@@ -888,9 +888,9 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
 // ########################
 
 void SourceNode::dump(NodeDumper &dumper) const {
-  DUMP(name);
+  DUMP_PTR(name);
   DUMP(modType);
-  DUMP(pathName);
+  DUMP_PTR(pathName);
   DUMP(firstAppear);
   DUMP(nothing);
   DUMP(maxVarNum);
@@ -902,10 +902,15 @@ void SourceNode::dump(NodeDumper &dumper) const {
 
 void SourceListNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(pathNode);
-  DUMP(name);
+  DUMP_PTR(name);
   DUMP(optional);
   DUMP(curIndex);
-  DUMP(pathList);
+
+  std::vector<std::string> tmp;
+  for(auto &e : this->pathList) {
+    tmp.push_back(*e);
+  }
+  dumper.dump(NAME(pathLList), tmp);
 }
 
 // ##########################

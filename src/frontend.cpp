@@ -140,7 +140,7 @@ FrontEndResult FrontEnd::enterModule() {
 
   auto &node = *this->getCurSrcListNode();
   unsigned int pathIndex = node.getCurIndex();
-  const char *modPath = node.getPathList()[pathIndex].c_str();
+  const char *modPath = node.getPathList()[pathIndex]->c_str();
   node.setCurIndex(pathIndex + 1);
 
   const char *scriptDir =
