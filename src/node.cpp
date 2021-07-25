@@ -887,6 +887,8 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
 // ##     SourceNode     ##
 // ########################
 
+std::shared_ptr<const std::string> SourceNode::EMPTY_STR = std::make_shared<const std::string>();
+
 void SourceNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(name);
   DUMP(modType);

@@ -2016,6 +2016,8 @@ private:
   unsigned int maxVarNum{0};
 
 public:
+  static std::shared_ptr<const std::string> EMPTY_STR;
+
   SourceNode(Token token, Token pathToken, std::shared_ptr<const std::string> name,
              const ModType &modType, std::shared_ptr<const std::string> pathName, bool firstAppear)
       : WithRtti(token), pathToken(pathToken), name(std::move(name)), modType(modType),
@@ -2025,7 +2027,7 @@ public:
 
   Token getPathToken() const { return this->pathToken; }
 
-  const std::string &getName() const { return *this->name; }
+  const std::string &getName() const { return this->name ? *this->name : *EMPTY_STR; }
 
   const ModType &getModType() const { return this->modType; }
 
@@ -2077,7 +2079,7 @@ public:
     this->name = std::make_shared<const std::string>(std::move(value));
   }
 
-  const std::string &getName() const { return *this->name; }
+  const std::string &getName() const { return this->name ? *this->name : *SourceNode::EMPTY_STR; }
 
   bool isOptional() const { return this->optional; }
 
