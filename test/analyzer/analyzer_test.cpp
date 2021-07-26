@@ -15,20 +15,6 @@
 using namespace ydsh::lsp;
 using namespace ydsh;
 
-TEST(ASTCtxTest, base) {
-  Source src("/dummy", 1, "", 0);
-  auto ctx = std::make_unique<ASTContext>(src);
-  auto *handle = ctx->getScope()->find("COMP_HOOK");
-  ASSERT_TRUE(handle);
-  ASSERT_TRUE(hasFlag(handle->attr(), FieldAttribute::GLOBAL));
-  ASSERT_EQ(0, handle->getModID());
-  handle = ctx->getScope()->find("TRUE");
-  ASSERT_TRUE(handle);
-  ASSERT_TRUE(hasFlag(handle->attr(), FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY));
-  ASSERT_EQ(0, handle->getModID());
-  ASSERT_TRUE(ctx->getPool().getDiscardPoint().typeIdOffset <= UINT8_MAX);
-}
-
 /**
  * compare analyzer output with frontend output
  */
@@ -107,6 +93,119 @@ TEST_P(ASTDumpTest, base) {
 
 INSTANTIATE_TEST_SUITE_P(ASTDumpTest, ASTDumpTest,
                          ::testing::ValuesIn(getTargetCases(EXEC_TEST_DIR "/base")));
+
+class ParseTest : public ::testing::Test {
+protected:
+  SourceManager srcMan;
+  IndexMap indexMap;
+
+public:
+  void parse(const char *path, ModuleIndexPtr &index) {
+    // read
+    ASSERT_TRUE(path && *path);
+    std::ifstream input(path);
+    std::string content;
+    ASSERT_FALSE(!input);
+    for (std::string line; std::getline(input, line);) {
+      content += line;
+      content += '\n';
+    }
+
+    // parse
+    auto src = this->srcMan.update(path, 0, std::move(content));
+    ASSERT_TRUE(src);
+    AnalyzerAction action;
+    index = buildIndex(this->srcMan, this->indexMap, action, *src);
+    ASSERT_TRUE(index);
+  }
+};
+
+static const Node *findVarDecl(const Node &node, const char *varName) {
+  switch (node.getNodeKind()) {
+  case NodeKind::VarDecl: {
+    auto &varDeclNode = cast<const VarDeclNode>(node);
+    if (varDeclNode.getVarName() == varName) {
+      return &node;
+    }
+    break;
+  }
+  case NodeKind::Source: {
+    auto &sourceNode = cast<const SourceNode>(node);
+    if(!sourceNode.getName().empty() && sourceNode.getName() == varName) {
+      return &node;
+    }
+    break;
+  }
+  default:
+    break;
+  }
+  return nullptr;
+}
+
+static const Node *findVarDecl(const std::vector<std::unique_ptr<Node>> &nodes,
+                                      const char *varName) {
+  for (auto &e : nodes) {
+    if (const Node * ret; (ret = findVarDecl(*e, varName))) {
+      return ret;
+    }
+  }
+  return nullptr;
+}
+
+TEST_F(ParseTest, case1) {  //FIXME: replaced with goto-definition test case
+  const char *path = EXEC_TEST_DIR "/base/mod1.ds";
+  ModuleIndexPtr index;
+  ASSERT_NO_FATAL_FAILURE(this->parse(path, index));
+  ASSERT_TRUE(index);
+  ASSERT_EQ(2, this->indexMap.size());
+  ASSERT_TRUE(StringRef(this->srcMan.findById(2)->getPath()).contains("module1.ds"));
+
+  auto *decl = findVarDecl(index->getNodes(), "c");
+  ASSERT_TRUE(decl);
+  ASSERT_TRUE(isa<VarDeclNode>(decl));
+
+  decl = findVarDecl(index->getNodes(), "hello");
+  ASSERT_FALSE(decl);
+
+  decl = findVarDecl(index->getNodes(), "mod");
+  ASSERT_TRUE(decl);
+  ASSERT_TRUE(isa<SourceNode>(decl));
+
+  //
+  index = this->indexMap.find(*this->srcMan.findById(2));
+  ASSERT_TRUE(index);
+  this->indexMap.revert({2});
+  index = this->indexMap.find(*this->srcMan.findById(2));
+  ASSERT_FALSE(index);
+  ASSERT_EQ(0, this->indexMap.size());
+  path = EXEC_TEST_DIR "/base/mod2.ds";
+  ASSERT_NO_FATAL_FAILURE(this->parse(path, index));
+  ASSERT_TRUE(index);
+  ASSERT_EQ(2, this->indexMap.size());
+  ASSERT_TRUE(StringRef(this->srcMan.findById(2)->getPath()).contains("module1.ds"));
+
+  decl = findVarDecl(index->getNodes(), "mod");
+  ASSERT_TRUE(decl);
+  ASSERT_TRUE(isa<SourceNode>(decl));
+}
+
+TEST_F(ParseTest, case2) {  //FIXME: replaced with goto-definition test case
+  const char *path = EXEC_TEST_DIR "/base/mod3.ds";
+  ModuleIndexPtr index;
+  ASSERT_NO_FATAL_FAILURE(this->parse(path, index));
+  ASSERT_TRUE(index);
+  ASSERT_EQ(3, this->indexMap.size());
+  ASSERT_TRUE(StringRef(this->srcMan.findById(2)->getPath()).contains("module3.ds"));
+  ASSERT_TRUE(StringRef(this->srcMan.findById(3)->getPath()).contains("module4.ds"));
+
+  auto decl = findVarDecl(index->getNodes(), "mod");
+  ASSERT_TRUE(decl);
+  ASSERT_TRUE(isa<SourceNode>(decl));
+
+  decl = findVarDecl(index->getNodes(), "mod1");
+  ASSERT_TRUE(decl);
+  ASSERT_TRUE(isa<SourceNode>(decl));
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

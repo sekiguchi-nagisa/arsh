@@ -39,7 +39,8 @@ public:
   }
 
   void add(const Source &src, ModuleIndexPtr index) {
-    assert(!index || src.getSrcId() == index->getModId());
+    assert(index);
+    assert(index->isNullIndex() || src.getSrcId() == index->getModId());
     this->map[src.getPath()] = std::move(index);
   }
 

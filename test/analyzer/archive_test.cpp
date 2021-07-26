@@ -7,6 +7,35 @@
 using namespace ydsh::lsp;
 using namespace ydsh;
 
+TEST(SourceTest, base) {
+  SourceManager srcMan;
+  auto src = srcMan.findById(111);
+  ASSERT_FALSE(src);
+  src = srcMan.find("ssss");
+  ASSERT_FALSE(src);
+
+  src = srcMan.update("/dummy1", 10, "hello");
+  ASSERT_TRUE(src);
+  ASSERT_EQ(10, src->getVersion());
+  ASSERT_STREQ("/dummy1", src->getPath());
+  ASSERT_EQ("hello", src->getContent());
+  ASSERT_EQ(1, src->getSrcId());
+
+  src = srcMan.update("/dummy1", 12, "world");
+  ASSERT_TRUE(src);
+  ASSERT_EQ(12, src->getVersion());
+  ASSERT_STREQ("/dummy1", src->getPath());
+  ASSERT_EQ("world", src->getContent());
+  ASSERT_EQ(1, src->getSrcId());
+
+  src = srcMan.update("/dummy2", 1, "");
+  ASSERT_TRUE(src);
+  ASSERT_EQ(1, src->getVersion());
+  ASSERT_STREQ("/dummy2", src->getPath());
+  ASSERT_EQ("", src->getContent());
+  ASSERT_EQ(2, src->getSrcId());
+}
+
 class ArchiveTest : public ::testing::Test {
 private:
   SourceManager srcMan;
@@ -21,8 +50,12 @@ protected:
     std::string path = "/dummy_";
     path += std::to_string(indexMap.size() + 1);
     auto src = srcMan.update(path, 0, "");
-    indexMap.add(*src, nullptr);
+    indexMap.add(*src, ModuleIndex::NULL_INDEX);
     return std::make_unique<ASTContext>(*src);
+  }
+
+  ASTContextPtr newctx() {
+    return newctx(this->srcMan, this->indexMap);
   }
 
   static auto toSorted(const std::unordered_map<std::string, FieldHandle> &handleMap) {
@@ -171,6 +204,19 @@ public:
     }
   }
 };
+
+TEST_F(ArchiveTest, base) {
+  auto ctx = this->newctx();
+  auto *handle = ctx->getScope()->find("COMP_HOOK");
+  ASSERT_TRUE(handle);
+  ASSERT_TRUE(hasFlag(handle->attr(), FieldAttribute::GLOBAL));
+  ASSERT_EQ(0, handle->getModID());
+  handle = ctx->getScope()->find("TRUE");
+  ASSERT_TRUE(handle);
+  ASSERT_TRUE(hasFlag(handle->attr(), FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY));
+  ASSERT_EQ(0, handle->getModID());
+  ASSERT_TRUE(ctx->getTypeIdOffset() <= UINT8_MAX);
+}
 
 TEST_F(ArchiveTest, predefined) {
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("a", "[String]"));

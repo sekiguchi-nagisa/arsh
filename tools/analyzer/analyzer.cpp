@@ -23,9 +23,7 @@ namespace ydsh::lsp {
 
 static bool isRevertedIndex(std::unordered_set<unsigned short> &revertingModIdSet,
                             const ModuleIndexPtr &index) {
-  if (!index) {
-    return false;
-  }
+  assert(index);
   const auto modId = index->getModId();
   auto iter = revertingModIdSet.find(modId);
   if (iter != revertingModIdSet.end()) {
@@ -51,17 +49,14 @@ void IndexMap::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
 }
 
 static bool isImported(const ModuleIndexPtr &index, unsigned short id) {
-  if (!index) {
-    return false;
-  }
+  assert(index);
   for (auto &e : index->getImportedIndexes()) {
-    if (e.second) {
-      if (e.second->getModId() == id) {
-        return true;
-      }
-      if (isImported(e.second, id)) {
-        return true;
-      }
+    assert(e.second);
+    if (e.second->getModId() == id) {
+      return true;
+    }
+    if (isImported(e.second, id)) {
+      return true;
     }
   }
   return false;
@@ -208,7 +203,7 @@ FrontEnd::ModuleProvider::Ret ASTContextProvider::load(const char *scriptDir, co
 const ASTContextPtr &ASTContextProvider::addNew(const Source &src) {
   auto ptr = std::make_unique<ASTContext>(src);
   this->ctxs.push_back(std::move(ptr));
-  this->indexMap.add(src, nullptr);
+  this->indexMap.add(src, ModuleIndex::NULL_INDEX);
   return this->current();
 }
 
@@ -216,8 +211,8 @@ ModResult ASTContextProvider::addNewModEntry(CStrPtr &&ptr) {
   StringRef path = ptr.get();
   auto src = this->srcMan.find(path);
   if (src) { // already loaded
-    if (auto index = this->indexMap.find(*src); !index) {
-      return ModLoadingError(0); // nest import
+    if(auto index = this->indexMap.find(*src); index && index->isNullIndex()) {
+      return ModLoadingError(0);  // nested import
     }
     return src->getSrcId();
   } else {
@@ -266,7 +261,7 @@ ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAct
     if (!ret) {
       break;
     }
-    if (ret.kind == FrontEndResult::IN_MODULE) {
+    if (ret.kind == FrontEndResult::IN_MODULE || ret.kind == FrontEndResult::EXIT_MODULE) {
       provider.current()->addNode(std::move(ret.node));
     }
   }

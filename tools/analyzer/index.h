@@ -39,6 +39,8 @@ private:
   std::vector<std::pair<bool, ModuleIndexPtr>> imported;
 
 public:
+  static const ModuleIndexPtr NULL_INDEX; // dummy object for null entry
+
   ModuleIndex(unsigned short modId, int version, std::unique_ptr<TypePool> &&pool,
               std::vector<std::unique_ptr<Node>> &&nodes, ModuleArchive &&archive,
               std::vector<std::pair<bool, ModuleIndexPtr>> &&dependencies)
@@ -61,6 +63,10 @@ public:
   const auto &getImportedIndexes() const { return this->imported; }
 
   unsigned short getModId() const { return this->modId; }
+
+  bool isNullIndex() const {
+    return this->getModId() == 0;
+  }
 
   std::vector<ModuleIndexPtr> getDepsByTopologicalOrder() const;
 };
