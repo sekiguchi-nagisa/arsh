@@ -211,8 +211,8 @@ ModResult ASTContextProvider::addNewModEntry(CStrPtr &&ptr) {
   StringRef path = ptr.get();
   auto src = this->srcMan.find(path);
   if (src) { // already loaded
-    if(auto index = this->indexMap.find(*src); index && index->isNullIndex()) {
-      return ModLoadingError(0);  // nested import
+    if (auto index = this->indexMap.find(*src); index && index->isNullIndex()) {
+      return ModLoadingError(0); // nested import
     }
     return src->getSrcId();
   } else {
