@@ -887,8 +887,6 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
 // ##     SourceNode     ##
 // ########################
 
-std::shared_ptr<const std::string> SourceNode::EMPTY_STR = std::make_shared<const std::string>();
-
 void SourceNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(name);
   DUMP(modType);
@@ -902,6 +900,9 @@ void SourceNode::dump(NodeDumper &dumper) const {
 // ##     SourceListNode     ##
 // ############################
 
+std::shared_ptr<const std::string> SourceListNode::EMPTY_STR =
+    std::make_shared<const std::string>();
+
 void SourceListNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(pathNode);
   DUMP_PTR(name);
@@ -909,7 +910,7 @@ void SourceListNode::dump(NodeDumper &dumper) const {
   DUMP(curIndex);
 
   std::vector<std::string> tmp;
-  for(auto &e : this->pathList) {
+  for (auto &e : this->pathList) {
     tmp.push_back(*e);
   }
   dumper.dump(NAME(pathLList), tmp);

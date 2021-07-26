@@ -2016,8 +2016,6 @@ private:
   unsigned int maxVarNum{0};
 
 public:
-  static std::shared_ptr<const std::string> EMPTY_STR;
-
   SourceNode(Token token, Token pathToken, std::shared_ptr<const std::string> name,
              const ModType &modType, std::shared_ptr<const std::string> pathName, bool firstAppear)
       : WithRtti(token), pathToken(pathToken), name(std::move(name)), modType(modType),
@@ -2027,7 +2025,7 @@ public:
 
   Token getPathToken() const { return this->pathToken; }
 
-  const std::string &getName() const { return this->name ? *this->name : *EMPTY_STR; }
+  const std::string &getName() const { return *this->name; }
 
   const ModType &getModType() const { return this->modType; }
 
@@ -2064,11 +2062,13 @@ private:
 
   std::vector<std::shared_ptr<const std::string>> pathList; // evaluated path list
 
+  static std::shared_ptr<const std::string> EMPTY_STR;
+
 public:
   using path_iterator = decltype(pathNode->getSegmentNodes().cbegin());
 
   SourceListNode(unsigned int pos, std::unique_ptr<CmdArgNode> &&pathNode, bool optional)
-      : WithRtti({pos, 1}), pathNode(std::move(pathNode)), optional(optional) {
+      : WithRtti({pos, 1}), pathNode(std::move(pathNode)), name(EMPTY_STR), optional(optional) {
     this->updateToken(this->pathNode->getToken());
   }
 
@@ -2079,7 +2079,7 @@ public:
     this->name = std::make_shared<const std::string>(std::move(value));
   }
 
-  const std::string &getName() const { return this->name ? *this->name : *SourceNode::EMPTY_STR; }
+  const std::string &getName() const { return *this->name; }
 
   bool isOptional() const { return this->optional; }
 
