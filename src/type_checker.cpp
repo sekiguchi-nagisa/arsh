@@ -1712,7 +1712,9 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
         createGlobMatcher<SourceGlobMeta>(this->lexer->getScriptDir(), begin, end, option);
     auto globRet = matcher(appender);
     if (globRet == GlobMatchResult::MATCH || node.isOptional()) {
-      std::sort(ret.begin(), ret.end());
+      std::sort(ret.begin(), ret.end(),
+                [](const std::shared_ptr<const std::string> &x,
+                   const std::shared_ptr<const std::string> &y) { return *x < *y; });
     } else {
       std::string path = concat(pathNode, pathNode.getSegmentNodes().size() - 1); // skip sentinel
       if (globRet == GlobMatchResult::NOMATCH) {
