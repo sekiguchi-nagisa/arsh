@@ -21,7 +21,7 @@ namespace ydsh::lsp {
 const char *toString(TraceValue setting) {
   switch (setting) {
 #define GEN_CASE(E)                                                                                \
-  case TraceValue::E:                                                                            \
+  case TraceValue::E:                                                                              \
     return #E;
     EACH_TRACE_VALUE(GEN_CASE)
 #undef GEN_CASE
@@ -74,6 +74,23 @@ bool toEnum(const char *str, CodeActionKind &kind) {
   }
   kind = CodeActionKind::Empty;
   return false;
+}
+
+std::string Position::toString() const {
+  std::string ret;
+  ret += std::to_string(this->line);
+  ret += ":";
+  ret += std::to_string(this->character);
+  return ret;
+}
+
+std::string Range::toString() const {
+  std::string ret = "(";
+  ret += this->start.toString();
+  ret += "~";
+  ret += this->end.toString();
+  ret += ")";
+  return ret;
 }
 
 } // namespace ydsh::lsp

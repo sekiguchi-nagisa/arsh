@@ -164,10 +164,8 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
 }
 
 Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &params) {
-  //  auto &pos = params.position;
-  //  auto &doc = params.textDocument;
-  //  LOG()
-  (void)params;
+  LOG(LogLevel::INFO, "definition at: %s:%s", params.textDocument.uri.c_str(),
+      params.position.toString().c_str());
   return std::vector<Location>();
 }
 

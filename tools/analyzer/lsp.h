@@ -52,6 +52,8 @@ struct Position {
     JSONIFY(line);
     JSONIFY(character);
   }
+
+  std::string toString() const;
 };
 
 struct Range {
@@ -63,6 +65,8 @@ struct Range {
     JSONIFY(start);
     JSONIFY(end);
   }
+
+  std::string toString() const;
 };
 
 struct Location {
