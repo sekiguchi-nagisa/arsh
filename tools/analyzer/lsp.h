@@ -162,7 +162,7 @@ struct ClientCapabilities {
   }
 };
 
-#define EACH_TRACE_VALUE(OP)                                                                     \
+#define EACH_TRACE_VALUE(OP)                                                                       \
   OP(off)                                                                                          \
   OP(message)                                                                                      \
   OP(verbose)
@@ -467,6 +467,37 @@ struct TextDocumentItem {
   }
 };
 
+struct TextDocumentPositionParams {
+  TextDocumentIdentifier textDocument;
+  Position position;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(textDocument);
+    JSONIFY(position);
+  }
+};
+
+using ProgressToken = Union<int, std::string>;
+
+struct WorkDoneProgressParams {
+  Optional<ProgressToken> workDoneToken;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(workDoneToken);
+  }
+};
+
+struct PartialResultParams {
+  Optional<ProgressToken> partialResultToken;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(partialResultToken);
+  }
+};
+
 struct DidOpenTextDocumentParams {
   TextDocumentItem textDocument;
 
@@ -482,6 +513,17 @@ struct DidCloseTextDocumentParams {
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(textDocument);
+  }
+};
+
+struct DefinitionParams : public TextDocumentPositionParams,
+                          public WorkDoneProgressParams,
+                          public PartialResultParams {
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentPositionParams::jsonify(t);
+    WorkDoneProgressParams::jsonify(t);
+    PartialResultParams::jsonify(t);
   }
 };
 

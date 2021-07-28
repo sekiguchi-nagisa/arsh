@@ -108,6 +108,8 @@ public:
   void didCloseTextDocument(const DidCloseTextDocumentParams &params);
 
   void didChangeTextDocument(const DidChangeTextDocumentParams &params);
+
+  Reply<std::vector<Location>> gotoDefinition(const DefinitionParams &params);
 };
 
 } // namespace ydsh::lsp

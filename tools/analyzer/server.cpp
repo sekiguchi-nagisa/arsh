@@ -42,6 +42,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/didOpen", &LSPServer::didOpenTextDocument);
   this->bind("textDocument/didClose", &LSPServer::didCloseTextDocument);
   this->bind("textDocument/didChange", &LSPServer::didChangeTextDocument);
+  this->bind("textDocument/definition", &LSPServer::gotoDefinition);
 }
 
 void LSPServer::run() {
@@ -69,6 +70,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       .willSaveWaitUntil = {},
       .save = {},
   };
+  ret.capabilities.definitionProvider = true;
   return std::move(ret);
 }
 
@@ -159,6 +161,14 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
   AnalyzerAction action;
   action.emitter.reset(&this->diagnosticEmitter);
   buildIndex(this->srcMan, this->indexMap, action, *src);
+}
+
+Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &params) {
+  //  auto &pos = params.position;
+  //  auto &doc = params.textDocument;
+  //  LOG()
+  (void)params;
+  return std::vector<Location>();
 }
 
 } // namespace ydsh::lsp
