@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_SERVER_LSP_H
-#define YDSH_TOOLS_SERVER_LSP_H
+#ifndef YDSH_TOOLS_ANALYZER_LSP_H
+#define YDSH_TOOLS_ANALYZER_LSP_H
 
 #include "../json/json.h"
 #include "../json/serialize.h"
@@ -559,4 +559,4 @@ struct DidChangeTextDocumentParams {
 
 } // namespace ydsh::lsp
 
-#endif // YDSH_TOOLS_SERVER_LSP_H
+#endif // YDSH_TOOLS_ANALYZER_LSP_H

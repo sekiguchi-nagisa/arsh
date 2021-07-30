@@ -1,5 +1,6 @@
 #include "../test_common.h"
 
+#include "location.h"
 #include "lsp.h"
 #include "server.h"
 
@@ -382,6 +383,96 @@ TEST_F(ServerTest, term3) {
   this->call("shutdown", nullptr);
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+server not initialized.+"));
   ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+must be initialized.+"));
+}
+
+struct LocationTest : public ::testing::Test {
+  static void checkPosition(const std::string &content, unsigned int pos,
+                            const Position &position) {
+    {
+      auto pos2 = toTokenPos(content, position);
+      ASSERT_TRUE(pos2.hasValue());
+      ASSERT_EQ(pos, pos2.unwrap());
+
+      auto position2 = toPosition(content, pos2.unwrap());
+      ASSERT_TRUE(position2.hasValue());
+      ASSERT_EQ(position.toString(), position2.unwrap().toString());
+    }
+
+    {
+      auto position2 = toPosition(content, pos);
+      ASSERT_TRUE(position2.hasValue());
+      ASSERT_EQ(position.toString(), position2.unwrap().toString());
+
+      auto pos2 = toTokenPos(content, position2.unwrap());
+      ASSERT_TRUE(pos2.hasValue());
+      ASSERT_EQ(pos, pos2.unwrap());
+    }
+  }
+
+  static void checkRange(const std::string &content, Token token, const Range &range) {
+    {
+      auto token2 = toToken(content, range);
+      ASSERT_TRUE(token2.hasValue());
+      ASSERT_EQ(token.str(), token2.unwrap().str());
+
+      auto range2 = toRange(content, token2.unwrap());
+      ASSERT_TRUE(range2.hasValue());
+      ASSERT_EQ(range.toString(), range2.unwrap().toString());
+    }
+
+    {
+      auto range2 = toRange(content, token);
+      ASSERT_TRUE(range2.hasValue());
+      ASSERT_EQ(range.toString(), range2.unwrap().toString());
+
+      auto token2 = toToken(content, range2.unwrap());
+      ASSERT_TRUE(token2.hasValue());
+      ASSERT_EQ(token.str(), token2.unwrap().str());
+    }
+  }
+};
+
+TEST_F(LocationTest, position) {
+  std::string content = "var a = 34;\n"      // 0-11
+                        "   $a as String\n"  // 0-15
+                        "\n"                 // 0
+                        "assert $a == 34\n"; // 0-15
+  // check position
+  ASSERT_NO_FATAL_FAILURE(checkPosition("", 0, {.line = 0, .character = 0}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition("a", 0, {.line = 0, .character = 0}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition("a", 1, {.line = 0, .character = 1}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition("\n", 0, {.line = 0, .character = 0}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(" \n", 0, {.line = 0, .character = 0}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(" \n", 1, {.line = 0, .character = 1}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 0, {.line = 0, .character = 0}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 10, {.line = 0, .character = 10}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 11, {.line = 0, .character = 11}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 12, {.line = 1, .character = 0}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 13, {.line = 1, .character = 1}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 14, {.line = 1, .character = 2}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 14, {.line = 1, .character = 2}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 28, {.line = 2, .character = 0}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 29, {.line = 3, .character = 0}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 43, {.line = 3, .character = 14}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 44, {.line = 3, .character = 15}));
+
+  ASSERT_FALSE(toTokenPos("", {.line = 0, .character = 1}).hasValue());
+  ASSERT_FALSE(toTokenPos("", {.line = 0, .character = 2}).hasValue());
+  ASSERT_FALSE(toTokenPos(content, {.line = 3, .character = 16}).hasValue());
+
+  ASSERT_TRUE(toPosition("", 0).hasValue());
+  ASSERT_FALSE(toPosition("", 1).hasValue());
+  ASSERT_FALSE(toPosition("\n", 1).hasValue());
+  ASSERT_FALSE(toPosition(content, 45).hasValue());
+  ASSERT_FALSE(toPosition(content, 46).hasValue());
+}
+
+TEST_F(LocationTest, range) {                // FIXME:
+  std::string content = "var a = 34;\n"      // 0-11
+                        "   $a as String\n"  // 0-15
+                        "\n"                 // 0
+                        "assert $a == 34\n"; // 0-15
+  // check range
 }
 
 int main(int argc, char **argv) {

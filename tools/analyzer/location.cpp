@@ -1,0 +1,110 @@
+/*
+ * Copyright (C) 2021 Nagisa Sekiguchi
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "location.h"
+
+namespace ydsh::lsp {
+
+static unsigned int findLineStartPos(const std::string &content, unsigned int count) {
+  const char *str = content.c_str();
+  for (unsigned int i = 0; i < count; i++) {
+    const char *ptr = strchr(str, '\n');
+    if (!ptr) {
+      break;
+    }
+    str = ++ptr;
+  }
+  return str - content.c_str();
+}
+
+static bool checkPos(const std::string &content, unsigned int pos) {
+  if (pos < content.size()) {
+    return true;
+  } else if (pos > content.size()) {
+    return false;
+  } else {
+    bool endWithNL = !content.empty() && content.back() == '\n';
+    return !endWithNL;
+  }
+}
+
+Optional<unsigned int> toTokenPos(const std::string &content, const Position &position) {
+  if (position.line < 0 || position.character < 0) {
+    return {};
+  }
+  unsigned int pos = findLineStartPos(content, position.line);
+  pos += position.character;
+  if (checkPos(content, pos)) {
+    return pos;
+  }
+  return {};
+}
+
+Optional<Position> toPosition(const std::string &content, unsigned int pos) {
+  if (!checkPos(content, pos)) {
+    return {};
+  }
+
+  unsigned int c = 0;
+  unsigned int offset = 0;
+  char prev = '\0';
+  for (unsigned int i = 0; i <= pos && i < content.size(); i++) {
+    if (prev == '\n') {
+      c++;
+      offset = i;
+    }
+    prev = content[i];
+  }
+  offset = pos - offset;
+  if (c > INT32_MAX || offset > INT32_MAX) {
+    return {};
+  }
+  return Position{
+      .line = static_cast<int>(c),
+      .character = static_cast<int>(offset),
+  };
+}
+
+Optional<Token> toToken(const std::string &content, const Range &range) {
+  auto r = toTokenPos(content, range.start);
+  if (!r.hasValue()) {
+    return {};
+  }
+  unsigned int start = r.unwrap();
+  r = toTokenPos(content, range.end);
+  if (!r.hasValue()) {
+    return {};
+  }
+  unsigned int end = r.unwrap();
+  return Token{
+      .pos = start,
+      .size = end - start,
+  };
+}
+
+Optional<Range> toRange(const std::string &content, Token token) {
+  auto start = toPosition(content, token.pos);
+  auto end = toPosition(content, token.endPos());
+  if (start.hasValue() && end.hasValue()) {
+    return Range{
+        .start = start.unwrap(),
+        .end = end.unwrap(),
+    };
+  }
+  return {};
+}
+
+} // namespace ydsh::lsp

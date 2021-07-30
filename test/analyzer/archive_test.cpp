@@ -18,21 +18,21 @@ TEST(SourceTest, base) {
   ASSERT_TRUE(src);
   ASSERT_EQ(10, src->getVersion());
   ASSERT_STREQ("/dummy1", src->getPath());
-  ASSERT_EQ("hello", src->getContent());
+  ASSERT_EQ("hello\n", src->getContent());
   ASSERT_EQ(1, src->getSrcId());
 
   src = srcMan.update("/dummy1", 12, "world");
   ASSERT_TRUE(src);
   ASSERT_EQ(12, src->getVersion());
   ASSERT_STREQ("/dummy1", src->getPath());
-  ASSERT_EQ("world", src->getContent());
+  ASSERT_EQ("world\n", src->getContent());
   ASSERT_EQ(1, src->getSrcId());
 
   src = srcMan.update("/dummy2", 1, "");
   ASSERT_TRUE(src);
   ASSERT_EQ(1, src->getVersion());
   ASSERT_STREQ("/dummy2", src->getPath());
-  ASSERT_EQ("", src->getContent());
+  ASSERT_EQ("\n", src->getContent());
   ASSERT_EQ(2, src->getSrcId());
 }
 
@@ -54,9 +54,7 @@ protected:
     return std::make_unique<ASTContext>(*src);
   }
 
-  ASTContextPtr newctx() {
-    return newctx(this->srcMan, this->indexMap);
-  }
+  ASTContextPtr newctx() { return newctx(this->srcMan, this->indexMap); }
 
   static auto toSorted(const std::unordered_map<std::string, FieldHandle> &handleMap) {
     using Entry = std::pair<std::string, FieldHandle>;
@@ -443,7 +441,7 @@ TEST_F(ArchiveTest, mod4) {
 
   auto ret = this->newPool().getModTypeById(3);
   ASSERT_TRUE(ret);
-  auto &modType3 = static_cast<const ModType&>(*ret.asOk());
+  auto &modType3 = static_cast<const ModType &>(*ret.asOk());
   ASSERT_EQ(3, modType3.getModID());
   ASSERT_EQ(2, modType3.getChildSize());
   auto *handle = modType3.lookupField("BBB");
@@ -451,11 +449,11 @@ TEST_F(ArchiveTest, mod4) {
   ASSERT_EQ(3, handle->getModID());
   auto &type1 = this->newPool().get(handle->getTypeID());
   ASSERT_TRUE(this->newPool().isTupleType(type1));
-  auto &tuple = static_cast<const TupleType&>(type1);
+  auto &tuple = static_cast<const TupleType &>(type1);
   ASSERT_EQ(2, tuple.getFieldSize());
   ASSERT_EQ(this->newPool().get(TYPE::IllegalAccessError), tuple.getElementTypeAt(0));
   ASSERT_TRUE(tuple.getElementTypeAt(1).isModType());
-  ASSERT_EQ(4, static_cast<const ModType&>(tuple.getElementTypeAt(1)).getModID());
+  ASSERT_EQ(4, static_cast<const ModType &>(tuple.getElementTypeAt(1)).getModID());
 
   handle = modType3.lookupField("AAA");
   ASSERT_FALSE(handle);

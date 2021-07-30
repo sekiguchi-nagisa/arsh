@@ -43,10 +43,15 @@ SourcePtr SourceManager::find(StringRef path) const {
 SourcePtr SourceManager::update(StringRef path, int version, std::string &&content) {
   std::lock_guard<std::mutex> lockGuard(this->mutex);
 
+  std::string tmp = std::move(content);
+  if (tmp.empty() || tmp.back() != '\n') {
+    tmp += '\n';
+  }
+
   auto iter = this->indexMap.find(path);
   if (iter != this->indexMap.end()) {
     unsigned int i = iter->second;
-    this->entries[i].second->update(std::move(content), version);
+    this->entries[i].second->update(std::move(tmp), version);
     return this->entries[i].second;
   } else {
     unsigned int id = this->entries.size() + 1;
@@ -58,7 +63,7 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
     path = ptr.get();
     this->entries.emplace_back(
         std::move(ptr), std::make_shared<Source>(path.data(), static_cast<unsigned short>(id),
-                                                 std::move(content), version));
+                                                 std::move(tmp), version));
     this->indexMap.emplace(path, i);
     return this->entries[i].second;
   }
