@@ -17,9 +17,9 @@
 #ifndef YDSH_TOOLS_ANALYZER_SOURCE_H
 #define YDSH_TOOLS_ANALYZER_SOURCE_H
 
+#include <mutex>
 #include <string>
 #include <unordered_map>
-#include <mutex>
 
 namespace ydsh::lsp {
 
@@ -85,6 +85,42 @@ public:
    */
   SourcePtr update(StringRef path, int version, std::string &&content); // FIXME:
 };
+
+/**
+ *
+ * @param content
+ * may not be terminated with newline
+ * @param position
+ * @return
+ */
+Optional<unsigned int> toTokenPos(const std::string &content, const Position &position);
+
+/**
+ *
+ * @param content
+ * may not be terminated with newline
+ * @param pos
+ * @return
+ */
+Optional<Position> toPosition(const std::string &content, unsigned int pos);
+
+/**
+ *
+ * @param content
+ * may not be terminated with newline
+ * @param range
+ * @return
+ */
+Optional<ydsh::Token> toToken(const std::string &content, const Range &range);
+
+/**
+ *
+ * @param content
+ * may not be terminated with newline
+ * @param token
+ * @return
+ */
+Optional<Range> toRange(const std::string &content, Token token);
 
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change);
 

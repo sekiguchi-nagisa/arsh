@@ -1,6 +1,5 @@
 #include "../test_common.h"
 
-#include "location.h"
 #include "lsp.h"
 #include "server.h"
 

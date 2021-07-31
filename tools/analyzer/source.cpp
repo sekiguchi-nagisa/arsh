@@ -69,6 +69,95 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
   }
 }
 
+static unsigned int findLineStartPos(const std::string &content, unsigned int count) {
+  const char *str = content.c_str();
+  for (unsigned int i = 0; i < count; i++) {
+    const char *ptr = strchr(str, '\n');
+    if (!ptr) {
+      break;
+    }
+    str = ++ptr;
+  }
+  return str - content.c_str();
+}
+
+static bool checkPos(const std::string &content, unsigned int pos) {
+  if (pos < content.size()) {
+    return true;
+  } else if (pos > content.size()) {
+    return false;
+  } else {
+    bool endWithNL = !content.empty() && content.back() == '\n';
+    return !endWithNL;
+  }
+}
+
+Optional<unsigned int> toTokenPos(const std::string &content, const Position &position) {
+  if (position.line < 0 || position.character < 0) {
+    return {};
+  }
+  unsigned int pos = findLineStartPos(content, position.line);
+  pos += position.character;
+  if (checkPos(content, pos)) {
+    return pos;
+  }
+  return {};
+}
+
+Optional<Position> toPosition(const std::string &content, unsigned int pos) {
+  if (!checkPos(content, pos)) {
+    return {};
+  }
+
+  unsigned int c = 0;
+  unsigned int offset = 0;
+  char prev = '\0';
+  for (unsigned int i = 0; i <= pos && i < content.size(); i++) {
+    if (prev == '\n') {
+      c++;
+      offset = i;
+    }
+    prev = content[i];
+  }
+  offset = pos - offset;
+  if (c > INT32_MAX || offset > INT32_MAX) {
+    return {};
+  }
+  return Position{
+      .line = static_cast<int>(c),
+      .character = static_cast<int>(offset),
+  };
+}
+
+Optional<Token> toToken(const std::string &content, const Range &range) {
+  auto r = toTokenPos(content, range.start);
+  if (!r.hasValue()) {
+    return {};
+  }
+  unsigned int start = r.unwrap();
+  r = toTokenPos(content, range.end);
+  if (!r.hasValue()) {
+    return {};
+  }
+  unsigned int end = r.unwrap();
+  return Token{
+      .pos = start,
+      .size = end - start,
+  };
+}
+
+Optional<Range> toRange(const std::string &content, Token token) {
+  auto start = toPosition(content, token.pos);
+  auto end = toPosition(content, token.endPos());
+  if (start.hasValue() && end.hasValue()) {
+    return Range{
+        .start = start.unwrap(),
+        .end = end.unwrap(),
+    };
+  }
+  return {};
+}
+
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change) {
   if (!change.range.hasValue()) {
     content = change.text;

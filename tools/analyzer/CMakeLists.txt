@@ -12,7 +12,7 @@ add_library(ydshd_static STATIC
         archive.cpp
         source.cpp
         index.cpp
-        location.cpp)
+        )
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri)
 
 add_executable(${LSP_SRV} main.cpp)
