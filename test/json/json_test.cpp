@@ -204,6 +204,14 @@ TEST_F(ParserTest, string3) {
   ASSERT_EQ(expect, this->ret.asString());
 }
 
+TEST_F(ParserTest, string4) {
+  const char *text = R"("あいうえお\u3042")";
+  ASSERT_NO_FATAL_FAILURE(this->parse(text));
+
+  const char *expect = R"(あいうえおあ)";
+  ASSERT_EQ(expect, this->ret.asString());
+}
+
 TEST_F(ParserTest, array) {
   const char *text = R"(
         [
@@ -352,7 +360,7 @@ void jsonify(T &t, AAA &v) {
   t("a2", v.a2);
 }
 
-} // namespace json::ydsh
+} // namespace ydsh::json
 
 TEST(SerializeTest, object) {
   AAA v = {.a1 = 190,

@@ -352,12 +352,8 @@ JSON JSONParser::parseValue() {
     return false;
   case JSONTokenKind::NUMBER:
     return this->parseNumber();
-  case JSONTokenKind::STRING: {
-    Token token = this->expect(JSONTokenKind::STRING); // always success
-    std::string str;
-    TRY(this->unescapeStr(token, str));
-    return JSON(std::move(str)); // for prevent build error in older gcc/clang
-  }
+  case JSONTokenKind::STRING:
+    return this->parseString();
   case JSONTokenKind::ARRAY_OPEN:
     return this->parseArray();
   case JSONTokenKind::OBJECT_OPEN:
@@ -404,14 +400,11 @@ JSON JSONParser::parseNumber() {
   })
 
 std::pair<std::string, JSON> JSONParser::parseMember() {
-  Token token = this->expect(JSONTokenKind::STRING); // always success
+  JSON key = TRY2(this->parseString());
   TRY2(this->expect(JSONTokenKind::COLON));
   JSON value = TRY2(this->parseValue());
-
-  std::string key;
-  TRY2(this->unescapeStr(token, key));
-
-  return {std::move(key), std::move(value)};
+  assert(key.isString());
+  return {std::move(key.asString()), std::move(value)};
 }
 
 JSON JSONParser::parseArray() {
@@ -473,76 +466,79 @@ static unsigned short parseHex(const char *&iter) {
   return v;
 }
 
-static int unescape(const char *&iter, const char *end) {
-  if (iter == end) {
+static int parseEscape(const char *&iter, const char *end) {
+  if (iter == end || *iter != '\\') {
     return -1;
   }
 
+  iter++; // skip '\\'
   int ch = static_cast<unsigned char>(*(iter++));
-  if (ch == '\\') {
-    char next = *(iter++);
-    switch (next) {
-    case '"':
-    case '\\':
-    case '/':
-      ch = next;
-      break;
-    case 'b':
-      ch = '\b';
-      break;
-    case 'f':
-      ch = '\f';
-      break;
-    case 'n':
-      ch = '\n';
-      break;
-    case 'r':
-      ch = '\r';
-      break;
-    case 't':
-      ch = '\t';
-      break;
-    case 'u':
-      ch = parseHex(iter);
-      if (UnicodeUtil::isLowSurrogate(ch)) {
-        return -1;
-      }
-      if (UnicodeUtil::isHighSurrogate(ch)) {
-        if (iter == end || *iter != '\\' || (iter + 1) == end || *(iter + 1) != 'u') {
-          return -1;
-        }
-        iter += 2;
-        int low = parseHex(iter);
-        if (!UnicodeUtil::isLowSurrogate(low)) {
-          return -1;
-        }
-        ch = UnicodeUtil::utf16ToCodePoint(ch, low);
-      }
-      break;
-    default:
+  switch (ch) {
+  case '"':
+  case '\\':
+  case '/':
+    break;
+  case 'b':
+    ch = '\b';
+    break;
+  case 'f':
+    ch = '\f';
+    break;
+  case 'n':
+    ch = '\n';
+    break;
+  case 'r':
+    ch = '\r';
+    break;
+  case 't':
+    ch = '\t';
+    break;
+  case 'u':
+    ch = parseHex(iter);
+    if (UnicodeUtil::isLowSurrogate(ch)) {
       return -1;
     }
+    if (UnicodeUtil::isHighSurrogate(ch)) {
+      if (iter == end || *iter != '\\' || (iter + 1) == end || *(iter + 1) != 'u') {
+        return -1;
+      }
+      iter += 2;
+      int low = parseHex(iter);
+      if (!UnicodeUtil::isLowSurrogate(low)) {
+        return -1;
+      }
+      ch = UnicodeUtil::utf16ToCodePoint(ch, low);
+    }
+    break;
+  default:
+    return -1;
   }
   return ch;
 }
 
-bool JSONParser::unescapeStr(Token token, std::string &str) {
-  auto actual = token;
-  actual.pos++;
-  actual.size -= 2;
+JSON JSONParser::parseString() {
+  Token token = TRY(this->expect(JSONTokenKind::STRING));
+  auto ref = this->lexer->toStrRef(token);
+  ref.removePrefix(1); // prefix ["]
+  ref.removeSuffix(1); // syffix ["]
 
-  auto range = this->lexer->toStrRef(actual);
-  for (auto iter = range.begin(); iter != range.end();) {
-    int codePoint = unescape(iter, range.end());
-    if (codePoint < 0) {
-      this->reportTokenFormatError(JSONTokenKind::STRING, token, "illegal string format");
-      return false;
+  std::string value;
+  const char *end = ref.end();
+  for (const char *iter = ref.begin(); iter != end;) {
+    if (*iter == '\\') {
+      int code = parseEscape(iter, end);
+      if (code < 0) {
+        this->reportTokenFormatError(JSONTokenKind::STRING, token, "illegal string format");
+        return JSON(); // broken escape sequence
+      }
+      char buf[4];
+      unsigned int size = UnicodeUtil::codePointToUtf8(code, buf);
+      value.append(buf, size);
+    } else {
+      value += *(iter++);
     }
-    char buf[4];
-    unsigned int size = UnicodeUtil::codePointToUtf8(codePoint, buf);
-    str.append(buf, size);
   }
-  return true;
+  return JSON(std::move(value));
 }
 
 std::string JSONParser::formatError() const {

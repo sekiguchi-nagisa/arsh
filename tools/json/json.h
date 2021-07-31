@@ -54,7 +54,7 @@ public:
   JSON(String &&v) : Base(std::move(v)) {}                 // NOLINT
   JSON(Array &&v) : Base(std::move(v)) {}                  // NOLINT
   JSON(Object &&v) : Base(std::move(v)) {}                 // NOLINT
-  JSON(std::initializer_list<JSONMember> list);                // NOLINT
+  JSON(std::initializer_list<JSONMember> list);            // NOLINT
   JSON(std::nullptr_t) : Base(nullptr) {}                  // NOLINT
 
   /**
@@ -226,7 +226,7 @@ private:
 
   JSON parseObject();
 
-  bool unescapeStr(Token token, std::string &str);
+  JSON parseString();
 };
 
 } // namespace json
