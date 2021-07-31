@@ -24,7 +24,7 @@ using namespace lsp;
 
 #define EACH_OPT(OP)                                                                               \
   OP(LOG, "--log", opt::HAS_ARG,                                                                   \
-     "specify log level (info, warning, error, fatal, none). default is `info'")                   \
+     "specify log level (debug, info, warning, error, fatal). default is `info'")                  \
   OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
   OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")
 
@@ -40,8 +40,8 @@ struct Options {
 };
 
 static LogLevel parseLogLevel(const char *value, LogLevel v) {
-  LogLevel levels[] = {LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR, LogLevel::FATAL,
-                       LogLevel::NONE};
+  LogLevel levels[] = {LogLevel::DEBUG, LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR,
+                       LogLevel::FATAL};
   for (auto &l : levels) {
     const char *ls = toString(l);
     if (strcasecmp(ls, value) == 0) {
@@ -84,8 +84,8 @@ static Options parseOptions(int argc, char **argv) {
 
 static void showInfo(char **const argv, LSPLogger &logger) {
   std::string cmdline;
-  for(unsigned int i = 0; argv[i]; i++) {
-    if(!cmdline.empty()) {
+  for (unsigned int i = 0; argv[i]; i++) {
+    if (!cmdline.empty()) {
       cmdline += ' ';
     }
     cmdline += argv[i];

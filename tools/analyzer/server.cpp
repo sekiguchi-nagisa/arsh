@@ -23,7 +23,10 @@ namespace ydsh::lsp {
 // ##     LSPServer     ##
 // #######################
 
-#define LOG(L, ...) (this->logger.get())(L, __VA_ARGS__)
+#define LOG(L, ...)                                                                                \
+  do {                                                                                             \
+    this->logger.get().enabled(L) && (this->logger.get())(L, __VA_ARGS__);                         \
+  } while (false)
 
 ReplyImpl LSPServer::onCall(const std::string &name, JSON &&param) {
   if (!this->init && name != "initialize") {

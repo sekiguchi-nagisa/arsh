@@ -31,10 +31,10 @@
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-enum class LogLevel : unsigned int { INFO, WARNING, ERROR, FATAL, NONE };
+enum class LogLevel : unsigned int { DEBUG, INFO, WARNING, ERROR, FATAL, NONE };
 
 inline const char *toString(LogLevel level) {
-  const char *str[] = {"info", "warning", "error", "fatal", "none"};
+  const char *str[] = {"debug", "info", "warning", "error", "fatal", "none"};
   return str[static_cast<unsigned int>(level)];
 }
 
@@ -73,11 +73,12 @@ public:
     func();
   }
 
-  void operator()(LogLevel level, const char *fmt, ...) __attribute__((format(printf, 3, 4))) {
+  bool operator()(LogLevel level, const char *fmt, ...) __attribute__((format(printf, 3, 4))) {
     va_list arg;
     va_start(arg, fmt);
     this->log(level, fmt, arg);
     va_end(arg);
+    return true;
   }
 
   bool enabled(LogLevel level) const {
@@ -124,7 +125,7 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
   }
 
   // print body
-  this->sync([&]{
+  this->sync([&] {
     fprintf(this->filePtr.get(), "%s%s\n", header, str);
     fflush(this->filePtr.get());
   });

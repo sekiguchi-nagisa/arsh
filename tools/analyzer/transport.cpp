@@ -20,6 +20,11 @@
 
 namespace ydsh::lsp {
 
+#define LOG(L, ...)                                                                                \
+  do {                                                                                             \
+    this->logger.get().enabled(L) && (this->logger.get())(L, __VA_ARGS__);                         \
+  } while (false)
+
 static constexpr const char HEADER_LENGTH[] = "Content-Length: ";
 
 // ##########################
@@ -58,7 +63,7 @@ int LSPTransport::recvSize() {
   while (true) {
     std::string header;
     if (!this->readHeader(header)) {
-      this->logger(LogLevel::ERROR, "invalid header: %s", header.c_str());
+      LOG(LogLevel::ERROR, "invalid header: %s", header.c_str());
       return -1;
     }
 
@@ -66,17 +71,17 @@ int LSPTransport::recvSize() {
       break;
     }
     if (isContentLength(header)) {
-      this->logger(LogLevel::INFO, "%s", header.c_str());
+      LOG(LogLevel::DEBUG, "%s", header.c_str());
       if (size > 0) {
-        this->logger(LogLevel::WARNING, "previous read message length: %d", size);
+        LOG(LogLevel::WARNING, "previous read message length: %d", size);
       }
       int ret = parseContentLength(header);
       if (!ret) {
-        this->logger(LogLevel::ERROR, "may be broken content length");
+        LOG(LogLevel::ERROR, "may be broken content length");
       }
       size = ret;
     } else { // may be other header
-      this->logger(LogLevel::INFO, "other header: %s", header.c_str());
+      LOG(LogLevel::INFO, "other header: %s", header.c_str());
     }
   }
   return size;
