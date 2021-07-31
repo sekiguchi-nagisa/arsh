@@ -661,6 +661,10 @@ TEST(DeserializeTest, error) {
   ASSERT_EQ("undefined field `b1'", des.getValidationError().formatError());
 }
 
+struct SingleNullLogger : ydsh::SingletonLogger<SingleNullLogger> {
+  SingleNullLogger() : ydsh::SingletonLogger<SingleNullLogger>("") {}
+};
+
 TEST(ReqTest, parse) {
   using namespace rpc;
 
@@ -668,7 +672,7 @@ TEST(ReqTest, parse) {
   ByteBuffer buf;
   std::string text = "}{";
   buf.append(text.c_str(), text.size());
-  auto msg = MessageParser(std::move(buf))();
+  auto msg = MessageParser(SingleNullLogger::instance(), std::move(buf))();
   ASSERT_TRUE(is<Error>(msg));
   ASSERT_EQ(rpc::ParseError, get<Error>(msg).code);
 
@@ -676,7 +680,7 @@ TEST(ReqTest, parse) {
   text = R"({ "hoge" : "de" })";
   buf = ByteBuffer();
   buf.append(text.c_str(), text.size());
-  msg = MessageParser(std::move(buf))();
+  msg = MessageParser(SingleNullLogger::instance(), std::move(buf))();
   ASSERT_TRUE(is<Error>(msg));
   ASSERT_EQ(rpc::InvalidRequest, get<Error>(msg).code);
 
@@ -684,7 +688,7 @@ TEST(ReqTest, parse) {
   text = rpc::Request("AAA", "hey", array(false, true)).toJSON().serialize(0);
   buf = ByteBuffer();
   buf.append(text.c_str(), text.size());
-  msg = MessageParser(std::move(buf))();
+  msg = MessageParser(SingleNullLogger::instance(), std::move(buf))();
   ASSERT_TRUE(is<Request>(msg));
   ASSERT_TRUE(get<Request>(msg).isCall());
   auto json = get<Request>(msg).toJSON();
@@ -697,7 +701,7 @@ TEST(ReqTest, parse) {
   text = rpc::Request(1234, "hoge", JSON()).toJSON().serialize(0);
   buf = ByteBuffer();
   buf.append(text.c_str(), text.size());
-  msg = MessageParser(std::move(buf))();
+  msg = MessageParser(SingleNullLogger::instance(), std::move(buf))();
   ASSERT_TRUE(is<Request>(msg));
   ASSERT_TRUE(get<Request>(msg).isCall());
   json = get<Request>(msg).toJSON();
@@ -709,7 +713,7 @@ TEST(ReqTest, parse) {
   text = rpc::Request(JSON(), "world", {{"AAA", 0.23}}).toJSON().serialize(0);
   buf = ByteBuffer();
   buf.append(text.c_str(), text.size());
-  msg = MessageParser(std::move(buf))();
+  msg = MessageParser(SingleNullLogger::instance(), std::move(buf))();
   ASSERT_TRUE(is<Request>(msg));
   ASSERT_TRUE(get<Request>(msg).isNotification());
   json = get<Request>(msg).toJSON();
@@ -722,13 +726,9 @@ TEST(ReqTest, parse) {
   text = rpc::Request(true, "world", {{"AAA", 0.23}}).toJSON().serialize(0);
   buf = ByteBuffer();
   buf.append(text.c_str(), text.size());
-  msg = MessageParser(std::move(buf))();
+  msg = MessageParser(SingleNullLogger::instance(), std::move(buf))();
   ASSERT_TRUE(is<Error>(msg));
 }
-
-struct SingleNullLogger : ydsh::SingletonLogger<SingleNullLogger> {
-  SingleNullLogger() : ydsh::SingletonLogger<SingleNullLogger>("") {}
-};
 
 struct StringTransport : public rpc::Transport {
   std::string inStr;

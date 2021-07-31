@@ -153,11 +153,15 @@ struct Response {
 
 using Message = Union<Request, Response, Error>;
 
-struct MessageParser
-    : public JSONParser { // TODO: currently only support single request (not support batch-request)
-  explicit MessageParser(ByteBuffer &&buffer) : JSONParser(std::move(buffer)) {}
+class MessageParser : public JSONParser {
+private:
+  std::reference_wrapper<LoggerBase> logger;
 
-  Message operator()();
+public:
+  MessageParser(LoggerBase &logger, ByteBuffer &&buffer)
+      : JSONParser(std::move(buffer)), logger(logger) {}
+
+  Message operator()(); // TODO: currently only support single request (not support batch-request)
 };
 
 using ResponseCallback = std::function<void(Response &&)>;

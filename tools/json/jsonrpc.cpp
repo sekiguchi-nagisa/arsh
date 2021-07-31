@@ -54,6 +54,11 @@ JSON Response::toJSON() {
   return std::move(serializer).take();
 }
 
+#define LOG(L, ...)                                                                                \
+  do {                                                                                             \
+    this->logger.get().enabled(L) && (this->logger.get())(L, __VA_ARGS__);                         \
+  } while (false)
+
 Message MessageParser::operator()() {
   // parse
   auto ret = JSONParser::operator()();
@@ -61,6 +66,7 @@ Message MessageParser::operator()() {
     return Error(ErrorCode::ParseError, "Parse error", this->formatError());
   }
 
+  LOG(LogLevel::DEBUG, "server to client:\n%s", ret.serialize(2).c_str());
   Union<Request, Response> value;
   JSONDeserializer deserializer(std::move(ret));
   deserializer(value);
@@ -119,35 +125,30 @@ CallbackMap::Entry CallbackMap::take(long id) {
 // ##     Transport     ##
 // #######################
 
-#define LOG(L, ...)                                                                                \
-  do {                                                                                             \
-    this->logger.get().enabled(L) && (this->logger.get())(L, __VA_ARGS__);                         \
-  } while (false)
-
 void Transport::call(JSON &&id, const std::string &methodName, JSON &&param) {
   auto json = Request(std::move(id), methodName, std::move(param)).toJSON();
-  LOG(LogLevel::DEBUG, "call request:\n%s", json.serialize(2).c_str());
+  LOG(LogLevel::DEBUG, "client to server call:\n%s", json.serialize(2).c_str());
   auto str = json.serialize();
   this->send(str.size(), str.c_str());
 }
 
 void Transport::notify(const std::string &methodName, JSON &&param) {
   auto json = Request(JSON(), methodName, std::move(param)).toJSON();
-  LOG(LogLevel::DEBUG, "notify request:\n%s", json.serialize(2).c_str());
+  LOG(LogLevel::DEBUG, "client to server notify:\n%s", json.serialize(2).c_str());
   auto str = json.serialize();
   this->send(str.size(), str.c_str());
 }
 
 void Transport::reply(JSON &&id, JSON &&result) {
   auto json = Response(std::move(id), std::move(result)).toJSON();
-  LOG(LogLevel::DEBUG, "reply response:\n%s", json.serialize(2).c_str());
+  LOG(LogLevel::DEBUG, "client to server reply:\n%s", json.serialize(2).c_str());
   auto str = json.serialize();
   this->send(str.size(), str.c_str());
 }
 
 void Transport::reply(JSON &&id, Error &&error) {
   auto json = Response(std::move(id), std::move(error)).toJSON();
-  LOG(LogLevel::DEBUG, "reply error:\n%s", json.serialize(2).c_str());
+  LOG(LogLevel::DEBUG, "client to server error:\n%s", json.serialize(2).c_str());
   auto str = json.serialize();
   this->send(str.size(), str.c_str());
 }
@@ -173,7 +174,7 @@ bool Transport::dispatch(Handler &handler) {
     remainSize -= recvSize;
   }
 
-  auto msg = MessageParser(std::move(buf))();
+  auto msg = MessageParser(this->logger, std::move(buf))();
   if (is<Error>(msg)) {
     auto &error = get<Error>(msg);
     LOG(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
