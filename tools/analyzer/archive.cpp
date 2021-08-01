@@ -85,7 +85,7 @@ Optional<FieldHandle> Unarchiver::unpackHandle() {
   uint16_t modID = this->read16();
   auto type = this->unpackType();
   if (!type) {
-    return Optional<FieldHandle>();
+    return {};
   }
   return FieldHandle(commitID, *type, index, static_cast<FieldAttribute>(attr), modID);
 }
@@ -166,10 +166,10 @@ Optional<std::unordered_map<std::string, FieldHandle>> ModuleArchive::unpack(Typ
   for (auto &e : this->getHandles()) {
     auto h = e.unpack(pool);
     if (!h.hasValue()) {
-      return Optional<std::unordered_map<std::string, FieldHandle>>();
+      return {};
     }
     if (!handleMap.emplace(e.getName(), h.unwrap()).second) {
-      return Optional<std::unordered_map<std::string, FieldHandle>>();
+      return {};
     }
   }
   return handleMap;

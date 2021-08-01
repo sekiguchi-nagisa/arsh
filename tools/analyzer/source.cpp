@@ -60,11 +60,10 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
     }
     unsigned int i = this->entries.size();
     auto ptr = CStrPtr(strdup(path.data()));
-    path = ptr.get();
-    this->entries.emplace_back(
-        std::move(ptr), std::make_shared<Source>(path.data(), static_cast<unsigned short>(id),
-                                                 std::move(tmp), version));
-    this->indexMap.emplace(path, i);
+    auto src = std::make_shared<Source>(ptr.get(), static_cast<unsigned short>(id), std::move(tmp),
+                                        version);
+    auto &pair = this->entries.emplace_back(std::move(ptr), std::move(src));
+    this->indexMap.emplace(pair.first.get(), i);
     return this->entries[i].second;
   }
 }

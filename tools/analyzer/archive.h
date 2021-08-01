@@ -56,7 +56,7 @@ private:
   void writeN(uint64_t b) {
     static_assert(N > 0 && N < 9, "out of range");
     for (unsigned int i = N; i > 0; --i) {
-      const uint64_t shift = (i - 1) * 8;
+      const uint64_t shift = static_cast<uint64_t>(i - 1) * 8;
       const uint64_t mask = static_cast<uint64_t>(0xFF) << shift;
       auto v = static_cast<uint8_t>((b & mask) >> shift);
       this->data += static_cast<char>(v);
@@ -99,7 +99,7 @@ private:
     static_assert(N > 0 && N < 9, "out of range");
     uint64_t v = 0;
     for (unsigned int i = N; i > 0; --i) {
-      const uint64_t shift = (i - 1) * 8;
+      const uint64_t shift = static_cast<uint64_t>(i - 1) * 8;
       uint8_t ch = this->data[this->pos++];
       v |= static_cast<uint64_t>(ch) << shift;
     }

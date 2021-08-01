@@ -23,11 +23,11 @@ namespace ydsh::lsp {
 // #########################
 
 static ModuleIndexPtr createNull() {
-  return ModuleIndex::create(0, 0, nullptr, std::vector<std::unique_ptr<Node>>(),
-                             ModuleArchive({}), std::vector<std::pair<bool, ModuleIndexPtr>>());
+  return ModuleIndex::create(0, 0, nullptr, std::vector<std::unique_ptr<Node>>(), ModuleArchive({}),
+                             std::vector<std::pair<bool, ModuleIndexPtr>>());
 }
 
-const ModuleIndexPtr ModuleIndex::NULL_INDEX = createNull();
+const ModuleIndexPtr ModuleIndex::NULL_INDEX = createNull(); // NOLINT
 
 static void tryInsertByAscendingOrder(std::vector<ModuleIndexPtr> &targets,
                                       const ModuleIndexPtr &index) {
