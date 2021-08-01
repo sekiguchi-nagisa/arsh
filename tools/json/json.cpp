@@ -176,7 +176,7 @@ struct Serializer {
   void serialize(const String &value) {
     this->str += '"';
     for (unsigned char ch : value) {
-      if (ch >= 0 && ch < 0x1F) {
+      if (ch < 0x1F) {
         char buf[16];
         snprintf(buf, 16, "\\u%04x", ch);
         str += buf;
