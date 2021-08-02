@@ -43,6 +43,10 @@ enum LSPErrorCode : int {
 
 using DocumentURI = std::string;
 
+/**
+ * line and character are 0-based and based on UTF16 encoding
+ * (encoding of actual content is UTF8)
+ */
 struct Position {
   int line{0};
   int character{0};

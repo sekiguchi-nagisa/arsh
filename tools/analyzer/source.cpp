@@ -15,6 +15,7 @@
  */
 
 #include <constant.h>
+#include <misc/unicode.hpp>
 
 #include "lsp.h"
 #include "source.h"
@@ -68,7 +69,7 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
   }
 }
 
-static unsigned int findLineStartPos(const std::string &content, unsigned int count) {
+static size_t findLineStartPos(const std::string &content, unsigned int count) {
   const char *str = content.c_str();
   for (unsigned int i = 0; i < count; i++) {
     const char *ptr = strchr(str, '\n');
@@ -80,33 +81,58 @@ static unsigned int findLineStartPos(const std::string &content, unsigned int co
   return str - content.c_str();
 }
 
-static bool checkPos(const std::string &content, unsigned int pos) {
-  if (pos < content.size()) {
-    return true;
-  } else if (pos > content.size()) {
-    return false;
-  } else {
-    bool endWithNL = !content.empty() && content.back() == '\n';
-    return !endWithNL;
+static size_t count(const std::string &content, unsigned int offset, unsigned int count) {
+  size_t limit = offset;
+  for (; limit < content.size() && content[limit] != '\n'; limit++)
+    ;
+  auto line = StringRef(content).slice(offset, limit + 1);
+
+  const char *iter = line.begin();
+  const char *end = line.end();
+  for (unsigned int i = 0; i < count && iter != end;) {
+    int codePoint;
+    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
+    if (byteSize == 0) {
+      byteSize++;
+    }
+    iter += byteSize;
+    i += codePoint < 0 || UnicodeUtil::isBmpCodePoint(codePoint) ? 1 : 2;
   }
+  return offset + (iter - line.begin());
 }
 
 Optional<unsigned int> toTokenPos(const std::string &content, const Position &position) {
-  if (position.line < 0 || position.character < 0) {
+  if (position.line < 0 || position.character < 0 || content.size() > UINT32_MAX) {
     return {};
   }
-  unsigned int pos = findLineStartPos(content, position.line);
-  pos += position.character;
-  if (checkPos(content, pos)) {
-    return pos;
+  size_t offset = findLineStartPos(content, position.line);
+  size_t pos = count(content, offset, position.character);
+  if (pos > UINT32_MAX) {
+    return {};
   }
-  return {};
+  return static_cast<unsigned int>(pos);
+}
+
+static unsigned int utf16Len(StringRef ref) {
+  unsigned int count = 0;
+  const char *end = ref.end();
+  for (const char *iter = ref.begin(); iter != end;) {
+    int codePoint;
+    unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
+    if (byteSize == 0) {
+      byteSize++;
+    }
+    iter += byteSize;
+    count += codePoint < 0 || UnicodeUtil::isBmpCodePoint(codePoint) ? 1 : 2;
+  }
+  return count;
 }
 
 Optional<Position> toPosition(const std::string &content, unsigned int pos) {
-  if (!checkPos(content, pos)) {
+  if (content.size() > UINT32_MAX) {
     return {};
   }
+  pos = static_cast<unsigned int>(std::min(content.size(), static_cast<size_t>(pos)));
 
   unsigned int c = 0;
   unsigned int offset = 0;
@@ -118,7 +144,8 @@ Optional<Position> toPosition(const std::string &content, unsigned int pos) {
     }
     prev = content[i];
   }
-  offset = pos - offset;
+  auto line = StringRef(content).slice(offset, pos);
+  offset = utf16Len(line);
   if (c > INT32_MAX || offset > INT32_MAX) {
     return {};
   }

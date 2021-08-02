@@ -431,7 +431,7 @@ struct LocationTest : public ::testing::Test {
   }
 };
 
-TEST_F(LocationTest, position) {
+TEST_F(LocationTest, position1) {
   std::string content = "var a = 34;\n"      // 0-11
                         "   $a as String\n"  // 0-15
                         "\n"                 // 0
@@ -455,15 +455,49 @@ TEST_F(LocationTest, position) {
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 43, {.line = 3, .character = 14}));
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 44, {.line = 3, .character = 15}));
 
-  ASSERT_FALSE(toTokenPos("", {.line = 0, .character = 1}).hasValue());
-  ASSERT_FALSE(toTokenPos("", {.line = 0, .character = 2}).hasValue());
-  ASSERT_FALSE(toTokenPos(content, {.line = 3, .character = 16}).hasValue());
+  ASSERT_TRUE(toTokenPos("", {.line = 0, .character = 1}).hasValue());
+  ASSERT_EQ(0, toTokenPos("", {.line = 0, .character = 1}).unwrap());
+
+  ASSERT_TRUE(toTokenPos("", {.line = 0, .character = 2}).hasValue());
+  ASSERT_EQ(0, toTokenPos("", {.line = 0, .character = 1}).unwrap());
+
+  ASSERT_TRUE(toTokenPos(content, {.line = 3, .character = 16}).hasValue());
+  ASSERT_EQ(45, toTokenPos(content, {.line = 3, .character = 16}).unwrap());
 
   ASSERT_TRUE(toPosition("", 0).hasValue());
-  ASSERT_FALSE(toPosition("", 1).hasValue());
-  ASSERT_FALSE(toPosition("\n", 1).hasValue());
-  ASSERT_FALSE(toPosition(content, 45).hasValue());
-  ASSERT_FALSE(toPosition(content, 46).hasValue());
+  ASSERT_TRUE(toPosition("", 1).hasValue());
+  ASSERT_EQ((Position{.line = 0, .character = 0}).toString(),
+            toPosition("", 1).unwrap().toString());
+
+  ASSERT_TRUE(toPosition("\n", 1).hasValue());
+  ASSERT_EQ((Position{.line = 0, .character = 1}).toString(),
+            toPosition("\n", 1).unwrap().toString());
+
+  ASSERT_TRUE(toPosition(content, 45).hasValue());
+  ASSERT_EQ((Position{.line = 3, .character = 16}).toString(),
+            toPosition(content, 45).unwrap().toString());
+
+  ASSERT_TRUE(toPosition(content, 46).hasValue());
+  ASSERT_EQ((Position{.line = 3, .character = 16}).toString(),
+            toPosition(content, 46).unwrap().toString());
+}
+
+TEST_F(LocationTest, position2) {
+  std::string content = "'あい1'\n" // 0-9
+                        "'𐐀1'\n";   // 0-6
+
+  // check position
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 1, {.line = 0, .character = 1}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 4, {.line = 0, .character = 2}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 7, {.line = 0, .character = 3}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 8, {.line = 0, .character = 4}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 9, {.line = 0, .character = 5}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 10, {.line = 1, .character = 0}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 11, {.line = 1, .character = 1}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 15, {.line = 1, .character = 3}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 16, {.line = 1, .character = 4}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 17, {.line = 1, .character = 5}));
+  ASSERT_NO_FATAL_FAILURE(checkPosition(content, 18, {.line = 1, .character = 6}));
 }
 
 TEST_F(LocationTest, range) {                // FIXME:
