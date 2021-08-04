@@ -467,6 +467,7 @@ private:
   void visitSourceNode(SourceNode &node) override;
   void visitSourceListNode(SourceListNode &node) override;
   void visitCodeCompNode(CodeCompNode &node) override;
+  void visitErrorNode(ErrorNode &node) override;
   void visitEmptyNode(EmptyNode &node) override;
 
 public:

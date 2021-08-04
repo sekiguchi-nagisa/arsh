@@ -1777,6 +1777,8 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
   RAISE_TC_ERROR(Unreachable, node);
 }
 
+void TypeChecker::visitErrorNode(ErrorNode &node) { node.setType(this->typePool.get(TYPE::Void)); }
+
 void TypeChecker::visitEmptyNode(EmptyNode &node) { node.setType(this->typePool.get(TYPE::Void)); }
 
 static bool mayBeCmd(const Node &node) {
@@ -1793,6 +1795,12 @@ static bool mayBeCmd(const Node &node) {
 
 std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::unique_ptr<Node> &&node,
                                               IntrusivePtr<NameScope> global) {
+  // reset state
+  this->curReturnType = nullptr;
+  this->visitingDepth = 0;
+  this->fctx.clear();
+  this->breakGather.clear();
+
   // set scope
   this->curScope = std::move(global);
 

@@ -933,6 +933,12 @@ void CodeCompNode::dump(NodeDumper &dumper) const {
 }
 
 // #######################
+// ##     ErrorNode     ##
+// #######################
+
+void ErrorNode::dump(NodeDumper &) const {}
+
+// #######################
 // ##     EmptyNode     ##
 // #######################
 

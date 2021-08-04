@@ -80,6 +80,7 @@ namespace ydsh {
   OP(Source)                                                                                       \
   OP(SourceList)                                                                                   \
   OP(CodeComp)                                                                                     \
+  OP(Error)                                                                                        \
   OP(Empty)
 
 enum class NodeKind : unsigned char {
@@ -2130,6 +2131,14 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
+class ErrorNode : public WithRtti<Node, NodeKind::Error> {
+public:
+  explicit ErrorNode(Token token) : WithRtti(token) {}
+  ~ErrorNode() override = default;
+
+  void dump(NodeDumper &dumper) const override;
+};
+
 class EmptyNode : public WithRtti<Node, NodeKind::Empty> {
 public:
   EmptyNode() : EmptyNode({0, 0}) {}
@@ -2222,6 +2231,7 @@ struct NodeVisitor {
   virtual void visitSourceNode(SourceNode &node) = 0;
   virtual void visitSourceListNode(SourceListNode &node) = 0;
   virtual void visitCodeCompNode(CodeCompNode &node) = 0;
+  virtual void visitErrorNode(ErrorNode &node) = 0;
   virtual void visitEmptyNode(EmptyNode &node) = 0;
 };
 
@@ -2277,6 +2287,7 @@ struct BaseVisitor : public NodeVisitor {
   void visitSourceNode(SourceNode &node) override { this->visitDefault(node); }
   void visitSourceListNode(SourceListNode &node) override { this->visitDefault(node); }
   void visitCodeCompNode(CodeCompNode &node) override { this->visitDefault(node); }
+  void visitErrorNode(ErrorNode &node) override { this->visitDefault(node); }
   void visitEmptyNode(EmptyNode &node) override { this->visitDefault(node); }
 };
 

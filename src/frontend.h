@@ -25,6 +25,7 @@ namespace ydsh {
 enum class FrontEndOption {
   PARSE_ONLY = 1 << 0,
   TOPLEVEL = 1 << 1,
+  ERROR_RECOVERY = 1 << 2,
 };
 
 template <>
