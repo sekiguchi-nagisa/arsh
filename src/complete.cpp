@@ -709,7 +709,7 @@ unsigned int doCodeCompletion(DSState &st, const ModType *underlyingModType, Str
   if (empty(option)) {
     // prepare
     DefaultModuleProvider provider(st.modLoader, st.typePool, scope);
-    FrontEnd frontEnd(provider, lex(ref), FrontEndOption{},
+    FrontEnd frontEnd(provider, lex(ref), FrontEndOption::ERROR_RECOVERY,
                       ObserverPtr<CodeCompletionHandler>(&handler));
 
     // perform completion

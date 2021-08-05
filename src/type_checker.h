@@ -154,6 +154,8 @@ protected:
 
   bool toplevelPrinting;
 
+  bool reachComp{false};
+
   FlowContext fctx;
 
   BreakGather breakGather;
@@ -176,6 +178,8 @@ public:
   void setCodeCompletionHandler(ObserverPtr<CodeCompletionHandler> handler) {
     this->ccHandler = handler;
   }
+
+  bool hasReachedCompNode() const { return this->reachComp; }
 
 protected:
   // base type check entry point

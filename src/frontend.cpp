@@ -69,7 +69,8 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
     return true;
   } catch (const TypeCheckError &e) {
     this->listener &&this->listener->handleTypeError(this->contexts, e);
-    if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
+    if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY) &&
+        !this->checker().hasReachedCompNode()) {
       node = std::make_unique<ErrorNode>(e.getToken());
       return true;
     }

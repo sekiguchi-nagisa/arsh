@@ -1751,6 +1751,7 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
 
 void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
   assert(this->ccHandler);
+  this->reachComp = true;
   switch (node.getKind()) {
   case CodeCompNode::VAR:
     this->ccHandler->addVarNameRequest(this->lexer->toName(node.getTypingToken()), this->curScope);
