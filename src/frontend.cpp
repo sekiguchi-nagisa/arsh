@@ -156,9 +156,10 @@ FrontEndResult FrontEnd::enterModule() {
     if (e.isFileNotFound() && node.isOptional()) {
       return FrontEndResult::inModule(std::make_unique<EmptyNode>());
     }
-    if (this->listener) {
-      auto error = wrapModLoadingError(node.getPathNode(), modPath, e);
-      this->listener->handleTypeError(this->contexts, error);
+    auto error = wrapModLoadingError(node.getPathNode(), modPath, e);
+    this->listener &&this->listener->handleTypeError(this->contexts, error);
+    if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
+      return FrontEndResult::inModule(std::make_unique<ErrorNode>(error.getToken()));
     }
     return FrontEndResult::failed();
   } else if (is<std::unique_ptr<Context>>(ret)) {
@@ -176,9 +177,10 @@ FrontEndResult FrontEnd::enterModule() {
     assert(is<const ModType *>(ret));
     auto &modType = *get<const ModType *>(ret);
     if (this->curScope()->modId == modType.getModID()) { // when load module from completion context
-      if (this->listener) {
-        auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(0));
-        this->listener->handleTypeError(this->contexts, error);
+      auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(0));
+      this->listener &&this->listener->handleTypeError(this->contexts, error);
+      if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
+        return FrontEndResult::inModule(std::make_unique<ErrorNode>(error.getToken()));
       }
       return FrontEndResult::failed();
     }
