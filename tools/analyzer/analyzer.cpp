@@ -246,7 +246,7 @@ ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAct
   // prepare
   ASTContextProvider provider(srcMan, indexMap);
   provider.addNew(src);
-  FrontEnd frontEnd(provider, createLexer(src), FrontEndOption{}, nullptr);
+  FrontEnd frontEnd(provider, createLexer(src), FrontEndOption::ERROR_RECOVERY, nullptr);
   if (action.emitter) {
     frontEnd.setErrorListener(*action.emitter);
   }
