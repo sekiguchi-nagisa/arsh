@@ -47,7 +47,7 @@ Currently, under heavy development. Language specification is subject to change 
 ```sh
 $ git clone https://github.com/sekiguchi-nagisa/ydsh.git
 $ cd ydsh
-$ cmake ..    # default install dir is /usr/local/bin
+$ cmake .    # default install dir is /usr/local/bin
 $ cmake --build .
 $ sudo cmake --build . -- install
 ```
