@@ -74,13 +74,14 @@ protected:
    */
   LexerImpl *lexer{nullptr};
 
-  T curKind{};
-  Token curToken{};
-
   /**
    * kind of latest consumed token
    */
   T consumedKind{};
+
+  T curKind{};
+
+  Token curToken{};
 
   /**
    * need 'void operator()(T, Token)'
