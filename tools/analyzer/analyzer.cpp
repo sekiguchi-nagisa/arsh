@@ -259,6 +259,7 @@ ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAct
   while (frontEnd) {
     auto ret = frontEnd();
     if (!ret) {
+      provider.unwind(); // FIXME: future may be removed
       break;
     }
     if (ret.kind == FrontEndResult::IN_MODULE || ret.kind == FrontEndResult::EXIT_MODULE) {

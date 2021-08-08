@@ -112,6 +112,12 @@ public:
 
   const ASTContextPtr &current() const { return this->ctxs.back(); }
 
+  void unwind() { // FIXME: future may be removed
+    while (this->ctxs.size() > 1) {
+      this->ctxs.pop_back();
+    }
+  }
+
 private:
   ModResult addNewModEntry(CStrPtr &&ptr) override;
 };
