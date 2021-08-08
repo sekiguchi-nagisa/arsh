@@ -2,5 +2,5 @@
 var a = 34;
 
 complete "source $SCRIPT_NAME; ech"
-assert $COMPREPLY.size() == 1
+assert $COMPREPLY.size() > 0
 assert $COMPREPLY[0] == 'echo'
