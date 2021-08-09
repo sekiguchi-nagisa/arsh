@@ -1336,14 +1336,14 @@ void TypeChecker::visitTryNode(TryNode &node) {
   /**
    * verify catch block order
    */
-  const int size = node.getCatchNodes().size();
-  for (int i = 0; i < size - 1; i++) {
+  const size_t size = node.getCatchNodes().size();
+  for (size_t i = 1; i < size; i++) {
     auto &curType =
-        findInnerNode<CatchNode>(node.getCatchNodes()[i].get())->getTypeNode().getType();
+        findInnerNode<CatchNode>(node.getCatchNodes()[i - 1].get())->getTypeNode().getType();
     auto &nextType =
-        findInnerNode<CatchNode>(node.getCatchNodes()[i + 1].get())->getTypeNode().getType();
+        findInnerNode<CatchNode>(node.getCatchNodes()[i].get())->getTypeNode().getType();
     if (curType.isSameOrBaseTypeOf(nextType)) {
-      auto &nextNode = node.getCatchNodes()[i + 1];
+      auto &nextNode = node.getCatchNodes()[i];
       RAISE_TC_ERROR(Unreachable, *nextNode);
     }
   }
