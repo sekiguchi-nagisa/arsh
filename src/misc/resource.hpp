@@ -77,9 +77,9 @@ public:
   IntrusivePtr(const IntrusivePtr<U, P> &v) noexcept : IntrusivePtr(v.get()) {} // NOLINT
 
   template <typename U>
-  IntrusivePtr(IntrusivePtr<U, P> &&v) noexcept : ptr(v.get()) {
+  IntrusivePtr(IntrusivePtr<U, P> &&v) noexcept : ptr(v.get()) { // NOLINT
     v.reset();
-  } // NOLINT
+  }
 
   ~IntrusivePtr() { P::decrease(this->ptr); }
 

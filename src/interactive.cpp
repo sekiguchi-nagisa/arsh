@@ -68,7 +68,7 @@ static void loadHistory() { DSState_lineEdit(state, DS_EDIT_HIST_LOAD, 0, nullpt
 
 static void saveHistory() { DSState_lineEdit(state, DS_EDIT_HIST_SAVE, 0, nullptr); }
 
-static const char *prompt(unsigned int n) {
+static const char *prompt(int n) {
   const char *buf = "";
   DSState_lineEdit(state, DS_EDIT_PROMPT, n, &buf);
   return buf;
@@ -134,7 +134,7 @@ static int checkProperty(const char *str, size_t pos) {
       EAW = UnicodeUtil::FULL_WIDTH;
     }
   } else if (strcmp(str, PROPERTY_FLAG_SEQ) == 0) {
-   // FIXME:
+    // FIXME:
   }
   return 0;
 }
@@ -182,7 +182,7 @@ static std::size_t encoding_readCode(int fd, char *buf, std::size_t bufSize, int
     return -1;
   }
 
-  int readSize = read(fd, &buf[0], 1);
+  ssize_t readSize = read(fd, &buf[0], 1);
   if (readSize <= 0) {
     return readSize;
   }

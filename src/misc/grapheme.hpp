@@ -221,7 +221,7 @@ private:
 
 public:
   explicit GraphemeScanner(StringRef ref, size_t prevPos = 0, size_t curPos = 0,
-                  GraphemeBoundary<Bool> boundary = {})
+                           GraphemeBoundary<Bool> boundary = {})
       : ref(ref), prevPos(prevPos), curPos(curPos), boundary(boundary) {}
 
   StringRef getRef() const { return this->ref; }
@@ -255,7 +255,8 @@ public:
 inline int toCodePoint(StringRef ref, size_t pos) {
   int codePoint = UnicodeUtil::utf8ToCodePoint(ref.begin() + pos, ref.end());
   if (codePoint < 0) {
-    codePoint = ref[pos]; // broken encoding
+    unsigned char ch = ref[pos];
+    codePoint = ch; // broken encoding
   }
   return codePoint;
 }

@@ -59,8 +59,8 @@ public:
 
   constexpr StringRefBase(const char *value, size_type size) noexcept : ptr_(value), size_(size) {}
 
-  StringRefBase(const std::string &value) noexcept
-      : ptr_(value.c_str()), size_(value.size()) {} // NOLINT
+  StringRefBase(const std::string &value) noexcept // NOLINT
+      : ptr_(value.c_str()), size_(value.size()) {}
 
   size_type size() const { return this->size_; }
 
@@ -148,13 +148,9 @@ public:
     return this->find(StringRefBase(str, 1), pos);
   }
 
-  bool contains(char ch) const {
-    return this->find(ch, 0) != npos;
-  }
+  bool contains(char ch) const { return this->find(ch, 0) != npos; }
 
-  bool contains(StringRefBase ref) const {
-    return this->find(ref, 0) != npos;
-  }
+  bool contains(StringRefBase ref) const { return this->find(ref, 0) != npos; }
 
   bool hasNullChar() const { return this->contains('\0'); }
 

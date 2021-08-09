@@ -576,9 +576,9 @@ static int builtin_false(DSState &, ArrayObject &) { return 1; }
  */
 static int builtin___gets(DSState &, ArrayObject &) {
   char buf[256];
-  int readSize = 0;
+  ssize_t readSize = 0;
   while ((readSize = read(STDIN_FILENO, buf, std::size(buf))) > 0) {
-    int r = write(STDOUT_FILENO, buf, readSize);
+    ssize_t r = write(STDOUT_FILENO, buf, readSize);
     (void)r;
   }
   return 0;
@@ -1783,7 +1783,7 @@ static bool parseMode(const char *&value, mode_t &mode) {
   // [ugoa]*
   mode_t user = 0;
   for (bool next = true; next;) {
-    int ch = *(value++);
+    char ch = *(value++);
     switch (ch) {
     case 'u':
       user |= 0700;
@@ -1816,7 +1816,7 @@ static bool parseMode(const char *&value, mode_t &mode) {
   // [rwx]*
   mode_t newMode = 0;
   while (*value && *value != ',') {
-    int ch = *(value++);
+    char ch = *(value++);
     switch (ch) {
     case 'r':
       newMode |= 0444 & user;
@@ -1921,7 +1921,7 @@ static int builtin_umask(DSState &, ArrayObject &argvObj) {
       auto ret = parseSymbolicMode(value, mask);
       mask = ret.mode;
       if (!ret.success) {
-        int ch = ret.invalid;
+        int ch = static_cast<unsigned char>(ret.invalid);
         if (isascii(ch) && ch != 0) {
           ERROR(argvObj, "%c: invalid symbolic operator", ch);
         } else {
@@ -2224,11 +2224,9 @@ static int builtin_wait(DSState &state, ArrayObject &argvObj) {
   bool breakNext = false;
   GetOptState optState;
   for (int opt; (opt = optState(argvObj, "n")) != -1;) {
-    switch (opt) {
-    case 'n':
+    if (opt == 'n') {
       breakNext = true;
-      break;
-    default:
+    } else {
       return invalidOptionError(argvObj, optState);
     }
   }
