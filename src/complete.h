@@ -32,25 +32,26 @@ namespace ydsh {
 class ArrayObject;
 
 enum class CodeCompOp : unsigned int {
-  FILE = 1u << 0u,     /* complete file names (including directory) */
-  DIR = 1u << 1u,      /* complete directory names (directory only) */
-  EXEC = 1u << 2u,     /* complete executable file names (including directory) */
-  TILDE = 1u << 3u,    /* perform tilde expansion before completions */
-  EXTERNAL = 1u << 4u, /* complete external command names */
-  BUILTIN = 1u << 5u,  /* complete builtin command names */
-  UDC = 1u << 6u,      /* complete user-defined command names */
-  VAR = 1u << 7u,      /* complete global variable names (not start with $) */
-  ENV = 1u << 8u,      /* complete environmental variable names */
-  SIGNAL = 1u << 9u,   /* complete signal names (not start with SIG) */
-  USER = 1u << 10u,    /* complete user names */
-  GROUP = 1u << 11u,   /* complete group names */
-  MODULE = 1u << 12u,  /* complete module path */
-  STMT_KW = 1u << 13u, /* complete statement keyword */
-  EXPR_KW = 1u << 14u, /* complete expr keyword */
-  EXPECT = 1u << 15u,  /* complete expetced token */
-  MEMBER = 1u << 16u,  /* complete member (field/meethod) */
-  TYPE = 1u << 17u,    /* complete type name */
-  HOOK = 1u << 18u,    /* for user-defined completion hook */
+  FILE = 1u << 0u,      /* complete file names (including directory) */
+  DIR = 1u << 1u,       /* complete directory names (directory only) */
+  EXEC = 1u << 2u,      /* complete executable file names (including directory) */
+  TILDE = 1u << 3u,     /* perform tilde expansion before completions */
+  EXTERNAL = 1u << 4u,  /* complete external command names */
+  BUILTIN = 1u << 5u,   /* complete builtin command names */
+  UDC = 1u << 6u,       /* complete user-defined command names */
+  VAR = 1u << 7u,       /* complete global variable names (not start with $) */
+  ENV = 1u << 8u,       /* complete environmental variable names */
+  SIGNAL = 1u << 9u,    /* complete signal names (not start with SIG) */
+  USER = 1u << 10u,     /* complete usernames */
+  GROUP = 1u << 11u,    /* complete group names */
+  MODULE = 1u << 12u,   /* complete module path */
+  STMT_KW = 1u << 13u,  /* complete statement keyword */
+  EXPR_KW = 1u << 14u,  /* complete expr keyword */
+  NO_IDENT = 1u << 15u, /* ignore completion candicates starting wiht identifier */
+  EXPECT = 1u << 16u,   /* complete expetced token */
+  MEMBER = 1u << 17u,   /* complete member (field/method) */
+  TYPE = 1u << 18u,     /* complete type name */
+  HOOK = 1u << 19u,     /* for user-defined completion hook */
   COMMAND = EXTERNAL | BUILTIN | UDC,
 };
 
@@ -142,6 +143,7 @@ public:
   enum class CMD_OR_KW_OP {
     STMT = 1u << 0u,
     TILDE = 1u << 1u,
+    NO_IDENT = 1u << 2u,
   };
 
   void addCmdOrKeywordRequest(std::string &&value, CMD_OR_KW_OP op);

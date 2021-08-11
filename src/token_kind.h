@@ -378,6 +378,25 @@ inline bool isInfixOp(TokenKind kind) { return hasFlag(getOpAttr(kind), Operator
 
 inline bool isRightAssoc(TokenKind kind) { return hasFlag(getOpAttr(kind), OperatorAttr::RASSOC); }
 
+inline bool isInfixKeyword(TokenKind kind) {
+  switch (kind) {
+  case TokenKind::IN:
+  case TokenKind::IS:
+  case TokenKind::AS:
+  case TokenKind::WITH:
+  case TokenKind::AND:
+  case TokenKind::OR:
+  case TokenKind::XOR:
+    return true;
+  default:
+    return false;
+  }
+}
+
+inline bool isIDStart(char ch) {
+  return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
+}
+
 } // namespace ydsh
 
 #endif // YDSH_TOKEN_KIND_H

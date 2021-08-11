@@ -131,17 +131,21 @@ static bool isExprKeyword(TokenKind kind) {
   }
 }
 
-static void completeKeyword(const std::string &prefix, bool onlyExpr, ArrayObject &results) {
+static void completeKeyword(const std::string &prefix, CodeCompOp option, ArrayObject &results) {
   TokenKind table[] = {
 #define GEN_ITEM(T) TokenKind::T,
       EACH_LA_statement(GEN_ITEM)
 #undef GEN_ITEM
   };
+  bool onlyExpr = !hasFlag(option, CodeCompOp::STMT_KW);
   for (auto &e : table) {
     if (onlyExpr && !isExprKeyword(e)) {
       continue;
     }
     StringRef value = toString(e);
+    if (hasFlag(option, CodeCompOp::NO_IDENT) && isIDStart(value[0])) {
+      continue;
+    }
     if (isKeyword(value) && value.startsWith(prefix)) {
       append(results, value, EscapeOp::NOP);
     }
@@ -208,14 +212,17 @@ static std::vector<std::string> computePathList(const char *pathVal) {
   return result;
 }
 
-static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
-                        ArrayObject &results) {
+static void completeUDC(const NameScope &scope, const std::string &cmdPrefix, ArrayObject &results,
+                        bool ignoreIdent) {
   for (const auto *curScope = &scope; curScope != nullptr; curScope = curScope->parent.get()) {
     for (const auto &e : *curScope) {
       StringRef udc = e.first.c_str();
       if (isCmdFullName(udc)) {
         udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
         if (udc.startsWith(cmdPrefix)) {
+          if (ignoreIdent && isIDStart(udc[0])) {
+            continue;
+          }
           if (std::any_of(std::begin(DENIED_REDEFINED_CMD_LIST),
                           std::end(DENIED_REDEFINED_CMD_LIST), [&](auto &e) { return udc == e; })) {
             continue;
@@ -231,7 +238,7 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
                             const CodeCompOp option, ArrayObject &results) {
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
-    completeUDC(scope, cmdPrefix, results);
+    completeUDC(scope, cmdPrefix, results, hasFlag(option, CodeCompOp::NO_IDENT));
   }
 
   // complete builtin command
@@ -239,6 +246,9 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
     unsigned int bsize = getBuiltinCommandSize();
     for (unsigned int i = 0; i < bsize; i++) {
       StringRef builtin = getBuiltinCommandName(i);
+      if (hasFlag(option, CodeCompOp::NO_IDENT) && isIDStart(builtin[0])) {
+        continue;
+      }
       if (builtin.startsWith(cmdPrefix)) {
         append(results, builtin, EscapeOp::COMMAND_NAME);
       }
@@ -259,6 +269,9 @@ static void completeCmdName(const NameScope &scope, const std::string &cmdPrefix
       }
       for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
         StringRef cmd = entry->d_name;
+        if (hasFlag(option, CodeCompOp::NO_IDENT) && isIDStart(cmd[0])) {
+          continue;
+        }
         if (cmd.startsWith(cmdPrefix)) {
           std::string fullpath(p);
           if (fullpath.back() != '/') {
@@ -602,8 +615,7 @@ void CodeCompletionHandler::invoke(ArrayObject &results) {
                    this->compWord, hasFlag(this->compOp, CodeCompOp::TILDE), results);
   }
   if (hasFlag(this->compOp, CodeCompOp::STMT_KW) || hasFlag(this->compOp, CodeCompOp::EXPR_KW)) {
-    bool onlyExpr = !hasFlag(this->compOp, CodeCompOp::STMT_KW);
-    completeKeyword(this->compWord, onlyExpr, results);
+    completeKeyword(this->compWord, this->compOp, results);
   }
   if (hasFlag(this->compOp, CodeCompOp::VAR)) {
     completeVarName(*this->scope, this->compWord, results);
@@ -656,6 +668,9 @@ void CodeCompletionHandler::addCmdOrKeywordRequest(std::string &&value, CMD_OR_K
   // add keyword request
   setFlag(this->compOp,
           hasFlag(cmdOrKwOp, CMD_OR_KW_OP::STMT) ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
+  if (hasFlag(cmdOrKwOp, CMD_OR_KW_OP::NO_IDENT)) {
+    setFlag(this->compOp, CodeCompOp::NO_IDENT);
+  }
 }
 
 void CodeCompletionHandler::addCmdArgOrModRequest(std::string &&value, CmdArgParseOpt opt,

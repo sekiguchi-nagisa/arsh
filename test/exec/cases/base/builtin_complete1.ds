@@ -84,11 +84,12 @@ __cmd() {
     '--stmt' => $eachEcho(['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
                            'do', 'for', 'if', 'case', 'try', 'while',
                            'break', 'continue', 'return',
+                           '!', '+', '-', 'throw', 'coproc',
 
                            'function', 'interface', 'assert',
                            'export-env', 'import-env',
                            'let', 'source', 'source!', 'typedef',
-                           'var', ';', '!', '+', '-', 'throw', 'coproc'])
+                           'var', ';'])
     }
 }
 
@@ -130,7 +131,14 @@ $assertArray($(cmd /bin /usr/bin --stmt| grep '^l'), $comp('{l', '/bin:/usr/bin'
 $assertArray($(cmd /bin /usr/bin --expr), $comp('echo && ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('export-env HOGE = ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr | grep '^l'), $comp('export-env HOGE = l', '/bin:/usr/bin'))
-
+$assertArray($(cmd /bin /usr/bin --expr), $comp('34 and ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr), $comp('34 or ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr), $comp('34 xor ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr), $comp('for $a in ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr | grep -v '^[a-zA-Z_]'), $comp('34 and', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr | grep -v '^[a-zA-Z_]'), $comp('34 or', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr | grep -v '^[a-zA-Z_]'), $comp('34 xor', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr | grep -v '^[a-zA-Z_]'), $comp('for $a in', '/bin:/usr/bin'))
 
 # complete file name
 __file() {
