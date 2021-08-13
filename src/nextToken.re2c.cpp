@@ -193,9 +193,10 @@ INIT:
     <STMT> "<("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
     <STMT> "@("              { MODE(EXPR); PUSH_MODE_SKIP_NL(CMD); RET(AT_PAREN); }
 
-    <STMT> "$"               { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); } else {
-    ERROR();} } <STMT> APPLIED_NAME      { MODE(EXPR); RET_OR_COMP(APPLIED_NAME); } <STMT>
-    SPECIAL_NAME      { MODE(EXPR); RET(SPECIAL_NAME); }
+    <STMT> "$"               { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }
+                               else { ERROR();} }
+    <STMT> APPLIED_NAME      { MODE(EXPR); RET_OR_COMP(APPLIED_NAME); }
+    <STMT> SPECIAL_NAME      { MODE(EXPR); RET(SPECIAL_NAME); }
 
     <STMT,EXPR,CMD> "("      { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(LP); }
     <STMT,EXPR,CMD> ")"      { POP_MODE(); RET(RP); }
@@ -270,11 +271,15 @@ INIT:
 
     <DSTRING> ["]            { POP_MODE(); RET(CLOSE_DQUOTE); }
     <DSTRING> DQUOTE_CHAR+   { UPDATE_LN(); RET(STR_ELEMENT); }
-    <DSTRING,CMD> "$"        { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); } else {
-    ERROR();} } <DSTRING,CMD> INNER_NAME { RET_OR_COMP(APPLIED_NAME); } <DSTRING,CMD>
-    INNER_SPECIAL_NAME { RET(SPECIAL_NAME); } <DSTRING,CMD> INNER_FIELD {
-    RET(APPLIED_NAME_WITH_FIELD); } <DSTRING,CMD> "${"       { PUSH_MODE_SKIP_NL(STMT);
-    RET(START_INTERP); } <DSTRING,CMD> "$("       { PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
+    <DSTRING,CMD> "$"        { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }
+                               else { ERROR();} }
+    <DSTRING,CMD> INNER_NAME { RET_OR_COMP(APPLIED_NAME); }
+    <DSTRING,CMD> INNER_SPECIAL_NAME
+                             { RET(SPECIAL_NAME); }
+    <DSTRING,CMD> INNER_FIELD
+                             { RET(APPLIED_NAME_WITH_FIELD); }
+    <DSTRING,CMD> "${"       { PUSH_MODE_SKIP_NL(STMT); RET(START_INTERP); }
+    <DSTRING,CMD> "$("       { PUSH_MODE_SKIP_NL(STMT); RET(START_SUB_CMD); }
 
     <CMD> CMD_ARG            { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
     <CMD> "?"                { RET(GLOB_ANY); }
