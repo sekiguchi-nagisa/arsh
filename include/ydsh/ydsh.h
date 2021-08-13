@@ -361,7 +361,7 @@ typedef enum {
  * @param index
  * indicates index of completion result or cursor of completing line
  * @param value
- * if DS_COMP_INVOKE, *value must be null terminate
+ * if DS_COMP_INVOKE, *value may not be null terminate
  * @return
  * if failed or no completion result, return 0.
  * if op is 'DS_COMP_SIZE' or 'DS_COMP_INVOKE', return size of completion result.

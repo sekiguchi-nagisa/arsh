@@ -619,9 +619,7 @@ unsigned int DSState_complete(DSState *st, DSCompletionOp op, unsigned int index
   case DS_COMP_INVOKE: {
     StringRef ref;
     if (value != nullptr && *value != nullptr) {
-      const char *str = *value;
-      unsigned int size = strlen(str);
-      ref = StringRef(str, index < size ? index : size);
+      ref = StringRef(*value, index);
     }
     auto old = st->getGlobal(BuiltinVarOffset::EXIT_STATUS);
     unsigned int size = doCodeCompletion(*st, nullptr, ref);
