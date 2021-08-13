@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 
-if(POLICY CMP0069)
+if (POLICY CMP0069)
     cmake_policy(SET CMP0069 NEW)
-endif()
+endif ()
 
 project(ydsh VERSION 0.23.0)
 enable_language(CXX)
@@ -24,9 +24,9 @@ include(CheckPCRE2Version)
 
 set(YDSH_STABLE_RELEASE off)
 set(YDSH_VERSION ${PROJECT_VERSION})
-if(NOT ${YDSH_STABLE_RELEASE})
+if (NOT ${YDSH_STABLE_RELEASE})
     set(YDSH_VERSION ${YDSH_VERSION}-unstable)
-endif()
+endif ()
 
 
 #++++++++++++++++++++++++++#
@@ -39,9 +39,9 @@ option(FUZZING_BUILD_MODE "enable fuzzing-aware build" OFF)
 option(USE_LTO "enable Link Time Optimization" OFF)
 option(USE_EXTRA_TEST "enable system extra test cases" OFF)
 
-if("${CMAKE_BUILD_TYPE}" STREQUAL "")
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
-endif()
+endif ()
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -57,37 +57,37 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
 set(SANITIZER "" CACHE STRING "which sanitizer to use")
 
 
-if(FUZZING_BUILD_MODE)
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if (FUZZING_BUILD_MODE)
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         set(CMAKE_BUILD_TYPE Debug)
         set(SANITIZER "address,fuzzer-no-link")
-    else()
+    else ()
         message(FATAL_ERROR "require clang")
-    endif()
-elseif(NOT ("${SANITIZER}" STREQUAL ""))
+    endif ()
+elseif (NOT ("${SANITIZER}" STREQUAL ""))
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O1 -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
-else()
+else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
-endif()
+endif ()
 
 string(TOLOWER "${CMAKE_BUILD_TYPE}" lower_type)
-if(("${lower_type}" STREQUAL "debug") OR ("${lower_type}" STREQUAL "coverage"))
+if (("${lower_type}" STREQUAL "debug") OR ("${lower_type}" STREQUAL "coverage"))
     set(USE_LOGGING ON)
     set(USE_SAFE_CAST ON)
-elseif("${lower_type}" STREQUAL "release" OR "${lower_type}" STREQUAL "relwithdebinfo")
-    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+elseif ("${lower_type}" STREQUAL "release" OR "${lower_type}" STREQUAL "relwithdebinfo")
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
         add_definitions(-D_FORTIFY_SOURCE=2)
-    endif()
-endif()
+    endif ()
+endif ()
 
 
 #+++++++++++++++++++++++++++++++++#
 #     set coverage build type     #
 #+++++++++++++++++++++++++++++++++#
 
-if("${lower_type}" STREQUAL "coverage")
+if ("${lower_type}" STREQUAL "coverage")
     add_definitions(-DCODE_COVERAGE=ON)
-endif()
+endif ()
 set(CMAKE_CXX_FLAGS_COVERAGE "-g -fprofile-arcs -ftest-coverage")
 
 
@@ -126,15 +126,15 @@ check_pcre2_version("10.30" ${HAVE_PCRE2_H} ${HAVE_LIBPCRE2})
 
 if (CMAKE_VERSION VERSION_LESS 3.2)
     set(UPDATE_DISCONNECTED_IF_AVAILABLE "")
-else()
+else ()
     set(UPDATE_DISCONNECTED_IF_AVAILABLE "UPDATE_DISCONNECTED 1")
-endif()
+endif ()
 
 download_project(
-        PROJ                linenoise
-        GIT_REPOSITORY      https://github.com/sekiguchi-nagisa/linenoise.git
-        GIT_TAG             61450b5eb2fadff493c1541bb9160f0fcb162b7a
-        GIT_PROGRESS        1
+        PROJ linenoise
+        GIT_REPOSITORY https://github.com/sekiguchi-nagisa/linenoise.git
+        GIT_TAG 61450b5eb2fadff493c1541bb9160f0fcb162b7a
+        GIT_PROGRESS 1
         ${UPDATE_DISCONNECTED_IF_AVAILABLE}
 )
 include_directories(${linenoise_SOURCE_DIR})
@@ -161,7 +161,7 @@ getRE2C()
 
 set(lexer_src ${CMAKE_CURRENT_BINARY_DIR}/nextToken.cpp)
 add_gen_lexer_target(
-        TARGET      gen_lexer
+        TARGET gen_lexer
         SOURCE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/nextToken.re2c.cpp
         OUTPUT_FILE ${lexer_src}
         RE2C_OPTION "-W -Werror -c -8 -s -t ${CMAKE_CURRENT_BINARY_DIR}/src/yycond.h"
@@ -174,19 +174,19 @@ add_gen_lexer_target(
 
 set(bind_doc ${CMAKE_SOURCE_DIR}/doc/std.md)
 add_custom_command(OUTPUT ${bind_doc}
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding --doc
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding --doc
         ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_doc}
-    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/src/builtin.h
-    DEPENDS gen_binding
-)
+        MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/src/builtin.h
+        DEPENDS gen_binding
+        )
 
 set(bind_src ${CMAKE_CURRENT_BINARY_DIR}/src/bind.h)
 add_custom_command(OUTPUT ${bind_src}
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/gen_binding/gen_binding
         ${CMAKE_SOURCE_DIR}/src/builtin.h ${bind_src}
-    MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/src/builtin.h
-    DEPENDS gen_binding ${bind_doc}
-)
+        MAIN_DEPENDENCY ${CMAKE_SOURCE_DIR}/src/builtin.h
+        DEPENDS gen_binding ${bind_doc}
+        )
 
 
 #=======================================#
@@ -195,12 +195,12 @@ add_custom_command(OUTPUT ${bind_src}
 
 set(embed_src ${CMAKE_CURRENT_BINARY_DIR}/src/embed.h)
 add_custom_command(OUTPUT ${embed_src}
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/src_to_str/src_to_str
-            -f ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
-            -o ${embed_src} -v embed_script
-    MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
-    DEPENDS src_to_str
-)
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/src_to_str/src_to_str
+        -f ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
+        -o ${embed_src} -v embed_script
+        MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
+        DEPENDS src_to_str
+        )
 
 
 #=================#
@@ -268,19 +268,19 @@ add_library(${YDSH_LIB} SHARED $<TARGET_OBJECTS:ydsh_obj>)
 set_target_properties(${YDSH_LIB} PROPERTIES OUTPUT_NAME ydsh)
 target_link_libraries(${YDSH_LIB} ${HAVE_LIBPCRE2})
 
-if(USE_LTO)
+if (USE_LTO)
     check_ipo_supported(RESULT ipo_supported OUTPUT output)
-    if(ipo_supported)
+    if (ipo_supported)
         if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
             check_program(lld)
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
-        endif()
+        endif ()
 
         set_property(TARGET ${YDSH_LIB} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-    else()
+    else ()
         message(FATAL_ERROR "IPO is not supported: ${output}")
-    endif()
-endif()
+    endif ()
+endif ()
 
 
 #==============#
@@ -313,9 +313,9 @@ add_subdirectory(test)
 #     fuzzer     #
 #++++++++++++++++#
 
-if(FUZZING_BUILD_MODE)
+if (FUZZING_BUILD_MODE)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fuzzing)
-endif()
+endif ()
 
 
 #+++++++++++++++#
