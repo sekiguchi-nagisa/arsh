@@ -58,24 +58,25 @@ bool FrontEnd::tryToCheckType(std::unique_ptr<Node> &node) {
   if (hasFlag(this->option, FrontEndOption::PARSE_ONLY)) {
     return true;
   }
-
-  try {
-    node = this->checker()(this->prevType, std::move(node), this->curScope());
-    this->prevType = &node->getType();
-
-    if (this->astDumper) {
-      this->astDumper(*node);
-    }
-    return true;
-  } catch (const TypeCheckError &e) {
-    this->listener &&this->listener->handleTypeError(this->contexts, e);
-    if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY) &&
-        !this->checker().hasReachedCompNode()) {
-      node = std::make_unique<ErrorNode>(e.getToken());
-      return true;
+  node = this->checker()(this->prevType, std::move(node), this->curScope());
+  this->prevType = &node->getType();
+  if (this->checker().hasError()) {
+    auto &errors = this->checker().getErrors();
+    // always report first error
+    this->listener &&this->listener->handleTypeError(this->contexts, errors.front());
+    if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
+      for (size_t i = 1; this->listener && i < errors.size(); i++) {
+        this->listener->handleTypeError(this->contexts, errors[i]);
+      }
+      if (!this->checker().hasReachedCompNode()) {
+        return true;
+      }
     }
     return false;
+  } else if (this->astDumper) {
+    this->astDumper(*node);
   }
+  return true;
 }
 
 FrontEndResult FrontEnd::operator()() {

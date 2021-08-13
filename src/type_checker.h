@@ -164,6 +164,8 @@ protected:
 
   ObserverPtr<CodeCompletionHandler> ccHandler;
 
+  std::vector<TypeCheckError> errors;
+
 public:
   TypeChecker(TypePool &pool, bool toplevelPrinting, const Lexer *lex)
       : typePool(pool), toplevelPrinting(toplevelPrinting), lexer(lex) {}
@@ -181,9 +183,12 @@ public:
 
   bool hasReachedCompNode() const { return this->reachComp; }
 
+  const std::vector<TypeCheckError> &getErrors() const { return this->errors; }
+
+  bool hasError() const { return !this->errors.empty(); }
+
 protected:
   // base type check entry point
-  TypeOrError toTypeImpl(TypeNode &node);
 
   /**
    * check node type.
@@ -241,6 +246,9 @@ protected:
    */
   const DSType &checkType(const DSType *requiredType, Node &targetNode,
                           const DSType *unacceptableType, CoercionKind &kind);
+
+private:
+  TypeOrError toTypeImpl(TypeNode &node);
 
   void checkTypeWithCurrentScope(BlockNode &blockNode) {
     this->checkTypeWithCurrentScope(&this->typePool.get(TYPE::Void), blockNode);

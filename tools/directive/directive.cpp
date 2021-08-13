@@ -75,17 +75,13 @@ private:
   using Handler = std::pair<const DSType *, AttributeHandler>;
   std::unordered_map<std::string, Handler> handlerMap;
 
-  std::unique_ptr<TypeCheckError> error;
-
 public:
   DirectiveInitializer(const char *sourceName, TypePool &pool);
   ~DirectiveInitializer() override = default;
 
   void operator()(ApplyNode &node, Directive &d);
 
-  bool hasError() const { return static_cast<bool>(this->error); }
-
-  const TypeCheckError &getError() const { return *this->error; }
+  const TypeCheckError &getError() const { return this->getErrors().front(); }
 
 private:
   void addHandler(const char *attributeName, const DSType &type, AttributeHandler &&handler);
@@ -125,8 +121,7 @@ private:
   }
 
   void createError(const Node &node, const std::string &str) {
-    this->error =
-        std::make_unique<TypeCheckError>(node.getToken(), "", CStrPtr(strdup(str.c_str())));
+    this->errors.emplace_back(node.getToken(), "", CStrPtr(strdup(str.c_str())));
   }
 };
 
@@ -270,7 +265,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     try {
       this->checkType(*pair->first, assignNode->getRightNode());
     } catch (const TypeCheckError &e) {
-      this->error = std::make_unique<TypeCheckError>(e);
+      this->errors.push_back(e);
       return;
     }
 

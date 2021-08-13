@@ -62,6 +62,8 @@ void BreakGather::addJumpNode(JumpNode *node) {
     value.take();                                                                                  \
   })
 
+#define REPORT_TC_ERROR(e, node, ...) this->errors.push_back(createTCError<e>(node, ##__VA_ARGS__))
+
 TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
   switch (node.typeKind) {
   case TypeNode::Base: {
@@ -1801,19 +1803,25 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
   this->visitingDepth = 0;
   this->fctx.clear();
   this->breakGather.clear();
+  this->errors.clear();
 
   // set scope
   this->curScope = std::move(global);
 
-  if (prevType != nullptr && prevType->isNothingType()) {
-    RAISE_TC_ERROR(Unreachable, *node);
-  }
-
-  if (this->toplevelPrinting && this->curScope->inRootModule() && !mayBeCmd(*node)) {
-    this->checkTypeExactly(*node);
-    node = this->newPrintOpNode(std::move(node));
-  } else {
-    this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node); // pop stack top
+  try {
+    if (prevType != nullptr && prevType->isNothingType()) {
+      RAISE_TC_ERROR(Unreachable, *node);
+    }
+    if (this->toplevelPrinting && this->curScope->inRootModule() && !mayBeCmd(*node)) {
+      this->checkTypeExactly(*node);
+      node = this->newPrintOpNode(std::move(node));
+    } else {
+      this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node); // pop stack top
+    }
+  } catch (const TypeCheckError &e) {
+    this->errors.push_back(e);
+    node = std::make_unique<ErrorNode>(e.getToken());
+    node->setType(this->typePool.get(TYPE::Void));
   }
   return std::move(node);
 }
