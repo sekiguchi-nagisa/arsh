@@ -54,9 +54,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-maybe-uninitialized")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-redundant-move")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
 
-set(SANITIZER "" CACHE STRING "which sanitizer to use")
-
-
 if (FUZZING_BUILD_MODE)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         set(CMAKE_BUILD_TYPE Debug)
@@ -64,7 +61,11 @@ if (FUZZING_BUILD_MODE)
     else ()
         message(FATAL_ERROR "require clang")
     endif ()
-elseif (NOT ("${SANITIZER}" STREQUAL ""))
+endif ()
+
+set(SANITIZER "" CACHE STRING "which sanitizer to use")
+
+if (NOT ("${SANITIZER}" STREQUAL ""))
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O1 -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
 else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
