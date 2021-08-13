@@ -83,6 +83,7 @@ std::unique_ptr<Node> Parser::operator()() {
   auto node = this->parse_statement();
   if (this->incompleteNode) {
     this->clear(); // force ignore parse error
+    this->lexer->setComplete(false);
     node = std::move(this->incompleteNode);
   }
   return node;

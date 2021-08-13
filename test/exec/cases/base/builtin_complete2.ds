@@ -173,6 +173,7 @@ assert($(complete '[  )').empty())
 assert($(complete 'var 23').empty())
 assert($(complete 'function f($').empty())
 assert($(complete '{ $T ').empty())
+assert $(complete 'var a = try { 34; } finally { return ; 34.').empty()
 
 complete '#jerijf' > /dev/null
 assert $COMPREPLY.empty()
