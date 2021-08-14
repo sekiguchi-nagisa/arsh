@@ -387,6 +387,7 @@ inline bool isInfixKeyword(TokenKind kind) {
   case TokenKind::AND:
   case TokenKind::OR:
   case TokenKind::XOR:
+  case TokenKind::ELIF:
     return true;
   default:
     return false;
