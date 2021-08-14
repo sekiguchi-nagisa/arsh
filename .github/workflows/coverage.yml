@@ -1,0 +1,41 @@
+name: "Coverage"
+
+on:
+  push:
+    branches: [ master, ]
+
+jobs:
+  build_on_linux_coverage:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: prepare
+        run: |
+          sudo apt-get install ninja-build lcov
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=coverage \
+                -DCMAKE_C_COMPILER=gcc \
+                -DCMAKE_CXX_COMPILER=g++ \
+                -DUSE_EXTRA_TEST=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          sudo ninja install
+          ./ydsh ../tools/scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          ctest --output-on-failure
+      - name: generate lcov
+        run: |
+          ./tools/scripts/report_cov.sh build
+      - name: Coveralls GitHub Action
+        uses: coverallsapp/github-action@1.1.3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./build/coverage_report-cleaned.info
