@@ -135,10 +135,12 @@ $assertArray($(cmd /bin /usr/bin --expr), $comp('34 and ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('34 or ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('34 xor ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('for $a in ', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr), $comp('if $true {} elif ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr | grep -v '^[a-zA-Z_]'), $comp('34 and', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr | grep -v '^[a-zA-Z_]'), $comp('34 or', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr | grep -v '^[a-zA-Z_]'), $comp('34 xor', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr | grep -v '^[a-zA-Z_]'), $comp('for $a in', '/bin:/usr/bin'))
+$assertArray($(cmd /bin /usr/bin --expr | grep -v '^[a-zA-Z_]'), $comp('if $true {} elif', '/bin:/usr/bin'))
 
 # complete file name
 __file() {

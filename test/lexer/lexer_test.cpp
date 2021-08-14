@@ -207,11 +207,18 @@ TEST_F(LexerTest_Lv1, do_tok) {
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::DO, text, TokenKind::EOS, ""));
 }
 
-TEST_F(LexerTest_Lv1, elif_tok) {
+TEST_F(LexerTest_Lv1, elif_tok1) {
   const char *text = "elif";
   this->initLexer(text, yycEXPR);
   ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ELIF, text, TokenKind::EOS, ""));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycSTMT));
+}
+
+TEST_F(LexerTest_Lv1, elif_tok2) {
+  const char *text = "elifA";
+  this->initLexer(text, yycEXPR);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "e"));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
 TEST_F(LexerTest_Lv1, else_tok1) {

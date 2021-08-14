@@ -156,7 +156,7 @@ INIT:
     <STMT> "continue"        { RET_OR_COMP(CONTINUE); }
     <STMT> "coproc"          { RET_OR_COMP(COPROC); }
     <STMT> "do"              { RET_OR_COMP(DO); }
-    <EXPR> "elif"            { MODE(STMT); RET(ELIF); }
+    <EXPR> "elif" / NO_ID    { MODE(STMT); RET(ELIF); }
     <STMT,EXPR> "else"       { MODE(EXPR); RET(ELSE); }
     <STMT> "export-env"      { MODE(NAME); RET_OR_COMP(EXPORT_ENV); }
     <EXPR> "finally"         { RET(FINALLY); }

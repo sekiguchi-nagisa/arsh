@@ -19,8 +19,10 @@
 
 ### Fixed
 
-- infix keyword (`in`, `as`, `is`, `and`, `or`, `xor`, `with`) parsing
-- in completion ignore keywords/commands starting with identifier if previous token is `in`, `and`, `or`, `xor`
+- following infix keyword parsing
+    - `in`, `as`, `is`, `and`, `or`, `xor`, `with`, `elif`
+- in completion ignore keywords/commands starting with identifier if previous token is the following
+    - `in`, `and`, `or`, `xor`, `elif`
 
 ## [0.22.0] - 2021-06-27
 
