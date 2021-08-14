@@ -1,12 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
-SCRIPT_DIR="$(cd $(dirname $0) && pwd -P)"
+SCRIPT_DIR="$(cd $(dirname "$0") && pwd -P)"
 ROOT=$SCRIPT_DIR/../..
 
 check_cmd() {
-    which $1
+    which "$1"
     if [ $? != 0 ]; then
-        echo not found: $1
+        echo not found: "$1"
         exit 1
     fi
 }
@@ -26,7 +26,7 @@ cd build-coverage
 clear_cmake_cache
 
 # build with coverage
-cmake $ROOT -G Ninja \
+cmake "$ROOT" -G Ninja \
             -DCMAKE_CXX_COMPILER=g++ \
             -DCMAKE_C_COMPILER=gcc \
             -DCMAKE_BUILD_TYPE=coverage
