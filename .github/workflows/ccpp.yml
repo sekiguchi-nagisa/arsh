@@ -1,104 +1,104 @@
 name: GitHub Actions
 
-on: [push]
+on: [ push ]
 
 jobs:
   build_on_linux_ubuntu18_04:
     runs-on: ubuntu-18.04
     strategy:
       matrix:
-        cc: [g++-7, g++-8, g++-9,
-             clang++-6.0, clang++-8, clang++-9]
+        cc: [ g++-7, g++-8, g++-9,
+              clang++-6.0, clang++-8, clang++-9 ]
     steps:
-    - uses: actions/checkout@v1
-    - name: prepare
-      run: |
-        sudo apt-get install ninja-build g++-5 g++-6 g++-8 clang-6.0 clang-8
-        sudo apt remove libgcc-11-dev gcc-11
-    - name: configure
-      run: |
-        mkdir build
-        cd build
-        cmake .. -G Ninja \
-              -DCMAKE_BUILD_TYPE=debug \
-              -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
-              -DUSE_EXTRA_TEST=on
-    - name: build
-      run: |
-        cd build
-        ninja
-        sudo ninja install
-        ./ydsh ../tools/scripts/copy_mod4extra.ds
-    - name: test
-      run: |
-        cd build
-        ctest --output-on-failure
+      - uses: actions/checkout@v1
+      - name: prepare
+        run: |
+          sudo apt-get install ninja-build g++-5 g++-6 g++-8 clang-6.0 clang-8
+          sudo apt remove libgcc-11-dev gcc-11
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=debug \
+                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
+                -DUSE_EXTRA_TEST=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          sudo ninja install
+          ./ydsh ../tools/scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          ctest --output-on-failure
 
   build_on_linux_ubuntu20_04:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        cc: [g++-10, g++-11, clang++-7, clang++-10, clang++-11, clang++-12]
+        cc: [ g++-10, g++-11, clang++-7, clang++-10, clang++-11, clang++-12 ]
     steps:
-    - uses: actions/checkout@v1
-    - name: prepare
-      run: |
-        sudo apt-get install ninja-build g++-10 g++-11 clang-10 clang-7 clang-11 clang-12
-    - name: configure
-      run: |
-        mkdir build
-        cd build
-        cmake .. -G Ninja \
-              -DCMAKE_BUILD_TYPE=debug \
-              -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
-              -DUSE_EXTRA_TEST=on
-    - name: build
-      run: |
-        cd build
-        ninja
-        sudo ninja install
-        ./ydsh ../tools/scripts/copy_mod4extra.ds
-    - name: test
-      run: |
-        cd build
-        ctest --output-on-failure
+      - uses: actions/checkout@v1
+      - name: prepare
+        run: |
+          sudo apt-get install ninja-build g++-10 g++-11 clang-10 clang-7 clang-11 clang-12
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=debug \
+                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
+                -DUSE_EXTRA_TEST=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          sudo ninja install
+          ./ydsh ../tools/scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          ctest --output-on-failure
 
   build_on_linux_ubuntu20_04_release:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        cc: [g++-11, clang++-12]
-        option: [on, off]
+        cc: [ g++-11, clang++-12 ]
+        option: [ on, off ]
     steps:
-    - uses: actions/checkout@v1
-    - name: prepare
-      run: |
-        sudo apt-get install ninja-build g++-11 clang-12 lld lld-12 llvm-12 llvm-12-dev
-    - name: configure
-      run: |
-        mkdir build
-        cd build
-        cmake .. -G Ninja \
-              -DCMAKE_BUILD_TYPE=release \
-              -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
-              -DUSE_EXTRA_TEST=on \
-              -DUSE_LTO=${{ matrix.option }}
-    - name: build
-      run: |
-        cd build
-        ninja
-        sudo ninja install
-        ./ydsh ../tools/scripts/copy_mod4extra.ds
-    - name: test
-      run: |
-        cd build
-        ctest --output-on-failure
+      - uses: actions/checkout@v1
+      - name: prepare
+        run: |
+          sudo apt-get install ninja-build g++-11 clang-12 lld lld-12 llvm-12 llvm-12-dev
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=release \
+                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
+                -DUSE_EXTRA_TEST=on \
+                -DUSE_LTO=${{ matrix.option }}
+      - name: build
+        run: |
+          cd build
+          ninja
+          sudo ninja install
+          ./ydsh ../tools/scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          ctest --output-on-failure
 
   build_on_linux_sanitizer:
     runs-on: ubuntu-20.04
     strategy:
       matrix:
-        option: [address, undefined]
+        option: [ address, undefined ]
     steps:
       - uses: actions/checkout@v1
       - name: prepare

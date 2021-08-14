@@ -4,7 +4,7 @@ on:
   push:
     # Sequence of patterns matched against refs/tags
     tags:
-    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
   build:
@@ -32,17 +32,17 @@ jobs:
           draft: true
           prerelease: false
       - name: Upload RPM
-        id: upload-release-rpm-asset 
+        id: upload-release-rpm-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}  
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: build/${{ steps.get_rpm_name.outputs.RPM_NAME }}
           asset_name: ${{ steps.get_rpm_name.outputs.RPM_NAME }}
           asset_content_type: application/rpm
       - name: Upload RPM debuginfo
-        id: upload-release-debuginfo-asset 
+        id: upload-release-debuginfo-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
