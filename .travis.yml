@@ -29,34 +29,6 @@ matrix:
       dist: bionic
       env: CXX_BIN=clang++-10 BUILD_TYPE=release
 
-    # gcc7 with coverage
-    - addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-7
-            - g++-7
-            - libpcre2-8-0
-            - libpcre2-dev
-            - ninja-build
-      env: CXX_BIN=g++-7 BUILD_TYPE=coverage OPTION="-DCMAKE_C_COMPILER=gcc-7"
-      before_script:
-        - pip install --user cpp-coveralls
-      after_success:
-        - |
-          coveralls -r ../ -b . --gcov-options '\-lp' \
-                    --exclude test --exclude fuzzing --exclude include \
-                    --exclude-pattern .*-src \
-                    --exclude-pattern .*-build \
-                    --exclude-pattern '.*/CMakeFiles*' \
-                    --exclude-pattern '.*/nextToken\.cpp' \
-                    --exclude-pattern '.*/tools/json/lexer\.cpp' \
-                    --exclude-pattern '.*/tools/uri/uri_parser\.cpp' \
-                    --exclude-pattern '.*/tools/process/ansi\.cpp' \
-                    --exclude-pattern '.*/tools/gen_binding/DescLexer\.cpp' \
-                    --exclude-pattern '.*\.re2c\.cpp'
-
 script:
   - uname -a
   - mkdir build && cd build
