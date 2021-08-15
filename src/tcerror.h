@@ -42,7 +42,7 @@ public:
       : token(token), kind(kind), message(std::move(message)) {}
 
   TypeCheckError(Token token, TypeLookupError &e) noexcept
-      : token(token), kind(e.getKind()), message(e.takeMessage()) {}
+      : token(token), kind(e.getKind()), message(std::move(e).takeMessage()) {}
 
   TypeCheckError(const TypeCheckError &o) noexcept
       : token(o.token), kind(o.kind), message(strdup(o.message.get())) {}

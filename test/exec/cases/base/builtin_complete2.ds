@@ -124,6 +124,7 @@ $assertArray(['abs', "toFloat"], $(complete '
         var b = 45.0
         $b * $a.'))
 $assertArray(['close', 'dup'], { complete '$STDIN.' > /dev/null; $COMPREPLY; })
+$assertArray(['abs', 'toFloat'], $(complete 'var a = try { 34; } finally { return ; 34.'))
 
 # type
 $assertArray(['Bool', 'Boolean'], $(complete '34 is [B'))
@@ -173,7 +174,8 @@ assert($(complete '[  )').empty())
 assert($(complete 'var 23').empty())
 assert($(complete 'function f($').empty())
 assert($(complete '{ $T ').empty())
-assert $(complete 'var a = try { 34; } finally { return ; 34.').empty()
+# assert $(complete 'coproc { break 34.').empty()
+# assert $(complete '{ return 34.').empty()
 
 complete '#jerijf' > /dev/null
 assert $COMPREPLY.empty()

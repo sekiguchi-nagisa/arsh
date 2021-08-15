@@ -35,7 +35,7 @@ public:
 
   const char *getMessage() const { return this->message.get(); }
 
-  CStrPtr takeMessage() { return std::move(this->message); }
+  CStrPtr takeMessage() && { return std::move(this->message); }
 };
 
 struct TLError {};

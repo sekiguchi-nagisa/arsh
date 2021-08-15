@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <cstdarg>
 #include <sys/utsname.h>
 
 #include <vector>
@@ -61,8 +62,6 @@ void BreakGather::addJumpNode(JumpNode *node) {
     }                                                                                              \
     value.take();                                                                                  \
   })
-
-#define REPORT_TC_ERROR(e, node, ...) this->errors.push_back(createTCError<e>(node, ##__VA_ARGS__))
 
 TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
   switch (node.typeKind) {
@@ -196,7 +195,7 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
   for (auto iter = blockNode.refNodes().begin(); iter != blockNode.refNodes().end(); ++iter) {
     auto &targetNode = *iter;
     if (blockType->isNothingType()) {
-      RAISE_TC_ERROR(Unreachable, *targetNode);
+      this->reportError<Unreachable>(*targetNode);
     }
     if (iter == blockNode.refNodes().end() - 1) {
       if (requiredType != nullptr) {
@@ -211,7 +210,7 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
 
     // check empty block
     if (isa<BlockNode>(*targetNode) && cast<BlockNode>(*targetNode).getNodes().empty()) {
-      RAISE_TC_ERROR(UselessBlock, *targetNode);
+      this->reportError<UselessBlock>(*targetNode);
     }
   }
 
@@ -275,10 +274,13 @@ const FieldHandle *TypeChecker::addEntry(const Node &node, const std::string &sy
   if (!ret) {
     switch (ret.asErr()) {
     case NameLookupError::DEFINED:
-      RAISE_TC_ERROR(DefinedSymbol, node, symbolName.c_str());
+      this->reportError<DefinedSymbol>(node, symbolName.c_str());
+      break;
     case NameLookupError::LIMIT:
-      RAISE_TC_ERROR(LocalLimit, node);
+      this->reportError<LocalLimit>(node);
+      break;
     }
+    return nullptr;
   }
   return ret.asOk();
 }
@@ -294,7 +296,8 @@ static auto initDeniedNameList() {
 const FieldHandle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   static auto deniedList = initDeniedNameList();
   if (deniedList.find(node.getCmdName()) != deniedList.end()) {
-    RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str()); // FIXME: better error message
+    this->reportError<DefinedCmd>(node, node.getCmdName().c_str()); // FIXME: better error message
+    return nullptr;
   }
 
   std::string name = toCmdFullName(node.getCmdName());
@@ -302,9 +305,23 @@ const FieldHandle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
                                           FieldAttribute::READ_ONLY);
   if (!ret) {
     assert(ret.asErr() == NameLookupError::DEFINED);
-    RAISE_TC_ERROR(DefinedCmd, node, node.getCmdName().c_str());
+    this->reportError<DefinedCmd>(node, node.getCmdName().c_str());
+    return nullptr;
   }
   return ret.asOk();
+}
+
+void TypeChecker::reportErrorImpl(const Node &node, const char *kind, const char *fmt, ...) {
+  va_list arg;
+
+  va_start(arg, fmt);
+  char *str = nullptr;
+  if (vasprintf(&str, fmt, arg) == -1) {
+    abort();
+  }
+  va_end(arg);
+
+  this->errors.emplace_back(node.getToken(), kind, CStrPtr(str));
 }
 
 // for ApplyNode type checking
@@ -462,7 +479,7 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
 void TypeChecker::visitRegexNode(RegexNode &node) {
   std::string e;
   if (!node.buildRegex(e)) {
-    RAISE_TC_ERROR(RegexSyntax, node, e.c_str());
+    this->reportError<RegexSyntax>(node, e.c_str());
   }
   node.setType(this->typePool.get(TYPE::Regex));
 }
@@ -568,7 +585,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     auto &booleanType = this->typePool.get(TYPE::Boolean);
     this->checkTypeWithCoercion(booleanType, node.refLeftNode());
     if (node.getLeftNode()->getType().isNothingType()) {
-      RAISE_TC_ERROR(Unreachable, *node.getRightNode());
+      this->reportError<Unreachable>(*node.getRightNode());
     }
 
     this->checkTypeWithCoercion(booleanType, node.refRightNode());
@@ -748,7 +765,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
   }
 
   if (node.getGlobPathSize() > SYS_LIMIT_GLOB_FRAG_NUM) {
-    RAISE_TC_ERROR(GlobLimit, node);
+    this->reportError<GlobLimit>(node);
   }
 
   // not allow String Array and UnixFD type
@@ -793,7 +810,7 @@ void TypeChecker::visitWildCardNode(WildCardNode &node) {
 void TypeChecker::visitPipelineNode(PipelineNode &node) {
   unsigned int size = node.getNodes().size();
   if (size > SYS_LIMIT_PIPE_LEN) {
-    RAISE_TC_ERROR(PipeLimit, node);
+    this->reportError<PipeLimit>(node);
   }
 
   {
@@ -864,7 +881,7 @@ void TypeChecker::visitAssertNode(AssertNode &node) {
 
 void TypeChecker::visitBlockNode(BlockNode &node) {
   if (this->isTopLevel() && node.getNodes().empty()) {
-    RAISE_TC_ERROR(UselessBlock, node);
+    this->reportError<UselessBlock>(node);
   }
   auto scope = this->intoBlock();
   this->checkTypeWithCurrentScope(nullptr, node);
@@ -875,7 +892,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
   auto &type = this->checkTypeExactly(typeToken);
   auto ret = this->curScope->defineTypeAlias(this->typePool, std::string(node.getAlias()), type);
   if (!ret) {
-    RAISE_TC_ERROR(DefinedTypeAlias, node, node.getAlias().c_str());
+    this->reportError<DefinedTypeAlias>(node, node.getAlias().c_str());
   }
   node.setType(this->typePool.get(TYPE::Void));
 }
@@ -1011,7 +1028,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
   }
 
   if (!type.isVoidType() && !collector.hasElsePattern()) {
-    RAISE_TC_ERROR(NeedDefault, node);
+    this->reportError<NeedDefault>(node);
   }
   node.setType(type);
 }
@@ -1026,7 +1043,7 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
     if (collector.hasElsePattern()) {
       Token token{node.getPos(), 4};
       auto elseNode = std::make_unique<StringNode>(token, "else");
-      RAISE_TC_ERROR(DupPattern, *elseNode);
+      this->reportError<DupPattern>(*elseNode);
     }
     collector.setElsePattern(true);
   }
@@ -1054,7 +1071,7 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
       continue;
     }
     if (!collector.collect(*e)) {
-      RAISE_TC_ERROR(DupPattern, *e);
+      this->reportError<DupPattern>(*e);
     }
   }
 }
@@ -1203,15 +1220,16 @@ bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) {
 
 void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
   if (this->fctx.loopLevel() == 0) {
-    RAISE_TC_ERROR(InsideLoop, node);
+    this->reportError<InsideLoop>(node);
+    return;
   }
 
   if (this->fctx.finallyLevel() > this->fctx.loopLevel()) {
-    RAISE_TC_ERROR(InsideFinally, node);
+    this->reportError<InsideFinally>(node);
   }
 
   if (this->fctx.childLevel() > this->fctx.loopLevel()) {
-    RAISE_TC_ERROR(InsideChild, node);
+    this->reportError<InsideChild>(node);
   }
 
   if (this->fctx.tryCatchLevel() > this->fctx.loopLevel()) {
@@ -1229,21 +1247,22 @@ void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
 
 void TypeChecker::checkTypeAsReturn(JumpNode &node) {
   if (this->fctx.finallyLevel() > 0) {
-    RAISE_TC_ERROR(InsideFinally, node);
+    this->reportError<InsideFinally>(node);
   }
 
   if (this->fctx.childLevel() > 0) {
-    RAISE_TC_ERROR(InsideChild, node);
+    this->reportError<InsideChild>(node);
   }
 
   auto *returnType = this->getCurrentReturnType();
   if (returnType == nullptr) {
-    RAISE_TC_ERROR(InsideFunc, node);
+    this->reportError<InsideFunc>(node);
+    return;
   }
   auto &exprType = this->checkType(*returnType, node.getExprNode());
   if (exprType.isVoidType()) {
     if (!node.getExprNode().is(NodeKind::Empty)) {
-      RAISE_TC_ERROR(NotNeedExpr, node.getExprNode());
+      this->reportError<NotNeedExpr>(node.getExprNode());
     }
   }
 }
@@ -1256,7 +1275,7 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
     break;
   case JumpNode::THROW: {
     if (this->fctx.finallyLevel() > 0) {
-      RAISE_TC_ERROR(InsideFinally, node);
+      this->reportError<InsideFinally>(node);
     }
     this->checkType(this->typePool.get(TYPE::Any), node.getExprNode());
     break;
@@ -1275,7 +1294,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
    * not allow Void, Nothing and Option type.
    */
   if (exceptionType.isOptionType()) {
-    RAISE_TC_ERROR(Unacceptable, node.getTypeNode(), exceptionType.getName());
+    this->reportError<Unacceptable>(node.getTypeNode(), exceptionType.getName());
   }
 
   {
@@ -1285,7 +1304,9 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
      */
     auto handle =
         this->addEntry(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
-    node.setAttribute(*handle);
+    if (handle) {
+      node.setAttribute(*handle);
+    }
     this->checkTypeWithCurrentScope(nullptr, node.getBlockNode());
   }
   node.setType(node.getBlockNode().getType());
@@ -1293,11 +1314,11 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
 
 void TypeChecker::visitTryNode(TryNode &node) {
   if (node.getCatchNodes().empty() && node.getFinallyNode() == nullptr) {
-    RAISE_TC_ERROR(MeaninglessTry, node);
+    this->reportError<MeaninglessTry>(node);
   }
   assert(node.getExprNode().is(NodeKind::Block));
   if (cast<BlockNode>(node.getExprNode()).getNodes().empty()) {
-    RAISE_TC_ERROR(EmptyTry, node.getExprNode());
+    this->reportError<EmptyTry>(node.getExprNode());
   }
 
   // check type try block
@@ -1328,10 +1349,10 @@ void TypeChecker::visitTryNode(TryNode &node) {
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node.refFinallyNode());
 
     if (findInnerNode<BlockNode>(node.getFinallyNode())->getNodes().empty()) {
-      RAISE_TC_ERROR(UselessBlock, *node.getFinallyNode());
+      this->reportError<UselessBlock>(*node.getFinallyNode());
     }
     if (node.getFinallyNode()->getType().isNothingType()) {
-      RAISE_TC_ERROR(InsideFinally, *node.getFinallyNode());
+      this->reportError<InsideFinally>(*node.getFinallyNode());
     }
   }
 
@@ -1346,7 +1367,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
         findInnerNode<CatchNode>(node.getCatchNodes()[i].get())->getTypeNode().getType();
     if (curType.isSameOrBaseTypeOf(nextType)) {
       auto &nextNode = node.getCatchNodes()[i];
-      RAISE_TC_ERROR(Unreachable, *nextNode);
+      this->reportError<Unreachable>(*nextNode);
     }
   }
   node.setType(*exprType);
@@ -1374,7 +1395,9 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
   }
 
   auto handle = this->addEntry(node, node.getVarName(), *exprType, attr);
-  node.setAttribute(*handle);
+  if (handle) {
+    node.setAttribute(*handle);
+  }
   node.setType(this->typePool.get(TYPE::Void));
 }
 
@@ -1443,9 +1466,11 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
       auto &rightType = this->checkType(this->typePool.get(TYPE::String), e->getRightNode());
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
-      auto *handle =
-          this->addEntry(leftNode, leftNode.getVarName(), rightType, FieldAttribute::ENV);
-      leftNode.setAttribute(*handle);
+      if (auto *handle =
+              this->addEntry(leftNode, leftNode.getVarName(), rightType, FieldAttribute::ENV);
+          handle) {
+        leftNode.setAttribute(*handle);
+      }
     }
 
     auto &exprType = this->checkTypeExactly(*node.getExprNode());
@@ -1472,8 +1497,11 @@ static void addReturnNodeToLast(BlockNode &blockNode, const TypePool &pool,
 }
 
 void TypeChecker::visitFunctionNode(FunctionNode &node) {
+  node.setType(this->typePool.get(TYPE::Void));
+
   if (!this->isTopLevel()) { // only available toplevel scope
-    RAISE_TC_ERROR(OutsideToplevel, node);
+    this->reportError<OutsideToplevel>(node);
+    return;
   }
 
   // resolve return type, param type
@@ -1490,18 +1518,22 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   assert(typeOrError);
   auto &funcType = static_cast<const FunctionType &>(*std::move(typeOrError).take());
   node.setFuncType(funcType);
-  auto handle = this->addEntry(node, node.getFuncName(), funcType,
-                               FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
-  node.setVarIndex(handle->getIndex());
+  if (auto handle = this->addEntry(node, node.getFuncName(), funcType,
+                                   FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
+      handle) {
+    node.setVarIndex(handle->getIndex());
+  }
 
   {
     auto func = this->intoFunc(returnType);
     // register parameter
     for (unsigned int i = 0; i < paramSize; i++) {
       VarNode &paramNode = *node.getParamNodes()[i];
-      auto fieldHandle = this->addEntry(paramNode, paramNode.getVarName(),
-                                        funcType.getParamTypeAt(i), FieldAttribute());
-      paramNode.setAttribute(*fieldHandle);
+      if (auto fieldHandle = this->addEntry(paramNode, paramNode.getVarName(),
+                                            funcType.getParamTypeAt(i), FieldAttribute());
+          fieldHandle) {
+        paramNode.setAttribute(*fieldHandle);
+      }
     }
     // check type func body
     this->checkTypeWithCurrentScope(node.getBlockNode());
@@ -1516,20 +1548,22 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     addReturnNodeToLast(blockNode, this->typePool, std::move(emptyNode));
   }
   if (!blockNode.getType().isNothingType()) {
-    RAISE_TC_ERROR(UnfoundReturn, blockNode);
+    this->reportError<UnfoundReturn>(blockNode);
   }
-
-  node.setType(this->typePool.get(TYPE::Void));
 }
 
 void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
+  node.setType(this->typePool.get(TYPE::Void));
+
   if (!this->isTopLevel()) { // only available toplevel scope
-    RAISE_TC_ERROR(OutsideToplevel, node);
+    this->reportError<OutsideToplevel>(node);
+    return;
   }
 
   // register command name
-  auto handle = this->addUdcEntry(node);
-  node.setUdcIndex(handle->getIndex());
+  if (auto handle = this->addUdcEntry(node); handle) {
+    node.setUdcIndex(handle->getIndex());
+  }
 
   {
     auto func = this->intoFunc(this->typePool.get(TYPE::Int)); // pseudo return type
@@ -1559,15 +1593,14 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
     this->checkTypeAsExpr(*varNode);
     addReturnNodeToLast(node.getBlockNode(), this->typePool, std::move(varNode));
   }
-
-  node.setType(this->typePool.get(TYPE::Void));
 }
 
 void TypeChecker::visitInterfaceNode(InterfaceNode &node) {
   //    if(!this->isTopLevel()) {   // only available toplevel scope
   //        RAISE_TC_ERROR(OutsideToplevel, node);
   //    }
-  RAISE_TC_ERROR(OutsideToplevel, node);
+  node.setType(this->typePool.get(TYPE::Void));
+  this->reportError<OutsideToplevel>(node);
 }
 
 void TypeChecker::visitSourceNode(SourceNode &node) {
@@ -1576,22 +1609,22 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   // import module
   auto ret = this->curScope->importForeignHandles(node.getModType(), node.getName().empty());
   if (!ret.empty()) {
-    RAISE_TC_ERROR(ConflictSymbol, node, ret.c_str(), node.getPathName().c_str());
+    this->reportError<ConflictSymbol>(node, ret.c_str(), node.getPathName().c_str());
   }
   if (!node.getName().empty()) { // scoped import
     auto handle = node.getModType().toHandle();
 
     // register actual module handle
     if (!this->curScope->defineAlias(std::string(node.getName()), handle)) {
-      RAISE_TC_ERROR(DefinedSymbol, node, node.getName().c_str());
+      this->reportError<DefinedSymbol>(node, node.getName().c_str());
     }
     std::string cmdName = toCmdFullName(node.getName());
     if (!this->curScope->defineAlias(std::move(cmdName), handle)) { // for module subcommand
-      RAISE_TC_ERROR(DefinedCmd, node, node.getName().c_str());
+      this->reportError<DefinedCmd>(node, node.getName().c_str());
     }
     if (!this->curScope->defineTypeAlias(this->typePool, std::string(node.getName()),
                                          node.getModType())) {
-      RAISE_TC_ERROR(DefinedTypeAlias, node, node.getName().c_str());
+      this->reportError<DefinedTypeAlias>(node, node.getName().c_str());
     }
   }
   node.setType(this->typePool.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
@@ -1694,7 +1727,8 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
   } else {
     if (isDirPattern(pathNode)) {
       std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
-      RAISE_TC_ERROR(NoGlobDir, pathNode, path.c_str());
+      this->reportError<NoGlobDir>(pathNode, path.c_str());
+      return;
     }
     pathNode.addSegmentNode(std::make_unique<EmptyNode>()); // sentinel
     auto begin = SourceGlobIter(pathNode.getSegmentNodes().cbegin());
@@ -1720,9 +1754,9 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
     } else {
       std::string path = concat(pathNode, pathNode.getSegmentNodes().size() - 1); // skip sentinel
       if (globRet == GlobMatchResult::NOMATCH) {
-        RAISE_TC_ERROR(NoGlobMatch, pathNode, path.c_str());
+        this->reportError<NoGlobMatch>(pathNode, path.c_str());
       } else {
-        RAISE_TC_ERROR(GlobRetLimit, pathNode, path.c_str());
+        this->reportError<GlobRetLimit>(pathNode, path.c_str());
       }
     }
   }
@@ -1730,8 +1764,10 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
 }
 
 void TypeChecker::visitSourceListNode(SourceListNode &node) {
+  node.setType(this->typePool.get(TYPE::Void));
   if (!this->isTopLevel()) { // only available toplevel scope
-    RAISE_TC_ERROR(OutsideToplevel, node);
+    this->reportError<OutsideToplevel>(node);
+    return;
   }
   bool isGlob = node.getPathNode().getGlobPathSize() > 0 && node.getName().empty();
   auto &exprType = this->typePool.get(isGlob ? TYPE::StringArray : TYPE::String);
@@ -1743,17 +1779,18 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     if (isa<StringNode>(*e)) {
       auto ref = StringRef(cast<StringNode>(*e).getValue());
       if (ref.hasNullChar()) {
-        RAISE_TC_ERROR(NullInPath, node.getPathNode());
+        this->reportError<NullInPath>(node.getPathNode());
+        return;
       }
     }
   }
   this->resolvePathList(node);
-  node.setType(this->typePool.get(TYPE::Void));
 }
 
 void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
   assert(this->ccHandler);
   this->reachComp = true;
+  node.setType(this->typePool.get(TYPE::Void));
   switch (node.getKind()) {
   case CodeCompNode::VAR:
     this->ccHandler->addVarNameRequest(this->lexer->toName(node.getTypingToken()), this->curScope);
@@ -1769,7 +1806,8 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     if (node.getExprNode()) {
       recvType = &this->checkTypeExactly(*node.getExprNode());
       if (!recvType->isModType()) {
-        RAISE_TC_ERROR(Required, *node.getExprNode(), "Module type", recvType->getName());
+        this->reportError<Required>(*node.getExprNode(), "Module type", recvType->getName());
+        return;
       }
     }
     this->ccHandler->addTypeNameRequest(this->lexer->toName(node.getTypingToken()), recvType,
@@ -1777,7 +1815,7 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     break;
   }
   }
-  RAISE_TC_ERROR(Unreachable, node);
+  this->reportError<Unreachable>(node);
 }
 
 void TypeChecker::visitErrorNode(ErrorNode &node) { node.setType(this->typePool.get(TYPE::Void)); }
@@ -1810,13 +1848,17 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
 
   try {
     if (prevType != nullptr && prevType->isNothingType()) {
-      RAISE_TC_ERROR(Unreachable, *node);
+      this->reportError<Unreachable>(*node);
     }
     if (this->toplevelPrinting && this->curScope->inRootModule() && !mayBeCmd(*node)) {
       this->checkTypeExactly(*node);
       node = this->newPrintOpNode(std::move(node));
     } else {
       this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node); // pop stack top
+    }
+    if (this->hasError()) {
+      node = std::make_unique<ErrorNode>(node->getToken());
+      node->setType(this->typePool.get(TYPE::Void));
     }
   } catch (const TypeCheckError &e) {
     this->errors.push_back(e);

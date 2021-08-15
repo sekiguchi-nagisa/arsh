@@ -278,9 +278,24 @@ private:
 
   const DSType &resolveCoercionOfJumpValue();
 
+  /**
+   *
+   * @param node
+   * @param symbolName
+   * @param type
+   * @param attribute
+   * @return
+   * if can not add entry, return null
+   */
   const FieldHandle *addEntry(const Node &node, const std::string &symbolName, const DSType &type,
                               FieldAttribute attribute);
 
+  /**
+   *
+   * @param node
+   * @return
+   * if can not add entry, return null
+   */
   const FieldHandle *addUdcEntry(const UserDefinedCmdNode &node);
 
   bool isTopLevel() const { return this->visitingDepth == 1; }
@@ -323,6 +338,14 @@ private:
   auto intoFinally() {
     this->fctx.enterFinally();
     return finally([&] { this->fctx.leave(); });
+  }
+
+  void reportErrorImpl(const Node &node, const char *kind, const char *fmt, ...)
+      __attribute__((format(printf, 4, 5)));
+
+  template <typename T, typename... Arg, typename = base_of_t<T, TCError>>
+  void reportError(const Node &node, Arg &&...arg) {
+    this->reportErrorImpl(node, T::kind, T::value, std::forward<Arg>(arg)...);
   }
 
   /**
