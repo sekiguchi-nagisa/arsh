@@ -79,14 +79,17 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
     auto &qualifiedNode = cast<QualifiedTypeNode>(node);
     auto &recvType = this->checkTypeExactly(qualifiedNode.getRecvTypeNode());
     if (!recvType.isModType()) {
-      RAISE_TC_ERROR(Required, qualifiedNode.getRecvTypeNode(), "Module type", recvType.getName());
+      this->reportError<Required>(qualifiedNode.getRecvTypeNode(), "Module type",
+                                  recvType.getName());
+      return Err(std::unique_ptr<TypeLookupError>());
     }
     auto &modType = static_cast<const ModType &>(recvType);
     std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
     auto *handle = this->curScope->lookupField(modType, typeName);
     if (!handle) {
       auto &nameNode = qualifiedNode.getNameTypeNode();
-      RAISE_TC_ERROR(UndefinedField, nameNode, nameNode.getTokenText().c_str());
+      this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str());
+      return Err(std::unique_ptr<TypeLookupError>());
     }
     return Ok(&this->typePool.get(handle->getTypeID()));
   }
@@ -447,7 +450,10 @@ void TypeChecker::visitTypeNode(TypeNode &node) {
   if (ret) {
     node.setType(*std::move(ret).take());
   } else {
-    throw TypeCheckError(node.getToken(), *ret.asErr());
+    if (ret.asErr()) {
+      this->errors.emplace_back(node.getToken(), *ret.asErr());
+    }
+    node.setType(this->typePool.get(TYPE::Nothing));
   }
 }
 
