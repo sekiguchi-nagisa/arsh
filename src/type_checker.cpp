@@ -1308,8 +1308,7 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
     /**
      * check type catch block
      */
-    auto handle =
-        this->addEntry(node, node.getExceptionName(), exceptionType, FieldAttribute::READ_ONLY);
+    auto handle = this->addEntry(node.getNameInfo(), exceptionType, FieldAttribute::READ_ONLY);
     if (handle) {
       node.setAttribute(*handle);
     }
@@ -1534,12 +1533,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
     auto func = this->intoFunc(returnType);
     // register parameter
     for (unsigned int i = 0; i < paramSize; i++) {
-      VarNode &paramNode = *node.getParamNodes()[i];
-      if (auto fieldHandle = this->addEntry(paramNode, paramNode.getVarName(),
-                                            funcType.getParamTypeAt(i), FieldAttribute());
-          fieldHandle) {
-        paramNode.setAttribute(*fieldHandle);
-      }
+      this->addEntry(node.getParams()[i], funcType.getParamTypeAt(i), FieldAttribute());
     }
     // check type func body
     this->checkTypeWithCurrentScope(node.getBlockNode());

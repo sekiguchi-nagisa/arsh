@@ -216,13 +216,10 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     }
 
     if (CUR_KIND() == TokenKind::APPLIED_NAME) {
-      Token token = this->expect(TokenKind::APPLIED_NAME); // always success
-      auto nameNode = this->newVarNode(token);
+      auto param = this->expectName(TokenKind::APPLIED_NAME, &Lexer::toName); // always success
       TRY(this->expect(TokenKind::COLON, false));
-
       auto type = TRY(this->parse_typeName());
-
-      node->addParamNode(std::move(nameNode), std::move(type));
+      node->addParamNode(std::move(param), std::move(type));
     } else {
       E_ALTER(TokenKind::APPLIED_NAME, TokenKind::RP);
     }
@@ -837,7 +834,7 @@ std::unique_ptr<CatchNode> Parser::parse_catchBlock() {
     TRY(this->expect(TokenKind::LP));
   }
 
-  Token token = TRY(this->expect(TokenKind::APPLIED_NAME));
+  auto nameInfo = TRY(this->expectName(TokenKind::APPLIED_NAME, &Lexer::toName));
   std::unique_ptr<TypeNode> typeToken;
   if (CUR_KIND() == TokenKind::COLON) {
     this->expect(TokenKind::COLON, false); // always success
@@ -858,8 +855,8 @@ std::unique_ptr<CatchNode> Parser::parse_catchBlock() {
     return nullptr;
   }
 
-  auto node = std::make_unique<CatchNode>(startPos, this->lexer->toName(token),
-                                          std::move(typeToken), std::move(blockNode));
+  auto node = std::make_unique<CatchNode>(startPos, std::move(nameInfo), std::move(typeToken),
+                                          std::move(blockNode));
   if (comp) {
     this->incompleteNode = std::move(node);
   }

@@ -201,7 +201,11 @@ nodes:
           pos: 25
           size: 11
         type:
-        exceptionName: "e"
+        exceptionName:
+          token:
+            pos: 31
+            size: 2
+          name: "e"
         typeNode:
           nodeKind: Type
           token:
@@ -341,7 +345,7 @@ nodes:
         pos: 9
         size: 1
       name: "f"
-    paramNodes:
+    params:
     paramTypeNodes:
     returnTypeNode:
       nodeKind: Type
@@ -896,6 +900,78 @@ nodes:
       needFork: true
     targetTypeToken: null
     opKind: "TO_VOID"
+)"},
+
+    {DumpOp::typed, R"(function f($a : Int, $b : Int) {})", 0, 1, R"(
+nodes:
+  - nodeKind: Function
+    token:
+      pos: 0
+      size: 33
+    type: Void
+    funcName:
+      token:
+        pos: 9
+        size: 1
+      name: "f"
+    params:
+      - token:
+          pos: 11
+          size: 2
+        name: "a"
+      - token:
+          pos: 21
+          size: 2
+        name: "b"
+    paramTypeNodes:
+      - nodeKind: Type
+        token:
+          pos: 16
+          size: 3
+        type: Int
+        typeKind: "Base"
+        typeName: "Int"
+      - nodeKind: Type
+        token:
+          pos: 26
+          size: 3
+        type: Int
+        typeKind: "Base"
+        typeName: "Int"
+    returnTypeNode:
+      nodeKind: Type
+      token:
+        pos: 0
+        size: 0
+      type: Void
+      typeKind: "Base"
+      typeName: "Void"
+    blockNode:
+      nodeKind: Block
+      token:
+        pos: 31
+        size: 2
+      type: Nothing
+      nodes:
+        - nodeKind: Jump
+          token:
+            pos: 0
+            size: 0
+          type: Nothing
+          opKind: "RETURN"
+          exprNode:
+            nodeKind: Empty
+            token:
+              pos: 0
+              size: 0
+            type: Void
+          leavingBlock: false
+      baseIndex: 0
+      varSize: 2
+      maxVarSize: 2
+    maxVarNum: 2
+    varIndex: 55
+    funcType: "(Int, Int) -> Void"
 )"},
 };
 

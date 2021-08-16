@@ -1585,7 +1585,7 @@ public:
 
 class CatchNode : public WithRtti<Node, NodeKind::Catch> {
 private:
-  std::string exceptionName;
+  NameInfo exceptionName;
   std::unique_ptr<TypeNode> typeNode;
 
   unsigned int varIndex{0};
@@ -1593,15 +1593,15 @@ private:
   std::unique_ptr<BlockNode> blockNode;
 
 public:
-  CatchNode(unsigned int startPos, std::string &&exceptionName,
-            std::unique_ptr<TypeNode> &&typeNode, std::unique_ptr<BlockNode> &&blockNode)
+  CatchNode(unsigned int startPos, NameInfo &&exceptionName, std::unique_ptr<TypeNode> &&typeNode,
+            std::unique_ptr<BlockNode> &&blockNode)
       : WithRtti({startPos, 0}), exceptionName(std::move(exceptionName)),
         typeNode(typeNode != nullptr ? std::move(typeNode) : newAnyTypeNode()),
         blockNode(std::move(blockNode)) {
     this->updateToken(this->blockNode->getToken());
   }
 
-  const std::string &getExceptionName() const { return this->exceptionName; }
+  const NameInfo &getNameInfo() const { return this->exceptionName; }
 
   TypeNode &getTypeNode() const { return *this->typeNode; }
 
@@ -1860,7 +1860,7 @@ private:
   /**
    * for parameter definition.
    */
-  std::vector<std::unique_ptr<VarNode>> paramNodes;
+  std::vector<NameInfo> params;
 
   /**
    * type token of each parameter
@@ -1893,12 +1893,12 @@ public:
 
   const std::string &getFuncName() const { return this->funcName.getName(); }
 
-  void addParamNode(std::unique_ptr<VarNode> &&node, std::unique_ptr<TypeNode> &&paramType) {
-    this->paramNodes.push_back(std::move(node));
+  void addParamNode(NameInfo &&name, std::unique_ptr<TypeNode> &&paramType) {
+    this->params.push_back(std::move(name));
     this->paramTypeNodes.push_back(std::move(paramType));
   }
 
-  const std::vector<std::unique_ptr<VarNode>> &getParamNodes() const { return this->paramNodes; }
+  const std::vector<NameInfo> &getParams() const { return this->params; }
 
   const std::vector<std::unique_ptr<TypeNode>> &getParamTypeNodes() const {
     return this->paramTypeNodes;
@@ -2372,6 +2372,19 @@ public:
       this->append("- ");
       this->appendEscaped(e.c_str());
       this->newline();
+    }
+    this->dumpNodesTail();
+  }
+
+  void dump(const char *fieldName, const std::vector<NameInfo> &values) {
+    this->dumpNodesHead(fieldName);
+    for (auto &e : values) {
+      this->indent();
+      this->append("- ");
+      this->enterIndent();
+      this->dumpToken(e.getToken());
+      this->dump("name", e.getName());
+      this->leaveIndent();
     }
     this->dumpNodesTail();
   }

@@ -1,0 +1,6 @@
+# function param
+
+#$test($result = 'type', $lineNum = 6, $chars = 9, $errorKind = 'DefinedSymbol', $status = 1)
+
+function f($a : Int,
+        $a : String) {}

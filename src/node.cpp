@@ -828,7 +828,7 @@ void PrefixAssignNode::dump(NodeDumper &dumper) const {
 
 void FunctionNode::dump(NodeDumper &dumper) const {
   DUMP(funcName);
-  DUMP(paramNodes);
+  DUMP(params);
   DUMP(paramTypeNodes);
 
   DUMP_PTR(returnTypeNode);
@@ -1125,6 +1125,7 @@ void NodeDumper::dump(const char *fieldName, const NameInfo &info) {
   // write body
   this->newline();
   this->enterIndent();
+  this->indent();
   this->dumpToken(info.getToken());
   this->dump("name", info.getName());
   this->leaveIndent();
@@ -1158,6 +1159,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     this->enterIndent();
   }
 
+  this->indent();
   this->dumpToken(node.getToken());
   this->indent();
   if (node.isUntyped()) {
@@ -1172,8 +1174,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
 }
 
 void NodeDumper::dumpToken(Token token) {
-  this->writeName("token");
-  this->newline();
+  this->append("token:\n");
   this->enterIndent();
   this->indent();
   this->appendAs("pos: %d\n", token.pos);
