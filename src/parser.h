@@ -161,6 +161,17 @@ protected:
     return std::make_unique<VarNode>(token, this->lexer->toName(token));
   }
 
+  template <typename Func>
+  NameInfo expectName(TokenKind kind, Func func) {
+    auto actual = this->curKind;
+    auto token = this->expect(kind);
+    std::string name;
+    if (actual == kind) {
+      name = (this->lexer->*func)(token);
+    }
+    return NameInfo(token, std::move(name));
+  }
+
   template <unsigned int N>
   void reportNoViableAlterError(const TokenKind (&alters)[N], bool allowComp) {
     this->reportNoViableAlterError(N, alters, allowComp);

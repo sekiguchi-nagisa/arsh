@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 6, $chars = 1, $errorKind = 'DefinedCmd', $status = 1, $fileName = $0)
+#$test($result = 'type', $lineNum = 6, $chars = 41, $errorKind = 'DefinedCmd', $status = 1, $fileName = $0)
 
 
 source ../../_module4test/command.ds

@@ -605,7 +605,8 @@ static void resolveIfIsStatement(Node &condNode, BlockNode &blockNode) {
       std::make_unique<VarNode>(Token{isNode.getPos(), 1}, std::string(varNode.getVarName()));
   auto castNode = std::make_unique<TypeOpNode>(std::move(exprNode), *isNode.getTargetTypeNode(),
                                                TypeOpNode::NO_CAST);
-  auto declNode = std::make_unique<VarDeclNode>(isNode.getPos(), std::string(varNode.getVarName()),
+  NameInfo nameInfo({isNode.getPos(), 1}, std::string(varNode.getVarName()));
+  auto declNode = std::make_unique<VarDeclNode>(isNode.getPos(), std::move(nameInfo),
                                                 std::move(castNode), VarDeclNode::LET);
   blockNode.insertNodeToFirst(std::move(declNode));
 }
@@ -719,7 +720,7 @@ void TryNode::dump(NodeDumper &dumper) const {
 // ##     VarDeclNode     ##
 // #########################
 
-VarDeclNode::VarDeclNode(unsigned int startPos, std::string &&varName,
+VarDeclNode::VarDeclNode(unsigned int startPos, NameInfo &&varName,
                          std::unique_ptr<Node> &&exprNode, Kind kind)
     : WithRtti({startPos, 0}), varName(std::move(varName)), kind(kind),
       exprNode(std::move(exprNode)) {
@@ -900,9 +901,6 @@ void SourceNode::dump(NodeDumper &dumper) const {
 // ##     SourceListNode     ##
 // ############################
 
-std::shared_ptr<const std::string> SourceListNode::EMPTY_STR =
-    std::make_shared<const std::string>();
-
 void SourceListNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(pathNode);
   DUMP_PTR(name);
@@ -913,7 +911,7 @@ void SourceListNode::dump(NodeDumper &dumper) const {
   for (auto &e : this->pathList) {
     tmp.push_back(*e);
   }
-  dumper.dump(NAME(pathLList), tmp);
+  dumper.dump(NAME(pathList), tmp);
 }
 
 // ##########################
@@ -1032,8 +1030,9 @@ std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&v
   auto call_iter = ApplyNode::newMethodCall(std::move(exprNode), std::string(OP_ITER));
   std::string reset_var_name = "%reset_";
   reset_var_name += std::to_string(startPos);
-  auto reset_varDecl = std::make_unique<VarDeclNode>(startPos, std::string(reset_var_name),
-                                                     std::move(call_iter), VarDeclNode::LET);
+  auto reset_varDecl =
+      std::make_unique<VarDeclNode>(startPos, NameInfo(dummy, std::string(reset_var_name)),
+                                    std::move(call_iter), VarDeclNode::LET);
 
   // create for-cond
   auto reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
@@ -1042,8 +1041,8 @@ std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&v
   // create forIn-init
   reset_var = std::make_unique<VarNode>(dummy, std::string(reset_var_name));
   auto call_next = ApplyNode::newMethodCall(std::move(reset_var), std::string(OP_NEXT));
-  auto init_var = std::make_unique<VarDeclNode>(startPos, std::move(varName), std::move(call_next),
-                                                VarDeclNode::VAR);
+  auto init_var = std::make_unique<VarDeclNode>(startPos, NameInfo(dummy, std::move(varName)),
+                                                std::move(call_next), VarDeclNode::VAR);
 
   // insert init to block
   blockNode->insertNodeToFirst(std::move(init_var));
@@ -1119,6 +1118,18 @@ void NodeDumper::dump(const char *fieldName, const MethodHandle &handle) {
   this->dump(fieldName, std::to_string(handle.getMethodIndex()));
 }
 
+void NodeDumper::dump(const char *fieldName, const NameInfo &info) {
+  // write field name
+  this->writeName(fieldName);
+
+  // write body
+  this->newline();
+  this->enterIndent();
+  this->dumpToken(info.getToken());
+  this->dump("name", info.getName());
+  this->leaveIndent();
+}
+
 void NodeDumper::dump(const Node &node) {
   this->indent();
   this->dumpNodeHeader(node);
@@ -1147,14 +1158,7 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
     this->enterIndent();
   }
 
-  this->indent();
-  this->appendAs("token:\n");
-  this->enterIndent();
-  this->indent();
-  this->appendAs("pos: %d\n", node.getPos());
-  this->indent();
-  this->appendAs("size: %d\n", node.getSize());
-  this->leaveIndent();
+  this->dumpToken(node.getToken());
   this->indent();
   if (node.isUntyped()) {
     this->append("type:\n");
@@ -1165,6 +1169,17 @@ void NodeDumper::dumpNodeHeader(const Node &node, bool inArray) {
   if (inArray) {
     this->leaveIndent();
   }
+}
+
+void NodeDumper::dumpToken(Token token) {
+  this->writeName("token");
+  this->newline();
+  this->enterIndent();
+  this->indent();
+  this->appendAs("pos: %d\n", token.pos);
+  this->indent();
+  this->appendAs("size: %d\n", token.size);
+  this->leaveIndent();
 }
 
 void NodeDumper::append(int ch) { this->bufs.back().value += static_cast<char>(ch); }

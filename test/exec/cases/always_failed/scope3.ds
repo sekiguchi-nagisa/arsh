@@ -1,6 +1,6 @@
 # nested block
 
-#$test($result = 'type', $lineNum = 9, $chars = 9, $errorKind = 'DefinedSymbol', $status = 1)
+#$test($result = 'type', $lineNum = 9, $chars = 13, $errorKind = 'DefinedSymbol', $status = 1)
 
 {
     var a = 5

@@ -131,7 +131,7 @@ static const Node *findVarDecl(const Node &node, const char *varName) {
   }
   case NodeKind::Source: {
     auto &sourceNode = cast<const SourceNode>(node);
-    if(!sourceNode.getName().empty() && sourceNode.getName() == varName) {
+    if (sourceNode.getNameInfo() && sourceNode.getNameInfo()->getName() == varName) {
       return &node;
     }
     break;
@@ -143,7 +143,7 @@ static const Node *findVarDecl(const Node &node, const char *varName) {
 }
 
 static const Node *findVarDecl(const std::vector<std::unique_ptr<Node>> &nodes,
-                                      const char *varName) {
+                               const char *varName) {
   for (auto &e : nodes) {
     if (const Node * ret; (ret = findVarDecl(*e, varName))) {
       return ret;
@@ -152,7 +152,7 @@ static const Node *findVarDecl(const std::vector<std::unique_ptr<Node>> &nodes,
   return nullptr;
 }
 
-TEST_F(ParseTest, case1) {  //FIXME: replaced with goto-definition test case
+TEST_F(ParseTest, case1) { // FIXME: replaced with goto-definition test case
   const char *path = EXEC_TEST_DIR "/base/mod1.ds";
   ModuleIndexPtr index;
   ASSERT_NO_FATAL_FAILURE(this->parse(path, index));
@@ -189,7 +189,7 @@ TEST_F(ParseTest, case1) {  //FIXME: replaced with goto-definition test case
   ASSERT_TRUE(isa<SourceNode>(decl));
 }
 
-TEST_F(ParseTest, case2) {  //FIXME: replaced with goto-definition test case
+TEST_F(ParseTest, case2) { // FIXME: replaced with goto-definition test case
   const char *path = EXEC_TEST_DIR "/base/mod3.ds";
   ModuleIndexPtr index;
   ASSERT_NO_FATAL_FAILURE(this->parse(path, index));

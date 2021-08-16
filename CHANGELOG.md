@@ -13,6 +13,15 @@
 
 ### Changed
 
+#### Core
+
+- **Breaking Change**: fix error location in the following statement
+    - variable declaration
+    - function definition
+    - command definition
+    - type alias definition
+    - source statement
+
 #### Misc
 
 - require CMake 3.8 or later

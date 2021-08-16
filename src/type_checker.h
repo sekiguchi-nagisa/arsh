@@ -288,6 +288,24 @@ private:
    * if can not add entry, return null
    */
   const FieldHandle *addEntry(const Node &node, const std::string &symbolName, const DSType &type,
+                              FieldAttribute attribute) {
+    return this->addEntry(node.getToken(), symbolName, type, attribute);
+  }
+
+  const FieldHandle *addEntry(const NameInfo &info, const DSType &type, FieldAttribute attribute) {
+    return this->addEntry(info.getToken(), info.getName(), type, attribute);
+  }
+
+  /**
+   *
+   * @param token
+   * @param symbolName
+   * @param type
+   * @param attribute
+   * @return
+   * if can not add entry, return null
+   */
+  const FieldHandle *addEntry(Token token, const std::string &symbolName, const DSType &type,
                               FieldAttribute attribute);
 
   /**
@@ -340,12 +358,17 @@ private:
     return finally([&] { this->fctx.leave(); });
   }
 
-  void reportErrorImpl(const Node &node, const char *kind, const char *fmt, ...)
+  void reportErrorImpl(Token token, const char *kind, const char *fmt, ...)
       __attribute__((format(printf, 4, 5)));
 
   template <typename T, typename... Arg, typename = base_of_t<T, TCError>>
   void reportError(const Node &node, Arg &&...arg) {
-    this->reportErrorImpl(node, T::kind, T::value, std::forward<Arg>(arg)...);
+    this->reportErrorImpl(node.getToken(), T::kind, T::value, std::forward<Arg>(arg)...);
+  }
+
+  template <typename T, typename... Arg, typename = base_of_t<T, TCError>>
+  void reportError(Token token, Arg &&...arg) {
+    this->reportErrorImpl(token, T::kind, T::value, std::forward<Arg>(arg)...);
   }
 
   /**

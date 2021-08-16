@@ -176,7 +176,11 @@ nodes:
             pos: 6
             size: 15
           type:
-          varName: "a"
+          varName:
+            token:
+              pos: 10
+              size: 1
+            name: "a"
           global: false
           varIndex: 0
           exprNode:
@@ -332,7 +336,11 @@ nodes:
       pos: 0
       size: 61
     type:
-    funcName: "f"
+    funcName:
+      token:
+        pos: 9
+        size: 1
+      name: "f"
     paramNodes:
     paramTypeNodes:
     returnTypeNode:
@@ -681,7 +689,11 @@ nodes:
       pos: 0
       size: 24
     type:
-    alias: "i"
+    alias:
+      token:
+        pos: 8
+        size: 1
+      name: "i"
     targetTypeNode:
       nodeKind: Type
       token:
@@ -768,7 +780,11 @@ nodes:
       pos: 0
       size: 6
     type: Void
-    cmdName: "f"
+    cmdName:
+      token:
+        pos: 0
+        size: 1
+      name: "f"
     udcIndex: 55
     blockNode:
       nodeKind: Block

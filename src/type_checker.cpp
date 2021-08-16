@@ -271,16 +271,16 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue() {
   return *std::move(ret).take();
 }
 
-const FieldHandle *TypeChecker::addEntry(const Node &node, const std::string &symbolName,
+const FieldHandle *TypeChecker::addEntry(Token token, const std::string &symbolName,
                                          const DSType &type, FieldAttribute attribute) {
   auto ret = this->curScope->defineHandle(std::string(symbolName), type, attribute);
   if (!ret) {
     switch (ret.asErr()) {
     case NameLookupError::DEFINED:
-      this->reportError<DefinedSymbol>(node, symbolName.c_str());
+      this->reportError<DefinedSymbol>(token, symbolName.c_str());
       break;
     case NameLookupError::LIMIT:
-      this->reportError<LocalLimit>(node);
+      this->reportError<LocalLimit>(token);
       break;
     }
     return nullptr;
@@ -314,7 +314,7 @@ const FieldHandle *TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   return ret.asOk();
 }
 
-void TypeChecker::reportErrorImpl(const Node &node, const char *kind, const char *fmt, ...) {
+void TypeChecker::reportErrorImpl(Token token, const char *kind, const char *fmt, ...) {
   va_list arg;
 
   va_start(arg, fmt);
@@ -324,7 +324,7 @@ void TypeChecker::reportErrorImpl(const Node &node, const char *kind, const char
   }
   va_end(arg);
 
-  this->errors.emplace_back(node.getToken(), kind, CStrPtr(str));
+  this->errors.emplace_back(token, kind, CStrPtr(str));
 }
 
 // for ApplyNode type checking
@@ -898,7 +898,7 @@ void TypeChecker::visitTypeAliasNode(TypeAliasNode &node) {
   auto &type = this->checkTypeExactly(typeToken);
   auto ret = this->curScope->defineTypeAlias(this->typePool, std::string(node.getAlias()), type);
   if (!ret) {
-    this->reportError<DefinedTypeAlias>(node, node.getAlias().c_str());
+    this->reportError<DefinedTypeAlias>(node.getNameInfo().getToken(), node.getAlias().c_str());
   }
   node.setType(this->typePool.get(TYPE::Void));
 }
@@ -1400,7 +1400,7 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
     break;
   }
 
-  auto handle = this->addEntry(node, node.getVarName(), *exprType, attr);
+  auto handle = this->addEntry(node.getNameInfo(), *exprType, attr);
   if (handle) {
     node.setAttribute(*handle);
   }
@@ -1524,7 +1524,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   assert(typeOrError);
   auto &funcType = static_cast<const FunctionType &>(*std::move(typeOrError).take());
   node.setFuncType(funcType);
-  if (auto handle = this->addEntry(node, node.getFuncName(), funcType,
+  if (auto handle = this->addEntry(node.getNameInfo(), funcType,
                                    FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
       handle) {
     node.setVarIndex(handle->getIndex());
@@ -1613,24 +1613,25 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   assert(this->isTopLevel());
 
   // import module
-  auto ret = this->curScope->importForeignHandles(node.getModType(), node.getName().empty());
+  auto ret = this->curScope->importForeignHandles(node.getModType(), !node.getNameInfo());
   if (!ret.empty()) {
     this->reportError<ConflictSymbol>(node, ret.c_str(), node.getPathName().c_str());
   }
-  if (!node.getName().empty()) { // scoped import
+  if (node.getNameInfo()) { // scoped import
+    auto &nameInfo = *node.getNameInfo();
     auto handle = node.getModType().toHandle();
 
     // register actual module handle
-    if (!this->curScope->defineAlias(std::string(node.getName()), handle)) {
-      this->reportError<DefinedSymbol>(node, node.getName().c_str());
+    if (!this->curScope->defineAlias(std::string(nameInfo.getName()), handle)) {
+      this->reportError<DefinedSymbol>(nameInfo.getToken(), nameInfo.getName().c_str());
     }
-    std::string cmdName = toCmdFullName(node.getName());
+    std::string cmdName = toCmdFullName(nameInfo.getName());
     if (!this->curScope->defineAlias(std::move(cmdName), handle)) { // for module subcommand
-      this->reportError<DefinedCmd>(node, node.getName().c_str());
+      this->reportError<DefinedCmd>(nameInfo.getToken(), nameInfo.getName().c_str());
     }
-    if (!this->curScope->defineTypeAlias(this->typePool, std::string(node.getName()),
+    if (!this->curScope->defineTypeAlias(this->typePool, std::string(nameInfo.getName()),
                                          node.getModType())) {
-      this->reportError<DefinedTypeAlias>(node, node.getName().c_str());
+      this->reportError<DefinedTypeAlias>(nameInfo.getToken(), nameInfo.getName().c_str());
     }
   }
   node.setType(this->typePool.get(node.isNothing() ? TYPE::Nothing : TYPE::Void));
@@ -1775,7 +1776,7 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     this->reportError<OutsideToplevel>(node);
     return;
   }
-  bool isGlob = node.getPathNode().getGlobPathSize() > 0 && node.getName().empty();
+  bool isGlob = node.getPathNode().getGlobPathSize() > 0 && !node.getNameInfoPtr();
   auto &exprType = this->typePool.get(isGlob ? TYPE::StringArray : TYPE::String);
   this->checkType(exprType, node.getPathNode());
 

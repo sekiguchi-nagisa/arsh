@@ -529,6 +529,21 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
+class NameInfo {
+private:
+  Token token;
+  std::string name;
+
+public:
+  NameInfo(Token token, std::string &&name) : token(token), name(std::move(name)) {}
+
+  Token getToken() const { return this->token; }
+
+  const std::string &getName() const { return this->name; }
+
+  explicit operator bool() const { return !this->name.empty(); }
+};
+
 /**
  * base class for VarNode, AccessNode
  */
@@ -1328,12 +1343,11 @@ public:
 
 class TypeAliasNode : public WithRtti<Node, NodeKind::TypeAlias> {
 private:
-  std::string alias;
+  NameInfo alias;
   std::unique_ptr<TypeNode> targetTypeNode;
 
 public:
-  TypeAliasNode(unsigned int startPos, std::string &&alias,
-                std::unique_ptr<TypeNode> &&targetTypeNode)
+  TypeAliasNode(unsigned int startPos, NameInfo &&alias, std::unique_ptr<TypeNode> &&targetTypeNode)
       : WithRtti({startPos, 0}), alias(std::move(alias)),
         targetTypeNode(std::move(targetTypeNode)) {
     this->updateToken(this->targetTypeNode->getToken());
@@ -1341,7 +1355,9 @@ public:
 
   ~TypeAliasNode() override = default;
 
-  const std::string &getAlias() const { return this->alias; }
+  const NameInfo &getNameInfo() const { return this->alias; }
+
+  const std::string &getAlias() const { return this->alias.getName(); }
 
   TypeNode &getTargetTypeNode() const { return *this->targetTypeNode; }
 
@@ -1659,7 +1675,7 @@ public:
   };
 
 private:
-  std::string varName;
+  NameInfo varName;
   bool global{false};
   Kind kind;
   unsigned int varIndex{0};
@@ -1670,10 +1686,12 @@ private:
   std::unique_ptr<Node> exprNode;
 
 public:
-  VarDeclNode(unsigned int startPos, std::string &&varName, std::unique_ptr<Node> &&exprNode,
+  VarDeclNode(unsigned int startPos, NameInfo &&varName, std::unique_ptr<Node> &&exprNode,
               Kind kind);
 
-  const std::string &getVarName() const { return this->varName; }
+  const NameInfo &getNameInfo() const { return this->varName; }
+
+  const std::string &getVarName() const { return this->varName.getName(); }
 
   Kind getKind() const { return this->kind; }
 
@@ -1837,7 +1855,7 @@ public:
 
 class FunctionNode : public WithRtti<Node, NodeKind::Function> {
 private:
-  std::string funcName;
+  NameInfo funcName;
 
   /**
    * for parameter definition.
@@ -1866,12 +1884,14 @@ private:
   const FunctionType *funcType{nullptr};
 
 public:
-  FunctionNode(unsigned int startPos, std::string &&funcName)
+  FunctionNode(unsigned int startPos, NameInfo &&funcName)
       : WithRtti({startPos, 0}), funcName(std::move(funcName)) {}
 
   ~FunctionNode() override = default;
 
-  const std::string &getFuncName() const { return this->funcName; }
+  const NameInfo &getNameInfo() const { return this->funcName; }
+
+  const std::string &getFuncName() const { return this->funcName.getName(); }
 
   void addParamNode(std::unique_ptr<VarNode> &&node, std::unique_ptr<TypeNode> &&paramType) {
     this->paramNodes.push_back(std::move(node));
@@ -1955,7 +1975,7 @@ public:
 
 class UserDefinedCmdNode : public WithRtti<Node, NodeKind::UserDefinedCmd> {
 private:
-  std::string cmdName;
+  NameInfo cmdName;
 
   unsigned int udcIndex{0};
   std::unique_ptr<BlockNode> blockNode;
@@ -1963,7 +1983,7 @@ private:
   unsigned int maxVarNum{0};
 
 public:
-  UserDefinedCmdNode(unsigned int startPos, std::string &&commandName,
+  UserDefinedCmdNode(unsigned int startPos, NameInfo &&commandName,
                      std::unique_ptr<BlockNode> &&blockNode)
       : WithRtti({startPos, 0}), cmdName(std::move(commandName)), blockNode(std::move(blockNode)) {
     this->updateToken(this->blockNode->getToken());
@@ -1971,7 +1991,9 @@ public:
 
   ~UserDefinedCmdNode() override = default;
 
-  const std::string &getCmdName() const { return this->cmdName; }
+  const NameInfo &getNameInfo() const { return this->cmdName; }
+
+  const std::string &getCmdName() const { return this->cmdName.getName(); }
 
   unsigned int getUdcIndex() const { return this->udcIndex; }
 
@@ -1993,9 +2015,9 @@ private:
   Token pathToken;
 
   /**
-   * may be empty string
+   * may be null
    */
-  std::shared_ptr<const std::string> name;
+  std::shared_ptr<const NameInfo> name;
 
   /**
    * resolved module type.
@@ -2017,7 +2039,7 @@ private:
   unsigned int maxVarNum{0};
 
 public:
-  SourceNode(Token token, Token pathToken, std::shared_ptr<const std::string> name,
+  SourceNode(Token token, Token pathToken, std::shared_ptr<const NameInfo> name,
              const ModType &modType, std::shared_ptr<const std::string> pathName, bool firstAppear)
       : WithRtti(token), pathToken(pathToken), name(std::move(name)), modType(modType),
         pathName(std::move(pathName)), firstAppear(firstAppear) {}
@@ -2026,7 +2048,7 @@ public:
 
   Token getPathToken() const { return this->pathToken; }
 
-  const std::string &getName() const { return *this->name; }
+  const auto &getNameInfo() const { return this->name; }
 
   const ModType &getModType() const { return this->modType; }
 
@@ -2050,9 +2072,9 @@ private:
   std::unique_ptr<CmdArgNode> pathNode;
 
   /**
-   * may be empty string
+   * may be null
    */
-  std::shared_ptr<const std::string> name;
+  std::shared_ptr<const NameInfo> name;
 
   /**
    * if true, ignore module not found error
@@ -2063,13 +2085,11 @@ private:
 
   std::vector<std::shared_ptr<const std::string>> pathList; // evaluated path list
 
-  static std::shared_ptr<const std::string> EMPTY_STR;
-
 public:
   using path_iterator = decltype(pathNode->getSegmentNodes().cbegin());
 
   SourceListNode(unsigned int pos, std::unique_ptr<CmdArgNode> &&pathNode, bool optional)
-      : WithRtti({pos, 1}), pathNode(std::move(pathNode)), name(EMPTY_STR), optional(optional) {
+      : WithRtti({pos, 1}), pathNode(std::move(pathNode)), optional(optional) {
     this->updateToken(this->pathNode->getToken());
   }
 
@@ -2077,10 +2097,10 @@ public:
 
   void setName(Token token, std::string &&value) {
     this->updateToken(token);
-    this->name = std::make_shared<const std::string>(std::move(value));
+    this->name = std::make_shared<const NameInfo>(token, std::move(value));
   }
 
-  const std::string &getName() const { return *this->name; }
+  const auto &getNameInfoPtr() const { return this->name; }
 
   bool isOptional() const { return this->optional; }
 
@@ -2367,6 +2387,8 @@ public:
 
   void dump(const char *fieldName, const MethodHandle &handle);
 
+  void dump(const char *fieldName, const NameInfo &info);
+
   void dumpNull(const char *fieldName) { this->dumpRaw(fieldName, "null"); }
 
   /**
@@ -2423,6 +2445,8 @@ private:
   void appendAs(const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
   void dumpNodeHeader(const Node &node, bool inArray = false);
+
+  void dumpToken(Token token);
 
   void dumpNodesHead(const char *fieldName) {
     this->writeName(fieldName);

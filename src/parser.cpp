@@ -203,8 +203,8 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
   assert(CUR_KIND() == TokenKind::FUNCTION);
   unsigned int startPos = START_POS();
   this->consume(); // FUNCTION
-  Token token = TRY(this->expect(TokenKind::IDENTIFIER));
-  auto node = std::make_unique<FunctionNode>(startPos, this->lexer->toName(token));
+  auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+  auto node = std::make_unique<FunctionNode>(startPos, std::move(nameInfo));
   TRY(this->expect(TokenKind::LP));
 
   for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
@@ -216,7 +216,7 @@ std::unique_ptr<FunctionNode> Parser::parse_funcDecl() {
     }
 
     if (CUR_KIND() == TokenKind::APPLIED_NAME) {
-      token = this->expect(TokenKind::APPLIED_NAME); // always success
+      Token token = this->expect(TokenKind::APPLIED_NAME); // always success
       auto nameNode = this->newVarNode(token);
       TRY(this->expect(TokenKind::COLON, false));
 
@@ -279,10 +279,10 @@ std::unique_ptr<Node> Parser::parse_interface() {
     case TokenKind::LET: {
       startPos = START_POS();
       auto readOnly = this->scan() == TokenKind::LET ? VarDeclNode::LET : VarDeclNode::VAR;
-      token = TRY(this->expect(TokenKind::IDENTIFIER));
+      auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
       TRY(this->expect(TokenKind::COLON, false));
       auto type = TRY(this->parse_typeName());
-      node->addFieldDecl(new VarDeclNode(startPos, this->lexer->toName(token), nullptr, readOnly),
+      node->addFieldDecl(new VarDeclNode(startPos, std::move(nameInfo), nullptr, readOnly),
                          type.release());
       TRY(this->parse_statementEnd());
       count++;
@@ -522,11 +522,10 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
   case TokenKind::EXPORT_ENV: {
     unsigned int startPos = START_POS();
     this->consume(); // EXPORT_ENV
-    Token token = TRY(this->expect(TokenKind::IDENTIFIER));
-    std::string name(this->lexer->toName(token));
+    auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
     TRY(this->expect(TokenKind::ASSIGN));
-    return std::make_unique<VarDeclNode>(startPos, std::move(name), TRY(this->parse_expression()),
-                                         VarDeclNode::EXPORT_ENV);
+    return std::make_unique<VarDeclNode>(startPos, std::move(nameInfo),
+                                         TRY(this->parse_expression()), VarDeclNode::EXPORT_ENV);
   }
   case TokenKind::IMPORT_ENV: {
     unsigned int startPos = START_POS();
@@ -534,15 +533,16 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     if (this->inCompletionPointAt(TokenKind::IDENTIFIER)) { // complete env name
       this->ccHandler->addCompRequest(CodeCompOp::ENV, this->lexer->toTokenText(this->curToken));
     }
-    Token token = TRY(this->expect(TokenKind::IDENTIFIER));
+    auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+    Token token = nameInfo.getToken();
     std::unique_ptr<Node> exprNode;
     if (!this->hasLineTerminator() && CUR_KIND() == TokenKind::COLON) {
       TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
       exprNode = TRY(this->parse_expression());
     }
 
-    auto node = std::make_unique<VarDeclNode>(startPos, this->lexer->toName(token),
-                                              std::move(exprNode), VarDeclNode::IMPORT_ENV);
+    auto node = std::make_unique<VarDeclNode>(startPos, std::move(nameInfo), std::move(exprNode),
+                                              VarDeclNode::IMPORT_ENV);
     node->updateToken(token);
     return std::move(node);
   }
@@ -564,11 +564,10 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
   case TokenKind::TYPEDEF: {
     unsigned int startPos = START_POS();
     this->consume(); // TYPEDEF
-    Token token = TRY(this->expect(TokenKind::IDENTIFIER));
+    auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toTokenText));
     TRY(this->expect(TokenKind::ASSIGN, false));
     auto typeToken = TRY(this->parse_typeName());
-    return std::make_unique<TypeAliasNode>(startPos, this->lexer->toTokenText(token),
-                                           std::move(typeToken));
+    return std::make_unique<TypeAliasNode>(startPos, std::move(nameInfo), std::move(typeToken));
   }
     // clang-format off
   EACH_LA_varDecl(GEN_LA_CASE) return this->parse_variableDeclaration();
@@ -644,8 +643,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
     readOnly = VarDeclNode::LET;
   }
 
-  Token token = TRY(this->expect(TokenKind::IDENTIFIER));
-  std::string name = this->lexer->toName(token);
+  auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
   std::unique_ptr<Node> exprNode;
   switch (CUR_KIND()) {
   case TokenKind::ASSIGN:
@@ -661,7 +659,8 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
   default:
     E_ALTER_OR_COMP(TokenKind::ASSIGN, TokenKind::COLON);
   }
-  return std::make_unique<VarDeclNode>(startPos, std::move(name), std::move(exprNode), readOnly);
+  return std::make_unique<VarDeclNode>(startPos, std::move(nameInfo), std::move(exprNode),
+                                       readOnly);
 }
 
 std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
@@ -878,7 +877,8 @@ std::unique_ptr<Node> Parser::parse_command() {
     this->consume();                 // LP
     TRY(this->expect(TokenKind::RP));
     auto blockNode = TRY(this->parse_block());
-    return std::make_unique<UserDefinedCmdNode>(token.pos, this->lexer->toCmdArg(token),
+    NameInfo nameInfo(token, this->lexer->toCmdArg(token));
+    return std::make_unique<UserDefinedCmdNode>(token.pos, std::move(nameInfo),
                                                 std::move(blockNode));
   }
 

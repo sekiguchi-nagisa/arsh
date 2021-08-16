@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 29, $chars = 61, $errorKind = 'LocalLimit', $status = 1)
+#$test($result = 'type', $lineNum = 29, $chars = 65, $errorKind = 'LocalLimit', $status = 1)
 
 {
 var _001=0; var _002=0; var _003=0; var _004=0; var _005=0; var _006=0; var _007=0; var _008=0; var _009=0; var _010=0;

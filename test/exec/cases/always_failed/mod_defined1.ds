@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 5, $chars = 1, $errorKind = 'DefinedSymbol', $status = 1, $fileName = $0)
+#$test($result = 'type', $lineNum = 5, $chars = 5, $errorKind = 'DefinedSymbol', $status = 1, $fileName = $0)
 
 source ../../_module4test/module1.ds
 
