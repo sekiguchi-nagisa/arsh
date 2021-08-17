@@ -536,18 +536,19 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 }
 
 void TypeChecker::visitVarNode(VarNode &node) {
-  auto handle = this->curScope->lookup(node.getVarName());
-  if (handle == nullptr) {
-    RAISE_TC_ERROR(UndefinedSymbol, node, node.getVarName().c_str());
+  if (auto *handle = this->curScope->lookup(node.getVarName()); handle) {
+    node.setAttribute(*handle);
+    node.setType(this->typePool.get(handle->getTypeID()));
+  } else {
+    this->reportError<UndefinedSymbol>(node, node.getVarName().c_str());
+    node.setType(this->typePool.get(TYPE::Nothing));
   }
-
-  node.setAttribute(*handle);
-  node.setType(this->typePool.get(handle->getTypeID()));
 }
 
 void TypeChecker::visitAccessNode(AccessNode &node) {
   if (!this->checkAccessNode(node)) {
-    RAISE_TC_ERROR(UndefinedField, node.getNameNode(), node.getFieldName().c_str());
+    this->reportError<UndefinedField>(node.getNameNode(), node.getFieldName().c_str());
+    node.setType(this->typePool.get(TYPE::Nothing));
   }
 }
 
