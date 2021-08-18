@@ -574,10 +574,12 @@ void TypeChecker::visitTypeOpNode(TypeOpNode &node) {
 void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
   auto &exprType = this->checkTypeAsExpr(*node.getExprNode());
   if (node.isUnwrapOp()) {
-    if (!exprType.isOptionType()) {
-      RAISE_TC_ERROR(Required, *node.getExprNode(), "Option type", exprType.getName());
+    if (exprType.isOptionType()) {
+      node.setType(static_cast<const ReifiedType *>(&exprType)->getElementTypeAt(0));
+    } else {
+      this->reportError<Required>(*node.getExprNode(), "Option type", exprType.getName());
+      node.setType(this->typePool.get(TYPE::Nothing));
     }
-    node.setType(static_cast<const ReifiedType *>(&exprType)->getElementTypeAt(0));
   } else {
     if (exprType.isOptionType()) {
       this->resolveCoercion(this->typePool.get(TYPE::Boolean), node.refExprNode());
@@ -609,12 +611,14 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
 
   if (node.getOp() == TokenKind::NULL_COALE) {
     auto &leftType = this->checkTypeAsExpr(*node.getLeftNode());
-    if (!leftType.isOptionType()) {
-      RAISE_TC_ERROR(Required, *node.getLeftNode(), "Option type", leftType.getName());
+    if (leftType.isOptionType()) {
+      auto &elementType = static_cast<const ReifiedType &>(leftType).getElementTypeAt(0);
+      this->checkTypeWithCoercion(elementType, node.refRightNode());
+      node.setType(elementType);
+    } else {
+      this->reportError<Required>(*node.getLeftNode(), "Option type", leftType.getName());
+      node.setType(this->typePool.get(TYPE::Nothing));
     }
-    auto &elementType = static_cast<const ReifiedType &>(leftType).getElementTypeAt(0);
-    this->checkTypeWithCoercion(elementType, node.refRightNode());
-    node.setType(elementType);
     return;
   }
 
@@ -721,11 +725,13 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
       std::string methodName(OP_INTERP);
       auto *handle =
           exprType.isOptionType() ? nullptr : this->typePool.lookupMethod(exprType, methodName);
-      if (handle == nullptr) { // if exprType is
-        RAISE_TC_ERROR(UndefinedMethod, node.getExprNode(), methodName.c_str());
+      if (handle) {
+        assert(handle->getReturnType() == type);
+        node.setHandle(handle);
+      } else { // if exprType is optional
+        this->reportError<UndefinedMethod>(node.getExprNode(), methodName.c_str());
+        node.setType(this->typePool.get(TYPE::Nothing));
       }
-      assert(handle->getReturnType() == type);
-      node.setHandle(handle);
     }
   } else {
     if (!this->typePool.get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
@@ -740,14 +746,16 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
         methodName = OP_STR;
         handle =
             exprType.isOptionType() ? nullptr : this->typePool.lookupMethod(exprType, methodName);
-        if (handle == nullptr) {
-          RAISE_TC_ERROR(UndefinedMethod, node.getExprNode(), methodName.c_str());
-        }
       }
-      assert(handle->getReturnType().is(TYPE::String) ||
-             handle->getReturnType().is(TYPE::StringArray));
-      node.setHandle(handle);
-      node.setType(handle->getReturnType());
+      if (handle) {
+        assert(handle->getReturnType().is(TYPE::String) ||
+               handle->getReturnType().is(TYPE::StringArray));
+        node.setHandle(handle);
+        node.setType(handle->getReturnType());
+      } else {
+        this->reportError<UndefinedMethod>(node.getExprNode(), methodName.c_str());
+        node.setType(this->typePool.get(TYPE::Nothing));
+      }
     }
   }
 }
@@ -1055,6 +1063,7 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
     collector.setElsePattern(true);
   }
 
+  // check pattern type
   for (auto &e : node.getPatternNodes()) {
     auto *type = &this->checkTypeAsExpr(*e);
     if (type->is(TYPE::Regex)) {
@@ -1065,7 +1074,7 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
       collector.setType(type);
     }
     if (*collector.getType() != *type) {
-      RAISE_TC_ERROR(Required, *e, collector.getType()->getName(), type->getName());
+      this->reportError<Required>(*e, collector.getType()->getName(), type->getName());
     }
   }
 
@@ -1073,6 +1082,7 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
     this->applyConstFolding(e);
   }
 
+  // check duplicated patterns
   for (auto &e : node.getPatternNodes()) {
     if (e->is(NodeKind::Regex)) {
       continue;
