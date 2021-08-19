@@ -64,9 +64,7 @@ public:
 
   unsigned short getModId() const { return this->modId; }
 
-  bool isNullIndex() const {
-    return this->getModId() == 0;
-  }
+  bool isNullIndex() const { return this->getModId() == 0; }
 
   std::vector<ModuleIndexPtr> getDepsByTopologicalOrder() const;
 };

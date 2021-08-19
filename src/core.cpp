@@ -23,11 +23,11 @@
 #include <algorithm>
 #include <cassert>
 
-#include <embed.h>
 #include "logger.h"
 #include "misc/files.h"
 #include "misc/num_util.hpp"
 #include "vm.h"
+#include <embed.h>
 
 extern char **environ; // NOLINT
 
@@ -680,9 +680,7 @@ void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope) {
   binder.bind(VAR_YDSH_BIN, DSValue::createStr());
 }
 
-const char *getEmbeddedScript() {
-    return embed_script;
-};
+const char *getEmbeddedScript() { return embed_script; };
 
 // ####################
 // ##     SigSet     ##

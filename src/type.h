@@ -302,13 +302,9 @@ public:
   /**
    * may be 0 if has no parameters
    */
-  unsigned int getParamSize() const {
-    return this->paramTypes.size();
-  }
+  unsigned int getParamSize() const { return this->paramTypes.size(); }
 
-  const DSType &getParamTypeAt(unsigned int index) const {
-    return *this->paramTypes[index];
-  }
+  const DSType &getParamTypeAt(unsigned int index) const { return *this->paramTypes[index]; }
 };
 
 /**
@@ -395,13 +391,9 @@ public:
 
   const std::vector<const DSType *> &getElementTypes() const { return this->elementTypes; }
 
-  unsigned int getElementSize() const {
-    return this->elementTypes.size();
-  }
+  unsigned int getElementSize() const { return this->elementTypes.size(); }
 
-  const DSType &getElementTypeAt(unsigned int index) const {
-    return *this->elementTypes[index];
-  }
+  const DSType &getElementTypeAt(unsigned int index) const { return *this->elementTypes[index]; }
 };
 
 class TupleType : public ReifiedType {
