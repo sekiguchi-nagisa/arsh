@@ -36,7 +36,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(${TEST_NAME}
         archive_test.cpp
         )
-target_link_libraries(${TEST_NAME} gtest gtest_main ydshd_static )
+target_link_libraries(${TEST_NAME} gtest gtest_main ydshd_static)
 add_test(${TEST_NAME} ${TEST_NAME})
 
 
@@ -49,5 +49,5 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(${TEST_NAME}
         index_test.cpp
         )
-target_link_libraries(${TEST_NAME} gtest gtest_main ydshd_static )
+target_link_libraries(${TEST_NAME} gtest gtest_main ydshd_static)
 add_test(${TEST_NAME} ${TEST_NAME})

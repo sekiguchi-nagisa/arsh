@@ -140,7 +140,7 @@ public:
   static std::string formatKind(int kind) {
     const char *s = toString(static_cast<DSErrorKind>(kind));
     std::string ret;
-    if(*s) {
+    if (*s) {
       ret = split(s, '_')[3];
     }
     ret += "(";

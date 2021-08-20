@@ -313,9 +313,7 @@ struct JobTableTest : public VMTest {
     return job;
   }
 
-  JobTable &jobTable() {
-    return this->state->jobTable;
-  }
+  JobTable &jobTable() { return this->state->jobTable; }
 };
 
 TEST_F(JobTableTest, attach) {
@@ -325,7 +323,10 @@ TEST_F(JobTableTest, attach) {
   auto job2 = newJob([] { return 12; });
   auto job3 = newJob();
   auto job4 = newJob();
-  auto job5 = newJob([] { sleep(1); return 15; });
+  auto job5 = newJob([] {
+    sleep(1);
+    return 15;
+  });
   auto job6 = newJob();
 
   jobTable.attach(job1);
@@ -431,9 +432,7 @@ TEST_F(JobTableTest, waitJob) {
   ASSERT_EQ(0, this->jobTable().size());
   ASSERT_EQ(0, this->jobTable().getProcTable().viableProcSize());
 
-  auto job1 = this->newAttactedJob([]{
-    return 23;
-  });
+  auto job1 = this->newAttactedJob([] { return 23; });
   ASSERT_TRUE(job1->available());
   int s = this->jobTable().waitForJob(job1, WaitOp::BLOCK_UNTRACED);
   ASSERT_EQ(23, s);
@@ -441,7 +440,6 @@ TEST_F(JobTableTest, waitJob) {
   ASSERT_EQ(0, this->jobTable().size());
   ASSERT_EQ(0, this->jobTable().getProcTable().viableProcSize());
 }
-
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
