@@ -258,12 +258,12 @@ INIT:
     <NAME> VAR_NAME          { MODE(EXPR); RET_OR_COMP(IDENTIFIER); }
     <EXPR> "."               { MODE(NAME); RET(ACCESSOR); }
 
-    <STMT,EXPR,CMD> LINE_END  { MODE(STMT); RET(LINE_END); }
+    <STMT,EXPR,CMD> LINE_END { MODE(STMT); RET(LINE_END); }
     <STMT,EXPR,NAME,TYPE> NEW_LINE
                              { UPDATE_LN(); FIND_NEW_LINE(); }
 
     <STMT,EXPR,NAME,CMD,TYPE> COMMENT
-                             { SKIP(); }
+                             { if(this->inCompletionPoint()) { setComplete(false); } SKIP(); }
     <STMT,EXPR,NAME,CMD,TYPE> [ \t]+
                              { FIND_SPACE(); }
     <STMT,EXPR,NAME,CMD,TYPE> "\\" [\r\n]
