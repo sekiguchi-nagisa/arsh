@@ -10,15 +10,13 @@ struct IndexBuilder {
   std::vector<IndexBuilder> children;
 
   ModuleIndexPtr build() const {
-    std::unique_ptr<ydsh::TypePool> pool;
     std::vector<std::unique_ptr<ydsh::Node>> nodes;
     ModuleArchive archive({});
     std::vector<std::pair<bool, ModuleIndexPtr>> deps;
     for (auto &e : this->children) {
       deps.emplace_back(true, e.build());
     }
-    return ModuleIndex::create(this->id, 0, std::move(pool), std::move(nodes), std::move(archive),
-                               std::move(deps));
+    return ModuleIndex::create(this->id, 0, std::move(archive), std::move(deps));
   }
 };
 
@@ -78,14 +76,13 @@ struct Builder {
 
   template <typename... Args>
   ModuleIndexPtr operator()(const char *path, Args &&...args) {
-    std::unique_ptr<ydsh::TypePool> pool;
     std::vector<std::unique_ptr<ydsh::Node>> nodes;
     ModuleArchive archive({});
     std::vector<std::pair<bool, ModuleIndexPtr>> deps;
     build(deps, std::forward<Args>(args)...);
     auto src = this->srcMan.update(path, 0, "");
-    auto index = ModuleIndex::create(src->getSrcId(), src->getVersion(), std::move(pool),
-                                     std::move(nodes), std::move(archive), std::move(deps));
+    auto index = ModuleIndex::create(src->getSrcId(), src->getVersion(), std::move(archive),
+                                     std::move(deps));
     this->indexMap.add(*src, index);
     return index;
   }

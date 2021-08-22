@@ -40,21 +40,21 @@ class ArchiveTest : public ::testing::Test {
 private:
   SourceManager srcMan;
   IndexMap indexMap;
-  ASTContextPtr orgCtx;
-  ASTContextPtr newCtx;
+  AnalyzerContextPtr orgCtx;
+  AnalyzerContextPtr newCtx;
 
 protected:
   const unsigned int builtinIdOffset;
 
-  static ASTContextPtr newctx(SourceManager &srcMan, IndexMap &indexMap) {
+  static AnalyzerContextPtr newctx(SourceManager &srcMan, IndexMap &indexMap) {
     std::string path = "/dummy_";
     path += std::to_string(indexMap.size() + 1);
     auto src = srcMan.update(path, 0, "");
     indexMap.add(*src, ModuleIndex::NULL_INDEX);
-    return std::make_unique<ASTContext>(*src);
+    return std::make_unique<AnalyzerContext>(*src);
   }
 
-  ASTContextPtr newctx() { return newctx(this->srcMan, this->indexMap); }
+  AnalyzerContextPtr newctx() { return newctx(this->srcMan, this->indexMap); }
 
   static auto toSorted(const std::unordered_map<std::string, FieldHandle> &handleMap) {
     using Entry = std::pair<std::string, FieldHandle>;
@@ -118,7 +118,7 @@ public:
     define(*this->orgCtx, fieldName, orgType, attr);
   }
 
-  static void define(ASTContext &ctx, const char *fieldName, const DSType &type,
+  static void define(AnalyzerContext &ctx, const char *fieldName, const DSType &type,
                      FieldAttribute attr = {}) {
     ASSERT_TRUE(fieldName);
     ASSERT_TRUE(type.typeId() < ctx.getPool().getDiscardPoint().typeIdOffset);
@@ -141,7 +141,7 @@ public:
   }
 
   template <typename Func>
-  const ModType &loadModAt(ASTContext &parent, bool global, Func func) {
+  const ModType &loadModAt(AnalyzerContext &parent, bool global, Func func) {
     auto ctx = newctx(this->srcMan, this->indexMap);
     func(*ctx);
     auto index = std::move(*ctx).buildAndAddIndex(this->srcMan, this->indexMap);
@@ -153,10 +153,11 @@ public:
 
   void archiveMod(std::vector<std::string> &&expected = {}) {
     // serialize
+    auto poolPtr = this->orgCtx->getPoolPtr();
     auto index = std::move(*this->orgCtx).buildAndAddIndex(this->srcMan, this->indexMap);
     ASSERT_TRUE(index);
     unsigned id = index->getModId();
-    auto ret = index->getPool().getModTypeById(id);
+    auto ret = poolPtr->getModTypeById(id);
     ASSERT_TRUE(ret);
     auto *orgModType = static_cast<const ModType *>(ret.asOk());
 
@@ -171,7 +172,7 @@ public:
       auto oe = orgModType->getChildAt(i);
       auto ne = newModType->getChildAt(i);
       ASSERT_EQ(oe.isGlobal(), ne.isGlobal());
-      auto &om = index->getPool().get(oe.typeId());
+      auto &om = poolPtr->get(oe.typeId());
       ASSERT_TRUE(om.isModType());
       auto &nm = this->newCtx->getPool().get(ne.typeId());
       ASSERT_TRUE(nm.isModType());
@@ -181,7 +182,7 @@ public:
     }
 
     ASSERT_EQ(orgModType->getHandleMap().size(), newModType->getHandleMap().size());
-    ASSERT_EQ(index->getPool().getDiscardPoint().typeIdOffset,
+    ASSERT_EQ(poolPtr->getDiscardPoint().typeIdOffset,
               this->newCtx->getPool().getDiscardPoint().typeIdOffset);
 
     auto orgHandles = toSorted(orgModType->getHandleMap());
@@ -358,7 +359,7 @@ TEST_F(ArchiveTest, mod2) {
 
 TEST_F(ArchiveTest, mod3) {
   {
-    auto &modType3 = this->loadMod(false, [](ASTContext &ctx) {
+    auto &modType3 = this->loadMod(false, [](AnalyzerContext &ctx) {
       auto ret1 = ctx.getPool().createMapType(ctx.getPool().get(TYPE::Signal),
                                               ctx.getPool().get(TYPE::GlobbingError));
       ASSERT_TRUE(ret1);
@@ -418,8 +419,8 @@ TEST_F(ArchiveTest, mod3) {
 
 TEST_F(ArchiveTest, mod4) {
   {
-    auto &modType3 = this->loadMod(false, [&](ASTContext &ctx1) {
-      auto &modType4 = this->loadModAt(ctx1, true, [](ASTContext &ctx2) {
+    auto &modType3 = this->loadMod(false, [&](AnalyzerContext &ctx1) {
+      auto &modType4 = this->loadModAt(ctx1, true, [](AnalyzerContext &ctx2) {
         auto ret = ctx2.getPool().createArrayType(ctx2.getPool().get(TYPE::Boolean));
         ASSERT_TRUE(ret);
         ctx2.getScope()->defineTypeAlias(ctx2.getPool(), "BoolArray", *ret.asOk());

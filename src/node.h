@@ -277,7 +277,7 @@ public:
     return this->paramTypeNodes;
   }
 
-  const std::unique_ptr<TypeNode> &getReturnTypeNode() const { return this->returnTypeNode; }
+  TypeNode &getReturnTypeNode() const { return *this->returnTypeNode; }
 
   void dump(NodeDumper &dumper) const override;
 };

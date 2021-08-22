@@ -18,6 +18,7 @@
 #define MISC_LIB_BUFFER_HPP
 
 #include <cassert>
+#include <cstdint>
 #include <cstring>
 #include <initializer_list>
 #include <type_traits>

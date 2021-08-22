@@ -21,67 +21,9 @@
 
 namespace ydsh::lsp {
 
-static bool isRevertedIndex(std::unordered_set<unsigned short> &revertingModIdSet,
-                            const ModuleIndexPtr &index) {
-  assert(index);
-  const auto modId = index->getModId();
-  auto iter = revertingModIdSet.find(modId);
-  if (iter != revertingModIdSet.end()) {
-    return true;
-  }
-  for (auto &e : index->getImportedIndexes()) {
-    if (isRevertedIndex(revertingModIdSet, e.second)) {
-      revertingModIdSet.emplace(modId);
-      return true;
-    }
-  }
-  return false;
-}
-
-void IndexMap::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
-  for (auto iter = this->map.begin(); iter != this->map.end();) {
-    if (isRevertedIndex(revertingModIdSet, iter->second)) {
-      iter = this->map.erase(iter);
-    } else {
-      ++iter;
-    }
-  }
-}
-
-static bool isImported(const ModuleIndexPtr &index, unsigned short id) {
-  assert(index);
-  for (auto &e : index->getImportedIndexes()) {
-    assert(e.second);
-    if (e.second->getModId() == id) {
-      return true;
-    }
-    if (isImported(e.second, id)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool IndexMap::revertIfUnused(unsigned short id) {
-  for (auto &e : this->map) {
-    if (isImported(e.second, id)) {
-      return false;
-    }
-  }
-  for (auto iter = this->map.begin(); iter != this->map.end();) {
-    if (iter->second && iter->second->getModId() == id) {
-      this->map.erase(iter);
-      return true;
-    } else {
-      ++iter;
-    }
-  }
-  return false;
-}
-
-// ########################
-// ##     ASTContext     ##
-// ########################
+// #############################
+// ##     AnalyzerContext     ##
+// #############################
 
 static void consumeAllInput(FrontEnd &frontEnd) {
   while (frontEnd) {
@@ -105,15 +47,16 @@ static const ModType &createBuiltin(TypePool &pool, unsigned int &gvarCount) {
   return builtin->toModType(pool);
 }
 
-ASTContext::ASTContext(const Source &src)
-    : pool(std::make_unique<TypePool>()), version(src.getVersion()) {
+AnalyzerContext::AnalyzerContext(const Source &src)
+    : pool(std::make_shared<TypePool>()), version(src.getVersion()) {
   auto &builtin = createBuiltin(this->getPool(), this->gvarCount);
   this->scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), src.getSrcId());
   this->scope->importForeignHandles(builtin, true);
   this->typeDiscardPoint = this->getPool().getDiscardPoint();
 }
 
-ModuleIndexPtr ASTContext::buildAndAddIndex(const SourceManager &srcMan, IndexMap &indexMap) && {
+ModuleIndexPtr AnalyzerContext::buildAndAddIndex(const SourceManager &srcMan,
+                                                 IndexMap &indexMap) && {
   auto &modType = this->getScope()->toModType(this->getPool());
   auto archive = ModuleArchive::create(this->getPool(), modType, this->getTypeIdOffset());
   std::vector<std::pair<bool, ModuleIndexPtr>> imported;
@@ -131,27 +74,26 @@ ModuleIndexPtr ASTContext::buildAndAddIndex(const SourceManager &srcMan, IndexMa
     imported.emplace_back(e.isGlobal(), std::move(index));
   }
   unsigned short id = this->getModId();
-  auto index = ModuleIndex::create(id, this->getVersion(), std::move(this->pool),
-                                   std::move(this->nodes), std::move(archive), std::move(imported));
+  auto index = ModuleIndex::create(id, this->getVersion(), std::move(archive), std::move(imported));
   auto src = srcMan.findById(id);
   assert(src);
   indexMap.add(*src, index);
   return index;
 }
 
-// ################################
-// ##     ASTContextProvider     ##
-// ################################
+// #####################################
+// ##     AnalyzerContextProvider     ##
+// #####################################
 
 std::unique_ptr<FrontEnd::Context>
-ASTContextProvider::newContext(Lexer &&lexer, FrontEndOption option,
-                               ObserverPtr<CodeCompletionHandler> ccHandler) {
+AnalyzerContextProvider::newContext(Lexer &&lexer, FrontEndOption option,
+                                    ObserverPtr<CodeCompletionHandler> ccHandler) {
   auto &ctx = this->current();
   return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lexer), ctx->getScope(),
                                              option, ccHandler);
 }
 
-const ModType &ASTContextProvider::newModTypeFromCurContext(
+const ModType &AnalyzerContextProvider::newModTypeFromCurContext(
     const std::vector<std::unique_ptr<FrontEnd::Context>> &) {
   auto index = std::move(*this->current()).buildAndAddIndex(this->srcMan, this->indexMap);
   this->ctxs.pop_back();
@@ -166,8 +108,8 @@ static Lexer createLexer(const Source &src) {
   return Lexer::fromFullPath(fullpath, ByteBuffer(ptr, ptr + strlen(ptr)));
 }
 
-FrontEnd::ModuleProvider::Ret ASTContextProvider::load(const char *scriptDir, const char *modPath,
-                                                       FrontEndOption option) {
+FrontEnd::ModuleProvider::Ret
+AnalyzerContextProvider::load(const char *scriptDir, const char *modPath, FrontEndOption option) {
   FilePtr filePtr;
   auto ret =
       ModuleLoaderBase::load(scriptDir, modPath, filePtr, ModLoadOption::IGNORE_NON_REG_FILE);
@@ -200,14 +142,14 @@ FrontEnd::ModuleProvider::Ret ASTContextProvider::load(const char *scriptDir, co
   }
 }
 
-const ASTContextPtr &ASTContextProvider::addNew(const Source &src) {
-  auto ptr = std::make_unique<ASTContext>(src);
+const AnalyzerContextPtr &AnalyzerContextProvider::addNew(const Source &src) {
+  auto ptr = std::make_unique<AnalyzerContext>(src);
   this->ctxs.push_back(std::move(ptr));
   this->indexMap.add(src, ModuleIndex::NULL_INDEX);
   return this->current();
 }
 
-ModResult ASTContextProvider::addNewModEntry(CStrPtr &&ptr) {
+ModResult AnalyzerContextProvider::addNewModEntry(CStrPtr &&ptr) {
   StringRef path = ptr.get();
   auto src = this->srcMan.find(path);
   if (src) { // already loaded
@@ -241,10 +183,10 @@ bool DiagnosticEmitter::handleTypeError(const std::vector<std::unique_ptr<FrontE
   return false;
 }
 
-ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAction &action,
-                          const Source &src) {
+ModuleIndexPtr analyze(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAction &action,
+                       const Source &src) {
   // prepare
-  ASTContextProvider provider(srcMan, indexMap);
+  AnalyzerContextProvider provider(srcMan, indexMap);
   provider.addNew(src);
   FrontEnd frontEnd(provider, createLexer(src), FrontEndOption::ERROR_RECOVERY, nullptr);
   if (action.emitter) {
@@ -252,6 +194,9 @@ ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAct
   }
   if (action.dumper) {
     frontEnd.setASTDumper(*action.dumper);
+  }
+  if (action.consumer) {
+    action.consumer->enterModule(provider.current()->getModId(), provider.current()->getPoolPtr());
   }
 
   // run front end
@@ -262,11 +207,31 @@ ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAct
       provider.unwind(); // FIXME: future may be removed
       break;
     }
-    if (ret.kind == FrontEndResult::IN_MODULE || ret.kind == FrontEndResult::EXIT_MODULE) {
-      provider.current()->addNode(std::move(ret.node));
+    switch (ret.kind) {
+    case FrontEndResult::IN_MODULE:
+      if (action.consumer) {
+        action.consumer->consume(std::move(ret.node));
+      }
+      break;
+    case FrontEndResult::ENTER_MODULE:
+      if (action.consumer) {
+        action.consumer->enterModule(provider.current()->getModId(),
+                                     provider.current()->getPoolPtr());
+      }
+      break;
+    case FrontEndResult::EXIT_MODULE:
+      if (action.consumer) {
+        action.consumer->exitModule(std::move(ret.node));
+      }
+      break;
+    case FrontEndResult::FAILED:
+      break;
     }
   }
   frontEnd.teardownASTDump();
+  if (action.consumer) {
+    action.consumer->exitModule(nullptr);
+  }
   return std::move(*provider.current()).buildAndAddIndex(srcMan, indexMap);
 }
 

@@ -12,6 +12,8 @@ add_library(ydshd_static STATIC
         archive.cpp
         source.cpp
         index.cpp
+        symbol.cpp
+        symbol_builder.cpp
         )
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri)
 

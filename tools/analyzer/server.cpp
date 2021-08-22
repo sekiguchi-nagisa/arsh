@@ -119,7 +119,7 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
     }
     AnalyzerAction action;
     action.emitter.reset(&this->diagnosticEmitter);
-    buildIndex(this->srcMan, this->indexMap, action, *src);
+    analyze(this->srcMan, this->indexMap, action, *src);
   }
 }
 
@@ -163,7 +163,7 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
   this->indexMap.revert({src->getSrcId()});
   AnalyzerAction action;
   action.emitter.reset(&this->diagnosticEmitter);
-  buildIndex(this->srcMan, this->indexMap, action, *src);
+  analyze(this->srcMan, this->indexMap, action, *src);
 }
 
 Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &params) {

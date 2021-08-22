@@ -17,7 +17,6 @@
 #include <constant.h>
 #include <misc/unicode.hpp>
 
-#include "lsp.h"
 #include "source.h"
 
 namespace ydsh::lsp {

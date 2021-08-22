@@ -21,6 +21,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "lsp.h"
+
 namespace ydsh::lsp {
 
 struct TextDocumentContentChangeEvent;

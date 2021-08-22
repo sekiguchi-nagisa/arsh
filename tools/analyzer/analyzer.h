@@ -23,57 +23,27 @@
 #include <type_pool.h>
 
 #include "index.h"
-#include "lsp.h"
-#include "source.h"
 
 namespace ydsh::lsp {
 
-class IndexMap {
+class AnalyzerContext {
 private:
-  StrRefMap<ModuleIndexPtr> map;
-
-public:
-  ModuleIndexPtr find(const Source &src) const {
-    auto iter = this->map.find(src.getPath());
-    return iter != this->map.end() ? iter->second : nullptr;
-  }
-
-  void add(const Source &src, ModuleIndexPtr index) {
-    assert(index);
-    assert(index->isNullIndex() || src.getSrcId() == index->getModId());
-    this->map[src.getPath()] = std::move(index);
-  }
-
-  size_t size() const { return this->map.size(); }
-
-  void revert(std::unordered_set<unsigned short> &&revertingModIdSet);
-
-  /**
-   * revert sepcified index if unused (not imported from other indexes)
-   * @param id
-   * @return
-   * if unused, return true
-   */
-  bool revertIfUnused(unsigned short id);
-};
-
-class ASTContext {
-private:
-  std::unique_ptr<TypePool> pool;
+  std::shared_ptr<TypePool> pool;
   IntrusivePtr<NameScope> scope;
-  std::vector<std::unique_ptr<Node>> nodes;
   int version;
   unsigned int gvarCount{0};
   TypeDiscardPoint typeDiscardPoint;
 
 public:
-  NON_COPYABLE(ASTContext);
+  NON_COPYABLE(AnalyzerContext);
 
-  explicit ASTContext(const Source &src);
+  explicit AnalyzerContext(const Source &src);
 
   const IntrusivePtr<NameScope> &getScope() const { return this->scope; }
 
   TypePool &getPool() { return *this->pool; }
+
+  const auto &getPoolPtr() const { return this->pool; }
 
   unsigned int getModId() const { return this->scope->modId; }
 
@@ -81,23 +51,22 @@ public:
 
   unsigned int getTypeIdOffset() const { return this->typeDiscardPoint.typeIdOffset; }
 
-  void addNode(std::unique_ptr<Node> &&node) { this->nodes.push_back(std::move(node)); }
-
   ModuleIndexPtr buildAndAddIndex(const SourceManager &srcMan, IndexMap &indexMap) &&;
 };
 
-using ASTContextPtr = std::unique_ptr<ASTContext>;
+using AnalyzerContextPtr = std::unique_ptr<AnalyzerContext>;
 
-class ASTContextProvider : public FrontEnd::ModuleProvider, public ModuleLoaderBase {
+class AnalyzerContextProvider : public FrontEnd::ModuleProvider, public ModuleLoaderBase {
 private:
   SourceManager &srcMan;
   IndexMap &indexMap;
-  std::vector<ASTContextPtr> ctxs;
+  std::vector<AnalyzerContextPtr> ctxs;
 
 public:
-  ASTContextProvider(SourceManager &src, IndexMap &indexMap) : srcMan(src), indexMap(indexMap) {}
+  AnalyzerContextProvider(SourceManager &src, IndexMap &indexMap)
+      : srcMan(src), indexMap(indexMap) {}
 
-  ~ASTContextProvider() override = default;
+  ~AnalyzerContextProvider() override = default;
 
   std::unique_ptr<FrontEnd::Context>
   newContext(Lexer &&lexer, FrontEndOption option,
@@ -108,9 +77,9 @@ public:
 
   Ret load(const char *scriptDir, const char *modPath, FrontEndOption option) override;
 
-  const ASTContextPtr &addNew(const Source &src);
+  const AnalyzerContextPtr &addNew(const Source &src);
 
-  const ASTContextPtr &current() const { return this->ctxs.back(); }
+  const AnalyzerContextPtr &current() const { return this->ctxs.back(); }
 
   void unwind() { // FIXME: future may be removed
     while (this->ctxs.size() > 1) {
@@ -132,13 +101,22 @@ public:
                        const TypeCheckError &checkError) override;
 };
 
+struct NodeConsumer {
+  virtual ~NodeConsumer() = default;
+
+  virtual void enterModule(unsigned short modID, const std::shared_ptr<TypePool> &pool) = 0;
+  virtual void exitModule(std::unique_ptr<Node> &&node) = 0;
+  virtual void consume(std::unique_ptr<Node> &&node) = 0;
+};
+
 struct AnalyzerAction {
   ObserverPtr<DiagnosticEmitter> emitter;
   ObserverPtr<NodeDumper> dumper;
+  ObserverPtr<NodeConsumer> consumer;
 };
 
-ModuleIndexPtr buildIndex(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAction &action,
-                          const Source &src);
+ModuleIndexPtr analyze(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAction &action,
+                       const Source &src);
 
 } // namespace ydsh::lsp
 

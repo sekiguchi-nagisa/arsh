@@ -15,6 +15,7 @@
  */
 
 #include "index.h"
+#include "lsp.h"
 
 namespace ydsh::lsp {
 
@@ -23,7 +24,7 @@ namespace ydsh::lsp {
 // #########################
 
 static ModuleIndexPtr createNull() {
-  return ModuleIndex::create(0, 0, nullptr, std::vector<std::unique_ptr<Node>>(), ModuleArchive({}),
+  return ModuleIndex::create(0, 0, ModuleArchive({}),
                              std::vector<std::pair<bool, ModuleIndexPtr>>());
 }
 
@@ -78,6 +79,68 @@ std::vector<ModuleIndexPtr> ModuleIndex::getDepsByTopologicalOrder() const {
     resolveTargets(targets, e.second);
   }
   return topologcalSort(targets);
+}
+
+// ######################
+// ##     IndexMap     ##
+// ######################
+
+static bool isRevertedIndex(std::unordered_set<unsigned short> &revertingModIdSet,
+                            const ModuleIndexPtr &index) {
+  assert(index);
+  const auto modId = index->getModId();
+  auto iter = revertingModIdSet.find(modId);
+  if (iter != revertingModIdSet.end()) {
+    return true;
+  }
+  for (auto &e : index->getImportedIndexes()) {
+    if (isRevertedIndex(revertingModIdSet, e.second)) {
+      revertingModIdSet.emplace(modId);
+      return true;
+    }
+  }
+  return false;
+}
+
+void IndexMap::revert(std::unordered_set<unsigned short> &&revertingModIdSet) {
+  for (auto iter = this->map.begin(); iter != this->map.end();) {
+    if (isRevertedIndex(revertingModIdSet, iter->second)) {
+      iter = this->map.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+}
+
+static bool isImported(const ModuleIndexPtr &index, unsigned short id) {
+  assert(index);
+  for (auto &e : index->getImportedIndexes()) {
+    assert(e.second);
+    if (e.second->getModId() == id) {
+      return true;
+    }
+    if (isImported(e.second, id)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool IndexMap::revertIfUnused(unsigned short id) {
+  for (auto &e : this->map) {
+    if (isImported(e.second, id)) {
+      return false;
+    }
+  }
+  for (auto iter = this->map.begin(); iter != this->map.end();) {
+    if (iter->second && iter->second->getModId() == id) {
+      this->map.erase(iter);
+      return true;
+    } else {
+      ++iter;
+    }
+  }
+  return false;
 }
 
 } // namespace ydsh::lsp

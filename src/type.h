@@ -565,7 +565,7 @@ private:
 
   const unsigned char paramSize;
 
-  const bool native{true}; // currently only support native method
+  const bool native{true}; // currently, only support native method
 
   const DSType &returnType;
 

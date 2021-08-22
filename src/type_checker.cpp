@@ -109,7 +109,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
   }
   case TypeNode::Func: {
     auto &typeNode = cast<FuncTypeNode>(node);
-    auto &returnType = this->checkTypeExactly(*typeNode.getReturnTypeNode());
+    auto &returnType = this->checkTypeExactly(typeNode.getReturnTypeNode());
     unsigned int size = typeNode.getParamTypeNodes().size();
     std::vector<const DSType *> paramTypes(size);
     for (unsigned int i = 0; i < size; i++) {
