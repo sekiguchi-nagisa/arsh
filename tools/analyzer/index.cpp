@@ -16,7 +16,7 @@
 
 #include <algorithm>
 
-#include "symbol.h"
+#include "index.h"
 
 namespace ydsh::lsp {
 

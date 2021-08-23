@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_SYMBOL_H
-#define YDSH_TOOLS_ANALYZER_SYMBOL_H
+#ifndef YDSH_TOOLS_ANALYZER_INDEX_H
+#define YDSH_TOOLS_ANALYZER_INDEX_H
 
 #include <vector>
 
@@ -89,4 +89,4 @@ public:
 
 } // namespace ydsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_SYMBOL_H
+#endif // YDSH_TOOLS_ANALYZER_INDEX_H

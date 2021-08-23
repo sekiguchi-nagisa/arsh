@@ -11,8 +11,8 @@ add_library(ydshd_static STATIC
         analyzer.cpp
         archive.cpp
         source.cpp
-        symbol.cpp
-        symbol_builder.cpp
+        index.cpp
+        index_builder.cpp
         )
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri)
 

@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_SYMBOL_BUILDER_H
-#define YDSH_TOOLS_ANALYZER_SYMBOL_BUILDER_H
+#ifndef YDSH_TOOLS_ANALYZER_INDEX_BUILDER_H
+#define YDSH_TOOLS_ANALYZER_INDEX_BUILDER_H
 
 #include "analyzer.h"
 
 namespace ydsh::lsp {
 
-class SymbolIndexBuilder : protected ydsh::NodeVisitor, public NodeConsumer {
+class IndexBuilder : protected ydsh::NodeVisitor, public NodeConsumer {
 private:
   std::shared_ptr<TypePool> pool;
 
 public:
-  ~SymbolIndexBuilder() override = default;
+  ~IndexBuilder() override = default;
 
   void enterModule(unsigned short modID, const std::shared_ptr<TypePool> &pool) override;
   void exitModule(std::unique_ptr<Node> &&node) override;
@@ -107,4 +107,4 @@ private:
 
 } // namespace ydsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_SYMBOL_BUILDER_H
+#endif // YDSH_TOOLS_ANALYZER_INDEX_BUILDER_H
