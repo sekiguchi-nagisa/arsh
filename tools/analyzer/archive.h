@@ -158,29 +158,76 @@ public:
   }
 };
 
+class ModuleArchive;
+
+using ModuleArchivePtr = std::shared_ptr<ModuleArchive>;
+
 class ModuleArchive {
 private:
+  const unsigned short modId{0};
+  const int version{0};
   std::vector<Archive> handles;
+  std::vector<std::pair<bool, ModuleArchivePtr>> imported;
 
 public:
-  explicit ModuleArchive(std::vector<Archive> &&handles) : handles(std::move(handles)) {}
+  ModuleArchive() = default;
 
-  static ModuleArchive create(const TypePool &pool, const ModType &modType, unsigned int idCount);
+  explicit ModuleArchive(unsigned short modID, int version, std::vector<Archive> &&handles,
+                         std::vector<std::pair<bool, ModuleArchivePtr>> imported)
+      : modId(modID), version(version), handles(std::move(handles)), imported(std::move(imported)) {
+  }
+
+  unsigned short getModID() const { return this->modId; }
+
+  int getVersion() const { return this->version; }
 
   const auto &getHandles() const { return this->handles; }
+
+  const auto &getImported() const { return this->imported; }
+
+  bool isEmpty() const { return this->getModID() == 0; }
+
+  std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
 
   Optional<std::unordered_map<std::string, FieldHandle>> unpack(TypePool &pool) const;
 };
 
-class ModuleIndex;
+const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive);
 
-/**
- * deserialize archives and load into foregin TypePool
- * @param pool
- * @param index
- * @return
- */
-const ModType *loadFromModuleIndex(TypePool &pool, const ModuleIndex &index);
+class ModuleArchives {
+private:
+  std::unordered_map<unsigned short, ModuleArchivePtr> map;
+
+  static const ModuleArchivePtr EMPTY_ARCHIVE;
+
+public:
+  ModuleArchivePtr find(unsigned short modID) const {
+    if (modID == 0) {
+      return nullptr;
+    }
+    auto iter = this->map.find(modID);
+    return iter != this->map.end() ? iter->second : nullptr;
+  }
+
+  void reserve(unsigned short modID) { this->map[modID] = EMPTY_ARCHIVE; }
+
+  void add(const ModuleArchivePtr &archive) {
+    assert(archive);
+    this->map[archive->getModID()] = archive;
+  }
+
+  size_t size() const { return this->map.size(); }
+
+  void revert(std::unordered_set<unsigned short> &&revertingModIdSet);
+
+  /**
+   * revert sepcified archive if unused (not imported from other archives)
+   * @param id
+   * @return
+   * if unused, return true
+   */
+  bool revertIfUnused(unsigned short id);
+};
 
 } // namespace ydsh::lsp
 

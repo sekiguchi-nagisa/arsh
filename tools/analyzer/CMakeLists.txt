@@ -11,7 +11,6 @@ add_library(ydshd_static STATIC
         analyzer.cpp
         archive.cpp
         source.cpp
-        index.cpp
         symbol.cpp
         symbol_builder.cpp
         )

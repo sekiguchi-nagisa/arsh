@@ -22,7 +22,8 @@
 #include <scope.h>
 #include <type_pool.h>
 
-#include "index.h"
+#include "archive.h"
+#include "source.h"
 
 namespace ydsh::lsp {
 
@@ -51,7 +52,7 @@ public:
 
   unsigned int getTypeIdOffset() const { return this->typeDiscardPoint.typeIdOffset; }
 
-  ModuleIndexPtr buildAndAddIndex(const SourceManager &srcMan, IndexMap &indexMap) &&;
+  ModuleArchivePtr buildArchive(ModuleArchives &archives) &&;
 };
 
 using AnalyzerContextPtr = std::unique_ptr<AnalyzerContext>;
@@ -59,12 +60,12 @@ using AnalyzerContextPtr = std::unique_ptr<AnalyzerContext>;
 class AnalyzerContextProvider : public FrontEnd::ModuleProvider, public ModuleLoaderBase {
 private:
   SourceManager &srcMan;
-  IndexMap &indexMap;
+  ModuleArchives &archives;
   std::vector<AnalyzerContextPtr> ctxs;
 
 public:
-  AnalyzerContextProvider(SourceManager &src, IndexMap &indexMap)
-      : srcMan(src), indexMap(indexMap) {}
+  AnalyzerContextProvider(SourceManager &src, ModuleArchives &archives)
+      : srcMan(src), archives(archives) {}
 
   ~AnalyzerContextProvider() override = default;
 
@@ -115,8 +116,8 @@ struct AnalyzerAction {
   ObserverPtr<NodeConsumer> consumer;
 };
 
-ModuleIndexPtr analyze(SourceManager &srcMan, IndexMap &indexMap, AnalyzerAction &action,
-                       const Source &src);
+ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, AnalyzerAction &action,
+                         const Source &src);
 
 } // namespace ydsh::lsp
 

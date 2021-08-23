@@ -50,14 +50,14 @@ protected:
     std::string content;
     readContent(GetParam(), content);
     SourceManager man;
-    IndexMap indexMap;
+    ModuleArchives archives;
     std::string tempFileName;
     auto tmpFile = this->createTempFilePtr(tempFileName, "");
     NodeDumper dumper(tmpFile.get());
     auto src = man.update(GetParam(), 0, std::move(content));
     AnalyzerAction action;
     action.dumper.reset(&dumper);
-    auto index = analyze(man, indexMap, action, *src);
+    analyze(man, archives, action, *src);
     tmpFile.reset();
     content = std::string();
     readContent(tempFileName, content);
@@ -145,7 +145,7 @@ public:
 class ParseTest : public ::testing::Test {
 protected:
   SourceManager srcMan;
-  IndexMap indexMap;
+  ModuleArchives archives;
   NodeCollector collector;
 
 public:
@@ -165,7 +165,7 @@ public:
     ASSERT_TRUE(src);
     AnalyzerAction action;
     action.consumer.reset(&this->collector);
-    analyze(this->srcMan, this->indexMap, action, *src);
+    analyze(this->srcMan, this->archives, action, *src);
     ASSERT_EQ(1, this->collector.getNodeLists().size());
   }
 };
@@ -208,7 +208,7 @@ static const Node *findVarDecl(const std::vector<std::unique_ptr<Node>> &nodes,
 TEST_F(ParseTest, case1) { // FIXME: replaced with goto-definition test case
   const char *path = EXEC_TEST_DIR "/base/mod1.ds";
   ASSERT_NO_FATAL_FAILURE(this->parse(path));
-  ASSERT_EQ(2, this->indexMap.size());
+  ASSERT_EQ(2, this->archives.size());
   ASSERT_TRUE(StringRef(this->srcMan.findById(2)->getPath()).contains("module1.ds"));
 
   auto *decl = findVarDecl(this->collector.current().nodes, "c");
@@ -223,15 +223,15 @@ TEST_F(ParseTest, case1) { // FIXME: replaced with goto-definition test case
   ASSERT_TRUE(isa<SourceNode>(decl));
 
   //
-  auto index = this->indexMap.find(*this->srcMan.findById(2));
-  ASSERT_TRUE(index);
-  this->indexMap.revert({2});
-  index = this->indexMap.find(*this->srcMan.findById(2));
-  ASSERT_FALSE(index);
-  ASSERT_EQ(0, this->indexMap.size());
+  auto archive = this->archives.find(2);
+  ASSERT_TRUE(archive);
+  this->archives.revert({2});
+  archive = this->archives.find(2);
+  ASSERT_FALSE(archive);
+  ASSERT_EQ(0, this->archives.size());
   path = EXEC_TEST_DIR "/base/mod2.ds";
   ASSERT_NO_FATAL_FAILURE(this->parse(path));
-  ASSERT_EQ(2, this->indexMap.size());
+  ASSERT_EQ(2, this->archives.size());
   ASSERT_TRUE(StringRef(this->srcMan.findById(2)->getPath()).contains("module1.ds"));
 
   decl = findVarDecl(this->collector.current().nodes, "mod");
@@ -242,7 +242,7 @@ TEST_F(ParseTest, case1) { // FIXME: replaced with goto-definition test case
 TEST_F(ParseTest, case2) { // FIXME: replaced with goto-definition test case
   const char *path = EXEC_TEST_DIR "/base/mod3.ds";
   ASSERT_NO_FATAL_FAILURE(this->parse(path));
-  ASSERT_EQ(3, this->indexMap.size());
+  ASSERT_EQ(3, this->archives.size());
   ASSERT_TRUE(StringRef(this->srcMan.findById(2)->getPath()).contains("module3.ds"));
   ASSERT_TRUE(StringRef(this->srcMan.findById(3)->getPath()).contains("module4.ds"));
 

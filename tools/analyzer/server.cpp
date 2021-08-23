@@ -119,7 +119,7 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
     }
     AnalyzerAction action;
     action.emitter.reset(&this->diagnosticEmitter);
-    analyze(this->srcMan, this->indexMap, action, *src);
+    analyze(this->srcMan, this->archives, action, *src);
   }
 }
 
@@ -136,7 +136,7 @@ void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
     LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr);
     return;
   }
-  this->indexMap.revertIfUnused(src->getSrcId());
+  this->archives.revertIfUnused(src->getSrcId());
 }
 
 void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params) {
@@ -160,10 +160,10 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
     }
   }
   src = this->srcMan.update(uri.getPath(), params.textDocument.version, std::move(content));
-  this->indexMap.revert({src->getSrcId()});
+  this->archives.revert({src->getSrcId()});
   AnalyzerAction action;
   action.emitter.reset(&this->diagnosticEmitter);
-  analyze(this->srcMan, this->indexMap, action, *src);
+  analyze(this->srcMan, this->archives, action, *src);
 }
 
 Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &params) {

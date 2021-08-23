@@ -34,7 +34,7 @@ class LSPServer : public Handler {
 private:
   LSPTransport transport;
   SourceManager srcMan;
-  IndexMap indexMap;
+  ModuleArchives archives;
   DiagnosticEmitter diagnosticEmitter;
   bool init{false};
   bool willExit{false};

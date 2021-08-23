@@ -36,25 +36,89 @@ TEST(SourceTest, base) {
   ASSERT_EQ(2, src->getSrcId());
 }
 
+struct ArchiveBuilder {
+  unsigned short id;
+  std::vector<ArchiveBuilder> children;
+
+  ModuleArchivePtr build() const {
+    std::vector<Archive> handles;
+    std::vector<std::pair<bool, ModuleArchivePtr>> imported;
+    for (auto &e : this->children) {
+      imported.emplace_back(true, e.build());
+    }
+    return std::make_shared<ModuleArchive>(this->id, 0, std::move(handles), std::move(imported));
+  }
+};
+
+template <size_t N, typename... T>
+ArchiveBuilder tree(T &&...args) {
+  return ArchiveBuilder{
+      .id = N,
+      .children = {std::forward<T>(args)...},
+  };
+}
+
+TEST(DependentTest, deps1) {
+  auto t = tree<1>(tree<2>(tree<5>(tree<7>()), tree<6>()), tree<3>(tree<4>()));
+  auto archive = t.build();
+  ASSERT_EQ(2, archive->getImported().size());
+  ASSERT_EQ(2, archive->getImported()[0].second->getModID());
+  ASSERT_EQ(3, archive->getImported()[1].second->getModID());
+  auto deps = archive->getDepsByTopologicalOrder();
+  ASSERT_EQ(6, deps.size());
+  ASSERT_EQ(7, deps[0]->getModID());
+  ASSERT_EQ(5, deps[1]->getModID());
+  ASSERT_EQ(6, deps[2]->getModID());
+  ASSERT_EQ(2, deps[3]->getModID());
+  ASSERT_EQ(4, deps[4]->getModID());
+  ASSERT_EQ(3, deps[5]->getModID());
+}
+
+TEST(DependentTest, deps2) {
+  auto t1 = tree<1>(tree<2>(), tree<3>(tree<4>()));
+  auto t2 = tree<5>(tree<2>(), t1, tree<6>(tree<4>()), tree<3>(tree<4>()));
+  auto t3 = tree<7>(t2, t1);
+  auto archive = t3.build();
+  ASSERT_EQ(2, archive->getImported().size());
+  ASSERT_EQ(5, archive->getImported()[0].second->getModID());
+  ASSERT_EQ(1, archive->getImported()[1].second->getModID());
+  auto deps = archive->getDepsByTopologicalOrder();
+  ASSERT_EQ(6, deps.size());
+  ASSERT_EQ(2, deps[0]->getModID());
+  ASSERT_EQ(4, deps[1]->getModID());
+  ASSERT_EQ(3, deps[2]->getModID());
+  ASSERT_EQ(1, deps[3]->getModID());
+  ASSERT_EQ(6, deps[4]->getModID());
+  ASSERT_EQ(5, deps[5]->getModID());
+}
+
+TEST(DependentTest, deps3) {
+  auto t = tree<1>();
+  auto archive = t.build();
+  ASSERT_EQ(0, archive->getImported().size());
+  auto deps = archive->getDepsByTopologicalOrder();
+  ASSERT_EQ(0, deps.size());
+}
+
 class ArchiveTest : public ::testing::Test {
 private:
   SourceManager srcMan;
-  IndexMap indexMap;
+  ModuleArchives archives;
   AnalyzerContextPtr orgCtx;
   AnalyzerContextPtr newCtx;
 
 protected:
   const unsigned int builtinIdOffset;
 
-  static AnalyzerContextPtr newctx(SourceManager &srcMan, IndexMap &indexMap) {
+  static AnalyzerContextPtr newctx(SourceManager &srcMan, ModuleArchives &archives) {
     std::string path = "/dummy_";
-    path += std::to_string(indexMap.size() + 1);
+    path += std::to_string(archives.size() + 1);
     auto src = srcMan.update(path, 0, "");
-    indexMap.add(*src, ModuleIndex::NULL_INDEX);
+    archives.reserve(src->getSrcId());
     return std::make_unique<AnalyzerContext>(*src);
   }
 
-  AnalyzerContextPtr newctx() { return newctx(this->srcMan, this->indexMap); }
+  AnalyzerContextPtr newctx() { return newctx(this->srcMan, this->archives); }
 
   static auto toSorted(const std::unordered_map<std::string, FieldHandle> &handleMap) {
     using Entry = std::pair<std::string, FieldHandle>;
@@ -69,7 +133,7 @@ protected:
 
 public:
   ArchiveTest()
-      : orgCtx(newctx(this->srcMan, this->indexMap)), newCtx(newctx(this->srcMan, this->indexMap)),
+      : orgCtx(newctx(this->srcMan, this->archives)), newCtx(newctx(this->srcMan, this->archives)),
         builtinIdOffset(this->orgCtx->getPool().getDiscardPoint().typeIdOffset) {}
 
   TypePool &pool() { return this->orgCtx->getPool(); }
@@ -142,10 +206,10 @@ public:
 
   template <typename Func>
   const ModType &loadModAt(AnalyzerContext &parent, bool global, Func func) {
-    auto ctx = newctx(this->srcMan, this->indexMap);
+    auto ctx = newctx(this->srcMan, this->archives);
     func(*ctx);
-    auto index = std::move(*ctx).buildAndAddIndex(this->srcMan, this->indexMap);
-    auto *type = loadFromModuleIndex(parent.getPool(), *index);
+    auto archive = std::move(*ctx).buildArchive(this->archives);
+    auto *type = loadFromArchive(parent.getPool(), *archive);
     assert(type);
     parent.getScope()->importForeignHandles(*type, global);
     return *type;
@@ -154,15 +218,15 @@ public:
   void archiveMod(std::vector<std::string> &&expected = {}) {
     // serialize
     auto poolPtr = this->orgCtx->getPoolPtr();
-    auto index = std::move(*this->orgCtx).buildAndAddIndex(this->srcMan, this->indexMap);
-    ASSERT_TRUE(index);
-    unsigned id = index->getModId();
+    auto archive = std::move(*this->orgCtx).buildArchive(this->archives);
+    ASSERT_TRUE(archive);
+    unsigned id = archive->getModID();
     auto ret = poolPtr->getModTypeById(id);
     ASSERT_TRUE(ret);
     auto *orgModType = static_cast<const ModType *>(ret.asOk());
 
     // deserialize
-    auto *newModType = loadFromModuleIndex(this->newCtx->getPool(), *index);
+    auto *newModType = loadFromArchive(this->newCtx->getPool(), *archive);
     ASSERT_TRUE(newModType);
 
     // compare
@@ -464,6 +528,85 @@ TEST_F(ArchiveTest, mod4) {
   ret = this->newPool().getType("[Boolean]");
   ASSERT_TRUE(ret);
   ASSERT_EQ(ret.asOk()->typeId(), handle->getTypeID());
+}
+
+struct Builder {
+  SourceManager &srcMan;
+  ModuleArchives &archives;
+
+  template <typename... Args>
+  ModuleArchivePtr operator()(const char *path, Args &&...args) {
+    std::vector<Archive> handles;
+    std::vector<std::pair<bool, ModuleArchivePtr>> deps;
+    build(deps, std::forward<Args>(args)...);
+    auto src = this->srcMan.update(path, 0, "");
+    auto archive = std::make_shared<ModuleArchive>(src->getSrcId(), src->getVersion(),
+                                                   std::move(handles), std::move(deps));
+    this->archives.add(archive);
+    return archive;
+  }
+
+private:
+  template <typename... Args>
+  static void build(std::vector<std::pair<bool, ModuleArchivePtr>> &deps,
+                    const ModuleArchivePtr &archive, Args &&...args) {
+    deps.emplace_back(true, archive);
+    build(deps, std::forward<Args>(args)...);
+  }
+
+  static void build(std::vector<std::pair<bool, ModuleArchivePtr>> &) {}
+};
+
+TEST(ArchivesTest, revert1) {
+  SourceManager srcMan;
+  ModuleArchives archives;
+  Builder builder = {
+      .srcMan = srcMan,
+      .archives = archives,
+  };
+
+  auto t1 = builder("/aaa");
+  auto t3 = builder("/ccc", t1);
+  auto t4 = builder("/ddd");
+  auto t2 = builder("/bbb", t3, t4);
+  ASSERT_EQ(4, archives.size());
+
+  archives.revert({archives.find(srcMan.find("/ddd")->getSrcId())->getModID()});
+  ASSERT_EQ(2, archives.size());
+  ASSERT_EQ(1, archives.find(srcMan.find("/aaa")->getSrcId())->getModID());
+  ASSERT_EQ(2, archives.find(srcMan.find("/ccc")->getSrcId())->getModID());
+
+  archives.revert({archives.find(srcMan.find("/aaa")->getSrcId())->getModID()});
+  ASSERT_EQ(0, archives.size());
+}
+
+TEST(ArchivesTest, revert2) {
+  SourceManager srcMan;
+  ModuleArchives archives;
+  Builder builder = {
+      .srcMan = srcMan,
+      .archives = archives,
+  };
+
+  auto t1 = builder("/aaa");
+  auto t3 = builder("/ccc", t1);
+  auto t4 = builder("/ddd");
+  auto t2 = builder("/bbb", t3, t4);
+  auto t5 = builder("/eee");
+  ASSERT_EQ(5, archives.size());
+
+  archives.revertIfUnused(t1->getModID());
+  ASSERT_EQ(5, archives.size());
+
+  archives.revertIfUnused(t4->getModID());
+  ASSERT_EQ(5, archives.size());
+
+  archives.revertIfUnused(t5->getModID());
+  ASSERT_EQ(4, archives.size());
+  ASSERT_EQ(nullptr, archives.find(srcMan.find("/eee")->getSrcId()));
+
+  archives.revert({t1->getModID(), t4->getModID()});
+  ASSERT_EQ(0, archives.size());
 }
 
 int main(int argc, char **argv) {
