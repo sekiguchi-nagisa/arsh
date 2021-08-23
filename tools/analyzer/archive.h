@@ -172,12 +172,12 @@ private:
 public:
   ModuleArchive() = default;
 
-  explicit ModuleArchive(unsigned short modID, int version, std::vector<Archive> &&handles,
+  explicit ModuleArchive(unsigned short modId, int version, std::vector<Archive> &&handles,
                          std::vector<std::pair<bool, ModuleArchivePtr>> imported)
-      : modId(modID), version(version), handles(std::move(handles)), imported(std::move(imported)) {
+      : modId(modId), version(version), handles(std::move(handles)), imported(std::move(imported)) {
   }
 
-  unsigned short getModID() const { return this->modId; }
+  unsigned short getModId() const { return this->modId; }
 
   int getVersion() const { return this->version; }
 
@@ -185,7 +185,7 @@ public:
 
   const auto &getImported() const { return this->imported; }
 
-  bool isEmpty() const { return this->getModID() == 0; }
+  bool isEmpty() const { return this->getModId() == 0; }
 
   std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
 
@@ -213,7 +213,7 @@ public:
 
   void add(const ModuleArchivePtr &archive) {
     assert(archive);
-    this->map[archive->getModID()] = archive;
+    this->map[archive->getModId()] = archive;
   }
 
   size_t size() const { return this->map.size(); }

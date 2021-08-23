@@ -171,9 +171,9 @@ static void tryInsertByAscendingOrder(std::vector<ModuleArchivePtr> &targets,
   assert(archive);
   auto iter = std::lower_bound(targets.begin(), targets.end(), archive,
                                [](const ModuleArchivePtr &x, const ModuleArchivePtr &y) {
-                                 return x->getModID() < y->getModID();
+                                 return x->getModId() < y->getModId();
                                });
-  if (iter == targets.end() || (*iter)->getModID() != archive->getModID()) {
+  if (iter == targets.end() || (*iter)->getModId() != archive->getModId()) {
     targets.insert(iter, archive);
   }
 }
@@ -188,10 +188,10 @@ static void resolveTargets(std::vector<ModuleArchivePtr> &targets,
 
 static void visit(std::vector<ModuleArchivePtr> &ret, std::vector<bool> &used,
                   const ModuleArchivePtr &archive) {
-  if (used[archive->getModID()]) {
+  if (used[archive->getModId()]) {
     return;
   }
-  used[archive->getModID()] = true;
+  used[archive->getModId()] = true;
   for (auto &e : archive->getImported()) {
     visit(ret, used, e.second);
   }
@@ -203,7 +203,7 @@ static std::vector<ModuleArchivePtr> topologcalSort(const std::vector<ModuleArch
   if (targets.empty()) {
     return ret;
   }
-  std::vector<bool> used(targets.back()->getModID() + 1, false);
+  std::vector<bool> used(targets.back()->getModId() + 1, false);
   for (auto &e : targets) {
     visit(ret, used, e);
   }
@@ -229,7 +229,7 @@ static const ModType *getModType(const TypePool &pool, unsigned short modId) {
 }
 
 static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
-  if (const ModType * type; (type = getModType(pool, archive.getModID()))) {
+  if (const ModType * type; (type = getModType(pool, archive.getModId()))) {
     return type;
   }
 
@@ -241,7 +241,7 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
 
   for (auto &child : archive.getImported()) {
     bool global = child.first;
-    auto type = pool.getModTypeById(child.second->getModID());
+    auto type = pool.getModTypeById(child.second->getModId());
     assert(type);
     auto e = static_cast<const ModType *>(type.asOk())->toModEntry(global);
     children.push_back(e);
@@ -252,11 +252,11 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
     return nullptr;
   }
   auto handleMap = ret.unwrap();
-  return &pool.createModType(archive.getModID(), std::move(handleMap), std::move(children), 0);
+  return &pool.createModType(archive.getModId(), std::move(handleMap), std::move(children), 0);
 }
 
 const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
-  if (const ModType * type; (type = getModType(pool, archive.getModID()))) {
+  if (const ModType * type; (type = getModType(pool, archive.getModId()))) {
     return type;
   }
   for (auto &dep : archive.getDepsByTopologicalOrder()) {
@@ -274,7 +274,7 @@ const ModuleArchivePtr ModuleArchives::EMPTY_ARCHIVE = std::make_shared<ModuleAr
 static bool isRevertedArchive(std::unordered_set<unsigned short> &revertingModIdSet,
                               const ModuleArchivePtr &archive) {
   assert(archive);
-  const auto modId = archive->getModID();
+  const auto modId = archive->getModId();
   auto iter = revertingModIdSet.find(modId);
   if (iter != revertingModIdSet.end()) {
     return true;
@@ -302,7 +302,7 @@ static bool isImported(const ModuleArchivePtr &archive, unsigned short id) {
   assert(archive);
   for (auto &e : archive->getImported()) {
     assert(e.second);
-    if (e.second->getModID() == id) {
+    if (e.second->getModId() == id) {
       return true;
     }
     if (isImported(e.second, id)) {
@@ -319,7 +319,7 @@ bool ModuleArchives::revertIfUnused(unsigned short id) {
     }
   }
   for (auto iter = this->map.begin(); iter != this->map.end();) {
-    if (iter->second && iter->second->getModID() == id) {
+    if (iter->second && iter->second->getModId() == id) {
       this->map.erase(iter);
       return true;
     } else {
