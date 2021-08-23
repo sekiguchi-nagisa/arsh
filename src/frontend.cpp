@@ -177,7 +177,7 @@ FrontEndResult FrontEnd::enterModule() {
   } else {
     assert(is<const ModType *>(ret));
     auto &modType = *get<const ModType *>(ret);
-    if (this->curScope()->modId == modType.getModId()) { // when load module from completion context
+    if (this->curScope()->modId == modType.getModID()) { // when load module from completion context
       auto error = wrapModLoadingError(node.getPathNode(), modPath, ModLoadingError(0));
       this->listener &&this->listener->handleTypeError(this->contexts, error);
       if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {

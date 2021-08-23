@@ -62,16 +62,16 @@ TEST(DependentTest, deps1) {
   auto t = tree<1>(tree<2>(tree<5>(tree<7>()), tree<6>()), tree<3>(tree<4>()));
   auto archive = t.build();
   ASSERT_EQ(2, archive->getImported().size());
-  ASSERT_EQ(2, archive->getImported()[0].second->getModId());
-  ASSERT_EQ(3, archive->getImported()[1].second->getModId());
+  ASSERT_EQ(2, archive->getImported()[0].second->getModID());
+  ASSERT_EQ(3, archive->getImported()[1].second->getModID());
   auto deps = archive->getDepsByTopologicalOrder();
   ASSERT_EQ(6, deps.size());
-  ASSERT_EQ(7, deps[0]->getModId());
-  ASSERT_EQ(5, deps[1]->getModId());
-  ASSERT_EQ(6, deps[2]->getModId());
-  ASSERT_EQ(2, deps[3]->getModId());
-  ASSERT_EQ(4, deps[4]->getModId());
-  ASSERT_EQ(3, deps[5]->getModId());
+  ASSERT_EQ(7, deps[0]->getModID());
+  ASSERT_EQ(5, deps[1]->getModID());
+  ASSERT_EQ(6, deps[2]->getModID());
+  ASSERT_EQ(2, deps[3]->getModID());
+  ASSERT_EQ(4, deps[4]->getModID());
+  ASSERT_EQ(3, deps[5]->getModID());
 }
 
 TEST(DependentTest, deps2) {
@@ -80,16 +80,16 @@ TEST(DependentTest, deps2) {
   auto t3 = tree<7>(t2, t1);
   auto archive = t3.build();
   ASSERT_EQ(2, archive->getImported().size());
-  ASSERT_EQ(5, archive->getImported()[0].second->getModId());
-  ASSERT_EQ(1, archive->getImported()[1].second->getModId());
+  ASSERT_EQ(5, archive->getImported()[0].second->getModID());
+  ASSERT_EQ(1, archive->getImported()[1].second->getModID());
   auto deps = archive->getDepsByTopologicalOrder();
   ASSERT_EQ(6, deps.size());
-  ASSERT_EQ(2, deps[0]->getModId());
-  ASSERT_EQ(4, deps[1]->getModId());
-  ASSERT_EQ(3, deps[2]->getModId());
-  ASSERT_EQ(1, deps[3]->getModId());
-  ASSERT_EQ(6, deps[4]->getModId());
-  ASSERT_EQ(5, deps[5]->getModId());
+  ASSERT_EQ(2, deps[0]->getModID());
+  ASSERT_EQ(4, deps[1]->getModID());
+  ASSERT_EQ(3, deps[2]->getModID());
+  ASSERT_EQ(1, deps[3]->getModID());
+  ASSERT_EQ(6, deps[4]->getModID());
+  ASSERT_EQ(5, deps[5]->getModID());
 }
 
 TEST(DependentTest, deps3) {
@@ -169,7 +169,7 @@ public:
     auto &newHandle = ret2.unwrap();
 
     // compare 2 handles
-    ASSERT_EQ(orgHandle.getModId(), newHandle.getModID());
+    ASSERT_EQ(orgHandle.getModID(), newHandle.getModID());
     ASSERT_EQ(orgHandle.getIndex(), newHandle.getIndex());
     ASSERT_EQ(orgHandle.getCommitID(), newHandle.getCommitID());
     ASSERT_EQ(toString(orgHandle.attr()), toString(newHandle.attr()));
@@ -220,7 +220,7 @@ public:
     auto poolPtr = this->orgCtx->getPoolPtr();
     auto archive = std::move(*this->orgCtx).buildArchive(this->archives);
     ASSERT_TRUE(archive);
-    unsigned id = archive->getModId();
+    unsigned id = archive->getModID();
     auto ret = poolPtr->getModTypeById(id);
     ASSERT_TRUE(ret);
     auto *orgModType = static_cast<const ModType *>(ret.asOk());
@@ -256,7 +256,7 @@ public:
       auto &orgEntry = orgHandles[i];
       auto &newEntry = newHandles[i];
       ASSERT_EQ(orgEntry.first, newEntry.first);
-      ASSERT_EQ(orgEntry.second.getModId(), newEntry.second.getModId());
+      ASSERT_EQ(orgEntry.second.getModID(), newEntry.second.getModID());
       ASSERT_EQ(toString(orgEntry.second.attr()), toString(newEntry.second.attr()));
     }
 
@@ -571,12 +571,12 @@ TEST(ArchivesTest, revert1) {
   auto t2 = builder("/bbb", t3, t4);
   ASSERT_EQ(4, archives.size());
 
-  archives.revert({archives.find(srcMan.find("/ddd")->getSrcId())->getModId()});
+  archives.revert({archives.find(srcMan.find("/ddd")->getSrcId())->getModID()});
   ASSERT_EQ(2, archives.size());
-  ASSERT_EQ(1, archives.find(srcMan.find("/aaa")->getSrcId())->getModId());
-  ASSERT_EQ(2, archives.find(srcMan.find("/ccc")->getSrcId())->getModId());
+  ASSERT_EQ(1, archives.find(srcMan.find("/aaa")->getSrcId())->getModID());
+  ASSERT_EQ(2, archives.find(srcMan.find("/ccc")->getSrcId())->getModID());
 
-  archives.revert({archives.find(srcMan.find("/aaa")->getSrcId())->getModId()});
+  archives.revert({archives.find(srcMan.find("/aaa")->getSrcId())->getModID()});
   ASSERT_EQ(0, archives.size());
 }
 
@@ -595,17 +595,17 @@ TEST(ArchivesTest, revert2) {
   auto t5 = builder("/eee");
   ASSERT_EQ(5, archives.size());
 
-  archives.revertIfUnused(t1->getModId());
+  archives.revertIfUnused(t1->getModID());
   ASSERT_EQ(5, archives.size());
 
-  archives.revertIfUnused(t4->getModId());
+  archives.revertIfUnused(t4->getModID());
   ASSERT_EQ(5, archives.size());
 
-  archives.revertIfUnused(t5->getModId());
+  archives.revertIfUnused(t5->getModID());
   ASSERT_EQ(4, archives.size());
   ASSERT_EQ(nullptr, archives.find(srcMan.find("/eee")->getSrcId()));
 
-  archives.revert({t1->getModId(), t4->getModId()});
+  archives.revert({t1->getModID(), t4->getModID()});
   ASSERT_EQ(0, archives.size());
 }
 
