@@ -46,6 +46,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/didClose", &LSPServer::didCloseTextDocument);
   this->bind("textDocument/didChange", &LSPServer::didChangeTextDocument);
   this->bind("textDocument/definition", &LSPServer::gotoDefinition);
+  this->bind("textDocument/references", &LSPServer::findReference);
 }
 
 void LSPServer::run() {
@@ -74,6 +75,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       .save = {},
   };
   ret.capabilities.definitionProvider = true;
+  ret.capabilities.referencesProvider = true;
   return std::move(ret);
 }
 
@@ -168,6 +170,12 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
 
 Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &params) {
   LOG(LogLevel::INFO, "definition at: %s:%s", params.textDocument.uri.c_str(),
+      params.position.toString().c_str());
+  return std::vector<Location>();
+}
+
+Reply<std::vector<Location>> LSPServer::findReference(const ReferenceParams &params) {
+  LOG(LogLevel::INFO, "reference at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
   return std::vector<Location>();
 }

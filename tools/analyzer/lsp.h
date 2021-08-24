@@ -535,6 +535,26 @@ struct DefinitionParams : public TextDocumentPositionParams,
   }
 };
 
+struct ReferenceContext {
+  bool includeDeclaration;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(includeDeclaration);
+  }
+};
+
+struct ReferenceParams : public TextDocumentPositionParams,
+                         public WorkDoneProgressParams,
+                         public PartialResultParams {
+  ReferenceContext context;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(context);
+  }
+};
+
 struct TextDocumentContentChangeEvent {
   Optional<Range> range;              // if invalid, text is considered full content of document
   Optional<unsigned int> rangeLength; // deprecated

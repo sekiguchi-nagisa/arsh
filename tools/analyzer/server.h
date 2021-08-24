@@ -110,6 +110,8 @@ public:
   void didChangeTextDocument(const DidChangeTextDocumentParams &params);
 
   Reply<std::vector<Location>> gotoDefinition(const DefinitionParams &params);
+
+  Reply<std::vector<Location>> findReference(const ReferenceParams &params);
 };
 
 } // namespace ydsh::lsp
