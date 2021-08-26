@@ -4,6 +4,8 @@
 Debug/
 Release/
 .idea/
+.vscode/
+
 build
 build-*
 cmake-build-*
