@@ -12,7 +12,7 @@ add_library(ydshd_static STATIC
         archive.cpp
         source.cpp
         index.cpp
-        index_builder.cpp
+        indexer.cpp
         )
 target_link_libraries(ydshd_static ydsh_static jsonrpc uri)
 

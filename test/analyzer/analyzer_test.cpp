@@ -111,7 +111,7 @@ private:
   std::vector<std::unique_ptr<NodeList>> nodeList;
 
 public:
-  void enterModule(unsigned short modID, const std::shared_ptr<TypePool> &pool) override {
+  void enterModule(unsigned short modID, int, const std::shared_ptr<TypePool> &pool) override {
     this->nodeList.push_back(std::make_unique<NodeList>(modID, pool));
   }
 

@@ -199,7 +199,8 @@ ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, Analyz
     frontEnd.setASTDumper(*action.dumper);
   }
   if (action.consumer) {
-    action.consumer->enterModule(provider.current()->getModId(), provider.current()->getPoolPtr());
+    action.consumer->enterModule(provider.current()->getModId(), provider.current()->getVersion(),
+                                 provider.current()->getPoolPtr());
   }
 
   // run front end
@@ -219,6 +220,7 @@ ModuleArchivePtr analyze(SourceManager &srcMan, ModuleArchives &archives, Analyz
     case FrontEndResult::ENTER_MODULE:
       if (action.consumer) {
         action.consumer->enterModule(provider.current()->getModId(),
+                                     provider.current()->getVersion(),
                                      provider.current()->getPoolPtr());
       }
       break;

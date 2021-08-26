@@ -58,4 +58,67 @@ const SymbolRef *SymbolIndex::findRef(unsigned int pos) const {
   return nullptr;
 }
 
+// ###########################
+// ##     SymbolIndexes     ##
+// ###########################
+
+void SymbolIndexes::add(SymbolIndex &&index) {
+  auto iter = std::lower_bound(
+      this->indexes.begin(), this->indexes.end(), index,
+      [](const SymbolIndex &x, const SymbolIndex &y) { return x.getModId() < y.getModId(); });
+  if (iter != this->indexes.end()) {
+    if (iter->getModId() == index.getModId()) { // update
+      *iter = std::move(index);
+    } else {
+      this->indexes.insert(iter, std::move(index));
+    }
+  } else {
+    this->indexes.push_back(std::move(index));
+  }
+}
+
+struct IndexComp {
+  bool operator()(const SymbolIndex &x, unsigned short id) const { return x.getModId() < id; }
+
+  bool operator()(unsigned short id, const SymbolIndex &y) const { return id < y.getModId(); }
+};
+
+const SymbolIndex *SymbolIndexes::find(unsigned short modId) const {
+  auto iter = std::lower_bound(this->indexes.begin(), this->indexes.end(), modId, IndexComp());
+  if (iter != this->indexes.end()) {
+    return &*iter;
+  }
+  return nullptr;
+}
+
+void SymbolIndexes::remove(unsigned short id) {
+  auto iter = std::lower_bound(this->indexes.begin(), this->indexes.end(), id, IndexComp());
+  if (iter != this->indexes.end()) {
+    this->indexes.erase(iter);
+  }
+}
+
+const Symbol *findDeclaration(const SymbolIndexes &indexes, Symbol::RefLoc ref) {
+  if (auto *index = indexes.find(ref.modID); index) {
+    if (auto *refSymbol = index->findRef(ref.pos); refSymbol) {
+      if (auto *decl = indexes.find(refSymbol->getDeclModId()); decl) {
+        return decl->findDecl(refSymbol->getDeclPos());
+      }
+    }
+  }
+  return nullptr;
+}
+
+// bool findAllReferences(const SymbolIndexes &indexes, Symbol::RefLoc decl,
+//                        const std::function<void(const SymbolRef &)> &cosumer) {
+//   unsigned int count = 0;
+//   if (auto *index = indexes.find(decl.modID); index) {
+//     if (auto *declSymbol = index->findDecl(decl.pos); declSymbol) {
+//       for (auto &e : declSymbol->getRefs()) {
+//       }
+//     }
+//   }
+//   return count > 0;
+// }
+
 } // namespace ydsh::lsp

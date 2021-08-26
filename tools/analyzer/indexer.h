@@ -14,21 +14,43 @@
  * limitations under the License.
  */
 
-#ifndef YDSH_TOOLS_ANALYZER_INDEX_BUILDER_H
-#define YDSH_TOOLS_ANALYZER_INDEX_BUILDER_H
+#ifndef YDSH_TOOLS_ANALYZER_INDEXER_H
+#define YDSH_TOOLS_ANALYZER_INDEXER_H
 
 #include "analyzer.h"
+#include "index.h"
 
 namespace ydsh::lsp {
 
-class IndexBuilder : protected ydsh::NodeVisitor, public NodeConsumer {
+class IndexBuilder {
 private:
+  unsigned short modId;
+  int version;
   std::shared_ptr<TypePool> pool;
+  std::vector<Symbol> decls;
+  std::vector<SymbolRef> refs;
 
 public:
-  ~IndexBuilder() override = default;
+  IndexBuilder(unsigned short modId, int version, const std::shared_ptr<TypePool> &pool)
+      : modId(modId), version(version), pool(pool) {}
 
-  void enterModule(unsigned short modID, const std::shared_ptr<TypePool> &pool) override;
+  SymbolIndex build() && {
+    return {this->modId, this->version, std::move(this->decls), std::move(this->refs)};
+  }
+};
+
+class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {
+private:
+  SymbolIndexes &indexes;
+  std::vector<IndexBuilder> builders;
+
+public:
+  explicit SymbolIndexer(SymbolIndexes &indexes) : indexes(indexes) {}
+
+  ~SymbolIndexer() override = default;
+
+  void enterModule(unsigned short modID, int version,
+                   const std::shared_ptr<TypePool> &pool) override;
   void exitModule(std::unique_ptr<Node> &&node) override;
   void consume(std::unique_ptr<Node> &&node) override;
 
@@ -103,8 +125,10 @@ private:
       this->visit(item);
     }
   }
+
+  IndexBuilder &builder() { return this->builders.back(); }
 };
 
 } // namespace ydsh::lsp
 
-#endif // YDSH_TOOLS_ANALYZER_INDEX_BUILDER_H
+#endif // YDSH_TOOLS_ANALYZER_INDEXER_H

@@ -105,7 +105,8 @@ public:
 struct NodeConsumer {
   virtual ~NodeConsumer() = default;
 
-  virtual void enterModule(unsigned short modID, const std::shared_ptr<TypePool> &pool) = 0;
+  virtual void enterModule(unsigned short modID, int version,
+                           const std::shared_ptr<TypePool> &pool) = 0;
   virtual void exitModule(std::unique_ptr<Node> &&node) = 0;
   virtual void consume(std::unique_ptr<Node> &&node) = 0;
 };

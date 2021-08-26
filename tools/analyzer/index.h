@@ -17,9 +17,11 @@
 #ifndef YDSH_TOOLS_ANALYZER_INDEX_H
 #define YDSH_TOOLS_ANALYZER_INDEX_H
 
+#include <functional>
 #include <vector>
 
 #include <misc/buffer.hpp>
+#include <misc/result.hpp>
 #include <misc/token.hpp>
 
 namespace ydsh::lsp {
@@ -27,15 +29,15 @@ namespace ydsh::lsp {
 class SymbolRef {
 private:
   Token token;
-  unsigned short modID;
-  unsigned int symbolID;
+  unsigned short declModId;
+  unsigned int declPos;
 
 public:
   Token getToken() const { return this->token; }
 
-  unsigned short getModID() const { return this->modID; }
+  unsigned short getDeclModId() const { return this->declModId; }
 
-  unsigned short getSymbolID() const { return this->symbolID; }
+  unsigned short getDeclPos() const { return this->declPos; }
 };
 
 class Symbol {
@@ -43,6 +45,7 @@ public:
   enum class Kind : unsigned short {
     VAR,
     FUNC,
+    CMD,
     TYPE_ALIAS,
   };
 
@@ -52,19 +55,29 @@ public:
   };
 
 private:
-  Token token;
+  unsigned int pos;
+  unsigned short size;
   Kind kind;
-  unsigned short modID;
   FlexBuffer<RefLoc> refs;
 
 public:
-  Symbol(Kind kind, Token token, unsigned short modID) : token(token), kind(kind), modID(modID) {}
+  static Optional<Symbol> create(Kind kind, Token token) {
+    if (token.size > UINT16_MAX) {
+      return {};
+    }
+    return Symbol(kind, token.pos, static_cast<unsigned short>(token.size));
+  }
+
+  Symbol(Kind kind, unsigned int pos, unsigned short size) : pos(pos), size(size), kind(kind) {}
 
   Kind getKind() const { return this->kind; }
 
-  Token getToken() const { return this->token; }
-
-  unsigned short getModID() const { return this->modID; }
+  Token getToken() const {
+    return Token{
+        .pos = this->pos,
+        .size = this->size,
+    };
+  }
 
   const FlexBuffer<RefLoc> &getRefs() const { return this->refs; }
 
@@ -73,12 +86,19 @@ public:
 
 class SymbolIndex {
 private:
+  unsigned short modId;
+  int version;
   std::vector<Symbol> decls;
   std::vector<SymbolRef> refs;
 
 public:
-  SymbolIndex(std::vector<Symbol> &&decls, std::vector<SymbolRef> &&refs)
-      : decls(std::move(decls)), refs(std::move(refs)) {}
+  SymbolIndex(unsigned short modId, int version, std::vector<Symbol> &&decls,
+              std::vector<SymbolRef> &&refs)
+      : modId(modId), version(version), decls(std::move(decls)), refs(std::move(refs)) {}
+
+  unsigned short getModId() const { return this->modId; }
+
+  int getVersion() const { return this->version; }
 
   const Symbol *findDecl(unsigned int pos) const;
 
@@ -86,6 +106,23 @@ public:
 
   const std::vector<SymbolRef> &getRefs() const { return this->refs; }
 };
+
+class SymbolIndexes {
+private:
+  std::vector<SymbolIndex> indexes;
+
+public:
+  void add(SymbolIndex &&index);
+
+  const SymbolIndex *find(unsigned short modId) const;
+
+  void remove(unsigned short id);
+};
+
+const Symbol *findDeclaration(const SymbolIndexes &indexes, Symbol::RefLoc ref);
+
+bool findAllReferences(const SymbolIndexes &indexes, Symbol::RefLoc decl,
+                       const std::function<void(const SymbolRef &)> &cosumer);
 
 } // namespace ydsh::lsp
 
