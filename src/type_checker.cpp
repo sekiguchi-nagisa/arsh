@@ -1017,15 +1017,15 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
 
   // check type expr
   node.setCaseKind(collector.getKind());
-  auto *patternType = collector.getType();
-  if (!patternType) {
-    RAISE_TC_ERROR(NeedPattern, node);
-  }
-  if (exprType->isOptionType()) {
-    exprType = &static_cast<const ReifiedType *>(exprType)->getElementTypeAt(0);
-  }
-  if (!patternType->isSameOrBaseTypeOf(*exprType)) {
-    RAISE_TC_ERROR(Required, node.getExprNode(), patternType->getName(), exprType->getName());
+  if (auto *patternType = collector.getType(); patternType) {
+    if (exprType->isOptionType()) {
+      exprType = &static_cast<const ReifiedType *>(exprType)->getElementTypeAt(0);
+    }
+    if (!patternType->isSameOrBaseTypeOf(*exprType)) {
+      this->reportError<Required>(node.getExprNode(), patternType->getName(), exprType->getName());
+    }
+  } else {
+    this->reportError<NeedPattern>(node);
   }
 
   // resolve arm expr type
@@ -1418,13 +1418,14 @@ void TypeChecker::visitVarDeclNode(VarDeclNode &node) {
 }
 
 void TypeChecker::visitAssignNode(AssignNode &node) {
-  if (!isAssignable(node.getLeftNode())) {
-    RAISE_TC_ERROR(Assignable, node.getLeftNode());
-  }
-  auto &leftNode = static_cast<AssignableNode &>(node.getLeftNode());
+  auto &leftNode = node.getLeftNode();
   auto &leftType = this->checkTypeAsExpr(leftNode);
-  if (hasFlag(leftNode.attr(), FieldAttribute::READ_ONLY)) {
-    RAISE_TC_ERROR(ReadOnly, leftNode);
+  if (isAssignable(leftNode)) {
+    if (hasFlag(static_cast<AssignableNode &>(leftNode).attr(), FieldAttribute::READ_ONLY)) {
+      this->reportError<ReadOnly>(leftNode);
+    }
+  } else {
+    this->reportError<Assignable>(leftNode);
   }
 
   if (leftNode.is(NodeKind::Access)) {
