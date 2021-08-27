@@ -33,6 +33,7 @@
 - in completion, ignore keywords/commands starting with identifier if previous token is the following
     - `in`, `and`, `or`, `xor`, `elif`
 - do not complete if previous token is a comment
+- error message of for-expression
 
 ## [0.22.0] - 2021-06-27
 

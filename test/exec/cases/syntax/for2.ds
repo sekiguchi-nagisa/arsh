@@ -1,0 +1,5 @@
+
+#$test($result = 'parse', $lineNum = 5, $chars = 15, $errorKind = 'EXPR_RP', $status = 1)
+
+for ( var i = 34;
+        $true;

@@ -59,6 +59,7 @@ class CodeCompletionHandler;
 #define EACH_PARSE_ERROR_KIND(OP)                                                                  \
   OP(EXPR, "expression")                                                                           \
   OP(EXPR_RP, "expression or `)'")                                                                 \
+  OP(EXPR_END, "expression or ';'")                                                                \
   OP(TYPE, "typename")                                                                             \
   OP(STMT, "statement")                                                                            \
   OP(CMD_ARG, "command argument")                                                                  \

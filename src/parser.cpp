@@ -807,6 +807,8 @@ std::unique_ptr<Node> Parser::parse_forCond() {
 
   if (lookahead_expression(CUR_KIND())) {
     return this->parse_expression();
+  } else if (CUR_KIND() != TokenKind::LINE_END) {
+    E_DETAILED(ParseErrorKind::EXPR_END, EACH_LA_expression(GEN_LA_ALTER) TokenKind::LINE_END);
   } else {
     return nullptr;
   }
@@ -817,6 +819,8 @@ std::unique_ptr<Node> Parser::parse_forIter() {
 
   if (lookahead_expression(CUR_KIND())) {
     return this->parse_expression();
+  } else if (CUR_KIND() != TokenKind::RP) {
+    E_DETAILED(ParseErrorKind::EXPR_RP, EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
   } else {
     return std::make_unique<EmptyNode>();
   }
