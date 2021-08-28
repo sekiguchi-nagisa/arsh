@@ -322,7 +322,7 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
       NameInfo info(leftNode.getToken(), std::string(leftNode.getVarName()));
       this->builder().addDecl(DeclSymbol::Kind::VAR, info);
     }
-    node.getExprNode();
+    this->visit(node.getExprNode());
   } else {
     this->visitEach(node.getAssignNodes());
   }

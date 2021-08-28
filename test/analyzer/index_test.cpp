@@ -41,6 +41,17 @@ public:
   }
 };
 
+static std::pair<unsigned short, const DeclSymbol *> findDeclaration2(const SymbolIndexes &indexes,
+                                                                      SymbolRef ref) {
+  unsigned short id = 0;
+  const DeclSymbol *decl = nullptr;
+  findDeclaration(indexes, ref, [&](unsigned short i, const DeclSymbol &d) {
+    id = i;
+    decl = &d;
+  });
+  return {id, decl};
+}
+
 TEST_F(IndexTest, scope1) {
   unsigned short modId;
   const char *content = R"(
@@ -52,19 +63,21 @@ try { $false; } catch($e) {
 
   auto ret = toTokenPos(content, Position{.line = 2, .character = 3});
   ASSERT_TRUE(ret.hasValue());
-  auto *decl = findDeclaration(this->indexes, SymbolRef(ret.unwrap(), 1, modId));
-  ASSERT_TRUE(decl);
-  ASSERT_EQ(1, decl->getRefs().size());
-  ASSERT_EQ(DeclSymbol::Kind::VAR, decl->getKind());
-  ASSERT_EQ(23, decl->getPos());
+  auto pair = findDeclaration2(this->indexes, SymbolRef(ret.unwrap(), 1, modId));
+  ASSERT_TRUE(pair.second);
+  ASSERT_EQ(modId, pair.first);
+  ASSERT_EQ(1, pair.second->getRefs().size());
+  ASSERT_EQ(DeclSymbol::Kind::VAR, pair.second->getKind());
+  ASSERT_EQ(23, pair.second->getPos());
 
   ret = toTokenPos(content, Position{.line = 2, .character = 4});
   ASSERT_TRUE(ret.hasValue());
-  decl = findDeclaration(this->indexes, SymbolRef(ret.unwrap(), 1, modId));
-  ASSERT_TRUE(decl);
-  ASSERT_EQ(1, decl->getRefs().size());
-  ASSERT_EQ(DeclSymbol::Kind::VAR, decl->getKind());
-  ASSERT_EQ(23, decl->getPos());
+  pair = findDeclaration2(this->indexes, SymbolRef(ret.unwrap(), 1, modId));
+  ASSERT_TRUE(pair.second);
+  ASSERT_EQ(modId, pair.first);
+  ASSERT_EQ(1, pair.second->getRefs().size());
+  ASSERT_EQ(DeclSymbol::Kind::VAR, pair.second->getKind());
+  ASSERT_EQ(23, pair.second->getPos());
 }
 
 TEST_F(IndexTest, scope2) {
@@ -95,6 +108,12 @@ function assertArray(
   ASSERT_TRUE(decl);
   ASSERT_EQ(DeclSymbol::Kind::VAR, decl->getKind());
   ASSERT_EQ(1, decl->getRefs().size());
+}
+
+TEST_F(IndexTest, scope3) {
+  unsigned short modId;
+  const char *content = "A=23 $A";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
 }
 
 int main(int argc, char **argv) {

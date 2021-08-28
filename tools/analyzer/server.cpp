@@ -56,6 +56,51 @@ void LSPServer::run() {
   }
 }
 
+SourcePtr LSPServer::resolveSource(const std::string &uriStr) {
+  auto uri = uri::URI::fromString(uriStr);
+  if (!uri) {
+    LOG(LogLevel::ERROR, "broken uri: %s", uriStr.c_str());
+    return nullptr;
+  }
+  if (uri.getScheme() != "file") {
+    LOG(LogLevel::ERROR, "only support 'file' scheme at textDocument: %s", uriStr.c_str());
+    return nullptr;
+  }
+  auto src = this->srcMan.find(uri.getPath());
+  if (!src) {
+    LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr.c_str());
+    return nullptr;
+  }
+  return src;
+}
+
+static Optional<SymbolRef> toSymbolRef(const Source &src, Position position) {
+  auto pos = toTokenPos(src.getContent(), position);
+  if (!pos.hasValue()) {
+    return {};
+  }
+  return SymbolRef(pos.unwrap(), 1, src.getSrcId());
+}
+
+void LSPServer::gotoDefinitionImpl(const Source &src, Position position,
+                                   std::vector<Location> &result) {
+  auto ref = toSymbolRef(src, position);
+  if (!ref.hasValue()) {
+    return;
+  }
+  findDeclaration(this->indexes, ref.unwrap(), [&](unsigned short modId, const DeclSymbol &decl) {
+    auto s = this->srcMan.findById(modId);
+    assert(s);
+    std::string uri = "file://";
+    uri += s->getPath();
+    auto range = toRange(s->getContent(), decl.getToken());
+    assert(range.hasValue());
+    result.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
+  });
+}
+
+// RPC method definitions
+
 Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   LOG(LogLevel::INFO, "initialize server ....");
   if (this->init) {
@@ -129,32 +174,18 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
 }
 
 void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
-  const char *uriStr = params.textDocument.uri.c_str();
-  LOG(LogLevel::INFO, "close textDocument: %s", uriStr);
-  auto uri = uri::URI::fromString(uriStr);
-  if (!uri) {
-    LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
-    return;
+  LOG(LogLevel::INFO, "close textDocument: %s", params.textDocument.uri.c_str());
+  auto src = this->resolveSource(params.textDocument.uri);
+  if (src) {
+    this->archives.revertIfUnused(src->getSrcId());
   }
-  auto src = this->srcMan.find(uri.getPath());
-  if (!src) {
-    LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr);
-    return;
-  }
-  this->archives.revertIfUnused(src->getSrcId());
 }
 
 void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params) {
-  const char *uriStr = params.textDocument.uri.c_str();
-  LOG(LogLevel::INFO, "change textDocument: %s, %d", uriStr, params.textDocument.version);
-  auto uri = uri::URI::fromString(params.textDocument.uri);
-  if (!uri) {
-    LOG(LogLevel::ERROR, "broken uri: %s", uriStr);
-    return;
-  }
-  auto src = this->srcMan.find(uri.getPath());
+  LOG(LogLevel::INFO, "change textDocument: %s, %d", params.textDocument.uri.c_str(),
+      params.textDocument.version);
+  auto src = this->resolveSource(params.textDocument.uri);
   if (!src) {
-    LOG(LogLevel::ERROR, "broken textDocument: %s", uriStr);
     return;
   }
   std::string content = src->getContent();
@@ -164,7 +195,7 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
       return;
     }
   }
-  src = this->srcMan.update(uri.getPath(), params.textDocument.version, std::move(content));
+  src = this->srcMan.update(src->getPath(), params.textDocument.version, std::move(content));
   this->archives.revert({src->getSrcId()});
   AnalyzerAction action;
   SymbolIndexer indexer(this->indexes);
@@ -176,7 +207,11 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
 Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &params) {
   LOG(LogLevel::INFO, "definition at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
-  return std::vector<Location>();
+  std::vector<Location> ret;
+  if (auto src = this->resolveSource(params.textDocument.uri); src) {
+    this->gotoDefinitionImpl(*src, params.position, ret);
+  }
+  return ret;
 }
 
 Reply<std::vector<Location>> LSPServer::findReference(const ReferenceParams &params) {

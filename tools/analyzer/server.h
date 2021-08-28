@@ -92,8 +92,12 @@ private:
                               std::forward<Error>(ecallback));
   }
 
+  SourcePtr resolveSource(const std::string &uriStr);
+
+  void gotoDefinitionImpl(const Source &src, Position position, std::vector<Location> &result);
+
 public:
-  // RPC method definition
+  // RPC method definitions
 
   Reply<InitializeResult> initialize(const InitializeParams &params);
 

@@ -190,7 +190,8 @@ public:
   }
 };
 
-const DeclSymbol *findDeclaration(const SymbolIndexes &indexes, SymbolRef ref);
+bool findDeclaration(const SymbolIndexes &indexes, SymbolRef ref,
+                     const std::function<void(unsigned short, const DeclSymbol &)> &consumer);
 
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRef ref,
                        const std::function<void(const SymbolRef &)> &cosumer);

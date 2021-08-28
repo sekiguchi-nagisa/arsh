@@ -82,13 +82,21 @@ void SymbolIndexes::remove(unsigned short id) {
   }
 }
 
-const DeclSymbol *findDeclaration(const SymbolIndexes &indexes, SymbolRef ref) {
+bool findDeclaration(const SymbolIndexes &indexes, SymbolRef ref,
+                     const std::function<void(unsigned short, const DeclSymbol &)> &consumer) {
   if (auto *index = indexes.find(ref.getModId()); index) {
     if (auto *symbol = index->findSymbol(ref.getPos()); symbol) {
-      return indexes.findDecl(symbol->getDeclModId(), symbol->getDeclPos());
+      auto *decl = indexes.findDecl(symbol->getDeclModId(), symbol->getDeclPos());
+      if (!decl) {
+        return false;
+      }
+      if (consumer) {
+        consumer(symbol->getDeclModId(), *decl);
+      }
+      return true;
     }
   }
-  return nullptr;
+  return false;
 }
 
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRef ref,
