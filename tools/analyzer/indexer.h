@@ -27,16 +27,43 @@ private:
   unsigned short modId;
   int version;
   std::shared_ptr<TypePool> pool;
-  std::vector<Symbol> decls;
-  std::vector<SymbolRef> refs;
+  std::vector<DeclSymbol> decls;
+  std::vector<Symbol> symbols;
+
+  struct ScopeEntry : public RefCount<ScopeEntry> {
+    std::unordered_map<std::string, SymbolRef> map;
+
+    const IntrusivePtr<ScopeEntry> parent;
+
+    explicit ScopeEntry(const IntrusivePtr<ScopeEntry> &parent) : parent(parent) {}
+  };
+
+  IntrusivePtr<ScopeEntry> scope;
 
 public:
   IndexBuilder(unsigned short modId, int version, const std::shared_ptr<TypePool> &pool)
-      : modId(modId), version(version), pool(pool) {}
+      : modId(modId), version(version), pool(pool),
+        scope(IntrusivePtr<ScopeEntry>::create(nullptr)) {}
 
   SymbolIndex build() && {
-    return {this->modId, this->version, std::move(this->decls), std::move(this->refs)};
+    return {this->modId, this->version, std::move(this->decls), std::move(this->symbols)};
   }
+
+  auto intoScope() {
+    this->scope = IntrusivePtr<ScopeEntry>::create(this->scope);
+    return finally([&] { this->scope = this->scope->parent; });
+  }
+
+  bool addDecl(DeclSymbol::Kind kind, const NameInfo &info);
+
+  bool addSymbol(const NameInfo &info);
+
+private:
+  const SymbolRef *findDeclRef(const std::string &name) const;
+
+  DeclSymbol *addDeclImpl(DeclSymbol::Kind k, Token token);
+
+  bool addSymbolImpl(Token token, unsigned short declModId, const DeclSymbol &decl);
 };
 
 class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {
@@ -49,7 +76,7 @@ public:
 
   ~SymbolIndexer() override = default;
 
-  void enterModule(unsigned short modID, int version,
+  void enterModule(unsigned short modId, int version,
                    const std::shared_ptr<TypePool> &pool) override;
   void exitModule(std::unique_ptr<Node> &&node) override;
   void consume(std::unique_ptr<Node> &&node) override;
@@ -124,6 +151,10 @@ private:
     for (const auto &item : nodes) {
       this->visit(item);
     }
+  }
+
+  void visitBlockWithCurrentScope(const BlockNode &blockNode) {
+    this->visitEach(blockNode.getNodes());
   }
 
   IndexBuilder &builder() { return this->builders.back(); }

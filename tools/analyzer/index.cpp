@@ -24,35 +24,23 @@ namespace ydsh::lsp {
 // ##     SymbolIndex     ##
 // #########################
 
-struct SymbolComp {
-  bool operator()(const Symbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
-
-  bool operator()(unsigned int x, const Symbol &y) const { return x < y.getToken().pos; }
-};
-
-const Symbol *SymbolIndex::findDecl(unsigned int pos) const {
-  auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), pos, SymbolComp());
+const DeclSymbol *SymbolIndex::findDecl(unsigned int pos) const {
+  auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), pos, DeclSymbol::Compare());
   if (iter != this->decls.end()) {
-    auto &symbol = *iter;
-    if (pos >= symbol.getToken().pos && pos <= symbol.getToken().endPos()) {
-      return &symbol;
+    auto &decl = *iter;
+    if (pos >= decl.getToken().pos && pos <= decl.getToken().endPos()) {
+      return &decl;
     }
   }
   return nullptr;
 }
 
-struct SymbolRefComp {
-  bool operator()(const SymbolRef &x, unsigned int y) const { return x.getToken().endPos() < y; }
-
-  bool operator()(unsigned int x, const SymbolRef &y) const { return x < y.getToken().pos; }
-};
-
-const SymbolRef *SymbolIndex::findRef(unsigned int pos) const {
-  auto iter = std::lower_bound(this->refs.begin(), this->refs.end(), pos, SymbolRefComp());
-  if (iter != this->refs.end()) {
-    auto &ref = *iter;
-    if (pos >= ref.getToken().pos && pos <= ref.getToken().endPos()) {
-      return &ref;
+const Symbol *SymbolIndex::findSymbol(unsigned int pos) const {
+  auto iter = std::lower_bound(this->symbols.begin(), this->symbols.end(), pos, Symbol::Compare());
+  if (iter != this->symbols.end()) {
+    auto &symbol = *iter;
+    if (pos >= symbol.getToken().pos && pos <= symbol.getToken().endPos()) {
+      return &symbol;
     }
   }
   return nullptr;
@@ -77,14 +65,9 @@ void SymbolIndexes::add(SymbolIndex &&index) {
   }
 }
 
-struct IndexComp {
-  bool operator()(const SymbolIndex &x, unsigned short id) const { return x.getModId() < id; }
-
-  bool operator()(unsigned short id, const SymbolIndex &y) const { return id < y.getModId(); }
-};
-
 const SymbolIndex *SymbolIndexes::find(unsigned short modId) const {
-  auto iter = std::lower_bound(this->indexes.begin(), this->indexes.end(), modId, IndexComp());
+  auto iter =
+      std::lower_bound(this->indexes.begin(), this->indexes.end(), modId, SymbolIndex::Compare());
   if (iter != this->indexes.end()) {
     return &*iter;
   }
@@ -92,33 +75,34 @@ const SymbolIndex *SymbolIndexes::find(unsigned short modId) const {
 }
 
 void SymbolIndexes::remove(unsigned short id) {
-  auto iter = std::lower_bound(this->indexes.begin(), this->indexes.end(), id, IndexComp());
+  auto iter =
+      std::lower_bound(this->indexes.begin(), this->indexes.end(), id, SymbolIndex::Compare());
   if (iter != this->indexes.end()) {
     this->indexes.erase(iter);
   }
 }
 
-const Symbol *findDeclaration(const SymbolIndexes &indexes, Symbol::RefLoc ref) {
-  if (auto *index = indexes.find(ref.modID); index) {
-    if (auto *refSymbol = index->findRef(ref.pos); refSymbol) {
-      if (auto *decl = indexes.find(refSymbol->getDeclModId()); decl) {
-        return decl->findDecl(refSymbol->getDeclPos());
-      }
+const DeclSymbol *findDeclaration(const SymbolIndexes &indexes, SymbolRef ref) {
+  if (auto *index = indexes.find(ref.getModId()); index) {
+    if (auto *symbol = index->findSymbol(ref.getPos()); symbol) {
+      return indexes.findDecl(symbol->getDeclModId(), symbol->getDeclPos());
     }
   }
   return nullptr;
 }
 
-// bool findAllReferences(const SymbolIndexes &indexes, Symbol::RefLoc decl,
-//                        const std::function<void(const SymbolRef &)> &cosumer) {
-//   unsigned int count = 0;
-//   if (auto *index = indexes.find(decl.modID); index) {
-//     if (auto *declSymbol = index->findDecl(decl.pos); declSymbol) {
-//       for (auto &e : declSymbol->getRefs()) {
-//       }
-//     }
-//   }
-//   return count > 0;
-// }
+bool findAllReferences(const SymbolIndexes &indexes, SymbolRef ref,
+                       const std::function<void(const SymbolRef &)> &cosumer) {
+  unsigned int count = 0;
+  if (auto *decl = indexes.findDecl(ref.getModId(), ref.getPos()); decl) {
+    for (auto &e : decl->getRefs()) {
+      count++;
+      if (cosumer) {
+        cosumer(e);
+      }
+    }
+  }
+  return count > 0;
+}
 
 } // namespace ydsh::lsp

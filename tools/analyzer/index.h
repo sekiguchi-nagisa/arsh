@@ -26,21 +26,74 @@
 
 namespace ydsh::lsp {
 
-class SymbolRef {
+class Symbol {
 private:
-  Token token;
+  unsigned int pos;
+  unsigned short size;
   unsigned short declModId;
   unsigned int declPos;
 
 public:
-  Token getToken() const { return this->token; }
+  static Optional<Symbol> create(Token token, unsigned short declModId, unsigned int declPos) {
+    if (token.size > UINT16_MAX) {
+      return {};
+    }
+    return Symbol(token.pos, static_cast<unsigned short>(token.size), declModId, declPos);
+  }
+
+  Symbol(unsigned int pos, unsigned short size, unsigned short declModId, unsigned int declPos)
+      : pos(pos), size(size), declModId(declModId), declPos(declPos) {}
+
+  unsigned int getPos() const { return this->pos; }
+
+  Token getToken() const {
+    return Token{
+        .pos = this->pos,
+        .size = this->size,
+    };
+  }
 
   unsigned short getDeclModId() const { return this->declModId; }
 
   unsigned short getDeclPos() const { return this->declPos; }
+
+  struct Compare {
+    bool operator()(const Symbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
+
+    bool operator()(unsigned int x, const Symbol &y) const { return x < y.getToken().pos; }
+  };
 };
 
-class Symbol {
+class SymbolRef {
+private:
+  unsigned int pos;
+  unsigned short size;
+  unsigned short modId;
+
+public:
+  static Optional<SymbolRef> create(Token token, unsigned short modId) {
+    if (token.size > UINT16_MAX) {
+      return {};
+    }
+    return SymbolRef(token.pos, static_cast<unsigned short>(token.size), modId);
+  }
+
+  SymbolRef(unsigned int pos, unsigned short size, unsigned short modId)
+      : pos(pos), size(size), modId(modId) {}
+
+  unsigned int getPos() const { return this->pos; }
+
+  Token getToken() const {
+    return Token{
+        .pos = this->pos,
+        .size = this->size,
+    };
+  }
+
+  unsigned short getModId() const { return this->modId; }
+};
+
+class DeclSymbol {
 public:
   enum class Kind : unsigned short {
     VAR,
@@ -49,26 +102,21 @@ public:
     TYPE_ALIAS,
   };
 
-  struct RefLoc {
-    unsigned short modID;
-    unsigned int pos;
-  };
-
 private:
   unsigned int pos;
   unsigned short size;
   Kind kind;
-  FlexBuffer<RefLoc> refs;
+  FlexBuffer<SymbolRef> refs;
 
 public:
-  static Optional<Symbol> create(Kind kind, Token token) {
+  static Optional<DeclSymbol> create(Kind kind, Token token) {
     if (token.size > UINT16_MAX) {
       return {};
     }
-    return Symbol(kind, token.pos, static_cast<unsigned short>(token.size));
+    return DeclSymbol(kind, token.pos, static_cast<unsigned short>(token.size));
   }
 
-  Symbol(Kind kind, unsigned int pos, unsigned short size) : pos(pos), size(size), kind(kind) {}
+  DeclSymbol(Kind kind, unsigned int pos, unsigned short size) : pos(pos), size(size), kind(kind) {}
 
   Kind getKind() const { return this->kind; }
 
@@ -79,32 +127,48 @@ public:
     };
   }
 
-  const FlexBuffer<RefLoc> &getRefs() const { return this->refs; }
+  unsigned int getPos() const { return this->pos; }
 
-  void addRef(RefLoc loc) { this->refs.push_back(loc); }
+  const FlexBuffer<SymbolRef> &getRefs() const { return this->refs; }
+
+  void addRef(SymbolRef ref) { this->refs.push_back(ref); }
+
+  struct Compare {
+    bool operator()(const DeclSymbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
+
+    bool operator()(unsigned int x, const DeclSymbol &y) const { return x < y.getToken().pos; }
+  };
 };
 
 class SymbolIndex {
 private:
   unsigned short modId;
   int version;
-  std::vector<Symbol> decls;
-  std::vector<SymbolRef> refs;
+  std::vector<DeclSymbol> decls;
+  std::vector<Symbol> symbols;
 
 public:
-  SymbolIndex(unsigned short modId, int version, std::vector<Symbol> &&decls,
-              std::vector<SymbolRef> &&refs)
-      : modId(modId), version(version), decls(std::move(decls)), refs(std::move(refs)) {}
+  SymbolIndex(unsigned short modId, int version, std::vector<DeclSymbol> &&decls,
+              std::vector<Symbol> &&symbols)
+      : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)) {}
 
   unsigned short getModId() const { return this->modId; }
 
   int getVersion() const { return this->version; }
 
-  const Symbol *findDecl(unsigned int pos) const;
+  const DeclSymbol *findDecl(unsigned int pos) const;
 
-  const SymbolRef *findRef(unsigned int pos) const;
+  const Symbol *findSymbol(unsigned int pos) const;
 
-  const std::vector<SymbolRef> &getRefs() const { return this->refs; }
+  const std::vector<DeclSymbol> &getDecls() const { return this->decls; }
+
+  const std::vector<Symbol> &getSymbols() const { return this->symbols; }
+
+  struct Compare {
+    bool operator()(const SymbolIndex &x, unsigned short id) const { return x.getModId() < id; }
+
+    bool operator()(unsigned short id, const SymbolIndex &y) const { return id < y.getModId(); }
+  };
 };
 
 class SymbolIndexes {
@@ -117,11 +181,18 @@ public:
   const SymbolIndex *find(unsigned short modId) const;
 
   void remove(unsigned short id);
+
+  const DeclSymbol *findDecl(unsigned short modId, unsigned int pos) const {
+    if (auto *index = this->find(modId); index) {
+      return index->findDecl(pos);
+    }
+    return nullptr;
+  }
 };
 
-const Symbol *findDeclaration(const SymbolIndexes &indexes, Symbol::RefLoc ref);
+const DeclSymbol *findDeclaration(const SymbolIndexes &indexes, SymbolRef ref);
 
-bool findAllReferences(const SymbolIndexes &indexes, Symbol::RefLoc decl,
+bool findAllReferences(const SymbolIndexes &indexes, SymbolRef ref,
                        const std::function<void(const SymbolRef &)> &cosumer);
 
 } // namespace ydsh::lsp

@@ -15,6 +15,7 @@
  */
 
 #include "server.h"
+#include "indexer.h"
 #include "source.h"
 
 namespace ydsh::lsp {
@@ -120,7 +121,9 @@ void LSPServer::didOpenTextDocument(const DidOpenTextDocumentParams &params) {
       return;
     }
     AnalyzerAction action;
+    SymbolIndexer indexer(this->indexes);
     action.emitter.reset(&this->diagnosticEmitter);
+    action.consumer.reset(&indexer);
     analyze(this->srcMan, this->archives, action, *src);
   }
 }
@@ -164,7 +167,9 @@ void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params)
   src = this->srcMan.update(uri.getPath(), params.textDocument.version, std::move(content));
   this->archives.revert({src->getSrcId()});
   AnalyzerAction action;
+  SymbolIndexer indexer(this->indexes);
   action.emitter.reset(&this->diagnosticEmitter);
+  action.consumer.reset(&indexer);
   analyze(this->srcMan, this->archives, action, *src);
 }
 

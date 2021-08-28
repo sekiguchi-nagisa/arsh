@@ -3,6 +3,7 @@
 #include <fstream>
 
 #include "analyzer.h"
+#include "indexer.h"
 
 #ifndef BIN_PATH
 #error require BIN_PATH
@@ -56,7 +57,10 @@ protected:
     NodeDumper dumper(tmpFile.get());
     auto src = man.update(GetParam(), 0, std::move(content));
     AnalyzerAction action;
+    SymbolIndexes indexes;
+    SymbolIndexer indexer(indexes);
     action.dumper.reset(&dumper);
+    action.consumer.reset(&indexer);
     analyze(man, archives, action, *src);
     tmpFile.reset();
     content = std::string();

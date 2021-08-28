@@ -19,6 +19,7 @@
 
 #include "../json/jsonrpc.h"
 #include "analyzer.h"
+#include "index.h"
 #include "lsp.h"
 #include "transport.h"
 
@@ -35,6 +36,7 @@ private:
   LSPTransport transport;
   SourceManager srcMan;
   ModuleArchives archives;
+  SymbolIndexes indexes;
   DiagnosticEmitter diagnosticEmitter;
   bool init{false};
   bool willExit{false};
