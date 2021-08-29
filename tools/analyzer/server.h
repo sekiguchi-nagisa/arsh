@@ -96,6 +96,8 @@ private:
 
   void gotoDefinitionImpl(const Source &src, Position position, std::vector<Location> &result);
 
+  void findReferenceImpl(const Source &src, Position position, std::vector<Location> &result);
+
 public:
   // RPC method definitions
 

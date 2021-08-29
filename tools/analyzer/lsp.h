@@ -455,7 +455,7 @@ struct VersionedTextDocumentIdentifier : public TextDocumentIdentifier {
 
   template <typename T>
   void jsonify(T &t) {
-    t(static_cast<TextDocumentIdentifier &>(*this));
+    TextDocumentIdentifier::jsonify(t);
     JSONIFY(version);
   }
 };
@@ -551,6 +551,9 @@ struct ReferenceParams : public TextDocumentPositionParams,
 
   template <typename T>
   void jsonify(T &t) {
+    TextDocumentPositionParams::jsonify(t);
+    WorkDoneProgressParams::jsonify(t);
+    PartialResultParams::jsonify(t);
     JSONIFY(context);
   }
 };

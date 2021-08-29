@@ -99,6 +99,23 @@ void LSPServer::gotoDefinitionImpl(const Source &src, Position position,
   });
 }
 
+void LSPServer::findReferenceImpl(const Source &src, Position position,
+                                  std::vector<Location> &result) {
+  auto ref = toSymbolRef(src, position);
+  if (!ref.hasValue()) {
+    return;
+  }
+  findAllReferences(this->indexes, ref.unwrap(), [&](const SymbolRef &symbol) {
+    auto s = this->srcMan.findById(symbol.getModId());
+    assert(s);
+    std::string uri = "file://";
+    uri += s->getPath();
+    auto range = toRange(s->getContent(), symbol.getToken());
+    assert(range.hasValue());
+    result.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
+  });
+}
+
 // RPC method definitions
 
 Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
@@ -217,7 +234,11 @@ Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &p
 Reply<std::vector<Location>> LSPServer::findReference(const ReferenceParams &params) {
   LOG(LogLevel::INFO, "reference at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
-  return std::vector<Location>();
+  std::vector<Location> ret;
+  if (auto src = this->resolveSource(params.textDocument.uri); src) {
+    this->findReferenceImpl(*src, params.position, ret);
+  }
+  return ret;
 }
 
 } // namespace ydsh::lsp
