@@ -479,6 +479,30 @@ static const FieldHandle *lookupUdcImpl(const NameScope &scope, const TypePool &
   }
 }
 
+static bool lookupUdcFromIndex(const DSState &state, unsigned int index, ResolvedCmd &cmd,
+                               const ModType *modType, bool underlyingMod = false) {
+  const FuncObject *udcObj = nullptr;
+  auto &v = state.getGlobal(index);
+  if (v) {
+    udcObj = &typeAs<FuncObject>(v);
+  } else {
+    cmd = ResolvedCmd::illegalUdc();
+    return true;
+  }
+
+  auto &type = state.typePool.get(udcObj->getTypeID());
+  if (type.isModType()) {
+    cmd = ResolvedCmd::fromMod(static_cast<const ModType &>(type), modType);
+  } else {
+    assert(type.isVoidType());
+    if (underlyingMod) {
+      modType = getUnderlyingModType(state.typePool, state.modLoader, &udcObj->getCode());
+    }
+    cmd = ResolvedCmd::fromUdc(*udcObj, modType);
+  }
+  return true;
+}
+
 /**
  * lookup user-defined command from module.
  * if modType is null, lookup from root module
@@ -492,27 +516,8 @@ static const FieldHandle *lookupUdcImpl(const NameScope &scope, const TypePool &
 static bool lookupUdc(const DSState &state, const char *name, ResolvedCmd &cmd,
                       const ModType *modType) {
   auto handle = lookupUdcImpl(*state.rootModScope, state.typePool, modType, name);
-  const FuncObject *udcObj = nullptr;
   if (handle) {
-    auto &v = state.getGlobal(handle->getIndex());
-    if (v) {
-      udcObj = &typeAs<FuncObject>(v);
-    } else {
-      cmd = ResolvedCmd::illegalUdc();
-      return true;
-    }
-  }
-
-  if (udcObj) {
-    auto &type = state.typePool.get(udcObj->getTypeID());
-    if (type.isModType()) {
-      cmd = ResolvedCmd::fromMod(static_cast<const ModType &>(type), modType);
-    } else {
-      assert(type.isVoidType());
-      modType = getUnderlyingModType(state.typePool, state.modLoader, &udcObj->getCode());
-      cmd = ResolvedCmd::fromUdc(*udcObj, modType);
-    }
-    return true;
+    return lookupUdcFromIndex(state, handle->getIndex(), cmd, modType, true);
   }
   return false;
 }
@@ -701,7 +706,12 @@ bool VM::callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj, DS
                      CmdCallAttr attr) {
   auto &array = typeAs<ArrayObject>(argvObj);
   auto cmd = resolver(state, array.getValues()[0].asStrRef());
+  return callCommand(state, cmd, std::move(argvObj), std::move(redirConfig), attr);
+}
 
+bool VM::callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
+                     DSValue &&redirConfig, CmdCallAttr attr) {
+  auto &array = typeAs<ArrayObject>(argvObj);
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:
   case ResolvedCmd::BUILTIN_S: {
@@ -1684,6 +1694,23 @@ bool VM::mainLoop(DSState &state) {
         auto argv = state.stack.pop();
 
         TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
+        vmnext;
+      }
+      vmcase(CALL_UDC) vmcase(CALL_UDC_NOFORK) {
+        unsigned short index = read16(GET_CODE(state), state.stack.pc());
+        state.stack.pc() += 2;
+        bool needFork = op != OpCode::CALL_UDC_NOFORK;
+        CmdCallAttr attr{};
+        if (needFork) {
+          setFlag(attr, CmdCallAttr::NEED_FORK);
+        }
+
+        auto redir = state.stack.pop();
+        auto argv = state.stack.pop();
+
+        ResolvedCmd cmd;
+        lookupUdcFromIndex(state, index, cmd, nullptr);
+        TRY(callCommand(state, cmd, std::move(argv), std::move(redir), attr));
         vmnext;
       }
       vmcase(BUILTIN_CMD) {

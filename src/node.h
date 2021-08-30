@@ -1136,6 +1136,8 @@ private:
 
   bool needFork{true};
 
+  unsigned short udcIndex{0};
+
 public:
   explicit CmdNode(std::unique_ptr<StringNode> &&nameNode)
       : WithRtti(nameNode->getToken()), nameNode(std::move(nameNode)) {}
@@ -1155,6 +1157,10 @@ public:
   bool getNeedFork() const { return this->needFork; }
 
   void addRedirNode(std::unique_ptr<RedirNode> &&node);
+
+  void setUdcIndex(unsigned short i) { this->udcIndex = i; }
+
+  unsigned short getUdcIndex() const { return this->udcIndex; }
 
   void dump(NodeDumper &dumper) const override;
 };

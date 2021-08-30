@@ -460,6 +460,7 @@ void CmdNode::dump(NodeDumper &dumper) const {
   DUMP(argNodes);
   DUMP(redirCount);
   DUMP(needFork);
+  DUMP(udcIndex);
 }
 
 // ##########################

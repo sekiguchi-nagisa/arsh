@@ -501,6 +501,9 @@ private:
   static bool callCommand(DSState &state, CmdResolver resolver, DSValue &&argvObj,
                           DSValue &&redirConfig, CmdCallAttr attr = {});
 
+  static bool callCommand(DSState &state, const ResolvedCmd &cmd, DSValue &&argvObj,
+                          DSValue &&redirConfig, CmdCallAttr attr);
+
   static bool builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdCallAttr attr);
 
   static void builtinExec(DSState &state, DSValue &&array, DSValue &&redir);

@@ -717,8 +717,13 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
   }
 
   this->emitSourcePos(node.getPos());
-  OpCode ins = node.getNeedFork() ? OpCode::CALL_CMD : OpCode::CALL_CMD_NOFORK;
-  this->emit0byteIns(ins);
+  if(node.getUdcIndex() == 0) {
+    OpCode ins = node.getNeedFork() ? OpCode::CALL_CMD : OpCode::CALL_CMD_NOFORK;
+    this->emit0byteIns(ins);
+  } else {
+    OpCode ins = node.getNeedFork() ? OpCode::CALL_UDC : OpCode::CALL_UDC_NOFORK;
+    this->emit2byteIns(ins, node.getUdcIndex());
+  }
 }
 
 void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {

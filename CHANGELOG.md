@@ -21,6 +21,8 @@
     - command definition
     - type alias definition
     - source statement
+- **Breaking Change**: statically determine user-defined command
+    - eliminate runtime user-defined command lookup
 
 #### Misc
 

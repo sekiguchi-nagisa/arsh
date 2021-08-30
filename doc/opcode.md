@@ -1,6 +1,6 @@
 ## Specification of op code
 
-| **Mnemonic**    | **Other bytes**                | **Stack (before -> after)**                  | **Description**                                    |
+| **Mnemonic**    | **Other bytes**                | **Stack (before -> after)**                  | **Description**    |
 |-----------------|--------------------------------|----------------------------------------------|----------------------------------------------------|
 | HALT            |                                | [no change]                                  | stop evaluation of interpreter immediately         |
 | ASSERT          |                                | value1 value2 ->                             | assertion that value1 is true.                     |
@@ -68,6 +68,8 @@
 | ADD_GLOBBING    | 1: len 2: option               | argv redir value1 ~ valueN+1 -> argv redir   | apply glob expansion and add results to value0     |
 | CALL_CMD        |                                | argv redir -> value                          | call command.                                      |
 | CALL_CMD_NOFORK |                                | argv redir -> value                          | call command without fork                          |
+| CALL_UDC        | 2: byte1 byte2                 | argv redir -> value                          | call user-defined command                          |
+| CALL_UDC_NOFORK | 2: byte1 byte2                 | argv redir -> value                          | call user-defined command without fork             |
 | BUILTIN_CMD     |                                | -> value                                     | call builtin command command                       |
 | BUILTIN_EVAL    |                                | -> value                                     | call builtin eval command                          |
 | BUILTIN_EXEC    |                                | -> value / [terminate]                       | call builtin exec command                          |

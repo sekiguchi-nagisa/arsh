@@ -768,6 +768,10 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
   if (node.getNameNode().getValue() == "exit" || node.getNameNode().getValue() == "_exit") {
     node.setType(this->typePool.get(TYPE::Nothing));
   } else {
+    std::string cmdName = toCmdFullName(node.getNameNode().getValue());
+    if (auto *handle = this->curScope->lookup(cmdName); handle) {
+      node.setUdcIndex(handle->getIndex());
+    }
     node.setType(this->typePool.get(TYPE::Boolean));
   }
 }

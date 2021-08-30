@@ -517,6 +517,7 @@ nodes:
                             value: "34"
                   redirCount: 1
                   needFork: true
+                  udcIndex: 0
                 methodCallNode: null
               - nodeKind: With
                 token:
@@ -898,6 +899,7 @@ nodes:
               meta: "*"
       redirCount: 0
       needFork: true
+      udcIndex: 0
     targetTypeToken: null
     opKind: "TO_VOID"
 )"},
