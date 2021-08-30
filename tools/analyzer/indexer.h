@@ -54,9 +54,9 @@ public:
     return finally([&] { this->scope = this->scope->parent; });
   }
 
-  bool addDecl(DeclSymbol::Kind kind, const NameInfo &info);
+  bool addDecl(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
-  bool addSymbol(const NameInfo &info);
+  bool addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
 private:
   const SymbolRef *findDeclRef(const std::string &name) const;
