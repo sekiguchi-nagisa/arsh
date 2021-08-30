@@ -2176,7 +2176,7 @@ const char *resolveBinaryOpName(TokenKind op);
 
 TokenKind resolveAssignOp(TokenKind op);
 
-std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, std::string &&varName,
+std::unique_ptr<LoopNode> createForInNode(unsigned int startPos, NameInfo &&varName,
                                           std::unique_ptr<Node> &&exprNode,
                                           std::unique_ptr<BlockNode> &&blockNode);
 

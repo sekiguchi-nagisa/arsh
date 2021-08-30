@@ -770,7 +770,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
     }
     return std::move(node);
   } else { // for-in
-    Token token = TRY(this->expect(TokenKind::APPLIED_NAME));
+    auto name = TRY(this->expectName(TokenKind::APPLIED_NAME, &Lexer::toName));
     TRY(this->expect(TokenKind::IN));
     auto exprNode = TRY(this->parse_expression());
     auto blockNode = this->parse_block();
@@ -783,8 +783,8 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
       return nullptr;
     }
 
-    auto node = createForInNode(startPos, this->lexer->toName(token), std::move(exprNode),
-                                std::move(blockNode));
+    auto node =
+        createForInNode(startPos, std::move(name), std::move(exprNode), std::move(blockNode));
     if (comp) {
       this->incompleteNode = std::move(node);
     }
