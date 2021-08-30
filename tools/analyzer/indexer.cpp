@@ -140,11 +140,15 @@ bool IndexBuilder::addSymbolImpl(Token token, unsigned short declModId, const De
 
 void SymbolIndexer::visitTypeNode(TypeNode &node) {
   switch (node.typeKind) {
-  case TypeNode::Base:
+  case TypeNode::Base: {
+    auto &base = cast<BaseTypeNode>(node);
+    this->builder().addSymbol(NameInfo(base.getToken(), std::string(base.getTokenText())),
+                              DeclSymbol::Kind::TYPE_ALIAS);
     break;
+  }
   case TypeNode::Qualified: {
     auto &type = cast<QualifiedTypeNode>(node);
-    this->visit(type.getRecvTypeNode());
+    this->visit(type.getRecvTypeNode()); // FIXME: resolve module
     break;
   }
   case TypeNode::Reified: {
