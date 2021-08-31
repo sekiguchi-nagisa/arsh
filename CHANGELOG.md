@@ -23,6 +23,7 @@
     - source statement
 - **Breaking Change**: statically determine user-defined command
     - eliminate runtime user-defined command lookup
+    - disallow user-defined command call defined in backward of call-site
 
 #### Misc
 

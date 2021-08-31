@@ -1,0 +1,14 @@
+
+var ex = 34 as Any
+
+try {
+    f 1 2 3
+    assert $false
+} catch $e {
+    $ex = $e
+}
+assert $ex is SystemError
+
+f() {
+    echo always hello
+}

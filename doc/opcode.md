@@ -66,10 +66,11 @@
 | NEW_CMD         |                                | value -> value                               | pop stack top and store it to new argv             |
 | ADD_CMD_ARG     | 1: byte1                       | argv redir value -> argv redir               | add stack top value as command argument            |
 | ADD_GLOBBING    | 1: len 2: option               | argv redir value1 ~ valueN+1 -> argv redir   | apply glob expansion and add results to value0     |
-| CALL_CMD        |                                | argv redir -> value                          | call command.                                      |
-| CALL_CMD_NOFORK |                                | argv redir -> value                          | call command without fork                          |
+| CALL_CMD        |                                | argv redir -> value                          | call builtin or external command.                  |
+| CALL_CMD_NOFORK |                                | argv redir -> value                          | call builtin or external command without fork      |
 | CALL_UDC        | 2: byte1 byte2                 | argv redir -> value                          | call user-defined command                          |
 | CALL_UDC_NOFORK | 2: byte1 byte2                 | argv redir -> value                          | call user-defined command without fork             |
+| CALL_CMD_COMMON |                                | argv redir -> value                          | call command (user-defined, builtin, external)     |
 | BUILTIN_CMD     |                                | -> value                                     | call builtin command command                       |
 | BUILTIN_EVAL    |                                | -> value                                     | call builtin eval command                          |
 | BUILTIN_EXEC    |                                | -> value / [terminate]                       | call builtin exec command                          |

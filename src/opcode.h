@@ -98,6 +98,7 @@ namespace ydsh {
   OP(CALL_CMD_NOFORK, 0, -1)                                                                       \
   OP(CALL_UDC, 2, -1)                                                                              \
   OP(CALL_UDC_NOFORK, 2, -1)                                                                       \
+  OP(CALL_CMD_COMMON, 0, -1)                                                                       \
   OP(BUILTIN_CMD, 0, 1)                                                                            \
   OP(BUILTIN_EVAL, 0, 1)                                                                           \
   OP(BUILTIN_EXEC, 0, 1)                                                                           \

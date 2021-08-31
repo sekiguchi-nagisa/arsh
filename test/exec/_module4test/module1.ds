@@ -9,12 +9,12 @@ function hey() {
   echo hey!!
 }
 
-say0() {
-    _say0 $@
-}
-
 _say0() {
     echo '_say!!' $@
+}
+
+say0() {
+    _say0 $@
 }
 
 typedef StrArray = [String]

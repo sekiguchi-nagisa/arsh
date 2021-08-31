@@ -811,9 +811,9 @@ bool VM::builtinCommand(DSState &state, DSValue &&argvObj, DSValue &&redir, CmdC
       auto &values = arrayObj.refValues();
       values.erase(values.begin(), values.begin() + index);
 
-      auto resolve = CmdResolver(
-          CmdResolver::FROM_BUILTIN | CmdResolver::FROM_EXTERNAL | CmdResolver::FROM_FALLBACK,
-          useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
+      auto resolve =
+          CmdResolver(CmdResolver::NO_UDC,
+                      useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
       return callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
     }
 
@@ -1693,7 +1693,8 @@ bool VM::mainLoop(DSState &state) {
         auto redir = state.stack.pop();
         auto argv = state.stack.pop();
 
-        TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir), attr));
+        TRY(callCommand(state, CmdResolver(CmdResolver::NO_UDC, FilePathCache::NON),
+                        std::move(argv), std::move(redir), attr));
         vmnext;
       }
       vmcase(CALL_UDC) vmcase(CALL_UDC_NOFORK) {
@@ -1711,6 +1712,14 @@ bool VM::mainLoop(DSState &state) {
         ResolvedCmd cmd;
         lookupUdcFromIndex(state, index, cmd, nullptr);
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), attr));
+        vmnext;
+      }
+      vmcase(CALL_CMD_COMMON) {
+        auto redir = state.stack.pop();
+        auto argv = state.stack.pop();
+
+        TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir),
+                        CmdCallAttr::NEED_FORK));
         vmnext;
       }
       vmcase(BUILTIN_CMD) {
@@ -1954,7 +1963,7 @@ static NativeCode initCmdTrampoline() noexcept {
   code[0] = static_cast<char>(OpCode::LOAD_LOCAL);
   code[1] = 0;
   code[2] = static_cast<char>(OpCode::PUSH_NULL);
-  code[3] = static_cast<char>(OpCode::CALL_CMD);
+  code[3] = static_cast<char>(OpCode::CALL_CMD_COMMON);
   code[4] = static_cast<char>(OpCode::RETURN_V);
   return NativeCode(code);
 }
