@@ -1,6 +1,7 @@
 
 var ex = 34 as Any
 
+assert !test -e f
 try {
     f 1 2 3
     assert $false
@@ -12,3 +13,5 @@ assert $ex is SystemError
 f() {
     echo always hello
 }
+
+true
