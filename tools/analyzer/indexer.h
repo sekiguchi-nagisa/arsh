@@ -49,19 +49,32 @@ public:
     return {this->modId, this->version, std::move(this->decls), std::move(this->symbols)};
   }
 
+  const TypePool &getPool() const { return *this->pool; }
+
   auto intoScope() {
     this->scope = IntrusivePtr<ScopeEntry>::create(this->scope);
     return finally([&] { this->scope = this->scope->parent; });
   }
 
-  bool addDecl(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
+  bool addDecl(const NameInfo &info, const DSType &type,
+               DeclSymbol::Kind kind = DeclSymbol::Kind::VAR) {
+    return this->addDecl(info, kind, type.getName());
+  }
+
+  bool addUdcDecl(const NameInfo &info) {
+    auto value = info.getName();
+    value += " is an user-defined command";
+    return this->addDecl(info, DeclSymbol::Kind::CMD, value.c_str());
+  }
+
+  bool addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover);
 
   bool addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
 private:
   const SymbolRef *findDeclRef(const std::string &name) const;
 
-  DeclSymbol *addDeclImpl(DeclSymbol::Kind k, Token token);
+  DeclSymbol *addDeclImpl(DeclSymbol::Kind k, Token token, const char *info);
 
   bool addSymbolImpl(Token token, unsigned short declModId, const DeclSymbol &decl);
 };

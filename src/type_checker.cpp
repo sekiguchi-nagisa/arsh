@@ -1491,6 +1491,7 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
               this->addEntry(leftNode, leftNode.getVarName(), rightType, FieldAttribute::ENV);
           handle) {
         leftNode.setAttribute(*handle);
+        leftNode.setType(rightType);
       }
     }
 

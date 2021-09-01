@@ -37,7 +37,7 @@ static std::string mangleSymbolName(DeclSymbol::Kind k, const std::string &name)
   }
 }
 
-bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind) {
+bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover) {
   if (!checkNameInfo(info)) {
     return false;
   }
@@ -50,7 +50,7 @@ bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind) {
   if (!pair.second) {
     return false;
   }
-  auto *decl = this->addDeclImpl(kind, info.getToken());
+  auto *decl = this->addDeclImpl(kind, info.getToken(), hover);
   if (!decl) {
     return false;
   }
@@ -102,8 +102,8 @@ const SymbolRef *IndexBuilder::findDeclRef(const std::string &name) const {
   return nullptr;
 }
 
-DeclSymbol *IndexBuilder::addDeclImpl(DeclSymbol::Kind k, Token token) {
-  auto ret = DeclSymbol::create(k, token);
+DeclSymbol *IndexBuilder::addDeclImpl(DeclSymbol::Kind k, Token token, const char *info) {
+  auto ret = DeclSymbol::create(k, token, info);
   if (!ret.hasValue()) {
     return nullptr;
   }
@@ -279,7 +279,8 @@ void SymbolIndexer::visitBlockNode(BlockNode &node) {
 
 void SymbolIndexer::visitTypeAliasNode(TypeAliasNode &node) {
   this->visit(node.getTargetTypeNode());
-  this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::TYPE_ALIAS);
+  this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
+                          DeclSymbol::Kind::TYPE_ALIAS);
 }
 
 void SymbolIndexer::visitLoopNode(LoopNode &node) {
@@ -311,7 +312,7 @@ void SymbolIndexer::visitJumpNode(JumpNode &node) { this->visit(node.getExprNode
 void SymbolIndexer::visitCatchNode(CatchNode &node) {
   auto block = this->builder().intoScope();
   this->visit(node.getTypeNode());
-  this->builder().addDecl(node.getNameInfo());
+  this->builder().addDecl(node.getNameInfo(), node.getTypeNode().getType());
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
 
@@ -323,7 +324,9 @@ void SymbolIndexer::visitTryNode(TryNode &node) {
 
 void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
   this->visit(node.getExprNode());
-  this->builder().addDecl(node.getNameInfo());
+  auto &type = node.getExprNode() ? node.getExprNode()->getType()
+                                  : this->builder().getPool().get(TYPE::String);
+  this->builder().addDecl(node.getNameInfo(), type);
 }
 
 void SymbolIndexer::visitAssignNode(AssignNode &node) {
@@ -345,7 +348,7 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
       NameInfo info(leftNode.getToken(), std::string(leftNode.getVarName()));
-      this->builder().addDecl(info);
+      this->builder().addDecl(info, leftNode.getType());
     }
     this->visit(node.getExprNode());
   } else {
@@ -356,10 +359,10 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
 void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
   this->visit(node.getReturnTypeToken());
   this->visitEach(node.getParamTypeNodes());
-  this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::FUNC);
+  this->builder().addDecl(node.getNameInfo(), *node.getFuncType(), DeclSymbol::Kind::FUNC);
   auto func = this->builder().intoScope();
-  for (auto &e : node.getParams()) {
-    this->builder().addDecl(e);
+  for (unsigned int i = 0; i < node.getParams().size(); i++) {
+    this->builder().addDecl(node.getParams()[i], node.getParamTypeNodes()[i]->getType());
   }
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
@@ -367,14 +370,14 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
 void SymbolIndexer::visitInterfaceNode(InterfaceNode &) {}
 
 void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
-  this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CMD);
+  this->builder().addUdcDecl(node.getNameInfo());
   auto udc = this->builder().intoScope(); // FIXME: register parameter?
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
 
 void SymbolIndexer::visitSourceNode(SourceNode &node) { // FIXME: import foreign decl
   if (node.getNameInfo()) {
-    this->builder().addDecl(*node.getNameInfo());
+    this->builder().addDecl(*node.getNameInfo(), node.getModType());
     //  this->builder().addDecl(DeclSymbol::Kind::TYPE_ALIAS, *node.getNameInfo());
     //  this->builder().addDecl(DeclSymbol::Kind::CMD, *node.getNameInfo());
   }

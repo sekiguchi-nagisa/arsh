@@ -48,6 +48,7 @@ void LSPServer::bindAll() {
   this->bind("textDocument/didChange", &LSPServer::didChangeTextDocument);
   this->bind("textDocument/definition", &LSPServer::gotoDefinition);
   this->bind("textDocument/references", &LSPServer::findReference);
+  this->bind("textDocument/hover", &LSPServer::hover);
 }
 
 void LSPServer::run() {
@@ -129,7 +130,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     this->traceSetting = t.unwrap();
   } // FIXME: check client capability
 
-  InitializeResult ret; // FIXME: set supported capabilities
+  InitializeResult ret;
   ret.capabilities.textDocumentSync = TextDocumentSyncOptions{
       .openClose = true,
       .change = TextDocumentSyncKind::Full,
@@ -139,6 +140,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   };
   ret.capabilities.definitionProvider = true;
   ret.capabilities.referencesProvider = true;
+  ret.capabilities.hoverProvider = true;
   return std::move(ret);
 }
 
@@ -237,6 +239,31 @@ Reply<std::vector<Location>> LSPServer::findReference(const ReferenceParams &par
   std::vector<Location> ret;
   if (auto src = this->resolveSource(params.textDocument.uri); src) {
     this->findReferenceImpl(*src, params.position, ret);
+  }
+  return ret;
+}
+
+Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) {
+  LOG(LogLevel::INFO, "hover at: %s:%s", params.textDocument.uri.c_str(),
+      params.position.toString().c_str());
+  Union<Hover, std::nullptr_t> ret = nullptr;
+  if (auto src = this->resolveSource(params.textDocument.uri); src) {
+    if (auto ref = toSymbolRef(*src, params.position); ref.hasValue()) {
+      auto *index = this->indexes.find(src->getSrcId());
+      assert(index);
+      if (auto *symbol = index->findSymbol(ref.unwrap().getPos()); symbol) {
+        auto *decl = this->indexes.findDecl(symbol->getDeclModId(), symbol->getDeclPos());
+        assert(decl);
+        ret = Hover{
+            .contents =
+                MarkupContent{
+                    .kind = MarkupKind::Markdown,
+                    .value = decl->getInfo().toString(),
+                },
+            .range = toRange(src->getContent(), symbol->getToken()),
+        };
+      }
+    }
   }
   return ret;
 }

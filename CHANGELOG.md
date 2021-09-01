@@ -10,6 +10,10 @@
     - ``$/setTrace``
     - ``textDocument/didOpen``
     - ``textDocument/didChange``
+    - ``textDocument/didClose``
+    - ``textDocument/definition``
+    - ``textDocument/references``
+    - ``textDocument/hover``
 
 ### Changed
 

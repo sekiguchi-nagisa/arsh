@@ -558,6 +558,62 @@ struct ReferenceParams : public TextDocumentPositionParams,
   }
 };
 
+struct HoverParams : public TextDocumentPositionParams, public WorkDoneProgressParams {
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentPositionParams::jsonify(t);
+    WorkDoneProgressParams::jsonify(t);
+  }
+};
+
+#define EACH_MARKUP_KIND(OP)                                                                       \
+  OP(PlainText, "plaintext")                                                                       \
+  OP(Markdown, "markdown")
+
+enum class MarkupKind : unsigned int {
+#define GEN_ENUM(E, S) E,
+  EACH_MARKUP_KIND(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+const char *toString(const MarkupKind &kind);
+
+bool toEnum(const char *str, MarkupKind &kind);
+
+template <typename T>
+void jsonify(T &t, MarkupKind &kind) {
+  if constexpr (is_serialize_v<T>) {
+    std::string value = toString(kind);
+    t(value);
+  } else if constexpr (is_deserialize_v<T>) {
+    std::string value;
+    t(value);
+    t.hasError() || toEnum(value.c_str(), kind);
+  }
+}
+
+struct MarkupContent {
+  MarkupKind kind;
+  std::string value;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(kind);
+    JSONIFY(value);
+  }
+};
+
+struct Hover {
+  MarkupContent contents;
+  Optional<Range> range;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(contents);
+    JSONIFY(range);
+  }
+};
+
 struct TextDocumentContentChangeEvent {
   Optional<Range> range;              // if invalid, text is considered full content of document
   Optional<unsigned int> rangeLength; // deprecated

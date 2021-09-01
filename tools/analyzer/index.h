@@ -21,7 +21,9 @@
 #include <vector>
 
 #include <misc/buffer.hpp>
+#include <misc/resource.hpp>
 #include <misc/result.hpp>
+#include <misc/string_ref.hpp>
 #include <misc/token.hpp>
 
 namespace ydsh::lsp {
@@ -106,17 +108,20 @@ private:
   unsigned int pos;
   unsigned short size;
   Kind kind;
+  CStrPtr info; // hover information
   FlexBuffer<SymbolRef> refs;
 
 public:
-  static Optional<DeclSymbol> create(Kind kind, Token token) {
+  static Optional<DeclSymbol> create(Kind kind, Token token, const char *info = nullptr) {
     if (token.size > UINT16_MAX) {
       return {};
     }
-    return DeclSymbol(kind, token.pos, static_cast<unsigned short>(token.size));
+    return DeclSymbol(kind, token.pos, static_cast<unsigned short>(token.size),
+                      info != nullptr ? info : "(dummy)");
   }
 
-  DeclSymbol(Kind kind, unsigned int pos, unsigned short size) : pos(pos), size(size), kind(kind) {}
+  DeclSymbol(Kind kind, unsigned int pos, unsigned short size, const char *info)
+      : pos(pos), size(size), kind(kind), info(CStrPtr(strdup(info))) {}
 
   Kind getKind() const { return this->kind; }
 
@@ -128,6 +133,8 @@ public:
   }
 
   unsigned int getPos() const { return this->pos; }
+
+  StringRef getInfo() const { return StringRef(this->info.get()); }
 
   const FlexBuffer<SymbolRef> &getRefs() const { return this->refs; }
 

@@ -120,6 +120,8 @@ public:
   Reply<std::vector<Location>> gotoDefinition(const DefinitionParams &params);
 
   Reply<std::vector<Location>> findReference(const ReferenceParams &params);
+
+  Reply<Union<Hover, std::nullptr_t>> hover(const HoverParams &params);
 };
 
 } // namespace ydsh::lsp

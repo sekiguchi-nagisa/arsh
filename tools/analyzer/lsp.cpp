@@ -93,4 +93,33 @@ std::string Range::toString() const {
   return ret;
 }
 
+const char *toString(const MarkupKind &kind) {
+  switch (kind) {
+#define GEN_CASE(E, V)                                                                             \
+  case MarkupKind::E:                                                                              \
+    return V;
+    EACH_MARKUP_KIND(GEN_CASE)
+#undef GEN_CASE
+  default:
+    return "";
+  }
+}
+
+bool toEnum(const char *str, MarkupKind &kind) {
+  StringRef ref = str;
+  MarkupKind kinds[] = {
+#define GEN_ENUM(E, V) MarkupKind::E,
+      EACH_MARKUP_KIND(GEN_ENUM)
+#undef GEN_ENUM
+  };
+  for (auto &e : kinds) {
+    if (ref == toString(e)) {
+      kind = e;
+      return true;
+    }
+  }
+  kind = MarkupKind::PlainText;
+  return false;
+}
+
 } // namespace ydsh::lsp
