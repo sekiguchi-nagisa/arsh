@@ -37,7 +37,7 @@ static std::string mangleSymbolName(DeclSymbol::Kind k, const std::string &name)
   }
 }
 
-bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind) { // FIXME: name mangling
+bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind) {
   if (!checkNameInfo(info)) {
     return false;
   }
@@ -54,7 +54,11 @@ bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind) { // FIX
   if (!decl) {
     return false;
   }
-  return this->addSymbolImpl(info.getToken(), this->modId, *decl);
+  if (!this->addSymbolImpl(info.getToken(), this->modId, *decl)) {
+    return false;
+  }
+  decl->addRef(ref.unwrap());
+  return true;
 }
 
 bool IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
