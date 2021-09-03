@@ -138,7 +138,7 @@ public:
 
   const FlexBuffer<SymbolRef> &getRefs() const { return this->refs; }
 
-  void addRef(SymbolRef ref) { this->refs.push_back(ref); }
+  void addRef(SymbolRef ref);
 
   struct Compare {
     bool operator()(const DeclSymbol &x, unsigned int y) const { return x.getToken().endPos() < y; }

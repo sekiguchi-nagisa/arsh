@@ -20,6 +20,29 @@
 
 namespace ydsh::lsp {
 
+// ########################
+// ##     DeclSymbol     ##
+// ########################
+
+void DeclSymbol::addRef(SymbolRef ref) {
+  auto iter = std::lower_bound(this->refs.begin(), this->refs.end(), ref,
+                               [](const SymbolRef &x, const SymbolRef &y) {
+                                 if (x.getModId() < y.getModId()) {
+                                   return true;
+                                 }
+                                 return x.getModId() == y.getModId() && x.getPos() < y.getPos();
+                               });
+  if (iter != this->refs.end()) {
+    if (iter->getModId() == ref.getModId() && iter->getPos() == ref.getPos()) {
+      *iter = ref; // update
+    } else {
+      this->refs.insert(iter, ref);
+    }
+  } else {
+    this->refs.push_back(ref);
+  }
+}
+
 // #########################
 // ##     SymbolIndex     ##
 // #########################
