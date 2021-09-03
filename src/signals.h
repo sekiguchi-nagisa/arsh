@@ -17,6 +17,7 @@
 #ifndef YDSH_SIGNAL_LIST_H
 #define YDSH_SIGNAL_LIST_H
 
+#include <cerrno>
 #include <csignal>
 #include <vector>
 
