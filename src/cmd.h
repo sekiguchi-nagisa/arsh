@@ -19,6 +19,7 @@
 
 #include <algorithm>
 
+#include "misc/opt.hpp"
 #include "misc/string_ref.hpp"
 
 struct DSState;
@@ -26,6 +27,17 @@ struct DSState;
 namespace ydsh {
 
 class ArrayObject;
+
+struct GetOptState : public opt::GetOptState {
+  /**
+   * index of next processing argument
+   */
+  unsigned int index;
+
+  explicit GetOptState(unsigned int index = 1) : index(index) {}
+
+  int operator()(const ArrayObject &obj, const char *optStr);
+};
 
 /**
  * return exit status.

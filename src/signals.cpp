@@ -198,4 +198,21 @@ std::vector<int> getUniqueSignalList() {
   return ret;
 }
 
+// ####################
+// ##     SigSet     ##
+// ####################
+
+int SigSet::popPendingSig() {
+  assert(!this->empty());
+  int sigNum;
+  do {
+    sigNum = this->pendingIndex++;
+    if (this->pendingIndex == NSIG) {
+      this->pendingIndex = 1;
+    }
+  } while (!this->has(sigNum));
+  this->del(sigNum);
+  return sigNum;
+}
+
 } // namespace ydsh

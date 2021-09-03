@@ -17,17 +17,10 @@
 #ifndef YDSH_CORE_H
 #define YDSH_CORE_H
 
-#include <unistd.h>
-
 #include <array>
-#include <csignal>
 #include <string>
 #include <vector>
 
-#include "misc/buffer.hpp"
-#include "misc/flag_util.hpp"
-#include "misc/hash.hpp"
-#include "misc/opt.hpp"
 #include "misc/resource.hpp"
 #include "object.h"
 #include "opcode.h"
@@ -60,70 +53,6 @@ enum class BuiltinVarOffset : unsigned int {
 };
 
 inline unsigned int toIndex(BuiltinVarOffset offset) { return static_cast<unsigned int>(offset); }
-
-class FilePathCache {
-private:
-  /**
-   * contains previously resolved path (for direct search)
-   */
-  std::string prevPath;
-
-  CStringHashMap<std::string> map;
-
-  static constexpr unsigned int MAX_CACHE_SIZE = 100;
-
-public:
-  NON_COPYABLE(FilePathCache);
-
-  FilePathCache() = default;
-
-  ~FilePathCache();
-
-  enum SearchOp {
-    NON = 0u,
-    USE_DEFAULT_PATH = 1u << 0u,
-    DIRECT_SEARCH = 1u << 1u,
-  };
-
-  /**
-   * search file path by using PATH
-   * if cannot resolve path (file not found), return null.
-   */
-  const char *searchPath(const char *cmdName, SearchOp op = NON);
-
-  void removePath(const char *cmdName);
-
-  bool isCached(const char *cmdName) const;
-
-  /**
-   * clear all cache
-   */
-  void clear();
-
-  /**
-   * get begin iterator of map
-   */
-  auto begin() const { return this->map.cbegin(); }
-
-  /**
-   * get end iterator of map
-   */
-  auto end() const { return this->map.cend(); }
-};
-
-template <>
-struct allow_enum_bitop<FilePathCache::SearchOp> : std::true_type {};
-
-struct GetOptState : public opt::GetOptState {
-  /**
-   * index of next processing argument
-   */
-  unsigned int index;
-
-  explicit GetOptState(unsigned int index = 1) : index(index) {}
-
-  int operator()(const ArrayObject &obj, const char *optStr);
-};
 
 struct VMHook {
   /**
@@ -161,21 +90,6 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message);
 /**
  *
  * @param st
- * @param useLogical
- * @return
- * if has error, return null and set errno.
- */
-CStrPtr getWorkingDir(const DSState &st, bool useLogical);
-
-/**
- * change current working directory and update OLDPWD, PWD.
- * if dest is null, do nothing and return true.
- */
-bool changeWorkingDir(DSState &st, StringRef dest, bool useLogical);
-
-/**
- *
- * @param st
  * @param sigNum
  * @param handler
  * must be FuncObject
@@ -197,31 +111,6 @@ DSValue getSignalHandler(const DSState &st, int sigNum);
  * @param set
  */
 void setJobControlSignalSetting(DSState &st, bool set);
-
-/**
- * expand dot '.' '..'
- * @param basePath
- * may be null. must be full path.
- * @param path
- * may be null
- * @return
- * if expansion failed, return empty string
- */
-std::string expandDots(const char *basePath, const char *path);
-
-/**
- *
- * @param str
- * @param useHOME
- * if true, use `HOME' environmental variable for `~' expansion
- */
-void expandTilde(std::string &str, bool useHOME = false);
-
-/**
- * get full path of LOCAL_MOD_DIR
- * @return
- */
-const char *getFullLocalModDir();
 
 class ModuleLoader;
 
@@ -259,57 +148,6 @@ void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope);
  * @return
  */
 const char *getEmbeddedScript();
-
-class SignalGuard {
-private:
-  sigset_t maskset;
-
-public:
-  SignalGuard() {
-    sigfillset(&this->maskset);
-    sigprocmask(SIG_BLOCK, &this->maskset, nullptr);
-  }
-
-  ~SignalGuard() {
-    int e = errno;
-    sigprocmask(SIG_UNBLOCK, &this->maskset, nullptr);
-    errno = e;
-  }
-};
-
-class SigSet {
-private:
-  static_assert(NSIG - 1 <= sizeof(uint64_t) * 8, "huge signal number");
-
-  uint64_t value{0};
-
-  int pendingIndex{1};
-
-public:
-  void add(int sigNum) {
-    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
-    setFlag(this->value, f);
-  }
-
-  void del(int sigNum) {
-    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
-    unsetFlag(this->value, f);
-  }
-
-  bool has(int sigNum) const {
-    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
-    return hasFlag(this->value, f);
-  }
-
-  bool empty() const { return this->value == 0; }
-
-  void clear() {
-    this->value = 0;
-    this->pendingIndex = 1;
-  }
-
-  int popPendingSig();
-};
 
 class SignalVector {
 private:

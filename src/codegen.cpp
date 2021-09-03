@@ -717,7 +717,7 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
   }
 
   this->emitSourcePos(node.getPos());
-  if(node.getUdcIndex() == 0) {
+  if (node.getUdcIndex() == 0) {
     OpCode ins = node.getNeedFork() ? OpCode::CALL_CMD : OpCode::CALL_CMD_NOFORK;
     this->emit0byteIns(ins);
   } else {

@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-#include <fcntl.h>
-#include <pwd.h>
-#include <sys/stat.h>
 #include <sys/utsname.h>
 #include <sys/wait.h>
 
@@ -24,7 +21,6 @@
 #include <cassert>
 
 #include "logger.h"
-#include "misc/files.h"
 #include "misc/num_util.hpp"
 #include "vm.h"
 #include <embed.h>
@@ -32,120 +28,6 @@
 extern char **environ; // NOLINT
 
 namespace ydsh {
-
-// ###########################
-// ##     FilePathCache     ##
-// ###########################
-
-FilePathCache::~FilePathCache() {
-  for (auto &pair : this->map) {
-    free(const_cast<char *>(pair.first));
-  }
-}
-
-const char *FilePathCache::searchPath(const char *cmdName, FilePathCache::SearchOp op) {
-  // if found '/', return fileName
-  if (strchr(cmdName, '/') != nullptr) {
-    return cmdName;
-  }
-
-  // search cache
-  if (!hasFlag(op, DIRECT_SEARCH)) {
-    auto iter = this->map.find(cmdName);
-    if (iter != this->map.end()) {
-      return iter->second.c_str();
-    }
-  }
-
-  // get PATH
-  const char *pathPrefix = getenv(ENV_PATH);
-  if (pathPrefix == nullptr || hasFlag(op, USE_DEFAULT_PATH)) {
-    pathPrefix = VAL_DEFAULT_PATH;
-  }
-
-  // resolve path
-  for (StringRef pathValue = pathPrefix; !pathValue.empty();) {
-    StringRef remain;
-    auto pos = pathValue.find(":");
-    if (pos != StringRef::npos) {
-      remain = pathValue.substr(pos + 1);
-      pathValue = pathValue.slice(0, pos);
-    }
-
-    if (!pathValue.empty()) {
-      auto resolvedPath = pathValue.toString();
-      if (resolvedPath.back() != '/') {
-        resolvedPath += '/';
-      }
-      resolvedPath += cmdName;
-
-      if ((getStMode(resolvedPath.c_str()) & S_IXUSR) == S_IXUSR) {
-        if (hasFlag(op, DIRECT_SEARCH)) {
-          this->prevPath = std::move(resolvedPath);
-          return this->prevPath.c_str();
-        }
-        // set to cache
-        if (this->map.size() == MAX_CACHE_SIZE) {
-          free(const_cast<char *>(this->map.begin()->first));
-          this->map.erase(this->map.begin());
-        }
-        auto pair = this->map.emplace(strdup(cmdName), std::move(resolvedPath));
-        assert(pair.second);
-        return pair.first->second.c_str();
-      }
-    }
-    pathValue = remain;
-  }
-
-  // not found
-  return nullptr;
-}
-
-void FilePathCache::removePath(const char *cmdName) {
-  if (cmdName != nullptr) {
-    auto iter = this->map.find(cmdName);
-    if (iter != this->map.end()) {
-      free(const_cast<char *>(iter->first));
-      this->map.erase(iter);
-    }
-  }
-}
-
-bool FilePathCache::isCached(const char *cmdName) const {
-  return this->map.find(cmdName) != this->map.end();
-}
-
-void FilePathCache::clear() {
-  for (auto &pair : this->map) {
-    free(const_cast<char *>(pair.first));
-  }
-  this->map.clear();
-}
-
-struct StrArrayIter {
-  ArrayObject::IterType actual;
-
-  explicit StrArrayIter(ArrayObject::IterType actual) : actual(actual) {}
-
-  auto operator*() const { return this->actual->asStrRef(); }
-
-  bool operator==(const StrArrayIter &o) const { return this->actual == o.actual; }
-
-  bool operator!=(const StrArrayIter &o) const { return !(*this == o); }
-
-  StrArrayIter &operator++() {
-    ++this->actual;
-    return *this;
-  }
-};
-
-int GetOptState::operator()(const ArrayObject &obj, const char *optStr) {
-  auto iter = StrArrayIter(obj.getValues().begin() + this->index);
-  auto end = StrArrayIter(obj.getValues().end());
-  int ret = opt::GetOptState::operator()(iter, end, optStr);
-  this->index = iter.actual - obj.getValues().begin();
-  return ret;
-}
 
 // core api definition
 const DSValue &getBuiltinGlobal(const DSState &st, const char *varName) {
@@ -174,58 +56,6 @@ void raiseSystemError(DSState &st, int errorNum, std::string &&message) {
   str += ": ";
   str += strerror(errorNum);
   raiseError(st, TYPE::SystemError, std::move(str));
-}
-
-CStrPtr getWorkingDir(const DSState &st, bool useLogical) {
-  if (useLogical) {
-    if (!S_ISDIR(getStMode(st.logicalWorkingDir.c_str()))) {
-      return nullptr;
-    }
-    return CStrPtr(strdup(st.logicalWorkingDir.c_str()));
-  }
-  return getCWD();
-}
-
-bool changeWorkingDir(DSState &st, StringRef dest, const bool useLogical) {
-  if (dest.hasNullChar()) {
-    errno = EINVAL;
-    return false;
-  }
-
-  const bool tryChdir = !dest.empty();
-  const char *ptr = dest.data();
-  std::string actualDest;
-  if (tryChdir) {
-    if (useLogical) {
-      actualDest = expandDots(st.logicalWorkingDir.c_str(), ptr);
-      ptr = actualDest.c_str();
-    }
-    if (chdir(ptr) != 0) {
-      return false;
-    }
-  }
-
-  // update OLDPWD
-  const char *oldpwd = getenv(ENV_PWD);
-  if (oldpwd == nullptr) {
-    oldpwd = "";
-  }
-  setenv(ENV_OLDPWD, oldpwd, 1);
-
-  // update PWD
-  if (tryChdir) {
-    if (useLogical) {
-      setenv(ENV_PWD, actualDest.c_str(), 1);
-      st.logicalWorkingDir = std::move(actualDest);
-    } else {
-      auto cwd = getCWD();
-      if (cwd != nullptr) {
-        setenv(ENV_PWD, cwd.get(), 1);
-        st.logicalWorkingDir = cwd.get();
-      }
-    }
-  }
-  return true;
 }
 
 void installSignalHandler(DSState &st, int sigNum, const DSValue &handler) {
@@ -293,148 +123,6 @@ void setJobControlSignalSetting(DSState &st, bool set) {
   st.sigVector.install(SIGTSTP, op, handler);
   st.sigVector.install(SIGTTIN, op, handler);
   st.sigVector.install(SIGTTOU, op, handler);
-}
-
-/**
- * path must be full path
- */
-static std::vector<std::string> createPathStack(const char *path) {
-  std::vector<std::string> stack;
-  if (*path == '/') {
-    stack.emplace_back("/");
-    path++;
-  }
-
-  for (const char *ptr; (ptr = strchr(path, '/')) != nullptr;) {
-    const unsigned int size = ptr - path;
-    if (size == 0) {
-      path++;
-      continue;
-    }
-    stack.emplace_back(path, size);
-    path += size;
-  }
-  if (*path != '\0') {
-    stack.emplace_back(path);
-  }
-  return stack;
-}
-
-std::string expandDots(const char *basePath, const char *path) {
-  std::string str;
-
-  if (path == nullptr || *path == '\0') {
-    return str;
-  }
-
-  std::vector<std::string> resolvedPathStack;
-  auto pathStack(createPathStack(path));
-
-  // fill resolvedPathStack
-  if (!pathStack.empty() && pathStack.front() != "/") {
-    if (basePath != nullptr && *basePath == '/') {
-      resolvedPathStack = createPathStack(basePath);
-    } else {
-      auto ptr = getCWD();
-      if (!ptr) {
-        return str;
-      }
-      resolvedPathStack = createPathStack(ptr.get());
-    }
-  }
-
-  for (auto &e : pathStack) {
-    if (e == "..") {
-      if (!resolvedPathStack.empty()) {
-        resolvedPathStack.pop_back();
-      }
-    } else if (e != ".") {
-      resolvedPathStack.push_back(std::move(e));
-    }
-  }
-
-  // create path
-  const unsigned int size = resolvedPathStack.size();
-  if (size == 1) {
-    str += '/';
-  }
-  for (unsigned int i = 1; i < size; i++) {
-    str += '/';
-    str += resolvedPathStack[i];
-  }
-  return str;
-}
-
-void expandTilde(std::string &str, bool useHOME) {
-  if (str.empty() || str.front() != '~') {
-    return;
-  }
-
-  const char *path = str.c_str();
-  std::string expanded;
-  for (; *path != '/' && *path != '\0'; path++) {
-    expanded += *path;
-  }
-
-  // expand tilde
-  if (expanded.size() == 1) {
-    const char *value = useHOME ? getenv(ENV_HOME) : nullptr;
-    if (!value) { // use HOME, but HOME is not set, fallback to getpwuid(getuid())
-      struct passwd *pw = getpwuid(getuid());
-      if (pw != nullptr) {
-        value = pw->pw_dir;
-      }
-    }
-    if (value) {
-      expanded = value;
-    }
-  } else if (expanded == "~+") {
-    /**
-     * if PWD indicates valid dir, use PWD.
-     * if PWD is invalid, use cwd
-     * if cwd is removed, not expand
-     */
-    auto cwd = getCWD();
-    if (cwd) {
-      const char *pwd = getenv(ENV_PWD);
-      if (pwd && *pwd == '/' && isSameFile(pwd, cwd.get())) {
-        expanded = pwd;
-      } else {
-        expanded = cwd.get();
-      }
-    }
-  } else if (expanded == "~-") {
-    /**
-     * if OLDPWD indicates valid dir, use OLDPWD
-     * if OLDPWD is invalid, not expand
-     */
-    const char *oldpwd = getenv(ENV_OLDPWD);
-    if (oldpwd && *oldpwd == '/' && S_ISDIR(getStMode(oldpwd))) {
-      expanded = oldpwd;
-    }
-  } else {
-    struct passwd *pw = getpwnam(expanded.c_str() + 1);
-    if (pw != nullptr) {
-      expanded = pw->pw_dir;
-    }
-  }
-
-  // append rest
-  if (*path != '\0') {
-    expanded += path;
-  }
-  str = std::move(expanded);
-}
-
-static std::string toFullLocalModDirPath() {
-  std::string dir = LOCAL_MOD_DIR;
-  expandTilde(dir);
-  return dir;
-}
-
-const char *getFullLocalModDir() {
-  static auto path = toFullLocalModDirPath();
-  return path.c_str();
 }
 
 const ModType *getUnderlyingModType(const TypePool &pool, const ModuleLoader &loader,
@@ -681,23 +369,6 @@ void bindBuiltinVariables(DSState *state, TypePool &pool, NameScope &scope) {
 }
 
 const char *getEmbeddedScript() { return embed_script; };
-
-// ####################
-// ##     SigSet     ##
-// ####################
-
-int SigSet::popPendingSig() {
-  assert(!this->empty());
-  int sigNum;
-  do {
-    sigNum = this->pendingIndex++;
-    if (this->pendingIndex == NSIG) {
-      this->pendingIndex = 1;
-    }
-  } while (!this->has(sigNum));
-  this->del(sigNum);
-  return sigNum;
-}
 
 // ##########################
 // ##     SignalVector     ##

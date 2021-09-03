@@ -21,8 +21,8 @@
 
 #include "complete.h"
 #include "constant.h"
-#include "core.h"
 #include "misc/glob.hpp"
+#include "paths.h"
 #include "type_checker.h"
 
 namespace ydsh {

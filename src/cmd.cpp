@@ -318,6 +318,31 @@ builtin_command_t lookupBuiltinCommand(const char *commandName) {
   return builtinCommands[iter->second].cmd_ptr;
 }
 
+struct StrArrayIter {
+  ArrayObject::IterType actual;
+
+  explicit StrArrayIter(ArrayObject::IterType actual) : actual(actual) {}
+
+  auto operator*() const { return this->actual->asStrRef(); }
+
+  bool operator==(const StrArrayIter &o) const { return this->actual == o.actual; }
+
+  bool operator!=(const StrArrayIter &o) const { return !(*this == o); }
+
+  StrArrayIter &operator++() {
+    ++this->actual;
+    return *this;
+  }
+};
+
+int GetOptState::operator()(const ArrayObject &obj, const char *optStr) {
+  auto iter = StrArrayIter(obj.getValues().begin() + this->index);
+  auto end = StrArrayIter(obj.getValues().end());
+  int ret = opt::GetOptState::operator()(iter, end, optStr);
+  this->index = iter.actual - obj.getValues().begin();
+  return ret;
+}
+
 std::string toPrintable(StringRef ref) {
   auto old = errno;
   std::string ret;
@@ -446,7 +471,7 @@ static int builtin_cd(DSState &state, ArrayObject &argvObj) {
     printf("%s\n", toPrintable(dest).c_str());
   }
 
-  if (!changeWorkingDir(state, dest, useLogical)) {
+  if (!changeWorkingDir(state.logicalWorkingDir, dest, useLogical)) {
     PERROR(argvObj, "%s", toPrintable(dest).c_str());
     return 1;
   }
@@ -625,7 +650,7 @@ static int builtin_pwd(DSState &state, ArrayObject &argvObj) {
     }
   }
 
-  auto workdir = getWorkingDir(state, useLogical);
+  auto workdir = getWorkingDir(state.logicalWorkingDir, useLogical);
   if (!workdir) {
     PERROR(argvObj, ".");
     return 1;

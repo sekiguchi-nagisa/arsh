@@ -16,9 +16,9 @@
 
 #include <algorithm>
 
-#include "core.h"
 #include "logger.h"
 #include "misc/files.h"
+#include "paths.h"
 #include "scope.h"
 
 namespace ydsh {

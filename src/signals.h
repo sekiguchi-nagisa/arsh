@@ -20,6 +20,7 @@
 #include <csignal>
 #include <vector>
 
+#include "misc/flag_util.hpp"
 #include "misc/string_ref.hpp"
 
 namespace ydsh {
@@ -57,6 +58,57 @@ const char *getSignalName(int sigNum);
  * @return
  */
 std::vector<int> getUniqueSignalList();
+
+class SignalGuard {
+private:
+  sigset_t maskset;
+
+public:
+  SignalGuard() {
+    sigfillset(&this->maskset);
+    sigprocmask(SIG_BLOCK, &this->maskset, nullptr);
+  }
+
+  ~SignalGuard() {
+    int e = errno;
+    sigprocmask(SIG_UNBLOCK, &this->maskset, nullptr);
+    errno = e;
+  }
+};
+
+class SigSet {
+private:
+  static_assert(NSIG - 1 <= sizeof(uint64_t) * 8, "huge signal number");
+
+  uint64_t value{0};
+
+  int pendingIndex{1};
+
+public:
+  void add(int sigNum) {
+    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
+    setFlag(this->value, f);
+  }
+
+  void del(int sigNum) {
+    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
+    unsetFlag(this->value, f);
+  }
+
+  bool has(int sigNum) const {
+    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
+    return hasFlag(this->value, f);
+  }
+
+  bool empty() const { return this->value == 0; }
+
+  void clear() {
+    this->value = 0;
+    this->pendingIndex = 1;
+  }
+
+  int popPendingSig();
+};
 
 } // namespace ydsh
 

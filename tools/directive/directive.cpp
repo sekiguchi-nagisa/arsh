@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <unistd.h>
+
 #include <fstream>
 #include <functional>
 #include <sstream>
@@ -21,9 +23,9 @@
 #include "../platform/platform.h"
 #include "directive.h"
 
-#include <core.h>
 #include <misc/fatal.h>
 #include <parser.h>
+#include <paths.h>
 #include <type_checker.h>
 
 namespace ydsh::directive {

@@ -26,6 +26,7 @@
 #include "core.h"
 #include "job.h"
 #include "misc/noncopyable.h"
+#include "paths.h"
 #include "scope.h"
 #include "signals.h"
 #include "state.h"
