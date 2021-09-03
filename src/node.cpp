@@ -19,7 +19,6 @@
 
 #include "constant.h"
 #include "node.h"
-#include "object.h"
 #include "scope.h"
 
 // helper macro for node dumper

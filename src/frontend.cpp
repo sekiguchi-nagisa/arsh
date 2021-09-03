@@ -15,7 +15,6 @@
  */
 
 #include "frontend.h"
-#include "core.h"
 #include <cerrno>
 
 namespace ydsh {
