@@ -1,3 +1,4 @@
+#!/usr/bin/env ydsh
 
 let _TERM_HOOKS : [(Int, typeof($TERM_HOOK!))]
 

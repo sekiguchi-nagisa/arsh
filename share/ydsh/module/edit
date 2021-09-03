@@ -1,3 +1,5 @@
+#!/usr/bin/env ydsh
+
 # for history manipulation
 
 source $SCRIPT_DIR/path
