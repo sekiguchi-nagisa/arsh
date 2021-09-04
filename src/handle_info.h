@@ -17,6 +17,8 @@
 #ifndef YDSH_HANDLE_INFO_H
 #define YDSH_HANDLE_INFO_H
 
+struct DSState;
+
 namespace ydsh {
 
 // builtin type
@@ -83,6 +85,52 @@ enum class HandleInfo : char {
 #define GEN_ENUM(ENUM) ENUM,
   EACH_HANDLE_INFO(GEN_ENUM)
 #undef GEN_ENUM
+};
+
+class DSValue;
+
+using native_func_t = DSValue (*)(DSState &);
+
+/**
+ * for method handle creation.
+ */
+struct NativeFuncInfo {
+  /**
+   * if empty string, treat as constructor.
+   */
+  const char *funcName;
+
+  /**
+   * serialized function handle
+   */
+  const HandleInfo handleInfo[30];
+
+  /**
+   * bool func(RuntimeContext &ctx)
+   */
+  const native_func_t func_ptr;
+
+  const bool hasRet;
+};
+
+const NativeFuncInfo *nativeFuncInfoTable();
+
+struct native_type_info_t {
+  unsigned short offset;
+
+  unsigned short methodSize;
+
+  unsigned int getActualMethodIndex(unsigned int index) const { return this->offset + index; }
+
+  const NativeFuncInfo &getMethodInfo(unsigned int index) const {
+    return nativeFuncInfoTable()[this->getActualMethodIndex(index)];
+  }
+
+  bool operator==(native_type_info_t info) const {
+    return this->offset == info.offset && this->methodSize == info.methodSize;
+  }
+
+  bool operator!=(native_type_info_t info) const { return !(*this == info); }
 };
 
 } // namespace ydsh

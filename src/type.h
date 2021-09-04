@@ -35,14 +35,9 @@
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
 
-struct DSState;
-
 namespace ydsh {
 
 class FieldHandle;
-class DSValue;
-using native_func_t = DSValue (*)(DSState &);
-
 class TypePool;
 
 enum class TYPE : unsigned int {
@@ -92,12 +87,12 @@ enum class TYPE : unsigned int {
 };
 
 #define EACH_TYPE_KIND(OP)                                                                         \
+  OP(Function)                                                                                     \
   OP(Builtin)                                                                                      \
   OP(Reified)                                                                                      \
   OP(Tuple)                                                                                        \
   OP(Option)                                                                                       \
   OP(Error)                                                                                        \
-  OP(Function)                                                                                     \
   OP(Mod)
 
 enum class TypeKind : unsigned char {
@@ -108,15 +103,22 @@ enum class TypeKind : unsigned char {
 
 class DSType {
 protected:
-  const CStrPtr name;
-
-  const unsigned int nameSize;
-
   /**
    * |   8bit   | 24bit  |
    * | TypeKind | TypeID |
    */
   const unsigned int tag;
+
+  union {
+    native_type_info_t info;
+    unsigned int u32;
+    struct {
+      unsigned short v1;
+      unsigned short v2;
+    } u16_2;
+  } meta;
+
+  const CStrPtr name;
 
   /**
    * if this type is Void or Any type, superType is null
@@ -129,8 +131,8 @@ protected:
    * not directly call it.
    */
   DSType(TypeKind k, unsigned int id, StringRef ref, const DSType *superType)
-      : name(strdup(ref.data())), nameSize(ref.size()),
-        tag(static_cast<unsigned int>(k) << 24 | id), superType(superType) {}
+      : tag(static_cast<unsigned int>(k) << 24 | id), name(strdup(ref.data())),
+        superType(superType) {}
 
   ~DSType() = default;
 
@@ -139,7 +141,7 @@ public:
 
   TypeKind typeKind() const { return static_cast<TypeKind>(this->tag >> 24); }
 
-  StringRef getNameRef() const { return StringRef(this->name.get(), this->nameSize); }
+  StringRef getNameRef() const { return StringRef(this->name.get()); }
 
   const char *getName() const { return this->name.get(); }
 
@@ -286,18 +288,27 @@ public:
 
 class FunctionType : public DSType {
 private:
+  static_assert(sizeof(DSType) == 24);
+
   const DSType &returnType;
 
-  /**
-   * may be empty vector, if has no parameter
-   */
-  std::vector<const DSType *> paramTypes;
+  const DSType *paramTypes[];
 
-public:
   FunctionType(unsigned int id, StringRef ref, const DSType &superType, const DSType &returnType,
                std::vector<const DSType *> &&paramTypes)
-      : DSType(TypeKind::Function, id, ref, &superType), returnType(returnType),
-        paramTypes(std::move(paramTypes)) {}
+      : DSType(TypeKind::Function, id, ref, &superType), returnType(returnType) {
+    this->meta.u32 = paramTypes.size();
+    for (unsigned int i = 0; i < paramTypes.size(); i++) {
+      this->paramTypes[i] = paramTypes[i];
+    }
+  }
+
+public:
+  static FunctionType *create(unsigned int id, StringRef ref, const DSType &superType,
+                              const DSType &returnType, std::vector<const DSType *> &&paramTypes) {
+    void *ptr = malloc(sizeof(FunctionType) + sizeof(DSType *) * paramTypes.size());
+    return new (ptr) FunctionType(id, ref, superType, returnType, std::move(paramTypes));
+  }
 
   ~FunctionType() = default;
 
@@ -306,53 +317,15 @@ public:
   /**
    * may be 0 if has no parameters
    */
-  unsigned int getParamSize() const { return this->paramTypes.size(); }
+  unsigned int getParamSize() const { return this->meta.u32; }
 
   const DSType &getParamTypeAt(unsigned int index) const { return *this->paramTypes[index]; }
 
+  static void operator delete(void *ptr) noexcept { // NOLINT
+    free(ptr);
+  }
+
   static bool classof(const DSType *type) { return type->isFuncType(); }
-};
-
-/**
- * for method handle creation.
- */
-struct NativeFuncInfo {
-  /**
-   * if empty string, treat as constructor.
-   */
-  const char *funcName;
-
-  /**
-   * serialized function handle
-   */
-  const HandleInfo handleInfo[30];
-
-  /**
-   * bool func(RuntimeContext &ctx)
-   */
-  const native_func_t func_ptr;
-
-  const bool hasRet;
-};
-
-const NativeFuncInfo *nativeFuncInfoTable();
-
-struct native_type_info_t {
-  unsigned short offset;
-
-  unsigned short methodSize;
-
-  unsigned int getActualMethodIndex(unsigned int index) const { return this->offset + index; }
-
-  const NativeFuncInfo &getMethodInfo(unsigned int index) const {
-    return nativeFuncInfoTable()[this->getActualMethodIndex(index)];
-  }
-
-  bool operator==(native_type_info_t info) const {
-    return this->offset == info.offset && this->methodSize == info.methodSize;
-  }
-
-  bool operator!=(native_type_info_t info) const { return !(*this == info); }
 };
 
 /**
@@ -362,11 +335,11 @@ struct native_type_info_t {
  */
 class BuiltinType : public DSType {
 protected:
-  const native_type_info_t info;
-
   BuiltinType(TypeKind k, unsigned int id, StringRef ref, const DSType *superType,
               native_type_info_t info)
-      : DSType(k, id, ref, superType), info(info) {}
+      : DSType(k, id, ref, superType) {
+    this->meta.info = info;
+  }
 
 public:
   BuiltinType(unsigned int id, StringRef ref, const DSType *superType, native_type_info_t info)
@@ -374,35 +347,47 @@ public:
 
   ~BuiltinType() = default;
 
-  native_type_info_t getNativeTypeInfo() const { return this->info; }
+  native_type_info_t getNativeTypeInfo() const { return this->meta.info; }
 
   static bool classof(const DSType *type) { return type->isBuiltinOrDerived(); }
 };
 
 /**
- * not support override.
+ * for Array, Map type
  */
 class ReifiedType : public BuiltinType {
 private:
-  /**
-   * size is 1 or 2.
-   */
-  std::vector<const DSType *> elementTypes;
+  const unsigned int size;
 
-public:
+  const DSType *elementTypes[];
+
   /**
-   * super type is AnyType or null (if represents Option type)
+   * super type is always AnyType
    */
   ReifiedType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
               std::vector<const DSType *> &&elementTypes)
-      : BuiltinType(TypeKind::Reified, id, ref, &superType, info),
-        elementTypes(std::move(elementTypes)) {}
+      : BuiltinType(TypeKind::Reified, id, ref, &superType, info), size(elementTypes.size()) {
+    for (unsigned int i = 0; i < this->size; i++) {
+      this->elementTypes[i] = elementTypes[i];
+    }
+  }
+
+public:
+  static ReifiedType *create(unsigned int id, StringRef ref, native_type_info_t info,
+                             const DSType &superType, std::vector<const DSType *> &&elementTypes) {
+    void *ptr = malloc(sizeof(ReifiedType) + sizeof(DSType *) * elementTypes.size());
+    return new (ptr) ReifiedType(id, ref, info, superType, std::move(elementTypes));
+  }
 
   ~ReifiedType() = default;
 
-  unsigned int getElementSize() const { return this->elementTypes.size(); }
+  unsigned int getElementSize() const { return this->size; }
 
   const DSType &getElementTypeAt(unsigned int index) const { return *this->elementTypes[index]; }
+
+  static void operator delete(void *ptr) noexcept { // NOLINT
+    free(ptr);
+  }
 
   static bool classof(const DSType *type) { return type->isReifiedType(); }
 };
@@ -473,13 +458,17 @@ class ModType : public DSType {
 private:
   static_assert(sizeof(ImportedModEntry) == 4, "failed!!");
 
-  unsigned short modID;
+  union {
+    struct {
+      unsigned int index;
+      ImportedModEntry v[3];
+    } e3;
 
-  unsigned short childSize;
-
-  unsigned int index; // module object index
-
-  ImportedModEntry *children;
+    struct {
+      unsigned int index;
+      ImportedModEntry *ptr;
+    } children;
+  } data;
 
   std::unordered_map<std::string, FieldHandle> handleMap;
 
@@ -487,39 +476,50 @@ public:
   ModType(unsigned int id, const DSType &superType, unsigned short modID,
           std::unordered_map<std::string, FieldHandle> &&handles,
           FlexBuffer<ImportedModEntry> &&children, unsigned int index)
-      : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType), modID(modID), index(index),
-        handleMap(std::move(handles)) {
-    this->childSize = children.size();
-    this->children = children.take();
+      : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType), handleMap(std::move(handles)) {
+    this->meta.u16_2.v1 = modID;
+    this->meta.u16_2.v2 = children.size();
+    this->data.e3.index = index;
+    if (this->getChildSize() < 3) {
+      for (unsigned int i = 0; i < this->getChildSize(); i++) {
+        this->data.e3.v[i] = children[i];
+      }
+    } else {
+      this->data.children.ptr = children.take();
+    }
   }
 
   ~ModType();
 
-  unsigned short getModID() const { return this->modID; }
+  unsigned short getModID() const { return this->meta.u16_2.v1; }
 
-  unsigned short getChildSize() const { return this->childSize; }
+  unsigned short getChildSize() const { return this->meta.u16_2.v2; }
 
   ImportedModEntry getChildAt(unsigned int i) const {
-    assert(i < this->childSize);
-    return this->children[i];
+    assert(i < this->getChildSize());
+    return this->getChildSize() < 3 ? this->data.e3.v[i] : this->data.children.ptr[i];
   }
 
-  unsigned int getIndex() const { return this->index; }
+  /**
+   * get module object index
+   * @return
+   */
+  unsigned int getIndex() const { return this->data.e3.index; }
 
   /**
    * for indicating module object index
    * @return
    */
   FieldHandle toHandle() const {
-    return FieldHandle(0, *this, this->index, FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
-                       this->modID);
+    return FieldHandle(0, *this, this->getIndex(),
+                       FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL, this->getModID());
   }
 
   FieldHandle toModHolder(bool global) const {
-    return FieldHandle(0, *this, this->index,
+    return FieldHandle(0, *this, this->getIndex(),
                        FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL |
                            (global ? FieldAttribute::GLOBAL_MOD : FieldAttribute::NAMED_MOD),
-                       this->modID);
+                       this->getModID());
   }
 
   ImportedModEntry toModEntry(bool global) const {
@@ -550,6 +550,17 @@ public:
 
   static bool classof(const DSType *type) { return type->isModType(); }
 };
+
+template <typename T, typename... Arg, enable_when<std::is_base_of_v<DSType, T>> = nullptr>
+inline T *constructType(Arg &&...arg) {
+  if constexpr (std::is_same_v<FunctionType, T>) {
+    return T::create(std::forward<Arg>(arg)...);
+  } else if constexpr (std::is_same_v<ReifiedType, T>) {
+    return T::create(std::forward<Arg>(arg)...);
+  } else {
+    return new T(std::forward<Arg>(arg)...);
+  }
+}
 
 /**
  * ReifiedType template.

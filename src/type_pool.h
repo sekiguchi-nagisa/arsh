@@ -239,7 +239,7 @@ private:
   template <typename T, typename... A>
   T &newType(A &&...arg) {
     unsigned int id = this->typeTable.size();
-    return *static_cast<T *>(this->addType(new T(id, std::forward<A>(arg)...)));
+    return *static_cast<T *>(this->addType(constructType<T>(id, std::forward<A>(arg)...)));
   }
 
   /**

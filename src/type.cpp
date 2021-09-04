@@ -145,7 +145,11 @@ const FieldHandle *TupleType::lookupField(const std::string &fieldName) const {
 // ##     ModType     ##
 // #####################
 
-ModType::~ModType() { free(this->children); }
+ModType::~ModType() {
+  if (this->getChildSize() >= 3) {
+    free(this->data.children.ptr);
+  }
+}
 
 const FieldHandle *ModType::lookup(const std::string &fieldName) const {
   auto iter = this->handleMap.find(fieldName);
