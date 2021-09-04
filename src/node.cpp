@@ -665,6 +665,7 @@ void CaseNode::dump(NodeDumper &dumper) const {
 
 void ArmNode::dump(ydsh::NodeDumper &dumper) const {
   DUMP(this->patternNodes);
+  DUMP(this->constPatternNodes);
   DUMP_PTR(this->actionNode);
 }
 
@@ -903,6 +904,7 @@ void SourceNode::dump(NodeDumper &dumper) const {
 
 void SourceListNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(pathNode);
+  DUMP_PTR(constPathNode);
   DUMP_PTR(name);
   DUMP(optional);
   DUMP(curIndex);

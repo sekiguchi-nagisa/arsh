@@ -626,6 +626,14 @@ nodes:
             type: Signal
             kind: "Signal"
             intValue: 2
+        this->constPatternNodes:
+          - nodeKind: Number
+            token:
+              pos: 14
+              size: 6
+            type: Signal
+            kind: "Signal"
+            intValue: 2
         this->actionNode:
           nodeKind: TypeOp
           token:
@@ -662,6 +670,7 @@ nodes:
           size: 13
         type: Void
         this->patternNodes:
+        this->constPatternNodes:
         this->actionNode:
           nodeKind: TypeOp
           token:

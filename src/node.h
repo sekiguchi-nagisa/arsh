@@ -352,6 +352,11 @@ private:
   };
 
 public:
+  /**
+   * not call directly
+   * @param token
+   * @param kind
+   */
   NumberNode(Token token, Kind kind) : WithRtti(token), kind(kind), intValue(0) {}
 
   static std::unique_ptr<NumberNode> newInt(Token token, int64_t value) {
@@ -379,6 +384,17 @@ public:
   double getFloatValue() const { return this->floatValue; }
 
   void dump(NodeDumper &dumper) const override;
+
+  std::unique_ptr<NumberNode> clone() const {
+    auto node = std::make_unique<NumberNode>(this->token, this->kind);
+    node->setType(this->getType());
+    if (this->kind == Kind::Float) {
+      node->floatValue = this->getFloatValue();
+    } else {
+      node->intValue = this->getIntValue();
+    }
+    return node;
+  }
 };
 
 class StringNode : public WithRtti<Node, NodeKind::String> {
@@ -1454,6 +1470,8 @@ private:
    */
   std::vector<std::unique_ptr<Node>> patternNodes;
 
+  std::vector<std::unique_ptr<Node>> constPatternNodes;
+
   /**
    * initial value is null.
    */
@@ -1477,7 +1495,11 @@ public:
 
   const std::vector<std::unique_ptr<Node>> &getPatternNodes() const { return this->patternNodes; }
 
-  std::vector<std::unique_ptr<Node>> &refPatternNodes() { return this->patternNodes; }
+  const auto &getConstPatternNodes() const { return this->constPatternNodes; }
+
+  void setConstPatternNodes(std::vector<std::unique_ptr<Node>> &&c) {
+    this->constPatternNodes = std::move(c);
+  }
 
   Node &getActionNode() const { return *this->actionNode; }
 
@@ -2070,6 +2092,11 @@ private:
   std::unique_ptr<CmdArgNode> pathNode;
 
   /**
+   * initial value is null
+   */
+  std::unique_ptr<CmdArgNode> constPathNode;
+
+  /**
    * may be null
    */
   std::shared_ptr<const NameInfo> name;
@@ -2092,6 +2119,10 @@ public:
   }
 
   CmdArgNode &getPathNode() const { return *this->pathNode; }
+
+  void setConstPathNode(std::unique_ptr<CmdArgNode> &&c) { this->constPathNode = std::move(c); }
+
+  const std::unique_ptr<CmdArgNode> &getConstPathNode() const { return this->constPathNode; }
 
   void setName(Token token, std::string &&value) {
     this->updateToken(token);

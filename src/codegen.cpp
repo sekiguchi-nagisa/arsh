@@ -959,7 +959,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
 
 void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, MapObject &obj) {
   unsigned int offset = this->currentCodeOffset();
-  for (auto &e : node.getPatternNodes()) {
+  for (auto &e : node.getConstPatternNodes()) {
     obj.set(newObject(*e), DSValue::createNum(offset));
   }
 }
@@ -996,7 +996,7 @@ void ByteCodeGenerator::generateIfElseArm(ArmNode &node, const MethodHandle &eqH
                                           const Label &mergeLabel) {
   auto armElse = makeLabel();
   auto armMerge = makeLabel();
-  unsigned int size = node.getPatternNodes().size();
+  unsigned int size = node.getConstPatternNodes().size();
 
   // generate arm pattern
   for (unsigned int index = 0; index < size; index++) {
@@ -1008,7 +1008,7 @@ void ByteCodeGenerator::generateIfElseArm(ArmNode &node, const MethodHandle &eqH
       this->markLabel(elseLabel);
     }
     this->emit0byteIns(OpCode::DUP);
-    auto &patternNode = node.getPatternNodes()[index];
+    auto &patternNode = node.getConstPatternNodes()[index];
     this->visit(*patternNode);
     assert(patternNode->getType().is(TYPE::String) || patternNode->getType().is(TYPE::Regex));
     this->emitMethodCallIns(1, patternNode->getType().is(TYPE::String) ? eqHandle : matchHandle);

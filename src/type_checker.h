@@ -470,12 +470,13 @@ private:
   const DSType &resolveCommonSuperType(const std::vector<const DSType *> &types);
 
   /**
-   *
+   * evaluate constant expression
    * @param node
    * must be typed node
    * @return
+   * final evaluated value
    */
-  bool applyConstFolding(std::unique_ptr<Node> &node);
+  std::unique_ptr<Node> evalConstant(const Node &node);
 
   /**
    * apply constant folding and generate source path list.

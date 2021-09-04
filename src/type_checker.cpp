@@ -54,15 +54,6 @@ void BreakGather::addJumpNode(JumpNode *node) {
 // ##     TypeChecker     ##
 // #########################
 
-#define TRY(E)                                                                                     \
-  ({                                                                                               \
-    auto value = E;                                                                                \
-    if (!value) {                                                                                  \
-      return value;                                                                                \
-    }                                                                                              \
-    value.take();                                                                                  \
-  })
-
 TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
   switch (node.typeKind) {
   case TypeNode::Base: {
@@ -1039,12 +1030,19 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
     }
   }
 
-  for (auto &e : node.refPatternNodes()) {
-    this->applyConstFolding(e);
+  // constant folding
+  std::vector<std::unique_ptr<Node>> constNodes;
+  for (auto &e : node.getPatternNodes()) {
+    auto constNode = this->evalConstant(*e);
+    if (!constNode) {
+      return;
+    }
+    constNodes.push_back(std::move(constNode));
   }
+  node.setConstPatternNodes(std::move(constNodes));
 
   // check duplicated patterns
-  for (auto &e : node.getPatternNodes()) {
+  for (auto &e : node.getConstPatternNodes()) {
     if (e->is(NodeKind::Regex)) {
       continue;
     }
@@ -1089,67 +1087,89 @@ static auto initConstVarMap() {
   return map;
 }
 
-bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) {
-  switch (node->getNodeKind()) {
-  case NodeKind::String:
+#define TRY(E)                                                                                     \
+  ({                                                                                               \
+    auto __v = E;                                                                                  \
+    if (!__v) {                                                                                    \
+      return nullptr;                                                                              \
+    }                                                                                              \
+    std::forward<decltype(__v)>(__v);                                                              \
+  })
+
+std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
+  switch (node.getNodeKind()) {
   case NodeKind::Number:
-  case NodeKind::Regex:
-  case NodeKind::WildCard:
-    return true;
+    return cast<NumberNode>(node).clone();
+  case NodeKind::String: {
+    auto &strNode = cast<StringNode>(node);
+    auto constNode = std::make_unique<StringNode>(
+        strNode.getToken(), std::string(strNode.getValue()), strNode.getKind());
+    constNode->setType(strNode.getType());
+    return constNode;
+  }
+  case NodeKind::Regex: {
+    auto &regexNode = cast<RegexNode>(node);
+    auto constNode =
+        std::make_unique<RegexNode>(regexNode.getToken(), std::string(regexNode.getReStr()),
+                                    std::string(regexNode.getReFlag()));
+    this->checkTypeAsExpr(*constNode);
+    return constNode;
+  }
+  case NodeKind::WildCard: {
+    auto &wildCardNode = cast<WildCardNode>(node);
+    auto constNode = std::make_unique<WildCardNode>(wildCardNode.getToken(), wildCardNode.meta);
+    constNode->setType(wildCardNode.getType());
+    return constNode;
+  }
   case NodeKind::UnaryOp: { // !, +, -, !
-    auto &unaryNode = cast<UnaryOpNode>(*node);
-    Token token = node->getToken();
+    auto &unaryNode = cast<UnaryOpNode>(node);
+    Token token = node.getToken();
     const auto op = unaryNode.getOp();
-    if (node->getType().is(TYPE::Int) &&
+    if (node.getType().is(TYPE::Int) &&
         (op == TokenKind::MINUS || op == TokenKind::PLUS || op == TokenKind::NOT)) {
-      auto &applyNode = unaryNode.refApplyNode();
+      auto *applyNode = TRY(unaryNode.getApplyNode());
       assert(applyNode->getExprNode().is(NodeKind::Access));
       auto &accessNode = cast<AccessNode>(applyNode->getExprNode());
-      auto &recvNode = accessNode.refRecvNode();
-      if (!this->applyConstFolding(recvNode)) {
-        break;
-      }
-      assert(isa<NumberNode>(*recvNode));
-      int64_t value = cast<NumberNode>(*recvNode).getIntValue();
+      auto &recvNode = accessNode.getRecvNode();
+      auto constNode = TRY(evalConstant(recvNode));
+      TRY(isa<NumberNode>(*constNode));
+      int64_t value = cast<NumberNode>(*constNode).getIntValue();
       if (op == TokenKind::MINUS) {
         value = -value;
       } else if (op == TokenKind::NOT) {
         uint64_t v = ~static_cast<uint64_t>(value);
         value = static_cast<int64_t>(v);
       }
-      node = NumberNode::newInt(token, value);
-      node->setType(this->typePool.get(TYPE::Int));
-      return true;
+      constNode = NumberNode::newInt(token, value);
+      constNode->setType(this->typePool.get(TYPE::Int));
+      return constNode;
     }
     break;
   }
   case NodeKind::StringExpr: {
-    auto &exprNode = cast<StringExprNode>(*node);
-    Token token = node->getToken();
+    auto &exprNode = cast<StringExprNode>(node);
+    Token token = node.getToken();
     std::string value;
-    for (auto &e : exprNode.refExprNodes()) {
-      if (!this->applyConstFolding(e)) {
-        break;
-      }
-      assert(isa<StringNode>(*e));
-      value += cast<StringNode>(*e).getValue();
+    for (auto &e : exprNode.getExprNodes()) {
+      auto constNode = TRY(this->evalConstant(*e));
+      TRY(isa<StringNode>(*constNode));
+      value += cast<StringNode>(*constNode).getValue();
     }
-    node = std::make_unique<StringNode>(token, std::move(value));
-    node->setType(this->typePool.get(TYPE::String));
-    return true;
+    auto constNode = std::make_unique<StringNode>(token, std::move(value));
+    constNode->setType(this->typePool.get(TYPE::String));
+    return constNode;
   }
   case NodeKind::Embed: {
-    auto &embedNode = cast<EmbedNode>(*node);
-    if (!embedNode.getHandle() && this->applyConstFolding(embedNode.refExprNode())) {
-      node = std::move(embedNode.refExprNode());
-      return true;
+    auto &embedNode = cast<EmbedNode>(node);
+    if (!embedNode.getHandle()) {
+      return this->evalConstant(embedNode.getExprNode());
     }
     break;
   }
   case NodeKind::Var: {
     assert(this->lexer);
     static const auto constMap = initConstVarMap();
-    auto &varNode = cast<VarNode>(*node);
+    auto &varNode = cast<VarNode>(node);
     Token token = varNode.getToken();
     std::string value;
     if (hasFlag(varNode.attr(), FieldAttribute::MOD_CONST)) {
@@ -1160,40 +1180,41 @@ bool TypeChecker::applyConstFolding(std::unique_ptr<Node> &node) {
       } else {
         break;
       }
-    } else {
+    } else if (hasFlag(varNode.attr(), FieldAttribute::GLOBAL)) {
       auto iter = constMap.find(varNode.getVarName());
       if (iter == constMap.end()) {
         break;
       }
       value = iter->second;
+    } else {
+      break;
     }
-    assert(varNode.getType().is(TYPE::String));
-    node = std::make_unique<StringNode>(token, std::move(value));
-    node->setType(this->typePool.get(TYPE::String));
-    return true;
+    TRY(varNode.getType().is(TYPE::String));
+    auto constNode = std::make_unique<StringNode>(token, std::move(value));
+    constNode->setType(this->typePool.get(TYPE::String));
+    return constNode;
   }
   case NodeKind::New: {
-    auto &newNode = cast<NewNode>(*node);
-    if (newNode.getType().is(TYPE::Regex)) {
-      if (!this->applyConstFolding(newNode.getArgsNode().refNodes()[0]) ||
-          !this->applyConstFolding(newNode.getArgsNode().refNodes()[1])) {
-        break;
-      }
-      assert(isa<StringNode>(*newNode.getArgsNode().refNodes()[0]));
-      assert(isa<StringNode>(*newNode.getArgsNode().refNodes()[1]));
+    auto &newNode = cast<NewNode>(node);
+    if (newNode.getType().is(TYPE::Regex) && newNode.getArgsNode().getNodes().size() == 2) {
+      auto strNode = TRY(this->evalConstant(*newNode.getArgsNode().getNodes()[0]));
+      auto flagNode = TRY(this->evalConstant(*newNode.getArgsNode().getNodes()[1]));
+      TRY(isa<StringNode>(*strNode));
+      TRY(isa<StringNode>(*flagNode));
       Token token = newNode.getToken();
-      std::string reStr = cast<StringNode>(*newNode.getArgsNode().refNodes()[0]).takeValue();
-      std::string reFlag = cast<StringNode>(*newNode.getArgsNode().refNodes()[1]).takeValue();
-      node = std::make_unique<RegexNode>(token, std::move(reStr), std::move(reFlag));
-      this->checkTypeAsExpr(*node);
-      return true;
+      auto reStr = cast<StringNode>(*strNode).getValue();
+      auto reFlag = cast<StringNode>(*flagNode).getValue();
+      auto constNode = std::make_unique<RegexNode>(token, std::move(reStr), std::move(reFlag));
+      this->checkTypeAsExpr(*constNode);
+      return constNode;
     }
     break;
   }
   default:
     break;
   }
-  RAISE_TC_ERROR(Constant, *node);
+  this->reportError<Constant>(node);
+  return nullptr;
 }
 
 void TypeChecker::checkTypeAsBreakContinue(JumpNode &node) {
@@ -1691,7 +1712,10 @@ static bool isDirPattern(const CmdArgNode &node) {
 }
 
 void TypeChecker::resolvePathList(SourceListNode &node) {
-  auto &pathNode = node.getPathNode();
+  if (!node.getConstPathNode()) {
+    return;
+  }
+  auto &pathNode = *node.getConstPathNode();
   std::vector<std::shared_ptr<const std::string>> ret;
   if (pathNode.getGlobPathSize() == 0) {
     std::string path = concat(pathNode, pathNode.getSegmentNodes().size());
@@ -1748,17 +1772,27 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
   auto &exprType = this->typePool.get(isGlob ? TYPE::StringArray : TYPE::String);
   this->checkType(exprType, node.getPathNode());
 
-  for (auto &e : node.getPathNode().refSegmentNodes()) {
-    this->applyConstFolding(e);
-    assert(isa<StringNode>(*e) || isa<WildCardNode>(*e));
-    if (isa<StringNode>(*e)) {
-      auto ref = StringRef(cast<StringNode>(*e).getValue());
+  std::unique_ptr<CmdArgNode> constPathNode;
+  for (auto &e : node.getPathNode().getSegmentNodes()) {
+    auto constNode = this->evalConstant(*e);
+    if (!constNode) {
+      return;
+    }
+    assert(isa<StringNode>(*constNode) || isa<WildCardNode>(*constNode));
+    if (isa<StringNode>(*constNode)) {
+      auto ref = StringRef(cast<StringNode>(*constNode).getValue());
       if (ref.hasNullChar()) {
         this->reportError<NullInPath>(node.getPathNode());
         return;
       }
     }
+    if (!constPathNode) {
+      constPathNode = std::make_unique<CmdArgNode>(std::move(constNode));
+    } else {
+      constPathNode->addSegmentNode(std::move(constNode));
+    }
   }
+  node.setConstPathNode(std::move(constPathNode));
   this->resolvePathList(node);
 }
 

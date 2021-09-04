@@ -303,7 +303,7 @@ void SymbolIndexer::visitCaseNode(CaseNode &node) {
 }
 
 void SymbolIndexer::visitArmNode(ArmNode &node) {
-  this->visitEach(node.getPatternNodes()); // FIXME: ignore not-constant expression
+  this->visitEach(node.getPatternNodes());
   this->visit(node.getActionNode());
 }
 
