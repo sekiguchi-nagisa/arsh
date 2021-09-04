@@ -718,13 +718,9 @@ public:
 std::unique_ptr<TypeOpNode> newTypedCastNode(std::unique_ptr<Node> &&targetNode,
                                              const DSType &type);
 
-using HandleOrFuncType = Union<const FunctionType *, const MethodHandle *>;
-
 class ArgsNode : public WithRtti<Node, NodeKind::Args> {
 private:
   std::vector<std::unique_ptr<Node>> nodes;
-
-  HandleOrFuncType ctx;
 
 public:
   explicit ArgsNode(Token token) : WithRtti(token) {}
@@ -739,10 +735,6 @@ public:
   const std::vector<std::unique_ptr<Node>> &getNodes() const { return this->nodes; }
 
   std::vector<std::unique_ptr<Node>> &refNodes() { return this->nodes; }
-
-  void setTypeContext(HandleOrFuncType hf) { this->ctx = std::move(hf); }
-
-  HandleOrFuncType getTypeContext() const { return this->ctx; }
 
   void dump(NodeDumper &dumper) const override;
 };

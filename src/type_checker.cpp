@@ -328,50 +328,33 @@ void TypeChecker::reportErrorImpl(Token token, const char *kind, const char *fmt
 }
 
 // for ApplyNode type checking
-HandleOrFuncType TypeChecker::resolveCallee(ApplyNode &node) {
+CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
+  CallableTypes callableTypes;
   auto &exprNode = node.getExprNode();
   if (exprNode.is(NodeKind::Access) && !node.isFuncCall()) {
     auto &accessNode = cast<AccessNode>(exprNode);
-    if (!this->checkAccessNode(accessNode)) {
+    if (!this->checkAccessNode(accessNode)) { // method call
       auto &recvType = accessNode.getRecvNode().getType();
-      auto *handle = this->typePool.lookupMethod(recvType, accessNode.getFieldName());
-      if (handle == nullptr) {
+      if (auto *handle = this->typePool.lookupMethod(recvType, accessNode.getFieldName()); handle) {
+        node.setKind(ApplyNode::METHOD_CALL);
+        node.setHandle(handle);
+        callableTypes = handle->toCallableTypes();
+      } else {
         const char *name = accessNode.getFieldName().c_str();
-        RAISE_TC_ERROR(UndefinedMethod, accessNode.getNameNode(), name);
+        this->reportError<UndefinedMethod>(accessNode.getNameNode(), name);
       }
-      node.setKind(ApplyNode::METHOD_CALL);
-      return handle;
+      return callableTypes;
     }
   }
 
   node.setKind(ApplyNode::FUNC_CALL);
-  if (exprNode.is(NodeKind::Var)) {
-    return this->resolveCallee(cast<VarNode>(exprNode));
-  }
-
   auto &type = this->checkType(this->typePool.get(TYPE::Func), exprNode);
-  if (!type.isFuncType()) {
-    RAISE_TC_ERROR(NotCallable, exprNode);
+  if (type.isFuncType()) {
+    callableTypes = cast<FunctionType>(type).toCallableTypes();
+  } else {
+    this->reportError<NotCallable>(exprNode);
   }
-  return static_cast<const FunctionType *>(&type);
-}
-
-HandleOrFuncType TypeChecker::resolveCallee(VarNode &recvNode) {
-  auto handle = this->curScope->lookup(recvNode.getVarName());
-  if (handle == nullptr) {
-    RAISE_TC_ERROR(UndefinedSymbol, recvNode, recvNode.getVarName().c_str());
-  }
-  recvNode.setAttribute(*handle);
-
-  auto &type = this->typePool.get(handle->getTypeID());
-  if (!type.isFuncType()) {
-    if (type.is(TYPE::Func)) {
-      RAISE_TC_ERROR(NotCallable, recvNode);
-    } else {
-      RAISE_TC_ERROR(Required, recvNode, this->typePool.get(TYPE::Func).getName(), type.getName());
-    }
-  }
-  return static_cast<FunctionType *>(const_cast<DSType *>(&type));
+  return callableTypes;
 }
 
 bool TypeChecker::checkAccessNode(AccessNode &node) {
@@ -383,6 +366,23 @@ bool TypeChecker::checkAccessNode(AccessNode &node) {
   node.setAttribute(*handle);
   node.setType(this->typePool.get(handle->getTypeID()));
   return true;
+}
+
+void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
+  unsigned int argSize = node.getNodes().size();
+  unsigned int paramSize = types.paramSize;
+  if (argSize != paramSize) {
+    this->reportError<UnmatchParam>(node, paramSize, argSize);
+  }
+  unsigned int maxSize = std::max(argSize, paramSize);
+  for (unsigned int i = 0; i < maxSize; i++) {
+    if (i < argSize && i < paramSize) {
+      this->checkTypeWithCoercion(*types.paramTypes[i], node.refNodes()[i]);
+    } else if (i < argSize) {
+      this->checkTypeAsExpr(*node.getNodes()[i]);
+    }
+  }
+  node.setType(this->typePool.get(TYPE::Void));
 }
 
 void TypeChecker::resolveCastOp(TypeOpNode &node) {
@@ -431,8 +431,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node) {
       return;
     }
   }
-
-  RAISE_TC_ERROR(CastOp, node, exprType.getName(), targetType.getName());
+  this->reportError<CastOp>(node, exprType.getName(), targetType.getName());
 }
 
 std::unique_ptr<Node> TypeChecker::newPrintOpNode(std::unique_ptr<Node> &&node) {
@@ -648,70 +647,28 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   node.setType(this->checkTypeAsExpr(*node.getOptNode()));
 }
 
-void TypeChecker::visitArgsNode(ArgsNode &node) {
-  auto hf = node.getTypeContext();
-  if (is<const MethodHandle *>(hf)) {
-    auto *handle = get<const MethodHandle *>(hf);
-    unsigned int argSize = node.getNodes().size();
-    // check param size
-    unsigned int paramSize = handle->getParamSize();
-    if (paramSize != argSize) {
-      RAISE_TC_ERROR(UnmatchParam, node, paramSize, argSize);
-    }
-
-    // check type each node
-    for (unsigned int i = 0; i < paramSize; i++) {
-      this->checkTypeWithCoercion(handle->getParamTypeAt(i), node.refNodes()[i]);
-    }
-  } else {
-    auto *funcType = get<const FunctionType *>(hf);
-    unsigned int size = funcType->getParamSize();
-    unsigned int argSize = node.getNodes().size();
-    // check param size
-    if (size != argSize) {
-      RAISE_TC_ERROR(UnmatchParam, node, size, argSize);
-    }
-
-    // check type each node
-    for (unsigned int i = 0; i < size; i++) {
-      this->checkTypeWithCoercion(funcType->getParamTypeAt(i), node.refNodes()[i]);
-    }
-  }
-  node.setType(this->typePool.get(TYPE::Void));
-}
+void TypeChecker::visitArgsNode(ArgsNode &) {} // do nothing
 
 void TypeChecker::visitApplyNode(ApplyNode &node) {
-  /**
-   * resolve handle
-   */
-  HandleOrFuncType hf = this->resolveCallee(node);
-  node.getArgsNode().setTypeContext(hf);
-  this->checkTypeExactly(node.getArgsNode());
-  if (is<const MethodHandle *>(hf)) {
-    node.setHandle(get<const MethodHandle *>(hf));
-    node.setType(node.getHandle()->getReturnType());
-  } else {
-    node.setType(get<const FunctionType *>(hf)->getReturnType());
-  }
+  CallableTypes callableTypes = this->resolveCallee(node);
+  this->checkArgsNode(callableTypes, node.getArgsNode());
+  node.setType(callableTypes.returnType == nullptr ? this->typePool.get(TYPE::Nothing)
+                                                   : *callableTypes.returnType);
 }
 
 void TypeChecker::visitNewNode(NewNode &node) {
   auto &type = this->checkTypeAsExpr(node.getTargetTypeNode());
-  if (type.isOptionType() || this->typePool.isArrayType(type) || this->typePool.isMapType(type)) {
-    unsigned int size = node.getArgsNode().getNodes().size();
-    if (size > 0) {
-      RAISE_TC_ERROR(UnmatchParam, node.getArgsNode(), 0, size);
+  CallableTypes callableTypes;
+  if (!type.isOptionType() && !this->typePool.isArrayType(type) &&
+      !this->typePool.isMapType(type)) {
+    if (auto *handle = this->typePool.lookupConstructor(type); handle) {
+      callableTypes = handle->toCallableTypes();
+      node.setHandle(handle);
+    } else {
+      this->reportError<UndefinedInit>(node.getTargetTypeNode(), type.getName());
     }
-  } else {
-    auto *handle = this->typePool.lookupConstructor(type);
-    if (handle == nullptr) {
-      RAISE_TC_ERROR(UndefinedInit, node.getTargetTypeNode(), type.getName());
-    }
-    node.getArgsNode().setTypeContext(handle);
-    this->checkTypeExactly(node.getArgsNode());
-    node.setHandle(handle);
   }
-
+  this->checkArgsNode(callableTypes, node.getArgsNode());
   node.setType(type);
 }
 

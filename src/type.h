@@ -286,9 +286,20 @@ public:
   unsigned short getModID() const { return this->modID; }
 };
 
+struct CallableTypes {
+  const DSType *returnType{nullptr};
+  unsigned int paramSize{0};
+  const DSType *const *paramTypes{nullptr};
+
+  CallableTypes() = default;
+
+  CallableTypes(const DSType &ret, unsigned int size, const DSType *const *params)
+      : returnType(&ret), paramSize(size), paramTypes(params) {}
+};
+
 class FunctionType : public DSType {
 private:
-  static_assert(sizeof(DSType) == 24);
+  static_assert(sizeof(DSType) <= 24);
 
   const DSType &returnType;
 
@@ -320,6 +331,11 @@ public:
   unsigned int getParamSize() const { return this->meta.u32; }
 
   const DSType &getParamTypeAt(unsigned int index) const { return *this->paramTypes[index]; }
+
+  CallableTypes toCallableTypes() const {
+    return CallableTypes(this->returnType, this->getParamSize(),
+                         this->getParamSize() == 0 ? nullptr : &this->paramTypes[0]);
+  }
 
   static void operator delete(void *ptr) noexcept { // NOLINT
     free(ptr);
@@ -654,6 +670,11 @@ public:
   }
 
   bool isNative() const { return this->native; }
+
+  CallableTypes toCallableTypes() const {
+    return CallableTypes(this->returnType, this->getParamSize(),
+                         this->getParamSize() == 0 ? nullptr : &this->paramTypes[0]);
+  }
 };
 
 } // namespace ydsh

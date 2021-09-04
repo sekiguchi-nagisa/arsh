@@ -380,14 +380,11 @@ private:
   /**
    * check type ApplyNode and resolve callee(handle or function type).
    */
-  HandleOrFuncType resolveCallee(ApplyNode &node);
-
-  /**
-   * check type ApplyNode and resolve callee(handle or function type).
-   */
-  HandleOrFuncType resolveCallee(VarNode &recvNode);
+  CallableTypes resolveCallee(ApplyNode &node);
 
   bool checkAccessNode(AccessNode &node);
+
+  void checkArgsNode(const CallableTypes &types, ArgsNode &node);
 
   // helper api for type cast
 
