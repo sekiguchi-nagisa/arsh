@@ -142,7 +142,7 @@ bool DSValue::opStr(DSState &state) const {
       return typeAs<MapObject>(*this).opStr(state);
     case ObjectKind::Base: {
       auto &type = state.typePool.get(this->getTypeID());
-      if (state.typePool.isTupleType(type)) {
+      if (type.isTupleType()) {
         return typeAs<BaseObject>(*this).opStrAsTuple(state);
       }
       break;
@@ -164,7 +164,7 @@ bool DSValue::opInterp(DSState &state) const {
       return typeAs<ArrayObject>(*this).opInterp(state);
     case ObjectKind::Base: {
       auto &type = state.typePool.get(this->getTypeID());
-      if (state.typePool.isTupleType(type)) {
+      if (type.isTupleType()) {
         return typeAs<BaseObject>(*this).opInterpAsTuple(state);
       }
       break;
@@ -541,7 +541,8 @@ DSValue MapIterObject::next(TypePool &pool) {
   types[0] = &pool.get(this->iter->first.getTypeID());
   types[1] = &pool.get(this->iter->second.getTypeID());
 
-  auto entry = DSValue::create<BaseObject>(*pool.createTupleType(std::move(types)).take());
+  auto *type = pool.createTupleType(std::move(types)).take();
+  auto entry = DSValue::create<BaseObject>(cast<TupleType>(*type));
   typeAs<BaseObject>(entry)[0] = this->iter->first;
   typeAs<BaseObject>(entry)[1] = this->iter->second;
   ++this->iter;
@@ -560,7 +561,7 @@ BaseObject::~BaseObject() {
 }
 
 bool BaseObject::opStrAsTuple(DSState &state) const {
-  assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
+  assert(state.typePool.get(this->getTypeID()).isTupleType());
 
   state.toStrBuf += "(";
   unsigned int size = this->getFieldSize();
@@ -583,7 +584,7 @@ bool BaseObject::opStrAsTuple(DSState &state) const {
 }
 
 bool BaseObject::opInterpAsTuple(DSState &state) const {
-  assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
+  assert(state.typePool.get(this->getTypeID()).isTupleType());
 
   unsigned int size = this->getFieldSize();
   for (unsigned int i = 0; i < size; i++) {
@@ -601,7 +602,7 @@ bool BaseObject::opInterpAsTuple(DSState &state) const {
 }
 
 DSValue BaseObject::opCmdArgAsTuple(DSState &state) const {
-  assert(state.typePool.isTupleType(state.typePool.get(this->getTypeID())));
+  assert(state.typePool.get(this->getTypeID()).isTupleType());
 
   auto result = DSValue::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
   unsigned int size = this->getFieldSize();

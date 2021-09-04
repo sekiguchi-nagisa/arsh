@@ -32,25 +32,26 @@ void Archiver::add(const DSType &type) {
     this->write8(static_cast<uint8_t>(type.typeId()));
   } else if (this->pool.isArrayType(type)) {
     this->writeT(ArchiveType::ARRAY);
-    this->add(static_cast<const ReifiedType &>(type).getElementTypeAt(0));
+    this->add(cast<ReifiedType>(type).getElementTypeAt(0));
   } else if (this->pool.isMapType(type)) {
     this->writeT(ArchiveType::MAP);
-    this->add(static_cast<const ReifiedType &>(type).getElementTypeAt(0));
-    this->add(static_cast<const ReifiedType &>(type).getElementTypeAt(1));
-  } else if (this->pool.isTupleType(type)) {
+    this->add(cast<ReifiedType>(type).getElementTypeAt(0));
+    this->add(cast<ReifiedType>(type).getElementTypeAt(1));
+  } else if (type.isTupleType()) {
     this->writeT(ArchiveType::TUPLE);
-    auto &tuple = static_cast<const TupleType &>(type);
-    assert(tuple.getFieldSize() <= SYS_LIMIT_TUPLE_NUM);
-    this->write8(static_cast<uint8_t>(tuple.getFieldSize()));
-    for (unsigned int i = 0; i < tuple.getElementSize(); i++) {
-      this->add(tuple.getElementTypeAt(i));
+    auto &tuple = cast<TupleType>(type);
+    unsigned int size = tuple.getFieldSize();
+    assert(size <= SYS_LIMIT_TUPLE_NUM);
+    this->write8(static_cast<uint8_t>(size));
+    for (unsigned int i = 0; i < size; i++) {
+      this->add(tuple.getFieldTypeAt(this->pool, i));
     }
   } else if (type.isOptionType()) {
     this->writeT(ArchiveType::OPTION);
-    this->add(static_cast<const ReifiedType &>(type).getElementTypeAt(0));
+    this->add(cast<OptionType>(type).getElementType());
   } else if (type.isFuncType()) {
     this->writeT(ArchiveType::FUNC);
-    auto &func = static_cast<const FunctionType &>(type);
+    auto &func = cast<FunctionType>(type);
     this->add(func.getReturnType());
     assert(func.getParamSize() <= SYS_LIMIT_FUNC_PARAM_NUM);
     this->write8(static_cast<uint8_t>(func.getParamSize()));
@@ -59,7 +60,7 @@ void Archiver::add(const DSType &type) {
     }
   } else if (type.isModType()) {
     this->writeT(ArchiveType::MOD);
-    auto &modType = static_cast<const ModType &>(type);
+    auto &modType = cast<ModType>(type);
     this->write16(modType.getModID());
   }
 }
@@ -223,7 +224,7 @@ static const ModType *getModType(const TypePool &pool, unsigned short modId) {
   if (ret) {
     auto *type = ret.asOk();
     assert(type && type->isModType());
-    return static_cast<const ModType *>(type);
+    return cast<ModType>(type);
   }
   return nullptr;
 }
@@ -243,7 +244,7 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
     bool global = child.first;
     auto type = pool.getModTypeById(child.second->getModID());
     assert(type);
-    auto e = static_cast<const ModType *>(type.asOk())->toModEntry(global);
+    auto e = cast<ModType>(type.asOk())->toModEntry(global);
     children.push_back(e);
   }
 

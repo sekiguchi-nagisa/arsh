@@ -100,7 +100,7 @@ TypePool::TypePool() {
 
 TypePool::~TypePool() {
   for (auto &e : this->typeTable) {
-    delete e;
+    e->destroy();
   }
 
   for (auto &e : this->methodMap) {
@@ -130,7 +130,7 @@ TypeOrError TypePool::getType(StringRef typeName) const {
 
 void TypePool::discard(const TypeDiscardPoint point) {
   for (unsigned int i = point.typeIdOffset; i < this->typeTable.size(); i++) {
-    delete this->typeTable[i];
+    this->typeTable[i]->destroy();
   }
   this->typeTable.erase(this->typeTable.begin() + point.typeIdOffset, this->typeTable.end());
 
@@ -175,35 +175,42 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   if (this->tupleTemplate.getName() == typeTemplate.getName()) {
     return this->createTupleType(std::move(elementTypes));
   }
-
-  TypeAttr attr{};
   if (this->optionTemplate.getName() == typeTemplate.getName()) {
-    setFlag(attr, TypeAttr::OPTION_TYPE);
+    return this->createOptionType(std::move(elementTypes));
   }
 
   // check each element type
-  if (hasFlag(attr, TypeAttr::OPTION_TYPE)) {
-    auto *type = elementTypes[0];
-    if (type->isVoidType() || type->isNothingType()) {
-      RAISE_TL_ERROR(InvalidElement, type->getName());
-    } else if (type->isOptionType()) {
-      return Ok(type);
-    }
-  } else {
-    auto checked = checkElementTypes(typeTemplate, elementTypes);
-    if (!checked) {
-      return checked;
-    }
+  if (auto checked = checkElementTypes(typeTemplate, elementTypes); !checked) {
+    return checked;
   }
 
   std::string typeName(this->toReifiedTypeName(typeTemplate, elementTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    auto *superType = hasFlag(attr, TypeAttr::OPTION_TYPE) ? nullptr : &this->get(TYPE::Any);
-    auto &reified = this->newType<ReifiedType>(typeName, typeTemplate.getInfo(), superType,
-                                               std::move(elementTypes), attr);
+    auto &reified = this->newType<ReifiedType>(typeName, typeTemplate.getInfo(),
+                                               this->get(TYPE::Any), std::move(elementTypes));
     this->registerHandles(reified);
     type = &reified;
+  }
+  return Ok(type);
+}
+
+TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementTypes) {
+  if (elementTypes.size() != 1) {
+    unsigned int size = elementTypes.size();
+    RAISE_TL_ERROR(UnmatchElement, this->optionTemplate.getName().c_str(), 1, size);
+  }
+  auto *elementType = elementTypes[0];
+  if (elementType->isVoidType() || elementType->isNothingType()) {
+    RAISE_TL_ERROR(InvalidElement, elementType->getName());
+  } else if (elementType->isOptionType()) {
+    return Ok(elementType);
+  }
+
+  auto typeName = this->toReifiedTypeName(this->optionTemplate, elementTypes);
+  auto *type = this->get(typeName);
+  if (type == nullptr) {
+    type = &this->newType<OptionType>(typeName, *elementType);
   }
   return Ok(type);
 }
@@ -256,18 +263,19 @@ const ModType &TypePool::createModType(unsigned short modID,
                                    std::move(children), index);
   }
   assert(type->isModType());
-  return static_cast<const ModType &>(*type);
+  return cast<ModType>(*type);
 }
 
 class TypeDecoder {
 private:
   TypePool &pool;
   const HandleInfo *cursor;
-  const std::vector<const DSType *> *types;
+  const std::vector<const DSType *> types;
 
 public:
-  TypeDecoder(TypePool &pool, const HandleInfo *pos, const std::vector<const DSType *> *types)
-      : pool(pool), cursor(pos), types(types) {}
+  TypeDecoder(TypePool &pool, const HandleInfo *pos, std::vector<const DSType *> &&types)
+      : pool(pool), cursor(pos), types(std::move(types)) {}
+
   ~TypeDecoder() = default;
 
   TypeOrError decode();
@@ -316,10 +324,10 @@ TypeOrError TypeDecoder::decode() {
   case HandleInfo::Tuple: {
     unsigned int size = this->decodeNum();
     if (size == 0) { // variable length type
-      size = this->types->size();
+      size = this->types.size();
       std::vector<const DSType *> elementTypes(size);
       for (unsigned int i = 0; i < size; i++) {
-        elementTypes[i] = (*this->types)[i];
+        elementTypes[i] = this->types[i];
       }
       return this->pool.createTupleType(std::move(elementTypes));
     }
@@ -358,9 +366,9 @@ TypeOrError TypeDecoder::decode() {
   case HandleInfo::P_N8:
     fatal("must be type\n");
   case HandleInfo::T0:
-    return Ok((*this->types)[0]);
+    return Ok(this->types[0]);
   case HandleInfo::T1:
-    return Ok((*this->types)[1]);
+    return Ok(this->types[1]);
   default:
     return Ok(static_cast<DSType *>(nullptr)); // normally unreachable due to suppress gcc warning
   }
@@ -379,10 +387,9 @@ TypeOrError TypeDecoder::decode() {
 bool TypePool::allocMethodHandle(const DSType &recv, MethodMap::iterator iter) {
   assert(!iter->second);
   unsigned int index = iter->second.index();
-  auto *types =
-      recv.isReifiedType() ? &static_cast<const ReifiedType &>(recv).getElementTypes() : nullptr;
+  auto types = recv.getTypeParams(*this);
   auto info = nativeFuncInfoTable()[index];
-  TypeDecoder decoder(*this, info.handleInfo, types);
+  TypeDecoder decoder(*this, info.handleInfo, std::move(types));
 
   // check type parameter constraint
   const unsigned int constraintSize = decoder.decodeNum();
@@ -533,11 +540,10 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
   return Ok(static_cast<DSType *>(nullptr));
 }
 
-void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool extendible,
-                               const ydsh::DSType *super, ydsh::native_type_info_t info) {
+void TypePool::initBuiltinType(ydsh::TYPE t, const char *typeName, bool, const ydsh::DSType *super,
+                               ydsh::native_type_info_t info) {
   // create and register type
-  auto &type = this->newType<BuiltinType>(typeName, super, info,
-                                          extendible ? TypeAttr::EXTENDIBLE : TypeAttr());
+  auto &type = this->newType<BuiltinType>(typeName, super, info);
   this->registerHandles(type);
   (void)t;
   assert(type.is(t));

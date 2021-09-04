@@ -262,7 +262,7 @@ public:
 
     // check specified names
     for (auto &e : expected) {
-      auto *handle = newModType->lookupField(e);
+      auto *handle = newModType->lookup(e);
       ASSERT_TRUE(handle);
     }
   }
@@ -448,14 +448,14 @@ TEST_F(ArchiveTest, mod3) {
   auto ret1 = this->newPool().getModTypeById(3);
   ASSERT_TRUE(ret1);
   auto &modType3 = static_cast<const ModType &>(*ret1.asOk());
-  auto *handle = modType3.lookupField("AAA");
+  auto *handle = modType3.lookup("AAA");
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("[Signal : GlobbingError]").asOk()->typeId(),
             handle->getTypeID());
   ASSERT_EQ(toString(FieldAttribute::ENV | FieldAttribute::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(modType3.getModID(), handle->getModID());
 
-  handle = modType3.lookupField("BBB");
+  handle = modType3.lookup("BBB");
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("TypeCastError").asOk()->typeId(), handle->getTypeID());
   ASSERT_EQ(toString(FieldAttribute::GLOBAL | FieldAttribute::RANDOM), toString(handle->attr()));
@@ -471,10 +471,10 @@ TEST_F(ArchiveTest, mod3) {
   ASSERT_FALSE(modType1.getChildAt(1).isGlobal());
   ASSERT_EQ(modType3.typeId(), modType1.getChildAt(1).typeId());
 
-  handle = modType1.lookupField("AAA");
+  handle = modType1.lookup("AAA");
   ASSERT_FALSE(handle);
 
-  handle = modType1.lookupField("aaa");
+  handle = modType1.lookup("aaa");
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("[GlobbingError]").asOk()->typeId(), handle->getTypeID());
   ASSERT_EQ(toString(FieldAttribute::GLOBAL), toString(handle->attr()));
@@ -509,18 +509,19 @@ TEST_F(ArchiveTest, mod4) {
   auto &modType3 = static_cast<const ModType &>(*ret.asOk());
   ASSERT_EQ(3, modType3.getModID());
   ASSERT_EQ(2, modType3.getChildSize());
-  auto *handle = modType3.lookupField("BBB");
+  auto *handle = modType3.lookup("BBB");
   ASSERT_TRUE(handle);
   ASSERT_EQ(3, handle->getModID());
   auto &type1 = this->newPool().get(handle->getTypeID());
-  ASSERT_TRUE(this->newPool().isTupleType(type1));
+  ASSERT_TRUE(type1.isTupleType());
   auto &tuple = static_cast<const TupleType &>(type1);
   ASSERT_EQ(2, tuple.getFieldSize());
-  ASSERT_EQ(this->newPool().get(TYPE::IllegalAccessError), tuple.getElementTypeAt(0));
-  ASSERT_TRUE(tuple.getElementTypeAt(1).isModType());
-  ASSERT_EQ(4, static_cast<const ModType &>(tuple.getElementTypeAt(1)).getModID());
+  ASSERT_EQ(this->newPool().get(TYPE::IllegalAccessError),
+            tuple.getFieldTypeAt(this->newPool(), 0));
+  ASSERT_TRUE(tuple.getFieldTypeAt(this->newPool(), 1).isModType());
+  ASSERT_EQ(4, static_cast<const ModType &>(tuple.getFieldTypeAt(this->newPool(), 1)).getModID());
 
-  handle = modType3.lookupField("AAA");
+  handle = modType3.lookup("AAA");
   ASSERT_FALSE(handle);
   handle = modType3.lookupVisibleSymbolAtModule(this->newPool(), "AAA");
   ASSERT_TRUE(handle);

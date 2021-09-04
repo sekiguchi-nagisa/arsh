@@ -69,7 +69,7 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
   unsigned int size = modType.getChildSize();
   for (unsigned int i = 0; i < size; i++) {
     auto e = modType.getChildAt(i);
-    auto &type = static_cast<const ModType &>(this->getPool().get(e.typeId()));
+    auto &type = cast<ModType>(this->getPool().get(e.typeId()));
     if (type.getModID() == 0) { // skip builtin module
       continue;
     }

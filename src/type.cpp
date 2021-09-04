@@ -26,13 +26,74 @@ namespace ydsh {
 // ##     DSType     ##
 // ####################
 
-unsigned int DSType::getFieldSize() const {
-  return this->superType != nullptr ? this->superType->getFieldSize() : 0;
+void DSType::destroy() {
+  switch (this->typeKind()) {
+#define GEN_CASE(E)                                                                                \
+  case TypeKind::E:                                                                                \
+    delete cast<E##Type>(this);                                                                    \
+    break;
+    EACH_TYPE_KIND(GEN_CASE)
+#undef GEN_CASE
+  }
 }
 
-const FieldHandle *DSType::lookupField(const std::string &) const { return nullptr; }
+const FieldHandle *DSType::lookupField(const std::string &fieldName) const {
+  switch (this->typeKind()) {
+  case TypeKind::Tuple:
+    return cast<TupleType>(this)->lookupField(fieldName);
+  case TypeKind::Mod:
+    return cast<ModType>(this)->lookup(fieldName);
+  default:
+    return nullptr;
+  }
+}
 
-void DSType::walkField(std::function<bool(StringRef, const FieldHandle &)> &) const {}
+void DSType::walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const {
+  switch (this->typeKind()) {
+  case TypeKind::Tuple:
+    for (auto &e : cast<TupleType>(this)->getFieldHandleMap()) {
+      if (!walker(e.first, e.second)) {
+        return;
+      }
+    }
+    break;
+  case TypeKind::Mod:
+    for (auto &e : cast<ModType>(this)->getHandleMap()) {
+      if (!walker(e.first, e.second)) {
+        return;
+      }
+    }
+    break;
+  default:
+    break;
+  }
+}
+
+std::vector<const DSType *> DSType::getTypeParams(const TypePool &pool) const {
+  std::vector<const DSType *> ret;
+  switch (this->typeKind()) {
+  case TypeKind::Reified: {
+    auto &type = cast<ReifiedType>(*this);
+    for (unsigned int i = 0; i < type.getElementSize(); i++) {
+      ret.push_back(&type.getElementTypeAt(i));
+    }
+    break;
+  }
+  case TypeKind::Tuple: {
+    auto &type = cast<TupleType>(*this);
+    for (unsigned int i = 0; i < type.getFieldSize(); i++) {
+      ret.push_back(&type.getFieldTypeAt(pool, i));
+    }
+    break;
+  }
+  case TypeKind::Option:
+    ret.push_back(&cast<OptionType>(this)->getElementType());
+    break;
+  default:
+    break;
+  }
+  return ret;
+}
 
 bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
   if (*this == targetType) {
@@ -42,8 +103,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
     return true;
   }
   if (this->isOptionType()) {
-    return static_cast<const ReifiedType *>(this)->getElementTypeAt(0).isSameOrBaseTypeOf(
-        targetType);
+    return cast<OptionType>(this)->getElementType().isSameOrBaseTypeOf(targetType);
   }
   auto *type = targetType.getSuperType();
   return type != nullptr && this->isSameOrBaseTypeOf(*type);
@@ -53,34 +113,32 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
 // ##     TupleType     ##
 // #######################
 
+static std::string toTupleFieldName(unsigned int i) { return "_" + std::to_string(i); }
+
 TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
                      const DSType &superType, std::vector<const DSType *> &&types)
-    : ReifiedType(id, ref, info, &superType, std::move(types)) {
-  const unsigned int size = this->elementTypes.size();
-  const unsigned int baseIndex = this->superType->getFieldSize();
+    : BuiltinType(TypeKind::Tuple, id, ref, &superType, info) {
+  const unsigned int size = types.size();
   for (unsigned int i = 0; i < size; i++) {
-    FieldHandle handle(0, *this->elementTypes[i], i + baseIndex, FieldAttribute());
-    this->fieldHandleMap.emplace("_" + std::to_string(i), handle);
+    FieldHandle handle(0, *types[i], i, FieldAttribute());
+    this->fieldHandleMap.emplace(toTupleFieldName(i), handle);
   }
 }
 
-unsigned int TupleType::getFieldSize() const { return this->elementTypes.size(); }
+const DSType &TupleType::getFieldTypeAt(const TypePool &pool, unsigned int i) const {
+  assert(i < this->getFieldSize());
+  auto name = toTupleFieldName(i);
+  auto *handle = this->lookupField(name);
+  assert(handle);
+  return pool.get(handle->getTypeID());
+}
 
 const FieldHandle *TupleType::lookupField(const std::string &fieldName) const {
   auto iter = this->fieldHandleMap.find(fieldName);
   if (iter == this->fieldHandleMap.end()) {
-    return this->superType->lookupField(fieldName);
+    return nullptr;
   }
   return &iter->second;
-}
-
-void TupleType::walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const {
-  for (auto &e : this->fieldHandleMap) {
-    if (!walker(e.first, e.second)) {
-      return;
-    }
-  }
-  this->superType->walkField(walker);
 }
 
 // #####################
@@ -89,7 +147,7 @@ void TupleType::walkField(std::function<bool(StringRef, const FieldHandle &)> &w
 
 ModType::~ModType() { free(this->children); }
 
-const FieldHandle *ModType::lookupField(const std::string &fieldName) const {
+const FieldHandle *ModType::lookup(const std::string &fieldName) const {
   auto iter = this->handleMap.find(fieldName);
   if (iter != this->handleMap.end()) {
     return &iter->second;
@@ -100,7 +158,7 @@ const FieldHandle *ModType::lookupField(const std::string &fieldName) const {
 const FieldHandle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
                                                         const std::string &name) const {
   // search own symbols
-  auto *handle = this->lookupField(name);
+  auto *handle = this->lookup(name);
   if (handle) {
     return handle;
   }
@@ -115,21 +173,13 @@ const FieldHandle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
     if (e.isGlobal()) {
       auto &type = pool.get(e.typeId());
       assert(type.isModType());
-      handle = static_cast<const ModType &>(type).lookupField(name);
+      handle = static_cast<const ModType &>(type).lookup(name);
       if (handle) {
         return handle;
       }
     }
   }
   return nullptr;
-}
-
-void ModType::walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const {
-  for (auto &e : this->handleMap) {
-    if (!walker(e.first, e.second)) {
-      return;
-    }
-  }
 }
 
 std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {

@@ -204,12 +204,10 @@ void VM::pushNewObject(DSState &state, const DSType &type) {
     value = DSValue::create<ArrayObject>(type);
   } else if (state.typePool.isMapType(type)) {
     value = DSValue::create<MapObject>(type);
-  } else if (state.typePool.isTupleType(type)) {
-    value = DSValue::create<BaseObject>(type);
-  } else if (!type.isRecordType()) {
-    value = DSValue::createDummy(type);
+  } else if (type.isTupleType()) {
+    value = DSValue::create<BaseObject>(cast<TupleType>(type));
   } else {
-    fatal("currently, DSObject allocation not supported\n");
+    value = DSValue::createDummy(type);
   }
   state.stack.push(std::move(value));
 }
@@ -690,7 +688,7 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, DSValue &&arg
   }
 
   std::string key = toCmdFullName(subcmd);
-  auto *handle = modType.lookupField(key);
+  auto *handle = modType.lookup(key);
   if (!handle) {
     ERROR(array, "undefined subcommand: %s", toPrintable(subcmd).c_str());
     pushExitStatus(state, 2);

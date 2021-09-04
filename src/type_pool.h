@@ -155,11 +155,6 @@ public:
                                        this->mapTemplate.getInfo();
   }
 
-  bool isTupleType(const DSType &type) const {
-    return type.isReifiedType() && static_cast<const ReifiedType &>(type).getNativeTypeInfo() ==
-                                       this->tupleTemplate.getInfo();
-  }
-
   TypeTempOrError getTypeTemplate(const std::string &typeName) const;
 
   TypeOrError createReifiedType(const TypeTemplate &typeTemplate,
@@ -174,8 +169,10 @@ public:
   }
 
   TypeOrError createOptionType(const DSType &elementType) {
-    return this->createReifiedType(this->getOptionTemplate(), {&elementType});
+    return this->createOptionType({&elementType});
   }
+
+  TypeOrError createOptionType(std::vector<const DSType *> &&elementTypes);
 
   TypeOrError createTupleType(std::vector<const DSType *> &&elementTypes);
 

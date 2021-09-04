@@ -575,7 +575,7 @@ void TypeChecker::visitUnaryOpNode(UnaryOpNode &node) {
   auto &exprType = this->checkTypeAsExpr(*node.getExprNode());
   if (node.isUnwrapOp()) {
     if (exprType.isOptionType()) {
-      node.setType(static_cast<const ReifiedType *>(&exprType)->getElementTypeAt(0));
+      node.setType(cast<OptionType>(exprType).getElementType());
     } else {
       this->reportError<Required>(*node.getExprNode(), "Option type", exprType.getName());
       node.setType(this->typePool.get(TYPE::Nothing));
@@ -612,7 +612,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   if (node.getOp() == TokenKind::NULL_COALE) {
     auto &leftType = this->checkTypeAsExpr(*node.getLeftNode());
     if (leftType.isOptionType()) {
-      auto &elementType = static_cast<const ReifiedType &>(leftType).getElementTypeAt(0);
+      auto &elementType = cast<OptionType>(leftType).getElementType();
       this->checkTypeWithCoercion(elementType, node.refRightNode());
       node.setType(elementType);
     } else {
@@ -1023,7 +1023,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
   node.setCaseKind(collector.getKind());
   if (auto *patternType = collector.getType(); patternType) {
     if (exprType->isOptionType()) {
-      exprType = &static_cast<const ReifiedType *>(exprType)->getElementTypeAt(0);
+      exprType = &cast<OptionType>(exprType)->getElementType();
     }
     if (!patternType->isSameOrBaseTypeOf(*exprType)) {
       this->reportError<Required>(node.getExprNode(), patternType->getName(), exprType->getName());

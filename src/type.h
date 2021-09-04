@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 Nagisa Sekiguchi
+ * Copyright (C) 2015-2021 Nagisa Sekiguchi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@
 #include "misc/flag_util.hpp"
 #include "misc/noncopyable.h"
 #include "misc/resource.hpp"
+#include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
 
 struct DSState;
@@ -90,27 +91,30 @@ enum class TYPE : unsigned int {
   _AssertFail,
 };
 
-enum class TypeAttr : unsigned char {
-  EXTENDIBLE = 1u << 0u,
-  FUNC_TYPE = 1u << 1u,    // function type
-  RECORD_TYPE = 1u << 2u,  // indicate user defined type
-  REIFIED_TYPE = 1u << 3u, // reified type (Array, Map, Tuple, Option)
-  OPTION_TYPE = 1u << 4u,  // Option<T>
-  MODULE_TYPE = 1u << 5u,  // Module type
-};
+#define EACH_TYPE_KIND(OP)                                                                         \
+  OP(Builtin)                                                                                      \
+  OP(Reified)                                                                                      \
+  OP(Tuple)                                                                                        \
+  OP(Option)                                                                                       \
+  OP(Error)                                                                                        \
+  OP(Function)                                                                                     \
+  OP(Mod)
 
-template <>
-struct allow_enum_bitop<TypeAttr> : std::true_type {};
+enum class TypeKind : unsigned char {
+#define GEN_ENUM(E) E,
+  EACH_TYPE_KIND(GEN_ENUM)
+#undef GEN_ENUM
+};
 
 class DSType {
 protected:
   const CStrPtr name;
 
-  unsigned int nameSize;
+  const unsigned int nameSize;
 
   /**
    * |   8bit   | 24bit  |
-   * | TypeAttr | TypeID |
+   * | TypeKind | TypeID |
    */
   const unsigned int tag;
 
@@ -119,17 +123,21 @@ protected:
    */
   const DSType *superType;
 
-public:
   NON_COPYABLE(DSType);
 
   /**
    * not directly call it.
    */
-  DSType(unsigned int id, StringRef ref, const DSType *superType, TypeAttr attribute)
+  DSType(TypeKind k, unsigned int id, StringRef ref, const DSType *superType)
       : name(strdup(ref.data())), nameSize(ref.size()),
-        tag(static_cast<unsigned int>(attribute) << 24 | id), superType(superType) {}
+        tag(static_cast<unsigned int>(k) << 24 | id), superType(superType) {}
 
-  virtual ~DSType() = default;
+  ~DSType() = default;
+
+public:
+  void destroy();
+
+  TypeKind typeKind() const { return static_cast<TypeKind>(this->tag >> 24); }
 
   StringRef getNameRef() const { return StringRef(this->name.get(), this->nameSize); }
 
@@ -139,32 +147,31 @@ public:
 
   bool is(TYPE type) const { return this->typeId() == static_cast<unsigned int>(type); }
 
-  TypeAttr attr() const { return static_cast<TypeAttr>(this->tag >> 24); }
-
-  /**
-   * if true, can extend this type
-   */
-  bool isExtendible() const { return hasFlag(this->attr(), TypeAttr::EXTENDIBLE); }
-
   /**
    * if this type is VoidType, return true.
    */
   bool isVoidType() const { return this->is(TYPE::Void); }
 
+  bool isNothingType() const { return this->is(TYPE::Nothing); }
+
+  bool isBuiltinOrDerived() const {
+    auto k = this->typeKind();
+    return static_cast<unsigned int>(k) >= static_cast<unsigned int>(TypeKind::Builtin) &&
+           static_cast<unsigned int>(k) <= static_cast<unsigned int>(TypeKind::Tuple);
+  }
+
   /**
    * if this type is FunctionType, return true.
    */
-  bool isFuncType() const { return hasFlag(this->attr(), TypeAttr::FUNC_TYPE); }
+  bool isFuncType() const { return this->typeKind() == TypeKind::Function; }
 
-  bool isRecordType() const { return hasFlag(this->attr(), TypeAttr::RECORD_TYPE); }
+  bool isReifiedType() const { return this->typeKind() == TypeKind::Reified; }
 
-  bool isNothingType() const { return this->is(TYPE::Nothing); }
+  bool isTupleType() const { return this->typeKind() == TypeKind::Tuple; }
 
-  bool isReifiedType() const { return hasFlag(this->attr(), TypeAttr::REIFIED_TYPE); }
+  bool isOptionType() const { return this->typeKind() == TypeKind::Option; }
 
-  bool isOptionType() const { return hasFlag(this->attr(), TypeAttr::OPTION_TYPE); }
-
-  bool isModType() const { return hasFlag(this->attr(), TypeAttr::MODULE_TYPE); }
+  bool isModType() const { return this->typeKind() == TypeKind::Mod; }
 
   /**
    * get super type of this type.
@@ -172,14 +179,11 @@ public:
    */
   const DSType *getSuperType() const { return this->superType; }
 
-  /**
-   * get size of the all fields(include superType fieldSize).
-   */
-  virtual unsigned int getFieldSize() const;
+  const FieldHandle *lookupField(const std::string &fieldName) const;
 
-  virtual const FieldHandle *lookupField(const std::string &fieldName) const;
+  void walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const;
 
-  virtual void walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const;
+  std::vector<const DSType *> getTypeParams(const TypePool &pool) const;
 
   bool operator==(const DSType &type) const {
     return reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&type);
@@ -292,10 +296,10 @@ private:
 public:
   FunctionType(unsigned int id, StringRef ref, const DSType &superType, const DSType &returnType,
                std::vector<const DSType *> &&paramTypes)
-      : DSType(id, ref, &superType, TypeAttr::FUNC_TYPE), returnType(returnType),
+      : DSType(TypeKind::Function, id, ref, &superType), returnType(returnType),
         paramTypes(std::move(paramTypes)) {}
 
-  ~FunctionType() override = default;
+  ~FunctionType() = default;
 
   const DSType &getReturnType() const { return this->returnType; }
 
@@ -305,6 +309,8 @@ public:
   unsigned int getParamSize() const { return this->paramTypes.size(); }
 
   const DSType &getParamTypeAt(unsigned int index) const { return *this->paramTypes[index]; }
+
+  static bool classof(const DSType *type) { return type->isFuncType(); }
 };
 
 /**
@@ -358,21 +364,26 @@ class BuiltinType : public DSType {
 protected:
   const native_type_info_t info;
 
-public:
-  BuiltinType(unsigned int id, StringRef ref, const DSType *superType, native_type_info_t info,
-              TypeAttr attribute)
-      : DSType(id, ref, superType, attribute), info(info) {}
+  BuiltinType(TypeKind k, unsigned int id, StringRef ref, const DSType *superType,
+              native_type_info_t info)
+      : DSType(k, id, ref, superType), info(info) {}
 
-  ~BuiltinType() override = default;
+public:
+  BuiltinType(unsigned int id, StringRef ref, const DSType *superType, native_type_info_t info)
+      : BuiltinType(TypeKind::Builtin, id, ref, superType, info) {}
+
+  ~BuiltinType() = default;
 
   native_type_info_t getNativeTypeInfo() const { return this->info; }
+
+  static bool classof(const DSType *type) { return type->isBuiltinOrDerived(); }
 };
 
 /**
  * not support override.
  */
 class ReifiedType : public BuiltinType {
-protected:
+private:
   /**
    * size is 1 or 2.
    */
@@ -382,21 +393,21 @@ public:
   /**
    * super type is AnyType or null (if represents Option type)
    */
-  ReifiedType(unsigned int id, StringRef ref, native_type_info_t info, const DSType *superType,
-              std::vector<const DSType *> &&elementTypes, TypeAttr attribute = TypeAttr())
-      : BuiltinType(id, ref, superType, info, attribute | TypeAttr::REIFIED_TYPE),
+  ReifiedType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
+              std::vector<const DSType *> &&elementTypes)
+      : BuiltinType(TypeKind::Reified, id, ref, &superType, info),
         elementTypes(std::move(elementTypes)) {}
 
-  ~ReifiedType() override = default;
-
-  const std::vector<const DSType *> &getElementTypes() const { return this->elementTypes; }
+  ~ReifiedType() = default;
 
   unsigned int getElementSize() const { return this->elementTypes.size(); }
 
   const DSType &getElementTypeAt(unsigned int index) const { return *this->elementTypes[index]; }
+
+  static bool classof(const DSType *type) { return type->isReifiedType(); }
 };
 
-class TupleType : public ReifiedType {
+class TupleType : public BuiltinType {
 private:
   std::unordered_map<std::string, FieldHandle> fieldHandleMap;
 
@@ -407,20 +418,39 @@ public:
   TupleType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
             std::vector<const DSType *> &&types);
 
+  const auto &getFieldHandleMap() const { return this->fieldHandleMap; }
+
   /**
    * return types.size()
    */
-  unsigned int getFieldSize() const override;
+  unsigned int getFieldSize() const { return this->fieldHandleMap.size(); }
 
-  const FieldHandle *lookupField(const std::string &fieldName) const override;
+  const FieldHandle *lookupField(const std::string &fieldName) const;
 
-  void walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const override;
+  const DSType &getFieldTypeAt(const TypePool &pool, unsigned int i) const;
+
+  static bool classof(const DSType *type) { return type->isTupleType(); }
+};
+
+class OptionType : public DSType {
+private:
+  const DSType &elementType;
+
+public:
+  OptionType(unsigned int id, StringRef ref, const DSType &type)
+      : DSType(TypeKind::Option, id, ref, nullptr), elementType(type) {}
+
+  const DSType &getElementType() const { return this->elementType; }
+
+  static bool classof(const DSType *type) { return type->isOptionType(); }
 };
 
 class ErrorType : public DSType {
 public:
   ErrorType(unsigned int id, StringRef ref, const DSType &superType)
-      : DSType(id, ref, &superType, TypeAttr::EXTENDIBLE) {}
+      : DSType(TypeKind::Error, id, ref, &superType) {}
+
+  static bool classof(const DSType *type) { return type->typeKind() == TypeKind::Error; }
 };
 
 struct ImportedModEntry {
@@ -457,13 +487,13 @@ public:
   ModType(unsigned int id, const DSType &superType, unsigned short modID,
           std::unordered_map<std::string, FieldHandle> &&handles,
           FlexBuffer<ImportedModEntry> &&children, unsigned int index)
-      : DSType(id, toModTypeName(modID), &superType, TypeAttr::MODULE_TYPE), modID(modID),
-        index(index), handleMap(std::move(handles)) {
+      : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType), modID(modID), index(index),
+        handleMap(std::move(handles)) {
     this->childSize = children.size();
     this->children = children.take();
   }
 
-  ~ModType() override;
+  ~ModType();
 
   unsigned short getModID() const { return this->modID; }
 
@@ -506,9 +536,7 @@ public:
     return this->handleMap;
   }
 
-  const FieldHandle *lookupField(const std::string &fieldName) const override;
-
-  void walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const override;
+  const FieldHandle *lookup(const std::string &fieldName) const;
 
   /**
    * for runtime symbol lookup
@@ -519,6 +547,8 @@ public:
    */
   const FieldHandle *lookupVisibleSymbolAtModule(const TypePool &pool,
                                                  const std::string &name) const;
+
+  static bool classof(const DSType *type) { return type->isModType(); }
 };
 
 /**

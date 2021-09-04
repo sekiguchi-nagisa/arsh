@@ -851,7 +851,7 @@ public:
    * @param type
    * must be tuple type
    */
-  static BaseObject *create(const DSType &type) { return create(type, type.getFieldSize()); }
+  static BaseObject *create(const TupleType &type) { return create(type, type.getFieldSize()); }
 
   ~BaseObject();
 

@@ -124,12 +124,6 @@ public:
     ASSERT_TRUE(*actualSuperType == superType);
   }
 
-  virtual void assertAttribute(TypeAttr set, const DSType &type) {
-    ASSERT_EQ(hasFlag(set, TypeAttr::EXTENDIBLE), type.isExtendible());
-    ASSERT_EQ(hasFlag(set, TypeAttr::FUNC_TYPE), type.isFuncType());
-    ASSERT_EQ(hasFlag(set, TypeAttr::RECORD_TYPE), type.isRecordType());
-  }
-
   virtual void assertTemplateName(const char *templateName, const TypeTemplate &t,
                                   unsigned int size) {
     std::string name(templateName);
@@ -229,36 +223,6 @@ TEST_F(TypeTest, superType) {
       this->assertSuperType(this->pool.get(TYPE::Regex), this->pool.get(TYPE::Any)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::RegexSyntaxError), this->pool.get(TYPE::Error)));
-}
-
-TEST_F(TypeTest, attribute) {
-  ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::Any)));
-  ASSERT_NO_FATAL_FAILURE(
-      this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::_Value)));
-  ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Int)));
-  ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Boolean)));
-  ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Float)));
-  ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::String)));
-  ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::UnixFD)));
-
-  ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::StringArray)));
-  ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::Error)));
-  ASSERT_NO_FATAL_FAILURE(
-      this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::ArithmeticError)));
-  ASSERT_NO_FATAL_FAILURE(
-      this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::OutOfRangeError)));
-  ASSERT_NO_FATAL_FAILURE(
-      this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::KeyNotFoundError)));
-  ASSERT_NO_FATAL_FAILURE(
-      this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::TypeCastError)));
-  ASSERT_NO_FATAL_FAILURE(
-      this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::StackOverflowError)));
-  ASSERT_NO_FATAL_FAILURE(
-      this->assertAttribute(TypeAttr::EXTENDIBLE, this->pool.get(TYPE::RegexSyntaxError)));
-  ASSERT_NO_FATAL_FAILURE(this->assertAttribute(TypeAttr(), this->pool.get(TYPE::Regex)));
-
-  ASSERT_NO_FATAL_FAILURE(
-      this->assertAttribute(TypeAttr::FUNC_TYPE, this->toType<Func_t<Int_t>>()));
 }
 
 TEST_F(TypeTest, templateName) {
