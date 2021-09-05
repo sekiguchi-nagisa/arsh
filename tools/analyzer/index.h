@@ -134,7 +134,7 @@ public:
 
   unsigned int getPos() const { return this->pos; }
 
-  StringRef getInfo() const { return StringRef(this->info.get()); }
+  StringRef getInfo() const { return this->info.get(); }
 
   const FlexBuffer<SymbolRef> &getRefs() const { return this->refs; }
 

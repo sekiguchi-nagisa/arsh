@@ -137,7 +137,7 @@
   /* line end */                                                                                   \
   TOKEN(LINE_END, ";") /* for new line error */                                                    \
   TOKEN(NEW_LINE, "<NewLine>")                                                                     \
-  /* double quoted string */                                                                       \
+  /* double-quoted string */                                                                       \
   TOKEN(CLOSE_DQUOTE, "\"")                                                                        \
   TOKEN(STR_ELEMENT, "<String Element>")                                                           \
   TOKEN(START_INTERP, "${")                                                                        \

@@ -2160,7 +2160,7 @@ public:
   enum Kind : unsigned int {
     VAR,    // complete variable names
     MEMBER, // complete members (field or method)
-    TYPE,   // complete type name (may be type alias)
+    TYPE,   // complete type name (maybe type alias)
   };
 
 private:

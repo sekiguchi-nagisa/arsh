@@ -41,8 +41,8 @@ private:
   IntrusivePtr<ScopeEntry> scope;
 
 public:
-  IndexBuilder(unsigned short modId, int version, const std::shared_ptr<TypePool> &pool)
-      : modId(modId), version(version), pool(pool),
+  IndexBuilder(unsigned short modId, int version, std::shared_ptr<TypePool> pool)
+      : modId(modId), version(version), pool(std::move(pool)),
         scope(IntrusivePtr<ScopeEntry>::create(nullptr)) {}
 
   SymbolIndex build() && {

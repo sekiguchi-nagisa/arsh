@@ -139,7 +139,7 @@ public:
                       const std::string &fieldName, const FieldHandle &handle) {
     Archiver archiver(pool, builtinTypeIdCount);
     archiver.add(handle);
-    return Archive(std::string(fieldName), std::move(archiver).take());
+    return {std::string(fieldName), std::move(archiver).take()};
   }
 
   const std::string &getName() const { return this->name; }

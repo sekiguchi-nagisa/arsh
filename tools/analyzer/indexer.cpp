@@ -134,7 +134,7 @@ bool IndexBuilder::addSymbolImpl(Token token, unsigned short declModId, const De
             toString(iter->getToken()).c_str());
     }
   }
-  this->symbols.insert(iter, std::move(symbol));
+  this->symbols.insert(iter, symbol);
   return true;
 }
 

@@ -536,7 +536,7 @@ struct DefinitionParams : public TextDocumentPositionParams,
 };
 
 struct ReferenceContext {
-  bool includeDeclaration;
+  bool includeDeclaration{false};
 
   template <typename T>
   void jsonify(T &t) {
