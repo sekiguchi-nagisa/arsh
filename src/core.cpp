@@ -131,7 +131,7 @@ const ModType *getUnderlyingModType(const TypePool &pool, const ModuleLoader &lo
     auto key = code->getSourceName();
     auto *e = loader.find(key);
     if (e && e->isSealed()) {
-      return static_cast<const ModType *>(&pool.get(e->getTypeId()));
+      return cast<ModType>(&pool.get(e->getTypeId()));
     }
   }
   return nullptr;

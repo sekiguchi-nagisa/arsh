@@ -490,7 +490,7 @@ static bool lookupUdcFromIndex(const DSState &state, unsigned int index, Resolve
 
   auto &type = state.typePool.get(udcObj->getTypeID());
   if (type.isModType()) {
-    cmd = ResolvedCmd::fromMod(static_cast<const ModType &>(type), modType);
+    cmd = ResolvedCmd::fromMod(cast<ModType>(type), modType);
   } else {
     assert(type.isVoidType());
     if (underlyingMod) {
@@ -532,7 +532,7 @@ ResolvedCmd CmdResolver::operator()(DSState &state, StringRef ref, const ModType
         if (!ret || !ret.asOk()->isModType() || ref.find('\0', fqn + 1) != StringRef::npos) {
           return ResolvedCmd::invalid();
         }
-        modType = static_cast<const ModType *>(ret.asOk());
+        modType = cast<ModType>(ret.asOk());
       }
       cmdName = ref.begin() + fqn + 1;
     } else if (!modType) {
@@ -2021,7 +2021,7 @@ DSValue VM::callFunction(DSState &state, DSValue &&funcObj,
   if (prepareFuncCall(state, size)) {
     assert(type.isFuncType());
     EvalOP op = EvalOP::PROPAGATE | EvalOP::SKIP_TERM;
-    if (!static_cast<const FunctionType &>(type).getReturnType().isVoidType()) {
+    if (!cast<FunctionType>(type).getReturnType().isVoidType()) {
       setFlag(op, EvalOP::HAS_RETURN);
     }
     startEval(state, op, nullptr, ret);

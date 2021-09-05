@@ -250,7 +250,7 @@ DefaultModuleProvider::load(const char *scriptDir, const char *modPath, FrontEnd
     assert(is<unsigned int>(ret));
     auto &type = this->pool.get(get<unsigned int>(ret));
     assert(type.isModType());
-    return static_cast<const ModType *>(&type);
+    return cast<ModType>(&type);
   }
 }
 

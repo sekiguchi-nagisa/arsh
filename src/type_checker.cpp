@@ -74,7 +74,7 @@ TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
                                   recvType.getName());
       return Err(std::unique_ptr<TypeLookupError>());
     }
-    auto &modType = static_cast<const ModType &>(recvType);
+    auto &modType = cast<ModType>(recvType);
     std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
     auto *handle = this->curScope->lookupField(modType, typeName);
     if (!handle) {
@@ -1516,7 +1516,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   // register function handle
   auto typeOrError = this->typePool.createFuncType(returnType, std::move(paramTypes));
   assert(typeOrError);
-  auto &funcType = static_cast<const FunctionType &>(*std::move(typeOrError).take());
+  auto &funcType = cast<FunctionType>(*std::move(typeOrError).take());
   node.setFuncType(funcType);
   if (auto handle = this->addEntry(node.getNameInfo(), funcType,
                                    FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);

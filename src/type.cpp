@@ -177,7 +177,7 @@ const FieldHandle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
     if (e.isGlobal()) {
       auto &type = pool.get(e.typeId());
       assert(type.isModType());
-      handle = static_cast<const ModType &>(type).lookup(name);
+      handle = cast<ModType>(type).lookup(name);
       if (handle) {
         return handle;
       }
