@@ -283,7 +283,7 @@ TEST_F(ArchiveTest, base) {
 
 TEST_F(ArchiveTest, predefined) {
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("a", "[String]"));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("b", "Void", FieldAttribute::ENV));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("b", "String", FieldAttribute::ENV));
   ASSERT_NO_FATAL_FAILURE(
       this->defineAndArchive("c", "((String, [String]) -> Void)!", FieldAttribute::FUNC_HANDLE));
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("d", "(Signal) -> Void", FieldAttribute::RANDOM));

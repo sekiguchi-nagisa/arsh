@@ -216,6 +216,11 @@ void NameScope::discard(ScopeDiscardPoint discardPoint) {
 NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
   assert(this->kind != FUNC);
 
+  if (handle.getTypeID() == static_cast<unsigned int>(TYPE::Nothing) ||
+      handle.getTypeID() == static_cast<unsigned int>(TYPE::Void)) {
+    return Err(NameLookupError::INVALID_TYPE);
+  }
+
   const auto attr = handle.attr();
 
   // check var index limit

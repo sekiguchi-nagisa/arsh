@@ -30,6 +30,7 @@ namespace ydsh {
 enum class NameLookupError {
   DEFINED,
   LIMIT,
+  INVALID_TYPE,
 };
 
 using NameLookupResult = Result<const FieldHandle *, NameLookupError>;

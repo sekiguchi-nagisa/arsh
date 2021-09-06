@@ -27,7 +27,7 @@ namespace ydsh {
 /**
  * for type error reporting
  */
-class TypeCheckError : public std::exception { // FIXME: not use exception
+class TypeCheckError {
 private:
   Token token{};
 
@@ -47,7 +47,7 @@ public:
   TypeCheckError(const TypeCheckError &o) noexcept
       : token(o.token), kind(o.kind), message(strdup(o.message.get())) {}
 
-  ~TypeCheckError() override = default;
+  ~TypeCheckError() = default;
 
   Token getToken() const { return this->token; }
 
@@ -115,8 +115,6 @@ template <typename T, typename... Arg, typename = base_of_t<T, TCError>>
 inline TypeCheckError createTCError(const Node &node, Arg &&...arg) {
   return createTCErrorImpl(node, T::kind, T::value, std::forward<Arg>(arg)...);
 }
-
-#define RAISE_TC_ERROR(e, node, ...) throw createTCError<e>(node, ##__VA_ARGS__)
 
 } // namespace ydsh
 

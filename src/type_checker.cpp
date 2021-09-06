@@ -153,7 +153,7 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
   if (requiredType == nullptr) {
     if (!type.isNothingType() && unacceptableType != nullptr &&
         unacceptableType->isSameOrBaseTypeOf(type)) {
-      RAISE_TC_ERROR(Unacceptable, targetNode, type.getName());
+      this->reportError<Unacceptable>(targetNode, type.getName());
     }
     return type;
   }
@@ -173,13 +173,14 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
     return type;
   }
 
-  RAISE_TC_ERROR(Required, targetNode, requiredType->getName(), type.getName());
+  this->reportError<Required>(targetNode, requiredType->getName(), type.getName());
+  return type;
 }
 
 const DSType &TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
   auto &type = this->checkTypeAsExpr(targetNode);
   if (type.isNothingType()) {
-    RAISE_TC_ERROR(Unacceptable, targetNode, type.getName());
+    this->reportError<Unacceptable>(targetNode, type.getName());
   }
   return type;
 }
@@ -250,16 +251,16 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue() {
   }
 
   auto &firstType = jumpNodes[0]->getExprNode().getType();
-  assert(!firstType.isNothingType() && !firstType.isVoidType());
-
   for (auto &jumpNode : jumpNodes) {
     if (firstType != jumpNode->getExprNode().getType()) {
       this->checkTypeWithCoercion(firstType, jumpNode->refExprNode());
     }
   }
-  auto ret = this->typePool.createOptionType(firstType);
-  assert(ret);
-  return *std::move(ret).take();
+  if (auto ret = this->typePool.createOptionType(firstType); ret) {
+    return *std::move(ret).take();
+  } else {
+    return this->typePool.get(TYPE::Nothing);
+  }
 }
 
 const FieldHandle *TypeChecker::addEntry(Token token, const std::string &symbolName,
@@ -273,6 +274,8 @@ const FieldHandle *TypeChecker::addEntry(Token token, const std::string &symbolN
     case NameLookupError::LIMIT:
       this->reportError<LocalLimit>(token);
       break;
+    case NameLookupError::INVALID_TYPE:
+      break; // nomarlly unreachable
     }
     return nullptr;
   }
@@ -491,8 +494,11 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
   }
 
   auto typeOrError = this->typePool.createArrayType(elementType);
-  assert(typeOrError);
-  node.setType(*std::move(typeOrError).take());
+  if (typeOrError) {
+    node.setType(*std::move(typeOrError).take());
+  } else {
+    node.setType(this->typePool.get(TYPE::Nothing));
+  }
 }
 
 void TypeChecker::visitMapNode(MapNode &node) {
@@ -510,8 +516,11 @@ void TypeChecker::visitMapNode(MapNode &node) {
   }
 
   auto typeOrError = this->typePool.createMapType(keyType, valueType);
-  assert(typeOrError);
-  node.setType(*std::move(typeOrError).take());
+  if (typeOrError) {
+    node.setType(*std::move(typeOrError).take());
+  } else {
+    node.setType(this->typePool.get(TYPE::Nothing));
+  }
 }
 
 void TypeChecker::visitTupleNode(TupleNode &node) {
@@ -521,8 +530,11 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
     types[i] = &this->checkTypeAsSomeExpr(*node.getNodes()[i]);
   }
   auto typeOrError = this->typePool.createTupleType(std::move(types));
-  assert(typeOrError);
-  node.setType(*std::move(typeOrError).take());
+  if (typeOrError) {
+    node.setType(*std::move(typeOrError).take());
+  } else {
+    node.setType(this->typePool.get(TYPE::Nothing));
+  }
 }
 
 void TypeChecker::visitVarNode(VarNode &node) {
@@ -765,8 +777,6 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
   if (node.isHereStr()) {
     this->checkType(nullptr, argNode, &this->typePool.get(TYPE::UnixFD));
   }
-  assert(argNode.getType().isNothingType() || argNode.getType().is(TYPE::String) ||
-         argNode.getType().is(TYPE::UnixFD));
   node.setType(this->typePool.get(TYPE::Any)); // FIXME:
 }
 
@@ -1514,21 +1524,25 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
   }
 
   // register function handle
-  auto typeOrError = this->typePool.createFuncType(returnType, std::move(paramTypes));
-  assert(typeOrError);
-  auto &funcType = cast<FunctionType>(*std::move(typeOrError).take());
-  node.setFuncType(funcType);
-  if (auto handle = this->addEntry(node.getNameInfo(), funcType,
-                                   FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
-      handle) {
-    node.setVarIndex(handle->getIndex());
+  const FunctionType *funcType = nullptr;
+  if (auto typeOrError = this->typePool.createFuncType(returnType, std::move(paramTypes));
+      typeOrError) {
+    funcType = cast<FunctionType>(std::move(typeOrError).take());
+    node.setFuncType(*funcType);
+    auto handle = this->addEntry(node.getNameInfo(), *funcType,
+                                 FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
+    if (handle) {
+      node.setVarIndex(handle->getIndex());
+    }
+  } else {
+    paramSize = 0; // function type creation failed.
   }
 
   {
     auto func = this->intoFunc(returnType);
     // register parameter
     for (unsigned int i = 0; i < paramSize; i++) {
-      this->addEntry(node.getParams()[i], funcType.getParamTypeAt(i), FieldAttribute());
+      this->addEntry(node.getParams()[i], funcType->getParamTypeAt(i), FieldAttribute());
     }
     // check type func body
     this->checkTypeWithCurrentScope(node.getBlockNode());
@@ -1855,23 +1869,17 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
   // set scope
   this->curScope = std::move(global);
 
-  try {
-    if (prevType != nullptr && prevType->isNothingType()) {
-      this->reportError<Unreachable>(*node);
-    }
-    if (this->toplevelPrinting && this->curScope->inRootModule() && !mayBeCmd(*node)) {
-      this->checkTypeExactly(*node);
-      node = this->newPrintOpNode(std::move(node));
-    } else {
-      this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node); // pop stack top
-    }
-    if (this->hasError()) {
-      node = std::make_unique<ErrorNode>(node->getToken());
-      node->setType(this->typePool.get(TYPE::Void));
-    }
-  } catch (const TypeCheckError &e) {
-    this->errors.push_back(e);
-    node = std::make_unique<ErrorNode>(e.getToken());
+  if (prevType != nullptr && prevType->isNothingType()) {
+    this->reportError<Unreachable>(*node);
+  }
+  if (this->toplevelPrinting && this->curScope->inRootModule() && !mayBeCmd(*node)) {
+    this->checkTypeExactly(*node);
+    node = this->newPrintOpNode(std::move(node));
+  } else {
+    this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node); // pop stack top
+  }
+  if (this->hasError()) {
+    node = std::make_unique<ErrorNode>(node->getToken());
     node->setType(this->typePool.get(TYPE::Void));
   }
   return std::move(node);

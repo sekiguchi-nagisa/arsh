@@ -264,10 +264,8 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     }
 
     // check type attribute
-    try {
-      this->checkType(*pair->first, assignNode->getRightNode());
-    } catch (const TypeCheckError &e) {
-      this->errors.push_back(e);
+    this->checkType(*pair->first, assignNode->getRightNode());
+    if (this->hasError()) {
       return;
     }
 
