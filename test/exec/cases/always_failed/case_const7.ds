@@ -1,0 +1,9 @@
+
+#$test($result = 'type', $lineNum = 7, $errorKind = 'Constant', $chars = 9, $status = 1)
+
+{
+    var OSTYPE = 34
+    case 235 as String {
+        $OSTYPE => echo hello
+    }
+}

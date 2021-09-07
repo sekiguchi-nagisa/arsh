@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 7, $errorKind = 'UnmatchParam', $chars = 11, $status = 1)
+
+var a = 'ims'
+
+case 'hello'  {
+new Regex ('34') => 34
+}

@@ -1,0 +1,10 @@
+#$test($result = 'type', $lineNum = 7, $chars = 1, $errorKind = 'Required', $status = 1)
+
+var a = 1234
+
+case $a {
+1234 => echo hello;
+''|1223 => echo heyl;
+else => echo else;
+
+}

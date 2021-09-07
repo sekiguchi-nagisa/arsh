@@ -1,5 +1,5 @@
 #$test($result = 'type', $lineNum = 5, $chars =41 , $errorKind = 'DefinedTypeAlias', $status = 1, $fileName = $0)
 
-typedef Bool = Boolean
+typedef HOGE = Boolean
 
-source ../../_module4test/module1.ds as Bool
+source ../../_module4test/module1.ds as HOGE
