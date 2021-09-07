@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 11, $errorKind = 'Constant', $status = 1)
+
+function f() : String { return "."; }
+
+source "${$f()}"

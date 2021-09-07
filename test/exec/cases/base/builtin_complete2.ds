@@ -175,6 +175,7 @@ assert($(complete 'var 23').empty())
 assert($(complete 'function f($').empty())
 assert($(complete '{ $T ').empty())
 assert $(complete 'ls # this is a comment ').empty()
+assert $(complete 'var a : Int.').empty()
 # assert $(complete 'coproc { break 34.').empty()
 # assert $(complete '{ return 34.').empty()
 

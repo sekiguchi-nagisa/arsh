@@ -1828,10 +1828,6 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     const DSType *recvType = nullptr;
     if (node.getExprNode()) {
       recvType = &this->checkTypeExactly(*node.getExprNode());
-      if (!recvType->isModType()) {
-        this->reportError<Required>(*node.getExprNode(), "Module type", recvType->getName());
-        return;
-      }
     }
     this->ccHandler->addTypeNameRequest(this->lexer->toName(node.getTypingToken()), recvType,
                                         this->curScope);
