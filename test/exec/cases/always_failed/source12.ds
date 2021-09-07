@@ -1,3 +1,0 @@
-#$test($result = 'type', $lineNum = 3, $chars = 3, $errorKind = 'OutsideToplevel', $status = 1)
-
-{ source $SCRIPT_NAME; }

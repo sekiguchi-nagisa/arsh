@@ -1,3 +1,0 @@
-#$test($result = 'type', $lineNum = 3, $chars = 8, $errorKind = 'NullInPath', $status = 1)
-
-source /$'\x00'hgoe

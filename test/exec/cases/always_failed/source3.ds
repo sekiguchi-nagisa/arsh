@@ -1,4 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 11, $errorKind = 'Constant', $status = 1)
 
-#$test($result = 'type', $lineNum = 4,$chars = 9,  $errorKind = 'NoGlobDir', $status = 1)
+function f() : String { return "."; }
 
-source! /*//*//*/.././*//.././*//**/?!/?!/
+source "${$f()}"
