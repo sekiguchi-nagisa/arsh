@@ -377,6 +377,41 @@ inline unsigned int hexToNum(char ch) {
   return 0;
 }
 
+inline int64_t dobuleTobits(double d) {
+  union {
+    int64_t i64;
+    double f64;
+  } data;
+
+  /**
+   * https://docs.oracle.com/javase/jp/8/docs/api/java/lang/Double.html#compare-double-double-
+   */
+  if (std::isnan(d)) {
+    return 0x7ff8000000000000L;
+  }
+  if (std::isinf(d)) {
+    return d > 0 ? 0x7ff0000000000000L : 0xfff0000000000000L;
+  }
+  data.f64 = d;
+  return data.i64;
+}
+
+inline int compareByTotalOrder(double x, double y) {
+  if (x < y) {
+    return -1;
+  }
+  if (x > y) {
+    return 1;
+  }
+
+  int64_t xx = dobuleTobits(x);
+  int64_t yy = dobuleTobits(y);
+  if (xx == yy) {
+    return 0;
+  }
+  return xx < yy ? -1 : 1;
+}
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_NUM_UTIL_HPP

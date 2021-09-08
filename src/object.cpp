@@ -197,7 +197,7 @@ bool DSValue::equals(const DSValue &o) const {
   case DSValueKind::INT:
     return this->asInt() == o.asInt();
   case DSValueKind::FLOAT:
-    return this->asFloat() == o.asFloat();
+    return compareByTotalOrder(this->asFloat(), o.asFloat()) == 0;
   default:
     assert(this->kind() == DSValueKind::OBJECT);
     if (this->get()->getKind() != o.get()->getKind()) {
@@ -216,7 +216,7 @@ size_t DSValue::hash() const {
   case DSValueKind::INT:
     return std::hash<int64_t>()(this->asInt());
   case DSValueKind::FLOAT:
-    return std::hash<double>()(this->asFloat());
+    return std::hash<int64_t>()(dobuleTobits(this->asFloat()));
   default:
     if (this->hasStrRef()) {
       return StrRefHash()(this->asStrRef());
@@ -246,7 +246,7 @@ bool DSValue::compare(const DSValue &o) const {
   case DSValueKind::INT:
     return this->asInt() < o.asInt();
   case DSValueKind::FLOAT:
-    return this->asFloat() < o.asFloat();
+    return compareByTotalOrder(this->asFloat(), o.asFloat()) < 0;
   default:
     return false;
   }

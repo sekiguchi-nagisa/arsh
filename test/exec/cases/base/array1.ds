@@ -162,11 +162,17 @@ assert $s3[0] == "1"
 assert $s3[1] == "AA"
 assert $s3[2] == "a"
 
-var s4 = [3.14, 0.0, -23.5]
+var s4 = [3.14, 0.0, -23.5, (0.0/0.0), 34.1/0.0, -0.0, -1000.0/0.0]
 $s4.sort()
-assert $s4[0] == -23.5
-assert $s4[1] == 0.0
-assert $s4[2] == 3.14
+echo ${$s4}
+# assert $s4[0].isInf()
+# assert $s4[0] == -12.0/0.0
+assert $s4[1] == -23.5
+assert $s4[2] == -0.0
+assert $s4[3] == 0.0
+assert $s4[4] == 3.14
+assert $s4[5] == 23.0/0.0
+assert $s4[6].isNan()
 
 var s5 = [%'int', %'kill', %'HUp']
 $s5.sort()

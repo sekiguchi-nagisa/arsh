@@ -7,6 +7,11 @@ assert $b[$false] == 90
 var f = [3.14 : 3.14, 0.1e-3: 34 as Float]
 assert $f[3.14] == 3.14
 assert $f[0.0001] == 34.0
+var f2 = [-0.0: "a", 0.0: "b", (0.0/0.0): "c"]
+assert $f2.size() == 3
+assert $f2[0.0] == "b"
+assert $f2[-0.000] == "a"
+assert $f2[0.000/-0.000] == "c"
 
 # Signal
 var sg = [%'hup' : "hung up", %'kill' : "killed"]

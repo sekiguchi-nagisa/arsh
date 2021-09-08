@@ -92,6 +92,8 @@ function ceil($this : Float) : Float
 function abs($this : Float) : Float
 
 function %OP_TO_INT($this : Float) : Int
+
+function compare($this : Float, $target : Float) : Int
 ```
 
 ## Boolean type

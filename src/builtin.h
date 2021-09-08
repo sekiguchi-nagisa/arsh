@@ -483,6 +483,15 @@ YDSH_METHOD float_toInt(RuntimeContext &ctx) {
   RET(DSValue::createInt(v));
 }
 
+//!bind: function compare($this : Float, $target : Float) : Int
+YDSH_METHOD float_compare(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(float_compare);
+  double x = LOCAL(0).asFloat();
+  double y = LOCAL(1).asFloat();
+  int ret = compareByTotalOrder(x, y);
+  RET(DSValue::createInt(ret));
+}
+
 // #####################
 // ##     Boolean     ##
 // #####################

@@ -4,6 +4,11 @@
 
 ### Added
 
+#### Builtin
+
+- add ``Float#compare`` method
+    - total order Comparison equivalent to Java (Double.compare)
+
 #### LSP
 
 - basic support the following methods/notifications
@@ -28,6 +33,11 @@
 - **Breaking Change**: statically determine user-defined command
     - eliminate runtime user-defined command lookup
     - disallow user-defined command call defined in backward of call-site
+- **Breaking Change**: change internal hash/equality function ``Map<Float, T>`` object
+    - now check equality by total order
+    - change hash code behavior
+        - hash(-0.0) != hash(0.0)
+        - hash(NAN) == hash(NAN)
 
 #### Misc
 

@@ -140,3 +140,23 @@ assert -92233720368547758090.0 as Int == -1 -9223372036854775807
 # to Float
 assert($f as Float is Float)
 assert($f as Float as String == '65535.923400')
+
+# compare
+assert $nan.compare($nan) == 0
+assert 3.13.compare($nan) < 0
+assert $nan.compare(3.13) > 0
+assert (-0.23).compare($nan) < 0
+assert $nan.compare(-0.23) > 0
+assert (0.0).compare(-0.0) > 0
+assert (-0.0).compare(0.0) < 0
+assert (-1000.2).compare(-0.0) < 0
+assert (-$inf).compare(234.0) < 0
+assert (-234.4).compare(23.4) < 0
+assert (234.4).compare($inf) < 0
+assert (-$inf).compare(-0.0) < 0
+assert (-$inf).compare(-3.14) < 0
+assert (-$inf).compare($inf) < 0
+assert (-$inf).compare(-$inf) == 0
+assert ($inf).compare($inf) == 0
+assert (-$inf).compare($nan) < 0
+assert ($inf).compare($nan) < 0
