@@ -376,7 +376,7 @@ void TypeChecker::checkArgsNode(const CallableTypes &types, ArgsNode &node) {
       this->checkTypeAsExpr(*node.getNodes()[i]);
     }
   }
-  node.setType(this->typePool.get(TYPE::Void));
+  this->checkTypeExactly(node);
 }
 
 void TypeChecker::resolveCastOp(TypeOpNode &node) {
@@ -650,7 +650,7 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   node.setType(this->checkTypeAsExpr(*node.getOptNode()));
 }
 
-void TypeChecker::visitArgsNode(ArgsNode &) {} // do nothing
+void TypeChecker::visitArgsNode(ArgsNode &node) { node.setType(this->typePool.get(TYPE::Void)); }
 
 void TypeChecker::visitApplyNode(ApplyNode &node) {
   CallableTypes callableTypes = this->resolveCallee(node);
@@ -1875,7 +1875,7 @@ std::unique_ptr<Node> TypeChecker::operator()(const DSType *prevType, std::uniqu
     this->checkTypeWithCoercion(this->typePool.get(TYPE::Void), node); // pop stack top
   }
   if (this->hasError()) {
-    node = std::make_unique<ErrorNode>(node->getToken());
+    node = std::make_unique<ErrorNode>(std::move(node));
     node->setType(this->typePool.get(TYPE::Void));
   }
   return std::move(node);

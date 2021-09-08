@@ -2181,9 +2181,18 @@ public:
 };
 
 class ErrorNode : public WithRtti<Node, NodeKind::Error> {
+private:
+  std::unique_ptr<Node> orgNode;
+
 public:
   explicit ErrorNode(Token token) : WithRtti(token) {}
+
+  explicit ErrorNode(std::unique_ptr<Node> &&node)
+      : WithRtti(node->getToken()), orgNode(std::move(node)) {}
+
   ~ErrorNode() override = default;
+
+  const std::unique_ptr<Node> &getOrgNode() const { return this->orgNode; }
 
   void dump(NodeDumper &dumper) const override;
 };

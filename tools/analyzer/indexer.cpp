@@ -357,6 +357,9 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
 }
 
 void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
+  if (!this->isTopLevel()) {
+    return;
+  }
   this->visit(node.getReturnTypeToken());
   this->visitEach(node.getParamTypeNodes());
   this->builder().addDecl(node.getNameInfo(), *node.getFuncType(), DeclSymbol::Kind::FUNC);
@@ -370,12 +373,18 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
 void SymbolIndexer::visitInterfaceNode(InterfaceNode &) {}
 
 void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
+  if (!this->isTopLevel()) {
+    return;
+  }
   this->builder().addUdcDecl(node.getNameInfo());
   auto udc = this->builder().intoScope(); // FIXME: register parameter?
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
 
 void SymbolIndexer::visitSourceNode(SourceNode &node) { // FIXME: import foreign decl
+  if (!this->isTopLevel()) {
+    return;
+  }
   if (node.getNameInfo()) {
     this->builder().addDecl(*node.getNameInfo(), node.getModType());
     //  this->builder().addDecl(DeclSymbol::Kind::TYPE_ALIAS, *node.getNameInfo());
@@ -387,11 +396,20 @@ void SymbolIndexer::visitSourceListNode(SourceListNode &) {}
 
 void SymbolIndexer::visitCodeCompNode(CodeCompNode &) {}
 
-void SymbolIndexer::visitErrorNode(ErrorNode &) {}
+void SymbolIndexer::visitErrorNode(ErrorNode &node) {
+  assert(this->isTopLevel());
+  this->visitingDepth--;
+  this->visit(node.getOrgNode());
+  this->visitingDepth++;
+}
 
 void SymbolIndexer::visitEmptyNode(EmptyNode &) {}
 
-void SymbolIndexer::visit(Node &node) { NodeVisitor::visit(node); }
+void SymbolIndexer::visit(Node &node) {
+  this->visitingDepth++;
+  NodeVisitor::visit(node);
+  this->visitingDepth--;
+}
 
 void SymbolIndexer::enterModule(unsigned short modId, int version,
                                 const std::shared_ptr<TypePool> &p) {

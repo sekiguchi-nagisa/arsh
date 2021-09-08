@@ -58,6 +58,9 @@ public:
 
   bool addDecl(const NameInfo &info, const DSType &type,
                DeclSymbol::Kind kind = DeclSymbol::Kind::VAR) {
+    if (type.isVoidType() || type.isNothingType()) {
+      return false;
+    }
     return this->addDecl(info, kind, type.getName());
   }
 
@@ -83,6 +86,7 @@ class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {
 private:
   SymbolIndexes &indexes;
   std::vector<IndexBuilder> builders;
+  int visitingDepth{0};
 
 public:
   explicit SymbolIndexer(SymbolIndexes &indexes) : indexes(indexes) {}
@@ -171,6 +175,8 @@ private:
   }
 
   IndexBuilder &builder() { return this->builders.back(); }
+
+  bool isTopLevel() const { return this->visitingDepth == 1; }
 };
 
 } // namespace ydsh::lsp
