@@ -96,8 +96,16 @@ std::string DSValue::toString() const {
     return std::to_string(this->asSig());
   case DSValueKind::INT:
     return std::to_string(this->asInt());
-  case DSValueKind::FLOAT:
-    return std::to_string(this->asFloat());
+  case DSValueKind::FLOAT: {
+    double d = this->asFloat();
+    if (std::isnan(d)) {
+      return "NaN";
+    }
+    if (std::isinf(d)) {
+      return d > 0 ? "Infinity" : "-Infinity";
+    }
+    return std::to_string(d);
+  }
   default:
     if (this->hasStrRef()) {
       return this->asStrRef().toString();

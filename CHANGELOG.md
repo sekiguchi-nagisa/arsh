@@ -38,6 +38,10 @@
     - change hash code behavior
         - hash(-0.0) != hash(0.0)
         - hash(NAN) == hash(NAN)
+- **Breaking Change**: fix string representation of ``Float`` object
+    - ``inf`` => ``Infinity``
+    - ``-inf`` => ``-Infinity``
+    - ``nan`` => ``NaN``
 
 #### Misc
 

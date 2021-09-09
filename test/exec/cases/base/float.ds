@@ -141,6 +141,11 @@ assert -92233720368547758090.0 as Int == -1 -9223372036854775807
 assert($f as Float is Float)
 assert($f as Float as String == '65535.923400')
 
+# to String
+assert $nan as String == "NaN"
+assert (-$inf) as String == '-Infinity'
+assert $inf as String == 'Infinity'
+
 # compare
 assert $nan.compare($nan) == 0
 assert 3.13.compare($nan) < 0
