@@ -24,25 +24,37 @@ namespace ydsh::lsp {
 
 class IndexBuilder {
 private:
-  unsigned short modId;
-  int version;
+  const unsigned short modId;
+  const int version;
   std::shared_ptr<TypePool> pool;
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
+  std::unordered_set<unsigned short> globallyImportedModIds;
+  const SymbolIndexes &indexes;
 
   struct ScopeEntry : public RefCount<ScopeEntry> {
-    std::unordered_map<std::string, SymbolRef> map;
+    StrRefMap<SymbolRef> map;
 
     const IntrusivePtr<ScopeEntry> parent;
 
     explicit ScopeEntry(const IntrusivePtr<ScopeEntry> &parent) : parent(parent) {}
+
+    bool isGlobal() const { return !this->parent; }
+
+    bool addDecl(unsigned short declModId, const DeclSymbol &decl) {
+      auto ref = SymbolRef::create(decl.getToken(), declModId);
+      assert(ref.hasValue());
+      auto pair = this->map.emplace(decl.getMangledName(), ref.unwrap());
+      return pair.second;
+    }
   };
 
   IntrusivePtr<ScopeEntry> scope;
 
 public:
-  IndexBuilder(unsigned short modId, int version, std::shared_ptr<TypePool> pool)
-      : modId(modId), version(version), pool(std::move(pool)),
+  IndexBuilder(unsigned short modId, int version, std::shared_ptr<TypePool> pool,
+               const SymbolIndexes &indexes)
+      : modId(modId), version(version), pool(std::move(pool)), indexes(indexes),
         scope(IntrusivePtr<ScopeEntry>::create(nullptr)) {}
 
   SymbolIndex build() && {
@@ -74,10 +86,12 @@ public:
 
   bool addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
-private:
-  const SymbolRef *findDeclRef(const std::string &name) const;
+  bool importForeignDecls(unsigned short foreignModId);
 
-  DeclSymbol *addDeclImpl(DeclSymbol::Kind k, Token token, const char *info);
+private:
+  const SymbolRef *findDeclRefFromScope(const std::string &name) const;
+
+  DeclSymbol *addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameInfo, const char *info);
 
   bool addSymbolImpl(Token token, unsigned short declModId, const DeclSymbol &decl);
 };

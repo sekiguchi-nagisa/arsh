@@ -7,3 +7,4 @@ source ../../_module4test/module1.ds
 
 assert "$(_say0)" == 'hello'
 assert "$(say0 echo echo)" == '_say!! echo echo'
+assert new StrArray() is [String]

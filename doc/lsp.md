@@ -8,18 +8,18 @@
 | variable (for-in) | ✔️ | ✔️ | ✔️ |
 | variable (catch) | ✔️ | ✔️ | ✔️ |
 | variable (function parameter) | ✔️ | ✔️ | ✔️ |
-| variable (global import) | ❌ | ❌ | ❌ |
+| variable (global import) | ✔️ | ❌ | ✔️ |
 | variable (named import) | ❌ | ❌ | ❌ |
 | builtin variable | - | - | ❌ |
 | builtin constant | - | - | ❌ (show value) |
 | function  | ✔️ | ✔️ |✔️ |
-| function (global import) | ❌ | ❌ | ❌ |
+| function (global import) | ✔️ | ❌ | ✔️ |
 | function (named import) | ❌ | ❌ | ❌ |
 | user-defined command | ✔️ | ✔️ |✔️ |
-| user-defined command (global import)  | ❌ | ❌ | ❌ |
+| user-defined command (global import)  | ✔️ | ❌ | ✔️ |
 | builtin command  | - | - | ❌ (show help) |
 | type (alias) | ✔️ | ✔️ |✔️ |
-| type (global import)| ❌ | ❌ | ❌ |
+| type (global import)| ✔️ | ❌ | ✔️ |
 | type (named import) | ❌ | ❌ | ❌ |
 | field (tuple)      | - | - | ❌ |
 | method (builtin) | - | - | ❌ |

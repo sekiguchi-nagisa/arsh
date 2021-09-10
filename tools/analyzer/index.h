@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <misc/buffer.hpp>
+#include <misc/enum_util.hpp>
 #include <misc/resource.hpp>
 #include <misc/result.hpp>
 #include <misc/string_ref.hpp>
@@ -97,33 +98,45 @@ public:
 
 class DeclSymbol {
 public:
-  enum class Kind : unsigned short {
+  enum class Kind : unsigned char {
     VAR,
     FUNC,
     CMD,
     TYPE_ALIAS,
   };
 
+  enum class Attr : unsigned char {
+    GLOBAL = 1u << 0u,
+    PUBLIC = 1u << 1u,
+  };
+
 private:
   unsigned int pos;
   unsigned short size;
   Kind kind;
+  Attr attr;
+  CStrPtr mangledName;
   CStrPtr info; // hover information
   FlexBuffer<SymbolRef> refs;
 
 public:
-  static Optional<DeclSymbol> create(Kind kind, Token token, const char *info = nullptr) {
+  static Optional<DeclSymbol> create(Kind kind, Attr attr, Token token, const std::string &name,
+                                     const char *info = nullptr) {
     if (token.size > UINT16_MAX) {
       return {};
     }
-    return DeclSymbol(kind, token.pos, static_cast<unsigned short>(token.size),
+    return DeclSymbol(kind, attr, token.pos, static_cast<unsigned short>(token.size), name,
                       info != nullptr ? info : "(dummy)");
   }
 
-  DeclSymbol(Kind kind, unsigned int pos, unsigned short size, const char *info)
-      : pos(pos), size(size), kind(kind), info(CStrPtr(strdup(info))) {}
+  DeclSymbol(Kind kind, Attr attr, unsigned int pos, unsigned short size, const std::string &name,
+             const char *info)
+      : pos(pos), size(size), kind(kind), attr(attr), mangledName(CStrPtr(strdup(name.c_str()))),
+        info(CStrPtr(strdup(info))) {}
 
   Kind getKind() const { return this->kind; }
+
+  Attr getAttr() const { return this->attr; }
 
   Token getToken() const {
     return Token{
@@ -133,6 +146,8 @@ public:
   }
 
   unsigned int getPos() const { return this->pos; }
+
+  StringRef getMangledName() const { return this->mangledName.get(); }
 
   StringRef getInfo() const { return this->info.get(); }
 
@@ -189,9 +204,9 @@ public:
 
   void remove(unsigned short id);
 
-  const DeclSymbol *findDecl(unsigned short modId, unsigned int pos) const {
-    if (auto *index = this->find(modId); index) {
-      return index->findDecl(pos);
+  const DeclSymbol *findDecl(unsigned short declModId, unsigned int declPos) const {
+    if (auto *index = this->find(declModId); index) {
+      return index->findDecl(declPos);
     }
     return nullptr;
   }
@@ -204,5 +219,12 @@ bool findAllReferences(const SymbolIndexes &indexes, SymbolRef ref,
                        const std::function<void(const SymbolRef &)> &cosumer);
 
 } // namespace ydsh::lsp
+
+namespace ydsh {
+
+template <>
+struct allow_enum_bitop<lsp::DeclSymbol::Attr> : std::true_type {};
+
+} // namespace ydsh
 
 #endif // YDSH_TOOLS_ANALYZER_INDEX_H
