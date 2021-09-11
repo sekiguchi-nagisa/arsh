@@ -80,18 +80,31 @@ bool IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
       return false;
     }
     auto &decl = *iter;
+    assert(decl.getPos() == ref->getPos());
     if (!this->addSymbolImpl(info.getToken(), ref->getModId(), decl)) {
       return false;
     }
     decl.addRef(symbol.unwrap());
   } else { // foreign decl
-    auto *decl = this->indexes.findDecl(ref->getModId(), ref->getPos());
-    if (!decl || !hasFlag(decl->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC)) {
+    SymbolRequest request = {.modId = ref->getModId(), .pos = ref->getPos()};
+    ForeignDecl *foreign;
+    auto iter = std::lower_bound(this->foreigns.begin(), this->foreigns.end(), request,
+                                 ForeignDecl::Compare());
+    if (iter != this->foreigns.end() && (*iter).getDeclModId() == request.modId &&
+        (*iter).getDeclPos() == request.pos) { // already registered
+      foreign = &*iter;
+    } else {
+      auto *decl = this->indexes.findDecl(request);
+      if (!decl || !hasFlag(decl->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC)) {
+        return false;
+      }
+      iter = this->foreigns.insert(iter, ForeignDecl::create(ref->getModId(), *decl));
+      foreign = &*iter;
+    }
+    if (!this->addSymbolImpl(info.getToken(), foreign->getDeclModId(), foreign->getDeclPos())) {
       return false;
     }
-    if (!this->addSymbolImpl(info.getToken(), ref->getModId(), *decl)) {
-      return false;
-    }
+    foreign->addRef(symbol.unwrap());
   }
   return true;
 }
@@ -147,8 +160,8 @@ DeclSymbol *IndexBuilder::addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameIn
   return &(*iter);
 }
 
-bool IndexBuilder::addSymbolImpl(Token token, unsigned short declModId, const DeclSymbol &decl) {
-  auto ret = Symbol::create(token, declModId, decl.getPos());
+bool IndexBuilder::addSymbolImpl(Token token, unsigned short declModId, unsigned int declPos) {
+  auto ret = Symbol::create(token, declModId, declPos);
   if (!ret.hasValue()) {
     return false;
   }
@@ -156,7 +169,7 @@ bool IndexBuilder::addSymbolImpl(Token token, unsigned short declModId, const De
   auto iter = std::lower_bound(this->symbols.begin(), this->symbols.end(), symbol.getPos(),
                                Symbol::Compare());
   if (iter != this->symbols.end()) {
-    if (iter->getPos() == decl.getPos()) {
+    if (iter->getPos() == declPos) {
       fatal("try to add token: %s, but already added: %s\n", toString(token).c_str(),
             toString(iter->getToken()).c_str());
     }
@@ -434,7 +447,7 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   if (!this->isTopLevel()) {
     return;
   }
-  if (node.getNameInfo()) { //FIXME: named import
+  if (node.getNameInfo()) { // FIXME: named import
     this->builder().addDecl(*node.getNameInfo(), node.getModType());
     //  this->builder().addDecl(DeclSymbol::Kind::TYPE_ALIAS, *node.getNameInfo());
     //  this->builder().addDecl(DeclSymbol::Kind::CMD, *node.getNameInfo());

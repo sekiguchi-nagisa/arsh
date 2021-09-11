@@ -42,10 +42,10 @@ public:
 };
 
 static std::pair<unsigned short, const DeclSymbol *> findDeclaration2(const SymbolIndexes &indexes,
-                                                                      SymbolRef ref) {
+                                                                      SymbolRequest req) {
   unsigned short id = 0;
   const DeclSymbol *decl = nullptr;
-  findDeclaration(indexes, ref, [&](unsigned short i, const DeclSymbol &d) {
+  findDeclaration(indexes, req, [&](unsigned short i, const DeclSymbol &d) {
     id = i;
     decl = &d;
   });
@@ -63,7 +63,7 @@ try { $false; } catch($e) {
 
   auto ret = toTokenPos(content, Position{.line = 2, .character = 3});
   ASSERT_TRUE(ret.hasValue());
-  auto pair = findDeclaration2(this->indexes, SymbolRef(ret.unwrap(), 1, modId));
+  auto pair = findDeclaration2(this->indexes, {.modId = modId, .pos = ret.unwrap()});
   ASSERT_TRUE(pair.second);
   ASSERT_EQ(modId, pair.first);
   ASSERT_EQ(2, pair.second->getRefs().size());
@@ -72,7 +72,7 @@ try { $false; } catch($e) {
 
   ret = toTokenPos(content, Position{.line = 2, .character = 4});
   ASSERT_TRUE(ret.hasValue());
-  pair = findDeclaration2(this->indexes, SymbolRef(ret.unwrap(), 1, modId));
+  pair = findDeclaration2(this->indexes, {.modId = modId, .pos = ret.unwrap()});
   ASSERT_TRUE(pair.second);
   ASSERT_EQ(modId, pair.first);
   ASSERT_EQ(2, pair.second->getRefs().size());
@@ -96,7 +96,7 @@ function assertArray(
 
   auto ret = toTokenPos(content, Position{.line = 1, .character = 13});
   ASSERT_TRUE(ret.hasValue());
-  auto *decl = this->indexes.findDecl(modId, ret.unwrap());
+  auto *decl = this->indexes.findDecl({.modId = modId, .pos = ret.unwrap()});
   ASSERT_TRUE(decl);
   ASSERT_EQ(DeclSymbol::Kind::FUNC, decl->getKind());
   ASSERT_EQ(1, decl->getRefs().size());
@@ -104,7 +104,7 @@ function assertArray(
 
   ret = toTokenPos(content, Position{.line = 2, .character = 3});
   ASSERT_TRUE(ret.hasValue());
-  decl = this->indexes.findDecl(modId, ret.unwrap());
+  decl = this->indexes.findDecl({.modId = modId, .pos = ret.unwrap()});
   ASSERT_TRUE(decl);
   ASSERT_EQ(DeclSymbol::Kind::VAR, decl->getKind());
   ASSERT_EQ(2, decl->getRefs().size());

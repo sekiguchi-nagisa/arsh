@@ -20,18 +20,12 @@
 
 namespace ydsh::lsp {
 
-// ########################
-// ##     DeclSymbol     ##
-// ########################
+// ##################
+// ##     Refs     ##
+// ##################
 
-void DeclSymbol::addRef(SymbolRef ref) {
-  auto iter = std::lower_bound(this->refs.begin(), this->refs.end(), ref,
-                               [](const SymbolRef &x, const SymbolRef &y) {
-                                 if (x.getModId() < y.getModId()) {
-                                   return true;
-                                 }
-                                 return x.getModId() == y.getModId() && x.getPos() < y.getPos();
-                               });
+void Refs::addRef(SymbolRef ref) {
+  auto iter = std::lower_bound(this->refs.begin(), this->refs.end(), ref);
   if (iter != this->refs.end()) {
     if (iter->getModId() == ref.getModId() && iter->getPos() == ref.getPos()) {
       *iter = ref; // update
@@ -69,6 +63,21 @@ const Symbol *SymbolIndex::findSymbol(unsigned int pos) const {
   return nullptr;
 }
 
+const ForeignDecl *SymbolIndex::findForeignDecl(SymbolRequest request) const {
+  auto iter = std::lower_bound(this->foreignDecls.begin(), this->foreignDecls.end(), request,
+                               ForeignDecl::Compare());
+  if (iter != this->foreignDecls.end()) {
+    auto &decl = *iter;
+    if (request.modId != decl.getDeclModId()) {
+      return nullptr;
+    }
+    if (request.pos >= decl.getToken().pos && request.pos <= decl.getToken().endPos()) {
+      return &decl;
+    }
+  }
+  return nullptr;
+}
+
 // ###########################
 // ##     SymbolIndexes     ##
 // ###########################
@@ -92,7 +101,9 @@ const SymbolIndex *SymbolIndexes::find(unsigned short modId) const {
   auto iter =
       std::lower_bound(this->indexes.begin(), this->indexes.end(), modId, SymbolIndex::Compare());
   if (iter != this->indexes.end()) {
-    return &*iter;
+    if (auto &ret = *iter; ret.getModId() == modId) {
+      return &ret;
+    }
   }
   return nullptr;
 }
@@ -105,11 +116,11 @@ void SymbolIndexes::remove(unsigned short id) {
   }
 }
 
-bool findDeclaration(const SymbolIndexes &indexes, SymbolRef ref,
+bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
                      const std::function<void(unsigned short, const DeclSymbol &)> &consumer) {
-  if (auto *index = indexes.find(ref.getModId()); index) {
-    if (auto *symbol = index->findSymbol(ref.getPos()); symbol) {
-      auto *decl = indexes.findDecl(symbol->getDeclModId(), symbol->getDeclPos());
+  if (auto *index = indexes.find(request.modId); index) {
+    if (auto *symbol = index->findSymbol(request.pos); symbol) {
+      auto *decl = indexes.findDecl({.modId = symbol->getDeclModId(), .pos = symbol->getDeclPos()});
       if (!decl) {
         return false;
       }
@@ -122,14 +133,30 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRef ref,
   return false;
 }
 
-bool findAllReferences(const SymbolIndexes &indexes, SymbolRef ref,
+bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
                        const std::function<void(const SymbolRef &)> &cosumer) {
   unsigned int count = 0;
-  if (auto *decl = indexes.findDecl(ref.getModId(), ref.getPos()); decl) {
+  if (auto *decl = indexes.findDecl(request); decl) {
+    // search local ref
     for (auto &e : decl->getRefs()) {
       count++;
       if (cosumer) {
         cosumer(e);
+      }
+    }
+
+    // search foreign ref
+    for (auto &index : indexes) {
+      if (index.getModId() == request.modId) {
+        continue;
+      }
+      if (auto *foreign = index.findForeignDecl(request); foreign) {
+        for (auto &e : foreign->getRefs()) {
+          count++;
+          if (cosumer) {
+            cosumer(e);
+          }
+        }
       }
     }
   }

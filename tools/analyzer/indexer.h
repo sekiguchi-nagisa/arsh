@@ -29,6 +29,7 @@ private:
   std::shared_ptr<TypePool> pool;
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
+  std::vector<ForeignDecl> foreigns;
   std::unordered_set<unsigned short> globallyImportedModIds;
   const SymbolIndexes &indexes;
 
@@ -58,7 +59,8 @@ public:
         scope(IntrusivePtr<ScopeEntry>::create(nullptr)) {}
 
   SymbolIndex build() && {
-    return {this->modId, this->version, std::move(this->decls), std::move(this->symbols)};
+    return {this->modId, this->version, std::move(this->decls), std::move(this->symbols),
+            std::move(foreigns)};
   }
 
   const TypePool &getPool() const { return *this->pool; }
@@ -93,7 +95,11 @@ private:
 
   DeclSymbol *addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameInfo, const char *info);
 
-  bool addSymbolImpl(Token token, unsigned short declModId, const DeclSymbol &decl);
+  bool addSymbolImpl(Token token, unsigned short declModId, const DeclSymbol &decl) {
+    return this->addSymbolImpl(token, declModId, decl.getPos());
+  }
+
+  bool addSymbolImpl(Token token, unsigned short declModId, unsigned int declPos);
 };
 
 class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {

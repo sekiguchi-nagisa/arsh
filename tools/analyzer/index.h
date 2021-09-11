@@ -94,9 +94,30 @@ public:
   }
 
   unsigned short getModId() const { return this->modId; }
+
+  bool operator<(SymbolRef o) const {
+    return this->getModId() < o.getModId() ||
+           (!(o.getModId() < this->getModId()) && this->getPos() < o.getPos());
+  }
 };
 
-class DeclSymbol {
+// for sybmol lookup
+struct SymbolRequest {
+  unsigned short modId;
+  unsigned int pos;
+};
+
+class Refs {
+private:
+  FlexBuffer<SymbolRef> refs;
+
+public:
+  const FlexBuffer<SymbolRef> &getRefs() const { return this->refs; }
+
+  void addRef(SymbolRef ref);
+};
+
+class DeclSymbol : public Refs {
 public:
   enum class Kind : unsigned char {
     VAR,
@@ -117,7 +138,6 @@ private:
   Attr attr;
   CStrPtr mangledName;
   CStrPtr info; // hover information
-  FlexBuffer<SymbolRef> refs;
 
 public:
   static Optional<DeclSymbol> create(Kind kind, Attr attr, Token token, const std::string &name,
@@ -151,14 +171,54 @@ public:
 
   StringRef getInfo() const { return this->info.get(); }
 
-  const FlexBuffer<SymbolRef> &getRefs() const { return this->refs; }
-
-  void addRef(SymbolRef ref);
-
   struct Compare {
     bool operator()(const DeclSymbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
 
     bool operator()(unsigned int x, const DeclSymbol &y) const { return x < y.getToken().pos; }
+  };
+};
+
+class ForeignDecl : public Refs {
+private:
+  unsigned int declPos;
+  unsigned short size;
+  unsigned short declModId;
+
+public:
+  static ForeignDecl create(unsigned short declModId, const DeclSymbol &decl) {
+    Token token = decl.getToken();
+    return {token.pos, static_cast<unsigned short>(token.size), declModId};
+  }
+
+  ForeignDecl(unsigned int pos, unsigned short size, unsigned short modId)
+      : declPos(pos), size(size), declModId(modId) {}
+
+  unsigned int getDeclPos() const { return this->declPos; }
+
+  unsigned short getDeclModId() const { return this->declModId; }
+
+  Token getToken() const {
+    return Token{
+        .pos = this->declPos,
+        .size = this->size,
+    };
+  }
+
+  bool operator<(const ForeignDecl &o) const {
+    return this->getDeclModId() < o.getDeclModId() || (!(o.getDeclModId() < this->getDeclModId()) &&
+                                                       this->getToken().endPos() < o.getDeclPos());
+  }
+
+  struct Compare {
+    bool operator()(const ForeignDecl &x, const SymbolRequest &y) const {
+      return x.getDeclModId() < y.modId ||
+             (!(y.modId < x.getDeclModId()) && x.getToken().endPos() < y.pos);
+    }
+
+    bool operator()(const SymbolRequest &x, const ForeignDecl &y) const {
+      return x.modId < y.getDeclModId() ||
+             (!(y.getDeclModId() < x.modId) && x.pos < y.getDeclPos());
+    }
   };
 };
 
@@ -168,11 +228,13 @@ private:
   int version;
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
+  std::vector<ForeignDecl> foreignDecls;
 
 public:
   SymbolIndex(unsigned short modId, int version, std::vector<DeclSymbol> &&decls,
-              std::vector<Symbol> &&symbols)
-      : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)) {}
+              std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls)
+      : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
+        foreignDecls(std::move(foreignDecls)) {}
 
   unsigned short getModId() const { return this->modId; }
 
@@ -182,9 +244,13 @@ public:
 
   const Symbol *findSymbol(unsigned int pos) const;
 
+  const ForeignDecl *findForeignDecl(SymbolRequest request) const;
+
   const std::vector<DeclSymbol> &getDecls() const { return this->decls; }
 
   const std::vector<Symbol> &getSymbols() const { return this->symbols; }
+
+  const std::vector<ForeignDecl> &getForeignDecls() const { return this->foreignDecls; }
 
   struct Compare {
     bool operator()(const SymbolIndex &x, unsigned short id) const { return x.getModId() < id; }
@@ -204,18 +270,22 @@ public:
 
   void remove(unsigned short id);
 
-  const DeclSymbol *findDecl(unsigned short declModId, unsigned int declPos) const {
-    if (auto *index = this->find(declModId); index) {
-      return index->findDecl(declPos);
+  const DeclSymbol *findDecl(SymbolRequest req) const {
+    if (auto *index = this->find(req.modId); index) {
+      return index->findDecl(req.pos);
     }
     return nullptr;
   }
+
+  auto begin() const { return this->indexes.cbegin(); }
+
+  auto end() const { return this->indexes.cend(); }
 };
 
-bool findDeclaration(const SymbolIndexes &indexes, SymbolRef ref,
+bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
                      const std::function<void(unsigned short, const DeclSymbol &)> &consumer);
 
-bool findAllReferences(const SymbolIndexes &indexes, SymbolRef ref,
+bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
                        const std::function<void(const SymbolRef &)> &cosumer);
 
 } // namespace ydsh::lsp

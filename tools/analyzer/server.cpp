@@ -75,38 +75,39 @@ SourcePtr LSPServer::resolveSource(const std::string &uriStr) {
   return src;
 }
 
-static Optional<SymbolRef> toSymbolRef(const Source &src, Position position) {
+static Optional<SymbolRequest> toRequest(const Source &src, Position position) {
   auto pos = toTokenPos(src.getContent(), position);
   if (!pos.hasValue()) {
     return {};
   }
-  return SymbolRef(pos.unwrap(), 1, src.getSrcId());
+  return SymbolRequest{.modId = src.getSrcId(), .pos = pos.unwrap()};
 }
 
 void LSPServer::gotoDefinitionImpl(const Source &src, Position position,
                                    std::vector<Location> &result) {
-  auto ref = toSymbolRef(src, position);
-  if (!ref.hasValue()) {
+  auto request = toRequest(src, position);
+  if (!request.hasValue()) {
     return;
   }
-  findDeclaration(this->indexes, ref.unwrap(), [&](unsigned short modId, const DeclSymbol &decl) {
-    auto s = this->srcMan.findById(modId);
-    assert(s);
-    std::string uri = "file://";
-    uri += s->getPath();
-    auto range = toRange(s->getContent(), decl.getToken());
-    assert(range.hasValue());
-    result.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
-  });
+  findDeclaration(this->indexes, request.unwrap(),
+                  [&](unsigned short modId, const DeclSymbol &decl) {
+                    auto s = this->srcMan.findById(modId);
+                    assert(s);
+                    std::string uri = "file://";
+                    uri += s->getPath();
+                    auto range = toRange(s->getContent(), decl.getToken());
+                    assert(range.hasValue());
+                    result.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
+                  });
 }
 
 void LSPServer::findReferenceImpl(const Source &src, Position position,
                                   std::vector<Location> &result) {
-  auto ref = toSymbolRef(src, position);
-  if (!ref.hasValue()) {
+  auto request = toRequest(src, position);
+  if (!request.hasValue()) {
     return;
   }
-  findAllReferences(this->indexes, ref.unwrap(), [&](const SymbolRef &symbol) {
+  findAllReferences(this->indexes, request.unwrap(), [&](const SymbolRef &symbol) {
     auto s = this->srcMan.findById(symbol.getModId());
     assert(s);
     std::string uri = "file://";
@@ -248,11 +249,12 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
       params.position.toString().c_str());
   Union<Hover, std::nullptr_t> ret = nullptr;
   if (auto src = this->resolveSource(params.textDocument.uri); src) {
-    if (auto ref = toSymbolRef(*src, params.position); ref.hasValue()) {
+    if (auto request = toRequest(*src, params.position); request.hasValue()) {
       auto *index = this->indexes.find(src->getSrcId());
       assert(index);
-      if (auto *symbol = index->findSymbol(ref.unwrap().getPos()); symbol) {
-        auto *decl = this->indexes.findDecl(symbol->getDeclModId(), symbol->getDeclPos());
+      if (auto *symbol = index->findSymbol(request.unwrap().pos); symbol) {
+        auto *decl =
+            this->indexes.findDecl({.modId = symbol->getDeclModId(), .pos = symbol->getDeclPos()});
         assert(decl);
         ret = Hover{
             .contents =
