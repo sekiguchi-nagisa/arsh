@@ -66,7 +66,7 @@ try { $false; } catch($e) {
   auto pair = findDeclaration2(this->indexes, {.modId = modId, .pos = ret.unwrap()});
   ASSERT_TRUE(pair.second);
   ASSERT_EQ(modId, pair.first);
-  ASSERT_EQ(2, pair.second->getRefs().size());
+  ASSERT_EQ(1, pair.second->getRefs().size());
   ASSERT_EQ(DeclSymbol::Kind::VAR, pair.second->getKind());
   ASSERT_EQ(23, pair.second->getPos());
 
@@ -75,7 +75,7 @@ try { $false; } catch($e) {
   pair = findDeclaration2(this->indexes, {.modId = modId, .pos = ret.unwrap()});
   ASSERT_TRUE(pair.second);
   ASSERT_EQ(modId, pair.first);
-  ASSERT_EQ(2, pair.second->getRefs().size());
+  ASSERT_EQ(1, pair.second->getRefs().size());
   ASSERT_EQ(DeclSymbol::Kind::VAR, pair.second->getKind());
   ASSERT_EQ(23, pair.second->getPos());
 }
@@ -99,7 +99,7 @@ function assertArray(
   auto *decl = this->indexes.findDecl({.modId = modId, .pos = ret.unwrap()});
   ASSERT_TRUE(decl);
   ASSERT_EQ(DeclSymbol::Kind::FUNC, decl->getKind());
-  ASSERT_EQ(1, decl->getRefs().size());
+  ASSERT_EQ(0, decl->getRefs().size());
   ASSERT_EQ(10, decl->getPos());
 
   ret = toTokenPos(content, Position{.line = 2, .character = 3});
@@ -107,7 +107,7 @@ function assertArray(
   decl = this->indexes.findDecl({.modId = modId, .pos = ret.unwrap()});
   ASSERT_TRUE(decl);
   ASSERT_EQ(DeclSymbol::Kind::VAR, decl->getKind());
-  ASSERT_EQ(2, decl->getRefs().size());
+  ASSERT_EQ(1, decl->getRefs().size());
 }
 
 TEST_F(IndexTest, scope3) {
