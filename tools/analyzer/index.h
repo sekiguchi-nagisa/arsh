@@ -29,44 +29,6 @@
 
 namespace ydsh::lsp {
 
-class Symbol {
-private:
-  unsigned int pos;
-  unsigned short size;
-  unsigned short declModId;
-  unsigned int declPos;
-
-public:
-  static Optional<Symbol> create(Token token, unsigned short declModId, unsigned int declPos) {
-    if (token.size > UINT16_MAX) {
-      return {};
-    }
-    return Symbol(token.pos, static_cast<unsigned short>(token.size), declModId, declPos);
-  }
-
-  Symbol(unsigned int pos, unsigned short size, unsigned short declModId, unsigned int declPos)
-      : pos(pos), size(size), declModId(declModId), declPos(declPos) {}
-
-  unsigned int getPos() const { return this->pos; }
-
-  Token getToken() const {
-    return Token{
-        .pos = this->pos,
-        .size = this->size,
-    };
-  }
-
-  unsigned short getDeclModId() const { return this->declModId; }
-
-  unsigned short getDeclPos() const { return this->declPos; }
-
-  struct Compare {
-    bool operator()(const Symbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
-
-    bool operator()(unsigned int x, const Symbol &y) const { return x < y.getToken().pos; }
-  };
-};
-
 class SymbolRef {
 private:
   unsigned int pos;
@@ -101,23 +63,50 @@ public:
   }
 };
 
-// for sybmol lookup
+// for symbol lookup
 struct SymbolRequest {
   unsigned short modId;
   unsigned int pos;
 };
 
-class Refs {
+class DeclBase {
 private:
+  unsigned int pos;
+  unsigned short size;
+  unsigned short modId;
   FlexBuffer<SymbolRef> refs;
 
+protected:
+  DeclBase(unsigned int pos, unsigned short size, unsigned short modId)
+      : pos(pos), size(size), modId(modId) {}
+
 public:
+  unsigned int getPos() const { return this->pos; }
+
+  unsigned short getSize() const { return this->size; }
+
+  unsigned short getModId() const { return this->modId; }
+
+  Token getToken() const {
+    return Token{
+        .pos = this->pos,
+        .size = this->size,
+    };
+  }
+
   const FlexBuffer<SymbolRef> &getRefs() const { return this->refs; }
 
   void addRef(SymbolRef ref);
+
+  SymbolRef toRef() const { return SymbolRef(this->pos, this->size, this->modId); }
+
+  bool operator<(const DeclBase &o) const {
+    return this->getModId() < o.getModId() ||
+           (!(o.getModId() < this->getModId()) && this->getToken().endPos() < o.getPos());
+  }
 };
 
-class DeclSymbol : public Refs {
+class DeclSymbol : public DeclBase {
 public:
   enum class Kind : unsigned char {
     VAR,
@@ -132,40 +121,29 @@ public:
   };
 
 private:
-  unsigned int pos;
-  unsigned short size;
   Kind kind;
   Attr attr;
   CStrPtr mangledName;
   CStrPtr info; // hover information
 
 public:
-  static Optional<DeclSymbol> create(Kind kind, Attr attr, Token token, const std::string &name,
-                                     const char *info = nullptr) {
+  static Optional<DeclSymbol> create(Kind kind, Attr attr, Token token, unsigned short modId,
+                                     const std::string &name, const char *info = nullptr) {
     if (token.size > UINT16_MAX) {
       return {};
     }
-    return DeclSymbol(kind, attr, token.pos, static_cast<unsigned short>(token.size), name,
+    return DeclSymbol(kind, attr, token.pos, static_cast<unsigned short>(token.size), modId, name,
                       info != nullptr ? info : "(dummy)");
   }
 
-  DeclSymbol(Kind kind, Attr attr, unsigned int pos, unsigned short size, const std::string &name,
-             const char *info)
-      : pos(pos), size(size), kind(kind), attr(attr), mangledName(CStrPtr(strdup(name.c_str()))),
-        info(CStrPtr(strdup(info))) {}
+  DeclSymbol(Kind kind, Attr attr, unsigned int pos, unsigned short size, unsigned short mod,
+             const std::string &name, const char *info)
+      : DeclBase(pos, size, mod), kind(kind), attr(attr),
+        mangledName(CStrPtr(strdup(name.c_str()))), info(CStrPtr(strdup(info))) {}
 
   Kind getKind() const { return this->kind; }
 
   Attr getAttr() const { return this->attr; }
-
-  Token getToken() const {
-    return Token{
-        .pos = this->pos,
-        .size = this->size,
-    };
-  }
-
-  unsigned int getPos() const { return this->pos; }
 
   StringRef getMangledName() const { return this->mangledName.get(); }
 
@@ -178,46 +156,57 @@ public:
   };
 };
 
-class ForeignDecl : public Refs {
+class Symbol {
 private:
-  unsigned int declPos;
+  unsigned int pos;
   unsigned short size;
   unsigned short declModId;
+  unsigned int declPos;
 
 public:
-  static ForeignDecl create(unsigned short declModId, const DeclSymbol &decl) {
-    Token token = decl.getToken();
-    return {token.pos, static_cast<unsigned short>(token.size), declModId};
+  static Optional<Symbol> create(Token token, const DeclBase &decl) {
+    if (token.size > UINT16_MAX) {
+      return {};
+    }
+    return Symbol(token.pos, static_cast<unsigned short>(token.size), decl.getModId(),
+                  decl.getPos());
   }
 
-  ForeignDecl(unsigned int pos, unsigned short size, unsigned short modId)
-      : declPos(pos), size(size), declModId(modId) {}
+  Symbol(unsigned int pos, unsigned short size, unsigned short declModId, unsigned int declPos)
+      : pos(pos), size(size), declModId(declModId), declPos(declPos) {}
 
-  unsigned int getDeclPos() const { return this->declPos; }
-
-  unsigned short getDeclModId() const { return this->declModId; }
+  unsigned int getPos() const { return this->pos; }
 
   Token getToken() const {
     return Token{
-        .pos = this->declPos,
+        .pos = this->pos,
         .size = this->size,
     };
   }
 
-  bool operator<(const ForeignDecl &o) const {
-    return this->getDeclModId() < o.getDeclModId() || (!(o.getDeclModId() < this->getDeclModId()) &&
-                                                       this->getToken().endPos() < o.getDeclPos());
-  }
+  unsigned short getDeclModId() const { return this->declModId; }
+
+  unsigned short getDeclPos() const { return this->declPos; }
+
+  struct Compare {
+    bool operator()(const Symbol &x, unsigned int y) const { return x.getToken().endPos() < y; }
+
+    bool operator()(unsigned int x, const Symbol &y) const { return x < y.getToken().pos; }
+  };
+};
+
+class ForeignDecl : public DeclBase {
+public:
+  explicit ForeignDecl(const DeclSymbol &decl)
+      : DeclBase(decl.getPos(), decl.getSize(), decl.getModId()) {}
 
   struct Compare {
     bool operator()(const ForeignDecl &x, const SymbolRequest &y) const {
-      return x.getDeclModId() < y.modId ||
-             (!(y.modId < x.getDeclModId()) && x.getToken().endPos() < y.pos);
+      return x.getModId() < y.modId || (!(y.modId < x.getModId()) && x.getToken().endPos() < y.pos);
     }
 
     bool operator()(const SymbolRequest &x, const ForeignDecl &y) const {
-      return x.modId < y.getDeclModId() ||
-             (!(y.getDeclModId() < x.modId) && x.pos < y.getDeclPos());
+      return x.modId < y.getModId() || (!(y.getModId() < x.modId) && x.pos < y.getPos());
     }
   };
 };

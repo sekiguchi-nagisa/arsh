@@ -44,18 +44,13 @@ static std::string mangleSymbolName(DeclSymbol::Kind k, const NameInfo &nameInfo
 }
 
 bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover) {
-  auto ref = SymbolRef::create(info.getToken(), this->modId);
-  if (!ref.hasValue()) {
-    return false;
-  }
   auto *decl = this->addDeclImpl(kind, info, hover);
   if (!decl) {
     return false;
   }
-  if (!this->addSymbolImpl(info.getToken(), this->modId, *decl)) {
+  if (!this->addSymbolImpl(info.getToken(), *decl)) {
     return false;
   }
-  decl->addRef(ref.unwrap());
   return true;
 }
 
@@ -64,117 +59,42 @@ bool IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
   if (name.empty()) {
     return false;
   }
-  auto symbol = SymbolRef::create(info.getToken(), this->modId);
-  if (!symbol.hasValue()) {
-    return false;
-  }
-  auto *ref = this->findDeclRefFromScope(name);
+  auto *ref = this->scope->find(name);
   if (!ref) {
     return false;
   }
 
+  DeclBase *decl;
   if (ref->getModId() == this->modId) {
     auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), ref->getPos(),
                                  DeclSymbol::Compare());
     if (iter == this->decls.end()) {
       return false;
     }
-    auto &decl = *iter;
-    assert(decl.getPos() == ref->getPos());
-    if (!this->addSymbolImpl(info.getToken(), ref->getModId(), decl)) {
-      return false;
-    }
-    decl.addRef(symbol.unwrap());
+    decl = &*iter;
+    assert(decl->getPos() == ref->getPos());
   } else { // foreign decl
     SymbolRequest request = {.modId = ref->getModId(), .pos = ref->getPos()};
-    ForeignDecl *foreign;
     auto iter = std::lower_bound(this->foreigns.begin(), this->foreigns.end(), request,
                                  ForeignDecl::Compare());
-    if (iter != this->foreigns.end() && (*iter).getDeclModId() == request.modId &&
-        (*iter).getDeclPos() == request.pos) { // already registered
-      foreign = &*iter;
+    if (iter != this->foreigns.end() && (*iter).getModId() == request.modId &&
+        (*iter).getPos() == request.pos) { // already registered
+      decl = &*iter;
     } else {
-      auto *decl = this->indexes.findDecl(request);
-      if (!decl || !hasFlag(decl->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC)) {
+      auto *ret = this->indexes.findDecl(request);
+      if (!ret || !hasFlag(ret->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC)) {
         return false;
       }
-      iter = this->foreigns.insert(iter, ForeignDecl::create(ref->getModId(), *decl));
-      foreign = &*iter;
-    }
-    if (!this->addSymbolImpl(info.getToken(), foreign->getDeclModId(), foreign->getDeclPos())) {
-      return false;
-    }
-    foreign->addRef(symbol.unwrap());
-  }
-  return true;
-}
-
-const SymbolRef *IndexBuilder::findDeclRefFromScope(const std::string &name) const {
-  auto cur = this->scope;
-  do {
-    auto iter = cur->map.find(name);
-    if (iter != cur->map.end()) {
-      return &iter->second;
-    }
-    cur = cur->parent;
-  } while (cur);
-  return nullptr;
-}
-
-DeclSymbol *IndexBuilder::addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameInfo,
-                                      const char *info) {
-  std::string name = mangleSymbolName(k, nameInfo);
-  if (name.empty()) {
-    return nullptr;
-  }
-
-  // create DeclSymbol
-  const Token token = nameInfo.getToken();
-  DeclSymbol::Attr attr = {};
-  if (this->scope->isGlobal()) {
-    setFlag(attr, DeclSymbol::Attr::GLOBAL);
-  }
-  if (name[0] != '_') {
-    setFlag(attr, DeclSymbol::Attr::PUBLIC);
-  }
-  auto ret = DeclSymbol::create(k, attr, nameInfo.getToken(), name, info);
-  if (!ret.hasValue()) {
-    return nullptr;
-  }
-  auto &decl = ret.unwrap();
-
-  // register name to scope
-  if (!this->scope->addDecl(this->modId, decl)) {
-    return nullptr;
-  }
-
-  auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), decl.getPos(),
-                               DeclSymbol::Compare());
-  if (iter != this->decls.end()) {
-    if (iter->getPos() == decl.getPos()) {
-      fatal("try to add token: %s, but already added: %s\n", toString(token).c_str(),
-            toString(iter->getToken()).c_str());
+      iter = this->foreigns.insert(iter, ForeignDecl(*ret));
+      decl = &*iter;
     }
   }
-  iter = this->decls.insert(iter, std::move(decl));
-  return &(*iter);
-}
-
-bool IndexBuilder::addSymbolImpl(Token token, unsigned short declModId, unsigned int declPos) {
-  auto ret = Symbol::create(token, declModId, declPos);
-  if (!ret.hasValue()) {
+  if (!this->addSymbolImpl(info.getToken(), *decl)) {
     return false;
   }
-  auto &symbol = ret.unwrap();
-  auto iter = std::lower_bound(this->symbols.begin(), this->symbols.end(), symbol.getPos(),
-                               Symbol::Compare());
-  if (iter != this->symbols.end()) {
-    if (iter->getPos() == declPos) {
-      fatal("try to add token: %s, but already added: %s\n", toString(token).c_str(),
-            toString(iter->getToken()).c_str());
-    }
-  }
-  this->symbols.insert(iter, symbol);
+  auto symbol = SymbolRef::create(info.getToken(), this->modId);
+  assert(symbol.hasValue());
+  decl->addRef(symbol.unwrap());
   return true;
 }
 
@@ -194,9 +114,66 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId) {
   this->globallyImportedModIds.emplace(foreignModId);
   for (auto &decl : index->getDecls()) {
     if (hasFlag(decl.getAttr(), DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL)) {
-      this->scope->addDecl(foreignModId, decl);
+      this->scope->addDecl(decl);
     }
   }
+  return true;
+}
+
+DeclSymbol *IndexBuilder::addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameInfo,
+                                      const char *info) {
+  std::string name = mangleSymbolName(k, nameInfo);
+  if (name.empty()) {
+    return nullptr;
+  }
+
+  // create DeclSymbol
+  const Token token = nameInfo.getToken();
+  DeclSymbol::Attr attr = {};
+  if (this->scope->isGlobal()) {
+    setFlag(attr, DeclSymbol::Attr::GLOBAL);
+  }
+  if (name[0] != '_') {
+    setFlag(attr, DeclSymbol::Attr::PUBLIC);
+  }
+  auto ret = DeclSymbol::create(k, attr, nameInfo.getToken(), this->modId, name, info);
+  if (!ret.hasValue()) {
+    return nullptr;
+  }
+  auto &decl = ret.unwrap();
+
+  // register name to scope
+  if (!this->scope->addDecl(decl)) {
+    return nullptr;
+  }
+
+  auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), decl.getPos(),
+                               DeclSymbol::Compare());
+  if (iter != this->decls.end()) {
+    if (iter->getPos() == decl.getPos()) {
+      fatal("try to add token: %s, but already added: %s\n", toString(token).c_str(),
+            toString(iter->getToken()).c_str());
+    }
+  }
+  iter = this->decls.insert(iter, std::move(decl));
+  return &(*iter);
+}
+
+bool IndexBuilder::addSymbolImpl(Token token, const DeclBase &decl) {
+  auto ret = Symbol::create(token, decl);
+  if (!ret.hasValue()) {
+    return false;
+  }
+  auto &symbol = ret.unwrap();
+  auto iter = std::lower_bound(this->symbols.begin(), this->symbols.end(), symbol.getPos(),
+                               Symbol::Compare());
+  if (iter != this->symbols.end()) {
+    if (iter->getPos() == decl.getPos()) {
+      fatal("try to add token: %s, but already added: %s\n", toString(token).c_str(),
+            toString(iter->getToken()).c_str());
+    }
+  }
+  this->symbols.insert(iter, symbol);
   return true;
 }
 

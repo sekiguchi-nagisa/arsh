@@ -24,7 +24,7 @@ namespace ydsh::lsp {
 // ##     Refs     ##
 // ##################
 
-void Refs::addRef(SymbolRef ref) {
+void DeclBase::addRef(SymbolRef ref) {
   auto iter = std::lower_bound(this->refs.begin(), this->refs.end(), ref);
   if (iter != this->refs.end()) {
     if (iter->getModId() == ref.getModId() && iter->getPos() == ref.getPos()) {
@@ -68,7 +68,7 @@ const ForeignDecl *SymbolIndex::findForeignDecl(SymbolRequest request) const {
                                ForeignDecl::Compare());
   if (iter != this->foreignDecls.end()) {
     auto &decl = *iter;
-    if (request.modId != decl.getDeclModId()) {
+    if (request.modId != decl.getModId()) {
       return nullptr;
     }
     if (request.pos >= decl.getToken().pos && request.pos <= decl.getToken().endPos()) {
@@ -142,6 +142,16 @@ bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
                        const std::function<void(const FindRefsResult &)> &cosumer) {
   unsigned int count = 0;
   if (auto *decl = indexes.findDecl(request); decl) {
+    // add its self
+    count++;
+    if (cosumer) {
+      FindRefsResult ret = {
+          .symbol = decl->toRef(),
+          .request = *decl,
+      };
+      cosumer(ret);
+    }
+
     // search local ref
     for (auto &e : decl->getRefs()) {
       count++;

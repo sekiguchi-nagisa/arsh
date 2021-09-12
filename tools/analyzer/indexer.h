@@ -33,20 +33,32 @@ private:
   std::unordered_set<unsigned short> globallyImportedModIds;
   const SymbolIndexes &indexes;
 
-  struct ScopeEntry : public RefCount<ScopeEntry> {
+  class ScopeEntry : public RefCount<ScopeEntry> {
+  private:
     StrRefMap<SymbolRef> map;
 
+  public:
     const IntrusivePtr<ScopeEntry> parent;
 
     explicit ScopeEntry(const IntrusivePtr<ScopeEntry> &parent) : parent(parent) {}
 
     bool isGlobal() const { return !this->parent; }
 
-    bool addDecl(unsigned short declModId, const DeclSymbol &decl) {
-      auto ref = SymbolRef::create(decl.getToken(), declModId);
-      assert(ref.hasValue());
-      auto pair = this->map.emplace(decl.getMangledName(), ref.unwrap());
+    bool addDecl(const DeclSymbol &decl) {
+      auto pair = this->map.emplace(decl.getMangledName(), decl.toRef());
       return pair.second;
+    }
+
+    const SymbolRef *find(StringRef name) const {
+      auto cur = this;
+      do {
+        auto iter = cur->map.find(name);
+        if (iter != cur->map.end()) {
+          return &iter->second;
+        }
+        cur = cur->parent.get();
+      } while (cur);
+      return nullptr;
     }
   };
 
@@ -91,15 +103,9 @@ public:
   bool importForeignDecls(unsigned short foreignModId);
 
 private:
-  const SymbolRef *findDeclRefFromScope(const std::string &name) const;
-
   DeclSymbol *addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameInfo, const char *info);
 
-  bool addSymbolImpl(Token token, unsigned short declModId, const DeclSymbol &decl) {
-    return this->addSymbolImpl(token, declModId, decl.getPos());
-  }
-
-  bool addSymbolImpl(Token token, unsigned short declModId, unsigned int declPos);
+  bool addSymbolImpl(Token token, const DeclBase &decl);
 };
 
 class SymbolIndexer : protected ydsh::NodeVisitor, public NodeConsumer {
