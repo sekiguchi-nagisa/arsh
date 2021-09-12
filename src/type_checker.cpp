@@ -54,7 +54,7 @@ void BreakGather::addJumpNode(JumpNode *node) {
 // ##     TypeChecker     ##
 // #########################
 
-TypeOrError TypeChecker::toTypeImpl(TypeNode &node) {
+TypeOrError TypeChecker::toType(TypeNode &node) {
   switch (node.typeKind) {
   case TypeNode::Base: {
     auto &typeNode = cast<BaseTypeNode>(node);
@@ -341,9 +341,9 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
     }
   }
 
-  node.setKind(ApplyNode::FUNC_CALL);
   auto &type = this->checkType(this->typePool.get(TYPE::Func), exprNode);
   if (type.isFuncType()) {
+    node.setKind(ApplyNode::FUNC_CALL);
     callableTypes = cast<FunctionType>(type).toCallableTypes();
   } else {
     this->reportError<NotCallable>(exprNode);
@@ -439,7 +439,7 @@ std::unique_ptr<Node> TypeChecker::newPrintOpNode(std::unique_ptr<Node> &&node) 
 
 // visitor api
 void TypeChecker::visitTypeNode(TypeNode &node) {
-  auto ret = this->toTypeImpl(node);
+  auto ret = this->toType(node);
   if (ret) {
     node.setType(*std::move(ret).take());
   } else {
