@@ -89,16 +89,15 @@ void LSPServer::gotoDefinitionImpl(const Source &src, Position position,
   if (!request.hasValue()) {
     return;
   }
-  findDeclaration(this->indexes, request.unwrap(),
-                  [&](unsigned short modId, const DeclSymbol &decl) {
-                    auto s = this->srcMan.findById(modId);
-                    assert(s);
-                    std::string uri = "file://";
-                    uri += s->getPath();
-                    auto range = toRange(s->getContent(), decl.getToken());
-                    assert(range.hasValue());
-                    result.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
-                  });
+  findDeclaration(this->indexes, request.unwrap(), [&](const FindDeclResult &ret) {
+    auto s = this->srcMan.findById(ret.declModId);
+    assert(s);
+    std::string uri = "file://";
+    uri += s->getPath();
+    auto range = toRange(s->getContent(), ret.decl.getToken());
+    assert(range.hasValue());
+    result.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
+  });
 }
 
 void LSPServer::findReferenceImpl(const Source &src, Position position,
@@ -107,12 +106,12 @@ void LSPServer::findReferenceImpl(const Source &src, Position position,
   if (!request.hasValue()) {
     return;
   }
-  findAllReferences(this->indexes, request.unwrap(), [&](const SymbolRef &symbol) {
-    auto s = this->srcMan.findById(symbol.getModId());
+  findAllReferences(this->indexes, request.unwrap(), [&](const FindRefsResult &ret) {
+    auto s = this->srcMan.findById(ret.symbol.getModId());
     assert(s);
     std::string uri = "file://";
     uri += s->getPath();
-    auto range = toRange(s->getContent(), symbol.getToken());
+    auto range = toRange(s->getContent(), ret.symbol.getToken());
     assert(range.hasValue());
     result.push_back(Location{.uri = std::move(uri), .range = range.unwrap()});
   });
@@ -250,21 +249,20 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
   Union<Hover, std::nullptr_t> ret = nullptr;
   if (auto src = this->resolveSource(params.textDocument.uri); src) {
     if (auto request = toRequest(*src, params.position); request.hasValue()) {
-      auto *index = this->indexes.find(src->getSrcId());
-      assert(index);
-      if (auto *symbol = index->findSymbol(request.unwrap().pos); symbol) {
-        auto *decl =
-            this->indexes.findDecl({.modId = symbol->getDeclModId(), .pos = symbol->getDeclPos()});
-        assert(decl);
+      auto callback = [&](const FindDeclResult &value) {
+        if (is<Hover>(ret)) {
+          return;
+        }
         ret = Hover{
             .contents =
                 MarkupContent{
                     .kind = MarkupKind::Markdown,
-                    .value = decl->getInfo().toString(),
+                    .value = value.decl.getInfo().toString(),
                 },
-            .range = toRange(src->getContent(), symbol->getToken()),
+            .range = toRange(src->getContent(), value.request.getToken()),
         };
-      }
+      };
+      findDeclaration(this->indexes, request.unwrap(), callback);
     }
   }
   return ret;

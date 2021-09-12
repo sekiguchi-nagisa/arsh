@@ -117,7 +117,7 @@ void SymbolIndexes::remove(unsigned short id) {
 }
 
 bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
-                     const std::function<void(unsigned short, const DeclSymbol &)> &consumer) {
+                     const std::function<void(const FindDeclResult &)> &consumer) {
   if (auto *index = indexes.find(request.modId); index) {
     if (auto *symbol = index->findSymbol(request.pos); symbol) {
       auto *decl = indexes.findDecl({.modId = symbol->getDeclModId(), .pos = symbol->getDeclPos()});
@@ -125,7 +125,12 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
         return false;
       }
       if (consumer) {
-        consumer(symbol->getDeclModId(), *decl);
+        FindDeclResult ret = {
+            .declModId = symbol->getDeclModId(),
+            .decl = *decl,
+            .request = *symbol,
+        };
+        consumer(ret);
       }
       return true;
     }
@@ -134,14 +139,18 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
 }
 
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
-                       const std::function<void(const SymbolRef &)> &cosumer) {
+                       const std::function<void(const FindRefsResult &)> &cosumer) {
   unsigned int count = 0;
   if (auto *decl = indexes.findDecl(request); decl) {
     // search local ref
     for (auto &e : decl->getRefs()) {
       count++;
       if (cosumer) {
-        cosumer(e);
+        FindRefsResult ret = {
+            .symbol = e,
+            .request = *decl,
+        };
+        cosumer(ret);
       }
     }
 
@@ -154,7 +163,11 @@ bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
         for (auto &e : foreign->getRefs()) {
           count++;
           if (cosumer) {
-            cosumer(e);
+            FindRefsResult ret = {
+                .symbol = e,
+                .request = *decl,
+            };
+            cosumer(ret);
           }
         }
       }

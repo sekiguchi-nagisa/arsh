@@ -282,11 +282,22 @@ public:
   auto end() const { return this->indexes.cend(); }
 };
 
+struct FindDeclResult {
+  unsigned short declModId;
+  const DeclSymbol &decl;
+  const Symbol &request;
+};
+
 bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
-                     const std::function<void(unsigned short, const DeclSymbol &)> &consumer);
+                     const std::function<void(const FindDeclResult &)> &consumer);
+
+struct FindRefsResult {
+  const SymbolRef &symbol;
+  const DeclSymbol &request;
+};
 
 bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest request,
-                       const std::function<void(const SymbolRef &)> &cosumer);
+                       const std::function<void(const FindRefsResult &)> &cosumer);
 
 } // namespace ydsh::lsp
 

@@ -45,9 +45,9 @@ static std::pair<unsigned short, const DeclSymbol *> findDeclaration2(const Symb
                                                                       SymbolRequest req) {
   unsigned short id = 0;
   const DeclSymbol *decl = nullptr;
-  findDeclaration(indexes, req, [&](unsigned short i, const DeclSymbol &d) {
-    id = i;
-    decl = &d;
+  findDeclaration(indexes, req, [&](const FindDeclResult &ret) {
+    id = ret.declModId;
+    decl = &ret.decl;
   });
   return {id, decl};
 }
