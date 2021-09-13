@@ -500,12 +500,18 @@ TEST_F(LocationTest, position2) {
   ASSERT_NO_FATAL_FAILURE(checkPosition(content, 18, {.line = 1, .character = 6}));
 }
 
-TEST_F(LocationTest, range) {                // FIXME:
+TEST_F(LocationTest, range) {
   std::string content = "var a = 34;\n"      // 0-11
                         "   $a as String\n"  // 0-15
                         "\n"                 // 0
                         "assert $a == 34\n"; // 0-15
   // check range
+  ASSERT_NO_FATAL_FAILURE(
+      checkRange(content, {.pos = 0, .size = 3},
+                 Range{.start = {.line = 0, .character = 0}, .end = {.line = 0, .character = 3}}));
+  ASSERT_NO_FATAL_FAILURE(
+      checkRange(content, {.pos = 15, .size = 2},
+                 Range{.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 5}}));
 }
 
 int main(int argc, char **argv) {

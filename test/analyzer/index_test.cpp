@@ -11,6 +11,21 @@ struct IndexSize {
   unsigned int symbolSize;
 };
 
+struct Request {
+  unsigned short modId;
+  Position position;
+};
+
+struct DeclResult {
+  unsigned short modId;
+  Range range;
+};
+
+struct RefsResult {
+  unsigned short modId;
+  Range range;
+};
+
 class IndexTest : public ::testing::Test {
 protected:
   SourceManager srcMan;
@@ -39,18 +54,69 @@ public:
     ASSERT_EQ(size.declSize, index->getDecls().size());
     ASSERT_EQ(size.symbolSize, index->getSymbols().size());
   }
-};
 
-static std::pair<unsigned short, const DeclSymbol *> findDeclaration2(const SymbolIndexes &indexes,
-                                                                      SymbolRequest req) {
-  unsigned short id = 0;
-  const DeclSymbol *decl = nullptr;
-  findDeclaration(indexes, req, [&](const FindDeclResult &ret) {
-    id = ret.decl.getModId();
-    decl = &ret.decl;
-  });
-  return {id, decl};
-}
+  void findDecl(const Request &req, const std::vector<DeclResult> &expected) {
+    auto src = this->srcMan.findById(req.modId);
+    ASSERT_TRUE(src);
+    auto pos = toTokenPos(src->getContent(), req.position);
+    ASSERT_TRUE(pos.hasValue());
+
+    SymbolRequest sr = {
+        .modId = req.modId,
+        .pos = pos.unwrap(),
+    };
+
+    std::vector<DeclResult> actual;
+    findDeclaration(this->indexes, sr, [&](const FindDeclResult &result) {
+      auto retSrc = this->srcMan.findById(result.decl.getModId());
+      ASSERT_TRUE(retSrc);
+      auto range = toRange(retSrc->getContent(), result.decl.getToken());
+      ASSERT_TRUE(range.hasValue());
+
+      actual.push_back(DeclResult{
+          .modId = result.decl.getModId(),
+          .range = range.unwrap(),
+      });
+    });
+
+    ASSERT_EQ(expected.size(), actual.size());
+    for (unsigned int i = 0; i < actual.size(); i++) {
+      ASSERT_EQ(expected[i].modId, actual[i].modId);
+      ASSERT_EQ(expected[i].range.toString(), actual[i].range.toString());
+    }
+  }
+
+  void findRefs(const Request &req, const std::vector<RefsResult> &expected) {
+    auto src = this->srcMan.findById(req.modId);
+    ASSERT_TRUE(src);
+    auto pos = toTokenPos(src->getContent(), req.position);
+    ASSERT_TRUE(pos.hasValue());
+
+    SymbolRequest sr = {
+        .modId = req.modId,
+        .pos = pos.unwrap(),
+    };
+
+    std::vector<RefsResult> actual;
+    findAllReferences(this->indexes, sr, [&](const FindRefsResult &result) {
+      auto retSrc = this->srcMan.findById(result.symbol.getModId());
+      ASSERT_TRUE(retSrc);
+      auto range = toRange(retSrc->getContent(), result.symbol.getToken());
+      ASSERT_TRUE(range.hasValue());
+
+      actual.push_back(RefsResult{
+          .modId = result.symbol.getModId(),
+          .range = range.unwrap(),
+      });
+    });
+
+    ASSERT_EQ(expected.size(), actual.size());
+    for (unsigned int i = 0; i < actual.size(); i++) {
+      ASSERT_EQ(expected[i].modId, actual[i].modId);
+      ASSERT_EQ(expected[i].range.toString(), actual[i].range.toString());
+    }
+  }
+};
 
 TEST_F(IndexTest, scope1) {
   unsigned short modId;
@@ -61,23 +127,87 @@ try { $false; } catch($e) {
 )";
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
 
-  auto ret = toTokenPos(content, Position{.line = 2, .character = 3});
-  ASSERT_TRUE(ret.hasValue());
-  auto pair = findDeclaration2(this->indexes, {.modId = modId, .pos = ret.unwrap()});
-  ASSERT_TRUE(pair.second);
-  ASSERT_EQ(modId, pair.first);
-  ASSERT_EQ(1, pair.second->getRefs().size());
-  ASSERT_EQ(DeclSymbol::Kind::VAR, pair.second->getKind());
-  ASSERT_EQ(23, pair.second->getPos());
+  // definition
 
-  ret = toTokenPos(content, Position{.line = 2, .character = 4});
-  ASSERT_TRUE(ret.hasValue());
-  pair = findDeclaration2(this->indexes, {.modId = modId, .pos = ret.unwrap()});
-  ASSERT_TRUE(pair.second);
-  ASSERT_EQ(modId, pair.first);
-  ASSERT_EQ(1, pair.second->getRefs().size());
-  ASSERT_EQ(DeclSymbol::Kind::VAR, pair.second->getKind());
-  ASSERT_EQ(23, pair.second->getPos());
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 2, }
+  };
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId,
+      .range = { .start = { .line = 1, .character = 22, }, .end = { .line = 1, .character = 24, }}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 3, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId,
+      .range = { .start = { .line = 1, .character = 22, }, .end = { .line = 1, .character = 24, }}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 4, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId,
+      .range = { .start = { .line = 1, .character = 22, }, .end = { .line = 1, .character = 24, }}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = {.line = 2, .character = 5, }
+  };
+  result = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // reference
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 3, }
+  };
+  std::vector<RefsResult> result2 = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 1, .character = 22, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = modId,
+      .range = { .start = { .line = 1, .character = 22, }, .end = { .line = 1, .character = 24, }}
+    },
+    RefsResult{
+      .modId = modId,
+      .range = { .start = { .line = 2, .character = 2, }, .end = { .line = 2, .character = 4, }}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
 TEST_F(IndexTest, scope2) {
@@ -94,20 +224,21 @@ function assertArray(
 )";
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 9}));
 
-  auto ret = toTokenPos(content, Position{.line = 1, .character = 13});
-  ASSERT_TRUE(ret.hasValue());
-  auto *decl = this->indexes.findDecl({.modId = modId, .pos = ret.unwrap()});
-  ASSERT_TRUE(decl);
-  ASSERT_EQ(DeclSymbol::Kind::FUNC, decl->getKind());
-  ASSERT_EQ(0, decl->getRefs().size());
-  ASSERT_EQ(10, decl->getPos());
+  // definition
 
-  ret = toTokenPos(content, Position{.line = 2, .character = 3});
-  ASSERT_TRUE(ret.hasValue());
-  decl = this->indexes.findDecl({.modId = modId, .pos = ret.unwrap()});
-  ASSERT_TRUE(decl);
-  ASSERT_EQ(DeclSymbol::Kind::VAR, decl->getKind());
-  ASSERT_EQ(1, decl->getRefs().size());
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 1, .character = 14, }
+  };
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 1, .character = 9}, .end = {.line = 1, .character = 20}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
 }
 
 TEST_F(IndexTest, scope3) {
