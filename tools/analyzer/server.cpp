@@ -90,7 +90,7 @@ void LSPServer::gotoDefinitionImpl(const Source &src, Position position,
     return;
   }
   findDeclaration(this->indexes, request.unwrap(), [&](const FindDeclResult &ret) {
-    auto s = this->srcMan.findById(ret.declModId);
+    auto s = this->srcMan.findById(ret.decl.getModId());
     assert(s);
     std::string uri = "file://";
     uri += s->getPath();

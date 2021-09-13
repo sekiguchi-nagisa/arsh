@@ -272,7 +272,6 @@ public:
 };
 
 struct FindDeclResult {
-  unsigned short declModId;
   const DeclSymbol &decl;
   const Symbol &request;
 };

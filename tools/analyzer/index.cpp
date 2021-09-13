@@ -126,7 +126,6 @@ bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
       }
       if (consumer) {
         FindDeclResult ret = {
-            .declModId = symbol->getDeclModId(),
             .decl = *decl,
             .request = *symbol,
         };
