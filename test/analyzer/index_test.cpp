@@ -443,6 +443,114 @@ new [typeof(new StrArray())]()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
+TEST_F(IndexTest, invalidVar) {
+  unsigned short modId;
+  const char *content = R"(
+let aaa = (throw 34)   # not allow 'Nothing'
+34 + $aaa
+var bbb = (34 as Void)  # not allow 'Void'
+var ccc = 34
+var ccc = $ccc
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 7, }
+  };
+  std::vector<DeclResult> result = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 3, .character = 6, }
+  };
+  result = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // references
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 1, .character = 6, }
+  };
+  std::vector<RefsResult> result2 = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
+TEST_F(IndexTest, invalidFunc) {
+  unsigned short modId;
+  const char *content = R"(
+var b = 34;
+function func($a : Nothing) : Int { return 34 + $func(34); }  # not allow 'Nothing'
+$b + $func(34)
+{ function gg() : Int { return 34; } }
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 1, .symbolSize = 2}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 3, .character = 8, }
+  };
+  std::vector<DeclResult> result = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // references
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 12, }
+  };
+  std::vector<RefsResult> result2 = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
+TEST_F(IndexTest, invalidUdc) {
+  unsigned short modId;
+  const char *content = R"(
+eval() { eval echo hello; }  # already defined
+eval eval 34
+{ f() {} }
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 0, .symbolSize = 0}));
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 1, }
+  };
+  std::vector<DeclResult> result = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // references
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 1, .character = 2, }
+  };
+  std::vector<RefsResult> result2 = {};
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -238,8 +238,11 @@ void SymbolIndexer::visitMapNode(MapNode &node) {
 void SymbolIndexer::visitTupleNode(TupleNode &node) { this->visitEach(node.getNodes()); }
 
 void SymbolIndexer::visitVarNode(VarNode &node) {
-  NameInfo info(node.getToken(), std::string(node.getVarName()));
-  this->builder().addSymbol(info);
+  assert(!node.isUntyped());
+  if (!node.getType().isVoidType() && !node.getType().isNothingType()) {
+    NameInfo info(node.getToken(), std::string(node.getVarName()));
+    this->builder().addSymbol(info);
+  }
 }
 
 void SymbolIndexer::visitAccessNode(AccessNode &node) { // FIXME: field name
@@ -401,7 +404,9 @@ void SymbolIndexer::visitFunctionNode(FunctionNode &node) {
   }
   this->visit(node.getReturnTypeToken());
   this->visitEach(node.getParamTypeNodes());
-  this->builder().addDecl(node.getNameInfo(), *node.getFuncType(), DeclSymbol::Kind::FUNC);
+  if (node.getVarIndex() > 0) {
+    this->builder().addDecl(node.getNameInfo(), *node.getFuncType(), DeclSymbol::Kind::FUNC);
+  }
   auto func = this->builder().intoScope();
   for (unsigned int i = 0; i < node.getParams().size(); i++) {
     this->builder().addDecl(node.getParams()[i], node.getParamTypeNodes()[i]->getType());
@@ -415,8 +420,10 @@ void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   if (!this->isTopLevel()) {
     return;
   }
-  this->builder().addUdcDecl(node.getNameInfo());
-  auto udc = this->builder().intoScope(); // FIXME: register parameter?
+  if (node.getUdcIndex() > 0) {
+    this->builder().addUdcDecl(node.getNameInfo());
+  }
+  auto udc = this->builder().intoScope();
   this->visitBlockWithCurrentScope(node.getBlockNode());
 }
 
