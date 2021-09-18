@@ -58,11 +58,40 @@ static int parseContentLength(const std::string &line) {
   return 0;
 }
 
+static bool readLine(FILE *fp, std::string &header) {
+  while (true) {
+    char ch;
+    errno = 0;
+    if (fread(&ch, 1, 1, fp) != 1) {
+      if (ferror(fp) && (errno == EINTR || errno == EAGAIN)) {
+        clearerr(fp);
+        continue;
+      }
+      return false;
+    }
+
+    if (ch == '\n' && !header.empty() && header.back() == '\r') {
+      header.pop_back();
+      break;
+    } else if (ch == '\0') {
+      break;
+    } else {
+      header += ch;
+    }
+  }
+  return true;
+}
+
 int LSPTransport::recvSize() {
+  if (feof(this->input.get()) || ferror(this->input.get())) {
+    LOG(LogLevel::ERROR, "io stream reach eof or fatal error. terminate immediately");
+    exit(1);
+  }
+
   int size = 0;
   while (true) {
     std::string header;
-    if (!this->readHeader(header)) {
+    if (!readLine(this->input.get(), header)) {
       LOG(LogLevel::ERROR, "invalid header: %s", header.c_str());
       return -1;
     }
@@ -81,7 +110,7 @@ int LSPTransport::recvSize() {
       }
       size = ret;
     } else { // may be other header
-      LOG(LogLevel::INFO, "other header: %s", header.c_str());
+      LOG(LogLevel::WARNING, "other header: %s", header.c_str());
     }
   }
   return size;
@@ -89,28 +118,6 @@ int LSPTransport::recvSize() {
 
 int LSPTransport::recv(unsigned int size, char *data) {
   return fread(data, sizeof(char), size, this->input.get());
-}
-
-bool LSPTransport::readHeader(std::string &header) {
-  clearerr(this->input.get());
-  char prev = '\0';
-  while (true) {
-    signed char ch;
-    if (fread(&ch, 1, 1, this->input.get()) != 1) {
-      if (ferror(this->input.get()) && (errno == EINTR || errno == EAGAIN)) {
-        continue;
-      }
-      return false;
-    }
-
-    if (ch == '\n' && prev == '\r') {
-      header.pop_back(); // pop \r
-      break;
-    }
-    prev = ch;
-    header += ch;
-  }
-  return true;
 }
 
 } // namespace ydsh::lsp

@@ -156,7 +156,7 @@ void Transport::reply(JSON &&id, Error &&error) {
 bool Transport::dispatch(Handler &handler) {
   int dataSize = this->recvSize();
   if (dataSize < 0) {
-    LOG(LogLevel::ERROR, "may be broken or empty message");
+    LOG(LogLevel::WARNING, "may be broken or empty message");
     return false;
   }
 

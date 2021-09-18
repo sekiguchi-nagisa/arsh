@@ -43,13 +43,6 @@ public:
   int recvSize() override;
 
   int recv(unsigned int size, char *data) override;
-
-private:
-  /**
-   * if reach end of header, set empty string
-   * @return
-   */
-  bool readHeader(std::string &header);
 };
 
 } // namespace ydsh::lsp
