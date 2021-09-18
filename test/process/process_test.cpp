@@ -150,7 +150,7 @@ TEST_F(ProcTest, pty4) {
     while (true) {
       fputs("do nothing", fp);
     }
-    return true;
+    return 0;
   });
   sleep(1);
   std::string str = "\x03"; // CTRL-C
@@ -163,6 +163,25 @@ TEST_F(ProcTest, pty4) {
   } else {
     ASSERT_NO_FATAL_FAILURE(this->expect(ret2, SIGINT, WaitStatus::SIGNALED, "^C"));
   }
+}
+
+TEST_F(ProcTest, timeout) {
+  IOConfig config;
+  auto handle = ProcBuilder::spawn(config, [] {
+    FILE *fp = fopen("/dev/null", "w");
+    if (!fp) {
+      fatal_perror("open failed");
+    }
+    while (true) {
+      fputs("do nothing", fp);
+    }
+    return 0;
+  });
+  handle.waitWithTimeout(2);
+  ASSERT_TRUE(handle);
+  handle.kill(SIGTERM);
+  auto ret = handle.waitAndGetResult(false);
+  ASSERT_NO_FATAL_FAILURE(this->expect(ret, SIGTERM, WaitStatus::SIGNALED));
 }
 
 TEST(ANSITest, base) {

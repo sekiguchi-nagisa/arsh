@@ -21,7 +21,6 @@
 #include <unistd.h>
 
 #include <cctype>
-#include <csignal>
 #include <cstdlib>
 
 #include <constant.h>
@@ -37,21 +36,19 @@
 namespace process {
 
 static WaitStatus inspectStatus(int status) {
-  int s;
-  WaitStatus::Kind type;
+  int s = 0;
+  auto kind = WaitStatus::RUNNING;
   if (WIFEXITED(status)) {
     s = WEXITSTATUS(status);
-    type = WaitStatus::EXITED;
+    kind = WaitStatus::EXITED;
   } else if (WIFSIGNALED(status)) {
     s = WTERMSIG(status);
-    type = WaitStatus::SIGNALED;
+    kind = WaitStatus::SIGNALED;
   } else if (WIFSTOPPED(status)) {
     s = WSTOPSIG(status);
-    type = WaitStatus::STOPPED;
-  } else {
-    fatal("unsupported status\n");
+    kind = WaitStatus::STOPPED;
   }
-  return {.kind = type, .value = s};
+  return {.kind = kind, .value = s};
 }
 
 // ########################
@@ -59,9 +56,7 @@ static WaitStatus inspectStatus(int status) {
 // ########################
 
 ProcHandle::~ProcHandle() {
-  if (*this) {
-    kill(this->pid(), SIGKILL);
-  }
+  this->kill(SIGKILL);
   this->wait();
 }
 
@@ -77,12 +72,27 @@ std::pair<unsigned short, unsigned short> ProcHandle::getWinSize() const {
   return ret;
 }
 
-WaitStatus ProcHandle::wait() {
+static int toOption(ProcHandle::WaitOp op) {
+  switch (op) {
+  case ProcHandle::WaitOp::BLOCKING:
+    return 0;
+  case ProcHandle::WaitOp::BLOCK_UNTRACED:
+    return WUNTRACED;
+  case ProcHandle::WaitOp::NONBLOCKING:
+    return WUNTRACED | WCONTINUED | WNOHANG;
+  }
+  return 0;
+}
+
+WaitStatus ProcHandle::wait(WaitOp op) {
   if (this->pid() > -1) {
     // wait for exit
     int s;
-    if (waitpid(this->pid(), &s, 0) < 0) {
+    int r = waitpid(this->pid(), &s, toOption(op));
+    if (r < 0) {
       this->status_ = {.kind = WaitStatus::ERROR, .value = errno};
+    } else if (r == 0) {
+      this->status_ = {.kind = WaitStatus::RUNNING, .value = 0};
     } else {
       this->status_ = inspectStatus(s);
     }
@@ -174,6 +184,24 @@ Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
   }
 
   return {.status = status, .out = std::move(output.first), .err = std::move(output.second)};
+}
+
+WaitStatus ProcHandle::waitWithTimeout(unsigned int msec) {
+  WaitStatus s = this->wait(WaitOp::NONBLOCKING);
+  if (s.kind != WaitStatus::RUNNING) {
+    return s;
+  }
+  for (unsigned int i = 0; i < msec; i++) {
+    struct timespec timespec;
+    timespec.tv_sec = 0;
+    timespec.tv_nsec = 1000000;
+    nanosleep(&timespec, nullptr);
+    s = this->wait(WaitOp::NONBLOCKING);
+    if (s.kind != WaitStatus::RUNNING) {
+      break;
+    }
+  }
+  return s;
 }
 
 // #########################

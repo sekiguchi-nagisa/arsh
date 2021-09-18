@@ -19,6 +19,7 @@
 
 #include <termios.h>
 
+#include <csignal>
 #include <functional>
 #include <initializer_list>
 #include <string>
@@ -35,6 +36,7 @@ struct WaitStatus {
     EXITED,
     SIGNALED,
     STOPPED,
+    RUNNING,
   };
 
   Kind kind;
@@ -71,7 +73,7 @@ private:
    */
   pid_t pid_;
 
-  WaitStatus status_{WaitStatus::EXITED, 0};
+  WaitStatus status_{WaitStatus::RUNNING, 0};
 
   /**
    * only available when specified PTY option.
@@ -152,11 +154,14 @@ public:
    */
   std::pair<unsigned short, unsigned short> getWinSize() const;
 
+  enum class WaitOp { BLOCKING, BLOCK_UNTRACED, NONBLOCKING };
+
   /**
    * wait process termination
+   * @param op
    * @return
    */
-  WaitStatus wait();
+  WaitStatus wait(WaitOp op = WaitOp::BLOCKING);
 
   pid_t detach() {
     pid_t pid = this->pid_;
@@ -168,6 +173,12 @@ public:
     return pid;
   }
 
+  void kill(int sig) const {
+    if (*this) {
+      ::kill(this->pid(), sig);
+    }
+  }
+
   using ReadCallback = std::function<void(unsigned int, const char *, unsigned int)>;
 
   void readAll(int timeout, const ReadCallback &readCallback) const;
@@ -175,6 +186,8 @@ public:
   std::pair<std::string, std::string> readAll(int timeout = -1) const;
 
   Output waitAndGetResult(bool removeLastSpace = true);
+
+  WaitStatus waitWithTimeout(unsigned int msec);
 };
 
 struct IOConfig {
