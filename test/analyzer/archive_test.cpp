@@ -42,9 +42,9 @@ struct ArchiveBuilder {
 
   ModuleArchivePtr build() const {
     std::vector<Archive> handles;
-    std::vector<std::pair<bool, ModuleArchivePtr>> imported;
+    std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
     for (auto &e : this->children) {
-      imported.emplace_back(true, e.build());
+      imported.emplace_back(ImportedModKind::GLOBAL, e.build());
     }
     return std::make_shared<ModuleArchive>(this->id, 0, std::move(handles), std::move(imported));
   }
@@ -211,7 +211,11 @@ public:
     auto archive = std::move(*ctx).buildArchive(this->archives);
     auto *type = loadFromArchive(parent.getPool(), *archive);
     assert(type);
-    parent.getScope()->importForeignHandles(*type, global);
+    auto importOp = ImportedModKind{};
+    if (global) {
+      setFlag(importOp, ImportedModKind::GLOBAL);
+    }
+    parent.getScope()->importForeignHandles(*type, importOp);
     return *type;
   }
 
@@ -223,7 +227,7 @@ public:
     unsigned id = archive->getModID();
     auto ret = poolPtr->getModTypeById(id);
     ASSERT_TRUE(ret);
-    auto *orgModType = static_cast<const ModType *>(ret.asOk());
+    auto *orgModType = cast<ModType>(ret.asOk());
 
     // deserialize
     auto *newModType = loadFromArchive(this->newCtx->getPool(), *archive);
@@ -240,8 +244,7 @@ public:
       ASSERT_TRUE(om.isModType());
       auto &nm = this->newCtx->getPool().get(ne.typeId());
       ASSERT_TRUE(nm.isModType());
-      ASSERT_EQ(static_cast<const ModType &>(om).getModID(),
-                static_cast<const ModType &>(nm).getModID());
+      ASSERT_EQ(cast<ModType>(om).getModID(), cast<ModType>(nm).getModID());
       ASSERT_EQ(om.getNameRef(), nm.getNameRef());
     }
 
@@ -445,7 +448,7 @@ TEST_F(ArchiveTest, mod3) {
   //
   auto ret1 = this->newPool().getModTypeById(3);
   ASSERT_TRUE(ret1);
-  auto &modType3 = static_cast<const ModType &>(*ret1.asOk());
+  auto &modType3 = cast<ModType>(*ret1.asOk());
   auto *handle = modType3.lookup("AAA");
   ASSERT_TRUE(handle);
   ASSERT_EQ(this->newPool().getType("[Signal : GlobbingError]").asOk()->typeId(),
@@ -462,7 +465,7 @@ TEST_F(ArchiveTest, mod3) {
   //
   ret1 = this->newPool().getModTypeById(1);
   ASSERT_TRUE(ret1);
-  auto &modType1 = static_cast<const ModType &>(*ret1.asOk());
+  auto &modType1 = cast<ModType>(*ret1.asOk());
   ASSERT_EQ(1, modType1.getModID());
   ASSERT_EQ(2, modType1.getChildSize());
   ASSERT_TRUE(modType1.getChildAt(0).isGlobal());
@@ -504,7 +507,7 @@ TEST_F(ArchiveTest, mod4) {
 
   auto ret = this->newPool().getModTypeById(3);
   ASSERT_TRUE(ret);
-  auto &modType3 = static_cast<const ModType &>(*ret.asOk());
+  auto &modType3 = cast<ModType>(*ret.asOk());
   ASSERT_EQ(3, modType3.getModID());
   ASSERT_EQ(2, modType3.getChildSize());
   auto *handle = modType3.lookup("BBB");
@@ -512,12 +515,12 @@ TEST_F(ArchiveTest, mod4) {
   ASSERT_EQ(3, handle->getModID());
   auto &type1 = this->newPool().get(handle->getTypeID());
   ASSERT_TRUE(type1.isTupleType());
-  auto &tuple = static_cast<const TupleType &>(type1);
+  auto &tuple = cast<TupleType>(type1);
   ASSERT_EQ(2, tuple.getFieldSize());
   ASSERT_EQ(this->newPool().get(TYPE::IllegalAccessError),
             tuple.getFieldTypeAt(this->newPool(), 0));
   ASSERT_TRUE(tuple.getFieldTypeAt(this->newPool(), 1).isModType());
-  ASSERT_EQ(4, static_cast<const ModType &>(tuple.getFieldTypeAt(this->newPool(), 1)).getModID());
+  ASSERT_EQ(4, cast<ModType>(tuple.getFieldTypeAt(this->newPool(), 1)).getModID());
 
   handle = modType3.lookup("AAA");
   ASSERT_FALSE(handle);
@@ -536,7 +539,7 @@ struct Builder {
   template <typename... Args>
   ModuleArchivePtr operator()(const char *path, Args &&...args) {
     std::vector<Archive> handles;
-    std::vector<std::pair<bool, ModuleArchivePtr>> deps;
+    std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> deps;
     build(deps, std::forward<Args>(args)...);
     auto src = this->srcMan.update(path, 0, "");
     auto archive = std::make_shared<ModuleArchive>(src->getSrcId(), src->getVersion(),
@@ -547,13 +550,13 @@ struct Builder {
 
 private:
   template <typename... Args>
-  static void build(std::vector<std::pair<bool, ModuleArchivePtr>> &deps,
+  static void build(std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &deps,
                     const ModuleArchivePtr &archive, Args &&...args) {
-    deps.emplace_back(true, archive);
+    deps.emplace_back(ImportedModKind::GLOBAL, archive);
     build(deps, std::forward<Args>(args)...);
   }
 
-  static void build(std::vector<std::pair<bool, ModuleArchivePtr>> &) {}
+  static void build(std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &) {}
 };
 
 TEST(ArchivesTest, revert1) {

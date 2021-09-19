@@ -224,7 +224,8 @@ public:
   OP(MOD_CONST, (1u << 5u))                                                                        \
   OP(ALIAS, (1u << 6u))                                                                            \
   OP(NAMED_MOD, (1u << 7u))                                                                        \
-  OP(GLOBAL_MOD, (1u << 8u))
+  OP(GLOBAL_MOD, (1u << 8u))                                                                       \
+  OP(INLINED_MOD, (1u << 9u))
 
 enum class FieldAttribute : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
@@ -289,6 +290,11 @@ public:
   FieldAttribute attr() const { return this->attribute; }
 
   bool has(FieldAttribute a) const { return hasFlag(this->attr(), a); }
+
+  bool isModHolder() const {
+    return !empty(this->attr() & (FieldAttribute::GLOBAL_MOD | FieldAttribute::NAMED_MOD |
+                                  FieldAttribute::INLINED_MOD));
+  }
 
   unsigned short getModID() const { return this->modID; }
 };
@@ -461,35 +467,54 @@ public:
   static bool classof(const DSType *type) { return type->typeKind() == TypeKind::Error; }
 };
 
-struct ImportedModEntry {
-  /**
-   * indicating loaded mod type id.
-   *
-   * | 1bit |  31bit  |
-   * | flag | type id |
-   *
-   * if flag is 1, indicate globally imported module
-   */
-  unsigned int value;
-
-  bool isGlobal() const { return static_cast<int>(this->value) < 0; }
-
-  unsigned int typeId() const { return this->value & 0x7FFFFFFF; }
+enum class ImportedModKind : unsigned char {
+  GLOBAL = 1u << 0u,
+  INLINED = 1u << 1u,
 };
 
+template <>
+struct allow_enum_bitop<ImportedModKind> : std::true_type {};
+
 class ModType : public DSType {
+public:
+  class Imported {
+  private:
+    /**
+     * | 24bit  | 8bit |
+     * | TypeID | kind |
+     */
+    unsigned int value;
+
+  public:
+    Imported() = default;
+
+    Imported(const ModType &type, ImportedModKind k)
+        : value(type.typeId() << 8 | static_cast<unsigned char>(k)) {
+      static_assert(sizeof(decltype(type.typeId())) == 4);
+      static_assert(sizeof(k) == 1);
+    }
+
+    unsigned int typeId() const { return this->value >> 8; }
+
+    ImportedModKind kind() const { return static_cast<ImportedModKind>(this->value & 0xFF); }
+
+    bool isGlobal() const { return hasFlag(this->kind(), ImportedModKind::GLOBAL); }
+
+    bool isInlined() const { return hasFlag(this->kind(), ImportedModKind::INLINED); }
+  };
+
 private:
-  static_assert(sizeof(ImportedModEntry) == 4, "failed!!");
+  static_assert(sizeof(Imported) == 4, "failed!!");
 
   union {
     struct {
       unsigned int index;
-      ImportedModEntry v[3];
+      Imported v[3];
     } e3;
 
     struct {
       unsigned int index;
-      ImportedModEntry *ptr;
+      Imported *ptr;
     } children;
   } data;
 
@@ -497,8 +522,8 @@ private:
 
 public:
   ModType(unsigned int id, const DSType &superType, unsigned short modID,
-          std::unordered_map<std::string, FieldHandle> &&handles,
-          FlexBuffer<ImportedModEntry> &&children, unsigned int index)
+          std::unordered_map<std::string, FieldHandle> &&handles, FlexBuffer<Imported> &&children,
+          unsigned int index)
       : DSType(TypeKind::Mod, id, toModTypeName(modID), &superType), handleMap(std::move(handles)) {
     this->meta.u16_2.v1 = modID;
     this->meta.u16_2.v2 = children.size();
@@ -518,7 +543,7 @@ public:
 
   unsigned short getChildSize() const { return this->meta.u16_2.v2; }
 
-  ImportedModEntry getChildAt(unsigned int i) const {
+  Imported getChildAt(unsigned int i) const {
     assert(i < this->getChildSize());
     return this->getChildSize() < 3 ? this->data.e3.v[i] : this->data.children.ptr[i];
   }
@@ -539,21 +564,18 @@ public:
                                this->getModID());
   }
 
-  FieldHandle toModHolder(bool global) const {
-    return FieldHandle::create(
-        0, *this, this->getIndex(),
-        FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL |
-            (global ? FieldAttribute::GLOBAL_MOD : FieldAttribute::NAMED_MOD),
-        this->getModID());
+  FieldHandle toModHolder(ImportedModKind k) const {
+    FieldAttribute attr = FieldAttribute::NAMED_MOD;
+    if (hasFlag(k, ImportedModKind::INLINED)) {
+      attr = FieldAttribute::INLINED_MOD;
+    } else if (hasFlag(k, ImportedModKind::GLOBAL)) {
+      attr = FieldAttribute::GLOBAL_MOD;
+    }
+    setFlag(attr, FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL);
+    return FieldHandle::create(0, *this, this->getIndex(), attr, this->getModID());
   }
 
-  ImportedModEntry toModEntry(bool global) const {
-    unsigned int value = this->typeId();
-    if (global) {
-      value |= static_cast<unsigned int>(1 << 31);
-    }
-    return ImportedModEntry{value};
-  }
+  Imported toModEntry(ImportedModKind k) const { return Imported(*this, k); }
 
   std::string toName() const { return this->getNameRef().toString(); }
 

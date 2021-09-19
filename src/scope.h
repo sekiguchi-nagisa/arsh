@@ -178,11 +178,11 @@ public:
   /**
    * import handle from foreign module (ModType)
    * @param type
-   * @param global
+   * @param k
    * @return
    * if found name conflict, return conflicted name
    */
-  std::string importForeignHandles(const ModType &type, bool global);
+  std::string importForeignHandles(const ModType &type, ImportedModKind k);
 
   const ModType &toModType(TypePool &pool) const;
 

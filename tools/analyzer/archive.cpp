@@ -234,17 +234,16 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
     return type;
   }
 
-  FlexBuffer<ImportedModEntry> children;
+  FlexBuffer<ModType::Imported> children;
 
   // add builtin
   auto &builtin = pool.getBuiltinModType();
-  children.push_back(builtin.toModEntry(true));
+  children.push_back(builtin.toModEntry(ImportedModKind::GLOBAL));
 
   for (auto &child : archive.getImported()) {
-    bool global = child.first;
     auto type = pool.getModTypeById(child.second->getModID());
     assert(type);
-    auto e = cast<ModType>(type.asOk())->toModEntry(global);
+    auto e = cast<ModType>(type.asOk())->toModEntry(child.first);
     children.push_back(e);
   }
 

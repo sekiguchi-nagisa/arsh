@@ -187,7 +187,7 @@ public:
 
   const ModType &createModType(unsigned short modID,
                                std::unordered_map<std::string, FieldHandle> &&handles,
-                               FlexBuffer<ImportedModEntry> &&children, unsigned int index);
+                               FlexBuffer<ModType::Imported> &&children, unsigned int index);
 
   const ModType &getBuiltinModType() const {
     auto *type = this->getModTypeById(0).take();

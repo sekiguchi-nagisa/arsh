@@ -1610,7 +1610,11 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   assert(this->isTopLevel());
 
   // import module
-  auto ret = this->curScope->importForeignHandles(node.getModType(), !node.getNameInfo());
+  ImportedModKind importedKind{};
+  if (!node.getNameInfo()) {
+    setFlag(importedKind, ImportedModKind::GLOBAL);
+  }
+  auto ret = this->curScope->importForeignHandles(node.getModType(), importedKind);
   if (!ret.empty()) {
     this->reportError<ConflictSymbol>(node, ret.c_str(), node.getPathName().c_str());
   }

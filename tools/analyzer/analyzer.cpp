@@ -51,7 +51,7 @@ AnalyzerContext::AnalyzerContext(const Source &src)
     : pool(std::make_shared<TypePool>()), version(src.getVersion()) {
   auto &builtin = createBuiltin(this->getPool(), this->gvarCount);
   this->scope = IntrusivePtr<NameScope>::create(std::ref(this->gvarCount), src.getSrcId());
-  this->scope->importForeignHandles(builtin, true);
+  this->scope->importForeignHandles(builtin, ImportedModKind::GLOBAL);
   this->typeDiscardPoint = this->getPool().getDiscardPoint();
 }
 
@@ -65,7 +65,7 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
   }
 
   // resolve imported modules
-  std::vector<std::pair<bool, ModuleArchivePtr>> imported;
+  std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
   unsigned int size = modType.getChildSize();
   for (unsigned int i = 0; i < size; i++) {
     auto e = modType.getChildAt(i);
@@ -75,7 +75,7 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
     }
     auto archive = archives.find(type.getModID());
     assert(archive);
-    imported.emplace_back(e.isGlobal(), std::move(archive));
+    imported.emplace_back(e.kind(), std::move(archive));
   }
 
   auto archive = std::make_shared<ModuleArchive>(this->getModId(), this->getVersion(),

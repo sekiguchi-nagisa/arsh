@@ -167,13 +167,13 @@ private:
   const unsigned short modId{0};
   const int version{0};
   std::vector<Archive> handles;
-  std::vector<std::pair<bool, ModuleArchivePtr>> imported;
+  std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
 
 public:
   ModuleArchive() = default;
 
   explicit ModuleArchive(unsigned short modID, int version, std::vector<Archive> &&handles,
-                         std::vector<std::pair<bool, ModuleArchivePtr>> imported)
+                         std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
       : modId(modID), version(version), handles(std::move(handles)), imported(std::move(imported)) {
   }
 

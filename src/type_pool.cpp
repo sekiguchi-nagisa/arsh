@@ -255,7 +255,7 @@ TypeOrError TypePool::createFuncType(const DSType &returnType,
 
 const ModType &TypePool::createModType(unsigned short modID,
                                        std::unordered_map<std::string, FieldHandle> &&handles,
-                                       FlexBuffer<ImportedModEntry> &&children,
+                                       FlexBuffer<ModType::Imported> &&children,
                                        unsigned int index) {
   auto name = toModTypeName(modID);
   auto *type = this->get(name);

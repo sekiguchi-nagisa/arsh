@@ -606,12 +606,12 @@ TEST_F(ScopeTest, import) {
   auto &modType = mod->toModType(this->pool);
 
   // named import
-  auto s = this->top->importForeignHandles(modType, false);
+  auto s = this->top->importForeignHandles(modType, ImportedModKind{});
   ASSERT_EQ("", s);
   ASSERT_EQ(2, this->top->getMaxGlobalVarIndex());
   ASSERT_EQ(1, this->top->getHandles().size());
 
-  s = this->top->importForeignHandles(modType, false);
+  s = this->top->importForeignHandles(modType, ImportedModKind{});
   ASSERT_EQ("", s);
   ASSERT_EQ(2, this->top->getMaxGlobalVarIndex());
   ASSERT_EQ(1, this->top->getHandles().size());
@@ -626,12 +626,12 @@ TEST_F(ScopeTest, import) {
   ASSERT_EQ(nullptr, handle);
 
   // global import
-  s = this->top->importForeignHandles(modType, true);
+  s = this->top->importForeignHandles(modType, ImportedModKind::GLOBAL);
   ASSERT_EQ("", s);
   ASSERT_EQ(2, this->top->getMaxGlobalVarIndex());
   ASSERT_EQ(4, this->top->getHandles().size());
 
-  s = this->top->importForeignHandles(modType, true);
+  s = this->top->importForeignHandles(modType, ImportedModKind::GLOBAL);
   ASSERT_EQ("", s);
   ASSERT_EQ(2, this->top->getMaxGlobalVarIndex());
   ASSERT_EQ(4, this->top->getHandles().size());
@@ -669,7 +669,7 @@ TEST_F(ScopeTest, import) {
   mod2->defineHandle("GGG", this->pool.get(TYPE::Job), FieldAttribute{});
   auto &modType2 = mod2->toModType(this->pool);
 
-  this->top->importForeignHandles(modType2, false);
+  this->top->importForeignHandles(modType2, ImportedModKind{});
 
   auto &modType3 = this->top->toModType(this->pool);
   ASSERT_EQ(2, modType3.getChildSize());
@@ -727,7 +727,7 @@ TEST_F(ScopeTest, conflict) {
   auto point = this->top->getDiscardPoint();
 
   this->top->defineHandle("AAA", this->pool.get(TYPE::Regex), FieldAttribute{});
-  auto ret = this->top->importForeignHandles(modType, true);
+  auto ret = this->top->importForeignHandles(modType, ImportedModKind::GLOBAL);
   ASSERT_EQ("AAA", ret);
 
   auto *handle = this->top->lookup("AAA");
