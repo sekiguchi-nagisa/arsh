@@ -555,6 +555,11 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
       this->expectAndChangeMode(TokenKind::CMD_ARG_PART, yycNAME); // always success
       Token token = TRY(this->expectAndChangeMode(TokenKind::IDENTIFIER, yycSTMT));
       node->setName(token, this->lexer->toName(token));
+    } else if (CUR_KIND() == TokenKind::CMD_ARG_PART &&
+               this->lexer->toStrRef(this->curToken) == "inlined") {
+      Token token = this->expect(TokenKind::CMD_ARG_PART); // always success
+      node->setInlined(true);
+      node->updateToken(token);
     }
     return std::move(node);
   }

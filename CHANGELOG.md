@@ -4,6 +4,14 @@
 
 ### Added
 
+#### Core
+
+- ``source`` statement support inlined import
+    - inlined imported global symbols are transitively imported from other modules
+  ```
+  source edit inlined   # module 'edit' is inlined imported
+  ```
+
 #### Builtin
 
 - add ``Float#compare`` method

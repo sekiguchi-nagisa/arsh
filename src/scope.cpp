@@ -43,7 +43,9 @@ NameScope::NameScope(const TypePool &pool, const IntrusivePtr<NameScope> &parent
   for (unsigned int i = 0; i < size; i++) {
     auto e = modType.getChildAt(i);
     auto &type = cast<ModType>(pool.get(e.typeId()));
-    this->importForeignHandles(type, e.kind());
+    if (!e.isInlined()) {
+      this->importForeignHandles(type, e.kind());
+    }
   }
 }
 
@@ -146,7 +148,9 @@ std::string NameScope::importForeignHandles(const ModType &type, ImportedModKind
       continue;
     }
     const auto &handle = e.second;
-    auto ret = this->addNewForeignHandle(name.toString(), handle);
+    auto ret = hasFlag(k, ImportedModKind::INLINED)
+                   ? this->addNewAlias(name.toString(), handle)
+                   : this->addNewForeignHandle(name.toString(), handle);
     if (!ret) {
       if (isCmdFullName(name)) {
         name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));

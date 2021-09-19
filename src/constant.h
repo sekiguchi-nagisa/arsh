@@ -185,9 +185,9 @@ inline std::string toTypeAliasFullName(const std::string &alias) {
   return name;
 }
 
-inline std::string toModHolderName(unsigned short id, bool global) {
+inline std::string toModHolderName(unsigned short modId, bool global) {
   std::string name = global ? "_g" : "_n";
-  name += std::to_string(id);
+  name += std::to_string(modId);
   name += MOD_HOLDER_SYMBOL_SUFFIX;
   return name;
 }

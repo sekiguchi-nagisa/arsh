@@ -1614,6 +1614,9 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   if (!node.getNameInfo()) {
     setFlag(importedKind, ImportedModKind::GLOBAL);
   }
+  if (node.isInlined()) {
+    setFlag(importedKind, ImportedModKind::INLINED);
+  }
   auto ret = this->curScope->importForeignHandles(node.getModType(), importedKind);
   if (!ret.empty()) {
     this->reportError<ConflictSymbol>(node, ret.c_str(), node.getPathName().c_str());

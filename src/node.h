@@ -2049,7 +2049,9 @@ private:
    */
   std::shared_ptr<const std::string> pathName;
 
-  bool firstAppear;
+  const bool firstAppear;
+
+  const bool inlined;
 
   bool nothing{false};
 
@@ -2060,9 +2062,10 @@ private:
 
 public:
   SourceNode(Token token, Token pathToken, std::shared_ptr<const NameInfo> name,
-             const ModType &modType, std::shared_ptr<const std::string> pathName, bool firstAppear)
+             const ModType &modType, std::shared_ptr<const std::string> pathName, bool firstAppear,
+             bool inlined)
       : WithRtti(token), pathToken(pathToken), name(std::move(name)), modType(modType),
-        pathName(std::move(pathName)), firstAppear(firstAppear) {}
+        pathName(std::move(pathName)), firstAppear(firstAppear), inlined(inlined) {}
 
   ~SourceNode() override = default;
 
@@ -2075,6 +2078,8 @@ public:
   const std::string &getPathName() const { return *this->pathName; }
 
   bool isFirstAppear() const { return this->firstAppear; }
+
+  bool isInlined() const { return this->inlined; }
 
   void setNothing(bool set) { this->nothing = set; }
 
@@ -2104,7 +2109,9 @@ private:
   /**
    * if true, ignore module not found error
    */
-  bool optional;
+  const bool optional;
+
+  bool inlined{false};
 
   unsigned int curIndex{0}; // index of currently evaluating source path
 
@@ -2133,6 +2140,10 @@ public:
 
   bool isOptional() const { return this->optional; }
 
+  bool isInlined() const { return this->inlined; }
+
+  void setInlined(bool s) { this->inlined = s; }
+
   unsigned int getCurIndex() const { return this->curIndex; }
 
   void setCurIndex(unsigned int index) { this->curIndex = index; }
@@ -2149,7 +2160,8 @@ public:
 
   std::unique_ptr<SourceNode> create(const ModType &modType, bool first) const {
     return std::make_unique<SourceNode>(this->token, this->getPathNode().getToken(), this->name,
-                                        modType, this->pathList[this->curIndex - 1], first);
+                                        modType, this->pathList[this->curIndex - 1], first,
+                                        this->isInlined());
   }
 
   void dump(NodeDumper &dumper) const override;

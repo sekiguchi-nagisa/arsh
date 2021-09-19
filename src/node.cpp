@@ -894,6 +894,7 @@ void SourceNode::dump(NodeDumper &dumper) const {
   DUMP(modType);
   DUMP_PTR(pathName);
   DUMP(firstAppear);
+  DUMP(inlined);
   DUMP(nothing);
   DUMP(maxVarNum);
 }
@@ -907,6 +908,7 @@ void SourceListNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(constPathNode);
   DUMP_PTR(name);
   DUMP(optional);
+  DUMP(inlined);
   DUMP(curIndex);
 
   std::vector<std::string> tmp;

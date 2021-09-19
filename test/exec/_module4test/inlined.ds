@@ -1,0 +1,11 @@
+
+source $SCRIPT_DIR/module1.ds \
+                    inlined
+
+say1() {
+    echo 'say1' $@
+}
+
+function hey2() : String { return 'hey2'; }
+
+typedef BoolArray = [Bool]
