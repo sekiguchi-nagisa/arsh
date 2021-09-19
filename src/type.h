@@ -219,13 +219,12 @@ public:
   OP(READ_ONLY, (1u << 0u))                                                                        \
   OP(GLOBAL, (1u << 1u))                                                                           \
   OP(ENV, (1u << 2u))                                                                              \
-  OP(FUNC_HANDLE, (1u << 3u))                                                                      \
-  OP(RANDOM, (1u << 4u))                                                                           \
-  OP(SECONDS, (1u << 5u))                                                                          \
-  OP(MOD_CONST, (1u << 6u))                                                                        \
-  OP(ALIAS, (1u << 7u))                                                                            \
-  OP(NAMED_MOD, (1u << 8u))                                                                        \
-  OP(GLOBAL_MOD, (1u << 9u))
+  OP(RANDOM, (1u << 3u))                                                                           \
+  OP(SECONDS, (1u << 4u))                                                                          \
+  OP(MOD_CONST, (1u << 5u))                                                                        \
+  OP(ALIAS, (1u << 6u))                                                                            \
+  OP(NAMED_MOD, (1u << 7u))                                                                        \
+  OP(GLOBAL_MOD, (1u << 8u))
 
 enum class FieldAttribute : unsigned short {
 #define GEN_ENUM(E, V) E = (V),
@@ -259,20 +258,25 @@ private:
    */
   unsigned short modID;
 
-public:
   FieldHandle(unsigned int commitID, const DSType &fieldType, unsigned int fieldIndex,
-              FieldAttribute attribute, unsigned short modID = 0)
+              FieldAttribute attribute, unsigned short modID)
       : commitID(commitID), typeID(fieldType.typeId()), index(fieldIndex), attribute(attribute),
         modID(modID) {}
-
-  FieldHandle(unsigned int commitID, const FieldHandle &handle, unsigned short modId)
-      : commitID(commitID), typeID(handle.typeID), index(handle.index), attribute(handle.attribute),
-        modID(modId) {}
 
   FieldHandle(unsigned int commitID, const FieldHandle &handle, FieldAttribute newAttr,
               unsigned short modID)
       : commitID(commitID), typeID(handle.getTypeID()), index(handle.getIndex()),
         attribute(newAttr), modID(modID) {}
+
+public:
+  static FieldHandle alias(unsigned int commitID, const FieldHandle &handle, unsigned short modId) {
+    return FieldHandle(commitID, handle, handle.attr() | FieldAttribute::ALIAS, modId);
+  }
+
+  static FieldHandle create(unsigned int commitID, const DSType &fieldType, unsigned int fieldIndex,
+                            FieldAttribute attribute, unsigned short modID = 0) {
+    return FieldHandle(commitID, fieldType, fieldIndex, attribute, modID);
+  }
 
   ~FieldHandle() = default;
 
@@ -528,15 +532,17 @@ public:
    * @return
    */
   FieldHandle toHandle() const {
-    return FieldHandle(0, *this, this->getIndex(),
-                       FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL, this->getModID());
+    return FieldHandle::create(0, *this, this->getIndex(),
+                               FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
+                               this->getModID());
   }
 
   FieldHandle toModHolder(bool global) const {
-    return FieldHandle(0, *this, this->getIndex(),
-                       FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL |
-                           (global ? FieldAttribute::GLOBAL_MOD : FieldAttribute::NAMED_MOD),
-                       this->getModID());
+    return FieldHandle::create(
+        0, *this, this->getIndex(),
+        FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL |
+            (global ? FieldAttribute::GLOBAL_MOD : FieldAttribute::NAMED_MOD),
+        this->getModID());
   }
 
   ImportedModEntry toModEntry(bool global) const {

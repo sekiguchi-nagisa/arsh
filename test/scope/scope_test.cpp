@@ -201,14 +201,13 @@ TEST_F(ScopeTest, global) {
   ASSERT_EQ(0, this->top->getMaxGlobalVarIndex());
 
   // define in builtin
-  auto ret = this->builtin->defineHandle("AAA", this->pool.get(TYPE::Job),
-                                         FieldAttribute::READ_ONLY | FieldAttribute::FUNC_HANDLE);
+  auto ret =
+      this->builtin->defineHandle("AAA", this->pool.get(TYPE::Job), FieldAttribute::READ_ONLY);
   ASSERT_NO_FATAL_FAILURE(
       this->expect(Handle{.commitID = 0,
                           .type = TYPE::Job,
                           .index = 0,
-                          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL |
-                                  FieldAttribute::FUNC_HANDLE,
+                          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
                           .modID = 0},
                    ret));
   ASSERT_EQ(1, this->builtin->getHandles().size());
@@ -224,7 +223,7 @@ TEST_F(ScopeTest, global) {
           .commitID = 0,
           .type = TYPE::Job,
           .index = 0,
-          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL | FieldAttribute::FUNC_HANDLE,
+          .attr = FieldAttribute::READ_ONLY | FieldAttribute::GLOBAL,
           .modID = 0,
       },
       handle));

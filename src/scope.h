@@ -242,7 +242,7 @@ private:
     }
     unsigned int index = this->isGlobal() ? this->getMaxGlobalVarIndex() : this->getCurLocalIndex();
     return this->add(std::move(name),
-                     FieldHandle(this->commitId(), type, index, attr, this->modId));
+                     FieldHandle::create(this->commitId(), type, index, attr, this->modId));
   }
 
   /**
@@ -252,16 +252,12 @@ private:
    * @return
    */
   NameLookupResult addNewAlias(std::string &&name, const FieldHandle &handle) {
-    auto newAttr = handle.attr();
-    setFlag(newAttr, FieldAttribute::ALIAS);
-    return this->add(std::move(name), FieldHandle(this->commitId(), handle, newAttr, this->modId));
+    return this->add(std::move(name), FieldHandle::alias(this->commitId(), handle, this->modId));
   }
 
   NameLookupResult addNewForeignHandle(std::string &&name, const FieldHandle &handle) {
-    auto newAttr = handle.attr();
-    setFlag(newAttr, FieldAttribute::ALIAS);
     return this->add(std::move(name),
-                     FieldHandle(this->commitId(), handle, newAttr, handle.getModID()));
+                     FieldHandle::alias(this->commitId(), handle, handle.getModID()));
   }
 };
 

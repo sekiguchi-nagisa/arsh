@@ -118,7 +118,8 @@ NameLookupResult NameScope::defineTypeAlias(const TypePool &pool, std::string &&
       return Err(NameLookupError::DEFINED);
     }
   }
-  return this->defineAlias(toTypeAliasFullName(name), FieldHandle(0, type, 0, FieldAttribute{}, 0));
+  return this->defineAlias(toTypeAliasFullName(name),
+                           FieldHandle::create(0, type, 0, FieldAttribute{}, 0));
 }
 
 std::string NameScope::importForeignHandles(const ModType &type, const bool global) {

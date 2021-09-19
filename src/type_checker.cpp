@@ -1524,8 +1524,7 @@ void TypeChecker::visitFunctionNode(FunctionNode &node) {
       typeOrError) {
     funcType = cast<FunctionType>(std::move(typeOrError).take());
     node.setFuncType(*funcType);
-    auto handle = this->addEntry(node.getNameInfo(), *funcType,
-                                 FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY);
+    auto handle = this->addEntry(node.getNameInfo(), *funcType, FieldAttribute::READ_ONLY);
     if (handle) {
       node.setVarIndex(handle->getIndex());
     }

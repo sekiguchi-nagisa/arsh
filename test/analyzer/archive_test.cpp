@@ -285,7 +285,7 @@ TEST_F(ArchiveTest, predefined) {
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("a", "[String]"));
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("b", "String", FieldAttribute::ENV));
   ASSERT_NO_FATAL_FAILURE(
-      this->defineAndArchive("c", "((String, [String]) -> Void)!", FieldAttribute::FUNC_HANDLE));
+      this->defineAndArchive("c", "((String, [String]) -> Void)!", FieldAttribute{}));
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("d", "(Signal) -> Void", FieldAttribute::RANDOM));
 }
 
@@ -383,8 +383,7 @@ TEST_F(ArchiveTest, func) {
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
-  ASSERT_NO_FATAL_FAILURE(
-      this->defineAndArchive("e1", type1, FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("e1", type1, FieldAttribute::READ_ONLY));
 
   //
   types = std::vector<const DSType *>();
@@ -397,7 +396,7 @@ TEST_F(ArchiveTest, func) {
   ASSERT_TRUE(ret1);
   auto &type2 = *ret1.asOk();
   ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("ccc", type2, FieldAttribute::ALIAS));
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("DDD", type2, FieldAttribute::FUNC_HANDLE));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("DDD", type2, FieldAttribute{}));
 }
 
 TEST_F(ArchiveTest, mod1) { ASSERT_NO_FATAL_FAILURE(this->archiveMod()); }
@@ -408,8 +407,7 @@ TEST_F(ArchiveTest, mod2) {
   auto ret1 = this->pool().createFuncType(this->pool().get(TYPE::Void), std::move(types));
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
-  ASSERT_NO_FATAL_FAILURE(
-      this->define("AAA", type1, FieldAttribute::FUNC_HANDLE | FieldAttribute::READ_ONLY));
+  ASSERT_NO_FATAL_FAILURE(this->define("AAA", type1, FieldAttribute::READ_ONLY));
 
   //
   auto ret2 = this->pool().createOptionType(this->pool().get(TYPE::UnwrappingError));

@@ -88,7 +88,7 @@ Optional<FieldHandle> Unarchiver::unpackHandle() {
   if (!type) {
     return {};
   }
-  return FieldHandle(commitID, *type, index, static_cast<FieldAttribute>(attr), modID);
+  return FieldHandle::create(commitID, *type, index, static_cast<FieldAttribute>(attr), modID);
 }
 
 #define TRY(E)                                                                                     \
