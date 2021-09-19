@@ -1,6 +1,8 @@
 
 source ../../_module4test/module1.ds as mod
 
+assert $mod is Module
+
 # access variable
 assert $mod.hello is String
 assert $mod.hello == "hello module!!"

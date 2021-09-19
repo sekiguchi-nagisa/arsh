@@ -16,7 +16,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG', 'SIG_DFL', 'SIG_IGN',
         'STDERR', 'STDIN', 'STDOUT', 'TERM_HOOK',
         'TRUE', 'True', 'UID', 'YDSH_BIN', 'YDSH_VERSION',
-        'assertArray', 'false', 'reply', 'true',
+        'assertArray', 'false', 'reply', 'true', 'types',
     ]
 
     $assertArray($gvars, $(complete '$'))
@@ -127,24 +127,20 @@ $assertArray(['close', 'dup'], { complete '$STDIN.' > /dev/null; $COMPREPLY; })
 $assertArray(['abs', 'toFloat'], $(complete 'var a = try { 34; } finally { return ; 34.'))
 
 # type
+var types = [
+    'Any', 'ArithmeticError', 'Bool', 'Boolean', 'Error', 'Float',
+    'Func', 'GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 'Job', 'KeyNotFoundError', 'Module', 'Nothing',
+    'OutOfRangeError', 'Regex', 'RegexSyntaxError', 'Signal', 'Signals', 
+    'StackOverflowError', 'String', 'SystemError', 'TypeCastError',
+    'UnixFD', 'UnwrappingError', 'Void'
+]
+
 $assertArray(['Bool', 'Boolean'], $(complete '34 is [B'))
 assert $(complete '34 is').empty()
 assert $(complete '34 as').empty()
 $assertArray(['StackOverflowError', 'String'], $(complete 'var a :St'))
-$assertArray([
-    'Any', 'ArithmeticError', 'Bool', 'Boolean', 'Error', 'Float',
-    'Func', 'GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 'Job', 'KeyNotFoundError', 'Nothing',
-    'OutOfRangeError', 'Regex', 'RegexSyntaxError', 'Signal', 'Signals', 
-    'StackOverflowError', 'String', 'SystemError', 'TypeCastError',
-    'UnixFD', 'UnwrappingError', 'Void'
-], $(complete 'var a :'))
-$assertArray([
-    'Any', 'ArithmeticError', 'Bool', 'Boolean', 'Error', 'Float',
-    'Func', 'GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 'Job', 'KeyNotFoundError', 'Nothing',
-    'OutOfRangeError', 'Regex', 'RegexSyntaxError', 'Signal', 'Signals', 
-    'StackOverflowError', 'String', 'SystemError', 'TypeCastError',
-    'UnixFD', 'UnwrappingError', 'Void'
-], $(complete '234 as '))
+$assertArray($types, $(complete 'var a :'))
+$assertArray($types, $(complete '234 as '))
 $assertArray(['Dot'], $(complete 'typedef Dot = [[String]]; function f($a : D'))
 $assertArray(['typeof', 'typeof0'], $(complete 'typedef typeof = [[String]]; typedef typeof0 = Int; function f($a : typeof'))
 $assertArray(['Func','Func0'], $(complete '

@@ -61,6 +61,7 @@ enum class TYPE : unsigned int {
   Error,
   Job,
   Func,
+  Module,
   StringIter,
   UnixFD,      // for Unix file descriptor
   StringArray, // for command argument

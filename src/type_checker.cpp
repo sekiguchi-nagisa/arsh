@@ -68,15 +68,10 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
   }
   case TypeNode::Qualified: {
     auto &qualifiedNode = cast<QualifiedTypeNode>(node);
-    auto &recvType = this->checkTypeExactly(qualifiedNode.getRecvTypeNode());
-    if (!recvType.isModType()) {
-      this->reportError<Required>(qualifiedNode.getRecvTypeNode(), "Module type",
-                                  recvType.getName());
-      return Err(std::unique_ptr<TypeLookupError>());
-    }
-    auto &modType = cast<ModType>(recvType);
+    auto &recvType =
+        this->checkType(this->typePool.get(TYPE::Module), qualifiedNode.getRecvTypeNode());
     std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
-    auto *handle = this->curScope->lookupField(modType, typeName);
+    auto *handle = this->curScope->lookupField(recvType, typeName);
     if (!handle) {
       auto &nameNode = qualifiedNode.getNameTypeNode();
       this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str());
