@@ -272,11 +272,11 @@ TEST_F(ArchiveTest, base) {
   auto ctx = this->newctx();
   auto *handle = ctx->getScope()->find("COMP_HOOK");
   ASSERT_TRUE(handle);
-  ASSERT_TRUE(hasFlag(handle->attr(), FieldAttribute::GLOBAL));
+  ASSERT_TRUE(handle->has(FieldAttribute::GLOBAL));
   ASSERT_EQ(0, handle->getModID());
   handle = ctx->getScope()->find("TRUE");
   ASSERT_TRUE(handle);
-  ASSERT_TRUE(hasFlag(handle->attr(), FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY));
+  ASSERT_TRUE(handle->has(FieldAttribute::GLOBAL | FieldAttribute::READ_ONLY));
   ASSERT_EQ(0, handle->getModID());
   ASSERT_TRUE(ctx->getTypeIdOffset() <= UINT8_MAX);
 }

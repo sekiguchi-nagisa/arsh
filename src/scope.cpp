@@ -222,11 +222,9 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
     return Err(NameLookupError::INVALID_TYPE);
   }
 
-  const auto attr = handle.attr();
-
   // check var index limit
-  if (!hasFlag(attr, FieldAttribute::ALIAS)) {
-    if (!hasFlag(attr, FieldAttribute::GLOBAL)) {
+  if (!handle.has(FieldAttribute::ALIAS)) {
+    if (!handle.has(FieldAttribute::GLOBAL)) {
       assert(!this->isGlobal());
       if (this->curLocalIndex == SYS_LIMIT_LOCAL_NUM) {
         return Err(NameLookupError::LIMIT);
@@ -240,9 +238,9 @@ NameLookupResult NameScope::add(std::string &&name, FieldHandle &&handle) {
   }
 
   // increment var index count
-  if (!hasFlag(attr, FieldAttribute::ALIAS)) {
-    assert(this->isGlobal() == hasFlag(attr, FieldAttribute::GLOBAL));
-    if (hasFlag(attr, FieldAttribute::GLOBAL)) {
+  if (!handle.has(FieldAttribute::ALIAS)) {
+    assert(this->isGlobal() == handle.has(FieldAttribute::GLOBAL));
+    if (handle.has(FieldAttribute::GLOBAL)) {
       this->maxVarCount.get()++;
     } else { // local
       assert(this->kind == BLOCK);

@@ -731,7 +731,7 @@ VarDeclNode::VarDeclNode(unsigned int startPos, NameInfo &&varName,
 }
 
 void VarDeclNode::setAttribute(const FieldHandle &handle) {
-  this->global = hasFlag(handle.attr(), FieldAttribute::GLOBAL);
+  this->global = handle.has(FieldAttribute::GLOBAL);
   this->varIndex = handle.getIndex();
 }
 

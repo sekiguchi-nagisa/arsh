@@ -288,6 +288,8 @@ public:
 
   FieldAttribute attr() const { return this->attribute; }
 
+  bool has(FieldAttribute a) const { return hasFlag(this->attr(), a); }
+
   unsigned short getModID() const { return this->modID; }
 };
 
