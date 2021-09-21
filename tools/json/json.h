@@ -210,7 +210,7 @@ public:
   template <typename... Arg>
   explicit JSONParser(Arg &&...arg) : JSONParser(JSONLexer(std::forward<Arg>(arg)...)) {}
 
-  JSON operator()();
+  JSON operator()(bool maybeEmpty = false);
 
   explicit operator bool() const { return this->curKind != JSONTokenKind::EOS; }
 

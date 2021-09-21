@@ -330,8 +330,22 @@ const char *toString(JSONTokenKind kind) {
   }                                                                                                \
   (void)name
 
-JSON JSONParser::operator()() {
+static bool lookahead_LA_VALUE(JSONTokenKind k) {
+  switch (k) {
+    // clang-format off
+  EACH_LA_VALUE(GEN_LA_CASE)
+    // clang-format on
+    return true;
+  default:
+    return false;
+  }
+}
+
+JSON JSONParser::operator()(bool maybeEmpty) {
   this->fetchNext();
+  if (maybeEmpty && !static_cast<bool>(*this)) {
+    return JSON();
+  }
   auto value = TRY(this->parseValue());
   TRY(this->expect(JSONTokenKind::EOS));
   return value;
@@ -418,15 +432,9 @@ JSON JSONParser::parseArray() {
       }
       this->consume(); // COMMA
     }
-    switch (this->curKind) {
-      // clang-format off
-    EACH_LA_VALUE(GEN_LA_CASE)
-      // clang-format on
-      {
-        value.push_back(TRY(this->parseValue()));
-        break;
-      }
-    default:
+    if (lookahead_LA_VALUE(this->curKind)) {
+      value.push_back(TRY(this->parseValue()));
+    } else {
       E_ALTER(EACH_LA_VALUE(GEN_LA_ALTER) JSONTokenKind::ARRAY_CLOSE);
     }
   }
@@ -559,8 +567,7 @@ std::string JSONParser::formatError() const {
   auto errorToken = this->lexer->shiftEOS(eToken);
   auto lineToken = this->lexer->getLineToken(errorToken);
 
-  str += this->lexer->toTokenText(lineToken);
-  str += '\n';
+  str += this->lexer->formatTokenText(lineToken);
   str += this->lexer->formatLineMarker(lineToken, errorToken);
   str += '\n';
 

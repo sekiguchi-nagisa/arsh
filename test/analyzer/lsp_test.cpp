@@ -1,5 +1,6 @@
 #include "../test_common.h"
 
+#include "client.h"
 #include "lsp.h"
 #include "server.h"
 
@@ -382,6 +383,129 @@ TEST_F(ServerTest, term3) {
   this->call("shutdown", nullptr);
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+server not initialized.+"));
   ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+must be initialized.+"));
+}
+
+TEST(ClientTest, parse1) {
+  auto ret = loadInputScript("hogehoge");
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("cannot read: hogehoge", ret.asErr());
+
+  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  auto fileName = tempFileFactory.createTempFile("script.test", R"(
+# this is a comment1 (skip empty section)
+---
+1234
+# this is a comment2
+# this is a comment3
+---
+{ "aaa": true}
+# this is a comment4
+<<<
+<<<
+false
+)");
+  ret = loadInputScript(fileName);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(3, ret.asOk().size());
+  ASSERT_EQ(1234, ret.asOk()[0].request.asLong());
+  ASSERT_FALSE(ret.asOk()[0].waitReply);
+  ASSERT_EQ(true, ret.asOk()[1].request["aaa"].asBool());
+  ASSERT_TRUE(ret.asOk()[1].waitReply);
+  ASSERT_EQ(false, ret.asOk()[2].request.asBool());
+  ASSERT_FALSE(ret.asOk()[2].waitReply);
+}
+
+TEST(ClientTest, parse2) {
+  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  auto fileName = tempFileFactory.createTempFile("script.test", R"(
+# this is a comment1 (skip empty section)
+---
+1234
+# this is a comment2
+# this is a comment3
+---
+   { true: true}
+# this is a comment4 (invalid json)
+<<<
+<<<
+false
+)");
+  auto ret = loadInputScript(fileName);
+  ASSERT_FALSE(ret);
+
+  std::string error = format("%s:8: [error] mismatched token `true', expected `<String>', `}'\n"
+                             "   { true: true}\n"
+                             "     ^~~~\n",
+                             fileName.c_str());
+  ASSERT_EQ(error, ret.asErr());
+}
+
+TEST(ClientTest, parse3) {
+  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  auto fileName = tempFileFactory.createTempFile("script.test", R"(
+1234
+# this is a comment2
+# this is a comment3
+<<<
+false ,
+)");
+  auto ret = loadInputScript(fileName);
+  ASSERT_FALSE(ret);
+
+  std::string error = format("%s:6: [error] mismatched token `,', expected `<EOS>'\n"
+                             "false ,\n"
+                             "      ^\n",
+                             fileName.c_str());
+  ASSERT_EQ(error, ret.asErr());
+}
+
+TEST(ClientTest, run) {
+  TempFileFactory tempFileFactory("ydsh_lsp_client");
+  auto fileName = tempFileFactory.createTempFile("script.test", R"(
+1234
+# this is a comment2
+# this is a comment3
+<<<
+)");
+  auto req = loadInputScript(fileName);
+  ASSERT_TRUE(req);
+
+  IOConfig config;
+  config.in = IOConfig::PIPE;
+  config.out = IOConfig::PIPE;
+  auto proc = ProcBuilder::spawn(config, [] {
+    char buf[1024];
+    ssize_t size = read(STDIN_FILENO, buf, std::size(buf));
+    if (size > 0) {
+      buf[size] = '\0';
+      auto res = rpc::Response(1, JSON(buf)).toJSON().serialize();
+      std::string content = "Content-Length: ";
+      content += std::to_string(res.size());
+      content += "\r\n\r\n";
+      content += res;
+      fwrite(content.c_str(), sizeof(char), content.size(), stdout);
+      fflush(stdout);
+      return 0;
+    }
+    return 1;
+  });
+
+  ClientLogger logger;
+  Client client(logger, createFilePtr(fdopen, proc.out(), "r"),
+                createFilePtr(fdopen, proc.in(), "w"));
+  rpc::Message ret;
+  client.setReplyCallback([&ret](rpc::Message &&msg) -> bool {
+    ret = std::move(msg);
+    return true;
+  });
+  client.run(req.asOk());
+  auto s = proc.wait();
+  ASSERT_TRUE(is<rpc::Response>(ret));
+  ASSERT_EQ(0, s.toShellStatus());
+  auto &res = get<rpc::Response>(ret);
+  ASSERT_EQ(1, res.id.asLong());
+  ASSERT_TRUE(res);
+  ASSERT_EQ("Content-Length: 4\r\n\r\n1234", res.result.unwrap().asString());
 }
 
 struct LocationTest : public ::testing::Test {

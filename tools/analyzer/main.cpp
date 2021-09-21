@@ -17,6 +17,8 @@
 #include <misc/files.h>
 #include <misc/opt.hpp>
 
+#include "../tools/process/process.h"
+#include "client.h"
 #include "server.h"
 
 using namespace ydsh;
@@ -26,7 +28,8 @@ using namespace lsp;
   OP(LOG, "--log", opt::HAS_ARG,                                                                   \
      "specify log level (debug, info, warning, error, fatal). default is `info'")                  \
   OP(HELP, "--help", opt::NO_ARG, "show this help message")                                        \
-  OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")
+  OP(LSP, "--language-server", opt::NO_ARG, "enable language server features (default)")           \
+  OP(TEST, "--test", opt::HAS_ARG, "run in test mode")
 
 enum class OptionKind {
 #define GEN_ENUM(E, S, F, D) E,
@@ -37,6 +40,7 @@ enum class OptionKind {
 struct Options {
   LogLevel level{LogLevel::INFO};
   bool lsp{true};
+  const char *testInput{nullptr};
 };
 
 static LogLevel parseLogLevel(const char *value, LogLevel v) {
@@ -72,6 +76,10 @@ static Options parseOptions(int argc, char **argv) {
     case OptionKind::LSP:
       options.lsp = true;
       break;
+    case OptionKind::TEST:
+      options.testInput = result.arg();
+      options.level = LogLevel::ERROR;
+      break;
     }
   }
   if (result.error() != opt::END) {
@@ -96,12 +104,98 @@ static void showInfo(char **const argv, LSPLogger &logger) {
   logger(LogLevel::INFO, "working directory: %s", getCWD().get());
 }
 
+struct Driver {
+  virtual ~Driver() = default;
+
+  [[noreturn]] virtual void run(const std::function<void()> &func) = 0;
+};
+
+struct SimpleDriver : public Driver {
+  void run(const std::function<void()> &func) override {
+    func(); // run in same process
+    exit(0);
+  }
+};
+
+class TestClientServerDriver : public Driver {
+private:
+  LogLevel level;
+  std::vector<ClientRequest> requests;
+
+public:
+  TestClientServerDriver(LogLevel level, std::vector<ClientRequest> &&requests)
+      : level(level), requests(std::move(requests)) {}
+
+  void run(const std::function<void()> &func) override {
+    using namespace process;
+    IOConfig ioConfig;
+    ioConfig.in = IOConfig::PIPE;
+    ioConfig.out = IOConfig::PIPE;
+    auto proc = ProcBuilder::spawn(ioConfig, [&func] {
+      func();
+      return 0; // normally unreachable
+    });
+
+    ClientLogger logger;
+    logger.setSeverity(this->level);
+    logger(LogLevel::INFO, "spawn server");
+    Client client(logger, createFilePtr(fdopen, proc.out(), "r"),
+                  createFilePtr(fdopen, proc.in(), "w"));
+    client.setReplyCallback([](rpc::Message &&msg) -> bool {
+      if (is<rpc::Error>(msg)) {
+        auto &error = get<rpc::Error>(msg);
+        prettyprint(error.toJSON());
+      } else if (is<rpc::Request>(msg)) {
+        auto &req = get<rpc::Request>(msg);
+        prettyprint(req.toJSON());
+      } else if (is<rpc::Response>(msg)) {
+        auto &res = get<rpc::Response>(msg);
+        prettyprint(res.toJSON());
+      } else {
+        fatal("broken\n");
+      }
+      return true;
+    });
+    client.run(this->requests);
+    proc.waitWithTimeout(100);
+    proc.kill(SIGTERM);
+    auto ret = proc.wait();
+    exit(ret.value);
+  }
+
+private:
+  static void prettyprint(const JSON &json) {
+    std::string value = json.serialize(2);
+    fputs(value.c_str(), stdout);
+    fflush(stdout);
+  }
+};
+
+static Result<std::unique_ptr<Driver>, std::string> createDriver(const Options &options) {
+  if (options.testInput) {
+    auto inputs = loadInputScript(options.testInput);
+    if (!inputs) {
+      return Err(std::move(inputs).takeError());
+    }
+    return Ok(std::make_unique<TestClientServerDriver>(options.level, std::move(inputs).take()));
+  } else {
+    return Ok(std::make_unique<SimpleDriver>());
+  }
+}
+
 int main(int argc, char **argv) {
   auto options = parseOptions(argc, argv);
-  LSPLogger logger;
-  logger.setSeverity(options.level);
-  logger.setAppender(FilePtr(stderr));
-  showInfo(argv, logger);
-  LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
-  server.run();
+  auto driver = createDriver(options);
+  if (!driver) {
+    fprintf(stderr, "%s\n", driver.asErr().c_str());
+    return 1;
+  }
+  driver.asOk()->run([&] {
+    LSPLogger logger;
+    logger.setSeverity(options.level);
+    logger.setAppender(FilePtr(stderr));
+    showInfo(argv, logger);
+    LSPServer server(logger, FilePtr(stdin), FilePtr(stdout));
+    server.run();
+  });
 }

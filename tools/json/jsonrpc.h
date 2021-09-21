@@ -205,6 +205,8 @@ public:
 
   virtual ~Transport() = default;
 
+  LoggerBase &getLogger() const { return this->logger.get(); }
+
   void call(JSON &&id, const std::string &methodName, JSON &&param);
 
   void notify(const std::string &methodName, JSON &&param);
