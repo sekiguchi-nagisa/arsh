@@ -27,29 +27,6 @@ namespace ydsh::rpc {
 
 using namespace json;
 
-struct ResponseError {
-  int code;
-  std::string message;
-  JSON data;
-
-  ResponseError(int code, std::string &&message, JSON &&data)
-      : code(code), message(std::move(message)), data(std::move(data)) {}
-
-  ResponseError(int code, std::string &&message)
-      : ResponseError(code, std::move(message), JSON()) {}
-
-  ResponseError() : code(0) {}
-
-  std::string toString() const;
-
-  template <typename T>
-  void jsonify(T &t) {
-    t("code", this->code);
-    t("message", this->message);
-    t("data", this->data);
-  }
-};
-
 // Error Code definition
 enum ErrorCode : int {
   ParseError = -32700,

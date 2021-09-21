@@ -18,15 +18,6 @@
 
 namespace ydsh::rpc {
 
-std::string ResponseError::toString() const {
-  std::string ret = "[";
-  ret += std::to_string(this->code);
-  ret += ": ";
-  ret += this->message;
-  ret += "]";
-  return ret;
-}
-
 std::string Error::toString() const {
   std::string ret = "[";
   ret += std::to_string(this->code);
