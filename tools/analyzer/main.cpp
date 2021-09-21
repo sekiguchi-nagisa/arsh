@@ -157,10 +157,12 @@ public:
       return true;
     });
     client.run(this->requests);
-    proc.waitWithTimeout(100);
-    proc.kill(SIGTERM);
-    auto ret = proc.wait();
-    exit(ret.value);
+    auto ret = proc.waitWithTimeout(100);
+    if (!ret.isTerminated()) {
+      proc.kill(SIGTERM);
+      ret = proc.wait();
+    }
+    exit(ret.toShellStatus());
   }
 
 private:
