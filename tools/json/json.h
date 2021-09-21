@@ -191,8 +191,11 @@ const char *toString(JSONTokenKind kind);
 
 class JSONLexer : public LexerBase {
 public:
-  template <typename... Arg>
-  explicit JSONLexer(Arg &&...arg) : LexerBase("(string)", std::forward<Arg>(arg)...) {}
+  explicit JSONLexer(const char *src) : LexerBase("(string)", src) {}
+
+  explicit JSONLexer(ByteBuffer &&buf) : LexerBase("(string)", std::move(buf)) {}
+
+  JSONLexer(const char *sourceName, const char *src) : LexerBase(sourceName, src) {}
 
   JSONTokenKind nextToken(Token &token);
 };

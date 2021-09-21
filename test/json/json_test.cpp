@@ -266,12 +266,12 @@ TEST_F(ParserTest, serialize1) {
                      {"ZZ", {{";;;", 234}, {"", object()}}}}
                     .serialize(3);
 
-  auto actual = JSONParser(expect.c_str(), expect.size())().serialize(3);
+  auto actual = JSONParser(expect.c_str())().serialize(3);
 
   ASSERT_EQ(expect, actual);
 
   expect = JSON(34).serialize(3);
-  actual = JSONParser(expect.c_str(), expect.size())().serialize(3);
+  actual = JSONParser(expect.c_str())().serialize(3);
 
   ASSERT_EQ(expect, actual);
 }
