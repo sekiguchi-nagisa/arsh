@@ -77,7 +77,9 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
       this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str());
       return Err(std::unique_ptr<TypeLookupError>());
     }
-    return Ok(&this->typePool.get(handle->getTypeID()));
+    auto &resolved = this->typePool.get(handle->getTypeID());
+    qualifiedNode.setType(resolved);
+    return Ok(&qualifiedNode.getType());
   }
   case TypeNode::Reified: {
     auto &typeNode = cast<ReifiedTypeNode>(node);
@@ -323,6 +325,7 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
   if (exprNode.is(NodeKind::Access) && !node.isFuncCall()) {
     auto &accessNode = cast<AccessNode>(exprNode);
     if (!this->checkAccessNode(accessNode)) { // method call
+      accessNode.setType(this->typePool.get(TYPE::Any));
       auto &recvType = accessNode.getRecvNode().getType();
       if (auto *handle = this->typePool.lookupMethod(recvType, accessNode.getFieldName()); handle) {
         node.setKind(ApplyNode::METHOD_CALL);

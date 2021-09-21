@@ -605,7 +605,7 @@ static void resolveIfIsStatement(Node &condNode, BlockNode &blockNode) {
       std::make_unique<VarNode>(Token{isNode.getPos(), 0}, std::string(varNode.getVarName()));
   auto castNode = std::make_unique<TypeOpNode>(std::move(exprNode), *isNode.getTargetTypeNode(),
                                                TypeOpNode::NO_CAST);
-  NameInfo nameInfo({isNode.getPos(), 0}, std::string(varNode.getVarName()));
+  NameInfo nameInfo({isNode.getPos(), 0}, varNode.getVarName());
   auto declNode = std::make_unique<VarDeclNode>(isNode.getPos(), std::move(nameInfo),
                                                 std::move(castNode), VarDeclNode::LET);
   blockNode.insertNodeToFirst(std::move(declNode));

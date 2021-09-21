@@ -31,10 +31,12 @@ private:
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreigns;
   std::unordered_set<unsigned short> globallyImportedModIds;
-  const SymbolIndexes &indexes;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
   private:
+    /**
+     * mangled name => DeclSymbol reference
+     */
     StrRefMap<SymbolRef> map;
 
   public:
@@ -64,11 +66,58 @@ private:
 
   IntrusivePtr<ScopeEntry> scope;
 
+  struct Hash {
+    std::size_t operator()(const std::pair<unsigned int, StringRef> &key) const {
+      auto hash = FNVHash::compute(key.second.begin(), key.second.end());
+      union {
+        char b[4];
+        unsigned int i;
+      } wrap;
+      wrap.i = key.first;
+      for (auto b : wrap.b) {
+        FNVHash::update(hash, b);
+      }
+      return hash;
+    }
+  };
+
+  class LazyMemberMap {
+  public:
+    using MapType =
+        std::unordered_map<std::pair<unsigned int, StringRef>, ObserverPtr<const DeclSymbol>, Hash>;
+
+    const SymbolIndexes &indexes;
+
+  private:
+    /**
+     * (id, mangled name) => DeclSymbol reference
+     */
+    MapType map;
+
+    std::unordered_set<unsigned short> cachedModIds;
+
+    void buildCache(unsigned short modId);
+
+  public:
+    explicit LazyMemberMap(const SymbolIndexes &indexes) : indexes(indexes) {}
+
+    /**
+     *
+     * @param recvType
+     * @param memberName
+     * must be mangled name
+     * @return
+     */
+    ObserverPtr<const DeclSymbol> find(const DSType &recvType, StringRef memberName);
+  };
+
+  LazyMemberMap memberMap;
+
 public:
   IndexBuilder(unsigned short modId, int version, std::shared_ptr<TypePool> pool,
                const SymbolIndexes &indexes)
-      : modId(modId), version(version), pool(std::move(pool)), indexes(indexes),
-        scope(IntrusivePtr<ScopeEntry>::create(nullptr)) {}
+      : modId(modId), version(version), pool(std::move(pool)),
+        scope(IntrusivePtr<ScopeEntry>::create(nullptr)), memberMap(indexes) {}
 
   SymbolIndex build() && {
     return {this->modId, this->version, std::move(this->decls), std::move(this->symbols),
@@ -101,6 +150,9 @@ public:
   bool addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
   bool importForeignDecls(unsigned short foreignModId);
+
+  bool addMember(const DSType &recv, const NameInfo &nameInfo,
+                 DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
 private:
   DeclSymbol *addDeclImpl(DeclSymbol::Kind k, const NameInfo &nameInfo, const char *info);

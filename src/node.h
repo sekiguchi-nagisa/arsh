@@ -553,6 +553,8 @@ private:
 public:
   NameInfo(Token token, std::string &&name) : token(token), name(std::move(name)) {}
 
+  NameInfo(Token token, const std::string &name) : NameInfo(token, std::string(name)) {}
+
   Token getToken() const { return this->token; }
 
   const std::string &getName() const { return this->name; }
@@ -809,7 +811,7 @@ public:
 
   const std::string &getMethodName() const {
     assert(this->isMethodCall());
-    return cast<AccessNode>(*this->exprNode).getNameNode().getVarName();
+    return cast<AccessNode>(*this->exprNode).getFieldName();
   }
 
   void setMethodName(std::string &&name) {
