@@ -649,15 +649,15 @@ typedef DDD = typeof(CCC)
 )");
 
   unsigned short modId;
-  auto content = format(R"(
-source %s as mod
+  auto content = format(R"(source %s \
+as mod
 $mod.AAA + $mod.BBB()
 # CCC
 new [mod.DDD]()
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 6}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 7}));
   ASSERT_EQ(1, modId);
 
   // definition
@@ -665,9 +665,37 @@ new [mod.DDD]()
   // clang-format off
   Request req = {
     .modId = modId,
-    .position = { .line = 2, .character = 8, }
+    .position = { .line = 2, .character = 13, }
   };
   std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 6}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 4, .character = 7, }
+  };
+  result = {
+    DeclResult{
+      .modId = modId,
+      .range = {.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 6}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 8, }
+  };
+  result = {
     DeclResult{
       .modId = 2,
       .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
@@ -717,25 +745,51 @@ typedef DDD = typeof(CCC)
 )");
 
   unsigned short modId;
-  auto content = format(R"(
-source %s as mod
+  auto content = format(R"(source %s \
+as mod
 $mod.AAA + $mod.BBB()
 # CCC
 new [mod.DDD]()
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(
-      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 6}));
+      this->doAnalyze(content.c_str(), modId, {.declSize = 1, .symbolSize = 7}));
   ASSERT_EQ(1, modId);
 
   // references
 
   // clang-format off
   Request req = {
+    .modId = modId,
+    .position = { .line = 1, .character = 6, }
+  };
+  std::vector<RefsResult> result2 = {
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 1, .character = 3}, .end = {.line = 1, .character = 6}}
+    },
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
+    },
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 2, .character = 11}, .end = {.line = 2, .character = 15}}
+    },
+    RefsResult{
+      .modId = modId,
+      .range = {.start = {.line = 4, .character = 5}, .end = {.line = 4, .character = 8}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
     .modId = 2,
     .position = { .line = 2, .character = 5, }
   };
-  std::vector<RefsResult> result2 = {
+  result2 = {
     RefsResult{
       .modId = 2,
       .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}

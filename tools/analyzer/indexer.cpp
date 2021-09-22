@@ -22,6 +22,21 @@ namespace ydsh::lsp {
 // ##     IndexBuidler     ##
 // ##########################
 
+bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
+  bool r1 = this->map.emplace(decl.getMangledName().toString(), decl.toRef()).second;
+  if (decl.getKind() == DeclSymbol::Kind::MOD) {
+    // register udc
+    std::string name = DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName().toString());
+    auto r2 = this->map.emplace(std::move(name), decl.toRef());
+
+    // register type alias
+    name = DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName().toString());
+    auto r3 = this->map.emplace(std::move(name), decl.toRef());
+    r1 = r1 || r2.second || r3.second;
+  }
+  return r1;
+}
+
 void IndexBuilder::LazyMemberMap::buildCache(unsigned short targetModId) {
   if (auto iter = this->cachedModIds.find(targetModId); iter != this->cachedModIds.end()) {
     return;
@@ -36,13 +51,25 @@ void IndexBuilder::LazyMemberMap::buildCache(unsigned short targetModId) {
     if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL)) {
       continue;
     }
-    auto key = std::make_pair<unsigned int, StringRef>(targetModId, decl.getMangledName());
+    auto key =
+        std::make_pair<unsigned int, std::string>(targetModId, decl.getMangledName().toString());
     this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
+    if (decl.getKind() == DeclSymbol::Kind::MOD) {
+      // udc
+      key = {targetModId,
+             DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName().toString())};
+      this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
+
+      // type alias
+      key = {targetModId,
+             DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName().toString())};
+      this->map.emplace(std::move(key), ObserverPtr<const DeclSymbol>(&decl));
+    }
   }
 }
 
 ObserverPtr<const DeclSymbol> IndexBuilder::LazyMemberMap::find(const DSType &recvType,
-                                                                StringRef memberName) {
+                                                                const std::string &memberName) {
   if (recvType.isModType()) {
     auto &modType = cast<ModType>(recvType);
     this->buildCache(modType.getModID());
@@ -58,21 +85,17 @@ static std::string mangleSymbolName(DeclSymbol::Kind k, const NameInfo &nameInfo
   if (!static_cast<bool>(nameInfo) || nameInfo.getToken().size == 0) {
     return "";
   }
-
-  std::string name = nameInfo.getName();
   switch (k) {
-  case DeclSymbol::Kind::CMD:
-    return toCmdFullName(name);
-  case DeclSymbol::Kind::TYPE_ALIAS:
-    return toTypeAliasFullName(name);
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::FUNC:
-    if (name[0] == '%') {
+    if (nameInfo.getName()[0] == '%') {
       return "";
     }
     break;
+  default:
+    break;
   }
-  return name;
+  return DeclSymbol::mangle(k, nameInfo.getName());
 }
 
 bool IndexBuilder::addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover) {
@@ -500,10 +523,8 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   if (!this->isTopLevel()) {
     return;
   }
-  if (node.getNameInfo()) { // FIXME: named import
-    this->builder().addDecl(*node.getNameInfo(), node.getModType());
-    //  this->builder().addDecl(DeclSymbol::Kind::TYPE_ALIAS, *node.getNameInfo());
-    //  this->builder().addDecl(DeclSymbol::Kind::CMD, *node.getNameInfo());
+  if (node.getNameInfo()) {
+    this->builder().addDecl(*node.getNameInfo(), node.getModType(), DeclSymbol::Kind::MOD);
   } else {
     this->builder().importForeignDecls(node.getModType().getModID());
   }

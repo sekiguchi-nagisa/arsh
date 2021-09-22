@@ -113,6 +113,7 @@ public:
     FUNC,
     CMD,
     TYPE_ALIAS,
+    MOD, // for named import
   };
 
   enum class Attr : unsigned char {
@@ -154,6 +155,8 @@ public:
 
     bool operator()(unsigned int x, const DeclSymbol &y) const { return x < y.getToken().pos; }
   };
+
+  static std::string mangle(Kind k, const std::string &name);
 };
 
 class Symbol {

@@ -37,7 +37,7 @@ private:
     /**
      * mangled name => DeclSymbol reference
      */
-    StrRefMap<SymbolRef> map;
+    std::unordered_map<std::string, SymbolRef> map;
 
   public:
     const IntrusivePtr<ScopeEntry> parent;
@@ -46,12 +46,9 @@ private:
 
     bool isGlobal() const { return !this->parent; }
 
-    bool addDecl(const DeclSymbol &decl) {
-      auto pair = this->map.emplace(decl.getMangledName(), decl.toRef());
-      return pair.second;
-    }
+    bool addDecl(const DeclSymbol &decl);
 
-    const SymbolRef *find(StringRef name) const {
+    const SymbolRef *find(const std::string &name) const {
       auto cur = this;
       do {
         auto iter = cur->map.find(name);
@@ -67,8 +64,8 @@ private:
   IntrusivePtr<ScopeEntry> scope;
 
   struct Hash {
-    std::size_t operator()(const std::pair<unsigned int, StringRef> &key) const {
-      auto hash = FNVHash::compute(key.second.begin(), key.second.end());
+    std::size_t operator()(const std::pair<unsigned int, std::string> &key) const {
+      auto hash = FNVHash::compute(key.second.c_str(), key.second.c_str() + key.second.size());
       union {
         char b[4];
         unsigned int i;
@@ -83,8 +80,8 @@ private:
 
   class LazyMemberMap {
   public:
-    using MapType =
-        std::unordered_map<std::pair<unsigned int, StringRef>, ObserverPtr<const DeclSymbol>, Hash>;
+    using MapType = std::unordered_map<std::pair<unsigned int, std::string>,
+                                       ObserverPtr<const DeclSymbol>, Hash>;
 
     const SymbolIndexes &indexes;
 
@@ -108,7 +105,7 @@ private:
      * must be mangled name
      * @return
      */
-    ObserverPtr<const DeclSymbol> find(const DSType &recvType, StringRef memberName);
+    ObserverPtr<const DeclSymbol> find(const DSType &recvType, const std::string &memberName);
   };
 
   LazyMemberMap memberMap;

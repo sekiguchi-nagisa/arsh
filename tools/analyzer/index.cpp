@@ -17,12 +17,13 @@
 #include <algorithm>
 
 #include "index.h"
+#include <constant.h>
 
 namespace ydsh::lsp {
 
-// ##################
-// ##     Refs     ##
-// ##################
+// ######################
+// ##     DeclBase     ##
+// ######################
 
 void DeclBase::addRef(SymbolRef ref) {
   auto iter = std::lower_bound(this->refs.begin(), this->refs.end(), ref);
@@ -35,6 +36,24 @@ void DeclBase::addRef(SymbolRef ref) {
   } else {
     this->refs.push_back(ref);
   }
+}
+
+// ########################
+// ##     DeclSymbol     ##
+// ########################
+
+std::string DeclSymbol::mangle(Kind k, const std::string &name) {
+  switch (k) {
+  case DeclSymbol::Kind::CMD:
+    return toCmdFullName(name);
+  case DeclSymbol::Kind::TYPE_ALIAS:
+    return toTypeAliasFullName(name);
+  case DeclSymbol::Kind::VAR:
+  case DeclSymbol::Kind::FUNC:
+  case DeclSymbol::Kind::MOD:
+    break;
+  }
+  return name;
 }
 
 // #########################
