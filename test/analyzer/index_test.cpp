@@ -445,7 +445,7 @@ new [typeof(new StrArray())]()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
-TEST_F(IndexTest, mod1) {
+TEST_F(IndexTest, globalImportDef) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -527,7 +527,7 @@ new [DDD]()
   ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
 }
 
-TEST_F(IndexTest, mod2) {
+TEST_F(IndexTest, globalImportRef) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -637,7 +637,7 @@ new [DDD]()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
-TEST_F(IndexTest, mod3) {
+TEST_F(IndexTest, namedImportDef) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -733,7 +733,7 @@ new [mod.DDD]()
   ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
 }
 
-TEST_F(IndexTest, mod4) {
+TEST_F(IndexTest, namedImportRef) {
   ydsh::TempFileFactory tempFileFactory("ydsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
                                                  R"(
@@ -869,6 +869,119 @@ new [mod.DDD]()
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
 }
 
+TEST_F(IndexTest, inlinedImportRef) {
+  ydsh::TempFileFactory tempFileFactory("ydsh_index");
+  auto fileName = tempFileFactory.createTempFile("mod.ds",
+                                                 R"(
+var _AAA = 34
+var AAA = $_AAA
+function BBB() : Int { return $AAA; }
+CCC() { $BBB(); }
+typedef DDD = typeof(CCC)
+)");
+
+  fileName =
+      tempFileFactory.createTempFile("inlined.ds", format("source %s inlined", fileName.c_str()));
+
+  unsigned short modId;
+  auto content = format(R"(
+source %s
+$AAA + $BBB()
+CCC
+new [DDD]()
+)",
+                        fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(
+      this->doAnalyze(content.c_str(), modId, {.declSize = 0, .symbolSize = 4}));
+  ASSERT_EQ(1, modId);
+
+  // references
+
+  // clang-format off
+  Request req = {
+    .modId = 3,
+    .position = { .line = 2, .character = 5, }
+  };
+  std::vector<RefsResult> result2 = {
+    RefsResult{
+      .modId = 3,
+      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
+    },
+    RefsResult{
+      .modId = 3,
+      .range = {.start = {.line = 3, .character = 30}, .end = {.line = 3, .character = 34}}
+    },
+    RefsResult{
+      .modId = 1,
+      .range = {.start = {.line = 2, .character = 0}, .end = {.line = 2, .character = 4}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = 3,
+    .position = { .line = 3, .character = 10, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = 3,
+      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
+    },
+    RefsResult{
+      .modId = 3,
+      .range = {.start = {.line = 4, .character = 8}, .end = {.line = 4, .character = 12}}
+    },
+    RefsResult{
+      .modId = 1,
+      .range = {.start = {.line = 2, .character = 7}, .end = {.line = 2, .character = 11}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = 3,
+    .position = { .line = 4, .character = 3, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = 3,
+      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
+    },
+    RefsResult{
+      .modId = 3,
+      .range = {.start = {.line = 5, .character = 21}, .end = {.line = 5, .character = 24}}
+    },
+    RefsResult{
+      .modId = 1,
+      .range = {.start = {.line = 3, .character = 0}, .end = {.line = 3, .character = 3}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+
+  // clang-format off
+  req = {
+    .modId = 3,
+    .position = { .line = 5, .character = 9, }
+  };
+  result2 = {
+    RefsResult{
+      .modId = 3,
+      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
+    },
+    RefsResult{
+      .modId = 1,
+      .range = {.start = {.line = 4, .character = 5}, .end = {.line = 4, .character = 8}}
+    },
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
 TEST_F(IndexTest, invalidVar) {
   unsigned short modId;
   const char *content = R"(
@@ -910,6 +1023,91 @@ var ccc = $ccc
   std::vector<RefsResult> result2 = {};
   // clang-format on
   ASSERT_NO_FATAL_FAILURE(this->findRefs(req, result2));
+}
+
+TEST_F(IndexTest, inlinedImportDef) {
+  ydsh::TempFileFactory tempFileFactory("ydsh_index");
+  auto fileName = tempFileFactory.createTempFile("mod.ds",
+                                                 R"(
+var _AAA = 34
+var AAA = $_AAA
+function BBB() : Int { return $AAA; }
+CCC() { $BBB(); }
+typedef DDD = typeof(CCC)
+)");
+
+  fileName =
+      tempFileFactory.createTempFile("inlined.ds", format("source %s inlined", fileName.c_str()));
+
+  unsigned short modId;
+  auto content = format(R"(
+source %s
+$AAA + $BBB()
+CCC
+new [DDD]()
+)",
+                        fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(
+      this->doAnalyze(content.c_str(), modId, {.declSize = 0, .symbolSize = 4}));
+  ASSERT_EQ(1, modId);
+
+  // definition
+
+  // clang-format off
+  Request req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 1, }
+  };
+  std::vector<DeclResult> result = {
+    DeclResult{
+      .modId = 3,
+      .range = {.start = {.line = 2, .character = 4}, .end = {.line = 2, .character = 7}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 2, .character = 9, }
+  };
+  result = {
+    DeclResult{
+      .modId = 3,
+      .range = {.start = {.line = 3, .character = 9}, .end = {.line = 3, .character = 12}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 3, .character = 1, }
+  };
+  result = {
+    DeclResult{
+      .modId = 3,
+      .range = {.start = {.line = 4, .character = 0}, .end = {.line = 4, .character = 3}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
+
+  // clang-format off
+  req = {
+    .modId = modId,
+    .position = { .line = 4, .character = 7, }
+  };
+  result = {
+    DeclResult{
+      .modId = 3,
+      .range = {.start = {.line = 5, .character = 8}, .end = {.line = 5, .character = 11}}
+    }
+  };
+  // clang-format on
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(req, result));
 }
 
 TEST_F(IndexTest, invalidFunc) {

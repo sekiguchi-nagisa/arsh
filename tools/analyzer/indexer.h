@@ -31,6 +31,7 @@ private:
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreigns;
   std::unordered_set<unsigned short> globallyImportedModIds;
+  std::unordered_set<unsigned short> inlinedModIds;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
   private:
@@ -117,8 +118,16 @@ public:
         scope(IntrusivePtr<ScopeEntry>::create(nullptr)), memberMap(indexes) {}
 
   SymbolIndex build() && {
-    return {this->modId, this->version, std::move(this->decls), std::move(this->symbols),
-            std::move(foreigns)};
+    FlexBuffer<unsigned short> inlinedModIdList;
+    for (auto &e : this->inlinedModIds) {
+      inlinedModIdList.push_back(e);
+    }
+    return {this->modId,
+            this->version,
+            std::move(this->decls),
+            std::move(this->symbols),
+            std::move(foreigns),
+            std::move(inlinedModIdList)};
   }
 
   const TypePool &getPool() const { return *this->pool; }
@@ -146,7 +155,7 @@ public:
 
   bool addSymbol(const NameInfo &info, DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
-  bool importForeignDecls(unsigned short foreignModId);
+  bool importForeignDecls(unsigned short foreignModId, bool inlined);
 
   bool addMember(const DSType &recv, const NameInfo &nameInfo,
                  DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);

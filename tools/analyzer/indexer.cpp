@@ -151,7 +151,7 @@ bool IndexBuilder::addSymbol(const NameInfo &info, DeclSymbol::Kind kind) {
   return true;
 }
 
-bool IndexBuilder::importForeignDecls(unsigned short foreignModId) {
+bool IndexBuilder::importForeignDecls(unsigned short foreignModId, bool inlined) {
   if (!this->scope->isGlobal()) {
     return false;
   }
@@ -164,11 +164,18 @@ bool IndexBuilder::importForeignDecls(unsigned short foreignModId) {
   if (!index) {
     return false;
   }
+  if (inlined) {
+    this->inlinedModIds.emplace(foreignModId);
+  }
   this->globallyImportedModIds.emplace(foreignModId);
   for (auto &decl : index->getDecls()) {
     if (hasFlag(decl.getAttr(), DeclSymbol::Attr::PUBLIC | DeclSymbol::Attr::GLOBAL)) {
       this->scope->addDecl(decl);
     }
+  }
+  // resolve inlined imported symbols
+  for (auto &e : index->getInlinedModIds()) {
+    this->importForeignDecls(e, false);
   }
   return true;
 }
@@ -526,7 +533,7 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   if (node.getNameInfo()) {
     this->builder().addDecl(*node.getNameInfo(), node.getModType(), DeclSymbol::Kind::MOD);
   } else {
-    this->builder().importForeignDecls(node.getModType().getModID());
+    this->builder().importForeignDecls(node.getModType().getModID(), node.isInlined());
   }
 }
 

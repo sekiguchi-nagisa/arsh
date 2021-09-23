@@ -221,12 +221,14 @@ private:
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreignDecls;
+  FlexBuffer<unsigned short> inlinedModIds;
 
 public:
   SymbolIndex(unsigned short modId, int version, std::vector<DeclSymbol> &&decls,
-              std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls)
+              std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls,
+              FlexBuffer<unsigned short> inlinedModIds)
       : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
-        foreignDecls(std::move(foreignDecls)) {}
+        foreignDecls(std::move(foreignDecls)), inlinedModIds(std::move(inlinedModIds)) {}
 
   unsigned short getModId() const { return this->modId; }
 
@@ -243,6 +245,8 @@ public:
   const std::vector<Symbol> &getSymbols() const { return this->symbols; }
 
   const std::vector<ForeignDecl> &getForeignDecls() const { return this->foreignDecls; }
+
+  const FlexBuffer<unsigned short> &getInlinedModIds() const { return this->inlinedModIds; }
 
   struct Compare {
     bool operator()(const SymbolIndex &x, unsigned short id) const { return x.getModId() < id; }
