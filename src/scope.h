@@ -194,8 +194,9 @@ public:
    */
   const FieldHandle *lookup(const std::string &name) const;
 
-  const FieldHandle *lookupField(const DSType &recv, const std::string &fieldName) const {
-    auto *handle = recv.lookupField(fieldName);
+  const FieldHandle *lookupField(const TypePool &pool, const DSType &recv,
+                                 const std::string &fieldName) const {
+    auto *handle = recv.lookupField(pool, fieldName);
     if (handle) {
       if (handle->getModID() == 0 || this->modId == handle->getModID() || fieldName[0] != '_') {
         return handle;

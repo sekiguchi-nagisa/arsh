@@ -182,9 +182,10 @@ public:
    */
   const DSType *getSuperType() const { return this->superType; }
 
-  const FieldHandle *lookupField(const std::string &fieldName) const;
+  const FieldHandle *lookupField(const TypePool &pool, const std::string &fieldName) const;
 
-  void walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const;
+  void walkField(const TypePool &pool,
+                 std::function<bool(StringRef, const FieldHandle &)> &walker) const;
 
   std::vector<const DSType *> getTypeParams(const TypePool &pool) const;
 
@@ -587,7 +588,7 @@ public:
     return this->handleMap;
   }
 
-  const FieldHandle *lookup(const std::string &fieldName) const;
+  const FieldHandle *lookup(const TypePool &pool, const std::string &fieldName) const;
 
   /**
    * for runtime symbol lookup
@@ -600,6 +601,15 @@ public:
                                                  const std::string &name) const;
 
   static bool classof(const DSType *type) { return type->isModType(); }
+
+private:
+  const FieldHandle *find(const std::string &name) const {
+    auto iter = this->handleMap.find(name);
+    if (iter != this->handleMap.end()) {
+      return &iter->second;
+    }
+    return nullptr;
+  }
 };
 
 template <typename T, typename... Arg, enable_when<std::is_base_of_v<DSType, T>> = nullptr>

@@ -758,10 +758,7 @@ TEST_F(ScopeTest, import2) {
   // ModType
   auto &modType2 = this->toModType(std::move(mod2));
   ASSERT_EQ(3, modType2.getModID());
-  handle = modType2.lookup("AAA");
-  ASSERT_FALSE(handle);
-
-  handle = modType2.lookupVisibleSymbolAtModule(this->pool, "AAA");
+  handle = modType2.lookup(this->pool, "AAA");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Handle{
           .commitID = 0,
@@ -771,11 +768,9 @@ TEST_F(ScopeTest, import2) {
           .modID = 2,
       },
       handle));
+  ASSERT_EQ(handle, modType2.lookupVisibleSymbolAtModule(this->pool, "AAA"));
 
-  handle = modType2.lookup(toTypeAliasFullName("integer"));
-  ASSERT_FALSE(handle);
-
-  handle = modType2.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("integer"));
+  handle = modType2.lookup(this->pool, toTypeAliasFullName("integer"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Handle{
           .commitID = 3,
@@ -785,13 +780,15 @@ TEST_F(ScopeTest, import2) {
           .modID = 2,
       },
       handle));
+  ASSERT_EQ(handle,
+            modType2.lookupVisibleSymbolAtModule(this->pool, toTypeAliasFullName("integer")));
 
-  handle = modType2.lookup(toTypeAliasFullName("_string"));
+  handle = modType2.lookup(this->pool, toTypeAliasFullName("_string"));
   ASSERT_FALSE(handle);
-  handle = modType2.lookup("_AAA");
+  handle = modType2.lookup(this->pool, "_AAA");
   ASSERT_FALSE(handle);
 
-  handle = modType2.lookup("BBB");
+  handle = modType2.lookup(this->pool, "BBB");
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Handle{
           .commitID = 0,
@@ -802,7 +799,7 @@ TEST_F(ScopeTest, import2) {
       },
       handle));
 
-  handle = modType2.lookup(toTypeAliasFullName("float"));
+  handle = modType2.lookup(this->pool, toTypeAliasFullName("float"));
   ASSERT_NO_FATAL_FAILURE(this->expect(
       Handle{
           .commitID = 1,

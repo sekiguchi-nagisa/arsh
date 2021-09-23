@@ -71,7 +71,7 @@ TypeOrError TypeChecker::toType(TypeNode &node) {
     auto &recvType =
         this->checkType(this->typePool.get(TYPE::Module), qualifiedNode.getRecvTypeNode());
     std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
-    auto *handle = this->curScope->lookupField(recvType, typeName);
+    auto *handle = this->curScope->lookupField(this->typePool, recvType, typeName);
     if (!handle) {
       auto &nameNode = qualifiedNode.getNameTypeNode();
       this->reportError<UndefinedField>(nameNode, nameNode.getTokenText().c_str());
@@ -351,7 +351,7 @@ CallableTypes TypeChecker::resolveCallee(ApplyNode &node) {
 
 bool TypeChecker::checkAccessNode(AccessNode &node) {
   auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
-  auto *handle = this->curScope->lookupField(recvType, node.getFieldName());
+  auto *handle = this->curScope->lookupField(this->typePool, recvType, node.getFieldName());
   if (handle == nullptr) {
     return false;
   }

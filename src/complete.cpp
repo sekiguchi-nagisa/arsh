@@ -436,7 +436,7 @@ static void completeMember(const TypePool &pool, const DSType &recvType, const s
     }
     return true;
   };
-  recvType.walkField(fieldWalker);
+  recvType.walkField(pool, fieldWalker);
 
   // complete method
   for (auto &e : pool.getMethodMap()) {
@@ -469,7 +469,7 @@ static void completeType(const TypePool &pool, const DSType *recvType, const Nam
           }
           return true;
         };
-    recvType->walkField(fieldWalker);
+    recvType->walkField(pool, fieldWalker);
     return;
   }
 
@@ -581,7 +581,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
     }
     return true;
   };
-  type.walkField(fieldWalker);
+  type.walkField(pool, fieldWalker);
   return true;
 }
 

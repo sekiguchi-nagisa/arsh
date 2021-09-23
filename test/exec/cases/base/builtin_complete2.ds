@@ -116,6 +116,8 @@ $assertArray($(env | grep ^P | while(read -r) {
 $assertArray(["_0", "_1"], $(complete "(1,2)."))
 $assertArray(["sort", "sortWith"], $(complete '$@.so'))
 $assertArray(["compAdd", 'compDelegate'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; \$CP."))
+$assertArray(["hello", "hey", "hey2", "hey3"],
+             $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; \$mod."))
 $assertArray(['abs', "toFloat"], $(complete '
     var a = 334.4 as Any
     if $a is Float {
@@ -150,13 +152,16 @@ $assertArray(['Func','Func0'], $(complete '
         assert 45 is Func'))
 $assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; 23 is CP."))
 $assertArray(["Completer"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; 23 is CP . C"))
+$assertArray(["BoolArray", "FloatArray", "StrArray"],
+             $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; 23 is mod."))
 
 # subcommand
 $assertArray(["compdef", 'startwith'], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; CP "))
 $assertArray(["compdef"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; CP c"))
 $assertArray(["startwith"], $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/completion as CP; CP > /dev/null s"))
 assert $(complete "source $SCRIPT_DIR/../../../../share/ydsh/module/path as P; P ").empty()
-
+$assertArray(["say0", "say1", "say2"],
+             $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; mod "))
 
 # no completion candidate
 assert($(complete '34').empty())

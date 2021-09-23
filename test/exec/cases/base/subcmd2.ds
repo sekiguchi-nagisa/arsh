@@ -1,0 +1,10 @@
+
+source ../../_module4test/inlined2.ds as mod
+
+assert "$(mod say0 1 2)" == "_say!! 1 2"
+assert "$(mod say1 1 2)" == "say1 1 2"
+assert "$(mod say2 1 2)" == "say2 1 2"
+
+assert "$(eval mod say0 1 2)" == "_say!! 1 2"
+assert "$(eval mod say1 1 2)" == "say1 1 2"
+assert "$(eval mod say2 1 2)" == "say2 1 2"

@@ -688,7 +688,7 @@ bool VM::prepareSubCommand(DSState &state, const ModType &modType, DSValue &&arg
   }
 
   std::string key = toCmdFullName(subcmd);
-  auto *handle = modType.lookup(key);
+  auto *handle = modType.lookup(state.typePool, key);
   if (!handle) {
     ERROR(array, "undefined subcommand: %s", toPrintable(subcmd).c_str());
     pushExitStatus(state, 2);

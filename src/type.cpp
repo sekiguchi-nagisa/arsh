@@ -37,18 +37,19 @@ void DSType::destroy() {
   }
 }
 
-const FieldHandle *DSType::lookupField(const std::string &fieldName) const {
+const FieldHandle *DSType::lookupField(const TypePool &pool, const std::string &fieldName) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     return cast<TupleType>(this)->lookupField(fieldName);
   case TypeKind::Mod:
-    return cast<ModType>(this)->lookup(fieldName);
+    return cast<ModType>(this)->lookup(pool, fieldName);
   default:
     return nullptr;
   }
 }
 
-void DSType::walkField(std::function<bool(StringRef, const FieldHandle &)> &walker) const {
+void DSType::walkField(const TypePool &pool,
+                       std::function<bool(StringRef, const FieldHandle &)> &walker) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     for (auto &e : cast<TupleType>(this)->getFieldHandleMap()) {
@@ -57,13 +58,27 @@ void DSType::walkField(std::function<bool(StringRef, const FieldHandle &)> &walk
       }
     }
     break;
-  case TypeKind::Mod:
-    for (auto &e : cast<ModType>(this)->getHandleMap()) {
+  case TypeKind::Mod: {
+    auto &modType = cast<ModType>(*this);
+    for (auto &e : modType.getHandleMap()) {
       if (!walker(e.first, e.second)) {
         return;
       }
     }
+    unsigned int size = modType.getChildSize();
+    for (unsigned int i = 0; i < size; i++) {
+      auto child = modType.getChildAt(i);
+      if (child.isInlined()) {
+        auto &childType = cast<ModType>(pool.get(child.typeId()));
+        for (auto &e : childType.getHandleMap()) {
+          if (!walker(e.first, e.second)) {
+            return;
+          }
+        }
+      }
+    }
     break;
+  }
   default:
     break;
   }
@@ -151,10 +166,25 @@ ModType::~ModType() {
   }
 }
 
-const FieldHandle *ModType::lookup(const std::string &fieldName) const {
-  auto iter = this->handleMap.find(fieldName);
-  if (iter != this->handleMap.end()) {
-    return &iter->second;
+const FieldHandle *ModType::lookup(const TypePool &pool, const std::string &fieldName) const {
+  if (auto *handle = this->find(fieldName); handle) {
+    return handle;
+  }
+
+  // search public symbol from inlined imported module
+  if (fieldName.empty() || fieldName[0] == '_') {
+    return nullptr;
+  }
+  unsigned int size = this->getChildSize();
+  for (unsigned int i = 0; i < size; i++) {
+    auto child = this->getChildAt(i);
+    if (child.isInlined()) {
+      auto &type = pool.get(child.typeId());
+      assert(type.isModType());
+      if (auto *handle = cast<ModType>(type).find(fieldName)) {
+        return handle;
+      }
+    }
   }
   return nullptr;
 }
@@ -162,7 +192,7 @@ const FieldHandle *ModType::lookup(const std::string &fieldName) const {
 const FieldHandle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
                                                         const std::string &name) const {
   // search own symbols
-  auto *handle = this->lookup(name);
+  auto *handle = this->find(name);
   if (handle) {
     return handle;
   }
@@ -177,7 +207,7 @@ const FieldHandle *ModType::lookupVisibleSymbolAtModule(const TypePool &pool,
     if (e.isGlobal()) {
       auto &type = pool.get(e.typeId());
       assert(type.isModType());
-      handle = cast<ModType>(type).lookup(name);
+      handle = cast<ModType>(type).find(name);
       if (handle) {
         return handle;
       }

@@ -1,0 +1,17 @@
+
+source ../../_module4test/inlined2.ds as mod
+
+assert $mod.hello == 'hello module!!'
+
+assert $mod.hey is () -> Void
+assert "$($mod.hey())" == "hey!!"
+
+assert $mod.hey2 is () -> String
+assert $mod.hey2() == 'hey2'
+
+assert $mod.hey3 is () -> String
+assert $mod.hey3() == 'hey3'
+
+assert [$true] is mod.BoolArray
+assert $@ is mod.StrArray
+assert [3.42] is mod.FloatArray
