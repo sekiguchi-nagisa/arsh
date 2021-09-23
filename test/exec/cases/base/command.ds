@@ -260,7 +260,7 @@ $HOME = $home
 
 ## expand to PWD
 import-env PWD : "$(pwd)"
-assert($PWD == "$(echo ~+)") : "$PWD, $(pwd), $(echo ~+), $(ps_intrp \\w)"
+assert($PWD == "$(echo ~+)") : "$PWD, $(pwd), $(echo ~+)"
 assert($PWD + "/" == "$(echo ~'+/')")
 assert($PWD + "/huge" == "$(echo ~+/huge)")
 assert($PWD + "/huge" == "$(echo ~+/"huge")")
